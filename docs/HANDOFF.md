@@ -1,10 +1,9 @@
-# HANDOFF — Emberisle (pause, 2026-09-21)
+# HANDOFF — Emberisle
+
+**Start at `docs/AGENT_START.md`.** The live task is `docs/CURRENT.md`. The line of work is `docs/TASKS.md`. The product spec is `docs/BUILD_BIBLE.md`. Method: `docs/FRAMEWORK.md` (linear stage-gate microtasks).
 
 **2026-09-24:** The product is a **downloadable PC/Mac Unreal game**, not a phone website.
-The spec for the other AI is **[docs/BUILD_BIBLE.md](BUILD_BIBLE.md)** (also on GitHub).
-Grok owns the rules host and this spec. Unreal owns the 4 GB island.
-
-Next agent: **read `docs/BUILD_BIBLE.md` first**, then this file, then `docs/VISION.md`.
+Grok owns the rules host and the spec. Unreal owns the 4 GB island.
 
 ## Product
 
