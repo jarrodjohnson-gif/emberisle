@@ -1,45 +1,116 @@
 # How agents use the tracker
 
-The task list is GitHub Issues on `jarrodjohnson-gif/emberisle`. Files in this repo explain how the game works. They are not a to-do list. Do not add tasks to a markdown file.
+The task list is GitHub Issues on `jarrodjohnson-gif/emberisle`.
+Files in this repo explain the game. They are not a to-do list.
 
-Milestones are the stages, in order: `1. Documents` through `12. Download`. Each milestone's description is its one-line job.
+Milestones are the stages, in order: `1. Documents` through `12. Download`.
+Each stage has four issues: `research`, `design`, `implementation`, `test`.
+A decision is an issue titled `Decide: ...`. A bug gets the `bug` label.
 
-Each stage has four issues, labeled in order: `research`, `design`, `implementation`, `test`. A decision is its own issue titled `Decide: ...`. A bug is an issue with the `bug` label.
+Several people may work at once. The labels are the lock. A comment that
+does not match the label does not count.
 
-## Status
+## The one status label
 
-The board status, once a Project exists, is:
+Every open issue has exactly one of these. When you change status you MUST
+remove the old one and add the new one in the same minute as the comment.
+If you only comment, you have not taken the issue. Someone else may take it.
 
-Backlog → Todo → In Progress → In Review → Done, plus Canceled.
+| Label | Write this in the comment | Meaning |
+|---|---|---|
+| `status:backlog` | `status: backlog` | Known. Not available. |
+| `status:todo` | `status: todo` | Available. Nobody has it. |
+| `status:claimed` | `status: claimed` | Named, not editing yet. |
+| `status:in-progress` | `status: in-progress` | Editing now. |
+| `status:paused` | `status: paused` | Stopped. The claim is kept. |
+| `status:failed` | `status: failed` | The completion test failed. |
+| `status:in-review` | `status: in-review` | Built. Waiting for Jarrod. |
+| `status:done` | `status: done` | Accepted. Then close the issue. |
+| `status:canceled` | `status: deleted` | Will not do. This is "deleted". Do not delete the issue. |
 
-- Backlog: known, not scheduled.
-- Todo: picked for now.
-- In Review: built, waiting for Jarrod.
-- Done: he accepted it. Close the issue.
+`mark:changed` is separate. Add it, and do not remove it, once any file was edited for this issue.
 
-Until the Project board exists, treat the open issues as the list. Do not invent a second status inside a file.
+## What you must write
 
-## What to do next
+Claim, before any edit:
 
-If nobody named a project: this repo is the only one. Do not start a second.
+```
+claimed: <name>, <YYYY-MM-DD>
+status: claimed
+files: <paths, or none>
+```
 
-Next issue:
+```
+gh issue edit <N> --repo jarrodjohnson-gif/emberisle --remove-label status:todo --add-label status:claimed
+```
 
-1. An issue already In Progress, if you claimed it or the claim is yours.
-2. Else the lowest-numbered open issue in the earliest open milestone whose `Depends on` issues are all closed.
+Start editing:
 
-## Claiming
+```
+status: in-progress
+```
 
-Re-read the issue. If a comment starts with `claimed:` and the issue is In Progress, skip it. Otherwise comment `claimed: <name>, <date>` and start. Never work two issues that edit the same file.
+Pause (you are stopping, work is not finished):
 
-## Done
+```
+status: paused
+changed: <one line, or nothing>
+left: <what is unfinished>
+```
 
-Comment one line: what changed, and how to test it. Move the issue to In Review if you cannot close it yourself. Close it only when the completion test in the issue passed and Jarrod has accepted it, or when he already said to close this kind of step.
+The completion test failed:
 
-A new real step becomes a new issue under the right milestone. An idea goes in `docs/IDEAS.md` first, and becomes an issue only after Jarrod says to build it. Then mark the idea `→ #<number>`.
+```
+status: failed
+changed: <one line, or nothing>
+broke: <what failed>
+```
 
-Do not delete, overwrite, or bulk-move files, and do not push, unless he asked for that in this chat.
+Ready for Jarrod:
 
-When a chat is long or a task finishes, give him one line he can paste into a new chat:
+```
+status: in-review
+changed: <one line>
+test: <how to verify>
+```
+
+He accepted it:
+
+```
+status: done
+changed: <one line>
+test: <how you know>
+```
+
+Then close the issue. Do not close it while the label is still `status:in-progress`.
+
+Dropping the task:
+
+```
+status: deleted
+reason: <why>
+```
+
+The label for that comment is `status:canceled`.
+
+## How to take an issue
+
+1. List locks:
+
+```
+gh issue list --repo jarrodjohnson-gif/emberisle --state open --limit 100 --search "label:status:claimed OR label:status:in-progress OR label:status:paused"
+```
+
+2. Skip any issue in that list. Also skip an issue whose `files:` overlap a lock.
+3. The next issue is the lowest-numbered open issue in the earliest milestone that is `status:todo` and whose `Depends on` issues are closed.
+4. Read it again. If the label is no longer `status:todo`, stop. Someone beat you.
+5. Set `status:claimed` and write the claim comment. Read it once more. If an older `claimed:` comment names someone else, remove your label and stop.
+6. Set `status:in-progress` when the first edit starts.
+
+When you finish, move the next unblocked issue in that milestone from `status:backlog` to `status:todo` if it is not already taken. Do not start it in the same minute if its `files:` would overlap yours.
+
+Do not delete, overwrite, or bulk-move files, and do not push, unless Jarrod asked in this chat.
+
+When a chat is long or a task finishes, give him one line:
 
 `Continue Emberisle. Next open issue: #<number>.`
