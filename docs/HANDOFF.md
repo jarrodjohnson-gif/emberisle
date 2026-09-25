@@ -1,8 +1,10 @@
 # HANDOFF — Emberisle (pause, 2026-09-21)
 
-Next agent: **read this file first**, then `docs/VISION.md`, then the GitHub issues.
-Do not restart the island from scratch. The playable game lives in **this sandbox**.
-GitHub currently has **docs only** — dumping `src/` is issue #4 and is unfinished.
+**2026-09-24:** The product is a **downloadable PC/Mac Unreal game**, not a phone website.
+The spec for the other AI is **[docs/BUILD_BIBLE.md](BUILD_BIBLE.md)** (also on GitHub).
+Grok owns the rules host and this spec. Unreal owns the 4 GB island.
+
+Next agent: **read `docs/BUILD_BIBLE.md` first**, then this file, then `docs/VISION.md`.
 
 ## Product
 
