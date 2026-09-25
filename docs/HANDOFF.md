@@ -1,9 +1,9 @@
-# HANDOFF — Emberisle
+# Notes for a new session
 
-**Start at `docs/AGENT_START.md`.** The live task is `docs/CURRENT.md`. The line of work is `docs/TASKS.md`. The product spec is `docs/BUILD_BIBLE.md`. Method: `docs/FRAMEWORK.md` (linear stage-gate microtasks).
+The task list is the GitHub milestones. Read [TRACKING.md](TRACKING.md). Next open issue: [#16](https://github.com/jarrodjohnson-gif/emberisle/issues/16).
+Do not treat the rest of this file as a checklist. It is background from earlier sessions.
 
-**2026-09-24:** The product is a **downloadable PC/Mac Unreal game**, not a phone website.
-Grok owns the rules host and the spec. Unreal owns the 4 GB island.
+**Product:** Emberisle, a downloadable PC/Mac game for friends. Rules are on the README. The island art is the 4 GB pack, opened on Jarrod's PC, not in the web sandbox.
 
 ## Product
 
