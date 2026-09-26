@@ -1,4 +1,4 @@
-import { mulberry32 } from "@/lib/utils";
+import { mulberry32 } from "../utils";
 import {
   AXIAL_DIRS,
   HEX_SIZE,

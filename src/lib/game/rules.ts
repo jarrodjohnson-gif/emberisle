@@ -4,6 +4,15 @@ function clone<T>(s: T): T {
   return structuredClone(s);
 }
 
+function rollDie(): number {
+  const buf = new Uint32Array(1);
+  const limit = Math.floor(0x1_0000_0000 / 6) * 6;
+  for (;;) {
+    crypto.getRandomValues(buf);
+    if (buf[0]! < limit) return 1 + (buf[0]! % 6);
+  }
+}
+
 function nextRand(state: GameState): number {
   let a = state.rng | 0;
   a = (a + 0x6d2b79f5) | 0;
@@ -263,6 +272,8 @@ function setupAdvance(state: GameState) {
 }
 
 function produce(state: GameState, total: number) {
+  const demand: Partial<Record<Resource, number>> = {};
+  const grants: { p: PlayerState; res: Resource; n: number; pip: number }[] = [];
   for (const h of state.hexes) {
     if (h.pip !== total || h.blocked || h.terrain === "waste") continue;
     const res = h.terrain as Resource;
@@ -271,9 +282,18 @@ function produce(state: GameState, total: number) {
       const p = player(state, v.building.playerId);
       if (!p) continue;
       const n = v.building.kind === "stronghold" ? 2 : 1;
-      const got = give(state, p, res, n);
-      if (got) log(state, `${p.name} gathers ${got} ${res} from the ${h.pip}.`);
+      demand[res] = (demand[res] ?? 0) + n;
+      grants.push({ p, res, n, pip: h.pip! });
     }
+  }
+  const short = new Set();
+  for (const res of Object.keys(demand)) {
+    if ((demand[res] ?? 0) > state.bank[res]) short.add(res);
+  }
+  for (const grant of grants) {
+    if (short.has(grant.res)) continue;
+    const got = give(state, grant.p, grant.res, grant.n);
+    if (got) log(state, `${grant.p.name} gathers ${got} ${grant.res} from the ${grant.pip}.`);
   }
 }
 
@@ -369,8 +389,8 @@ export function applyAction(prev: GameState, actor: string, action: Action): { s
     }
     case "roll": {
       if (state.phase !== "roll") return { state: prev, error: "Cannot roll now." };
-      const a = 1 + Math.floor(nextRand(state) * 6);
-      const b = 1 + Math.floor(nextRand(state) * 6);
+      const a = rollDie();
+      const b = rollDie();
       state.dice = [a, b];
       const total = a + b;
       log(state, `${me.name} rolls ${a}+${b} = ${total}.`);
