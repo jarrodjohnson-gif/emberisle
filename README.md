@@ -2,7 +2,7 @@
 
 A private island settler for friends on their own computers. One person runs the table. The others join with a four-character code. The island is the art pack. This repo is the rules and the host.
 
-Work is not listed here. It lives in the [milestone issues](https://github.com/jarrodjohnson-gif/emberisle/issues?q=is%3Aopen). The next open issue is [#16](https://github.com/jarrodjohnson-gif/emberisle/issues/16). Agents follow [docs/TRACKING.md](docs/TRACKING.md).
+Work is not listed here. It lives in the [milestone issues](https://github.com/jarrodjohnson-gif/emberisle/issues?q=is%3Aopen). Agents follow [docs/TRACKING.md](docs/TRACKING.md).
 
 ## Rule set
 

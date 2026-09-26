@@ -107,7 +107,7 @@ gh issue list --repo jarrodjohnson-gif/emberisle --state open --limit 100 --sear
 5. Set `status:claimed` and write the claim comment. Read it once more. If an older `claimed:` comment names someone else, remove your label and stop.
 6. Set `status:in-progress` when the first edit starts.
 
-When you finish, move the next unblocked issue in that milestone from `status:backlog` to `status:todo` if it is not already taken. Do not start it in the same minute if its `files:` would overlap yours.
+When the completion test passed, set `status:done`, close the issue, and set the next issue to `status:todo` in the same turn. Do not stop to wait.
 
 Do not delete, overwrite, or bulk-move files, and do not push, unless Jarrod asked in this chat.
 
