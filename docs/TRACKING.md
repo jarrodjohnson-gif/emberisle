@@ -101,11 +101,12 @@ The label for that comment is `status:canceled`.
 gh issue list --repo jarrodjohnson-gif/emberisle --state open --limit 100 --search "label:status:claimed OR label:status:in-progress OR label:status:paused"
 ```
 
-2. Skip any issue in that list. Also skip an issue whose `files:` overlap a lock.
-3. The next issue is the lowest-numbered open issue in the earliest milestone that is `status:todo` and whose `Depends on` issues are closed.
-4. Read it again. If the label is no longer `status:todo`, stop. Someone beat you.
-5. Set `status:claimed` and write the claim comment. Read it once more. If an older `claimed:` comment names someone else, remove your label and stop.
-6. Set `status:in-progress` when the first edit starts.
+2. A `status:paused` issue is still claimed. Resume it before any todo if you can do its `left:` line on this machine. If you cannot, leave it paused and do not start a later issue that depends on it.
+3. Otherwise skip every issue in that lock list, and skip an issue whose `files:` overlap a lock.
+4. The next issue is the lowest-numbered open issue in the earliest milestone that is `status:todo` and whose `Depends on` issues are closed.
+5. Read it again. If the label is no longer `status:todo`, stop. Someone beat you.
+6. Set `status:claimed` and write the claim comment. Read it once more. If an older `claimed:` comment names someone else, remove your label and stop.
+7. Set `status:in-progress` when the first edit starts.
 
 When the completion test passed, set `status:done`, close the issue, and set the next issue to `status:todo` in the same turn. Do not stop to wait.
 
