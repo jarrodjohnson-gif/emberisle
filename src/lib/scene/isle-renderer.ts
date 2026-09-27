@@ -21,14 +21,24 @@ const SIDE: Record<Terrain, number> = {
   waste: 0xb89b6a,
 };
 
-const TEX_URL: Record<Terrain, string> = {
-  timber: "/textures/forest.jpg",
-  wool: "/textures/pasture.jpg",
-  grain: "/textures/fields.jpg",
-  clay: "/textures/hills.jpg",
-  ore: "/textures/mountains.jpg",
-  waste: "/textures/desert.jpg",
+const TEX_FILE: Record<Terrain, string> = {
+  timber: "forest.jpg",
+  wool: "pasture.jpg",
+  grain: "fields.jpg",
+  clay: "hills.jpg",
+  ore: "mountains.jpg",
+  waste: "desert.jpg",
 };
+
+// Drop photo textures into src/assets/textures/ to use them. Missing ones are painted, with no request.
+const PHOTOS = import.meta.glob("../../assets/textures/*.jpg", { eager: true, import: "default", query: "?url" }) as Record<
+  string,
+  string
+>;
+
+function photoUrl(kind: Terrain): string | undefined {
+  return PHOTOS[`../../assets/textures/${TEX_FILE[kind]}`];
+}
 
 type Highlights = { vertices: string[]; edges: string[]; hexes: string[] };
 type Sheep = { g: THREE.Group; ox: number; oz: number; tx: number; tz: number; wait: number; graze: number };
@@ -195,20 +205,24 @@ export class IsleRenderer {
 
   private loadTextures() {
     const loader = new THREE.TextureLoader();
-    const kinds = Object.keys(TEX_URL) as Terrain[];
+    const kinds = Object.keys(TEX_FILE) as Terrain[];
     let left = kinds.length;
+    const done = (k: Terrain, tex: THREE.Texture) => {
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+      tex.anisotropy = 8;
+      this.textures[k] = tex;
+      left -= 1;
+      if (left === 0 && this.lastState) {
+        this.lastSeed = null;
+        this.setBoard(this.lastState, this.lastHi, this.lastInteractive);
+      }
+    };
     for (const k of kinds) {
-      loader.load(TEX_URL[k], (tex) => {
-        tex.colorSpace = THREE.SRGBColorSpace;
-        tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-        tex.anisotropy = 8;
-        this.textures[k] = tex;
-        left -= 1;
-        if (left === 0 && this.lastState) {
-          this.lastSeed = null;
-          this.setBoard(this.lastState, this.lastHi, this.lastInteractive);
-        }
-      });
+      // The photo textures lived only in the old sandbox. A missing file gets a painted one.
+      const url = photoUrl(k);
+      if (url) loader.load(url, (tex) => done(k, tex), undefined, () => done(k, paintedTexture(k)));
+      else done(k, paintedTexture(k));
     }
   }
 
@@ -726,4 +740,34 @@ function makeSheep() {
   }
   g.add(body, head);
   return g;
+}
+
+const PAINT: Record<Terrain, [string, string]> = {
+  timber: ["#2f6b3a", "#1f4a28"],
+  clay: ["#b5522a", "#8a3a1c"],
+  wool: ["#8fbf5a", "#6f9e42"],
+  grain: ["#e0b13a", "#c4922a"],
+  ore: ["#6e7580", "#4f555e"],
+  waste: ["#c4a574", "#a88a5c"],
+};
+
+function paintedTexture(kind: Terrain): THREE.Texture {
+  const size = 256;
+  const canvas = document.createElement("canvas");
+  canvas.width = canvas.height = size;
+  const ctx = canvas.getContext("2d")!;
+  const [base, dark] = PAINT[kind];
+  ctx.fillStyle = base;
+  ctx.fillRect(0, 0, size, size);
+  const rand = mulberry32(hashStr(kind));
+  ctx.fillStyle = dark;
+  for (let i = 0; i < 900; i++) {
+    const r = 1 + rand() * 3;
+    ctx.globalAlpha = 0.15 + rand() * 0.35;
+    ctx.beginPath();
+    ctx.arc(rand() * size, rand() * size, r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+  return new THREE.CanvasTexture(canvas);
 }

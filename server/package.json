@@ -1,0 +1,13 @@
+{
+  "name": "emberisle-host",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22.18" },
+  "scripts": {
+    "host": "node --import ./register.mjs host.mjs",
+    "test": "node --import ./register.mjs prove.mjs && node --import ./register.mjs trade-prove.mjs && node sound-prove.mjs && node --import ./register.mjs table-prove.mjs && node --import ./register.mjs harden-prove.mjs"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}

@@ -1,6 +1,6 @@
 # Ideas
 
-Not scheduled. An idea becomes an issue only when Jarrod says to build it. Then write `→ #<number>` on that line.
+Not scheduled. An idea becomes an issue only when Jarrod says to build it (see [FRAMEWORK.md](FRAMEWORK.md) section 8). Then write `→ #<number>` on that line.
 
 - A fifth and sixth seat, which needs a larger island. The 19-hex table stays 3 or 4.
 - Background music. Table sounds already have a milestone.

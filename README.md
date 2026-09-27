@@ -1,8 +1,27 @@
 # Emberisle
 
-A private island settler for friends on their own computers. One person runs the table. The others join with a four-character code. The island is the art pack. This repo is the rules and the host.
+A private island settler game for Jarrod and friends. One person hosts a table on their PC, and the others join with a four-character code. It is 3 or 4 players, first to 10 points, on one island of 19 hexes. The full rules are in [Rule set](#rule-set) below.
 
-Work is not listed here. It lives in the [milestone issues](https://github.com/jarrodjohnson-gif/emberisle/issues?q=is%3Aopen). Agents follow [docs/TRACKING.md](docs/TRACKING.md).
+**The task list is the [GitHub issues and milestones](https://github.com/jarrodjohnson-gif/emberisle/milestones), not this repo.** This file says what the game is and how the code works. How work is organized, and how any AI picks up the next step, is in **[docs/FRAMEWORK.md](docs/FRAMEWORK.md)** (the Fractal Build).
+
+---
+
+## Contents
+
+1. [Rule set](#rule-set)
+2. [What exists](#what-exists)
+3. [Run it](#run-it)
+4. [How work is done](#how-work-is-done)
+5. [What an AI can and cannot do here](#what-an-ai-can-and-cannot-do-here)
+6. [Architecture](#architecture)
+7. [Repo map](#repo-map)
+8. [Messages between client and host](#messages-between-client-and-host)
+9. [Tests and proofs](#tests-and-proofs)
+10. [Done: what 100% means](#done-what-100-means)
+11. [Names and words](#names)
+12. [Do not](#do-not)
+
+---
 
 ## Rule set
 
@@ -60,4 +79,189 @@ The bank starts with 19 of each resource.
 
 ## Names
 
+<a id="names"></a>
+
 Say timber, clay, wool, grain, ore, outpost, stronghold, path, fortune, and wayfarer. The window title is Emberisle.
+
+---
+
+## What exists
+
+| Piece | State | Where |
+|---|---|---|
+| Rules engine (setup, dice, production, 7s, wayfarer, trades, fortunes, longest path, largest army, win) | Works. Proven by scripts. | `src/lib/game/` |
+| Rules host: one Node process holding the tables, codes, seats, and pictures, speaking WebSocket | Works. Proven by a 3-socket table test. | `server/host.mjs` |
+| Browser client: Three.js island, HUD, bots, practice vs the isle, hotseat | Works from a fresh clone. Proven in headless Chromium. | `src/`, `index.html` |
+| Browser client playing online through the host | Not built. The host side is ready. | |
+| Friends joining over the internet | Not built. Needs a Cloudflare tunnel on the host PC. | |
+| Unreal client, the "photoreal" version from the 3.6 GB art pack | Specs only. Needs the gaming PC. | `docs/BUILD_BIBLE.md`, `docs/design/` |
+
+There are two clients on purpose:
+
+- **Browser client (this repo, runs anywhere).** This is what friends can play first. Any AI can build it.
+- **Unreal client (Jarrod's gaming PC).** This is the pretty version. It speaks the same messages to the same host, so nothing in the rules is written twice.
+
+---
+
+## Run it
+
+You need Node **22.18 or newer**. Check with `node --version`.
+
+```bash
+git clone https://github.com/jarrodjohnson-gif/emberisle.git
+cd emberisle
+
+# 1. Browser client (practice vs 3 bots, or 4 seats hotseat)
+npm install
+npm run dev              # open http://localhost:8080
+
+# 2. Rules host (tables with room codes)
+npm --prefix server install
+npm run host             # WebSocket on ws://localhost:8787 (set PORT to change)
+
+# 3. Checks: run all of these before you push
+npm run typecheck        # TypeScript, no errors
+npm run build            # production client in dist/
+npm test                 # rules proofs, sounds, 3-socket table + 20 rolls
+npm run client-prove     # headless Chromium plays setup + a roll, zero console errors
+```
+
+`client-prove` uses the Chromium that ships with cloud sessions (`/opt/pw-browsers/chromium`). On your own PC, run `npx playwright install chromium` once first. It saves a screenshot to `test-results/client-prove.png`.
+
+If any command here fails on a fresh clone, that is a bug. File it (label `bug`) before doing anything else.
+
+---
+
+## How work is done
+
+Full rules: **[docs/FRAMEWORK.md](docs/FRAMEWORK.md)**. In short:
+
+- **Fractal Build.** Every piece of work runs **1 Research → 2 Design → 3 Implementation → 4 Testing**. Research files the child pieces it finds, and each child runs the same four steps, down to pieces small enough for one session and one PR.
+- **The tracker is the task list.** Milestones are stages (`1. Documents`, `2. ...`). Issues are the steps, with sub-issues for children. Status: Backlog → Todo → In Progress → In Review → Done.
+- **Any AI, any budget.** Each issue has a size (`XS` or `S`). With little limit left, do one step and leave a pause comment. With no limit, loop through Todo in the earliest milestone.
+- **Every change is a pull request.** CI runs the checks below. The Builder never merges its own PR. The next session reviews it and merges it if CI is green (see FRAMEWORK.md, Builder and Reviewer).
+- **Ideas** go in [docs/IDEAS.md](docs/IDEAS.md) until Jarrod decides to build them.
+
+---
+
+## What an AI can and cannot do here
+
+| Can (cloud session, or any machine with Node) | Cannot (needs Jarrod) |
+|---|---|
+| All of `src/`, `server/`, and `docs/` | Open the 3.6 GB `CATAN_PACKED.zip` (Drive), run Unreal, or cook a Windows `.exe` |
+| Run the client in headless Chromium and take screenshots | Run the Cloudflare tunnel on his PC |
+| Write specs for Unreal work | Decide open `Decide:` issues |
+| Create, edit, and close issues and sub-issues; open PRs | Create milestones, labels, or the Project board (the cloud connector cannot; Jarrod or an agent with `gh` can) |
+
+---
+
+## Architecture
+
+```
+ ┌──────────────── browser client (src/) ────────────────┐      ┌──── Unreal client (gaming PC) ────┐
+ │ React HUD + Three.js island (isle-renderer.ts)        │      │ art pack island, UMG menus        │
+ │ zustand store (store.ts)                              │      │ follows docs/design/*.md          │
+ │   practice / hotseat: calls rules.ts directly + ai.ts │      └──────────────┬────────────────────┘
+ │   online (planned): sends intents over WebSocket ─────┼──┐                 │ same JSON
+ └───────────────────────────────────────────────────────┘  │                 │
+                                                             ▼                 ▼
+                                      ┌──────── rules host (server/host.mjs, port 8787) ────────┐
+                                      │ rooms by 4-char code · seats · ready · start           │
+                                      │ applyAction() from src/lib/game/rules.ts (the only rules)│
+                                      │ per-seat state + legal ids · rolled · log · avatars     │
+                                      └──────────────────────────────────────────────────────────┘
+```
+
+- The rules exist once, in `src/lib/game/rules.ts` (`applyAction(state, playerId, action)` → `{ state, error? }`). It is pure and deterministic except for the dice. The host and the browser both import it.
+- The server rolls the dice (`crypto`). Clients only animate the numbers they are given.
+- The host sends each seat only what it may see. Other players' fortunes and the deck order stay hidden.
+
+---
+
+## Repo map
+
+| Path | What it is |
+|---|---|
+| `README.md` | This file, the front door |
+| `docs/FRAMEWORK.md` | The Fractal Build: how work is organized and picked up |
+| `docs/BUILD_BIBLE.md` | Full product spec for the Unreal client: UX, sounds, messages, and the rules it must not re-decide |
+| `docs/design/` | Step-2 specs: hex-id map, menus, connection, placement, dice, install |
+| `.github/workflows/ci.yml` | CI: runs the Run-it checks on every PR |
+| `docs/research/` | Step-1 notes, one per topic (`_TEMPLATE.md`) |
+| `docs/VISION.md`, `docs/HARBORS.md`, `docs/IDEAS.md` | The look, the dock layout, and unscheduled ideas |
+| `docs/HANDOFF.md` | Old background from the Grok sandbox. History only. |
+| `src/lib/game/types.ts` | Resources, pieces, costs, phases, `GameState`, `Action` |
+| `src/lib/game/hex.ts` | Axial coordinates and hex, vertex, and edge ids |
+| `src/lib/game/board.ts` | `createGame()`: the 19-hex deal, tokens, docks, and players |
+| `src/lib/game/rules.ts` | `applyAction()` and the `legal*` helpers: **all the rules** |
+| `src/lib/game/ai.ts` | Bots for practice |
+| `src/lib/game/random.ts` | Seeded RNG for the board deal (not the dice) |
+| `src/lib/game/store.ts` | The zustand store the UI uses |
+| `src/lib/scene/isle-renderer.ts` | The Three.js island: slabs, trees, sheep, boats, and painted textures |
+| `src/components/game/` | `EmberisleApp.tsx` (title and modes) and `Hud.tsx` (in-game bar) |
+| `src/components/ui/button.tsx` | Button with 8 px corners that press to 0.97 |
+| `src/assets/textures/` | Drop terrain photos here (optional) |
+| `server/host.mjs` | The rules host |
+| `server/*-prove.mjs` | Proof scripts (see Tests) |
+| `server/audio/` | CC0 Kenney sounds, mapped in `server/cue.mjs` |
+| `scripts/client-prove.mjs` | Headless browser test of the client |
+
+---
+
+## Messages between client and host
+
+WebSocket JSON. The client sends intents. The server answers with `state` or `error`. Full detail: [docs/design/connection.md](docs/design/connection.md) and [BUILD_BIBLE §10](docs/BUILD_BIBLE.md).
+
+| Client → host | Meaning |
+|---|---|
+| `{type:"hello", name, color, avatarId}` | Open a table. Reply: `welcome {code, you, host:true}` |
+| `{type:"hello", code, name, color, avatarId}` | Sit down at a table |
+| `{type:"ready", value}` / `{type:"start"}` | Lobby. Only the host can start, with 3 or 4 seated and everyone ready. |
+| `{type:"place", kind:"outpost"\|"path"\|"stronghold", id}` | Build or place during setup |
+| `{type:"roll"}` `{type:"pass"}` `{type:"buy"}` | Turn actions |
+| `{type:"play", card:"knight", hexId, stealFrom}` (and `road`/`ids`, `plenty`/`resources`, `monopoly`/`resource`) | Fortunes |
+| `{type:"rob", hexId, stealFrom}` `{type:"discard", cards}` | After a 7 |
+| `{type:"tradeBank", give, take}` `{type:"tradeAsk", give, want}` `{type:"tradeAnswer", tradeId, yes}` | Trades |
+
+| Host → client | Meaning |
+|---|---|
+| `seats {code, seats[]}` | Lobby seat list |
+| `state {you, game, legal}` | The full game for you, plus `legal` = the ids you may click and the actions you may take |
+| `rolled {dice:[a,b], sum, gains[]}` | The server's dice and who got what |
+| `log {text}` / `error {message}` | One line to show |
+| `tradeOffer` / `tradeClosed` | Ask-the-table trades (20 s) |
+
+---
+
+## Tests and proofs
+
+| Command | Proves |
+|---|---|
+| `node --import ./server/register.mjs server/prove.mjs` | Short bank pays nobody, dice histogram, setup goods, illegal placement rejected |
+| `node --import ./server/register.mjs server/trade-prove.mjs` | Bank 4:1, discards, steals |
+| `node server/sound-prove.mjs` | A missing sound does not crash |
+| `node --import ./server/register.mjs server/table-prove.mjs` | 3 sockets: codes, color taken, ready, start, setup glow and neighbor rule, 20 rolls match the host |
+| `npm run client-prove` | The browser client plays setup and a roll with zero console errors |
+
+`npm test` runs the first four.
+
+---
+
+## Done: what 100% means
+
+1. Two computers. One hosts. The other joins with a code over the internet.
+2. They finish a game to 10. The points match the Rule set below.
+3. The dice faces match the log. A 7 forces discards, then a wayfarer move.
+4. Pictures show in the lobby. Path, outpost, and dice each make a sound.
+5. First with the browser client, then with the Unreal client.
+
+---
+
+## Do not
+
+- Do not put the board-game trademark anywhere in the UI. It is **Emberisle**.
+- Do not write a second rules engine (in Blueprints, the client, or anywhere else). Call `rules.ts` or the host.
+- Do not let a client decide the dice, the steal, or the winner.
+- Do not download the 3.6 GB art pack into a cloud session.
+- Do not rip sounds from commercial games. Use CC0 only.
+- Do not add a 5th seat to the 19-hex island.

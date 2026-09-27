@@ -1,7 +1,7 @@
-# Notes for a new session
+# History: the Grok sandbox (read-only)
 
-The task list is the GitHub milestones. Read [TRACKING.md](TRACKING.md). Next open issue: [#16](https://github.com/jarrodjohnson-gif/emberisle/issues/16).
-Do not treat the rest of this file as a checklist. It is background from earlier sessions.
+This is background from before the repo was set up. **It is not a task list, and its "next steps" are out of date.** Start at the [README](../README.md).
+
 
 **Product:** Emberisle, a downloadable PC/Mac game for friends. Rules are on the README. The island art is the 4 GB pack, opened on Jarrod's PC, not in the web sandbox.
 
@@ -106,19 +106,6 @@ Issues:
 2. https://github.com/jarrodjohnson-gif/emberisle/issues/2 living hexes
 3. https://github.com/jarrodjohnson-gif/emberisle/issues/3 trade + P2P tables
 4. https://github.com/jarrodjohnson-gif/emberisle/issues/4 **push full source**
-
-## Next steps (do in this order)
-
-1. **Dump source to GitHub** (issue #4). Highest risk.
-2. **Screenshot vs north star.** If slabs are not obviously white stone walls,
-   fix `makeHexTile` (taller walls, no bevel color leak, grout between hexes).
-3. **Coast:** dark water, foam ring already exists, add wet rocks + sand strip
-   at the rim. Reference still has this.
-4. **Terrain dioramas** one type at a time — pasture (grass + sheep + stones),
-   then wheat, then ore (rock mass + mine mouth + smoke particles), then pines.
-   Stop using photo-stickers as the whole identity of a hex.
-5. HUD: light glass, smaller, must not cover the island.
-6. Trade panel. Then wire P2P (`/api/rtc` exists) to `applyAction` with host authority.
 
 ## Do not
 
