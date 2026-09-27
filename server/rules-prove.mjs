@@ -1,4 +1,4 @@
-// Rules-audit fixes (docs/design/rules-fixes.md): longest path as a real trail, ties, cuts, and fortune timing.
+// Rules-audit fixes (docs/design/rules-fixes.md): longest path as a real trail, ties, cuts, fortune timing, and paths past an outpost.
 import { createGame } from "../src/lib/game/board.ts";
 import { applyAction, roadLength } from "../src/lib/game/rules.ts";
 
@@ -140,6 +140,24 @@ let lineA;
   if (r.error) fail("knight on the next turn", r.error);
   if (r.state.players[0].knightsPlayed !== 1) fail("knight counted", r.state.players[0].knightsPlayed);
   console.log("pass, then play it next turn before the roll: works");
+}
+
+// 8. A path cannot go on past an opponent's outpost (#100). 9. From your own building it still can.
+{
+  const g = fresh();
+  const v = g.vertices.find((x) => edgesAt(g, x.id).length === 3).id;
+  const [mine, beyond, other] = edgesAt(g, v);
+  own(g, [mine], "p0");
+  g.vertices.find((x) => x.id === v).building = { playerId: "p1", kind: "outpost" };
+  giveCards(g.players[0], { timber: 1, clay: 1 });
+  let r = applyAction(g, "p0", { type: "buildPath", edgeId: beyond.id });
+  if (r.error !== "Path must connect to you.") fail("path past p1's outpost", r.error ?? "allowed");
+  console.log(`path past an opponent's outpost: rejected ("${r.error}")`);
+
+  g.vertices.find((x) => x.id === v).building = { playerId: "p0", kind: "outpost" };
+  r = applyAction(g, "p0", { type: "buildPath", edgeId: other.id });
+  if (r.error) fail("path from own outpost", r.error);
+  console.log("path from your own outpost: works");
 }
 
 console.log("rules prove ok");

@@ -91,6 +91,8 @@ function connectedToNetwork(state: GameState, pid: string, eid: string) {
   const touch = (vid: string) => {
     const v = vertex(state, vid);
     if (v?.building?.playerId === pid) return true;
+    // An opponent's building cuts your network at that corner (README Setup, #98).
+    if (v?.building) return false;
     return state.edges.some((x) => x.path === pid && (x.va === vid || x.vb === vid));
   };
   return touch(e.va) || touch(e.vb);
