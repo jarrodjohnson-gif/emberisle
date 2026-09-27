@@ -46,6 +46,12 @@ Call `updateLongest(state)` in `buildOutpost` and `setupSettle` after the buildi
 `connectedToNetwork(state, pid, eid)`: an end corner connects if you have a building there, **or** you have a path
 there **and** no opponent has a building there.
 
+## #83: a win that arrives on someone else's turn
+
+`checkWin` only runs for the player whose turn it is. Points can still arrive on another player's turn: their outpost
+cuts the holder's path, and the longest path goes to you. The engine then never ended the game unless you built or bought something.
+Fix: `endTurn` calls `checkWin` for the next player, so a player who already has 10 wins as their turn starts.
+
 ## Proof (step 3 adds it; step 4 runs it)
 
 `server/rules-prove.mjs`, run by `npm test`, has one check per fix:
@@ -60,3 +66,6 @@ there **and** no opponent has a building there.
 | Buy a knight, play it the same turn | error |
 | Pass, then play it next turn | works |
 | Path from a corner holding an opponent's outpost | rejected |
+
+After those, the same script has one `README <rule>: ok` line for each sentence under README "Rule set" (#83),
+including the #83 win check above. A rule proved by an earlier check, or by another script, names that check.
