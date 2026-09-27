@@ -3,6 +3,15 @@ import { randomInt } from "node:crypto";
 import { WebSocketServer } from "ws";
 import { createGame } from "../src/lib/game/board.ts";
 import { applyAction } from "../src/lib/game/rules.ts";
+import { cue } from "./cue.mjs";
+
+function hear(name) {
+  try {
+    cue(name);
+  } catch {
+    /* a missing sound must not take down the table */
+  }
+}
 
 const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const rooms = new Map();
@@ -170,18 +179,75 @@ wss.on("connection", (ws) => {
       action = { type: room.game.phase === "setupSettle" ? "setupSettle" : "buildOutpost", vertexId: msg.id };
     } else if (msg.type === "place" && msg.kind === "path") {
       action = { type: room.game.phase === "setupRoad" ? "setupRoad" : "buildPath", edgeId: msg.id };
+    } else if (msg.type === "place" && msg.kind === "stronghold") {
+      action = { type: "buildStronghold", vertexId: msg.id };
     } else if (msg.type === "pass") action = { type: "endTurn" };
-    else {
+    else if (msg.type === "tradeBank") action = { type: "bankTrade", give: msg.give, want: msg.want };
+    else if (msg.type === "discard") action = { type: "discard", resources: msg.resources };
+    else if (msg.type === "rob") action = { type: "moveRobber", hexId: msg.hexId, stealFrom: msg.stealFrom ?? null };
+    else if (msg.type === "tradeAsk") {
+      if (room.game.phase !== "main" || room.game.current !== actor) {
+        send(ws, { type: "error", message: "Cannot trade now." });
+        return;
+      }
+      if (room.offerTimer) clearTimeout(room.offerTimer);
+      room.offer = { from: actor, give: msg.give ?? {}, want: msg.want ?? {} };
+      room.offerTimer = setTimeout(() => {
+        room.offer = null;
+        broadcast(room, { type: "tradeClosed" });
+      }, 20000);
+      broadcast(room, { type: "tradeOffer", from: actor, give: room.offer.give, want: room.offer.want, seconds: 20 });
+      return;
+    } else if (msg.type === "tradeAnswer") {
+      const offer = room.offer;
+      if (!offer || actor === offer.from) {
+        send(ws, { type: "error", message: "Offer is gone." });
+        return;
+      }
+      if (!msg.accept) {
+        send(ws, { type: "tradeClosed", you: actor });
+        return;
+      }
+      room.offer = null;
+      if (room.offerTimer) clearTimeout(room.offerTimer);
+      const offered = applyAction(room.game, offer.from, {
+        type: "offerTrade",
+        to: actor,
+        give: offer.give,
+        want: offer.want,
+      });
+      if (offered.error) {
+        send(ws, { type: "error", message: offered.error });
+        return;
+      }
+      const accepted = applyAction(offered.state, actor, { type: "respondTrade", accept: true });
+      if (accepted.error) {
+        send(ws, { type: "error", message: accepted.error });
+        return;
+      }
+      room.game = accepted.state;
+      broadcast(room, { type: "state", you: actor, game: room.game });
+      return;
+    } else {
       send(ws, { type: "error", message: "not ready" });
       return;
     }
     const next = applyAction(room.game, actor, action);
     if (next.error) {
       send(ws, { type: "error", message: next.error });
+      hear("ui_error");
       return;
     }
     room.game = next.state;
-    if (msg.type === "roll") broadcast(room, { type: "rolled", dice: room.game.dice, sum: room.game.dice[0] + room.game.dice[1] });
+    if (msg.type === "roll") {
+      hear("dice_land");
+      broadcast(room, { type: "rolled", dice: room.game.dice, sum: room.game.dice[0] + room.game.dice[1] });
+    } else if (msg.type === "place" && msg.kind === "path") hear("path_place");
+    else if (msg.type === "place" && msg.kind === "outpost") hear("outpost_place");
+    else if (msg.type === "place" && msg.kind === "stronghold") hear("stronghold_place");
+    else if (msg.type === "tradeBank") hear("trade_yes");
+    else if (msg.type === "discard") hear("chip_gain");
+    else if (msg.type === "pass") hear("ui_click");
     broadcast(room, { type: "state", you: actor, game: room.game });
   });
 

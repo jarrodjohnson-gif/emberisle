@@ -101,7 +101,7 @@ The label for that comment is `status:canceled`.
 gh issue list --repo jarrodjohnson-gif/emberisle --state open --limit 100 --search "label:status:claimed OR label:status:in-progress OR label:status:paused"
 ```
 
-2. A `status:paused` issue is still claimed. Resume it before any todo if you can do its `left:` line on this machine. If you cannot, leave it paused and do not start a later issue that depends on it.
+2. A `status:paused` issue stays claimed. Resume it if you can do its `left:` line. If you cannot, leave it paused. Do not start an issue that needs that deliverable. You may claim a later issue whose source is already in the repo and whose work does not need the paused deliverable.
 3. Otherwise skip every issue in that lock list, and skip an issue whose `files:` overlap a lock.
 4. The next issue is the lowest-numbered open issue in the earliest milestone that is `status:todo` and whose `Depends on` issues are closed.
 5. Read it again. If the label is no longer `status:todo`, stop. Someone beat you.
