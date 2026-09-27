@@ -372,8 +372,8 @@ function play(ws, room, msg) {
     const parts = paid.map((g) => `${g.name} +${g.amount} ${g.resource}`);
     say(room, [String(a + b), ...parts].join(" · "));
   }
-  for (const line of room.game.log.slice(before.log.length)) say(room, line);
   runBots(room);
+  for (const line of room.game.log.slice(before.log.length)) say(room, line);
   if (room.game.phase === "over" && before.phase !== "over") hear("win");
   pushState(room);
 }
@@ -388,7 +388,13 @@ wss.on("connection", (ws) => {
       send(ws, { type: "error", message: "not ready" });
     }
   });
-  ws.on("close", () => leave(ws));
+  ws.on("close", () => {
+    try {
+      leave(ws);
+    } catch (err) {
+      console.error("leave failed:", err);
+    }
+  });
 });
 
 function handle(ws, raw) {
@@ -433,7 +439,9 @@ function leave(ws) {
     const p = room.game.players.find((x) => x.id === ws.seat.pid);
     if (p) {
       room.game = { ...room.game, players: room.game.players.map((x) => (x === p ? { ...x, kind: "bot", name: `${x.name} (bot)` } : x)) };
+      const seen = room.game.log.length;
       runBots(room);
+      for (const line of room.game.log.slice(seen)) say(room, line);
       pushState(room);
     }
   } else publish(room);
