@@ -79,6 +79,8 @@ export class IsleRenderer {
   private robberTarget = new THREE.Vector3();
   private clock = new THREE.Timer();
   private water = makeWater();
+  private titleMode = false;
+  private lastFrame = 0;
   private foam!: THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial>;
   private onPick: (kind: "hex" | "vertex" | "edge", id: string) => void;
 
@@ -167,8 +169,11 @@ export class IsleRenderer {
     this.renderer.setAnimationLoop(this.tick);
   }
 
+  // Off the table (title and lobby) the island is a backdrop under a card: no SSAO, and 30 frames a second.
   setTitleMode(v: boolean) {
+    this.titleMode = v;
     this.controls.autoRotate = v;
+    this.ssao.enabled = !v;
   }
 
   setBoard(state: GameState, highlights: Highlights, interactive: boolean) {
@@ -255,6 +260,9 @@ export class IsleRenderer {
 
   private tick = () => {
     if (this.stopped) return;
+    const now = performance.now();
+    if (this.titleMode && now - this.lastFrame < 1000 / 30 - 2) return;
+    this.lastFrame = now;
     this.clock.update();
     const t = this.clock.getElapsed();
     const dt = Math.min(this.clock.getDelta(), 0.05);
