@@ -7,7 +7,7 @@ import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 import { hexHeight, worldOfHex } from "@/lib/game/board";
 import { HEX_SIZE, hexCorners, hexesInRadius, vertexId } from "@/lib/game/hex";
 import { mulberry32, hashStr } from "@/lib/utils";
-import type { GameState, HexCell, Terrain, Vertex } from "@/lib/game/types";
+import type { GameState, HarborKind, HexCell, Terrain, Vertex } from "@/lib/game/types";
 
 const SLAB = 0.26;
 const TILE_Y = 0.04;
@@ -82,6 +82,7 @@ export class IsleRenderer {
   private titleMode = false;
   private lastFrame = 0;
   private foam!: THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial>;
+  private coastMiter = new Map<string, { mx: number; mz: number }>();
   private onPick: (kind: "hex" | "vertex" | "edge", id: string) => void;
 
   constructor(canvas: HTMLCanvasElement, onPick: (kind: "hex" | "vertex" | "edge", id: string) => void) {
@@ -132,6 +133,7 @@ export class IsleRenderer {
     this.scene.add(ocean);
 
     const coast = coastLoop();
+    for (const c of coast) this.coastMiter.set(c.id, { mx: c.mx, mz: c.mz });
     const beach = new THREE.Mesh(
       coastStrip(coast, -0.04, 0.22),
       new THREE.MeshStandardMaterial({ color: 0xe8d7b0, roughness: 1, metalness: 0 }),
@@ -330,18 +332,25 @@ export class IsleRenderer {
 
     for (const v of state.vertices) {
       if (!v.harbor) continue;
-      const len = Math.hypot(v.x, v.z) || 1;
-      const px = v.x + (v.x / len) * 0.62;
-      const pz = v.z + (v.z / len) * 0.62;
+      const m = this.coastMiter.get(v.id);
+      if (!m) continue; // every harbor is coastal; a miss here is a bug in coastLoop, not a fallback case
+      const jettyStart = 0.22; // the beach's own outer offset (docs/design/ocean.md)
+      const jettyLen = 0.24; // ends at 0.46: just past the foam's 0.42 outer offset
+      const px = v.x + m.mx * (jettyStart + jettyLen / 2);
+      const pz = v.z + m.mz * (jettyStart + jettyLen / 2);
       const pier = new THREE.Mesh(
-        new THREE.BoxGeometry(0.2, 0.05, 0.72),
+        new THREE.BoxGeometry(0.16, 0.05, jettyLen),
         new THREE.MeshStandardMaterial({ color: 0x6b4a32, roughness: 0.82 }),
       );
       pier.position.set(px, 0.1, pz);
-      pier.lookAt(0, 0.1, 0);
+      pier.lookAt(v.x + m.mx, 0.1, v.z + m.mz);
+      pier.castShadow = true;
       this.land.add(pier);
-      const boat = makeBoat();
-      boat.position.set(px + (v.x / len) * 0.5, 0.08, pz + (v.z / len) * 0.5);
+
+      const boat = makeBoat(v.harbor);
+      const bx = v.x + m.mx * (jettyStart + jettyLen + 0.16);
+      const bz = v.z + m.mz * (jettyStart + jettyLen + 0.16);
+      boat.position.set(bx, 0.08, bz);
       boat.lookAt(v.x, 0.08, v.z);
       boat.userData.vid = v.id;
       this.living.add(boat);
@@ -580,7 +589,7 @@ function coastLoop() {
     if (mx * p.x + mz * p.z <= 0) throw new Error("coast walk: a miter points into the island");
     // Scale so an offset d along the miter sits d away from both edges.
     const k = 1 / (mx * a.nx + mz * a.nz);
-    return { x: p.x, z: p.z, mx: mx * k, mz: mz * k };
+    return { id, x: p.x, z: p.z, mx: mx * k, mz: mz * k };
   });
 }
 
@@ -856,29 +865,6 @@ function makeWayfarer() {
   return g;
 }
 
-function makeBoat() {
-  const g = new THREE.Group();
-  g.add(
-    new THREE.Mesh(
-      new THREE.BoxGeometry(0.16, 0.07, 0.4),
-      new THREE.MeshStandardMaterial({ color: 0x5a3a24, roughness: 0.7 }),
-    ),
-  );
-  const mast = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.012, 0.012, 0.36, 6),
-    new THREE.MeshStandardMaterial({ color: 0x3a2a1a }),
-  );
-  mast.position.y = 0.2;
-  g.add(mast);
-  const sail = new THREE.Mesh(
-    new THREE.PlaneGeometry(0.2, 0.26),
-    new THREE.MeshStandardMaterial({ color: 0xf4efe4, side: THREE.DoubleSide, roughness: 0.6 }),
-  );
-  sail.name = "sail";
-  sail.position.set(0.04, 0.22, 0);
-  g.add(sail);
-  return g;
-}
 
 function makeSheep() {
   const g = new THREE.Group();
@@ -933,3 +919,73 @@ function paintedTexture(kind: Terrain): THREE.Texture {
   ctx.globalAlpha = 1;
   return new THREE.CanvasTexture(canvas);
 }
+
+function hullShape() {
+  const s = new THREE.Shape();
+  s.moveTo(0, -0.24); // stern, flat
+  s.lineTo(0.09, -0.2);
+  s.lineTo(0.09, 0.1);
+  s.lineTo(0, 0.26); // bow, pointed
+  s.lineTo(-0.09, 0.1);
+  s.lineTo(-0.09, -0.2);
+  s.closePath();
+  return s;
+}
+
+const sailTextures = new Map<HarborKind, THREE.CanvasTexture>();
+
+function sailTexture(kind: HarborKind): THREE.CanvasTexture {
+  let tex = sailTextures.get(kind);
+  if (tex) return tex;
+  const c = document.createElement("canvas");
+  c.width = c.height = 64;
+  const ctx = c.getContext("2d")!;
+  ctx.fillStyle = "#f4efe4";
+  ctx.fillRect(0, 0, 64, 64);
+  if (kind !== "any") {
+    ctx.fillStyle = PAINT[kind][0]; // the same terrain colour used on the hex sides
+    ctx.fillRect(0, 44, 64, 20); // a resource-coloured band along the sail's foot
+  }
+  ctx.fillStyle = "#1c1915";
+  ctx.font = "bold 30px sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(kind === "any" ? "3:1" : "2:1", 32, kind === "any" ? 32 : 22);
+  tex = new THREE.CanvasTexture(c);
+  sailTextures.set(kind, tex);
+  return tex;
+}
+
+function makeBoat(kind: HarborKind) {
+  const g = new THREE.Group();
+  const hull = new THREE.Mesh(
+    new THREE.ExtrudeGeometry(hullShape(), { depth: 0.09, bevelEnabled: false }),
+    new THREE.MeshStandardMaterial({ color: 0x5a3a24, roughness: 0.7 }),
+  );
+  hull.rotation.x = -Math.PI / 2;
+  hull.position.y = 0.045;
+  hull.castShadow = true;
+  g.add(hull);
+
+  const mast = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.012, 0.012, 0.36, 6),
+    new THREE.MeshStandardMaterial({ color: 0x3a2a1a }),
+  );
+  mast.position.y = 0.2;
+  g.add(mast);
+
+  const sail = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.3, 0.36),
+    new THREE.MeshStandardMaterial({
+      color: 0xf4efe4,
+      map: sailTexture(kind),
+      side: THREE.DoubleSide,
+      roughness: 0.6,
+    }),
+  );
+  sail.name = "sail";
+  sail.position.set(0.04, 0.22, 0);
+  g.add(sail);
+  return g;
+}
+
