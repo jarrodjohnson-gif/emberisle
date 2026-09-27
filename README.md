@@ -139,7 +139,7 @@ Full rules: **[docs/FRAMEWORK.md](docs/FRAMEWORK.md)**. In short:
 - **Fractal Build.** Every piece of work runs **1 Research → 2 Design → 3 Implementation → 4 Testing**. Research files the child pieces it finds, and each child runs the same four steps, down to pieces small enough for one session and one PR.
 - **The tracker is the task list.** Milestones are stages (`1. Documents`, `2. ...`). Issues are the steps, with sub-issues for children. Status: Backlog → Todo → In Progress → In Review → Done.
 - **Any AI, any budget.** Each issue has a size (`XS` or `S`). With little limit left, do one step and leave a pause comment. With no limit, loop through Todo in the earliest milestone.
-- **Every change is a pull request.** CI runs the checks below. Only green PRs get merged, and only Jarrod merges.
+- **Every change is a pull request.** CI runs the checks below. The Builder never merges its own PR. The next session reviews it and merges it if CI is green (see FRAMEWORK.md, Builder and Reviewer).
 - **Ideas** go in [docs/IDEAS.md](docs/IDEAS.md) until Jarrod decides to build them.
 
 ---

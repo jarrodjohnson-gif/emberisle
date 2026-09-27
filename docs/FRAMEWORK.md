@@ -159,10 +159,20 @@ Move it to In Review (Jarrod accepts it, then it goes to Done and is closed). Th
 (a sub-issue if it belongs to a node). An idea goes in [IDEAS.md](IDEAS.md), not in the tracker.
 
 **Every change goes through a pull request.** Push to a branch, open a PR, and CI (`.github/workflows/ci.yml`)
-runs the README "Run it" checks. Only green PRs are merged, and only Jarrod merges.
+runs the README "Run it" checks. A red PR is never merged.
+
+**Two roles: Builder and Reviewer.**
+
+| Role | Who | Does |
+|---|---|---|
+| Builder | the session doing the work | Steps 1-4, pushes, opens the PR, and fixes CI until it is green. **Never merges its own PR.** |
+| Reviewer | the **next** session, which did not write the code | Before taking a new issue, it reviews every open PR: reads the diff against the issue's completion test, runs the "Run it" checks, and checks the framework rules (no to-do lists in files, issue comments present). If CI is green and nothing is wrong, it **merges** and says so in one PR comment. If something is wrong, it comments exactly what, and the PR stays open for a Builder. |
+| Jarrod | the owner | Accepts results: moves In Review to Done. No code reading needed. |
+
+A new chat therefore starts: review and merge open PRs, then take the next open issue.
 
 **End of a chat, or a finished task:** give Jarrod one line to paste into a new chat:
-`Continue Emberisle: take the next open issue per docs/FRAMEWORK.md.`
+`Continue Emberisle: review and merge open PRs, then take the next open issue per docs/FRAMEWORK.md.`
 
 **Ask Jarrod before:** deleting, overwriting, or bulk-moving files; pushing to `main`; and anything
 outward-facing (posting outside this repo, sharing links, or spending money).
