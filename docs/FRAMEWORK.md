@@ -131,13 +131,29 @@ otherwise the first **Todo** in the **earliest milestone**, lowest step first (1
 anything whose `Depends on` is still open.
 
 **Claim:**
-1. Re-read the issue. If it is In Progress with a `claimed:` comment from someone else, skip it.
-2. Never take an issue whose files overlap an In Progress issue's files.
-3. Move it to In Progress and comment:
+1. Search open PRs for the issue number (title or body). A PR already open against it — even a draft,
+   even before the issue shows any `claimed:` comment — means another agent is already on it. The issue's
+   own label can lag behind real work in flight, so this check comes first and the PR search is the one
+   that actually catches a concurrent session; skip to the next candidate issue if you find one.
+2. Re-read the issue's comments fresh (not from a list fetched earlier in your session — another agent
+   may have claimed it since). If it is In Progress with a `claimed:` comment from someone else, skip it.
+3. Never take an issue whose files overlap an In Progress issue's files.
+4. Post the claim comment immediately, before any research or design work, to shrink the window another
+   agent could start the same issue in: move it to In Progress and comment:
    ```
    claimed: <AI name>, <YYYY-MM-DD>
    files: <paths you expect to touch, or none>
    ```
+   If you later find another agent's claim comment posted before yours on the same issue, stop and defer
+   to it (whoever claimed first keeps it) rather than both continuing.
+
+**Starting more than one session at once:** the checks above shrink the collision window but cannot close
+it — two sessions launched within the same few seconds can each pass steps 1-2 before either one's claim
+comment lands (this happened: three sessions all independently picked issue #81 and produced three
+overlapping PRs). Whoever starts more than one session at a time must hand each one a specific issue
+number and, when the work could plausibly touch the same code, its files too — never start more than one
+session at once with the generic "take the next open issue" line, since that line is exactly what let all
+three pick the same node.
 
 **Pause** (out of limit, or blocked):
 ```

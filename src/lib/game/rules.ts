@@ -91,6 +91,8 @@ function connectedToNetwork(state: GameState, pid: string, eid: string) {
   const touch = (vid: string) => {
     const v = vertex(state, vid);
     if (v?.building?.playerId === pid) return true;
+    // An opponent's building cuts your network at that corner (README Setup, #98).
+    if (v?.building) return false;
     return state.edges.some((x) => x.path === pid && (x.va === vid || x.vb === vid));
   };
   return touch(e.va) || touch(e.vb);
@@ -152,69 +154,48 @@ export function stealTargets(state: GameState, hexId: string, pid: string): stri
   return [...ids];
 }
 
-function roadLength(state: GameState, pid: string): number {
-  const roads = state.edges.filter((e) => e.path === pid);
-  if (!roads.length) return 0;
+// Longest real trail: walk corner to corner, entering each segment at one end and leaving at the other.
+// An opponent's building ends a trail at that corner (it may still start there).
+export function roadLength(state: GameState, pid: string): number {
+  const mine = state.edges.filter((e) => e.path === pid);
+  if (!mine.length) return 0;
+  const byCorner = new Map<string, typeof mine>();
+  for (const e of mine) {
+    for (const v of [e.va, e.vb]) {
+      if (!byCorner.has(v)) byCorner.set(v, []);
+      byCorner.get(v)!.push(e);
+    }
+  }
   const blocked = (vid: string) => {
     const b = vertex(state, vid)?.building;
     return Boolean(b && b.playerId !== pid);
   };
-  const adj = new Map<string, string[]>();
-  for (const e of roads) adj.set(e.id, []);
-  for (let i = 0; i < roads.length; i++) {
-    for (let j = i + 1; j < roads.length; j++) {
-      const a = roads[i]!;
-      const b = roads[j]!;
-      const share =
-        (a.va === b.va || a.va === b.vb || a.vb === b.va || a.vb === b.vb) &&
-        [a.va, a.vb, b.va, b.vb].some(
-          (vid) => (a.va === vid || a.vb === vid) && (b.va === vid || b.vb === vid) && !blocked(vid),
-        );
-      if (share) {
-        adj.get(a.id)!.push(b.id);
-        adj.get(b.id)!.push(a.id);
-      }
+  const used = new Set<string>();
+  const walk = (corner: string): number => {
+    if (used.size > 0 && blocked(corner)) return 0;
+    let best = 0;
+    for (const e of byCorner.get(corner) ?? []) {
+      if (used.has(e.id)) continue;
+      used.add(e.id);
+      best = Math.max(best, 1 + walk(e.va === corner ? e.vb : e.va));
+      used.delete(e.id);
     }
-  }
-  let best = 1;
-  const dfs = (node: string, seen: Set<string>): number => {
-    let m = 1;
-    for (const n of adj.get(node) ?? []) {
-      if (seen.has(n)) continue;
-      seen.add(n);
-      m = Math.max(m, 1 + dfs(n, seen));
-      seen.delete(n);
-    }
-    return m;
+    return best;
   };
-  for (const r of roads) {
-    best = Math.max(best, dfs(r.id, new Set([r.id])));
-  }
+  let best = 0;
+  for (const corner of byCorner.keys()) best = Math.max(best, walk(corner));
   return best;
 }
 
+// Official rules: 5+ to hold it; ties keep the holder; a tie with no holder gives it to nobody.
 function updateLongest(state: GameState) {
-  let best = 0;
-  let who: string | null = null;
-  for (const p of state.players) {
-    const n = roadLength(state, p.id);
-    if (n > best) {
-      best = n;
-      who = p.id;
-    } else if (n === best && state.longestRoad === p.id) {
-      who = p.id;
-    }
-  }
-  if (best >= 5) {
-    if (state.longestRoad && who !== state.longestRoad) {
-      const prev = roadLength(state, state.longestRoad);
-      if (best > prev) state.longestRoad = who;
-    } else {
-      state.longestRoad = who;
-    }
-  } else {
-    state.longestRoad = null;
-  }
+  const lengths = new Map(state.players.map((p) => [p.id, roadLength(state, p.id)]));
+  const top = Math.max(...lengths.values());
+  const leaders = [...lengths].filter(([, n]) => n === top).map(([id]) => id);
+  const holder = state.longestRoad;
+  if (top < 5) state.longestRoad = null;
+  else if (holder && leaders.includes(holder)) state.longestRoad = holder;
+  else state.longestRoad = leaders.length === 1 ? leaders[0]! : null;
 }
 
 function updateArmy(state: GameState, pid: string) {
@@ -382,6 +363,7 @@ export function applyAction(prev: GameState, actor: string, action: Action): { s
       v.building = { playerId: actor, kind: "outpost" };
       me.outpostsLeft -= 1;
       state.lastSetupVertex = action.vertexId;
+      updateLongest(state);
       if (setupOrderNote(state)) grantSecondSettlement(state, action.vertexId, actor);
       log(state, `${me.name} raises an outpost.`);
       setupAdvance(state);
@@ -472,6 +454,7 @@ export function applyAction(prev: GameState, actor: string, action: Action): { s
       pay(state, me, COST.outpost);
       vertex(state, action.vertexId)!.building = { playerId: actor, kind: "outpost" };
       me.outpostsLeft -= 1;
+      updateLongest(state);
       log(state, `${me.name} founds an outpost.`);
       checkWin(state, actor);
       return { state };
@@ -498,13 +481,14 @@ export function applyAction(prev: GameState, actor: string, action: Action): { s
       if (!card) return { state: prev, error: "The fortune deck is empty." };
       pay(state, me, COST.card);
       me.hidden[card] += 1;
+      me.boughtThisTurn[card] += 1;
       log(state, `${me.name} draws a fortune.`);
       if (card === "vp") checkWin(state, actor);
       return { state };
     }
     case "playKnight": {
       if (state.playedCard) return { state: prev, error: "Already played a fortune." };
-      if (me.hidden.knight <= 0) return { state: prev, error: "No wayfarer cards." };
+      if (playable(me, "knight") <= 0) return { state: prev, error: me.hidden.knight > 0 ? BOUGHT_THIS_TURN : "No wayfarer cards." };
       if (state.phase !== "roll" && state.phase !== "main") {
         return { state: prev, error: "Cannot play that now." };
       }
@@ -524,7 +508,7 @@ export function applyAction(prev: GameState, actor: string, action: Action): { s
     }
     case "playRoad": {
       if (state.phase !== "main" || state.playedCard) return { state: prev, error: "Cannot play that." };
-      if (me.hidden.road <= 0) return { state: prev, error: "No path fortune." };
+      if (playable(me, "road") <= 0) return { state: prev, error: me.hidden.road > 0 ? BOUGHT_THIS_TURN : "No path fortune." };
       if (!Array.isArray(action.edgeIds)) return { state: prev, error: "Place one or two paths." };
       if (action.edgeIds.length < 1 || action.edgeIds.length > 2) {
         return { state: prev, error: "Place one or two paths." };
@@ -549,7 +533,7 @@ export function applyAction(prev: GameState, actor: string, action: Action): { s
     }
     case "playPlenty": {
       if (state.phase !== "main" || state.playedCard) return { state: prev, error: "Cannot play that." };
-      if (me.hidden.plenty <= 0) return { state: prev, error: "No plenty fortune." };
+      if (playable(me, "plenty") <= 0) return { state: prev, error: me.hidden.plenty > 0 ? BOUGHT_THIS_TURN : "No plenty fortune." };
       if (!Array.isArray(action.resources) || action.resources.length !== 2 || !action.resources.every(validRes)) {
         return { state: prev, error: "Choose two resources." };
       }
@@ -561,7 +545,7 @@ export function applyAction(prev: GameState, actor: string, action: Action): { s
     }
     case "playMonopoly": {
       if (state.phase !== "main" || state.playedCard) return { state: prev, error: "Cannot play that." };
-      if (me.hidden.monopoly <= 0) return { state: prev, error: "No monopoly." };
+      if (playable(me, "monopoly") <= 0) return { state: prev, error: me.hidden.monopoly > 0 ? BOUGHT_THIS_TURN : "No monopoly." };
       if (!validRes(action.resource)) return { state: prev, error: "Choose a resource." };
       me.hidden.monopoly -= 1;
       state.playedCard = true;
@@ -630,6 +614,7 @@ export function applyAction(prev: GameState, actor: string, action: Action): { s
       if (state.phase !== "main") return { state: prev, error: "Finish your turn first." };
       state.trade = null;
       state.playedCard = false;
+      me.boughtThisTurn = { knight: 0, road: 0, plenty: 0, monopoly: 0, vp: 0 };
       state.dice = state.dice;
       const idx = state.players.findIndex((p) => p.id === actor);
       const next = state.players[(idx + 1) % state.players.length]!;
@@ -642,6 +627,13 @@ export function applyAction(prev: GameState, actor: string, action: Action): { s
     default:
       return { state: prev, error: "Unknown action." };
   }
+}
+
+const BOUGHT_THIS_TURN = "A fortune cannot be played the turn it is bought.";
+
+// Fortunes of this kind held since before this turn (README: a fortune bought this turn cannot be played this turn).
+export function playable(p: PlayerState, k: DevKind) {
+  return p.hidden[k] - p.boughtThisTurn[k];
 }
 
 export function hiddenCount(p: PlayerState) {
