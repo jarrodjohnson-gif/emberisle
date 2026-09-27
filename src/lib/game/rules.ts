@@ -622,6 +622,8 @@ export function applyAction(prev: GameState, actor: string, action: Action): { s
       state.phase = "roll";
       if (idx === state.players.length - 1) state.turn += 1;
       log(state, `${next.name}'s turn.`);
+      // Points can arrive on someone else's turn (an award handed over by a cut); they win as this turn starts.
+      checkWin(state, next.id);
       return { state };
     }
     default:
