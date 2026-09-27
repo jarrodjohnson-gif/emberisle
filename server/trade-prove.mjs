@@ -1,5 +1,10 @@
 import { createGame } from "../src/lib/game/board.ts";
-import { applyAction, legalSettle, legalRoads } from "../src/lib/game/rules.ts";
+import { applyAction, legalSettle, legalRoads, stealTargets } from "../src/lib/game/rules.ts";
+import { RESOURCES } from "../src/lib/game/types.ts";
+
+function cardsOf(p) {
+  return RESOURCES.reduce((n, r) => n + p.resources[r], 0);
+}
 
 function game() {
   const g = createGame({ humans: [{ name: "Ember" }, { name: "Tide" }, { name: "Pine" }], bots: 0, seed: 3 });
@@ -75,6 +80,45 @@ if (ore0 !== 1 || ore1 !== 0) {
   process.exit(1);
 }
 console.log("one ore moved", ore0, ore1);
+
+// #92: a hex with two opponents on it must let the robber pick which one to rob, not just the first.
+g = game();
+const hex2 = g.hexes.find((h) => h.terrain !== "waste");
+const [va, vb] = g.vertices.filter((v) => v.hexes.includes(hex2.id));
+va.building = { playerId: "p1", kind: "outpost" };
+vb.building = { playerId: "p2", kind: "outpost" };
+g.players[1].resources.ore = 1;
+g.players[2].resources.wool = 2;
+g.phase = "robber";
+g.current = "p0";
+g.robberHex = "none";
+
+const targets = stealTargets(g, hex2.id, "p0");
+if (targets.length !== 2 || !targets.includes("p1") || !targets.includes("p2")) {
+  console.log("FAIL expected both opponents as steal targets", targets);
+  process.exit(1);
+}
+const [first, second] = targets;
+const before = {
+  first: cardsOf(g.players.find((p) => p.id === first)),
+  second: cardsOf(g.players.find((p) => p.id === second)),
+};
+const picked = applyAction(g, "p0", { type: "moveRobber", hexId: hex2.id, stealFrom: second });
+if (picked.error) {
+  console.log("FAIL steal from second target", picked.error);
+  process.exit(1);
+}
+const after = {
+  first: cardsOf(picked.state.players.find((p) => p.id === first)),
+  second: cardsOf(picked.state.players.find((p) => p.id === second)),
+};
+if (after.second !== before.second - 1 || after.first !== before.first) {
+  console.log("FAIL second target's cards did not drop by exactly 1", { before, after });
+  process.exit(1);
+}
+console.log(
+  `two opponents on one hex (${targets.join(", ")}); stole from the second (${second}): ${before.second} -> ${after.second}, first (${first}) untouched at ${after.first}`,
+);
 
 let setup = game();
 const spot = legalSettle(setup, setup.current, true)[0];
