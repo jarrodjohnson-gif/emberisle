@@ -1,81 +1,180 @@
-# The Emberisle framework
+# The Fractal Build
 
-This is how any AI (or person) takes the project from where it is to 100%.
-If this file and another doc disagree, this file wins. [TRACKING.md](TRACKING.md)
-is the label and comment protocol that goes with it.
+How work is organized on Emberisle. It is written for any AI, whether it has five minutes left
+or no limit at all, and for Jarrod. **The GitHub tracker is the task list.** Files in this repo
+explain how the game and the code work. They never hold a to-do list.
+
+## 1. The idea in one picture
+
+Every piece of work is a **node**. Every node runs the same four steps, in order:
+
+| # | Step | Question | Output |
+|---|---|---|---|
+| 1 | **Research** | What is true? What does this node need? | A note (`docs/research/<topic>.md`, or the issue comment if it is short). It also **files the child nodes** it found. |
+| 2 | **Design** | What exactly will we build? | A spec (`docs/design/<topic>.md`), or the interface and test plan in the issue. |
+| 3 | **Implementation** | Build it. | Code plus a proof script or test, in a pull request. |
+| 4 | **Testing** | Is it right, from a fresh clone? | The test command and its pasted output. Each failure becomes a **Bug** child node. |
+
+Research is the step that grows the tree. When Research on a node finds that the node is really
+several pieces, each piece becomes a child node, and each child runs the same 1-2-3-4.
+Children can have children. There is no depth limit.
 
 ```
-Project (100% = two PCs finish a full game over the internet, see "Done" in README)
-└── Level (a GitHub milestone, or an issue titled "[L<n>] ...")
-    ├── Step 1  Research        label: research        title: [L<n>.1 Research] ...
-    ├── Step 2  Code            label: design          title: [L<n>.2 Code] ...
-    ├── Step 3  Implementation  label: implementation  title: [L<n>.3 Implementation] ...
-    ├── Step 4  Debug           label: test            title: [L<n>.4 Debug] ...
-    │     └── Subtask (sub-issue, label: bug)   <- one per error found, unlimited
-    │           └── Subtask ... (a subtask may spawn its own subtasks)
-    └── (more steps if the level needs them: every step is still one of the four kinds)
+Dice randomizer                                 (a node from the build plan)
+ ├─ 1 Research ─► finds 3 pieces, files them as children:
+ │    ├─ Server RNG ........ 1 Research · 2 Design · 3 Implementation · 4 Testing   ← leaf
+ │    ├─ Fairness proof .... 1 · 2 · 3 · 4                                           ← leaf
+ │    └─ Dice animation .... 1 Research ─► finds: mesh, snap-to-face, sound
+ │          ├─ Mesh ............ 1 · 2 · 3 · 4
+ │          └─ Snap-to-face .... 1 · 2 · 3 · 4 …
+ ├─ 2 Design          (the parent's own design ties the children together)
+ ├─ 3 Implementation  (wires the finished children into the game)
+ └─ 4 Testing         (the parent's test: the whole feature works)
 ```
 
-## The four steps
+Established names for the same idea: a Work Breakdown Structure (project management), a
+Hierarchical Task Network (AI planning), and the spiral model (software).
 
-Every level has **at least four issues**, one per step, done **in order**.
-A step cannot start until the step before it is closed.
+## 2. Three rules that keep the tree honest
 
-| # | Step | Question it answers | Output (must be in the repo or the issue) | Done when |
-|---|---|---|---|---|
-| 1 | **Research** | What is true today? What exists, what is missing, what do the sources say? | A note in `docs/research/<level>.md` (use `_TEMPLATE.md`) with file paths, commands run, and their output. No code changes. | Every "Done when" line of the level can be answered from the note, and each unknown is listed. |
-| 2 | **Code** | What exactly do we write? | The code (or design/spec, when the level is a design level) in its own module, plus a small proof script or unit test that runs **without** the rest of the app. | The proof runs with one command and passes. |
-| 3 | **Implementation** | Does it work inside the real app? | The step-2 code wired into the host / client / build, and the README "Run it" section updated if a command changed. | The level's "Done when" can be tried end to end with the commands in the README. |
-| 4 | **Debug** | Is it actually right? | The level's test run, with pasted output. **Every failure becomes a sub-issue** (see below). | The test passes with zero open sub-issues under this Debug issue. Then the level is 100%. |
+1. **Stop rule.** A node stops splitting when one person or AI can do all four steps in **one
+   session, and in one pull request with one test**. That node is a **leaf**, and it is simply built.
+2. **Just in time.** Research files only the **next** layer of children, in Backlog. Nobody
+   pre-generates empty issues. The tree grows where work actually reaches.
+3. **Done means runs.** A Testing step is done only when its command passes **from a fresh clone**,
+   and the output is pasted in the issue. A test that "should pass" is not done.
 
-GitHub labels are fixed at `research`, `design`, `implementation`, `test` (an AI cannot
-create new labels through the connector). So **`design` means step 2 Code and `test` means
-step 4 Debug**. The step name is always in the title: `[L13.2 Code] ...`. Milestones 1–12
-were made before this file. Their `design` issues are specs (Code in doc form), and their `test` issues
-are the Debug step.
+## 3. Sized for any AI
 
-A level is one parent issue titled `[L<n>] ...` with the label `level`. Its four steps are
-GitHub sub-issues of it. Milestones 1–12 group their four issues by milestone instead.
+Every issue says its size in the body:
 
-## Subtasks: infinite, but always tracked
+| Size | Meaning | Good for |
+|---|---|---|
+| `Size: XS` | Under 15 minutes. One file, or one note. | An AI with almost no limit left |
+| `Size: S` | One session, one PR | Most steps |
+| `Size: M` | Too big. Split it with a Research step first. | Nobody; split it |
 
-Any step can hit a problem. When it does:
+- **Small limit left?** Take one `XS` or `S` step. If you run out mid-step, leave the pause
+  comment (section 7). The next AI resumes from it. Half-done work is fine if the comment says exactly where it stopped.
+- **No limit (Cursor, a long session)?** Loop: finish a step, set the next one to Todo, take it, and repeat,
+  top to bottom through the earliest milestone. Stop only when nothing is Todo, or everything left is
+  `needs: jarrod` or `needs: gaming-pc`.
 
-1. **Do not** quietly fix it inside another issue and **do not** stop.
-2. Create a sub-issue under the step you are on (GitHub "sub-issue", or write `Parent: #<n>` in the body).
-   Title: what is wrong, in one line. Labels: `bug` + `status:todo`.
-   Body: the exact command, the exact output, the file and line if known.
-3. Work the sub-issue with the same four steps, shortened to lines in the issue:
-   `research:` (why it breaks), `code:` (the fix), `implementation:` (where it went in),
-   `debug:` (the command that now passes).
-4. A sub-issue can have its own sub-issues. There is no depth limit.
-5. The parent step closes only when all of its sub-issues are closed.
+## 4. How it maps onto GitHub
 
-If a problem is **not** fixable by an AI (it needs Jarrod's PC, his money, his accounts,
-or his decision), make it a `Decide:` issue or add `needs:jarrod` / `needs:gaming-pc`,
-comment exactly what he has to do, and move on to the next level that does not need it.
-Blocked is never a reason to stop working. It is a reason to pick a different level.
-
-## Who can do which level
-
-| Label | Meaning |
+| Framework | GitHub |
 |---|---|
-| `needs:gaming-pc` | Needs Unreal + the 3.6 GB art pack on Jarrod's gaming PC. A cloud AI must skip it. |
-| `needs:jarrod` | Needs Jarrod's answer or account. Comment the question, then skip. |
-| none of the above | Any AI with this repo can do it (cloud sessions included). |
+| Project (one goal, a start and an end) | This repo plus one GitHub **Project** board, "Emberisle" |
+| Stage, in order | **Milestone** named `<n>. <Stage>` with a one-line description of its job |
+| Node | **Issue**, filed under the milestone of its stage |
+| Child node | **Sub-issue** of the parent issue (GitHub allows 8 levels and 100 children per issue) |
+| Step (1-4) | Its own issue. Title starts with the step verb. Label `research`, `design`, `implementation`, or `test`. |
+| Decision | Issue titled `Decide: ...`. Anything waiting on it says `Depends on: #N`. |
+| Bug | Issue with the label `bug`, as a sub-issue of the step that found it |
+| Status | The Project **Status** field (section 6) |
 
-## Picking the next thing (every AI, every session)
+There is no "seed" or "master" issue. The README says what the project is, and the issues say what is next.
+A parent node with sub-issues is fine. It is a real piece of the game, not a list of everything.
 
-1. Read [README.md](../README.md) top to bottom. Run the commands in "Run it". If one fails, that is a `bug` sub-issue first.
-2. List locks (TRACKING.md step 1). Resume a `status:paused` issue you can finish.
-3. Otherwise take the **lowest-numbered level** that has an open step you can do (not `needs:*`),
-   and inside it the **first open step** (1 → 2 → 3 → 4).
-4. Claim it (TRACKING.md), do it, fill in the output, set the status, close it,
-   and set the next step to `status:todo` in the same turn.
-5. When you stop, the last line to Jarrod is:
-   `Continue Emberisle. Next open issue: #<number>.`
+## 5. Issue format
 
-## Level list
+**Title:** imperative and specific, starting with the step:
+`Research how Unreal opens a socket`, `Design the glow and click-to-place flow`,
+`Implement the host-button connection`, `Test twenty rolls against the server log`.
 
-The authoritative list is the milestones and `[L<n>]` issues on GitHub. The README
-has a snapshot table ("Levels") that the last agent keeps up to date.
+**Body:**
+
+```
+## Deliverable
+What exists when this is done (a file, a function, a screen, a note).
+
+## Completion test
+How we know. A command and its expected output, or an exact thing to look at.
+
+## Depends on
+#N, #M (or: none)
+
+## Source
+file:line, or a doc section this came from (for example docs/BUILD_BIBLE.md §6)
+
+Size: XS | S
+```
+
+Add `needs: jarrod` (his decision, account, or money) or `needs: gaming-pc` (Unreal, or the 3.6 GB art pack)
+on its own line when an AI cannot finish it. Those issues still get Research and Design done by any AI.
+
+## 6. Statuses
+
+`Backlog → Todo → In Progress → In Review → Done`, plus `Canceled`.
+
+| Status | Meaning |
+|---|---|
+| Backlog | Known, not scheduled. Research files new children here. |
+| Todo | Picked for now. Any AI may take it. |
+| In Progress | Claimed. Someone is on it. |
+| In Review | Built and tested. Waiting for Jarrod to accept. |
+| Done | Accepted. The issue is closed. |
+| Canceled | Will not do. Close the issue as "not planned". Never delete it. |
+
+The Project board's Status field is the truth. **An agent whose tools cannot set Project fields** (the
+GitHub connector in cloud sessions cannot) uses the matching label (`status:backlog`, `status:todo`,
+`status:in-progress`, `status:in-review`, `status:done`, `status:canceled`) and says so in its comment.
+Jarrod's board automation, or the next agent with `gh`, syncs the field from the label.
+
+## 7. Workflow rules for every AI
+
+**"What's next?" with no project named:** list Jarrod's projects as numbered options (In Progress
+first, then on hold), each with its next open issue, and ask which one. Do not start until he picks.
+
+**Next open issue** = one already In Progress that you can resume (read its last pause comment);
+otherwise the first **Todo** in the **earliest milestone**, lowest step first (1 → 4), skipping
+anything whose `Depends on` is still open.
+
+**Claim:**
+1. Re-read the issue. If it is In Progress with a `claimed:` comment from someone else, skip it.
+2. Never take an issue whose files overlap an In Progress issue's files.
+3. Move it to In Progress and comment:
+   ```
+   claimed: <AI name>, <YYYY-MM-DD>
+   files: <paths you expect to touch, or none>
+   ```
+
+**Pause** (out of limit, or blocked):
+```
+paused: <AI name>, <YYYY-MM-DD>
+done so far: <one line>
+left: <exactly what is unfinished, and the next command to run>
+```
+Leave it In Progress. The next AI resumes from `left:`.
+
+**Finish:**
+```
+changed: <one line>
+test: <command> → <result>
+pr: #<n>
+```
+Move it to In Review (Jarrod accepts it, then it goes to Done and is closed). Then set the next step to Todo.
+
+**Found something along the way?** A real new step becomes a new issue under the right milestone
+(a sub-issue if it belongs to a node). An idea goes in [IDEAS.md](IDEAS.md), not in the tracker.
+
+**Every change goes through a pull request.** Push to a branch, open a PR, and CI (`.github/workflows/ci.yml`)
+runs the README "Run it" checks. Only green PRs are merged, and only Jarrod merges.
+
+**End of a chat, or a finished task:** give Jarrod one line to paste into a new chat:
+`Continue Emberisle: take the next open issue per docs/FRAMEWORK.md.`
+
+**Ask Jarrod before:** deleting, overwriting, or bulk-moving files; pushing to `main`; and anything
+outward-facing (posting outside this repo, sharing links, or spending money).
+
+## 8. Ideas vs issues
+
+Ideas live in [IDEAS.md](IDEAS.md), never straight in the tracker. When Jarrod decides to build one:
+1. Create a node issue for it under the right milestone (or a new milestone, if it is a new stage), in Backlog.
+2. Give it its `Research ...` step issue, in Todo. That is enough: Research files the rest.
+3. Mark the idea line `→ #<issue number>`.
+
+## 9. External bug logs
+
+If bugs live in an outside log, do not copy each one. Make one pointer issue per milestone:
+`Eng: <topic> — Log IMP-06, 13, 14`, listing the item ids and saying the details live in the log.
