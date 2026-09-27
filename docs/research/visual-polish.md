@@ -28,7 +28,7 @@ three bots, loads the 7, the wayfarer, and the win as crafted states through the
 | Win | `08-win-1280x720.png` | `08-win-1920x1080.png` |
 | Board zoomed to the closest the controls allow | | `09-zoom-1920x1080.png` |
 
-The PR for this note attaches the 1280×720 set, plus the 1920 setup and zoom shots.
+They are not committed. Regenerate them with the command above (about 15 minutes per size on a CPU-only runner, much less with a GPU).
 
 ## Cost now (1920×1080)
 
