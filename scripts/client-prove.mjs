@@ -15,7 +15,7 @@ const browser = await chromium.launch({
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 try {
-  const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+  const page = await browser.newPage({ viewport: { width: 800, height: 500 } });
   page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
   page.on("pageerror", (e) => errors.push(String(e)));
   page.on("response", (r) => r.status() >= 400 && errors.push(`${r.status()} ${r.url()}`));
@@ -58,7 +58,8 @@ try {
   console.log("rolled:", rolled);
   await page.waitForTimeout(1500);
   mkdirSync("test-results", { recursive: true });
-  await page.screenshot({ path: "test-results/client-prove.png" });
+  // Software WebGL on a 2-CPU CI runner can take a while to finish one frame of the island.
+  await page.screenshot({ path: "test-results/client-prove.png", timeout: 120_000 });
   console.log("screenshot: test-results/client-prove.png");
 
   if (phase !== "roll" && phase !== "main" && phase !== "robber" && phase !== "discard") throw new Error(`setup: ${phase}`);
