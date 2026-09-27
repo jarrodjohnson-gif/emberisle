@@ -8,6 +8,7 @@ import { chooseBotAction } from "../src/lib/game/ai.ts";
 import { createGame } from "../src/lib/game/board.ts";
 import { applyAction, legalCities, legalRoads, legalSettle, playable, stealTargets } from "../src/lib/game/rules.ts";
 import { COST, PLAYER_COLORS, RESOURCES } from "../src/lib/game/types.ts";
+import { allow, cleanText, loadEmotes, remember } from "./chat.mjs";
 import { cue } from "./cue.mjs";
 
 function hear(name) {
@@ -41,6 +42,8 @@ const TYPES = {
   ".ogg": "audio/ogg",
   ".mp3": "audio/mpeg",
 };
+const EMOTES_DIR = fileURLToPath(new URL("../src/assets/emotes/", import.meta.url));
+const EMOTES = loadEmotes(EMOTES_DIR);
 
 function code() {
   let out = "";
@@ -272,10 +275,10 @@ async function serveStatic(req, res) {
   res.end(req.method === "HEAD" ? undefined : body);
 }
 
-const wss = new WebSocketServer({ server });
+const wss = new WebSocketServer({ server, maxPayload: 16 * 1024 });
 
 function openTable(ws, msg) {
-  const room = { code: code(), seats: [], game: null, host: null, next: 0, avatarIds: [], offer: null, offerTimer: null };
+  const room = { code: code(), seats: [], game: null, host: null, next: 0, avatarIds: [], offer: null, offerTimer: null, chat: [], chatSeq: 0 };
   rooms.set(room.code, room);
   const seat = {
     id: `s${room.next++}`,
@@ -284,13 +287,14 @@ function openTable(ws, msg) {
     avatarId: avatars.has(msg.avatarId) ? msg.avatarId : null,
     ready: false,
     ws,
+    bucket: { tokens: 5, at: Date.now() },
   };
   if (seat.avatarId) room.avatarIds.push(seat.avatarId);
   room.seats.push(seat);
   room.host = seat.id;
   ws.room = room;
   ws.seat = seat;
-  send(ws, { type: "welcome", code: room.code, you: seat.id, host: true });
+  send(ws, { type: "welcome", code: room.code, you: seat.id, host: true, chat: room.chat });
   say(room, `${seat.name} sat down.`);
   publish(room);
 }
@@ -309,12 +313,13 @@ function sitDown(ws, msg) {
     avatarId: avatars.has(msg.avatarId) ? msg.avatarId : null,
     ready: false,
     ws,
+    bucket: { tokens: 5, at: Date.now() },
   };
   if (seat.avatarId) room.avatarIds.push(seat.avatarId);
   room.seats.push(seat);
   ws.room = room;
   ws.seat = seat;
-  send(ws, { type: "welcome", code: room.code, you: seat.id, host: false });
+  send(ws, { type: "welcome", code: room.code, you: seat.id, host: false, chat: room.chat });
   say(room, `${seat.name} sat down.`);
   publish(room);
 }
@@ -420,6 +425,23 @@ function answer(ws, room, msg) {
   pushState(room);
 }
 
+function talk(ws, room, msg) {
+  const seat = ws.seat;
+  if (!allow(seat.bucket, Date.now())) return send(ws, { type: "error", message: "Slow down." });
+  if (msg.type === "chat") {
+    const text = cleanText(msg.text);
+    if (text === null) return;
+    const line = { id: room.chatSeq++, seat: seat.id, player: seat.pid ?? null, name: seat.name, color: seat.color, text, at: Date.now() };
+    remember(room.chat, line);
+    broadcast(room, { type: "chat", ...line });
+    return;
+  }
+  if (!EMOTES.has(msg.emote)) return;
+  let to = typeof msg.to === "string" ? msg.to : null;
+  if (to && !room.seats.some((s) => s.id === to || s.pid === to)) to = null;
+  broadcast(room, { type: "react", seat: seat.id, player: seat.pid ?? null, emote: msg.emote, to, at: Date.now() });
+}
+
 function play(ws, room, msg) {
   const before = room.game;
   const action = toAction(before, msg);
@@ -445,6 +467,10 @@ function play(ws, room, msg) {
 }
 
 wss.on("connection", (ws) => {
+  // An over-limit frame (maxPayload) raises 'error' on this one socket; with no listener here,
+  // Node's default behavior is to throw and take down the whole host. One bad frame must only
+  // close that socket (ws already sends close code 1009) and never the other tables.
+  ws.on("error", () => {});
   ws.on("message", (raw) => {
     try {
       handle(ws, raw);
@@ -483,6 +509,7 @@ function handle(ws, raw) {
     return publish(room);
   }
   if (msg.type === "start") return room.game ? send(ws, { type: "error", message: "Game already started." }) : startGame(ws, room);
+  if (msg.type === "chat" || msg.type === "react") return talk(ws, room, msg);
   if (!room.game) return send(ws, { type: "error", message: "not ready" });
   if (msg.type === "tradeAsk") return ask(ws, room, msg);
   if (msg.type === "tradeAnswer") return answer(ws, room, msg);
