@@ -7,6 +7,13 @@ import { connectTable, hostUrl, type Legal, type Seat, type TableClient } from "
 
 export type Screen = "title" | "lobby" | "play";
 
+export interface RollRecord {
+  turn: number;
+  dice: [number, number];
+  sum: number;
+  timestamp: number;
+}
+
 interface GameStore {
   screen: Screen;
   name: string;
@@ -19,6 +26,7 @@ interface GameStore {
   buildMode: BuildMode;
   howTo: boolean;
   toast: string | null;
+  rollHistory: RollRecord[];
   setName: (n: string) => void;
   setHowTo: (v: boolean) => void;
   setBuildMode: (m: BuildMode) => void;
@@ -46,6 +54,7 @@ interface GameStore {
   joinTable: (code: string) => void;
   setReady: (value: boolean) => void;
   startTable: () => void;
+  addRoll: (dice: [number, number], turn: number) => void;
 }
 
 function savedName() {
@@ -72,6 +81,7 @@ export const useGame = create<GameStore>((set, get) => ({
   legal: null,
   lobbyLog: "",
   pendingSteal: null,
+  rollHistory: [],
   setName: (n) => {
     const name = n.slice(0, 18) || "Ember";
     if (typeof window !== "undefined") localStorage.setItem("emberisle-name", name);
@@ -90,6 +100,7 @@ export const useGame = create<GameStore>((set, get) => ({
       state,
       error: null,
       buildMode: "none",
+      rollHistory: [],
     });
   },
   startHotseat: (count) => {
@@ -105,6 +116,7 @@ export const useGame = create<GameStore>((set, get) => ({
       state,
       error: null,
       buildMode: "none",
+      rollHistory: [],
     });
   },
   loadState: (s, localId, host, table) =>
@@ -117,6 +129,7 @@ export const useGame = create<GameStore>((set, get) => ({
       table: table ?? get().table,
       error: null,
       pendingSteal: null,
+      rollHistory: [],
     }),
   goTitle: () => {
     get().net?.close();
@@ -130,6 +143,7 @@ export const useGame = create<GameStore>((set, get) => ({
       legal: null,
       code: "",
       pendingSteal: null,
+      rollHistory: [],
     });
   },
   dispatch: (action, asId) => {
@@ -241,6 +255,19 @@ export const useGame = create<GameStore>((set, get) => ({
     if (buildMode === "stronghold") return { vertices: legalCities(state, actor), edges: [], hexes: [] };
     if (buildMode === "path") return { vertices: [], edges: legalRoads(state, actor, false), hexes: [] };
     return { vertices: [], edges: [], hexes: [] };
+  },
+  addRoll: (dice, turn) => {
+    set((state) => ({
+      rollHistory: [
+        ...state.rollHistory,
+        {
+          turn,
+          dice,
+          sum: dice[0] + dice[1],
+          timestamp: Date.now(),
+        },
+      ].slice(-10), // Keep only last 10
+    }));
   },
   hostTable: () => connect(set, get, (t, me) => t.open(me)),
   joinTable: (code) => connect(set, get, (t, me) => t.join(code, me)),
