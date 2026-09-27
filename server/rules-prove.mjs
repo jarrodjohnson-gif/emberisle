@@ -1,4 +1,4 @@
-// Rules-audit fixes (docs/design/rules-fixes.md): longest path as a real trail, ties, and cuts.
+// Rules-audit fixes (docs/design/rules-fixes.md): longest path as a real trail, ties, cuts, and fortune timing.
 import { createGame } from "../src/lib/game/board.ts";
 import { applyAction, roadLength } from "../src/lib/game/rules.ts";
 
@@ -114,6 +114,32 @@ let lineA;
     fail("cut", { len: roadLength(r.state, "p0"), award: r.state.longestRoad });
   }
   console.log(`outpost at the middle of p0's line: p0 trail ${roadLength(r.state, "p0")}, award removed`);
+}
+
+// 6. A fortune bought this turn cannot be played this turn (#96). 7. It can be on the next turn, even before the roll.
+{
+  let g = fresh();
+  g.deck = ["knight", ...g.deck];
+  giveCards(g.players[0], { wool: 1, grain: 1, ore: 1 });
+  let r = applyAction(g, "p0", { type: "buyCard" });
+  if (r.error) fail("buy knight", r.error);
+  g = r.state;
+  const hexId = g.hexes.find((h) => h.id !== g.robberHex).id;
+  r = applyAction(g, "p0", { type: "playKnight", hexId, stealFrom: null });
+  if (!r.error) fail("knight played the turn it was bought");
+  console.log(`buy a knight, play it the same turn: rejected ("${r.error}")`);
+
+  while (g.current !== "p0" || g.phase !== "roll") {
+    g.phase = "main";
+    r = applyAction(g, g.current, { type: "endTurn" });
+    if (r.error) fail("end turn", r.error);
+    g = r.state;
+  }
+  if (g.players[0].hidden.knight !== 1) fail("knight kept across turns", g.players[0].hidden);
+  r = applyAction(g, "p0", { type: "playKnight", hexId, stealFrom: null });
+  if (r.error) fail("knight on the next turn", r.error);
+  if (r.state.players[0].knightsPlayed !== 1) fail("knight counted", r.state.players[0].knightsPlayed);
+  console.log("pass, then play it next turn before the roll: works");
 }
 
 console.log("rules prove ok");

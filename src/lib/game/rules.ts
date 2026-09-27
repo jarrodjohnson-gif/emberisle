@@ -479,13 +479,14 @@ export function applyAction(prev: GameState, actor: string, action: Action): { s
       if (!card) return { state: prev, error: "The fortune deck is empty." };
       pay(state, me, COST.card);
       me.hidden[card] += 1;
+      me.boughtThisTurn[card] += 1;
       log(state, `${me.name} draws a fortune.`);
       if (card === "vp") checkWin(state, actor);
       return { state };
     }
     case "playKnight": {
       if (state.playedCard) return { state: prev, error: "Already played a fortune." };
-      if (me.hidden.knight <= 0) return { state: prev, error: "No wayfarer cards." };
+      if (playable(me, "knight") <= 0) return { state: prev, error: me.hidden.knight > 0 ? BOUGHT_THIS_TURN : "No wayfarer cards." };
       if (state.phase !== "roll" && state.phase !== "main") {
         return { state: prev, error: "Cannot play that now." };
       }
@@ -505,7 +506,7 @@ export function applyAction(prev: GameState, actor: string, action: Action): { s
     }
     case "playRoad": {
       if (state.phase !== "main" || state.playedCard) return { state: prev, error: "Cannot play that." };
-      if (me.hidden.road <= 0) return { state: prev, error: "No path fortune." };
+      if (playable(me, "road") <= 0) return { state: prev, error: me.hidden.road > 0 ? BOUGHT_THIS_TURN : "No path fortune." };
       if (!Array.isArray(action.edgeIds)) return { state: prev, error: "Place one or two paths." };
       if (action.edgeIds.length < 1 || action.edgeIds.length > 2) {
         return { state: prev, error: "Place one or two paths." };
@@ -530,7 +531,7 @@ export function applyAction(prev: GameState, actor: string, action: Action): { s
     }
     case "playPlenty": {
       if (state.phase !== "main" || state.playedCard) return { state: prev, error: "Cannot play that." };
-      if (me.hidden.plenty <= 0) return { state: prev, error: "No plenty fortune." };
+      if (playable(me, "plenty") <= 0) return { state: prev, error: me.hidden.plenty > 0 ? BOUGHT_THIS_TURN : "No plenty fortune." };
       if (!Array.isArray(action.resources) || action.resources.length !== 2 || !action.resources.every(validRes)) {
         return { state: prev, error: "Choose two resources." };
       }
@@ -542,7 +543,7 @@ export function applyAction(prev: GameState, actor: string, action: Action): { s
     }
     case "playMonopoly": {
       if (state.phase !== "main" || state.playedCard) return { state: prev, error: "Cannot play that." };
-      if (me.hidden.monopoly <= 0) return { state: prev, error: "No monopoly." };
+      if (playable(me, "monopoly") <= 0) return { state: prev, error: me.hidden.monopoly > 0 ? BOUGHT_THIS_TURN : "No monopoly." };
       if (!validRes(action.resource)) return { state: prev, error: "Choose a resource." };
       me.hidden.monopoly -= 1;
       state.playedCard = true;
@@ -611,6 +612,7 @@ export function applyAction(prev: GameState, actor: string, action: Action): { s
       if (state.phase !== "main") return { state: prev, error: "Finish your turn first." };
       state.trade = null;
       state.playedCard = false;
+      me.boughtThisTurn = { knight: 0, road: 0, plenty: 0, monopoly: 0, vp: 0 };
       state.dice = state.dice;
       const idx = state.players.findIndex((p) => p.id === actor);
       const next = state.players[(idx + 1) % state.players.length]!;
@@ -623,6 +625,13 @@ export function applyAction(prev: GameState, actor: string, action: Action): { s
     default:
       return { state: prev, error: "Unknown action." };
   }
+}
+
+const BOUGHT_THIS_TURN = "A fortune cannot be played the turn it is bought.";
+
+// Fortunes of this kind held since before this turn (README: a fortune bought this turn cannot be played this turn).
+export function playable(p: PlayerState, k: DevKind) {
+  return p.hidden[k] - p.boughtThisTurn[k];
 }
 
 export function hiddenCount(p: PlayerState) {

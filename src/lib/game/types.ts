@@ -73,6 +73,8 @@ export interface PlayerState {
   kind: PlayerKind;
   resources: Record<Resource, number>;
   hidden: Record<DevKind, number>;
+  // Fortunes drawn during this player's current turn; they cannot be played until a later turn.
+  boughtThisTurn: Record<DevKind, number>;
   knightsPlayed: number;
   pathsLeft: number;
   outpostsLeft: number;
