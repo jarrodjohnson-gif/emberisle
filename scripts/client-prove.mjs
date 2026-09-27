@@ -4,7 +4,7 @@ import { chromium } from "playwright";
 import { createServer } from "vite";
 
 const PORT = 8091;
-const vite = await createServer({ server: { port: PORT, strictPort: true }, logLevel: "error" });
+const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();
 
 const errors = [];
