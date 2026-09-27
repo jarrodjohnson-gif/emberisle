@@ -91,10 +91,10 @@ Make a **named** tunnel so the address never changes.
 
 On the host PC:
 
-1. Free Cloudflare account. Add any domain he already has, or a free
-   `trycloudflare` is only for testing — named tunnel needs a zone he controls.
-   If he has no domain: use a free `*.cfargotunnel.com` hostname from
-   `cloudflared tunnel route dns`.
+1. Free Cloudflare account, plus a domain on it (a zone he controls). A named tunnel
+   needs one: its `<UUID>.cfargotunnel.com` name is only a CNAME target and serves
+   nothing by itself (docs/research/L16-serve.md). With no domain, the only option is a
+   quick `trycloudflare` URL, which changes on every restart and is for testing.
 2. Install cloudflared.
 3. `cloudflared tunnel login`
 4. `cloudflared tunnel create emberisle`
