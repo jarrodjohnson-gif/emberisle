@@ -3,7 +3,7 @@ import { randomBytes, randomInt } from "node:crypto";
 import { WebSocketServer } from "ws";
 import { chooseBotAction } from "../src/lib/game/ai.ts";
 import { createGame } from "../src/lib/game/board.ts";
-import { applyAction, legalCities, legalRoads, legalSettle, stealTargets } from "../src/lib/game/rules.ts";
+import { applyAction, legalCities, legalRoads, legalSettle, playable, stealTargets } from "../src/lib/game/rules.ts";
 import { COST, PLAYER_COLORS, RESOURCES } from "../src/lib/game/types.ts";
 import { cue } from "./cue.mjs";
 
@@ -92,7 +92,7 @@ export function legalFor(game, you) {
   }
   if ((game.phase === "roll" || game.phase === "main") && !game.playedCard) {
     for (const card of ["knight", "road", "plenty", "monopoly"]) {
-      if (me.hidden[card] > 0 && (card === "knight" || game.phase === "main")) out.actions.push(`play:${card}`);
+      if (playable(me, card) > 0 && (card === "knight" || game.phase === "main")) out.actions.push(`play:${card}`);
     }
   }
   return out;
@@ -111,6 +111,7 @@ export function viewFor(game, you) {
         : {
             ...p,
             hidden: { knight: 0, road: 0, plenty: 0, monopoly: 0, vp: 0 },
+            boughtThisTurn: { knight: 0, road: 0, plenty: 0, monopoly: 0, vp: 0 },
             fortunes: Object.values(p.hidden).reduce((a, b) => a + b, 0),
           },
     ),

@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { COST, RESOURCES, RESOURCE_LABEL, type Resource } from "@/lib/game/types";
-import { harborRate, hiddenCount, publicVP, totalVP } from "@/lib/game/rules";
+import { harborRate, hiddenCount, playable, publicVP, totalVP } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
 import { cn } from "@/lib/utils";
 
@@ -157,7 +157,7 @@ export function Hud() {
                 <ScrollText className="size-4" /> Fortune
               </Button>
               <BankTrade />
-              {me.hidden.knight > 0 ? (
+              {playable(me, "knight") > 0 ? (
                 <Button
                   size="sm"
                   variant={buildMode === "knight" ? "primary" : "secondary"}
