@@ -11,7 +11,8 @@
     "test": "npm --prefix server test",
     "client-prove": "node scripts/client-prove.mjs",
     "tabs-prove": "node scripts/tabs-prove.mjs",
-    "served-prove": "node scripts/tabs-prove.mjs --served"
+    "served-prove": "node scripts/tabs-prove.mjs --served",
+    "night": "node scripts/night.mjs"
   },
   "dependencies": {
     "clsx": "^2.1.1",
