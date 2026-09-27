@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Hud } from "@/components/game/Hud";
 import { useGame } from "@/lib/game/store";
+import { PLAYER_COLORS, PLAYER_NAMES } from "@/lib/game/types";
 
 const IslandCanvas = lazy(() => import("@/components/scene/IslandCanvas"));
 
@@ -42,6 +43,8 @@ export function EmberisleApp() {
 function Title() {
   const name = useGame((s) => s.name);
   const setName = useGame((s) => s.setName);
+  const color = useGame((s) => s.color);
+  const setColor = useGame((s) => s.setColor);
   const startAi = useGame((s) => s.startAi);
   const startHotseat = useGame((s) => s.startHotseat);
   const setHowTo = useGame((s) => s.setHowTo);
@@ -67,6 +70,21 @@ function Title() {
             className="mt-1 h-11 w-full rounded-[12px] border border-border bg-surface px-3 text-base text-fg"
           />
         </label>
+        <div role="radiogroup" aria-label="Your color" className="mt-3 flex gap-2">
+          {PLAYER_COLORS.map((c, i) => (
+            <button
+              key={c}
+              type="button"
+              role="radio"
+              aria-checked={color === c}
+              aria-label={PLAYER_NAMES[i]}
+              title={PLAYER_NAMES[i]}
+              onClick={() => setColor(c)}
+              className="size-8 rounded-full border-2 transition"
+              style={{ background: c, borderColor: color === c ? "#1c1915" : "transparent" }}
+            />
+          ))}
+        </div>
         <div className="mt-4 flex flex-col gap-2">
           <Button size="lg" onClick={startAi}>
             Play versus the isle
