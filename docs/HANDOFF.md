@@ -107,19 +107,6 @@ Issues:
 3. https://github.com/jarrodjohnson-gif/emberisle/issues/3 trade + P2P tables
 4. https://github.com/jarrodjohnson-gif/emberisle/issues/4 **push full source**
 
-## Next steps (do in this order)
-
-1. **Dump source to GitHub** (issue #4). Highest risk.
-2. **Screenshot vs north star.** If slabs are not obviously white stone walls,
-   fix `makeHexTile` (taller walls, no bevel color leak, grout between hexes).
-3. **Coast:** dark water, foam ring already exists, add wet rocks + sand strip
-   at the rim. Reference still has this.
-4. **Terrain dioramas** one type at a time — pasture (grass + sheep + stones),
-   then wheat, then ore (rock mass + mine mouth + smoke particles), then pines.
-   Stop using photo-stickers as the whole identity of a hex.
-5. HUD: light glass, smaller, must not cover the island.
-6. Trade panel. Then wire P2P (`/api/rtc` exists) to `applyAction` with host authority.
-
 ## Do not
 
 - Restart as a 2D Catan clone or R3F rewrite (vanilla Three.js on purpose)

@@ -1,9 +1,10 @@
 import http from "node:http";
-import { randomInt } from "node:crypto";
+import { randomBytes, randomInt } from "node:crypto";
 import { WebSocketServer } from "ws";
+import { chooseBotAction } from "../src/lib/game/ai.ts";
 import { createGame } from "../src/lib/game/board.ts";
 import { applyAction, legalCities, legalRoads, legalSettle, stealTargets } from "../src/lib/game/rules.ts";
-import { COST, RESOURCES } from "../src/lib/game/types.ts";
+import { COST, PLAYER_COLORS, RESOURCES } from "../src/lib/game/types.ts";
 import { cue } from "./cue.mjs";
 
 function hear(name) {
@@ -17,7 +18,10 @@ function hear(name) {
 const PORT = Number(process.env.PORT ?? 8787);
 const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const rooms = new Map();
-const avatars = new Map();
+const avatars = new Map(); // avatarId -> { body, at }
+const AVATAR_BYTES = 256 * 1024;
+const AVATAR_MAX = 64;
+const AVATAR_TTL = 60 * 60 * 1000; // an upload nobody sat down with is dropped after an hour
 
 function code() {
   let out = "";
@@ -113,6 +117,25 @@ export function viewFor(game, you) {
   };
 }
 
+// A player who leaves mid-game is played by the practice bot so the table never hangs.
+function runBots(room) {
+  for (let i = 0; i < 500 && room.game.phase !== "over"; i++) {
+    const g = room.game;
+    const waiting =
+      g.phase === "discard"
+        ? g.players.find((p) => p.kind === "bot" && (g.discardNeeded[p.id] ?? 0) > 0)
+        : g.players.find((p) => p.kind === "bot" && p.id === g.current);
+    if (!waiting) return;
+    const action = chooseBotAction(g, waiting.id);
+    const next = action && applyAction(g, waiting.id, action);
+    if (!next || next.error) {
+      const pass = applyAction(g, waiting.id, { type: "endTurn" });
+      if (pass.error) return;
+      room.game = pass.state;
+    } else room.game = next.state;
+  }
+}
+
 function pushState(room) {
   for (const seat of room.seats) {
     send(seat.ws, {
@@ -139,26 +162,44 @@ function gains(before, after) {
 const server = http.createServer((req, res) => {
   const url = new URL(req.url, "http://127.0.0.1");
   if (req.method === "POST" && url.pathname === "/avatars") {
-    const id = req.headers["x-player-id"];
+    // The host picks the id, so nobody can overwrite someone else's picture.
+    const inUse = new Set([...rooms.values()].flatMap((r) => r.avatarIds));
+    for (const [id, a] of avatars) if (!inUse.has(id) && Date.now() - a.at > AVATAR_TTL) avatars.delete(id);
+    if (avatars.size >= AVATAR_MAX) {
+      res.writeHead(503);
+      res.end();
+      req.destroy();
+      return;
+    }
     const chunks = [];
-    req.on("data", (c) => chunks.push(c));
-    req.on("end", () => {
-      const body = Buffer.concat(chunks);
-      if (!id || !/^[\w-]{1,40}$/.test(String(id)) || body.length > 256 * 1024) {
-        res.writeHead(400);
+    let size = 0;
+    req.on("data", (c) => {
+      size += c.length;
+      if (size > AVATAR_BYTES) {
+        res.writeHead(413, { connection: "close" });
         res.end();
+        req.destroy();
         return;
       }
-      avatars.set(String(id), body);
+      chunks.push(c);
+    });
+    req.on("end", () => {
+      if (size > AVATAR_BYTES || size === 0) {
+        if (!res.headersSent) res.writeHead(400).end();
+        return;
+      }
+      const id = randomBytes(8).toString("hex");
+      avatars.set(id, { body: Buffer.concat(chunks), at: Date.now() });
       res.writeHead(200, { "content-type": "application/json" });
       res.end(JSON.stringify({ avatarId: id, url: `/avatars/${id}.jpg` }));
     });
+    req.on("error", () => {});
     return;
   }
   const got = url.pathname.match(/^\/avatars\/(.+)\.jpg$/);
   if (req.method === "GET" && got && avatars.has(got[1])) {
     res.writeHead(200, { "content-type": "image/jpeg" });
-    res.end(avatars.get(got[1]));
+    res.end(avatars.get(got[1]).body);
     return;
   }
   res.writeHead(404);
@@ -174,7 +215,7 @@ function openTable(ws, msg) {
     id: `s${room.next++}`,
     name: String(msg.name || "Ember").slice(0, 16),
     color: msg.color || "#c45c3e",
-    avatarId: msg.avatarId || null,
+    avatarId: avatars.has(msg.avatarId) ? msg.avatarId : null,
     ready: false,
     ws,
   };
@@ -193,12 +234,13 @@ function sitDown(ws, msg) {
   if (!room) return send(ws, { type: "error", message: "No table with that code" });
   if (room.game) return send(ws, { type: "error", message: "Game already started." });
   if (room.seats.length >= 4) return send(ws, { type: "error", message: "Table full." });
-  if (room.seats.some((s) => s.color === msg.color)) return send(ws, { type: "error", message: "Color taken." });
+  const color = typeof msg.color === "string" && msg.color ? msg.color : PLAYER_COLORS.find((c) => !room.seats.some((s) => s.color === c));
+  if (!color || room.seats.some((s) => s.color === color)) return send(ws, { type: "error", message: "Color taken." });
   const seat = {
     id: `s${room.next++}`,
     name: String(msg.name || "Tide").slice(0, 16),
-    color: msg.color || "#2a8f8a",
-    avatarId: msg.avatarId || null,
+    color,
+    avatarId: avatars.has(msg.avatarId) ? msg.avatarId : null,
     ready: false,
     ws,
   };
@@ -331,51 +373,70 @@ function play(ws, room, msg) {
     say(room, [String(a + b), ...parts].join(" · "));
   }
   for (const line of room.game.log.slice(before.log.length)) say(room, line);
+  runBots(room);
   if (room.game.phase === "over" && before.phase !== "over") hear("win");
   pushState(room);
 }
 
 wss.on("connection", (ws) => {
   ws.on("message", (raw) => {
-    let msg;
     try {
-      msg = JSON.parse(String(raw));
-    } catch {
-      return send(ws, { type: "error", message: "not ready" });
+      handle(ws, raw);
+    } catch (err) {
+      // One bad message must never take down every table on this host.
+      console.error("message failed:", err);
+      send(ws, { type: "error", message: "not ready" });
     }
-    if (!msg || typeof msg !== "object") return send(ws, { type: "error", message: "not ready" });
-    if (!ws.room) {
-      // hello with no code opens a table; hello with a code sits down (build bible 2.3, 10).
-      if (msg.type === "create" || (msg.type === "hello" && !msg.code)) return openTable(ws, msg);
-      if (msg.type === "join" || msg.type === "hello") return sitDown(ws, msg);
-      return send(ws, { type: "error", message: "not ready" });
-    }
-    const room = ws.room;
-    if (msg.type === "ready") {
-      ws.seat.ready = Boolean(msg.value);
-      return publish(room);
-    }
-    if (msg.type === "start") return room.game ? send(ws, { type: "error", message: "Game already started." }) : startGame(ws, room);
-    if (!room.game) return send(ws, { type: "error", message: "not ready" });
-    if (msg.type === "tradeAsk") return ask(ws, room, msg);
-    if (msg.type === "tradeAnswer") return answer(ws, room, msg);
-    return play(ws, room, msg);
   });
-
-  ws.on("close", () => {
-    const room = ws.room;
-    if (!room) return;
-    room.seats = room.seats.filter((s) => s !== ws.seat);
-    if (room.seats.length === 0) {
-      closeOffer(room);
-      for (const id of room.avatarIds) avatars.delete(id);
-      rooms.delete(room.code);
-      return;
-    }
-    if (room.host === ws.seat.id) room.host = room.seats[0].id;
-    say(room, `${ws.seat.name} left.`);
-    publish(room);
-  });
+  ws.on("close", () => leave(ws));
 });
+
+function handle(ws, raw) {
+  let msg;
+  try {
+    msg = JSON.parse(String(raw));
+  } catch {
+    return send(ws, { type: "error", message: "not ready" });
+  }
+  if (!msg || typeof msg !== "object") return send(ws, { type: "error", message: "not ready" });
+  if (!ws.room) {
+    // hello with no code opens a table; hello with a code sits down (build bible 2.3, 10).
+    if (msg.type === "create" || (msg.type === "hello" && !msg.code)) return openTable(ws, msg);
+    if (msg.type === "join" || msg.type === "hello") return sitDown(ws, msg);
+    return send(ws, { type: "error", message: "not ready" });
+  }
+  const room = ws.room;
+  if (msg.type === "ready") {
+    ws.seat.ready = Boolean(msg.value);
+    return publish(room);
+  }
+  if (msg.type === "start") return room.game ? send(ws, { type: "error", message: "Game already started." }) : startGame(ws, room);
+  if (!room.game) return send(ws, { type: "error", message: "not ready" });
+  if (msg.type === "tradeAsk") return ask(ws, room, msg);
+  if (msg.type === "tradeAnswer") return answer(ws, room, msg);
+  return play(ws, room, msg);
+}
+
+function leave(ws) {
+  const room = ws.room;
+  if (!room) return;
+  room.seats = room.seats.filter((s) => s !== ws.seat);
+  if (room.seats.length === 0) {
+    closeOffer(room);
+    for (const id of room.avatarIds) avatars.delete(id);
+    rooms.delete(room.code);
+    return;
+  }
+  if (room.host === ws.seat.id) room.host = room.seats[0].id;
+  say(room, `${ws.seat.name} left.`);
+  if (room.game && ws.seat.pid) {
+    const p = room.game.players.find((x) => x.id === ws.seat.pid);
+    if (p) {
+      room.game = { ...room.game, players: room.game.players.map((x) => (x === p ? { ...x, kind: "bot", name: `${x.name} (bot)` } : x)) };
+      runBots(room);
+      pushState(room);
+    }
+  } else publish(room);
+}
 
 server.listen(PORT, () => console.log(`host listening ${server.address().port}`));
