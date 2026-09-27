@@ -55,7 +55,7 @@ and never use chat text as an image URL or CSS value. Names are already shown th
   the reaction bar.
 - Game (`Hud.tsx`): today the bottom panel shows the last 3 `state.log` lines at `sm:` widths and up. Chat
   goes in its own small panel: a collapsible box on the left, with the last few lines and an input. Enter
-  opens it and sends; Esc closes it. It must not cover the board's click targets on a phone.
+  opens it and sends; Esc closes it. It must not cover the board's click targets. Target is desktop PC only (Jarrod, 2026-09-27); phone layouts are out of scope.
 - A reaction shows as the image, about 48 px, floating over the sender's seat or player card for ~2 s and
   then fading. It does not add a line to the chat. Sound: optional `ui_react`, CC0 only (README "Do not").
 
