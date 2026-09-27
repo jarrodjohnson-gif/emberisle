@@ -56,7 +56,9 @@ console.log("bank of 3 pays 1 and 2:", paid);
 const counts = {};
 let diceGame = fresh();
 for (const h of diceGame.hexes) h.pip = null;
-for (let i = 0; i < 600; i++) {
+// The dice use crypto randomness, so the band must be wide enough never to trip by chance:
+// 6000 rolls expect 1000 sevens (sd 29); 850-1150 is +-5.2 sd, about 1 false failure in 5 million runs.
+for (let i = 0; i < 6000; i++) {
   diceGame.phase = "roll";
   diceGame.current = "p0";
   const next = applyAction(diceGame, "p0", { type: "roll" });
@@ -65,7 +67,7 @@ for (let i = 0; i < 600; i++) {
   counts[sum] = (counts[sum] ?? 0) + 1;
 }
 console.log("histogram", counts);
-if (counts[7] < 80 || counts[7] > 120) {
+if (counts[7] < 850 || counts[7] > 1150) {
   console.log("FAIL histogram");
   process.exit(1);
 }

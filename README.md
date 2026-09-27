@@ -117,7 +117,7 @@ npm run dev              # open http://localhost:8080
 
 # 2. Rules host (tables with room codes)
 npm --prefix server install
-npm run host             # WebSocket on ws://localhost:8787 (set PORT to change)
+npm run host             # socket, avatars and the built client (dist/) on http://localhost:8787 (set PORT to change)
 
 # 3. Checks: run all of these before you push
 npm run typecheck        # TypeScript, no errors
@@ -125,6 +125,7 @@ npm run build            # production client in dist/
 npm test                 # rules proofs, sounds, 3-socket table + 20 rolls
 npm run client-prove     # headless Chromium plays setup + a roll, zero console errors
 npm run tabs-prove       # 3 headless tabs host, join, play setup + 5 rolls on the rules host, boards match
+npm run served-prove     # same 3 tabs, but the page comes from the rules host itself with no ?host= (after build)
 ```
 
 `client-prove` uses the Chromium that ships with cloud sessions (`/opt/pw-browsers/chromium`). On your own PC, run `npx playwright install chromium` once first. It saves a screenshot to `test-results/client-prove.png`.

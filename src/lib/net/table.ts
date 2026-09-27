@@ -100,12 +100,16 @@ export function toIntent(action: Action): Record<string, unknown> | null {
   }
 }
 
-// ?host=wss://play.example.com wins (the browser's host.txt); otherwise the host runs next to the page on 8787.
-export function hostUrl(loc: { protocol: string; hostname: string; search: string }): string {
+// ?host=wss://play.example.com wins (the browser's host.txt). In `npm run dev` the page is on Vite (8080)
+// and the host on 8787. A built page was served by the host itself, so it dials the address it came from.
+export function hostUrl(
+  loc: { protocol: string; hostname: string; host: string; search: string },
+  dev: boolean = import.meta.env?.DEV ?? false,
+): string {
   const pinned = new URLSearchParams(loc.search).get("host");
   if (pinned) return pinned;
   const scheme = loc.protocol === "https:" ? "wss" : "ws";
-  return `${scheme}://${loc.hostname}:8787`;
+  return dev ? `${scheme}://${loc.hostname}:8787` : `${scheme}://${loc.host}`;
 }
 
 export function connectTable(url: string, on: Partial<TableEvents>, Socket?: SocketCtor): TableClient {

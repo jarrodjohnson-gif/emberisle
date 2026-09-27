@@ -1,4 +1,7 @@
+import { readFile } from "node:fs/promises";
 import http from "node:http";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { randomBytes, randomInt } from "node:crypto";
 import { WebSocketServer } from "ws";
 import { chooseBotAction } from "../src/lib/game/ai.ts";
@@ -22,6 +25,22 @@ const avatars = new Map(); // avatarId -> { body, at }
 const AVATAR_BYTES = 256 * 1024;
 const AVATAR_MAX = 64;
 const AVATAR_TTL = 60 * 60 * 1000; // an upload nobody sat down with is dropped after an hour
+// The built client (npm run build). DIST lets a proof point the host at a small temp folder.
+const DIST = path.resolve(process.env.DIST ?? fileURLToPath(new URL("../dist/", import.meta.url)));
+const TYPES = {
+  ".html": "text/html; charset=utf-8",
+  ".js": "text/javascript",
+  ".css": "text/css",
+  ".json": "application/json",
+  ".svg": "image/svg+xml",
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".webp": "image/webp",
+  ".woff2": "font/woff2",
+  ".ogg": "audio/ogg",
+  ".mp3": "audio/mpeg",
+};
 
 function code() {
   let out = "";
@@ -207,9 +226,51 @@ const server = http.createServer((req, res) => {
     res.end(avatars.get(got[1]).body);
     return;
   }
+  if (req.method === "GET" || req.method === "HEAD") {
+    serveStatic(req, res);
+    return;
+  }
   res.writeHead(404);
   res.end();
 });
+
+// One address carries the page, the socket and the avatars, so a single tunnel reaches all three.
+async function serveStatic(req, res) {
+  const raw = req.url.split("?")[0];
+  let file;
+  try {
+    const rel = decodeURIComponent(raw);
+    if (rel.includes("\0")) throw new Error("nul");
+    file = path.resolve(DIST, "." + (rel === "/" ? "/index.html" : rel));
+  } catch {
+    file = null;
+  }
+  if (!file || !file.startsWith(DIST + path.sep)) {
+    res.writeHead(404);
+    res.end();
+    return;
+  }
+  let body;
+  try {
+    body = await readFile(file);
+  } catch {
+    if (raw === "/") {
+      res.writeHead(503, { "content-type": "text/plain; charset=utf-8" });
+      res.end("Run npm run build first.");
+    } else {
+      res.writeHead(404);
+      res.end();
+    }
+    return;
+  }
+  const hashed = raw.startsWith("/assets/");
+  res.writeHead(200, {
+    "content-type": TYPES[path.extname(file).toLowerCase()] ?? "application/octet-stream",
+    "cache-control": hashed ? "public, max-age=31536000, immutable" : "no-cache",
+    "x-content-type-options": "nosniff",
+  });
+  res.end(req.method === "HEAD" ? undefined : body);
+}
 
 const wss = new WebSocketServer({ server });
 

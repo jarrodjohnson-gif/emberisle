@@ -1,16 +1,25 @@
 // #80: three headless tabs host, join, ready, start, play setup and five rolls through server/host.mjs.
 // Every step must land the same dice and board on all three tabs, with zero console errors.
+// #116: `--served` skips Vite. The host serves the built dist/ itself and the tabs open it with no ?host=,
+// so they must find the socket at the address the page came from (the tunnel case). Run npm run build first.
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
 import { createServer } from "vite";
 
 const PORT = 8093;
 const ROLLS = 5;
+const SERVED = process.argv.includes("--served");
+const DIST = fileURLToPath(new URL("../dist/", import.meta.url));
+if (SERVED && !existsSync(`${DIST}index.html`)) {
+  console.log("FAIL no dist/index.html: run npm run build first");
+  process.exit(1);
+}
 
 const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL("../server/", import.meta.url),
-  env: { ...process.env, PORT: "0" },
+  env: { ...process.env, PORT: "0", DIST },
 });
 const hostPort = await new Promise((resolve) =>
   host.stdout.on("data", (d) => {
@@ -18,8 +27,10 @@ const hostPort = await new Promise((resolve) =>
     if (m) resolve(Number(m[1]));
   }),
 );
-const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
-await vite.listen();
+const vite = SERVED
+  ? null
+  : await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
+await vite?.listen();
 const browser = await chromium.launch({
   executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
 });
@@ -33,7 +44,7 @@ async function tab(name) {
   page.on("pageerror", (e) => errors.push(`${name}: ${e}`));
   page.on("response", (r) => r.status() >= 400 && errors.push(`${name}: ${r.status()} ${r.url()}`));
   await page.addInitScript((n) => localStorage.setItem("emberisle-name", n), name);
-  await page.goto(`http://127.0.0.1:${PORT}/?host=ws://127.0.0.1:${hostPort}`);
+  await page.goto(SERVED ? `http://127.0.0.1:${hostPort}/` : `http://127.0.0.1:${PORT}/?host=ws://127.0.0.1:${hostPort}`);
   return { name, page };
 }
 
@@ -153,14 +164,14 @@ try {
   }
   console.log(`${ROLLS} rolls, same on all 3 tabs: ${dice.map((d) => d.join("+")).join(" ")}`);
   if (errors.length) throw new Error(`console errors:\n${errors.join("\n")}`);
-  console.log("tabs prove ok");
+  console.log(SERVED ? `tabs prove ok (served by the host on :${hostPort}, no ?host=)` : "tabs prove ok");
 } catch (e) {
   console.log("FAIL", e.message);
   if (errors.length) console.log(errors.join("\n"));
   code = 1;
 } finally {
   await browser.close();
-  await vite.close();
+  await vite?.close();
   host.kill();
 }
 process.exit(code);
