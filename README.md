@@ -124,6 +124,7 @@ npm run typecheck        # TypeScript, no errors
 npm run build            # production client in dist/
 npm test                 # rules proofs, sounds, 3-socket table + 20 rolls
 npm run client-prove     # headless Chromium plays setup + a roll, zero console errors
+npm run tabs-prove       # 3 headless tabs host, join, play setup + 5 rolls on the rules host, boards match
 ```
 
 `client-prove` uses the Chromium that ships with cloud sessions (`/opt/pw-browsers/chromium`). On your own PC, run `npx playwright install chromium` once first. It saves a screenshot to `test-results/client-prove.png`.
@@ -242,6 +243,7 @@ WebSocket JSON. The client sends intents. The server answers with `state` or `er
 | `node server/sound-prove.mjs` | A missing sound does not crash |
 | `node --import ./server/register.mjs server/table-prove.mjs` | 3 sockets: codes, color taken, ready, start, setup glow and neighbor rule, 20 rolls match the host |
 | `npm run client-prove` | The browser client plays setup and a roll with zero console errors |
+| `npm run tabs-prove` | 3 browser tabs host, join, ready, start, play setup and 5 rolls through the rules host; dice and board match on every tab, zero console errors |
 
 `npm test` runs the first four.
 

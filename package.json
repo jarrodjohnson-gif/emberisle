@@ -9,7 +9,8 @@
     "typecheck": "tsc --noEmit",
     "host": "npm --prefix server run host",
     "test": "npm --prefix server test",
-    "client-prove": "node scripts/client-prove.mjs"
+    "client-prove": "node scripts/client-prove.mjs",
+    "tabs-prove": "node scripts/tabs-prove.mjs"
   },
   "dependencies": {
     "clsx": "^2.1.1",
