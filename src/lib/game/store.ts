@@ -32,6 +32,9 @@ interface GameStore {
   pickVertex: (id: string) => void;
   pickEdge: (id: string) => void;
   highlights: () => { vertices: string[]; edges: string[]; hexes: string[] };
+  // Set when a robber/knight hex has 2+ steal targets and needs the player to pick one.
+  pendingSteal: { hexId: string; kind: "moveRobber" | "playKnight"; targets: string[] } | null;
+  chooseSteal: (playerId: string) => void;
   // Online table (docs/design/online-client.md)
   net: TableClient | null;
   code: string;
@@ -68,6 +71,7 @@ export const useGame = create<GameStore>((set, get) => ({
   seats: [],
   legal: null,
   lobbyLog: "",
+  pendingSteal: null,
   setName: (n) => {
     const name = n.slice(0, 18) || "Ember";
     if (typeof window !== "undefined") localStorage.setItem("emberisle-name", name);
@@ -112,10 +116,21 @@ export const useGame = create<GameStore>((set, get) => ({
       host,
       table: table ?? get().table,
       error: null,
+      pendingSteal: null,
     }),
   goTitle: () => {
     get().net?.close();
-    set({ screen: "title", state: null, error: null, buildMode: "none", net: null, seats: [], legal: null, code: "" });
+    set({
+      screen: "title",
+      state: null,
+      error: null,
+      buildMode: "none",
+      net: null,
+      seats: [],
+      legal: null,
+      code: "",
+      pendingSteal: null,
+    });
   },
   dispatch: (action, asId) => {
     const { state, localId, mode, net } = get();
@@ -153,17 +168,29 @@ export const useGame = create<GameStore>((set, get) => ({
     if (a) dispatch(a, cur.id);
   },
   pickHex: (id) => {
-    const { state, localId, mode, buildMode, dispatch } = get();
+    const { state, localId, mode, buildMode, legal, dispatch } = get();
     if (!state) return;
     const actor = mode === "hotseat" ? state.current : localId;
-    if (state.phase === "robber" && state.current === actor) {
-      const from = mode === "online" ? (get().legal?.steal[id]?.[0] ?? null) : null;
-      dispatch({ type: "moveRobber", hexId: id, stealFrom: from });
+    const kind: "moveRobber" | "playKnight" | null =
+      state.phase === "robber" && state.current === actor ? "moveRobber" : buildMode === "knight" ? "playKnight" : null;
+    if (!kind) return;
+    const targets = mode === "online" ? (legal?.steal[id] ?? []) : [];
+    if (targets.length > 1) {
+      set({ pendingSteal: { hexId: id, kind, targets } });
       return;
     }
-    if (buildMode === "knight") {
-      dispatch({ type: "playKnight", hexId: id, stealFrom: null });
-    }
+    set({ pendingSteal: null });
+    const stealFrom = targets[0] ?? null;
+    if (kind === "moveRobber") dispatch({ type: "moveRobber", hexId: id, stealFrom });
+    else dispatch({ type: "playKnight", hexId: id, stealFrom });
+  },
+  chooseSteal: (playerId) => {
+    const { pendingSteal, dispatch } = get();
+    if (!pendingSteal) return;
+    const { hexId, kind } = pendingSteal;
+    if (kind === "moveRobber") dispatch({ type: "moveRobber", hexId, stealFrom: playerId });
+    else dispatch({ type: "playKnight", hexId, stealFrom: playerId });
+    set({ pendingSteal: null });
   },
   pickVertex: (id) => {
     const { state, localId, mode, buildMode, dispatch } = get();

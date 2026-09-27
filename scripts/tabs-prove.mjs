@@ -140,7 +140,12 @@ try {
           need -= k;
         }
         await act(tabs[j], "dispatch", [{ type: "discard", resources: cards }]);
-      } else if (phase === "robber") await act(tabs[i], "pickHex", vs[i].legal.wayfarer[0]);
+      } else if (phase === "robber") {
+        const hexId = vs[i].legal.wayfarer[0];
+        await act(tabs[i], "pickHex", hexId);
+        const targets = vs[i].legal.steal[hexId];
+        if (targets && targets.length > 1) await act(tabs[i], "chooseSteal", targets[0]);
+      }
       else if (phase === "main") await act(tabs[i], "dispatch", [{ type: "endTurn" }]);
       else throw new Error(`unexpected phase ${phase}`);
       vs = await synced(tabs, seqOf(vs[0]), `after roll ${r + 1} (${phase})`);
