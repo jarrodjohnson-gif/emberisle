@@ -5,7 +5,7 @@ import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { SSAOPass } from "three/addons/postprocessing/SSAOPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 import { hexHeight, worldOfHex } from "@/lib/game/board";
-import { HEX_SIZE } from "@/lib/game/hex";
+import { HEX_SIZE, hexCorners, hexesInRadius, vertexId } from "@/lib/game/hex";
 import { mulberry32, hashStr } from "@/lib/utils";
 import type { GameState, HexCell, Terrain, Vertex } from "@/lib/game/types";
 
@@ -78,6 +78,10 @@ export class IsleRenderer {
   private stopped = false;
   private robberTarget = new THREE.Vector3();
   private clock = new THREE.Timer();
+  private water = makeWater();
+  private titleMode = false;
+  private lastFrame = 0;
+  private foam!: THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial>;
   private onPick: (kind: "hex" | "vertex" | "edge", id: string) => void;
 
   constructor(canvas: HTMLCanvasElement, onPick: (kind: "hex" | "vertex" | "edge", id: string) => void) {
@@ -121,37 +125,27 @@ export class IsleRenderer {
     fill.position.set(-8, 8, -4);
     this.scene.add(fill);
 
-    const ocean = new THREE.Mesh(
-      new THREE.CircleGeometry(48, 96),
-      new THREE.MeshStandardMaterial({ color: 0x2a6a78, roughness: 0.28, metalness: 0.06 }),
-    );
+    // Water, beach, and foam (docs/design/ocean.md). Built once: the outline does not change when the isle is dealt.
+    const ocean = new THREE.Mesh(new THREE.CircleGeometry(48, 64), this.water);
     ocean.rotation.x = -Math.PI / 2;
-    ocean.position.y = 0;
+    ocean.position.y = -0.02;
     this.scene.add(ocean);
 
-    const foam = new THREE.Mesh(
-      new THREE.RingGeometry(5.15, 5.85, 72),
-      new THREE.MeshBasicMaterial({ color: 0xe8f8f8, transparent: true, opacity: 0.55, side: THREE.DoubleSide }),
+    const coast = coastLoop();
+    const beach = new THREE.Mesh(
+      coastStrip(coast, -0.04, 0.22),
+      new THREE.MeshStandardMaterial({ color: 0xe8d7b0, roughness: 1, metalness: 0 }),
     );
-    foam.rotation.x = -Math.PI / 2;
-    foam.position.y = 0.03;
-    this.scene.add(foam);
+    beach.position.y = 0.015;
+    beach.receiveShadow = true;
+    this.scene.add(beach);
 
-    const shelf = new THREE.Mesh(
-      new THREE.CylinderGeometry(5.45, 5.7, 0.55, 48),
-      new THREE.MeshStandardMaterial({ color: 0x3aa8a8, roughness: 0.85 }),
+    this.foam = new THREE.Mesh(
+      coastStrip(coast, 0.22, 0.42),
+      new THREE.MeshBasicMaterial({ color: 0xe8f8f8, transparent: true, opacity: 0.32, depthWrite: false }),
     );
-    shelf.position.y = -0.32;
-    shelf.receiveShadow = true;
-    this.scene.add(shelf);
-
-    const sand = new THREE.Mesh(
-      new THREE.CylinderGeometry(5.35, 5.4, 0.08, 48),
-      new THREE.MeshStandardMaterial({ color: 0xe8d7b0, roughness: 1 }),
-    );
-    sand.position.y = 0.0;
-    sand.receiveShadow = true;
-    this.scene.add(sand);
+    this.foam.position.y = 0.028;
+    this.scene.add(this.foam);
 
     this.wayfarer = makeWayfarer();
     this.living.add(this.wayfarer);
@@ -175,8 +169,11 @@ export class IsleRenderer {
     this.renderer.setAnimationLoop(this.tick);
   }
 
+  // Off the table (title and lobby) the island is a backdrop under a card: no SSAO, and 30 frames a second.
   setTitleMode(v: boolean) {
+    this.titleMode = v;
     this.controls.autoRotate = v;
+    this.ssao.enabled = !v;
   }
 
   setBoard(state: GameState, highlights: Highlights, interactive: boolean) {
@@ -263,10 +260,15 @@ export class IsleRenderer {
 
   private tick = () => {
     if (this.stopped) return;
+    const now = performance.now();
+    if (this.titleMode && now - this.lastFrame < 1000 / 30 - 2) return;
+    this.lastFrame = now;
     this.clock.update();
     const t = this.clock.getElapsed();
     const dt = Math.min(this.clock.getDelta(), 0.05);
     this.controls.update();
+    this.water.uniforms.uTime!.value = t;
+    this.foam.material.opacity = 0.32 + 0.23 * (0.5 + 0.5 * Math.sin(t * 0.8));
     for (const tr of this.trees) tr.rotation.z = Math.sin(t * 1.05 + tr.position.x * 2) * 0.028;
     this.wayfarer.position.lerp(this.robberTarget, 1 - Math.exp(-dt * 3.2));
     this.wayfarer.position.y = this.robberTarget.y + Math.sin(t * 2.4) * 0.025;
@@ -473,6 +475,137 @@ function disposeGroup(g: THREE.Group) {
       else if (mat && !(mat as THREE.Material).userData?.shared) mat.dispose?.();
     });
   }
+}
+
+// The sea: an unlit shader, so the sun cannot paint a hotspot on it. Shallow to deep, a slow ripple, then the fog.
+function makeWater() {
+  return new THREE.ShaderMaterial({
+    uniforms: {
+      uTime: { value: 0 },
+      uShallow: { value: new THREE.Color(0x3d8f96) },
+      uDeep: { value: new THREE.Color(0x163e4c) },
+      uFog: { value: new THREE.Color(0x6a93a0) },
+    },
+    vertexShader: /* glsl */ `
+      // The circle is local XY; +Z is up after the mesh's rotation. Crests stay at or below y = 0.
+      uniform float uTime;
+      varying vec2 vXZ;
+      void main() {
+        vec3 p = position;
+        p.z += sin(p.x * 1.6 + uTime * 0.55) * sin(p.y * 1.25 + uTime * 0.40) * 0.012;
+        vec4 world = modelMatrix * vec4(p, 1.0);
+        vXZ = world.xz;
+        gl_Position = projectionMatrix * viewMatrix * world;
+      }
+    `,
+    fragmentShader: /* glsl */ `
+      uniform float uTime;
+      uniform vec3 uShallow;
+      uniform vec3 uDeep;
+      uniform vec3 uFog;
+      varying vec2 vXZ;
+      void main() {
+        float d = length(vXZ);
+        vec3 c = mix(uShallow, uDeep, smoothstep(4.2, 7.5, d));
+        c += 0.022 * sin(vXZ.x * 2.1 + uTime * 0.9) * sin(vXZ.y * 1.7 - uTime * 0.7);
+        c = mix(c, uFog, smoothstep(18.0, 40.0, d));
+        gl_FragColor = vec4(c, 1.0);
+      }
+    `,
+  });
+}
+
+// The island's outline: the coastal corners of the 19 hexes in order, each with its outward miter (#130).
+function coastLoop() {
+  const pts = new Map<string, { x: number; z: number }>();
+  const edges = new Map<string, { a: string; b: string; n: number }>();
+  for (const { q, r } of hexesInRadius(2)) {
+    const ids = hexCorners(q, r).map((c) => {
+      const id = vertexId(c.x, c.z);
+      pts.set(id, c);
+      return id;
+    });
+    for (let i = 0; i < 6; i++) {
+      const a = ids[i]!;
+      const b = ids[(i + 1) % 6]!;
+      const key = a < b ? `${a}|${b}` : `${b}|${a}`;
+      const e = edges.get(key);
+      if (e) e.n += 1;
+      else edges.set(key, { a, b, n: 1 });
+    }
+  }
+  // An edge is coastal when exactly one hex uses it.
+  const next = new Map<string, string[]>();
+  for (const e of edges.values()) {
+    if (e.n !== 1) continue;
+    next.set(e.a, [...(next.get(e.a) ?? []), e.b]);
+    next.set(e.b, [...(next.get(e.b) ?? []), e.a]);
+  }
+  const start = next.keys().next().value!;
+  const loop = [start];
+  let prev = start;
+  let cur = next.get(start)![0]!;
+  while (cur !== start) {
+    const ns = next.get(cur)!;
+    if (ns.length !== 2 || loop.length > next.size) throw new Error("coast walk: the outline forks or does not close");
+    loop.push(cur);
+    const to = ns[0] === prev ? ns[1]! : ns[0]!;
+    prev = cur;
+    cur = to;
+  }
+  if (loop.length !== next.size) throw new Error("coast walk: more than one island");
+
+  // The outward normal of edge p->q: the perpendicular on the side away from the origin (the island is centered there).
+  const normal = (p: { x: number; z: number }, q: { x: number; z: number }) => {
+    const dx = q.x - p.x;
+    const dz = q.z - p.z;
+    const l = Math.hypot(dx, dz);
+    let nx = dz / l;
+    let nz = -dx / l;
+    if (nx * (p.x + q.x) + nz * (p.z + q.z) < 0) {
+      nx = -nx;
+      nz = -nz;
+    }
+    return { nx, nz };
+  };
+  return loop.map((id, i) => {
+    const p = pts.get(id)!;
+    const a = normal(pts.get(loop[(i + loop.length - 1) % loop.length]!)!, p);
+    const b = normal(p, pts.get(loop[(i + 1) % loop.length]!)!);
+    let mx = a.nx + b.nx;
+    let mz = a.nz + b.nz;
+    const ml = Math.hypot(mx, mz);
+    mx /= ml;
+    mz /= ml;
+    if (mx * p.x + mz * p.z <= 0) throw new Error("coast walk: a miter points into the island");
+    // Scale so an offset d along the miter sits d away from both edges.
+    const k = 1 / (mx * a.nx + mz * a.nz);
+    return { x: p.x, z: p.z, mx: mx * k, mz: mz * k };
+  });
+}
+
+// One flat strip between two offsets from the coast, facing up.
+function coastStrip(coast: ReturnType<typeof coastLoop>, inner: number, outer: number) {
+  const pos: number[] = [];
+  for (const c of coast) pos.push(c.x + c.mx * inner, 0, c.z + c.mz * inner, c.x + c.mx * outer, 0, c.z + c.mz * outer);
+  const idx: number[] = [];
+  const n = coast.length;
+  for (let i = 0; i < n; i++) {
+    const a = i * 2;
+    const b = ((i + 1) % n) * 2;
+    idx.push(a, a + 1, b + 1, a, b + 1, b);
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+  geo.setIndex(idx);
+  geo.computeVertexNormals();
+  // The loop's direction is whatever the walk found. Flip the winding if the strip faces down.
+  if (geo.attributes.normal!.getY(0) < 0) {
+    for (let i = 0; i < idx.length; i += 3) [idx[i + 1], idx[i + 2]] = [idx[i + 2]!, idx[i + 1]!];
+    geo.setIndex(idx);
+    geo.computeVertexNormals();
+  }
+  return geo;
 }
 
 function hexShape(size: number) {

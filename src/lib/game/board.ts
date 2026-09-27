@@ -209,6 +209,13 @@ export function createGame(opts: {
   };
 }
 
+// The island behind the title and the lobby (#130). The day the repo was created. It never changes.
+export const DEMO_SEED = 20260921;
+
+export function demoBoard(): GameState {
+  return createGame({ seed: DEMO_SEED, humans: [{ name: "Ember" }], bots: 2 });
+}
+
 export function hexHeight(terrain: Terrain) {
   switch (terrain) {
     case "ore":
