@@ -76,13 +76,7 @@ export function legalFor(game, you) {
   if (game.phase === "setupSettle") out.outpost = legalSettle(game, you, true);
   if (game.phase === "setupRoad") out.path = legalRoads(game, you, true);
   if (game.phase === "roll") out.actions.push("roll");
-  if (game.phase === "robber") {
-    out.wayfarer = game.hexes.filter((h) => h.id !== game.robberHex).map((h) => h.id);
-    for (const id of out.wayfarer) {
-      const targets = stealTargets(game, id, you);
-      if (targets.length) out.steal[id] = targets;
-    }
-  }
+  if (game.phase === "robber") out.wayfarer = game.hexes.filter((h) => h.id !== game.robberHex).map((h) => h.id);
   if (game.phase === "main") {
     if (me.pathsLeft > 0 && affords(me, COST.path)) out.path = legalRoads(game, you, false);
     if (me.outpostsLeft > 0 && affords(me, COST.outpost)) out.outpost = legalSettle(game, you, false);
@@ -93,6 +87,14 @@ export function legalFor(game, you) {
   if ((game.phase === "roll" || game.phase === "main") && !game.playedCard) {
     for (const card of ["knight", "road", "plenty", "monopoly"]) {
       if (playable(me, card) > 0 && (card === "knight" || game.phase === "main")) out.actions.push(`play:${card}`);
+    }
+  }
+  // Moving the wayfarer and playing a knight both need to know whom each hex can rob.
+  if (game.phase === "robber" || out.actions.includes("play:knight")) {
+    for (const h of game.hexes) {
+      if (h.id === game.robberHex) continue;
+      const targets = stealTargets(game, h.id, you);
+      if (targets.length) out.steal[h.id] = targets;
     }
   }
   return out;
