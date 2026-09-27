@@ -1,6 +1,11 @@
 import { useEffect, useRef } from "react";
 import { IsleRenderer } from "@/lib/scene/isle-renderer";
 import { useGame } from "@/lib/game/store";
+import { demoBoard } from "@/lib/game/board";
+import type { GameState } from "@/lib/game/types";
+
+// One dealt island for the life of the page, shown behind the title and the lobby. It is never in the store.
+let demo: GameState | null = null;
 
 export default function IslandCanvas() {
   const ref = useRef<HTMLCanvasElement>(null);
@@ -25,6 +30,9 @@ export default function IslandCanvas() {
           s.mode === "hotseat" ? s.state.current : s.localId;
         const mine = s.state.current === actor || s.state.phase === "discard";
         renderer.setBoard(s.state, s.highlights(), mine && s.screen === "play");
+      } else if (s.screen === "title" || s.screen === "lobby") {
+        demo ??= demoBoard();
+        renderer.setBoard(demo, { vertices: [], edges: [], hexes: [] }, false);
       }
     };
     sync();
