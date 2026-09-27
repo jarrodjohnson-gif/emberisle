@@ -103,8 +103,10 @@ export function legalFor(game, you) {
 // Hidden fortunes and the deck order stay on the host until the game ends.
 export function viewFor(game, you) {
   if (game.phase === "over") return { ...game, deckLeft: game.deck.length };
+  // The seed rebuilds the whole fortune deck, and rng predicts which card a steal takes (#111).
+  const { seed, rng, ...open } = game;
   return {
-    ...game,
+    ...open,
     deck: [],
     deckLeft: game.deck.length,
     players: game.players.map((p) =>
