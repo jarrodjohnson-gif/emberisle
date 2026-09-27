@@ -7,9 +7,15 @@ import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 import { hexHeight, worldOfHex } from "@/lib/game/board";
 import { HEX_SIZE } from "@/lib/game/hex";
 import { mulberry32, hashStr } from "@/lib/utils";
-import type { GameState, HexCell, Terrain } from "@/lib/game/types";
+import type { GameState, HexCell, Terrain, Vertex } from "@/lib/game/types";
 
 const SLAB = 0.26;
+const TILE_Y = 0.04;
+
+// The y of a hex's top surface: where makeHexTile puts its cap. Everything that sits on a hex sits here.
+function topOf(terrain: Terrain) {
+  return TILE_Y + SLAB + hexHeight(terrain) * 0.35;
+}
 const STONE = 0xefeae0;
 
 const SIDE: Record<Terrain, number> = {
@@ -191,7 +197,7 @@ export class IsleRenderer {
     const rh = state.hexes.find((h) => h.id === state.robberHex);
     if (rh) {
       const w = worldOfHex(rh);
-      this.robberTarget.set(w.x, hexHeight(rh.terrain) + 0.08, w.z);
+      this.robberTarget.set(w.x, topOf(rh.terrain), w.z);
     }
   }
 
@@ -303,7 +309,7 @@ export class IsleRenderer {
       const { x, z } = worldOfHex(h);
       const height = hexHeight(h.terrain);
       const tile = makeHexTile(HEX_SIZE * 0.995, height, this.textures[h.terrain], SIDE[h.terrain]);
-      tile.position.set(x, 0.04, z);
+      tile.position.set(x, TILE_Y, z);
       tile.userData = { kind: "hex", id: h.id };
       tile.traverse((o) => {
         o.userData = tile.userData;
@@ -312,10 +318,10 @@ export class IsleRenderer {
       });
       this.land.add(tile);
       this.pickables.push(tile);
-      decorate(this.living, this.trees, this.wheat, this.sheep, h, x, z, height);
+      decorate(this.living, this.trees, this.wheat, this.sheep, h, x, z, topOf(h.terrain));
       if (h.pip != null) {
         const tok = numberToken(h.pip);
-        tok.position.set(x, SLAB + height * 0.35 + 0.08, z);
+        tok.position.set(x, topOf(h.terrain) + 0.04, z);
         this.land.add(tok);
       }
     }
@@ -345,6 +351,7 @@ export class IsleRenderer {
     disposeGroup(this.pieces);
     const vmap = new Map(state.vertices.map((v) => [v.id, v]));
     const pmap = new Map(state.players.map((p) => [p.id, p]));
+    const tops = hexTops(state);
 
     for (const e of state.edges) {
       if (!e.path) continue;
@@ -357,7 +364,7 @@ export class IsleRenderer {
         new THREE.BoxGeometry(0.13, 0.07, Math.hypot(dx, dz) * 0.9),
         new THREE.MeshStandardMaterial({ color, roughness: 0.5 }),
       );
-      road.position.set((a.x + b.x) / 2, 0.3, (a.z + b.z) / 2);
+      road.position.set((a.x + b.x) / 2, edgeTop(tops, a, b) + 0.035, (a.z + b.z) / 2);
       road.rotation.y = Math.atan2(dx, dz);
       road.castShadow = true;
       this.pieces.add(road);
@@ -366,12 +373,8 @@ export class IsleRenderer {
     for (const v of state.vertices) {
       if (!v.building) continue;
       const pl = pmap.get(v.building.playerId);
-      const h = Math.max(
-        ...v.hexes.map((id) => hexHeight(state.hexes.find((x) => x.id === id)!.terrain)),
-        0.14,
-      );
       const house = makeHouse(pl?.color ?? "#ccc", v.building.kind === "stronghold");
-      house.position.set(v.x, h + 0.12, v.z);
+      house.position.set(v.x, vertexTop(tops, v), v.z);
       this.pieces.add(house);
     }
 
@@ -393,6 +396,7 @@ export class IsleRenderer {
     const eset = new Set(hi.edges);
     const hset = new Set(hi.hexes);
     const vmap = new Map(state.vertices.map((v) => [v.id, v]));
+    const tops = hexTops(state);
 
     for (const v of state.vertices) {
       if (!vset.has(v.id)) continue;
@@ -401,7 +405,7 @@ export class IsleRenderer {
         new THREE.MeshStandardMaterial({ color: 0xfff6e8, emissive: 0xfff6e8, emissiveIntensity: 0.8 }),
       );
       m.rotation.x = Math.PI / 2;
-      m.position.set(v.x, 0.36, v.z);
+      m.position.set(v.x, vertexTop(tops, v) + 0.03, v.z);
       m.userData = { kind: "vertex", id: v.id };
       this.marks.add(m);
       this.pickables.push(m);
@@ -414,7 +418,7 @@ export class IsleRenderer {
         new THREE.BoxGeometry(0.16, 0.07, Math.hypot(b.x - a.x, b.z - a.z) * 0.72),
         new THREE.MeshStandardMaterial({ color: 0xfff6e8, emissive: 0x2a8f8a, emissiveIntensity: 0.45 }),
       );
-      m.position.set((a.x + b.x) / 2, 0.34, (a.z + b.z) / 2);
+      m.position.set((a.x + b.x) / 2, edgeTop(tops, a, b) + 0.035, (a.z + b.z) / 2);
       m.rotation.y = Math.atan2(b.x - a.x, b.z - a.z);
       m.userData = { kind: "edge", id: e.id };
       this.marks.add(m);
@@ -424,7 +428,7 @@ export class IsleRenderer {
       if (!hset.has(h.id)) continue;
       const { x, z } = worldOfHex(h);
       const ring = hexCap(HEX_SIZE * 0.9, undefined, 0xc45c3e);
-      ring.position.set(x, hexHeight(h.terrain) + 0.14, z);
+      ring.position.set(x, topOf(h.terrain) + 0.01, z);
       ring.userData = { kind: "hex", id: h.id };
       const mat = ring.material as THREE.MeshStandardMaterial;
       mat.emissive = new THREE.Color(0xc45c3e);
@@ -433,6 +437,22 @@ export class IsleRenderer {
       this.pickables.push(ring);
     }
   }
+}
+
+// Each hex id's top y.
+function hexTops(state: GameState) {
+  return new Map(state.hexes.map((h) => [h.id, topOf(h.terrain)]));
+}
+
+// A corner sits on the highest hex it touches.
+function vertexTop(tops: Map<string, number>, v: Vertex) {
+  return Math.max(...v.hexes.map((id) => tops.get(id) ?? 0));
+}
+
+// An edge sits on the higher of the (one or two) hexes its two corners share.
+function edgeTop(tops: Map<string, number>, a: Vertex, b: Vertex) {
+  const shared = a.hexes.filter((id) => b.hexes.includes(id));
+  return Math.max(...(shared.length ? shared : a.hexes).map((id) => tops.get(id) ?? 0));
 }
 
 // Everything buildLand draws: each hex's terrain and token, and the corners that hold a dock.
@@ -552,7 +572,7 @@ function decorate(
   h: HexCell,
   x: number,
   z: number,
-  height: number,
+  top: number,
 ) {
   const rng = mulberry32(hashStr(h.id + h.terrain));
   const place = (minR: number, maxR: number) => {
@@ -565,7 +585,7 @@ function decorate(
     for (let i = 0; i < n; i++) {
       const { px, pz } = place(0.4, 0.88);
       const tree = rng() > 0.42 ? makePine(0.85 + rng() * 0.45) : makeDeciduous(0.8 + rng() * 0.4);
-      tree.position.set(px, height + 0.03, pz);
+      tree.position.set(px, top, pz);
       tree.rotation.y = rng() * Math.PI * 2;
       living.add(tree);
       trees.push(tree);
@@ -576,7 +596,7 @@ function decorate(
     for (let i = 0; i < n; i++) {
       const { px, pz } = place(0.36, 0.7);
       const s = makeSheep();
-      s.position.set(px, height + 0.05, pz);
+      s.position.set(px, top + 0.1, pz);
       living.add(s);
       sheep.push({ g: s, ox: x, oz: z, tx: px, tz: pz, wait: rng() * 2, graze: 0 });
     }
@@ -588,7 +608,7 @@ function decorate(
         new THREE.DodecahedronGeometry(0.12 + rng() * 0.12, 0),
         new THREE.MeshStandardMaterial({ color: 0x6a737c, roughness: 0.95, flatShading: true }),
       );
-      rock.position.set(px, height + 0.08, pz);
+      rock.position.set(px, top + 0.04, pz);
       rock.rotation.set(rng(), rng(), rng());
       rock.castShadow = true;
       living.add(rock);
