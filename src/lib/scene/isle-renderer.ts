@@ -63,7 +63,7 @@ export class IsleRenderer {
   private trees: THREE.Object3D[] = [];
   private wheat: THREE.Object3D[] = [];
   private textures: Partial<Record<Terrain, THREE.Texture>> = {};
-  private lastSeed: number | null = null;
+  private lastLand: string | null = null;
   private lastSeq = -1;
   private lastState: GameState | null = null;
   private lastHi: Highlights = { vertices: [], edges: [], hexes: [] };
@@ -177,9 +177,11 @@ export class IsleRenderer {
     this.lastState = state;
     this.lastHi = highlights;
     this.lastInteractive = interactive;
-    if (this.lastSeed !== state.seed) {
+    // Online clients get no seed until the game ends (#111), so a new island is spotted by what buildLand draws.
+    const land = landKey(state);
+    if (this.lastLand !== land) {
       this.buildLand(state);
-      this.lastSeed = state.seed;
+      this.lastLand = land;
     }
     if (this.lastSeq !== state.seq) {
       this.buildPieces(state);
@@ -214,7 +216,7 @@ export class IsleRenderer {
       this.textures[k] = tex;
       left -= 1;
       if (left === 0 && this.lastState) {
-        this.lastSeed = null;
+        this.lastLand = null;
         this.setBoard(this.lastState, this.lastHi, this.lastInteractive);
       }
     };
@@ -431,6 +433,13 @@ export class IsleRenderer {
       this.pickables.push(ring);
     }
   }
+}
+
+// Everything buildLand draws: each hex's terrain and token, and the corners that hold a dock.
+function landKey(state: GameState) {
+  const hexes = state.hexes.map((h) => `${h.id}:${h.terrain}:${h.pip ?? ""}`).join(",");
+  const docks = state.vertices.filter((v) => v.harbor).map((v) => v.id).join(",");
+  return `${hexes}|${docks}`;
 }
 
 function disposeGroup(g: THREE.Group) {

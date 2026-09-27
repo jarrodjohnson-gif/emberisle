@@ -1,5 +1,6 @@
 // #79: three src/lib/net/table.ts clients play setup through host.mjs using rules Actions and the host's legal lists.
 // #92: all three sit on one hex, then a wayfarer move and a knight each rob the second of two targets the host lists.
+// #111: no state pushed before the game ends carries the seed (it rebuilds the fortune deck) or rng (it predicts steals).
 import { spawn } from "node:child_process";
 import WebSocket from "ws";
 import { stealTargets } from "../src/lib/game/rules.ts";
@@ -27,10 +28,12 @@ const port = await new Promise((resolve) => host.stdout.on("data", (d) => {
 const url = `ws://127.0.0.1:${port}`;
 
 function player(name) {
-  const p = { name, state: null, legal: null, code: null, errors: [] };
+  const p = { name, state: null, legal: null, code: null, errors: [], pushes: 0, leaks: [] };
   p.t = connectTable(url, {
     welcome: (m) => (p.code = m.code),
     state: (m) => {
+      p.pushes++;
+      if (m.game.phase !== "over" && ("seed" in m.game || "rng" in m.game)) p.leaks.push({ seq: m.game.seq, phase: m.game.phase });
       p.state = m.game;
       p.legal = m.legal;
       p.you = m.you;
@@ -165,6 +168,9 @@ for (let turn = 0; turn < 5000 && !(robbed && knighted); turn++) {
   }
 }
 if (!robbed || !knighted) fail("never reached both robberies", { robbed, knighted });
+const leaks = all.flatMap((x) => x.leaks.map((l) => ({ you: x.you, ...l })));
+if (leaks.length) fail("state pushed before the game ended carries seed or rng", leaks.slice(0, 5));
+console.log(`${all.reduce((n, x) => n + x.pushes, 0)} pushed states before the end, none carry seed or rng`);
 [a, b, c].forEach((p) => p.t.close());
 host.kill();
 console.log("net prove ok");
