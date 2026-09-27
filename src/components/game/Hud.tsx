@@ -102,7 +102,7 @@ export function Hud() {
               <span className="tabular-nums text-sm text-zinc-600">{publicVP(state, p.id)} vp</span>
             </div>
             <p className="mt-1 text-xs text-zinc-600">
-              {RESOURCES.reduce((n, r) => n + p.resources[r], 0)} goods · {hiddenCount(p)} fortunes
+              {RESOURCES.reduce((n, r) => n + p.resources[r], 0)} goods · {(p as typeof p & { fortunes?: number }).fortunes ?? hiddenCount(p)} fortunes
             </p>
           </div>
         ))}

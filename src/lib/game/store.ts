@@ -3,6 +3,7 @@ import { createGame } from "./board";
 import { applyAction, legalCities, legalRoads, legalSettle } from "./rules";
 import { chooseBotAction } from "./ai";
 import type { Action, BuildMode, GameState } from "./types";
+import { connectTable, hostUrl, type Legal, type Seat, type TableClient } from "@/lib/net/table";
 
 export type Screen = "title" | "lobby" | "play";
 
@@ -31,6 +32,17 @@ interface GameStore {
   pickVertex: (id: string) => void;
   pickEdge: (id: string) => void;
   highlights: () => { vertices: string[]; edges: string[]; hexes: string[] };
+  // Online table (docs/design/online-client.md)
+  net: TableClient | null;
+  code: string;
+  isHost: boolean;
+  seats: Seat[];
+  legal: Legal | null;
+  lobbyLog: string;
+  hostTable: () => void;
+  joinTable: (code: string) => void;
+  setReady: (value: boolean) => void;
+  startTable: () => void;
 }
 
 function savedName() {
@@ -50,6 +62,12 @@ export const useGame = create<GameStore>((set, get) => ({
   buildMode: "none",
   howTo: false,
   toast: null,
+  net: null,
+  code: "",
+  isHost: false,
+  seats: [],
+  legal: null,
+  lobbyLog: "",
   setName: (n) => {
     const name = n.slice(0, 18) || "Ember";
     if (typeof window !== "undefined") localStorage.setItem("emberisle-name", name);
@@ -95,10 +113,19 @@ export const useGame = create<GameStore>((set, get) => ({
       table: table ?? get().table,
       error: null,
     }),
-  goTitle: () => set({ screen: "title", state: null, error: null, buildMode: "none" }),
+  goTitle: () => {
+    get().net?.close();
+    set({ screen: "title", state: null, error: null, buildMode: "none", net: null, seats: [], legal: null, code: "" });
+  },
   dispatch: (action, asId) => {
-    const { state, localId, mode } = get();
+    const { state, localId, mode, net } = get();
     if (!state) return { ok: false, error: "No game." };
+    if (mode === "online") {
+      // The host is the rules; its next state message updates the board.
+      if (!net?.act(action)) return { ok: false, error: "Not available online." };
+      set({ buildMode: "none" });
+      return { ok: true };
+    }
     const actor = asId ?? (mode === "hotseat" ? state.current : localId);
     const res = applyAction(state, actor, action);
     if (res.error) {
@@ -130,7 +157,7 @@ export const useGame = create<GameStore>((set, get) => ({
     if (!state) return;
     const actor = mode === "hotseat" ? state.current : localId;
     if (state.phase === "robber" && state.current === actor) {
-      const from = null;
+      const from = mode === "online" ? (get().legal?.steal[id]?.[0] ?? null) : null;
       dispatch({ type: "moveRobber", hexId: id, stealFrom: from });
       return;
     }
@@ -160,8 +187,20 @@ export const useGame = create<GameStore>((set, get) => ({
     if (buildMode === "path") dispatch({ type: "buildPath", edgeId: id });
   },
   highlights: () => {
-    const { state, localId, mode, buildMode } = get();
+    const { state, localId, mode, buildMode, legal } = get();
     if (!state) return { vertices: [], edges: [], hexes: [] };
+    if (mode === "online") {
+      const l = legal;
+      if (!l) return { vertices: [], edges: [], hexes: [] };
+      if (state.phase === "setupSettle") return { vertices: l.outpost, edges: [], hexes: [] };
+      if (state.phase === "setupRoad") return { vertices: [], edges: l.path, hexes: [] };
+      if (state.phase === "robber") return { vertices: [], edges: [], hexes: l.wayfarer };
+      if (buildMode === "knight") return { vertices: [], edges: [], hexes: state.hexes.filter((h) => h.id !== state.robberHex).map((h) => h.id) };
+      if (buildMode === "outpost") return { vertices: l.outpost, edges: [], hexes: [] };
+      if (buildMode === "stronghold") return { vertices: l.stronghold, edges: [], hexes: [] };
+      if (buildMode === "path") return { vertices: [], edges: l.path, hexes: [] };
+      return { vertices: [], edges: [], hexes: [] };
+    }
     const actor = mode === "hotseat" ? state.current : localId;
     if (state.current !== actor && state.phase !== "discard") {
       return { vertices: [], edges: [], hexes: [] };
@@ -176,4 +215,28 @@ export const useGame = create<GameStore>((set, get) => ({
     if (buildMode === "path") return { vertices: [], edges: legalRoads(state, actor, false), hexes: [] };
     return { vertices: [], edges: [], hexes: [] };
   },
+  hostTable: () => connect(set, get, (t, me) => t.open(me)),
+  joinTable: (code) => connect(set, get, (t, me) => t.join(code, me)),
+  setReady: (value) => get().net?.ready(value),
+  startTable: () => get().net?.start(),
 }));
+
+type Set = (partial: Partial<GameStore>) => void;
+type Get = () => GameStore;
+
+function connect(set: Set, get: Get, first: (t: TableClient, me: { name: string }) => void) {
+  get().net?.close();
+  const table = connectTable(hostUrl(window.location), {
+    welcome: ({ code, host }) => set({ code, isHost: host, screen: "lobby", mode: "online", error: null }),
+    seats: ({ code, seats }) => set({ code, seats }),
+    state: ({ you, game, legal }) => {
+      set({ legal });
+      get().loadState(game, you, get().isHost, get().code);
+    },
+    log: (text) => set({ lobbyLog: text }),
+    error: (message) => set({ error: message, toast: message }),
+    closed: () => set({ error: "Lost the table", toast: "Lost the table", screen: "title", net: null, state: null }),
+  });
+  set({ net: table, mode: "online", error: null });
+  first(table, { name: get().name });
+}
