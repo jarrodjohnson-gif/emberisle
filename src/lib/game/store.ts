@@ -2,14 +2,16 @@ import { create } from "zustand";
 import { createGame } from "./board";
 import { applyAction, legalCities, legalRoads, legalSettle } from "./rules";
 import { chooseBotAction } from "./ai";
-import type { Action, BuildMode, GameState } from "./types";
-import { connectTable, hostUrl, type Legal, type Seat, type TableClient } from "@/lib/net/table";
+import { PLAYER_COLORS, type Action, type BuildMode, type GameState } from "./types";
+import { connectTable, hostUrl, type Legal, type Me, type Seat, type TableClient } from "@/lib/net/table";
 
 export type Screen = "title" | "lobby" | "play";
 
 interface GameStore {
   screen: Screen;
   name: string;
+  // null until the player picks a swatch; see savedColor().
+  color: string | null;
   mode: "ai" | "hotseat" | "online";
   table: string;
   localId: string;
@@ -20,6 +22,7 @@ interface GameStore {
   howTo: boolean;
   toast: string | null;
   setName: (n: string) => void;
+  setColor: (c: string) => void;
   setHowTo: (v: boolean) => void;
   setBuildMode: (m: BuildMode) => void;
   startAi: () => void;
@@ -53,9 +56,19 @@ function savedName() {
   return localStorage.getItem("emberisle-name") || "Ember";
 }
 
+// null (not a default swatch) until the player actively picks one, so a fresh tab sends no `color`
+// in `hello` and the host's existing free-color assignment runs — otherwise two players who never
+// touch the picker would both request the same default color and the second would be rejected.
+function savedColor(): string | null {
+  if (typeof window === "undefined") return null;
+  const saved = localStorage.getItem("emberisle-color");
+  return saved && (PLAYER_COLORS as readonly string[]).includes(saved) ? saved : null;
+}
+
 export const useGame = create<GameStore>((set, get) => ({
   screen: "title",
   name: savedName(),
+  color: savedColor(),
   mode: "ai",
   table: "",
   localId: "p0",
@@ -76,6 +89,10 @@ export const useGame = create<GameStore>((set, get) => ({
     const name = n.slice(0, 18) || "Ember";
     if (typeof window !== "undefined") localStorage.setItem("emberisle-name", name);
     set({ name });
+  },
+  setColor: (c) => {
+    if (typeof window !== "undefined") localStorage.setItem("emberisle-color", c);
+    set({ color: c });
   },
   setHowTo: (v) => set({ howTo: v }),
   setBuildMode: (m) => set({ buildMode: m }),
@@ -251,7 +268,7 @@ export const useGame = create<GameStore>((set, get) => ({
 type Set = (partial: Partial<GameStore>) => void;
 type Get = () => GameStore;
 
-function connect(set: Set, get: Get, first: (t: TableClient, me: { name: string }) => void) {
+function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void) {
   get().net?.close();
   const table = connectTable(hostUrl(window.location), {
     welcome: ({ code, host }) => set({ code, isHost: host, screen: "lobby", mode: "online", error: null }),
@@ -265,5 +282,5 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: { name: string 
     closed: () => set({ error: "Lost the table", toast: "Lost the table", screen: "title", net: null, state: null }),
   });
   set({ net: table, mode: "online", error: null });
-  first(table, { name: get().name });
+  first(table, { name: get().name, color: get().color ?? undefined });
 }

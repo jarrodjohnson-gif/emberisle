@@ -102,6 +102,8 @@ try {
   const tabs = [await tab("Ember"), await tab("Tide"), await tab("Pine")];
   const [a, b, c] = tabs;
 
+  // #142: picking a color on the Title screen must reach the actual seat and game state.
+  await a.page.getByRole("radio", { name: "Tide" }).click();
   await a.page.getByRole("button", { name: "Host a table" }).click();
   const tableCode = (await a.page.getByTestId("table-code").textContent()).trim();
   for (const t of [b, c]) {
@@ -116,6 +118,13 @@ try {
   await a.page.getByRole("button", { name: "Start" }).click();
   let vs = await synced(tabs, -1, "start");
   console.log(`table ${tableCode}: 3 tabs in, phase ${JSON.parse(vs[0].shared).phase}`);
+
+  const hostColor = await a.page.evaluate(() => {
+    const s = window.__emberisle.getState();
+    return s.state.players.find((p) => p.id === s.localId)?.color;
+  });
+  if (hostColor !== "#2a8f8a") throw new Error(`host picked Tide's color but the seat shows ${hostColor}`);
+  console.log(`host's chosen color round-tripped into the game: ${hostColor}`);
 
   // Setup: whoever's turn it is clicks the first glowing spot through the store.
   for (let step = 0; step < 12; step++) {
