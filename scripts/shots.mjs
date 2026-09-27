@@ -11,7 +11,7 @@ const OUT = "test-results/shots";
 const SIZES = [
   [1280, 720],
   [1920, 1080],
-];
+].filter(([w]) => !process.env.ONLY || process.env.ONLY === String(w));
 mkdirSync(OUT, { recursive: true });
 
 const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
@@ -127,7 +127,8 @@ try {
 
     // Lobby: host a table here, and two small side tabs sit down.
     await page.getByRole("button", { name: "Host a table" }).click();
-    const code = (await page.getByTestId("table-code").textContent()).trim();
+    await page.waitForFunction(() => /^[A-Z0-9]{4}$/.test(window.__emberisle.getState().code));
+    const code = await page.evaluate(() => window.__emberisle.getState().code);
     const side = [];
     for (const name of ["Tide", "Pine"]) {
       const p = await browser.newPage({ viewport: { width: 400, height: 300 } });
@@ -135,7 +136,9 @@ try {
       await p.goto(`http://127.0.0.1:${PORT}/?host=ws://127.0.0.1:${hostPort}`);
       await p.waitForFunction(() => window.__emberisle);
       await p.evaluate((c) => window.__emberisle.getState().joinTable(c), code);
-      await p.waitForFunction(() => window.__emberisle.getState().screen === "lobby");
+      await p.waitForFunction(() => window.__emberisle.getState().screen === "lobby", null, { timeout: 60_000 }).catch(async (e) => {
+        throw new Error(`${name} could not join ${code}: ${await p.evaluate(() => window.__emberisle.getState().error)}`, { cause: e });
+      });
       await p.evaluate(() => window.__emberisle.getState().setReady(true));
       side.push(p);
     }
