@@ -63,6 +63,8 @@ and never use chat text as an image URL or CSS value. Names are already shown th
 - Format: **PNG or WebP** with transparency. SVG works too, but browsers can run scripts in an SVG opened
   as a page, so keep to PNG/WebP unless they are plain vector art.
 - Size: **128 × 128 px**, shown at 32-48 px (sharp on high-DPI screens). Target **under 15 KB each**.
+  Jarrod does not have to crop: `node scripts/emote.mjs <image> <name>` trims the empty space, pads it
+  square, and writes a 128 px WebP (the first one, `ben-10`, went from 750×1000 and 181 KB to 6.8 KB).
 - Names: lowercase, `a-z 0-9 -`, for example `laugh.png`, `gg.png`, `angry-sheep.png`. The file name without
   the extension is the `emote` id.
 - Count: 8-16 fits in one reaction bar without scrolling.
