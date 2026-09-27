@@ -4,14 +4,24 @@ import { spawn } from "node:child_process";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { build } from "vite";
+
+// Prefer a real LAN address (192.168.x, 10.x, 172.16-31.x) over a virtual adapter's
+// (Hyper-V, WSL, a VPN), which is often unreachable from another machine on the network.
+const PRIVATE_RANGES = [/^192\.168\./, /^10\./, /^172\.(1[6-9]|2\d|3[01])\./];
 
 export function lanAddress() {
+  const candidates = [];
   for (const list of Object.values(os.networkInterfaces())) {
     for (const net of list ?? []) {
-      if (net.family === "IPv4" && !net.internal) return net.address;
+      if (net.family === "IPv4" && !net.internal) candidates.push(net.address);
     }
   }
-  return null;
+  for (const pattern of PRIVATE_RANGES) {
+    const hit = candidates.find((a) => pattern.test(a));
+    if (hit) return hit;
+  }
+  return candidates[0] ?? null;
 }
 
 export function joinLines(port, lan) {
@@ -30,9 +40,15 @@ if (isMain && process.argv.includes("--print")) {
   console.log(joinLines(process.env.PORT || "8787", lanAddress()));
 } else if (isMain) {
   const port = process.env.PORT || "8787";
-  const build = spawn("npm", ["run", "build"], { stdio: "inherit" });
-  const built = await new Promise((resolve) => build.on("exit", resolve));
-  if (built !== 0) process.exit(built ?? 1);
+  // Call Vite's build() in-process (as scripts/tabs-prove.mjs does with createServer): no shell,
+  // works the same on Windows, macOS, and Linux, and a build error throws with a readable message
+  // instead of spawning "npm", which is npm.cmd on Windows and needs shell: true to find.
+  try {
+    await build({ root: fileURLToPath(new URL("../", import.meta.url)) });
+  } catch (err) {
+    console.error("Build failed:", err.message ?? err);
+    process.exit(1);
+  }
 
   const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
     cwd: fileURLToPath(new URL("../server/", import.meta.url)),
