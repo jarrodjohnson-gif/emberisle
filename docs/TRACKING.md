@@ -3,8 +3,12 @@
 The task list is GitHub Issues on `jarrodjohnson-gif/emberisle`.
 Files in this repo explain the game. They are not a to-do list.
 
-Milestones are the stages, in order: `1. Documents` through `12. Download`.
-Each stage has four issues: `research`, `design`, `implementation`, `test`.
+The framework (what the steps are and how errors become subtasks) is
+[FRAMEWORK.md](FRAMEWORK.md). This file is only the lock protocol.
+
+Levels: milestones `1. Documents` to `12. Download`, then `[L13]`, `[L14]`, and so on as parent issues.
+Each level has four steps, in order: Research (`research`), Code (`design`),
+Implementation (`implementation`), and Debug (`test`). Errors become `bug` sub-issues.
 A decision is an issue titled `Decide: ...`. A bug gets the `bug` label.
 
 Several people may work at once. The labels are the lock. A comment that
@@ -43,6 +47,9 @@ files: <paths, or none>
 ```
 gh issue edit <N> --repo jarrodjohnson-gif/emberisle --remove-label status:todo --add-label status:claimed
 ```
+
+No `gh`? (Cloud sessions have none.) Use the GitHub connector: `issue_write` with `method: update` and
+the full new `labels` list, then `add_issue_comment`.
 
 Start editing:
 
@@ -110,7 +117,7 @@ gh issue list --repo jarrodjohnson-gif/emberisle --state open --limit 100 --sear
 
 When the completion test passed, set `status:done`, close the issue, and set the next issue to `status:todo` in the same turn. Do not stop to wait.
 
-Do not delete, overwrite, or bulk-move files, and do not push, unless Jarrod asked in this chat.
+Do not delete, overwrite, or bulk-move files. Push only to your own branch and open a PR. Jarrod merges.
 
 When a chat is long or a task finishes, give him one line:
 

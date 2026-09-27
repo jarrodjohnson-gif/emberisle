@@ -1,4 +1,3 @@
 # Retired
 
-The task list is the GitHub milestone issues, not this file.
-Next open issue: https://github.com/jarrodjohnson-gif/emberisle/issues/16
+Start at the [README](../README.md). The framework is [FRAMEWORK.md](FRAMEWORK.md), and the task list is GitHub issues.

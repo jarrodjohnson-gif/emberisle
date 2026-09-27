@@ -287,7 +287,7 @@ function produce(state: GameState, total: number) {
     }
   }
   const short = new Set();
-  for (const res of Object.keys(demand)) {
+  for (const res of Object.keys(demand) as Resource[]) {
     if ((demand[res] ?? 0) > state.bank[res]) short.add(res);
   }
   for (const grant of grants) {

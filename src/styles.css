@@ -1,0 +1,24 @@
+@import "tailwindcss";
+
+/* Build bible 3.4: stone #efeae0, text #1c1915. Player colors from types.ts. */
+@theme {
+  --color-bg: #efeae0;
+  --color-surface: #f7f4ee;
+  --color-raised: #ffffff;
+  --color-fg: #1c1915;
+  --color-muted: #6b645a;
+  --color-border: #d8d1c3;
+  --color-sea: #2a8f8a;
+  --color-accent: #c45c3e;
+  --font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}

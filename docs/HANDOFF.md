@@ -1,7 +1,7 @@
-# Notes for a new session
+# History: the Grok sandbox (read-only)
 
-The task list is the GitHub milestones. Read [TRACKING.md](TRACKING.md). Next open issue: [#16](https://github.com/jarrodjohnson-gif/emberisle/issues/16).
-Do not treat the rest of this file as a checklist. It is background from earlier sessions.
+This is background from before the repo was set up. **It is not a task list, and its "next steps" are out of date.** Start at the [README](../README.md).
+
 
 **Product:** Emberisle, a downloadable PC/Mac game for friends. Rules are on the README. The island art is the 4 GB pack, opened on Jarrod's PC, not in the web sandbox.
 
