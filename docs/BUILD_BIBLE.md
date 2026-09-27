@@ -171,7 +171,8 @@ Empty seat says "Empty".
 Host sees **Start** only when every filled seat is Ready and there are
 3 or 4 humans (practice mode can fill with bots named Tide, Dune, Pine).
 
-No chat required for v1. A one-line log is enough: "Tide sat down."
+The lobby has table chat and emoji reactions (Jarrod, 2026-09-27; docs/research/chat.md, #117).
+The one-line log stays for events: "Tide sat down."
 
 ### 3.4 Feel
 
@@ -249,7 +250,7 @@ One panel:
 Ask the table: each other human gets a toast "Ember offers 2 wool for 1 ore"
 with **Yes** / **No**. First Yes wins. 20 seconds then it dies.
 Bank: 4 of one for 1 of another, if the bank has it.
-Do not build a chat.
+Offers go through this panel only, never through table chat (#117).
 
 ### 4.5 Discard
 
