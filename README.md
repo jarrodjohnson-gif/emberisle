@@ -61,3 +61,16 @@ The bank starts with 19 of each resource.
 ## Names
 
 Say timber, clay, wool, grain, ore, outpost, stronghold, path, fortune, and wayfarer. The window title is Emberisle.
+
+## Rules host
+
+The host is Node 22.18 or newer, and it needs no build step.
+
+```
+cd server
+npm install
+npm run host   # listens on 8787, or PORT
+npm test       # rules proofs + a 3-socket table playing 20 rolls
+```
+
+The messages follow [docs/BUILD_BIBLE.md](docs/BUILD_BIBLE.md) section 10. Each `state` also carries `legal`, which lists what that seat may click. The Unreal client designs are in [docs/design](docs/design).
