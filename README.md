@@ -44,13 +44,13 @@ The deck is 14 knights, 2 path-building, 2 plenty, 2 monopoly, and 5 hidden poin
 
 ### Points
 
-An outpost is 1. A stronghold is 2. The longest path is 2, and it takes at least 5 segments to hold it. The largest army is 2, and it takes at least 3 knights to hold it. A tie does not take either award away. Hidden points stay hidden until the end.
+An outpost is 1. A stronghold is 2. The longest path is 2, and it takes at least 5 segments in one unbroken line to hold it. If two players tie for it and nobody holds it yet, nobody gets it until one is strictly longer. The largest army is 2, and it takes at least 3 knights to hold it. A tie does not take either award away. Hidden points stay hidden until the end.
 
 ### Setup
 
 Seat order, then the reverse. Each turn in setup is one outpost and one path from it. Only the second outpost pays starting goods: one card for each hex it touches.
 
-An outpost must not touch another building, including your own. After setup, a new outpost must also touch one of your paths. A path must touch your own path or building.
+An outpost must not touch another building, including your own. After setup, a new outpost must also touch one of your paths. A path must touch your own path or building. A path cannot continue past a corner where an opponent has a building.
 
 ### A turn
 
