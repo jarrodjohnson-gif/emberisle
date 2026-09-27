@@ -130,6 +130,22 @@ npm run served-prove     # same 3 tabs, but the page comes from the rules host i
 
 `client-prove` uses the Chromium that ships with cloud sessions (`/opt/pw-browsers/chromium`). On your own PC, run `npx playwright install chromium` once first. It saves a screenshot to `test-results/client-prove.png`.
 
+### Game night
+
+On the PC that hosts, after the two installs above:
+
+```bash
+npm run night
+```
+
+That builds the client, starts the host, and prints the join line:
+
+- **On this PC** — open it, then Host a table. Post the 4-character code.
+- **On your network** — same Wi-Fi. No tunnel.
+- **Friends on the internet** — the script does not start the tunnel. In a second terminal, run the `cloudflared tunnel --url ...` command it printed. Leave both open. cloudflared prints an `https://….trycloudflare.com` link; paste that in the chat. Friends open the link and Join with the code. They never type a port.
+
+Ctrl-C in the night terminal stops the host. Install cloudflared once if it is not already there (`winget install --id Cloudflare.cloudflared` on Windows). A quick tunnel needs no account. If it refuses to start because `~/.cloudflared/config.yml` exists, move that file aside for the night, or use the named tunnel in the build bible.
+
 If any command here fails on a fresh clone, that is a bug. File it (label `bug`) before doing anything else.
 
 ---
