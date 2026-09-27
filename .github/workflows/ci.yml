@@ -27,6 +27,7 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: npm run client-prove
       - run: npm run tabs-prove
+      - run: npm run served-prove
       - if: always()
         uses: actions/upload-artifact@v4
         with:
