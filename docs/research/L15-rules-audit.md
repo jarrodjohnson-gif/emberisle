@@ -60,9 +60,9 @@ row 14 legitimately lets a knight bought on an *earlier* turn be played in the c
 | # | README rule | Code | Match/GAP | Proof |
 |---|---|---|---|---|
 | 15 | Outpost = 1, stronghold = 2 | rules.ts:227-236 `publicVP` | Match | **Y** — server/prove.mjs:47-54 (bank-of-3 case pays outpost 1, stronghold 2 — production amount, not VP directly, but exercises the same kind check) |
-| 16 | Longest path = 2, needs ≥5 segments | rules.ts:196-218 `updateLongest`, 233 (`+2`) | Match | N |
+| 16 | Longest path = 2, needs ≥5 segments **in one real trail** | rules.ts:157-187 `roadLength` (rewritten in #99, merged after this row was first written — see correction below), 233 (`+2`) | **Was a confirmed gap, now fixed** | **Y** — server/rules-prove.mjs (star of 6 → trail 4, no award) |
 | 17 | Largest army = 2, needs ≥3 knights | rules.ts:220-225 `updateArmy`, 234 (`+2`) | Match | N |
-| 18 | A tie does not take either award away | rules.ts:199-217 (road: re-affirms the existing holder when another player only ties, not beats, the length); rules.ts:224 (army: `>` not `>=`, so a tie never replaces the holder) | Match | N |
+| 18 | A tie does not take either award away; a tie with no holder gets it | rules.ts:189-197 `updateLongest` (holder keeps it on a tie; a tie with nobody currently holding it goes to nobody, decided in #97/#99); rules.ts:224 (army: `>` not `>=`, so a tie never replaces the holder) | Match | **Y** — server/rules-prove.mjs (holder keeps a tie; two players tied with no holder → nobody) |
 | 19 | Hidden points stay hidden until the end | server/host.mjs:101-118 `viewFor` zeroes every other seat's `hidden` (and sends only a `fortunes` total) while `phase !== "over"` | Match | N (no proof script touches `viewFor`) |
 
 ### Setup
@@ -125,25 +125,45 @@ edge, a vertex getting two harbor kinds) and found none: the 9 loop iterations p
 |---|---|---|---|---|
 | 43 | The bank starts with 19 of each resource | board.ts:201 `{ timber:19, clay:19, wool:19, grain:19, ore:19 }` | Match | N |
 
+## Correction (added after #99 merged)
+
+Row 16 as first written here said "Match" for longest-path — wrong. I'd only read `roadLength` and
+reasoned about it; I never constructed a case where 3+ of a player's own segments meet at one corner.
+A second, independent session (issue #81 was claimed concurrently by three sessions — see #103) did
+construct that case, found that the old segment-adjacency DFS could chain all three spokes of a star
+through their shared corner as if it were one line, and shipped a tested fix in #99 (now merged): walk
+corner to corner instead, so a trail can only pass through a given corner as part of one continuous
+route. I reproduced the pre-fix bug myself before trusting it — a 6-segment star (3 spokes, each with one
+more segment) got awarded Longest Road on old `main`, when the real longest trail through it is 4 — then
+confirmed the fix. Rows 16 and 18 below are corrected to match reality instead of my first read of the code.
+
+The lesson for future Research steps here: read the code for a graph/topology rule, then also construct
+the adversarial topology (a fork, a loop, a tie) and run it, rather than stopping at "the logic looks
+right."
+
 ## Gaps found
 
-Only one real rules gap, already known from #71:
+One rules gap remains open, already known from #71:
 
 1. **Row 13 — a fortune bought this turn can be played this turn.** `buyCard` (rules.ts:494-504) never
    records the turn a card was acquired, and every `play*` case only checks `state.playedCard` (already
-   played *a* fortune this turn) and the hidden count. Fix belongs to #82 (Design), scoped to: track
-   which of a player's hidden fortunes were bought during their *current turn* (roll phase through their
-   own `endTurn`, not "this roll" — row 14 must keep working), and block those specific cards from
-   `playKnight`/`playRoad`/`playPlenty`/`playMonopoly` until the turn advances.
+   played *a* fortune this turn) and the hidden count. #99's `docs/design/rules-fixes.md` already designed
+   this fix (its own #96) — track which of a player's hidden fortunes were bought during their *current
+   turn* (roll phase through their own `endTurn`, not "this roll" — row 14 must keep working) — so
+   Implementation (#83) can build it directly from that design rather than #82 redesigning it.
 
-Not a gap, but worth Design (#82) knowing before scoping work: **the docks/harbor count is correct.**
-#71's second listed gap does not reproduce — see the Docks section above.
+One rules gap was found and fixed during this node (see Correction above):
 
-Test-coverage gaps for #83/#84 to close (engine looks correct by inspection, nothing asserts it yet):
-longest-path/largest-army thresholds and tie-preservation (rows 16-18), the specific 2:1/3:1 harbor rates
-(rows 37-38, 41 — trade-prove.mjs zeroes all harbors on purpose), deck/bank starting counts (rows 12, 43),
-and reaching exactly 10 points to end a game (row 2). None of these looked wrong reading the code; they're
-just unproven.
+2. **Row 16 — longest path counted a fork as one line.** Fixed in #99, merged to `main`. No further
+   action needed here.
+
+Not a gap: **the docks/harbor count is correct.** #71's second listed gap does not reproduce — see the
+Docks section above.
+
+Test-coverage gaps for #83/#84 to close (engine looks correct by inspection, nothing asserts it yet): the
+specific 2:1/3:1 harbor rates (rows 37-38, 41 — trade-prove.mjs zeroes all harbors on purpose), deck/bank
+starting counts (rows 12, 43), and reaching exactly 10 points to end a game (row 2). Longest-path/largest-
+army (rows 16-18) are now covered by server/rules-prove.mjs, added in #99.
 
 ## What I am not sure about
 
@@ -158,9 +178,13 @@ just unproven.
 ## Handoff
 
 ```
-done: docs/research/L15-rules-audit.md — every "Rule set" sentence has a row (43 rows); one confirmed
-      gap (row 13, fortune same-turn play); #71's docks gap disproven, not real
-left: #82 Design a fix for row 13 only (not docks). #83/#84 can seed server/rules-prove.mjs from the
-      "Test-coverage gaps" list above instead of re-deriving it.
-next agent: #82
+done: docs/research/L15-rules-audit.md — every "Rule set" sentence has a row (43 rows). One gap remains
+      open (row 13, fortune same-turn play; design already written in #99's docs/design/rules-fixes.md).
+      One gap this doc first missed (row 16, longest-path fork) was found and fixed by a concurrent
+      session in #99, merged; rows 16/18 corrected above instead of silently rewritten. #71's docks
+      gap disproven, not real.
+left: #83 Implementation for row 13, from #99's existing design (no new Design step needed — #82's design
+      work is done). #83/#84 can also seed server/rules-prove.mjs's remaining coverage from the
+      "Test-coverage gaps" list above.
+next agent: #83
 ```
