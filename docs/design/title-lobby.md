@@ -6,7 +6,11 @@ Sources: [docs/research/visual-polish.md](../research/visual-polish.md) §8, [do
 [docs/design/chat.md](chat.md) "Lobby" (the chat box this node places), `src/components/game/EmberisleApp.tsx`
 (`Title`, `Lobby`), `src/components/game/Hud.tsx` (the existing glass-card class, and `HowTo`), `src/lib/game/store.ts`.
 
-Target: desktop, 1280×720 and up, same as #119. Phone layouts are out of scope.
+Target: desktop, 1280×720 and up. This card's layout (position, sizing, copy) is specified for that range only —
+mobile is real scope as of Jarrod's 2026-09-28 reversal (#117), but its own layout is #169's job (camera,
+touch, and orientation first). #167 should not stretch this bottom-left card to a phone viewport without that
+design; on a narrow/short viewport, fall back to today's behavior (or block start until #169 lands) rather than
+guessing.
 
 ## What is wrong today
 
