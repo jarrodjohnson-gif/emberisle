@@ -28,11 +28,31 @@ export interface Gain {
   amount: number;
 }
 
+export interface ChatLine {
+  id: number;
+  seat: string;
+  player: string | null;
+  name: string;
+  color: string;
+  text: string;
+  at: number;
+}
+
+export interface Reaction {
+  seat: string;
+  player: string | null;
+  emote: string;
+  to: string | null;
+  at: number;
+}
+
 export interface TableEvents {
-  welcome(msg: { code: string; you: string; host: boolean }): void;
+  welcome(msg: { code: string; you: string; host: boolean; chat?: ChatLine[] }): void;
   seats(msg: { code: string; seats: Seat[] }): void;
   state(msg: { you: string; game: GameState; legal: Legal }): void;
   rolled(msg: { dice: [number, number]; sum: number; gains: Gain[] }): void;
+  chat(line: ChatLine): void;
+  react(r: Reaction): void;
   log(text: string): void;
   error(message: string): void;
   closed(): void;
@@ -50,6 +70,8 @@ export interface TableClient {
   ready(value: boolean): void;
   start(): void;
   act(action: Action): boolean;
+  say(text: string): void;
+  react(emote: string, to?: string): void;
   close(): void;
 }
 
@@ -150,6 +172,12 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
       case "rolled":
         on.rolled?.(msg as never);
         break;
+      case "chat":
+        on.chat?.(msg as never);
+        break;
+      case "react":
+        on.react?.(msg as never);
+        break;
       case "log":
         on.log?.(String(msg.text));
         break;
@@ -169,6 +197,8 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
       if (intent) send(intent);
       return Boolean(intent);
     },
+    say: (text) => send({ type: "chat", text }),
+    react: (emote, to) => send({ type: "react", emote, to }),
     close: () => {
       closedByUs = true;
       ws.close();

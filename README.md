@@ -240,12 +240,17 @@ WebSocket JSON. The client sends intents. The server answers with `state` or `er
 | `{type:"play", card:"knight", hexId, stealFrom}` (and `road`/`ids`, `plenty`/`resources`, `monopoly`/`resource`) | Fortunes |
 | `{type:"rob", hexId, stealFrom}` `{type:"discard", cards}` | After a 7 |
 | `{type:"tradeBank", give, take}` `{type:"tradeAsk", give, want}` `{type:"tradeAnswer", tradeId, yes}` | Trades |
+| `{type:"chat", text}` | One chat line, lobby or game (200 chars, rate-limited) |
+| `{type:"react", emote, to}` | A reaction image, `to` a seat or player id or omitted |
 
 | Host → client | Meaning |
 |---|---|
 | `seats {code, seats[]}` | Lobby seat list |
+| `welcome {code, you, host, chat[]}` | `chat` is the room's last 50 lines |
 | `state {you, game, legal}` | The full game for you, plus `legal` = the ids you may click and the actions you may take |
 | `rolled {dice:[a,b], sum, gains[]}` | The server's dice and who got what |
+| `chat {id, seat, player, name, color, text, at}` | A chat line, sent to every seat, sender included |
+| `react {seat, player, emote, to, at}` | A reaction, sent to every seat, sender included |
 | `log {text}` / `error {message}` | One line to show |
 | `tradeOffer` / `tradeClosed` | Ask-the-table trades (20 s) |
 
@@ -259,6 +264,7 @@ WebSocket JSON. The client sends intents. The server answers with `state` or `er
 | `node --import ./server/register.mjs server/trade-prove.mjs` | Bank 4:1, discards, steals |
 | `node server/sound-prove.mjs` | A missing sound does not crash |
 | `node --import ./server/register.mjs server/table-prove.mjs` | 3 sockets: codes, color taken, ready, start, setup glow and neighbor rule, 20 rolls match the host |
+| `node --import ./server/register.mjs server/chat-prove.mjs` | `cleanText`/`allow`/`remember`/`loadEmotes` units, the host fills in the sender, rate limit, reactions, chat history for a late joiner, an over-limit frame closes only that socket |
 | `npm run client-prove` | The browser client plays setup and a roll with zero console errors |
 | `npm run tabs-prove` | 3 browser tabs host, join, ready, start, play setup and 5 rolls through the rules host; dice and board match on every tab, zero console errors |
 
