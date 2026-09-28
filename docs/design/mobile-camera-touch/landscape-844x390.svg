@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="844" height="390" viewBox="0 0 844 390" role="img" aria-label="844 by 390 overhead fit overlay">
+  <rect width="844" height="390" fill="#6a93a0"/>
+  <g transform="translate(422,173)">
+    <ellipse rx="210" ry="118" fill="#2a6a78"/>
+    <g fill="#efeae0" stroke="#d9d1c3" stroke-width="1">
+      <polygon points="0,-22 19,-11 19,11 0,22 -19,11 -19,-11"/>
+      <g>
+        <polygon transform="translate(33,-19)" points="0,-22 19,-11 19,11 0,22 -19,11 -19,-11"/>
+        <polygon transform="translate(33,19)" points="0,-22 19,-11 19,11 0,22 -19,11 -19,-11"/>
+        <polygon transform="translate(0,38)" points="0,-22 19,-11 19,11 0,22 -19,11 -19,-11"/>
+        <polygon transform="translate(-33,19)" points="0,-22 19,-11 19,11 0,22 -19,11 -19,-11"/>
+        <polygon transform="translate(-33,-19)" points="0,-22 19,-11 19,11 0,22 -19,11 -19,-11"/>
+        <polygon transform="translate(0,-38)" points="0,-22 19,-11 19,11 0,22 -19,11 -19,-11"/>
+      </g>
+      <g>
+        <polygon transform="translate(66,-38)" points="0,-22 19,-11 19,11 0,22 -19,11 -19,-11"/>
+        <polygon transform="translate(66,0)" points="0,-22 19,-11 19,11 0,22 -19,11 -19,-11"/>
+        <polygon transform="translate(66,38)" points="0,-22 19,-11 19,11 0,22 -19,11 -19,-11"/>
+        <polygon transform="translate(33,57)" points="0,-22 19,-11 19,11 0,22 -19,11 -19,-11"/>
+        <polygon transform="translate(0,76)" points="0,-22 19,-11 19,11 0,22 -19,11 -19,-11"/>
+        <polygon transform="translate(-33,57)" points="0,-22 19,-11 19,11 0,22 -19,11 -19,-11"/>
+        <polygon transform="translate(-66,38)" points="0,-22 19,-11 19,11 0,22 -19,11 -19,-11"/>
+        <polygon transform="translate(-66,0)" points="0,-22 19,-11 19,11 0,22 -19,11 -19,-11"/>
+        <polygon transform="translate(-66,-38)" points="0,-22 19,-11 19,11 0,22 -19,11 -19,-11"/>
+        <polygon transform="translate(-33,-57)" points="0,-22 19,-11 19,11 0,22 -19,11 -19,-11"/>
+        <polygon transform="translate(0,-76)" points="0,-22 19,-11 19,11 0,22 -19,11 -19,-11"/>
+        <polygon transform="translate(33,-57)" points="0,-22 19,-11 19,11 0,22 -19,11 -19,-11"/>
+      </g>
+    </g>
+    <g fill="#6b4a32">
+      <rect x="86" y="-6" width="20" height="5"/>
+      <rect x="-106" y="-6" width="20" height="5"/>
+      <rect x="-6" y="-102" width="5" height="18"/>
+      <rect x="-6" y="84" width="5" height="18"/>
+      <rect x="62" y="-68" width="16" height="5"/>
+      <rect x="-78" y="-68" width="16" height="5"/>
+      <rect x="62" y="62" width="16" height="5"/>
+      <rect x="-78" y="62" width="16" height="5"/>
+      <rect x="16" y="92" width="16" height="5"/>
+    </g>
+    <circle cx="19" cy="-55" r="11" fill="none" stroke="#c45c3e" stroke-width="2" stroke-dasharray="3 2"/>
+    <circle cx="19" cy="-55" r="4" fill="none" stroke="#fff6e8" stroke-width="2"/>
+  </g>
+  <rect x="0" y="0" width="844" height="56" fill="#f7f4ee" fill-opacity="0.92"/>
+  <text x="16" y="36" font-family="Georgia, serif" font-size="18" fill="#1c1915">Emberisle</text>
+  <text x="780" y="36" font-family="sans-serif" font-size="12" fill="#1c1915">Leave</text>
+  <rect x="0" y="294" width="844" height="96" fill="#f7f4ee" fill-opacity="0.92"/>
+  <rect x="16" y="306" width="280" height="32" rx="12" fill="#fff" fill-opacity="0.7"/>
+  <text x="28" y="327" font-family="sans-serif" font-size="13" fill="#1c1915">Your turn — place an outpost</text>
+  <rect x="308" y="306" width="400" height="68" rx="16" fill="#fff" fill-opacity="0.7"/>
+  <text x="320" y="345" font-family="sans-serif" font-size="12" fill="#52525b">hand strip</text>
+  <rect x="720" y="306" width="108" height="68" rx="12" fill="#fff" fill-opacity="0.7"/>
+  <text x="744" y="345" font-family="sans-serif" font-size="12" fill="#52525b">actions</text>
+  <rect x="12" y="56" width="820" height="238" fill="none" stroke="#1c1915" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <text x="20" y="76" font-family="sans-serif" font-size="11" fill="#1c1915">HUD hole 820×238 — island fitted to width, docks inside the dash</text>
+  <rect x="620" y="238" width="88" height="44" rx="12" fill="#1c1915"/>
+  <text x="641" y="265" font-family="sans-serif" font-size="14" fill="#efeae0">Place</text>
+</svg>
