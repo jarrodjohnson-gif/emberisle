@@ -12,6 +12,8 @@
     "client-prove": "node scripts/client-prove.mjs",
     "tabs-prove": "node scripts/tabs-prove.mjs",
     "chat-prove": "node scripts/chat-prove.mjs",
+    "mobile-shots": "node scripts/mobile-shots.mjs",
+    "touch-place-prove": "node scripts/touch-place-prove.mjs",
     "served-prove": "node scripts/tabs-prove.mjs --served",
     "night": "node scripts/night.mjs"
   },

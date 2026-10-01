@@ -34,6 +34,10 @@ interface GameStore {
   pickHex: (id: string) => void;
   pickVertex: (id: string) => void;
   pickEdge: (id: string) => void;
+  // Coarse pointers pick a mark first and confirm it with the Place chip (docs/design/mobile-camera-touch.md).
+  pendingPlace: { kind: "hex" | "vertex" | "edge"; id: string } | null;
+  setPendingPlace: (p: { kind: "hex" | "vertex" | "edge"; id: string } | null) => void;
+  confirmPlace: () => void;
   highlights: () => { vertices: string[]; edges: string[]; hexes: string[] };
   // Set when a robber/knight hex has 2+ steal targets and needs the player to pick one.
   pendingSteal: { hexId: string; kind: "moveRobber" | "playKnight"; targets: string[] } | null;
@@ -232,6 +236,16 @@ export const useGame = create<GameStore>((set, get) => ({
     const stealFrom = targets[0] ?? null;
     if (kind === "moveRobber") dispatch({ type: "moveRobber", hexId: id, stealFrom });
     else dispatch({ type: "playKnight", hexId: id, stealFrom });
+  },
+  pendingPlace: null,
+  setPendingPlace: (p) => set({ pendingPlace: p }),
+  confirmPlace: () => {
+    const { pendingPlace: p, pickHex, pickVertex, pickEdge } = get();
+    if (!p) return;
+    set({ pendingPlace: null });
+    if (p.kind === "hex") pickHex(p.id);
+    if (p.kind === "vertex") pickVertex(p.id);
+    if (p.kind === "edge") pickEdge(p.id);
   },
   chooseSteal: (playerId) => {
     const { pendingSteal, dispatch } = get();

@@ -1,4 +1,16 @@
 import * as THREE from "three";
+import {
+  PICK_EDGE,
+  PICK_VERTEX_RADIUS,
+  TARGET,
+  fitOrtho,
+  freeMaxDistance,
+  hudInsets,
+  isSelectTap,
+  pickBest,
+  tapSlop,
+  type Insets,
+} from "@/lib/scene/mobile-fit";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
@@ -53,6 +65,14 @@ export class IsleRenderer {
   private renderer: THREE.WebGLRenderer;
   private scene = new THREE.Scene();
   private camera: THREE.PerspectiveCamera;
+  private ortho = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 80);
+  private overhead = false;
+  private pending: { kind: string; id: string } | null = null;
+  private downType = "mouse";
+  private pinch = new Map<number, { x: number; y: number }>();
+  private pinchStart = 0;
+  private pinchZoom = 1;
+  private safeProbe: HTMLDivElement;
   private controls: OrbitControls;
   private raycaster = new THREE.Raycaster();
   private pointer = new THREE.Vector2();
@@ -63,6 +83,7 @@ export class IsleRenderer {
   private pickables: THREE.Object3D[] = [];
   private composer!: EffectComposer;
   private ssao!: SSAOPass;
+  private renderPass!: RenderPass;
   private wayfarer: THREE.Group;
   private sheep: Sheep[] = [];
   private boats: THREE.Group[] = [];
@@ -74,6 +95,7 @@ export class IsleRenderer {
   private lastState: GameState | null = null;
   private lastHi: Highlights = { vertices: [], edges: [], hexes: [] };
   private lastInteractive = false;
+  private legalIds = new Set<string>();
   private down = { x: 0, y: 0 };
   private stopped = false;
   private robberTarget = new THREE.Vector3();
@@ -84,9 +106,19 @@ export class IsleRenderer {
   private foam!: THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial>;
   private coastMiter = new Map<string, { mx: number; mz: number }>();
   private onPick: (kind: "hex" | "vertex" | "edge", id: string) => void;
+  private onSelect: (sel: { kind: "hex" | "vertex" | "edge"; id: string } | null) => void;
 
-  constructor(canvas: HTMLCanvasElement, onPick: (kind: "hex" | "vertex" | "edge", id: string) => void) {
+  constructor(
+    canvas: HTMLCanvasElement,
+    onPick: (kind: "hex" | "vertex" | "edge", id: string) => void,
+    onSelect: (sel: { kind: "hex" | "vertex" | "edge"; id: string } | null) => void = () => {},
+  ) {
     this.onPick = onPick;
+    this.onSelect = onSelect;
+    this.safeProbe = document.createElement("div");
+    this.safeProbe.style.cssText =
+      "position:fixed;visibility:hidden;pointer-events:none;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)";
+    document.body.appendChild(this.safeProbe);
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: "high-performance" });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.setClearColor(0x6a93a0, 1);
@@ -156,12 +188,15 @@ export class IsleRenderer {
     canvas.style.touchAction = "none";
     canvas.addEventListener("pointerdown", this.onDown);
     canvas.addEventListener("pointerup", this.onUp);
+    canvas.addEventListener("pointermove", this.onMove);
+    canvas.addEventListener("pointercancel", this.onCancel);
     window.addEventListener("resize", this.resize);
     this.resize();
     this.loadTextures();
     this.clock.connect(document);
     this.composer = new EffectComposer(this.renderer);
-    this.composer.addPass(new RenderPass(this.scene, this.camera));
+    this.renderPass = new RenderPass(this.scene, this.camera);
+    this.composer.addPass(this.renderPass);
     this.ssao = new SSAOPass(this.scene, this.camera, 1, 1);
     this.ssao.kernelRadius = 10;
     this.ssao.minDistance = 0.001;
@@ -175,7 +210,47 @@ export class IsleRenderer {
   setTitleMode(v: boolean) {
     this.titleMode = v;
     this.controls.autoRotate = v;
-    this.ssao.enabled = !v;
+    this.ssao.enabled = !v && !this.overhead;
+    this.setView(!v && this.coarse() ? "overhead" : "free");
+  }
+
+  private coarse() {
+    return typeof matchMedia === "function" && matchMedia("(pointer: coarse)").matches;
+  }
+
+  private insets(): Insets {
+    const c = this.renderer.domElement;
+    const cs = getComputedStyle(this.safeProbe);
+    return hudInsets(c.clientWidth, c.clientHeight, this.coarse(), {
+      top: parseFloat(cs.paddingTop) || 0,
+      right: parseFloat(cs.paddingRight) || 0,
+      bottom: parseFloat(cs.paddingBottom) || 0,
+      left: parseFloat(cs.paddingLeft) || 0,
+    });
+  }
+
+  // Overhead is one orthographic camera fitted to the HUD hole; Free is the tilted OrbitControls view.
+  setView(view: "overhead" | "free") {
+    const over = view === "overhead";
+    if (over === this.overhead) return;
+    this.overhead = over;
+    this.controls.enabled = !over;
+    this.ssao.enabled = !over && !this.titleMode;
+    const cam = over ? this.ortho : this.camera;
+    this.renderPass.camera = cam;
+    this.ssao.camera = cam;
+    this.resize();
+  }
+
+  // The mark a coarse pointer has selected, waiting for the Place chip. Pulses it and locks orbit meanwhile.
+  setPending(p: { kind: string; id: string } | null) {
+    this.pending = p;
+    this.controls.enableRotate = !p;
+    for (const o of this.marks.children) {
+      const m = o as THREE.Mesh;
+      const mat = m.material as THREE.MeshStandardMaterial | undefined;
+      if (m.userData?.id && mat && "emissiveIntensity" in mat) mat.emissiveIntensity = m.userData.id === p?.id ? 1.4 : m.userData.kind === "edge" ? 0.45 : 0.8;
+    }
   }
 
   setBoard(state: GameState, highlights: Highlights, interactive: boolean) {
@@ -219,7 +294,7 @@ export class IsleRenderer {
       const w = worldOfHex(h);
       p.set(w.x, topOf(h.terrain), w.z);
     } else return null;
-    p.project(this.camera);
+    p.project(this.overhead ? this.ortho : this.camera);
     const r = this.renderer.domElement.getBoundingClientRect();
     return { x: r.left + ((p.x + 1) / 2) * r.width, y: r.top + ((1 - p.y) / 2) * r.height };
   }
@@ -231,6 +306,9 @@ export class IsleRenderer {
     window.removeEventListener("resize", this.resize);
     this.renderer.domElement.removeEventListener("pointerdown", this.onDown);
     this.renderer.domElement.removeEventListener("pointerup", this.onUp);
+    this.renderer.domElement.removeEventListener("pointermove", this.onMove);
+    this.renderer.domElement.removeEventListener("pointercancel", this.onCancel);
+    this.safeProbe.remove();
     this.renderer.dispose();
   }
 
@@ -262,7 +340,21 @@ export class IsleRenderer {
     const w = c.clientWidth || 1;
     const h = c.clientHeight || 1;
     this.camera.aspect = w / h;
+    // Dolly limit: OrbitControls.update() clamps the current distance to the new max on the next frame.
+    this.controls.maxDistance = freeMaxDistance(h, this.insets(), this.coarse());
     this.camera.updateProjectionMatrix();
+    if (this.overhead) {
+      const f = fitOrtho(w, h, this.insets());
+      this.ortho.left = f.left;
+      this.ortho.right = f.right;
+      this.ortho.top = f.top;
+      this.ortho.bottom = f.bottom;
+      this.ortho.up.set(0, 0, -1);
+      this.ortho.position.set(f.x, 18, f.z);
+      this.ortho.lookAt(f.x, TARGET.y, f.z);
+      this.ortho.zoom = this.pinchZoom;
+      this.ortho.updateProjectionMatrix();
+    }
     this.renderer.setSize(w, h, false);
     this.composer?.setSize(w, h);
     this.ssao?.setSize(w, h);
@@ -271,17 +363,60 @@ export class IsleRenderer {
   private onDown = (e: PointerEvent) => {
     this.down.x = e.clientX;
     this.down.y = e.clientY;
+    this.downType = e.pointerType;
+    this.pinch.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (this.pinch.size === 2) {
+      this.pinchStart = this.pinchDistance();
+      this.pinchZoom = this.ortho.zoom;
+    }
+  };
+
+  private pinchDistance() {
+    const [a, b] = [...this.pinch.values()];
+    return a && b ? Math.hypot(a.x - b.x, a.y - b.y) : 0;
+  }
+
+  // Overhead has no orbit; two fingers change the zoom, 1.0 to 2.4.
+  private onMove = (e: PointerEvent) => {
+    if (!this.pinch.has(e.pointerId)) return;
+    this.pinch.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (this.pinch.size === 2 && this.overhead && this.pinchStart > 0) {
+      this.ortho.zoom = Math.min(2.4, Math.max(1, this.pinchZoom * (this.pinchDistance() / this.pinchStart)));
+      this.ortho.updateProjectionMatrix();
+    }
+  };
+
+  private onCancel = (e: PointerEvent) => {
+    this.pinch.delete(e.pointerId);
   };
 
   private onUp = (e: PointerEvent) => {
-    if (Math.hypot(e.clientX - this.down.x, e.clientY - this.down.y) > 8) return;
+    const wasPinch = this.pinch.size > 1;
+    this.pinch.delete(e.pointerId);
+    if (wasPinch) return;
+    const coarse = this.coarse();
+    if (Math.hypot(e.clientX - this.down.x, e.clientY - this.down.y) > tapSlop(this.downType, coarse)) return;
     const rect = this.renderer.domElement.getBoundingClientRect();
     this.pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
     this.pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-    this.raycaster.setFromCamera(this.pointer, this.camera);
-    const hits = this.raycaster.intersectObjects(this.pickables, true);
-    const hit = hits.find((h) => h.object.userData.id);
-    if (hit) this.onPick(hit.object.userData.kind, hit.object.userData.id);
+    this.raycaster.setFromCamera(this.pointer, this.overhead ? this.ortho : this.camera);
+    const hits = this.raycaster
+      .intersectObjects(this.pickables, true)
+      .filter((h) => h.object.userData.id)
+      .map((h) => ({ kind: h.object.userData.kind as "hex" | "vertex" | "edge", id: h.object.userData.id as string, distance: h.distance }));
+    const hit = pickBest(hits);
+    const touch = coarse || this.downType === "touch";
+    if (!touch) {
+      if (hit) this.onPick(hit.kind, hit.id);
+      return;
+    }
+    const legal = hit && this.legalIds.has(hit.id);
+    if (!hit || !legal) {
+      if (this.pending) this.onSelect(null);
+      return;
+    }
+    if (isSelectTap(coarse, this.downType, this.pending?.id ?? null, hit.id)) this.onSelect({ kind: hit.kind, id: hit.id });
+    else this.onPick(hit.kind, hit.id);
   };
 
   private tick = () => {
@@ -338,7 +473,7 @@ export class IsleRenderer {
       const height = hexHeight(h.terrain);
       const tile = makeHexTile(HEX_SIZE * 0.995, height, this.textures[h.terrain], SIDE[h.terrain]);
       tile.position.set(x, TILE_Y, z);
-      tile.userData = { kind: "hex", id: h.id };
+      tile.userData = { kind: "hex", id: h.id, land: true };
       tile.traverse((o) => {
         o.userData = tile.userData;
         o.castShadow = true;
@@ -425,7 +560,8 @@ export class IsleRenderer {
 
   private buildMarks(state: GameState, hi: Highlights, interactive: boolean) {
     disposeGroup(this.marks);
-    this.pickables = this.pickables.filter((o) => o.userData.kind === "hex");
+    this.pickables = this.pickables.filter((o) => o.userData.kind === "hex" && o.userData.land);
+    this.legalIds = interactive ? new Set([...hi.vertices, ...hi.edges, ...hi.hexes]) : new Set();
     if (!interactive) return;
     const vset = new Set(hi.vertices);
     const eset = new Set(hi.edges);
@@ -443,7 +579,12 @@ export class IsleRenderer {
       m.position.set(v.x, vertexTop(tops, v) + 0.03, v.z);
       m.userData = { kind: "vertex", id: v.id };
       this.marks.add(m);
-      this.pickables.push(m);
+      const pick = new THREE.Mesh(new THREE.SphereGeometry(PICK_VERTEX_RADIUS, 8, 6), new THREE.MeshBasicMaterial());
+      pick.visible = false;
+      pick.position.copy(m.position);
+      pick.userData = { kind: "vertex", id: v.id };
+      this.marks.add(pick);
+      this.pickables.push(pick);
     }
     for (const e of state.edges) {
       if (!eset.has(e.id)) continue;
@@ -457,7 +598,14 @@ export class IsleRenderer {
       m.rotation.y = Math.atan2(b.x - a.x, b.z - a.z);
       m.userData = { kind: "edge", id: e.id };
       this.marks.add(m);
-      this.pickables.push(m);
+      const len = Math.hypot(b.x - a.x, b.z - a.z) * PICK_EDGE.lengthScale;
+      const pick = new THREE.Mesh(new THREE.BoxGeometry(PICK_EDGE.w, PICK_EDGE.h, len), new THREE.MeshBasicMaterial());
+      pick.visible = false;
+      pick.position.copy(m.position);
+      pick.rotation.y = m.rotation.y;
+      pick.userData = { kind: "edge", id: e.id };
+      this.marks.add(pick);
+      this.pickables.push(pick);
     }
     for (const h of state.hexes) {
       if (!hset.has(h.id)) continue;
@@ -471,6 +619,7 @@ export class IsleRenderer {
       this.marks.add(ring);
       this.pickables.push(ring);
     }
+    this.setPending(this.pending);
   }
 }
 

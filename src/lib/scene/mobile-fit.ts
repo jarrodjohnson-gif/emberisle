@@ -1,0 +1,93 @@
+// Camera fit and touch picking for phones (docs/design/mobile-camera-touch.md, issue #171). Pure math, no THREE
+// imports, so scripts/touch-place-prove.mjs can run it directly.
+
+// Half-extent of the island plus its docks, padded 8%, in world units (HEX_SIZE 1.12).
+export const ISLE_HALF = { x: 6.0, z: 5.6 };
+export const TARGET = { x: 0.15, y: 0.05, z: 0 };
+
+export type Insets = { top: number; right: number; bottom: number; left: number };
+
+// The rectangle the HUD chrome leaves for the island. `coarse` is matchMedia("(pointer: coarse)").
+export function hudInsets(cssW: number, cssH: number, coarse: boolean, safe: Partial<Insets> = {}): Insets {
+  let i: Insets;
+  if (coarse && cssH > cssW) i = { top: 72, right: 12, bottom: 196, left: 12 };
+  // Landscape bottom is 184, not the design's 96: until #177 builds the compact strip, the hand and phase bars are ~180 px tall.
+  else if (coarse) i = { top: 56, right: 12, bottom: 184, left: 12 };
+  else i = { top: 72, right: 312, bottom: 168, left: 248 };
+  return {
+    top: i.top + (safe.top ?? 0),
+    right: i.right + (safe.right ?? 0),
+    bottom: i.bottom + (safe.bottom ?? 0),
+    left: i.left + (safe.left ?? 0),
+  };
+}
+
+export type OrthoFit = { left: number; right: number; top: number; bottom: number; x: number; z: number };
+
+// Overhead frustum sized to the island inside the hole, then the camera is shifted so the world center lands
+// at the hole center. Screen-up is -Z, screen-right is +X (the camera's up vector is (0,0,-1)).
+export function fitOrtho(cssW: number, cssH: number, insets: Insets): OrthoFit {
+  const holeW = Math.max(1, cssW - insets.left - insets.right);
+  const holeH = Math.max(1, cssH - insets.top - insets.bottom);
+  const aspect = holeW / holeH;
+  const { x: halfX, z: halfZ } = ISLE_HALF;
+  // The frustum spans the whole canvas, so scale the hole's world size up by canvas / hole.
+  let hw: number;
+  let hh: number;
+  if (halfX / halfZ > aspect) {
+    hw = halfX;
+    hh = halfX / aspect;
+  } else {
+    hh = halfZ;
+    hw = halfZ * aspect;
+  }
+  const worldW = hw * 2 * (cssW / holeW);
+  const worldH = hh * 2 * (cssH / holeH);
+  const holeCx = insets.left + holeW / 2;
+  const holeCy = insets.top + holeH / 2;
+  const ndcX = (holeCx / cssW) * 2 - 1;
+  const ndcY = -((holeCy / cssH) * 2 - 1);
+  return {
+    left: -worldW / 2,
+    right: worldW / 2,
+    top: worldH / 2,
+    bottom: -worldH / 2,
+    // Centered on the island (0, 0), not the 0.15 orbit target: ISLE_HALF is symmetric about the origin.
+    x: -ndcX * worldW * 0.5,
+    z: ndcY * worldH * 0.5,
+  };
+}
+
+const FOV = (32 * Math.PI) / 180;
+
+// Free-mode farthest dolly: far enough to see the whole isle inside the hole, never below 18. Desktop keeps 18
+// exactly (the design's own formula gives ~29 there, which would change the shipped desktop view); the design's
+// worked values 23.6 / 26.4 disagree with its formula, so the formula wins: 28.6 portrait; landscape hits the 36 cap.
+export function freeMaxDistance(cssH: number, insets: Insets, coarse: boolean): number {
+  if (!coarse) return 18;
+  const usable = Math.max(1, cssH - insets.top - insets.bottom) / cssH;
+  const d = (ISLE_HALF.z * 2) / usable / (2 * Math.tan(FOV / 2));
+  return Math.min(36, Math.max(18, d));
+}
+
+// Pixels a pointer may drift between down and up and still be a tap.
+export function tapSlop(pointerType: string, coarse: boolean): number {
+  return pointerType === "touch" || coarse ? 24 : 8;
+}
+
+// Invisible pick volumes, world units. Visual meshes are unchanged.
+export const PICK_VERTEX_RADIUS = 0.28;
+export const PICK_EDGE = { w: 0.36, h: 0.16, lengthScale: 0.9 };
+
+const RANK = { vertex: 0, edge: 1, hex: 2 } as const;
+
+// Vertices beat edges beat hexes, then nearest. Not purely by distance: a vertex sphere sits on an edge box.
+export function pickBest<T extends { kind: keyof typeof RANK; distance: number }>(hits: T[]): T | undefined {
+  return [...hits].sort((a, b) => RANK[a.kind] - RANK[b.kind] || a.distance - b.distance)[0];
+}
+
+// Coarse pointers select first and confirm on a second tap of the same mark.
+export function isSelectTap(coarse: boolean, pointerType: string, pendingId: string | null, hitId: string) {
+  const touch = pointerType === "touch" || coarse;
+  return touch && pendingId !== hitId;
+}
