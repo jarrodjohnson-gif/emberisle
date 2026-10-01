@@ -22,3 +22,10 @@ body,
   color: var(--color-fg);
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 }
+
+/* A reaction rises about 12 px over 2 s and fades in its last 0.5 s (docs/design/chat.md "Reactions"). */
+@keyframes emote-float {
+  0% { opacity: 1; transform: translateY(0); }
+  75% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-12px); }
+}

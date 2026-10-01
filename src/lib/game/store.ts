@@ -3,7 +3,7 @@ import { createGame } from "./board";
 import { applyAction, legalCities, legalRoads, legalSettle } from "./rules";
 import { chooseBotAction } from "./ai";
 import { PLAYER_COLORS, type Action, type BuildMode, type GameState } from "./types";
-import { connectTable, hostUrl, type Legal, type Me, type Seat, type TableClient } from "@/lib/net/table";
+import { connectTable, hostUrl, type ChatLine, type Legal, type Me, type Reaction, type Seat, type TableClient } from "@/lib/net/table";
 
 export type Screen = "title" | "lobby" | "play";
 
@@ -49,6 +49,28 @@ interface GameStore {
   joinTable: (code: string) => void;
   setReady: (value: boolean) => void;
   startTable: () => void;
+  // Table chat (docs/design/chat.md)
+  // This tab's seat id (s0...), from welcome. localId is the player id once the game starts.
+  seatId: string;
+  chat: ChatLine[];
+  reactions: Reaction[];
+  chatOpen: boolean;
+  unread: number;
+  chatDraft: string;
+  setChatOpen: (v: boolean) => void;
+  setChatDraft: (v: string) => void;
+  sendChat: (text: string) => void;
+  sendReact: (emote: string, to?: string) => void;
+}
+
+const CHAT_OPEN_KEY = "emberisle-chat-open";
+
+function savedChatOpen() {
+  try {
+    return localStorage.getItem(CHAT_OPEN_KEY) === "1";
+  } catch {
+    return false;
+  }
 }
 
 function savedName() {
@@ -85,6 +107,12 @@ export const useGame = create<GameStore>((set, get) => ({
   legal: null,
   lobbyLog: "",
   pendingSteal: null,
+  seatId: "",
+  chat: [],
+  reactions: [],
+  chatOpen: savedChatOpen(),
+  unread: 0,
+  chatDraft: "",
   setName: (n) => {
     const name = n.slice(0, 18) || "Ember";
     if (typeof window !== "undefined") localStorage.setItem("emberisle-name", name);
@@ -147,6 +175,10 @@ export const useGame = create<GameStore>((set, get) => ({
       legal: null,
       code: "",
       pendingSteal: null,
+      chat: [],
+      reactions: [],
+      unread: 0,
+      chatDraft: "",
     });
   },
   dispatch: (action, asId) => {
@@ -263,6 +295,17 @@ export const useGame = create<GameStore>((set, get) => ({
   joinTable: (code) => connect(set, get, (t, me) => t.join(code, me)),
   setReady: (value) => get().net?.ready(value),
   startTable: () => get().net?.start(),
+  setChatOpen: (v) => {
+    try {
+      localStorage.setItem(CHAT_OPEN_KEY, v ? "1" : "0");
+    } catch {
+      // storage can be blocked; the dock still works for this page
+    }
+    set(v ? { chatOpen: true, unread: 0 } : { chatOpen: false });
+  },
+  setChatDraft: (v) => set({ chatDraft: v }),
+  sendChat: (text) => get().net?.say(text),
+  sendReact: (emote, to) => get().net?.react(emote, to),
 }));
 
 type Set = (partial: Partial<GameStore>) => void;
@@ -271,7 +314,18 @@ type Get = () => GameStore;
 function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void) {
   get().net?.close();
   const table = connectTable(hostUrl(window.location), {
-    welcome: ({ code, host }) => set({ code, isHost: host, screen: "lobby", mode: "online", error: null }),
+    welcome: ({ code, you, host, chat }) =>
+      set({ code, seatId: you, isHost: host, screen: "lobby", mode: "online", error: null, chat: (chat ?? []).slice(-50), reactions: [], unread: 0 }),
+    chat: (line) => {
+      const { chat, chatOpen, unread, seatId, screen } = get();
+      // The lobby box is always open, so only lines that arrive during the game can be unread.
+      const counts = screen === "play" && !chatOpen && line.seat !== seatId;
+      set({ chat: [...chat, line].slice(-50), unread: counts ? unread + 1 : unread });
+    },
+    react: (r) => {
+      set({ reactions: [...get().reactions, r] });
+      setTimeout(() => set({ reactions: get().reactions.filter((x) => x !== r) }), 2000);
+    },
     seats: ({ code, seats }) => set({ code, seats }),
     state: ({ you, game, legal }) => {
       set({ legal });

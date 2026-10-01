@@ -13,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ChatDock, ReactionFloats } from "@/components/game/Chat";
 import { COST, RESOURCES, RESOURCE_LABEL, type Resource } from "@/lib/game/types";
 import { harborRate, hiddenCount, playable, publicVP, totalVP } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
@@ -90,7 +91,7 @@ export function Hud() {
           <div
             key={p.id}
             className={cn(
-              "pointer-events-auto rounded-[16px] border bg-white/45 px-3 py-2 backdrop-blur-md",
+              "pointer-events-auto relative rounded-[16px] border bg-white/45 px-3 py-2 backdrop-blur-md",
               p.id === state.current ? "border-accent" : "border-white/50",
             )}
           >
@@ -104,9 +105,12 @@ export function Hud() {
             <p className="mt-1 text-xs text-zinc-600">
               {RESOURCES.reduce((n, r) => n + p.resources[r], 0)} goods · {(p as typeof p & { fortunes?: number }).fortunes ?? hiddenCount(p)} fortunes
             </p>
+            <ReactionFloats by="player" id={p.id} />
           </div>
         ))}
       </aside>
+
+      <ChatDock />
 
       <div className="pointer-events-none absolute bottom-0 inset-x-0 z-10 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         <div className="pointer-events-auto mx-auto flex max-w-3xl flex-col gap-2">

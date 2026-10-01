@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { ChatBox, ReactionFloats } from "@/components/game/Chat";
 import { Hud } from "@/components/game/Hud";
 import { useGame } from "@/lib/game/store";
 import { PLAYER_COLORS, PLAYER_NAMES } from "@/lib/game/types";
@@ -145,14 +146,18 @@ function Lobby() {
           {[0, 1, 2, 3].map((i) => {
             const s = seats[i];
             return (
-              <li key={i} className="flex items-center gap-3 rounded-[12px] border border-border bg-surface px-3 py-2">
+              <li key={i} className="relative flex items-center gap-3 rounded-[12px] border border-border bg-surface px-3 py-2">
                 <span className="size-3 rounded-full" style={{ background: s?.color ?? "transparent" }} />
                 <span className="flex-1 text-sm">{s ? s.name : "Empty"}</span>
                 {s ? <span className="text-xs text-muted">{s.ready ? "Ready" : "Waiting"}</span> : null}
+                {s ? <ReactionFloats by="seat" id={s.id} /> : null}
               </li>
             );
           })}
         </ul>
+        <div className="mt-2 rounded-[12px] border border-border bg-surface p-2">
+          <ChatBox rows={6} />
+        </div>
         <p className="mt-2 min-h-5 text-xs text-muted">{error ?? lobbyLog}</p>
         <div className="mt-3 flex flex-col gap-2">
           <Button
