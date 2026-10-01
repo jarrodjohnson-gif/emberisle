@@ -22,6 +22,7 @@ export default function IslandCanvas() {
       if (kind === "edge") g.pickEdge(id);
     });
     api.current = renderer;
+    (window as unknown as { __isle: IsleRenderer }).__isle = renderer;
     const sync = () => {
       const s = useGame.getState();
       renderer.setTitleMode(s.screen !== "play");

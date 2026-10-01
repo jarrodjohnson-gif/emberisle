@@ -126,6 +126,7 @@ npm test                 # rules proofs, sounds, 3-socket table + 20 rolls
 npm run client-prove     # headless Chromium plays setup + a roll, zero console errors
 npm run tabs-prove       # 3 headless tabs host, join, play setup + 5 rolls on the rules host, boards match
 npm run served-prove     # same 3 tabs, but the page comes from the rules host itself with no ?host= (after build)
+npm run chat-prove       # 3 headless tabs chat in the lobby and the game: presets, reactions, unread badge, minimized dock covers no target
 ```
 
 `client-prove` uses the Chromium that ships with cloud sessions (`/opt/pw-browsers/chromium`). On your own PC, run `npx playwright install chromium` once first. It saves a screenshot to `test-results/client-prove.png`.
@@ -266,6 +267,7 @@ WebSocket JSON. The client sends intents. The server answers with `state` or `er
 | `node --import ./server/register.mjs server/table-prove.mjs` | 3 sockets: codes, color taken, ready, start, setup glow and neighbor rule, 20 rolls match the host |
 | `node --import ./server/register.mjs server/chat-prove.mjs` | `cleanText`/`allow`/`remember`/`loadEmotes` units, the host fills in the sender, rate limit, reactions, chat history for a late joiner, an over-limit frame closes only that socket |
 | `npm run client-prove` | The browser client plays setup and a roll with zero console errors |
+| `npm run chat-prove` | 3 browser tabs at 1280x720: lobby chat and presets, a reaction floats over the sender's rail card for 2 s, the unread badge, the remembered dock state, the minimized dock covers no board target, zero console errors |
 | `npm run tabs-prove` | 3 browser tabs host, join, ready, start, play setup and 5 rolls through the rules host; dice and board match on every tab, zero console errors |
 
 `npm test` runs the first four.

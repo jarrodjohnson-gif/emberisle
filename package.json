@@ -11,6 +11,7 @@
     "test": "npm --prefix server test",
     "client-prove": "node scripts/client-prove.mjs",
     "tabs-prove": "node scripts/tabs-prove.mjs",
+    "chat-prove": "node scripts/chat-prove.mjs",
     "served-prove": "node scripts/tabs-prove.mjs --served",
     "night": "node scripts/night.mjs"
   },

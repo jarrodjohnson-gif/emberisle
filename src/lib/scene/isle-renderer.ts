@@ -200,6 +200,30 @@ export class IsleRenderer {
     }
   }
 
+  // Where a hex, corner, or edge id sits on screen, in page pixels. For the chat proof, which checks nothing covers a target.
+  screenOf(id: string): { x: number; y: number } | null {
+    const st = this.lastState;
+    if (!st) return null;
+    const tops = hexTops(st);
+    const vmap = new Map(st.vertices.map((v) => [v.id, v]));
+    const p = new THREE.Vector3();
+    const v = vmap.get(id);
+    const e = st.edges.find((x) => x.id === id);
+    const h = st.hexes.find((x) => x.id === id);
+    if (v) p.set(v.x, vertexTop(tops, v), v.z);
+    else if (e) {
+      const a = vmap.get(e.va)!;
+      const b = vmap.get(e.vb)!;
+      p.set((a.x + b.x) / 2, edgeTop(tops, a, b), (a.z + b.z) / 2);
+    } else if (h) {
+      const w = worldOfHex(h);
+      p.set(w.x, topOf(h.terrain), w.z);
+    } else return null;
+    p.project(this.camera);
+    const r = this.renderer.domElement.getBoundingClientRect();
+    return { x: r.left + ((p.x + 1) / 2) * r.width, y: r.top + ((1 - p.y) / 2) * r.height };
+  }
+
   dispose() {
     this.stopped = true;
     this.renderer.setAnimationLoop(null);
