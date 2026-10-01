@@ -330,7 +330,7 @@ function BankTrade() {
   );
 }
 
-function HowTo({ onClose }: { onClose: () => void }) {
+export function HowTo({ onClose }: { onClose: () => void }) {
   return (
     <div className="absolute inset-0 z-30 flex items-end justify-center bg-white/45 p-3 sm:items-center">
       <div className="max-h-[80dvh] w-full max-w-md overflow-y-auto rounded-[28px] border border-white/50 bg-surface p-5">
