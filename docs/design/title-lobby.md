@@ -6,7 +6,8 @@ Sources: [docs/research/visual-polish.md](../research/visual-polish.md) §8, [do
 [docs/design/chat.md](chat.md) "Lobby" (the chat box this node places), `src/components/game/EmberisleApp.tsx`
 (`Title`, `Lobby`), `src/components/game/Hud.tsx` (the existing glass-card class, and `HowTo`), `src/lib/game/store.ts`.
 
-Target: desktop, 1280×720 and up, same as #119. Phone layouts are out of scope.
+Target: desktop, 1280×720 and up, same as #119. Phone layouts: see **Phone addendum** at the end (issue #172).
+`#167` still ships the desktop card in this file unchanged.
 
 ## What is wrong today
 
@@ -142,7 +143,16 @@ regression check that clicking Host/Join/Practice still works with the new marku
 ## Out of scope
 
 Re-litigating #142's color picker itself, the in-game chat dock and player menu (#119/#159-162, separate
-screens), phone layouts, and any change to `HowTo`'s own content.
+screens), and any change to `HowTo`'s own content. Phone layouts are no longer out of scope — see the addendum.
+
+## Phone addendum (issue #172)
+
+Desktop card above stays. On a coarse pointer in portrait:
+
+- The card is full width minus 12 px, `max-h-[55vh]`, scroll, pinned to the bottom. Host / Join stay weighted.
+- Landscape may keep the desktop `max-w-sm` bottom-left card.
+
+`#167` does not build this branch. Full rules: [mobile-hud.md](mobile-hud.md).
 
 ## Child issue filed
 
