@@ -43,7 +43,7 @@ async function client(port, name) {
   });
   ws.on("error", () => {});
   c.send = (msg) => ws.send(JSON.stringify(msg));
-  c.next = async (type, ok = () => true, ms = 3000) => {
+  c.next = async (type, ok = () => true, ms = 10000) => {
     const until = Date.now() + ms;
     for (;;) {
       const i = c.inbox.findIndex((m) => m.type === type && ok(m));
@@ -86,14 +86,14 @@ async function step(msg) {
   mover.send(msg(mover.state));
   await Promise.all(all.map((x) => x.next("state", (m) => m.game.seq > before)));
 }
-let rolls = 0;
-for (let i = 0; i < 200 && rolls < 3; i++) {
+// One step of whatever phase the table is in; true when that step was a roll.
+async function advance() {
   const g = a.state.game;
   if (g.phase === "setupSettle") await step((s) => ({ type: "place", kind: "outpost", id: s.legal.outpost[0] }));
   else if (g.phase === "setupRoad") await step((s) => ({ type: "place", kind: "path", id: s.legal.path[0] }));
   else if (g.phase === "roll") {
     await step(() => ({ type: "roll" }));
-    rolls++;
+    return true;
   } else if (g.phase === "main") await step(() => ({ type: "pass" }));
   else if (g.phase === "discard") {
     const who = all.find((x) => x.state.legal.discard > 0);
@@ -114,8 +114,15 @@ for (let i = 0; i < 200 && rolls < 3; i++) {
       return { type: "rob", hexId, stealFrom: s.legal.steal[hexId]?.[0] ?? null };
     });
   } else fail("unexpected phase", g.phase);
+  return false;
 }
+let rolls = 0;
+for (let i = 0; i < 200 && rolls < 3; i++) if (await advance()) rolls++;
 if (rolls < 3) fail("rolled three times", rolls);
+// A third roll of 7 leaves discards or the wayfarer pending; finish them, so the crash lands in a
+// phase the restored table can resume with one roll or one pass (#208).
+for (let i = 0; i < 20 && ["discard", "robber"].includes(a.state.game.phase); i++) await advance();
+if (!["roll", "main"].includes(a.state.game.phase)) fail("settled before the crash", a.state.game.phase);
 const seq = seqNow();
 const current = a.state.game.current;
 a.send({ type: "chat", text: "see you after the crash" });
