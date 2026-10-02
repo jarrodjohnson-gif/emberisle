@@ -51,6 +51,8 @@ async function tab(name, phone = false) {
   const page = await ctx.newPage();
   watch(name, page);
   await page.addInitScript((n) => localStorage.setItem("emberisle-name", n), name);
+  // The phone remembers an open chat, and Play must still start with the sheet closed.
+  if (phone) await page.addInitScript(() => localStorage.setItem("emberisle-chat-open", "1"));
   // Three software-rendered 1280x720 scenes starve the machine, and the proof reads the DOM. Skip GL draws except while a screenshot is taken.
   await page.addInitScript(() => {
     window.__draw = false;
@@ -218,6 +220,8 @@ try {
 
   // 5. Phone: the open dock is a bottom sheet, and the tap that closes it does not reach the board.
   await phone.page.getByRole("button", { name: "Open chat" }).waitFor();
+  check((await phone.page.getByTestId("chat-sheet").count()) === 0, "phone: Play starts with the sheet closed although chat was remembered open");
+  check((await phone.page.evaluate(() => localStorage.getItem("emberisle-chat-open"))) === "1", "phone: the remembered open state is left in storage");
   r = await box(phone, '[aria-label="Open chat"]');
   check(r.right > r.vw - 20 && r.bottom < r.vh - 150, "phone: the minimized button sits bottom-right above the hand bar");
   await phone.page.getByRole("button", { name: "Open chat" }).click();
@@ -226,6 +230,15 @@ try {
   const cap = Math.min(0.48 * r.vh, 320);
   check(Math.abs(r.bottom - r.vh) < 1 && r.left === 0 && Math.abs(r.width - r.vw) < 1, `phone: chat is a sheet at the bottom, ${r.width.toFixed(0)} px wide of ${r.vw}`);
   check(r.height > 100 && r.height <= cap + 0.5, `phone: the sheet is ${r.height.toFixed(0)} px tall, at most min(48vh, 320px) = ${cap.toFixed(0)}`);
+  const lay = await phone.page.evaluate(() => {
+    const sheet = document.querySelector('[data-testid="chat-sheet"]').getBoundingClientRect();
+    const head = document.querySelector('[data-testid="chat-sheet-header"]').getBoundingClientRect();
+    const log = document.querySelector('[data-testid="chat-log"]');
+    const input = document.getElementById("chat-input").getBoundingClientRect();
+    return { sheetBottom: sheet.bottom, headBottom: head.bottom, logTop: log.getBoundingClientRect().top, inputBottom: input.bottom, atEnd: log.scrollHeight - log.scrollTop - log.clientHeight < 2 };
+  });
+  check(lay.sheetBottom - lay.inputBottom <= 24, `phone: the input row ends ${(lay.sheetBottom - lay.inputBottom).toFixed(0)} px above the sheet bottom, no dead space`);
+  check(lay.logTop >= lay.headBottom && lay.atEnd, "phone: the log starts below the header and shows the newest line");
   await shot(phone, "chat-phone-open.jpg");
   const before = await phone.page.evaluate(() => {
     const s = window.__emberisle.getState();

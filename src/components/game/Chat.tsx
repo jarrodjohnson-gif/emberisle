@@ -42,7 +42,7 @@ function Line({ line, me }: { line: ChatLine; me: string }) {
 }
 
 // The log, the preset chips, the emote tray, and the input. `onEscape` is the dock's minimize.
-export function ChatBox({ rows, onEscape }: { rows: number; onEscape?: () => void }) {
+export function ChatBox({ rows, onEscape, className }: { rows: number; onEscape?: () => void; className?: string }) {
   const chat = useGame((s) => s.chat);
   const draft = useGame((s) => s.chatDraft);
   const setDraft = useGame((s) => s.setChatDraft);
@@ -66,7 +66,7 @@ export function ChatBox({ rows, onEscape }: { rows: number; onEscape?: () => voi
   };
 
   return (
-    <div className="flex min-h-0 flex-col gap-2">
+    <div className={cn("flex min-h-0 flex-col gap-2", className)}>
       <ul
         ref={log}
         data-testid="chat-log"
@@ -81,7 +81,7 @@ export function ChatBox({ rows, onEscape }: { rows: number; onEscape?: () => voi
           <Line key={line.id} line={line} me={me} />
         ))}
       </ul>
-      <div className="flex flex-wrap gap-1">
+      <div className="flex shrink-0 flex-wrap gap-1">
         {PRESETS.map((p) => (
           <button
             key={p}
@@ -111,7 +111,7 @@ export function ChatBox({ rows, onEscape }: { rows: number; onEscape?: () => voi
           ))}
         </div>
       ) : null}
-      <div className="flex gap-1">
+      <div className="flex shrink-0 gap-1">
         <button
           type="button"
           aria-label="Emotes"
@@ -194,6 +194,11 @@ export function ChatDock() {
   const { phone, portrait } = useViewport();
   const focusNext = useRef(false);
 
+  // A remembered open dock must not cover the hand bar when Play starts on a phone. The stored value stays for desktop.
+  useEffect(() => {
+    if (phone) useGame.setState({ chatOpen: false });
+  }, []);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Enter" || useGame.getState().mode !== "online") return;
@@ -236,14 +241,14 @@ export function ChatDock() {
         <section
           aria-label="Table chat"
           data-testid="chat-sheet"
-          className="fixed inset-x-0 bottom-0 z-30 flex flex-col gap-2 rounded-t-[16px] border border-white/50 bg-white/70 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-md"
+          className="fixed inset-x-0 bottom-0 z-30 flex flex-col gap-2 rounded-t-[16px] border border-white/50 bg-white/70 px-3 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur-md"
           style={{ height: "min(48vh, 320px)" }}
         >
-          <div className="flex items-center justify-between">
+          <div data-testid="chat-sheet-header" className="flex shrink-0 items-center justify-between">
             <h2 className="text-sm font-medium">Table chat</h2>
             {minimize}
           </div>
-          <ChatBox rows={4} onEscape={() => setOpen(false)} />
+          <ChatBox className="flex-1" rows={4} onEscape={() => setOpen(false)} />
         </section>
       </>
     );
