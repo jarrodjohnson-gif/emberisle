@@ -53,6 +53,7 @@ export function Hud() {
   const localId = useGame((s) => s.localId);
   const mode = useGame((s) => s.mode);
   const buildMode = useGame((s) => s.buildMode);
+  const roadPicks = useGame((s) => s.roadPicks);
   const error = useGame((s) => s.error);
   const howTo = useGame((s) => s.howTo);
   const dispatch = useGame((s) => s.dispatch);
@@ -115,7 +116,11 @@ export function Hud() {
       <div className="pointer-events-none absolute bottom-0 inset-x-0 z-10 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         <div className="pointer-events-auto mx-auto flex max-w-3xl flex-col gap-2">
           <p className="rounded-[16px] border border-white/50 bg-white/45 px-3 py-2 text-sm text-zinc-900 backdrop-blur-md">
-            {winner ? `${winner.name} wins with ${totalVP(state, winner.id)} points.` : phaseCopy(state.phase)}
+            {winner
+              ? `${winner.name} wins with ${totalVP(state, winner.id)} points.`
+              : buildMode === "roadCard"
+                ? `Path fortune: pick ${roadPicks.length ? "one more path" : "two paths"} on the glowing edges.`
+                : phaseCopy(state.phase)}
             {error ? <span className="mt-1 block text-orange-700">{error}</span> : null}
           </p>
 
@@ -162,15 +167,26 @@ export function Hud() {
                 <ScrollText className="size-4" /> Fortune
               </Button>
               <BankTrade />
-              {playable(me, "knight") > 0 ? (
+              {!state.playedCard && playable(me, "knight") > 0 ? (
                 <Button
                   size="sm"
                   variant={buildMode === "knight" ? "primary" : "secondary"}
-                  onClick={() => setBuildMode("knight")}
+                  onClick={() => setBuildMode(buildMode === "knight" ? "none" : "knight")}
                 >
-                  Wayfarer card
+                  Wayfarer card{playable(me, "knight") > 1 ? ` ×${playable(me, "knight")}` : ""}
                 </Button>
               ) : null}
+              {!state.playedCard && playable(me, "road") > 0 ? (
+                <Button
+                  size="sm"
+                  variant={buildMode === "roadCard" ? "primary" : "secondary"}
+                  onClick={() => setBuildMode(buildMode === "roadCard" ? "none" : "roadCard")}
+                >
+                  Path fortune{playable(me, "road") > 1 ? ` ×${playable(me, "road")}` : ""}
+                </Button>
+              ) : null}
+              {!state.playedCard && playable(me, "plenty") > 0 ? <PlentyForm /> : null}
+              {!state.playedCard && playable(me, "monopoly") > 0 ? <MonopolyForm /> : null}
               <Button size="sm" variant="sea" className="ml-auto" onClick={() => dispatch({ type: "endTurn" })}>
                 End turn
               </Button>
@@ -325,6 +341,62 @@ function BankTrade() {
       </select>
       <Button size="sm" variant="secondary" type="submit">
         Bank
+      </Button>
+    </form>
+  );
+}
+
+// Year of plenty: two resources from the bank (rules.ts playPlenty).
+function PlentyForm() {
+  const dispatch = useGame((s) => s.dispatch);
+  return (
+    <form
+      className="flex items-center gap-1"
+      onSubmit={(e) => {
+        e.preventDefault();
+        const fd = new FormData(e.currentTarget);
+        const a = fd.get("plentyA") as Resource;
+        const b = fd.get("plentyB") as Resource;
+        if (a && b) dispatch({ type: "playPlenty", resources: [a, b] });
+      }}
+    >
+      {["plentyA", "plentyB"].map((name) => (
+        <select key={name} name={name} aria-label={name === "plentyA" ? "First plenty resource" : "Second plenty resource"} className="h-9 rounded-[8px] border border-white/50 bg-raised px-2 text-sm">
+          {RESOURCES.map((r) => (
+            <option key={r} value={r}>
+              {RESOURCE_LABEL[r]}
+            </option>
+          ))}
+        </select>
+      ))}
+      <Button size="sm" variant="secondary" type="submit">
+        Plenty
+      </Button>
+    </form>
+  );
+}
+
+// Monopoly: every other player's cards of one resource (rules.ts playMonopoly).
+function MonopolyForm() {
+  const dispatch = useGame((s) => s.dispatch);
+  return (
+    <form
+      className="flex items-center gap-1"
+      onSubmit={(e) => {
+        e.preventDefault();
+        const r = new FormData(e.currentTarget).get("monopoly") as Resource;
+        if (r) dispatch({ type: "playMonopoly", resource: r });
+      }}
+    >
+      <select name="monopoly" aria-label="Monopoly resource" className="h-9 rounded-[8px] border border-white/50 bg-raised px-2 text-sm">
+        {RESOURCES.map((r) => (
+          <option key={r} value={r}>
+            All {RESOURCE_LABEL[r]}
+          </option>
+        ))}
+      </select>
+      <Button size="sm" variant="secondary" type="submit">
+        Monopoly
       </Button>
     </form>
   );

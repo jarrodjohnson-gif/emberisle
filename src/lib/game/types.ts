@@ -134,4 +134,4 @@ export type Action =
   | { type: "respondTrade"; accept: boolean }
   | { type: "endTurn" };
 
-export type BuildMode = "none" | "path" | "outpost" | "stronghold" | "robber" | "knight";
+export type BuildMode = "none" | "path" | "outpost" | "stronghold" | "robber" | "knight" | "roadCard";
