@@ -31,6 +31,9 @@ const AVATAR_TTL = 60 * 60 * 1000; // an upload nobody sat down with is dropped 
 // (docs/research/rejoin.md). The proofs shorten both through env.
 const GRACE_MS = Number(process.env.GRACE_MS ?? 90 * 1000);
 const HOLD_MS = Number(process.env.HOLD_MS ?? 10 * 60 * 1000);
+// Every socket is pinged this often; one that has not answered the last ping is cut, so a phone that
+// locked or changed Wi-Fi frees its seat for the rejoin instead of holding it half-open (#202, #113).
+const PING_MS = Number(process.env.PING_MS ?? 30 * 1000);
 // Every room is saved to ROOMS/<code>.json after each change and reloaded on boot, so a host PC
 // that sleeps or a Node crash does not end the game. Rooms saved more than a day ago are dropped.
 const ROOMS = path.resolve(process.env.ROOMS_DIR ?? fileURLToPath(new URL("./rooms/", import.meta.url)));
@@ -562,6 +565,8 @@ wss.on("connection", (ws) => {
   // Node's default behavior is to throw and take down the whole host. One bad frame must only
   // close that socket (ws already sends close code 1009) and never the other tables.
   ws.on("error", () => {});
+  ws.alive = true;
+  ws.on("pong", () => (ws.alive = true));
   ws.on("message", (raw) => {
     try {
       handle(ws, raw);
@@ -699,6 +704,20 @@ function leave(ws) {
   say(room, `${seat.name} left.`);
   publish(room);
 }
+
+// terminate() fires "close", so leave() holds the seat and starts the grace like any other drop.
+const pinger = setInterval(() => {
+  for (const ws of wss.clients) {
+    if (!ws.alive) {
+      ws.terminate();
+      continue;
+    }
+    ws.alive = false;
+    ws.ping();
+  }
+}, PING_MS);
+pinger.unref();
+wss.on("close", () => clearInterval(pinger));
 
 load();
 server.listen(PORT, () => console.log(`host listening ${server.address().port}`));
