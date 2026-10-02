@@ -158,6 +158,22 @@ try {
   await page.screenshot({ path: "test-results/client-prove.png", timeout: 120_000 });
   console.log("screenshot: test-results/client-prove.png");
 
+  // Online the host runs bots (#221), and leaving a table clears its leftovers (#222).
+  const online = await page.evaluate(async () => {
+    const g = window.__emberisle;
+    const acts = [];
+    const s = g.getState().state;
+    const bot = s.players.find((p) => p.kind === "bot");
+    g.setState({ mode: "online", net: { act: (a) => (acts.push(a), true), close: () => {} }, state: { ...s, phase: "main", current: bot.id, seq: s.seq + 1 } });
+    await new Promise((r) => setTimeout(r, 1500));
+    const botActs = acts.length;
+    g.setState({ lobbyLog: "Pine left.", pendingPlace: { kind: "edge", id: "x" }, seatId: "s1", isHost: true, roadPicks: ["e"], toast: "old" });
+    g.getState().goTitle();
+    const t = g.getState();
+    return { botActs, log: t.lobbyLog, place: t.pendingPlace, seat: t.seatId, host: t.isHost, picks: t.roadPicks.length, toast: t.toast, screen: t.screen };
+  });
+  console.log("online bots + leave:", JSON.stringify(online));
+
   if (phase !== "roll" && phase !== "main" && phase !== "robber" && phase !== "discard") throw new Error(`setup: ${phase}`);
   if (!Array.isArray(rolled)) throw new Error(`roll: ${rolled}`);
   if (!bannerText || !bannerText.includes(`rolls ${rolled[0]}+${rolled[1]} = ${rolled[0] + rolled[1]}`)) throw new Error(`roll banner: ${bannerText}`);
@@ -169,6 +185,10 @@ try {
   }
   if (plenty.ore !== 1 || plenty.wool !== 1 || plenty.cardLeft !== 0 || plenty.error) throw new Error(`plenty fortune: ${JSON.stringify(plenty)}`);
   if (monopoly.gained !== 6 || monopoly.othersLeft !== 0 || monopoly.cardLeft !== 0 || monopoly.error) throw new Error(`monopoly fortune: ${JSON.stringify(monopoly)}`);
+  if (online.botActs !== 0) throw new Error(`client ran a bot online: ${JSON.stringify(online)}`);
+  if (online.log !== "" || online.place !== null || online.seat !== "" || online.host || online.picks || online.toast !== null || online.screen !== "title") {
+    throw new Error(`stale state after leaving: ${JSON.stringify(online)}`);
+  }
   if (errors.length) throw new Error(`console errors:\n${errors.join("\n")}`);
   console.log("client prove ok");
 } catch (e) {
