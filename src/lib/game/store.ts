@@ -1,6 +1,12 @@
 import { create } from "zustand";
 import { createGame } from "./board";
 import { applyAction, legalCities, legalRoads, legalSettle, stealTargets } from "./rules";
+
+// The board as it would be with these paths laid, so the second pick of a path fortune can glow (#184).
+function withPaths(state: GameState, edgeIds: string[], pid: string): GameState {
+  if (!edgeIds.length) return state;
+  return { ...state, edges: state.edges.map((e) => (edgeIds.includes(e.id) ? { ...e, path: pid } : e)) };
+}
 import { chooseBotAction } from "./ai";
 import { PLAYER_COLORS, type Action, type BuildMode, type GameState } from "./types";
 import { connectTable, hostUrl, type ChatLine, type Legal, type Me, type Reaction, type Seat, type TableClient } from "@/lib/net/table";
@@ -19,6 +25,8 @@ interface GameStore {
   state: GameState | null;
   error: string | null;
   buildMode: BuildMode;
+  // Edges picked so far for a path fortune (buildMode "roadCard"); sent together as one playRoad.
+  roadPicks: string[];
   howTo: boolean;
   toast: string | null;
   setName: (n: string) => void;
@@ -98,6 +106,7 @@ export const useGame = create<GameStore>((set, get) => ({
   state: null,
   error: null,
   buildMode: "none",
+  roadPicks: [],
   howTo: false,
   toast: null,
   net: null,
@@ -123,7 +132,7 @@ export const useGame = create<GameStore>((set, get) => ({
     set({ color: c });
   },
   setHowTo: (v) => set({ howTo: v }),
-  setBuildMode: (m) => set({ buildMode: m }),
+  setBuildMode: (m) => set({ buildMode: m, roadPicks: [] }),
   startAi: () => {
     const name = get().name;
     const state = createGame({ humans: [{ name }], bots: 3 });
@@ -187,7 +196,7 @@ export const useGame = create<GameStore>((set, get) => ({
     if (mode === "online") {
       // The host is the rules; its next state message updates the board.
       if (!net?.act(action)) return { ok: false, error: "Not available online." };
-      set({ buildMode: "none" });
+      set({ buildMode: "none", roadPicks: [] });
       return { ok: true };
     }
     const actor = asId ?? (mode === "hotseat" ? state.current : localId);
@@ -196,7 +205,7 @@ export const useGame = create<GameStore>((set, get) => ({
       set({ error: res.error, toast: res.error });
       return { ok: false, error: res.error };
     }
-    set({ state: res.state, error: null, toast: null, buildMode: "none" });
+    set({ state: res.state, error: null, toast: null, buildMode: "none", roadPicks: [] });
     return { ok: true, state: res.state };
   },
   runBots: () => {
@@ -254,7 +263,7 @@ export const useGame = create<GameStore>((set, get) => ({
     if (buildMode === "stronghold") dispatch({ type: "buildStronghold", vertexId: id });
   },
   pickEdge: (id) => {
-    const { state, localId, mode, buildMode, dispatch } = get();
+    const { state, localId, mode, buildMode, roadPicks, dispatch } = get();
     if (!state) return;
     const actor = mode === "hotseat" ? state.current : localId;
     if (state.phase === "setupRoad" && state.current === actor) {
@@ -262,10 +271,28 @@ export const useGame = create<GameStore>((set, get) => ({
       return;
     }
     if (buildMode === "path") dispatch({ type: "buildPath", edgeId: id });
+    if (buildMode === "roadCard") {
+      // One pick at a time, each legal given the ones before it. Two picks play the card; one is
+      // enough when no second path is legal or the stock is down to one (rules.ts playRoad).
+      if (!legalRoads(withPaths(state, roadPicks, actor), actor, false).includes(id)) return;
+      const picks = [...roadPicks, id];
+      const me = state.players.find((p) => p.id === actor);
+      const canPlaceMore = (me?.pathsLeft ?? 0) > picks.length && legalRoads(withPaths(state, picks, actor), actor, false).length > 0;
+      if (picks.length < 2 && canPlaceMore) {
+        set({ roadPicks: picks });
+        return;
+      }
+      dispatch({ type: "playRoad", edgeIds: picks });
+    }
   },
   highlights: () => {
-    const { state, localId, mode, buildMode, legal } = get();
+    const { state, localId, mode, buildMode, legal, roadPicks } = get();
     if (!state) return { vertices: [], edges: [], hexes: [] };
+    if (buildMode === "roadCard") {
+      // Same rules online and offline: the client holds the whole board, and the host re-checks the play.
+      const actor = mode === "hotseat" ? state.current : localId;
+      return { vertices: [], edges: legalRoads(withPaths(state, roadPicks, actor), actor, false), hexes: [] };
+    }
     if (mode === "online") {
       const l = legal;
       if (!l) return { vertices: [], edges: [], hexes: [] };

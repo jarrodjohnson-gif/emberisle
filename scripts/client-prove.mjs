@@ -85,6 +85,70 @@ try {
     return { targets: pending?.targets.length ?? 0, asked, got: mine.wool, left: victim.wool, phase: after.phase, cleared: g.getState().pendingSteal === null };
   });
   console.log("offline steal picker:", JSON.stringify(steal));
+
+  // #184: the path, plenty, and monopoly fortunes each have a way to be played from the HUD.
+  const arm = (hidden) =>
+    page.evaluate((hidden) => {
+      const g = window.__emberisle;
+      const st = structuredClone(g.getState().state);
+      const me = g.getState().localId;
+      const mine = st.players.find((p) => p.id === me);
+      st.phase = "main";
+      st.current = me;
+      st.playedCard = false;
+      mine.hidden = { knight: 0, road: 0, plenty: 0, monopoly: 0, vp: 0, ...hidden };
+      mine.boughtThisTurn = { knight: 0, road: 0, plenty: 0, monopoly: 0, vp: 0 };
+      mine.pathsLeft = 10;
+      for (const p of st.players) if (p.id !== me) p.resources.ore = 2;
+      st.bank.ore = 10;
+      st.bank.wool = 10;
+      g.setState({ state: st, buildMode: "none", roadPicks: [], pendingSteal: null, error: null });
+      return { ore: mine.resources.ore, wool: mine.resources.wool };
+    }, hidden);
+  await arm({ road: 1 });
+  const road = await page.evaluate(() => {
+    const g = window.__emberisle;
+    const me = g.getState().localId;
+    const had = g.getState().state.edges.filter((e) => e.path === me).length;
+    g.getState().setBuildMode("roadCard");
+    const first = g.getState().highlights().edges;
+    g.getState().pickEdge(first[0]);
+    const picked = g.getState().roadPicks.length;
+    const second = g.getState().highlights().edges;
+    g.getState().pickEdge(second[0]);
+    const st = g.getState().state;
+    return {
+      first: first.length,
+      picked,
+      second: second.length,
+      laid: st.edges.filter((e) => e.path === me).length - had,
+      cardLeft: st.players.find((p) => p.id === me).hidden.road,
+      played: st.playedCard,
+      mode: g.getState().buildMode,
+      error: g.getState().error,
+    };
+  });
+  console.log("path fortune:", JSON.stringify(road));
+  const before = await arm({ plenty: 1 });
+  await page.selectOption("select[name=plentyA]", "ore");
+  await page.selectOption("select[name=plentyB]", "wool");
+  await page.getByRole("button", { name: "Plenty", exact: true }).click();
+  const plenty = await page.evaluate((before) => {
+    const g = window.__emberisle;
+    const me = g.getState().state.players.find((p) => p.id === g.getState().localId);
+    return { ore: me.resources.ore - before.ore, wool: me.resources.wool - before.wool, cardLeft: me.hidden.plenty, error: g.getState().error };
+  }, before);
+  console.log("plenty fortune:", JSON.stringify(plenty));
+  const mono = await arm({ monopoly: 1 });
+  await page.selectOption("select[name=monopoly]", "ore");
+  await page.getByRole("button", { name: "Monopoly", exact: true }).click();
+  const monopoly = await page.evaluate((before) => {
+    const g = window.__emberisle;
+    const st = g.getState().state;
+    const me = st.players.find((p) => p.id === g.getState().localId);
+    return { gained: me.resources.ore - before.ore, othersLeft: st.players.filter((p) => p !== me).reduce((n, p) => n + p.resources.ore, 0), cardLeft: me.hidden.monopoly, error: g.getState().error };
+  }, mono);
+  console.log("monopoly fortune:", JSON.stringify(monopoly));
   await page.waitForTimeout(1500);
   mkdirSync("test-results", { recursive: true });
   // Software WebGL on a 2-CPU CI runner can take a while to finish one frame of the island.
@@ -96,6 +160,11 @@ try {
   if (steal.targets !== 2 || !steal.asked || steal.got !== 1 || steal.left !== 1 || steal.phase !== "main" || !steal.cleared) {
     throw new Error(`offline steal picker: ${JSON.stringify(steal)}`);
   }
+  if (road.first < 1 || road.picked !== 1 || road.second < 1 || road.laid !== 2 || road.cardLeft !== 0 || !road.played || road.mode !== "none" || road.error) {
+    throw new Error(`path fortune: ${JSON.stringify(road)}`);
+  }
+  if (plenty.ore !== 1 || plenty.wool !== 1 || plenty.cardLeft !== 0 || plenty.error) throw new Error(`plenty fortune: ${JSON.stringify(plenty)}`);
+  if (monopoly.gained !== 6 || monopoly.othersLeft !== 0 || monopoly.cardLeft !== 0 || monopoly.error) throw new Error(`monopoly fortune: ${JSON.stringify(monopoly)}`);
   if (errors.length) throw new Error(`console errors:\n${errors.join("\n")}`);
   console.log("client prove ok");
 } catch (e) {
