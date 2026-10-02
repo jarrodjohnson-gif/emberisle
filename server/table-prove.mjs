@@ -194,6 +194,46 @@ while (table.length < 20) {
 console.log("20 rolls match the host:", table.join(" "));
 handsAreCounts("after 20 rolls");
 
+// The host leaves the lobby: the next seat is host, can start, and the table is told (#249).
+{
+  const h = client("Host", "#c45c3e");
+  const t = client("Tide", "#2a8f8a");
+  const p = client("Pine", "#3d6b4f");
+  const o = client("Oak", "#8a5a9e");
+  await Promise.all([h.open, t.open, p.open, o.open]);
+  h.send({ type: "hello", name: "Host", color: h.color });
+  const room = (await h.next("welcome")).code;
+  t.send({ type: "hello", code: room, name: "Tide", color: t.color });
+  await t.next("welcome");
+  p.send({ type: "hello", code: room, name: "Pine", color: p.color });
+  await p.next("welcome");
+  o.send({ type: "hello", code: room, name: "Oak", color: o.color });
+  await o.next("welcome");
+  for (;;) if ((await t.next("seats")).seats.length === 4) break;
+  t.inbox.length = 0;
+  h.ws.close();
+  let handed;
+  for (;;) {
+    const m = await t.next("seats");
+    if (m.seats.length === 3) {
+      handed = m;
+      break;
+    }
+  }
+  if (!handed.seats.find((s) => s.name === "Tide")?.host) fail("Tide is not host after the host left", handed.seats);
+  if (handed.seats.some((s) => s.host && s.name !== "Tide")) fail("two hosts", handed.seats);
+  const line = t.inbox.find((m) => m.type === "log" && m.text === "Tide is now the host.");
+  if (!line) fail("no 'Tide is now the host.' line", t.inbox);
+  for (const c of [t, p, o]) c.send({ type: "ready", value: true });
+  await new Promise((r) => setTimeout(r, 100));
+  t.send({ type: "start" });
+  await t.next("state");
+  console.log("host left the lobby: Tide is host, saw the log line, and started the game");
+  t.ws.close();
+  p.ws.close();
+  o.ws.close();
+}
+
 host.kill();
 console.log("table prove ok");
 process.exit(0);
