@@ -199,6 +199,7 @@ export function legalFor(game, you) {
 export function viewFor(game, you) {
   if (game.phase === "over") return { ...game, deckLeft: game.deck.length };
   // The seed rebuilds the whole fortune deck, and rng predicts which card a steal takes (#111).
+  // Other players' hands go out as a count only, like cards held face down (#186).
   const { seed, rng, ...open } = game;
   return {
     ...open,
@@ -208,13 +209,18 @@ export function viewFor(game, you) {
       p.id === you
         ? p
         : {
-            ...p,
+            ...withoutHand(p),
+            goods: RESOURCES.reduce((n, r) => n + p.resources[r], 0),
             hidden: { knight: 0, road: 0, plenty: 0, monopoly: 0, vp: 0 },
             boughtThisTurn: { knight: 0, road: 0, plenty: 0, monopoly: 0, vp: 0 },
             fortunes: Object.values(p.hidden).reduce((a, b) => a + b, 0),
           },
     ),
   };
+}
+
+function withoutHand({ resources, ...rest }) {
+  return rest;
 }
 
 // A player who leaves mid-game is played by the practice bot so the table never hangs.
