@@ -1,5 +1,5 @@
 import { COST, RESOURCES, type Action, type GameState, type Resource } from "./types";
-import { legalCities, legalRoads, legalSettle, stealTargets } from "./rules";
+import { harborRate, legalCities, legalRoads, legalSettle, playable, stealTargets } from "./rules";
 
 function cards(p: { resources: Record<Resource, number> }) {
   return RESOURCES.reduce((n, r) => n + p.resources[r], 0);
@@ -80,6 +80,12 @@ export function chooseBotAction(state: GameState, pid: string): Action | null {
   if (state.phase === "roll") return { type: "roll" };
   if (state.phase !== "main") return null;
 
+  // A held knight is 2 points once three are out (#233: bots that never play them stall a game).
+  if (!state.playedCard && playable(me, "knight") > 0) {
+    const m = bestRobberHex(state, pid);
+    return { type: "playKnight", hexId: m.hexId, stealFrom: m.stealFrom };
+  }
+
   const cities = legalCities(state, pid);
   if (cities.length && hasCost(me, COST.stronghold) && me.strongholdsLeft > 0) {
     return { type: "buildStronghold", vertexId: cities[0]! };
@@ -95,10 +101,22 @@ export function chooseBotAction(state: GameState, pid: string): Action | null {
   }
   if (hasCost(me, COST.card) && state.deck.length > 0) return { type: "buyCard" };
 
-  const missing = RESOURCES.find((r) => me.resources[r] === 0);
-  const extra = RESOURCES.find((r) => me.resources[r] >= 4);
-  if (missing && extra && extra !== missing && state.bank[missing] > 0) {
-    return { type: "bankTrade", give: extra, want: missing };
+  // Trade spare cards toward the next buy (#233: a bot with no ore hex never reached 2 ore by
+  // trading only for what it had none of, and sat at 9 points for hundreds of turns).
+  const goal =
+    cities.length && me.strongholdsLeft > 0
+      ? COST.stronghold
+      : settles.length && me.outpostsLeft > 0
+        ? COST.outpost
+        : roads.length && me.pathsLeft > 0 && me.outpostsLeft > 0
+          ? COST.path
+          : state.deck.length > 0
+            ? COST.card
+            : null;
+  if (goal) {
+    const want = RESOURCES.find((r) => me.resources[r] < (goal[r] ?? 0) && state.bank[r] > 0);
+    const give = RESOURCES.find((r) => r !== want && me.resources[r] - (goal[r] ?? 0) >= harborRate(state, pid, r));
+    if (want && give) return { type: "bankTrade", give, want };
   }
   if (roads.length && hasCost(me, COST.path) && me.pathsLeft > 0) {
     return { type: "buildPath", edgeId: roads[0]! };
