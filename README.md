@@ -272,7 +272,7 @@ WebSocket JSON. The client sends intents. The server answers with `state` or `er
 | `node --import ./server/register.mjs server/prove.mjs` | Short bank pays nobody, dice histogram, setup goods, illegal placement rejected |
 | `node --import ./server/register.mjs server/trade-prove.mjs` | Bank 4:1, discards, steals |
 | `node server/sound-prove.mjs` | A missing sound does not crash |
-| `node --import ./server/register.mjs server/table-prove.mjs` | 3 sockets: codes, color taken, ready, start, setup glow and neighbor rule, 20 rolls match the host |
+| `node --import ./server/register.mjs server/table-prove.mjs` | 3 sockets: codes, color taken, ready, start, setup glow and neighbor rule, 20 rolls match the host, and the table's error strings (full, host-only start, 3 or 4, already started, not your turn) |
 | `node --import ./server/register.mjs server/trade-table-prove.mjs` | 3 sockets: a table trade's decline reaches every seat, a yes swaps both hands, a pass closes the offer and a late yes errors |
 | `node --import ./server/register.mjs server/harden-prove.mjs` | Untrusted input: bad messages, card-minting discards, oversized pictures, and a player who leaves mid-game |
 | `node --import ./server/register.mjs server/net-prove.mjs` | 3 `src/lib/net/table.ts` clients play setup through the host using the host's legal lists; two robberies pick the second of two targets; no state sent before the game ends carries the seed or rng |
