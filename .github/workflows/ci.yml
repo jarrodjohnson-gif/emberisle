@@ -28,6 +28,7 @@ jobs:
       - run: npm run client-prove
       - run: npm run hotseat-prove
       - run: npm run tabs-prove
+      - run: npm run trade-prove
       - run: npm run served-prove
       - run: npm run chat-prove
       - if: always()
