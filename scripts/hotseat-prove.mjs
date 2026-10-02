@@ -84,6 +84,22 @@ try {
   await f.getByRole("button", { name: "Discard" }).click();
   await page.waitForFunction(() => window.__emberisle.getState().state.phase === "robber", null, { timeout: STEP_MS });
   console.log("two seats: phase robber");
+
+  // The roller owes the discard too: the turn banner and the discard bar both name the current seat,
+  // so their React keys must differ (a shared "p0" key logged a console error, caught on CI).
+  await page.evaluate(() => {
+    const g = window.__emberisle;
+    const st = structuredClone(g.getState().state);
+    st.phase = "discard";
+    st.players.find((p) => p.id === st.current).resources = { timber: 4, clay: 2, wool: 2, grain: 1, ore: 1 };
+    st.discardNeeded = { [st.current]: 5 };
+    st.seq += 1;
+    g.setState({ state: st, pendingSteal: null, error: null });
+  });
+  const curName = await page.evaluate(() => { const st = window.__emberisle.getState().state; return st.players.find((p) => p.id === st.current).name; });
+  await page.getByText(`${curName}: discard 5`).waitFor({ timeout: STEP_MS });
+  await page.waitForTimeout(300);
+  console.log("roller discards: bar and banner side by side");
 } catch (e) {
   console.error("hotseat-prove failed:", e);
   code = 1;

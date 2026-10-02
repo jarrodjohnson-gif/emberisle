@@ -15,6 +15,8 @@ const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"],
   cwd: new URL(".", import.meta.url),
   env: { ...process.env, PORT: "0", GRACE_MS: String(GRACE), HOLD_MS: String(HOLD), PING_MS: String(PING), ROOMS_DIR },
 });
+process.on("exit", () => host.kill());
+for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
 const port = await new Promise((resolve, reject) => {
   host.stdout.on("data", (d) => {
     const m = String(d).match(/listening (\d+)/);
