@@ -247,6 +247,9 @@ try {
   console.log("rail cards:", JSON.stringify(rail));
 
   // #177: the whose-turn banner is on desktop too, and the phone strip is not.
+  // The app runs a bot 700 ms after each seq change. Let any timer left from the last move fire first,
+  // so it can't roll for the bot before the banner is read; the flip below keeps seq, so none is set again.
+  await page.waitForTimeout(1000);
   const turn = await page.evaluate(() => {
     const g = window.__emberisle;
     const st = structuredClone(g.getState().state);
@@ -257,7 +260,9 @@ try {
     g.setState({ state: st });
     return { mineText, bot: bot.name };
   });
-  await page.waitForTimeout(200);
+  await page
+    .waitForFunction((name) => document.querySelector('[data-testid="turn-banner"]')?.textContent?.startsWith(`${name}'s turn`), turn.bot, { timeout: 5000 })
+    .catch(() => {});
   turn.theirs = await page.getByTestId("turn-banner").textContent();
   turn.strip = await page.getByTestId("seat-strip").count();
   console.log("turn banner:", JSON.stringify(turn));
