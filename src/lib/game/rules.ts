@@ -577,6 +577,7 @@ export function applyAction(prev: GameState, actor: string, action: Action): { s
     case "bankTrade": {
       if (state.phase !== "main") return { state: prev, error: "Cannot trade now." };
       if (!validRes(action.give) || !validRes(action.want)) return { state: prev, error: "Choose resources." };
+      if (action.give === action.want) return { state: prev, error: "Trade for a different resource." };
       const rate = harborRate(state, actor, action.give);
       if (me.resources[action.give] < rate) return { state: prev, error: `Need ${rate} ${action.give}.` };
       if (state.bank[action.want] <= 0) return { state: prev, error: "Bank is empty." };

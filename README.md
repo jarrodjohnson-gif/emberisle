@@ -92,8 +92,11 @@ Say timber, clay, wool, grain, ore, outpost, stronghold, path, fortune, and wayf
 | Rules engine (setup, dice, production, 7s, wayfarer, trades, fortunes, longest path, largest army, win) | Works. Proven by scripts. | `src/lib/game/` |
 | Rules host: one Node process holding the tables, codes, seats, and pictures, speaking WebSocket | Works. Proven by a 3-socket table test. | `server/host.mjs` |
 | Browser client: Three.js island, HUD, bots, practice vs the isle, hotseat | Works from a fresh clone. Proven in headless Chromium. | `src/`, `index.html` |
-| Browser client playing online through the host | Not built. The host side is ready. | |
-| Friends joining over the internet | Not built. Needs a Cloudflare tunnel on the host PC. | |
+| Browser client playing online through the host: host or join with a code, lobby, chat and reactions, a full game | Works. Proven by 3 headless tabs against the host, from Vite and from the host's own `dist/`. | `src/lib/net/table.ts`, `scripts/tabs-prove.mjs`, `scripts/chat-prove.mjs` |
+| Reconnect and rejoin: a dropped player gets the same seat back, by backoff or on reload | Works. Proven against a fake socket and against the host. | `server/rejoin-prove.mjs`, `server/reconnect-prove.mjs` |
+| Room persistence: tables are saved to disk and reloaded when the host restarts | Works. Proven by killing and restarting the host mid-game. | `server/persist-prove.mjs` |
+| Keepalive: the host pings every socket and cuts one that stops answering | Works. Proven in the rejoin proof. | `server/rejoin-prove.mjs` |
+| Friends joining over the internet: `npm run night` builds, starts the host, and prints the join line for a Cloudflare tunnel | Works. The host serves the page and the socket on one address, so one tunnel carries both. The tunnel itself is Jarrod's step. | `scripts/night.mjs`, `server/serve-prove.mjs`, `npm run served-prove` |
 | Unreal client, the "photoreal" version from the 3.6 GB art pack | Specs only. Needs the gaming PC. | `docs/BUILD_BIBLE.md`, `docs/design/` |
 
 There are two clients on purpose:
@@ -123,14 +126,15 @@ npm run host             # socket, avatars and the built client (dist/) on http:
 # 3. Checks: run all of these before you push
 npm run typecheck        # TypeScript, no errors
 npm run build            # production client in dist/
-npm test                 # rules proofs, sounds, 3-socket table + 20 rolls
+npm test                 # every server/*-prove.mjs: rules, bots, sounds, sockets, chat, rejoin, restart (see Tests and proofs)
 npm run client-prove     # headless Chromium plays setup + a roll, zero console errors
+npm run hotseat-prove    # headless Chromium: a 7 in hotseat shows the discard bar for the seat that owes cards
 npm run tabs-prove       # 3 headless tabs host, join, play setup + 5 rolls on the rules host, boards match
 npm run served-prove     # same 3 tabs, but the page comes from the rules host itself with no ?host= (after build)
 npm run chat-prove       # 3 headless tabs chat in the lobby and the game: presets, reactions, unread badge, minimized dock covers no target
 ```
 
-`client-prove` uses the Chromium that ships with cloud sessions (`/opt/pw-browsers/chromium`). On your own PC, run `npx playwright install chromium` once first. It saves a screenshot to `test-results/client-prove.png`.
+CI runs `npm ci` in the root and in `server/`, then these checks in this order, and installs Chromium with `npx playwright install --with-deps chromium`. `client-prove` uses the Chromium that ships with cloud sessions (`/opt/pw-browsers/chromium`). On your own PC, run `npx playwright install chromium` once first. It saves a screenshot to `test-results/client-prove.png`.
 
 ### Game night
 
@@ -182,7 +186,7 @@ Full rules: **[docs/FRAMEWORK.md](docs/FRAMEWORK.md)**. In short:
  │ React HUD + Three.js island (isle-renderer.ts)        │      │ art pack island, UMG menus        │
  │ zustand store (store.ts)                              │      │ follows docs/design/*.md          │
  │   practice / hotseat: calls rules.ts directly + ai.ts │      └──────────────┬────────────────────┘
- │   online (planned): sends intents over WebSocket ─────┼──┐                 │ same JSON
+ │   online: sends intents over WebSocket (net/table.ts) ┼──┐                 │ same JSON
  └───────────────────────────────────────────────────────┘  │                 │
                                                              ▼                 ▼
                                       ┌──────── rules host (server/host.mjs, port 8787) ────────┐
@@ -268,16 +272,26 @@ WebSocket JSON. The client sends intents. The server answers with `state` or `er
 | `node --import ./server/register.mjs server/prove.mjs` | Short bank pays nobody, dice histogram, setup goods, illegal placement rejected |
 | `node --import ./server/register.mjs server/trade-prove.mjs` | Bank 4:1, discards, steals |
 | `node server/sound-prove.mjs` | A missing sound does not crash |
-| `node --import ./server/register.mjs server/table-prove.mjs` | 3 sockets: codes, color taken, ready, start, setup glow and neighbor rule, 20 rolls match the host |
+| `node --import ./server/register.mjs server/table-prove.mjs` | 3 sockets: codes, color taken, ready, start, setup glow and neighbor rule, 20 rolls match the host, and the table's error strings (full, host-only start, 3 or 4, already started, not your turn) |
 | `node --import ./server/register.mjs server/trade-table-prove.mjs` | 3 sockets: a table trade's decline reaches every seat, a yes swaps both hands, a pass closes the offer and a late yes errors |
+| `node --import ./server/register.mjs server/harden-prove.mjs` | Untrusted input: bad messages, card-minting discards, oversized pictures, and a player who leaves mid-game |
+| `node --import ./server/register.mjs server/net-prove.mjs` | 3 `src/lib/net/table.ts` clients play setup through the host using the host's legal lists; two robberies pick the second of two targets; no state sent before the game ends carries the seed or rng |
+| `node --import ./server/register.mjs server/rules-prove.mjs` | Longest path as a real trail, ties, cuts, fortune timing, paths past an outpost, then one check per Rule set line |
+| `node --import ./server/register.mjs server/bots-prove.mjs` | 200 all-bot games: after every action the cards, the piece stock and the win still add up |
+| `node --import ./server/register.mjs server/serve-prove.mjs` | The host serves the built client, the socket and the avatars from one address, and the client dials the page's own origin |
 | `node --import ./server/register.mjs server/chat-prove.mjs` | `cleanText`/`allow`/`remember`/`loadEmotes` units, the host fills in the sender, rate limit, reactions, chat history for a late joiner, an over-limit frame closes only that socket |
 | `node --import ./server/register.mjs server/rejoin-prove.mjs` | A dropped seat is held: the table waits through the grace, `hello {code, secret}` returns the same seat, a second socket gets "Seat is taken.", the bot plays the seat after the grace and hands it back on return, the room survives every socket closing, the seat is let go after the hold, a socket that stops answering pings is cut within two intervals and can rejoin |
+| `node --import ./server/register.mjs server/reconnect-prove.mjs` | The client's reconnect edge cases against a fake socket: a second tab keeps the saved seat, a failed first dial sends one hello, a half-open old socket keeps it backing off, actions queued while down are dropped |
 | `node --import ./server/register.mjs server/persist-prove.mjs` | Three seats set up and roll three times. The host is killed and restarted on the same port. All three rejoin with their secrets and see the same `seq` and the chat. A 25-hour-old room file is dropped, and a broken one and one with a null seat are skipped. |
 | `npm run client-prove` | The browser client plays setup and a roll with zero console errors |
+| `npm run hotseat-prove` | In hotseat, a 7 where another seat owes a discard shows that seat's discard bar and charges the discard to that seat; zero console errors |
 | `npm run chat-prove` | 3 browser tabs at 1280x720: lobby chat and presets, a reaction floats over the sender's rail card for 2 s, the unread badge, the remembered dock state, the minimized dock covers no board target, zero console errors |
 | `npm run tabs-prove` | 3 browser tabs host, join, ready, start, play setup and 5 rolls through the rules host; dice and board match on every tab; then plays on until a gain has flashed green +N and a loss red -N on the hand, each gone within 2 s; zero console errors |
+| `npm run served-prove` | The same 3 tabs, but the host serves the built `dist/` and the tabs open it with no `?host=`, so they find the socket at the page's own address (the tunnel case) |
+| `npm run touch-place-prove` | The phone camera fit and touch picking, checked on the pure math in `src/lib/scene/mobile-fit.ts`, no browser |
+| `npm run orphan-check` | Not in CI. Starts two proofs, kills each mid-run, and counts the host processes left behind. Expect 0. |
 
-`npm test` runs the first four.
+`npm test` runs the fourteen `server/*-prove.mjs` scripts: `prove`, `trade-prove`, `sound-prove`, `table-prove`, `trade-table-prove`, `harden-prove`, `net-prove`, `rules-prove`, `bots-prove`, `serve-prove`, `chat-prove`, `rejoin-prove`, `reconnect-prove`, and `persist-prove`. CI also runs `client-prove`, `hotseat-prove`, `tabs-prove`, `served-prove`, and the browser `chat-prove`.
 
 ---
 

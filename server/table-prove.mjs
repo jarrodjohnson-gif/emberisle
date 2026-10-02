@@ -139,6 +139,17 @@ while (["setupSettle", "setupRoad"].includes(ember.state.game.phase)) {
 }
 console.log("setup done, phase", ember.state.game.phase);
 
+// Error messages a client can see (#256): the seat that is not up cannot roll. The phase is roll here, so only the turn can refuse.
+const expectError = (m, want, what) => {
+  if (m.message !== want) fail(what, m.message);
+  console.log(`error "${want}" (${what}): ok`);
+};
+{
+  const idle = all.find((c) => c.state.you !== c.state.game.current);
+  idle.send({ type: "roll" });
+  expectError(await idle.next("error"), "Not your turn.", "roll out of turn");
+}
+
 const other = ember.state.game.players.find((p) => p.id !== ember.state.you);
 if (Object.values(other.hidden).some((n) => n !== 0) || typeof other.fortunes !== "number") fail("hidden fortunes leaked");
 
@@ -193,6 +204,34 @@ while (table.length < 20) {
 }
 console.log("20 rolls match the host:", table.join(" "));
 handsAreCounts("after 20 rolls");
+
+// Error messages a client can see (#256).
+{
+  // The started table: a late sitter, and a seat that is not up.
+  const late = client("Late", "#7a5c9e");
+  await late.open;
+  late.send({ type: "hello", code, name: "Late", color: late.color });
+  expectError(await late.next("error"), "Game already started.", "hello after the start");
+
+  // A lobby: only the host starts, and 3 or 4 sit.
+  const lobby = [client("Host", "#c45c3e"), client("Two", "#2a8f8a"), client("Three", "#3d6b4f"), client("Four", "#7a5c9e"), client("Five", "#b8860b")];
+  await Promise.all(lobby.map((c) => c.open));
+  const [h, two, three, four, five] = lobby;
+  h.send({ type: "hello", name: "Host", color: h.color });
+  const room = (await h.next("welcome")).code;
+  two.send({ type: "hello", code: room, name: "Two", color: two.color });
+  await two.next("welcome");
+  two.send({ type: "start" });
+  expectError(await two.next("error"), "Only the host can start.", "start by a guest");
+  h.send({ type: "start" });
+  expectError(await h.next("error"), "Need 3 or 4 at the table.", "start with two");
+  for (const c of [three, four]) {
+    c.send({ type: "hello", code: room, name: c.name, color: c.color });
+    await c.next("welcome");
+  }
+  five.send({ type: "hello", code: room, name: "Five", color: five.color });
+  expectError(await five.next("error"), "Table full.", "fifth seat");
+}
 
 // The host leaves the lobby: the next seat is host, can start, and the table is told (#249).
 {
