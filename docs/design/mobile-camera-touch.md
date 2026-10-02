@@ -48,7 +48,7 @@ export function hudInsets(cssW: number, cssH: number): Insets {
   const narrow = cssW < 768;
   if (coarse && cssH > cssW) {
     // phone portrait — #172's compact seat strip + hand bar
-    return { top: 72, right: 12, bottom: 196, left: 12 };
+    return { top: 116, right: 12, bottom: 196, left: 12 };
   }
   if (coarse && cssW >= cssH) {
     // phone landscape — hand bar is a short strip; seats can sit top-right
