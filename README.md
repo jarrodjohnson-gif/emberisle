@@ -255,7 +255,9 @@ WebSocket JSON. The client sends intents. The server answers with `state` or `er
 | `chat {id, seat, player, name, color, text, at}` | A chat line, sent to every seat, sender included |
 | `react {seat, player, emote, to, at}` | A reaction, sent to every seat, sender included |
 | `log {text}` / `error {message}` | One line to show |
-| `tradeOffer` / `tradeClosed` | Ask-the-table trades (20 s) |
+| `tradeOffer {tradeId, from, give, want, seconds}` | An ask-the-table trade, open 20 s |
+| `tradeDeclined {tradeId, by, name}` | One seat said no, sent to every seat with a `log` line "<Name> declines." The offer stays open for seats that have not answered. |
+| `tradeClosed {tradeId, taker?}` | The offer is over, sent to every seat: taken (`taker`), every other human seat declined, the 20 s ran out, or the asker's turn moved on (pass, or any action that ends it). A late `tradeAnswer` gets "Offer is gone." |
 
 ---
 
@@ -267,6 +269,7 @@ WebSocket JSON. The client sends intents. The server answers with `state` or `er
 | `node --import ./server/register.mjs server/trade-prove.mjs` | Bank 4:1, discards, steals |
 | `node server/sound-prove.mjs` | A missing sound does not crash |
 | `node --import ./server/register.mjs server/table-prove.mjs` | 3 sockets: codes, color taken, ready, start, setup glow and neighbor rule, 20 rolls match the host |
+| `node --import ./server/register.mjs server/trade-table-prove.mjs` | 3 sockets: a table trade's decline reaches every seat, a yes swaps both hands, a pass closes the offer and a late yes errors |
 | `node --import ./server/register.mjs server/chat-prove.mjs` | `cleanText`/`allow`/`remember`/`loadEmotes` units, the host fills in the sender, rate limit, reactions, chat history for a late joiner, an over-limit frame closes only that socket |
 | `node --import ./server/register.mjs server/rejoin-prove.mjs` | A dropped seat is held: the table waits through the grace, `hello {code, secret}` returns the same seat, a second socket gets "Seat is taken.", the bot plays the seat after the grace and hands it back on return, the room survives every socket closing, the seat is let go after the hold, a socket that stops answering pings is cut within two intervals and can rejoin |
 | `node --import ./server/register.mjs server/persist-prove.mjs` | Three seats set up and roll three times. The host is killed and restarted on the same port. All three rejoin with their secrets and see the same `seq` and the chat. A 25-hour-old room file is dropped, and a broken one and one with a null seat are skipped. |
