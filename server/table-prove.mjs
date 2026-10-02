@@ -139,6 +139,17 @@ while (["setupSettle", "setupRoad"].includes(ember.state.game.phase)) {
 }
 console.log("setup done, phase", ember.state.game.phase);
 
+// Error messages a client can see (#256): the seat that is not up cannot roll. The phase is roll here, so only the turn can refuse.
+const expectError = (m, want, what) => {
+  if (m.message !== want) fail(what, m.message);
+  console.log(`error "${want}" (${what}): ok`);
+};
+{
+  const idle = all.find((c) => c.state.you !== c.state.game.current);
+  idle.send({ type: "roll" });
+  expectError(await idle.next("error"), "Not your turn.", "roll out of turn");
+}
+
 const other = ember.state.game.players.find((p) => p.id !== ember.state.you);
 if (Object.values(other.hidden).some((n) => n !== 0) || typeof other.fortunes !== "number") fail("hidden fortunes leaked");
 
@@ -195,19 +206,12 @@ console.log("20 rolls match the host:", table.join(" "));
 handsAreCounts("after 20 rolls");
 
 // Error messages a client can see (#256).
-const expectError = (m, want, what) => {
-  if (m.message !== want) fail(what, m.message);
-  console.log(`error "${want}" (${what}): ok`);
-};
 {
   // The started table: a late sitter, and a seat that is not up.
   const late = client("Late", "#7a5c9e");
   await late.open;
   late.send({ type: "hello", code, name: "Late", color: late.color });
   expectError(await late.next("error"), "Game already started.", "hello after the start");
-  const idle = all.find((c) => c.state.legal.actions.length === 0 && !c.state.legal.path.length && !c.state.legal.outpost.length);
-  idle.send({ type: "roll" });
-  expectError(await idle.next("error"), "Not your turn.", "roll out of turn");
 
   // A lobby: only the host starts, and 3 or 4 sit.
   const lobby = [client("Host", "#c45c3e"), client("Two", "#2a8f8a"), client("Three", "#3d6b4f"), client("Four", "#7a5c9e"), client("Five", "#b8860b")];

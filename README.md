@@ -268,7 +268,7 @@ WebSocket JSON. The client sends intents. The server answers with `state` or `er
 | `node --import ./server/register.mjs server/prove.mjs` | Short bank pays nobody, dice histogram, setup goods, illegal placement rejected |
 | `node --import ./server/register.mjs server/trade-prove.mjs` | Bank 4:1, discards, steals |
 | `node server/sound-prove.mjs` | A missing sound does not crash |
-| `node --import ./server/register.mjs server/table-prove.mjs` | 3 sockets: codes, color taken, ready, start, setup glow and neighbor rule, 20 rolls match the host |
+| `node --import ./server/register.mjs server/table-prove.mjs` | 3 sockets: codes, color taken, ready, start, setup glow and neighbor rule, 20 rolls match the host, and the table's error strings (full, host-only start, 3 or 4, already started, not your turn) |
 | `node --import ./server/register.mjs server/trade-table-prove.mjs` | 3 sockets: a table trade's decline reaches every seat, a yes swaps both hands, a pass closes the offer and a late yes errors |
 | `node --import ./server/register.mjs server/chat-prove.mjs` | `cleanText`/`allow`/`remember`/`loadEmotes` units, the host fills in the sender, rate limit, reactions, chat history for a late joiner, an over-limit frame closes only that socket |
 | `node --import ./server/register.mjs server/rejoin-prove.mjs` | A dropped seat is held: the table waits through the grace, `hello {code, secret}` returns the same seat, a second socket gets "Seat is taken.", the bot plays the seat after the grace and hands it back on return, the room survives every socket closing, the seat is let go after the hold, a socket that stops answering pings is cut within two intervals and can rejoin |
