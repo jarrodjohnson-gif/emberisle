@@ -69,7 +69,12 @@ const view = (t) =>
         vertices: g.vertices,
         edges: g.edges,
         bank: g.bank,
-        players: g.players.map((p) => ({ id: p.id, resources: p.resources, vp: p.vp })),
+        // Other players' hands arrive as a count only (#186), so the shared part is each hand's size.
+        players: g.players.map((p) => ({
+          id: p.id,
+          goods: p.goods ?? Object.values(p.resources).reduce((a, b) => a + b, 0),
+          vp: p.vp,
+        })),
       }),
     };
   });

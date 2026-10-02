@@ -106,7 +106,7 @@ export function Hud() {
               <span className="tabular-nums text-sm text-zinc-600">{publicVP(state, p.id)} vp</span>
             </div>
             <p className="mt-1 text-xs text-zinc-600">
-              {RESOURCES.reduce((n, r) => n + p.resources[r], 0)} goods · {(p as typeof p & { fortunes?: number }).fortunes ?? hiddenCount(p)} fortunes
+              {p.goods ?? RESOURCES.reduce((n, r) => n + p.resources[r], 0)} goods · {p.fortunes ?? hiddenCount(p)} fortunes
               {seats.some((s) => s.away && (s.name === p.name || `${s.name} (bot)` === p.name)) ? " · reconnecting…" : ""}
             </p>
             <ReactionFloats by="player" id={p.id} />
