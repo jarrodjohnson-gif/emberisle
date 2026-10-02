@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import {
+  TouchGesture,
   PICK_EDGE,
   PICK_VERTEX_RADIUS,
   TARGET,
@@ -69,7 +70,7 @@ export class IsleRenderer {
   private overhead = false;
   private pending: { kind: string; id: string } | null = null;
   private downType = "mouse";
-  private pinch = new Map<number, { x: number; y: number }>();
+  private gesture = new TouchGesture();
   private pinchStart = 0;
   private pinchZoom = 1;
   private safeProbe: HTMLDivElement;
@@ -249,7 +250,7 @@ export class IsleRenderer {
     for (const o of this.marks.children) {
       const m = o as THREE.Mesh;
       const mat = m.material as THREE.MeshStandardMaterial | undefined;
-      if (m.userData?.id && mat && "emissiveIntensity" in mat) mat.emissiveIntensity = m.userData.id === p?.id ? 1.4 : m.userData.kind === "edge" ? 0.45 : 0.8;
+      if (m.userData?.id && mat && "emissiveIntensity" in mat) mat.emissiveIntensity = m.userData.id === p?.id ? 1.4 : (m.userData.baseGlow as number);
     }
   }
 
@@ -352,7 +353,6 @@ export class IsleRenderer {
       this.ortho.up.set(0, 0, -1);
       this.ortho.position.set(f.x, 18, f.z);
       this.ortho.lookAt(f.x, TARGET.y, f.z);
-      this.ortho.zoom = this.pinchZoom;
       this.ortho.updateProjectionMatrix();
     }
     this.renderer.setSize(w, h, false);
@@ -364,36 +364,34 @@ export class IsleRenderer {
     this.down.x = e.clientX;
     this.down.y = e.clientY;
     this.downType = e.pointerType;
-    this.pinch.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    if (this.pinch.size === 2) {
+    this.gesture.down(e.pointerId, e.clientX, e.clientY);
+    if (this.gesture.pointers.size === 2) {
       this.pinchStart = this.pinchDistance();
       this.pinchZoom = this.ortho.zoom;
     }
   };
 
   private pinchDistance() {
-    const [a, b] = [...this.pinch.values()];
+    const [a, b] = [...this.gesture.pointers.values()];
     return a && b ? Math.hypot(a.x - b.x, a.y - b.y) : 0;
   }
 
   // Overhead has no orbit; two fingers change the zoom, 1.0 to 2.4.
   private onMove = (e: PointerEvent) => {
-    if (!this.pinch.has(e.pointerId)) return;
-    this.pinch.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    if (this.pinch.size === 2 && this.overhead && this.pinchStart > 0) {
+    if (!this.gesture.pointers.has(e.pointerId)) return;
+    this.gesture.move(e.pointerId, e.clientX, e.clientY);
+    if (this.gesture.pointers.size === 2 && this.overhead && this.pinchStart > 0) {
       this.ortho.zoom = Math.min(2.4, Math.max(1, this.pinchZoom * (this.pinchDistance() / this.pinchStart)));
       this.ortho.updateProjectionMatrix();
     }
   };
 
   private onCancel = (e: PointerEvent) => {
-    this.pinch.delete(e.pointerId);
+    this.gesture.up(e.pointerId);
   };
 
   private onUp = (e: PointerEvent) => {
-    const wasPinch = this.pinch.size > 1;
-    this.pinch.delete(e.pointerId);
-    if (wasPinch) return;
+    if (this.gesture.up(e.pointerId)) return;
     const coarse = this.coarse();
     if (Math.hypot(e.clientX - this.down.x, e.clientY - this.down.y) > tapSlop(this.downType, coarse)) return;
     const rect = this.renderer.domElement.getBoundingClientRect();
@@ -577,7 +575,7 @@ export class IsleRenderer {
       );
       m.rotation.x = Math.PI / 2;
       m.position.set(v.x, vertexTop(tops, v) + 0.03, v.z);
-      m.userData = { kind: "vertex", id: v.id };
+      m.userData = { kind: "vertex", id: v.id, baseGlow: 0.8 };
       this.marks.add(m);
       const pick = new THREE.Mesh(new THREE.SphereGeometry(PICK_VERTEX_RADIUS, 8, 6), new THREE.MeshBasicMaterial());
       pick.visible = false;
@@ -596,7 +594,7 @@ export class IsleRenderer {
       );
       m.position.set((a.x + b.x) / 2, edgeTop(tops, a, b) + 0.035, (a.z + b.z) / 2);
       m.rotation.y = Math.atan2(b.x - a.x, b.z - a.z);
-      m.userData = { kind: "edge", id: e.id };
+      m.userData = { kind: "edge", id: e.id, baseGlow: 0.45 };
       this.marks.add(m);
       const len = Math.hypot(b.x - a.x, b.z - a.z) * PICK_EDGE.lengthScale;
       const pick = new THREE.Mesh(new THREE.BoxGeometry(PICK_EDGE.w, PICK_EDGE.h, len), new THREE.MeshBasicMaterial());
@@ -612,7 +610,7 @@ export class IsleRenderer {
       const { x, z } = worldOfHex(h);
       const ring = hexCap(HEX_SIZE * 0.9, undefined, 0xc45c3e);
       ring.position.set(x, topOf(h.terrain) + 0.01, z);
-      ring.userData = { kind: "hex", id: h.id };
+      ring.userData = { kind: "hex", id: h.id, baseGlow: 0.55 };
       const mat = ring.material as THREE.MeshStandardMaterial;
       mat.emissive = new THREE.Color(0xc45c3e);
       mat.emissiveIntensity = 0.55;

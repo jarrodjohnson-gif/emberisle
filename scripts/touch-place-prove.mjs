@@ -10,6 +10,7 @@ import {
   isSelectTap,
   pickBest,
   tapSlop,
+  TouchGesture,
 } from "../src/lib/scene/mobile-fit.ts";
 
 // Where a world point (x, z) lands in CSS pixels under the fitted overhead camera.
@@ -72,4 +73,26 @@ assert.equal(isSelectTap(false, "touch", null, "v1"), true, "touch first tap sel
 assert.equal(isSelectTap(true, "touch", "v1", "v1"), false, "touch second tap on the same mark confirms");
 assert.equal(isSelectTap(true, "touch", "v1", "v2"), true, "touch tap on another mark retargets");
 console.log("tap-then-confirm rules ok");
+// A pinch must not tap when either finger lifts, in either order, and the next single tap works again.
+for (const order of [[1, 2], [2, 1]]) {
+  const g = new TouchGesture();
+  g.down(1, 0, 0);
+  g.down(2, 50, 0);
+  assert.equal(g.up(order[0]), true, `pinch: first lift (${order[0]}) is swallowed`);
+  assert.equal(g.up(order[1]), true, `pinch: second lift (${order[1]}) is swallowed`);
+  g.down(3, 0, 0);
+  assert.equal(g.up(3), false, "a single tap after a pinch still taps");
+}
+{
+  const g = new TouchGesture();
+  g.down(1, 0, 0);
+  g.down(2, 50, 0);
+  g.up(1);
+  g.down(3, 10, 10); // a third finger lands mid-gesture; still a pinch
+  assert.equal(g.up(3), true);
+  assert.equal(g.up(2), true);
+  g.down(4, 0, 0);
+  assert.equal(g.up(4), false);
+}
+console.log("pinch lifts never tap, the next single tap does");
 console.log("touch place prove ok");

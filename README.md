@@ -54,7 +54,7 @@ An outpost must not touch another building, including your own. After setup, a n
 
 ### A turn
 
-Roll two dice. The server rolls. Sums that match a token pay every building on that hex, unless the wayfarer is standing there. An outpost takes 1. A stronghold takes 2. If the bank cannot pay everyone for a resource, nobody gets that resource.
+Roll two dice. The server rolls. Sums that match a token pay every building on that hex, unless the wayfarer is standing there. An outpost takes 1. A stronghold takes 2. If the bank cannot pay everyone for a resource, nobody gets that resource, unless only one player is owed it: then they take whatever is left.
 
 Then you may trade, build, buy fortunes, and play fortunes bought on an earlier turn. Pass ends the turn.
 
@@ -118,6 +118,7 @@ npm run dev              # open http://localhost:8080
 # 2. Rules host (tables with room codes)
 npm --prefix server install
 npm run host             # socket, avatars and the built client (dist/) on http://localhost:8787 (set PORT to change)
+                         # tables are saved in server/rooms/ and survive a restart
 
 # 3. Checks: run all of these before you push
 npm run typecheck        # TypeScript, no errors
@@ -235,6 +236,7 @@ WebSocket JSON. The client sends intents. The server answers with `state` or `er
 |---|---|
 | `{type:"hello", name, color, avatarId}` | Open a table. Reply: `welcome {code, you, host:true}` |
 | `{type:"hello", code, name, color, avatarId}` | Sit down at a table |
+| `{type:"hello", code, secret}` | Sit back down in your own seat after a drop. Errors: "Seat is taken." (that seat's socket is still open), "Seat is gone." |
 | `{type:"ready", value}` / `{type:"start"}` | Lobby. Only the host can start, with 3 or 4 seated and everyone ready. |
 | `{type:"place", kind:"outpost"\|"path"\|"stronghold", id}` | Build or place during setup |
 | `{type:"roll"}` `{type:"pass"}` `{type:"buy"}` | Turn actions |
@@ -246,8 +248,8 @@ WebSocket JSON. The client sends intents. The server answers with `state` or `er
 
 | Host → client | Meaning |
 |---|---|
-| `seats {code, seats[]}` | Lobby seat list |
-| `welcome {code, you, host, chat[]}` | `chat` is the room's last 50 lines |
+| `seats {code, seats[]}` | Seat list. `away: true` marks a dropped player whose seat is held. |
+| `welcome {code, you, host, chat[], secret}` | `chat` is the room's last 50 lines. `secret` reclaims this seat with `hello {code, secret}`. |
 | `state {you, game, legal}` | The full game for you, plus `legal` = the ids you may click and the actions you may take |
 | `rolled {dice:[a,b], sum, gains[]}` | The server's dice and who got what |
 | `chat {id, seat, player, name, color, text, at}` | A chat line, sent to every seat, sender included |
@@ -266,6 +268,8 @@ WebSocket JSON. The client sends intents. The server answers with `state` or `er
 | `node server/sound-prove.mjs` | A missing sound does not crash |
 | `node --import ./server/register.mjs server/table-prove.mjs` | 3 sockets: codes, color taken, ready, start, setup glow and neighbor rule, 20 rolls match the host |
 | `node --import ./server/register.mjs server/chat-prove.mjs` | `cleanText`/`allow`/`remember`/`loadEmotes` units, the host fills in the sender, rate limit, reactions, chat history for a late joiner, an over-limit frame closes only that socket |
+| `node --import ./server/register.mjs server/rejoin-prove.mjs` | A dropped seat is held: the table waits through the grace, `hello {code, secret}` returns the same seat, a second socket gets "Seat is taken.", the bot plays the seat after the grace and hands it back on return, the room survives every socket closing, the seat is let go after the hold |
+| `node --import ./server/register.mjs server/persist-prove.mjs` | Three seats set up and roll three times. The host is killed and restarted on the same port. All three rejoin with their secrets and see the same `seq` and the chat. A 25-hour-old room file is dropped, and a broken one is skipped. |
 | `npm run client-prove` | The browser client plays setup and a roll with zero console errors |
 | `npm run chat-prove` | 3 browser tabs at 1280x720: lobby chat and presets, a reaction floats over the sender's rail card for 2 s, the unread badge, the remembered dock state, the minimized dock covers no board target, zero console errors |
 | `npm run tabs-prove` | 3 browser tabs host, join, ready, start, play setup and 5 rolls through the rules host; dice and board match on every tab, zero console errors |

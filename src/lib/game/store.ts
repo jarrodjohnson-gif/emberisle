@@ -1,8 +1,52 @@
 import { create } from "zustand";
 import { createGame } from "./board";
-import { applyAction, legalCities, legalRoads, legalSettle } from "./rules";
+import { applyAction, legalCities, legalRoads, legalSettle, stealTargets } from "./rules";
+
+const BANNER_MS = 2500;
+let bannerTimer: ReturnType<typeof setTimeout> | null = null;
+function showBanner(set: (p: { banner: string | null }) => void, text: string) {
+  if (bannerTimer) clearTimeout(bannerTimer);
+  set({ banner: text });
+  bannerTimer = setTimeout(() => set({ banner: null }), BANNER_MS);
+}
+
+// "Tide rolls 4+5 = 9 · Ember +1 wool · Pine +2 ore"
+function rollLine(roller: string, dice: [number, number], gains: { name: string; resource: string; amount: number }[]) {
+  const parts = gains.map((g) => `${g.name} +${g.amount} ${g.resource}`);
+  return [`${roller} rolls ${dice[0]}+${dice[1]} = ${dice[0] + dice[1]}`, ...(parts.length ? parts : ["nobody gathers"])].join(" · ");
+}
+
+function gainsBetween(before: GameState, after: GameState) {
+  const out: { name: string; resource: string; amount: number }[] = [];
+  for (const p of after.players) {
+    const was = before.players.find((x) => x.id === p.id);
+    if (!was) continue;
+    for (const r of RESOURCES) {
+      const d = p.resources[r] - was.resources[r];
+      if (d > 0) out.push({ name: p.name, resource: r, amount: d });
+    }
+  }
+  return out;
+}
+
+// An award that changed hands between two states, as one line, or null.
+function awardLine(before: GameState | null, after: GameState) {
+  if (!before) return null;
+  const who = (id: string | null) => after.players.find((p) => p.id === id)?.name ?? "Nobody";
+  if (after.longestRoad !== before.longestRoad) {
+    return after.longestRoad ? `${who(after.longestRoad)} holds the longest path` : `${who(before.longestRoad)} loses the longest path`;
+  }
+  if (after.largestArmy !== before.largestArmy) return `${who(after.largestArmy)} holds the largest army`;
+  return null;
+}
+
+// The board as it would be with these paths laid, so the second pick of a path fortune can glow (#184).
+function withPaths(state: GameState, edgeIds: string[], pid: string): GameState {
+  if (!edgeIds.length) return state;
+  return { ...state, edges: state.edges.map((e) => (edgeIds.includes(e.id) ? { ...e, path: pid } : e)) };
+}
 import { chooseBotAction } from "./ai";
-import { PLAYER_COLORS, type Action, type BuildMode, type GameState } from "./types";
+import { PLAYER_COLORS, RESOURCES, type Action, type BuildMode, type GameState } from "./types";
 import { connectTable, hostUrl, type ChatLine, type Legal, type Me, type Reaction, type Seat, type TableClient } from "@/lib/net/table";
 
 export type Screen = "title" | "lobby" | "play";
@@ -19,8 +63,12 @@ interface GameStore {
   state: GameState | null;
   error: string | null;
   buildMode: BuildMode;
+  // Edges picked so far for a path fortune (buildMode "roadCard"); sent together as one playRoad.
+  roadPicks: string[];
   howTo: boolean;
   toast: string | null;
+  // One line everyone reads for a moment: the roll and who got what, or an award changing hands (#188).
+  banner: string | null;
   setName: (n: string) => void;
   setColor: (c: string) => void;
   setHowTo: (v: boolean) => void;
@@ -102,8 +150,10 @@ export const useGame = create<GameStore>((set, get) => ({
   state: null,
   error: null,
   buildMode: "none",
+  roadPicks: [],
   howTo: false,
   toast: null,
+  banner: null,
   net: null,
   code: "",
   isHost: false,
@@ -127,7 +177,7 @@ export const useGame = create<GameStore>((set, get) => ({
     set({ color: c });
   },
   setHowTo: (v) => set({ howTo: v }),
-  setBuildMode: (m) => set({ buildMode: m }),
+  setBuildMode: (m) => set({ buildMode: m, roadPicks: [] }),
   startAi: () => {
     const name = get().name;
     const state = createGame({ humans: [{ name }], bots: 3 });
@@ -191,7 +241,7 @@ export const useGame = create<GameStore>((set, get) => ({
     if (mode === "online") {
       // The host is the rules; its next state message updates the board.
       if (!net?.act(action)) return { ok: false, error: "Not available online." };
-      set({ buildMode: "none" });
+      set({ buildMode: "none", roadPicks: [] });
       return { ok: true };
     }
     const actor = asId ?? (mode === "hotseat" ? state.current : localId);
@@ -200,7 +250,14 @@ export const useGame = create<GameStore>((set, get) => ({
       set({ error: res.error, toast: res.error });
       return { ok: false, error: res.error };
     }
-    set({ state: res.state, error: null, toast: null, buildMode: "none" });
+    set({ state: res.state, error: null, toast: null, buildMode: "none", roadPicks: [] });
+    if (action.type === "roll" && res.state.dice) {
+      const roller = state.players.find((p) => p.id === actor)?.name ?? actor;
+      showBanner(set, rollLine(roller, res.state.dice, gainsBetween(state, res.state)));
+    } else {
+      const swing = awardLine(state, res.state);
+      if (swing) showBanner(set, swing);
+    }
     return { ok: true, state: res.state };
   },
   runBots: () => {
@@ -227,7 +284,8 @@ export const useGame = create<GameStore>((set, get) => ({
     const kind: "moveRobber" | "playKnight" | null =
       state.phase === "robber" && state.current === actor ? "moveRobber" : buildMode === "knight" ? "playKnight" : null;
     if (!kind) return;
-    const targets = mode === "online" ? (legal?.steal[id] ?? []) : [];
+    // Online, the host says whom each hex can rob. Offline, ask the rules the same question (#189).
+    const targets = mode === "online" ? (legal?.steal[id] ?? []) : stealTargets(state, id, actor);
     if (targets.length > 1) {
       set({ pendingSteal: { hexId: id, kind, targets } });
       return;
@@ -267,7 +325,7 @@ export const useGame = create<GameStore>((set, get) => ({
     if (buildMode === "stronghold") dispatch({ type: "buildStronghold", vertexId: id });
   },
   pickEdge: (id) => {
-    const { state, localId, mode, buildMode, dispatch } = get();
+    const { state, localId, mode, buildMode, roadPicks, dispatch } = get();
     if (!state) return;
     const actor = mode === "hotseat" ? state.current : localId;
     if (state.phase === "setupRoad" && state.current === actor) {
@@ -275,10 +333,28 @@ export const useGame = create<GameStore>((set, get) => ({
       return;
     }
     if (buildMode === "path") dispatch({ type: "buildPath", edgeId: id });
+    if (buildMode === "roadCard") {
+      // One pick at a time, each legal given the ones before it. Two picks play the card; one is
+      // enough when no second path is legal or the stock is down to one (rules.ts playRoad).
+      if (!legalRoads(withPaths(state, roadPicks, actor), actor, false).includes(id)) return;
+      const picks = [...roadPicks, id];
+      const me = state.players.find((p) => p.id === actor);
+      const canPlaceMore = (me?.pathsLeft ?? 0) > picks.length && legalRoads(withPaths(state, picks, actor), actor, false).length > 0;
+      if (picks.length < 2 && canPlaceMore) {
+        set({ roadPicks: picks });
+        return;
+      }
+      dispatch({ type: "playRoad", edgeIds: picks });
+    }
   },
   highlights: () => {
-    const { state, localId, mode, buildMode, legal } = get();
+    const { state, localId, mode, buildMode, legal, roadPicks } = get();
     if (!state) return { vertices: [], edges: [], hexes: [] };
+    if (buildMode === "roadCard") {
+      // Same rules online and offline: the client holds the whole board, and the host re-checks the play.
+      const actor = mode === "hotseat" ? state.current : localId;
+      return { vertices: [], edges: legalRoads(withPaths(state, roadPicks, actor), actor, false), hexes: [] };
+    }
     if (mode === "online") {
       const l = legal;
       if (!l) return { vertices: [], edges: [], hexes: [] };
@@ -341,9 +417,17 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void) {
       setTimeout(() => set({ reactions: get().reactions.filter((x) => x !== r) }), 2000);
     },
     seats: ({ code, seats }) => set({ code, seats }),
+    rolled: ({ dice, gains }) => {
+      // The host sends this before the state that follows it, so `current` is still the roller.
+      const st = get().state;
+      const roller = st?.players.find((p) => p.id === st.current)?.name ?? "Someone";
+      showBanner(set, rollLine(roller, dice, gains));
+    },
     state: ({ you, game, legal }) => {
+      const swing = awardLine(get().state, game);
       set({ legal });
       get().loadState(game, you, get().isHost, get().code);
+      if (swing) showBanner(set, swing);
     },
     log: (text) => set({ lobbyLog: text }),
     error: (message) => set({ error: message, toast: message }),

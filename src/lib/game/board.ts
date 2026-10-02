@@ -95,7 +95,9 @@ export function createGame(opts: {
 
   const pips = shuffle([2, 3, 3, 4, 4, 5, 5, 6, 6, 8, 8, 9, 9, 10, 10, 11, 11, 12], rand);
   const land = hexes.filter((h) => h.terrain !== "waste");
-  for (let attempt = 0; attempt < 40; attempt++) {
+  // Deal until no 6 or 8 touches another 6 or 8. About one shuffle in eight passes, so this ends
+  // quickly, and a cap would leave a board with empty hexes (#182: 68 of 20,000 seeds did).
+  for (let attempt = 0; ; attempt++) {
     const order = attempt === 0 ? pips : shuffle(pips, rand);
     let ok = true;
     land.forEach((h) => (h.pip = null));

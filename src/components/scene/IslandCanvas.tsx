@@ -28,14 +28,18 @@ export default function IslandCanvas() {
     );
     api.current = renderer;
     (window as unknown as { __isle: IsleRenderer }).__isle = renderer;
+    let action = "";
     const sync = () => {
       const s = useGame.getState();
       renderer.setTitleMode(s.screen !== "play");
-      // A new state that drops the pending mark from the legal set clears it.
+      // A new state that drops the pending mark from the legal set, or changes what a tap would do, clears it.
       const hi = s.highlights();
       const pp = s.pendingPlace;
+      const nextAction = `${s.state?.phase}|${s.buildMode}`;
+      const actionChanged = nextAction !== action;
+      action = nextAction;
       renderer.setPending(pp);
-      if (pp && ![...hi.vertices, ...hi.edges, ...hi.hexes].includes(pp.id)) {
+      if (pp && (actionChanged || ![...hi.vertices, ...hi.edges, ...hi.hexes].includes(pp.id))) {
         s.setPendingPlace(null);
         return;
       }

@@ -91,3 +91,27 @@ export function isSelectTap(coarse: boolean, pointerType: string, pendingId: str
   const touch = pointerType === "touch" || coarse;
   return touch && pendingId !== hitId;
 }
+
+// Tracks the fingers on the canvas. Once a second finger lands, the whole gesture is a pinch: every lift in it,
+// including the last one, is swallowed so it can't select or place a mark. The flag clears when all fingers are up.
+export class TouchGesture {
+  pointers = new Map<number, { x: number; y: number }>();
+  private hadTwo = false;
+
+  down(id: number, x: number, y: number) {
+    this.pointers.set(id, { x, y });
+    if (this.pointers.size >= 2) this.hadTwo = true;
+  }
+
+  move(id: number, x: number, y: number) {
+    this.pointers.set(id, { x, y });
+  }
+
+  // True when this lift belongs to a pinch and must not be treated as a tap.
+  up(id: number): boolean {
+    this.pointers.delete(id);
+    const pinch = this.hadTwo;
+    if (this.pointers.size === 0) this.hadTwo = false;
+    return pinch;
+  }
+}

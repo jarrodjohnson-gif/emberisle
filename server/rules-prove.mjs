@@ -3,6 +3,7 @@
 import { createGame } from "../src/lib/game/board.ts";
 import { applyAction, harborRate, legalRoads, legalSettle, publicVP, roadLength, stealTargets } from "../src/lib/game/rules.ts";
 import { RESOURCES } from "../src/lib/game/types.ts";
+import { AXIAL_DIRS } from "../src/lib/game/hex.ts";
 
 function fail(why, extra) {
   console.log("FAIL", why, extra ?? "");
@@ -73,7 +74,8 @@ let lineA;
   own(g, lineA.edges.slice(0, 4), "p0");
   g = build(g, "p0", lineA.edges[4].id);
   if (roadLength(g, "p0") !== 5 || g.longestRoad !== "p0") fail("line of 5", { len: roadLength(g, "p0"), award: g.longestRoad });
-  console.log("line of 5: award to p0");
+  if (!g.log.some((l) => l === "A holds the longest path.")) fail("longest path log line (#188)", g.log.slice(-3));
+  console.log("line of 5: award to p0, and the log says so");
 }
 
 // 3. Two players tie at 5 with no holder: nobody gets it (#97). 4. A holder keeps it on a tie.
@@ -115,6 +117,7 @@ let lineA;
   if (roadLength(r.state, "p0") >= 5 || r.state.longestRoad !== null) {
     fail("cut", { len: roadLength(r.state, "p0"), award: r.state.longestRoad });
   }
+  if (!r.state.log.some((l) => l === "A loses the longest path.")) fail("lost longest path log line (#188)", r.state.log.slice(-3));
   console.log(`outpost at the middle of p0's line: p0 trail ${roadLength(r.state, "p0")}, award removed`);
 }
 
@@ -217,6 +220,24 @@ for (const seed of [1, 2, 3, 4, 5]) {
   if (!land.every((h) => Number.isInteger(h.pip) && h.pip >= 2 && h.pip <= 12)) fail("token on every land hex", seed);
   if (g.hexes.find((h) => h.terrain === "waste").pip !== null) fail("waste has no token", seed);
   if (land.some((h) => h.pip === 7)) fail("no 7 token", seed);
+}
+// #182: the deal must never give up and leave a land hex without a token, and red tokens never touch.
+{
+  let empty = 0;
+  let red = 0;
+  for (let seed = 1; seed <= 20000; seed++) {
+    const g = createGame({ humans: [{ name: "A" }], bots: 2, seed });
+    if (g.hexes.some((h) => h.terrain !== "waste" && h.pip == null)) empty++;
+    for (const h of g.hexes) {
+      if (h.pip !== 6 && h.pip !== 8) continue;
+      for (const [dq, dr] of AXIAL_DIRS) {
+        const m = g.hexes.find((x) => x.q === h.q + dq && x.r === h.r + dr);
+        if (m && (m.pip === 6 || m.pip === 8)) red++;
+      }
+    }
+  }
+  console.log(`20000 deals: ${empty} land hexes without a token, ${red} adjacent red tokens`);
+  if (empty || red) fail("deal", { empty, red });
 }
 ok("forest, clay hills, pasture, fields, mountains, or the wastes", true);
 ok("a token from 2 to 12 on every hex except the wastes", true);
@@ -322,6 +343,7 @@ ok("a tie with nobody holding the longest path gives it to nobody (check 3 above
   const two = g.largestArmy;
   knight("p0", 2);
   ok("largest army is 2 and takes 3 knights", two === null && g.largestArmy === "p0" && publicVP(g, "p0") === 2, { two, now: g.largestArmy });
+  ok("the log says who holds the largest army (#188)", g.log.some((l) => l === "A holds the largest army."), g.log.slice(-3));
   [3, 4, 5].forEach((i) => knight("p1", i));
   const tied = g.largestArmy;
   knight("p1", 6);
@@ -410,6 +432,15 @@ ok("a path cannot continue past an opponent's building (check 8 above)", true);
   ok("if the bank cannot pay everyone for a resource, nobody gets it", s.players[0].resources[h.terrain] === 0 && s.players[1].resources[h.terrain] === 0 && s.bank[h.terrain] === 1);
 }
 {
+  // #185: the one exception. A single player owed more than the bank has takes what is left.
+  const g = rollPhase(fresh());
+  const { h, v } = payingCorner(g);
+  g.vertices.find((x) => x.id === v).building = { playerId: "p0", kind: "stronghold" };
+  g.bank[h.terrain] = 1;
+  const s = rollTo(g, h.pip);
+  ok("unless only one player is owed it: then they take whatever is left", s.players[0].resources[h.terrain] === 1 && s.bank[h.terrain] === 0, { got: s.players[0].resources[h.terrain], bank: s.bank[h.terrain] });
+}
+{
   const g = rollPhase(fresh());
   const early = applyAction(g, "p0", { type: "buyCard" });
   g.phase = "main";
@@ -445,6 +476,9 @@ ok("a path cannot continue past an opponent's building (check 8 above)", true);
     wrong.error && !r.error && hand(r.state.players[0]) === 1 && hand(r.state.players[1]) === 2 && hand(r.state.players[2]) === 3 && stealTargets(g, target.id, "p0").join() === "p1",
     wrong.error ?? r.error,
   );
+  // #187: the shared log says a card moved, never which one.
+  const line = r.state.log.find((l) => l.includes("steals"));
+  ok("the stolen card stays between the two players", Boolean(line) && !RESOURCES.some((res) => line.includes(res)), line);
 }
 
 // Docks

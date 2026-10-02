@@ -196,13 +196,21 @@ function updateLongest(state: GameState) {
   if (top < 5) state.longestRoad = null;
   else if (holder && leaders.includes(holder)) state.longestRoad = holder;
   else state.longestRoad = leaders.length === 1 ? leaders[0]! : null;
+  if (state.longestRoad !== holder) {
+    // A swing is worth 2 points either way, so the table hears it (#188).
+    if (state.longestRoad) log(state, `${player(state, state.longestRoad)?.name} holds the longest path.`);
+    else log(state, `${player(state, holder!)?.name} loses the longest path.`);
+  }
 }
 
 function updateArmy(state: GameState, pid: string) {
   const p = player(state, pid);
   if (!p || p.knightsPlayed < 3) return;
   const cur = state.largestArmy ? player(state, state.largestArmy) : null;
-  if (!cur || p.knightsPlayed > cur.knightsPlayed) state.largestArmy = pid;
+  if (!cur || p.knightsPlayed > cur.knightsPlayed) {
+    if (state.largestArmy !== pid) log(state, `${p.name} holds the largest army.`);
+    state.largestArmy = pid;
+  }
 }
 
 export function publicVP(state: GameState, pid: string) {
@@ -254,6 +262,7 @@ function setupAdvance(state: GameState) {
 
 function produce(state: GameState, total: number) {
   const demand: Partial<Record<Resource, number>> = {};
+  const owed: Partial<Record<Resource, Set<string>>> = {};
   const grants: { p: PlayerState; res: Resource; n: number; pip: number }[] = [];
   for (const h of state.hexes) {
     if (h.pip !== total || h.blocked || h.terrain === "waste") continue;
@@ -264,12 +273,14 @@ function produce(state: GameState, total: number) {
       if (!p) continue;
       const n = v.building.kind === "stronghold" ? 2 : 1;
       demand[res] = (demand[res] ?? 0) + n;
+      (owed[res] ??= new Set()).add(p.id);
       grants.push({ p, res, n, pip: h.pip! });
     }
   }
+  // A short bank pays nobody, unless only one player is owed: they take what is left (README "A turn").
   const short = new Set();
   for (const res of Object.keys(demand) as Resource[]) {
-    if ((demand[res] ?? 0) > state.bank[res]) short.add(res);
+    if ((demand[res] ?? 0) > state.bank[res] && (owed[res]?.size ?? 0) > 1) short.add(res);
   }
   for (const grant of grants) {
     if (short.has(grant.res)) continue;
@@ -298,7 +309,8 @@ function stealOne(state: GameState, fromId: string, toId: string) {
   const pick = pool[Math.floor(nextRand(state) * pool.length)]!;
   from.resources[pick] -= 1;
   to.resources[pick] += 1;
-  log(state, `${to.name} steals ${pick} from ${from.name}.`);
+  // The table hears that a card moved, not which one: only the two hands change (#187).
+  log(state, `${to.name} steals a card from ${from.name}.`);
 }
 
 function afterRobber(state: GameState) {
@@ -615,7 +627,8 @@ export function applyAction(prev: GameState, actor: string, action: Action): { s
       state.trade = null;
       state.playedCard = false;
       me.boughtThisTurn = { knight: 0, road: 0, plenty: 0, monopoly: 0, vp: 0 };
-      state.dice = state.dice;
+      // The next player rolls fresh; stale dice would show on their roll phase (#188).
+      state.dice = null;
       const idx = state.players.findIndex((p) => p.id === actor);
       const next = state.players[(idx + 1) % state.players.length]!;
       state.current = next.id;

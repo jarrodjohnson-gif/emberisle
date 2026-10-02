@@ -38,7 +38,21 @@ Before `start`, seat ids are `s0`, `s1`, and so on. After `start`, `state.you` i
 
 ## Reconnect
 
-v1 has none. If the socket drops, show "Lost the table", play `ui_error`, and go back to the main menu. Closing the socket frees the seat.
+Notes: [docs/research/rejoin.md](../research/rejoin.md). `welcome` carries a per-seat `secret` (32 hex characters).
+
+| Client sends | Server answers |
+|---|---|
+| `{ "type": "hello", "code", "secret" }` | `welcome` with the same `you` and `host` flag and the chat history, then `seats`, then `state` if the game has started. Or `error`: "No table with that code", "Seat is taken." (that seat's socket is still open), or "Seat is gone." |
+
+On the host, during a game:
+- A dropped socket keeps its seat. The table hears "<name> lost connection." and `seats` marks it `away: true`.
+- After the grace (`GRACE_MS`, 90 s) the practice bot plays the seat ("(bot)" on the name). If nobody at all is connected, the bots wait for the first rejoin.
+- A rejoin inside the hold (`HOLD_MS`, 10 min) gives the seat back, as a human with the original name, even after the bot took over.
+- After the hold the seat is dropped for good and the bot keeps playing it. The room is deleted when no live or held seats remain.
+
+Host restarts: after each change the host writes the room to `server/rooms/<code>.json` (`ROOMS_DIR` overrides the folder). It saves seats with their secrets, the game, and the chat. Sockets, timers, avatars, and an open trade offer are not saved. On boot it reloads every file and drops any saved more than 24 hours ago. Every restored seat is held as if it had just dropped, so the grace and the hold start again, and players return through `hello {code, secret}`.
+
+In the lobby, closing the socket still frees the seat. The browser client does not use the secret yet: on a drop it still goes back to the main menu.
 
 ## Test
 
