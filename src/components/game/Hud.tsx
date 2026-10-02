@@ -16,7 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { WinScreen } from "@/components/game/WinScreen";
 import { ChatDock, ReactionFloats } from "@/components/game/Chat";
-import { COST, RESOURCES, RESOURCE_LABEL, type PlayerState, type Resource } from "@/lib/game/types";
+import { COST, RESOURCES, RESOURCE_LABEL, type DevKind, type PlayerState, type Resource } from "@/lib/game/types";
 import { harborRate, hiddenCount, legalRoads, playable, publicVP, totalVP } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
 import { cn } from "@/lib/utils";
@@ -28,6 +28,14 @@ const ICONS: Record<Resource, typeof Trees> = {
   grain: Wheat,
   ore: Mountain,
 };
+
+const FORTUNE_NAMES: [DevKind, string][] = [
+  ["knight", "knight"],
+  ["road", "path"],
+  ["plenty", "plenty"],
+  ["monopoly", "monopoly"],
+  ["vp", "points"],
+];
 
 function phaseCopy(phase: string) {
   switch (phase) {
@@ -78,6 +86,17 @@ export function Hud() {
         : (state.discardNeeded[actor] ?? 0) > 0
           ? actor
           : null;
+  const knightButton =
+    mine && !state.playedCard && playable(me, "knight") > 0 ? (
+      <Button
+        size="sm"
+        data-testid="knight-button"
+        variant={buildMode === "knight" ? "primary" : "secondary"}
+        onClick={() => setBuildMode(buildMode === "knight" ? "none" : "knight")}
+      >
+        Wayfarer card{playable(me, "knight") > 1 ? ` ×${playable(me, "knight")}` : ""}
+      </Button>
+    ) : null;
   const winner = state.winner ? state.players.find((p) => p.id === state.winner) : null;
 
   return (
@@ -104,6 +123,7 @@ export function Hud() {
         {state.players.map((p) => (
           <div
             key={p.id}
+            data-testid={`rail-${p.id}`}
             className={cn(
               "pointer-events-auto relative rounded-[16px] border bg-white/45 px-3 py-2 backdrop-blur-md",
               p.id === state.current ? "border-accent" : "border-white/50",
@@ -114,12 +134,20 @@ export function Hud() {
                 <span className="size-2.5 rounded-full" style={{ background: p.color }} />
                 <span className="text-sm font-medium">{p.name}</span>
               </div>
-              <span className="tabular-nums text-sm text-zinc-600">{publicVP(state, p.id)} vp</span>
+              <span className="tabular-nums text-sm text-zinc-600">{publicVP(state, p.id)} vp{p.id === actor && p.hidden.vp > 0 ? ` (+${p.hidden.vp} hidden)` : ""}
+              </span>
             </div>
             <p className="mt-1 text-xs text-zinc-600">
               {p.goods ?? RESOURCES.reduce((n, r) => n + p.resources[r], 0)} goods · {p.fortunes ?? hiddenCount(p)} fortunes
               {seats.some((s) => s.away && (s.name === p.name || `${s.name} (bot)` === p.name)) ? " · reconnecting…" : ""}
             </p>
+            {p.id === actor && hiddenCount(p) > 0 ? (
+              <p className="mt-0.5 text-xs text-zinc-600">
+                {FORTUNE_NAMES.filter(([k]) => p.hidden[k] > 0)
+                  .map(([k, label]) => `${label} ×${p.hidden[k]}${p.boughtThisTurn[k] > 0 ? ` (${p.boughtThisTurn[k]} new)` : ""}`)
+                  .join(" · ")}
+              </p>
+            ) : null}
             <ReactionFloats by="player" id={p.id} />
           </div>
         ))}
@@ -179,15 +207,7 @@ export function Hud() {
                 <ScrollText className="size-4" /> Fortune
               </Button>
               <BankTrade />
-              {!state.playedCard && playable(me, "knight") > 0 ? (
-                <Button
-                  size="sm"
-                  variant={buildMode === "knight" ? "primary" : "secondary"}
-                  onClick={() => setBuildMode(buildMode === "knight" ? "none" : "knight")}
-                >
-                  Wayfarer card{playable(me, "knight") > 1 ? ` ×${playable(me, "knight")}` : ""}
-                </Button>
-              ) : null}
+              {knightButton}
               {!state.playedCard && playable(me, "road") > 0 && me.pathsLeft > 0 && legalRoads(state, me.id, false).length > 0 ? (
                 <Button
                   size="sm"
@@ -206,9 +226,12 @@ export function Hud() {
           ) : null}
 
           {state.phase === "roll" && mine ? (
-            <Button size="lg" onClick={() => dispatch({ type: "roll" })}>
-              <Dices className="size-5" /> Roll
-            </Button>
+            <div className="flex flex-col gap-2">
+              {knightButton ? <div className="flex flex-wrap gap-1">{knightButton}</div> : null}
+              <Button size="lg" onClick={() => dispatch({ type: "roll" })}>
+                <Dices className="size-5" /> Roll
+              </Button>
+            </div>
           ) : null}
 
           {state.dice ? (
