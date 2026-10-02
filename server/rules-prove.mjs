@@ -429,6 +429,15 @@ ok("a path cannot continue past an opponent's building (check 8 above)", true);
   ok("if the bank cannot pay everyone for a resource, nobody gets it", s.players[0].resources[h.terrain] === 0 && s.players[1].resources[h.terrain] === 0 && s.bank[h.terrain] === 1);
 }
 {
+  // #185: the one exception. A single player owed more than the bank has takes what is left.
+  const g = rollPhase(fresh());
+  const { h, v } = payingCorner(g);
+  g.vertices.find((x) => x.id === v).building = { playerId: "p0", kind: "stronghold" };
+  g.bank[h.terrain] = 1;
+  const s = rollTo(g, h.pip);
+  ok("unless only one player is owed it: then they take whatever is left", s.players[0].resources[h.terrain] === 1 && s.bank[h.terrain] === 0, { got: s.players[0].resources[h.terrain], bank: s.bank[h.terrain] });
+}
+{
   const g = rollPhase(fresh());
   const early = applyAction(g, "p0", { type: "buyCard" });
   g.phase = "main";

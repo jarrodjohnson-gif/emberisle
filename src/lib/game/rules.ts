@@ -254,6 +254,7 @@ function setupAdvance(state: GameState) {
 
 function produce(state: GameState, total: number) {
   const demand: Partial<Record<Resource, number>> = {};
+  const owed: Partial<Record<Resource, Set<string>>> = {};
   const grants: { p: PlayerState; res: Resource; n: number; pip: number }[] = [];
   for (const h of state.hexes) {
     if (h.pip !== total || h.blocked || h.terrain === "waste") continue;
@@ -264,12 +265,14 @@ function produce(state: GameState, total: number) {
       if (!p) continue;
       const n = v.building.kind === "stronghold" ? 2 : 1;
       demand[res] = (demand[res] ?? 0) + n;
+      (owed[res] ??= new Set()).add(p.id);
       grants.push({ p, res, n, pip: h.pip! });
     }
   }
+  // A short bank pays nobody, unless only one player is owed: they take what is left (README "A turn").
   const short = new Set();
   for (const res of Object.keys(demand) as Resource[]) {
-    if ((demand[res] ?? 0) > state.bank[res]) short.add(res);
+    if ((demand[res] ?? 0) > state.bank[res] && (owed[res]?.size ?? 0) > 1) short.add(res);
   }
   for (const grant of grants) {
     if (short.has(grant.res)) continue;

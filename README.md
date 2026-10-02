@@ -54,7 +54,7 @@ An outpost must not touch another building, including your own. After setup, a n
 
 ### A turn
 
-Roll two dice. The server rolls. Sums that match a token pay every building on that hex, unless the wayfarer is standing there. An outpost takes 1. A stronghold takes 2. If the bank cannot pay everyone for a resource, nobody gets that resource.
+Roll two dice. The server rolls. Sums that match a token pay every building on that hex, unless the wayfarer is standing there. An outpost takes 1. A stronghold takes 2. If the bank cannot pay everyone for a resource, nobody gets that resource, unless only one player is owed it: then they take whatever is left.
 
 Then you may trade, build, buy fortunes, and play fortunes bought on an earlier turn. Pass ends the turn.
 
