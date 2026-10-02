@@ -2,13 +2,51 @@ import { create } from "zustand";
 import { createGame } from "./board";
 import { applyAction, legalCities, legalRoads, legalSettle, stealTargets } from "./rules";
 
+const BANNER_MS = 2500;
+let bannerTimer: ReturnType<typeof setTimeout> | null = null;
+function showBanner(set: (p: { banner: string | null }) => void, text: string) {
+  if (bannerTimer) clearTimeout(bannerTimer);
+  set({ banner: text });
+  bannerTimer = setTimeout(() => set({ banner: null }), BANNER_MS);
+}
+
+// "Tide rolls 4+5 = 9 · Ember +1 wool · Pine +2 ore"
+function rollLine(roller: string, dice: [number, number], gains: { name: string; resource: string; amount: number }[]) {
+  const parts = gains.map((g) => `${g.name} +${g.amount} ${g.resource}`);
+  return [`${roller} rolls ${dice[0]}+${dice[1]} = ${dice[0] + dice[1]}`, ...(parts.length ? parts : ["nobody gathers"])].join(" · ");
+}
+
+function gainsBetween(before: GameState, after: GameState) {
+  const out: { name: string; resource: string; amount: number }[] = [];
+  for (const p of after.players) {
+    const was = before.players.find((x) => x.id === p.id);
+    if (!was) continue;
+    for (const r of RESOURCES) {
+      const d = p.resources[r] - was.resources[r];
+      if (d > 0) out.push({ name: p.name, resource: r, amount: d });
+    }
+  }
+  return out;
+}
+
+// An award that changed hands between two states, as one line, or null.
+function awardLine(before: GameState | null, after: GameState) {
+  if (!before) return null;
+  const who = (id: string | null) => after.players.find((p) => p.id === id)?.name ?? "Nobody";
+  if (after.longestRoad !== before.longestRoad) {
+    return after.longestRoad ? `${who(after.longestRoad)} holds the longest path` : `${who(before.longestRoad)} loses the longest path`;
+  }
+  if (after.largestArmy !== before.largestArmy) return `${who(after.largestArmy)} holds the largest army`;
+  return null;
+}
+
 // The board as it would be with these paths laid, so the second pick of a path fortune can glow (#184).
 function withPaths(state: GameState, edgeIds: string[], pid: string): GameState {
   if (!edgeIds.length) return state;
   return { ...state, edges: state.edges.map((e) => (edgeIds.includes(e.id) ? { ...e, path: pid } : e)) };
 }
 import { chooseBotAction } from "./ai";
-import { PLAYER_COLORS, type Action, type BuildMode, type GameState } from "./types";
+import { PLAYER_COLORS, RESOURCES, type Action, type BuildMode, type GameState } from "./types";
 import { connectTable, hostUrl, type ChatLine, type Legal, type Me, type Reaction, type Seat, type TableClient } from "@/lib/net/table";
 
 export type Screen = "title" | "lobby" | "play";
@@ -29,6 +67,8 @@ interface GameStore {
   roadPicks: string[];
   howTo: boolean;
   toast: string | null;
+  // One line everyone reads for a moment: the roll and who got what, or an award changing hands (#188).
+  banner: string | null;
   setName: (n: string) => void;
   setColor: (c: string) => void;
   setHowTo: (v: boolean) => void;
@@ -109,6 +149,7 @@ export const useGame = create<GameStore>((set, get) => ({
   roadPicks: [],
   howTo: false,
   toast: null,
+  banner: null,
   net: null,
   code: "",
   isHost: false,
@@ -206,6 +247,13 @@ export const useGame = create<GameStore>((set, get) => ({
       return { ok: false, error: res.error };
     }
     set({ state: res.state, error: null, toast: null, buildMode: "none", roadPicks: [] });
+    if (action.type === "roll" && res.state.dice) {
+      const roller = state.players.find((p) => p.id === actor)?.name ?? actor;
+      showBanner(set, rollLine(roller, res.state.dice, gainsBetween(state, res.state)));
+    } else {
+      const swing = awardLine(state, res.state);
+      if (swing) showBanner(set, swing);
+    }
     return { ok: true, state: res.state };
   },
   runBots: () => {
@@ -355,9 +403,17 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void) {
       setTimeout(() => set({ reactions: get().reactions.filter((x) => x !== r) }), 2000);
     },
     seats: ({ code, seats }) => set({ code, seats }),
+    rolled: ({ dice, gains }) => {
+      // The host sends this before the state that follows it, so `current` is still the roller.
+      const st = get().state;
+      const roller = st?.players.find((p) => p.id === st.current)?.name ?? "Someone";
+      showBanner(set, rollLine(roller, dice, gains));
+    },
     state: ({ you, game, legal }) => {
+      const swing = awardLine(get().state, game);
       set({ legal });
       get().loadState(game, you, get().isHost, get().code);
+      if (swing) showBanner(set, swing);
     },
     log: (text) => set({ lobbyLog: text }),
     error: (message) => set({ error: message, toast: message }),
