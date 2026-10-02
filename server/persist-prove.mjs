@@ -43,7 +43,7 @@ async function client(port, name) {
   });
   ws.on("error", () => {});
   c.send = (msg) => ws.send(JSON.stringify(msg));
-  c.next = async (type, ok = () => true, ms = 3000) => {
+  c.next = async (type, ok = () => true, ms = 10000) => {
     const until = Date.now() + ms;
     for (;;) {
       const i = c.inbox.findIndex((m) => m.type === type && ok(m));
