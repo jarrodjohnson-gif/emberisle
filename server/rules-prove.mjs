@@ -464,6 +464,9 @@ ok("a path cannot continue past an opponent's building (check 8 above)", true);
     wrong.error && !r.error && hand(r.state.players[0]) === 1 && hand(r.state.players[1]) === 2 && hand(r.state.players[2]) === 3 && stealTargets(g, target.id, "p0").join() === "p1",
     wrong.error ?? r.error,
   );
+  // #187: the shared log says a card moved, never which one.
+  const line = r.state.log.find((l) => l.includes("steals"));
+  ok("the stolen card stays between the two players", Boolean(line) && !RESOURCES.some((res) => line.includes(res)), line);
 }
 
 // Docks
