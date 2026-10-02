@@ -144,8 +144,16 @@ try {
     const cur = JSON.parse(vs[0].shared).current;
     const i = vs.findIndex((v) => v.you === cur);
     await act(tabs[i], "dispatch", [{ type: "roll" }]);
+    // #188: every tab shows the same roll banner (dice, sum, who got what) for a moment.
+    const banner = await until(async () => {
+      const texts = await Promise.all(tabs.map((t) => t.page.evaluate(() => document.querySelector('[data-testid="banner"]')?.textContent ?? null)));
+      return texts.every(Boolean) && new Set(texts).size === 1 ? texts[0] : null;
+    }, `banner after roll ${r + 1}`);
     vs = await synced(tabs, seqOf(vs[0]), `roll ${r + 1}`);
-    dice.push(JSON.parse(vs[0].shared).dice);
+    const d = JSON.parse(vs[0].shared).dice;
+    dice.push(d);
+    if (!banner.includes(`rolls ${d[0]}+${d[1]} = ${d[0] + d[1]}`)) throw new Error(`banner after roll ${r + 1}: "${banner}" vs dice ${d}`);
+    if (r === 0) console.log(`roll banner on all tabs: "${banner}"`);
 
     for (let guard = 0; guard < 10; guard++) {
       const phase = JSON.parse(vs[0].shared).phase;

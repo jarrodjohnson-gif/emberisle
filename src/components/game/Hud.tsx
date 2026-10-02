@@ -54,6 +54,7 @@ export function Hud() {
   const mode = useGame((s) => s.mode);
   const buildMode = useGame((s) => s.buildMode);
   const roadPicks = useGame((s) => s.roadPicks);
+  const banner = useGame((s) => s.banner);
   const error = useGame((s) => s.error);
   const howTo = useGame((s) => s.howTo);
   const dispatch = useGame((s) => s.dispatch);
@@ -115,6 +116,15 @@ export function Hud() {
 
       <div className="pointer-events-none absolute bottom-0 inset-x-0 z-10 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         <div className="pointer-events-auto mx-auto flex max-w-3xl flex-col gap-2">
+          {banner ? (
+            <p
+              role="status"
+              data-testid="banner"
+              className="rounded-[16px] border border-accent/40 bg-surface px-3 py-2 text-center text-sm font-medium text-zinc-900"
+            >
+              {banner}
+            </p>
+          ) : null}
           <p className="rounded-[16px] border border-white/50 bg-white/45 px-3 py-2 text-sm text-zinc-900 backdrop-blur-md">
             {winner
               ? `${winner.name} wins with ${totalVP(state, winner.id)} points.`
