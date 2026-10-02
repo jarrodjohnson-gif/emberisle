@@ -71,7 +71,11 @@ export interface PlayerState {
   name: string;
   color: string;
   kind: PlayerKind;
+  // Online, the host sends other players' `resources` as `goods` (the card count) and their
+  // `hidden` fortunes as `fortunes` (the count); only your own hand arrives in full.
   resources: Record<Resource, number>;
+  goods?: number;
+  fortunes?: number;
   hidden: Record<DevKind, number>;
   // Fortunes drawn during this player's current turn; they cannot be played until a later turn.
   boughtThisTurn: Record<DevKind, number>;

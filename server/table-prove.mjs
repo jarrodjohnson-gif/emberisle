@@ -134,6 +134,24 @@ console.log("setup done, phase", ember.state.game.phase);
 const other = ember.state.game.players.find((p) => p.id !== ember.state.you);
 if (Object.values(other.hidden).some((n) => n !== 0) || typeof other.fortunes !== "number") fail("hidden fortunes leaked");
 
+// Another seat's hand arrives as a count only (#186): no `resources`, and `goods` is the size of the
+// hand that seat's own socket holds, which is the host's hand for that player.
+function handsAreCounts(when) {
+  const size = (p) => Object.values(p.resources).reduce((a, b) => a + b, 0);
+  for (const c of all) {
+    for (const p of c.state.game.players) {
+      if (p.id === c.state.you) continue;
+      if ("resources" in p) fail(`${c.name} sees ${p.name}'s hand ${when}`, p.resources);
+      const owner = all.find((o) => o.state.you === p.id).state.game;
+      const held = size(owner.players.find((x) => x.id === p.id));
+      if (owner.seq !== c.state.game.seq || p.goods !== held) fail(`${c.name} counts ${p.name} ${p.goods}, host holds ${held} ${when}`);
+    }
+  }
+  const seen = ember.state.game.players.filter((p) => p.id !== ember.state.you).map((p) => `${p.name} ${p.goods}`);
+  console.log(`${when}, Ember sees counts only (${seen.join(", ")}) and they match each seat's own hand`);
+}
+handsAreCounts("after setup");
+
 // Twenty rolls: every socket sees the same dice the host committed.
 const table = [];
 while (table.length < 20) {
@@ -166,6 +184,7 @@ while (table.length < 20) {
   }
 }
 console.log("20 rolls match the host:", table.join(" "));
+handsAreCounts("after 20 rolls");
 
 host.kill();
 console.log("table prove ok");

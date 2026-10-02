@@ -100,7 +100,11 @@ console.log(`3 table.ts clients finished setup via the host: phase roll, seq ${[
 
 // Play on through the host until a 7 and a knight each rob from a hex with two opponents.
 const all = [a, b, c];
-const cardsOf = (g, id) => RESOURCES.reduce((n, r) => n + g.players.find((x) => x.id === id).resources[r], 0);
+// Another seat's hand is a count only in this client's view (#186); its own hand is in full.
+const cardsOf = (g, id) => {
+  const p = g.players.find((x) => x.id === id);
+  return p.goods ?? RESOURCES.reduce((n, r) => n + p.resources[r], 0);
+};
 async function act(p, action) {
   const seq = p.state.seq;
   p.t.act(action);

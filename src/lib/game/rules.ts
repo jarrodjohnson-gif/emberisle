@@ -26,8 +26,9 @@ function player(state: GameState, id: string) {
   return state.players.find((p) => p.id === id);
 }
 
+// An opponent in the host's view carries only `goods`, the size of the hand (#186).
 function cards(p: PlayerState) {
-  return RESOURCES.reduce((n, r) => n + p.resources[r], 0);
+  return p.goods ?? RESOURCES.reduce((n, r) => n + p.resources[r], 0);
 }
 
 function hasCost(p: PlayerState, cost: Partial<Record<Resource, number>>) {
