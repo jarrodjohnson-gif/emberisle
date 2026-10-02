@@ -27,7 +27,7 @@ function check(line, ok) {
 async function start(dist) {
   const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
     cwd: new URL(".", import.meta.url),
-    env: { ...process.env, PORT: "0", DIST: dist },
+    env: { ...process.env, PORT: "0", DIST: dist, ROOMS_DIR: path.join(temp, "rooms") },
   });
   hosts.push(host);
   return new Promise((resolve) =>

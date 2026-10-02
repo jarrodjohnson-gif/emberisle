@@ -2,7 +2,9 @@
 // the unread badge and the remembered open/minimized state, a minimized dock that covers no board target, zero console errors.
 // Design: docs/design/chat.md "Test plan". Screenshots go to test-results/.
 import { spawn } from "node:child_process";
-import { existsSync, mkdirSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
 import { createServer } from "vite";
@@ -11,9 +13,12 @@ const PORT = 8094;
 const SHOTS = fileURLToPath(new URL("../test-results/", import.meta.url));
 mkdirSync(SHOTS, { recursive: true });
 
+// Rooms go to a temp folder, dropped on exit, so the real host never restores this proof's tables (#207).
+const ROOMS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-rooms-"));
+process.on("exit", () => rmSync(ROOMS_DIR, { recursive: true, force: true }));
 const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL("../server/", import.meta.url),
-  env: { ...process.env, PORT: "0" },
+  env: { ...process.env, PORT: "0", ROOMS_DIR },
 });
 const hostPort = await new Promise((resolve) =>
   host.stdout.on("data", (d) => {

@@ -1,10 +1,16 @@
 // Three sockets play a table against host.mjs with no art (build bible 11.3).
 import { spawn } from "node:child_process";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import WebSocket from "ws";
 
+// Rooms go to a temp folder, dropped on exit, so the real host never restores this proof's tables (#207).
+const ROOMS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-rooms-"));
+process.on("exit", () => rmSync(ROOMS_DIR, { recursive: true, force: true }));
 const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL(".", import.meta.url),
-  env: { ...process.env, PORT: "0" },
+  env: { ...process.env, PORT: "0", ROOMS_DIR },
 });
 const port = await new Promise((resolve, reject) => {
   host.stdout.on("data", (d) => {
