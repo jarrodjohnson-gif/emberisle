@@ -14,6 +14,7 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { WinScreen } from "@/components/game/WinScreen";
 import { ChatDock, ReactionFloats } from "@/components/game/Chat";
 import { COST, RESOURCES, RESOURCE_LABEL, type Resource } from "@/lib/game/types";
 import { harborRate, hiddenCount, legalRoads, playable, publicVP, totalVP } from "@/lib/game/rules";
@@ -240,17 +241,7 @@ export function Hud() {
       </div>
 
       {howTo ? <HowTo onClose={() => setHowTo(false)} /> : null}
-      {winner ? (
-        <div className="absolute inset-0 z-20 flex items-center justify-center bg-bg/60 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-sm rounded-[28px] border border-white/50 bg-surface p-6 text-center">
-            <p className="font-display text-3xl">{winner.name} rules the isle</p>
-            <p className="mt-2 text-zinc-600">{totalVP(state, winner.id)} points</p>
-            <Button className="mt-6 w-full" onClick={goTitle}>
-              Return
-            </Button>
-          </div>
-        </div>
-      ) : null}
+      <WinScreen />
 
       <p className="sr-only">
         Costs: path {COST.path.timber} timber {COST.path.clay} clay. Outpost timber clay wool grain. Stronghold 3 grain 2
