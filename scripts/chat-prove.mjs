@@ -43,8 +43,12 @@ function watch(name, page) {
   page.on("response", (r) => r.status() >= 400 && errors.push(`${name}: ${r.status()} ${r.url()}`));
 }
 
-async function tab(name) {
-  const page = await (await browser.newContext({ viewport: { width: 1280, height: 720 } })).newPage();
+// `phone` is a 390x844 touch phone (#178), the same device as scripts/mobile-shots.mjs.
+async function tab(name, phone = false) {
+  const ctx = await browser.newContext(
+    phone ? { viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, deviceScaleFactor: 1 } : { viewport: { width: 1280, height: 720 } },
+  );
+  const page = await ctx.newPage();
   watch(name, page);
   await page.addInitScript((n) => localStorage.setItem("emberisle-name", n), name);
   // Three software-rendered 1280x720 scenes starve the machine, and the proof reads the DOM. Skip GL draws except while a screenshot is taken.
@@ -87,6 +91,7 @@ const check = (ok, what) => {
 try {
   const tabs = [await tab("Ember"), await tab("Tide"), await tab("Pine")];
   const [a, b, c] = tabs;
+  const phone = await tab("Moss", true);
 
   await a.page.getByRole("button", { name: "Host a table" }).click();
   const tableCode = (await a.page.getByTestId("table-code").textContent()).trim();
@@ -97,6 +102,26 @@ try {
   }
   for (const t of tabs) {
     await until(async () => (await t.page.locator("li", { hasText: "Pine" }).count()) === 1, `${t.name} sees 3 seats`);
+  }
+
+  // Phone title card (#178): full width minus 12 px, at most 55% of the viewport, pinned to the bottom.
+  const box = (t, sel) => t.page.evaluate((q) => {
+    const r = document.querySelector(q).getBoundingClientRect();
+    return { left: r.left, right: r.right, top: r.top, bottom: r.bottom, width: r.width, height: r.height, vw: innerWidth, vh: innerHeight };
+  }, sel);
+  await phone.page.getByTestId("title-card").waitFor();
+  let r = await box(phone, '[data-testid="title-card"]');
+  check(r.height <= 0.55 * r.vh + 0.5, `phone title card is ${r.height.toFixed(0)} px tall, at most 55% of ${r.vh}`);
+  check(Math.abs(r.width - (r.vw - 24)) < 1 && r.left >= 11 && r.bottom > r.vh - 20, "phone title card is full width minus 12 px, at the bottom");
+  await shot(phone, "chat-phone-title.jpg");
+  await phone.page.getByPlaceholder(/code/i).fill(tableCode);
+  await phone.page.getByRole("button", { name: "Join" }).click();
+  await phone.page.getByTestId("table-code").waitFor();
+  r = await box(phone, '[data-testid="lobby-card"]');
+  check(r.height <= 0.55 * r.vh + 0.5 && Math.abs(r.width - (r.vw - 24)) < 1, `phone lobby card is ${r.width.toFixed(0)}x${r.height.toFixed(0)}, within 55vh and full width`);
+  await shot(phone, "chat-phone-lobby.jpg");
+  for (const t of [...tabs, phone]) {
+    await until(async () => (await t.page.locator("li", { hasText: "Moss" }).count()) >= 1, `${t.name} sees 4 seats`);
   }
 
   // 1. Lobby: typed line with Enter, then a preset click, on every tab.
@@ -114,7 +139,7 @@ try {
   check(true, 'lobby: preset "gg" from Tide shows on all 3 tabs');
   check((await a.page.getByPlaceholder("Say something…").inputValue()) === "", "lobby: input cleared after Enter");
 
-  for (const t of tabs) await t.page.getByRole("button", { name: "Ready", exact: true }).click();
+  for (const t of [...tabs, phone]) await t.page.getByRole("button", { name: "Ready", exact: true }).click();
   await a.page.getByRole("button", { name: "Start" }).click();
   for (const t of tabs) await t.page.getByRole("button", { name: "Open chat" }).waitFor();
   check(true, "game: every tab shows the minimized dock, and the lobby lines did not count as unread");
@@ -190,6 +215,28 @@ try {
   await a.page.getByPlaceholder("Say something…").press("Escape");
   await a.page.getByRole("button", { name: "Open chat" }).waitFor();
   check((await stored(a)) === "0", "Esc in the input minimizes the dock");
+
+  // 5. Phone: the open dock is a bottom sheet, and the tap that closes it does not reach the board.
+  await phone.page.getByRole("button", { name: "Open chat" }).waitFor();
+  r = await box(phone, '[aria-label="Open chat"]');
+  check(r.right > r.vw - 20 && r.bottom < r.vh - 150, "phone: the minimized button sits bottom-right above the hand bar");
+  await phone.page.getByRole("button", { name: "Open chat" }).click();
+  await phone.page.getByTestId("chat-sheet").waitFor({ timeout: 5000 });
+  r = await box(phone, '[aria-label="Table chat"]');
+  const cap = Math.min(0.48 * r.vh, 320);
+  check(Math.abs(r.bottom - r.vh) < 1 && r.left === 0 && Math.abs(r.width - r.vw) < 1, `phone: chat is a sheet at the bottom, ${r.width.toFixed(0)} px wide of ${r.vw}`);
+  check(r.height > 100 && r.height <= cap + 0.5, `phone: the sheet is ${r.height.toFixed(0)} px tall, at most min(48vh, 320px) = ${cap.toFixed(0)}`);
+  await shot(phone, "chat-phone-open.jpg");
+  const before = await phone.page.evaluate(() => {
+    const s = window.__emberisle.getState();
+    const v = s.state.current === s.localId ? s.legal?.outpost?.[0] : null;
+    const at = v ? window.__isle.screenOf(v) : null;
+    return { seq: s.state.seq, at: at ?? { x: 195, y: 200 } };
+  });
+  await phone.page.touchscreen.tap(before.at.x, before.at.y);
+  await phone.page.getByTestId("chat-sheet").waitFor({ state: "detached", timeout: 5000 });
+  const after = await phone.page.evaluate(() => ({ seq: window.__emberisle.getState().state.seq, pending: window.__emberisle.getState().pendingPlace }));
+  check(after.seq === before.seq && !after.pending, "phone: tapping the board with the sheet open only closes it, no piece or selection");
 
   // 6.
   check(errors.length === 0, "zero console errors in all tabs");

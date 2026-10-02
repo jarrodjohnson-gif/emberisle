@@ -5,6 +5,7 @@ import { EMOTES } from "@/components/game/emotes";
 import { useGame } from "@/lib/game/store";
 import type { ChatLine } from "@/lib/net/table";
 import { cn } from "@/lib/utils";
+import { useViewport } from "@/lib/viewport";
 
 const PRESETS = ["gg", "nice roll", "your turn", "one sec", "ty"];
 const INPUT_ID = "chat-input";
@@ -148,7 +149,7 @@ export function ChatBox({ rows, onEscape }: { rows: number; onEscape?: () => voi
   );
 }
 
-function Preview() {
+function Preview({ above }: { above?: boolean }) {
   const chat = useGame((s) => s.chat);
   const seen = useRef<Map<number, number>>(new Map(chat.map((l) => [l.id, 0])));
   const [, tick] = useState(0);
@@ -167,7 +168,7 @@ function Preview() {
   }).slice(-3);
 
   return (
-    <ul className="pointer-events-none mt-1 flex w-72 flex-col items-end gap-1" data-testid="chat-preview">
+    <ul className={cn("pointer-events-none flex w-72 flex-col items-end gap-1", above ? "mb-1" : "mt-1")} data-testid="chat-preview">
       {live.map((l) => (
         <li
           key={l.id}
@@ -190,6 +191,7 @@ export function ChatDock() {
   const open = useGame((s) => s.chatOpen);
   const unread = useGame((s) => s.unread);
   const setOpen = useGame((s) => s.setChatOpen);
+  const { phone, portrait } = useViewport();
   const focusNext = useRef(false);
 
   useEffect(() => {
@@ -215,8 +217,45 @@ export function ChatDock() {
 
   if (mode !== "online") return null;
 
+  const minimize = (
+    <button
+      type="button"
+      aria-label="Minimize chat"
+      onClick={() => setOpen(false)}
+      className="flex size-6 cursor-pointer items-center justify-center rounded-[8px] hover:bg-white/60"
+    >
+      <Minus className="size-4" />
+    </button>
+  );
+
+  // On a phone the open dock is a bottom sheet. The backdrop catches the tap that closes it, so that tap never reaches the board.
+  if (phone && open) {
+    return (
+      <>
+        <div data-testid="chat-backdrop" className="fixed inset-0 z-20" onClick={() => setOpen(false)} />
+        <section
+          aria-label="Table chat"
+          data-testid="chat-sheet"
+          className="fixed inset-x-0 bottom-0 z-30 flex flex-col gap-2 rounded-t-[16px] border border-white/50 bg-white/70 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-md"
+          style={{ height: "min(48vh, 320px)" }}
+        >
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-medium">Table chat</h2>
+            {minimize}
+          </div>
+          <ChatBox rows={4} onEscape={() => setOpen(false)} />
+        </section>
+      </>
+    );
+  }
+
   return (
-    <div className="absolute right-3 top-16 z-20 flex flex-col items-end">
+    <div
+      className={cn(
+        "absolute right-3 z-20 flex items-end",
+        phone ? cn("flex-col-reverse", portrait ? "bottom-[196px]" : "bottom-[184px]") : "top-16 flex-col",
+      )}
+    >
       {open ? (
         <section
           aria-label="Table chat"
@@ -225,14 +264,7 @@ export function ChatDock() {
         >
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-medium">Table chat</h2>
-            <button
-              type="button"
-              aria-label="Minimize chat"
-              onClick={() => setOpen(false)}
-              className="flex size-6 cursor-pointer items-center justify-center rounded-[8px] hover:bg-white/60"
-            >
-              <Minus className="size-4" />
-            </button>
+            {minimize}
           </div>
           <ChatBox rows={6} onEscape={() => setOpen(false)} />
         </section>
@@ -259,7 +291,7 @@ export function ChatDock() {
               </span>
             ) : null}
           </button>
-          <Preview />
+          <Preview above={phone} />
         </>
       )}
     </div>
