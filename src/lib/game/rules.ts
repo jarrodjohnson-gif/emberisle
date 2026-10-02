@@ -343,7 +343,7 @@ function setupOrderNote(state: GameState) {
 }
 
 // Client input is untrusted: a card bag is only known resources with whole, non-negative counts.
-function validBag(bag: unknown): bag is Partial<Record<Resource, number>> {
+export function validBag(bag: unknown): bag is Partial<Record<Resource, number>> {
   if (!bag || typeof bag !== "object" || Array.isArray(bag)) return false;
   return Object.entries(bag).every(
     ([k, n]) => (RESOURCES as readonly string[]).includes(k) && Number.isInteger(n) && (n as number) >= 0,
@@ -577,6 +577,7 @@ export function applyAction(prev: GameState, actor: string, action: Action): { s
     case "bankTrade": {
       if (state.phase !== "main") return { state: prev, error: "Cannot trade now." };
       if (!validRes(action.give) || !validRes(action.want)) return { state: prev, error: "Choose resources." };
+      if (action.give === action.want) return { state: prev, error: "Trade for a different resource." };
       const rate = harborRate(state, actor, action.give);
       if (me.resources[action.give] < rate) return { state: prev, error: `Need ${rate} ${action.give}.` };
       if (state.bank[action.want] <= 0) return { state: prev, error: "Bank is empty." };

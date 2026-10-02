@@ -538,4 +538,35 @@ ok("a path cannot continue past an opponent's building (check 8 above)", true);
 // Bank
 ok("the bank starts with 19 of each resource", RESOURCES.every((r) => fresh().bank[r] === 19));
 
+// Error messages a client can see (#256)
+{
+  const g = rollPhase(fresh());
+  giveCards(g.players[0], { timber: 8 });
+  const s = rollTo(g, 7);
+  const r = applyAction(s, "p0", { type: "discard", resources: { timber: 3 } });
+  ok("a discard must be exactly half", r.error === "Discard exactly 4.", r.error);
+}
+{
+  const g = fresh();
+  g.phase = "robber";
+  const target = g.hexes.find((h) => h.terrain !== "waste" && h.id !== g.robberHex);
+  const away = g.vertices.find((v) => !v.hexes.includes(target.id));
+  away.building = { playerId: "p2", kind: "outpost" };
+  giveCards(g.players[2], { ore: 3 });
+  const r = applyAction(g, "p0", { type: "moveRobber", hexId: target.id, stealFrom: "p2" });
+  ok("the wayfarer steals only from a player with a building there", r.error === "Cannot steal from them.", r.error);
+}
+{
+  const g = fresh();
+  g.phase = "over";
+  const r = applyAction(g, "p0", { type: "endTurn" });
+  ok("nothing happens once the game is over", r.error === "The game is over.", r.error);
+}
+{
+  const g = fresh();
+  giveCards(g.players[0], { ore: 8 });
+  const r = applyAction(g, "p0", { type: "bankTrade", give: "ore", want: "ore" });
+  ok("the bank is 4 of one resource for 1 of another", r.error === "Trade for a different resource." && r.state.players[0].resources.ore === 8 && r.state.bank.ore === 19, r.error ?? r.state.players[0].resources);
+}
+
 console.log("rules prove ok");

@@ -152,6 +152,31 @@ try {
     return { gained: me.resources.ore - before.ore, othersLeft: st.players.filter((p) => p !== me).reduce((n, p) => n + p.resources.ore, 0), cardLeft: me.hidden.monopoly, error: g.getState().error };
   }, mono);
   console.log("monopoly fortune:", JSON.stringify(monopoly));
+
+  // #163: a bank trade through the trade panel. Only the rate harborRate gives this player shows on the button.
+  await arm({});
+  const oreBefore = await page.evaluate(() => {
+    const g = window.__emberisle;
+    const st = structuredClone(g.getState().state);
+    const me = st.players.find((p) => p.id === g.getState().localId);
+    me.resources.ore = 4;
+    g.setState({ state: st });
+    return me.resources.wool;
+  });
+  await page.getByRole("button", { name: "Trade", exact: true }).click();
+  await page.getByTestId("trade-panel").waitFor();
+  const askOffline = await page.getByRole("button", { name: "Ask the table" }).count();
+  await page.getByRole("button", { name: "More ore to give" }).click();
+  await page.getByRole("button", { name: "More wool to want" }).click();
+  const rateButton = page.getByRole("button", { name: /^(Bank 4|Dock 3|Dock 2):1$/ });
+  const rateLabel = await rateButton.textContent();
+  await rateButton.click();
+  const bankTrade = await page.evaluate((woolBefore) => {
+    const g = window.__emberisle;
+    const me = g.getState().state.players.find((p) => p.id === g.getState().localId);
+    return { ore: 4 - me.resources.ore, wool: me.resources.wool - woolBefore, open: g.getState().tradeOpen, error: g.getState().error };
+  }, oreBefore);
+  console.log("bank trade through the panel:", rateLabel, JSON.stringify(bankTrade), `ask-the-table buttons offline: ${askOffline}`);
   await page.waitForTimeout(1500);
   mkdirSync("test-results", { recursive: true });
   // Software WebGL on a 2-CPU CI runner can take a while to finish one frame of the island.
@@ -222,6 +247,9 @@ try {
   console.log("rail cards:", JSON.stringify(rail));
 
   // #177: the whose-turn banner is on desktop too, and the phone strip is not.
+  // The app runs a bot 700 ms after each seq change. Let any timer left from the last move fire first,
+  // so it can't roll for the bot before the banner is read; the flip below keeps seq, so none is set again.
+  await page.waitForTimeout(1000);
   const turn = await page.evaluate(() => {
     const g = window.__emberisle;
     const st = structuredClone(g.getState().state);
@@ -232,7 +260,9 @@ try {
     g.setState({ state: st });
     return { mineText, bot: bot.name };
   });
-  await page.waitForTimeout(200);
+  await page
+    .waitForFunction((name) => document.querySelector('[data-testid="turn-banner"]')?.textContent?.startsWith(`${name}'s turn`), turn.bot, { timeout: 5000 })
+    .catch(() => {});
   turn.theirs = await page.getByTestId("turn-banner").textContent();
   turn.strip = await page.getByTestId("seat-strip").count();
   console.log("turn banner:", JSON.stringify(turn));
@@ -251,6 +281,9 @@ try {
   }
   if (plenty.ore !== 1 || plenty.wool !== 1 || plenty.cardLeft !== 0 || plenty.error) throw new Error(`plenty fortune: ${JSON.stringify(plenty)}`);
   if (monopoly.gained !== 6 || monopoly.othersLeft !== 0 || monopoly.cardLeft !== 0 || monopoly.error) throw new Error(`monopoly fortune: ${JSON.stringify(monopoly)}`);
+  if (bankTrade.ore !== Number(rateLabel.match(/\d/)[0]) || bankTrade.wool !== 1 || bankTrade.open || bankTrade.error || askOffline !== 0) {
+    throw new Error(`bank trade through the panel: ${rateLabel} ${JSON.stringify(bankTrade)} ask buttons ${askOffline}`);
+  }
   if (online.botActs !== 0) throw new Error(`client ran a bot online: ${JSON.stringify(online)}`);
   if (online.log !== "" || online.place !== null || online.seat !== "" || online.host || online.picks || online.toast !== null || online.screen !== "title") {
     throw new Error(`stale state after leaving: ${JSON.stringify(online)}`);

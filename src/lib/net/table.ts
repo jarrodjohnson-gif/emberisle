@@ -48,6 +48,9 @@ export interface Reaction {
   at: number;
 }
 
+// An ask-the-table offer (README "Messages between client and host"). Bags are resource counts, empty when absent.
+export type Bag = Partial<Record<Resource, number>>;
+
 export interface TableEvents {
   welcome(msg: { code: string; you: string; host: boolean; chat?: ChatLine[]; secret?: string }): void;
   seats(msg: { code: string; seats: Seat[] }): void;
@@ -57,6 +60,9 @@ export interface TableEvents {
   react(r: Reaction): void;
   log(text: string): void;
   error(message: string): void;
+  tradeOffer(msg: { tradeId: string; from: string; give: Bag; want: Bag; seconds: number }): void;
+  tradeDeclined(msg: { tradeId: string; by: string; name: string }): void;
+  tradeClosed(msg: { tradeId: string; taker?: string }): void;
   // The socket dropped and the client is dialing again (attempt 1, 2, ...); `closed` follows only if it gives up.
   reconnecting(attempt: number): void;
   // `keepSeat`: the seat is still ours but open in another tab, so the saved secret stays.
@@ -79,6 +85,9 @@ export interface TableClient {
   ready(value: boolean): void;
   start(): void;
   act(action: Action): boolean;
+  // Ask-the-table trades are host-run (not rules Actions): offer `give` for `want` to every other seat, and answer one.
+  ask(give: Bag, want: Bag): void;
+  answer(tradeId: string, yes: boolean): void;
   say(text: string): void;
   react(emote: string, to?: string): void;
   close(): void;
@@ -243,6 +252,15 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
       case "log":
         on.log?.(String(msg.text));
         break;
+      case "tradeOffer":
+        on.tradeOffer?.(msg as never);
+        break;
+      case "tradeDeclined":
+        on.tradeDeclined?.(msg as never);
+        break;
+      case "tradeClosed":
+        on.tradeClosed?.(msg as never);
+        break;
       case "error": {
         const message = String(msg.message);
         if (rejoining) taken = message === "Seat is taken.";
@@ -282,6 +300,8 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
       if (intent) send(intent);
       return Boolean(intent);
     },
+    ask: (give, want) => send({ type: "tradeAsk", give, want }),
+    answer: (tradeId, yes) => send({ type: "tradeAnswer", tradeId, yes }),
     say: (text) => send({ type: "chat", text }),
     react: (emote, to) => send({ type: "react", emote, to }),
     drop: () => ws.close(),
