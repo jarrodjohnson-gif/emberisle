@@ -1,6 +1,6 @@
 // The player action menu, opened from a rail card (desktop) or a seat strip chip (phone). Design: docs/design/chat.md
 // "The player action menu". Illegal rows are hidden, not greyed out. Closes on Esc, a pointerdown outside the menu and
-// its trigger, or the same card again (the trigger toggles `openMenu`).
+// its trigger, or the same card again (the trigger toggles `openMenu`). Both trade rows open the trade panel (#163).
 import { useEffect, useRef } from "react";
 import { MessageSquare, Landmark, AtSign, Handshake } from "lucide-react";
 import { EMOTES } from "@/components/game/emotes";
@@ -8,12 +8,6 @@ import { RESOURCES, type PlayerState } from "@/lib/game/types";
 import { hiddenCount, publicVP } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
 import { cn } from "@/lib/utils";
-
-// #163 hook-up (PR #241 adds `setTradeOpen` to the store): return `() => useGame.getState().setTradeOpen(true)` here.
-// Until then "Offer a trade…" stays hidden and your own trade row focuses the bank select, per the design.
-function tradePanel(): (() => void) | null {
-  return null;
-}
 
 const CHAT_INPUT = "chat-input";
 
@@ -32,6 +26,7 @@ export function PlayerMenu({ player: p, className }: { player: PlayerState; clas
   const sendReact = useGame((s) => s.sendReact);
   const setChatOpen = useGame((s) => s.setChatOpen);
   const setChatDraft = useGame((s) => s.setChatDraft);
+  const setTradeOpen = useGame((s) => s.setTradeOpen);
   const root = useRef<HTMLDivElement>(null);
 
   const actor = mode === "hotseat" ? state.current : localId;
@@ -67,7 +62,6 @@ export function PlayerMenu({ player: p, className }: { player: PlayerState; clas
     ["Points shown", publicVP(state, p.id)],
     ["Wayfarers played", p.knightsPlayed],
   ];
-  const openTrade = tradePanel();
 
   return (
     <div
@@ -108,20 +102,19 @@ export function PlayerMenu({ player: p, className }: { player: PlayerState; clas
           type="button"
           className={ROW}
           onClick={() => {
-            if (openTrade) openTrade();
-            else document.querySelector<HTMLSelectElement>('select[name="give"]')?.focus();
+            setTradeOpen(true);
             close();
           }}
         >
           <Landmark className="size-4 shrink-0 text-zinc-600" /> Trade with the bank or a dock…
         </button>
       ) : null}
-      {!own && online && myMain && openTrade ? (
+      {!own && online && myMain ? (
         <button
           type="button"
           className={ROW}
           onClick={() => {
-            openTrade();
+            setTradeOpen(true);
             close();
           }}
         >

@@ -16,9 +16,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { WinScreen } from "@/components/game/WinScreen";
 import { ChatDock, ReactionFloats } from "@/components/game/Chat";
+import { TradeButton, TradePanel } from "@/components/game/TradePanel";
+import { TradeToast } from "@/components/game/TradeToast";
 import { PlayerMenu } from "@/components/game/PlayerMenu";
 import { COST, RESOURCES, RESOURCE_LABEL, type DevKind, type PlayerState, type Resource } from "@/lib/game/types";
-import { harborRate, hiddenCount, legalRoads, playable, publicVP, totalVP } from "@/lib/game/rules";
+import { hiddenCount, legalRoads, playable, publicVP, totalVP } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
 import { useViewport } from "@/lib/viewport";
 import { cn } from "@/lib/utils";
@@ -205,6 +207,7 @@ export function Hud() {
       )}
 
       <ChatDock />
+      <TradeToast />
 
       <div className="pointer-events-none absolute bottom-0 inset-x-0 z-10 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         <div className="pointer-events-auto mx-auto flex max-w-3xl flex-col gap-2">
@@ -230,7 +233,7 @@ export function Hud() {
           ) : null}
           {state.phase === "over" ? null : (
             <p
-              key={state.current}
+              key={`turn-${state.current}`}
               data-testid="turn-banner"
               style={{ borderLeftColor: yours ? undefined : subjectPlayer.color }}
               className={cn(
@@ -263,7 +266,7 @@ export function Hud() {
 
           <ResourceHand me={me} />
 
-          {discarder ? <DiscardBar key={discarder} id={discarder} n={state.discardNeeded[discarder]!} /> : null}
+          {discarder ? <DiscardBar key={`discard-${discarder}`} id={discarder} n={state.discardNeeded[discarder]!} /> : null}
           <TakeFromBar />
 
           {state.phase === "main" && mine ? (
@@ -292,7 +295,7 @@ export function Hud() {
               <Button size="sm" variant="secondary" onClick={() => dispatch({ type: "buyCard" })}>
                 <ScrollText className="size-4" /> Fortune
               </Button>
-              <BankTrade />
+              <TradeButton />
               {knightButton}
               {!state.playedCard && playable(me, "road") > 0 && me.pathsLeft > 0 && legalRoads(state, me.id, false).length > 0 ? (
                 <Button
@@ -338,6 +341,7 @@ export function Hud() {
         </div>
       </div>
 
+      <TradePanel />
       {howTo ? <HowTo onClose={() => setHowTo(false)} /> : null}
       <WinScreen />
 
@@ -539,45 +543,6 @@ function TakeFromBar() {
         );
       })}
     </div>
-  );
-}
-
-function BankTrade() {
-  const state = useGame((s) => s.state)!;
-  const localId = useGame((s) => s.localId);
-  const mode = useGame((s) => s.mode);
-  const dispatch = useGame((s) => s.dispatch);
-  const actor = mode === "hotseat" ? state.current : localId;
-  const me = state.players.find((p) => p.id === actor)!;
-  return (
-    <form
-      className="flex items-center gap-1"
-      onSubmit={(e) => {
-        e.preventDefault();
-        const fd = new FormData(e.currentTarget);
-        const give = fd.get("give") as Resource;
-        const want = fd.get("want") as Resource;
-        if (give && want && give !== want) dispatch({ type: "bankTrade", give, want });
-      }}
-    >
-      <select name="give" className="h-9 rounded-[8px] border border-white/50 bg-raised px-2 text-sm">
-        {RESOURCES.map((r) => (
-          <option key={r} value={r}>
-            Give {harborRate(state, me.id, r)} {RESOURCE_LABEL[r]}
-          </option>
-        ))}
-      </select>
-      <select name="want" className="h-9 rounded-[8px] border border-white/50 bg-raised px-2 text-sm">
-        {RESOURCES.map((r) => (
-          <option key={r} value={r}>
-            For {RESOURCE_LABEL[r]}
-          </option>
-        ))}
-      </select>
-      <Button size="sm" variant="secondary" type="submit">
-        Bank
-      </Button>
-    </form>
   );
 }
 

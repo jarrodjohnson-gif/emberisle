@@ -21,6 +21,8 @@ const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"],
   cwd: new URL("../server/", import.meta.url),
   env: { ...process.env, PORT: "0", ROOMS_DIR },
 });
+process.on("exit", () => host.kill());
+for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
 const hostPort = await new Promise((resolve) =>
   host.stdout.on("data", (d) => {
     const m = String(d).match(/listening (\d+)/);
@@ -224,7 +226,7 @@ try {
     return { inRail: menu.left >= aside.left - 1 && menu.right <= aside.right + 1, under: menu.top >= card.bottom, pushed: !below || below.top >= menu.bottom };
   }, bId);
   check(geo.inRail && geo.under && geo.pushed, "menu: sits in the rail column under the card and pushes the cards below it down");
-  check((await menu.getByRole("button", { name: /Offer a trade/ }).count()) === 0, "menu: no Offer a trade row until the trade panel lands");
+  check((await menu.getByRole("button", { name: /Offer a trade/ }).count()) === 0, "menu: no Offer a trade row outside your main phase");
   await shot(a, "menu-open.jpg");
   await menu.getByRole("button", { name: "React ben-10" }).click();
   await menu.waitFor({ state: "detached" });

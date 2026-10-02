@@ -55,6 +55,8 @@ host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   env: { ...process.env, PORT: "0", GRACE_MS: "100", ROOMS_DIR },
   stdio: ["ignore", "pipe", "pipe"],
 });
+process.on("exit", () => host.kill());
+for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
 const port = await new Promise((resolve, reject) => {
   host.stdout.on("data", (d) => {
     const m = String(d).match(/listening (\d+)/);

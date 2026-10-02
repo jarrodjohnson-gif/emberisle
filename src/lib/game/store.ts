@@ -47,7 +47,19 @@ function withPaths(state: GameState, edgeIds: string[], pid: string): GameState 
 }
 import { chooseBotAction } from "./ai";
 import { PLAYER_COLORS, RESOURCES, type Action, type BuildMode, type GameState } from "./types";
-import { connectTable, hostUrl, type ChatLine, type Legal, type Me, type Reaction, type Seat, type TableClient } from "@/lib/net/table";
+import { connectTable, hostUrl, type Bag, type ChatLine, type Legal, type Me, type Reaction, type Seat, type TableClient } from "@/lib/net/table";
+
+// The ask-the-table offer every seat is looking at (docs/BUILD_BIBLE.md 4.4). `until` is when the host's 20 s run out.
+export interface OpenOffer {
+  tradeId: string;
+  from: string;
+  fromName: string;
+  give: Bag;
+  want: Bag;
+  until: number;
+}
+
+let outcomeTimer: ReturnType<typeof setTimeout> | null = null;
 
 export type Screen = "title" | "lobby" | "play";
 
@@ -115,6 +127,14 @@ interface GameStore {
   setChatDraft: (v: string) => void;
   sendChat: (text: string) => void;
   sendReact: (emote: string, to?: string) => void;
+  // Ask-the-table trades (docs/BUILD_BIBLE.md 4.4): the open offer, who has said No to it, and the asker's closing line.
+  offer: OpenOffer | null;
+  declined: string[];
+  tradeOutcome: string | null;
+  tradeOpen: boolean;
+  setTradeOpen: (v: boolean) => void;
+  askTable: (give: Bag, want: Bag) => void;
+  answerTrade: (yes: boolean) => void;
   // The player whose action menu is open in the HUD rail or seat strip (docs/design/chat.md "The player action menu").
   menuFor: string | null;
   openMenu: (id: string | null) => void;
@@ -194,6 +214,10 @@ export const useGame = create<GameStore>((set, get) => ({
   chatOpen: savedChatOpen(),
   unread: 0,
   chatDraft: "",
+  offer: null,
+  declined: [],
+  tradeOutcome: null,
+  tradeOpen: false,
   menuFor: null,
   setName: (n) => {
     const name = n.slice(0, 18) || "Ember";
@@ -277,6 +301,10 @@ export const useGame = create<GameStore>((set, get) => ({
       roadPicks: [],
       pendingPlace: null,
       toast: null,
+      offer: null,
+      declined: [],
+      tradeOutcome: null,
+      tradeOpen: false,
     });
   },
   dispatch: (action, asId) => {
@@ -447,6 +475,15 @@ export const useGame = create<GameStore>((set, get) => ({
   setChatDraft: (v) => set({ chatDraft: v }),
   sendChat: (text) => get().net?.say(text),
   sendReact: (emote, to) => get().net?.react(emote, to),
+  setTradeOpen: (v) => set({ tradeOpen: v }),
+  askTable: (give, want) => {
+    get().net?.ask(give, want);
+    set({ tradeOpen: false });
+  },
+  answerTrade: (yes) => {
+    const { offer, net } = get();
+    if (offer) net?.answer(offer.tradeId, yes);
+  },
   openMenu: (id) => set({ menuFor: id }),
 }));
 
@@ -486,6 +523,26 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void) {
       if (swing) showBanner(set, swing);
     },
     log: (text) => set({ lobbyLog: text }),
+    tradeOffer: ({ tradeId, from, give, want, seconds }) => {
+      const fromName = get().state?.players.find((p) => p.id === from)?.name ?? "Someone";
+      set({ offer: { tradeId, from, fromName, give, want, until: Date.now() + seconds * 1000 }, declined: [], tradeOutcome: null });
+    },
+    tradeDeclined: ({ tradeId, by }) => {
+      const { offer, declined } = get();
+      if (offer?.tradeId === tradeId && !declined.includes(by)) set({ declined: [...declined, by] });
+    },
+    tradeClosed: ({ tradeId, taker }) => {
+      const { offer, localId, state } = get();
+      if (offer?.tradeId !== tradeId) return;
+      const takerName = state?.players.find((p) => p.id === taker)?.name ?? "Someone";
+      set({ offer: null, declined: [] });
+      if (taker) showBanner(set, `${takerName} takes ${offer.fromName}'s trade`);
+      if (offer.from !== localId) return;
+      // The asker's toast lingers with the outcome for as long as a banner would.
+      if (outcomeTimer) clearTimeout(outcomeTimer);
+      set({ tradeOutcome: taker ? `${takerName} takes it.` : "Nobody took it." });
+      outcomeTimer = setTimeout(() => set({ tradeOutcome: null }), BANNER_MS);
+    },
     error: (message) => set({ error: message, toast: message }),
     closed: (keepSeat) => {
       if (keepSeat) {
