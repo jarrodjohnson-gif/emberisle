@@ -141,6 +141,21 @@ if (new Set(lastSeats.seats.map((s) => s.color)).size !== 4) fail("seat colours 
 for (const x of n) x.ws.close();
 console.log("names de-duped (Ember, Ember 2, Ember 3), control-only name defaulted, hostile colour replaced");
 
+// 2c. The 16-character cut leaves no trailing space, and a zero-width-only name takes the default (#264).
+const m = [client(), client()];
+await Promise.all(m.map((x) => x.open));
+m[0].send({ type: "hello", name: "B".repeat(15) + " x" });
+const { code: mcode } = await m[0].next("welcome");
+m[1].send({ type: "hello", code: mcode, name: "\u200b\u200b" });
+await m[1].next("welcome");
+await new Promise((r) => setTimeout(r, 100));
+let mSeats;
+while (m[1].inbox.some((x) => x.type === "seats")) mSeats = await m[1].next("seats");
+const mNames = mSeats.seats.map((s) => s.name).join(",");
+if (mNames !== "B".repeat(15) + ",Tide") fail("edge seat names", mNames);
+for (const x of m) x.ws.close();
+console.log("16-char cut trimmed to 15 B's; zero-width-only name defaulted");
+
 // 3. A player who leaves mid-game is played by the bot after the grace, so the table keeps going.
 for (const x of [a, b, c]) x.send({ type: "ready", value: true });
 await new Promise((r) => setTimeout(r, 100));

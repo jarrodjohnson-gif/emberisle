@@ -2,7 +2,7 @@
 // Design: docs/design/chat.md "Validation".
 import { readdirSync } from "node:fs";
 
-const CONTROL = /\p{Cc}/gu;
+const CONTROL = /[\p{Cc}\p{Cf}]/gu;
 const SPACES = / {2,}/g;
 const EMOTE_FILE = /^([a-z0-9-]+)\.(png|webp)$/;
 

@@ -370,7 +370,7 @@ const wss = new WebSocketServer({ server, maxPayload: 16 * 1024 });
 
 // A name is the join key for the away marker, chat mentions and the log, so it is cleaned and made unique.
 function seatName(room, raw, fallback) {
-  const base = typeof raw === "string" ? Array.from(raw.replace(/\p{Cc}/gu, "").replace(/ {2,}/g, " ").trim()).slice(0, 16).join("") : "";
+  const base = typeof raw === "string" ? Array.from(raw.replace(/[\p{Cc}\p{Cf}]/gu, "").replace(/ {2,}/g, " ").trim()).slice(0, 16).join("").trimEnd() : "";
   const name = base || fallback;
   const taken = (n) => room.seats.some((s) => s.name.toLowerCase() === n.toLowerCase());
   if (!taken(name)) return name;
@@ -512,7 +512,7 @@ function ask(ws, room, msg) {
   if (RESOURCES.every((r) => !msg.give[r] && !msg.want[r])) return send(ws, { type: "error", message: "Offer something." });
   if (room.offer) broadcast(room, { type: "tradeClosed", tradeId: room.offer.tradeId });
   closeOffer(room);
-  const tradeId = `t${room.game.seq}`;
+  const tradeId = `t${room.game.seq}-${(room.offerSeq = (room.offerSeq ?? 0) + 1)}`;
   room.offer = { tradeId, from: actor, give: msg.give, want: msg.want, declined: new Set() };
   room.offerTimer = setTimeout(() => {
     room.offer = null;
