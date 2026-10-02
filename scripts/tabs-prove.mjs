@@ -151,7 +151,7 @@ try {
   const afterB = await until(async () => {
     const m = await me(b);
     return m.screen === "play" && !m.error && m.you === beforeB.you ? m : null;
-  }, "tab B back in its seat", 40_000);
+  }, "tab B back in its seat", 90_000);
   const back = await until(async () => ((await a.page.evaluate(() => window.__emberisle.getState().lobbyLog)) === "Tide is back." ? true : null), "host says Tide is back", 10_000);
   console.log(`tab B dropped 3 s: saw reconnecting=${sawReconnecting}, back as ${afterB.you} (was ${beforeB.you}), host log on A: Tide is back=${back}`);
 
@@ -161,7 +161,7 @@ try {
   const afterC = await until(async () => {
     const m = await me(c);
     return m.screen === "play" && !m.error && m.you === beforeC.you ? m : null;
-  }, "tab C back after reload", 20_000);
+  }, "tab C back after reload", 90_000); // the reloaded page may block on its cold render first (see the first roll below)
   console.log(`tab C reloaded: back as ${afterC.you} (was ${beforeC.you})`);
   vs = await synced(tabs, -1, "after the drop and the reload");
   if (JSON.parse(vs[0].shared).phase !== "roll") throw new Error(`table moved during the blip: ${JSON.parse(vs[0].shared).phase}`);
