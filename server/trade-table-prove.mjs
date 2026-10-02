@@ -130,8 +130,9 @@ async function fresh() {
   await settle();
   for (const c of all) while (c.inbox.length) c.inbox.pop();
 }
-const offer = async () => {
-  A.send({ type: "tradeAsk", give: { [give]: 1 }, want: { [want]: 1 } });
+// After the swap in step 2 the asker holds one `want` for sure, so later asks give that.
+const offer = async (g = give, w = want) => {
+  A.send({ type: "tradeAsk", give: { [g]: 1 }, want: { [w]: 1 } });
   const o = await Promise.all(all.map((c) => c.next("tradeOffer")));
   return o[0].tradeId;
 };
@@ -170,9 +171,41 @@ for (const c of all) {
 if (goods(B, A) !== aGoods || goods(B, C) !== cGoods) fail("a 1-for-1 swap changed a hand size");
 console.log("decline reached all three seats; yes swapped both hands in every seat's next state");
 
-// 3. A asks again, then passes: everyone hears tradeClosed, and a late yes changes nothing.
+// 3. A bad ask is refused to the asker alone; nobody is offered anything.
 await fresh();
-tradeId = await offer();
+const bad = [
+  [{ [want]: me(A).resources[want] + 1 }, { [give]: 1 }, "You lack those goods."],
+  [{}, {}, "Offer something."],
+  [[1], { [give]: 1 }, "Bad trade."],
+  [{ [want]: 1 }, { gold: 1 }, "Bad trade."],
+];
+for (const [g, w, message] of bad) {
+  A.send({ type: "tradeAsk", give: g, want: w });
+  const e = await A.next("error");
+  if (e.message !== message) fail(`ask ${JSON.stringify([g, w])} error`, e.message);
+}
+await settle();
+for (const c of all) if (c.has("tradeOffer")) fail(`${c.name} was offered a bad trade`);
+console.log("bad asks refused to the asker alone: lack, empty, array bag, unknown resource");
+
+// 4. A second ask replaces the first: every seat hears tradeClosed for the first id before the new tradeOffer.
+await fresh();
+tradeId = await offer(want, give);
+await fresh();
+A.send({ type: "tradeAsk", give: { [want]: 1 }, want: { [give]: 1 } });
+for (const c of all) {
+  await settle();
+  const types = c.inbox.filter((m) => m.type === "tradeClosed" || m.type === "tradeOffer").map((m) => m.type);
+  if (types.join() !== "tradeClosed,tradeOffer") fail(`${c.name} replace order`, types);
+  if (c.inbox.find((m) => m.type === "tradeClosed").tradeId !== tradeId) fail(`${c.name} closed the wrong id`);
+}
+console.log("a replaced offer sent tradeClosed before the new tradeOffer to all three seats");
+
+// 5. A asks again, then passes: everyone hears tradeClosed, and a late yes changes nothing.
+await fresh();
+tradeId = await offer(want, give);
+// The ask replaced step 4's open offer, whose tradeClosed (same id) came first; only the pass's counts here.
+for (const c of all) c.inbox = c.inbox.filter((m) => m.type !== "tradeClosed");
 const seq = A.state.game.seq;
 A.send({ type: "pass" });
 for (const c of all) {
