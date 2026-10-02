@@ -188,7 +188,7 @@ export function Hud() {
                   Wayfarer card{playable(me, "knight") > 1 ? ` ×${playable(me, "knight")}` : ""}
                 </Button>
               ) : null}
-              {!state.playedCard && playable(me, "road") > 0 ? (
+              {!state.playedCard && playable(me, "road") > 0 && me.pathsLeft > 0 ? (
                 <Button
                   size="sm"
                   variant={buildMode === "roadCard" ? "primary" : "secondary"}
