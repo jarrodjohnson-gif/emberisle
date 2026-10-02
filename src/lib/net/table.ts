@@ -147,7 +147,8 @@ export function hostUrl(
 const BACKOFF_MS = [1000, 2000, 4000, 8000, 15000];
 const GIVE_UP_MS = 10 * 60 * 1000;
 
-export function connectTable(url: string, on: Partial<TableEvents>, Socket?: SocketCtor): TableClient {
+// `giveUpMs` is only for proofs that cannot wait 10 minutes.
+export function connectTable(url: string, on: Partial<TableEvents>, Socket?: SocketCtor, giveUpMs = GIVE_UP_MS): TableClient {
   const Ctor = Socket ?? (globalThis.WebSocket as unknown as SocketCtor);
   const queue: string[] = [];
   let ws: SocketLike;
@@ -158,6 +159,8 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
   let lostAt = 0;
   // True while a hello {code, secret} is out; an error then means the seat is gone for good.
   let rejoining = false;
+  // The last rejoin answer was "Seat is taken.": another tab of ours holds the seat, so giving up must keep the secret.
+  let taken = false;
   let timer: ReturnType<typeof setTimeout> | null = null;
 
   const send = (msg: Record<string, unknown>) => {
@@ -192,8 +195,8 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
         return;
       }
       if (attempt === 0) lostAt = Date.now();
-      if (Date.now() - lostAt > GIVE_UP_MS) {
-        giveUp();
+      if (Date.now() - lostAt > giveUpMs) {
+        giveUp(taken);
         return;
       }
       attempt += 1;
@@ -217,6 +220,7 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
         const m = msg as { code: string; you: string; host: boolean; chat?: ChatLine[]; secret?: string };
         if (typeof m.secret === "string") seat = { code: m.code, secret: m.secret };
         rejoining = false;
+        taken = false;
         attempt = 0;
         on.welcome?.(m);
         break;
@@ -241,6 +245,7 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
         break;
       case "error": {
         const message = String(msg.message);
+        if (rejoining) taken = message === "Seat is taken.";
         if (rejoining && message === "Seat is taken." && attempt > 0) {
           // After a drop the host can still see our old socket as open (no keepalive yet, #202).
           // Close this one and keep backing off until the host lets the old one go.
@@ -252,7 +257,7 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
           // "Seat is taken." on a fresh rejoin: another tab of ours is sitting in it, so keep the secret.
           // "Seat is gone." or no such table: nothing to go back to.
           ws.close();
-          giveUp(message === "Seat is taken.");
+          giveUp(taken);
         }
         break;
       }

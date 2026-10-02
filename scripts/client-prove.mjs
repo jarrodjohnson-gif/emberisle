@@ -242,6 +242,54 @@ try {
   if (!rail[0]?.includes("+2 hidden") || !rail[0].includes("points ×2") || rail.slice(1).some((t) => t === null || t.includes("hidden"))) {
     throw new Error(`rail cards: ${JSON.stringify(rail)}`);
   }
+  // The knight and hidden-points steps above left a live game, so return to the title for the next one.
+  await page.evaluate(() => window.__emberisle.getState().goTitle());
+  // #220: the win screen lists every player with totals that match totalVP, and Look around / Back to menu work.
+  // The online step above left the table, so start a fresh practice game for this one.
+  await page.getByRole("button", { name: "Play versus the isle" }).click();
+  await page.waitForFunction(() => window.__emberisle.getState().state);
+  await page.evaluate(async () => {
+    const g = window.__emberisle;
+    const st = structuredClone(g.getState().state);
+    const ids = st.players.map((p) => p.id);
+    for (const v of st.vertices) v.building = null;
+    st.vertices.slice(0, 6).forEach((v, i) => (v.building = { playerId: ids[i % 2 === 0 ? 0 : 1], kind: i < 2 ? "stronghold" : "outpost" }));
+    st.vertices.slice(6, 8).forEach((v, i) => (v.building = { playerId: ids[2 + i], kind: "outpost" }));
+    st.players[1].hidden.vp = 3;
+    st.players[2].hidden.vp = 1;
+    st.longestRoad = ids[0];
+    st.largestArmy = ids[1];
+    st.phase = "over";
+    st.winner = ids[1];
+    g.setState({ state: st, pendingSteal: null, error: null });
+  });
+  await page.getByTestId("win-screen").waitFor({ timeout: 5000 }).catch(() => {});
+  const winRows = await page.evaluate(() => {
+    const g = window.__emberisle;
+    const st = g.getState().state;
+    const rows = [...document.querySelectorAll('[data-testid="win-row"]')].map((r) => ({
+      id: r.getAttribute("data-player"),
+      total: Number(r.querySelector('[data-testid="win-total"]').textContent),
+    }));
+    return { rows, state: st, winner: st.winner, headline: document.querySelector('[data-testid="win-headline"]')?.textContent };
+  });
+  const { totalVP } = await vite.ssrLoadModule("/src/lib/game/rules.ts");
+  winRows.want = Object.fromEntries(winRows.state.players.map((p) => [p.id, totalVP(winRows.state, p.id)]));
+  delete winRows.state;
+  console.log("win screen:", JSON.stringify(winRows));
+  if (winRows.rows.length !== 4) throw new Error(`win screen rows: ${JSON.stringify(winRows)}`);
+  if (winRows.rows[0].id !== winRows.winner) throw new Error(`win screen: winner not first: ${JSON.stringify(winRows)}`);
+  for (const r of winRows.rows) if (r.total !== winRows.want[r.id]) throw new Error(`win screen total: ${JSON.stringify(winRows)}`);
+  if (new Set(winRows.rows.map((r) => r.total)).size < 3) throw new Error("win screen: totals should differ");
+  if (!winRows.headline?.endsWith(" wins")) throw new Error(`win headline: ${winRows.headline}`);
+  await page.getByTestId("win-look").click();
+  await page.getByTestId("win-chip").waitFor({ timeout: 2000 });
+  if (await page.getByTestId("win-screen").count()) throw new Error("win screen still shown after Look around");
+  await page.getByTestId("win-show").click();
+  await page.getByTestId("win-screen").waitFor({ timeout: 2000 });
+  await page.getByTestId("win-menu").click();
+  await page.waitForFunction(() => window.__emberisle.getState().screen === "title", null, { timeout: 5000 });
+  console.log("win screen ok");
   if (errors.length) throw new Error(`console errors:\n${errors.join("\n")}`);
   console.log("client prove ok");
 } catch (e) {

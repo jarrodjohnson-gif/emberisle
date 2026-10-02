@@ -489,7 +489,7 @@ function ask(ws, room, msg) {
   }
   closeOffer(room);
   const tradeId = `t${room.game.seq}`;
-  room.offer = { tradeId, from: actor, give: msg.give ?? {}, want: msg.want ?? {} };
+  room.offer = { tradeId, from: actor, give: msg.give ?? {}, want: msg.want ?? {}, declined: new Set() };
   room.offerTimer = setTimeout(() => {
     room.offer = null;
     broadcast(room, { type: "tradeClosed", tradeId });
@@ -504,8 +504,20 @@ function answer(ws, room, msg) {
     return send(ws, { type: "error", message: "Offer is gone." });
   }
   if (!(msg.yes ?? msg.accept)) {
+    // A "No" is told to the whole table. The offer stays open for seats that have not answered and
+    // closes once every other human seat has declined (bots never answer an ask).
+    if (offer.declined.has(actor)) return;
+    offer.declined.add(actor);
     hear("trade_no");
-    return send(ws, { type: "tradeClosed", tradeId: offer.tradeId, you: actor });
+    const name = room.game.players.find((p) => p.id === actor)?.name ?? ws.seat.name;
+    broadcast(room, { type: "tradeDeclined", tradeId: offer.tradeId, by: actor, name });
+    say(room, `${name} declines.`);
+    const askees = room.game.players.filter((p) => p.id !== offer.from && p.kind === "human");
+    if (askees.every((p) => offer.declined.has(p.id))) {
+      closeOffer(room);
+      broadcast(room, { type: "tradeClosed", tradeId: offer.tradeId });
+    }
+    return;
   }
   const offered = applyAction(room.game, offer.from, { type: "offerTrade", to: actor, give: offer.give, want: offer.want });
   if (offered.error) return send(ws, { type: "error", message: offered.error });
@@ -557,6 +569,12 @@ function play(ws, room, msg) {
   runBots(room);
   for (const line of room.game.log.slice(before.log.length)) say(room, line);
   if (room.game.phase === "over" && before.phase !== "over") hear("win");
+  // An offer lives only while its asker still has the turn in `main`.
+  const open = room.offer;
+  if (open && (room.game.current !== open.from || room.game.phase !== "main")) {
+    closeOffer(room);
+    broadcast(room, { type: "tradeClosed", tradeId: open.tradeId });
+  }
   pushState(room);
 }
 

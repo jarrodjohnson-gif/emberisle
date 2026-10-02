@@ -37,6 +37,7 @@ function player(name) {
   const p = { name, state: null, legal: null, code: null, errors: [], pushes: 0, leaks: [] };
   p.t = connectTable(url, {
     welcome: (m) => (p.code = m.code),
+    seats: (m) => (p.seats = m.seats),
     state: (m) => {
       p.pushes++;
       if (m.game.phase !== "over" && ("seed" in m.game || "rng" in m.game)) p.leaks.push({ seq: m.game.seq, phase: m.game.phase });
@@ -63,7 +64,8 @@ b.t.join(a.code.toLowerCase(), { name: "Tide" });
 c.t.join(a.code, { name: "Pine" });
 await until(() => b.code && c.code, "joins");
 for (const p of [a, b, c]) p.t.ready(true);
-await new Promise((r) => setTimeout(r, 100));
+// Start only once the host has every ready; a fixed pause raced a slow CI runner and the start was refused.
+await until(() => a.seats?.length === 3 && a.seats.every((s) => s.ready), "all ready");
 a.t.start();
 await until(() => a.state && b.state && c.state, "start");
 

@@ -214,6 +214,7 @@ export const useGame = create<GameStore>((set, get) => ({
       localId: "p0",
       state,
       error: null,
+      toast: null,
       buildMode: "none",
       net: null,
     });
@@ -231,6 +232,7 @@ export const useGame = create<GameStore>((set, get) => ({
       localId: "p0",
       state,
       error: null,
+      toast: null,
       buildMode: "none",
       net: null,
     });
