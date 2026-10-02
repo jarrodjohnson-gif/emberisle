@@ -351,13 +351,20 @@ try {
     cwd: new URL("../server/", import.meta.url),
     env: { ...process.env, PORT: "0", ROOMS_DIR: roomsDir },
   });
+  process.on("exit", () => rejoinHost.kill());
+  for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
   try {
-    const hostPort = await new Promise((resolve) =>
+    const hostPort = await new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error("rejoin host never listened")), 10000);
+      rejoinHost.on("exit", (c) => reject(new Error(`rejoin host exited early (${c})`)));
       rejoinHost.stdout.on("data", (d) => {
         const m = String(d).match(/listening (\d+)/);
-        if (m) resolve(Number(m[1]));
-      }),
-    );
+        if (m) {
+          clearTimeout(timer);
+          resolve(Number(m[1]));
+        }
+      });
+    });
     await page.goto(`http://127.0.0.1:${PORT}/?host=ws://127.0.0.1:${hostPort}`);
     await page.evaluate(() => localStorage.setItem("emberisle-seat", JSON.stringify({ code: "ZZZZ", secret: "x" })));
     await page.reload();
