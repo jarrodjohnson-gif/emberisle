@@ -121,6 +121,26 @@ const colors = new Set(seats.map((s) => s.color));
 if (colors.size !== seats.length) fail("two seats got the same default color", [...colors]);
 console.log("host survived 6 malformed messages; default colors differ:", [...colors].join(" "));
 
+// 2b. Names are cleaned and made unique, and a colour must be a palette swatch (#251).
+const PALETTE = ["#c45c3e", "#2a8f8a", "#e4c9a0", "#3d6b4f"];
+const n = [client(), client(), client(), client()];
+await Promise.all(n.map((x) => x.open));
+n[0].send({ type: "hello", name: "Ember", color: "javascript:alert(1)" });
+const { code: ncode } = await n[0].next("welcome");
+for (const [x, name] of [[n[1], "Ember"], [n[2], "Ember"], [n[3], "\x07\x07"]]) {
+  x.send({ type: "hello", code: ncode, name });
+  await x.next("welcome");
+}
+await new Promise((r) => setTimeout(r, 100));
+let lastSeats;
+while (n[3].inbox.some((m) => m.type === "seats")) lastSeats = await n[3].next("seats");
+const names = lastSeats.seats.map((s) => s.name).join(",");
+if (names !== "Ember,Ember 2,Ember 3,Tide") fail("seat names", names);
+if (!lastSeats.seats.every((s) => PALETTE.includes(s.color))) fail("hostile colour accepted", lastSeats.seats.map((s) => s.color));
+if (new Set(lastSeats.seats.map((s) => s.color)).size !== 4) fail("seat colours collide", lastSeats.seats.map((s) => s.color));
+for (const x of n) x.ws.close();
+console.log("names de-duped (Ember, Ember 2, Ember 3), control-only name defaulted, hostile colour replaced");
+
 // 3. A player who leaves mid-game is played by the bot after the grace, so the table keeps going.
 for (const x of [a, b, c]) x.send({ type: "ready", value: true });
 await new Promise((r) => setTimeout(r, 100));
