@@ -159,7 +159,7 @@ export function Hud() {
             })}
           </div>
 
-          {discarder ? <DiscardBar id={discarder} n={state.discardNeeded[discarder]!} /> : null}
+          {discarder ? <DiscardBar key={discarder} id={discarder} n={state.discardNeeded[discarder]!} /> : null}
           <TakeFromBar />
 
           {state.phase === "main" && mine ? (
