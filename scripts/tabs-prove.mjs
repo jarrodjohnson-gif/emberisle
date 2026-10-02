@@ -3,7 +3,9 @@
 // #116: `--served` skips Vite. The host serves the built dist/ itself and the tabs open it with no ?host=,
 // so they must find the socket at the address the page came from (the tunnel case). Run npm run build first.
 import { spawn } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
 import { createServer } from "vite";
@@ -17,9 +19,12 @@ if (SERVED && !existsSync(`${DIST}index.html`)) {
   process.exit(1);
 }
 
+// Rooms go to a temp folder, dropped on exit, so the real host never restores this proof's tables (#207).
+const ROOMS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-rooms-"));
+process.on("exit", () => rmSync(ROOMS_DIR, { recursive: true, force: true }));
 const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL("../server/", import.meta.url),
-  env: { ...process.env, PORT: "0", DIST },
+  env: { ...process.env, PORT: "0", DIST, ROOMS_DIR },
 });
 const hostPort = await new Promise((resolve) =>
   host.stdout.on("data", (d) => {

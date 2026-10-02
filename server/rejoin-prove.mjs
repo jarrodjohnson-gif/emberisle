@@ -1,12 +1,18 @@
 // A dropped player sits back down in their own seat (#195, docs/research/rejoin.md).
 import { spawn } from "node:child_process";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import WebSocket from "ws";
 
 const GRACE = 800;
 const HOLD = 2500;
+// Rooms go to a temp folder, dropped on exit, so the real host never restores this proof's tables (#207).
+const ROOMS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-rooms-"));
+process.on("exit", () => rmSync(ROOMS_DIR, { recursive: true, force: true }));
 const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL(".", import.meta.url),
-  env: { ...process.env, PORT: "0", GRACE_MS: String(GRACE), HOLD_MS: String(HOLD) },
+  env: { ...process.env, PORT: "0", GRACE_MS: String(GRACE), HOLD_MS: String(HOLD), ROOMS_DIR },
 });
 const port = await new Promise((resolve, reject) => {
   host.stdout.on("data", (d) => {

@@ -1,5 +1,8 @@
 // Untrusted input: bad messages, card-minting discards, oversized pictures, and a player who leaves mid-game.
 import { spawn } from "node:child_process";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import WebSocket from "ws";
 import { createGame } from "../src/lib/game/board.ts";
 import { applyAction } from "../src/lib/game/rules.ts";
@@ -42,11 +45,14 @@ for (const bad of [
 }
 console.log("engine rejects bad bags, names, and non-arrays");
 
+// Rooms go to a temp folder, dropped on exit, so the real host never restores this proof's tables (#207).
+const ROOMS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-rooms-"));
+process.on("exit", () => rmSync(ROOMS_DIR, { recursive: true, force: true }));
 // 2. The host survives garbage, caps pictures, and picks picture ids itself.
 host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL(".", import.meta.url),
   // A short grace so the bot takes over a dropped seat within the proof (#195).
-  env: { ...process.env, PORT: "0", GRACE_MS: "100" },
+  env: { ...process.env, PORT: "0", GRACE_MS: "100", ROOMS_DIR },
   stdio: ["ignore", "pipe", "pipe"],
 });
 const port = await new Promise((resolve, reject) => {

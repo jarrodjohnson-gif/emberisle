@@ -140,14 +140,21 @@ function load() {
       rmSync(file, { force: true });
       continue;
     }
-    const room = { ...saved, avatarIds: [], offer: null, offerTimer: null, seats: [] };
-    delete room.savedAt;
-    for (const s of saved.seats) {
-      // Avatars live in memory only, so a restored seat has none.
-      const seat = { ...s, avatarId: null, ws: null, bucket: { tokens: 5, at: Date.now() } };
-      room.seats.push(seat);
-      hold(room, seat);
+    // A file that parses but does not rebuild (a null seat, say) is skipped like one that does not parse.
+    let room;
+    try {
+      room = { ...saved, avatarIds: [], offer: null, offerTimer: null, seats: [] };
+      delete room.savedAt;
+      for (const s of saved.seats) {
+        if (typeof s?.id !== "string" || typeof s.secret !== "string") throw new Error(`bad seat ${JSON.stringify(s)}`);
+        // Avatars live in memory only, so a restored seat has none.
+        room.seats.push({ ...s, avatarId: null, ws: null, bucket: { tokens: 5, at: Date.now() } });
+      }
+    } catch (err) {
+      console.error("unreadable room file:", name, err.message);
+      continue;
     }
+    for (const seat of room.seats) hold(room, seat);
     rooms.set(room.code, room);
   }
   if (rooms.size) console.log(`restored ${rooms.size} room(s): ${[...rooms.keys()].join(" ")}`);

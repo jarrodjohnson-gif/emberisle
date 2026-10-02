@@ -2,7 +2,9 @@
 // and measure draw calls and frame time at 1920x1080. Research tool: it does not pass or fail.
 // The 7, the wayfarer and the win screen are loaded as crafted states through the store, so no luck is needed.
 import { spawn } from "node:child_process";
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import { chromium } from "playwright";
 import { createServer } from "vite";
 
@@ -14,9 +16,12 @@ const SIZES = [
 ].filter(([w]) => !process.env.ONLY || process.env.ONLY === String(w));
 mkdirSync(OUT, { recursive: true });
 
+// Rooms go to a temp folder, dropped on exit, so the real host never restores this proof's tables (#207).
+const ROOMS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-rooms-"));
+process.on("exit", () => rmSync(ROOMS_DIR, { recursive: true, force: true }));
 const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL("../server/", import.meta.url),
-  env: { ...process.env, PORT: "0" },
+  env: { ...process.env, PORT: "0", ROOMS_DIR },
 });
 const hostPort = await new Promise((resolve) =>
   host.stdout.on("data", (d) => {

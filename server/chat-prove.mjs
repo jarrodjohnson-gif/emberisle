@@ -48,9 +48,12 @@ console.log("unit checks ok");
 
 // 2. Socket tests against a real host ---------------------------------------
 
+// Rooms go to a temp folder, dropped on exit, so the real host never restores this proof's tables (#207).
+const ROOMS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-rooms-"));
+process.on("exit", () => rmSync(ROOMS_DIR, { recursive: true, force: true }));
 const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL(".", import.meta.url),
-  env: { ...process.env, PORT: "0" },
+  env: { ...process.env, PORT: "0", ROOMS_DIR },
 });
 const port = await new Promise((resolve, reject) => {
   host.stdout.on("data", (d) => {

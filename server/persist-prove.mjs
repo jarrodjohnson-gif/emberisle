@@ -124,9 +124,10 @@ await wait(100);
 if (!existsSync(path.join(ROOMS_DIR, `${code}.json`))) fail("room file written", ROOMS_DIR);
 console.log(`table ${code}: setup done, rolled ${rolls} times, seq ${seq}, ${current} to play; ${code}.json on disk`);
 
-// A day-old room and a broken file sit next to it; the restart must drop the first and survive the second.
+// A day-old room, a broken file and one with a null seat sit next to it; the restart must drop the first and survive the rest.
 writeFileSync(path.join(ROOMS_DIR, "OLD1.json"), JSON.stringify({ code: "OLD1", seats: [{ id: "s0" }], game: null, savedAt: Date.now() - 25 * 60 * 60 * 1000 }));
 writeFileSync(path.join(ROOMS_DIR, "BAD1.json"), "{ not json");
+writeFileSync(path.join(ROOMS_DIR, "BAD2.json"), JSON.stringify({ code: "BAD2", seats: [null], game: null, savedAt: Date.now() }));
 
 // The host process dies without warning and comes back on the same port.
 host.removeAllListeners("exit");
@@ -137,7 +138,8 @@ const second = await start(port);
 if (second.port !== port) fail("same port", second.port);
 if (existsSync(path.join(ROOMS_DIR, "OLD1.json"))) fail("a room older than 24 hours is dropped on boot");
 if (!second.out().includes(code)) fail("restored room listed", second.out());
-console.log(`host killed and restarted on ${port}: ${second.out().trim().split("\n")[0]}; OLD1 (25 h) dropped, BAD1 skipped`);
+if (second.out().includes("BAD2")) fail("a room with a null seat is skipped", second.out());
+console.log(`host killed and restarted on ${port}: ${second.out().trim().split("\n")[0]}; OLD1 (25 h) dropped, BAD1 and BAD2 skipped`);
 
 const back = [];
 for (const [w, name] of [[wa, "Ember"], [wb, "Tide"], [wc, "Pine"]]) {

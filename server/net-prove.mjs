@@ -2,6 +2,9 @@
 // #92: all three sit on one hex, then a wayfarer move and a knight each rob the second of two targets the host lists.
 // #111: no state pushed before the game ends carries the seed (it rebuilds the fortune deck) or rng (it predicts steals).
 import { spawn } from "node:child_process";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import WebSocket from "ws";
 import { stealTargets } from "../src/lib/game/rules.ts";
 import { COST, RESOURCES } from "../src/lib/game/types.ts";
@@ -17,9 +20,12 @@ function fail(why, extra) {
 if (toIntent({ type: "offerTrade", to: "p1", give: {}, want: {} }) !== null) fail("offerTrade should be host-run");
 if (toIntent({ type: "bankTrade", give: "wool", want: "ore" }).take !== "ore") fail("bankTrade take");
 
+// Rooms go to a temp folder, dropped on exit, so the real host never restores this proof's tables (#207).
+const ROOMS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-rooms-"));
+process.on("exit", () => rmSync(ROOMS_DIR, { recursive: true, force: true }));
 host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL(".", import.meta.url),
-  env: { ...process.env, PORT: "0" },
+  env: { ...process.env, PORT: "0", ROOMS_DIR },
 });
 const port = await new Promise((resolve) => host.stdout.on("data", (d) => {
   const m = String(d).match(/listening (\d+)/);
