@@ -434,8 +434,9 @@ export class IsleRenderer {
     for (const s of this.sheep) {
       s.wait -= dt;
       if (s.wait <= 0) {
-        const a = Math.random() * Math.PI * 2;
-        const r = 0.22 + Math.random() * 0.32;
+        // A step of at most 0.3 rad around the ring keeps the straight walk to the target off the token.
+        const a = Math.atan2(s.tz - s.oz, s.tx - s.ox) + (Math.random() - 0.5) * 0.6;
+        const r = 0.54 + Math.random() * 0.2;
         s.tx = s.ox + Math.cos(a) * r;
         s.tz = s.oz + Math.sin(a) * r;
         s.wait = 1.8 + Math.random() * 2.8;
@@ -482,6 +483,7 @@ export class IsleRenderer {
       decorate(this.living, this.trees, this.wheat, this.sheep, h, x, z, topOf(h.terrain));
       if (h.pip != null) {
         const tok = numberToken(h.pip);
+        tok.userData.token = h.pip;
         tok.position.set(x, topOf(h.terrain) + 0.04, z);
         this.land.add(tok);
       }
@@ -840,9 +842,10 @@ function hexCap(size: number, tex: THREE.Texture | undefined, color: number) {
 
 function numberToken(n: number) {
   const g = new THREE.Group();
+  const hot = n === 6 || n === 8;
   const disc = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.3, 0.3, 0.05, 32),
-    new THREE.MeshStandardMaterial({ color: 0xf4ead6, roughness: 0.45 }),
+    new THREE.CylinderGeometry(0.34, 0.34, 0.06, 32),
+    new THREE.MeshStandardMaterial({ color: hot ? 0xb3261e : 0x1c1916, roughness: 0.6 }),
   );
   disc.castShadow = true;
   g.add(disc);
@@ -854,25 +857,31 @@ function numberToken(n: number) {
   ctx.beginPath();
   ctx.arc(128, 128, 124, 0, Math.PI * 2);
   ctx.fill();
-  const hot = n === 6 || n === 8;
-  ctx.fillStyle = hot ? "#c0392b" : "#1c1916";
-  ctx.font = "bold 118px Georgia, serif";
+  const ink = hot ? "#b3261e" : "#1c1916";
+  ctx.fillStyle = ink;
+  ctx.font = "bold 170px Georgia, serif";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillText(String(n), 128, 108);
+  ctx.fillText(String(n), 128, 96);
+  if (hot) {
+    ctx.strokeStyle = ink;
+    ctx.lineWidth = 10;
+    ctx.lineJoin = "round";
+    ctx.strokeText(String(n), 128, 96);
+  }
   const pips = 6 - Math.abs(n - 7);
-  ctx.fillStyle = hot ? "#c0392b" : "#3a342c";
-  const span = (pips - 1) * 16;
+  const span = (pips - 1) * 26;
   for (let i = 0; i < pips; i++) {
     ctx.beginPath();
-    ctx.arc(128 - span / 2 + i * 16, 188, 5.5, 0, Math.PI * 2);
+    ctx.arc(128 - span / 2 + i * 26, 196, 10, 0, Math.PI * 2);
     ctx.fill();
   }
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
-  const label = new THREE.Mesh(new THREE.CircleGeometry(0.28, 32), new THREE.MeshBasicMaterial({ map: tex }));
+  tex.anisotropy = 8;
+  const label = new THREE.Mesh(new THREE.CircleGeometry(0.29, 32), new THREE.MeshBasicMaterial({ map: tex }));
   label.rotation.x = -Math.PI / 2;
-  label.position.y = 0.03;
+  label.position.y = 0.031;
   g.add(label);
   return g;
 }
@@ -896,8 +905,11 @@ function decorate(
   if (h.terrain === "timber") {
     const n = 16 + Math.floor(rng() * 5);
     for (let i = 0; i < n; i++) {
-      const { px, pz } = place(0.4, 0.88);
-      const tree = rng() > 0.42 ? makePine(0.85 + rng() * 0.45) : makeDeciduous(0.8 + rng() * 0.4);
+      const { px, pz } = place(0.7, 0.86);
+      const pine = rng() > 0.42;
+      const ts = pine ? 0.85 + rng() * 0.45 : 0.8 + rng() * 0.4;
+      const tree = pine ? makePine(ts) : makeDeciduous(ts);
+      tree.userData = { prop: "tree", hex: h.id, reach: pine ? 0.22 * ts : 0.1 * ts + 0.13 * ts * 1.05 };
       tree.position.set(px, top, pz);
       tree.rotation.y = rng() * Math.PI * 2;
       living.add(tree);
@@ -907,8 +919,9 @@ function decorate(
   if (h.terrain === "wool") {
     const n = 4 + Math.floor(rng() * 2);
     for (let i = 0; i < n; i++) {
-      const { px, pz } = place(0.36, 0.7);
+      const { px, pz } = place(0.54, 0.74);
       const s = makeSheep();
+      s.userData = { prop: "sheep", hex: h.id, reach: 0.115 };
       s.position.set(px, top + 0.1, pz);
       living.add(s);
       sheep.push({ g: s, ox: x, oz: z, tx: px, tz: pz, wait: rng() * 2, graze: 0 });
@@ -916,14 +929,16 @@ function decorate(
   }
   if (h.terrain === "ore") {
     for (let i = 0; i < 5; i++) {
-      const { px, pz } = place(0.4, 0.78);
+      const { px, pz } = place(0.64, 0.8);
+      const rockR = 0.12 + rng() * 0.12;
       const rock = new THREE.Mesh(
-        new THREE.DodecahedronGeometry(0.12 + rng() * 0.12, 0),
+        new THREE.DodecahedronGeometry(rockR, 0),
         new THREE.MeshStandardMaterial({ color: 0x6a737c, roughness: 0.95, flatShading: true }),
       );
       rock.position.set(px, top + 0.04, pz);
       rock.rotation.set(rng(), rng(), rng());
       rock.castShadow = true;
+      rock.userData = { prop: "rock", hex: h.id, reach: rockR };
       living.add(rock);
     }
   }
