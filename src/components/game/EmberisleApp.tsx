@@ -25,6 +25,8 @@ export function EmberisleApp() {
 
   useEffect(() => {
     (window as unknown as { __emberisle: typeof useGame }).__emberisle = useGame;
+    // A reload mid-game goes straight back to the held seat (#196).
+    useGame.getState().rejoinTable();
   }, []);
 
   useEffect(() => {

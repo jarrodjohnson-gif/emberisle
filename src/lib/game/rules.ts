@@ -522,6 +522,8 @@ export function applyAction(prev: GameState, actor: string, action: Action): { s
     case "playRoad": {
       if (state.phase !== "main" || state.playedCard) return { state: prev, error: "Cannot play that." };
       if (playable(me, "road") <= 0) return { state: prev, error: me.hidden.road > 0 ? BOUGHT_THIS_TURN : "No path fortune." };
+      if (me.pathsLeft <= 0) return { state: prev, error: "No paths left to place." };
+      if (legalRoads(state, actor, false).length === 0) return { state: prev, error: "No place for a path." };
       if (!Array.isArray(action.edgeIds)) return { state: prev, error: "Place one or two paths." };
       if (action.edgeIds.length < 1 || action.edgeIds.length > 2) {
         return { state: prev, error: "Place one or two paths." };

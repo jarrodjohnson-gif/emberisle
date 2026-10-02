@@ -147,6 +147,28 @@ let lineA;
   console.log("pass, then play it next turn before the roll: works");
 }
 
+// A path fortune with no paths left is refused and stays in hand (#201).
+{
+  const g = fresh();
+  g.players[0].hidden.road = 1;
+  g.players[0].pathsLeft = 0;
+  const r = applyAction(g, "p0", { type: "playRoad", edgeIds: [g.edges[0].id] });
+  if (!r.error) fail("path fortune played with no paths left");
+  if (r.state.players[0].hidden.road !== 1 || r.state.playedCard) fail("path fortune spent with no paths left", r.state.players[0].hidden);
+  console.log(`path fortune with no paths left: rejected ("${r.error}"), card kept`);
+}
+
+// A path fortune with paths in stock but no legal edge (no network yet) is refused up front and stays in hand (#212).
+{
+  const g = fresh();
+  g.players[0].hidden.road = 1;
+  if (legalRoads(g, "p0", false).length !== 0) fail("setup: p0 should have no legal edge", legalRoads(g, "p0", false).length);
+  const r = applyAction(g, "p0", { type: "playRoad", edgeIds: [g.edges[0].id] });
+  if (r.error !== "No place for a path.") fail("path fortune with no legal edge", r.error);
+  if (r.state.players[0].hidden.road !== 1 || r.state.playedCard) fail("path fortune spent with no legal edge", r.state.players[0].hidden);
+  console.log(`path fortune with no legal edge: rejected ("${r.error}"), card kept`);
+}
+
 // 8. A path cannot go on past an opponent's outpost (#100). 9. From your own building it still can.
 {
   const g = fresh();

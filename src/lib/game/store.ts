@@ -99,6 +99,8 @@ interface GameStore {
   lobbyLog: string;
   hostTable: () => void;
   joinTable: (code: string) => void;
+  // Sit back down in the seat this browser held (localStorage), e.g. after a reload (#196).
+  rejoinTable: () => boolean;
   setReady: (value: boolean) => void;
   startTable: () => void;
   // Table chat (docs/design/chat.md)
@@ -116,6 +118,28 @@ interface GameStore {
 }
 
 const CHAT_OPEN_KEY = "emberisle-chat-open";
+// The table code and this seat's secret from the last welcome, so a reload or a new tab can rejoin (#196).
+const SEAT_KEY = "emberisle-seat";
+
+function savedSeat(): { code: string; secret: string } | null {
+  try {
+    const raw = localStorage.getItem(SEAT_KEY);
+    if (!raw) return null;
+    const v = JSON.parse(raw) as { code?: unknown; secret?: unknown };
+    return typeof v.code === "string" && typeof v.secret === "string" ? { code: v.code, secret: v.secret } : null;
+  } catch {
+    return null;
+  }
+}
+
+function rememberSeat(seat: { code: string; secret: string } | null) {
+  try {
+    if (seat) localStorage.setItem(SEAT_KEY, JSON.stringify(seat));
+    else localStorage.removeItem(SEAT_KEY);
+  } catch {
+    // storage can be blocked; the game still plays, it just cannot rejoin after a reload
+  }
+}
 
 function savedChatOpen() {
   try {
@@ -179,6 +203,8 @@ export const useGame = create<GameStore>((set, get) => ({
   setHowTo: (v) => set({ howTo: v }),
   setBuildMode: (m) => set({ buildMode: m, roadPicks: [] }),
   startAi: () => {
+    // A table left dialing (a reload with a saved seat) must not pull a practice game back to the lobby.
+    get().net?.close();
     const name = get().name;
     const state = createGame({ humans: [{ name }], bots: 3 });
     set({
@@ -189,9 +215,11 @@ export const useGame = create<GameStore>((set, get) => ({
       state,
       error: null,
       buildMode: "none",
+      net: null,
     });
   },
   startHotseat: (count) => {
+    get().net?.close();
     const humans = Array.from({ length: count }, (_, i) => ({
       name: i === 0 ? get().name : `Seat ${i + 1}`,
     }));
@@ -204,6 +232,7 @@ export const useGame = create<GameStore>((set, get) => ({
       state,
       error: null,
       buildMode: "none",
+      net: null,
     });
   },
   loadState: (s, localId, host, table) =>
@@ -218,6 +247,8 @@ export const useGame = create<GameStore>((set, get) => ({
       pendingSteal: null,
     }),
   goTitle: () => {
+    // Leaving on purpose frees the seat; only a drop keeps it.
+    rememberSeat(null);
     get().net?.close();
     set({
       screen: "title",
@@ -233,6 +264,12 @@ export const useGame = create<GameStore>((set, get) => ({
       reactions: [],
       unread: 0,
       chatDraft: "",
+      lobbyLog: "",
+      seatId: "",
+      isHost: false,
+      roadPicks: [],
+      pendingPlace: null,
+      toast: null,
     });
   },
   dispatch: (action, asId) => {
@@ -261,8 +298,9 @@ export const useGame = create<GameStore>((set, get) => ({
     return { ok: true, state: res.state };
   },
   runBots: () => {
-    const { state, dispatch } = get();
-    if (!state || state.phase === "over") return;
+    const { state, dispatch, mode } = get();
+    // Online, the host runs the bots; a bot move sent as our own intent only draws "Not your turn."
+    if (!state || mode === "online" || state.phase === "over") return;
     if (state.phase === "discard") {
       for (const p of state.players) {
         if (p.kind === "bot" && (state.discardNeeded[p.id] ?? 0) > 0) {
@@ -383,6 +421,12 @@ export const useGame = create<GameStore>((set, get) => ({
   },
   hostTable: () => connect(set, get, (t, me) => t.open(me)),
   joinTable: (code) => connect(set, get, (t, me) => t.join(code, me)),
+  rejoinTable: () => {
+    const seat = savedSeat();
+    if (!seat) return false;
+    connect(set, get, (t) => t.rejoin(seat.code, seat.secret));
+    return true;
+  },
   setReady: (value) => get().net?.ready(value),
   startTable: () => get().net?.start(),
   setChatOpen: (v) => {
@@ -404,8 +448,12 @@ type Get = () => GameStore;
 function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void) {
   get().net?.close();
   const table = connectTable(hostUrl(window.location), {
-    welcome: ({ code, you, host, chat }) =>
-      set({ code, seatId: you, isHost: host, screen: "lobby", mode: "online", error: null, chat: (chat ?? []).slice(-50), reactions: [], unread: 0 }),
+    welcome: ({ code, you, host, chat, secret }) => {
+      if (secret) rememberSeat({ code, secret });
+      // A rejoin lands in the lobby for a moment; the host's state push (if the game started) moves it to play.
+      set({ code, seatId: you, isHost: host, screen: "lobby", mode: "online", error: null, toast: null, chat: (chat ?? []).slice(-50), reactions: [], unread: 0 });
+    },
+    reconnecting: (attempt) => set({ error: `Reconnecting… (try ${attempt})`, toast: "Reconnecting…" }),
     chat: (line) => {
       const { chat, chatOpen, unread, seatId, screen } = get();
       // The lobby box is always open, so only lines that arrive during the game can be unread.
@@ -431,7 +479,14 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void) {
     },
     log: (text) => set({ lobbyLog: text }),
     error: (message) => set({ error: message, toast: message }),
-    closed: () => set({ error: "Lost the table", toast: "Lost the table", screen: "title", net: null, state: null }),
+    closed: (keepSeat) => {
+      if (keepSeat) {
+        set({ error: "Your seat is open in another tab", toast: "Your seat is open in another tab", screen: "title", net: null, state: null });
+        return;
+      }
+      rememberSeat(null);
+      set({ error: "Lost the table", toast: "Lost the table", screen: "title", net: null, state: null });
+    },
   });
   set({ net: table, mode: "online", error: null });
   first(table, { name: get().name, color: get().color ?? undefined });

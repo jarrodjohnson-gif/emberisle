@@ -16,7 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { ChatDock, ReactionFloats } from "@/components/game/Chat";
 import { COST, RESOURCES, RESOURCE_LABEL, type PlayerState, type Resource } from "@/lib/game/types";
-import { harborRate, hiddenCount, playable, publicVP, totalVP } from "@/lib/game/rules";
+import { harborRate, hiddenCount, legalRoads, playable, publicVP, totalVP } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
 import { cn } from "@/lib/utils";
 
@@ -56,6 +56,7 @@ export function Hud() {
   const buildMode = useGame((s) => s.buildMode);
   const roadPicks = useGame((s) => s.roadPicks);
   const banner = useGame((s) => s.banner);
+  const seats = useGame((s) => s.seats);
   const error = useGame((s) => s.error);
   const howTo = useGame((s) => s.howTo);
   const dispatch = useGame((s) => s.dispatch);
@@ -67,7 +68,15 @@ export function Hud() {
   const actor = mode === "hotseat" ? state.current : localId;
   const me = state.players.find((p) => p.id === actor) ?? state.players[0]!;
   const mine = state.current === actor;
-  const needDiscard = state.phase === "discard" && (state.discardNeeded[actor] ?? 0) > 0;
+  // Hotseat has no bots: the first seat still owing a discard takes the bar, whoever rolled the 7.
+  const discarder =
+    state.phase !== "discard"
+      ? null
+      : mode === "hotseat"
+        ? (state.players.find((p) => (state.discardNeeded[p.id] ?? 0) > 0)?.id ?? null)
+        : (state.discardNeeded[actor] ?? 0) > 0
+          ? actor
+          : null;
   const winner = state.winner ? state.players.find((p) => p.id === state.winner) : null;
 
   return (
@@ -108,6 +117,7 @@ export function Hud() {
             </div>
             <p className="mt-1 text-xs text-zinc-600">
               {p.goods ?? RESOURCES.reduce((n, r) => n + p.resources[r], 0)} goods · {p.fortunes ?? hiddenCount(p)} fortunes
+              {seats.some((s) => s.away && (s.name === p.name || `${s.name} (bot)` === p.name)) ? " · reconnecting…" : ""}
             </p>
             <ReactionFloats by="player" id={p.id} />
           </div>
@@ -138,7 +148,7 @@ export function Hud() {
 
           <ResourceHand me={me} />
 
-          {needDiscard ? <DiscardBar n={state.discardNeeded[actor]!} /> : null}
+          {discarder ? <DiscardBar key={discarder} id={discarder} n={state.discardNeeded[discarder]!} /> : null}
           <TakeFromBar />
 
           {state.phase === "main" && mine ? (
@@ -177,7 +187,7 @@ export function Hud() {
                   Wayfarer card{playable(me, "knight") > 1 ? ` ×${playable(me, "knight")}` : ""}
                 </Button>
               ) : null}
-              {!state.playedCard && playable(me, "road") > 0 ? (
+              {!state.playedCard && playable(me, "road") > 0 && me.pathsLeft > 0 && legalRoads(state, me.id, false).length > 0 ? (
                 <Button
                   size="sm"
                   variant={buildMode === "roadCard" ? "primary" : "secondary"}
@@ -316,12 +326,9 @@ function ResourceHand({ me }: { me: PlayerState }) {
   );
 }
 
-function DiscardBar({ n }: { n: number }) {
-  const me = useGame((s) => {
-    const st = s.state!;
-    const id = s.mode === "hotseat" ? st.current : s.localId;
-    return st.players.find((p) => p.id === id)!;
-  });
+function DiscardBar({ id, n }: { id: string; n: number }) {
+  const me = useGame((s) => s.state!.players.find((p) => p.id === id)!);
+  const hotseat = useGame((s) => s.mode === "hotseat");
   const dispatch = useGame((s) => s.dispatch);
   const picked = useGame(() => null);
   void picked;
@@ -339,10 +346,10 @@ function DiscardBar({ n }: { n: number }) {
           sum += v;
         }
         if (sum !== n) return;
-        dispatch({ type: "discard", resources });
+        dispatch({ type: "discard", resources }, id);
       }}
     >
-      <span className="text-sm">Discard {n}</span>
+      <span className="text-sm">{hotseat ? `${me.name}: discard ${n}` : `Discard ${n}`}</span>
       {RESOURCES.map((r) => (
         <label key={r} className="flex items-center gap-1 text-xs">
           {RESOURCE_LABEL[r]}

@@ -10,6 +10,7 @@
     "host": "npm --prefix server run host",
     "test": "npm --prefix server test",
     "client-prove": "node scripts/client-prove.mjs",
+    "hotseat-prove": "node scripts/hotseat-prove.mjs",
     "tabs-prove": "node scripts/tabs-prove.mjs",
     "chat-prove": "node scripts/chat-prove.mjs",
     "mobile-shots": "node scripts/mobile-shots.mjs",

@@ -45,7 +45,8 @@ let code = 0;
 
 async function tab(name) {
   const page = await browser.newPage({ viewport: { width: 800, height: 500 } });
-  page.on("console", (m) => m.type() === "error" && errors.push(`${name}: ${m.text()}`));
+  // A socket that fails while the tab is offline logs a console error by design (#196); everything else counts.
+  page.on("console", (m) => m.type() === "error" && !/WebSocket connection to .* failed/.test(m.text()) && errors.push(`${name}: ${m.text()}`));
   page.on("pageerror", (e) => errors.push(`${name}: ${e}`));
   page.on("response", (r) => r.status() >= 400 && errors.push(`${name}: ${r.status()} ${r.url()}`));
   await page.addInitScript((n) => localStorage.setItem("emberisle-name", n), name);
@@ -97,11 +98,11 @@ async function until(check, what, ms = 10_000) {
 }
 
 // Wait for every tab to pass `seq`, then require the three shared views to be identical.
-async function synced(tabs, seq, what) {
+async function synced(tabs, seq, what, ms) {
   const vs = await until(async () => {
     const vs = await views(tabs);
     return vs.every((v) => v && seqOf(v) > seq) && new Set(vs.map(seqOf)).size === 1 ? vs : null;
-  }, what);
+  }, what, ms);
   if (new Set(vs.map((v) => v.shared)).size !== 1) throw new Error(`${what}: tabs disagree on the board`);
   return vs;
 }
@@ -146,6 +147,34 @@ try {
     vs = await synced(tabs, seqOf(vs[0]), `setup step ${step}`);
   }
   if (JSON.parse(vs[0].shared).phase !== "roll") throw new Error(`after setup: ${JSON.parse(vs[0].shared).phase}`);
+
+  // #196: tab B loses its connection and its network for 3 s. It dials again with its seat secret and
+  // lands back in the same seat; the table (grace 90 s on the host) has not moved. Chromium keeps an
+  // open socket alive under setOffline, so the drop itself comes from the client's drop() hook.
+  const me = (t) => t.page.evaluate(() => ({ you: window.__emberisle.getState().localId, screen: window.__emberisle.getState().screen, error: window.__emberisle.getState().error, seq: window.__emberisle.getState().state?.seq ?? -1 }));
+  const beforeB = await me(b);
+  await b.page.context().setOffline(true);
+  await b.page.evaluate(() => window.__emberisle.getState().net.drop());
+  const sawReconnecting = await until(async () => ((await me(b)).error?.startsWith("Reconnecting") ? true : null), "tab B notices the drop", 20_000);
+  await new Promise((r) => setTimeout(r, 3000));
+  await b.page.context().setOffline(false);
+  const afterB = await until(async () => {
+    const m = await me(b);
+    return m.screen === "play" && !m.error && m.you === beforeB.you ? m : null;
+  }, "tab B back in its seat", 90_000);
+  const back = await until(async () => ((await a.page.evaluate(() => window.__emberisle.getState().lobbyLog)) === "Tide is back." ? true : null), "host says Tide is back", 10_000);
+  console.log(`tab B dropped 3 s: saw reconnecting=${sawReconnecting}, back as ${afterB.you} (was ${beforeB.you}), host log on A: Tide is back=${back}`);
+
+  // #196: tab C reloads the page and rejoins from localStorage with the same seat.
+  const beforeC = await me(c);
+  await c.page.reload();
+  const afterC = await until(async () => {
+    const m = await me(c);
+    return m.screen === "play" && !m.error && m.you === beforeC.you ? m : null;
+  }, "tab C back after reload", 90_000); // the reloaded page may block on its cold render first (see the first roll below)
+  console.log(`tab C reloaded: back as ${afterC.you} (was ${beforeC.you})`);
+  vs = await synced(tabs, -1, "after the drop and the reload");
+  if (JSON.parse(vs[0].shared).phase !== "roll") throw new Error(`table moved during the blip: ${JSON.parse(vs[0].shared).phase}`);
   console.log(`setup done on all tabs, seq ${seqOf(vs[0])}`);
 
   // Five rolls. Each roll is followed by any discards, the wayfarer, and a pass.
@@ -153,13 +182,21 @@ try {
   for (let r = 0; r < ROLLS; r++) {
     const cur = JSON.parse(vs[0].shared).current;
     const i = vs.findIndex((v) => v.you === cur);
+    // #188: every tab shows the same roll banner (dice, sum, who got what) for a moment. The proof rolls
+    // faster than a banner fades, so each tab's banner is cleared first and only a fresh one counts.
+    for (const t of tabs) await t.page.evaluate(() => window.__emberisle.setState({ banner: null }));
     await act(tabs[i], "dispatch", [{ type: "roll" }]);
-    // #188: every tab shows the same roll banner (dice, sum, who got what) for a moment.
-    const banner = await until(async () => {
-      const texts = await Promise.all(tabs.map((t) => t.page.evaluate(() => document.querySelector('[data-testid="banner"]')?.textContent ?? null)));
-      return texts.every(Boolean) && new Set(texts).size === 1 ? texts[0] : null;
-    }, `banner after roll ${r + 1}`);
-    vs = await synced(tabs, seqOf(vs[0]), `roll ${r + 1}`);
+    // The first roll follows the reconnect cases, and a reloaded tab can still be finishing its cold
+    // island render under software GL, so that one gets a longer window (#196).
+    const slow = r === 0 ? 90_000 : undefined;
+    // Each tab is read on its own: a tab whose page is blocked answers late, after the others' 2.5 s
+    // banners are gone, so one poll across all three would never see them together.
+    const texts = await Promise.all(
+      tabs.map((t) => until(() => t.page.evaluate(() => document.querySelector('[data-testid="banner"]')?.textContent ?? null), `banner on ${t.name} after roll ${r + 1}`, slow)),
+    );
+    if (new Set(texts).size !== 1) throw new Error(`banner differs after roll ${r + 1}: ${texts.join(" | ")}`);
+    const banner = texts[0];
+    vs = await synced(tabs, seqOf(vs[0]), `roll ${r + 1}`, slow);
     const d = JSON.parse(vs[0].shared).dice;
     dice.push(d);
     if (!banner.includes(`rolls ${d[0]}+${d[1]} = ${d[0] + d[1]}`)) throw new Error(`banner after roll ${r + 1}: "${banner}" vs dice ${d}`);

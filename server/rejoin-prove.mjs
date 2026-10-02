@@ -7,12 +7,13 @@ import WebSocket from "ws";
 
 const GRACE = 800;
 const HOLD = 2500;
+const PING = 300;
 // Rooms go to a temp folder, dropped on exit, so the real host never restores this proof's tables (#207).
 const ROOMS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-rooms-"));
 process.on("exit", () => rmSync(ROOMS_DIR, { recursive: true, force: true }));
 const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL(".", import.meta.url),
-  env: { ...process.env, PORT: "0", GRACE_MS: String(GRACE), HOLD_MS: String(HOLD), ROOMS_DIR },
+  env: { ...process.env, PORT: "0", GRACE_MS: String(GRACE), HOLD_MS: String(HOLD), PING_MS: String(PING), ROOMS_DIR },
 });
 const port = await new Promise((resolve, reject) => {
   host.stdout.on("data", (d) => {
@@ -29,8 +30,8 @@ function fail(why, extra) {
 }
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
-async function client(name) {
-  const ws = new WebSocket(`ws://127.0.0.1:${port}`);
+async function client(name, opts) {
+  const ws = new WebSocket(`ws://127.0.0.1:${port}`, opts);
   const c = { name, ws, inbox: [], waiters: [], state: null };
   ws.on("message", (raw) => {
     const msg = JSON.parse(String(raw));
@@ -145,6 +146,36 @@ c2.send({ type: "hello", code, secret: wc.secret });
 const late = await c2.next("error");
 if (late.message !== "Seat is gone.") fail("seat after the hold", late.message);
 console.log(`past the hold: "${late.message}"`);
+
+// 9. Keepalive (#202, #113): a socket that stops answering pings (a locked phone, a half-open socket)
+// is cut within two intervals and its seat held; sockets that answer stay seated; the rejoin then works.
+{
+  const x = await client("Reed", { autoPong: false });
+  const y = await client("Moss");
+  const z = await client("Fern");
+  x.send({ type: "hello", name: "Reed" });
+  const wx = await x.next("welcome");
+  y.send({ type: "hello", code: wx.code, name: "Moss" });
+  z.send({ type: "hello", code: wx.code, name: "Fern" });
+  await y.next("welcome");
+  await z.next("welcome");
+  for (const s of [x, y, z]) s.send({ type: "ready", value: true });
+  await wait(100);
+  x.send({ type: "start" });
+  await Promise.all([x.next("state"), y.next("state"), z.next("state")]);
+  const t0 = Date.now();
+  await y.next("log", (m) => m.text === "Reed lost connection.", 2 * PING + 500);
+  const took = Date.now() - t0;
+  if (x.ws.readyState !== WebSocket.CLOSED && x.ws.readyState !== WebSocket.CLOSING) fail("the silent socket is cut", x.ws.readyState);
+  await wait(3 * PING);
+  if (y.ws.readyState !== WebSocket.OPEN || z.ws.readyState !== WebSocket.OPEN) fail("sockets that answer pings stay open");
+  if (y.inbox.some((m) => m.type === "log" && /^(Moss|Fern) (lost connection|left)/.test(m.text))) fail("an answering seat was dropped", y.inbox.filter((m) => m.type === "log"));
+  const x2 = await client("Reed again");
+  x2.send({ type: "hello", code: wx.code, secret: wx.secret });
+  const xb = await x2.next("welcome");
+  if (xb.you !== wx.you) fail("rejoin after the keepalive cut", xb.you);
+  console.log(`keepalive: silent socket cut after ${took} ms (ping ${PING} ms), answering seats kept for ${3 * PING} ms more, Reed rejoined as ${xb.you}`);
+}
 
 host.removeAllListeners("exit");
 host.kill();
