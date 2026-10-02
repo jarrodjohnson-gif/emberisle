@@ -4,6 +4,8 @@ import { ChatBox, ReactionFloats } from "@/components/game/Chat";
 import { Hud, HowTo } from "@/components/game/Hud";
 import { useGame } from "@/lib/game/store";
 import { PLAYER_COLORS, PLAYER_NAMES } from "@/lib/game/types";
+import { cn } from "@/lib/utils";
+import { useViewport } from "@/lib/viewport";
 
 const IslandCanvas = lazy(() => import("@/components/scene/IslandCanvas"));
 
@@ -56,10 +58,20 @@ function Title() {
   const hostTable = useGame((s) => s.hostTable);
   const joinTable = useGame((s) => s.joinTable);
   const error = useGame((s) => s.error);
+  const { phone, portrait } = useViewport();
+  const sheet = phone && portrait;
 
   return (
-    <div className="absolute bottom-5 left-5 z-10 w-full max-w-sm pb-[env(safe-area-inset-bottom)] sm:bottom-10 sm:left-10">
-      <div className="rounded-[20px] border border-white/50 bg-white/45 p-5 backdrop-blur-md sm:p-6">
+    <div
+      data-testid="title-card"
+      className={cn(
+        "absolute z-10",
+        sheet
+          ? "inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] max-h-[55vh] overflow-y-auto rounded-[20px] border border-white/50 bg-white/45 p-5 backdrop-blur-md"
+          : "bottom-5 left-5 w-full max-w-sm pb-[env(safe-area-inset-bottom)] sm:bottom-10 sm:left-10",
+      )}
+    >
+      <div className={sheet ? undefined : "rounded-[20px] border border-white/50 bg-white/45 p-5 backdrop-blur-md sm:p-6"}>
         <p className="text-xs uppercase tracking-[0.22em] text-sea">A living island</p>
         <h1 className="mt-2 font-display text-5xl leading-none tracking-tight sm:text-6xl">Emberisle</h1>
         <p className="mt-3 max-w-sm text-pretty text-muted">
@@ -151,9 +163,19 @@ function Lobby() {
     );
   };
   const canStart = isHost && seats.length >= 3 && seats.length <= 4 && seats.every((s) => s.ready);
+  const { phone, portrait } = useViewport();
+  const sheet = phone && portrait;
 
   return (
-    <div className="absolute bottom-5 left-5 top-5 z-10 flex w-full max-w-sm flex-col sm:bottom-10 sm:left-10 sm:top-10">
+    <div
+      data-testid="lobby-card"
+      className={cn(
+        "absolute z-10 flex flex-col",
+        sheet
+          ? "inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] max-h-[55vh]"
+          : "bottom-5 left-5 top-5 w-full max-w-sm sm:bottom-10 sm:left-10 sm:top-10",
+      )}
+    >
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto rounded-[20px] border border-white/50 bg-white/45 p-5 backdrop-blur-md sm:p-6">
         <p className="text-xs uppercase tracking-[0.22em] text-sea">Table code</p>
         <div className="mt-1 flex items-center gap-3">
