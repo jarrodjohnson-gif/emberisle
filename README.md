@@ -272,7 +272,7 @@ WebSocket JSON. The client sends intents. The server answers with `state` or `er
 | `node --import ./server/register.mjs server/persist-prove.mjs` | Three seats set up and roll three times. The host is killed and restarted on the same port. All three rejoin with their secrets and see the same `seq` and the chat. A 25-hour-old room file is dropped, and a broken one and one with a null seat are skipped. |
 | `npm run client-prove` | The browser client plays setup and a roll with zero console errors |
 | `npm run chat-prove` | 3 browser tabs at 1280x720: lobby chat and presets, a reaction floats over the sender's rail card for 2 s, the unread badge, the remembered dock state, the minimized dock covers no board target, zero console errors |
-| `npm run tabs-prove` | 3 browser tabs host, join, ready, start, play setup and 5 rolls through the rules host; dice and board match on every tab, zero console errors |
+| `npm run tabs-prove` | 3 browser tabs host, join, ready, start, play setup and 5 rolls through the rules host; dice and board match on every tab; then plays on until a gain has flashed green +N and a loss red -N on the hand, each gone within 2 s; zero console errors |
 
 `npm test` runs the first four.
 
