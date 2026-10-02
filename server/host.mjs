@@ -26,6 +26,10 @@ const avatars = new Map(); // avatarId -> { body, at }
 const AVATAR_BYTES = 256 * 1024;
 const AVATAR_MAX = 64;
 const AVATAR_TTL = 60 * 60 * 1000; // an upload nobody sat down with is dropped after an hour
+// A dropped player keeps the seat: the bot takes over after the grace, the seat is let go after the hold
+// (docs/research/rejoin.md). The proofs shorten both through env.
+const GRACE_MS = Number(process.env.GRACE_MS ?? 90 * 1000);
+const HOLD_MS = Number(process.env.HOLD_MS ?? 10 * 60 * 1000);
 // The built client (npm run build). DIST lets a proof point the host at a small temp folder.
 const DIST = path.resolve(process.env.DIST ?? fileURLToPath(new URL("../dist/", import.meta.url)));
 const TYPES = {
@@ -52,12 +56,12 @@ function code() {
 }
 
 function send(ws, msg) {
-  if (ws.readyState === ws.OPEN) ws.send(JSON.stringify(msg));
+  if (ws && ws.readyState === ws.OPEN) ws.send(JSON.stringify(msg));
 }
 
 function broadcast(room, msg) {
   const raw = JSON.stringify(msg);
-  for (const seat of room.seats) if (seat.ws.readyState === seat.ws.OPEN) seat.ws.send(raw);
+  for (const seat of room.seats) if (seat.ws && seat.ws.readyState === seat.ws.OPEN) seat.ws.send(raw);
 }
 
 function say(room, text) {
@@ -72,6 +76,7 @@ function seatsOf(room) {
     avatarId: s.avatarId,
     ready: s.ready,
     host: s.id === room.host,
+    away: !s.ws,
     url: s.avatarId ? `/avatars/${s.avatarId}.jpg` : null,
   }));
 }
@@ -165,6 +170,7 @@ function runBots(room) {
 
 function pushState(room) {
   for (const seat of room.seats) {
+    if (!seat.ws) continue;
     send(seat.ws, {
       type: "state",
       you: seat.pid,
@@ -288,13 +294,14 @@ function openTable(ws, msg) {
     ready: false,
     ws,
     bucket: { tokens: 5, at: Date.now() },
+    secret: randomBytes(16).toString("hex"),
   };
   if (seat.avatarId) room.avatarIds.push(seat.avatarId);
   room.seats.push(seat);
   room.host = seat.id;
   ws.room = room;
   ws.seat = seat;
-  send(ws, { type: "welcome", code: room.code, you: seat.id, host: true, chat: room.chat });
+  send(ws, { type: "welcome", code: room.code, you: seat.id, host: true, chat: room.chat, secret: seat.secret });
   say(room, `${seat.name} sat down.`);
   publish(room);
 }
@@ -314,12 +321,13 @@ function sitDown(ws, msg) {
     ready: false,
     ws,
     bucket: { tokens: 5, at: Date.now() },
+    secret: randomBytes(16).toString("hex"),
   };
   if (seat.avatarId) room.avatarIds.push(seat.avatarId);
   room.seats.push(seat);
   ws.room = room;
   ws.seat = seat;
-  send(ws, { type: "welcome", code: room.code, you: seat.id, host: false, chat: room.chat });
+  send(ws, { type: "welcome", code: room.code, you: seat.id, host: false, chat: room.chat, secret: seat.secret });
   say(room, `${seat.name} sat down.`);
   publish(room);
 }
@@ -500,6 +508,7 @@ function handle(ws, raw) {
   if (!ws.room) {
     // hello with no code opens a table; hello with a code sits down (build bible 2.3, 10).
     if (msg.type === "create" || (msg.type === "hello" && !msg.code)) return openTable(ws, msg);
+    if (msg.type === "hello" && typeof msg.secret === "string") return rejoin(ws, msg);
     if (msg.type === "join" || msg.type === "hello") return sitDown(ws, msg);
     return send(ws, { type: "error", message: "not ready" });
   }
@@ -516,28 +525,88 @@ function handle(ws, raw) {
   return play(ws, room, msg);
 }
 
+// hello {code, secret} puts a dropped player back in their own seat, even after the bot took over.
+function rejoin(ws, msg) {
+  const room = rooms.get(String(msg.code || "").toUpperCase());
+  if (!room) return send(ws, { type: "error", message: "No table with that code" });
+  const seat = room.seats.find((s) => s.secret === msg.secret);
+  if (!seat) return send(ws, { type: "error", message: "Seat is gone." });
+  if (seat.ws && seat.ws.readyState === seat.ws.OPEN) return send(ws, { type: "error", message: "Seat is taken." });
+  clearTimeout(seat.graceTimer);
+  clearTimeout(seat.holdTimer);
+  seat.graceTimer = seat.holdTimer = null;
+  seat.ws = ws;
+  seat.gone = null;
+  ws.room = room;
+  ws.seat = seat;
+  send(ws, { type: "welcome", code: room.code, you: seat.id, host: seat.id === room.host, chat: room.chat, secret: seat.secret });
+  say(room, `${seat.name} is back.`);
+  publish(room);
+  if (!room.game) return;
+  const p = room.game.players.find((x) => x.id === seat.pid);
+  if (p?.kind === "bot") {
+    room.game = { ...room.game, players: room.game.players.map((x) => (x === p ? { ...x, kind: "human", name: seat.name } : x)) };
+  }
+  // Other seats may have become bots while nobody was here to watch them play.
+  const seen = room.game.log.length;
+  runBots(room);
+  for (const line of room.game.log.slice(seen)) say(room, line);
+  pushState(room);
+}
+
+function dropRoom(room) {
+  closeOffer(room);
+  for (const seat of room.seats) {
+    clearTimeout(seat.graceTimer);
+    clearTimeout(seat.holdTimer);
+  }
+  for (const id of room.avatarIds) avatars.delete(id);
+  rooms.delete(room.code);
+}
+
+// The grace is over: the practice bot plays the seat so the table never waits longer than that.
+function takeOver(room, seat) {
+  seat.graceTimer = null;
+  const p = room.game.players.find((x) => x.id === seat.pid);
+  if (!p || p.kind === "bot") return;
+  room.game = { ...room.game, players: room.game.players.map((x) => (x === p ? { ...x, kind: "bot", name: `${x.name} (bot)` } : x)) };
+  say(room, `${seat.name} is played by the bot until they return.`);
+  // With nobody connected, the bots wait too: a rejoin runs them.
+  if (!room.seats.some((s) => s.ws)) return;
+  const seen = room.game.log.length;
+  runBots(room);
+  for (const line of room.game.log.slice(seen)) say(room, line);
+  pushState(room);
+}
+
+// The hold is over: the seat is let go for good. The bot keeps playing the player.
+function letGo(room, seat) {
+  room.seats = room.seats.filter((s) => s !== seat);
+  if (room.seats.length === 0) return dropRoom(room);
+  if (room.host === seat.id) room.host = room.seats[0].id;
+  publish(room);
+}
+
 function leave(ws) {
   const room = ws.room;
   if (!room) return;
-  room.seats = room.seats.filter((s) => s !== ws.seat);
-  if (room.seats.length === 0) {
-    closeOffer(room);
-    for (const id of room.avatarIds) avatars.delete(id);
-    rooms.delete(room.code);
+  const seat = ws.seat;
+  // A socket replaced by a rejoin closing late must not touch the seat it no longer holds.
+  if (seat.ws !== ws) return;
+  if (room.game && seat.pid) {
+    seat.ws = null;
+    seat.gone = Date.now();
+    say(room, `${seat.name} lost connection.`);
+    seat.graceTimer = setTimeout(() => takeOver(room, seat), GRACE_MS);
+    seat.holdTimer = setTimeout(() => letGo(room, seat), HOLD_MS);
+    publish(room);
     return;
   }
-  if (room.host === ws.seat.id) room.host = room.seats[0].id;
-  say(room, `${ws.seat.name} left.`);
-  if (room.game && ws.seat.pid) {
-    const p = room.game.players.find((x) => x.id === ws.seat.pid);
-    if (p) {
-      room.game = { ...room.game, players: room.game.players.map((x) => (x === p ? { ...x, kind: "bot", name: `${x.name} (bot)` } : x)) };
-      const seen = room.game.log.length;
-      runBots(room);
-      for (const line of room.game.log.slice(seen)) say(room, line);
-      pushState(room);
-    }
-  } else publish(room);
+  room.seats = room.seats.filter((s) => s !== seat);
+  if (room.seats.length === 0) return dropRoom(room);
+  if (room.host === seat.id) room.host = room.seats[0].id;
+  say(room, `${seat.name} left.`);
+  publish(room);
 }
 
 server.listen(PORT, () => console.log(`host listening ${server.address().port}`));

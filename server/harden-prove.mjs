@@ -45,7 +45,8 @@ console.log("engine rejects bad bags, names, and non-arrays");
 // 2. The host survives garbage, caps pictures, and picks picture ids itself.
 host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL(".", import.meta.url),
-  env: { ...process.env, PORT: "0" },
+  // A short grace so the bot takes over a dropped seat within the proof (#195).
+  env: { ...process.env, PORT: "0", GRACE_MS: "100" },
   stdio: ["ignore", "pipe", "pipe"],
 });
 const port = await new Promise((resolve, reject) => {
@@ -112,7 +113,7 @@ const colors = new Set(seats.map((s) => s.color));
 if (colors.size !== seats.length) fail("two seats got the same default color", [...colors]);
 console.log("host survived 6 malformed messages; default colors differ:", [...colors].join(" "));
 
-// 3. A player who leaves mid-game is played by the bot, so the table keeps going.
+// 3. A player who leaves mid-game is played by the bot after the grace, so the table keeps going.
 for (const x of [a, b, c]) x.send({ type: "ready", value: true });
 await new Promise((r) => setTimeout(r, 100));
 a.send({ type: "start" });
