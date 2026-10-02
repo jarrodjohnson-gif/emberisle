@@ -50,6 +50,8 @@ On the host, during a game:
 - A rejoin inside the hold (`HOLD_MS`, 10 min) gives the seat back, as a human with the original name, even after the bot took over.
 - After the hold the seat is dropped for good and the bot keeps playing it. The room is deleted when no live or held seats remain.
 
+Host restarts: after each change the host writes the room to `server/rooms/<code>.json` (`ROOMS_DIR` overrides the folder). It saves seats with their secrets, the game, and the chat. Sockets, timers, avatars, and an open trade offer are not saved. On boot it reloads every file and drops any saved more than 24 hours ago. Every restored seat is held as if it had just dropped, so the grace and the hold start again, and players return through `hello {code, secret}`.
+
 In the lobby, closing the socket still frees the seat. The browser client does not use the secret yet: on a drop it still goes back to the main menu.
 
 ## Test
