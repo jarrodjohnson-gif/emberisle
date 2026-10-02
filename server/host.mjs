@@ -1,3 +1,4 @@
+import { mkdirSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import http from "node:http";
 import path from "node:path";
@@ -30,6 +31,10 @@ const AVATAR_TTL = 60 * 60 * 1000; // an upload nobody sat down with is dropped 
 // (docs/research/rejoin.md). The proofs shorten both through env.
 const GRACE_MS = Number(process.env.GRACE_MS ?? 90 * 1000);
 const HOLD_MS = Number(process.env.HOLD_MS ?? 10 * 60 * 1000);
+// Every room is saved to ROOMS/<code>.json after each change and reloaded on boot, so a host PC
+// that sleeps or a Node crash does not end the game. Rooms saved more than a day ago are dropped.
+const ROOMS = path.resolve(process.env.ROOMS_DIR ?? fileURLToPath(new URL("./rooms/", import.meta.url)));
+const ROOM_TTL = 24 * 60 * 60 * 1000;
 // The built client (npm run build). DIST lets a proof point the host at a small temp folder.
 const DIST = path.resolve(process.env.DIST ?? fileURLToPath(new URL("../dist/", import.meta.url)));
 const TYPES = {
@@ -83,6 +88,69 @@ function seatsOf(room) {
 
 function publish(room) {
   broadcast(room, { type: "seats", code: room.code, seats: seatsOf(room) });
+  save(room);
+}
+
+// Sockets, timers and the open trade offer stay in memory; everything else goes to disk.
+function save(room) {
+  if (!rooms.has(room.code)) return;
+  const out = {
+    code: room.code,
+    host: room.host,
+    next: room.next,
+    chat: room.chat,
+    chatSeq: room.chatSeq,
+    game: room.game,
+    seats: room.seats.map(({ id, name, color, ready, pid, secret }) => ({ id, name, color, ready, pid, secret })),
+    savedAt: Date.now(),
+  };
+  try {
+    mkdirSync(ROOMS, { recursive: true });
+    const file = path.join(ROOMS, `${room.code}.json`);
+    // Write then rename, so a crash mid-write never leaves half a room behind.
+    writeFileSync(`${file}.tmp`, JSON.stringify(out));
+    renameSync(`${file}.tmp`, file);
+  } catch (err) {
+    console.error("save failed:", err);
+  }
+}
+
+function unsave(room) {
+  rmSync(path.join(ROOMS, `${room.code}.json`), { force: true });
+}
+
+// Rebuild every saved room. Nobody is connected yet, so each seat is held as if it had just dropped.
+function load() {
+  let names;
+  try {
+    names = readdirSync(ROOMS).filter((n) => n.endsWith(".json"));
+  } catch {
+    return;
+  }
+  for (const name of names) {
+    const file = path.join(ROOMS, name);
+    let saved;
+    try {
+      saved = JSON.parse(readFileSync(file, "utf8"));
+    } catch {
+      console.error("unreadable room file:", name);
+      continue;
+    }
+    if (typeof saved?.code !== "string" || !Array.isArray(saved.seats) || !(Date.now() - saved.savedAt < ROOM_TTL) || saved.seats.length === 0) {
+      rmSync(file, { force: true });
+      continue;
+    }
+    const room = { ...saved, avatarIds: [], offer: null, offerTimer: null, seats: [] };
+    delete room.savedAt;
+    for (const s of saved.seats) {
+      // Avatars live in memory only, so a restored seat has none.
+      const seat = { ...s, avatarId: null, ws: null, bucket: { tokens: 5, at: Date.now() } };
+      room.seats.push(seat);
+      hold(room, seat);
+    }
+    rooms.set(room.code, room);
+  }
+  if (rooms.size) console.log(`restored ${rooms.size} room(s): ${[...rooms.keys()].join(" ")}`);
 }
 
 function affords(player, cost) {
@@ -169,6 +237,7 @@ function runBots(room) {
 }
 
 function pushState(room) {
+  save(room);
   for (const seat of room.seats) {
     if (!seat.ws) continue;
     send(seat.ws, {
@@ -442,6 +511,7 @@ function talk(ws, room, msg) {
     const line = { id: room.chatSeq++, seat: seat.id, player: seat.pid ?? null, name: seat.name, color: seat.color, text, at: Date.now() };
     remember(room.chat, line);
     broadcast(room, { type: "chat", ...line });
+    save(room);
     return;
   }
   if (!EMOTES.has(msg.emote)) return;
@@ -562,6 +632,15 @@ function dropRoom(room) {
   }
   for (const id of room.avatarIds) avatars.delete(id);
   rooms.delete(room.code);
+  unsave(room);
+}
+
+// A seat with no socket: the bot takes it after the grace (in a game), and it is let go after the hold.
+function hold(room, seat) {
+  seat.ws = null;
+  seat.gone = Date.now();
+  if (room.game && seat.pid) seat.graceTimer = setTimeout(() => takeOver(room, seat), GRACE_MS);
+  seat.holdTimer = setTimeout(() => letGo(room, seat), HOLD_MS);
 }
 
 // The grace is over: the practice bot plays the seat so the table never waits longer than that.
@@ -571,6 +650,7 @@ function takeOver(room, seat) {
   if (!p || p.kind === "bot") return;
   room.game = { ...room.game, players: room.game.players.map((x) => (x === p ? { ...x, kind: "bot", name: `${x.name} (bot)` } : x)) };
   say(room, `${seat.name} is played by the bot until they return.`);
+  save(room);
   // With nobody connected, the bots wait too: a rejoin runs them.
   if (!room.seats.some((s) => s.ws)) return;
   const seen = room.game.log.length;
@@ -581,6 +661,7 @@ function takeOver(room, seat) {
 
 // The hold is over: the seat is let go for good. The bot keeps playing the player.
 function letGo(room, seat) {
+  clearTimeout(seat.graceTimer);
   room.seats = room.seats.filter((s) => s !== seat);
   if (room.seats.length === 0) return dropRoom(room);
   if (room.host === seat.id) room.host = room.seats[0].id;
@@ -594,11 +675,8 @@ function leave(ws) {
   // A socket replaced by a rejoin closing late must not touch the seat it no longer holds.
   if (seat.ws !== ws) return;
   if (room.game && seat.pid) {
-    seat.ws = null;
-    seat.gone = Date.now();
+    hold(room, seat);
     say(room, `${seat.name} lost connection.`);
-    seat.graceTimer = setTimeout(() => takeOver(room, seat), GRACE_MS);
-    seat.holdTimer = setTimeout(() => letGo(room, seat), HOLD_MS);
     publish(room);
     return;
   }
@@ -609,4 +687,5 @@ function leave(ws) {
   publish(room);
 }
 
+load();
 server.listen(PORT, () => console.log(`host listening ${server.address().port}`));
