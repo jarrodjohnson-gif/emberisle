@@ -18,7 +18,7 @@ import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { SSAOPass } from "three/addons/postprocessing/SSAOPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 import { hexHeight, worldOfHex } from "@/lib/game/board";
-import { HEX_SIZE, hexCorners, hexesInRadius, vertexId } from "@/lib/game/hex";
+import { HEX_SIZE, SQRT3, hexCorners, hexesInRadius, vertexId } from "@/lib/game/hex";
 import { mulberry32, hashStr } from "@/lib/utils";
 import type { GameState, HarborKind, HexCell, Terrain, Vertex } from "@/lib/game/types";
 
@@ -26,7 +26,7 @@ const SLAB = 0.26;
 const TILE_Y = 0.04;
 
 // The y of a hex's top surface: where makeHexTile puts its cap. Everything that sits on a hex sits here.
-function topOf(terrain: Terrain) {
+export function topOf(terrain: Terrain) {
   return TILE_Y + SLAB + hexHeight(terrain) * 0.35;
 }
 const STONE = 0xefeae0;
@@ -100,6 +100,8 @@ export class IsleRenderer {
   private down = { x: 0, y: 0 };
   private stopped = false;
   private robberTarget = new THREE.Vector3();
+  private walk: { from: THREE.Vector3; to: THREE.Vector3; start: number; hops: number; dur: number } | null = null;
+  private lantern: THREE.MeshStandardMaterial;
   private clock = new THREE.Timer();
   private water = makeWater();
   private titleMode = false;
@@ -183,6 +185,7 @@ export class IsleRenderer {
     this.scene.add(this.foam);
 
     this.wayfarer = makeWayfarer();
+    this.lantern = this.wayfarer.userData.lantern as THREE.MeshStandardMaterial;
     this.living.add(this.wayfarer);
     this.scene.add(this.land, this.living, this.pieces, this.marks);
 
@@ -260,7 +263,8 @@ export class IsleRenderer {
     this.lastInteractive = interactive;
     // Online clients get no seed until the game ends (#111), so a new island is spotted by what buildLand draws.
     const land = landKey(state);
-    if (this.lastLand !== land) {
+    const landChanged = this.lastLand !== land;
+    if (landChanged) {
       this.buildLand(state);
       this.lastLand = land;
     }
@@ -272,8 +276,23 @@ export class IsleRenderer {
     const rh = state.hexes.find((h) => h.id === state.robberHex);
     if (rh) {
       const w = worldOfHex(rh);
-      this.robberTarget.set(w.x, topOf(rh.terrain), w.z);
+      // The wastes have no token, so his feet are on the cap there.
+      this.robberTarget.set(w.x, topOf(rh.terrain) + (rh.pip === null ? 0 : 0.07), w.z);
+      if (!this.wayfarer.userData.placed || landChanged) {
+        this.walk = null;
+        this.wayfarer.position.copy(this.robberTarget);
+        this.wayfarer.userData.placed = true;
+      } else if (!this.walk) this.startWalk();
     }
+  }
+
+  // One 0.3-high hop per hex of distance, 300 ms each, 900 ms at most.
+  private startWalk() {
+    const from = this.wayfarer.position;
+    const dist = Math.hypot(this.robberTarget.x - from.x, this.robberTarget.z - from.z);
+    if (dist <= 0.01) return;
+    const hops = Math.max(1, Math.round(dist / (HEX_SIZE * SQRT3)));
+    this.walk = { from: from.clone(), to: this.robberTarget.clone(), start: this.clock.getElapsed(), hops, dur: Math.min(0.9, 0.3 * hops) };
   }
 
   // Where a hex, corner, or edge id sits on screen, in page pixels. For the chat proof, which checks nothing covers a target.
@@ -429,8 +448,23 @@ export class IsleRenderer {
     this.water.uniforms.uTime!.value = t;
     this.foam.material.opacity = 0.32 + 0.23 * (0.5 + 0.5 * Math.sin(t * 0.8));
     for (const tr of this.trees) tr.rotation.z = Math.sin(t * 1.05 + tr.position.x * 2) * 0.028;
-    this.wayfarer.position.lerp(this.robberTarget, 1 - Math.exp(-dt * 3.2));
-    this.wayfarer.position.y = this.robberTarget.y + Math.sin(t * 2.4) * 0.025;
+    if (this.walk) {
+      const w = this.walk;
+      const u = Math.min(1, (t - w.start) / w.dur);
+      const e = u < 0.5 ? 2 * u * u : 1 - (-2 * u + 2) ** 2 / 2;
+      this.wayfarer.position.lerpVectors(w.from, w.to, e);
+      this.wayfarer.position.y += 0.3 * Math.abs(Math.sin(Math.PI * u * w.hops));
+      this.wayfarer.lookAt(w.to.x, this.wayfarer.position.y, w.to.z);
+      if (u >= 1) {
+        this.walk = null;
+        this.startWalk();
+      }
+    }
+    this.lantern.emissiveIntensity = 1.6 + 0.3 * Math.sin(t * 2.2);
+    for (const m of this.marks.children) {
+      if (m.userData.kind !== "hex" || m.userData.id === this.pending?.id) continue;
+      (m as THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>).material.emissiveIntensity = 0.5 + 0.35 * (0.5 + 0.5 * Math.sin(t * 4));
+    }
     for (const s of this.sheep) {
       s.wait -= dt;
       if (s.wait <= 0) {
@@ -608,12 +642,12 @@ export class IsleRenderer {
     for (const h of state.hexes) {
       if (!hset.has(h.id)) continue;
       const { x, z } = worldOfHex(h);
-      const ring = hexCap(HEX_SIZE * 0.9, undefined, 0xc45c3e);
-      ring.position.set(x, topOf(h.terrain) + 0.01, z);
-      ring.userData = { kind: "hex", id: h.id, baseGlow: 0.55 };
-      const mat = ring.material as THREE.MeshStandardMaterial;
-      mat.emissive = new THREE.Color(0xc45c3e);
-      mat.emissiveIntensity = 0.55;
+      const ring = new THREE.Mesh(
+        hexRing(HEX_SIZE * 0.94, HEX_SIZE * 0.76),
+        new THREE.MeshStandardMaterial({ color: 0xfff6e8, emissive: 0xffb347, emissiveIntensity: 0.6, roughness: 0.6 }),
+      );
+      ring.position.set(x, topOf(h.terrain) + 0.012, z);
+      ring.userData = { kind: "hex", id: h.id, baseGlow: 0.6 };
       this.marks.add(ring);
       this.pickables.push(ring);
     }
@@ -819,6 +853,14 @@ function makeHexTile(size: number, height: number, tex: THREE.Texture | undefine
   return g;
 }
 
+function hexRing(outer: number, inner: number) {
+  const s = hexShape(outer);
+  s.holes.push(hexShape(inner));
+  const geo = new THREE.ShapeGeometry(s);
+  geo.rotateX(-Math.PI / 2);
+  return geo;
+}
+
 function hexCap(size: number, tex: THREE.Texture | undefined, color: number) {
   const geo = new THREE.ShapeGeometry(hexShape(size));
   geo.rotateX(-Math.PI / 2);
@@ -1013,29 +1055,24 @@ function makeHouse(color: string, city: boolean) {
 
 function makeWayfarer() {
   const g = new THREE.Group();
-  const robe = new THREE.Mesh(
-    new THREE.ConeGeometry(0.1, 0.38, 8),
-    new THREE.MeshStandardMaterial({ color: 0x161616, roughness: 0.7 }),
-  );
-  robe.position.y = 0.19;
-  g.add(robe);
-  const wrap = new THREE.Mesh(
-    new THREE.SphereGeometry(0.08, 12, 10),
-    new THREE.MeshStandardMaterial({ color: 0xf6f1e6, roughness: 0.5 }),
-  );
-  wrap.position.y = 0.4;
-  g.add(wrap);
-  for (const sx of [-0.024, 0.024]) {
-    const eye = new THREE.Mesh(
-      new THREE.SphereGeometry(0.011, 8, 8),
-      new THREE.MeshStandardMaterial({ color: 0x111111 }),
-    );
-    eye.position.set(sx, 0.4, 0.065);
-    g.add(eye);
-  }
+  const charcoal = new THREE.MeshStandardMaterial({ color: 0x2b2420, roughness: 0.75 });
+  const part = (geo: THREE.BufferGeometry, mat: THREE.Material, x: number, y: number, z: number) => {
+    const m = new THREE.Mesh(geo, mat);
+    m.position.set(x, y, z);
+    g.add(m);
+    return m;
+  };
+  part(new THREE.ConeGeometry(0.15, 0.46, 10), charcoal, 0, 0.23, 0).castShadow = true;
+  part(new THREE.SphereGeometry(0.1, 12, 10), charcoal, 0, 0.5, 0);
+  part(new THREE.SphereGeometry(0.07, 10, 8), new THREE.MeshStandardMaterial({ color: 0xfff6e8, roughness: 0.5 }), 0, 0.49, 0.045);
+  const eye = new THREE.MeshStandardMaterial({ color: 0x111111 });
+  for (const sx of [-0.024, 0.024]) part(new THREE.SphereGeometry(0.011, 8, 8), eye, sx, 0.5, 0.105);
+  part(new THREE.CylinderGeometry(0.012, 0.012, 0.64, 6), new THREE.MeshStandardMaterial({ color: 0x4a3220 }), 0.17, 0.32, 0.04);
+  const lantern = new THREE.MeshStandardMaterial({ color: 0xffb347, emissive: 0xff9a2e, emissiveIntensity: 1.6, roughness: 0.3 });
+  part(new THREE.SphereGeometry(0.05, 10, 8), lantern, 0.17, 0.56, 0.04);
+  g.userData.lantern = lantern;
   return g;
 }
-
 
 function makeSheep() {
   const g = new THREE.Group();

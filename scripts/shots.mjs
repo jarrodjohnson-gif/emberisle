@@ -194,10 +194,18 @@ try {
       });
       console.log("metrics", JSON.stringify(metrics));
       // Closer looks for the pieces, boats and wayfarer: zoom to the controls' minimum distance.
+      // Aim at the wayfarer so the zoom shows his parts (#237), then put the orbit target back.
+      const aim = await page.evaluate(() => {
+        const c = window.__isle.controls;
+        const was = c.target.toArray();
+        c.target.copy(window.__isle.wayfarer.position);
+        return was;
+      });
       await page.mouse.move(w / 2, h / 2);
       for (let i = 0; i < 12; i++) await page.mouse.wheel(0, -400);
       await shot(page, "09-zoom", size);
       for (let i = 0; i < 12; i++) await page.mouse.wheel(0, 400);
+      await page.evaluate((was) => window.__isle.controls.target.set(...was), aim);
     }
 
     // A 7: more than seven goods, discard half.
