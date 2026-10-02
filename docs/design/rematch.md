@@ -41,12 +41,11 @@ It must sit above the `!room.game` line. Below it, `again` would fall through to
 | 1 | `ws.seat.id === room.host` | error `Only the host can start.` |
 | 2 | `room.game?.phase === "over"` | error `Game is not over.` |
 | 3 | `live = room.seats.filter(s => s.ws?.readyState === OPEN)`; `live.length >= 3` | error `Need 3 or 4 at the table.` |
-| 4 | Let go of every seat not in `live`: `clearTimeout` both its timers, remove it from `room.seats`. | |
+| 4 | Let go of every seat not in `live`: `clearTimeout` both its timers, set `seat.ws = null`, remove it from `room.seats`. | |
 | 5 | Order `room.seats`: the seat whose `pid === room.game.winner` first, the rest in their current order. If the winner's seat was let go in step 4, keep the current order. | |
-| 6 | `closeOffer(room)`. | |
-| 7 | `game = createGame({ humans: room.seats.map(s => ({ name: s.name })), bots: 0 })`. Then `s.pid = game.players[i].id` and `game.players[i].color = s.color`, as `startGame` does. `room.game = game`. | |
-| 8 | `hear("ui_confirm")`. `say(room, "<name> won last time and places first.")`. | |
-| 9 | `publish(room)` (the seat list changed), then `pushState(room)`. | |
+| 6 | `game = createGame({ humans: room.seats.map(s => ({ name: s.name })), bots: 0 })`. Then `s.pid = game.players[i].id` and `game.players[i].color = s.color`, as `startGame` does. `room.game = game`. | |
+| 7 | `hear("ui_confirm")`. `say(room, "<name> won last time and places first.")`. | |
+| 8 | `publish(room)` (the seat list changed), then `pushState(room)`. | |
 
 Notes:
 
@@ -57,12 +56,17 @@ Notes:
 - Step 4 does not call `letGo`. `letGo` is the hold timer's own callback: it clears only the grace timer, and it calls
   `publish`. Called early, the hold timer would fire later on a seat that is already gone. The host is always in
   `live`, so the host never moves.
+- Step 4 sets `seat.ws = null` because a seat that is not `live` can still have a socket that is CLOSING. When that
+  socket's `close` fires, `leave` runs `hold` and later `takeOver` for that seat. With `seat.ws` still pointing at the
+  socket, `leave`'s guard (`seat.ws !== ws`) does not stop it, and `takeOver` looks the old `pid` up in the new game,
+  where it now belongs to a live human, who would become "(bot)". With `seat.ws = null` the late `leave` returns at
+  that guard.
 - In step 4 a seat's `avatarId` stays in `room.avatarIds`, as `letGo` leaves it today.
-- Step 5 sets the line "<name> won last time and places first." Step 8 skips the "won last time" half when the winner
+- Step 5 sets the line "<name> won last time and places first." Step 7 skips the "won last time" half when the winner
   was let go: the line is then `<name> places first.`, the same wording `startGame` uses.
 - `ready` is not touched. Every seat that stays is still `ready: true` from the lobby.
 - `room.chat`, `room.chatSeq`, `room.next`, `room.host`, every `secret`, name, color and picture are kept.
-- Step 7 gives the winner `p0`. Seat ids (`s0..s3`) do not change. `pid` does, and `you` in the next `state` message
+- Step 6 gives the winner `p0`. Seat ids (`s0..s3`) do not change. `pid` does, and `you` in the next `state` message
   carries the new one.
 - The new game takes a fresh random seed from `createGame`. The old state is never reused. `viewFor` hands out the old
   `seed` and `rng` at `over` (#111), so reuse would give the new island away.
@@ -71,9 +75,9 @@ Notes:
 
 | String | When | New? |
 |---|---|---|
-| `Only the host can start.` | A guest sends `again`. | no, `host.mjs:422` |
+| `Only the host can start.` | A guest sends `again`. | no, `startGame` |
 | `Game is not over.` | No game, a game in play, or a second `again`. | yes |
-| `Need 3 or 4 at the table.` | Fewer than 3 open sockets. | no, `host.mjs:423` |
+| `Need 3 or 4 at the table.` | Fewer than 3 open sockets. | no, `startGame` |
 
 ### Log line
 
@@ -120,14 +124,15 @@ Add `again: () => void` to `TableClient` and `again: () => send({ type: "again" 
 Why the new-game branch is needed:
 
 - **`awardLine`** compares the old and new game. The old winner holds the longest path or largest army, the new game
-  holds nobody, so it would show "<name> loses the longest path" with a name looked up in the new `players`, which
-  can be a different person. Skip it when the previous phase was `over`.
+  holds nobody, so it would show "<name> loses the longest path" (or, for the largest-army branch, "Nobody holds the
+  largest army") with a name looked up in the new `players`, which can be a different person. One skip covers both
+  branches: skip `awardLine` when the previous phase was `over`.
 - **`loadState`** already clears `pendingSteal` and `error`, and sets `state`, `localId` (the new `pid`), `host` and
   `legal`. It does not touch `buildMode`, `roadPicks`, `pendingPlace`, `tradeOpen`. The dispatch path resets
   `buildMode` and `roadPicks` on every online action, so they are usually already clean, but `pendingPlace` (the
   touch confirm) and `tradeOpen` (the panel) can be left open at the win. Reset all four on a new game.
-- `offer`, `declined` and `tradeOutcome` are driven by the server's trade messages. `closeOffer` in step 6 sends the
-  close, so they clear without a client change.
+- `offer`, `declined` and `tradeOutcome` are driven by the server's trade messages. No rematch code is needed: an open trade offer
+  is always closed by `play` when the phase leaves `main`, so `room.offer` is already null at `over`.
 - `chat`, `reactions`, `unread`, `code`, `seats`, `seatId`, `isHost` belong to the table and are kept.
 - The `WinScreen` panel is keyed by `winnerId` and unmounts when `winner` becomes `null`, so its "Look around"
   state resets on its own.
@@ -165,13 +170,13 @@ Who sees what:
 Hotseat `playAgain`: take `state.players` in order, move the winner to the front, and call
 `createGame({ humans: ordered.map(p => ({ name: p.name })), bots: 0 })`. The names are the typed ones ("Ember",
 "Seat 2"), not the first seat's saved `name`. Set `state`, `localId: "p0"`, `error: null`, `toast: null`,
-`buildMode: "none"`, `roadPicks: []`, `pendingPlace: null`. Colors come from the new game's default palette, so a
+`buildMode: "none"`, `roadPicks: []`, `pendingPlace: null`, `pendingSteal: null`. Colors come from the new game's default palette, so a
 hotseat player's color can change; that matches `startHotseat` today, which also takes the palette. If #149 has
 landed, pass `rollOff: false`.
 
 ## Persistence and rejoin
 
-No new code. Step 9 saves through `publish` and `pushState`, which write the whole room (`game`, `seats`, `host`,
+No new code. Step 8 saves through `publish` and `pushState`, which write the whole room (`game`, `seats`, `host`,
 `chat`). Every change is made before the first save, so a crash never leaves the old game with the new seat list on
 disk. A restart loads the new game, holds each seat, and a `hello {code, secret}` gets a `state` with the new `pid`.
 A seat that was let go is not in the file.
@@ -197,7 +202,7 @@ must read as the exception to it.
 
 ## Proof plan
 
-A game cannot be played to `over` over the wire: `table-prove` plays only a few turns. The new proof starts from a
+Playing a game to `over` over the wire is not practical: `table-prove` plays only a few turns. The new proof starts from a
 finished game on disk instead. `host.mjs` loads rooms from `ROOMS_DIR` (the same path `persist-prove` exercises).
 
 ### New: `server/rematch-prove.mjs` (added to `server/package.json` `test`)
@@ -206,6 +211,11 @@ Fixtures, written to a temp `ROOMS_DIR` before the host starts: a room with a 3-
 `phase: "over"`, `winner: "p2"` (the third seat, not the host), and seats `s0..s2` with known secrets. A second room
 with the same game plus a fourth seat. Env: `HOLD_MS` and `GRACE_MS` long, so held seats are not let go by timers.
 Clients rejoin with `hello {code, secret}`.
+
+Each fixture file must carry the full save shape that `save` in `host.mjs` writes: `code`, `host`, `next`,
+`chat: []`, `chatSeq: 0`, `game`, `seats: [{ id, name, color, ready, pid, secret }]`, and `savedAt: Date.now()`. `load`
+deletes any file without a fresh `savedAt`. `server/persist-prove.mjs` (the `OLD1`/`BAD1` fixtures, about lines
+135-139) is the pattern for writing room files into `ROOMS_DIR` before the host starts.
 
 | Check | Expected |
 |---|---|
