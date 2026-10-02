@@ -9,6 +9,8 @@ export interface Seat {
   ready: boolean;
   host: boolean;
   url: string | null;
+  // The host marks a seat whose socket is gone (#195); it is held for the player to rejoin.
+  away?: boolean;
 }
 
 export interface Legal {
@@ -47,7 +49,7 @@ export interface Reaction {
 }
 
 export interface TableEvents {
-  welcome(msg: { code: string; you: string; host: boolean; chat?: ChatLine[] }): void;
+  welcome(msg: { code: string; you: string; host: boolean; chat?: ChatLine[]; secret?: string }): void;
   seats(msg: { code: string; seats: Seat[] }): void;
   state(msg: { you: string; game: GameState; legal: Legal }): void;
   rolled(msg: { dice: [number, number]; sum: number; gains: Gain[] }): void;
@@ -55,6 +57,8 @@ export interface TableEvents {
   react(r: Reaction): void;
   log(text: string): void;
   error(message: string): void;
+  // The socket dropped and the client is dialing again (attempt 1, 2, ...); `closed` follows only if it gives up.
+  reconnecting(attempt: number): void;
   closed(): void;
 }
 
@@ -67,6 +71,10 @@ export interface Me {
 export interface TableClient {
   open(me: Me): void;
   join(code: string, me: Me): void;
+  // Sit back down in a held seat (#196): hello {code, secret} from an earlier welcome.
+  rejoin(code: string, secret: string): void;
+  // Close the socket the way a lost network would (not on purpose), so the client dials again. For proofs.
+  drop(): void;
   ready(value: boolean): void;
   start(): void;
   act(action: Action): boolean;
@@ -134,11 +142,22 @@ export function hostUrl(
   return dev ? `${scheme}://${loc.hostname}:8787` : `${scheme}://${loc.host}`;
 }
 
+// Waits between reconnect attempts, then every 15 s, for up to 10 minutes (docs/research/rejoin.md).
+const BACKOFF_MS = [1000, 2000, 4000, 8000, 15000];
+const GIVE_UP_MS = 10 * 60 * 1000;
+
 export function connectTable(url: string, on: Partial<TableEvents>, Socket?: SocketCtor): TableClient {
   const Ctor = Socket ?? (globalThis.WebSocket as unknown as SocketCtor);
-  const ws = new Ctor(url);
   const queue: string[] = [];
+  let ws: SocketLike;
   let closedByUs = false;
+  // Set by the first welcome. With a seat to go back to, an unexpected close means dial again.
+  let seat: { code: string; secret: string } | null = null;
+  let attempt = 0;
+  let lostAt = 0;
+  // True while a hello {code, secret} is out; an error then means the seat is gone for good.
+  let rejoining = false;
+  let timer: ReturnType<typeof setTimeout> | null = null;
 
   const send = (msg: Record<string, unknown>) => {
     const raw = JSON.stringify(msg);
@@ -146,23 +165,58 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
     else queue.push(raw);
   };
 
-  ws.onopen = () => {
-    for (const raw of queue.splice(0)) ws.send(raw);
+  const giveUp = () => {
+    closedByUs = true;
+    seat = null;
+    rejoining = false;
+    on.closed?.();
   };
-  ws.onclose = () => {
-    if (!closedByUs) on.closed?.();
+
+  const dial = () => {
+    ws = new Ctor(url);
+    ws.onopen = () => {
+      if (seat && attempt > 0) {
+        rejoining = true;
+        ws.send(JSON.stringify({ type: "hello", code: seat.code, secret: seat.secret }));
+      }
+      for (const raw of queue.splice(0)) ws.send(raw);
+    };
+    ws.onclose = () => {
+      if (closedByUs) return;
+      if (!seat) {
+        on.closed?.();
+        return;
+      }
+      if (attempt === 0) lostAt = Date.now();
+      if (Date.now() - lostAt > GIVE_UP_MS) {
+        giveUp();
+        return;
+      }
+      attempt += 1;
+      on.reconnecting?.(attempt);
+      timer = setTimeout(dial, BACKOFF_MS[Math.min(attempt, BACKOFF_MS.length) - 1]!);
+    };
+    ws.onmessage = (ev) => {
+      let msg: { type?: string; [k: string]: unknown };
+      try {
+        msg = JSON.parse(String(ev.data));
+      } catch {
+        return;
+      }
+      handle(msg);
+    };
   };
-  ws.onmessage = (ev) => {
-    let msg: { type?: string; [k: string]: unknown };
-    try {
-      msg = JSON.parse(String(ev.data));
-    } catch {
-      return;
-    }
+
+  const handle = (msg: { type?: string; [k: string]: unknown }) => {
     switch (msg.type) {
-      case "welcome":
-        on.welcome?.(msg as never);
+      case "welcome": {
+        const m = msg as { code: string; you: string; host: boolean; chat?: ChatLine[]; secret?: string };
+        if (typeof m.secret === "string") seat = { code: m.code, secret: m.secret };
+        rejoining = false;
+        attempt = 0;
+        on.welcome?.(m);
         break;
+      }
       case "seats":
         on.seats?.(msg as never);
         break;
@@ -183,13 +237,25 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
         break;
       case "error":
         on.error?.(String(msg.message));
+        if (rejoining) {
+          // "Seat is gone.", "Seat is taken.", or no such table: nothing to go back to.
+          ws.close();
+          giveUp();
+        }
         break;
     }
   };
 
+  dial();
+
   return {
     open: (me) => send({ type: "hello", ...me }),
     join: (code, me) => send({ type: "hello", code: code.toUpperCase(), ...me }),
+    rejoin: (code, secret) => {
+      seat = { code: code.toUpperCase(), secret };
+      rejoining = true;
+      send({ type: "hello", code: seat.code, secret });
+    },
     ready: (value) => send({ type: "ready", value }),
     start: () => send({ type: "start" }),
     act: (action) => {
@@ -199,8 +265,10 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
     },
     say: (text) => send({ type: "chat", text }),
     react: (emote, to) => send({ type: "react", emote, to }),
+    drop: () => ws.close(),
     close: () => {
       closedByUs = true;
+      if (timer) clearTimeout(timer);
       ws.close();
     },
   };

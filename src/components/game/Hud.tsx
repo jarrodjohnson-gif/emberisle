@@ -54,6 +54,7 @@ export function Hud() {
   const mode = useGame((s) => s.mode);
   const buildMode = useGame((s) => s.buildMode);
   const roadPicks = useGame((s) => s.roadPicks);
+  const seats = useGame((s) => s.seats);
   const error = useGame((s) => s.error);
   const howTo = useGame((s) => s.howTo);
   const dispatch = useGame((s) => s.dispatch);
@@ -105,6 +106,7 @@ export function Hud() {
             </div>
             <p className="mt-1 text-xs text-zinc-600">
               {RESOURCES.reduce((n, r) => n + p.resources[r], 0)} goods · {(p as typeof p & { fortunes?: number }).fortunes ?? hiddenCount(p)} fortunes
+              {seats.some((s) => s.away && (s.name === p.name || `${s.name} (bot)` === p.name)) ? " · reconnecting…" : ""}
             </p>
             <ReactionFloats by="player" id={p.id} />
           </div>
