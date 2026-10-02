@@ -44,10 +44,11 @@ for (const [w, h] of [
 
 const near = (a, b) => Math.abs(a - b) < 0.1;
 // The design's table says 23.6 / 26.4; its own formula (11.2 / usable / (2 tan 16 deg)) gives these.
-assert.ok(near(freeMaxDistance(844, hudInsets(390, 844, true), true), 28.6), "portrait maxDistance");
+assert.ok(near(freeMaxDistance(844, hudInsets(390, 844, true), true), 31.0), "portrait maxDistance");
+assert.deepEqual(hudInsets(390, 844, true), { top: 116, right: 12, bottom: 196, left: 12 }, "portrait insets include the 44 px seat strip (#177)");
 assert.ok(near(freeMaxDistance(390, hudInsets(844, 390, true), true), 36), "landscape maxDistance");
 assert.equal(freeMaxDistance(720, hudInsets(1280, 720, false), false), 18);
-console.log("free maxDistance: 28.6 portrait, 36 (capped) landscape, 18 desktop");
+console.log("free maxDistance: 31.0 portrait, 36 (capped) landscape, 18 desktop");
 
 // Two legal vertices one HEX_SIZE apart; a ray 0.40 along from the midpoint toward A is 0.16 from A, 0.96 from B.
 const SPACING = 1.12;

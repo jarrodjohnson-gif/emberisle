@@ -18,9 +18,10 @@ import { WinScreen } from "@/components/game/WinScreen";
 import { ChatDock, ReactionFloats } from "@/components/game/Chat";
 import { TradeButton, TradePanel } from "@/components/game/TradePanel";
 import { TradeToast } from "@/components/game/TradeToast";
-import { COST, RESOURCES, RESOURCE_LABEL, type PlayerState, type Resource } from "@/lib/game/types";
+import { COST, RESOURCES, RESOURCE_LABEL, type DevKind, type PlayerState, type Resource } from "@/lib/game/types";
 import { hiddenCount, legalRoads, playable, publicVP, totalVP } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
+import { useViewport } from "@/lib/viewport";
 import { cn } from "@/lib/utils";
 
 const ICONS: Record<Resource, typeof Trees> = {
@@ -30,6 +31,14 @@ const ICONS: Record<Resource, typeof Trees> = {
   grain: Wheat,
   ore: Mountain,
 };
+
+const FORTUNE_NAMES: [DevKind, string][] = [
+  ["knight", "knight"],
+  ["road", "path"],
+  ["plenty", "plenty"],
+  ["monopoly", "monopoly"],
+  ["vp", "points"],
+];
 
 function phaseCopy(phase: string) {
   switch (phase) {
@@ -52,6 +61,8 @@ function phaseCopy(phase: string) {
   }
 }
 
+const HINT_KEY = "emberisle-landscape-hint";
+
 export function Hud() {
   const state = useGame((s) => s.state);
   const localId = useGame((s) => s.localId);
@@ -66,6 +77,8 @@ export function Hud() {
   const setBuildMode = useGame((s) => s.setBuildMode);
   const goTitle = useGame((s) => s.goTitle);
   const setHowTo = useGame((s) => s.setHowTo);
+  const { phone, portrait } = useViewport();
+  const [hintDismissed, setHintDismissed] = useState(() => sessionStorage.getItem(HINT_KEY) === "1");
 
   if (!state) return null;
   const actor = mode === "hotseat" ? state.current : localId;
@@ -80,6 +93,28 @@ export function Hud() {
         : (state.discardNeeded[actor] ?? 0) > 0
           ? actor
           : null;
+  const knightButton =
+    mine && !state.playedCard && playable(me, "knight") > 0 ? (
+      <Button
+        size="sm"
+        data-testid="knight-button"
+        variant={buildMode === "knight" ? "primary" : "secondary"}
+        onClick={() => setBuildMode(buildMode === "knight" ? "none" : "knight")}
+      >
+        Wayfarer card{playable(me, "knight") > 1 ? ` ×${playable(me, "knight")}` : ""}
+      </Button>
+    ) : null;
+  // Hotseat has no "you": every seat is named. The turn banner sits out once the isle has a ruler (the pill says who).
+  const subject = state.phase === "discard" && discarder ? discarder : state.current;
+  const subjectPlayer = state.players.find((p) => p.id === subject) ?? state.players[0]!;
+  const yours = mode !== "hotseat" && subject === actor;
+  const phaseText =
+    yours && state.phase === "discard"
+      ? `discard ${state.discardNeeded[subject] ?? 0}`
+      : yours && state.phase === "robber"
+        ? "move the wayfarer"
+        : phaseCopy(state.phase);
+  const turnText = `${yours ? "Your" : `${subjectPlayer.name}'s`} turn — ${phaseText}`;
   const winner = state.winner ? state.players.find((p) => p.id === state.winner) : null;
 
   return (
@@ -91,6 +126,7 @@ export function Hud() {
             <span className="font-display text-lg tracking-tight">Emberisle</span>
             <span className="hidden text-xs text-zinc-600 sm:inline">Turn {Math.max(1, state.turn)}</span>
           </div>
+          {phone && !portrait ? <SeatStrip actor={actor} className="ml-auto min-w-0 max-w-[34rem] flex-1" /> : null}
           <div className="flex gap-1">
             <Button variant="secondary" size="icon" onClick={() => setHowTo(true)} aria-label="How to play">
               <BookOpen className="size-4" />
@@ -102,10 +138,19 @@ export function Hud() {
         </div>
       </header>
 
+      {phone && portrait ? (
+        <SeatStrip
+          actor={actor}
+          className="absolute inset-x-3 top-[calc(env(safe-area-inset-top)+4.25rem)] z-10"
+        />
+      ) : null}
+
+      {phone ? null : (
       <aside className="pointer-events-none absolute left-3 top-20 z-10 hidden w-56 flex-col gap-2 md:flex">
         {state.players.map((p) => (
           <div
             key={p.id}
+            data-testid={`rail-${p.id}`}
             className={cn(
               "pointer-events-auto relative rounded-[16px] border bg-white/45 px-3 py-2 backdrop-blur-md",
               p.id === state.current ? "border-accent" : "border-white/50",
@@ -116,22 +161,64 @@ export function Hud() {
                 <span className="size-2.5 rounded-full" style={{ background: p.color }} />
                 <span className="text-sm font-medium">{p.name}</span>
               </div>
-              <span className="tabular-nums text-sm text-zinc-600">{publicVP(state, p.id)} vp</span>
+              <span className="tabular-nums text-sm text-zinc-600">{publicVP(state, p.id)} vp{p.id === actor && p.hidden.vp > 0 ? ` (+${p.hidden.vp} hidden)` : ""}
+              </span>
             </div>
             <p className="mt-1 text-xs text-zinc-600">
               {p.goods ?? RESOURCES.reduce((n, r) => n + p.resources[r], 0)} goods · {p.fortunes ?? hiddenCount(p)} fortunes
               {seats.some((s) => s.away && (s.name === p.name || `${s.name} (bot)` === p.name)) ? " · reconnecting…" : ""}
             </p>
+            {p.id === actor && hiddenCount(p) > 0 ? (
+              <p className="mt-0.5 text-xs text-zinc-600">
+                {FORTUNE_NAMES.filter(([k]) => p.hidden[k] > 0)
+                  .map(([k, label]) => `${label} ×${p.hidden[k]}${p.boughtThisTurn[k] > 0 ? ` (${p.boughtThisTurn[k]} new)` : ""}`)
+                  .join(" · ")}
+              </p>
+            ) : null}
             <ReactionFloats by="player" id={p.id} />
           </div>
         ))}
       </aside>
+      )}
 
       <ChatDock />
       <TradeToast />
 
       <div className="pointer-events-none absolute bottom-0 inset-x-0 z-10 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         <div className="pointer-events-auto mx-auto flex max-w-3xl flex-col gap-2">
+          {phone && portrait && !hintDismissed ? (
+            <p
+              data-testid="landscape-hint"
+              className="pointer-events-none flex h-11 items-center justify-between gap-2 rounded-[16px] border border-white/50 bg-white/45 pl-3 text-sm text-zinc-900 backdrop-blur-md"
+            >
+              Turn the phone sideways to see the whole isle.
+              <button
+                type="button"
+                aria-label="Dismiss"
+                data-testid="landscape-hint-dismiss"
+                className="pointer-events-auto flex size-11 items-center justify-center"
+                onClick={() => {
+                  sessionStorage.setItem(HINT_KEY, "1");
+                  setHintDismissed(true);
+                }}
+              >
+                <X className="size-4" />
+              </button>
+            </p>
+          ) : null}
+          {state.phase === "over" ? null : (
+            <p
+              key={state.current}
+              data-testid="turn-banner"
+              style={{ borderLeftColor: yours ? undefined : subjectPlayer.color }}
+              className={cn(
+                "animate-[turn-fade_200ms_ease-out] rounded-[16px] border bg-white/45 px-3 py-2 text-sm font-medium text-zinc-900 backdrop-blur-md",
+                yours ? "border-accent bg-accent/20" : "border-white/50 border-l-4",
+              )}
+            >
+              {turnText}
+            </p>
+          )}
           {banner ? (
             <p
               role="status"
@@ -141,14 +228,16 @@ export function Hud() {
               {banner}
             </p>
           ) : null}
-          <p className="rounded-[16px] border border-white/50 bg-white/45 px-3 py-2 text-sm text-zinc-900 backdrop-blur-md">
-            {winner
-              ? `${winner.name} wins with ${totalVP(state, winner.id)} points.`
-              : buildMode === "roadCard"
-                ? `Path fortune: pick ${roadPicks.length ? "one more path" : "two paths"} on the glowing edges.`
-                : phaseCopy(state.phase)}
-            {error ? <span className="mt-1 block text-orange-700">{error}</span> : null}
-          </p>
+          {winner || buildMode === "roadCard" || error ? (
+            <p className="rounded-[16px] border border-white/50 bg-white/45 px-3 py-2 text-sm text-zinc-900 backdrop-blur-md">
+              {winner
+                ? `${winner.name} wins with ${totalVP(state, winner.id)} points.`
+                : buildMode === "roadCard"
+                  ? `Path fortune: pick ${roadPicks.length ? "one more path" : "two paths"} on the glowing edges.`
+                  : null}
+              {error ? <span className={cn("block text-orange-700", (winner || buildMode === "roadCard") && "mt-1")}>{error}</span> : null}
+            </p>
+          ) : null}
 
           <ResourceHand me={me} />
 
@@ -182,15 +271,7 @@ export function Hud() {
                 <ScrollText className="size-4" /> Fortune
               </Button>
               <TradeButton />
-              {!state.playedCard && playable(me, "knight") > 0 ? (
-                <Button
-                  size="sm"
-                  variant={buildMode === "knight" ? "primary" : "secondary"}
-                  onClick={() => setBuildMode(buildMode === "knight" ? "none" : "knight")}
-                >
-                  Wayfarer card{playable(me, "knight") > 1 ? ` ×${playable(me, "knight")}` : ""}
-                </Button>
-              ) : null}
+              {knightButton}
               {!state.playedCard && playable(me, "road") > 0 && me.pathsLeft > 0 && legalRoads(state, me.id, false).length > 0 ? (
                 <Button
                   size="sm"
@@ -209,9 +290,12 @@ export function Hud() {
           ) : null}
 
           {state.phase === "roll" && mine ? (
-            <Button size="lg" onClick={() => dispatch({ type: "roll" })}>
-              <Dices className="size-5" /> Roll
-            </Button>
+            <div className="flex flex-col gap-2">
+              {knightButton ? <div className="flex flex-wrap gap-1">{knightButton}</div> : null}
+              <Button size="lg" onClick={() => dispatch({ type: "roll" })}>
+                <Dices className="size-5" /> Roll
+              </Button>
+            </div>
           ) : null}
 
           {state.dice ? (
@@ -241,6 +325,45 @@ export function Hud() {
         ore.
       </p>
     </>
+  );
+}
+
+// Phone seat strip (docs/design/mobile-hud.md): 44 px, one cell per seat. Compact vs the rail: no per-fortune
+// breakdown (that line is rail-only), hidden points show as "+N", and "reconnecting…" replaces the counts line.
+function SeatStrip({ actor, className }: { actor: string; className: string }) {
+  const state = useGame((s) => s.state)!;
+  const seats = useGame((s) => s.seats);
+  return (
+    <div data-testid="seat-strip" className={cn("pointer-events-auto flex h-11 gap-1", className)}>
+      {state.players.map((p) => {
+        const away = seats.some((s) => s.away && (s.name === p.name || `${s.name} (bot)` === p.name));
+        const hidden = p.id === actor && p.hidden.vp > 0 ? p.hidden.vp : 0;
+        const goods = p.goods ?? RESOURCES.reduce((n, r) => n + p.resources[r], 0);
+        return (
+          <div
+            key={p.id}
+            data-testid={`seat-${p.id}`}
+            className={cn(
+              "relative flex h-11 min-w-0 flex-1 flex-col justify-center rounded-[12px] border bg-white/45 px-2 leading-tight backdrop-blur-md",
+              p.id === state.current ? "border-accent" : "border-white/50",
+            )}
+          >
+            <div className="flex items-center gap-1.5">
+              <span className="size-3 shrink-0 rounded-full" style={{ background: p.color }} />
+              <span className="min-w-0 flex-1 truncate text-xs font-medium">{p.name}</span>
+              <span className="shrink-0 text-xs tabular-nums text-zinc-600">
+                {publicVP(state, p.id)}
+                {hidden ? `+${hidden}` : ""}
+              </span>
+            </div>
+            <span className="truncate text-[10px] text-zinc-600">
+              {away ? "reconnecting…" : `${goods}g · ${p.fortunes ?? hiddenCount(p)}f`}
+            </span>
+            <ReactionFloats by="player" id={p.id} />
+          </div>
+        );
+      })}
+    </div>
   );
 }
 

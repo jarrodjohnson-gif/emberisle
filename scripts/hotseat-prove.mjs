@@ -4,6 +4,9 @@ import { existsSync } from "node:fs";
 import { chromium } from "playwright";
 import { createServer } from "vite";
 
+// CI renders the island with software GL, where one frame can take seconds; a step gets this long to show.
+const STEP_MS = 15_000;
+
 const PORT = 8096;
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();
@@ -38,14 +41,14 @@ try {
   });
 
   const p2Name = await page.evaluate(() => window.__emberisle.getState().state.players.find((p) => p.id === "p2").name);
-  const label = await page.getByText(`${p2Name}: discard 4`).textContent({ timeout: 3000 });
+  const label = await page.getByText(`${p2Name}: discard 4`).textContent({ timeout: STEP_MS });
   console.log("bar:", label);
 
   const form = page.locator("form", { hasText: "discard 4" });
   await form.locator('input[name="timber"]').fill("3");
   await form.locator('input[name="clay"]').fill("1");
   await form.getByRole("button", { name: "Discard" }).click();
-  await page.waitForFunction(() => window.__emberisle.getState().state.phase === "robber", null, { timeout: 3000 });
+  await page.waitForFunction(() => window.__emberisle.getState().state.phase === "robber", null, { timeout: STEP_MS });
   const after = await page.evaluate(() => {
     const st = window.__emberisle.getState().state;
     const p2 = st.players.find((p) => p.id === "p2");
@@ -66,12 +69,12 @@ try {
     g.setState({ state: st, pendingSteal: null, error: null });
   });
   const name = (id) => page.evaluate((i) => window.__emberisle.getState().state.players.find((p) => p.id === i).name, id);
-  await page.getByText(`${await name("p1")}: discard 4`).waitFor({ timeout: 3000 });
+  await page.getByText(`${await name("p1")}: discard 4`).waitFor({ timeout: STEP_MS });
   let f = page.locator("form", { hasText: "discard 4" });
   await f.locator('input[name="timber"]').fill("3");
   await f.locator('input[name="clay"]').fill("1");
   await f.getByRole("button", { name: "Discard" }).click();
-  await page.getByText(`${await name("p2")}: discard 5`).waitFor({ timeout: 3000 });
+  await page.getByText(`${await name("p2")}: discard 5`).waitFor({ timeout: STEP_MS });
   f = page.locator("form", { hasText: "discard 5" });
   const vals = await f.locator("input").evaluateAll((els) => els.map((e) => e.value));
   console.log("second bar inputs:", vals.join(","));
@@ -79,7 +82,7 @@ try {
   await f.locator('input[name="timber"]').fill("4");
   await f.locator('input[name="clay"]').fill("1");
   await f.getByRole("button", { name: "Discard" }).click();
-  await page.waitForFunction(() => window.__emberisle.getState().state.phase === "robber", null, { timeout: 3000 });
+  await page.waitForFunction(() => window.__emberisle.getState().state.phase === "robber", null, { timeout: STEP_MS });
   console.log("two seats: phase robber");
 } catch (e) {
   console.error("hotseat-prove failed:", e);

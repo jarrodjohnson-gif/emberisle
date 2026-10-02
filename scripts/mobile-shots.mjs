@@ -29,6 +29,30 @@ try {
     await page.waitForFunction(() => window.__emberisle.getState().state?.phase === "setupSettle" && window.__emberisle.getState().state.current === window.__emberisle.getState().localId);
     await page.waitForTimeout(1500);
     await page.screenshot({ path: `${OUT}/03-setup-${w}x${h}.png` });
+    // #177: seat strip, turn banner, and the once-per-session landscape hint.
+    const fail = (msg, extra) => ((code = 1), console.error(`${w}x${h}: ${msg}`, extra ?? ""));
+    const strip = await page.evaluate(() => {
+      const el = document.querySelector('[data-testid="seat-strip"]');
+      const r = el?.getBoundingClientRect();
+      return { chips: el?.querySelectorAll('[data-testid^="seat-"]').length ?? 0, seats: window.__emberisle.getState().state.players.length, h: r?.height ?? 0, top: r?.top ?? 0, rail: !!document.querySelector('[data-testid^="rail-"]') };
+    });
+    if (!(await page.getByTestId("seat-strip").isVisible()) || strip.chips !== strip.seats || strip.h > 44 || strip.rail) fail("seat strip", strip);
+    const bannerIs = async (want) => {
+      const got = await page.getByTestId("turn-banner").textContent();
+      if (got !== want) fail("turn banner", { got, want });
+    };
+    await bannerIs("Your turn — Place an outpost on a highlighted corner.");
+    const hint = page.getByTestId("landscape-hint");
+    if (w < h) {
+      if (!(await hint.isVisible())) fail("landscape hint should show in portrait Play");
+      await page.getByTestId("landscape-hint-dismiss").tap();
+      if (await hint.isVisible()) fail("landscape hint should dismiss");
+      await page.reload();
+      await page.getByRole("button", { name: "Play versus the isle" }).click();
+      await page.waitForFunction(() => window.__emberisle.getState().state?.phase === "setupSettle" && window.__emberisle.getState().state.current === window.__emberisle.getState().localId);
+      await page.waitForTimeout(1500);
+      if (await hint.isVisible()) fail("landscape hint came back after a reload in the same session");
+    } else if (await hint.isVisible()) fail("landscape hint should not show in landscape");
     const target = await page.evaluate(() => {
       const s = window.__emberisle.getState();
       const id = s.highlights().vertices[0];
@@ -45,7 +69,8 @@ try {
     await page.waitForTimeout(500);
     st = await page.evaluate(() => ({ pending: window.__emberisle.getState().pendingPlace, phase: window.__emberisle.getState().state.phase }));
     if (st.pending || st.phase !== "setupRoad") (code = 1), console.error(w, "second tap should place", st);
-    console.log(`${w}x${h}: tap selects, chip shows, second tap places ->`, st.phase);
+    await bannerIs("Your turn — Lay a path from that outpost.");
+    console.log(`${w}x${h}: strip ${strip.chips} chips ${strip.h}px, banner, hint ok; tap selects, chip shows, second tap places ->`, st.phase);
     await ctx.close();
   }
 } catch (e) {

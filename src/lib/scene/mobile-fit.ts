@@ -10,7 +10,7 @@ export type Insets = { top: number; right: number; bottom: number; left: number 
 // The rectangle the HUD chrome leaves for the island. `coarse` is matchMedia("(pointer: coarse)").
 export function hudInsets(cssW: number, cssH: number, coarse: boolean, safe: Partial<Insets> = {}): Insets {
   let i: Insets;
-  if (coarse && cssH > cssW) i = { top: 72, right: 12, bottom: 196, left: 12 };
+  if (coarse && cssH > cssW) i = { top: 116, right: 12, bottom: 196, left: 12 };
   // Landscape bottom is 184, not the design's 96: until #177 builds the compact strip, the hand and phase bars are ~180 px tall.
   else if (coarse) i = { top: 56, right: 12, bottom: 184, left: 12 };
   else i = { top: 72, right: 312, bottom: 168, left: 248 };
@@ -62,7 +62,7 @@ const FOV = (32 * Math.PI) / 180;
 
 // Free-mode farthest dolly: far enough to see the whole isle inside the hole, never below 18. Desktop keeps 18
 // exactly (the design's own formula gives ~29 there, which would change the shipped desktop view); the design's
-// worked values 23.6 / 26.4 disagree with its formula, so the formula wins: 28.6 portrait; landscape hits the 36 cap.
+// worked values 23.6 / 26.4 disagree with its formula, so the formula wins: 31.0 portrait (top inset 116 with the #177 seat strip); landscape hits the 36 cap.
 export function freeMaxDistance(cssH: number, insets: Insets, coarse: boolean): number {
   if (!coarse) return 18;
   const usable = Math.max(1, cssH - insets.top - insets.bottom) / cssH;

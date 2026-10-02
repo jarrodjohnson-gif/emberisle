@@ -6,6 +6,8 @@ import { bagText } from "@/components/game/TradePanel";
 import { useGame } from "@/lib/game/store";
 import { RESOURCES } from "@/lib/game/types";
 import type { Bag } from "@/lib/net/table";
+import { useViewport } from "@/lib/viewport";
+import { cn } from "@/lib/utils";
 
 // "Ember offers 2 wool for 1 ore"; the asker reads "You offer 2 wool for 1 ore".
 function offerLine(name: string | null, give: Bag, want: Bag) {
@@ -30,6 +32,7 @@ export function TradeToast() {
   const localId = useGame((s) => s.localId);
   const answerTrade = useGame((s) => s.answerTrade);
   const [now, setNow] = useState(() => Date.now());
+  const { phone, portrait } = useViewport();
 
   useEffect(() => {
     if (!offer) return;
@@ -85,7 +88,17 @@ export function TradeToast() {
   }
 
   return (
-    <div className="pointer-events-none absolute left-3 right-16 top-16 z-20 flex md:left-[15.5rem] lg:inset-x-3 lg:justify-center">
+    <div
+      className={cn(
+        "pointer-events-none absolute z-20 flex",
+        // Under the portrait seat strip (#177); beside the chat button in landscape; clear of the rail on desktop.
+        phone && portrait
+          ? "inset-x-3 top-[calc(env(safe-area-inset-top)+7.5rem)]"
+          : phone
+            ? "left-3 right-16 top-16"
+            : "left-3 right-16 top-16 md:left-[15.5rem] lg:inset-x-3 lg:justify-center",
+      )}
+    >
       <div data-testid="trade-toast" className="pointer-events-auto w-full max-w-sm rounded-[16px] border border-accent/40 bg-surface p-3">
         {body}
       </div>
