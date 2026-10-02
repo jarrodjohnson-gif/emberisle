@@ -150,22 +150,24 @@ console.log(`past the hold: "${late.message}"`);
 // 9. Keepalive (#202, #113): a socket that stops answering pings (a locked phone, a half-open socket)
 // is cut within two intervals and its seat held; sockets that answer stay seated; the rejoin then works.
 {
-  const x = await client("Reed", { autoPong: false });
+  // Reed connects last, right before ready/start, so setup does not race his first ping interval.
   const y = await client("Moss");
   const z = await client("Fern");
-  x.send({ type: "hello", name: "Reed" });
-  const wx = await x.next("welcome");
-  y.send({ type: "hello", code: wx.code, name: "Moss" });
-  z.send({ type: "hello", code: wx.code, name: "Fern" });
-  await y.next("welcome");
+  y.send({ type: "hello", name: "Moss" });
+  const wy = await y.next("welcome");
+  z.send({ type: "hello", code: wy.code, name: "Fern" });
   await z.next("welcome");
+  const x = await client("Reed", { autoPong: false });
+  x.send({ type: "hello", code: wy.code, name: "Reed" });
+  const wx = await x.next("welcome");
   for (const s of [x, y, z]) s.send({ type: "ready", value: true });
   await wait(100);
-  x.send({ type: "start" });
+  y.send({ type: "start" });
   await Promise.all([x.next("state"), y.next("state"), z.next("state")]);
   const t0 = Date.now();
   await y.next("log", (m) => m.text === "Reed lost connection.", 2 * PING + 500);
   const took = Date.now() - t0;
+  await wait(50); // the host's terminate() reaches Reed's side a moment after the log reaches Moss
   if (x.ws.readyState !== WebSocket.CLOSED && x.ws.readyState !== WebSocket.CLOSING) fail("the silent socket is cut", x.ws.readyState);
   await wait(3 * PING);
   if (y.ws.readyState !== WebSocket.OPEN || z.ws.readyState !== WebSocket.OPEN) fail("sockets that answer pings stay open");

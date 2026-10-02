@@ -43,10 +43,13 @@ const browser = await chromium.launch({
 const errors = [];
 let code = 0;
 
+// The tab whose failed dials are expected right now (it is offline on purpose), or null.
+let offlineTab = null;
+
 async function tab(name) {
   const page = await browser.newPage({ viewport: { width: 800, height: 500 } });
-  // A socket that fails while the tab is offline logs a console error by design (#196); everything else counts.
-  page.on("console", (m) => m.type() === "error" && !/WebSocket connection to .* failed/.test(m.text()) && errors.push(`${name}: ${m.text()}`));
+  // A socket that fails while this tab is offline on purpose logs a console error (#196); everything else counts.
+  page.on("console", (m) => m.type() === "error" && !(offlineTab === name && /WebSocket connection to .* failed/.test(m.text())) && errors.push(`${name}: ${m.text()}`));
   page.on("pageerror", (e) => errors.push(`${name}: ${e}`));
   page.on("response", (r) => r.status() >= 400 && errors.push(`${name}: ${r.status()} ${r.url()}`));
   await page.addInitScript((n) => localStorage.setItem("emberisle-name", n), name);
@@ -153,6 +156,7 @@ try {
   // open socket alive under setOffline, so the drop itself comes from the client's drop() hook.
   const me = (t) => t.page.evaluate(() => ({ you: window.__emberisle.getState().localId, screen: window.__emberisle.getState().screen, error: window.__emberisle.getState().error, seq: window.__emberisle.getState().state?.seq ?? -1 }));
   const beforeB = await me(b);
+  offlineTab = "Tide";
   await b.page.context().setOffline(true);
   await b.page.evaluate(() => window.__emberisle.getState().net.drop());
   const sawReconnecting = await until(async () => ((await me(b)).error?.startsWith("Reconnecting") ? true : null), "tab B notices the drop", 20_000);
@@ -162,6 +166,8 @@ try {
     const m = await me(b);
     return m.screen === "play" && !m.error && m.you === beforeB.you ? m : null;
   }, "tab B back in its seat", 90_000);
+  await new Promise((r) => setTimeout(r, 1000)); // a dial already in flight when the network came back
+  offlineTab = null;
   const back = await until(async () => ((await a.page.evaluate(() => window.__emberisle.getState().lobbyLog)) === "Tide is back." ? true : null), "host says Tide is back", 10_000);
   console.log(`tab B dropped 3 s: saw reconnecting=${sawReconnecting}, back as ${afterB.you} (was ${beforeB.you}), host log on A: Tide is back=${back}`);
 

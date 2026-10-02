@@ -37,8 +37,8 @@ the `ws` package README on `ping()` and the `pong` event; the Playwright docs on
    of 10 min** the seat is dropped. A rejoin inside the hold restores the human (and the name) at once, even
    after the bot took over. A room is deleted only when it has no live and no held seats. Lobby behaviour is
    unchanged: a seat that leaves the lobby is freed. Child: #195.
-2. **A keepalive ping (host).** `ws.ping()` every 30 s with the `isAlive` pattern; two missed pongs means
-   `terminate()`, which runs the normal `leave()` path. Browsers answer pings without any client code. This
+2. **A keepalive ping (host).** `ws.ping()` every 30 s with the `isAlive` pattern; one missed pong (no answer
+   by the next ping) means `terminate()`, which runs the normal `leave()` path. Browsers answer pings without any client code. This
    also makes Cloudflare's unstated idle timeout irrelevant (L16). Child: #113 (already filed; comment there
    has the shape).
 3. **Reconnect with backoff (client).** `connectTable` reopens the socket after an unexpected close with

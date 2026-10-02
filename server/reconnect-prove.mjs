@@ -42,13 +42,13 @@ const last = () => sockets[sockets.length - 1];
 const tick = (ms = 0) => new Promise((r) => setTimeout(r, ms));
 const hellos = (s) => s.sent.filter((m) => m.type === "hello");
 
-function client() {
+function client(giveUpMs) {
   const ev = { closed: [], reconnecting: [], errors: [] };
   const t = connectTable("ws://fake", {
     closed: (keep) => ev.closed.push(Boolean(keep)),
     reconnecting: (n) => ev.reconnecting.push(n),
     error: (m) => ev.errors.push(m),
-  }, Fake);
+  }, Fake, giveUpMs);
   return { t, ev };
 }
 
@@ -114,6 +114,25 @@ function client() {
   await tick(10);
   if (ev.closed.join() !== "false") fail("Seat is gone should give up and forget", ev);
   console.log("seat gone: gives up and forgets the seat");
+}
+
+// 6. The first dial fails, then every redial hears "Seat is taken." (another tab of ours is live): it gives up
+// after the window, and keeps the saved seat so the live tab is not wiped. The window is 1.5 s here, not 10 min.
+{
+  sockets.length = 0;
+  const { t, ev } = client(1500);
+  t.rejoin("abcd", "s1");
+  last().lose();
+  await tick(10);
+  await tick(1100);
+  for (let i = 0; i < 2 && !ev.closed.length; i++) {
+    last().open();
+    last().reply({ type: "error", message: "Seat is taken." });
+    await tick(2100);
+  }
+  if (ev.closed.join() !== "true") fail("a taken seat after a failed first dial should give up and keep the seat", ev);
+  if (ev.errors.length) fail("the retries should not toast an error", ev.errors);
+  console.log("failed first dial, then Seat is taken on every redial: gives up, keeps the saved seat");
 }
 
 console.log("reconnect prove ok");
