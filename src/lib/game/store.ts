@@ -199,6 +199,8 @@ export const useGame = create<GameStore>((set, get) => ({
   setHowTo: (v) => set({ howTo: v }),
   setBuildMode: (m) => set({ buildMode: m, roadPicks: [] }),
   startAi: () => {
+    // A table left dialing (a reload with a saved seat) must not pull a practice game back to the lobby.
+    get().net?.close();
     const name = get().name;
     const state = createGame({ humans: [{ name }], bots: 3 });
     set({
@@ -209,9 +211,11 @@ export const useGame = create<GameStore>((set, get) => ({
       state,
       error: null,
       buildMode: "none",
+      net: null,
     });
   },
   startHotseat: (count) => {
+    get().net?.close();
     const humans = Array.from({ length: count }, (_, i) => ({
       name: i === 0 ? get().name : `Seat ${i + 1}`,
     }));
@@ -224,6 +228,7 @@ export const useGame = create<GameStore>((set, get) => ({
       state,
       error: null,
       buildMode: "none",
+      net: null,
     });
   },
   loadState: (s, localId, host, table) =>
@@ -453,7 +458,11 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void) {
     },
     log: (text) => set({ lobbyLog: text }),
     error: (message) => set({ error: message, toast: message }),
-    closed: () => {
+    closed: (keepSeat) => {
+      if (keepSeat) {
+        set({ error: "Your seat is open in another tab", toast: "Your seat is open in another tab", screen: "title", net: null, state: null });
+        return;
+      }
       rememberSeat(null);
       set({ error: "Lost the table", toast: "Lost the table", screen: "title", net: null, state: null });
     },

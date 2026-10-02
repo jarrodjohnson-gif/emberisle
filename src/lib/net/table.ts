@@ -59,7 +59,8 @@ export interface TableEvents {
   error(message: string): void;
   // The socket dropped and the client is dialing again (attempt 1, 2, ...); `closed` follows only if it gives up.
   reconnecting(attempt: number): void;
-  closed(): void;
+  // `keepSeat`: the seat is still ours but open in another tab, so the saved secret stays.
+  closed(keepSeat?: boolean): void;
 }
 
 export interface Me {
@@ -165,19 +166,22 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
     else queue.push(raw);
   };
 
-  const giveUp = () => {
+  const giveUp = (keepSeat = false) => {
     closedByUs = true;
     seat = null;
     rejoining = false;
-    on.closed?.();
+    on.closed?.(keepSeat);
   };
 
   const dial = () => {
     ws = new Ctor(url);
     ws.onopen = () => {
-      if (seat && attempt > 0) {
+      // The rejoin hello goes out here only, never through the queue, so it is sent once per socket.
+      if (seat && (attempt > 0 || rejoining)) {
         rejoining = true;
         ws.send(JSON.stringify({ type: "hello", code: seat.code, secret: seat.secret }));
+        // Anything sent while the socket was down is stale after a rejoin (a second roll, an old placement).
+        queue.length = 0;
       }
       for (const raw of queue.splice(0)) ws.send(raw);
     };
@@ -235,14 +239,23 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
       case "log":
         on.log?.(String(msg.text));
         break;
-      case "error":
-        on.error?.(String(msg.message));
-        if (rejoining) {
-          // "Seat is gone.", "Seat is taken.", or no such table: nothing to go back to.
+      case "error": {
+        const message = String(msg.message);
+        if (rejoining && message === "Seat is taken." && attempt > 0) {
+          // After a drop the host can still see our old socket as open (no keepalive yet, #202).
+          // Close this one and keep backing off until the host lets the old one go.
           ws.close();
-          giveUp();
+          break;
+        }
+        on.error?.(message);
+        if (rejoining) {
+          // "Seat is taken." on a fresh rejoin: another tab of ours is sitting in it, so keep the secret.
+          // "Seat is gone." or no such table: nothing to go back to.
+          ws.close();
+          giveUp(message === "Seat is taken.");
         }
         break;
+      }
     }
   };
 
@@ -254,7 +267,8 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
     rejoin: (code, secret) => {
       seat = { code: code.toUpperCase(), secret };
       rejoining = true;
-      send({ type: "hello", code: seat.code, secret });
+      // Not queued: onopen sends it, so a failed first dial cannot leave a second hello behind.
+      if (ws.readyState === 1) ws.send(JSON.stringify({ type: "hello", code: seat.code, secret }));
     },
     ready: (value) => send({ type: "ready", value }),
     start: () => send({ type: "start" }),
