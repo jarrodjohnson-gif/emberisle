@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { createGame } from "./board";
-import { applyAction, legalCities, legalRoads, legalSettle } from "./rules";
+import { applyAction, legalCities, legalRoads, legalSettle, stealTargets } from "./rules";
 import { chooseBotAction } from "./ai";
 import { PLAYER_COLORS, type Action, type BuildMode, type GameState } from "./types";
 import { connectTable, hostUrl, type ChatLine, type Legal, type Me, type Reaction, type Seat, type TableClient } from "@/lib/net/table";
@@ -223,7 +223,8 @@ export const useGame = create<GameStore>((set, get) => ({
     const kind: "moveRobber" | "playKnight" | null =
       state.phase === "robber" && state.current === actor ? "moveRobber" : buildMode === "knight" ? "playKnight" : null;
     if (!kind) return;
-    const targets = mode === "online" ? (legal?.steal[id] ?? []) : [];
+    // Online, the host says whom each hex can rob. Offline, ask the rules the same question (#189).
+    const targets = mode === "online" ? (legal?.steal[id] ?? []) : stealTargets(state, id, actor);
     if (targets.length > 1) {
       set({ pendingSteal: { hexId: id, kind, targets } });
       return;
