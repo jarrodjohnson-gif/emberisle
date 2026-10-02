@@ -130,6 +130,7 @@ npm test                 # every server/*-prove.mjs: rules, bots, sounds, socket
 npm run client-prove     # headless Chromium plays setup + a roll, zero console errors
 npm run hotseat-prove    # headless Chromium: a 7 in hotseat shows the discard bar for the seat that owes cards
 npm run tabs-prove       # 3 headless tabs host, join, play setup + 5 rolls on the rules host, boards match
+npm run trade-prove      # 3 headless tabs: one asks the table through the trade panel, one says No, one says Yes, goods move; a second ask times out
 npm run served-prove     # same 3 tabs, but the page comes from the rules host itself with no ?host= (after build)
 npm run chat-prove       # 3 headless tabs chat in the lobby and the game: presets, reactions, unread badge, minimized dock covers no target
 ```
@@ -287,11 +288,12 @@ WebSocket JSON. The client sends intents. The server answers with `state` or `er
 | `npm run hotseat-prove` | In hotseat, a 7 where another seat owes a discard shows that seat's discard bar and charges the discard to that seat; zero console errors |
 | `npm run chat-prove` | 3 browser tabs at 1280x720: lobby chat and presets, a reaction floats over the sender's rail card for 2 s, the unread badge, the remembered dock state, the minimized dock covers no board target, zero console errors |
 | `npm run tabs-prove` | 3 browser tabs host, join, ready, start, play setup and 5 rolls through the rules host; dice and board match on every tab; then plays on until a gain has flashed green +N and a loss red -N on the hand, each gone within 2 s; zero console errors |
+| `npm run trade-prove` | 3 browser tabs on the rules host: the Trade panel asks the table, the toast's No reaches every tab and leaves the offer open, Yes moves the goods (own hands exact, others' `goods` counts), a second ask runs out its 20 s with nothing moved and every toast closed, zero console errors |
 | `npm run served-prove` | The same 3 tabs, but the host serves the built `dist/` and the tabs open it with no `?host=`, so they find the socket at the page's own address (the tunnel case) |
 | `npm run touch-place-prove` | The phone camera fit and touch picking, checked on the pure math in `src/lib/scene/mobile-fit.ts`, no browser |
 | `npm run orphan-check` | Not in CI. Starts two proofs, kills each mid-run, and counts the host processes left behind. Expect 0. |
 
-`npm test` runs the fourteen `server/*-prove.mjs` scripts: `prove`, `trade-prove`, `sound-prove`, `table-prove`, `trade-table-prove`, `harden-prove`, `net-prove`, `rules-prove`, `bots-prove`, `serve-prove`, `chat-prove`, `rejoin-prove`, `reconnect-prove`, and `persist-prove`. CI also runs `client-prove`, `hotseat-prove`, `tabs-prove`, `served-prove`, and the browser `chat-prove`.
+`npm test` runs the fourteen `server/*-prove.mjs` scripts: `prove`, `trade-prove`, `sound-prove`, `table-prove`, `trade-table-prove`, `harden-prove`, `net-prove`, `rules-prove`, `bots-prove`, `serve-prove`, `chat-prove`, `rejoin-prove`, `reconnect-prove`, and `persist-prove`. CI also runs `client-prove`, `hotseat-prove`, `tabs-prove`, `trade-prove`, `served-prove`, the browser `chat-prove`, and `tokens-prove`.
 
 ---
 
