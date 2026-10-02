@@ -16,7 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { ChatDock, ReactionFloats } from "@/components/game/Chat";
 import { COST, RESOURCES, RESOURCE_LABEL, type Resource } from "@/lib/game/types";
-import { harborRate, hiddenCount, playable, publicVP, totalVP } from "@/lib/game/rules";
+import { harborRate, hiddenCount, legalRoads, playable, publicVP, totalVP } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
 import { cn } from "@/lib/utils";
 
@@ -190,7 +190,7 @@ export function Hud() {
                   Wayfarer card{playable(me, "knight") > 1 ? ` ×${playable(me, "knight")}` : ""}
                 </Button>
               ) : null}
-              {!state.playedCard && playable(me, "road") > 0 && me.pathsLeft > 0 ? (
+              {!state.playedCard && playable(me, "road") > 0 && me.pathsLeft > 0 && legalRoads(state, me.id, false).length > 0 ? (
                 <Button
                   size="sm"
                   variant={buildMode === "roadCard" ? "primary" : "secondary"}
