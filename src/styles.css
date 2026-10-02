@@ -29,3 +29,10 @@ body,
   75% { opacity: 1; }
   100% { opacity: 0; transform: translateY(-12px); }
 }
+
+/* A resource card's +N/-N holds briefly, then fades out over about a second (#170). */
+@keyframes resource-flash {
+  0% { opacity: 1; transform: translateY(0); }
+  30% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-6px); }
+}

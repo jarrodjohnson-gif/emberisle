@@ -233,6 +233,93 @@ try {
     }
   }
   console.log(`${ROLLS} rolls, same on all 3 tabs: ${dice.map((d) => d.join("+")).join(" ")}`);
+
+  // #170: a tab's own hand flashes +N green on a gain and -N red on a loss, and each flash is gone within
+  // ~2 s. Keep playing until a roll has paid someone and a bank trade, a discard, or a steal has taken
+  // something. Every count that moves on a tab between two synced states must have flashed with its sign.
+  // A flash is shorter than the wait for three tabs to sync, so each tab's DOM is watched from the act on.
+  const flashes = (t) =>
+    t.page.evaluate(() =>
+      [...document.querySelectorAll('[data-testid="resource-flash"]')].map((e) => `${e.dataset.resource}${e.dataset.delta}`),
+    );
+  const watch = (t) => {
+    const seen = new Set();
+    let on = true;
+    const run = (async () => {
+      while (on) {
+        for (const f of await flashes(t)) seen.add(f);
+        await new Promise((r) => setTimeout(r, 30));
+      }
+    })();
+    return {
+      seen,
+      stop: () => {
+        on = false;
+        return run;
+      },
+    };
+  };
+  const step = async (what, go) => {
+    const before = vs;
+    const watchers = tabs.map(watch);
+    await go();
+    vs = await synced(tabs, seqOf(before[0]), what);
+    await new Promise((r) => setTimeout(r, 200));
+    for (const w of watchers) await w.stop();
+    const seen = [];
+    for (const [k, t] of tabs.entries()) {
+      const diff = (r) => vs[k].mine[r] - before[k].mine[r];
+      const tags = Object.keys(vs[k].mine).filter((r) => diff(r)).map((r) => `${r}${diff(r) > 0 ? "+" : ""}${diff(r)}`);
+      const missing = tags.filter((tag) => !watchers[k].seen.has(tag));
+      if (missing.length) throw new Error(`${what}: ${t.name} never flashed ${missing.join(" ")} (saw ${[...watchers[k].seen].join(" ") || "nothing"})`);
+      if (tags.length) await until(async () => ((await flashes(t)).length ? null : true), `${t.name}'s flash fades (${what})`, 3000);
+      seen.push(...tags.map((tag) => `${t.name} ${tag}`));
+    }
+    return seen;
+  };
+  const proved = { gain: null, loss: null };
+  for (let turn = 0; turn < 40 && !(proved.gain && proved.loss); turn++) {
+    const cur = JSON.parse(vs[0].shared).current;
+    const i = vs.findIndex((v) => v.you === cur);
+    const seen = [await step(`flash roll ${turn + 1}`, () => act(tabs[i], "dispatch", [{ type: "roll" }]))];
+    for (let guard = 0; guard < 10; guard++) {
+      const phase = JSON.parse(vs[0].shared).phase;
+      if (phase === "roll") break;
+      let go;
+      if (phase === "discard") {
+        const j = vs.findIndex((v) => v.legal?.discard > 0);
+        let need = vs[j].legal.discard;
+        const cards = {};
+        for (const [res, n] of Object.entries(vs[j].mine)) {
+          const k = Math.min(n, need);
+          if (k) cards[res] = k;
+          need -= k;
+        }
+        go = () => act(tabs[j], "dispatch", [{ type: "discard", resources: cards }]);
+      } else if (phase === "robber") {
+        const hexId = vs[i].legal.wayfarer[0];
+        const targets = vs[i].legal.steal[hexId];
+        go = async () => {
+          await act(tabs[i], "pickHex", hexId);
+          if (targets && targets.length > 1) await act(tabs[i], "chooseSteal", targets[0]);
+        };
+      } else if (phase === "main") {
+        const give = Object.keys(vs[i].mine).find((r) => vs[i].mine[r] >= 4);
+        if (give) {
+          const want = Object.keys(vs[i].mine).find((r) => r !== give);
+          seen.push(await step(`flash bank trade ${give} for ${want}`, () => act(tabs[i], "dispatch", [{ type: "bankTrade", give, want }])));
+        }
+        go = () => act(tabs[i], "dispatch", [{ type: "endTurn" }]);
+      } else throw new Error(`unexpected phase ${phase}`);
+      seen.push(await step(`flash after roll ${turn + 1} (${phase})`, go));
+    }
+    for (const tag of seen.flat()) {
+      if (tag.includes("+")) proved.gain ??= tag;
+      else proved.loss ??= tag;
+    }
+  }
+  if (!proved.gain || !proved.loss) throw new Error(`resource flash: gain ${proved.gain}, loss ${proved.loss}`);
+  console.log(`resource flash: green "${proved.gain}" and red "${proved.loss}" each showed and faded within 2 s`);
   if (errors.length) throw new Error(`console errors:\n${errors.join("\n")}`);
   console.log(SERVED ? `tabs prove ok (served by the host on :${hostPort}, no ?host=)` : "tabs prove ok");
 } catch (e) {

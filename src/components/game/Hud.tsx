@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   BookOpen,
   Dices,
@@ -16,7 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { WinScreen } from "@/components/game/WinScreen";
 import { ChatDock, ReactionFloats } from "@/components/game/Chat";
-import { COST, RESOURCES, RESOURCE_LABEL, type DevKind, type Resource } from "@/lib/game/types";
+import { COST, RESOURCES, RESOURCE_LABEL, type DevKind, type PlayerState, type Resource } from "@/lib/game/types";
 import { harborRate, hiddenCount, legalRoads, playable, publicVP, totalVP } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
 import { cn } from "@/lib/utils";
@@ -175,18 +175,7 @@ export function Hud() {
             {error ? <span className="mt-1 block text-orange-700">{error}</span> : null}
           </p>
 
-          <div className="flex gap-1 overflow-x-auto rounded-[20px] border border-white/50 bg-white/45 p-2 backdrop-blur-md">
-            {RESOURCES.map((r) => {
-              const Icon = ICONS[r];
-              return (
-                <div key={r} className="flex min-w-[3.5rem] flex-1 flex-col items-center gap-1 rounded-[12px] bg-raised px-2 py-2">
-                  <Icon className="size-4 text-zinc-600" />
-                  <span className="tabular-nums text-base font-medium">{me.resources[r]}</span>
-                  <span className="text-[10px] uppercase tracking-wide text-zinc-600">{RESOURCE_LABEL[r]}</span>
-                </div>
-              );
-            })}
-          </div>
+          <ResourceHand me={me} />
 
           {discarder ? <DiscardBar key={discarder} id={discarder} n={state.discardNeeded[discarder]!} /> : null}
           <TakeFromBar />
@@ -271,6 +260,83 @@ export function Hud() {
         ore.
       </p>
     </>
+  );
+}
+
+const FLASH_MS = 1200;
+
+// The hand's counts are diffed on every state, so a gain flashes +N green and a loss -N red whether it
+// came from a roll, a trade, a build, a discard, or a steal, hotseat and online alike (#170). Only this
+// hand is read: online, the other players arrive as a `goods` count with no `resources`. A change of
+// seat (hotseat) resets the baseline instead of flashing.
+function useResourceFlashes(me: PlayerState) {
+  const [flashes, setFlashes] = useState<Partial<Record<Resource, { delta: number; at: number }>>>({});
+  const prev = useRef<{ id: string; resources: Record<Resource, number> } | null>(null);
+  const timers = useRef<Partial<Record<Resource, ReturnType<typeof setTimeout>>>>({});
+  const counts = RESOURCES.map((r) => me.resources[r]).join(",");
+  useEffect(() => {
+    const was = prev.current;
+    prev.current = { id: me.id, resources: me.resources };
+    if (!was || was.id !== me.id) return;
+    for (const r of RESOURCES) {
+      const delta = me.resources[r] - was.resources[r];
+      if (!delta) continue;
+      setFlashes((f) => ({ ...f, [r]: { delta, at: Date.now() } }));
+      clearTimeout(timers.current[r]);
+      timers.current[r] = setTimeout(
+        () =>
+          setFlashes((f) => {
+            const next = { ...f };
+            delete next[r];
+            return next;
+          }),
+        FLASH_MS,
+      );
+    }
+  }, [me.id, counts]);
+  useEffect(() => () => Object.values(timers.current).forEach(clearTimeout), []);
+  return flashes;
+}
+
+function ResourceHand({ me }: { me: PlayerState }) {
+  const flashes = useResourceFlashes(me);
+  return (
+    <div className="flex gap-1 overflow-x-auto rounded-[20px] border border-white/50 bg-white/45 p-2 backdrop-blur-md">
+      {RESOURCES.map((r) => {
+        const Icon = ICONS[r];
+        const flash = flashes[r];
+        const label = flash ? (flash.delta > 0 ? `+${flash.delta}` : String(flash.delta)) : null;
+        return (
+          <div
+            key={r}
+            data-testid={`resource-${r}`}
+            className={cn(
+              "relative flex min-w-[3.5rem] flex-1 flex-col items-center gap-1 rounded-[12px] px-2 py-2 transition-colors duration-700",
+              !flash ? "bg-raised" : flash.delta > 0 ? "bg-emerald-200" : "bg-rose-200",
+            )}
+          >
+            <Icon className="size-4 text-zinc-600" />
+            <span className="tabular-nums text-base font-medium">{me.resources[r]}</span>
+            <span className="text-[10px] uppercase tracking-wide text-zinc-600">{RESOURCE_LABEL[r]}</span>
+            {flash ? (
+              <span
+                key={flash.at}
+                data-testid="resource-flash"
+                data-resource={r}
+                data-delta={label}
+                className={cn(
+                  "pointer-events-none absolute right-1 top-1 text-sm font-semibold tabular-nums",
+                  flash.delta > 0 ? "text-emerald-700" : "text-rose-700",
+                )}
+                style={{ animation: `resource-flash ${FLASH_MS}ms ease-out forwards` }}
+              >
+                {label}
+              </span>
+            ) : null}
+          </div>
+        );
+      })}
+    </div>
   );
 }
 
