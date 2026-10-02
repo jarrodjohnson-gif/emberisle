@@ -163,6 +163,15 @@ try {
     return m.screen === "play" && !m.error && m.you === beforeC.you ? m : null;
   }, "tab C back after reload", 90_000); // the reloaded page may block on its cold render first (see the first roll below)
   console.log(`tab C reloaded: back as ${afterC.you} (was ${beforeC.you})`);
+  // The reloaded page compiles the island on its first frames; under software GL that can block it for
+  // 20-30 s. Wait until it paints a frame and answers quickly twice in a row before the table moves on.
+  let quick = 0;
+  await until(async () => {
+    const t0 = Date.now();
+    await c.page.evaluate(() => new Promise((r) => requestAnimationFrame(() => r())));
+    quick = Date.now() - t0 < 500 ? quick + 1 : 0;
+    return quick >= 2 ? true : null;
+  }, "tab C settled after its reload", 120_000);
   vs = await synced(tabs, -1, "after the drop and the reload");
   if (JSON.parse(vs[0].shared).phase !== "roll") throw new Error(`table moved during the blip: ${JSON.parse(vs[0].shared).phase}`);
   console.log(`setup done on all tabs, seq ${seqOf(vs[0])}`);
@@ -173,10 +182,19 @@ try {
     const cur = JSON.parse(vs[0].shared).current;
     const i = vs.findIndex((v) => v.you === cur);
     await act(tabs[i], "dispatch", [{ type: "roll" }]);
-    // The tab that just reloaded does its cold first island render on this update; under software GL
-    // that can block its page for 20-30 s (#196), so the first roll gets a longer window.
-    vs = await synced(tabs, seqOf(vs[0]), `roll ${r + 1}`, r === 0 ? 90_000 : undefined);
-    dice.push(JSON.parse(vs[0].shared).dice);
+    // #188: every tab shows the same roll banner (dice, sum, who got what) for a moment. The first roll
+    // follows the reconnect cases, and a reloaded tab can still be finishing its cold island render under
+    // software GL, so that one gets a longer window (#196).
+    const slow = r === 0 ? 90_000 : undefined;
+    const banner = await until(async () => {
+      const texts = await Promise.all(tabs.map((t) => t.page.evaluate(() => document.querySelector('[data-testid="banner"]')?.textContent ?? null)));
+      return texts.every(Boolean) && new Set(texts).size === 1 ? texts[0] : null;
+    }, `banner after roll ${r + 1}`, slow);
+    vs = await synced(tabs, seqOf(vs[0]), `roll ${r + 1}`, slow);
+    const d = JSON.parse(vs[0].shared).dice;
+    dice.push(d);
+    if (!banner.includes(`rolls ${d[0]}+${d[1]} = ${d[0] + d[1]}`)) throw new Error(`banner after roll ${r + 1}: "${banner}" vs dice ${d}`);
+    if (r === 0) console.log(`roll banner on all tabs: "${banner}"`);
 
     for (let guard = 0; guard < 10; guard++) {
       const phase = JSON.parse(vs[0].shared).phase;

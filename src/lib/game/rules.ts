@@ -196,13 +196,21 @@ function updateLongest(state: GameState) {
   if (top < 5) state.longestRoad = null;
   else if (holder && leaders.includes(holder)) state.longestRoad = holder;
   else state.longestRoad = leaders.length === 1 ? leaders[0]! : null;
+  if (state.longestRoad !== holder) {
+    // A swing is worth 2 points either way, so the table hears it (#188).
+    if (state.longestRoad) log(state, `${player(state, state.longestRoad)?.name} holds the longest path.`);
+    else log(state, `${player(state, holder!)?.name} loses the longest path.`);
+  }
 }
 
 function updateArmy(state: GameState, pid: string) {
   const p = player(state, pid);
   if (!p || p.knightsPlayed < 3) return;
   const cur = state.largestArmy ? player(state, state.largestArmy) : null;
-  if (!cur || p.knightsPlayed > cur.knightsPlayed) state.largestArmy = pid;
+  if (!cur || p.knightsPlayed > cur.knightsPlayed) {
+    if (state.largestArmy !== pid) log(state, `${p.name} holds the largest army.`);
+    state.largestArmy = pid;
+  }
 }
 
 export function publicVP(state: GameState, pid: string) {
@@ -619,7 +627,8 @@ export function applyAction(prev: GameState, actor: string, action: Action): { s
       state.trade = null;
       state.playedCard = false;
       me.boughtThisTurn = { knight: 0, road: 0, plenty: 0, monopoly: 0, vp: 0 };
-      state.dice = state.dice;
+      // The next player rolls fresh; stale dice would show on their roll phase (#188).
+      state.dice = null;
       const idx = state.players.findIndex((p) => p.id === actor);
       const next = state.players[(idx + 1) % state.players.length]!;
       state.current = next.id;
