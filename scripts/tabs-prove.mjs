@@ -163,15 +163,6 @@ try {
     return m.screen === "play" && !m.error && m.you === beforeC.you ? m : null;
   }, "tab C back after reload", 90_000); // the reloaded page may block on its cold render first (see the first roll below)
   console.log(`tab C reloaded: back as ${afterC.you} (was ${beforeC.you})`);
-  // The reloaded page compiles the island on its first frames; under software GL that can block it for
-  // 20-30 s. Wait until it paints a frame and answers quickly twice in a row before the table moves on.
-  let quick = 0;
-  await until(async () => {
-    const t0 = Date.now();
-    await c.page.evaluate(() => new Promise((r) => requestAnimationFrame(() => r())));
-    quick = Date.now() - t0 < 500 ? quick + 1 : 0;
-    return quick >= 2 ? true : null;
-  }, "tab C settled after its reload", 120_000);
   vs = await synced(tabs, -1, "after the drop and the reload");
   if (JSON.parse(vs[0].shared).phase !== "roll") throw new Error(`table moved during the blip: ${JSON.parse(vs[0].shared).phase}`);
   console.log(`setup done on all tabs, seq ${seqOf(vs[0])}`);
