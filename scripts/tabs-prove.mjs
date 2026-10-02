@@ -172,10 +172,12 @@ try {
   for (let r = 0; r < ROLLS; r++) {
     const cur = JSON.parse(vs[0].shared).current;
     const i = vs.findIndex((v) => v.you === cur);
+    // #188: every tab shows the same roll banner (dice, sum, who got what) for a moment. The proof rolls
+    // faster than a banner fades, so each tab's banner is cleared first and only a fresh one counts.
+    for (const t of tabs) await t.page.evaluate(() => window.__emberisle.setState({ banner: null }));
     await act(tabs[i], "dispatch", [{ type: "roll" }]);
-    // #188: every tab shows the same roll banner (dice, sum, who got what) for a moment. The first roll
-    // follows the reconnect cases, and a reloaded tab can still be finishing its cold island render under
-    // software GL, so that one gets a longer window (#196).
+    // The first roll follows the reconnect cases, and a reloaded tab can still be finishing its cold
+    // island render under software GL, so that one gets a longer window (#196).
     const slow = r === 0 ? 90_000 : undefined;
     // Each tab is read on its own: a tab whose page is blocked answers late, after the others' 2.5 s
     // banners are gone, so one poll across all three would never see them together.
