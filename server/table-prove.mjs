@@ -194,6 +194,41 @@ while (table.length < 20) {
 console.log("20 rolls match the host:", table.join(" "));
 handsAreCounts("after 20 rolls");
 
+// Error messages a client can see (#256).
+const expectError = (m, want, what) => {
+  if (m.message !== want) fail(what, m.message);
+  console.log(`error "${want}" (${what}): ok`);
+};
+{
+  // The started table: a late sitter, and a seat that is not up.
+  const late = client("Late", "#7a5c9e");
+  await late.open;
+  late.send({ type: "hello", code, name: "Late", color: late.color });
+  expectError(await late.next("error"), "Game already started.", "hello after the start");
+  const idle = all.find((c) => c.state.legal.actions.length === 0 && !c.state.legal.path.length && !c.state.legal.outpost.length);
+  idle.send({ type: "roll" });
+  expectError(await idle.next("error"), "Not your turn.", "roll out of turn");
+
+  // A lobby: only the host starts, and 3 or 4 sit.
+  const lobby = [client("Host", "#c45c3e"), client("Two", "#2a8f8a"), client("Three", "#3d6b4f"), client("Four", "#7a5c9e"), client("Five", "#b8860b")];
+  await Promise.all(lobby.map((c) => c.open));
+  const [h, two, three, four, five] = lobby;
+  h.send({ type: "hello", name: "Host", color: h.color });
+  const room = (await h.next("welcome")).code;
+  two.send({ type: "hello", code: room, name: "Two", color: two.color });
+  await two.next("welcome");
+  two.send({ type: "start" });
+  expectError(await two.next("error"), "Only the host can start.", "start by a guest");
+  h.send({ type: "start" });
+  expectError(await h.next("error"), "Need 3 or 4 at the table.", "start with two");
+  for (const c of [three, four]) {
+    c.send({ type: "hello", code: room, name: c.name, color: c.color });
+    await c.next("welcome");
+  }
+  five.send({ type: "hello", code: room, name: "Five", color: five.color });
+  expectError(await five.next("error"), "Table full.", "fifth seat");
+}
+
 host.kill();
 console.log("table prove ok");
 process.exit(0);
