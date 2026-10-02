@@ -264,6 +264,12 @@ export const useGame = create<GameStore>((set, get) => ({
       reactions: [],
       unread: 0,
       chatDraft: "",
+      lobbyLog: "",
+      seatId: "",
+      isHost: false,
+      roadPicks: [],
+      pendingPlace: null,
+      toast: null,
     });
   },
   dispatch: (action, asId) => {
@@ -292,8 +298,9 @@ export const useGame = create<GameStore>((set, get) => ({
     return { ok: true, state: res.state };
   },
   runBots: () => {
-    const { state, dispatch } = get();
-    if (!state || state.phase === "over") return;
+    const { state, dispatch, mode } = get();
+    // Online, the host runs the bots; a bot move sent as our own intent only draws "Not your turn."
+    if (!state || mode === "online" || state.phase === "over") return;
     if (state.phase === "discard") {
       for (const p of state.players) {
         if (p.kind === "bot" && (state.discardNeeded[p.id] ?? 0) > 0) {

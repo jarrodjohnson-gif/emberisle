@@ -69,7 +69,15 @@ export function Hud() {
   const actor = mode === "hotseat" ? state.current : localId;
   const me = state.players.find((p) => p.id === actor) ?? state.players[0]!;
   const mine = state.current === actor;
-  const needDiscard = state.phase === "discard" && (state.discardNeeded[actor] ?? 0) > 0;
+  // Hotseat has no bots: the first seat still owing a discard takes the bar, whoever rolled the 7.
+  const discarder =
+    state.phase !== "discard"
+      ? null
+      : mode === "hotseat"
+        ? (state.players.find((p) => (state.discardNeeded[p.id] ?? 0) > 0)?.id ?? null)
+        : (state.discardNeeded[actor] ?? 0) > 0
+          ? actor
+          : null;
   const winner = state.winner ? state.players.find((p) => p.id === state.winner) : null;
 
   return (
@@ -152,7 +160,7 @@ export function Hud() {
             })}
           </div>
 
-          {needDiscard ? <DiscardBar n={state.discardNeeded[actor]!} /> : null}
+          {discarder ? <DiscardBar key={discarder} id={discarder} n={state.discardNeeded[discarder]!} /> : null}
           <TakeFromBar />
 
           {state.phase === "main" && mine ? (
@@ -243,12 +251,9 @@ export function Hud() {
   );
 }
 
-function DiscardBar({ n }: { n: number }) {
-  const me = useGame((s) => {
-    const st = s.state!;
-    const id = s.mode === "hotseat" ? st.current : s.localId;
-    return st.players.find((p) => p.id === id)!;
-  });
+function DiscardBar({ id, n }: { id: string; n: number }) {
+  const me = useGame((s) => s.state!.players.find((p) => p.id === id)!);
+  const hotseat = useGame((s) => s.mode === "hotseat");
   const dispatch = useGame((s) => s.dispatch);
   const picked = useGame(() => null);
   void picked;
@@ -266,10 +271,10 @@ function DiscardBar({ n }: { n: number }) {
           sum += v;
         }
         if (sum !== n) return;
-        dispatch({ type: "discard", resources });
+        dispatch({ type: "discard", resources }, id);
       }}
     >
-      <span className="text-sm">Discard {n}</span>
+      <span className="text-sm">{hotseat ? `${me.name}: discard ${n}` : `Discard ${n}`}</span>
       {RESOURCES.map((r) => (
         <label key={r} className="flex items-center gap-1 text-xs">
           {RESOURCE_LABEL[r]}
