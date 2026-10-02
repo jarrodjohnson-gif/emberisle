@@ -3,6 +3,7 @@
 import { createGame } from "../src/lib/game/board.ts";
 import { applyAction, harborRate, legalRoads, legalSettle, publicVP, roadLength, stealTargets } from "../src/lib/game/rules.ts";
 import { RESOURCES } from "../src/lib/game/types.ts";
+import { AXIAL_DIRS } from "../src/lib/game/hex.ts";
 
 function fail(why, extra) {
   console.log("FAIL", why, extra ?? "");
@@ -217,6 +218,24 @@ for (const seed of [1, 2, 3, 4, 5]) {
   if (!land.every((h) => Number.isInteger(h.pip) && h.pip >= 2 && h.pip <= 12)) fail("token on every land hex", seed);
   if (g.hexes.find((h) => h.terrain === "waste").pip !== null) fail("waste has no token", seed);
   if (land.some((h) => h.pip === 7)) fail("no 7 token", seed);
+}
+// #182: the deal must never give up and leave a land hex without a token, and red tokens never touch.
+{
+  let empty = 0;
+  let red = 0;
+  for (let seed = 1; seed <= 20000; seed++) {
+    const g = createGame({ humans: [{ name: "A" }], bots: 2, seed });
+    if (g.hexes.some((h) => h.terrain !== "waste" && h.pip == null)) empty++;
+    for (const h of g.hexes) {
+      if (h.pip !== 6 && h.pip !== 8) continue;
+      for (const [dq, dr] of AXIAL_DIRS) {
+        const m = g.hexes.find((x) => x.q === h.q + dq && x.r === h.r + dr);
+        if (m && (m.pip === 6 || m.pip === 8)) red++;
+      }
+    }
+  }
+  console.log(`20000 deals: ${empty} land hexes without a token, ${red} adjacent red tokens`);
+  if (empty || red) fail("deal", { empty, red });
 }
 ok("forest, clay hills, pasture, fields, mountains, or the wastes", true);
 ok("a token from 2 to 12 on every hex except the wastes", true);
