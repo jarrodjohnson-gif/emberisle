@@ -115,6 +115,9 @@ interface GameStore {
   setChatDraft: (v: string) => void;
   sendChat: (text: string) => void;
   sendReact: (emote: string, to?: string) => void;
+  // The player whose action menu is open in the HUD rail or seat strip (docs/design/chat.md "The player action menu").
+  menuFor: string | null;
+  openMenu: (id: string | null) => void;
 }
 
 const CHAT_OPEN_KEY = "emberisle-chat-open";
@@ -191,6 +194,7 @@ export const useGame = create<GameStore>((set, get) => ({
   chatOpen: savedChatOpen(),
   unread: 0,
   chatDraft: "",
+  menuFor: null,
   setName: (n) => {
     const name = n.slice(0, 18) || "Ember";
     if (typeof window !== "undefined") localStorage.setItem("emberisle-name", name);
@@ -266,6 +270,7 @@ export const useGame = create<GameStore>((set, get) => ({
       reactions: [],
       unread: 0,
       chatDraft: "",
+      menuFor: null,
       lobbyLog: "",
       seatId: "",
       isHost: false,
@@ -442,6 +447,7 @@ export const useGame = create<GameStore>((set, get) => ({
   setChatDraft: (v) => set({ chatDraft: v }),
   sendChat: (text) => get().net?.say(text),
   sendReact: (emote, to) => get().net?.react(emote, to),
+  openMenu: (id) => set({ menuFor: id }),
 }));
 
 type Set = (partial: Partial<GameStore>) => void;

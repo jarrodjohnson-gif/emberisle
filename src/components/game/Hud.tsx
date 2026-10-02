@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { WinScreen } from "@/components/game/WinScreen";
 import { ChatDock, ReactionFloats } from "@/components/game/Chat";
+import { PlayerMenu } from "@/components/game/PlayerMenu";
 import { COST, RESOURCES, RESOURCE_LABEL, type DevKind, type PlayerState, type Resource } from "@/lib/game/types";
 import { harborRate, hiddenCount, legalRoads, playable, publicVP, totalVP } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
@@ -75,6 +76,8 @@ export function Hud() {
   const setBuildMode = useGame((s) => s.setBuildMode);
   const goTitle = useGame((s) => s.goTitle);
   const setHowTo = useGame((s) => s.setHowTo);
+  const menuFor = useGame((s) => s.menuFor);
+  const openMenu = useGame((s) => s.openMenu);
   const { phone, portrait } = useViewport();
   const [hintDismissed, setHintDismissed] = useState(() => sessionStorage.getItem(HINT_KEY) === "1");
 
@@ -114,6 +117,7 @@ export function Hud() {
         : phaseCopy(state.phase);
   const turnText = `${yours ? "Your" : `${subjectPlayer.name}'s`} turn — ${phaseText}`;
   const winner = state.winner ? state.players.find((p) => p.id === state.winner) : null;
+  const menuPlayer = menuFor ? state.players.find((p) => p.id === menuFor) : null;
 
   return (
     <>
@@ -142,38 +146,59 @@ export function Hud() {
           className="absolute inset-x-3 top-[calc(env(safe-area-inset-top)+4.25rem)] z-10"
         />
       ) : null}
+      {phone && menuPlayer ? (
+        <PlayerMenu
+          player={menuPlayer}
+          className={cn(
+            "absolute z-20",
+            portrait ? "inset-x-3 top-[calc(env(safe-area-inset-top)+7.25rem)]" : "right-3 top-16 w-72",
+          )}
+        />
+      ) : null}
 
       {phone ? null : (
       <aside className="pointer-events-none absolute left-3 top-20 z-10 hidden w-56 flex-col gap-2 md:flex">
         {state.players.map((p) => (
-          <div
-            key={p.id}
-            data-testid={`rail-${p.id}`}
-            className={cn(
-              "pointer-events-auto relative rounded-[16px] border bg-white/45 px-3 py-2 backdrop-blur-md",
-              p.id === state.current ? "border-accent" : "border-white/50",
-            )}
-          >
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <span className="size-2.5 rounded-full" style={{ background: p.color }} />
-                <span className="text-sm font-medium">{p.name}</span>
-              </div>
-              <span className="tabular-nums text-sm text-zinc-600">{publicVP(state, p.id)} vp{p.id === actor && p.hidden.vp > 0 ? ` (+${p.hidden.vp} hidden)` : ""}
-              </span>
+          <div key={p.id} className="pointer-events-auto flex flex-col gap-1">
+            <div
+              data-testid={`rail-${p.id}`}
+              className={cn(
+                "relative rounded-[16px] border bg-white/45 backdrop-blur-md",
+                p.id === state.current ? "border-accent" : "border-white/50",
+              )}
+            >
+              {/* The card is the menu's trigger (docs/design/chat.md "The player action menu"). */}
+              <button
+                type="button"
+                data-menu-trigger={p.id}
+                aria-expanded={menuFor === p.id}
+                aria-controls={`player-menu-${p.id}`}
+                onClick={() => openMenu(menuFor === p.id ? null : p.id)}
+                className="block w-full cursor-pointer rounded-[16px] px-3 py-2 text-left hover:bg-white/40"
+              >
+                <span className="flex items-center justify-between gap-2">
+                  <span className="flex items-center gap-2">
+                    <span className="size-2.5 rounded-full" style={{ background: p.color }} />
+                    <span className="text-sm font-medium">{p.name}</span>
+                  </span>
+                  <span className="tabular-nums text-sm text-zinc-600">{publicVP(state, p.id)} vp{p.id === actor && p.hidden.vp > 0 ? ` (+${p.hidden.vp} hidden)` : ""}
+                  </span>
+                </span>
+                <span className="mt-1 block text-xs text-zinc-600">
+                  {p.goods ?? RESOURCES.reduce((n, r) => n + p.resources[r], 0)} goods · {p.fortunes ?? hiddenCount(p)} fortunes
+                  {seats.some((s) => s.away && (s.name === p.name || `${s.name} (bot)` === p.name)) ? " · reconnecting…" : ""}
+                </span>
+                {p.id === actor && hiddenCount(p) > 0 ? (
+                  <span className="mt-0.5 block text-xs text-zinc-600">
+                    {FORTUNE_NAMES.filter(([k]) => p.hidden[k] > 0)
+                      .map(([k, label]) => `${label} ×${p.hidden[k]}${p.boughtThisTurn[k] > 0 ? ` (${p.boughtThisTurn[k]} new)` : ""}`)
+                      .join(" · ")}
+                  </span>
+                ) : null}
+              </button>
+              <ReactionFloats by="player" id={p.id} />
             </div>
-            <p className="mt-1 text-xs text-zinc-600">
-              {p.goods ?? RESOURCES.reduce((n, r) => n + p.resources[r], 0)} goods · {p.fortunes ?? hiddenCount(p)} fortunes
-              {seats.some((s) => s.away && (s.name === p.name || `${s.name} (bot)` === p.name)) ? " · reconnecting…" : ""}
-            </p>
-            {p.id === actor && hiddenCount(p) > 0 ? (
-              <p className="mt-0.5 text-xs text-zinc-600">
-                {FORTUNE_NAMES.filter(([k]) => p.hidden[k] > 0)
-                  .map(([k, label]) => `${label} ×${p.hidden[k]}${p.boughtThisTurn[k] > 0 ? ` (${p.boughtThisTurn[k]} new)` : ""}`)
-                  .join(" · ")}
-              </p>
-            ) : null}
-            <ReactionFloats by="player" id={p.id} />
+            {menuFor === p.id ? <PlayerMenu player={p} /> : null}
           </div>
         ))}
       </aside>
@@ -329,6 +354,8 @@ export function Hud() {
 function SeatStrip({ actor, className }: { actor: string; className: string }) {
   const state = useGame((s) => s.state)!;
   const seats = useGame((s) => s.seats);
+  const menuFor = useGame((s) => s.menuFor);
+  const openMenu = useGame((s) => s.openMenu);
   return (
     <div data-testid="seat-strip" className={cn("pointer-events-auto flex h-11 gap-1", className)}>
       {state.players.map((p) => {
@@ -340,21 +367,30 @@ function SeatStrip({ actor, className }: { actor: string; className: string }) {
             key={p.id}
             data-testid={`seat-${p.id}`}
             className={cn(
-              "relative flex h-11 min-w-0 flex-1 flex-col justify-center rounded-[12px] border bg-white/45 px-2 leading-tight backdrop-blur-md",
+              "relative h-11 min-w-0 flex-1 rounded-[12px] border bg-white/45 leading-tight backdrop-blur-md",
               p.id === state.current ? "border-accent" : "border-white/50",
             )}
           >
-            <div className="flex items-center gap-1.5">
-              <span className="size-3 shrink-0 rounded-full" style={{ background: p.color }} />
-              <span className="min-w-0 flex-1 truncate text-xs font-medium">{p.name}</span>
-              <span className="shrink-0 text-xs tabular-nums text-zinc-600">
-                {publicVP(state, p.id)}
-                {hidden ? `+${hidden}` : ""}
+            <button
+              type="button"
+              data-menu-trigger={p.id}
+              aria-expanded={menuFor === p.id}
+              aria-controls={`player-menu-${p.id}`}
+              onClick={() => openMenu(menuFor === p.id ? null : p.id)}
+              className="flex h-full w-full cursor-pointer flex-col justify-center rounded-[12px] px-2 text-left"
+            >
+              <span className="flex w-full items-center gap-1.5">
+                <span className="size-3 shrink-0 rounded-full" style={{ background: p.color }} />
+                <span className="min-w-0 flex-1 truncate text-xs font-medium">{p.name}</span>
+                <span className="shrink-0 text-xs tabular-nums text-zinc-600">
+                  {publicVP(state, p.id)}
+                  {hidden ? `+${hidden}` : ""}
+                </span>
               </span>
-            </div>
-            <span className="truncate text-[10px] text-zinc-600">
-              {away ? "reconnecting…" : `${goods}g · ${p.fortunes ?? hiddenCount(p)}f`}
-            </span>
+              <span className="block w-full truncate text-[10px] text-zinc-600">
+                {away ? "reconnecting…" : `${goods}g · ${p.fortunes ?? hiddenCount(p)}f`}
+              </span>
+            </button>
             <ReactionFloats by="player" id={p.id} />
           </div>
         );
