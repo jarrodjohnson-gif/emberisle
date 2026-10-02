@@ -208,7 +208,7 @@ export function Hud() {
           ) : null}
           {state.phase === "over" ? null : (
             <p
-              key={state.current}
+              key={`turn-${state.current}`}
               data-testid="turn-banner"
               style={{ borderLeftColor: yours ? undefined : subjectPlayer.color }}
               className={cn(
@@ -241,7 +241,7 @@ export function Hud() {
 
           <ResourceHand me={me} />
 
-          {discarder ? <DiscardBar key={discarder} id={discarder} n={state.discardNeeded[discarder]!} /> : null}
+          {discarder ? <DiscardBar key={`discard-${discarder}`} id={discarder} n={state.discardNeeded[discarder]!} /> : null}
           <TakeFromBar />
 
           {state.phase === "main" && mine ? (
