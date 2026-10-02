@@ -174,6 +174,53 @@ try {
   });
   console.log("online bots + leave:", JSON.stringify(online));
 
+  // #218: a knight can be played before the roll from the HUD; the phase stays roll and Roll still works.
+  await page.getByRole("button", { name: "Play versus the isle" }).click();
+  await page.waitForFunction(() => window.__emberisle.getState().state);
+  await page.evaluate(() => {
+    const g = window.__emberisle;
+    const st = structuredClone(g.getState().state);
+    for (const v of st.vertices) v.building = null;
+    st.phase = "roll";
+    st.current = "p0";
+    st.playedCard = false;
+    st.dice = null;
+    for (const p of st.players) {
+      p.hidden = { knight: 0, road: 0, plenty: 0, monopoly: 0, vp: 0 };
+      p.boughtThisTurn = { knight: 0, road: 0, plenty: 0, monopoly: 0, vp: 0 };
+    }
+    st.players[0].hidden.knight = 1;
+    st.players[0].knightsPlayed = 0;
+    g.setState({ state: st, localId: "p0", mode: "practice", buildMode: "none", pendingSteal: null, error: null });
+  });
+  await page.getByTestId("knight-button").click({ timeout: 5000 });
+  const knight = await page.evaluate(() => {
+    const g = window.__emberisle;
+    const armed = g.getState().buildMode;
+    const hex = g.getState().highlights().hexes[0];
+    g.getState().pickHex(hex);
+    const st = g.getState().state;
+    const after = { phase: st.phase, played: st.players[0].knightsPlayed, error: g.getState().error };
+    const r = g.getState().dispatch({ type: "roll" });
+    return { armed, ...after, roll: r.ok, rollError: r.error };
+  });
+  console.log("knight before roll:", JSON.stringify(knight));
+
+  // #219: your own rail card shows your hidden points; nobody else's does.
+  await page.evaluate(() => {
+    const g = window.__emberisle;
+    const st = structuredClone(g.getState().state);
+    st.players[0].hidden.vp = 2;
+    for (const p of st.players.slice(1)) p.hidden.vp = 0;
+    g.setState({ state: st });
+  });
+  await page.waitForTimeout(200);
+  const rail = await page.evaluate(() => {
+    const ids = window.__emberisle.getState().state.players.map((p) => p.id);
+    return ids.map((id) => document.querySelector(`[data-testid="rail-${id}"]`)?.textContent ?? null);
+  });
+  console.log("rail cards:", JSON.stringify(rail));
+
   if (phase !== "roll" && phase !== "main" && phase !== "robber" && phase !== "discard") throw new Error(`setup: ${phase}`);
   if (!Array.isArray(rolled)) throw new Error(`roll: ${rolled}`);
   if (!bannerText || !bannerText.includes(`rolls ${rolled[0]}+${rolled[1]} = ${rolled[0] + rolled[1]}`)) throw new Error(`roll banner: ${bannerText}`);
@@ -188,6 +235,12 @@ try {
   if (online.botActs !== 0) throw new Error(`client ran a bot online: ${JSON.stringify(online)}`);
   if (online.log !== "" || online.place !== null || online.seat !== "" || online.host || online.picks || online.toast !== null || online.screen !== "title") {
     throw new Error(`stale state after leaving: ${JSON.stringify(online)}`);
+  }
+  if (knight.armed !== "knight" || knight.phase !== "roll" || knight.played !== 1 || knight.error || !knight.roll) {
+    throw new Error(`knight before roll: ${JSON.stringify(knight)}`);
+  }
+  if (!rail[0]?.includes("+2 hidden") || !rail[0].includes("points ×2") || rail.slice(1).some((t) => t === null || t.includes("hidden"))) {
+    throw new Error(`rail cards: ${JSON.stringify(rail)}`);
   }
   if (errors.length) throw new Error(`console errors:\n${errors.join("\n")}`);
   console.log("client prove ok");
