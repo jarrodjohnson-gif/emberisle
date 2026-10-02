@@ -235,14 +235,14 @@ WebSocket JSON. The client sends intents. The server answers with `state` or `er
 | Client → host | Meaning |
 |---|---|
 | `{type:"hello", name, color, avatarId}` | Open a table. Reply: `welcome {code, you, host:true}` |
-| `{type:"hello", code, name, color, avatarId}` | Sit down at a table |
+| `{type:"hello", code, name, color, avatarId}` | Sit down at a table. The host cleans `name` (control characters stripped, 16 characters, a duplicate becomes "Ember 2") and takes only a palette `color`, else the first free swatch. |
 | `{type:"hello", code, secret}` | Sit back down in your own seat after a drop. Errors: "Seat is taken." (that seat's socket is still open), "Seat is gone." |
 | `{type:"ready", value}` / `{type:"start"}` | Lobby. Only the host can start, with 3 or 4 seated and everyone ready. |
 | `{type:"place", kind:"outpost"\|"path"\|"stronghold", id}` | Build or place during setup |
 | `{type:"roll"}` `{type:"pass"}` `{type:"buy"}` | Turn actions |
 | `{type:"play", card:"knight", hexId, stealFrom}` (and `road`/`ids`, `plenty`/`resources`, `monopoly`/`resource`) | Fortunes |
 | `{type:"rob", hexId, stealFrom}` `{type:"discard", cards}` | After a 7 |
-| `{type:"tradeBank", give, take}` `{type:"tradeAsk", give, want}` `{type:"tradeAnswer", tradeId, yes}` | Trades |
+| `{type:"tradeBank", give, take}` `{type:"tradeAsk", give, want}` `{type:"tradeAnswer", tradeId, yes}` | Trades. A `tradeAsk` is refused to the asker alone, with "Bad trade." (`give` or `want` is not a bag of known resources), "You lack those goods." or "Offer something." (both bags empty). A new ask closes the open one with `tradeClosed`. |
 | `{type:"chat", text}` | One chat line, lobby or game (200 chars, rate-limited) |
 | `{type:"react", emote, to}` | A reaction image, `to` a seat or player id or omitted |
 
