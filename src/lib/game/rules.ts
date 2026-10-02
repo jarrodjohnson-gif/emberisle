@@ -301,7 +301,8 @@ function stealOne(state: GameState, fromId: string, toId: string) {
   const pick = pool[Math.floor(nextRand(state) * pool.length)]!;
   from.resources[pick] -= 1;
   to.resources[pick] += 1;
-  log(state, `${to.name} steals ${pick} from ${from.name}.`);
+  // The table hears that a card moved, not which one: only the two hands change (#187).
+  log(state, `${to.name} steals a card from ${from.name}.`);
 }
 
 function afterRobber(state: GameState) {
