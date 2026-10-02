@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import {
   BookOpen,
   Dices,
@@ -71,6 +72,7 @@ export function Hud() {
 
   return (
     <>
+      <PlaceChip />
       <header className="pointer-events-none absolute inset-x-0 top-0 z-10 p-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
         <div className="pointer-events-auto mx-auto flex max-w-5xl items-center justify-between gap-2">
           <div className="flex items-center gap-2 rounded-[20px] border border-white/50 bg-white/45 px-3 py-2 backdrop-blur-md">
@@ -353,6 +355,38 @@ function BankTrade() {
         Bank
       </Button>
     </form>
+  );
+}
+
+// Coarse pointers pick a mark, then confirm here (docs/design/mobile-camera-touch.md). Enter confirms, Esc cancels.
+function PlaceChip() {
+  const pending = useGame((s) => s.pendingPlace);
+  const confirmPlace = useGame((s) => s.confirmPlace);
+  const setPendingPlace = useGame((s) => s.setPendingPlace);
+  useEffect(() => {
+    if (!pending) return;
+    const key = (e: KeyboardEvent) => {
+      if (e.key === "Enter") confirmPlace();
+      if (e.key === "Escape") setPendingPlace(null);
+    };
+    window.addEventListener("keydown", key);
+    return () => window.removeEventListener("keydown", key);
+  }, [pending, confirmPlace, setPendingPlace]);
+  if (!pending) return null;
+  return (
+    <div className="pointer-events-none absolute inset-x-0 bottom-[max(11rem,calc(env(safe-area-inset-bottom)+10.5rem))] z-20 flex items-center justify-end gap-3 px-3">
+      <button type="button" className="pointer-events-auto h-11 px-2 text-sm text-fg underline" onClick={() => setPendingPlace(null)}>
+        Cancel
+      </button>
+      <button
+        type="button"
+        data-testid="place-chip"
+        className="pointer-events-auto h-11 min-w-[88px] rounded-[12px] bg-fg px-4 text-bg"
+        onClick={confirmPlace}
+      >
+        Place
+      </button>
+    </div>
   );
 }
 

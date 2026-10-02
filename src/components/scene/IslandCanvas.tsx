@@ -15,17 +15,34 @@ export default function IslandCanvas() {
     const canvas = ref.current;
     if (!canvas) return;
     const game = useGame.getState();
-    const renderer = new IsleRenderer(canvas, (kind, id) => {
-      const g = useGame.getState();
-      if (kind === "hex") g.pickHex(id);
-      if (kind === "vertex") g.pickVertex(id);
-      if (kind === "edge") g.pickEdge(id);
-    });
+    const renderer = new IsleRenderer(
+      canvas,
+      (kind, id) => {
+        const g = useGame.getState();
+        g.setPendingPlace(null);
+        if (kind === "hex") g.pickHex(id);
+        if (kind === "vertex") g.pickVertex(id);
+        if (kind === "edge") g.pickEdge(id);
+      },
+      (sel) => useGame.getState().setPendingPlace(sel),
+    );
     api.current = renderer;
     (window as unknown as { __isle: IsleRenderer }).__isle = renderer;
+    let action = "";
     const sync = () => {
       const s = useGame.getState();
       renderer.setTitleMode(s.screen !== "play");
+      // A new state that drops the pending mark from the legal set, or changes what a tap would do, clears it.
+      const hi = s.highlights();
+      const pp = s.pendingPlace;
+      const nextAction = `${s.state?.phase}|${s.buildMode}`;
+      const actionChanged = nextAction !== action;
+      action = nextAction;
+      renderer.setPending(pp);
+      if (pp && (actionChanged || ![...hi.vertices, ...hi.edges, ...hi.hexes].includes(pp.id))) {
+        s.setPendingPlace(null);
+        return;
+      }
       if (s.state) {
         const actor =
           s.mode === "hotseat" ? s.state.current : s.localId;
