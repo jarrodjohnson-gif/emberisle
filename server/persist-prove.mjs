@@ -7,6 +7,8 @@ import WebSocket from "ws";
 
 const ROOMS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-rooms-"));
 let host;
+process.on("exit", () => host?.kill());
+for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
 
 function start(port) {
   host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {

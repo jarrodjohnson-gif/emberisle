@@ -9,6 +9,8 @@ import WebSocket from "ws";
 import { hostUrl } from "../src/lib/net/table.ts";
 
 const hosts = [];
+process.on("exit", () => hosts.forEach((h) => h.kill()));
+for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
 const temp = mkdtempSync(path.join(tmpdir(), "emberisle-dist-"));
 function done(code) {
   for (const h of hosts) h.kill();
