@@ -13,6 +13,7 @@
     "hotseat-prove": "node scripts/hotseat-prove.mjs",
     "tabs-prove": "node scripts/tabs-prove.mjs",
     "tokens-prove": "node scripts/tokens-prove.mjs",
+    "orphan-check": "node scripts/orphan-check.mjs",
     "chat-prove": "node scripts/chat-prove.mjs",
     "mobile-shots": "node scripts/mobile-shots.mjs",
     "touch-place-prove": "node scripts/touch-place-prove.mjs",

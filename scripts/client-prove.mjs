@@ -221,6 +221,25 @@ try {
   });
   console.log("rail cards:", JSON.stringify(rail));
 
+  // #177: the whose-turn banner is on desktop too, and the phone strip is not.
+  const turn = await page.evaluate(() => {
+    const g = window.__emberisle;
+    const st = structuredClone(g.getState().state);
+    const bot = st.players.find((p) => p.id !== g.getState().localId);
+    const mineText = document.querySelector('[data-testid="turn-banner"]')?.textContent ?? null;
+    st.current = bot.id;
+    st.phase = "roll";
+    g.setState({ state: st });
+    return { mineText, bot: bot.name };
+  });
+  await page.waitForTimeout(200);
+  turn.theirs = await page.getByTestId("turn-banner").textContent();
+  turn.strip = await page.getByTestId("seat-strip").count();
+  console.log("turn banner:", JSON.stringify(turn));
+
+  if (turn.theirs !== `${turn.bot}'s turn — Roll the dice to gather from the land.` || !/^Your turn — (Roll the dice|Build, trade|move the wayfarer|discard \d+)/.test(turn.mineText ?? "") || turn.strip) {
+    throw new Error(`turn banner: ${JSON.stringify(turn)}`);
+  }
   if (phase !== "roll" && phase !== "main" && phase !== "robber" && phase !== "discard") throw new Error(`setup: ${phase}`);
   if (!Array.isArray(rolled)) throw new Error(`roll: ${rolled}`);
   if (!bannerText || !bannerText.includes(`rolls ${rolled[0]}+${rolled[1]} = ${rolled[0] + rolled[1]}`)) throw new Error(`roll banner: ${bannerText}`);

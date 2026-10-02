@@ -31,6 +31,12 @@ body,
 }
 
 /* A resource card's +N/-N holds briefly, then fades out over about a second (#170). */
+/* The turn banner fades in over 200 ms when the seat on turn changes (docs/design/mobile-hud.md). */
+@keyframes turn-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 @keyframes resource-flash {
   0% { opacity: 1; transform: translateY(0); }
   30% { opacity: 1; }

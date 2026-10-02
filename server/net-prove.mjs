@@ -27,6 +27,8 @@ host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL(".", import.meta.url),
   env: { ...process.env, PORT: "0", ROOMS_DIR },
 });
+process.on("exit", () => host.kill());
+for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
 const port = await new Promise((resolve) => host.stdout.on("data", (d) => {
   const m = String(d).match(/listening (\d+)/);
   if (m) resolve(Number(m[1]));
