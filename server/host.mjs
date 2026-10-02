@@ -724,7 +724,10 @@ function letGo(room, seat) {
   clearTimeout(seat.graceTimer);
   room.seats = room.seats.filter((s) => s !== seat);
   if (room.seats.length === 0) return dropRoom(room);
-  if (room.host === seat.id) room.host = room.seats[0].id;
+  if (room.host === seat.id) {
+    room.host = room.seats[0].id;
+    say(room, `${room.seats[0].name} is now the host.`);
+  }
   publish(room);
 }
 
@@ -742,8 +745,11 @@ function leave(ws) {
   }
   room.seats = room.seats.filter((s) => s !== seat);
   if (room.seats.length === 0) return dropRoom(room);
-  if (room.host === seat.id) room.host = room.seats[0].id;
   say(room, `${seat.name} left.`);
+  if (room.host === seat.id) {
+    room.host = room.seats[0].id;
+    say(room, `${room.seats[0].name} is now the host.`);
+  }
   publish(room);
 }
 

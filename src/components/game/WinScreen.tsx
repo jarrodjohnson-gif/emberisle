@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { totalVP } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
@@ -14,6 +14,15 @@ function Panel() {
   const goTitle = useGame((s) => s.goTitle);
   const [hidden, setHidden] = useState(false);
   const winner = state.players.find((p) => p.id === state.winner)!;
+  const dialog = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (hidden) return;
+    dialog.current?.querySelector<HTMLElement>('[data-testid="win-menu"]')?.focus();
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setHidden(true);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [hidden]);
 
   const rows = state.players
     .map((p) => {
@@ -55,9 +64,16 @@ function Panel() {
   const head = "px-1 py-2 text-right text-[11px] sm:px-2 font-medium uppercase tracking-wide text-zinc-600";
   const cell = "px-1 py-2 sm:px-2 text-right tabular-nums";
   return (
-    <div data-testid="win-screen" className="absolute inset-0 z-20 flex items-center justify-center bg-bg/60 p-4 backdrop-blur-sm">
+    <div
+      ref={dialog}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="win-headline"
+      data-testid="win-screen"
+      className="absolute inset-0 z-20 flex items-center justify-center bg-bg/60 p-4 backdrop-blur-sm"
+    >
       <div className="flex max-h-full w-full max-w-2xl flex-col rounded-[28px] border border-white/50 bg-surface p-5 text-center sm:p-6">
-        <p data-testid="win-headline" className="font-display text-3xl" style={{ color: winner.color }}>
+        <p id="win-headline" data-testid="win-headline" className="font-display text-3xl" style={{ color: winner.color }}>
           {winner.name} wins
         </p>
         <div className="mt-4 min-h-0 overflow-auto">
