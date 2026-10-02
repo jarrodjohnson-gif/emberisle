@@ -167,7 +167,8 @@ console.log(`past the hold: "${late.message}"`);
   const t0 = Date.now();
   await y.next("log", (m) => m.text === "Reed lost connection.", 2 * PING + 500);
   const took = Date.now() - t0;
-  await wait(50); // the host's terminate() reaches Reed's side a moment after the log reaches Moss
+  // The host's terminate() reaches Reed's side a moment after the log reaches Moss: wait for his close, bounded.
+  if (x.ws.readyState !== WebSocket.CLOSED) await Promise.race([new Promise((r) => x.ws.once("close", r)), wait(1000)]);
   if (x.ws.readyState !== WebSocket.CLOSED && x.ws.readyState !== WebSocket.CLOSING) fail("the silent socket is cut", x.ws.readyState);
   await wait(3 * PING);
   if (y.ws.readyState !== WebSocket.OPEN || z.ws.readyState !== WebSocket.OPEN) fail("sockets that answer pings stay open");
