@@ -65,6 +65,16 @@ await until(() => a.code, "welcome");
 b.t.join(a.code.toLowerCase(), { name: "Tide" });
 c.t.join(a.code, { name: "Pine" });
 await until(() => b.code && c.code, "joins");
+
+// #271: a peek answers `seats` for the asked code without seating, and a join with a free color then lands.
+const peeker = player("Peeker");
+peeker.t.peek(a.code.toLowerCase());
+await until(() => peeker.seats, "peek reply");
+if (peeker.code) fail("a peek seated the client");
+if (peeker.seats.length !== 3) fail("peek seats", peeker.seats.length);
+peeker.t.join(a.code, { name: "Peeker", color: "#3d6b4f" });
+await until(() => peeker.code === a.code, "join after peek");
+peeker.t.close();
 for (const p of [a, b, c]) p.t.ready(true);
 // Start only once the host has every ready; a fixed pause raced a slow CI runner and the start was refused.
 await until(() => a.seats?.length === 3 && a.seats.every((s) => s.ready), "all ready");

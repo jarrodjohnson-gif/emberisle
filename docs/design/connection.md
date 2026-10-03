@@ -20,6 +20,8 @@ The first frame on a new socket is always `hello`:
 |---|---|---|
 | Host → Open table | `{ "type": "hello", "name", "color", "avatarId" }`, no `code` | `welcome { code, you, host: true }`, then `seats` |
 | Join → Sit down | `{ "type": "hello", "code", "name", "color", "avatarId" }` | `welcome { code, you, host: false }`, then `seats`. Or `error`: "No table with that code", "Table full.", "Color taken.", or "Game already started." |
+| Title, a 4-character code typed | `{ "type": "peek", "code" }` | `seats { code, seats[] }` without sitting down (empty for no table or a started game); no reply for a bad code or over the rate limit. See [color-peek.md](color-peek.md). |
+| Title, a 4-character code typed | `{ "type": "peek", "code" }` | `seats { code, seats[] }` without sitting down (empty for no table or a started game); no reply for a bad code or over the rate limit. See [color-peek.md](color-peek.md). |
 
 `create` and `join` still work as aliases for older test clients.
 

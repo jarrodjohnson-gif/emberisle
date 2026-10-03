@@ -47,6 +47,8 @@ export function EmberisleApp() {
   );
 }
 
+const PEEK_CODE = /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{4}$/;
+
 function Title() {
   const name = useGame((s) => s.name);
   const setName = useGame((s) => s.setName);
@@ -59,9 +61,24 @@ function Title() {
   const [join, setJoin] = useState("");
   const hostTable = useGame((s) => s.hostTable);
   const joinTable = useGame((s) => s.joinTable);
+  const peekTable = useGame((s) => s.peekTable);
+  const peekedCode = useGame((s) => s.code);
+  const peekedSeats = useGame((s) => s.seats);
   const error = useGame((s) => s.error);
   const { phone, portrait } = useViewport();
   const sheet = phone && portrait;
+  // Colors already seated at the table whose code is in the field (docs/design/color-peek.md).
+  const taken = peekedCode === join ? peekedSeats.map((s) => s.color) : [];
+
+  useEffect(() => {
+    if (!PEEK_CODE.test(join)) return;
+    const timer = setTimeout(() => peekTable(join), 300);
+    const again = setInterval(() => peekTable(join), 5000);
+    return () => {
+      clearTimeout(timer);
+      clearInterval(again);
+    };
+  }, [join, peekTable]);
 
   return (
     <div
@@ -93,12 +110,13 @@ function Title() {
               key={c}
               type="button"
               role="radio"
-              aria-checked={color === c}
-              aria-label={PLAYER_NAMES[i]}
-              title={PLAYER_NAMES[i]}
+              aria-checked={!taken.includes(c) && color === c}
+              aria-label={taken.includes(c) ? `${PLAYER_NAMES[i]} (taken)` : PLAYER_NAMES[i]}
+              title={taken.includes(c) ? `${PLAYER_NAMES[i]} (taken)` : PLAYER_NAMES[i]}
+              disabled={taken.includes(c)}
               onClick={() => setColor(c)}
-              className="size-8 rounded-full border-2 transition"
-              style={{ background: c, borderColor: color === c ? "#1c1915" : "transparent" }}
+              className={cn("size-8 rounded-full border-2 transition", taken.includes(c) && "cursor-not-allowed opacity-35")}
+              style={{ background: c, borderColor: !taken.includes(c) && color === c ? "#1c1915" : "transparent" }}
             />
           ))}
         </div>

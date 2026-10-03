@@ -608,6 +608,7 @@ wss.on("connection", (ws) => {
   // close that socket (ws already sends close code 1009) and never the other tables.
   ws.on("error", () => {});
   ws.alive = true;
+  ws.bucket = { tokens: 5, at: Date.now() };
   ws.on("pong", () => (ws.alive = true));
   ws.on("message", (raw) => {
     try {
@@ -636,6 +637,10 @@ function handle(ws, raw) {
   }
   if (!msg || typeof msg !== "object") return send(ws, { type: "error", message: "not ready" });
   if (!ws.room) {
+    // A socket with no seat has no seat.bucket; this one throttles the pre-seat frames (docs/design/color-peek.md).
+    const ok = allow(ws.bucket, Date.now());
+    if (msg.type === "peek") return ok ? peek(ws, msg) : undefined;
+    if (!ok && (msg.type === "create" || msg.type === "join" || msg.type === "hello")) return send(ws, { type: "error", message: "Slow down." });
     // hello with no code opens a table; hello with a code sits down (build bible 2.3, 10).
     if (msg.type === "create" || (msg.type === "hello" && !msg.code)) return openTable(ws, msg);
     if (msg.type === "hello" && typeof msg.secret === "string") return rejoin(ws, msg);
@@ -653,6 +658,16 @@ function handle(ws, raw) {
   if (msg.type === "tradeAsk") return ask(ws, room, msg);
   if (msg.type === "tradeAnswer") return answer(ws, room, msg);
   return play(ws, room, msg);
+}
+
+const CODE = /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{4}$/;
+
+// Answers which seats a lobby holds, without sitting down (docs/design/color-peek.md).
+function peek(ws, msg) {
+  const code = typeof msg.code === "string" ? msg.code.toUpperCase() : "";
+  if (!CODE.test(code)) return;
+  const room = rooms.get(code);
+  send(ws, { type: "seats", code, seats: room && !room.game ? seatsOf(room) : [] });
 }
 
 // hello {code, secret} puts a dropped player back in their own seat, even after the bot took over.

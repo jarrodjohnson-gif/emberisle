@@ -411,9 +411,11 @@ try {
   await page.getByRole("textbox", { name: "Join code" }).press("Enter");
   await page.locator("[role=alert]").waitFor({ timeout: 5000 });
   // No host is running here, so the join attempt's refused socket is the expected console error; drop only that one.
-  const refused = errors.findIndex((e) => e.includes("ws://127.0.0.1:8787"));
-  if (refused < 0) throw new Error("join form: Enter did not try the host");
-  errors.splice(refused, 1);
+  // The typed code also fires a peek 300 ms later (#271) that is refused the same way; let it land, then drop both.
+  await page.waitForTimeout(600);
+  const refused = errors.filter((e) => e.includes("ws://127.0.0.1:8787"));
+  if (!refused.length) throw new Error("join form: Enter did not try the host");
+  for (const e of refused) errors.splice(errors.indexOf(e), 1);
   const joinForm = await page.evaluate(() => {
     const input = document.querySelector("form[aria-label='Join code'] input");
     return { alert: document.querySelector("[role=alert]")?.textContent, value: input?.value, caps: input?.getAttribute("autocapitalize"), auto: input?.getAttribute("autocomplete") };
@@ -490,6 +492,74 @@ try {
     });
     console.log("stale rejoin on load:", JSON.stringify(stale));
     if (stale.screen !== "title" || stale.error !== null || stale.toast !== null || !stale.net) throw new Error(`stale rejoin not quiet: ${JSON.stringify(stale)}`);
+
+    // #271 case 12: with the stale rejoin gone, a peek opens a connection of its own and stays quiet.
+    await page.evaluate(() => window.__emberisle.getState().peekTable("ABCD"));
+    await page.waitForFunction(() => { const t = window.__emberisle.getState(); return t.peeking === true && t.net !== null; }, null, { timeout: 6000 });
+    const peeked = await page.evaluate(() => { const t = window.__emberisle.getState(); return { peeking: t.peeking, error: t.error, toast: t.toast, screen: t.screen }; });
+    console.log("peek after a stale rejoin:", JSON.stringify(peeked));
+    if (peeked.error !== null || peeked.toast !== null || peeked.screen !== "title") throw new Error(`peek not quiet: ${JSON.stringify(peeked)}`);
+
+    // #271 case 11: a peek called while a held seat's rejoin is pending is left alone, so the rejoin lands with no toast.
+    // A held seat needs a started game (a lobby seat is dropped on close), so three sockets start one and the third drops.
+    const { default: WebSocket } = await import("../server/node_modules/ws/wrapper.mjs");
+    const socks = [];
+    const seat = (extra) =>
+      new Promise((resolve, reject) => {
+        const ws = new WebSocket(`ws://127.0.0.1:${hostPort}`);
+        const inbox = [];
+        const c = { ws, inbox, send: (m) => ws.send(JSON.stringify(m)) };
+        ws.on("message", (raw) => inbox.push(JSON.parse(String(raw))));
+        ws.on("error", reject);
+        ws.on("open", () => {
+          c.send({ type: "hello", name: `Held${socks.length}`, ...extra });
+          socks.push(c);
+          const poll = setInterval(() => {
+            const w = inbox.find((m) => m.type === "welcome");
+            if (w) {
+              clearInterval(poll);
+              resolve({ ...c, welcome: w });
+            }
+          }, 20);
+        });
+      });
+    const pollUntil = async (check, what) => {
+      for (let i = 0; i < 100; i++) {
+        if (check()) return;
+        await new Promise((r) => setTimeout(r, 50));
+      }
+      throw new Error(`timed out: ${what}`);
+    };
+    try {
+      const first = await seat({});
+      const second = await seat({ code: first.welcome.code });
+      const third = await seat({ code: first.welcome.code });
+      for (const c of [first, second, third]) c.send({ type: "ready", value: true });
+      await new Promise((r) => setTimeout(r, 200));
+      first.send({ type: "start" });
+      await pollUntil(() => third.inbox.some((m) => m.type === "state"), "game start");
+      third.ws.close();
+      await pollUntil(() => first.inbox.some((m) => m.type === "log" && /lost connection/.test(m.text)), "seat held");
+      await page.evaluate(([code, secret]) => localStorage.setItem("emberisle-seat", JSON.stringify({ code, secret })), [third.welcome.code, third.welcome.secret]);
+      // The page-load rejoin, then a peek on every macrotask until it lands: one of them falls between the rejoin
+      // socket opening and its welcome, which is where a peek queued on the rejoin socket would reach a seated host.
+      await page.evaluate(async (code) => {
+        const g = window.__emberisle;
+        g.getState().rejoinTable();
+        const tick = () => new Promise((r) => { const c = new MessageChannel(); c.port1.onmessage = r; c.port2.postMessage(0); });
+        for (let i = 0; i < 20000 && g.getState().screen === "title"; i++) {
+          g.getState().peekTable(code);
+          await tick();
+        }
+      }, third.welcome.code);
+      await page.waitForFunction(() => window.__emberisle.getState().screen !== "title", null, { timeout: 5000 });
+      await new Promise((r) => setTimeout(r, 500));
+      const held = await page.evaluate(() => { const t = window.__emberisle.getState(); return { screen: t.screen, error: t.error, toast: t.toast, peeking: t.peeking }; });
+      console.log("peek during a pending rejoin:", JSON.stringify(held));
+      if (held.error !== null || held.toast !== null || held.peeking !== false || !["lobby", "play"].includes(held.screen)) throw new Error(`peek during rejoin: ${JSON.stringify(held)}`);
+    } finally {
+      for (const c of socks) c.ws.close();
+    }
   } finally {
     rejoinHost.kill();
     rmSync(roomsDir, { recursive: true, force: true });

@@ -73,6 +73,32 @@ if ((await pine.next("error")).message !== "Color taken.") fail("color taken");
 pine.send({ type: "hello", code, name: "Pine", color: pine.color });
 await pine.next("welcome");
 
+// Peek (docs/design/color-peek.md): which seats a lobby holds, without sitting down.
+const peeker = client("Peeker", "#e4c9a0");
+await peeker.open;
+await new Promise((r) => setTimeout(r, 100));
+const hostSeen = () => ember.inbox.filter((m) => m.type === "seats").length;
+const before = hostSeen();
+peeker.send({ type: "peek", code: code.toLowerCase() });
+const peeked = await peeker.next("seats");
+if (peeked.code !== code || peeked.seats.length !== 3 || !peeked.seats.some((s) => s.color === ember.color)) fail("peek seats", JSON.stringify(peeked));
+peeker.send({ type: "peek", code });
+const peekedAgain = await peeker.next("seats");
+if (JSON.stringify(peekedAgain) !== JSON.stringify(peeked)) fail("peek with the code uppercased differs", JSON.stringify(peekedAgain));
+peeker.send({ type: "peek", code: "ZZZZ" });
+const none = await peeker.next("seats");
+if (none.code !== "ZZZZ" || none.seats.length !== 0) fail("peek of an unknown code", JSON.stringify(none));
+await new Promise((r) => setTimeout(r, 300));
+if (hostSeen() !== before) fail("a peek published seats to the table");
+peeker.send({ type: "hello", code, name: "Peeker", color: ember.color });
+if ((await peeker.next("error")).message !== "Color taken.") fail("peeked color was not taken");
+peeker.send({ type: "hello", code, name: "Peeker", color: peeker.color });
+await peeker.next("welcome");
+peeker.ws.close();
+for (let n = 0; n !== 4; ) n = (await ember.next("seats")).seats.length;
+while ((await ember.next("seats")).seats.length !== 3);
+console.log("peek: 3 seats with Ember's color, lowercase same, ZZZZ empty, nothing published, then Color taken. and a free color seats");
+
 let seats;
 for (;;) {
   seats = await tide.next("seats");
@@ -88,6 +114,14 @@ ember.send({ type: "start" });
 
 const all = [ember, tide, pine];
 await Promise.all(all.map((c) => c.next("state")));
+
+const late = client("Late", "#e4c9a0");
+await late.open;
+late.send({ type: "peek", code });
+const started = await late.next("seats");
+if (started.code !== code || started.seats.length !== 0) fail("peek of a started game", JSON.stringify(started));
+late.ws.close();
+console.log("peek after start: no seats");
 if (ember.state.game.players.map((p) => p.color).join() !== [ember, tide, pine].map((c) => c.color).join()) {
   fail("seat colors", ember.state.game.players.map((p) => p.color));
 }

@@ -124,6 +124,18 @@ try {
   const tableCode = (await a.page.getByTestId("table-code").textContent()).trim();
   for (const t of [b, c]) {
     await t.page.getByPlaceholder(/code/i).fill(tableCode);
+    if (t === b) {
+      // #156/#271: before Join, the color the table already holds is dimmed and cannot be picked.
+      const swatch = (n) => b.page.getByRole("radio", { name: n });
+      await until(async () => {
+        const tide = swatch("Tide (taken)");
+        if (!(await tide.count()) || !(await tide.isDisabled())) return null;
+        const [opacity, checked] = await tide.evaluate((el) => [getComputedStyle(el).opacity, el.getAttribute("aria-checked")]);
+        return opacity === "0.35" && checked === "false" ? true : null;
+      }, "Tide swatch dims before Join");
+      for (const n of ["Ember", "Dune", "Pine"]) if (await swatch(n).isDisabled()) throw new Error(`${n} swatch is disabled`);
+      console.log("tab B typed the code: Tide swatch disabled at opacity 0.35, aria-checked=false; Ember, Dune, Pine enabled");
+    }
     await t.page.getByRole("button", { name: "Join" }).click();
     await t.page.getByTestId("table-code").waitFor();
   }
