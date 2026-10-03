@@ -1,6 +1,6 @@
 // A host restart keeps the table: rooms are saved to disk and reloaded on boot (#190).
 import { spawn } from "node:child_process";
-import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import WebSocket from "ws";
@@ -91,10 +91,15 @@ async function step(msg) {
   mover.send(msg(mover.state));
   await Promise.all(all.map((x) => x.next("state", (m) => m.game.seq > before)));
 }
-// One step of whatever phase the table is in; true when that step was a roll.
+// One step of whatever phase the table is in; true when that step was a production roll.
+let midRollOff = null;
 async function advance() {
   const g = a.state.game;
-  if (g.phase === "setupSettle") await step((s) => ({ type: "place", kind: "outpost", id: s.legal.outpost[0] }));
+  if (g.phase === "rollOff") {
+    await step(() => ({ type: "roll" }));
+    // The room on disk after the first roll-off die: still in the roll-off, with that one die (docs/design/first-player.md).
+    midRollOff ??= JSON.parse(readFileSync(path.join(ROOMS_DIR, `${code}.json`), "utf8")).game;
+  } else if (g.phase === "setupSettle") await step((s) => ({ type: "place", kind: "outpost", id: s.legal.outpost[0] }));
   else if (g.phase === "setupRoad") await step((s) => ({ type: "place", kind: "path", id: s.legal.path[0] }));
   else if (g.phase === "roll") {
     await step(() => ({ type: "roll" }));
@@ -124,6 +129,8 @@ async function advance() {
 let rolls = 0;
 for (let i = 0; i < 200 && rolls < 3; i++) if (await advance()) rolls++;
 if (rolls < 3) fail("rolled three times", rolls);
+if (midRollOff?.phase !== "rollOff" || Object.keys(midRollOff.rollOff.rolls).length !== 1) fail("room on disk mid-roll-off", midRollOff?.rollOff);
+console.log(`${code}.json on disk mid-roll-off: phase ${midRollOff.phase}, ${Object.keys(midRollOff.rollOff.rolls).length} die (${JSON.stringify(midRollOff.rollOff.rolls)}), pending ${midRollOff.rollOff.pending.join(",")}`);
 // A third roll of 7 leaves discards or the wayfarer pending; finish them, so the crash lands in a
 // phase the restored table can resume with one roll or one pass (#208).
 for (let i = 0; i < 20 && ["discard", "robber"].includes(a.state.game.phase); i++) await advance();
@@ -137,13 +144,13 @@ if (!existsSync(path.join(ROOMS_DIR, `${code}.json`))) fail("room file written",
 console.log(`table ${code}: setup done, rolled ${rolls} times, seq ${seq}, ${current} to play; ${code}.json on disk`);
 
 // A day-old room, a broken file and one with a null seat sit next to it; the restart must drop the first and survive the rest.
-writeFileSync(path.join(ROOMS_DIR, "OLD1.json"), JSON.stringify({ code: "OLD1", seats: [{ id: "s0" }], game: null, shape: 1, savedAt: Date.now() - 25 * 60 * 60 * 1000 }));
+writeFileSync(path.join(ROOMS_DIR, "OLD1.json"), JSON.stringify({ code: "OLD1", seats: [{ id: "s0" }], game: null, shape: 2, savedAt: Date.now() - 25 * 60 * 60 * 1000 }));
 writeFileSync(path.join(ROOMS_DIR, "BAD1.json"), "{ not json");
-writeFileSync(path.join(ROOMS_DIR, "BAD2.json"), JSON.stringify({ code: "BAD2", seats: [null], game: null, shape: 1, savedAt: Date.now() }));
+writeFileSync(path.join(ROOMS_DIR, "BAD2.json"), JSON.stringify({ code: "BAD2", seats: [null], game: null, shape: 2, savedAt: Date.now() }));
 // Rooms from another build: a stale shape, a game that is not a game, and one from before rooms were stamped.
 const seat = [{ id: "s0", name: "Old", color: "ember", ready: true, pid: null, secret: wa.secret }];
-const room = (code, extra) => writeFileSync(path.join(ROOMS_DIR, `${code}.json`), JSON.stringify({ code, seats: seat, game: null, savedAt: Date.now(), shape: 1, ...extra }));
-room("ZZZ1", { shape: 0 });
+const room = (code, extra) => writeFileSync(path.join(ROOMS_DIR, `${code}.json`), JSON.stringify({ code, seats: seat, game: null, savedAt: Date.now(), shape: 2, ...extra }));
+room("ZZZ1", { shape: 1 });
 room("ZZZ2", { game: {} });
 room("ZZZ3", { shape: undefined });
 
@@ -156,14 +163,14 @@ const second = await start(port);
 if (second.port !== port) fail("same port", second.port);
 if (existsSync(path.join(ROOMS_DIR, "OLD1.json"))) fail("a room older than 24 hours is dropped on boot");
 for (const z of ["ZZZ1", "ZZZ2", "ZZZ3"]) if (existsSync(path.join(ROOMS_DIR, `${z}.json`))) fail(`${z} is deleted on boot`);
-if (!err.includes("stale room file: ZZZ1.json (shape 0, want 1)")) fail("stale shape logged", err);
-if (!err.includes("stale room file: ZZZ3.json (shape undefined, want 1)")) fail("unstamped room logged as stale", err);
+if (!err.includes("stale room file: ZZZ1.json (shape 1, want 2)")) fail("stale shape logged", err);
+if (!err.includes("stale room file: ZZZ3.json (shape undefined, want 2)")) fail("unstamped room logged as stale", err);
 if (!err.includes("bad game in room file: ZZZ2.json")) fail("bad game logged", err);
 if (!second.out().includes(code)) fail("restored room listed", second.out());
 if (second.out().includes("BAD2")) fail("a room with a null seat is skipped", second.out());
 console.log(`host killed and restarted on ${port}: ${second.out().trim().split("\n")[0]}; OLD1 (25 h) dropped, BAD1 and BAD2 skipped`);
 
-console.log("stale shape dropped (ZZZ1 shape 0, ZZZ3 unstamped), bad game dropped (ZZZ2)");
+console.log("stale shape dropped (ZZZ1 shape 1, from before the roll-off; ZZZ3 unstamped), bad game dropped (ZZZ2)");
 const back = [];
 for (const [w, name] of [[wa, "Ember"], [wb, "Tide"], [wc, "Pine"]]) {
   const x = await client(port, name);

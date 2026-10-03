@@ -91,7 +91,7 @@ for (let guard = 0; guard < 400 && !pair; guard++) {
   const { legal, game } = c.state;
   if (game.phase === "setupSettle") await step(c, { type: "place", kind: "outpost", id: legal.outpost[0] });
   else if (game.phase === "setupRoad") await step(c, { type: "place", kind: "path", id: legal.path[0] });
-  else if (game.phase === "roll") await step(c, { type: "roll" });
+  else if (game.phase === "roll" || game.phase === "rollOff") await step(c, { type: "roll" });
   else if (legal.discard > 0) {
     let left = legal.discard;
     const cards = {};

@@ -33,6 +33,14 @@ try {
   await page.evaluate(async () => {
     const g = window.__emberisle;
     g.getState().startAi();
+    // #232: roll off first, so the outpost below is a real placement.
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+    for (let i = 0; i < 200 && g.getState().state.phase === "rollOff"; i++) {
+      const s = g.getState();
+      if (s.state.current === s.localId) s.dispatch({ type: "roll" });
+      await sleep(100);
+    }
+    for (let i = 0; i < 200 && g.getState().state.current !== g.getState().localId; i++) await sleep(100);
     const s = g.getState();
     s.pickVertex(s.highlights().vertices[0]);
     await new Promise((r) => setTimeout(r, 1500));
@@ -42,6 +50,31 @@ try {
   console.log("plays before the first gesture:", JSON.stringify(silent));
   if (silent.length) throw new Error(`sound played before a gesture: ${JSON.stringify(silent)}`);
   await page.getByRole("button", { name: "Play versus the isle" }).click();
+
+  // #232: roll off for first place. The human rolls on its turn; the bots roll on the app's timer.
+  await page.evaluate(() => {
+    window.__banners = [];
+    window.__emberisle.subscribe((s) => s.banner && window.__banners.push(s.banner));
+  });
+  const rollOff = await page.evaluate(async () => {
+    const g = window.__emberisle;
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+    for (let i = 0; i < 400; i++) {
+      const s = g.getState();
+      if (s.state.phase !== "rollOff") return { phase: s.state.phase, order: s.state.players.map((p) => p.id), rolls: s.state.rollOff.rolls };
+      if (s.state.current === s.localId) s.dispatch({ type: "roll" });
+      await sleep(100);
+    }
+    return { phase: "stuck in rollOff" };
+  });
+  const tiles = page.locator('[data-testid="rolloff-die"]:visible');
+  await page.waitForFunction(() => [...document.querySelectorAll('[data-testid="rolloff-die"]')].filter((e) => e.checkVisibility()).length === 4);
+  const faces = await tiles.allTextContents();
+  const placesFirst = await page.evaluate(() => window.__banners.find((b) => b.includes("places first, then")) ?? null);
+  console.log(`roll-off: ${rollOff.phase}, order ${rollOff.order?.join(" ")}, ${faces.length} die tiles [${faces.join(" ")}], banner ${JSON.stringify(placesFirst)}`);
+  if (rollOff.phase !== "setupSettle" || faces.length !== 4 || faces.some((f) => !/^[1-6]$/.test(f)) || !placesFirst) {
+    throw new Error(`roll-off: ${JSON.stringify({ rollOff, faces, placesFirst })}`);
+  }
 
   // Place the human's outposts and paths through the same store the canvas clicks use.
   const phase = await page.evaluate(async () => {

@@ -4,6 +4,7 @@ export type Terrain = Resource | "waste";
 export type HarborKind = Resource | "any";
 export type DevKind = "knight" | "road" | "plenty" | "monopoly" | "vp";
 export type Phase =
+  | "rollOff"
   | "setupSettle"
   | "setupRoad"
   | "roll"
@@ -105,6 +106,8 @@ export interface GameState {
   phase: Phase;
   turn: number;
   dice: [number, number] | null;
+  // Pre-setup roll-off (docs/design/first-player.md): the die on each seat, and who still rolls this round.
+  rollOff: { rolls: Record<string, number>; pending: string[] } | null;
   setupIndex: number;
   lastSetupVertex: string | null;
   longestRoad: string | null;
