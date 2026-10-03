@@ -151,8 +151,28 @@ try {
   check(true, "game: every tab shows the minimized dock, and the lobby lines did not count as unread");
   for (const t of tabs) check((await t.page.getByTestId("chat-unread").count()) === 0, `game: ${t.name} has no unread badge`);
 
+  // #232: roll off for first place; whichever seat is up rolls, until setup starts.
+  await until(async () => {
+    for (const t of [...tabs, phone]) {
+      const phase = await t.page.evaluate(() => {
+        const s = window.__emberisle.getState();
+        if (s.state?.phase === "rollOff" && s.state.current === s.localId && s.legal?.actions.includes("roll")) s.dispatch({ type: "roll" });
+        return s.state?.phase;
+      });
+      if (phase === "setupSettle") return true;
+    }
+    return null;
+  }, "the roll-off ends");
+
   // 5. Minimized dock covers no target. A line from another seat is showing under the button, and it must not catch clicks either.
+  // If the phone won the roll-off, it places its first outpost and path so a desktop tab is up.
   const cur = await until(async () => {
+    await phone.page.evaluate(() => {
+      const s = window.__emberisle.getState();
+      if (s.state?.current !== s.localId) return;
+      if (s.legal?.outpost?.length) s.pickVertex(s.legal.outpost[0]);
+      else if (s.state.phase === "setupRoad" && s.legal?.path?.length) s.pickEdge(s.legal.path[0]);
+    });
     for (const t of tabs) {
       const own = await t.page.evaluate(() => {
         const s = window.__emberisle.getState();
@@ -208,7 +228,12 @@ try {
   await card.click();
   await menu.waitFor();
   check((await card.getAttribute("aria-expanded")) === "true", "menu: Tide's card is a button with aria-expanded");
-  const cardText = await a.page.getByTestId(`rail-${bId}`).textContent();
+  // The roll-off die tile (#232) sits next to the vp in setup; read the card without it so its face does not run into a number.
+  const cardText = await a.page.getByTestId(`rail-${bId}`).evaluate((el) => {
+    const copy = el.cloneNode(true);
+    for (const d of copy.querySelectorAll('[data-testid="rolloff-die"]')) d.remove();
+    return copy.textContent;
+  });
   const fromCard = [
     Number(cardText.match(/(\d+) goods/)[1]),
     Number(cardText.match(/(\d+) fortunes/)[1]),
@@ -400,7 +425,12 @@ try {
   watch("Solo", solo);
   await solo.goto(`http://127.0.0.1:${PORT}/`);
   await solo.getByRole("button", { name: "Play versus the isle" }).click();
-  await solo.waitForFunction(() => window.__emberisle.getState().state?.phase === "setupSettle");
+  // The human rolls off (#232) when it is up; the bots roll on the app's timer.
+  await solo.waitForFunction(() => {
+    const s = window.__emberisle.getState();
+    if (s.state?.phase === "rollOff" && s.state.current === s.localId) s.dispatch({ type: "roll" });
+    return s.state?.phase === "setupSettle";
+  }, null, { polling: 100 });
   await solo.getByTestId("rail-p1").getByRole("button").click();
   await solo.getByTestId("player-menu").waitFor();
   check(
