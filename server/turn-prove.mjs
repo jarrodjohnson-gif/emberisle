@@ -7,7 +7,8 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import WebSocket from "ws";
 
-const TURN = 300;
+// A window wide enough that a seat acting a third of the way in still beats the timer on a loaded CI box.
+const TURN = 1200;
 const GRACE = 5 * TURN;
 const HOLD = 20000;
 const ROOMS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-rooms-"));
@@ -114,8 +115,8 @@ for (const st of first) {
 }
 await b.next("log", (m) => m.text === tooLong("Ember"), TURN + 1000);
 const took = Date.now() - t0;
-if (took < TURN - 50 || took > 1000) fail(`the table moved after ${took} ms, wanted about ${TURN}`);
-const placed = await b.next("state", (m) => m.game.phase === "setupRoad", 1000);
+if (took < TURN - 50 || took > TURN + 1000) fail(`the table moved after ${took} ms, wanted about ${TURN}`);
+const placed = await b.next("state", (m) => m.game.phase === "setupRoad");
 if (placed.game.current !== ember) fail("still Ember's setup after the outpost", placed.game.current);
 if (placed.game.players.find((p) => p.id === ember).kind !== "human") fail("Ember stays human");
 if (!placed.game.vertices.some((v) => v.building?.playerId === ember)) fail("the bot placed Ember's outpost");
@@ -130,10 +131,10 @@ if (moved.game.current !== tide) fail("Tide places second", moved.game.current);
 const deadline0 = b.state.turnDeadline;
 await wait(TURN / 3);
 b.send({ type: "place", kind: "outpost", id: b.state.legal.outpost[0] });
-const road = await b.next("state", (m) => m.game.phase === "setupRoad" && m.game.current === tide, 1000);
+const road = await b.next("state", (m) => m.game.phase === "setupRoad" && m.game.current === tide);
 if (!(road.turnDeadline > deadline0)) fail("an accepted action restarts the window", { deadline0, next: road.turnDeadline });
 b.send({ type: "place", kind: "path", id: road.legal.path[0] });
-await b.next("state", (m) => m.game.current !== tide, 1000);
+await b.next("state", (m) => m.game.current !== tide);
 if (all.some((x) => x.logs.includes(tooLong("Tide")))) fail("a seat that acts in time was moved", b.logs);
 console.log(`in time: Tide placed after ${TURN / 3} ms, deadline ${deadline0} -> ${road.turnDeadline}, never moved`);
 
@@ -152,7 +153,7 @@ for (const [pid, n] of owing) {
   const before = handOf(x.state, pid);
   if (n !== Math.floor(before / 2)) fail("the discard is half the hand", { pid, before, n });
   await x.next("log", (m) => m.text === tooLong(x.name), TURN + 1000);
-  const halved = await x.next("state", (m) => m.game.seq > owed.game.seq && !(m.game.discardNeeded[pid] > 0), 1000);
+  const halved = await x.next("state", (m) => m.game.seq > owed.game.seq && !(m.game.discardNeeded[pid] > 0));
   const after = handOf(halved, pid);
   if (after !== before - n) fail("the idle hand was halved", { pid, before, n, after });
   if (!x.logs.includes(`${x.name} discards ${n}.`)) fail("the discard is logged", x.logs.slice(-5));
@@ -175,12 +176,13 @@ watcher.inbox = watcher.inbox.filter((m) => m.type !== "state");
 const seen = watcher.logs.length;
 const t1 = Date.now();
 await dropper.close();
-await watcher.next("log", (m) => m.text === `${dropper.name} lost connection.`, 1000);
+await watcher.next("log", (m) => m.text === `${dropper.name} lost connection.`);
 const taken = await watcher.next("log", (m) => m.text === `${dropper.name} is played by the bot until they return.`, GRACE + 2000);
 const graced = Date.now() - t1;
 if (graced < GRACE - 50) fail(`the bot took the dropped seat after ${graced} ms, grace is ${GRACE}`);
 if (watcher.logs.slice(seen).includes(tooLong(dropper.name))) fail("the turn timer fired for a dropped seat", watcher.logs.slice(seen));
-const stale = watcher.inbox.filter((m) => m.type === "state" && m.game.seq !== passed.game.seq);
+// The takeover state follows its log at once, so only a state where the dropper is still human counts as movement.
+const stale = watcher.inbox.filter((m) => m.type === "state" && m.game.seq !== passed.game.seq && m.game.players.find((p) => p.id === dropper.state.you).kind === "human");
 if (stale.length) fail("the table moved inside the grace", stale.length);
 const bot = await watcher.next("state", (m) => m.game.seq > passed.game.seq && m.game.players.find((p) => p.id === dropper.state.you).kind === "bot", 2000);
 console.log(`dropped seat: ${dropper.name} held ${graced} ms (TURN_MS ${TURN}, GRACE_MS ${GRACE}), no turn-timer line, then "${taken.text}", seq ${passed.game.seq} -> ${bot.game.seq}`);

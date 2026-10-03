@@ -339,9 +339,11 @@ function turnOut(room, seat) {
   seat.turnTimer = null;
   seat.turnDeadline = null;
   if (!seat.ws || !waitedOn(room.game, seat.pid)) return;
+  const intent = room.game.phase === "main" ? { type: "pass" } : toIntent(chooseBotAction(room.game, seat.pid));
+  // A phase the bot has no move for yet: wait another window rather than send a move play() would refuse.
+  if (!intent) return armTurns(room);
   say(room, `${seat.name} took too long; the table moved on.`);
-  const action = room.game.phase === "main" ? null : chooseBotAction(room.game, seat.pid);
-  play(seat.ws, room, toIntent(action) ?? { type: "pass" });
+  play(seat.ws, room, intent);
 }
 
 function pushState(room) {
