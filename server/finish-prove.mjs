@@ -157,11 +157,13 @@ function checkReveal(all, n) {
     const now = final.players.find((q) => q.id === p.you);
     if (p.you === winner) {
       if (now.hidden.vp < mine.hidden.vp) fail(`${where}: ${p.you}'s VP cards went down on the winning move`, { before: mine.hidden, after: now.hidden });
-      if (totalVP(p.prev, p.you) >= 10 && p.prev.current === p.you) fail(`${where}: ${p.you} had ${totalVP(p.prev, p.you)} points before the winning move`);
-    } else {
-      if (JSON.stringify(now.hidden) !== JSON.stringify(mine.hidden)) fail(`${where}: ${p.you}'s hidden cards changed on another seat's move`, { before: mine.hidden, after: now.hidden });
-      if (totalVP(p.prev, p.you) >= 10) fail(`${where}: ${p.you} sat at ${totalVP(p.prev, p.you)} points without winning`);
+    } else if (JSON.stringify(now.hidden) !== JSON.stringify(mine.hidden)) {
+      fail(`${where}: ${p.you}'s hidden cards changed on another seat's move`, { before: mine.hidden, after: now.hidden });
     }
+    // The rules check for a win after every point-changing move of the current player and as each turn starts, so
+    // whoever held the turn before the last push was below 10. A seat that is not current may sit at 10 (a longest
+    // path handed over by a cut) until its own turn starts, so only the current seat is checked.
+    if (p.prev.current === p.you && totalVP(p.prev, p.you) >= 10) fail(`${where}: ${p.you} held the turn at ${totalVP(p.prev, p.you)} points without winning`);
     if (p.legal.actions.length || p.legal.discard) fail(`${where}: ${p.you} still has legal moves after the win`, p.legal);
     const last = p.logs[p.logs.length - 1];
     if (!/claims the isle with \d+ points\.$/.test(last ?? "")) fail(`${where}: ${p.you}'s last log line is not the win`, { tail: p.logs.slice(-6), gameLog: final.log.slice(-4), phase: final.phase, seq: final.seq });
