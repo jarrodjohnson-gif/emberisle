@@ -315,10 +315,12 @@ WebSocket JSON. The client sends intents. The server answers with `state` or `er
 | `npm run tokens-prove` | In the browser, number tokens are rimmed and legible, and nothing is placed or wanders within 0.39 of a hex centre (docs/design/tokens.md) |
 | `npm run pieces-prove` | Pieces read in every seat colour: the five checks in docs/design/pieces.md, no browser |
 | `npm run touch-place-prove` | The phone camera fit and touch picking, checked on the pure math in `src/lib/scene/mobile-fit.ts`, no browser |
+| `npm run dpr-prove` | In the browser, the renderer's pixel ratio is 1.5 on a coarse pointer (a 3x phone) and 2 on a fine one (a 3x desktop), and a resize keeps that cap |
+| `npm run idle-prove` | In the browser with the draw stubbed out: the title keeps its 30 fps gate, an idle board renders at most 30 times in 2 s, a drag and a state push each bring back full rate, reduced motion idles the same way; zero console errors |
 | `npm run size-prove` | After a build, the gzip size of each `dist/assets/*.js` chunk (`index`, `IslandCanvas`) is inside its budget (today plus 10%), and no chunk is unbudgeted; the budget is in `scripts/size-prove.mjs` |
 | `npm run orphan-check` | Not in CI. Starts two proofs, kills each mid-run, and counts the host processes left behind. Expect 0. |
 
-`npm test` runs the sixteen `server/*-prove.mjs` scripts: `prove`, `trade-prove`, `sound-prove`, `table-prove`, `trade-table-prove`, `harden-prove`, `net-prove`, `rules-prove`, `bots-prove`, `ai-prove`, `serve-prove`, `chat-prove`, `rejoin-prove`, `reconnect-prove`, `persist-prove`, and `finish-prove`. CI also runs `size-prove` (after the build), `client-prove`, `hotseat-prove`, `tabs-prove`, `trade-prove`, `served-prove`, `night-prove`, the browser `chat-prove`, `wayfarer-prove`, `tokens-prove`, `pieces-prove`, and `touch-place-prove`.
+`npm test` runs the sixteen `server/*-prove.mjs` scripts: `prove`, `trade-prove`, `sound-prove`, `table-prove`, `trade-table-prove`, `harden-prove`, `net-prove`, `rules-prove`, `bots-prove`, `ai-prove`, `serve-prove`, `chat-prove`, `rejoin-prove`, `reconnect-prove`, `persist-prove`, and `finish-prove`. CI also runs `size-prove` (after the build), `client-prove`, `dpr-prove`, `hotseat-prove`, `tabs-prove`, `trade-prove`, `served-prove`, `night-prove`, the browser `chat-prove`, `wayfarer-prove`, `tokens-prove`, `pieces-prove`, `touch-place-prove`, and `idle-prove`.
 
 ---
 
