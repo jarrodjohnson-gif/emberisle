@@ -247,14 +247,15 @@ try {
   console.log("rail cards:", JSON.stringify(rail));
 
   // #177: the whose-turn banner is on desktop too, and the phone strip is not.
-  // The app runs a bot 700 ms after each seq change. Let any timer left from the last move fire first,
-  // so it can't roll for the bot before the banner is read; the flip below keeps seq, so none is set again.
-  await page.waitForTimeout(1000);
+  // The app runs a bot 700 ms after each seq change, and under software GL that timer can fire seconds late.
+  // So the flipped state marks the bot's seat human for the check: runBots skips it, and the banner reads only name and phase.
   const turn = await page.evaluate(() => {
     const g = window.__emberisle;
+    window.__beforeBanner = g.getState().state;
     const st = structuredClone(g.getState().state);
     const bot = st.players.find((p) => p.id !== g.getState().localId);
     const mineText = document.querySelector('[data-testid="turn-banner"]')?.textContent ?? null;
+    bot.kind = "human";
     st.current = bot.id;
     st.phase = "roll";
     g.setState({ state: st });
@@ -265,6 +266,7 @@ try {
     .catch(() => {});
   turn.theirs = await page.getByTestId("turn-banner").textContent();
   turn.strip = await page.getByTestId("seat-strip").count();
+  await page.evaluate(() => window.__emberisle.setState({ state: window.__beforeBanner }));
   console.log("turn banner:", JSON.stringify(turn));
 
   if (turn.theirs !== `${turn.bot}'s turn — Roll the dice to gather from the land.` || !/^Your turn — (Roll the dice|Build, trade|move the wayfarer|discard \d+)/.test(turn.mineText ?? "") || turn.strip) {
