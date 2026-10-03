@@ -131,9 +131,9 @@ for (const [x, name] of [[n[1], "Ember"], [n[2], "Ember"], [n[3], "\x07\x07"]]) 
   x.send({ type: "hello", code: ncode, name });
   await x.next("welcome");
 }
-await new Promise((r) => setTimeout(r, 100));
 let lastSeats;
-while (n[3].inbox.some((m) => m.type === "seats")) lastSeats = await n[3].next("seats");
+do lastSeats = await n[3].next("seats");
+while (lastSeats.seats.length < 4);
 const names = lastSeats.seats.map((s) => s.name).join(",");
 if (names !== "Ember,Ember 2,Ember 3,Tide") fail("seat names", names);
 if (!lastSeats.seats.every((s) => PALETTE.includes(s.color))) fail("hostile colour accepted", lastSeats.seats.map((s) => s.color));
@@ -148,9 +148,9 @@ m[0].send({ type: "hello", name: "B".repeat(15) + " x" });
 const { code: mcode } = await m[0].next("welcome");
 m[1].send({ type: "hello", code: mcode, name: "\u200b\u200b" });
 await m[1].next("welcome");
-await new Promise((r) => setTimeout(r, 100));
 let mSeats;
-while (m[1].inbox.some((x) => x.type === "seats")) mSeats = await m[1].next("seats");
+do mSeats = await m[1].next("seats");
+while (mSeats.seats.length < 2);
 const mNames = mSeats.seats.map((s) => s.name).join(",");
 if (mNames !== "B".repeat(15) + ",Tide") fail("edge seat names", mNames);
 for (const x of m) x.ws.close();
@@ -178,7 +178,7 @@ console.log("peeks: 4 bad shapes silent, 1 valid answered, 6 peeks gave 5 replie
 
 // 3. A player who leaves mid-game is played by the bot after the grace, so the table keeps going.
 for (const x of [a, b, c]) x.send({ type: "ready", value: true });
-await new Promise((r) => setTimeout(r, 100));
+while (!(await a.next("seats")).seats.every((s) => s.ready));
 a.send({ type: "start" });
 await Promise.all([a.next("state"), b.next("state"), c.next("state")]);
 const first = a.state.game.current;

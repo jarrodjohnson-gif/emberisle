@@ -12,6 +12,7 @@
     "client-prove": "node scripts/client-prove.mjs",
     "hotseat-prove": "node scripts/hotseat-prove.mjs",
     "tabs-prove": "node scripts/tabs-prove.mjs",
+    "wayfarer-prove": "node scripts/wayfarer-prove.mjs",
     "trade-prove": "node scripts/trade-prove.mjs",
     "tokens-prove": "node scripts/tokens-prove.mjs",
     "orphan-check": "node scripts/orphan-check.mjs",

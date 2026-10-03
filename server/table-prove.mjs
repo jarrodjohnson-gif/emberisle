@@ -109,7 +109,7 @@ console.log("seat list on Tide:", seats.seats.map((s) => s.name).join(", "), "co
 ember.send({ type: "start" });
 if ((await ember.next("error")).message !== "Not everyone is ready.") fail("start before ready");
 for (const c of [ember, tide, pine]) c.send({ type: "ready", value: true });
-await new Promise((r) => setTimeout(r, 100));
+while (!(await ember.next("seats")).seats.every((s) => s.ready));
 ember.send({ type: "start" });
 
 const all = [ember, tide, pine];
@@ -298,7 +298,7 @@ handsAreCounts("after 20 rolls");
   const line = t.inbox.find((m) => m.type === "log" && m.text === "Tide is now the host.");
   if (!line) fail("no 'Tide is now the host.' line", t.inbox);
   for (const c of [t, p, o]) c.send({ type: "ready", value: true });
-  await new Promise((r) => setTimeout(r, 100));
+  while (!(await t.next("seats")).seats.every((s) => s.ready));
   t.send({ type: "start" });
   await t.next("state");
   console.log("host left the lobby: Tide is host, saw the log line, and started the game");
