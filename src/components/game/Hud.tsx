@@ -374,9 +374,10 @@ const FLASH_MS = 1200;
 // hand is read: online, the other players arrive as a `goods` count with no `resources`. A change of
 // seat (hotseat) resets the baseline instead of flashing.
 function useResourceFlashes(me: PlayerState) {
-  const [flashes, setFlashes] = useState<Partial<Record<Resource, { delta: number; at: number }>>>({});
+  type Flash = { delta: number; at: number };
+  const [flashes, setFlashes] = useState<Partial<Record<Resource, Flash>>>({});
   const prev = useRef<{ id: string; resources: Record<Resource, number> } | null>(null);
-  const timers = useRef<Partial<Record<Resource, ReturnType<typeof setTimeout>>>>({});
+  const timers = useRef<Partial<Record<Resource, { flash: Flash; timer: ReturnType<typeof setTimeout> }>>>({});
   const counts = RESOURCES.map((r) => me.resources[r]).join(",");
   useEffect(() => {
     const was = prev.current;
@@ -384,21 +385,33 @@ function useResourceFlashes(me: PlayerState) {
     if (!was || was.id !== me.id) return;
     for (const r of RESOURCES) {
       const delta = me.resources[r] - was.resources[r];
-      if (!delta) continue;
-      setFlashes((f) => ({ ...f, [r]: { delta, at: Date.now() } }));
-      clearTimeout(timers.current[r]);
-      timers.current[r] = setTimeout(
-        () =>
+      if (delta) setFlashes((f) => ({ ...f, [r]: { delta, at: Date.now() } }));
+    }
+  }, [me.id, counts]);
+  // The label's clock starts once it is on the page. The render that mounts it is a separate task, which
+  // on a slow machine can wait behind an island frame longer than FLASH_MS; a timer started with the count
+  // change would then be due before the label existed (#248).
+  useEffect(() => {
+    for (const r of RESOURCES) {
+      const flash = flashes[r];
+      const cur = timers.current[r];
+      if (!flash || cur?.flash === flash) continue;
+      if (cur) clearTimeout(cur.timer);
+      timers.current[r] = {
+        flash,
+        timer: setTimeout(() => {
+          delete timers.current[r];
           setFlashes((f) => {
+            if (f[r] !== flash) return f;
             const next = { ...f };
             delete next[r];
             return next;
-          }),
-        FLASH_MS,
-      );
+          });
+        }, FLASH_MS),
+      };
     }
-  }, [me.id, counts]);
-  useEffect(() => () => Object.values(timers.current).forEach(clearTimeout), []);
+  }, [flashes]);
+  useEffect(() => () => Object.values(timers.current).forEach((t) => clearTimeout(t.timer)), []);
   return flashes;
 }
 
