@@ -14,10 +14,11 @@ export function cleanText(raw) {
   return Array.from(cleaned).slice(0, 200).join("");
 }
 
-// A shared 5-per-5s bucket for chat and reactions, refilled at 1 token/second.
-export function allow(bucket, now) {
+// A token bucket. By default the shared 5-per-5s one for chat and reactions, refilled at 1 token/second;
+// the host passes a larger cap and rate for a seat's non-chat messages.
+export function allow(bucket, now, cap = 5, rate = 1) {
   const elapsed = Math.max(0, now - bucket.at);
-  bucket.tokens = Math.min(5, bucket.tokens + elapsed / 1000);
+  bucket.tokens = Math.min(cap, bucket.tokens + (elapsed / 1000) * rate);
   bucket.at = now;
   if (bucket.tokens < 1) return false;
   bucket.tokens -= 1;

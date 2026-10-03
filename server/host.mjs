@@ -26,6 +26,11 @@ const rooms = new Map();
 const avatars = new Map(); // avatarId -> { body, at }
 const AVATAR_BYTES = 256 * 1024;
 const AVATAR_MAX = 64;
+const ROOM_MAX = Number(process.env.ROOM_MAX ?? 64);
+// A seat's non-chat messages (ready, start, intents, trades): a burst of 20, refilled 4 a second. A person or a bot
+// client stays far under this; a flood does not. Chat keeps its own 5-per-5s bucket.
+const ACT_CAP = 20;
+const ACT_RATE = 4;
 const AVATAR_TTL = 60 * 60 * 1000; // an upload nobody sat down with is dropped after an hour
 // A dropped player keeps the seat: the bot takes over after the grace, the seat is let go after the hold
 // (docs/research/rejoin.md). The proofs shorten both through env.
@@ -151,7 +156,7 @@ function load() {
       for (const s of saved.seats) {
         if (typeof s?.id !== "string" || typeof s.secret !== "string") throw new Error(`bad seat ${JSON.stringify(s)}`);
         // Avatars live in memory only, so a restored seat has none.
-        room.seats.push({ ...s, avatarId: null, ws: null, bucket: { tokens: 5, at: Date.now() } });
+        room.seats.push({ ...s, avatarId: null, ws: null, bucket: { tokens: 5, at: Date.now() }, act: { tokens: ACT_CAP, at: Date.now() } });
       }
     } catch (err) {
       console.error("unreadable room file:", name, err.message);
@@ -388,6 +393,7 @@ function seatColor(room, raw) {
 }
 
 function openTable(ws, msg) {
+  if (rooms.size >= ROOM_MAX) return send(ws, { type: "error", message: "The host is full." });
   const room = { code: code(), seats: [], game: null, host: null, next: 0, avatarIds: [], offer: null, offerTimer: null, chat: [], chatSeq: 0 };
   rooms.set(room.code, room);
   const seat = {
@@ -398,6 +404,7 @@ function openTable(ws, msg) {
     ready: false,
     ws,
     bucket: { tokens: 5, at: Date.now() },
+    act: { tokens: ACT_CAP, at: Date.now() },
     secret: randomBytes(16).toString("hex"),
   };
   if (seat.avatarId) room.avatarIds.push(seat.avatarId);
@@ -425,6 +432,7 @@ function sitDown(ws, msg) {
     ready: false,
     ws,
     bucket: { tokens: 5, at: Date.now() },
+    act: { tokens: ACT_CAP, at: Date.now() },
     secret: randomBytes(16).toString("hex"),
   };
   if (seat.avatarId) room.avatarIds.push(seat.avatarId);
@@ -648,12 +656,15 @@ function handle(ws, raw) {
     return send(ws, { type: "error", message: "not ready" });
   }
   const room = ws.room;
+  if (msg.type === "chat" || msg.type === "react") return talk(ws, room, msg);
+  if (!allow(ws.seat.act, Date.now(), ACT_CAP, ACT_RATE)) return send(ws, { type: "error", message: "Slow down." });
   if (msg.type === "ready") {
-    ws.seat.ready = Boolean(msg.value);
+    const value = Boolean(msg.value);
+    if (ws.seat.ready === value) return;
+    ws.seat.ready = value;
     return publish(room);
   }
   if (msg.type === "start") return room.game ? send(ws, { type: "error", message: "Game already started." }) : startGame(ws, room);
-  if (msg.type === "chat" || msg.type === "react") return talk(ws, room, msg);
   if (!room.game) return send(ws, { type: "error", message: "not ready" });
   if (msg.type === "tradeAsk") return ask(ws, room, msg);
   if (msg.type === "tradeAnswer") return answer(ws, room, msg);

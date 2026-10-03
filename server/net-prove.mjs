@@ -127,6 +127,8 @@ const cardsOf = (g, id) => {
 };
 async function act(p, action) {
   const seq = p.state.seq;
+  // The host allows a seat a burst of 20 non-chat messages, then 4 a second (#281); pace the proof like a person.
+  await new Promise((r) => setTimeout(r, 70));
   p.t.act(action);
   await until(() => all.every((x) => x.state.seq > seq) || p.errors.length, `${action.type} by ${p.you}`);
   if (p.errors.length) fail(`${action.type} refused`, p.errors);
