@@ -1,4 +1,4 @@
-// #87: build the client, start the rules host, and print the join line.
+// #87: build the client, start the rules host, and print the join line. #321: restart the host when it dies.
 // The tunnel is Jarrod's step. This process does not start cloudflared.
 import { spawn } from "node:child_process";
 import os from "node:os";
@@ -34,6 +34,38 @@ export function joinLines(port, lan) {
   ].join("\n");
 }
 
+// #321: keep the host up for the night. An exit nobody asked for (no stop() call, a non-zero code or a
+// signal) spawns it again at once, without rebuilding; the saved rooms reload and the clients redial.
+// More than maxRestarts such exits inside windowMs is a real bug, so give up with exit code 1.
+export function supervise(spawnHost, { maxRestarts = 5, windowMs = 60_000, log = console.log, now = Date.now } = {}) {
+  let host;
+  let stopping = false;
+  const exits = [];
+  const done = new Promise((resolve) => {
+    const start = () => {
+      host = spawnHost();
+      host.once("exit", (code, signal) => {
+        if (stopping || (code === 0 && !signal)) return resolve(code ?? 0);
+        const t = now();
+        while (exits.length && t - exits[0] > windowMs) exits.shift();
+        exits.push(t);
+        if (exits.length > maxRestarts) {
+          log(`host keeps dying (${exits.length} exits in ${Math.round(windowMs / 1000)} s), giving up`);
+          return resolve(1);
+        }
+        log(`host exited (${signal ? `signal ${signal}` : `code ${code}`}), restarting (${exits.length}/${maxRestarts})…`);
+        start();
+      });
+    };
+    start();
+  });
+  const stop = () => {
+    stopping = true;
+    host.kill("SIGTERM");
+  };
+  return { done, stop };
+}
+
 const isMain = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 
 if (isMain && process.argv.includes("--print")) {
@@ -50,18 +82,22 @@ if (isMain && process.argv.includes("--print")) {
     process.exit(1);
   }
 
-  const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
-    cwd: fileURLToPath(new URL("../server/", import.meta.url)),
-    env: { ...process.env, PORT: String(port) },
-    stdio: ["inherit", "pipe", "inherit"],
-  });
-  const stop = () => host.kill("SIGTERM");
-  process.on("SIGINT", stop);
-  process.on("SIGTERM", stop);
-  host.stdout.on("data", (chunk) => {
-    process.stdout.write(chunk);
-    const heard = String(chunk).match(/listening (\d+)/);
-    if (heard) console.log(`\n${joinLines(heard[1], lanAddress())}\n`);
-  });
-  host.on("exit", (code) => process.exit(code ?? 0));
+  // Same env (PORT, ROOMS_DIR) on every spawn, so a restarted host reloads the same saved rooms.
+  const spawnHost = () => {
+    const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
+      cwd: fileURLToPath(new URL("../server/", import.meta.url)),
+      env: { ...process.env, PORT: String(port) },
+      stdio: ["inherit", "pipe", "inherit"],
+    });
+    host.stdout.on("data", (chunk) => {
+      process.stdout.write(chunk);
+      const heard = String(chunk).match(/listening (\d+)/);
+      if (heard) console.log(`\n${joinLines(heard[1], lanAddress())}\n`);
+    });
+    return host;
+  };
+  const supervisor = supervise(spawnHost);
+  process.on("SIGINT", supervisor.stop);
+  process.on("SIGTERM", supervisor.stop);
+  process.exit(await supervisor.done);
 }

@@ -137,7 +137,7 @@ npm run hotseat-prove    # headless Chromium: a 7 in hotseat shows the discard b
 npm run tabs-prove       # 3 headless tabs host, join, play setup + 5 rolls on the rules host, boards match
 npm run trade-prove      # 3 headless tabs: one asks the table through the trade panel, one says No, one says Yes, goods move; a second ask times out
 npm run served-prove     # same 3 tabs, but the page comes from the rules host itself with no ?host= (after build)
-npm run night-prove      # npm run night from a clean start: builds, prints the join lines, serves the page, answers a socket, SIGINT leaves no host
+npm run night-prove      # npm run night from a clean start: builds, prints the join lines, serves the page, answers a socket, survives kill -9 on the host, SIGINT leaves no host
 npm run chat-prove       # 3 headless tabs chat in the lobby and the game: presets, reactions, unread badge, minimized dock covers no target
 ```
 
@@ -159,7 +159,7 @@ That builds the client, starts the host, and prints the join line:
 
 Host env knobs: `PORT` (default 8787), `ROOMS_DIR` (where tables are saved, default `server/rooms/`), `GRACE_MS` (how long the table waits before a bot plays a dropped seat, default 90 s), `HOLD_MS` (how long a dropped seat is held in a game, default 10 min) and `LOBBY_HOLD_MS` (how long a dropped seat is held in the lobby, default 90 s).
 
-Ctrl-C in the night terminal stops the host. Install cloudflared once if it is not already there (`winget install --id Cloudflare.cloudflared` on Windows). A quick tunnel needs no account. If it refuses to start because `~/.cloudflared/config.yml` exists, move that file aside for the night, or use the named tunnel in the build bible.
+If the host process dies, night restarts it and the saved tables come back; players reconnect on their own. (More than five deaths in a minute and night gives up with `host keeps dying`, so a real bug still shows.) Ctrl-C in the night terminal stops the host. Install cloudflared once if it is not already there (`winget install --id Cloudflare.cloudflared` on Windows). A quick tunnel needs no account. If it refuses to start because `~/.cloudflared/config.yml` exists, move that file aside for the night, or use the named tunnel in the build bible.
 
 Host limits to know about: `ROOM_MAX` (default 64) counts every open lobby room, and each open socket can hold one, so a client that opens 64 sockets (about 13 s at the pre-seat rate) can fill the host. Per-IP limits are out of scope because the tunnel hides addresses. A finished game whose players stay connected keeps its slot. The per-seat non-chat limit (`ACT_CAP` 20, `ACT_RATE` 4 a second) is read from env like `HOLD_MS` and `GRACE_MS`; the table and net proofs raise it, `harden-prove` keeps the defaults.
 
@@ -308,7 +308,7 @@ WebSocket JSON. The client sends intents. The server answers with `state` or `er
 | `npm run tabs-prove` | 3 browser tabs host, join, ready, start, play setup and 5 rolls through the rules host; dice and board match on every tab; then plays on until a gain has flashed green +N and a loss red -N on the hand, each gone within 2 s; a taken color dims before Join; zero console errors |
 | `npm run trade-prove` | 3 browser tabs on the rules host: the Trade panel asks the table, the toast's No reaches every tab and leaves the offer open, Yes moves the goods (own hands exact, others' `goods` counts), a second ask runs out its 20 s with nothing moved and every toast closed, zero console errors |
 | `npm run served-prove` | The same 3 tabs, but the host serves the built `dist/` and the tabs open it with no `?host=`, so they find the socket at the page's own address (the tunnel case) |
-| `npm run night-prove` | Runs `npm run night` on port 8797 with a temp rooms folder: it builds, prints the three join lines within 120 s, serves `<title>Emberisle</title>`, answers a `peek` for an unknown table with an empty seat list, and on SIGINT leaves no host behind within 5 s. No tunnel is started. |
+| `npm run night-prove` | Runs `npm run night` on port 8797 with a temp rooms folder: it builds, prints the three join lines within 120 s, serves `<title>Emberisle</title>`, answers a `peek` for an unknown table with an empty seat list, comes back under night with the join lines reprinted within 10 s of a `kill -9` on the host (same port, `restarting (1/5)` logged, page and `peek` answer again), and on SIGINT leaves no host behind within 5 s. No tunnel is started. Also checks `supervise()` with fake hosts: six fast deaths give five restarts then exit 1; a stop is not a restart. |
 | `npm run wayfarer-prove` | In the browser, the wayfarer stands on the token and hops rather than slides, and the target hexes wear a band (docs/design/wayfarer.md); zero console errors |
 | `npm run tokens-prove` | In the browser, number tokens are rimmed and legible, and nothing is placed or wanders within 0.39 of a hex centre (docs/design/tokens.md) |
 | `npm run pieces-prove` | Pieces read in every seat colour: the five checks in docs/design/pieces.md, no browser |
