@@ -343,7 +343,7 @@ function setupOrderNote(state: GameState) {
 }
 
 // Client input is untrusted: a card bag is only known resources with whole, non-negative counts.
-function validBag(bag: unknown): bag is Partial<Record<Resource, number>> {
+export function validBag(bag: unknown): bag is Partial<Record<Resource, number>> {
   if (!bag || typeof bag !== "object" || Array.isArray(bag)) return false;
   return Object.entries(bag).every(
     ([k, n]) => (RESOURCES as readonly string[]).includes(k) && Number.isInteger(n) && (n as number) >= 0,
