@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { ChatBox, ReactionFloats } from "@/components/game/Chat";
 import { Hud, HowTo } from "@/components/game/Hud";
 import { useGame } from "@/lib/game/store";
+import { useTurnTitle } from "@/lib/turn-title";
 import { PLAYER_COLORS, PLAYER_NAMES } from "@/lib/game/types";
 import { cn } from "@/lib/utils";
 import { useViewport } from "@/lib/viewport";
@@ -24,6 +25,7 @@ export function EmberisleApp() {
   const screen = useGame((s) => s.screen);
   const runBots = useGame((s) => s.runBots);
   const seq = useGame((s) => s.state?.seq);
+  useTurnTitle();
 
   useEffect(() => {
     (window as unknown as { __emberisle: typeof useGame }).__emberisle = useGame;
@@ -104,25 +106,33 @@ function Title() {
           <Button size="lg" variant="accent" onClick={hostTable}>
             Host a table
           </Button>
-          <div className="flex gap-2">
+          <form
+            aria-label="Join code"
+            className="flex gap-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (join.length === 4) joinTable(join);
+            }}
+          >
             <input
               value={join}
               onChange={(e) => setJoin(e.target.value.toUpperCase())}
               placeholder="Join code"
+              aria-label="Join code"
+              autoCapitalize="characters"
+              autoComplete="off"
               maxLength={4}
               className="h-11 flex-1 rounded-[12px] border border-border bg-surface px-3 tracking-[0.3em]"
             />
-            <Button
-              size="lg"
-              variant="sea"
-              onClick={() => {
-                if (join.length === 4) joinTable(join);
-              }}
-            >
+            <Button size="lg" variant="sea" type="submit">
               Join
             </Button>
-          </div>
-          {error ? <p className="text-sm text-accent">{error}</p> : null}
+          </form>
+          {error ? (
+            <p role="alert" className="text-sm text-accent">
+              {error}
+            </p>
+          ) : null}
           <div className="mt-1 flex gap-2">
             <Button size="sm" variant="outline" className="flex-1 whitespace-nowrap px-2" onClick={startAi}>
               Play versus the isle
@@ -144,7 +154,8 @@ function Title() {
 function Lobby() {
   const code = useGame((s) => s.code);
   const seats = useGame((s) => s.seats);
-  const isHost = useGame((s) => s.isHost);
+  // The welcome flag goes stale when the host leaves; the live seat list is the truth (#249).
+  const isHost = useGame((s) => s.seats.find((x) => x.id === s.seatId)?.host ?? s.isHost);
   const lobbyLog = useGame((s) => s.lobbyLog);
   const error = useGame((s) => s.error);
   const setReady = useGame((s) => s.setReady);
@@ -202,7 +213,7 @@ function Lobby() {
         <div className="mt-2 rounded-[12px] border border-border bg-surface p-2">
           <ChatBox rows={6} />
         </div>
-        <p className="mt-2 min-h-5 text-xs text-muted">{error ?? lobbyLog}</p>
+        <p aria-live="polite" className="mt-2 min-h-5 text-xs text-muted">{error ?? lobbyLog}</p>
         <div className="mt-3 flex flex-col gap-2">
           <Button
             size="lg"

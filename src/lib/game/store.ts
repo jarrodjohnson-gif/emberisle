@@ -135,6 +135,9 @@ interface GameStore {
   setTradeOpen: (v: boolean) => void;
   askTable: (give: Bag, want: Bag) => void;
   answerTrade: (yes: boolean) => void;
+  // The player whose action menu is open in the HUD rail or seat strip (docs/design/chat.md "The player action menu").
+  menuFor: string | null;
+  openMenu: (id: string | null) => void;
 }
 
 const CHAT_OPEN_KEY = "emberisle-chat-open";
@@ -215,6 +218,7 @@ export const useGame = create<GameStore>((set, get) => ({
   declined: [],
   tradeOutcome: null,
   tradeOpen: false,
+  menuFor: null,
   setName: (n) => {
     const name = n.slice(0, 18) || "Ember";
     if (typeof window !== "undefined") localStorage.setItem("emberisle-name", name);
@@ -290,6 +294,7 @@ export const useGame = create<GameStore>((set, get) => ({
       reactions: [],
       unread: 0,
       chatDraft: "",
+      menuFor: null,
       lobbyLog: "",
       seatId: "",
       isHost: false,
@@ -454,7 +459,7 @@ export const useGame = create<GameStore>((set, get) => ({
   rejoinTable: () => {
     const seat = savedSeat();
     if (!seat) return false;
-    connect(set, get, (t) => t.rejoin(seat.code, seat.secret));
+    connect(set, get, (t) => t.rejoin(seat.code, seat.secret), true);
     return true;
   },
   setReady: (value) => get().net?.ready(value),
@@ -479,15 +484,19 @@ export const useGame = create<GameStore>((set, get) => ({
     const { offer, net } = get();
     if (offer) net?.answer(offer.tradeId, yes);
   },
+  openMenu: (id) => set({ menuFor: id }),
 }));
 
 type Set = (partial: Partial<GameStore>) => void;
 type Get = () => GameStore;
 
-function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void) {
+// `quiet` is the automatic rejoin on page load: until the first welcome, a dead seat is dropped without telling the player.
+function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, quiet = false) {
   get().net?.close();
+  let pending = quiet;
   const table = connectTable(hostUrl(window.location), {
     welcome: ({ code, you, host, chat, secret }) => {
+      pending = false;
       if (secret) rememberSeat({ code, secret });
       // A rejoin lands in the lobby for a moment; the host's state push (if the game started) moves it to play.
       set({ code, seatId: you, isHost: host, screen: "lobby", mode: "online", error: null, toast: null, chat: (chat ?? []).slice(-50), reactions: [], unread: 0 });
@@ -537,13 +546,19 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void) {
       set({ tradeOutcome: taker ? `${takerName} takes it.` : "Nobody took it." });
       outcomeTimer = setTimeout(() => set({ tradeOutcome: null }), BANNER_MS);
     },
-    error: (message) => set({ error: message, toast: message }),
+    error: (message) => {
+      if (!pending) set({ error: message, toast: message });
+    },
     closed: (keepSeat) => {
       if (keepSeat) {
         set({ error: "Your seat is open in another tab", toast: "Your seat is open in another tab", screen: "title", net: null, state: null });
         return;
       }
       rememberSeat(null);
+      if (pending) {
+        set({ error: null, toast: null, screen: "title", net: null, state: null });
+        return;
+      }
       set({ error: "Lost the table", toast: "Lost the table", screen: "title", net: null, state: null });
     },
   });

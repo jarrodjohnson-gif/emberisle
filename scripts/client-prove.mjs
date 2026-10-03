@@ -247,14 +247,15 @@ try {
   console.log("rail cards:", JSON.stringify(rail));
 
   // #177: the whose-turn banner is on desktop too, and the phone strip is not.
-  // The app runs a bot 700 ms after each seq change. Let any timer left from the last move fire first,
-  // so it can't roll for the bot before the banner is read; the flip below keeps seq, so none is set again.
-  await page.waitForTimeout(1000);
+  // The app runs a bot 700 ms after each seq change, and under software GL that timer can fire seconds late.
+  // So the flipped state marks the bot's seat human for the check: runBots skips it, and the banner reads only name and phase.
   const turn = await page.evaluate(() => {
     const g = window.__emberisle;
+    window.__beforeBanner = g.getState().state;
     const st = structuredClone(g.getState().state);
     const bot = st.players.find((p) => p.id !== g.getState().localId);
     const mineText = document.querySelector('[data-testid="turn-banner"]')?.textContent ?? null;
+    bot.kind = "human";
     st.current = bot.id;
     st.phase = "roll";
     g.setState({ state: st });
@@ -265,6 +266,7 @@ try {
     .catch(() => {});
   turn.theirs = await page.getByTestId("turn-banner").textContent();
   turn.strip = await page.getByTestId("seat-strip").count();
+  await page.evaluate(() => window.__emberisle.setState({ state: window.__beforeBanner }));
   console.log("turn banner:", JSON.stringify(turn));
 
   if (turn.theirs !== `${turn.bot}'s turn — Roll the dice to gather from the land.` || !/^Your turn — (Roll the dice|Build, trade|move the wayfarer|discard \d+)/.test(turn.mineText ?? "") || turn.strip) {
@@ -342,6 +344,157 @@ try {
   await page.getByTestId("win-menu").click();
   await page.waitForFunction(() => window.__emberisle.getState().screen === "title", null, { timeout: 5000 });
   console.log("win screen ok");
+
+  // Each step below starts from the title screen and builds its own state, so none depends on the one before.
+  const toTitle = () => page.evaluate(() => window.__emberisle.getState().goTitle());
+  const freshPractice = async () => {
+    await toTitle();
+    await page.getByRole("button", { name: "Play versus the isle" }).click();
+    await page.waitForFunction(() => window.__emberisle.getState().state);
+  };
+
+  // #249: the lobby reads host from the live seat list, not the welcome flag.
+  const lobbyStart = async (host, isHost) => {
+    await toTitle();
+    await page.evaluate(
+      ({ host, isHost }) => {
+        const seats = ["s0", "s1", "s2"].map((id, i) => ({ id, name: `P${i}`, color: "#c45c3e", avatarId: null, ready: true, host: id === "s0" ? !host : id === "s1" && host, away: false, url: null }));
+        window.__emberisle.setState({ screen: "lobby", mode: "online", code: "ABCD", seatId: "s1", seats, isHost });
+      },
+      { host, isHost },
+    );
+    await page.getByTestId("lobby-card").waitFor({ timeout: 3000 });
+    await page.waitForTimeout(100);
+    return page.getByRole("button", { name: "Start", exact: true }).count();
+  };
+  const handedOver = await lobbyStart(true, false);
+  const notHost = await lobbyStart(false, true);
+  console.log("lobby host from seats:", JSON.stringify({ handedOver, notHost }));
+  if (handedOver !== 1 || notHost !== 0) throw new Error(`lobby host from seats: ${JSON.stringify({ handedOver, notHost })}`);
+
+  // #252: the tab title says when it is your move.
+  await toTitle();
+  await page.getByRole("button", { name: "Play versus the isle" }).click();
+  await page.waitForFunction(() => window.__emberisle.getState().state);
+  const titles = {};
+  titles.start = await page.title();
+  await page.evaluate(() => {
+    const g = window.__emberisle;
+    const st = structuredClone(g.getState().state);
+    st.current = st.players.find((p) => p.id !== g.getState().localId).id;
+    st.phase = "roll";
+    st.seq += 1;
+    g.setState({ state: st });
+  });
+  await page.waitForFunction(() => document.title === "Emberisle", null, { timeout: 2000 }).catch(() => {});
+  titles.bot = await page.title();
+  await page.evaluate(() => {
+    const g = window.__emberisle;
+    const st = structuredClone(g.getState().state);
+    st.current = g.getState().localId;
+    st.seq += 1;
+    g.setState({ state: st });
+  });
+  await page.waitForFunction(() => document.title.startsWith("● Your turn"), null, { timeout: 2000 }).catch(() => {});
+  titles.back = await page.title();
+  await toTitle();
+  await page.waitForFunction(() => document.title === "Emberisle", null, { timeout: 2000 }).catch(() => {});
+  titles.title = await page.title();
+  console.log("tab titles:", JSON.stringify(titles));
+  if (!titles.start.startsWith("● Your turn") || titles.bot !== "Emberisle" || !titles.back.startsWith("● Your turn") || titles.title !== "Emberisle") {
+    throw new Error(`tab titles: ${JSON.stringify(titles)}`);
+  }
+
+  // #253: the join form submits on Enter and its error is announced.
+  await toTitle();
+  await page.getByRole("textbox", { name: "Join code" }).fill("zzzz");
+  await page.getByRole("textbox", { name: "Join code" }).press("Enter");
+  await page.locator("[role=alert]").waitFor({ timeout: 5000 });
+  // No host is running here, so the join attempt's refused socket is the expected console error; drop only that one.
+  const refused = errors.findIndex((e) => e.includes("ws://127.0.0.1:8787"));
+  if (refused < 0) throw new Error("join form: Enter did not try the host");
+  errors.splice(refused, 1);
+  const joinForm = await page.evaluate(() => {
+    const input = document.querySelector("form[aria-label='Join code'] input");
+    return { alert: document.querySelector("[role=alert]")?.textContent, value: input?.value, caps: input?.getAttribute("autocapitalize"), auto: input?.getAttribute("autocomplete") };
+  });
+  console.log("join form:", JSON.stringify(joinForm));
+  if (!joinForm.alert || joinForm.value !== "ZZZZ" || joinForm.caps !== "characters" || joinForm.auto !== "off") throw new Error(`join form: ${JSON.stringify(joinForm)}`);
+
+  // #253: the win screen is a dialog, focus lands on Back to menu, and Escape is Look around.
+  await freshPractice();
+  await page.evaluate(() => {
+    const g = window.__emberisle;
+    const st = structuredClone(g.getState().state);
+    st.phase = "over";
+    st.winner = st.players[1].id;
+    g.setState({ state: st, pendingSteal: null, error: null });
+  });
+  await page.getByRole("dialog", { name: /wins/ }).waitFor({ timeout: 5000 });
+  const focused = await page.evaluate(() => document.activeElement?.textContent);
+  const modal = await page.getByRole("dialog", { name: /wins/ }).getAttribute("aria-modal");
+  await page.keyboard.press("Escape");
+  await page.getByTestId("win-chip").waitFor({ timeout: 2000 });
+  console.log("win dialog:", JSON.stringify({ focused, modal }));
+  if (focused?.trim() !== "Back to menu" || modal !== "true") throw new Error(`win dialog: ${JSON.stringify({ focused, modal })}`);
+
+  // #253: with reduced motion a resource flash is gone almost at once, and the banner fade is cut short.
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await freshPractice();
+  await page.evaluate(() => {
+    const g = window.__emberisle;
+    const st = structuredClone(g.getState().state);
+    st.players.find((p) => p.id === g.getState().localId).resources.ore += 1;
+    g.setState({ state: st });
+  });
+  await page.getByTestId("resource-flash").waitFor({ timeout: 2000 });
+  const motion = await page.evaluate(() => {
+    const flash = document.querySelector('[data-testid="resource-flash"]');
+    const banner = document.querySelector('[data-testid="turn-banner"]');
+    return { flash: flash ? getComputedStyle(flash).animationDuration : null, fade: banner ? getComputedStyle(banner).animationDuration : null };
+  });
+  await page.emulateMedia({ reducedMotion: null });
+  console.log("reduced motion:", JSON.stringify(motion));
+  if (motion.flash !== "0.001s" || motion.fade !== "0.001s") throw new Error(`reduced motion: ${JSON.stringify(motion)}`);
+  await toTitle();
+  // #259: a saved seat whose table is gone fails quietly on page load: title card, no error, key cleared.
+  const { spawn } = await import("node:child_process");
+  const { mkdtempSync, rmSync } = await import("node:fs");
+  const { tmpdir } = await import("node:os");
+  const roomsDir = mkdtempSync(`${tmpdir()}/emberisle-rooms-`);
+  const rejoinHost = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
+    cwd: new URL("../server/", import.meta.url),
+    env: { ...process.env, PORT: "0", ROOMS_DIR: roomsDir },
+  });
+  process.on("exit", () => rejoinHost.kill());
+  for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
+  try {
+    const hostPort = await new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error("rejoin host never listened")), 10000);
+      rejoinHost.on("exit", (c) => reject(new Error(`rejoin host exited early (${c})`)));
+      rejoinHost.stdout.on("data", (d) => {
+        const m = String(d).match(/listening (\d+)/);
+        if (m) {
+          clearTimeout(timer);
+          resolve(Number(m[1]));
+        }
+      });
+    });
+    await page.goto(`http://127.0.0.1:${PORT}/?host=ws://127.0.0.1:${hostPort}`);
+    await page.evaluate(() => localStorage.setItem("emberisle-seat", JSON.stringify({ code: "ZZZZ", secret: "x" })));
+    await page.reload();
+    await page.waitForFunction(() => localStorage.getItem("emberisle-seat") === null, null, { timeout: 5000 });
+    const stale = await page.evaluate(() => {
+      const t = window.__emberisle.getState();
+      return { screen: t.screen, error: t.error, toast: t.toast, net: t.net === null };
+    });
+    console.log("stale rejoin on load:", JSON.stringify(stale));
+    if (stale.screen !== "title" || stale.error !== null || stale.toast !== null || !stale.net) throw new Error(`stale rejoin not quiet: ${JSON.stringify(stale)}`);
+  } finally {
+    rejoinHost.kill();
+    rmSync(roomsDir, { recursive: true, force: true });
+  }
+
   if (errors.length) throw new Error(`console errors:\n${errors.join("\n")}`);
   console.log("client prove ok");
 } catch (e) {
