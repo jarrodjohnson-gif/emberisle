@@ -195,6 +195,9 @@ try {
         };
       });
       console.log("metrics", JSON.stringify(metrics));
+      // One stronghold for p0, so the zoom shows both shapes (#238).
+      await craft(page, 'st.vertices.find((v) => v.building?.playerId === "p0").building.kind = "stronghold"');
+      await page.waitForTimeout(300);
       // Closer looks for the pieces, boats and wayfarer: zoom to the controls' minimum distance.
       // Aim at the wayfarer so the zoom shows his parts (#237), then put the orbit target back.
       const aim = await page.evaluate(() => {

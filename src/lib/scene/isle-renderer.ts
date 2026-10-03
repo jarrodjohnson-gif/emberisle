@@ -17,9 +17,11 @@ import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { SSAOPass } from "three/addons/postprocessing/SSAOPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
+import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { hexHeight, worldOfHex } from "@/lib/game/board";
 import { HEX_SIZE, SQRT3, hexCorners, hexesInRadius, vertexId } from "@/lib/game/hex";
 import { mulberry32, hashStr } from "@/lib/utils";
+import { PAINT, RIM } from "@/lib/scene/palette";
 import type { GameState, HarborKind, HexCell, Terrain, Vertex } from "@/lib/game/types";
 
 const SLAB = 0.26;
@@ -564,20 +566,16 @@ export class IsleRenderer {
       const color = pmap.get(e.path)?.color ?? "#ccc";
       const dx = b.x - a.x;
       const dz = b.z - a.z;
-      const road = new THREE.Mesh(
-        new THREE.BoxGeometry(0.13, 0.07, Math.hypot(dx, dz) * 0.9),
-        new THREE.MeshStandardMaterial({ color, roughness: 0.5 }),
-      );
-      road.position.set((a.x + b.x) / 2, edgeTop(tops, a, b) + 0.035, (a.z + b.z) / 2);
+      const road = makePath(color, Math.hypot(dx, dz) * 0.9);
+      road.position.set((a.x + b.x) / 2, edgeTop(tops, a, b), (a.z + b.z) / 2);
       road.rotation.y = Math.atan2(dx, dz);
-      road.castShadow = true;
       this.pieces.add(road);
     }
 
     for (const v of state.vertices) {
       if (!v.building) continue;
       const pl = pmap.get(v.building.playerId);
-      const house = makeHouse(pl?.color ?? "#ccc", v.building.kind === "stronghold");
+      const house = v.building.kind === "stronghold" ? makeStronghold(pl?.color ?? "#ccc") : makeOutpost(pl?.color ?? "#ccc");
       house.position.set(v.x, vertexTop(tops, v), v.z);
       this.pieces.add(house);
     }
@@ -1033,39 +1031,61 @@ function makeDeciduous(s: number) {
   return g;
 }
 
-function makeHouse(color: string, city: boolean) {
-  const g = new THREE.Group();
-  const w = city ? 0.28 : 0.2;
-  const d = city ? 0.24 : 0.18;
-  const h = city ? 0.16 : 0.12;
-  const body = new THREE.Mesh(
-    new THREE.BoxGeometry(w, h, d),
-    new THREE.MeshStandardMaterial({ color, roughness: 0.48 }),
-  );
-  body.position.y = h / 2;
-  body.castShadow = true;
-  g.add(body);
+const PIECE_MAT = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.55 });
+PIECE_MAT.userData.shared = true; // disposeGroup leaves it alone
+
+function tint(geo: THREE.BufferGeometry, hex: string) {
+  const c = new THREE.Color(hex); // sRGB in, linear out: the same conversion material.color gets
+  const a = new Float32Array(geo.attributes.position.count * 3);
+  for (let i = 0; i < a.length; i += 3) c.toArray(a, i);
+  geo.setAttribute("color", new THREE.BufferAttribute(a, 3));
+  return geo;
+}
+
+// A box whose bottom face is at y, centred on (x, z). Non-indexed, because ExtrudeGeometry is non-indexed
+// and mergeGeometries refuses to mix the two.
+function slab(w: number, h: number, d: number, hex: string, y = 0, x = 0, z = 0) {
+  return tint(new THREE.BoxGeometry(w, h, d).toNonIndexed().translate(x, y + h / 2, z), hex);
+}
+
+function piece(parts: THREE.BufferGeometry[]) {
+  const m = new THREE.Mesh(mergeGeometries(parts), PIECE_MAT);
+  m.castShadow = true;
+  return m;
+}
+
+function makeOutpost(seat: string) {
   const shape = new THREE.Shape();
-  shape.moveTo(-w * 0.58, 0);
-  shape.lineTo(w * 0.58, 0);
-  shape.lineTo(0, 0.14);
+  shape.moveTo(-0.14, 0);
+  shape.lineTo(0.14, 0);
+  shape.lineTo(0, 0.12);
   shape.closePath();
-  const roofGeo = new THREE.ExtrudeGeometry(shape, { depth: d * 1.08, bevelEnabled: false });
-  roofGeo.rotateX(Math.PI / 2);
-  roofGeo.translate(0, 0, -d * 0.54);
-  const roof = new THREE.Mesh(roofGeo, new THREE.MeshStandardMaterial({ color: 0x4a3022, roughness: 0.7 }));
-  roof.position.y = h;
-  roof.castShadow = true;
-  g.add(roof);
-  if (city) {
-    const keep = new THREE.Mesh(
-      new THREE.BoxGeometry(0.12, 0.18, 0.12),
-      new THREE.MeshStandardMaterial({ color, roughness: 0.48 }),
-    );
-    keep.position.set(w * 0.25, h + 0.04, 0);
-    g.add(keep);
-  }
-  return g;
+  const roof = tint(new THREE.ExtrudeGeometry(shape, { depth: 0.24, bevelEnabled: false }).translate(0, 0.22, -0.12), seat);
+  return piece([
+    slab(0.48, 0.04, 0.44, RIM.dark),
+    slab(0.38, 0.04, 0.34, RIM.light, 0.04),
+    slab(0.26, 0.14, 0.22, seat, 0.08),
+    roof,
+  ]);
+}
+
+function makeStronghold(seat: string) {
+  const parts = [
+    slab(0.54, 0.04, 0.54, RIM.dark),
+    slab(0.44, 0.04, 0.44, RIM.light, 0.04),
+    slab(0.32, 0.22, 0.32, seat, 0.08),
+    slab(0.18, 0.012, 0.18, RIM.dark, 0.3),
+  ];
+  for (const x of [-0.12, 0.12]) for (const z of [-0.12, 0.12]) parts.push(slab(0.08, 0.09, 0.08, seat, 0.3, x, z));
+  return piece(parts);
+}
+
+function makePath(seat: string, len: number) {
+  return piece([
+    slab(0.36, 0.03, len, RIM.dark),
+    slab(0.26, 0.03, len - 0.06, RIM.light, 0.03),
+    slab(0.16, 0.04, len - 0.12, seat, 0.06),
+  ]);
 }
 
 function makeWayfarer() {
@@ -1112,15 +1132,6 @@ function makeSheep() {
   g.add(body, head);
   return g;
 }
-
-const PAINT: Record<Terrain, [string, string]> = {
-  timber: ["#2f6b3a", "#1f4a28"],
-  clay: ["#b5522a", "#8a3a1c"],
-  wool: ["#8fbf5a", "#6f9e42"],
-  grain: ["#e0b13a", "#c4922a"],
-  ore: ["#6e7580", "#4f555e"],
-  waste: ["#c4a574", "#a88a5c"],
-};
 
 function paintedTexture(kind: Terrain): THREE.Texture {
   const size = 256;
