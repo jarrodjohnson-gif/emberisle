@@ -147,6 +147,8 @@ interface GameStore {
   host: boolean;
   state: GameState | null;
   error: string | null;
+  // Bumped on every refused move, so the same error twice is announced twice (#380).
+  errorSeq: number;
   buildMode: BuildMode;
   // Edges picked so far for a path fortune (buildMode "roadCard"); sent together as one playRoad.
   roadPicks: string[];
@@ -280,6 +282,7 @@ export const useGame = create<GameStore>((set, get) => ({
   host: true,
   state: null,
   error: null,
+  errorSeq: 0,
   buildMode: "none",
   roadPicks: [],
   howTo: false,
@@ -416,7 +419,7 @@ export const useGame = create<GameStore>((set, get) => ({
     const actor = asId ?? (mode === "hotseat" ? state.current : localId);
     const res = applyAction(state, actor, action);
     if (res.error) {
-      set({ error: res.error, toast: res.error });
+      set({ error: res.error, toast: res.error, errorSeq: get().errorSeq + 1 });
       play("ui_error");
       return { ok: false, error: res.error };
     }
@@ -687,7 +690,7 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
     },
     error: (message) => {
       if (!pending && kind !== "peek") {
-        set({ error: message, toast: message });
+        set({ error: message, toast: message, errorSeq: get().errorSeq + 1 });
         play("ui_error");
       }
       // A refused join leaves an unseated socket the host never closes; drop it so the next peek can open its own.

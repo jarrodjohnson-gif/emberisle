@@ -49,6 +49,14 @@ try {
   const silent = await plays();
   console.log("plays before the first gesture:", JSON.stringify(silent));
   if (silent.length) throw new Error(`sound played before a gesture: ${JSON.stringify(silent)}`);
+  // #380: every new text of the polite turn region, recorded as it changes, from before the Hud mounts.
+  await page.evaluate(() => {
+    window.__turns = [];
+    new MutationObserver(() => {
+      const t = document.querySelector('[aria-live="polite"][data-testid="announce-turn"]')?.textContent ?? "";
+      if (t && t !== window.__turns.at(-1)) window.__turns.push(t);
+    }).observe(document.body, { subtree: true, childList: true, characterData: true });
+  });
   await page.getByRole("button", { name: "Play versus the isle" }).click();
 
   // #232: roll off for first place. The human rolls on its turn; the bots roll on the app's timer.
@@ -95,6 +103,10 @@ try {
     return "stuck in " + g.getState().state.phase;
   });
   console.log("after setup:", phase);
+  // #380: the human's own turn (it waits on a placement in setup) is read as "Your turn.", a bot's by name.
+  const turns = await page.evaluate(() => window.__turns);
+  console.log(`turn announcements: ${JSON.stringify(turns)}`);
+  if (!turns.includes("Your turn.") || !turns.some((t) => /^.+'s turn\.$/.test(t))) throw new Error(`turn announcements: ${JSON.stringify(turns)}`);
 
   const rolled = await page.evaluate(async () => {
     const g = window.__emberisle;
