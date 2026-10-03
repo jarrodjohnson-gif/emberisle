@@ -63,7 +63,8 @@ for (const c of all.slice(1)) {
   await c.next("welcome");
 }
 for (const c of all) c.send({ type: "ready", value: true });
-await new Promise((r) => setTimeout(r, 100));
+// Start only once the host has published all three ready flags; a fixed sleep let "start" race a slow "ready" (rejected, so no state ever came).
+while (!(await all[0].next("seats")).seats.every((s) => s.ready));
 all[0].send({ type: "start" });
 await Promise.all(all.map((c) => c.next("state")));
 
@@ -201,10 +202,26 @@ for (const c of all) {
 }
 console.log("a replaced offer sent tradeClosed before the new tradeOffer to all three seats");
 
+// 4b. A replacing ask in the same seq gets its own id, so a late yes to the first terms is refused and no goods move (#264).
+await fresh();
+const firstId = await offer(want, give);
+await offer(want, give);
+await fresh();
+const [aStale, cStale, seqStale] = [hand(A), hand(C), A.state.game.seq];
+C.send({ type: "tradeAnswer", tradeId: firstId, yes: true });
+const stale = await C.next("error");
+if (stale.message !== "Offer is gone.") fail("stale yes message", stale.message);
+await settle();
+if (C.has("state") || A.has("state") || A.has("tradeClosed")) fail("stale yes moved the table or closed the new offer");
+if (JSON.stringify(hand(A)) !== JSON.stringify(aStale) || JSON.stringify(hand(C)) !== JSON.stringify(cStale) || A.state.game.seq !== seqStale) {
+  fail("stale yes moved goods");
+}
+console.log("a stale yes to the replaced offer got:", stale.message, "- no goods moved");
+
 // 5. A asks again, then passes: everyone hears tradeClosed, and a late yes changes nothing.
 await fresh();
 tradeId = await offer(want, give);
-// The ask replaced step 4's open offer, whose tradeClosed (same id) came first; only the pass's counts here.
+// The ask replaced step 4's open offer, whose tradeClosed came first; only the pass's counts here.
 for (const c of all) c.inbox = c.inbox.filter((m) => m.type !== "tradeClosed");
 const seq = A.state.game.seq;
 A.send({ type: "pass" });
