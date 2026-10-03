@@ -205,7 +205,7 @@ async function freshTable(names) {
   const { clients } = await freshTable(["Ember", "Tide", "Pine"]);
   const [ember, tide, pine] = clients;
   for (const c of clients) c.send({ type: "ready", value: true });
-  await new Promise((r) => setTimeout(r, 100));
+  while (!(await ember.next("seats")).seats.every((s) => s.ready));
   ember.send({ type: "start" });
   await Promise.all(clients.map((c) => c.next("state")));
   ember.send({ type: "chat", text: "after start" });
