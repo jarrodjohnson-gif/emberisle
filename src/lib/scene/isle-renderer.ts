@@ -205,7 +205,6 @@ export class IsleRenderer {
     canvas.addEventListener("pointermove", this.onMove);
     canvas.addEventListener("pointercancel", this.onCancel);
     window.addEventListener("resize", this.resize);
-    this.resize();
     this.loadTextures();
     this.clock.connect(document);
     this.composer = new EffectComposer(this.renderer);
@@ -217,6 +216,8 @@ export class IsleRenderer {
     this.ssao.maxDistance = 0.08;
     this.composer.addPass(this.ssao);
     this.composer.addPass(new OutputPass());
+    // After the passes exist: addPass() sizes each pass to the full composer.
+    this.resize();
     this.renderer.setAnimationLoop(this.tick);
   }
 
@@ -398,7 +399,8 @@ export class IsleRenderer {
     }
     this.renderer.setSize(w, h, false);
     this.composer?.setSize(w, h);
-    this.ssao?.setSize(w, h);
+    // #330: AO is soft, so half the CSS size loses little and the pass costs a quarter of the pixels.
+    this.ssao?.setSize(Math.ceil(w / 2), Math.ceil(h / 2));
   };
 
   private onDown = (e: PointerEvent) => {
