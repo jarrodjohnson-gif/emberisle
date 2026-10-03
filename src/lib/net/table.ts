@@ -92,6 +92,8 @@ export interface TableClient {
   answer(tradeId: string, yes: boolean): void;
   say(text: string): void;
   react(emote: string, to?: string): void;
+  // The browser says the network or the tab is back: if a backoff timer is pending, dial now. Otherwise nothing.
+  wake(): void;
   close(): void;
 }
 
@@ -188,6 +190,7 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
   };
 
   const dial = () => {
+    timer = null;
     ws = new Ctor(url);
     ws.onopen = () => {
       // The rejoin hello goes out here only, never through the queue, so it is sent once per socket.
@@ -308,9 +311,15 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
     say: (text) => send({ type: "chat", text }),
     react: (emote, to) => send({ type: "react", emote, to }),
     drop: () => ws.close(),
+    wake: () => {
+      if (!timer) return;
+      clearTimeout(timer);
+      dial();
+    },
     close: () => {
       closedByUs = true;
       if (timer) clearTimeout(timer);
+      timer = null;
       ws.close();
     },
   };

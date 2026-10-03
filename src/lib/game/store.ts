@@ -59,6 +59,12 @@ export interface OpenOffer {
   until: number;
 }
 
+// The window listeners that wake a backing-off table; one connection at a time, so one remover.
+let stopWake: (() => void) | null = null;
+function clearWake() {
+  stopWake?.();
+  stopWake = null;
+}
 let outcomeTimer: ReturnType<typeof setTimeout> | null = null;
 
 export type Screen = "title" | "lobby" | "play";
@@ -237,6 +243,7 @@ export const useGame = create<GameStore>((set, get) => ({
   setBuildMode: (m) => set({ buildMode: m, roadPicks: [] }),
   startAi: () => {
     // A table left dialing (a reload with a saved seat) must not pull a practice game back to the lobby.
+    clearWake();
     get().net?.close();
     const name = get().name;
     const state = createGame({ humans: [{ name }], bots: 3 });
@@ -254,6 +261,7 @@ export const useGame = create<GameStore>((set, get) => ({
     });
   },
   startHotseat: (count) => {
+    clearWake();
     get().net?.close();
     const humans = Array.from({ length: count }, (_, i) => ({
       name: i === 0 ? get().name : `Seat ${i + 1}`,
@@ -286,6 +294,7 @@ export const useGame = create<GameStore>((set, get) => ({
   goTitle: () => {
     // Leaving on purpose frees the seat; only a drop keeps it.
     rememberSeat(null);
+    clearWake();
     get().net?.close();
     set({
       screen: "title",
@@ -514,6 +523,7 @@ type Get = () => GameStore;
 // "peek" asks a lobby for its seats before joining (docs/design/color-peek.md): it never seats, toasts, or touches the saved seat.
 type ConnectKind = "normal" | "quiet" | "peek";
 function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, kind: ConnectKind = "normal") {
+  clearWake();
   get().net?.close();
   let pending = kind === "quiet";
   let welcomed = false;
@@ -576,11 +586,13 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       if (!pending && kind !== "peek") set({ error: message, toast: message });
       // A refused join leaves an unseated socket the host never closes; drop it so the next peek can open its own.
       if (kind === "normal" && !welcomed) {
+        clearWake();
         table.close();
         if (get().net === table) set({ net: null, peeking: false });
       }
     },
     closed: (keepSeat) => {
+      clearWake();
       if (kind === "peek") {
         if (get().net === table) set({ net: null, peeking: false });
         return;
@@ -599,5 +611,17 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
   });
   // A peek is not the player's action, so it leaves a join error ("Lost the table") on the Title card.
   set(kind === "peek" ? { net: table, peeking: true, mode: "online" } : { net: table, peeking: false, mode: "online", error: null });
+  if (kind !== "peek") {
+    const online = () => table.wake();
+    const visible = () => {
+      if (document.visibilityState === "visible") table.wake();
+    };
+    window.addEventListener("online", online);
+    window.addEventListener("visibilitychange", visible);
+    stopWake = () => {
+      window.removeEventListener("online", online);
+      window.removeEventListener("visibilitychange", visible);
+    };
+  }
   first(table, { name: get().name, color: get().color ?? undefined });
 }
