@@ -126,7 +126,7 @@ function hexRing(outer: number, inner: number) {
 // the hex loop in buildMarks
 const ring = new THREE.Mesh(
   hexRing(HEX_SIZE * 0.94, HEX_SIZE * 0.76),
-  new THREE.MeshStandardMaterial({ color: 0xfff6e8, emissive: 0xffb347, emissiveIntensity: 0.6, roughness: 0.6 }),
+  new THREE.MeshStandardMaterial({ color: 0xffb347, emissive: 0xffb347, emissiveIntensity: 0.6, roughness: 0.6 }),
 );
 ring.position.set(x, topOf(h.terrain) + 0.012, z);
 ring.userData = { kind: "hex", id: h.id };
@@ -134,7 +134,7 @@ ring.userData = { kind: "hex", id: h.id };
 
 - The band is 0.20 wide (HEX_SIZE × 0.18): 9 px at 1280 overhead, inset 0.07 from the tile's edge so two
   neighbouring targets show two rings, not one blob.
-- Cream with the lantern's orange as the emissive, so the glow is the wayfarer's own colour, not a seat's
+- The lantern's orange as both colour and emissive (cream albedo washed out to the slab rims under ACES), so the glow is the wayfarer's own colour, not a seat's
   colour (today's ember `#c45c3e` is Ember's seat colour, which reads as "Ember's hexes").
 - The terrain, the token, and the trees inside the band stay visible, so the player can pick a target by its
   number. That is the whole point of the move.
@@ -162,7 +162,7 @@ on main before the change.
 
 | Shot | Must show |
 |---|---|
-| `07-wayfarer-1280x720` | Every legal target hex has a cream-orange band and its terrain, token, and props are still visible inside it. The wayfarer's own hex and the wastes have no band. The figure is the one dark shape with an orange lantern on a cream disc. |
+| `07-wayfarer-1280x720` | Every legal target hex has an orange band (`#ffb347`) and its terrain, token, and props are still visible inside it. The wayfarer's own hex and the wastes have no band. The figure is the one dark shape with an orange lantern on a cream disc. |
 | `04-turn-1280x720` | The wayfarer stands on his token with his feet on its face, not sunk in the tile and not floating. The token's rim is visible around his base. |
 | `09-zoom-1920x1080` | Cloak, hood, pale face, staff, and lantern are all distinct. |
 
@@ -207,7 +207,7 @@ For #132, in the one file docs/design/wayfarer.md names: src/lib/scene/isle-rend
   the token face (topOf + 0.07).
 - setBoard and tick: the straight-line hop (one 0.3-high arc per hex of distance, 300 ms per hop, 900 ms
   cap), snap on the first board or a new island, no idle hover, lantern breath.
-- buildMarks: the 0.20-wide hexagonal band (cream, emissive #ffb347) instead of the full cap, pulsing
+- buildMarks: the 0.20-wide hexagonal band (orange `#ffb347`, emissive #ffb347) instead of the full cap, pulsing
   0.5–0.85 every 1.6 s.
 - scripts/wayfarer-prove.mjs with the five checks in the design.
 Do not start until #132 is on main. The design is the contract. Do not retune the token, the camera, or

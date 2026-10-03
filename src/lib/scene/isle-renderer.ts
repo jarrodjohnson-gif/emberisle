@@ -646,7 +646,7 @@ export class IsleRenderer {
       const { x, z } = worldOfHex(h);
       const ring = new THREE.Mesh(
         hexRing(HEX_SIZE * 0.94, HEX_SIZE * 0.76),
-        new THREE.MeshStandardMaterial({ color: 0xfff6e8, emissive: 0xffb347, emissiveIntensity: 0.6, roughness: 0.6 }),
+        new THREE.MeshStandardMaterial({ color: 0xffb347, emissive: 0xffb347, emissiveIntensity: 0.6, roughness: 0.6 }),
       );
       ring.position.set(x, topOf(h.terrain) + 0.012, z);
       ring.userData = { kind: "hex", id: h.id, baseGlow: 0.6 };

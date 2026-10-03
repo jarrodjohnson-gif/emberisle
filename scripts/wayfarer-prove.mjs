@@ -3,7 +3,7 @@ import { existsSync } from "node:fs";
 import { chromium } from "playwright";
 import { createServer } from "vite";
 
-const PORT = 8097;
+const PORT = 8092;
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();
 
@@ -100,6 +100,7 @@ try {
       vt += 0.05;
       isle.tick();
     }
+    delete isle.clock.getElapsed;
     const w = window.__worldOfHex(to);
     const p = isle.wayfarer.position;
     return { rises, max: Math.max(...ys), samples: ys.length, dy: p.y - face, dx: p.x - w.x, dz: p.z - w.z };
