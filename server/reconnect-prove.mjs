@@ -135,5 +135,42 @@ function client(giveUpMs) {
   console.log("failed first dial, then Seat is taken on every redial: gives up, keeps the saved seat");
 }
 
+// 7. #284: wake() dials at once during a backoff, once; it does nothing on a live, connecting, fresh or peek socket.
+{
+  sockets.length = 0;
+  const { t, ev } = client();
+  t.peek("abcd");
+  t.wake();
+  if (sockets.length !== 1) fail("wake on a connecting socket must not dial", sockets.length);
+  last().open();
+  t.wake();
+  if (sockets.length !== 1) fail("wake on an open socket must not dial", sockets.length);
+  last().lose();
+  await tick(10);
+  t.wake();
+  if (sockets.length !== 1 || ev.reconnecting.length) fail("wake on a peek/fresh drop (no seat) must not dial", sockets.length);
+
+  sockets.length = 0;
+  const seated = client();
+  seated.t.rejoin("abcd", "s1");
+  seated.t.wake();
+  if (sockets.length !== 1) fail("wake before any drop must not dial", sockets.length);
+  last().open();
+  last().reply({ type: "welcome", code: "ABCD", you: "s1seat", host: false, secret: "s1" });
+  last().lose();
+  await tick(10);
+  if (seated.ev.reconnecting.join() !== "1") fail("seated drop should back off", seated.ev);
+  seated.t.wake();
+  if (sockets.length !== 2) fail("wake during the backoff should dial at once", sockets.length);
+  seated.t.wake();
+  if (sockets.length !== 2) fail("a second wake while the redial is connecting must not dial again", sockets.length);
+  last().open();
+  if (hellos(last()).length !== 1 || hellos(last())[0].secret !== "s1") fail("the woken redial sends one rejoin hello", last().sent);
+  await tick(1100);
+  if (sockets.length !== 2) fail("the cancelled backoff timer must not dial a second time", sockets.length);
+  seated.t.close();
+  console.log("wake: redials at once during a backoff, once; no-op otherwise");
+}
+
 console.log("reconnect prove ok");
 process.exit(0);
