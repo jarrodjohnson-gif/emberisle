@@ -3,6 +3,7 @@
 import { spawn } from "node:child_process";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import http from "node:http";
+import net from "node:net";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import WebSocket from "ws";
@@ -53,6 +54,17 @@ function get(port, p, method = "GET", body) {
   });
 }
 
+// #368: a raw socket, since node:http and fetch would refuse or normalise these request targets before sending.
+function raw(port, target) {
+  return new Promise((resolve) => {
+    const sock = net.connect(port, "127.0.0.1", () => sock.write(`GET ${target} HTTP/1.1\r\nHost: x\r\nConnection: close\r\n\r\n`));
+    let text = "";
+    sock.on("data", (d) => (text += d));
+    sock.on("error", () => {});
+    sock.on("close", () => resolve(Number(text.match(/^HTTP\/1\.1 (\d{3})/)?.[1]) || null));
+  });
+}
+
 const dist = path.join(temp, "dist");
 mkdirSync(path.join(dist, "assets"), { recursive: true });
 writeFileSync(path.join(dist, "index.html"), "<!doctype html><title>Emberisle</title>");
@@ -62,6 +74,13 @@ const empty = path.join(temp, "empty");
 mkdirSync(empty);
 
 const port = await start(dist);
+hosts[0].on("exit", (code) => fail(`host exited (${code})`));
+
+// These run first, so every check below also proves the same host process survived them.
+for (const [target, want] of [["//", 400], ["//[", 400], ["//a b", 400], ["http://[", 400], ["/%", 404], ["http://x//", 404]]) {
+  const status = await raw(port, target);
+  check(`raw GET ${target} -> ${status}`, status === want);
+}
 
 let r = await get(port, "/");
 check(`GET / -> ${r.status} ${r.headers["content-type"]}, ${r.headers["cache-control"]}`,

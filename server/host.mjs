@@ -311,8 +311,14 @@ function gains(before, after) {
   return out;
 }
 
-const server = http.createServer((req, res) => {
-  const url = new URL(req.url, "http://127.0.0.1");
+function route(req, res) {
+  // #368: a target like "//" or "//[" makes new URL throw, which used to take the whole host down.
+  const url = URL.parse(req.url, "http://127.0.0.1");
+  if (!url) {
+    res.writeHead(400);
+    res.end();
+    return;
+  }
   if (req.method === "POST" && url.pathname === "/avatars") {
     // The host picks the id, so nobody can overwrite someone else's picture.
     const inUse = new Set([...rooms.values()].flatMap((r) => r.avatarIds));
@@ -360,6 +366,17 @@ const server = http.createServer((req, res) => {
   }
   res.writeHead(404);
   res.end();
+}
+
+// No single request may crash the host and drop every table.
+const server = http.createServer((req, res) => {
+  try {
+    route(req, res);
+  } catch (e) {
+    console.error("http request failed:", e);
+    if (!res.headersSent) res.writeHead(500);
+    res.end();
+  }
 });
 
 // One address carries the page, the socket and the avatars, so a single tunnel reaches all three.
