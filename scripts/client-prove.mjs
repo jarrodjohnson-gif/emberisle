@@ -396,9 +396,28 @@ try {
   for (const r of winRows.rows) if (r.total !== winRows.want[r.id]) throw new Error(`win screen total: ${JSON.stringify(winRows)}`);
   if (new Set(winRows.rows.map((r) => r.total)).size < 3) throw new Error("win screen: totals should differ");
   if (!winRows.headline?.endsWith(" wins")) throw new Error(`win headline: ${winRows.headline}`);
+  // #379: aria-modal is a promise to the keyboard too. Tab cycles among the dialog's buttons and never reaches the HUD behind it.
+  const winFocus = () =>
+    page.evaluate(() => {
+      const el = document.activeElement;
+      return { id: el?.getAttribute("data-testid") ?? el?.tagName.toLowerCase(), inDialog: !!el?.closest('[data-testid="win-screen"]') };
+    });
+  await page.waitForFunction(() => document.activeElement?.getAttribute("data-testid") === "win-menu", null, { timeout: 2000 });
+  const tabs = [];
+  for (let i = 0; i < 4; i++) {
+    await page.keyboard.press("Tab");
+    tabs.push(await winFocus());
+  }
+  await page.getByTestId("win-look").focus();
+  await page.keyboard.press("Shift+Tab");
+  const back = await winFocus();
+  console.log("win tab order:", JSON.stringify({ tabs, back }));
+  if (tabs.some((t) => !t.inDialog)) throw new Error(`win screen: Tab left the dialog: ${JSON.stringify(tabs)}`);
+  if (back.id !== "win-menu") throw new Error(`win screen: Shift+Tab from Look around went to ${back.id}`);
   await page.getByTestId("win-look").click();
   await page.getByTestId("win-chip").waitFor({ timeout: 2000 });
   if (await page.getByTestId("win-screen").count()) throw new Error("win screen still shown after Look around");
+  await page.waitForFunction(() => document.activeElement?.getAttribute("data-testid") === "win-show", null, { timeout: 2000 });
   await page.getByTestId("win-show").click();
   await page.getByTestId("win-screen").waitFor({ timeout: 2000 });
   await page.getByTestId("win-menu").click();

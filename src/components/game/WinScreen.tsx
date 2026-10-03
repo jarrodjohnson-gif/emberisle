@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { totalVP } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
+import { useFocusTrap } from "@/lib/focus-trap";
 
 // Build bible 4.7: the island stays visible. "Look around" hides the panel and leaves a small chip.
 export function WinScreen() {
@@ -15,10 +16,15 @@ function Panel() {
   const [hidden, setHidden] = useState(false);
   const winner = state.players.find((p) => p.id === state.winner)!;
   const dialog = useRef<HTMLDivElement>(null);
+  const chip = useRef<HTMLDivElement>(null);
 
+  // #379: Tab stays inside the dialog; "Look around" hands focus to the chip so the keyboard does not land on the body.
+  useFocusTrap(dialog, !hidden, '[data-testid="win-menu"]');
   useEffect(() => {
-    if (hidden) return;
-    dialog.current?.querySelector<HTMLElement>('[data-testid="win-menu"]')?.focus();
+    if (hidden) {
+      chip.current?.querySelector<HTMLElement>('[data-testid="win-show"]')?.focus();
+      return;
+    }
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setHidden(true);
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -48,6 +54,7 @@ function Panel() {
   if (hidden) {
     return (
       <div
+        ref={chip}
         data-testid="win-chip"
         className="absolute left-1/2 top-16 z-20 flex -translate-x-1/2 items-center gap-1 rounded-[20px] border border-white/50 bg-white/60 p-1 backdrop-blur-md"
       >
