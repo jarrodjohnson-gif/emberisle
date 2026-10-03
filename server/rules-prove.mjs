@@ -461,6 +461,7 @@ ok("a path cannot continue past an opponent's building (check 8 above)", true);
   g.bank[h.terrain] = 1;
   const s = rollTo(g, h.pip);
   ok("unless only one player is owed it: then they take whatever is left", s.players[0].resources[h.terrain] === 1 && s.bank[h.terrain] === 0, { got: s.players[0].resources[h.terrain], bank: s.bank[h.terrain] });
+  ok("and the bank is not reported short", !s.log.some((l) => l.startsWith("The bank is short")), s.log.slice(-3));
 }
 {
   const g = rollPhase(fresh());

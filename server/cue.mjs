@@ -22,7 +22,7 @@ const map = {
 export function cue(name) {
   const file = map[name];
   if (!file) return null;
-  const path = new URL(`./audio/${file}`, import.meta.url);
+  const path = new URL(`../public/audio/${file}`, import.meta.url);
   if (!existsSync(path)) return null;
   return readFileSync(path);
 }

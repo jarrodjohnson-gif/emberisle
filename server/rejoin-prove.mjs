@@ -8,12 +8,13 @@ import WebSocket from "ws";
 const GRACE = 800;
 const HOLD = 2500;
 const PING = 300;
+const LOBBY_HOLD = 300;
 // Rooms go to a temp folder, dropped on exit, so the real host never restores this proof's tables (#207).
 const ROOMS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-rooms-"));
 process.on("exit", () => rmSync(ROOMS_DIR, { recursive: true, force: true }));
 const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL(".", import.meta.url),
-  env: { ...process.env, PORT: "0", GRACE_MS: String(GRACE), HOLD_MS: String(HOLD), PING_MS: String(PING), ROOMS_DIR },
+  env: { ...process.env, PORT: "0", GRACE_MS: String(GRACE), HOLD_MS: String(HOLD), LOBBY_HOLD_MS: String(LOBBY_HOLD), PING_MS: String(PING), ROOMS_DIR },
 });
 process.on("exit", () => host.kill());
 for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
@@ -180,6 +181,58 @@ console.log(`past the hold: "${late.message}"`);
   const xb = await x2.next("welcome");
   if (xb.you !== wx.you) fail("rejoin after the keepalive cut", xb.you);
   console.log(`keepalive: silent socket cut after ${took} ms (ping ${PING} ms), answering seats kept for ${3 * PING} ms more, Reed rejoined as ${xb.you}`);
+}
+
+// 10. A lobby seat is held too (#280): a locked phone keeps its seat while friends sit down.
+{
+  const h = await client("Ember");
+  const t = await client("Tide");
+  const p = await client("Pine");
+  h.send({ type: "hello", name: "Ember" });
+  const wh = await h.next("welcome");
+  t.send({ type: "hello", code: wh.code, name: "Tide" });
+  const wt = await t.next("welcome");
+  p.send({ type: "hello", code: wh.code, name: "Pine" });
+  await p.next("welcome");
+  t.send({ type: "ready", value: true });
+  await h.next("seats", (m) => m.seats.length === 3 && m.seats.find((s) => s.id === wt.you)?.ready);
+  await t.close();
+  const held = (await h.next("seats", (m) => m.seats.find((s) => s.id === wt.you)?.away)).seats;
+  const ht = held.find((s) => s.id === wt.you);
+  if (held.length !== 3 || ht.ready) fail("a dropped lobby seat is held and not ready", held);
+  h.send({ type: "ready", value: true });
+  p.send({ type: "ready", value: true });
+  await wait(50);
+  h.send({ type: "start" });
+  const nr = await h.next("error");
+  if (nr.message !== "Not everyone is ready.") fail("start with a held seat", nr.message);
+  h.inbox = [];
+  const t2 = await client("Tide again");
+  t2.send({ type: "hello", code: wh.code, secret: wt.secret });
+  const back2 = await t2.next("welcome");
+  if (back2.you !== wt.you) fail("lobby rejoin keeps the seat", back2.you);
+  const seats2 = (await h.next("seats", (m) => !m.seats.find((s) => s.id === wt.you)?.away)).seats;
+  if (seats2.length !== 3) fail("seats after the lobby rejoin", seats2);
+  h.inbox = [];
+  await t2.close();
+  const after = (await h.next("seats", (m) => m.seats.length === 2, LOBBY_HOLD + 2000)).seats;
+  const t3 = await client("Tide late");
+  t3.send({ type: "hello", code: wh.code, secret: wt.secret });
+  const gone2 = await t3.next("error");
+  if (gone2.message !== "Seat is gone.") fail("lobby seat after the hold", gone2.message);
+  console.log(`lobby hold: away+not ready with 3 seats, start refused, rejoin kept ${back2.you}, after ${LOBBY_HOLD} ms ${after.length} seats and "${gone2.message}"`);
+
+  // The host drops in the lobby: the role passes to a live seat and does not come back.
+  p.inbox = [];
+  await h.close();
+  const handed = (await p.next("seats", (m) => m.seats.find((s) => s.id === wh.you)?.away)).seats;
+  if (handed.find((s) => s.id === wh.you).host || !handed.find((s) => s.name === "Pine").host) fail("host role passes to the next seat", handed);
+  const h2 = await client("Ember again");
+  h2.send({ type: "hello", code: wh.code, secret: wh.secret });
+  const hb = await h2.next("welcome");
+  if (hb.you !== wh.you || hb.host) fail("the returning host does not get the role back", hb);
+  console.log(`lobby host drop: Pine is host, Ember rejoined as ${hb.you} with host=${hb.host}`);
+  await Promise.all([h2.close(), p.close()]);
 }
 
 host.removeAllListeners("exit");

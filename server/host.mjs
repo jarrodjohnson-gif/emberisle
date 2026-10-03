@@ -7,7 +7,7 @@ import { randomBytes, randomInt } from "node:crypto";
 import { WebSocketServer } from "ws";
 import { chooseBotAction } from "../src/lib/game/ai.ts";
 import { createGame } from "../src/lib/game/board.ts";
-import { applyAction, legalCities, legalRoads, legalSettle, playable, stealTargets, validBag } from "../src/lib/game/rules.ts";
+import { applyAction, bankShort, legalCities, legalRoads, legalSettle, playable, stealTargets, validBag } from "../src/lib/game/rules.ts";
 import { COST, PLAYER_COLORS, RESOURCES } from "../src/lib/game/types.ts";
 import { allow, cleanText, loadEmotes, remember } from "./chat.mjs";
 import { cue } from "./cue.mjs";
@@ -36,6 +36,7 @@ const AVATAR_TTL = 60 * 60 * 1000; // an upload nobody sat down with is dropped 
 // (docs/research/rejoin.md). The proofs shorten both through env.
 const GRACE_MS = Number(process.env.GRACE_MS ?? 90 * 1000);
 const HOLD_MS = Number(process.env.HOLD_MS ?? 10 * 60 * 1000);
+const LOBBY_HOLD_MS = Number(process.env.LOBBY_HOLD_MS ?? 90 * 1000);
 // Every socket is pinged this often; one that has not answered the last ping is cut, so a phone that
 // locked or changed Wi-Fi frees its seat for the rejoin instead of holding it half-open (#202, #113).
 const PING_MS = Number(process.env.PING_MS ?? 30 * 1000);
@@ -43,6 +44,9 @@ const PING_MS = Number(process.env.PING_MS ?? 30 * 1000);
 // that sleeps or a Node crash does not end the game. Rooms saved more than a day ago are dropped.
 const ROOMS = path.resolve(process.env.ROOMS_DIR ?? fileURLToPath(new URL("./rooms/", import.meta.url)));
 const ROOM_TTL = 24 * 60 * 60 * 1000;
+// Stamped on every saved room. Bump it whenever GameState, the seat record or the chat record changes
+// shape: load() drops files with any other stamp (including none), so a bump ends the saved rooms on the next restart.
+const ROOM_SHAPE = 1;
 // The built client (npm run build). DIST lets a proof point the host at a small temp folder.
 const DIST = path.resolve(process.env.DIST ?? fileURLToPath(new URL("../dist/", import.meta.url)));
 const TYPES = {
@@ -56,6 +60,7 @@ const TYPES = {
   ".jpeg": "image/jpeg",
   ".webp": "image/webp",
   ".woff2": "font/woff2",
+  ".wav": "audio/wav",
   ".ogg": "audio/ogg",
   ".mp3": "audio/mpeg",
 };
@@ -79,6 +84,16 @@ function broadcast(room, msg) {
 
 function say(room, text) {
   broadcast(room, { type: "log", text });
+}
+
+// The engine keeps only the last 41 log lines (rules.ts `log`), so once the log is full its length never grows and
+// `after.slice(before.length)` is empty (#319: the winner line never reached a seat). The new lines are what follows
+// the longest tail of the old log that the new one still starts with.
+function newLog(before, after) {
+  for (let k = Math.min(before.length, after.length); k > 0; k--) {
+    if (before.slice(-k).every((line, i) => line === after[i])) return after.slice(k);
+  }
+  return after;
 }
 
 function seatsOf(room) {
@@ -110,6 +125,7 @@ function save(room) {
     chatSeq: room.chatSeq,
     game: room.game,
     seats: room.seats.map(({ id, name, color, ready, pid, secret }) => ({ id, name, color, ready, pid, secret })),
+    shape: ROOM_SHAPE,
     savedAt: Date.now(),
   };
   try {
@@ -145,6 +161,17 @@ function load() {
       continue;
     }
     if (typeof saved?.code !== "string" || !Array.isArray(saved.seats) || !(Date.now() - saved.savedAt < ROOM_TTL) || saved.seats.length === 0) {
+      rmSync(file, { force: true });
+      continue;
+    }
+    if (saved.shape !== ROOM_SHAPE) {
+      console.error(`stale room file: ${name} (shape ${saved.shape}, want ${ROOM_SHAPE})`);
+      rmSync(file, { force: true });
+      continue;
+    }
+    const g = saved.game;
+    if (g !== null && (typeof g !== "object" || !["players", "vertices", "edges", "seq", "phase"].every((k) => k in g))) {
+      console.error(`bad game in room file: ${name}`);
       rmSync(file, { force: true });
       continue;
     }
@@ -594,12 +621,14 @@ function play(ws, room, msg) {
   if (msg.type === "roll") {
     const [a, b] = room.game.dice;
     const paid = gains(before, room.game);
-    broadcast(room, { type: "rolled", dice: [a, b], sum: a + b, gains: paid });
+    const short = bankShort(room.game);
+    broadcast(room, { type: "rolled", dice: [a, b], sum: a + b, gains: paid, short });
     const parts = paid.map((g) => `${g.name} +${g.amount} ${g.resource}`);
+    if (short.length) parts.push(`bank short of ${short.join(" and ")}`);
     say(room, [String(a + b), ...parts].join(" · "));
   }
   runBots(room);
-  for (const line of room.game.log.slice(before.log.length)) say(room, line);
+  for (const line of newLog(before.log, room.game.log)) say(room, line);
   if (room.game.phase === "over" && before.phase !== "over") hear("win");
   // An offer lives only while its asker still has the turn in `main`.
   const open = room.offer;
@@ -704,9 +733,9 @@ function rejoin(ws, msg) {
     room.game = { ...room.game, players: room.game.players.map((x) => (x === p ? { ...x, kind: "human", name: seat.name } : x)) };
   }
   // Other seats may have become bots while nobody was here to watch them play.
-  const seen = room.game.log.length;
+  const seen = room.game.log;
   runBots(room);
-  for (const line of room.game.log.slice(seen)) say(room, line);
+  for (const line of newLog(seen, room.game.log)) say(room, line);
   pushState(room);
 }
 
@@ -726,7 +755,14 @@ function hold(room, seat) {
   seat.ws = null;
   seat.gone = Date.now();
   if (room.game && seat.pid) seat.graceTimer = setTimeout(() => takeOver(room, seat), GRACE_MS);
-  seat.holdTimer = setTimeout(() => letGo(room, seat), HOLD_MS);
+  seat.holdTimer = setTimeout(() => letGo(room, seat), room.game ? HOLD_MS : LOBBY_HOLD_MS);
+}
+
+// The host role goes to the first seat with a socket; with none, to the first held seat.
+function handOffHost(room) {
+  const next = room.seats.find((s) => s.ws) ?? room.seats[0];
+  room.host = next.id;
+  say(room, `${next.name} is now the host.`);
 }
 
 // The grace is over: the practice bot plays the seat so the table never waits longer than that.
@@ -739,9 +775,9 @@ function takeOver(room, seat) {
   save(room);
   // With nobody connected, the bots wait too: a rejoin runs them.
   if (!room.seats.some((s) => s.ws)) return;
-  const seen = room.game.log.length;
+  const seen = room.game.log;
   runBots(room);
-  for (const line of room.game.log.slice(seen)) say(room, line);
+  for (const line of newLog(seen, room.game.log)) say(room, line);
   pushState(room);
 }
 
@@ -750,10 +786,8 @@ function letGo(room, seat) {
   clearTimeout(seat.graceTimer);
   room.seats = room.seats.filter((s) => s !== seat);
   if (room.seats.length === 0) return dropRoom(room);
-  if (room.host === seat.id) {
-    room.host = room.seats[0].id;
-    say(room, `${room.seats[0].name} is now the host.`);
-  }
+  if (!room.game) say(room, `${seat.name} left.`);
+  if (room.host === seat.id) handOffHost(room);
   publish(room);
 }
 
@@ -769,13 +803,12 @@ function leave(ws) {
     publish(room);
     return;
   }
-  room.seats = room.seats.filter((s) => s !== seat);
-  if (room.seats.length === 0) return dropRoom(room);
-  say(room, `${seat.name} left.`);
-  if (room.host === seat.id) {
-    room.host = room.seats[0].id;
-    say(room, `${room.seats[0].name} is now the host.`);
-  }
+  // In the lobby the seat is held too, so a locked phone keeps its seat; it cannot be ready while away.
+  seat.ready = false;
+  hold(room, seat);
+  say(room, `${seat.name} lost connection.`);
+  // A held host hands the role to a live seat now and does not get it back on return.
+  if (room.host === seat.id && room.seats.some((s) => s.ws)) handOffHost(room);
   publish(room);
 }
 

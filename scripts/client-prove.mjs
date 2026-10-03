@@ -19,7 +19,28 @@ try {
   page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
   page.on("pageerror", (e) => errors.push(String(e)));
   page.on("response", (r) => r.status() >= 400 && errors.push(`${r.status()} ${r.url()}`));
+  // #303: record which /audio/<file> each play() came from instead of playing it; headless has no speaker to hear.
+  await page.addInitScript(() => {
+    window.__plays = [];
+    HTMLMediaElement.prototype.play = function () {
+      window.__plays.push(new URL(this.src).pathname);
+      return Promise.resolve();
+    };
+  });
+  const plays = () => page.evaluate(() => window.__plays.map((p) => p.replace("/audio/", "")));
   await page.goto(`http://127.0.0.1:${PORT}/`);
+  // #303: nothing plays before the first gesture. A game started from the console places pieces without one.
+  await page.evaluate(async () => {
+    const g = window.__emberisle;
+    g.getState().startAi();
+    const s = g.getState();
+    s.pickVertex(s.highlights().vertices[0]);
+    await new Promise((r) => setTimeout(r, 1500));
+    g.getState().goTitle();
+  });
+  const silent = await plays();
+  console.log("plays before the first gesture:", JSON.stringify(silent));
+  if (silent.length) throw new Error(`sound played before a gesture: ${JSON.stringify(silent)}`);
   await page.getByRole("button", { name: "Play versus the isle" }).click();
 
   // Place the human's outposts and paths through the same store the canvas clicks use.
@@ -56,6 +77,12 @@ try {
     return "never my roll";
   });
   console.log("rolled:", rolled);
+  // #303: setup and the first roll made the table sounds (server/cue.mjs names).
+  const SOUND = { dice_land: "drop_001.wav", path_place: "drop_002.wav", outpost_place: "drop_003.wav" };
+  const heardFiles = await plays();
+  const heard = Object.keys(SOUND).filter((n) => heardFiles.includes(SOUND[n]));
+  console.log("sounds heard in setup and the first roll:", JSON.stringify(heardFiles));
+  if (heard.length !== 3) throw new Error(`sounds: heard only ${heard.join(" ")} in ${JSON.stringify(heardFiles)}`);
   // #188: the roll banner shows offline too.
   const bannerText = await page.getByTestId("banner").textContent({ timeout: 2000 }).catch(() => null);
   console.log("roll banner:", JSON.stringify(bannerText));
@@ -353,6 +380,35 @@ try {
     await page.waitForFunction(() => window.__emberisle.getState().state);
   };
 
+  // #303: the speaker toggle is remembered across a reload, and a muted table makes no sound.
+  await toTitle();
+  const speaker = page.getByTestId("sound-toggle");
+  const wasOn = await speaker.getAttribute("aria-pressed");
+  await speaker.click();
+  const stored = await page.evaluate(() => localStorage.getItem("emberisle-muted"));
+  await page.reload();
+  await page.waitForFunction(() => window.__emberisle);
+  const stillOff = await speaker.getAttribute("aria-pressed");
+  await page.getByRole("button", { name: "Play versus the isle" }).click();
+  await page.waitForFunction(() => window.__emberisle.getState().state);
+  await page.evaluate(async () => {
+    const s = window.__emberisle.getState();
+    s.pickVertex(s.highlights().vertices[0]);
+    await new Promise((r) => setTimeout(r, 1500));
+  });
+  const mutedPlays = await plays();
+  // Back on, through the own-seat menu this time, so both toggles are exercised.
+  await page.locator('[data-menu-trigger="p0"]').first().click();
+  await page.getByTestId("player-menu").getByTestId("sound-toggle").click();
+  const menuSays = await page.getByTestId("player-menu").getByTestId("sound-toggle").textContent();
+  const cleared = await page.evaluate(() => localStorage.getItem("emberisle-muted"));
+  const mute = { wasOn, stored, stillOff, mutedPlays, menuSays: menuSays?.trim(), cleared };
+  console.log("mute:", JSON.stringify(mute));
+  if (wasOn !== "true" || stored !== "1" || stillOff !== "false" || mutedPlays.length || menuSays?.trim() !== "Table sounds on" || cleared !== null) {
+    throw new Error(`mute: ${JSON.stringify(mute)}`);
+  }
+  console.log(`sounds: ${heard.join(" ")} played; mute remembered`);
+
   // #249: the lobby reads host from the live seat list, not the welcome flag.
   const lobbyStart = async (host, isHost) => {
     await toTitle();
@@ -537,7 +593,7 @@ try {
       Object.fromEntries(
         ["Path", "Outpost", "Stronghold", "Fortune"].map((n) => {
           const b = [...document.querySelectorAll("button")].find((x) => x.textContent.trim() === n);
-          return [n, { disabled: b?.disabled, title: b?.title, desc: b?.getAttribute("aria-description"), pressed: b?.getAttribute("aria-pressed") }];
+          return [n, { disabled: b?.getAttribute("aria-disabled") === "true", native: b?.disabled, cursor: b && getComputedStyle(b).cursor, title: b?.title, desc: b?.getAttribute("aria-description"), pressed: b?.getAttribute("aria-pressed") }];
         }),
       ),
     );
@@ -547,7 +603,23 @@ try {
   await page.getByRole("button", { name: "Path", exact: true }).waitFor({ timeout: 5000 });
   const empty = await buildRow();
   console.log("build row, empty hand:", JSON.stringify(empty));
-  for (const [n, p] of Object.entries(price)) if (!empty[n].disabled || empty[n].title !== p || empty[n].desc !== p) throw new Error(`empty hand ${n}: ${JSON.stringify(empty[n])}`);
+  for (const [n, p] of Object.entries(price)) if (!empty[n].disabled || empty[n].native || empty[n].cursor !== "not-allowed" || empty[n].title !== p || empty[n].desc !== p) throw new Error(`empty hand ${n}: ${JSON.stringify(empty[n])}`);
+  // #302: an unaffordable button is still in the Tab order, reports aria-disabled and its price, and a click neither arms nor buys.
+  await page.evaluate(() => document.activeElement?.blur());
+  let tabbedTo = null;
+  for (let i = 0; i < 40 && tabbedTo !== "Path"; i++) {
+    await page.keyboard.press("Tab");
+    tabbedTo = await page.evaluate(() => document.activeElement?.textContent?.trim());
+  }
+  const tabFocus = await page.evaluate(() => ({ aria: document.activeElement?.getAttribute("aria-disabled"), desc: document.activeElement?.getAttribute("aria-description") }));
+  console.log("Tab to unaffordable Path:", JSON.stringify({ tabbedTo, ...tabFocus }));
+  if (tabbedTo !== "Path" || tabFocus.aria !== "true" || tabFocus.desc !== price.Path) throw new Error(`Tab/aria-disabled: ${JSON.stringify({ tabbedTo, ...tabFocus })}`);
+  const cardsBefore = await page.evaluate(() => JSON.stringify([window.__emberisle.getState().state.deck.length, window.__emberisle.getState().error]));
+  for (const n of ["Path", "Outpost", "Stronghold", "Fortune"]) await page.getByRole("button", { name: n, exact: true }).click({ force: true });
+  await page.keyboard.press("Enter");
+  const clickRes = await page.evaluate(() => ({ buildMode: window.__emberisle.getState().buildMode, cards: JSON.stringify([window.__emberisle.getState().state.deck.length, window.__emberisle.getState().error]) }));
+  console.log("click unaffordable:", JSON.stringify({ ...clickRes, cardsBefore }));
+  if (clickRes.buildMode !== "none" || clickRes.cards !== cardsBefore) throw new Error(`unaffordable click acted: ${JSON.stringify(clickRes)}`);
   await setHand({ timber: 1, clay: 1 });
   const some = await buildRow();
   console.log("build row, 1 timber 1 clay:", JSON.stringify(some));
@@ -591,10 +663,18 @@ try {
 
   // #286: How to play is a dialog: focus goes to Close, Escape closes it, and focus returns to the opener (title and in-game).
   const howToRound = async (opener, label) => {
+    // Safari does not focus a button on click: stop the mousedown focus and blur, so activeElement is <body> when the dialog opens.
+    await opener.evaluate((el) => {
+      el.addEventListener("mousedown", (e) => e.preventDefault(), { once: true });
+      el.blur();
+    });
     await opener.click();
     const dlg = page.getByRole("dialog", { name: "How to play" });
     await dlg.waitFor({ timeout: 3000 });
     const at = await page.evaluate(() => document.activeElement?.getAttribute("aria-label"));
+    await page.keyboard.press("Tab");
+    const afterTab = await page.evaluate(() => document.activeElement?.getAttribute("aria-label"));
+    if (afterTab !== "Close") throw new Error(`how to play ${label}: Tab left the dialog: ${afterTab}`);
     await page.keyboard.press("Escape");
     await dlg.waitFor({ state: "detached", timeout: 3000 });
     const back = await page.evaluate(() => document.activeElement?.getAttribute("aria-label") ?? document.activeElement?.textContent?.trim());
