@@ -220,17 +220,20 @@ console.log("ROOM_MAX=3: three hellos got welcome, the fourth got 'The host is f
 const flood = four[0];
 flood.inbox.length = 0;
 for (let i = 0; i < 60; i++) flood.send({ type: "ready", value: i % 2 === 0 });
-// Wait for all 60 answers (a seats push or an error), not a fixed 500 ms: on a loaded CI runner the replies
-// came later and none were counted. A late flood reply would also be mistaken for the answer to the ready below.
-const answered = () => flood.inbox.filter((e) => e.type === "seats" || e.type === "error").length;
-for (const until = Date.now() + 5000; answered() < 60 && Date.now() < until; ) await new Promise((r) => setTimeout(r, 25));
+// Not a fixed 500 ms: on a loaded CI runner no reply had arrived by then. The host answers in order and echoes chat
+// to its sender, so once this line comes back every reply to the flood is in, and none can be mistaken later.
+flood.send({ type: "chat", text: "flood done" });
+await flood.next("chat");
 const slows = flood.inbox.filter((e) => e.type === "error" && e.message === "Slow down.").length;
 if (slows < 1) fail("60 ready toggles were never throttled");
 if (small3.exitCode !== null) fail("the host died in the flood");
 await new Promise((r) => setTimeout(r, 1100));
 flood.inbox.length = 0;
+// A ready that changes nothing gets no reply, and which toggles got through decides the seat's state, so go
+// false then true: the true always changes the seat and always publishes seats.
+flood.send({ type: "ready", value: false });
 flood.send({ type: "ready", value: true });
-await flood.next("seats");
+for (;;) if ((await flood.next("seats")).seats.find((x) => x.name === "T0")?.ready) break;
 flood.send({ type: "start" });
 const afterFlood = await flood.next("error");
 if (afterFlood.message === "Slow down.") fail("start still throttled after a second");
