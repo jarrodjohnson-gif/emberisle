@@ -480,7 +480,13 @@ function useResourceFlashes(me: PlayerState) {
   useEffect(() => {
     const was = prev.current;
     prev.current = { id: me.id, resources: me.resources };
-    if (!was || was.id !== me.id) return;
+    if (!was) return;
+    if (was.id !== me.id) {
+      Object.values(timers.current).forEach((t) => clearTimeout(t.timer));
+      timers.current = {};
+      setFlashes({});
+      return;
+    }
     for (const r of RESOURCES) {
       const delta = me.resources[r] - was.resources[r];
       if (delta) setFlashes((f) => ({ ...f, [r]: { delta, at: Date.now() } }));
