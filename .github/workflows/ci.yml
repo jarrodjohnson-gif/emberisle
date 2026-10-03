@@ -1,15 +1,17 @@
 name: CI
 
 # The README "Run it" checks, on every pull request and every push to main.
+# build, server, browser-a and browser-b run at once on separate runners (browser-b waits for build's dist/).
+# `checks` is the required merge check: it passes only when all four pass.
 on:
   pull_request:
   push:
     branches: [main]
 
 jobs:
-  checks:
+  build:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -23,15 +25,85 @@ jobs:
       - run: npm ci --prefix server
       - run: npm run typecheck
       - run: npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          retention-days: 1
       - run: npm run size-prove
+
+  server:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            server/package-lock.json
+      - run: npm ci
+      - run: npm ci --prefix server
       - run: npm test
       - run: npm run touch-place-prove
+
+  browser-a:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            server/package-lock.json
+      - run: npm ci
+      - run: npm ci --prefix server
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
       - run: npx playwright install --with-deps chromium
       - run: npm run client-prove
       - run: npm run dpr-prove
       - run: npm run hotseat-prove
       - run: npm run tabs-prove
       - run: npm run trade-prove
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: client-prove-screenshot
+          path: test-results/
+          if-no-files-found: ignore
+
+  browser-b:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            server/package-lock.json
+      - run: npm ci
+      - run: npm ci --prefix server
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      - run: npx playwright install --with-deps chromium
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
       - run: npm run served-prove
       - run: npm run night-prove
       - run: npm run chat-prove
@@ -42,6 +114,20 @@ jobs:
       - if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: client-prove-screenshot
+          name: browser-b-test-results
           path: test-results/
           if-no-files-found: ignore
+
+  # always() so a failed or cancelled job above fails this check instead of skipping it (a skipped required check passes).
+  checks:
+    needs: [build, server, browser-a, browser-b]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - run: |
+          echo 'build=${{ needs.build.result }} server=${{ needs.server.result }} browser-a=${{ needs.browser-a.result }} browser-b=${{ needs.browser-b.result }}'
+          test '${{ needs.build.result }}' = success
+          test '${{ needs.server.result }}' = success
+          test '${{ needs.browser-a.result }}' = success
+          test '${{ needs.browser-b.result }}' = success
