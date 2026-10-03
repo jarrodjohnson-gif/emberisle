@@ -522,8 +522,10 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       pending = false;
       welcomed = true;
       if (secret) rememberSeat({ code, secret });
-      // A rejoin lands in the lobby for a moment; the host's state push (if the game started) moves it to play.
-      set({ code, seatId: you, isHost: host, screen: "lobby", mode: "online", error: null, toast: null, chat: (chat ?? []).slice(-50), reactions: [], unread: 0 });
+      // A page-load rejoin has no state yet, so it passes through the lobby until the host's state push moves it to play.
+      // A mid-game reconnect already holds the game: stay on the board so the HUD keeps its local state.
+      const inGame = get().state !== null && get().screen === "play";
+      set({ code, seatId: you, isHost: host, screen: inGame ? "play" : "lobby", mode: "online", error: null, toast: null, chat: (chat ?? []).slice(-50), reactions: [], unread: 0 });
     },
     reconnecting: (attempt) => set({ error: `Reconnecting… (try ${attempt})`, toast: "Reconnecting…" }),
     chat: (line) => {
