@@ -259,7 +259,7 @@ WebSocket JSON. The client sends intents. The server answers with `state` or `er
 | `rolled {dice:[a,b], sum, gains[]}` | The server's dice and who got what |
 | `chat {id, seat, player, name, color, text, at}` | A chat line, sent to every seat, sender included |
 | `react {seat, player, emote, to, at}` | A reaction, sent to every seat, sender included |
-| `log {text}` / `error {message}` | One line to show |
+| `log {text}` / `error {message}` | One line to show. Two come from the host's limits: "The host is full." (a `hello` that would open a table past `ROOM_MAX`, default 64) and "Slow down." (a seat sent more than about 20 non-chat messages in a burst, refilled 4 a second; the message is dropped) |
 | `tradeOffer {tradeId, from, give, want, seconds}` | An ask-the-table trade, open 20 s |
 | `tradeDeclined {tradeId, by, name}` | One seat said no, sent to every seat with a `log` line "<Name> declines." The offer stays open for seats that have not answered. |
 | `tradeClosed {tradeId, taker?}` | The offer is over, sent to every seat: taken (`taker`), every other human seat declined, the 20 s ran out, or the asker's turn moved on (pass, or any action that ends it). A late `tradeAnswer` gets "Offer is gone." |

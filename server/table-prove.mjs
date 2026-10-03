@@ -133,6 +133,8 @@ function whoActs() {
 
 async function step(c, msg) {
   const seq = c.state.game.seq;
+  // The host allows a seat a burst of 20 non-chat messages, then 4 a second (#281); a person never nears that, so pace the proof like one.
+  await new Promise((r) => setTimeout(r, 70));
   c.send(msg);
   for (;;) {
     const m = await c.next("any");
