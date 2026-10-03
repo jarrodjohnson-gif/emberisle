@@ -1,7 +1,7 @@
 // #116: host.mjs serves the built client next to the socket and the avatars, so one address (and one tunnel)
 // carries all three. Also checks hostUrl dials the page's own origin in a built client, and :8787 only in dev.
 import { spawn } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import http from "node:http";
 import net from "node:net";
 import { tmpdir } from "node:os";
@@ -30,7 +30,8 @@ function check(line, ok) {
 async function start(dist) {
   const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
     cwd: new URL(".", import.meta.url),
-    env: { ...process.env, PORT: "0", DIST: dist, ROOMS_DIR: path.join(temp, "rooms") },
+    // #369: a short lobby hold so a stranger's table drops within the proof, and a store small enough to fill.
+    env: { ...process.env, PORT: "0", DIST: dist, ROOMS_DIR: path.join(temp, "rooms"), LOBBY_HOLD_MS: "300", AVATAR_MAX: "2", AVATAR_STORE_BYTES: "1000" },
   });
   hosts.push(host);
   return new Promise((resolve) =>
@@ -42,9 +43,9 @@ async function start(dist) {
 }
 
 // node:http sends the path exactly as given; fetch would normalise the dot segments away.
-function get(port, p, method = "GET", body) {
+function get(port, p, method = "GET", body, headers = {}) {
   return new Promise((resolve, reject) => {
-    const req = http.request({ host: "127.0.0.1", port, path: p, method }, (res) => {
+    const req = http.request({ host: "127.0.0.1", port, path: p, method, headers }, (res) => {
       const chunks = [];
       res.on("data", (c) => chunks.push(c));
       res.on("end", () => resolve({ status: res.statusCode, headers: res.headers, body: Buffer.concat(chunks).toString() }));
@@ -99,26 +100,96 @@ for (const p of ["/assets/missing.js", "/assets", "/../secret.txt", "/%2e%2e/sec
 r = await get(port, "/", "POST");
 check(`POST / -> ${r.status}`, r.status === 404);
 
-r = await get(port, "/avatars", "POST", Buffer.from([0xff, 0xd8, 0xff, 0xd9]));
-const { url: avatarUrl } = JSON.parse(r.body);
-const first = r.status;
-r = await get(port, avatarUrl);
-check(`POST /avatars then GET it -> ${first}, ${r.status}`, first === 200 && r.status === 200);
-
-const welcome = await new Promise((resolve, reject) => {
+// A socket that sits down (hello) and can wait for one message of a type.
+function seat(hello) {
   const ws = new WebSocket(`ws://127.0.0.1:${port}`);
-  ws.on("open", () => ws.send(JSON.stringify({ type: "create", name: "Ember" })));
+  const inbox = [];
+  const waiters = [];
   ws.on("message", (m) => {
-    const msg = JSON.parse(m);
-    if (msg.type === "welcome") {
-      ws.close();
-      resolve(msg);
-    }
+    inbox.push(JSON.parse(m));
+    for (const w of waiters.splice(0)) w();
   });
-  ws.on("error", reject);
-  setTimeout(() => reject(new Error("no welcome")), 5000);
-}).catch((e) => fail(e.message));
-check(`WS on the same port -> welcome ${welcome.code}`, /^[A-Z2-9]{4}$/.test(welcome.code));
+  ws.on("error", (e) => fail(e.message));
+  ws.on("open", () => ws.send(JSON.stringify(hello)));
+  const next = async (type, where = () => true) => {
+    for (;;) {
+      const i = inbox.findIndex((m) => m.type === type && where(m));
+      if (i >= 0) return inbox.splice(i, 1)[0];
+      await new Promise((res, rej) => {
+        waiters.push(res);
+        setTimeout(() => rej(new Error(`waited for ${type}`)), 5000);
+      }).catch((e) => fail(e.message));
+    }
+  };
+  return { ws, inbox, next };
+}
+// A picture is `size` bytes starting with the JPEG marker; `with` carries the seat's secret from its welcome.
+const jpeg = (size) => Buffer.concat([Buffer.from([0xff, 0xd8, 0xff]), Buffer.alloc(size - 3)]);
+const upload = (body, secret) => get(port, "/avatars", "POST", body, secret ? { "x-seat-secret": secret } : {});
+
+const a = seat({ type: "create", name: "Ember" });
+const welcome = await a.next("welcome");
+check(`WS on the same port -> welcome ${welcome.code}`, /^[A-Z2-9]{4}$/.test(welcome.code) && typeof welcome.secret === "string");
+
+// #369: only a seated player uploads, with the secret from their welcome; the picture is then that seat's own.
+r = await upload(jpeg(600));
+const noSecret = r.status;
+r = await upload(jpeg(600), "not-a-secret");
+check(`POST /avatars with no secret, then a wrong one -> ${noSecret}, ${r.status}`, noSecret === 403 && r.status === 403);
+r = await upload(jpeg(600), welcome.secret);
+check(`POST /avatars with the seat's secret -> ${r.status}`, r.status === 200);
+const aPic = JSON.parse(r.body);
+const seen = await a.next("seats", (m) => m.seats[0].url === aPic.url);
+check(`seats then shows ${aPic.url} on the uploader`, seen.seats[0].avatarId === aPic.avatarId);
+r = await get(port, aPic.url);
+check(`GET ${aPic.url} -> ${r.status} ${r.headers["content-type"]}, nosniff`,
+  r.status === 200 && r.headers["content-type"] === "image/jpeg" && r.headers["x-content-type-options"] === "nosniff");
+r = await upload(Buffer.alloc(100), welcome.secret);
+check(`POST /avatars with bytes that are not a JPEG -> ${r.status}`, r.status === 400);
+
+// The store holds AVATAR_MAX pictures and AVATAR_STORE_BYTES in all; one picture per seat, a new one replaces the old.
+const b = seat({ type: "hello", code: welcome.code, name: "Tide" });
+const bWelcome = await b.next("welcome");
+r = await upload(jpeg(600), bWelcome.secret);
+check(`second seat's 600 B over a 1000 B store -> ${r.status}`, r.status === 503);
+r = await upload(jpeg(300), bWelcome.secret);
+check(`second seat's 300 B -> ${r.status}`, r.status === 200);
+const bPic = JSON.parse(r.body);
+const c = seat({ type: "hello", code: welcome.code, name: "Moss" });
+const cWelcome = await c.next("welcome");
+r = await upload(jpeg(50), cWelcome.secret);
+check(`third seat's 50 B over AVATAR_MAX=2 -> ${r.status}`, r.status === 503);
+r = await upload(jpeg(100), welcome.secret);
+const replaced = JSON.parse(r.body);
+const old = await get(port, aPic.url);
+check(`uploader replaces its picture -> ${r.status}; old url -> ${old.status}`, r.status === 200 && old.status === 404 && replaced.url !== aPic.url);
+
+// A stranger peeks the table, hellos with a seat's avatarId, and drops: the picture stays with its seat (#369).
+const stranger = seat({ type: "peek", code: welcome.code });
+const peeked = await stranger.next("seats");
+check(`stranger peeks -> sees ${peeked.seats[0].avatarId}`, peeked.seats[0].avatarId === replaced.avatarId);
+stranger.ws.send(JSON.stringify({ type: "hello", name: "Grab", avatarId: replaced.avatarId }));
+const grab = await stranger.next("welcome");
+const grabSeats = await stranger.next("seats");
+check(`stranger hellos with that avatarId -> seat shows ${grabSeats.seats[0].avatarId}`, grabSeats.seats[0].avatarId === null);
+stranger.ws.close();
+const grabFile = path.join(temp, "rooms", `${grab.code}.json`);
+const until = Date.now() + 5000;
+while (existsSync(grabFile) && Date.now() < until) await new Promise((res) => setTimeout(res, 25));
+check(`stranger's table ${grab.code} dropped after the lobby hold`, !existsSync(grabFile));
+r = await get(port, replaced.url);
+check(`GET ${replaced.url} after that -> ${r.status}`, r.status === 200);
+
+// A seat that is let go takes its picture with it, which frees the slot. Every seats message between Tide sitting
+// and Tide's let-go lists Tide, so with the older ones cleared, the first without Tide is the let-go.
+a.inbox.length = 0;
+b.ws.close();
+await a.next("seats", (m) => !m.seats.some((s) => s.name === "Tide"));
+r = await get(port, bPic.url);
+check(`seat let go: GET ${bPic.url} -> ${r.status}`, r.status === 404);
+r = await upload(jpeg(50), cWelcome.secret);
+check(`third seat's 50 B into the freed slot -> ${r.status}`, r.status === 200);
+for (const s of [a, c]) s.ws.close();
 
 const bare = await start(empty);
 r = await get(bare, "/");
