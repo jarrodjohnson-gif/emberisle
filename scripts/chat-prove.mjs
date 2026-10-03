@@ -256,7 +256,11 @@ try {
   await menu.waitFor({ state: "detached" });
   await a.page.getByPlaceholder("Say something…").waitFor();
   check((await a.page.getByPlaceholder("Say something…").inputValue()) === "@Tide ", 'menu: Mention puts "@Tide " in the input');
-  check(await a.page.evaluate(() => document.activeElement?.id === "chat-input"), "menu: Mention focuses the input");
+  // focusChat focuses on the next animation frame, and a software-GL frame can take seconds.
+  const focused = await a.page
+    .waitForFunction(() => document.activeElement?.id === "chat-input", null, { timeout: 5000 })
+    .then(() => true, () => false);
+  check(focused, "menu: Mention focuses the input");
   await a.page.getByPlaceholder("Say something…").fill("");
   await a.page.getByPlaceholder("Say something…").press("Escape");
   await a.page.getByRole("button", { name: "Open chat" }).waitFor();
