@@ -112,6 +112,14 @@ try {
   // here (tabs-prove covers it), so each tab stops drawing it and the clicks below land in time.
   for (const t of tabs) await t.page.evaluate(() => window.__isle.renderer.setAnimationLoop(null));
 
+  // #232: roll off for first place, each die from the tab whose seat is up.
+  for (let n = 0; vs[0].phase === "rollOff"; n++) {
+    if (n > 30) throw new Error("roll-off never ended");
+    const i = vs.findIndex((v) => v.you === vs[0].current);
+    await act(tabs[i], "dispatch", [{ type: "roll" }]);
+    vs = await synced(tabs, vs[0].seq, `roll-off roll ${n}`);
+  }
+
   for (let step = 0; step < 12; step++) {
     const i = vs.findIndex((v) => v.you === vs[0].current);
     if (vs[i].phase === "setupSettle") await act(tabs[i], "pickVertex", vs[i].legal.outpost[0]);
