@@ -25,7 +25,8 @@
     "served-prove": "node scripts/tabs-prove.mjs --served",
     "size-prove": "node scripts/size-prove.mjs",
     "night": "node scripts/night.mjs",
-    "night-prove": "node scripts/night-prove.mjs"
+    "night-prove": "node scripts/night-prove.mjs",
+    "contrast-prove": "node scripts/contrast-prove.mjs"
   },
   "dependencies": {
     "clsx": "^2.1.1",

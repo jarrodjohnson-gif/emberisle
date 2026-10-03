@@ -111,6 +111,7 @@ jobs:
       - run: npm run tokens-prove
       - run: npm run pieces-prove
       - run: npm run idle-prove
+      - run: npm run contrast-prove
       - if: always()
         uses: actions/upload-artifact@v4
         with:
