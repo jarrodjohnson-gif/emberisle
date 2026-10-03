@@ -172,8 +172,9 @@ function place(g, hexId, nth, pid, kind, cards) {
   g.players.find((x) => x.id === pid).resources.wool = cards;
   g.bank.wool -= cards;
 }
-// Seed 7: "-2,0" is an 8 (the best token), "0,-1" a 2, neither the wayfarer's start.
+// Seed 7: "-2,0" is an 8 (the best token), "0,-2" a 6, "0,-1" a 2; none is the wayfarer's start.
 const BEST = "-2,0";
+const SIX = "0,-2";
 const WORST = "0,-1";
 
 // Two targets on the best hex, the leader (a stronghold) listed second: the steal goes to the leader.
@@ -223,19 +224,33 @@ const WORST = "0,-1";
   console.log("robs the leader: the wayfarer card robs the leader too");
 }
 
-// The leader shares the best hex with the bot: it blocks the other opponent on a worse hex instead.
+// The leader farms a worse token than the trailer: the leader's two strongholds outweigh the 8.
+// Corners 4 and 5 of "0,-2" and corner 3 of "-2,0" touch no other hex, so each hex scores alone.
 {
   const g = robberPosition();
-  place(g, BEST, 0, "p0", "outpost", 0);
-  place(g, BEST, 2, "p2", "stronghold", 3);
-  place(g, WORST, 0, "p1", "outpost", 3);
+  place(g, SIX, 4, "p2", "stronghold", 3);
+  place(g, SIX, 5, "p2", "stronghold", 3);
+  place(g, BEST, 3, "p1", "outpost", 3);
+  const a = chooseBotAction(g, "p0");
+  if (a.type !== "moveRobber" || a.hexId !== SIX) fail("robs the leader: took the better token over the leader's hex", a);
+  if (a.stealFrom !== "p2") fail("robs the leader: not the leader", a);
+  play(g, a);
+  console.log("robs the leader: the leader's strongholds on a 6 outweigh a trailing outpost on an 8");
+}
+
+// The leader shares the best hex with the bot, and the only other opponent holds no cards: the bot
+// still leaves its own hex alone and blocks the empty-handed trailer rather than itself.
+{
+  const g = robberPosition();
+  place(g, BEST, 4, "p0", "outpost", 0);
+  place(g, BEST, 3, "p2", "stronghold", 3);
+  place(g, WORST, 0, "p1", "outpost", 0);
   const a = chooseBotAction(g, "p0");
   const corners = g.vertices.filter((v) => v.hexes.includes(a.hexId) && v.building);
   if (a.type !== "moveRobber" || a.hexId === BEST) fail("own hex: blocked itself while another hex blocks an opponent", a);
   if (corners.some((v) => v.building.playerId === "p0") || !corners.length) fail("own hex: the hex picked instead does not block an opponent", a);
-  if (!a.stealFrom) fail("own hex: no steal", a);
   play(g, a);
-  console.log("own hex: never blocked while another hex blocks an opponent");
+  console.log("own hex: never blocked while another hex blocks an opponent, even with no steal there");
 }
 
 console.log("ai prove ok");

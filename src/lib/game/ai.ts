@@ -59,7 +59,7 @@ function bestRobberHex(state: GameState, pid: string): { hexId: string; stealFro
   const blocks = (hid: string) =>
     state.vertices.some((v) => v.hexes.includes(hid) && v.building && v.building.playerId !== pid);
   const pool = legal.some((h) => !owned(h.id) && blocks(h.id)) ? legal.filter((h) => !owned(h.id)) : legal;
-  let best = { hexId: state.hexes[0]!.id, stealFrom: null as string | null, score: -1 };
+  let best = { hexId: pool[0]!.id, stealFrom: null as string | null, score: -1 };
   for (const h of pool) {
     const targets = stealTargets(state, h.id, pid);
     let score = h.pip ? 6 - Math.abs(h.pip - 7) : 0;
