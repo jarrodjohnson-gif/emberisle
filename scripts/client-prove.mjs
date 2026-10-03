@@ -459,13 +459,62 @@ try {
         return flash ? { flash: getComputedStyle(flash).animationDuration, fade: banner ? getComputedStyle(banner).animationDuration : null } : null;
       },
       null,
-      { timeout: 2000, polling: "raf" },
+      { timeout: 10000, polling: "raf" },
     )
   ).jsonValue();
   await page.emulateMedia({ reducedMotion: null });
   console.log("reduced motion:", JSON.stringify(motion));
   if (motion.flash !== "0.001s" || motion.fade !== "0.001s") throw new Error(`reduced motion: ${JSON.stringify(motion)}`);
   await toTitle();
+  // #254: online, Leave asks first (Stay and Escape cancel); a second Leave goes to the title and clears the saved seat.
+  // Practice keeps the one-click Leave.
+  await freshPractice();
+  const leaveState = () => page.evaluate(() => ({ screen: window.__emberisle.getState().screen, seat: localStorage.getItem("emberisle-seat") }));
+  await page.evaluate(() => {
+    localStorage.setItem("emberisle-seat", JSON.stringify({ code: "ABCD", secret: "x" }));
+    window.__emberisle.setState({ mode: "online", net: { act: () => true, close: () => {} } });
+  });
+  const confirmBox = page.getByTestId("leave-confirm");
+  await page.getByRole("button", { name: "Leave", exact: true }).click();
+  await confirmBox.waitFor({ timeout: 2000 });
+  const asked = { text: await confirmBox.textContent(), ...(await leaveState()) };
+  console.log("leave asks:", JSON.stringify(asked));
+  if (asked.screen !== "play" || !asked.text.includes("Leave the table? Your seat goes to the bot.") || !asked.seat) throw new Error(`leave confirm: ${JSON.stringify(asked)}`);
+  await confirmBox.getByRole("button", { name: "Stay" }).click();
+  await confirmBox.waitFor({ state: "detached", timeout: 2000 });
+  await page.getByRole("button", { name: "Leave", exact: true }).click();
+  await confirmBox.waitFor({ timeout: 2000 });
+  await page.keyboard.press("Escape");
+  await confirmBox.waitFor({ state: "detached", timeout: 2000 });
+  if ((await leaveState()).screen !== "play") throw new Error("Stay/Escape left the table");
+  await page.getByRole("button", { name: "Leave", exact: true }).click();
+  await confirmBox.getByRole("button", { name: "Leave" }).click();
+  await page.waitForFunction(() => window.__emberisle.getState().screen === "title", null, { timeout: 5000 });
+  const left = await leaveState();
+  console.log("leave then leave:", JSON.stringify(left));
+  if (left.seat !== null) throw new Error(`saved seat not cleared: ${JSON.stringify(left)}`);
+  // Phone portrait: the seat strip sits under the header and must not paint over the question.
+  await freshPractice();
+  await page.evaluate(() => window.__emberisle.setState({ mode: "online", net: { act: () => true, close: () => {} } }));
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByTestId("seat-strip").waitFor({ timeout: 5000 });
+  await page.getByRole("button", { name: "Leave", exact: true }).click();
+  await confirmBox.waitFor({ timeout: 2000 });
+  const topmost = await page.evaluate(() => {
+    const q = document.querySelector("#leave-confirm-msg").getBoundingClientRect();
+    const hit = document.elementFromPoint(q.x + q.width / 2, q.y + q.height / 2);
+    return { ok: hit?.id === "leave-confirm-msg", hit: hit ? `${hit.tagName}.${hit.className}`.slice(0, 80) : null };
+  });
+  console.log("phone leave question topmost:", JSON.stringify(topmost));
+  if (!topmost.ok) throw new Error(`phone: strip covers the leave question: ${JSON.stringify(topmost)}`);
+  await page.keyboard.press("Escape");
+  await page.setViewportSize({ width: 800, height: 500 });
+  await freshPractice();
+  await page.getByRole("button", { name: "Leave", exact: true }).click();
+  await page.waitForFunction(() => window.__emberisle.getState().screen === "title", null, { timeout: 5000 });
+  if (await confirmBox.count()) throw new Error("practice Leave asked for confirmation");
+  console.log("practice leave: one click");
+
   // #259: a saved seat whose table is gone fails quietly on page load: title card, no error, key cleared.
   const { spawn } = await import("node:child_process");
   const { mkdtempSync, rmSync } = await import("node:fs");

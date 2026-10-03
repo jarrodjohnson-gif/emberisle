@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes } from "react";
+import type { ButtonHTMLAttributes, Ref } from "react";
 import { cn } from "@/lib/utils";
 
 const VARIANT = {
@@ -21,6 +21,7 @@ const SIZE = {
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: keyof typeof VARIANT;
   size?: keyof typeof SIZE;
+  ref?: Ref<HTMLButtonElement>;
 }
 
 // Build bible 3.4: 8 px corners, press scales to 0.97 for 80 ms.
