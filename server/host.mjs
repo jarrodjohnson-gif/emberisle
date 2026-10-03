@@ -7,7 +7,7 @@ import { randomBytes, randomInt } from "node:crypto";
 import { WebSocketServer } from "ws";
 import { chooseBotAction } from "../src/lib/game/ai.ts";
 import { createGame } from "../src/lib/game/board.ts";
-import { applyAction, legalCities, legalRoads, legalSettle, playable, stealTargets } from "../src/lib/game/rules.ts";
+import { applyAction, legalCities, legalRoads, legalSettle, playable, stealTargets, validBag } from "../src/lib/game/rules.ts";
 import { COST, PLAYER_COLORS, RESOURCES } from "../src/lib/game/types.ts";
 import { allow, cleanText, loadEmotes, remember } from "./chat.mjs";
 import { cue } from "./cue.mjs";
@@ -368,13 +368,32 @@ async function serveStatic(req, res) {
 
 const wss = new WebSocketServer({ server, maxPayload: 16 * 1024 });
 
+// A name is the join key for the away marker, chat mentions and the log, so it is cleaned and made unique.
+function seatName(room, raw, fallback) {
+  const base = typeof raw === "string" ? Array.from(raw.replace(/\p{Cc}/gu, "").replace(/ {2,}/g, " ").trim()).slice(0, 16).join("") : "";
+  const name = base || fallback;
+  const taken = (n) => room.seats.some((s) => s.name.toLowerCase() === n.toLowerCase());
+  if (!taken(name)) return name;
+  for (let i = 2; ; i++) {
+    const tag = ` ${i}`;
+    const next = Array.from(name).slice(0, 16 - tag.length).join("").trimEnd() + tag;
+    if (!taken(next)) return next;
+  }
+}
+
+// Only a palette swatch is accepted, since the colour reaches inline styles; anything else gets the first free one.
+function seatColor(room, raw) {
+  if (PLAYER_COLORS.includes(raw)) return raw;
+  return PLAYER_COLORS.find((c) => !room.seats.some((s) => s.color === c));
+}
+
 function openTable(ws, msg) {
   const room = { code: code(), seats: [], game: null, host: null, next: 0, avatarIds: [], offer: null, offerTimer: null, chat: [], chatSeq: 0 };
   rooms.set(room.code, room);
   const seat = {
     id: `s${room.next++}`,
-    name: String(msg.name || "Ember").slice(0, 16),
-    color: msg.color || "#c45c3e",
+    name: seatName(room, msg.name, "Ember"),
+    color: seatColor(room, msg.color),
     avatarId: avatars.has(msg.avatarId) ? msg.avatarId : null,
     ready: false,
     ws,
@@ -396,11 +415,11 @@ function sitDown(ws, msg) {
   if (!room) return send(ws, { type: "error", message: "No table with that code" });
   if (room.game) return send(ws, { type: "error", message: "Game already started." });
   if (room.seats.length >= 4) return send(ws, { type: "error", message: "Table full." });
-  const color = typeof msg.color === "string" && msg.color ? msg.color : PLAYER_COLORS.find((c) => !room.seats.some((s) => s.color === c));
+  const color = seatColor(room, msg.color);
   if (!color || room.seats.some((s) => s.color === color)) return send(ws, { type: "error", message: "Color taken." });
   const seat = {
     id: `s${room.next++}`,
-    name: String(msg.name || "Tide").slice(0, 16),
+    name: seatName(room, msg.name, "Tide"),
     color,
     avatarId: avatars.has(msg.avatarId) ? msg.avatarId : null,
     ready: false,
@@ -487,9 +506,14 @@ function ask(ws, room, msg) {
   if (room.game.phase !== "main" || room.game.current !== actor) {
     return send(ws, { type: "error", message: "Cannot trade now." });
   }
+  if (!validBag(msg.give) || !validBag(msg.want)) return send(ws, { type: "error", message: "Bad trade." });
+  const asker = room.game.players.find((p) => p.id === actor);
+  if (RESOURCES.some((r) => (msg.give[r] ?? 0) > asker.resources[r])) return send(ws, { type: "error", message: "You lack those goods." });
+  if (RESOURCES.every((r) => !msg.give[r] && !msg.want[r])) return send(ws, { type: "error", message: "Offer something." });
+  if (room.offer) broadcast(room, { type: "tradeClosed", tradeId: room.offer.tradeId });
   closeOffer(room);
   const tradeId = `t${room.game.seq}`;
-  room.offer = { tradeId, from: actor, give: msg.give ?? {}, want: msg.want ?? {}, declined: new Set() };
+  room.offer = { tradeId, from: actor, give: msg.give, want: msg.want, declined: new Set() };
   room.offerTimer = setTimeout(() => {
     room.offer = null;
     broadcast(room, { type: "tradeClosed", tradeId });
@@ -700,7 +724,10 @@ function letGo(room, seat) {
   clearTimeout(seat.graceTimer);
   room.seats = room.seats.filter((s) => s !== seat);
   if (room.seats.length === 0) return dropRoom(room);
-  if (room.host === seat.id) room.host = room.seats[0].id;
+  if (room.host === seat.id) {
+    room.host = room.seats[0].id;
+    say(room, `${room.seats[0].name} is now the host.`);
+  }
   publish(room);
 }
 
@@ -718,8 +745,11 @@ function leave(ws) {
   }
   room.seats = room.seats.filter((s) => s !== seat);
   if (room.seats.length === 0) return dropRoom(room);
-  if (room.host === seat.id) room.host = room.seats[0].id;
   say(room, `${seat.name} left.`);
+  if (room.host === seat.id) {
+    room.host = room.seats[0].id;
+    say(room, `${room.seats[0].name} is now the host.`);
+  }
   publish(room);
 }
 

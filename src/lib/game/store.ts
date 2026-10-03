@@ -47,7 +47,19 @@ function withPaths(state: GameState, edgeIds: string[], pid: string): GameState 
 }
 import { chooseBotAction } from "./ai";
 import { PLAYER_COLORS, RESOURCES, type Action, type BuildMode, type GameState } from "./types";
-import { connectTable, hostUrl, type ChatLine, type Legal, type Me, type Reaction, type Seat, type TableClient } from "@/lib/net/table";
+import { connectTable, hostUrl, type Bag, type ChatLine, type Legal, type Me, type Reaction, type Seat, type TableClient } from "@/lib/net/table";
+
+// The ask-the-table offer every seat is looking at (docs/BUILD_BIBLE.md 4.4). `until` is when the host's 20 s run out.
+export interface OpenOffer {
+  tradeId: string;
+  from: string;
+  fromName: string;
+  give: Bag;
+  want: Bag;
+  until: number;
+}
+
+let outcomeTimer: ReturnType<typeof setTimeout> | null = null;
 
 export type Screen = "title" | "lobby" | "play";
 
@@ -115,6 +127,14 @@ interface GameStore {
   setChatDraft: (v: string) => void;
   sendChat: (text: string) => void;
   sendReact: (emote: string, to?: string) => void;
+  // Ask-the-table trades (docs/BUILD_BIBLE.md 4.4): the open offer, who has said No to it, and the asker's closing line.
+  offer: OpenOffer | null;
+  declined: string[];
+  tradeOutcome: string | null;
+  tradeOpen: boolean;
+  setTradeOpen: (v: boolean) => void;
+  askTable: (give: Bag, want: Bag) => void;
+  answerTrade: (yes: boolean) => void;
 }
 
 const CHAT_OPEN_KEY = "emberisle-chat-open";
@@ -191,6 +211,10 @@ export const useGame = create<GameStore>((set, get) => ({
   chatOpen: savedChatOpen(),
   unread: 0,
   chatDraft: "",
+  offer: null,
+  declined: [],
+  tradeOutcome: null,
+  tradeOpen: false,
   setName: (n) => {
     const name = n.slice(0, 18) || "Ember";
     if (typeof window !== "undefined") localStorage.setItem("emberisle-name", name);
@@ -272,6 +296,10 @@ export const useGame = create<GameStore>((set, get) => ({
       roadPicks: [],
       pendingPlace: null,
       toast: null,
+      offer: null,
+      declined: [],
+      tradeOutcome: null,
+      tradeOpen: false,
     });
   },
   dispatch: (action, asId) => {
@@ -426,7 +454,7 @@ export const useGame = create<GameStore>((set, get) => ({
   rejoinTable: () => {
     const seat = savedSeat();
     if (!seat) return false;
-    connect(set, get, (t) => t.rejoin(seat.code, seat.secret));
+    connect(set, get, (t) => t.rejoin(seat.code, seat.secret), true);
     return true;
   },
   setReady: (value) => get().net?.ready(value),
@@ -442,15 +470,27 @@ export const useGame = create<GameStore>((set, get) => ({
   setChatDraft: (v) => set({ chatDraft: v }),
   sendChat: (text) => get().net?.say(text),
   sendReact: (emote, to) => get().net?.react(emote, to),
+  setTradeOpen: (v) => set({ tradeOpen: v }),
+  askTable: (give, want) => {
+    get().net?.ask(give, want);
+    set({ tradeOpen: false });
+  },
+  answerTrade: (yes) => {
+    const { offer, net } = get();
+    if (offer) net?.answer(offer.tradeId, yes);
+  },
 }));
 
 type Set = (partial: Partial<GameStore>) => void;
 type Get = () => GameStore;
 
-function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void) {
+// `quiet` is the automatic rejoin on page load: until the first welcome, a dead seat is dropped without telling the player.
+function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, quiet = false) {
   get().net?.close();
+  let pending = quiet;
   const table = connectTable(hostUrl(window.location), {
     welcome: ({ code, you, host, chat, secret }) => {
+      pending = false;
       if (secret) rememberSeat({ code, secret });
       // A rejoin lands in the lobby for a moment; the host's state push (if the game started) moves it to play.
       set({ code, seatId: you, isHost: host, screen: "lobby", mode: "online", error: null, toast: null, chat: (chat ?? []).slice(-50), reactions: [], unread: 0 });
@@ -480,13 +520,39 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void) {
       if (swing) showBanner(set, swing);
     },
     log: (text) => set({ lobbyLog: text }),
-    error: (message) => set({ error: message, toast: message }),
+    tradeOffer: ({ tradeId, from, give, want, seconds }) => {
+      const fromName = get().state?.players.find((p) => p.id === from)?.name ?? "Someone";
+      set({ offer: { tradeId, from, fromName, give, want, until: Date.now() + seconds * 1000 }, declined: [], tradeOutcome: null });
+    },
+    tradeDeclined: ({ tradeId, by }) => {
+      const { offer, declined } = get();
+      if (offer?.tradeId === tradeId && !declined.includes(by)) set({ declined: [...declined, by] });
+    },
+    tradeClosed: ({ tradeId, taker }) => {
+      const { offer, localId, state } = get();
+      if (offer?.tradeId !== tradeId) return;
+      const takerName = state?.players.find((p) => p.id === taker)?.name ?? "Someone";
+      set({ offer: null, declined: [] });
+      if (taker) showBanner(set, `${takerName} takes ${offer.fromName}'s trade`);
+      if (offer.from !== localId) return;
+      // The asker's toast lingers with the outcome for as long as a banner would.
+      if (outcomeTimer) clearTimeout(outcomeTimer);
+      set({ tradeOutcome: taker ? `${takerName} takes it.` : "Nobody took it." });
+      outcomeTimer = setTimeout(() => set({ tradeOutcome: null }), BANNER_MS);
+    },
+    error: (message) => {
+      if (!pending) set({ error: message, toast: message });
+    },
     closed: (keepSeat) => {
       if (keepSeat) {
         set({ error: "Your seat is open in another tab", toast: "Your seat is open in another tab", screen: "title", net: null, state: null });
         return;
       }
       rememberSeat(null);
+      if (pending) {
+        set({ error: null, toast: null, screen: "title", net: null, state: null });
+        return;
+      }
       set({ error: "Lost the table", toast: "Lost the table", screen: "title", net: null, state: null });
     },
   });

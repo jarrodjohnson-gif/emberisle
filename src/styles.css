@@ -42,3 +42,12 @@ body,
   30% { opacity: 1; }
   100% { opacity: 0; transform: translateY(-6px); }
 }
+
+/* The animations are inline or utility styles, so the override has to out-rank them (#253). */
+@media (prefers-reduced-motion: reduce) {
+  [style*="emote-float"],
+  [style*="resource-flash"],
+  [class*="turn-fade"] {
+    animation-duration: 1ms !important;
+  }
+}
