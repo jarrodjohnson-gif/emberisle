@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* #383: a short viewport, such as a 1280x720 window at 200 % zoom (640x360). */
+@custom-variant short (@media (max-height: 480px));
+
 /* Build bible 3.4: stone #efeae0, text #1c1915. Player colors from types.ts. */
 @theme {
   --color-bg: #efeae0;

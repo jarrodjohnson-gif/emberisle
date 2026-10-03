@@ -26,7 +26,8 @@
     "size-prove": "node scripts/size-prove.mjs",
     "night": "node scripts/night.mjs",
     "night-prove": "node scripts/night-prove.mjs",
-    "contrast-prove": "node scripts/contrast-prove.mjs"
+    "contrast-prove": "node scripts/contrast-prove.mjs",
+    "reflow-prove": "node scripts/reflow-prove.mjs"
   },
   "dependencies": {
     "clsx": "^2.1.1",
