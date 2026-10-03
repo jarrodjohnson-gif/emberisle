@@ -5,6 +5,8 @@
 // #366: every non-asker's toast is an alertdialog named by the offer line that does not take focus; a Yes it cannot pay
 // for stays focusable with aria-disabled and is described by the "Need …" line, and refuses Enter; Escape answers No; the
 // countdown is hidden from screen readers but a polite line says "5 seconds left".
+// #378: the asker's panel is a modal dialog named "Trade": focus moves in on open, 14 Tabs and 3 Shift+Tabs never leave
+// it, and Escape (or the ask itself) puts focus back on the Trade button.
 import { spawn } from "node:child_process";
 import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -176,9 +178,43 @@ try {
       net.answer = (...a) => (window.__answers.push(a), window.__answer(...a));
     });
 
+  // 0. #378: Enter on Trade opens a modal dialog with focus inside; Tab cycles inside it; Escape closes it and focus is back on Trade.
+  const tradeButton = A.page.getByRole("button", { name: "Trade", exact: true });
+  const dialog = A.page.getByRole("dialog", { name: "Trade", exact: true });
+  const focusIs = (t) =>
+    t.page.evaluate(() => {
+      const el = document.activeElement;
+      const dlg = document.querySelector('[data-testid="trade-panel"]');
+      return { inDialog: Boolean(dlg && dlg !== el && dlg.contains(el)), label: el?.getAttribute("aria-label") ?? el?.textContent?.trim() ?? null };
+    });
+  await tradeButton.focus();
+  await A.page.keyboard.press("Enter");
+  await dialog.waitFor({ timeout: 5_000 });
+  if ((await dialog.getAttribute("aria-modal")) !== "true") throw new Error("the trade dialog is not aria-modal");
+  const opened = await focusIs(A);
+  if (!opened.inDialog) throw new Error(`focus did not move into the trade dialog: on "${opened.label}"`);
+  const visited = [opened.label];
+  for (let n = 0; n < 14; n++) {
+    await A.page.keyboard.press("Tab");
+    const f = await focusIs(A);
+    if (!f.inDialog) throw new Error(`Tab ${n + 1} left the trade dialog for "${f.label}" (visited ${visited.join(" > ")})`);
+    visited.push(f.label);
+  }
+  for (let n = 0; n < 3; n++) {
+    await A.page.keyboard.press("Shift+Tab");
+    const f = await focusIs(A);
+    if (!f.inDialog) throw new Error(`Shift+Tab ${n + 1} left the trade dialog for "${f.label}"`);
+  }
+  if (new Set(visited).size < 3) throw new Error(`Tab did not cycle through the dialog: ${visited.join(" > ")}`);
+  await A.page.keyboard.press("Escape");
+  await dialog.waitFor({ state: "detached", timeout: 5_000 });
+  const back = await focusIs(A);
+  if (back.label !== "Trade") throw new Error(`Escape put focus on "${back.label}", not the Trade button`);
+  console.log(`#378: Enter on Trade -> dialog "Trade", focus on "${opened.label}"; 14 Tabs + 3 Shift+Tabs stayed inside (${new Set(visited).size} stops); Escape -> focus on Trade`);
+
   // 1. The panel: one Trade button, steppers, Ask the table. Offline there is no table to ask, so the button is online-only.
   const ask = async (g, w, n = 1) => {
-    await A.page.getByRole("button", { name: "Trade", exact: true }).click();
+    await tradeButton.click();
     await A.page.getByTestId("trade-panel").waitFor();
     await A.page.getByRole("button", { name: `More ${g} to give` }).click();
     for (let m = 0; m < n; m++) await A.page.getByRole("button", { name: `More ${w} to want` }).click();
@@ -190,6 +226,8 @@ try {
   };
   vs = await ask(give, want);
   if (await A.page.getByTestId("trade-panel").isVisible()) throw new Error("the panel stayed open after the ask");
+  const afterAsk = await focusIs(A);
+  if (afterAsk.label !== "Trade") throw new Error(`#378: the ask closed the panel but focus went to "${afterAsk.label}", not the Trade button`);
   const line = `${A.name} offers 1 ${give} for 1 ${want}`;
   for (const t of [B, C]) {
     const v = vs[tabs.indexOf(t)];
