@@ -447,12 +447,18 @@ try {
     st.players.find((p) => p.id === g.getState().localId).resources.ore += 1;
     g.setState({ state: st });
   });
-  await page.getByTestId("resource-flash").waitFor({ timeout: 2000 });
-  const motion = await page.evaluate(() => {
-    const flash = document.querySelector('[data-testid="resource-flash"]');
-    const banner = document.querySelector('[data-testid="turn-banner"]');
-    return { flash: flash ? getComputedStyle(flash).animationDuration : null, fade: banner ? getComputedStyle(banner).animationDuration : null };
-  });
+  // Read the flash in the same poll that finds it: it unmounts on a timer, so a separate read can miss it on a slow runner.
+  const motion = await (
+    await page.waitForFunction(
+      () => {
+        const flash = document.querySelector('[data-testid="resource-flash"]');
+        const banner = document.querySelector('[data-testid="turn-banner"]');
+        return flash ? { flash: getComputedStyle(flash).animationDuration, fade: banner ? getComputedStyle(banner).animationDuration : null } : null;
+      },
+      null,
+      { timeout: 2000, polling: "raf" },
+    )
+  ).jsonValue();
   await page.emulateMedia({ reducedMotion: null });
   console.log("reduced motion:", JSON.stringify(motion));
   if (motion.flash !== "0.001s" || motion.fade !== "0.001s") throw new Error(`reduced motion: ${JSON.stringify(motion)}`);
