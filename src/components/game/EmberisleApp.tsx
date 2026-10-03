@@ -159,7 +159,7 @@ function Title() {
               Four seats, one table
             </Button>
           </div>
-          <Button variant="ghost" className="self-center" onClick={() => setHowTo(!howTo)}>
+          <Button variant="ghost" className="self-center" onClick={(e) => setHowTo(!howTo, e.currentTarget)}>
             How to play
           </Button>
         </div>
