@@ -2,7 +2,8 @@
 // Design: docs/design/chat.md "Validation".
 import { readdirSync } from "node:fs";
 
-const CONTROL = /\p{Cc}/gu;
+// Keep U+200D: it joins emoji such as family and flag sequences.
+const CONTROL = /(?!\u200D)[\p{Cc}\p{Cf}]/gu;
 const SPACES = / {2,}/g;
 const EMOTE_FILE = /^([a-z0-9-]+)\.(png|webp)$/;
 

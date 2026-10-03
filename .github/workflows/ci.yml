@@ -31,7 +31,9 @@ jobs:
       - run: npm run trade-prove
       - run: npm run served-prove
       - run: npm run chat-prove
+      - run: npm run wayfarer-prove
       - run: npm run tokens-prove
+      - run: npm run pieces-prove
       - if: always()
         uses: actions/upload-artifact@v4
         with:
