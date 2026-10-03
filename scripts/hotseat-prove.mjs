@@ -1,5 +1,6 @@
 // #216: in hotseat, a 7 where a seat other than the roller owes a discard must show that seat's DiscardBar, and the
 // discard must be attributed to that seat. Crafts p0 rolled a 7, p2 holds 9 cards, discardNeeded {p2: 4}; zero console errors.
+// #390: a seat change must not carry the last seat's flash tint onto the new seat's tiles.
 // #232: first, the Roll button carries all four seats through the roll-off for first place.
 import { existsSync } from "node:fs";
 import { chromium } from "playwright";
@@ -50,6 +51,33 @@ try {
   const offTiles = await page.locator('[data-testid="rolloff-die"]:visible').allTextContents();
   console.log(`roll-off by the Roll button: ${rollers.length} clicks (${rollers.join(" ")}), order ${off.ids.join(" ")} ok ${off.ok}, tiles [${offTiles.join(" ")}], "${off.line}"`);
   if (!off.ok || rollers.length < 4 || offTiles.length !== 4 || offTiles.some((t) => !/^[1-6]$/.test(t))) throw new Error(`roll-off: ${JSON.stringify({ off, rollers, offTiles })}`);
+
+  // #390: the seat that is current gains timber and flashes; the next seat then takes the hand. Once the new seat has
+  // painted (two frames), no tile may still carry the old seat's tint or label.
+  const flashSeat = await page.evaluate(() => {
+    const g = window.__emberisle;
+    const st = structuredClone(g.getState().state);
+    const from = st.current;
+    st.players.find((p) => p.id === from).resources.timber += 2;
+    st.seq += 1;
+    g.setState({ state: st });
+    return from;
+  });
+  await page.locator('[data-testid="resource-flash"]').first().waitFor({ timeout: STEP_MS });
+  const carried = await page.evaluate(async (from) => {
+    const g = window.__emberisle;
+    const st = structuredClone(g.getState().state);
+    const to = st.players.find((p) => p.id !== from).id;
+    st.current = to;
+    st.seq += 1;
+    g.setState({ state: st });
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+    const tinted = [...document.querySelectorAll('[data-testid^="resource-"]')]
+      .filter((el) => el.dataset.testid !== "resource-flash" && /emerald|rose/.test(el.className)).length;
+    return { to, tinted, labels: document.querySelectorAll('[data-testid="resource-flash"]').length };
+  }, flashSeat);
+  console.log(`seat change ${flashSeat} -> ${carried.to}: tinted tiles ${carried.tinted}, flash labels ${carried.labels}`);
+  if (carried.tinted || carried.labels) throw new Error(`flash carried over to the next seat: ${JSON.stringify(carried)}`);
 
   await page.evaluate(() => {
     const g = window.__emberisle;
