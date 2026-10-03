@@ -394,6 +394,21 @@ try {
   const wanted = await store(a, () => window.__emberisle.getState().gameLog.map((l) => l.text).join("\n"));
   check(copied === wanted && copied.split("\n").length === shown.length, `game log: ${shown.length} rows, copy ok`);
   await shot(a, "chat-game-log.jpg");
+  // #343: with no clipboard (a LAN address over plain http) Copy log shows the log in a read-only field, focused and selected.
+  await a.page.evaluate(() => Object.defineProperty(navigator, "clipboard", { value: undefined, configurable: true }));
+  await a.page.getByRole("button", { name: "Copy log" }).click();
+  const fallback = await a.page
+    .waitForFunction(
+      () => {
+        const el = document.querySelector('[data-testid="copy-fallback"]');
+        if (!el || document.activeElement !== el) return null;
+        return { value: el.value, readOnly: el.readOnly, selected: el.selectionStart === 0 && el.selectionEnd === el.value.length, live: document.querySelector('[data-testid="copy-status"]')?.textContent };
+      },
+      null,
+      { timeout: 5000 },
+    )
+    .then((h) => h.jsonValue());
+  check(fallback.value === wanted && fallback.readOnly && fallback.selected && fallback.live === "Select and copy", "game log: without a clipboard, Copy log shows the log in a focused, selected read-only field and says so");
 
   // Versus bots the menu shows only the facts (and the bank trade on your main turn, not during setup).
   const solo = await (await browser.newContext({ viewport: { width: 1280, height: 720 } })).newPage();
