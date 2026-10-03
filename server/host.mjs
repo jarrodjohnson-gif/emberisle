@@ -37,6 +37,9 @@ const AVATAR_TTL = 60 * 60 * 1000; // an upload nobody sat down with is dropped 
 const GRACE_MS = Number(process.env.GRACE_MS ?? 90 * 1000);
 const HOLD_MS = Number(process.env.HOLD_MS ?? 10 * 60 * 1000);
 const LOBBY_HOLD_MS = Number(process.env.LOBBY_HOLD_MS ?? 90 * 1000);
+// A connected player who stops taking their turn: after this long the host's bot makes that one move for the
+// seat and the seat stays human (#344, Jarrod's call on #324). A dropped seat follows GRACE_MS instead, never this.
+const TURN_MS = Number(process.env.TURN_MS ?? 120 * 1000);
 // Every socket is pinged this often; one that has not answered the last ping is cut, so a phone that
 // locked or changed Wi-Fi frees its seat for the rejoin instead of holding it half-open (#202, #113).
 const PING_MS = Number(process.env.PING_MS ?? 30 * 1000);
@@ -286,7 +289,66 @@ function runBots(room) {
   }
 }
 
+// The game waits on `pid` when legalFor gives it anything to do: the current seat in setup, roll, main or robber,
+// and every seat that owes a discard. Any phase that waits on one seat (a roll-off, say) is covered the same way.
+function waitedOn(game, pid) {
+  const l = legalFor(game, pid);
+  return l.actions.length > 0 || l.outpost.length > 0 || l.path.length > 0 || l.stronghold.length > 0 || l.wayfarer.length > 0;
+}
+
+function disarmTurn(seat) {
+  clearTimeout(seat.turnTimer);
+  seat.turnTimer = null;
+  seat.turnDeadline = null;
+}
+
+// Every connected human seat the game waits on gets TURN_MS from the moment it became waited on. An accepted action
+// from the seat disarms it first (play), so its window restarts; a dropped seat is disarmed (hold) and left to GRACE_MS.
+function armTurns(room) {
+  for (const seat of room.seats) {
+    const human = room.game?.players.find((p) => p.id === seat.pid)?.kind === "human";
+    if (!seat.ws || !human || !waitedOn(room.game, seat.pid)) disarmTurn(seat);
+    else if (!seat.turnTimer) {
+      seat.turnDeadline = Date.now() + TURN_MS;
+      seat.turnTimer = setTimeout(() => turnOut(room, seat), TURN_MS);
+    }
+  }
+}
+
+// A bot action as the client would have sent it, so the timer's move runs through play() like any other.
+function toIntent(action) {
+  switch (action.type) {
+    case "roll":
+      return { type: "roll" };
+    case "setupSettle":
+      return { type: "place", kind: "outpost", id: action.vertexId };
+    case "setupRoad":
+      return { type: "place", kind: "path", id: action.edgeId };
+    case "moveRobber":
+      return { type: "rob", hexId: action.hexId, stealFrom: action.stealFrom };
+    case "discard":
+      return { type: "discard", cards: action.resources };
+    default:
+      return { type: "pass" };
+  }
+}
+
+// The window ran out: the host's bot makes one move for the seat (a roll, a halved discard, a wayfarer move, a setup
+// placement; in main it passes and spends nothing). The seat stays human, and its next move is its own.
+function turnOut(room, seat) {
+  seat.turnTimer = null;
+  seat.turnDeadline = null;
+  if (!seat.ws || !waitedOn(room.game, seat.pid)) return;
+  const before = room.game;
+  say(room, `${seat.name} took too long; the table moved on.`);
+  const action = before.phase === "main" ? null : chooseBotAction(before, seat.pid);
+  if (action) play(seat.ws, room, toIntent(action));
+  if (room.game === before) play(seat.ws, room, { type: "pass" });
+}
+
 function pushState(room) {
+  armTurns(room);
+  const turnDeadline = room.seats.reduce((d, s) => (s.turnDeadline && (!d || s.turnDeadline < d) ? s.turnDeadline : d), null);
   save(room);
   for (const seat of room.seats) {
     if (!seat.ws) continue;
@@ -295,6 +357,7 @@ function pushState(room) {
       you: seat.pid,
       game: viewFor(room.game, seat.pid),
       legal: legalFor(room.game, seat.pid),
+      turnDeadline,
     });
   }
 }
@@ -619,6 +682,7 @@ function play(ws, room, msg) {
     return send(ws, { type: "error", message: next.error });
   }
   room.game = next.state;
+  disarmTurn(ws.seat);
   hear(msg.type === "place" ? `${msg.kind}_place` : SOUND[msg.type]);
   if (msg.type === "roll") {
     const [a, b] = room.game.dice;
