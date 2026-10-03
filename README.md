@@ -157,7 +157,7 @@ That builds the client, starts the host, and prints the join line:
 - **On your network** — same Wi-Fi. No tunnel.
 - **Friends on the internet** — the script does not start the tunnel. In a second terminal, run the `cloudflared tunnel --url ...` command it printed. Leave both open. cloudflared prints an `https://….trycloudflare.com` link; paste that in the chat. Friends open the link and Join with the code. They never type a port.
 
-Host env knobs: `PORT` (default 8787), `ROOMS_DIR` (where tables are saved, default `server/rooms/`), `GRACE_MS` (how long the table waits before a bot plays a dropped seat, default 90 s) and `HOLD_MS` (how long a dropped seat is held, default 10 min).
+Host env knobs: `PORT` (default 8787), `ROOMS_DIR` (where tables are saved, default `server/rooms/`), `GRACE_MS` (how long the table waits before a bot plays a dropped seat, default 90 s), `HOLD_MS` (how long a dropped seat is held in a game, default 10 min) and `LOBBY_HOLD_MS` (how long a dropped seat is held in the lobby, default 90 s).
 
 Ctrl-C in the night terminal stops the host. Install cloudflared once if it is not already there (`winget install --id Cloudflare.cloudflared` on Windows). A quick tunnel needs no account. If it refuses to start because `~/.cloudflared/config.yml` exists, move that file aside for the night, or use the named tunnel in the build bible.
 
@@ -258,7 +258,7 @@ WebSocket JSON. The client sends intents. The server answers with `state` or `er
 |---|---|
 | `{type:"hello", name, color, avatarId}` | Open a table. Reply: `welcome {code, you, host:true}` |
 | `{type:"hello", code, name, color, avatarId}` | Sit down at a table. The host cleans `name` (control characters stripped, 16 characters, a duplicate becomes "Ember 2") and takes only a palette `color`, else the first free swatch. |
-| `{type:"hello", code, secret}` | Sit back down in your own seat after a drop. Errors: "Seat is taken." (that seat's socket is still open), "Seat is gone." |
+| `{type:"hello", code, secret}` | Sit back down in your own seat after a drop. The seat is held 90 s in the lobby (`LOBBY_HOLD_MS`) and 10 min in a game (`HOLD_MS`); a held lobby seat is not ready. Errors: "Seat is taken." (that seat's socket is still open), "Seat is gone." |
 | `{type:"peek", code}` | Before sitting down, ask which colours a lobby has taken. Reply: `seats`. Sent with no seat; throttled by its own pre-seat limit. |
 | `{type:"ready", value}` / `{type:"start"}` | Lobby. Only the host can start, with 3 or 4 seated and everyone ready. |
 | `{type:"place", kind:"outpost"\|"path"\|"stronghold", id}` | Build or place during setup |

@@ -36,6 +36,7 @@ const AVATAR_TTL = 60 * 60 * 1000; // an upload nobody sat down with is dropped 
 // (docs/research/rejoin.md). The proofs shorten both through env.
 const GRACE_MS = Number(process.env.GRACE_MS ?? 90 * 1000);
 const HOLD_MS = Number(process.env.HOLD_MS ?? 10 * 60 * 1000);
+const LOBBY_HOLD_MS = Number(process.env.LOBBY_HOLD_MS ?? 90 * 1000);
 // Every socket is pinged this often; one that has not answered the last ping is cut, so a phone that
 // locked or changed Wi-Fi frees its seat for the rejoin instead of holding it half-open (#202, #113).
 const PING_MS = Number(process.env.PING_MS ?? 30 * 1000);
@@ -743,7 +744,14 @@ function hold(room, seat) {
   seat.ws = null;
   seat.gone = Date.now();
   if (room.game && seat.pid) seat.graceTimer = setTimeout(() => takeOver(room, seat), GRACE_MS);
-  seat.holdTimer = setTimeout(() => letGo(room, seat), HOLD_MS);
+  seat.holdTimer = setTimeout(() => letGo(room, seat), room.game ? HOLD_MS : LOBBY_HOLD_MS);
+}
+
+// The host role goes to the first seat with a socket; with none, to the first held seat.
+function handOffHost(room) {
+  const next = room.seats.find((s) => s.ws) ?? room.seats[0];
+  room.host = next.id;
+  say(room, `${next.name} is now the host.`);
 }
 
 // The grace is over: the practice bot plays the seat so the table never waits longer than that.
@@ -767,10 +775,8 @@ function letGo(room, seat) {
   clearTimeout(seat.graceTimer);
   room.seats = room.seats.filter((s) => s !== seat);
   if (room.seats.length === 0) return dropRoom(room);
-  if (room.host === seat.id) {
-    room.host = room.seats[0].id;
-    say(room, `${room.seats[0].name} is now the host.`);
-  }
+  if (!room.game) say(room, `${seat.name} left.`);
+  if (room.host === seat.id) handOffHost(room);
   publish(room);
 }
 
@@ -786,13 +792,12 @@ function leave(ws) {
     publish(room);
     return;
   }
-  room.seats = room.seats.filter((s) => s !== seat);
-  if (room.seats.length === 0) return dropRoom(room);
-  say(room, `${seat.name} left.`);
-  if (room.host === seat.id) {
-    room.host = room.seats[0].id;
-    say(room, `${room.seats[0].name} is now the host.`);
-  }
+  // In the lobby the seat is held too, so a locked phone keeps its seat; it cannot be ready while away.
+  seat.ready = false;
+  hold(room, seat);
+  say(room, `${seat.name} lost connection.`);
+  // A held host hands the role to a live seat now and does not get it back on return.
+  if (room.host === seat.id && room.seats.some((s) => s.ws)) handOffHost(room);
   publish(room);
 }
 
