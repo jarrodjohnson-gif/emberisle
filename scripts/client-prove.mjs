@@ -412,9 +412,10 @@ try {
   await page.locator("[role=alert]").waitFor({ timeout: 5000 });
   // No host is running here, so the join attempt's refused socket is the expected console error; drop only that one.
   // The typed code also fires a peek 300 ms later (#271) that is refused the same way; let it land, then drop both.
-  await page.waitForTimeout(600);
-  const refused = errors.filter((e) => e.includes("ws://127.0.0.1:8787"));
-  if (!refused.length) throw new Error("join form: Enter did not try the host");
+  const refusedNow = () => errors.filter((e) => e.includes("ws://127.0.0.1:8787"));
+  for (let i = 0; i < 100 && refusedNow().length < 2; i++) await page.waitForTimeout(50);
+  const refused = refusedNow();
+  if (refused.length < 2) throw new Error(`join form: expected the join and the peek to be refused, saw ${refused.length}`);
   for (const e of refused) errors.splice(errors.indexOf(e), 1);
   const joinForm = await page.evaluate(() => {
     const input = document.querySelector("form[aria-label='Join code'] input");
@@ -514,11 +515,15 @@ try {
         ws.on("open", () => {
           c.send({ type: "hello", name: `Held${socks.length}`, ...extra });
           socks.push(c);
+          const started = Date.now();
           const poll = setInterval(() => {
             const w = inbox.find((m) => m.type === "welcome");
             if (w) {
               clearInterval(poll);
               resolve({ ...c, welcome: w });
+            } else if (Date.now() - started > 5000) {
+              clearInterval(poll);
+              reject(new Error("seat: no welcome within 5 s"));
             }
           }, 20);
         });
@@ -531,6 +536,28 @@ try {
       throw new Error(`timed out: ${what}`);
     };
     try {
+      // #271: a Join the host refuses ("Color taken.") must not leave a socket that blocks later peeks.
+      const solo = await seat({ color: "#c45c3e" });
+      await page.evaluate(([code]) => {
+        const g = window.__emberisle.getState();
+        g.setColor("#c45c3e");
+        g.joinTable(code);
+      }, [solo.welcome.code]);
+      await page.waitForFunction(() => window.__emberisle.getState().error === "Color taken.", null, { timeout: 5000 });
+      await page.evaluate((code) => {
+        const g = window.__emberisle.getState();
+        g.peekTable(code);
+      }, solo.welcome.code);
+      await page.waitForFunction(
+        (code) => {
+          const t = window.__emberisle.getState();
+          return t.peeking && t.code === code && t.seats.some((x) => x.color === "#c45c3e");
+        },
+        solo.welcome.code,
+        { timeout: 6000 },
+      );
+      console.log("peek after a refused Join (Color taken.): the taken color shows again");
+      await page.evaluate(() => window.__emberisle.getState().goTitle());
       const first = await seat({});
       const second = await seat({ code: first.welcome.code });
       const third = await seat({ code: first.welcome.code });

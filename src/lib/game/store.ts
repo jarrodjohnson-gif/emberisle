@@ -516,9 +516,11 @@ type ConnectKind = "normal" | "quiet" | "peek";
 function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, kind: ConnectKind = "normal") {
   get().net?.close();
   let pending = kind === "quiet";
+  let welcomed = false;
   const table = connectTable(hostUrl(window.location), {
     welcome: ({ code, you, host, chat, secret }) => {
       pending = false;
+      welcomed = true;
       if (secret) rememberSeat({ code, secret });
       // A rejoin lands in the lobby for a moment; the host's state push (if the game started) moves it to play.
       set({ code, seatId: you, isHost: host, screen: "lobby", mode: "online", error: null, toast: null, chat: (chat ?? []).slice(-50), reactions: [], unread: 0 });
@@ -570,6 +572,11 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
     },
     error: (message) => {
       if (!pending && kind !== "peek") set({ error: message, toast: message });
+      // A refused join leaves an unseated socket the host never closes; drop it so the next peek can open its own.
+      if (kind === "normal" && !welcomed) {
+        table.close();
+        if (get().net === table) set({ net: null, peeking: false });
+      }
     },
     closed: (keepSeat) => {
       if (kind === "peek") {
