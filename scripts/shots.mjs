@@ -1,6 +1,8 @@
 // #125: screenshot every screen of the browser table at 1280x720 and 1920x1080 into test-results/shots/,
 // and measure draw calls and frame time at 1920x1080. Research tool: it does not pass or fail.
 // The 7, the wayfarer and the win screen are loaded as crafted states through the store, so no luck is needed.
+// Flags (#310): --size 390x844 shoots one viewport, --coarse makes it a touch device (pointer: coarse, pixel ratio 3),
+// and --budget skips the shots and prints the frame-time matrix (pixel ratio x view x SSAO size) in the play screen.
 import { spawn } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -8,12 +10,19 @@ import path from "node:path";
 import { chromium } from "playwright";
 import { createServer } from "vite";
 
-const PORT = 8094;
+const PORT = Number(process.env.VITE_PORT) || 8094;
 const OUT = "test-results/shots";
-const SIZES = [
-  [1280, 720],
-  [1920, 1080],
-].filter(([w]) => !process.env.ONLY || process.env.ONLY === String(w));
+const argv = process.argv.slice(2);
+const flagSize = argv.includes("--size") ? argv[argv.indexOf("--size") + 1] : null;
+const COARSE = argv.includes("--coarse");
+const BUDGET = argv.includes("--budget");
+const SIZES = (flagSize
+  ? [flagSize.split("x").map(Number)]
+  : [
+      [1280, 720],
+      [1920, 1080],
+    ]
+).filter(([w]) => !process.env.ONLY || process.env.ONLY === String(w));
 mkdirSync(OUT, { recursive: true });
 
 // Rooms go to a temp folder, dropped on exit, so the real host never restores this proof's tables (#207).
@@ -122,14 +131,105 @@ const craft = (page, patch) =>
     g.setState({ state: st, pendingSteal: null, error: null });
   }, patch);
 
+// Frame gaps and draw calls over `ms`, after `settle` ms for the new targets to warm up.
+const sample = (page, ms) =>
+  page.evaluate(async (ms) => {
+    const s = window.__gl;
+    await new Promise((r) => setTimeout(r, 1500));
+    s.frames.length = 0;
+    s.perFrame.length = 0;
+    await new Promise((r) => setTimeout(r, ms));
+    const n = s.frames.length;
+    const avg = (xs) => xs.reduce((a, b) => a + b, 0) / Math.max(1, xs.length);
+    const sorted = [...s.frames].sort((a, b) => a - b);
+    return { frames: n, msAvg: +avg(s.frames).toFixed(1), msP50: +(sorted[Math.floor(n / 2)] ?? 0).toFixed(1), calls: +avg(s.perFrame.map((x) => x[0])).toFixed(1) };
+  }, ms);
+
+// The matrix of #310: pixel ratio x (overhead | free + SSAO sized three ways), then the title 30 fps gate.
+// Drives window.__isle directly; SwiftShader is software GL, so the numbers are a relative yardstick, not a phone's.
+async function frameBudget(page, [w, h]) {
+  const set = (pr, view, ssao) =>
+    page.evaluate(
+      ([pr, view, ssao]) => {
+        const r = window.__isle;
+        r.setTitleMode(false);
+        r.setView(view);
+        r.renderer.setPixelRatio(pr);
+        r.composer.setPixelRatio(pr);
+        r.resize();
+        r.ssao.enabled = ssao !== "off";
+        if (ssao === "canvas") r.ssao.setSize(Math.round(r.renderer.domElement.clientWidth * pr), Math.round(r.renderer.domElement.clientHeight * pr));
+        if (ssao === "half") r.ssao.setSize(Math.round(r.renderer.domElement.clientWidth / 2), Math.round(r.renderer.domElement.clientHeight / 2));
+        const c = r.renderer.domElement;
+        return { canvas: `${c.width}x${c.height}`, ssaoTarget: `${r.ssao.width}x${r.ssao.height}` };
+      },
+      [pr, view, ssao],
+    );
+  const rows = [];
+  for (const pr of [1, 2, 3]) {
+    for (const [view, ssao] of [
+      ["overhead", "off"],
+      ["free", "off"],
+      ["free", "css"],
+      ["free", "half"],
+      ["free", "canvas"],
+    ]) {
+      const dims = await set(pr, view, ssao);
+      const m = await sample(page, pr === 3 ? 15000 : 6000);
+      rows.push({ size: `${w}x${h}`, pr, view, ssao, ...dims, ...m });
+      console.log("row", JSON.stringify(rows.at(-1)));
+    }
+  }
+  // Title gate: the same free view, SSAO off, with and without the 30 fps cap.
+  await set(1, "free", "off");
+  const open = await sample(page, 6000);
+  await page.evaluate(() => {
+    window.__isle.titleMode = true;
+  });
+  const gated = await sample(page, 6000);
+  await page.evaluate(() => {
+    window.__isle.titleMode = false;
+  });
+  // Idle: nothing but the ambient loop. Does the loop still draw every frame, and does the picture still change?
+  const idle = await page.evaluate(async () => {
+    const r = window.__isle;
+    const gl = r.renderer.getContext();
+    const grab = () => {
+      r.composer.render();
+      const px = new Uint8Array(gl.drawingBufferWidth * gl.drawingBufferHeight * 4);
+      gl.readPixels(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight, gl.RGBA, gl.UNSIGNED_BYTE, px);
+      return px;
+    };
+    const a = grab();
+    await new Promise((res) => setTimeout(res, 1000));
+    const b = grab();
+    let diff = 0;
+    for (let i = 0; i < a.length; i += 4) if (a[i] !== b[i] || a[i + 1] !== b[i + 1] || a[i + 2] !== b[i + 2]) diff++;
+    return { changedPixelsPct: +((100 * diff) / (a.length / 4)).toFixed(2) };
+  });
+  return { rows, titleGate: { open, gated }, idle };
+}
+
 let metrics = null;
+let budget = null;
 try {
   for (const size of SIZES) {
     const [w, h] = size;
-    const page = await browser.newPage({ viewport: { width: w, height: h } });
+    const page = await browser.newPage({
+      viewport: { width: w, height: h },
+      ...(COARSE ? { isMobile: true, hasTouch: true, deviceScaleFactor: 3 } : {}),
+    });
     await page.addInitScript(counters);
     await page.addInitScript(() => localStorage.setItem("emberisle-name", "Ember"));
     await page.goto(`http://127.0.0.1:${PORT}/?host=ws://127.0.0.1:${hostPort}`);
+    if (BUDGET) {
+      await page.getByRole("button", { name: "Play versus the isle" }).click();
+      await playUntil(page, (st, me) => st.phase === "roll" && st.current === me);
+      budget = await frameBudget(page, size);
+      console.log("budget", JSON.stringify(budget));
+      await page.close();
+      continue;
+    }
     await shot(page, "01-title", size);
 
     // Lobby: host a table here, and two small side tabs sit down.
@@ -230,7 +330,8 @@ try {
     await shot(page, "08-win", size);
     await page.close();
   }
-  writeFileSync(`${OUT}/metrics.json`, JSON.stringify(metrics, null, 2));
+  if (BUDGET) writeFileSync(`${OUT}/budget-${flagSize ?? "all"}.json`, JSON.stringify(budget, null, 2));
+  else writeFileSync(`${OUT}/metrics.json`, JSON.stringify(metrics, null, 2));
   console.log(`${shots.length} shots in ${OUT}`);
 } finally {
   await browser.close();
