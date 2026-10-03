@@ -37,6 +37,12 @@ body,
   to { opacity: 1; }
 }
 
+/* A new roll's faces settle from a slight scale over 150 ms; only under motion-safe, so reduced motion has none (#322). */
+@keyframes die-settle {
+  from { transform: scale(0.85); }
+  to { transform: scale(1); }
+}
+
 @keyframes resource-flash {
   0% { opacity: 1; transform: translateY(0); }
   30% { opacity: 1; }

@@ -20,6 +20,7 @@ import { TradeButton, TradePanel } from "@/components/game/TradePanel";
 import { TradeToast } from "@/components/game/TradeToast";
 import { PlayerMenu } from "@/components/game/PlayerMenu";
 import { DiscardBar } from "@/components/game/DiscardBar";
+import { Dice } from "@/components/game/Dice";
 import { COST, RESOURCES, RESOURCE_LABEL, type DevKind, type PlayerState, type Resource } from "@/lib/game/types";
 import { hiddenCount, legalRoads, playable, publicVP, totalVP } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
@@ -380,17 +381,7 @@ export function Hud() {
             </div>
           ) : null}
 
-          {state.dice ? (
-            <div className="flex items-center gap-2 text-sm text-zinc-600">
-              <span className="inline-flex size-9 items-center justify-center rounded-[8px] bg-fg text-bg tabular-nums">
-                {state.dice[0]}
-              </span>
-              <span className="inline-flex size-9 items-center justify-center rounded-[8px] bg-fg text-bg tabular-nums">
-                {state.dice[1]}
-              </span>
-              <span className="tabular-nums">{state.dice[0] + state.dice[1]}</span>
-            </div>
-          ) : null}
+          {state.dice ? <Dice values={state.dice} /> : null}
 
           <p className="hidden max-h-16 overflow-y-auto text-xs text-zinc-600 sm:block">
             {state.log.slice(-3).join(" · ")}
