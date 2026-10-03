@@ -105,23 +105,26 @@ try {
   if (after.cards !== 5) throw new Error(`p2 should hold 5 cards, has ${after.cards}`);
 
   // Two seats owe a discard: the second bar must not inherit what the first typed.
-  await page.evaluate(() => {
+  // Hotseat bars go in seat order, which the roll-off shuffles (#232): the earlier of p1 and p2 owes 4, the later 5.
+  const [first, second] = await page.evaluate(() => {
     const g = window.__emberisle;
     const st = structuredClone(g.getState().state);
+    const [x, y] = st.players.filter((p) => p.id === "p1" || p.id === "p2").map((p) => p.id);
     st.phase = "discard";
-    st.players.find((p) => p.id === "p1").resources = { timber: 3, clay: 2, wool: 2, grain: 1, ore: 0 };
-    st.players.find((p) => p.id === "p2").resources = { timber: 4, clay: 2, wool: 2, grain: 1, ore: 1 };
-    st.discardNeeded = { p1: 4, p2: 5 };
+    st.players.find((p) => p.id === x).resources = { timber: 3, clay: 2, wool: 2, grain: 1, ore: 0 };
+    st.players.find((p) => p.id === y).resources = { timber: 4, clay: 2, wool: 2, grain: 1, ore: 1 };
+    st.discardNeeded = { [x]: 4, [y]: 5 };
     st.seq += 1;
     g.setState({ state: st, pendingSteal: null, error: null });
+    return [x, y];
   });
   const name = (id) => page.evaluate((i) => window.__emberisle.getState().state.players.find((p) => p.id === i).name, id);
-  await page.getByText(`${await name("p1")}: discard 4`).waitFor({ timeout: STEP_MS });
+  await page.getByText(`${await name(first)}: discard 4`).waitFor({ timeout: STEP_MS });
   let f = page.locator("form", { hasText: "discard 4" });
   await f.locator('input[name="timber"]').fill("3");
   await f.locator('input[name="clay"]').fill("1");
   await f.getByRole("button", { name: "Discard" }).click();
-  await page.getByText(`${await name("p2")}: discard 5`).waitFor({ timeout: STEP_MS });
+  await page.getByText(`${await name(second)}: discard 5`).waitFor({ timeout: STEP_MS });
   f = page.locator("form", { hasText: "discard 5" });
   const vals = await f.locator("input").evaluateAll((els) => els.map((e) => e.value));
   console.log("second bar inputs:", vals.join(","));
