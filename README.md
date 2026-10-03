@@ -132,6 +132,7 @@ npm run hotseat-prove    # headless Chromium: a 7 in hotseat shows the discard b
 npm run tabs-prove       # 3 headless tabs host, join, play setup + 5 rolls on the rules host, boards match
 npm run trade-prove      # 3 headless tabs: one asks the table through the trade panel, one says No, one says Yes, goods move; a second ask times out
 npm run served-prove     # same 3 tabs, but the page comes from the rules host itself with no ?host= (after build)
+npm run night-prove      # npm run night from a clean start: builds, prints the join lines, serves the page, answers a socket, SIGINT leaves no host
 npm run chat-prove       # 3 headless tabs chat in the lobby and the game: presets, reactions, unread badge, minimized dock covers no target
 ```
 
@@ -292,13 +293,14 @@ WebSocket JSON. The client sends intents. The server answers with `state` or `er
 | `npm run tabs-prove` | 3 browser tabs host, join, ready, start, play setup and 5 rolls through the rules host; dice and board match on every tab; then plays on until a gain has flashed green +N and a loss red -N on the hand, each gone within 2 s; a taken color dims before Join; zero console errors |
 | `npm run trade-prove` | 3 browser tabs on the rules host: the Trade panel asks the table, the toast's No reaches every tab and leaves the offer open, Yes moves the goods (own hands exact, others' `goods` counts), a second ask runs out its 20 s with nothing moved and every toast closed, zero console errors |
 | `npm run served-prove` | The same 3 tabs, but the host serves the built `dist/` and the tabs open it with no `?host=`, so they find the socket at the page's own address (the tunnel case) |
+| `npm run night-prove` | Runs `npm run night` on port 8797 with a temp rooms folder: it builds, prints the three join lines within 120 s, serves `<title>Emberisle</title>`, answers a `peek` for an unknown table with an empty seat list, and on SIGINT leaves no host behind within 5 s. No tunnel is started. |
 | `npm run wayfarer-prove` | In the browser, the wayfarer stands on the token and hops rather than slides, and the target hexes wear a band (docs/design/wayfarer.md); zero console errors |
 | `npm run tokens-prove` | In the browser, number tokens are rimmed and legible, and nothing is placed or wanders within 0.39 of a hex centre (docs/design/tokens.md) |
 | `npm run pieces-prove` | Pieces read in every seat colour: the five checks in docs/design/pieces.md, no browser |
 | `npm run touch-place-prove` | The phone camera fit and touch picking, checked on the pure math in `src/lib/scene/mobile-fit.ts`, no browser |
 | `npm run orphan-check` | Not in CI. Starts two proofs, kills each mid-run, and counts the host processes left behind. Expect 0. |
 
-`npm test` runs the fourteen `server/*-prove.mjs` scripts: `prove`, `trade-prove`, `sound-prove`, `table-prove`, `trade-table-prove`, `harden-prove`, `net-prove`, `rules-prove`, `bots-prove`, `serve-prove`, `chat-prove`, `rejoin-prove`, `reconnect-prove`, and `persist-prove`. CI also runs `client-prove`, `hotseat-prove`, `tabs-prove`, `trade-prove`, `served-prove`, the browser `chat-prove`, `wayfarer-prove`, `tokens-prove`, `pieces-prove`, and `touch-place-prove`.
+`npm test` runs the fourteen `server/*-prove.mjs` scripts: `prove`, `trade-prove`, `sound-prove`, `table-prove`, `trade-table-prove`, `harden-prove`, `net-prove`, `rules-prove`, `bots-prove`, `serve-prove`, `chat-prove`, `rejoin-prove`, `reconnect-prove`, and `persist-prove`. CI also runs `client-prove`, `hotseat-prove`, `tabs-prove`, `trade-prove`, `served-prove`, `night-prove`, the browser `chat-prove`, `wayfarer-prove`, `tokens-prove`, `pieces-prove`, and `touch-place-prove`.
 
 ---
 
