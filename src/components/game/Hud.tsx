@@ -98,6 +98,9 @@ function useEscapeDisarm() {
   }, [setBuildMode]);
 }
 
+// Unaffordable build buttons use aria-disabled, not disabled, so Tab still reaches them and the price is read out.
+const UNAFFORDABLE = "aria-disabled:cursor-not-allowed aria-disabled:opacity-50 aria-disabled:active:scale-100";
+
 export function Hud() {
   const state = useGame((s) => s.state);
   const localId = useGame((s) => s.localId);
@@ -121,6 +124,7 @@ export function Hud() {
   const actor = mode === "hotseat" ? state.current : localId;
   const me = state.players.find((p) => p.id === actor) ?? state.players[0]!;
   const mine = state.current === actor;
+  const fortuneBlocked = (state.deckLeft ?? state.deck.length) <= 0 || !affords(me, "card");
   // Hotseat has no bots: the first seat still owing a discard takes the bar, whoever rolled the 7.
   const discarder =
     state.phase !== "discard"
@@ -168,7 +172,7 @@ export function Hud() {
           </div>
           {phone && !portrait ? <SeatStrip actor={actor} className="ml-auto min-w-0 max-w-[34rem] flex-1" /> : null}
           <div className="flex gap-1">
-            <Button variant="secondary" size="icon" onClick={() => setHowTo(true)} aria-label="How to play">
+            <Button variant="secondary" size="icon" onClick={(e) => setHowTo(true, e.currentTarget)} aria-label="How to play">
               <BookOpen className="size-4" />
             </Button>
             <LeaveButton confirm={mode === "online" && state.phase !== "over"} />
@@ -311,29 +315,38 @@ export function Hud() {
                   ["outpost", "outpost", Home, "Outpost", me.outpostsLeft],
                   ["stronghold", "stronghold", Landmark, "Stronghold", me.strongholdsLeft],
                 ] as const
-              ).map(([kind, arm, Icon, label, left]) => (
+              ).map(([kind, arm, Icon, label, left]) => {
+                const blocked = left <= 0 || !affords(me, kind);
+                return (
                 <Button
                   key={kind}
                   size="sm"
                   variant={buildMode === arm ? "primary" : "secondary"}
-                  className={cn("disabled:pointer-events-auto", phone && "h-11 min-w-11")}
+                  className={cn(UNAFFORDABLE, phone && "h-11 min-w-11")}
                   aria-pressed={buildMode === arm}
-                  disabled={left <= 0 || !affords(me, kind)}
+                  aria-disabled={blocked || undefined}
                   title={priceLabel(kind)}
                   aria-description={priceLabel(kind)}
-                  onClick={() => setBuildMode(buildMode === arm ? "none" : arm)}
+                  onClick={() => {
+                    // aria-disabled keeps the button focusable, so the click itself must refuse (but may still disarm).
+                    if (blocked && buildMode !== arm) return;
+                    setBuildMode(buildMode === arm ? "none" : arm);
+                  }}
                 >
                   <Icon className="size-4" /> {label}
                 </Button>
-              ))}
+                );
+              })}
               <Button
                 size="sm"
                 variant="secondary"
-                className={cn("disabled:pointer-events-auto", phone && "h-11 min-w-11")}
-                disabled={(state.deckLeft ?? state.deck.length) <= 0 || !affords(me, "card")}
+                className={cn(UNAFFORDABLE, phone && "h-11 min-w-11")}
+                aria-disabled={fortuneBlocked || undefined}
                 title={priceLabel("card")}
                 aria-description={priceLabel("card")}
-                onClick={() => dispatch({ type: "buyCard" })}
+                onClick={() => {
+                  if (!fortuneBlocked) dispatch({ type: "buyCard" });
+                }}
               >
                 <ScrollText className="size-4" /> Fortune
               </Button>
@@ -657,15 +670,23 @@ function MonopolyForm() {
 export function HowTo({ onClose }: { onClose: () => void }) {
   const phone = useViewport().phone;
   const closeRef = useRef<HTMLButtonElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
   useEffect(() => {
-    const opener = document.activeElement as HTMLElement | null;
+    // Safari never focuses a button on click, so the opener comes from the store; activeElement is the fallback.
+    const opener = useGame.getState().howToOpener ?? (document.activeElement as HTMLElement | null);
     closeRef.current?.focus();
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Tab") {
+        const items = [...(dialogRef.current?.querySelectorAll<HTMLElement>('a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])') ?? [])].filter(
+          (el) => !el.hasAttribute("disabled"),
+        );
+        if (!items.length) return;
+        const i = items.indexOf(document.activeElement as HTMLElement);
+        const next = e.shiftKey ? (i <= 0 ? items.length - 1 : i - 1) : i === -1 || i === items.length - 1 ? 0 : i + 1;
         e.preventDefault();
-        closeRef.current?.focus();
+        items[next]!.focus();
       }
       if (e.key !== "Escape") return;
       e.stopPropagation();
@@ -682,6 +703,7 @@ export function HowTo({ onClose }: { onClose: () => void }) {
       role="dialog"
       aria-modal="true"
       aria-labelledby="howto-title"
+      ref={dialogRef}
       className="absolute inset-0 z-30 flex items-end justify-center bg-white/45 p-3 sm:items-center"
     >
       <div className="max-h-[80dvh] w-full max-w-md overflow-y-auto rounded-[28px] border border-white/50 bg-surface p-5">

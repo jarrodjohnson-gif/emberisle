@@ -84,12 +84,14 @@ interface GameStore {
   // Edges picked so far for a path fortune (buildMode "roadCard"); sent together as one playRoad.
   roadPicks: string[];
   howTo: boolean;
+  /** The element that opened How to play; Safari does not focus buttons on click, so activeElement cannot be trusted. */
+  howToOpener: HTMLElement | null;
   toast: string | null;
   // One line everyone reads for a moment: the roll and who got what, or an award changing hands (#188).
   banner: string | null;
   setName: (n: string) => void;
   setColor: (c: string) => void;
-  setHowTo: (v: boolean) => void;
+  setHowTo: (v: boolean, opener?: HTMLElement | null) => void;
   setBuildMode: (m: BuildMode) => void;
   startAi: () => void;
   startHotseat: (count: number) => void;
@@ -209,6 +211,7 @@ export const useGame = create<GameStore>((set, get) => ({
   buildMode: "none",
   roadPicks: [],
   howTo: false,
+  howToOpener: null,
   toast: null,
   banner: null,
   net: null,
@@ -239,7 +242,7 @@ export const useGame = create<GameStore>((set, get) => ({
     if (typeof window !== "undefined") localStorage.setItem("emberisle-color", c);
     set({ color: c });
   },
-  setHowTo: (v) => set({ howTo: v }),
+  setHowTo: (v, opener) => set({ howTo: v, howToOpener: v ? (opener ?? null) : null }),
   setBuildMode: (m) => set({ buildMode: m, roadPicks: [] }),
   startAi: () => {
     // A table left dialing (a reload with a saved seat) must not pull a practice game back to the lobby.
