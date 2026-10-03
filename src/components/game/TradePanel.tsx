@@ -1,7 +1,8 @@
 // The trade panel (docs/BUILD_BIBLE.md 4.4): "I give" and "I want" steppers, Ask the table, and the one bank or dock rate you hold.
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowLeftRight, Minus, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useFocusTrap } from "@/lib/focus-trap";
 import { harborRate } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
 import { RESOURCES, RESOURCE_LABEL, type Resource } from "@/lib/game/types";
@@ -20,7 +21,7 @@ const kinds = (bag: Record<Resource, number>) => RESOURCES.filter((r) => bag[r] 
 export function TradeButton() {
   const setTradeOpen = useGame((s) => s.setTradeOpen);
   return (
-    <Button size="sm" variant="secondary" onClick={() => setTradeOpen(true)}>
+    <Button size="sm" variant="secondary" onClick={(e) => setTradeOpen(true, e.currentTarget)}>
       <ArrowLeftRight className="size-4" /> Trade
     </Button>
   );
@@ -49,12 +50,18 @@ export function TradePanel() {
   const mode = useGame((s) => s.mode);
   const dispatch = useGame((s) => s.dispatch);
   const askTable = useGame((s) => s.askTable);
+  const opener = useGame((s) => s.tradeOpener);
   const [give, setGive] = useState(ZERO);
   const [want, setWant] = useState(ZERO);
+  const panel = useRef<HTMLElement>(null);
 
   const actor = mode === "hotseat" ? state?.current : localId;
   const me = state?.players.find((p) => p.id === actor);
   const mine = Boolean(state && me && state.phase === "main" && state.current === actor);
+  const shown = open && mine;
+
+  // #378: a modal dialog. Focus lands on Close (the first focusable), Tab cycles inside, and focus goes back to the opener on close.
+  useFocusTrap(panel, shown, undefined, opener);
 
   useEffect(() => {
     // The turn moved on (or the game ended) with the panel up: drop it rather than pop it on the next turn.
@@ -72,7 +79,7 @@ export function TradePanel() {
     return () => window.removeEventListener("keydown", key);
   }, [open, setTradeOpen]);
 
-  if (!open || !state || !me || !mine) return null;
+  if (!shown || !state || !me) return null;
 
   const giving = kinds(give);
   const wanting = kinds(want);
@@ -100,13 +107,18 @@ export function TradePanel() {
   return (
     <div className="absolute inset-0 z-30 flex items-end justify-center bg-white/45 p-3 sm:items-center" onClick={() => setTradeOpen(false)}>
       <section
-        aria-label="Trade"
+        ref={panel}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="trade-title"
         data-testid="trade-panel"
         className="max-h-[85dvh] w-full max-w-md overflow-y-auto rounded-[28px] border border-white/50 bg-surface p-4 sm:p-5"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-3">
-          <h2 className="font-display text-2xl">Trade</h2>
+          <h2 id="trade-title" className="font-display text-2xl">
+            Trade
+          </h2>
           <Button variant="ghost" size="icon" onClick={() => setTradeOpen(false)} aria-label="Close">
             <X className="size-4" />
           </Button>

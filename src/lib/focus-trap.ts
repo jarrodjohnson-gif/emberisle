@@ -7,11 +7,12 @@ export function focusableIn(root: HTMLElement | null): HTMLElement[] {
   return [...(root?.querySelectorAll<HTMLElement>(FOCUSABLE) ?? [])].filter((el) => !el.hasAttribute("disabled"));
 }
 
-// `initial` is a selector for the element to focus on open; the first focusable one otherwise.
-export function useFocusTrap(ref: RefObject<HTMLElement | null>, active = true, initial?: string) {
+// `initial` is a selector for the element to focus on open; the first focusable one otherwise. `opener` is where focus
+// goes back on close; whatever was focused on open otherwise (Safari does not focus a clicked button, #302).
+export function useFocusTrap(ref: RefObject<HTMLElement | null>, active = true, initial?: string, opener?: HTMLElement | null) {
   useEffect(() => {
     if (!active) return;
-    const opener = document.activeElement as HTMLElement | null;
+    const back = opener ?? (document.activeElement as HTMLElement | null);
     const first = (initial && ref.current?.querySelector<HTMLElement>(initial)) || focusableIn(ref.current)[0];
     first?.focus();
     const onKey = (e: KeyboardEvent) => {
@@ -26,7 +27,7 @@ export function useFocusTrap(ref: RefObject<HTMLElement | null>, active = true, 
     window.addEventListener("keydown", onKey, true);
     return () => {
       window.removeEventListener("keydown", onKey, true);
-      if (opener?.isConnected) opener.focus();
+      if (back?.isConnected) back.focus();
     };
-  }, [ref, active, initial]);
+  }, [ref, active, initial, opener]);
 }
