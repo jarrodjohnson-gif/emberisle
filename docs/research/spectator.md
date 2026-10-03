@@ -109,7 +109,7 @@ re-enters the code. A host restart drops watchers (they are not saved), which is
   watcher sees only what an opponent sees, so I did not add a table password. A host "no watchers" switch is an idea, not a
   child.
 - **`SPECTATOR_MAX` default 8** is a guess. Each watcher costs one send of a shared JSON string per state, so the cost is small.
-- **The issue names `table-prove.mjs` at the repo root.** It lives at `server/table-prove.mjs` and is already in `npm test`.
+- **Where the proof lives.** `server/table-prove.mjs` is already in `npm test`; the issue names it without a path.
 
 ## Proof plan
 
