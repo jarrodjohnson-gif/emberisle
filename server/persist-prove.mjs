@@ -7,6 +7,7 @@ import WebSocket from "ws";
 
 const ROOMS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-rooms-"));
 let host;
+let err = "";
 process.on("exit", () => host?.kill());
 for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
 
@@ -16,6 +17,8 @@ function start(port) {
     env: { ...process.env, PORT: String(port), ROOMS_DIR },
   });
   let out = "";
+  err = "";
+  host.stderr.on("data", (d) => (err += d));
   return new Promise((resolve, reject) => {
     host.stdout.on("data", (d) => {
       out += d;
@@ -134,9 +137,15 @@ if (!existsSync(path.join(ROOMS_DIR, `${code}.json`))) fail("room file written",
 console.log(`table ${code}: setup done, rolled ${rolls} times, seq ${seq}, ${current} to play; ${code}.json on disk`);
 
 // A day-old room, a broken file and one with a null seat sit next to it; the restart must drop the first and survive the rest.
-writeFileSync(path.join(ROOMS_DIR, "OLD1.json"), JSON.stringify({ code: "OLD1", seats: [{ id: "s0" }], game: null, savedAt: Date.now() - 25 * 60 * 60 * 1000 }));
+writeFileSync(path.join(ROOMS_DIR, "OLD1.json"), JSON.stringify({ code: "OLD1", seats: [{ id: "s0" }], game: null, shape: 1, savedAt: Date.now() - 25 * 60 * 60 * 1000 }));
 writeFileSync(path.join(ROOMS_DIR, "BAD1.json"), "{ not json");
-writeFileSync(path.join(ROOMS_DIR, "BAD2.json"), JSON.stringify({ code: "BAD2", seats: [null], game: null, savedAt: Date.now() }));
+writeFileSync(path.join(ROOMS_DIR, "BAD2.json"), JSON.stringify({ code: "BAD2", seats: [null], game: null, shape: 1, savedAt: Date.now() }));
+// Rooms from another build: a stale shape, a game that is not a game, and one from before rooms were stamped.
+const seat = [{ id: "s0", name: "Old", color: "ember", ready: true, pid: null, secret: wa.secret }];
+const room = (code, extra) => writeFileSync(path.join(ROOMS_DIR, `${code}.json`), JSON.stringify({ code, seats: seat, game: null, savedAt: Date.now(), shape: 1, ...extra }));
+room("ZZZ1", { shape: 0 });
+room("ZZZ2", { game: {} });
+room("ZZZ3", { shape: undefined });
 
 // The host process dies without warning and comes back on the same port.
 host.removeAllListeners("exit");
@@ -146,10 +155,15 @@ for (const x of all) x.ws.terminate();
 const second = await start(port);
 if (second.port !== port) fail("same port", second.port);
 if (existsSync(path.join(ROOMS_DIR, "OLD1.json"))) fail("a room older than 24 hours is dropped on boot");
+for (const z of ["ZZZ1", "ZZZ2", "ZZZ3"]) if (existsSync(path.join(ROOMS_DIR, `${z}.json`))) fail(`${z} is deleted on boot`);
+if (!err.includes("stale room file: ZZZ1.json (shape 0, want 1)")) fail("stale shape logged", err);
+if (!err.includes("stale room file: ZZZ3.json (shape undefined, want 1)")) fail("unstamped room logged as stale", err);
+if (!err.includes("bad game in room file: ZZZ2.json")) fail("bad game logged", err);
 if (!second.out().includes(code)) fail("restored room listed", second.out());
 if (second.out().includes("BAD2")) fail("a room with a null seat is skipped", second.out());
 console.log(`host killed and restarted on ${port}: ${second.out().trim().split("\n")[0]}; OLD1 (25 h) dropped, BAD1 and BAD2 skipped`);
 
+console.log("stale shape dropped (ZZZ1 shape 0, ZZZ3 unstamped), bad game dropped (ZZZ2)");
 const back = [];
 for (const [w, name] of [[wa, "Ember"], [wb, "Tide"], [wc, "Pine"]]) {
   const x = await client(port, name);
@@ -161,6 +175,14 @@ for (const [w, name] of [[wa, "Ember"], [wb, "Tide"], [wc, "Pine"]]) {
   if (!welcome.chat.some((l) => l.text === "see you after the crash")) fail(`${name} gets the chat history`);
   back.push(x);
   console.log(`${name} rejoined: you=${welcome.you}, player ${st.you}, seq ${st.game.seq}, current ${st.game.current}`);
+}
+
+for (const z of ["ZZZ1", "ZZZ2", "ZZZ3"]) {
+  const x = await client(port, z);
+  x.send({ type: "hello", code: z, secret: wa.secret });
+  const e = await x.next("error");
+  if (e.message !== "No table with that code") fail(`${z} has no table`, e);
+  x.ws.terminate();
 }
 
 // The restored game is live: whoever is up can act, and every seat sees it.
