@@ -1,5 +1,5 @@
 import { COST, RESOURCES, type Action, type GameState, type Resource } from "./types";
-import { harborRate, legalCities, legalRoads, legalSettle, playable, stealTargets } from "./rules";
+import { harborRate, legalCities, legalRoads, legalSettle, playable, publicVP, stealTargets } from "./rules";
 
 function cards(p: { resources: Record<Resource, number> }) {
   return RESOURCES.reduce((n, r) => n + p.resources[r], 0);
@@ -34,23 +34,44 @@ function discardHalf(p: { resources: Record<Resource, number> }, n: number): Par
   return out;
 }
 
+// The target showing the most points, then the fullest hand (#362). Public information only:
+// `stealTargets` already drops empty hands, and the card count arrives as `goods` online.
+function bestVictim(state: GameState, targets: string[]): string | null {
+  let best: { id: string; vp: number; cards: number } | null = null;
+  for (const id of targets) {
+    const p = state.players.find((x) => x.id === id);
+    if (!p) continue;
+    const vp = publicVP(state, id);
+    const n = p.goods ?? cards(p);
+    if (!best || vp > best.vp || (vp === best.vp && n > best.cards)) best = { id, vp, cards: n };
+  }
+  return best?.id ?? null;
+}
+
+// Block the opponent showing the most points (#362): their buildings weigh on top of the token,
+// and a hex the bot itself farms is never chosen while some other hex blocks an opponent.
 function bestRobberHex(state: GameState, pid: string): { hexId: string; stealFrom: string | null } {
-  let best = { hexId: state.hexes[0]!.id, stealFrom: null as string | null, score: -1 };
-  for (const h of state.hexes) {
-    if (h.id === state.robberHex || h.terrain === "waste") continue;
+  const opps = state.players.filter((p) => p.id !== pid);
+  const leaderVP = Math.max(0, ...opps.map((p) => publicVP(state, p.id)));
+  const leaders = new Set(opps.filter((p) => publicVP(state, p.id) === leaderVP).map((p) => p.id));
+  const legal = state.hexes.filter((h) => h.id !== state.robberHex && h.terrain !== "waste");
+  const owned = (hid: string) => state.vertices.some((v) => v.hexes.includes(hid) && v.building?.playerId === pid);
+  const blocks = (hid: string) =>
+    state.vertices.some((v) => v.hexes.includes(hid) && v.building && v.building.playerId !== pid);
+  const pool = legal.some((h) => !owned(h.id) && blocks(h.id)) ? legal.filter((h) => !owned(h.id)) : legal;
+  let best = { hexId: pool[0]!.id, stealFrom: null as string | null, score: -1 };
+  for (const h of pool) {
     const targets = stealTargets(state, h.id, pid);
     let score = h.pip ? 6 - Math.abs(h.pip - 7) : 0;
     if (targets.length) score += 8;
-    const oppCity = state.vertices.some(
-      (v) => v.hexes.includes(h.id) && v.building && v.building.playerId !== pid,
-    );
-    if (oppCity) score += 4;
-    const own = state.vertices.some(
-      (v) => v.hexes.includes(h.id) && v.building?.playerId === pid,
-    );
-    if (own) score -= 6;
+    if (blocks(h.id)) score += 4;
+    for (const v of state.vertices) {
+      if (!v.hexes.includes(h.id) || !v.building || !leaders.has(v.building.playerId)) continue;
+      score += v.building.kind === "stronghold" ? 6 : 3;
+    }
+    if (owned(h.id)) score -= 6;
     if (score > best.score) {
-      best = { hexId: h.id, stealFrom: targets[0] ?? null, score };
+      best = { hexId: h.id, stealFrom: bestVictim(state, targets), score };
     }
   }
   return best;
