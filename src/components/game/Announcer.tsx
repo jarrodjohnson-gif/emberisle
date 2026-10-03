@@ -12,6 +12,7 @@ export function Announcer() {
     return `${st.players.find((p) => p.id === st.current)?.name ?? "Someone"}'s turn.`;
   });
   const error = useGame((s) => s.error);
+  const errorSeq = useGame((s) => s.errorSeq);
   // A live region that mounts with its text already in it is often not read, so the first turn is filled in after mount.
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -21,8 +22,9 @@ export function Announcer() {
       <p data-testid="announce-turn" aria-live="polite" aria-atomic="true">
         {mounted ? turn : ""}
       </p>
+      {/* Keyed by errorSeq: a repeat of the same error replaces the text node, so it is read again. */}
       <p data-testid="announce-error" role="alert">
-        {error ?? ""}
+        {error ? <span key={errorSeq}>{error}</span> : null}
       </p>
     </div>
   );
