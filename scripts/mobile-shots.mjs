@@ -16,6 +16,12 @@ const browser = await chromium.launch({
 const errors = [];
 let code = 0;
 try {
+  // The human rolls off (#232) when it is up, then waits for its first corner; the bots act on the app's timer.
+  const myCorner = () => {
+    const s = window.__emberisle.getState();
+    if (s.state?.phase === "rollOff" && s.state.current === s.localId) s.dispatch({ type: "roll" });
+    return s.state?.phase === "setupSettle" && s.state.current === s.localId;
+  };
   for (const [w, h] of [
     [390, 844],
     [844, 390],
@@ -26,7 +32,7 @@ try {
     page.on("pageerror", (e) => errors.push(String(e)));
     await page.goto(`http://127.0.0.1:${PORT}/`);
     await page.getByRole("button", { name: "Play versus the isle" }).click();
-    await page.waitForFunction(() => window.__emberisle.getState().state?.phase === "setupSettle" && window.__emberisle.getState().state.current === window.__emberisle.getState().localId);
+    await page.waitForFunction(myCorner, null, { polling: 100 });
     await page.waitForTimeout(1500);
     await page.screenshot({ path: `${OUT}/03-setup-${w}x${h}.png` });
     // #177: seat strip, turn banner, and the once-per-session landscape hint.
@@ -49,7 +55,7 @@ try {
       if (await hint.isVisible()) fail("landscape hint should dismiss");
       await page.reload();
       await page.getByRole("button", { name: "Play versus the isle" }).click();
-      await page.waitForFunction(() => window.__emberisle.getState().state?.phase === "setupSettle" && window.__emberisle.getState().state.current === window.__emberisle.getState().localId);
+      await page.waitForFunction(myCorner, null, { polling: 100 });
       await page.waitForTimeout(1500);
       if (await hint.isVisible()) fail("landscape hint came back after a reload in the same session");
     } else if (await hint.isVisible()) fail("landscape hint should not show in landscape");
