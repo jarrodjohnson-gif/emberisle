@@ -18,6 +18,9 @@ const NONE = { knight: 0, road: 0, plenty: 0, monopoly: 0, vp: 0 };
 // `extend` lays one more path to a free corner, so an outpost is legal.
 function position({ seed = 7, resources, hidden = {}, bought = {}, strongholds = false, extend = false }) {
   let g = createGame({ humans: [], bots: 3, seed });
+  // Skip the roll-off (#232): its die is not seeded, and these positions need p0 placing first.
+  g.phase = "setupSettle";
+  g.rollOff = null;
   while (g.phase === "setupSettle" || g.phase === "setupRoad") {
     const r = applyAction(g, g.current, chooseBotAction(g, g.current));
     if (r.error) fail("setup", r.error);
