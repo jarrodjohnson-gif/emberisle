@@ -1,0 +1,115 @@
+// #331: with nothing moving the board renders at about 12 fps; a drag or a state push brings back full rate.
+// Software GL draws only one or two real frames a second here, so the proof swaps the composer's draw for a no-op
+// and counts what the loop decides to render (window.__isle.renders) at the browser's own frame rate.
+import { existsSync } from "node:fs";
+import { chromium } from "playwright";
+import { createServer } from "vite";
+
+const PORT = 8099;
+const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
+await vite.listen();
+
+const errors = [];
+const fails = [];
+const check = (name, ok, detail) => {
+  console.log(`${ok ? "ok  " : "FAIL"} ${name}${detail === undefined ? "" : " " + JSON.stringify(detail)}`);
+  if (!ok) fails.push(name);
+};
+
+const browser = await chromium.launch({
+  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
+  args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
+});
+try {
+  const page = await browser.newPage({ viewport: { width: 640, height: 400 } });
+  page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
+  page.on("pageerror", (e) => errors.push(String(e)));
+  await page.goto(`http://127.0.0.1:${PORT}/`);
+  await page.waitForFunction(() => window.__isle);
+  await page.evaluate(() => {
+    const isle = window.__isle;
+    window.__draws = 0;
+    isle.composer.render = () => {
+      window.__draws += 1;
+    };
+  });
+
+  // Renders (the renderer's counter) and draws (the stub's count) over a window of ms.
+  const count = (ms) =>
+    page.evaluate(async (ms) => {
+      const isle = window.__isle;
+      const r0 = isle.renders;
+      const d0 = window.__draws;
+      const t0 = performance.now();
+      await new Promise((r) => setTimeout(r, ms));
+      return { renders: isle.renders - r0, draws: window.__draws - d0, ms: Math.round(performance.now() - t0) };
+    }, ms);
+  // Idle: past the 1 s hold, no walk, no pulsing ring.
+  const idle = () =>
+    page.waitForFunction(
+      () => {
+        const isle = window.__isle;
+        const pulsing = isle.marks.children.some((m) => m.userData.kind === "hex");
+        return (isle.busyUntil ?? 0) < performance.now() && !isle.walk && !pulsing;
+      },
+      null,
+      { timeout: 15000 },
+    );
+
+  // The title keeps its 30 fps gate: above the idle cap, at most ~30 a second. Measured once the page has settled.
+  await page.waitForFunction(() => window.__draws >= 20, null, { timeout: 30000 });
+  const title = await count(2000);
+  check("title 30 fps gate (31..75 in 2 s)", title.draws > 30 && title.draws <= 75, title);
+
+  await page.getByRole("button", { name: "Four seats, one table" }).click();
+  await page.waitForFunction(() => window.__emberisle?.getState().state && window.__isle.lastState);
+  await idle();
+  const still = await count(2000);
+  check("idle: at most 30 renders in 2 s", still.draws <= 30, still);
+  check("window.__isle.renders counts every draw", still.renders === still.draws, still);
+
+  // A drag across the canvas for 2 s.
+  const box = await page.locator("canvas").boundingBox();
+  const cx = box.x + box.width / 2;
+  const cy = box.y + box.height / 2;
+  await page.mouse.move(cx, cy);
+  const d0 = await page.evaluate(() => window.__draws);
+  const t0 = Date.now();
+  await page.mouse.down();
+  for (let i = 0; Date.now() - t0 < 2000; i++) await page.mouse.move(cx + (i % 2 ? 60 : -60), cy, { steps: 4 });
+  await page.mouse.up();
+  const drag = { draws: (await page.evaluate(() => window.__draws)) - d0, ms: Date.now() - t0 };
+  check("drag: at least 3x idle in 2 s", drag.draws >= 3 * Math.max(still.draws, 1), { drag, idle: still.draws });
+
+  // A state push holds full rate for 1 s: compare that second with half the idle window.
+  await idle();
+  const pushed = await page.evaluate(async () => {
+    const g = window.__emberisle;
+    const isle = window.__isle;
+    const st = structuredClone(g.getState().state);
+    st.seq += 1;
+    const d0 = window.__draws;
+    const t0 = performance.now();
+    g.setState({ state: st });
+    await new Promise((r) => setTimeout(r, 1000));
+    return { draws: window.__draws - d0, ms: Math.round(performance.now() - t0), held: isle.busyUntil - t0 };
+  });
+  check("state push: at least 3x idle over its 1 s", pushed.draws >= 1.5 * Math.max(still.draws, 1), { pushed, idlePerSecond: still.draws / 2 });
+
+  // Reduced motion idles the same way.
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await idle();
+  const calm = await count(2000);
+  check("reduced motion idle: at most 30 in 2 s", calm.draws <= 30, calm);
+  await page.emulateMedia({ reducedMotion: null });
+
+  check("no console errors", errors.length === 0, errors);
+} finally {
+  await browser.close();
+  await vite.close();
+}
+if (fails.length) {
+  console.log(`\n${fails.length} failed: ${fails.join(", ")}`);
+  process.exit(1);
+}
+console.log("\nidle-prove: all checks passed");

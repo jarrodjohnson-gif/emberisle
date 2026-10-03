@@ -16,6 +16,7 @@
     "trade-prove": "node scripts/trade-prove.mjs",
     "pieces-prove": "node --import ./server/register.mjs scripts/pieces-prove.mjs",
     "tokens-prove": "node scripts/tokens-prove.mjs",
+    "idle-prove": "node scripts/idle-prove.mjs",
     "orphan-check": "node scripts/orphan-check.mjs",
     "chat-prove": "node scripts/chat-prove.mjs",
     "mobile-shots": "node scripts/mobile-shots.mjs",

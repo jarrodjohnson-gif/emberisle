@@ -108,6 +108,11 @@ export class IsleRenderer {
   private water = makeWater();
   private titleMode = false;
   private lastFrame = 0;
+  // Until when the loop runs at full rate: a drag, a camera move, a walk or a state change holds it there for 1 s (#331).
+  private busyUntil = 0;
+  private lastMarks = "";
+  // Frames drawn; the idle proof counts them.
+  renders = 0;
   private foam!: THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial>;
   private coastMiter = new Map<string, { mx: number; mz: number }>();
   private onPick: (kind: "hex" | "vertex" | "edge", id: string) => void;
@@ -145,6 +150,8 @@ export class IsleRenderer {
     this.controls.target.set(0.15, 0.05, 0);
     this.controls.autoRotate = true;
     this.controls.autoRotateSpeed = 0.28;
+    this.controls.addEventListener("start", this.wake);
+    this.controls.addEventListener("change", this.wake);
 
     this.scene.fog = new THREE.Fog(0x6a93a0, 26, 52);
     this.scene.add(new THREE.HemisphereLight(0xf3fbff, 0xe8c9a0, 1.15));
@@ -214,6 +221,7 @@ export class IsleRenderer {
 
   // Off the table (title and lobby) the island is a backdrop under a card: no SSAO, and 30 frames a second.
   setTitleMode(v: boolean) {
+    if (v !== this.titleMode) this.wake();
     this.titleMode = v;
     this.controls.autoRotate = v;
     this.ssao.enabled = !v && !this.overhead;
@@ -239,6 +247,7 @@ export class IsleRenderer {
   setView(view: "overhead" | "free") {
     const over = view === "overhead";
     if (over === this.overhead) return;
+    this.wake();
     this.overhead = over;
     this.controls.enabled = !over;
     this.ssao.enabled = !over && !this.titleMode;
@@ -250,6 +259,7 @@ export class IsleRenderer {
 
   // The mark a coarse pointer has selected, waiting for the Place chip. Pulses it and locks orbit meanwhile.
   setPending(p: { kind: string; id: string } | null) {
+    if (p?.id !== this.pending?.id) this.wake();
     this.pending = p;
     this.controls.enableRotate = !p;
     for (const o of this.marks.children) {
@@ -266,6 +276,10 @@ export class IsleRenderer {
     // Online clients get no seed until the game ends (#111), so a new island is spotted by what buildLand draws.
     const land = landKey(state);
     const landChanged = this.lastLand !== land;
+    // The store calls this on every change, chat and timers included; only what the island draws wakes the loop.
+    const marks = `${interactive}|${highlights.vertices}|${highlights.edges}|${highlights.hexes}`;
+    if (landChanged || this.lastSeq !== state.seq || marks !== this.lastMarks) this.wake();
+    this.lastMarks = marks;
     if (landChanged) {
       this.buildLand(state);
       this.lastLand = land;
@@ -357,7 +371,12 @@ export class IsleRenderer {
     }
   }
 
+  private wake = () => {
+    this.busyUntil = performance.now() + 1000;
+  };
+
   private resize = () => {
+    this.wake();
     const c = this.renderer.domElement;
     const w = c.clientWidth || 1;
     const h = c.clientHeight || 1;
@@ -382,6 +401,7 @@ export class IsleRenderer {
   };
 
   private onDown = (e: PointerEvent) => {
+    this.wake();
     this.down.x = e.clientX;
     this.down.y = e.clientY;
     this.downType = e.pointerType;
@@ -401,6 +421,7 @@ export class IsleRenderer {
   private onMove = (e: PointerEvent) => {
     if (!this.gesture.pointers.has(e.pointerId)) return;
     this.gesture.move(e.pointerId, e.clientX, e.clientY);
+    this.wake();
     if (this.gesture.pointers.size === 2 && this.overhead && this.pinchStart > 0) {
       this.ortho.zoom = Math.min(2.4, Math.max(1, this.pinchZoom * (this.pinchDistance() / this.pinchStart)));
       this.ortho.updateProjectionMatrix();
@@ -441,11 +462,15 @@ export class IsleRenderer {
   private tick = () => {
     if (this.stopped) return;
     const now = performance.now();
-    if (this.titleMode && now - this.lastFrame < 1000 / 30 - 2) return;
+    // Title: 30 fps. On the board with nothing moving: 12 fps, enough to keep the water, sheep and boats alive (#331).
+    const pulsing = this.marks.children.some((m) => m.userData.kind === "hex" && m.userData.id !== this.pending?.id);
+    const gap = this.titleMode ? 1000 / 30 : this.walk || pulsing || now < this.busyUntil ? 0 : 1000 / 12;
+    if (now - this.lastFrame < gap - 2) return;
     this.lastFrame = now;
     this.clock.update();
     const t = this.clock.getElapsed();
-    const dt = Math.min(this.clock.getDelta(), 0.05);
+    // An idle frame is 83 ms apart; a smaller cap would slow the sheep while idle.
+    const dt = Math.min(this.clock.getDelta(), 0.1);
     this.controls.update();
     this.water.uniforms.uTime!.value = t;
     this.foam.material.opacity = 0.32 + 0.23 * (0.5 + 0.5 * Math.sin(t * 0.8));
@@ -458,6 +483,7 @@ export class IsleRenderer {
       this.wayfarer.position.y += 0.3 * Math.abs(Math.sin(Math.PI * u * w.hops));
       this.wayfarer.lookAt(w.to.x, this.wayfarer.position.y, w.to.z);
       if (u >= 1) {
+        this.wake();
         this.walk = null;
         this.startWalk();
       }
@@ -491,6 +517,7 @@ export class IsleRenderer {
       b.rotation.x = Math.sin(t * 1.1) * 0.035;
     }
     this.composer.render();
+    this.renders += 1;
   };
 
   private buildLand(state: GameState) {
