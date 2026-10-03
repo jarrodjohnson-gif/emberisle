@@ -194,6 +194,37 @@ const moved = await Promise.all(back.map((x) => x.next("state", (m) => m.game.se
 if (new Set(moved.map((m) => m.game.seq)).size !== 1) fail("every seat sees the same next seq");
 console.log(`after the restart ${mover.name} played (${g.phase}): seq ${moved[0].game.seq} on all three`);
 
+// A lobby restored after a restart does not keep its seats ready while they are away (#318).
+const lobby = await client(port, "Host");
+lobby.send({ type: "hello", name: "Host" });
+const wl = await lobby.next("welcome");
+const lobbyMates = [];
+for (const name of ["Mate1", "Mate2"]) {
+  const x = await client(port, name);
+  x.send({ type: "hello", code: wl.code, name });
+  await x.next("welcome");
+  lobbyMates.push(x);
+}
+for (const x of [lobby, ...lobbyMates]) x.send({ type: "ready", value: true });
+await lobby.next("seats", (m) => m.code === wl.code && m.seats.length === 3 && m.seats.every((s) => s.ready));
+// The seats broadcast goes out before the save; the chat echo only comes once that handler has finished writing the file.
+lobby.send({ type: "chat", text: "all ready" });
+await lobby.next("chat");
+host.removeAllListeners("exit");
+host.kill("SIGKILL");
+await new Promise((r) => host.once("exit", r));
+for (const x of [lobby, ...lobbyMates]) x.ws.terminate();
+const third = await start(port);
+if (!third.out().includes(wl.code)) fail("restored lobby listed", third.out());
+const lobbyBack = await client(port, "Host");
+lobbyBack.send({ type: "hello", code: wl.code, secret: wl.secret });
+await lobbyBack.next("welcome");
+lobbyBack.send({ type: "start" });
+const notReady = await lobbyBack.next("error");
+if (notReady.message !== "Not everyone is ready.") fail("a restored lobby does not start with seats away", notReady);
+console.log(`restored lobby ${wl.code}: start refused with "${notReady.message}"`);
+lobbyBack.ws.terminate();
+
 host.removeAllListeners("exit");
 host.kill();
 for (const x of [a2, b2, c2]) x.ws.terminate();

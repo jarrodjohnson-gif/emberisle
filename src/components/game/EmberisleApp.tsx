@@ -83,6 +83,17 @@ function Title() {
     };
   }, [join, peekTable]);
 
+  // #304: a join link (?code=K7QP) fills the field so the peek above runs; nothing is sent until Join is pressed.
+  // The code then leaves the URL so a reload does not refill a dead one.
+  useEffect(() => {
+    const url = new URL(location.href);
+    const code = url.searchParams.get("code")?.toUpperCase();
+    if (code === undefined) return;
+    url.searchParams.delete("code");
+    history.replaceState(history.state, "", `${url.pathname}${url.search}${url.hash}`);
+    if (PEEK_CODE.test(code)) setJoin(code);
+  }, []);
+
   return (
     <div
       data-testid="title-card"
@@ -196,16 +207,21 @@ function Lobby() {
   const startTable = useGame((s) => s.startTable);
   const goTitle = useGame((s) => s.goTitle);
   const [ready, setReadyLocal] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const copyCode = () => {
+  const [copied, setCopied] = useState<"code" | "link" | null>(null);
+  const copy = (what: "code" | "link", text: string) => {
     // Never throws: clipboard is missing on insecure origins (a LAN IP over http) and can be denied.
-    navigator.clipboard?.writeText(code).then(
+    navigator.clipboard?.writeText(text).then(
       () => {
-        setCopied(true);
-        window.setTimeout(() => setCopied(false), 1500);
+        setCopied(what);
+        window.setTimeout(() => setCopied(null), 1500);
       },
       () => {},
     );
+  };
+  // #304: the join link. `?host=` is kept so a Vite dev page's link still dials the same host (src/lib/net/table.ts hostUrl).
+  const copyLink = () => {
+    const host = new URLSearchParams(location.search).get("host");
+    copy("link", `${location.origin}${location.pathname}?code=${code}${host ? `&host=${encodeURIComponent(host)}` : ""}`);
   };
   const canStart = isHost && seats.length >= 3 && seats.length <= 4 && seats.every((s) => s.ready);
   const { phone, portrait } = useViewport();
@@ -227,9 +243,14 @@ function Lobby() {
           <p data-testid="table-code" className="font-display text-6xl tracking-[0.2em]">
             {code}
           </p>
-          <Button size="sm" variant="outline" onClick={copyCode}>
-            {copied ? "Copied" : "Copy"}
-          </Button>
+          <div className="flex flex-col gap-1">
+            <Button size="sm" variant="outline" onClick={() => copy("code", code)}>
+              {copied === "code" ? "Copied" : "Copy"}
+            </Button>
+            <Button size="sm" variant="outline" onClick={copyLink}>
+              {copied === "link" ? "Copied" : "Copy link"}
+            </Button>
+          </div>
         </div>
         <ul className="mt-5 flex flex-col gap-2">
           {[0, 1, 2, 3].map((i) => {

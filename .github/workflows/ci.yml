@@ -23,10 +23,12 @@ jobs:
       - run: npm ci --prefix server
       - run: npm run typecheck
       - run: npm run build
+      - run: npm run size-prove
       - run: npm test
       - run: npm run touch-place-prove
       - run: npx playwright install --with-deps chromium
       - run: npm run client-prove
+      - run: npm run dpr-prove
       - run: npm run hotseat-prove
       - run: npm run tabs-prove
       - run: npm run trade-prove
@@ -37,6 +39,7 @@ jobs:
       - run: npm run wayfarer-prove
       - run: npm run tokens-prove
       - run: npm run pieces-prove
+      - run: npm run idle-prove
       - if: always()
         uses: actions/upload-artifact@v4
         with:

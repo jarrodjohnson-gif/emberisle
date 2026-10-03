@@ -1,6 +1,7 @@
 // #160: three headless tabs at 1280x720 chat through server/host.mjs. Lobby chat and presets, a floating reaction,
 // the unread badge and the remembered open/minimized state, a minimized dock that covers no board target, the player action
-// menu in the rail and under the phone seat strip (#161), zero console errors.
+// menu in the rail and under the phone seat strip (#161), the game log in the dock with its Chat/All filter and Copy log (#305),
+// zero console errors.
 // Design: docs/design/chat.md "Test plan". Screenshots go to test-results/.
 import { spawn } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
@@ -339,6 +340,60 @@ try {
   await phone.page.getByTestId("chat-sheet").waitFor({ timeout: 5000 });
   check((await phone.page.getByPlaceholder("Say something…").inputValue()) === "@Ember ", 'phone: Mention opens the sheet with "@Ember "');
   await phone.page.getByRole("button", { name: "Minimize chat" }).tap();
+
+  // 7. The game log (#305): setup and the first roll through the store, then every dock lists the game's lines as muted
+  // rows in with the chat, the Chat chip hides them, and Copy log puts the whole log on the clipboard.
+  const all = [...tabs, phone];
+  const act = (t, fn, arg) => t.page.evaluate(([f, a]) => window.__emberisle.getState()[f](...[].concat(a)), [fn, arg]);
+  const seen = (t) =>
+    store(t, () => {
+      const s = window.__emberisle.getState();
+      return { you: s.localId, current: s.state.current, phase: s.state.phase, seq: s.state.seq, dice: s.state.dice, outpost: s.legal?.outpost ?? [], path: s.legal?.path ?? [] };
+    });
+  const byId = {};
+  for (const t of all) byId[(await seen(t)).you] = t;
+  for (let step = 0; step < 16; step++) {
+    const v = await seen(a);
+    if (v.phase === "roll") break;
+    const t = byId[v.current];
+    const mine = await until(async () => {
+      const m = await seen(t);
+      return m.seq === v.seq && (m.phase === "setupSettle" ? m.outpost.length : m.path.length) ? m : null;
+    }, `${t.name} has its glow for setup step ${step}`);
+    if (mine.phase === "setupSettle") await act(t, "pickVertex", mine.outpost[0]);
+    else await act(t, "pickEdge", mine.path[0]);
+    await until(async () => ((await seen(a)).seq > v.seq ? true : null), `setup step ${step} reaches Ember`);
+  }
+  const atRoll = await seen(a);
+  check(atRoll.phase === "roll", `game log: setup is done, phase ${atRoll.phase}`);
+  await act(byId[atRoll.current], "dispatch", [{ type: "roll" }]);
+  await until(async () => ((await seen(a)).dice ? true : null), "the first roll reaches Ember");
+  const rowsOf = (t) => t.page.getByTestId("chat-log").getByTestId("log-row").allTextContents();
+  for (const t of all) {
+    if (await t.page.getByRole("button", { name: "Open chat" }).count()) await t.page.getByRole("button", { name: "Open chat" }).click();
+    const rows = await until(async () => {
+      const r = await rowsOf(t);
+      return r.length >= 3 && r.some((x) => /rolls \d\+\d = \d+/.test(x)) && r.some((x) => /raises an outpost|founds an outpost/.test(x)) ? r : null;
+    }, `${t.name} lists the roll and an outpost in the game log`);
+    check(true, `game log: ${t.name} shows ${rows.length} rows, with the roll and an outpost${t === phone ? ", in the phone sheet" : ""}`);
+  }
+  const logKey = () => a.page.evaluate(() => localStorage.getItem("emberisle-log-filter"));
+  await a.page.getByRole("button", { name: "Chat", exact: true }).click();
+  await until(async () => ((await rowsOf(a)).length === 0 ? true : null), "the Chat chip hides the game rows");
+  check((await a.page.getByTestId("chat-log").locator("li", { hasText: "hello" }).count()) === 1 && (await logKey()) === "chat", 'game log: the Chat chip keeps the chat lines and stores "chat"');
+  await a.page.getByRole("button", { name: "All", exact: true }).click();
+  const shown = await until(async () => {
+    const r = await rowsOf(a);
+    return r.length >= 3 ? r : null;
+  }, "the All chip shows the game rows again");
+  check((await logKey()) === "all", 'game log: the All chip stores "all"');
+  await a.page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
+  await a.page.getByRole("button", { name: "Copy log" }).click();
+  await a.page.getByRole("button", { name: "Copied" }).waitFor({ timeout: 5000 });
+  const copied = await a.page.evaluate(() => navigator.clipboard.readText());
+  const wanted = await store(a, () => window.__emberisle.getState().gameLog.map((l) => l.text).join("\n"));
+  check(copied === wanted && copied.split("\n").length === shown.length, `game log: ${shown.length} rows, copy ok`);
+  await shot(a, "chat-game-log.jpg");
 
   // Versus bots the menu shows only the facts (and the bank trade on your main turn, not during setup).
   const solo = await (await browser.newContext({ viewport: { width: 1280, height: 720 } })).newPage();

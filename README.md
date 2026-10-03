@@ -138,7 +138,7 @@ npm run tabs-prove       # 3 headless tabs host, join, play setup + 5 rolls on t
 npm run trade-prove      # 3 headless tabs: one asks the table through the trade panel, one says No, one says Yes, goods move; a second ask times out
 npm run served-prove     # same 3 tabs, but the page comes from the rules host itself with no ?host= (after build)
 npm run night-prove      # npm run night from a clean start: builds, prints the join lines, serves the page, answers a socket, survives kill -9 on the host, SIGINT leaves no host
-npm run chat-prove       # 3 headless tabs chat in the lobby and the game: presets, reactions, unread badge, minimized dock covers no target
+npm run chat-prove       # 3 headless tabs chat in the lobby and the game: presets, reactions, unread badge, minimized dock covers no target, the game log in the dock with Chat/All and Copy log
 ```
 
 CI runs `npm ci` in the root and in `server/`, then these checks in this order, and installs Chromium with `npx playwright install --with-deps chromium`. `client-prove` uses the Chromium that ships with cloud sessions (`/opt/pw-browsers/chromium`). On your own PC, run `npx playwright install chromium` once first. It saves a screenshot to `test-results/client-prove.png`.
@@ -153,9 +153,9 @@ npm run night
 
 That builds the client, starts the host, and prints the join line:
 
-- **On this PC** — open it, then Host a table. Post the 4-character code.
+- **On this PC** — open it, then Host a table. Copy link in the lobby, paste it in the chat. Friends open it and press Join. (Copy gives the 4-character code alone, for anyone who already has the page open.)
 - **On your network** — same Wi-Fi. No tunnel.
-- **Friends on the internet** — the script does not start the tunnel. In a second terminal, run the `cloudflared tunnel --url ...` command it printed. Leave both open. cloudflared prints an `https://….trycloudflare.com` link; paste that in the chat. Friends open the link and Join with the code. They never type a port.
+- **Friends on the internet** — the script does not start the tunnel. In a second terminal, run the `cloudflared tunnel --url ...` command it printed. Leave both open. cloudflared prints an `https://….trycloudflare.com` link; open that link yourself (Copy link carries the address the lobby page is on, so a `localhost` lobby would hand out a `localhost` link), Host a table, Copy link, paste it in the chat. Friends open it and press Join. They never type a port or a code.
 
 Host env knobs: `PORT` (default 8787), `ROOMS_DIR` (where tables are saved, default `server/rooms/`), `GRACE_MS` (how long the table waits before a bot plays a dropped seat, default 90 s), `HOLD_MS` (how long a dropped seat is held in a game, default 10 min) and `LOBBY_HOLD_MS` (how long a dropped seat is held in the lobby, default 90 s).
 
@@ -305,8 +305,8 @@ WebSocket JSON. The client sends intents. The server answers with `state` or `er
 | `node --import ./server/register.mjs server/finish-prove.mjs` | 3 `src/lib/net/table.ts` clients play two hosted games to the win, each seat running the practice bot on its own view: no hand or seed leaks before the end, the final state reaches every seat in full (hands, fortunes, deck) and agrees with what each seat held, the VP cards add up to 5, every post-win roll, pass, buy and trade ask is refused while chat still arrives, and the last log line is the winner's |
 | `npm run client-prove` | The browser client plays setup and a roll with zero console errors; a peek during a pending rejoin is quiet, and opens its own connection after a stale one |
 | `npm run hotseat-prove` | In hotseat, a 7 where another seat owes a discard shows that seat's discard bar and charges the discard to that seat; zero console errors |
-| `npm run chat-prove` | 3 browser tabs at 1280x720: lobby chat and presets, a reaction floats over the sender's rail card for 2 s, the unread badge, the remembered dock state, the minimized dock covers no board target, zero console errors |
-| `npm run tabs-prove` | 3 browser tabs host, join, ready, start, play setup and 5 rolls through the rules host; dice and board match on every tab; each tab draws the roll as two pip faces matching the banner and the log, labelled "Rolled a and b, sum", with no settle animation under reduced motion; then plays on until a gain has flashed green +N and a loss red -N on the hand, each gone within 2 s; a taken color dims before Join; zero console errors |
+| `npm run chat-prove` | 3 browser tabs at 1280x720: lobby chat and presets, a reaction floats over the sender's rail card for 2 s, the unread badge, the remembered dock state, the minimized dock covers no board target; after setup and the first roll every dock (the phone sheet too) lists the game log as muted rows with the roll and an outpost, the Chat chip hides them, Copy log puts the whole log on the clipboard; zero console errors |
+| `npm run tabs-prove` | 3 browser tabs host, join, ready, start, play setup and 5 rolls through the rules host; dice and board match on every tab; each tab draws the roll as two pip faces matching the banner and the log, labelled "Rolled a and b, sum", with no settle animation under reduced motion; then plays on until a gain has flashed green +N and a loss red -N on the hand, each gone within 2 s; a taken color dims before Join; the third tab opens the lobby's copied join link (`?code=` fills Join, the taken color dims, the code leaves the URL, `?host=` is kept); zero console errors |
 | `npm run trade-prove` | 3 browser tabs on the rules host: the Trade panel asks the table, the toast's No reaches every tab and leaves the offer open, Yes moves the goods (own hands exact, others' `goods` counts), a second ask runs out its 20 s with nothing moved and every toast closed, zero console errors |
 | `npm run served-prove` | The same 3 tabs, but the host serves the built `dist/` and the tabs open it with no `?host=`, so they find the socket at the page's own address (the tunnel case) |
 | `npm run night-prove` | Runs `npm run night` on port 8797 with a temp rooms folder: it builds, prints the three join lines within 120 s, serves `<title>Emberisle</title>`, answers a `peek` for an unknown table with an empty seat list, comes back under night with the join lines reprinted within 10 s of a `kill -9` on the host (same port, `restarting (1/5)` logged, page and `peek` answer again), and on SIGINT leaves no host behind within 5 s. No tunnel is started. Also checks `supervise()` with fake hosts: six fast deaths give five restarts then exit 1; a stop is not a restart. |
@@ -314,9 +314,10 @@ WebSocket JSON. The client sends intents. The server answers with `state` or `er
 | `npm run tokens-prove` | In the browser, number tokens are rimmed and legible, and nothing is placed or wanders within 0.39 of a hex centre (docs/design/tokens.md) |
 | `npm run pieces-prove` | Pieces read in every seat colour: the five checks in docs/design/pieces.md, no browser |
 | `npm run touch-place-prove` | The phone camera fit and touch picking, checked on the pure math in `src/lib/scene/mobile-fit.ts`, no browser |
+| `npm run size-prove` | After a build, the gzip size of each `dist/assets/*.js` chunk (`index`, `IslandCanvas`) is inside its budget (today plus 10%), and no chunk is unbudgeted; the budget is in `scripts/size-prove.mjs` |
 | `npm run orphan-check` | Not in CI. Starts two proofs, kills each mid-run, and counts the host processes left behind. Expect 0. |
 
-`npm test` runs the fifteen `server/*-prove.mjs` scripts: `prove`, `trade-prove`, `sound-prove`, `table-prove`, `trade-table-prove`, `harden-prove`, `net-prove`, `rules-prove`, `bots-prove`, `serve-prove`, `chat-prove`, `rejoin-prove`, `reconnect-prove`, `persist-prove`, and `finish-prove`. CI also runs `client-prove`, `hotseat-prove`, `tabs-prove`, `trade-prove`, `served-prove`, `night-prove`, the browser `chat-prove`, `wayfarer-prove`, `tokens-prove`, `pieces-prove`, and `touch-place-prove`.
+`npm test` runs the fifteen `server/*-prove.mjs` scripts: `prove`, `trade-prove`, `sound-prove`, `table-prove`, `trade-table-prove`, `harden-prove`, `net-prove`, `rules-prove`, `bots-prove`, `serve-prove`, `chat-prove`, `rejoin-prove`, `reconnect-prove`, `persist-prove`, and `finish-prove`. CI also runs `size-prove` (after the build), `client-prove`, `hotseat-prove`, `tabs-prove`, `trade-prove`, `served-prove`, `night-prove`, the browser `chat-prove`, `wayfarer-prove`, `tokens-prove`, `pieces-prove`, and `touch-place-prove`.
 
 ---
 
