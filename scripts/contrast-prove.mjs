@@ -53,6 +53,7 @@ try {
       host: btn("Host a table"),
       eyebrow: px(eyebrow.color),
       surface: px(root.getPropertyValue("--color-surface").trim()),
+      bg: px(root.getPropertyValue("--color-bg").trim()),
       accentInk: px(root.getPropertyValue("--color-accent-ink").trim()),
       accent: px(root.getPropertyValue("--color-accent").trim()),
     };
@@ -64,7 +65,9 @@ try {
     ["Join (sea) white on fill", ratio(read.join.fg, read.join.bg)],
     ["Host a table (accent) white on fill", ratio(read.host.fg, read.host.bg)],
     ["eyebrow 12 px on surface", ratio(read.eyebrow, read.surface)],
+    ["eyebrow 12 px on bg", ratio(read.eyebrow, read.bg)],
     ["error line 14 px on surface", ratio(errorInk, read.surface)],
+    ["error line 14 px on bg", ratio(errorInk, read.bg)],
   ];
   const bad = [];
   for (const [name, r] of checks) {

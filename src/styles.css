@@ -11,8 +11,8 @@
   --color-sea: #2a8f8a;
   --color-accent: #c45c3e;
   /* Text and text-on-fill ink (WCAG 1.4.3, 4.5:1). The brand swatches above are for fills that carry no text. */
-  --color-sea-ink: #1f7a76;
-  --color-accent-ink: #b04f33;
+  --color-sea-ink: #1b726e;
+  --color-accent-ink: #a94b30;
   --font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
 }
 
