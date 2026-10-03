@@ -454,7 +454,7 @@ export const useGame = create<GameStore>((set, get) => ({
   rejoinTable: () => {
     const seat = savedSeat();
     if (!seat) return false;
-    connect(set, get, (t) => t.rejoin(seat.code, seat.secret));
+    connect(set, get, (t) => t.rejoin(seat.code, seat.secret), true);
     return true;
   },
   setReady: (value) => get().net?.ready(value),
@@ -484,10 +484,13 @@ export const useGame = create<GameStore>((set, get) => ({
 type Set = (partial: Partial<GameStore>) => void;
 type Get = () => GameStore;
 
-function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void) {
+// `quiet` is the automatic rejoin on page load: until the first welcome, a dead seat is dropped without telling the player.
+function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, quiet = false) {
   get().net?.close();
+  let pending = quiet;
   const table = connectTable(hostUrl(window.location), {
     welcome: ({ code, you, host, chat, secret }) => {
+      pending = false;
       if (secret) rememberSeat({ code, secret });
       // A rejoin lands in the lobby for a moment; the host's state push (if the game started) moves it to play.
       set({ code, seatId: you, isHost: host, screen: "lobby", mode: "online", error: null, toast: null, chat: (chat ?? []).slice(-50), reactions: [], unread: 0 });
@@ -537,13 +540,19 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void) {
       set({ tradeOutcome: taker ? `${takerName} takes it.` : "Nobody took it." });
       outcomeTimer = setTimeout(() => set({ tradeOutcome: null }), BANNER_MS);
     },
-    error: (message) => set({ error: message, toast: message }),
+    error: (message) => {
+      if (!pending) set({ error: message, toast: message });
+    },
     closed: (keepSeat) => {
       if (keepSeat) {
         set({ error: "Your seat is open in another tab", toast: "Your seat is open in another tab", screen: "title", net: null, state: null });
         return;
       }
       rememberSeat(null);
+      if (pending) {
+        set({ error: null, toast: null, screen: "title", net: null, state: null });
+        return;
+      }
       set({ error: "Lost the table", toast: "Lost the table", screen: "title", net: null, state: null });
     },
   });
