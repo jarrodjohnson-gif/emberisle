@@ -274,7 +274,7 @@ WebSocket JSON. The client sends intents. The server answers with `state` or `er
 | `seats {code, seats[]}` | Seat list. `away: true` marks a dropped player whose seat is held. |
 | `welcome {code, you, host, chat[], secret}` | `chat` is the room's last 50 lines. `secret` reclaims this seat with `hello {code, secret}`. |
 | `state {you, game, legal}` | The full game for you, plus `legal` = the ids you may click and the actions you may take |
-| `rolled {dice:[a,b], sum, gains[]}` | The server's dice and who got what |
+| `rolled {dice:[a,b], sum, gains[], short[]}` | The server's dice and who got what. `short` lists the resources the bank was too short to pay anyone |
 | `chat {id, seat, player, name, color, text, at}` | A chat line, sent to every seat, sender included |
 | `react {seat, player, emote, to, at}` | A reaction, sent to every seat, sender included |
 | `log {text}` / `error {message}` | One line to show. Two come from the host's limits: "The host is full." (a `hello` that would open a table past `ROOM_MAX`, default 64) and "Slow down." (a seat sent more than about 20 non-chat messages in a burst, refilled 4 a second; the message is dropped) |

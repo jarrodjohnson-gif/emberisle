@@ -7,7 +7,7 @@ import { randomBytes, randomInt } from "node:crypto";
 import { WebSocketServer } from "ws";
 import { chooseBotAction } from "../src/lib/game/ai.ts";
 import { createGame } from "../src/lib/game/board.ts";
-import { applyAction, legalCities, legalRoads, legalSettle, playable, stealTargets, validBag } from "../src/lib/game/rules.ts";
+import { applyAction, bankShort, legalCities, legalRoads, legalSettle, playable, stealTargets, validBag } from "../src/lib/game/rules.ts";
 import { COST, PLAYER_COLORS, RESOURCES } from "../src/lib/game/types.ts";
 import { allow, cleanText, loadEmotes, remember } from "./chat.mjs";
 import { cue } from "./cue.mjs";
@@ -609,8 +609,10 @@ function play(ws, room, msg) {
   if (msg.type === "roll") {
     const [a, b] = room.game.dice;
     const paid = gains(before, room.game);
-    broadcast(room, { type: "rolled", dice: [a, b], sum: a + b, gains: paid });
+    const short = bankShort(room.game);
+    broadcast(room, { type: "rolled", dice: [a, b], sum: a + b, gains: paid, short });
     const parts = paid.map((g) => `${g.name} +${g.amount} ${g.resource}`);
+    if (short.length) parts.push(`bank short of ${short.join(" and ")}`);
     say(room, [String(a + b), ...parts].join(" · "));
   }
   runBots(room);

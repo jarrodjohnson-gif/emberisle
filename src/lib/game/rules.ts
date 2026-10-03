@@ -283,11 +283,19 @@ function produce(state: GameState, total: number) {
   for (const res of Object.keys(demand) as Resource[]) {
     if ((demand[res] ?? 0) > state.bank[res] && (owed[res]?.size ?? 0) > 1) short.add(res);
   }
+  if (short.size) log(state, `The bank is short of ${[...short].join(" and ")}; nobody gathers it.`);
   for (const grant of grants) {
     if (short.has(grant.res)) continue;
     const got = give(state, grant.p, grant.res, grant.n);
     if (got) log(state, `${grant.p.name} gathers ${got} ${grant.res} from the ${grant.pip}.`);
   }
+}
+
+// The resources the latest roll could not pay, read from the line produce() logs right after the roll line.
+export function bankShort(state: GameState): Resource[] {
+  const i = state.log.findLastIndex((l) => / rolls \d\+\d = \d+\.$/.test(l));
+  const m = /^The bank is short of (.+); nobody gathers it\.$/.exec(state.log[i + 1] ?? "");
+  return m ? (m[1]!.split(" and ") as Resource[]) : [];
 }
 
 function grantSecondSettlement(state: GameState, vid: string, pid: string) {
