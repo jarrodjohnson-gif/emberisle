@@ -1,6 +1,6 @@
 // Untrusted input: bad messages, card-minting discards, oversized pictures, and a player who leaves mid-game.
 import { spawn } from "node:child_process";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import WebSocket from "ws";
@@ -79,8 +79,8 @@ const { avatarId } = await small.json();
 if (!avatarId || avatarId === "p0") fail("client chose the picture id", avatarId);
 console.log("picture: 300 KB refused (413), id picked by host");
 
-function client() {
-  const ws = new WebSocket(`ws://127.0.0.1:${port}`);
+function client(at = port) {
+  const ws = new WebSocket(`ws://127.0.0.1:${at}`);
   const c = { ws, inbox: [], waiters: [], state: null };
   ws.on("message", (raw) => {
     const m = JSON.parse(String(raw));
@@ -188,6 +188,53 @@ const after = await b.next("state");
 const gone = after.game.players.find((p) => p.id === first);
 if (gone.kind !== "bot" || after.game.current === first) fail("table hung after a leave", after.game.current);
 console.log(`seat ${first} left on its turn; the bot placed and play moved to ${after.game.current}`);
+
+// 4. A host with ROOM_MAX=3 opens three tables and refuses the fourth; one seat flooding non-chat messages is throttled (#281).
+const SMALL_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-rooms-"));
+process.on("exit", () => rmSync(SMALL_DIR, { recursive: true, force: true }));
+const small3 = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
+  cwd: new URL(".", import.meta.url),
+  env: { ...process.env, PORT: "0", ROOMS_DIR: SMALL_DIR, ROOM_MAX: "3" },
+  stdio: ["ignore", "pipe", "pipe"],
+});
+process.on("exit", () => small3.kill());
+const port3 = await new Promise((resolve, reject) => {
+  small3.stdout.on("data", (d) => {
+    const mm = String(d).match(/listening (\d+)/);
+    if (mm) resolve(Number(mm[1]));
+  });
+  small3.on("exit", (code) => reject(new Error(`ROOM_MAX host exited ${code}`)));
+});
+small3.on("exit", (code) => fail("ROOM_MAX host died", code));
+const four = [client(port3), client(port3), client(port3), client(port3)];
+await Promise.all(four.map((x) => x.open));
+for (const [i, x] of four.entries()) {
+  x.send({ type: "hello", name: `T${i}` });
+  await (i < 3 ? x.next("welcome") : x.next("error").then((e) => (e.message === "The host is full." ? e : fail("fourth table answer", e.message))));
+}
+if (four[3].inbox.some((e) => e.type === "welcome")) fail("the fourth table opened");
+const files = readdirSync(SMALL_DIR).filter((f) => f.endsWith(".json"));
+if (files.length !== 3) fail("rooms/ should hold three files", files);
+console.log("ROOM_MAX=3: three hellos got welcome, the fourth got 'The host is full.', rooms/ holds", files.length, "files");
+
+const flood = four[0];
+flood.inbox.length = 0;
+for (let i = 0; i < 60; i++) flood.send({ type: "ready", value: i % 2 === 0 });
+await new Promise((r) => setTimeout(r, 500));
+const slows = flood.inbox.filter((e) => e.type === "error" && e.message === "Slow down.").length;
+if (slows < 1) fail("60 ready toggles were never throttled");
+if (small3.exitCode !== null) fail("the host died in the flood");
+await new Promise((r) => setTimeout(r, 1100));
+flood.inbox.length = 0;
+flood.send({ type: "ready", value: true });
+await flood.next("seats");
+flood.send({ type: "start" });
+const afterFlood = await flood.next("error");
+if (afterFlood.message === "Slow down.") fail("start still throttled after a second");
+console.log(`60 ready toggles gave ${slows} 'Slow down.'; host up; ready and start answered a second later ("${afterFlood.message}")`);
+for (const x of four) x.ws.close();
+small3.removeAllListeners("exit");
+small3.kill();
 
 host.removeAllListeners("exit");
 host.kill();
