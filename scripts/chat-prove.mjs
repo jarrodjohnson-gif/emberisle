@@ -395,9 +395,9 @@ try {
   check(copied === wanted && copied.split("\n").length === shown.length, `game log: ${shown.length} rows, copy ok`);
   await shot(a, "chat-game-log.jpg");
   // #343: with no clipboard (a LAN address over plain http) Copy log shows the log in a read-only field, focused and selected.
-  await b.page.evaluate(() => Object.defineProperty(navigator, "clipboard", { value: undefined, configurable: true }));
-  await b.page.getByRole("button", { name: "Copy log" }).click();
-  const fallback = await b.page
+  await a.page.evaluate(() => Object.defineProperty(navigator, "clipboard", { value: undefined, configurable: true }));
+  await a.page.getByRole("button", { name: "Copy log" }).click();
+  const fallback = await a.page
     .waitForFunction(
       () => {
         const el = document.querySelector('[data-testid="copy-fallback"]');
