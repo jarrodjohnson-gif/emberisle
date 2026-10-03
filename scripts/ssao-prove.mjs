@@ -4,7 +4,7 @@ import { existsSync } from "node:fs";
 import { chromium } from "playwright";
 import { createServer } from "vite";
 
-const PORT = 8098;
+const PORT = 8099; // 8098 is idle-prove; keep these from colliding if a runner overlaps them.
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();
 const browser = await chromium.launch({
