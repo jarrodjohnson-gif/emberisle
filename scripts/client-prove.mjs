@@ -515,6 +515,97 @@ try {
   if (await confirmBox.count()) throw new Error("practice Leave asked for confirmation");
   console.log("practice leave: one click");
 
+  // #285: build buttons carry their price and are disabled when you cannot pay; arming is announced; Escape disarms.
+  await freshPractice();
+  const setHand = (res) =>
+    page.evaluate((res) => {
+      const g = window.__emberisle;
+      const st = structuredClone(g.getState().state);
+      st.phase = "main";
+      st.current = g.getState().localId;
+      st.playedCard = false;
+      st.seq += 1;
+      const me = st.players.find((p) => p.id === g.getState().localId);
+      me.resources = { timber: 0, clay: 0, wool: 0, grain: 0, ore: 0, ...res };
+      // A fresh practice board is empty; one outpost gives the path somewhere to glow from.
+      for (const v of st.vertices) v.building = null;
+      st.vertices[0].building = { playerId: me.id, kind: "outpost" };
+      g.setState({ state: st, mode: "practice", buildMode: "none", roadPicks: [], tradeOpen: false, menuFor: null, error: null });
+    }, res);
+  const buildRow = () =>
+    page.evaluate(() =>
+      Object.fromEntries(
+        ["Path", "Outpost", "Stronghold", "Fortune"].map((n) => {
+          const b = [...document.querySelectorAll("button")].find((x) => x.textContent.trim() === n);
+          return [n, { disabled: b?.disabled, title: b?.title, desc: b?.getAttribute("aria-description"), pressed: b?.getAttribute("aria-pressed") }];
+        }),
+      ),
+    );
+  const price = { Path: "Path · 1 timber, 1 clay", Outpost: "Outpost · 1 timber, 1 clay, 1 wool, 1 grain", Stronghold: "Stronghold · 3 grain, 2 ore", Fortune: "Fortune · 1 wool, 1 grain, 1 ore" };
+  const storeNow = () => page.evaluate(() => ({ buildMode: window.__emberisle.getState().buildMode, tradeOpen: window.__emberisle.getState().tradeOpen, howTo: window.__emberisle.getState().howTo }));
+  await setHand({});
+  await page.getByRole("button", { name: "Path", exact: true }).waitFor({ timeout: 5000 });
+  const empty = await buildRow();
+  console.log("build row, empty hand:", JSON.stringify(empty));
+  for (const [n, p] of Object.entries(price)) if (!empty[n].disabled || empty[n].title !== p || empty[n].desc !== p) throw new Error(`empty hand ${n}: ${JSON.stringify(empty[n])}`);
+  await setHand({ timber: 1, clay: 1 });
+  const some = await buildRow();
+  console.log("build row, 1 timber 1 clay:", JSON.stringify(some));
+  if (some.Path.disabled || some.Path.title !== price.Path || ["Outpost", "Stronghold", "Fortune"].some((n) => !some[n].disabled || some[n].title !== price[n])) throw new Error(`timber+clay: ${JSON.stringify(some)}`);
+  const pathBtn = page.getByRole("button", { name: "Path", exact: true });
+  await pathBtn.click();
+  const armed = await page.evaluate(() => ({ ...window.__emberisle.getState(), edges: window.__emberisle.getState().highlights().edges.length }));
+  const pressed = await pathBtn.getAttribute("aria-pressed");
+  if (armed.buildMode !== "path" || pressed !== "true" || !armed.edges) throw new Error(`armed: ${JSON.stringify({ mode: armed.buildMode, pressed, edges: armed.edges })}`);
+  await page.keyboard.press("Escape");
+  const disarmed = { ...(await storeNow()), pressed: await pathBtn.getAttribute("aria-pressed") };
+  console.log("arm then Escape:", JSON.stringify({ armed: armed.buildMode, pressed, edges: armed.edges, disarmed }));
+  if (disarmed.buildMode !== "none" || disarmed.pressed !== "false") throw new Error(`Escape did not disarm: ${JSON.stringify(disarmed)}`);
+  // One Escape closes only the topmost thing: the trade panel first, then the arm.
+  await pathBtn.click();
+  await page.evaluate(() => window.__emberisle.getState().setTradeOpen(true));
+  await page.keyboard.press("Escape");
+  const layer1 = await storeNow();
+  await page.keyboard.press("Escape");
+  const layer2 = await storeNow();
+  console.log("escape order, trade over arm:", JSON.stringify({ layer1, layer2 }));
+  if (layer1.tradeOpen || layer1.buildMode !== "path" || layer2.buildMode !== "none") throw new Error(`trade/arm order: ${JSON.stringify({ layer1, layer2 })}`);
+  // The How-to dialog is above an armed build: its Escape leaves the arm alone.
+  await pathBtn.click();
+  await page.getByRole("button", { name: "How to play" }).click();
+  await page.keyboard.press("Escape");
+  const layer3 = await storeNow();
+  await page.keyboard.press("Escape");
+  const layer4 = await storeNow();
+  console.log("escape order, how-to over arm:", JSON.stringify({ layer3, layer4 }));
+  if (layer3.howTo || layer3.buildMode !== "path" || layer4.buildMode !== "none") throw new Error(`how-to/arm order: ${JSON.stringify({ layer3, layer4 })}`);
+  // Phone: the four build buttons keep a 44 px target.
+  await setHand({});
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole("button", { name: "Path", exact: true }).waitFor({ timeout: 5000 });
+  await page.waitForFunction(() => document.querySelector("[data-testid='seat-strip']"), null, { timeout: 5000 });
+  const heights = await page.evaluate(() => ["Path", "Outpost", "Stronghold", "Fortune"].map((n) => [...document.querySelectorAll("button")].find((x) => x.textContent.trim() === n).getBoundingClientRect().height));
+  console.log("phone build button heights:", JSON.stringify(heights));
+  if (heights.some((h) => h < 44)) throw new Error(`phone build buttons under 44 px: ${JSON.stringify(heights)}`);
+  await page.setViewportSize({ width: 800, height: 500 });
+
+  // #286: How to play is a dialog: focus goes to Close, Escape closes it, and focus returns to the opener (title and in-game).
+  const howToRound = async (opener, label) => {
+    await opener.click();
+    const dlg = page.getByRole("dialog", { name: "How to play" });
+    await dlg.waitFor({ timeout: 3000 });
+    const at = await page.evaluate(() => document.activeElement?.getAttribute("aria-label"));
+    await page.keyboard.press("Escape");
+    await dlg.waitFor({ state: "detached", timeout: 3000 });
+    const back = await page.evaluate(() => document.activeElement?.getAttribute("aria-label") ?? document.activeElement?.textContent?.trim());
+    console.log(`how to play (${label}):`, JSON.stringify({ focusedOnOpen: at, focusedAfter: back }));
+    if (at !== "Close" || back !== "How to play") throw new Error(`how to play ${label}: ${JSON.stringify({ at, back })}`);
+  };
+  await toTitle();
+  await howToRound(page.getByRole("button", { name: "How to play" }), "title");
+  await freshPractice();
+  await howToRound(page.getByRole("button", { name: "How to play" }), "header");
+
   // #259: a saved seat whose table is gone fails quietly on page load: title card, no error, key cleared.
   const { spawn } = await import("node:child_process");
   const { mkdtempSync, rmSync } = await import("node:fs");

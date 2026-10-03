@@ -42,6 +42,10 @@ const FORTUNE_NAMES: [DevKind, string][] = [
   ["vp", "points"],
 ];
 
+function affords(p: PlayerState, kind: Price) {
+  return RESOURCES.every((r) => p.resources[r] >= (COST[kind][r] ?? 0));
+}
+
 function phaseCopy(phase: string) {
   switch (phase) {
     case "setupSettle":
@@ -65,6 +69,35 @@ function phaseCopy(phase: string) {
 
 const HINT_KEY = "emberisle-landscape-hint";
 
+type Price = keyof typeof COST;
+
+function priceLabel(kind: Price) {
+  const name = { path: "Path", outpost: "Outpost", stronghold: "Stronghold", card: "Fortune" }[kind];
+  return `${name} · ${RESOURCES.filter((r) => COST[kind][r]).map((r) => `${COST[kind][r]} ${r}`).join(", ")}`;
+}
+
+// Escape, topmost layer first. One press closes exactly one thing:
+//   1. LeaveButton's confirm popover: window capture + stopPropagation (and it closes whenever HowTo opens, so the two never stack).
+//   2. HowTo: modal, so window capture + stopPropagation; nothing behind it hears the key.
+//   3. TradePanel (window) and PlayerMenu (document), bubble phase, each closes itself; PlaceChip's pending tap (window) likewise.
+//   4. Disarming a build mode: window capture, but it stands down when 1-3 are open or the key came from a text field
+//      (the chat box minimizes itself), because the layers above run later in the same event and must still see their own state.
+function useEscapeDisarm() {
+  const setBuildMode = useGame((s) => s.setBuildMode);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      const s = useGame.getState();
+      if (s.buildMode === "none" || s.tradeOpen || s.menuFor || s.pendingPlace || s.howTo) return;
+      if ((e.target as HTMLElement | null)?.closest("input, select, textarea")) return;
+      if (document.querySelector('[data-testid="leave-confirm"]')) return;
+      setBuildMode("none");
+    };
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
+  }, [setBuildMode]);
+}
+
 export function Hud() {
   const state = useGame((s) => s.state);
   const localId = useGame((s) => s.localId);
@@ -82,6 +115,7 @@ export function Hud() {
   const openMenu = useGame((s) => s.openMenu);
   const { phone, portrait } = useViewport();
   const [hintDismissed, setHintDismissed] = useState(() => sessionStorage.getItem(HINT_KEY) === "1");
+  useEscapeDisarm();
 
   if (!state) return null;
   const actor = mode === "hotseat" ? state.current : localId;
@@ -101,6 +135,8 @@ export function Hud() {
       <Button
         size="sm"
         data-testid="knight-button"
+        className={phone ? "h-11 min-w-11" : undefined}
+        aria-pressed={buildMode === "knight"}
         variant={buildMode === "knight" ? "primary" : "secondary"}
         onClick={() => setBuildMode(buildMode === "knight" ? "none" : "knight")}
       >
@@ -269,28 +305,36 @@ export function Hud() {
 
           {state.phase === "main" && mine ? (
             <div className="flex flex-wrap gap-1">
+              {(
+                [
+                  ["path", "path", Route, "Path", me.pathsLeft],
+                  ["outpost", "outpost", Home, "Outpost", me.outpostsLeft],
+                  ["stronghold", "stronghold", Landmark, "Stronghold", me.strongholdsLeft],
+                ] as const
+              ).map(([kind, arm, Icon, label, left]) => (
+                <Button
+                  key={kind}
+                  size="sm"
+                  variant={buildMode === arm ? "primary" : "secondary"}
+                  className={cn("disabled:pointer-events-auto", phone && "h-11 min-w-11")}
+                  aria-pressed={buildMode === arm}
+                  disabled={left <= 0 || !affords(me, kind)}
+                  title={priceLabel(kind)}
+                  aria-description={priceLabel(kind)}
+                  onClick={() => setBuildMode(buildMode === arm ? "none" : arm)}
+                >
+                  <Icon className="size-4" /> {label}
+                </Button>
+              ))}
               <Button
                 size="sm"
-                variant={buildMode === "path" ? "primary" : "secondary"}
-                onClick={() => setBuildMode(buildMode === "path" ? "none" : "path")}
+                variant="secondary"
+                className={cn("disabled:pointer-events-auto", phone && "h-11 min-w-11")}
+                disabled={(state.deckLeft ?? state.deck.length) <= 0 || !affords(me, "card")}
+                title={priceLabel("card")}
+                aria-description={priceLabel("card")}
+                onClick={() => dispatch({ type: "buyCard" })}
               >
-                <Route className="size-4" /> Path
-              </Button>
-              <Button
-                size="sm"
-                variant={buildMode === "outpost" ? "primary" : "secondary"}
-                onClick={() => setBuildMode(buildMode === "outpost" ? "none" : "outpost")}
-              >
-                <Home className="size-4" /> Outpost
-              </Button>
-              <Button
-                size="sm"
-                variant={buildMode === "stronghold" ? "primary" : "secondary"}
-                onClick={() => setBuildMode(buildMode === "stronghold" ? "none" : "stronghold")}
-              >
-                <Landmark className="size-4" /> Stronghold
-              </Button>
-              <Button size="sm" variant="secondary" onClick={() => dispatch({ type: "buyCard" })}>
                 <ScrollText className="size-4" /> Fortune
               </Button>
               <TradeButton />
@@ -299,6 +343,8 @@ export function Hud() {
                 <Button
                   size="sm"
                   variant={buildMode === "roadCard" ? "primary" : "secondary"}
+                  className={phone ? "h-11 min-w-11" : undefined}
+                  aria-pressed={buildMode === "roadCard"}
                   onClick={() => setBuildMode(buildMode === "roadCard" ? "none" : "roadCard")}
                 >
                   Path fortune{playable(me, "road") > 1 ? ` ×${playable(me, "road")}` : ""}
@@ -607,13 +653,41 @@ function MonopolyForm() {
   );
 }
 
+// A modal dialog: focus goes to Close on open and back to whatever opened it on close; Escape closes it (see useEscapeDisarm for the order).
 export function HowTo({ onClose }: { onClose: () => void }) {
+  const phone = useViewport().phone;
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+  useEffect(() => {
+    const opener = document.activeElement as HTMLElement | null;
+    closeRef.current?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Tab") {
+        e.preventDefault();
+        closeRef.current?.focus();
+      }
+      if (e.key !== "Escape") return;
+      e.stopPropagation();
+      onCloseRef.current();
+    };
+    window.addEventListener("keydown", onKey, true);
+    return () => {
+      window.removeEventListener("keydown", onKey, true);
+      if (opener?.isConnected) opener.focus();
+    };
+  }, []);
   return (
-    <div className="absolute inset-0 z-30 flex items-end justify-center bg-white/45 p-3 sm:items-center">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="howto-title"
+      className="absolute inset-0 z-30 flex items-end justify-center bg-white/45 p-3 sm:items-center"
+    >
       <div className="max-h-[80dvh] w-full max-w-md overflow-y-auto rounded-[28px] border border-white/50 bg-surface p-5">
         <div className="flex items-start justify-between gap-3">
-          <h2 className="font-display text-2xl">How to play</h2>
-          <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close">
+          <h2 id="howto-title" className="font-display text-2xl">How to play</h2>
+          <Button ref={closeRef} variant="ghost" size="icon" className={phone ? "size-11" : undefined} onClick={onClose} aria-label="Close">
             <X className="size-4" />
           </Button>
         </div>
@@ -657,9 +731,10 @@ function LeaveButton({ confirm }: { confirm: boolean }) {
     };
   }, [asking]);
   const menuFor = useGame((s) => s.menuFor);
+  const howTo = useGame((s) => s.howTo);
   useEffect(() => {
-    if (!confirm || menuFor) setAsking(false);
-  }, [confirm, menuFor]);
+    if (!confirm || menuFor || howTo) setAsking(false);
+  }, [confirm, menuFor, howTo]);
   return (
     <div className="relative">
       <Button ref={leaveRef} variant="secondary" size="sm" onClick={confirm ? () => setAsking(true) : goTitle}>

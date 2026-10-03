@@ -112,6 +112,8 @@ export interface GameState {
   winner: string | null;
   bank: Record<Resource, number>;
   deck: DevKind[];
+  // Online the host hides the deck order and sends only its size (server/host.mjs).
+  deckLeft?: number;
   trade: TradeOffer | null;
   log: string[];
   discardNeeded: Record<string, number>;
