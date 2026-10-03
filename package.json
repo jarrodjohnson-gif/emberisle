@@ -21,6 +21,7 @@
     "mobile-shots": "node scripts/mobile-shots.mjs",
     "touch-place-prove": "node scripts/touch-place-prove.mjs",
     "served-prove": "node scripts/tabs-prove.mjs --served",
+    "size-prove": "node scripts/size-prove.mjs",
     "night": "node scripts/night.mjs",
     "night-prove": "node scripts/night-prove.mjs"
   },
