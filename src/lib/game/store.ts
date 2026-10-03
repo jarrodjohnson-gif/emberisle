@@ -64,6 +64,41 @@ function hear(before: GameState | null, after: GameState, me: string, mode: Game
   if (mode !== "hotseat" && before && after.current === me && before.current !== me && after.phase !== "over") yourTurn();
 }
 
+// The game log the dock shows (#305): a line of `state.log` or a host `log` message, stamped when this browser saw it.
+export interface GameLogLine {
+  at: number;
+  text: string;
+}
+const GAME_LOG_MAX = 200;
+const LOG_FILTER_KEY = "emberisle-log-filter";
+
+// The engine keeps only the last 41 log lines (rules.ts `log`), so once the log is full its length never grows and
+// `after.slice(before.length)` would be empty. The new lines are what follows the longest tail of the old log that
+// the new one still starts with.
+function newLog(before: string[], after: string[]) {
+  for (let k = Math.min(before.length, after.length); k > 0; k--) {
+    if (before.slice(-k).every((line, i) => line === after[i])) return after.slice(k);
+  }
+  return after;
+}
+
+function stamp(lines: string[]): GameLogLine[] {
+  const at = Date.now();
+  return lines.map((text) => ({ at, text }));
+}
+
+function appendLog(log: GameLogLine[], lines: string[]) {
+  return lines.length ? [...log, ...stamp(lines)].slice(-GAME_LOG_MAX) : log;
+}
+
+function savedLogFilter(): "all" | "chat" {
+  try {
+    return localStorage.getItem(LOG_FILTER_KEY) === "chat" ? "chat" : "all";
+  } catch {
+    return "all";
+  }
+}
+
 // The board as it would be with these paths laid, so the second pick of a path fortune can glow (#184).
 function withPaths(state: GameState, edgeIds: string[], pid: string): GameState {
   if (!edgeIds.length) return state;
@@ -164,6 +199,11 @@ interface GameStore {
   setChatDraft: (v: string) => void;
   sendChat: (text: string) => void;
   sendReact: (emote: string, to?: string) => void;
+  // The whole game log, for the dock (#305): the new lines of `state.log` after each local action, and the host's `log` messages online.
+  gameLog: GameLogLine[];
+  // Which rows the dock lists: the chat alone, or the chat and the game log together. Remembered like `chatOpen`.
+  logFilter: "all" | "chat";
+  setLogFilter: (v: "all" | "chat") => void;
   // Ask-the-table trades (docs/BUILD_BIBLE.md 4.4): the open offer, who has said No to it, and the asker's closing line.
   offer: OpenOffer | null;
   declined: string[];
@@ -253,6 +293,8 @@ export const useGame = create<GameStore>((set, get) => ({
   chatOpen: savedChatOpen(),
   unread: 0,
   chatDraft: "",
+  gameLog: [],
+  logFilter: savedLogFilter(),
   offer: null,
   declined: [],
   tradeOutcome: null,
@@ -281,6 +323,7 @@ export const useGame = create<GameStore>((set, get) => ({
       host: true,
       localId: "p0",
       state,
+      gameLog: stamp(state.log),
       error: null,
       toast: null,
       buildMode: "none",
@@ -301,6 +344,7 @@ export const useGame = create<GameStore>((set, get) => ({
       host: true,
       localId: "p0",
       state,
+      gameLog: stamp(state.log),
       error: null,
       toast: null,
       buildMode: "none",
@@ -339,6 +383,7 @@ export const useGame = create<GameStore>((set, get) => ({
       reactions: [],
       unread: 0,
       chatDraft: "",
+      gameLog: [],
       menuFor: null,
       lobbyLog: "",
       seatId: "",
@@ -368,7 +413,7 @@ export const useGame = create<GameStore>((set, get) => ({
       play("ui_error");
       return { ok: false, error: res.error };
     }
-    set({ state: res.state, error: null, toast: null, buildMode: "none", roadPicks: [] });
+    set({ state: res.state, gameLog: appendLog(get().gameLog, newLog(state.log, res.state.log)), error: null, toast: null, buildMode: "none", roadPicks: [] });
     hear(state, res.state, localId, mode);
     if (action.type === "roll" && res.state.dice) {
       const roller = state.players.find((p) => p.id === actor)?.name ?? actor;
@@ -532,6 +577,14 @@ export const useGame = create<GameStore>((set, get) => ({
     set(v ? { chatOpen: true, unread: 0 } : { chatOpen: false });
   },
   setChatDraft: (v) => set({ chatDraft: v }),
+  setLogFilter: (v) => {
+    try {
+      localStorage.setItem(LOG_FILTER_KEY, v);
+    } catch {
+      // storage can be blocked; the filter still holds for this page
+    }
+    set({ logFilter: v });
+  },
   sendChat: (text) => get().net?.say(text),
   sendReact: (emote, to) => get().net?.react(emote, to),
   setTradeOpen: (v) => set({ tradeOpen: v }),
@@ -565,14 +618,19 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       // A page-load rejoin has no state yet, so it passes through the lobby until the host's state push moves it to play.
       // A mid-game reconnect already holds the game: stay on the board so the HUD keeps its local state.
       const inGame = get().state !== null && get().screen === "play";
-      set({ code, seatId: you, isHost: host, screen: inGame ? "play" : "lobby", mode: "online", error: null, toast: null, chat: (chat ?? []).slice(-50), reactions: [], unread: 0 });
+      // Chat and game-log lines sort together by this browser's clock, never the host's (#305): the history keeps the
+      // stamps of the lines this tab already held, and the rest arrive now, before any log line that follows.
+      const known = new Map(get().chat.map((l) => [l.id, l.at]));
+      const now = Date.now();
+      const history = (chat ?? []).slice(-50).map((l) => ({ ...l, at: known.get(l.id) ?? now }));
+      set({ code, seatId: you, isHost: host, screen: inGame ? "play" : "lobby", mode: "online", error: null, toast: null, chat: history, reactions: [], unread: 0 });
     },
     reconnecting: (attempt) => set({ error: `Reconnecting… (try ${attempt})`, toast: "Reconnecting…" }),
     chat: (line) => {
       const { chat, chatOpen, unread, seatId, screen } = get();
       // The lobby box is always open, so only lines that arrive during the game can be unread.
       const counts = screen === "play" && !chatOpen && line.seat !== seatId;
-      set({ chat: [...chat, line].slice(-50), unread: counts ? unread + 1 : unread });
+      set({ chat: [...chat, { ...line, at: Date.now() }].slice(-50), unread: counts ? unread + 1 : unread });
     },
     react: (r) => {
       set({ reactions: [...get().reactions, r] });
@@ -588,11 +646,12 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
     state: ({ you, game, legal }) => {
       const swing = awardLine(get().state, game);
       hear(get().state, game, you, "online");
-      set({ legal });
+      // The first state after a join or a page-load rejoin seeds the log with what the engine kept, the way practice does.
+      set({ legal, gameLog: get().state ? get().gameLog : appendLog(get().gameLog, game.log) });
       get().loadState(game, you, get().isHost, get().code);
       if (swing) showBanner(set, swing);
     },
-    log: (text) => set({ lobbyLog: text }),
+    log: (text) => set({ lobbyLog: text, gameLog: appendLog(get().gameLog, [text]) }),
     tradeOffer: ({ tradeId, from, give, want, seconds }) => {
       const fromName = get().state?.players.find((p) => p.id === from)?.name ?? "Someone";
       set({ offer: { tradeId, from, fromName, give, want, until: Date.now() + seconds * 1000 }, declined: [], tradeOutcome: null });
