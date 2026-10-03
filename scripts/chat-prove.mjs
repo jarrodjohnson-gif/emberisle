@@ -126,6 +126,31 @@ try {
   r = await box(phone, '[data-testid="lobby-card"]');
   check(r.height <= 0.55 * r.vh + 0.5 && Math.abs(r.width - (r.vw - 24)) < 1, `phone lobby card is ${r.width.toFixed(0)}x${r.height.toFixed(0)}, within 55vh and full width`);
   await shot(phone, "chat-phone-lobby.jpg");
+  // #389: Ready and Start are in the first screenful of the phone lobby, with no scrolling.
+  const inView = (t, sel) => t.page.evaluate((q) => {
+    const r = document.querySelector(q).getBoundingClientRect();
+    return r.top >= 0 && r.bottom <= innerHeight && r.left >= 0 && r.right <= innerWidth;
+  }, sel);
+  check((await phone.page.evaluate(() => document.querySelector('[data-testid="lobby-card"] > div').scrollTop)) === 0, "phone lobby: the card starts unscrolled");
+  const readyBtn = phone.page.getByRole("button", { name: "Ready", exact: true });
+  check(await readyBtn.evaluate((el) => { const r = el.getBoundingClientRect(); const c = document.querySelector('[data-testid="lobby-card"]').getBoundingClientRect(); return r.top >= c.top && r.bottom <= c.bottom && r.bottom <= innerHeight; }), "phone lobby: Ready is inside the card and the 390x844 viewport without scrolling");
+  // The host's phone: once three seats are ready, Start joins Ready and is in view too.
+  const hp = await tab("Hana", true);
+  await hp.page.getByRole("button", { name: "Host a table" }).click();
+  const hCode = (await hp.page.getByTestId("table-code").textContent()).trim();
+  const guests = [await tab("Gus"), await tab("Ivy")];
+  for (const g of guests) {
+    await g.page.getByPlaceholder(/code/i).fill(hCode);
+    await g.page.getByRole("button", { name: "Join" }).click();
+    await g.page.getByTestId("table-code").waitFor();
+  }
+  for (const t of [hp, ...guests]) await t.page.getByRole("button", { name: "Ready", exact: true }).click();
+  const startBtn = hp.page.getByRole("button", { name: "Start", exact: true });
+  await startBtn.waitFor({ timeout: 10_000 });
+  check(await startBtn.evaluate((el) => { const r = el.getBoundingClientRect(); const c = document.querySelector('[data-testid="lobby-card"]').getBoundingClientRect(); return r.top >= c.top && r.bottom <= c.bottom && r.bottom <= innerHeight; }), "phone lobby: Start is inside the card and the 390x844 viewport without scrolling");
+  check(await inView(hp, '[data-testid="lobby-actions"]'), "phone lobby: the Ready/Start row is wholly on screen");
+  await shot(hp, "chat-phone-lobby-host.jpg");
+  for (const t of [hp, ...guests]) await t.page.context().close();
   for (const t of [...tabs, phone]) {
     await until(async () => (await t.page.locator("li", { hasText: "Moss" }).count()) >= 1, `${t.name} sees 4 seats`);
   }

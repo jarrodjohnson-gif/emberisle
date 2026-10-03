@@ -261,7 +261,15 @@ function Lobby() {
           <ChatBox rows={6} />
         </div>
         <p aria-live="polite" className="mt-2 min-h-5 text-xs text-muted">{error ?? lobbyLog}</p>
-        <div className="mt-3 flex flex-col gap-2">
+        {/* #389: on a phone Ready/Start stay pinned to the bottom of the card; a fade above them says the rest scrolls. */}
+        <div
+          data-testid="lobby-actions"
+          className={cn(
+            "mt-3 flex flex-col gap-2",
+            sheet &&
+              "sticky bottom-0 z-10 -mx-5 mb-2 bg-white/85 px-5 pb-2 pt-2 before:pointer-events-none before:absolute before:inset-x-0 before:-top-6 before:h-6 before:bg-gradient-to-t before:from-white/85 before:to-transparent",
+          )}
+        >
           <Button
             size="lg"
             variant="outline"
@@ -277,10 +285,17 @@ function Lobby() {
               Start
             </Button>
           ) : null}
+          {sheet ? null : (
+            <Button variant="ghost" onClick={goTitle}>
+              Leave the table
+            </Button>
+          )}
+        </div>
+        {sheet ? (
           <Button variant="ghost" onClick={goTitle}>
             Leave the table
           </Button>
-        </div>
+        ) : null}
       </div>
     </div>
   );
