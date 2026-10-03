@@ -119,6 +119,9 @@ export function ChatBox({ rows, game, onEscape, className }: { rows: number; gam
       <ul
         ref={log}
         data-testid="chat-log"
+        role="log"
+        aria-label="Chat"
+        tabIndex={0}
         onScroll={(e) => {
           const el = e.currentTarget;
           stuck.current = el.scrollHeight - el.scrollTop - el.clientHeight < 8;
@@ -250,7 +253,7 @@ export function ChatDock() {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Enter" || useGame.getState().mode !== "online") return;
       const t = e.target as HTMLElement | null;
-      if (t && ["INPUT", "SELECT", "TEXTAREA"].includes(t.tagName)) return;
+      if (t?.closest("button, a, [role=button], [role=radio], input, select, textarea")) return;
       e.preventDefault();
       focusNext.current = true;
       useGame.getState().setChatOpen(true);
@@ -324,7 +327,7 @@ export function ChatDock() {
         <>
           <button
             type="button"
-            aria-label="Open chat"
+            aria-label={unread ? `Open chat, ${unread} unread` : "Open chat"}
             onClick={() => {
               focusNext.current = true;
               setOpen(true);
