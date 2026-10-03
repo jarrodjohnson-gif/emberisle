@@ -1,5 +1,6 @@
 // #216: in hotseat, a 7 where a seat other than the roller owes a discard must show that seat's DiscardBar, and the
 // discard must be attributed to that seat. Crafts p0 rolled a 7, p2 holds 9 cards, discardNeeded {p2: 4}; zero console errors.
+// #232: first, the Roll button carries all four seats through the roll-off for first place.
 import { existsSync } from "node:fs";
 import { chromium } from "playwright";
 import { createServer } from "vite";
@@ -25,6 +26,30 @@ try {
   await page.goto(`http://127.0.0.1:${PORT}/`);
   await page.getByRole("button", { name: "Four seats, one table" }).click();
   await page.waitForFunction(() => window.__emberisle?.getState().state);
+
+  // #232: the Roll button rolls off for whichever seat is current, until one seat places first.
+  const rollBtn = page.getByRole("button", { name: "Roll", exact: true });
+  const rollers = [];
+  for (let i = 0; i < 40; i++) {
+    const before = await page.evaluate(() => { const st = window.__emberisle.getState().state; return { phase: st.phase, current: st.current, seq: st.seq }; });
+    if (before.phase !== "rollOff") break;
+    await rollBtn.click({ timeout: STEP_MS });
+    await page.waitForFunction((seq) => window.__emberisle.getState().state.seq > seq, before.seq, { timeout: STEP_MS });
+    rollers.push(before.current);
+  }
+  const off = await page.evaluate(() => {
+    const st = window.__emberisle.getState().state;
+    const ids = st.players.map((p) => p.id);
+    const d = st.rollOff.rolls;
+    const [first, ...rest] = ids;
+    const ok = st.phase === "setupSettle" && st.setupIndex === 0 && st.current === first && st.rollOff.pending.length === 0 &&
+      Object.keys(d).length === ids.length && rest.every((id) => d[id] < d[first]) &&
+      rest.every((id, i) => i === 0 || d[rest[i - 1]] > d[id] || (d[rest[i - 1]] === d[id] && rest[i - 1] < id));
+    return { ok, ids, rolls: d, line: st.log.findLast((l) => l.includes("places first, then")) };
+  });
+  const offTiles = await page.locator('[data-testid="rolloff-die"]:visible').allTextContents();
+  console.log(`roll-off by the Roll button: ${rollers.length} clicks (${rollers.join(" ")}), order ${off.ids.join(" ")} ok ${off.ok}, tiles [${offTiles.join(" ")}], "${off.line}"`);
+  if (!off.ok || rollers.length < 4 || offTiles.length !== 4 || offTiles.some((t) => !/^[1-6]$/.test(t))) throw new Error(`roll-off: ${JSON.stringify({ off, rollers, offTiles })}`);
 
   await page.evaluate(() => {
     const g = window.__emberisle;
