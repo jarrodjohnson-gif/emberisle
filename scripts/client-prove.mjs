@@ -484,6 +484,22 @@ try {
   const left = await leaveState();
   console.log("leave then leave:", JSON.stringify(left));
   if (left.seat !== null) throw new Error(`saved seat not cleared: ${JSON.stringify(left)}`);
+  // Phone portrait: the seat strip sits under the header and must not paint over the question.
+  await freshPractice();
+  await page.evaluate(() => window.__emberisle.setState({ mode: "online", net: { act: () => true, close: () => {} } }));
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByTestId("seat-strip").waitFor({ timeout: 5000 });
+  await page.getByRole("button", { name: "Leave", exact: true }).click();
+  await confirmBox.waitFor({ timeout: 2000 });
+  const topmost = await page.evaluate(() => {
+    const q = document.querySelector("#leave-confirm-msg").getBoundingClientRect();
+    const hit = document.elementFromPoint(q.x + q.width / 2, q.y + q.height / 2);
+    return { ok: hit?.id === "leave-confirm-msg", hit: hit ? `${hit.tagName}.${hit.className}`.slice(0, 80) : null };
+  });
+  console.log("phone leave question topmost:", JSON.stringify(topmost));
+  if (!topmost.ok) throw new Error(`phone: strip covers the leave question: ${JSON.stringify(topmost)}`);
+  await page.keyboard.press("Escape");
+  await page.setViewportSize({ width: 800, height: 500 });
   await freshPractice();
   await page.getByRole("button", { name: "Leave", exact: true }).click();
   await page.waitForFunction(() => window.__emberisle.getState().screen === "title", null, { timeout: 5000 });

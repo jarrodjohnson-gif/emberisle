@@ -124,7 +124,7 @@ export function Hud() {
   return (
     <>
       <PlaceChip />
-      <header className="pointer-events-none absolute inset-x-0 top-0 z-10 p-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
+      <header className="pointer-events-none absolute inset-x-0 top-0 z-20 p-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
         <div className="pointer-events-auto mx-auto flex max-w-5xl items-center justify-between gap-2">
           <div className="flex items-center gap-2 rounded-[20px] border border-white/50 bg-white/45 px-3 py-2 backdrop-blur-md">
             <span className="font-display text-lg tracking-tight">Emberisle</span>
@@ -624,19 +624,23 @@ function LeaveButton({ confirm }: { confirm: boolean }) {
   useEffect(() => {
     if (!asking) return;
     stayRef.current?.focus();
-    const timer = setTimeout(() => setAsking(false), 5000);
+    const timer = setTimeout(cancel, 5000);
+    // Capture phase, so this Escape closes only the popover and not the trade panel behind it.
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") cancel();
+      if (e.key !== "Escape") return;
+      e.stopPropagation();
+      cancel();
     };
-    window.addEventListener("keydown", onKey);
+    window.addEventListener("keydown", onKey, true);
     return () => {
       clearTimeout(timer);
-      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("keydown", onKey, true);
     };
   }, [asking]);
+  const menuFor = useGame((s) => s.menuFor);
   useEffect(() => {
-    if (!confirm) setAsking(false);
-  }, [confirm]);
+    if (!confirm || menuFor) setAsking(false);
+  }, [confirm, menuFor]);
   return (
     <div className="relative">
       <Button ref={leaveRef} variant="secondary" size="sm" onClick={confirm ? () => setAsking(true) : goTitle}>
@@ -646,10 +650,11 @@ function LeaveButton({ confirm }: { confirm: boolean }) {
         <div
           role="alertdialog"
           aria-label="Leave the table?"
+          aria-describedby="leave-confirm-msg"
           data-testid="leave-confirm"
           className="absolute right-0 top-full z-20 mt-2 flex w-64 flex-col gap-2 rounded-[16px] border border-white/50 bg-surface p-3 text-sm shadow-lg"
         >
-          <p>Leave the table? Your seat goes to the bot.</p>
+          <p id="leave-confirm-msg">Leave the table? Your seat goes to the bot.</p>
           <div className="flex justify-end gap-2">
             <Button ref={stayRef} variant="secondary" size="sm" className={phone ? "h-11 min-w-11" : undefined} onClick={cancel}>
               Stay
