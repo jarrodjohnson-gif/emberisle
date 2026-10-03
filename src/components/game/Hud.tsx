@@ -19,6 +19,7 @@ import { ChatDock, ReactionFloats } from "@/components/game/Chat";
 import { TradeButton, TradePanel } from "@/components/game/TradePanel";
 import { TradeToast } from "@/components/game/TradeToast";
 import { PlayerMenu } from "@/components/game/PlayerMenu";
+import { DiscardBar } from "@/components/game/DiscardBar";
 import { COST, RESOURCES, RESOURCE_LABEL, type DevKind, type PlayerState, type Resource } from "@/lib/game/types";
 import { hiddenCount, legalRoads, playable, publicVP, totalVP } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
@@ -76,7 +77,6 @@ export function Hud() {
   const howTo = useGame((s) => s.howTo);
   const dispatch = useGame((s) => s.dispatch);
   const setBuildMode = useGame((s) => s.setBuildMode);
-  const goTitle = useGame((s) => s.goTitle);
   const setHowTo = useGame((s) => s.setHowTo);
   const menuFor = useGame((s) => s.menuFor);
   const openMenu = useGame((s) => s.openMenu);
@@ -124,7 +124,7 @@ export function Hud() {
   return (
     <>
       <PlaceChip />
-      <header className="pointer-events-none absolute inset-x-0 top-0 z-10 p-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
+      <header className="pointer-events-none absolute inset-x-0 top-0 z-20 p-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
         <div className="pointer-events-auto mx-auto flex max-w-5xl items-center justify-between gap-2">
           <div className="flex items-center gap-2 rounded-[20px] border border-white/50 bg-white/45 px-3 py-2 backdrop-blur-md">
             <span className="font-display text-lg tracking-tight">Emberisle</span>
@@ -135,9 +135,7 @@ export function Hud() {
             <Button variant="secondary" size="icon" onClick={() => setHowTo(true)} aria-label="How to play">
               <BookOpen className="size-4" />
             </Button>
-            <Button variant="secondary" size="sm" onClick={goTitle}>
-              Leave
-            </Button>
+            <LeaveButton confirm={mode === "online" && state.phase !== "over"} />
           </div>
         </div>
       </header>
@@ -410,9 +408,10 @@ const FLASH_MS = 1200;
 // hand is read: online, the other players arrive as a `goods` count with no `resources`. A change of
 // seat (hotseat) resets the baseline instead of flashing.
 function useResourceFlashes(me: PlayerState) {
-  const [flashes, setFlashes] = useState<Partial<Record<Resource, { delta: number; at: number }>>>({});
+  type Flash = { delta: number; at: number };
+  const [flashes, setFlashes] = useState<Partial<Record<Resource, Flash>>>({});
   const prev = useRef<{ id: string; resources: Record<Resource, number> } | null>(null);
-  const timers = useRef<Partial<Record<Resource, ReturnType<typeof setTimeout>>>>({});
+  const timers = useRef<Partial<Record<Resource, { flash: Flash; timer: ReturnType<typeof setTimeout> }>>>({});
   const counts = RESOURCES.map((r) => me.resources[r]).join(",");
   useEffect(() => {
     const was = prev.current;
@@ -420,21 +419,33 @@ function useResourceFlashes(me: PlayerState) {
     if (!was || was.id !== me.id) return;
     for (const r of RESOURCES) {
       const delta = me.resources[r] - was.resources[r];
-      if (!delta) continue;
-      setFlashes((f) => ({ ...f, [r]: { delta, at: Date.now() } }));
-      clearTimeout(timers.current[r]);
-      timers.current[r] = setTimeout(
-        () =>
+      if (delta) setFlashes((f) => ({ ...f, [r]: { delta, at: Date.now() } }));
+    }
+  }, [me.id, counts]);
+  // The label's clock starts once it is on the page. The render that mounts it is a separate task, which
+  // on a slow machine can wait behind an island frame longer than FLASH_MS; a timer started with the count
+  // change would then be due before the label existed (#248).
+  useEffect(() => {
+    for (const r of RESOURCES) {
+      const flash = flashes[r];
+      const cur = timers.current[r];
+      if (!flash || cur?.flash === flash) continue;
+      if (cur) clearTimeout(cur.timer);
+      timers.current[r] = {
+        flash,
+        timer: setTimeout(() => {
+          delete timers.current[r];
           setFlashes((f) => {
+            if (f[r] !== flash) return f;
             const next = { ...f };
             delete next[r];
             return next;
-          }),
-        FLASH_MS,
-      );
+          });
+        }, FLASH_MS),
+      };
     }
-  }, [me.id, counts]);
-  useEffect(() => () => Object.values(timers.current).forEach(clearTimeout), []);
+  }, [flashes]);
+  useEffect(() => () => Object.values(timers.current).forEach((t) => clearTimeout(t.timer)), []);
   return flashes;
 }
 
@@ -477,50 +488,6 @@ function ResourceHand({ me }: { me: PlayerState }) {
         );
       })}
     </div>
-  );
-}
-
-function DiscardBar({ id, n }: { id: string; n: number }) {
-  const me = useGame((s) => s.state!.players.find((p) => p.id === id)!);
-  const hotseat = useGame((s) => s.mode === "hotseat");
-  const dispatch = useGame((s) => s.dispatch);
-  const picked = useGame(() => null);
-  void picked;
-  return (
-    <form
-      className="flex flex-wrap items-center gap-2 rounded-[16px] border border-accent/40 bg-surface p-2"
-      onSubmit={(e) => {
-        e.preventDefault();
-        const fd = new FormData(e.currentTarget);
-        const resources: Partial<Record<Resource, number>> = {};
-        let sum = 0;
-        for (const r of RESOURCES) {
-          const v = Number(fd.get(r) || 0);
-          resources[r] = v;
-          sum += v;
-        }
-        if (sum !== n) return;
-        dispatch({ type: "discard", resources }, id);
-      }}
-    >
-      <span className="text-sm">{hotseat ? `${me.name}: discard ${n}` : `Discard ${n}`}</span>
-      {RESOURCES.map((r) => (
-        <label key={r} className="flex items-center gap-1 text-xs">
-          {RESOURCE_LABEL[r]}
-          <input
-            name={r}
-            type="number"
-            min={0}
-            max={me.resources[r]}
-            defaultValue={0}
-            className="h-9 w-12 rounded-[8px] border border-white/50 bg-raised px-1 text-center"
-          />
-        </label>
-      ))}
-      <Button size="sm" type="submit">
-        Discard
-      </Button>
-    </form>
   );
 }
 
@@ -652,6 +619,65 @@ export function HowTo({ onClose }: { onClose: () => void }) {
           <p>Drag to orbit the isle. Tap glowing corners and paths to build.</p>
         </div>
       </div>
+    </div>
+  );
+}
+
+// Leaving an online table frees the seat for good (goTitle wipes the saved secret), so ask first. Stay, Escape or 5 s cancels.
+function LeaveButton({ confirm }: { confirm: boolean }) {
+  const goTitle = useGame((s) => s.goTitle);
+  const phone = useViewport().phone;
+  const [asking, setAsking] = useState(false);
+  const leaveRef = useRef<HTMLButtonElement>(null);
+  const stayRef = useRef<HTMLButtonElement>(null);
+  const cancel = () => {
+    setAsking(false);
+    leaveRef.current?.focus();
+  };
+  useEffect(() => {
+    if (!asking) return;
+    stayRef.current?.focus();
+    const timer = setTimeout(cancel, 5000);
+    // Capture phase, so this Escape closes only the popover and not the trade panel behind it.
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      e.stopPropagation();
+      cancel();
+    };
+    window.addEventListener("keydown", onKey, true);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("keydown", onKey, true);
+    };
+  }, [asking]);
+  const menuFor = useGame((s) => s.menuFor);
+  useEffect(() => {
+    if (!confirm || menuFor) setAsking(false);
+  }, [confirm, menuFor]);
+  return (
+    <div className="relative">
+      <Button ref={leaveRef} variant="secondary" size="sm" onClick={confirm ? () => setAsking(true) : goTitle}>
+        Leave
+      </Button>
+      {asking ? (
+        <div
+          role="alertdialog"
+          aria-label="Leave the table?"
+          aria-describedby="leave-confirm-msg"
+          data-testid="leave-confirm"
+          className="absolute right-0 top-full z-20 mt-2 flex w-64 flex-col gap-2 rounded-[16px] border border-white/50 bg-surface p-3 text-sm shadow-lg"
+        >
+          <p id="leave-confirm-msg">Leave the table? Your seat goes to the bot.</p>
+          <div className="flex justify-end gap-2">
+            <Button ref={stayRef} variant="secondary" size="sm" className={phone ? "h-11 min-w-11" : undefined} onClick={cancel}>
+              Stay
+            </Button>
+            <Button size="sm" className={phone ? "h-11 min-w-11" : undefined} onClick={goTitle}>
+              Leave
+            </Button>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
