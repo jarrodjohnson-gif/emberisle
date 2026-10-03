@@ -2,6 +2,9 @@
 // Tab 1 asks the table through the panel; tab 3 says No (the offer stays open), tab 2 says Yes, and every tab's state
 // shows the goods moved. A second ask gets a No and then runs out its 20 s: the goods stay put and the toast closes
 // everywhere. Zero console errors.
+// #366: every non-asker's toast is an alertdialog named by the offer line that does not take focus; a Yes it cannot pay
+// for stays focusable with aria-disabled and is described by the "Need …" line, and refuses Enter; Escape answers No; the
+// countdown is hidden from screen readers but a polite line says "5 seconds left".
 import { spawn } from "node:child_process";
 import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -165,11 +168,11 @@ try {
   console.log(`${A.name} gives 1 ${give}, wants 1 ${want}; ${C.name} says no, ${B.name} says yes`);
 
   // 1. The panel: one Trade button, steppers, Ask the table. Offline there is no table to ask, so the button is online-only.
-  const ask = async (g, w) => {
+  const ask = async (g, w, n = 1) => {
     await A.page.getByRole("button", { name: "Trade", exact: true }).click();
     await A.page.getByTestId("trade-panel").waitFor();
     await A.page.getByRole("button", { name: `More ${g} to give` }).click();
-    await A.page.getByRole("button", { name: `More ${w} to want` }).click();
+    for (let m = 0; m < n; m++) await A.page.getByRole("button", { name: `More ${w} to want` }).click();
     await A.page.getByRole("button", { name: "Ask the table" }).click();
     return until(async () => {
       const vs = await views(tabs);
@@ -189,14 +192,44 @@ try {
   const tradeId = vs[0].offer.tradeId;
   console.log(`toast on ${B.name} and ${C.name}: "${line}"; asker sees "Waiting…"`);
 
-  // Yes is disabled, with the reason, when the goods are not in hand.
-  for (const t of [B, C]) {
-    const v = vs[tabs.indexOf(t)];
-    const yes = t.page.getByRole("button", { name: "Yes", exact: true });
-    const canPay = v.mine[want] >= 1;
-    if ((await yes.isEnabled()) !== canPay) throw new Error(`${t.name}: Yes enabled=${!canPay} but can pay=${canPay}`);
-    if (!canPay && !v.toast.includes(`Need 1 more ${want}`)) throw new Error(`${t.name}: no reason on the disabled Yes: "${v.toast}"`);
-  }
+  // #366: the offer is an alertdialog named by its line that leaves focus alone. A Yes that cannot be paid for is
+  // aria-disabled (not disabled), stays focusable, and is described by the "Need …" line.
+  const answerable = async (t, v, line, r, n) => {
+    const got = await t.page.getByTestId("trade-toast").evaluate((el) => {
+      const yes = [...el.querySelectorAll("button")].find((b) => b.textContent.trim() === "Yes");
+      const text = (ids) => (ids ?? "").split(/\s+/).filter(Boolean).map((id) => document.getElementById(id)?.textContent ?? "").join(" ");
+      const focusInside = el.contains(document.activeElement);
+      yes.focus();
+      const out = {
+        role: el.getAttribute("role"),
+        focusInside,
+        ariaDisabled: yes.getAttribute("aria-disabled"),
+        disabled: yes.hasAttribute("disabled"),
+        describedBy: text(yes.getAttribute("aria-describedby")),
+        focusable: document.activeElement === yes && yes.tabIndex >= 0,
+        countdownHidden: el.querySelector('[data-testid="trade-countdown"]')?.getAttribute("aria-hidden"),
+      };
+      yes.blur();
+      return out;
+    });
+    const where = `${t.name} (${JSON.stringify(got)})`;
+    if (got.role !== "alertdialog") throw new Error(`${where}: the offer is not an alertdialog`);
+    if ((await t.page.getByRole("alertdialog", { name: line, exact: true }).count()) !== 1) throw new Error(`${where}: alertdialog not named "${line}"`);
+    if (got.focusInside) throw new Error(`${where}: the offer took focus`);
+    if (got.countdownHidden !== "true") throw new Error(`${where}: the ticking countdown is not aria-hidden`);
+    if (got.disabled) throw new Error(`${where}: Yes uses disabled, so Tab cannot reach it`);
+    if (!got.focusable) throw new Error(`${where}: Yes is not focusable`);
+    const short = n - v.mine[r];
+    if (short <= 0) {
+      if (got.ariaDisabled !== null || got.describedBy) throw new Error(`${where}: Yes is marked disabled but can pay`);
+      return false;
+    }
+    if (got.ariaDisabled !== "true") throw new Error(`${where}: Yes is not aria-disabled though it cannot pay`);
+    if (got.describedBy !== `Need ${short} more ${r}`) throw new Error(`${where}: Yes is not described by "Need ${short} more ${r}"`);
+    return true;
+  };
+  for (const t of [B, C]) await answerable(t, vs[tabs.indexOf(t)], line, want, 1);
+  console.log(`#366: ${B.name} and ${C.name} see an alertdialog named "${line}", focus untouched, countdown aria-hidden`);
 
   // 2. C says No: everyone sees it, C's toast goes, the offer stays open for B.
   const before = vs;
@@ -229,17 +262,43 @@ try {
   // 4. Ask again, the other way round (the asker now holds the card it got); C says No; nobody else answers, so the
   // host's 20 s run out. Nothing moves, every toast closes.
   if (vs[0].phase !== "main" || vs[0].current !== vs[i].you) throw new Error("the asker lost the turn");
-  const again = await ask(want, give);
+  // It asks for one more than either other tab holds, so both see an aria-disabled Yes with its reason (#366).
+  const n2 = Math.max(vs[j].mine[give], vs[k].mine[give]) + 1;
+  const again = await ask(want, give, n2);
   const tradeId2 = again[0].offer.tradeId;
   if (tradeId2 === tradeId) throw new Error("second ask reused the tradeId");
-  await C.page.getByRole("button", { name: "No", exact: true }).click();
-  await until(async () => (await views(tabs)).every((v) => v.declined.includes(again[k].you)) || null, "second decline");
+  const line2 = `${A.name} offers 1 ${want} for ${n2} ${give}`;
+  for (const t of [B, C]) {
+    if (!(await answerable(t, again[tabs.indexOf(t)], line2, give, n2))) throw new Error(`${t.name} can pay ${n2} ${give}`);
+  }
+  console.log(`#366: "${line2}": Yes on ${B.name} and ${C.name} is aria-disabled, focusable, described by "Need … more ${give}"`);
+  // Enter on B's aria-disabled Yes sends nothing; Escape inside C's toast answers No.
+  await B.page.evaluate(() => {
+    const net = window.__emberisle.getState().net;
+    const answer = net.answer.bind(net);
+    window.__answers = [];
+    net.answer = (...a) => (window.__answers.push(a), answer(...a));
+  });
+  await B.page.getByTestId("trade-toast").getByRole("button", { name: "Yes", exact: true }).focus();
+  await B.page.keyboard.press("Enter");
+  const sent = await B.page.evaluate(() => window.__answers);
+  if (sent.length) throw new Error(`${B.name}'s aria-disabled Yes answered: ${JSON.stringify(sent)}`);
+  await C.page.getByTestId("trade-toast").getByRole("button", { name: "Yes", exact: true }).focus();
+  await C.page.keyboard.press("Escape");
+  await until(async () => (await views(tabs)).every((v) => v.declined.includes(again[k].you)) || null, "second decline (Escape)");
+  console.log(`#366: Enter on ${B.name}'s aria-disabled Yes sent nothing; Escape in ${C.name}'s toast answered No`);
   const left = Number((await A.page.getByTestId("trade-countdown").textContent()).replace(/\D/g, ""));
   if (left < 15 || left > 20) throw new Error(`countdown reads ${left} s right after the ask`);
+  // The polite line stays silent while the clock ticks and says "5 seconds left" once, at 5 s.
+  const heard = new Set();
   vs = await until(async () => {
+    const said = await B.page.evaluate(() => document.querySelector('[data-testid="trade-countdown-live"]')?.textContent ?? null);
+    if (said) heard.add(said);
     const vs = await views(tabs);
     return vs.every((v) => !v.offer && v.toast === null) ? vs : null;
   }, "the offer times out and every toast closes", 30_000);
+  if (heard.size !== 1 || !heard.has("5 seconds left")) throw new Error(`${B.name}'s polite countdown line said ${JSON.stringify([...heard])}`);
+  console.log(`#366: ${B.name}'s polite line said only "5 seconds left"`);
   if (vs[0].seq !== again[0].seq) throw new Error("the timeout changed the game");
   for (const n of [0, 1, 2]) if (!same(vs[n].mine, again[n].mine)) throw new Error(`${tabs[n].name}'s hand changed on a timeout`);
   console.log(`second offer ran out after ${left} s left on the clock: hands unchanged, toast closed on all 3 tabs`);
