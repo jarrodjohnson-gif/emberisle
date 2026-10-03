@@ -647,4 +647,68 @@ ok("the bank starts with 19 of each resource", RESOURCES.every((r) => fresh().ba
   ok("the bank is 4 of one resource for 1 of another", r.error === "Trade for a different resource." && r.state.players[0].resources.ore === 8 && r.state.bank.ore === 19, r.error ?? r.state.players[0].resources);
 }
 
+// What the plenty, monopoly and path fortunes do once played (#359).
+const effect = (what, cond, extra) => (cond ? console.log(`fortune effect: ${what}`) : fail(`fortune effect: ${what}`, extra));
+const total = (g, r) => g.bank[r] + g.players.reduce((n, p) => n + p.resources[r], 0);
+{
+  const g = fresh();
+  giveCards(g.players[0], {});
+  g.players[0].hidden.plenty = 1;
+  g.players[0].hidden.monopoly = 1;
+  const r = applyAction(g, "p0", { type: "playPlenty", resources: ["grain", "ore"] });
+  if (r.error) fail("plenty", r.error);
+  const s = r.state;
+  const me = s.players[0];
+  effect(
+    "plenty puts two cards in hand, takes them from the bank, spends the card",
+    me.resources.grain === 1 && me.resources.ore === 1 && hand(me) === 2 && s.bank.grain === 18 && s.bank.ore === 18 && s.bank.timber === 19 && me.hidden.plenty === 0,
+    { resources: me.resources, bank: s.bank },
+  );
+  const again = applyAction(s, "p0", { type: "playMonopoly", resource: "ore" });
+  effect("plenty sets playedCard so a second fortune that turn is refused", s.playedCard === true && again.error === "Cannot play that.", again.error);
+}
+{
+  const g = fresh();
+  giveCards(g.players[0], { ore: 1, wool: 2 });
+  giveCards(g.players[1], { ore: 3, grain: 2 });
+  giveCards(g.players[2], { ore: 4, timber: 1 });
+  for (const r of RESOURCES) g.bank[r] = 19 - g.players.reduce((n, p) => n + p.resources[r], 0);
+  g.players[0].hidden.monopoly = 1;
+  const r = applyAction(g, "p0", { type: "playMonopoly", resource: "ore" });
+  if (r.error) fail("monopoly", r.error);
+  const s = r.state;
+  const [a, b, c] = s.players;
+  effect(
+    "monopoly takes every other hand's copies, adds the sum, leaves other resources alone",
+    b.resources.ore === 0 && c.resources.ore === 0 && a.resources.ore === 8 && a.resources.wool === 2 && b.resources.grain === 2 && c.resources.timber === 1 && a.hidden.monopoly === 0,
+    s.players.map((p) => p.resources),
+  );
+  effect("monopoly logs the total", s.log[s.log.length - 1] === "A monopolizes ore (7).", s.log.slice(-2));
+  effect("monopoly keeps 19 of each resource across hands and bank", RESOURCES.every((x) => total(s, x) === 19), s.bank);
+}
+{
+  const g = fresh();
+  const a = line(g, 5);
+  own(g, a.edges.slice(0, 3), "p0");
+  const [e4, e5] = a.edges.slice(3).map((e) => e.id);
+  g.players[0].hidden.road = 1;
+  g.players[0].pathsLeft = 10;
+  if (legalRoads(g, "p0", false).includes(e5)) fail("setup: fifth edge should need the fourth first");
+  const dup = applyAction(g, "p0", { type: "playRoad", edgeIds: [e4, e4] });
+  effect("a duplicate path pair is refused and the card stays in hand", dup.error === "Illegal path." && dup.state.players[0].hidden.road === 1 && !dup.state.playedCard && dup.state.players[0].pathsLeft === 10, dup.error);
+  const r = applyAction(g, "p0", { type: "playRoad", edgeIds: [e4, e5] });
+  if (r.error) fail("two connected paths from one card", r.error);
+  const s = r.state;
+  effect(
+    "a path fortune places two connected paths, the second legal only after the first, and drops pathsLeft by 2",
+    s.edges.find((e) => e.id === e4).path === "p0" && s.edges.find((e) => e.id === e5).path === "p0" && s.players[0].pathsLeft === 8 && s.players[0].hidden.road === 0 && s.playedCard,
+    { pathsLeft: s.players[0].pathsLeft },
+  );
+  effect(
+    "the two free paths complete a 5-line and take the longest path, with a log line",
+    roadLength(s, "p0") === 5 && s.longestRoad === "p0" && s.log.includes("A holds the longest path."),
+    { len: roadLength(s, "p0"), award: s.longestRoad },
+  );
+}
+
 console.log("rules prove ok");

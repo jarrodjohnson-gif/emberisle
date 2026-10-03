@@ -102,6 +102,43 @@ try {
   });
   check("state push: at least 3x idle over its 1 s", pushed.draws >= 1.5 * Math.max(still.draws, 1), { pushed, idlePerSecond: still.draws / 2 });
 
+  // A walk started after the loop idled begins at its real start, not at the last frame's time (a stale clock skipped 20-30% of a 300 ms hop; one frame is ~5-8%).
+  await idle();
+  await count(1500);
+  const first = await page.evaluate(async () => {
+    const g = window.__emberisle;
+    const isle = window.__isle;
+    // Start the walk when the last frame is at least 60 ms old: an idle gap, as in the worst case.
+    await new Promise((res) => {
+      const poll = () => (performance.now() - isle.lastFrame > 60 ? res() : requestAnimationFrame(poll));
+      poll();
+    });
+    const st = structuredClone(g.getState().state);
+    const rh = st.hexes.find((h) => h.id === st.robberHex);
+    const { worldOfHex } = await import("/src/lib/game/board.ts");
+    const fw = worldOfHex(rh);
+    const near = st.hexes.find((h) => {
+      const w = worldOfHex(h);
+      return Math.abs(Math.hypot(w.x - fw.x, w.z - fw.z) - 1.12 * Math.sqrt(3)) < 0.05;
+    });
+    st.robberHex = near.id;
+    st.seq += 1;
+    const r0 = isle.renders;
+    const stale = performance.now() - isle.lastFrame;
+    g.setState({ state: st });
+    // The walk's start against the real "now" on the clock's scale, sampled in the same task: it must not lag by the idle gap.
+    const wk0 = isle.walk;
+    const lagMs = wk0 ? (isle.clock.getElapsed() + (performance.now() - isle.lastFrame) / 1000 - wk0.start) * 1000 : null;
+    await new Promise((res) => {
+      const poll = () => (isle.renders > r0 ? res() : requestAnimationFrame(poll));
+      poll();
+    });
+    const wk = isle.walk;
+    return { walking: !!wk, lagMs: lagMs === null ? null : Math.round(lagMs * 10) / 10, u: wk ? (isle.clock.getElapsed() - wk.start) / wk.dur : null, stale: Math.round(stale) };
+  });
+  check("walk after idle: start is the real time (lag <= 10 ms)", first.walking && first.lagMs !== null && first.lagMs <= 10, first);
+  check("walk after idle: first frame progress < 50%", first.walking && first.u < 0.5, first);
+
   // Reduced motion idles the same way.
   await page.emulateMedia({ reducedMotion: "reduce" });
   await idle();
