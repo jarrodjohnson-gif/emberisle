@@ -177,7 +177,7 @@ try {
       out.checked++;
       const el = document.elementFromPoint(p.x, p.y);
       if (el?.tagName === "CANVAS") out.canvas++;
-      if (el?.closest('[aria-label="Open chat"], [data-testid="chat-preview"], [aria-label="Table chat"]')) out.chat.push(id);
+      if (el?.closest('[aria-label^="Open chat"], [data-testid="chat-preview"], [aria-label="Table chat"]')) out.chat.push(id);
     }
     return out;
   });
@@ -275,6 +275,9 @@ try {
   await c.page.getByPlaceholder("Say something…").press("Enter");
   await a.page.getByTestId("chat-unread").waitFor({ timeout: 5000 });
   check((await a.page.getByTestId("chat-unread").textContent()) === "1", "unread: tab 1's badge shows 1");
+  // #377: the badge is part of the button's name.
+  await a.page.getByRole("button", { name: "Open chat, 1 unread", exact: true }).waitFor({ timeout: 5000 });
+  check(true, 'unread: the minimized button is named "Open chat, 1 unread"');
   await a.page.getByRole("button", { name: "Open chat" }).click();
   await a.page.getByTestId("chat-unread").waitFor({ state: "detached" });
   check((await stored(a)) === "1", 'open: badge cleared and the value is "1"');
@@ -288,11 +291,36 @@ try {
   await a.page.getByRole("button", { name: "Open chat" }).waitFor();
   check((await stored(a)) === "0", "Esc in the input minimizes the dock");
 
+  // #377: Enter on a focused button presses it; the chat shortcut is only for focus on the page itself.
+  const chatOpen = () => a.page.evaluate(() => window.__emberisle.getState().chatOpen);
+  const how = a.page.getByRole("button", { name: "How to play" });
+  await how.focus();
+  await a.page.keyboard.press("Enter");
+  await a.page.getByRole("dialog", { name: "How to play" }).waitFor({ timeout: 5000 });
+  check((await chatOpen()) === false, "Enter on How to play opens its dialog and leaves the chat closed");
+  await a.page.keyboard.press("Escape");
+  await a.page.getByRole("dialog", { name: "How to play" }).waitFor({ state: "detached" });
+  await a.page.getByRole("button", { name: "Open chat" }).click();
+  const log = a.page.getByTestId("chat-log");
+  await log.waitFor();
+  check((await log.getAttribute("tabindex")) === "0" && (await log.getAttribute("role")) === "log", "the chat log is a focusable role=log");
+  const min = a.page.getByRole("button", { name: "Minimize chat" });
+  await min.focus();
+  await a.page.keyboard.press("Enter");
+  await a.page.getByRole("button", { name: "Open chat" }).waitFor({ timeout: 5000 });
+  check((await chatOpen()) === false, "Enter on Minimize chat minimizes the dock");
+  await a.page.evaluate(() => document.activeElement?.blur());
+  await a.page.keyboard.press("Enter");
+  await a.page.waitForFunction(() => document.activeElement?.id === "chat-input", null, { timeout: 5000 });
+  check(await chatOpen(), "Enter with focus on the page still opens the chat and focuses the input");
+  await a.page.getByPlaceholder("Say something…").press("Escape");
+  await a.page.getByRole("button", { name: "Open chat" }).waitFor();
+
   // 5. Phone: the open dock is a bottom sheet, and the tap that closes it does not reach the board.
   await phone.page.getByRole("button", { name: "Open chat" }).waitFor();
   check((await phone.page.getByTestId("chat-sheet").count()) === 0, "phone: Play starts with the sheet closed although chat was remembered open");
   check((await phone.page.evaluate(() => localStorage.getItem("emberisle-chat-open"))) === "1", "phone: the remembered open state is left in storage");
-  r = await box(phone, '[aria-label="Open chat"]');
+  r = await box(phone, '[aria-label^="Open chat"]');
   check(r.right > r.vw - 20 && r.bottom < r.vh - 150, "phone: the minimized button sits bottom-right above the hand bar");
   await phone.page.getByRole("button", { name: "Open chat" }).click();
   await phone.page.getByTestId("chat-sheet").waitFor({ timeout: 5000 });
