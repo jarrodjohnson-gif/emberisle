@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ChatBox, ReactionFloats } from "@/components/game/Chat";
 import { CopyFallback, useCopy } from "@/components/game/CopyText";
 import { Hud, HowTo } from "@/components/game/Hud";
+import { PlaceList } from "@/components/game/PlaceList";
 import { useGame } from "@/lib/game/store";
 import { setMuted, useMuted } from "@/lib/sound";
 import { useTurnTitle } from "@/lib/turn-title";
@@ -45,7 +46,12 @@ export function EmberisleApp() {
   return (
     <div className="relative h-dvh w-full overflow-hidden bg-bg">
       <ClientCanvas />
-      {screen === "title" ? <Title /> : screen === "lobby" ? <Lobby /> : <Hud />}
+      {screen === "title" ? <Title /> : screen === "lobby" ? <Lobby /> : (
+        <>
+          <Hud />
+          <PlaceList />
+        </>
+      )}
     </div>
   );
 }

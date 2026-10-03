@@ -112,6 +112,7 @@ jobs:
       - run: npm run pieces-prove
       - run: npm run idle-prove
       - run: npm run contrast-prove
+      - run: npm run keyboard-place-prove
       - if: always()
         uses: actions/upload-artifact@v4
         with:
