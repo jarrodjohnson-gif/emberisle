@@ -78,6 +78,8 @@ export interface Me {
 export interface TableClient {
   open(me: Me): void;
   join(code: string, me: Me): void;
+  // Ask which seats a lobby holds before sitting down (docs/design/color-peek.md). Answered as `seats`.
+  peek(code: string): void;
   // Sit back down in a held seat (#196): hello {code, secret} from an earlier welcome.
   rejoin(code: string, secret: string): void;
   // Close the socket the way a lost network would (not on purpose), so the client dials again. For proofs.
@@ -287,6 +289,7 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
   return {
     open: (me) => send({ type: "hello", ...me }),
     join: (code, me) => send({ type: "hello", code: code.toUpperCase(), ...me }),
+    peek: (code) => send({ type: "peek", code: code.toUpperCase() }),
     rejoin: (code, secret) => {
       seat = { code: code.toUpperCase(), secret };
       rejoining = true;

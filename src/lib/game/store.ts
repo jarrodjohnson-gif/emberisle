@@ -104,6 +104,8 @@ interface GameStore {
   chooseSteal: (playerId: string) => void;
   // Online table (docs/design/online-client.md)
   net: TableClient | null;
+  // True when `net` is the pre-join peek connection (docs/design/color-peek.md), not a seated or rejoining one.
+  peeking: boolean;
   code: string;
   isHost: boolean;
   seats: Seat[];
@@ -111,6 +113,8 @@ interface GameStore {
   lobbyLog: string;
   hostTable: () => void;
   joinTable: (code: string) => void;
+  // Ask which colors a lobby already holds, on a connection of its own, before the player joins.
+  peekTable: (code: string) => void;
   // Sit back down in the seat this browser held (localStorage), e.g. after a reload (#196).
   rejoinTable: () => boolean;
   setReady: (value: boolean) => void;
@@ -202,6 +206,7 @@ export const useGame = create<GameStore>((set, get) => ({
   toast: null,
   banner: null,
   net: null,
+  peeking: false,
   code: "",
   isHost: false,
   seats: [],
@@ -245,6 +250,7 @@ export const useGame = create<GameStore>((set, get) => ({
       toast: null,
       buildMode: "none",
       net: null,
+      peeking: false,
     });
   },
   startHotseat: (count) => {
@@ -263,6 +269,7 @@ export const useGame = create<GameStore>((set, get) => ({
       toast: null,
       buildMode: "none",
       net: null,
+      peeking: false,
     });
   },
   loadState: (s, localId, host, table) =>
@@ -286,6 +293,7 @@ export const useGame = create<GameStore>((set, get) => ({
       error: null,
       buildMode: "none",
       net: null,
+      peeking: false,
       seats: [],
       legal: null,
       code: "",
@@ -455,11 +463,23 @@ export const useGame = create<GameStore>((set, get) => ({
     return { vertices: [], edges: [], hexes: [] };
   },
   hostTable: () => connect(set, get, (t, me) => t.open(me)),
-  joinTable: (code) => connect(set, get, (t, me) => t.join(code, me)),
+  joinTable: (code) => {
+    // A color the peek showed taken at this table is sent as no color, so the host seats the first free one.
+    const { code: peeked, seats, color } = get();
+    const free = color && !(peeked === code.toUpperCase() && seats.some((s) => s.color === color));
+    connect(set, get, (t, me) => t.join(code, { ...me, color: free ? me.color : undefined }));
+  },
+  peekTable: (code) => {
+    const { screen, net, peeking } = get();
+    if (screen !== "title") return;
+    // A non-peek `net` is the page-load rejoin; a peek queued on it would reach a seated socket and come back "not ready".
+    if (net) return peeking ? net.peek(code) : undefined;
+    connect(set, get, (t) => t.peek(code), "peek");
+  },
   rejoinTable: () => {
     const seat = savedSeat();
     if (!seat) return false;
-    connect(set, get, (t) => t.rejoin(seat.code, seat.secret), true);
+    connect(set, get, (t) => t.rejoin(seat.code, seat.secret), "quiet");
     return true;
   },
   setReady: (value) => get().net?.ready(value),
@@ -490,13 +510,17 @@ export const useGame = create<GameStore>((set, get) => ({
 type Set = (partial: Partial<GameStore>) => void;
 type Get = () => GameStore;
 
-// `quiet` is the automatic rejoin on page load: until the first welcome, a dead seat is dropped without telling the player.
-function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, quiet = false) {
+// "quiet" is the automatic rejoin on page load: until the first welcome, a dead seat is dropped without telling the player.
+// "peek" asks a lobby for its seats before joining (docs/design/color-peek.md): it never seats, toasts, or touches the saved seat.
+type ConnectKind = "normal" | "quiet" | "peek";
+function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, kind: ConnectKind = "normal") {
   get().net?.close();
-  let pending = quiet;
+  let pending = kind === "quiet";
+  let welcomed = false;
   const table = connectTable(hostUrl(window.location), {
     welcome: ({ code, you, host, chat, secret }) => {
       pending = false;
+      welcomed = true;
       if (secret) rememberSeat({ code, secret });
       // A rejoin lands in the lobby for a moment; the host's state push (if the game started) moves it to play.
       set({ code, seatId: you, isHost: host, screen: "lobby", mode: "online", error: null, toast: null, chat: (chat ?? []).slice(-50), reactions: [], unread: 0 });
@@ -547,21 +571,31 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, qu
       outcomeTimer = setTimeout(() => set({ tradeOutcome: null }), BANNER_MS);
     },
     error: (message) => {
-      if (!pending) set({ error: message, toast: message });
+      if (!pending && kind !== "peek") set({ error: message, toast: message });
+      // A refused join leaves an unseated socket the host never closes; drop it so the next peek can open its own.
+      if (kind === "normal" && !welcomed) {
+        table.close();
+        if (get().net === table) set({ net: null, peeking: false });
+      }
     },
     closed: (keepSeat) => {
+      if (kind === "peek") {
+        if (get().net === table) set({ net: null, peeking: false });
+        return;
+      }
       if (keepSeat) {
-        set({ error: "Your seat is open in another tab", toast: "Your seat is open in another tab", screen: "title", net: null, state: null });
+        set({ error: "Your seat is open in another tab", toast: "Your seat is open in another tab", screen: "title", net: null, peeking: false, seats: [], code: "", state: null });
         return;
       }
       rememberSeat(null);
       if (pending) {
-        set({ error: null, toast: null, screen: "title", net: null, state: null });
+        set({ error: null, toast: null, screen: "title", net: null, peeking: false, seats: [], code: "", state: null });
         return;
       }
-      set({ error: "Lost the table", toast: "Lost the table", screen: "title", net: null, state: null });
+      set({ error: "Lost the table", toast: "Lost the table", screen: "title", net: null, peeking: false, seats: [], code: "", state: null });
     },
   });
-  set({ net: table, mode: "online", error: null });
+  // A peek is not the player's action, so it leaves a join error ("Lost the table") on the Title card.
+  set(kind === "peek" ? { net: table, peeking: true, mode: "online" } : { net: table, peeking: false, mode: "online", error: null });
   first(table, { name: get().name, color: get().color ?? undefined });
 }
