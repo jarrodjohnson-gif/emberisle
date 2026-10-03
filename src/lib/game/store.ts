@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { createGame } from "./board";
-import { applyAction, legalCities, legalRoads, legalSettle, stealTargets } from "./rules";
+import { applyAction, bankShort, legalCities, legalRoads, legalSettle, stealTargets } from "./rules";
 
 const BANNER_MS = 2500;
 let bannerTimer: ReturnType<typeof setTimeout> | null = null;
@@ -10,10 +10,11 @@ function showBanner(set: (p: { banner: string | null }) => void, text: string) {
   bannerTimer = setTimeout(() => set({ banner: null }), BANNER_MS);
 }
 
-// "Tide rolls 4+5 = 9 · Ember +1 wool · Pine +2 ore"
-function rollLine(roller: string, dice: [number, number], gains: { name: string; resource: string; amount: number }[]) {
+// "Tide rolls 4+5 = 9 · Ember +1 wool · Pine +2 ore", ending "· bank short of grain" when the bank paid nobody some resource
+function rollLine(roller: string, dice: [number, number], gains: { name: string; resource: string; amount: number }[], short: string[]) {
   const parts = gains.map((g) => `${g.name} +${g.amount} ${g.resource}`);
-  return [`${roller} rolls ${dice[0]}+${dice[1]} = ${dice[0] + dice[1]}`, ...(parts.length ? parts : ["nobody gathers"])].join(" · ");
+  const tail = short.length ? [`bank short of ${short.join(" and ")}`] : [];
+  return [`${roller} rolls ${dice[0]}+${dice[1]} = ${dice[0] + dice[1]}`, ...(parts.length ? parts : ["nobody gathers"]), ...tail].join(" · ");
 }
 
 function gainsBetween(before: GameState, after: GameState) {
@@ -342,7 +343,7 @@ export const useGame = create<GameStore>((set, get) => ({
     set({ state: res.state, error: null, toast: null, buildMode: "none", roadPicks: [] });
     if (action.type === "roll" && res.state.dice) {
       const roller = state.players.find((p) => p.id === actor)?.name ?? actor;
-      showBanner(set, rollLine(roller, res.state.dice, gainsBetween(state, res.state)));
+      showBanner(set, rollLine(roller, res.state.dice, gainsBetween(state, res.state), bankShort(res.state)));
     } else {
       const swing = awardLine(state, res.state);
       if (swing) showBanner(set, swing);
@@ -549,11 +550,11 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       setTimeout(() => set({ reactions: get().reactions.filter((x) => x !== r) }), 2000);
     },
     seats: ({ code, seats }) => set({ code, seats }),
-    rolled: ({ dice, gains }) => {
+    rolled: ({ dice, gains, short }) => {
       // The host sends this before the state that follows it, so `current` is still the roller.
       const st = get().state;
       const roller = st?.players.find((p) => p.id === st.current)?.name ?? "Someone";
-      showBanner(set, rollLine(roller, dice, gains));
+      showBanner(set, rollLine(roller, dice, gains, short));
     },
     state: ({ you, game, legal }) => {
       const swing = awardLine(get().state, game);
