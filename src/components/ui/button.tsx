@@ -5,8 +5,8 @@ const VARIANT = {
   default: "bg-fg text-bg hover:bg-fg/90",
   primary: "bg-fg text-bg hover:bg-fg/90",
   secondary: "border border-border bg-bg text-fg hover:brightness-105",
-  sea: "bg-sea text-white hover:bg-sea/90",
-  accent: "bg-accent text-white hover:bg-accent/90",
+  sea: "bg-sea-ink text-white hover:brightness-90",
+  accent: "bg-accent-ink text-white hover:brightness-90",
   outline: "border border-fg/30 bg-transparent text-fg hover:bg-fg/5",
   ghost: "bg-transparent text-fg hover:bg-fg/5",
 } as const;

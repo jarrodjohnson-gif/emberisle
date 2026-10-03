@@ -106,7 +106,7 @@ function Title() {
       )}
     >
       <div className={sheet ? undefined : "rounded-[20px] border border-white/50 bg-white/45 p-5 backdrop-blur-md sm:p-6"}>
-        <p className="text-xs uppercase tracking-[0.22em] text-sea">A living island</p>
+        <p className="text-xs uppercase tracking-[0.22em] text-sea-ink">A living island</p>
         <h1 className="mt-2 font-display text-5xl leading-none tracking-tight sm:text-6xl">Emberisle</h1>
         <p className="mt-3 max-w-sm text-pretty text-muted">
           Claim hexes, graze the pastures, and trade the land. Sheep wander. Boats rock. The wayfarer crosses the wastes.
@@ -162,7 +162,7 @@ function Title() {
             </Button>
           </form>
           {error ? (
-            <p role="alert" className="text-sm text-accent">
+            <p role="alert" className="text-sm text-accent-ink">
               {error}
             </p>
           ) : null}
@@ -229,7 +229,7 @@ function Lobby() {
       )}
     >
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto rounded-[20px] border border-white/50 bg-white/45 p-5 backdrop-blur-md sm:p-6">
-        <p className="text-xs uppercase tracking-[0.22em] text-sea">Table code</p>
+        <p className="text-xs uppercase tracking-[0.22em] text-sea-ink">Table code</p>
         <div className="mt-1 flex items-center gap-3">
           <p data-testid="table-code" className="font-display text-6xl tracking-[0.2em]">
             {code}
