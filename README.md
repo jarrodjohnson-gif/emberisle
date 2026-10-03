@@ -138,7 +138,7 @@ npm run tabs-prove       # 3 headless tabs host, join, play setup + 5 rolls on t
 npm run trade-prove      # 3 headless tabs: one asks the table through the trade panel, one says No, one says Yes, goods move; a second ask times out
 npm run served-prove     # same 3 tabs, but the page comes from the rules host itself with no ?host= (after build)
 npm run night-prove      # npm run night from a clean start: builds, prints the join lines, serves the page, answers a socket, survives kill -9 on the host, SIGINT leaves no host
-npm run chat-prove       # 3 headless tabs chat in the lobby and the game: presets, reactions, unread badge, minimized dock covers no target
+npm run chat-prove       # 3 headless tabs chat in the lobby and the game: presets, reactions, unread badge, minimized dock covers no target, the game log in the dock with Chat/All and Copy log
 ```
 
 CI runs `npm ci` in the root and in `server/`, then these checks in this order, and installs Chromium with `npx playwright install --with-deps chromium`. `client-prove` uses the Chromium that ships with cloud sessions (`/opt/pw-browsers/chromium`). On your own PC, run `npx playwright install chromium` once first. It saves a screenshot to `test-results/client-prove.png`.
@@ -304,7 +304,7 @@ WebSocket JSON. The client sends intents. The server answers with `state` or `er
 | `node --import ./server/register.mjs server/persist-prove.mjs` | Three seats set up and roll three times. The host is killed and restarted on the same port. All three rejoin with their secrets and see the same `seq` and the chat. A 25-hour-old room file is dropped, and a broken one and one with a null seat are skipped. |
 | `npm run client-prove` | The browser client plays setup and a roll with zero console errors; a peek during a pending rejoin is quiet, and opens its own connection after a stale one |
 | `npm run hotseat-prove` | In hotseat, a 7 where another seat owes a discard shows that seat's discard bar and charges the discard to that seat; zero console errors |
-| `npm run chat-prove` | 3 browser tabs at 1280x720: lobby chat and presets, a reaction floats over the sender's rail card for 2 s, the unread badge, the remembered dock state, the minimized dock covers no board target, zero console errors |
+| `npm run chat-prove` | 3 browser tabs at 1280x720: lobby chat and presets, a reaction floats over the sender's rail card for 2 s, the unread badge, the remembered dock state, the minimized dock covers no board target; after setup and the first roll every dock (the phone sheet too) lists the game log as muted rows with the roll and an outpost, the Chat chip hides them, Copy log puts the whole log on the clipboard; zero console errors |
 | `npm run tabs-prove` | 3 browser tabs host, join, ready, start, play setup and 5 rolls through the rules host; dice and board match on every tab; then plays on until a gain has flashed green +N and a loss red -N on the hand, each gone within 2 s; a taken color dims before Join; zero console errors |
 | `npm run trade-prove` | 3 browser tabs on the rules host: the Trade panel asks the table, the toast's No reaches every tab and leaves the offer open, Yes moves the goods (own hands exact, others' `goods` counts), a second ask runs out its 20 s with nothing moved and every toast closed, zero console errors |
 | `npm run served-prove` | The same 3 tabs, but the host serves the built `dist/` and the tabs open it with no `?host=`, so they find the socket at the page's own address (the tunnel case) |

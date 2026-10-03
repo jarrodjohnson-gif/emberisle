@@ -64,6 +64,41 @@ function hear(before: GameState | null, after: GameState, me: string, mode: Game
   if (mode !== "hotseat" && before && after.current === me && before.current !== me && after.phase !== "over") yourTurn();
 }
 
+// The game log the dock shows (#305): a line of `state.log` or a host `log` message, stamped when this browser saw it.
+export interface GameLogLine {
+  at: number;
+  text: string;
+}
+const GAME_LOG_MAX = 200;
+const LOG_FILTER_KEY = "emberisle-log-filter";
+
+// The engine keeps only the last 41 log lines (rules.ts `log`), so once the log is full its length never grows and
+// `after.slice(before.length)` would be empty. The new lines are what follows the longest tail of the old log that
+// the new one still starts with.
+function newLog(before: string[], after: string[]) {
+  for (let k = Math.min(before.length, after.length); k > 0; k--) {
+    if (before.slice(-k).every((line, i) => line === after[i])) return after.slice(k);
+  }
+  return after;
+}
+
+function stamp(lines: string[]): GameLogLine[] {
+  const at = Date.now();
+  return lines.map((text) => ({ at, text }));
+}
+
+function appendLog(log: GameLogLine[], lines: string[]) {
+  return lines.length ? [...log, ...stamp(lines)].slice(-GAME_LOG_MAX) : log;
+}
+
+function savedLogFilter(): "all" | "chat" {
+  try {
+    return localStorage.getItem(LOG_FILTER_KEY) === "chat" ? "chat" : "all";
+  } catch {
+    return "all";
+  }
+}
+
 // The board as it would be with these paths laid, so the second pick of a path fortune can glow (#184).
 function withPaths(state: GameState, edgeIds: string[], pid: string): GameState {
   if (!edgeIds.length) return state;
@@ -164,6 +199,11 @@ interface GameStore {
   setChatDraft: (v: string) => void;
   sendChat: (text: string) => void;
   sendReact: (emote: string, to?: string) => void;
+  // The whole game log, for the dock (#305): the new lines of `state.log` after each local action, and the host's `log` messages online.
+  gameLog: GameLogLine[];
+  // Which rows the dock lists: the chat alone, or the chat and the game log together. Remembered like `chatOpen`.
+  logFilter: "all" | "chat";
+  setLogFilter: (v: "all" | "chat") => void;
   // Ask-the-table trades (docs/BUILD_BIBLE.md 4.4): the open offer, who has said No to it, and the asker's closing line.
   offer: OpenOffer | null;
   declined: string[];
@@ -253,6 +293,8 @@ export const useGame = create<GameStore>((set, get) => ({
   chatOpen: savedChatOpen(),
   unread: 0,
   chatDraft: "",
+  gameLog: [],
+  logFilter: savedLogFilter(),
   offer: null,
   declined: [],
   tradeOutcome: null,
@@ -281,6 +323,7 @@ export const useGame = create<GameStore>((set, get) => ({
       host: true,
       localId: "p0",
       state,
+      gameLog: stamp(state.log),
       error: null,
       toast: null,
       buildMode: "none",
@@ -301,6 +344,7 @@ export const useGame = create<GameStore>((set, get) => ({
       host: true,
       localId: "p0",
       state,
+      gameLog: stamp(state.log),
       error: null,
       toast: null,
       buildMode: "none",
@@ -339,6 +383,7 @@ export const useGame = create<GameStore>((set, get) => ({
       reactions: [],
       unread: 0,
       chatDraft: "",
+      gameLog: [],
       menuFor: null,
       lobbyLog: "",
       seatId: "",
@@ -368,7 +413,7 @@ export const useGame = create<GameStore>((set, get) => ({
       play("ui_error");
       return { ok: false, error: res.error };
     }
-    set({ state: res.state, error: null, toast: null, buildMode: "none", roadPicks: [] });
+    set({ state: res.state, gameLog: appendLog(get().gameLog, newLog(state.log, res.state.log)), error: null, toast: null, buildMode: "none", roadPicks: [] });
     hear(state, res.state, localId, mode);
     if (action.type === "roll" && res.state.dice) {
       const roller = state.players.find((p) => p.id === actor)?.name ?? actor;
@@ -532,6 +577,14 @@ export const useGame = create<GameStore>((set, get) => ({
     set(v ? { chatOpen: true, unread: 0 } : { chatOpen: false });
   },
   setChatDraft: (v) => set({ chatDraft: v }),
+  setLogFilter: (v) => {
+    try {
+      localStorage.setItem(LOG_FILTER_KEY, v);
+    } catch {
+      // storage can be blocked; the filter still holds for this page
+    }
+    set({ logFilter: v });
+  },
   sendChat: (text) => get().net?.say(text),
   sendReact: (emote, to) => get().net?.react(emote, to),
   setTradeOpen: (v) => set({ tradeOpen: v }),
@@ -592,7 +645,7 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       get().loadState(game, you, get().isHost, get().code);
       if (swing) showBanner(set, swing);
     },
-    log: (text) => set({ lobbyLog: text }),
+    log: (text) => set({ lobbyLog: text, gameLog: appendLog(get().gameLog, [text]) }),
     tradeOffer: ({ tradeId, from, give, want, seconds }) => {
       const fromName = get().state?.players.find((p) => p.id === from)?.name ?? "Someone";
       set({ offer: { tradeId, from, fromName, give, want, until: Date.now() + seconds * 1000 }, declined: [], tradeOutcome: null });

@@ -1,8 +1,8 @@
 // The table chat dock, the shared chat box, and floating reactions. Design: docs/design/chat.md.
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { MessageSquare, Minus, Smile } from "lucide-react";
 import { EMOTES } from "@/components/game/emotes";
-import { useGame } from "@/lib/game/store";
+import { useGame, type GameLogLine } from "@/lib/game/store";
 import type { ChatLine } from "@/lib/net/table";
 import { cn } from "@/lib/utils";
 import { useViewport } from "@/lib/viewport";
@@ -41,22 +41,39 @@ function Line({ line, me }: { line: ChatLine; me: string }) {
   );
 }
 
+// A game log line (#305): a muted system row, no speaker.
+function LogRow({ line }: { line: GameLogLine }) {
+  return (
+    <li data-testid="log-row" className="break-words text-xs leading-snug text-zinc-600">
+      {line.text}
+    </li>
+  );
+}
+
+const CHIP = "cursor-pointer rounded-full border border-white/60 px-2 py-0.5 text-xs";
+
 // The log, the preset chips, the emote tray, and the input. `onEscape` is the dock's minimize.
-export function ChatBox({ rows, onEscape, className }: { rows: number; onEscape?: () => void; className?: string }) {
+// `game` (the in-game dock, not the Lobby) lists the game log in with the chat, behind a Chat/All filter, with Copy log.
+export function ChatBox({ rows, game, onEscape, className }: { rows: number; game?: boolean; onEscape?: () => void; className?: string }) {
   const chat = useGame((s) => s.chat);
+  const gameLog = useGame((s) => s.gameLog);
+  const filter = useGame((s) => s.logFilter);
+  const setFilter = useGame((s) => s.setLogFilter);
   const draft = useGame((s) => s.chatDraft);
   const setDraft = useGame((s) => s.setChatDraft);
   const sendChat = useGame((s) => s.sendChat);
   const sendReact = useGame((s) => s.sendReact);
   const me = useMyName();
   const [tray, setTray] = useState(false);
+  const [copied, setCopied] = useState(false);
   const log = useRef<HTMLUListElement>(null);
   const stuck = useRef(true);
+  const withLog = game && filter === "all";
 
   useEffect(() => {
     const el = log.current;
     if (el && stuck.current) el.scrollTop = el.scrollHeight;
-  }, [chat]);
+  }, [chat, gameLog, withLog]);
 
   const send = () => {
     const text = draft.trim();
@@ -65,8 +82,46 @@ export function ChatBox({ rows, onEscape, className }: { rows: number; onEscape?
     setDraft("");
   };
 
+  const copyLog = () => {
+    // Never throws: clipboard is missing on insecure origins (a LAN IP over http) and can be denied.
+    navigator.clipboard?.writeText(gameLog.map((l) => l.text).join("\n")).then(
+      () => {
+        setCopied(true);
+        window.setTimeout(() => setCopied(false), 1500);
+      },
+      () => {},
+    );
+  };
+
+  // Chat and game lines in time order. The sort is stable, so each kind keeps its own order when stamps tie.
+  const lines: { at: number; node: ReactNode }[] = chat.map((line) => ({ at: line.at, node: <Line key={`c${line.id}`} line={line} me={me} /> }));
+  if (withLog) {
+    for (const [i, line] of gameLog.entries()) lines.push({ at: line.at, node: <LogRow key={`g${i}`} line={line} /> });
+    lines.sort((x, y) => x.at - y.at);
+  }
+
   return (
     <div className={cn("flex min-h-0 flex-col gap-2", className)}>
+      {game ? (
+        <div className="flex shrink-0 items-center gap-1">
+          <div role="group" aria-label="Show" className="flex gap-1">
+            {(["chat", "all"] as const).map((f) => (
+              <button
+                key={f}
+                type="button"
+                aria-pressed={filter === f}
+                onClick={() => setFilter(f)}
+                className={cn(CHIP, filter === f ? "bg-fg text-bg" : "bg-white/60 text-zinc-900 hover:bg-white/90")}
+              >
+                {f === "chat" ? "Chat" : "All"}
+              </button>
+            ))}
+          </div>
+          <button type="button" onClick={copyLog} className={cn(CHIP, "ml-auto bg-white/60 text-zinc-900 hover:bg-white/90")}>
+            {copied ? "Copied" : "Copy log"}
+          </button>
+        </div>
+      ) : null}
       <ul
         ref={log}
         data-testid="chat-log"
@@ -77,9 +132,7 @@ export function ChatBox({ rows, onEscape, className }: { rows: number; onEscape?
         className="flex min-h-0 flex-col gap-1 overflow-y-auto"
         style={{ height: rows * 18, flex: "1 1 auto" }}
       >
-        {chat.map((line) => (
-          <Line key={line.id} line={line} me={me} />
-        ))}
+        {lines.map((l) => l.node)}
       </ul>
       <div className="flex shrink-0 flex-wrap gap-1">
         {PRESETS.map((p) => (
@@ -248,7 +301,7 @@ export function ChatDock() {
             <h2 className="text-sm font-medium">Table chat</h2>
             {minimize}
           </div>
-          <ChatBox className="flex-1" rows={4} onEscape={() => setOpen(false)} />
+          <ChatBox className="flex-1" rows={4} game onEscape={() => setOpen(false)} />
         </section>
       </>
     );
@@ -271,7 +324,7 @@ export function ChatDock() {
             <h2 className="text-sm font-medium">Table chat</h2>
             {minimize}
           </div>
-          <ChatBox rows={6} onEscape={() => setOpen(false)} />
+          <ChatBox rows={6} game onEscape={() => setOpen(false)} />
         </section>
       ) : (
         <>

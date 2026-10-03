@@ -232,6 +232,12 @@ the other two nodes keep the board out of them:
   panel and the rail have today (visual-polish §1). It gets fixed once, by #135 fitting the island into the space the
   HUD leaves, not by each panel. This PR comments the rectangle on #135. Until then, one Esc minimizes it.
 - Nothing here depends on the #128 camera decision. The rectangles are screen space.
+- **The corner log (option B) also carries the game log** (#305). The store keeps `gameLog: {at, text}[]`, the last 200
+  lines: the new lines of `state.log` after each local action (practice and hotseat), and the host's `log` messages
+  online. The open dock lists them as muted system rows (`data-testid="log-row"`) in time order with the chat, behind a
+  two-chip filter, **Chat / All** (default All, remembered in `localStorage["emberisle-log-filter"]` like the dock state),
+  and a **Copy log** chip that writes the game lines as text with the Lobby's never-throws clipboard code. The Lobby box
+  stays chat-only. The HUD's three-line `<p>` is left as it is until an XS follow-up removes it.
 
 ## Files the implementation touches
 
