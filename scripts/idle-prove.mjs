@@ -139,9 +139,51 @@ try {
   check("walk after idle: start is the real time (lag <= 10 ms)", first.walking && first.lagMs !== null && first.lagMs <= 10, first);
   check("walk after idle: first frame progress < 50%", first.walking && first.u < 0.5, first);
 
-  // Reduced motion (#382): nothing ambient moves and the loop draws only on a change. Every mesh's position and
-  // rotation, sampled 2 s apart once the 1 s hold is over, must match, with at most one draw between.
+  // Move the robber one hex over. Returns whether a walk started and whether the wayfarer is already on the new hex.
+  const nudge = () =>
+    page.evaluate(async () => {
+      const g = window.__emberisle;
+      const isle = window.__isle;
+      const st = structuredClone(g.getState().state);
+      const rh = st.hexes.find((h) => h.id === st.robberHex);
+      const { worldOfHex } = await import("/src/lib/game/board.ts");
+      const fw = worldOfHex(rh);
+      const near = st.hexes.find((h) => {
+        const w = worldOfHex(h);
+        return Math.abs(Math.hypot(w.x - fw.x, w.z - fw.z) - 1.12 * Math.sqrt(3)) < 0.05;
+      });
+      st.robberHex = near.id;
+      st.seq += 1;
+      const r0 = isle.renders;
+      g.setState({ state: st });
+      const target = worldOfHex(near);
+      const p = isle.wayfarer.position;
+      return { walk: !!isle.walk, atTarget: Math.hypot(p.x - target.x, p.z - target.z) < 0.01, r0 };
+    });
+  const landed = () =>
+    page.evaluate(() => {
+      const isle = window.__isle;
+      const p = isle.wayfarer.position;
+      const t = isle.robberTarget;
+      return { walk: !!isle.walk, atTarget: Math.hypot(p.x - t.x, p.z - t.z) < 0.01 };
+    });
+
+  // Reduced motion (#382): nothing ambient moves and the loop draws only on a change. The preference flips mid-hop:
+  // the wayfarer lands at once. The change event reaches the page a frame after `matches` flips and wakes the loop for
+  // 1 s, so the proof waits for that event and then for the hold to end before it takes its baseline.
+  await idle();
+  const midHop = await nudge();
+  check("reduced motion: a hop is in flight before the flip", midHop.walk && !midHop.atTarget, midHop);
+  await page.evaluate(() => {
+    window.__calmFlip = new Promise((res) => matchMedia("(prefers-reduced-motion: reduce)").addEventListener("change", (e) => res(e.matches), { once: true }));
+  });
   await page.emulateMedia({ reducedMotion: "reduce" });
+  check("reduced motion: change event reached the page", (await page.evaluate(() => window.__calmFlip)) === true);
+  await page.waitForFunction(() => !window.__isle.walk, null, { timeout: 15000 });
+  const snapped = await landed();
+  check("reduced motion: the hop in flight lands at once", !snapped.walk && snapped.atTarget, snapped);
+
+  // Every mesh's position and rotation, sampled 2 s apart once the 1 s hold is over, must match, with at most one draw between.
   await idle();
   const snapshot = () =>
     page.evaluate(() => {
@@ -161,31 +203,9 @@ try {
   check("reduced motion idle: at most 1 draw in 2 s", calm.draws <= 1, calm);
 
   // A robber move still shows: the wayfarer is on the new hex at once, with no walk, and the island redraws.
-  const hop = await page.evaluate(async () => {
-    const g = window.__emberisle;
-    const isle = window.__isle;
-    const st = structuredClone(g.getState().state);
-    const rh = st.hexes.find((h) => h.id === st.robberHex);
-    const { worldOfHex } = await import("/src/lib/game/board.ts");
-    const fw = worldOfHex(rh);
-    const near = st.hexes.find((h) => {
-      const w = worldOfHex(h);
-      return Math.abs(Math.hypot(w.x - fw.x, w.z - fw.z) - 1.12 * Math.sqrt(3)) < 0.05;
-    });
-    st.robberHex = near.id;
-    st.seq += 1;
-    const r0 = isle.renders;
-    g.setState({ state: st });
-    const target = worldOfHex(near);
-    const p = isle.wayfarer.position;
-    const atTarget = Math.hypot(p.x - target.x, p.z - target.z) < 0.01;
-    await new Promise((res) => {
-      const poll = () => (isle.renders > r0 ? res() : requestAnimationFrame(poll));
-      poll();
-    });
-    return { walk: !!isle.walk, atTarget, drew: isle.renders - r0 };
-  });
-  check("reduced motion: robber move places the wayfarer at once and draws", !hop.walk && hop.atTarget && hop.drew >= 1, hop);
+  const hop = await nudge();
+  await page.waitForFunction((r0) => window.__isle.renders > r0, hop.r0, { timeout: 15000 });
+  check("reduced motion: robber move places the wayfarer at once and draws", !hop.walk && hop.atTarget, hop);
 
   // Turning the preference off wakes the island again.
   await page.emulateMedia({ reducedMotion: null });

@@ -151,7 +151,6 @@ export class IsleRenderer {
     this.controls.maxPolarAngle = 1.02;
     this.controls.minPolarAngle = 0.7;
     this.controls.target.set(0.15, 0.05, 0);
-    this.controls.autoRotate = true;
     this.controls.autoRotateSpeed = 0.28;
     this.calmMq?.addEventListener("change", this.onCalm);
     this.controls.addEventListener("start", this.wake);
