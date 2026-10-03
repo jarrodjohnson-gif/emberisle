@@ -317,7 +317,7 @@ function armTurns(room) {
 
 // A bot action as the client would have sent it, so the timer's move runs through play() like any other.
 function toIntent(action) {
-  switch (action.type) {
+  switch (action?.type) {
     case "roll":
       return { type: "roll" };
     case "setupSettle":
@@ -329,7 +329,7 @@ function toIntent(action) {
     case "discard":
       return { type: "discard", cards: action.resources };
     default:
-      return { type: "pass" };
+      return null;
   }
 }
 
@@ -339,11 +339,9 @@ function turnOut(room, seat) {
   seat.turnTimer = null;
   seat.turnDeadline = null;
   if (!seat.ws || !waitedOn(room.game, seat.pid)) return;
-  const before = room.game;
   say(room, `${seat.name} took too long; the table moved on.`);
-  const action = before.phase === "main" ? null : chooseBotAction(before, seat.pid);
-  if (action) play(seat.ws, room, toIntent(action));
-  if (room.game === before) play(seat.ws, room, { type: "pass" });
+  const action = room.game.phase === "main" ? null : chooseBotAction(room.game, seat.pid);
+  play(seat.ws, room, toIntent(action) ?? { type: "pass" });
 }
 
 function pushState(room) {
@@ -649,6 +647,9 @@ function answer(ws, room, msg) {
   if (accepted.error) return send(ws, { type: "error", message: accepted.error });
   closeOffer(room);
   room.game = accepted.state;
+  // The asker's trade went through: that is their action, so their window restarts (pushState re-arms it).
+  const asker = room.seats.find((s) => s.pid === offer.from);
+  if (asker) disarmTurn(asker);
   hear("trade_yes");
   broadcast(room, { type: "tradeClosed", tradeId: offer.tradeId, taker: actor });
   pushState(room);
@@ -810,6 +811,7 @@ function dropRoom(room) {
   for (const seat of room.seats) {
     clearTimeout(seat.graceTimer);
     clearTimeout(seat.holdTimer);
+    clearTimeout(seat.turnTimer);
   }
   for (const id of room.avatarIds) avatars.delete(id);
   rooms.delete(room.code);
@@ -820,6 +822,8 @@ function dropRoom(room) {
 function hold(room, seat) {
   seat.ws = null;
   seat.gone = Date.now();
+  // A dropped seat is the grace timer's business, never the turn timer's (#344).
+  disarmTurn(seat);
   if (room.game && seat.pid) seat.graceTimer = setTimeout(() => takeOver(room, seat), GRACE_MS);
   seat.holdTimer = setTimeout(() => letGo(room, seat), room.game ? HOLD_MS : LOBBY_HOLD_MS);
 }
