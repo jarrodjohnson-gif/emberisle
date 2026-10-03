@@ -16,6 +16,7 @@ assert.equal(cleanText("x".repeat(250)).length, 200);
 const withEmoji = "x".repeat(199) + "🙂";
 assert.equal(cleanText(withEmoji), withEmoji);
 assert.equal(cleanText("a\u200bb\u202ec"), "abc");
+assert.equal(cleanText("\u{1F468}\u200D\u{1F469}\u200D\u{1F467}"), "\u{1F468}\u200D\u{1F469}\u200D\u{1F467}");
 assert.equal(cleanText("\u200b\u200b"), null);
 assert.equal(cleanText(""), null);
 assert.equal(cleanText("   "), null);
