@@ -48,7 +48,8 @@ let code = 0;
 // The tab whose failed dials are expected right now (it is offline on purpose), or null.
 let offlineTab = null;
 
-async function tab(name) {
+// `url` is the page to open; the default is the plain Title page. #304's third tab opens the lobby's copied join link.
+async function tab(name, url = SERVED ? `http://127.0.0.1:${hostPort}/` : `http://127.0.0.1:${PORT}/?host=ws://127.0.0.1:${hostPort}`) {
   const page = await browser.newPage({ viewport: { width: 800, height: 500 } });
   // A socket that fails while this tab is offline on purpose logs a console error (#196); everything else counts.
   page.on("console", (m) => m.type() === "error" && !(offlineTab === name && /WebSocket connection to .* failed/.test(m.text())) && errors.push(`${name}: ${m.text()}`));
@@ -69,7 +70,7 @@ async function tab(name) {
       }
     }).observe(document, { childList: true, subtree: true });
   });
-  await page.goto(SERVED ? `http://127.0.0.1:${hostPort}/` : `http://127.0.0.1:${PORT}/?host=ws://127.0.0.1:${hostPort}`);
+  await page.goto(url);
   return { name, page };
 }
 
@@ -129,30 +130,52 @@ async function synced(tabs, seq, what, ms) {
 const act = (t, fn, arg) => t.page.evaluate(([f, a]) => window.__emberisle.getState()[f](...[].concat(a)), [fn, arg]);
 
 try {
-  const tabs = [await tab("Ember"), await tab("Tide"), await tab("Pine")];
-  const [a, b, c] = tabs;
+  const a = await tab("Ember");
+  const b = await tab("Tide");
 
   // #142: picking a color on the Title screen must reach the actual seat and game state.
   await a.page.getByRole("radio", { name: "Tide" }).click();
   await a.page.getByRole("button", { name: "Host a table" }).click();
   const tableCode = (await a.page.getByTestId("table-code").textContent()).trim();
+
+  // #304: the lobby's Copy link writes `<this page>?code=<code>`, keeping `?host=` when the page has one. The
+  // clipboard is stubbed in the page (headless Chromium's is not readable here), and tab C opens the copied link.
+  await a.page.evaluate(() => Object.defineProperty(navigator, "clipboard", { value: { writeText: (t) => ((window.__copied = t), Promise.resolve()) } }));
+  await a.page.getByRole("button", { name: "Copy link" }).click();
+  const link = await until(() => a.page.evaluate(() => window.__copied ?? null), "Copy link wrote the clipboard");
+  const want = new URL(SERVED ? `http://127.0.0.1:${hostPort}/` : `http://127.0.0.1:${PORT}/?host=ws://127.0.0.1:${hostPort}`);
+  want.searchParams.set("code", tableCode);
+  const got = new URL(link);
+  if (got.origin + got.pathname !== want.origin + want.pathname || got.searchParams.get("code") !== tableCode || got.searchParams.get("host") !== want.searchParams.get("host"))
+    throw new Error(`Copy link wrote ${link}, wanted ${want.href}`);
+  const c = await tab("Pine", link);
+  const tabs = [a, b, c];
+
+  // #156/#271: before Join, the color the table already holds is dimmed and cannot be picked.
+  const tideDims = async (t) => {
+    const swatch = (n) => t.page.getByRole("radio", { name: n });
+    await until(async () => {
+      const tide = swatch("Tide (taken)");
+      if (!(await tide.count()) || !(await tide.isDisabled())) return null;
+      const [opacity, checked] = await tide.evaluate((el) => [getComputedStyle(el).opacity, el.getAttribute("aria-checked")]);
+      return opacity === "0.35" && checked === "false" ? true : null;
+    }, `Tide swatch dims on ${t.name} before Join`);
+    for (const n of ["Ember", "Dune", "Pine"]) if (await swatch(n).isDisabled()) throw new Error(`${n} swatch is disabled on ${t.name}`);
+  };
+  await b.page.getByPlaceholder(/code/i).fill(tableCode);
+  await tideDims(b);
+  console.log("tab B typed the code: Tide swatch disabled at opacity 0.35, aria-checked=false; Ember, Dune, Pine enabled");
+  // #304: tab C typed nothing. The link filled the field, the peek dimmed Tide, and the code is gone from the URL.
+  await until(async () => ((await c.page.getByPlaceholder(/code/i).inputValue()) === tableCode ? true : null), "join link prefills tab C's Join field");
+  await tideDims(c);
+  const searchC = await c.page.evaluate(() => location.search);
+  if (new URLSearchParams(searchC).has("code")) throw new Error(`tab C's URL still carries the code: ${searchC}`);
+  if ((await c.page.evaluate(() => window.__emberisle.getState().screen)) !== "title") throw new Error("tab C left the Title before Join");
   for (const t of [b, c]) {
-    await t.page.getByPlaceholder(/code/i).fill(tableCode);
-    if (t === b) {
-      // #156/#271: before Join, the color the table already holds is dimmed and cannot be picked.
-      const swatch = (n) => b.page.getByRole("radio", { name: n });
-      await until(async () => {
-        const tide = swatch("Tide (taken)");
-        if (!(await tide.count()) || !(await tide.isDisabled())) return null;
-        const [opacity, checked] = await tide.evaluate((el) => [getComputedStyle(el).opacity, el.getAttribute("aria-checked")]);
-        return opacity === "0.35" && checked === "false" ? true : null;
-      }, "Tide swatch dims before Join");
-      for (const n of ["Ember", "Dune", "Pine"]) if (await swatch(n).isDisabled()) throw new Error(`${n} swatch is disabled`);
-      console.log("tab B typed the code: Tide swatch disabled at opacity 0.35, aria-checked=false; Ember, Dune, Pine enabled");
-    }
     await t.page.getByRole("button", { name: "Join" }).click();
     await t.page.getByTestId("table-code").waitFor();
   }
+  console.log(`join link: Pine joined from ?code=${tableCode} (link ${link}; URL after open: "${searchC || "/"}")`);
   for (const t of tabs) {
     await until(async () => (await t.page.locator("li", { hasText: "Pine" }).count()) === 1, `${t.name} sees 3 seats`);
     await t.page.getByRole("button", { name: "Ready", exact: true }).click();
@@ -222,7 +245,10 @@ try {
   console.log(`setup done on all tabs, seq ${seqOf(vs[0])}`);
 
   // Five rolls. Each roll is followed by any discards, the wayfarer, and a pass.
+  // #322: tab C asks for reduced motion, so its dice faces must not animate at all.
+  await c.page.emulateMedia({ reducedMotion: "reduce" });
   const dice = [];
+  let diceMatch = 0;
   for (let r = 0; r < ROLLS; r++) {
     const cur = JSON.parse(vs[0].shared).current;
     const i = vs.findIndex((v) => v.you === cur);
@@ -245,6 +271,35 @@ try {
     dice.push(d);
     if (!banner.includes(`rolls ${d[0]}+${d[1]} = ${d[0] + d[1]}`)) throw new Error(`banner after roll ${r + 1}: "${banner}" vs dice ${d}`);
     if (r === 0) console.log(`roll banner on all tabs: "${banner}"`);
+    // #322: every tab draws the roll as two pip faces that match the banner and the last roll line in the log.
+    const sum = Number(banner.match(/rolls \d\+\d = (\d+)/)[1]);
+    for (const t of tabs) {
+      const faces = await until(
+        () =>
+          t.page.evaluate((want) => {
+            const els = [...document.querySelectorAll('[data-testid="die"]')];
+            const values = els.map((e) => Number(e.dataset.value));
+            if (els.length !== 2 || values.join("+") !== want) return null;
+            const line = window.__emberisle.getState().state.log.findLast((l) => /rolls \d\+\d/.test(l));
+            return {
+              values,
+              logged: line.match(/rolls (\d)\+(\d)/).slice(1).map(Number),
+              pips: els.map((e) => e.querySelectorAll("[data-pip]").length),
+              label: els[0].closest('[role="img"]')?.getAttribute("aria-label"),
+              motion: getComputedStyle(els[0]).animationName,
+            };
+          }, d.join("+")),
+        `dice faces on ${t.name} after roll ${r + 1}`,
+      );
+      const [x, y] = faces.values;
+      if (x + y !== sum) throw new Error(`${t.name} dice ${x}+${y} vs banner sum ${sum}`);
+      if (faces.logged.join() !== faces.values.join()) throw new Error(`${t.name} dice ${x}+${y} vs log ${faces.logged.join("+")}`);
+      if (faces.pips.join() !== faces.values.join()) throw new Error(`${t.name} dice ${x}+${y} drew ${faces.pips.join("+")} pips`);
+      if (faces.label !== `Rolled ${x} and ${y}, ${sum}`) throw new Error(`${t.name} dice label "${faces.label}"`);
+      const want = t === c ? "none" : "die-settle";
+      if (faces.motion !== want) throw new Error(`${t.name} die animation ${faces.motion}, want ${want}`);
+    }
+    diceMatch++;
 
     for (let guard = 0; guard < 10; guard++) {
       const phase = JSON.parse(vs[0].shared).phase;
@@ -271,6 +326,7 @@ try {
     }
   }
   console.log(`${ROLLS} rolls, same on all 3 tabs: ${dice.map((d) => d.join("+")).join(" ")}`);
+  console.log(`dice faces: ${diceMatch}/${ROLLS} match the log (pips, aria-label, no settle on the reduced-motion tab)`);
 
   // #170: a tab's own hand flashes +N green on a gain and -N red on a loss, and each flash goes away again.
   // Keep playing until a roll has paid someone and a bank trade, a discard, or a steal has taken something.

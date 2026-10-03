@@ -86,6 +86,16 @@ function say(room, text) {
   broadcast(room, { type: "log", text });
 }
 
+// The engine keeps only the last 41 log lines (rules.ts `log`), so once the log is full its length never grows and
+// `after.slice(before.length)` is empty (#319: the winner line never reached a seat). The new lines are what follows
+// the longest tail of the old log that the new one still starts with.
+function newLog(before, after) {
+  for (let k = Math.min(before.length, after.length); k > 0; k--) {
+    if (before.slice(-k).every((line, i) => line === after[i])) return after.slice(k);
+  }
+  return after;
+}
+
 function seatsOf(room) {
   return room.seats.map((s) => ({
     id: s.id,
@@ -179,6 +189,8 @@ function load() {
       console.error("unreadable room file:", name, err.message);
       continue;
     }
+    // Every seat comes back held, and a held seat is not ready (#280).
+    if (!room.game) for (const seat of room.seats) seat.ready = false;
     for (const seat of room.seats) hold(room, seat);
     rooms.set(room.code, room);
   }
@@ -618,7 +630,7 @@ function play(ws, room, msg) {
     say(room, [String(a + b), ...parts].join(" · "));
   }
   runBots(room);
-  for (const line of room.game.log.slice(before.log.length)) say(room, line);
+  for (const line of newLog(before.log, room.game.log)) say(room, line);
   if (room.game.phase === "over" && before.phase !== "over") hear("win");
   // An offer lives only while its asker still has the turn in `main`.
   const open = room.offer;
@@ -723,9 +735,9 @@ function rejoin(ws, msg) {
     room.game = { ...room.game, players: room.game.players.map((x) => (x === p ? { ...x, kind: "human", name: seat.name } : x)) };
   }
   // Other seats may have become bots while nobody was here to watch them play.
-  const seen = room.game.log.length;
+  const seen = room.game.log;
   runBots(room);
-  for (const line of room.game.log.slice(seen)) say(room, line);
+  for (const line of newLog(seen, room.game.log)) say(room, line);
   pushState(room);
 }
 
@@ -765,9 +777,9 @@ function takeOver(room, seat) {
   save(room);
   // With nobody connected, the bots wait too: a rejoin runs them.
   if (!room.seats.some((s) => s.ws)) return;
-  const seen = room.game.log.length;
+  const seen = room.game.log;
   runBots(room);
-  for (const line of room.game.log.slice(seen)) say(room, line);
+  for (const line of newLog(seen, room.game.log)) say(room, line);
   pushState(room);
 }
 
