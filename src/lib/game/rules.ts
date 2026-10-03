@@ -261,6 +261,41 @@ function setupAdvance(state: GameState) {
   state.phase = "setupSettle";
 }
 
+// "A and B", "A, B, and C".
+function names(list: PlayerState[]) {
+  const n = list.map((p) => p.name);
+  return n.length < 3 ? n.join(" and ") : `${n.slice(0, -1).join(", ")}, and ${n.at(-1)}`;
+}
+
+// The pre-setup roll-off (docs/design/first-player.md). Never touches state.rng.
+function rollOffRoll(state: GameState, me: PlayerState) {
+  const ro = state.rollOff!;
+  const die = rollDie();
+  ro.rolls[me.id] = die;
+  ro.pending.shift();
+  log(state, `${me.name} rolls a ${die}.`);
+  if (ro.pending.length) {
+    state.current = ro.pending[0]!;
+    return;
+  }
+  const top = Math.max(...Object.values(ro.rolls));
+  const leaders = state.players.filter((p) => ro.rolls[p.id] === top);
+  if (leaders.length > 1) {
+    for (const p of leaders) delete ro.rolls[p.id];
+    ro.pending = leaders.map((p) => p.id);
+    state.current = leaders[0]!.id;
+    log(state, `${names(leaders)} tie at ${top} and roll again.`);
+    return;
+  }
+  const first = leaders[0]!;
+  const rest = state.players.filter((p) => p !== first).sort((a, b) => ro.rolls[b.id]! - ro.rolls[a.id]!);
+  state.players = [first, ...rest];
+  state.current = first.id;
+  state.phase = "setupSettle";
+  state.setupIndex = 0;
+  log(state, `${first.name} places first, then ${names(rest)}.`);
+}
+
 function produce(state: GameState, total: number) {
   const demand: Partial<Record<Resource, number>> = {};
   const owed: Partial<Record<Resource, Set<string>>> = {};
@@ -403,6 +438,10 @@ export function applyAction(prev: GameState, actor: string, action: Action): { s
       return { state };
     }
     case "roll": {
+      if (state.phase === "rollOff") {
+        rollOffRoll(state, me);
+        return { state };
+      }
       if (state.phase !== "roll") return { state: prev, error: "Cannot roll now." };
       const a = rollDie();
       const b = rollDie();

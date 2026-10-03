@@ -142,6 +142,43 @@ async function step(c, msg) {
   await Promise.all(all.filter((o) => o !== c).map((o) => o.next("state")));
 }
 
+// Roll-off (docs/design/first-player.md): one die per seat, in turn, before setup. Only `current` may roll,
+// the dice go out as log lines, never as `rolled`, and the seats end up in die order.
+{
+  let refused = null;
+  let rolls = 0;
+  while (ember.state.game.phase === "rollOff") {
+    const c = whoActs();
+    const up = all.filter((o) => o.state.legal.actions.length);
+    if (up.length !== 1 || c.state.you !== c.state.game.current || c.state.legal.actions.join() !== "roll") {
+      fail("roll-off legal", all.map((o) => [o.name, o.state.legal.actions]));
+    }
+    if (!refused) {
+      const idle = all.find((o) => o !== c);
+      idle.send({ type: "roll" });
+      refused = (await idle.next("error")).message;
+      if (refused !== "Not your turn.") fail("roll-off out of turn", refused);
+    }
+    await step(c, { type: "roll" });
+    rolls++;
+  }
+  const join = (id) => Number(id.slice(1));
+  for (const c of all) {
+    const g = c.state.game;
+    const die = (p) => g.rollOff.rolls[p.id];
+    const [first, ...rest] = g.players;
+    const ordered =
+      rest.every((p) => die(first) > die(p)) &&
+      rest.every((p, i) => i === 0 || die(rest[i - 1]) > die(p) || (die(rest[i - 1]) === die(p) && join(rest[i - 1].id) < join(p.id))) &&
+      g.current === first.id && g.phase === "setupSettle" && g.setupIndex === 0 && g.rollOff.pending.length === 0 && Object.keys(g.rollOff.rolls).length === 3;
+    if (!ordered) fail(`${c.name} roll-off order`, g.rollOff);
+    if (c.rolls.length) fail(`${c.name} got rolled during the roll-off`, c.rolls);
+    if (!c.inbox.some((m) => m.type === "log" && /^\w+ places first, then \w+ and \w+\.$/.test(m.text))) fail(`${c.name} never heard who places first`);
+  }
+  const g = ember.state.game;
+  console.log(`roll-off: ${rolls} rolls, one seat up at a time, "${refused}" for the wrong seat, no rolled, order ok on every socket: ${g.players.map((p) => `${p.name} ${g.rollOff.rolls[p.id]}`).join(", ")}`);
+}
+
 // Setup: first outpost, then the two neighbors must not glow for the next seat.
 let checkedNeighbors = false;
 while (["setupSettle", "setupRoad"].includes(ember.state.game.phase)) {

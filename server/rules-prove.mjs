@@ -373,9 +373,85 @@ ok("a tie with nobody holding the longest path gives it to nobody (check 3 above
 }
 ok("hidden points stay hidden until the end (server/table-prove.mjs, viewFor)", true);
 
+// Roll-off (docs/design/first-player.md): roll as `current` until setup starts.
+function rollOff(g) {
+  for (let i = 0; i < 1000 && g.phase === "rollOff"; i++) {
+    const r = applyAction(g, g.current, { type: "roll" });
+    if (r.error) fail("roll-off roll", r.error);
+    g = r.state;
+  }
+  if (g.phase !== "setupSettle") fail("roll-off never ended", g.phase);
+  return g;
+}
+// The invariant wherever a roll-off ends: the first seat's die is strictly highest, the rest by die then join order.
+function orderOk(g) {
+  const { rolls, pending } = g.rollOff;
+  const die = (p) => rolls[p.id];
+  const [first, ...rest] = g.players;
+  const join = (p) => Number(p.id.slice(1));
+  return (
+    rest.every((p) => die(first) > die(p)) &&
+    rest.every((p, i) => i === 0 || die(rest[i - 1]) > die(p) || (die(rest[i - 1]) === die(p) && join(rest[i - 1]) < join(p))) &&
+    g.current === first.id && g.phase === "setupSettle" && g.setupIndex === 0 &&
+    pending.length === 0 && Object.keys(rolls).length === g.players.length && g.players.every((p) => die(p) >= 1 && die(p) <= 6)
+  );
+}
+{
+  const three = () => createGame({ humans: [{ name: "A" }, { name: "B" }, { name: "C" }], bots: 0, seed: 9 });
+  const g = three();
+  const startOk = g.phase === "rollOff" && g.current === "p0" && g.rollOff.pending.join() === "p0,p1,p2" && g.dice === null && g.log.at(-1) === "The isle is dealt. Roll for first place.";
+  const outOfTurn = applyAction(g, "p1", { type: "roll" }).error;
+  const placeEarly = applyAction(g, "p0", { type: "setupSettle", vertexId: legalSettle(g, "p0", true)[0] }).error;
+  const faces = Array.from({ length: 60 }, () => applyAction(three(), "p0", { type: "roll", dice: [6] }).state.rollOff?.rolls.p0);
+  const facesOk = faces.every((f) => Number.isInteger(f) && f >= 1 && f <= 6) && faces.some((f) => f !== 6);
+  const done = rollOff(g);
+  if (!(startOk && outOfTurn === "Not your turn." && placeEarly === "Not placing outposts." && facesOk && orderOk(done) && done.dice === null)) {
+    fail("roll-off basics", { startOk, outOfTurn, placeEarly, faces: faces.join(""), done: done.rollOff });
+  }
+  console.log('roll-off: starts with p0, "Not your turn." out of turn, "Not placing outposts." before it, a sent face is ignored, order ok');
+
+  // A forced tie at 6: p2's roll closes the round, the leaders reroll in join order, p2 keeps a lower die.
+  for (let i = 0; i < 50; i++) {
+    const t = three();
+    Object.assign(t, { rollOff: { rolls: { p0: 6, p1: 6 }, pending: ["p2"] }, current: "p2" });
+    const r = applyAction(t, "p2", { type: "roll" });
+    if (r.error) fail("tie roll", r.error);
+    const s = r.state;
+    const p2 = s.log.at(-2).match(/^C rolls a (\d)\.$/)?.[1];
+    const all = p2 === "6";
+    const tieOk =
+      s.phase === "rollOff" && s.current === "p0" && s.rollOff.pending.join() === (all ? "p0,p1,p2" : "p0,p1") &&
+      !("p0" in s.rollOff.rolls) && !("p1" in s.rollOff.rolls) && (all ? !("p2" in s.rollOff.rolls) : s.rollOff.rolls.p2 === Number(p2)) &&
+      s.log.at(-1) === (all ? "A, B, and C tie at 6 and roll again." : "A and B tie at 6 and roll again.");
+    if (!tieOk) fail("forced tie", { p2, rollOff: s.rollOff, log: s.log.slice(-2) });
+    const end = rollOff(s);
+    if (!orderOk(end)) fail("order after tie", end.rollOff);
+  }
+  console.log("roll-off: a forced tie at 6 rerolls only the leaders, in join order; order ok after it");
+
+  // 200 full roll-offs at 3 and 4 seats: order ok every time, ties happen, and state.rng is never touched.
+  let ties = 0;
+  for (const humans of [3, 4]) {
+    for (let i = 0; i < 200; i++) {
+      const s = createGame({ humans: Array.from({ length: humans }, (_, k) => ({ name: `P${k}` })), bots: 0, seed: 100 + i });
+      const end = rollOff(s);
+      if (!orderOk(end)) fail("order", { humans, rolls: end.rollOff.rolls, players: end.players.map((p) => p.id) });
+      if (end.rng !== s.rng) fail("roll-off consumed rng", { before: s.rng, after: end.rng });
+      if (end.log.some((l) => / tie at \d and roll again\.$/.test(l))) ties++;
+      const names = end.players.slice(1).map((p) => p.name);
+      const tail = names.length === 2 ? names.join(" and ") : `${names.slice(0, -1).join(", ")}, and ${names.at(-1)}`;
+      if (end.log.at(-1) !== `${end.players[0].name} places first, then ${tail}.`) fail("places first line", end.log.at(-1));
+    }
+  }
+  if (ties === 0) fail("no tie in 400 roll-offs");
+  ok("before setup, each player rolls one die; the highest roll places first; tied players reroll among themselves", true);
+  console.log(`roll-off: 400 full roll-offs (3 and 4 seats), ${ties} with a tie, order ok, rng untouched`);
+}
+
 // Setup
 {
-  let g = createGame({ humans: [{ name: "A" }, { name: "B" }, { name: "C" }], bots: 0, seed: 9 });
+  let g = rollOff(createGame({ humans: [{ name: "A" }, { name: "B" }, { name: "C" }], bots: 0, seed: 9 }));
+  const ids = g.players.map((p) => p.id);
   const order = [];
   let firstRoundEmpty = true;
   let secondPaid = true;
@@ -403,18 +479,19 @@ ok("hidden points stay hidden until the end (server/table-prove.mjs, viewFor)", 
     if (r.error) fail("setup road", r.error);
     g = r.state;
   }
-  ok("seat order, then the reverse", order.join() === "p0,p1,p2,p2,p1,p0" && g.phase === "roll" && g.current === "p0", order);
+  ok("seat order, then the reverse", order.join() === ids.concat([...ids].reverse()).join() && g.phase === "roll" && g.current === ids[0], { ids, order });
   ok("each setup turn is one outpost and one path from it", pathFromIt);
   ok("only the second outpost pays: one card per hex it touches", firstRoundEmpty && secondPaid);
   ok("an outpost must not touch another building, including your own", spacing);
 
-  const lone = g.vertices.find((v) => !v.building && legalSettle(g, "p0", true).includes(v.id) && !legalSettle(g, "p0", false).includes(v.id));
+  const first = ids[0];
+  const lone = g.vertices.find((v) => !v.building && legalSettle(g, first, true).includes(v.id) && !legalSettle(g, first, false).includes(v.id));
   g.phase = "main";
   giveCards(g.players[0], { timber: 1, clay: 1, wool: 1, grain: 1 });
-  const r = applyAction(g, "p0", { type: "buildOutpost", vertexId: lone.id });
+  const r = applyAction(g, first, { type: "buildOutpost", vertexId: lone.id });
   ok("after setup, a new outpost must touch one of your paths", r.error === "Illegal outpost.", r.error);
-  const island = g.edges.find((e) => !e.path && !legalRoads(g, "p0", false).includes(e.id));
-  const p = applyAction(g, "p0", { type: "buildPath", edgeId: island.id });
+  const island = g.edges.find((e) => !e.path && !legalRoads(g, first, false).includes(e.id));
+  const p = applyAction(g, first, { type: "buildPath", edgeId: island.id });
   ok("a path must touch your own path or building", p.error === "Path must connect to you.", p.error);
 }
 ok("a path cannot continue past an opponent's building (check 8 above)", true);
@@ -568,6 +645,70 @@ ok("the bank starts with 19 of each resource", RESOURCES.every((r) => fresh().ba
   giveCards(g.players[0], { ore: 8 });
   const r = applyAction(g, "p0", { type: "bankTrade", give: "ore", want: "ore" });
   ok("the bank is 4 of one resource for 1 of another", r.error === "Trade for a different resource." && r.state.players[0].resources.ore === 8 && r.state.bank.ore === 19, r.error ?? r.state.players[0].resources);
+}
+
+// What the plenty, monopoly and path fortunes do once played (#359).
+const effect = (what, cond, extra) => (cond ? console.log(`fortune effect: ${what}`) : fail(`fortune effect: ${what}`, extra));
+const total = (g, r) => g.bank[r] + g.players.reduce((n, p) => n + p.resources[r], 0);
+{
+  const g = fresh();
+  giveCards(g.players[0], {});
+  g.players[0].hidden.plenty = 1;
+  g.players[0].hidden.monopoly = 1;
+  const r = applyAction(g, "p0", { type: "playPlenty", resources: ["grain", "ore"] });
+  if (r.error) fail("plenty", r.error);
+  const s = r.state;
+  const me = s.players[0];
+  effect(
+    "plenty puts two cards in hand, takes them from the bank, spends the card",
+    me.resources.grain === 1 && me.resources.ore === 1 && hand(me) === 2 && s.bank.grain === 18 && s.bank.ore === 18 && s.bank.timber === 19 && me.hidden.plenty === 0,
+    { resources: me.resources, bank: s.bank },
+  );
+  const again = applyAction(s, "p0", { type: "playMonopoly", resource: "ore" });
+  effect("plenty sets playedCard so a second fortune that turn is refused", s.playedCard === true && again.error === "Cannot play that.", again.error);
+}
+{
+  const g = fresh();
+  giveCards(g.players[0], { ore: 1, wool: 2 });
+  giveCards(g.players[1], { ore: 3, grain: 2 });
+  giveCards(g.players[2], { ore: 4, timber: 1 });
+  for (const r of RESOURCES) g.bank[r] = 19 - g.players.reduce((n, p) => n + p.resources[r], 0);
+  g.players[0].hidden.monopoly = 1;
+  const r = applyAction(g, "p0", { type: "playMonopoly", resource: "ore" });
+  if (r.error) fail("monopoly", r.error);
+  const s = r.state;
+  const [a, b, c] = s.players;
+  effect(
+    "monopoly takes every other hand's copies, adds the sum, leaves other resources alone",
+    b.resources.ore === 0 && c.resources.ore === 0 && a.resources.ore === 8 && a.resources.wool === 2 && b.resources.grain === 2 && c.resources.timber === 1 && a.hidden.monopoly === 0,
+    s.players.map((p) => p.resources),
+  );
+  effect("monopoly logs the total", s.log[s.log.length - 1] === "A monopolizes ore (7).", s.log.slice(-2));
+  effect("monopoly keeps 19 of each resource across hands and bank", RESOURCES.every((x) => total(s, x) === 19), s.bank);
+}
+{
+  const g = fresh();
+  const a = line(g, 5);
+  own(g, a.edges.slice(0, 3), "p0");
+  const [e4, e5] = a.edges.slice(3).map((e) => e.id);
+  g.players[0].hidden.road = 1;
+  g.players[0].pathsLeft = 10;
+  if (legalRoads(g, "p0", false).includes(e5)) fail("setup: fifth edge should need the fourth first");
+  const dup = applyAction(g, "p0", { type: "playRoad", edgeIds: [e4, e4] });
+  effect("a duplicate path pair is refused and the card stays in hand", dup.error === "Illegal path." && dup.state.players[0].hidden.road === 1 && !dup.state.playedCard && dup.state.players[0].pathsLeft === 10, dup.error);
+  const r = applyAction(g, "p0", { type: "playRoad", edgeIds: [e4, e5] });
+  if (r.error) fail("two connected paths from one card", r.error);
+  const s = r.state;
+  effect(
+    "a path fortune places two connected paths, the second legal only after the first, and drops pathsLeft by 2",
+    s.edges.find((e) => e.id === e4).path === "p0" && s.edges.find((e) => e.id === e5).path === "p0" && s.players[0].pathsLeft === 8 && s.players[0].hidden.road === 0 && s.playedCard,
+    { pathsLeft: s.players[0].pathsLeft },
+  );
+  effect(
+    "the two free paths complete a 5-line and take the longest path, with a log line",
+    roadLength(s, "p0") === 5 && s.longestRoad === "p0" && s.log.includes("A holds the longest path."),
+    { len: roadLength(s, "p0"), award: s.longestRoad },
+  );
 }
 
 console.log("rules prove ok");

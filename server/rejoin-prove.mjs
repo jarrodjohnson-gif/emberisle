@@ -79,9 +79,9 @@ await wait(100);
 a.send({ type: "start" });
 await Promise.all([a.next("state"), b.next("state"), c.next("state")]);
 const pid = a.state.you;
-if (a.state.game.current !== pid) fail("expected Ember to place first", a.state.game.current);
+if (a.state.game.current !== pid) fail("expected Ember to roll first", a.state.game.current);
 const seq = b.state.game.seq;
-console.log(`table ${code}: 3 seats, Ember (${pid}) places first, seq ${seq}`);
+console.log(`table ${code}: 3 seats, Ember (${pid}) rolls first, seq ${seq}`);
 
 // 1. Ember drops on her turn. Within the grace the table waits and nobody plays her seat.
 await a.close();
