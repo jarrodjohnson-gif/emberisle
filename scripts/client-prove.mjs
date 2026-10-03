@@ -455,6 +455,44 @@ try {
   console.log("reduced motion:", JSON.stringify(motion));
   if (motion.flash !== "0.001s" || motion.fade !== "0.001s") throw new Error(`reduced motion: ${JSON.stringify(motion)}`);
   await toTitle();
+  // #259: a saved seat whose table is gone fails quietly on page load: title card, no error, key cleared.
+  const { spawn } = await import("node:child_process");
+  const { mkdtempSync, rmSync } = await import("node:fs");
+  const { tmpdir } = await import("node:os");
+  const roomsDir = mkdtempSync(`${tmpdir()}/emberisle-rooms-`);
+  const rejoinHost = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
+    cwd: new URL("../server/", import.meta.url),
+    env: { ...process.env, PORT: "0", ROOMS_DIR: roomsDir },
+  });
+  process.on("exit", () => rejoinHost.kill());
+  for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
+  try {
+    const hostPort = await new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error("rejoin host never listened")), 10000);
+      rejoinHost.on("exit", (c) => reject(new Error(`rejoin host exited early (${c})`)));
+      rejoinHost.stdout.on("data", (d) => {
+        const m = String(d).match(/listening (\d+)/);
+        if (m) {
+          clearTimeout(timer);
+          resolve(Number(m[1]));
+        }
+      });
+    });
+    await page.goto(`http://127.0.0.1:${PORT}/?host=ws://127.0.0.1:${hostPort}`);
+    await page.evaluate(() => localStorage.setItem("emberisle-seat", JSON.stringify({ code: "ZZZZ", secret: "x" })));
+    await page.reload();
+    await page.waitForFunction(() => localStorage.getItem("emberisle-seat") === null, null, { timeout: 5000 });
+    const stale = await page.evaluate(() => {
+      const t = window.__emberisle.getState();
+      return { screen: t.screen, error: t.error, toast: t.toast, net: t.net === null };
+    });
+    console.log("stale rejoin on load:", JSON.stringify(stale));
+    if (stale.screen !== "title" || stale.error !== null || stale.toast !== null || !stale.net) throw new Error(`stale rejoin not quiet: ${JSON.stringify(stale)}`);
+  } finally {
+    rejoinHost.kill();
+    rmSync(roomsDir, { recursive: true, force: true });
+  }
+
   if (errors.length) throw new Error(`console errors:\n${errors.join("\n")}`);
   console.log("client prove ok");
 } catch (e) {
