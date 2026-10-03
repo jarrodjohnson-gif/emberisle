@@ -1,6 +1,7 @@
 // The table chat dock, the shared chat box, and floating reactions. Design: docs/design/chat.md.
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { MessageSquare, Minus, Smile } from "lucide-react";
+import { CopyFallback, useCopy } from "@/components/game/CopyText";
 import { EMOTES } from "@/components/game/emotes";
 import { useGame, type GameLogLine } from "@/lib/game/store";
 import type { ChatLine } from "@/lib/net/table";
@@ -65,7 +66,7 @@ export function ChatBox({ rows, game, onEscape, className }: { rows: number; gam
   const sendReact = useGame((s) => s.sendReact);
   const me = useMyName();
   const [tray, setTray] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const { state: copied, copy } = useCopy<"log">();
   const log = useRef<HTMLUListElement>(null);
   const stuck = useRef(true);
   const withLog = game && filter === "all";
@@ -82,16 +83,7 @@ export function ChatBox({ rows, game, onEscape, className }: { rows: number; gam
     setDraft("");
   };
 
-  const copyLog = () => {
-    // Never throws: clipboard is missing on insecure origins (a LAN IP over http) and can be denied.
-    navigator.clipboard?.writeText(gameLog.map((l) => l.text).join("\n")).then(
-      () => {
-        setCopied(true);
-        window.setTimeout(() => setCopied(false), 1500);
-      },
-      () => {},
-    );
-  };
+  const copyLog = () => copy("log", gameLog.map((l) => l.text).join("\n"));
 
   // Chat and game lines in the order this browser saw them (both `at` stamps are its own clock, store.ts). The sort is
   // stable, so each kind keeps its own order when stamps tie.
@@ -118,11 +110,12 @@ export function ChatBox({ rows, game, onEscape, className }: { rows: number; gam
               </button>
             ))}
           </div>
-          <button type="button" aria-live="polite" onClick={copyLog} className={cn(CHIP, "ml-auto bg-white/60 text-zinc-900 hover:bg-white/90")}>
-            {copied ? "Copied" : "Copy log"}
+          <button type="button" onClick={copyLog} className={cn(CHIP, "ml-auto bg-white/60 text-zinc-900 hover:bg-white/90")}>
+            {copied?.ok ? "Copied" : "Copy log"}
           </button>
         </div>
       ) : null}
+      {game ? <CopyFallback state={copied} label="Game log" className="shrink-0" /> : null}
       <ul
         ref={log}
         data-testid="chat-log"
