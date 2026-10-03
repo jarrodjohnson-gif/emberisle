@@ -185,6 +185,8 @@ interface GameStore {
   isHost: boolean;
   seats: Seat[];
   legal: Legal | null;
+  // The host's turn timer (#344) on this tab's clock: when it fires and whose seat it is, or null when none is armed.
+  turnTimer: { at: number; player: string } | null;
   lobbyLog: string;
   hostTable: () => void;
   joinTable: (code: string) => void;
@@ -292,6 +294,7 @@ export const useGame = create<GameStore>((set, get) => ({
   isHost: false,
   seats: [],
   legal: null,
+  turnTimer: null,
   lobbyLog: "",
   pendingSteal: null,
   seatId: "",
@@ -384,6 +387,7 @@ export const useGame = create<GameStore>((set, get) => ({
       peeking: false,
       seats: [],
       legal: null,
+      turnTimer: null,
       code: "",
       pendingSteal: null,
       chat: [],
@@ -653,12 +657,15 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       const roller = st?.players.find((p) => p.id === st.current)?.name ?? "Someone";
       showBanner(set, rollLine(roller, dice, gains, short));
     },
-    state: ({ you, game, legal }) => {
+    state: ({ you, game, legal, turnDeadline, turnPlayer, serverNow }) => {
       const rollOff = rollOffLine(get().state, game);
       const swing = awardLine(get().state, game);
       hear(get().state, game, you, "online");
+      // The deadline moves onto this clock by the skew the message shows, so a phone minutes off still counts true.
+      const skew = typeof serverNow === "number" ? serverNow - Date.now() : 0;
+      const turnTimer = turnDeadline && turnPlayer ? { at: turnDeadline - skew, player: turnPlayer } : null;
       // The first state after a join or a page-load rejoin seeds the log with what the engine kept, the way practice does.
-      set({ legal, gameLog: get().state ? get().gameLog : appendLog(get().gameLog, game.log) });
+      set({ legal, turnTimer, gameLog: get().state ? get().gameLog : appendLog(get().gameLog, game.log) });
       get().loadState(game, you, get().isHost, get().code);
       if (rollOff) showBanner(set, rollOff);
       else if (swing) showBanner(set, swing);

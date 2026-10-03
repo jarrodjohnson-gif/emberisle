@@ -20,6 +20,7 @@ import { TradeButton, TradePanel } from "@/components/game/TradePanel";
 import { TradeToast } from "@/components/game/TradeToast";
 import { PlayerMenu } from "@/components/game/PlayerMenu";
 import { DiscardBar } from "@/components/game/DiscardBar";
+import { TurnCountdown } from "@/components/game/TurnCountdown";
 import { Dice } from "@/components/game/Dice";
 import { COST, RESOURCES, RESOURCE_LABEL, type DevKind, type GameState, type PlayerState, type Resource } from "@/lib/game/types";
 import { hiddenCount, legalRoads, playable, publicVP, totalVP } from "@/lib/game/rules";
@@ -296,6 +297,7 @@ export function Hud() {
               {turnText}
             </p>
           )}
+          <TurnCountdown />
           {banner ? (
             <p
               role="status"

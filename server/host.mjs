@@ -348,7 +348,9 @@ function turnOut(room, seat) {
 
 function pushState(room) {
   armTurns(room);
-  const turnDeadline = room.seats.reduce((d, s) => (s.turnDeadline && (!d || s.turnDeadline < d) ? s.turnDeadline : d), null);
+  // The soonest armed window, and whose it is, so every HUD can count it down (#345). `serverNow` lets a client
+  // whose clock is off still land on the host's moment.
+  const soonest = room.seats.reduce((d, s) => (s.turnDeadline && (!d || s.turnDeadline < d.turnDeadline) ? s : d), null);
   save(room);
   for (const seat of room.seats) {
     if (!seat.ws) continue;
@@ -357,7 +359,9 @@ function pushState(room) {
       you: seat.pid,
       game: viewFor(room.game, seat.pid),
       legal: legalFor(room.game, seat.pid),
-      turnDeadline,
+      turnDeadline: soonest?.turnDeadline ?? null,
+      turnPlayer: soonest?.pid ?? null,
+      serverNow: Date.now(),
     });
   }
 }
