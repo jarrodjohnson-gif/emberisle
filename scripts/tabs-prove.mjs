@@ -277,6 +277,7 @@ try {
   // Every count that moves on a tab between two synced states must have flashed with its sign. The label is
   // read from the page's own record (see tab()), from the act on, so it is caught however long a frame takes.
   const flashesSince = (t, mark) => t.page.evaluate((m) => window.__flashes.slice(m), mark);
+  const FLASH_MS = 1200; // keep equal to FLASH_MS in Hud.tsx: a label removed sooner than this fails
   let longest = 0;
   const step = async (what, go) => {
     const before = vs;
@@ -301,6 +302,7 @@ try {
       for (const tag of tags) {
         const on = gone.find((f) => f.sign === "+" && f.tag === tag).at;
         const off = gone.find((f) => f.sign === "-" && f.tag === tag).at;
+        if (off - on < FLASH_MS - 50) throw new Error(`${what}: ${t.name}'s ${tag} label lived ${Math.round(off - on)} ms, under FLASH_MS (${FLASH_MS}) - 50`);
         longest = Math.max(longest, off - on);
       }
       seen.push(...tags.map((tag) => `${t.name} ${tag}`));
