@@ -1,7 +1,8 @@
 // #347: a spectator socket (hello {code, watch:true}) on a started table. It has no seat and gets the opponent view:
 // every state the seats get, with no hand, hidden card, deck, seed or rng, and at the win the same reveal as the seats
-// minus the seed and rng. The seats see a watcher count, every message a watcher sends is refused with one error, and
-// the turn timer only ever moves a seat. Three src/lib/net/table.ts clients play the game to the win on the practice bot.
+// minus the seed and rng. The seats see a watcher count and a coalesced log line, every message a watcher sends is refused
+// with one error, the turn timer only ever moves a seat, and the last seat letting go closes the watchers. Three
+// src/lib/net/table.ts clients play the game to the win on the practice bot.
 import { spawn } from "node:child_process";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -16,6 +17,8 @@ const STEP_MS = 5000;
 // Wide enough that the bot-driven seats never idle this long on a loaded CI box; the only idle wait is deliberate.
 const TURN = 1200;
 const WATCH_MAX = 2;
+// Once the game is over every seat closes; after HOLD the room is dropped under the last watcher.
+const HOLD = 400;
 const DEV_KINDS = ["knight", "road", "plenty", "monopoly", "vp"];
 
 let host;
@@ -31,7 +34,7 @@ const ROOMS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-rooms-"));
 process.on("exit", () => rmSync(ROOMS_DIR, { recursive: true, force: true }));
 host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL(".", import.meta.url),
-  env: { ...process.env, PORT: "0", ACT_RATE: "1000", ACT_CAP: "1000", TURN_MS: String(TURN), SPECTATOR_MAX: String(WATCH_MAX), ROOMS_DIR },
+  env: { ...process.env, PORT: "0", ACT_RATE: "1000", ACT_CAP: "1000", TURN_MS: String(TURN), HOLD_MS: String(HOLD), SPECTATOR_MAX: String(WATCH_MAX), ROOMS_DIR },
 });
 process.on("exit", () => host.kill());
 for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
@@ -185,7 +188,10 @@ for (const [i, p] of all.entries()) if (!p.logs.slice(logsAtJoin[i]).includes("S
 for (const p of all) if (p.seatsSeen[p.seatsSeen.length - 1].watching !== 1) fail(`${p.name} counts the watcher`, p.seatsSeen[p.seatsSeen.length - 1]);
 const w2 = await watcher("w2");
 w2.send({ type: "hello", code, watch: true });
-await until(() => w2.states.length >= 1 && all.every((p) => p.seatsSeen[p.seatsSeen.length - 1].watching === 2), "a second watcher counted");
+const counted = (x) => x.seatsSeen[x.seatsSeen.length - 1]?.watching === 2;
+await until(() => w2.states.length >= 1 && all.every(counted) && counted(w1), "a second watcher counted");
+// The second join, within WATCH_LOG_MS of the first, is counted but not logged again.
+if (a.logs.slice(logsAtJoin[0]).filter((t) => t === "Someone is watching.").length !== 1) fail("one log line for two watchers inside the window", a.logs.slice(logsAtJoin[0]));
 if (w1.seatsSeen[w1.seatsSeen.length - 1].watching !== 2) fail("the first watcher sees the second", w1.seatsSeen[w1.seatsSeen.length - 1]);
 if (a.seatsSeen.slice(seatsAtJoin).some((m) => m.seats.length !== 3)) fail("a watcher is never a seat", a.seatsSeen.slice(seatsAtJoin).map((m) => m.seats.length));
 const w3 = await watcher("w3");
@@ -193,7 +199,7 @@ w3.send({ type: "hello", code, watch: true });
 await until(() => w3.errors.length >= 1, "the cap");
 if (w3.errors[0] !== "Table is full to watch." || w3.inbox.length !== 1) fail(`watcher ${WATCH_MAX + 1} past SPECTATOR_MAX=${WATCH_MAX}`, w3.inbox);
 await w3.close();
-console.log(`after the start: welcome {spectator:true}, seats {watching:1}, redacted state at seq ${first.game.seq}; two watchers counted at every seat, a third gets "${w3.errors[0]}"`);
+console.log(`after the start: welcome {spectator:true}, seats {watching:1}, redacted state at seq ${first.game.seq}; two watchers counted at every seat, one log line, a third gets "${w3.errors[0]}"`);
 
 // --- 3. The turn timer: every seat idles on the roll-off with two watchers connected. It moves a seat, not a watcher.
 const opener = all.find((p) => p.you === a.state.current);
@@ -253,28 +259,26 @@ for (const w of [w1, w2]) for (const p of all) if (w.raws.some((t) => t.includes
 console.log(`at the win: ${finalW.game.winner} wins; the watcher holds every hand and hidden card and the deck (${finalW.game.deck.length}), no seed or rng`);
 
 // --- 6. Everything a watcher sends is refused with one error and changes nothing. The pre-seat bucket answers a burst
-// of 5 and is then silent, so each watcher gets five, and the rest from w1 must draw no reply at all. A seat's chat
-// still reaches the watchers, and is the fence: it is sent after the silent four and arrives on the same ordered socket.
+// of 5 and is then silent (1 token a second), so w1 sends nine in one tick and must get exactly five replies, and w2
+// five for five. A seat's chat still reaches the watchers, and is the fence: it is sent after the nine and arrives on
+// the same ordered socket, so a late reply would have come before it.
 const seqAtWin = a.state.seq;
 const aErrs = a.errors.length;
-const bursts = [
-  [w1, [{ type: "hello", code, secret: a.secret }, { type: "roll" }, { type: "chat", text: "hello from the stands" }, { type: "tradeAnswer", tradeId: "t1", yes: true }, "not json"]],
-  [w2, [{ type: "place", kind: "outpost", id: "v:0,0,0" }, { type: "pass" }, { type: "buy" }, { type: "tradeAsk", give: { wool: 1 }, want: { ore: 1 } }, { type: "react", emote: "wave" }]],
-];
-for (const [w, sent] of bursts) {
-  const errs0 = w.errors.length;
-  for (const m of sent) w.send(m);
-  await until(() => w.errors.length >= errs0 + sent.length, () => `${sent.length} refusals at ${w.name}: got ${JSON.stringify(w.errors.slice(errs0))}, tail ${JSON.stringify(w.inbox.slice(-3).map((m) => m.type))}`);
-  const refused = w.errors.slice(errs0);
-  if (refused.length !== sent.length || refused.some((e) => e !== "Watching only.")) fail(`every message from ${w.name} is refused with Watching only.`, refused);
-}
-const errsBefore = w1.errors.length;
-for (const m of [{ type: "ready", value: true }, { type: "start" }, { type: "peek", code }, { type: "hello", code, watch: true }]) w1.send(m);
+const errs1 = w1.errors.length;
+const burst = [{ type: "hello", code, secret: a.secret }, { type: "roll" }, { type: "chat", text: "hello from the stands" }, { type: "tradeAnswer", tradeId: "t1", yes: true }, "not json"];
+for (const m of [...burst, { type: "ready", value: true }, { type: "start" }, { type: "peek", code }, { type: "hello", code, watch: true }]) w1.send(m);
+const errs2 = w2.errors.length;
+const burst2 = [{ type: "place", kind: "outpost", id: "v:0,0,0" }, { type: "pass" }, { type: "buy" }, { type: "tradeAsk", give: { wool: 1 }, want: { ore: 1 } }, { type: "react", emote: "wave" }];
+for (const m of burst2) w2.send(m);
+await until(() => w1.errors.length >= errs1 + burst.length && w2.errors.length >= errs2 + burst2.length, () => `refusals: w1 ${JSON.stringify(w1.errors.slice(errs1))}, w2 ${JSON.stringify(w2.errors.slice(errs2))}`);
 const chats0 = w1.chats.length;
 a.t.say("gg");
 await until(() => w1.chats.length > chats0 && w2.chats.length > 0, "a seat's chat reaching the watchers");
 if (w1.chats[w1.chats.length - 1].text !== "gg") fail("the watcher hears the table", w1.chats[w1.chats.length - 1]);
-if (w1.errors.length !== errsBefore) fail("past the burst a watcher's messages draw no reply", w1.errors.slice(errsBefore));
+for (const [w, n, from] of [[w1, burst.length, errs1], [w2, burst2.length, errs2]]) {
+  const refused = w.errors.slice(from);
+  if (refused.length !== n || refused.some((e) => e !== "Watching only.")) fail(`${w.name}: ${n} refusals with Watching only., then silence`, refused);
+}
 if (w1.inbox.some((m) => m.type === "seats" && m.seats.length !== 3)) fail("a peek from a watcher was answered", w1.inbox.filter((m) => m.type === "seats"));
 if (all.some((p) => p.chats.some((l) => l.text === "hello from the stands"))) fail("a watcher's chat reached a seat");
 if (w1.inbox.some((m) => m.type === "chat" && m.text === "hello from the stands")) fail("a watcher's chat was echoed");
@@ -282,17 +286,22 @@ if (all.some((p) => p.state.seq !== seqAtWin) || w1.state().game.seq !== seqAtWi
 if (a.errors.length !== aErrs || a.seats.some((s) => s.away) || a.logs.some((t) => t === "Ember is back." || t === "Ember lost connection.")) fail("a watcher's hello {code, secret} touched the seat", { errors: a.errors.slice(aErrs), seats: a.seats });
 console.log(`refusals: a seat's secret, roll, chat, tradeAnswer, junk, place, pass, buy, tradeAsk, react -> 10 x "Watching only."; ready, start, peek and a second watch past the burst -> silence; nothing moved; "gg" from a seat reached both watchers`);
 
-// --- 7. A watcher leaving is told to the seats and counted down; the seats are untouched.
+// --- 7. A watcher leaving is counted down at once and logged at most once per window; the seats are untouched.
 const logsAtLeave = a.logs.length;
 await w1.close();
 await until(() => all.every((p) => p.seatsSeen[p.seatsSeen.length - 1].watching === 1), "the count going down");
-if (!a.logs.slice(logsAtLeave).includes("A watcher left.")) fail("the seats are told a watcher left", a.logs.slice(logsAtLeave));
+const leftLines = a.logs.slice(logsAtLeave).filter((t) => t === "A watcher left.").length;
+if (leftLines > 1) fail("the leave line is coalesced", a.logs.slice(logsAtLeave));
+if (a.logs.slice(logsAtLeave).some((t) => t !== "A watcher left.")) fail("a watcher leaving said more than its line", a.logs.slice(logsAtLeave));
 if (a.seats.length !== 3 || a.seats.some((s) => s.away)) fail("a watcher leaving touched a seat", a.seats);
-await w2.close();
-await until(() => all.every((p) => p.seatsSeen[p.seatsSeen.length - 1].watching === 0), "the count reaching zero");
-console.log(`leaving: "A watcher left." at every seat, watching 2 -> 1 -> 0, three seats still seated`);
+console.log(`leaving: watching 2 -> 1 at every seat, ${leftLines} "A watcher left." line(s) (coalesced), three seats still seated`);
 
+// --- 8. Every seat closes after the win; after HOLD_MS the last is let go and the room drops under the remaining watcher.
 for (const p of all) p.t.close();
+await until(() => w2.closed, "the room closing under the watcher", HOLD * 3 + 3000);
+if (w2.errors[w2.errors.length - 1] !== "The table closed.") fail("a dropped room tells its watcher", w2.errors.slice(-3));
+console.log(`dropped room: every seat gone, after HOLD_MS=${HOLD} the watcher got "The table closed." and its socket closed`);
+
 host.removeAllListeners("exit");
 host.kill();
 console.log("watch prove ok");

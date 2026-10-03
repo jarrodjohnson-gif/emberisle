@@ -26,9 +26,17 @@ const rooms = new Map();
 const avatars = new Map(); // avatarId -> { body, at }
 const AVATAR_BYTES = 256 * 1024;
 const AVATAR_MAX = 64;
-const ROOM_MAX = Number(process.env.ROOM_MAX ?? 64);
+// An env limit, or its default when the variable is unset or not a number.
+function envNum(name, fallback) {
+  const n = Number(process.env[name]);
+  return Number.isFinite(n) ? n : fallback;
+}
+const ROOM_MAX = envNum("ROOM_MAX", 64);
 // Watchers per room (docs/design/spectator.md). A watcher has no seat and is never saved; 0 turns watching off.
-const SPECTATOR_MAX = Number(process.env.SPECTATOR_MAX ?? 8);
+const SPECTATOR_MAX = envNum("SPECTATOR_MAX", 8);
+// A watcher coming or going is logged to the table at most this often per room, so a watch-and-close loop cannot
+// flood the log; the `watching` count on `seats` is always exact.
+const WATCH_LOG_MS = 5000;
 // A seat's non-chat messages (ready, start, intents, trades): a burst of 20, refilled 4 a second. A person or a bot
 // client stays far under this; a flood does not. Chat keeps its own 5-per-5s bucket. The proofs raise it through env.
 const ACT_CAP = Number(process.env.ACT_CAP ?? 20);
@@ -115,9 +123,23 @@ function seatsOf(room) {
   }));
 }
 
+function seatsMsg(room) {
+  return { type: "seats", code: room.code, seats: seatsOf(room), watching: room.watchers.size };
+}
+
 function publish(room) {
-  broadcast(room, { type: "seats", code: room.code, seats: seatsOf(room), watching: room.watchers.size });
+  broadcast(room, seatsMsg(room));
   save(room);
+}
+
+// A watcher came or went: the count goes out, nothing is saved (a watcher is never on disk), and the log line is coalesced.
+function watchersChanged(room, text) {
+  const now = Date.now();
+  if (!(now - (room.watchSaid ?? 0) < WATCH_LOG_MS)) {
+    room.watchSaid = now;
+    say(room, text);
+  }
+  broadcast(room, seatsMsg(room));
 }
 
 // Sockets, timers and the open trade offer stay in memory; everything else goes to disk.
@@ -584,8 +606,7 @@ function watch(ws, msg) {
   room.watchers.add(ws);
   ws.watch = room;
   send(ws, { type: "welcome", code: room.code, spectator: true, chat: room.chat });
-  say(room, "Someone is watching.");
-  publish(room);
+  watchersChanged(room, "Someone is watching.");
   const turnDeadline = deadlineOf(room);
   send(ws, { type: "state", you: null, game: watchView(room.game), legal: legalFor(room.game, null), turnDeadline });
 }
@@ -934,8 +955,7 @@ function leave(ws) {
     const room = ws.watch;
     ws.watch = null;
     if (!room.watchers.delete(ws) || !rooms.has(room.code)) return;
-    say(room, "A watcher left.");
-    publish(room);
+    watchersChanged(room, "A watcher left.");
     return;
   }
   const room = ws.room;
