@@ -189,6 +189,8 @@ function load() {
       console.error("unreadable room file:", name, err.message);
       continue;
     }
+    // Every seat comes back held, and a held seat is not ready (#280).
+    if (!room.game) for (const seat of room.seats) seat.ready = false;
     for (const seat of room.seats) hold(room, seat);
     rooms.set(room.code, room);
   }
