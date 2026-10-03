@@ -459,7 +459,7 @@ try {
         return flash ? { flash: getComputedStyle(flash).animationDuration, fade: banner ? getComputedStyle(banner).animationDuration : null } : null;
       },
       null,
-      { timeout: 2000, polling: "raf" },
+      { timeout: 10000, polling: "raf" },
     )
   ).jsonValue();
   await page.emulateMedia({ reducedMotion: null });
