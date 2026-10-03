@@ -98,6 +98,16 @@ for (const h of g0.hexes.filter((x) => x.terrain !== "waste" && x.id !== g0.robb
 }
 if (!shared) fail("no hex with three spread corners");
 
+// The pre-setup roll-off (docs/design/first-player.md): whoever is `current` rolls until setup starts.
+let rollOffRolls = 0;
+while (a.state.phase === "rollOff") {
+  const p = [a, b, c].find((x) => x.state.current === x.you);
+  const seq = p.state.seq;
+  p.t.act({ type: "roll" });
+  await until(() => [a, b, c].every((x) => x.state.seq > seq), `roll-off roll ${rollOffRolls++}`);
+}
+console.log(`3 table.ts clients rolled off via the host in ${rollOffRolls} rolls: ${a.state.players.map((p) => p.name).join(", ")}`);
+
 let settled = 0;
 for (let step = 0; step < 12; step++) {
   const p = [a, b, c].find((x) => x.state.current === x.you);

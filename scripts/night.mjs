@@ -1,6 +1,7 @@
 // #87: build the client, start the rules host, and print the join line. #321: restart the host when it dies.
 // The tunnel is Jarrod's step. This process does not start cloudflared.
 import { spawn } from "node:child_process";
+import net from "node:net";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -13,8 +14,8 @@ const PRIVATE_RANGES = [/^192\.168\./, /^10\./, /^172\.(1[6-9]|2\d|3[01])\./];
 export function lanAddress() {
   const candidates = [];
   for (const list of Object.values(os.networkInterfaces())) {
-    for (const net of list ?? []) {
-      if (net.family === "IPv4" && !net.internal) candidates.push(net.address);
+    for (const iface of list ?? []) {
+      if (iface.family === "IPv4" && !iface.internal) candidates.push(iface.address);
     }
   }
   for (const pattern of PRIVATE_RANGES) {
@@ -66,12 +67,27 @@ export function supervise(spawnHost, { maxRestarts = 5, windowMs = 60_000, log =
   return { done, stop };
 }
 
+// #365: false only when something already holds the port (EADDRINUSE). Binds the way the host does
+// (no address given), so the answer matches what server.listen would get. Any other error is left
+// for the host to report.
+export function portFree(port) {
+  return new Promise((resolve) => {
+    const probe = net.createServer();
+    probe.once("error", (err) => resolve(err.code !== "EADDRINUSE"));
+    probe.listen(Number(port), () => probe.close(() => resolve(true)));
+  });
+}
+
 const isMain = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 
 if (isMain && process.argv.includes("--print")) {
   console.log(joinLines(process.env.PORT || "8787", lanAddress()));
 } else if (isMain) {
   const port = process.env.PORT || "8787";
+  if (!(await portFree(port))) {
+    console.error(`Port ${port} is busy: another npm run night or host is already running. Close it, or run with PORT=${Number(port) + 1}.`);
+    process.exit(1);
+  }
   // Call Vite's build() in-process (as scripts/tabs-prove.mjs does with createServer): no shell,
   // works the same on Windows, macOS, and Linux, and a build error throws with a readable message
   // instead of spawning "npm", which is npm.cmd on Windows and needs shell: true to find.

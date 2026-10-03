@@ -151,8 +151,28 @@ try {
   check(true, "game: every tab shows the minimized dock, and the lobby lines did not count as unread");
   for (const t of tabs) check((await t.page.getByTestId("chat-unread").count()) === 0, `game: ${t.name} has no unread badge`);
 
+  // #232: roll off for first place; whichever seat is up rolls, until setup starts.
+  await until(async () => {
+    for (const t of [...tabs, phone]) {
+      const phase = await t.page.evaluate(() => {
+        const s = window.__emberisle.getState();
+        if (s.state?.phase === "rollOff" && s.state.current === s.localId && s.legal?.actions.includes("roll")) s.dispatch({ type: "roll" });
+        return s.state?.phase;
+      });
+      if (phase === "setupSettle") return true;
+    }
+    return null;
+  }, "the roll-off ends");
+
   // 5. Minimized dock covers no target. A line from another seat is showing under the button, and it must not catch clicks either.
+  // If the phone won the roll-off, it places its first outpost and path so a desktop tab is up.
   const cur = await until(async () => {
+    await phone.page.evaluate(() => {
+      const s = window.__emberisle.getState();
+      if (s.state?.current !== s.localId) return;
+      if (s.legal?.outpost?.length) s.pickVertex(s.legal.outpost[0]);
+      else if (s.state.phase === "setupRoad" && s.legal?.path?.length) s.pickEdge(s.legal.path[0]);
+    });
     for (const t of tabs) {
       const own = await t.page.evaluate(() => {
         const s = window.__emberisle.getState();
@@ -177,7 +197,7 @@ try {
       out.checked++;
       const el = document.elementFromPoint(p.x, p.y);
       if (el?.tagName === "CANVAS") out.canvas++;
-      if (el?.closest('[aria-label="Open chat"], [data-testid="chat-preview"], [aria-label="Table chat"]')) out.chat.push(id);
+      if (el?.closest('[aria-label^="Open chat"], [data-testid="chat-preview"], [aria-label="Table chat"]')) out.chat.push(id);
     }
     return out;
   });
@@ -208,7 +228,12 @@ try {
   await card.click();
   await menu.waitFor();
   check((await card.getAttribute("aria-expanded")) === "true", "menu: Tide's card is a button with aria-expanded");
-  const cardText = await a.page.getByTestId(`rail-${bId}`).textContent();
+  // The roll-off die tile (#232) sits next to the vp in setup; read the card without it so its face does not run into a number.
+  const cardText = await a.page.getByTestId(`rail-${bId}`).evaluate((el) => {
+    const copy = el.cloneNode(true);
+    for (const d of copy.querySelectorAll('[data-testid="rolloff-die"]')) d.remove();
+    return copy.textContent;
+  });
   const fromCard = [
     Number(cardText.match(/(\d+) goods/)[1]),
     Number(cardText.match(/(\d+) fortunes/)[1]),
@@ -275,6 +300,9 @@ try {
   await c.page.getByPlaceholder("Say something…").press("Enter");
   await a.page.getByTestId("chat-unread").waitFor({ timeout: 5000 });
   check((await a.page.getByTestId("chat-unread").textContent()) === "1", "unread: tab 1's badge shows 1");
+  // #377: the badge is part of the button's name.
+  await a.page.getByRole("button", { name: "Open chat, 1 unread", exact: true }).waitFor({ timeout: 5000 });
+  check(true, 'unread: the minimized button is named "Open chat, 1 unread"');
   await a.page.getByRole("button", { name: "Open chat" }).click();
   await a.page.getByTestId("chat-unread").waitFor({ state: "detached" });
   check((await stored(a)) === "1", 'open: badge cleared and the value is "1"');
@@ -288,11 +316,36 @@ try {
   await a.page.getByRole("button", { name: "Open chat" }).waitFor();
   check((await stored(a)) === "0", "Esc in the input minimizes the dock");
 
+  // #377: Enter on a focused button presses it; the chat shortcut is only for focus on the page itself.
+  const chatOpen = () => a.page.evaluate(() => window.__emberisle.getState().chatOpen);
+  const how = a.page.getByRole("button", { name: "How to play" });
+  await how.focus();
+  await a.page.keyboard.press("Enter");
+  await a.page.getByRole("dialog", { name: "How to play" }).waitFor({ timeout: 5000 });
+  check((await chatOpen()) === false, "Enter on How to play opens its dialog and leaves the chat closed");
+  await a.page.keyboard.press("Escape");
+  await a.page.getByRole("dialog", { name: "How to play" }).waitFor({ state: "detached" });
+  await a.page.getByRole("button", { name: "Open chat" }).click();
+  const log = a.page.getByTestId("chat-log");
+  await log.waitFor();
+  check((await log.getAttribute("tabindex")) === "0" && (await log.getAttribute("role")) === "log", "the chat log is a focusable role=log");
+  const min = a.page.getByRole("button", { name: "Minimize chat" });
+  await min.focus();
+  await a.page.keyboard.press("Enter");
+  await a.page.getByRole("button", { name: "Open chat" }).waitFor({ timeout: 5000 });
+  check((await chatOpen()) === false, "Enter on Minimize chat minimizes the dock");
+  await a.page.evaluate(() => document.activeElement?.blur());
+  await a.page.keyboard.press("Enter");
+  await a.page.waitForFunction(() => document.activeElement?.id === "chat-input", null, { timeout: 5000 });
+  check(await chatOpen(), "Enter with focus on the page still opens the chat and focuses the input");
+  await a.page.getByPlaceholder("Say something…").press("Escape");
+  await a.page.getByRole("button", { name: "Open chat" }).waitFor();
+
   // 5. Phone: the open dock is a bottom sheet, and the tap that closes it does not reach the board.
   await phone.page.getByRole("button", { name: "Open chat" }).waitFor();
   check((await phone.page.getByTestId("chat-sheet").count()) === 0, "phone: Play starts with the sheet closed although chat was remembered open");
   check((await phone.page.evaluate(() => localStorage.getItem("emberisle-chat-open"))) === "1", "phone: the remembered open state is left in storage");
-  r = await box(phone, '[aria-label="Open chat"]');
+  r = await box(phone, '[aria-label^="Open chat"]');
   check(r.right > r.vw - 20 && r.bottom < r.vh - 150, "phone: the minimized button sits bottom-right above the hand bar");
   await phone.page.getByRole("button", { name: "Open chat" }).click();
   await phone.page.getByTestId("chat-sheet").waitFor({ timeout: 5000 });
@@ -394,13 +447,33 @@ try {
   const wanted = await store(a, () => window.__emberisle.getState().gameLog.map((l) => l.text).join("\n"));
   check(copied === wanted && copied.split("\n").length === shown.length, `game log: ${shown.length} rows, copy ok`);
   await shot(a, "chat-game-log.jpg");
+  // #343: with no clipboard (a LAN address over plain http) Copy log shows the log in a read-only field, focused and selected.
+  await a.page.evaluate(() => Object.defineProperty(navigator, "clipboard", { value: undefined, configurable: true }));
+  await a.page.getByRole("button", { name: "Copy log" }).click();
+  const fallback = await a.page
+    .waitForFunction(
+      () => {
+        const el = document.querySelector('[data-testid="copy-fallback"]');
+        if (!el || document.activeElement !== el) return null;
+        return { value: el.value, readOnly: el.readOnly, selected: el.selectionStart === 0 && el.selectionEnd === el.value.length, live: document.querySelector('[data-testid="copy-status"]')?.textContent };
+      },
+      null,
+      { timeout: 5000 },
+    )
+    .then((h) => h.jsonValue());
+  check(fallback.value === wanted && fallback.readOnly && fallback.selected && fallback.live === "Select and copy", "game log: without a clipboard, Copy log shows the log in a focused, selected read-only field and says so");
 
   // Versus bots the menu shows only the facts (and the bank trade on your main turn, not during setup).
   const solo = await (await browser.newContext({ viewport: { width: 1280, height: 720 } })).newPage();
   watch("Solo", solo);
   await solo.goto(`http://127.0.0.1:${PORT}/`);
   await solo.getByRole("button", { name: "Play versus the isle" }).click();
-  await solo.waitForFunction(() => window.__emberisle.getState().state?.phase === "setupSettle");
+  // The human rolls off (#232) when it is up; the bots roll on the app's timer.
+  await solo.waitForFunction(() => {
+    const s = window.__emberisle.getState();
+    if (s.state?.phase === "rollOff" && s.state.current === s.localId) s.dispatch({ type: "roll" });
+    return s.state?.phase === "setupSettle";
+  }, null, { polling: 100 });
   await solo.getByTestId("rail-p1").getByRole("button").click();
   await solo.getByTestId("player-menu").waitFor();
   check(

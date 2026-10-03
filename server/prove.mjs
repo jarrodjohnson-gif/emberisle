@@ -5,6 +5,16 @@ function fresh() {
   return createGame({ humans: [{ name: "Ember" }, { name: "Tide" }, { name: "Pine" }], bots: 0, seed: 7 });
 }
 
+// The pre-setup roll-off (docs/design/first-player.md): roll as `current` until setup starts.
+function rollOff(g) {
+  while (g.phase === "rollOff") {
+    const next = applyAction(g, g.current, { type: "roll" });
+    if (next.error) throw new Error(next.error);
+    g = next.state;
+  }
+  return g;
+}
+
 function timberSetup(bank) {
   const g = fresh();
   const hex = g.hexes.find((h) => h.terrain === "timber");
@@ -77,7 +87,7 @@ if (counts[7] < 850 || counts[7] > 1150) {
   process.exit(1);
 }
 
-let setup = fresh();
+let setup = rollOff(fresh());
 const goodsAt = [];
 for (let step = 0; step < 12; step++) {
   const pid = setup.current;
@@ -105,7 +115,7 @@ if (firstRound.some((n) => n !== 0) || secondRound.some((n) => n <= 0)) {
 }
 console.log("setup goods first then second", goodsAt);
 
-let illegal = fresh();
+let illegal = rollOff(fresh());
 const spot = legalSettle(illegal, illegal.current, true)[0];
 let placed = applyAction(illegal, illegal.current, { type: "setupSettle", vertexId: spot });
 illegal = placed.state;

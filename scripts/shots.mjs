@@ -110,7 +110,7 @@ const playUntil = (page, stop) =>
         s.dispatch({ type: "discard", resources: res });
       } else if (mine && st.phase === "setupSettle") s.pickVertex(hi.vertices[0]);
       else if (mine && st.phase === "setupRoad") s.pickEdge(hi.edges[0]);
-      else if (mine && st.phase === "roll") s.dispatch({ type: "roll" });
+      else if (mine && (st.phase === "roll" || st.phase === "rollOff")) s.dispatch({ type: "roll" });
       else if (mine && st.phase === "robber") {
         s.pickHex(hi.hexes[0]);
         const p = g.getState().pendingSteal;

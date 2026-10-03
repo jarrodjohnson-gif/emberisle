@@ -1,4 +1,4 @@
-// #80: three headless tabs host, join, ready, start, play setup and five rolls through server/host.mjs.
+// #80: three headless tabs host, join, ready, start, roll off (#232), play setup and five rolls through server/host.mjs.
 // Every step must land the same dice and board on all three tabs, with zero console errors.
 // #116: `--served` skips Vite. The host serves the built dist/ itself and the tabs open it with no ?host=,
 // so they must find the socket at the address the page came from (the tunnel case). Run npm run build first.
@@ -89,6 +89,7 @@ const view = (t) =>
         phase: g.phase,
         current: g.current,
         dice: g.dice,
+        rollOff: g.rollOff,
         robberHex: g.robberHex,
         hexes: g.hexes,
         vertices: g.vertices,
@@ -190,6 +191,29 @@ try {
   });
   if (hostColor !== "#2a8f8a") throw new Error(`host picked Tide's color but the seat shows ${hostColor}`);
   console.log(`host's chosen color round-tripped into the game: ${hostColor}`);
+
+  // #232: roll off for first place. Each die is rolled by the tab whose seat is current, and no tab
+  // shows a production-roll banner meanwhile. `shared` carries the dice and the seat order.
+  for (const t of tabs) {
+    await t.page.evaluate(() => {
+      window.__banners = [];
+      window.__emberisle.subscribe((s) => s.banner && window.__banners.push(s.banner));
+    });
+  }
+  let offRolls = 0;
+  while (JSON.parse(vs[0].shared).phase === "rollOff") {
+    if (++offRolls > 30) throw new Error("roll-off never ended");
+    const cur = JSON.parse(vs[0].shared).current;
+    const i = vs.findIndex((v) => v.you === cur);
+    if (!vs[i].legal.actions.includes("roll")) throw new Error(`roll-off: ${tabs[i].name} is current but may not roll`);
+    await act(tabs[i], "dispatch", [{ type: "roll" }]);
+    vs = await synced(tabs, seqOf(vs[0]), `roll-off roll ${offRolls}`);
+  }
+  const off = JSON.parse(vs[0].shared);
+  const offBanners = await Promise.all(tabs.map((t) => t.page.evaluate(() => window.__banners)));
+  if (off.phase !== "setupSettle" || off.current !== off.players[0].id) throw new Error(`after the roll-off: ${off.phase}, ${off.current}`);
+  if (offBanners.flat().some((x) => /rolls \d\+\d =/.test(x))) throw new Error(`production banner during the roll-off: ${offBanners.flat().join(" | ")}`);
+  console.log(`roll-off: ${offRolls} rolls, each by the current tab, shared on all 3 tabs; order ${off.players.map((p) => `${p.id} ${off.rollOff.rolls[p.id]}`).join(", ")}; no production banner`);
 
   // Setup: whoever's turn it is clicks the first glowing spot through the store.
   for (let step = 0; step < 12; step++) {

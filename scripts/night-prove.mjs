@@ -4,6 +4,7 @@
 // night.mjs only prints the cloudflared line; it never starts a tunnel, so nothing here needs stubbing.
 import { spawn, execFileSync } from "node:child_process";
 import { EventEmitter } from "node:events";
+import net from "node:net";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -62,6 +63,34 @@ function fail(msg) {
   stopped.stop();
   if ((await stopped.done) !== 0 || spawns !== 1) fail(`stop(): exit ${await stopped.done}, spawns ${spawns}; expected 0 and 1`);
   console.log("supervise unit ok");
+}
+// #365: a busy port must stop night before the build, with one plain line and exit 1, not a host
+// crash loop. A plain net server holds the port; night must exit quickly with no host child.
+{
+  const BUSY = 8798;
+  const holder = net.createServer();
+  await new Promise((resolve, reject) => holder.once("error", reject).listen(BUSY, resolve));
+  const busy = spawn(process.execPath, ["scripts/night.mjs"], {
+    env: { ...process.env, PORT: String(BUSY), ROOMS_DIR },
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+  let busyOut = "";
+  let maxHosts = 0;
+  for (const s of [busy.stdout, busy.stderr]) s.on("data", (c) => (busyOut += c));
+  const poll = setInterval(() => { try { maxHosts = Math.max(maxHosts, hostsOf(busy.pid).length); } catch {} }, 50);
+  const tb = Date.now();
+  const exit = await Promise.race([
+    new Promise((resolve) => busy.once("exit", (code, sig) => resolve({ code, sig }))),
+    sleep(5000).then(() => null),
+  ]);
+  clearInterval(poll);
+  if (!exit) { busy.kill("SIGKILL"); holder.close(); fail(`busy port: night still running 5 s later:\n${busyOut}`); }
+  holder.close();
+  if (exit.code !== 1) fail(`busy port: night exit ${JSON.stringify(exit)}, expected code 1:\n${busyOut}`);
+  if (!busyOut.includes(`Port ${BUSY} is busy`) || !busyOut.includes(`PORT=${BUSY + 1}`)) fail(`busy port: no busy message:\n${busyOut}`);
+  if (busyOut.includes("restarting") || busyOut.includes("giving up")) fail(`busy port: host was restarted:\n${busyOut}`);
+  if (maxHosts) fail(`busy port: night spawned ${maxHosts} host(s)`);
+  console.log(`port busy ok (exit 1 after ${((Date.now() - tb) / 1000).toFixed(1)} s)`);
 }
 const watchdog = setTimeout(() => fail("overall 150 s limit"), 150_000);
 

@@ -33,6 +33,14 @@ try {
   await page.evaluate(async () => {
     const g = window.__emberisle;
     g.getState().startAi();
+    // #232: roll off first, so the outpost below is a real placement.
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+    for (let i = 0; i < 200 && g.getState().state.phase === "rollOff"; i++) {
+      const s = g.getState();
+      if (s.state.current === s.localId) s.dispatch({ type: "roll" });
+      await sleep(100);
+    }
+    for (let i = 0; i < 200 && g.getState().state.current !== g.getState().localId; i++) await sleep(100);
     const s = g.getState();
     s.pickVertex(s.highlights().vertices[0]);
     await new Promise((r) => setTimeout(r, 1500));
@@ -42,6 +50,31 @@ try {
   console.log("plays before the first gesture:", JSON.stringify(silent));
   if (silent.length) throw new Error(`sound played before a gesture: ${JSON.stringify(silent)}`);
   await page.getByRole("button", { name: "Play versus the isle" }).click();
+
+  // #232: roll off for first place. The human rolls on its turn; the bots roll on the app's timer.
+  await page.evaluate(() => {
+    window.__banners = [];
+    window.__emberisle.subscribe((s) => s.banner && window.__banners.push(s.banner));
+  });
+  const rollOff = await page.evaluate(async () => {
+    const g = window.__emberisle;
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+    for (let i = 0; i < 400; i++) {
+      const s = g.getState();
+      if (s.state.phase !== "rollOff") return { phase: s.state.phase, order: s.state.players.map((p) => p.id), rolls: s.state.rollOff.rolls };
+      if (s.state.current === s.localId) s.dispatch({ type: "roll" });
+      await sleep(100);
+    }
+    return { phase: "stuck in rollOff" };
+  });
+  const tiles = page.locator('[data-testid="rolloff-die"]:visible');
+  await page.waitForFunction(() => [...document.querySelectorAll('[data-testid="rolloff-die"]')].filter((e) => e.checkVisibility()).length === 4);
+  const faces = await tiles.allTextContents();
+  const placesFirst = await page.evaluate(() => window.__banners.find((b) => b.includes("places first, then")) ?? null);
+  console.log(`roll-off: ${rollOff.phase}, order ${rollOff.order?.join(" ")}, ${faces.length} die tiles [${faces.join(" ")}], banner ${JSON.stringify(placesFirst)}`);
+  if (rollOff.phase !== "setupSettle" || faces.length !== 4 || faces.some((f) => !/^[1-6]$/.test(f)) || !placesFirst) {
+    throw new Error(`roll-off: ${JSON.stringify({ rollOff, faces, placesFirst })}`);
+  }
 
   // Place the human's outposts and paths through the same store the canvas clicks use.
   const phase = await page.evaluate(async () => {
@@ -427,6 +460,32 @@ try {
   const notHost = await lobbyStart(false, true);
   console.log("lobby host from seats:", JSON.stringify({ handedOver, notHost }));
   if (handedOver !== 1 || notHost !== 0) throw new Error(`lobby host from seats: ${JSON.stringify({ handedOver, notHost })}`);
+
+  // #343: with no clipboard (a LAN address over plain http) Copy link shows the link in a read-only field, focused with its
+  // text selected, and the polite live region says so. When the copy works the region says "Copied" and no field shows.
+  await page.evaluate(() => Object.defineProperty(navigator, "clipboard", { value: undefined, configurable: true }));
+  await page.getByRole("button", { name: "Copy link" }).click();
+  const noClip = await (
+    await page.waitForFunction(
+      () => {
+        const el = document.querySelector('[data-testid="copy-fallback"]');
+        const live = document.querySelector('[data-testid="copy-status"]');
+        if (!el || document.activeElement !== el) return null;
+        return { value: el.value, readOnly: el.readOnly, selected: el.selectionStart === 0 && el.selectionEnd === el.value.length, live: live?.textContent, polite: live?.getAttribute("aria-live") };
+      },
+      null,
+      { timeout: 3000 },
+    )
+  ).jsonValue();
+  await page.evaluate(() => Object.defineProperty(navigator, "clipboard", { value: { writeText: () => Promise.resolve() }, configurable: true }));
+  await page.getByRole("button", { name: "Copy", exact: true }).click();
+  await page.getByRole("button", { name: "Copied" }).waitFor({ timeout: 3000 });
+  const clip = { live: await page.getByTestId("copy-status").textContent(), field: await page.getByTestId("copy-fallback").count() };
+  console.log("copy fallback:", JSON.stringify({ noClip, clip }));
+  if (!noClip.value.includes("?code=ABCD") || !noClip.readOnly || !noClip.selected || noClip.live !== "Select and copy" || noClip.polite !== "polite") {
+    throw new Error(`copy fallback: ${JSON.stringify(noClip)}`);
+  }
+  if (clip.live !== "Copied" || clip.field !== 0) throw new Error(`copy ok: ${JSON.stringify(clip)}`);
 
   // #252: the tab title says when it is your move.
   await toTitle();
