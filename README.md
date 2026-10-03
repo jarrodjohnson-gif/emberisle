@@ -48,6 +48,8 @@ An outpost is 1. A stronghold is 2. The longest path is 2, and it takes at least
 
 ### Setup
 
+Before anyone places, each player rolls one die. The server rolls. The highest roll places first. If two or more tie for the highest, only they roll again, until one is strictly ahead. The others follow in order of their dice, highest first, and the order they sat down breaks a tie between them. That is the seat order for setup and for every turn after.
+
 Seat order, then the reverse. Each turn in setup is one outpost and one path from it. Only the second outpost pays starting goods: one card for each hex it touches.
 
 An outpost must not touch another building, including your own. After setup, a new outpost must also touch one of your paths. A path must touch your own path or building. A path cannot continue past a corner where an opponent has a building.
@@ -263,7 +265,7 @@ WebSocket JSON. The client sends intents. The server answers with `state` or `er
 | `{type:"peek", code}` | Before sitting down, ask which colours a lobby has taken. Reply: `seats`. Sent with no seat; throttled by its own pre-seat limit. |
 | `{type:"ready", value}` / `{type:"start"}` | Lobby. Only the host can start, with 3 or 4 seated and everyone ready. |
 | `{type:"place", kind:"outpost"\|"path"\|"stronghold", id}` | Build or place during setup |
-| `{type:"roll"}` `{type:"pass"}` `{type:"buy"}` | Turn actions |
+| `{type:"roll"}` `{type:"pass"}` `{type:"buy"}` | Turn actions. roll is also the roll-off die before setup. |
 | `{type:"play", card:"knight", hexId, stealFrom}` (and `road`/`ids`, `plenty`/`resources`, `monopoly`/`resource`) | Fortunes |
 | `{type:"rob", hexId, stealFrom}` `{type:"discard", cards}` | After a 7 |
 | `{type:"tradeBank", give, take}` `{type:"tradeAsk", give, want}` `{type:"tradeAnswer", tradeId, yes}` | Trades. A `tradeAsk` is refused to the asker alone, with "Bad trade." (`give` or `want` is not a bag of known resources), "You lack those goods." or "Offer something." (both bags empty). A new ask closes the open one with `tradeClosed`. |
@@ -298,6 +300,7 @@ WebSocket JSON. The client sends intents. The server answers with `state` or `er
 | `node --import ./server/register.mjs server/net-prove.mjs` | 3 `src/lib/net/table.ts` clients play setup through the host using the host's legal lists; two robberies pick the second of two targets; no state sent before the game ends carries the seed or rng |
 | `node --import ./server/register.mjs server/rules-prove.mjs` | Longest path as a real trail, ties, cuts, fortune timing, paths past an outpost, then one check per Rule set line |
 | `node --import ./server/register.mjs server/bots-prove.mjs` | 200 all-bot games: after every action the cards, the piece stock and the win still add up |
+| `node --import ./server/register.mjs server/ai-prove.mjs` | Bot choices in hand-built positions: a plenty when one or two cards short of the next buy, a path fortune laying two legal edges toward an outpost corner, a monopoly for the card its goal lacks most, and none of them the turn they are bought |
 | `node --import ./server/register.mjs server/serve-prove.mjs` | The host serves the built client, the socket and the avatars from one address, and the client dials the page's own origin |
 | `node --import ./server/register.mjs server/chat-prove.mjs` | `cleanText`/`allow`/`remember`/`loadEmotes` units, the host fills in the sender, rate limit, reactions, chat history for a late joiner, an over-limit frame closes only that socket |
 | `node --import ./server/register.mjs server/rejoin-prove.mjs` | A dropped seat is held: the table waits through the grace, `hello {code, secret}` returns the same seat, a second socket gets "Seat is taken.", the bot plays the seat after the grace and hands it back on return, the room survives every socket closing, the seat is let go after the hold, a socket that stops answering pings is cut within two intervals and can rejoin |
@@ -321,7 +324,7 @@ WebSocket JSON. The client sends intents. The server answers with `state` or `er
 | `npm run contrast-prove` | In the browser, the title's Join and Host a table buttons (white on the `sea-ink` and `accent-ink` fills, the same variants Start and End turn use), the 12 px "A living island" eyebrow and the error line each measure at least 4.5:1 from their computed colours; zero console errors |
 | `npm run orphan-check` | Not in CI. Starts two proofs, kills each mid-run, and counts the host processes left behind. Expect 0. |
 
-`npm test` runs the fifteen `server/*-prove.mjs` scripts: `prove`, `trade-prove`, `sound-prove`, `table-prove`, `trade-table-prove`, `harden-prove`, `net-prove`, `rules-prove`, `bots-prove`, `serve-prove`, `chat-prove`, `rejoin-prove`, `reconnect-prove`, `persist-prove`, and `finish-prove`. CI also runs `size-prove` (after the build), `client-prove`, `dpr-prove`, `hotseat-prove`, `tabs-prove`, `trade-prove`, `served-prove`, `night-prove`, the browser `chat-prove`, `wayfarer-prove`, `tokens-prove`, `pieces-prove`, `touch-place-prove`, `idle-prove`, and `contrast-prove`.
+`npm test` runs the sixteen `server/*-prove.mjs` scripts: `prove`, `trade-prove`, `sound-prove`, `table-prove`, `trade-table-prove`, `harden-prove`, `net-prove`, `rules-prove`, `bots-prove`, `ai-prove`, `serve-prove`, `chat-prove`, `rejoin-prove`, `reconnect-prove`, `persist-prove`, and `finish-prove`. CI also runs `size-prove` (after the build), `client-prove`, `dpr-prove`, `hotseat-prove`, `tabs-prove`, `trade-prove`, `served-prove`, `night-prove`, the browser `chat-prove`, `wayfarer-prove`, `tokens-prove`, `pieces-prove`, `touch-place-prove`, `idle-prove`, and `contrast-prove`.
 
 ---
 

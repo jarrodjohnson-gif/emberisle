@@ -56,6 +56,24 @@ function bestRobberHex(state: GameState, pid: string): { hexId: string; stealFro
   return best;
 }
 
+// The state with one more of the bot's paths on `eid`, for asking the rules what that opens up.
+function withPath(state: GameState, pid: string, eid: string): GameState {
+  return { ...state, edges: state.edges.map((e) => (e.id === eid ? { ...e, path: pid } : e)) };
+}
+
+// The edge among `roads` that opens the most outpost corners, then the most pips at its far end.
+function bestRoad(state: GameState, pid: string, roads: string[]): string {
+  let best = { eid: roads[0]!, score: -1 };
+  for (const eid of roads) {
+    const next = withPath(state, pid, eid);
+    const corners = legalSettle(next, pid, false);
+    const e = state.edges.find((x) => x.id === eid)!;
+    const score = corners.length * 1000 + Math.max(pipScore(state, e.va), pipScore(state, e.vb));
+    if (score > best.score) best = { eid, score };
+  }
+  return best.eid;
+}
+
 export function chooseBotAction(state: GameState, pid: string): Action | null {
   const me = state.players.find((p) => p.id === pid);
   if (!me) return null;
@@ -77,7 +95,7 @@ export function chooseBotAction(state: GameState, pid: string): Action | null {
     const m = bestRobberHex(state, pid);
     return { type: "moveRobber", hexId: m.hexId, stealFrom: m.stealFrom };
   }
-  if (state.phase === "roll") return { type: "roll" };
+  if (state.phase === "roll" || state.phase === "rollOff") return { type: "roll" };
   if (state.phase !== "main") return null;
 
   // A held knight is 2 points once three are out (#233: bots that never play them stall a game).
@@ -99,10 +117,8 @@ export function chooseBotAction(state: GameState, pid: string): Action | null {
   if (roads.length && hasCost(me, COST.path) && me.pathsLeft > 0 && me.outpostsLeft > 0) {
     return { type: "buildPath", edgeId: roads[Math.floor(roads.length / 2)]! };
   }
-  if (hasCost(me, COST.card) && state.deck.length > 0) return { type: "buyCard" };
 
-  // Trade spare cards toward the next buy (#233: a bot with no ore hex never reached 2 ore by
-  // trading only for what it had none of, and sat at 9 points for hundreds of turns).
+  // The next buy the bot is saving for, and what it is short of (#233, #361).
   const goal =
     cities.length && me.strongholdsLeft > 0
       ? COST.stronghold
@@ -113,6 +129,45 @@ export function chooseBotAction(state: GameState, pid: string): Action | null {
           : state.deck.length > 0
             ? COST.card
             : null;
+  const short: Resource[] = [];
+  if (goal) {
+    for (const r of RESOURCES) for (let n = me.resources[r]; n < (goal[r] ?? 0); n++) short.push(r);
+  }
+
+  // Fortunes held since an earlier turn (#361: a bot that never plays them makes practice too easy).
+  if (!state.playedCard) {
+    if (goal && playable(me, "plenty") > 0 && short.length >= 1 && short.length <= 2) {
+      const pick = short.slice();
+      if (pick.length === 1) {
+        const extra = RESOURCES.find((r) => (goal[r] ?? 0) > 0 && state.bank[r] > (r === pick[0] ? 1 : 0)) ?? RESOURCES.find((r) => state.bank[r] > (r === pick[0] ? 1 : 0));
+        if (extra) pick.push(extra);
+      }
+      if (pick.length === 2 && RESOURCES.every((r) => state.bank[r] >= pick.filter((x) => x === r).length)) {
+        return { type: "playPlenty", resources: pick };
+      }
+    }
+    if (playable(me, "road") > 0 && me.pathsLeft > 0 && roads.length) {
+      const first = bestRoad(state, pid, roads);
+      const edgeIds = [first];
+      if (me.pathsLeft > 1) {
+        const next = withPath(state, pid, first);
+        const more = legalRoads(next, pid, false);
+        if (more.length) edgeIds.push(bestRoad(next, pid, more));
+      }
+      return { type: "playRoad", edgeIds };
+    }
+    if (goal && playable(me, "monopoly") > 0 && short.length) {
+      // Only the bot's own need decides; opponents' hands are hidden online and stay unread here.
+      const count = (r: Resource) => short.filter((x) => x === r).length;
+      const resource = RESOURCES.slice().sort((a, b) => count(b) - count(a))[0]!;
+      return { type: "playMonopoly", resource };
+    }
+  }
+
+  if (hasCost(me, COST.card) && state.deck.length > 0) return { type: "buyCard" };
+
+  // Trade spare cards toward the next buy (#233: a bot with no ore hex never reached 2 ore by
+  // trading only for what it had none of, and sat at 9 points for hundreds of turns).
   if (goal) {
     const want = RESOURCES.find((r) => me.resources[r] < (goal[r] ?? 0) && state.bank[r] > 0);
     const give = RESOURCES.find((r) => r !== want && me.resources[r] - (goal[r] ?? 0) >= harborRate(state, pid, r));

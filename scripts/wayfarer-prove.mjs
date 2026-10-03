@@ -85,6 +85,8 @@ try {
     // Software GL renders ~7 frames a second, too few to see a 300 ms hop. Run the renderer's own tick on a virtual clock in 50 ms steps.
     let vt = isle.clock.getElapsed();
     isle.clock.getElapsed = () => vt;
+    // The virtual clock stands for "now", so no real time has passed since its last frame (startWalk adds that gap).
+    isle.lastFrame = performance.now();
     st.robberHex = to.id;
     st.seq += 1;
     g.setState({ state: st, pendingSteal: null, error: null });

@@ -202,6 +202,7 @@ Phase sentence, one line, plain language:
 
 | Phase | Sentence |
 |---|---|
+| `rollOff` | "Roll for first place." |
 | `setupSettle` | "Place an outpost." |
 | `setupRoad` | "Lay a path from it." |
 | `roll` | "Roll." |

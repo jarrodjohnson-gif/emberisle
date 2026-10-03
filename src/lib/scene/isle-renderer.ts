@@ -309,7 +309,9 @@ export class IsleRenderer {
     const dist = Math.hypot(this.robberTarget.x - from.x, this.robberTarget.z - from.z);
     if (dist <= 0.01) return;
     const hops = Math.max(1, Math.round(dist / (HEX_SIZE * SQRT3)));
-    this.walk = { from: from.clone(), to: this.robberTarget.clone(), start: this.clock.getElapsed(), hops, dur: Math.min(0.9, 0.3 * hops) };
+    // The clock is only as fresh as the last drawn frame, up to 83 ms old while idle; add the time since, so the hop starts at 0.
+    const start = this.clock.getElapsed() + (performance.now() - this.lastFrame) / 1000;
+    this.walk = { from: from.clone(), to: this.robberTarget.clone(), start, hops, dur: Math.min(0.9, 0.3 * hops) };
   }
 
   // Where a hex, corner, or edge id sits on screen, in page pixels. For the chat proof, which checks nothing covers a target.

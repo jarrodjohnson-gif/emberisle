@@ -1,5 +1,6 @@
 // #216: in hotseat, a 7 where a seat other than the roller owes a discard must show that seat's DiscardBar, and the
 // discard must be attributed to that seat. Crafts p0 rolled a 7, p2 holds 9 cards, discardNeeded {p2: 4}; zero console errors.
+// #232: first, the Roll button carries all four seats through the roll-off for first place.
 import { existsSync } from "node:fs";
 import { chromium } from "playwright";
 import { createServer } from "vite";
@@ -25,6 +26,30 @@ try {
   await page.goto(`http://127.0.0.1:${PORT}/`);
   await page.getByRole("button", { name: "Four seats, one table" }).click();
   await page.waitForFunction(() => window.__emberisle?.getState().state);
+
+  // #232: the Roll button rolls off for whichever seat is current, until one seat places first.
+  const rollBtn = page.getByRole("button", { name: "Roll", exact: true });
+  const rollers = [];
+  for (let i = 0; i < 40; i++) {
+    const before = await page.evaluate(() => { const st = window.__emberisle.getState().state; return { phase: st.phase, current: st.current, seq: st.seq }; });
+    if (before.phase !== "rollOff") break;
+    await rollBtn.click({ timeout: STEP_MS });
+    await page.waitForFunction((seq) => window.__emberisle.getState().state.seq > seq, before.seq, { timeout: STEP_MS });
+    rollers.push(before.current);
+  }
+  const off = await page.evaluate(() => {
+    const st = window.__emberisle.getState().state;
+    const ids = st.players.map((p) => p.id);
+    const d = st.rollOff.rolls;
+    const [first, ...rest] = ids;
+    const ok = st.phase === "setupSettle" && st.setupIndex === 0 && st.current === first && st.rollOff.pending.length === 0 &&
+      Object.keys(d).length === ids.length && rest.every((id) => d[id] < d[first]) &&
+      rest.every((id, i) => i === 0 || d[rest[i - 1]] > d[id] || (d[rest[i - 1]] === d[id] && rest[i - 1] < id));
+    return { ok, ids, rolls: d, line: st.log.findLast((l) => l.includes("places first, then")) };
+  });
+  const offTiles = await page.locator('[data-testid="rolloff-die"]:visible').allTextContents();
+  console.log(`roll-off by the Roll button: ${rollers.length} clicks (${rollers.join(" ")}), order ${off.ids.join(" ")} ok ${off.ok}, tiles [${offTiles.join(" ")}], "${off.line}"`);
+  if (!off.ok || rollers.length < 4 || offTiles.length !== 4 || offTiles.some((t) => !/^[1-6]$/.test(t))) throw new Error(`roll-off: ${JSON.stringify({ off, rollers, offTiles })}`);
 
   await page.evaluate(() => {
     const g = window.__emberisle;
@@ -80,23 +105,26 @@ try {
   if (after.cards !== 5) throw new Error(`p2 should hold 5 cards, has ${after.cards}`);
 
   // Two seats owe a discard: the second bar must not inherit what the first typed.
-  await page.evaluate(() => {
+  // Hotseat bars go in seat order, which the roll-off shuffles (#232): the earlier of p1 and p2 owes 4, the later 5.
+  const [first, second] = await page.evaluate(() => {
     const g = window.__emberisle;
     const st = structuredClone(g.getState().state);
+    const [x, y] = st.players.filter((p) => p.id === "p1" || p.id === "p2").map((p) => p.id);
     st.phase = "discard";
-    st.players.find((p) => p.id === "p1").resources = { timber: 3, clay: 2, wool: 2, grain: 1, ore: 0 };
-    st.players.find((p) => p.id === "p2").resources = { timber: 4, clay: 2, wool: 2, grain: 1, ore: 1 };
-    st.discardNeeded = { p1: 4, p2: 5 };
+    st.players.find((p) => p.id === x).resources = { timber: 3, clay: 2, wool: 2, grain: 1, ore: 0 };
+    st.players.find((p) => p.id === y).resources = { timber: 4, clay: 2, wool: 2, grain: 1, ore: 1 };
+    st.discardNeeded = { [x]: 4, [y]: 5 };
     st.seq += 1;
     g.setState({ state: st, pendingSteal: null, error: null });
+    return [x, y];
   });
   const name = (id) => page.evaluate((i) => window.__emberisle.getState().state.players.find((p) => p.id === i).name, id);
-  await page.getByText(`${await name("p1")}: discard 4`).waitFor({ timeout: STEP_MS });
+  await page.getByText(`${await name(first)}: discard 4`).waitFor({ timeout: STEP_MS });
   let f = page.locator("form", { hasText: "discard 4" });
   await f.locator('input[name="timber"]').fill("3");
   await f.locator('input[name="clay"]').fill("1");
   await f.getByRole("button", { name: "Discard" }).click();
-  await page.getByText(`${await name("p2")}: discard 5`).waitFor({ timeout: STEP_MS });
+  await page.getByText(`${await name(second)}: discard 5`).waitFor({ timeout: STEP_MS });
   f = page.locator("form", { hasText: "discard 5" });
   const vals = await f.locator("input").evaluateAll((els) => els.map((e) => e.value));
   console.log("second bar inputs:", vals.join(","));

@@ -12,6 +12,16 @@ function game() {
   return g;
 }
 
+// The pre-setup roll-off (docs/design/first-player.md): roll as `current` until setup starts.
+function rollOff(g) {
+  while (g.phase === "rollOff") {
+    const next = applyAction(g, g.current, { type: "roll" });
+    if (next.error) throw new Error(next.error);
+    g = next.state;
+  }
+  return g;
+}
+
 let g = game();
 g.phase = "main";
 g.current = "p0";
@@ -120,7 +130,7 @@ console.log(
   `two opponents on one hex (${targets.join(", ")}); stole from the second (${second}): ${before.second} -> ${after.second}, first (${first}) untouched at ${after.first}`,
 );
 
-let setup = game();
+let setup = rollOff(game());
 const spot = legalSettle(setup, setup.current, true)[0];
 setup = applyAction(setup, setup.current, { type: "setupSettle", vertexId: spot }).state;
 const road = legalRoads(setup, setup.current, true)[0];

@@ -182,12 +182,12 @@ while (!(await a.next("seats")).seats.every((s) => s.ready));
 a.send({ type: "start" });
 await Promise.all([a.next("state"), b.next("state"), c.next("state")]);
 const first = a.state.game.current;
-if (first !== a.state.you) fail("expected the host to place first", first);
+if (first !== a.state.you) fail("expected the host to roll first", first);
 a.ws.close();
 const after = await b.next("state");
 const gone = after.game.players.find((p) => p.id === first);
 if (gone.kind !== "bot" || after.game.current === first) fail("table hung after a leave", after.game.current);
-console.log(`seat ${first} left on its turn; the bot placed and play moved to ${after.game.current}`);
+console.log(`seat ${first} left on its roll-off turn; the bot rolled and play moved to ${after.game.current}`);
 
 // 4. A host with ROOM_MAX=3 opens three tables and refuses the fourth; one seat flooding non-chat messages is throttled (#281).
 const SMALL_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-rooms-"));

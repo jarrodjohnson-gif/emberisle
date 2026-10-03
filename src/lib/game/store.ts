@@ -41,6 +41,13 @@ function awardLine(before: GameState | null, after: GameState) {
   return null;
 }
 
+// The roll-off's new log lines as one banner ("Dune rolls a 4. · Dune places first, then …"), or null.
+function rollOffLine(before: GameState | null, after: GameState) {
+  if (before?.phase !== "rollOff") return null;
+  const lines = newLog(before.log, after.log);
+  return lines.length ? lines.join(" · ") : null;
+}
+
 // The table sound a change of state makes, if any (#303): the same diff serves practice, hotseat, and the host's pushes.
 function soundFor(before: GameState | null, after: GameState): SoundName | null {
   if (!before) return null;
@@ -415,7 +422,10 @@ export const useGame = create<GameStore>((set, get) => ({
     }
     set({ state: res.state, gameLog: appendLog(get().gameLog, newLog(state.log, res.state.log)), error: null, toast: null, buildMode: "none", roadPicks: [] });
     hear(state, res.state, localId, mode);
-    if (action.type === "roll" && res.state.dice) {
+    const rollOff = rollOffLine(state, res.state);
+    if (rollOff) {
+      showBanner(set, rollOff);
+    } else if (action.type === "roll" && res.state.dice) {
       const roller = state.players.find((p) => p.id === actor)?.name ?? actor;
       showBanner(set, rollLine(roller, res.state.dice, gainsBetween(state, res.state), bankShort(res.state)));
     } else {
@@ -644,12 +654,14 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       showBanner(set, rollLine(roller, dice, gains, short));
     },
     state: ({ you, game, legal }) => {
+      const rollOff = rollOffLine(get().state, game);
       const swing = awardLine(get().state, game);
       hear(get().state, game, you, "online");
       // The first state after a join or a page-load rejoin seeds the log with what the engine kept, the way practice does.
       set({ legal, gameLog: get().state ? get().gameLog : appendLog(get().gameLog, game.log) });
       get().loadState(game, you, get().isHost, get().code);
-      if (swing) showBanner(set, swing);
+      if (rollOff) showBanner(set, rollOff);
+      else if (swing) showBanner(set, swing);
     },
     log: (text) => set({ lobbyLog: text, gameLog: appendLog(get().gameLog, [text]) }),
     tradeOffer: ({ tradeId, from, give, want, seconds }) => {
