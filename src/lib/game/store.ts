@@ -135,6 +135,9 @@ interface GameStore {
   setTradeOpen: (v: boolean) => void;
   askTable: (give: Bag, want: Bag) => void;
   answerTrade: (yes: boolean) => void;
+  // The player whose action menu is open in the HUD rail or seat strip (docs/design/chat.md "The player action menu").
+  menuFor: string | null;
+  openMenu: (id: string | null) => void;
 }
 
 const CHAT_OPEN_KEY = "emberisle-chat-open";
@@ -215,6 +218,7 @@ export const useGame = create<GameStore>((set, get) => ({
   declined: [],
   tradeOutcome: null,
   tradeOpen: false,
+  menuFor: null,
   setName: (n) => {
     const name = n.slice(0, 18) || "Ember";
     if (typeof window !== "undefined") localStorage.setItem("emberisle-name", name);
@@ -290,6 +294,7 @@ export const useGame = create<GameStore>((set, get) => ({
       reactions: [],
       unread: 0,
       chatDraft: "",
+      menuFor: null,
       lobbyLog: "",
       seatId: "",
       isHost: false,
@@ -479,6 +484,7 @@ export const useGame = create<GameStore>((set, get) => ({
     const { offer, net } = get();
     if (offer) net?.answer(offer.tradeId, yes);
   },
+  openMenu: (id) => set({ menuFor: id }),
 }));
 
 type Set = (partial: Partial<GameStore>) => void;

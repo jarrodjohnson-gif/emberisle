@@ -1,5 +1,6 @@
 // #160: three headless tabs at 1280x720 chat through server/host.mjs. Lobby chat and presets, a floating reaction,
-// the unread badge and the remembered open/minimized state, a minimized dock that covers no board target, zero console errors.
+// the unread badge and the remembered open/minimized state, a minimized dock that covers no board target, the player action
+// menu in the rail and under the phone seat strip (#161), zero console errors.
 // Design: docs/design/chat.md "Test plan". Screenshots go to test-results/.
 import { spawn } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
@@ -198,6 +199,68 @@ try {
   await new Promise((r) => setTimeout(r, 3000));
   for (const t of tabs) check((await t.page.locator("[data-testid=reaction]").count()) === 0, `reaction: gone after 3 s on ${t.name}`);
 
+  // 3. Tab 1 clicks tab 2's card (#161): an accordion menu in the rail with the card's 4 facts, a reaction aimed at Tide,
+  // Mention fills the input, and Esc, the same card, and a click outside all close it.
+  const bId = await store(b, () => window.__emberisle.getState().localId);
+  const card = a.page.getByTestId(`rail-${bId}`).getByRole("button");
+  const menu = a.page.getByTestId("player-menu");
+  await card.click();
+  await menu.waitFor();
+  check((await card.getAttribute("aria-expanded")) === "true", "menu: Tide's card is a button with aria-expanded");
+  const cardText = await a.page.getByTestId(`rail-${bId}`).textContent();
+  const fromCard = [
+    Number(cardText.match(/(\d+) goods/)[1]),
+    Number(cardText.match(/(\d+) fortunes/)[1]),
+    Number(cardText.match(/(\d+) vp/)[1]),
+    await a.page.evaluate((id) => window.__emberisle.getState().state.players.find((p) => p.id === id).knightsPlayed, bId),
+  ];
+  const facts = (await menu.getByTestId("menu-facts").locator("dd").allTextContents()).map(Number);
+  check(facts.length === 4 && facts.every((n, i) => n === fromCard[i]), `menu: 4 facts ${JSON.stringify(facts)} equal the card's numbers`);
+  const geo = await a.page.evaluate((id) => {
+    const r = (el) => el.getBoundingClientRect();
+    const aside = r(document.querySelector("aside"));
+    const card = r(document.querySelector(`[data-testid="rail-${id}"]`));
+    const menu = r(document.querySelector('[data-testid="player-menu"]'));
+    const cards = [...document.querySelectorAll('[data-testid^="rail-"]')].map(r);
+    const below = cards.find((c) => c.top > card.top);
+    return { inRail: menu.left >= aside.left - 1 && menu.right <= aside.right + 1, under: menu.top >= card.bottom, pushed: !below || below.top >= menu.bottom };
+  }, bId);
+  check(geo.inRail && geo.under && geo.pushed, "menu: sits in the rail column under the card and pushes the cards below it down");
+  check((await menu.getByRole("button", { name: /Offer a trade/ }).count()) === 0, "menu: no Offer a trade row outside your main phase");
+  await shot(a, "menu-open.jpg");
+  await menu.getByRole("button", { name: "React ben-10" }).click();
+  await menu.waitFor({ state: "detached" });
+  for (const t of [b, c]) {
+    const float = t.page.locator("aside [data-testid=reaction][data-emote=ben-10]");
+    await float.waitFor({ timeout: 5000 });
+    const owner = await float.locator("xpath=ancestor::div[contains(@class,'relative')][1]").textContent();
+    check(owner.includes("Ember") && (await float.textContent()).includes("→ Tide"), `menu: ${t.name} shows Ember's ben-10 tagged → Tide`);
+  }
+  await card.click();
+  await menu.waitFor();
+  await a.page.keyboard.press("Escape");
+  await menu.waitFor({ state: "detached" });
+  check(await card.evaluate((el) => document.activeElement === el), "menu: Esc closes it and the focus returns to the card");
+  await card.click();
+  await menu.waitFor();
+  await card.click();
+  await menu.waitFor({ state: "detached" });
+  check(true, "menu: the same card closes it");
+  await card.click();
+  await menu.waitFor();
+  await a.page.getByText("Emberisle", { exact: true }).click();
+  await menu.waitFor({ state: "detached" });
+  check(true, "menu: a click outside closes it");
+  await card.click();
+  await menu.getByRole("button", { name: "Mention @Tide in chat" }).click();
+  await menu.waitFor({ state: "detached" });
+  await a.page.getByPlaceholder("Say something…").waitFor();
+  check((await a.page.getByPlaceholder("Say something…").inputValue()) === "@Tide ", 'menu: Mention puts "@Tide " in the input');
+  check(await a.page.evaluate(() => document.activeElement?.id === "chat-input"), "menu: Mention focuses the input");
+  await a.page.getByPlaceholder("Say something…").fill("");
+  await a.page.getByPlaceholder("Say something…").press("Escape");
+  await a.page.getByRole("button", { name: "Open chat" }).waitFor();
+
   // 4. Minimize and unread, and the remembered state.
   const stored = (t) => t.page.evaluate(() => localStorage.getItem("emberisle-chat-open"));
   await a.page.getByRole("button", { name: "Open chat" }).click();
@@ -252,6 +315,40 @@ try {
   await phone.page.getByTestId("chat-sheet").waitFor({ state: "detached", timeout: 5000 });
   const after = await phone.page.evaluate(() => ({ seq: window.__emberisle.getState().state.seq, pending: window.__emberisle.getState().pendingPlace }));
   check(after.seq === before.seq && !after.pending, "phone: tapping the board with the sheet open only closes it, no piece or selection");
+
+  // Phone menu (#161): a strip chip opens it under the strip with 44 px items, and Mention opens the sheet with the draft.
+  const aId = await store(a, () => window.__emberisle.getState().localId);
+  await phone.page.getByTestId(`seat-${aId}`).getByRole("button").tap();
+  const pMenu = phone.page.getByTestId("player-menu");
+  await pMenu.waitFor({ timeout: 5000 });
+  const pGeo = await phone.page.evaluate(() => {
+    const strip = document.querySelector('[data-testid="seat-strip"]').getBoundingClientRect();
+    const menu = document.querySelector('[data-testid="player-menu"]').getBoundingClientRect();
+    const items = [...document.querySelectorAll('[data-testid="player-menu"] button')].map((b) => b.getBoundingClientRect());
+    return { under: menu.top >= strip.bottom, onScreen: menu.left >= 0 && menu.right <= innerWidth && menu.bottom <= innerHeight, items: items.length, small: items.filter((r) => r.width < 44 || r.height < 44).length };
+  });
+  check(pGeo.under && pGeo.onScreen, "phone: the menu opens downward from the strip, on screen");
+  check(pGeo.items > 0 && pGeo.small === 0, `phone: all ${pGeo.items} menu items are at least 44 px on both axes`);
+  await shot(phone, "chat-phone-menu.jpg");
+  await pMenu.getByRole("button", { name: "Mention @Ember in chat" }).tap();
+  await pMenu.waitFor({ state: "detached" });
+  await phone.page.getByTestId("chat-sheet").waitFor({ timeout: 5000 });
+  check((await phone.page.getByPlaceholder("Say something…").inputValue()) === "@Ember ", 'phone: Mention opens the sheet with "@Ember "');
+  await phone.page.getByRole("button", { name: "Minimize chat" }).tap();
+
+  // Versus bots the menu shows only the facts (and the bank trade on your main turn, not during setup).
+  const solo = await (await browser.newContext({ viewport: { width: 1280, height: 720 } })).newPage();
+  watch("Solo", solo);
+  await solo.goto(`http://127.0.0.1:${PORT}/`);
+  await solo.getByRole("button", { name: "Play versus the isle" }).click();
+  await solo.waitForFunction(() => window.__emberisle.getState().state?.phase === "setupSettle");
+  await solo.getByTestId("rail-p1").getByRole("button").click();
+  await solo.getByTestId("player-menu").waitFor();
+  check(
+    (await solo.getByTestId("player-menu").locator("dd").count()) === 4 && (await solo.getByTestId("player-menu").locator("button").count()) === 0,
+    "bots: the menu shows the 4 facts and nothing else",
+  );
+  await solo.context().close();
 
   // 6.
   check(errors.length === 0, "zero console errors in all tabs");
