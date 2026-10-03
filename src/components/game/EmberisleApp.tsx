@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useState } from "react";
 import { Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ChatBox, ReactionFloats } from "@/components/game/Chat";
+import { CopyFallback, useCopy } from "@/components/game/CopyText";
 import { Hud, HowTo } from "@/components/game/Hud";
 import { useGame } from "@/lib/game/store";
 import { setMuted, useMuted } from "@/lib/sound";
@@ -207,17 +208,7 @@ function Lobby() {
   const startTable = useGame((s) => s.startTable);
   const goTitle = useGame((s) => s.goTitle);
   const [ready, setReadyLocal] = useState(false);
-  const [copied, setCopied] = useState<"code" | "link" | null>(null);
-  const copy = (what: "code" | "link", text: string) => {
-    // Never throws: clipboard is missing on insecure origins (a LAN IP over http) and can be denied.
-    navigator.clipboard?.writeText(text).then(
-      () => {
-        setCopied(what);
-        window.setTimeout(() => setCopied(null), 1500);
-      },
-      () => {},
-    );
-  };
+  const { state: copied, copy } = useCopy<"code" | "link">();
   // #304: the join link. `?host=` is kept so a Vite dev page's link still dials the same host (src/lib/net/table.ts hostUrl).
   const copyLink = () => {
     const host = new URLSearchParams(location.search).get("host");
@@ -245,13 +236,14 @@ function Lobby() {
           </p>
           <div className="flex flex-col gap-1">
             <Button size="sm" variant="outline" onClick={() => copy("code", code)}>
-              {copied === "code" ? "Copied" : "Copy"}
+              {copied?.ok && copied.what === "code" ? "Copied" : "Copy"}
             </Button>
             <Button size="sm" variant="outline" onClick={copyLink}>
-              {copied === "link" ? "Copied" : "Copy link"}
+              {copied?.ok && copied.what === "link" ? "Copied" : "Copy link"}
             </Button>
           </div>
         </div>
+        <CopyFallback state={copied} label={copied?.what === "link" ? "Join link" : "Table code"} className="mt-2" />
         <ul className="mt-5 flex flex-col gap-2">
           {[0, 1, 2, 3].map((i) => {
             const s = seats[i];

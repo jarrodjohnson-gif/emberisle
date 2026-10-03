@@ -428,6 +428,32 @@ try {
   console.log("lobby host from seats:", JSON.stringify({ handedOver, notHost }));
   if (handedOver !== 1 || notHost !== 0) throw new Error(`lobby host from seats: ${JSON.stringify({ handedOver, notHost })}`);
 
+  // #343: with no clipboard (a LAN address over plain http) Copy link shows the link in a read-only field, focused with its
+  // text selected, and the polite live region says so. When the copy works the region says "Copied" and no field shows.
+  await page.evaluate(() => Object.defineProperty(navigator, "clipboard", { value: undefined, configurable: true }));
+  await page.getByRole("button", { name: "Copy link" }).click();
+  const noClip = await (
+    await page.waitForFunction(
+      () => {
+        const el = document.querySelector('[data-testid="copy-fallback"]');
+        const live = document.querySelector('[data-testid="copy-status"]');
+        if (!el || document.activeElement !== el) return null;
+        return { value: el.value, readOnly: el.readOnly, selected: el.selectionStart === 0 && el.selectionEnd === el.value.length, live: live?.textContent, polite: live?.getAttribute("aria-live") };
+      },
+      null,
+      { timeout: 3000 },
+    )
+  ).jsonValue();
+  await page.evaluate(() => Object.defineProperty(navigator, "clipboard", { value: { writeText: () => Promise.resolve() }, configurable: true }));
+  await page.getByRole("button", { name: "Copy", exact: true }).click();
+  await page.getByRole("button", { name: "Copied" }).waitFor({ timeout: 3000 });
+  const clip = { live: await page.getByTestId("copy-status").textContent(), field: await page.getByTestId("copy-fallback").count() };
+  console.log("copy fallback:", JSON.stringify({ noClip, clip }));
+  if (!noClip.value.includes("?code=ABCD") || !noClip.readOnly || !noClip.selected || noClip.live !== "Select and copy" || noClip.polite !== "polite") {
+    throw new Error(`copy fallback: ${JSON.stringify(noClip)}`);
+  }
+  if (clip.live !== "Copied" || clip.field !== 0) throw new Error(`copy ok: ${JSON.stringify(clip)}`);
+
   // #252: the tab title says when it is your move.
   await toTitle();
   await page.getByRole("button", { name: "Play versus the isle" }).click();
