@@ -62,7 +62,7 @@ function photoUrl(kind: Terrain): string | undefined {
 }
 
 type Highlights = { vertices: string[]; edges: string[]; hexes: string[] };
-type Sheep = { g: THREE.Group; ox: number; oz: number; tx: number; tz: number; wait: number; graze: number };
+type Sheep = { g: THREE.Object3D; ox: number; oz: number; tx: number; tz: number; wait: number; graze: number };
 
 export class IsleRenderer {
   private renderer: THREE.WebGLRenderer;
@@ -971,10 +971,7 @@ function decorate(
     for (let i = 0; i < 5; i++) {
       const { px, pz } = place(0.64, 0.8);
       const rockR = 0.12 + rng() * 0.12;
-      const rock = new THREE.Mesh(
-        new THREE.DodecahedronGeometry(rockR, 0),
-        new THREE.MeshStandardMaterial({ color: 0x6a737c, roughness: 0.95, flatShading: true }),
-      );
+      const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(rockR, 0), ROCK_MAT);
       rock.position.set(px, top + 0.04, pz);
       rock.rotation.set(rng(), rng(), rng());
       rock.castShadow = true;
@@ -984,51 +981,59 @@ function decorate(
   }
 }
 
-function makePine(s: number) {
-  const g = new THREE.Group();
-  const trunk = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.025 * s, 0.04 * s, 0.22 * s, 6),
-    new THREE.MeshLambertMaterial({ color: 0x4a3220 }),
+// One figure is one mesh: its parts are placed (position, y rotation, scale), tinted per vertex and merged,
+// on a material shared by every tree (or sheep or rock), which disposeGroup leaves alone.
+const TREE_MAT = new THREE.MeshLambertMaterial({ vertexColors: true });
+const SHEEP_MAT = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95 });
+const ROCK_MAT = new THREE.MeshStandardMaterial({ color: 0x6a737c, roughness: 0.95, flatShading: true });
+for (const m of [TREE_MAT, SHEEP_MAT, ROCK_MAT]) m.userData.shared = true;
+
+const AXIS_Y = new THREE.Vector3(0, 1, 0);
+function placed(geo: THREE.BufferGeometry, hex: number, x: number, y: number, z: number, rotY = 0, sx = 1, sy = sx, sz = sx) {
+  const g = geo.index ? geo.toNonIndexed() : geo; // mergeGeometries refuses to mix indexed and not
+  if (g !== geo) geo.dispose();
+  g.applyMatrix4(
+    new THREE.Matrix4().compose(
+      new THREE.Vector3(x, y, z),
+      new THREE.Quaternion().setFromAxisAngle(AXIS_Y, rotY),
+      new THREE.Vector3(sx, sy, sz),
+    ),
   );
-  trunk.position.y = 0.1 * s;
-  g.add(trunk);
-  const shades = [0x163d28, 0x1f5a38, 0x2a6e44, 0x1a4a30];
-  for (let i = 0; i < 4; i++) {
-    const r = (0.22 - i * 0.035) * s;
-    const cone = new THREE.Mesh(
-      new THREE.ConeGeometry(r, 0.28 * s, 8),
-      new THREE.MeshLambertMaterial({ color: shades[i % shades.length] }),
-    );
-    cone.position.y = (0.22 + i * 0.14) * s;
-    cone.rotation.y = i * 0.4;
-    cone.scale.x = 0.92 + (i % 2) * 0.12;
-    cone.castShadow = true;
-    g.add(cone);
-  }
+  const c = new THREE.Color(hex);
+  const a = new Float32Array(g.attributes.position.count * 3);
+  for (let i = 0; i < a.length; i += 3) c.toArray(a, i);
+  g.setAttribute("color", new THREE.BufferAttribute(a, 3));
   return g;
 }
 
+function figure(parts: THREE.BufferGeometry[], mat: THREE.Material, shadow: boolean) {
+  const geo = mergeGeometries(parts);
+  parts.forEach((p) => p.dispose());
+  const m = new THREE.Mesh(geo, mat);
+  m.castShadow = shadow;
+  return m;
+}
+
+function makePine(s: number) {
+  const parts = [placed(new THREE.CylinderGeometry(0.025 * s, 0.04 * s, 0.22 * s, 6), 0x4a3220, 0, 0.1 * s, 0)];
+  const shades = [0x163d28, 0x1f5a38, 0x2a6e44, 0x1a4a30];
+  for (let i = 0; i < 4; i++) {
+    const r = (0.22 - i * 0.035) * s;
+    parts.push(placed(new THREE.ConeGeometry(r, 0.28 * s, 8), shades[i % shades.length]!, 0, (0.22 + i * 0.14) * s, 0, i * 0.4, 0.92 + (i % 2) * 0.12, 1, 1));
+  }
+  return figure(parts, TREE_MAT, true);
+}
+
 function makeDeciduous(s: number) {
-  const g = new THREE.Group();
-  const trunk = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.028 * s, 0.04 * s, 0.24 * s, 6),
-    new THREE.MeshLambertMaterial({ color: 0x4a3220 }),
-  );
-  trunk.position.y = 0.12 * s;
-  g.add(trunk);
+  const parts = [placed(new THREE.CylinderGeometry(0.028 * s, 0.04 * s, 0.24 * s, 6), 0x4a3220, 0, 0.12 * s, 0)];
   const shades = [0x2f7a43, 0x3d8f52, 0x246638, 0x4a9a5c];
   for (let i = 0; i < 6; i++) {
-    const blob = new THREE.Mesh(
-      new THREE.IcosahedronGeometry(0.13 * s, 0),
-      new THREE.MeshLambertMaterial({ color: shades[i % shades.length] }),
-    );
     const a = (i / 6) * Math.PI * 2;
-    blob.position.set(Math.cos(a) * 0.1 * s, (0.3 + (i % 3) * 0.08) * s, Math.sin(a) * 0.1 * s);
-    blob.scale.setScalar(0.75 + (i % 3) * 0.15);
-    blob.castShadow = true;
-    g.add(blob);
+    parts.push(
+      placed(new THREE.IcosahedronGeometry(0.13 * s, 0), shades[i % shades.length]!, Math.cos(a) * 0.1 * s, (0.3 + (i % 3) * 0.08) * s, Math.sin(a) * 0.1 * s, 0, 0.75 + (i % 3) * 0.15),
+    );
   }
-  return g;
+  return figure(parts, TREE_MAT, true);
 }
 
 const PIECE_MAT = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.55 });
@@ -1110,27 +1115,14 @@ function makeWayfarer() {
 }
 
 function makeSheep() {
-  const g = new THREE.Group();
-  const body = new THREE.Mesh(
-    new THREE.SphereGeometry(0.085, 10, 8),
-    new THREE.MeshStandardMaterial({ color: 0xf7f3ea, roughness: 0.95 }),
-  );
-  body.scale.set(1.35, 0.9, 1);
-  const head = new THREE.Mesh(
-    new THREE.SphereGeometry(0.04, 8, 8),
-    new THREE.MeshStandardMaterial({ color: 0x2a2a2a }),
-  );
-  head.position.set(0, 0.03, 0.1);
-  for (const [lx, lz] of [[-0.05, 0.05], [0.05, 0.05], [-0.05, -0.05], [0.05, -0.05]]) {
-    const leg = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.012, 0.012, 0.06, 5),
-      new THREE.MeshStandardMaterial({ color: 0x2a2a2a }),
-    );
-    leg.position.set(lx, -0.07, lz);
-    g.add(leg);
+  const parts = [
+    placed(new THREE.SphereGeometry(0.085, 10, 8), 0xf7f3ea, 0, 0, 0, 0, 1.35, 0.9, 1),
+    placed(new THREE.SphereGeometry(0.04, 8, 8), 0x2a2a2a, 0, 0.03, 0.1),
+  ];
+  for (const [lx, lz] of [[-0.05, 0.05], [0.05, 0.05], [-0.05, -0.05], [0.05, -0.05]] as const) {
+    parts.push(placed(new THREE.CylinderGeometry(0.012, 0.012, 0.06, 5), 0x2a2a2a, lx, -0.07, lz));
   }
-  g.add(body, head);
-  return g;
+  return figure(parts, SHEEP_MAT, false);
 }
 
 function paintedTexture(kind: Terrain): THREE.Texture {
