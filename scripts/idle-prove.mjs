@@ -120,14 +120,18 @@ try {
     const r0 = isle.renders;
     const stale = performance.now() - isle.lastFrame;
     g.setState({ state: st });
+    // The walk's start against the real "now" on the clock's scale, sampled in the same task: it must not lag by the idle gap.
+    const wk0 = isle.walk;
+    const lagMs = wk0 ? (isle.clock.getElapsed() + (performance.now() - isle.lastFrame) / 1000 - wk0.start) * 1000 : null;
     await new Promise((res) => {
       const poll = () => (isle.renders > r0 ? res() : requestAnimationFrame(poll));
       poll();
     });
     const wk = isle.walk;
-    return { walking: !!wk, u: wk ? (isle.clock.getElapsed() - wk.start) / wk.dur : null, stale: Math.round(stale) };
+    return { walking: !!wk, lagMs: lagMs === null ? null : Math.round(lagMs * 10) / 10, u: wk ? (isle.clock.getElapsed() - wk.start) / wk.dur : null, stale: Math.round(stale) };
   });
-  check("walk after idle: first frame progress < 15%", first.walking && first.u < 0.15, first);
+  check("walk after idle: start is the real time (lag <= 10 ms)", first.walking && first.lagMs !== null && first.lagMs <= 10, first);
+  check("walk after idle: first frame progress < 50%", first.walking && first.u < 0.5, first);
 
   // Reduced motion idles the same way.
   await page.emulateMedia({ reducedMotion: "reduce" });
