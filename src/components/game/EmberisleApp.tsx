@@ -163,7 +163,7 @@ function Title() {
             </Button>
           </div>
           <div className="flex items-center justify-center gap-1">
-            <Button variant="ghost" onClick={() => setHowTo(!howTo)}>
+            <Button variant="ghost" onClick={(e) => setHowTo(!howTo, e.currentTarget)}>
               How to play
             </Button>
             <Button

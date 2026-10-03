@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { createGame } from "./board";
-import { applyAction, legalCities, legalRoads, legalSettle, stealTargets } from "./rules";
+import { applyAction, bankShort, legalCities, legalRoads, legalSettle, stealTargets } from "./rules";
 
 const BANNER_MS = 2500;
 let bannerTimer: ReturnType<typeof setTimeout> | null = null;
@@ -10,10 +10,11 @@ function showBanner(set: (p: { banner: string | null }) => void, text: string) {
   bannerTimer = setTimeout(() => set({ banner: null }), BANNER_MS);
 }
 
-// "Tide rolls 4+5 = 9 · Ember +1 wool · Pine +2 ore"
-function rollLine(roller: string, dice: [number, number], gains: { name: string; resource: string; amount: number }[]) {
+// "Tide rolls 4+5 = 9 · Ember +1 wool · Pine +2 ore", ending "· bank short of grain" when the bank paid nobody some resource
+function rollLine(roller: string, dice: [number, number], gains: { name: string; resource: string; amount: number }[], short: string[]) {
   const parts = gains.map((g) => `${g.name} +${g.amount} ${g.resource}`);
-  return [`${roller} rolls ${dice[0]}+${dice[1]} = ${dice[0] + dice[1]}`, ...(parts.length ? parts : ["nobody gathers"])].join(" · ");
+  const tail = short.length ? [`bank short of ${short.join(" and ")}`] : [];
+  return [`${roller} rolls ${dice[0]}+${dice[1]} = ${dice[0] + dice[1]}`, ...(parts.length ? parts : ["nobody gathers"]), ...tail].join(" · ");
 }
 
 function gainsBetween(before: GameState, after: GameState) {
@@ -108,12 +109,14 @@ interface GameStore {
   // Edges picked so far for a path fortune (buildMode "roadCard"); sent together as one playRoad.
   roadPicks: string[];
   howTo: boolean;
+  /** The element that opened How to play; Safari does not focus buttons on click, so activeElement cannot be trusted. */
+  howToOpener: HTMLElement | null;
   toast: string | null;
   // One line everyone reads for a moment: the roll and who got what, or an award changing hands (#188).
   banner: string | null;
   setName: (n: string) => void;
   setColor: (c: string) => void;
-  setHowTo: (v: boolean) => void;
+  setHowTo: (v: boolean, opener?: HTMLElement | null) => void;
   setBuildMode: (m: BuildMode) => void;
   startAi: () => void;
   startHotseat: (count: number) => void;
@@ -233,6 +236,7 @@ export const useGame = create<GameStore>((set, get) => ({
   buildMode: "none",
   roadPicks: [],
   howTo: false,
+  howToOpener: null,
   toast: null,
   banner: null,
   net: null,
@@ -263,7 +267,7 @@ export const useGame = create<GameStore>((set, get) => ({
     if (typeof window !== "undefined") localStorage.setItem("emberisle-color", c);
     set({ color: c });
   },
-  setHowTo: (v) => set({ howTo: v }),
+  setHowTo: (v, opener) => set({ howTo: v, howToOpener: v ? (opener ?? null) : null }),
   setBuildMode: (m) => set({ buildMode: m, roadPicks: [] }),
   startAi: () => {
     // A table left dialing (a reload with a saved seat) must not pull a practice game back to the lobby.
@@ -368,7 +372,7 @@ export const useGame = create<GameStore>((set, get) => ({
     hear(state, res.state, localId, mode);
     if (action.type === "roll" && res.state.dice) {
       const roller = state.players.find((p) => p.id === actor)?.name ?? actor;
-      showBanner(set, rollLine(roller, res.state.dice, gainsBetween(state, res.state)));
+      showBanner(set, rollLine(roller, res.state.dice, gainsBetween(state, res.state), bankShort(res.state)));
     } else {
       const swing = awardLine(state, res.state);
       if (swing) showBanner(set, swing);
@@ -575,11 +579,11 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       setTimeout(() => set({ reactions: get().reactions.filter((x) => x !== r) }), 2000);
     },
     seats: ({ code, seats }) => set({ code, seats }),
-    rolled: ({ dice, gains }) => {
+    rolled: ({ dice, gains, short }) => {
       // The host sends this before the state that follows it, so `current` is still the roller.
       const st = get().state;
       const roller = st?.players.find((p) => p.id === st.current)?.name ?? "Someone";
-      showBanner(set, rollLine(roller, dice, gains));
+      showBanner(set, rollLine(roller, dice, gains, short));
     },
     state: ({ you, game, legal }) => {
       const swing = awardLine(get().state, game);
