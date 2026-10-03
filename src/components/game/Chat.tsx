@@ -93,7 +93,8 @@ export function ChatBox({ rows, game, onEscape, className }: { rows: number; gam
     );
   };
 
-  // Chat and game lines in time order. The sort is stable, so each kind keeps its own order when stamps tie.
+  // Chat and game lines in the order this browser saw them (both `at` stamps are its own clock, store.ts). The sort is
+  // stable, so each kind keeps its own order when stamps tie.
   const lines: { at: number; node: ReactNode }[] = chat.map((line) => ({ at: line.at, node: <Line key={`c${line.id}`} line={line} me={me} /> }));
   if (withLog) {
     for (const [i, line] of gameLog.entries()) lines.push({ at: line.at, node: <LogRow key={`g${i}`} line={line} /> });
@@ -117,7 +118,7 @@ export function ChatBox({ rows, game, onEscape, className }: { rows: number; gam
               </button>
             ))}
           </div>
-          <button type="button" onClick={copyLog} className={cn(CHIP, "ml-auto bg-white/60 text-zinc-900 hover:bg-white/90")}>
+          <button type="button" aria-live="polite" onClick={copyLog} className={cn(CHIP, "ml-auto bg-white/60 text-zinc-900 hover:bg-white/90")}>
             {copied ? "Copied" : "Copy log"}
           </button>
         </div>

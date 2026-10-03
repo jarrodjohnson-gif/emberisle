@@ -618,14 +618,19 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       // A page-load rejoin has no state yet, so it passes through the lobby until the host's state push moves it to play.
       // A mid-game reconnect already holds the game: stay on the board so the HUD keeps its local state.
       const inGame = get().state !== null && get().screen === "play";
-      set({ code, seatId: you, isHost: host, screen: inGame ? "play" : "lobby", mode: "online", error: null, toast: null, chat: (chat ?? []).slice(-50), reactions: [], unread: 0 });
+      // Chat and game-log lines sort together by this browser's clock, never the host's (#305): the history keeps the
+      // stamps of the lines this tab already held, and the rest arrive now, before any log line that follows.
+      const known = new Map(get().chat.map((l) => [l.id, l.at]));
+      const now = Date.now();
+      const history = (chat ?? []).slice(-50).map((l) => ({ ...l, at: known.get(l.id) ?? now }));
+      set({ code, seatId: you, isHost: host, screen: inGame ? "play" : "lobby", mode: "online", error: null, toast: null, chat: history, reactions: [], unread: 0 });
     },
     reconnecting: (attempt) => set({ error: `Reconnecting… (try ${attempt})`, toast: "Reconnecting…" }),
     chat: (line) => {
       const { chat, chatOpen, unread, seatId, screen } = get();
       // The lobby box is always open, so only lines that arrive during the game can be unread.
       const counts = screen === "play" && !chatOpen && line.seat !== seatId;
-      set({ chat: [...chat, line].slice(-50), unread: counts ? unread + 1 : unread });
+      set({ chat: [...chat, { ...line, at: Date.now() }].slice(-50), unread: counts ? unread + 1 : unread });
     },
     react: (r) => {
       set({ reactions: [...get().reactions, r] });
@@ -641,7 +646,8 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
     state: ({ you, game, legal }) => {
       const swing = awardLine(get().state, game);
       hear(get().state, game, you, "online");
-      set({ legal });
+      // The first state after a join or a page-load rejoin seeds the log with what the engine kept, the way practice does.
+      set({ legal, gameLog: get().state ? get().gameLog : appendLog(get().gameLog, game.log) });
       get().loadState(game, you, get().isHost, get().code);
       if (swing) showBanner(set, swing);
     },
