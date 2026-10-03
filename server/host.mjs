@@ -28,9 +28,9 @@ const AVATAR_BYTES = 256 * 1024;
 const AVATAR_MAX = 64;
 const ROOM_MAX = Number(process.env.ROOM_MAX ?? 64);
 // A seat's non-chat messages (ready, start, intents, trades): a burst of 20, refilled 4 a second. A person or a bot
-// client stays far under this; a flood does not. Chat keeps its own 5-per-5s bucket.
-const ACT_CAP = 20;
-const ACT_RATE = 4;
+// client stays far under this; a flood does not. Chat keeps its own 5-per-5s bucket. The proofs raise it through env.
+const ACT_CAP = Number(process.env.ACT_CAP ?? 20);
+const ACT_RATE = Number(process.env.ACT_RATE ?? 4);
 const AVATAR_TTL = 60 * 60 * 1000; // an upload nobody sat down with is dropped after an hour
 // A dropped player keeps the seat: the bot takes over after the grace, the seat is let go after the hold
 // (docs/research/rejoin.md). The proofs shorten both through env.
