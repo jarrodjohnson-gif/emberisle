@@ -111,6 +111,8 @@ export class IsleRenderer {
   // Until when the loop runs at full rate: a drag, a camera move, a walk or a state change holds it there for 1 s (#331).
   private busyUntil = 0;
   private lastMarks = "";
+  // prefers-reduced-motion (#382): nothing ambient moves, and the loop draws only on a change.
+  private calmMq = typeof matchMedia === "function" ? matchMedia("(prefers-reduced-motion: reduce)") : null;
   // Frames drawn; the idle proof counts them.
   renders = 0;
   private foam!: THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial>;
@@ -151,6 +153,7 @@ export class IsleRenderer {
     this.controls.target.set(0.15, 0.05, 0);
     this.controls.autoRotate = true;
     this.controls.autoRotateSpeed = 0.28;
+    this.calmMq?.addEventListener("change", this.onCalm);
     this.controls.addEventListener("start", this.wake);
     this.controls.addEventListener("change", this.wake);
 
@@ -224,7 +227,6 @@ export class IsleRenderer {
   setTitleMode(v: boolean) {
     if (v !== this.titleMode) this.wake();
     this.titleMode = v;
-    this.controls.autoRotate = v;
     this.ssao.enabled = !v && !this.overhead;
     this.setView(!v && this.coarse() ? "overhead" : "free");
   }
@@ -232,6 +234,13 @@ export class IsleRenderer {
   private coarse() {
     return typeof matchMedia === "function" && matchMedia("(pointer: coarse)").matches;
   }
+
+  private calm() {
+    return this.calmMq?.matches ?? false;
+  }
+
+  // The preference flipped: draw the island as it stands now. The event comes a frame after `matches` changes, so tick reads that.
+  private onCalm = () => this.wake();
 
   private insets(): Insets {
     const c = this.renderer.domElement;
@@ -308,6 +317,12 @@ export class IsleRenderer {
     const from = this.wayfarer.position;
     const dist = Math.hypot(this.robberTarget.x - from.x, this.robberTarget.z - from.z);
     if (dist <= 0.01) return;
+    if (this.calm()) {
+      // Reduced motion: he turns and is simply there (#382).
+      this.wayfarer.lookAt(this.robberTarget.x, from.y, this.robberTarget.z);
+      this.wayfarer.position.copy(this.robberTarget);
+      return;
+    }
     const hops = Math.max(1, Math.round(dist / (HEX_SIZE * SQRT3)));
     // The clock is only as fresh as the last drawn frame, up to 83 ms old while idle; add the time since, so the hop starts at 0.
     const start = this.clock.getElapsed() + (performance.now() - this.lastFrame) / 1000;
@@ -342,6 +357,7 @@ export class IsleRenderer {
     this.stopped = true;
     this.renderer.setAnimationLoop(null);
     this.controls.dispose();
+    this.calmMq?.removeEventListener("change", this.onCalm);
     window.removeEventListener("resize", this.resize);
     this.renderer.domElement.removeEventListener("pointerdown", this.onDown);
     this.renderer.domElement.removeEventListener("pointerup", this.onUp);
@@ -467,14 +483,26 @@ export class IsleRenderer {
     const now = performance.now();
     // Title: 30 fps. On the board with nothing moving: 12 fps, enough to keep the water, sheep and boats alive (#331).
     const pulsing = this.marks.children.some((m) => m.userData.kind === "hex" && m.userData.id !== this.pending?.id);
-    const gap = this.titleMode ? 1000 / 30 : this.walk || pulsing || now < this.busyUntil ? 0 : 1000 / 12;
+    // Reduced motion (#382): no tick at all; a drag, a camera move or a state push still draws for its 1 s hold.
+    const calm = this.calm();
+    if (calm && this.walk) {
+      this.walk = null;
+      this.startWalk();
+    }
+    const gap = calm ? (now < this.busyUntil ? 0 : Infinity) : this.titleMode ? 1000 / 30 : this.walk || pulsing || now < this.busyUntil ? 0 : 1000 / 12;
     if (now - this.lastFrame < gap - 2) return;
     this.lastFrame = now;
     this.clock.update();
     const t = this.clock.getElapsed();
     // An idle frame is 83 ms apart; a smaller cap would slow the sheep while idle.
     const dt = Math.min(this.clock.getDelta(), 0.1);
+    this.controls.autoRotate = this.titleMode && !calm;
     this.controls.update();
+    if (calm) {
+      this.composer.render();
+      this.renders += 1;
+      return;
+    }
     this.water.uniforms.uTime!.value = t;
     this.foam.material.opacity = 0.32 + 0.23 * (0.5 + 0.5 * Math.sin(t * 0.8));
     for (const tr of this.trees) tr.rotation.z = Math.sin(t * 1.05 + tr.position.x * 2) * 0.028;
