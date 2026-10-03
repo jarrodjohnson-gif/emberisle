@@ -63,7 +63,8 @@ for (const c of all.slice(1)) {
   await c.next("welcome");
 }
 for (const c of all) c.send({ type: "ready", value: true });
-await new Promise((r) => setTimeout(r, 100));
+// Start only once the host has published all three ready flags; a fixed sleep let "start" race a slow "ready" (rejected, so no state ever came).
+while (!(await all[0].next("seats")).seats.every((s) => s.ready));
 all[0].send({ type: "start" });
 await Promise.all(all.map((c) => c.next("state")));
 
