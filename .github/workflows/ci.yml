@@ -9,7 +9,7 @@ on:
 jobs:
   checks:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -24,6 +24,7 @@ jobs:
       - run: npm run typecheck
       - run: npm run build
       - run: npm test
+      - run: npm run touch-place-prove
       - run: npx playwright install --with-deps chromium
       - run: npm run client-prove
       - run: npm run hotseat-prove

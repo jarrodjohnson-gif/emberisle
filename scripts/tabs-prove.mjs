@@ -55,6 +55,20 @@ async function tab(name) {
   page.on("pageerror", (e) => errors.push(`${name}: ${e}`));
   page.on("response", (r) => r.status() >= 400 && errors.push(`${name}: ${r.status()} ${r.url()}`));
   await page.addInitScript((n) => localStorage.setItem("emberisle-name", n), name);
+  // #248: the page records every resource-flash label the moment it enters or leaves the DOM. Under software
+  // GL on a loaded machine one island frame can take longer than the 1.2 s label, so a poll from outside the
+  // page only gets to run between frames and can arrive after the label is gone. The observer cannot miss it.
+  await page.addInitScript(() => {
+    const log = (window.__flashes = []);
+    const labels = (n) =>
+      n.nodeType === 1 ? [n, ...n.querySelectorAll('[data-testid="resource-flash"]')].filter((e) => e.dataset.testid === "resource-flash") : [];
+    new MutationObserver((muts) => {
+      for (const m of muts) {
+        for (const n of m.addedNodes) for (const e of labels(n)) log.push({ sign: "+", tag: `${e.dataset.resource}${e.dataset.delta}`, at: performance.now() });
+        for (const n of m.removedNodes) for (const e of labels(n)) log.push({ sign: "-", tag: `${e.dataset.resource}${e.dataset.delta}`, at: performance.now() });
+      }
+    }).observe(document, { childList: true, subtree: true });
+  });
   await page.goto(SERVED ? `http://127.0.0.1:${hostPort}/` : `http://127.0.0.1:${PORT}/?host=ws://127.0.0.1:${hostPort}`);
   return { name, page };
 }
@@ -124,6 +138,18 @@ try {
   const tableCode = (await a.page.getByTestId("table-code").textContent()).trim();
   for (const t of [b, c]) {
     await t.page.getByPlaceholder(/code/i).fill(tableCode);
+    if (t === b) {
+      // #156/#271: before Join, the color the table already holds is dimmed and cannot be picked.
+      const swatch = (n) => b.page.getByRole("radio", { name: n });
+      await until(async () => {
+        const tide = swatch("Tide (taken)");
+        if (!(await tide.count()) || !(await tide.isDisabled())) return null;
+        const [opacity, checked] = await tide.evaluate((el) => [getComputedStyle(el).opacity, el.getAttribute("aria-checked")]);
+        return opacity === "0.35" && checked === "false" ? true : null;
+      }, "Tide swatch dims before Join");
+      for (const n of ["Ember", "Dune", "Pine"]) if (await swatch(n).isDisabled()) throw new Error(`${n} swatch is disabled`);
+      console.log("tab B typed the code: Tide swatch disabled at opacity 0.35, aria-checked=false; Ember, Dune, Pine enabled");
+    }
     await t.page.getByRole("button", { name: "Join" }).click();
     await t.page.getByTestId("table-code").waitFor();
   }
@@ -236,45 +262,37 @@ try {
   }
   console.log(`${ROLLS} rolls, same on all 3 tabs: ${dice.map((d) => d.join("+")).join(" ")}`);
 
-  // #170: a tab's own hand flashes +N green on a gain and -N red on a loss, and each flash is gone within
-  // ~2 s. Keep playing until a roll has paid someone and a bank trade, a discard, or a steal has taken
-  // something. Every count that moves on a tab between two synced states must have flashed with its sign.
-  // A flash is shorter than the wait for three tabs to sync, so each tab's DOM is watched from the act on.
-  const flashes = (t) =>
-    t.page.evaluate(() =>
-      [...document.querySelectorAll('[data-testid="resource-flash"]')].map((e) => `${e.dataset.resource}${e.dataset.delta}`),
-    );
-  const watch = (t) => {
-    const seen = new Set();
-    let on = true;
-    const run = (async () => {
-      while (on) {
-        for (const f of await flashes(t)) seen.add(f);
-        await new Promise((r) => setTimeout(r, 30));
-      }
-    })();
-    return {
-      seen,
-      stop: () => {
-        on = false;
-        return run;
-      },
-    };
-  };
+  // #170: a tab's own hand flashes +N green on a gain and -N red on a loss, and each flash goes away again.
+  // Keep playing until a roll has paid someone and a bank trade, a discard, or a steal has taken something.
+  // Every count that moves on a tab between two synced states must have flashed with its sign. The label is
+  // read from the page's own record (see tab()), from the act on, so it is caught however long a frame takes.
+  const flashesSince = (t, mark) => t.page.evaluate((m) => window.__flashes.slice(m), mark);
+  let longest = 0;
   const step = async (what, go) => {
     const before = vs;
-    const watchers = tabs.map(watch);
+    const marks = await Promise.all(tabs.map((t) => t.page.evaluate(() => window.__flashes.length)));
     await go();
     vs = await synced(tabs, seqOf(before[0]), what);
-    await new Promise((r) => setTimeout(r, 200));
-    for (const w of watchers) await w.stop();
     const seen = [];
     for (const [k, t] of tabs.entries()) {
       const diff = (r) => vs[k].mine[r] - before[k].mine[r];
       const tags = Object.keys(vs[k].mine).filter((r) => diff(r)).map((r) => `${r}${diff(r) > 0 ? "+" : ""}${diff(r)}`);
-      const missing = tags.filter((tag) => !watchers[k].seen.has(tag));
-      if (missing.length) throw new Error(`${what}: ${t.name} never flashed ${missing.join(" ")} (saw ${[...watchers[k].seen].join(" ") || "nothing"})`);
-      if (tags.length) await until(async () => ((await flashes(t)).length ? null : true), `${t.name}'s flash fades (${what})`, 3000);
+      if (!tags.length) continue;
+      // The label and the new count land in the same commit, so by now the record has it.
+      const shown = await flashesSince(t, marks[k]);
+      const missing = tags.filter((tag) => !shown.some((f) => f.sign === "+" && f.tag === tag));
+      if (missing.length) throw new Error(`${what}: ${t.name} never flashed ${missing.join(" ")} (saw ${shown.map((f) => f.sign + f.tag).join(" ") || "nothing"})`);
+      // It is removed by a 1.2 s timer, which waits for the frames in progress; software-GL frames on a loaded
+      // machine have kept a label up for 8 s.
+      const gone = await until(async () => {
+        const log = await flashesSince(t, marks[k]);
+        return tags.every((tag) => log.some((f) => f.sign === "-" && f.tag === tag)) ? log : null;
+      }, `${t.name}'s flash fades (${what})`, 20_000);
+      for (const tag of tags) {
+        const on = gone.find((f) => f.sign === "+" && f.tag === tag).at;
+        const off = gone.find((f) => f.sign === "-" && f.tag === tag).at;
+        longest = Math.max(longest, off - on);
+      }
       seen.push(...tags.map((tag) => `${t.name} ${tag}`));
     }
     return seen;
@@ -321,7 +339,7 @@ try {
     }
   }
   if (!proved.gain || !proved.loss) throw new Error(`resource flash: gain ${proved.gain}, loss ${proved.loss}`);
-  console.log(`resource flash: green "${proved.gain}" and red "${proved.loss}" each showed and faded within 2 s`);
+  console.log(`resource flash: green "${proved.gain}" and red "${proved.loss}" each showed and went away (longest label ${Math.round(longest)} ms)`);
   if (errors.length) throw new Error(`console errors:\n${errors.join("\n")}`);
   console.log(SERVED ? `tabs prove ok (served by the host on :${hostPort}, no ?host=)` : "tabs prove ok");
 } catch (e) {

@@ -156,6 +156,26 @@ if (mNames !== "B".repeat(15) + ",Tide") fail("edge seat names", mNames);
 for (const x of m) x.ws.close();
 console.log("16-char cut trimmed to 15 B's; zero-width-only name defaulted");
 
+// 2d. Peeks: bad shapes are dropped, one valid peek answers, and a flood on one socket is throttled (docs/design/color-peek.md).
+const silent = (x, ms = 300) => new Promise((r) => setTimeout(r, ms)).then(() => x.inbox.length === 0);
+const [p1, p2, p3] = [client(), client(), client()];
+await Promise.all([p1.open, p2.open, p3.open]);
+for (const bad of [{}, "ABC", "ABCDE", "ABC0"]) p1.send({ type: "peek", code: bad });
+if (!(await silent(p1))) fail("an invalid peek got a reply", JSON.stringify(p1.inbox));
+p1.send({ type: "peek", code });
+if ((await p1.next("seats")).seats.length !== 3) fail("valid peek after invalid ones");
+await new Promise((r) => setTimeout(r, 300));
+if (p1.inbox.length) fail("more than one seats reply", JSON.stringify(p1.inbox));
+for (let i = 0; i < 6; i++) p2.send({ type: "peek", code });
+for (let i = 0; i < 5; i++) await p2.next("seats");
+await new Promise((r) => setTimeout(r, 300));
+if (p2.inbox.length) fail("the sixth peek was answered", JSON.stringify(p2.inbox));
+for (let i = 0; i < 6; i++) p3.send({ type: "hello", code: "ZZZZ", name: "Flood" });
+for (let i = 0; i < 5; i++) if ((await p3.next("error")).message !== "No table with that code") fail("hello flood answer");
+if ((await p3.next("error")).message !== "Slow down.") fail("sixth hello not throttled");
+for (const x of [p1, p2, p3]) x.ws.close();
+console.log("peeks: 4 bad shapes silent, 1 valid answered, 6 peeks gave 5 replies, 6 hellos gave 5 errors then Slow down.");
+
 // 3. A player who leaves mid-game is played by the bot after the grace, so the table keeps going.
 for (const x of [a, b, c]) x.send({ type: "ready", value: true });
 while (!(await a.next("seats")).seats.every((s) => s.ready));
