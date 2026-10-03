@@ -14,6 +14,7 @@
     "tabs-prove": "node scripts/tabs-prove.mjs",
     "wayfarer-prove": "node scripts/wayfarer-prove.mjs",
     "trade-prove": "node scripts/trade-prove.mjs",
+    "pieces-prove": "node --import ./server/register.mjs scripts/pieces-prove.mjs",
     "tokens-prove": "node scripts/tokens-prove.mjs",
     "orphan-check": "node scripts/orphan-check.mjs",
     "chat-prove": "node scripts/chat-prove.mjs",
