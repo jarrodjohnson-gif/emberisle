@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef } from "react";
+import { useEffect, useId, useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { useGame } from "@/lib/game/store";
 import { TERRAIN_LABEL, type GameState, type HexCell, type Vertex } from "@/lib/game/types";
@@ -80,11 +80,13 @@ function useTargets() {
   useGame((s) => s.legal);
   useGame((s) => s.roadPicks);
   const highlights = useGame((s) => s.highlights);
-  if (!state || screen !== "play") return null;
-  const actor = mode === "hotseat" ? state.current : localId;
+  const actor = mode === "hotseat" ? (state?.current ?? localId) : localId;
+  // The names only change with the board, not with every arming or pick.
+  const corner = useMemo(() => (state ? cornerNames(state, actor) : null), [state, actor]);
+  const hexName = useMemo(() => (state ? hexNames(state) : null), [state]);
+  if (!state || !corner || !hexName || screen !== "play") return null;
   if (state.current !== actor) return null;
   const hi = highlights();
-  const corner = cornerNames(state, actor);
   const byId = new Map(state.vertices.map((v) => [v.id, v]));
   if (hi.vertices.length) {
     const heading = buildMode === "stronghold" ? "Raise a stronghold" : "Place an outpost";
@@ -102,8 +104,7 @@ function useTargets() {
     return { heading: "Lay a path", kind: "edge" as const, items };
   }
   if (hi.hexes.length) {
-    const names = hexNames(state);
-    const items = hi.hexes.map((id) => ({ id, name: names.get(state.hexes.find((h) => h.id === id)!)! }));
+    const items = hi.hexes.map((id) => ({ id, name: hexName.get(state.hexes.find((h) => h.id === id)!)! }));
     return { heading: "Move the wayfarer", kind: "hex" as const, items };
   }
   return null;
@@ -135,6 +136,12 @@ export function PlaceList() {
         role="group"
         aria-labelledby={headingId}
         data-testid="place-list"
+        // A mark tapped on the board but not yet confirmed must not ride along: PlaceChip confirms it on any Enter
+        // that reaches the window, which would place it instead of (or as well as) the button pressed here.
+        onFocusCapture={() => useGame.getState().setPendingPlace(null)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") e.stopPropagation();
+        }}
         className="sr-only rounded-[16px] border border-white/50 bg-surface p-2 shadow-lg focus-within:not-sr-only focus-within:pointer-events-auto focus-within:block"
       >
         <h2 id={headingId} className="px-1 pb-1 text-sm font-medium">
@@ -148,9 +155,13 @@ export function PlaceList() {
               variant="secondary"
               className="h-auto min-h-8 justify-start py-1 text-left"
               onClick={() => {
+                const before = useGame.getState();
                 refocus.current = true;
-                useGame.getState().setPendingPlace(null);
+                before.setPendingPlace(null);
                 pick(t.id);
+                // Offline a pick acts at once; one that changed nothing (refused, or asking whom to rob) leaves focus alone.
+                const after = useGame.getState();
+                if (after.mode !== "online" && after.state === before.state && after.roadPicks === before.roadPicks) refocus.current = false;
               }}
             >
               {t.name}

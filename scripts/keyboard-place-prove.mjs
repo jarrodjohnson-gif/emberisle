@@ -7,7 +7,7 @@ import { createServer } from "vite";
 // CI renders the island with software GL, where one frame can take seconds; a step gets this long to show.
 const STEP_MS = 15_000;
 
-const PORT = 8099;
+const PORT = Number(process.env.VITE_PORT) || 8101;
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();
 
@@ -69,7 +69,26 @@ try {
   mkdirSync("test-results", { recursive: true });
   await page.screenshot({ path: "test-results/keyboard-place-prove.png" });
 
-  // Eight placements: Enter on whatever button holds focus, which stays in the list from one to the next.
+  // A phone tap left a mark on corner A (PlaceChip, waiting for Enter); Enter on list button B places B, never A.
+  {
+    const [a, b] = start.hi.vertices;
+    await group.getByRole("button").nth(1).focus();
+    await page.evaluate((id) => window.__emberisle.getState().setPendingPlace({ kind: "vertex", id }), a);
+    await page.getByTestId("place-chip").waitFor({ timeout: STEP_MS });
+    await page.keyboard.press("Enter");
+    await waitSeq(start.seq);
+    const got = await page.evaluate(([a, b]) => {
+      const s = window.__emberisle.getState();
+      const at = (id) => s.state.vertices.find((v) => v.id === id).building?.playerId ?? null;
+      return { a: at(a), b: at(b), phase: s.state.phase, pending: s.pendingPlace, seq: s.state.seq };
+    }, [a, b]);
+    console.log(`pending mark on A, Enter on list button B: A ${got.a ?? "empty"}, B ${got.b}, ${got.phase}, seq +${got.seq - start.seq}`);
+    if (got.a !== null || got.b !== start.current || got.phase !== "setupRoad" || got.pending || got.seq !== start.seq + 1) {
+      throw new Error(`Enter on B with A pending: ${JSON.stringify(got)}`);
+    }
+  }
+
+  // Eight placements (the first outpost is down): Enter on whatever button holds focus, which stays in the list from one to the next.
   for (let step = 0; step < 16; step++) {
     const before = await game();
     if (before.phase !== "setupSettle" && before.phase !== "setupRoad") break;
@@ -203,13 +222,18 @@ try {
   const w = page.getByRole("group", { name: "Move the wayfarer" });
   await w.waitFor({ state: "attached", timeout: STEP_MS });
   const hexNames = await w.getByRole("button").allTextContents();
-  await w.getByRole("button").first().focus();
+  // A tapped-but-unconfirmed hex A is dropped when focus enters the list, so Enter on B moves the wayfarer once, to B.
+  const [hexA, hexB] = await page.evaluate(() => window.__emberisle.getState().highlights().hexes.slice(0, 2));
+  await page.evaluate((id) => window.__emberisle.getState().setPendingPlace({ kind: "hex", id }), hexA);
+  await page.getByTestId("place-chip").waitFor({ timeout: STEP_MS });
+  await w.getByRole("button").nth(1).focus();
+  await page.getByTestId("place-chip").waitFor({ state: "detached", timeout: STEP_MS });
   await page.keyboard.press("Enter");
   // One or no seat to rob moves at once; two or more ask "Take from whom?", which is already buttons.
   await page.waitForFunction((r) => { const s = window.__emberisle.getState(); return s.state.seq > r.seq || s.pendingSteal; }, robber, { timeout: STEP_MS });
   const moved = await page.evaluate(() => { const s = window.__emberisle.getState(); return { hex: s.pendingSteal?.hexId ?? s.state.robberHex, asks: !!s.pendingSteal }; });
   console.log(`wayfarer: ${hexNames.length} buttons (glow ${robber.glow}), "${hexNames[0]}", Enter -> ${moved.asks ? "asks whom to rob at" : "moved to"} ${moved.hex}`);
-  if (hexNames.length !== robber.glow || new Set(hexNames).size !== hexNames.length || moved.hex === robber.from) {
+  if (hexNames.length !== robber.glow || new Set(hexNames).size !== hexNames.length || moved.hex !== hexB || moved.hex === robber.from) {
     throw new Error(`wayfarer: ${JSON.stringify({ hexNames, robber, moved })}`);
   }
 } catch (e) {
