@@ -216,7 +216,9 @@ interface GameStore {
   declined: string[];
   tradeOutcome: string | null;
   tradeOpen: boolean;
-  setTradeOpen: (v: boolean) => void;
+  // Who opened the panel, so focus can go back there on close (Safari does not focus buttons on click, #302).
+  tradeOpener: HTMLElement | null;
+  setTradeOpen: (v: boolean, opener?: HTMLElement | null) => void;
   askTable: (give: Bag, want: Bag) => void;
   answerTrade: (yes: boolean) => void;
   // The player whose action menu is open in the HUD rail or seat strip (docs/design/chat.md "The player action menu").
@@ -306,6 +308,7 @@ export const useGame = create<GameStore>((set, get) => ({
   declined: [],
   tradeOutcome: null,
   tradeOpen: false,
+  tradeOpener: null,
   menuFor: null,
   setName: (n) => {
     const name = n.slice(0, 18) || "Ember";
@@ -402,6 +405,7 @@ export const useGame = create<GameStore>((set, get) => ({
       declined: [],
       tradeOutcome: null,
       tradeOpen: false,
+      tradeOpener: null,
     });
   },
   dispatch: (action, asId) => {
@@ -597,7 +601,7 @@ export const useGame = create<GameStore>((set, get) => ({
   },
   sendChat: (text) => get().net?.say(text),
   sendReact: (emote, to) => get().net?.react(emote, to),
-  setTradeOpen: (v) => set({ tradeOpen: v }),
+  setTradeOpen: (v, opener) => set({ tradeOpen: v, tradeOpener: v ? (opener ?? null) : null }),
   askTable: (give, want) => {
     get().net?.ask(give, want);
     set({ tradeOpen: false });
