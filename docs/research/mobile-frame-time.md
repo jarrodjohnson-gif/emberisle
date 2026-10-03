@@ -134,8 +134,8 @@ $ npm run typecheck
 
 ```
 done: measured the matrix, wrote this note; scripts/shots.mjs gained --size, --coarse and --budget
-left: file the children in Backlog (numbers above): cap pixel ratio on coarse pointers; SSAO at half CSS size
-      (free view only); low-rate idle loop; dist/assets size budget proof; (needs: jarrod) a real-phone re-measure
-broke: nothing known; the screenshot run of shots.mjs without flags was not re-run, only the new --budget path
-next agent: file the children, link them here
+left: nothing in this note. Children filed in Backlog: #329 cap pixel ratio 1.5 on coarse pointers; #330 SSAO at half
+      CSS size; #331 idle render loop; #332 size budget proof for dist/assets; #333 Decide: real-phone re-measure (needs: jarrod)
+broke: nothing; `node scripts/shots.mjs` (17 shots) and `node scripts/shots.mjs --size 390x844 --coarse` (8 shots) both exit 0
+next agent: take #329 to #332 as Todo is set
 ```
