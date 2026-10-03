@@ -153,6 +153,8 @@ That builds the client, starts the host, and prints the join line:
 
 Ctrl-C in the night terminal stops the host. Install cloudflared once if it is not already there (`winget install --id Cloudflare.cloudflared` on Windows). A quick tunnel needs no account. If it refuses to start because `~/.cloudflared/config.yml` exists, move that file aside for the night, or use the named tunnel in the build bible.
 
+Host limits to know about: `ROOM_MAX` (default 64) counts every open lobby room, and each open socket can hold one, so a client that opens 64 sockets (about 13 s at the pre-seat rate) can fill the host. Per-IP limits are out of scope because the tunnel hides addresses. A finished game whose players stay connected keeps its slot. The per-seat non-chat limit (`ACT_CAP` 20, `ACT_RATE` 4 a second) is read from env like `HOLD_MS` and `GRACE_MS`; the table and net proofs raise it, `harden-prove` keeps the defaults.
+
 If any command here fails on a fresh clone, that is a bug. File it (label `bug`) before doing anything else.
 
 ---

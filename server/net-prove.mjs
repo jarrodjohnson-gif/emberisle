@@ -25,7 +25,7 @@ const ROOMS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-rooms-"));
 process.on("exit", () => rmSync(ROOMS_DIR, { recursive: true, force: true }));
 host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL(".", import.meta.url),
-  env: { ...process.env, PORT: "0", ROOMS_DIR },
+  env: { ...process.env, PORT: "0", ACT_RATE: "1000", ACT_CAP: "1000", ROOMS_DIR },
 });
 process.on("exit", () => host.kill());
 for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
@@ -127,8 +127,6 @@ const cardsOf = (g, id) => {
 };
 async function act(p, action) {
   const seq = p.state.seq;
-  // The host allows a seat a burst of 20 non-chat messages, then 4 a second (#281); pace the proof like a person.
-  await new Promise((r) => setTimeout(r, 70));
   p.t.act(action);
   await until(() => all.every((x) => x.state.seq > seq) || p.errors.length, `${action.type} by ${p.you}`);
   if (p.errors.length) fail(`${action.type} refused`, p.errors);
