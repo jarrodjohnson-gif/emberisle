@@ -537,7 +537,7 @@ try {
       Object.fromEntries(
         ["Path", "Outpost", "Stronghold", "Fortune"].map((n) => {
           const b = [...document.querySelectorAll("button")].find((x) => x.textContent.trim() === n);
-          return [n, { disabled: b?.disabled, title: b?.title, desc: b?.getAttribute("aria-description"), pressed: b?.getAttribute("aria-pressed") }];
+          return [n, { disabled: b?.getAttribute("aria-disabled") === "true", native: b?.disabled, cursor: b && getComputedStyle(b).cursor, title: b?.title, desc: b?.getAttribute("aria-description"), pressed: b?.getAttribute("aria-pressed") }];
         }),
       ),
     );
@@ -547,7 +547,23 @@ try {
   await page.getByRole("button", { name: "Path", exact: true }).waitFor({ timeout: 5000 });
   const empty = await buildRow();
   console.log("build row, empty hand:", JSON.stringify(empty));
-  for (const [n, p] of Object.entries(price)) if (!empty[n].disabled || empty[n].title !== p || empty[n].desc !== p) throw new Error(`empty hand ${n}: ${JSON.stringify(empty[n])}`);
+  for (const [n, p] of Object.entries(price)) if (!empty[n].disabled || empty[n].native || empty[n].cursor !== "not-allowed" || empty[n].title !== p || empty[n].desc !== p) throw new Error(`empty hand ${n}: ${JSON.stringify(empty[n])}`);
+  // #302: an unaffordable button is still in the Tab order, reports aria-disabled and its price, and a click neither arms nor buys.
+  await page.evaluate(() => document.activeElement?.blur());
+  let tabbedTo = null;
+  for (let i = 0; i < 40 && tabbedTo !== "Path"; i++) {
+    await page.keyboard.press("Tab");
+    tabbedTo = await page.evaluate(() => document.activeElement?.textContent?.trim());
+  }
+  const tabFocus = await page.evaluate(() => ({ aria: document.activeElement?.getAttribute("aria-disabled"), desc: document.activeElement?.getAttribute("aria-description") }));
+  console.log("Tab to unaffordable Path:", JSON.stringify({ tabbedTo, ...tabFocus }));
+  if (tabbedTo !== "Path" || tabFocus.aria !== "true" || tabFocus.desc !== price.Path) throw new Error(`Tab/aria-disabled: ${JSON.stringify({ tabbedTo, ...tabFocus })}`);
+  const cardsBefore = await page.evaluate(() => JSON.stringify([window.__emberisle.getState().state.deck.length, window.__emberisle.getState().error]));
+  for (const n of ["Path", "Outpost", "Stronghold", "Fortune"]) await page.getByRole("button", { name: n, exact: true }).click({ force: true });
+  await page.keyboard.press("Enter");
+  const clickRes = await page.evaluate(() => ({ buildMode: window.__emberisle.getState().buildMode, cards: JSON.stringify([window.__emberisle.getState().state.deck.length, window.__emberisle.getState().error]) }));
+  console.log("click unaffordable:", JSON.stringify({ ...clickRes, cardsBefore }));
+  if (clickRes.buildMode !== "none" || clickRes.cards !== cardsBefore) throw new Error(`unaffordable click acted: ${JSON.stringify(clickRes)}`);
   await setHand({ timber: 1, clay: 1 });
   const some = await buildRow();
   console.log("build row, 1 timber 1 clay:", JSON.stringify(some));
@@ -591,10 +607,18 @@ try {
 
   // #286: How to play is a dialog: focus goes to Close, Escape closes it, and focus returns to the opener (title and in-game).
   const howToRound = async (opener, label) => {
+    // Safari does not focus a button on click: stop the mousedown focus and blur, so activeElement is <body> when the dialog opens.
+    await opener.evaluate((el) => {
+      el.addEventListener("mousedown", (e) => e.preventDefault(), { once: true });
+      el.blur();
+    });
     await opener.click();
     const dlg = page.getByRole("dialog", { name: "How to play" });
     await dlg.waitFor({ timeout: 3000 });
     const at = await page.evaluate(() => document.activeElement?.getAttribute("aria-label"));
+    await page.keyboard.press("Tab");
+    const afterTab = await page.evaluate(() => document.activeElement?.getAttribute("aria-label"));
+    if (afterTab !== "Close") throw new Error(`how to play ${label}: Tab left the dialog: ${afterTab}`);
     await page.keyboard.press("Escape");
     await dlg.waitFor({ state: "detached", timeout: 3000 });
     const back = await page.evaluate(() => document.activeElement?.getAttribute("aria-label") ?? document.activeElement?.textContent?.trim());
