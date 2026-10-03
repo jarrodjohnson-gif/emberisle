@@ -447,7 +447,13 @@ function useResourceFlashes(me: PlayerState) {
       };
     }
   }, [flashes]);
-  useEffect(() => () => Object.values(timers.current).forEach((t) => clearTimeout(t.timer)), []);
+  useEffect(
+    () => () => {
+      Object.values(timers.current).forEach((t) => clearTimeout(t.timer));
+      timers.current = {};
+    },
+    [],
+  );
   return flashes;
 }
 
