@@ -63,6 +63,12 @@ try {
 
   await page.getByRole("button", { name: "Four seats, one table" }).click();
   await page.waitForFunction(() => window.__emberisle?.getState().state && window.__isle.lastState);
+  // #232: roll off first, so the board is measured in setup as before (the roll-off's longer phase sentence
+  // and Roll button cover the canvas centre at 640x400, where the drag below starts).
+  await page.evaluate(() => {
+    const g = window.__emberisle;
+    while (g.getState().state.phase === "rollOff") g.getState().dispatch({ type: "roll" });
+  });
   await idle();
   const still = await count(2000);
   check("idle: at most 30 renders in 2 s", still.draws <= 30, still);
