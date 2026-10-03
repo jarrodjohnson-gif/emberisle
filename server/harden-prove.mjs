@@ -220,7 +220,10 @@ console.log("ROOM_MAX=3: three hellos got welcome, the fourth got 'The host is f
 const flood = four[0];
 flood.inbox.length = 0;
 for (let i = 0; i < 60; i++) flood.send({ type: "ready", value: i % 2 === 0 });
-await new Promise((r) => setTimeout(r, 500));
+// Wait for all 60 answers (a seats push or an error), not a fixed 500 ms: on a loaded CI runner the replies
+// came later and none were counted. A late flood reply would also be mistaken for the answer to the ready below.
+const answered = () => flood.inbox.filter((e) => e.type === "seats" || e.type === "error").length;
+for (const until = Date.now() + 5000; answered() < 60 && Date.now() < until; ) await new Promise((r) => setTimeout(r, 25));
 const slows = flood.inbox.filter((e) => e.type === "error" && e.message === "Slow down.").length;
 if (slows < 1) fail("60 ready toggles were never throttled");
 if (small3.exitCode !== null) fail("the host died in the flood");
