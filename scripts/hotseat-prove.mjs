@@ -45,6 +45,28 @@ try {
   console.log("bar:", label);
 
   const form = page.locator("form", { hasText: "discard 4" });
+  // #255: the bar counts what is picked, clamps each count to what the seat holds, and keeps Discard off until the total is exact.
+  const count = form.getByTestId("discard-count");
+  const submit = form.getByRole("button", { name: "Discard" });
+  const countState = async () => ({ text: (await count.textContent()).trim(), disabled: await submit.isDisabled() });
+  const start = await countState();
+  if (start.text !== "0 of 4" || !start.disabled) throw new Error(`empty bar: ${JSON.stringify(start)}`);
+  await form.getByLabel("Timber").fill("3");
+  const part = await countState();
+  if (part.text !== "3 of 4" || !part.disabled) throw new Error(`3 picked: ${JSON.stringify(part)}`);
+  await form.getByLabel("Ore").fill("5"); // holds 1: clamped
+  const clamped = await form.getByLabel("Ore").inputValue();
+  const over = await countState();
+  if (clamped !== "1" || over.text !== "4 of 4" || over.disabled) throw new Error(`clamp/exact: ${clamped} ${JSON.stringify(over)}`);
+  await form.getByLabel("Timber").fill("4"); // holds 3: clamped, total still 4
+  const tooMany = await form.getByLabel("Timber").inputValue();
+  if (tooMany !== "3") throw new Error(`timber not clamped: ${tooMany}`);
+  await form.getByLabel("Timber").fill("2");
+  const short = await countState();
+  if (short.text !== "3 of 4" || !short.disabled) throw new Error(`short again: ${JSON.stringify(short)}`);
+  console.log("discard count:", JSON.stringify({ start, part, clamped, over, short }));
+  await form.getByLabel("Timber").fill("0");
+  await form.getByLabel("Ore").fill("0");
   await form.locator('input[name="timber"]').fill("3");
   await form.locator('input[name="clay"]').fill("1");
   await form.getByRole("button", { name: "Discard" }).click();

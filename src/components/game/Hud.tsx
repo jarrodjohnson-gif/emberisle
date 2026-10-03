@@ -19,6 +19,7 @@ import { ChatDock, ReactionFloats } from "@/components/game/Chat";
 import { TradeButton, TradePanel } from "@/components/game/TradePanel";
 import { TradeToast } from "@/components/game/TradeToast";
 import { PlayerMenu } from "@/components/game/PlayerMenu";
+import { DiscardBar } from "@/components/game/DiscardBar";
 import { COST, RESOURCES, RESOURCE_LABEL, type DevKind, type PlayerState, type Resource } from "@/lib/game/types";
 import { hiddenCount, legalRoads, playable, publicVP, totalVP } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
@@ -76,7 +77,6 @@ export function Hud() {
   const howTo = useGame((s) => s.howTo);
   const dispatch = useGame((s) => s.dispatch);
   const setBuildMode = useGame((s) => s.setBuildMode);
-  const goTitle = useGame((s) => s.goTitle);
   const setHowTo = useGame((s) => s.setHowTo);
   const menuFor = useGame((s) => s.menuFor);
   const openMenu = useGame((s) => s.openMenu);
@@ -135,9 +135,7 @@ export function Hud() {
             <Button variant="secondary" size="icon" onClick={() => setHowTo(true)} aria-label="How to play">
               <BookOpen className="size-4" />
             </Button>
-            <Button variant="secondary" size="sm" onClick={goTitle}>
-              Leave
-            </Button>
+            <LeaveButton confirm={mode === "online" && state.phase !== "over"} />
           </div>
         </div>
       </header>
@@ -480,50 +478,6 @@ function ResourceHand({ me }: { me: PlayerState }) {
   );
 }
 
-function DiscardBar({ id, n }: { id: string; n: number }) {
-  const me = useGame((s) => s.state!.players.find((p) => p.id === id)!);
-  const hotseat = useGame((s) => s.mode === "hotseat");
-  const dispatch = useGame((s) => s.dispatch);
-  const picked = useGame(() => null);
-  void picked;
-  return (
-    <form
-      className="flex flex-wrap items-center gap-2 rounded-[16px] border border-accent/40 bg-surface p-2"
-      onSubmit={(e) => {
-        e.preventDefault();
-        const fd = new FormData(e.currentTarget);
-        const resources: Partial<Record<Resource, number>> = {};
-        let sum = 0;
-        for (const r of RESOURCES) {
-          const v = Number(fd.get(r) || 0);
-          resources[r] = v;
-          sum += v;
-        }
-        if (sum !== n) return;
-        dispatch({ type: "discard", resources }, id);
-      }}
-    >
-      <span className="text-sm">{hotseat ? `${me.name}: discard ${n}` : `Discard ${n}`}</span>
-      {RESOURCES.map((r) => (
-        <label key={r} className="flex items-center gap-1 text-xs">
-          {RESOURCE_LABEL[r]}
-          <input
-            name={r}
-            type="number"
-            min={0}
-            max={me.resources[r]}
-            defaultValue={0}
-            className="h-9 w-12 rounded-[8px] border border-white/50 bg-raised px-1 text-center"
-          />
-        </label>
-      ))}
-      <Button size="sm" type="submit">
-        Discard
-      </Button>
-    </form>
-  );
-}
-
 function TakeFromBar() {
   const state = useGame((s) => s.state);
   const pendingSteal = useGame((s) => s.pendingSteal);
@@ -652,6 +606,60 @@ export function HowTo({ onClose }: { onClose: () => void }) {
           <p>Drag to orbit the isle. Tap glowing corners and paths to build.</p>
         </div>
       </div>
+    </div>
+  );
+}
+
+// Leaving an online table frees the seat for good (goTitle wipes the saved secret), so ask first. Stay, Escape or 5 s cancels.
+function LeaveButton({ confirm }: { confirm: boolean }) {
+  const goTitle = useGame((s) => s.goTitle);
+  const phone = useViewport().phone;
+  const [asking, setAsking] = useState(false);
+  const leaveRef = useRef<HTMLButtonElement>(null);
+  const stayRef = useRef<HTMLButtonElement>(null);
+  const cancel = () => {
+    setAsking(false);
+    leaveRef.current?.focus();
+  };
+  useEffect(() => {
+    if (!asking) return;
+    stayRef.current?.focus();
+    const timer = setTimeout(() => setAsking(false), 5000);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") cancel();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [asking]);
+  useEffect(() => {
+    if (!confirm) setAsking(false);
+  }, [confirm]);
+  return (
+    <div className="relative">
+      <Button ref={leaveRef} variant="secondary" size="sm" onClick={confirm ? () => setAsking(true) : goTitle}>
+        Leave
+      </Button>
+      {asking ? (
+        <div
+          role="alertdialog"
+          aria-label="Leave the table?"
+          data-testid="leave-confirm"
+          className="absolute right-0 top-full z-20 mt-2 flex w-64 flex-col gap-2 rounded-[16px] border border-white/50 bg-surface p-3 text-sm shadow-lg"
+        >
+          <p>Leave the table? Your seat goes to the bot.</p>
+          <div className="flex justify-end gap-2">
+            <Button ref={stayRef} variant="secondary" size="sm" className={phone ? "h-11 min-w-11" : undefined} onClick={cancel}>
+              Stay
+            </Button>
+            <Button size="sm" className={phone ? "h-11 min-w-11" : undefined} onClick={goTitle}>
+              Leave
+            </Button>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
