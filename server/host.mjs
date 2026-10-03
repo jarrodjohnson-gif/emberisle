@@ -43,6 +43,9 @@ const PING_MS = Number(process.env.PING_MS ?? 30 * 1000);
 // that sleeps or a Node crash does not end the game. Rooms saved more than a day ago are dropped.
 const ROOMS = path.resolve(process.env.ROOMS_DIR ?? fileURLToPath(new URL("./rooms/", import.meta.url)));
 const ROOM_TTL = 24 * 60 * 60 * 1000;
+// Stamped on every saved room. Bump it whenever GameState, the seat record or the chat record changes
+// shape: load() drops files with any other stamp (including none), so a bump ends the saved rooms on the next restart.
+const ROOM_SHAPE = 1;
 // The built client (npm run build). DIST lets a proof point the host at a small temp folder.
 const DIST = path.resolve(process.env.DIST ?? fileURLToPath(new URL("../dist/", import.meta.url)));
 const TYPES = {
@@ -110,6 +113,7 @@ function save(room) {
     chatSeq: room.chatSeq,
     game: room.game,
     seats: room.seats.map(({ id, name, color, ready, pid, secret }) => ({ id, name, color, ready, pid, secret })),
+    shape: ROOM_SHAPE,
     savedAt: Date.now(),
   };
   try {
@@ -145,6 +149,17 @@ function load() {
       continue;
     }
     if (typeof saved?.code !== "string" || !Array.isArray(saved.seats) || !(Date.now() - saved.savedAt < ROOM_TTL) || saved.seats.length === 0) {
+      rmSync(file, { force: true });
+      continue;
+    }
+    if (saved.shape !== ROOM_SHAPE) {
+      console.error(`stale room file: ${name} (shape ${saved.shape}, want ${ROOM_SHAPE})`);
+      rmSync(file, { force: true });
+      continue;
+    }
+    const g = saved.game;
+    if (g !== null && (typeof g !== "object" || !["players", "vertices", "edges", "seq", "phase"].every((k) => k in g))) {
+      console.error(`bad game in room file: ${name}`);
       rmSync(file, { force: true });
       continue;
     }
