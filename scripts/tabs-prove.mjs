@@ -222,7 +222,10 @@ try {
   console.log(`setup done on all tabs, seq ${seqOf(vs[0])}`);
 
   // Five rolls. Each roll is followed by any discards, the wayfarer, and a pass.
+  // #322: tab C asks for reduced motion, so its dice faces must not animate at all.
+  await c.page.emulateMedia({ reducedMotion: "reduce" });
   const dice = [];
+  let diceMatch = 0;
   for (let r = 0; r < ROLLS; r++) {
     const cur = JSON.parse(vs[0].shared).current;
     const i = vs.findIndex((v) => v.you === cur);
@@ -245,6 +248,35 @@ try {
     dice.push(d);
     if (!banner.includes(`rolls ${d[0]}+${d[1]} = ${d[0] + d[1]}`)) throw new Error(`banner after roll ${r + 1}: "${banner}" vs dice ${d}`);
     if (r === 0) console.log(`roll banner on all tabs: "${banner}"`);
+    // #322: every tab draws the roll as two pip faces that match the banner and the last roll line in the log.
+    const sum = Number(banner.match(/rolls \d\+\d = (\d+)/)[1]);
+    for (const t of tabs) {
+      const faces = await until(
+        () =>
+          t.page.evaluate((want) => {
+            const els = [...document.querySelectorAll('[data-testid="die"]')];
+            const values = els.map((e) => Number(e.dataset.value));
+            if (els.length !== 2 || values.join("+") !== want) return null;
+            const line = window.__emberisle.getState().state.log.findLast((l) => /rolls \d\+\d/.test(l));
+            return {
+              values,
+              logged: line.match(/rolls (\d)\+(\d)/).slice(1).map(Number),
+              pips: els.map((e) => e.querySelectorAll("[data-pip]").length),
+              label: els[0].closest('[role="img"]')?.getAttribute("aria-label"),
+              motion: getComputedStyle(els[0]).animationName,
+            };
+          }, d.join("+")),
+        `dice faces on ${t.name} after roll ${r + 1}`,
+      );
+      const [x, y] = faces.values;
+      if (x + y !== sum) throw new Error(`${t.name} dice ${x}+${y} vs banner sum ${sum}`);
+      if (faces.logged.join() !== faces.values.join()) throw new Error(`${t.name} dice ${x}+${y} vs log ${faces.logged.join("+")}`);
+      if (faces.pips.join() !== faces.values.join()) throw new Error(`${t.name} dice ${x}+${y} drew ${faces.pips.join("+")} pips`);
+      if (faces.label !== `Rolled ${x} and ${y}, ${sum}`) throw new Error(`${t.name} dice label "${faces.label}"`);
+      const want = t === c ? "none" : "die-settle";
+      if (faces.motion !== want) throw new Error(`${t.name} die animation ${faces.motion}, want ${want}`);
+    }
+    diceMatch++;
 
     for (let guard = 0; guard < 10; guard++) {
       const phase = JSON.parse(vs[0].shared).phase;
@@ -271,6 +303,7 @@ try {
     }
   }
   console.log(`${ROLLS} rolls, same on all 3 tabs: ${dice.map((d) => d.join("+")).join(" ")}`);
+  console.log(`dice faces: ${diceMatch}/${ROLLS} match the log (pips, aria-label, no settle on the reduced-motion tab)`);
 
   // #170: a tab's own hand flashes +N green on a gain and -N red on a loss, and each flash goes away again.
   // Keep playing until a roll has paid someone and a bank trade, a discard, or a steal has taken something.
