@@ -83,12 +83,14 @@ function play(g, action) {
   g.bank.clay = 0;
   const a = chooseBotAction(g, "p0");
   if (a.type === "playPlenty") fail("bank has no clay: still a plenty", a);
+  play(g, a);
   console.log("plenty: held back when the bank cannot pay a named card");
 }
 {
   const g = position({ resources: { timber: 1 }, hidden: { plenty: 1 } });
   const a = chooseBotAction(g, "p0");
   if (a.type === "playPlenty") fail("short by 5 for a stronghold: still a plenty", a);
+  play(g, a);
   console.log("plenty: held back when the stronghold is five cards away");
 }
 
@@ -138,17 +140,18 @@ function play(g, action) {
 
 // Fortunes bought this turn stay in hand; a second fortune in one turn is never asked for.
 for (const kind of ["plenty", "road", "monopoly"]) {
-  const g = position({ resources: { timber: 1, wool: 1 }, hidden: { [kind]: 1 }, bought: { [kind]: 1 } });
+  const g = position({ resources: { timber: 1, wool: 1 }, hidden: { [kind]: 1 }, bought: { [kind]: 1 }, strongholds: true, extend: true });
   const a = chooseBotAction(g, "p0");
   if (a.type.startsWith("play")) fail(`${kind} bought this turn was played`, a);
-  if (applyAction(g, "p0", a).error) fail(`${kind} bought this turn: fallback is illegal`, a);
+  play(g, a);
 }
 console.log("bought this turn: plenty, path and monopoly all stay in hand");
 {
-  const g = position({ resources: { timber: 1, wool: 1 }, hidden: { plenty: 1, road: 1, monopoly: 1 } });
+  const g = position({ resources: { timber: 1, wool: 1 }, hidden: { plenty: 1, road: 1, monopoly: 1 }, strongholds: true, extend: true });
   g.playedCard = true;
   const a = chooseBotAction(g, "p0");
   if (a.type.startsWith("play")) fail("a second fortune in one turn", a);
+  play(g, a);
   console.log("already played: no second fortune");
 }
 
