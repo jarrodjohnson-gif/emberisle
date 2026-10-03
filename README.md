@@ -97,6 +97,11 @@ Say timber, clay, wool, grain, ore, outpost, stronghold, path, fortune, and wayf
 | Room persistence: tables are saved to disk and reloaded when the host restarts | Works. Proven by killing and restarting the host mid-game. | `server/persist-prove.mjs` |
 | Keepalive: the host pings every socket and cuts one that stops answering | Works. Proven in the rejoin proof. | `server/rejoin-prove.mjs` |
 | Friends joining over the internet: `npm run night` builds, starts the host, and prints the join line for a Cloudflare tunnel | Works. The host serves the page and the socket on one address, so one tunnel carries both. The tunnel itself is Jarrod's step. | `scripts/night.mjs`, `server/serve-prove.mjs`, `npm run served-prove` |
+| Phone layout: one phone and portrait test, a camera fit and touch picking for small screens, a compact HUD (#175, #177, #178) | Works. Proven by the touch-place proof and in headless Chromium. | `src/lib/viewport.ts`, `src/lib/scene/mobile-fit.ts`, `scripts/touch-place-prove.mjs` |
+| Trade panel and toast: ask the table, answer an offer (#163) | Works. | `src/components/game/TradePanel.tsx`, `src/components/game/TradeToast.tsx` |
+| Win screen (#220) | Works. | `src/components/game/WinScreen.tsx` |
+| Player action menu (#161) | Works. | `src/components/game/PlayerMenu.tsx` |
+| Table sounds | Host map only (`server/cue.mjs`); the browser is silent. Not finished: item 4 of "Done" waits on [#303](https://github.com/jarrodjohnson-gif/emberisle/issues/303). | `server/cue.mjs`, `server/audio/` |
 | Unreal client, the "photoreal" version from the 3.6 GB art pack | Specs only. Needs the gaming PC. | `docs/BUILD_BIBLE.md`, `docs/design/` |
 
 There are two clients on purpose:
@@ -150,6 +155,8 @@ That builds the client, starts the host, and prints the join line:
 - **On this PC** — open it, then Host a table. Post the 4-character code.
 - **On your network** — same Wi-Fi. No tunnel.
 - **Friends on the internet** — the script does not start the tunnel. In a second terminal, run the `cloudflared tunnel --url ...` command it printed. Leave both open. cloudflared prints an `https://….trycloudflare.com` link; paste that in the chat. Friends open the link and Join with the code. They never type a port.
+
+Host env knobs: `PORT` (default 8787), `ROOMS_DIR` (where tables are saved, default `server/rooms/`), `GRACE_MS` (how long the table waits before a bot plays a dropped seat, default 90 s) and `HOLD_MS` (how long a dropped seat is held, default 10 min).
 
 Ctrl-C in the night terminal stops the host. Install cloudflared once if it is not already there (`winget install --id Cloudflare.cloudflared` on Windows). A quick tunnel needs no account. If it refuses to start because `~/.cloudflared/config.yml` exists, move that file aside for the night, or use the named tunnel in the build bible.
 
@@ -226,24 +233,32 @@ Full rules: **[docs/FRAMEWORK.md](docs/FRAMEWORK.md)**. In short:
 | `src/lib/game/store.ts` | The zustand store the UI uses |
 | `src/lib/scene/isle-renderer.ts` | The Three.js island: slabs, trees, sheep, boats, and painted textures |
 | `src/components/game/` | `EmberisleApp.tsx` (title and modes) and `Hud.tsx` (in-game bar) |
+| `src/components/game/Chat.tsx`, `PlayerMenu.tsx`, `TradePanel.tsx`, `TradeToast.tsx`, `DiscardBar.tsx`, `WinScreen.tsx` | Chat and reactions, the player action menu, the trade panel and toast, the discard bar, the win screen |
+| `src/components/scene/IslandCanvas.tsx` | The canvas that mounts the Three.js island |
+| `src/lib/scene/mobile-fit.ts`, `palette.ts` | Phone camera fit and touch picking (pure math); the painted terrain colours |
+| `src/lib/viewport.ts`, `turn-title.ts`, `utils.ts` | The phone and portrait test; the "Your turn" window title; the `cn()` class helper |
+| `src/lib/net/table.ts` | The browser's socket client for the host |
 | `src/components/ui/button.tsx` | Button with 8 px corners that press to 0.97 |
 | `src/assets/textures/` | Drop terrain photos here (optional) |
 | `server/host.mjs` | The rules host |
+| `server/chat.mjs` | Pure chat and reaction validation |
+| `server/hooks.mjs`, `server/register.mjs` | Node loader that lets the host import the `.ts` rules (used as `--import ./server/register.mjs`) |
 | `server/*-prove.mjs` | Proof scripts (see Tests) |
 | `server/audio/` | CC0 Kenney sounds, mapped in `server/cue.mjs` |
-| `scripts/client-prove.mjs` | Headless browser test of the client |
+| `scripts/client-prove.mjs` | Headless browser test of the client (the other `scripts/*-prove.mjs` follow the same pattern) |
 
 ---
 
 ## Messages between client and host
 
-WebSocket JSON. The client sends intents. The server answers with `state` or `error`. Full detail: [docs/design/connection.md](docs/design/connection.md) and [BUILD_BIBLE §10](docs/BUILD_BIBLE.md).
+WebSocket JSON. The client sends intents. The server answers with `state` or `error`. `create` and `join` are accepted as aliases of `hello`. Full detail: [docs/design/connection.md](docs/design/connection.md) and [BUILD_BIBLE §10](docs/BUILD_BIBLE.md).
 
 | Client → host | Meaning |
 |---|---|
 | `{type:"hello", name, color, avatarId}` | Open a table. Reply: `welcome {code, you, host:true}` |
 | `{type:"hello", code, name, color, avatarId}` | Sit down at a table. The host cleans `name` (control characters stripped, 16 characters, a duplicate becomes "Ember 2") and takes only a palette `color`, else the first free swatch. |
 | `{type:"hello", code, secret}` | Sit back down in your own seat after a drop. Errors: "Seat is taken." (that seat's socket is still open), "Seat is gone." |
+| `{type:"peek", code}` | Before sitting down, ask which colours a lobby has taken. Reply: `seats`. Sent with no seat; throttled by its own pre-seat limit. |
 | `{type:"ready", value}` / `{type:"start"}` | Lobby. Only the host can start, with 3 or 4 seated and everyone ready. |
 | `{type:"place", kind:"outpost"\|"path"\|"stronghold", id}` | Build or place during setup |
 | `{type:"roll"}` `{type:"pass"}` `{type:"buy"}` | Turn actions |
