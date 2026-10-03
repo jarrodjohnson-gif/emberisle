@@ -69,14 +69,16 @@ export function TradeToast() {
           <p id={lineId} className="text-sm font-medium">
             {offerLine(asker ? null : offer.fromName, offer.give, offer.want)}
           </p>
-          {/* The 250 ms tick would chatter, so it is hidden; the polite line below speaks once, at 5 s. */}
-          <span aria-hidden className="shrink-0 tabular-nums text-xs text-zinc-600" data-testid="trade-countdown">
+          {/* For answerers the 250 ms tick would chatter, so it is hidden; the polite line below speaks once, at 5 s. */}
+          <span aria-hidden={!asker || undefined} className="shrink-0 tabular-nums text-xs text-zinc-600" data-testid="trade-countdown">
             {left} s
           </span>
         </div>
-        <p aria-live="polite" className="sr-only" data-testid="trade-countdown-live">
-          {left === 5 ? "5 seconds left" : ""}
-        </p>
+        {asker ? null : (
+          <p aria-live="polite" className="sr-only" data-testid="trade-countdown-live">
+            {left === 5 ? "5 seconds left" : ""}
+          </p>
+        )}
         {asker ? (
           <p role="status" className="mt-1 text-xs text-zinc-600">
             {declined.length ? declinedLine(declined.map(name)) : "Waiting…"}

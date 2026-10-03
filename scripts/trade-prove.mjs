@@ -167,6 +167,15 @@ try {
   const [A, B, C] = [tabs[i], tabs[j], tabs[k]];
   console.log(`${A.name} gives 1 ${give}, wants 1 ${want}; ${C.name} says no, ${B.name} says yes`);
 
+  // Records every answer this tab sends to the host.
+  const spyAnswers = (t) =>
+    t.page.evaluate(() => {
+      const net = window.__emberisle.getState().net;
+      window.__answer ??= net.answer.bind(net);
+      window.__answers = [];
+      net.answer = (...a) => (window.__answers.push(a), window.__answer(...a));
+    });
+
   // 1. The panel: one Trade button, steppers, Ask the table. Offline there is no table to ask, so the button is online-only.
   const ask = async (g, w, n = 1) => {
     await A.page.getByRole("button", { name: "Trade", exact: true }).click();
@@ -229,6 +238,12 @@ try {
     return true;
   };
   for (const t of [B, C]) await answerable(t, vs[tabs.indexOf(t)], line, want, 1);
+  const askerView = await A.page.getByTestId("trade-toast").evaluate((el) => ({
+    live: el.querySelector('[data-testid="trade-countdown-live"]') !== null,
+    hidden: el.querySelector('[data-testid="trade-countdown"]')?.getAttribute("aria-hidden") ?? null,
+    role: el.getAttribute("role"),
+  }));
+  if (askerView.live || askerView.hidden !== null || askerView.role !== null) throw new Error(`asker's toast changed: ${JSON.stringify(askerView)}`);
   console.log(`#366: ${B.name} and ${C.name} see an alertdialog named "${line}", focus untouched, countdown aria-hidden`);
 
   // 2. C says No: everyone sees it, C's toast goes, the offer stays open for B.
@@ -243,8 +258,12 @@ try {
   if (!vs[j].toast || vs.some((v) => !v.offer || v.offer.tradeId !== tradeId)) throw new Error("the offer closed on a single No");
   console.log(`${C.name} declined: asker sees "${C.name} declined", offer still open for ${B.name}`);
 
-  // 3. B says Yes: the goods move in every tab's next state.
-  await B.page.getByRole("button", { name: "Yes", exact: true }).click();
+  // 3. B says Yes (Enter on the focused button, the spy's positive control for #366): the goods move in every tab's next state.
+  await spyAnswers(B);
+  await B.page.getByTestId("trade-toast").getByRole("button", { name: "Yes", exact: true }).focus();
+  await B.page.keyboard.press("Enter");
+  const yesSent = await B.page.evaluate(() => window.__answers);
+  if (!same(yesSent, [[tradeId, true]])) throw new Error(`${B.name}'s Enter on an enabled Yes sent ${JSON.stringify(yesSent)}`);
   vs = await synced(tabs, before[0].seq, "the trade lands");
   await until(async () => (await views(tabs)).every((v) => !v.offer) || null, "offers cleared");
   const [a0, b0, a1, b1] = [before[i].mine, before[j].mine, vs[i].mine, vs[j].mine];
@@ -273,11 +292,12 @@ try {
   }
   console.log(`#366: "${line2}": Yes on ${B.name} and ${C.name} is aria-disabled, focusable, described by "Need … more ${give}"`);
   // Enter on B's aria-disabled Yes sends nothing; Escape inside C's toast answers No.
+  await spyAnswers(B);
+  // Every text B's polite line takes, from ~20 s left until the toast closes (a MutationObserver misses no 1 s window).
   await B.page.evaluate(() => {
-    const net = window.__emberisle.getState().net;
-    const answer = net.answer.bind(net);
-    window.__answers = [];
-    net.answer = (...a) => (window.__answers.push(a), answer(...a));
+    const live = document.querySelector('[data-testid="trade-countdown-live"]');
+    window.__said = [live.textContent];
+    new MutationObserver(() => window.__said.push(live.textContent)).observe(live, { childList: true, characterData: true, subtree: true });
   });
   await B.page.getByTestId("trade-toast").getByRole("button", { name: "Yes", exact: true }).focus();
   await B.page.keyboard.press("Enter");
@@ -289,15 +309,13 @@ try {
   console.log(`#366: Enter on ${B.name}'s aria-disabled Yes sent nothing; Escape in ${C.name}'s toast answered No`);
   const left = Number((await A.page.getByTestId("trade-countdown").textContent()).replace(/\D/g, ""));
   if (left < 15 || left > 20) throw new Error(`countdown reads ${left} s right after the ask`);
-  // The polite line stays silent while the clock ticks and says "5 seconds left" once, at 5 s.
-  const heard = new Set();
   vs = await until(async () => {
-    const said = await B.page.evaluate(() => document.querySelector('[data-testid="trade-countdown-live"]')?.textContent ?? null);
-    if (said) heard.add(said);
     const vs = await views(tabs);
     return vs.every((v) => !v.offer && v.toast === null) ? vs : null;
   }, "the offer times out and every toast closes", 30_000);
-  if (heard.size !== 1 || !heard.has("5 seconds left")) throw new Error(`${B.name}'s polite countdown line said ${JSON.stringify([...heard])}`);
+  // The polite line stays silent while the clock ticks and says "5 seconds left" once, at 5 s.
+  const heard = [...new Set((await B.page.evaluate(() => window.__said)).filter(Boolean))];
+  if (!same(heard, ["5 seconds left"])) throw new Error(`${B.name}'s polite countdown line said ${JSON.stringify(heard)}`);
   console.log(`#366: ${B.name}'s polite line said only "5 seconds left"`);
   if (vs[0].seq !== again[0].seq) throw new Error("the timeout changed the game");
   for (const n of [0, 1, 2]) if (!same(vs[n].mine, again[n].mine)) throw new Error(`${tabs[n].name}'s hand changed on a timeout`);
