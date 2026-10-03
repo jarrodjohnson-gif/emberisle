@@ -96,12 +96,12 @@ Say timber, clay, wool, grain, ore, outpost, stronghold, path, fortune, and wayf
 | Reconnect and rejoin: a dropped player gets the same seat back, by backoff or on reload | Works. Proven against a fake socket and against the host. | `server/rejoin-prove.mjs`, `server/reconnect-prove.mjs` |
 | Room persistence: tables are saved to disk and reloaded when the host restarts | Works. Proven by killing and restarting the host mid-game. Room files carry `ROOM_SHAPE` (`server/host.mjs`): bump it whenever `GameState`, the seat record or the chat record changes shape, and the saved rooms are dropped on the next restart. | `server/persist-prove.mjs` |
 | Keepalive: the host pings every socket and cuts one that stops answering | Works. Proven in the rejoin proof. | `server/rejoin-prove.mjs` |
+| Table sounds: dice, pieces, cards, trades, errors, the win, and a your-turn chime, with a speaker toggle on the Title card and your own seat menu | Works. Proven in headless Chromium: the right files play, nothing before the first click, and mute is remembered. | `src/lib/sound.ts`, `public/audio/` |
 | Friends joining over the internet: `npm run night` builds, starts the host, and prints the join line for a Cloudflare tunnel | Works. The host serves the page and the socket on one address, so one tunnel carries both. The tunnel itself is Jarrod's step. | `scripts/night.mjs`, `server/serve-prove.mjs`, `npm run served-prove` |
 | Phone layout: one phone and portrait test, a camera fit and touch picking for small screens, a compact HUD (#175, #177, #178) | Works. Proven by the touch-place proof and in headless Chromium. | `src/lib/viewport.ts`, `src/lib/scene/mobile-fit.ts`, `scripts/touch-place-prove.mjs` |
 | Trade panel and toast: ask the table, answer an offer (#163) | Works. | `src/components/game/TradePanel.tsx`, `src/components/game/TradeToast.tsx` |
 | Win screen (#220) | Works. | `src/components/game/WinScreen.tsx` |
 | Player action menu (#161) | Works. | `src/components/game/PlayerMenu.tsx` |
-| Table sounds | Host map only (`server/cue.mjs`); the browser is silent. Not finished: item 4 of "Done" waits on [#303](https://github.com/jarrodjohnson-gif/emberisle/issues/303). | `server/cue.mjs`, `server/audio/` |
 | Unreal client, the "photoreal" version from the 3.6 GB art pack | Specs only. Needs the gaming PC. | `docs/BUILD_BIBLE.md`, `docs/design/` |
 
 There are two clients on purpose:
@@ -245,7 +245,7 @@ Full rules: **[docs/FRAMEWORK.md](docs/FRAMEWORK.md)**. In short:
 | `server/chat.mjs` | Pure chat and reaction validation |
 | `server/hooks.mjs`, `server/register.mjs` | Node loader that lets the host import the `.ts` rules (used as `--import ./server/register.mjs`) |
 | `server/*-prove.mjs` | Proof scripts (see Tests) |
-| `server/audio/` | CC0 Kenney sounds, mapped in `server/cue.mjs` |
+| `public/audio/` | CC0 Kenney sounds, mapped in `server/cue.mjs` and played by `src/lib/sound.ts` |
 | `scripts/client-prove.mjs` | Headless browser test of the client (the other `scripts/*-prove.mjs` follow the same pattern) |
 
 ---
@@ -290,7 +290,7 @@ WebSocket JSON. The client sends intents. The server answers with `state` or `er
 |---|---|
 | `node --import ./server/register.mjs server/prove.mjs` | Short bank pays nobody, dice histogram, setup goods, illegal placement rejected |
 | `node --import ./server/register.mjs server/trade-prove.mjs` | Bank 4:1, discards, steals |
-| `node server/sound-prove.mjs` | A missing sound does not crash |
+| `node server/sound-prove.mjs` | The host finds the wavs in `public/audio/` through `server/cue.mjs`, and a missing sound is null, not a crash |
 | `node --import ./server/register.mjs server/table-prove.mjs` | 3 sockets: codes, color taken, peek before sitting, ready, start, setup glow and neighbor rule, 20 rolls match the host, and the table's error strings (full, host-only start, 3 or 4, already started, not your turn) |
 | `node --import ./server/register.mjs server/trade-table-prove.mjs` | 3 sockets: a table trade's decline reaches every seat, a yes swaps both hands, a pass closes the offer and a late yes errors |
 | `node --import ./server/register.mjs server/harden-prove.mjs` | Untrusted input: bad messages, card-minting discards, oversized pictures, a peek or hello flood, and a player who leaves mid-game |

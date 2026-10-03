@@ -60,6 +60,7 @@ const TYPES = {
   ".jpeg": "image/jpeg",
   ".webp": "image/webp",
   ".woff2": "font/woff2",
+  ".wav": "audio/wav",
   ".ogg": "audio/ogg",
   ".mp3": "audio/mpeg",
 };

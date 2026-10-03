@@ -1,8 +1,10 @@
 import { lazy, Suspense, useEffect, useState } from "react";
+import { Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ChatBox, ReactionFloats } from "@/components/game/Chat";
 import { Hud, HowTo } from "@/components/game/Hud";
 import { useGame } from "@/lib/game/store";
+import { setMuted, useMuted } from "@/lib/sound";
 import { useTurnTitle } from "@/lib/turn-title";
 import { PLAYER_COLORS, PLAYER_NAMES } from "@/lib/game/types";
 import { cn } from "@/lib/utils";
@@ -65,6 +67,7 @@ function Title() {
   const peekedCode = useGame((s) => s.code);
   const peekedSeats = useGame((s) => s.seats);
   const error = useGame((s) => s.error);
+  const muted = useMuted();
   const { phone, portrait } = useViewport();
   const sheet = phone && portrait;
   // Colors already seated at the table whose code is in the field (docs/design/color-peek.md).
@@ -159,9 +162,22 @@ function Title() {
               Four seats, one table
             </Button>
           </div>
-          <Button variant="ghost" className="self-center" onClick={(e) => setHowTo(!howTo, e.currentTarget)}>
-            How to play
-          </Button>
+          <div className="flex items-center justify-center gap-1">
+            <Button variant="ghost" onClick={(e) => setHowTo(!howTo, e.currentTarget)}>
+              How to play
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              data-testid="sound-toggle"
+              aria-label={muted ? "Table sounds off" : "Table sounds on"}
+              aria-pressed={!muted}
+              title={muted ? "Table sounds off" : "Table sounds on"}
+              onClick={() => setMuted(!muted)}
+            >
+              {muted ? <VolumeX className="size-4" /> : <Volume2 className="size-4" />}
+            </Button>
+          </div>
         </div>
       </div>
       {howTo ? <HowTo onClose={() => setHowTo(false)} /> : null}
