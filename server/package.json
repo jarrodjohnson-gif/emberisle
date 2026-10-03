@@ -5,7 +5,7 @@
   "engines": { "node": ">=22.18" },
   "scripts": {
     "host": "node --import ./register.mjs host.mjs",
-    "test": "node --import ./register.mjs prove.mjs && node --import ./register.mjs trade-prove.mjs && node sound-prove.mjs && node --import ./register.mjs table-prove.mjs && node --import ./register.mjs trade-table-prove.mjs && node --import ./register.mjs harden-prove.mjs && node --import ./register.mjs net-prove.mjs && node --import ./register.mjs rules-prove.mjs && node --import ./register.mjs bots-prove.mjs && node --import ./register.mjs ai-prove.mjs && node --import ./register.mjs serve-prove.mjs && node --import ./register.mjs chat-prove.mjs && node --import ./register.mjs rejoin-prove.mjs && node --import ./register.mjs reconnect-prove.mjs && node --import ./register.mjs persist-prove.mjs && node --import ./register.mjs finish-prove.mjs"
+    "test": "node --import ./register.mjs prove.mjs && node --import ./register.mjs trade-prove.mjs && node sound-prove.mjs && node --import ./register.mjs table-prove.mjs && node --import ./register.mjs trade-table-prove.mjs && node --import ./register.mjs harden-prove.mjs && node --import ./register.mjs net-prove.mjs && node --import ./register.mjs rules-prove.mjs && node --import ./register.mjs bots-prove.mjs && node --import ./register.mjs ai-prove.mjs && node --import ./register.mjs serve-prove.mjs && node --import ./register.mjs chat-prove.mjs && node --import ./register.mjs rejoin-prove.mjs && node --import ./register.mjs reconnect-prove.mjs && node --import ./register.mjs persist-prove.mjs && node --import ./register.mjs finish-prove.mjs && node --import ./register.mjs turn-prove.mjs"
   },
   "dependencies": {
     "ws": "^8.18.0"
