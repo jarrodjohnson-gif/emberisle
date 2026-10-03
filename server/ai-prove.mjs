@@ -158,4 +158,84 @@ console.log("bought this turn: plenty, path and monopoly all stay in hand");
   console.log("already played: no second fortune");
 }
 
+// Wayfarer (#362): an empty board where p0 moves the wayfarer and `place` puts buildings by hand.
+// The bot sees only what every seat sees: points shown, buildings and card counts.
+function robberPosition({ seed = 7, phase = "robber" } = {}) {
+  const g = createGame({ humans: [], bots: 3, seed });
+  g.phase = phase;
+  g.current = "p0";
+  g.rollOff = null;
+  return g;
+}
+function place(g, hexId, nth, pid, kind, cards) {
+  g.vertices.filter((x) => x.hexes.includes(hexId))[nth].building = { playerId: pid, kind };
+  g.players.find((x) => x.id === pid).resources.wool = cards;
+  g.bank.wool -= cards;
+}
+// Seed 7: "-2,0" is an 8 (the best token), "0,-1" a 2, neither the wayfarer's start.
+const BEST = "-2,0";
+const WORST = "0,-1";
+
+// Two targets on the best hex, the leader (a stronghold) listed second: the steal goes to the leader.
+{
+  const g = robberPosition();
+  place(g, BEST, 0, "p1", "outpost", 3);
+  place(g, BEST, 2, "p2", "stronghold", 3);
+  const a = chooseBotAction(g, "p0");
+  if (a.type !== "moveRobber" || a.hexId !== BEST) fail("robs the leader: not the leader's hex", a);
+  if (a.stealFrom !== "p2") fail("robs the leader: stole from the trailing player", a);
+  play(g, a);
+  console.log("robs the leader: two targets, the one showing more points is robbed");
+}
+
+// Same points shown: the fuller hand is robbed, not the first seat.
+{
+  const g = robberPosition();
+  place(g, BEST, 0, "p1", "outpost", 1);
+  place(g, BEST, 2, "p2", "outpost", 4);
+  const a = chooseBotAction(g, "p0");
+  if (a.type !== "moveRobber" || a.stealFrom !== "p2") fail("robs the leader: tied on points, did not rob the fuller hand", a);
+  play(g, a);
+  console.log("robs the leader: tied on points, the fuller hand is robbed");
+}
+
+// The leader holds no cards: their hex is still blocked, and the steal goes to the hand that has cards.
+{
+  const g = robberPosition();
+  place(g, BEST, 0, "p2", "stronghold", 0);
+  place(g, BEST, 2, "p1", "outpost", 3);
+  const a = chooseBotAction(g, "p0");
+  if (a.type !== "moveRobber" || a.hexId !== BEST) fail("robs the leader: empty-handed leader, left their hex alone", a);
+  if (a.stealFrom !== "p1") fail("robs the leader: tried an empty hand", a);
+  play(g, a);
+  console.log("robs the leader: an empty-handed leader is blocked, the steal goes to the hand with cards");
+}
+
+// A wayfarer card picks the same way.
+{
+  const g = robberPosition({ phase: "main" });
+  g.players[0].hidden = { ...NONE, knight: 1 };
+  place(g, BEST, 0, "p1", "outpost", 3);
+  place(g, BEST, 2, "p2", "stronghold", 3);
+  const a = chooseBotAction(g, "p0");
+  if (a.type !== "playKnight" || a.hexId !== BEST || a.stealFrom !== "p2") fail("robs the leader: the wayfarer card picked differently", a);
+  play(g, a);
+  console.log("robs the leader: the wayfarer card robs the leader too");
+}
+
+// The leader shares the best hex with the bot: it blocks the other opponent on a worse hex instead.
+{
+  const g = robberPosition();
+  place(g, BEST, 0, "p0", "outpost", 0);
+  place(g, BEST, 2, "p2", "stronghold", 3);
+  place(g, WORST, 0, "p1", "outpost", 3);
+  const a = chooseBotAction(g, "p0");
+  const corners = g.vertices.filter((v) => v.hexes.includes(a.hexId) && v.building);
+  if (a.type !== "moveRobber" || a.hexId === BEST) fail("own hex: blocked itself while another hex blocks an opponent", a);
+  if (corners.some((v) => v.building.playerId === "p0") || !corners.length) fail("own hex: the hex picked instead does not block an opponent", a);
+  if (!a.stealFrom) fail("own hex: no steal", a);
+  play(g, a);
+  console.log("own hex: never blocked while another hex blocks an opponent");
+}
+
 console.log("ai prove ok");
