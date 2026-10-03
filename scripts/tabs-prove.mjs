@@ -170,6 +170,12 @@ try {
   // open socket alive under setOffline, so the drop itself comes from the client's drop() hook.
   const me = (t) => t.page.evaluate(() => ({ you: window.__emberisle.getState().localId, screen: window.__emberisle.getState().screen, error: window.__emberisle.getState().error, seq: window.__emberisle.getState().state?.seq ?? -1 }));
   const beforeB = await me(b);
+  // #283: the board stays on screen through the rejoin; the lobby never shows and the HUD is not remounted.
+  await b.page.evaluate(() => {
+    window.__screens = [];
+    window.__emberisle.subscribe((s) => window.__screens.push(s.screen));
+  });
+  const bannerB = await b.page.getByTestId("turn-banner").elementHandle();
   offlineTab = "Tide";
   await b.page.context().setOffline(true);
   await b.page.evaluate(() => window.__emberisle.getState().net.drop());
@@ -182,6 +188,10 @@ try {
   }, "tab B back in its seat", 90_000);
   await new Promise((r) => setTimeout(r, 1000)); // a dial already in flight when the network came back
   offlineTab = null;
+  const screensB = await b.page.evaluate(() => window.__screens);
+  if (screensB.includes("lobby")) throw new Error(`tab B flashed the lobby during the rejoin: ${screensB.join(",")}`);
+  if (!(await bannerB.evaluate((el) => el.isConnected))) throw new Error("tab B's HUD remounted during the rejoin (turn banner detached)");
+  console.log(`tab B screens during the rejoin: ${[...new Set(screensB)].join(",")}, turn banner still attached`);
   const back = await until(async () => ((await a.page.evaluate(() => window.__emberisle.getState().lobbyLog)) === "Tide is back." ? true : null), "host says Tide is back", 10_000);
   console.log(`tab B dropped 3 s: saw reconnecting=${sawReconnecting}, back as ${afterB.you} (was ${beforeB.you}), host log on A: Tide is back=${back}`);
 
