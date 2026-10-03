@@ -77,7 +77,7 @@ export function chooseBotAction(state: GameState, pid: string): Action | null {
     const m = bestRobberHex(state, pid);
     return { type: "moveRobber", hexId: m.hexId, stealFrom: m.stealFrom };
   }
-  if (state.phase === "roll") return { type: "roll" };
+  if (state.phase === "roll" || state.phase === "rollOff") return { type: "roll" };
   if (state.phase !== "main") return null;
 
   // A held knight is 2 points once three are out (#233: bots that never play them stall a game).

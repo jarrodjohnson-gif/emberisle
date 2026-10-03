@@ -46,7 +46,7 @@ const ROOMS = path.resolve(process.env.ROOMS_DIR ?? fileURLToPath(new URL("./roo
 const ROOM_TTL = 24 * 60 * 60 * 1000;
 // Stamped on every saved room. Bump it whenever GameState, the seat record or the chat record changes
 // shape: load() drops files with any other stamp (including none), so a bump ends the saved rooms on the next restart.
-const ROOM_SHAPE = 1;
+const ROOM_SHAPE = 2;
 // The built client (npm run build). DIST lets a proof point the host at a small temp folder.
 const DIST = path.resolve(process.env.DIST ?? fileURLToPath(new URL("../dist/", import.meta.url)));
 const TYPES = {
@@ -214,7 +214,7 @@ export function legalFor(game, you) {
   if (game.current !== you) return out;
   if (game.phase === "setupSettle") out.outpost = legalSettle(game, you, true);
   if (game.phase === "setupRoad") out.path = legalRoads(game, you, true);
-  if (game.phase === "roll") out.actions.push("roll");
+  if (game.phase === "roll" || game.phase === "rollOff") out.actions.push("roll");
   if (game.phase === "robber") out.wayfarer = game.hexes.filter((h) => h.id !== game.robberHex).map((h) => h.id);
   if (game.phase === "main") {
     if (me.pathsLeft > 0 && affords(me, COST.path)) out.path = legalRoads(game, you, false);
@@ -485,7 +485,7 @@ function startGame(ws, room) {
   });
   room.game = game;
   hear("ui_confirm");
-  say(room, `${game.players[0].name} places first.`);
+  say(room, "Roll for first place.");
   pushState(room);
 }
 
@@ -620,7 +620,8 @@ function play(ws, room, msg) {
   }
   room.game = next.state;
   hear(msg.type === "place" ? `${msg.kind}_place` : SOUND[msg.type]);
-  if (msg.type === "roll") {
+  // A roll-off die is not a production roll: its lines reach every seat through the log below.
+  if (msg.type === "roll" && before.phase === "roll") {
     const [a, b] = room.game.dice;
     const paid = gains(before, room.game);
     const short = bankShort(room.game);

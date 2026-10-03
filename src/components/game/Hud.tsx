@@ -21,7 +21,7 @@ import { TradeToast } from "@/components/game/TradeToast";
 import { PlayerMenu } from "@/components/game/PlayerMenu";
 import { DiscardBar } from "@/components/game/DiscardBar";
 import { Dice } from "@/components/game/Dice";
-import { COST, RESOURCES, RESOURCE_LABEL, type DevKind, type PlayerState, type Resource } from "@/lib/game/types";
+import { COST, RESOURCES, RESOURCE_LABEL, type DevKind, type GameState, type PlayerState, type Resource } from "@/lib/game/types";
 import { hiddenCount, legalRoads, playable, publicVP, totalVP } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
 import { useViewport } from "@/lib/viewport";
@@ -49,6 +49,8 @@ function affords(p: PlayerState, kind: Price) {
 
 function phaseCopy(phase: string) {
   switch (phase) {
+    case "rollOff":
+      return "Roll one die for first place. The highest roll places first; a tie rolls again.";
     case "setupSettle":
       return "Place an outpost on a highlighted corner.";
     case "setupRoad":
@@ -66,6 +68,16 @@ function phaseCopy(phase: string) {
     default:
       return "";
   }
+}
+
+// The seat's roll-off die, shown through the roll-off and setup (docs/design/first-player.md); "–" until it rolls this round.
+function RollOffDie({ state, id, className }: { state: GameState; id: string; className: string }) {
+  if (!state.rollOff || state.turn !== 0) return null;
+  return (
+    <span data-testid="rolloff-die" className={cn("grid shrink-0 place-items-center rounded-[8px] bg-fg font-medium text-bg tabular-nums", className)}>
+      {state.rollOff.rolls[id] ?? "–"}
+    </span>
+  );
 }
 
 const HINT_KEY = "emberisle-landscape-hint";
@@ -221,6 +233,7 @@ export function Hud() {
                   <span className="flex items-center gap-2">
                     <span className="size-2.5 rounded-full" style={{ background: p.color }} />
                     <span className="text-sm font-medium">{p.name}</span>
+                    <RollOffDie state={state} id={p.id} className="size-6 text-sm" />
                   </span>
                   <span className="tabular-nums text-sm text-zinc-600">{publicVP(state, p.id)} vp{p.id === actor && p.hidden.vp > 0 ? ` (+${p.hidden.vp} hidden)` : ""}
                   </span>
@@ -372,7 +385,7 @@ export function Hud() {
             </div>
           ) : null}
 
-          {state.phase === "roll" && mine ? (
+          {(state.phase === "roll" || state.phase === "rollOff") && mine ? (
             <div className="flex flex-col gap-2">
               {knightButton ? <div className="flex flex-wrap gap-1">{knightButton}</div> : null}
               <Button size="lg" onClick={() => dispatch({ type: "roll" })}>
@@ -434,6 +447,7 @@ function SeatStrip({ actor, className }: { actor: string; className: string }) {
               <span className="flex w-full items-center gap-1.5">
                 <span className="size-3 shrink-0 rounded-full" style={{ background: p.color }} />
                 <span className="min-w-0 flex-1 truncate text-xs font-medium">{p.name}</span>
+                <RollOffDie state={state} id={p.id} className="size-4 rounded-[4px] text-[10px]" />
                 <span className="shrink-0 text-xs tabular-nums text-zinc-600">
                   {publicVP(state, p.id)}
                   {hidden ? `+${hidden}` : ""}
