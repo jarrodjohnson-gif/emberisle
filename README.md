@@ -243,7 +243,7 @@ WebSocket JSON. The client sends intents. The server answers with `state` or `er
 |---|---|
 | `{type:"hello", name, color, avatarId}` | Open a table. Reply: `welcome {code, you, host:true}` |
 | `{type:"hello", code, name, color, avatarId}` | Sit down at a table. The host cleans `name` (control characters stripped, 16 characters, a duplicate becomes "Ember 2") and takes only a palette `color`, else the first free swatch. |
-| `{type:"hello", code, secret}` | Sit back down in your own seat after a drop. Errors: "Seat is taken." (that seat's socket is still open), "Seat is gone." |
+| `{type:"hello", code, secret}` | Sit back down in your own seat after a drop. The seat is held 90 s in the lobby (`LOBBY_HOLD_MS`) and 10 min in a game (`HOLD_MS`); a held lobby seat is not ready. Errors: "Seat is taken." (that seat's socket is still open), "Seat is gone." |
 | `{type:"ready", value}` / `{type:"start"}` | Lobby. Only the host can start, with 3 or 4 seated and everyone ready. |
 | `{type:"place", kind:"outpost"\|"path"\|"stronghold", id}` | Build or place during setup |
 | `{type:"roll"}` `{type:"pass"}` `{type:"buy"}` | Turn actions |
