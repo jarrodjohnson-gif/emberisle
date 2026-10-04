@@ -49,18 +49,18 @@ try {
 
     const join = page.getByRole("button", { name: "Join", exact: true });
     await join.waitFor();
-    // Before anything scrolls (#421): the subtitles render, and on phone landscape the whole card is on screen: eyebrow,
-    // wordmark, tagline and every button inside the viewport.
+    // Before anything scrolls (#421): Play's subtitle renders (#444 cut the hotseat one), and on phone landscape the whole
+    // card is on screen: wordmark and every button inside the viewport.
     const fold = await page.evaluate(() => {
       const card = document.querySelector('[data-testid="title-card"]');
       const out = [...card.querySelectorAll("p, h1, button, input")].filter((el) => {
         const r = el.getBoundingClientRect();
         return r.top < 0 || r.left < 0 || r.bottom > innerHeight + 0.5 || r.right > innerWidth + 0.5;
       }).map((el) => (el.textContent.trim() || el.getAttribute("aria-label") || el.tagName).slice(0, 24));
-      return { out, subtitles: [...card.querySelectorAll("p")].map((p) => p.textContent).filter((s) => /^(3 bots, no network|pass one device around)$/.test(s)) };
+      return { out, subtitles: [...card.querySelectorAll("p")].map((p) => p.textContent).filter((s) => /^3 bots, no network$/.test(s)) };
     });
-    check(fold.subtitles.length === 2, `${tag} title: both subtitles render`, fold.subtitles);
-    if (viewport.touch && viewport.width > viewport.height) check(fold.out.length === 0, `${tag} title: wordmark, tagline and buttons inside the viewport`, fold.out);
+    check(fold.subtitles.length === 1, `${tag} title: Play's subtitle renders`, fold.subtitles);
+    if (viewport.touch) check(fold.out.length === 0, `${tag} title: wordmark and buttons inside the viewport`, fold.out);
     await join.scrollIntoViewIfNeeded();
     const title = await page.evaluate(() => {
       const r = (el) => el.getBoundingClientRect();

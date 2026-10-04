@@ -220,14 +220,15 @@ try {
   const w = await tab("Watcher");
   const errorsBefore = await w.page.evaluate(() => window.__emberisle.getState().errorSeq);
   await w.page.getByPlaceholder(/code/i).fill(tableCode.slice(0, 3));
-  await w.page.getByRole("button", { name: "Watch", exact: true }).click();
+  // #444: Watch only shows once the field holds a whole code, so under 4 there is nothing to press.
+  if (await w.page.getByRole("button", { name: "Watch", exact: true }).count()) throw new Error("Watch shows with a 3-character code");
   await w.page.getByPlaceholder(/code/i).fill(tableCode);
   await w.page.getByRole("button", { name: "Watch", exact: true }).click();
   await until(async () => (await view(w)).alert === "Not started yet.", 'the lobby refusal "Not started yet."');
   if ((await view(w)).screen !== "title") throw new Error("a refused watch left the Title");
   const errorsAfter = await w.page.evaluate(() => window.__emberisle.getState().errorSeq);
   if (errorsAfter !== errorsBefore + 1) throw new Error(`a 3-character Watch sent something: errorSeq ${errorsBefore} -> ${errorsAfter}`);
-  console.log(`table ${tableCode}: Watch at 3 characters sent nothing; at 4 on the lobby -> "Not started yet.", still on the Title`);
+  console.log(`table ${tableCode}: no Watch at 3 characters; at 4 on the lobby -> "Not started yet.", still on the Title`);
 
   for (const t of [a, b]) {
     await until(async () => (await t.page.locator("li", { hasText: "Pine" }).count()) === 1, `${t.name} sees 3 seats`);
@@ -249,8 +250,8 @@ try {
   const link = await w1.page.evaluate(() => ({
     field: document.querySelector('input[aria-label="Join code"]').value,
     search: location.search,
-    watchPrimary: [...document.querySelectorAll("button")].find((b) => b.textContent.trim() === "Watch")?.className.includes("bg-sea-ink") ?? false,
-    joinPrimary: [...document.querySelectorAll("button")].find((b) => b.textContent.trim() === "Join")?.className.includes("bg-sea-ink") ?? false,
+    watchPrimary: [...document.querySelectorAll("button")].find((b) => b.textContent.trim() === "Watch")?.className.split(" ").includes("bg-fg") ?? false,
+    joinPrimary: [...document.querySelectorAll("button")].find((b) => b.textContent.trim() === "Join")?.className.split(" ").includes("bg-fg") ?? false,
   }));
   if (link.field !== tableCode) throw new Error(`?watch= did not fill the field: ${JSON.stringify(link)}`);
   if (link.search.includes("watch=") || !link.search.includes("host=")) throw new Error(`?watch= stayed in the URL or ?host= was lost: ${link.search}`);
