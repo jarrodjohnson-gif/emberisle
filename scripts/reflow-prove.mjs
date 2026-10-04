@@ -80,6 +80,10 @@ try {
     });
     await page.getByRole("button", { name: "End turn" }).waitFor();
     await page.locator("form", { hasText: "Plenty" }).first().waitFor();
+    // The island canvas is lazy-loaded and can mount after the HUD; the evaluate below reads all three.
+    await page.locator("canvas").first().waitFor();
+    await page.locator("header > .pointer-events-auto").waitFor();
+    await page.getByTestId("turn-banner").waitFor();
     const hud = await page.evaluate(async () => {
       await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
       const r = (el) => el.getBoundingClientRect();
