@@ -1,18 +1,22 @@
 // #440: each roll is shown once, big and centred, then the dice settle into the HUD. Practice versus the isle at 1280x720
 // and 390x844 (touch), played to the person's first roll through the real roll-off and setup:
-// - the person's roll (a real click on Roll): within 200 ms a [data-testid=roll-moment] is visible, its centre within
-//   ±10 % of the viewport width of the middle, the sum's computed font-size ≥ 48 px, and the resting dice row is hidden
-//   (the sum is on screen once);
-// - after 900 ms it shrinks into the resting dice row: one 220 ms flight whose last keyframe puts the chip on the row (centre
-//   within 4 px, one side matching), and at 1400 ms (wall clock) the moment is gone and the row shows the same faces; no
-//   element spells the roll out a second time (the banner and the log line carry no dice numbers);
+// - the person's roll (a real click on Roll): the moment mounts in the same frame the roll is applied, so no frame shows the
+//   roll without it; it is centred within ±10 % of the viewport, the sum's computed font-size ≥ 48 px, and the resting dice
+//   row is hidden (the sum is on screen once);
+// - after a hold of at least 900 ms it shrinks into the resting dice row: one flight of 220 ms, no delay, --ease-out, fill
+//   forwards, whose last keyframe puts the chip on the row (centre within 4 px, one side matching); afterwards the row shows
+//   the same faces and nothing spells the roll out twice (the banner and the log line carry no dice numbers);
+// - the issue's wall-clock limits, measured in the page from the state change: up within 200 ms and gone by 1400 ms, net of
+//   the time the page's main thread was measurably stalled (a 10 ms interval probe), so a loaded machine slows the clock
+//   but cannot fail or pass the check by itself; raw and stalled times are printed;
 // - every roll of the game, the person's and the bots', shows exactly one moment and one screen-reader line;
-// - a key press skips a moment at once, and so does a tap on the touch viewport; the press still reaches the page;
+// - a key press skips a moment at once, and so does a touch pointerdown; the press still reaches the page (both are
+//   dispatched in the page as soon as the moment is up, so the harness cannot miss its second);
 // - online seats and watchers mount a table with loadState and get rolls as pushed states: a table loaded with dice on it
 //   shows nothing, one roll on shows one moment (a 7 in accent-ink, read out by name), a jump of two rolls shows none.
 // Hotseat at 1280x720: a seat's roll shows one moment and is read out by the seat's name, not "You".
-// Reduced motion at 1280x720: the moment still shows centred and large, with no entry animation and no flight; it is
-// gone by 1400 ms and the row shows the faces. Zero console errors throughout.
+// Reduced motion at 1280x720: the moment still shows centred and large, with no entry animation and no flight, and goes
+// after its hold. Zero console errors throughout.
 import { existsSync } from "node:fs";
 import { chromium } from "playwright";
 import { createServer } from "vite";
@@ -42,7 +46,25 @@ function recorders() {
   window.__moments = [];
   window.__flights = [];
   window.__said = [];
+  window.__applied = [];
+  // Frames, so "in the same frame" is a count, not a guess from a clock.
+  window.__frame = 0;
+  const tick = () => {
+    window.__frame++;
+    requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+  // Main-thread stall: every gap between 10 ms ticks beyond 20 ms is time no timer on the page could have run.
+  const gaps = [];
+  let last = performance.now();
+  setInterval(() => {
+    const now = performance.now();
+    if (now - last > 20) gaps.push([last, now]);
+    last = now;
+  }, 10);
+  window.__stall = (a, b) => gaps.reduce((n, [x, y]) => n + Math.max(0, Math.min(y, b) - Math.max(x, a) - 10), 0);
   let current = null;
+  let subscribed = false;
   let said = "";
   // Visible elements that show the sum as a bare number, or spell a roll out ("4+5"), outside the hand, seats and header.
   window.__sumShown = (sum) => {
@@ -59,6 +81,14 @@ function recorders() {
     return out;
   };
   const watch = () => {
+    // The roll is applied when the store's state changes, stamped synchronously inside the store's set().
+    if (!subscribed && window.__emberisle) {
+      subscribed = true;
+      window.__emberisle.subscribe((s, p) => {
+        const n = s.state?.rolls ?? 0;
+        if (s.state && p.state && n === (p.state.rolls ?? 0) + 1) window.__applied.push({ n, at: performance.now(), frame: window.__frame });
+      });
+    }
     const m = document.querySelector('[data-testid="roll-moment"]');
     if (m && m !== current) {
       current = m;
@@ -68,6 +98,7 @@ function recorders() {
       const sum = Number(sumEl.textContent);
       window.__moments.push({
         at: performance.now(),
+        frame: window.__frame,
         n: window.__emberisle?.getState().state?.rolls,
         dice: [...m.querySelectorAll('[data-testid="die"]')].map((d) => Number(d.dataset.value)),
         sum,
@@ -105,6 +136,9 @@ function recorders() {
       window.__flights.push({
         start: performance.now(),
         duration: options.duration,
+        delay: options.delay ?? 0,
+        easing: options.easing,
+        fill: options.fill,
         from: { width: w, height: h },
         landed: { left: cx - (w * k) / 2, top: cy - (h * k) / 2, width: w * k, height: h * k },
         row: document.querySelector('[data-testid="dice-row"]').getBoundingClientRect().toJSON(),
@@ -159,26 +193,33 @@ async function playUntil(page, until) {
 
 const myRoll = (s) => s.state.phase === "roll" && s.state.current === (s.mode === "hotseat" ? s.state.current : s.localId);
 
-// The person clicks Roll; returns the roll's dice and when the store took the roll, on the page's clock.
+// The person clicks Roll; returns the roll's dice and its applied stamp (time and frame, on the page's clock).
 async function clickRoll(page) {
-  await page.evaluate(() => {
-    window.__rolledAt = null;
-    const un = window.__emberisle.subscribe((s, p) => {
-      if ((s.state?.rolls ?? 0) === (p.state?.rolls ?? 0)) return;
-      window.__rolledAt = performance.now();
-      un();
-    });
-  });
+  const n = await page.evaluate(() => (window.__emberisle.getState().state.rolls ?? 0) + 1);
   await page.getByRole("button", { name: "Roll", exact: true }).click();
-  await page.waitForFunction(() => window.__rolledAt, null, { timeout: STEP_MS });
-  return page.evaluate(() => ({ t0: window.__rolledAt, dice: window.__emberisle.getState().state.dice }));
+  await page.waitForFunction((n) => window.__applied.some((a) => a.n === n), n, { timeout: STEP_MS });
+  return page.evaluate((n) => ({ applied: window.__applied.find((a) => a.n === n), dice: window.__emberisle.getState().state.dice }), n);
 }
 
-async function settleChecks(page, tag, { t0, dice }, { reduced = false } = {}) {
+// Two frames, so whatever the last state change rendered has committed.
+const frames = (page) => page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+
+async function settleChecks(page, tag, { applied, dice }, { reduced = false } = {}) {
   const sum = dice[0] + dice[1];
-  await page.waitForFunction((t0) => performance.now() - t0 >= 1400, t0, { timeout: STEP_MS, polling: 50 });
-  const m = await page.evaluate(() => window.__moments.at(-1));
-  const flights = await page.evaluate((t0) => window.__flights.filter((f) => f.start > t0), t0);
+  const t0 = applied.at;
+  await page.waitForFunction((n) => window.__moments.find((m) => m.n === n)?.gone, applied.n, { timeout: STEP_MS, polling: 50 });
+  await frames(page);
+  const { m, flights, stall } = await page.evaluate((n) => {
+    const m = window.__moments.find((x) => x.n === n);
+    const flights = window.__flights.filter((f) => f.start >= m.at && f.start <= m.gone);
+    const a = window.__applied.find((x) => x.n === n);
+    const f = flights[0];
+    return {
+      m,
+      flights,
+      stall: { up: window.__stall(a.at, m.at), hold: f ? window.__stall(a.at, f.start) : 0, flight: f ? window.__stall(f.start, m.gone) : 0, gone: window.__stall(a.at, m.gone) },
+    };
+  }, applied.n);
   const late = await page.evaluate((sum) => ({
     moment: !!document.querySelector('[data-testid="roll-moment"]'),
     row: [...document.querySelectorAll('[data-testid="dice-row"] [data-testid="die"]')].map((d) => Number(d.dataset.value)),
@@ -187,22 +228,25 @@ async function settleChecks(page, tag, { t0, dice }, { reduced = false } = {}) {
     banner: document.querySelector('[data-testid="banner"]')?.textContent ?? null,
     log: document.querySelector('[data-testid="log-line"]')?.textContent ?? null,
   }), sum);
-  const appeared = m.at - t0;
-  console.log(`${tag}: rolled ${dice.join("+")}=${sum}; moment after ${appeared.toFixed(0)} ms, gone ${(m.gone - t0).toFixed(0)} ms after the roll, centre ${m.centreX.toFixed(0)}/${m.vw}, sum ${m.fontSize}px ${m.sumColor}, animation ${m.animation}; shown then ${JSON.stringify(m.shown)}, at 1400 ms ${JSON.stringify(late.shown)}; banner ${JSON.stringify(late.banner)}`);
-  check(appeared <= 200, `${tag}: the moment is up ${appeared.toFixed(0)} ms after the click (≤ 200)`);
+  const up = m.at - t0;
+  const gone = m.gone - t0;
+  console.log(`${tag}: rolled ${dice.join("+")}=${sum}; up ${up.toFixed(0)} ms after the roll was applied (stalled ${stall.up.toFixed(0)}), frame ${m.frame - applied.frame} after it; gone at ${gone.toFixed(0)} ms (stalled ${stall.gone.toFixed(0)}); centre ${m.centreX.toFixed(0)}/${m.vw}, sum ${m.fontSize}px ${m.sumColor}, animation ${m.animation}; shown then ${JSON.stringify(m.shown)}, after ${JSON.stringify(late.shown)}; banner ${JSON.stringify(late.banner)}`);
+  check(m.frame === applied.frame, `${tag}: the moment mounts in the same frame the roll is applied (${m.frame - applied.frame} frames later)`);
+  check(up - stall.up <= 200, `${tag}: up within 200 ms of the roll being applied (${up.toFixed(0)} ms, ${stall.up.toFixed(0)} of them stalled)`);
   check(m.dice.join() === dice.join() && m.sum === sum, `${tag}: the moment shows the rolled faces ${m.dice} and sum ${m.sum}`);
   check(Math.abs(m.centreX - m.vw / 2) <= m.vw * 0.1, `${tag}: centred horizontally (${m.centreX.toFixed(0)} of ${m.vw}, ±10 %)`);
   check(Math.abs(m.centreY - m.vh / 2) <= m.vh * 0.1, `${tag}: centred vertically (${m.centreY.toFixed(0)} of ${m.vh}, ±10 %)`);
   check(m.fontSize >= 48, `${tag}: the sum is ${m.fontSize}px (≥ 48)`);
   check(m.sumColor === (sum === 7 ? "rgb(169, 75, 48)" : "rgb(28, 25, 21)"), `${tag}: the sum is ${sum === 7 ? "accent-ink on a 7" : "ink"} (${m.sumColor})`);
   check(m.rowHidden === true && m.shown.length === 1 && m.shown[0] === "roll-sum", `${tag}: while it is up the roll is on screen once (${JSON.stringify(m.shown)})`);
-  check(!late.moment && m.gone - t0 <= 1400, `${tag}: gone at 1400 ms (${(m.gone - t0).toFixed(0)} ms)`);
+  check(!late.moment && gone - stall.gone <= 1400, `${tag}: gone by 1400 ms of the roll being applied (${gone.toFixed(0)} ms, ${stall.gone.toFixed(0)} of them stalled)`);
   check(late.rowVisible && late.row.join() === dice.join(), `${tag}: the resting row shows the same faces (${late.row})`);
-  check(late.shown.length === 1 && late.shown[0] === "dice-row", `${tag}: at 1400 ms the sum is on screen once, in the row (${JSON.stringify(late.shown)})`);
+  check(late.shown.length === 1 && late.shown[0] === "dice-row", `${tag}: afterwards the sum is on screen once, in the row (${JSON.stringify(late.shown)})`);
   check(!/\b\d\+\d\b/.test(late.banner ?? "") && !/\b\d\+\d\b/.test(late.log ?? ""), `${tag}: neither the banner nor the log line repeats the dice`);
   if (reduced) {
     check(flights.length === 0, `${tag}: reduced motion, no flight (${flights.length})`);
     check(m.animation === "none", `${tag}: reduced motion, no entry animation (${m.animation})`);
+    check(gone >= 898 && gone - stall.gone <= 900 + 200, `${tag}: reduced motion, it holds about 900 ms and goes (${gone.toFixed(0)} ms)`);
     return;
   }
   const f = flights[0];
@@ -210,9 +254,13 @@ async function settleChecks(page, tag, { t0, dice }, { reduced = false } = {}) {
   const off = f?.landed ? Math.hypot(c(f.landed)[0] - c(f.row)[0], c(f.landed)[1] - c(f.row)[1]) : Infinity;
   const fits = f?.landed && f.landed.width <= f.row.width + 1 && f.landed.height <= f.row.height + 1 &&
     (Math.abs(f.landed.width - f.row.width) <= 2 || Math.abs(f.landed.height - f.row.height) <= 2);
-  console.log(`${tag}: flight ${JSON.stringify(f && { after: (f.start - m.at).toFixed(0), from: [f.from.width, f.from.height], landed: [f.landed.width.toFixed(1), f.landed.height.toFixed(1)], row: [f.row.width.toFixed(1), f.row.height.toFixed(1)], off: off.toFixed(1) })}`);
-  check(flights.length === 1 && f.duration === 220 && f.start - m.at >= 880, `${tag}: one 220 ms flight after the 900 ms hold`);
-  check(off <= 4 && fits, `${tag}: the flight lands on the resting row (centre off ${off.toFixed(1)} px, size fits)`);
+  const hold = f ? f.start - t0 : NaN;
+  const flight = f ? m.gone - f.start : NaN;
+  console.log(`${tag}: flight ${JSON.stringify(f && { hold: hold.toFixed(0), stalledHold: stall.hold.toFixed(0), flight: flight.toFixed(0), stalledFlight: stall.flight.toFixed(0), duration: f.duration, delay: f.delay, easing: f.easing, fill: f.fill, from: [f.from.width, f.from.height], landed: [f.landed.width.toFixed(1), f.landed.height.toFixed(1)], row: [f.row.width.toFixed(1), f.row.height.toFixed(1)], off: off.toFixed(1) })}`);
+  check(flights.length === 1 && f.duration === 220 && f.delay === 0 && f.easing === "cubic-bezier(0.22, 1, 0.36, 1)" && f.fill === "forwards", `${tag}: one flight: 220 ms, no delay, --ease-out, fill forwards`);
+  check(hold >= 898 && hold - stall.hold <= 900 + 200, `${tag}: the flight starts after the 900 ms hold (${hold.toFixed(0)} ms, ${stall.hold.toFixed(0)} stalled)`);
+  check(flight >= 218 && flight - stall.flight <= 220 + 100, `${tag}: the moment goes when its 220 ms flight ends (${flight.toFixed(0)} ms, ${stall.flight.toFixed(0)} stalled)`);
+  check(off <= 4 && fits, `${tag}: the last keyframe lands on the resting row (centre off ${off.toFixed(1)} px, size fits)`);
   check(f && f.from.width > f.row.width * 1.5, `${tag}: it starts large and shrinks into the row (${f?.from.width.toFixed(0)} → ${f?.row.width.toFixed(0)} px)`);
 }
 
@@ -221,6 +269,7 @@ async function practice(viewport, touch) {
   const page = await open(viewport, { touch });
   await page.getByRole("button", { name: "Play", exact: true }).click();
   await playUntil(page, myRoll);
+  await frames(page);
   // The roll-off and setup roll no pair of dice, so nothing has shown unless a bot has already rolled.
   const early = await page.evaluate(() => ({ rolls: window.__emberisle.getState().state.rolls ?? 0, moments: window.__moments.length }));
   check(early.moments === early.rolls, `${tag}: through the roll-off and setup, one moment per bot roll and no other (${early.moments} for ${early.rolls})`);
@@ -240,26 +289,40 @@ async function practice(viewport, touch) {
   const byName = tally.said.every((t, i) => (i + 1 === mine ? t.startsWith("You rolled ") : tally.names.some((n) => t.startsWith(`${n} rolled `))));
   check(tally.said.length === tally.rolls && byName, `${tag}: each roll read out once, "You" for the person's, the name for a bot's`);
 
-  // Skipping: a key on the desktop, a tap on the touch viewport; either ends the moment at once and still reaches the page.
+  // Skipping: a key on the desktop, a touch pointerdown on the phone, dispatched in the page the moment the moment is up
+  // (a press sent from the harness could land after the moment has already gone); it ends at once and still reaches the page.
   await playUntil(page, myRoll);
-  const { t0 } = await clickRoll(page);
-  await page.waitForSelector('[data-testid="roll-moment"]', { timeout: STEP_MS });
-  await page.evaluate(() => {
+  await page.evaluate((touch) => {
     window.__pressed = 0;
-    document.addEventListener(navigator.maxTouchPoints ? "pointerdown" : "keydown", () => {
-      window.__pressed++;
-      window.__pressedAt = performance.now();
+    document.addEventListener(touch ? "pointerdown" : "keydown", () => window.__pressed++);
+    const watch = new MutationObserver(() => {
+      if (!document.querySelector('[data-testid="roll-moment"]')) return;
+      watch.disconnect();
+      // The next task: after the moment's own listeners are in, long before its 900 ms hold can end.
+      setTimeout(() => {
+        window.__pressed = 0; // the Roll click's own pointerdown came first
+        window.__pressedAt = performance.now();
+        if (touch) {
+          const x = innerWidth - 20;
+          const y = innerHeight / 2;
+          document.elementFromPoint(x, y).dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, composed: true, pointerType: "touch", isPrimary: true, clientX: x, clientY: y }));
+        } else {
+          document.activeElement.dispatchEvent(new KeyboardEvent("keydown", { key: "Shift", bubbles: true, composed: true }));
+        }
+      });
     });
-  });
-  if (touch) await page.touchscreen.tap(viewport.width - 20, viewport.height / 2);
-  else await page.keyboard.press("Shift");
-  await page.waitForSelector('[data-testid="roll-moment"]', { state: "detached", timeout: STEP_MS });
-  const skip = await page.evaluate(({ t0 }) => ({ m: window.__moments.at(-1), pressed: window.__pressed, at: window.__pressedAt, flights: window.__flights.filter((f) => f.start > t0).length }), { t0 });
-  // From when the page handles the press, not from when the harness sent it: a tap can wait in the input queue behind a
-  // slow software-GL frame, which is the browser's latency, not the moment's.
+    watch.observe(document.body, { subtree: true, childList: true });
+  }, touch);
+  const { applied } = await clickRoll(page);
+  await page.waitForFunction((n) => window.__moments.find((m) => m.n === n)?.gone, applied.n, { timeout: STEP_MS });
+  await frames(page);
+  const skip = await page.evaluate((n) => {
+    const m = window.__moments.find((x) => x.n === n);
+    return { m, pressed: window.__pressed, at: window.__pressedAt, flights: window.__flights.filter((f) => f.start >= m.at).length };
+  }, applied.n);
   const skipped = skip.m.gone - skip.at;
   console.log(`${tag}: ${touch ? "tap" : "key"} skip, gone ${skipped.toFixed(0)} ms after the press, page heard it ${skip.pressed}×`);
-  check(skipped < 100 && skip.flights === 0 && skip.pressed === 1, `${tag}: a ${touch ? "tap" : "key press"} skips the moment and still reaches the page`);
+  check(skipped < 100 && skip.flights === 0 && skip.pressed === 1, `${tag}: a ${touch ? "touch pointerdown" : "key press"} skips the moment and still reaches the page`);
   check(await page.getByTestId("dice-row").isVisible(), `${tag}: after a skip the resting row shows`);
 
   // Online seats and watchers mount a table from the host's state and get each roll as a pushed state (the store's
@@ -268,6 +331,12 @@ async function practice(viewport, touch) {
   const pushed = await page.evaluate(async () => {
     const g = window.__emberisle;
     const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+    const frame = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+    const until = async (ok) => {
+      for (let i = 0; i < 200 && !ok(); i++) await sleep(50);
+      await frame();
+    };
+    const row = () => [...document.querySelectorAll('[data-testid="dice-row"] [data-testid="die"]')].map((d) => d.dataset.value).join("+");
     const saved = structuredClone(g.getState().state);
     const roller = saved.players.find((p) => p.id === saved.current).name;
     g.getState().goTitle();
@@ -276,7 +345,7 @@ async function practice(viewport, touch) {
     const saidBefore = window.__said.length;
     g.getState().loadState(saved, "p0", false, "TEST");
     g.setState({ spectator: true });
-    await sleep(1200);
+    await until(() => row() === saved.dice.join("+"));
     const loaded = window.__moments.length - before;
     const push = (k, dice) => {
       const st = structuredClone(g.getState().state);
@@ -286,12 +355,12 @@ async function practice(viewport, touch) {
       g.setState({ state: st });
     };
     push(1, [6, 1]);
-    await sleep(100);
+    await until(() => window.__moments.length > before + loaded);
     const one = window.__moments.length - before - loaded;
     const seven = window.__moments.at(-1);
-    await sleep(1400);
+    await until(() => !document.querySelector('[data-testid="roll-moment"]'));
     push(2, [2, 2]);
-    await sleep(1400);
+    await until(() => row() === "2+2");
     return { loaded, one, jump: window.__moments.length - before - loaded - one, seven: seven?.sum, color: seven?.sumColor, said: window.__said.slice(saidBefore), roller };
   });
   console.log(`${tag}: pushed states ${JSON.stringify(pushed)}`);

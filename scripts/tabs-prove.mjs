@@ -238,7 +238,7 @@ try {
   const off = JSON.parse(vs[0].shared);
   const offBanners = await Promise.all(tabs.map((t) => t.page.evaluate(() => window.__banners)));
   if (off.phase !== "setupSettle" || off.current !== off.players[0].id) throw new Error(`after the roll-off: ${off.phase}, ${off.current}`);
-  if (offBanners.flat().some((x) => /rolls \d\+\d =/.test(x))) throw new Error(`production banner during the roll-off: ${offBanners.flat().join(" | ")}`);
+  if (offBanners.flat().some((x) => /'s roll · /.test(x))) throw new Error(`production banner during the roll-off: ${offBanners.flat().join(" | ")}`);
   console.log(`roll-off: ${offRolls} rolls, each by the current tab, shared on all ${SEATS} tabs; order ${off.players.map((p) => `${p.id} ${off.rollOff.rolls[p.id]}`).join(", ")}; no production banner`);
 
   // Setup: whoever's turn it is clicks the first glowing spot through the store. Two rounds, an outpost and a path each.
@@ -331,12 +331,25 @@ try {
   // Five rolls. Each roll is followed by any discards, the wayfarer, and a pass.
   // #322: tab C asks for reduced motion, so its dice faces must not animate at all.
   await c.page.emulateMedia({ reducedMotion: "reduce" });
+  // #440: every tab records the faces of each roll moment as it mounts, so a roll is shown once on every tab, even on a
+  // tab that is too blocked to be polled inside the moment's second.
+  for (const t of tabs) {
+    await t.page.evaluate(() => {
+      window.__moments = [];
+      let cur = null;
+      new MutationObserver(() => {
+        const m = document.querySelector('[data-testid="roll-moment"]');
+        if (m && m !== cur) window.__moments.push([...m.querySelectorAll('[data-testid="die"]')].map((e) => Number(e.dataset.value)));
+        cur = m;
+      }).observe(document.body, { subtree: true, childList: true });
+    });
+  }
   const dice = [];
   let diceMatch = 0;
   for (let r = 0; r < ROLLS; r++) {
     const cur = JSON.parse(vs[0].shared).current;
     const i = vs.findIndex((v) => v.you === cur);
-    // #188: every tab shows the same roll banner (dice, sum, who got what) for a moment. The proof rolls
+    // #188: every tab shows the same roll banner (whose roll, who got what) for a moment. The proof rolls
     // faster than a banner fades, so each tab's banner is cleared first and only a fresh one counts.
     for (const t of tabs) await t.page.evaluate(() => window.__emberisle.setState({ banner: null }));
     await act(tabs[i], "dispatch", [{ type: "roll" }]);
@@ -353,15 +366,22 @@ try {
     vs = await synced(tabs, seqOf(vs[0]), `roll ${r + 1}`, slow);
     const d = JSON.parse(vs[0].shared).dice;
     dice.push(d);
-    if (!banner.includes(`rolls ${d[0]}+${d[1]} = ${d[0] + d[1]}`)) throw new Error(`banner after roll ${r + 1}: "${banner}" vs dice ${d}`);
+    // #440: the banner names the roller and carries no dice; the roll itself is the moment's, once on every tab.
+    const roller = await tabs[i].page.evaluate((id) => window.__emberisle.getState().state.players.find((p) => p.id === id)?.name, cur);
+    if (!banner.startsWith(`${roller}'s roll · `) || banner.includes(`${d[0]}+${d[1]}`)) throw new Error(`banner after roll ${r + 1}: "${banner}" vs roller ${roller}`);
     if (r === 0) console.log(`roll banner on all tabs: "${banner}"`);
-    // #322: every tab draws the roll as two pip faces that match the banner and the last roll line in the log.
-    const sum = Number(banner.match(/rolls \d\+\d = (\d+)/)[1]);
+    for (const t of tabs) {
+      const seen = await until(() => t.page.evaluate((n) => (window.__moments.length >= n ? window.__moments : null), r + 1), `roll moment on ${t.name} after roll ${r + 1}`, slow);
+      if (seen.length !== r + 1 || seen[r].join() !== d.join()) throw new Error(`${t.name} roll moments ${JSON.stringify(seen)} after roll ${r + 1} of ${d}`);
+    }
+    if (r === 0) console.log(`roll moment on all tabs: ${d.join("+")}`);
+    // #322: every tab rests the roll as two pip faces that match the shared dice and the last roll line in the log.
+    const sum = d[0] + d[1];
     for (const t of tabs) {
       const faces = await until(
         () =>
           t.page.evaluate((want) => {
-            const els = [...document.querySelectorAll('[data-testid="die"]')];
+            const els = [...document.querySelectorAll('[data-testid="dice-row"] [data-testid="die"]')];
             const values = els.map((e) => Number(e.dataset.value));
             if (els.length !== 2 || values.join("+") !== want) return null;
             const line = window.__emberisle.getState().state.log.findLast((l) => /rolls \d\+\d/.test(l));
@@ -376,7 +396,7 @@ try {
         `dice faces on ${t.name} after roll ${r + 1}`,
       );
       const [x, y] = faces.values;
-      if (x + y !== sum) throw new Error(`${t.name} dice ${x}+${y} vs banner sum ${sum}`);
+      if (x + y !== sum) throw new Error(`${t.name} dice ${x}+${y} vs shared sum ${sum}`);
       if (faces.logged.join() !== faces.values.join()) throw new Error(`${t.name} dice ${x}+${y} vs log ${faces.logged.join("+")}`);
       if (faces.pips.join() !== faces.values.join()) throw new Error(`${t.name} dice ${x}+${y} drew ${faces.pips.join("+")} pips`);
       if (faces.label !== `Rolled ${x} and ${y}, ${sum}`) throw new Error(`${t.name} dice label "${faces.label}"`);
