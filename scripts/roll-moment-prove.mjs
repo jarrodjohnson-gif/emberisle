@@ -303,9 +303,9 @@ async function practice(viewport, touch) {
         window.__pressed = 0; // the Roll click's own pointerdown came first
         window.__pressedAt = performance.now();
         if (touch) {
-          const x = innerWidth - 20;
-          const y = innerHeight / 2;
-          document.elementFromPoint(x, y).dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, composed: true, pointerType: "touch", isPrimary: true, clientX: x, clientY: y }));
+          // On the document, not the board: a synthetic pointerdown has no live pointer behind it, so the board's orbit
+          // controls (#469) could not capture it. The moment listens on the window, so the document still reaches it.
+          document.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, composed: true, pointerType: "touch", isPrimary: true }));
         } else {
           document.activeElement.dispatchEvent(new KeyboardEvent("keydown", { key: "Shift", bubbles: true, composed: true }));
         }
