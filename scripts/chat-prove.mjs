@@ -711,16 +711,14 @@ try {
   }
 
   // Versus bots the menu shows only the facts (and the bank trade on your main turn, not during setup).
-  const solo = await (await browser.newContext({ viewport: { width: 1280, height: 720 } })).newPage();
-  watch("Solo", solo);
-  await solo.goto(`http://127.0.0.1:${PORT}/`);
+  const { page: solo } = await tab("Solo");
   await solo.getByRole("button", { name: "Play", exact: true }).click();
   // The human rolls off (#232) when it is up; the bots roll on the app's timer.
   await solo.waitForFunction(() => {
     const s = window.__emberisle.getState();
     if (s.state?.phase === "rollOff" && s.state.current === s.localId) s.dispatch({ type: "roll" });
     return s.state?.phase === "setupSettle";
-  }, null, { polling: 100 });
+  }, null, { polling: 100, timeout: 60_000 });
   await solo.getByTestId("rail-p1").getByRole("button").click();
   await solo.getByTestId("player-menu").waitFor();
   check(
