@@ -4,7 +4,7 @@
 // #424: text chips over the island, sampled from screenshots. With the chip's text made transparent, its box (inside the
 // border and in from the rounded corners) is screenshotted; the computed text colour is measured against the mean and the darkest 5 % of those background pixels (both >= 4.5:1).
 // Chips: another seat's turn banner over the setup board (hotseat) at 1280x720 and 390x844, your own turn banner (versus the
-// isle), and the log line at 1280x720. Worst case, computed: the banner's and the log line's text against the glass token
+// isle), and the log line at 1280x720. Worst case, computed: every text on a glass chip against the glass token
 // composited over black (the darkest board the blur can show).
 // Run: npm run contrast-prove
 import assert from "node:assert/strict";
@@ -99,50 +99,68 @@ try {
   // #424: resolve the chip's text colour, hide the text, screenshot the box inside its border, and decode it in the page.
   const sample = async (pg, testid, label) => {
     const el = pg.getByTestId(testid);
-    await el.waitFor();
-    const info = await el.evaluate(async (node) => {
-      await Promise.all(node.getAnimations({ subtree: true }).map((a) => a.finished));
-      const c = document.createElement("canvas").getContext("2d", { willReadFrequently: true });
-      c.fillStyle = getComputedStyle(node).color;
-      c.fillRect(0, 0, 1, 1);
-      const fg = [...c.getImageData(0, 0, 1, 1).data].slice(0, 3);
-      node.style.setProperty("color", "transparent", "important");
-      for (const d of node.querySelectorAll("*")) d.style.setProperty("color", "transparent", "important");
-      const s = getComputedStyle(node);
-      const r = node.getBoundingClientRect();
-      // Inside the border, and in from the rounded corners, where the bare board shows past the chip.
-      const radius = parseFloat(s.borderTopLeftRadius) || 0;
-      const [t, rt, b, l] = ["Top", "Right", "Bottom", "Left"].map((k, i) => parseFloat(s[`border${k}Width`]) + (i % 2 ? radius : 2));
-      return { fg, text: node.textContent, clip: { x: r.left + l, y: r.top + t, width: r.width - l - rt, height: r.height - t - b } };
-    });
-    await pg.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
-    const png = (await pg.screenshot({ clip: info.clip })).toString("base64");
-    const lums = await pg.evaluate(async (png) => {
-      const img = new Image();
-      img.src = `data:image/png;base64,${png}`;
-      await img.decode();
-      const c = document.createElement("canvas");
-      c.width = img.width;
-      c.height = img.height;
-      const g = c.getContext("2d", { willReadFrequently: true });
-      g.drawImage(img, 0, 0);
-      const d = g.getImageData(0, 0, c.width, c.height).data;
-      const out = [];
-      for (let i = 0; i < d.length; i += 4) out.push([d[i], d[i + 1], d[i + 2]]);
+    // The chip can remount (a turn change re-keys the banner) or move (a line mounts beside it) between hiding its text and
+    // the screenshot. So the shot only counts if the marked node is still there, hidden, settled and in place.
+    for (let attempt = 1; ; attempt++) {
+      await el.waitFor();
+      const info = await el.evaluate(async (node) => {
+        node.dataset.sampling = "1";
+        await Promise.all(node.getAnimations({ subtree: true }).map((a) => a.finished));
+        const c = document.createElement("canvas").getContext("2d", { willReadFrequently: true });
+        c.fillStyle = getComputedStyle(node).color;
+        c.fillRect(0, 0, 1, 1);
+        const fg = [...c.getImageData(0, 0, 1, 1).data].slice(0, 3);
+        node.style.setProperty("color", "transparent", "important");
+        for (const d of node.querySelectorAll("*")) d.style.setProperty("color", "transparent", "important");
+        const s = getComputedStyle(node);
+        const r = node.getBoundingClientRect();
+        // Inside the border, and in from the rounded corners, where the bare board shows past the chip.
+        const radius = parseFloat(s.borderTopLeftRadius) || 0;
+        const [t, rt, b, l] = ["Top", "Right", "Bottom", "Left"].map((k, i) => parseFloat(s[`border${k}Width`]) + (i % 2 ? radius : 2));
+        return { fg, text: node.textContent, at: [r.left, r.top], clip: { x: r.left + l, y: r.top + t, width: r.width - l - rt, height: r.height - t - b } };
+      });
+      await pg.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+      const png = (await pg.screenshot({ clip: info.clip })).toString("base64");
+      const steady = await pg.evaluate(([id, at]) => {
+        const node = document.querySelector(`[data-testid="${id}"]`);
+        const r = node?.getBoundingClientRect();
+        if (!node?.dataset.sampling || node.style.color !== "transparent") return "remounted";
+        if (r.left !== at[0] || r.top !== at[1]) return `moved from ${at.map(Math.round)} to ${[r.left, r.top].map(Math.round)}`;
+        return node.getAnimations({ subtree: true }).every((a) => a.playState === "finished") ? "steady" : "animating";
+      }, [testid, info.at]);
+      await el.evaluate((node) => {
+        delete node.dataset.sampling;
+        node.style.removeProperty("color");
+        for (const d of node.querySelectorAll("*")) d.style.removeProperty("color");
+      });
+      if (steady !== "steady") {
+        if (attempt === 5) throw new Error(`${label}: the chip never held still for a sample`);
+        console.log(`  ${label}: the chip ${steady} during the sample, again (${attempt})`);
+        continue;
+      }
+      const lums = await pg.evaluate(async (png) => {
+        const img = new Image();
+        img.src = `data:image/png;base64,${png}`;
+        await img.decode();
+        const c = document.createElement("canvas");
+        c.width = img.width;
+        c.height = img.height;
+        const g = c.getContext("2d", { willReadFrequently: true });
+        g.drawImage(img, 0, 0);
+        const d = g.getImageData(0, 0, c.width, c.height).data;
+        const out = [];
+        for (let i = 0; i < d.length; i += 4) out.push([d[i], d[i + 1], d[i + 2]]);
+        return out;
+      }, png);
+      const L = lums.map(lum).sort((a, b) => a - b);
+      const mean = L.reduce((a, b) => a + b, 0) / L.length;
+      const p5 = L[Math.floor(L.length * 0.05)];
+      const fgL = lum(info.fg);
+      const r = (bgL) => (Math.max(fgL, bgL) + 0.05) / (Math.min(fgL, bgL) + 0.05);
+      const out = [[`${label}: text on mean background`, r(mean)], [`${label}: text on darkest 5 % of background`, r(p5)]];
+      console.log(`  ${label}: "${info.text}" text rgb(${info.fg}) over ${L.length} px`);
       return out;
-    }, png);
-    await el.evaluate((node) => {
-      node.style.removeProperty("color");
-      for (const d of node.querySelectorAll("*")) d.style.removeProperty("color");
-    });
-    const L = lums.map(lum).sort((a, b) => a - b);
-    const mean = L.reduce((a, b) => a + b, 0) / L.length;
-    const p5 = L[Math.floor(L.length * 0.05)];
-    const fgL = lum(info.fg);
-    const r = (bgL) => (Math.max(fgL, bgL) + 0.05) / (Math.min(fgL, bgL) + 0.05);
-    const out = [[`${label}: text on mean background`, r(mean)], [`${label}: text on darkest 5 % of background`, r(p5)]];
-    console.log(`  ${label}: "${info.text}" text rgb(${info.fg}) over ${L.length} px`);
-    return out;
+    }
   };
   const sampled = [];
   for (const viewport of [{ width: 1280, height: 720 }, { width: 390, height: 844 }]) {
@@ -160,24 +178,35 @@ try {
     });
     await pg.waitForFunction(() => window.__isle && window.__emberisle.getState().state.phase === "setupSettle");
     sampled.push(...(await sample(pg, "turn-banner", `${tag} another seat's turn banner`)));
-    if (viewport.width >= 640) {
-      sampled.push(...(await sample(pg, "log-line", `${tag} log line`)));
-      const worst = await pg.evaluate(() => {
-        const c = document.createElement("canvas").getContext("2d", { willReadFrequently: true });
-        const px = (css, under) => {
-          c.fillStyle = under;
-          c.fillRect(0, 0, 1, 1);
-          c.fillStyle = css;
-          c.fillRect(0, 0, 1, 1);
-          return [...c.getImageData(0, 0, 1, 1).data].slice(0, 3);
-        };
-        const glass = px(getComputedStyle(document.documentElement).getPropertyValue("--color-glass").trim(), "#000");
-        const ink = (id) => px(getComputedStyle(document.querySelector(`[data-testid="${id}"]`)).color, "#fff");
-        return { glass, banner: ink("turn-banner"), log: ink("log-line") };
-      });
-      console.log(`  glass over black rgb(${worst.glass}); banner ink rgb(${worst.banner}), log ink rgb(${worst.log})`);
-      sampled.push([`banner text on glass over black`, ratio(worst.banner, worst.glass)], [`log line text on glass over black`, ratio(worst.log, worst.glass)]);
-    }
+    if (viewport.width >= 640) sampled.push(...(await sample(pg, "log-line", `${tag} log line`)));
+    // Worst case, computed: every text whose nearest painted background is a glass chip (banner, log line, header pill,
+    // rail, seat strip, hint), against the glass token composited over black, the darkest board the blur can show.
+    const worst = await pg.evaluate(() => {
+      const c = document.createElement("canvas").getContext("2d", { willReadFrequently: true });
+      const px = (css, under) => {
+        c.fillStyle = under;
+        c.fillRect(0, 0, 1, 1);
+        c.fillStyle = css;
+        c.fillRect(0, 0, 1, 1);
+        return [...c.getImageData(0, 0, 1, 1).data].slice(0, 3);
+      };
+      const painted = (el) => px(getComputedStyle(el).backgroundColor, "#000").some((v) => v > 0) || px(getComputedStyle(el).backgroundColor, "#fff").some((v) => v < 255);
+      const glass = px(getComputedStyle(document.documentElement).getPropertyValue("--color-glass").trim(), "#000");
+      const chips = [...document.querySelectorAll('[class*="bg-glass"]')];
+      const out = [];
+      for (const el of document.querySelectorAll("body *")) {
+        if (![...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim())) continue;
+        if (!el.getClientRects().length || getComputedStyle(el).visibility === "hidden") continue;
+        let bg = el;
+        while (bg && !painted(bg)) bg = bg.parentElement;
+        if (!chips.includes(bg)) continue;
+        const where = bg.closest("[data-testid]")?.dataset.testid ?? bg.tagName.toLowerCase();
+        out.push({ where, text: el.textContent.trim().slice(0, 24), ink: px(getComputedStyle(el).color, "#fff") });
+      }
+      return { glass, out };
+    });
+    for (const t of worst.out) sampled.push([`${tag} "${t.text}" (${t.where}, rgb ${t.ink}) on glass over black`, ratio(t.ink, worst.glass)]);
+    console.log(`  ${tag}: ${worst.out.length} texts on glass chips, glass over black rgb(${worst.glass})`);
     // Versus the isle: the human rolls off when up, then waits on its own first corner (the bots act on the app's timer).
     await pg.evaluate(() => window.__emberisle.getState().goTitle());
     await pg.getByRole("button", { name: "Play", exact: true }).click();

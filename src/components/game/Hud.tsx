@@ -217,7 +217,7 @@ export function Hud() {
         <div className="pointer-events-auto mx-auto flex max-w-5xl items-center justify-between gap-2">
           <div className="flex items-center gap-2 rounded-[20px] border border-white/50 bg-glass px-3 py-2 backdrop-blur-md">
             <span className="font-display text-lg tracking-tight">Emberisle</span>
-            <span className="hidden text-xs text-zinc-600 sm:inline">Turn {Math.max(1, state.turn)}</span>
+            <span className="hidden text-xs text-zinc-700 sm:inline">Turn {Math.max(1, state.turn)}</span>
             {spectator ? (
               <span data-testid="watching-badge" className="rounded-full bg-fg px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-bg">
                 Watching
@@ -228,7 +228,7 @@ export function Hud() {
                 data-testid="watching-count"
                 title={`${watching} watching`}
                 aria-label={`${watching} watching`}
-                className="flex items-center gap-1 text-xs tabular-nums text-zinc-600"
+                className="flex items-center gap-1 text-xs tabular-nums text-zinc-700"
               >
                 <Eye className="size-3.5" aria-hidden="true" />
                 {watching}
@@ -288,15 +288,15 @@ export function Hud() {
                     <span className="text-sm font-medium">{p.name}</span>
                     <RollOffDie state={state} id={p.id} className="size-6 text-sm" />
                   </span>
-                  <span className="tabular-nums text-sm text-zinc-600">{publicVP(state, p.id)} vp{p.id === actor && p.hidden.vp > 0 ? ` (+${p.hidden.vp} hidden)` : ""}
+                  <span className="tabular-nums text-sm text-zinc-700">{publicVP(state, p.id)} vp{p.id === actor && p.hidden.vp > 0 ? ` (+${p.hidden.vp} hidden)` : ""}
                   </span>
                 </span>
-                <span className="mt-1 block text-xs text-zinc-600">
+                <span className="mt-1 block text-xs text-zinc-700">
                   {p.goods ?? RESOURCES.reduce((n, r) => n + p.resources[r], 0)} goods · {p.fortunes ?? hiddenCount(p)} fortunes
                   {seats.some((s) => s.away && (s.name === p.name || `${s.name} (bot)` === p.name)) ? " · reconnecting…" : ""}
                 </span>
                 {p.id === actor && hiddenCount(p) > 0 ? (
-                  <span className="mt-0.5 block text-xs text-zinc-600">
+                  <span className="mt-0.5 block text-xs text-zinc-700">
                     {FORTUNE_NAMES.filter(([k]) => p.hidden[k] > 0)
                       .map(([k, label]) => `${label} ×${p.hidden[k]}${p.boughtThisTurn[k] > 0 ? ` (${p.boughtThisTurn[k]} new)` : ""}`)
                       .join(" · ")}
@@ -544,13 +544,13 @@ function SeatStrip({ actor, className }: { actor: string; className: string }) {
                 />
                 <span
                   data-testid="seat-vp"
-                  className={cn("shrink-0 text-xs tabular-nums text-zinc-600", state.phase === "rollOff" && "@max-[100px]:hidden")}
+                  className={cn("shrink-0 text-xs tabular-nums text-zinc-700", state.phase === "rollOff" && "@max-[100px]:hidden")}
                 >
                   {publicVP(state, p.id)}
                   {hidden ? `+${hidden}` : ""}
                 </span>
               </span>
-              <span className="block w-full truncate text-[10px] text-zinc-600">
+              <span className="block w-full truncate text-[10px] text-zinc-700">
                 {away ? "reconnecting…" : `${goods}g · ${p.fortunes ?? hiddenCount(p)}f`}
               </span>
             </button>
