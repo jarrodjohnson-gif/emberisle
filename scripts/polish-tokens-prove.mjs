@@ -6,7 +6,7 @@ import { existsSync, mkdirSync } from "node:fs";
 import { chromium } from "playwright";
 import { createServer } from "vite";
 
-const PORT = 8096;
+const PORT = Number(process.env.VITE_PORT) || 8105;
 const TOKENS = {
   "--text-caption": "0.75rem",
   "--text-body": "0.9375rem",
@@ -70,6 +70,7 @@ try {
     page.on("pageerror", (e) => errors.push(String(e)));
     await page.goto(`http://127.0.0.1:${PORT}/`);
     await page.getByRole("button", { name: "Host a table" }).waitFor();
+    await page.waitForFunction(() => window.__isle?.land.children.length > 30);
 
     const root = await page.evaluate(
       (names) => Object.fromEntries(names.map((n) => [n, getComputedStyle(document.documentElement).getPropertyValue(n).trim()])),
@@ -109,7 +110,6 @@ try {
       });
       assert.deepEqual(after, { style: "solid", width: "2px", offset: "2px" }, `${v.tag}: focus ring`);
     }
-    await page.waitForTimeout(800);
     await page.screenshot({ path: `test-results/polish-tokens-${v.tag}-rolloff.png` });
     assert.deepEqual(errors, [], `${v.tag}: console errors`);
     console.log(`${v.tag} ${v.width}x${v.height}: tokens ok, Button radius ${host.radius} ${host.duration} ${host.easing}, 0 console errors`);
