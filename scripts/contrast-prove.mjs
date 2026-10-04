@@ -1,6 +1,11 @@
 // #381: UI text meets WCAG 1.4.3 (4.5:1). Reads computed colours of the title's Play (primary), Host a table and Join (secondary)
 // buttons, the quiet row (Four seats, one table, How to play; #454) and the 12 px "3 bots, no network" line, and checks white on the `sea-ink` and `accent-ink` fills that Start,
 // End turn and the 7 use (#444 took them off the title).
+// #424: text chips over the island, sampled from screenshots. With the chip's text made transparent, its box (inside the
+// border and in from the rounded corners) is screenshotted; the computed text colour is measured against the mean and the darkest 5 % of those background pixels (both >= 4.5:1).
+// Chips: another seat's turn banner over the setup board (hotseat) at 1280x720 and 390x844, your own turn banner (versus the
+// isle), and the log line at 1280x720. Worst case, computed: every text on a glass chip against the glass token
+// composited over black (the darkest board the blur can show).
 // Run: npm run contrast-prove
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
@@ -90,6 +95,134 @@ try {
   const app = readFileSync("src/components/game/EmberisleApp.tsx", "utf8");
   if (/text-accent"/.test(app)) bad.push("EmberisleApp.tsx still uses text-accent for text");
   if (/text-sea"/.test(app)) bad.push("EmberisleApp.tsx still uses text-sea for text");
+
+  // #424: resolve the chip's text colour, hide the text, screenshot the box inside its border, and decode it in the page.
+  const sample = async (pg, testid, label) => {
+    const el = pg.getByTestId(testid);
+    // The chip can remount (a turn change re-keys the banner) or move (a line mounts beside it) between hiding its text and
+    // the screenshot. So the shot only counts if the marked node is still there, hidden, settled and in place.
+    for (let attempt = 1; ; attempt++) {
+      await el.waitFor();
+      const info = await el.evaluate(async (node) => {
+        node.dataset.sampling = "1";
+        await Promise.all(node.getAnimations({ subtree: true }).map((a) => a.finished));
+        const c = document.createElement("canvas").getContext("2d", { willReadFrequently: true });
+        c.fillStyle = getComputedStyle(node).color;
+        c.fillRect(0, 0, 1, 1);
+        const fg = [...c.getImageData(0, 0, 1, 1).data].slice(0, 3);
+        node.style.setProperty("color", "transparent", "important");
+        for (const d of node.querySelectorAll("*")) d.style.setProperty("color", "transparent", "important");
+        const s = getComputedStyle(node);
+        const r = node.getBoundingClientRect();
+        // Inside the border, and in from the rounded corners, where the bare board shows past the chip.
+        const radius = parseFloat(s.borderTopLeftRadius) || 0;
+        const [t, rt, b, l] = ["Top", "Right", "Bottom", "Left"].map((k, i) => parseFloat(s[`border${k}Width`]) + (i % 2 ? radius : 2));
+        return { fg, text: node.textContent, at: [r.left, r.top], clip: { x: r.left + l, y: r.top + t, width: r.width - l - rt, height: r.height - t - b } };
+      });
+      await pg.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+      const png = (await pg.screenshot({ clip: info.clip })).toString("base64");
+      const steady = await pg.evaluate(([id, at]) => {
+        const node = document.querySelector(`[data-testid="${id}"]`);
+        const r = node?.getBoundingClientRect();
+        if (!node?.dataset.sampling || node.style.color !== "transparent") return "remounted";
+        if (r.left !== at[0] || r.top !== at[1]) return `moved from ${at.map(Math.round)} to ${[r.left, r.top].map(Math.round)}`;
+        return node.getAnimations({ subtree: true }).every((a) => a.playState === "finished") ? "steady" : "animating";
+      }, [testid, info.at]);
+      await el.evaluate((node) => {
+        delete node.dataset.sampling;
+        node.style.removeProperty("color");
+        for (const d of node.querySelectorAll("*")) d.style.removeProperty("color");
+      });
+      if (steady !== "steady") {
+        if (attempt === 5) throw new Error(`${label}: the chip never held still for a sample`);
+        console.log(`  ${label}: the chip ${steady} during the sample, again (${attempt})`);
+        continue;
+      }
+      const lums = await pg.evaluate(async (png) => {
+        const img = new Image();
+        img.src = `data:image/png;base64,${png}`;
+        await img.decode();
+        const c = document.createElement("canvas");
+        c.width = img.width;
+        c.height = img.height;
+        const g = c.getContext("2d", { willReadFrequently: true });
+        g.drawImage(img, 0, 0);
+        const d = g.getImageData(0, 0, c.width, c.height).data;
+        const out = [];
+        for (let i = 0; i < d.length; i += 4) out.push([d[i], d[i + 1], d[i + 2]]);
+        return out;
+      }, png);
+      const L = lums.map(lum).sort((a, b) => a - b);
+      const mean = L.reduce((a, b) => a + b, 0) / L.length;
+      const p5 = L[Math.floor(L.length * 0.05)];
+      const fgL = lum(info.fg);
+      const r = (bgL) => (Math.max(fgL, bgL) + 0.05) / (Math.min(fgL, bgL) + 0.05);
+      const out = [[`${label}: text on mean background`, r(mean)], [`${label}: text on darkest 5 % of background`, r(p5)]];
+      console.log(`  ${label}: "${info.text}" text rgb(${info.fg}) over ${L.length} px`);
+      return out;
+    }
+  };
+  const sampled = [];
+  for (const viewport of [{ width: 1280, height: 720 }, { width: 390, height: 844 }]) {
+    const tag = `${viewport.width}x${viewport.height}`;
+    const pg = await browser.newPage({ viewport });
+    pg.on("console", (m) => m.type() === "error" && errors.push(m.text()));
+    pg.on("pageerror", (e) => errors.push(String(e)));
+    await pg.goto(`http://127.0.0.1:${PORT}/`);
+    await pg.getByRole("button", { name: "Join", exact: true }).waitFor();
+    // Hotseat names every seat, so the banner is another seat's: roll off, then the first seat places on the setup board.
+    await pg.evaluate(() => {
+      const g = window.__emberisle.getState();
+      g.startHotseat(4);
+      while (window.__emberisle.getState().state.phase === "rollOff") window.__emberisle.getState().dispatch({ type: "roll" });
+    });
+    await pg.waitForFunction(() => window.__isle && window.__emberisle.getState().state.phase === "setupSettle");
+    sampled.push(...(await sample(pg, "turn-banner", `${tag} another seat's turn banner`)));
+    if (viewport.width >= 640) sampled.push(...(await sample(pg, "log-line", `${tag} log line`)));
+    // Worst case, computed: every text whose nearest painted background is a glass chip (banner, log line, header pill,
+    // rail, seat strip, hint), against the glass token composited over black, the darkest board the blur can show.
+    const worst = await pg.evaluate(() => {
+      const c = document.createElement("canvas").getContext("2d", { willReadFrequently: true });
+      const px = (css, under) => {
+        c.fillStyle = under;
+        c.fillRect(0, 0, 1, 1);
+        c.fillStyle = css;
+        c.fillRect(0, 0, 1, 1);
+        return [...c.getImageData(0, 0, 1, 1).data].slice(0, 3);
+      };
+      const painted = (el) => px(getComputedStyle(el).backgroundColor, "#000").some((v) => v > 0) || px(getComputedStyle(el).backgroundColor, "#fff").some((v) => v < 255);
+      const glass = px(getComputedStyle(document.documentElement).getPropertyValue("--color-glass").trim(), "#000");
+      const chips = [...document.querySelectorAll('[class*="bg-glass"]')];
+      const out = [];
+      for (const el of document.querySelectorAll("body *")) {
+        if (![...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim())) continue;
+        if (!el.getClientRects().length || getComputedStyle(el).visibility === "hidden") continue;
+        let bg = el;
+        while (bg && !painted(bg)) bg = bg.parentElement;
+        if (!chips.includes(bg)) continue;
+        const where = bg.closest("[data-testid]")?.dataset.testid ?? bg.tagName.toLowerCase();
+        out.push({ where, text: el.textContent.trim().slice(0, 24), ink: px(getComputedStyle(el).color, "#fff") });
+      }
+      return { glass, out };
+    });
+    for (const t of worst.out) sampled.push([`${tag} "${t.text}" (${t.where}, rgb ${t.ink}) on glass over black`, ratio(t.ink, worst.glass)]);
+    console.log(`  ${tag}: ${worst.out.length} texts on glass chips, glass over black rgb(${worst.glass})`);
+    // Versus the isle: the human rolls off when up, then waits on its own first corner (the bots act on the app's timer).
+    await pg.evaluate(() => window.__emberisle.getState().goTitle());
+    await pg.getByRole("button", { name: "Play", exact: true }).click();
+    await pg.waitForFunction(() => {
+      const s = window.__emberisle.getState();
+      if (s.state?.phase === "rollOff" && s.state.current === s.localId) s.dispatch({ type: "roll" });
+      return s.state?.phase === "setupSettle" && s.state.current === s.localId;
+    }, null, { polling: 100, timeout: 60_000 });
+    sampled.push(...(await sample(pg, "turn-banner", `${tag} your turn banner`)));
+    await pg.screenshot({ path: `test-results/contrast-prove-${tag}.png` });
+    await pg.close();
+  }
+  for (const [name, r] of sampled) {
+    console.log(`${r.toFixed(2)}:1  ${name}`);
+    if (r < MIN) bad.push(`${name} is ${r.toFixed(2)}:1`);
+  }
   assert.deepEqual(bad, [], `below ${MIN}:1`);
   assert.deepEqual(errors, [], "console errors");
   console.log("contrast-prove: ok");

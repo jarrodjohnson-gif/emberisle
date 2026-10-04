@@ -5,6 +5,10 @@
 //   or the seat strip (portrait), and at least 120 px of the island between them stays uncovered and takes the pointer.
 // - #402: while the stack has content below the fold a static "more below" cue shows (it takes no pointer events), it is gone
 //   once the stack is scrolled to the end, and it never shows at 1280x720 where nothing overflows.
+// - #420: at 390x844 (touch) the four-seat strip stays 44 px and no seat name is cut off: under 100 px a cell
+//   shows a short form, the roll-off die only during the roll-off and the points after it, never both side by side.
+//   Two seats whose three letters match ("Ember", "Emberly") still read differently.
+// - #419: on that touch screen an armed Path's banner ends "tap Path again to cancel", and a second tap restores it.
 // Zero console errors. Run: npm run reflow-prove
 import { existsSync } from "node:fs";
 import { chromium } from "playwright";
@@ -18,6 +22,8 @@ const VIEWPORTS = [
   { width: 1280, height: 720 },
   // Phone landscape (#421): the title must not run past the top edge.
   { width: 844, height: 390, touch: true },
+  // Phone portrait, four seats in the strip (#420, #419).
+  { width: 390, height: 844, touch: true, strip: true },
 ];
 
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
@@ -82,6 +88,38 @@ try {
 
     await page.evaluate(() => window.__emberisle.getState().startHotseat(4));
     await page.waitForFunction(() => window.__emberisle?.getState().state);
+    // #420: read every portrait strip cell: the name actually drawn (not the screen-reader copy), whether it is cut off, die and points.
+    const strip = () =>
+      page.evaluate(() => {
+        const el = document.querySelector('[data-testid="seat-strip"]');
+        if (!el || el.closest("header")) return null;
+        const shown = (x) => !!x && x.getClientRects().length > 0 && getComputedStyle(x).position !== "absolute";
+        return {
+          h: el.getBoundingClientRect().height,
+          cells: [...el.querySelectorAll('[data-testid^="seat-p"]')].map((cell) => {
+            const name = [...cell.querySelectorAll('[data-testid="seat-name"]')].find(shown);
+            const row = name?.parentElement;
+            return {
+              w: Math.round(cell.getBoundingClientRect().width),
+              name: name?.textContent ?? null,
+              cut: !name || name.scrollWidth > name.clientWidth || row.scrollWidth > row.clientWidth,
+              die: shown(cell.querySelector('[data-testid="rolloff-die"]')),
+              vp: shown(cell.querySelector('[data-testid="seat-vp"]')),
+            };
+          }),
+        };
+      });
+    const checkStrip = (s, phase) => {
+      const narrow = s.cells.filter((c) => c.w < 100);
+      check(s.h === 44 && s.cells.length === 4 && s.cells.every((c) => !c.cut), `${tag} strip (${phase}): 44 px, four cells, no name cut off`, s);
+      if (narrow.length) {
+        check(narrow.every((c) => (phase === "rollOff" ? c.die && !c.vp : !c.die && c.vp)), `${tag} strip (${phase}): under 100 px, ${phase === "rollOff" ? "die without points" : "points without die"}`, narrow);
+      }
+    };
+    if (viewport.strip) {
+      await page.getByTestId("seat-strip").waitFor();
+      checkStrip(await strip(), "rollOff");
+    }
     await page.evaluate(() => {
       const g = window.__emberisle;
       const st = structuredClone(g.getState().state);
@@ -128,6 +166,29 @@ try {
         scrollWidth: document.documentElement.scrollWidth,
       };
     });
+    if (viewport.strip) {
+      checkStrip(await strip(), "main");
+      await page.evaluate(() => {
+        const g = window.__emberisle;
+        const st = structuredClone(g.getState().state);
+        st.players[0].name = "Ember";
+        st.players[1].name = "Emberly";
+        st.seq += 1;
+        g.setState({ state: st });
+      });
+      await page.waitForFunction(() => document.querySelector('[data-testid="seat-strip"] [data-testid="seat-name"][aria-hidden]')?.textContent !== "Emb");
+      const twins = await strip();
+      const shown = twins.cells.map((c) => c.name);
+      check(new Set(shown).size === 4 && twins.cells.every((c) => !c.cut), `${tag} strip: "Ember" and "Emberly" read differently`, shown);
+      const name = await page.evaluate(() => window.__emberisle.getState().state.players[0].name);
+      const path = page.getByRole("button", { name: "Path", exact: true });
+      const bannerIs = (t) => page.waitForFunction((t) => document.querySelector('[data-testid="turn-banner"]')?.textContent === t, t, { timeout: 5000 }).then(() => true, () => false);
+      await path.tap();
+      const armed = `${name}'s turn — Pick a glowing edge · tap Path again to cancel`;
+      check(await bannerIs(armed), `${tag} armed Path on touch: banner says what to pick and how to cancel`, await page.getByTestId("turn-banner").textContent());
+      await path.tap();
+      check(await bannerIs(`${name}'s turn — Build, trade with the bank, or end your turn.`), `${tag} second tap: banner back to the main line`, await page.getByTestId("turn-banner").textContent());
+    }
     const floor = hud.stripBottom ?? hud.headerBottom + 8;
     check(hud.stackTop >= floor, `${tag} hud: bottom stack starts below the ${hud.stripBottom ? "seat strip" : "header + 8 px"}`, hud);
     check(hud.uncovered >= BOARD_MIN && hud.hits.length > 0 && hud.hits.every((t) => t === "CANVAS"), `${tag} hud: >= ${BOARD_MIN} px of island uncovered and pointer-reachable`, { uncovered: hud.uncovered, hits: hud.hits });

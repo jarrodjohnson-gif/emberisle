@@ -1,5 +1,6 @@
 // #376 (WCAG 2.1.1): a keyboard alone places every setup piece in hotseat, then a path, an outpost, a stronghold and the
 // wayfarer through the PlaceList beside the HUD. Each list holds exactly the targets the island glows; zero console errors.
+// #419: an armed Path, Outpost or Stronghold turns the turn banner into what to pick and "Esc cancels"; Escape restores it.
 import { existsSync, mkdirSync } from "node:fs";
 import { chromium } from "playwright";
 import { createServer } from "vite";
@@ -194,13 +195,35 @@ try {
       g.setState({ state: st, buildMode: "none", error: null });
       return st.seq;
     });
+  // #419: the banner reads `${seat}'s turn — ${phase}` in hotseat.
+  const bannerIs = async (phase) => {
+    const want = await page.evaluate((phase) => {
+      const st = window.__emberisle.getState().state;
+      return `${st.players.find((p) => p.id === st.current).name}'s turn — ${phase}`;
+    }, phase);
+    await page.waitForFunction((t) => document.querySelector('[data-testid="turn-banner"]')?.textContent === t, want, { timeout: STEP_MS })
+      .catch(async () => { throw new Error(`banner: want "${want}", got "${await page.getByTestId("turn-banner").textContent()}"`); });
+    return want;
+  };
+  const ARMED = {
+    Path: "Pick a glowing edge · Esc cancels",
+    Outpost: "Pick a glowing corner · Esc cancels",
+    Stronghold: "Pick an outpost to upgrade · Esc cancels",
+  };
   const arm = async (name, heading) => {
     await page.getByRole("button", { name, exact: true }).focus({ timeout: STEP_MS });
     await page.keyboard.press("Enter");
     const g = page.getByRole("group", { name: heading });
     await g.waitFor({ state: "attached", timeout: STEP_MS });
+    console.log(`armed ${name}: banner "${await bannerIs(ARMED[name])}"`);
     return g;
   };
+  // #419: Escape disarms, and the banner says the main-phase line again.
+  await fill();
+  await arm("Path", "Lay a path");
+  await page.keyboard.press("Escape");
+  await page.getByRole("group", { name: "Lay a path" }).waitFor({ state: "detached", timeout: STEP_MS });
+  console.log(`Escape: banner "${await bannerIs("Build, trade with the bank, or end your turn.")}"`);
   // Two paths out from an outpost, so a corner two steps away is free for an outpost.
   for (let i = 0; i < 2; i++) {
     await fill();

@@ -4,6 +4,7 @@
 // #232: first, the Roll button carries all four seats through the roll-off for first place.
 // #380: each turn change and each rule error reaches a live region (recorded by a MutationObserver, not polled).
 // #410: with the bank out of ore, the Plenty form greys ore out (disabled, aria-disabled, described) and it cannot be picked.
+// #430: while p2 owes that discard on p0's turn the banner reads "{p2} — discard 4", not "{p2}'s turn", and p0's turn after.
 // #412: a pick the bank empties while the form is open moves to a card it still has; an empty bank turns Plenty off.
 import { existsSync } from "node:fs";
 import { chromium } from "playwright";
@@ -144,6 +145,11 @@ try {
   const p2Name = await page.evaluate(() => window.__emberisle.getState().state.players.find((p) => p.id === "p2").name);
   const label = await page.getByText(`${p2Name}: discard 4`).textContent({ timeout: STEP_MS });
   console.log("bar:", label);
+  const bannerIs = (want) =>
+    page.waitForFunction((t) => document.querySelector('[data-testid="turn-banner"]')?.textContent === t, want, { timeout: STEP_MS })
+      .catch(async () => { throw new Error(`banner: want "${want}", got "${await page.getByTestId("turn-banner").textContent()}"`); });
+  await bannerIs(`${p2Name} — discard 4`);
+  console.log(`banner while ${p2Name} discards on p0's turn: "${await page.getByTestId("turn-banner").textContent()}"`);
 
   const form = page.locator("form", { hasText: "discard 4" });
   // #255: the bar counts what is picked, clamps each count to what the seat holds, and keeps Discard off until the total is exact.
@@ -178,6 +184,9 @@ try {
     return { phase: st.phase, cards: Object.values(p2.resources).reduce((a, b) => a + b, 0), need: st.discardNeeded };
   });
   console.log("after discard:", JSON.stringify(after));
+  const p0Name = await page.evaluate(() => window.__emberisle.getState().state.players.find((p) => p.id === "p0").name);
+  await bannerIs(`${p0Name}'s turn — Move the wayfarer onto another hex.`);
+  console.log(`banner after the discard: "${await page.getByTestId("turn-banner").textContent()}"`);
   if (after.cards !== 5) throw new Error(`p2 should hold 5 cards, has ${after.cards}`);
 
   // Two seats owe a discard: the second bar must not inherit what the first typed.
