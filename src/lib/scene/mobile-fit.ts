@@ -3,11 +3,62 @@
 
 // Half-extent of the island plus its docks, padded 8%, in world units (HEX_SIZE 1.12).
 export const ISLE_HALF = { x: 6.0, z: 5.6 };
-export const TARGET = { x: 0.15, y: 0.05, z: 0 };
 
 export type Insets = { top: number; right: number; bottom: number; left: number };
 
-// The rectangle the HUD chrome leaves for the island. `coarse` is matchMedia("(pointer: coarse)").
+export type Rect = { left: number; top: number; right: number; bottom: number };
+
+// A chip this close to a canvas edge, or to chrome already counted on that edge, extends that edge's chrome (the HUD's
+// own p-3 rhythm plus a little slack); the island keeps PAD of room from the chrome, or from the bare edge.
+const CHROME_GAP = 16;
+const CHROME_PAD = 12;
+
+// The rectangle the HUD actually leaves for the island, from the rects of the chrome that takes pointer events (what a tap
+// cannot pass through), so a taller phase bar or a rail never hides a corner. Wide chips (at least half the canvas) are bands
+// and stack from the top or bottom edge, each one that touches the edge or the band before it; narrower ones that touch the
+// left or right edge the same way are a rail when together they span at least a quarter of the canvas (a seat rail, an open
+// chat), not a lone button. Floating chips (a toast, a centred sheet) and overlays that cover nearly everything (a dialog's
+// backdrop) count for nothing. `safe` is the device's safe area, used where no chrome is.
+export function chromeInsets(cssW: number, cssH: number, solids: Rect[], safe: Partial<Insets> = {}): Insets {
+  const chrome = solids.filter((r) => {
+    const w = r.right - r.left;
+    const h = r.bottom - r.top;
+    return w >= 2 && h >= 2 && w * h < 0.9 * cssW * cssH;
+  });
+  const bands = chrome.filter((r) => r.right - r.left >= cssW / 2);
+  const rails = chrome.filter((r) => r.right - r.left < cssW / 2);
+  // The chips on an edge: each within CHROME_GAP of the edge or of a chip already counted. `near` is a chip's distance
+  // from the edge, `reach` how far from the edge it extends.
+  const onEdge = (chips: Rect[], near: (r: Rect) => number, reach: (r: Rect) => number) => {
+    const found: Rect[] = [];
+    let edge = 0;
+    for (let again = true; again; ) {
+      again = false;
+      for (const r of chips) {
+        if (!found.includes(r) && near(r) <= edge + CHROME_GAP) {
+          found.push(r);
+          edge = Math.max(edge, reach(r));
+          again = true;
+        }
+      }
+    }
+    return { found, edge };
+  };
+  const top = onEdge(bands.filter((r) => r.bottom < cssH / 2), (r) => r.top, (r) => r.bottom).edge;
+  const bottom = onEdge(bands.filter((r) => r.top > cssH / 2), (r) => cssH - r.bottom, (r) => cssH - r.top).edge;
+  const rail = (side: ReturnType<typeof onEdge>) => {
+    if (!side.found.length) return 0;
+    const span = Math.max(...side.found.map((r) => r.bottom)) - Math.min(...side.found.map((r) => r.top));
+    return span >= cssH / 4 ? side.edge : 0;
+  };
+  const left = rail(onEdge(rails.filter((r) => r.right < cssW / 2), (r) => r.left, (r) => r.right));
+  const right = rail(onEdge(rails.filter((r) => r.left > cssW / 2), (r) => cssW - r.right, (r) => cssW - r.left));
+  const inset = (chrome: number, safe: number) => (chrome > 0 ? chrome : safe) + CHROME_PAD;
+  return { top: inset(top, safe.top ?? 0), right: inset(right, safe.right ?? 0), bottom: inset(bottom, safe.bottom ?? 0), left: inset(left, safe.left ?? 0) };
+}
+
+// The design's HUD footprint (docs/design/mobile-camera-touch.md): the free camera's dolly limit on the title and the lobby,
+// where there is no HUD to measure, and the fallback before one has been. `coarse` is matchMedia("(pointer: coarse)").
 export function hudInsets(cssW: number, cssH: number, coarse: boolean, safe: Partial<Insets> = {}): Insets {
   let i: Insets;
   if (coarse && cssH > cssW) i = { top: 116, right: 12, bottom: 196, left: 12 };
@@ -24,13 +75,23 @@ export function hudInsets(cssW: number, cssH: number, coarse: boolean, safe: Par
 
 export type OrthoFit = { left: number; right: number; top: number; bottom: number; x: number; z: number };
 
-// Overhead frustum sized to the island inside the hole, then the camera is shifted so the world center lands
-// at the hole center. Screen-up is -Z, screen-right is +X (the camera's up vector is (0,0,-1)).
-export function fitOrtho(cssW: number, cssH: number, insets: Insets): OrthoFit {
+// The overhead camera leans this far off straight down, toward the player (#135, polish.md "The board look target"):
+// the slabs show a side and the trees a silhouette, like a board seen by someone leaning over the table, while a
+// token still reads as a disc. It looks at cap level; the tallest prop (a pine) rises LEAN_RISE above that, and the
+// far row's tree tops lift up-screen by that much times sin(lean), so the frustum keeps the room.
+export const OVERHEAD_LEAN = (25 * Math.PI) / 180;
+export const CAP_LEVEL = 0.35;
+const LEAN_RISE = 1.15;
+
+// Overhead frustum sized to the island inside the hole, then the camera's look-at point is shifted so the world center
+// lands at the hole center. Screen-up is -Z, screen-right is +X. `lean` is radians off straight down; it shortens the
+// island's screen depth by cos(lean), so a screen shift on the ground is that much longer.
+export function fitOrtho(cssW: number, cssH: number, insets: Insets, lean = 0): OrthoFit {
   const holeW = Math.max(1, cssW - insets.left - insets.right);
   const holeH = Math.max(1, cssH - insets.top - insets.bottom);
   const aspect = holeW / holeH;
-  const { x: halfX, z: halfZ } = ISLE_HALF;
+  const halfX = ISLE_HALF.x;
+  const halfZ = ISLE_HALF.z * Math.cos(lean) + LEAN_RISE * Math.sin(lean);
   // The frustum spans the whole canvas, so scale the hole's world size up by canvas / hole.
   let hw: number;
   let hh: number;
@@ -54,7 +115,7 @@ export function fitOrtho(cssW: number, cssH: number, insets: Insets): OrthoFit {
     bottom: -worldH / 2,
     // Centered on the island (0, 0), not the 0.15 orbit target: ISLE_HALF is symmetric about the origin.
     x: -ndcX * worldW * 0.5,
-    z: ndcY * worldH * 0.5,
+    z: (ndcY * worldH * 0.5) / Math.cos(lean),
   };
 }
 
