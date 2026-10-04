@@ -1,4 +1,5 @@
-// A host restart keeps the table: rooms are saved to disk and reloaded on boot (#190).
+// A host restart keeps the table: rooms are saved to disk and reloaded on boot (#190). A watcher is never on disk: the
+// restart closes it, the restored room counts 0 watching, and a new watcher is taken at the same seq (#349).
 import { spawn } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -137,11 +138,20 @@ for (let i = 0; i < 20 && ["discard", "robber"].includes(a.state.game.phase); i+
 if (!["roll", "main"].includes(a.state.game.phase)) fail("settled before the crash", a.state.game.phase);
 const seq = seqNow();
 const current = a.state.game.current;
+// A watcher on the table before the crash. The chat that follows saves the room with the watcher in it.
+const w = await client(port, "Watcher");
+w.send({ type: "hello", code, watch: true });
+const ww = await w.next("welcome");
+if (ww.spectator !== true || "secret" in ww) fail("the watcher's welcome", ww);
+if ((await w.next("state")).game.seq !== seq) fail("the watcher sees the live seq");
+await a.next("seats", (m) => m.watching === 1);
 a.send({ type: "chat", text: "see you after the crash" });
 await b.next("chat");
 await wait(100);
 if (!existsSync(path.join(ROOMS_DIR, `${code}.json`))) fail("room file written", ROOMS_DIR);
-console.log(`table ${code}: setup done, rolled ${rolls} times, seq ${seq}, ${current} to play; ${code}.json on disk`);
+const onDisk = readFileSync(path.join(ROOMS_DIR, `${code}.json`), "utf8");
+if (onDisk.includes("watch") || "watchers" in JSON.parse(onDisk)) fail("the room file carries watcher data", onDisk.slice(0, 200));
+console.log(`table ${code}: setup done, rolled ${rolls} times, seq ${seq}, ${current} to play, 1 watching; ${code}.json on disk with no watcher data`);
 
 // A day-old room, a broken file and one with a null seat sit next to it; the restart must drop the first and survive the rest.
 writeFileSync(path.join(ROOMS_DIR, "OLD1.json"), JSON.stringify({ code: "OLD1", seats: [{ id: "s0" }], game: null, shape: 2, savedAt: Date.now() - 25 * 60 * 60 * 1000 }));
@@ -159,6 +169,7 @@ host.removeAllListeners("exit");
 host.kill("SIGKILL");
 await new Promise((r) => host.once("exit", r));
 for (const x of all) x.ws.terminate();
+await new Promise((r) => (w.ws.readyState === WebSocket.CLOSED ? r() : w.ws.once("close", r)));
 const second = await start(port);
 if (second.port !== port) fail("same port", second.port);
 if (existsSync(path.join(ROOMS_DIR, "OLD1.json"))) fail("a room older than 24 hours is dropped on boot");
@@ -180,9 +191,18 @@ for (const [w, name] of [[wa, "Ember"], [wb, "Tide"], [wc, "Pine"]]) {
   if (welcome.you !== w.you) fail(`${name} keeps the seat`, welcome.you);
   if (st.game.seq !== seq) fail(`${name} sees the same seq`, { got: st.game.seq, want: seq });
   if (!welcome.chat.some((l) => l.text === "see you after the crash")) fail(`${name} gets the chat history`);
+  if ((await x.next("seats")).watching !== 0) fail(`${name} sees a watcher the restart should have dropped`);
   back.push(x);
-  console.log(`${name} rejoined: you=${welcome.you}, player ${st.you}, seq ${st.game.seq}, current ${st.game.current}`);
+  console.log(`${name} rejoined: you=${welcome.you}, player ${st.you}, seq ${st.game.seq}, current ${st.game.current}, watching 0`);
 }
+
+// The old watcher's socket died with the host; the restored room takes a new one at the same seq.
+const w2 = await client(port, "Watcher");
+w2.send({ type: "hello", code, watch: true });
+await w2.next("welcome");
+if ((await w2.next("state")).game.seq !== seq) fail("the watcher of the restored room sees the same seq");
+await back[0].next("seats", (m) => m.watching === 1);
+console.log(`restored room ${code}: the old watcher closed with the host, a new one watches at seq ${seq}`);
 
 for (const z of ["ZZZ1", "ZZZ2", "ZZZ3"]) {
   const x = await client(port, z);
@@ -197,9 +217,9 @@ const [a2, b2, c2] = back;
 const mover = back.find((x) => x.state.you === a2.state.game.current);
 const g = mover.state.game;
 mover.send(g.phase === "roll" ? { type: "roll" } : { type: "pass" });
-const moved = await Promise.all(back.map((x) => x.next("state", (m) => m.game.seq > seq)));
-if (new Set(moved.map((m) => m.game.seq)).size !== 1) fail("every seat sees the same next seq");
-console.log(`after the restart ${mover.name} played (${g.phase}): seq ${moved[0].game.seq} on all three`);
+const moved = await Promise.all([...back, w2].map((x) => x.next("state", (m) => m.game.seq > seq)));
+if (new Set(moved.map((m) => m.game.seq)).size !== 1) fail("every seat and the watcher see the same next seq");
+console.log(`after the restart ${mover.name} played (${g.phase}): seq ${moved[0].game.seq} on all three and the watcher`);
 
 // A lobby restored after a restart does not keep its seats ready while they are away (#318).
 const lobby = await client(port, "Host");
@@ -234,7 +254,7 @@ lobbyBack.ws.terminate();
 
 host.removeAllListeners("exit");
 host.kill();
-for (const x of [a2, b2, c2]) x.ws.terminate();
+for (const x of [a2, b2, c2, w2]) x.ws.terminate();
 rmSync(ROOMS_DIR, { recursive: true, force: true });
 console.log("persist prove ok");
 process.exit(0);
