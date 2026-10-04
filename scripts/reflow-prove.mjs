@@ -1,5 +1,6 @@
-// #383: WCAG 1.4.4 / 1.4.10 reflow. At 640x360 (a 1280x720 window at 200 % zoom) and at 320x568:
-// - the title's Join button is fully on screen, no title button runs past the right edge, and the page has no horizontal scroll;
+// #383: WCAG 1.4.4 / 1.4.10 reflow. At 640x360 (a 1280x720 window at 200 % zoom), at 320x568 and on an 844x390 touch phone (#421):
+// - the title's "Emberisle" wordmark starts on screen, the Join button is fully on screen, no title button runs past the right
+//   edge, and the page has no horizontal scroll;
 // - in hotseat `main` with every fortune kind held, the bottom HUD stack starts below the header (landscape: header + 8 px)
 //   or the seat strip (portrait), and at least 120 px of the island between them stays uncovered and takes the pointer.
 // - #402: while the stack has content below the fold a static "more below" cue shows (it takes no pointer events), it is gone
@@ -15,6 +16,8 @@ const VIEWPORTS = [
   { width: 640, height: 360 },
   { width: 320, height: 568 },
   { width: 1280, height: 720 },
+  // Phone landscape (#421): the title must not run past the top edge.
+  { width: 844, height: 390, touch: true },
 ];
 
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
@@ -33,13 +36,26 @@ let code = 0;
 try {
   for (const viewport of VIEWPORTS) {
     const tag = `${viewport.width}x${viewport.height}`;
-    const page = await browser.newPage({ viewport });
+    const page = await browser.newPage({ viewport: { width: viewport.width, height: viewport.height }, hasTouch: !!viewport.touch, isMobile: !!viewport.touch });
     page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
     page.on("pageerror", (e) => errors.push(String(e)));
     page.on("response", (r) => r.status() >= 400 && errors.push(`${r.status()} ${r.url()}`));
     await page.goto(`http://127.0.0.1:${PORT}/`);
 
     const join = page.getByRole("button", { name: "Join", exact: true });
+    await join.waitFor();
+    // Before anything scrolls (#421): the subtitles render, and on phone landscape the whole card is on screen: eyebrow,
+    // wordmark, tagline and every button inside the viewport.
+    const fold = await page.evaluate(() => {
+      const card = document.querySelector('[data-testid="title-card"]');
+      const out = [...card.querySelectorAll("p, h1, button, input")].filter((el) => {
+        const r = el.getBoundingClientRect();
+        return r.top < 0 || r.left < 0 || r.bottom > innerHeight + 0.5 || r.right > innerWidth + 0.5;
+      }).map((el) => (el.textContent.trim() || el.getAttribute("aria-label") || el.tagName).slice(0, 24));
+      return { out, subtitles: [...card.querySelectorAll("p")].map((p) => p.textContent).filter((s) => /^(3 bots, no network|pass one device around)$/.test(s)) };
+    });
+    check(fold.subtitles.length === 2, `${tag} title: both subtitles render`, fold.subtitles);
+    if (viewport.touch) check(fold.out.length === 0, `${tag} title: wordmark, tagline and buttons inside the viewport`, fold.out);
     await join.scrollIntoViewIfNeeded();
     const title = await page.evaluate(() => {
       const r = (el) => el.getBoundingClientRect();
