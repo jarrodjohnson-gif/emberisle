@@ -124,6 +124,8 @@ jobs:
       - run: npm run watch-ui-prove
       - run: npm run tabs-prove-4
       - run: npm run polish-tokens-prove
+      - run: npm run hand-cards-prove
+      - run: npm run install-prove
       - if: always()
         uses: actions/upload-artifact@v4
         with:

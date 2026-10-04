@@ -5,12 +5,7 @@ import {
   Eye,
   Home,
   Landmark,
-  Mountain,
   Route,
-  Trees,
-  Wheat,
-  Cloud,
-  BrickWall,
   ScrollText,
   X,
 } from "lucide-react";
@@ -24,6 +19,7 @@ import { PlayerMenu } from "@/components/game/PlayerMenu";
 import { DiscardBar } from "@/components/game/DiscardBar";
 import { TurnCountdown } from "@/components/game/TurnCountdown";
 import { Dice } from "@/components/game/Dice";
+import { ResourceHand } from "@/components/game/Hand";
 import { COST, RESOURCES, RESOURCE_LABEL, type BuildMode, type DevKind, type GameState, type PlayerState, type Resource } from "@/lib/game/types";
 import { hiddenCount, legalRoads, playable, publicVP, totalVP } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
@@ -31,14 +27,6 @@ import { play } from "@/lib/sound";
 import { useViewport } from "@/lib/viewport";
 import { useMoreBelow } from "@/lib/scroll-fade";
 import { cn } from "@/lib/utils";
-
-const ICONS: Record<Resource, typeof Trees> = {
-  timber: Trees,
-  clay: BrickWall,
-  wool: Cloud,
-  grain: Wheat,
-  ore: Mountain,
-};
 
 const FORTUNE_NAMES: [DevKind, string][] = [
   ["knight", "knight"],
@@ -556,110 +544,6 @@ function SeatStrip({ actor, className }: { actor: string; className: string }) {
               </span>
             </button>
             <ReactionFloats by="player" id={p.id} />
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-const FLASH_MS = 1200;
-
-// The hand's counts are diffed on every state, so a gain flashes +N green and a loss -N red whether it
-// came from a roll, a trade, a build, a discard, or a steal, hotseat and online alike (#170). Only this
-// hand is read: online, the other players arrive as a `goods` count with no `resources`. A change of
-// seat (hotseat) resets the baseline instead of flashing.
-function useResourceFlashes(me: PlayerState) {
-  type Flash = { delta: number; at: number };
-  const [flashes, setFlashes] = useState<Partial<Record<Resource, Flash>>>({});
-  const prev = useRef<{ id: string; resources: Record<Resource, number> } | null>(null);
-  const timers = useRef<Partial<Record<Resource, { flash: Flash; timer: ReturnType<typeof setTimeout> }>>>({});
-  const counts = RESOURCES.map((r) => me.resources[r]).join(",");
-  useEffect(() => {
-    const was = prev.current;
-    prev.current = { id: me.id, resources: me.resources };
-    if (!was) return;
-    if (was.id !== me.id) {
-      Object.values(timers.current).forEach((t) => clearTimeout(t.timer));
-      timers.current = {};
-      setFlashes({});
-      return;
-    }
-    for (const r of RESOURCES) {
-      const delta = me.resources[r] - was.resources[r];
-      if (delta) setFlashes((f) => ({ ...f, [r]: { delta, at: Date.now() } }));
-    }
-  }, [me.id, counts]);
-  // The label's clock starts once it is on the page. The render that mounts it is a separate task, which
-  // on a slow machine can wait behind an island frame longer than FLASH_MS; a timer started with the count
-  // change would then be due before the label existed (#248).
-  useEffect(() => {
-    for (const r of RESOURCES) {
-      const flash = flashes[r];
-      const cur = timers.current[r];
-      if (!flash || cur?.flash === flash) continue;
-      if (cur) clearTimeout(cur.timer);
-      timers.current[r] = {
-        flash,
-        timer: setTimeout(() => {
-          delete timers.current[r];
-          setFlashes((f) => {
-            if (f[r] !== flash) return f;
-            const next = { ...f };
-            delete next[r];
-            return next;
-          });
-        }, FLASH_MS),
-      };
-    }
-  }, [flashes]);
-  useEffect(
-    () => () => {
-      Object.values(timers.current).forEach((t) => clearTimeout(t.timer));
-      timers.current = {};
-    },
-    [],
-  );
-  return flashes;
-}
-
-function ResourceHand({ me }: { me: PlayerState }) {
-  const flashes = useResourceFlashes(me);
-  return (
-    <div className="flex shrink-0 gap-1 overflow-x-auto rounded-[20px] border border-white/50 bg-glass p-2 backdrop-blur-md short:p-1">
-      {RESOURCES.map((r) => {
-        const Icon = ICONS[r];
-        const flash = flashes[r];
-        const label = flash ? (flash.delta > 0 ? `+${flash.delta}` : String(flash.delta)) : null;
-        return (
-          <div
-            key={r}
-            data-testid={`resource-${r}`}
-            title={RESOURCE_LABEL[r]}
-            className={cn(
-              "relative flex min-w-[3.5rem] flex-1 flex-col items-center gap-1 rounded-[12px] px-2 py-2 transition-colors duration-700",
-              "short:h-11 short:flex-row short:justify-center short:py-0",
-              !flash ? "bg-raised" : flash.delta > 0 ? "bg-emerald-200" : "bg-rose-200",
-            )}
-          >
-            <Icon className="size-4 text-zinc-600" />
-            <span className="tabular-nums text-base font-medium">{me.resources[r]}</span>
-            <span className="text-[10px] uppercase tracking-wide text-zinc-600 short:sr-only">{RESOURCE_LABEL[r]}</span>
-            {flash ? (
-              <span
-                key={flash.at}
-                data-testid="resource-flash"
-                data-resource={r}
-                data-delta={label}
-                className={cn(
-                  "pointer-events-none absolute right-1 top-1 text-sm font-semibold tabular-nums",
-                  flash.delta > 0 ? "text-emerald-700" : "text-rose-700",
-                )}
-                style={{ animation: `resource-flash ${FLASH_MS}ms ease-out forwards` }}
-              >
-                {label}
-              </span>
-            ) : null}
           </div>
         );
       })}

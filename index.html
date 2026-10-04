@@ -4,6 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Emberisle</title>
+    <!-- #468: Add to Home Screen opens full-screen. Relative paths, so the page works wherever it is served from. -->
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <meta name="theme-color" content="#efeae0" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Emberisle" />
+    <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Cpolygon points=%2216,2 29,9 29,23 16,30 3,23 3,9%22 fill=%22%23efeae0%22 stroke=%22%23c45c3e%22 stroke-width=%222%22/%3E%3C/svg%3E" />
   </head>
   <body>
