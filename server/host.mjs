@@ -666,6 +666,35 @@ function startGame(ws, room) {
   pushState(room);
 }
 
+// `again` (#266, docs/design/rematch.md): a new island at the same table. The last winner places first and the rest
+// roll off behind it (Jarrod, 2026-10-03). Seats with no socket are let go; watchers stay and get the new game.
+function rematch(ws, room) {
+  if (ws.seat.id !== room.host) return send(ws, { type: "error", message: "Only the host can start." });
+  if (room.game?.phase !== "over") return send(ws, { type: "error", message: "Game is not over." });
+  const live = room.seats.filter((s) => s.ws && s.ws.readyState === s.ws.OPEN);
+  if (live.length < 3) return send(ws, { type: "error", message: "Need 3 or 4 at the table." });
+  for (const seat of room.seats) {
+    if (live.includes(seat)) continue;
+    clearTimeout(seat.graceTimer);
+    clearTimeout(seat.holdTimer);
+    disarmTurn(seat);
+    seat.ws = null;
+  }
+  room.seats = live;
+  const winner = live.find((s) => s.pid === room.game.winner);
+  const order = winner ? [winner, ...live.filter((s) => s !== winner)] : live;
+  const game = createGame({ humans: order.map((s) => ({ name: s.name })), bots: 0, winnerFirst: Boolean(winner) });
+  order.forEach((s, i) => {
+    s.pid = game.players[i].id;
+    game.players[i].color = s.color;
+  });
+  room.game = game;
+  hear("ui_confirm");
+  say(room, winner ? `${winner.name} won last time and places first. The rest roll for their order.` : "Roll for first place.");
+  publish(room);
+  pushState(room);
+}
+
 // Build bible section 10 intents -> rules.ts actions.
 function toAction(game, msg) {
   switch (msg.type) {
@@ -884,6 +913,7 @@ function handle(ws, raw) {
     return publish(room);
   }
   if (msg.type === "start") return room.game ? send(ws, { type: "error", message: "Game already started." }) : startGame(ws, room);
+  if (msg.type === "again") return rematch(ws, room);
   if (!room.game) return send(ws, { type: "error", message: "not ready" });
   if (msg.type === "tradeAsk") return ask(ws, room, msg);
   if (msg.type === "tradeAnswer") return answer(ws, room, msg);

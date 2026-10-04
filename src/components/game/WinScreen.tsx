@@ -13,6 +13,14 @@ export function WinScreen() {
 function Panel() {
   const state = useGame((s) => s.state)!;
   const goTitle = useGame((s) => s.goTitle);
+  const playAgain = useGame((s) => s.playAgain);
+  const mode = useGame((s) => s.mode);
+  // The lobby's host test (EmberisleApp), so a handed-off host gets the button.
+  const isHost = useGame((s) => s.seats.find((x) => x.id === s.seatId)?.host ?? s.isHost);
+  const hostName = useGame((s) => s.seats.find((x) => x.host)?.name);
+  // docs/design/rematch.md: the online host and hotseat start another; practice has no table to keep.
+  const canAgain = mode === "hotseat" || (mode === "online" && isHost);
+  const waiting = mode === "online" && !isHost && hostName;
   const [hidden, setHidden] = useState(false);
   const winner = state.players.find((p) => p.id === state.winner)!;
   const dialog = useRef<HTMLDivElement>(null);
@@ -61,6 +69,11 @@ function Panel() {
         <Button size="sm" variant="secondary" className="whitespace-nowrap" data-testid="win-show" onClick={() => setHidden(false)}>
           Show scores
         </Button>
+        {canAgain ? (
+          <Button size="sm" className="whitespace-nowrap" data-testid="win-again-chip" onClick={playAgain}>
+            Play again
+          </Button>
+        ) : null}
         <Button size="sm" variant="secondary" className="whitespace-nowrap" data-testid="win-menu-chip" onClick={goTitle}>
           Back to menu
         </Button>
@@ -131,11 +144,21 @@ function Panel() {
             </tbody>
           </table>
         </div>
-        <div className="mt-5 flex gap-2">
-          <Button variant="secondary" className="flex-1" data-testid="win-look" onClick={() => setHidden(true)}>
+        {waiting ? (
+          <p data-testid="win-waiting" className="mt-4 text-sm text-zinc-600">
+            Waiting for {hostName} to start another.
+          </p>
+        ) : null}
+        <div className="mt-5 flex flex-wrap gap-2">
+          <Button variant="secondary" className="min-w-fit flex-1 whitespace-nowrap" data-testid="win-look" onClick={() => setHidden(true)}>
             Look around
           </Button>
-          <Button className="flex-1" data-testid="win-menu" onClick={goTitle}>
+          {canAgain ? (
+            <Button className="min-w-fit flex-1 whitespace-nowrap" data-testid="win-again" onClick={playAgain}>
+              Play again
+            </Button>
+          ) : null}
+          <Button variant={canAgain ? "secondary" : "default"} className="min-w-fit flex-1 whitespace-nowrap" data-testid="win-menu" onClick={goTitle}>
             Back to menu
           </Button>
         </div>

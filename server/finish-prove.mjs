@@ -1,8 +1,9 @@
 // #319: three src/lib/net/table.ts clients play a hosted game to the win. Each seat runs the practice bot on its
 // own view, so what the host does only at the end gets exercised over sockets: the whole game goes out once it is
 // over (viewFor's reveal), the host refuses every action after the win, and the winner line reaches every seat.
+// #266: the second game is the first table's rematch (`again`), with a watcher who stays through it.
 import { spawn } from "node:child_process";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import WebSocket from "ws";
@@ -201,15 +202,124 @@ async function checkRefused(all, n) {
   }
 }
 
+// A raw socket that watches the table (#347). It never sits down.
+function watcher(code) {
+  const w = { state: null, states: 0, errors: [], logs: [], watching: null, ws: new WebSocket(url) };
+  w.ws.on("message", (raw) => {
+    const m = JSON.parse(String(raw));
+    if (m.type === "state") {
+      w.state = m.game;
+      w.states++;
+    }
+    if (m.type === "error") w.errors.push(m.message);
+    if (m.type === "log") w.logs.push(m.text);
+    if (m.type === "seats") w.watching = m.watching;
+    wake();
+  });
+  w.ws.on("open", () => w.ws.send(JSON.stringify({ type: "hello", code, watch: true })));
+  return w;
+}
+
+// Sends `again` from `p` and returns the one error it draws; the table's state must not move.
+async function againRefused(all, p, what) {
+  const seq = all.map((x) => x.state.seq);
+  const errs = p.errors.length;
+  p.t.again();
+  await until(() => p.errors.length > errs, `${what}: an answer to again`);
+  if (all.some((x, i) => x.state.seq !== seq[i] || x.state.phase !== all[i].state.phase)) fail(`${what}: the state moved`);
+  return p.errors[errs];
+}
+
+// #266: the host's `again` deals a new island at the same table. The last winner is p0 and places first; the others
+// roll off for the rest of the order (Jarrod, 2026-10-03). A watcher keeps watching.
+async function rematch(all, w) {
+  const [hostSeat, guest] = all;
+  const final = all[0].state;
+  const winnerName = final.players.find((q) => q.id === final.winner).name;
+  const seatIds = hostSeat.seats.map((s) => s.id).join();
+  const colors = Object.fromEntries(hostSeat.seats.map((s) => [s.name, s.color]));
+  const code = hostSeat.code;
+  const refused = await againRefused(all, guest, "guest again");
+  if (refused !== "Only the host can start.") fail("a guest's again", refused);
+  const logs = all.map((x) => x.logs.length);
+  const watcherStates = w.states;
+  hostSeat.t.again();
+  await until(() => all.every((x) => x.state.phase !== "over") && w.states > watcherStates, "the rematch reaching every seat and the watcher");
+  for (const [i, p] of all.entries()) {
+    const g = p.state;
+    const me = g.players.find((q) => q.id === p.you);
+    const ok =
+      g.phase === "rollOff" && g.winner === null && g.seq === 0 && g.players.length === 3 &&
+      g.players[0].id === "p0" && g.players[0].name === winnerName && g.rollOff.first === "p0" &&
+      g.rollOff.pending.join() === "p1,p2" && g.current === "p1" && me?.name === p.name && (p.name === winnerName) === (p.you === "p0") &&
+      g.players.every((q) => q.color === colors[q.name]) && !("seed" in g) && !("rng" in g) &&
+      p.code === code && p.seats.map((s) => s.id).join() === seatIds;
+    if (!ok) fail(`rematch at ${p.name}`, { you: p.you, phase: g.phase, seq: g.seq, players: g.players.map((q) => [q.id, q.name, q.color]), rollOff: g.rollOff, current: g.current });
+    const said = p.logs.slice(logs[i]);
+    if (!said.includes(`${winnerName} won last time and places first. The rest roll for their order.`)) fail(`rematch line at ${p.name}`, said);
+    if (p.legal.actions.includes("roll") !== (p.you === g.current)) fail(`roll-off legal at ${p.name}`, p.legal);
+    p.overPushes = 0;
+  }
+  const saved = JSON.parse(readFileSync(path.join(ROOMS_DIR, `${code}.json`), "utf8")).game;
+  if (saved.seed === final.seed || saved.phase !== "rollOff" || saved.players[0].name !== winnerName) fail("the rematch on disk", { seed: saved.seed, old: final.seed, phase: saved.phase });
+  const wg = w.state;
+  if (w.ws.readyState !== WebSocket.OPEN || wg.phase !== "rollOff" || wg.players[0].name !== winnerName || "seed" in wg || "rng" in wg || w.watching !== 1) {
+    fail("the watcher after the rematch", { open: w.ws.readyState, phase: wg.phase, first: wg.players[0].name, watching: w.watching });
+  }
+  const wErrs = w.errors.length;
+  w.ws.send(JSON.stringify({ type: "again" }));
+  await until(() => w.errors.length > wErrs, "the watcher's again");
+  if (w.errors[wErrs] !== "Watching only.") fail("a watcher's again", w.errors[wErrs]);
+  const twice = await againRefused(all, hostSeat, "a second again");
+  if (twice !== "Game is not over.") fail("a second again", twice);
+  // The winner sits out the roll-off: it has no roll, and one sent anyway is refused.
+  const winnerSeat = all.find((p) => p.you === "p0");
+  if ((await act(all, winnerSeat, { type: "roll" })) !== "Not your turn.") fail("the winner rolled in the roll-off");
+  while (all[0].state.phase === "rollOff") {
+    const p = all.find((x) => x.you === x.state.current);
+    const err = await act(all, p, { type: "roll" });
+    if (err) fail(`roll-off roll by ${p.you}`, err);
+  }
+  await until(() => w.state.seq === all[0].state.seq, "the watcher seeing the roll-off end");
+  const g = all[0].state;
+  const rest = g.players.slice(1);
+  const ordered = rest.every((q, i) => i === 0 || g.rollOff.rolls[rest[i - 1].id] >= g.rollOff.rolls[q.id]);
+  if (g.phase !== "setupSettle" || g.current !== "p0" || g.players[0].name !== winnerName || !ordered || "p0" in g.rollOff.rolls) {
+    fail("the winner places first, the rest by their roll", { phase: g.phase, current: g.current, players: g.players.map((q) => q.name), rolls: g.rollOff.rolls });
+  }
+  if (g.log.at(-1) !== `${winnerName} places first, then ${rest[0].name} and ${rest[1].name}.`) fail("the order line", g.log.at(-1));
+  console.log(`rematch: same code ${code} and seats ${seatIds}, new seed, ${winnerName} is p0 and places first, then ${rest.map((q) => q.name).join(" and ")} by roll; guest, watcher and second again refused; the watcher stayed`);
+}
+
+// #266: fewer than 3 seats with a socket is refused, and nothing changes.
+async function shortTable(all) {
+  const [hostSeat, , gone] = all;
+  gone.t.close();
+  await until(() => hostSeat.seats.find((s) => s.name === gone.name)?.away, "the closed seat held");
+  const left = all.filter((p) => p !== gone);
+  const refused = await againRefused(left, hostSeat, "again with two at the table");
+  if (refused !== "Need 3 or 4 at the table.") fail("again with two at the table", refused);
+  const saved = JSON.parse(readFileSync(path.join(ROOMS_DIR, `${hostSeat.code}.json`), "utf8"));
+  if (saved.game.phase !== "over" || saved.seats.length !== 3) fail("the short table on disk", { phase: saved.game.phase, seats: saved.seats.length });
+  console.log("rematch: two at the table is refused, the finished game and all three seats kept");
+}
+
 const started = Date.now();
+const all = await sitDown();
+const early = await againRefused(all, all[0], "again before the end");
+if (early !== "Game is not over.") fail("again before the end", early);
+const w = watcher(all[0].code);
+await until(() => w.state, "the watcher's first state");
 for (let n = 1; n <= GAMES; n++) {
-  const all = await sitDown();
+  if (n > 1) await rematch(all, w);
   const actions = await playToTheEnd(all, n);
   const { name, vp } = checkReveal(all, n);
   await checkRefused(all, n);
   console.log(`game ${n}: ${name} wins with ${vp} in ${actions} actions, reveal ok, post-win refused`);
-  for (const p of all) p.t.close();
 }
+await shortTable(all);
+for (const p of all) p.t.close();
+w.ws.close();
 console.log(`${GAMES} hosted games to the win in ${Date.now() - started} ms`);
 host.kill();
 console.log("finish prove ok");
