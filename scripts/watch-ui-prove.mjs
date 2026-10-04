@@ -1,5 +1,6 @@
 // #348: the spectator view in the browser (docs/design/spectator.md). Two headless tabs and one src/lib/net/table.ts
-// client seat a table; a third tab's Watch is refused on the lobby ("Not started yet."), then watches after the start
+// client seat a table; a third tab's Watch sends nothing under 4 characters and is refused on the lobby ("Not started
+// yet."), then watches after the start
 // through a ?watch=CODE link. It sees the board with no glow, the Watching badge, no hand bar, no action buttons, a
 // read-only dock and the "Watching — Emberisle" title, while every seat shows the eye count "1". An injected intent is
 // refused with "Watching only." and the store's own actions send nothing. The seats then play to the win on the practice
@@ -213,13 +214,20 @@ try {
   c.t.join(tableCode, { name: "Pine" });
   await until(() => c.code, "Pine's welcome");
 
-  // --- 1. A watch of the lobby is refused in the title's alert line, and the tab stays on the Title.
+  // --- 1. Watch under 4 characters sends nothing; at 4 a watch of the lobby is refused in the title's alert line, and
+  // the tab stays on the Title. The 4-character refusal is the fence: a 3-character hello that got out would have been
+  // refused first ("No table with that code") and counted a second error.
   const w = await tab("Watcher");
+  const errorsBefore = await w.page.evaluate(() => window.__emberisle.getState().errorSeq);
+  await w.page.getByPlaceholder(/code/i).fill(tableCode.slice(0, 3));
+  await w.page.getByRole("button", { name: "Watch", exact: true }).click();
   await w.page.getByPlaceholder(/code/i).fill(tableCode);
   await w.page.getByRole("button", { name: "Watch", exact: true }).click();
   await until(async () => (await view(w)).alert === "Not started yet.", 'the lobby refusal "Not started yet."');
   if ((await view(w)).screen !== "title") throw new Error("a refused watch left the Title");
-  console.log(`table ${tableCode}: Watch on the lobby -> "Not started yet.", still on the Title`);
+  const errorsAfter = await w.page.evaluate(() => window.__emberisle.getState().errorSeq);
+  if (errorsAfter !== errorsBefore + 1) throw new Error(`a 3-character Watch sent something: errorSeq ${errorsBefore} -> ${errorsAfter}`);
+  console.log(`table ${tableCode}: Watch at 3 characters sent nothing; at 4 on the lobby -> "Not started yet.", still on the Title`);
 
   for (const t of [a, b]) {
     await until(async () => (await t.page.locator("li", { hasText: "Pine" }).count()) === 1, `${t.name} sees 3 seats`);
