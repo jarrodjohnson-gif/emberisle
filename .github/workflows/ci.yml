@@ -118,12 +118,15 @@ jobs:
       - run: npm run keyboard-place-prove
       - run: npm run flash-prove
       - run: npm run reflow-prove
+      - run: npm run banner-stable-prove
       - run: npm run howto-prove
       - run: npm run title-prove
       - run: npm run watch-ui-prove
       - run: npm run tabs-prove-4
       - run: npm run polish-tokens-prove
       - run: npm run board-look-prove
+      - run: npm run hand-cards-prove
+      - run: npm run install-prove
       - if: always()
         uses: actions/upload-artifact@v4
         with:
