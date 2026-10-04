@@ -164,12 +164,14 @@ export function TableMenu() {
                   <Copy className={ICON} /> {copied?.ok ? "Copied" : `Copy table code ${code}`}
                 </Button>
               ) : null}
-              <CopyFallback state={copied} label="Table code" className="px-3" />
               <Button ref={leaveRef} variant="ghost" className={ROW} onClick={confirm ? () => setAsking(true) : goTitle}>
                 <LogOut className={ICON} /> Leave table
               </Button>
             </>
           )}
+          {/* Outside the question's branch: the field focuses itself when it mounts, and must not take the focus back from
+              Leave table each time the question folds into the rows (CI has no clipboard, so the field is the common case). */}
+          <CopyFallback state={copied} label="Table code" className="px-3" />
         </div>
       ) : null}
     </div>

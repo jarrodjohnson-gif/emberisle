@@ -4,7 +4,8 @@
 // - it opens a sheet with the turn number, How to play, Table sounds and Leave table, focus moving to the first row;
 // - How to play opens its dialog and closing that puts the focus back on the menu button; the sound toggle flips and keeps
 //   the sheet open; Escape closes the sheet and refocuses the button; Enter on the button opens it; a tap outside closes it;
-// - online (a faked socket): the sheet shows the watcher count and "Copy table code", Leave table asks first (Stay, Escape
+// - online (a faked socket): the sheet shows the watcher count and "Copy table code" (copied where the clipboard works, the
+//   select-and-copy field where it does not, as on CI; both are run), Leave table asks first (Stay, Escape
 //   and the 5 s auto-cancel return to the rows with the focus on Leave table), then leaves; hotseat Leave table goes
 //   straight to the title.
 // Zero console errors. Run: npm run table-menu-prove
@@ -16,7 +17,7 @@ import { createServer } from "vite";
 const PORT = Number(process.env.VITE_PORT) || 8107;
 const VIEWS = [
   { tag: "1280x720", width: 1280, height: 720 },
-  { tag: "390x844", width: 390, height: 844, touch: true },
+  { tag: "390x844", width: 390, height: 844, touch: true, noClipboard: true },
   { tag: "844x390", width: 844, height: 390, touch: true },
 ];
 
@@ -33,6 +34,7 @@ try {
   for (const v of VIEWS) {
     const ctx = await browser.newContext({ viewport: { width: v.width, height: v.height }, hasTouch: !!v.touch, isMobile: !!v.touch });
     const page = await ctx.newPage();
+    if (v.noClipboard) await page.addInitScript(() => Object.defineProperty(navigator, "clipboard", { value: undefined }));
     page.on("console", (m) => m.type() === "error" && errors.push(`${v.tag}: ${m.text()}`));
     page.on("pageerror", (e) => errors.push(`${v.tag}: ${e}`));
     await page.goto(`http://127.0.0.1:${PORT}/`);
@@ -113,11 +115,12 @@ try {
     await menu.waitFor();
     assert.equal(await menu.getByTestId("watching-count").textContent().then((t) => t.trim()), "2", `${v.tag}: the watcher count is in the menu`);
     await menu.getByRole("button", { name: "Copy table code K7QP" }).click();
-    const copied = await Promise.race([
-      menu.getByRole("button", { name: "Copied" }).waitFor().then(() => "copied"),
-      menu.getByTestId("copy-fallback").waitFor().then(() => "fallback"),
-    ]);
-    if (copied === "fallback") assert.equal(await menu.getByTestId("copy-fallback").inputValue(), "K7QP", `${v.tag}: the fallback field holds the code`);
+    const copied = v.noClipboard ? "fallback" : "copied";
+    if (v.noClipboard) {
+      await menu.getByTestId("copy-fallback").waitFor();
+      assert.equal(await menu.getByTestId("copy-fallback").inputValue(), "K7QP", `${v.tag}: the fallback field holds the code`);
+      assert.equal(await page.evaluate(() => document.activeElement?.value), "K7QP", `${v.tag}: the fallback field takes the focus`);
+    } else await menu.getByRole("button", { name: "Copied" }).waitFor();
     const confirmBox = page.getByTestId("leave-confirm");
     await menu.getByRole("button", { name: "Leave table" }).click();
     await confirmBox.waitFor();
