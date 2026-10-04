@@ -719,7 +719,12 @@ function answer(ws, room, msg) {
     return;
   }
   const offered = applyAction(room.game, offer.from, { type: "offerTrade", to: actor, give: offer.give, want: offer.want });
-  if (offered.error) return send(ws, { type: "error", message: offered.error });
+  // Every offerTrade refusal is the asker's (wrong phase, short of the goods), so the offer is dead for the whole table.
+  if (offered.error) {
+    closeOffer(room);
+    broadcast(room, { type: "tradeClosed", tradeId: offer.tradeId });
+    return send(ws, { type: "error", message: "Offer is gone." });
+  }
   const accepted = applyAction(offered.state, actor, { type: "respondTrade", accept: true });
   if (accepted.error) return send(ws, { type: "error", message: accepted.error });
   closeOffer(room);
@@ -775,11 +780,17 @@ function play(ws, room, msg) {
   runBots(room);
   for (const line of newLog(before.log, room.game.log)) say(room, line);
   if (room.game.phase === "over" && before.phase !== "over") hear("win");
-  // An offer lives only while its asker still has the turn in `main`.
+  // An offer lives only while its asker still has the turn in `main` and still holds the offered goods.
   const open = room.offer;
-  if (open && (room.game.current !== open.from || room.game.phase !== "main")) {
-    closeOffer(room);
-    broadcast(room, { type: "tradeClosed", tradeId: open.tradeId });
+  if (open) {
+    const asker = room.game.players.find((p) => p.id === open.from);
+    const turnOver = room.game.current !== open.from || room.game.phase !== "main";
+    const spent = RESOURCES.some((r) => (open.give[r] ?? 0) > asker.resources[r]);
+    if (turnOver || spent) {
+      closeOffer(room);
+      broadcast(room, { type: "tradeClosed", tradeId: open.tradeId });
+      if (!turnOver) say(room, `${asker.name} spent the offered goods; the offer is withdrawn.`);
+    }
   }
   pushState(room);
 }
