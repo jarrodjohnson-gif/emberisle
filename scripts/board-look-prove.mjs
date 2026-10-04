@@ -8,9 +8,11 @@
 //   number token is at least 24 px across on the desktop and 18 px on the phone (the phone hole is width-bound; #422 owns
 //   growing it);
 // - the default view is the fitted 25° overhead view; a drag (mouse, or one finger through CDP touch events) orbits it and
-//   places nothing even when it starts on a legal corner; a wheel zooms; Home (desktop) and a double click or double tap on
-//   empty board glide back to the fitted view; a click on the corner still places afterwards; under reduced motion Home is
-//   instant.
+//   places nothing even when it starts on a legal corner, nor does an out-and-back drag that ends on it; a wheel zooms;
+//   Home (desktop) and a double click or double tap on empty board glide back to the fitted view; a click on the corner
+//   still places afterwards; under reduced motion Home is instant; mid-game with an armed path the token size is read and
+//   reported (not gated: the main HUD leaves it under 24 px, #135's call); three long chat previews beside the dock button
+//   do not count as a rail or move the camera.
 // Zero console errors. Saves test-results/board-look-{title,play}-<size>.png. Port from VITE_PORT, default 8112.
 import { existsSync, mkdirSync } from "node:fs";
 import { chromium } from "playwright";
@@ -52,6 +54,9 @@ async function open(width, height, touch) {
   page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
   page.on("pageerror", (e) => errors.push(String(e)));
   page.on("response", (r) => r.status() >= 400 && errors.push(`${r.status()} ${r.url()}`));
+  // A wait that times out names its predicate.
+  const wait = page.waitForFunction.bind(page);
+  page.waitForFunction = (fn, arg, opts) => wait(fn, arg, opts).catch((e) => { throw new Error(`waiting for ${String(fn).replace(/\s+/g, " ").slice(0, 160)}: ${e.message}`); });
   await page.goto(`http://127.0.0.1:${PORT}/`);
   await page.waitForFunction(() => window.__isle?.renders > 0, null, { timeout: STEP_MS });
   // Copy every drawn frame into a 2D canvas, so pixels can be read back without preserveDrawingBuffer.
@@ -150,7 +155,8 @@ try {
       const g = window.__emberisle;
       while (g.getState().state.phase === "rollOff") g.getState().dispatch({ type: "roll" });
     });
-    await page.waitForFunction(() => window.__isle.lastSeq === window.__emberisle.getState().state.seq && !window.__isle.glide, null, { timeout: STEP_MS });
+    // A state change marks the fit due at once and the next frame starts its glide, so both must be clear.
+    await page.waitForFunction(() => window.__isle.lastSeq === window.__emberisle.getState().state.seq && !window.__isle.refitDue && !window.__isle.glide, null, { timeout: STEP_MS });
     await drawn(page, 3);
     // The camera as the orbit sees it, plus what a wrong gesture could change: the game's seq and the pieces on the board.
     const pose = () =>
@@ -166,11 +172,12 @@ try {
           pieces: i.pieces.children.length,
         };
       });
-    // Where home is for the hole the HUD leaves right now (a timed notice leaving the phase bar moves it, and the fit follows).
+    // Where home is: the fit the renderer measured at the last state change (a timed notice leaving the phase bar in
+    // between does not move it; the next state change does).
     const home = () =>
       page.evaluate(async () => {
-        const { fitOrtho, OVERHEAD_LEAN, CAP_LEVEL } = await import("/src/lib/scene/mobile-fit.ts");
-        const f = fitOrtho(innerWidth, innerHeight, window.__isle.insets(), OVERHEAD_LEAN);
+        const { OVERHEAD_LEAN, CAP_LEVEL } = await import("/src/lib/scene/mobile-fit.ts");
+        const f = window.__isle.fit;
         return { polar: OVERHEAD_LEAN, azimuth: 0, zoom: 1, target: [f.x, CAP_LEVEL, f.z] };
       });
     const atHome = async (p) => {
@@ -178,9 +185,9 @@ try {
       return Math.abs(p.polar - h.polar) < 0.01 && Math.abs(p.azimuth) < 0.01 && Math.abs(p.zoom - 1) < 0.01 && p.target.every((v, k) => Math.abs(v - h.target[k]) < 0.02);
     };
     const lean = Math.round(((await home()).polar * 180) / Math.PI);
-    const brief = (p) => ({ polar: +p.polar.toFixed(3), azimuth: +p.azimuth.toFixed(3), zoom: +p.zoom.toFixed(3), target: p.target.map((v) => +v.toFixed(2)) });
+    const brief = (p) => ({ polar: +p.polar.toFixed(3), azimuth: +p.azimuth.toFixed(3), zoom: +p.zoom.toFixed(3), target: p.target.map((v) => +v.toFixed(2)), glide: p.glide });
     const settle = async () => {
-      await page.waitForFunction(() => !window.__isle.glide, null, { timeout: STEP_MS });
+      await page.waitForFunction(() => !window.__isle.refitDue && !window.__isle.glide, null, { timeout: STEP_MS });
       await drawn(page, 2);
       return pose();
     };
@@ -219,24 +226,31 @@ try {
       const id = window.__emberisle.getState().highlights().vertices[0];
       return { id, ...window.__isle.screenOf(id) };
     });
-    const dragged = await (async () => {
+    // A drag through the points, with the mouse or one finger (CDP touch events: Playwright's touchscreen only taps).
+    const cdp = touch ? await page.context().newCDPSession(page) : null;
+    const drag = async (pts) => {
       if (!touch) {
-        await page.mouse.move(mark.x, mark.y);
+        await page.mouse.move(pts[0].x, pts[0].y);
         await page.mouse.down();
-        for (let i = 1; i <= 6; i++) await page.mouse.move(mark.x + 20 * i, mark.y + 8 * i);
+        for (const p of pts.slice(1)) await page.mouse.move(p.x, p.y);
         await page.mouse.up();
       } else {
-        const cdp = await page.context().newCDPSession(page);
-        await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: mark.x, y: mark.y }] });
-        for (let i = 1; i <= 6; i++) await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: mark.x + 20 * i, y: mark.y + 8 * i }] });
+        const pt = (p) => ({ x: p.x, y: p.y });
+        await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [pt(pts[0])] });
+        for (const p of pts.slice(1)) await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [pt(p)] });
         await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
       }
       await drawn(page, 2);
       return pose();
-    })();
+    };
+    const path = (dx, dy, n = 6) => [mark, ...Array.from({ length: n }, (_, i) => ({ x: mark.x + dx * (i + 1), y: mark.y + dy * (i + 1) }))];
+    const dragged = await drag(path(20, 8));
     const turned = Math.abs(dragged.azimuth - p0.azimuth) > 0.05 || Math.abs(dragged.polar - p0.polar) > 0.05;
     check(`${tag}: a ${touch ? "one-finger " : ""}drag orbits the camera`, turned, brief(dragged));
     check(`${tag}: a drag from a legal corner places nothing`, dragged.seq === p0.seq && dragged.pieces === p0.pieces, { seq: [p0.seq, dragged.seq], pieces: [p0.pieces, dragged.pieces], mark: mark.id });
+    // Out and back: 160 px away and back to the corner it started on. The lift lands where the press did; it is still a drag.
+    const back = await drag([...path(32, 0, 5), ...path(32, 0, 5).slice(1, -1).reverse(), mark]);
+    check(`${tag}: an out-and-back drag ending on the corner places nothing`, back.seq === p0.seq && back.pieces === p0.pieces, { seq: [p0.seq, back.seq], pieces: [p0.pieces, back.pieces] });
 
     if (!touch) {
       await page.mouse.move(w / 2, h / 2);
@@ -251,27 +265,23 @@ try {
     }
 
     // Orbit again, then two taps on empty board (the hole's top-left corner is open sea) snap home and place nothing.
-    if (!touch) {
-      await page.mouse.move(mark.x, mark.y);
-      await page.mouse.down();
-      for (let i = 1; i <= 6; i++) await page.mouse.move(mark.x - 20 * i, mark.y + 5 * i);
-      await page.mouse.up();
-    } else {
-      const cdp = await page.context().newCDPSession(page);
-      await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: mark.x, y: mark.y }] });
-      for (let i = 1; i <= 6; i++) await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: mark.x - 20 * i, y: mark.y + 5 * i }] });
-      await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
-    }
-    await drawn(page, 2);
-    const away = await pose();
+    const away = await drag(path(-20, 5));
     const sea = { x: fit.hole.l + 10, y: fit.hole.t + 10 };
-    if (touch) {
-      await page.touchscreen.tap(sea.x, sea.y);
-      await page.touchscreen.tap(sea.x, sea.y);
-    } else await page.mouse.dblclick(sea.x, sea.y);
     const wasAway = !(await atHome(away));
+    // Software GL can hold the page's main thread for longer than the 350 ms double-tap window between two input round
+    // trips; the gesture is tried again (as a player would) rather than the window widened.
+    let tries = 0;
+    for (; tries < 3; tries++) {
+      if (touch) {
+        await page.touchscreen.tap(sea.x, sea.y);
+        await page.touchscreen.tap(sea.x, sea.y);
+      } else await page.mouse.dblclick(sea.x, sea.y);
+      if (await page.evaluate(() => window.__isle.glide !== null)) break;
+      await drawn(page, 2);
+      if (await atHome(await pose())) break;
+    }
     const snapped = await settle();
-    check(`${tag}: a double ${touch ? "tap" : "click"} on empty board returns to the fitted view and places nothing`, wasAway && (await atHome(snapped)) && snapped.seq === p0.seq, { before: brief(away), after: brief(snapped), seq: [p0.seq, snapped.seq] });
+    check(`${tag}: a double ${touch ? "tap" : "click"} on empty board returns to the fitted view and places nothing`, wasAway && (await atHome(snapped)) && snapped.seq === p0.seq, { before: brief(away), after: brief(snapped), seq: [p0.seq, snapped.seq], tries: tries + 1 });
 
     if (!touch) {
       // The click still places: the same corner, after all that orbiting.
@@ -295,6 +305,69 @@ try {
       await drawn(page, 1);
       const calmHome = await pose();
       check(`${tag}: under reduced motion Home snaps at once`, calmWasAway && noGlide && (await atHome(calmHome)), { before: brief(calmAway), noGlide, after: brief(calmHome) });
+      await page.emulateMedia({ reducedMotion: "no-preference" });
+
+      // Mid-game: through the setup round, a roll, then an armed path. The phase bar is at its main-phase height with the
+      // armed banner; the fit follows (the marks changed) and the token is read there and reported, not gated: the main
+      // HUD at 1280x720 leaves a 321 px hole and a 19.6 px token, which is #135's call to make, not this proof's.
+      const mid = await page.evaluate(async () => {
+        const g = window.__emberisle;
+        for (let i = 0; i < 40; i++) {
+          const s = g.getState();
+          const ph = s.state.phase;
+          const hi = s.highlights();
+          if (ph === "setupSettle" && hi.vertices[0]) s.pickVertex(hi.vertices[0]);
+          else if (ph === "setupRoad" && hi.edges[0]) s.pickEdge(hi.edges[0]);
+          else if (ph === "roll") s.dispatch({ type: "roll" });
+          else if (ph === "robber" && hi.hexes[0]) {
+            // A 7: move the wayfarer, and rob the first seat offered if asked whom.
+            s.pickHex(hi.hexes[0]);
+            const steal = g.getState().pendingSteal;
+            if (steal) g.getState().chooseSteal(steal.targets[0]);
+          } else break;
+        }
+        if (g.getState().state.phase === "main") g.getState().setBuildMode("path");
+        const s = g.getState();
+        const seq = s.state.seq;
+        await new Promise((res) => {
+          const isle = window.__isle;
+          const poll = () => (isle.lastSeq === seq && !isle.refitDue && !isle.glide ? res() : requestAnimationFrame(poll));
+          poll();
+        });
+        const isle = window.__isle;
+        return { phase: s.state.phase, armed: s.buildMode, insets: isle.insets(), token: +((innerWidth / (isle.ortho.right - isle.ortho.left)) * isle.ortho.zoom * 0.68).toFixed(1) };
+      });
+      await drawn(page, 2);
+      check(`${tag}: mid-game with an armed path the token is read (reported, not gated)`, mid.phase === "main" && mid.armed === "path" && mid.token > 0, mid);
+      // Disarming changes the marks, so the fit follows once more; let it land before the baseline below is taken.
+      await page.evaluate(() => window.__emberisle.getState().setBuildMode("none"));
+      await page.waitForFunction(() => !window.__isle.refitDue && !window.__isle.glide, null, { timeout: STEP_MS });
+      await drawn(page, 2);
+
+      // Chat previews beside the dock button let taps through; they are not a rail and never move the camera. The dock
+      // shows online only, so the store is told so (which re-fits once: the HUD and the marks change with the mode) and the
+      // baseline is taken after that settles; then three long lines arrive.
+      const step = (name, p) => p.catch((e) => { throw new Error(`${name}: ${e.message}`); });
+      const settled = () => step("fit settles", page.waitForFunction(() => !window.__isle.refitDue && !window.__isle.glide, null, { timeout: STEP_MS }));
+      await page.evaluate(() => window.__emberisle.setState({ mode: "online" }));
+      await step("chat dock mounts", page.waitForSelector('[data-testid="chat-preview"]', { state: "attached", timeout: STEP_MS }));
+      await settled();
+      await drawn(page, 2);
+      const t0 = await pose();
+      await page.evaluate(() => {
+        const text = "A long line of table talk that runs to about ninety-five characters so the preview is as wide as it gets.";
+        const at = Date.now();
+        window.__emberisle.setState({ chat: [1, 2, 3].map((i) => ({ id: 9000 + i, seat: "s1", player: "p1", name: "Tide", color: "#2a8f8a", text, at })) });
+      });
+      await step("three previews show", page.waitForFunction(() => document.querySelectorAll('[data-testid="chat-preview"] li').length === 3, null, { timeout: STEP_MS }));
+      const withChat = await page.evaluate(() => ({
+        previews: document.querySelectorAll('[data-testid="chat-preview"] li').length,
+        previewW: Math.round(document.querySelector('[data-testid="chat-preview"]').getBoundingClientRect().width),
+        right: window.__isle.insets().right,
+      }));
+      await drawn(page, 2);
+      const t1 = await pose();
+      check(`${tag}: chat previews are not a rail: the right inset stays 12 and the camera stays put`, withChat.previews === 3 && withChat.previewW >= 200 && withChat.right === 12 && !t1.glide && t1.target.every((v, k) => Math.abs(v - t0.target[k]) < 1e-6), { ...withChat, target: brief(t1).target, before: brief(t0).target });
     }
     await page.context().close();
   }

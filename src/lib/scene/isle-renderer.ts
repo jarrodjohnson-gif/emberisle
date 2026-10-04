@@ -101,6 +101,8 @@ export class IsleRenderer {
   private downType = "mouse";
   private gesture = new TouchGesture();
   private lastTap = { t: 0, x: 0, y: 0, empty: false };
+  // Set once a single pointer has moved past the tap slop; an out-and-back drag ends where it began and must not place.
+  private dragged = false;
   private safeProbe: HTMLDivElement;
   private controls: OrbitControls;
   private orbit: OrbitControls;
@@ -108,9 +110,9 @@ export class IsleRenderer {
   private fit: OrthoFit | null = null;
   private shownAt = -1;
   private glide: { from: Pose; to: Pose; keys: (keyof Pose)[]; start: number } | null = null;
-  // The HUD's chrome: every direct child of the canvas's shell is watched for size, and the shell for children coming and going.
-  private chrome = new ResizeObserver(() => this.refit(false));
-  private shell = new MutationObserver(() => this.watchChrome());
+  // The hole is re-measured on the next frame after a view or state change (React has committed the HUD by then), never on
+  // HUD housekeeping alone (a timed notice leaving, the Place chip): the camera moves with the game, and an idle board idles.
+  private refitDue = false;
   private raycaster = new THREE.Raycaster();
   private pointer = new THREE.Vector2();
   private land = new THREE.Group();
@@ -207,7 +209,7 @@ export class IsleRenderer {
     this.orbit.maxZoom = 2.4;
     this.orbit.minPolarAngle = 0.12;
     this.orbit.maxPolarAngle = 1.15;
-    this.orbit.addEventListener("start", this.onOrbitStart);
+    this.orbit.addEventListener("start", this.wake);
     this.orbit.addEventListener("change", this.wake);
 
     this.scene.fog = new THREE.Fog(0x6a93a0, 26, 52);
@@ -266,9 +268,7 @@ export class IsleRenderer {
     canvas.addEventListener("pointercancel", this.onCancel);
     window.addEventListener("resize", this.resize);
     window.addEventListener("keydown", this.onKey);
-    if (canvas.parentElement) this.shell.observe(canvas.parentElement, { childList: true });
     this.resize();
-    this.watchChrome();
     this.loadTextures();
     this.clock.connect(document);
     this.composer = new EffectComposer(this.renderer);
@@ -336,6 +336,7 @@ export class IsleRenderer {
     this.fit = null;
     this.glide = null;
     this.shownAt = this.renders;
+    this.refitDue = true;
     this.resize();
   }
 
@@ -389,6 +390,8 @@ export class IsleRenderer {
     // The store calls this on every change, chat and timers included; only what the island draws wakes the loop.
     const marks = `${interactive}|${highlights.vertices}|${highlights.edges}|${highlights.hexes}`;
     if (landChanged || this.lastSeq !== state.seq || marks !== this.lastMarks) this.wake();
+    // A new state or an armed build (the marks change with the phase bar) re-measures the hole on the next frame.
+    if (landChanged || this.lastSeq !== state.seq || marks !== this.lastMarks) this.refitDue = true;
     this.lastMarks = marks;
     if (landChanged) {
       this.buildLand(state);
@@ -459,8 +462,6 @@ export class IsleRenderer {
     this.renderer.setAnimationLoop(null);
     this.controls.dispose();
     this.orbit.dispose();
-    this.chrome.disconnect();
-    this.shell.disconnect();
     this.calmMq?.removeEventListener("change", this.onCalm);
     window.removeEventListener("resize", this.resize);
     window.removeEventListener("keydown", this.onKey);
@@ -514,16 +515,10 @@ export class IsleRenderer {
     this.refit(true);
   };
 
-  private watchChrome() {
-    this.chrome.disconnect();
-    const c = this.renderer.domElement;
-    for (const el of c.parentElement?.children ?? []) if (el !== c) this.chrome.observe(el);
-    this.refit(false);
-  }
-
   // Fit the overhead view to the hole the HUD leaves now. The first fit of a view lands at home; a later change of hole
-  // (a phase bar grows, the chat opens) glides the frustum and the look-at point and keeps the eye the player set.
+  // (the phase bar grew with the state) glides the frustum and the look-at point and keeps the eye the player set.
   private refit(instant: boolean) {
+    this.refitDue = false;
     if (!this.overhead) return;
     const c = this.renderer.domElement;
     const f = fitOrtho(c.clientWidth || 1, c.clientHeight || 1, this.insets(), OVERHEAD_LEAN);
@@ -564,6 +559,7 @@ export class IsleRenderer {
     o.updateProjectionMatrix();
   }
 
+  // The wake's 1 s hold covers the glide; nothing re-arms it frame by frame, so the loop idles again right after.
   private moveTo(to: Pose, keys: (keyof Pose)[], instant: boolean) {
     this.wake();
     if (instant || this.calm()) {
@@ -591,7 +587,6 @@ export class IsleRenderer {
     }
     this.applyPose(p);
     if (u >= 1) this.glide = null;
-    else this.wake();
   }
 
   // Back to the fitted lean, zoom 1, over the hole's centre.
@@ -600,18 +595,21 @@ export class IsleRenderer {
     this.moveTo(this.fitPose(this.fit), [...FIT_KEYS, ...EYE_KEYS], false);
   }
 
-  // A drag that starts mid-glide takes the eye; the fit keeps gliding.
-  private onOrbitStart = () => {
-    this.wake();
+  // A drag mid-glide takes the eye (a tap does not: the controls fire "start" on every press); the fit keeps gliding.
+  private dragTakesEye() {
     if (!this.glide) return;
     this.glide.keys = this.glide.keys.filter((k) => !EYE_KEYS.includes(k));
     if (!this.glide.keys.length) this.glide = null;
-  };
+  }
 
+  // Home snaps the view unless the key means something where it landed: a text field, a dialog, a scrolling region (the
+  // chat log, the bottom stack), a modifier chord, or a handler that already took it.
   private onKey = (e: KeyboardEvent) => {
     if (e.key !== "Home" || !this.overhead || this.titleMode) return;
-    const t = e.target as HTMLElement | null;
+    if (e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey) return;
+    const t = e.target instanceof HTMLElement ? e.target : null;
     if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return;
+    if (t?.closest("[role=dialog], [role=alertdialog]") || inScroller(t)) return;
     e.preventDefault();
     this.goHome();
   };
@@ -621,14 +619,20 @@ export class IsleRenderer {
     this.down.x = e.clientX;
     this.down.y = e.clientY;
     this.downType = e.pointerType;
+    this.dragged = false;
     this.gesture.down(e.pointerId, e.clientX, e.clientY);
   };
 
-  // The orbit controls own the drag and the pinch; this only keeps the finger count for onUp.
+  // The orbit controls own the drag and the pinch; this keeps the finger count and whether the pointer ever left the tap.
   private onMove = (e: PointerEvent) => {
     if (!this.gesture.pointers.has(e.pointerId)) return;
     this.gesture.move(e.pointerId, e.clientX, e.clientY);
     this.wake();
+    if (this.dragged || this.gesture.pointers.size !== 1) return;
+    if (Math.hypot(e.clientX - this.down.x, e.clientY - this.down.y) > tapSlop(this.downType, this.coarse())) {
+      this.dragged = true;
+      this.dragTakesEye();
+    }
   };
 
   private onCancel = (e: PointerEvent) => {
@@ -636,7 +640,7 @@ export class IsleRenderer {
   };
 
   private onUp = (e: PointerEvent) => {
-    if (this.gesture.up(e.pointerId)) return;
+    if (this.gesture.up(e.pointerId) || this.dragged) return;
     const coarse = this.coarse();
     if (Math.hypot(e.clientX - this.down.x, e.clientY - this.down.y) > tapSlop(this.downType, coarse)) return;
     const rect = this.renderer.domElement.getBoundingClientRect();
@@ -697,6 +701,7 @@ export class IsleRenderer {
       this.wake();
     }
     this.stepLandings(now, calm);
+    if (this.refitDue) this.refit(false);
     if (calm && this.walk) {
       this.walk = null;
       this.startWalk();
@@ -991,24 +996,39 @@ function landKey(state: GameState) {
   return `${hexes}|${docks}`;
 }
 
-// The chrome a tap cannot pass through: down each branch of the shell, the first element that takes pointer events, in
-// canvas pixels. Wrappers that let taps through (pointer-events: none) are looked into, not counted.
+// The chrome a tap cannot pass through, one box per child of the shell, in canvas pixels. An element that takes pointer
+// events is its own box, unless something inside it lets taps through (pointer-events: none): then its box is the union of
+// the parts that do take them, so the chat dock measures as its button and not as the 288 px preview list beside it, and a
+// wrapper that lets taps through is only what is inside it.
 function solidRects(shell: Element, canvas: Element): Rect[] {
   const base = canvas.getBoundingClientRect();
-  const out: Rect[] = [];
-  const walk = (el: Element) => {
-    if (el === canvas) return;
+  const box = (el: Element): { r: Rect | null; porous: boolean } => {
+    if (el === canvas) return { r: null, porous: false };
     const cs = getComputedStyle(el);
-    if (cs.display === "none" || cs.visibility === "hidden") return;
-    if (cs.pointerEvents === "none") {
-      for (const k of el.children) walk(k);
-      return;
+    if (cs.display === "none" || cs.visibility === "hidden") return { r: null, porous: false };
+    const kids = [...el.children].map(box);
+    const none = cs.pointerEvents === "none";
+    if (!none && !kids.some((k) => k.porous)) {
+      const r = el.getBoundingClientRect();
+      return { r: { left: r.left - base.left, top: r.top - base.top, right: r.right - base.left, bottom: r.bottom - base.top }, porous: false };
     }
-    const r = el.getBoundingClientRect();
-    out.push({ left: r.left - base.left, top: r.top - base.top, right: r.right - base.left, bottom: r.bottom - base.top });
+    let u: Rect | null = null;
+    for (const { r } of kids) {
+      if (!r) continue;
+      u = u ? { left: Math.min(u.left, r.left), top: Math.min(u.top, r.top), right: Math.max(u.right, r.right), bottom: Math.max(u.bottom, r.bottom) } : r;
+    }
+    return { r: u, porous: true };
   };
-  for (const k of shell.children) walk(k);
-  return out;
+  return [...shell.children].map((k) => box(k).r).filter((r): r is Rect => r !== null);
+}
+
+// True inside a region that scrolls on its own (the chat log, the bottom stack), where Home means "to the top".
+function inScroller(el: HTMLElement | null): boolean {
+  for (let n = el; n && n !== document.body; n = n.parentElement) {
+    const o = getComputedStyle(n).overflowY;
+    if ((o === "auto" || o === "scroll") && n.scrollHeight > n.clientHeight) return true;
+  }
+  return false;
 }
 
 function disposeGroup(g: THREE.Group) {

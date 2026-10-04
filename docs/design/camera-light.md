@@ -42,16 +42,20 @@ Two modes on one scene (#128), unchanged in kind:
 ### The hole
 
 The fit reads the HUD's real footprint, not a table of constants (the #455 HUD is taller than the 168 px the table said,
-and the far row sat under it). `IsleRenderer.insets()` walks the canvas's shell: down each branch, the first element that
-takes pointer events is chrome (a `pointer-events: none` wrapper is looked into, not counted), and `chromeInsets` in
+and the far row sat under it). `IsleRenderer.insets()` walks the canvas's shell: an element that takes pointer events is chrome, unless something inside
+it lets taps through (`pointer-events: none`), in which case it counts as the union of the parts that do take them (so the
+chat dock is its button, not the 288 px preview list beside it, and a wrapper that lets taps through is only what is inside
+it), and `chromeInsets` in
 `mobile-fit.ts` turns those rects into insets: chips at least half the canvas wide are bands that stack from the top or
 bottom edge, each within 16 px of the edge or of the band before it (the header, the seat strip under it, the phase bar,
 an armed-build banner); narrower chips that touch a side the same way are a rail when together they span a quarter of the
 canvas (the seat cards, an open chat), so a lone chat button is not one. Floating chips and overlays that cover nearly
 everything (a sheet, a backdrop) count for nothing. The island keeps 12 px from the chrome, or 12 px plus the safe area
-from a bare edge. A `ResizeObserver` on the shell's children and a `MutationObserver` on the shell refit when the HUD
-changes; a changed hole glides the frustum and the look-at point over 280 ms and leaves the eye where the player put it.
-`hudInsets` (the old table) now serves only the free camera's dolly limit on the title, where there is no HUD.
+from a bare edge. The hole is re-measured on the first frame after a view or state change (React has committed the HUD by
+then), when the marks change (an armed build swaps the phase bar) and on a window resize, never on HUD housekeeping
+alone: a timed notice leaving the phase bar, chat previews or the Place chip appearing do not move the camera, so the board moves with the game and an idle board idles at 12 fps (#331,
+`idle-prove`). A changed hole glides the frustum and the look-at point over 280 ms and leaves the eye where the player put
+it. `hudInsets` (the old table) now serves only the free camera's dolly limit on the title, where there is no HUD.
 
 Measured at 1280x720 in the first placement: 70 / 12 / 245 / 248 (top / right / bottom / left), a hole of 1020x405 at
 36.4 px per world unit, a token 24.8 px across, the nearest dock 54 px inside; at 390x844 (touch): 124 / 12 / 305 / 12,
@@ -73,12 +77,14 @@ setting, no chrome). The overhead camera sits on its own OrbitControls, orbiting
 |---|---|
 | Drag (mouse or one finger) | Orbits: polar 7°-66°, any azimuth. No damping, so the board stops where the pointer stops. No pan. |
 | Wheel, pinch | Zooms the frustum 0.8x-2.4x. |
-| Home key (outside a text field), double click or double tap on empty board | Glides home: the fit, the 25° lean, zoom 1, over 280 ms with the ease-out curve; instant under `prefers-reduced-motion`. |
+| Home key, double click or double tap on empty board | Glides home: the fit, the 25° lean, zoom 1, over 280 ms with the ease-out curve; instant under `prefers-reduced-motion`. |
 
 "Empty board" is two taps within 350 ms and 32 px where neither hit a legal mark, so a double tap that places (or selects
-then confirms) never moves the camera. A drag never places: a pointer that moves past the tap slop (8 px mouse, 24 px
-touch) is a drag, and a pinch swallows its lifts (`TouchGesture`). The keyboard route (the PlaceList, #376) is untouched.
-A drag that starts mid-glide takes the eye; the fit keeps gliding.
+then confirms) never moves the camera. Home is left alone in a text field, a dialog, a region that scrolls on its own (the
+chat log, the bottom stack), with a modifier held, or when a handler already took it. A drag never places: a pointer that
+ever moves past the tap slop (8 px mouse, 24 px touch) is a drag, even one that comes back to the corner it started on, and
+a pinch swallows its lifts (`TouchGesture`). The keyboard route (the PlaceList, #376) is untouched.
+A drag past the slop mid-glide takes the eye (a tap during the glide does not); the fit keeps gliding.
 
 Proof: `npm run board-look-prove` (the measured hole, every corner on the canvas, the default view, a drag orbits and
 places nothing, a wheel zooms, Home and a double click or tap return home, reduced motion snaps) and
