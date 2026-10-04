@@ -80,6 +80,7 @@ function Title() {
   const muted = useMuted();
   const { phone, portrait } = useViewport();
   const sheet = phone && portrait;
+  const landscape = phone && !portrait;
   // Colors already seated at the table whose code is in the field (docs/design/color-peek.md).
   const taken = peekedCode === join ? peekedSeats.map((s) => s.color) : [];
 
@@ -112,44 +113,56 @@ function Title() {
 
   return (
     <>
+      {/* On a phone the card itself scrolls: a portrait sheet, or in landscape (#421) a wide two-column card capped at the
+          viewport (name and tagline left, buttons right) so nothing sits above the top edge. */}
       <div
         data-testid="title-card"
         className={cn(
           "absolute z-10",
+          phone && "overflow-y-auto rounded-[20px] border border-white/50 bg-white/45 p-5 backdrop-blur-md",
           sheet
-            ? "inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] max-h-[55vh] overflow-y-auto rounded-[20px] border border-white/50 bg-white/45 p-5 backdrop-blur-md"
-            : "bottom-5 left-5 w-full max-w-sm pb-[env(safe-area-inset-bottom)] sm:bottom-10 sm:left-10",
+            ? "inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] max-h-[55vh]"
+            : phone
+              ? "bottom-3 left-[max(0.75rem,env(safe-area-inset-left))] w-[min(44rem,calc(100%-1.5rem))] max-h-[calc(100dvh-1.5rem)]"
+              : "bottom-5 left-5 w-full max-w-sm pb-[env(safe-area-inset-bottom)] sm:bottom-10 sm:left-10",
         )}
       >
-        <div className={sheet ? undefined : "rounded-[20px] border border-white/50 bg-white/45 p-5 backdrop-blur-md sm:p-6"}>
-          <p className="text-xs uppercase tracking-[0.22em] text-sea-ink">A living island</p>
-          <h1 className="mt-2 font-display text-5xl leading-none tracking-tight sm:text-6xl">Emberisle</h1>
-          <p className="mt-3 max-w-sm text-pretty text-muted">
-            Claim hexes, graze the pastures, and trade the land. Sheep wander. Boats rock. The wayfarer crosses the wastes.
-          </p>
-          <label className="mt-6 block text-xs uppercase tracking-wide text-muted">
-            Your name
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="mt-1 h-11 w-full rounded-[12px] border border-border bg-surface px-3 text-base text-fg"
-            />
-          </label>
-          <div role="radiogroup" aria-label="Your color" className="mt-3 flex gap-2">
-            {PLAYER_COLORS.map((c, i) => (
-              <button
-                key={c}
-                type="button"
-                role="radio"
-                aria-checked={!taken.includes(c) && color === c}
-                aria-label={taken.includes(c) ? `${PLAYER_NAMES[i]} (taken)` : PLAYER_NAMES[i]}
-                title={taken.includes(c) ? `${PLAYER_NAMES[i]} (taken)` : PLAYER_NAMES[i]}
-                disabled={taken.includes(c)}
-                onClick={() => setColor(c)}
-                className={cn("size-8 rounded-full border-2 transition", taken.includes(c) && "cursor-not-allowed opacity-35")}
-                style={{ background: c, borderColor: !taken.includes(c) && color === c ? "#1c1915" : "transparent" }}
+        <div
+          className={cn(
+            !phone && "rounded-[20px] border border-white/50 bg-white/45 p-5 backdrop-blur-md sm:p-6",
+            landscape && "grid grid-cols-2 items-center gap-x-6",
+          )}
+        >
+          <div>
+            <p className="text-xs uppercase tracking-[0.22em] text-sea-ink">A living island</p>
+            <h1 className="mt-2 font-display text-5xl leading-none tracking-tight sm:text-6xl">Emberisle</h1>
+            <p className="mt-3 max-w-sm text-pretty text-muted">
+              Claim hexes, graze the pastures, and trade the land. Sheep wander. Boats rock. The wayfarer crosses the wastes.
+            </p>
+            <label className="mt-6 block text-xs uppercase tracking-wide text-muted">
+              Your name
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="mt-1 h-11 w-full rounded-[12px] border border-border bg-surface px-3 text-base text-fg"
               />
-            ))}
+            </label>
+            <div role="radiogroup" aria-label="Your color" className="mt-3 flex gap-2">
+              {PLAYER_COLORS.map((c, i) => (
+                <button
+                  key={c}
+                  type="button"
+                  role="radio"
+                  aria-checked={!taken.includes(c) && color === c}
+                  aria-label={taken.includes(c) ? `${PLAYER_NAMES[i]} (taken)` : PLAYER_NAMES[i]}
+                  title={taken.includes(c) ? `${PLAYER_NAMES[i]} (taken)` : PLAYER_NAMES[i]}
+                  disabled={taken.includes(c)}
+                  onClick={() => setColor(c)}
+                  className={cn("size-8 rounded-full border-2 transition", taken.includes(c) && "cursor-not-allowed opacity-35")}
+                  style={{ background: c, borderColor: !taken.includes(c) && color === c ? "#1c1915" : "transparent" }}
+                />
+              ))}
+            </div>
           </div>
           <div className="mt-4 flex flex-col gap-2">
             <Button size="lg" variant="accent" onClick={hostTable}>
@@ -195,13 +208,20 @@ function Title() {
                 {error}
               </p>
             ) : null}
+            {/* #411: each offline button carries one tiny muted line on what it is. */}
             <div className="mt-1 flex flex-wrap gap-2">
-              <Button size="sm" variant="outline" className="flex-1 whitespace-nowrap px-2" onClick={startAi}>
-                Play versus the isle
-              </Button>
-              <Button size="sm" variant="outline" className="flex-1 whitespace-nowrap px-2" onClick={() => startHotseat(4)}>
-                Four seats, one table
-              </Button>
+              <div className="flex flex-1 flex-col items-center gap-1">
+                <Button size="sm" variant="outline" className="w-full whitespace-nowrap px-2" onClick={startAi}>
+                  Play versus the isle
+                </Button>
+                <p className="text-xs text-muted">3 bots, no network</p>
+              </div>
+              <div className="flex flex-1 flex-col items-center gap-1">
+                <Button size="sm" variant="outline" className="w-full whitespace-nowrap px-2" onClick={() => startHotseat(4)}>
+                  Four seats, one table
+                </Button>
+                <p className="text-xs text-muted">pass one device around</p>
+              </div>
             </div>
             <div className="flex items-center justify-center gap-1">
               <Button variant="ghost" onClick={(e) => setHowTo(!howTo, e.currentTarget)}>
