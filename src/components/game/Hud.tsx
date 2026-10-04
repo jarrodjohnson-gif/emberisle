@@ -28,6 +28,7 @@ import { COST, RESOURCES, RESOURCE_LABEL, type DevKind, type GameState, type Pla
 import { hiddenCount, legalRoads, playable, publicVP, totalVP } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
 import { useViewport } from "@/lib/viewport";
+import { useMoreBelow } from "@/lib/scroll-fade";
 import { cn } from "@/lib/utils";
 
 const ICONS: Record<Resource, typeof Trees> = {
@@ -138,6 +139,7 @@ export function Hud() {
   const { phone, portrait } = useViewport();
   const [hintDismissed, setHintDismissed] = useState(() => sessionStorage.getItem(HINT_KEY) === "1");
   useEscapeDisarm();
+  const [stackRef, moreBelow] = useMoreBelow();
 
   if (!state) return null;
   const actor = mode === "hotseat" ? state.current : localId;
@@ -286,9 +288,11 @@ export function Hud() {
       <Announcer />
 
       <div className="pointer-events-none absolute bottom-0 inset-x-0 z-10 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <div className="relative mx-auto max-w-3xl">
         <div
+          ref={stackRef}
           className={cn(
-            "pointer-events-auto mx-auto flex max-w-3xl flex-col gap-2 overflow-y-auto overscroll-contain",
+            "pointer-events-auto flex flex-col gap-2 overflow-y-auto overscroll-contain",
             // #383: stop under the header (or the portrait seat strip) and leave the island at least ~8 rem.
             phone && portrait ? "max-h-[calc(100dvh-16rem)]" : "max-h-[calc(100dvh-13rem)]",
           )}
@@ -430,6 +434,14 @@ export function Hud() {
           <p className="hidden max-h-16 shrink-0 overflow-y-auto text-xs text-zinc-600 sm:block short:hidden">
             {state.log.slice(-3).join(" · ")}
           </p>
+        </div>
+        {moreBelow ? (
+          <div
+            data-testid="hud-more-below"
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-zinc-900/40 to-transparent"
+          />
+        ) : null}
         </div>
       </div>
 
