@@ -212,6 +212,8 @@ export function createGame(opts: {
     log: [opts.winnerFirst ? `The isle is dealt. ${players[0]!.name} places first; the rest roll for their order.` : "The isle is dealt. Roll for first place."],
     discardNeeded: {},
     playedCard: false,
+    rolls: 0,
+    lastProduction: [],
     hostId: opts.hostId ?? players[0]!.id,
   };
 }

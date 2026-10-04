@@ -167,6 +167,57 @@ try {
       check("wayfarer-blocked", g3, e3, reduced);
       if (g3.ids.includes(under)) throw new Error("the hex under the wayfarer glowed");
       if (!e3.expected.length) throw new Error("the other hex with that token paid nothing; the scenario proves too little");
+      // 3b. Twins: two wool hexes on the same token, one owner, a bank holding one wool. One hex gets paid, so exactly one glows.
+      const twins = await page.evaluate(() => {
+        const g = window.__emberisle;
+        const st = structuredClone(g.getState().state);
+        const two = st.hexes.filter((h) => h.pip && h.terrain !== "waste" && h.id !== st.robberHex && h.pip !== 6).slice(0, 2);
+        for (const h of two) {
+          h.terrain = "wool";
+          h.pip = 6;
+        }
+        st.vertices.forEach((v) => {
+          if (v.building) v.building.playerId = st.players[0].id;
+        });
+        st.seq += 1;
+        g.setState({ state: st });
+        return two.map((h) => h.id);
+      });
+      await page.waitForFunction(() => window.__isle?.lastSeq === window.__emberisle.getState().state.seq, null, { timeout: STEP_MS });
+      const e4 = await roll(page, { dice: split(6), robber: "", bank: { timber: 19, clay: 19, wool: 1, grain: 19, ore: 19 } });
+      await settled(page);
+      const g4 = await glowing(page);
+      const woolGlow = g4.ids.filter((id) => twins.includes(id));
+      console.log(`twins: wool hexes ${twins} on a 6, bank holds 1 wool, hands gained [${e4.gained}], ${woolGlow.length} of them glowed`);
+      if (!e4.gained.includes("wool") || woolGlow.length !== 1) throw new Error(`two wool 6s, one paid: ${woolGlow.length} glowed`);
+      // 3c. Online style: one push carries a roll and the actions after it (seq +2, one more roll). It still flashes the payers.
+      const multi = await page.evaluate(async (dice) => {
+        const g = window.__emberisle;
+        const pre = structuredClone(g.getState().state);
+        pre.phase = "roll";
+        pre.dice = null;
+        pre.bank = { timber: 19, clay: 19, wool: 19, grain: 19, ore: 19 };
+        pre.seq += 1;
+        g.setState({ state: pre });
+        await new Promise((r) => { const w = () => (window.__isle.lastSeq === pre.seq ? r() : requestAnimationFrame(w)); w(); });
+        window.__frames.length = 0;
+        window.__queue.push(dice[0] - 1, dice[1] - 1);
+        const R = window.__rules;
+        const rolled = R.applyAction(pre, pre.current, { type: "roll" }).state;
+        const done = R.applyAction(rolled, rolled.current, { type: "endTurn" }).state;
+        const hand = (st) => Object.fromEntries(["timber", "clay", "wool", "grain", "ore"].map((r) => [r, st.players.reduce((n, p) => n + p.resources[r], 0)]));
+        const gained = Object.keys(hand(pre)).filter((r) => hand(rolled)[r] > hand(pre)[r]);
+        const sum = dice[0] + dice[1];
+        const expected = pre.hexes.filter((h) => h.pip === sum && !h.blocked && gained.includes(h.terrain)).map((h) => h.id);
+        g.setState({ state: done });
+        return { jump: done.seq - pre.seq, rolls: done.rolls - pre.rolls, expected };
+      }, split(sums[0]));
+      await settled(page);
+      const g5 = await glowing(page);
+      console.log(`one push, ${multi.jump} actions, ${multi.rolls} roll: ${g5.ids.length} glowed, ${multi.expected.length} expected`);
+      if (multi.rolls !== 1 || multi.jump < 2 || !multi.expected.length || g5.ids.length !== multi.expected.length || !multi.expected.every((id) => g5.ids.includes(id))) {
+        throw new Error(`multi-action push: ${JSON.stringify({ multi, glow: g5.ids })}`);
+      }
       // 4. Negatives: a state that already has dice never flashes when it is met, only a live roll does.
       const rolled = await page.evaluate(() => structuredClone(window.__emberisle.getState().state));
       await page.evaluate(() => {

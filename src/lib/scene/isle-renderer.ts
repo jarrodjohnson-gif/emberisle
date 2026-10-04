@@ -313,10 +313,11 @@ export class IsleRenderer {
   }
 
   setBoard(state: GameState, highlights: Highlights, interactive: boolean) {
-    // Only a roll seen live flashes: the same island, the very next state, dice newly down. Landing on a state that already
-    // has dice (a spectator, a rejoin, the title's island carried into a game) does not.
+    // Only a roll seen live flashes: the same island and exactly one more dice roll than last time. Landing on a state that
+    // already has rolls (a spectator, a rejoin, the title's island carried into a game) does not; several actions in one push
+    // (online bots) still flash when one roll is among them.
     const prev = this.lastState;
-    const rolled = prev && !prev.dice && state.dice && state.phase !== "rollOff" && landKey(prev) === landKey(state) && state.seq === prev.seq + 1;
+    const rolled = prev && landKey(prev) === landKey(state) && (state.rolls ?? 0) === (prev.rolls ?? 0) + 1;
     this.lastState = state;
     this.lastHi = highlights;
     this.lastInteractive = interactive;
