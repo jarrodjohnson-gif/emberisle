@@ -5,7 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { randomBytes, randomInt, timingSafeEqual } from "node:crypto";
 import { WebSocketServer } from "ws";
-import { chooseBotAction } from "../src/lib/game/ai.ts";
+import { chooseBotAction, chooseTradeAsk, shouldAcceptTrade } from "../src/lib/game/ai.ts";
 import { createGame } from "../src/lib/game/board.ts";
 import { applyAction, bankShort, legalCities, legalRoads, legalSettle, playable, stealTargets, validBag } from "../src/lib/game/rules.ts";
 import { COST, PLAYER_COLORS, RESOURCES } from "../src/lib/game/types.ts";
@@ -52,6 +52,8 @@ const LOBBY_HOLD_MS = Number(process.env.LOBBY_HOLD_MS ?? 90 * 1000);
 // A connected player who stops taking their turn: after this long the host's bot makes that one move for the
 // seat and the seat stays human (#344, Jarrod's call on #324). A dropped seat follows GRACE_MS instead, never this.
 const TURN_MS = Number(process.env.TURN_MS ?? 120 * 1000);
+// A bot seat answers a table ask after BOT_ANSWER_MS to twice that, so its Yes or No lands like a person's (#363).
+const BOT_ANSWER_MS = Number(process.env.BOT_ANSWER_MS ?? 1000);
 // Every socket is pinged this often; one that has not answered the last ping is cut, so a phone that
 // locked or changed Wi-Fi frees its seat for the rejoin instead of holding it half-open (#202, #113).
 const PING_MS = Number(process.env.PING_MS ?? 30 * 1000);
@@ -317,6 +319,14 @@ function runBots(room) {
         ? g.players.find((p) => p.kind === "bot" && (g.discardNeeded[p.id] ?? 0) > 0)
         : g.players.find((p) => p.kind === "bot" && p.id === g.current);
     if (!waiting) return;
+    // A bot's own ask is open: its turn waits for the answers, and the offer's close plays on (botsOn).
+    if (room.offer?.from === waiting.id) return;
+    // Once per bot turn, before its other moves, the bot may ask the table (#363).
+    if (g.phase === "main" && !room.offer && room.botAsked !== `${g.turn}:${waiting.id}`) {
+      room.botAsked = `${g.turn}:${waiting.id}`;
+      const ask = chooseTradeAsk(g, waiting.id);
+      if (ask) return openOffer(room, waiting.id, ask.give, ask.want);
+    }
     const action = chooseBotAction(g, waiting.id);
     const next = action && applyAction(g, waiting.id, action);
     if (!next || next.error) {
@@ -716,8 +726,44 @@ const SOUND = {
 
 function closeOffer(room) {
   if (room.offerTimer) clearTimeout(room.offerTimer);
+  for (const t of room.offer?.botTimers ?? []) clearTimeout(t);
   room.offerTimer = null;
   room.offer = null;
+}
+
+// A bot's ask paused its turn in runBots; once that offer is gone the bots play on. With nobody connected they wait,
+// as in takeOver, and a rejoin runs them. True when it pushed the state.
+function botsOn(room, offer) {
+  if (room.game.players.find((p) => p.id === offer.from)?.kind !== "bot" || !room.seats.some((s) => s.ws)) return false;
+  const seen = room.game.log;
+  runBots(room);
+  for (const line of newLog(seen, room.game.log)) say(room, line);
+  pushState(room);
+  return true;
+}
+
+// Opens the table offer for `from`, closing any earlier one. Every other bot seat answers it after a short delay.
+function openOffer(room, from, give, want) {
+  if (room.offer) broadcast(room, { type: "tradeClosed", tradeId: room.offer.tradeId });
+  closeOffer(room);
+  const tradeId = `t${room.game.seq}-${(room.offerSeq = (room.offerSeq ?? 0) + 1)}`;
+  const offer = (room.offer = { tradeId, from, give, want, declined: new Set(), botTimers: [] });
+  room.offerTimer = setTimeout(() => {
+    closeOffer(room);
+    broadcast(room, { type: "tradeClosed", tradeId });
+    botsOn(room, offer);
+  }, 20000);
+  broadcast(room, { type: "tradeOffer", tradeId, from, give, want, seconds: 20 });
+  for (const p of room.game.players) {
+    if (p.kind !== "bot" || p.id === from) continue;
+    offer.botTimers.push(setTimeout(() => botAnswer(room, offer, p.id), BOT_ANSWER_MS + randomInt(BOT_ANSWER_MS + 1)));
+  }
+}
+
+// The seat may have been taken back by its player, or the offer closed, while the bot was "thinking".
+function botAnswer(room, offer, pid) {
+  if (room.offer !== offer || room.game.players.find((p) => p.id === pid)?.kind !== "bot") return;
+  respond(room, pid, shouldAcceptTrade(room.game, pid, offer));
 }
 
 function ask(ws, room, msg) {
@@ -729,15 +775,7 @@ function ask(ws, room, msg) {
   const asker = room.game.players.find((p) => p.id === actor);
   if (RESOURCES.some((r) => (msg.give[r] ?? 0) > asker.resources[r])) return send(ws, { type: "error", message: "You lack those goods." });
   if (RESOURCES.every((r) => !msg.give[r] && !msg.want[r])) return send(ws, { type: "error", message: "Offer something." });
-  if (room.offer) broadcast(room, { type: "tradeClosed", tradeId: room.offer.tradeId });
-  closeOffer(room);
-  const tradeId = `t${room.game.seq}-${(room.offerSeq = (room.offerSeq ?? 0) + 1)}`;
-  room.offer = { tradeId, from: actor, give: msg.give, want: msg.want, declined: new Set() };
-  room.offerTimer = setTimeout(() => {
-    room.offer = null;
-    broadcast(room, { type: "tradeClosed", tradeId });
-  }, 20000);
-  broadcast(room, { type: "tradeOffer", tradeId, from: actor, give: room.offer.give, want: room.offer.want, seconds: 20 });
+  openOffer(room, actor, msg.give, msg.want);
 }
 
 function answer(ws, room, msg) {
@@ -746,19 +784,27 @@ function answer(ws, room, msg) {
   if (!offer || actor === offer.from || (msg.tradeId && msg.tradeId !== offer.tradeId)) {
     return send(ws, { type: "error", message: "Offer is gone." });
   }
-  if (!(msg.yes ?? msg.accept)) {
+  const error = respond(room, actor, Boolean(msg.yes ?? msg.accept));
+  if (error) send(ws, { type: "error", message: error });
+}
+
+// `actor`'s Yes or No to the open offer, from a person or a bot seat. Returns an error for that seat, if any.
+function respond(room, actor, yes) {
+  const offer = room.offer;
+  if (!yes) {
     // A "No" is told to the whole table. The offer stays open for seats that have not answered and
-    // closes once every other human seat has declined (bots never answer an ask).
+    // closes once every other seat, person or bot, has declined.
     if (offer.declined.has(actor)) return;
     offer.declined.add(actor);
     hear("trade_no");
-    const name = room.game.players.find((p) => p.id === actor)?.name ?? ws.seat.name;
+    const name = room.game.players.find((p) => p.id === actor).name;
     broadcast(room, { type: "tradeDeclined", tradeId: offer.tradeId, by: actor, name });
     say(room, `${name} declines.`);
-    const askees = room.game.players.filter((p) => p.id !== offer.from && p.kind === "human");
+    const askees = room.game.players.filter((p) => p.id !== offer.from);
     if (askees.every((p) => offer.declined.has(p.id))) {
       closeOffer(room);
       broadcast(room, { type: "tradeClosed", tradeId: offer.tradeId });
+      botsOn(room, offer);
     }
     return;
   }
@@ -767,10 +813,11 @@ function answer(ws, room, msg) {
   if (offered.error) {
     closeOffer(room);
     broadcast(room, { type: "tradeClosed", tradeId: offer.tradeId });
-    return send(ws, { type: "error", message: "Offer is gone." });
+    botsOn(room, offer);
+    return "Offer is gone.";
   }
   const accepted = applyAction(offered.state, actor, { type: "respondTrade", accept: true });
-  if (accepted.error) return send(ws, { type: "error", message: accepted.error });
+  if (accepted.error) return accepted.error;
   closeOffer(room);
   room.game = accepted.state;
   // The asker's trade went through: that is their action, so their window restarts (pushState re-arms it).
@@ -778,7 +825,7 @@ function answer(ws, room, msg) {
   if (asker) disarmTurn(asker);
   hear("trade_yes");
   broadcast(room, { type: "tradeClosed", tradeId: offer.tradeId, taker: actor });
-  pushState(room);
+  if (!botsOn(room, offer)) pushState(room);
 }
 
 function talk(ws, room, msg) {
@@ -821,11 +868,10 @@ function play(ws, room, msg) {
     if (short.length) parts.push(`bank short of ${short.join(" and ")}`);
     say(room, [String(a + b), ...parts].join(" · "));
   }
-  runBots(room);
-  for (const line of newLog(before.log, room.game.log)) say(room, line);
-  if (room.game.phase === "over" && before.phase !== "over") hear("win");
-  // An offer lives only while its asker still has the turn in `main` and still holds the offered goods.
+  // An offer lives only while its asker still has the turn in `main` and still holds the offered goods. Checked before
+  // the bots play, so a bot never sees the stale offer of a seat that just passed.
   const open = room.offer;
+  let withdrawn = null;
   if (open) {
     const asker = room.game.players.find((p) => p.id === open.from);
     const turnOver = room.game.current !== open.from || room.game.phase !== "main";
@@ -833,9 +879,13 @@ function play(ws, room, msg) {
     if (turnOver || spent) {
       closeOffer(room);
       broadcast(room, { type: "tradeClosed", tradeId: open.tradeId });
-      if (!turnOver) say(room, `${asker.name} spent the offered goods; the offer is withdrawn.`);
+      if (!turnOver) withdrawn = `${asker.name} spent the offered goods; the offer is withdrawn.`;
     }
   }
+  runBots(room);
+  for (const line of newLog(before.log, room.game.log)) say(room, line);
+  if (withdrawn) say(room, withdrawn);
+  if (room.game.phase === "over" && before.phase !== "over") hear("win");
   pushState(room);
 }
 
