@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { BrickWall, Cloud, Mountain, Trees, Wheat } from "lucide-react";
-import { RESOURCES, RESOURCE_LABEL, type PlayerState, type Resource } from "@/lib/game/types";
+import { RESOURCES, RESOURCE_LABEL, type Phase, type PlayerState, type Resource } from "@/lib/game/types";
 import { cn } from "@/lib/utils";
 
 const ICONS: Record<Resource, typeof Trees> = {
@@ -21,6 +21,10 @@ const PAINT: Record<Resource, string> = {
 };
 
 const FLASH_MS = 1200;
+
+// The ring and the +N are not pointer-events-none on purpose: the renderer measures the hole from the HUD's rects, and a
+// pointer-transparent child makes its tile "porous", so for the flash's 1.2 s the hand measured as loose icons and the island
+// was fitted as if the hand were not there (#439). The tiles take no taps, so nothing is lost.
 
 // The hand's counts are diffed on every state, so a gain flashes +N green and a loss -N red whether it
 // came from a roll, a trade, a build, a discard, or a steal, hotseat and online alike (#170). Only this
@@ -80,8 +84,7 @@ function useResourceFlashes(me: PlayerState) {
   return flashes;
 }
 
-export function ResourceHand({ me }: { me: PlayerState }) {
-  const flashes = useResourceFlashes(me);
+function ResourceHand({ me, flashes }: { me: PlayerState; flashes: ReturnType<typeof useResourceFlashes> }) {
   return (
     <div className="flex shrink-0 gap-1 overflow-x-auto rounded-[20px] border border-white/50 bg-glass p-2 backdrop-blur-md short:p-1">
       {RESOURCES.map((r) => {
@@ -112,7 +115,7 @@ export function ResourceHand({ me }: { me: PlayerState }) {
                   key={`ring-${flash.at}`}
                   data-testid="hand-ring"
                   aria-hidden
-                  className="pointer-events-none absolute inset-0 rounded-chip"
+                  className="absolute inset-0 rounded-chip"
                   style={{ animation: `resource-ring ${FLASH_MS}ms ease-out forwards` }}
                 />
                 <span
@@ -120,7 +123,7 @@ export function ResourceHand({ me }: { me: PlayerState }) {
                   data-testid="resource-flash"
                   data-resource={r}
                   data-delta={label}
-                  className="pointer-events-none absolute right-1 top-1 text-sm font-semibold tabular-nums"
+                  className="absolute right-1 top-1 text-sm font-semibold tabular-nums"
                   style={{ animation: `resource-flash ${FLASH_MS}ms ease-out forwards` }}
                 >
                   {label}
@@ -130,6 +133,42 @@ export function ResourceHand({ me }: { me: PlayerState }) {
           </div>
         );
       })}
+    </div>
+  );
+}
+
+// #439: the hand is not on the table until the seat has held a good this game (or the game is in roll/main). Once it is
+// there it stays, so spending down to 0 or a robber does not make it come and go. Online `me` is the local seat; in
+// hotseat it is the seat on turn, so "held" is tracked per seat and a new roll-off starts it over.
+//
+// It is mounted at its full height in the same commit as the state change that brings it, so the renderer's next-frame
+// refit measures the hole with the hand in it; the motion is opacity and translateY only (docs/design/polish.md: never
+// animate layout). A hand that goes away (a hotseat seat that has held nothing takes the turn) is removed at once for the
+// same reason: nothing refits when an animation ends.
+export function HandDock({ me, phase }: { me: PlayerState; phase: Phase }) {
+  // Read here, not in the hand, so the +N that brings the first good in is not lost to the hand mounting after the change.
+  const flashes = useResourceFlashes(me);
+  const held = useRef(new Set<string>());
+  if (phase === "rollOff") held.current.clear();
+  if (RESOURCES.some((r) => me.resources[r] > 0)) held.current.add(me.id);
+  const show = phase === "roll" || phase === "main" || held.current.has(me.id);
+  const [shown, setShown] = useState(show);
+  const [rising, setRising] = useState(false);
+  if (show !== shown) {
+    setShown(show);
+    setRising(show);
+  }
+  if (!show) return null;
+  return (
+    <div
+      data-testid="hand-dock"
+      data-rising={rising || undefined}
+      className={cn("shrink-0", rising && "hand-in")}
+      onAnimationEnd={(e) => {
+        if (e.target === e.currentTarget) setRising(false);
+      }}
+    >
+      <ResourceHand me={me} flashes={flashes} />
     </div>
   );
 }

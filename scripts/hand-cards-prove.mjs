@@ -61,7 +61,6 @@ async function open(v, reducedMotion) {
     await page.keyboard.press("Enter");
     await page.waitForFunction((s) => window.__emberisle.getState().state.seq > s, before.seq, { timeout: STEP_MS });
   }
-  await page.locator('[data-testid="resource-timber"]').waitFor({ timeout: STEP_MS });
   return { ctx, page, errors };
 }
 

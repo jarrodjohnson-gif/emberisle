@@ -70,12 +70,20 @@ body {
   100% { box-shadow: 0 0 0 2px rgba(255, 255, 255, 0); opacity: 0; }
 }
 
+/* #439: the hand rises in over --duration-base. Opacity and translateY only: the layout is already final when it mounts. */
+@keyframes hand-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+.hand-in { animation: hand-in var(--duration-base) var(--ease-out) both; }
+
 /* The animations are inline or utility styles, so the override has to out-rank them (#253). */
 @media (prefers-reduced-motion: reduce) {
   [style*="emote-float"],
   [style*="resource-flash"],
   [style*="resource-ring"],
-  [class*="turn-fade"] {
+  [class*="turn-fade"],
+  .hand-in {
     animation-duration: 1ms !important;
   }
 }

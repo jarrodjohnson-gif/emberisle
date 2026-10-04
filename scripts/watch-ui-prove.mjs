@@ -303,11 +303,11 @@ try {
   if (pressable.length) throw new Error(`the watcher can press ${JSON.stringify(pressable)}`);
   if (!wv.buttons.includes("Leave table")) throw new Error(`the watcher has no Leave table button: ${JSON.stringify(wv.buttons)}`);
   if (!wv.turnBanner || wv.turnBanner.startsWith("Your")) throw new Error(`the watcher's turn line: "${wv.turnBanner}"`);
-  // The positive control: the seat whose roll it is has the Roll button, its hand tiles and no badge.
+  // The positive control: the seat whose roll it is has the Roll button and no badge. Its hand is empty in the roll-off, so no hand tiles are shown (#439).
   const up = [a, b].find((t, i) => seatViews[i].localId === wv.current);
   if (up) {
     const uv = seatViews[[a, b].indexOf(up)];
-    if (!uv.buttons.includes("Roll") || uv.resources !== 5 || uv.badge !== null) throw new Error(`${up.name} (on turn) is missing its controls: ${JSON.stringify([uv.buttons, uv.resources, uv.badge])}`);
+    if (!uv.buttons.includes("Roll") || uv.resources !== 0 || uv.badge !== null) throw new Error(`${up.name} (on turn) is missing its controls: ${JSON.stringify([uv.buttons, uv.resources, uv.badge])}`);
   } else if (c.legal?.actions.includes("roll") !== true) throw new Error("Pine is on turn with no roll");
   console.log(`watching: board at seq ${wv.seq}, badge "${wv.badge}", eye count "${wv.count}" on every seat, title "${wv.title}", 0 hand tiles, 0 glow, no controls; turn line "${wv.turnBanner}"`);
 
@@ -371,6 +371,11 @@ try {
     const v = await view(a);
     return v.phase === "over" && v.winRows.length === 3 ? v : null;
   }, "the win on Ember's screen");
+  // #439: the hand is shown once a seat has held a good, so a seat whose hand is not empty at the win shows its five tiles (keeps the
+  // watcher's 0 tiles meaningful, now that an empty hand is also 0).
+  const mineAt = c.state.players.findIndex((p) => p.id === av.localId);
+  if (mineAt < 0 || typeof av.hands?.[mineAt] !== "number") throw new Error(`Ember's own hand at the win: ${JSON.stringify([av.localId, av.hands])}`);
+  if (av.hands[mineAt] > 0 && av.resources !== 5) throw new Error(`Ember holds ${av.hands[mineAt]} goods at the win but shows ${av.resources} hand tiles`);
   const winnerName = c.state.players.find((p) => p.id === wv.winner)?.name;
   if (!winnerName || wv.winHeadline !== `${winnerName} wins`) throw new Error(`the watcher's headline: "${wv.winHeadline}" (winner ${wv.winner})`);
   if (JSON.stringify(wv.winRows) !== JSON.stringify(av.winRows)) throw new Error(`the watcher's table differs from Ember's:\n${JSON.stringify(wv.winRows)}\n${JSON.stringify(av.winRows)}`);

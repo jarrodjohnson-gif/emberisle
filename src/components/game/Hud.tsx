@@ -18,7 +18,7 @@ import { DiscardBar } from "@/components/game/DiscardBar";
 import { TurnCountdown } from "@/components/game/TurnCountdown";
 import { Dice } from "@/components/game/Dice";
 import { TableMenu } from "@/components/game/TableMenu";
-import { ResourceHand } from "@/components/game/Hand";
+import { HandDock } from "@/components/game/Hand";
 import { COST, RESOURCES, RESOURCE_LABEL, type BuildMode, type DevKind, type GameState, type PlayerState, type Resource } from "@/lib/game/types";
 import { hiddenCount, legalRoads, playable, publicVP, totalVP } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
@@ -346,7 +346,7 @@ export function Hud() {
               </p>
             ) : null}
 
-            {spectator ? null : <ResourceHand me={me} />}
+            {spectator ? null : <HandDock me={me} phase={state.phase} />}
 
             {discarder ? <DiscardBar key={`discard-${discarder}`} id={discarder} n={state.discardNeeded[discarder]!} /> : null}
             <TakeFromBar />
