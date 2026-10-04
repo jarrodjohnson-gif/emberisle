@@ -29,7 +29,7 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   ref?: Ref<HTMLButtonElement>;
 }
 
-// Build bible 3.4: 8 px corners, press scales to 0.97 for 80 ms.
+// Build bible 3.4: press scales to 0.97 for 80 ms. Corners are rounded-control, 12 px (docs/design/polish.md).
 export function Button({ variant = "default", size = "default", className, type = "button", back, silent, onPointerDown, onKeyDown, ...props }: ButtonProps) {
   // A disabled or aria-disabled button (an unaffordable build) refuses the press, so it stays quiet.
   const press = (e: SyntheticEvent<HTMLButtonElement>) => {

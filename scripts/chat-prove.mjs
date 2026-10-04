@@ -546,7 +546,7 @@ try {
   const solo = await (await browser.newContext({ viewport: { width: 1280, height: 720 } })).newPage();
   watch("Solo", solo);
   await solo.goto(`http://127.0.0.1:${PORT}/`);
-  await solo.getByRole("button", { name: "Play versus the isle" }).click();
+  await solo.getByRole("button", { name: "Play", exact: true }).click();
   // The human rolls off (#232) when it is up; the bots roll on the app's timer.
   await solo.waitForFunction(() => {
     const s = window.__emberisle.getState();

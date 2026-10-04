@@ -80,7 +80,7 @@ try {
   await page.waitForFunction(() => window.__isle && window.__isle.living.children.length > 20 && window.__isle.land.children.length > 30);
 
   const demo = await page.evaluate(readScene, true);
-  await page.getByRole("button", { name: "Play versus the isle" }).click();
+  await page.getByRole("button", { name: "Play", exact: true }).click();
   await page.waitForFunction(() => window.__emberisle.getState().screen === "play" && window.__emberisle.getState().state);
   await page.waitForTimeout(500);
   const practice = await page.evaluate(readScene, false);

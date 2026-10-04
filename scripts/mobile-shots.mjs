@@ -31,7 +31,7 @@ try {
     page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
     page.on("pageerror", (e) => errors.push(String(e)));
     await page.goto(`http://127.0.0.1:${PORT}/`);
-    await page.getByRole("button", { name: "Play versus the isle" }).click();
+    await page.getByRole("button", { name: "Play", exact: true }).click();
     await page.waitForFunction(myCorner, null, { polling: 100 });
     await page.waitForTimeout(1500);
     await page.screenshot({ path: `${OUT}/03-setup-${w}x${h}.png` });
@@ -54,7 +54,7 @@ try {
       await page.getByTestId("landscape-hint-dismiss").tap();
       if (await hint.isVisible()) fail("landscape hint should dismiss");
       await page.reload();
-      await page.getByRole("button", { name: "Play versus the isle" }).click();
+      await page.getByRole("button", { name: "Play", exact: true }).click();
       await page.waitForFunction(myCorner, null, { polling: 100 });
       await page.waitForTimeout(1500);
       if (await hint.isVisible()) fail("landscape hint came back after a reload in the same session");

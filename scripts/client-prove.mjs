@@ -57,7 +57,7 @@ try {
       if (t && t !== window.__turns.at(-1)) window.__turns.push(t);
     }).observe(document.body, { subtree: true, childList: true, characterData: true });
   });
-  await page.getByRole("button", { name: "Play versus the isle" }).click();
+  await page.getByRole("button", { name: "Play", exact: true }).click();
 
   // #232: roll off for first place. The human rolls on its turn; the bots roll on the app's timer.
   await page.evaluate(() => {
@@ -272,7 +272,7 @@ try {
   console.log("online bots + leave:", JSON.stringify(online));
 
   // #218: a knight can be played before the roll from the HUD; the phase stays roll and Roll still works.
-  await page.getByRole("button", { name: "Play versus the isle" }).click();
+  await page.getByRole("button", { name: "Play", exact: true }).click();
   await page.waitForFunction(() => window.__emberisle.getState().state);
   await page.evaluate(() => {
     const g = window.__emberisle;
@@ -372,7 +372,7 @@ try {
   await page.evaluate(() => window.__emberisle.getState().goTitle());
   // #220: the win screen lists every player with totals that match totalVP, and Look around / Back to menu work.
   // The online step above left the table, so start a fresh practice game for this one.
-  await page.getByRole("button", { name: "Play versus the isle" }).click();
+  await page.getByRole("button", { name: "Play", exact: true }).click();
   await page.waitForFunction(() => window.__emberisle.getState().state);
   await page.evaluate(async () => {
     const g = window.__emberisle;
@@ -500,7 +500,7 @@ try {
   const toTitle = () => page.evaluate(() => window.__emberisle.getState().goTitle());
   const freshPractice = async () => {
     await toTitle();
-    await page.getByRole("button", { name: "Play versus the isle" }).click();
+    await page.getByRole("button", { name: "Play", exact: true }).click();
     await page.waitForFunction(() => window.__emberisle.getState().state);
   };
 
@@ -513,7 +513,7 @@ try {
   await page.reload();
   await page.waitForFunction(() => window.__emberisle);
   const stillOff = await speaker.getAttribute("aria-pressed");
-  await page.getByRole("button", { name: "Play versus the isle" }).click();
+  await page.getByRole("button", { name: "Play", exact: true }).click();
   await page.waitForFunction(() => window.__emberisle.getState().state);
   await page.evaluate(async () => {
     const s = window.__emberisle.getState();
@@ -580,7 +580,7 @@ try {
 
   // #252: the tab title says when it is your move.
   await toTitle();
-  await page.getByRole("button", { name: "Play versus the isle" }).click();
+  await page.getByRole("button", { name: "Play", exact: true }).click();
   await page.waitForFunction(() => window.__emberisle.getState().state);
   const titles = {};
   titles.start = await page.title();
