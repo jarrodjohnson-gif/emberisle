@@ -41,7 +41,8 @@
     "polish-tokens-prove": "node scripts/polish-tokens-prove.mjs",
     "hand-cards-prove": "node scripts/hand-cards-prove.mjs",
     "install-prove": "node scripts/install-prove.mjs",
-    "make-icons": "node scripts/make-icons.mjs"
+    "make-icons": "node scripts/make-icons.mjs",
+    "board-look-prove": "node scripts/board-look-prove.mjs"
   },
   "dependencies": {
     "clsx": "^2.1.1",
