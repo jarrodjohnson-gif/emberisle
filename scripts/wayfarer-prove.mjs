@@ -31,7 +31,7 @@ try {
   page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
   page.on("pageerror", (e) => errors.push(String(e)));
   await page.goto(`http://127.0.0.1:${PORT}/`);
-  await page.getByRole("button", { name: "Play versus the isle" }).click();
+  await page.getByRole("button", { name: "Play", exact: true }).click();
 
   const setup = await page.evaluate(async () => {
     const g = window.__emberisle;

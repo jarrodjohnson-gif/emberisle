@@ -117,6 +117,7 @@ jobs:
       - run: npm run keyboard-place-prove
       - run: npm run reflow-prove
       - run: npm run howto-prove
+      - run: npm run title-prove
       - run: npm run watch-ui-prove
       - run: npm run tabs-prove-4
       - run: npm run polish-tokens-prove

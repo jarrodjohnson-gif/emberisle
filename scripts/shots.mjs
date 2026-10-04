@@ -223,7 +223,7 @@ try {
     await page.addInitScript(() => localStorage.setItem("emberisle-name", "Ember"));
     await page.goto(`http://127.0.0.1:${PORT}/?host=ws://127.0.0.1:${hostPort}`);
     if (BUDGET) {
-      await page.getByRole("button", { name: "Play versus the isle" }).click();
+      await page.getByRole("button", { name: "Play", exact: true }).click();
       await playUntil(page, (st, me) => st.phase === "roll" && st.current === me);
       budget = await frameBudget(page, size);
       console.log("budget", JSON.stringify(budget));
@@ -255,7 +255,7 @@ try {
     await page.getByRole("button", { name: "Leave the table" }).click();
 
     // Setup, versus three bots: the first corner to place, glowing.
-    await page.getByRole("button", { name: "Play versus the isle" }).click();
+    await page.getByRole("button", { name: "Play", exact: true }).click();
     await playUntil(page, (st, me) => st.phase === "setupSettle" && st.current === me);
     await shot(page, "03-setup", size);
 

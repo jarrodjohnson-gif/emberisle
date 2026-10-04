@@ -1,5 +1,6 @@
-// #381: UI text meets WCAG 1.4.3 (4.5:1). Reads computed colours of the title's Join and Host a table buttons
-// (End turn and Start share the `sea` variant) and the "A living island" eyebrow, then checks the ink tokens.
+// #381: UI text meets WCAG 1.4.3 (4.5:1). Reads computed colours of the title's Play (primary) and Join (secondary)
+// buttons and the 12 px "3 bots, no network" line, and checks white on the `sea-ink` and `accent-ink` fills that Start,
+// End turn and the 7 use (#444 took them off the title).
 // Run: npm run contrast-prove
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
@@ -46,12 +47,13 @@ try {
       const s = getComputedStyle(el);
       return { fg: px(s.color), bg: px(s.backgroundColor) };
     };
-    const eyebrow = getComputedStyle([...document.querySelectorAll("p")].find((p) => p.textContent === "A living island"));
+    const caption = getComputedStyle([...document.querySelectorAll("p")].find((p) => p.textContent === "3 bots, no network"));
     const root = getComputedStyle(document.documentElement);
     return {
+      play: btn("Play"),
       join: btn("Join"),
-      host: btn("Host a table"),
-      eyebrow: px(eyebrow.color),
+      caption: px(caption.color),
+      seaInk: px(root.getPropertyValue("--color-sea-ink").trim()),
       surface: px(root.getPropertyValue("--color-surface").trim()),
       bg: px(root.getPropertyValue("--color-bg").trim()),
       accentInk: px(root.getPropertyValue("--color-accent-ink").trim()),
@@ -62,10 +64,12 @@ try {
   const errorInk = /text-accent-ink/.test(readFileSync("src/components/game/EmberisleApp.tsx", "utf8")) ? read.accentInk : read.accent;
   await page.screenshot({ path: "test-results/contrast-prove.png" });
   const checks = [
-    ["Join (sea) white on fill", ratio(read.join.fg, read.join.bg)],
-    ["Host a table (accent) white on fill", ratio(read.host.fg, read.host.bg)],
-    ["eyebrow 12 px on surface", ratio(read.eyebrow, read.surface)],
-    ["eyebrow 12 px on bg", ratio(read.eyebrow, read.bg)],
+    ["Play (primary) on fill", ratio(read.play.fg, read.play.bg)],
+    ["Join (secondary) on fill", ratio(read.join.fg, read.join.bg)],
+    ["white on sea-ink (Start, End turn)", ratio([255, 255, 255], read.seaInk)],
+    ["white on accent-ink", ratio([255, 255, 255], read.accentInk)],
+    ["caption 12 px on surface", ratio(read.caption, read.surface)],
+    ["caption 12 px on bg", ratio(read.caption, read.bg)],
     ["error line 14 px on surface", ratio(errorInk, read.surface)],
     ["error line 14 px on bg", ratio(errorInk, read.bg)],
   ];
