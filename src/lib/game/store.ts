@@ -64,14 +64,26 @@ function soundFor(before: GameState | null, after: GameState): SoundName | null 
   return null;
 }
 
+// Knocks waiting for their piece to land (#438). Leaving the table or starting a game drops them, so none plays late.
+const knocks = new Set<ReturnType<typeof setTimeout>>();
+function clearKnocks() {
+  for (const t of knocks) clearTimeout(t);
+  knocks.clear();
+}
+
 // Play the sound for a state change, and the your-turn chime when the turn comes round to this browser's seat
 // (not in hotseat, where every seat is this browser).
 function hear(before: GameState | null, after: GameState, me: string, mode: GameStore["mode"]) {
   const sound = soundFor(before, after);
   // A piece knocks when it lands, not when it is picked (#438); reduced motion has no fall, so it knocks at once.
   const land = sound && sound in LAND_MS && !calmMotion() ? LAND_MS[sound as keyof typeof LAND_MS] : 0;
-  if (sound && land) setTimeout(() => play(sound), land);
-  else if (sound) play(sound);
+  if (sound && land) {
+    const t = setTimeout(() => {
+      knocks.delete(t);
+      play(sound);
+    }, land);
+    knocks.add(t);
+  } else if (sound) play(sound);
   if (mode !== "hotseat" && before && after.current === me && before.current !== me && after.phase !== "over") yourTurn();
 }
 
@@ -346,6 +358,7 @@ export const useGame = create<GameStore>((set, get) => ({
   startAi: () => {
     // A table left dialing (a reload with a saved seat) must not pull a practice game back to the lobby.
     clearWake();
+    clearKnocks();
     get().net?.close();
     const name = get().name;
     const state = createGame({ humans: [{ name }], bots: 3 });
@@ -366,6 +379,7 @@ export const useGame = create<GameStore>((set, get) => ({
   },
   startHotseat: (count) => {
     clearWake();
+    clearKnocks();
     get().net?.close();
     const humans = Array.from({ length: count }, (_, i) => ({
       name: i === 0 ? get().name : `Seat ${i + 1}`,
@@ -401,6 +415,7 @@ export const useGame = create<GameStore>((set, get) => ({
     // Leaving on purpose frees the seat; only a drop keeps it. A watcher never held one, and the saved seat may be another table's.
     if (!get().spectator) rememberSeat(null);
     clearWake();
+    clearKnocks();
     get().net?.close();
     set({
       screen: "title",

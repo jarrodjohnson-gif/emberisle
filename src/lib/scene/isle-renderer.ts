@@ -639,6 +639,7 @@ export class IsleRenderer {
   private buildPieces(state: GameState, fresh: boolean) {
     disposeGroup(this.pieces);
     const now = performance.now();
+    if (fresh) this.landStart.clear();
     const before = fresh ? new Map<string, PieceKind>() : this.placed;
     const calm = this.calm();
     this.placed = new Map();

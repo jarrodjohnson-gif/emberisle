@@ -7,6 +7,9 @@
 // - a path starts short along its edge (scale z < 0.5) and grows to exactly 1;
 // - a stronghold swaps in larger than 1 and settles exactly at 1;
 // - a redraw with no new piece (a seq bump, as a reconnect gives) leaves every piece at rest;
+// - a fresh board (a first board, as on a page load, or a new island) is drawn standing with nothing landing, even
+//   for a piece the last board did not have;
+// - a rebuild mid-fall (another state push) keeps the fall's original start instead of restarting it;
 // - under prefers-reduced-motion the outpost is at rest on the first frame and knocks at once.
 // Zero console errors. Run: npm run pieces-land-prove
 import assert from "node:assert/strict";
@@ -23,10 +26,13 @@ const browser = await chromium.launch({
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 
-// Play from the title (a real click, so sound unlocks) and roll off until it is this seat's first outpost.
+// Start practice and roll off until it is this seat's first outpost. A key press is the gesture that unlocks sound;
+// the game starts through the store, since the title's Play button can re-render under load mid-click.
 async function toMySetup(page) {
   await page.goto(`http://127.0.0.1:${PORT}/`);
-  await page.getByRole("button", { name: "Play", exact: true }).click();
+  await page.waitForFunction(() => window.__emberisle && window.__isle);
+  await page.keyboard.press("Shift");
+  await page.evaluate(() => window.__emberisle.getState().startAi());
   for (;;) {
     const next = await (
       await page.waitForFunction(
@@ -42,7 +48,9 @@ async function toMySetup(page) {
         { timeout: 90_000 },
       )
     ).jsonValue();
-    if (next === "mine") return;
+    // From here the bots wait (the app re-binds its bot timer to the new runBots and drops the pending one), so no
+    // bot piece is landing while the checks read the board.
+    if (next === "mine") return page.evaluate(() => window.__emberisle.setState({ runBots: () => {} }));
     await page.evaluate(() => window.__emberisle.getState().dispatch({ type: "roll" }));
     await page.waitForFunction(() => {
       const s = window.__emberisle.getState();
@@ -145,6 +153,58 @@ try {
     });
     assert.ok(redraw.length >= 2 && redraw.every((r) => r.rest), `redraw: ${JSON.stringify(redraw.filter((r) => !r.rest))}`);
     console.log(`redraw with no new piece: all ${redraw.length} pieces at rest`);
+
+    // Fresh boards: a first board (as on load) and a new island, each with a piece the last board lacked.
+    const fresh = await page.evaluate((vid) => {
+      const isle = window.__isle;
+      const out = {};
+      const extra = (st) => {
+        const v = st.vertices.find((x) => !x.building && x.id !== vid && !st.vertices.some((y) => y.building && y.id === x.id));
+        v.building = { kind: "outpost", playerId: st.players[1].id };
+        return `v:${v.id}`;
+      };
+      const standing = () => isle.landings.length === 0 && isle.pieces.children.filter((c) => c.userData.key).every((c) => c.position.y === c.userData.restY && c.scale.x === 1 && c.scale.z === 1);
+      let st = structuredClone(isle.lastState);
+      let key = extra(st);
+      st.seq += 1;
+      isle.lastSeq = -1;
+      isle.setBoard(st, isle.lastHi, false);
+      out.first = { standing: standing(), drawn: isle.pieces.children.some((c) => c.userData.key === key) };
+      st = structuredClone(isle.lastState);
+      key = extra(st);
+      st.hexes[0].pip = st.hexes[0].pip === 2 ? 12 : 2;
+      st.seq += 1;
+      isle.setBoard(st, isle.lastHi, false);
+      out.island = { standing: standing(), drawn: isle.pieces.children.some((c) => c.userData.key === key) };
+      return out;
+    }, o.id);
+    assert.deepEqual(fresh, { first: { standing: true, drawn: true }, island: { standing: true, drawn: true } }, "fresh boards draw standing");
+    console.log("fresh boards (first board, new island): drawn standing, nothing landing");
+
+    // Mid-fall carry-over: a new outpost, then a second push 100 ms (virtual) into its fall keeps the original start.
+    const carry = await page.evaluate(() => {
+      const isle = window.__isle;
+      const st = structuredClone(isle.lastState);
+      const v = st.vertices.find((x) => !x.building);
+      v.building = { kind: "outpost", playerId: st.players[0].id };
+      st.seq += 1;
+      isle.setBoard(st, isle.lastHi, false);
+      const key = `v:${v.id}`;
+      const l0 = isle.landings.find((l) => l.obj.userData.key === key);
+      if (!l0) return null;
+      const start = l0.start;
+      isle.stepLandings(start + 100, false);
+      const st2 = structuredClone(isle.lastState);
+      st2.seq += 1;
+      isle.setBoard(st2, isle.lastHi, false);
+      const l1 = isle.landings.find((l) => l.obj.userData.key === key);
+      const r = { sameStart: l1?.start === start, newMesh: l1 && l1.obj !== l0.obj, offRest: l1 && l1.obj.position.y - l1.restY };
+      isle.stepLandings(start + 400, false);
+      r.settled = l1.obj.position.y === l1.restY && isle.landings.length === 0;
+      return r;
+    });
+    assert.ok(carry && carry.sameStart && carry.newMesh && carry.offRest > 0 && carry.offRest < 0.2 && carry.settled, `mid-fall carry-over: ${JSON.stringify(carry)}`);
+    console.log(`mid-fall rebuild: new mesh keeps the original start, ${carry.offRest.toFixed(3)} above rest (not 0.2), then settles`);
 
     // A stronghold over this seat's outpost, drawn straight through the renderer.
     const s = await page.evaluate(([sample, vid]) => {
