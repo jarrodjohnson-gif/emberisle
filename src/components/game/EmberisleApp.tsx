@@ -111,117 +111,121 @@ function Title() {
   }, []);
 
   return (
-    <div
-      data-testid="title-card"
-      className={cn(
-        "absolute z-10",
-        sheet
-          ? "inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] max-h-[55vh] overflow-y-auto rounded-[20px] border border-white/50 bg-white/45 p-5 backdrop-blur-md"
-          : "bottom-5 left-5 w-full max-w-sm pb-[env(safe-area-inset-bottom)] sm:bottom-10 sm:left-10",
-      )}
-    >
-      <div className={sheet ? undefined : "rounded-[20px] border border-white/50 bg-white/45 p-5 backdrop-blur-md sm:p-6"}>
-        <p className="text-xs uppercase tracking-[0.22em] text-sea-ink">A living island</p>
-        <h1 className="mt-2 font-display text-5xl leading-none tracking-tight sm:text-6xl">Emberisle</h1>
-        <p className="mt-3 max-w-sm text-pretty text-muted">
-          Claim hexes, graze the pastures, and trade the land. Sheep wander. Boats rock. The wayfarer crosses the wastes.
-        </p>
-        <label className="mt-6 block text-xs uppercase tracking-wide text-muted">
-          Your name
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="mt-1 h-11 w-full rounded-[12px] border border-border bg-surface px-3 text-base text-fg"
-          />
-        </label>
-        <div role="radiogroup" aria-label="Your color" className="mt-3 flex gap-2">
-          {PLAYER_COLORS.map((c, i) => (
-            <button
-              key={c}
-              type="button"
-              role="radio"
-              aria-checked={!taken.includes(c) && color === c}
-              aria-label={taken.includes(c) ? `${PLAYER_NAMES[i]} (taken)` : PLAYER_NAMES[i]}
-              title={taken.includes(c) ? `${PLAYER_NAMES[i]} (taken)` : PLAYER_NAMES[i]}
-              disabled={taken.includes(c)}
-              onClick={() => setColor(c)}
-              className={cn("size-8 rounded-full border-2 transition", taken.includes(c) && "cursor-not-allowed opacity-35")}
-              style={{ background: c, borderColor: !taken.includes(c) && color === c ? "#1c1915" : "transparent" }}
-            />
-          ))}
-        </div>
-        <div className="mt-4 flex flex-col gap-2">
-          <Button size="lg" variant="accent" onClick={hostTable}>
-            Host a table
-          </Button>
-          <form
-            aria-label="Join code"
-            className="flex gap-2"
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (join.length !== 4) return;
-              // Enter does what the primary button does.
-              if (watchLink) watchTable(join);
-              else joinTable(join);
-            }}
-          >
+    <>
+      <div
+        data-testid="title-card"
+        className={cn(
+          "absolute z-10",
+          sheet
+            ? "inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] max-h-[55vh] overflow-y-auto rounded-[20px] border border-white/50 bg-white/45 p-5 backdrop-blur-md"
+            : "bottom-5 left-5 w-full max-w-sm pb-[env(safe-area-inset-bottom)] sm:bottom-10 sm:left-10",
+        )}
+      >
+        <div className={sheet ? undefined : "rounded-[20px] border border-white/50 bg-white/45 p-5 backdrop-blur-md sm:p-6"}>
+          <p className="text-xs uppercase tracking-[0.22em] text-sea-ink">A living island</p>
+          <h1 className="mt-2 font-display text-5xl leading-none tracking-tight sm:text-6xl">Emberisle</h1>
+          <p className="mt-3 max-w-sm text-pretty text-muted">
+            Claim hexes, graze the pastures, and trade the land. Sheep wander. Boats rock. The wayfarer crosses the wastes.
+          </p>
+          <label className="mt-6 block text-xs uppercase tracking-wide text-muted">
+            Your name
             <input
-              value={join}
-              onChange={(e) => setJoin(e.target.value.toUpperCase())}
-              placeholder="Join code"
-              aria-label="Join code"
-              autoCapitalize="characters"
-              autoComplete="off"
-              maxLength={4}
-              className="h-11 min-w-0 flex-1 rounded-[12px] border border-border bg-surface px-3 tracking-[0.3em]"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="mt-1 h-11 w-full rounded-[12px] border border-border bg-surface px-3 text-base text-fg"
             />
-            <Button size="lg" variant={watchLink ? "outline" : "sea"} type="submit">
-              Join
+          </label>
+          <div role="radiogroup" aria-label="Your color" className="mt-3 flex gap-2">
+            {PLAYER_COLORS.map((c, i) => (
+              <button
+                key={c}
+                type="button"
+                role="radio"
+                aria-checked={!taken.includes(c) && color === c}
+                aria-label={taken.includes(c) ? `${PLAYER_NAMES[i]} (taken)` : PLAYER_NAMES[i]}
+                title={taken.includes(c) ? `${PLAYER_NAMES[i]} (taken)` : PLAYER_NAMES[i]}
+                disabled={taken.includes(c)}
+                onClick={() => setColor(c)}
+                className={cn("size-8 rounded-full border-2 transition", taken.includes(c) && "cursor-not-allowed opacity-35")}
+                style={{ background: c, borderColor: !taken.includes(c) && color === c ? "#1c1915" : "transparent" }}
+              />
+            ))}
+          </div>
+          <div className="mt-4 flex flex-col gap-2">
+            <Button size="lg" variant="accent" onClick={hostTable}>
+              Host a table
             </Button>
-            <Button
-              size="lg"
-              variant={watchLink ? "sea" : "outline"}
-              type="button"
-              onClick={() => {
-                if (join.length === 4) watchTable(join);
+            <form
+              aria-label="Join code"
+              className="flex gap-2"
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (join.length !== 4) return;
+                // Enter does what the primary button does.
+                if (watchLink) watchTable(join);
+                else joinTable(join);
               }}
             >
-              Watch
-            </Button>
-          </form>
-          {error ? (
-            <p role="alert" className="text-sm text-accent-ink">
-              {error}
-            </p>
-          ) : null}
-          <div className="mt-1 flex flex-wrap gap-2">
-            <Button size="sm" variant="outline" className="flex-1 whitespace-nowrap px-2" onClick={startAi}>
-              Play versus the isle
-            </Button>
-            <Button size="sm" variant="outline" className="flex-1 whitespace-nowrap px-2" onClick={() => startHotseat(4)}>
-              Four seats, one table
-            </Button>
-          </div>
-          <div className="flex items-center justify-center gap-1">
-            <Button variant="ghost" onClick={(e) => setHowTo(!howTo, e.currentTarget)}>
-              How to play
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              data-testid="sound-toggle"
-              aria-label={muted ? "Table sounds off" : "Table sounds on"}
-              aria-pressed={!muted}
-              title={muted ? "Table sounds off" : "Table sounds on"}
-              onClick={() => setMuted(!muted)}
-            >
-              {muted ? <VolumeX className="size-4" /> : <Volume2 className="size-4" />}
-            </Button>
+              <input
+                value={join}
+                onChange={(e) => setJoin(e.target.value.toUpperCase())}
+                placeholder="Join code"
+                aria-label="Join code"
+                autoCapitalize="characters"
+                autoComplete="off"
+                maxLength={4}
+                className="h-11 min-w-0 flex-1 rounded-[12px] border border-border bg-surface px-3 tracking-[0.3em]"
+              />
+              <Button size="lg" variant={watchLink ? "outline" : "sea"} type="submit">
+                Join
+              </Button>
+              <Button
+                size="lg"
+                variant={watchLink ? "sea" : "outline"}
+                type="button"
+                onClick={() => {
+                  if (join.length === 4) watchTable(join);
+                }}
+              >
+                Watch
+              </Button>
+            </form>
+            {error ? (
+              <p role="alert" className="text-sm text-accent-ink">
+                {error}
+              </p>
+            ) : null}
+            <div className="mt-1 flex flex-wrap gap-2">
+              <Button size="sm" variant="outline" className="flex-1 whitespace-nowrap px-2" onClick={startAi}>
+                Play versus the isle
+              </Button>
+              <Button size="sm" variant="outline" className="flex-1 whitespace-nowrap px-2" onClick={() => startHotseat(4)}>
+                Four seats, one table
+              </Button>
+            </div>
+            <div className="flex items-center justify-center gap-1">
+              <Button variant="ghost" onClick={(e) => setHowTo(!howTo, e.currentTarget)}>
+                How to play
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                data-testid="sound-toggle"
+                aria-label={muted ? "Table sounds off" : "Table sounds on"}
+                aria-pressed={!muted}
+                title={muted ? "Table sounds off" : "Table sounds on"}
+                onClick={() => setMuted(!muted)}
+              >
+                {muted ? <VolumeX className="size-4" /> : <Volume2 className="size-4" />}
+              </Button>
+            </div>
           </div>
         </div>
       </div>
+      {/* Beside the card, not inside it: the card is absolute (and scrolls on a phone), so a dialog inside it is
+          clipped to the card's box and its Close can sit off-screen. */}
       {howTo ? <HowTo onClose={() => setHowTo(false)} /> : null}
-    </div>
+    </>
   );
 }
 

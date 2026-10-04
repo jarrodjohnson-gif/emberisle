@@ -3,6 +3,8 @@
 // #390: a seat change must not carry the last seat's flash tint onto the new seat's tiles.
 // #232: first, the Roll button carries all four seats through the roll-off for first place.
 // #380: each turn change and each rule error reaches a live region (recorded by a MutationObserver, not polled).
+// #410: with the bank out of ore, the Plenty form greys ore out (disabled, aria-disabled, described) and it cannot be picked.
+// #412: a pick the bank empties while the form is open moves to a card it still has; an empty bank turns Plenty off.
 import { existsSync } from "node:fs";
 import { chromium } from "playwright";
 import { createServer } from "vite";
@@ -216,6 +218,76 @@ try {
   await page.getByText(`${curName}: discard 5`).waitFor({ timeout: STEP_MS });
   await page.waitForTimeout(300);
   console.log("roller discards: bar and banner side by side");
+
+  // #410: the bank has no ore; the seat holds a plenty from an earlier turn.
+  await page.evaluate(() => {
+    const g = window.__emberisle;
+    const st = structuredClone(g.getState().state);
+    const me = st.players.find((p) => p.id === st.current);
+    st.phase = "main";
+    st.discardNeeded = {};
+    st.playedCard = false;
+    me.resources = { timber: 0, clay: 0, wool: 0, grain: 0, ore: 0 };
+    me.hidden.plenty = 1;
+    me.boughtThisTurn.plenty = 0;
+    st.players.find((p) => p.id !== st.current).resources.ore += st.bank.ore;
+    st.bank.ore = 0;
+    st.seq += 1;
+    g.setState({ state: st, pendingSteal: null, error: null });
+  });
+  const plentyA = page.getByLabel("First plenty resource");
+  await plentyA.waitFor({ timeout: STEP_MS });
+  const greyed = await page.locator("select[name^=plenty]").evaluateAll((els) => els.map((s) => {
+    const ore = s.querySelector('option[value="ore"]');
+    return { value: s.value, why: s.getAttribute("aria-description"), disabled: ore.disabled, aria: ore.getAttribute("aria-disabled"), text: ore.textContent,
+      othersOn: [...s.options].filter((o) => o.value !== "ore").every((o) => !o.disabled && !o.hasAttribute("aria-disabled")) };
+  }));
+  console.log("plenty with no ore in the bank:", JSON.stringify(greyed));
+  if (greyed.length !== 2 || greyed.some((g) => g.value === "ore" || !g.disabled || g.aria !== "true" || g.text !== "Ore (bank empty)" || g.why !== "The bank has no ore." || !g.othersOn)) {
+    throw new Error(`ore not greyed out: ${JSON.stringify(greyed)}`);
+  }
+  // Ore is the last option: the keyboard cannot step from grain onto it.
+  await plentyA.selectOption("grain");
+  await plentyA.focus();
+  await page.keyboard.press("ArrowDown");
+  await page.keyboard.press("End");
+  const stepped = await plentyA.inputValue();
+  if (stepped === "ore") throw new Error("the keyboard picked ore from an empty bank");
+  await page.getByRole("button", { name: "Plenty", exact: true }).click();
+  await page.waitForFunction(() => window.__emberisle.getState().state.playedCard, null, { timeout: STEP_MS });
+  const paid = await page.evaluate(() => { const st = window.__emberisle.getState().state; const me = st.players.find((p) => p.id === st.current); return { res: me.resources, plenty: me.hidden.plenty, ore: st.bank.ore }; });
+  console.log(`plenty paid after the keyboard stayed on ${stepped}:`, JSON.stringify(paid));
+  if (paid.plenty !== 0 || paid.res.ore !== 0 || paid.ore !== 0 || Object.values(paid.res).reduce((a, b) => a + b, 0) !== 2) throw new Error(`plenty paid wrong: ${JSON.stringify(paid)}`);
+
+  // #412: the form is open on timber and the bank runs out of timber; both picks move to clay and the click still pays.
+  // Then with the bank empty of everything, Plenty is off and says why.
+  const plentyAgain = (bank) => page.evaluate((bank) => {
+    const g = window.__emberisle;
+    const st = structuredClone(g.getState().state);
+    const me = st.players.find((p) => p.id === st.current);
+    st.playedCard = false;
+    me.resources = { timber: 0, clay: 0, wool: 0, grain: 0, ore: 0 };
+    me.hidden.plenty = 1;
+    Object.assign(st.bank, bank);
+    st.seq += 1;
+    g.setState({ state: st, error: null });
+  }, bank);
+  const picks = () => page.locator("select[name^=plenty]").evaluateAll((els) => els.map((s) => s.value));
+  await plentyAgain({ timber: 5, clay: 5, wool: 5, grain: 5, ore: 5 });
+  await page.waitForFunction(() => [...document.querySelectorAll("select[name^=plenty]")].map((s) => s.value).join() === "timber,timber", null, { timeout: STEP_MS });
+  await plentyAgain({ timber: 0 });
+  await page.waitForFunction(() => [...document.querySelectorAll("select[name^=plenty]")].map((s) => s.value).join() === "clay,clay", null, { timeout: STEP_MS })
+    .catch(async () => { throw new Error(`picks did not leave the emptied timber: ${await picks()}`); });
+  await page.getByRole("button", { name: "Plenty", exact: true }).click();
+  await page.waitForFunction(() => window.__emberisle.getState().state.playedCard, null, { timeout: STEP_MS });
+  const drained = await page.evaluate(() => { const st = window.__emberisle.getState().state; return st.players.find((p) => p.id === st.current).resources; });
+  console.log("timber emptied with the form open: picks moved to clay, paid", JSON.stringify(drained));
+  if (drained.clay !== 2 || drained.timber !== 0) throw new Error(`drained plenty paid wrong: ${JSON.stringify(drained)}`);
+  await plentyAgain({ timber: 0, clay: 0, wool: 0, grain: 0, ore: 0 });
+  await page.getByText("The bank is empty.").waitFor({ timeout: STEP_MS });
+  const plentyOff = await page.getByRole("button", { name: "Plenty", exact: true }).isDisabled();
+  console.log(`bank empty of everything: Plenty disabled ${plentyOff}, reason shown`);
+  if (!plentyOff) throw new Error("Plenty is clickable with an empty bank");
 } catch (e) {
   console.error("hotseat-prove failed:", e);
   code = 1;

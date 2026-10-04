@@ -32,7 +32,8 @@ function gainsBetween(before: GameState, after: GameState) {
 
 // An award that changed hands between two states, as one line, or null.
 function awardLine(before: GameState | null, after: GameState) {
-  if (!before) return null;
+  // After a win the next state is a rematch's new game (#266): nobody lost anything.
+  if (!before || before.phase === "over") return null;
   const who = (id: string | null) => after.players.find((p) => p.id === id)?.name ?? "Nobody";
   if (after.longestRoad !== before.longestRoad) {
     return after.longestRoad ? `${who(after.longestRoad)} holds the longest path` : `${who(before.longestRoad)} loses the longest path`;
@@ -205,6 +206,8 @@ interface GameStore {
   rejoinTable: () => boolean;
   setReady: (value: boolean) => void;
   startTable: () => void;
+  // A rematch (#266): online the host asks for it; hotseat deals it here, the last winner first.
+  playAgain: () => void;
   // Table chat (docs/design/chat.md)
   // This tab's seat id (s0...), from welcome. localId is the player id once the game starts.
   seatId: string;
@@ -608,6 +611,27 @@ export const useGame = create<GameStore>((set, get) => ({
   startTable: () => {
     if (!get().spectator) get().net?.start();
   },
+  playAgain: () => {
+    const { mode, state, net, spectator } = get();
+    if (spectator) return;
+    if (mode === "online") return net?.again();
+    if (mode !== "hotseat" || state?.phase !== "over") return;
+    const winner = state.players.find((p) => p.id === state.winner)!;
+    const ordered = [winner, ...state.players.filter((p) => p !== winner)];
+    const next = createGame({ humans: ordered.map((p) => ({ name: p.name })), bots: 0, winnerFirst: true });
+    set({
+      state: next,
+      localId: "p0",
+      gameLog: appendLog(get().gameLog, next.log),
+      error: null,
+      toast: null,
+      buildMode: "none",
+      roadPicks: [],
+      pendingPlace: null,
+      pendingSteal: null,
+      tradeOpen: false,
+    });
+  },
   setChatOpen: (v) => {
     try {
       localStorage.setItem(CHAT_OPEN_KEY, v ? "1" : "0");
@@ -711,6 +735,8 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       const turnTimer = !turnDeadline || !turnPlayer ? null : prev?.deadline === turnDeadline && prev.player === turnPlayer ? prev : { at: turnDeadline - skew, player: turnPlayer, deadline: turnDeadline };
       // The first state after a join or a page-load rejoin seeds the log with what the engine kept, the way practice does.
       set({ legal, turnTimer, gameLog: get().state ? get().gameLog : appendLog(get().gameLog, game.log) });
+      // A rematch's new game (#266): drop any half-made move or open panel left over from the win.
+      if (get().state?.phase === "over" && game.phase !== "over") set({ buildMode: "none", roadPicks: [], pendingPlace: null, tradeOpen: false });
       get().loadState(game, me, get().isHost, get().code);
       if (rollOff) showBanner(set, rollOff);
       else if (swing) showBanner(set, swing);

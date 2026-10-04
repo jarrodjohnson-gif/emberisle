@@ -446,6 +446,30 @@ function orderOk(g) {
   if (ties === 0) fail("no tie in 400 roll-offs");
   ok("before setup, each player rolls one die; the highest roll places first; tied players reroll among themselves", true);
   console.log(`roll-off: 400 full roll-offs (3 and 4 seats), ${ties} with a tie, order ok, rng untouched`);
+
+  // A rematch (#266): p0, the last winner, places first without a die; the others roll off behind it by the same rule.
+  let restTies = 0;
+  for (const humans of [3, 4]) {
+    for (let i = 0; i < 200; i++) {
+      const s = createGame({ humans: Array.from({ length: humans }, (_, k) => ({ name: `P${k}` })), bots: 0, seed: 300 + i, winnerFirst: true });
+      const ids = s.players.map((p) => p.id).slice(1).join();
+      const startOk = s.phase === "rollOff" && s.current === "p1" && s.rollOff.first === "p0" && s.rollOff.pending.join() === ids && s.log.at(-1) === "The isle is dealt. P0 places first; the rest roll for their order.";
+      if (!startOk) fail("rematch roll-off start", { current: s.current, rollOff: s.rollOff, log: s.log });
+      if (applyAction(s, "p0", { type: "roll" }).error !== "Not your turn.") fail("the winner rolled");
+      const end = rollOff(s);
+      if (end.log.some((l) => / tie at \d and roll again\.$/.test(l))) restTies++;
+      const rest = { ...end, players: end.players.slice(1), rollOff: { ...end.rollOff, first: undefined } };
+      const tailOk = orderOk({ ...rest, current: rest.players[0].id });
+      const names = end.players.slice(1).map((p) => p.name);
+      const tail = names.length === 2 ? names.join(" and ") : `${names.slice(0, -1).join(", ")}, and ${names.at(-1)}`;
+      if (!(end.players[0].id === "p0" && end.current === "p0" && !("p0" in end.rollOff.rolls) && tailOk && end.rng === s.rng && end.log.at(-1) === `P0 places first, then ${tail}.`)) {
+        fail("rematch roll-off order", { humans, players: end.players.map((p) => p.id), rolls: end.rollOff.rolls, log: end.log.at(-1) });
+      }
+    }
+  }
+  if (restTies === 0) fail("no tie among the rest in 400 rematch roll-offs");
+  ok("in a rematch at the same table, the last game's winner places first; the others roll off for the remaining order", true);
+  console.log(`roll-off: 400 rematch roll-offs (3 and 4 seats), p0 first with no die, ${restTies} with a tie among the rest, rest ordered by the roll-off rule`);
 }
 
 // Setup
@@ -666,6 +690,22 @@ const total = (g, r) => g.bank[r] + g.players.reduce((n, p) => n + p.resources[r
   );
   const again = applyAction(s, "p0", { type: "playMonopoly", resource: "ore" });
   effect("plenty sets playedCard so a second fortune that turn is refused", s.playedCard === true && again.error === "Cannot play that.", again.error);
+}
+// #410 (decision #360): a plenty may not name a card the bank cannot pay; the card stays in hand.
+{
+  const g = fresh();
+  giveCards(g.players[0], {});
+  g.players[0].hidden.plenty = 1;
+  g.players[1].resources.ore += g.bank.ore;
+  g.bank.ore = 0;
+  g.bank.grain = 1;
+  const kept = (r) => r.state.players[0].hidden.plenty === 1 && !r.state.playedCard && hand(r.state.players[0]) === 0 && r.state.bank.grain === 1;
+  const empty = applyAction(g, "p0", { type: "playPlenty", resources: ["grain", "ore"] });
+  effect("plenty naming a card the bank has none of is refused, card stays in hand", empty.error === "The bank has no ore." && kept(empty), { error: empty.error, bank: empty.state.bank });
+  const twice = applyAction(g, "p0", { type: "playPlenty", resources: ["grain", "grain"] });
+  effect("plenty naming grain twice with one grain in the bank is refused", twice.error === "The bank has only 1 grain." && kept(twice), { error: twice.error, bank: twice.state.bank });
+  const r = applyAction(g, "p0", { type: "playPlenty", resources: ["grain", "wool"] });
+  effect("plenty naming cards the bank holds still pays them", !r.error && r.state.players[0].resources.grain === 1 && r.state.players[0].resources.wool === 1 && r.state.bank.grain === 0, r.error);
 }
 {
   const g = fresh();

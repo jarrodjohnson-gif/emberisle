@@ -457,6 +457,7 @@ Client intents:
 { "type": "hello", "code": "K7QP", "watch": true }
 { "type": "ready", "value": true }
 { "type": "start" }
+{ "type": "again" }
 { "type": "roll" }
 { "type": "place", "kind": "outpost", "id": "v:1,0,0" }
 { "type": "place", "kind": "path", "id": "e:..." }
