@@ -64,11 +64,26 @@ function soundFor(before: GameState | null, after: GameState): SoundName | null 
   return null;
 }
 
+// Knocks waiting for their piece to land (#438). Leaving the table or starting a game drops them, so none plays late.
+const knocks = new Set<ReturnType<typeof setTimeout>>();
+function clearKnocks() {
+  for (const t of knocks) clearTimeout(t);
+  knocks.clear();
+}
+
 // Play the sound for a state change, and the your-turn chime when the turn comes round to this browser's seat
 // (not in hotseat, where every seat is this browser).
 function hear(before: GameState | null, after: GameState, me: string, mode: GameStore["mode"]) {
   const sound = soundFor(before, after);
-  if (sound) play(sound);
+  // A piece knocks when it lands, not when it is picked (#438); reduced motion has no fall, so it knocks at once.
+  const land = sound && sound in LAND_MS && !calmMotion() ? LAND_MS[sound as keyof typeof LAND_MS] : 0;
+  if (sound && land) {
+    const t = setTimeout(() => {
+      knocks.delete(t);
+      play(sound);
+    }, land);
+    knocks.add(t);
+  } else if (sound) play(sound);
   if (mode !== "hotseat" && before && after.current === me && before.current !== me && after.phase !== "over") yourTurn();
 }
 
@@ -116,6 +131,7 @@ import { chooseBotAction, chooseTradeAsk, shouldAcceptTrade } from "./ai";
 import { PLAYER_COLORS, RESOURCES, type Action, type BuildMode, type GameState } from "./types";
 import { connectTable, hostUrl, type Bag, type ChatLine, type Legal, type Me, type Reaction, type Seat, type TableClient } from "@/lib/net/table";
 import { play, yourTurn, type SoundName } from "@/lib/sound";
+import { calmMotion, LAND_MS } from "@/lib/scene/landing";
 
 // The ask-the-table offer every seat is looking at (docs/BUILD_BIBLE.md 4.4). `until` is when the host's 20 s run out.
 export interface OpenOffer {
@@ -355,6 +371,7 @@ export const useGame = create<GameStore>((set, get) => ({
   startAi: () => {
     // A table left dialing (a reload with a saved seat) must not pull a practice game back to the lobby.
     clearWake();
+    clearKnocks();
     get().net?.close();
     // A new game owes nothing to the last one's offer or bot ask.
     clearOfferTimers();
@@ -381,6 +398,7 @@ export const useGame = create<GameStore>((set, get) => ({
   },
   startHotseat: (count) => {
     clearWake();
+    clearKnocks();
     get().net?.close();
     clearOfferTimers();
     botAsked = "";
@@ -421,6 +439,7 @@ export const useGame = create<GameStore>((set, get) => ({
     // Leaving on purpose frees the seat; only a drop keeps it. A watcher never held one, and the saved seat may be another table's.
     if (!get().spectator) rememberSeat(null);
     clearWake();
+    clearKnocks();
     clearOfferTimers();
     botAsked = "";
     get().net?.close();

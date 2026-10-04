@@ -112,6 +112,7 @@ jobs:
       - run: npm run wayfarer-prove
       - run: npm run tokens-prove
       - run: npm run pieces-prove
+      - run: npm run pieces-land-prove
       - run: npm run idle-prove
       - run: npm run contrast-prove
       - run: npm run keyboard-place-prove

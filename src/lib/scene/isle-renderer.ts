@@ -20,6 +20,7 @@ import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { hexHeight, worldOfHex } from "@/lib/game/board";
 import { HEX_SIZE, SQRT3, hexCorners, hexesInRadius, vertexId } from "@/lib/game/hex";
+import { LAND_MS } from "@/lib/scene/landing";
 import { mulberry32, hashStr } from "@/lib/utils";
 import { PAINT, RIM } from "@/lib/scene/palette";
 import { payingHexes } from "@/lib/game/rules";
@@ -106,6 +107,11 @@ export class IsleRenderer {
   private lastState: GameState | null = null;
   private lastHi: Highlights = { vertices: [], edges: [], hexes: [] };
   private lastInteractive = false;
+  // #438: each piece on the board by key ("e:<edge>" / "v:<vertex>") and its kind, and when the ones still landing were
+  // placed (performance.now()), so a rebuild mid-fall carries the fall over to the new mesh instead of restarting it.
+  private placed = new Map<string, PieceKind>();
+  private landStart = new Map<string, number>();
+  private landings: { obj: THREE.Object3D; kind: PieceKind; start: number; restY: number }[] = [];
   private legalIds = new Set<string>();
   private down = { x: 0, y: 0 };
   private stopped = false;
@@ -333,7 +339,7 @@ export class IsleRenderer {
       this.lastLand = land;
     }
     if (this.lastSeq !== state.seq) {
-      this.buildPieces(state);
+      this.buildPieces(state, landChanged || this.lastSeq === -1);
       this.lastSeq = state.seq;
     }
     this.buildMarks(state, highlights, interactive);
@@ -541,6 +547,7 @@ export class IsleRenderer {
       this.wasCalm = calm;
       this.wake();
     }
+    this.stepLandings(now, calm);
     if (calm && this.walk) {
       this.walk = null;
       this.startWalk();
@@ -673,8 +680,28 @@ export class IsleRenderer {
     }
   }
 
-  private buildPieces(state: GameState) {
+  // A new board (or a first one, as on a reconnect) is drawn standing; only pieces added since the last board land.
+  private buildPieces(state: GameState, fresh: boolean) {
     disposeGroup(this.pieces);
+    const now = performance.now();
+    if (fresh) this.landStart.clear();
+    const before = fresh ? new Map<string, PieceKind>() : this.placed;
+    const calm = this.calm();
+    this.placed = new Map();
+    this.landings = [];
+    const land = (obj: THREE.Object3D, key: string, kind: PieceKind) => {
+      obj.userData = { piece: kind, key, restY: obj.position.y };
+      this.placed.set(key, kind);
+      const start = !fresh && !calm && before.get(key) !== kind ? now : this.landStart.get(key);
+      if (start === undefined || now - start >= LAND_MS[LAND_SOUND[kind]]) {
+        this.landStart.delete(key);
+        return;
+      }
+      this.landStart.set(key, start);
+      const l = { obj, kind, start, restY: obj.position.y };
+      this.landings.push(l);
+      poseLanding(l, now);
+    };
     const vmap = new Map(state.vertices.map((v) => [v.id, v]));
     const pmap = new Map(state.players.map((p) => [p.id, p]));
     const tops = hexTops(state);
@@ -690,6 +717,7 @@ export class IsleRenderer {
       road.position.set((a.x + b.x) / 2, edgeTop(tops, a, b), (a.z + b.z) / 2);
       road.rotation.y = Math.atan2(dx, dz);
       this.pieces.add(road);
+      land(road, `e:${e.id}`, "path");
     }
 
     for (const v of state.vertices) {
@@ -698,6 +726,7 @@ export class IsleRenderer {
       const house = v.building.kind === "stronghold" ? makeStronghold(pl?.color ?? "#ccc") : makeOutpost(pl?.color ?? "#ccc");
       house.position.set(v.x, vertexTop(tops, v), v.z);
       this.pieces.add(house);
+      land(house, `v:${v.id}`, v.building.kind);
     }
 
     for (const b of this.boats) {
@@ -708,6 +737,14 @@ export class IsleRenderer {
         sail.material.color.set(claimed ? pmap.get(claimed)?.color ?? "#eee" : "#f4efe4");
       }
     }
+  }
+
+  // Pose every landing piece for this moment; a finished one is left exactly at rest. Reduced motion skips to rest.
+  private stepLandings(now: number, calm: boolean) {
+    if (!this.landings.length) return;
+    for (const l of this.landings) poseLanding(l, calm ? Infinity : now);
+    this.landings = this.landings.filter((l) => !calm && now - l.start < LAND_MS[LAND_SOUND[l.kind]]);
+    for (const [key, start] of this.landStart) if (calm || now - start >= LAND_MAX) this.landStart.delete(key);
   }
 
   private buildMarks(state: GameState, hi: Highlights, interactive: boolean) {
@@ -1208,6 +1245,25 @@ function makeStronghold(seat: string) {
   ];
   for (const x of [-0.12, 0.12]) for (const z of [-0.12, 0.12]) parts.push(slab(0.08, 0.09, 0.08, seat, 0.3, x, z));
   return piece(parts);
+}
+
+type PieceKind = "path" | "outpost" | "stronghold";
+const LAND_SOUND = { path: "path_place", outpost: "outpost_place", stronghold: "stronghold_place" } as const;
+const LAND_MAX = Math.max(...Object.values(LAND_MS));
+// polish.md: --ease-out for a path growing, --ease-snap for what lands (a small overshoot reads as weight).
+const easeOut = (u: number) => 1 - (1 - u) ** 5;
+const easeSnap = (u: number) => 1 + 2.70158 * (u - 1) ** 3 + 1.70158 * (u - 1) ** 2;
+
+// A path grows from 0.2 along its edge; an outpost drops 0.2 and settles; a stronghold swaps in at 1.05 and settles.
+function poseLanding(l: { obj: THREE.Object3D; kind: PieceKind; start: number; restY: number }, now: number) {
+  const u = Math.min(1, Math.max(0, (now - l.start) / LAND_MS[LAND_SOUND[l.kind]]));
+  const { obj } = l;
+  if (u >= 1) {
+    obj.position.y = l.restY;
+    obj.scale.set(1, 1, 1);
+  } else if (l.kind === "path") obj.scale.set(1, 1, 0.2 + 0.8 * easeOut(u));
+  else if (l.kind === "outpost") obj.position.y = l.restY + 0.2 * (1 - easeSnap(u));
+  else obj.scale.setScalar(1.05 - 0.05 * easeSnap(u));
 }
 
 function makePath(seat: string, len: number) {

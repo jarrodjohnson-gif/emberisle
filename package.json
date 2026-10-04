@@ -18,6 +18,7 @@
     "trade-prove": "node scripts/trade-prove.mjs",
     "practice-trade-prove": "node --import ./server/register.mjs scripts/practice-trade-prove.mjs",
     "pieces-prove": "node --import ./server/register.mjs scripts/pieces-prove.mjs",
+    "pieces-land-prove": "node scripts/pieces-land-prove.mjs",
     "watch-ui-prove": "node --import ./server/register.mjs scripts/watch-ui-prove.mjs",
     "tokens-prove": "node scripts/tokens-prove.mjs",
     "idle-prove": "node scripts/idle-prove.mjs",
