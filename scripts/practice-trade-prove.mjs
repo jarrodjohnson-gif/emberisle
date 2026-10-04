@@ -52,7 +52,7 @@ try {
   page.on("pageerror", (e) => errors.push(String(e)));
   page.on("response", (r) => r.status() >= 400 && errors.push(`${r.status()} ${r.url()}`));
   await page.goto(`http://127.0.0.1:${PORT}/`);
-  await page.getByRole("button", { name: "Play versus the isle" }).click();
+  await page.getByRole("button", { name: "Play", exact: true }).click();
   await page.waitForFunction(() => window.__emberisle?.getState().state);
   // Each step starts a fresh practice game (as the Title's button does) and swaps in the hand-built state.
   const load = (g) =>
