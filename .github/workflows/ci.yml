@@ -114,6 +114,7 @@ jobs:
       - run: npm run idle-prove
       - run: npm run contrast-prove
       - run: npm run keyboard-place-prove
+      - run: npm run flash-prove
       - run: npm run reflow-prove
       - run: npm run howto-prove
       - run: npm run title-prove

@@ -302,7 +302,7 @@ function rollOffRoll(state: GameState, me: PlayerState) {
 function produce(state: GameState, total: number) {
   const demand: Partial<Record<Resource, number>> = {};
   const owed: Partial<Record<Resource, Set<string>>> = {};
-  const grants: { p: PlayerState; res: Resource; n: number; pip: number }[] = [];
+  const grants: { p: PlayerState; res: Resource; n: number; pip: number; hex: string }[] = [];
   for (const h of state.hexes) {
     if (h.pip !== total || h.blocked || h.terrain === "waste") continue;
     const res = h.terrain as Resource;
@@ -313,7 +313,7 @@ function produce(state: GameState, total: number) {
       const n = v.building.kind === "stronghold" ? 2 : 1;
       demand[res] = (demand[res] ?? 0) + n;
       (owed[res] ??= new Set()).add(p.id);
-      grants.push({ p, res, n, pip: h.pip! });
+      grants.push({ p, res, n, pip: h.pip!, hex: h.id });
     }
   }
   // A short bank pays nobody, unless only one player is owed: they take what is left (README "A turn").
@@ -325,7 +325,10 @@ function produce(state: GameState, total: number) {
   for (const grant of grants) {
     if (short.has(grant.res)) continue;
     const got = give(state, grant.p, grant.res, grant.n);
-    if (got) log(state, `${grant.p.name} gathers ${got} ${grant.res} from the ${grant.pip}.`);
+    if (got) {
+      log(state, `${grant.p.name} gathers ${got} ${grant.res} from the ${grant.pip}.`);
+      (state.lastProduction ??= []).push({ hex: grant.hex, player: grant.p.id, res: grant.res, n: got });
+    }
   }
 }
 
@@ -334,6 +337,12 @@ export function bankShort(state: GameState): Resource[] {
   const i = state.log.findLastIndex((l) => / rolls \d\+\d = \d+\.$/.test(l));
   const m = /^The bank is short of (.+); nobody gathers it\.$/.exec(state.log[i + 1] ?? "");
   return m ? (m[1]!.split(" and ") as Resource[]) : [];
+}
+
+// The hexes the latest roll actually paid: each grant produce() made is recorded per hex, so a short bank, the wayfarer's hex
+// and an empty corner agree with the hands, and a second hex with the same token and resource that got nothing stays out.
+export function payingHexes(state: GameState): string[] {
+  return [...new Set((state.lastProduction ?? []).map((g) => g.hex))];
 }
 
 function grantSecondSettlement(state: GameState, vid: string, pid: string) {
@@ -449,6 +458,8 @@ export function applyAction(prev: GameState, actor: string, action: Action): { s
       const a = rollDie();
       const b = rollDie();
       state.dice = [a, b];
+      state.rolls = (state.rolls ?? 0) + 1;
+      state.lastProduction = [];
       const total = a + b;
       log(state, `${me.name} rolls ${a}+${b} = ${total}.`);
       if (total === 7) {
