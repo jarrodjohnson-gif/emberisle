@@ -63,3 +63,51 @@ body,
     animation-duration: 1ms !important;
   }
 }
+
+/* Offsuit × Catan tokens (docs/design/polish.md, #435). `static` so every token is on :root before a screen adopts it. */
+@theme static {
+  --text-caption: 0.75rem;
+  --text-caption--line-height: 1rem;
+  --text-caption--font-weight: 500;
+  --text-body: 0.9375rem;
+  --text-body--line-height: 1.375rem;
+  --text-body--font-weight: 500;
+  --text-title: 1.25rem;
+  --text-title--line-height: 1.625rem;
+  --text-title--font-weight: 600;
+  --text-title--letter-spacing: -0.01em;
+  --text-number: 1.75rem;
+  --text-number--line-height: 2rem;
+  --text-number--font-weight: 600;
+  --text-display: 3.5rem;
+  --text-display--line-height: 3.75rem;
+  --text-display--font-weight: 600;
+  --text-display--letter-spacing: -0.02em;
+
+  --radius-control: 12px;
+  --radius-chip: 16px;
+  --radius-sheet: 24px;
+
+  /* Resource fills are the terrain caps' base colours (src/lib/scene/palette.ts PAINT); `-on` is text on that fill, ≥ 4.5:1. */
+  --color-timber: #2f6b3a;
+  --color-timber-on: #ffffff;
+  --color-clay: #b5522a;
+  --color-clay-on: #ffffff;
+  --color-wool: #8fbf5a;
+  --color-wool-on: #1c1915;
+  --color-grain: #e0b13a;
+  --color-grain-on: #1c1915;
+  --color-ore: #6e7580;
+  --color-ore-on: #ffffff;
+  --color-danger: #b3261e;
+
+  --duration-press: 80ms;
+  --duration-quick: 150ms;
+  --duration-base: 220ms;
+  --duration-settle: 280ms;
+  --duration-pulse: 1.2s;
+  --duration-moment: 900ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-snap: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+}

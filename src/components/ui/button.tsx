@@ -24,13 +24,13 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   ref?: Ref<HTMLButtonElement>;
 }
 
-// Build bible 3.4: 8 px corners, press scales to 0.97 for 80 ms.
+// Build bible 3.4: press scales to 0.97 for 80 ms. Corners are 12 px (docs/design/polish.md, Jarrod 2026-10-04).
 export function Button({ variant = "default", size = "default", className, type = "button", ...props }: ButtonProps) {
   return (
     <button
       type={type}
       className={cn(
-        "inline-flex cursor-pointer items-center justify-center gap-2 rounded-[8px] font-medium transition-[transform,filter,background-color] duration-[80ms] active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50",
+        "inline-flex cursor-pointer items-center justify-center gap-2 rounded-control font-medium transition-[transform,filter,background-color] duration-(--duration-press) ease-out focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sea-ink active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50",
         VARIANT[variant],
         SIZE[size],
         className,

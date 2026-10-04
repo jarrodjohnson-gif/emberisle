@@ -32,7 +32,8 @@
     "night-prove": "node scripts/night-prove.mjs",
     "contrast-prove": "node scripts/contrast-prove.mjs",
     "howto-prove": "node scripts/howto-prove.mjs",
-    "reflow-prove": "node scripts/reflow-prove.mjs"
+    "reflow-prove": "node scripts/reflow-prove.mjs",
+    "polish-tokens-prove": "node scripts/polish-tokens-prove.mjs"
   },
   "dependencies": {
     "clsx": "^2.1.1",
