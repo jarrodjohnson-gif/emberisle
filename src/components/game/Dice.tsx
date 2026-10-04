@@ -104,7 +104,6 @@ export function RollMoment() {
       const el = chip.current;
       const row = document.querySelector('[data-testid="dice-row"]');
       if (!el || !row || matchMedia("(prefers-reduced-motion: reduce)").matches) return end();
-      done = setTimeout(end, SETTLE_MS);
       // Layout boxes, so an entry scale still running on a slow device does not skew the flight.
       const box = (el.offsetParent ?? document.body).getBoundingClientRect();
       const to = row.getBoundingClientRect();
@@ -116,6 +115,7 @@ export function RollMoment() {
         easing: EASE_OUT,
         fill: "forwards",
       });
+      done = setTimeout(end, SETTLE_MS);
     }, MOMENT_MS);
     window.addEventListener("pointerdown", end, true);
     window.addEventListener("keydown", end, true);
