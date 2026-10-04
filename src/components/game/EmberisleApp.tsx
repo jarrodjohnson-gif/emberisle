@@ -29,6 +29,8 @@ export function EmberisleApp() {
   const screen = useGame((s) => s.screen);
   const runBots = useGame((s) => s.runBots);
   const seq = useGame((s) => s.state?.seq);
+  // A bot's turn waits while its own ask is open (#363); the offer's close wakes it again.
+  const offerOpen = useGame((s) => s.offer !== null);
   useTurnTitle();
 
   useEffect(() => {
@@ -41,7 +43,7 @@ export function EmberisleApp() {
     if (screen !== "play") return;
     const t = window.setTimeout(() => runBots(), 700);
     return () => window.clearTimeout(t);
-  }, [seq, screen, runBots]);
+  }, [seq, screen, offerOpen, runBots]);
 
   return (
     <div className="relative h-dvh w-full overflow-hidden bg-bg">

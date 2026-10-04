@@ -127,7 +127,7 @@ function withPaths(state: GameState, edgeIds: string[], pid: string): GameState 
   if (!edgeIds.length) return state;
   return { ...state, edges: state.edges.map((e) => (edgeIds.includes(e.id) ? { ...e, path: pid } : e)) };
 }
-import { chooseBotAction } from "./ai";
+import { chooseBotAction, chooseTradeAsk, shouldAcceptTrade } from "./ai";
 import { PLAYER_COLORS, RESOURCES, type Action, type BuildMode, type GameState } from "./types";
 import { connectTable, hostUrl, type Bag, type ChatLine, type Legal, type Me, type Reaction, type Seat, type TableClient } from "@/lib/net/table";
 import { play, yourTurn, type SoundName } from "@/lib/sound";
@@ -150,6 +150,19 @@ function clearWake() {
   stopWake = null;
 }
 let outcomeTimer: ReturnType<typeof setTimeout> | null = null;
+
+// Practice runs the ask-the-table offer here, as host.mjs does online (#363): a bot answers BOT_ANSWER_MS to twice that
+// after the ask, and an offer nobody takes closes after OFFER_MS. The timers belong to the open offer.
+const BOT_ANSWER_MS = 1000;
+const OFFER_MS = 20000;
+let offerTimers: ReturnType<typeof setTimeout>[] = [];
+let offerSeq = 0;
+// `${turn}:${bot}` of the last bot turn that had its one chance to ask the table.
+let botAsked = "";
+function clearOfferTimers() {
+  for (const t of offerTimers) clearTimeout(t);
+  offerTimers = [];
+}
 
 export type Screen = "title" | "lobby" | "play";
 
@@ -360,6 +373,9 @@ export const useGame = create<GameStore>((set, get) => ({
     clearWake();
     clearKnocks();
     get().net?.close();
+    // A new game owes nothing to the last one's offer or bot ask.
+    clearOfferTimers();
+    botAsked = "";
     const name = get().name;
     const state = createGame({ humans: [{ name }], bots: 3 });
     set({
@@ -375,12 +391,17 @@ export const useGame = create<GameStore>((set, get) => ({
       net: null,
       peeking: false,
       spectator: false,
+      offer: null,
+      declined: [],
+      tradeOutcome: null,
     });
   },
   startHotseat: (count) => {
     clearWake();
     clearKnocks();
     get().net?.close();
+    clearOfferTimers();
+    botAsked = "";
     const humans = Array.from({ length: count }, (_, i) => ({
       name: i === 0 ? get().name : `Seat ${i + 1}`,
     }));
@@ -398,6 +419,9 @@ export const useGame = create<GameStore>((set, get) => ({
       net: null,
       peeking: false,
       spectator: false,
+      offer: null,
+      declined: [],
+      tradeOutcome: null,
     });
   },
   loadState: (s, localId, host, table) =>
@@ -416,6 +440,8 @@ export const useGame = create<GameStore>((set, get) => ({
     if (!get().spectator) rememberSeat(null);
     clearWake();
     clearKnocks();
+    clearOfferTimers();
+    botAsked = "";
     get().net?.close();
     set({
       screen: "title",
@@ -469,6 +495,16 @@ export const useGame = create<GameStore>((set, get) => ({
     }
     set({ state: res.state, gameLog: appendLog(get().gameLog, newLog(state.log, res.state.log)), error: null, toast: null, buildMode: "none", roadPicks: [] });
     hear(state, res.state, localId, mode);
+    // An offer lives only while its asker still has the turn in `main` and still holds the offered goods (as host.mjs play).
+    const open = get().offer;
+    if (open) {
+      const asker = res.state.players.find((p) => p.id === open.from);
+      const turnOver = res.state.current !== open.from || res.state.phase !== "main";
+      if (turnOver || RESOURCES.some((r) => (open.give[r] ?? 0) > (asker?.resources[r] ?? 0))) {
+        endOffer(set, get, null);
+        if (!turnOver) set({ gameLog: appendLog(get().gameLog, [`${asker?.name} spent the offered goods; the offer is withdrawn.`]) });
+      }
+    }
     const rollOff = rollOffLine(state, res.state);
     if (rollOff) {
       showBanner(set, rollOff);
@@ -496,6 +532,15 @@ export const useGame = create<GameStore>((set, get) => ({
     }
     const cur = state.players.find((p) => p.id === state.current);
     if (cur?.kind !== "bot") return;
+    // A bot's own ask is open: its turn waits for the answers, and the offer's close plays on (EmberisleApp re-runs this).
+    const { offer } = get();
+    if (offer?.from === cur.id) return;
+    // Once per bot turn, before its other moves, the bot may ask the table (#363).
+    if (state.phase === "main" && !offer && botAsked !== `${state.turn}:${cur.id}`) {
+      botAsked = `${state.turn}:${cur.id}`;
+      const ask = chooseTradeAsk(state, cur.id);
+      if (ask) return openOffer(set, get, cur.id, ask.give, ask.want);
+    }
     const a = chooseBotAction(state, cur.id);
     if (a) dispatch(a, cur.id);
   },
@@ -676,12 +721,36 @@ export const useGame = create<GameStore>((set, get) => ({
   },
   setTradeOpen: (v, opener) => set({ tradeOpen: v, tradeOpener: v ? (opener ?? null) : null }),
   askTable: (give, want) => {
-    if (!get().spectator) get().net?.ask(give, want);
+    const { mode, state, localId, spectator, net } = get();
     set({ tradeOpen: false });
+    if (spectator) return;
+    if (mode === "online") return net?.ask(give, want);
+    // Practice: the store is the host, so it refuses what host.mjs `ask` refuses.
+    const me = state?.players.find((p) => p.id === localId);
+    const error =
+      state?.phase !== "main" || state.current !== localId
+        ? "Not your turn."
+        : RESOURCES.some((r) => (give[r] ?? 0) > (me?.resources[r] ?? 0))
+          ? "You lack those goods."
+          : RESOURCES.every((r) => !give[r] && !want[r])
+            ? "Offer something."
+            : null;
+    if (error) {
+      set({ error, toast: error, errorSeq: get().errorSeq + 1 });
+      play("ui_error");
+      return;
+    }
+    openOffer(set, get, localId, give, want);
   },
   answerTrade: (yes) => {
-    const { offer, net, spectator } = get();
-    if (offer && !spectator) net?.answer(offer.tradeId, yes);
+    const { offer, net, spectator, mode, localId } = get();
+    if (!offer || spectator) return;
+    if (mode === "online") return net?.answer(offer.tradeId, yes);
+    const error = respond(set, get, localId, yes);
+    if (error) {
+      set({ error, toast: error, errorSeq: get().errorSeq + 1 });
+      play("ui_error");
+    }
   },
   openMenu: (id) => {
     if (!get().spectator) set({ menuFor: id });
@@ -690,6 +759,64 @@ export const useGame = create<GameStore>((set, get) => ({
 
 type Set = (partial: Partial<GameStore>) => void;
 type Get = () => GameStore;
+
+// The open offer is over, taken by `taker` or by nobody: the toast goes, and the asker reads the outcome for a moment.
+function endOffer(set: Set, get: Get, taker: string | null) {
+  const { offer, localId, state } = get();
+  if (!offer) return;
+  clearOfferTimers();
+  const takerName = state?.players.find((p) => p.id === taker)?.name ?? "Someone";
+  set({ offer: null, declined: [] });
+  play(taker ? "trade_yes" : "trade_no");
+  if (taker) showBanner(set, `${takerName} takes ${offer.fromName}'s trade`);
+  if (offer.from !== localId) return;
+  // The asker's toast lingers with the outcome for as long as a banner would.
+  if (outcomeTimer) clearTimeout(outcomeTimer);
+  set({ tradeOutcome: taker ? `${takerName} takes it.` : "Nobody took it." });
+  outcomeTimer = setTimeout(() => set({ tradeOutcome: null }), BANNER_MS);
+}
+
+// Practice's table offer for `from`, closing any earlier one (host.mjs openOffer). Every other bot answers it after a delay.
+function openOffer(set: Set, get: Get, from: string, give: Bag, want: Bag) {
+  endOffer(set, get, null);
+  const state = get().state!;
+  const tradeId = `t${state.seq}-${++offerSeq}`;
+  const fromName = state.players.find((p) => p.id === from)?.name ?? "Someone";
+  set({ offer: { tradeId, from, fromName, give, want, until: Date.now() + OFFER_MS }, declined: [], tradeOutcome: null });
+  offerTimers.push(setTimeout(() => endOffer(set, get, null), OFFER_MS));
+  for (const p of state.players) {
+    if (p.kind !== "bot" || p.id === from) continue;
+    const answer = () => {
+      if (get().offer?.tradeId === tradeId) respond(set, get, p.id, shouldAcceptTrade(get().state!, p.id, { from, give, want }));
+    };
+    offerTimers.push(setTimeout(answer, BOT_ANSWER_MS + Math.floor(Math.random() * (BOT_ANSWER_MS + 1))));
+  }
+}
+
+// `actor`'s Yes or No to practice's open offer, from the person or a bot (host.mjs respond). Returns an error, if any.
+function respond(set: Set, get: Get, actor: string, yes: boolean): string | null {
+  const { offer, state, declined, gameLog } = get();
+  if (!offer || !state || actor === offer.from) return "Offer is gone.";
+  if (!yes) {
+    // A No is told to the table; the offer closes once every other seat, person or bot, has declined.
+    if (declined.includes(actor)) return null;
+    const now = [...declined, actor];
+    set({ declined: now, gameLog: appendLog(gameLog, [`${state.players.find((p) => p.id === actor)?.name} declines.`]) });
+    if (state.players.every((p) => p.id === offer.from || now.includes(p.id))) endOffer(set, get, null);
+    return null;
+  }
+  const offered = applyAction(state, offer.from, { type: "offerTrade", to: actor, give: offer.give, want: offer.want });
+  // Every offerTrade refusal is the asker's (wrong phase, short of the goods), so the offer is dead for the whole table.
+  if (offered.error) {
+    endOffer(set, get, null);
+    return "Offer is gone.";
+  }
+  const accepted = applyAction(offered.state, actor, { type: "respondTrade", accept: true });
+  if (accepted.error) return accepted.error;
+  set({ state: accepted.state, gameLog: appendLog(gameLog, newLog(state.log, accepted.state.log)) });
+  endOffer(set, get, actor);
+  return null;
+}
 
 // "quiet" is the automatic rejoin on page load: until the first welcome, a dead seat is dropped without telling the player.
 // "peek" asks a lobby for its seats before joining (docs/design/color-peek.md): it never seats, toasts, or touches the saved seat.
@@ -770,17 +897,7 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       if (offer?.tradeId === tradeId && !declined.includes(by)) set({ declined: [...declined, by] });
     },
     tradeClosed: ({ tradeId, taker }) => {
-      const { offer, localId, state } = get();
-      if (offer?.tradeId !== tradeId) return;
-      const takerName = state?.players.find((p) => p.id === taker)?.name ?? "Someone";
-      set({ offer: null, declined: [] });
-      play(taker ? "trade_yes" : "trade_no");
-      if (taker) showBanner(set, `${takerName} takes ${offer.fromName}'s trade`);
-      if (offer.from !== localId) return;
-      // The asker's toast lingers with the outcome for as long as a banner would.
-      if (outcomeTimer) clearTimeout(outcomeTimer);
-      set({ tradeOutcome: taker ? `${takerName} takes it.` : "Nobody took it." });
-      outcomeTimer = setTimeout(() => set({ tradeOutcome: null }), BANNER_MS);
+      if (get().offer?.tradeId === tradeId) endOffer(set, get, taker ?? null);
     },
     error: (message) => {
       if (!pending && kind !== "peek") {

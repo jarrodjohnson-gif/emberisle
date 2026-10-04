@@ -16,6 +16,7 @@
     "tabs-prove-4": "node scripts/tabs-prove.mjs --seats 4",
     "wayfarer-prove": "node scripts/wayfarer-prove.mjs",
     "trade-prove": "node scripts/trade-prove.mjs",
+    "practice-trade-prove": "node --import ./server/register.mjs scripts/practice-trade-prove.mjs",
     "pieces-prove": "node --import ./server/register.mjs scripts/pieces-prove.mjs",
     "pieces-land-prove": "node scripts/pieces-land-prove.mjs",
     "watch-ui-prove": "node --import ./server/register.mjs scripts/watch-ui-prove.mjs",
