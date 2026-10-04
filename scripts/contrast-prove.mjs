@@ -4,7 +4,8 @@
 // #424: text chips over the island, sampled from screenshots. With the chip's text made transparent, its box (inside the
 // border and in from the rounded corners) is screenshotted; the computed text colour is measured against the mean and the darkest 5 % of those background pixels (both >= 4.5:1).
 // Chips: another seat's turn banner over the setup board (hotseat) at 1280x720 and 390x844, your own turn banner (versus the
-// isle), and the log line at 1280x720.
+// isle), and the log line at 1280x720. Worst case, computed: the banner's and the log line's text against the glass token
+// composited over black (the darkest board the blur can show).
 // Run: npm run contrast-prove
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
@@ -159,7 +160,24 @@ try {
     });
     await pg.waitForFunction(() => window.__isle && window.__emberisle.getState().state.phase === "setupSettle");
     sampled.push(...(await sample(pg, "turn-banner", `${tag} another seat's turn banner`)));
-    if (viewport.width >= 640) sampled.push(...(await sample(pg, "log-line", `${tag} log line`)));
+    if (viewport.width >= 640) {
+      sampled.push(...(await sample(pg, "log-line", `${tag} log line`)));
+      const worst = await pg.evaluate(() => {
+        const c = document.createElement("canvas").getContext("2d", { willReadFrequently: true });
+        const px = (css, under) => {
+          c.fillStyle = under;
+          c.fillRect(0, 0, 1, 1);
+          c.fillStyle = css;
+          c.fillRect(0, 0, 1, 1);
+          return [...c.getImageData(0, 0, 1, 1).data].slice(0, 3);
+        };
+        const glass = px(getComputedStyle(document.documentElement).getPropertyValue("--color-glass").trim(), "#000");
+        const ink = (id) => px(getComputedStyle(document.querySelector(`[data-testid="${id}"]`)).color, "#fff");
+        return { glass, banner: ink("turn-banner"), log: ink("log-line") };
+      });
+      console.log(`  glass over black rgb(${worst.glass}); banner ink rgb(${worst.banner}), log ink rgb(${worst.log})`);
+      sampled.push([`banner text on glass over black`, ratio(worst.banner, worst.glass)], [`log line text on glass over black`, ratio(worst.log, worst.glass)]);
+    }
     // Versus the isle: the human rolls off when up, then waits on its own first corner (the bots act on the app's timer).
     await pg.evaluate(() => window.__emberisle.getState().goTitle());
     await pg.getByRole("button", { name: "Play", exact: true }).click();

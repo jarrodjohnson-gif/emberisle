@@ -75,18 +75,19 @@ function phaseCopy(phase: string) {
   }
 }
 
-function armedCopy(mode: BuildMode, roadPicks: number) {
+// What to pick, and the label of the button that armed it (a touch screen cancels by tapping that button again).
+function armedCopy(mode: BuildMode, roadPicks: number): [string, string] | null {
   switch (mode) {
     case "path":
-      return "Pick a glowing edge";
+      return ["Pick a glowing edge", "Path"];
     case "outpost":
-      return "Pick a glowing corner";
+      return ["Pick a glowing corner", "Outpost"];
     case "stronghold":
-      return "Pick an outpost to upgrade";
+      return ["Pick an outpost to upgrade", "Stronghold"];
     case "knight":
-      return "Pick a hex for the wayfarer";
+      return ["Pick a hex for the wayfarer", "Wayfarer card"];
     case "roadCard":
-      return roadPicks ? "Pick one more path" : "Pick two paths";
+      return [roadPicks ? "Pick one more path" : "Pick two paths", "Path fortune"];
     default:
       return null;
   }
@@ -195,7 +196,7 @@ export function Hud() {
   // #419: an armed build says what to pick and how to cancel (a touch screen has no Esc key).
   const armed = mine ? armedCopy(buildMode, roadPicks.length) : null;
   const phaseText = armed
-    ? `${armed} · ${matchMedia("(pointer: coarse)").matches ? "tap again to cancel" : "Esc cancels"}`
+    ? `${armed[0]} · ${matchMedia("(pointer: coarse)").matches ? `tap ${armed[1]} again to cancel` : "Esc cancels"}`
     : yours && state.phase === "discard"
       ? `discard ${state.discardNeeded[subject] ?? 0}`
       : yours && state.phase === "robber"
@@ -457,7 +458,7 @@ export function Hud() {
 
             <p
               data-testid="log-line"
-              className="hidden max-h-16 shrink-0 overflow-y-auto rounded-[16px] bg-glass px-3 py-1 text-xs text-zinc-600 backdrop-blur-md sm:block short:hidden"
+              className="hidden max-h-16 shrink-0 overflow-y-auto rounded-[16px] bg-glass px-3 py-1 text-xs text-zinc-700 backdrop-blur-md sm:block short:hidden"
             >
               {state.log.slice(-3).join(" · ")}
             </p>
@@ -490,6 +491,13 @@ function shortName(name: string) {
   return n ? `${name[0]}${n}` : name.slice(0, 3);
 }
 
+// Three letters is all an 89 px cell holds, so seats that still share a short form ("Ember", "Emberly") fall back to
+// the initial and the seat number ("E1", "E2").
+function shortNames(names: string[]) {
+  const short = names.map(shortName);
+  return short.map((s, i) => (short.some((o, j) => j !== i && o === s) ? `${names[i]![0]}${i + 1}` : s));
+}
+
 // Phone seat strip (docs/design/mobile-hud.md): 44 px, one cell per seat. Compact vs the rail: no per-fortune
 // breakdown (that line is rail-only), hidden points show as "+N", and "reconnecting…" replaces the counts line.
 function SeatStrip({ actor, className }: { actor: string; className: string }) {
@@ -497,9 +505,10 @@ function SeatStrip({ actor, className }: { actor: string; className: string }) {
   const seats = useGame((s) => s.seats);
   const menuFor = useGame((s) => s.menuFor);
   const openMenu = useGame((s) => s.openMenu);
+  const short = shortNames(state.players.map((p) => p.name));
   return (
     <div data-testid="seat-strip" className={cn("pointer-events-auto flex h-11 gap-1", className)}>
-      {state.players.map((p) => {
+      {state.players.map((p, i) => {
         const away = seats.some((s) => s.away && (s.name === p.name || `${s.name} (bot)` === p.name));
         const hidden = p.id === actor && p.hidden.vp > 0 ? p.hidden.vp : 0;
         const goods = p.goods ?? RESOURCES.reduce((n, r) => n + p.resources[r], 0);
@@ -526,7 +535,7 @@ function SeatStrip({ actor, className }: { actor: string; className: string }) {
                     die only while the roll-off is live, so it never sits beside the points as one number. */}
                 <span data-testid="seat-name" className="min-w-0 flex-1 truncate text-xs font-medium @max-[100px]:sr-only">{p.name}</span>
                 <span data-testid="seat-name" aria-hidden="true" className="hidden min-w-0 flex-1 text-xs font-medium @max-[100px]:block">
-                  {shortName(p.name)}
+                  {short[i]}
                 </span>
                 <RollOffDie
                   state={state}

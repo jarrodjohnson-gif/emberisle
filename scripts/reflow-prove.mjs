@@ -7,7 +7,8 @@
 //   once the stack is scrolled to the end, and it never shows at 1280x720 where nothing overflows.
 // - #420: at 390x844 (touch) the four-seat strip stays 44 px and no seat name is cut off: under 100 px a cell
 //   shows a short form, the roll-off die only during the roll-off and the points after it, never both side by side.
-// - #419: on that touch screen an armed Path's banner ends "tap again to cancel", and a second tap restores it.
+//   Two seats whose three letters match ("Ember", "Emberly") still read differently.
+// - #419: on that touch screen an armed Path's banner ends "tap Path again to cancel", and a second tap restores it.
 // Zero console errors. Run: npm run reflow-prove
 import { existsSync } from "node:fs";
 import { chromium } from "playwright";
@@ -167,11 +168,23 @@ try {
     });
     if (viewport.strip) {
       checkStrip(await strip(), "main");
+      await page.evaluate(() => {
+        const g = window.__emberisle;
+        const st = structuredClone(g.getState().state);
+        st.players[0].name = "Ember";
+        st.players[1].name = "Emberly";
+        st.seq += 1;
+        g.setState({ state: st });
+      });
+      await page.waitForFunction(() => document.querySelector('[data-testid="seat-strip"] [data-testid="seat-name"][aria-hidden]')?.textContent !== "Emb");
+      const twins = await strip();
+      const shown = twins.cells.map((c) => c.name);
+      check(new Set(shown).size === 4 && twins.cells.every((c) => !c.cut), `${tag} strip: "Ember" and "Emberly" read differently`, shown);
       const name = await page.evaluate(() => window.__emberisle.getState().state.players[0].name);
       const path = page.getByRole("button", { name: "Path", exact: true });
       const bannerIs = (t) => page.waitForFunction((t) => document.querySelector('[data-testid="turn-banner"]')?.textContent === t, t, { timeout: 5000 }).then(() => true, () => false);
       await path.tap();
-      const armed = `${name}'s turn — Pick a glowing edge · tap again to cancel`;
+      const armed = `${name}'s turn — Pick a glowing edge · tap Path again to cancel`;
       check(await bannerIs(armed), `${tag} armed Path on touch: banner says what to pick and how to cancel`, await page.getByTestId("turn-banner").textContent());
       await path.tap();
       check(await bannerIs(`${name}'s turn — Build, trade with the bank, or end your turn.`), `${tag} second tap: banner back to the main line`, await page.getByTestId("turn-banner").textContent());
