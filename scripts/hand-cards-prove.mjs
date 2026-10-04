@@ -87,7 +87,7 @@ try {
         ["timber", "clay", "wool", "grain", "ore"].map((r) => {
           const el = document.querySelector(`[data-testid="resource-${r}"]`);
           const cs = getComputedStyle(el);
-          const count = el.querySelector('[data-testid="resource-count"]');
+          const count = el.querySelector('[data-testid="hand-count"]');
           const cc = getComputedStyle(count);
           const sizes = [...el.querySelectorAll("*")]
             .filter((e) => e.textContent.trim() && !e.querySelector("*"))
@@ -130,17 +130,17 @@ try {
     await page.evaluate(() => {
       window.__rings = [];
       new MutationObserver((ms) => {
-        for (const m of ms) for (const n of m.addedNodes) if (n.nodeType === 1 && n.dataset?.testid === "resource-ring") window.__rings.push(n.parentElement.dataset.testid);
+        for (const m of ms) for (const n of m.addedNodes) if (n.nodeType === 1 && n.dataset?.testid === "hand-ring") window.__rings.push(n.parentElement.dataset.testid);
       }).observe(document.body, { childList: true, subtree: true });
     });
     await setHand(page, { timber: 5 });
-    await page.locator('[data-testid="resource-ring"]').waitFor({ timeout: STEP_MS });
+    await page.locator('[data-testid="hand-ring"]').waitFor({ timeout: STEP_MS });
     await page.evaluate(() => { const g = window.__emberisle; g.setState({ state: structuredClone(g.getState().state) }); });
     await page.waitForTimeout(300);
     const ring = await page.evaluate(() => {
-      const el = document.querySelector('[data-testid="resource-ring"]');
+      const el = document.querySelector('[data-testid="hand-ring"]');
       const kf = [...document.styleSheets].flatMap((s) => [...s.cssRules]).find((r) => r.name === "resource-ring");
-      return { anim: getComputedStyle(el).animationName, rings: window.__rings.slice(), n: document.querySelectorAll('[data-testid="resource-ring"]').length, kf: kf?.cssText ?? "" };
+      return { anim: getComputedStyle(el).animationName, rings: window.__rings.slice(), n: document.querySelectorAll('[data-testid="hand-ring"]').length, kf: kf?.cssText ?? "" };
     });
     assert.equal(ring.anim, "resource-ring", `${v.tag}: ring animation`);
     assert.deepEqual(ring.rings, ["resource-timber"], `${v.tag}: one gain, one ring on timber: ${JSON.stringify(ring.rings)}`);
@@ -160,8 +160,8 @@ try {
   // Reduced motion: the ring is still there for one change but runs as a 1 ms step.
   const rm = await open(VIEWS[0], true);
   await setHand(rm.page, { timber: 2 });
-  await rm.page.locator('[data-testid="resource-ring"]').waitFor({ timeout: STEP_MS });
-  const dur = await rm.page.evaluate(() => getComputedStyle(document.querySelector('[data-testid="resource-ring"]')).animationDuration);
+  await rm.page.locator('[data-testid="hand-ring"]').waitFor({ timeout: STEP_MS });
+  const dur = await rm.page.evaluate(() => getComputedStyle(document.querySelector('[data-testid="hand-ring"]')).animationDuration);
   assert.equal(dur, "0.001s", "reduced motion: ring duration");
   assert.deepEqual(rm.errors, [], "reduced motion: console errors");
   console.log(`reduced motion: ring runs ${dur}`);

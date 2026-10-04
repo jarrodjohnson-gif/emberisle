@@ -102,7 +102,7 @@ export function ResourceHand({ me }: { me: PlayerState }) {
             )}
           >
             <Icon className="size-4 opacity-70" aria-hidden />
-            <span data-testid="resource-count" className="text-number tabular-nums">
+            <span data-testid="hand-count" className="text-number tabular-nums">
               {count}
             </span>
             <span className="sr-only">{RESOURCE_LABEL[r]}</span>
@@ -110,7 +110,7 @@ export function ResourceHand({ me }: { me: PlayerState }) {
               <>
                 <span
                   key={`ring-${flash.at}`}
-                  data-testid="resource-ring"
+                  data-testid="hand-ring"
                   aria-hidden
                   className="pointer-events-none absolute inset-0 rounded-chip"
                   style={{ animation: `resource-ring ${FLASH_MS}ms ease-out forwards` }}
