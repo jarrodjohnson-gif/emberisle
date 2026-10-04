@@ -68,7 +68,10 @@ function soundFor(before: GameState | null, after: GameState): SoundName | null 
 // (not in hotseat, where every seat is this browser).
 function hear(before: GameState | null, after: GameState, me: string, mode: GameStore["mode"]) {
   const sound = soundFor(before, after);
-  if (sound) play(sound);
+  // A piece knocks when it lands, not when it is picked (#438); reduced motion has no fall, so it knocks at once.
+  const land = sound && sound in LAND_MS && !calmMotion() ? LAND_MS[sound as keyof typeof LAND_MS] : 0;
+  if (sound && land) setTimeout(() => play(sound), land);
+  else if (sound) play(sound);
   if (mode !== "hotseat" && before && after.current === me && before.current !== me && after.phase !== "over") yourTurn();
 }
 
@@ -116,6 +119,7 @@ import { chooseBotAction } from "./ai";
 import { PLAYER_COLORS, RESOURCES, type Action, type BuildMode, type GameState } from "./types";
 import { connectTable, hostUrl, type Bag, type ChatLine, type Legal, type Me, type Reaction, type Seat, type TableClient } from "@/lib/net/table";
 import { play, yourTurn, type SoundName } from "@/lib/sound";
+import { calmMotion, LAND_MS } from "@/lib/scene/landing";
 
 // The ask-the-table offer every seat is looking at (docs/BUILD_BIBLE.md 4.4). `until` is when the host's 20 s run out.
 export interface OpenOffer {
