@@ -11,7 +11,7 @@ const ROOMS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-rooms-"));
 process.on("exit", () => rmSync(ROOMS_DIR, { recursive: true, force: true }));
 const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL(".", import.meta.url),
-  env: { ...process.env, PORT: "0", ROOMS_DIR },
+  env: { ...process.env, PORT: "0", ACT_RATE: "1000", ACT_CAP: "1000", ROOMS_DIR },
 });
 process.on("exit", () => host.kill());
 for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
@@ -85,9 +85,8 @@ const me = (c) => c.state.game.players.find((p) => p.id === c.state.you);
 const RES = ["timber", "clay", "wool", "grain", "ore"];
 let pair = null;
 
-// Play setup, then turns, until the player to move in `main` holds a card another seat can match.
-for (let guard = 0; guard < 400 && !pair; guard++) {
-  const c = whoActs();
+// One move for the seat `c` that acts: setup pieces, rolls, discards and the robber; anything else passes.
+async function move(c) {
   const { legal, game } = c.state;
   if (game.phase === "setupSettle") await step(c, { type: "place", kind: "outpost", id: legal.outpost[0] });
   else if (game.phase === "setupRoad") await step(c, { type: "place", kind: "path", id: legal.path[0] });
@@ -104,7 +103,13 @@ for (let guard = 0; guard < 400 && !pair; guard++) {
   } else if (game.phase === "robber") {
     const hexId = legal.wayfarer.find((h) => !legal.steal[h]) ?? legal.wayfarer[0];
     await step(c, { type: "rob", hexId, stealFrom: legal.steal[hexId]?.[0] ?? null });
-  } else if (game.phase === "main") {
+  } else await step(c, { type: "pass" });
+}
+
+// Play setup, then turns, until the player to move in `main` holds a card another seat can match.
+for (let guard = 0; guard < 400 && !pair; guard++) {
+  const c = whoActs();
+  if (c.state.game.phase === "main") {
     const mine = me(c).resources;
     const others = all.filter((o) => o !== c);
     for (const give of RES.filter((r) => mine[r] >= 1)) {
@@ -113,8 +118,8 @@ for (let guard = 0; guard < 400 && !pair; guard++) {
         if (want) pair ??= { asker: c, taker, bystander: others.find((o) => o !== taker), give, want };
       }
     }
-    if (!pair) await step(c, { type: "pass" });
-  } else await step(c, { type: "pass" });
+  }
+  if (!pair) await move(c);
 }
 if (!pair) fail("never reached a main turn with a tradeable pair");
 const { asker, taker, bystander, give, want } = pair;
@@ -242,6 +247,35 @@ if (JSON.stringify(hand(B)) !== JSON.stringify(bBefore) || JSON.stringify(hand(A
   fail("late yes changed the table");
 }
 console.log("pass closed the offer for all three seats; late yes got:", err.message);
+
+// 6. The asker offers all of one resource, then bank-trades it away (#370): the offer closes for every seat with a
+// log line, a late yes gets "Offer is gone.", and no seat is told it lacks goods that the asker spent.
+let spender = null;
+let spent = null;
+for (let guard = 0; guard < 400 && !spender; guard++) {
+  const c = whoActs();
+  spent = c.state.game.phase === "main" && RES.find((r) => me(c).resources[r] >= 4);
+  if (spent) spender = c;
+  else await move(c);
+}
+if (!spender) fail("never reached a main turn with four of one resource");
+for (const c of all) c.inbox = [];
+const late = all.find((c) => c !== spender);
+const take = RES.find((r) => r !== spent && spender.state.game.bank[r] > 0);
+spender.send({ type: "tradeAsk", give: { [spent]: me(spender).resources[spent] }, want: { [take]: 1 } });
+const spentId = (await Promise.all(all.map((c) => c.next("tradeOffer"))))[0].tradeId;
+spender.send({ type: "tradeBank", give: spent, want: take });
+for (const c of all) {
+  const closed = await c.next("tradeClosed");
+  if (closed.tradeId !== spentId || closed.taker) fail(`${c.name} tradeClosed after the spend`, closed);
+  while (!(await c.next("log")).text.includes("withdrawn"));
+  await c.next("state");
+}
+late.send({ type: "tradeAnswer", tradeId: spentId, yes: true });
+const gone = await late.next("error");
+if (gone.message !== "Offer is gone.") fail(`${late.name} late yes after the spend`, gone.message);
+for (const c of all) if (c.inbox.some((m) => m.type === "error")) fail(`${c.name} got an error`, c.inbox.filter((m) => m.type === "error"));
+console.log(`${spender.name} offered its ${spent} and bank-traded it away: all three seats got tradeClosed and the log line; late yes got:`, gone.message);
 
 host.kill();
 console.log("trade table prove ok");
