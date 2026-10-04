@@ -40,7 +40,7 @@ Each hex is forest, clay hills, pasture, fields, mountains, or the wastes. A tok
 | Stronghold | 2 ore, 3 grain, on an outpost you own | 4 |
 | Fortune | 1 wool, 1 grain, 1 ore | a shared deck of 25 |
 
-The deck is 14 knights, 2 path-building, 2 plenty, 2 monopoly, and 5 hidden points. A fortune bought this turn cannot be played this turn. A knight may be played before the roll.
+The deck is 14 knights, 2 path-building, 2 plenty, 2 monopoly, and 5 hidden points. A fortune bought this turn cannot be played this turn. A knight may be played before the roll. A plenty takes two cards from the bank, and can name only cards the bank still has.
 
 ### Points
 

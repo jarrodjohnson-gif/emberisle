@@ -667,6 +667,22 @@ const total = (g, r) => g.bank[r] + g.players.reduce((n, p) => n + p.resources[r
   const again = applyAction(s, "p0", { type: "playMonopoly", resource: "ore" });
   effect("plenty sets playedCard so a second fortune that turn is refused", s.playedCard === true && again.error === "Cannot play that.", again.error);
 }
+// #410 (decision #360): a plenty may not name a card the bank cannot pay; the card stays in hand.
+{
+  const g = fresh();
+  giveCards(g.players[0], {});
+  g.players[0].hidden.plenty = 1;
+  g.players[1].resources.ore += g.bank.ore;
+  g.bank.ore = 0;
+  g.bank.grain = 1;
+  const kept = (r) => r.state.players[0].hidden.plenty === 1 && !r.state.playedCard && hand(r.state.players[0]) === 0 && r.state.bank.grain === 1;
+  const empty = applyAction(g, "p0", { type: "playPlenty", resources: ["grain", "ore"] });
+  effect("plenty naming a card the bank has none of is refused, card stays in hand", empty.error === "The bank has no ore." && kept(empty), { error: empty.error, bank: empty.state.bank });
+  const twice = applyAction(g, "p0", { type: "playPlenty", resources: ["grain", "grain"] });
+  effect("plenty naming grain twice with one grain in the bank is refused", twice.error === "The bank has only 1 grain." && kept(twice), { error: twice.error, bank: twice.state.bank });
+  const r = applyAction(g, "p0", { type: "playPlenty", resources: ["grain", "wool"] });
+  effect("plenty naming cards the bank holds still pays them", !r.error && r.state.players[0].resources.grain === 1 && r.state.players[0].resources.wool === 1 && r.state.bank.grain === 0, r.error);
+}
 {
   const g = fresh();
   giveCards(g.players[0], { ore: 1, wool: 2 });
