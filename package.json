@@ -37,7 +37,8 @@
     "title-prove": "node scripts/title-prove.mjs",
     "howto-prove": "node scripts/howto-prove.mjs",
     "reflow-prove": "node scripts/reflow-prove.mjs",
-    "polish-tokens-prove": "node scripts/polish-tokens-prove.mjs"
+    "polish-tokens-prove": "node scripts/polish-tokens-prove.mjs",
+    "board-look-prove": "node scripts/board-look-prove.mjs"
   },
   "dependencies": {
     "clsx": "^2.1.1",

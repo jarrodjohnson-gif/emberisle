@@ -1,9 +1,10 @@
 import * as THREE from "three";
 import {
+  CAP_LEVEL,
+  OVERHEAD_LEAN,
   TouchGesture,
   PICK_EDGE,
   PICK_VERTEX_RADIUS,
-  TARGET,
   fitOrtho,
   freeMaxDistance,
   hudInsets,
@@ -156,7 +157,7 @@ export class IsleRenderer {
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.28;
+    this.renderer.toneMappingExposure = 1.05;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
 
     this.camera = new THREE.PerspectiveCamera(32, 1, 0.1, 80);
@@ -175,19 +176,23 @@ export class IsleRenderer {
     this.controls.addEventListener("change", this.wake);
 
     this.scene.fog = new THREE.Fog(0x6a93a0, 26, 52);
-    this.scene.add(new THREE.HemisphereLight(0xf3fbff, 0xe8c9a0, 1.15));
-    const sun = new THREE.DirectionalLight(0xfff7e8, 1.35);
+    // A lit board on a table (polish.md "The board look target", #135): one warm key lamp carries the light, so the
+    // slabs shade on their sides and every prop casts a soft shadow; the sky and ground bounce are low and nearly grey,
+    // so the caps' own paint is the colour on screen. No flat ambient: that was what washed the caps out.
+    this.scene.add(new THREE.HemisphereLight(0xe9e4da, 0xc8ad86, 0.55));
+    const sun = new THREE.DirectionalLight(0xffe3bd, 2.1);
     sun.position.set(8, 16, 6);
     sun.castShadow = true;
-    sun.shadow.mapSize.set(2048, 2048);
-    sun.shadow.camera.left = -10;
-    sun.shadow.camera.right = 10;
-    sun.shadow.camera.top = 10;
-    sun.shadow.camera.bottom = -10;
+    // 1024 over 18 units, blurred 6 texels: shadow edges soften over about a tenth of a hex, like a lamp, not the noon sun.
+    sun.shadow.mapSize.set(1024, 1024);
+    sun.shadow.radius = 6;
+    sun.shadow.camera.left = -9;
+    sun.shadow.camera.right = 9;
+    sun.shadow.camera.top = 9;
+    sun.shadow.camera.bottom = -9;
     sun.shadow.bias = -0.0003;
     this.scene.add(sun);
-    this.scene.add(new THREE.AmbientLight(0xfffaf0, 0.62));
-    const fill = new THREE.DirectionalLight(0xcfe8ff, 0.45);
+    const fill = new THREE.DirectionalLight(0xd9e4ea, 0.3);
     fill.position.set(-8, 8, -4);
     this.scene.add(fill);
 
@@ -240,12 +245,13 @@ export class IsleRenderer {
     this.renderer.setAnimationLoop(this.tick);
   }
 
-  // Off the table (title and lobby) the island is a backdrop under a card: no SSAO, and 30 frames a second.
+  // Off the table (title and lobby) the island is a backdrop under a card: the slow orbit, no SSAO, 30 frames a second.
+  // In play it is the overhead board fitted to the HUD hole (#128's default); the free orbit waits for the toggle.
   setTitleMode(v: boolean) {
     if (v !== this.titleMode) this.wake();
     this.titleMode = v;
     this.ssao.enabled = !v && !this.overhead;
-    this.setView(!v && this.coarse() ? "overhead" : "free");
+    this.setView(v ? "free" : "overhead");
   }
 
   private coarse() {
@@ -449,14 +455,15 @@ export class IsleRenderer {
     this.controls.maxDistance = freeMaxDistance(h, this.insets(), this.coarse());
     this.camera.updateProjectionMatrix();
     if (this.overhead) {
-      const f = fitOrtho(w, h, this.insets());
+      const f = fitOrtho(w, h, this.insets(), OVERHEAD_LEAN);
       this.ortho.left = f.left;
       this.ortho.right = f.right;
       this.ortho.top = f.top;
       this.ortho.bottom = f.bottom;
-      this.ortho.up.set(0, 0, -1);
-      this.ortho.position.set(f.x, 18, f.z);
-      this.ortho.lookAt(f.x, TARGET.y, f.z);
+      // Leaned toward the player (+Z is screen-down), looking at cap level over the hole's centre.
+      this.ortho.up.set(0, 1, 0);
+      this.ortho.position.set(f.x, CAP_LEVEL + 18 * Math.cos(OVERHEAD_LEAN), f.z + 18 * Math.sin(OVERHEAD_LEAN));
+      this.ortho.lookAt(f.x, CAP_LEVEL, f.z);
       this.ortho.updateProjectionMatrix();
     }
     this.renderer.setSize(w, h, false);
@@ -853,12 +860,14 @@ function disposeGroup(g: THREE.Group) {
 }
 
 // The sea: an unlit shader, so the sun cannot paint a hotspot on it. Shallow to deep, a slow ripple, then the fog.
+// A calm teal that never competes with the land: the ripple scales the colour by a few percent rather than adding to it
+// (an added 0.022 was a third of the deep colour's linear value and drew dark blotches across the whole sea).
 function makeWater() {
   return new THREE.ShaderMaterial({
     uniforms: {
       uTime: { value: 0 },
-      uShallow: { value: new THREE.Color(0x3d8f96) },
-      uDeep: { value: new THREE.Color(0x163e4c) },
+      uShallow: { value: new THREE.Color(0x4596a0) },
+      uDeep: { value: new THREE.Color(0x225a68) },
       uFog: { value: new THREE.Color(0x6a93a0) },
     },
     vertexShader: /* glsl */ `
@@ -882,7 +891,7 @@ function makeWater() {
       void main() {
         float d = length(vXZ);
         vec3 c = mix(uShallow, uDeep, smoothstep(4.2, 7.5, d));
-        c += 0.022 * sin(vXZ.x * 2.1 + uTime * 0.9) * sin(vXZ.y * 1.7 - uTime * 0.7);
+        c *= 1.0 + 0.03 * sin(vXZ.x * 2.1 + uTime * 0.9) * sin(vXZ.y * 1.7 - uTime * 0.7);
         c = mix(c, uFog, smoothstep(18.0, 40.0, d));
         gl_FragColor = vec4(c, 1.0);
       }
