@@ -105,7 +105,8 @@ function Title() {
     url.searchParams.delete("watch");
     history.replaceState(history.state, "", `${url.pathname}${url.search}${url.hash}`);
     const fill = code ?? watch!;
-    if (PEEK_CODE.test(fill)) setJoin(fill);
+    if (!PEEK_CODE.test(fill)) return;
+    setJoin(fill);
     if (code === undefined) setWatchLink(true);
   }, []);
 

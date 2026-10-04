@@ -391,7 +391,10 @@ function deadlineOf(room) {
 
 function pushState(room) {
   armTurns(room);
-  const turnDeadline = deadlineOf(room);
+  // The soonest armed window, and whose it is, so every HUD can count it down (#345). `serverNow` lets a client
+  // whose clock is off still land on the host's moment.
+  const soonest = room.seats.reduce((d, s) => (s.turnDeadline && (!d || s.turnDeadline < d.turnDeadline) ? s : d), null);
+  const turnDeadline = soonest?.turnDeadline ?? null;
   save(room);
   for (const seat of room.seats) {
     if (!seat.ws) continue;
@@ -401,10 +404,12 @@ function pushState(room) {
       game: viewFor(room.game, seat.pid),
       legal: legalFor(room.game, seat.pid),
       turnDeadline,
+      turnPlayer: soonest?.pid ?? null,
+      serverNow: Date.now(),
     });
   }
   if (!room.watchers.size) return;
-  const raw = JSON.stringify({ type: "state", you: null, game: watchView(room.game), legal: legalFor(room.game, null), turnDeadline });
+  const raw = JSON.stringify({ type: "state", you: null, game: watchView(room.game), legal: legalFor(room.game, null), turnDeadline, turnPlayer: soonest?.pid ?? null, serverNow: Date.now() });
   for (const ws of room.watchers) if (ws.readyState === ws.OPEN) ws.send(raw);
 }
 
@@ -646,8 +651,8 @@ function watch(ws, msg) {
   ws.watch = room;
   send(ws, { type: "welcome", code: room.code, spectator: true, chat: room.chat });
   watchersChanged(room, "Someone is watching.");
-  const turnDeadline = deadlineOf(room);
-  send(ws, { type: "state", you: null, game: watchView(room.game), legal: legalFor(room.game, null), turnDeadline });
+  const soonest = room.seats.reduce((d, s) => (s.turnDeadline && (!d || s.turnDeadline < d.turnDeadline) ? s : d), null);
+  send(ws, { type: "state", you: null, game: watchView(room.game), legal: legalFor(room.game, null), turnDeadline: deadlineOf(room), turnPlayer: soonest?.pid ?? null, serverNow: Date.now() });
 }
 
 function startGame(ws, room) {
@@ -758,7 +763,12 @@ function answer(ws, room, msg) {
     return;
   }
   const offered = applyAction(room.game, offer.from, { type: "offerTrade", to: actor, give: offer.give, want: offer.want });
-  if (offered.error) return send(ws, { type: "error", message: offered.error });
+  // Every offerTrade refusal is the asker's (wrong phase, short of the goods), so the offer is dead for the whole table.
+  if (offered.error) {
+    closeOffer(room);
+    broadcast(room, { type: "tradeClosed", tradeId: offer.tradeId });
+    return send(ws, { type: "error", message: "Offer is gone." });
+  }
   const accepted = applyAction(offered.state, actor, { type: "respondTrade", accept: true });
   if (accepted.error) return send(ws, { type: "error", message: accepted.error });
   closeOffer(room);
@@ -814,11 +824,17 @@ function play(ws, room, msg) {
   runBots(room);
   for (const line of newLog(before.log, room.game.log)) say(room, line);
   if (room.game.phase === "over" && before.phase !== "over") hear("win");
-  // An offer lives only while its asker still has the turn in `main`.
+  // An offer lives only while its asker still has the turn in `main` and still holds the offered goods.
   const open = room.offer;
-  if (open && (room.game.current !== open.from || room.game.phase !== "main")) {
-    closeOffer(room);
-    broadcast(room, { type: "tradeClosed", tradeId: open.tradeId });
+  if (open) {
+    const asker = room.game.players.find((p) => p.id === open.from);
+    const turnOver = room.game.current !== open.from || room.game.phase !== "main";
+    const spent = RESOURCES.some((r) => (open.give[r] ?? 0) > asker.resources[r]);
+    if (turnOver || spent) {
+      closeOffer(room);
+      broadcast(room, { type: "tradeClosed", tradeId: open.tradeId });
+      if (!turnOver) say(room, `${asker.name} spent the offered goods; the offer is withdrawn.`);
+    }
   }
   pushState(room);
 }

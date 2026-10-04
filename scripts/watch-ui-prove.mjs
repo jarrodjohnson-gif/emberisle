@@ -352,17 +352,20 @@ try {
   if (wv.resources !== 0 || wv.badge !== "Watching") throw new Error("the watcher grew a hand or lost its badge at the win");
   console.log(`win: "${wv.winHeadline}" at seq ${wv.seq}; the watcher's ${wv.winRows.length} rows equal Ember's (hidden ${JSON.stringify(wv.hiddenVp)}, hands ${JSON.stringify(wv.hands)}); no seed or rng, no Play again`);
 
-  // --- 6. Leave: no confirm for a watcher, straight to the Title; every seat's count falls to 0.
+  // --- 6. Leave: no confirm for a watcher, straight to the Title; every seat's count falls to 0. A seat saved in
+  // localStorage for another table survives the leave (goTitle must not forget it for a watcher).
+  const saved = JSON.stringify({ code: "ZZZZ", secret: "another-table" });
+  await w1.page.evaluate((v) => localStorage.setItem("emberisle-seat", v), saved);
   await w1.page.getByTestId("win-look").click();
   await w1.page.getByRole("button", { name: "Leave", exact: true }).click();
   await until(async () => (await view(w1)).screen === "title", "Leave taking the watcher to the Title");
   if ((await w1.page.getByTestId("leave-confirm").count()) !== 0) throw new Error("Leave asked a watcher to confirm");
   await until(async () => (await Promise.all([a, b].map(view))).every((v) => v.watching === 0 && v.count === null) && c.watching === 0, "the count falling to 0");
-  console.log("leave: Title with no confirm; eye count gone on every seat");
+  const keptAfterLeave = await w1.page.evaluate(() => localStorage.getItem("emberisle-seat"));
+  if (keptAfterLeave !== saved) throw new Error(`Leave as a watcher touched the saved seat: ${keptAfterLeave}`);
+  console.log("leave: Title with no confirm; eye count gone on every seat; the saved seat for another table kept");
 
   // --- 7. A dropped watcher lands on the Title with "Lost the table"; a seat saved for another table is untouched.
-  const saved = JSON.stringify({ code: "ZZZZ", secret: "another-table" });
-  await w1.page.evaluate((v) => localStorage.setItem("emberisle-seat", v), saved);
   await w1.page.getByPlaceholder(/code/i).fill(tableCode);
   await w1.page.getByRole("button", { name: "Watch", exact: true }).click();
   await until(async () => (await view(w1)).screen === "play", "watching again after the win");

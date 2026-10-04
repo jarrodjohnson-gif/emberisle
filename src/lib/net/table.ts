@@ -56,8 +56,9 @@ export interface TableEvents {
   welcome(msg: { code: string; you?: string; host?: boolean; chat?: ChatLine[]; secret?: string; spectator?: true }): void;
   // `watching`: how many spectators the table has (#347).
   seats(msg: { code: string; seats: Seat[]; watching?: number }): void;
-  // `you` is null on a watcher's state.
-  state(msg: { you: string | null; game: GameState; legal: Legal }): void;
+  // `you` is null on a watcher's state. `turnDeadline` is the host's clock (epoch ms) for the seat `turnPlayer`;
+  // `serverNow` is the host's clock as it sent this.
+  state(msg: { you: string | null; game: GameState; legal: Legal; turnDeadline?: number | null; turnPlayer?: string | null; serverNow?: number }): void;
   rolled(msg: { dice: [number, number]; sum: number; gains: Gain[]; short: Resource[] }): void;
   chat(line: ChatLine): void;
   react(r: Reaction): void;
