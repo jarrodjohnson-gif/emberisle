@@ -24,7 +24,7 @@ import { PlayerMenu } from "@/components/game/PlayerMenu";
 import { DiscardBar } from "@/components/game/DiscardBar";
 import { TurnCountdown } from "@/components/game/TurnCountdown";
 import { Dice } from "@/components/game/Dice";
-import { COST, RESOURCES, RESOURCE_LABEL, type DevKind, type GameState, type PlayerState, type Resource } from "@/lib/game/types";
+import { COST, RESOURCES, RESOURCE_LABEL, type BuildMode, type DevKind, type GameState, type PlayerState, type Resource } from "@/lib/game/types";
 import { hiddenCount, legalRoads, playable, publicVP, totalVP } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
 import { useViewport } from "@/lib/viewport";
@@ -71,6 +71,23 @@ function phaseCopy(phase: string) {
       return "The isle has a ruler.";
     default:
       return "";
+  }
+}
+
+function armedCopy(mode: BuildMode, roadPicks: number) {
+  switch (mode) {
+    case "path":
+      return "Pick a glowing edge";
+    case "outpost":
+      return "Pick a glowing corner";
+    case "stronghold":
+      return "Pick an outpost to upgrade";
+    case "knight":
+      return "Pick a hex for the wayfarer";
+    case "roadCard":
+      return roadPicks ? "Pick one more path" : "Pick two paths";
+    default:
+      return null;
   }
 }
 
@@ -173,13 +190,20 @@ export function Hud() {
   const subject = state.phase === "discard" && discarder ? discarder : state.current;
   const subjectPlayer = state.players.find((p) => p.id === subject) ?? state.players[0]!;
   const yours = mode !== "hotseat" && subject === actor;
-  const phaseText =
-    yours && state.phase === "discard"
+  // #419: an armed build says what to pick and how to cancel (a touch screen has no Esc key).
+  const armed = mine ? armedCopy(buildMode, roadPicks.length) : null;
+  const phaseText = armed
+    ? `${armed} · ${matchMedia("(pointer: coarse)").matches ? "tap again to cancel" : "Esc cancels"}`
+    : yours && state.phase === "discard"
       ? `discard ${state.discardNeeded[subject] ?? 0}`
       : yours && state.phase === "robber"
         ? "move the wayfarer"
         : phaseCopy(state.phase);
-  const turnText = `${yours ? "Your" : `${subjectPlayer.name}'s`} turn — ${phaseText}`;
+  // #430: in hotseat a seat that owes a discard on another seat's turn is named, not given the turn.
+  const turnText =
+    !yours && subject !== state.current
+      ? `${subjectPlayer.name} — discard ${state.discardNeeded[subject] ?? 0}`
+      : `${yours ? "Your" : `${subjectPlayer.name}'s`} turn — ${phaseText}`;
   const winner = state.winner ? state.players.find((p) => p.id === state.winner) : null;
   const menuPlayer = menuFor ? state.players.find((p) => p.id === menuFor) : null;
 
@@ -188,7 +212,7 @@ export function Hud() {
       <PlaceChip />
       <header className="pointer-events-none absolute inset-x-0 top-0 z-20 p-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
         <div className="pointer-events-auto mx-auto flex max-w-5xl items-center justify-between gap-2">
-          <div className="flex items-center gap-2 rounded-[20px] border border-white/50 bg-white/45 px-3 py-2 backdrop-blur-md">
+          <div className="flex items-center gap-2 rounded-[20px] border border-white/50 bg-glass px-3 py-2 backdrop-blur-md">
             <span className="font-display text-lg tracking-tight">Emberisle</span>
             <span className="hidden text-xs text-zinc-600 sm:inline">Turn {Math.max(1, state.turn)}</span>
             {spectator ? (
@@ -234,14 +258,15 @@ export function Hud() {
         />
       ) : null}
 
+      {/* An open player menu is a popover, so the rail rises over the bottom stack while it shows (they overlap at 800x500). */}
       {phone ? null : (
-      <aside className="pointer-events-none absolute left-3 top-20 z-10 hidden w-56 flex-col gap-2 md:flex">
+      <aside className={cn("pointer-events-none absolute left-3 top-20 hidden w-56 flex-col gap-2 md:flex", menuFor ? "z-20" : "z-10")}>
         {state.players.map((p) => (
           <div key={p.id} className="pointer-events-auto flex flex-col gap-1">
             <div
               data-testid={`rail-${p.id}`}
               className={cn(
-                "relative rounded-[16px] border bg-white/45 backdrop-blur-md",
+                "relative rounded-[16px] border bg-glass backdrop-blur-md",
                 p.id === state.current ? "border-accent" : "border-white/50",
               )}
             >
@@ -300,7 +325,7 @@ export function Hud() {
             {phone && portrait && !hintDismissed ? (
               <p
                 data-testid="landscape-hint"
-                className="pointer-events-none flex h-11 items-center justify-between gap-2 rounded-[16px] border border-white/50 bg-white/45 pl-3 text-sm text-zinc-900 backdrop-blur-md"
+                className="pointer-events-none flex h-11 items-center justify-between gap-2 rounded-[16px] border border-white/50 bg-glass pl-3 text-sm text-zinc-900 backdrop-blur-md"
               >
                 Turn the phone sideways to see the whole isle.
                 <button
@@ -323,8 +348,9 @@ export function Hud() {
                 data-testid="turn-banner"
                 style={{ borderLeftColor: yours ? undefined : subjectPlayer.color }}
                 className={cn(
-                  "animate-[turn-fade_200ms_ease-out] rounded-[16px] border bg-white/45 px-3 py-2 text-sm font-medium text-zinc-900 backdrop-blur-md",
-                  yours ? "border-accent bg-accent/20" : "border-white/50 border-l-4",
+                  "animate-[turn-fade_200ms_ease-out] rounded-[16px] border bg-glass px-3 py-2 text-sm font-medium text-zinc-900 backdrop-blur-md",
+                  // #424: the accent tint is a layer over the glass, not a replacement for it.
+                  yours ? "border-accent bg-linear-to-r from-accent/20 to-accent/20" : "border-white/50 border-l-4",
                 )}
               >
                 {turnText}
@@ -340,14 +366,10 @@ export function Hud() {
                 {banner}
               </p>
             ) : null}
-            {winner || buildMode === "roadCard" || error ? (
-              <p className="rounded-[16px] border border-white/50 bg-white/45 px-3 py-2 text-sm text-zinc-900 backdrop-blur-md">
-                {winner
-                  ? `${winner.name} wins with ${totalVP(state, winner.id)} points.`
-                  : buildMode === "roadCard"
-                    ? `Path fortune: pick ${roadPicks.length ? "one more path" : "two paths"} on the glowing edges.`
-                    : null}
-                {error ? <span className={cn("block text-orange-700", (winner || buildMode === "roadCard") && "mt-1")}>{error}</span> : null}
+            {winner || error ? (
+              <p className="rounded-[16px] border border-white/50 bg-glass px-3 py-2 text-sm text-zinc-900 backdrop-blur-md">
+                {winner ? `${winner.name} wins with ${totalVP(state, winner.id)} points.` : null}
+                {error ? <span className={cn("block text-orange-700", winner && "mt-1")}>{error}</span> : null}
               </p>
             ) : null}
 
@@ -431,7 +453,10 @@ export function Hud() {
 
             {state.dice ? <Dice values={state.dice} /> : null}
 
-            <p className="hidden max-h-16 shrink-0 overflow-y-auto text-xs text-zinc-600 sm:block short:hidden">
+            <p
+              data-testid="log-line"
+              className="hidden max-h-16 shrink-0 overflow-y-auto rounded-[16px] bg-glass px-3 py-1 text-xs text-zinc-600 backdrop-blur-md sm:block short:hidden"
+            >
               {state.log.slice(-3).join(" · ")}
             </p>
           </div>
@@ -457,6 +482,12 @@ export function Hud() {
   );
 }
 
+// Hotseat's "Seat 2" .. "Seat 4" would all read "Sea", so a trailing number keeps the initial and the number ("S2").
+function shortName(name: string) {
+  const n = /\d+$/.exec(name)?.[0];
+  return n ? `${name[0]}${n}` : name.slice(0, 3);
+}
+
 // Phone seat strip (docs/design/mobile-hud.md): 44 px, one cell per seat. Compact vs the rail: no per-fortune
 // breakdown (that line is rail-only), hidden points show as "+N", and "reconnecting…" replaces the counts line.
 function SeatStrip({ actor, className }: { actor: string; className: string }) {
@@ -475,7 +506,7 @@ function SeatStrip({ actor, className }: { actor: string; className: string }) {
             key={p.id}
             data-testid={`seat-${p.id}`}
             className={cn(
-              "relative h-11 min-w-0 flex-1 rounded-[12px] border bg-white/45 leading-tight backdrop-blur-md",
+              "@container relative h-11 min-w-0 flex-1 rounded-[12px] border bg-glass leading-tight backdrop-blur-md",
               p.id === state.current ? "border-accent" : "border-white/50",
             )}
           >
@@ -485,13 +516,25 @@ function SeatStrip({ actor, className }: { actor: string; className: string }) {
               aria-expanded={menuFor === p.id}
               aria-controls={`player-menu-${p.id}`}
               onClick={() => openMenu(menuFor === p.id ? null : p.id)}
-              className="flex h-full w-full cursor-pointer flex-col justify-center rounded-[12px] px-2 text-left"
+              className="flex h-full w-full cursor-pointer flex-col justify-center rounded-[12px] px-2 text-left @max-[100px]:px-1.5"
             >
-              <span className="flex w-full items-center gap-1.5">
+              <span className="flex w-full items-center gap-1.5 @max-[100px]:gap-1">
                 <span className="size-3 shrink-0 rounded-full" style={{ background: p.color }} />
-                <span className="min-w-0 flex-1 truncate text-xs font-medium">{p.name}</span>
-                <RollOffDie state={state} id={p.id} className="size-4 rounded-[4px] text-[10px]" />
-                <span className="shrink-0 text-xs tabular-nums text-zinc-600">
+                {/* #420: under 100 px a deliberate short form: three letters or initial + number (the full name stays for screen readers), and the
+                    die only while the roll-off is live, so it never sits beside the points as one number. */}
+                <span data-testid="seat-name" className="min-w-0 flex-1 truncate text-xs font-medium @max-[100px]:sr-only">{p.name}</span>
+                <span data-testid="seat-name" aria-hidden="true" className="hidden min-w-0 flex-1 text-xs font-medium @max-[100px]:block">
+                  {shortName(p.name)}
+                </span>
+                <RollOffDie
+                  state={state}
+                  id={p.id}
+                  className={cn("size-4 rounded-[4px] text-[10px]", state.phase !== "rollOff" && "@max-[100px]:hidden")}
+                />
+                <span
+                  data-testid="seat-vp"
+                  className={cn("shrink-0 text-xs tabular-nums text-zinc-600", state.phase === "rollOff" && "@max-[100px]:hidden")}
+                >
                   {publicVP(state, p.id)}
                   {hidden ? `+${hidden}` : ""}
                 </span>
@@ -571,7 +614,7 @@ function useResourceFlashes(me: PlayerState) {
 function ResourceHand({ me }: { me: PlayerState }) {
   const flashes = useResourceFlashes(me);
   return (
-    <div className="flex shrink-0 gap-1 overflow-x-auto rounded-[20px] border border-white/50 bg-white/45 p-2 backdrop-blur-md short:p-1">
+    <div className="flex shrink-0 gap-1 overflow-x-auto rounded-[20px] border border-white/50 bg-glass p-2 backdrop-blur-md short:p-1">
       {RESOURCES.map((r) => {
         const Icon = ICONS[r];
         const flash = flashes[r];

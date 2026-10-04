@@ -1,5 +1,9 @@
 // #381: UI text meets WCAG 1.4.3 (4.5:1). Reads computed colours of the title's Join and Host a table buttons
 // (End turn and Start share the `sea` variant) and the "A living island" eyebrow, then checks the ink tokens.
+// #424: text chips over the island, sampled from screenshots. With the chip's text made transparent, its box is screenshotted;
+// the computed text colour is measured against the mean and the darkest 5 % of those background pixels (both >= 4.5:1).
+// Chips: another seat's turn banner over the setup board (hotseat) at 1280x720 and 390x844, your own turn banner (versus the
+// isle), and the log line at 1280x720.
 // Run: npm run contrast-prove
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
@@ -78,6 +82,86 @@ try {
   const app = readFileSync("src/components/game/EmberisleApp.tsx", "utf8");
   if (/text-accent"/.test(app)) bad.push("EmberisleApp.tsx still uses text-accent for text");
   if (/text-sea"/.test(app)) bad.push("EmberisleApp.tsx still uses text-sea for text");
+
+  // #424: resolve the chip's text colour, hide the text, screenshot the box inside its border, and decode it in the page.
+  const sample = async (pg, testid, label) => {
+    const el = pg.getByTestId(testid);
+    await el.waitFor();
+    const info = await el.evaluate(async (node) => {
+      await Promise.all(node.getAnimations({ subtree: true }).map((a) => a.finished));
+      const c = document.createElement("canvas").getContext("2d", { willReadFrequently: true });
+      c.fillStyle = getComputedStyle(node).color;
+      c.fillRect(0, 0, 1, 1);
+      const fg = [...c.getImageData(0, 0, 1, 1).data].slice(0, 3);
+      node.style.setProperty("color", "transparent", "important");
+      for (const d of node.querySelectorAll("*")) d.style.setProperty("color", "transparent", "important");
+      const s = getComputedStyle(node);
+      const r = node.getBoundingClientRect();
+      const [t, rt, b, l] = ["Top", "Right", "Bottom", "Left"].map((k) => parseFloat(s[`border${k}Width`]) + 2);
+      return { fg, text: node.textContent, clip: { x: r.left + l, y: r.top + t, width: r.width - l - rt, height: r.height - t - b } };
+    });
+    await pg.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+    const png = (await pg.screenshot({ clip: info.clip })).toString("base64");
+    const lums = await pg.evaluate(async (png) => {
+      const img = new Image();
+      img.src = `data:image/png;base64,${png}`;
+      await img.decode();
+      const c = document.createElement("canvas");
+      c.width = img.width;
+      c.height = img.height;
+      const g = c.getContext("2d", { willReadFrequently: true });
+      g.drawImage(img, 0, 0);
+      const d = g.getImageData(0, 0, c.width, c.height).data;
+      const out = [];
+      for (let i = 0; i < d.length; i += 4) out.push([d[i], d[i + 1], d[i + 2]]);
+      return out;
+    }, png);
+    await el.evaluate((node) => {
+      node.style.removeProperty("color");
+      for (const d of node.querySelectorAll("*")) d.style.removeProperty("color");
+    });
+    const L = lums.map(lum).sort((a, b) => a - b);
+    const mean = L.reduce((a, b) => a + b, 0) / L.length;
+    const p5 = L[Math.floor(L.length * 0.05)];
+    const fgL = lum(info.fg);
+    const r = (bgL) => (Math.max(fgL, bgL) + 0.05) / (Math.min(fgL, bgL) + 0.05);
+    const out = [[`${label}: text on mean background`, r(mean)], [`${label}: text on darkest 5 % of background`, r(p5)]];
+    console.log(`  ${label}: "${info.text}" text rgb(${info.fg}) over ${L.length} px`);
+    return out;
+  };
+  const sampled = [];
+  for (const viewport of [{ width: 1280, height: 720 }, { width: 390, height: 844 }]) {
+    const tag = `${viewport.width}x${viewport.height}`;
+    const pg = await browser.newPage({ viewport });
+    pg.on("console", (m) => m.type() === "error" && errors.push(m.text()));
+    pg.on("pageerror", (e) => errors.push(String(e)));
+    await pg.goto(`http://127.0.0.1:${PORT}/`);
+    await pg.getByRole("button", { name: "Join", exact: true }).waitFor();
+    // Hotseat names every seat, so the banner is another seat's: roll off, then the first seat places on the setup board.
+    await pg.evaluate(() => {
+      const g = window.__emberisle.getState();
+      g.startHotseat(4);
+      while (window.__emberisle.getState().state.phase === "rollOff") window.__emberisle.getState().dispatch({ type: "roll" });
+    });
+    await pg.waitForFunction(() => window.__isle && window.__emberisle.getState().state.phase === "setupSettle");
+    sampled.push(...(await sample(pg, "turn-banner", `${tag} another seat's turn banner`)));
+    if (viewport.width >= 640) sampled.push(...(await sample(pg, "log-line", `${tag} log line`)));
+    // Versus the isle: the human rolls off when up, then waits on its own first corner (the bots act on the app's timer).
+    await pg.evaluate(() => window.__emberisle.getState().goTitle());
+    await pg.getByRole("button", { name: "Play versus the isle" }).click();
+    await pg.waitForFunction(() => {
+      const s = window.__emberisle.getState();
+      if (s.state?.phase === "rollOff" && s.state.current === s.localId) s.dispatch({ type: "roll" });
+      return s.state?.phase === "setupSettle" && s.state.current === s.localId;
+    }, null, { polling: 100, timeout: 60_000 });
+    sampled.push(...(await sample(pg, "turn-banner", `${tag} your turn banner`)));
+    await pg.screenshot({ path: `test-results/contrast-prove-${tag}.png` });
+    await pg.close();
+  }
+  for (const [name, r] of sampled) {
+    console.log(`${r.toFixed(2)}:1  ${name}`);
+    if (r < MIN) bad.push(`${name} is ${r.toFixed(2)}:1`);
+  }
   assert.deepEqual(bad, [], `below ${MIN}:1`);
   assert.deepEqual(errors, [], "console errors");
   console.log("contrast-prove: ok");

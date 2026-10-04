@@ -46,8 +46,8 @@ export function TurnCountdown() {
         data-seconds={secs}
         style={{ borderLeftColor: urgent ? undefined : player!.color }}
         className={cn(
-          "animate-[turn-fade_200ms_ease-out] rounded-[16px] border bg-white/45 px-3 py-2 text-sm font-medium tabular-nums text-zinc-900 backdrop-blur-md",
-          urgent ? "border-accent bg-accent/20" : "border-white/50 border-l-4",
+          "animate-[turn-fade_200ms_ease-out] rounded-[16px] border bg-glass px-3 py-2 text-sm font-medium tabular-nums text-zinc-900 backdrop-blur-md",
+          urgent ? "border-accent bg-linear-to-r from-accent/20 to-accent/20" : "border-white/50 border-l-4",
         )}
       >
         {who}: {clock(secs!)}
