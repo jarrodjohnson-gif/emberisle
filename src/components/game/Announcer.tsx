@@ -1,6 +1,7 @@
 // Screen-reader status messages (#380, WCAG 4.1.3): whose turn it is, and what the isle just refused.
-// Roll results and the roll-off ("Dune rolls a 4.", "… places first") already speak through the Hud's role="status"
-// banner, trade news through TradeToast, and the win through WinScreen's dialog, so none of those are repeated here.
+// The roll speaks through Dice.tsx's RollMoment (#440); who gathered what and the roll-off ("Dune rolls a 4.",
+// "… places first") through the Hud's role="status" banner, trade news through TradeToast, and the win through
+// WinScreen's dialog, so none of those are repeated here.
 import { useEffect, useState } from "react";
 import { useGame } from "@/lib/game/store";
 
