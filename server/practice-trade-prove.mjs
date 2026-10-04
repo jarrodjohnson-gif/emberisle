@@ -6,6 +6,7 @@
 //      bot plays on without asking again.
 //   D. A bot asks and the person stays silent: it closes at 20 s and the bot plays on.
 //   E. The person's offer closes when their turn ends, and its bots' answers never land.
+//   F. Leaving for the Title, or starting a new practice game, drops an open offer, and its bots' answers never land.
 import { mock } from "node:test";
 import { chooseBotAction, chooseTradeAsk, shouldAcceptTrade } from "../src/lib/game/ai.ts";
 import { createGame } from "../src/lib/game/board.ts";
@@ -131,6 +132,18 @@ const after = JSON.stringify(s().state.players.map((p) => p.resources));
 mock.timers.tick(20_000);
 if (s().declined.length || JSON.stringify(s().state.players.map((p) => p.resources)) !== after) fail("E: a bot answered a closed offer");
 console.log("E ok: ending the turn closes the person's offer, and no bot answers it");
+
+// F: the person asks, then leaves; and asks again, then starts a fresh game straight from the store.
+for (const [how, leave] of [["goTitle", () => s().goTitle()], ["startAi", () => s().startAi()]]) {
+  practice(structuredClone(gA));
+  s().askTable(helps.give, helps.want);
+  leave();
+  if (s().offer) fail(`F: ${how} left the offer open`);
+  const held = JSON.stringify(s().state?.players.map((p) => p.resources) ?? null);
+  mock.timers.tick(20_000);
+  if (s().offer || s().declined.length || JSON.stringify(s().state?.players.map((p) => p.resources) ?? null) !== held) fail(`F: a bot answered after ${how}`);
+}
+console.log("F ok: goTitle and startAi drop an open offer, and no bot answers it");
 
 mock.timers.reset();
 console.log("practice trade prove ok");

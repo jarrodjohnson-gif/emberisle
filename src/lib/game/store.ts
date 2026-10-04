@@ -356,6 +356,9 @@ export const useGame = create<GameStore>((set, get) => ({
     // A table left dialing (a reload with a saved seat) must not pull a practice game back to the lobby.
     clearWake();
     get().net?.close();
+    // A new game owes nothing to the last one's offer or bot ask.
+    clearOfferTimers();
+    botAsked = "";
     const name = get().name;
     const state = createGame({ humans: [{ name }], bots: 3 });
     set({
@@ -371,11 +374,16 @@ export const useGame = create<GameStore>((set, get) => ({
       net: null,
       peeking: false,
       spectator: false,
+      offer: null,
+      declined: [],
+      tradeOutcome: null,
     });
   },
   startHotseat: (count) => {
     clearWake();
     get().net?.close();
+    clearOfferTimers();
+    botAsked = "";
     const humans = Array.from({ length: count }, (_, i) => ({
       name: i === 0 ? get().name : `Seat ${i + 1}`,
     }));
@@ -393,6 +401,9 @@ export const useGame = create<GameStore>((set, get) => ({
       net: null,
       peeking: false,
       spectator: false,
+      offer: null,
+      declined: [],
+      tradeOutcome: null,
     });
   },
   loadState: (s, localId, host, table) =>

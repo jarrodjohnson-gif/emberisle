@@ -62,8 +62,23 @@ try {
       s.startAi();
       window.__emberisle.setState({ state: g });
     }, g);
-  const hands = () => page.evaluate(() => Object.fromEntries(window.__emberisle.getState().state.players.map((p) => [p.id, p.resources])));
   const toast = page.getByTestId("trade-toast");
+  // Every hand at the moment the open offer closes. Once it has, the bot's turn plays on (a build, a fortune, the next
+  // seat's roll) and moves goods for its own reasons, so the trade is judged on this snapshot, not on a later read.
+  const watchClose = () =>
+    page.evaluate(() => {
+      window.__closed = null;
+      const stop = window.__emberisle.subscribe((now, prev) => {
+        if (prev.offer && !now.offer) {
+          window.__closed = Object.fromEntries(now.state.players.map((p) => [p.id, { ...p.resources }]));
+          stop();
+        }
+      });
+    });
+  const closedHands = async () => {
+    await page.waitForFunction(() => window.__closed, null, { timeout: STEP_MS });
+    return page.evaluate(() => window.__closed);
+  };
 
   // 1. The person asks through the panel.
   await load(gA);
@@ -71,10 +86,11 @@ try {
   const panel = page.getByTestId("trade-panel");
   await panel.getByRole("button", { name: "More grain to give" }).click();
   await panel.getByRole("button", { name: "More wool to want" }).click();
+  await watchClose();
   await panel.getByRole("button", { name: "Ask the table" }).click();
   await page.waitForFunction(() => window.__emberisle.getState().offer?.from === "p0", null, { timeout: STEP_MS });
   await toast.getByText(`${bot} takes it.`).waitFor({ timeout: STEP_MS });
-  const h1 = await hands();
+  const h1 = await closedHands();
   console.log(`person asks: "${bot} takes it."; Ember ${JSON.stringify(h1.p0)}, ${bot} ${JSON.stringify(h1.p2)}`);
   if (h1.p0.grain !== 0 || h1.p0.wool !== 1 || h1.p2.grain !== 3 || h1.p2.wool !== 1) throw new Error("the goods did not move");
 
@@ -82,6 +98,7 @@ try {
   await load(gC);
   const dialog = page.getByRole("alertdialog");
   await dialog.waitFor({ timeout: STEP_MS });
+  await watchClose();
   const line = await dialog.locator("p").first().textContent();
   const buttons = await dialog.getByRole("button").allTextContents();
   const want = `${bot} offers 1 ${Object.keys(askC.give)[0]} for 1 ${Object.keys(askC.want)[0]}`;
@@ -93,8 +110,7 @@ try {
   });
   if (waiting.current !== "p2" || waiting.phase !== "main") throw new Error(`the bot's turn did not wait on its ask: ${JSON.stringify(waiting)}`);
   await dialog.getByRole("button", { name: "Yes" }).click();
-  await page.waitForFunction(() => !window.__emberisle.getState().offer, null, { timeout: STEP_MS });
-  const h2 = await hands();
+  const h2 = await closedHands();
   if (h2.p0.grain !== 0 || h2.p2.grain !== 3) throw new Error(`the person's Yes moved nothing: ${JSON.stringify(h2)}`);
   await page.waitForFunction(() => window.__emberisle.getState().state.current !== "p2", null, { timeout: STEP_MS });
   const log = await page.evaluate((n) => window.__emberisle.getState().gameLog.map((l) => l.text).filter((t) => t.startsWith(n)), bot);
@@ -104,10 +120,10 @@ try {
   //    turn still plays on.
   await load(gC);
   await dialog.waitFor({ timeout: STEP_MS });
+  await watchClose();
   await dialog.getByRole("button", { name: "No" }).click();
-  await page.waitForFunction(() => !window.__emberisle.getState().offer, null, { timeout: STEP_MS });
-  const h3 = await hands();
-  if (h3.p0.grain !== 1 || h3.p2.grain !== 2) throw new Error(`a declined ask moved goods: ${JSON.stringify(h3)}`);
+  const h3 = await closedHands();
+  if (h3.p0.grain !== 1 || h3.p0.wool !== 0 || h3.p2.grain !== 2 || h3.p2.wool !== 2) throw new Error(`a declined ask moved goods: ${JSON.stringify(h3)}`);
   await page.waitForFunction(() => window.__emberisle.getState().state.current !== "p2", null, { timeout: STEP_MS });
   console.log(`person says No: nothing moves, and ${bot} plays on`);
 
