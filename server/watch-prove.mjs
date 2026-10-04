@@ -1,8 +1,9 @@
 // #347: a spectator socket (hello {code, watch:true}) on a started table. It has no seat and gets the opponent view:
 // every state the seats get, with no hand, hidden card, deck, seed or rng, and at the win the same reveal as the seats
 // minus the seed and rng. The seats see a watcher count and a coalesced log line, every message a watcher sends is refused
-// with one error, the turn timer only ever moves a seat, and the last seat letting go closes the watchers. Three
-// src/lib/net/table.ts clients play the game to the win on the practice bot.
+// with one error, the turn timer only ever moves a seat, with every seat dropped the bots wait as they do with nobody
+// connected (#349), and the last seat letting go closes the watchers. Three src/lib/net/table.ts clients play the game
+// to the win on the practice bot.
 import { spawn } from "node:child_process";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -17,8 +18,10 @@ const STEP_MS = 5000;
 // Wide enough that the bot-driven seats never idle this long on a loaded CI box; the only idle wait is deliberate.
 const TURN = 1200;
 const WATCH_MAX = 2;
-// Once the game is over every seat closes; after HOLD the room is dropped under the last watcher.
-const HOLD = 400;
+// Every seat drops mid-game: after GRACE the bot takes each seat (and waits, with no seat connected); the seats rejoin
+// well inside HOLD. Once the game is over every seat closes; after HOLD the room is dropped under the last watcher.
+const GRACE = 300;
+const HOLD = 5000;
 const DEV_KINDS = ["knight", "road", "plenty", "monopoly", "vp"];
 
 let host;
@@ -34,7 +37,7 @@ const ROOMS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-rooms-"));
 process.on("exit", () => rmSync(ROOMS_DIR, { recursive: true, force: true }));
 host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL(".", import.meta.url),
-  env: { ...process.env, PORT: "0", ACT_RATE: "1000", ACT_CAP: "1000", TURN_MS: String(TURN), HOLD_MS: String(HOLD), SPECTATOR_MAX: String(WATCH_MAX), ROOMS_DIR },
+  env: { ...process.env, PORT: "0", ACT_RATE: "1000", ACT_CAP: "1000", TURN_MS: String(TURN), GRACE_MS: String(GRACE), HOLD_MS: String(HOLD), SPECTATOR_MAX: String(WATCH_MAX), ROOMS_DIR },
 });
 process.on("exit", () => host.kill());
 for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
@@ -67,6 +70,12 @@ function until(cond, what, ms = STEP_MS) {
 
 function player(name) {
   const p = { name, state: null, legal: null, code: null, you: null, secret: null, seats: null, seatsSeen: [], errors: [], logs: [], chats: [], seqs: [] };
+  attach(p);
+  return p;
+}
+
+// A fresh table.ts client for `p`; a rejoin after a drop keeps the same record and its history.
+function attach(p) {
   const on = (fn) => (m) => {
     fn(m);
     wake();
@@ -90,7 +99,6 @@ function player(name) {
     chat: on((line) => p.chats.push(line)),
     error: on((e) => p.errors.push(e)),
   }, WebSocket);
-  return p;
 }
 
 // A raw socket that keeps every message it is sent, so the proof can read all of them back.
@@ -219,19 +227,51 @@ async function act(p, action) {
   return p.errors.length > errs ? p.errors[p.errors.length - 1] : null;
 }
 let actions = 0;
-for (; actions < MAX_ACTIONS && a.state.phase !== "over"; actions++) {
-  const g = a.state;
-  const p = g.phase === "discard" ? all.find((x) => x.legal.discard > 0) : all.find((x) => x.state.current === x.you);
-  if (!p) fail(`nobody to act at seq ${g.seq}`, { phase: g.phase, current: g.current });
-  const view = { ...p.state, deck: Array.from({ length: p.state.deckLeft }) };
-  const action = chooseBotAction(view, p.you) ?? { type: "endTurn" };
-  const err = await act(p, action);
-  // A refused move becomes a pass, as runBots does; a refusal because the table already moved (the timer) is fine.
-  if (err && a.state.seq === g.seq) {
-    const again = await act(p, { type: "endTurn" });
-    if (again && a.state.seq === g.seq) fail(`${p.you} ${JSON.stringify(action)} refused (${err}) and so was the pass`, again);
+async function playUntil(stop) {
+  for (; actions < MAX_ACTIONS && !stop(a.state); actions++) {
+    const g = a.state;
+    const p = g.phase === "discard" ? all.find((x) => x.legal.discard > 0) : all.find((x) => x.state.current === x.you);
+    if (!p) fail(`nobody to act at seq ${g.seq}`, { phase: g.phase, current: g.current });
+    const view = { ...p.state, deck: Array.from({ length: p.state.deckLeft }) };
+    const action = chooseBotAction(view, p.you) ?? { type: "endTurn" };
+    const err = await act(p, action);
+    // A refused move becomes a pass, as runBots does; a refusal because the table already moved (the timer) is fine.
+    if (err && a.state.seq === g.seq) {
+      const again = await act(p, { type: "endTurn" });
+      if (again && a.state.seq === g.seq) fail(`${p.you} ${JSON.stringify(action)} refused (${err}) and so was the pass`, again);
+    }
   }
 }
+
+// --- 4b. Every seat drops mid-game with both watchers connected. After the grace the bot takes each seat, but with no
+// seat connected the bots wait, exactly as with nobody connected at all: a watcher never keeps the game moving. The
+// fence is the first "is back." line of the rejoin: a bot's push would have arrived before it on the same socket.
+await playUntil((g) => g.phase === "main");
+const seqAtDrop = a.state.seq;
+// The watchers' copy of the last push rides its own socket, so it can land after the seats' did.
+await until(() => [w1, w2].every((w) => w.state().game.seq === seqAtDrop), "the watchers catching up before the drop");
+const inboxAtDrop = w1.inbox.length;
+const inboxAtDrop2 = w2.inbox.length;
+for (const p of all) p.t.close();
+const taken = (w, from) => names.every((n) => w.inbox.slice(from).some((m) => m.type === "log" && m.text === `${n} is played by the bot until they return.`));
+await until(() => taken(w1, inboxAtDrop) && taken(w2, inboxAtDrop2), "the bot taking every dropped seat", GRACE * 3 + 3000);
+if (w1.closed || w2.closed) fail("the room closed under its watchers inside the hold");
+if (!w1.seatsSeen[w1.seatsSeen.length - 1].seats.every((s) => s.away)) fail("every seat is marked away", w1.seatsSeen[w1.seatsSeen.length - 1].seats);
+for (const p of all) {
+  const seqs = p.seqs.length;
+  attach(p);
+  p.t.rejoin(code, p.secret);
+  await until(() => p.seqs.length > seqs, `${p.name}'s rejoin state`);
+}
+const backAt = w1.inbox.findIndex((m, i) => i >= inboxAtDrop && m.type === "log" && m.text === "Ember is back.");
+if (backAt < 0) fail("the watcher heard the first rejoin", w1.logs.slice(-5));
+const pushedWhileEmpty = w1.inbox.slice(inboxAtDrop, backAt).filter((m) => m.type === "state");
+if (pushedWhileEmpty.length) fail("the bots played with only watchers connected", { seqAtDrop, pushed: pushedWhileEmpty.map((m) => m.game.seq) });
+if (w1.inbox.slice(inboxAtDrop, backAt).some((m) => m.type === "error")) fail("a watcher was touched by the drops", w1.errors.slice(-3));
+await until(() => all.every((p) => p.state.players.every((q) => q.kind === "human")), "every seat human again");
+console.log(`every seat dropped at seq ${seqAtDrop}: after GRACE_MS=${GRACE} the bot took all three and waited (0 states pushed to the watchers); all three rejoined, seq ${a.state.seq}, every seat human`);
+
+await playUntil((g) => g.phase === "over");
 if (a.state.phase !== "over") fail(`no winner after ${MAX_ACTIONS} actions`, { phase: a.state.phase, turn: a.state.turn });
 await until(() => all.every((x) => x.state.phase === "over") && [w1, w2].every((w) => w.state().game.phase === "over"), "the end reaching every socket");
 for (const w of [w1, w2]) {
@@ -241,7 +281,8 @@ for (const w of [w1, w2]) {
   const got = w.states.map((m) => m.game.seq);
   if (JSON.stringify(got) !== JSON.stringify(seatSeqs)) fail(`${w.name} missed or invented a state`, { got: got.length, seats: seatSeqs.length });
 }
-console.log(`played to the win in ${actions} actions: ${w1.states.length} watcher states, every one before the end the opponent view, same seqs as the seats`);
+for (const w of [w1, w2]) if (!w.inbox.some((m) => m.type === "rolled" && Array.isArray(m.dice))) fail(`${w.name} never got a rolled message`);
+console.log(`played to the win in ${actions} actions: ${w1.states.length} watcher states, every one before the end the opponent view, same seqs as the seats; the rolled messages reached the watchers`);
 
 // --- 5. At the win: the full reveal, minus the seed and rng. Everything else equals the seats' own final state.
 const finalW = w1.state();
@@ -264,6 +305,7 @@ console.log(`at the win: ${finalW.game.winner} wins; the watcher holds every han
 // the same ordered socket, so a late reply would have come before it.
 const seqAtWin = a.state.seq;
 const aErrs = a.errors.length;
+const aLogs = a.logs.length;
 const errs1 = w1.errors.length;
 const burst = [{ type: "hello", code, secret: a.secret }, { type: "roll" }, { type: "chat", text: "hello from the stands" }, { type: "tradeAnswer", tradeId: "t1", yes: true }, "not json"];
 for (const m of [...burst, { type: "ready", value: true }, { type: "start" }, { type: "peek", code }, { type: "hello", code, watch: true }]) w1.send(m);
@@ -283,7 +325,7 @@ if (w1.inbox.some((m) => m.type === "seats" && m.seats.length !== 3)) fail("a pe
 if (all.some((p) => p.chats.some((l) => l.text === "hello from the stands"))) fail("a watcher's chat reached a seat");
 if (w1.inbox.some((m) => m.type === "chat" && m.text === "hello from the stands")) fail("a watcher's chat was echoed");
 if (all.some((p) => p.state.seq !== seqAtWin) || w1.state().game.seq !== seqAtWin || w2.state().game.seq !== seqAtWin) fail("the state moved on a watcher's message");
-if (a.errors.length !== aErrs || a.seats.some((s) => s.away) || a.logs.some((t) => t === "Ember is back." || t === "Ember lost connection.")) fail("a watcher's hello {code, secret} touched the seat", { errors: a.errors.slice(aErrs), seats: a.seats });
+if (a.errors.length !== aErrs || a.seats.some((s) => s.away) || a.logs.slice(aLogs).some((t) => t === "Ember is back." || t === "Ember lost connection.")) fail("a watcher's hello {code, secret} touched the seat", { errors: a.errors.slice(aErrs), seats: a.seats });
 console.log(`refusals: a seat's secret, roll, chat, tradeAnswer, junk, place, pass, buy, tradeAsk, react -> 10 x "Watching only."; ready, start, peek and a second watch past the burst -> silence; nothing moved; "gg" from a seat reached both watchers`);
 
 // --- 7. A watcher leaving is counted down at once and logged at most once per window; the seats are untouched.

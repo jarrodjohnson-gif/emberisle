@@ -1,4 +1,5 @@
-// Untrusted input: bad messages, card-minting discards, oversized pictures, and a player who leaves mid-game.
+// Untrusted input: bad messages, card-minting discards, oversized pictures, a player who leaves mid-game, and the two
+// caps around watchers: SPECTATOR_MAX=0 turns watching off, and watchers never count toward ROOM_MAX (#349).
 import { spawn } from "node:child_process";
 import { mkdtempSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -51,8 +52,8 @@ process.on("exit", () => rmSync(ROOMS_DIR, { recursive: true, force: true }));
 // 2. The host survives garbage, caps pictures, and picks picture ids itself.
 host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL(".", import.meta.url),
-  // A short grace so the bot takes over a dropped seat within the proof (#195).
-  env: { ...process.env, PORT: "0", GRACE_MS: "100", ROOMS_DIR },
+  // A short grace so the bot takes over a dropped seat within the proof (#195). Watching is off (docs/design/spectator.md).
+  env: { ...process.env, PORT: "0", GRACE_MS: "100", SPECTATOR_MAX: "0", ROOMS_DIR },
   stdio: ["ignore", "pipe", "pipe"],
 });
 process.on("exit", () => host.kill());
@@ -190,6 +191,16 @@ const gone = after.game.players.find((p) => p.id === first);
 if (gone.kind !== "bot" || after.game.current === first) fail("table hung after a leave", after.game.current);
 console.log(`seat ${first} left on its roll-off turn; the bot rolled and play moved to ${after.game.current}`);
 
+// 3b. SPECTATOR_MAX=0: the first watcher of a started table is refused by the cap.
+const off = client();
+await off.open;
+off.send({ type: "hello", code, watch: true });
+while (!off.inbox.length) await new Promise((res) => off.waiters.push(res));
+const noWatch = off.inbox.shift();
+if (noWatch.type !== "error" || noWatch.message !== "Table is full to watch.") fail("SPECTATOR_MAX=0 must refuse the first watcher", JSON.stringify(noWatch));
+off.ws.close();
+console.log(`SPECTATOR_MAX=0: the first watcher of the started table got "${noWatch.message}"`);
+
 // 4. A host with ROOM_MAX=3 opens three tables and refuses the fourth; one seat flooding non-chat messages is throttled (#281).
 const SMALL_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-rooms-"));
 process.on("exit", () => rmSync(SMALL_DIR, { recursive: true, force: true }));
@@ -209,9 +220,10 @@ const port3 = await new Promise((resolve, reject) => {
 small3.on("exit", (code) => fail("ROOM_MAX host died", code));
 const four = [client(port3), client(port3), client(port3), client(port3)];
 await Promise.all(four.map((x) => x.open));
+const codes = [];
 for (const [i, x] of four.entries()) {
   x.send({ type: "hello", name: `T${i}` });
-  await (i < 3 ? x.next("welcome") : x.next("error").then((e) => (e.message === "The host is full." ? e : fail("fourth table answer", e.message))));
+  await (i < 3 ? x.next("welcome").then((w) => codes.push(w.code)) : x.next("error").then((e) => (e.message === "The host is full." ? e : fail("fourth table answer", e.message))));
 }
 if (four[3].inbox.some((e) => e.type === "welcome")) fail("the fourth table opened");
 const files = readdirSync(SMALL_DIR).filter((f) => f.endsWith(".json"));
@@ -239,6 +251,44 @@ flood.send({ type: "start" });
 const afterFlood = await flood.next("error");
 if (afterFlood.message === "Slow down.") fail("start still throttled after a second");
 console.log(`60 ready toggles gave ${slows} 'Slow down.'; host up; ready and start answered a second later ("${afterFlood.message}")`);
+
+// 4b. Watchers never count toward ROOM_MAX (docs/design/spectator.md): T1's table fills, starts and takes two watchers;
+// a new table is still refused, rooms/ still holds three files, and the watchers stay and get the next state.
+const mates = [client(port3), client(port3)];
+await Promise.all(mates.map((x) => x.open));
+for (const [i, x] of mates.entries()) {
+  x.send({ type: "hello", code: codes[1], name: `M${i}` });
+  await x.next("welcome");
+}
+const table1 = [four[1], ...mates];
+for (const x of table1) x.send({ type: "ready", value: true });
+let ready1;
+do ready1 = await four[1].next("seats");
+while (ready1.seats.length < 3 || !ready1.seats.every((s) => s.ready));
+four[1].send({ type: "start" });
+await Promise.all(table1.map((x) => x.next("state")));
+const watchers = [client(port3), client(port3)];
+await Promise.all(watchers.map((x) => x.open));
+for (const x of watchers) {
+  x.send({ type: "hello", code: codes[1], watch: true });
+  const w = await x.next("welcome");
+  if (w.spectator !== true || "secret" in w) fail("the watcher's welcome", JSON.stringify(w));
+  await x.next("state");
+}
+const fifth = client(port3);
+await fifth.open;
+fifth.send({ type: "hello", name: "T4" });
+const stillFull = await fifth.next("error");
+if (stillFull.message !== "The host is full.") fail("a new table on a full host with watchers", stillFull.message);
+const filesAfter = readdirSync(SMALL_DIR).filter((f) => f.endsWith(".json"));
+if (filesAfter.length !== 3) fail("watchers changed rooms/", filesAfter);
+const mover = table1.find((x) => x.state.you === x.state.game.current);
+const seqBefore = mover.state.game.seq;
+mover.send({ type: "roll" });
+const rolled = await Promise.all(watchers.map((x) => x.next("state")));
+if (rolled.some((m) => m.game.seq <= seqBefore) || watchers.some((x) => x.ws.readyState !== x.ws.OPEN)) fail("the watchers did not stay on the full host", rolled.map((m) => m.game.seq));
+console.log(`ROOM_MAX=3 with 2 watchers on ${codes[1]}: a new table still got "${stillFull.message}", rooms/ holds ${filesAfter.length} files, both watchers stayed and got seq ${rolled[0].game.seq}`);
+for (const x of [...mates, ...watchers, fifth]) x.ws.close();
 for (const x of four) x.ws.close();
 small3.removeAllListeners("exit");
 small3.kill();
