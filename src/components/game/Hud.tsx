@@ -1,8 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import {
-  BookOpen,
   Dices,
-  Eye,
   Home,
   Landmark,
   Route,
@@ -19,6 +17,7 @@ import { PlayerMenu } from "@/components/game/PlayerMenu";
 import { DiscardBar } from "@/components/game/DiscardBar";
 import { TurnCountdown } from "@/components/game/TurnCountdown";
 import { Dice } from "@/components/game/Dice";
+import { TableMenu } from "@/components/game/TableMenu";
 import { ResourceHand } from "@/components/game/Hand";
 import { COST, RESOURCES, RESOURCE_LABEL, type BuildMode, type DevKind, type GameState, type PlayerState, type Resource } from "@/lib/game/types";
 import { hiddenCount, legalRoads, playable, publicVP, totalVP } from "@/lib/game/rules";
@@ -101,7 +100,7 @@ function priceLabel(kind: Price) {
 }
 
 // Escape, topmost layer first. One press closes exactly one thing:
-//   1. LeaveButton's confirm popover: window capture + stopPropagation (and it closes whenever HowTo opens, so the two never stack).
+//   1. TableMenu (and its Leave question): window capture + stopPropagation (it closes whenever HowTo opens, so the two never stack).
 //   2. HowTo: modal, so window capture + stopPropagation; nothing behind it hears the key.
 //   3. TradePanel (window) and PlayerMenu (document), bubble phase, each closes itself; PlaceChip's pending tap (window) likewise.
 //   4. Disarming a build mode: window capture, but it stands down when 1-3 are open or the key came from a text field
@@ -114,7 +113,7 @@ function useEscapeDisarm() {
       const s = useGame.getState();
       if (s.buildMode === "none" || s.tradeOpen || s.menuFor || s.pendingPlace || s.howTo) return;
       if ((e.target as HTMLElement | null)?.closest("input, select, textarea")) return;
-      if (document.querySelector('[data-testid="leave-confirm"]')) return;
+      if (document.querySelector('[data-testid="table-menu"]')) return;
       play("ui_back");
       setBuildMode("none");
     };
@@ -143,7 +142,6 @@ export function Hud() {
   const openMenu = useGame((s) => s.openMenu);
   // A watcher (docs/design/spectator.md): `me` below falls back to seat 0, so its hand bar is hidden by this flag, never by `localId`.
   const spectator = useGame((s) => s.spectator);
-  const watching = useGame((s) => s.watching);
   const { phone, portrait } = useViewport();
   const [hintDismissed, setHintDismissed] = useState(() => sessionStorage.getItem(HINT_KEY) === "1");
   useEscapeDisarm();
@@ -201,35 +199,18 @@ export function Hud() {
   return (
     <>
       <PlaceChip />
-      <header className="pointer-events-none absolute inset-x-0 top-0 z-20 p-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
-        <div className="pointer-events-auto mx-auto flex max-w-5xl items-center justify-between gap-2">
-          <div className="flex items-center gap-2 rounded-[20px] border border-white/50 bg-glass px-3 py-2 backdrop-blur-md">
-            <span className="font-display text-lg tracking-tight">Emberisle</span>
-            <span className="hidden text-xs text-zinc-700 sm:inline">Turn {Math.max(1, state.turn)}</span>
-            {spectator ? (
-              <span data-testid="watching-badge" className="rounded-full bg-fg px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-bg">
-                Watching
-              </span>
-            ) : null}
-            {watching > 0 ? (
-              <span
-                data-testid="watching-count"
-                title={`${watching} watching`}
-                aria-label={`${watching} watching`}
-                className="flex items-center gap-1 text-xs tabular-nums text-zinc-700"
-              >
-                <Eye className="size-3.5" aria-hidden="true" />
-                {watching}
-              </span>
-            ) : null}
-          </div>
-          {phone && !portrait ? <SeatStrip actor={actor} className="ml-auto min-w-0 max-w-[34rem] flex-1" /> : null}
-          <div className="flex gap-1">
-            <Button variant="secondary" size="icon" onClick={(e) => setHowTo(true, e.currentTarget)} aria-label="How to play">
-              <BookOpen className="size-4" />
-            </Button>
-            <LeaveButton confirm={mode === "online" && !spectator && state.phase !== "over"} />
-          </div>
+      {/* #442: one control up top. The turn number, watcher count, How to play, sound and Leave live in the menu, whose open
+          sheet rises over the z-20 chat dock (it reaches the header on a sideways phone). A watcher's badge stays out here,
+          a chip and not a button, so a watcher always sees why it has no controls (docs/design/spectator.md). */}
+      <header className="pointer-events-none absolute inset-x-0 top-0 z-20 p-3 pt-[max(0.75rem,env(safe-area-inset-top))] has-[#table-menu]:z-30">
+        <div className="pointer-events-auto flex items-center justify-end gap-2">
+          {phone && !portrait ? <SeatStrip actor={actor} className="min-w-0 max-w-[34rem] flex-1" /> : null}
+          {spectator ? (
+            <span data-testid="watching-badge" className="flex h-11 items-center rounded-chip bg-glass px-3 text-caption text-fg backdrop-blur-md">
+              Watching
+            </span>
+          ) : null}
+          <TableMenu />
         </div>
       </header>
 
@@ -731,67 +712,6 @@ export function HowTo({ onClose }: { onClose: () => void }) {
           <p>Drag to orbit the isle. Tap glowing corners and paths to build.</p>
         </div>
       </div>
-    </div>
-  );
-}
-
-// Leaving an online table frees the seat for good (goTitle wipes the saved secret), so ask first. Stay, Escape or 5 s cancels.
-function LeaveButton({ confirm }: { confirm: boolean }) {
-  const goTitle = useGame((s) => s.goTitle);
-  const phone = useViewport().phone;
-  const [asking, setAsking] = useState(false);
-  const leaveRef = useRef<HTMLButtonElement>(null);
-  const stayRef = useRef<HTMLButtonElement>(null);
-  const cancel = () => {
-    setAsking(false);
-    leaveRef.current?.focus();
-  };
-  useEffect(() => {
-    if (!asking) return;
-    stayRef.current?.focus();
-    const timer = setTimeout(cancel, 5000);
-    // Capture phase, so this Escape closes only the popover and not the trade panel behind it.
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== "Escape") return;
-      e.stopPropagation();
-      play("ui_back");
-      cancel();
-    };
-    window.addEventListener("keydown", onKey, true);
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener("keydown", onKey, true);
-    };
-  }, [asking]);
-  const menuFor = useGame((s) => s.menuFor);
-  const howTo = useGame((s) => s.howTo);
-  useEffect(() => {
-    if (!confirm || menuFor || howTo) setAsking(false);
-  }, [confirm, menuFor, howTo]);
-  return (
-    <div className="relative">
-      <Button ref={leaveRef} variant="secondary" size="sm" onClick={confirm ? () => setAsking(true) : goTitle}>
-        Leave
-      </Button>
-      {asking ? (
-        <div
-          role="alertdialog"
-          aria-label="Leave the table?"
-          aria-describedby="leave-confirm-msg"
-          data-testid="leave-confirm"
-          className="absolute right-0 top-full z-20 mt-2 flex w-64 flex-col gap-2 rounded-[16px] border border-white/50 bg-surface p-3 text-sm shadow-lg"
-        >
-          <p id="leave-confirm-msg">Leave the table? Your seat goes to the bot.</p>
-          <div className="flex justify-end gap-2">
-            <Button ref={stayRef} back variant="secondary" size="sm" className={phone ? "h-11 min-w-11" : undefined} onClick={cancel}>
-              Stay
-            </Button>
-            <Button size="sm" className={phone ? "h-11 min-w-11" : undefined} onClick={goTitle}>
-              Leave
-            </Button>
-          </div>
-        </div>
-      ) : null}
     </div>
   );
 }

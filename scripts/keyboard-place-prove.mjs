@@ -53,7 +53,7 @@ try {
   if (start.phase !== "setupSettle") throw new Error(`roll-off did not end: ${start.phase}`);
 
   // From the first HUD button, Tab alone reaches the list.
-  await page.getByRole("button", { name: "How to play" }).focus();
+  await page.getByRole("button", { name: "Table menu" }).focus();
   let tabs = 0;
   while (!(await focusInList())) {
     if (++tabs > 120) throw new Error("Tab never reached the place list");
@@ -62,7 +62,7 @@ try {
   const group = page.getByRole("group", { name: "Place an outpost" });
   const names = await group.getByRole("button").allTextContents();
   const box = await list.boundingBox();
-  console.log(`setupSettle: ${tabs} Tab presses from How to play reach "Place an outpost", ${names.length} buttons (glow ${start.hi.vertices.length}), panel ${Math.round(box.width)}x${Math.round(box.height)}, e.g. "${names[0]}"`);
+  console.log(`setupSettle: ${tabs} Tab presses from Table menu reach "Place an outpost", ${names.length} buttons (glow ${start.hi.vertices.length}), panel ${Math.round(box.width)}x${Math.round(box.height)}, e.g. "${names[0]}"`);
   if (names.length !== start.hi.vertices.length) throw new Error(`outpost buttons ${names.length} vs glow ${start.hi.vertices.length}`);
   if (new Set(names).size !== names.length) throw new Error(`two outpost buttons share a name: ${names.filter((n, i) => names.indexOf(n) !== i)}`);
   if (!names.every((n) => /^Corner: /.test(n))) throw new Error(`corner names: ${names.slice(0, 3)}`);
