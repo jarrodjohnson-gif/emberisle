@@ -137,6 +137,7 @@ npm test                 # every server/*-prove.mjs: rules, bots, sounds, socket
 npm run client-prove     # headless Chromium plays setup + a roll, zero console errors
 npm run hotseat-prove    # headless Chromium: a 7 in hotseat shows the discard bar for the seat that owes cards
 npm run tabs-prove       # 3 headless tabs host, join, play setup + 5 rolls on the rules host, boards match
+npm run countdown-prove  # 3 headless tabs on a 25 s turn timer: the countdown chip names the waited-on seat on every tab, survives a seat dropping and rejoining, runs to the deadline, re-arms after the host moves on
 npm run trade-prove      # 3 headless tabs: one asks the table through the trade panel, one says No, one says Yes, goods move; a second ask times out
 npm run served-prove     # same 3 tabs, but the page comes from the rules host itself with no ?host= (after build)
 npm run night-prove      # npm run night from a clean start: builds, prints the join lines, serves the page, answers a socket, survives kill -9 on the host, SIGINT leaves no host
