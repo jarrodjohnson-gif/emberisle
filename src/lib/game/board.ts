@@ -67,6 +67,8 @@ export function createGame(opts: {
   humans: { name: string }[];
   bots: number;
   hostId?: string;
+  // A rematch (#266): the first human is the last winner. It places first and sits out the roll-off.
+  winnerFirst?: boolean;
 }): GameState {
   const seed = opts.seed ?? (Math.floor(Math.random() * 1e9) | 0);
   const rand = mulberry32(seed);
@@ -172,6 +174,8 @@ export function createGame(opts: {
     else players.push(makePlayer(i, `${PLAYER_NAMES[i]} (bot)`, "bot"));
   }
 
+  const pending = players.slice(opts.winnerFirst ? 1 : 0).map((p) => p.id);
+
   const deck: DevKind[] = shuffle(
     [
       ...Array(14).fill("knight"),
@@ -192,11 +196,11 @@ export function createGame(opts: {
     edges: [...emap.values()],
     robberHex,
     players,
-    current: players[0]!.id,
+    current: pending[0]!,
     phase: "rollOff",
     turn: 0,
     dice: null,
-    rollOff: { rolls: {}, pending: players.map((p) => p.id) },
+    rollOff: opts.winnerFirst ? { rolls: {}, pending, first: players[0]!.id } : { rolls: {}, pending },
     setupIndex: 0,
     lastSetupVertex: null,
     longestRoad: null,
@@ -205,7 +209,7 @@ export function createGame(opts: {
     bank: { timber: 19, clay: 19, wool: 19, grain: 19, ore: 19 },
     deck,
     trade: null,
-    log: ["The isle is dealt. Roll for first place."],
+    log: [opts.winnerFirst ? `The isle is dealt. ${players[0]!.name} places first; the rest roll for their order.` : "The isle is dealt. Roll for first place."],
     discardNeeded: {},
     playedCard: false,
     hostId: opts.hostId ?? players[0]!.id,
