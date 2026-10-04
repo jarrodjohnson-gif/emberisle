@@ -32,6 +32,22 @@ let code = 0;
 const tiles = (page) => page.locator('[data-testid^="resource-"]:not([data-testid="resource-flash"])').count();
 const bannerBottom = (page) => page.evaluate(() => document.querySelector('[data-testid="turn-banner"]').getBoundingClientRect().bottom);
 const game = (page) => page.evaluate(() => window.__emberisle.getState().state);
+// The island's on-screen height (extreme vertices) and the hole's bottom inset, read once the fit has stopped moving.
+async function island(page) {
+  let prev = null;
+  let same = 0;
+  for (let i = 0; i < 80; i++) {
+    const m = await page.evaluate(() => {
+      const ys = window.__emberisle.getState().state.vertices.map((v) => window.__isle.screenOf(v.id).y);
+      return { h: Math.round((Math.max(...ys) - Math.min(...ys)) * 10) / 10, bottom: window.__isle.insets().bottom };
+    });
+    same = prev && prev.h === m.h && prev.bottom === m.bottom ? same + 1 : 0;
+    if (same >= 4) return m;
+    prev = m;
+    await page.waitForTimeout(300);
+  }
+  throw new Error("the island never settled");
+}
 const act = (page, action) => page.evaluate((a) => window.__emberisle.getState().dispatch(a), action);
 
 // Runs `change` in the page. A MutationObserver catches the dock the moment React commits it (before a frame is drawn) and, if a CSS
@@ -105,6 +121,7 @@ async function run(v, reduced) {
   await page.waitForTimeout(300);
   assert.equal(await tiles(page), 0, `${tag}: first setupSettle hand tiles`);
   const bare = await bannerBottom(page);
+  const isleBare = await island(page);
 
   // Setup, played through: the hand stays away until a second outpost pays.
   let shown = null;
@@ -136,6 +153,9 @@ async function run(v, reduced) {
   const full = await bannerBottom(page);
   const dockH = await page.getByTestId("hand-dock").evaluate((e) => e.getBoundingClientRect().height);
   assert.ok(bare - full >= dockH * 0.8 && bare - full <= dockH + 10, `${tag}: the hole shrinks by about the hand (${dockH}): ${bare} -> ${full}`);
+  const isleFull = await island(page);
+  assert.ok(isleBare.bottom < isleFull.bottom, `${tag}: the hole's bottom inset is smaller without the hand (${isleBare.bottom} < ${isleFull.bottom})`);
+  assert.ok(isleBare.h >= isleFull.h, `${tag}: the island is no smaller on screen without the hand (${isleBare.h} >= ${isleFull.h})`);
   await page.screenshot({ path: `test-results/hand-hidden-${v.tag}-${reduced ? "rm" : "motion"}-shown.png` });
 
   const midOf = (m, name, from, to) => {
@@ -163,10 +183,13 @@ async function run(v, reduced) {
     () => !document.querySelector('[data-testid="hand-dock"]'),
   );
   assert.equal(await tiles(page), 0, `${tag}: no tiles once every good is gone`);
+  const isleBack = await island(page);
+  assert.ok(isleBack.bottom < isleFull.bottom, `${tag}: the hole is bigger again once the hand is gone (${isleBack.bottom} < ${isleFull.bottom}; the banner text differs by phase, so not compared exactly to the first reading)`);
+  assert.ok(isleBack.h >= isleFull.h, `${tag}: the island is no smaller again (${isleBack.h} >= ${isleFull.h})`);
   assert.ok(Math.abs((await bannerBottom(page)) - bare) <= 1, `${tag}: the banner is back where it was ${bare} vs ${await bannerBottom(page)}`);
   midOf(gone, "hand-out", bare, full);
   assert.deepEqual(errors, [], `${tag}: console errors`);
-  console.log(`${tag} ${v.width}x${v.height}: 0 tiles through roll-off and setup, 5 once the second outpost paid (held ${JSON.stringify(shown.held.resources)}), banner bottom ${bare} -> ${full} (hole ${(bare - full).toFixed(0)} px bigger without the hand), ` +
+  console.log(`${tag} ${v.width}x${v.height}: 0 tiles through roll-off and setup, 5 once the second outpost paid (held ${JSON.stringify(shown.held.resources)}), banner bottom ${bare} -> ${full} (hole ${(bare - full).toFixed(0)} px bigger without the hand; island ${isleFull.h} -> ${isleBare.h} px tall, bottom inset ${isleFull.bottom} -> ${isleBare.bottom}), ` +
     `${reduced ? "instant in and out" : `220 ms rise in, midpoint opacity ${shown.mid.opacity.toFixed(2)} height ${shown.mid.h.toFixed(0)}/${dockH}, fade out ${gone.opacity.toFixed(2)}`}, 0 tiles again, 0 console errors`);
   await ctx.close();
 }
