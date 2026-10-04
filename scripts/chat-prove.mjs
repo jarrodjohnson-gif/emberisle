@@ -2,7 +2,8 @@
 // the unread badge and the remembered open/minimized state, a minimized dock that covers no board target, the player action
 // menu in the rail and under the phone seat strip (#161), the game log in the dock with its Chat/All filter and Copy log (#305),
 // the lobby status line as seats join and ready up (#418), Start and Leave inside the 1280x720 lobby card (#417),
-// zero console errors.
+// #460: computed glass surfaces, 12 px controls, one primary and >= 4.5:1 text contrast over black, on desktop and phone,
+// including emotes, previews, copy fallback and read-only chat. Zero console errors.
 // Design: docs/design/chat.md "Test plan". Screenshots go to test-results/.
 import { spawn } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
@@ -83,10 +84,14 @@ async function until(check, what, ms = 10_000) {
 }
 
 const store = (t, fn) => t.page.evaluate(fn);
-// Let the scene draw a few frames, then capture.
+// Capture after actual rendered frames, including the lazy island's first mount.
 async function shot(t, file) {
-  await t.page.evaluate(() => (window.__draw = true));
-  await new Promise((r) => setTimeout(r, 1500));
+  await t.page.waitForFunction(() => Boolean(window.__isle));
+  const before = await t.page.evaluate(() => {
+    window.__draw = true;
+    return window.__isle.renders;
+  });
+  await t.page.waitForFunction((n) => window.__isle.renders >= n + 2, before, { timeout: 15_000 });
   await t.page.screenshot({ path: `${SHOTS}${file}`, type: "jpeg", quality: 70 });
   await t.page.evaluate(() => (window.__draw = false));
 }
@@ -94,6 +99,95 @@ const check = (ok, what) => {
   if (!ok) throw new Error(what);
   console.log(`ok ${what}`, `+${((Date.now() - T0) / 1000).toFixed(1)}s`);
 };
+
+// Accumulate the style failures so a main run reports both viewports, rather than stopping at the first 8 px corner.
+const polishFailures = [];
+async function polish(t, state, selector = 'section[aria-label="Table chat"]', minControls = 1) {
+  await t.page.locator(selector).first().waitFor();
+  const result = await t.page.evaluate(({ selector, minControls }) => {
+    const roots = [...document.querySelectorAll(selector)];
+    const canvas = document.createElement("canvas").getContext("2d", { willReadFrequently: true });
+    const px = (css, under = "#000") => {
+      canvas.fillStyle = under;
+      canvas.fillRect(0, 0, 1, 1);
+      canvas.fillStyle = css;
+      canvas.fillRect(0, 0, 1, 1);
+      return [...canvas.getImageData(0, 0, 1, 1).data].slice(0, 3);
+    };
+    const theme = getComputedStyle(document.documentElement);
+    const glassCSS = theme.getPropertyValue("--color-glass").trim();
+    if (!glassCSS) throw new Error("the glass token is missing");
+    const glass = px(glassCSS);
+    // Comparing over both black and white detects alpha differences as well as different RGB colours.
+    const same = (a, b) => ["#000", "#fff"].every((under) => px(a, under).every((n, i) => Math.abs(n - px(b, under)[i]) <= 1));
+    const lum = (rgb) => rgb.map((v) => {
+      const s = v / 255;
+      return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+    }).reduce((sum, v, i) => sum + v * [0.2126, 0.7152, 0.0722][i], 0);
+    const ratio = (a, b) => (Math.max(lum(a), lum(b)) + 0.05) / (Math.min(lum(a), lum(b)) + 0.05);
+    const visible = (el) => el.getClientRects().length && getComputedStyle(el).visibility !== "hidden" && !el.closest(".sr-only");
+    const name = (el) => el.getAttribute("aria-label") || el.textContent.trim().slice(0, 35) || el.tagName.toLowerCase();
+    const bad = { corners: [], glass: [], contrast: [], primary: [] };
+    const controls = roots.flatMap((root) => [
+      ...(root.matches("button,input,textarea") ? [root] : []),
+      ...root.querySelectorAll("button,input,textarea"),
+    ]).filter(visible);
+    if (controls.length < minControls) bad.corners.push(`expected at least ${minControls} controls, found ${controls.length}`);
+    const pills = new Set(["Chat", "All", "Copy log", "Copied", "gg", "nice roll", "your turn", "one sec", "ty"]);
+    const fg = theme.getPropertyValue("--color-fg").trim();
+    const filled = [];
+    for (const el of controls) {
+      const css = getComputedStyle(el);
+      const label = name(el);
+      const radii = ["TopLeft", "TopRight", "BottomLeft", "BottomRight"].map((corner) => parseFloat(css[`border${corner}Radius`]));
+      const pill = pills.has(el.textContent.trim());
+      if (!radii.every((r) => pill ? r >= el.getBoundingClientRect().height / 2 : Math.abs(r - 12) <= 0.01)) {
+        bad.corners.push(`${label}: ${radii.join("/")} px${pill ? " (pill)" : ", want 12"}`);
+      }
+      const send = el.tagName === "BUTTON" && el.textContent.trim() === "Send";
+      if (!same(css.backgroundColor, send ? fg : glassCSS)) bad.glass.push(`${label}: ${css.backgroundColor}`);
+      if (["Top", "Right", "Bottom", "Left"].some((edge) => parseFloat(css[`border${edge}Width`]) !== 0)) bad.glass.push(`${label}: has a border`);
+      if (el.tagName === "BUTTON" && same(css.backgroundColor, fg)) filled.push(label);
+    }
+    // Send is the deliberate primary exception to the glass controls. Spectators and minimized chat have no primary.
+    const sends = controls.filter((el) => el.tagName === "BUTTON" && el.textContent.trim() === "Send").length;
+    if (filled.length !== sends || filled.some((label) => label !== "Send")) bad.primary.push(`filled buttons: ${JSON.stringify(filled)}`);
+    for (const root of roots) {
+      if (!same(getComputedStyle(root).backgroundColor, glassCSS)) bad.glass.push(`${name(root)} surface: ${getComputedStyle(root).backgroundColor}`);
+    }
+    const texts = [];
+    const measure = (el, text, css = getComputedStyle(el)) => {
+      if (!text.trim() || !visible(el)) return;
+      // Use one glass over black even inside the layered dock. Primary text, the unread badge and mentions have their
+      // own backing; checking white badge/Send text against glass would report a false failure.
+      const send = el.closest("button")?.textContent.trim() === "Send";
+      const badge = el.closest('[data-testid="chat-unread"]');
+      const mark = el.closest("mark");
+      const backing = send ? fg : badge ? getComputedStyle(badge).backgroundColor : mark ? getComputedStyle(mark).backgroundColor : null;
+      const bg = backing ? px(backing, `rgb(${glass.join(" ")})`) : glass;
+      let ink = px(css.color, `rgb(${bg.join(" ")})`);
+      const opacity = Number(css.opacity);
+      ink = ink.map((n, i) => n * opacity + bg[i] * (1 - opacity));
+      const contrast = ratio(ink, bg);
+      texts.push(contrast);
+      if (contrast < 4.5) bad.contrast.push(`${text.trim().slice(0, 30)}: ${contrast.toFixed(2)}:1`);
+    };
+    for (const root of roots) {
+      const walk = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+      while (walk.nextNode()) measure(walk.currentNode.parentElement, walk.currentNode.textContent);
+    }
+    for (const el of controls) {
+      if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+        measure(el, el.value || el.placeholder, el.value ? getComputedStyle(el) : getComputedStyle(el, "::placeholder"));
+      }
+    }
+    return { bad, controls: controls.length, texts: texts.length, min: texts.length ? Math.min(...texts).toFixed(2) : "n/a", glass, viewport: `${innerWidth}x${innerHeight}` };
+  }, { selector, minControls });
+  for (const [kind, failures] of Object.entries(result.bad)) {
+    if (failures.length) polishFailures.push(`${result.viewport} ${state} ${kind}: ${failures.join("; ")}`);
+  }
+  console.log(`${Object.values(result.bad).some((failures) => failures.length) ? "FAIL" : "ok"} chat polish ${result.viewport} ${state}: ${result.controls} controls, ${result.texts} texts, minimum ${result.min}:1, glass over black rgb(${result.glass})`);
+}
 
 try {
   const tabs = [await tab("Ember"), await tab("Tide"), await tab("Pine")];
@@ -302,6 +396,8 @@ try {
   await other.page.getByPlaceholder("Say something…").fill("preview line");
   await other.page.getByPlaceholder("Say something…").press("Enter");
   await cur.page.getByTestId("chat-preview").getByText("preview line").waitFor({ timeout: 5000 });
+  await polish(cur, "minimized", '[aria-label^="Open chat"]');
+  await polish(cur, "preview", '[data-testid="chat-preview"] li', 0);
   const hits = await cur.page.evaluate(() => {
     const s = window.__emberisle.getState();
     const ids = [...s.legal.outpost, ...s.legal.path, ...s.legal.wayfarer, ...s.state.hexes.map((h) => h.id)];
@@ -332,8 +428,10 @@ try {
     const box = await float.locator("img").boundingBox();
     check(Math.round(box.width) === 48, `reaction: ${t.name} image is 48 px wide`);
   }
-  await new Promise((r) => setTimeout(r, 3000));
-  for (const t of tabs) check((await t.page.locator("[data-testid=reaction]").count()) === 0, `reaction: gone after 3 s on ${t.name}`);
+  for (const t of tabs) {
+    await t.page.locator("[data-testid=reaction]").waitFor({ state: "detached", timeout: 6000 });
+    check((await t.page.locator("[data-testid=reaction]").count()) === 0, `reaction: gone after its lifetime on ${t.name}`);
+  }
 
   // 3. Tab 1 clicks tab 2's card (#161): an accordion menu in the rail with the card's 4 facts, a reaction aimed at Tide,
   // Mention fills the input, and Esc, the same card, and a click outside all close it.
@@ -376,6 +474,7 @@ try {
     await float.waitFor({ timeout: 5000 });
     const owner = await float.locator("xpath=ancestor::div[contains(@class,'relative')][1]").textContent();
     check(owner.includes("Ember") && (await float.textContent()).includes("→ Tide"), `menu: ${t.name} shows Ember's ben-10 tagged → Tide`);
+    await polish(t, "reaction target", '[data-testid="reaction"] span', 0);
   }
   await card.click();
   await menu.waitFor();
@@ -465,6 +564,7 @@ try {
   check((await phone.page.evaluate(() => localStorage.getItem("emberisle-chat-open"))) === "1", "phone: the remembered open state is left in storage");
   r = await box(phone, '[aria-label^="Open chat"]');
   check(r.right > r.vw - 20 && r.bottom < r.vh - 150, "phone: the minimized button sits bottom-right above the hand bar");
+  await polish(phone, "minimized", '[aria-label^="Open chat"]');
   await phone.page.getByRole("button", { name: "Open chat" }).click();
   await phone.page.getByTestId("chat-sheet").waitFor({ timeout: 5000 });
   r = await box(phone, '[aria-label="Table chat"]');
@@ -480,6 +580,10 @@ try {
   });
   check(lay.sheetBottom - lay.inputBottom <= 24, `phone: the input row ends ${(lay.sheetBottom - lay.inputBottom).toFixed(0)} px above the sheet bottom, no dead space`);
   check(lay.logTop >= lay.headBottom && lay.atEnd, "phone: the log starts below the header and shows the newest line");
+  await phone.page.getByRole("button", { name: "Emotes", exact: true }).click();
+  await phone.page.getByTestId("emote-tray").waitFor();
+  await polish(phone, "open with emotes", undefined, 13);
+  await phone.page.getByRole("button", { name: "Emotes", exact: true }).click();
   await shot(phone, "chat-phone-open.jpg");
   const before = await phone.page.evaluate(() => {
     const s = window.__emberisle.getState();
@@ -548,10 +652,18 @@ try {
     }, `${t.name} lists the roll and an outpost in the game log`);
     check(true, `game log: ${t.name} shows ${rows.length} rows, with the roll and an outpost${t === phone ? ", in the phone sheet" : ""}`);
   }
+  await b.page.getByPlaceholder("Say something…").fill("@Ember polish");
+  await b.page.getByPlaceholder("Say something…").press("Enter");
+  await a.page.getByTestId("chat-log").locator("mark").getByText("@Ember", { exact: true }).waitFor();
+  await a.page.getByRole("button", { name: "Emotes", exact: true }).click();
+  await a.page.getByTestId("emote-tray").waitFor();
+  await polish(a, "open with emotes and mention", undefined, 13);
+  await a.page.getByRole("button", { name: "Emotes", exact: true }).click();
   const logKey = () => a.page.evaluate(() => localStorage.getItem("emberisle-log-filter"));
   await a.page.getByRole("button", { name: "Chat", exact: true }).click();
   await until(async () => ((await rowsOf(a)).length === 0 ? true : null), "the Chat chip hides the game rows");
   check((await a.page.getByTestId("chat-log").locator("li", { hasText: "hello" }).count()) === 1 && (await logKey()) === "chat", 'game log: the Chat chip keeps the chat lines and stores "chat"');
+  await polish(a, "Chat filter selected", undefined, 12);
   await a.page.getByRole("button", { name: "All", exact: true }).click();
   const shown = await until(async () => {
     const r = await rowsOf(a);
@@ -580,18 +692,36 @@ try {
     )
     .then((h) => h.jsonValue());
   check(fallback.value === wanted && fallback.readOnly && fallback.selected && fallback.live === "Select and copy", "game log: without a clipboard, Copy log shows the log in a focused, selected read-only field and says so");
+  await polish(a, "copy fallback", undefined, 13);
+  await phone.page.evaluate(() => Object.defineProperty(navigator, "clipboard", { value: undefined, configurable: true }));
+  await phone.page.getByRole("button", { name: "Copy log" }).click();
+  await phone.page.getByTestId("copy-fallback").waitFor();
+  await polish(phone, "copy fallback", undefined, 13);
+
+  // A real watcher exposes the muted read-only note, as well as the filters and copy fallback, at both sizes.
+  for (const isPhone of [false, true]) {
+    const reader = await tab("Reader", isPhone);
+    await reader.page.getByPlaceholder(/code/i).fill(tableCode);
+    await reader.page.getByRole("button", { name: "Watch", exact: true }).click();
+    await reader.page.getByRole("button", { name: "Open chat" }).click();
+    await reader.page.getByTestId("chat-readonly").waitFor();
+    await polish(reader, "read-only", undefined, 4);
+    await reader.page.evaluate(() => Object.defineProperty(navigator, "clipboard", { value: undefined, configurable: true }));
+    await reader.page.getByRole("button", { name: "Copy log" }).click();
+    await reader.page.getByTestId("copy-fallback").waitFor();
+    await polish(reader, "read-only copy fallback", undefined, 5);
+    await reader.page.context().close();
+  }
 
   // Versus bots the menu shows only the facts (and the bank trade on your main turn, not during setup).
-  const solo = await (await browser.newContext({ viewport: { width: 1280, height: 720 } })).newPage();
-  watch("Solo", solo);
-  await solo.goto(`http://127.0.0.1:${PORT}/`);
+  const { page: solo } = await tab("Solo");
   await solo.getByRole("button", { name: "Play", exact: true }).click();
   // The human rolls off (#232) when it is up; the bots roll on the app's timer.
   await solo.waitForFunction(() => {
     const s = window.__emberisle.getState();
     if (s.state?.phase === "rollOff" && s.state.current === s.localId) s.dispatch({ type: "roll" });
     return s.state?.phase === "setupSettle";
-  }, null, { polling: 100 });
+  }, null, { polling: 100, timeout: 60_000 });
   await solo.getByTestId("rail-p1").getByRole("button").click();
   await solo.getByTestId("player-menu").waitFor();
   check(
@@ -601,6 +731,7 @@ try {
   await solo.context().close();
 
   // 6.
+  check(polishFailures.length === 0, `chat polish at both sizes${polishFailures.length ? `\n${polishFailures.join("\n")}` : ""}`);
   check(errors.length === 0, "zero console errors in all tabs");
   console.log("chat prove ok");
 } catch (e) {
