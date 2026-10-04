@@ -147,6 +147,7 @@ npm run contrast-prove   # headless Chromium: title buttons and small labels mee
 npm run title-prove      # headless Chromium at 6 sizes incl. 667x375 and 1280x500: one primary (Play), no uppercase, nothing clipped on the title card
 npm run reflow-prove     # headless Chromium at 640x360 (200 % zoom) and 320x568: title fits, HUD leaves the header and some island uncovered
 npm run polish-tokens-prove # headless Chromium at 3 sizes: the docs/design/polish.md tokens on :root, Button reads them, 0 console errors
+npm run install-prove    # after build: manifest, icons and home-screen meta tags from the host and vite preview; Play, Ready and the HUD inside an iPhone's safe area; ?code= and ?watch= links
 npm run chat-prove       # 3 headless tabs chat in the lobby and the game: presets, reactions, unread badge, minimized dock covers no target, the game log in the dock with Chat/All and Copy log
 npm run watch-ui-prove   # 2 headless tabs and a client seat play; a third tab watches after the start: board, no glow, no controls, read-only dock, eye count on the seats, "Watching only." for an injected intent, the full reveal at the win
 ```
@@ -172,6 +173,15 @@ Host env knobs: `PORT` (default 8787), `ROOMS_DIR` (where tables are saved, defa
 If the host process dies, night restarts it and the saved tables come back; players reconnect on their own. (More than five deaths in a minute and night gives up with `host keeps dying`, so a real bug still shows.) Ctrl-C in the night terminal stops the host. Install cloudflared once if it is not already there (`winget install --id Cloudflare.cloudflared` on Windows). A quick tunnel needs no account. If it refuses to start because `~/.cloudflared/config.yml` exists, move that file aside for the night, or use the named tunnel in the build bible.
 
 Host limits to know about: `ROOM_MAX` (default 64) counts every open lobby room, and each open socket can hold one, so a client that opens 64 sockets (about 13 s at the pre-seat rate) can fill the host. Per-IP limits are out of scope because the tunnel hides addresses. A finished game whose players stay connected keeps its slot. The per-seat non-chat limit (`ACT_CAP` 20, `ACT_RATE` 4 a second) is read from env like `HOLD_MS` and `GRACE_MS`; the table and net proofs raise it, `harden-prove` keeps the defaults.
+
+### Install on your phone
+
+Emberisle installs from the browser, with no App Store. Open the game at the address you play on (the host's link), then:
+
+- **iPhone or iPad (Safari):** Share → Add to Home Screen → Add.
+- **Android (Chrome):** the ⋮ menu → Install app (or Add to Home screen).
+
+The icon opens the game full-screen, with nothing under the notch or the home bar. It always opens the address it was added from, so add it from a link that stays the same: a quick `trycloudflare.com` tunnel gets a new address every night, so re-add it then, or use the named tunnel. A join link (`?code=K7QP`) or a watch link (`?watch=K7QP`) still works: Android opens it in the installed app, and iPhone opens it in Safari (or type the four characters into the app's code field). The icons are drawn from `public/icons/icon.svg`; after editing it, run `npm run make-icons` and commit the PNGs.
 
 If any command here fails on a fresh clone, that is a bug. File it (label `bug`) before doing anything else.
 
@@ -256,6 +266,7 @@ Full rules: **[docs/FRAMEWORK.md](docs/FRAMEWORK.md)**. In short:
 | `server/hooks.mjs`, `server/register.mjs` | Node loader that lets the host import the `.ts` rules (used as `--import ./server/register.mjs`) |
 | `server/*-prove.mjs` | Proof scripts (see Tests) |
 | `public/audio/` | CC0 Kenney sounds, mapped in `server/cue.mjs` and played by `src/lib/sound.ts` |
+| `public/manifest.webmanifest`, `public/icons/` | Add to Home Screen: the web app manifest and its icons, rendered from `icons/icon.svg` by `scripts/make-icons.mjs` (#468) |
 | `scripts/client-prove.mjs` | Headless browser test of the client (the other `scripts/*-prove.mjs` follow the same pattern) |
 
 ---
