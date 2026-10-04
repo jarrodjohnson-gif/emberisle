@@ -62,6 +62,11 @@ function photoUrl(kind: Terrain): string | undefined {
 }
 
 type Highlights = { vertices: string[]; edges: string[]; hexes: string[] };
+// The paying-hex flash (docs/design/dice.md): the cap glows in over --duration-base, then fades linearly out by 600 ms.
+const FLASH_IN_S = 0.22;
+const FLASH_S = 0.6;
+const FLASH_PEAK = 0.45;
+const FLASH_WARM = new THREE.Color(0xffd9a0);
 type Sheep = { g: THREE.Object3D; ox: number; oz: number; tx: number; tz: number; wait: number; graze: number };
 
 export class IsleRenderer {
@@ -104,6 +109,9 @@ export class IsleRenderer {
   private robberTarget = new THREE.Vector3();
   private walk: { from: THREE.Vector3; to: THREE.Vector3; start: number; hops: number; dur: number } | null = null;
   private lantern: THREE.MeshStandardMaterial;
+  // Each land hex's cap material by hex id, and the flashes under way (age in seconds, advanced by the frame's dt).
+  caps = new Map<string, THREE.MeshStandardMaterial>();
+  private flashes: { mat: THREE.MeshStandardMaterial; age: number }[] = [];
   private clock = new THREE.Timer();
   private water = makeWater();
   private titleMode = false;
@@ -278,7 +286,30 @@ export class IsleRenderer {
     }
   }
 
+  // Glow the caps of the hexes that paid. Each rises to the warm tint of its resource colour and fades back, once.
+  flashHexes(ids: string[]) {
+    for (const id of ids) {
+      const mat = this.caps.get(id);
+      if (!mat) continue;
+      this.flashes = this.flashes.filter((f) => f.mat !== mat);
+      this.flashes.push({ mat, age: 0 });
+    }
+  }
+
+  // The caps' emissive for each flash at its age. Reduced motion steps to the peak and back with no ramp.
+  private stepFlashes(dt: number, calm: boolean) {
+    if (!this.flashes.length) return;
+    for (const f of this.flashes) {
+      f.age += dt;
+      const a = f.age;
+      const level = a >= FLASH_S ? 0 : calm ? 1 : a < FLASH_IN_S ? 1 - (1 - a / FLASH_IN_S) ** 3 : 1 - (a - FLASH_IN_S) / (FLASH_S - FLASH_IN_S);
+      f.mat.emissiveIntensity = FLASH_PEAK * level;
+    }
+    this.flashes = this.flashes.filter((f) => f.age < FLASH_S);
+  }
+
   setBoard(state: GameState, highlights: Highlights, interactive: boolean) {
+    const rolled = this.lastState && !this.lastState.dice && state.dice && state.phase !== "rollOff" && this.lastState.seq !== state.seq;
     this.lastState = state;
     this.lastHi = highlights;
     this.lastInteractive = interactive;
@@ -298,6 +329,7 @@ export class IsleRenderer {
       this.lastSeq = state.seq;
     }
     this.buildMarks(state, highlights, interactive);
+    if (rolled) this.flashHexes(payingHexes(state));
     const rh = state.hexes.find((h) => h.id === state.robberHex);
     if (rh) {
       const w = worldOfHex(rh);
@@ -488,13 +520,15 @@ export class IsleRenderer {
       this.walk = null;
       this.startWalk();
     }
-    const gap = calm ? (now < this.busyUntil ? 0 : Infinity) : this.titleMode ? 1000 / 30 : this.walk || pulsing || now < this.busyUntil ? 0 : 1000 / 12;
+    const busy = now < this.busyUntil || this.flashes.length > 0;
+    const gap = calm ? (busy ? 0 : Infinity) : this.titleMode ? 1000 / 30 : this.walk || pulsing || busy ? 0 : 1000 / 12;
     if (now - this.lastFrame < gap - 2) return;
     this.lastFrame = now;
     this.clock.update();
     const t = this.clock.getElapsed();
     // An idle frame is 83 ms apart; a smaller cap would slow the sheep while idle.
     const dt = Math.min(this.clock.getDelta(), 0.1);
+    this.stepFlashes(dt, calm);
     this.controls.autoRotate = this.titleMode && !calm;
     this.controls.update();
     if (calm) {
@@ -559,6 +593,8 @@ export class IsleRenderer {
     this.wheat = [];
     this.living.add(this.wayfarer);
     this.pickables = [];
+    this.caps.clear();
+    this.flashes = [];
 
     for (const h of state.hexes) {
       const { x, z } = worldOfHex(h);
@@ -573,6 +609,10 @@ export class IsleRenderer {
       });
       this.land.add(tile);
       this.pickables.push(tile);
+      const cap = tile.getObjectByName("cap") as THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>;
+      cap.material.emissive.copy(new THREE.Color(PAINT[h.terrain][0]).lerp(FLASH_WARM, 0.5));
+      cap.material.emissiveIntensity = 0;
+      this.caps.set(h.id, cap.material);
       decorate(this.living, this.trees, this.wheat, this.sheep, h, x, z, topOf(h.terrain));
       if (h.pip != null) {
         const tok = numberToken(h.pip);
@@ -905,9 +945,17 @@ function makeHexTile(size: number, height: number, tex: THREE.Texture | undefine
   wall.receiveShadow = true;
   g.add(wall);
   const cap = hexCap(size * 0.992, tex, STONE);
+  cap.name = "cap";
   cap.position.y = slabH + 0.002;
   g.add(cap);
   return g;
+}
+
+// The hexes the latest roll paid: the token matches the sum, the wayfarer is not on it, and a building touches it.
+export function payingHexes(state: GameState) {
+  const sum = state.dice ? state.dice[0] + state.dice[1] : 0;
+  const built = new Set(state.vertices.filter((v) => v.building).flatMap((v) => v.hexes));
+  return state.hexes.filter((h) => h.pip === sum && !h.blocked && h.terrain !== "waste" && built.has(h.id)).map((h) => h.id);
 }
 
 function hexRing(outer: number, inner: number) {
