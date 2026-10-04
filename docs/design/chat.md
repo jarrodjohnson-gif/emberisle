@@ -284,8 +284,10 @@ Private messages, a profanity filter, edits or deletes, chat after the table clo
 
 ## Quick reactions from the board (#467)
 
-During online play, a 44 px **Quick reactions** button sits next to the minimized chat button, beside an open
-desktop dock, or above an open phone sheet. Opening chat closes the picker while keeping its trigger available. It opens a
+During online play, a 44 px **Quick reactions** button sits above the minimized chat button on a portrait
+phone, next to it on desktop and landscape phones, beside an open desktop dock, or above an open phone sheet.
+The portrait trigger has a 12 px gap above chat, keeping the rotate guidance readable. Opening or minimizing
+chat closes the picker while keeping its trigger available. It opens a
 small glass picker without opening chat. Its first row is **😠 😊 👏 😂 🔥 🐑**; a second row offers the
 local image emotes from `src/assets/emotes/`. Buttons use 12 px control corners, the glass token and readable
 ink. The picker closes after a send, on Escape, or on a pointer press outside it. Desktop keys **1–6** select

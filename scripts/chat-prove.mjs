@@ -4,6 +4,7 @@
 // the lobby status line as seats join and ready up (#418), Start and Leave inside the 1280x720 lobby card (#417),
 // #460: computed glass surfaces, 12 px controls, one primary and >= 4.5:1 text contrast over black, on desktop and phone,
 // including emotes, previews, copy fallback and read-only chat. Zero console errors.
+// #467: board reactions, all six emoji, image delivery, keyboard/cooldown, coalescing, reduced motion and host rejection.
 // Design: docs/design/chat.md "Test plan". Screenshots go to test-results/.
 import { spawn } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
@@ -189,6 +190,143 @@ async function polish(t, state, selector = 'section[aria-label="Table chat"]', m
   console.log(`${Object.values(result.bad).some((failures) => failures.length) ? "FAIL" : "ok"} chat polish ${result.viewport} ${state}: ${result.controls} controls, ${result.texts} texts, minimum ${result.min}:1, glass over black rgb(${result.glass})`);
 }
 
+async function quickReactions(a, b, c, phone) {
+  const choices = [["😠", "angry"], ["😊", "happy"], ["👏", "clap"], ["😂", "laugh"], ["🔥", "fire"], ["🐑", "sheep"]];
+  // Preserve incoming events beyond their two-second UI lifetime, including any forbidden host broadcast.
+  await b.page.evaluate(() => {
+    window.__reactionProofReceived = [];
+    window.__reactionProofUnsubscribe = window.__emberisle.subscribe((next, previous) => {
+      window.__reactionProofReceived.push(...next.reactions.filter((r) => !previous.reactions.includes(r)));
+    });
+  });
+  const identity = (t) => store(t, () => ({ seat: window.__emberisle.getState().seatId, player: window.__emberisle.getState().localId }));
+  const receivedCount = () => b.page.evaluate(() => window.__reactionProofReceived.length);
+  const delivered = async (t, emote, before) => {
+    const { seat } = await identity(t);
+    await b.page.waitForFunction(({ seat, emote, before }) => window.__reactionProofReceived.slice(before).some((r) => r.seat === seat && r.emote === emote), { seat, emote, before });
+    check(true, `quick reactions: ${emote} from ${t.name} reaches another seat through the host`);
+  };
+  const openPicker = async (t) => {
+    await t.page.getByRole("button", { name: "Quick reactions", exact: true }).click();
+    await t.page.getByRole("group", { name: "Choose a reaction" }).waitFor();
+    await t.page.waitForFunction(() => !document.querySelector('#quick-reaction-picker button')?.disabled);
+  };
+  for (const t of [a, phone]) {
+    await t.page.getByRole("button", { name: "Quick reactions", exact: true }).waitFor();
+    check(await store(t, () => !window.__emberisle.getState().chatOpen), `quick reactions: ${t.name} starts with chat closed`);
+    if (t === phone) {
+      check(await t.page.getByRole("button", { name: "Quick reactions", exact: true }).evaluate((button) => {
+        const hint = document.querySelector('[data-testid="landscape-hint"]');
+        if (!hint) return false;
+        const a = button.getBoundingClientRect();
+        const b = hint.getBoundingClientRect();
+        return a.right <= b.left || a.left >= b.right || a.bottom <= b.top || a.top >= b.bottom;
+      }), "quick reactions: phone trigger leaves the rotate hint unobscured");
+    }
+    await openPicker(t);
+    for (const [, label] of choices) await t.page.getByRole("button", { name: `React ${label}`, exact: true }).waitFor();
+    await polish(t, "quick picker", '#quick-reaction-picker', 7);
+    const fits = await t.page.getByTestId("quick-reactions").evaluate((root) => [...root.querySelectorAll("button")].every((button) => {
+      const r = button.getBoundingClientRect();
+      return r.width >= 44 && r.height >= 44 && r.left >= 0 && r.top >= 0 && r.right <= innerWidth && r.bottom <= innerHeight;
+    }));
+    check(fits, `quick reactions: ${t.name} picker and 44 px controls fit the viewport`);
+    await shot(t, t === phone ? "reactions-phone.jpg" : "reactions-desktop.jpg");
+    await t.page.keyboard.press("Escape");
+  }
+  for (const [index, [emoji]] of choices.entries()) {
+    await openPicker(a);
+    const before = await receivedCount();
+    await a.page.keyboard.press(String(index + 1));
+    await delivered(a, emoji, before);
+    check(await a.page.getByRole("group", { name: "Choose a reaction" }).count() === 0 && await store(a, () => !window.__emberisle.getState().chatOpen), `quick reactions: key ${index + 1} sends and closes the picker without opening chat`);
+    if (index === 0) {
+      await a.page.getByRole("button", { name: "Quick reactions", exact: true }).click();
+      check(await a.page.getByRole("button", { name: "React angry", exact: true }).isDisabled(), "quick reactions: choices dim and disable during cooldown");
+      await a.page.keyboard.press("Escape");
+    }
+  }
+  await openPicker(a);
+  let before = await receivedCount();
+  await a.page.getByRole("button", { name: "React ben-10", exact: true }).click();
+  await delivered(a, "ben-10", before);
+  await b.page.locator('[data-testid="reaction"][data-emote="ben-10"] img').waitFor();
+  check(true, "quick reactions: an asset image also sends from the board");
+
+  await openPicker(phone);
+  before = await receivedCount();
+  await phone.page.getByRole("button", { name: "React sheep", exact: true }).click();
+  await delivered(phone, "🐑", before);
+  check(await store(phone, () => !window.__emberisle.getState().chatOpen), "quick reactions: phone tap sends without opening chat");
+
+  // Use the real chat input: keyboard navigation can focus it while the reaction picker remains open.
+  await a.page.getByRole("button", { name: "Open chat" }).click();
+  await openPicker(a);
+  const input = a.page.getByPlaceholder("Say something…");
+  await input.focus();
+  await input.press("1");
+  check(await input.inputValue() === "1" && await a.page.getByRole("group", { name: "Choose a reaction" }).count() === 1, "quick reactions: typing 1 in chat does not send or close the picker");
+  await input.fill("");
+  await input.press("Escape");
+  await a.page.getByRole("button", { name: "Open chat" }).waitFor();
+  check(await a.page.getByRole("group", { name: "Choose a reaction" }).count() === 0, "quick reactions: Escape from the chat input minimizes chat and closes its picker");
+
+  // This bypasses the picker allowlist. The valid chat marker on the same ordered socket proves the host processed all three bad frames.
+  const invalid = ["not-an-emote", "🙃", "https://example.invalid/reaction.png"];
+  const marker = `reaction-validation-${Date.now()}`;
+  await c.page.evaluate(({ invalid, marker }) => {
+    const s = window.__emberisle.getState();
+    for (const id of invalid) s.net.react(id);
+    s.sendChat(marker);
+  }, { invalid, marker });
+  await b.page.waitForFunction((marker) => window.__emberisle.getState().chat.some((line) => line.text === marker), marker);
+  check(await b.page.evaluate((invalid) => !window.__reactionProofReceived.some((r) => invalid.includes(r.emote)), invalid), "quick reactions: host drops an unknown id, unlisted emoji, and URL");
+
+  const target = (await identity(a)).seat;
+  const sender = await identity(phone);
+  await phone.page.evaluate((target) => {
+    const s = window.__emberisle.getState();
+    s.sendReact("🔥", target);
+    s.sendReact("🔥", target);
+  }, target);
+  for (const [t, anchor] of [[b, `rail-${sender.player}`], [phone, `seat-${sender.player}`]]) {
+    const float = t.page.getByTestId(anchor).getByTestId("reaction");
+    await float.getByTestId("reaction-count").getByText("×2", { exact: true }).waitFor();
+    check(await float.count() === 1, `quick reactions: repeats coalesce at ${t.name}'s sender seat`);
+    const fits = await float.evaluate((wrapper) => {
+      const element = wrapper.firstElementChild;
+      const animation = element.getAnimations()[0];
+      if (!animation) return false;
+      animation.pause();
+      for (const time of [0, 1500, 1999]) {
+        animation.currentTime = time;
+        for (const node of [element, ...element.querySelectorAll("img,span")]) {
+          const r = node.getBoundingClientRect();
+          if (r.left < 7.9 || r.top < 7.9 || r.right > innerWidth - 7.9 || r.bottom > innerHeight - 7.9) return false;
+        }
+      }
+      return true;
+    });
+    check(fits, `quick reactions: ${t.name} float, badge and target fit at every sampled animation frame`);
+  }
+  await phone.page.emulateMedia({ reducedMotion: "reduce" });
+  await phone.page.evaluate(() => window.__emberisle.getState().sendReact("👏"));
+  const reduced = phone.page.getByTestId(`seat-${sender.player}`).locator('[data-testid="reaction"][data-emote="👏"] > div');
+  await reduced.waitFor();
+  const fadeOnly = await reduced.evaluate((element) => {
+    const frames = element.getAnimations()[0]?.effect?.getKeyframes();
+    return frames?.length === 3 && frames.every((f) => !f.transform || f.transform === "none") && frames[0].opacity === "1" && frames[2].opacity === "0";
+  });
+  check(fadeOnly, "quick reactions: reduced motion fades without rising");
+  await phone.page.emulateMedia({ reducedMotion: "no-preference" });
+  for (const t of [a, b, c, phone]) {
+    await t.page.getByRole("button", { name: "Open chat" }).click();
+    await t.page.getByRole("button", { name: "Minimize chat" }).click();
+    await t.page.waitForFunction(() => document.querySelectorAll('[data-testid="reaction"]').length === 0, null, { timeout: 6000 });
+  }
+  await b.page.evaluate(() => window.__reactionProofUnsubscribe());
+}
+
 try {
   const tabs = [await tab("Ember"), await tab("Tide"), await tab("Pine")];
   const [a, b, c] = tabs;
@@ -359,6 +497,10 @@ try {
   for (const t of tabs) await t.page.getByRole("button", { name: "Open chat" }).waitFor();
   check(true, "game: every tab shows the minimized dock, and the lobby lines did not count as unread");
   for (const t of tabs) check((await t.page.getByTestId("chat-unread").count()) === 0, `game: ${t.name} has no unread badge`);
+  await phone.page.getByRole("button", { name: "Open chat" }).waitFor();
+  check((await phone.page.getByTestId("chat-sheet").count()) === 0, "phone: Play starts with the sheet closed although chat was remembered open");
+  check((await phone.page.evaluate(() => localStorage.getItem("emberisle-chat-open"))) === "1", "phone: the remembered open state is left in storage");
+  await quickReactions(a, b, c, phone);
 
   // #232: roll off for first place; whichever seat is up rolls, until setup starts.
   await until(async () => {
@@ -557,8 +699,6 @@ try {
 
   // 5. Phone: the open dock is a bottom sheet, and the tap that closes it does not reach the board.
   await phone.page.getByRole("button", { name: "Open chat" }).waitFor();
-  check((await phone.page.getByTestId("chat-sheet").count()) === 0, "phone: Play starts with the sheet closed although chat was remembered open");
-  check((await phone.page.evaluate(() => localStorage.getItem("emberisle-chat-open"))) === "1", "phone: the remembered open state is left in storage");
   r = await box(phone, '[aria-label^="Open chat"]');
   check(r.right > r.vw - 20 && r.bottom < r.vh - 150, "phone: the minimized button sits bottom-right above the hand bar");
   await polish(phone, "minimized", '[aria-label^="Open chat"]');
@@ -702,6 +842,25 @@ try {
     await reader.page.getByRole("button", { name: "Watch", exact: true }).click();
     await reader.page.getByRole("button", { name: "Open chat" }).click();
     await reader.page.getByTestId("chat-readonly").waitFor();
+    check(await reader.page.getByTestId("quick-reactions").count() === 0, `quick reactions: ${isPhone ? "phone" : "desktop"} watcher has no sender control`);
+    const refused = await reader.page.evaluate((code) => new Promise((resolve, reject) => {
+      const socket = new WebSocket(new URLSearchParams(location.search).get("host"));
+      const frames = [];
+      const timer = setTimeout(() => { socket.close(); reject(new Error("watcher reaction rejection timed out")); }, 5000);
+      socket.onopen = () => socket.send(JSON.stringify({ type: "hello", code, watch: true }));
+      socket.onmessage = (event) => {
+        const message = JSON.parse(event.data);
+        frames.push(message);
+        if (message.type === "welcome" && message.spectator) socket.send(JSON.stringify({ type: "react", emote: "😊" }));
+        if (message.type === "error") socket.close();
+      };
+      socket.onerror = () => { clearTimeout(timer); reject(new Error("watcher proof socket failed")); };
+      socket.onclose = () => {
+        clearTimeout(timer);
+        resolve(frames.some((m) => m.type === "error" && m.message === "Watching only.") && !frames.some((m) => m.type === "react"));
+      };
+    }), tableCode);
+    check(refused, "quick reactions: host rejects an allowlisted emoji forged by a watcher");
     await polish(reader, "read-only", undefined, 4);
     await reader.page.evaluate(() => Object.defineProperty(navigator, "clipboard", { value: undefined, configurable: true }));
     await reader.page.getByRole("button", { name: "Copy log" }).click();

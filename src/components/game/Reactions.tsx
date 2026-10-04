@@ -25,13 +25,14 @@ export function QuickReactions() {
   const root = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const available = mode === "online" && screen === "play" && !spectator;
+  const portraitClosed = phone && portrait && !chatOpen;
 
   useEffect(() => () => clearTimeout(timer.current), []);
   useEffect(() => {
     if (!available) setOpen(false);
   }, [available]);
   useEffect(() => {
-    if (chatOpen) setOpen(false);
+    setOpen(false);
   }, [chatOpen]);
 
   const send = (emote: string) => {
@@ -87,9 +88,13 @@ export function QuickReactions() {
       data-testid="quick-reactions"
       className={cn(
         "absolute z-30",
-        !phone && chatOpen ? "right-[312px]" : "right-[68px]",
+        portraitClosed
+          ? "right-3"
+          : !phone && chatOpen
+            ? "right-[312px]"
+            : "right-[68px]",
         phone
-          ? !chatOpen && (portrait ? "bottom-[196px]" : "bottom-[184px]")
+          ? !chatOpen && (portrait ? "bottom-[252px]" : "bottom-[184px]")
           : "top-16",
       )}
       style={
@@ -116,7 +121,7 @@ export function QuickReactions() {
           aria-label="Choose a reaction"
           className={cn(
             "absolute flex w-max max-w-[calc(100vw-24px)] flex-col gap-2 rounded-chip bg-glass p-2 backdrop-blur-md",
-            !phone && chatOpen ? "right-0" : "-right-14",
+            portraitClosed || (!phone && chatOpen) ? "right-0" : "-right-14",
             phone ? "bottom-full mb-2" : "top-full mt-2",
           )}
         >
@@ -254,7 +259,7 @@ function ReactionFloat({
           </span>
         ) : null}
         {target ? (
-          <span className="max-w-28 break-words rounded-chip bg-glass px-1 text-center text-[10px] font-medium text-zinc-700 backdrop-blur-md">
+          <span className="max-w-28 break-words rounded-chip bg-glass px-1 text-center text-caption font-medium text-zinc-700 backdrop-blur-md">
             → {target}
           </span>
         ) : null}

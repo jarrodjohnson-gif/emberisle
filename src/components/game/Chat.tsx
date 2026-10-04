@@ -3,10 +3,13 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { MessageSquare, Minus, Smile } from "lucide-react";
 import { CopyFallback, useCopy } from "@/components/game/CopyText";
 import { EMOTES } from "@/components/game/emotes";
+import { QuickReactions } from "@/components/game/Reactions";
 import { useGame, type GameLogLine } from "@/lib/game/store";
 import type { ChatLine } from "@/lib/net/table";
 import { cn } from "@/lib/utils";
 import { useViewport } from "@/lib/viewport";
+
+export { ReactionFloats } from "@/components/game/Reactions";
 
 const PRESETS = ["gg", "nice roll", "your turn", "one sec", "ty"];
 const INPUT_ID = "chat-input";
@@ -304,6 +307,7 @@ export function ChatDock() {
   if (phone && open) {
     return (
       <>
+        <QuickReactions />
         <div data-testid="chat-backdrop" className="fixed inset-0 z-20" onClick={() => setOpen(false)} />
         <section
           aria-label="Table chat"
@@ -322,87 +326,53 @@ export function ChatDock() {
   }
 
   return (
-    <div
-      className={cn(
-        "absolute right-3 z-20 flex items-end",
-        phone ? cn("flex-col-reverse", portrait ? "bottom-[196px]" : "bottom-[184px]") : "top-16 flex-col",
-      )}
-    >
-      {open ? (
-        <section
-          aria-label="Table chat"
-          className="flex w-72 flex-col gap-2 rounded-chip bg-glass p-3 backdrop-blur-md"
-          style={{ maxHeight: "min(360px, 50vh)" }}
-        >
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-medium">Table chat</h2>
-            {minimize}
-          </div>
-          <ChatBox rows={6} game onEscape={() => setOpen(false)} />
-        </section>
-      ) : (
-        <>
-          <button
-            type="button"
-            aria-label={unread ? `Open chat, ${unread} unread` : "Open chat"}
-            onClick={() => {
-              focusNext.current = true;
-              setOpen(true);
-            }}
-            className={cn(
-              "relative flex size-11 cursor-pointer items-center justify-center rounded-control bg-glass text-zinc-700 backdrop-blur-md hover:text-zinc-900",
-            )}
-          >
-            <MessageSquare className="size-5" />
-            {unread > 0 ? (
-              <span
-                data-testid="chat-unread"
-                className="absolute -right-1 -top-1 flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[11px] font-medium text-white"
-              >
-                {unread}
-              </span>
-            ) : null}
-          </button>
-          <Preview above={phone} />
-        </>
-      )}
-    </div>
-  );
-}
-
-// Floats over its parent (which must be `relative`): the live reactions from `anchor`, a player id or a seat id.
-export function ReactionFloats({ by, id }: { by: "player" | "seat"; id: string }) {
-  const reactions = useGame((s) => s.reactions);
-  const seats = useGame((s) => s.seats);
-  const players = useGame((s) => s.state?.players);
-  return (
     <>
-      {reactions
-        .filter((r) => (by === "player" ? r.player : r.seat) === id)
-        .map((r) => {
-          const url = EMOTES[r.emote];
-          if (!url) return null;
-          const to = r.to
-            ? (seats.find((s) => s.id === r.to) ?? players?.find((p) => p.id === r.to))
-            : undefined;
-          return (
-            <div
-              key={`${r.at}-${r.seat}-${r.emote}`}
-              data-testid="reaction"
-              data-emote={r.emote}
-              className="pointer-events-none absolute inset-x-0 top-0 z-30 flex justify-center"
-            >
-              <div className="flex flex-col items-center" style={{ animation: "emote-float 2s linear forwards" }}>
-                <img src={url} alt="" className="size-12 object-contain" />
-                {to ? (
-                  <span className="rounded-chip bg-glass px-1 text-[10px] font-medium text-zinc-700 backdrop-blur-md">
-                    → {to.name}
-                  </span>
-                ) : null}
-              </div>
+      <QuickReactions />
+      <div
+        className={cn(
+          "absolute right-3 z-20 flex items-end",
+          phone ? cn("flex-col-reverse", portrait ? "bottom-[196px]" : "bottom-[184px]") : "top-16 flex-col",
+        )}
+      >
+        {open ? (
+          <section
+            aria-label="Table chat"
+            className="flex w-72 flex-col gap-2 rounded-chip bg-glass p-3 backdrop-blur-md"
+            style={{ maxHeight: "min(360px, 50vh)" }}
+          >
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-medium">Table chat</h2>
+              {minimize}
             </div>
-          );
-        })}
+            <ChatBox rows={6} game onEscape={() => setOpen(false)} />
+          </section>
+        ) : (
+          <>
+            <button
+              type="button"
+              aria-label={unread ? `Open chat, ${unread} unread` : "Open chat"}
+              onClick={() => {
+                focusNext.current = true;
+                setOpen(true);
+              }}
+              className={cn(
+                "relative flex size-11 cursor-pointer items-center justify-center rounded-control bg-glass text-zinc-700 backdrop-blur-md hover:text-zinc-900",
+              )}
+            >
+              <MessageSquare className="size-5" />
+              {unread > 0 ? (
+                <span
+                  data-testid="chat-unread"
+                  className="absolute -right-1 -top-1 flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[11px] font-medium text-white"
+                >
+                  {unread}
+                </span>
+              ) : null}
+            </button>
+            <Preview above={phone} />
+          </>
+        )}
+      </div>
     </>
   );
 }
