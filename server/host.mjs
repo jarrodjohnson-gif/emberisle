@@ -697,6 +697,9 @@ function rematch(ws, room) {
     seat.ws = null;
   }
   room.seats = live;
+  // Seats get new pids below, so no offer (or a bot's answer timer on it) may outlive the old game.
+  if (room.offer) broadcast(room, { type: "tradeClosed", tradeId: room.offer.tradeId });
+  closeOffer(room);
   const winner = live.find((s) => s.pid === room.game.winner);
   const order = winner ? [winner, ...live.filter((s) => s !== winner)] : live;
   const game = createGame({ humans: order.map((s) => ({ name: s.name })), bots: 0, winnerFirst: Boolean(winner) });
@@ -766,8 +769,10 @@ function closeOffer(room) {
 function botsOn(room, offer) {
   if (room.game.players.find((p) => p.id === offer.from)?.kind !== "bot" || !room.seats.some((s) => s.ws)) return false;
   const seen = room.game.log;
+  const phase = room.game.phase;
   runBots(room);
   for (const line of newLog(seen, room.game.log)) say(room, line);
+  if (room.game.phase === "over" && phase !== "over") hear("win");
   pushState(room);
   return true;
 }

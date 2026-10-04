@@ -4,6 +4,8 @@
 //      after the bot's delay, never at once. Its No counts, so the offer closes when the last person declines too.
 //   B. A bot asks on its own turn; the other bot (which cannot pay) declines, and a person takes it.
 //   C. A bot asks and nobody answers: no bot answers its own ask, the offer runs out, and the bot's turn plays on.
+//   D. An offer open when its asker wins (by a build that does not spend the offered goods) is gone at the win, and
+//      after the rematch (#405) a late Yes to it moves nothing.
 // Every wait is on a message; nothing sleeps a fixed time.
 import { spawn } from "node:child_process";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
@@ -67,9 +69,13 @@ if (!askB || shouldAcceptTrade(gB, "p1", { from: "p2", ...askB })) fail("room B:
 // C: the same bot ask with only people to answer it, who stay silent.
 const gC = game(["Ember", "Tide"], 1, "p2", { p0: { grain: 1 }, p1: { clay: 1 }, p2: { grain: 2, ore: 2, wool: 2 } }, 13);
 if (!chooseTradeAsk(gC, "p2")) fail("room C: the bot does not ask");
+// D: three people; Ember holds 2 outposts and 7 hidden points, and the goods for a stronghold besides the offered wool.
+const gD = game(["Ember", "Tide", "Pine"], 0, "p0", { p0: { grain: 3, ore: 2, wool: 1 }, p1: { timber: 1 }, p2: { clay: 1 } }, 14);
+gD.players[0].hidden.vp = 7;
 const seatsA = saveRoom("BTAA", gA);
 const seatsB = saveRoom("BTBB", gB);
 const seatsC = saveRoom("BTCC", gC);
+const seatsD = saveRoom("BTDD", gD);
 
 host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL(".", import.meta.url),
@@ -203,6 +209,28 @@ if (EB.seen.some((m) => m.type === "tradeDeclined" && m.by === "p2")) fail("B: t
 // One ask per bot turn: the bot played the rest of its turn without asking again.
 if (EB.seen.filter((m) => m.type === "tradeOffer").length !== 1) fail("B: the bot asked more than once in its turn");
 console.log(`B: bot asked ${JSON.stringify(askB.give)} for ${JSON.stringify(askB.want)}; the other bot said No; Ember took it; the bot's turn played on`);
+
+// D. The asker wins with the offer open, then the host starts a rematch.
+const D = ["p0", "p1", "p2"].map((pid) => rejoin("BTDD", seatsD.find((s) => s.pid === pid)));
+const [ED, TD] = D;
+await Promise.all(D.map((c) => c.until("seats", (m) => m.seats.every((s) => !s.away))));
+await ED.until("state", (m) => m.legal.stronghold.length > 0);
+ED.send({ type: "tradeAsk", give: { wool: 1 }, want: { timber: 1 } });
+offer = (await Promise.all(D.map((c) => c.next("tradeOffer"))))[0];
+ED.send({ type: "place", kind: "stronghold", id: ED.state.legal.stronghold[0] });
+for (const c of D) {
+  const closed = await c.next("tradeClosed");
+  if (closed.tradeId !== offer.tradeId || closed.taker) fail(`D: ${c.name} tradeClosed at the win`, closed);
+  await c.until("state", (m) => m.game.phase === "over");
+}
+ED.send({ type: "again" });
+await Promise.all(D.map((c) => c.until("state", (m) => m.game.phase !== "over")));
+const dSeq = TD.state.game.seq;
+TD.send({ type: "tradeAnswer", tradeId: offer.tradeId, yes: true });
+const gone = await TD.next("error");
+if (gone.message !== "Offer is gone.") fail("D: a late Yes after the rematch", gone.message);
+if (TD.state.game.seq !== dSeq || D.some((c) => c.inbox.some((m) => m.type === "tradeClosed" && m.taker))) fail("D: a late Yes after the rematch moved the table");
+console.log("D: the offer open at Ember's win closed at every seat; after the rematch a late Yes got:", gone.message);
 
 const cMs = await roomC;
 console.log(`C: nobody answered the bot's ask; no bot answered it; it closed after ${cMs} ms and the bot's turn played on`);
