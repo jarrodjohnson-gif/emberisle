@@ -47,6 +47,15 @@ async function tab(name) {
   page.on("pageerror", (e) => errors.push(`${name}: ${e}`));
   page.on("response", (r) => r.status() >= 400 && errors.push(`${name}: ${r.status()} ${r.url()}`));
   await page.addInitScript((n) => localStorage.setItem("emberisle-name", n), name);
+  // #425: records every clip the page starts (the file name), without changing what play() does.
+  await page.addInitScript(() => {
+    window.__plays = [];
+    const play = HTMLMediaElement.prototype.play;
+    HTMLMediaElement.prototype.play = function () {
+      window.__plays.push(new URL(this.src).pathname);
+      return play.call(this);
+    };
+  });
   await page.goto(`http://127.0.0.1:${PORT}/?host=ws://127.0.0.1:${hostPort}`);
   return { name, page };
 }
@@ -101,6 +110,10 @@ try {
   const tabs = [await tab("Ember"), await tab("Tide"), await tab("Pine")];
   const [a, b, c] = tabs;
   await a.page.getByRole("button", { name: "Host a table" }).click();
+  // #425: a press plays ui_click once, on the pointer going down.
+  const hostPlays = await a.page.evaluate(() => window.__plays);
+  if (hostPlays.join() !== "/audio/click_001.wav") throw new Error(`Host a table played ${JSON.stringify(hostPlays)}, not click_001.wav once`);
+  console.log("#425: Host a table -> /audio/click_001.wav once");
   const tableCode = (await a.page.getByTestId("table-code").textContent()).trim();
   for (const t of [b, c]) {
     await t.page.getByPlaceholder(/code/i).fill(tableCode);
@@ -206,8 +219,13 @@ try {
     if (!f.inDialog) throw new Error(`Shift+Tab ${n + 1} left the trade dialog for "${f.label}"`);
   }
   if (new Set(visited).size < 3) throw new Error(`Tab did not cycle through the dialog: ${visited.join(" > ")}`);
+  const playsBefore = (await A.page.evaluate(() => window.__plays)).length;
   await A.page.keyboard.press("Escape");
   await dialog.waitFor({ state: "detached", timeout: 5_000 });
+  // #425: Escape on the trade panel plays ui_back once.
+  const escPlays = (await A.page.evaluate(() => window.__plays)).slice(playsBefore);
+  if (escPlays.join() !== "/audio/back_001.wav") throw new Error(`Escape on the trade panel played ${JSON.stringify(escPlays)}, not back_001.wav once`);
+  console.log("#425: Escape on the trade panel -> /audio/back_001.wav once");
   const back = await focusIs(A);
   if (back.label !== "Trade") throw new Error(`Escape put focus on "${back.label}", not the Trade button`);
   console.log(`#378: Enter on Trade -> dialog "Trade", focus on "${opened.label}"; 14 Tabs + 3 Shift+Tabs stayed inside (${new Set(visited).size} stops); Escape -> focus on Trade`);
