@@ -251,9 +251,10 @@ const seqAtDrop = a.state.seq;
 // The watchers' copy of the last push rides its own socket, so it can land after the seats' did.
 await until(() => [w1, w2].every((w) => w.state().game.seq === seqAtDrop), "the watchers catching up before the drop");
 const inboxAtDrop = w1.inbox.length;
+const inboxAtDrop2 = w2.inbox.length;
 for (const p of all) p.t.close();
-const taken = (w) => names.every((n) => w.logs.includes(`${n} is played by the bot until they return.`));
-await until(() => taken(w1) && taken(w2), "the bot taking every dropped seat", GRACE * 3 + 3000);
+const taken = (w, from) => names.every((n) => w.inbox.slice(from).some((m) => m.type === "log" && m.text === `${n} is played by the bot until they return.`));
+await until(() => taken(w1, inboxAtDrop) && taken(w2, inboxAtDrop2), "the bot taking every dropped seat", GRACE * 3 + 3000);
 if (w1.closed || w2.closed) fail("the room closed under its watchers inside the hold");
 if (!w1.seatsSeen[w1.seatsSeen.length - 1].seats.every((s) => s.away)) fail("every seat is marked away", w1.seatsSeen[w1.seatsSeen.length - 1].seats);
 for (const p of all) {

@@ -149,8 +149,8 @@ a.send({ type: "chat", text: "see you after the crash" });
 await b.next("chat");
 await wait(100);
 if (!existsSync(path.join(ROOMS_DIR, `${code}.json`))) fail("room file written", ROOMS_DIR);
-const onDisk = readFileSync(path.join(ROOMS_DIR, `${code}.json`), "utf8");
-if (onDisk.includes("watch") || "watchers" in JSON.parse(onDisk)) fail("the room file carries watcher data", onDisk.slice(0, 200));
+const onDisk = JSON.parse(readFileSync(path.join(ROOMS_DIR, `${code}.json`), "utf8"));
+if ("watchers" in onDisk || "watchSaid" in onDisk || onDisk.seats.some((s) => "ws" in s || "watch" in s)) fail("the room file carries watcher data", Object.keys(onDisk));
 console.log(`table ${code}: setup done, rolled ${rolls} times, seq ${seq}, ${current} to play, 1 watching; ${code}.json on disk with no watcher data`);
 
 // A day-old room, a broken file and one with a null seat sit next to it; the restart must drop the first and survive the rest.

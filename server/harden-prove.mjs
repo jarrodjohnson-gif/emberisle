@@ -195,8 +195,9 @@ console.log(`seat ${first} left on its roll-off turn; the bot rolled and play mo
 const off = client();
 await off.open;
 off.send({ type: "hello", code, watch: true });
-const noWatch = await off.next("error");
-if (noWatch.message !== "Table is full to watch.") fail("SPECTATOR_MAX=0 refuses the first watcher", noWatch.message);
+while (!off.inbox.length) await new Promise((res) => off.waiters.push(res));
+const noWatch = off.inbox.shift();
+if (noWatch.type !== "error" || noWatch.message !== "Table is full to watch.") fail("SPECTATOR_MAX=0 must refuse the first watcher", JSON.stringify(noWatch));
 off.ws.close();
 console.log(`SPECTATOR_MAX=0: the first watcher of the started table got "${noWatch.message}"`);
 
