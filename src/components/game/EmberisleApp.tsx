@@ -216,6 +216,10 @@ function Title() {
                 Watch
               </Button>
             ) : null}
+            {/* Always mounted, so the text arriving is what a screen reader hears when the Watch button appears. */}
+            <p className="sr-only" aria-live="polite" data-testid="watch-announce">
+              {showWatch ? "Watch available" : ""}
+            </p>
             {error ? (
               <p role="alert" className="text-sm text-accent-ink">
                 {error}
@@ -282,6 +286,7 @@ function Lobby() {
         : "Everyone is ready";
   const { phone, portrait } = useViewport();
   const sheet = phone && portrait;
+  const landscape = phone && !portrait;
 
   return (
     <div
@@ -290,13 +295,23 @@ function Lobby() {
         "absolute z-10 flex flex-col",
         sheet
           ? "inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] max-h-[55vh]"
-          : "bottom-5 left-5 top-5 w-full max-w-sm sm:bottom-6 sm:left-10 sm:top-6",
+          : landscape
+            ? "inset-y-3 left-[max(0.75rem,env(safe-area-inset-left))] w-[min(44rem,calc(100%-1.5rem))]"
+            : "bottom-5 left-5 top-5 w-full max-w-sm sm:bottom-6 sm:left-10 sm:top-6",
       )}
     >
-      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto rounded-[20px] border border-white/50 bg-white/45 p-5 backdrop-blur-md sm:p-6">
+      {/* #449: held sideways the card is two columns, as the title's is (#433): seats and chat on the left, the code, status,
+          Ready/Start and Leave stacked on the right, so none of them needs a scroll. */}
+      <div
+        className={cn(
+          "flex min-h-0 flex-1 flex-col overflow-y-auto rounded-[20px] border border-white/50 bg-white/45 p-5 backdrop-blur-md sm:p-6",
+          landscape && "grid grid-cols-2 grid-rows-[auto_1fr] gap-x-5 p-4 sm:p-4",
+        )}
+      >
+        <div className={cn(landscape && "col-start-2 row-start-1")}>
         <p className="text-xs uppercase tracking-[0.22em] text-sea-ink">Table code</p>
         <div className="mt-1 flex items-center gap-3">
-          <p data-testid="table-code" className="font-display text-6xl tracking-[0.2em]">
+          <p data-testid="table-code" className={cn("font-display tracking-[0.2em]", landscape ? "text-5xl" : "text-6xl")}>
             {code}
           </p>
           <div className="flex flex-col gap-1">
@@ -309,11 +324,13 @@ function Lobby() {
           </div>
         </div>
         <CopyFallback state={copied} label={copied?.what === "link" ? "Join link" : "Table code"} className="mt-2" />
-        <ul className="mt-5 flex flex-col gap-2">
+        </div>
+        <div className={cn(landscape ? "col-start-1 row-span-2 row-start-1 flex min-h-0 flex-col" : "contents")}>
+        <ul className={cn("flex flex-col gap-2", landscape ? "shrink-0" : "mt-5")}>
           {[0, 1, 2, 3].map((i) => {
             const s = seats[i];
             return (
-              <li key={i} className="relative flex items-center gap-3 rounded-[12px] border border-border bg-surface px-3 py-2">
+              <li key={i} className={cn("relative flex items-center gap-3 rounded-[12px] border border-border bg-surface px-3", landscape ? "py-1" : "py-2")}>
                 <span className="size-3 rounded-full ring-1 ring-inset ring-black/25" style={{ background: s?.color ?? "transparent" }} />
                 <span className="flex-1 text-sm">
                   {s ? s.name : "Empty"}
@@ -326,14 +343,16 @@ function Lobby() {
           })}
         </ul>
         {/* #417: the chat log is the one flexible piece (down to about 2 rows), so at 1280x720 Start and Leave stay inside the card. */}
-        <div className="mt-2 flex min-h-32 flex-col rounded-[12px] border border-border bg-surface p-2">
+        <div className={cn("mt-2 flex flex-col rounded-[12px] border border-border bg-surface p-2", landscape ? "min-h-0 flex-1" : "min-h-32")}>
           <ChatBox rows={6} />
+        </div>
         </div>
         {/* #389: on a phone Ready/Start stay pinned to the bottom of the card; a fade above them says the rest scrolls. */}
         <div
           data-testid="lobby-actions"
           className={cn(
             "mt-3 flex flex-col gap-2",
+            landscape && "col-start-2 row-start-2 justify-end",
             sheet &&
               "sticky -bottom-5 z-10 -mx-5 -mb-5 bg-surface px-5 pb-5 pt-2 before:pointer-events-none before:absolute before:inset-x-0 before:-top-6 before:h-6 before:bg-gradient-to-t before:from-surface before:to-transparent",
           )}
