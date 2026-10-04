@@ -107,11 +107,11 @@ Tailwind's 4 px base, used on these steps only: **4, 8, 12, 16, 24, 32, 48**.
 
 ### Colour
 
-Neutrals (existing tokens, unchanged):
+Neutrals (existing tokens, unchanged, plus `glass`, which is new and lands with #424):
 
 | Token | Value | Use | Contrast |
 |---|---|---|---|
-| `bg` (stone) | `#efeae0` | page, quiet button fill | — |
+| `bg` (stone) | `#efeae0` | page background | — |
 | `surface` | `#f7f4ee` | opaque sheets (trade, discard, how to play) | — |
 | `raised` | `#ffffff` | fields, the selected tile | — |
 | `fg` (ink) | `#1c1915` | text, the primary button fill | 16:1 on surface |
@@ -119,8 +119,8 @@ Neutrals (existing tokens, unchanged):
 | `border` | `#d8d1c3` | fields only | non-text |
 | `sea` / `sea-ink` | `#2a8f8a` / `#1b726e` | links, focus ring, Tide | ink 5.7:1 with white |
 | `accent` / `accent-ink` | `#c45c3e` / `#a94b30` | Ember; a 7 | ink 5.6:1 with white |
-| `glass` | white ≥ 72 % + 16 px blur (`--color-glass`, #424) | every text chip over the island | text ≥ 4.5:1 sampled over the board |
-| `danger` | `#b3261e` | errors, can't-afford | 6.5:1 on white |
+| `danger` | `#b3261e` | errors, can't-afford (new, #435) | 6.5:1 on white |
+| `glass` | white ≥ 70 % + 16 px blur (`--color-glass`, **new in #424**, not on main yet) | every text chip over the island | text ≥ 4.5:1 sampled over the board |
 
 Resources, new. The fill is the terrain cap's own base colour from `PAINT`
 (`src/lib/scene/palette.ts`), so the hand card *is* the hex. Text on a fill uses its `-on` colour:
@@ -145,20 +145,21 @@ and your legal-spot pulse.
 
 | Token | Value | Use |
 |---|---|---|
-| `rounded-control` | 8 px (bible §3.4) | buttons, fields, dice, swatches' focus ring |
+| `rounded-control` | 12 px (Jarrod 2026-10-04; supersedes the bible §3.4's 8 px) | buttons, fields, dice, swatches' focus ring |
 | `rounded-chip` | 16 px | text chips, hand cards, seat cards, toasts |
 | `rounded-sheet` | 24 px | sheets and modals (trade, discard, how to play, win, title card) |
 | `rounded-full` | pill | swatches, avatars, the turn dot |
 
-Nested corners: inner radius = outer radius − padding (a 16 px chip in a 24 px sheet with 8 px padding).
-Today the code uses 4, 8, 12, 16, 20 and 28 px; the 12 / 20 / 28 cases fold into the table above as each
-screen is touched. (Question 3 asks whether controls should go rounder.)
+Nested corners: inner radius = outer radius − padding. So a sheet (24) pads **12 px** around a control
+(12) or a chip-sized card (it then shows 12, not 16: inside a sheet, cards use `rounded-control`); a chip
+(16) pads **4 px** around a control (12). Today the code uses 4, 8, 12, 16, 20
+and 28 px; the 4 / 20 / 28 cases fold into the table above as each screen is touched.
 
 ### Surfaces
 
 Two, and only two:
 
-- **Glass** for anything that sits over the island and carries text: `--color-glass` (#424, white ≥ 72 %),
+- **Glass** for anything that sits over the island and carries text: `--color-glass` (new in #424, white ≥ 70 %),
   `backdrop-blur` 16 px, no border, `rounded-chip`. The log line moves onto it.
 - **Solid** `surface` for sheets that take the centre (trade, discard, how to play, win), `rounded-sheet`,
   with one soft shadow (`0 8px 32px rgb(28 25 21 / 0.18)`) and no border.
@@ -170,13 +171,14 @@ edge are enough). No gradients on controls.
 
 | Level | Look | Size | When |
 |---|---|---|---|
-| **Primary** | `fg` fill, `bg` text, no border | 48 px tall, full width on phones | The one next action: Roll, Play / Host, Start, Confirm discard, Send offer. **One per screen.** |
-| **Secondary** | `raised` fill, `fg` text, no border, `rounded-control` | 44 px | Real alternatives: Trade, Join, a build you can afford. |
-| **Quiet** | text only, `fg`, hover `fg/5` | 44 px | Back, Cancel, How to play, Leave, End turn when there is still something to do. |
+| **Primary** | `fg` fill, `bg` text, no border | 48 px tall, full width on phones | The one next action: Roll, Play, Start, Confirm discard, Send offer. **One per screen.** |
+| **Secondary** | `raised` fill, `fg` text, 1 px inner ring `black/10` (edge contrast on `surface` sheets, WCAG 1.4.11), `rounded-control` | 44 px | Real alternatives: Trade, Join, Host, a build you can afford. |
+| **Quiet** | text only, `fg`, hover `fg/5` (this overrides the bible §3.4's stone-filled button for this level) | 44 px | Back, Cancel, How to play, Leave, End turn when there is still something to do. |
 | **Disabled build** | secondary at 50 % with its price (`Path · 1 timber 1 clay`) | 44 px | Only the three builds in `main` (bible §4.2). |
 
 - Colour buttons (`sea`, `accent` variants) are retired as screens are touched: colour is information,
-  not hierarchy. End turn becomes Primary once nothing else is affordable, Quiet before.
+  not hierarchy. End turn becomes Primary once nothing else is affordable, Quiet before; as Quiet it stays
+  on screen at its full 44 px target, never hidden or shrunk.
 - Press: scale 0.97, 80 ms, `--ease-out`, `ui_click` on pointerdown (#425, PR #431).
 - Focus: 2 px `sea-ink` outline, 2 px offset, on `:focus-visible` only.
 - Labels are verbs plus the amount where there is one: "Roll", "Place outpost", "Bank 4 ore → 1 grain".
@@ -188,16 +190,19 @@ edge are enough). No gradients on controls.
 | `--duration-press` | 80 ms | button press scale |
 | `--duration-quick` | 150 ms | hover, toggles, a die face settling |
 | `--duration-base` | 220 ms | chips and toasts entering, a path growing, the hand appearing |
-| `--duration-settle` | 320 ms | an outpost or stronghold landing, a sheet opening |
+| `--duration-settle` | 280 ms | an outpost landing, a sheet opening (a stronghold adds its 1.05 bounce: 320 ms, bible §8) |
+| `--duration-pulse` | 1.2 s, sine, loop | the legal-spot pulse (#437), the only looping motion |
 | `--duration-moment` | 900 ms | how long the roll holds centre screen |
 | `--ease-out` | `cubic-bezier(0.22, 1, 0.36, 1)` | everything that enters or moves |
 | `--ease-snap` | `cubic-bezier(0.34, 1.56, 0.64, 1)` | things that land: pieces, a count bumping, the dice |
 | `--ease-in` | `cubic-bezier(0.4, 0, 1, 1)` | things that leave (exit at about 0.7 × the entry time) |
 
 - Move transform and opacity only; never animate layout.
-- Nothing over 320 ms except the roll moment and the wayfarer's walk (bible §8: 600-900 ms).
+- Nothing over 320 ms except the roll moment, the legal-spot pulse and the wayfarer's walk (bible §8: 600-900 ms).
 - No camera shake, no confetti, no looping UI animation except the legal-spot pulse.
-- `prefers-reduced-motion: reduce`: durations collapse to 1 ms; sounds still play.
+- `prefers-reduced-motion: reduce`: CSS durations collapse to 1 ms. That does not reach three.js: under
+  reduced motion the legal-spot pulse and any other loop **stop and hold a steady state** (a code switch in
+  the renderer, not a duration), as #382 did and #437 specifies. Sounds still play.
 
 ### Sound pairing
 
@@ -211,7 +216,7 @@ ends, dice land when they freeze, a gain ticks when the hand count changes.
 | Ready, Start, trade Yes | `ui_confirm` | on the confirmed state, not the press |
 | Illegal pick, bad code | `ui_error` | on the error |
 | Path grows (220 ms) | `path_place` | end of the grow |
-| Outpost drops (280 ms) | `outpost_place` | the landing frame |
+| Outpost drops (`--duration-settle`, 280 ms) | `outpost_place` | the landing frame |
 | Stronghold settles (320 ms) | `stronghold_place` | the landing frame |
 | Dice freeze | `dice_land` | the freeze |
 | Hand count rises | `chip_gain` | once per roll, not per hex |
@@ -254,7 +259,7 @@ Cut, in this order (each line names where it is tracked):
 
 ## Issues
 
-Ranked by wow per hour, first 60 seconds first.
+Land #435 (the tokens) first; the rest use its names. Ranked by wow per hour, first 60 seconds first.
 
 | # | Title | Size |
 |---|---|---|
@@ -266,19 +271,16 @@ Ranked by wow per hour, first 60 seconds first.
 | #441 | Glow the hexes that paid after a roll | S |
 | #442 | Cut the table's top chrome to one menu button | XS |
 | #443 | Make each seat in the rail one line with the points as the number | XS |
-| #444 | Give the title one primary action and cut the eyebrow and tagline | S (needs: jarrod) |
+| #444 | Give the title one primary action and cut the eyebrow and tagline | S |
 | #435 | Implement the polish design tokens in styles.css and the Button primitive | XS |
 
 Already filed and in the same direction: #417-#425, #430 (ux-review), #129 (HUD layout), #135 (camera
 and light), #323 (Hud.tsx split, which #442 waits on), #312 (colour-blind seats).
 
-## Questions for Jarrod
+## Decided by Jarrod 2026-10-04
 
-1. **The title's one button.** Should the primary on the title be **Play** (practice against the isle,
-   no setup) with Host and Join as secondary, or does **Host a table** stay primary because game night is
-   the point? (#444 waits on this.)
-2. **Light or dark chrome.** Offsuit's chrome is black; Catan's is warm cream. This doc keeps warm stone
-   and white glass so the island stays the colourful thing on screen. Want to see a dark-chrome variant
-   anyway?
-3. **Rounder corners.** Offsuit's tiles are soft (~16-20 px). The bible says 8 px for buttons; this doc
-   keeps 8 px for controls and uses 16 / 24 px for chips and sheets. Go rounder on buttons too (12 px)?
+1. **The title's one button is Play** (instant practice against the isle). Host and Join are secondary
+   (#444).
+2. **Warm light chrome**: stone, white glass and ink, as above. No dark variant.
+3. **Rounder controls: 12 px.** Chips 16, sheets 24; the nested-radius rule above follows from it, and #435
+   sets `--radius-control` to 12 px.
