@@ -129,10 +129,10 @@ try {
         };
       });
     const before = await stackState();
-    if (viewport.height === 360) check(before.overflow, `${tag} hud: stack overflows (End turn below the fold)`, before);
+    if (viewport.height <= 568) check(before.overflow, `${tag} hud: stack overflows (End turn below the fold)`, before);
     if (viewport.height === 720) check(!before.overflow && !before.cue, `${tag} hud: no overflow, no cue`, before);
     if (before.overflow) {
-      await page.waitForSelector('[data-testid="hud-more-below"]');
+      await page.waitForSelector('[data-testid="hud-more-below"]', { timeout: 2000 });
       check((await stackState()).cuePointer === "none", `${tag} hud: cue takes no pointer events`, await stackState());
     }
     // The capped stack scrolls, so the last action in it must still be reachable and on top once scrolled to.
@@ -148,7 +148,7 @@ try {
         const sc = document.querySelector('[data-testid="turn-banner"]').closest(".pointer-events-auto");
         sc.scrollTop = sc.scrollHeight;
       });
-      await page.waitForSelector('[data-testid="hud-more-below"]', { state: "detached" });
+      await page.waitForSelector('[data-testid="hud-more-below"]', { state: "detached", timeout: 2000 });
       check(!(await stackState()).cue, `${tag} hud: cue gone once scrolled to the bottom`, await stackState());
     }
     await page.close();

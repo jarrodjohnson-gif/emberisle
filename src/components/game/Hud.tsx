@@ -289,159 +289,159 @@ export function Hud() {
 
       <div className="pointer-events-none absolute bottom-0 inset-x-0 z-10 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         <div className="relative mx-auto max-w-3xl">
-        <div
-          ref={stackRef}
-          className={cn(
-            "pointer-events-auto flex flex-col gap-2 overflow-y-auto overscroll-contain",
-            // #383: stop under the header (or the portrait seat strip) and leave the island at least ~8 rem.
-            phone && portrait ? "max-h-[calc(100dvh-16rem)]" : "max-h-[calc(100dvh-13rem)]",
-          )}
-        >
-          {phone && portrait && !hintDismissed ? (
-            <p
-              data-testid="landscape-hint"
-              className="pointer-events-none flex h-11 items-center justify-between gap-2 rounded-[16px] border border-white/50 bg-white/45 pl-3 text-sm text-zinc-900 backdrop-blur-md"
-            >
-              Turn the phone sideways to see the whole isle.
-              <button
-                type="button"
-                aria-label="Dismiss"
-                data-testid="landscape-hint-dismiss"
-                className="pointer-events-auto flex size-11 items-center justify-center"
-                onClick={() => {
-                  sessionStorage.setItem(HINT_KEY, "1");
-                  setHintDismissed(true);
-                }}
+          <div
+            ref={stackRef}
+            className={cn(
+              "pointer-events-auto flex flex-col gap-2 overflow-y-auto overscroll-contain",
+              // #383: stop under the header (or the portrait seat strip) and leave the island at least ~8 rem.
+              phone && portrait ? "max-h-[calc(100dvh-16rem)]" : "max-h-[calc(100dvh-13rem)]",
+            )}
+          >
+            {phone && portrait && !hintDismissed ? (
+              <p
+                data-testid="landscape-hint"
+                className="pointer-events-none flex h-11 items-center justify-between gap-2 rounded-[16px] border border-white/50 bg-white/45 pl-3 text-sm text-zinc-900 backdrop-blur-md"
               >
-                <X className="size-4" />
-              </button>
-            </p>
-          ) : null}
-          {state.phase === "over" ? null : (
-            <p
-              key={`turn-${state.current}`}
-              data-testid="turn-banner"
-              style={{ borderLeftColor: yours ? undefined : subjectPlayer.color }}
-              className={cn(
-                "animate-[turn-fade_200ms_ease-out] rounded-[16px] border bg-white/45 px-3 py-2 text-sm font-medium text-zinc-900 backdrop-blur-md",
-                yours ? "border-accent bg-accent/20" : "border-white/50 border-l-4",
-              )}
-            >
-              {turnText}
-            </p>
-          )}
-          <TurnCountdown />
-          {banner ? (
-            <p
-              role="status"
-              data-testid="banner"
-              className="rounded-[16px] border border-accent/40 bg-surface px-3 py-2 text-center text-sm font-medium text-zinc-900"
-            >
-              {banner}
-            </p>
-          ) : null}
-          {winner || buildMode === "roadCard" || error ? (
-            <p className="rounded-[16px] border border-white/50 bg-white/45 px-3 py-2 text-sm text-zinc-900 backdrop-blur-md">
-              {winner
-                ? `${winner.name} wins with ${totalVP(state, winner.id)} points.`
-                : buildMode === "roadCard"
-                  ? `Path fortune: pick ${roadPicks.length ? "one more path" : "two paths"} on the glowing edges.`
-                  : null}
-              {error ? <span className={cn("block text-orange-700", (winner || buildMode === "roadCard") && "mt-1")}>{error}</span> : null}
-            </p>
-          ) : null}
-
-          {spectator ? null : <ResourceHand me={me} />}
-
-          {discarder ? <DiscardBar key={`discard-${discarder}`} id={discarder} n={state.discardNeeded[discarder]!} /> : null}
-          <TakeFromBar />
-
-          {state.phase === "main" && mine ? (
-            <div className="flex flex-wrap gap-1">
-              {(
-                [
-                  ["path", "path", Route, "Path", me.pathsLeft],
-                  ["outpost", "outpost", Home, "Outpost", me.outpostsLeft],
-                  ["stronghold", "stronghold", Landmark, "Stronghold", me.strongholdsLeft],
-                ] as const
-              ).map(([kind, arm, Icon, label, left]) => {
-                const blocked = left <= 0 || !affords(me, kind);
-                return (
-                <Button
-                  key={kind}
-                  size="sm"
-                  variant={buildMode === arm ? "primary" : "secondary"}
-                  className={cn(UNAFFORDABLE, phone && "h-11 min-w-11")}
-                  aria-pressed={buildMode === arm}
-                  aria-disabled={blocked || undefined}
-                  title={priceLabel(kind)}
-                  aria-description={priceLabel(kind)}
+                Turn the phone sideways to see the whole isle.
+                <button
+                  type="button"
+                  aria-label="Dismiss"
+                  data-testid="landscape-hint-dismiss"
+                  className="pointer-events-auto flex size-11 items-center justify-center"
                   onClick={() => {
-                    // aria-disabled keeps the button focusable, so the click itself must refuse (but may still disarm).
-                    if (blocked && buildMode !== arm) return;
-                    setBuildMode(buildMode === arm ? "none" : arm);
+                    sessionStorage.setItem(HINT_KEY, "1");
+                    setHintDismissed(true);
                   }}
                 >
-                  <Icon className="size-4" /> {label}
-                </Button>
-                );
-              })}
-              <Button
-                size="sm"
-                variant="secondary"
-                className={cn(UNAFFORDABLE, phone && "h-11 min-w-11")}
-                aria-disabled={fortuneBlocked || undefined}
-                title={priceLabel("card")}
-                aria-description={priceLabel("card")}
-                onClick={() => {
-                  if (!fortuneBlocked) dispatch({ type: "buyCard" });
-                }}
+                  <X className="size-4" />
+                </button>
+              </p>
+            ) : null}
+            {state.phase === "over" ? null : (
+              <p
+                key={`turn-${state.current}`}
+                data-testid="turn-banner"
+                style={{ borderLeftColor: yours ? undefined : subjectPlayer.color }}
+                className={cn(
+                  "animate-[turn-fade_200ms_ease-out] rounded-[16px] border bg-white/45 px-3 py-2 text-sm font-medium text-zinc-900 backdrop-blur-md",
+                  yours ? "border-accent bg-accent/20" : "border-white/50 border-l-4",
+                )}
               >
-                <ScrollText className="size-4" /> Fortune
-              </Button>
-              <TradeButton />
-              {knightButton}
-              {!state.playedCard && playable(me, "road") > 0 && me.pathsLeft > 0 && legalRoads(state, me.id, false).length > 0 ? (
+                {turnText}
+              </p>
+            )}
+            <TurnCountdown />
+            {banner ? (
+              <p
+                role="status"
+                data-testid="banner"
+                className="rounded-[16px] border border-accent/40 bg-surface px-3 py-2 text-center text-sm font-medium text-zinc-900"
+              >
+                {banner}
+              </p>
+            ) : null}
+            {winner || buildMode === "roadCard" || error ? (
+              <p className="rounded-[16px] border border-white/50 bg-white/45 px-3 py-2 text-sm text-zinc-900 backdrop-blur-md">
+                {winner
+                  ? `${winner.name} wins with ${totalVP(state, winner.id)} points.`
+                  : buildMode === "roadCard"
+                    ? `Path fortune: pick ${roadPicks.length ? "one more path" : "two paths"} on the glowing edges.`
+                    : null}
+                {error ? <span className={cn("block text-orange-700", (winner || buildMode === "roadCard") && "mt-1")}>{error}</span> : null}
+              </p>
+            ) : null}
+
+            {spectator ? null : <ResourceHand me={me} />}
+
+            {discarder ? <DiscardBar key={`discard-${discarder}`} id={discarder} n={state.discardNeeded[discarder]!} /> : null}
+            <TakeFromBar />
+
+            {state.phase === "main" && mine ? (
+              <div className="flex flex-wrap gap-1">
+                {(
+                  [
+                    ["path", "path", Route, "Path", me.pathsLeft],
+                    ["outpost", "outpost", Home, "Outpost", me.outpostsLeft],
+                    ["stronghold", "stronghold", Landmark, "Stronghold", me.strongholdsLeft],
+                  ] as const
+                ).map(([kind, arm, Icon, label, left]) => {
+                  const blocked = left <= 0 || !affords(me, kind);
+                  return (
+                  <Button
+                    key={kind}
+                    size="sm"
+                    variant={buildMode === arm ? "primary" : "secondary"}
+                    className={cn(UNAFFORDABLE, phone && "h-11 min-w-11")}
+                    aria-pressed={buildMode === arm}
+                    aria-disabled={blocked || undefined}
+                    title={priceLabel(kind)}
+                    aria-description={priceLabel(kind)}
+                    onClick={() => {
+                      // aria-disabled keeps the button focusable, so the click itself must refuse (but may still disarm).
+                      if (blocked && buildMode !== arm) return;
+                      setBuildMode(buildMode === arm ? "none" : arm);
+                    }}
+                  >
+                    <Icon className="size-4" /> {label}
+                  </Button>
+                  );
+                })}
                 <Button
                   size="sm"
-                  variant={buildMode === "roadCard" ? "primary" : "secondary"}
-                  className={phone ? "h-11 min-w-11" : undefined}
-                  aria-pressed={buildMode === "roadCard"}
-                  onClick={() => setBuildMode(buildMode === "roadCard" ? "none" : "roadCard")}
+                  variant="secondary"
+                  className={cn(UNAFFORDABLE, phone && "h-11 min-w-11")}
+                  aria-disabled={fortuneBlocked || undefined}
+                  title={priceLabel("card")}
+                  aria-description={priceLabel("card")}
+                  onClick={() => {
+                    if (!fortuneBlocked) dispatch({ type: "buyCard" });
+                  }}
                 >
-                  Path fortune{playable(me, "road") > 1 ? ` ×${playable(me, "road")}` : ""}
+                  <ScrollText className="size-4" /> Fortune
                 </Button>
-              ) : null}
-              {!state.playedCard && playable(me, "plenty") > 0 ? <PlentyForm /> : null}
-              {!state.playedCard && playable(me, "monopoly") > 0 ? <MonopolyForm /> : null}
-              <Button size="sm" variant="sea" className="ml-auto" onClick={() => dispatch({ type: "endTurn" })}>
-                End turn
-              </Button>
-            </div>
+                <TradeButton />
+                {knightButton}
+                {!state.playedCard && playable(me, "road") > 0 && me.pathsLeft > 0 && legalRoads(state, me.id, false).length > 0 ? (
+                  <Button
+                    size="sm"
+                    variant={buildMode === "roadCard" ? "primary" : "secondary"}
+                    className={phone ? "h-11 min-w-11" : undefined}
+                    aria-pressed={buildMode === "roadCard"}
+                    onClick={() => setBuildMode(buildMode === "roadCard" ? "none" : "roadCard")}
+                  >
+                    Path fortune{playable(me, "road") > 1 ? ` ×${playable(me, "road")}` : ""}
+                  </Button>
+                ) : null}
+                {!state.playedCard && playable(me, "plenty") > 0 ? <PlentyForm /> : null}
+                {!state.playedCard && playable(me, "monopoly") > 0 ? <MonopolyForm /> : null}
+                <Button size="sm" variant="sea" className="ml-auto" onClick={() => dispatch({ type: "endTurn" })}>
+                  End turn
+                </Button>
+              </div>
+            ) : null}
+
+            {(state.phase === "roll" || state.phase === "rollOff") && mine ? (
+              <div className="flex flex-col gap-2">
+                {knightButton ? <div className="flex flex-wrap gap-1">{knightButton}</div> : null}
+                <Button size="lg" onClick={() => dispatch({ type: "roll" })}>
+                  <Dices className="size-5" /> Roll
+                </Button>
+              </div>
+            ) : null}
+
+            {state.dice ? <Dice values={state.dice} /> : null}
+
+            <p className="hidden max-h-16 shrink-0 overflow-y-auto text-xs text-zinc-600 sm:block short:hidden">
+              {state.log.slice(-3).join(" · ")}
+            </p>
+          </div>
+          {moreBelow ? (
+            <div
+              data-testid="hud-more-below"
+              aria-hidden
+              className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-zinc-900/40 to-transparent"
+            />
           ) : null}
-
-          {(state.phase === "roll" || state.phase === "rollOff") && mine ? (
-            <div className="flex flex-col gap-2">
-              {knightButton ? <div className="flex flex-wrap gap-1">{knightButton}</div> : null}
-              <Button size="lg" onClick={() => dispatch({ type: "roll" })}>
-                <Dices className="size-5" /> Roll
-              </Button>
-            </div>
-          ) : null}
-
-          {state.dice ? <Dice values={state.dice} /> : null}
-
-          <p className="hidden max-h-16 shrink-0 overflow-y-auto text-xs text-zinc-600 sm:block short:hidden">
-            {state.log.slice(-3).join(" · ")}
-          </p>
-        </div>
-        {moreBelow ? (
-          <div
-            data-testid="hud-more-below"
-            aria-hidden
-            className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-zinc-900/40 to-transparent"
-          />
-        ) : null}
         </div>
       </div>
 
