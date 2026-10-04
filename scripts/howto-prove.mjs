@@ -1,6 +1,7 @@
 // The title's How to play is a dialog over the whole screen, not a box inside the title card: on a phone (portrait and
 // landscape) and at 1280x720 its backdrop covers the viewport, its Close button is on screen and takes the tap, and
 // Close actually closes it. Zero console errors.
+// #425: a press plays click_001.wav and Close / Escape play back_001.wav, once each; with the sound toggle off nothing plays.
 // Run: npm run howto-prove
 import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
@@ -55,6 +56,46 @@ try {
     await page.waitForFunction(() => !window.__emberisle.getState().howTo);
     assert.equal(await dialog.count(), 0, `${c.name}: Close closes the dialog`);
     console.log(`${c.name}: backdrop ${got.backdrop.w}x${got.backdrop.h}, Close at ${got.close.top}-${got.close.bottom} px on screen and tappable, closes`);
+    await ctx.close();
+  }
+  {
+    const ctx = await browser.newContext({ viewport: { width: 1280, height: 720 } });
+    const page = await ctx.newPage();
+    page.on("console", (m) => m.type() === "error" && errors.push(`sound: ${m.text()}`));
+    page.on("pageerror", (e) => errors.push(`sound: ${e}`));
+    await page.addInitScript(() => {
+      window.__plays = [];
+      const play = HTMLMediaElement.prototype.play;
+      HTMLMediaElement.prototype.play = function () {
+        window.__plays.push(new URL(this.src).pathname);
+        return play.call(this);
+      };
+    });
+    await page.goto(`http://127.0.0.1:${PORT}/`);
+    await page.waitForFunction(() => window.__emberisle);
+    const plays = () => page.evaluate(() => window.__plays.map((p) => p.split("/").pop()));
+    const dialog = page.getByRole("dialog", { name: "How to play" });
+    await page.getByRole("button", { name: "How to play" }).click();
+    await dialog.waitFor();
+    await dialog.getByRole("button", { name: "Close" }).click();
+    await dialog.waitFor({ state: "detached" });
+    await page.getByRole("button", { name: "How to play" }).click();
+    await dialog.waitFor();
+    await page.keyboard.press("Escape");
+    await dialog.waitFor({ state: "detached" });
+    assert.deepEqual(await plays(), ["click_001.wav", "back_001.wav", "click_001.wav", "back_001.wav"], "open, Close, open, Escape");
+    await page.getByRole("button", { name: "Table sounds on" }).click();
+    const before = (await plays()).length;
+    await page.getByRole("button", { name: "How to play" }).click();
+    await dialog.waitFor();
+    await dialog.getByRole("button", { name: "Close" }).click();
+    await dialog.waitFor({ state: "detached" });
+    await page.getByRole("button", { name: "How to play" }).click();
+    await dialog.waitFor();
+    await page.keyboard.press("Escape");
+    await dialog.waitFor({ state: "detached" });
+    assert.equal((await plays()).length, before, "muted: nothing plays");
+    console.log("sounds: open click_001, Close back_001, Escape back_001, once each; muted plays nothing");
     await ctx.close();
   }
   assert.deepEqual(errors, [], "console errors");

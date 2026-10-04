@@ -1,5 +1,6 @@
 import type { ButtonHTMLAttributes, Ref } from "react";
 import { cn } from "@/lib/utils";
+import { play } from "@/lib/sound";
 
 const VARIANT = {
   default: "bg-fg text-bg hover:bg-fg/90",
@@ -21,11 +22,13 @@ const SIZE = {
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: keyof typeof VARIANT;
   size?: keyof typeof SIZE;
+  // Close, Cancel and Leave press with ui_back instead of ui_click.
+  back?: boolean;
   ref?: Ref<HTMLButtonElement>;
 }
 
 // Build bible 3.4: 8 px corners, press scales to 0.97 for 80 ms.
-export function Button({ variant = "default", size = "default", className, type = "button", ...props }: ButtonProps) {
+export function Button({ variant = "default", size = "default", className, type = "button", back, onPointerDown, ...props }: ButtonProps) {
   return (
     <button
       type={type}
@@ -35,6 +38,11 @@ export function Button({ variant = "default", size = "default", className, type 
         SIZE[size],
         className,
       )}
+      onPointerDown={(e) => {
+        onPointerDown?.(e);
+        // An aria-disabled button (an unaffordable build) refuses the press, so it stays quiet.
+        if (e.currentTarget.getAttribute("aria-disabled") !== "true") play(back ? "ui_back" : "ui_click");
+      }}
       {...props}
     />
   );
