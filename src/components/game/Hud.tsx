@@ -16,7 +16,7 @@ import { Announcer } from "@/components/game/Announcer";
 import { PlayerMenu } from "@/components/game/PlayerMenu";
 import { DiscardBar } from "@/components/game/DiscardBar";
 import { TurnCountdown } from "@/components/game/TurnCountdown";
-import { Dice } from "@/components/game/Dice";
+import { Dice, RollMoment } from "@/components/game/Dice";
 import { TableMenu } from "@/components/game/TableMenu";
 import { HandDock } from "@/components/game/Hand";
 import { COST, RESOURCES, RESOURCE_LABEL, type BuildMode, type DevKind, type GameState, type PlayerState, type Resource } from "@/lib/game/types";
@@ -121,6 +121,9 @@ function useEscapeDisarm() {
     return () => window.removeEventListener("keydown", onKey, true);
   }, [setBuildMode]);
 }
+
+// The rules' roll line ("Tide rolls 4+5 = 9."): the dice row already shows the roll, so the log line skips it (#440).
+const ROLL_LOG = / rolls \d\+\d = \d+\.$/;
 
 // Unaffordable build buttons use aria-disabled, not disabled, so Tab still reaches them and the price is read out.
 const UNAFFORDABLE = "aria-disabled:cursor-not-allowed aria-disabled:opacity-50 aria-disabled:active:scale-100";
@@ -283,6 +286,7 @@ export function Hud() {
       <ChatDock />
       <TradeToast />
       <Announcer />
+      <RollMoment />
 
       <div className="pointer-events-none absolute bottom-0 inset-x-0 z-10 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         <div className="relative mx-auto max-w-3xl">
@@ -430,7 +434,7 @@ export function Hud() {
               data-testid="log-line"
               className="hidden max-h-16 shrink-0 overflow-y-auto rounded-[16px] bg-glass px-3 py-1 text-xs text-zinc-700 backdrop-blur-md sm:block short:hidden"
             >
-              {state.log.slice(-3).join(" · ")}
+              {state.log.filter((l) => !ROLL_LOG.test(l)).slice(-3).join(" · ")}
             </p>
           </div>
           {moreBelow ? (

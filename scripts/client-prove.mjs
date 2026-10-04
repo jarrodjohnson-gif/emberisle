@@ -347,7 +347,8 @@ try {
   }
   if (phase !== "roll" && phase !== "main" && phase !== "robber" && phase !== "discard") throw new Error(`setup: ${phase}`);
   if (!Array.isArray(rolled)) throw new Error(`roll: ${rolled}`);
-  if (!bannerText || !bannerText.includes(`rolls ${rolled[0]}+${rolled[1]} = ${rolled[0] + rolled[1]}`)) throw new Error(`roll banner: ${bannerText}`);
+  // #440: the banner says whose roll and who gathered; the numbers are the roll moment's and the dice row's alone.
+  if (!bannerText || !/^.+'s roll · /.test(bannerText) || bannerText.includes(`${rolled[0]}+${rolled[1]}`)) throw new Error(`roll banner: ${bannerText}`);
   if (steal.targets !== 2 || !steal.asked || steal.got !== 1 || steal.left !== 1 || steal.phase !== "main" || !steal.cleared) {
     throw new Error(`offline steal picker: ${JSON.stringify(steal)}`);
   }
