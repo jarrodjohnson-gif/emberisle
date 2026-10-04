@@ -147,6 +147,7 @@ npm run contrast-prove   # headless Chromium: title buttons and small labels mee
 npm run title-prove      # headless Chromium at 6 sizes incl. 667x375 and 1280x500: one primary (Play), no uppercase, nothing clipped on the title card
 npm run reflow-prove     # headless Chromium at 640x360 (200 % zoom) and 320x568: title fits, HUD leaves the header and some island uncovered
 npm run polish-tokens-prove # headless Chromium at 3 sizes: the docs/design/polish.md tokens on :root, Button reads them, 0 console errors
+npm run table-menu-prove # headless Chromium at 3 sizes: one 44 px menu button tops the table; How to play, sounds, the code and Leave work from it; Escape closes and refocuses
 npm run chat-prove       # 3 headless tabs chat in the lobby and the game: presets, reactions, unread badge, minimized dock covers no target, the game log in the dock with Chat/All and Copy log
 npm run watch-ui-prove   # 2 headless tabs and a client seat play; a third tab watches after the start: board, no glow, no controls, read-only dock, eye count on the seats, "Watching only." for an injected intent, the full reveal at the win
 ```

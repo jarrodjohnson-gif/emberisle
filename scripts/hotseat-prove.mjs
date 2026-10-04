@@ -307,8 +307,10 @@ try {
   if (!plentyOff) throw new Error("Plenty is clickable with an empty bank");
 
   // #425: Leave plays click_001 once (a hotseat table has no confirm popover, so it goes straight to the title).
+  // #442: Leave table is a row of the table menu; the menu's own open click is not counted.
+  await page.getByRole("button", { name: "Table menu" }).click();
   const playsBeforeLeave = await page.evaluate(() => window.__plays.length);
-  await page.getByRole("button", { name: "Leave", exact: true }).click();
+  await page.getByRole("button", { name: "Leave table" }).click();
   await page.waitForFunction(() => !window.__emberisle.getState().state, null, { timeout: STEP_MS });
   const leavePlays = await page.evaluate((n) => window.__plays.slice(n), playsBeforeLeave);
   console.log("Leave played", JSON.stringify(leavePlays));

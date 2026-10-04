@@ -389,7 +389,7 @@ try {
   check(true, "menu: the same card closes it");
   await card.click();
   await menu.waitFor();
-  await a.page.getByText("Emberisle", { exact: true }).click();
+  await a.page.getByTestId("turn-banner").click();
   await menu.waitFor({ state: "detached" });
   check(true, "menu: a click outside closes it");
   await card.click();
@@ -433,11 +433,14 @@ try {
 
   // #377: Enter on a focused button presses it; the chat shortcut is only for focus on the page itself.
   const chatOpen = () => a.page.evaluate(() => window.__emberisle.getState().chatOpen);
+  // #442: How to play is a row of the table menu; Enter opens the menu, then the row.
+  await a.page.getByRole("button", { name: "Table menu" }).focus();
+  await a.page.keyboard.press("Enter");
   const how = a.page.getByRole("button", { name: "How to play" });
   await how.focus();
   await a.page.keyboard.press("Enter");
   await a.page.getByRole("dialog", { name: "How to play" }).waitFor({ timeout: 5000 });
-  check((await chatOpen()) === false, "Enter on How to play opens its dialog and leaves the chat closed");
+  check((await chatOpen()) === false, "Enter on Table menu, then How to play, opens its dialog and leaves the chat closed");
   await a.page.keyboard.press("Escape");
   await a.page.getByRole("dialog", { name: "How to play" }).waitFor({ state: "detached" });
   await a.page.getByRole("button", { name: "Open chat" }).click();

@@ -682,19 +682,24 @@ try {
     window.__emberisle.setState({ mode: "online", net: { act: () => true, close: () => {} } });
   });
   const confirmBox = page.getByTestId("leave-confirm");
-  await page.getByRole("button", { name: "Leave", exact: true }).click();
+  // #442: Leave table is a row of the table menu, which stays open (rows back) after Stay or Escape on the question.
+  const leaveTable = async () => {
+    if (!(await page.getByTestId("table-menu").count())) await page.getByRole("button", { name: "Table menu" }).click();
+    await page.getByRole("button", { name: "Leave table" }).click();
+  };
+  await leaveTable();
   await confirmBox.waitFor({ timeout: 2000 });
   const asked = { text: await confirmBox.textContent(), ...(await leaveState()) };
   console.log("leave asks:", JSON.stringify(asked));
   if (asked.screen !== "play" || !asked.text.includes("Leave the table? Your seat goes to the bot.") || !asked.seat) throw new Error(`leave confirm: ${JSON.stringify(asked)}`);
   await confirmBox.getByRole("button", { name: "Stay" }).click();
   await confirmBox.waitFor({ state: "detached", timeout: 2000 });
-  await page.getByRole("button", { name: "Leave", exact: true }).click();
+  await leaveTable();
   await confirmBox.waitFor({ timeout: 2000 });
   await page.keyboard.press("Escape");
   await confirmBox.waitFor({ state: "detached", timeout: 2000 });
   if ((await leaveState()).screen !== "play") throw new Error("Stay/Escape left the table");
-  await page.getByRole("button", { name: "Leave", exact: true }).click();
+  await leaveTable();
   await confirmBox.getByRole("button", { name: "Leave" }).click();
   await page.waitForFunction(() => window.__emberisle.getState().screen === "title", null, { timeout: 5000 });
   const left = await leaveState();
@@ -705,7 +710,7 @@ try {
   await page.evaluate(() => window.__emberisle.setState({ mode: "online", net: { act: () => true, close: () => {} } }));
   await page.setViewportSize({ width: 390, height: 844 });
   await page.getByTestId("seat-strip").waitFor({ timeout: 5000 });
-  await page.getByRole("button", { name: "Leave", exact: true }).click();
+  await leaveTable();
   await confirmBox.waitFor({ timeout: 2000 });
   const topmost = await page.evaluate(() => {
     const q = document.querySelector("#leave-confirm-msg").getBoundingClientRect();
@@ -717,7 +722,7 @@ try {
   await page.keyboard.press("Escape");
   await page.setViewportSize({ width: 800, height: 500 });
   await freshPractice();
-  await page.getByRole("button", { name: "Leave", exact: true }).click();
+  await leaveTable();
   await page.waitForFunction(() => window.__emberisle.getState().screen === "title", null, { timeout: 5000 });
   if (await confirmBox.count()) throw new Error("practice Leave asked for confirmation");
   console.log("practice leave: one click");
@@ -793,8 +798,9 @@ try {
   const layer2 = await storeNow();
   console.log("escape order, trade over arm:", JSON.stringify({ layer1, layer2 }));
   if (layer1.tradeOpen || layer1.buildMode !== "path" || layer2.buildMode !== "none") throw new Error(`trade/arm order: ${JSON.stringify({ layer1, layer2 })}`);
-  // The How-to dialog is above an armed build: its Escape leaves the arm alone.
+  // The How-to dialog is above an armed build: its Escape leaves the arm alone (#442: it opens from the table menu).
   await pathBtn.click();
+  await page.getByRole("button", { name: "Table menu" }).click();
   await page.getByRole("button", { name: "How to play" }).click();
   await page.keyboard.press("Escape");
   const layer3 = await storeNow();
@@ -813,7 +819,8 @@ try {
   await page.setViewportSize({ width: 800, height: 500 });
 
   // #286: How to play is a dialog: focus goes to Close, Escape closes it, and focus returns to the opener (title and in-game).
-  const howToRound = async (opener, label) => {
+  // #442: in-game the row sits in the table menu and is gone once the dialog is up, so the focus goes back to the menu button.
+  const howToRound = async (opener, label, backTo = "How to play") => {
     // Safari does not focus a button on click: stop the mousedown focus and blur, so activeElement is <body> when the dialog opens.
     await opener.evaluate((el) => {
       el.addEventListener("mousedown", (e) => e.preventDefault(), { once: true });
@@ -830,12 +837,13 @@ try {
     await dlg.waitFor({ state: "detached", timeout: 3000 });
     const back = await page.evaluate(() => document.activeElement?.getAttribute("aria-label") ?? document.activeElement?.textContent?.trim());
     console.log(`how to play (${label}):`, JSON.stringify({ focusedOnOpen: at, focusedAfter: back }));
-    if (at !== "Close" || back !== "How to play") throw new Error(`how to play ${label}: ${JSON.stringify({ at, back })}`);
+    if (at !== "Close" || back !== backTo) throw new Error(`how to play ${label}: ${JSON.stringify({ at, back })}`);
   };
   await toTitle();
   await howToRound(page.getByRole("button", { name: "How to play" }), "title");
   await freshPractice();
-  await howToRound(page.getByRole("button", { name: "How to play" }), "header");
+  await page.getByRole("button", { name: "Table menu" }).click();
+  await howToRound(page.getByRole("button", { name: "How to play" }), "table menu", "Table menu");
 
   // #259: a saved seat whose table is gone fails quietly on page load: title card, no error, key cleared.
   const { spawn } = await import("node:child_process");
