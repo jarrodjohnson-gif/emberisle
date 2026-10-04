@@ -124,10 +124,12 @@ jobs:
       - run: npm run watch-ui-prove
       - run: npm run tabs-prove-4
       - run: npm run polish-tokens-prove
+      - run: npm run roll-moment-prove
       - run: npm run table-menu-prove
       - run: npm run board-look-prove
       - run: npm run hand-cards-prove
       - run: npm run seat-rail-prove
+      - run: npm run hand-hidden-prove
       - run: npm run install-prove
       - if: always()
         uses: actions/upload-artifact@v4
