@@ -1,6 +1,7 @@
 // #160: three headless tabs at 1280x720 chat through server/host.mjs. Lobby chat and presets, a floating reaction,
 // the unread badge and the remembered open/minimized state, a minimized dock that covers no board target, the player action
 // menu in the rail and under the phone seat strip (#161), the game log in the dock with its Chat/All filter and Copy log (#305),
+// the lobby status line as seats join and ready up (#418), Start and Leave inside the 1280x720 lobby card (#417),
 // zero console errors.
 // Design: docs/design/chat.md "Test plan". Screenshots go to test-results/.
 import { spawn } from "node:child_process";
@@ -99,12 +100,19 @@ try {
   const [a, b, c] = tabs;
   const phone = await tab("Moss", true);
 
+  // #418: the host's status line says what is still missing, from the seat list alone, as seats join and ready up.
+  const statusIs = (t, text) =>
+    until(async () => (await t.page.getByTestId("lobby-status").textContent()).trim() === text, `${t.name} lobby status "${text}"`).then(() =>
+      check(true, `lobby status on ${t.name}: "${text}"`),
+    );
   await a.page.getByRole("button", { name: "Host a table" }).click();
   const tableCode = (await a.page.getByTestId("table-code").textContent()).trim();
-  for (const t of [b, c]) {
+  await statusIs(a, "Waiting for 2 more players (3 or 4 play)");
+  for (const [i, t] of [b, c].entries()) {
     await t.page.getByPlaceholder(/code/i).fill(tableCode);
     await t.page.getByRole("button", { name: "Join" }).click();
     await t.page.getByTestId("table-code").waitFor();
+    await statusIs(a, i === 0 ? "Waiting for 1 more player (3 or 4 play)" : "0 of 3 ready");
   }
   for (const t of tabs) {
     await until(async () => (await t.page.locator("li", { hasText: "Pine" }).count()) === 1, `${t.name} sees 3 seats`);
@@ -154,6 +162,7 @@ try {
   for (const t of [...tabs, phone]) {
     await until(async () => (await t.page.locator("li", { hasText: "Moss" }).count()) >= 1, `${t.name} sees 4 seats`);
   }
+  await statusIs(a, "0 of 4 ready");
 
   // 1. Lobby: typed line with Enter, then a preset click, on every tab.
   await a.page.getByPlaceholder("Say something…").fill("hello");
@@ -170,7 +179,24 @@ try {
   check(true, 'lobby: preset "gg" from Tide shows on all 3 tabs');
   check((await a.page.getByPlaceholder("Say something…").inputValue()) === "", "lobby: input cleared after Enter");
 
-  for (const t of [...tabs, phone]) await t.page.getByRole("button", { name: "Ready", exact: true }).click();
+  for (const [i, t] of [...tabs, phone].entries()) {
+    await t.page.getByRole("button", { name: "Ready", exact: true }).click();
+    await statusIs(a, i < 3 ? `${i + 1} of 4 ready` : "Everyone is ready");
+  }
+  // #417: on the 1280x720 desktop card every seat ready means code, four rows, the chat box and Ready/Start/Leave; Start and
+  // Leave must still sit inside the card's visible box without scrolling.
+  await a.page.getByRole("button", { name: "Start", exact: true }).waitFor();
+  check((await a.page.evaluate(() => document.querySelector('[data-testid="lobby-card"] > div').scrollTop)) === 0, "desktop lobby: the card starts unscrolled");
+  const insideCard = (name) =>
+    a.page.getByRole("button", { name, exact: true }).evaluate((el) => {
+      const r = el.getBoundingClientRect();
+      const c = document.querySelector('[data-testid="lobby-card"]').getBoundingClientRect();
+      return { ok: r.top >= c.top && r.bottom <= c.bottom && r.bottom <= innerHeight, bottom: Math.round(r.bottom), card: Math.round(c.bottom) };
+    });
+  for (const name of ["Start", "Leave the table"]) {
+    const r = await insideCard(name);
+    check(r.ok, `desktop lobby at 1280x720: ${name} is inside the card (bottom ${r.bottom} <= card ${r.card}) without scrolling`);
+  }
   await a.page.getByRole("button", { name: "Start" }).click();
   for (const t of tabs) await t.page.getByRole("button", { name: "Open chat" }).waitFor();
   check(true, "game: every tab shows the minimized dock, and the lobby lines did not count as unread");

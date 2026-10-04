@@ -234,7 +234,6 @@ function Lobby() {
   const seats = useGame((s) => s.seats);
   // The welcome flag goes stale when the host leaves; the live seat list is the truth (#249).
   const isHost = useGame((s) => s.seats.find((x) => x.id === s.seatId)?.host ?? s.isHost);
-  const lobbyLog = useGame((s) => s.lobbyLog);
   const error = useGame((s) => s.error);
   const setReady = useGame((s) => s.setReady);
   const startTable = useGame((s) => s.startTable);
@@ -247,6 +246,15 @@ function Lobby() {
     copy("link", `${location.origin}${location.pathname}?code=${code}${host ? `&host=${encodeURIComponent(host)}` : ""}`);
   };
   const canStart = isHost && seats.length >= 3 && seats.length <= 4 && seats.every((s) => s.ready);
+  // #418: what is still needed before Start appears, read off the seat list (docs/BUILD_BIBLE.md §3.3: 3 or 4 play).
+  const missing = 3 - seats.length;
+  const readyCount = seats.filter((s) => s.ready).length;
+  const status =
+    missing > 0
+      ? `Waiting for ${missing} more player${missing === 1 ? "" : "s"} (3 or 4 play)`
+      : readyCount < seats.length
+        ? `${readyCount} of ${seats.length} ready`
+        : "Everyone is ready";
   const { phone, portrait } = useViewport();
   const sheet = phone && portrait;
 
@@ -257,7 +265,7 @@ function Lobby() {
         "absolute z-10 flex flex-col",
         sheet
           ? "inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] max-h-[55vh]"
-          : "bottom-5 left-5 top-5 w-full max-w-sm sm:bottom-10 sm:left-10 sm:top-10",
+          : "bottom-5 left-5 top-5 w-full max-w-sm sm:bottom-6 sm:left-10 sm:top-6",
       )}
     >
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto rounded-[20px] border border-white/50 bg-white/45 p-5 backdrop-blur-md sm:p-6">
@@ -289,10 +297,10 @@ function Lobby() {
             );
           })}
         </ul>
-        <div className="mt-2 rounded-[12px] border border-border bg-surface p-2">
+        {/* #417: the chat log is the one flexible piece (down to about 2 rows), so at 1280x720 Start and Leave stay inside the card. */}
+        <div className="mt-2 flex min-h-32 flex-col rounded-[12px] border border-border bg-surface p-2">
           <ChatBox rows={6} />
         </div>
-        <p aria-live="polite" className="mt-2 min-h-5 text-xs text-muted">{error ?? lobbyLog}</p>
         {/* #389: on a phone Ready/Start stay pinned to the bottom of the card; a fade above them says the rest scrolls. */}
         <div
           data-testid="lobby-actions"
@@ -302,6 +310,10 @@ function Lobby() {
               "sticky bottom-0 z-10 -mx-5 mb-2 bg-white/85 px-5 pb-2 pt-2 before:pointer-events-none before:absolute before:inset-x-0 before:-top-6 before:h-6 before:bg-gradient-to-t before:from-white/85 before:to-transparent",
           )}
         >
+          {/* #418: one line on what is still needed, in the slot the "sat down" echo had (the seat rows already say who is here). */}
+          <p data-testid="lobby-status" aria-live="polite" className="min-h-5 text-center text-xs text-muted">
+            {error ?? status}
+          </p>
           <Button
             size="lg"
             variant="outline"
