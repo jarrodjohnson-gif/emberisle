@@ -269,6 +269,7 @@ async function quickReactions(a, b, c, phone) {
   await input.fill("");
   await input.press("Escape");
   await a.page.getByRole("button", { name: "Open chat" }).waitFor();
+  await a.page.getByRole("group", { name: "Choose a reaction" }).waitFor({ state: "detached" });
   check(await a.page.getByRole("group", { name: "Choose a reaction" }).count() === 0, "quick reactions: Escape from the chat input minimizes chat and closes its picker");
 
   // This bypasses the picker allowlist. The valid chat marker on the same ordered socket proves the host processed all three bad frames.
