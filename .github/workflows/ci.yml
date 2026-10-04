@@ -74,6 +74,7 @@ jobs:
       - run: npm run tabs-prove
       - run: npm run countdown-prove
       - run: npm run trade-prove
+      - run: npm run practice-trade-prove
       - if: always()
         uses: actions/upload-artifact@v4
         with:
