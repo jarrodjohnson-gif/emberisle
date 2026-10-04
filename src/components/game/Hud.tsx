@@ -264,7 +264,13 @@ export function Hud() {
       <Announcer />
 
       <div className="pointer-events-none absolute bottom-0 inset-x-0 z-10 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-        <div className="pointer-events-auto mx-auto flex max-w-3xl flex-col gap-2">
+        <div
+          className={cn(
+            "pointer-events-auto mx-auto flex max-w-3xl flex-col gap-2 overflow-y-auto overscroll-contain",
+            // #383: stop under the header (or the portrait seat strip) and leave the island at least ~8 rem.
+            phone && portrait ? "max-h-[calc(100dvh-16rem)]" : "max-h-[calc(100dvh-13rem)]",
+          )}
+        >
           {phone && portrait && !hintDismissed ? (
             <p
               data-testid="landscape-hint"
@@ -398,7 +404,7 @@ export function Hud() {
 
           {state.dice ? <Dice values={state.dice} /> : null}
 
-          <p className="hidden max-h-16 overflow-y-auto text-xs text-zinc-600 sm:block">
+          <p className="hidden max-h-16 shrink-0 overflow-y-auto text-xs text-zinc-600 sm:block short:hidden">
             {state.log.slice(-3).join(" · ")}
           </p>
         </div>
@@ -530,7 +536,7 @@ function useResourceFlashes(me: PlayerState) {
 function ResourceHand({ me }: { me: PlayerState }) {
   const flashes = useResourceFlashes(me);
   return (
-    <div className="flex gap-1 overflow-x-auto rounded-[20px] border border-white/50 bg-white/45 p-2 backdrop-blur-md">
+    <div className="flex shrink-0 gap-1 overflow-x-auto rounded-[20px] border border-white/50 bg-white/45 p-2 backdrop-blur-md short:p-1">
       {RESOURCES.map((r) => {
         const Icon = ICONS[r];
         const flash = flashes[r];
@@ -539,14 +545,16 @@ function ResourceHand({ me }: { me: PlayerState }) {
           <div
             key={r}
             data-testid={`resource-${r}`}
+            title={RESOURCE_LABEL[r]}
             className={cn(
               "relative flex min-w-[3.5rem] flex-1 flex-col items-center gap-1 rounded-[12px] px-2 py-2 transition-colors duration-700",
+              "short:h-11 short:flex-row short:justify-center short:py-0",
               !flash ? "bg-raised" : flash.delta > 0 ? "bg-emerald-200" : "bg-rose-200",
             )}
           >
             <Icon className="size-4 text-zinc-600" />
             <span className="tabular-nums text-base font-medium">{me.resources[r]}</span>
-            <span className="text-[10px] uppercase tracking-wide text-zinc-600">{RESOURCE_LABEL[r]}</span>
+            <span className="text-[10px] uppercase tracking-wide text-zinc-600 short:sr-only">{RESOURCE_LABEL[r]}</span>
             {flash ? (
               <span
                 key={flash.at}
