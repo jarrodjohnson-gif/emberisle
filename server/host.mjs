@@ -875,7 +875,9 @@ function talk(ws, room, msg) {
     save(room);
     return;
   }
-  if (!EMOTES.has(msg.emote)) return;
+  // Keep the six exact emoji in sync with emotes.ts; chat-prove exercises every picker entry.
+  const emoji = new Set(["😠", "😊", "👏", "😂", "🔥", "🐑"]);
+  if (!EMOTES.has(msg.emote) && !emoji.has(msg.emote)) return;
   let to = typeof msg.to === "string" ? msg.to : null;
   if (to && !room.seats.some((s) => s.id === to || s.pid === to)) to = null;
   broadcast(room, { type: "react", seat: seat.id, player: seat.pid ?? null, emote: msg.emote, to, at: Date.now() });

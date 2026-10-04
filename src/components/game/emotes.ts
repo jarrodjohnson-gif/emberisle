@@ -4,3 +4,13 @@ export const EMOTES: Record<string, string> = Object.fromEntries(
     ([p, url]) => [p.split("/").pop()!.replace(/\.\w+$/, ""), url as string],
   ),
 );
+
+// Keep this small set in sync with server/host.mjs talk(); chat-prove sends every entry through the host.
+export const QUICK_REACTIONS = [
+  { emoji: "😠", label: "angry" },
+  { emoji: "😊", label: "happy" },
+  { emoji: "👏", label: "clap" },
+  { emoji: "😂", label: "laugh" },
+  { emoji: "🔥", label: "fire" },
+  { emoji: "🐑", label: "sheep" },
+] as const;
