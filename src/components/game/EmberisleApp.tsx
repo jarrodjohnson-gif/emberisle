@@ -111,10 +111,15 @@ function Title() {
     if (code === undefined) setWatchLink(true);
   }, []);
 
+  // One primary per screen (docs/design/polish.md): Play, or Watch on a watch link. Watch only shows once there is a code.
+  const showWatch = watchLink || join.length === 4;
+
   return (
     <>
       {/* On a phone the card itself scrolls: a portrait sheet, or in landscape (#421) a wide two-column card capped at the
-          viewport (name and tagline left, buttons right) so nothing sits above the top edge. */}
+          viewport (name left, buttons right). `phone` is a coarse pointer or under 768 px wide, so a tablet held sideways
+          gets the two-column card too, on purpose: it keeps the island's centre clear. The desktop card is capped as well so
+          a short window (1280x500) never pushes the wordmark above the top edge. */}
       <div
         data-testid="title-card"
         className={cn(
@@ -123,8 +128,8 @@ function Title() {
           sheet
             ? "inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] max-h-[55vh]"
             : phone
-              ? "bottom-3 left-[max(0.75rem,env(safe-area-inset-left))] w-[min(44rem,calc(100%-1.5rem))] max-h-[calc(100dvh-1.5rem)]"
-              : "bottom-5 left-5 w-full max-w-sm pb-[env(safe-area-inset-bottom)] sm:bottom-10 sm:left-10",
+              ? "bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-[max(0.75rem,env(safe-area-inset-left))] w-[min(44rem,calc(100%-1.5rem))] max-h-[calc(100dvh-1.5rem)]"
+              : "bottom-5 left-5 max-h-[calc(100dvh-2.5rem)] w-full max-w-sm overflow-y-auto pb-[env(safe-area-inset-bottom)] sm:bottom-10 sm:left-10 sm:max-h-[calc(100dvh-5rem)]",
         )}
       >
         <div
@@ -134,19 +139,14 @@ function Title() {
           )}
         >
           <div>
-            <p className="text-xs uppercase tracking-[0.22em] text-sea-ink">A living island</p>
-            <h1 className="mt-2 font-display text-5xl leading-none tracking-tight sm:text-6xl">Emberisle</h1>
-            <p className="mt-3 max-w-sm text-pretty text-muted">
-              Claim hexes, graze the pastures, and trade the land. Sheep wander. Boats rock. The wayfarer crosses the wastes.
-            </p>
-            <label className="mt-6 block text-xs uppercase tracking-wide text-muted">
-              Your name
-              <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="mt-1 h-11 w-full rounded-[12px] border border-border bg-surface px-3 text-base text-fg"
-              />
-            </label>
+            <h1 className="font-display text-5xl leading-none tracking-tight sm:text-6xl">Emberisle</h1>
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Your name"
+              aria-label="Your name"
+              className="mt-5 h-11 w-full rounded-[12px] border border-border bg-surface px-3 text-base text-fg"
+            />
             <div role="radiogroup" aria-label="Your color" className="mt-3 flex gap-2">
               {PLAYER_COLORS.map((c, i) => (
                 <button
@@ -165,36 +165,47 @@ function Title() {
             </div>
           </div>
           <div className="mt-4 flex flex-col gap-2">
-            <Button size="lg" variant="accent" onClick={hostTable}>
-              Host a table
-            </Button>
-            <form
-              aria-label="Join code"
-              className="flex gap-2"
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (join.length !== 4) return;
-                // Enter does what the primary button does.
-                if (watchLink) watchTable(join);
-                else joinTable(join);
-              }}
-            >
-              <input
-                value={join}
-                onChange={(e) => setJoin(e.target.value.toUpperCase())}
-                placeholder="Join code"
-                aria-label="Join code"
-                autoCapitalize="characters"
-                autoComplete="off"
-                maxLength={4}
-                className="h-11 min-w-0 flex-1 rounded-[12px] border border-border bg-surface px-3 tracking-[0.3em]"
-              />
-              <Button size="lg" variant={watchLink ? "outline" : "sea"} type="submit">
-                Join
+            <div className="flex flex-col items-center gap-1">
+              <Button size="lg" variant={watchLink ? "secondary" : "primary"} className="w-full" onClick={startAi}>
+                Play
               </Button>
+              {/* #411: the offline button says what it is in one tiny muted line. */}
+              <p className="text-xs text-muted">3 bots, no network</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button size="lg" variant="secondary" className="grow" onClick={hostTable}>
+                Host a table
+              </Button>
+              <form
+                aria-label="Join code"
+                className="flex min-w-[11rem] flex-1 gap-2"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (join.length !== 4) return;
+                  // Enter does what the primary button does.
+                  if (watchLink) watchTable(join);
+                  else joinTable(join);
+                }}
+              >
+                <input
+                  value={join}
+                  onChange={(e) => setJoin(e.target.value.toUpperCase())}
+                  placeholder="Code"
+                  aria-label="Join code"
+                  autoCapitalize="characters"
+                  autoComplete="off"
+                  maxLength={4}
+                  className="h-12 w-0 min-w-[4.5rem] flex-1 rounded-[12px] border border-border bg-surface px-3 tracking-[0.3em]"
+                />
+                <Button size="lg" variant="secondary" type="submit">
+                  Join
+                </Button>
+              </form>
+            </div>
+            {showWatch ? (
               <Button
                 size="lg"
-                variant={watchLink ? "sea" : "outline"}
+                variant={watchLink ? "primary" : "secondary"}
                 type="button"
                 onClick={() => {
                   if (join.length === 4) watchTable(join);
@@ -202,29 +213,17 @@ function Title() {
               >
                 Watch
               </Button>
-            </form>
+            ) : null}
             {error ? (
               <p role="alert" className="text-sm text-accent-ink">
                 {error}
               </p>
             ) : null}
-            {/* #411: each offline button carries one tiny muted line on what it is. */}
-            <div className="mt-1 flex flex-wrap gap-2">
-              <div className="flex flex-1 flex-col items-center gap-1">
-                <Button size="sm" variant="outline" className="w-full whitespace-nowrap px-2" onClick={startAi}>
-                  Play versus the isle
-                </Button>
-                <p className="text-xs text-muted">3 bots, no network</p>
-              </div>
-              <div className="flex flex-1 flex-col items-center gap-1">
-                <Button size="sm" variant="outline" className="w-full whitespace-nowrap px-2" onClick={() => startHotseat(4)}>
-                  Four seats, one table
-                </Button>
-                <p className="text-xs text-muted">pass one device around</p>
-              </div>
-            </div>
-            <div className="flex items-center justify-center gap-1">
-              <Button variant="ghost" onClick={(e) => setHowTo(!howTo, e.currentTarget)}>
+            <div className="flex flex-wrap items-center justify-center">
+              <Button variant="ghost" className="px-3" title="Pass one device around" onClick={() => startHotseat(4)}>
+                Four seats, one table
+              </Button>
+              <Button variant="ghost" className="px-3" onClick={(e) => setHowTo(!howTo, e.currentTarget)}>
                 How to play
               </Button>
               <Button
