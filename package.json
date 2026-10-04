@@ -22,6 +22,7 @@
     "tokens-prove": "node scripts/tokens-prove.mjs",
     "idle-prove": "node scripts/idle-prove.mjs",
     "keyboard-place-prove": "node scripts/keyboard-place-prove.mjs",
+    "flash-prove": "node scripts/flash-prove.mjs",
     "orphan-check": "node scripts/orphan-check.mjs",
     "chat-prove": "node scripts/chat-prove.mjs",
     "mobile-shots": "node scripts/mobile-shots.mjs",
