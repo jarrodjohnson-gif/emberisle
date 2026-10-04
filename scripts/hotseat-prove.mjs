@@ -27,6 +27,14 @@ try {
   page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
   page.on("pageerror", (e) => errors.push(String(e)));
   page.on("response", (r) => r.status() >= 400 && errors.push(`${r.status()} ${r.url()}`));
+  await page.addInitScript(() => {
+    window.__plays = [];
+    const play = HTMLMediaElement.prototype.play;
+    HTMLMediaElement.prototype.play = function () {
+      window.__plays.push(new URL(this.src).pathname);
+      return play.call(this);
+    };
+  });
   await page.goto(`http://127.0.0.1:${PORT}/`);
   // #380: log every new text of the polite turn region, and every node added to the alert region (a repeat of the same
   // error is a new node with the same text), so a message that flashes by is still seen.
@@ -288,6 +296,14 @@ try {
   const plentyOff = await page.getByRole("button", { name: "Plenty", exact: true }).isDisabled();
   console.log(`bank empty of everything: Plenty disabled ${plentyOff}, reason shown`);
   if (!plentyOff) throw new Error("Plenty is clickable with an empty bank");
+
+  // #425: Leave plays click_001 once (a hotseat table has no confirm popover, so it goes straight to the title).
+  const playsBeforeLeave = await page.evaluate(() => window.__plays.length);
+  await page.getByRole("button", { name: "Leave", exact: true }).click();
+  await page.waitForFunction(() => !window.__emberisle.getState().state, null, { timeout: STEP_MS });
+  const leavePlays = await page.evaluate((n) => window.__plays.slice(n), playsBeforeLeave);
+  console.log("Leave played", JSON.stringify(leavePlays));
+  if (leavePlays.join() !== "/audio/click_001.wav") throw new Error(`Leave played ${JSON.stringify(leavePlays)}, not click_001.wav once`);
 } catch (e) {
   console.error("hotseat-prove failed:", e);
   code = 1;

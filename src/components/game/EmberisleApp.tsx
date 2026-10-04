@@ -6,7 +6,7 @@ import { CopyFallback, useCopy } from "@/components/game/CopyText";
 import { Hud, HowTo } from "@/components/game/Hud";
 import { PlaceList } from "@/components/game/PlaceList";
 import { useGame } from "@/lib/game/store";
-import { setMuted, useMuted } from "@/lib/sound";
+import { play, setMuted, useMuted } from "@/lib/sound";
 import { useTurnTitle } from "@/lib/turn-title";
 import { PLAYER_COLORS, PLAYER_NAMES } from "@/lib/game/types";
 import { cn } from "@/lib/utils";
@@ -233,7 +233,11 @@ function Title() {
                 aria-label={muted ? "Table sounds off" : "Table sounds on"}
                 aria-pressed={!muted}
                 title={muted ? "Table sounds off" : "Table sounds on"}
-                onClick={() => setMuted(!muted)}
+                silent
+                onClick={() => {
+                  setMuted(!muted);
+                  if (muted) play("ui_click");
+                }}
               >
                 {muted ? <VolumeX className="size-4" /> : <Volume2 className="size-4" />}
               </Button>
