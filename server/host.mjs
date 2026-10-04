@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import http from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { randomBytes, randomInt } from "node:crypto";
+import { randomBytes, randomInt, timingSafeEqual } from "node:crypto";
 import { WebSocketServer } from "ws";
 import { chooseBotAction } from "../src/lib/game/ai.ts";
 import { createGame } from "../src/lib/game/board.ts";
@@ -23,15 +23,27 @@ function hear(name) {
 const PORT = Number(process.env.PORT ?? 8787);
 const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const rooms = new Map();
-const avatars = new Map(); // avatarId -> { body, at }
+const avatars = new Map(); // avatarId -> { body }
 const AVATAR_BYTES = 256 * 1024;
-const AVATAR_MAX = 64;
-const ROOM_MAX = Number(process.env.ROOM_MAX ?? 64);
+// An env limit, or its default when the variable is unset or not a number.
+function envNum(name, fallback) {
+  const n = Number(process.env[name]);
+  return Number.isFinite(n) ? n : fallback;
+}
+// Every picture belongs to one seat and a seat holds one picture, so a table carries at most 4 x 256 KB (#369).
+// These two cap the whole host: a full store refuses (503) rather than evict a seated player's picture.
+const AVATAR_MAX = envNum("AVATAR_MAX", 128);
+const AVATAR_STORE_BYTES = envNum("AVATAR_STORE_BYTES", 16 * 1024 * 1024);
+const ROOM_MAX = envNum("ROOM_MAX", 64);
+// Watchers per room (docs/design/spectator.md). A watcher has no seat and is never saved; 0 turns watching off.
+const SPECTATOR_MAX = envNum("SPECTATOR_MAX", 8);
+// A watcher coming or going is logged to the table at most this often per room, so a watch-and-close loop cannot
+// flood the log; the `watching` count on `seats` is always exact.
+const WATCH_LOG_MS = 5000;
 // A seat's non-chat messages (ready, start, intents, trades): a burst of 20, refilled 4 a second. A person or a bot
 // client stays far under this; a flood does not. Chat keeps its own 5-per-5s bucket. The proofs raise it through env.
 const ACT_CAP = Number(process.env.ACT_CAP ?? 20);
 const ACT_RATE = Number(process.env.ACT_RATE ?? 4);
-const AVATAR_TTL = 60 * 60 * 1000; // an upload nobody sat down with is dropped after an hour
 // A dropped player keeps the seat: the bot takes over after the grace, the seat is let go after the hold
 // (docs/research/rejoin.md). The proofs shorten both through env.
 const GRACE_MS = Number(process.env.GRACE_MS ?? 90 * 1000);
@@ -83,6 +95,7 @@ function send(ws, msg) {
 function broadcast(room, msg) {
   const raw = JSON.stringify(msg);
   for (const seat of room.seats) if (seat.ws && seat.ws.readyState === seat.ws.OPEN) seat.ws.send(raw);
+  for (const ws of room.watchers) if (ws.readyState === ws.OPEN) ws.send(raw);
 }
 
 function say(room, text) {
@@ -112,9 +125,23 @@ function seatsOf(room) {
   }));
 }
 
+function seatsMsg(room) {
+  return { type: "seats", code: room.code, seats: seatsOf(room), watching: room.watchers.size };
+}
+
 function publish(room) {
-  broadcast(room, { type: "seats", code: room.code, seats: seatsOf(room) });
+  broadcast(room, seatsMsg(room));
   save(room);
+}
+
+// A watcher came or went: the count goes out, nothing is saved (a watcher is never on disk), and the log line is coalesced.
+function watchersChanged(room, text) {
+  const now = Date.now();
+  if (!(now - (room.watchSaid ?? 0) < WATCH_LOG_MS)) {
+    room.watchSaid = now;
+    say(room, text);
+  }
+  broadcast(room, seatsMsg(room));
 }
 
 // Sockets, timers and the open trade offer stay in memory; everything else goes to disk.
@@ -181,7 +208,7 @@ function load() {
     // A file that parses but does not rebuild (a null seat, say) is skipped like one that does not parse.
     let room;
     try {
-      room = { ...saved, avatarIds: [], offer: null, offerTimer: null, seats: [] };
+      room = { ...saved, offer: null, offerTimer: null, seats: [], watchers: new Set() };
       delete room.savedAt;
       for (const s of saved.seats) {
         if (typeof s?.id !== "string" || typeof s.secret !== "string") throw new Error(`bad seat ${JSON.stringify(s)}`);
@@ -245,6 +272,17 @@ export function legalFor(game, you) {
 // Hidden fortunes and the deck order stay on the host until the game ends.
 export function viewFor(game, you) {
   if (game.phase === "over") return { ...game, deckLeft: game.deck.length };
+  return closedView(game, you);
+}
+
+// A watcher gets the opponent view, and at the win the same reveal as the seats minus the seed and rng (#347).
+function watchView(game) {
+  if (game.phase !== "over") return closedView(game, null);
+  const { seed, rng, ...open } = game;
+  return { ...open, deckLeft: game.deck.length };
+}
+
+function closedView(game, you) {
   // The seed rebuilds the whole fortune deck, and rng predicts which card a steal takes (#111).
   // Other players' hands go out as a count only, like cards held face down (#186).
   const { seed, rng, ...open } = game;
@@ -346,11 +384,17 @@ function turnOut(room, seat) {
   play(seat.ws, room, intent);
 }
 
+// The soonest armed window at the table, or null.
+function deadlineOf(room) {
+  return room.seats.reduce((d, s) => (s.turnDeadline && (!d || s.turnDeadline < d) ? s.turnDeadline : d), null);
+}
+
 function pushState(room) {
   armTurns(room);
   // The soonest armed window, and whose it is, so every HUD can count it down (#345). `serverNow` lets a client
   // whose clock is off still land on the host's moment.
   const soonest = room.seats.reduce((d, s) => (s.turnDeadline && (!d || s.turnDeadline < d.turnDeadline) ? s : d), null);
+  const turnDeadline = soonest?.turnDeadline ?? null;
   save(room);
   for (const seat of room.seats) {
     if (!seat.ws) continue;
@@ -359,11 +403,14 @@ function pushState(room) {
       you: seat.pid,
       game: viewFor(room.game, seat.pid),
       legal: legalFor(room.game, seat.pid),
-      turnDeadline: soonest?.turnDeadline ?? null,
+      turnDeadline,
       turnPlayer: soonest?.pid ?? null,
       serverNow: Date.now(),
     });
   }
+  if (!room.watchers.size) return;
+  const raw = JSON.stringify({ type: "state", you: null, game: watchView(room.game), legal: legalFor(room.game, null), turnDeadline, turnPlayer: soonest?.pid ?? null, serverNow: Date.now() });
+  for (const ws of room.watchers) if (ws.readyState === ws.OPEN) ws.send(raw);
 }
 
 function gains(before, after) {
@@ -378,6 +425,32 @@ function gains(before, after) {
   return out;
 }
 
+// The seat whose welcome carried this secret, in whichever room.
+function seatOf(secret) {
+  if (typeof secret !== "string" || !secret) return null;
+  const given = Buffer.from(secret);
+  const same = (s) => {
+    const own = Buffer.from(s.secret);
+    return own.length === given.length && timingSafeEqual(own, given);
+  };
+  for (const room of rooms.values()) {
+    const seat = room.seats.find(same);
+    if (seat) return { room, seat };
+  }
+  return null;
+}
+
+function storeBytes() {
+  let n = 0;
+  for (const a of avatars.values()) n += a.body.length;
+  return n;
+}
+
+function forgetAvatar(seat) {
+  if (seat.avatarId) avatars.delete(seat.avatarId);
+  seat.avatarId = null;
+}
+
 function route(req, res) {
   // #368: a target like "//" or "//[" makes new URL throw, which used to take the whole host down.
   const url = URL.parse(req.url, "http://127.0.0.1");
@@ -387,15 +460,21 @@ function route(req, res) {
     return;
   }
   if (req.method === "POST" && url.pathname === "/avatars") {
-    // The host picks the id, so nobody can overwrite someone else's picture.
-    const inUse = new Set([...rooms.values()].flatMap((r) => r.avatarIds));
-    for (const [id, a] of avatars) if (!inUse.has(id) && Date.now() - a.at > AVATAR_TTL) avatars.delete(id);
-    if (avatars.size >= AVATAR_MAX) {
-      res.writeHead(503);
-      res.end();
-      req.destroy();
-      return;
-    }
+    // #369: only a seated player uploads, keyed by the secret from their welcome, and the picture becomes that
+    // seat's own: it goes when the seat goes, and nobody else's hello can claim it. The host picks the id.
+    const found = seatOf(req.headers["x-seat-secret"]);
+    // Cut the socket once the answer is out, so a body still coming in is not read and the client still sees the status.
+    const refuse = (status) => {
+      res.writeHead(status, { connection: "close" });
+      res.end(() => req.destroy());
+    };
+    if (!found) return refuse(403);
+    const { room, seat } = found;
+    if (!allow(seat.act, Date.now(), ACT_CAP, ACT_RATE)) return refuse(429);
+    // Bytes this seat's current picture holds; its replacement frees them. Read again at the end, since the body
+    // arrives over time and another upload may have landed meanwhile.
+    const held = () => (seat.avatarId ? avatars.get(seat.avatarId).body.length : 0);
+    if (avatars.size - (held() ? 1 : 0) >= AVATAR_MAX) return refuse(503);
     const chunks = [];
     let size = 0;
     req.on("data", (c) => {
@@ -409,21 +488,27 @@ function route(req, res) {
       chunks.push(c);
     });
     req.on("end", () => {
-      if (size > AVATAR_BYTES || size === 0) {
-        if (!res.headersSent) res.writeHead(400).end();
-        return;
-      }
+      if (res.headersSent) return;
+      // The seat was let go, or its room dropped, while the body was still coming: nothing would ever free it.
+      if (rooms.get(room.code) !== room || !room.seats.includes(seat)) return res.writeHead(410).end();
+      const body = Buffer.concat(chunks);
+      // Served as image/jpeg, so only JPEG bytes (SOI marker) are kept.
+      if (size < 3 || body[0] !== 0xff || body[1] !== 0xd8 || body[2] !== 0xff) return res.writeHead(400).end();
+      if (storeBytes() - held() + size > AVATAR_STORE_BYTES) return res.writeHead(503).end();
+      forgetAvatar(seat);
       const id = randomBytes(8).toString("hex");
-      avatars.set(id, { body: Buffer.concat(chunks), at: Date.now() });
+      avatars.set(id, { body });
+      seat.avatarId = id;
       res.writeHead(200, { "content-type": "application/json" });
       res.end(JSON.stringify({ avatarId: id, url: `/avatars/${id}.jpg` }));
+      publish(room);
     });
     req.on("error", () => {});
     return;
   }
   const got = url.pathname.match(/^\/avatars\/(.+)\.jpg$/);
   if (req.method === "GET" && got && avatars.has(got[1])) {
-    res.writeHead(200, { "content-type": "image/jpeg" });
+    res.writeHead(200, { "content-type": "image/jpeg", "x-content-type-options": "nosniff" });
     res.end(avatars.get(got[1]).body);
     return;
   }
@@ -507,20 +592,20 @@ function seatColor(room, raw) {
 
 function openTable(ws, msg) {
   if (rooms.size >= ROOM_MAX) return send(ws, { type: "error", message: "The host is full." });
-  const room = { code: code(), seats: [], game: null, host: null, next: 0, avatarIds: [], offer: null, offerTimer: null, chat: [], chatSeq: 0 };
+  const room = { code: code(), seats: [], game: null, host: null, next: 0, offer: null, offerTimer: null, chat: [], chatSeq: 0, watchers: new Set() };
   rooms.set(room.code, room);
   const seat = {
     id: `s${room.next++}`,
     name: seatName(room, msg.name, "Ember"),
     color: seatColor(room, msg.color),
-    avatarId: avatars.has(msg.avatarId) ? msg.avatarId : null,
+    // A picture is set by POST /avatars with this seat's secret, never by hello (#369).
+    avatarId: null,
     ready: false,
     ws,
     bucket: { tokens: 5, at: Date.now() },
     act: { tokens: ACT_CAP, at: Date.now() },
     secret: randomBytes(16).toString("hex"),
   };
-  if (seat.avatarId) room.avatarIds.push(seat.avatarId);
   room.seats.push(seat);
   room.host = seat.id;
   ws.room = room;
@@ -541,20 +626,33 @@ function sitDown(ws, msg) {
     id: `s${room.next++}`,
     name: seatName(room, msg.name, "Tide"),
     color,
-    avatarId: avatars.has(msg.avatarId) ? msg.avatarId : null,
+    avatarId: null,
     ready: false,
     ws,
     bucket: { tokens: 5, at: Date.now() },
     act: { tokens: ACT_CAP, at: Date.now() },
     secret: randomBytes(16).toString("hex"),
   };
-  if (seat.avatarId) room.avatarIds.push(seat.avatarId);
   room.seats.push(seat);
   ws.room = room;
   ws.seat = seat;
   send(ws, { type: "welcome", code: room.code, you: seat.id, host: false, chat: room.chat, secret: seat.secret });
   say(room, `${seat.name} sat down.`);
   publish(room);
+}
+
+// hello {code, watch:true} on a started table: no seat, no secret, read-only (docs/design/spectator.md, #347).
+function watch(ws, msg) {
+  const room = rooms.get(String(msg.code || "").toUpperCase());
+  if (!room) return send(ws, { type: "error", message: "No table with that code" });
+  if (!room.game) return send(ws, { type: "error", message: "Not started yet." });
+  if (room.watchers.size >= SPECTATOR_MAX) return send(ws, { type: "error", message: "Table is full to watch." });
+  room.watchers.add(ws);
+  ws.watch = room;
+  send(ws, { type: "welcome", code: room.code, spectator: true, chat: room.chat });
+  watchersChanged(room, "Someone is watching.");
+  const soonest = room.seats.reduce((d, s) => (s.turnDeadline && (!d || s.turnDeadline < d.turnDeadline) ? s : d), null);
+  send(ws, { type: "state", you: null, game: watchView(room.game), legal: legalFor(room.game, null), turnDeadline: deadlineOf(room), turnPlayer: soonest?.pid ?? null, serverNow: Date.now() });
 }
 
 function startGame(ws, room) {
@@ -757,6 +855,11 @@ wss.on("connection", (ws) => {
 });
 
 function handle(ws, raw) {
+  // A watcher sends nothing after its hello. Above the parse and the seatless branch, so it can never sit down or rejoin.
+  if (ws.watch) {
+    if (!allow(ws.bucket, Date.now())) return;
+    return send(ws, { type: "error", message: "Watching only." });
+  }
   let msg;
   try {
     msg = JSON.parse(String(raw));
@@ -769,6 +872,7 @@ function handle(ws, raw) {
     const ok = allow(ws.bucket, Date.now());
     if (msg.type === "peek") return ok ? peek(ws, msg) : undefined;
     if (!ok && (msg.type === "create" || msg.type === "join" || msg.type === "hello")) return send(ws, { type: "error", message: "Slow down." });
+    if (msg.type === "hello" && msg.watch === true) return watch(ws, msg);
     // hello with no code opens a table; hello with a code sits down (build bible 2.3, 10).
     if (msg.type === "create" || (msg.type === "hello" && !msg.code)) return openTable(ws, msg);
     if (msg.type === "hello" && typeof msg.secret === "string") return rejoin(ws, msg);
@@ -836,8 +940,13 @@ function dropRoom(room) {
     clearTimeout(seat.graceTimer);
     clearTimeout(seat.holdTimer);
     clearTimeout(seat.turnTimer);
+    forgetAvatar(seat);
   }
-  for (const id of room.avatarIds) avatars.delete(id);
+  for (const ws of room.watchers) {
+    send(ws, { type: "error", message: "The table closed." });
+    ws.close();
+  }
+  room.watchers.clear();
   rooms.delete(room.code);
   unsave(room);
 }
@@ -878,6 +987,7 @@ function takeOver(room, seat) {
 // The hold is over: the seat is let go for good. The bot keeps playing the player.
 function letGo(room, seat) {
   clearTimeout(seat.graceTimer);
+  forgetAvatar(seat);
   room.seats = room.seats.filter((s) => s !== seat);
   if (room.seats.length === 0) return dropRoom(room);
   if (!room.game) say(room, `${seat.name} left.`);
@@ -886,6 +996,13 @@ function letGo(room, seat) {
 }
 
 function leave(ws) {
+  if (ws.watch) {
+    const room = ws.watch;
+    ws.watch = null;
+    if (!room.watchers.delete(ws) || !rooms.has(room.code)) return;
+    watchersChanged(room, "A watcher left.");
+    return;
+  }
   const room = ws.room;
   if (!room) return;
   const seat = ws.seat;

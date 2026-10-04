@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ChatBox, ReactionFloats } from "@/components/game/Chat";
 import { CopyFallback, useCopy } from "@/components/game/CopyText";
 import { Hud, HowTo } from "@/components/game/Hud";
+import { PlaceList } from "@/components/game/PlaceList";
 import { useGame } from "@/lib/game/store";
 import { setMuted, useMuted } from "@/lib/sound";
 import { useTurnTitle } from "@/lib/turn-title";
@@ -45,7 +46,12 @@ export function EmberisleApp() {
   return (
     <div className="relative h-dvh w-full overflow-hidden bg-bg">
       <ClientCanvas />
-      {screen === "title" ? <Title /> : screen === "lobby" ? <Lobby /> : <Hud />}
+      {screen === "title" ? <Title /> : screen === "lobby" ? <Lobby /> : (
+        <>
+          <Hud />
+          <PlaceList />
+        </>
+      )}
     </div>
   );
 }
@@ -155,7 +161,7 @@ function Title() {
               autoCapitalize="characters"
               autoComplete="off"
               maxLength={4}
-              className="h-11 flex-1 rounded-[12px] border border-border bg-surface px-3 tracking-[0.3em]"
+              className="h-11 min-w-0 flex-1 rounded-[12px] border border-border bg-surface px-3 tracking-[0.3em]"
             />
             <Button size="lg" variant="sea" type="submit">
               Join
@@ -166,7 +172,7 @@ function Title() {
               {error}
             </p>
           ) : null}
-          <div className="mt-1 flex gap-2">
+          <div className="mt-1 flex flex-wrap gap-2">
             <Button size="sm" variant="outline" className="flex-1 whitespace-nowrap px-2" onClick={startAi}>
               Play versus the isle
             </Button>

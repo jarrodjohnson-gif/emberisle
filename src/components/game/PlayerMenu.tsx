@@ -36,6 +36,8 @@ export function PlayerMenu({ player: p, className }: { player: PlayerState; clas
   const online = mode === "online";
   const myMain = state.phase === "main" && state.current === actor;
   const close = () => openMenu(null);
+  // The card or chip that opened this menu; the trade rows hand it on as the panel's opener since the row itself is gone by then (#378).
+  const trigger = () => document.querySelector<HTMLElement>(`[data-menu-trigger="${p.id}"]`);
 
   useEffect(() => {
     const trigger = document.querySelector<HTMLElement>(`[data-menu-trigger="${p.id}"]`);
@@ -104,7 +106,7 @@ export function PlayerMenu({ player: p, className }: { player: PlayerState; clas
           type="button"
           className={ROW}
           onClick={() => {
-            setTradeOpen(true);
+            setTradeOpen(true, trigger());
             close();
           }}
         >
@@ -116,7 +118,7 @@ export function PlayerMenu({ player: p, className }: { player: PlayerState; clas
           type="button"
           className={ROW}
           onClick={() => {
-            setTradeOpen(true);
+            setTradeOpen(true, trigger());
             close();
           }}
         >

@@ -454,6 +454,7 @@ Client intents:
 
 ```json
 { "type": "hello", "code": "K7QP", "name": "Jarrod", "color": "#c45c3e", "avatarId": "p1" }
+{ "type": "hello", "code": "K7QP", "watch": true }
 { "type": "ready", "value": true }
 { "type": "start" }
 { "type": "roll" }
@@ -474,6 +475,7 @@ Server events:
 
 ```json
 { "type": "state", "you": "p1", "game": { } }
+{ "type": "welcome", "code": "K7QP", "spectator": true, "chat": [] }
 { "type": "error", "message": "Too close to another outpost." }
 { "type": "rolled", "dice": [3, 5], "sum": 8 }
 { "type": "log", "text": "Tide laid a path." }
@@ -484,6 +486,10 @@ Send the full state after every accepted intent (v1). Do not invent a diff
 protocol until something is slow. Four players will not notice.
 
 Illegal intent: `{ "type": "error", "message": "..." }` and do not change state.
+
+A spectator (`hello` with `watch: true`, docs/design/spectator.md) has no seat: it gets `welcome {spectator:true}`,
+then every `state` the seats get with `you: null` and the opponent view (the full reveal minus `seed` and `rng` once
+the game is over). Anything else it sends is refused with "Watching only." and changes nothing.
 The UI shows the message for 2 seconds and plays `ui_error`.
 
 Ids: use the ids the rules engine already generates (`hex.ts`). The Unreal

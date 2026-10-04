@@ -147,6 +147,8 @@ interface GameStore {
   host: boolean;
   state: GameState | null;
   error: string | null;
+  // Bumped on every refused move, so the same error twice is announced twice (#380).
+  errorSeq: number;
   buildMode: BuildMode;
   // Edges picked so far for a path fortune (buildMode "roadCard"); sent together as one playRoad.
   roadPicks: string[];
@@ -219,7 +221,9 @@ interface GameStore {
   declined: string[];
   tradeOutcome: string | null;
   tradeOpen: boolean;
-  setTradeOpen: (v: boolean) => void;
+  // Who opened the panel, so focus can go back there on close (Safari does not focus buttons on click, #302).
+  tradeOpener: HTMLElement | null;
+  setTradeOpen: (v: boolean, opener?: HTMLElement | null) => void;
   askTable: (give: Bag, want: Bag) => void;
   answerTrade: (yes: boolean) => void;
   // The player whose action menu is open in the HUD rail or seat strip (docs/design/chat.md "The player action menu").
@@ -283,6 +287,7 @@ export const useGame = create<GameStore>((set, get) => ({
   host: true,
   state: null,
   error: null,
+  errorSeq: 0,
   buildMode: "none",
   roadPicks: [],
   howTo: false,
@@ -310,6 +315,7 @@ export const useGame = create<GameStore>((set, get) => ({
   declined: [],
   tradeOutcome: null,
   tradeOpen: false,
+  tradeOpener: null,
   menuFor: null,
   setName: (n) => {
     const name = n.slice(0, 18) || "Ember";
@@ -407,6 +413,7 @@ export const useGame = create<GameStore>((set, get) => ({
       declined: [],
       tradeOutcome: null,
       tradeOpen: false,
+      tradeOpener: null,
     });
   },
   dispatch: (action, asId) => {
@@ -421,7 +428,7 @@ export const useGame = create<GameStore>((set, get) => ({
     const actor = asId ?? (mode === "hotseat" ? state.current : localId);
     const res = applyAction(state, actor, action);
     if (res.error) {
-      set({ error: res.error, toast: res.error });
+      set({ error: res.error, toast: res.error, errorSeq: get().errorSeq + 1 });
       play("ui_error");
       return { ok: false, error: res.error };
     }
@@ -602,7 +609,7 @@ export const useGame = create<GameStore>((set, get) => ({
   },
   sendChat: (text) => get().net?.say(text),
   sendReact: (emote, to) => get().net?.react(emote, to),
-  setTradeOpen: (v) => set({ tradeOpen: v }),
+  setTradeOpen: (v, opener) => set({ tradeOpen: v, tradeOpener: v ? (opener ?? null) : null }),
   askTable: (give, want) => {
     get().net?.ask(give, want);
     set({ tradeOpen: false });
@@ -699,7 +706,7 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
     },
     error: (message) => {
       if (!pending && kind !== "peek") {
-        set({ error: message, toast: message });
+        set({ error: message, toast: message, errorSeq: get().errorSeq + 1 });
         play("ui_error");
       }
       // A refused join leaves an unseated socket the host never closes; drop it so the next peek can open its own.
