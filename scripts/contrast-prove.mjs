@@ -1,5 +1,5 @@
-// #381: UI text meets WCAG 1.4.3 (4.5:1). Reads computed colours of the title's Play (primary) and Join (secondary)
-// buttons and the 12 px "3 bots, no network" line, and checks white on the `sea-ink` and `accent-ink` fills that Start,
+// #381: UI text meets WCAG 1.4.3 (4.5:1). Reads computed colours of the title's Play (primary), Host a table and Join (secondary)
+// buttons, the quiet row (Four seats, one table, How to play; #454) and the 12 px "3 bots, no network" line, and checks white on the `sea-ink` and `accent-ink` fills that Start,
 // End turn and the 7 use (#444 took them off the title).
 // #424: text chips over the island, sampled from screenshots. With the chip's text made transparent, its box (inside the
 // border and in from the rounded corners) is screenshotted; the computed text colour is measured against the mean and the darkest 5 % of those background pixels (both >= 4.5:1).
@@ -11,7 +11,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { chromium } from "playwright";
 import { createServer } from "vite";
 
-const PORT = 8093;
+const PORT = Number(process.env.VITE_PORT) || 8093;
 const MIN = 4.5;
 const lum = ([r, g, b]) => {
   const [R, G, B] = [r, g, b].map((v) => ((v /= 255) <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
@@ -56,6 +56,9 @@ try {
     return {
       play: btn("Play"),
       join: btn("Join"),
+      host: btn("Host a table"),
+      quietSeats: btn("Four seats, one table"),
+      quietHow: btn("How to play"),
       caption: px(caption.color),
       seaInk: px(root.getPropertyValue("--color-sea-ink").trim()),
       surface: px(root.getPropertyValue("--color-surface").trim()),
@@ -70,6 +73,11 @@ try {
   const checks = [
     ["Play (primary) on fill", ratio(read.play.fg, read.play.bg)],
     ["Join (secondary) on fill", ratio(read.join.fg, read.join.bg)],
+    ["Host a table (secondary) on fill", ratio(read.host.fg, read.host.bg)],
+    ["Four seats, one table (quiet) on surface", ratio(read.quietSeats.fg, read.surface)],
+    ["Four seats, one table (quiet) on bg", ratio(read.quietSeats.fg, read.bg)],
+    ["How to play (quiet) on surface", ratio(read.quietHow.fg, read.surface)],
+    ["How to play (quiet) on bg", ratio(read.quietHow.fg, read.bg)],
     ["white on sea-ink (Start, End turn)", ratio([255, 255, 255], read.seaInk)],
     ["white on accent-ink", ratio([255, 255, 255], read.accentInk)],
     ["caption 12 px on surface", ratio(read.caption, read.surface)],
