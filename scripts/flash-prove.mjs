@@ -44,6 +44,13 @@ async function openTable(reducedMotion) {
   await page.evaluate(async () => {
     const g = window.__emberisle;
     const st = structuredClone(g.getState().state);
+    // The island is random; the scenarios need a token shared by two resources (8: wool and ore) and one on two hexes (9: grain
+    // and clay), so four land hexes are set to those, and nothing below depends on how the island was dealt.
+    const land = st.hexes.filter((h) => h.pip && h.terrain !== "waste" && h.id !== st.robberHex);
+    [["wool", 8], ["ore", 8], ["grain", 9], ["clay", 9]].forEach(([terrain, pip], i) => {
+      land[i].terrain = terrain;
+      land[i].pip = pip;
+    });
     st.vertices.forEach((v, i) => {
       v.building = { playerId: st.players[i % 2].id, kind: i % 3 === 0 ? "stronghold" : "outpost" };
     });
@@ -191,9 +198,12 @@ try {
       console.log(`twins: wool hexes ${twins} on a 6, bank holds 1 wool, hands gained [${e4.gained}], ${woolGlow.length} of them glowed`);
       if (!e4.gained.includes("wool") || woolGlow.length !== 1) throw new Error(`two wool 6s, one paid: ${woolGlow.length} glowed`);
       // 3c. Online style: one push carries a roll and the actions after it (seq +2, one more roll). It still flashes the payers.
-      const multi = await page.evaluate(async (dice) => {
+      const multi = await page.evaluate(async () => {
         const g = window.__emberisle;
         const pre = structuredClone(g.getState().state);
+        // A token on a hex the wayfarer is not on and a building touches (every corner is owned, the bank is full), so it pays.
+        const sum = pre.hexes.find((h) => h.pip && h.pip !== 7 && !h.blocked && h.terrain !== "waste").pip;
+        const dice = [Math.max(1, sum - 6), sum - Math.max(1, sum - 6)];
         pre.phase = "roll";
         pre.dice = null;
         pre.bank = { timber: 19, clay: 19, wool: 19, grain: 19, ore: 19 };
@@ -207,11 +217,10 @@ try {
         const done = R.applyAction(rolled, rolled.current, { type: "endTurn" }).state;
         const hand = (st) => Object.fromEntries(["timber", "clay", "wool", "grain", "ore"].map((r) => [r, st.players.reduce((n, p) => n + p.resources[r], 0)]));
         const gained = Object.keys(hand(pre)).filter((r) => hand(rolled)[r] > hand(pre)[r]);
-        const sum = dice[0] + dice[1];
         const expected = pre.hexes.filter((h) => h.pip === sum && !h.blocked && gained.includes(h.terrain)).map((h) => h.id);
         g.setState({ state: done });
         return { jump: done.seq - pre.seq, rolls: done.rolls - pre.rolls, expected };
-      }, split(sums[0]));
+      });
       await settled(page);
       const g5 = await glowing(page);
       console.log(`one push, ${multi.jump} actions, ${multi.rolls} roll: ${g5.ids.length} glowed, ${multi.expected.length} expected`);
