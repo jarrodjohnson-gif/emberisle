@@ -524,7 +524,6 @@ export class IsleRenderer {
   // hole again on the next frame. Cheap enough to call on every such change; a hole that did not change refits nothing.
   remeasure = () => {
     this.refitDue = true;
-    this.wake();
   };
 
   // Fit the overhead view to the hole the HUD leaves now. The first fit of a view lands at home; a later change of hole
@@ -1009,32 +1008,28 @@ function landKey(state: GameState) {
 }
 
 // The chrome a tap cannot pass through, one box per child of the shell, in canvas pixels. An element that takes pointer
-// events is its own box, unless something inside it lets taps through (pointer-events: none): then its box is the union of
-// the parts that do take them, so the chat dock measures as its button and not as the 288 px preview list beside it, and a
-// wrapper that lets taps through is only what is inside it.
+// events catches taps across its whole box, so it is its own box together with whatever pokes out of it, even when a
+// decorative child inside it (absolute or fixed, pointer-events: none: a flash, a fade) lets taps through. An element that
+// lets taps through is only the union of what is inside it, and so is a taking element with such an in-flow child, since
+// that child is what gives it its size: the chat dock measures as its button and not as the 288 px preview list beside it.
 function solidRects(shell: Element, canvas: Element): Rect[] {
   const base = canvas.getBoundingClientRect();
+  const local = (el: Element): Rect => {
+    const r = el.getBoundingClientRect();
+    return { left: r.left - base.left, top: r.top - base.top, right: r.right - base.left, bottom: r.bottom - base.top };
+  };
+  const join = (a: Rect | null, b: Rect | null): Rect | null =>
+    !a ? b : !b ? a : { left: Math.min(a.left, b.left), top: Math.min(a.top, b.top), right: Math.max(a.right, b.right), bottom: Math.max(a.bottom, b.bottom) };
   const box = (el: Element): { r: Rect | null; porous: boolean } => {
     if (el === canvas) return { r: null, porous: false };
     const cs = getComputedStyle(el);
     if (cs.display === "none" || cs.visibility === "hidden") return { r: null, porous: false };
     const kids = [...el.children].map(box);
-    const none = cs.pointerEvents === "none";
-    if (!none && !kids.some((k) => k.porous)) {
-      const r = el.getBoundingClientRect();
-      return { r: { left: r.left - base.left, top: r.top - base.top, right: r.right - base.left, bottom: r.bottom - base.top }, porous: false };
-    }
     let u: Rect | null = null;
-    for (const { r } of kids) {
-      if (!r) continue;
-      u = u ? { left: Math.min(u.left, r.left), top: Math.min(u.top, r.top), right: Math.max(u.right, r.right), bottom: Math.max(u.bottom, r.bottom) } : r;
-    }
-    // A pointer-taking element whose parts all let taps through is still itself a target: its own box.
-    if (!none && !u) {
-      const r = el.getBoundingClientRect();
-      u = { left: r.left - base.left, top: r.top - base.top, right: r.right - base.left, bottom: r.bottom - base.top };
-    }
-    return { r: u, porous: true };
+    for (const k of kids) u = join(u, k.r);
+    if (cs.pointerEvents === "none") return { r: u, porous: cs.position !== "absolute" && cs.position !== "fixed" };
+    if (kids.some((k) => k.porous)) return { r: u, porous: true };
+    return { r: join(local(el), u), porous: false };
   };
   return [...shell.children].map((k) => box(k).r).filter((r): r is Rect => r !== null);
 }

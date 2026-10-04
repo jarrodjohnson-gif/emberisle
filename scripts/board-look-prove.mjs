@@ -411,7 +411,7 @@ try {
           if (document.elementFromPoint(p.x, p.y)?.tagName !== "CANVAS") covered.push(`${v.id}@${p.x | 0},${p.y | 0}`);
         }
         const fresh = ["left", "right", "top", "bottom", "x", "z"].every((k) => Math.abs(want[k] - isle.fit[k]) < 1e-6);
-        return { right: ins.right, fresh, railLeft, rightmost: Math.round(rightmost), covered, glide: isle.glide !== null };
+        return { seq: st.seq, right: ins.right, fresh, railLeft, rightmost: Math.round(rightmost), covered, glide: isle.glide !== null };
       }, rail);
     // The first-player notice leaves the phase bar a few seconds in, and housekeeping does not refit; start after it has
     // gone, with one measure asked for, so every fit below answers to the hole as it then stands.
@@ -420,15 +420,25 @@ try {
     await settled();
     const base = await look(null);
     check("1024x768: the fit is the one the hole asks for", base.fresh && base.covered.length === 0, base);
+    // A measure that finds the hole unchanged draws nothing extra: it does not wake the idle loop (#481).
+    const idleWake = await page.evaluate(async () => {
+      const isle = window.__isle;
+      await new Promise((r) => setTimeout(r, 1100));
+      const before = isle.busyUntil;
+      isle.remeasure();
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      return { before, after: isle.busyUntil };
+    });
+    check("1024x768: a remeasure that changes nothing does not wake the loop", idleWake.after === idleWake.before, idleWake);
     // The keyboard PlaceList shows while a button in it has focus (#376) and is a rail then.
     await page.evaluate(() => document.querySelector('[data-testid="place-list"] button').focus());
     await settled();
     const list = await look('[data-testid="place-list"]');
-    check("1024x768: focusing the PlaceList refits the island clear of it, with no state change", list.right > base.right && list.fresh && list.rightmost < list.railLeft && list.covered.length === 0, { base, list });
+    check("1024x768: focusing the PlaceList refits the island clear of it, with no state change", list.seq === base.seq && list.right > base.right && list.fresh && list.rightmost < list.railLeft && list.covered.length === 0, { base, list });
     await page.evaluate(() => document.activeElement.blur());
     await settled();
     const blurred = await look(null);
-    check("1024x768: blurring the PlaceList refits it back", blurred.right === base.right && blurred.fresh && blurred.covered.length === 0, { base, blurred });
+    check("1024x768: blurring the PlaceList refits it back", blurred.seq === base.seq && blurred.right === base.right && blurred.fresh && blurred.covered.length === 0, { base, blurred });
     // The chat dock shows online; the store is told so, then the dock is opened with no state change.
     await page.evaluate(() => window.__emberisle.setState({ mode: "online" }));
     await settled();
@@ -437,11 +447,11 @@ try {
     await page.waitForSelector('[aria-label="Table chat"]', { timeout: STEP_MS });
     await settled();
     const chat = await look('[aria-label="Table chat"]');
-    check("1024x768: opening the chat refits the island clear of the chat rail, with no state change", chat.right > online.right && chat.fresh && chat.rightmost < chat.railLeft && chat.covered.length === 0, { online, chat });
+    check("1024x768: opening the chat refits the island clear of the chat rail, with no state change", chat.seq === online.seq && chat.right > online.right && chat.fresh && chat.rightmost < chat.railLeft && chat.covered.length === 0, { online, chat });
     await page.evaluate(() => window.__emberisle.getState().setChatOpen(false));
     await settled();
     const closed = await look(null);
-    check("1024x768: closing the chat refits it back", closed.right === online.right && closed.fresh && closed.covered.length === 0, { online, closed });
+    check("1024x768: closing the chat refits it back", closed.seq === online.seq && closed.right === online.right && closed.fresh && closed.covered.length === 0, { online, closed });
     await page.context().close();
   }
   check("no console errors", errors.length === 0, errors);

@@ -128,6 +128,21 @@ try {
       await menu.getByTestId("copy-fallback").waitFor();
       assert.equal(await menu.getByTestId("copy-fallback").inputValue(), "K7QP", `${v.tag}: the fallback field holds the code`);
       assert.equal(await page.evaluate(() => document.activeElement?.value), "K7QP", `${v.tag}: the fallback field takes the focus`);
+      // A failed copy is forgotten when the menu closes (Escape, then an outside tap): the next open shows no field and
+      // opens on How to play.
+      const reopen = async (how) => {
+        await menu.getByRole("button", { name: "Copy table code K7QP" }).click();
+        await menu.getByTestId("copy-fallback").waitFor();
+        if (how === "escape") await page.keyboard.press("Escape");
+        else await canvas.tap({ position: { x: v.width / 2, y: v.height / 2 } });
+        await menu.waitFor({ state: "detached" });
+        await trigger.click();
+        await menu.waitFor();
+        assert.equal(await menu.getByTestId("copy-fallback").count(), 0, `${v.tag}: after ${how} the next open shows no stale copy field`);
+        assert.equal(await page.evaluate(() => document.activeElement?.textContent.trim()), "How to play", `${v.tag}: after ${how} the next open focuses How to play`);
+      };
+      await reopen("escape");
+      await reopen("an outside tap");
     } else await menu.getByRole("button", { name: "Copied" }).waitFor();
     const confirmBox = page.getByTestId("leave-confirm");
     await menu.getByRole("button", { name: "Leave table" }).click();

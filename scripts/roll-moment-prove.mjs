@@ -62,6 +62,7 @@ function recorders() {
     if (now - last > 20) gaps.push([last, now]);
     last = now;
   }, 10);
+  window.__longest = (a, b) => gaps.reduce((n, [x, y]) => (y > a && x < b ? Math.max(n, Math.min(y, b) - Math.max(x, a) - 10) : n), 0);
   window.__stall = (a, b) => gaps.reduce((n, [x, y]) => n + Math.max(0, Math.min(y, b) - Math.max(x, a) - 10), 0);
   let current = null;
   let subscribed = false;
@@ -123,6 +124,7 @@ function recorders() {
   new MutationObserver(watch).observe(document, { subtree: true, childList: true, characterData: true, attributes: true });
   const animate = Element.prototype.animate;
   Element.prototype.animate = function (keyframes, options) {
+    if (window.__animateThrows && this.dataset?.testid === "roll-moment") throw new Error("animate unavailable");
     const a = animate.call(this, keyframes, options);
     if (this.dataset?.testid === "roll-moment") {
       // Where the last keyframe puts the chip: its layout box (no transform) moved and scaled about its centre.
@@ -217,7 +219,7 @@ async function settleChecks(page, tag, { applied, dice }, { reduced = false } = 
     return {
       m,
       flights,
-      stall: { up: window.__stall(a.at, m.at), hold: f ? window.__stall(a.at, f.start) : 0, flight: f ? window.__stall(f.start, m.gone) : 0, gone: window.__stall(a.at, m.gone) },
+      stall: { longest: window.__longest(a.at, m.at), up: window.__stall(a.at, m.at), hold: f ? window.__stall(a.at, f.start) : 0, flight: f ? window.__stall(f.start, m.gone) : 0, gone: window.__stall(a.at, m.gone) },
     };
   }, applied.n);
   const late = await page.evaluate((sum) => ({
@@ -233,6 +235,10 @@ async function settleChecks(page, tag, { applied, dice }, { reduced = false } = 
   console.log(`${tag}: rolled ${dice.join("+")}=${sum}; up ${up.toFixed(0)} ms after the roll was applied (stalled ${stall.up.toFixed(0)}), frame ${m.frame - applied.frame} after it; gone at ${gone.toFixed(0)} ms (stalled ${stall.gone.toFixed(0)}); centre ${m.centreX.toFixed(0)}/${m.vw}, sum ${m.fontSize}px ${m.sumColor}, animation ${m.animation}; shown then ${JSON.stringify(m.shown)}, after ${JSON.stringify(late.shown)}; banner ${JSON.stringify(late.banner)}`);
   check(m.frame === applied.frame, `${tag}: the moment mounts in the same frame the roll is applied (${m.frame - applied.frame} frames later)`);
   check(up - stall.up <= 200, `${tag}: up within 200 ms of the roll being applied (${up.toFixed(0)} ms, ${stall.up.toFixed(0)} of them stalled)`);
+  // The check above nets out stalls, so a long synchronous render inside the moment would hide in it: also cap the raw time
+  // loosely, and allow no single stall of 50 ms or more between the roll being applied and the moment being up.
+  check(up <= 350, `${tag}: the raw time up is within a loose 350 ms cap (${up.toFixed(0)} ms), stall included`);
+  check(stall.longest < 50, `${tag}: no single main-thread stall of 50 ms or more before the moment is up (${stall.longest.toFixed(0)} ms)`);
   check(m.dice.join() === dice.join() && m.sum === sum, `${tag}: the moment shows the rolled faces ${m.dice} and sum ${m.sum}`);
   check(Math.abs(m.centreX - m.vw / 2) <= m.vw * 0.1, `${tag}: centred horizontally (${m.centreX.toFixed(0)} of ${m.vw}, ±10 %)`);
   check(Math.abs(m.centreY - m.vh / 2) <= m.vh * 0.1, `${tag}: centred vertically (${m.centreY.toFixed(0)} of ${m.vh}, ±10 %)`);
@@ -371,6 +377,22 @@ async function practice(viewport, touch) {
   await page.close();
 }
 
+// #481 item 8: if the flight cannot start (`animate` throws), the moment still goes, on the settle timer.
+async function noFlight() {
+  const tag = "animate throws 1280x720";
+  const page = await open({ width: 1280, height: 720 });
+  await page.getByRole("button", { name: "Four seats, one table" }).click();
+  await playUntil(page, myRoll);
+  await page.evaluate(() => (window.__animateThrows = true));
+  const { applied } = await clickRoll(page);
+  await page.waitForFunction((n) => window.__moments.find((m) => m.n === n)?.gone, applied.n, { timeout: STEP_MS, polling: 50 });
+  const m = await page.evaluate((n) => ({ ...window.__moments.find((x) => x.n === n), applied: window.__applied.find((x) => x.n === n).at, flights: window.__flights.length }), applied.n);
+  const gone = m.gone - m.applied;
+  console.log(`${tag}: gone at ${gone.toFixed(0)} ms`);
+  check(gone >= 898 && gone <= 2500, `${tag}: the moment still goes when the flight cannot start (${gone.toFixed(0)} ms)`);
+  await page.close();
+}
+
 async function hotseat() {
   const tag = "hotseat 1280x720";
   const page = await open({ width: 1280, height: 720 });
@@ -396,6 +418,7 @@ try {
   await practice({ width: 1280, height: 720 }, false);
   await practice({ width: 390, height: 844 }, true);
   await hotseat();
+  await noFlight();
   await reduced();
   check(errors.length === 0, `zero console errors${errors.length ? `: ${errors.join(" | ")}` : ""}`);
 } catch (e) {
