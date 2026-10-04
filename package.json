@@ -37,6 +37,7 @@
     "title-prove": "node scripts/title-prove.mjs",
     "howto-prove": "node scripts/howto-prove.mjs",
     "reflow-prove": "node scripts/reflow-prove.mjs",
+    "banner-stable-prove": "node scripts/banner-stable-prove.mjs",
     "polish-tokens-prove": "node scripts/polish-tokens-prove.mjs"
   },
   "dependencies": {
