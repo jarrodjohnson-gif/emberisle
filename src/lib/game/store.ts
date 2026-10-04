@@ -185,8 +185,9 @@ interface GameStore {
   isHost: boolean;
   seats: Seat[];
   legal: Legal | null;
-  // The host's turn timer (#344) on this tab's clock: when it fires and whose seat it is, or null when none is armed.
-  turnTimer: { at: number; player: string } | null;
+  // The host's turn timer (#344): when it fires on this tab's clock, whose seat it is, and the host's own value
+  // (`deadline`) that tells one window from the next. Null when none is armed.
+  turnTimer: { at: number; player: string; deadline: number } | null;
   lobbyLog: string;
   hostTable: () => void;
   joinTable: (code: string) => void;
@@ -639,7 +640,8 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       const history = (chat ?? []).slice(-50).map((l) => ({ ...l, at: known.get(l.id) ?? now }));
       set({ code, seatId: you, isHost: host, screen: inGame ? "play" : "lobby", mode: "online", error: null, toast: null, chat: history, reactions: [], unread: 0 });
     },
-    reconnecting: (attempt) => set({ error: `Reconnecting… (try ${attempt})`, toast: "Reconnecting…" }),
+    // The window may have closed while we were away; the next state brings it back rather than a chip stuck at 0:00.
+    reconnecting: (attempt) => set({ error: `Reconnecting… (try ${attempt})`, toast: "Reconnecting…", turnTimer: null }),
     chat: (line) => {
       const { chat, chatOpen, unread, seatId, screen } = get();
       // The lobby box is always open, so only lines that arrive during the game can be unread.
@@ -662,8 +664,11 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       const swing = awardLine(get().state, game);
       hear(get().state, game, you, "online");
       // The deadline moves onto this clock by the skew the message shows, so a phone minutes off still counts true.
+      // Every push carries the same window, and the skew wobbles by however long this tab took to get to the message:
+      // the timer we hold stays while the host's deadline is the same, so the chip neither remounts nor announces twice.
       const skew = typeof serverNow === "number" ? serverNow - Date.now() : 0;
-      const turnTimer = turnDeadline && turnPlayer ? { at: turnDeadline - skew, player: turnPlayer } : null;
+      const prev = get().turnTimer;
+      const turnTimer = !turnDeadline || !turnPlayer ? null : prev?.deadline === turnDeadline && prev.player === turnPlayer ? prev : { at: turnDeadline - skew, player: turnPlayer, deadline: turnDeadline };
       // The first state after a join or a page-load rejoin seeds the log with what the engine kept, the way practice does.
       set({ legal, turnTimer, gameLog: get().state ? get().gameLog : appendLog(get().gameLog, game.log) });
       get().loadState(game, you, get().isHost, get().code);
