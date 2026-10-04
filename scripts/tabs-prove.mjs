@@ -1,5 +1,8 @@
 // #80: three headless tabs host, join, ready, start, roll off (#232), play setup and five rolls through server/host.mjs.
 // Every step must land the same dice and board on all three tabs, with zero console errors.
+// #308: `--seats 4` adds a fourth tab at 1280x720: the lobby seats four, setup runs 1-2-3-4-4-3-2-1, the rail shows
+// four cards on every tab with none clipped, and the roll loop runs with four hands. A table trade (ask, answer)
+// lands the same hands and goods counts on every tab at either size.
 // #116: `--served` skips Vite. The host serves the built dist/ itself and the tabs open it with no ?host=,
 // so they must find the socket at the address the page came from (the tunnel case). Run npm run build first.
 import { spawn } from "node:child_process";
@@ -10,7 +13,15 @@ import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
 import { createServer } from "vite";
 
-const PORT = 8093;
+const seatsArg = process.argv.indexOf("--seats");
+const SEATS = seatsArg === -1 ? 3 : Number(process.argv[seatsArg + 1]);
+if (![3, 4].includes(SEATS)) {
+  console.log(`FAIL --seats ${SEATS}: the table seats 3 or 4`);
+  process.exit(1);
+}
+// Four seats take their own port so this proof can run beside the three-seat one.
+const PORT = SEATS === 4 ? 8103 : 8093;
+const VIEWPORT = SEATS === 4 ? { width: 1280, height: 720 } : { width: 800, height: 500 };
 const ROLLS = 5;
 const SERVED = process.argv.includes("--served");
 const DIST = fileURLToPath(new URL("../dist/", import.meta.url));
@@ -50,7 +61,10 @@ let offlineTab = null;
 
 // `url` is the page to open; the default is the plain Title page. #304's third tab opens the lobby's copied join link.
 async function tab(name, url = SERVED ? `http://127.0.0.1:${hostPort}/` : `http://127.0.0.1:${PORT}/?host=ws://127.0.0.1:${hostPort}`) {
-  const page = await browser.newPage({ viewport: { width: 800, height: 500 } });
+  const page = await browser.newPage({ viewport: VIEWPORT });
+  // Four 1280x720 islands under software GL can block a tab's renderer past Playwright's 30 s default for one
+  // click or read; the proof's own waits (`until`) set their own windows.
+  page.setDefaultTimeout(90_000);
   // A socket that fails while this tab is offline on purpose logs a console error (#196); everything else counts.
   page.on("console", (m) => m.type() === "error" && !(offlineTab === name && /WebSocket connection to .* failed/.test(m.text())) && errors.push(`${name}: ${m.text()}`));
   page.on("pageerror", (e) => errors.push(`${name}: ${e}`));
@@ -118,7 +132,7 @@ async function until(check, what, ms = 10_000) {
   throw new Error(`timed out: ${what}`);
 }
 
-// Wait for every tab to pass `seq`, then require the three shared views to be identical.
+// Wait for every tab to pass `seq`, then require every tab's shared view to be identical.
 async function synced(tabs, seq, what, ms) {
   const vs = await until(async () => {
     const vs = await views(tabs);
@@ -150,7 +164,8 @@ try {
   if (got.origin + got.pathname !== want.origin + want.pathname || got.searchParams.get("code") !== tableCode || got.searchParams.get("host") !== want.searchParams.get("host"))
     throw new Error(`Copy link wrote ${link}, wanted ${want.href}`);
   const c = await tab("Pine", link);
-  const tabs = [a, b, c];
+  const d = SEATS === 4 ? await tab("Dune") : null;
+  const tabs = [a, b, c, ...(d ? [d] : [])];
 
   // #156/#271: before Join, the color the table already holds is dimmed and cannot be picked.
   const tideDims = async (t) => {
@@ -172,18 +187,29 @@ try {
   const searchC = await c.page.evaluate(() => location.search);
   if (new URLSearchParams(searchC).has("code")) throw new Error(`tab C's URL still carries the code: ${searchC}`);
   if ((await c.page.evaluate(() => window.__emberisle.getState().screen)) !== "title") throw new Error("tab C left the Title before Join");
-  for (const t of [b, c]) {
+  if (d) await d.page.getByPlaceholder(/code/i).fill(tableCode);
+  for (const t of tabs.slice(1)) {
     await t.page.getByRole("button", { name: "Join" }).click();
     await t.page.getByTestId("table-code").waitFor();
   }
   console.log(`join link: Pine joined from ?code=${tableCode} (link ${link}; URL after open: "${searchC || "/"}")`);
   for (const t of tabs) {
-    await until(async () => (await t.page.locator("li", { hasText: "Pine" }).count()) === 1, `${t.name} sees 3 seats`);
+    await until(async () => {
+      const counts = await Promise.all(tabs.map((o) => t.page.locator("li", { hasText: o.name }).count()));
+      return counts.every((n) => n === 1) ? true : null;
+    }, `${t.name} sees ${SEATS} seats`);
     await t.page.getByRole("button", { name: "Ready", exact: true }).click();
   }
   await a.page.getByRole("button", { name: "Start" }).click();
   let vs = await synced(tabs, -1, "start");
-  console.log(`table ${tableCode}: 3 tabs in, phase ${JSON.parse(vs[0].shared).phase}`);
+  console.log(`table ${tableCode}: ${SEATS} seats, ${SEATS} tabs in, phase ${JSON.parse(vs[0].shared).phase}`);
+  // Four 1280x720 islands under software GL starve every tab's HUD. The board is checked here as shared state and
+  // the rail and dice are DOM, so at four seats each tab stops drawing the island (as trade-prove does).
+  const stopIsland = async (t) => {
+    if (SEATS !== 4) return;
+    await until(() => t.page.evaluate(() => (window.__isle?.renderer ? (window.__isle.renderer.setAnimationLoop(null), true) : null)), `${t.name} island mounted`, 90_000);
+  };
+  for (const t of tabs) await stopIsland(t);
 
   const hostColor = await a.page.evaluate(() => {
     const s = window.__emberisle.getState();
@@ -213,10 +239,10 @@ try {
   const offBanners = await Promise.all(tabs.map((t) => t.page.evaluate(() => window.__banners)));
   if (off.phase !== "setupSettle" || off.current !== off.players[0].id) throw new Error(`after the roll-off: ${off.phase}, ${off.current}`);
   if (offBanners.flat().some((x) => /rolls \d\+\d =/.test(x))) throw new Error(`production banner during the roll-off: ${offBanners.flat().join(" | ")}`);
-  console.log(`roll-off: ${offRolls} rolls, each by the current tab, shared on all 3 tabs; order ${off.players.map((p) => `${p.id} ${off.rollOff.rolls[p.id]}`).join(", ")}; no production banner`);
+  console.log(`roll-off: ${offRolls} rolls, each by the current tab, shared on all ${SEATS} tabs; order ${off.players.map((p) => `${p.id} ${off.rollOff.rolls[p.id]}`).join(", ")}; no production banner`);
 
-  // Setup: whoever's turn it is clicks the first glowing spot through the store.
-  for (let step = 0; step < 12; step++) {
+  // Setup: whoever's turn it is clicks the first glowing spot through the store. Two rounds, an outpost and a path each.
+  for (let step = 0; step < SEATS * 4; step++) {
     const cur = JSON.parse(vs[0].shared).current;
     const i = vs.findIndex((v) => v.you === cur);
     const phase = JSON.parse(vs[i].shared).phase;
@@ -264,9 +290,43 @@ try {
     return m.screen === "play" && !m.error && m.you === beforeC.you ? m : null;
   }, "tab C back after reload", 90_000); // the reloaded page may block on its cold render first (see the first roll below)
   console.log(`tab C reloaded: back as ${afterC.you} (was ${beforeC.you})`);
+  await stopIsland(c);
   vs = await synced(tabs, -1, "after the drop and the reload");
   if (JSON.parse(vs[0].shared).phase !== "roll") throw new Error(`table moved during the blip: ${JSON.parse(vs[0].shared).phase}`);
   console.log(`setup done on all tabs, seq ${seqOf(vs[0])}`);
+
+  // #308: one table trade through the store, run as a flash step below. The current seat asks the table for 1 card
+  // another seat holds in return for 1 it holds, that seat says Yes, and every tab's next state shows both hands
+  // moved and the same goods counts. Returns the move, or null when no pair of hands can trade this turn.
+  let traded = null;
+  const tableTrade = (i) => {
+    const give = Object.keys(vs[i].mine).find((r) => vs[i].mine[r] > 0);
+    if (!give) return null;
+    for (const [j, v] of vs.entries()) {
+      if (j === i) continue;
+      const want = Object.keys(v.mine).find((r) => r !== give && v.mine[r] > 0);
+      if (!want) continue;
+      return async () => {
+        const [asker, taker] = [vs[i], vs[j]];
+        await tabs[i].page.evaluate(([g, w]) => window.__emberisle.getState().net.ask({ [g]: 1 }, { [w]: 1 }), [give, want]);
+        const tradeId = await until(async () => {
+          const ids = await Promise.all(tabs.map((t) => t.page.evaluate(() => window.__emberisle.getState().offer?.tradeId ?? null)));
+          return ids.every((x) => x && x === ids[0]) ? ids[0] : null;
+        }, "the offer reaches every tab");
+        await tabs[j].page.evaluate((id) => window.__emberisle.getState().net.answer(id, true), tradeId);
+        vs = await synced(tabs, seqOf(asker), "the table trade lands");
+        await until(async () => ((await Promise.all(tabs.map((t) => t.page.evaluate(() => window.__emberisle.getState().offer ?? null)))).every((o) => !o) ? true : null), "offers cleared");
+        const [a0, a1, b0, b1] = [asker.mine, vs[i].mine, taker.mine, vs[j].mine];
+        if (a1[give] !== a0[give] - 1 || a1[want] !== a0[want] + 1) throw new Error(`asker hand ${JSON.stringify([a0, a1])}`);
+        if (b1[give] !== b0[give] + 1 || b1[want] !== b0[want] - 1) throw new Error(`taker hand ${JSON.stringify([b0, b1])}`);
+        const total = (h) => Object.values(h).reduce((x, y) => x + y, 0);
+        const goods = JSON.parse(vs[0].shared).players;
+        if (goods.find((p) => p.id === asker.you).goods !== total(a1) || goods.find((p) => p.id === taker.you).goods !== total(b1)) throw new Error(`goods counts ${JSON.stringify(goods)}`);
+        traded = `${tabs[i].name} gave 1 ${give} for 1 ${want} from ${tabs[j].name}`;
+      };
+    }
+    return null;
+  };
 
   // Five rolls. Each roll is followed by any discards, the wayfarer, and a pass.
   // #322: tab C asks for reduced motion, so its dice faces must not animate at all.
@@ -349,7 +409,7 @@ try {
       vs = await synced(tabs, seqOf(vs[0]), `after roll ${r + 1} (${phase})`);
     }
   }
-  console.log(`${ROLLS} rolls, same on all 3 tabs: ${dice.map((d) => d.join("+")).join(" ")}`);
+  console.log(`${ROLLS} rolls, same on all ${SEATS} tabs: ${dice.map((d) => d.join("+")).join(" ")}`);
   console.log(`dice faces: ${diceMatch}/${ROLLS} match the log (pips, aria-label, no settle on the reduced-motion tab)`);
 
   // #170: a tab's own hand flashes +N green on a gain and -N red on a loss, and each flash goes away again.
@@ -389,8 +449,11 @@ try {
     }
     return seen;
   };
+  // A label from the rolls above can still be up; the HUD swaps a repeat of the same tag in one commit, and the
+  // record would then read the old label's removal as the new one's fade.
+  await until(async () => ((await Promise.all(tabs.map((t) => t.page.evaluate(() => document.querySelectorAll('[data-testid="resource-flash"]').length)))).every((n) => n === 0) ? true : null), "earlier flash labels gone", 20_000);
   const proved = { gain: null, loss: null };
-  for (let turn = 0; turn < 40 && !(proved.gain && proved.loss); turn++) {
+  for (let turn = 0; turn < 40 && !(proved.gain && proved.loss && traded); turn++) {
     const cur = JSON.parse(vs[0].shared).current;
     const i = vs.findIndex((v) => v.you === cur);
     const seen = [await step(`flash roll ${turn + 1}`, () => act(tabs[i], "dispatch", [{ type: "roll" }]))];
@@ -416,6 +479,8 @@ try {
           if (targets && targets.length > 1) await act(tabs[i], "chooseSteal", targets[0]);
         };
       } else if (phase === "main") {
+        const trade = traded ? null : tableTrade(i);
+        if (trade) seen.push(await step("flash table trade", trade));
         const give = Object.keys(vs[i].mine).find((r) => vs[i].mine[r] >= 4);
         if (give) {
           const want = Object.keys(vs[i].mine).find((r) => r !== give);
@@ -432,7 +497,24 @@ try {
   }
   if (!proved.gain || !proved.loss) throw new Error(`resource flash: gain ${proved.gain}, loss ${proved.loss}`);
   console.log(`resource flash: green "${proved.gain}" and red "${proved.loss}" each showed and went away (longest label ${Math.round(longest)} ms)`);
+  if (!traded) throw new Error("no two hands could make a table trade in 40 turns");
+  console.log(`table trade: ${traded}; hands and goods counts agree on all ${SEATS} tabs`);
+
+  // #308: at four seats every tab's rail shows one card per seat, each wholly inside the 1280x720 viewport.
+  if (SEATS === 4) {
+    const ids = JSON.parse(vs[0].shared).players.map((p) => p.id);
+    for (const t of tabs) {
+      for (const id of ids) {
+        const box = await t.page.getByTestId(`rail-${id}`).boundingBox();
+        if (!box) throw new Error(`${t.name}: rail card ${id} is not on screen`);
+        if (box.x < 0 || box.y < 0 || box.x + box.width > VIEWPORT.width || box.y + box.height > VIEWPORT.height)
+          throw new Error(`${t.name}: rail card ${id} clipped at ${JSON.stringify(box)}`);
+      }
+    }
+    console.log(`rail: ${ids.length} cards inside ${VIEWPORT.width}x${VIEWPORT.height} on all ${SEATS} tabs`);
+  }
   if (errors.length) throw new Error(`console errors:\n${errors.join("\n")}`);
+  console.log(`boards match on ${SEATS} tabs`);
   console.log(SERVED ? `tabs prove ok (served by the host on :${hostPort}, no ?host=)` : "tabs prove ok");
 } catch (e) {
   console.log("FAIL", e.message);

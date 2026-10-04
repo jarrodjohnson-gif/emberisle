@@ -92,6 +92,8 @@ export interface TableClient {
   drop(): void;
   ready(value: boolean): void;
   start(): void;
+  // A rematch at the same table (#266). Host only, once the game is over.
+  again(): void;
   act(action: Action): boolean;
   // Ask-the-table trades are host-run (not rules Actions): offer `give` for `want` to every other seat, and answer one.
   ask(give: Bag, want: Bag): void;
@@ -308,6 +310,7 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
     },
     ready: (value) => send({ type: "ready", value }),
     start: () => send({ type: "start" }),
+    again: () => send({ type: "again" }),
     act: (action) => {
       const intent = toIntent(action);
       if (intent) send(intent);

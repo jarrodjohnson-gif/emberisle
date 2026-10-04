@@ -278,8 +278,10 @@ function rollOffRoll(state: GameState, me: PlayerState) {
     state.current = ro.pending[0]!;
     return;
   }
+  const seated = state.players.filter((p) => p.id === ro.first);
+  const rolling = state.players.filter((p) => p.id !== ro.first);
   const top = Math.max(...Object.values(ro.rolls));
-  const leaders = state.players.filter((p) => ro.rolls[p.id] === top);
+  const leaders = rolling.filter((p) => ro.rolls[p.id] === top);
   if (leaders.length > 1) {
     for (const p of leaders) delete ro.rolls[p.id];
     ro.pending = leaders.map((p) => p.id);
@@ -287,13 +289,14 @@ function rollOffRoll(state: GameState, me: PlayerState) {
     log(state, `${names(leaders)} tie at ${top} and roll again.`);
     return;
   }
-  const first = leaders[0]!;
-  const rest = state.players.filter((p) => p !== first).sort((a, b) => ro.rolls[b.id]! - ro.rolls[a.id]!);
-  state.players = [first, ...rest];
-  state.current = first.id;
+  const lead = leaders[0]!;
+  const rest = rolling.filter((p) => p !== lead).sort((a, b) => ro.rolls[b.id]! - ro.rolls[a.id]!);
+  state.players = [...seated, lead, ...rest];
+  const [first, ...after] = state.players;
+  state.current = first!.id;
   state.phase = "setupSettle";
   state.setupIndex = 0;
-  log(state, `${first.name} places first, then ${names(rest)}.`);
+  log(state, `${first!.name} places first, then ${names(after)}.`);
 }
 
 function produce(state: GameState, total: number) {
@@ -598,6 +601,11 @@ export function applyAction(prev: GameState, actor: string, action: Action): { s
       if (playable(me, "plenty") <= 0) return { state: prev, error: me.hidden.plenty > 0 ? BOUGHT_THIS_TURN : "No plenty fortune." };
       if (!Array.isArray(action.resources) || action.resources.length !== 2 || !action.resources.every(validRes)) {
         return { state: prev, error: "Choose two resources." };
+      }
+      // The bank must pay every card named (#360); the HUD greys out what it lacks, this is the backstop.
+      for (const r of action.resources) {
+        const named = action.resources.filter((x) => x === r).length;
+        if (state.bank[r] < named) return { state: prev, error: state.bank[r] === 0 ? `The bank has no ${r}.` : `The bank has only ${state.bank[r]} ${r}.` };
       }
       me.hidden.plenty -= 1;
       state.playedCard = true;

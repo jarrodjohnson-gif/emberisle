@@ -408,6 +408,8 @@ try {
   for (const r of winRows.rows) if (r.total !== winRows.want[r.id]) throw new Error(`win screen total: ${JSON.stringify(winRows)}`);
   if (new Set(winRows.rows.map((r) => r.total)).size < 3) throw new Error("win screen: totals should differ");
   if (!winRows.headline?.endsWith(" wins")) throw new Error(`win headline: ${winRows.headline}`);
+  // #266: practice has no table to keep, so no Play again.
+  if (await page.getByTestId("win-again").count()) throw new Error("win screen: practice shows Play again");
   // #379: aria-modal is a promise to the keyboard too. Tab cycles among the dialog's buttons and never reaches the HUD behind it.
   const winFocus = () =>
     page.evaluate(() => {
@@ -435,6 +437,64 @@ try {
   await page.getByTestId("win-menu").click();
   await page.waitForFunction(() => window.__emberisle.getState().screen === "title", null, { timeout: 5000 });
   console.log("win screen ok");
+
+  // #266: Play again. Hotseat deals the rematch here, the last winner first; online the host's button sends `again`
+  // (a fake net records it) and a guest waits for the host.
+  {
+    const toOver = (extra) =>
+      page.evaluate((extra) => {
+        const g = window.__emberisle;
+        const st = structuredClone(g.getState().state);
+        st.phase = "over";
+        st.winner = "p2";
+        g.setState({ state: st, ...extra });
+      }, extra);
+    await page.evaluate(() => window.__emberisle.getState().startHotseat(4));
+    await page.waitForFunction(() => window.__emberisle.getState().state?.phase === "rollOff");
+    const names = await page.evaluate(() => window.__emberisle.getState().state.players.map((p) => p.name));
+    await toOver({ buildMode: "outpost" });
+    await page.getByTestId("win-again").click();
+    await page.getByTestId("win-screen").waitFor({ state: "detached", timeout: 2000 });
+    const hot = await page.evaluate(() => {
+      const t = window.__emberisle.getState();
+      return { phase: t.state.phase, winner: t.state.winner, names: t.state.players.map((p) => p.name), first: t.state.rollOff.first, current: t.state.current, localId: t.localId, buildMode: t.buildMode };
+    });
+    console.log("hotseat rematch:", JSON.stringify(hot));
+    const restOk = JSON.stringify(hot.names.slice(1)) === JSON.stringify(names.filter((n) => n !== names[2]));
+    if (hot.phase !== "rollOff" || hot.winner !== null || hot.names[0] !== names[2] || !restOk || hot.first !== "p0" || hot.current !== "p1" || hot.localId !== "p0" || hot.buildMode !== "none") {
+      throw new Error(`hotseat rematch: ${JSON.stringify({ hot, names })}`);
+    }
+
+    const seat = (id, name, host) => ({ id, name, color: "#c45c3e", avatarId: null, ready: true, host, away: false, url: null });
+    const online = (seatId) => ({
+      mode: "online",
+      code: "ABCD",
+      seatId,
+      isHost: seatId === "s0",
+      seats: [seat("s0", "Ember", true), seat("s1", "Tide", false), seat("s2", "Pine", false)],
+    });
+    await page.evaluate(() => {
+      window.__again = 0;
+      window.__emberisle.setState({ net: { again: () => window.__again++, close: () => {} } });
+    });
+    await toOver(online("s0"));
+    await page.getByTestId("win-again").click();
+    await page.waitForFunction(() => window.__again === 1, null, { timeout: 2000 });
+    if (await page.getByTestId("win-waiting").count()) throw new Error("online host sees the waiting line");
+    await page.getByTestId("win-look").click();
+    await page.getByTestId("win-again-chip").click();
+    await page.waitForFunction(() => window.__again === 2, null, { timeout: 2000 });
+    await page.getByTestId("win-show").click();
+    await page.evaluate(() => window.__emberisle.setState({ seatId: "s1", isHost: false }));
+    await page.getByTestId("win-waiting").waitFor({ timeout: 2000 });
+    const guest = { again: await page.getByTestId("win-again").count(), waiting: await page.getByTestId("win-waiting").textContent() };
+    await page.getByTestId("win-look").click();
+    guest.chip = await page.getByTestId("win-again-chip").count();
+    console.log("online play again:", JSON.stringify({ hostSent: await page.evaluate(() => window.__again), guest }));
+    if (guest.again || guest.chip || guest.waiting !== "Waiting for Ember to start another.") throw new Error(`online guest: ${JSON.stringify(guest)}`);
+    await page.evaluate(() => window.__emberisle.getState().goTitle());
+    console.log("play again ok");
+  }
 
   // Each step below starts from the title screen and builds its own state, so none depends on the one before.
   const toTitle = () => page.evaluate(() => window.__emberisle.getState().goTitle());
