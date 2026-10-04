@@ -80,8 +80,7 @@ function useResourceFlashes(me: PlayerState) {
   return flashes;
 }
 
-export function ResourceHand({ me }: { me: PlayerState }) {
-  const flashes = useResourceFlashes(me);
+function ResourceHand({ me, flashes }: { me: PlayerState; flashes: ReturnType<typeof useResourceFlashes> }) {
   return (
     <div className="flex shrink-0 gap-1 overflow-x-auto rounded-[20px] border border-white/50 bg-glass p-2 backdrop-blur-md short:p-1">
       {RESOURCES.map((r) => {
@@ -130,6 +129,37 @@ export function ResourceHand({ me }: { me: PlayerState }) {
           </div>
         );
       })}
+    </div>
+  );
+}
+
+type DockPhase = "in" | "idle" | "out" | "gone";
+
+const reducedMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+// #439: the hand is on the table only while it holds a good. It rises in over --duration-base when the first good
+// lands and leaves the same way when the last one goes (instantly under reduced motion). The slot grows from
+// zero height and cancels the stack's 8 px gap while it does, so nothing else in the stack lurches.
+export function HandDock({ me }: { me: PlayerState }) {
+  // Read here, not in the hand, so the +N that brings the first good in is not lost to the hand mounting after the change.
+  const flashes = useResourceFlashes(me);
+  const open = RESOURCES.some((r) => me.resources[r] > 0);
+  const [phase, setPhase] = useState<DockPhase>(open ? "idle" : "gone");
+  if (open && (phase === "gone" || phase === "out")) setPhase(reducedMotion() ? "idle" : "in");
+  else if (!open && (phase === "in" || phase === "idle")) setPhase(reducedMotion() ? "gone" : "out");
+  if (phase === "gone") return null;
+  return (
+    <div
+      data-testid="hand-dock"
+      data-phase={phase}
+      className={cn("grid shrink-0", phase === "in" && "hand-in", phase === "out" && "hand-out")}
+      onAnimationEnd={(e) => {
+        if (e.target === e.currentTarget) setPhase((p) => (p === "in" ? "idle" : p === "out" ? "gone" : p));
+      }}
+    >
+      <div className={cn("min-h-0", phase !== "idle" && "overflow-hidden")}>
+        <ResourceHand me={me} flashes={flashes} />
+      </div>
     </div>
   );
 }

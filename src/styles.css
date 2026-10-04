@@ -70,12 +70,26 @@ body {
   100% { box-shadow: 0 0 0 2px rgba(255, 255, 255, 0); opacity: 0; }
 }
 
+/* #439: the hand rises in and leaves over --duration-base. Its slot grows from zero height and takes back the stack's 8 px gap meanwhile. */
+@keyframes hand-in {
+  from { grid-template-rows: 0fr; margin-top: -0.5rem; opacity: 0; transform: translateY(8px); }
+  to { grid-template-rows: 1fr; margin-top: 0; opacity: 1; transform: none; }
+}
+@keyframes hand-out {
+  from { grid-template-rows: 1fr; margin-top: 0; opacity: 1; transform: none; }
+  to { grid-template-rows: 0fr; margin-top: -0.5rem; opacity: 0; transform: translateY(8px); }
+}
+.hand-in { animation: hand-in var(--duration-base) var(--ease-out) both; }
+.hand-out { animation: hand-out var(--duration-base) var(--ease-out) both; }
+
 /* The animations are inline or utility styles, so the override has to out-rank them (#253). */
 @media (prefers-reduced-motion: reduce) {
   [style*="emote-float"],
   [style*="resource-flash"],
   [style*="resource-ring"],
-  [class*="turn-fade"] {
+  [class*="turn-fade"],
+  .hand-in,
+  .hand-out {
     animation-duration: 1ms !important;
   }
 }

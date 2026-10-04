@@ -40,6 +40,7 @@
     "banner-stable-prove": "node scripts/banner-stable-prove.mjs",
     "polish-tokens-prove": "node scripts/polish-tokens-prove.mjs",
     "hand-cards-prove": "node scripts/hand-cards-prove.mjs",
+    "hand-hidden-prove": "node scripts/hand-hidden-prove.mjs",
     "install-prove": "node scripts/install-prove.mjs",
     "make-icons": "node scripts/make-icons.mjs"
   },

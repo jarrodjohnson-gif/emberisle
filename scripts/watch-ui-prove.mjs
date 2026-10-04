@@ -283,11 +283,11 @@ try {
   if (pressable.length) throw new Error(`the watcher can press ${JSON.stringify(pressable)}`);
   if (!wv.buttons.includes("Leave")) throw new Error(`the watcher has no Leave button: ${JSON.stringify(wv.buttons)}`);
   if (!wv.turnBanner || wv.turnBanner.startsWith("Your")) throw new Error(`the watcher's turn line: "${wv.turnBanner}"`);
-  // The positive control: the seat whose roll it is has the Roll button, its hand tiles and no badge.
+  // The positive control: the seat whose roll it is has the Roll button and no badge. Its hand is empty in the roll-off, so no hand tiles are shown (#439).
   const up = [a, b].find((t, i) => seatViews[i].localId === wv.current);
   if (up) {
     const uv = seatViews[[a, b].indexOf(up)];
-    if (!uv.buttons.includes("Roll") || uv.resources !== 5 || uv.badge !== null) throw new Error(`${up.name} (on turn) is missing its controls: ${JSON.stringify([uv.buttons, uv.resources, uv.badge])}`);
+    if (!uv.buttons.includes("Roll") || uv.resources !== 0 || uv.badge !== null) throw new Error(`${up.name} (on turn) is missing its controls: ${JSON.stringify([uv.buttons, uv.resources, uv.badge])}`);
   } else if (c.legal?.actions.includes("roll") !== true) throw new Error("Pine is on turn with no roll");
   console.log(`watching: board at seq ${wv.seq}, badge "${wv.badge}", eye count "${wv.count}" on every seat, title "${wv.title}", 0 hand tiles, 0 glow, no controls; turn line "${wv.turnBanner}"`);
 
