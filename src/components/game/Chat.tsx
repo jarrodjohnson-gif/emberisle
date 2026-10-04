@@ -35,7 +35,7 @@ function Line({ line, me }: { line: ChatLine; me: string }) {
   return (
     <li className="break-words text-xs leading-snug text-zinc-900">
       <span className="mr-1 inline-block size-2 rounded-full align-baseline" style={{ background: line.color }} />
-      <span className="mr-1 font-medium" style={{ color: line.color }}>
+      <span className="mr-1 font-medium text-zinc-700">
         {line.name}
       </span>
       {me ? <Mention text={line.text} name={me} /> : line.text}
@@ -46,13 +46,13 @@ function Line({ line, me }: { line: ChatLine; me: string }) {
 // A game log line (#305): a muted system row, no speaker.
 function LogRow({ line }: { line: GameLogLine }) {
   return (
-    <li data-testid="log-row" className="break-words text-xs leading-snug text-zinc-600">
+    <li data-testid="log-row" className="break-words text-xs leading-snug text-zinc-700">
       {line.text}
     </li>
   );
 }
 
-const CHIP = "cursor-pointer rounded-full border border-white/60 px-2 py-0.5 text-xs";
+const CHIP = "cursor-pointer rounded-full bg-glass px-2 py-0.5 text-xs text-zinc-700 hover:text-zinc-900";
 
 // The log, the preset chips, the emote tray, and the input. `onEscape` is the dock's minimize.
 // `game` (the in-game dock, not the Lobby) lists the game log in with the chat, behind a Chat/All filter, with Copy log.
@@ -106,18 +106,24 @@ export function ChatBox({ rows, game, onEscape, className }: { rows: number; gam
                 type="button"
                 aria-pressed={filter === f}
                 onClick={() => setFilter(f)}
-                className={cn(CHIP, filter === f ? "bg-fg text-bg" : "bg-white/60 text-zinc-900 hover:bg-white/90")}
+                className={cn(CHIP, filter === f && "font-semibold underline underline-offset-2")}
               >
                 {f === "chat" ? "Chat" : "All"}
               </button>
             ))}
           </div>
-          <button type="button" onClick={copyLog} className={cn(CHIP, "ml-auto bg-white/60 text-zinc-900 hover:bg-white/90")}>
+          <button type="button" onClick={copyLog} className={cn(CHIP, "ml-auto")}>
             {copied?.ok ? "Copied" : "Copy log"}
           </button>
         </div>
       ) : null}
-      {game ? <CopyFallback state={copied} label="Game log" className="shrink-0" /> : null}
+      {game ? (
+        <CopyFallback
+          state={copied}
+          label="Game log"
+          className="shrink-0 text-zinc-700 [&_textarea]:rounded-control [&_textarea]:border-0 [&_textarea]:bg-glass"
+        />
+      ) : null}
       <ul
         ref={log}
         data-testid="chat-log"
@@ -135,7 +141,7 @@ export function ChatBox({ rows, game, onEscape, className }: { rows: number; gam
       </ul>
       {spectator ? (
         // Read-only (docs/design/spectator.md): the log and the filter stay; the chips, tray and input are this one line.
-        <p data-testid="chat-readonly" className="shrink-0 text-xs text-zinc-600">
+        <p data-testid="chat-readonly" className="shrink-0 text-xs text-zinc-700">
           Watching — chat is read-only
         </p>
       ) : (
@@ -146,7 +152,7 @@ export function ChatBox({ rows, game, onEscape, className }: { rows: number; gam
                 key={p}
                 type="button"
                 onClick={() => sendChat(p)}
-                className="cursor-pointer rounded-full border border-white/60 bg-white/60 px-2 py-0.5 text-xs text-zinc-900 hover:bg-white/90"
+                className={CHIP}
               >
                 {p}
               </button>
@@ -163,7 +169,7 @@ export function ChatBox({ rows, game, onEscape, className }: { rows: number; gam
                     sendReact(id);
                     setTray(false);
                   }}
-                  className="cursor-pointer rounded-[8px] p-0.5 hover:bg-white/70"
+                  className="cursor-pointer rounded-control bg-glass p-0.5"
                 >
                   <img src={url} alt="" className="size-8 object-contain" />
                 </button>
@@ -176,7 +182,7 @@ export function ChatBox({ rows, game, onEscape, className }: { rows: number; gam
               aria-label="Emotes"
               aria-expanded={tray}
               onClick={() => setTray(!tray)}
-              className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-[8px] border border-white/60 bg-white/60 hover:bg-white/90"
+              className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-control bg-glass text-zinc-700 hover:text-zinc-900"
             >
               <Smile className="size-4" />
             </button>
@@ -194,12 +200,12 @@ export function ChatBox({ rows, game, onEscape, className }: { rows: number; gam
                   onEscape?.();
                 }
               }}
-              className="h-8 min-w-0 flex-1 rounded-[8px] border border-white/60 bg-white/70 px-2 text-sm text-zinc-900"
+              className="h-8 min-w-0 flex-1 rounded-control bg-glass px-2 text-sm text-zinc-900 placeholder:text-zinc-700"
             />
             <button
               type="button"
               onClick={send}
-              className="h-8 cursor-pointer rounded-[8px] bg-fg px-3 text-sm font-medium text-bg hover:bg-fg/90"
+              className="h-8 cursor-pointer rounded-control bg-fg px-3 text-sm font-medium text-bg hover:bg-fg/90"
             >
               Send
             </button>
@@ -233,11 +239,11 @@ function Preview({ above }: { above?: boolean }) {
       {live.map((l) => (
         <li
           key={l.id}
-          className="max-w-full break-words rounded-[8px] bg-white/55 px-2 py-0.5 text-xs text-zinc-900 backdrop-blur-md transition-opacity duration-1000"
+          className="max-w-full break-words rounded-chip bg-glass px-2 py-0.5 text-xs text-zinc-900 backdrop-blur-md transition-opacity duration-1000"
           style={{ opacity: now - (seen.current.get(l.id) ?? 0) < 6000 ? 1 : 0 }}
         >
           <span className="mr-1 inline-block size-2 rounded-full" style={{ background: l.color }} />
-          <span className="mr-1 font-medium" style={{ color: l.color }}>
+          <span className="mr-1 font-medium text-zinc-700">
             {l.name}
           </span>
           {l.text}
@@ -288,7 +294,7 @@ export function ChatDock() {
       type="button"
       aria-label="Minimize chat"
       onClick={() => setOpen(false)}
-      className="flex size-6 cursor-pointer items-center justify-center rounded-[8px] hover:bg-white/60"
+      className="flex size-6 cursor-pointer items-center justify-center rounded-control bg-glass text-zinc-700 hover:text-zinc-900"
     >
       <Minus className="size-4" />
     </button>
@@ -302,7 +308,7 @@ export function ChatDock() {
         <section
           aria-label="Table chat"
           data-testid="chat-sheet"
-          className="fixed inset-x-0 bottom-0 z-30 flex flex-col gap-2 rounded-t-[16px] border border-white/50 bg-white/70 px-3 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur-md"
+          className="fixed inset-x-0 bottom-0 z-30 flex flex-col gap-2 rounded-t-chip bg-glass px-3 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur-md"
           style={{ height: "min(48vh, 320px)" }}
         >
           <div data-testid="chat-sheet-header" className="flex shrink-0 items-center justify-between">
@@ -325,7 +331,7 @@ export function ChatDock() {
       {open ? (
         <section
           aria-label="Table chat"
-          className="flex w-72 flex-col gap-2 rounded-[16px] border border-white/50 bg-white/45 p-3 backdrop-blur-md"
+          className="flex w-72 flex-col gap-2 rounded-chip bg-glass p-3 backdrop-blur-md"
           style={{ maxHeight: "min(360px, 50vh)" }}
         >
           <div className="flex items-center justify-between">
@@ -344,7 +350,7 @@ export function ChatDock() {
               setOpen(true);
             }}
             className={cn(
-              "relative flex size-11 cursor-pointer items-center justify-center rounded-[16px] border border-white/50 bg-white/45 backdrop-blur-md hover:bg-white/70",
+              "relative flex size-11 cursor-pointer items-center justify-center rounded-control bg-glass text-zinc-700 backdrop-blur-md hover:text-zinc-900",
             )}
           >
             <MessageSquare className="size-5" />
@@ -389,7 +395,7 @@ export function ReactionFloats({ by, id }: { by: "player" | "seat"; id: string }
               <div className="flex flex-col items-center" style={{ animation: "emote-float 2s linear forwards" }}>
                 <img src={url} alt="" className="size-12 object-contain" />
                 {to ? (
-                  <span className="rounded bg-white/70 px-1 text-[10px] font-medium" style={{ color: to.color }}>
+                  <span className="rounded-chip bg-glass px-1 text-[10px] font-medium text-zinc-700 backdrop-blur-md">
                     → {to.name}
                   </span>
                 ) : null}
