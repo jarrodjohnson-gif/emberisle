@@ -26,8 +26,9 @@ function Mention({ text, name }: { text: string; name: string }) {
   );
 }
 
+// A watcher has no name at the table (docs/design/spectator.md), so nothing is a mention of it.
 function useMyName() {
-  return useGame((s) => s.seats.find((x) => x.id === s.seatId)?.name ?? s.name);
+  return useGame((s) => (s.spectator ? "" : (s.seats.find((x) => x.id === s.seatId)?.name ?? s.name)));
 }
 
 function Line({ line, me }: { line: ChatLine; me: string }) {
@@ -37,7 +38,7 @@ function Line({ line, me }: { line: ChatLine; me: string }) {
       <span className="mr-1 font-medium" style={{ color: line.color }}>
         {line.name}
       </span>
-      <Mention text={line.text} name={me} />
+      {me ? <Mention text={line.text} name={me} /> : line.text}
     </li>
   );
 }
@@ -64,6 +65,7 @@ export function ChatBox({ rows, game, onEscape, className }: { rows: number; gam
   const setDraft = useGame((s) => s.setChatDraft);
   const sendChat = useGame((s) => s.sendChat);
   const sendReact = useGame((s) => s.sendReact);
+  const spectator = useGame((s) => s.spectator);
   const me = useMyName();
   const [tray, setTray] = useState(false);
   const { state: copied, copy } = useCopy<"log">();
@@ -131,70 +133,79 @@ export function ChatBox({ rows, game, onEscape, className }: { rows: number; gam
       >
         {lines.map((l) => l.node)}
       </ul>
-      <div className="flex shrink-0 flex-wrap gap-1">
-        {PRESETS.map((p) => (
-          <button
-            key={p}
-            type="button"
-            onClick={() => sendChat(p)}
-            className="cursor-pointer rounded-full border border-white/60 bg-white/60 px-2 py-0.5 text-xs text-zinc-900 hover:bg-white/90"
-          >
-            {p}
-          </button>
-        ))}
-      </div>
-      {tray ? (
-        <div className="grid grid-cols-6 gap-1" data-testid="emote-tray">
-          {Object.entries(EMOTES).map(([id, url]) => (
+      {spectator ? (
+        // Read-only (docs/design/spectator.md): the log and the filter stay; the chips, tray and input are this one line.
+        <p data-testid="chat-readonly" className="shrink-0 text-xs text-zinc-600">
+          Watching — chat is read-only
+        </p>
+      ) : (
+        <>
+          <div className="flex shrink-0 flex-wrap gap-1">
+            {PRESETS.map((p) => (
+              <button
+                key={p}
+                type="button"
+                onClick={() => sendChat(p)}
+                className="cursor-pointer rounded-full border border-white/60 bg-white/60 px-2 py-0.5 text-xs text-zinc-900 hover:bg-white/90"
+              >
+                {p}
+              </button>
+            ))}
+          </div>
+          {tray ? (
+            <div className="grid grid-cols-6 gap-1" data-testid="emote-tray">
+              {Object.entries(EMOTES).map(([id, url]) => (
+                <button
+                  key={id}
+                  type="button"
+                  aria-label={`React ${id}`}
+                  onClick={() => {
+                    sendReact(id);
+                    setTray(false);
+                  }}
+                  className="cursor-pointer rounded-[8px] p-0.5 hover:bg-white/70"
+                >
+                  <img src={url} alt="" className="size-8 object-contain" />
+                </button>
+              ))}
+            </div>
+          ) : null}
+          <div className="flex shrink-0 gap-1">
             <button
-              key={id}
               type="button"
-              aria-label={`React ${id}`}
-              onClick={() => {
-                sendReact(id);
-                setTray(false);
-              }}
-              className="cursor-pointer rounded-[8px] p-0.5 hover:bg-white/70"
+              aria-label="Emotes"
+              aria-expanded={tray}
+              onClick={() => setTray(!tray)}
+              className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-[8px] border border-white/60 bg-white/60 hover:bg-white/90"
             >
-              <img src={url} alt="" className="size-8 object-contain" />
+              <Smile className="size-4" />
             </button>
-          ))}
-        </div>
-      ) : null}
-      <div className="flex shrink-0 gap-1">
-        <button
-          type="button"
-          aria-label="Emotes"
-          aria-expanded={tray}
-          onClick={() => setTray(!tray)}
-          className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-[8px] border border-white/60 bg-white/60 hover:bg-white/90"
-        >
-          <Smile className="size-4" />
-        </button>
-        <input
-          id={INPUT_ID}
-          value={draft}
-          maxLength={200}
-          placeholder="Say something…"
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => {
-            e.stopPropagation();
-            if (e.key === "Enter") send();
-            if (e.key === "Escape") {
-              e.currentTarget.blur();
-              onEscape?.();
-            }
-          }}
-          className="h-8 min-w-0 flex-1 rounded-[8px] border border-white/60 bg-white/70 px-2 text-sm text-zinc-900"
-        />
-        <button
-          type="button"
-          onClick={send}
-          className="h-8 cursor-pointer rounded-[8px] bg-fg px-3 text-sm font-medium text-bg hover:bg-fg/90"
-        >
-          Send
-        </button>
-      </div>
+            <input
+              id={INPUT_ID}
+              value={draft}
+              maxLength={200}
+              placeholder="Say something…"
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => {
+                e.stopPropagation();
+                if (e.key === "Enter") send();
+                if (e.key === "Escape") {
+                  e.currentTarget.blur();
+                  onEscape?.();
+                }
+              }}
+              className="h-8 min-w-0 flex-1 rounded-[8px] border border-white/60 bg-white/70 px-2 text-sm text-zinc-900"
+            />
+            <button
+              type="button"
+              onClick={send}
+              className="h-8 cursor-pointer rounded-[8px] bg-fg px-3 text-sm font-medium text-bg hover:bg-fg/90"
+            >
+              Send
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 }

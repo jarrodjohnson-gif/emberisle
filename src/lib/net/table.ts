@@ -52,9 +52,12 @@ export interface Reaction {
 export type Bag = Partial<Record<Resource, number>>;
 
 export interface TableEvents {
-  welcome(msg: { code: string; you: string; host: boolean; chat?: ChatLine[]; secret?: string }): void;
-  seats(msg: { code: string; seats: Seat[] }): void;
-  state(msg: { you: string; game: GameState; legal: Legal }): void;
+  // A watcher's welcome (docs/design/spectator.md) has `spectator: true` and no `you`, `host` or `secret`.
+  welcome(msg: { code: string; you?: string; host?: boolean; chat?: ChatLine[]; secret?: string; spectator?: true }): void;
+  // `watching`: how many spectators the table has (#347).
+  seats(msg: { code: string; seats: Seat[]; watching?: number }): void;
+  // `you` is null on a watcher's state.
+  state(msg: { you: string | null; game: GameState; legal: Legal }): void;
   rolled(msg: { dice: [number, number]; sum: number; gains: Gain[]; short: Resource[] }): void;
   chat(line: ChatLine): void;
   react(r: Reaction): void;
@@ -78,6 +81,8 @@ export interface Me {
 export interface TableClient {
   open(me: Me): void;
   join(code: string, me: Me): void;
+  // Watch a started table, read-only: hello {code, watch:true} (docs/design/spectator.md). No seat, no secret, so no redial.
+  watch(code: string): void;
   // Ask which seats a lobby holds before sitting down (docs/design/color-peek.md). Answered as `seats`.
   peek(code: string): void;
   // Sit back down in a held seat (#196): hello {code, secret} from an earlier welcome.
@@ -231,7 +236,7 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
   const handle = (msg: { type?: string; [k: string]: unknown }) => {
     switch (msg.type) {
       case "welcome": {
-        const m = msg as { code: string; you: string; host: boolean; chat?: ChatLine[]; secret?: string };
+        const m = msg as { code: string; you?: string; host?: boolean; chat?: ChatLine[]; secret?: string; spectator?: true };
         if (typeof m.secret === "string") seat = { code: m.code, secret: m.secret };
         rejoining = false;
         taken = false;
@@ -292,6 +297,7 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
   return {
     open: (me) => send({ type: "hello", ...me }),
     join: (code, me) => send({ type: "hello", code: code.toUpperCase(), ...me }),
+    watch: (code) => send({ type: "hello", code: code.toUpperCase(), watch: true }),
     peek: (code) => send({ type: "peek", code: code.toUpperCase() }),
     rejoin: (code, secret) => {
       seat = { code: code.toUpperCase(), secret };

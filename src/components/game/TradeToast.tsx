@@ -30,6 +30,8 @@ export function TradeToast() {
   const outcome = useGame((s) => s.tradeOutcome);
   const players = useGame((s) => s.state?.players);
   const localId = useGame((s) => s.localId);
+  // A watcher (docs/design/spectator.md) reads the offer and the clock, with no Yes or No.
+  const spectator = useGame((s) => s.spectator);
   const answerTrade = useGame((s) => s.answerTrade);
   const [now, setNow] = useState(() => Date.now());
   const { phone, portrait } = useViewport();
@@ -44,7 +46,7 @@ export function TradeToast() {
   }, [offer]);
 
   const me = players?.find((p) => p.id === localId);
-  if (!me || (!offer && !outcome)) return null;
+  if ((!me && !spectator) || (!offer && !outcome)) return null;
   const name = (id: string) => players?.find((p) => p.id === id)?.name ?? "Someone";
 
   let body;
@@ -60,9 +62,9 @@ export function TradeToast() {
     if (declined.includes(localId)) return null;
     const left = Math.max(0, Math.ceil((offer.until - now) / 1000));
     const asker = offer.from === localId;
-    const short = RESOURCES.filter((r) => (offer.want[r] ?? 0) > me.resources[r]);
-    answering = !asker;
-    why = short.length ? `Need ${short.map((r) => `${offer.want[r]! - me.resources[r]} more ${r}`).join(", ")}` : null;
+    const short = me ? RESOURCES.filter((r) => (offer.want[r] ?? 0) > me.resources[r]) : [];
+    answering = !asker && !spectator;
+    why = me && short.length ? `Need ${short.map((r) => `${offer.want[r]! - me.resources[r]} more ${r}`).join(", ")}` : null;
     body = (
       <>
         <div className="flex items-baseline justify-between gap-3">
@@ -74,16 +76,16 @@ export function TradeToast() {
             {left} s
           </span>
         </div>
-        {asker ? null : (
+        {answering ? (
           <p aria-live="polite" className="sr-only" data-testid="trade-countdown-live">
             {left === 5 ? "5 seconds left" : ""}
           </p>
-        )}
+        ) : null}
         {asker ? (
           <p role="status" className="mt-1 text-xs text-zinc-600">
             {declined.length ? declinedLine(declined.map(name)) : "Waiting…"}
           </p>
-        ) : (
+        ) : !answering ? null : (
           <>
             <div className="mt-2 flex items-center gap-2">
               {/* aria-disabled, not disabled, so Tab still reaches Yes and reads the reason (#285); the click refuses instead. */}
