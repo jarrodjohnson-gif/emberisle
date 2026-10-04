@@ -311,7 +311,7 @@ try {
     await still.keyboard.press("Enter");
     await still.waitForFunction((s) => window.__emberisle.getState().state.seq > s, seq, { timeout: STEP_MS });
   }
-  await still.waitForFunction(() => window.__isle.marks.children.some((m) => m.userData.kind === "vertex" && m.userData.baseGlow !== undefined), null, { timeout: STEP_MS });
+  await still.waitForFunction(() => window.__isle?.marks.children.some((m) => m.userData.kind === "vertex" && m.userData.baseGlow !== undefined), null, { timeout: STEP_MS });
   const calm = await observe(false, still);
   console.log(`reduced motion: ${calm.n} marks, glow swing ${calm.swing.toFixed(2)} over ${calm.frames} frames`);
   if (calm.swing !== 0 || calm.n !== liveN) throw new Error(`marks move under reduced motion: ${JSON.stringify(calm)}`);

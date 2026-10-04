@@ -3,7 +3,6 @@
 
 // Half-extent of the island plus its docks, padded 8%, in world units (HEX_SIZE 1.12).
 export const ISLE_HALF = { x: 6.0, z: 5.6 };
-export const TARGET = { x: 0.15, y: 0.05, z: 0 };
 
 export type Insets = { top: number; right: number; bottom: number; left: number };
 
@@ -24,13 +23,23 @@ export function hudInsets(cssW: number, cssH: number, coarse: boolean, safe: Par
 
 export type OrthoFit = { left: number; right: number; top: number; bottom: number; x: number; z: number };
 
+// The overhead camera leans this far off straight down, toward the player (#135, polish.md "The board look target"):
+// the slabs show a side and the trees a silhouette, like a board seen by someone leaning over the table, while a
+// token still reads as a disc. It looks at cap level; the tallest prop (a pine) rises LEAN_RISE above that, and the
+// far row's tree tops lift up-screen by that much times sin(lean), so the frustum keeps the room.
+export const OVERHEAD_LEAN = (25 * Math.PI) / 180;
+export const CAP_LEVEL = 0.35;
+const LEAN_RISE = 1.15;
+
 // Overhead frustum sized to the island inside the hole, then the camera is shifted so the world center lands
-// at the hole center. Screen-up is -Z, screen-right is +X (the camera's up vector is (0,0,-1)).
-export function fitOrtho(cssW: number, cssH: number, insets: Insets): OrthoFit {
+// at the hole center. Screen-up is -Z, screen-right is +X. `lean` is radians off straight down; it shortens the
+// island's screen depth by cos(lean).
+export function fitOrtho(cssW: number, cssH: number, insets: Insets, lean = 0): OrthoFit {
   const holeW = Math.max(1, cssW - insets.left - insets.right);
   const holeH = Math.max(1, cssH - insets.top - insets.bottom);
   const aspect = holeW / holeH;
-  const { x: halfX, z: halfZ } = ISLE_HALF;
+  const halfX = ISLE_HALF.x;
+  const halfZ = ISLE_HALF.z * Math.cos(lean) + LEAN_RISE * Math.sin(lean);
   // The frustum spans the whole canvas, so scale the hole's world size up by canvas / hole.
   let hw: number;
   let hh: number;
