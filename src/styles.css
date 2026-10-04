@@ -64,10 +64,17 @@ body {
   100% { opacity: 0; transform: translateY(-6px); }
 }
 
+/* #436: the hand card's gain/loss cue is a 2 px white ring that pulses once; the fill carries the resource. */
+@keyframes resource-ring {
+  0% { box-shadow: 0 0 0 2px rgba(255, 255, 255, 1); opacity: 1; }
+  100% { box-shadow: 0 0 0 2px rgba(255, 255, 255, 0); opacity: 0; }
+}
+
 /* The animations are inline or utility styles, so the override has to out-rank them (#253). */
 @media (prefers-reduced-motion: reduce) {
   [style*="emote-float"],
   [style*="resource-flash"],
+  [style*="resource-ring"],
   [class*="turn-fade"] {
     animation-duration: 1ms !important;
   }
