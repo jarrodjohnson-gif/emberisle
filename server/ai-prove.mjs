@@ -307,11 +307,13 @@ const CLAY_FOR_ORE = { from: "p1", give: { clay: 1 }, want: { ore: 1 } };
   console.log("trade: says No when it cannot pay, Yes to the same ask once it can");
 }
 
-// No: an ask that takes a card its outpost needs, and one that gives it fewer cards than it pays.
+// No: an ask that takes a card its outpost needs, one that gives it fewer cards than it pays, and one
+// that leaves it exactly as short (a grain it already has, still missing the clay).
 {
   const g = tradePosition({ timber: 1, wool: 1, grain: 1, ore: 2 });
   if (shouldAcceptTrade(g, "p0", { from: "p1", give: { ore: 1 }, want: { grain: 1 } })) fail("trade: gave away a card its outpost needs");
   if (shouldAcceptTrade(g, "p0", { from: "p1", give: { clay: 1 }, want: { ore: 2 } })) fail("trade: paid two for one");
+  if (shouldAcceptTrade(g, "p0", { from: "p1", give: { grain: 1 }, want: { ore: 1 } })) fail("trade: still one clay short, said Yes");
   console.log("trade: says No when it brings the outpost no closer, or pays more cards than it gets");
 }
 
