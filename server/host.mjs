@@ -391,7 +391,10 @@ function deadlineOf(room) {
 
 function pushState(room) {
   armTurns(room);
-  const turnDeadline = deadlineOf(room);
+  // The soonest armed window, and whose it is, so every HUD can count it down (#345). `serverNow` lets a client
+  // whose clock is off still land on the host's moment.
+  const soonest = room.seats.reduce((d, s) => (s.turnDeadline && (!d || s.turnDeadline < d.turnDeadline) ? s : d), null);
+  const turnDeadline = soonest?.turnDeadline ?? null;
   save(room);
   for (const seat of room.seats) {
     if (!seat.ws) continue;
@@ -401,10 +404,12 @@ function pushState(room) {
       game: viewFor(room.game, seat.pid),
       legal: legalFor(room.game, seat.pid),
       turnDeadline,
+      turnPlayer: soonest?.pid ?? null,
+      serverNow: Date.now(),
     });
   }
   if (!room.watchers.size) return;
-  const raw = JSON.stringify({ type: "state", you: null, game: watchView(room.game), legal: legalFor(room.game, null), turnDeadline });
+  const raw = JSON.stringify({ type: "state", you: null, game: watchView(room.game), legal: legalFor(room.game, null), turnDeadline, turnPlayer: soonest?.pid ?? null, serverNow: Date.now() });
   for (const ws of room.watchers) if (ws.readyState === ws.OPEN) ws.send(raw);
 }
 
@@ -646,8 +651,8 @@ function watch(ws, msg) {
   ws.watch = room;
   send(ws, { type: "welcome", code: room.code, spectator: true, chat: room.chat });
   watchersChanged(room, "Someone is watching.");
-  const turnDeadline = deadlineOf(room);
-  send(ws, { type: "state", you: null, game: watchView(room.game), legal: legalFor(room.game, null), turnDeadline });
+  const soonest = room.seats.reduce((d, s) => (s.turnDeadline && (!d || s.turnDeadline < d.turnDeadline) ? s : d), null);
+  send(ws, { type: "state", you: null, game: watchView(room.game), legal: legalFor(room.game, null), turnDeadline: deadlineOf(room), turnPlayer: soonest?.pid ?? null, serverNow: Date.now() });
 }
 
 function startGame(ws, room) {

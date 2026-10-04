@@ -232,7 +232,7 @@ try {
   for (const t of [B, C]) {
     const v = vs[tabs.indexOf(t)];
     if (!v.toast.includes(line)) throw new Error(`${t.name} toast: "${v.toast}"`);
-    const secs = Number(v.toast.match(/(\d+) s/)?.[1] ?? -1);
+    const secs = Number((await t.page.getByTestId("trade-countdown").textContent()).replace(/\D/g, ""));
     if (secs < 1 || secs > 20) throw new Error(`${t.name} toast has no countdown: "${v.toast}"`);
   }
   if (!vs[i].toast.includes(`You offer 1 ${give} for 1 ${want}`) || !vs[i].toast.includes("Waiting")) throw new Error(`asker toast: "${vs[i].toast}"`);
