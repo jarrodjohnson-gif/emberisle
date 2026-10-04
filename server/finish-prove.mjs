@@ -1,7 +1,8 @@
 // #319: three src/lib/net/table.ts clients play a hosted game to the win. Each seat runs the practice bot on its
 // own view, so what the host does only at the end gets exercised over sockets: the whole game goes out once it is
 // over (viewFor's reveal), the host refuses every action after the win, and the winner line reaches every seat.
-// #266: the second game is the first table's rematch (`again`), with a watcher who stays through it.
+// #266: the second game is the first table's rematch (`again`), with a watcher who stays through it. The first game
+// seats four; one closes at the win and the rematch lets it go, picture and all.
 import { spawn } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -67,7 +68,10 @@ function player(name) {
     wake();
   };
   p.t = connectTable(url, {
-    welcome: on((m) => (p.code = m.code)),
+    welcome: on((m) => {
+      p.code = m.code;
+      p.secret = m.secret;
+    }),
     seats: on((m) => (p.seats = m.seats)),
     state: on((m) => {
       const g = m.game;
@@ -89,18 +93,27 @@ function player(name) {
   return p;
 }
 
+// Each seat uploads a picture with its own secret (#369), so a seat let go by the rematch can be checked for a leak.
+const jpeg = (size) => Buffer.concat([Buffer.from([0xff, 0xd8, 0xff]), Buffer.alloc(size - 3)]);
+const http = (p, init) => fetch(`http://127.0.0.1:${port}${p}`, init);
+
 async function sitDown() {
-  const [a, b, c] = [player("Ember"), player("Tide"), player("Pine")];
-  a.t.open({ name: "Ember" });
+  const all = ["Ember", "Tide", "Pine", "Dune"].map(player);
+  const [a, ...rest] = all;
+  a.t.open({ name: a.name });
   await until(() => a.code, "welcome");
-  b.t.join(a.code, { name: "Tide" });
-  c.t.join(a.code, { name: "Pine" });
-  await until(() => b.code && c.code, "joins");
-  for (const p of [a, b, c]) p.t.ready(true);
-  await until(() => a.seats?.length === 3 && a.seats.every((s) => s.ready), "all ready");
+  for (const p of rest) p.t.join(a.code, { name: p.name });
+  await until(() => rest.every((p) => p.code), "joins");
+  for (const p of all) {
+    const r = await http("/avatars", { method: "POST", headers: { "x-seat-secret": p.secret }, body: jpeg(600) });
+    if (r.status !== 200) fail(`${p.name}'s picture upload`, r.status);
+    p.pic = (await r.json()).url;
+  }
+  for (const p of all) p.t.ready(true);
+  await until(() => a.seats?.length === 4 && a.seats.every((s) => s.ready), "all ready");
   a.t.start();
-  await until(() => a.state && b.state && c.state, "start");
-  return [a, b, c];
+  await until(() => all.every((p) => p.state), "start");
+  return all;
 }
 
 // Sends one action for `p` and waits for the host's answer: a new state at every seat, or an error at this one.
@@ -191,7 +204,7 @@ async function checkRefused(all, n) {
   }
   const chats = all.map((x) => x.chats.length);
   for (const p of all) p.t.say(`gg from ${p.name}`);
-  await until(() => all.every((x, i) => x.chats.length >= chats[i] + 3), `${where}: chat reaching every seat after the win`);
+  await until(() => all.every((x, i) => x.chats.length >= chats[i] + all.length), `${where}: chat reaching every seat after the win`);
   for (const [i, p] of all.entries()) {
     const texts = p.chats.slice(chats[i]).map((c) => c.text).sort();
     const want = all.map((x) => `gg from ${x.name}`).sort();
@@ -232,11 +245,11 @@ async function againRefused(all, p, what) {
 
 // #266: the host's `again` deals a new island at the same table. The last winner is p0 and places first; the others
 // roll off for the rest of the order (Jarrod, 2026-10-03). A watcher keeps watching.
-async function rematch(all, w) {
+async function rematch(all, w, gone) {
   const [hostSeat, guest] = all;
   const final = all[0].state;
   const winnerName = final.players.find((q) => q.id === final.winner).name;
-  const seatIds = hostSeat.seats.map((s) => s.id).join();
+  const seatIds = hostSeat.seats.filter((s) => s.name !== gone.name).map((s) => s.id).join();
   const colors = Object.fromEntries(hostSeat.seats.map((s) => [s.name, s.color]));
   const code = hostSeat.code;
   const refused = await againRefused(all, guest, "guest again");
@@ -260,6 +273,10 @@ async function rematch(all, w) {
     if (p.legal.actions.includes("roll") !== (p.you === g.current)) fail(`roll-off legal at ${p.name}`, p.legal);
     p.overPushes = 0;
   }
+  // The seat with no socket is let go, and its picture with it (#369); a kept seat's picture stays.
+  const goneStatus = (await http(gone.pic)).status;
+  const keptStatus = (await http(hostSeat.pic)).status;
+  if (goneStatus !== 404 || keptStatus !== 200) fail("pictures after the rematch", { gone: goneStatus, kept: keptStatus });
   const saved = JSON.parse(readFileSync(path.join(ROOMS_DIR, `${code}.json`), "utf8")).game;
   if (saved.seed === final.seed || saved.phase !== "rollOff" || saved.players[0].name !== winnerName) fail("the rematch on disk", { seed: saved.seed, old: final.seed, phase: saved.phase });
   const wg = w.state;
@@ -288,7 +305,7 @@ async function rematch(all, w) {
     fail("the winner places first, the rest by their roll", { phase: g.phase, current: g.current, players: g.players.map((q) => q.name), rolls: g.rollOff.rolls });
   }
   if (g.log.at(-1) !== `${winnerName} places first, then ${rest[0].name} and ${rest[1].name}.`) fail("the order line", g.log.at(-1));
-  console.log(`rematch: same code ${code} and seats ${seatIds}, new seed, ${winnerName} is p0 and places first, then ${rest.map((q) => q.name).join(" and ")} by roll; guest, watcher and second again refused; the watcher stayed`);
+  console.log(`rematch: same code ${code}, ${gone.name} (closed) let go and its picture 404, seats ${seatIds}, new seed, ${winnerName} is p0 and places first, then ${rest.map((q) => q.name).join(" and ")} by roll; guest, watcher and second again refused; the watcher stayed`);
 }
 
 // #266: fewer than 3 seats with a socket is refused, and nothing changes.
@@ -305,13 +322,20 @@ async function shortTable(all) {
 }
 
 const started = Date.now();
-const all = await sitDown();
+let all = await sitDown();
 const early = await againRefused(all, all[0], "again before the end");
 if (early !== "Game is not over.") fail("again before the end", early);
 const w = watcher(all[0].code);
 await until(() => w.state, "the watcher's first state");
 for (let n = 1; n <= GAMES; n++) {
-  if (n > 1) await rematch(all, w);
+  if (n > 1) {
+    // A seat that is neither the host nor the winner closes at the win; the other three play the rematch.
+    const gone = all.find((p, i) => i > 0 && p.you !== all[0].state.winner);
+    gone.t.close();
+    await until(() => all[0].seats.find((s) => s.name === gone.name)?.away, `${gone.name} held`);
+    all = all.filter((p) => p !== gone);
+    await rematch(all, w, gone);
+  }
   const actions = await playToTheEnd(all, n);
   const { name, vp } = checkReveal(all, n);
   await checkRefused(all, n);

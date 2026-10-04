@@ -683,6 +683,7 @@ function rematch(ws, room) {
     clearTimeout(seat.graceTimer);
     clearTimeout(seat.holdTimer);
     disarmTurn(seat);
+    forgetAvatar(seat);
     seat.ws = null;
   }
   room.seats = live;
