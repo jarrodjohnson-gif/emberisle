@@ -125,6 +125,28 @@ const glowing = (page) =>
 const split = (sum) => [Math.max(1, sum - 6), sum - Math.max(1, sum - 6)];
 const layout = (page) => page.evaluate(() => window.__emberisle.getState().state.hexes.filter((h) => h.pip && h.terrain !== "waste").map((h) => ({ id: h.id, pip: h.pip, terrain: h.terrain })));
 
+// What a roll of `sum` would pay on the table as it stands, with the given bank and wayfarer, asked of the rules on a copy (nothing is
+// dispatched). A scenario is only worth running when the hexes it is about really pay; a crowded token can drain a full bank by itself.
+const payers = (page, sum, bank, robber) =>
+  page.evaluate(({ sum, bank, robber }) => {
+    const R = window.__rules;
+    const st = structuredClone(window.__emberisle.getState().state);
+    st.phase = "roll";
+    st.dice = null;
+    st.bank = bank;
+    if (robber) {
+      st.robberHex = robber;
+      for (const h of st.hexes) h.blocked = h.id === robber;
+    }
+    const hand = (x) => Object.fromEntries(["timber", "clay", "wool", "grain", "ore"].map((r) => [r, x.players.reduce((n, p) => n + p.resources[r], 0)]));
+    const h0 = hand(st);
+    window.__queue.push(Math.max(1, sum - 6) - 1, sum - Math.max(1, sum - 6) - 1);
+    const after = R.applyAction(st, st.current, { type: "roll" }).state;
+    const h1 = hand(after);
+    const gained = Object.keys(h0).filter((r) => h1[r] > h0[r]);
+    return { short: R.bankShort(after), paid: after.hexes.filter((h) => h.pip === sum && !h.blocked && gained.includes(h.terrain)).map((h) => h.id) };
+  }, { sum, bank, robber });
+
 function check(label, got, exp, reduced) {
   const same = got.ids.length === exp.expected.length && exp.expected.every((id) => got.ids.includes(id));
   console.log(`${label}: sum ${exp.sum}, gained [${exp.gained}], short [${exp.short}], expect ${exp.expected.length} glow, saw ${got.ids.length}, ${got.frames} frames, peak ${got.peak.toFixed(2)}, in-between ${got.mid}`);
@@ -151,10 +173,20 @@ try {
     if (!reduced) {
       // 2. A short bank: a token shared by two resources, the bank holds one of the first, and two seats are owed it.
       const at = (n) => hexes.filter((h) => h.pip === n);
-      const sum2 = sums.find((n) => new Set(at(n).map((h) => h.terrain)).size >= 2);
-      if (!sum2) throw new Error("no token is shared by two resources on this island");
-      const short = at(sum2)[0].terrain;
-      const bank = { timber: 19, clay: 19, wool: 19, grain: 19, ore: 19, [short]: 1 };
+      // The first token and short resource where the roll really is short of that resource and the other hexes really pay.
+      let sum2, short, bank;
+      for (const n of sums) {
+        const terrains = [...new Set(at(n).map((h) => h.terrain))];
+        if (terrains.length < 2) continue;
+        for (const t of terrains) {
+          const b = { timber: 19, clay: 19, wool: 19, grain: 19, ore: 19, [t]: 1 };
+          const p = await payers(page, n, b);
+          if (p.short.includes(t) && p.paid.length) [sum2, short, bank] = [n, t, b];
+          if (sum2) break;
+        }
+        if (sum2) break;
+      }
+      if (!sum2) throw new Error("no token is shared by two resources with the other paying while the bank is short");
       const e2 = await roll(page, { dice: split(sum2), bank });
       await settled(page);
       const g2 = await glowing(page);
@@ -164,10 +196,17 @@ try {
       if (g2.ids.some((id) => shortIds.includes(id))) throw new Error(`a ${short} hex glowed on a roll the bank could not pay`);
       if (!e2.expected.length) throw new Error("bank-short roll paid nothing else; the scenario proves too little");
       // 3. The wayfarer on a hex whose token is rolled: that hex stays dark.
-      const sum3 = sums.find((n) => at(n).length >= 2);
-      if (!sum3) throw new Error("no token is on two hexes of this island");
-      const under = at(sum3)[0].id;
+      // The first token on two hexes where, with the wayfarer on the first, the other hex(es) still pay from a full bank.
       const full = { timber: 19, clay: 19, wool: 19, grain: 19, ore: 19 };
+      let sum3;
+      for (const n of sums) {
+        if (at(n).length >= 2 && (await payers(page, n, full, at(n)[0].id)).paid.length) {
+          sum3 = n;
+          break;
+        }
+      }
+      if (!sum3) throw new Error("no token is on two hexes where the one the wayfarer is not on pays");
+      const under = at(sum3)[0].id;
       const e3 = await roll(page, { dice: split(sum3), robber: under, bank: full });
       await settled(page, 2);
       const g3 = await glowing(page);

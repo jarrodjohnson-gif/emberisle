@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- The Emberisle mark: an ember on an island hex in the sea, on stone. Polish tokens (docs/design/polish.md).
+       scripts/make-icons.mjs renders the PNGs from this file; #mark sits inside the maskable safe circle (r 204). -->
+  <rect id="bg" width="512" height="512" fill="#efeae0"/>
+  <g id="mark">
+    <polygon points="256,76 412,166 412,346 256,436 100,346 100,166" fill="#2a8f8a"/>
+    <polygon points="256,126 368,191 368,321 256,386 144,321 144,191" fill="#8fbf5a"/>
+    <path d="M256 150 C302 206 334 248 322 302 C312 346 284 368 256 368 C228 368 200 346 190 302 C178 248 210 206 256 150 Z" fill="#c45c3e"/>
+    <path d="M256 236 C280 266 296 290 288 318 C282 340 270 350 256 350 C242 350 230 340 224 318 C216 290 232 266 256 236 Z" fill="#e0b13a"/>
+  </g>
+</svg>
