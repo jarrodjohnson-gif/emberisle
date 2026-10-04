@@ -657,29 +657,43 @@ function PlaceChip() {
 // Year of plenty: two resources from the bank (rules.ts playPlenty).
 function PlentyForm() {
   const dispatch = useGame((s) => s.dispatch);
+  const bank = useGame((s) => s.state!.bank);
+  // The bank cannot pay what it has run out of (#360), so those are greyed out; rules.ts refuses them too.
+  const empty = RESOURCES.filter((r) => bank[r] <= 0);
+  const why = empty.length ? `The bank has no ${empty.join(" or ")}.` : undefined;
+  // Controlled, so a pick the bank empties while the form is open falls back to the first card it still has.
+  const [pick, setPick] = useState<[Resource, Resource]>(["timber", "timber"]);
+  const first = RESOURCES.find((r) => bank[r] > 0);
+  const chosen = pick.map((r) => (bank[r] > 0 ? r : first));
   return (
     <form
       className="flex items-center gap-1"
       onSubmit={(e) => {
         e.preventDefault();
-        const fd = new FormData(e.currentTarget);
-        const a = fd.get("plentyA") as Resource;
-        const b = fd.get("plentyB") as Resource;
-        if (a && b) dispatch({ type: "playPlenty", resources: [a, b] });
+        if (first) dispatch({ type: "playPlenty", resources: chosen as Resource[] });
       }}
     >
-      {["plentyA", "plentyB"].map((name) => (
-        <select key={name} name={name} aria-label={name === "plentyA" ? "First plenty resource" : "Second plenty resource"} className="h-9 rounded-[8px] border border-white/50 bg-raised px-2 text-sm">
+      {[0, 1].map((i) => (
+        <select
+          key={i}
+          name={i === 0 ? "plentyA" : "plentyB"}
+          aria-label={i === 0 ? "First plenty resource" : "Second plenty resource"}
+          aria-description={why}
+          value={chosen[i] ?? ""}
+          onChange={(e) => setPick((p) => (i === 0 ? [e.target.value as Resource, p[1]] : [p[0], e.target.value as Resource]))}
+          className="h-9 rounded-[8px] border border-white/50 bg-raised px-2 text-sm"
+        >
           {RESOURCES.map((r) => (
-            <option key={r} value={r}>
-              {RESOURCE_LABEL[r]}
+            <option key={r} value={r} disabled={empty.includes(r)} aria-disabled={empty.includes(r) || undefined}>
+              {empty.includes(r) ? `${RESOURCE_LABEL[r]} (bank empty)` : RESOURCE_LABEL[r]}
             </option>
           ))}
         </select>
       ))}
-      <Button size="sm" variant="secondary" type="submit">
+      <Button size="sm" variant="secondary" type="submit" disabled={!first}>
         Plenty
       </Button>
+      {first ? null : <span className="text-xs">The bank is empty.</span>}
     </form>
   );
 }

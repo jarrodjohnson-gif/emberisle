@@ -599,6 +599,11 @@ export function applyAction(prev: GameState, actor: string, action: Action): { s
       if (!Array.isArray(action.resources) || action.resources.length !== 2 || !action.resources.every(validRes)) {
         return { state: prev, error: "Choose two resources." };
       }
+      // The bank must pay every card named (#360); the HUD greys out what it lacks, this is the backstop.
+      for (const r of action.resources) {
+        const named = action.resources.filter((x) => x === r).length;
+        if (state.bank[r] < named) return { state: prev, error: state.bank[r] === 0 ? `The bank has no ${r}.` : `The bank has only ${state.bank[r]} ${r}.` };
+      }
       me.hidden.plenty -= 1;
       state.playedCard = true;
       for (const r of action.resources) give(state, me, r, 1);
