@@ -1,5 +1,5 @@
 // The table chat dock, the shared chat box, and floating reactions. Design: docs/design/chat.md.
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { MessageSquare, Minus, Smile } from "lucide-react";
 import { CopyFallback, useCopy } from "@/components/game/CopyText";
 import { EMOTES } from "@/components/game/emotes";
@@ -13,6 +13,7 @@ export { ReactionFloats } from "@/components/game/Reactions";
 
 const PRESETS = ["gg", "nice roll", "your turn", "one sec", "ty"];
 const INPUT_ID = "chat-input";
+const HUD_STACK = ".pointer-events-none.absolute.bottom-0.inset-x-0.z-10 > .relative > .overflow-y-auto";
 
 // Text renders only as React children. The mention is found with split() on the literal "@name", never a regex.
 function Mention({ text, name }: { text: string; name: string }) {
@@ -256,6 +257,42 @@ function Preview({ above }: { above?: boolean }) {
   );
 }
 
+function useHudStackTop(enabled: boolean) {
+  const [top, setTop] = useState<number | null>(null);
+
+  useLayoutEffect(() => {
+    if (!enabled) {
+      setTop(null);
+      return;
+    }
+
+    let stack: HTMLElement | null = null;
+    let observer: ResizeObserver | null = null;
+    const update = () => {
+      const anchor = document.querySelector<HTMLElement>('[data-testid="turn-banner"], [data-testid="landscape-hint"]');
+      const next = anchor?.parentElement ?? document.querySelector<HTMLElement>(HUD_STACK) ?? stack;
+      if (next !== stack) {
+        if (stack) observer?.unobserve(stack);
+        stack = next;
+        if (stack) observer?.observe(stack);
+      }
+      if (!stack) return;
+      const nextTop = stack.getBoundingClientRect().top;
+      setTop((previous) => previous !== null && Math.abs(previous - nextTop) < 0.1 ? previous : nextTop);
+    };
+    observer = new ResizeObserver(update);
+
+    update();
+    window.addEventListener("resize", update);
+    return () => {
+      window.removeEventListener("resize", update);
+      observer?.disconnect();
+    };
+  }, [enabled]);
+
+  return top;
+}
+
 export function ChatDock() {
   const mode = useGame((s) => s.mode);
   const open = useGame((s) => s.chatOpen);
@@ -263,6 +300,7 @@ export function ChatDock() {
   const setOpen = useGame((s) => s.setChatOpen);
   const { phone, portrait } = useViewport();
   const focusNext = useRef(false);
+  const stackTop = useHudStackTop(phone && portrait && !open);
 
   // A remembered open dock must not cover the hand bar when Play starts on a phone. The stored value stays for desktop.
   useEffect(() => {
@@ -327,12 +365,13 @@ export function ChatDock() {
 
   return (
     <>
-      <QuickReactions />
+      <QuickReactions stackTop={phone && portrait && !open ? stackTop : null} />
       <div
         className={cn(
           "absolute right-3 z-20 flex items-end",
-          phone ? cn("flex-col-reverse", portrait ? "bottom-[196px]" : "bottom-[184px]") : "top-16 flex-col",
+          phone ? cn("flex-col-reverse", !portrait && "bottom-[184px]") : "top-16 flex-col",
         )}
+        style={phone && portrait ? { bottom: stackTop === null ? "12px" : `calc(100dvh - ${stackTop}px + 12px)` } : undefined}
       >
         {open ? (
           <section

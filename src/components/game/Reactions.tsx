@@ -11,7 +11,7 @@ const COOLDOWN = 1000;
 const CONTROL =
   "flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-control bg-glass text-zinc-700 disabled:cursor-default disabled:opacity-50";
 
-export function QuickReactions() {
+export function QuickReactions({ stackTop }: { stackTop?: number | null } = {}) {
   const mode = useGame((s) => s.mode);
   const screen = useGame((s) => s.screen);
   const spectator = useGame((s) => s.spectator);
@@ -94,12 +94,14 @@ export function QuickReactions() {
             ? "right-[312px]"
             : "right-[68px]",
         phone
-          ? !chatOpen && (portrait ? "bottom-[252px]" : "bottom-[184px]")
+          ? !chatOpen && !portrait && "bottom-[184px]"
           : "top-16",
       )}
       style={
         phone && chatOpen
           ? { bottom: "calc(min(48vh, 320px) + 12px)" }
+          : phone && portraitClosed
+            ? { bottom: stackTop === null || stackTop === undefined ? "calc(100dvh - 16rem + 64px)" : `calc(100dvh - ${stackTop}px + 64px)` }
           : undefined
       }
     >
@@ -142,6 +144,7 @@ export function QuickReactions() {
           </div>
           {Object.keys(EMOTES).length ? (
             <div
+              role="group"
               className="grid max-h-32 grid-cols-6 gap-1 overflow-y-auto"
               aria-label="Image reactions"
             >

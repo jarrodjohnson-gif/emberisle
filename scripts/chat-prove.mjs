@@ -211,6 +211,13 @@ async function quickReactions(a, b, c, phone) {
     await t.page.getByRole("group", { name: "Choose a reaction" }).waitFor();
     await t.page.waitForFunction(() => !document.querySelector('#quick-reaction-picker button')?.disabled);
   };
+  await a.page.evaluate(() => window.__emberisle.getState().setBuildMode("path"));
+  await openPicker(a);
+  await a.page.keyboard.press("Escape");
+  await a.page.getByRole("group", { name: "Choose a reaction" }).waitFor({ state: "detached" });
+  check(await store(a, () => window.__emberisle.getState().buildMode === "path"), "quick reactions: first Escape closes the picker and keeps Path armed");
+  await a.page.keyboard.press("Escape");
+  check(await store(a, () => window.__emberisle.getState().buildMode === "none"), "quick reactions: second Escape disarms Path");
   for (const t of [a, phone]) {
     await t.page.getByRole("button", { name: "Quick reactions", exact: true }).waitFor();
     check(await store(t, () => !window.__emberisle.getState().chatOpen), `quick reactions: ${t.name} starts with chat closed`);
@@ -779,6 +786,59 @@ try {
   }
   const atRoll = await seen(a);
   check(atRoll.phase === "roll", `game log: setup is done, phase ${atRoll.phase}`);
+  const phoneLayout = async (t, ownTurn) => {
+    const state = await seen(t);
+    const own = state.current === state.you;
+    check(state.phase === "roll" && own === ownTurn, `chat dock: ${ownTurn ? "own" : "another seat's"} turn is available for the 390x844 stack check`);
+    if (await store(t, () => window.__emberisle.getState().chatOpen)) {
+      await t.page.getByRole("button", { name: "Minimize chat" }).click();
+    }
+    await t.page.setViewportSize({ width: 390, height: 844 });
+    const roll = t.page.getByRole("button", { name: "Roll", exact: true });
+    if (ownTurn) {
+      await roll.waitFor({ state: "visible" });
+    } else {
+      check(await roll.count() === 0, "chat dock: Roll is hidden on another seat's turn");
+    }
+    const geometry = await t.page.waitForFunction(() => {
+      const stack = document.querySelector('[data-testid="turn-banner"]')?.parentElement;
+      const persistentStack = document.querySelector(".pointer-events-none.absolute.bottom-0.inset-x-0.z-10 > .relative > .overflow-y-auto");
+      const controls = [
+        document.querySelector('button[aria-label="Quick reactions"]'),
+        document.querySelector('button[aria-label^="Open chat"]'),
+      ];
+      if (!stack || persistentStack !== stack || controls.some((control) => !control)) return null;
+      const bottom = stack.getBoundingClientRect();
+      const boxes = controls.map((control) => {
+        const r = control.getBoundingClientRect();
+        return { left: r.left, top: r.top, right: r.right, bottom: r.bottom, width: r.width, height: r.height };
+      });
+      if (!boxes.every((r) => r.bottom <= bottom.top - 7)) return null;
+      return {
+        viewport: { width: innerWidth, height: innerHeight },
+        persistentStack: persistentStack === stack,
+        stack: { left: bottom.left, top: bottom.top, right: bottom.right, bottom: bottom.bottom },
+        boxes,
+      };
+    }, null, { timeout: 5000 }).then((handle) => handle.jsonValue());
+    const clear = geometry.boxes.every((r) =>
+      r.right <= geometry.stack.left || r.left >= geometry.stack.right ||
+      r.bottom <= geometry.stack.top || r.top >= geometry.stack.bottom,
+    );
+    check(geometry.viewport.width === 390 && geometry.viewport.height === 844, "chat dock: phone layout uses the 390x844 viewport");
+    check(geometry.persistentStack, "chat dock: the hidden-banner fallback finds the persistent HUD scroller");
+    check(geometry.boxes.every((r) => r.left >= 0 && r.top >= 0 && r.right <= geometry.viewport.width && r.bottom <= geometry.viewport.height), "chat dock: both controls fit in the phone viewport");
+    check(geometry.boxes.every((r) => r.width >= 44 && r.height >= 44), `chat dock: both controls are at least 44 px at 390x844 (${geometry.boxes.map((r) => `${r.width}x${r.height}`).join(", ")})`);
+    check(clear, `chat dock: Quick reactions and Open chat clear the full bottom stack at 390x844, ${ownTurn ? "with Roll showing" : "on another seat's turn"}`);
+  };
+  const ownTab = byId[atRoll.current];
+  const otherTab = all.find((t) => t !== ownTab);
+  const originalViewports = new Map([ownTab, otherTab].map((t) => [t, t.page.viewportSize()]));
+  await phoneLayout(ownTab, true);
+  await phoneLayout(otherTab, false);
+  for (const [t, viewport] of originalViewports) {
+    if (viewport) await t.page.setViewportSize(viewport);
+  }
   await act(byId[atRoll.current], "dispatch", [{ type: "roll" }]);
   await until(async () => ((await seen(a)).dice ? true : null), "the first roll reaches Ember");
   const rowsOf = (t) => t.page.getByTestId("chat-log").getByTestId("log-row").allTextContents();
