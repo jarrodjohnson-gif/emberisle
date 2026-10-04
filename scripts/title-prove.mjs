@@ -5,7 +5,7 @@
 // - every element on the card sits inside the viewport and inside the card's own clip box, so nothing needs the card's
 //   scroll at first paint (the colour dots were clipped at 667x375);
 // - in portrait the card takes at most 60 % of the height;
-// - Watch shows only once the field holds four characters.
+// - Watch shows only once the field holds four characters, and a polite live region says "Watch available" then (#454).
 // Zero console errors. Run: npm run title-prove
 import assert from "node:assert/strict";
 import { existsSync, mkdirSync } from "node:fs";
@@ -82,10 +82,15 @@ try {
 
     const watch = page.getByRole("button", { name: "Watch", exact: true });
     assert.equal(await watch.count(), 0, `${tag}: Watch before a code`);
+    const live = page.getByTestId("watch-announce");
+    assert.equal(await live.getAttribute("aria-live"), "polite", `${tag}: Watch live region`);
+    assert.equal(await live.textContent(), "", `${tag}: live region speaks before a code`);
     await page.getByRole("textbox", { name: "Join code" }).fill("ABC");
     assert.equal(await watch.count(), 0, `${tag}: Watch at 3 characters`);
+    assert.equal(await live.textContent(), "", `${tag}: live region speaks at 3 characters`);
     await page.getByRole("textbox", { name: "Join code" }).fill("ABCD");
     await watch.waitFor();
+    assert.equal(await live.textContent(), "Watch available", `${tag}: live region says Watch appeared`);
     await page.getByRole("textbox", { name: "Join code" }).fill("");
     await page.screenshot({ path: `test-results/title-prove-${v.width}x${v.height}.png` });
 

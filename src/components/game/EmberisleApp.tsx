@@ -214,6 +214,10 @@ function Title() {
                 Watch
               </Button>
             ) : null}
+            {/* Always mounted, so the text arriving is what a screen reader hears when the Watch button appears. */}
+            <p className="sr-only" aria-live="polite" data-testid="watch-announce">
+              {showWatch ? "Watch available" : ""}
+            </p>
             {error ? (
               <p role="alert" className="text-sm text-accent-ink">
                 {error}

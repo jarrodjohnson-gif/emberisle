@@ -10,7 +10,7 @@ import { existsSync } from "node:fs";
 import { chromium } from "playwright";
 import { createServer } from "vite";
 
-const PORT = 8100;
+const PORT = Number(process.env.VITE_PORT) || 8100;
 const BOARD_MIN = 120;
 const VIEWPORTS = [
   { width: 640, height: 360 },
