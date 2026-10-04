@@ -205,7 +205,7 @@ export function Hud() {
       {/* #442: one control up top. The turn number, watcher count, How to play, sound and Leave live in the menu, whose open
           sheet rises over the z-20 chat dock (it reaches the header on a sideways phone). A watcher's badge stays out here,
           a chip and not a button, so a watcher always sees why it has no controls (docs/design/spectator.md). */}
-      <header className="pointer-events-none absolute inset-x-0 top-0 z-20 p-3 pt-[max(0.75rem,env(safe-area-inset-top))] has-[#table-menu]:z-30">
+      <header className="pointer-events-none absolute inset-x-0 top-0 z-20 p-3 pt-[max(0.75rem,env(safe-area-inset-top))] pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] has-[#table-menu]:z-30">
         <div className="pointer-events-auto flex items-center justify-end gap-2">
           {phone && !portrait ? <SeatStrip actor={actor} className="min-w-0 max-w-[34rem] flex-1" /> : null}
           {spectator ? (
@@ -220,7 +220,7 @@ export function Hud() {
       {phone && portrait ? (
         <SeatStrip
           actor={actor}
-          className="absolute inset-x-3 top-[calc(env(safe-area-inset-top)+4.25rem)] z-10"
+          className="absolute left-[max(0.75rem,env(safe-area-inset-left))] right-[max(0.75rem,env(safe-area-inset-right))] top-[calc(env(safe-area-inset-top)+4.25rem)] z-10"
         />
       ) : null}
       {phone && menuPlayer ? (
@@ -228,7 +228,7 @@ export function Hud() {
           player={menuPlayer}
           className={cn(
             "absolute z-20",
-            portrait ? "inset-x-3 top-[calc(env(safe-area-inset-top)+7.25rem)]" : "right-3 top-16 w-72",
+            portrait ? "left-[max(0.75rem,env(safe-area-inset-left))] right-[max(0.75rem,env(safe-area-inset-right))] top-[calc(env(safe-area-inset-top)+7.25rem)]" : "right-[max(0.75rem,env(safe-area-inset-right))] top-16 w-72",
           )}
         />
       ) : null}
@@ -288,7 +288,7 @@ export function Hud() {
       <Announcer />
       <RollMoment />
 
-      <div className="pointer-events-none absolute bottom-0 inset-x-0 z-10 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+      <div className="pointer-events-none absolute bottom-0 inset-x-0 z-10 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))]">
         <div className="relative mx-auto max-w-3xl">
           {/* #459: floats above the stack, so it coming and going never reflows the turn banner. */}
           {banner ? (
@@ -574,7 +574,7 @@ function PlaceChip() {
   }, [pending, confirmPlace, setPendingPlace]);
   if (!pending) return null;
   return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-[max(11rem,calc(env(safe-area-inset-bottom)+10.5rem))] z-20 flex items-center justify-end gap-3 px-3">
+    <div className="pointer-events-none absolute inset-x-0 bottom-[max(11rem,calc(env(safe-area-inset-bottom)+10.5rem))] z-20 flex items-center justify-end gap-3 pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))]">
       <button type="button" className="pointer-events-auto h-11 px-2 text-sm text-fg underline" onClick={() => setPendingPlace(null)}>
         Cancel
       </button>

@@ -44,6 +44,7 @@
     "hand-cards-prove": "node scripts/hand-cards-prove.mjs",
     "hand-hidden-prove": "node scripts/hand-hidden-prove.mjs",
     "install-prove": "node scripts/install-prove.mjs",
+    "hud-safe-area-prove": "node scripts/hud-safe-area-prove.mjs",
     "make-icons": "node scripts/make-icons.mjs",
     "board-look-prove": "node scripts/board-look-prove.mjs"
   },

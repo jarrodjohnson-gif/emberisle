@@ -122,7 +122,7 @@ export function TradeToast() {
         phone && portrait
           ? "inset-x-3 top-[calc(env(safe-area-inset-top)+7.5rem)]"
           : phone
-            ? "left-3 right-16 top-16"
+            ? "left-[max(0.75rem,env(safe-area-inset-left))] right-[calc(max(0.75rem,env(safe-area-inset-right))+3.25rem)] top-16"
             : "left-3 right-16 top-16 md:left-[15.5rem] lg:inset-x-3 lg:justify-center",
       )}
     >
