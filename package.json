@@ -17,6 +17,7 @@
     "wayfarer-prove": "node scripts/wayfarer-prove.mjs",
     "trade-prove": "node scripts/trade-prove.mjs",
     "pieces-prove": "node --import ./server/register.mjs scripts/pieces-prove.mjs",
+    "watch-ui-prove": "node --import ./server/register.mjs scripts/watch-ui-prove.mjs",
     "tokens-prove": "node scripts/tokens-prove.mjs",
     "idle-prove": "node scripts/idle-prove.mjs",
     "keyboard-place-prove": "node scripts/keyboard-place-prove.mjs",
