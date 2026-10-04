@@ -31,6 +31,13 @@ body,
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
+/* #468: the page itself never scrolls or rubber-bands behind the canvas, in a tab or installed; only cards and sheets scroll. */
+html,
+body {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
 /* A reaction rises about 12 px over 2 s and fades in its last 0.5 s (docs/design/chat.md "Reactions"). */
 @keyframes emote-float {
   0% { opacity: 1; transform: translateY(0); }

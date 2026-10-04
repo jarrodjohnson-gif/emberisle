@@ -14,7 +14,7 @@ import path from "node:path";
 import { chromium } from "playwright";
 import { createServer } from "vite";
 
-const PORT = 8097;
+const PORT = Number(process.env.VITE_PORT) || 8097;
 const RES = ["timber", "clay", "wool", "grain", "ore"];
 
 // Rooms go to a temp folder, dropped on exit, so the real host never restores this proof's tables (#207).
@@ -219,6 +219,14 @@ try {
     if (!f.inDialog) throw new Error(`Shift+Tab ${n + 1} left the trade dialog for "${f.label}"`);
   }
   if (new Set(visited).size < 3) throw new Error(`Tab did not cycle through the dialog: ${visited.join(" > ")}`);
+  // A piece placed just before (the last setup path, or one pushed by another seat) knocks when it lands, up to 320 ms
+  // later (#438, LAND_MS). Let those knocks play out so only the Escape's own sound is measured.
+  for (let quiet = 0, seen = -1; quiet < 600; ) {
+    const n = (await A.page.evaluate(() => window.__plays)).length;
+    quiet = n === seen ? quiet + 100 : 0;
+    seen = n;
+    await new Promise((r) => setTimeout(r, 100));
+  }
   const playsBefore = (await A.page.evaluate(() => window.__plays)).length;
   await A.page.keyboard.press("Escape");
   await dialog.waitFor({ state: "detached", timeout: 5_000 });
