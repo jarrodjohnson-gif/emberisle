@@ -52,8 +52,10 @@ an armed-build banner); narrower chips that touch a side the same way are a rail
 canvas (the seat cards, an open chat), so a lone chat button is not one. Floating chips and overlays that cover nearly
 everything (a sheet, a backdrop) count for nothing. The island keeps 12 px from the chrome, or 12 px plus the safe area
 from a bare edge. The hole is re-measured on the first frame after a view or state change (React has committed the HUD by
-then), when the marks change (an armed build swaps the phase bar) and on a window resize, never on HUD housekeeping
-alone: a timed notice leaving the phase bar, chat previews or the Place chip appearing do not move the camera, so the board moves with the game and an idle board idles at 12 fps (#331,
+then), when the marks change (an armed build swaps the phase bar), when the player opens or closes the chat dock or
+the trade sheet (`IslandCanvas` calls `remeasure()`), when focus enters or leaves the chrome (the keyboard PlaceList
+shows while focused) and on a window resize, never on HUD housekeeping alone: a timed notice leaving the phase bar,
+chat previews or the Place chip appearing do not move the camera, so the board moves with the game and an idle board idles at 12 fps (#331,
 `idle-prove`). A changed hole glides the frustum and the look-at point over 280 ms and leaves the eye where the player put
 it. `hudInsets` (the old table) now serves only the free camera's dolly limit on the title, where there is no HUD.
 

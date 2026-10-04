@@ -268,6 +268,9 @@ export class IsleRenderer {
     canvas.addEventListener("pointercancel", this.onCancel);
     window.addEventListener("resize", this.resize);
     window.addEventListener("keydown", this.onKey);
+    // Focus moving into or out of the chrome (the keyboard PlaceList shows while focused) changes the hole.
+    canvas.parentElement?.addEventListener("focusin", this.remeasure);
+    canvas.parentElement?.addEventListener("focusout", this.remeasure);
     this.resize();
     this.loadTextures();
     this.clock.connect(document);
@@ -465,6 +468,8 @@ export class IsleRenderer {
     this.calmMq?.removeEventListener("change", this.onCalm);
     window.removeEventListener("resize", this.resize);
     window.removeEventListener("keydown", this.onKey);
+    this.renderer.domElement.parentElement?.removeEventListener("focusin", this.remeasure);
+    this.renderer.domElement.parentElement?.removeEventListener("focusout", this.remeasure);
     this.renderer.domElement.removeEventListener("pointerdown", this.onDown);
     this.renderer.domElement.removeEventListener("pointerup", this.onUp);
     this.renderer.domElement.removeEventListener("pointermove", this.onMove);
@@ -513,6 +518,13 @@ export class IsleRenderer {
     this.composer?.setSize(w, h);
     this.ssao?.setSize(w, h);
     this.refit(true);
+  };
+
+  // The player changed the chrome without the game moving (opened the chat or a sheet, focused the PlaceList): measure the
+  // hole again on the next frame. Cheap enough to call on every such change; a hole that did not change refits nothing.
+  remeasure = () => {
+    this.refitDue = true;
+    this.wake();
   };
 
   // Fit the overhead view to the hole the HUD leaves now. The first fit of a view lands at home; a later change of hole
@@ -1016,6 +1028,11 @@ function solidRects(shell: Element, canvas: Element): Rect[] {
     for (const { r } of kids) {
       if (!r) continue;
       u = u ? { left: Math.min(u.left, r.left), top: Math.min(u.top, r.top), right: Math.max(u.right, r.right), bottom: Math.max(u.bottom, r.bottom) } : r;
+    }
+    // A pointer-taking element whose parts all let taps through is still itself a target: its own box.
+    if (!none && !u) {
+      const r = el.getBoundingClientRect();
+      u = { left: r.left - base.left, top: r.top - base.top, right: r.right - base.left, bottom: r.bottom - base.top };
     }
     return { r: u, porous: true };
   };

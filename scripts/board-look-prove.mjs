@@ -12,7 +12,8 @@
 //   Home (desktop) and a double click or double tap on empty board glide back to the fitted view; a click on the corner
 //   still places afterwards; under reduced motion Home is instant; mid-game with an armed path the token size is read and
 //   reported (not gated: the main HUD leaves it under 24 px, #135's call); three long chat previews beside the dock button
-//   do not count as a rail or move the camera.
+//   do not count as a rail or move the camera; at 1024x768 online, opening the chat and focusing the keyboard PlaceList
+//   (no state change) each refit the island clear of the rail they make, and closing or blurring refits it back.
 // Zero console errors. Saves test-results/board-look-{title,play}-<size>.png. Port from VITE_PORT, default 8112.
 import { existsSync, mkdirSync } from "node:fs";
 import { chromium } from "playwright";
@@ -268,20 +269,26 @@ try {
     const away = await drag(path(-20, 5));
     const sea = { x: fit.hole.l + 10, y: fit.hole.t + 10 };
     const wasAway = !(await atHome(away));
-    // Software GL can hold the page's main thread for longer than the 350 ms double-tap window between two input round
-    // trips; the gesture is tried again (as a player would) rather than the window widened.
-    let tries = 0;
-    for (; tries < 3; tries++) {
+    // Under load the two input round trips can land more than 350 ms apart, which is not a double tap at all; the lifts
+    // are timed in the page and the gesture is tried again (as a player would) until one is a real double tap.
+    await page.evaluate(() => {
+      window.__ups = [];
+      document.querySelector("canvas").addEventListener("pointerup", () => window.__ups.push(performance.now()));
+    });
+    const gaps = [];
+    for (let tries = 0; tries < 8; tries++) {
+      await page.evaluate(() => (window.__ups = []));
       if (touch) {
         await page.touchscreen.tap(sea.x, sea.y);
         await page.touchscreen.tap(sea.x, sea.y);
       } else await page.mouse.dblclick(sea.x, sea.y);
-      if (await page.evaluate(() => window.__isle.glide !== null)) break;
-      await drawn(page, 2);
-      if (await atHome(await pose())) break;
+      const ups = await page.evaluate(() => window.__ups);
+      gaps.push(ups.length === 2 ? Math.round(ups[1] - ups[0]) : ups.length);
+      if (ups.length === 2 && ups[1] - ups[0] < 350) break;
+      await drawn(page, 1);
     }
     const snapped = await settle();
-    check(`${tag}: a double ${touch ? "tap" : "click"} on empty board returns to the fitted view and places nothing`, wasAway && (await atHome(snapped)) && snapped.seq === p0.seq, { before: brief(away), after: brief(snapped), seq: [p0.seq, snapped.seq], tries: tries + 1 });
+    check(`${tag}: a double ${touch ? "tap" : "click"} on empty board returns to the fitted view and places nothing`, wasAway && (await atHome(snapped)) && snapped.seq === p0.seq, { before: brief(away), after: brief(snapped), seq: [p0.seq, snapped.seq], gapsMs: gaps });
 
     if (!touch) {
       // The click still places: the same corner, after all that orbiting.
@@ -369,6 +376,72 @@ try {
       const t1 = await pose();
       check(`${tag}: chat previews are not a rail: the right inset stays 12 and the camera stays put`, withChat.previews === 3 && withChat.previewW >= 200 && withChat.right === 12 && !t1.glide && t1.target.every((v, k) => Math.abs(v - t0.target[k]) < 1e-6), { ...withChat, target: brief(t1).target, before: brief(t0).target });
     }
+    await page.context().close();
+  }
+  // 3. Chrome the player opens without the game moving refits the board: the chat dock (online) and the focused keyboard
+  // PlaceList each become a right rail, the island glides clear of them, and closing or blurring glides it back.
+  {
+    const page = await open(1024, 768, false);
+    await page.getByRole("button", { name: "Four seats, one table" }).click();
+    await page.waitForFunction(() => window.__emberisle?.getState().state && window.__isle.lastState, null, { timeout: STEP_MS });
+    await page.evaluate(() => {
+      const g = window.__emberisle;
+      while (g.getState().state.phase === "rollOff") g.getState().dispatch({ type: "roll" });
+    });
+    const settled = async () => {
+      await page.waitForFunction(() => window.__isle.lastSeq === window.__emberisle.getState().state.seq && !window.__isle.refitDue && !window.__isle.glide, null, { timeout: STEP_MS });
+      await drawn(page, 2);
+    };
+    // The hole and the fit as they stand, whether the fit is the one the hole asks for now, and where the island's
+    // rightmost corner sits against the rail on the right.
+    const look = (rail) =>
+      page.evaluate(async (rail) => {
+        const { fitOrtho, OVERHEAD_LEAN } = await import("/src/lib/scene/mobile-fit.ts");
+        const isle = window.__isle;
+        const ins = isle.insets();
+        const want = fitOrtho(innerWidth, innerHeight, ins, OVERHEAD_LEAN);
+        const st = window.__emberisle.getState().state;
+        const el = rail ? document.querySelector(rail) : null;
+        const railLeft = el ? Math.round(el.getBoundingClientRect().left) : null;
+        let rightmost = -Infinity;
+        const covered = [];
+        for (const v of st.vertices) {
+          const p = isle.screenOf(v.id);
+          rightmost = Math.max(rightmost, p.x);
+          if (document.elementFromPoint(p.x, p.y)?.tagName !== "CANVAS") covered.push(`${v.id}@${p.x | 0},${p.y | 0}`);
+        }
+        const fresh = ["left", "right", "top", "bottom", "x", "z"].every((k) => Math.abs(want[k] - isle.fit[k]) < 1e-6);
+        return { right: ins.right, fresh, railLeft, rightmost: Math.round(rightmost), covered, glide: isle.glide !== null };
+      }, rail);
+    // The first-player notice leaves the phase bar a few seconds in, and housekeeping does not refit; start after it has
+    // gone, with one measure asked for, so every fit below answers to the hole as it then stands.
+    await page.waitForFunction(() => !document.querySelector('[data-testid="banner"]'), null, { timeout: STEP_MS });
+    await page.evaluate(() => window.__isle.remeasure());
+    await settled();
+    const base = await look(null);
+    check("1024x768: the fit is the one the hole asks for", base.fresh && base.covered.length === 0, base);
+    // The keyboard PlaceList shows while a button in it has focus (#376) and is a rail then.
+    await page.evaluate(() => document.querySelector('[data-testid="place-list"] button').focus());
+    await settled();
+    const list = await look('[data-testid="place-list"]');
+    check("1024x768: focusing the PlaceList refits the island clear of it, with no state change", list.right > base.right && list.fresh && list.rightmost < list.railLeft && list.covered.length === 0, { base, list });
+    await page.evaluate(() => document.activeElement.blur());
+    await settled();
+    const blurred = await look(null);
+    check("1024x768: blurring the PlaceList refits it back", blurred.right === base.right && blurred.fresh && blurred.covered.length === 0, { base, blurred });
+    // The chat dock shows online; the store is told so, then the dock is opened with no state change.
+    await page.evaluate(() => window.__emberisle.setState({ mode: "online" }));
+    await settled();
+    const online = await look(null);
+    await page.evaluate(() => window.__emberisle.getState().setChatOpen(true));
+    await page.waitForSelector('[aria-label="Table chat"]', { timeout: STEP_MS });
+    await settled();
+    const chat = await look('[aria-label="Table chat"]');
+    check("1024x768: opening the chat refits the island clear of the chat rail, with no state change", chat.right > online.right && chat.fresh && chat.rightmost < chat.railLeft && chat.covered.length === 0, { online, chat });
+    await page.evaluate(() => window.__emberisle.getState().setChatOpen(false));
+    await settled();
+    const closed = await look(null);
+    check("1024x768: closing the chat refits it back", closed.right === online.right && closed.fresh && closed.covered.length === 0, { online, closed });
     await page.context().close();
   }
   check("no console errors", errors.length === 0, errors);

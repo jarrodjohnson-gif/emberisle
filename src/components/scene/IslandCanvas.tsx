@@ -29,9 +29,14 @@ export default function IslandCanvas() {
     api.current = renderer;
     (window as unknown as { __isle: IsleRenderer }).__isle = renderer;
     let action = "";
+    let chrome = "";
     const sync = () => {
       const s = useGame.getState();
       renderer.setTitleMode(s.screen !== "play");
+      // The chat dock and the trade sheet change the hole the HUD leaves without the game moving.
+      const nextChrome = `${s.chatOpen}|${s.tradeOpen}`;
+      if (nextChrome !== chrome) renderer.remeasure();
+      chrome = nextChrome;
       // A new state that drops the pending mark from the legal set, or changes what a tap would do, clears it.
       const hi = s.highlights();
       const pp = s.pendingPlace;
