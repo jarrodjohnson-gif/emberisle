@@ -522,10 +522,10 @@ try {
     await new Promise((r) => setTimeout(r, 1500));
   });
   const mutedPlays = await plays();
-  // Back on, through the own-seat menu this time, so both toggles are exercised.
-  await page.locator('[data-menu-trigger="p0"]').first().click();
-  await page.getByTestId("player-menu").getByTestId("sound-toggle").click();
-  const menuSays = await page.getByTestId("player-menu").getByTestId("sound-toggle").textContent();
+  // Back on, through the table menu this time (#442 moved the in-game toggle there), so both toggles are exercised.
+  await page.getByRole("button", { name: "Table menu" }).click();
+  await page.getByTestId("table-menu").getByTestId("sound-toggle").click();
+  const menuSays = await page.getByTestId("table-menu").getByTestId("sound-toggle").textContent();
   const cleared = await page.evaluate(() => localStorage.getItem("emberisle-muted"));
   const mute = { wasOn, stored, stillOff, mutedPlays, menuSays: menuSays?.trim(), cleared };
   console.log("mute:", JSON.stringify(mute));

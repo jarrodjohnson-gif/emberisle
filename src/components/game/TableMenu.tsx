@@ -1,5 +1,6 @@
 // #442: the table's one top-right control. A 44 px quiet "…" button opens a small sheet holding what the top chrome used
 // to spread out: the turn number and watcher count, How to play, the sound toggle, the table code (online) and Leave table.
+// A watcher's own "Watching" chip stays in the header beside the button (docs/design/spectator.md), not in here.
 // Opens with focus on the first row; Escape, a pointerdown outside or focus leaving closes it, and Escape puts the focus
 // back on the button. Leaving an online seat asks first (the seat goes to a bot for good); Stay, Escape or 5 s cancels.
 import { useEffect, useRef, useState } from "react";
@@ -83,8 +84,8 @@ export function TableMenu() {
   }, [asking]);
 
   useEffect(() => {
-    if (!confirm) setAsking(false);
-  }, [confirm]);
+    if (!confirm && asking) stay();
+  }, [confirm, asking]);
 
   return (
     <div className="relative">
@@ -116,11 +117,6 @@ export function TableMenu() {
         >
           <p className="flex items-center gap-2 px-3 py-2 text-caption text-muted">
             <span>Turn {Math.max(1, state.turn)}</span>
-            {spectator ? (
-              <span data-testid="watching-badge" className="rounded-full bg-fg px-2 py-0.5 text-bg">
-                Watching
-              </span>
-            ) : null}
             {watching > 0 ? (
               <span data-testid="watching-count" aria-label={`${watching} watching`} className="ml-auto flex items-center gap-1 tabular-nums">
                 <Eye className="size-3.5" aria-hidden="true" />

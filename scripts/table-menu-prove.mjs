@@ -4,8 +4,9 @@
 // - it opens a sheet with the turn number, How to play, Table sounds and Leave table, focus moving to the first row;
 // - How to play opens its dialog and closing that puts the focus back on the menu button; the sound toggle flips and keeps
 //   the sheet open; Escape closes the sheet and refocuses the button; Enter on the button opens it; a tap outside closes it;
-// - online (a faked socket): the sheet shows the watcher count and "Copy table code", Leave table asks first (Stay and
-//   Escape return to the rows), then leaves; hotseat Leave table goes straight to the title.
+// - online (a faked socket): the sheet shows the watcher count and "Copy table code", Leave table asks first (Stay, Escape
+//   and the 5 s auto-cancel return to the rows with the focus on Leave table), then leaves; hotseat Leave table goes
+//   straight to the title.
 // Zero console errors. Run: npm run table-menu-prove
 import assert from "node:assert/strict";
 import { existsSync, mkdirSync } from "node:fs";
@@ -129,12 +130,18 @@ try {
     await page.keyboard.press("Escape");
     await confirmBox.waitFor({ state: "detached" });
     assert.equal(await menu.count(), 1, `${v.tag}: Escape on the question keeps the menu`);
+    // Left alone, the question folds back into the rows after 5 s, with the focus on Leave table.
+    await menu.getByRole("button", { name: "Leave table" }).click();
+    await confirmBox.waitFor();
+    await confirmBox.waitFor({ state: "detached", timeout: 8000 });
+    assert.equal(await menu.count(), 1, `${v.tag}: the 5 s auto-cancel keeps the menu`);
+    assert.equal(await page.evaluate(() => document.activeElement?.textContent.trim()), "Leave table", `${v.tag}: the 5 s auto-cancel returns the focus to Leave table`);
     assert.equal(await page.evaluate(() => window.__emberisle.getState().screen), "play", `${v.tag}: Stay and Escape stay at the table`);
     // The question cancels itself after 5 s; a slow runner can lose that race between the two clicks, so ask again.
     for (let tries = 0; (await page.evaluate(() => window.__emberisle.getState().screen)) !== "title"; tries++) {
       assert.ok(tries < 5, `${v.tag}: Leave never left the table`);
       if (!(await confirmBox.count())) await menu.getByRole("button", { name: "Leave table" }).click();
-      await confirmBox.getByRole("button", { name: "Leave", exact: true }).click({ timeout: 5000 }).catch(() => {});
+      await confirmBox.getByRole("button", { name: "Leave", exact: true }).click({ timeout: 5000 }).catch((e) => console.log(`${v.tag}: Leave click retried: ${String(e).split("\n")[0]}`));
     }
 
     // Hotseat: Leave table is one press.

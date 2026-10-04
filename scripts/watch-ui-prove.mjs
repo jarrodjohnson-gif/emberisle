@@ -130,12 +130,16 @@ const view = (t) =>
     };
   });
 
-// #442: the Watching badge, the eye count and Leave table live in the table menu, so they are read with it open. The
-// button is clicked through the DOM: at the win the modal win screen covers it, and the sheet's text still reads.
+// #442: the eye count and Leave table live in the table menu, so they are read with it open (the Watching badge stays in
+// the header and is read with it closed). The button is clicked through the DOM: at the win the modal win screen covers
+// it, and the sheet's text still reads.
 const peek = async (t) => {
   const trigger = t.page.getByRole("button", { name: "Table menu" });
   const opens = (await trigger.count()) > 0 && (await t.page.getByTestId("table-menu").count()) === 0;
-  if (opens) await trigger.dispatchEvent("click");
+  if (opens) {
+    await trigger.dispatchEvent("click");
+    if ((await t.page.getByTestId("table-menu").count()) !== 1) throw new Error(`${t.name}: the table menu did not open`);
+  }
   const v = await view(t);
   if (opens) await t.page.keyboard.press("Escape");
   return v;
@@ -283,7 +287,11 @@ try {
   await w1.page.evaluate(() => (window.__onBoard = true));
   wv = await peek(w1);
   if (!wv.spectator || wv.localId !== "") throw new Error(`watcher store: spectator=${wv.spectator} localId=${JSON.stringify(wv.localId)}`);
-  if (wv.badge !== "Watching" || wv.count !== "1") throw new Error(`watcher header: badge=${JSON.stringify(wv.badge)} count=${JSON.stringify(wv.count)}`);
+  if (wv.count !== "1") throw new Error(`watcher menu: count=${JSON.stringify(wv.count)}`);
+  // The badge is a header chip a watcher sees with the menu closed (docs/design/spectator.md).
+  const badge = await w1.page.getByTestId("watching-badge");
+  if ((await w1.page.getByTestId("table-menu").count()) !== 0 || !(await badge.isVisible()) || (await badge.textContent()) !== "Watching") throw new Error("watcher header: no visible Watching badge with the menu closed");
+  wv.badge = await badge.textContent();
   if (wv.title !== "Watching — Emberisle") throw new Error(`watcher tab title: "${wv.title}"`);
   if (wv.canvas < 1 || wv.boardSeq !== wv.seq) throw new Error(`the watcher's board is not drawn at seq ${wv.seq}: ${JSON.stringify([wv.canvas, wv.boardSeq])}`);
   if (wv.seq !== seatViews[0].seq || wv.phase !== "rollOff") throw new Error(`the watcher is not on the seats' state: ${JSON.stringify([wv.seq, wv.phase, seatViews[0].seq])}`);
@@ -378,7 +386,7 @@ try {
   const saved = JSON.stringify({ code: "ZZZZ", secret: "another-table" });
   await w1.page.evaluate((v) => localStorage.setItem("emberisle-seat", v), saved);
   await w1.page.getByTestId("win-look").click();
-  if ((await peek(w1)).badge !== "Watching") throw new Error("the watcher lost its badge at the win");
+  if (!(await w1.page.getByTestId("watching-badge").isVisible())) throw new Error("the watcher lost its badge at the win");
   await w1.page.getByRole("button", { name: "Table menu" }).click();
   await w1.page.getByRole("button", { name: "Leave table" }).click();
   await until(async () => (await view(w1)).screen === "title", "Leave taking the watcher to the Title");
