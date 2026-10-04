@@ -12,6 +12,7 @@
     "client-prove": "node scripts/client-prove.mjs",
     "hotseat-prove": "node scripts/hotseat-prove.mjs",
     "tabs-prove": "node scripts/tabs-prove.mjs",
+    "tabs-prove-4": "node scripts/tabs-prove.mjs --seats 4",
     "wayfarer-prove": "node scripts/wayfarer-prove.mjs",
     "trade-prove": "node scripts/trade-prove.mjs",
     "pieces-prove": "node --import ./server/register.mjs scripts/pieces-prove.mjs",
