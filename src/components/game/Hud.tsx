@@ -833,7 +833,7 @@ function LeaveButton({ confirm }: { confirm: boolean }) {
   }, [confirm, menuFor, howTo]);
   return (
     <div className="relative">
-      <Button ref={leaveRef} back variant="secondary" size="sm" onClick={confirm ? () => setAsking(true) : goTitle}>
+      <Button ref={leaveRef} variant="secondary" size="sm" onClick={confirm ? () => setAsking(true) : goTitle}>
         Leave
       </Button>
       {asking ? (
@@ -849,7 +849,7 @@ function LeaveButton({ confirm }: { confirm: boolean }) {
             <Button ref={stayRef} back variant="secondary" size="sm" className={phone ? "h-11 min-w-11" : undefined} onClick={cancel}>
               Stay
             </Button>
-            <Button back size="sm" className={phone ? "h-11 min-w-11" : undefined} onClick={goTitle}>
+            <Button size="sm" className={phone ? "h-11 min-w-11" : undefined} onClick={goTitle}>
               Leave
             </Button>
           </div>

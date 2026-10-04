@@ -297,13 +297,13 @@ try {
   console.log(`bank empty of everything: Plenty disabled ${plentyOff}, reason shown`);
   if (!plentyOff) throw new Error("Plenty is clickable with an empty bank");
 
-  // #425: Leave plays back_001 once (a hotseat table has no confirm popover, so it goes straight to the title).
+  // #425: Leave plays click_001 once (a hotseat table has no confirm popover, so it goes straight to the title).
   const playsBeforeLeave = await page.evaluate(() => window.__plays.length);
   await page.getByRole("button", { name: "Leave", exact: true }).click();
   await page.waitForFunction(() => !window.__emberisle.getState().state, null, { timeout: STEP_MS });
   const leavePlays = await page.evaluate((n) => window.__plays.slice(n), playsBeforeLeave);
   console.log("Leave played", JSON.stringify(leavePlays));
-  if (leavePlays.join() !== "/audio/back_001.wav") throw new Error(`Leave played ${JSON.stringify(leavePlays)}, not back_001.wav once`);
+  if (leavePlays.join() !== "/audio/click_001.wav") throw new Error(`Leave played ${JSON.stringify(leavePlays)}, not click_001.wav once`);
 } catch (e) {
   console.error("hotseat-prove failed:", e);
   code = 1;
