@@ -58,13 +58,18 @@ try {
   // #232: the Roll button rolls off for whichever seat is current, until one seat places first.
   const rollBtn = page.getByRole("button", { name: "Roll", exact: true });
   const rollers = [];
+  // #443: the seats' die tiles show only while the roll-off is live, so the last full set is read on the way through.
+  let offTiles = [];
   for (let i = 0; i < 40; i++) {
     const before = await page.evaluate(() => { const st = window.__emberisle.getState().state; return { phase: st.phase, current: st.current, seq: st.seq }; });
     if (before.phase !== "rollOff") break;
+    const tiles = await page.locator('[data-testid="rolloff-die"]:visible').allTextContents();
+    if (tiles.length) offTiles = tiles;
     await rollBtn.click({ timeout: STEP_MS });
     await page.waitForFunction((seq) => window.__emberisle.getState().state.seq > seq, before.seq, { timeout: STEP_MS });
     rollers.push(before.current);
   }
+  const tilesAfter = await page.locator('[data-testid="rolloff-die"]:visible').count();
   const off = await page.evaluate(() => {
     const st = window.__emberisle.getState().state;
     const ids = st.players.map((p) => p.id);
@@ -75,9 +80,8 @@ try {
       rest.every((id, i) => i === 0 || d[rest[i - 1]] > d[id] || (d[rest[i - 1]] === d[id] && rest[i - 1] < id));
     return { ok, ids, rolls: d, line: st.log.findLast((l) => l.includes("places first, then")) };
   });
-  const offTiles = await page.locator('[data-testid="rolloff-die"]:visible').allTextContents();
-  console.log(`roll-off by the Roll button: ${rollers.length} clicks (${rollers.join(" ")}), order ${off.ids.join(" ")} ok ${off.ok}, tiles [${offTiles.join(" ")}], "${off.line}"`);
-  if (!off.ok || rollers.length < 4 || offTiles.length !== 4 || offTiles.some((t) => !/^[1-6]$/.test(t))) throw new Error(`roll-off: ${JSON.stringify({ off, rollers, offTiles })}`);
+  console.log(`roll-off by the Roll button: ${rollers.length} clicks (${rollers.join(" ")}), order ${off.ids.join(" ")} ok ${off.ok}, tiles [${offTiles.join(" ")}] then ${tilesAfter}, "${off.line}"`);
+  if (!off.ok || rollers.length < 4 || offTiles.length !== 4 || offTiles.some((t) => !/^[1-6–]$/.test(t)) || tilesAfter !== 0) throw new Error(`roll-off: ${JSON.stringify({ off, rollers, offTiles, tilesAfter })}`);
 
   // #380: every roller's turn was announced, ending on the seat that places first; hotseat names every seat (no "Your").
   const said = (k) => page.evaluate((k) => window.__said.filter((s) => s.k === k).map((s) => s.t), k);

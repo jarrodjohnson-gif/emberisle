@@ -9,31 +9,24 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { WinScreen } from "@/components/game/WinScreen";
-import { ChatDock, ReactionFloats } from "@/components/game/Chat";
+import { ChatDock } from "@/components/game/Chat";
 import { TradeButton, TradePanel } from "@/components/game/TradePanel";
 import { TradeToast } from "@/components/game/TradeToast";
 import { Announcer } from "@/components/game/Announcer";
 import { PlayerMenu } from "@/components/game/PlayerMenu";
+import { SeatRail, SeatStrip } from "@/components/game/SeatRail";
 import { DiscardBar } from "@/components/game/DiscardBar";
 import { TurnCountdown } from "@/components/game/TurnCountdown";
 import { Dice } from "@/components/game/Dice";
 import { TableMenu } from "@/components/game/TableMenu";
 import { ResourceHand } from "@/components/game/Hand";
-import { COST, RESOURCES, RESOURCE_LABEL, type BuildMode, type DevKind, type GameState, type PlayerState, type Resource } from "@/lib/game/types";
-import { hiddenCount, legalRoads, playable, publicVP, totalVP } from "@/lib/game/rules";
+import { COST, RESOURCES, RESOURCE_LABEL, type BuildMode, type PlayerState, type Resource } from "@/lib/game/types";
+import { legalRoads, playable, totalVP } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
 import { play } from "@/lib/sound";
 import { useViewport } from "@/lib/viewport";
 import { useMoreBelow } from "@/lib/scroll-fade";
 import { cn } from "@/lib/utils";
-
-const FORTUNE_NAMES: [DevKind, string][] = [
-  ["knight", "knight"],
-  ["road", "path"],
-  ["plenty", "plenty"],
-  ["monopoly", "monopoly"],
-  ["vp", "points"],
-];
 
 function affords(p: PlayerState, kind: Price) {
   return RESOURCES.every((r) => p.resources[r] >= (COST[kind][r] ?? 0));
@@ -80,16 +73,6 @@ function armedCopy(mode: BuildMode, roadPicks: number): [string, string] | null 
   }
 }
 
-// The seat's roll-off die, shown through the roll-off and setup (docs/design/first-player.md); "–" until it rolls this round.
-function RollOffDie({ state, id, className }: { state: GameState; id: string; className: string }) {
-  if (!state.rollOff || state.turn !== 0) return null;
-  return (
-    <span data-testid="rolloff-die" className={cn("grid shrink-0 place-items-center rounded-[8px] bg-fg font-medium text-bg tabular-nums", className)}>
-      {state.rollOff.rolls[id] ?? "–"}
-    </span>
-  );
-}
-
 const HINT_KEY = "emberisle-landscape-hint";
 
 type Price = keyof typeof COST;
@@ -132,7 +115,6 @@ export function Hud() {
   const buildMode = useGame((s) => s.buildMode);
   const roadPicks = useGame((s) => s.roadPicks);
   const banner = useGame((s) => s.banner);
-  const seats = useGame((s) => s.seats);
   const error = useGame((s) => s.error);
   const howTo = useGame((s) => s.howTo);
   const dispatch = useGame((s) => s.dispatch);
@@ -230,55 +212,7 @@ export function Hud() {
         />
       ) : null}
 
-      {/* An open player menu is a popover, so the rail rises over the bottom stack while it shows (they overlap at 800x500). */}
-      {phone ? null : (
-      <aside className={cn("pointer-events-none absolute left-3 top-20 hidden w-56 flex-col gap-2 md:flex", menuFor ? "z-20" : "z-10")}>
-        {state.players.map((p) => (
-          <div key={p.id} className="pointer-events-auto flex flex-col gap-1">
-            <div
-              data-testid={`rail-${p.id}`}
-              className={cn(
-                "relative rounded-[16px] border bg-glass backdrop-blur-md",
-                p.id === state.current ? "border-accent" : "border-white/50",
-              )}
-            >
-              {/* The card is the menu's trigger (docs/design/chat.md "The player action menu"). */}
-              <button
-                type="button"
-                data-menu-trigger={p.id}
-                aria-expanded={menuFor === p.id}
-                aria-controls={`player-menu-${p.id}`}
-                onClick={() => openMenu(menuFor === p.id ? null : p.id)}
-                className="block w-full cursor-pointer rounded-[16px] px-3 py-2 text-left hover:bg-white/40"
-              >
-                <span className="flex items-center justify-between gap-2">
-                  <span className="flex items-center gap-2">
-                    <span className="size-2.5 rounded-full" style={{ background: p.color }} />
-                    <span className="text-sm font-medium">{p.name}</span>
-                    <RollOffDie state={state} id={p.id} className="size-6 text-sm" />
-                  </span>
-                  <span className="tabular-nums text-sm text-zinc-700">{publicVP(state, p.id)} vp{p.id === actor && p.hidden.vp > 0 ? ` (+${p.hidden.vp} hidden)` : ""}
-                  </span>
-                </span>
-                <span className="mt-1 block text-xs text-zinc-700">
-                  {p.goods ?? RESOURCES.reduce((n, r) => n + p.resources[r], 0)} goods · {p.fortunes ?? hiddenCount(p)} fortunes
-                  {seats.some((s) => s.away && (s.name === p.name || `${s.name} (bot)` === p.name)) ? " · reconnecting…" : ""}
-                </span>
-                {p.id === actor && hiddenCount(p) > 0 ? (
-                  <span className="mt-0.5 block text-xs text-zinc-700">
-                    {FORTUNE_NAMES.filter(([k]) => p.hidden[k] > 0)
-                      .map(([k, label]) => `${label} ×${p.hidden[k]}${p.boughtThisTurn[k] > 0 ? ` (${p.boughtThisTurn[k]} new)` : ""}`)
-                      .join(" · ")}
-                  </span>
-                ) : null}
-              </button>
-              <ReactionFloats by="player" id={p.id} />
-            </div>
-            {menuFor === p.id ? <PlayerMenu player={p} /> : null}
-          </div>
-        ))}
-      </aside>
-      )}
+      {phone ? null : <SeatRail actor={actor} />}
 
       <ChatDock />
       <TradeToast />
@@ -452,83 +386,6 @@ export function Hud() {
         ore.
       </p>
     </>
-  );
-}
-
-// Hotseat's "Seat 2" .. "Seat 4" would all read "Sea", so a trailing number keeps the initial and the number ("S2").
-function shortName(name: string) {
-  const n = /\d+$/.exec(name)?.[0];
-  return n ? `${name[0]}${n}` : name.slice(0, 3);
-}
-
-// Three letters is all an 89 px cell holds, so seats that still share a short form ("Ember", "Emberly") fall back to
-// the initial and the seat number ("E1", "E2").
-function shortNames(names: string[]) {
-  const short = names.map(shortName);
-  return short.map((s, i) => (short.some((o, j) => j !== i && o === s) ? `${names[i]![0]}${i + 1}` : s));
-}
-
-// Phone seat strip (docs/design/mobile-hud.md): 44 px, one cell per seat. Compact vs the rail: no per-fortune
-// breakdown (that line is rail-only), hidden points show as "+N", and "reconnecting…" replaces the counts line.
-function SeatStrip({ actor, className }: { actor: string; className: string }) {
-  const state = useGame((s) => s.state)!;
-  const seats = useGame((s) => s.seats);
-  const menuFor = useGame((s) => s.menuFor);
-  const openMenu = useGame((s) => s.openMenu);
-  const short = shortNames(state.players.map((p) => p.name));
-  return (
-    <div data-testid="seat-strip" className={cn("pointer-events-auto flex h-11 gap-1", className)}>
-      {state.players.map((p, i) => {
-        const away = seats.some((s) => s.away && (s.name === p.name || `${s.name} (bot)` === p.name));
-        const hidden = p.id === actor && p.hidden.vp > 0 ? p.hidden.vp : 0;
-        const goods = p.goods ?? RESOURCES.reduce((n, r) => n + p.resources[r], 0);
-        return (
-          <div
-            key={p.id}
-            data-testid={`seat-${p.id}`}
-            className={cn(
-              "@container relative h-11 min-w-0 flex-1 rounded-[12px] border bg-glass leading-tight backdrop-blur-md",
-              p.id === state.current ? "border-accent" : "border-white/50",
-            )}
-          >
-            <button
-              type="button"
-              data-menu-trigger={p.id}
-              aria-expanded={menuFor === p.id}
-              aria-controls={`player-menu-${p.id}`}
-              onClick={() => openMenu(menuFor === p.id ? null : p.id)}
-              className="flex h-full w-full cursor-pointer flex-col justify-center rounded-[12px] px-2 text-left @max-[100px]:px-1.5"
-            >
-              <span className="flex w-full items-center gap-1.5 @max-[100px]:gap-1">
-                <span className="size-3 shrink-0 rounded-full" style={{ background: p.color }} />
-                {/* #420: under 100 px a deliberate short form: three letters or initial + number (the full name stays for screen readers), and the
-                    die only while the roll-off is live, so it never sits beside the points as one number. */}
-                <span data-testid="seat-name" className="min-w-0 flex-1 truncate text-xs font-medium @max-[100px]:sr-only">{p.name}</span>
-                <span data-testid="seat-name" aria-hidden="true" className="hidden min-w-0 flex-1 text-xs font-medium @max-[100px]:block">
-                  {short[i]}
-                </span>
-                <RollOffDie
-                  state={state}
-                  id={p.id}
-                  className={cn("size-4 rounded-[4px] text-[10px]", state.phase !== "rollOff" && "@max-[100px]:hidden")}
-                />
-                <span
-                  data-testid="seat-vp"
-                  className={cn("shrink-0 text-xs tabular-nums text-zinc-700", state.phase === "rollOff" && "@max-[100px]:hidden")}
-                >
-                  {publicVP(state, p.id)}
-                  {hidden ? `+${hidden}` : ""}
-                </span>
-              </span>
-              <span className="block w-full truncate text-[10px] text-zinc-700">
-                {away ? "reconnecting…" : `${goods}g · ${p.fortunes ?? hiddenCount(p)}f`}
-              </span>
-            </button>
-            <ReactionFloats by="player" id={p.id} />
-          </div>
-        );
-      })}
-    </div>
   );
 }
 

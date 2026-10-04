@@ -139,11 +139,11 @@ No extra screen. Three touches:
    `rollOff` → `Roll one die for first place. The highest roll places first; a tie rolls again.`
 2. **Roll button:** show the existing `Roll` button when `(phase === "roll" || phase === "rollOff") && mine`. Same
    label, same icon.
-3. **One die per seat:** in each rail card, while `state.rollOff && state.turn === 0` (the roll-off and all of setup),
+3. **One die per seat:** in each seat line (the rail and the phone strip, `SeatRail.tsx`), while `phase === "rollOff"`
+   (#443 took it off the setup round: once the order is settled the die would sit beside the points as one number),
    a small tile after the name: the seat's die from `rollOff.rolls[p.id]`, or `–` while it has not rolled this round.
    Same look as the production dice tiles, smaller (`size-6 rounded-[8px] bg-fg text-bg tabular-nums`),
-   `data-testid="rolloff-die"`. The card's existing accent border already marks `current`. The rail is `hidden
-   md:flex`; on a phone the banner and the phase sentence carry the roll-off.
+   `data-testid="rolloff-die"`. The seat's turn pulse marks `current`.
 
 The production dice row (`state.dice`) stays null through the roll-off, so nothing else moves.
 
