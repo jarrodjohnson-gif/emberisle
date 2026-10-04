@@ -1,8 +1,8 @@
 // Bot choices (#361): hand-built positions where the practice bot must play a plenty, a path fortune
 // or a monopoly, and ones where it must not (bought this turn, already played, short by too much).
 import { createGame } from "../src/lib/game/board.ts";
-import { applyAction, legalRoads, legalSettle } from "../src/lib/game/rules.ts";
-import { chooseBotAction } from "../src/lib/game/ai.ts";
+import { applyAction, legalRoads, legalSettle, publicVP } from "../src/lib/game/rules.ts";
+import { chooseBotAction, chooseTradeAsk, shouldAcceptTrade } from "../src/lib/game/ai.ts";
 import { RESOURCES } from "../src/lib/game/types.ts";
 
 function fail(why, extra) {
@@ -251,6 +251,89 @@ const WORST = "0,-1";
   if (corners.some((v) => v.building.playerId === "p0") || !corners.length) fail("own hex: the hex picked instead does not block an opponent", a);
   play(g, a);
   console.log("own hex: never blocked while another hex blocks an opponent, even with no steal there");
+}
+
+// Table trades (#363). p0 holds two strongholds and one path to a free corner, so its goal is an
+// outpost (timber, clay, wool, grain). `asker` gets the goods the ask gives, so the trade can go through.
+function tradePosition(resources) {
+  return position({ resources, strongholds: true, extend: true });
+}
+function stock(g, pid, bag) {
+  const p = g.players.find((x) => x.id === pid);
+  for (const [r, n] of Object.entries(bag)) {
+    p.resources[r] += n;
+    g.bank[r] -= n;
+  }
+}
+function trade(g, offer) {
+  g.current = offer.from;
+  const o = applyAction(g, offer.from, { type: "offerTrade", to: "p0", give: offer.give, want: offer.want });
+  if (o.error) fail("the ask is illegal", o.error);
+  const r = applyAction(o.state, "p0", { type: "respondTrade", accept: true });
+  if (r.error) fail("the bot's Yes is illegal", r.error);
+  r.state.current = "p0";
+  return r.state;
+}
+const CLAY_FOR_ORE = { from: "p1", give: { clay: 1 }, want: { ore: 1 } };
+
+// Yes: one clay short of an outpost, offered clay for a spare ore. The trade goes through and it builds.
+{
+  let g = tradePosition({ timber: 1, wool: 1, grain: 1, ore: 2 });
+  stock(g, "p1", { clay: 1 });
+  if (!shouldAcceptTrade(g, "p0", CLAY_FOR_ORE)) fail("trade: refused clay it is short of for a spare ore");
+  g = trade(g, CLAY_FOR_ORE);
+  const b = chooseBotAction(g, "p0");
+  if (b.type !== "buildOutpost") fail("trade: after the clay, not an outpost", b);
+  play(g, b);
+  console.log("trade: says Yes to the clay its outpost lacks, for a spare ore, then builds");
+}
+
+// No: the same ask from the leader on public points; Yes from a trailing seat.
+{
+  const g = tradePosition({ timber: 1, wool: 1, grain: 1, ore: 2 });
+  g.longestRoad = "p1";
+  g.largestArmy = "p1";
+  if (!(publicVP(g, "p1") > publicVP(g, "p0"))) fail("trade: p1 is not the leader", publicVP(g, "p1"));
+  if (shouldAcceptTrade(g, "p0", CLAY_FOR_ORE)) fail("trade: helped the leader");
+  if (!shouldAcceptTrade(g, "p0", { ...CLAY_FOR_ORE, from: "p2" })) fail("trade: refused a trailing seat the same ask");
+  console.log("trade: says No to the leader on public points, Yes to a trailing seat");
+}
+
+// No: clay and grain for one ore would finish its outpost, but it holds no ore; with an ore, Yes.
+{
+  const ask = { from: "p1", give: { clay: 1, grain: 1 }, want: { ore: 1 } };
+  if (shouldAcceptTrade(tradePosition({ timber: 1, wool: 1 }), "p0", ask)) fail("trade: said Yes without the ore to pay");
+  if (!shouldAcceptTrade(tradePosition({ timber: 1, wool: 1, ore: 1 }), "p0", ask)) fail("trade: refused the same ask it can pay");
+  console.log("trade: says No when it cannot pay, Yes to the same ask once it can");
+}
+
+// No: an ask that takes a card its outpost needs, and one that gives it fewer cards than it pays.
+{
+  const g = tradePosition({ timber: 1, wool: 1, grain: 1, ore: 2 });
+  if (shouldAcceptTrade(g, "p0", { from: "p1", give: { ore: 1 }, want: { grain: 1 } })) fail("trade: gave away a card its outpost needs");
+  if (shouldAcceptTrade(g, "p0", { from: "p1", give: { clay: 1 }, want: { ore: 2 } })) fail("trade: paid two for one");
+  console.log("trade: says No when it brings the outpost no closer, or pays more cards than it gets");
+}
+
+// Its own ask: one clay short, it asks for exactly that clay against a spare ore, and the ask is legal.
+{
+  const g = tradePosition({ timber: 1, wool: 1, grain: 1, ore: 2 });
+  const ask = chooseTradeAsk(g, "p0");
+  if (!ask || JSON.stringify(ask.want) !== '{"clay":1}' || JSON.stringify(ask.give) !== '{"ore":1}') fail("ask: not one ore for the clay it is short of", ask);
+  stock(g, "p1", { clay: 1 });
+  const r = applyAction(g, "p0", { type: "offerTrade", to: "p1", ...ask });
+  if (r.error) fail("ask: illegal", r.error);
+  console.log("ask: names the one clay its outpost lacks, for a spare ore");
+}
+
+// No ask: nothing spare to give, two or more cards short, or not its turn.
+{
+  if (chooseTradeAsk(tradePosition({ timber: 1, wool: 1, grain: 1 }), "p0") !== null) fail("ask: gave away a card its outpost needs");
+  if (chooseTradeAsk(tradePosition({ timber: 1, wool: 1, ore: 3 }), "p0") !== null) fail("ask: two cards short and still asked");
+  const g = tradePosition({ timber: 1, wool: 1, grain: 1, ore: 2 });
+  g.current = "p1";
+  if (chooseTradeAsk(g, "p0") !== null) fail("ask: asked on another seat's turn");
+  console.log("ask: null when nothing spare, two short, or not its turn");
 }
 
 console.log("ai prove ok");
