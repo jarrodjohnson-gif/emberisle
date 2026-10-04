@@ -18,6 +18,7 @@ import { WinScreen } from "@/components/game/WinScreen";
 import { ChatDock, ReactionFloats } from "@/components/game/Chat";
 import { TradeButton, TradePanel } from "@/components/game/TradePanel";
 import { TradeToast } from "@/components/game/TradeToast";
+import { Announcer } from "@/components/game/Announcer";
 import { PlayerMenu } from "@/components/game/PlayerMenu";
 import { DiscardBar } from "@/components/game/DiscardBar";
 import { Dice } from "@/components/game/Dice";
@@ -260,6 +261,7 @@ export function Hud() {
 
       <ChatDock />
       <TradeToast />
+      <Announcer />
 
       <div className="pointer-events-none absolute bottom-0 inset-x-0 z-10 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         <div
