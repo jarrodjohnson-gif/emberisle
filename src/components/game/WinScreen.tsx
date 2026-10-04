@@ -149,16 +149,16 @@ function Panel() {
             Waiting for {hostName} to start another.
           </p>
         ) : null}
-        <div className="mt-5 flex gap-2">
-          <Button variant="secondary" className="flex-1" data-testid="win-look" onClick={() => setHidden(true)}>
+        <div className="mt-5 flex flex-wrap gap-2">
+          <Button variant="secondary" className="min-w-fit flex-1 whitespace-nowrap" data-testid="win-look" onClick={() => setHidden(true)}>
             Look around
           </Button>
           {canAgain ? (
-            <Button className="flex-1" data-testid="win-again" onClick={playAgain}>
+            <Button className="min-w-fit flex-1 whitespace-nowrap" data-testid="win-again" onClick={playAgain}>
               Play again
             </Button>
           ) : null}
-          <Button variant={canAgain ? "secondary" : "default"} className="flex-1" data-testid="win-menu" onClick={goTitle}>
+          <Button variant={canAgain ? "secondary" : "default"} className="min-w-fit flex-1 whitespace-nowrap" data-testid="win-menu" onClick={goTitle}>
             Back to menu
           </Button>
         </div>
