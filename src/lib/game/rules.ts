@@ -336,6 +336,20 @@ export function bankShort(state: GameState): Resource[] {
   return m ? (m[1]!.split(" and ") as Resource[]) : [];
 }
 
+// The hexes the latest roll paid, read from the "gathers N res from the P." lines produce() logs after the roll line, so the
+// glow never contradicts the log (a short bank, the wayfarer's hex and an empty corner all pay nothing there).
+export function payingHexes(state: GameState): string[] {
+  const i = state.log.findLastIndex((l) => / rolls \d\+\d = \d+\.$/.test(l));
+  if (i < 0) return [];
+  const paid = new Set<string>();
+  for (const l of state.log.slice(i + 1)) {
+    const m = /gathers \d+ (\w+) from the (\d+)\.$/.exec(l);
+    if (m) paid.add(`${m[1]}|${m[2]}`);
+  }
+  const built = new Set(state.vertices.filter((v) => v.building).flatMap((v) => v.hexes));
+  return state.hexes.filter((h) => !h.blocked && built.has(h.id) && paid.has(`${h.terrain}|${h.pip}`)).map((h) => h.id);
+}
+
 function grantSecondSettlement(state: GameState, vid: string, pid: string) {
   const v = vertex(state, vid);
   const p = player(state, pid);

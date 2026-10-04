@@ -1,6 +1,9 @@
-// #441: after a roll the hexes that paid glow (cap emissive up, then back to rest) and nothing else does. A state with an
-// outpost on each corner of a hex is pushed twice, first with no dice, then with the dice that pay it, and the proof reads every
-// frame the island draws. Under reduced motion the glow is a step to the peak and back, with no ramp. Zero console errors.
+// #441: after a roll the hexes that paid glow (cap emissive up, then back to rest) and nothing else does.
+// A hotseat table is built up (every corner owned), then real rolls go through the store's dispatch. After each roll the glowing
+// caps, read from every frame the island draws, must be exactly the hexes whose token is the sum, that the wayfarer is not on,
+// and whose resource a hand actually gained (read from the hand diff, not from the renderer's own rule). The rng is searched with
+// the rules' own applyAction so a roll can be steered into a bank-short roll and a wayfarer-blocked one. Negatives: a state that
+// already has dice, met on first load or after a jump of several seqs, never flashes. Under reduced motion the glow is a step.
 import { existsSync } from "node:fs";
 import { chromium } from "playwright";
 import { createServer } from "vite";
@@ -19,8 +22,7 @@ const browser = await chromium.launch({
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 
-// Plays one roll on a fresh hotseat table and returns, per drawn frame, the cap glow of each hex.
-async function scenario(reducedMotion) {
+async function openTable(reducedMotion) {
   const page = await browser.newPage({ viewport: { width: 960, height: 540 }, reducedMotion: reducedMotion ? "reduce" : "no-preference" });
   page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
   page.on("pageerror", (e) => errors.push(String(e)));
@@ -37,25 +39,25 @@ async function scenario(reducedMotion) {
     await page.keyboard.press("Enter");
     await page.waitForFunction((s) => window.__emberisle.getState().state.seq > s, before.seq, { timeout: STEP_MS });
   }
-  const seatedSeq = (seq) => page.waitForFunction((s) => window.__isle?.lastSeq === s, seq, { timeout: STEP_MS });
-
-  // The table before the roll: no dice, an outpost on every corner of the target hex.
-  const setup = await page.evaluate(() => {
+  await page.waitForFunction(() => window.__isle?.caps.size > 0, null, { timeout: STEP_MS });
+  // Every corner owned, alternately by the first two seats; the table waits for a roll.
+  await page.evaluate(async () => {
     const g = window.__emberisle;
     const st = structuredClone(g.getState().state);
-    const hex = st.hexes.find((h) => h.pip && h.terrain !== "waste" && h.id !== st.robberHex && h.pip !== 7);
-    const owner = st.current;
-    for (const v of st.vertices) if (v.hexes.includes(hex.id)) v.building = { playerId: owner, kind: "outpost" };
+    st.vertices.forEach((v, i) => {
+      v.building = { playerId: st.players[i % 2].id, kind: i % 3 === 0 ? "stronghold" : "outpost" };
+    });
+    st.current = st.players[0].id;
     st.phase = "roll";
     st.dice = null;
     st.seq += 1;
     g.setState({ state: st, buildMode: "none", error: null });
-    return { seq: st.seq, pip: hex.pip };
-  });
-  await seatedSeq(setup.seq);
-
-  // Record the glow of every cap on every frame the island draws.
-  await page.evaluate(() => {
+    window.__rules = await import("/src/lib/game/rules.ts");
+    // The rules draw each die from crypto.getRandomValues; a queued value steers the next die, otherwise it is untouched.
+    window.__queue = [];
+    const real = crypto.getRandomValues.bind(crypto);
+    crypto.getRandomValues = (buf) => (window.__queue.length ? ((buf[0] = window.__queue.shift()), buf) : real(buf));
+    // Record the glow of every cap on every frame the island draws.
     const isle = window.__isle;
     window.__frames = [];
     const draw = isle.composer.render.bind(isle.composer);
@@ -64,47 +66,146 @@ async function scenario(reducedMotion) {
       return draw(...a);
     };
   });
-  const rolled = await page.evaluate((pip) => {
+  await page.waitForFunction(() => window.__isle?.lastSeq === window.__emberisle.getState().state.seq, null, { timeout: STEP_MS });
+  return page;
+}
+
+// Pushes the pre-roll table with the given rng, bank and wayfarer hex, rolls through dispatch, waits for the glow to be over.
+async function roll(page, { dice, bank, robber }) {
+  await page.evaluate(({ bank, robber }) => {
     const g = window.__emberisle;
     const st = structuredClone(g.getState().state);
-    st.dice = [Math.floor(pip / 2), Math.ceil(pip / 2)];
-    st.phase = "main";
+    st.phase = "roll";
+    st.dice = null;
+    if (bank) st.bank = bank;
+    if (robber) {
+      st.robberHex = robber;
+      for (const h of st.hexes) h.blocked = h.id === robber;
+    }
     st.seq += 1;
-    g.setState({ state: st, buildMode: "none", error: null });
-    const touched = new Set(st.vertices.filter((v) => v.building).flatMap((v) => v.hexes));
-    const paying = st.hexes.filter((h) => h.pip === pip && !h.blocked && h.terrain !== "waste" && touched.has(h.id)).map((h) => h.id);
-    const resting = st.hexes.filter((h) => !paying.includes(h.id)).map((h) => h.id);
-    return { paying, resting, pip };
-  }, setup.pip);
-  // Wait on the frames: the glow shows, then every cap is back at rest.
-  await page.waitForFunction(
-    (ids) => {
-      const f = window.__frames;
-      const at = f.findIndex((fr) => ids.some((id) => fr[id] > 0));
-      return at >= 0 && f.slice(at).some((fr) => ids.every((id) => fr[id] === 0));
-    },
-    rolled.paying,
-    { timeout: STEP_MS * 8 },
-  );
-  const frames = await page.evaluate(() => window.__frames);
-  await page.close();
-  return { ...rolled, frames };
+    g.setState({ state: st, error: null });
+  }, { bank, robber });
+  await page.waitForFunction(() => window.__isle?.lastSeq === window.__emberisle.getState().state.seq, null, { timeout: STEP_MS });
+  return page.evaluate((dice) => {
+    window.__frames.length = 0;
+    const g = window.__emberisle;
+    const before = g.getState().state;
+    const hand = (st) => Object.fromEntries(["timber", "clay", "wool", "grain", "ore"].map((r) => [r, st.players.reduce((n, p) => n + p.resources[r], 0)]));
+    const h0 = hand(before);
+    window.__queue.push(dice[0] - 1, dice[1] - 1);
+    const res = g.getState().dispatch({ type: "roll" });
+    const after = g.getState().state;
+    const h1 = hand(after);
+    const gained = Object.keys(h0).filter((r) => h1[r] > h0[r]);
+    const sum = after.dice[0] + after.dice[1];
+    // The hexes that should glow: token is the sum, no wayfarer on it, and some hand gained that resource.
+    const expected = after.hexes.filter((h) => h.pip === sum && !h.blocked && gained.includes(h.terrain)).map((h) => h.id);
+    if (sum !== dice[0] + dice[1]) throw new Error(`dice ${after.dice} for ${dice}`);
+    return { ok: res.ok, sum, gained, expected, short: window.__rules.bankShort(after), blocked: after.robberHex, seq: after.seq };
+  }, dice);
+}
+
+const settled = (page, minFrames = 4) =>
+  page.waitForFunction((n) => window.__isle.flashes.length === 0 && window.__frames.length >= n, minFrames, { timeout: STEP_MS * 8 });
+const glowing = (page) =>
+  page.evaluate(() => {
+    const f = window.__frames;
+    const ids = Object.keys(f[0] ?? {});
+    const peak = Math.max(0, ...f.flatMap((fr) => Object.values(fr)));
+    return { frames: f.length, ids: ids.filter((id) => f.some((fr) => fr[id] > 0)), peak, last: f[f.length - 1], mid: f.flatMap((fr) => Object.values(fr)).filter((v) => v > 0 && v < peak - 1e-6).length };
+  });
+
+const split = (sum) => [Math.max(1, sum - 6), sum - Math.max(1, sum - 6)];
+const layout = (page) => page.evaluate(() => window.__emberisle.getState().state.hexes.filter((h) => h.pip && h.terrain !== "waste").map((h) => ({ id: h.id, pip: h.pip, terrain: h.terrain })));
+
+function check(label, got, exp, reduced) {
+  const same = got.ids.length === exp.expected.length && exp.expected.every((id) => got.ids.includes(id));
+  console.log(`${label}: sum ${exp.sum}, gained [${exp.gained}], short [${exp.short}], expect ${exp.expected.length} glow, saw ${got.ids.length}, ${got.frames} frames, peak ${got.peak.toFixed(2)}, in-between ${got.mid}`);
+  if (!exp.ok) throw new Error(`${label}: the roll was refused`);
+  if (!same) throw new Error(`${label}: glow ${got.ids} vs hands ${exp.expected}`);
+  if (exp.expected.length) {
+    if (got.peak < 0.25) throw new Error(`${label}: peak ${got.peak}`);
+    if (!exp.expected.every((id) => got.last[id] === 0)) throw new Error(`${label}: a paying hex did not settle`);
+    if (reduced && got.mid) throw new Error(`${label}: reduced motion ramped`);
+    if (!reduced && !got.mid) throw new Error(`${label}: the glow stepped; it should rise and fade`);
+  }
 }
 
 try {
   for (const reduced of [false, true]) {
-    const { paying, resting, pip, frames } = await scenario(reduced);
-    const series = (id) => frames.map((f) => f[id]);
-    const peak = Math.max(...paying.flatMap(series));
-    const mid = paying.flatMap(series).filter((v) => v > 0 && v < peak - 1e-6).length;
-    const stray = Math.max(...resting.flatMap(series));
-    const last = frames[frames.length - 1];
-    console.log(`${reduced ? "reduced motion" : "motion"}: roll of ${pip} pays ${paying.length} hex(es), ${frames.length} frames, peak ${peak.toFixed(2)}, ${mid} frames between rest and peak, other hexes max ${stray}, end ${paying.map((id) => last[id])}`);
-    if (!paying.length || peak < 0.3) throw new Error(`the paying hexes did not glow: peak ${peak}`);
-    if (stray !== 0) throw new Error(`a non-paying hex glowed: ${stray}`);
-    if (!paying.every((id) => last[id] === 0)) throw new Error("a paying hex did not settle back to rest");
-    if (reduced && mid !== 0) throw new Error(`reduced motion ramped the glow (${mid} in-between frames)`);
-    if (!reduced && mid === 0) throw new Error("the glow stepped; it should rise and fade");
+    const page = await openTable(reduced);
+    const tag = reduced ? "reduced motion" : "motion";
+    const hexes = await layout(page);
+    const sums = [...new Set(hexes.map((h) => h.pip))].filter((n) => n !== 7);
+    // 1. A plain roll.
+    const e1 = await roll(page, { dice: split(sums[0]) });
+    await settled(page);
+    check(`${tag} roll`, await glowing(page), e1, reduced);
+    if (!reduced) {
+      // 2. A short bank: a token shared by two resources, the bank holds one of the first, and two seats are owed it.
+      const at = (n) => hexes.filter((h) => h.pip === n);
+      const sum2 = sums.find((n) => new Set(at(n).map((h) => h.terrain)).size >= 2);
+      if (!sum2) throw new Error("no token is shared by two resources on this island");
+      const short = at(sum2)[0].terrain;
+      const bank = { timber: 19, clay: 19, wool: 19, grain: 19, ore: 19, [short]: 1 };
+      const e2 = await roll(page, { dice: split(sum2), bank });
+      await settled(page);
+      const g2 = await glowing(page);
+      check("bank short", g2, e2, reduced);
+      if (!e2.short.includes(short)) throw new Error(`the log did not say the bank was short of ${short}: ${e2.short}`);
+      const shortIds = at(sum2).filter((h) => h.terrain === short).map((h) => h.id);
+      if (g2.ids.some((id) => shortIds.includes(id))) throw new Error(`a ${short} hex glowed on a roll the bank could not pay`);
+      if (!e2.expected.length) throw new Error("bank-short roll paid nothing else; the scenario proves too little");
+      // 3. The wayfarer on a hex whose token is rolled: that hex stays dark.
+      const sum3 = sums.find((n) => at(n).length >= 2);
+      if (!sum3) throw new Error("no token is on two hexes of this island");
+      const under = at(sum3)[0].id;
+      const full = { timber: 19, clay: 19, wool: 19, grain: 19, ore: 19 };
+      const e3 = await roll(page, { dice: split(sum3), robber: under, bank: full });
+      await settled(page, 2);
+      const g3 = await glowing(page);
+      check("wayfarer-blocked", g3, e3, reduced);
+      if (g3.ids.includes(under)) throw new Error("the hex under the wayfarer glowed");
+      if (!e3.expected.length) throw new Error("the other hex with that token paid nothing; the scenario proves too little");
+      // 4. Negatives: a state that already has dice never flashes when it is met, only a live roll does.
+      const rolled = await page.evaluate(() => structuredClone(window.__emberisle.getState().state));
+      await page.evaluate(() => {
+        window.__emberisle.getState().goTitle();
+        window.__frames.length = 0;
+      });
+      await page.waitForFunction(() => window.__emberisle.getState().state === null && window.__frames.length >= 2, null, { timeout: STEP_MS * 4 });
+      await page.evaluate((st) => {
+        window.__frames.length = 0;
+        window.__emberisle.setState({ state: st, screen: "play", mode: "hotseat" });
+      }, rolled);
+      await page.waitForFunction((seq) => window.__isle.lastSeq === seq && window.__frames.length >= 4, rolled.seq, { timeout: STEP_MS * 8 });
+      const first = await glowing(page);
+      console.log(`first load onto a state with dice: ${first.frames} frames, glowing ${first.ids.length}`);
+      if (first.ids.length) throw new Error(`a state met with dice flashed: ${first.ids}`);
+      // The same island but a jump of several seqs (a spectator catching up) does not flash either.
+      await page.evaluate(() => {
+        const g = window.__emberisle;
+        const st = structuredClone(g.getState().state);
+        st.dice = null;
+        st.phase = "roll";
+        st.seq += 1;
+        g.setState({ state: st });
+      });
+      await page.waitForFunction(() => window.__isle.lastSeq === window.__emberisle.getState().state.seq, null, { timeout: STEP_MS });
+      await page.evaluate((st) => {
+        window.__frames.length = 0;
+        const g = window.__emberisle;
+        const cur = g.getState().state;
+        const next = structuredClone(st);
+        next.seq = cur.seq + 3;
+        g.setState({ state: next });
+      }, rolled);
+      await page.waitForFunction(() => window.__frames.length >= 4, null, { timeout: STEP_MS * 8 });
+      const jump = await glowing(page);
+      console.log(`seq jump onto a state with dice: ${jump.frames} frames, glowing ${jump.ids.length}`);
+      if (jump.ids.length) throw new Error(`a seq jump flashed: ${jump.ids}`);
+    }
+    await page.close();
   }
 } catch (e) {
   console.error("flash-prove failed:", e);
