@@ -278,8 +278,10 @@ function rollOffRoll(state: GameState, me: PlayerState) {
     state.current = ro.pending[0]!;
     return;
   }
+  const seated = state.players.filter((p) => p.id === ro.first);
+  const rolling = state.players.filter((p) => p.id !== ro.first);
   const top = Math.max(...Object.values(ro.rolls));
-  const leaders = state.players.filter((p) => ro.rolls[p.id] === top);
+  const leaders = rolling.filter((p) => ro.rolls[p.id] === top);
   if (leaders.length > 1) {
     for (const p of leaders) delete ro.rolls[p.id];
     ro.pending = leaders.map((p) => p.id);
@@ -287,13 +289,14 @@ function rollOffRoll(state: GameState, me: PlayerState) {
     log(state, `${names(leaders)} tie at ${top} and roll again.`);
     return;
   }
-  const first = leaders[0]!;
-  const rest = state.players.filter((p) => p !== first).sort((a, b) => ro.rolls[b.id]! - ro.rolls[a.id]!);
-  state.players = [first, ...rest];
-  state.current = first.id;
+  const lead = leaders[0]!;
+  const rest = rolling.filter((p) => p !== lead).sort((a, b) => ro.rolls[b.id]! - ro.rolls[a.id]!);
+  state.players = [...seated, lead, ...rest];
+  const [first, ...after] = state.players;
+  state.current = first!.id;
   state.phase = "setupSettle";
   state.setupIndex = 0;
-  log(state, `${first.name} places first, then ${names(rest)}.`);
+  log(state, `${first!.name} places first, then ${names(after)}.`);
 }
 
 function produce(state: GameState, total: number) {

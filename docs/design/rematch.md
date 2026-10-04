@@ -7,6 +7,11 @@ next first if the game continues."
 
 ## Decisions
 
+**Jarrod, 2026-10-03 (on #266), replaces "There is no roll-off" and `rollOff: false` below:** the last winner places
+first, and the others roll off (#232) for the remaining order. As built: `createGame({ winnerFirst: true })` makes the
+first human `p0`, sets `rollOff.first` to it and leaves it out of `pending`; the others roll by the #232 rule (a tie for
+the top of the rest rolls again) and line up behind it. If the winner was let go, the rematch is a plain roll-off.
+
 The research note left four open items. Each has a default here.
 
 | Open item | Default | Why |
