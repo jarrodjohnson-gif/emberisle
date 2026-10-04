@@ -321,6 +321,16 @@ export function Hud() {
 
       <div className="pointer-events-none absolute bottom-0 inset-x-0 z-10 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         <div className="relative mx-auto max-w-3xl">
+          {/* #459: floats above the stack, so it coming and going never reflows the turn banner. */}
+          {banner ? (
+            <p
+              role="status"
+              data-testid="banner"
+              className="pointer-events-none absolute inset-x-0 bottom-full mb-2 animate-[turn-fade_200ms_ease-out] rounded-[16px] border border-accent/40 bg-surface px-3 py-2 text-center text-sm font-medium text-zinc-900"
+            >
+              {banner}
+            </p>
+          ) : null}
           <div
             ref={stackRef}
             className={cn(
@@ -364,15 +374,6 @@ export function Hud() {
               </p>
             )}
             <TurnCountdown />
-            {banner ? (
-              <p
-                role="status"
-                data-testid="banner"
-                className="rounded-[16px] border border-accent/40 bg-surface px-3 py-2 text-center text-sm font-medium text-zinc-900"
-              >
-                {banner}
-              </p>
-            ) : null}
             {winner || error ? (
               <p className="rounded-[16px] border border-white/50 bg-glass px-3 py-2 text-sm text-zinc-900 backdrop-blur-md">
                 {winner ? `${winner.name} wins with ${totalVP(state, winner.id)} points.` : null}
