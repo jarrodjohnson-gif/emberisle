@@ -144,6 +144,24 @@ try {
   r = await box(phone, '[data-testid="lobby-card"]');
   check(r.height <= 0.55 * r.vh + 0.5 && Math.abs(r.width - (r.vw - 24)) < 1, `phone lobby card is ${r.width.toFixed(0)}x${r.height.toFixed(0)}, within 55vh and full width`);
   await shot(phone, "chat-phone-lobby.jpg");
+  // Four seats, scrolled to the bottom, at 844 and 640 tall: the sticky actions row reaches the card's bottom edge, so no
+  // scroll content (chat chips, input, seat rows) renders below it, and Leave lives inside it.
+  for (const h of [844, 640]) {
+    await phone.page.setViewportSize({ width: 390, height: h });
+    await phone.page.evaluate(() => { const s = document.querySelector('[data-testid="lobby-card"] > div'); s.scrollTop = s.scrollHeight; });
+    await shot(phone, `chat-phone-lobby-bottom-${h}.jpg`);
+    const m = await phone.page.evaluate(() => {
+      const scroller = document.querySelector('[data-testid="lobby-card"] > div');
+      const row = document.querySelector('[data-testid="lobby-actions"]');
+      const rb = row.getBoundingClientRect().bottom;
+      const below = [...scroller.querySelectorAll("*")].filter((el) => !row.contains(el) && el !== row && el.getBoundingClientRect().height > 0 && el.getBoundingClientRect().bottom > rb + 0.5 && !el.contains(row)).map((el) => el.tagName);
+      const leave = [...row.querySelectorAll("button")].some((b) => b.textContent.trim() === "Leave the table");
+      return { gap: Math.round((scroller.getBoundingClientRect().bottom - 1 - rb) * 10) / 10, below, leave };
+    });
+    check(m.gap <= 1 && m.below.length === 0 && m.leave, `phone lobby 390x${h}, 4 seats scrolled down: sticky row ends at the card's bottom edge (gap ${m.gap}), nothing below it, Leave inside it`);
+  }
+  await phone.page.setViewportSize({ width: 390, height: 844 });
+  await phone.page.evaluate(() => { document.querySelector('[data-testid="lobby-card"] > div').scrollTop = 0; });
   // #389: Ready and Start are in the first screenful of the phone lobby, with no scrolling.
   const inView = (t, sel) => t.page.evaluate((q) => {
     const r = document.querySelector(q).getBoundingClientRect();
