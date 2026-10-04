@@ -1,6 +1,6 @@
 // #322: the two dice as faces with pips. The whole row is one image to a screen reader, so it hears
 // "Rolled 3 and 4, 7" once instead of three bare numbers.
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { create } from "zustand";
 import { cn } from "@/lib/utils";
 import { useGame } from "@/lib/game/store";
@@ -80,7 +80,8 @@ export function RollMoment() {
   const [said, setSaid] = useState<Roll | null>(null);
   const chip = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
+  // Before paint, so the moment shows in the same frame as the dice, not one frame later.
+  useLayoutEffect(() => {
     const was = seen.current;
     seen.current = rolls;
     if (rolls !== was + 1 || !state?.dice) return;

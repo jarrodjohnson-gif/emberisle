@@ -246,16 +246,20 @@ async function practice(viewport, touch) {
   await page.waitForSelector('[data-testid="roll-moment"]', { timeout: STEP_MS });
   await page.evaluate(() => {
     window.__pressed = 0;
-    document.addEventListener(navigator.maxTouchPoints ? "pointerdown" : "keydown", () => window.__pressed++);
+    document.addEventListener(navigator.maxTouchPoints ? "pointerdown" : "keydown", () => {
+      window.__pressed++;
+      window.__pressedAt = performance.now();
+    });
   });
-  const pressAt = await page.evaluate(() => performance.now());
   if (touch) await page.touchscreen.tap(viewport.width - 20, viewport.height / 2);
   else await page.keyboard.press("Shift");
   await page.waitForSelector('[data-testid="roll-moment"]', { state: "detached", timeout: STEP_MS });
-  const skip = await page.evaluate(({ t0 }) => ({ m: window.__moments.at(-1), pressed: window.__pressed, flights: window.__flights.filter((f) => f.start > t0).length }), { t0 });
-  const skipped = skip.m.gone - pressAt;
+  const skip = await page.evaluate(({ t0 }) => ({ m: window.__moments.at(-1), pressed: window.__pressed, at: window.__pressedAt, flights: window.__flights.filter((f) => f.start > t0).length }), { t0 });
+  // From when the page handles the press, not from when the harness sent it: a tap can wait in the input queue behind a
+  // slow software-GL frame, which is the browser's latency, not the moment's.
+  const skipped = skip.m.gone - skip.at;
   console.log(`${tag}: ${touch ? "tap" : "key"} skip, gone ${skipped.toFixed(0)} ms after the press, page heard it ${skip.pressed}×`);
-  check(skipped < 300 && skip.flights === 0 && skip.pressed === 1, `${tag}: a ${touch ? "tap" : "key press"} skips the moment and still reaches the page`);
+  check(skipped < 100 && skip.flights === 0 && skip.pressed === 1, `${tag}: a ${touch ? "tap" : "key press"} skips the moment and still reaches the page`);
   check(await page.getByTestId("dice-row").isVisible(), `${tag}: after a skip the resting row shows`);
 
   // Online seats and watchers mount a table from the host's state and get each roll as a pushed state (the store's
