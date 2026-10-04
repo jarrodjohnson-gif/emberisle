@@ -115,6 +115,17 @@ try {
     if (live.n !== start.hi.vertices.length || live.colors.length !== 1 || live.colors[0] !== live.seat.toLowerCase() || live.swing < 0.1) {
       throw new Error(`marks do not pulse in the seat colour: ${JSON.stringify(live)}`);
     }
+    // Flip to reduced motion mid-pulse: the marks drop to their base glow and stay there.
+    await page.evaluate(() => {
+      window.__calmFlip = new Promise((res) => matchMedia("(prefers-reduced-motion: reduce)").addEventListener("change", (e) => res(e.matches), { once: true }));
+    });
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    if ((await page.evaluate(() => window.__calmFlip)) !== true) throw new Error("reduced-motion change event did not reach the page");
+    await page.waitForFunction(() => window.__isle.marks.children.filter((m) => m.userData.baseGlow !== undefined).every((m) => m.material.emissiveIntensity === m.userData.baseGlow), null, { timeout: STEP_MS * 4 });
+    const flipped = await observe(false);
+    console.log(`flipped to reduced motion mid-pulse: glow swing ${flipped.swing.toFixed(2)}`);
+    if (flipped.swing !== 0) throw new Error(`marks still move after the flip: ${JSON.stringify(flipped)}`);
+    await page.emulateMedia({ reducedMotion: "no-preference" });
   }
 
   // A phone tap left a mark on corner A (PlaceChip, waiting for Enter); Enter on list button B places B, never A.
@@ -304,6 +315,36 @@ try {
   const calm = await observe(false, still);
   console.log(`reduced motion: ${calm.n} marks, glow swing ${calm.swing.toFixed(2)} over ${calm.frames} frames`);
   if (calm.swing !== 0 || calm.n !== liveN) throw new Error(`marks move under reduced motion: ${JSON.stringify(calm)}`);
+  // Legibility, worst case: the darkest seat (Pine) acts. At the pulse trough (0.6x base) a corner ring and a path bar must still
+  // carry enough light to read on forest: emissive luminance times trough intensity stays above a floor.
+  const lum = (c) => 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
+  const trough = await still.evaluate(() => {
+    const g = window.__emberisle;
+    const st = structuredClone(g.getState().state);
+    const pine = st.players.find((p) => p.color.toLowerCase() === "#3d6b4f") ?? st.players[0];
+    st.current = pine.id;
+    st.seq += 1;
+    g.setState({ state: st, buildMode: "none", error: null });
+    return pine.id;
+  });
+  const read = (kind) =>
+    still.waitForFunction(
+      (k) => window.__isle.marks.children.some((m) => m.userData.kind === k && m.userData.baseGlow !== undefined),
+      kind,
+      { timeout: STEP_MS * 4 },
+    ).then(() =>
+      still.evaluate((k) => {
+        const m = window.__isle.marks.children.find((o) => o.userData.kind === k && o.userData.baseGlow !== undefined);
+        return { glow: { r: m.material.emissive.r, g: m.material.emissive.g, b: m.material.emissive.b }, trough: m.userData.baseGlow * 0.6 };
+      }, kind),
+    );
+  const ring = await read("vertex");
+  await still.evaluate(() => window.__emberisle.getState().pickVertex(window.__emberisle.getState().highlights().vertices[0]));
+  const bar = await read("edge");
+  const lr = lum(ring.glow) * ring.trough;
+  const lb = lum(bar.glow) * bar.trough;
+  console.log(`Pine (${trough}) at the trough: ring light ${lr.toFixed(3)}, path bar light ${lb.toFixed(3)} (floor 0.1)`);
+  if (lr < 0.1 || lb < 0.1) throw new Error(`Pine marks too dim at the trough: ring ${lr}, bar ${lb}`);
   await still.close();
 } catch (e) {
   console.error("keyboard-place-prove failed:", e);
