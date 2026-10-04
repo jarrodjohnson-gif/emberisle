@@ -62,6 +62,8 @@ function photoUrl(kind: Terrain): string | undefined {
 }
 
 type Highlights = { vertices: string[]; edges: string[]; hexes: string[] };
+// The pulse token (polish.md "Motion"): legal corners and paths breathe once per 1.2 s.
+const LEGAL_PULSE_S = 1.2;
 type Sheep = { g: THREE.Object3D; ox: number; oz: number; tx: number; tz: number; wait: number; graze: number };
 
 export class IsleRenderer {
@@ -111,6 +113,7 @@ export class IsleRenderer {
   // Until when the loop runs at full rate: a drag, a camera move, a walk or a state change holds it there for 1 s (#331).
   private busyUntil = 0;
   private lastMarks = "";
+  private wasCalm = false;
   // prefers-reduced-motion (#382): nothing ambient moves, and the loop draws only on a change.
   private calmMq = typeof matchMedia === "function" ? matchMedia("(prefers-reduced-motion: reduce)") : null;
   // Frames drawn; the idle proof counts them.
@@ -477,6 +480,18 @@ export class IsleRenderer {
     else this.onPick(hit.kind, hit.id);
   };
 
+  // The legal marks breathe between 0.6x and 1.2x of their base glow on the 1.2 s pulse token, one shared phase (#437).
+  // Reduced motion holds the base glow. The wayfarer's hex ring keeps its own faster pulse. Marks pulse at the idle 12 fps by design.
+  private pulseMarks(t: number, still: boolean) {
+    const k = still ? 1 : 0.9 + 0.3 * Math.sin((t * 2 * Math.PI) / LEGAL_PULSE_S);
+    for (const m of this.marks.children) {
+      const base = m.userData.baseGlow as number | undefined;
+      if (base === undefined || m.userData.id === this.pending?.id) continue;
+      const mat = (m as THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>).material;
+      mat.emissiveIntensity = m.userData.kind === "hex" ? (still ? base : 0.5 + 0.35 * (0.5 + 0.5 * Math.sin(t * 4))) : base * k;
+    }
+  }
+
   private tick = () => {
     if (this.stopped) return;
     const now = performance.now();
@@ -484,6 +499,11 @@ export class IsleRenderer {
     const pulsing = this.marks.children.some((m) => m.userData.kind === "hex" && m.userData.id !== this.pending?.id);
     // Reduced motion (#382): no tick at all; a drag, a camera move or a state push still draws for its 1 s hold.
     const calm = this.calm();
+    // Reading `matches` here can swallow the change event, so a flip seen on this frame wakes the loop itself.
+    if (calm !== this.wasCalm) {
+      this.wasCalm = calm;
+      this.wake();
+    }
     if (calm && this.walk) {
       this.walk = null;
       this.startWalk();
@@ -498,6 +518,7 @@ export class IsleRenderer {
     this.controls.autoRotate = this.titleMode && !calm;
     this.controls.update();
     if (calm) {
+      this.pulseMarks(0, true);
       this.composer.render();
       this.renders += 1;
       return;
@@ -519,10 +540,7 @@ export class IsleRenderer {
       }
     }
     this.lantern.emissiveIntensity = 1.6 + 0.3 * Math.sin(t * 2.2);
-    for (const m of this.marks.children) {
-      if (m.userData.kind !== "hex" || m.userData.id === this.pending?.id) continue;
-      (m as THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>).material.emissiveIntensity = 0.5 + 0.35 * (0.5 + 0.5 * Math.sin(t * 4));
-    }
+    this.pulseMarks(t, false);
     for (const s of this.sheep) {
       s.wait -= dt;
       if (s.wait <= 0) {
@@ -657,12 +675,16 @@ export class IsleRenderer {
     const hset = new Set(hi.hexes);
     const vmap = new Map(state.vertices.map((v) => [v.id, v]));
     const tops = hexTops(state);
+    // Marks show only for the seat to act, so that seat's colour is the one every mark wears.
+    const seat = new THREE.Color(state.players.find((p) => p.id === state.current)?.color ?? "#fff6e8");
+    // The glow leans toward cream so a dark seat (Pine) still reads on forest at the pulse trough; the hue stays the seat's.
+    const glow = seat.clone().lerp(new THREE.Color(0xfff6e8), 0.35);
 
     for (const v of state.vertices) {
       if (!vset.has(v.id)) continue;
       const m = new THREE.Mesh(
         new THREE.TorusGeometry(0.13, 0.025, 8, 24),
-        new THREE.MeshStandardMaterial({ color: 0xfff6e8, emissive: 0xfff6e8, emissiveIntensity: 0.8 }),
+        new THREE.MeshStandardMaterial({ color: seat, emissive: glow, emissiveIntensity: 0.8 }),
       );
       m.rotation.x = Math.PI / 2;
       m.position.set(v.x, vertexTop(tops, v) + 0.03, v.z);
@@ -681,7 +703,7 @@ export class IsleRenderer {
       const b = vmap.get(e.vb)!;
       const m = new THREE.Mesh(
         new THREE.BoxGeometry(0.16, 0.07, Math.hypot(b.x - a.x, b.z - a.z) * 0.72),
-        new THREE.MeshStandardMaterial({ color: 0xfff6e8, emissive: 0x2a8f8a, emissiveIntensity: 0.45 }),
+        new THREE.MeshStandardMaterial({ color: seat, emissive: glow, emissiveIntensity: 0.45 }),
       );
       m.position.set((a.x + b.x) / 2, edgeTop(tops, a, b) + 0.035, (a.z + b.z) / 2);
       m.rotation.y = Math.atan2(b.x - a.x, b.z - a.z);

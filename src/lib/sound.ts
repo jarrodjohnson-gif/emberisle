@@ -12,6 +12,8 @@ const FILES = {
   card_play: "scratch_001.wav",
   trade_yes: "confirmation_001.wav",
   trade_no: "error_002.wav",
+  ui_click: "click_001.wav",
+  ui_back: "back_001.wav",
   ui_error: "error_001.wav",
   win: "pluck_001.wav",
   // Reused as the your-turn chime.

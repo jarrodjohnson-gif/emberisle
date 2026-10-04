@@ -6,6 +6,7 @@ import { useFocusTrap } from "@/lib/focus-trap";
 import { harborRate } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
 import { RESOURCES, RESOURCE_LABEL, type Resource } from "@/lib/game/types";
+import { play } from "@/lib/sound";
 import type { Bag } from "@/lib/net/table";
 
 // "2 wool, 1 grain" in the README's words, or "" for an empty bag.
@@ -74,7 +75,11 @@ export function TradePanel() {
   }, [open]);
   useEffect(() => {
     if (!open) return;
-    const key = (e: KeyboardEvent) => e.key === "Escape" && setTradeOpen(false);
+    const key = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      play("ui_back");
+      setTradeOpen(false);
+    };
     window.addEventListener("keydown", key);
     return () => window.removeEventListener("keydown", key);
   }, [open, setTradeOpen]);
@@ -119,7 +124,7 @@ export function TradePanel() {
           <h2 id="trade-title" className="font-display text-2xl">
             Trade
           </h2>
-          <Button variant="ghost" size="icon" onClick={() => setTradeOpen(false)} aria-label="Close">
+          <Button variant="ghost" size="icon" onClick={() => setTradeOpen(false)} aria-label="Close" back>
             <X className="size-4" />
           </Button>
         </div>

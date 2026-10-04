@@ -69,6 +69,65 @@ try {
   mkdirSync("test-results", { recursive: true });
   await page.screenshot({ path: "test-results/keyboard-place-prove.png" });
 
+  // #437: the legal corners wear the seat's colour and breathe on the 1.2 s pulse; under reduced motion they hold their base glow.
+  let observe;
+  let liveN = 0;
+  {
+    // Every mark's colour and emissive intensity over one pulse period, read off the live scene on animation frames.
+    observe = (moving, on = page) =>
+      on.evaluate(
+        (moving) =>
+          new Promise((resolve) => {
+            const t0 = performance.now();
+            const seat = window.__emberisle.getState().state.players.find((p) => p.id === window.__emberisle.getState().state.current).color;
+            const lo = new Map();
+            const hi = new Map();
+            
+            const colors = new Set();
+            let frames = 0;
+            const frame = () => {
+              frames++;
+              const marks = window.__isle.marks.children.filter((m) => m.userData.baseGlow !== undefined && m.userData.kind === "vertex");
+              for (const m of marks) {
+                colors.add(`#${m.material.color.getHexString()}`);
+                const v = m.material.emissiveIntensity;
+                lo.set(m.userData.id, Math.min(lo.get(m.userData.id) ?? v, v));
+                hi.set(m.userData.id, Math.max(hi.get(m.userData.id) ?? v, v));
+              }
+              const ids0 = [...lo.keys()];
+              const swing0 = Math.max(0, ...ids0.map((i) => hi.get(i) - lo.get(i)));
+              // Moving: until a swing shows (software GL draws a frame every ~0.7 s, so a clock window would miss it). Still: one full pulse of frames.
+              const more = moving ? swing0 < 0.1 && performance.now() - t0 < 15000 : performance.now() - t0 < 1400 || frames < 3;
+              if (more) requestAnimationFrame(frame);
+              else {
+                const ids = [...lo.keys()];
+                resolve({ n: ids.length, seat, colors: [...colors], swing: Math.max(0, ...ids.map((i) => hi.get(i) - lo.get(i))), frames });
+              }
+            };
+            requestAnimationFrame(frame);
+          }),
+        moving,
+      );
+    await page.waitForFunction(() => window.__isle.marks.children.some((m) => m.userData.kind === "vertex" && m.userData.baseGlow !== undefined), null, { timeout: STEP_MS });
+    const live = await observe(true);
+    liveN = live.n;
+    console.log(`legal corners: ${live.n} marks, colours ${live.colors}, seat ${live.seat}, glow swing ${live.swing.toFixed(2)} over one pulse (${live.frames} frames)`);
+    if (live.n !== start.hi.vertices.length || live.colors.length !== 1 || live.colors[0] !== live.seat.toLowerCase() || live.swing < 0.1) {
+      throw new Error(`marks do not pulse in the seat colour: ${JSON.stringify(live)}`);
+    }
+    // Flip to reduced motion mid-pulse: the marks drop to their base glow and stay there.
+    await page.evaluate(() => {
+      window.__calmFlip = new Promise((res) => matchMedia("(prefers-reduced-motion: reduce)").addEventListener("change", (e) => res(e.matches), { once: true }));
+    });
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    if ((await page.evaluate(() => window.__calmFlip)) !== true) throw new Error("reduced-motion change event did not reach the page");
+    await page.waitForFunction(() => window.__isle.marks.children.filter((m) => m.userData.baseGlow !== undefined).every((m) => m.material.emissiveIntensity === m.userData.baseGlow), null, { timeout: STEP_MS * 4 });
+    const flipped = await observe(false);
+    console.log(`flipped to reduced motion mid-pulse: glow swing ${flipped.swing.toFixed(2)}`);
+    if (flipped.swing !== 0) throw new Error(`marks still move after the flip: ${JSON.stringify(flipped)}`);
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+  }
+
   // A phone tap left a mark on corner A (PlaceChip, waiting for Enter); Enter on list button B places B, never A.
   {
     const [a, b] = start.hi.vertices;
@@ -236,6 +295,57 @@ try {
   if (hexNames.length !== robber.glow || new Set(hexNames).size !== hexNames.length || moved.hex !== hexB || moved.hex === robber.from) {
     throw new Error(`wayfarer: ${JSON.stringify({ hexNames, robber, moved })}`);
   }
+  // #437: a page that starts under reduced motion holds every mark at its base glow. The first page is parked so software GL has the CPU.
+  await page.goto("about:blank");
+  const still = await browser.newPage({ viewport: { width: 1280, height: 720 }, reducedMotion: "reduce" });
+  still.on("pageerror", (e) => errors.push(String(e)));
+  await still.goto(`http://127.0.0.1:${PORT}/`);
+  await still.getByRole("button", { name: "Four seats, one table" }).focus();
+  await still.keyboard.press("Enter");
+  await still.waitForFunction(() => window.__emberisle?.getState().state, null, { timeout: STEP_MS });
+  for (let i = 0; i < 40; i++) {
+    const phase = await still.evaluate(() => window.__emberisle.getState().state.phase);
+    if (phase !== "rollOff") break;
+    const seq = await still.evaluate(() => window.__emberisle.getState().state.seq);
+    await still.getByRole("button", { name: "Roll", exact: true }).focus({ timeout: STEP_MS });
+    await still.keyboard.press("Enter");
+    await still.waitForFunction((s) => window.__emberisle.getState().state.seq > s, seq, { timeout: STEP_MS });
+  }
+  await still.waitForFunction(() => window.__isle.marks.children.some((m) => m.userData.kind === "vertex" && m.userData.baseGlow !== undefined), null, { timeout: STEP_MS });
+  const calm = await observe(false, still);
+  console.log(`reduced motion: ${calm.n} marks, glow swing ${calm.swing.toFixed(2)} over ${calm.frames} frames`);
+  if (calm.swing !== 0 || calm.n !== liveN) throw new Error(`marks move under reduced motion: ${JSON.stringify(calm)}`);
+  // Legibility, worst case: the darkest seat (Pine) acts. At the pulse trough (0.6x base) a corner ring and a path bar must still
+  // carry enough light to read on forest: emissive luminance times trough intensity stays above a floor.
+  const lum = (c) => 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
+  const trough = await still.evaluate(() => {
+    const g = window.__emberisle;
+    const st = structuredClone(g.getState().state);
+    const pine = st.players.find((p) => p.color.toLowerCase() === "#3d6b4f") ?? st.players[0];
+    st.current = pine.id;
+    st.seq += 1;
+    g.setState({ state: st, buildMode: "none", error: null });
+    return pine.id;
+  });
+  const read = (kind) =>
+    still.waitForFunction(
+      (k) => window.__isle.marks.children.some((m) => m.userData.kind === k && m.userData.baseGlow !== undefined),
+      kind,
+      { timeout: STEP_MS * 4 },
+    ).then(() =>
+      still.evaluate((k) => {
+        const m = window.__isle.marks.children.find((o) => o.userData.kind === k && o.userData.baseGlow !== undefined);
+        return { glow: { r: m.material.emissive.r, g: m.material.emissive.g, b: m.material.emissive.b }, trough: m.userData.baseGlow * 0.6 };
+      }, kind),
+    );
+  const ring = await read("vertex");
+  await still.evaluate(() => window.__emberisle.getState().pickVertex(window.__emberisle.getState().highlights().vertices[0]));
+  const bar = await read("edge");
+  const lr = lum(ring.glow) * ring.trough;
+  const lb = lum(bar.glow) * bar.trough;
+  console.log(`Pine (${trough}) at the trough: ring light ${lr.toFixed(3)}, path bar light ${lb.toFixed(3)} (floor 0.1)`);
+  if (lr < 0.1 || lb < 0.1) throw new Error(`Pine marks too dim at the trough: ring ${lr}, bar ${lb}`);
+  await still.close();
 } catch (e) {
   console.error("keyboard-place-prove failed:", e);
   code = 1;
