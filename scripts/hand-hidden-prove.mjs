@@ -1,10 +1,13 @@
-// #439: the hand bar is not on the table until the seat on turn holds a good. At 1280x720 and 390x844 (touch), with and without
-// prefers-reduced-motion, on a hotseat table played through the real roll-off and setup:
-//  - roll-off and every setup step before the second outpost pays: 0 hand tiles, no hand-dock, and the HUD stack (the turn banner's bottom
-//    edge) sits lower, so the space above it, the board's hole, is bigger by about the hand's height;
-//  - the second outpost paying brings the hand in (5 tiles). With motion it rises over 220 ms: opacity and height pass through
-//    in-between values (read at the animation's midpoint) and the banner glides up between its two resting places; under reduced motion the first frame after the change is the final one;
-//  - losing every good takes the hand away again, the same way, and the banner returns to where it was;
+// #439: the hand bar is not on the table until the seat has held a good this game (or the phase is roll/main). At 1280x720 and
+// 390x844 (touch), with and without prefers-reduced-motion, on a hotseat table played through the real roll-off and setup:
+//  - roll-off and every setup step before the second outpost pays: 0 hand tiles, no hand-dock, and the HUD sits lower, so the
+//    hole the island is fitted to (`__isle.insets().bottom`) is bigger by about the hand's height;
+//  - the second outpost paying brings the hand in (5 tiles) mounted at its full height in that same commit, rising over 220 ms
+//    with opacity and translateY only (read at the animation's midpoint: opacity in between, height already final, no layout
+//    property in the keyframes); under reduced motion it is a 1 ms step;
+//  - the island is fitted to the hole WITH the hand: forcing `__isle.remeasure()` once everything has settled moves no vertex
+//    by more than 1 px, when the hand arrives and when it goes (a seat that has held nothing taking the turn);
+//  - the hand stays once held: spending down to 0 keeps it on the table, zero cards greyed;
 //  - zero console errors.
 // Run: npm run hand-hidden-prove
 import assert from "node:assert/strict";
@@ -39,38 +42,45 @@ async function island(page) {
   for (let i = 0; i < 80; i++) {
     const m = await page.evaluate(() => {
       const ys = window.__emberisle.getState().state.vertices.map((v) => window.__isle.screenOf(v.id).y);
-      return { h: Math.round((Math.max(...ys) - Math.min(...ys)) * 10) / 10, bottom: window.__isle.insets().bottom };
+      return { h: Math.round((Math.max(...ys) - Math.min(...ys)) * 10) / 10, min: Math.min(...ys), max: Math.max(...ys), bottom: window.__isle.insets().bottom };
     });
-    same = prev && prev.h === m.h && prev.bottom === m.bottom ? same + 1 : 0;
+    same = prev && Math.abs(prev.min - m.min) < 0.05 && Math.abs(prev.max - m.max) < 0.05 && prev.bottom === m.bottom ? same + 1 : 0;
     if (same >= 4) return m;
     prev = m;
     await page.waitForTimeout(300);
   }
   throw new Error("the island never settled");
 }
+// Once the island has settled, force a re-measure of the hole and let it settle again: a fit made against the right hole moves nothing.
+async function stillFitted(page, tag, what) {
+  const before = await island(page);
+  await page.evaluate(() => window.__isle.remeasure());
+  await page.waitForTimeout(600);
+  const after = await island(page);
+  assert.ok(Math.abs(after.min - before.min) <= 1 && Math.abs(after.max - before.max) <= 1, `${tag}: ${what}: the island was fitted to a stale hole (${before.min.toFixed(1)}-${before.max.toFixed(1)} -> ${after.min.toFixed(1)}-${after.max.toFixed(1)})`);
+  return after;
+}
 const act = (page, action) => page.evaluate((a) => window.__emberisle.getState().dispatch(a), action);
 
-// Runs `change` in the page. A MutationObserver catches the dock the moment React commits it (before a frame is drawn) and, if a CSS
-// animation is running on it, parks that animation at its midpoint, reads the dock and the banner there, and lets it finish. That
-// reads the in-between state deterministically however loaded the machine is. `mid` is null when no animation ever ran (instant).
+// Runs `change` in the page. A MutationObserver catches the dock the moment React commits it (before a frame is drawn) and, if a
+// CSS animation is running on it, slows it right down; this then parks it at its midpoint and reads the dock there. That reads the
+// in-between state deterministically however loaded the machine is. Resolves to null when no animation ever ran (instant).
 async function probe(page, change, done) {
   await page.evaluate(() => {
     window.__anim = null;
-    window.__ran = false;
     const grab = () => {
       const dock = document.querySelector('[data-testid="hand-dock"]');
-      if (!dock || window.__ran) return;
+      if (!dock || window.__anim) return;
       const anim = dock.getAnimations().find((a) => a.animationName?.startsWith("hand-"));
       if (!anim) return;
-      window.__ran = true;
       window.__anim = anim;
       anim.playbackRate = 0.001;
     };
     window.__obs = new MutationObserver(grab);
-    window.__obs.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["data-phase"] });
+    window.__obs.observe(document.body, { childList: true, subtree: true, attributes: true });
   });
   await change();
-  await page.waitForFunction(`window.__ran || (${done})()`, null, { timeout: STEP_MS });
+  await page.waitForFunction(`window.__anim || (${done})()`, null, { timeout: STEP_MS });
   const mid = await page.evaluate(() => {
     window.__obs.disconnect();
     const anim = window.__anim;
@@ -78,15 +88,13 @@ async function probe(page, change, done) {
     const dock = anim.effect.target;
     anim.pause();
     anim.currentTime = 110;
-    // The earlier probe finished its animation by hand, which leaves a filled copy behind that would mask this one.
-    anim.effect.target.getAnimations().filter((x) => x !== anim).forEach((x) => x.cancel());
     const m = {
       name: anim.animationName,
       duration: anim.effect.getTiming().duration,
       easing: getComputedStyle(dock).animationTimingFunction,
+      props: [...new Set(anim.effect.getKeyframes().flatMap((k) => Object.keys(k)))].filter((k) => !["offset", "easing", "composite", "computedOffset"].includes(k)).sort(),
       opacity: Number(getComputedStyle(dock).opacity),
       h: dock.getBoundingClientRect().height,
-      top: document.querySelector('[data-testid="turn-banner"]').getBoundingClientRect().bottom,
     };
     anim.finish();
     return m;
@@ -124,6 +132,7 @@ async function run(v, reduced) {
   const isleBare = await island(page);
 
   // Setup, played through: the hand stays away until a second outpost pays.
+  const dockUp = () => !!document.querySelector('[data-testid="hand-dock"]') && !document.querySelector('[data-testid="hand-dock"]').dataset.rising;
   let shown = null;
   for (let guard = 0; guard < 24; guard++) {
     const st = await game(page);
@@ -137,13 +146,10 @@ async function run(v, reduced) {
     const spots = rules.legalSettle(st, me, true);
     const paying = (id) => st.vertices.find((x) => x.id === id).hexes.some((h) => st.hexes.find((x) => x.id === h).terrain !== "waste");
     const vertexId = (second && spots.find(paying)) || spots[0];
-    // After the first payout the next seat takes the hand and the paid seat's bar leaves over 220 ms, so give it that long.
-    await page.waitForFunction(() => !document.querySelector('[data-testid^="resource-"]:not([data-testid="resource-flash"])'), null, { timeout: 3000 })
-      .catch(() => {});
     assert.equal(await tiles(page), 0, `${tag}: setup step ${st.setupIndex} hand tiles before the outpost`);
     if (second) {
-      const mid = await probe(page, () => act(page, { type: "setupSettle", vertexId }), () => document.querySelector('[data-testid="hand-dock"]')?.dataset.phase === "idle");
-      shown = { mid, held: (await game(page)).players.find((p) => p.id === me) };
+      const mid = await probe(page, () => act(page, { type: "setupSettle", vertexId }), dockUp);
+      shown = { mid, me, held: (await game(page)).players.find((p) => p.id === me) };
       break;
     }
     await act(page, { type: "setupSettle", vertexId });
@@ -155,42 +161,49 @@ async function run(v, reduced) {
   assert.ok(bare - full >= dockH * 0.8 && bare - full <= dockH + 10, `${tag}: the hole shrinks by about the hand (${dockH}): ${bare} -> ${full}`);
   const isleFull = await island(page);
   assert.ok(isleBare.bottom < isleFull.bottom, `${tag}: the hole's bottom inset is smaller without the hand (${isleBare.bottom} < ${isleFull.bottom})`);
-  assert.ok(isleBare.h >= isleFull.h, `${tag}: the island is no smaller on screen without the hand (${isleBare.h} >= ${isleFull.h})`);
+  await stillFitted(page, tag, "hand arrived");
   await page.screenshot({ path: `test-results/hand-hidden-${v.tag}-${reduced ? "rm" : "motion"}-shown.png` });
 
-  const midOf = (m, name, from, to) => {
-    if (reduced) return assert.equal(m, null, `${tag}: no animation runs under reduced motion`);
-    assert.ok(m, `${tag}: ${name} animation ran`);
-    assert.equal(m.name, name, `${tag}: animation name`);
-    assert.equal(m.duration, 220, `${tag}: ${name} lasts 220 ms (--duration-base)`);
-    assert.match(m.easing, /cubic-bezier\(0\.22, 1, 0\.36, 1\)/, `${tag}: easing ${m.easing}`);
-    assert.ok(m.opacity > 0 && m.opacity < 1, `${tag}: ${name} midpoint opacity ${m.opacity}`);
-    assert.ok(m.h > 0 && m.h < dockH - 1, `${tag}: ${name} midpoint height ${m.h} of ${dockH}`);
-    assert.ok(m.top < from && m.top > to, `${tag}: ${name} midpoint banner ${m.top} between ${from} and ${to}`);
-  };
-  midOf(shown.mid, "hand-in", bare, full);
+  const m = shown.mid;
+  if (reduced) assert.ok(m === null || m.duration <= 1, `${tag}: reduced motion makes it instant (${JSON.stringify(m)})`);
+  else {
+    assert.ok(m, `${tag}: the hand rises in with an animation`);
+    assert.equal(m.name, "hand-in", `${tag}: animation name`);
+    assert.equal(m.duration, 220, `${tag}: lasts 220 ms (--duration-base)`);
+    assert.match(m.easing, /cubic-bezier\(0\.22, 1, 0\.36, 1\)/, `${tag}: --ease-out, got ${m.easing}`);
+    assert.deepEqual(m.props, ["opacity", "transform"], `${tag}: the keyframes animate opacity and transform only`);
+    assert.ok(m.opacity > 0 && m.opacity < 1, `${tag}: midpoint opacity ${m.opacity}`);
+    assert.ok(Math.abs(m.h - dockH) <= 1, `${tag}: the hand is already at its full height mid-animation (${m.h} vs ${dockH})`);
+  }
 
-  // Losing every good takes it away again.
-  const gone = await probe(
-    page,
-    () => page.evaluate(() => {
-      const g = window.__emberisle;
-      const st = structuredClone(g.getState().state);
-      Object.assign(st.players.find((p) => p.id === st.current).resources, { timber: 0, clay: 0, wool: 0, grain: 0, ore: 0 });
-      st.seq += 1;
-      g.setState({ state: st });
-    }),
-    () => !document.querySelector('[data-testid="hand-dock"]'),
-  );
-  assert.equal(await tiles(page), 0, `${tag}: no tiles once every good is gone`);
-  const isleBack = await island(page);
-  assert.ok(isleBack.bottom < isleFull.bottom, `${tag}: the hole is bigger again once the hand is gone (${isleBack.bottom} < ${isleFull.bottom}; the banner text differs by phase, so not compared exactly to the first reading)`);
-  assert.ok(isleBack.h >= isleFull.h, `${tag}: the island is no smaller again (${isleBack.h} >= ${isleFull.h})`);
-  assert.ok(Math.abs((await bannerBottom(page)) - bare) <= 1, `${tag}: the banner is back where it was ${bare} vs ${await bannerBottom(page)}`);
-  midOf(gone, "hand-out", bare, full);
+  // Spending down to nothing keeps the hand: it is on the table once held.
+  await page.evaluate(() => {
+    const g = window.__emberisle;
+    const st = structuredClone(g.getState().state);
+    Object.assign(st.players.find((p) => p.id === st.current).resources, { timber: 0, clay: 0, wool: 0, grain: 0, ore: 0 });
+    st.seq += 1;
+    g.setState({ state: st });
+  });
+  await page.waitForTimeout(400);
+  assert.equal(await tiles(page), 5, `${tag}: the hand stays once held, even at 0 goods`);
+  assert.equal(await page.locator('[data-testid="hand-count"]').allTextContents().then((t) => t.join("")), "00000", `${tag}: all five cards read 0`);
+
+  // A hotseat seat that has held nothing takes the turn: its hand is not shown, and the island is fitted to that.
+  await page.evaluate(() => {
+    const g = window.__emberisle;
+    const st = structuredClone(g.getState().state);
+    st.current = st.players.find((p) => p.id !== st.current && p.resources && Object.values(p.resources).every((n) => n === 0)).id;
+    st.seq += 1;
+    g.setState({ state: st });
+  });
+  await page.waitForFunction(() => !document.querySelector('[data-testid="hand-dock"]'), null, { timeout: STEP_MS });
+  assert.equal(await tiles(page), 0, `${tag}: a seat that never held a good has no hand`);
+  const isleGone = await island(page);
+  assert.ok(isleGone.bottom < isleFull.bottom, `${tag}: the hole is bigger again without the hand (${isleGone.bottom} < ${isleFull.bottom})`);
+  await stillFitted(page, tag, "hand left");
   assert.deepEqual(errors, [], `${tag}: console errors`);
-  console.log(`${tag} ${v.width}x${v.height}: 0 tiles through roll-off and setup, 5 once the second outpost paid (held ${JSON.stringify(shown.held.resources)}), banner bottom ${bare} -> ${full} (hole ${(bare - full).toFixed(0)} px bigger without the hand; island ${isleFull.h} -> ${isleBare.h} px tall, bottom inset ${isleFull.bottom} -> ${isleBare.bottom}), ` +
-    `${reduced ? "instant in and out" : `220 ms rise in, midpoint opacity ${shown.mid.opacity.toFixed(2)} height ${shown.mid.h.toFixed(0)}/${dockH}, fade out ${gone.opacity.toFixed(2)}`}, 0 tiles again, 0 console errors`);
+  console.log(`${tag} ${v.width}x${v.height}: 0 tiles through roll-off and setup, 5 once the second outpost paid (held ${JSON.stringify(shown.held.resources)}), banner bottom ${bare} -> ${full}, hole bottom inset ${isleFull.bottom} -> ${isleBare.bottom} without the hand; ` +
+    `${reduced ? "1 ms step" : `220 ms rise, midpoint opacity ${m.opacity.toFixed(2)}, height ${m.h.toFixed(0)}/${dockH}, props ${m.props}`}; island unmoved by a forced re-measure on arrival and on leaving; stays at 0 goods; 0 console errors`);
   await ctx.close();
 }
 

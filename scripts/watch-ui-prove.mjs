@@ -130,6 +130,21 @@ const view = (t) =>
     };
   });
 
+// #442: the eye count and Leave table live in the table menu, so they are read with it open (the Watching badge stays in
+// the header and is read with it closed). The button is clicked through the DOM: at the win the modal win screen covers
+// it, and the sheet's text still reads.
+const peek = async (t) => {
+  const trigger = t.page.getByRole("button", { name: "Table menu" });
+  const opens = (await trigger.count()) > 0 && (await t.page.getByTestId("table-menu").count()) === 0;
+  if (opens) {
+    await trigger.dispatchEvent("click");
+    if ((await t.page.getByTestId("table-menu").count()) !== 1) throw new Error(`${t.name}: the table menu did not open`);
+  }
+  const v = await view(t);
+  if (opens) await t.page.keyboard.press("Escape");
+  return v;
+};
+
 // The seat tabs play themselves: the practice bot picks on each new state where it is this seat's move (or discard);
 // a refusal becomes one pass, as runBots does. Lives in the page so the game runs at the host's pace, not Playwright's.
 const autoplay = (t) =>
@@ -239,7 +254,7 @@ try {
   await until(async () => (await Promise.all([a, b].map(view))).every((v) => v.screen === "play" && v.seq !== null) && c.state, "start", 90_000);
   // The seats idle on the roll-off while the watcher is checked (TURN_MS is 120 s). No count yet.
   for (const t of [a, b]) {
-    const v = await view(t);
+    const v = await peek(t);
     if (v.watching !== 0 || v.count !== null) throw new Error(`${t.name} counts a watcher before any watched: ${JSON.stringify([v.watching, v.count])}`);
   }
 
@@ -266,12 +281,17 @@ try {
     return v.screen === "play" && v.seq !== null && v.boardSeq === v.seq && v.title.startsWith("Watching") ? v : null;
   }, "the watcher reaching the board", 60_000);
   const seatViews = await until(async () => {
-    const vs = await Promise.all([a, b].map(view));
+    const vs = await Promise.all([a, b].map(peek));
     return vs.every((v) => v.watching === 1 && v.count === "1") && c.watching === 1 ? vs : null;
   }, "every seat counting the watcher");
   await w1.page.evaluate(() => (window.__onBoard = true));
+  wv = await peek(w1);
   if (!wv.spectator || wv.localId !== "") throw new Error(`watcher store: spectator=${wv.spectator} localId=${JSON.stringify(wv.localId)}`);
-  if (wv.badge !== "Watching" || wv.count !== "1") throw new Error(`watcher header: badge=${JSON.stringify(wv.badge)} count=${JSON.stringify(wv.count)}`);
+  if (wv.count !== "1") throw new Error(`watcher menu: count=${JSON.stringify(wv.count)}`);
+  // The badge is a header chip a watcher sees with the menu closed (docs/design/spectator.md).
+  const badge = await w1.page.getByTestId("watching-badge");
+  if ((await w1.page.getByTestId("table-menu").count()) !== 0 || !(await badge.isVisible()) || (await badge.textContent()) !== "Watching") throw new Error("watcher header: no visible Watching badge with the menu closed");
+  wv.badge = await badge.textContent();
   if (wv.title !== "Watching — Emberisle") throw new Error(`watcher tab title: "${wv.title}"`);
   if (wv.canvas < 1 || wv.boardSeq !== wv.seq) throw new Error(`the watcher's board is not drawn at seq ${wv.seq}: ${JSON.stringify([wv.canvas, wv.boardSeq])}`);
   if (wv.seq !== seatViews[0].seq || wv.phase !== "rollOff") throw new Error(`the watcher is not on the seats' state: ${JSON.stringify([wv.seq, wv.phase, seatViews[0].seq])}`);
@@ -281,7 +301,7 @@ try {
   if (wv.placeList !== 0) throw new Error("the watcher has a PlaceList (#376) of targets");
   const pressable = wv.buttons.filter((t) => GAME_CONTROLS.includes(t));
   if (pressable.length) throw new Error(`the watcher can press ${JSON.stringify(pressable)}`);
-  if (!wv.buttons.includes("Leave")) throw new Error(`the watcher has no Leave button: ${JSON.stringify(wv.buttons)}`);
+  if (!wv.buttons.includes("Leave table")) throw new Error(`the watcher has no Leave table button: ${JSON.stringify(wv.buttons)}`);
   if (!wv.turnBanner || wv.turnBanner.startsWith("Your")) throw new Error(`the watcher's turn line: "${wv.turnBanner}"`);
   // The positive control: the seat whose roll it is has the Roll button and no badge. Its hand is empty in the roll-off, so no hand tiles are shown (#439).
   const up = [a, b].find((t, i) => seatViews[i].localId === wv.current);
@@ -351,6 +371,11 @@ try {
     const v = await view(a);
     return v.phase === "over" && v.winRows.length === 3 ? v : null;
   }, "the win on Ember's screen");
+  // #439: the hand is shown once a seat has held a good, so a seat whose hand is not empty at the win shows its five tiles (keeps the
+  // watcher's 0 tiles meaningful, now that an empty hand is also 0).
+  const mineAt = c.state.players.findIndex((p) => p.id === av.localId);
+  if (mineAt < 0 || typeof av.hands?.[mineAt] !== "number") throw new Error(`Ember's own hand at the win: ${JSON.stringify([av.localId, av.hands])}`);
+  if (av.hands[mineAt] > 0 && av.resources !== 5) throw new Error(`Ember holds ${av.hands[mineAt]} goods at the win but shows ${av.resources} hand tiles`);
   const winnerName = c.state.players.find((p) => p.id === wv.winner)?.name;
   if (!winnerName || wv.winHeadline !== `${winnerName} wins`) throw new Error(`the watcher's headline: "${wv.winHeadline}" (winner ${wv.winner})`);
   if (JSON.stringify(wv.winRows) !== JSON.stringify(av.winRows)) throw new Error(`the watcher's table differs from Ember's:\n${JSON.stringify(wv.winRows)}\n${JSON.stringify(av.winRows)}`);
@@ -358,7 +383,7 @@ try {
   if (JSON.stringify(wv.hiddenVp) !== JSON.stringify(av.hiddenVp)) throw new Error(`hidden points differ at the win: ${JSON.stringify([wv.hiddenVp, av.hiddenVp])}`);
   if (wv.hasSeed || !av.hasSeed) throw new Error(`seed/rng: watcher ${wv.hasSeed}, seat ${av.hasSeed}`);
   if (wv.buttons.some((t) => /play again/i.test(t))) throw new Error("the watcher has Play again");
-  if (wv.resources !== 0 || wv.badge !== "Watching") throw new Error("the watcher grew a hand or lost its badge at the win");
+  if (wv.resources !== 0) throw new Error("the watcher grew a hand at the win");
   console.log(`win: "${wv.winHeadline}" at seq ${wv.seq}; the watcher's ${wv.winRows.length} rows equal Ember's (hidden ${JSON.stringify(wv.hiddenVp)}, hands ${JSON.stringify(wv.hands)}); no seed or rng, no Play again`);
 
   // --- 6. Leave: no confirm for a watcher, straight to the Title; every seat's count falls to 0. A seat saved in
@@ -366,10 +391,12 @@ try {
   const saved = JSON.stringify({ code: "ZZZZ", secret: "another-table" });
   await w1.page.evaluate((v) => localStorage.setItem("emberisle-seat", v), saved);
   await w1.page.getByTestId("win-look").click();
-  await w1.page.getByRole("button", { name: "Leave", exact: true }).click();
+  if (!(await w1.page.getByTestId("watching-badge").isVisible())) throw new Error("the watcher lost its badge at the win");
+  await w1.page.getByRole("button", { name: "Table menu" }).click();
+  await w1.page.getByRole("button", { name: "Leave table" }).click();
   await until(async () => (await view(w1)).screen === "title", "Leave taking the watcher to the Title");
   if ((await w1.page.getByTestId("leave-confirm").count()) !== 0) throw new Error("Leave asked a watcher to confirm");
-  await until(async () => (await Promise.all([a, b].map(view))).every((v) => v.watching === 0 && v.count === null) && c.watching === 0, "the count falling to 0");
+  await until(async () => (await Promise.all([a, b].map(peek))).every((v) => v.watching === 0 && v.count === null) && c.watching === 0, "the count falling to 0");
   const keptAfterLeave = await w1.page.evaluate(() => localStorage.getItem("emberisle-seat"));
   if (keptAfterLeave !== saved) throw new Error(`Leave as a watcher touched the saved seat: ${keptAfterLeave}`);
   console.log("leave: Title with no confirm; eye count gone on every seat; the saved seat for another table kept");
