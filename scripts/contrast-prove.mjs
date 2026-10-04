@@ -1,7 +1,7 @@
 // #381: UI text meets WCAG 1.4.3 (4.5:1). Reads computed colours of the title's Join and Host a table buttons
 // (End turn and Start share the `sea` variant) and the "A living island" eyebrow, then checks the ink tokens.
-// #424: text chips over the island, sampled from screenshots. With the chip's text made transparent, its box is screenshotted;
-// the computed text colour is measured against the mean and the darkest 5 % of those background pixels (both >= 4.5:1).
+// #424: text chips over the island, sampled from screenshots. With the chip's text made transparent, its box (inside the
+// border and in from the rounded corners) is screenshotted; the computed text colour is measured against the mean and the darkest 5 % of those background pixels (both >= 4.5:1).
 // Chips: another seat's turn banner over the setup board (hotseat) at 1280x720 and 390x844, your own turn banner (versus the
 // isle), and the log line at 1280x720.
 // Run: npm run contrast-prove
@@ -97,7 +97,9 @@ try {
       for (const d of node.querySelectorAll("*")) d.style.setProperty("color", "transparent", "important");
       const s = getComputedStyle(node);
       const r = node.getBoundingClientRect();
-      const [t, rt, b, l] = ["Top", "Right", "Bottom", "Left"].map((k) => parseFloat(s[`border${k}Width`]) + 2);
+      // Inside the border, and in from the rounded corners, where the bare board shows past the chip.
+      const radius = parseFloat(s.borderTopLeftRadius) || 0;
+      const [t, rt, b, l] = ["Top", "Right", "Bottom", "Left"].map((k, i) => parseFloat(s[`border${k}Width`]) + (i % 2 ? radius : 2));
       return { fg, text: node.textContent, clip: { x: r.left + l, y: r.top + t, width: r.width - l - rt, height: r.height - t - b } };
     });
     await pg.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
