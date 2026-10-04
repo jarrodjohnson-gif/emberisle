@@ -444,8 +444,8 @@ try {
   // #443: the card is one line; a goods or fortunes count shows only when it is held, and the points read "N points".
   const cardText = await a.page.getByTestId(`rail-${bId}`).textContent();
   const fromCard = [
-    Number(cardText.match(/(\d+) goods/)?.[1] ?? 0),
-    Number(cardText.match(/(\d+) fortunes/)?.[1] ?? 0),
+    Number(cardText.match(/(\d+) goods?/)?.[1] ?? 0),
+    Number(cardText.match(/(\d+) fortunes?/)?.[1] ?? 0),
     Number(cardText.match(/(\d+) points/)[1]),
     await a.page.evaluate((id) => window.__emberisle.getState().state.players.find((p) => p.id === id).knightsPlayed, bId),
   ];

@@ -189,7 +189,7 @@ export function Hud() {
           a chip and not a button, so a watcher always sees why it has no controls (docs/design/spectator.md). */}
       <header className="pointer-events-none absolute inset-x-0 top-0 z-20 p-3 pt-[max(0.75rem,env(safe-area-inset-top))] has-[#table-menu]:z-30">
         <div className="pointer-events-auto flex items-center justify-end gap-2">
-          {phone && !portrait ? <SeatStrip actor={actor} className="min-w-0 max-w-[34rem] flex-1" /> : null}
+          {phone && !portrait ? <SeatStrip actor={actor} className="min-w-0 max-w-[48rem] flex-1" /> : null}
           {spectator ? (
             <span data-testid="watching-badge" className="flex h-11 items-center rounded-chip bg-glass px-3 text-caption text-fg backdrop-blur-md">
               Watching

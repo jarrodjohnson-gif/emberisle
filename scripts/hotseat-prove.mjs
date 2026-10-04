@@ -58,7 +58,8 @@ try {
   // #232: the Roll button rolls off for whichever seat is current, until one seat places first.
   const rollBtn = page.getByRole("button", { name: "Roll", exact: true });
   const rollers = [];
-  // #443: the seats' die tiles show only while the roll-off is live, so the last full set is read on the way through.
+  // #443: the seats' die tiles show only while the roll-off is live, so the set before the last roll is read on the way
+  // through: every seat but the one still to roll shows 1-6.
   let offTiles = [];
   for (let i = 0; i < 40; i++) {
     const before = await page.evaluate(() => { const st = window.__emberisle.getState().state; return { phase: st.phase, current: st.current, seq: st.seq }; });
@@ -81,7 +82,7 @@ try {
     return { ok, ids, rolls: d, line: st.log.findLast((l) => l.includes("places first, then")) };
   });
   console.log(`roll-off by the Roll button: ${rollers.length} clicks (${rollers.join(" ")}), order ${off.ids.join(" ")} ok ${off.ok}, tiles [${offTiles.join(" ")}] then ${tilesAfter}, "${off.line}"`);
-  if (!off.ok || rollers.length < 4 || offTiles.length !== 4 || offTiles.some((t) => !/^[1-6–]$/.test(t)) || tilesAfter !== 0) throw new Error(`roll-off: ${JSON.stringify({ off, rollers, offTiles, tilesAfter })}`);
+  if (!off.ok || rollers.length < 4 || offTiles.length !== 4 || offTiles.some((t) => !/^[1-6–]$/.test(t)) || offTiles.filter((t) => t === "–").length > 1 || tilesAfter !== 0) throw new Error(`roll-off: ${JSON.stringify({ off, rollers, offTiles, tilesAfter })}`);
 
   // #380: every roller's turn was announced, ending on the seat that places first; hotseat names every seat (no "Your").
   const said = (k) => page.evaluate((k) => window.__said.filter((s) => s.k === k).map((s) => s.t), k);

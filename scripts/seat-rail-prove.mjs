@@ -1,12 +1,15 @@
-// #443: each seat is one line with the points as the number. In hotseat at 1280x720 (the rail), 390x844 and 844x390
-// (the strip, touch):
+// #443: each seat is one line with the points as the number. In hotseat at 1280x720 (the rail), 390x844, 667x375 and
+// 844x390 (the strip, touch):
 // - every seat box is at most 44 px tall and its points are the largest text in it; no seat text says "0 goods",
-//   "0 fortunes", "goods ·" or " vp"; a seat with goods or fortunes shows them as small counts, a seat with none shows no count;
+//   "0 fortunes", "goods ·" or " vp"; a seat with goods or fortunes shows them as small counts ("1 good", "3 goods",
+//   "1 fortune" for screen readers) where the cell is at least 160 px wide, a seat with none shows no count;
 // - the roll-off die is on every seat during the roll-off and on none once it is settled;
 // - exactly the seat on turn carries `seat-turn` and aria-current, its dot has the pulse animation and an ink ring, and
 //   both move when the turn moves; under reduced motion the ring stays and the animation goes;
-// - your own seat shows your hidden points as "+N" and nobody else's does;
-// - tapping a seat opens its facts (4 numbers that match the line), tapping again closes them;
+// - your own seat shows your hidden points as "+N" ("N points, plus N hidden" for screen readers) and nobody else's does;
+// - tapping a seat opens its facts, which match the line, tapping again closes them; your own facts list your fortunes by
+//   kind ("knight ×1 · points ×2 (1 new)");
+// - a dropped seat shows a visible reconnecting marker at every size and its facts say so;
 // - no seat overlaps the Table menu button or the Watching chip, and every seat is inside the viewport.
 // Zero console errors. Saves test-results/seat-rail-<size>.png. Run: npm run seat-rail-prove
 import assert from "node:assert/strict";
@@ -18,6 +21,7 @@ const PORT = Number(process.env.VITE_PORT) || 8443;
 const VIEWS = [
   { tag: "1280x720", width: 1280, height: 720, seat: "rail" },
   { tag: "390x844", width: 390, height: 844, touch: true, seat: "seat" },
+  { tag: "667x375", width: 667, height: 375, touch: true, seat: "seat" },
   { tag: "844x390", width: 844, height: 390, touch: true, seat: "seat" },
 ];
 
@@ -70,6 +74,10 @@ try {
             goods: el.querySelector('[data-testid="seat-goods"]')?.textContent ?? null,
             fortunes: el.querySelector('[data-testid="seat-fortunes"]')?.textContent ?? null,
             die: [...el.querySelectorAll('[data-testid="rolloff-die"]')].filter(shown).length,
+            away: (() => {
+              const a = el.querySelector('[data-testid="seat-away"]');
+              return a ? { w: Math.round(a.getBoundingClientRect().width), word: shown(a.lastElementChild.previousElementSibling) } : null;
+            })(),
             turn: el.classList.contains("seat-turn"),
             current: button.getAttribute("aria-current"),
             expanded: button.getAttribute("aria-expanded"),
@@ -149,6 +157,7 @@ try {
       const [a, b, c] = st.players.filter((p) => p !== me);
       me.hidden.vp = 2;
       me.hidden.knight = 1;
+      me.boughtThisTurn.vp = 1;
       b.hidden.vp = 1;
       a.resources = { timber: 2, clay: 1, wool: 0, grain: 0, ore: 0 };
       b.resources = { timber: 0, clay: 0, wool: 0, grain: 0, ore: 0 };
@@ -165,35 +174,54 @@ try {
     assert.ok(ls.every((l) => l.die === 0), `${v.tag} main: no roll-off die after the roll-off`);
     // On a strip cell under 160 px the counts yield to the name (the facts are a tap away), so they are read where they fit.
     const cellW = by(mid.a).box.r - by(mid.a).box.l;
-    if (v.seat === "rail" || cellW >= 160) {
+    const wide = v.seat === "rail" || cellW >= 160;
+    console.log(`${v.tag}: cells ${Math.round(cellW)} px, counts ${wide ? "shown" : "folded into the facts"}`);
+    if (wide) {
       assert.equal(by(mid.a).goods, "3 goods", `${v.tag} main: seat a shows 3 goods, got ${JSON.stringify(by(mid.a).goods)}`);
-      assert.equal(by(mid.b).fortunes, "1 fortunes", `${v.tag} main: seat b shows 1 fortune, got ${JSON.stringify(by(mid.b).fortunes)}`);
-      assert.equal(by(mid.c).goods, "1 goods", `${v.tag} main: seat c shows 1 good`);
+      assert.equal(by(mid.b).fortunes, "1 fortune", `${v.tag} main: seat b shows 1 fortune, got ${JSON.stringify(by(mid.b).fortunes)}`);
+      assert.equal(by(mid.c).goods, "1 good", `${v.tag} main: seat c shows 1 good`);
     }
     assert.equal(by(mid.b).goods, null, `${v.tag} main: seat b holds nothing and shows no goods count`);
     assert.equal(by(mid.c).fortunes, null, `${v.tag} main: seat c has no fortune and shows no fortunes count`);
-    assert.match(by(mid.me).vp, /^\d+ points\+2$/, `${v.tag} main: your seat shows your hidden points, got ${JSON.stringify(by(mid.me).vp)}`);
+    assert.match(by(mid.me).vp, /^\d+ points, plus 2 hidden\+2$/, `${v.tag} main: your seat shows your hidden points, got ${JSON.stringify(by(mid.me).vp)}`);
     assert.ok(ls.filter((l) => l.id !== `${v.seat}-${mid.me}`).every((l) => !l.vp.includes("+")), `${v.tag} main: nobody else's hidden points show`);
     await page.screenshot({ path: `test-results/seat-rail-${v.tag}.png` });
 
     // A tap opens the seat's facts, which match the line; the same tap closes them.
-    const target = mid.a;
-    const button = seat(target).getByRole("button");
-    await button.click();
     const menu = page.getByTestId("player-menu");
-    await menu.waitFor();
-    assert.equal(await button.getAttribute("aria-expanded"), "true", `${v.tag}: the tapped seat is expanded`);
-    const facts = (await menu.getByTestId("menu-facts").locator("dd").allTextContents()).map(Number);
-    const line = (await lines()).find((l) => l.id === `${v.seat}-${target}`);
-    const fromLine = [Number(line.goods?.match(/\d+/)?.[0] ?? 0), Number(line.fortunes?.match(/\d+/)?.[0] ?? 0), Number(line.vp.match(/\d+/)[0])];
-    assert.deepEqual(facts.slice(0, 3), fromLine, `${v.tag}: facts ${JSON.stringify(facts)} match the line ${JSON.stringify(fromLine)}`);
-    const fits = await menu.evaluate((el) => {
-      const r = el.getBoundingClientRect();
-      return r.left >= 0 && r.right <= innerWidth && r.top >= 0 && r.bottom <= innerHeight;
-    });
-    assert.ok(fits, `${v.tag}: the facts are inside the viewport`);
-    await button.click();
-    await menu.waitFor({ state: "detached" });
+    const factsOf = async (id) => {
+      const button = seat(id).getByRole("button");
+      await button.click();
+      await menu.waitFor();
+      assert.equal(await button.getAttribute("aria-expanded"), "true", `${v.tag}: the tapped seat is expanded`);
+      const facts = await menu.getByTestId("menu-facts").locator("dd").allTextContents();
+      const labels = await menu.getByTestId("menu-facts").locator("dt").allTextContents();
+      const fits = await menu.evaluate((el) => {
+        const r = el.getBoundingClientRect();
+        return r.left >= 0 && r.right <= innerWidth && r.top >= 0 && r.bottom <= innerHeight;
+      });
+      assert.ok(fits, `${v.tag}: the facts are inside the viewport`);
+      await button.click();
+      await menu.waitFor({ state: "detached" });
+      return Object.fromEntries(labels.map((l, i) => [l, facts[i]]));
+    };
+    const aFacts = await factsOf(mid.a);
+    const line = (await lines()).find((l) => l.id === `${v.seat}-${mid.a}`);
+    const fromLine = [3, 0, Number(line.vp.match(/\d+/)[0])];
+    assert.deepEqual([aFacts["Cards in hand"], aFacts["Fortunes held"], aFacts["Points shown"]].map(Number), fromLine, `${v.tag}: facts ${JSON.stringify(aFacts)} match the line`);
+    assert.equal(aFacts["Your fortunes"], undefined, `${v.tag}: another seat's facts list no fortunes by kind`);
+    const myFacts = await factsOf(mid.me);
+    assert.equal(myFacts["Your fortunes"], "knight ×1 · points ×2 (1 new)", `${v.tag}: your facts list your fortunes by kind, got ${JSON.stringify(myFacts)}`);
+
+    // A dropped seat: a visible marker on the line at every size, the word only where it fits, and a fact in its menu.
+    await page.evaluate((name) => window.__emberisle.setState({ seats: [{ name, ready: true, host: false, away: true, url: null }] }), await page.evaluate((id) => window.__emberisle.getState().state.players.find((p) => p.id === id).name, mid.b));
+    await seat(mid.b).getByTestId("seat-away").waitFor();
+    const dropped = (await lines()).find((l) => l.id === `${v.seat}-${mid.b}`);
+    assert.ok(dropped.away && dropped.away.w >= 12 && dropped.h <= 44 && dropped.spill === 0, `${v.tag}: the dropped seat shows a marker ${JSON.stringify(dropped.away)}`);
+    assert.equal(dropped.away.word, wide, `${v.tag}: the word "reconnecting…" shows where the cell is wide ${JSON.stringify(dropped.away)}`);
+    assert.ok((await lines()).filter((l) => l.id !== `${v.seat}-${mid.b}`).every((l) => l.away === null), `${v.tag}: no marker on a seated seat`);
+    assert.equal((await factsOf(mid.b))["Connection"], "reconnecting…", `${v.tag}: the dropped seat's facts say so`);
+    await page.evaluate(() => window.__emberisle.setState({ seats: [] }));
 
     // Nothing in the seats overlaps the menu button or the Watching chip (shown by flagging the store a watcher).
     await page.evaluate(() => window.__emberisle.setState({ spectator: true }));
@@ -207,7 +235,7 @@ try {
     }, v.seat);
     await page.evaluate(() => window.__emberisle.setState({ spectator: false }));
     assert.ok(clash.badge && clash.hits === 0 && clash.inView, `${v.tag}: seats clear of the menu button and the Watching chip ${JSON.stringify(clash)}`);
-    console.log(`${v.tag}: four one-line seats (<= 44 px, points ${ls[0].vpFont}px/${ls[0].vpWeight}), pulse follows the turn, die only in the roll-off, counts only when held, facts on tap, clear of the menu and the Watching chip`);
+    console.log(`${v.tag}: four one-line seats (<= 44 px, points ${ls[0].vpFont}px/${ls[0].vpWeight}), pulse follows the turn, die only in the roll-off, counts only when held, facts on tap (fortunes by kind, dropped seat), clear of the menu and the Watching chip`);
     await ctx.close();
   }
   assert.deepEqual(errors, [], "console errors");

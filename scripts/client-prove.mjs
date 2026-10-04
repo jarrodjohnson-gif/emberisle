@@ -83,7 +83,7 @@ try {
   const faces = rollOff.faces ?? [];
   const placesFirst = await page.evaluate(() => window.__banners.find((b) => b.includes("places first, then")) ?? null);
   console.log(`roll-off: ${rollOff.phase}, order ${rollOff.order?.join(" ")}, ${faces.length} die tiles [${faces.join(" ")}] (gone after), banner ${JSON.stringify(placesFirst)}`);
-  if (rollOff.phase !== "setupSettle" || faces.length !== 4 || faces.some((f) => !/^[1-6–]$/.test(f)) || !faces.some((f) => /^[1-6]$/.test(f)) || !placesFirst) {
+  if (rollOff.phase !== "setupSettle" || faces.length !== 4 || faces.some((f) => !/^[1-6–]$/.test(f)) || faces.filter((f) => /^[1-6]$/.test(f)).length < 3 || !placesFirst) {
     throw new Error(`roll-off: ${JSON.stringify({ rollOff, faces, placesFirst })}`);
   }
 
@@ -318,11 +318,7 @@ try {
   await page.waitForTimeout(200);
   const rail = await page.evaluate(() => {
     const ids = window.__emberisle.getState().state.players.map((p) => p.id);
-    // #443: the fortune breakdown is the fortunes count's title, so it rides along in brackets.
-    return ids.map((id) => {
-      const el = document.querySelector(`[data-testid="rail-${id}"]`);
-      return el ? `${el.textContent} [${el.querySelector('[data-testid="seat-fortunes"]')?.title ?? ""}]` : null;
-    });
+    return ids.map((id) => document.querySelector(`[data-testid="rail-${id}"]`)?.textContent ?? null);
   });
   console.log("rail cards:", JSON.stringify(rail));
 
@@ -374,7 +370,9 @@ try {
   if (knight.armed !== "knight" || knight.phase !== "roll" || knight.played !== 1 || knight.error || !knight.roll) {
     throw new Error(`knight before roll: ${JSON.stringify(knight)}`);
   }
-  if (!rail[0]?.includes("points+2") || !rail[0].includes("[points ×2") || rail.slice(1).some((t) => t === null || t.includes("+"))) {
+  // #443: "N points, plus 2 hidden" is the screen-reader text; the drawn "+2" follows it. The by-kind breakdown is a
+  // player-menu fact (seat-rail-prove).
+  if (!rail[0]?.includes("plus 2 hidden+2") || rail.slice(1).some((t) => t === null || t.includes("hidden"))) {
     throw new Error(`rail cards: ${JSON.stringify(rail)}`);
   }
   // The knight and hidden-points steps above left a live game, so return to the title for the next one.

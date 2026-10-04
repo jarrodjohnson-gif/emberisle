@@ -3,31 +3,19 @@
 // strip (docs/design/mobile-hud.md) share SeatLine: colour dot, name, goods and fortunes as two small counts only when
 // non-zero, the roll-off die only while the roll-off is live, and the points at text-title. The seat on turn carries
 // `seat-turn`: its dot pulses softly (bible §4.3) and the card brightens over 200 ms (§8), with an ink ring on the dot and
-// aria-current so the turn never rests on colour or motion alone (#312).
+// aria-current so the turn never rests on colour or motion alone (#312). Your fortunes by kind and a dropped seat's
+// state are facts in the player menu, one tap away.
 import type { LucideIcon } from "lucide-react";
-import { RectangleVertical, Sparkles } from "lucide-react";
+import { RectangleVertical, Sparkles, WifiOff } from "lucide-react";
 import { ReactionFloats } from "@/components/game/Chat";
-import { PlayerMenu } from "@/components/game/PlayerMenu";
-import { RESOURCES, type DevKind, type GameState, type PlayerState } from "@/lib/game/types";
+import { PlayerMenu, seatAway } from "@/components/game/PlayerMenu";
+import { RESOURCES, type GameState, type PlayerState } from "@/lib/game/types";
 import { hiddenCount, publicVP } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
-import type { Seat } from "@/lib/net/table";
 import { cn } from "@/lib/utils";
-
-const FORTUNE_NAMES: [DevKind, string][] = [
-  ["knight", "knight"],
-  ["road", "path"],
-  ["plenty", "plenty"],
-  ["monopoly", "monopoly"],
-  ["vp", "points"],
-];
 
 const SEAT_CARD = "relative bg-glass backdrop-blur-md transition-colors duration-200 [&.seat-turn]:bg-raised/90";
 const SEAT_BUTTON = "flex h-11 w-full cursor-pointer items-center rounded-[inherit] text-left hover:bg-white/40";
-
-function isAway(seats: Seat[], p: PlayerState) {
-  return seats.some((s) => s.away && (s.name === p.name || `${s.name} (bot)` === p.name));
-}
 
 // The seat's roll-off die, "–" until it rolls this round; gone once the roll-off is settled (docs/design/first-player.md).
 function RollOffDie({ state, id, className }: { state: GameState; id: string; className: string }) {
@@ -39,48 +27,52 @@ function RollOffDie({ state, id, className }: { state: GameState; id: string; cl
   );
 }
 
-// A small count with its unit as an icon; the unit's word stays for screen readers.
-function Count({ testid, n, unit, Icon, className, title }: { testid: string; n: number; unit: string; Icon: LucideIcon; className?: string; title?: string }) {
+// A small count with its unit as an icon; the unit's word stays for screen readers. zinc-700 reads ≥ 4.5:1 on the glass.
+function Count({ testid, n, unit, Icon, className }: { testid: string; n: number; unit: string; Icon: LucideIcon; className?: string }) {
   return (
-    <span data-testid={testid} title={title} className={cn("flex shrink-0 items-center gap-0.5 text-caption tabular-nums text-muted", className)}>
+    <span data-testid={testid} className={cn("flex shrink-0 items-center gap-0.5 text-caption tabular-nums text-zinc-700", className)}>
       {n}
       <Icon className="size-3" aria-hidden="true" />
-      <span className="sr-only"> {unit}</span>
+      <span className="sr-only">
+        {" "}
+        {unit}
+        {n === 1 ? "" : "s"}
+      </span>
     </span>
   );
 }
 
 // `short` is the strip's under-100 px form (#420); its presence makes this a strip line, which also hides the counts in
-// a cell under 160 px so the name keeps its room.
+// a cell under 160 px so the name keeps its room. A dropped seat's marker shows at every width (the word only where it fits).
 function SeatLine({ state, p, actor, away, short }: { state: GameState; p: PlayerState; actor: string; away: boolean; short?: string }) {
   const strip = short !== undefined;
-  const own = p.id === actor;
-  const hidden = own && p.hidden.vp > 0 ? p.hidden.vp : 0;
+  const hidden = p.id === actor && p.hidden.vp > 0 ? p.hidden.vp : 0;
   const goods = p.goods ?? RESOURCES.reduce((n, r) => n + p.resources[r], 0);
   const fortunes = p.fortunes ?? hiddenCount(p);
-  const breakdown = own
-    ? FORTUNE_NAMES.filter(([k]) => p.hidden[k] > 0)
-        .map(([k, label]) => `${label} ×${p.hidden[k]}${p.boughtThisTurn[k] > 0 ? ` (${p.boughtThisTurn[k]} new)` : ""}`)
-        .join(" · ")
-    : undefined;
-  const narrow = strip && "@max-[160px]:hidden";
+  const narrow = strip ? "@max-[160px]:hidden" : undefined;
   return (
     <>
       <span className="seat-dot size-2.5 shrink-0 rounded-full" style={{ background: p.color }} />
-      <span data-testid="seat-name" className={cn("min-w-0 flex-1 truncate text-sm font-medium", strip && "@max-[100px]:sr-only")}>
+      <span data-testid="seat-name" className={cn("min-w-0 flex-auto truncate text-sm font-medium", strip && "@max-[100px]:sr-only")}>
         {p.name}
       </span>
       {strip ? (
-        <span data-testid="seat-name" aria-hidden="true" className="hidden min-w-0 flex-1 text-xs font-medium @max-[100px]:block">
+        <span data-testid="seat-name" aria-hidden="true" className="hidden min-w-0 flex-auto text-xs font-medium @max-[100px]:block">
           {short}
         </span>
       ) : null}
       {away ? (
-        <span className={cn("truncate text-caption text-muted", narrow)}>reconnecting…</span>
+        <span data-testid="seat-away" className="flex min-w-4 shrink-[9] items-center gap-0.5 text-caption text-zinc-700">
+          <WifiOff className="size-3 shrink-0" aria-hidden="true" />
+          <span aria-hidden="true" className={cn("truncate", narrow)}>
+            reconnecting…
+          </span>
+          <span className="sr-only">reconnecting</span>
+        </span>
       ) : (
         <>
-          {goods > 0 ? <Count testid="seat-goods" n={goods} unit="goods" Icon={RectangleVertical} className={narrow || undefined} /> : null}
-          {fortunes > 0 ? <Count testid="seat-fortunes" n={fortunes} unit="fortunes" Icon={Sparkles} title={breakdown} className={narrow || undefined} /> : null}
+          {goods > 0 ? <Count testid="seat-goods" n={goods} unit="good" Icon={RectangleVertical} className={narrow} /> : null}
+          {fortunes > 0 ? <Count testid="seat-fortunes" n={fortunes} unit="fortune" Icon={Sparkles} className={narrow} /> : null}
         </>
       )}
       <RollOffDie state={state} id={p.id} className={strip ? "size-5 rounded-[4px] text-xs" : "size-6 text-sm"} />
@@ -89,8 +81,12 @@ function SeatLine({ state, p, actor, away, short }: { state: GameState; p: Playe
         className={cn("shrink-0 text-title tabular-nums", strip && state.phase === "rollOff" && "@max-[100px]:hidden")}
       >
         {publicVP(state, p.id)}
-        <span className="sr-only"> points</span>
-        {hidden ? <span className="text-caption text-muted">+{hidden}</span> : null}
+        <span className="sr-only"> points{hidden ? `, plus ${hidden} hidden` : ""}</span>
+        {hidden ? (
+          <span aria-hidden="true" className="text-caption text-zinc-700">
+            +{hidden}
+          </span>
+        ) : null}
       </span>
     </>
   );
@@ -117,7 +113,7 @@ export function SeatRail({ actor }: { actor: string }) {
               onClick={() => openMenu(menuFor === p.id ? null : p.id)}
               className={cn(SEAT_BUTTON, "gap-2 px-3")}
             >
-              <SeatLine state={state} p={p} actor={actor} away={isAway(seats, p)} />
+              <SeatLine state={state} p={p} actor={actor} away={seatAway(seats, p)} />
             </button>
             <ReactionFloats by="player" id={p.id} />
           </div>
@@ -165,7 +161,7 @@ export function SeatStrip({ actor, className }: { actor: string; className: stri
             onClick={() => openMenu(menuFor === p.id ? null : p.id)}
             className={cn(SEAT_BUTTON, "gap-1.5 px-2 @max-[100px]:gap-1 @max-[100px]:px-1.5")}
           >
-            <SeatLine state={state} p={p} actor={actor} away={isAway(seats, p)} short={short[i]} />
+            <SeatLine state={state} p={p} actor={actor} away={seatAway(seats, p)} short={short[i]} />
           </button>
           <ReactionFloats by="player" id={p.id} />
         </div>
