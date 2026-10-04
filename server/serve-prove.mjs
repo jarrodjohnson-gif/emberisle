@@ -172,11 +172,17 @@ stranger.ws.send(JSON.stringify({ type: "hello", name: "Grab", avatarId: replace
 const grab = await stranger.next("welcome");
 const grabSeats = await stranger.next("seats");
 check(`stranger hellos with that avatarId -> seat shows ${grabSeats.seats[0].avatarId}`, grabSeats.seats[0].avatarId === null);
-stranger.ws.close();
+// The host saves rooms/<code>.json just after it sends welcome, and drops the file when the room drops. Both waits
+// are bounded polls on that file (the room is another process), never a fixed sleep.
+const until = async (cond) => {
+  const deadline = Date.now() + 5000;
+  while (!cond() && Date.now() < deadline) await new Promise((res) => setTimeout(res, 25));
+  return cond();
+};
 const grabFile = path.join(temp, "rooms", `${grab.code}.json`);
-const until = Date.now() + 5000;
-while (existsSync(grabFile) && Date.now() < until) await new Promise((res) => setTimeout(res, 25));
-check(`stranger's table ${grab.code} dropped after the lobby hold`, !existsSync(grabFile));
+await until(() => existsSync(grabFile));
+stranger.ws.close();
+check(`stranger's table ${grab.code} dropped after the lobby hold`, await until(() => !existsSync(grabFile)));
 r = await get(port, replaced.url);
 check(`GET ${replaced.url} after that -> ${r.status}`, r.status === 200);
 
@@ -187,9 +193,44 @@ b.ws.close();
 await a.next("seats", (m) => !m.seats.some((s) => s.name === "Tide"));
 r = await get(port, bPic.url);
 check(`seat let go: GET ${bPic.url} -> ${r.status}`, r.status === 404);
+// An upload still in flight when its seat is let go must not be stored on a seat nothing will ever free.
+const d = seat({ type: "create", name: "Fern" });
+const dWelcome = await d.next("welcome");
+const slow = http.request({ host: "127.0.0.1", port, path: "/avatars", method: "POST", headers: { "x-seat-secret": dWelcome.secret, "content-length": "10" } });
+const slowDone = new Promise((resolve) => slow.on("response", (res) => res.resume().on("end", () => resolve(res.statusCode))));
+slow.on("error", () => {});
+slow.write(jpeg(3));
+const dFile = path.join(temp, "rooms", `${dWelcome.code}.json`);
+await until(() => existsSync(dFile));
+d.ws.close();
+check(`table ${dWelcome.code} dropped with an upload half sent`, await until(() => !existsSync(dFile)));
+slow.end(Buffer.alloc(7));
+const late = await slowDone;
+check(`the rest of that upload arrives -> ${late}`, late === 410);
+
 r = await upload(jpeg(50), cWelcome.secret);
 check(`third seat's 50 B into the freed slot -> ${r.status}`, r.status === 200);
-for (const s of [a, c]) s.ws.close();
+
+// A watcher's welcome carries no secret, so a watcher cannot upload (spectators, #347).
+const e = seat({ type: "hello", code: welcome.code, name: "Reed" });
+await e.next("welcome");
+for (const s of [a, c, e]) s.ws.send(JSON.stringify({ type: "ready", value: true }));
+await a.next("seats", (m) => m.seats.length === 3 && m.seats.every((s) => s.ready));
+a.ws.send(JSON.stringify({ type: "start" }));
+await a.next("state");
+const watcher = seat({ type: "hello", code: welcome.code, watch: true });
+const watching = await watcher.next("welcome");
+r = await upload(jpeg(50), watching.secret);
+check(`watcher welcome has no secret; its upload -> ${r.status}`, watching.spectator === true && watching.secret === undefined && r.status === 403);
+// Uploads draw from the seat's action bucket: a burst past ACT_CAP is told to slow down.
+let burst = 0;
+for (; burst < 40; burst++) {
+  r = await upload(jpeg(50), cWelcome.secret);
+  if (r.status !== 200) break;
+}
+check(`upload burst: ${burst} accepted, then ${r.status}`, burst >= 1 && burst <= 20 && r.status === 429);
+
+for (const s of [a, c, e, watcher]) s.ws.close();
 
 const bare = await start(empty);
 r = await get(bare, "/");

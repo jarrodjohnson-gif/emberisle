@@ -2,6 +2,7 @@
 // discard must be attributed to that seat. Crafts p0 rolled a 7, p2 holds 9 cards, discardNeeded {p2: 4}; zero console errors.
 // #390: a seat change must not carry the last seat's flash tint onto the new seat's tiles.
 // #232: first, the Roll button carries all four seats through the roll-off for first place.
+// #380: each turn change and each rule error reaches a live region (recorded by a MutationObserver, not polled).
 import { existsSync } from "node:fs";
 import { chromium } from "playwright";
 import { createServer } from "vite";
@@ -25,6 +26,21 @@ try {
   page.on("pageerror", (e) => errors.push(String(e)));
   page.on("response", (r) => r.status() >= 400 && errors.push(`${r.status()} ${r.url()}`));
   await page.goto(`http://127.0.0.1:${PORT}/`);
+  // #380: log every new text of the polite turn region, and every node added to the alert region (a repeat of the same
+  // error is a new node with the same text), so a message that flashes by is still seen.
+  await page.evaluate(() => {
+    window.__said = [];
+    let lastTurn = "";
+    new MutationObserver((records) => {
+      const turn = document.querySelector('[aria-live="polite"][data-testid="announce-turn"]')?.textContent ?? "";
+      if (turn && turn !== lastTurn) window.__said.push({ k: "turn", t: turn });
+      lastTurn = turn;
+      for (const r of records) {
+        if (!r.target.closest?.('[role="alert"][data-testid="announce-error"]')) continue;
+        for (const n of r.addedNodes) if (n.textContent) window.__said.push({ k: "alert", t: n.textContent });
+      }
+    }).observe(document.body, { subtree: true, childList: true, characterData: true });
+  });
   await page.getByRole("button", { name: "Four seats, one table" }).click();
   await page.waitForFunction(() => window.__emberisle?.getState().state);
 
@@ -51,6 +67,28 @@ try {
   const offTiles = await page.locator('[data-testid="rolloff-die"]:visible').allTextContents();
   console.log(`roll-off by the Roll button: ${rollers.length} clicks (${rollers.join(" ")}), order ${off.ids.join(" ")} ok ${off.ok}, tiles [${offTiles.join(" ")}], "${off.line}"`);
   if (!off.ok || rollers.length < 4 || offTiles.length !== 4 || offTiles.some((t) => !/^[1-6]$/.test(t))) throw new Error(`roll-off: ${JSON.stringify({ off, rollers, offTiles })}`);
+
+  // #380: every roller's turn was announced, ending on the seat that places first; hotseat names every seat (no "Your").
+  const said = (k) => page.evaluate((k) => window.__said.filter((s) => s.k === k).map((s) => s.t), k);
+  const firstName = await page.evaluate(() => { const st = window.__emberisle.getState().state; return st.players.find((p) => p.id === st.current).name; });
+  await page.waitForFunction((t) => window.__said.filter((s) => s.k === "turn").at(-1)?.t === t, `${firstName}'s turn.`, { timeout: STEP_MS });
+  const turns = await said("turn");
+  const rollerNames = await page.evaluate((ids) => ids.map((id) => window.__emberisle.getState().state.players.find((p) => p.id === id).name), rollers);
+  console.log(`turn announcements: ${JSON.stringify(turns)}`);
+  if (rollerNames.some((n) => !turns.includes(`${n}'s turn.`)) || turns.some((t) => t.startsWith("Your"))) throw new Error(`turn announcements: ${JSON.stringify({ turns, rollerNames })}`);
+
+  // #380: an illegal move is read out through the one alert region, and retrying it is read out again.
+  const refuse = () => page.evaluate(() => window.__emberisle.getState().dispatch({ type: "roll" }).error);
+  const heard = (t) => page.evaluate((t) => window.__said.filter((s) => s.k === "alert" && s.t === t).length, t);
+  const refused = await refuse();
+  await page.waitForFunction((t) => window.__said.some((s) => s.k === "alert" && s.t === t), refused, { timeout: STEP_MS });
+  if ((await refuse()) !== refused) throw new Error("the retry was refused differently");
+  await page.waitForFunction((t) => window.__said.filter((s) => s.k === "alert" && s.t === t).length >= 2, refused, { timeout: STEP_MS })
+    .catch(() => {});
+  const times = await heard(refused);
+  const alerts = await page.getByRole("alert").allTextContents();
+  console.log(`rule error "${refused}" announced ${times}x for 2 tries; alert regions: ${JSON.stringify(alerts)}`);
+  if (!refused || times !== 2 || alerts.length !== 1 || alerts[0] !== refused) throw new Error(`alert: ${JSON.stringify({ refused, times, alerts })}`);
 
   // #390: the seat that is current gains timber and flashes; the next seat then takes the hand. Once the new seat has
   // painted (two frames), no tile may still carry the old seat's tint or label.

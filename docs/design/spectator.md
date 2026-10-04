@@ -21,8 +21,8 @@ Defaults this design adds (each is cheap to change):
 |---|---|---|
 | `SPECTATOR_MAX` | `8` per room | See "Cap". |
 | Anything a watcher sends after its hello | Refused with one error, `Watching only.`, and changes nothing | Explicit beats the accidental "not ready" a seatless socket would get today. |
-| A watcher's presence | Silent. No log line, no count on the seats | Smallest step. See "Open question". |
-| Final hands at the win | **Not** revealed to a watcher | The #346 completion test says no hand, hidden point, deck, seed or rng "before or after a win". See "The view". |
+| A watcher's presence | **Shown.** `seats` carries `watching: n`, and the table logs "Someone is watching." / "A watcher left." (at most one line per room per 5 s, so a watch-and-close loop cannot flood the log) | Jarrod's decision 1 on #347 (2026-10-03). The HUD shows a small eye count (#348). |
+| Final hands at the win | **Revealed**, like the seats: at `phase === "over"` a watcher gets the seats' reveal minus `seed` and `rng`. Before the win it stays on the opponent view | Jarrod's decision 2 on #347 (2026-10-03), replacing the #346 completion test's "before or after a win". See "The view". |
 | Reconnect | None. A dropped watcher lands on the Title | It holds nothing worth saving. |
 
 ## Protocol
@@ -59,13 +59,13 @@ no way. The client closes it (store `error` handler, `kind === "normal" && !welc
 ### What a watcher receives
 
 On success the host sets `ws.watch = room`, adds `ws` to `room.watchers` (leaving `ws.room` and `ws.seat` unset), and
-sends, in this order and with no log line to the table:
+sends, in this order (the table also hears "Someone is watching." and gets a fresh `seats`):
 
 | # | Message | Content |
 |---|---|---|
 | 1 | `welcome` | `{ type: "welcome", code, spectator: true, chat: room.chat }`. **No** `you`, `host` or `secret`. |
-| 2 | `seats` | `{ type: "seats", code, seats: seatsOf(room) }`, so the rail has names, colours, pictures and away marks at once. |
-| 3 | `state` | `{ type: "state", you: null, game: closedView(room.game, null), legal: legalFor(room.game, null) }` |
+| 2 | `seats` | `{ type: "seats", code, seats: seatsOf(room), watching: n }`, so the rail has names, colours, pictures, away marks and the watcher count at once. |
+| 3 | `state` | `{ type: "state", you: null, game: watchView(room.game), legal: legalFor(room.game, null), turnDeadline }` |
 
 After that a watcher gets, unchanged, every message `broadcast` sends to the seats: `seats` (each `publish`), `log`, `chat`,
 `react`, `rolled`, `tradeOffer`, `tradeDeclined`, `tradeClosed`. It gets a `state` on **every** `pushState`, with the same
@@ -114,24 +114,23 @@ if (ws.watch) {
 
 `viewFor(game, null)` is already the opponent view **until the game ends**. At `phase === "over"` it returns
 `{ ...game, deckLeft }`: every hand, every hidden point, the `deck`, the `seed` and the `rng`, to every seat (#111). A
-watcher must not get that, because the #346 completion test says it never receives them "before or after a win".
+watcher gets the same reveal at the win (Jarrod's decision 2 on #347), but never the `seed` or `rng`: the seed rebuilds
+the fortune deck and the rng is the host's, and neither is part of the table's result.
 
 So the over branch is split out, with no change for seats:
 
 - `closedView(game, you)`: the body `viewFor` has today after the `over` early return (strips `seed` and `rng`, empties
   `deck`, turns every other player into counts and zeroed `hidden` and `boughtThisTurn`).
 - `viewFor(game, you)`: `game.phase === "over" ? { ...game, deckLeft } : closedView(game, you)`. Behaviour identical.
-- A watcher always gets `closedView(game, null)`, before and after the win. `winner` and `phase: "over"` are still in it,
-  so the win screen knows who won.
+- `watchView(game)`: `closedView(game, null)` before the win; at `phase === "over"`, `{ ...game minus seed and rng, deckLeft }`,
+  the seats' reveal minus the seed and rng. `winner` is in both.
 
 `pushState` builds the watcher string **once** per push (`JSON.stringify` of the state message) and sends that one string
 to every watcher.
 
-What this means for the win screen: a watcher knows the winner and every public fact (buildings, longest path, largest
-army, public points) but not the winner's hidden points. See "Client". Known limit: the engine's log line
-`<name> claims the isle with <N> points.` (`rules.ts` `checkWin`) names the winner's total, and `N - publicVP` is the
-hidden points. That line is in `game.log` and `log` for **every** seat today and is a public announcement, so the proof
-asserts the structured fields (`hidden`, `resources`, `deck`, `seed`, `rng`), not log text.
+What this means for the win screen: a watcher sees the same table as a seat, hidden points and all. Before the win the
+proof asserts the structured fields (`hidden`, `resources`, `deck`, `seed`, `rng`), not log text; at the win it asserts
+the watcher's `game` equals a seat's final `game` minus `seed` and `rng`.
 
 ## Host (`server/host.mjs`)
 
@@ -151,11 +150,11 @@ A watcher has no seat, no `secret`, no `pid`, no name. It is in no `room.seats`,
 | Function | Change |
 |---|---|
 | `handle` | Two additions. (1) The `ws.watch` line above. (2) In the `!ws.room` branch, after the throttle line and before `create`/`hello`-with-no-code: `if (msg.type === "hello" && msg.watch === true) return watch(ws, msg)`. |
-| `watch(ws, msg)` (new) | The four checks in order, then add to `room.watchers`, `ws.watch = room`, send `welcome`, `seats`, `state`. |
+| `watch(ws, msg)` (new) | The four checks in order, then add to `room.watchers`, `ws.watch = room`, send `welcome`, then `watchersChanged(room, "Someone is watching.")` (the coalesced log line and a `seats` with the count to the table and the watchers, **no** `save`: a watcher is never on disk), then `state`. |
 | `broadcast` | After the seats loop, the same `raw` goes to every open socket in `room.watchers`. This one change delivers `log`, `chat`, `react`, `rolled`, `trade*` and `seats` to watchers. |
 | `pushState` | After the seats loop, send the shared watcher `state` string to `room.watchers`. |
 | `viewFor` | Split as above. |
-| `leave` | First line: `if (ws.watch) { ws.watch.watchers.delete(ws); return; }`. Nothing else: no `say`, no `publish`, no `hold`. |
+| `leave` | First branch: `if (ws.watch)`: remove it from `room.watchers` and `watchersChanged(room, "A watcher left.")` if the room still exists. No `hold`, no `save`. |
 | `dropRoom` | Send `The table closed.` to each watcher, close it, `room.watchers.clear()`. |
 
 `save` writes an explicit field list, so `watchers` and `ws.watch` are **never saved**. No `ROOM_SHAPE` bump.
@@ -245,7 +244,7 @@ through that fallback. The `spectator` branch is taken before `me` is derived.
 | Banner / HUD sentence | The turn line names the current player ("Ember's turn"); never "Your turn". |
 | Tab title | `Watching - Emberisle` while on the play screen, never the your-turn title (`turn-title.ts`). |
 | Sound | Table sounds (win, dice, builds) play as for a seat. No your-turn chime. |
-| Win screen | The headline, `Look around` and `Back to menu`. The table has Player, Outposts, Strongholds, Longest path, Largest army and **Public points** (`publicVP`); the Hidden column and the Total are not shown, and a line says "Hidden points are not shown to watchers." No `Play again` and no host-waiting line. When the host starts a rematch, the new `state` clears the panel and the watcher keeps watching. |
+| Win screen | The headline, `Look around` and `Back to menu`, and the same table a seat sees (the reveal reaches a watcher at the win, Jarrod's decision 2 on #347): Player, Outposts, Strongholds, Longest path, Largest army, Hidden and Total. No `Play again` and no host-waiting line. When the host starts a rematch, the new `state` clears the panel and the watcher keeps watching. |
 
 ## Test plan for #349
 
@@ -290,7 +289,7 @@ it passes.
 2. Zero enabled game controls: no build, roll, pass, buy, trade or knight button; no `place-chip`; `chat` has no input and
    no emote tray; a seat click opens no menu.
 3. The board and every seat's counts render, the **Watching** badge is shown, and the tab title is `Watching - Emberisle`.
-4. At the win: the headline names the winner, there is no Hidden column and no `Play again`.
+4. At the win: the headline names the winner, the table shows every seat's hidden points like a seat's does, and there is no `Play again`.
 5. A watcher dropped by closing the host lands on the Title with `Lost the table`, and the saved seat in `localStorage`
    of a tab that holds one is untouched.
 6. The Title: Watch is enabled at 4 characters; `?watch=CODE` fills the field and leaves the URL.
@@ -298,11 +297,11 @@ it passes.
 
 Plus `npm run typecheck && npm run build` and the repo's `npm test` and `npm run client-prove`, from a fresh clone.
 
-## Open question for Jarrod
+## Resolved question: do the players know someone is watching?
 
-**Should the players know someone is watching?** The default here is silent: no log line, no count. Anyone with the 4-letter
-code can watch, and players will not see them. If you want a notice, the smallest step is a log line "A watcher joined"
-and a "Watching: N" count on `seats`. It touches `seats`, the rail and the proof, so it is a separate child if you want it.
+Yes (Jarrod on #347, 2026-10-03): `seats` carries `watching: n` and the table logs "Someone is watching." / "A watcher
+left.", coalesced to one line per room per 5 s; the HUD shows a small eye count (#348). The count is exact at every
+change; only the log line is rate-limited. Anyone with the 4-letter code can watch, and the players see how many do.
 
 ## README
 

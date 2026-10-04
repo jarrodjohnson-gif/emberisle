@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import http from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { randomBytes, randomInt } from "node:crypto";
+import { randomBytes, randomInt, timingSafeEqual } from "node:crypto";
 import { WebSocketServer } from "ws";
 import { chooseBotAction } from "../src/lib/game/ai.ts";
 import { createGame } from "../src/lib/game/board.ts";
@@ -25,11 +25,21 @@ const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const rooms = new Map();
 const avatars = new Map(); // avatarId -> { body }
 const AVATAR_BYTES = 256 * 1024;
+// An env limit, or its default when the variable is unset or not a number.
+function envNum(name, fallback) {
+  const n = Number(process.env[name]);
+  return Number.isFinite(n) ? n : fallback;
+}
 // Every picture belongs to one seat and a seat holds one picture, so a table carries at most 4 x 256 KB (#369).
 // These two cap the whole host: a full store refuses (503) rather than evict a seated player's picture.
-const AVATAR_MAX = Number(process.env.AVATAR_MAX ?? 128);
-const AVATAR_STORE_BYTES = Number(process.env.AVATAR_STORE_BYTES ?? 16 * 1024 * 1024);
-const ROOM_MAX = Number(process.env.ROOM_MAX ?? 64);
+const AVATAR_MAX = envNum("AVATAR_MAX", 128);
+const AVATAR_STORE_BYTES = envNum("AVATAR_STORE_BYTES", 16 * 1024 * 1024);
+const ROOM_MAX = envNum("ROOM_MAX", 64);
+// Watchers per room (docs/design/spectator.md). A watcher has no seat and is never saved; 0 turns watching off.
+const SPECTATOR_MAX = envNum("SPECTATOR_MAX", 8);
+// A watcher coming or going is logged to the table at most this often per room, so a watch-and-close loop cannot
+// flood the log; the `watching` count on `seats` is always exact.
+const WATCH_LOG_MS = 5000;
 // A seat's non-chat messages (ready, start, intents, trades): a burst of 20, refilled 4 a second. A person or a bot
 // client stays far under this; a flood does not. Chat keeps its own 5-per-5s bucket. The proofs raise it through env.
 const ACT_CAP = Number(process.env.ACT_CAP ?? 20);
@@ -85,6 +95,7 @@ function send(ws, msg) {
 function broadcast(room, msg) {
   const raw = JSON.stringify(msg);
   for (const seat of room.seats) if (seat.ws && seat.ws.readyState === seat.ws.OPEN) seat.ws.send(raw);
+  for (const ws of room.watchers) if (ws.readyState === ws.OPEN) ws.send(raw);
 }
 
 function say(room, text) {
@@ -114,9 +125,23 @@ function seatsOf(room) {
   }));
 }
 
+function seatsMsg(room) {
+  return { type: "seats", code: room.code, seats: seatsOf(room), watching: room.watchers.size };
+}
+
 function publish(room) {
-  broadcast(room, { type: "seats", code: room.code, seats: seatsOf(room) });
+  broadcast(room, seatsMsg(room));
   save(room);
+}
+
+// A watcher came or went: the count goes out, nothing is saved (a watcher is never on disk), and the log line is coalesced.
+function watchersChanged(room, text) {
+  const now = Date.now();
+  if (!(now - (room.watchSaid ?? 0) < WATCH_LOG_MS)) {
+    room.watchSaid = now;
+    say(room, text);
+  }
+  broadcast(room, seatsMsg(room));
 }
 
 // Sockets, timers and the open trade offer stay in memory; everything else goes to disk.
@@ -183,7 +208,7 @@ function load() {
     // A file that parses but does not rebuild (a null seat, say) is skipped like one that does not parse.
     let room;
     try {
-      room = { ...saved, offer: null, offerTimer: null, seats: [] };
+      room = { ...saved, offer: null, offerTimer: null, seats: [], watchers: new Set() };
       delete room.savedAt;
       for (const s of saved.seats) {
         if (typeof s?.id !== "string" || typeof s.secret !== "string") throw new Error(`bad seat ${JSON.stringify(s)}`);
@@ -247,6 +272,17 @@ export function legalFor(game, you) {
 // Hidden fortunes and the deck order stay on the host until the game ends.
 export function viewFor(game, you) {
   if (game.phase === "over") return { ...game, deckLeft: game.deck.length };
+  return closedView(game, you);
+}
+
+// A watcher gets the opponent view, and at the win the same reveal as the seats minus the seed and rng (#347).
+function watchView(game) {
+  if (game.phase !== "over") return closedView(game, null);
+  const { seed, rng, ...open } = game;
+  return { ...open, deckLeft: game.deck.length };
+}
+
+function closedView(game, you) {
   // The seed rebuilds the whole fortune deck, and rng predicts which card a steal takes (#111).
   // Other players' hands go out as a count only, like cards held face down (#186).
   const { seed, rng, ...open } = game;
@@ -348,9 +384,14 @@ function turnOut(room, seat) {
   play(seat.ws, room, intent);
 }
 
+// The soonest armed window at the table, or null.
+function deadlineOf(room) {
+  return room.seats.reduce((d, s) => (s.turnDeadline && (!d || s.turnDeadline < d) ? s.turnDeadline : d), null);
+}
+
 function pushState(room) {
   armTurns(room);
-  const turnDeadline = room.seats.reduce((d, s) => (s.turnDeadline && (!d || s.turnDeadline < d) ? s.turnDeadline : d), null);
+  const turnDeadline = deadlineOf(room);
   save(room);
   for (const seat of room.seats) {
     if (!seat.ws) continue;
@@ -362,6 +403,9 @@ function pushState(room) {
       turnDeadline,
     });
   }
+  if (!room.watchers.size) return;
+  const raw = JSON.stringify({ type: "state", you: null, game: watchView(room.game), legal: legalFor(room.game, null), turnDeadline });
+  for (const ws of room.watchers) if (ws.readyState === ws.OPEN) ws.send(raw);
 }
 
 function gains(before, after) {
@@ -379,8 +423,13 @@ function gains(before, after) {
 // The seat whose welcome carried this secret, in whichever room.
 function seatOf(secret) {
   if (typeof secret !== "string" || !secret) return null;
+  const given = Buffer.from(secret);
+  const same = (s) => {
+    const own = Buffer.from(s.secret);
+    return own.length === given.length && timingSafeEqual(own, given);
+  };
   for (const room of rooms.values()) {
-    const seat = room.seats.find((s) => s.secret === secret);
+    const seat = room.seats.find(same);
     if (seat) return { room, seat };
   }
   return null;
@@ -417,8 +466,10 @@ function route(req, res) {
     if (!found) return refuse(403);
     const { room, seat } = found;
     if (!allow(seat.act, Date.now(), ACT_CAP, ACT_RATE)) return refuse(429);
-    const old = seat.avatarId ? avatars.get(seat.avatarId).body.length : 0;
-    if (avatars.size - (old ? 1 : 0) >= AVATAR_MAX) return refuse(503);
+    // Bytes this seat's current picture holds; its replacement frees them. Read again at the end, since the body
+    // arrives over time and another upload may have landed meanwhile.
+    const held = () => (seat.avatarId ? avatars.get(seat.avatarId).body.length : 0);
+    if (avatars.size - (held() ? 1 : 0) >= AVATAR_MAX) return refuse(503);
     const chunks = [];
     let size = 0;
     req.on("data", (c) => {
@@ -433,10 +484,12 @@ function route(req, res) {
     });
     req.on("end", () => {
       if (res.headersSent) return;
+      // The seat was let go, or its room dropped, while the body was still coming: nothing would ever free it.
+      if (rooms.get(room.code) !== room || !room.seats.includes(seat)) return res.writeHead(410).end();
       const body = Buffer.concat(chunks);
       // Served as image/jpeg, so only JPEG bytes (SOI marker) are kept.
       if (size < 3 || body[0] !== 0xff || body[1] !== 0xd8 || body[2] !== 0xff) return res.writeHead(400).end();
-      if (storeBytes() - old + size > AVATAR_STORE_BYTES) return res.writeHead(503).end();
+      if (storeBytes() - held() + size > AVATAR_STORE_BYTES) return res.writeHead(503).end();
       forgetAvatar(seat);
       const id = randomBytes(8).toString("hex");
       avatars.set(id, { body });
@@ -534,7 +587,7 @@ function seatColor(room, raw) {
 
 function openTable(ws, msg) {
   if (rooms.size >= ROOM_MAX) return send(ws, { type: "error", message: "The host is full." });
-  const room = { code: code(), seats: [], game: null, host: null, next: 0, offer: null, offerTimer: null, chat: [], chatSeq: 0 };
+  const room = { code: code(), seats: [], game: null, host: null, next: 0, offer: null, offerTimer: null, chat: [], chatSeq: 0, watchers: new Set() };
   rooms.set(room.code, room);
   const seat = {
     id: `s${room.next++}`,
@@ -581,6 +634,20 @@ function sitDown(ws, msg) {
   send(ws, { type: "welcome", code: room.code, you: seat.id, host: false, chat: room.chat, secret: seat.secret });
   say(room, `${seat.name} sat down.`);
   publish(room);
+}
+
+// hello {code, watch:true} on a started table: no seat, no secret, read-only (docs/design/spectator.md, #347).
+function watch(ws, msg) {
+  const room = rooms.get(String(msg.code || "").toUpperCase());
+  if (!room) return send(ws, { type: "error", message: "No table with that code" });
+  if (!room.game) return send(ws, { type: "error", message: "Not started yet." });
+  if (room.watchers.size >= SPECTATOR_MAX) return send(ws, { type: "error", message: "Table is full to watch." });
+  room.watchers.add(ws);
+  ws.watch = room;
+  send(ws, { type: "welcome", code: room.code, spectator: true, chat: room.chat });
+  watchersChanged(room, "Someone is watching.");
+  const turnDeadline = deadlineOf(room);
+  send(ws, { type: "state", you: null, game: watchView(room.game), legal: legalFor(room.game, null), turnDeadline });
 }
 
 function startGame(ws, room) {
@@ -783,6 +850,11 @@ wss.on("connection", (ws) => {
 });
 
 function handle(ws, raw) {
+  // A watcher sends nothing after its hello. Above the parse and the seatless branch, so it can never sit down or rejoin.
+  if (ws.watch) {
+    if (!allow(ws.bucket, Date.now())) return;
+    return send(ws, { type: "error", message: "Watching only." });
+  }
   let msg;
   try {
     msg = JSON.parse(String(raw));
@@ -795,6 +867,7 @@ function handle(ws, raw) {
     const ok = allow(ws.bucket, Date.now());
     if (msg.type === "peek") return ok ? peek(ws, msg) : undefined;
     if (!ok && (msg.type === "create" || msg.type === "join" || msg.type === "hello")) return send(ws, { type: "error", message: "Slow down." });
+    if (msg.type === "hello" && msg.watch === true) return watch(ws, msg);
     // hello with no code opens a table; hello with a code sits down (build bible 2.3, 10).
     if (msg.type === "create" || (msg.type === "hello" && !msg.code)) return openTable(ws, msg);
     if (msg.type === "hello" && typeof msg.secret === "string") return rejoin(ws, msg);
@@ -864,6 +937,11 @@ function dropRoom(room) {
     clearTimeout(seat.turnTimer);
     forgetAvatar(seat);
   }
+  for (const ws of room.watchers) {
+    send(ws, { type: "error", message: "The table closed." });
+    ws.close();
+  }
+  room.watchers.clear();
   rooms.delete(room.code);
   unsave(room);
 }
@@ -913,6 +991,13 @@ function letGo(room, seat) {
 }
 
 function leave(ws) {
+  if (ws.watch) {
+    const room = ws.watch;
+    ws.watch = null;
+    if (!room.watchers.delete(ws) || !rooms.has(room.code)) return;
+    watchersChanged(room, "A watcher left.");
+    return;
+  }
   const room = ws.room;
   if (!room) return;
   const seat = ws.seat;
