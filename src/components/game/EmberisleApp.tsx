@@ -161,7 +161,7 @@ function Title() {
               autoCapitalize="characters"
               autoComplete="off"
               maxLength={4}
-              className="h-11 flex-1 rounded-[12px] border border-border bg-surface px-3 tracking-[0.3em]"
+              className="h-11 min-w-0 flex-1 rounded-[12px] border border-border bg-surface px-3 tracking-[0.3em]"
             />
             <Button size="lg" variant="sea" type="submit">
               Join
@@ -172,7 +172,7 @@ function Title() {
               {error}
             </p>
           ) : null}
-          <div className="mt-1 flex gap-2">
+          <div className="mt-1 flex flex-wrap gap-2">
             <Button size="sm" variant="outline" className="flex-1 whitespace-nowrap px-2" onClick={startAi}>
               Play versus the isle
             </Button>

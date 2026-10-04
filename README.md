@@ -137,11 +137,13 @@ npm test                 # every server/*-prove.mjs: rules, bots, sounds, socket
 npm run client-prove     # headless Chromium plays setup + a roll, zero console errors
 npm run hotseat-prove    # headless Chromium: a 7 in hotseat shows the discard bar for the seat that owes cards
 npm run tabs-prove       # 3 headless tabs host, join, play setup + 5 rolls on the rules host, boards match
+npm run countdown-prove  # 3 headless tabs on a 25 s turn timer: the countdown chip names the waited-on seat on every tab, survives a seat dropping and rejoining, runs to the deadline, re-arms after the host moves on
 npm run tabs-prove-4     # the same proof with 4 tabs at 1280x720: setup 1-2-3-4-4-3-2-1, four rail cards unclipped on every tab
 npm run trade-prove      # 3 headless tabs: one asks the table through the trade panel, one says No, one says Yes, goods move; a second ask times out
 npm run served-prove     # same 3 tabs, but the page comes from the rules host itself with no ?host= (after build)
 npm run night-prove      # npm run night from a clean start: builds, prints the join lines, serves the page, answers a socket, survives kill -9 on the host, SIGINT leaves no host
 npm run contrast-prove   # headless Chromium: title buttons and small labels meet 4.5:1 contrast
+npm run reflow-prove     # headless Chromium at 640x360 (200 % zoom) and 320x568: title fits, HUD leaves the header and some island uncovered
 npm run chat-prove       # 3 headless tabs chat in the lobby and the game: presets, reactions, unread badge, minimized dock covers no target, the game log in the dock with Chat/All and Copy log
 ```
 
@@ -327,9 +329,10 @@ WebSocket JSON. The client sends intents. The server answers with `state` or `er
 | `npm run keyboard-place-prove` | In hotseat at 1280x720, with the keyboard alone: Enter on Roll through the roll-off, Tab from How to play reaches a visible "Place an outpost" list holding exactly the glowing corners with distinct names, Enter places all eight setup outposts and paths (focus stays in the list, and a phone mark left pending on another corner or hex is never placed instead), then an armed Path, Outpost and Stronghold and a wayfarer move each match the glow and place; zero console errors. Saves `test-results/keyboard-place-prove.png` |
 | `npm run size-prove` | After a build, the gzip size of each `dist/assets/*.js` chunk (`index`, `IslandCanvas`) is inside its budget (today plus 10%), and no chunk is unbudgeted; the budget is in `scripts/size-prove.mjs` |
 | `npm run contrast-prove` | In the browser, the title's Join and Host a table buttons (white on the `sea-ink` and `accent-ink` fills, the same variants Start and End turn use), the 12 px "A living island" eyebrow and the error line each measure at least 4.5:1 from their computed colours; zero console errors |
+| `npm run reflow-prove` | In the browser at 640x360 (a 1280x720 window at 200 % zoom) and 320x568: the title's Join is fully visible, no title button runs past the right edge and nothing scrolls sideways; in hotseat `main` with every fortune held, the bottom HUD starts below the header + 8 px (landscape) or the seat strip (portrait), at least 120 px of island between them takes the pointer, and End turn is reachable by scrolling the stack; zero console errors |
 | `npm run orphan-check` | Not in CI. Starts two proofs, kills each mid-run, and counts the host processes left behind. Expect 0. |
 
-`npm test` runs the eighteen `server/*-prove.mjs` scripts: `prove`, `trade-prove`, `sound-prove`, `table-prove`, `trade-table-prove`, `harden-prove`, `net-prove`, `rules-prove`, `bots-prove`, `ai-prove`, `serve-prove`, `chat-prove`, `rejoin-prove`, `reconnect-prove`, `persist-prove`, `finish-prove`, `turn-prove`, and `watch-prove`. CI also runs `size-prove` (after the build), `client-prove`, `dpr-prove`, `hotseat-prove`, `tabs-prove`, `trade-prove`, `served-prove`, `night-prove`, the browser `chat-prove`, `wayfarer-prove`, `tokens-prove`, `pieces-prove`, `touch-place-prove`, `idle-prove`, `contrast-prove`, `keyboard-place-prove`, and `tabs-prove-4`.
+`npm test` runs the eighteen `server/*-prove.mjs` scripts: `prove`, `trade-prove`, `sound-prove`, `table-prove`, `trade-table-prove`, `harden-prove`, `net-prove`, `rules-prove`, `bots-prove`, `ai-prove`, `serve-prove`, `chat-prove`, `rejoin-prove`, `reconnect-prove`, `persist-prove`, `finish-prove`, `turn-prove`, and `watch-prove`. CI also runs `size-prove` (after the build), `client-prove`, `dpr-prove`, `hotseat-prove`, `tabs-prove`, `trade-prove`, `served-prove`, `night-prove`, the browser `chat-prove`, `wayfarer-prove`, `tokens-prove`, `pieces-prove`, `touch-place-prove`, `idle-prove`, `contrast-prove`, `keyboard-place-prove`, `reflow-prove`, and `tabs-prove-4`.
 
 ---
 
