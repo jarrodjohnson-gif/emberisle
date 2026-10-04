@@ -54,7 +54,8 @@ export type Bag = Partial<Record<Resource, number>>;
 export interface TableEvents {
   welcome(msg: { code: string; you: string; host: boolean; chat?: ChatLine[]; secret?: string }): void;
   seats(msg: { code: string; seats: Seat[] }): void;
-  state(msg: { you: string; game: GameState; legal: Legal }): void;
+  // `turnDeadline` is the host's clock (epoch ms) for the seat `turnPlayer`; `serverNow` is the host's clock as it sent this.
+  state(msg: { you: string; game: GameState; legal: Legal; turnDeadline?: number | null; turnPlayer?: string | null; serverNow?: number }): void;
   rolled(msg: { dice: [number, number]; sum: number; gains: Gain[]; short: Resource[] }): void;
   chat(line: ChatLine): void;
   react(r: Reaction): void;

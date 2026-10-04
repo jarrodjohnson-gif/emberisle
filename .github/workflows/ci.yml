@@ -72,6 +72,7 @@ jobs:
       - run: npm run dpr-prove
       - run: npm run hotseat-prove
       - run: npm run tabs-prove
+      - run: npm run countdown-prove
       - run: npm run trade-prove
       - if: always()
         uses: actions/upload-artifact@v4
@@ -112,6 +113,8 @@ jobs:
       - run: npm run pieces-prove
       - run: npm run idle-prove
       - run: npm run contrast-prove
+      - run: npm run keyboard-place-prove
+      - run: npm run reflow-prove
       - if: always()
         uses: actions/upload-artifact@v4
         with:

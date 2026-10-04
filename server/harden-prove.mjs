@@ -66,19 +66,6 @@ const port = await new Promise((resolve, reject) => {
 });
 host.on("exit", (c) => fail("host died", c));
 
-const big = await fetch(`http://127.0.0.1:${port}/avatars`, { method: "POST", body: Buffer.alloc(300 * 1024) }).catch(
-  () => ({ status: 413 }),
-);
-if (big.status !== 413) fail("300 KB picture accepted", big.status);
-const small = await fetch(`http://127.0.0.1:${port}/avatars`, {
-  method: "POST",
-  headers: { "x-player-id": "p0" },
-  body: Buffer.alloc(1000),
-});
-const { avatarId } = await small.json();
-if (!avatarId || avatarId === "p0") fail("client chose the picture id", avatarId);
-console.log("picture: 300 KB refused (413), id picked by host");
-
 function client(at = port) {
   const ws = new WebSocket(`ws://127.0.0.1:${at}`);
   const c = { ws, inbox: [], waiters: [], state: null };
@@ -111,7 +98,21 @@ for (const junk of ["{", "null", "5", '{"type":"hello","code":{}}', { type: "pla
   a.send(junk);
 }
 a.send({ type: "hello", name: "A" });
-const { code } = await a.next("welcome");
+const { code, secret } = await a.next("welcome");
+// An upload needs a seat's secret (#369), so it comes after the welcome; a JPEG marker since the host keeps only JPEG bytes.
+const jpeg = (size) => Buffer.concat([Buffer.from([0xff, 0xd8, 0xff]), Buffer.alloc(size - 3)]);
+const big = await fetch(`http://127.0.0.1:${port}/avatars`, { method: "POST", headers: { "x-seat-secret": secret }, body: jpeg(300 * 1024) }).catch(
+  () => ({ status: 413 }),
+);
+if (big.status !== 413) fail("300 KB picture accepted", big.status);
+const small = await fetch(`http://127.0.0.1:${port}/avatars`, {
+  method: "POST",
+  headers: { "x-seat-secret": secret, "x-player-id": "p0" },
+  body: jpeg(1000),
+});
+const { avatarId } = await small.json();
+if (!avatarId || avatarId === "p0") fail("client chose the picture id", avatarId);
+console.log("picture: 300 KB refused (413), id picked by host");
 b.send({ type: "hello", code, name: "B" });
 c.send({ type: "hello", code, name: "C" });
 await b.next("welcome");
