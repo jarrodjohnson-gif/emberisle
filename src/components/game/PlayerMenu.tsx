@@ -4,8 +4,8 @@
 import { useEffect, useRef } from "react";
 import { MessageSquare, Landmark, AtSign, Handshake } from "lucide-react";
 import { EMOTES } from "@/components/game/emotes";
-import { RESOURCES, type DevKind, type PlayerState } from "@/lib/game/types";
-import { hiddenCount, publicVP } from "@/lib/game/rules";
+import type { DevKind, PlayerState } from "@/lib/game/types";
+import { cards, hiddenCount, publicVP } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
 import type { Seat } from "@/lib/net/table";
 import { cn } from "@/lib/utils";
@@ -82,7 +82,7 @@ export function PlayerMenu({ player: p, className }: { player: PlayerState; clas
 
   // #443: your own fortunes by kind and a dropped seat's state are facts here, one tap from the seat line.
   const facts: [string, number | string][] = [
-    ["Cards in hand", p.goods ?? RESOURCES.reduce((n, r) => n + p.resources[r], 0)],
+    ["Cards in hand", cards(p)],
     ["Fortunes held", p.fortunes ?? hiddenCount(p)],
     ["Points shown", publicVP(state, p.id)],
     ["Wayfarers played", p.knightsPlayed],

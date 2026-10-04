@@ -5,17 +5,13 @@
 // `seat-turn`: its dot pulses softly (bible §4.3) and the card brightens over 200 ms (§8), with an ink ring on the dot and
 // aria-current so the turn never rests on colour or motion alone (#312). Your fortunes by kind and a dropped seat's
 // state are facts in the player menu, one tap away.
-import type { LucideIcon } from "lucide-react";
-import { RectangleVertical, Sparkles, WifiOff } from "lucide-react";
+import { ScrollText } from "lucide-react";
 import { ReactionFloats } from "@/components/game/Chat";
 import { PlayerMenu, seatAway } from "@/components/game/PlayerMenu";
-import { RESOURCES, type GameState, type PlayerState } from "@/lib/game/types";
-import { hiddenCount, publicVP } from "@/lib/game/rules";
+import type { GameState, PlayerState } from "@/lib/game/types";
+import { cards, hiddenCount, publicVP } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
 import { cn } from "@/lib/utils";
-
-const SEAT_CARD = "relative bg-glass backdrop-blur-md transition-colors duration-200 [&.seat-turn]:bg-raised/90";
-const SEAT_BUTTON = "flex h-11 w-full cursor-pointer items-center rounded-[inherit] text-left hover:bg-white/40";
 
 // The seat's roll-off die, "–" until it rolls this round; gone once the roll-off is settled (docs/design/first-player.md).
 function RollOffDie({ state, id, className }: { state: GameState; id: string; className: string }) {
@@ -27,27 +23,26 @@ function RollOffDie({ state, id, className }: { state: GameState; id: string; cl
   );
 }
 
-// A small count with its unit as an icon; the unit's word stays for screen readers. zinc-700 reads ≥ 4.5:1 on the glass.
-function Count({ testid, n, unit, Icon, className }: { testid: string; n: number; unit: string; Icon: LucideIcon; className?: string }) {
+// A small count with its unit as a mark (a card outline for goods, the Fortune button's scroll for fortunes); the unit's
+// word stays for screen readers. zinc-700 reads ≥ 4.5:1 on the glass.
+function Count({ testid, n, unit, className }: { testid: string; n: number; unit: "good" | "fortune"; className?: string }) {
   return (
     <span data-testid={testid} className={cn("flex shrink-0 items-center gap-0.5 text-caption tabular-nums text-zinc-700", className)}>
       {n}
-      <Icon className="size-3" aria-hidden="true" />
-      <span className="sr-only">
-        {" "}
-        {unit}
-        {n === 1 ? "" : "s"}
-      </span>
+      {unit === "good" ? <span className="h-3 w-2.5 rounded-[2px] border-[1.5px] border-current" /> : <ScrollText className="size-3" aria-hidden="true" />}
+      <span className="sr-only"> {unit}{n === 1 ? "" : "s"}</span>
     </span>
   );
 }
 
 // `short` is the strip's under-100 px form (#420); its presence makes this a strip line, which also hides the counts in
 // a cell under 160 px so the name keeps its room. A dropped seat's marker shows at every width (the word only where it fits).
-function SeatLine({ state, p, actor, away, short }: { state: GameState; p: PlayerState; actor: string; away: boolean; short?: string }) {
+function SeatLine({ p, actor, short }: { p: PlayerState; actor: string; short?: string }) {
+  const state = useGame((s) => s.state)!;
+  const away = seatAway(useGame((s) => s.seats), p);
   const strip = short !== undefined;
   const hidden = p.id === actor && p.hidden.vp > 0 ? p.hidden.vp : 0;
-  const goods = p.goods ?? RESOURCES.reduce((n, r) => n + p.resources[r], 0);
+  const goods = cards(p);
   const fortunes = p.fortunes ?? hiddenCount(p);
   const narrow = strip ? "@max-[160px]:hidden" : undefined;
   return (
@@ -63,7 +58,8 @@ function SeatLine({ state, p, actor, away, short }: { state: GameState; p: Playe
       ) : null}
       {away ? (
         <span data-testid="seat-away" className="flex min-w-4 shrink-[9] items-center gap-0.5 text-caption text-zinc-700">
-          <WifiOff className="size-3 shrink-0" aria-hidden="true" />
+          {/* A struck ring: the seat's circle with a line through it, in CSS so it costs no icon. */}
+          <span className="relative size-2.5 shrink-0 rounded-full border-[1.5px] border-current after:absolute after:-inset-x-0.5 after:top-1/2 after:h-[1.5px] after:-rotate-45 after:bg-current" />
           <span aria-hidden="true" className={cn("truncate", narrow)}>
             reconnecting…
           </span>
@@ -71,8 +67,8 @@ function SeatLine({ state, p, actor, away, short }: { state: GameState; p: Playe
         </span>
       ) : (
         <>
-          {goods > 0 ? <Count testid="seat-goods" n={goods} unit="good" Icon={RectangleVertical} className={narrow} /> : null}
-          {fortunes > 0 ? <Count testid="seat-fortunes" n={fortunes} unit="fortune" Icon={Sparkles} className={narrow} /> : null}
+          {goods > 0 ? <Count testid="seat-goods" n={goods} unit="good" className={narrow} /> : null}
+          {fortunes > 0 ? <Count testid="seat-fortunes" n={fortunes} unit="fortune" className={narrow} /> : null}
         </>
       )}
       <RollOffDie state={state} id={p.id} className={strip ? "size-5 rounded-[4px] text-xs" : "size-6 text-sm"} />
@@ -92,31 +88,46 @@ function SeatLine({ state, p, actor, away, short }: { state: GameState; p: Playe
   );
 }
 
-// An open player menu is a popover, so the rail rises over the bottom stack while it shows (they overlap at 800x500).
-export function SeatRail({ actor }: { actor: string }) {
-  const state = useGame((s) => s.state)!;
-  const seats = useGame((s) => s.seats);
+// One seat's card: the menu's trigger (docs/design/chat.md "The player action menu") with its reactions over it. The rail
+// gives it `rail-<id>` and chip corners, the strip `seat-<id>`, control corners and a short name.
+function SeatCard({ p, actor, short, className }: { p: PlayerState; actor: string; short?: string; className: string }) {
+  const current = useGame((s) => s.state!.current);
   const menuFor = useGame((s) => s.menuFor);
   const openMenu = useGame((s) => s.openMenu);
+  const strip = short !== undefined;
+  return (
+    <div
+      data-testid={`${strip ? "seat" : "rail"}-${p.id}`}
+      className={cn("relative bg-glass backdrop-blur-md transition-colors duration-200 [&.seat-turn]:bg-raised/90", className, p.id === current && "seat-turn")}
+    >
+      <button
+        type="button"
+        data-menu-trigger={p.id}
+        aria-expanded={menuFor === p.id}
+        aria-controls={`player-menu-${p.id}`}
+        aria-current={p.id === current || undefined}
+        onClick={() => openMenu(menuFor === p.id ? null : p.id)}
+        className={cn(
+          "flex h-11 w-full cursor-pointer items-center rounded-[inherit] text-left hover:bg-white/40",
+          strip ? "gap-1.5 px-2 @max-[100px]:gap-1 @max-[100px]:px-1.5" : "gap-2 px-3",
+        )}
+      >
+        <SeatLine p={p} actor={actor} short={short} />
+      </button>
+      <ReactionFloats by="player" id={p.id} />
+    </div>
+  );
+}
+
+// An open player menu is a popover, so the rail rises over the bottom stack while it shows (they overlap at 800x500).
+export function SeatRail({ actor }: { actor: string }) {
+  const players = useGame((s) => s.state!.players);
+  const menuFor = useGame((s) => s.menuFor);
   return (
     <aside className={cn("pointer-events-none absolute left-3 top-20 hidden w-56 flex-col gap-2 md:flex", menuFor ? "z-20" : "z-10")}>
-      {state.players.map((p) => (
+      {players.map((p) => (
         <div key={p.id} className="pointer-events-auto flex flex-col gap-1">
-          <div data-testid={`rail-${p.id}`} className={cn(SEAT_CARD, "rounded-chip", p.id === state.current && "seat-turn")}>
-            {/* The card is the menu's trigger (docs/design/chat.md "The player action menu"). */}
-            <button
-              type="button"
-              data-menu-trigger={p.id}
-              aria-expanded={menuFor === p.id}
-              aria-controls={`player-menu-${p.id}`}
-              aria-current={p.id === state.current || undefined}
-              onClick={() => openMenu(menuFor === p.id ? null : p.id)}
-              className={cn(SEAT_BUTTON, "gap-2 px-3")}
-            >
-              <SeatLine state={state} p={p} actor={actor} away={seatAway(seats, p)} />
-            </button>
-            <ReactionFloats by="player" id={p.id} />
-          </div>
+          <SeatCard p={p} actor={actor} className="rounded-chip" />
           {menuFor === p.id ? <PlayerMenu player={p} /> : null}
         </div>
       ))}
@@ -139,32 +150,12 @@ function shortNames(names: string[]) {
 
 // Phone seat strip (docs/design/mobile-hud.md): 44 px, one cell per seat.
 export function SeatStrip({ actor, className }: { actor: string; className: string }) {
-  const state = useGame((s) => s.state)!;
-  const seats = useGame((s) => s.seats);
-  const menuFor = useGame((s) => s.menuFor);
-  const openMenu = useGame((s) => s.openMenu);
-  const short = shortNames(state.players.map((p) => p.name));
+  const players = useGame((s) => s.state!.players);
+  const short = shortNames(players.map((p) => p.name));
   return (
     <div data-testid="seat-strip" className={cn("pointer-events-auto flex h-11 gap-1", className)}>
-      {state.players.map((p, i) => (
-        <div
-          key={p.id}
-          data-testid={`seat-${p.id}`}
-          className={cn(SEAT_CARD, "@container h-11 min-w-0 flex-1 rounded-control", p.id === state.current && "seat-turn")}
-        >
-          <button
-            type="button"
-            data-menu-trigger={p.id}
-            aria-expanded={menuFor === p.id}
-            aria-controls={`player-menu-${p.id}`}
-            aria-current={p.id === state.current || undefined}
-            onClick={() => openMenu(menuFor === p.id ? null : p.id)}
-            className={cn(SEAT_BUTTON, "gap-1.5 px-2 @max-[100px]:gap-1 @max-[100px]:px-1.5")}
-          >
-            <SeatLine state={state} p={p} actor={actor} away={seatAway(seats, p)} short={short[i]} />
-          </button>
-          <ReactionFloats by="player" id={p.id} />
-        </div>
+      {players.map((p, i) => (
+        <SeatCard key={p.id} p={p} actor={actor} short={short[i]} className="@container h-11 min-w-0 flex-1 rounded-control" />
       ))}
     </div>
   );
