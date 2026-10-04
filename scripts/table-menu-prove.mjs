@@ -32,7 +32,13 @@ const errors = [];
 let code = 0;
 try {
   for (const v of VIEWS) {
-    const ctx = await browser.newContext({ viewport: { width: v.width, height: v.height }, hasTouch: !!v.touch, isMobile: !!v.touch });
+    // The clipboard path is granted explicitly (a headless runner has no clipboard otherwise); the no-clipboard path removes it.
+    const ctx = await browser.newContext({
+      viewport: { width: v.width, height: v.height },
+      hasTouch: !!v.touch,
+      isMobile: !!v.touch,
+      permissions: v.noClipboard ? [] : ["clipboard-read", "clipboard-write"],
+    });
     const page = await ctx.newPage();
     if (v.noClipboard) await page.addInitScript(() => Object.defineProperty(navigator, "clipboard", { value: undefined }));
     page.on("console", (m) => m.type() === "error" && errors.push(`${v.tag}: ${m.text()}`));
@@ -116,6 +122,8 @@ try {
     assert.equal(await menu.getByTestId("watching-count").textContent().then((t) => t.trim()), "2", `${v.tag}: the watcher count is in the menu`);
     await menu.getByRole("button", { name: "Copy table code K7QP" }).click();
     const copied = v.noClipboard ? "fallback" : "copied";
+    const clipboard = await page.evaluate(() => navigator.clipboard?.writeText("probe").then(() => "writes", (e) => `rejects: ${e}`) ?? "missing");
+    assert.equal(clipboard, v.noClipboard ? "missing" : "writes", `${v.tag}: navigator.clipboard is ${clipboard}`);
     if (v.noClipboard) {
       await menu.getByTestId("copy-fallback").waitFor();
       assert.equal(await menu.getByTestId("copy-fallback").inputValue(), "K7QP", `${v.tag}: the fallback field holds the code`);
