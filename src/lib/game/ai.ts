@@ -1,4 +1,4 @@
-import { COST, RESOURCES, type Action, type GameState, type Resource } from "./types";
+import { COST, RESOURCES, type Action, type GameState, type PlayerState, type Resource, type TradeOffer } from "./types";
 import { harborRate, legalCities, legalRoads, legalSettle, playable, publicVP, stealTargets } from "./rules";
 
 function cards(p: { resources: Record<Resource, number> }) {
@@ -95,6 +95,67 @@ function bestRoad(state: GameState, pid: string, roads: string[]): string {
   return best.eid;
 }
 
+type Cost = Partial<Record<Resource, number>>;
+type Hand = Record<Resource, number>;
+
+// The next buy the bot is saving for (#233, #361).
+function goalOf(state: GameState, me: PlayerState, cities: string[], settles: string[], roads: string[]): Cost | null {
+  if (cities.length && me.strongholdsLeft > 0) return COST.stronghold;
+  if (settles.length && me.outpostsLeft > 0) return COST.outpost;
+  if (roads.length && me.pathsLeft > 0 && me.outpostsLeft > 0) return COST.path;
+  return state.deck.length > 0 ? COST.card : null;
+}
+
+// One entry per card `hand` still lacks for `goal`.
+function shortOf(hand: Hand, goal: Cost | null): Resource[] {
+  const short: Resource[] = [];
+  if (goal) for (const r of RESOURCES) for (let n = hand[r]; n < (goal[r] ?? 0); n++) short.push(r);
+  return short;
+}
+
+function goalFor(state: GameState, me: PlayerState) {
+  return goalOf(state, me, legalCities(state, me.id), legalSettle(state, me.id, false), legalRoads(state, me.id, false));
+}
+
+function size(bag: Cost) {
+  return RESOURCES.reduce((n, r) => n + (bag[r] ?? 0), 0);
+}
+
+// A table ask (#363) as its asker sent it: the asker gives `give` and wants `want`.
+export type TradeAsk = Pick<TradeOffer, "from" | "give" | "want">;
+
+// Whether a bot says Yes to an ask (#363). It reads only its own hand and what every seat sees:
+// it can pay, it gets at least as many cards as it gives, the trade leaves it fewer cards short of
+// its next build, and the asker is not the leader on public points.
+export function shouldAcceptTrade(state: GameState, botId: string, offer: TradeAsk): boolean {
+  const me = state.players.find((p) => p.id === botId);
+  if (!me || offer.from === botId || !state.players.some((p) => p.id === offer.from)) return false;
+  if (RESOURCES.some((r) => (offer.want[r] ?? 0) > me.resources[r])) return false;
+  if (size(offer.give) < size(offer.want)) return false;
+  const askerVP = publicVP(state, offer.from);
+  const topVP = Math.max(...state.players.map((p) => publicVP(state, p.id)));
+  if (askerVP === topVP && askerVP > publicVP(state, botId)) return false;
+  const goal = goalFor(state, me);
+  const after = { ...me.resources };
+  for (const r of RESOURCES) after[r] += (offer.give[r] ?? 0) - (offer.want[r] ?? 0);
+  return shortOf(after, goal).length < shortOf(me.resources, goal).length;
+}
+
+// What a bot asks the table for on its own turn (#363), or null. Only when exactly one card short of
+// its next build: that card, one for one, against its biggest spare (a card the build does not use).
+// Pure; the caller holds a bot to one ask per turn.
+export function chooseTradeAsk(state: GameState, botId: string): { give: Cost; want: Cost } | null {
+  const me = state.players.find((p) => p.id === botId);
+  if (!me || state.phase !== "main" || state.current !== botId || state.trade) return null;
+  const goal = goalFor(state, me);
+  const short = shortOf(me.resources, goal);
+  if (!goal || short.length !== 1) return null;
+  const want = short[0]!;
+  const spare = (r: Resource) => me.resources[r] - (goal[r] ?? 0);
+  const give = RESOURCES.filter((r) => r !== want && spare(r) > 0).sort((a, b) => spare(b) - spare(a))[0];
+  return give ? { give: { [give]: 1 }, want: { [want]: 1 } } : null;
+}
+
 export function chooseBotAction(state: GameState, pid: string): Action | null {
   const me = state.players.find((p) => p.id === pid);
   if (!me) return null;
@@ -139,21 +200,8 @@ export function chooseBotAction(state: GameState, pid: string): Action | null {
     return { type: "buildPath", edgeId: roads[Math.floor(roads.length / 2)]! };
   }
 
-  // The next buy the bot is saving for, and what it is short of (#233, #361).
-  const goal =
-    cities.length && me.strongholdsLeft > 0
-      ? COST.stronghold
-      : settles.length && me.outpostsLeft > 0
-        ? COST.outpost
-        : roads.length && me.pathsLeft > 0 && me.outpostsLeft > 0
-          ? COST.path
-          : state.deck.length > 0
-            ? COST.card
-            : null;
-  const short: Resource[] = [];
-  if (goal) {
-    for (const r of RESOURCES) for (let n = me.resources[r]; n < (goal[r] ?? 0); n++) short.push(r);
-  }
+  const goal = goalOf(state, me, cities, settles, roads);
+  const short = shortOf(me.resources, goal);
 
   // Fortunes held since an earlier turn (#361: a bot that never plays them makes practice too easy).
   if (!state.playedCard) {

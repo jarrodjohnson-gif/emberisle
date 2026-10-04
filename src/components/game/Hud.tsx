@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   BookOpen,
   Dices,
+  Eye,
   Home,
   Landmark,
   Mountain,
@@ -131,6 +132,9 @@ export function Hud() {
   const setHowTo = useGame((s) => s.setHowTo);
   const menuFor = useGame((s) => s.menuFor);
   const openMenu = useGame((s) => s.openMenu);
+  // A watcher (docs/design/spectator.md): `me` below falls back to seat 0, so its hand bar is hidden by this flag, never by `localId`.
+  const spectator = useGame((s) => s.spectator);
+  const watching = useGame((s) => s.watching);
   const { phone, portrait } = useViewport();
   const [hintDismissed, setHintDismissed] = useState(() => sessionStorage.getItem(HINT_KEY) === "1");
   useEscapeDisarm();
@@ -139,7 +143,8 @@ export function Hud() {
   const actor = mode === "hotseat" ? state.current : localId;
   const me = state.players.find((p) => p.id === actor) ?? state.players[0]!;
   const mine = state.current === actor;
-  const fortuneBlocked = (state.deckLeft ?? state.deck.length) <= 0 || !affords(me, "card");
+  // A watcher's `me` is seat 0 in the opponent view, which has no `resources`, so the flag is checked first.
+  const fortuneBlocked = spectator || (state.deckLeft ?? state.deck.length) <= 0 || !affords(me, "card");
   // Hotseat has no bots: the first seat still owing a discard takes the bar, whoever rolled the 7.
   const discarder =
     state.phase !== "discard"
@@ -184,13 +189,29 @@ export function Hud() {
           <div className="flex items-center gap-2 rounded-[20px] border border-white/50 bg-white/45 px-3 py-2 backdrop-blur-md">
             <span className="font-display text-lg tracking-tight">Emberisle</span>
             <span className="hidden text-xs text-zinc-600 sm:inline">Turn {Math.max(1, state.turn)}</span>
+            {spectator ? (
+              <span data-testid="watching-badge" className="rounded-full bg-fg px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-bg">
+                Watching
+              </span>
+            ) : null}
+            {watching > 0 ? (
+              <span
+                data-testid="watching-count"
+                title={`${watching} watching`}
+                aria-label={`${watching} watching`}
+                className="flex items-center gap-1 text-xs tabular-nums text-zinc-600"
+              >
+                <Eye className="size-3.5" aria-hidden="true" />
+                {watching}
+              </span>
+            ) : null}
           </div>
           {phone && !portrait ? <SeatStrip actor={actor} className="ml-auto min-w-0 max-w-[34rem] flex-1" /> : null}
           <div className="flex gap-1">
             <Button variant="secondary" size="icon" onClick={(e) => setHowTo(true, e.currentTarget)} aria-label="How to play">
               <BookOpen className="size-4" />
             </Button>
-            <LeaveButton confirm={mode === "online" && state.phase !== "over"} />
+            <LeaveButton confirm={mode === "online" && !spectator && state.phase !== "over"} />
           </div>
         </div>
       </header>
@@ -326,7 +347,7 @@ export function Hud() {
             </p>
           ) : null}
 
-          <ResourceHand me={me} />
+          {spectator ? null : <ResourceHand me={me} />}
 
           {discarder ? <DiscardBar key={`discard-${discarder}`} id={discarder} n={state.discardNeeded[discarder]!} /> : null}
           <TakeFromBar />

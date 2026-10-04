@@ -15,12 +15,13 @@ function Panel() {
   const goTitle = useGame((s) => s.goTitle);
   const playAgain = useGame((s) => s.playAgain);
   const mode = useGame((s) => s.mode);
+  const spectator = useGame((s) => s.spectator);
   // The lobby's host test (EmberisleApp), so a handed-off host gets the button.
   const isHost = useGame((s) => s.seats.find((x) => x.id === s.seatId)?.host ?? s.isHost);
   const hostName = useGame((s) => s.seats.find((x) => x.host)?.name);
   // docs/design/rematch.md: the online host and hotseat start another; practice has no table to keep.
   const canAgain = mode === "hotseat" || (mode === "online" && isHost);
-  const waiting = mode === "online" && !isHost && hostName;
+  const waiting = mode === "online" && !isHost && !spectator && hostName;
   const [hidden, setHidden] = useState(false);
   const winner = state.players.find((p) => p.id === state.winner)!;
   const dialog = useRef<HTMLDivElement>(null);

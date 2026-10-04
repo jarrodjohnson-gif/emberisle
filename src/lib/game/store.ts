@@ -196,6 +196,12 @@ interface GameStore {
   joinTable: (code: string) => void;
   // Ask which colors a lobby already holds, on a connection of its own, before the player joins.
   peekTable: (code: string) => void;
+  // Watch a started table read-only (docs/design/spectator.md): no seat, no actions, no chat input, no rejoin.
+  watchTable: (code: string) => void;
+  // True from a `welcome {spectator:true}` until the Title; every seat-only action returns at once while it is set.
+  spectator: boolean;
+  // How many spectators the table has, from `seats {watching}` (#347).
+  watching: number;
   // Sit back down in the seat this browser held (localStorage), e.g. after a reload (#196).
   rejoinTable: () => boolean;
   setReady: (value: boolean) => void;
@@ -305,6 +311,8 @@ export const useGame = create<GameStore>((set, get) => ({
   legal: null,
   turnTimer: null,
   lobbyLog: "",
+  spectator: false,
+  watching: 0,
   pendingSteal: null,
   seatId: "",
   chat: [],
@@ -349,6 +357,7 @@ export const useGame = create<GameStore>((set, get) => ({
       buildMode: "none",
       net: null,
       peeking: false,
+      spectator: false,
     });
   },
   startHotseat: (count) => {
@@ -370,6 +379,7 @@ export const useGame = create<GameStore>((set, get) => ({
       buildMode: "none",
       net: null,
       peeking: false,
+      spectator: false,
     });
   },
   loadState: (s, localId, host, table) =>
@@ -384,8 +394,8 @@ export const useGame = create<GameStore>((set, get) => ({
       pendingSteal: null,
     }),
   goTitle: () => {
-    // Leaving on purpose frees the seat; only a drop keeps it.
-    rememberSeat(null);
+    // Leaving on purpose frees the seat; only a drop keeps it. A watcher never held one, and the saved seat may be another table's.
+    if (!get().spectator) rememberSeat(null);
     clearWake();
     get().net?.close();
     set({
@@ -399,6 +409,8 @@ export const useGame = create<GameStore>((set, get) => ({
       legal: null,
       turnTimer: null,
       code: "",
+      spectator: false,
+      watching: 0,
       pendingSteal: null,
       chat: [],
       reactions: [],
@@ -420,8 +432,9 @@ export const useGame = create<GameStore>((set, get) => ({
     });
   },
   dispatch: (action, asId) => {
-    const { state, localId, mode, net } = get();
+    const { state, localId, mode, net, spectator } = get();
     if (!state) return { ok: false, error: "No game." };
+    if (spectator) return { ok: false, error: "Watching only." };
     if (mode === "online") {
       // The host is the rules; its next state message updates the board.
       if (!net?.act(action)) return { ok: false, error: "Not available online." };
@@ -585,16 +598,22 @@ export const useGame = create<GameStore>((set, get) => ({
     if (net) return peeking ? net.peek(code) : undefined;
     connect(set, get, (t) => t.peek(code), "peek");
   },
+  watchTable: (code) => connect(set, get, (t) => t.watch(code), "watch"),
   rejoinTable: () => {
     const seat = savedSeat();
     if (!seat) return false;
     connect(set, get, (t) => t.rejoin(seat.code, seat.secret), "quiet");
     return true;
   },
-  setReady: (value) => get().net?.ready(value),
-  startTable: () => get().net?.start(),
+  setReady: (value) => {
+    if (!get().spectator) get().net?.ready(value);
+  },
+  startTable: () => {
+    if (!get().spectator) get().net?.start();
+  },
   playAgain: () => {
-    const { mode, state, net } = get();
+    const { mode, state, net, spectator } = get();
+    if (spectator) return;
     if (mode === "online") return net?.again();
     if (mode !== "hotseat" || state?.phase !== "over") return;
     const winner = state.players.find((p) => p.id === state.winner)!;
@@ -630,18 +649,24 @@ export const useGame = create<GameStore>((set, get) => ({
     }
     set({ logFilter: v });
   },
-  sendChat: (text) => get().net?.say(text),
-  sendReact: (emote, to) => get().net?.react(emote, to),
+  sendChat: (text) => {
+    if (!get().spectator) get().net?.say(text);
+  },
+  sendReact: (emote, to) => {
+    if (!get().spectator) get().net?.react(emote, to);
+  },
   setTradeOpen: (v, opener) => set({ tradeOpen: v, tradeOpener: v ? (opener ?? null) : null }),
   askTable: (give, want) => {
-    get().net?.ask(give, want);
+    if (!get().spectator) get().net?.ask(give, want);
     set({ tradeOpen: false });
   },
   answerTrade: (yes) => {
-    const { offer, net } = get();
-    if (offer) net?.answer(offer.tradeId, yes);
+    const { offer, net, spectator } = get();
+    if (offer && !spectator) net?.answer(offer.tradeId, yes);
   },
-  openMenu: (id) => set({ menuFor: id }),
+  openMenu: (id) => {
+    if (!get().spectator) set({ menuFor: id });
+  },
 }));
 
 type Set = (partial: Partial<GameStore>) => void;
@@ -649,14 +674,16 @@ type Get = () => GameStore;
 
 // "quiet" is the automatic rejoin on page load: until the first welcome, a dead seat is dropped without telling the player.
 // "peek" asks a lobby for its seats before joining (docs/design/color-peek.md): it never seats, toasts, or touches the saved seat.
-type ConnectKind = "normal" | "quiet" | "peek";
+// "watch" is a spectator (docs/design/spectator.md): no seat and no secret, so a drop never redials and must not erase a
+// seat this browser saved for another table.
+type ConnectKind = "normal" | "quiet" | "peek" | "watch";
 function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, kind: ConnectKind = "normal") {
   clearWake();
   get().net?.close();
   let pending = kind === "quiet";
   let welcomed = false;
   const table = connectTable(hostUrl(window.location), {
-    welcome: ({ code, you, host, chat, secret }) => {
+    welcome: ({ code, you, host, chat, secret, spectator }) => {
       pending = false;
       welcomed = true;
       if (secret) rememberSeat({ code, secret });
@@ -668,7 +695,12 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       const known = new Map(get().chat.map((l) => [l.id, l.at]));
       const now = Date.now();
       const history = (chat ?? []).slice(-50).map((l) => ({ ...l, at: known.get(l.id) ?? now }));
-      set({ code, seatId: you, isHost: host, screen: inGame ? "play" : "lobby", mode: "online", error: null, toast: null, chat: history, reactions: [], unread: 0 });
+      if (spectator) {
+        // No lobby for a watcher: the host's first `state`, which follows at once, moves it to the board.
+        set({ code, spectator: true, seatId: "", isHost: false, mode: "online", error: null, toast: null, chat: history, reactions: [], unread: 0 });
+        return;
+      }
+      set({ code, spectator: false, seatId: you ?? "", isHost: host ?? false, screen: inGame ? "play" : "lobby", mode: "online", error: null, toast: null, chat: history, reactions: [], unread: 0 });
     },
     // The window may have closed while we were away; the next state brings it back rather than a chip stuck at 0:00.
     reconnecting: (attempt) => set({ error: `Reconnecting… (try ${attempt})`, toast: "Reconnecting…", turnTimer: null }),
@@ -682,7 +714,7 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       set({ reactions: [...get().reactions, r] });
       setTimeout(() => set({ reactions: get().reactions.filter((x) => x !== r) }), 2000);
     },
-    seats: ({ code, seats }) => set({ code, seats }),
+    seats: ({ code, seats, watching }) => set({ code, seats, watching: watching ?? 0 }),
     rolled: ({ dice, gains, short }) => {
       // The host sends this before the state that follows it, so `current` is still the roller.
       const st = get().state;
@@ -690,9 +722,11 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       showBanner(set, rollLine(roller, dice, gains, short));
     },
     state: ({ you, game, legal, turnDeadline, turnPlayer, serverNow }) => {
+      // A watcher's `you` is null: "" matches no player, so nothing is ever its turn and the your-turn chime never fires.
+      const me = you ?? "";
       const rollOff = rollOffLine(get().state, game);
       const swing = awardLine(get().state, game);
-      hear(get().state, game, you, "online");
+      hear(get().state, game, me, "online");
       // The deadline moves onto this clock by the skew the message shows, so a phone minutes off still counts true.
       // Every push carries the same window, and the skew wobbles by however long this tab took to get to the message:
       // the timer we hold stays while the host's deadline is the same, so the chip neither remounts nor announces twice.
@@ -703,7 +737,7 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       set({ legal, turnTimer, gameLog: get().state ? get().gameLog : appendLog(get().gameLog, game.log) });
       // A rematch's new game (#266): drop any half-made move or open panel left over from the win.
       if (get().state?.phase === "over" && game.phase !== "over") set({ buildMode: "none", roadPicks: [], pendingPlace: null, tradeOpen: false });
-      get().loadState(game, you, get().isHost, get().code);
+      get().loadState(game, me, get().isHost, get().code);
       if (rollOff) showBanner(set, rollOff);
       else if (swing) showBanner(set, swing);
     },
@@ -735,7 +769,7 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
         play("ui_error");
       }
       // A refused join leaves an unseated socket the host never closes; drop it so the next peek can open its own.
-      if (kind === "normal" && !welcomed) {
+      if ((kind === "normal" || kind === "watch") && !welcomed) {
         clearWake();
         table.close();
         if (get().net === table) set({ net: null, peeking: false });
@@ -749,6 +783,11 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       }
       if (keepSeat) {
         set({ error: "Your seat is open in another tab", toast: "Your seat is open in another tab", screen: "title", net: null, peeking: false, seats: [], code: "", state: null });
+        return;
+      }
+      if (kind === "watch") {
+        // A watcher holds nothing worth saving, and the seat secret in localStorage may belong to another table.
+        set({ error: "Lost the table", toast: "Lost the table", screen: "title", net: null, peeking: false, seats: [], code: "", state: null, spectator: false, watching: 0 });
         return;
       }
       rememberSeat(null);
