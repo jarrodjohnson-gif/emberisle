@@ -226,6 +226,7 @@ try {
   console.log("monopoly fortune:", JSON.stringify(monopoly));
 
   // #163: a bank trade through the trade panel. Only the rate harborRate gives this player shows on the button.
+  // #363: practice asks its bots, so the panel has Ask the table here too.
   await arm({});
   const oreBefore = await page.evaluate(() => {
     const g = window.__emberisle;
@@ -237,7 +238,7 @@ try {
   });
   await page.getByRole("button", { name: "Trade", exact: true }).click();
   await page.getByTestId("trade-panel").waitFor();
-  const askOffline = await page.getByRole("button", { name: "Ask the table" }).count();
+  const askPractice = await page.getByRole("button", { name: "Ask the table" }).count();
   await page.getByRole("button", { name: "More ore to give" }).click();
   await page.getByRole("button", { name: "More wool to want" }).click();
   const rateButton = page.getByRole("button", { name: /^(Bank 4|Dock 3|Dock 2):1$/ });
@@ -248,7 +249,7 @@ try {
     const me = g.getState().state.players.find((p) => p.id === g.getState().localId);
     return { ore: 4 - me.resources.ore, wool: me.resources.wool - woolBefore, open: g.getState().tradeOpen, error: g.getState().error };
   }, oreBefore);
-  console.log("bank trade through the panel:", rateLabel, JSON.stringify(bankTrade), `ask-the-table buttons offline: ${askOffline}`);
+  console.log("bank trade through the panel:", rateLabel, JSON.stringify(bankTrade), `ask-the-table buttons in practice: ${askPractice}`);
   await page.waitForTimeout(1500);
   mkdirSync("test-results", { recursive: true });
   // Software WebGL on a 2-CPU CI runner can take a while to finish one frame of the island.
@@ -355,8 +356,8 @@ try {
   }
   if (plenty.ore !== 1 || plenty.wool !== 1 || plenty.cardLeft !== 0 || plenty.error) throw new Error(`plenty fortune: ${JSON.stringify(plenty)}`);
   if (monopoly.gained !== 6 || monopoly.othersLeft !== 0 || monopoly.cardLeft !== 0 || monopoly.error) throw new Error(`monopoly fortune: ${JSON.stringify(monopoly)}`);
-  if (bankTrade.ore !== Number(rateLabel.match(/\d/)[0]) || bankTrade.wool !== 1 || bankTrade.open || bankTrade.error || askOffline !== 0) {
-    throw new Error(`bank trade through the panel: ${rateLabel} ${JSON.stringify(bankTrade)} ask buttons ${askOffline}`);
+  if (bankTrade.ore !== Number(rateLabel.match(/\d/)[0]) || bankTrade.wool !== 1 || bankTrade.open || bankTrade.error || askPractice !== 1) {
+    throw new Error(`bank trade through the panel: ${rateLabel} ${JSON.stringify(bankTrade)} ask buttons ${askPractice}`);
   }
   if (online.botActs !== 0) throw new Error(`client ran a bot online: ${JSON.stringify(online)}`);
   if (online.log !== "" || online.place !== null || online.seat !== "" || online.host || online.picks || online.toast !== null || online.screen !== "title") {

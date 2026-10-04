@@ -146,7 +146,8 @@ export function TradePanel() {
         </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
-          {mode === "online" ? (
+          {/* Practice asks its bots (#363). Hotseat deals no bots, and its people share the one screen. */}
+          {mode !== "hotseat" ? (
             <Button className="h-11 flex-1" disabled={!asking} onClick={() => askTable(give, want)}>
               Ask the table
             </Button>
