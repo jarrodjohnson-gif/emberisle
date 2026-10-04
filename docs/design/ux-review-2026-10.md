@@ -53,7 +53,7 @@ The island is the product. Everything else is a thin rim around it.
 
 ## Findings, ranked by player impact
 
-### 1. Phone: How to play on the title is trapped inside the card — #416 (XS, fixed in PR #426)
+### 1. Phone: How to play on the title is trapped inside the card — #416 (XS, fix in PR #426)
 
 - **Screenshots:** `port-01b-howto`, `land-01b-howto`, `probe-phone-howto`.
 - **Evidence:** `Title` mounts `HowTo` inside the absolutely positioned title card, so its `absolute
@@ -128,11 +128,13 @@ The island is the product. Everything else is a thin rim around it.
 - **Screenshots:** `desk-06b-fortunes`, `port-06b-fortunes`, `land-06b-fortunes`.
 - **Evidence:** with every fortune held the row becomes "Wayfarer card · Path fortune · [Timber ▾]
   [Timber ▾] Plenty · [All Timber ▾] Monopoly". The rail calls the same cards "knight · path · plenty ·
-  monopoly · points"; the README says knight, path-building, plenty, monopoly, hidden points. Nothing says
-  what a card does or that one bought this turn is blocked. On a phone it is five rows and the island is
-  gone.
+  monopoly · points". The README itself uses two vocabularies: its Names section says wayfarer and fortune
+  (no "knight"), while the Rule set prose says knight and path-building. Nothing on the table says what a
+  card does or that one bought this turn is blocked. On a phone it is five rows and the island is gone.
 - **Recommendation:** one "Fortunes ×N" button opening a tray: name, count, one-line effect, blocked
-  state, Play; Plenty and Monopoly pick with chips, not `<select>`. Names match the README. UI side of #323.
+  state, Play; Plenty and Monopoly pick with chips, not `<select>`. The rail and the tray use one set of
+  names; which set is Jarrod's call (Questions, 2). Touches the same files as #323 (the Hud.tsx split);
+  sequence after it.
 
 ### 9. Text chips at 45 % glass vanish over the hexes — #424 (XS)
 
@@ -178,8 +180,8 @@ The island is the product. Everything else is a thin rim around it.
   call for Jarrod (see Questions).
 - **Win table on a phone** abbreviates to OUT / STR / PATH / ARMY / HID (`port-10-win`). Full words fit if
   the table scrolls sideways or the player column wraps. `WinScreen.tsx` is in flight (rematch), so hold.
-- **Hotseat discard banner** says "Seat 2's turn — Too many goods…" while the dice belong to Ember's turn
-  (`desk-11b-hotseat-discard`). "Seat 2 — discard 4" would be truer.
+- **Hotseat discard banner** says "Seat 2's turn — Too many goods…" while the turn is Ember's and Seat 2
+  only owes a discard (`desk-11b-hotseat-discard`). "Seat 2 — discard 4" would be truer. Filed as #430 (XS).
 - **"Turn the phone sideways"** stays until dismissed and sits inside the stack, pushing the island up
   (`port-05-main`). Auto-hide after the first rotate, or after 10 s.
 - **Touch targets.** On every phone frame the measured interactive elements are at or above 44 px except
@@ -206,6 +208,7 @@ The island is the product. Everything else is a thin rim around it.
 | #423 | Replace the inline fortune selects with a fortune tray | S |
 | #424 | Raise the glass behind text chips so the other seat's turn banner reads over the hexes | XS |
 | #425 | Play ui_click on every button press and ui_back on Escape, as the build bible asks | XS |
+| #430 | Hotseat: the discard banner names the discarder as the turn owner | XS |
 
 ## Questions for Jarrod
 
@@ -213,8 +216,9 @@ These are look and wording calls, not bugs. Everything above can ship without th
 
 1. **Title button wording.** May the two secondary buttons carry a one-line subtitle ("3 bots, no network" /
    "pass one device around"), or should the labels themselves change?
-2. **Fortune names in the UI.** The README says knight, path-building, plenty, monopoly, hidden points; the
-   HUD says Wayfarer card and Path fortune. #423 proposes the README's words. Is "Wayfarer card" a deliberate
-   rename to keep "knight" off the table, in which case the README (Rule set) should say so?
+2. **Fortune names in the UI.** The README's Names section says wayfarer and fortune (no "knight"); its
+   Rule set prose says knight and path-building. The HUD follows Names ("Wayfarer card", "Path fortune"), the
+   rail follows the Rule set ("knight ×1 · path ×1"). Which governs the UI? #423 will use whichever you pick,
+   in both places.
 3. **Hover sound.** §3.4 asks for `ui_hover`; across a five-card hand bar it would retrigger constantly.
    #425 leaves hover silent. Agree?
