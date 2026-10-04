@@ -27,6 +27,7 @@ import { Dice } from "@/components/game/Dice";
 import { COST, RESOURCES, RESOURCE_LABEL, type BuildMode, type DevKind, type GameState, type PlayerState, type Resource } from "@/lib/game/types";
 import { hiddenCount, legalRoads, playable, publicVP, totalVP } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
+import { play } from "@/lib/sound";
 import { useViewport } from "@/lib/viewport";
 import { useMoreBelow } from "@/lib/scroll-fade";
 import { cn } from "@/lib/utils";
@@ -125,6 +126,7 @@ function useEscapeDisarm() {
       if (s.buildMode === "none" || s.tradeOpen || s.menuFor || s.pendingPlace || s.howTo) return;
       if ((e.target as HTMLElement | null)?.closest("input, select, textarea")) return;
       if (document.querySelector('[data-testid="leave-confirm"]')) return;
+      play("ui_back");
       setBuildMode("none");
     };
     window.addEventListener("keydown", onKey, true);
@@ -803,6 +805,7 @@ export function HowTo({ onClose }: { onClose: () => void }) {
       }
       if (e.key !== "Escape") return;
       e.stopPropagation();
+      play("ui_back");
       onCloseRef.current();
     };
     window.addEventListener("keydown", onKey, true);
@@ -822,7 +825,7 @@ export function HowTo({ onClose }: { onClose: () => void }) {
       <div className="max-h-[80dvh] w-full max-w-md overflow-y-auto rounded-[28px] border border-white/50 bg-surface p-5">
         <div className="flex items-start justify-between gap-3">
           <h2 id="howto-title" className="font-display text-2xl">How to play</h2>
-          <Button ref={closeRef} variant="ghost" size="icon" className={phone ? "size-11" : undefined} onClick={onClose} aria-label="Close">
+          <Button ref={closeRef} variant="ghost" size="icon" className={phone ? "size-11" : undefined} onClick={onClose} aria-label="Close" back>
             <X className="size-4" />
           </Button>
         </div>
@@ -857,6 +860,7 @@ function LeaveButton({ confirm }: { confirm: boolean }) {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
       e.stopPropagation();
+      play("ui_back");
       cancel();
     };
     window.addEventListener("keydown", onKey, true);
@@ -885,7 +889,7 @@ function LeaveButton({ confirm }: { confirm: boolean }) {
         >
           <p id="leave-confirm-msg">Leave the table? Your seat goes to the bot.</p>
           <div className="flex justify-end gap-2">
-            <Button ref={stayRef} variant="secondary" size="sm" className={phone ? "h-11 min-w-11" : undefined} onClick={cancel}>
+            <Button ref={stayRef} back variant="secondary" size="sm" className={phone ? "h-11 min-w-11" : undefined} onClick={cancel}>
               Stay
             </Button>
             <Button size="sm" className={phone ? "h-11 min-w-11" : undefined} onClick={goTitle}>
