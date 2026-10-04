@@ -3,9 +3,14 @@
 //   ambient, soft shadows (PCF blurred at least 4 texels) from a map of at most 1024, exposure at most 1.1;
 // - the sea is calm: a patch of open water, read back from the drawn frame, varies less than 6 % in luminance and is teal;
 // - the title keeps the slow orbit (free camera, auto-rotate); in play, on a fine pointer at 1280x720 and a coarse one at
-//   390x844, the overhead camera is on and every corner of the island, docks included, projects inside the HUD hole
-//   (`hudInsets`), each corner's screen point lands on the canvas, and a number token is at least 24 px across on the
-//   desktop and 18 px on the phone (the phone hole is width-bound; #422 owns growing it).
+//   390x844, the overhead camera is on and every corner of the island, docks included, projects inside the hole the HUD
+//   leaves (`__isle.insets()`, measured from the HUD's own chrome), each corner's screen point lands on the canvas, and a
+//   number token is at least 24 px across on the desktop and 18 px on the phone (the phone hole is width-bound; #422 owns
+//   growing it);
+// - the default view is the fitted 25° overhead view; a drag (mouse, or one finger through CDP touch events) orbits it and
+//   places nothing even when it starts on a legal corner; a wheel zooms; Home (desktop) and a double click or double tap on
+//   empty board glide back to the fitted view; a click on the corner still places afterwards; under reduced motion Home is
+//   instant.
 // Zero console errors. Saves test-results/board-look-{title,play}-<size>.png. Port from VITE_PORT, default 8112.
 import { existsSync, mkdirSync } from "node:fs";
 import { chromium } from "playwright";
@@ -131,7 +136,8 @@ try {
   await title.screenshot({ path: "test-results/board-look-title-1280x720.png" });
   await title.context().close();
 
-  // 2. In play: the overhead board fits the HUD hole on a desktop and on a phone.
+  // 2. In play: the overhead board fits the hole the HUD leaves, on a desktop and on a phone, and the camera is the
+  // player's: a drag orbits (and places nothing), a wheel zooms, Home and a double click or double tap glide back.
   for (const [w, h, touch] of [
     [1280, 720, false],
     [390, 844, true],
@@ -144,22 +150,47 @@ try {
       const g = window.__emberisle;
       while (g.getState().state.phase === "rollOff") g.getState().dispatch({ type: "roll" });
     });
-    await page.waitForFunction(() => window.__isle.lastSeq === window.__emberisle.getState().state.seq, null, { timeout: STEP_MS });
+    await page.waitForFunction(() => window.__isle.lastSeq === window.__emberisle.getState().state.seq && !window.__isle.glide, null, { timeout: STEP_MS });
     await drawn(page, 3);
-    const fit = await page.evaluate(async (touch) => {
+    // The camera as the orbit sees it, plus what a wrong gesture could change: the game's seq and the pieces on the board.
+    const pose = () =>
+      page.evaluate(() => {
+        const i = window.__isle;
+        return {
+          polar: i.orbit.getPolarAngle(),
+          azimuth: i.orbit.getAzimuthalAngle(),
+          zoom: i.ortho.zoom,
+          target: [i.orbit.target.x, i.orbit.target.y, i.orbit.target.z],
+          glide: i.glide !== null,
+          seq: window.__emberisle.getState().state.seq,
+          pieces: i.pieces.children.length,
+        };
+      });
+    // Where home is for the hole the HUD leaves right now (a timed notice leaving the phase bar moves it, and the fit follows).
+    const home = () =>
+      page.evaluate(async () => {
+        const { fitOrtho, OVERHEAD_LEAN, CAP_LEVEL } = await import("/src/lib/scene/mobile-fit.ts");
+        const f = fitOrtho(innerWidth, innerHeight, window.__isle.insets(), OVERHEAD_LEAN);
+        return { polar: OVERHEAD_LEAN, azimuth: 0, zoom: 1, target: [f.x, CAP_LEVEL, f.z] };
+      });
+    const atHome = async (p) => {
+      const h = await home();
+      return Math.abs(p.polar - h.polar) < 0.01 && Math.abs(p.azimuth) < 0.01 && Math.abs(p.zoom - 1) < 0.01 && p.target.every((v, k) => Math.abs(v - h.target[k]) < 0.02);
+    };
+    const lean = Math.round(((await home()).polar * 180) / Math.PI);
+    const brief = (p) => ({ polar: +p.polar.toFixed(3), azimuth: +p.azimuth.toFixed(3), zoom: +p.zoom.toFixed(3), target: p.target.map((v) => +v.toFixed(2)) });
+    const settle = async () => {
+      await page.waitForFunction(() => !window.__isle.glide, null, { timeout: STEP_MS });
+      await drawn(page, 2);
+      return pose();
+    };
+    const fit = await page.evaluate(() => {
       const isle = window.__isle;
-      const { hudInsets } = await import("/src/lib/scene/mobile-fit.ts");
-      const { worldOfHex } = await import("/src/lib/game/board.ts");
       const st = window.__emberisle.getState().state;
-      const ins = hudInsets(innerWidth, innerHeight, touch);
+      const ins = isle.insets();
       const hole = { l: ins.left, t: ins.top, r: innerWidth - ins.right, b: innerHeight - ins.bottom };
-      // Pixels per world unit, from two hex centres a known distance apart.
-      const [h0, h1] = st.hexes;
-      const w0 = worldOfHex(h0);
-      const w1 = worldOfHex(h1);
-      const s0 = isle.screenOf(h0.id);
-      const s1 = isle.screenOf(h1.id);
-      const scale = Math.hypot(s1.x - s0.x, s1.y - s0.y) / Math.hypot(w1.x - w0.x, w1.z - w0.z);
+      // Pixels per world unit across the screen, from the frustum (the lean foreshortens depth, not width).
+      const scale = (innerWidth / (isle.ortho.right - isle.ortho.left)) * isle.ortho.zoom;
       const out = [];
       const covered = [];
       let dockIn = Infinity;
@@ -173,13 +204,98 @@ try {
         if (document.elementFromPoint(p.x, p.y)?.tagName !== "CANVAS") covered.push(`${v.id}@${p.x | 0},${p.y | 0}`);
       }
       return { overhead: isle.overhead, hole, scale: +scale.toFixed(1), corners: st.vertices.length, out, covered, dockIn: +dockIn.toFixed(1), token: +(0.68 * scale).toFixed(1) };
-    }, touch);
+    });
     check(`${tag}: the overhead camera is on in play`, fit.overhead);
-    check(`${tag}: every corner and dock inside the HUD hole`, fit.corners === 54 && fit.out.length === 0, { hole: fit.hole, scale: fit.scale, dockIn: fit.dockIn, out: fit.out.slice(0, 6) });
+    check(`${tag}: every corner and dock inside the measured HUD hole`, fit.corners === 54 && fit.out.length === 0, { hole: fit.hole, scale: fit.scale, dockIn: fit.dockIn, out: fit.out.slice(0, 6) });
     check(`${tag}: every corner lands on the canvas (clear of the HUD)`, fit.covered.length === 0, fit.covered.slice(0, 6));
     const tokenMin = touch ? 18 : 24;
     check(`${tag}: a number token is at least ${tokenMin} px across`, fit.token >= tokenMin, { token: fit.token });
+    const p0 = await pose();
+    check(`${tag}: the default view is the fitted ${lean}° overhead view`, (await atHome(p0)) && !p0.glide, brief(p0));
     await page.screenshot({ path: `test-results/board-look-play-${w}x${h}.png` });
+
+    // A legal corner to start a drag on: the drag must orbit, not place.
+    const mark = await page.evaluate(() => {
+      const id = window.__emberisle.getState().highlights().vertices[0];
+      return { id, ...window.__isle.screenOf(id) };
+    });
+    const dragged = await (async () => {
+      if (!touch) {
+        await page.mouse.move(mark.x, mark.y);
+        await page.mouse.down();
+        for (let i = 1; i <= 6; i++) await page.mouse.move(mark.x + 20 * i, mark.y + 8 * i);
+        await page.mouse.up();
+      } else {
+        const cdp = await page.context().newCDPSession(page);
+        await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: mark.x, y: mark.y }] });
+        for (let i = 1; i <= 6; i++) await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: mark.x + 20 * i, y: mark.y + 8 * i }] });
+        await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+      }
+      await drawn(page, 2);
+      return pose();
+    })();
+    const turned = Math.abs(dragged.azimuth - p0.azimuth) > 0.05 || Math.abs(dragged.polar - p0.polar) > 0.05;
+    check(`${tag}: a ${touch ? "one-finger " : ""}drag orbits the camera`, turned, brief(dragged));
+    check(`${tag}: a drag from a legal corner places nothing`, dragged.seq === p0.seq && dragged.pieces === p0.pieces, { seq: [p0.seq, dragged.seq], pieces: [p0.pieces, dragged.pieces], mark: mark.id });
+
+    if (!touch) {
+      await page.mouse.move(w / 2, h / 2);
+      await page.mouse.wheel(0, -240);
+      await drawn(page, 2);
+      const zoomed = await pose();
+      check(`${tag}: a wheel zooms in`, zoomed.zoom > 1.05 && zoomed.zoom <= 2.4, { zoom: +zoomed.zoom.toFixed(3) });
+      await page.keyboard.press("Home");
+      const gliding = await pose();
+      const homed = await settle();
+      check(`${tag}: Home glides back to the fitted view`, gliding.glide && (await atHome(homed)), { startedGlide: gliding.glide, ...brief(homed) });
+    }
+
+    // Orbit again, then two taps on empty board (the hole's top-left corner is open sea) snap home and place nothing.
+    if (!touch) {
+      await page.mouse.move(mark.x, mark.y);
+      await page.mouse.down();
+      for (let i = 1; i <= 6; i++) await page.mouse.move(mark.x - 20 * i, mark.y + 5 * i);
+      await page.mouse.up();
+    } else {
+      const cdp = await page.context().newCDPSession(page);
+      await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: mark.x, y: mark.y }] });
+      for (let i = 1; i <= 6; i++) await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: mark.x - 20 * i, y: mark.y + 5 * i }] });
+      await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+    }
+    await drawn(page, 2);
+    const away = await pose();
+    const sea = { x: fit.hole.l + 10, y: fit.hole.t + 10 };
+    if (touch) {
+      await page.touchscreen.tap(sea.x, sea.y);
+      await page.touchscreen.tap(sea.x, sea.y);
+    } else await page.mouse.dblclick(sea.x, sea.y);
+    const wasAway = !(await atHome(away));
+    const snapped = await settle();
+    check(`${tag}: a double ${touch ? "tap" : "click"} on empty board returns to the fitted view and places nothing`, wasAway && (await atHome(snapped)) && snapped.seq === p0.seq, { before: brief(away), after: brief(snapped), seq: [p0.seq, snapped.seq] });
+
+    if (!touch) {
+      // The click still places: the same corner, after all that orbiting.
+      const at = await page.evaluate((id) => window.__isle.screenOf(id), mark.id);
+      await page.mouse.click(at.x, at.y);
+      await page.waitForFunction((s) => window.__emberisle.getState().state.seq > s, p0.seq, { timeout: STEP_MS }).catch(() => {});
+      const placed = await pose();
+      check(`${tag}: a click on the legal corner still places`, placed.seq > p0.seq && placed.pieces === p0.pieces + 1, { seq: [p0.seq, placed.seq], pieces: [p0.pieces, placed.pieces] });
+      // Reduced motion: Home is instant, no glide.
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      await page.mouse.move(w / 2, h / 2);
+      await page.mouse.down();
+      for (let i = 1; i <= 6; i++) await page.mouse.move(w / 2 + 20 * i, h / 2);
+      await page.mouse.up();
+      await drawn(page, 2);
+      const calmAway = await pose();
+      const calmWasAway = !(await atHome(calmAway));
+      await page.keyboard.press("Home");
+      // No glide is started; the next drawn frame is already home.
+      const noGlide = !(await pose()).glide;
+      await drawn(page, 1);
+      const calmHome = await pose();
+      check(`${tag}: under reduced motion Home snaps at once`, calmWasAway && noGlide && (await atHome(calmHome)), { before: brief(calmAway), noGlide, after: brief(calmHome) });
+    }
     await page.context().close();
   }
   check("no console errors", errors.length === 0, errors);

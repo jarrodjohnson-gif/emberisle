@@ -146,7 +146,8 @@ Worked values (no safe-area):
 the new max, calls `controls.reset` is wrong — instead dolly in by setting the camera along the existing
 eye−target ray at the new max. `minDistance` stays 10.
 
-Pinch-zoom (`touches: 2`) stays. One-finger orbit stays in Free only. Overhead never orbits.
+Pinch-zoom (`touches: 2`) stays. One-finger orbit stays in Free only. Overhead never orbits. (Superseded by
+[camera-light.md](camera-light.md): since #465 the overhead view orbits and zooms in play and snaps home.)
 
 ## Viewports the Implementation must prove
 

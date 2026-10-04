@@ -5,6 +5,7 @@ import {
   TouchGesture,
   PICK_EDGE,
   PICK_VERTEX_RADIUS,
+  chromeInsets,
   fitOrtho,
   freeMaxDistance,
   hudInsets,
@@ -12,6 +13,8 @@ import {
   pickBest,
   tapSlop,
   type Insets,
+  type OrthoFit,
+  type Rect,
 } from "@/lib/scene/mobile-fit";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
@@ -74,6 +77,20 @@ const FLASH_WARM = new THREE.Color(0xffa94d);
 const LEGAL_PULSE_S = 1.2;
 type Sheep = { g: THREE.Object3D; ox: number; oz: number; tx: number; tz: number; wait: number; graze: number };
 
+// The overhead view in play (docs/design/camera-light.md): a frustum and a look-at point from the fit to the HUD hole, and
+// the eye on an orbit around that point, ORBIT_RADIUS out. Home is the fitted OVERHEAD_LEAN at zoom 1; a drag orbits, a
+// wheel or a pinch zooms, and Home, a double tap or a double click on empty board glides back over GLIDE_MS (instant under
+// reduced motion). A HUD that grows or shrinks glides the fit alone and leaves the eye where the player put it.
+type Pose = { left: number; right: number; top: number; bottom: number; tx: number; tz: number; polar: number; azimuth: number; zoom: number };
+const FIT_KEYS: (keyof Pose)[] = ["left", "right", "top", "bottom", "tx", "tz"];
+const EYE_KEYS: (keyof Pose)[] = ["polar", "azimuth", "zoom"];
+const ORBIT_RADIUS = 18;
+const GLIDE_MS = 280;
+const DOUBLE_TAP_MS = 350;
+const DOUBLE_TAP_PX = 32;
+const _eye = new THREE.Vector3();
+const _sph = new THREE.Spherical();
+
 export class IsleRenderer {
   private renderer: THREE.WebGLRenderer;
   private scene = new THREE.Scene();
@@ -83,10 +100,17 @@ export class IsleRenderer {
   private pending: { kind: string; id: string } | null = null;
   private downType = "mouse";
   private gesture = new TouchGesture();
-  private pinchStart = 0;
-  private pinchZoom = 1;
+  private lastTap = { t: 0, x: 0, y: 0, empty: false };
   private safeProbe: HTMLDivElement;
   private controls: OrbitControls;
+  private orbit: OrbitControls;
+  // The fit the overhead view is on, null until the view is first shown; `shownAt` is `renders` when it was switched to.
+  private fit: OrthoFit | null = null;
+  private shownAt = -1;
+  private glide: { from: Pose; to: Pose; keys: (keyof Pose)[]; start: number } | null = null;
+  // The HUD's chrome: every direct child of the canvas's shell is watched for size, and the shell for children coming and going.
+  private chrome = new ResizeObserver(() => this.refit(false));
+  private shell = new MutationObserver(() => this.watchChrome());
   private raycaster = new THREE.Raycaster();
   private pointer = new THREE.Vector2();
   private land = new THREE.Group();
@@ -174,6 +198,17 @@ export class IsleRenderer {
     this.calmMq?.addEventListener("change", this.onCalm);
     this.controls.addEventListener("start", this.wake);
     this.controls.addEventListener("change", this.wake);
+    this.orbit = new OrbitControls(this.ortho, canvas);
+    this.orbit.enabled = false;
+    // No damping: the board stops where the pointer stops, and nothing drifts after a glide home.
+    this.orbit.enableDamping = false;
+    this.orbit.enablePan = false;
+    this.orbit.minZoom = 0.8;
+    this.orbit.maxZoom = 2.4;
+    this.orbit.minPolarAngle = 0.12;
+    this.orbit.maxPolarAngle = 1.15;
+    this.orbit.addEventListener("start", this.onOrbitStart);
+    this.orbit.addEventListener("change", this.wake);
 
     this.scene.fog = new THREE.Fog(0x6a93a0, 26, 52);
     // A lit board on a table (polish.md "The board look target", #135): one warm key lamp carries the light, so the
@@ -230,7 +265,10 @@ export class IsleRenderer {
     canvas.addEventListener("pointermove", this.onMove);
     canvas.addEventListener("pointercancel", this.onCancel);
     window.addEventListener("resize", this.resize);
+    window.addEventListener("keydown", this.onKey);
+    if (canvas.parentElement) this.shell.observe(canvas.parentElement, { childList: true });
     this.resize();
+    this.watchChrome();
     this.loadTextures();
     this.clock.connect(document);
     this.composer = new EffectComposer(this.renderer);
@@ -246,7 +284,7 @@ export class IsleRenderer {
   }
 
   // Off the table (title and lobby) the island is a backdrop under a card: the slow orbit, no SSAO, 30 frames a second.
-  // In play it is the overhead board fitted to the HUD hole (#128's default); the free orbit waits for the toggle.
+  // In play it is the overhead board fitted to the HUD hole, which the player may orbit and zoom and snap home again.
   setTitleMode(v: boolean) {
     if (v !== this.titleMode) this.wake();
     this.titleMode = v;
@@ -265,28 +303,39 @@ export class IsleRenderer {
   // The preference flipped: draw the island as it stands now. The event comes a frame after `matches` changes, so tick reads that.
   private onCalm = () => this.wake();
 
-  private insets(): Insets {
-    const c = this.renderer.domElement;
+  private safe(): Insets {
     const cs = getComputedStyle(this.safeProbe);
-    return hudInsets(c.clientWidth, c.clientHeight, this.coarse(), {
+    return {
       top: parseFloat(cs.paddingTop) || 0,
       right: parseFloat(cs.paddingRight) || 0,
       bottom: parseFloat(cs.paddingBottom) || 0,
       left: parseFloat(cs.paddingLeft) || 0,
-    });
+    };
   }
 
-  // Overhead is one orthographic camera fitted to the HUD hole; Free is the tilted OrbitControls view.
+  // The hole the HUD leaves for the island right now, measured from the chrome around the canvas. Proofs read it too.
+  insets(): Insets {
+    const c = this.renderer.domElement;
+    const shell = c.parentElement;
+    return chromeInsets(c.clientWidth, c.clientHeight, shell ? solidRects(shell, c) : [], this.safe());
+  }
+
+  // Overhead is one orthographic camera fitted to the HUD hole, on its own orbit; Free is the tilted title view.
   setView(view: "overhead" | "free") {
     const over = view === "overhead";
     if (over === this.overhead) return;
     this.wake();
     this.overhead = over;
     this.controls.enabled = !over;
+    this.orbit.enabled = over;
     this.ssao.enabled = !over && !this.titleMode;
     const cam = over ? this.ortho : this.camera;
     this.renderPass.camera = cam;
     this.ssao.camera = cam;
+    // Each entry to the table starts from home.
+    this.fit = null;
+    this.glide = null;
+    this.shownAt = this.renders;
     this.resize();
   }
 
@@ -295,6 +344,7 @@ export class IsleRenderer {
     if (p?.id !== this.pending?.id) this.wake();
     this.pending = p;
     this.controls.enableRotate = !p;
+    this.orbit.enableRotate = !p;
     for (const o of this.marks.children) {
       const m = o as THREE.Mesh;
       const mat = m.material as THREE.MeshStandardMaterial | undefined;
@@ -408,8 +458,12 @@ export class IsleRenderer {
     this.stopped = true;
     this.renderer.setAnimationLoop(null);
     this.controls.dispose();
+    this.orbit.dispose();
+    this.chrome.disconnect();
+    this.shell.disconnect();
     this.calmMq?.removeEventListener("change", this.onCalm);
     window.removeEventListener("resize", this.resize);
+    window.removeEventListener("keydown", this.onKey);
     this.renderer.domElement.removeEventListener("pointerdown", this.onDown);
     this.renderer.domElement.removeEventListener("pointerup", this.onUp);
     this.renderer.domElement.removeEventListener("pointermove", this.onMove);
@@ -452,23 +506,114 @@ export class IsleRenderer {
     const h = c.clientHeight || 1;
     this.camera.aspect = w / h;
     // Dolly limit: OrbitControls.update() clamps the current distance to the new max on the next frame.
-    this.controls.maxDistance = freeMaxDistance(h, this.insets(), this.coarse());
+    this.controls.maxDistance = freeMaxDistance(h, hudInsets(w, h, this.coarse(), this.safe()), this.coarse());
     this.camera.updateProjectionMatrix();
-    if (this.overhead) {
-      const f = fitOrtho(w, h, this.insets(), OVERHEAD_LEAN);
-      this.ortho.left = f.left;
-      this.ortho.right = f.right;
-      this.ortho.top = f.top;
-      this.ortho.bottom = f.bottom;
-      // Leaned toward the player (+Z is screen-down), looking at cap level over the hole's centre.
-      this.ortho.up.set(0, 1, 0);
-      this.ortho.position.set(f.x, CAP_LEVEL + 18 * Math.cos(OVERHEAD_LEAN), f.z + 18 * Math.sin(OVERHEAD_LEAN));
-      this.ortho.lookAt(f.x, CAP_LEVEL, f.z);
-      this.ortho.updateProjectionMatrix();
-    }
     this.renderer.setSize(w, h, false);
     this.composer?.setSize(w, h);
     this.ssao?.setSize(w, h);
+    this.refit(true);
+  };
+
+  private watchChrome() {
+    this.chrome.disconnect();
+    const c = this.renderer.domElement;
+    for (const el of c.parentElement?.children ?? []) if (el !== c) this.chrome.observe(el);
+    this.refit(false);
+  }
+
+  // Fit the overhead view to the hole the HUD leaves now. The first fit of a view lands at home; a later change of hole
+  // (a phase bar grows, the chat opens) glides the frustum and the look-at point and keeps the eye the player set.
+  private refit(instant: boolean) {
+    if (!this.overhead) return;
+    const c = this.renderer.domElement;
+    const f = fitOrtho(c.clientWidth || 1, c.clientHeight || 1, this.insets(), OVERHEAD_LEAN);
+    const was = this.fit;
+    if (was && FIT_KEYS.every((k) => Math.abs(this.fitPose(f)[k] - this.fitPose(was)[k]) < 1e-6)) return;
+    this.fit = f;
+    if (!was) {
+      this.applyPose(this.fitPose(f));
+      this.orbit.update();
+      return;
+    }
+    this.moveTo(this.fitPose(f), FIT_KEYS, instant || this.renders <= this.shownAt);
+  }
+
+  private fitPose(f: OrthoFit): Pose {
+    return { left: f.left, right: f.right, top: f.top, bottom: f.bottom, tx: f.x, tz: f.z, polar: OVERHEAD_LEAN, azimuth: 0, zoom: 1 };
+  }
+
+  // Read from the camera itself, so it is right straight after applyPose, before the controls' next update.
+  private pose(): Pose {
+    const o = this.ortho;
+    _sph.setFromVector3(_eye.copy(o.position).sub(this.orbit.target));
+    return { left: o.left, right: o.right, top: o.top, bottom: o.bottom, tx: this.orbit.target.x, tz: this.orbit.target.z, polar: _sph.phi, azimuth: _sph.theta, zoom: o.zoom };
+  }
+
+  // Leaned toward the player (+Z is screen-down), looking at cap level over the hole's centre.
+  private applyPose(p: Pose) {
+    const o = this.ortho;
+    o.left = p.left;
+    o.right = p.right;
+    o.top = p.top;
+    o.bottom = p.bottom;
+    o.zoom = p.zoom;
+    this.orbit.target.set(p.tx, CAP_LEVEL, p.tz);
+    o.up.set(0, 1, 0);
+    o.position.setFromSphericalCoords(ORBIT_RADIUS, p.polar, p.azimuth).add(this.orbit.target);
+    o.lookAt(this.orbit.target);
+    o.updateProjectionMatrix();
+  }
+
+  private moveTo(to: Pose, keys: (keyof Pose)[], instant: boolean) {
+    this.wake();
+    if (instant || this.calm()) {
+      const p = this.pose();
+      for (const k of keys) p[k] = to[k];
+      this.applyPose(p);
+      this.glide = null;
+      return;
+    }
+    this.glide = { from: this.pose(), to, keys, start: performance.now() };
+  }
+
+  // Each frame of a glide: the eased mix of the keys on the move, the rest as they are now (a drag mid-glide still orbits).
+  private stepGlide(now: number) {
+    const g = this.glide;
+    if (!g) return;
+    const u = Math.min(1, (now - g.start) / GLIDE_MS);
+    const e = 1 - (1 - u) ** 3;
+    const p = this.pose();
+    for (const k of g.keys) {
+      let d = g.to[k] - g.from[k];
+      // The short way round.
+      if (k === "azimuth") d = Math.atan2(Math.sin(d), Math.cos(d));
+      p[k] = g.from[k] + d * e;
+    }
+    this.applyPose(p);
+    if (u >= 1) this.glide = null;
+    else this.wake();
+  }
+
+  // Back to the fitted lean, zoom 1, over the hole's centre.
+  goHome() {
+    if (!this.overhead || !this.fit) return;
+    this.moveTo(this.fitPose(this.fit), [...FIT_KEYS, ...EYE_KEYS], false);
+  }
+
+  // A drag that starts mid-glide takes the eye; the fit keeps gliding.
+  private onOrbitStart = () => {
+    this.wake();
+    if (!this.glide) return;
+    this.glide.keys = this.glide.keys.filter((k) => !EYE_KEYS.includes(k));
+    if (!this.glide.keys.length) this.glide = null;
+  };
+
+  private onKey = (e: KeyboardEvent) => {
+    if (e.key !== "Home" || !this.overhead || this.titleMode) return;
+    const t = e.target as HTMLElement | null;
+    if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return;
+    e.preventDefault();
+    this.goHome();
   };
 
   private onDown = (e: PointerEvent) => {
@@ -477,26 +622,13 @@ export class IsleRenderer {
     this.down.y = e.clientY;
     this.downType = e.pointerType;
     this.gesture.down(e.pointerId, e.clientX, e.clientY);
-    if (this.gesture.pointers.size === 2) {
-      this.pinchStart = this.pinchDistance();
-      this.pinchZoom = this.ortho.zoom;
-    }
   };
 
-  private pinchDistance() {
-    const [a, b] = [...this.gesture.pointers.values()];
-    return a && b ? Math.hypot(a.x - b.x, a.y - b.y) : 0;
-  }
-
-  // Overhead has no orbit; two fingers change the zoom, 1.0 to 2.4.
+  // The orbit controls own the drag and the pinch; this only keeps the finger count for onUp.
   private onMove = (e: PointerEvent) => {
     if (!this.gesture.pointers.has(e.pointerId)) return;
     this.gesture.move(e.pointerId, e.clientX, e.clientY);
     this.wake();
-    if (this.gesture.pointers.size === 2 && this.overhead && this.pinchStart > 0) {
-      this.ortho.zoom = Math.min(2.4, Math.max(1, this.pinchZoom * (this.pinchDistance() / this.pinchStart)));
-      this.ortho.updateProjectionMatrix();
-    }
   };
 
   private onCancel = (e: PointerEvent) => {
@@ -516,12 +648,22 @@ export class IsleRenderer {
       .filter((h) => h.object.userData.id)
       .map((h) => ({ kind: h.object.userData.kind as "hex" | "vertex" | "edge", id: h.object.userData.id as string, distance: h.distance }));
     const hit = pickBest(hits);
+    const legal = hit !== undefined && this.legalIds.has(hit.id);
+    // Two taps on empty board (nothing legal under either) within DOUBLE_TAP_MS and DOUBLE_TAP_PX snap the view home.
+    const now = performance.now();
+    const again = now - this.lastTap.t < DOUBLE_TAP_MS && Math.hypot(e.clientX - this.lastTap.x, e.clientY - this.lastTap.y) <= DOUBLE_TAP_PX;
+    if (this.overhead && !legal && again && this.lastTap.empty) {
+      this.lastTap.t = 0;
+      if (this.pending) this.onSelect(null);
+      this.goHome();
+      return;
+    }
+    this.lastTap = { t: now, x: e.clientX, y: e.clientY, empty: !legal };
     const touch = coarse || this.downType === "touch";
     if (!touch) {
       if (hit) this.onPick(hit.kind, hit.id);
       return;
     }
-    const legal = hit && this.legalIds.has(hit.id);
     if (!hit || !legal) {
       if (this.pending) this.onSelect(null);
       return;
@@ -569,7 +711,10 @@ export class IsleRenderer {
     const dt = Math.min(this.clock.getDelta(), 0.1);
     this.stepFlashes(dt, calm);
     this.controls.autoRotate = this.titleMode && !calm;
-    this.controls.update();
+    if (this.overhead) {
+      this.orbit.update();
+      this.stepGlide(now);
+    } else this.controls.update();
     if (calm) {
       this.pulseMarks(0, true);
       this.composer.render();
@@ -844,6 +989,26 @@ function landKey(state: GameState) {
   const hexes = state.hexes.map((h) => `${h.id}:${h.terrain}:${h.pip ?? ""}`).join(",");
   const docks = state.vertices.filter((v) => v.harbor).map((v) => v.id).join(",");
   return `${hexes}|${docks}`;
+}
+
+// The chrome a tap cannot pass through: down each branch of the shell, the first element that takes pointer events, in
+// canvas pixels. Wrappers that let taps through (pointer-events: none) are looked into, not counted.
+function solidRects(shell: Element, canvas: Element): Rect[] {
+  const base = canvas.getBoundingClientRect();
+  const out: Rect[] = [];
+  const walk = (el: Element) => {
+    if (el === canvas) return;
+    const cs = getComputedStyle(el);
+    if (cs.display === "none" || cs.visibility === "hidden") return;
+    if (cs.pointerEvents === "none") {
+      for (const k of el.children) walk(k);
+      return;
+    }
+    const r = el.getBoundingClientRect();
+    out.push({ left: r.left - base.left, top: r.top - base.top, right: r.right - base.left, bottom: r.bottom - base.top });
+  };
+  for (const k of shell.children) walk(k);
+  return out;
 }
 
 function disposeGroup(g: THREE.Group) {
