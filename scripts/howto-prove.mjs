@@ -2,13 +2,14 @@
 // landscape) and at 1280x720 its backdrop covers the viewport, its Close button is on screen and takes the tap, and
 // Close actually closes it. Zero console errors.
 // #425: a press plays click_001.wav and Close / Escape play back_001.wav, once each; with the sound toggle off nothing plays.
+// #442: on the table the entry point is the How to play row of the table menu, at the same three sizes.
 // Run: npm run howto-prove
 import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
 import { chromium } from "playwright";
 import { createServer } from "vite";
 
-const PORT = 8104;
+const PORT = Number(process.env.VITE_PORT) || 8104;
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();
 const browser = await chromium.launch({
@@ -35,6 +36,14 @@ try {
     await open.click();
     const dialog = page.getByRole("dialog", { name: "How to play" });
     await dialog.waitFor();
+    await dialog.getByRole("button", { name: "Close" }).click();
+    await dialog.waitFor({ state: "detached" });
+    // #442: the table's entry point is a row of the table menu; the menu is gone once the dialog is up.
+    await page.evaluate(() => window.__emberisle.getState().startHotseat(4));
+    await page.getByRole("button", { name: "Table menu" }).click();
+    await page.getByRole("dialog", { name: "Table menu" }).getByRole("button", { name: "How to play" }).click();
+    await dialog.waitFor();
+    assert.equal(await page.getByTestId("table-menu").count(), 0, `${c.name}: the table menu closes behind the dialog`);
     const got = await page.evaluate(() => {
       const dialog = document.querySelector('[role="dialog"][aria-labelledby="howto-title"]');
       const close = dialog.querySelector('button[aria-label="Close"]');
@@ -55,7 +64,8 @@ try {
     await dialog.getByRole("button", { name: "Close" }).click();
     await page.waitForFunction(() => !window.__emberisle.getState().howTo);
     assert.equal(await dialog.count(), 0, `${c.name}: Close closes the dialog`);
-    console.log(`${c.name}: backdrop ${got.backdrop.w}x${got.backdrop.h}, Close at ${got.close.top}-${got.close.bottom} px on screen and tappable, closes`);
+    assert.ok(await page.getByRole("button", { name: "Table menu" }).evaluate((el) => document.activeElement === el), `${c.name}: Close hands the focus back to the table menu button`);
+    console.log(`${c.name}: title and table menu entry points; backdrop ${got.backdrop.w}x${got.backdrop.h}, Close at ${got.close.top}-${got.close.bottom} px on screen and tappable, closes`);
     await ctx.close();
   }
   {

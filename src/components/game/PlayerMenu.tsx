@@ -2,12 +2,11 @@
 // "The player action menu". Illegal rows are hidden, not greyed out. Closes on Esc, a pointerdown outside the menu and
 // its trigger, or the same card again (the trigger toggles `openMenu`). Both trade rows open the trade panel (#163).
 import { useEffect, useRef } from "react";
-import { MessageSquare, Landmark, AtSign, Handshake, Volume2, VolumeX } from "lucide-react";
+import { MessageSquare, Landmark, AtSign, Handshake } from "lucide-react";
 import { EMOTES } from "@/components/game/emotes";
 import { RESOURCES, type PlayerState } from "@/lib/game/types";
 import { hiddenCount, publicVP } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
-import { setMuted, useMuted } from "@/lib/sound";
 import { cn } from "@/lib/utils";
 
 const CHAT_INPUT = "chat-input";
@@ -28,7 +27,6 @@ export function PlayerMenu({ player: p, className }: { player: PlayerState; clas
   const setChatOpen = useGame((s) => s.setChatOpen);
   const setChatDraft = useGame((s) => s.setChatDraft);
   const setTradeOpen = useGame((s) => s.setTradeOpen);
-  const muted = useMuted();
   const root = useRef<HTMLDivElement>(null);
 
   const actor = mode === "hotseat" ? state.current : localId;
@@ -150,13 +148,6 @@ export function PlayerMenu({ player: p, className }: { player: PlayerState; clas
           }}
         >
           <MessageSquare className="size-4 shrink-0 text-zinc-600" /> Open chat
-        </button>
-      ) : null}
-      {own ? (
-        // A toggle, so the menu stays open to show the new state (#303).
-        <button type="button" className={ROW} data-testid="sound-toggle" aria-pressed={!muted} onClick={() => setMuted(!muted)}>
-          {muted ? <VolumeX className="size-4 shrink-0 text-zinc-600" /> : <Volume2 className="size-4 shrink-0 text-zinc-600" />}
-          Table sounds {muted ? "off" : "on"}
         </button>
       ) : null}
     </div>
