@@ -2,6 +2,8 @@
 // - the title's Join button is fully on screen, no title button runs past the right edge, and the page has no horizontal scroll;
 // - in hotseat `main` with every fortune kind held, the bottom HUD stack starts below the header (landscape: header + 8 px)
 //   or the seat strip (portrait), and at least 120 px of the island between them stays uncovered and takes the pointer.
+// - #402: while the stack has content below the fold a static "more below" cue shows (it takes no pointer events), it is gone
+//   once the stack is scrolled to the end, and it never shows at 1280x720 where nothing overflows.
 // Zero console errors. Run: npm run reflow-prove
 import { existsSync } from "node:fs";
 import { chromium } from "playwright";
@@ -12,6 +14,7 @@ const BOARD_MIN = 120;
 const VIEWPORTS = [
   { width: 640, height: 360 },
   { width: 320, height: 568 },
+  { width: 1280, height: 720 },
 ];
 
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
@@ -114,6 +117,24 @@ try {
     check(hud.uncovered >= BOARD_MIN && hud.hits.length > 0 && hud.hits.every((t) => t === "CANVAS"), `${tag} hud: >= ${BOARD_MIN} px of island uncovered and pointer-reachable`, { uncovered: hud.uncovered, hits: hud.hits });
     check(hud.scrollWidth <= viewport.width, `${tag} hud: no horizontal scroll`, { scrollWidth: hud.scrollWidth });
     await page.screenshot({ path: `test-results/reflow-${tag}.png` });
+    // #402: the cue tracks overflow. The scroller is the stack's `overflow-y-auto` element.
+    const stackState = () =>
+      page.evaluate(() => {
+        const sc = document.querySelector('[data-testid="turn-banner"]').closest(".pointer-events-auto");
+        const cue = document.querySelector('[data-testid="hud-more-below"]');
+        return {
+          overflow: sc.scrollHeight - sc.scrollTop - sc.clientHeight > 1,
+          cue: !!cue,
+          cuePointer: cue ? getComputedStyle(cue).pointerEvents : null,
+        };
+      });
+    const before = await stackState();
+    if (viewport.height <= 568) check(before.overflow, `${tag} hud: stack overflows (End turn below the fold)`, before);
+    if (viewport.height === 720) check(!before.overflow && !before.cue, `${tag} hud: no overflow, no cue`, before);
+    if (before.overflow) {
+      await page.waitForSelector('[data-testid="hud-more-below"]', { timeout: 2000 });
+      check((await stackState()).cuePointer === "none", `${tag} hud: cue takes no pointer events`, await stackState());
+    }
     // The capped stack scrolls, so the last action in it must still be reachable and on top once scrolled to.
     const endTurn = page.getByRole("button", { name: "End turn" });
     await endTurn.scrollIntoViewIfNeeded();
@@ -122,6 +143,14 @@ try {
       return { top: Math.round(r.top), bottom: Math.round(r.bottom), onTop: b.contains(document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2)) };
     });
     check(reach.onTop && reach.bottom <= viewport.height, `${tag} hud: End turn reachable by scrolling the stack`, reach);
+    if (before.overflow) {
+      await page.evaluate(() => {
+        const sc = document.querySelector('[data-testid="turn-banner"]').closest(".pointer-events-auto");
+        sc.scrollTop = sc.scrollHeight;
+      });
+      await page.waitForSelector('[data-testid="hud-more-below"]', { state: "detached", timeout: 2000 });
+      check(!(await stackState()).cue, `${tag} hud: cue gone once scrolled to the bottom`, await stackState());
+    }
     await page.close();
   }
   check(errors.length === 0, "zero console errors", errors);
