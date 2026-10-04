@@ -107,12 +107,22 @@ try {
     );
   await a.page.getByRole("button", { name: "Host a table" }).click();
   const tableCode = (await a.page.getByTestId("table-code").textContent()).trim();
-  await statusIs(a, "Waiting for 2 more players (3 or 4 play)");
+  await statusIs(a, "Need 2 more players");
   for (const [i, t] of [b, c].entries()) {
     await t.page.getByPlaceholder(/code/i).fill(tableCode);
     await t.page.getByRole("button", { name: "Join" }).click();
     await t.page.getByTestId("table-code").waitFor();
-    await statusIs(a, i === 0 ? "Waiting for 1 more player (3 or 4 play)" : "0 of 3 ready");
+    await statusIs(a, i === 0 ? "Need 1 more player" : "0 of 3 ready");
+    // A guest tab reads the same status off the same seat list.
+    await statusIs(b, i === 0 ? "Need 1 more player" : "0 of 3 ready");
+  }
+  // The host tag sits on the host's row only, on every tab.
+  for (const t of tabs) {
+    await until(
+      async () => (await t.page.getByTestId("host-tag").count()) === 1 && (await t.page.locator("li", { hasText: "Ember" }).getByTestId("host-tag").count()) === 1,
+      `${t.name} sees one host tag, on Ember's row`,
+    );
+    check(true, `host tag on Ember's row only, seen by ${t.name}`);
   }
   for (const t of tabs) {
     await until(async () => (await t.page.locator("li", { hasText: "Pine" }).count()) === 1, `${t.name} sees 3 seats`);

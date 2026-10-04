@@ -251,7 +251,7 @@ function Lobby() {
   const readyCount = seats.filter((s) => s.ready).length;
   const status =
     missing > 0
-      ? `Waiting for ${missing} more player${missing === 1 ? "" : "s"} (3 or 4 play)`
+      ? `Need ${missing} more player${missing === 1 ? "" : "s"}`
       : readyCount < seats.length
         ? `${readyCount} of ${seats.length} ready`
         : "Everyone is ready";
@@ -291,6 +291,7 @@ function Lobby() {
               <li key={i} className="relative flex items-center gap-3 rounded-[12px] border border-border bg-surface px-3 py-2">
                 <span className="size-3 rounded-full ring-1 ring-inset ring-black/25" style={{ background: s?.color ?? "transparent" }} />
                 <span className="flex-1 text-sm">{s ? s.name : "Empty"}</span>
+                {s?.host ? <span data-testid="host-tag" className="text-xs text-muted">host</span> : null}
                 {s ? <span className="text-xs text-muted">{s.away ? "reconnecting…" : s.ready ? "Ready" : "Waiting"}</span> : null}
                 {s ? <ReactionFloats by="seat" id={s.id} /> : null}
               </li>
@@ -307,7 +308,7 @@ function Lobby() {
           className={cn(
             "mt-3 flex flex-col gap-2",
             sheet &&
-              "sticky bottom-0 z-10 -mx-5 mb-2 bg-white/85 px-5 pb-2 pt-2 before:pointer-events-none before:absolute before:inset-x-0 before:-top-6 before:h-6 before:bg-gradient-to-t before:from-white/85 before:to-transparent",
+              "sticky bottom-0 z-10 -mx-5 mb-2 bg-surface px-5 pb-2 pt-2 before:pointer-events-none before:absolute before:inset-x-0 before:-top-6 before:h-6 before:bg-gradient-to-t before:from-surface before:to-transparent",
           )}
         >
           {/* #418: one line on what is still needed, in the slot the "sat down" echo had (the seat rows already say who is here). */}
