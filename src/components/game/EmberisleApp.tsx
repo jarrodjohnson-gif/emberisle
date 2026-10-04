@@ -70,6 +70,9 @@ function Title() {
   const [join, setJoin] = useState("");
   const hostTable = useGame((s) => s.hostTable);
   const joinTable = useGame((s) => s.joinTable);
+  const watchTable = useGame((s) => s.watchTable);
+  // A ?watch= link makes Watch the primary button for this visit (docs/design/spectator.md).
+  const [watchLink, setWatchLink] = useState(false);
   const peekTable = useGame((s) => s.peekTable);
   const peekedCode = useGame((s) => s.code);
   const peekedSeats = useGame((s) => s.seats);
@@ -91,14 +94,19 @@ function Title() {
   }, [join, peekTable]);
 
   // #304: a join link (?code=K7QP) fills the field so the peek above runs; nothing is sent until Join is pressed.
-  // The code then leaves the URL so a reload does not refill a dead one.
+  // The code then leaves the URL so a reload does not refill a dead one. A watch link (?watch=K7QP) does the same and
+  // makes Watch the primary button, so a reload never re-watches either.
   useEffect(() => {
     const url = new URL(location.href);
     const code = url.searchParams.get("code")?.toUpperCase();
-    if (code === undefined) return;
+    const watch = url.searchParams.get("watch")?.toUpperCase();
+    if (code === undefined && watch === undefined) return;
     url.searchParams.delete("code");
+    url.searchParams.delete("watch");
     history.replaceState(history.state, "", `${url.pathname}${url.search}${url.hash}`);
-    if (PEEK_CODE.test(code)) setJoin(code);
+    const fill = code ?? watch!;
+    if (PEEK_CODE.test(fill)) setJoin(fill);
+    if (code === undefined) setWatchLink(true);
   }, []);
 
   return (
@@ -150,7 +158,10 @@ function Title() {
             className="flex gap-2"
             onSubmit={(e) => {
               e.preventDefault();
-              if (join.length === 4) joinTable(join);
+              if (join.length !== 4) return;
+              // Enter does what the primary button does.
+              if (watchLink) watchTable(join);
+              else joinTable(join);
             }}
           >
             <input
@@ -163,8 +174,18 @@ function Title() {
               maxLength={4}
               className="h-11 min-w-0 flex-1 rounded-[12px] border border-border bg-surface px-3 tracking-[0.3em]"
             />
-            <Button size="lg" variant="sea" type="submit">
+            <Button size="lg" variant={watchLink ? "outline" : "sea"} type="submit">
               Join
+            </Button>
+            <Button
+              size="lg"
+              variant={watchLink ? "sea" : "outline"}
+              type="button"
+              onClick={() => {
+                if (join.length === 4) watchTable(join);
+              }}
+            >
+              Watch
             </Button>
           </form>
           {error ? (
