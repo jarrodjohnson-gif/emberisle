@@ -12,7 +12,7 @@ import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
 import { createServer } from "vite";
 
-const PORT = 8094;
+const PORT = Number(process.env.VITE_PORT) || 8094;
 const SHOTS = fileURLToPath(new URL("../test-results/", import.meta.url));
 mkdirSync(SHOTS, { recursive: true });
 
@@ -186,6 +186,42 @@ try {
   check(await startBtn.evaluate((el) => { const r = el.getBoundingClientRect(); const c = document.querySelector('[data-testid="lobby-card"]').getBoundingClientRect(); return r.top >= c.top && r.bottom <= c.bottom && r.bottom <= innerHeight; }), "phone lobby: Start is inside the card and the 390x844 viewport without scrolling");
   check(await inView(hp, '[data-testid="lobby-actions"]'), "phone lobby: the Ready/Start row is wholly on screen");
   await shot(hp, "chat-phone-lobby-host.jpg");
+  // #449: held sideways, the lobby is a two-column card, so with four seats and everyone ready the status line, Ready, Start
+  // and Leave are all on screen with no scrolling (the card's own scroller stays at 0).
+  const fourth = await tab("Fay");
+  await fourth.page.getByPlaceholder(/code/i).fill(hCode);
+  await fourth.page.getByRole("button", { name: "Join" }).click();
+  await fourth.page.getByTestId("table-code").waitFor();
+  await fourth.page.getByRole("button", { name: "Ready", exact: true }).click();
+  await until(async () => (await hp.page.locator("li", { hasText: "Fay" }).count()) === 1, "Hana sees four seats");
+  await until(async () => (await hp.page.getByTestId("lobby-status").textContent()).trim() === "Everyone is ready", "Hana sees Everyone is ready");
+  for (const [w, h] of [[844, 390], [667, 375]]) {
+    await hp.page.setViewportSize({ width: w, height: h });
+    await shot(hp, `chat-phone-lobby-landscape-${w}x${h}.jpg`);
+    await until(
+      () => hp.page.evaluate(() => document.querySelector('[data-testid="lobby-card"]').getBoundingClientRect().width > innerWidth * 0.8),
+      `${w}x${h}: the lobby card is the wide landscape card`,
+    );
+    const m = await hp.page.evaluate(() => {
+      const card = document.querySelector('[data-testid="lobby-card"]');
+      const inside = (el) => { const r = el.getBoundingClientRect(); return r.height > 0 && r.top >= 0 && r.bottom <= innerHeight && r.left >= 0 && r.right <= innerWidth; };
+      const btn = (t) => [...card.querySelectorAll("button")].find((b) => b.textContent.trim() === t);
+      const scrollers = [card, ...card.querySelectorAll("*")].filter((el) => getComputedStyle(el).overflowY === "auto" && el.getAttribute("data-testid") !== "chat-log");
+      return {
+        status: inside(document.querySelector('[data-testid="lobby-status"]')),
+        ready: !!btn("Not ready") && inside(btn("Not ready")),
+        start: !!btn("Start") && inside(btn("Start")),
+        leave: !!btn("Leave the table") && inside(btn("Leave the table")),
+        seats: [...card.querySelectorAll("li")].filter((li) => li.querySelector("span.rounded-full") && inside(li)).length,
+        scroll: scrollers.map((el) => el.scrollHeight - el.clientHeight),
+        top: card.getBoundingClientRect().top,
+      };
+    });
+    check(m.status && m.ready && m.start && m.leave, `phone landscape ${w}x${h}, 4 seats all ready: status, Ready, Start and Leave are on screen without scrolling`);
+    check(m.seats === 4, `phone landscape ${w}x${h}: all four seat rows are on screen`);
+    check(m.scroll.every((n) => n <= 1), `phone landscape ${w}x${h}: nothing in the card scrolls (${m.scroll})`);
+  }
+  await fourth.page.context().close();
   for (const t of [hp, ...guests]) await t.page.context().close();
   for (const t of [...tabs, phone]) {
     await until(async () => (await t.page.locator("li", { hasText: "Moss" }).count()) >= 1, `${t.name} sees 4 seats`);
