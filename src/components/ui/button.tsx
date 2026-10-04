@@ -24,7 +24,7 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   ref?: Ref<HTMLButtonElement>;
 }
 
-// Build bible 3.4: press scales to 0.97 for 80 ms. Corners are 12 px (docs/design/polish.md, Jarrod 2026-10-04).
+// Build bible 3.4: 8 px corners, press scales to 0.97 for 80 ms.
 export function Button({ variant = "default", size = "default", className, type = "button", ...props }: ButtonProps) {
   return (
     <button
