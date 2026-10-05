@@ -1,7 +1,7 @@
 // #468: Add to Home Screen opens Emberisle full-screen. Against the built dist/, served both by server/host.mjs and by
 // `vite preview`:
 // - index.html carries the manifest link, theme-color, the iOS and mobile web-app tags, the apple-touch-icon and
-//   viewport-fit=cover;
+//   viewport-fit=cover, and the iOS status bar is the solid `default` one (#475);
 // - the manifest parses: standalone, any orientation, the stone `bg` token as theme and background, start_url inside scope
 //   at the page's own address; every icon (192, 512, maskable 512) and the 180 px apple-touch-icon resolve as PNGs of the
 //   size they claim;
@@ -71,7 +71,8 @@ async function proveStatic(name, origin) {
   assert.equal(tag(/<meta name="theme-color" content="([^"]+)"/, "theme-color").toLowerCase(), BG, `${name}: theme-color`);
   assert.equal(tag(/<meta name="apple-mobile-web-app-capable" content="([^"]+)"/, "apple-mobile-web-app-capable"), "yes");
   assert.equal(tag(/<meta name="mobile-web-app-capable" content="([^"]+)"/, "mobile-web-app-capable"), "yes");
-  tag(/<meta name="apple-mobile-web-app-status-bar-style" content="([^"]+)"/, "apple-mobile-web-app-status-bar-style");
+  // #475: a solid bar with dark text over nothing, not white text over the light stone title (black-translucent).
+  assert.equal(tag(/<meta name="apple-mobile-web-app-status-bar-style" content="([^"]+)"/, "apple-mobile-web-app-status-bar-style"), "default");
   assert.equal(tag(/<meta name="apple-mobile-web-app-title" content="([^"]+)"/, "apple-mobile-web-app-title"), "Emberisle");
   await fetchPng(new URL(tag(/<link rel="apple-touch-icon" href="([^"]+)"/, "apple-touch-icon"), origin), "180x180", `${name} apple-touch-icon`);
 
