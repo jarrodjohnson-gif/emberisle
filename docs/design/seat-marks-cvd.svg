@@ -1,0 +1,123 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1360 510" role="img" aria-labelledby="title desc">
+  <title id="title">Emberisle seat colours and piece silhouettes under colour-vision simulations</title>
+  <desc id="desc">Four panels show current seat swatches and path, outpost and stronghold silhouettes in the original palette, then simulated protanopia, deuteranopia and tritanopia. Each piece row shows Ember, Tide, Dune and Pine.</desc>
+  <style>
+    text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #27231f; }
+    .panel { fill: #fbfaf7; stroke: #c9c1b6; stroke-width: 1.5; }
+    .panel-title { font-size: 17px; font-weight: 700; }
+    .small { font-size: 11px; font-weight: 600; }
+    .row-title { font-size: 12px; font-weight: 700; }
+    .seat-name { font-size: 10px; }
+    .tag { font-size: 9px; fill: #655d54; }
+    .orig-e { color: #c45c3e; }
+    .orig-t { color: #2a8f8a; }
+    .orig-d { color: #e4c9a0; }
+    .orig-p { color: #3d6b4f; }
+    .prot-e { color: #786d3b; }
+    .prot-t { color: #87878a; }
+    .prot-d { color: #d4c99d; }
+    .prot-p { color: #6b644d; }
+    .deut-e { color: #91843c; }
+    .deut-t { color: #787c8b; }
+    .deut-d { color: #dbcfa1; }
+    .deut-p { color: #635f51; }
+    .trit-e { color: #d74755; }
+    .trit-t { color: #00938d; }
+    .trit-d { color: #efc1be; }
+    .trit-p { color: #336a63; }
+    .seat-fill { fill: currentColor; }
+  </style>
+  <defs>
+    <symbol id="path-piece" viewBox="-22 -18 44 36">
+      <rect x="-19" y="-5" width="38" height="12" rx="2" fill="#29231f"/>
+      <rect x="-17" y="-7" width="34" height="3" rx="1" fill="#fff6e8"/>
+      <rect x="-15" y="-13" width="30" height="6" rx="1" class="seat-fill"/>
+      <path d="M-5-13v6M5-13v6" stroke="#29231f" stroke-width="1.3"/>
+    </symbol>
+    <symbol id="outpost-piece" viewBox="-22 -18 44 36">
+      <path d="M-18 12h36v4h-36z" fill="#29231f"/>
+      <path d="M-15 8h30v4h-30z" fill="#fff6e8"/>
+      <path d="M-12-1h24v9h-24z" class="seat-fill"/>
+      <path d="M-16-2 0-14 16-2z" class="seat-fill" stroke="#29231f" stroke-width="1.5" stroke-linejoin="round"/>
+      <path d="M-5 2h5v6h-5z" fill="#29231f"/>
+    </symbol>
+    <symbol id="stronghold-piece" viewBox="-22 -18 44 36">
+      <path d="M-19 12h38v4h-38z" fill="#29231f"/>
+      <path d="M-16 8h32v4h-32z" fill="#fff6e8"/>
+      <path d="M-13 7V-8h5v4h4v-4h8v4h4v-4h5V7z" class="seat-fill" stroke="#29231f" stroke-width="1.5" stroke-linejoin="round"/>
+      <path d="M-3-2h6v9h-6z" fill="#29231f"/>
+    </symbol>
+  </defs>
+
+  <g transform="translate(10 10)">
+    <rect class="panel" width="330" height="490" rx="12"/>
+    <text class="panel-title" x="16" y="28">Current palette</text>
+    <text class="tag" x="16" y="47">Unsimulated flat sRGB</text>
+    <g transform="translate(10 59)">
+      <rect x="0" y="0" width="66" height="28" rx="5" fill="#c45c3e"/><text class="seat-name" x="33" y="42" text-anchor="middle">Ember</text>
+      <rect x="77" y="0" width="66" height="28" rx="5" fill="#2a8f8a"/><text class="seat-name" x="110" y="42" text-anchor="middle">Tide</text>
+      <rect x="154" y="0" width="66" height="28" rx="5" fill="#e4c9a0"/><text class="seat-name" x="187" y="42" text-anchor="middle">Dune</text>
+      <rect x="231" y="0" width="66" height="28" rx="5" fill="#3d6b4f"/><text class="seat-name" x="264" y="42" text-anchor="middle">Pine</text>
+    </g>
+    <text class="row-title" x="18" y="150">Path</text>
+    <use href="#path-piece" x="38" y="158" width="44" height="36" class="orig-e"/><use href="#path-piece" x="108" y="158" width="44" height="36" class="orig-t"/><use href="#path-piece" x="178" y="158" width="44" height="36" class="orig-d"/><use href="#path-piece" x="248" y="158" width="44" height="36" class="orig-p"/>
+    <text class="row-title" x="18" y="258">Outpost</text>
+    <use href="#outpost-piece" x="38" y="266" width="44" height="36" class="orig-e"/><use href="#outpost-piece" x="108" y="266" width="44" height="36" class="orig-t"/><use href="#outpost-piece" x="178" y="266" width="44" height="36" class="orig-d"/><use href="#outpost-piece" x="248" y="266" width="44" height="36" class="orig-p"/>
+    <text class="row-title" x="18" y="366">Stronghold</text>
+    <use href="#stronghold-piece" x="38" y="374" width="44" height="36" class="orig-e"/><use href="#stronghold-piece" x="108" y="374" width="44" height="36" class="orig-t"/><use href="#stronghold-piece" x="178" y="374" width="44" height="36" class="orig-d"/><use href="#stronghold-piece" x="248" y="374" width="44" height="36" class="orig-p"/>
+  </g>
+
+  <g transform="translate(350 10)">
+    <rect class="panel" width="330" height="490" rx="12"/>
+    <text class="panel-title" x="16" y="28">Protanopia</text>
+    <text class="tag" x="16" y="47">Full-severity simulation</text>
+    <g transform="translate(10 59)">
+      <rect x="0" y="0" width="66" height="28" rx="5" fill="#786d3b"/><text class="seat-name" x="33" y="42" text-anchor="middle">Ember</text>
+      <rect x="77" y="0" width="66" height="28" rx="5" fill="#87878a"/><text class="seat-name" x="110" y="42" text-anchor="middle">Tide</text>
+      <rect x="154" y="0" width="66" height="28" rx="5" fill="#d4c99d"/><text class="seat-name" x="187" y="42" text-anchor="middle">Dune</text>
+      <rect x="231" y="0" width="66" height="28" rx="5" fill="#6b644d"/><text class="seat-name" x="264" y="42" text-anchor="middle">Pine</text>
+    </g>
+    <text class="row-title" x="18" y="150">Path</text>
+    <use href="#path-piece" x="38" y="158" width="44" height="36" class="prot-e"/><use href="#path-piece" x="108" y="158" width="44" height="36" class="prot-t"/><use href="#path-piece" x="178" y="158" width="44" height="36" class="prot-d"/><use href="#path-piece" x="248" y="158" width="44" height="36" class="prot-p"/>
+    <text class="row-title" x="18" y="258">Outpost</text>
+    <use href="#outpost-piece" x="38" y="266" width="44" height="36" class="prot-e"/><use href="#outpost-piece" x="108" y="266" width="44" height="36" class="prot-t"/><use href="#outpost-piece" x="178" y="266" width="44" height="36" class="prot-d"/><use href="#outpost-piece" x="248" y="266" width="44" height="36" class="prot-p"/>
+    <text class="row-title" x="18" y="366">Stronghold</text>
+    <use href="#stronghold-piece" x="38" y="374" width="44" height="36" class="prot-e"/><use href="#stronghold-piece" x="108" y="374" width="44" height="36" class="prot-t"/><use href="#stronghold-piece" x="178" y="374" width="44" height="36" class="prot-d"/><use href="#stronghold-piece" x="248" y="374" width="44" height="36" class="prot-p"/>
+  </g>
+
+  <g transform="translate(690 10)">
+    <rect class="panel" width="330" height="490" rx="12"/>
+    <text class="panel-title" x="16" y="28">Deuteranopia</text>
+    <text class="tag" x="16" y="47">Full-severity simulation</text>
+    <g transform="translate(10 59)">
+      <rect x="0" y="0" width="66" height="28" rx="5" fill="#91843c"/><text class="seat-name" x="33" y="42" text-anchor="middle">Ember</text>
+      <rect x="77" y="0" width="66" height="28" rx="5" fill="#787c8b"/><text class="seat-name" x="110" y="42" text-anchor="middle">Tide</text>
+      <rect x="154" y="0" width="66" height="28" rx="5" fill="#dbcfa1"/><text class="seat-name" x="187" y="42" text-anchor="middle">Dune</text>
+      <rect x="231" y="0" width="66" height="28" rx="5" fill="#635f51"/><text class="seat-name" x="264" y="42" text-anchor="middle">Pine</text>
+    </g>
+    <text class="row-title" x="18" y="150">Path</text>
+    <use href="#path-piece" x="38" y="158" width="44" height="36" class="deut-e"/><use href="#path-piece" x="108" y="158" width="44" height="36" class="deut-t"/><use href="#path-piece" x="178" y="158" width="44" height="36" class="deut-d"/><use href="#path-piece" x="248" y="158" width="44" height="36" class="deut-p"/>
+    <text class="row-title" x="18" y="258">Outpost</text>
+    <use href="#outpost-piece" x="38" y="266" width="44" height="36" class="deut-e"/><use href="#outpost-piece" x="108" y="266" width="44" height="36" class="deut-t"/><use href="#outpost-piece" x="178" y="266" width="44" height="36" class="deut-d"/><use href="#outpost-piece" x="248" y="266" width="44" height="36" class="deut-p"/>
+    <text class="row-title" x="18" y="366">Stronghold</text>
+    <use href="#stronghold-piece" x="38" y="374" width="44" height="36" class="deut-e"/><use href="#stronghold-piece" x="108" y="374" width="44" height="36" class="deut-t"/><use href="#stronghold-piece" x="178" y="374" width="44" height="36" class="deut-d"/><use href="#stronghold-piece" x="248" y="374" width="44" height="36" class="deut-p"/>
+  </g>
+
+  <g transform="translate(1030 10)">
+    <rect class="panel" width="320" height="490" rx="12"/>
+    <text class="panel-title" x="16" y="28">Tritanopia</text>
+    <text class="tag" x="16" y="47">Full-severity simulation</text>
+    <g transform="translate(10 59)">
+      <rect x="0" y="0" width="63" height="28" rx="5" fill="#d74755"/><text class="seat-name" x="31" y="42" text-anchor="middle">Ember</text>
+      <rect x="74" y="0" width="63" height="28" rx="5" fill="#00938d"/><text class="seat-name" x="105" y="42" text-anchor="middle">Tide</text>
+      <rect x="148" y="0" width="63" height="28" rx="5" fill="#efc1be"/><text class="seat-name" x="179" y="42" text-anchor="middle">Dune</text>
+      <rect x="222" y="0" width="63" height="28" rx="5" fill="#336a63"/><text class="seat-name" x="253" y="42" text-anchor="middle">Pine</text>
+    </g>
+    <text class="row-title" x="18" y="150">Path</text>
+    <use href="#path-piece" x="35" y="158" width="44" height="36" class="trit-e"/><use href="#path-piece" x="103" y="158" width="44" height="36" class="trit-t"/><use href="#path-piece" x="171" y="158" width="44" height="36" class="trit-d"/><use href="#path-piece" x="239" y="158" width="44" height="36" class="trit-p"/>
+    <text class="row-title" x="18" y="258">Outpost</text>
+    <use href="#outpost-piece" x="35" y="266" width="44" height="36" class="trit-e"/><use href="#outpost-piece" x="103" y="266" width="44" height="36" class="trit-t"/><use href="#outpost-piece" x="171" y="266" width="44" height="36" class="trit-d"/><use href="#outpost-piece" x="239" y="266" width="44" height="36" class="trit-p"/>
+    <text class="row-title" x="18" y="366">Stronghold</text>
+    <use href="#stronghold-piece" x="35" y="374" width="44" height="36" class="trit-e"/><use href="#stronghold-piece" x="103" y="374" width="44" height="36" class="trit-t"/><use href="#stronghold-piece" x="171" y="374" width="44" height="36" class="trit-d"/><use href="#stronghold-piece" x="239" y="374" width="44" height="36" class="trit-p"/>
+  </g>
+</svg>
