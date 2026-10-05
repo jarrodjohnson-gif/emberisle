@@ -4,12 +4,13 @@ import { Smile } from "lucide-react";
 import { EMOTES, QUICK_REACTIONS } from "@/components/game/emotes";
 import { useGame } from "@/lib/game/store";
 import type { Reaction } from "@/lib/net/table";
+import { play } from "@/lib/sound";
 import { cn } from "@/lib/utils";
 import { useViewport } from "@/lib/viewport";
 
 const COOLDOWN = 1000;
 const CONTROL =
-  "flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-control bg-glass text-zinc-700 disabled:cursor-default disabled:opacity-50";
+  "flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-control bg-glass text-zinc-700 transition-transform duration-75 active:scale-[0.97] disabled:cursor-default disabled:opacity-50";
 
 export function QuickReactions({ stackTop }: { stackTop?: number | null } = {}) {
   const mode = useGame((s) => s.mode);
@@ -87,12 +88,12 @@ export function QuickReactions({ stackTop }: { stackTop?: number | null } = {}) 
       ref={root}
       data-testid="quick-reactions"
       className={cn(
-        "absolute z-30",
+        "absolute z-[25]",
         portraitClosed
-          ? "right-3"
+          ? "right-safe"
           : !phone && chatOpen
-            ? "right-[312px]"
-            : "right-[68px]",
+            ? "right-safe mr-[300px]"
+            : "right-safe mr-14",
         phone
           ? !chatOpen && !portrait && "bottom-[184px]"
           : "top-16",
@@ -101,7 +102,7 @@ export function QuickReactions({ stackTop }: { stackTop?: number | null } = {}) 
         phone && chatOpen
           ? { bottom: "calc(min(48vh, 320px) + 12px)" }
           : phone && portraitClosed
-            ? { bottom: stackTop === null || stackTop === undefined ? "calc(100dvh - 16rem + 64px)" : `calc(100dvh - ${stackTop}px + 64px)` }
+            ? { bottom: stackTop === null || stackTop === undefined ? "calc(100dvh - 16rem + 140px)" : `calc(100dvh - ${stackTop}px + 68px)` }
           : undefined
       }
     >
@@ -112,6 +113,7 @@ export function QuickReactions({ stackTop }: { stackTop?: number | null } = {}) 
         aria-expanded={open}
         aria-controls="quick-reaction-picker"
         className={cn(CONTROL, "backdrop-blur-md", cooling && "opacity-50")}
+        onPointerDown={() => play("ui_click")}
         onClick={() => setOpen(!open)}
       >
         <Smile className="size-5" />
@@ -136,6 +138,7 @@ export function QuickReactions({ stackTop }: { stackTop?: number | null } = {}) 
                 aria-keyshortcuts={String(index + 1)}
                 disabled={cooling}
                 className={cn(CONTROL, "text-2xl")}
+                onPointerDown={() => play("ui_click")}
                 onClick={() => send(emoji)}
               >
                 <span aria-hidden="true">{emoji}</span>
@@ -155,6 +158,7 @@ export function QuickReactions({ stackTop }: { stackTop?: number | null } = {}) 
                   aria-label={`React ${id}`}
                   disabled={cooling}
                   className={CONTROL}
+                  onPointerDown={() => play("ui_click")}
                   onClick={() => send(id)}
                 >
                   <img src={url} alt="" className="size-8 object-contain" />

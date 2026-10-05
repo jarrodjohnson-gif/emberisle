@@ -286,11 +286,16 @@ Private messages, a profanity filter, edits or deletes, chat after the table clo
 
 During online play, a 44 px **Quick reactions** button sits above the minimized chat button on a portrait
 phone, next to it on desktop and landscape phones, beside an open desktop dock, or above an open phone sheet.
-The portrait trigger has a 12 px gap above chat, keeping the rotate guidance readable. Opening or minimizing
-chat closes the picker while keeping its trigger available. It opens a
+The portrait controls reserve the turn banner's 144 px slot above the measured HUD stack even while the banner is
+hidden, so showing or clearing the status line never moves them. They use the shared `right-safe` and `px-safe`
+utilities at the device edges. The reaction trigger stays below the Table menu layer, so an open menu always
+receives its Leave action. The portrait trigger has a 12 px gap above chat, keeping the rotate guidance readable.
+Opening or minimizing chat closes the picker while keeping its trigger available. It opens a
 small glass picker without opening chat. Its first row is **😠 😊 👏 😂 🔥 🐑**; a second row offers the
 local image emotes from `src/assets/emotes/`. Buttons use 12 px control corners, the glass token and readable
-ink. The picker closes after a send, on Escape, or on a pointer press outside it. Desktop keys **1–6** select
+ink, and they click and press down on pointer input. The picker closes after a send, on Escape, or on a pointer
+press outside it. That outside press continues to the board, where it can still place or orbit; the picker only
+dismisses itself. Desktop keys **1–6** select
 the corresponding emoji only while the picker is open. Inputs, textareas, selects and editable content keep
 their keys; modifier shortcuts and held-key repeats do not send. Chat remains available with the existing
 text input, canned lines and image tray.

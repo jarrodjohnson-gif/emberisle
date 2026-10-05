@@ -14,6 +14,7 @@ export { ReactionFloats } from "@/components/game/Reactions";
 const PRESETS = ["gg", "nice roll", "your turn", "one sec", "ty"];
 const INPUT_ID = "chat-input";
 const HUD_STACK = ".pointer-events-none.absolute.bottom-0.inset-x-0.z-10 > .relative > .overflow-y-auto";
+const STATUS_BANNER_SLOT = 144;
 
 // Text renders only as React children. The mention is found with split() on the literal "@name", never a regex.
 function Mention({ text, name }: { text: string; name: string }) {
@@ -301,6 +302,7 @@ export function ChatDock() {
   const { phone, portrait } = useViewport();
   const focusNext = useRef(false);
   const stackTop = useHudStackTop(phone && portrait && !open);
+  const controlsTop = stackTop === null ? null : stackTop - STATUS_BANNER_SLOT;
 
   // A remembered open dock must not cover the hand bar when Play starts on a phone. The stored value stays for desktop.
   useEffect(() => {
@@ -350,7 +352,7 @@ export function ChatDock() {
         <section
           aria-label="Table chat"
           data-testid="chat-sheet"
-          className="fixed inset-x-0 bottom-0 z-30 flex flex-col gap-2 rounded-t-chip bg-glass px-3 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur-md"
+          className="fixed inset-x-0 bottom-0 z-30 flex flex-col gap-2 rounded-t-chip bg-glass px-safe pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur-md"
           style={{ height: "min(48vh, 320px)" }}
         >
           <div data-testid="chat-sheet-header" className="flex shrink-0 items-center justify-between">
@@ -365,13 +367,13 @@ export function ChatDock() {
 
   return (
     <>
-      <QuickReactions stackTop={phone && portrait && !open ? stackTop : null} />
+      <QuickReactions stackTop={phone && portrait && !open ? controlsTop : null} />
       <div
         className={cn(
-          "absolute right-3 z-20 flex items-end",
+          "absolute right-safe z-20 flex items-end",
           phone ? cn("flex-col-reverse", !portrait && "bottom-[184px]") : "top-16 flex-col",
         )}
-        style={phone && portrait ? { bottom: stackTop === null ? "12px" : `calc(100dvh - ${stackTop}px + 12px)` } : undefined}
+        style={phone && portrait ? { bottom: controlsTop === null ? "84px" : `calc(100dvh - ${controlsTop}px + 12px)` } : undefined}
       >
         {open ? (
           <section

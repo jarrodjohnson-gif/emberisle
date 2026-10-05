@@ -16,6 +16,7 @@ import { createServer } from "vite";
 
 const PORT = Number(process.env.VITE_PORT) || 8094;
 const SHOTS = fileURLToPath(new URL("../test-results/", import.meta.url));
+const HUD_STACK = ".pointer-events-none.absolute.bottom-0.inset-x-0.z-10 > .relative > .overflow-y-auto";
 mkdirSync(SHOTS, { recursive: true });
 
 // Rooms go to a temp folder, dropped on exit, so the real host never restores this proof's tables (#207).
@@ -707,10 +708,12 @@ try {
   // 5. Phone: the open dock is a bottom sheet, and the tap that closes it does not reach the board.
   await phone.page.getByRole("button", { name: "Open chat" }).waitFor();
   r = await box(phone, '[aria-label^="Open chat"]');
-  check(r.right > r.vw - 20 && r.bottom < r.vh - 150, "phone: the minimized button sits bottom-right above the hand bar");
+  const stackTop = await phone.page.locator(HUD_STACK).evaluate((el) => el.getBoundingClientRect().top);
+  check(r.right > r.vw - 20 && r.bottom <= stackTop - 7, "phone: the minimized button sits bottom-right above the measured HUD stack");
   await polish(phone, "minimized", '[aria-label^="Open chat"]');
   await phone.page.getByRole("button", { name: "Open chat" }).click();
   await phone.page.getByTestId("chat-sheet").waitFor({ timeout: 5000 });
+  check(await phone.page.getByTestId("chat-sheet").evaluate((el) => el.classList.contains("px-safe")), "phone: the chat sheet uses the shared horizontal safe-area utility");
   r = await box(phone, '[aria-label="Table chat"]');
   const cap = Math.min(0.48 * r.vh, 320);
   check(Math.abs(r.bottom - r.vh) < 1 && r.left === 0 && Math.abs(r.width - r.vw) < 1, `phone: chat is a sheet at the bottom, ${r.width.toFixed(0)} px wide of ${r.vw}`);
@@ -785,7 +788,7 @@ try {
   }
   const atRoll = await seen(a);
   check(atRoll.phase === "roll", `game log: setup is done, phase ${atRoll.phase}`);
-  const phoneLayout = async (t, ownTurn) => {
+  const phoneLayout = async (t, ownTurn, checkBanner = false) => {
     const state = await seen(t);
     const own = state.current === state.you;
     check(state.phase === "roll" && own === ownTurn, `chat dock: ${ownTurn ? "own" : "another seat's"} turn is available for the 390x844 stack check`);
@@ -799,7 +802,7 @@ try {
     } else {
       check(await roll.count() === 0, "chat dock: Roll is hidden on another seat's turn");
     }
-    const geometry = await t.page.waitForFunction(() => {
+    const layout = () => t.page.waitForFunction(() => {
       const stack = document.querySelector('[data-testid="turn-banner"]')?.parentElement;
       const persistentStack = document.querySelector(".pointer-events-none.absolute.bottom-0.inset-x-0.z-10 > .relative > .overflow-y-auto");
       const controls = [
@@ -807,6 +810,7 @@ try {
         document.querySelector('button[aria-label^="Open chat"]'),
       ];
       if (!stack || persistentStack !== stack || controls.some((control) => !control)) return null;
+      if (!controls[1].parentElement.style.bottom.startsWith("calc(100dvh - ")) return null;
       const bottom = stack.getBoundingClientRect();
       const boxes = controls.map((control) => {
         const r = control.getBoundingClientRect();
@@ -818,8 +822,10 @@ try {
         persistentStack: persistentStack === stack,
         stack: { left: bottom.left, top: bottom.top, right: bottom.right, bottom: bottom.bottom },
         boxes,
+        banner: document.querySelector('[data-testid="banner"]')?.getBoundingClientRect().toJSON() ?? null,
       };
     }, null, { timeout: 5000 }).then((handle) => handle.jsonValue());
+    const geometry = await layout();
     const clear = geometry.boxes.every((r) =>
       r.right <= geometry.stack.left || r.left >= geometry.stack.right ||
       r.bottom <= geometry.stack.top || r.top >= geometry.stack.bottom,
@@ -828,12 +834,36 @@ try {
     check(geometry.persistentStack, "chat dock: the hidden-banner fallback finds the persistent HUD scroller");
     check(geometry.boxes.every((r) => r.left >= 0 && r.top >= 0 && r.right <= geometry.viewport.width && r.bottom <= geometry.viewport.height), "chat dock: both controls fit in the phone viewport");
     check(geometry.boxes.every((r) => r.width >= 44 && r.height >= 44), `chat dock: both controls are at least 44 px at 390x844 (${geometry.boxes.map((r) => `${r.width}x${r.height}`).join(", ")})`);
+    check(Math.abs(geometry.boxes[1].top - geometry.boxes[0].bottom - 12) <= 1, "chat dock: portrait quick reactions sit 12 px above chat");
     check(clear, `chat dock: Quick reactions and Open chat clear the full bottom stack at 390x844, ${ownTurn ? "with Roll showing" : "on another seat's turn"}`);
+    check(await t.page.evaluate(() => document.querySelector('[data-testid="quick-reactions"]')?.classList.contains("right-safe") && document.querySelector('button[aria-label^="Open chat"]')?.parentElement?.classList.contains("right-safe")), "chat dock: both portrait controls use the shared right safe-area utility");
+    if (checkBanner) {
+      await t.page.evaluate(() => window.__emberisle.setState({ banner: null }));
+      await t.page.waitForFunction(() => !document.querySelector('[data-testid="banner"]'));
+      const before = await layout();
+      await t.page.evaluate(() => window.__emberisle.setState({ banner: "Ember's roll · Ember +2 timber · Ember +1 grain · Pine +2 timber · Pine +1 grain · Tide +2 timber · Tide +1 grain · Moss +2 timber · Moss +1 grain · bank short of timber and grain" }));
+      await t.page.getByTestId("banner").waitFor();
+      const showing = await layout();
+      const longRoll = showing.banner && showing.banner.bottom - showing.banner.top >= 90;
+      check(longRoll, "chat dock: a multi-seat, multi-gain roll status wraps to at least four lines at 390x844");
+      const noOverlap = showing.banner && showing.boxes.every((control) =>
+        control.right <= showing.banner.left || control.left >= showing.banner.right ||
+        control.bottom <= showing.banner.top || control.top >= showing.banner.bottom,
+      );
+      check(noOverlap, "chat dock: both portrait controls clear the visible status banner");
+      const stable = before.boxes.every((box, i) => ["left", "top", "right", "bottom"].every((edge) => Math.abs(box[edge] - showing.boxes[i][edge]) <= 1));
+      const movement = before.boxes.map((box, i) => Object.fromEntries(["left", "top", "right", "bottom"].map((edge) => [edge, Math.round((showing.boxes[i][edge] - box[edge]) * 10) / 10])));
+      check(stable, `chat dock: showing the status banner does not move either portrait control${stable ? "" : ` (${JSON.stringify(movement)})`}`);
+      await t.page.evaluate(() => window.__emberisle.setState({ banner: null }));
+      await t.page.waitForFunction(() => !document.querySelector('[data-testid="banner"]'));
+      const cleared = await layout();
+      check(before.boxes.every((box, i) => ["left", "top", "right", "bottom"].every((edge) => Math.abs(box[edge] - cleared.boxes[i][edge]) <= 1)), "chat dock: clearing the status banner does not move either portrait control");
+    }
   };
   const ownTab = byId[atRoll.current];
   const otherTab = all.find((t) => t !== ownTab);
   const originalViewports = new Map([ownTab, otherTab].map((t) => [t, t.page.viewportSize()]));
-  await phoneLayout(ownTab, true);
+  await phoneLayout(ownTab, true, true);
   await phoneLayout(otherTab, false);
   for (const [t, viewport] of originalViewports) {
     if (viewport) await t.page.setViewportSize(viewport);
@@ -945,6 +975,28 @@ try {
     "bots: the menu shows the 4 facts and nothing else",
   );
   await solo.context().close();
+
+  // The 844x390 board reaction shares the top-menu edge. The menu and its Leave question stay above it.
+  if (await phone.page.getByRole("button", { name: "Minimize chat" }).count()) {
+    await phone.page.getByRole("button", { name: "Minimize chat" }).click();
+  }
+  await phone.page.setViewportSize({ width: 844, height: 390 });
+  await phone.page.getByRole("button", { name: "Quick reactions", exact: true }).waitFor();
+  await phone.page.getByRole("button", { name: "Table menu", exact: true }).tap();
+  const tableMenu = phone.page.getByRole("dialog", { name: "Table menu" });
+  await tableMenu.waitFor();
+  await tableMenu.getByRole("button", { name: "Leave table" }).tap();
+  const leaveConfirm = phone.page.getByTestId("leave-confirm");
+  const leave = leaveConfirm.getByRole("button", { name: "Leave", exact: true });
+  await leave.waitFor();
+  const onTop = await leave.evaluate((button) => {
+    const r = button.getBoundingClientRect();
+    const target = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+    return target === button || button.contains(target);
+  });
+  check(onTop, "landscape phone: the Table menu Leave action is topmost above Quick reactions at 844x390");
+  await leave.tap();
+  await phone.page.waitForFunction(() => window.__emberisle.getState().screen === "title");
 
   // 6.
   check(polishFailures.length === 0, `chat polish at both sizes${polishFailures.length ? `\n${polishFailures.join("\n")}` : ""}`);
