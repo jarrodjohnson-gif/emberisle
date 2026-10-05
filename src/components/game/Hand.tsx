@@ -3,7 +3,7 @@ import { BrickWall, Cloud, Mountain, Trees, Wheat } from "lucide-react";
 import { RESOURCES, RESOURCE_LABEL, type Phase, type PlayerState, type Resource } from "@/lib/game/types";
 import { cn } from "@/lib/utils";
 
-const ICONS: Record<Resource, typeof Trees> = {
+export const RESOURCE_ICON: Record<Resource, typeof Trees> = {
   timber: Trees,
   clay: BrickWall,
   wool: Cloud,
@@ -12,7 +12,7 @@ const ICONS: Record<Resource, typeof Trees> = {
 };
 
 // Each card is the terrain cap's colour (docs/design/polish.md, #436); full class names so Tailwind can see them.
-const PAINT: Record<Resource, string> = {
+export const RESOURCE_PAINT: Record<Resource, string> = {
   timber: "bg-timber text-timber-on",
   clay: "bg-clay text-clay-on",
   wool: "bg-wool text-wool-on",
@@ -84,7 +84,7 @@ function ResourceHand({ me, flashes }: { me: PlayerState; flashes: ReturnType<ty
   return (
     <div className="flex shrink-0 gap-1 overflow-x-auto rounded-[20px] border border-white/50 bg-glass p-2 backdrop-blur-md short:p-1">
       {RESOURCES.map((r) => {
-        const Icon = ICONS[r];
+        const Icon = RESOURCE_ICON[r];
         const flash = flashes[r];
         const label = flash ? (flash.delta > 0 ? `+${flash.delta}` : String(flash.delta)) : null;
         const count = me.resources[r];
@@ -96,7 +96,7 @@ function ResourceHand({ me, flashes }: { me: PlayerState; flashes: ReturnType<ty
             className={cn(
               "relative flex min-w-[3.5rem] flex-1 flex-col items-center gap-1 rounded-chip px-2 py-2 ring-1 ring-inset ring-black/10 transition-opacity duration-base",
               "short:h-11 short:flex-row short:justify-center short:py-0",
-              PAINT[r],
+              RESOURCE_PAINT[r],
               count === 0 && "opacity-40",
             )}
           >
