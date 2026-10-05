@@ -8,7 +8,7 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ChatControls, ChatDock, ChromeLanded, FortuneTray, HowTo, sheets, TradePanel, WinScreen } from "@/components/game/chunks";
+import { ChatControls, ChatDock, ChromeLanded, FortuneTray, GainFloats, HowTo, sheets, TradePanel, TurnMoment, WinScreen } from "@/components/game/chunks";
 import { TradeToast } from "@/components/game/TradeToast";
 import { WinFailed } from "@/components/game/WinFailed";
 import { Announcer } from "@/components/game/Announcer";
@@ -57,6 +57,26 @@ function phaseCopy(phase: string) {
       return "The isle has a ruler.";
     default:
       return "";
+  }
+}
+
+// Another seat's turn, seen from this one (online, practice, a watcher): whose turn it is and that this seat waits.
+function waitingCopy(phase: string, name: string) {
+  switch (phase) {
+    case "rollOff":
+      return `Waiting for ${name} to roll for first place`;
+    case "setupSettle":
+      return `Waiting for ${name} to place an outpost`;
+    case "setupRoad":
+      return `Waiting for ${name} to lay a path`;
+    case "roll":
+      return `Waiting for ${name} to roll`;
+    case "discard":
+      return "Waiting for discards";
+    case "robber":
+      return `Waiting for ${name} to move the wayfarer`;
+    default:
+      return `Waiting for ${name} to build or trade`;
   }
 }
 
@@ -180,11 +200,14 @@ export function Hud() {
       : yours && state.phase === "robber"
         ? "move the wayfarer"
         : phaseCopy(state.phase);
+  const waiting = mode !== "hotseat" && !yours;
   // #430: in hotseat a seat that owes a discard on another seat's turn is named, not given the turn.
   const turnText =
     !yours && subject !== state.current
       ? `${subjectPlayer.name} — discard ${state.discardNeeded[subject] ?? 0}`
-      : `${yours ? "Your" : `${subjectPlayer.name}'s`} turn — ${phaseText}`;
+      : waiting
+        ? waitingCopy(state.phase, subjectPlayer.name)
+        : `${yours ? "Your" : `${subjectPlayer.name}'s`} turn — ${phaseText}`;
   const winner = state.winner ? state.players.find((p) => p.id === state.winner) : null;
   const menuPlayer = menuFor ? state.players.find((p) => p.id === menuFor) : null;
   // #422: on the player's own Roll or End row the dice ride beside the button instead of taking a row of their own.
@@ -192,11 +215,14 @@ export function Hud() {
   const diceInBar = mine && /^(main|roll)/.test(state.phase);
   // #491: in the column End turn is its own row pinned to the bottom of the scroller on a solid ground, so it never scrolls out of reach.
   const pinEnd = column && state.phase === "main" && mine;
+  // docs/design/polish.md "Buttons": End turn is the one primary once nothing else can be bought and nothing is armed.
+  const canBuy = !fortuneBlocked || (["path", "outpost", "stronghold"] as const).some((k) => me[`${k}sLeft`] > 0 && affords(me, k));
+  const endPrimary = !canBuy && buildMode === "none";
 
   const endRow = (
     <div className={cn("flex gap-2 *:self-center", column ? "sticky bottom-0 z-10 justify-end rounded-[16px] bg-surface p-1" : "ml-auto")}>
       {dice}
-      <Button size="sm" variant="sea" className={phone ? "h-11" : undefined} onClick={() => dispatch({ type: "endTurn" })}>
+      <Button size="sm" variant={endPrimary ? "primary" : "secondary"} className={phone ? "h-11" : undefined} onClick={() => dispatch({ type: "endTurn" })}>
         End turn
       </Button>
     </div>
@@ -257,6 +283,11 @@ export function Hud() {
       <TradeToast />
       <Announcer />
       <RollMoment />
+      {/* If the moments' chunk cannot load, the table stands without them; the hand still flashes every change. */}
+      <LazyBoundary failed={null}>
+        <TurnMoment />
+        {spectator ? null : <GainFloats me={me} rolls={state.rolls ?? 0} />}
+      </LazyBoundary>
 
       <div className="pointer-events-none absolute bottom-0 inset-x-0 z-10 px-safe pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         <div className={cn("relative", column ? "w-80 max-w-[48vw]" : "mx-auto max-w-3xl")}>
@@ -276,6 +307,7 @@ export function Hud() {
           ) : null}
           <div
             ref={stackRef}
+            data-hud-stack
             className={cn(
               "pointer-events-auto flex flex-col gap-2 overflow-y-auto overscroll-contain",
               // #383: stop under the header (or the portrait seat strip) and leave the island at least ~8 rem.
@@ -314,7 +346,8 @@ export function Hud() {
                 data-testid="turn-banner"
                 style={{ borderLeftColor: yours ? undefined : subjectPlayer.color }}
                 className={cn(
-                  "animate-[turn-fade_200ms_ease-out] rounded-[16px] border bg-glass px-3 py-2 text-sm font-medium text-zinc-900 backdrop-blur-md",
+                  "animate-[turn-fade_200ms_ease-out] rounded-[16px] border bg-glass px-3 py-2 text-sm font-medium backdrop-blur-md",
+                  waiting ? "text-zinc-700" : "text-zinc-900",
                   // #424: the accent tint is a layer over the glass, not a replacement for it.
                   yours ? "border-accent bg-linear-to-r from-accent/20 to-accent/20" : "border-white/50 border-l-4",
                 )}
