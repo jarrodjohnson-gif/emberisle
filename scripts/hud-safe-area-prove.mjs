@@ -10,6 +10,10 @@
 // - the hole the HUD leaves (`__isle.insets()`) lies inside the safe rect, and every corner of the island, docks
 //   included, projects inside that hole once the fit has settled (not checked over a full-screen sheet);
 // - zero console errors.
+// #491: on a sideways phone holding a full hand and every fortune, the column scrolls, and the Roll or End turn button
+// (scrolled back to the top, the worst case) still lies fully inside the safe rect and the column's visible rect, and is
+// the topmost element at its centre, with no scrolling needed; Tab never lands a control behind the pinned row, the "more
+// below" cue meets the row, and the open fortune tray covers the row inside the safe area.
 // The chat dock and sheet are Chat.tsx (another lane): their controls are measured and listed, and fail the run only
 // once CHAT_PENDING is set to false (#475's report names the change they need).
 // Run: npm run hud-safe-area-prove. Port from VITE_PORT, default 8475. Screenshots to test-results/hud-safe-*.png.
@@ -154,6 +158,102 @@ async function prove(p, moment, { island = true } = {}) {
   await page.screenshot({ path: `test-results/hud-safe-${tag}-${moment.replace(/[^a-z0-9]+/gi, "-")}.png` });
 }
 
+// A full hand and every fortune held, the column scrolled to its top: the primary action stays reachable (#491).
+async function pinned(p, moment, name, mustScroll) {
+  const { page, tag, insets } = p;
+  await page.evaluate(() => {
+    const g = window.__emberisle;
+    const st = structuredClone(g.getState().state);
+    const me = st.players.find((x) => x.id === g.getState().localId);
+    for (const r of Object.keys(me.resources)) me.resources[r] = 5;
+    for (const k of Object.keys(me.hidden)) me.hidden[k] = 2;
+    for (const k of Object.keys(me.boughtThisTurn)) me.boughtThisTurn[k] = 0;
+    st.playedCard = false;
+    st.seq += 1;
+    g.setState({ state: st });
+  });
+  await page.waitForTimeout(350);
+  const btn = page.getByRole("button", { name, exact: true });
+  await btn.waitFor({ timeout: STEP_MS });
+  const m = await btn.evaluate((el, insets) => {
+    let sc = el.parentElement;
+    while (sc && getComputedStyle(sc).overflowY !== "auto") sc = sc.parentElement;
+    sc.scrollTop = 0;
+    const b = el.getBoundingClientRect();
+    const top = document.elementFromPoint((b.left + b.right) / 2, (b.top + b.bottom) / 2);
+    return {
+      scrolls: sc.scrollHeight > sc.clientHeight,
+      inside: b.left >= insets.left && b.top >= insets.top && b.right <= innerWidth - insets.right && b.bottom <= innerHeight - insets.bottom,
+      box: [b.left, b.top, b.right, b.bottom].map(Math.round),
+      topmost: el.contains(top),
+      inScroller: b.top >= sc.getBoundingClientRect().top && b.bottom <= sc.getBoundingClientRect().bottom,
+      tall: b.height >= 44,
+    };
+  }, insets);
+  if (mustScroll) check(`${tag} ${moment}: the column scrolls (full hand, every fortune)`, m.scrolls);
+  check(`${tag} ${moment}: ${name} is inside the safe area, 44 px tall, uncovered, scrolled to the top`, m.inside && m.topmost && m.inScroller && m.tall, m.box);
+  if (!mustScroll) return;
+  // Keyboard: Tab through the column from its top; every focused control stays uncovered (the pinned row does not hide it),
+  // and the "more below" cue does not sit under that row.
+  await page.evaluate(() => {
+    const sc = document.querySelector('[data-testid="turn-banner"]').parentElement;
+    sc.scrollTop = 0;
+    sc.querySelector("button").focus();
+  });
+  const seen = [];
+  for (let i = 0; i < 30; i++) {
+    const f = await page.evaluate(() => {
+      const el = document.activeElement;
+      const sc = document.querySelector('[data-testid="turn-banner"]').parentElement;
+      if (!sc.contains(el)) return null;
+      const b = el.getBoundingClientRect();
+      const top = document.elementFromPoint((b.left + b.right) / 2, (b.top + b.bottom) / 2);
+      const cue = document.querySelector('[data-testid="hud-more-below"]')?.getBoundingClientRect();
+      const end = [...sc.querySelectorAll("button")].find((x) => x.textContent.trim() === "End turn")?.parentElement.getBoundingClientRect();
+      return {
+        name: (el.getAttribute("aria-label") || el.textContent.trim()).slice(0, 24),
+        y: [Math.round(b.top), Math.round(b.bottom)],
+        uncovered: el.contains(top),
+        cueClear: !cue || !end || Math.abs(cue.bottom - end.top) <= 1,
+      };
+    });
+    if (!f) break;
+    seen.push(f);
+    await page.keyboard.press("Tab");
+  }
+  const bad = seen.filter((f) => !f.uncovered);
+  check(`${tag} ${moment}: Tab through ${seen.length} column controls, none hidden behind the pinned row`, seen.length > 3 && bad.length === 0, bad.length ? bad : undefined);
+  check(`${tag} ${moment}: the "more below" cue sits above the pinned row`, seen.every((f) => f.cueClear));
+  // The fortune tray (#423) rises from the column's bottom edge over the pinned row: it covers the bar cleanly, inside the viewport.
+  await page.getByRole("button", { name: /^Fortunes/ }).click();
+  const tray = await page.getByRole("dialog").first().waitFor({ timeout: STEP_MS }).then(() =>
+    page.waitForFunction(() => {
+      const d = document.querySelector("#fortune-title")?.closest('[role="dialog"]');
+      return !!d && d.getAnimations().every((a) => a.playState === "finished");
+    }, null, { timeout: STEP_MS }),
+  ).then(() =>
+    page.evaluate((insets) => {
+      const t = document.querySelector("#fortune-title").closest('[role="dialog"]').getBoundingClientRect();
+      const sc = document.querySelector('[data-testid="turn-banner"]').parentElement;
+      const end = [...sc.querySelectorAll("button")].find((x) => x.textContent.trim() === "End turn");
+      const b = end.parentElement.getBoundingClientRect();
+      const hit = document.elementFromPoint((b.left + b.right) / 2, (b.top + b.bottom) / 2);
+      return {
+        covers: !!hit?.closest('[role="dialog"]'),
+        inside: t.left >= insets.left && t.top >= insets.top && t.right <= innerWidth - insets.right && t.bottom <= innerHeight - insets.bottom,
+        box: [t.left, t.top, t.right, t.bottom].map(Math.round),
+      };
+    }, insets),
+  );
+  check(`${tag} ${moment}: the open fortune tray covers the pinned row and sits inside the safe area`, tray.covers && tray.inside, tray);
+  await page.keyboard.press("Escape");
+  await page.locator("#fortune-title").waitFor({ state: "detached", timeout: STEP_MS });
+  check(
+    `${tag} ${moment}: Escape closes the tray and focus returns to Fortunes`,
+    await page.evaluate(() => /^Fortunes/.test(document.activeElement?.textContent ?? "")),
+  );
+}
+
 // One practice game against the bots, through its real phases.
 async function practice(spec) {
   const p = await phone(spec);
@@ -208,6 +308,7 @@ async function practice(spec) {
   }
   await roll.waitFor({ timeout: STEP_MS });
   await prove(p, "roll");
+  if (spec.width > spec.height) await pinned(p, "roll, full hand", "Roll");
   await roll.click();
 
   // A 7 sends the wayfarer first; then the main phase.
@@ -236,6 +337,7 @@ async function practice(spec) {
   }
   await page.getByRole("button", { name: "End turn" }).waitFor({ timeout: STEP_MS });
   await prove(p, "main");
+  if (spec.width > spec.height) await pinned(p, "main, full hand", "End turn", true);
 
   // A seat's player menu, the Table menu and the trade panel, each opened by its own control.
   // The player's own seat: in its main phase the menu carries the bank trade row.
