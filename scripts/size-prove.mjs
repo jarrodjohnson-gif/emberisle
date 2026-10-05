@@ -3,7 +3,9 @@
 //
 // To raise a budget on purpose: change its number below, in the same pull request that adds the
 // weight, and say why in the PR. Each budget is the gzip size on main on 2026-10-03 plus 10%
-// (index 105728 bytes, IslandCanvas 166209 bytes).
+// (index 105728 bytes, IslandCanvas 166209 bytes). #488 split the online-only lobby and chat (online) and the on-demand
+// How to play, trade panel and win screen (sheets) out of the index. sheets is its 2026-10-05 size plus 10%; online is
+// set at 7000 so #477's quick reactions (6.26 kB with them) fit without another change.
 import { readdirSync, readFileSync } from "node:fs";
 import { gzipSync } from "node:zlib";
 
@@ -11,6 +13,11 @@ const DIR = "dist/assets";
 const BUDGETS = [
   { name: "index", gzipBytes: 116301 },
   { name: "IslandCanvas", gzipBytes: 182830 },
+  { name: "online", gzipBytes: 7000 },
+  { name: "sheets", gzipBytes: 4223 },
+  // The lucide Minus icon, which Chat (online) and TradePanel (sheets) both use and nothing in the index does: rolldown
+  // gives a module shared by two lazy chunks a chunk of its own. If the sharing ends, so does this chunk; drop the line.
+  { name: "minus", gzipBytes: 500 },
 ];
 
 let files;

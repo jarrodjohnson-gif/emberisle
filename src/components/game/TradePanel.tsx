@@ -1,32 +1,16 @@
 // The trade panel (docs/BUILD_BIBLE.md 4.4): "I give" and "I want" steppers, Ask the table, and the one bank or dock rate you hold.
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeftRight, Minus, Plus, X } from "lucide-react";
+import { Minus, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useFocusTrap } from "@/lib/focus-trap";
 import { harborRate } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
 import { RESOURCES, RESOURCE_LABEL, type Resource } from "@/lib/game/types";
 import { play } from "@/lib/sound";
-import type { Bag } from "@/lib/net/table";
-
-// "2 wool, 1 grain" in the README's words, or "" for an empty bag.
-export function bagText(bag: Bag) {
-  return RESOURCES.filter((r) => (bag[r] ?? 0) > 0)
-    .map((r) => `${bag[r]} ${r}`)
-    .join(", ");
-}
+import { bagText } from "@/lib/game/trade";
 
 const ZERO: Record<Resource, number> = { timber: 0, clay: 0, wool: 0, grain: 0, ore: 0 };
 const kinds = (bag: Record<Resource, number>) => RESOURCES.filter((r) => bag[r] > 0);
-
-export function TradeButton() {
-  const setTradeOpen = useGame((s) => s.setTradeOpen);
-  return (
-    <Button size="sm" variant="secondary" onClick={(e) => setTradeOpen(true, e.currentTarget)}>
-      <ArrowLeftRight className="size-4" /> Trade
-    </Button>
-  );
-}
 
 // 44 px targets, so the steppers work under a thumb (docs/design/mobile-hud.md).
 function Stepper({ label, value, canMore, onChange }: { label: string; value: number; canMore: boolean; onChange: (n: number) => void }) {

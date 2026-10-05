@@ -6,7 +6,8 @@
 // aria-current so the turn never rests on colour or motion alone (#312). Your fortunes by kind and a dropped seat's
 // state are facts in the player menu, one tap away.
 import { ScrollText } from "lucide-react";
-import { ReactionFloats } from "@/components/game/Chat";
+import { ReactionFloats } from "@/components/game/chunks";
+import { LazyBoundary } from "@/lib/lazy";
 import { PlayerMenu, seatAway } from "@/components/game/PlayerMenu";
 import type { GameState, PlayerState } from "@/lib/game/types";
 import { cards, hiddenCount, publicVP } from "@/lib/game/rules";
@@ -94,6 +95,8 @@ function SeatCard({ p, actor, short, className }: { p: PlayerState; actor: strin
   const current = useGame((s) => s.state!.current);
   const menuFor = useGame((s) => s.menuFor);
   const openMenu = useGame((s) => s.openMenu);
+  // #488: reactions only arrive at an online table; the chunk that draws them is loaded by then (see chunks.ts).
+  const online = useGame((s) => s.mode === "online");
   const strip = short !== undefined;
   return (
     <div
@@ -114,7 +117,11 @@ function SeatCard({ p, actor, short, className }: { p: PlayerState; actor: strin
       >
         <SeatLine p={p} actor={actor} short={short} />
       </button>
-      <ReactionFloats by="player" id={p.id} />
+      {online ? (
+        <LazyBoundary failed={null}>
+          <ReactionFloats by="player" id={p.id} />
+        </LazyBoundary>
+      ) : null}
     </div>
   );
 }

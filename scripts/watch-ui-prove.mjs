@@ -275,6 +275,17 @@ try {
   console.log(`?watch=${tableCode.toLowerCase()}: field "${link.field}", URL "${link.search}", Watch primary`);
 
   // --- 3. Watch after the start: the board, the badge, the opponent view, nothing to press, no glow, and the seats count 1.
+  // #488: the watcher never sees a lobby, so the watch link's own prefetch is what has the chat dock (a lazy chunk) ready;
+  // it must be in the HUD's first frame, as it is for a seat (tabs-prove).
+  await w1.page.evaluate(() => {
+    window.__dockFrame = new Promise((resolve) => {
+      const tick = () => {
+        if (!document.querySelector("header")) return requestAnimationFrame(tick);
+        resolve(Boolean(document.querySelector('[aria-label="Table chat"], button[aria-label^="Open chat"]')));
+      };
+      requestAnimationFrame(tick);
+    });
+  });
   await w1.page.getByRole("button", { name: "Watch", exact: true }).click();
   let wv = await until(async () => {
     const v = await view(w1);
@@ -284,6 +295,8 @@ try {
     const vs = await Promise.all([a, b].map(peek));
     return vs.every((v) => v.watching === 1 && v.count === "1") && c.watching === 1 ? vs : null;
   }, "every seat counting the watcher");
+  if (!(await w1.page.evaluate(() => window.__dockFrame))) throw new Error("the watcher's chat dock missed the HUD's first frame");
+  console.log("watcher: the chat dock is in the HUD's first frame");
   await w1.page.evaluate(() => (window.__onBoard = true));
   wv = await peek(w1);
   if (!wv.spectator || wv.localId !== "") throw new Error(`watcher store: spectator=${wv.spectator} localId=${JSON.stringify(wv.localId)}`);
