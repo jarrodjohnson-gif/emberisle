@@ -262,6 +262,8 @@ try {
   await w.page.close();
   const w1 = await tab("Watcher", `&watch=${tableCode.toLowerCase()}`, false);
   await until(() => w1.page.evaluate(() => document.querySelector('input[aria-label="Join code"]')?.value || null), "the watch link filling the field");
+  // The link leaves the URL once the online chunk has loaded, a moment after the field fills.
+  await w1.page.waitForFunction(() => !location.search.includes("watch="), null, { timeout: 15_000 });
   const link = await w1.page.evaluate(() => ({
     field: document.querySelector('input[aria-label="Join code"]').value,
     search: location.search,

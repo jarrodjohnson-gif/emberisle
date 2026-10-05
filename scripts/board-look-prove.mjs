@@ -29,6 +29,9 @@ const PORT = Number(process.env.VITE_PORT) || 8112;
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();
 
+// Mirrors DOUBLE_TAP_MS in src/lib/scene/isle-renderer.ts.
+const DOUBLE_TAP_MS = 350;
+
 const errors = [];
 const fails = [];
 const check = (name, ok, detail) => {
@@ -253,7 +256,7 @@ try {
       return { id, ...window.__isle.screenOf(id) };
     });
     // A drag through the points, with the mouse or one finger (CDP touch events: Playwright's touchscreen only taps).
-    const cdp = touch ? await page.context().newCDPSession(page) : null;
+    const cdp = await page.context().newCDPSession(page);
     const drag = async (pts) => {
       if (!touch) {
         await page.mouse.move(pts[0].x, pts[0].y);
@@ -294,26 +297,34 @@ try {
     const away = await drag(path(-20, 5));
     const sea = { x: fit.hole.l + 10, y: fit.hole.t + 10 };
     const wasAway = !(await atHome(away));
-    // Under load the two input round trips can land more than 350 ms apart, which is not a double tap at all; the lifts
-    // are timed in the page and the gesture is tried again (as a player would) until one is a real double tap.
+    // Playwright's tap and dblclick are one protocol round trip per event, and on a slow runner (software GL) each takes
+    // ~370 ms, longer than DOUBLE_TAP_MS (350): two taps that far apart are not a double tap. So both go out from one CDP
+    // session in a single burst, and the gap between the two lifts is read in the page with performance.now(), the clock
+    // the renderer's double-tap test uses, and must be inside the window.
     await page.evaluate(() => {
+      window.__downs = [];
       window.__ups = [];
-      document.querySelector("canvas").addEventListener("pointerup", () => window.__ups.push(performance.now()));
+      const c = document.querySelector("canvas");
+      c.addEventListener("pointerdown", () => window.__downs.push(performance.now()));
+      c.addEventListener("pointerup", () => window.__ups.push(performance.now()));
     });
-    const gaps = [];
-    for (let tries = 0; tries < 8; tries++) {
-      await page.evaluate(() => (window.__ups = []));
-      if (touch) {
-        await page.touchscreen.tap(sea.x, sea.y);
-        await page.touchscreen.tap(sea.x, sea.y);
-      } else await page.mouse.dblclick(sea.x, sea.y);
-      const ups = await page.evaluate(() => window.__ups);
-      gaps.push(ups.length === 2 ? Math.round(ups[1] - ups[0]) : ups.length);
-      if (ups.length === 2 && ups[1] - ups[0] < 350) break;
-      await drawn(page, 1);
-    }
+    const press = (n) =>
+      touch
+        ? [
+            cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: sea.x, y: sea.y }] }),
+            cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] }),
+          ]
+        : [
+            cdp.send("Input.dispatchMouseEvent", { type: "mousePressed", x: sea.x, y: sea.y, button: "left", clickCount: n }),
+            cdp.send("Input.dispatchMouseEvent", { type: "mouseReleased", x: sea.x, y: sea.y, button: "left", clickCount: n }),
+          ];
+    await Promise.all([...press(1), ...press(2)]);
+    await page.waitForFunction(() => window.__ups.length >= 2, null, { timeout: STEP_MS });
+    const stamps = await page.evaluate(() => ({ downs: window.__downs, ups: window.__ups }));
+    const gaps = { downMs: Math.round(stamps.downs[1] - stamps.downs[0]), upMs: Math.round(stamps.ups[1] - stamps.ups[0]) };
+    check(`${tag}: the two ${touch ? "taps" : "clicks"} land inside the ${DOUBLE_TAP_MS} ms double-tap window`, stamps.downs.length === 2 && stamps.ups.length === 2 && gaps.downMs < DOUBLE_TAP_MS && gaps.upMs < DOUBLE_TAP_MS, gaps);
     const snapped = await settle();
-    check(`${tag}: a double ${touch ? "tap" : "click"} on empty board returns to the fitted view and places nothing`, wasAway && (await atHome(snapped)) && snapped.seq === p0.seq, { before: brief(away), after: brief(snapped), seq: [p0.seq, snapped.seq], gapsMs: gaps });
+    check(`${tag}: a double ${touch ? "tap" : "click"} on empty board returns to the fitted view and places nothing`, wasAway && (await atHome(snapped)) && snapped.seq === p0.seq, { before: brief(away), after: brief(snapped), seq: [p0.seq, snapped.seq], gaps });
 
     if (!touch) {
       // The click still places: the same corner, after all that orbiting.
