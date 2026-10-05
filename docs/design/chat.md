@@ -284,12 +284,12 @@ Private messages, a profanity filter, edits or deletes, chat after the table clo
 
 ## Quick reactions from the board (#467)
 
-During online play, a 44 px **Quick reactions** button sits above the minimized chat button on a portrait
-phone, next to it on desktop and landscape phones, beside an open desktop dock, or above an open phone sheet.
-The portrait controls reserve the turn banner's 144 px slot above the measured HUD stack even while the banner is
-hidden, so showing or clearing the status line never moves them. They use the shared `right-safe` and `px-safe`
-utilities at the device edges. The reaction trigger stays below the Table menu layer, so an open menu always
-receives its Leave action. The portrait trigger has a 12 px gap above chat, keeping the rotate guidance readable.
+During online play, a 44 px **Quick reactions** button sits in the top row, left of the Table menu, with the 44 px
+**Open chat** button to its left (hidden while the dock is open). They are part of the header's row, so on every phone
+size and desktop they stay inside the safe area, clear of the Table menu and the seat strip, above the island, and in
+the same place on every turn. A sideways phone's seat strip gives way to them. The picker opens below the row with its
+right edge on the safe edge. The reaction trigger stays below the Table menu layer, so an open menu always receives its
+Leave action. The newest chat lines show under the row (below the seat strip on a portrait phone).
 Opening or minimizing chat closes the picker while keeping its trigger available. It opens a
 small glass picker without opening chat. Its first row is **😠 😊 👏 😂 🔥 🐑**; a second row offers the
 local image emotes from `src/assets/emotes/`. Buttons use 12 px control corners, the glass token and readable

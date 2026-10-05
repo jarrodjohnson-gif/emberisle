@@ -14,8 +14,8 @@
 // (scrolled back to the top, the worst case) still lies fully inside the safe rect and the column's visible rect, and is
 // the topmost element at its centre, with no scrolling needed; Tab never lands a control behind the pinned row, the "more
 // below" cue meets the row, and the open fortune tray covers the row inside the safe area.
-// The chat dock and sheet are Chat.tsx (another lane): their controls are measured and listed, and fail the run only
-// once CHAT_PENDING is set to false (#475's report names the change they need).
+// The chat dock and sheet are Chat.tsx: their controls are measured and listed, and fail the run unless CHAT_PENDING is true
+// (#475 left it true; #477 moved Quick reactions and Open chat into the top row, so they pass).
 // Run: npm run hud-safe-area-prove. Port from VITE_PORT, default 8475. Screenshots to test-results/hud-safe-*.png.
 import { spawn } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
@@ -24,7 +24,7 @@ import path from "node:path";
 import { chromium } from "playwright";
 import { createServer } from "vite";
 
-const CHAT_PENDING = true;
+const CHAT_PENDING = false;
 // Software GL under a loaded CI runner can take seconds a frame; every wait gets this long.
 const STEP_MS = 120_000;
 const PORT = Number(process.env.VITE_PORT) || 8475;

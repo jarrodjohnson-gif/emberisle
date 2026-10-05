@@ -6,7 +6,6 @@ import { useGame } from "@/lib/game/store";
 import type { Reaction } from "@/lib/net/table";
 import { play } from "@/lib/sound";
 import { cn } from "@/lib/utils";
-import { useViewport } from "@/lib/viewport";
 
 const COOLDOWN = 1000;
 const MUTE_KEY = "emberisle-chat-muted-";
@@ -68,13 +67,13 @@ export function useMutedSeats(code: string) {
   return { muted: new Set(seats), toggle };
 }
 
-export function QuickReactions({ stackTop, inline = false }: { stackTop?: number | null; inline?: boolean } = {}) {
+// Beside the Table menu in Hud's top row, so the picker anchors to that header: its right edge is the safe edge, below the row.
+export function QuickReactions() {
   const mode = useGame((s) => s.mode);
   const screen = useGame((s) => s.screen);
   const spectator = useGame((s) => s.spectator);
   const chatOpen = useGame((s) => s.chatOpen);
   const sendReact = useGame((s) => s.sendReact);
-  const { phone, portrait } = useViewport();
   const [open, setOpen] = useState(false);
   const [cooling, setCooling] = useState(false);
   const nextSend = useRef(0);
@@ -82,7 +81,6 @@ export function QuickReactions({ stackTop, inline = false }: { stackTop?: number
   const root = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const available = mode === "online" && screen === "play" && !spectator;
-  const portraitClosed = phone && portrait && !chatOpen;
 
   useEffect(() => () => clearTimeout(timer.current), []);
   useEffect(() => {
@@ -140,31 +138,7 @@ export function QuickReactions({ stackTop, inline = false }: { stackTop?: number
 
   if (!available) return null;
   return (
-    <div
-      ref={root}
-      data-testid="quick-reactions"
-      className={cn(
-        inline ? "pointer-events-auto relative z-[25]" : "absolute z-[25]",
-        !inline &&
-          (portraitClosed
-            ? "right-safe"
-            : !phone && chatOpen
-              ? "right-safe mr-[300px]"
-              : "right-safe mr-14"),
-        !inline && phone
-          ? !chatOpen && !portrait && "bottom-[184px]"
-          : !inline && "top-16",
-      )}
-      style={
-        inline
-          ? undefined
-          : phone && chatOpen
-          ? { bottom: "calc(min(48vh, 320px) + 12px)" }
-          : phone && portraitClosed
-            ? { bottom: stackTop === null || stackTop === undefined ? "calc(100dvh - 16rem + 140px)" : `calc(100dvh - ${stackTop}px + 68px)` }
-            : undefined
-      }
-    >
+    <div ref={root} data-testid="quick-reactions" className="pointer-events-auto">
       <button
         ref={trigger}
         type="button"
@@ -182,11 +156,7 @@ export function QuickReactions({ stackTop, inline = false }: { stackTop?: number
           id="quick-reaction-picker"
           role="group"
           aria-label="Choose a reaction"
-          className={cn(
-            "absolute flex w-max max-w-[calc(100vw-24px)] flex-col gap-2 rounded-chip bg-glass p-2 backdrop-blur-md",
-            inline ? "left-0" : portraitClosed || (!phone && chatOpen) ? "right-0" : "-right-14",
-            phone ? "bottom-full mb-2" : "top-full mt-2",
-          )}
+          className="absolute right-safe top-full z-[25] flex w-max max-w-[calc(100vw-24px)] flex-col gap-2 rounded-chip bg-glass p-2 backdrop-blur-md"
         >
           <div className="grid grid-cols-6 gap-1">
             {QUICK_REACTIONS.map(({ emoji, label }, index) => (

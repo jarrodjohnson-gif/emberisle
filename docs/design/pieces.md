@@ -140,15 +140,15 @@ not brown: overhead it is the only face you see.
 | Skirt | `0.54, 0.04, 0.54, RIM.dark, 0` | 0.04 |
 | Plinth | `0.44, 0.04, 0.44, RIM.light, 0.04` | 0.08 |
 | Keep | `0.32, 0.22, 0.32, seat, 0.08` | 0.30 |
-| Courtyard | `0.18, 0.012, 0.18, RIM.dark, 0.30` | 0.312 |
+| Mark | the seat's mark in its ink, 0.15 wide, on the keep's top (#312, [seat-marks.md](seat-marks.md)) | 0.315 |
 | Merlons ×4 | `0.08, 0.09, 0.08, seat, 0.30, ±0.12, ±0.12` | 0.39 |
 
 0.39 tall, 0.54 square: 23 px overhead at 1280×720. It differs from the outpost in silhouette from every
-angle: square, not oblong; a flat top with four corner blocks and a dark centre instead of a ridge; taller.
-The dark courtyard against Pine is 2.85:1, the one pair in this note under 3.0; the four merlons (each 3.4 px
-at 1280, with the sun's shadow between them) carry the stronghold-ness for Pine, and the courtyard is a
-figure inside the piece, not its edge, which the rims already draw. Cream would be 1.49:1 against Dune, which
-is worse, and a seat-coloured courtyard would make the top a plain square, which is what the outpost is.
+angle: square, not oblong; a flat top with four corner blocks and the seat's mark at the centre instead of a
+ridge; taller. The centre was a dark courtyard (2.85:1 against Pine, the one pair in this note under 3.0) until
+#312 made it the seat's mark in its ink, which is at least 4.12:1 on every seat; the four merlons (each 3.4 px
+at 1280, with the sun's shadow between them) carry the stronghold-ness, and the mark is a figure inside the
+piece, not its edge, which the rims already draw.
 
 ### Path (`makePath(seat, len)`)
 
