@@ -15,19 +15,19 @@
 
 - **CATAN:** Invention lets the player take any two resource cards from the supply; they may be the same or different. The shortage FAQ describes what happens when production cannot pay all players, but does not specify a separate partial-payment rule for Invention.
 - **Colonist:** Its published patch notes record fixes for consuming Year of Plenty when the bank could not supply a request (v65, 2020) and for requests involving an unavailable resource (v93, 2020). Those entries show that unavailable requests need validation, but do not establish the exact current UI behavior in every shortage case.
-- **Emberisle today:** `playPlenty` pays through `give()`, which can pay less than requested. A zero-stock resource can therefore consume the card without delivering the named card or explaining the shortage.
+- **Emberisle today:** the #410 fix is shipped. The HUD disables resource choices with zero bank stock, and `playPlenty` validates the full pair in the rules. If the bank cannot pay either named resource (including two of a resource when only one remains), the action is rejected, the error explains the shortage, and the Year of Plenty card stays in hand.
 
 ## Options
 
 1. **Refuse an unpayable selection.** Keep the card, explain the shortage, and allow the player to choose another legal pair.
 2. **Partially pay.** Spend the card, grant whatever is available, and report the shortfall. This is surprising when the player selected a specific pair.
-3. **Prevent impossible choices in the HUD and validate in the rules.** Grey out resources with no stock, disable combinations that cannot be paid in full, and reject any invalid request as a backstop.
+3. **Prevent empty-stock choices in the HUD and validate in the rules.** Grey out resources with no stock and reject any pair the bank cannot pay in full as a backstop.
 
 ## Recommendation
 
-Use option 3, as already selected in Jarrod's decision comment. Treat the two cards as an exact request: only show pairs the bank can pay; if a stale or forged request names an unavailable card, reject it and leave the fortune card unspent. If the bank has fewer than two cards in total, there is no legal pair to select, so keep the card and explain that the supply is short. This follows CATAN's two-card instruction and avoids silently turning the card into a partial payment.
+Keep the shipped option 3 behavior selected in Jarrod's decision comment. Treat the two cards as an exact request: grey out zero-stock resources, then have the rules reject any unaffordable pair and leave the fortune card unspent. The rules also reject a repeated resource if the bank has only one copy; the UI does not need to predict every pair because the rules are authoritative. This follows CATAN's two-card instruction and avoids silently turning the card into a partial payment.
 
-The UI makes the restriction understandable before the player commits; the rules layer remains authoritative. The engine check should cover both copies of a repeated resource (one ore in stock cannot satisfy ore + ore) and mixed pairs.
+The UI makes empty stock understandable before the player commits; the rules layer covers repeated resources and mixed pairs. `server/rules-prove.mjs` checks both a zero-stock ore request and asking for two grain when only one remains, including that the card stays in hand. `scripts/hotseat-prove.mjs` checks the empty-stock choice is disabled in the HUD.
 
 ## What I am not sure about
 
@@ -41,8 +41,8 @@ The UI makes the restriction understandable before the player commits; the rules
 ## Handoff
 
 ```
-done: compared exact refusal, partial payment, and constrained selection; recommended HUD constraints plus engine validation, retaining the card on invalid or impossible requests
-left: implementation is already tracked by #410
+done: compared exact refusal, partial payment, and constrained selection; documented the shipped #410 HUD guard and rules validation, retaining the card on invalid or impossible requests
+left: none for the selected #360 behavior
 broke: nothing
-next agent: #410
+next agent: no implementation follow-up required for #360
 ```
