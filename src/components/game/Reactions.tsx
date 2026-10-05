@@ -12,7 +12,7 @@ const COOLDOWN = 1000;
 const CONTROL =
   "flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-control bg-glass text-zinc-700 transition-transform duration-75 active:scale-[0.97] disabled:cursor-default disabled:opacity-50";
 
-export function QuickReactions({ stackTop }: { stackTop?: number | null } = {}) {
+export function QuickReactions({ stackTop, inline = false }: { stackTop?: number | null; inline?: boolean } = {}) {
   const mode = useGame((s) => s.mode);
   const screen = useGame((s) => s.screen);
   const spectator = useGame((s) => s.spectator);
@@ -88,22 +88,25 @@ export function QuickReactions({ stackTop }: { stackTop?: number | null } = {}) 
       ref={root}
       data-testid="quick-reactions"
       className={cn(
-        "absolute z-[25]",
-        portraitClosed
-          ? "right-safe"
-          : !phone && chatOpen
-            ? "right-safe mr-[300px]"
-            : "right-safe mr-14",
-        phone
+        inline ? "pointer-events-auto relative z-[25]" : "absolute z-[25]",
+        !inline &&
+          (portraitClosed
+            ? "right-safe"
+            : !phone && chatOpen
+              ? "right-safe mr-[300px]"
+              : "right-safe mr-14"),
+        !inline && phone
           ? !chatOpen && !portrait && "bottom-[184px]"
-          : "top-16",
+          : !inline && "top-16",
       )}
       style={
-        phone && chatOpen
+        inline
+          ? undefined
+          : phone && chatOpen
           ? { bottom: "calc(min(48vh, 320px) + 12px)" }
           : phone && portraitClosed
             ? { bottom: stackTop === null || stackTop === undefined ? "calc(100dvh - 16rem + 140px)" : `calc(100dvh - ${stackTop}px + 68px)` }
-          : undefined
+            : undefined
       }
     >
       <button
@@ -125,7 +128,7 @@ export function QuickReactions({ stackTop }: { stackTop?: number | null } = {}) 
           aria-label="Choose a reaction"
           className={cn(
             "absolute flex w-max max-w-[calc(100vw-24px)] flex-col gap-2 rounded-chip bg-glass p-2 backdrop-blur-md",
-            portraitClosed || (!phone && chatOpen) ? "right-0" : "-right-14",
+            inline ? "left-0" : portraitClosed || (!phone && chatOpen) ? "right-0" : "-right-14",
             phone ? "bottom-full mb-2" : "top-full mt-2",
           )}
         >
