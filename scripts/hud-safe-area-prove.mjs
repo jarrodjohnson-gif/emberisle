@@ -11,8 +11,9 @@
 //   included, projects inside that hole once the fit has settled (not checked over a full-screen sheet);
 // - zero console errors.
 // #491: on a sideways phone holding a full hand and every fortune, the column scrolls, and the Roll or End turn button
-// (scrolled back to the top, the worst case) still lies fully inside the safe rect, is the topmost element at its centre
-// and takes a real click.
+// (scrolled back to the top, the worst case) still lies fully inside the safe rect and the column's visible rect, and is
+// the topmost element at its centre, with no scrolling needed; Tab never lands a control behind the pinned row, the "more
+// below" cue meets the row, and the open fortune tray covers the row inside the safe area.
 // The chat dock and sheet are Chat.tsx (another lane): their controls are measured and listed, and fail the run only
 // once CHAT_PENDING is set to false (#475's report names the change they need).
 // Run: npm run hud-safe-area-prove. Port from VITE_PORT, default 8475. Screenshots to test-results/hud-safe-*.png.
@@ -225,7 +226,12 @@ async function pinned(p, moment, name, mustScroll) {
   check(`${tag} ${moment}: the "more below" cue sits above the pinned row`, seen.every((f) => f.cueClear));
   // The fortune tray (#423) rises from the column's bottom edge over the pinned row: it covers the bar cleanly, inside the viewport.
   await page.getByRole("button", { name: /^Fortunes/ }).click();
-  const tray = await page.getByRole("dialog").first().waitFor({ timeout: STEP_MS }).then(() => page.waitForTimeout(600)).then(() =>
+  const tray = await page.getByRole("dialog").first().waitFor({ timeout: STEP_MS }).then(() =>
+    page.waitForFunction(() => {
+      const d = document.querySelector("#fortune-title")?.closest('[role="dialog"]');
+      return !!d && d.getAnimations().every((a) => a.playState === "finished");
+    }, null, { timeout: STEP_MS }),
+  ).then(() =>
     page.evaluate((insets) => {
       const t = document.querySelector("#fortune-title").closest('[role="dialog"]').getBoundingClientRect();
       const sc = document.querySelector('[data-testid="turn-banner"]').parentElement;
@@ -241,6 +247,11 @@ async function pinned(p, moment, name, mustScroll) {
   );
   check(`${tag} ${moment}: the open fortune tray covers the pinned row and sits inside the safe area`, tray.covers && tray.inside, tray);
   await page.keyboard.press("Escape");
+  await page.locator("#fortune-title").waitFor({ state: "detached", timeout: STEP_MS });
+  check(
+    `${tag} ${moment}: Escape closes the tray and focus returns to Fortunes`,
+    await page.evaluate(() => /^Fortunes/.test(document.activeElement?.textContent ?? "")),
+  );
 }
 
 // One practice game against the bots, through its real phases.
