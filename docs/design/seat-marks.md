@@ -1,6 +1,6 @@
 # Seat marks alongside colour
 
-**Status:** design proposal; Jarrod has not selected either option. The current client and host still identify seats by the four palette colours. The mockups below compare the two choices requested in #312; they are not a claim that either has shipped.
+**Status:** option B selected (Opus, under Jarrod's delegation, 2026-10-05; Jarrod audits) and implemented. The mapping is `SEAT_MARKS` in `src/lib/game/types.ts`, keyed by seat colour; the UI dot is `src/components/game/SeatDot.tsx` (seat rail and strip, the player menu's heading, the trade toast, the lobby, the Host/Join picker, the win line and table); the board marks are geometry merged into each piece's one mesh (`src/lib/scene/seat-mark.ts`, `makePath`/`makeOutpost`/`makeStronghold`): a path carries its mark on a round seat-colour badge at its middle, an outpost's mark folds over the roof ridge, a stronghold's mark is the figure in its keep's top where [pieces.md](pieces.md)'s dark courtyard was. `npm run seat-marks-prove` checks all of it. Chat names (`Chat.tsx`) are another lane and still identify seats by colour alone: a follow-up for that lane. Option A stays below as the palette follow-up if playtesting asks for it.
 
 ## Current palette under colour-vision simulations
 

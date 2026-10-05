@@ -3,12 +3,13 @@
 // strip (docs/design/mobile-hud.md) share SeatLine: colour dot, name, goods and fortunes as two small counts only when
 // non-zero, the roll-off die only while the roll-off is live, and the points at text-title. The seat on turn carries
 // `seat-turn`: its dot pulses softly (bible §4.3) and the card brightens over 200 ms (§8), with an ink ring on the dot and
-// aria-current so the turn never rests on colour or motion alone (#312). Your fortunes by kind and a dropped seat's
-// state are facts in the player menu, one tap away.
+// aria-current so the turn never rests on colour or motion alone (#312); the dot is a SeatDot, so it carries the seat's
+// mark. Your fortunes by kind and a dropped seat's state are facts in the player menu, one tap away.
 import { ScrollText } from "lucide-react";
 import { ReactionFloats } from "@/components/game/chunks";
 import { LazyBoundary } from "@/lib/lazy";
 import { PlayerMenu, seatAway } from "@/components/game/PlayerMenu";
+import { SeatDot } from "@/components/game/SeatDot";
 import type { GameState, PlayerState } from "@/lib/game/types";
 import { cards, hiddenCount, publicVP } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
@@ -48,7 +49,8 @@ function SeatLine({ p, actor, short }: { p: PlayerState; actor: string; short?: 
   const narrow = strip ? "@max-[200px]:hidden" : undefined;
   return (
     <>
-      <span className="seat-dot size-2.5 shrink-0 rounded-full" style={{ background: p.color }} />
+      {/* Under 100 px a cell holds "Emb" and the points with 4 px gaps; the dot gives back its two extra pixels there (#420). */}
+      <SeatDot color={p.color} className={cn("seat-dot size-3", strip && "@max-[100px]:size-2.5")} />
       <span data-testid="seat-name" className={cn("min-w-0 flex-auto truncate text-sm font-medium", strip && "@max-[100px]:sr-only")}>
         {p.name}
       </span>

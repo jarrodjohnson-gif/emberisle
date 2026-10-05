@@ -27,8 +27,9 @@ import { HEX_SIZE, SQRT3, hexCorners, hexesInRadius, vertexId } from "@/lib/game
 import { LAND_MS } from "@/lib/scene/landing";
 import { mulberry32, hashStr } from "@/lib/utils";
 import { PAINT, RIM } from "@/lib/scene/palette";
+import { foldOverRidge, markParts } from "@/lib/scene/seat-mark";
 import { payingHexes } from "@/lib/game/rules";
-import type { GameState, HarborKind, HexCell, Terrain, Vertex } from "@/lib/game/types";
+import { seatMark, type GameState, type HarborKind, type HexCell, type Terrain, type Vertex } from "@/lib/game/types";
 
 const SLAB = 0.26;
 const TILE_Y = 0.04;
@@ -857,8 +858,8 @@ export class IsleRenderer {
     const calm = this.calm();
     this.placed = new Map();
     this.landings = [];
-    const land = (obj: THREE.Object3D, key: string, kind: PieceKind) => {
-      obj.userData = { piece: kind, key, restY: obj.position.y };
+    const land = (obj: THREE.Object3D, key: string, kind: PieceKind, seat: string) => {
+      obj.userData = { piece: kind, key, restY: obj.position.y, mark: seatMark(seat)?.mark ?? null };
       this.placed.set(key, kind);
       const start = !fresh && !calm && before.get(key) !== kind ? now : this.landStart.get(key);
       if (start === undefined || now - start >= LAND_MS[LAND_SOUND[kind]]) {
@@ -881,20 +882,21 @@ export class IsleRenderer {
       const color = pmap.get(e.path)?.color ?? "#ccc";
       const dx = b.x - a.x;
       const dz = b.z - a.z;
-      const road = makePath(color, Math.hypot(dx, dz) * 0.9);
+      const rot = Math.atan2(dx, dz);
+      const road = makePath(color, Math.hypot(dx, dz) * 0.9, rot);
       road.position.set((a.x + b.x) / 2, edgeTop(tops, a, b), (a.z + b.z) / 2);
-      road.rotation.y = Math.atan2(dx, dz);
+      road.rotation.y = rot;
       this.pieces.add(road);
-      land(road, `e:${e.id}`, "path");
+      land(road, `e:${e.id}`, "path", color);
     }
 
     for (const v of state.vertices) {
       if (!v.building) continue;
-      const pl = pmap.get(v.building.playerId);
-      const house = v.building.kind === "stronghold" ? makeStronghold(pl?.color ?? "#ccc") : makeOutpost(pl?.color ?? "#ccc");
+      const color = pmap.get(v.building.playerId)?.color ?? "#ccc";
+      const house = v.building.kind === "stronghold" ? makeStronghold(color) : makeOutpost(color);
       house.position.set(v.x, vertexTop(tops, v), v.z);
       this.pieces.add(house);
-      land(house, `v:${v.id}`, v.building.kind);
+      land(house, `v:${v.id}`, v.building.kind, color);
     }
 
     for (const b of this.boats) {
@@ -1428,6 +1430,17 @@ function piece(parts: THREE.BufferGeometry[]) {
   return m;
 }
 
+// #312: the seat's mark in its ink, `size` wide, lying on the seat colour at height y (docs/design/seat-marks.md). The
+// parts are merged into the piece, so a mark costs vertices and no draw call. `rot` undoes the piece's own turn so the
+// mark keeps one world orientation, like the number tokens; `gable` folds it over an outpost's ridge.
+function mark(seat: string, size: number, y: number, rot = 0, gable?: { rise: number; run: number }) {
+  const m = seatMark(seat);
+  if (!m) return [];
+  const parts = markParts(m.mark, size);
+  if (gable) foldOverRidge(parts, gable.rise, gable.run);
+  return parts.map((g) => tint(g.rotateY(rot).translate(0, y, 0), m.ink));
+}
+
 function makeOutpost(seat: string) {
   const shape = new THREE.Shape();
   shape.moveTo(-0.14, 0);
@@ -1440,6 +1453,8 @@ function makeOutpost(seat: string) {
     slab(0.38, 0.04, 0.34, RIM.light, 0.04),
     slab(0.26, 0.14, 0.22, seat, 0.08),
     roof,
+    // Folded over the ridge: 0.1 down each slope (the slope is 0.185 long), 0.2 along it.
+    ...mark(seat, 0.2, 0.34, 0, { rise: 0.12, run: 0.14 }),
   ]);
 }
 
@@ -1448,7 +1463,8 @@ function makeStronghold(seat: string) {
     slab(0.54, 0.04, 0.54, RIM.dark),
     slab(0.44, 0.04, 0.44, RIM.light, 0.04),
     slab(0.32, 0.22, 0.32, seat, 0.08),
-    slab(0.18, 0.012, 0.18, RIM.dark, 0.3),
+    // The mark is the figure in the keep's top, between the merlons (0.16 apart), where pieces.md's dark courtyard was.
+    ...mark(seat, 0.15, 0.3),
   ];
   for (const x of [-0.12, 0.12]) for (const z of [-0.12, 0.12]) parts.push(slab(0.08, 0.09, 0.08, seat, 0.3, x, z));
   return piece(parts);
@@ -1473,11 +1489,17 @@ function poseLanding(l: { obj: THREE.Object3D; kind: PieceKind; start: number; r
   else obj.scale.setScalar(1.05 - 0.05 * easeSnap(u));
 }
 
-function makePath(seat: string, len: number) {
+// `rot` is the path's own rotation.y; the mark counter-turns so every mark on the board faces the same way, like the
+// number tokens, whichever way the seam runs.
+function makePath(seat: string, len: number, rot: number) {
   return piece([
     slab(0.36, 0.03, len, RIM.dark),
     slab(0.26, 0.03, len - 0.06, RIM.light, 0.03),
     slab(0.16, 0.04, len - 0.12, seat, 0.06),
+    // A 7 px plank cannot hold an 8 px mark, so a round badge of the seat colour widens it at the middle, inside the
+    // cream step, a hair above the plank so the two never share a face.
+    tint(new THREE.CylinderGeometry(0.12, 0.12, 0.045, 12).toNonIndexed().translate(0, 0.0825, 0), seat),
+    ...mark(seat, 0.15, 0.105, -rot),
   ]);
 }
 

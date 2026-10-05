@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { HowTo, Lobby, online, sheets } from "@/components/game/chunks";
 import { Hud } from "@/components/game/Hud";
 import { PlaceList } from "@/components/game/PlaceList";
+import { SeatDot } from "@/components/game/SeatDot";
 import { useGame } from "@/lib/game/store";
 import { JOIN_CODE, LazyBoundary, preloadOnIdle, reloadOnStaleChunk } from "@/lib/lazy";
 import { play, setMuted, useMuted } from "@/lib/sound";
@@ -185,9 +186,11 @@ function Title() {
                   title={taken.includes(c) ? `${PLAYER_NAMES[i]} (taken)` : PLAYER_NAMES[i]}
                   disabled={taken.includes(c)}
                   onClick={() => setColor(c)}
-                  className={cn("size-8 rounded-full border-2 transition", taken.includes(c) && "cursor-not-allowed opacity-35")}
-                  style={{ background: c, borderColor: !taken.includes(c) && color === c ? "#1c1915" : "transparent" }}
-                />
+                  className={cn("size-8 rounded-full border-2 p-0 transition", taken.includes(c) && "cursor-not-allowed opacity-35")}
+                  style={{ borderColor: !taken.includes(c) && color === c ? "#1c1915" : "transparent" }}
+                >
+                  <SeatDot color={c} className="size-full" />
+                </button>
               ))}
             </div>
           </div>
