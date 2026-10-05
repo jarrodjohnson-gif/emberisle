@@ -19,6 +19,8 @@
 // - your last fortune played takes the Fortunes button with the tray, and focus falls to End turn;
 // - a second pick of a good the bank has only one of is refused and says so, while a tap with two picked still replaces the
 //   oldest; Monopoly's chips are radios and Plenty's caption is a live region.
+// - (#511) on a sideways phone with notch insets (844x390, 667x375) and the tray open and settled, a point just inside each
+//   top corner of the tray's box hits the tray or its own backdrop, never the turn banner or anything else behind it;
 // Zero console errors. Saves test-results/fortune-tray-<size>.png. Run: npm run fortune-tray-prove
 import assert from "node:assert/strict";
 import { existsSync, mkdirSync, readFileSync } from "node:fs";
@@ -382,6 +384,62 @@ try {
     await page.emulateMedia({ reducedMotion: "no-preference" });
     console.log(`${v.tag}: reduced motion ok (${reduced}s)`);
 
+    await ctx.close();
+  }
+
+  // #511: the tray's rounded top corners must not let the banner or the column's content behind show through. With notch
+  // insets and the tray open and settled, elementFromPoint a few px inside each top corner of its box is the tray or its
+  // own backdrop (data-testid="fortune-tray-backdrop"), never the banner.
+  for (const v of [{ tag: "844x390", width: 844, height: 390, insets: { top: 0, right: 47, bottom: 21, left: 47 } }, { tag: "667x375", width: 667, height: 375, insets: { top: 0, right: 44, bottom: 21, left: 44 } }]) {
+    const ctx = await browser.newContext({ viewport: { width: v.width, height: v.height }, hasTouch: true, isMobile: true });
+    const page = await ctx.newPage();
+    page.on("console", (m) => m.type() === "error" && errors.push(`${v.tag} corners: ${m.text()}`));
+    page.on("pageerror", (e) => errors.push(`${v.tag} corners: ${e}`));
+    await (await ctx.newCDPSession(page)).send("Emulation.setSafeAreaInsetsOverride", { insets: v.insets });
+    await page.goto(`http://127.0.0.1:${PORT}/`);
+    await page.waitForFunction(() => window.__emberisle);
+    await page.evaluate(() => window.__emberisle.getState().startHotseat(4));
+    await page.waitForFunction(() => window.__emberisle.getState().state);
+    await page.evaluate(() => {
+      const g = window.__emberisle;
+      const st = structuredClone(g.getState().state);
+      const me = st.players.find((p) => p.id === st.current);
+      st.phase = "main";
+      st.playedCard = false;
+      st.dice = [3, 4];
+      me.resources = { timber: 2, clay: 2, wool: 2, grain: 2, ore: 2 };
+      me.hidden = { knight: 2, road: 1, plenty: 1, monopoly: 1, vp: 1 };
+      me.boughtThisTurn = { knight: 0, road: 0, plenty: 0, monopoly: 0, vp: 0 };
+      st.seq += 1;
+      g.setState({ state: st, buildMode: "none", roadPicks: [], pendingSteal: null, pendingPlace: null, error: null });
+    });
+    await page.getByTestId("fortunes-button").click({ timeout: STEP_MS });
+    const tray = page.getByTestId("fortune-tray");
+    await tray.waitFor({ timeout: STEP_MS });
+    // The entry animations are done when every one of them on the tray, its backdrop and the banner has finished.
+    await page.waitForFunction(() => {
+      const all = document.querySelectorAll('[data-testid="fortune-tray"], [data-testid="fortune-tray-backdrop"], [data-testid="turn-banner"]');
+      return [...all].every((el) => el.getAnimations().every((a) => a.playState === "finished"));
+    }, null, { timeout: STEP_MS });
+    const hits = await page.evaluate(() => {
+      const el = document.querySelector('[data-testid="fortune-tray"]');
+      const r = el.getBoundingClientRect();
+      const banner = document.querySelector('[data-testid="turn-banner"]');
+      const name = (e) => (e ? `${e.tagName.toLowerCase()}${e.dataset?.testid ? `[${e.dataset.testid}]` : ""}.${String(e.className).slice(0, 40)}` : "null");
+      const at = (x, y) => {
+        const e = document.elementFromPoint(x, y);
+        const own = !!e && (el.contains(e) || !!e.closest('[data-testid="fortune-tray-backdrop"]'));
+        return { x, y, hit: name(e), own, banner: !!banner && !!e && banner.contains(e) };
+      };
+      return { banner: !!banner, corners: [at(r.left + 3, r.top + 3), at(r.right - 3, r.top + 3)] };
+    });
+    await page.screenshot({ path: `test-results/fortune-tray-corners-${v.tag}.png` });
+    assert.ok(hits.banner, `${v.tag}: the turn banner is up while the tray is open, or the check proves nothing`);
+    for (const c of hits.corners) {
+      assert.ok(!c.banner, `${v.tag}: the banner shows through the tray corner at ${c.x},${c.y}: ${c.hit}`);
+      assert.ok(c.own, `${v.tag}: tray corner at ${c.x},${c.y} is ${c.hit}, not the tray or its backdrop`);
+    }
+    console.log(`${v.tag}: tray corners hit ${hits.corners.map((c) => c.hit).join(" | ")}`);
     await ctx.close();
   }
 } catch (e) {

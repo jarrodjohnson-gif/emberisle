@@ -423,7 +423,7 @@ export function Hud() {
                 onClose={() => setFortunesOpen(false)}
                 className={
                   column
-                    ? "max-h-full"
+                    ? "max-h-full rounded-t-none" /* #511: it fills the column up to the header, so a round top only shows the banner behind */
                     : portrait
                       ? "max-h-[calc(100dvh-7.25rem-env(safe-area-inset-top)-max(0.75rem,env(safe-area-inset-bottom)))]"
                       : "max-h-[calc(100dvh-5rem-env(safe-area-inset-top)-max(0.75rem,env(safe-area-inset-bottom)))]"
