@@ -6,7 +6,8 @@ import { play } from "@/lib/sound";
 //   1. TableMenu (and its Leave question): window capture + stopPropagation (it closes whenever HowTo opens, so the two never stack).
 //   2. HowTo: modal, so window capture + stopPropagation; nothing behind it hears the key.
 //   3. TradePanel (window) and PlayerMenu (document), bubble phase, each closes itself; PlaceChip's pending tap (window) likewise.
-//   4. Disarming a build mode: window capture, but it stands down when 1-3 are open or the key came from a text field
+//   4. QuickReactions picker: document bubble phase; its Escape must get the chance to close before a build mode disarms.
+//   5. Disarming a build mode: window capture, but it stands down when 1-4 are open or the key came from a text field
 //      (the chat box minimizes itself), because the layers above run later in the same event and must still see their own state.
 export function useEscapeDisarm() {
   const setBuildMode = useGame((s) => s.setBuildMode);
@@ -14,7 +15,7 @@ export function useEscapeDisarm() {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
       const s = useGame.getState();
-      if (s.buildMode === "none" || s.tradeOpen || s.menuFor || s.pendingPlace || s.howTo) return;
+      if (s.buildMode === "none" || s.tradeOpen || s.menuFor || s.pendingPlace || s.howTo || document.getElementById("quick-reaction-picker")) return;
       if ((e.target as HTMLElement | null)?.closest("input, select, textarea")) return;
       if (document.querySelector('[data-testid="table-menu"]')) return;
       play("ui_back");

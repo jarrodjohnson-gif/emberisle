@@ -281,3 +281,43 @@ Under #70:
 
 Private messages, a profanity filter, edits or deletes, chat after the table closes, aimed trades (above), a
 `ui_react` sound, and phone layouts.
+
+## Quick reactions from the board (#467)
+
+During online play, a 44 px **Quick reactions** button sits in the top row, left of the Table menu, with the 44 px
+**Open chat** button to its left (hidden while the dock is open). They are part of the header's row, so on every phone
+size and desktop they stay inside the safe area, clear of the Table menu and the seat strip, above the island, and in
+the same place on every turn. A sideways phone's seat strip gives way to them. The picker opens below the row with its
+right edge on the safe edge. The reaction trigger stays below the Table menu layer, so an open menu always receives its
+Leave action. The newest chat lines show under the row (below the seat strip on a portrait phone).
+Opening or minimizing chat closes the picker while keeping its trigger available. It opens a
+small glass picker without opening chat. Its first row is **😠 😊 👏 😂 🔥 🐑**; a second row offers the
+local image emotes from `src/assets/emotes/`. Buttons use 12 px control corners, the glass token and readable
+ink, and they click and press down on pointer input. The picker closes after a send, on Escape, or on a pointer
+press outside it. That outside press continues to the board, where it can still place or orbit; the picker only
+dismisses itself. Desktop keys **1–6** select
+the corresponding emoji only while the picker is open. Inputs, textareas, selects and editable content keep
+their keys; modifier shortcuts and held-key repeats do not send. Chat remains available with the existing
+text input, canned lines and image tray.
+
+`emotes.ts` and the host’s `talk()` each contain the same six exact emoji strings. The browser proof sends every
+picker emoji through the actual host, so adding a client-only emoji fails the proof. Image ids remain derived
+from the asset folder on each side. No arbitrary Unicode, text, URL or markup is a reaction. The host continues
+to charge the existing shared chat/reaction token bucket; quick sends also dim the trigger and disable picker
+choices for one second. The cooldown is UI feedback, and the host remains authoritative. Watchers have no
+quick-react control and their socket remains read-only.
+
+`Reactions.tsx` owns the picker and floating reaction rendering. `Chat.tsx` mounts the picker and re-exports
+`ReactionFloats`, preserving the existing seat/rail anchors and imports. Emoji render as text, image emotes
+through the local image map, and all floats ignore pointer events. Repeated reactions from the same sender
+with the same emoji/image and target coalesce into one float with a **×N** badge. Only the newest live group
+from each sender is visible; it still expires with the store's existing two-second lifetime. A new repeat
+restarts that group's visual animation. The image, count badge and target label stay at least 8 px inside the
+viewport, including on the phone seat strip. Normal motion rises up to 12 px, limited by the room above the
+float, and fades in the final half-second;
+`prefers-reduced-motion: reduce` keeps the same fade without translation. Target names use zinc-700 ink on
+glass, retaining the contrast rules from #460.
+
+The existing `chat-prove` remains the browser/CI entrypoint. It covers closed-chat sends, all six emoji arriving
+at another seat, asset-backed image sends, keyboard and cooldown behavior, repeated reaction coalescing,
+reduced motion, rejected unlisted ids, and read-only watchers alongside the existing chat coverage.

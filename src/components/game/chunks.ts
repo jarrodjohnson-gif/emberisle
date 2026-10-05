@@ -9,6 +9,7 @@ import { useGame } from "@/lib/game/store";
 
 export const online = chunk(() => import("@/components/game/online"));
 export const Lobby = online.pick((m) => m.Lobby);
+export const ChatControls = online.pick((m) => m.ChatControls);
 export const ChatDock = online.pick((m) => m.ChatDock);
 export const ReactionFloats = online.pick((m) => m.ReactionFloats);
 
