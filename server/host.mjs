@@ -414,6 +414,7 @@ function pushState(room) {
       you: seat.pid,
       game: viewFor(room.game, seat.pid),
       legal: legalFor(room.game, seat.pid),
+      actionStamp: actionStamp(room, seat.ws),
       turnDeadline,
       turnPlayer: soonest?.pid ?? null,
       serverNow: Date.now(),
@@ -422,6 +423,40 @@ function pushState(room) {
   if (!room.watchers.size) return;
   const raw = JSON.stringify({ type: "state", you: null, game: watchView(room.game), legal: legalFor(room.game, null), turnDeadline, turnPlayer: soonest?.pid ?? null, serverNow: Date.now() });
   for (const ws of room.watchers) if (ws.readyState === ws.OPEN) ws.send(raw);
+}
+
+// A connection-bound baseline for gameplay intents. Rejoin/restart gets a new connection id even when
+// the game has not advanced; a rematch rotates it too, since turn/seq start over on the new island.
+function actionStamp(room, ws) {
+  ws.actionConnection ??= randomBytes(16).toString("hex");
+  return { turn: room.game.turn, baseSeq: room.game.seq, connection: ws.actionConnection };
+}
+
+function freshAction(ws, room, msg) {
+  const stamp = actionStamp(room, ws);
+  const seen = (ws.seat.actionCids ??= []);
+  if (
+    ws.seat.ws !== ws ||
+    typeof msg.cid !== "string" || msg.cid.length === 0 || msg.cid.length > 64 ||
+    !Number.isSafeInteger(msg.turn) || msg.turn !== stamp.turn ||
+    !Number.isSafeInteger(msg.baseSeq) || msg.baseSeq !== stamp.baseSeq ||
+    msg.connection !== stamp.connection || seen.includes(msg.cid)
+  ) {
+    send(ws, { type: "error", message: "stale action: wait for the latest table state and try again." });
+    // Resync this seat only. Refusing an intent must not rearm any clock, run bots, or write a room.
+    const soonest = room.seats.reduce((d, s) => (s.turnDeadline && (!d || s.turnDeadline < d.turnDeadline) ? s : d), null);
+    send(ws, {
+      type: "state", you: ws.seat.pid, game: viewFor(room.game, ws.seat.pid),
+      legal: legalFor(room.game, ws.seat.pid), actionStamp: stamp,
+      turnDeadline: soonest?.turnDeadline ?? null, turnPlayer: soonest?.pid ?? null, serverNow: Date.now(),
+    });
+    return false;
+  }
+  // Consume once before dispatch, including a rules refusal: retrying is a new intent with a new cid.
+  // The bounded seat ledger also covers asks/declines, which do not advance game.seq.
+  seen.push(msg.cid);
+  if (seen.length > 32) seen.shift();
+  return true;
 }
 
 function gains(before, after) {
@@ -677,6 +712,7 @@ function startGame(ws, room) {
     game.players[i].color = s.color;
   });
   room.game = game;
+  for (const seat of room.seats) if (seat.ws) seat.ws.actionConnection = randomBytes(16).toString("hex");
   hear("ui_confirm");
   say(room, "Roll for first place.");
   pushState(room);
@@ -709,6 +745,7 @@ function rematch(ws, room) {
     game.players[i].color = s.color;
   });
   room.game = game;
+  for (const seat of room.seats) seat.ws.actionConnection = randomBytes(16).toString("hex");
   hear("ui_confirm");
   say(room, winner ? `${winner.name} won last time and places first. The rest roll for their order.` : "Roll for first place.");
   publish(room);
@@ -990,6 +1027,7 @@ function handle(ws, raw) {
   if (msg.type === "start") return room.game ? send(ws, { type: "error", message: "Game already started." }) : startGame(ws, room);
   if (msg.type === "again") return rematch(ws, room);
   if (!room.game) return send(ws, { type: "error", message: "not ready" });
+  if (!freshAction(ws, room, msg)) return;
   if (msg.type === "tradeAsk") return ask(ws, room, msg);
   if (msg.type === "tradeAnswer") return answer(ws, room, msg);
   return play(ws, room, msg);

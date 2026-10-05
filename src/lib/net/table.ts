@@ -30,6 +30,12 @@ export interface Gain {
   amount: number;
 }
 
+export interface ActionStamp {
+  turn: number;
+  baseSeq: number;
+  connection: string;
+}
+
 export interface ChatLine {
   id: number;
   seat: string;
@@ -58,7 +64,7 @@ export interface TableEvents {
   seats(msg: { code: string; seats: Seat[]; watching?: number }): void;
   // `you` is null on a watcher's state. `turnDeadline` is the host's clock (epoch ms) for the seat `turnPlayer`;
   // `serverNow` is the host's clock as it sent this.
-  state(msg: { you: string | null; game: GameState; legal: Legal; turnDeadline?: number | null; turnPlayer?: string | null; serverNow?: number }): void;
+  state(msg: { you: string | null; game: GameState; legal: Legal; actionStamp?: ActionStamp; turnDeadline?: number | null; turnPlayer?: string | null; serverNow?: number }): void;
   rolled(msg: { dice: [number, number]; sum: number; gains: Gain[]; short: Resource[] }): void;
   chat(line: ChatLine): void;
   react(r: Reaction): void;
@@ -183,11 +189,21 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
   // The last rejoin answer was "Seat is taken.": another tab of ours holds the seat, so giving up must keep the secret.
   let taken = false;
   let timer: ReturnType<typeof setTimeout> | null = null;
+  let stamp: ActionStamp | null = null;
 
   const send = (msg: Record<string, unknown>) => {
     const raw = JSON.stringify(msg);
     if (ws.readyState === 1) ws.send(raw);
     else queue.push(raw);
+  };
+
+  // Gameplay is never queued. Only the latest state on this connection authorizes an intent.
+  const act = (msg: Record<string, unknown>) => {
+    if (!stamp || ws.readyState !== 1 || rejoining || closedByUs) return false;
+    // getRandomValues also works on the documented plain-HTTP LAN join; randomUUID requires HTTPS.
+    const cid = Array.from(globalThis.crypto.getRandomValues(new Uint8Array(16)), (b) => b.toString(16).padStart(2, "0")).join("");
+    ws.send(JSON.stringify({ ...msg, ...stamp, cid }));
+    return true;
   };
 
   const giveUp = (keepSeat = false) => {
@@ -199,6 +215,7 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
 
   const dial = () => {
     timer = null;
+    stamp = null;
     ws = new Ctor(url);
     ws.onopen = () => {
       // The rejoin hello goes out here only, never through the queue, so it is sent once per socket.
@@ -211,6 +228,7 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
       for (const raw of queue.splice(0)) ws.send(raw);
     };
     ws.onclose = () => {
+      stamp = null;
       if (closedByUs) return;
       if (!seat) {
         on.closed?.();
@@ -239,6 +257,7 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
   const handle = (msg: { type?: string; [k: string]: unknown }) => {
     switch (msg.type) {
       case "welcome": {
+        stamp = null;
         const m = msg as { code: string; you?: string; host?: boolean; chat?: ChatLine[]; secret?: string; spectator?: true };
         if (typeof m.secret === "string") seat = { code: m.code, secret: m.secret };
         rejoining = false;
@@ -251,6 +270,7 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
         on.seats?.(msg as never);
         break;
       case "state":
+        stamp = (msg as { actionStamp?: ActionStamp }).actionStamp ?? null;
         on.state?.(msg as never);
         break;
       case "rolled":
@@ -303,6 +323,7 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
     watch: (code) => send({ type: "hello", code: code.toUpperCase(), watch: true }),
     peek: (code) => send({ type: "peek", code: code.toUpperCase() }),
     rejoin: (code, secret) => {
+      stamp = null;
       seat = { code: code.toUpperCase(), secret };
       rejoining = true;
       // Not queued: onopen sends it, so a failed first dial cannot leave a second hello behind.
@@ -313,11 +334,14 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
     again: () => send({ type: "again" }),
     act: (action) => {
       const intent = toIntent(action);
-      if (intent) send(intent);
-      return Boolean(intent);
+      return intent ? act(intent) : false;
     },
-    ask: (give, want) => send({ type: "tradeAsk", give, want }),
-    answer: (tradeId, yes) => send({ type: "tradeAnswer", tradeId, yes }),
+    ask: (give, want) => {
+      act({ type: "tradeAsk", give, want });
+    },
+    answer: (tradeId, yes) => {
+      act({ type: "tradeAnswer", tradeId, yes });
+    },
     say: (text) => send({ type: "chat", text }),
     react: (emote, to) => send({ type: "react", emote, to }),
     drop: () => ws.close(),
@@ -327,6 +351,7 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
       dial();
     },
     close: () => {
+      stamp = null;
       closedByUs = true;
       if (timer) clearTimeout(timer);
       timer = null;
