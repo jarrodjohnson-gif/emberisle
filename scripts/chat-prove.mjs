@@ -5,6 +5,8 @@
 // #460: computed glass surfaces, 12 px controls, one primary and >= 4.5:1 text contrast over black, on desktop and phone,
 // including emotes, previews, copy fallback and read-only chat. Zero console errors.
 // #467: board reactions, all six emoji, image delivery, keyboard/cooldown, coalescing, reduced motion and host rejection.
+// #477: Quick reactions and Open chat sit in the top row beside the Table menu: at 390x844, 360x640 and 844x390 with notch insets, on
+// an own Roll turn and another seat's turn, they are whole, in the safe area, clear of the menu and status, 12 px from every board target.
 // Design: docs/design/chat.md "Test plan". Screenshots go to test-results/.
 import { spawn } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
@@ -707,14 +709,7 @@ try {
 
   // 5. Phone: the open dock is a bottom sheet, and the tap that closes it does not reach the board.
   await phone.page.getByRole("button", { name: "Open chat" }).waitFor();
-  await phone.page.waitForFunction(() => /\b100dvh\b/.test(document.querySelector('[data-testid="chat-control-band"]')?.style.bottom ?? ""), null, { timeout: 5000 });
   r = await box(phone, '[aria-label^="Open chat"]');
-  const controlBand = await box(phone, '[data-testid="chat-control-band"]');
-  const stackTop = await phone.page.locator(HUD_STACK).evaluate((el) => el.getBoundingClientRect().top);
-  check(
-    r.left >= controlBand.left && r.right <= controlBand.right && controlBand.right - controlBand.left >= r.vw - 1 && controlBand.bottom <= stackTop - 7,
-    "phone: the minimized button sits in the full-width status-area band above the measured HUD stack",
-  );
   await polish(phone, "minimized", '[aria-label^="Open chat"]');
   await phone.page.getByRole("button", { name: "Open chat" }).click();
   await phone.page.getByTestId("chat-sheet").waitFor({ timeout: 5000 });
@@ -801,96 +796,124 @@ try {
   }
   const atRoll = await seen(a);
   check(atRoll.phase === "roll", `game log: setup is done, phase ${atRoll.phase}`);
+  // #477: Quick reactions and Open chat sit in the top row beside the Table menu, a place that depends on neither the turn nor the
+  // HUD stack. At each phone size, with the notch insets emulated over CDP as hud-safe-area-prove does, on your own Roll turn and
+  // another seat's turn: both buttons are 44 px, whole and inside the safe area, clear of the Table menu, the seat strip and the
+  // status line, at least 12 px from every on-screen vertex, edge and hex, and at the same y on both turns. The board is read
+  // with the camera settled (no glide, no refit due) and the projection unchanged between two reads.
+  const DOCK_SIZES = [
+    { width: 390, height: 844, insets: { top: 47, right: 0, bottom: 34, left: 0 } },
+    { width: 360, height: 640, insets: { top: 24, right: 0, bottom: 24, left: 0 } },
+    { width: 844, height: 390, insets: { top: 0, right: 47, bottom: 21, left: 47 } },
+  ];
+  const SLOP = 12;
+  const dockFailures = [];
+  const dockTop = new Map();
+  const dockSample = (t) =>
+    t.page.evaluate(() => {
+      const i = window.__isle;
+      const st = window.__emberisle.getState().state;
+      if (!i?.lastState || i.lastSeq !== st.seq || i.refitDue || i.glide) return null;
+      const rect = (el) => {
+        if (!el) return null;
+        const r = el.getBoundingClientRect();
+        return { left: r.left, top: r.top, right: r.right, bottom: r.bottom };
+      };
+      const qr = rect(document.querySelector('button[aria-label="Quick reactions"]'));
+      const chat = rect(document.querySelector('button[aria-label^="Open chat"]'));
+      const menu = rect(document.querySelector('button[aria-label="Table menu"]'));
+      if (!qr || !chat || !menu) return null;
+      const status = ["seat-strip", "banner", "turn-banner", "watching-badge"].flatMap((id) => {
+        const r = rect(document.querySelector(`[data-testid="${id}"]`));
+        return r ? [{ id, ...r }] : [];
+      });
+      const probe = document.createElement("div");
+      probe.style.cssText = "position:fixed;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)";
+      document.body.append(probe);
+      const cs = getComputedStyle(probe);
+      const env = [cs.paddingTop, cs.paddingRight, cs.paddingBottom, cs.paddingLeft].map(parseFloat);
+      probe.remove();
+      const targets = [...st.vertices, ...st.edges, ...st.hexes].flatMap(({ id }) => {
+        const p = i.screenOf(id);
+        return p && p.x >= 0 && p.y >= 0 && p.x <= innerWidth && p.y <= innerHeight ? [{ id, x: Math.round(p.x * 10) / 10, y: Math.round(p.y * 10) / 10 }] : [];
+      });
+      return { vw: innerWidth, vh: innerHeight, env, qr, chat, menu, status, targets };
+    });
+  const dockLayout = async (t) => {
+    let last = "";
+    return until(async () => {
+      const m = await dockSample(t);
+      const key = m ? JSON.stringify(m.targets) : "";
+      const stable = m && key === last;
+      last = key;
+      return stable ? m : null;
+    }, "the camera settles with a stable projection", 30_000);
+  };
   const phoneLayout = async (t, ownTurn, checkBanner = false) => {
     const state = await seen(t);
-    const own = state.current === state.you;
-    check(state.phase === "roll" && own === ownTurn, `chat dock: ${ownTurn ? "own" : "another seat's"} turn is available for the 390x844 stack check`);
-    if (await store(t, () => window.__emberisle.getState().chatOpen)) {
-      await t.page.getByRole("button", { name: "Minimize chat" }).click();
-    }
-    await t.page.setViewportSize({ width: 390, height: 844 });
+    check(state.phase === "roll" && (state.current === state.you) === ownTurn, `chat dock: ${ownTurn ? "own" : "another seat's"} turn is available for the layout check`);
+    if (await store(t, () => window.__emberisle.getState().chatOpen)) await t.page.getByRole("button", { name: "Minimize chat" }).click();
     const roll = t.page.getByRole("button", { name: "Roll", exact: true });
-    if (ownTurn) {
-      await roll.waitFor({ state: "visible" });
-    } else {
-      check(await roll.count() === 0, "chat dock: Roll is hidden on another seat's turn");
-    }
-    const layout = () => t.page.waitForFunction(() => {
-      const stack = document.querySelector('[data-testid="turn-banner"]')?.parentElement;
-      const persistentStack = document.querySelector(".pointer-events-none.absolute.bottom-0.inset-x-0.z-10 > .relative > .overflow-y-auto");
-      const controlBand = document.querySelector('[data-testid="chat-control-band"]');
-      const controls = [
-        document.querySelector('button[aria-label="Quick reactions"]'),
-        document.querySelector('button[aria-label^="Open chat"]'),
-      ];
-      if (!stack || persistentStack !== stack || !controlBand || controls.some((control) => !control)) return null;
-      if (!/\b100dvh\b/.test(controlBand.style.bottom)) return null;
-      const bottom = stack.getBoundingClientRect();
-      const band = controlBand.getBoundingClientRect();
-      const gapHit = document.elementFromPoint(innerWidth / 2, band.top + band.height / 2)?.tagName ?? null;
-      const boxes = controls.map((control) => {
-        const r = control.getBoundingClientRect();
-        return { left: r.left, top: r.top, right: r.right, bottom: r.bottom, width: r.width, height: r.height };
+    const turn = ownTurn ? "own Roll turn" : "another seat's turn";
+    const cdp = await t.page.context().newCDPSession(t.page);
+    for (const size of DOCK_SIZES) {
+      const tag = `${size.width}x${size.height}, ${turn}`;
+      await t.page.setViewportSize({ width: size.width, height: size.height });
+      await cdp.send("Emulation.setSafeAreaInsetsOverride", { insets: size.insets });
+      if (ownTurn) await roll.waitFor({ state: "visible" });
+      else if (await roll.count()) dockFailures.push(`${tag}: Roll is showing on another seat's turn`);
+      const m = await dockLayout(t);
+      const want = [size.insets.top, size.insets.right, size.insets.bottom, size.insets.left];
+      const bad = (what) => dockFailures.push(`${tag}: ${what}`);
+      if (m.vw !== size.width || m.vh !== size.height || m.env.some((v, i) => v !== want[i])) bad(`the viewport or inset emulation did not take (${m.vw}x${m.vh}, env ${m.env})`);
+      const safe = { left: size.insets.left, top: size.insets.top, right: size.width - size.insets.right, bottom: size.height - size.insets.bottom };
+      const hit = (a, b) => a.right > b.left && a.left < b.right && a.bottom > b.top && a.top < b.bottom;
+      for (const [name, r] of [["Quick reactions", m.qr], ["Open chat", m.chat]]) {
+        if (r.right - r.left < 44 - 0.5 || r.bottom - r.top < 44 - 0.5) bad(`${name} is ${(r.right - r.left).toFixed(0)}x${(r.bottom - r.top).toFixed(0)}, under 44 px`);
+        if (r.left < safe.left || r.top < safe.top || r.right > safe.right || r.bottom > safe.bottom) bad(`${name} is not fully inside the safe area ${JSON.stringify(r)}`);
+        if (hit(r, m.menu)) bad(`${name} overlaps the Table menu ${JSON.stringify(r)} vs ${JSON.stringify(m.menu)}`);
+        for (const sx of m.status) if (hit(r, sx)) bad(`${name} overlaps ${sx.id} ${JSON.stringify(r)} vs ${JSON.stringify(sx)}`);
+        const near = m.targets.filter((p) => p.x > r.left - SLOP && p.x < r.right + SLOP && p.y > r.top - SLOP && p.y < r.bottom + SLOP);
+        if (near.length) bad(`${near.length} board targets within ${SLOP} px of ${name} ${JSON.stringify(r)}: ${JSON.stringify(near.slice(0, 4))}`);
+      }
+      if (hit(m.qr, m.chat)) bad("Quick reactions overlaps Open chat");
+      const key = `${size.width}x${size.height}`;
+      const mine = Math.round(m.qr.top * 10) / 10;
+      const other = dockTop.get(key);
+      if (other !== undefined) {
+        if (Math.abs(other.qr - mine) > 0.5 || Math.abs(other.chat - m.chat.top) > 0.5) bad(`the buttons moved between turns: y ${other.qr}/${other.chat} before, ${mine}/${m.chat.top} now`);
+      } else dockTop.set(key, { qr: mine, chat: m.chat.top });
+      console.log(`dock ${tag}: ${m.targets.length} targets, Quick reactions x ${m.qr.left.toFixed(0)}-${m.qr.right.toFixed(0)}, Open chat x ${m.chat.left.toFixed(0)}-${m.chat.right.toFixed(0)}, y ${m.qr.top.toFixed(0)}-${m.qr.bottom.toFixed(0)}, Table menu x ${m.menu.left.toFixed(0)}-${m.menu.right.toFixed(0)}`);
+      // The picker opens below the row, whole and inside the safe area, and Escape closes it, with the chat still closed.
+      await t.page.getByRole("button", { name: "Quick reactions", exact: true }).click();
+      const picker = await t.page.locator("#quick-reaction-picker").evaluate((el) => {
+        const r = el.getBoundingClientRect();
+        return { left: r.left, top: r.top, right: r.right, bottom: r.bottom };
       });
-      const state = window.__emberisle.getState().state;
-      const corners = state.vertices.flatMap(({ id }) => {
-        const p = window.__isle.screenOf(id);
-        return p && p.x >= 0 && p.y >= 0 && p.x <= innerWidth && p.y <= innerHeight ? [{ id, x: p.x, y: p.y }] : [];
-      });
-      const coveredCorners = corners.filter((p) => boxes.some((r) => p.x >= r.left && p.x <= r.right && p.y >= r.top && p.y <= r.bottom));
-      return {
-        viewport: { width: innerWidth, height: innerHeight },
-        persistentStack: persistentStack === stack,
-        band: { left: band.left, top: band.top, right: band.right, bottom: band.bottom },
-        gapHit,
-        coveredCorners,
-        stack: { left: bottom.left, top: bottom.top, right: bottom.right, bottom: bottom.bottom },
-        boxes,
-        banner: document.querySelector('[data-testid="banner"]')?.getBoundingClientRect().toJSON() ?? null,
-      };
-    }, null, { timeout: 5000 }).then((handle) => handle.jsonValue());
-    const geometry = await layout();
-    const clear = geometry.boxes.every((r) =>
-      r.right <= geometry.stack.left || r.left >= geometry.stack.right ||
-      r.bottom <= geometry.stack.top || r.top >= geometry.stack.bottom,
-    );
-    check(geometry.viewport.width === 390 && geometry.viewport.height === 844, "chat dock: phone layout uses the 390x844 viewport");
-    check(geometry.persistentStack, "chat dock: the hidden-banner fallback finds the persistent HUD scroller");
-    check(Math.abs(geometry.band.left) <= 1 && Math.abs(geometry.band.right - geometry.viewport.width) <= 1, "chat dock: the status-area row spans the phone width");
-    check(geometry.gapHit === "CANVAS", "chat dock: the gap between edge controls still passes taps to the board");
-    check(geometry.boxes.every((r) => r.left >= 0 && r.top >= 0 && r.right <= geometry.viewport.width && r.bottom <= geometry.viewport.height), "chat dock: both controls fit in the phone viewport");
-    check(geometry.boxes.every((r) => r.width >= 44 && r.height >= 44), `chat dock: both controls are at least 44 px at 390x844 (${geometry.boxes.map((r) => `${r.width}x${r.height}`).join(", ")})`);
-    check(geometry.boxes[0].left < geometry.viewport.width / 4 && geometry.boxes[1].right > geometry.viewport.width * 3 / 4, "chat dock: portrait quick reactions and chat sit at opposite safe edges");
-    check(clear, `chat dock: Quick reactions and Open chat clear the full bottom stack at 390x844, ${ownTurn ? "with Roll showing" : "on another seat's turn"}`);
-    check(geometry.coveredCorners.length === 0, `chat dock: no board corner sits under either button at 390x844${geometry.coveredCorners.length ? ` (${JSON.stringify(geometry.coveredCorners)}; controls ${JSON.stringify(geometry.boxes)})` : ""}, ${ownTurn ? "with Roll showing" : "on another seat's turn"}`);
-    if (checkBanner) {
-      await t.page.evaluate(() => window.__emberisle.setState({ banner: null }));
-      await t.page.waitForFunction(() => !document.querySelector('[data-testid="banner"]'));
-      const before = await layout();
-      await t.page.evaluate(() => window.__emberisle.setState({ banner: "Ember's roll · Ember +2 timber · Ember +1 grain · Pine +2 timber · Pine +1 grain · Tide +2 timber · Tide +1 grain · Moss +2 timber · Moss +1 grain · bank short of timber and grain" }));
-      await t.page.getByTestId("banner").waitFor();
-      const showing = await layout();
-      const longRoll = showing.banner && showing.banner.bottom - showing.banner.top >= 90;
-      check(longRoll, "chat dock: a multi-seat, multi-gain roll status wraps to at least four lines at 390x844");
-      const noOverlap = showing.banner && showing.boxes.every((control) =>
-        control.right <= showing.banner.left || control.left >= showing.banner.right ||
-        control.bottom <= showing.banner.top || control.top >= showing.banner.bottom,
-      );
-      check(noOverlap, "chat dock: both portrait controls clear the visible status banner");
-      const stable = before.boxes.every((box, i) => ["left", "top", "right", "bottom"].every((edge) => Math.abs(box[edge] - showing.boxes[i][edge]) <= 1));
-      const movement = before.boxes.map((box, i) => Object.fromEntries(["left", "top", "right", "bottom"].map((edge) => [edge, Math.round((showing.boxes[i][edge] - box[edge]) * 10) / 10])));
-      check(stable, `chat dock: showing the status banner does not move either portrait control${stable ? "" : ` (${JSON.stringify(movement)})`}`);
-      await t.page.evaluate(() => window.__emberisle.setState({ banner: null }));
-      await t.page.waitForFunction(() => !document.querySelector('[data-testid="banner"]'));
-      const cleared = await layout();
-      check(before.boxes.every((box, i) => ["left", "top", "right", "bottom"].every((edge) => Math.abs(box[edge] - cleared.boxes[i][edge]) <= 1)), "chat dock: clearing the status banner does not move either portrait control");
+      if (picker.left < safe.left || picker.right > safe.right || picker.top < m.qr.bottom || picker.bottom > safe.bottom) bad(`the reaction picker is not inside the safe area, below the buttons ${JSON.stringify(picker)}`);
+      await t.page.keyboard.press("Escape");
+      await t.page.locator("#quick-reaction-picker").waitFor({ state: "detached" });
+      if (await store(t, () => window.__emberisle.getState().chatOpen)) bad("opening the reaction picker opened the chat");
+      if (checkBanner && size.width === 390) {
+        await t.page.evaluate(() => window.__emberisle.setState({ banner: "Ember's roll · Ember +2 timber · Ember +1 grain · Pine +2 timber · Pine +1 grain · Tide +2 timber · Tide +1 grain · Moss +2 timber · Moss +1 grain · bank short of timber and grain" }));
+        await t.page.getByTestId("banner").waitFor();
+        const shown = await dockLayout(t);
+        const banner = shown.status.find((x) => x.id === "banner");
+        if (!banner || banner.bottom - banner.top < 90) bad("a multi-seat roll status did not wrap to four lines");
+        if (banner && [shown.qr, shown.chat].some((r) => hit(r, banner))) bad("a button overlaps the visible status banner");
+        if (Math.abs(shown.qr.top - m.qr.top) > 0.5 || Math.abs(shown.chat.top - m.chat.top) > 0.5 || Math.abs(shown.qr.left - m.qr.left) > 0.5) bad("showing the status banner moved the buttons");
+        await t.page.evaluate(() => window.__emberisle.setState({ banner: null }));
+        await t.page.waitForFunction(() => !document.querySelector('[data-testid="banner"]'));
+      }
     }
+    await cdp.send("Emulation.setSafeAreaInsetsOverride", { insets: { top: 0, right: 0, bottom: 0, left: 0 } });
   };
   const ownTab = await tabForTurn(true);
   const otherTab = await tabForTurn(false);
   const originalViewports = new Map([ownTab, otherTab].map((t) => [t, t.page.viewportSize()]));
   await phoneLayout(ownTab, true, true);
   await phoneLayout(otherTab, false);
+  check(dockFailures.length === 0, `chat dock: top-row buttons at 390x844, 360x640 and 844x390, own and another seat's turn${dockFailures.length ? `\n${dockFailures.join("\n")}` : ""}`);
   for (const [t, viewport] of originalViewports) {
     if (viewport) await t.page.setViewportSize(viewport);
   }
