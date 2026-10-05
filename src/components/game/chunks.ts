@@ -2,7 +2,7 @@
 // render online, so they stay out of the first-load index as one chunk: a pointer or focus on Host, Join or Watch, a
 // join or watch link and a saved seat's rejoin fetch it, and the lobby renders from it, so the dock is already in memory
 // when the table renders. The sheets (How to play, the trade panel, the win screen) open on demand and load as another
-// chunk, fetched on idle by the title and the table.
+// chunk, fetched on idle by the title and the table; the fortune tray (#423) rides with them.
 import { useEffect } from "react";
 import { chunk } from "@/lib/lazy";
 import { useGame } from "@/lib/game/store";
@@ -13,6 +13,7 @@ export const ChatDock = online.pick((m) => m.ChatDock);
 export const ReactionFloats = online.pick((m) => m.ReactionFloats);
 
 export const sheets = chunk(() => import("@/components/game/sheets"));
+export const FortuneTray = sheets.pick((m) => m.FortuneTray);
 export const HowTo = sheets.pick((m) => m.HowTo);
 export const TradePanel = sheets.pick((m) => m.TradePanel);
 export const WinScreen = sheets.pick((m) => m.WinScreen);
