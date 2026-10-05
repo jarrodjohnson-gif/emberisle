@@ -15,7 +15,8 @@ const PRESETS = ["gg", "nice roll", "your turn", "one sec", "ty"];
 const INPUT_ID = "chat-input";
 const HUD_STACK = ".pointer-events-none.absolute.bottom-0.inset-x-0.z-10 > .relative > .overflow-y-auto";
 const CONTROL_BAND_HEIGHT = 56;
-const CONTROL_BAND_BOTTOM_OFFSET = 121;
+// The outer board corners can rise into the old 121 px gap on some turns; keep actions above the fitted board.
+const CONTROL_BAND_BOTTOM_OFFSET = 350;
 
 // Text renders only as React children. The mention is found with split() on the literal "@name", never a regex.
 function Mention({ text, name }: { text: string; name: string }) {
