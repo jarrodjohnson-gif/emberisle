@@ -2,7 +2,9 @@
 // 844x390 (the strip, touch):
 // - every seat box is at most 44 px tall and its points are the largest text in it; no seat text says "0 goods",
 //   "0 fortunes", "goods ·" or " vp"; a seat with goods or fortunes shows them as small counts ("1 good", "3 goods",
-//   "1 fortune" for screen readers) where the cell is at least 160 px wide, a seat with none shows no count;
+//   "1 fortune" for screen readers) where the cell is at least 200 px wide, a seat with none shows no count;
+// - (#485) names read whole (no ellipsis) or in the #420 short form, with and without the Watching chip and on an away seat,
+//   and no seat menu label wraps, at every size;
 // - the roll-off die is on every seat during the roll-off and on none once it is settled;
 // - exactly the seat on turn carries `seat-turn` and aria-current, its dot has the pulse animation and an ink ring, and
 //   both move when the turn moves; under reduced motion the ring stays and the animation goes;
@@ -65,6 +67,7 @@ try {
             box: { l: r.left, t: r.top, r: r.right, b: r.bottom },
             inView: r.left >= 0 && r.top >= 0 && r.right <= innerWidth && r.bottom <= innerHeight,
             text: el.textContent,
+            clipped: [...el.querySelectorAll('[data-testid="seat-name"],[data-testid="seat-away"] > span:nth-child(2)')].filter((x) => shown(x) && x.scrollWidth > x.clientWidth).map((x) => x.textContent),
             spill: texts.filter((x) => x.getBoundingClientRect().top < r.top || x.getBoundingClientRect().bottom > r.bottom).length,
             maxFont: Math.max(...texts.map((x) => parseFloat(getComputedStyle(x).fontSize))),
             vpShown: shown(vp),
@@ -98,6 +101,10 @@ try {
         else assert.ok(phase === "rollOff" && l.die === 1 && l.box.r - l.box.l < 100, `${v.tag} ${phase}: ${l.id} hides its points outside a narrow roll-off cell`);
         assert.doesNotMatch(l.text, /0 goods|0 fortunes|goods ·| vp\b/, `${v.tag} ${phase}: ${l.id} says "${l.text}"`);
       }
+    };
+    // #485: a name is drawn whole or as its short form, never with an ellipsis (nor is the away word).
+    const noClip = (ls, phase) => {
+      for (const l of ls) assert.deepEqual(l.clipped, [], `${v.tag} ${phase}: ${l.id} clips ${JSON.stringify(l.clipped)} in a ${Math.round(l.box.r - l.box.l)} px cell`);
     };
     const checkTurn = (ls, id, phase) => {
       const on = ls.filter((l) => l.turn);
@@ -170,11 +177,12 @@ try {
     ls = await lines();
     checkLines(ls, "main");
     checkTurn(ls, mid.me, "main");
+    noClip(ls, "main");
     const by = (id) => ls.find((l) => l.id === `${v.seat}-${id}`);
     assert.ok(ls.every((l) => l.die === 0), `${v.tag} main: no roll-off die after the roll-off`);
-    // On a strip cell under 160 px the counts yield to the name (the facts are a tap away), so they are read where they fit.
+    // On a strip cell under 200 px the counts yield to the name (the facts are a tap away), so they are read where they fit.
     const cellW = by(mid.a).box.r - by(mid.a).box.l;
-    const wide = v.seat === "rail" || cellW >= 160;
+    const wide = v.seat === "rail" || cellW >= 200;
     console.log(`${v.tag}: cells ${Math.round(cellW)} px, counts ${wide ? "shown" : "folded into the facts"}`);
     if (wide) {
       assert.equal(by(mid.a).goods, "3 goods", `${v.tag} main: seat a shows 3 goods, got ${JSON.stringify(by(mid.a).goods)}`);
@@ -196,6 +204,10 @@ try {
       assert.equal(await button.getAttribute("aria-expanded"), "true", `${v.tag}: the tapped seat is expanded`);
       const facts = await menu.getByTestId("menu-facts").locator("dd").allTextContents();
       const labels = await menu.getByTestId("menu-facts").locator("dt").allTextContents();
+      const wrapped = await menu.evaluate((el) =>
+        [...el.querySelectorAll("dt")].filter((dt) => { const r = document.createRange(); r.selectNodeContents(dt); return r.getBoundingClientRect().height > parseFloat(getComputedStyle(dt).fontSize) * 1.6; }).map((dt) => dt.textContent),
+      );
+      assert.deepEqual(wrapped, [], `${v.tag}: menu labels wrap`);
       const fits = await menu.evaluate((el) => {
         const r = el.getBoundingClientRect();
         return r.left >= 0 && r.right <= innerWidth && r.top >= 0 && r.bottom <= innerHeight;
@@ -218,6 +230,7 @@ try {
     await seat(mid.b).getByTestId("seat-away").waitFor();
     const dropped = (await lines()).find((l) => l.id === `${v.seat}-${mid.b}`);
     assert.ok(dropped.away && dropped.away.w >= 12 && dropped.h <= 44 && dropped.spill === 0, `${v.tag}: the dropped seat shows a marker ${JSON.stringify(dropped.away)}`);
+    noClip(await lines(), "away");
     assert.equal(dropped.away.word, wide, `${v.tag}: the word "reconnecting…" shows where the cell is wide ${JSON.stringify(dropped.away)}`);
     assert.ok((await lines()).filter((l) => l.id !== `${v.seat}-${mid.b}`).every((l) => l.away === null), `${v.tag}: no marker on a seated seat`);
     assert.equal((await factsOf(mid.b))["Connection"], "reconnecting…", `${v.tag}: the dropped seat's facts say so`);
@@ -233,6 +246,7 @@ try {
       const hit = (a, b) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
       return { hits: seats.filter((s) => chrome.some((c) => hit(s, c))).length, inView: seats.every((s) => s.right <= innerWidth && s.left >= 0), badge: chrome[1].width > 0 };
     }, v.seat);
+    noClip(await lines(), "watching");
     await page.evaluate(() => window.__emberisle.setState({ spectator: false }));
     assert.ok(clash.badge && clash.hits === 0 && clash.inView, `${v.tag}: seats clear of the menu button and the Watching chip ${JSON.stringify(clash)}`);
     console.log(`${v.tag}: four one-line seats (<= 44 px, points ${ls[0].vpFont}px/${ls[0].vpWeight}), pulse follows the turn, die only in the roll-off, counts only when held, facts on tap (fortunes by kind, dropped seat), clear of the menu and the Watching chip`);

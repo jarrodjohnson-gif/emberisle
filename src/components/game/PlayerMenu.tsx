@@ -116,10 +116,10 @@ export function PlayerMenu({ player: p, className }: { player: PlayerState; clas
           ))}
         </div>
       ) : null}
-      <dl data-testid="menu-facts" className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-0.5 px-2 py-1 text-xs text-zinc-600">
+      <dl data-testid="menu-facts" className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 px-2 py-1 text-xs text-zinc-600">
         {facts.map(([label, n]) => (
           <div key={label} className="contents">
-            <dt>{label}</dt>
+            <dt className="whitespace-nowrap">{label}</dt>
             <dd className="tabular-nums text-right text-zinc-900">{n}</dd>
           </div>
         ))}
