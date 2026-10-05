@@ -3,9 +3,9 @@
 // #390: a seat change must not carry the last seat's flash tint onto the new seat's tiles.
 // #232: first, the Roll button carries all four seats through the roll-off for first place.
 // #380: each turn change and each rule error reaches a live region (recorded by a MutationObserver, not polled).
-// #410: with the bank out of ore, the Plenty form greys ore out (disabled, aria-disabled, described) and it cannot be picked.
+// #410: with the bank out of ore, the fortune tray's ore chip is greyed out (aria-disabled, described) and it cannot be picked (#423).
 // #430: while p2 owes that discard on p0's turn the banner reads "{p2} — discard 4", not "{p2}'s turn", and p0's turn after.
-// #412: a pick the bank empties while the form is open moves to a card it still has; an empty bank turns Plenty off.
+// #412: a pick the bank empties while the tray is open is dropped and Play waits; an empty bank turns Plenty off.
 import { existsSync } from "node:fs";
 import { chromium } from "playwright";
 import { createServer } from "vite";
@@ -257,32 +257,37 @@ try {
     st.seq += 1;
     g.setState({ state: st, pendingSteal: null, error: null });
   });
-  const plentyA = page.getByLabel("First plenty resource");
-  await plentyA.waitFor({ timeout: STEP_MS });
-  const greyed = await page.locator("select[name^=plenty]").evaluateAll((els) => els.map((s) => {
-    const ore = s.querySelector('option[value="ore"]');
-    return { value: s.value, why: s.getAttribute("aria-description"), disabled: ore.disabled, aria: ore.getAttribute("aria-disabled"), text: ore.textContent,
-      othersOn: [...s.options].filter((o) => o.value !== "ore").every((o) => !o.disabled && !o.hasAttribute("aria-disabled")) };
-  }));
+  // #423: the plenty is played from the fortune tray; the ore chip is greyed out (aria-disabled, described) and neither a tap nor
+  // the keyboard picks it. Grain twice pays two grain.
+  const tray = page.getByTestId("fortune-tray");
+  const openTray = async () => {
+    await page.getByTestId("fortunes-button").click({ timeout: STEP_MS });
+    await tray.waitFor({ timeout: STEP_MS });
+  };
+  const picks = () => page.getByTestId("plenty-picks").textContent();
+  await openTray();
+  const greyed = await page.locator('[data-testid^="plenty-chip-"]').evaluateAll((els) => els.map((b) => ({
+    r: b.dataset.testid.slice("plenty-chip-".length), disabled: b.getAttribute("aria-disabled"), why: b.getAttribute("aria-description") })));
   console.log("plenty with no ore in the bank:", JSON.stringify(greyed));
-  if (greyed.length !== 2 || greyed.some((g) => g.value === "ore" || !g.disabled || g.aria !== "true" || g.text !== "Ore (bank empty)" || g.why !== "The bank has no ore." || !g.othersOn)) {
+  if (greyed.length !== 5 || greyed.some((g) => g.r === "ore" ? g.disabled !== "true" || g.why !== "The bank has no ore." : g.disabled || g.why)) {
     throw new Error(`ore not greyed out: ${JSON.stringify(greyed)}`);
   }
-  // Ore is the last option: the keyboard cannot step from grain onto it.
-  await plentyA.selectOption("grain");
-  await plentyA.focus();
-  await page.keyboard.press("ArrowDown");
-  await page.keyboard.press("End");
-  const stepped = await plentyA.inputValue();
-  if (stepped === "ore") throw new Error("the keyboard picked ore from an empty bank");
-  await page.getByRole("button", { name: "Plenty", exact: true }).click();
+  await page.getByTestId("plenty-chip-ore").focus();
+  await page.keyboard.press("Enter");
+  await page.getByTestId("plenty-chip-ore").click({ force: true });
+  if ((await picks()) !== "Tap two goods") throw new Error(`ore was picked from an empty bank: ${await picks()}`);
+  await page.getByTestId("plenty-chip-grain").click();
+  await page.getByTestId("plenty-chip-grain").click();
+  if ((await picks()) !== "Grain ×2") throw new Error(`two grain picks read ${await picks()}`);
+  await page.getByTestId("fortune-play-plenty").click();
   await page.waitForFunction(() => window.__emberisle.getState().state.playedCard, null, { timeout: STEP_MS });
+  await tray.waitFor({ state: "detached", timeout: STEP_MS });
   const paid = await page.evaluate(() => { const st = window.__emberisle.getState().state; const me = st.players.find((p) => p.id === st.current); return { res: me.resources, plenty: me.hidden.plenty, ore: st.bank.ore }; });
-  console.log(`plenty paid after the keyboard stayed on ${stepped}:`, JSON.stringify(paid));
-  if (paid.plenty !== 0 || paid.res.ore !== 0 || paid.ore !== 0 || Object.values(paid.res).reduce((a, b) => a + b, 0) !== 2) throw new Error(`plenty paid wrong: ${JSON.stringify(paid)}`);
+  console.log("plenty paid, the tray closed:", JSON.stringify(paid));
+  if (paid.plenty !== 0 || paid.res.ore !== 0 || paid.ore !== 0 || paid.res.grain !== 2 || Object.values(paid.res).reduce((a, b) => a + b, 0) !== 2) throw new Error(`plenty paid wrong: ${JSON.stringify(paid)}`);
 
-  // #412: the form is open on timber and the bank runs out of timber; both picks move to clay and the click still pays.
-  // Then with the bank empty of everything, Plenty is off and says why.
+  // #412: timber is picked twice and the bank runs out of timber with the tray open: the picks are dropped and Play waits; clay
+  // twice then pays. Then with the bank empty of everything, Plenty is off and says why.
   const plentyAgain = (bank) => page.evaluate((bank) => {
     const g = window.__emberisle;
     const st = structuredClone(g.getState().state);
@@ -294,22 +299,30 @@ try {
     st.seq += 1;
     g.setState({ state: st, error: null });
   }, bank);
-  const picks = () => page.locator("select[name^=plenty]").evaluateAll((els) => els.map((s) => s.value));
   await plentyAgain({ timber: 5, clay: 5, wool: 5, grain: 5, ore: 5 });
-  await page.waitForFunction(() => [...document.querySelectorAll("select[name^=plenty]")].map((s) => s.value).join() === "timber,timber", null, { timeout: STEP_MS });
+  await openTray();
+  await page.getByTestId("plenty-chip-timber").click();
+  await page.getByTestId("plenty-chip-timber").click();
+  if ((await picks()) !== "Timber ×2") throw new Error(`two timber picks read ${await picks()}`);
   await plentyAgain({ timber: 0 });
-  await page.waitForFunction(() => [...document.querySelectorAll("select[name^=plenty]")].map((s) => s.value).join() === "clay,clay", null, { timeout: STEP_MS })
+  await page.waitForFunction(() => document.querySelector('[data-testid="plenty-picks"]')?.textContent === "Tap two goods", null, { timeout: STEP_MS })
     .catch(async () => { throw new Error(`picks did not leave the emptied timber: ${await picks()}`); });
-  await page.getByRole("button", { name: "Plenty", exact: true }).click();
+  const waits = await page.getByTestId("fortune-play-plenty").getAttribute("aria-disabled");
+  await page.getByTestId("plenty-chip-clay").click();
+  await page.getByTestId("plenty-chip-clay").click();
+  await page.getByTestId("fortune-play-plenty").click();
   await page.waitForFunction(() => window.__emberisle.getState().state.playedCard, null, { timeout: STEP_MS });
   const drained = await page.evaluate(() => { const st = window.__emberisle.getState().state; return st.players.find((p) => p.id === st.current).resources; });
-  console.log("timber emptied with the form open: picks moved to clay, paid", JSON.stringify(drained));
-  if (drained.clay !== 2 || drained.timber !== 0) throw new Error(`drained plenty paid wrong: ${JSON.stringify(drained)}`);
+  console.log(`timber emptied with the tray open: picks dropped (Play waited: ${waits}), clay ×2 paid`, JSON.stringify(drained));
+  if (waits !== "true" || drained.clay !== 2 || drained.timber !== 0) throw new Error(`drained plenty paid wrong: ${JSON.stringify(drained)}`);
   await plentyAgain({ timber: 0, clay: 0, wool: 0, grain: 0, ore: 0 });
-  await page.getByText("The bank is empty.").waitFor({ timeout: STEP_MS });
-  const plentyOff = await page.getByRole("button", { name: "Plenty", exact: true }).isDisabled();
-  console.log(`bank empty of everything: Plenty disabled ${plentyOff}, reason shown`);
-  if (!plentyOff) throw new Error("Plenty is clickable with an empty bank");
+  await openTray();
+  await page.getByText("The bank is empty").waitFor({ timeout: STEP_MS });
+  const plentyOff = await page.getByTestId("fortune-play-plenty").getAttribute("aria-disabled");
+  console.log(`bank empty of everything: Plenty aria-disabled ${plentyOff}, reason shown`);
+  if (plentyOff !== "true") throw new Error("Plenty is playable with an empty bank");
+  await page.keyboard.press("Escape");
+  await tray.waitFor({ state: "detached", timeout: STEP_MS });
 
   // #425: Leave plays click_001 once (a hotseat table has no confirm popover, so it goes straight to the title).
   // #442: Leave table is a row of the table menu; the menu's own open click is not counted.

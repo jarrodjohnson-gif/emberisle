@@ -214,7 +214,7 @@ function nodeSeat(name) {
   return p;
 }
 
-const GAME_CONTROLS = ["Roll", "End turn", "Trade", "Fortune", "Path", "Outpost", "Stronghold", "Wayfarer card", "Yes", "No", "Ready", "Start", "Send", "Place"];
+const GAME_CONTROLS = ["Roll", "End turn", "Trade", "Fortune", "Path", "Outpost", "Stronghold", "Yes", "No", "Ready", "Start", "Send", "Place"];
 
 try {
   // --- The table: two tabs and one client seat, through the lobby to the start.
@@ -312,7 +312,7 @@ try {
   if (wv.hands.some((n) => n !== null) || wv.hiddenVp.some((n) => n !== 0) || wv.hasSeed) throw new Error(`hidden info reached the watcher before the win: ${JSON.stringify([wv.hands, wv.hiddenVp, wv.hasSeed])}`);
   if (wv.legalCount !== 0 || wv.highlights !== 0 || wv.glow !== 0 || wv.interactive !== false) throw new Error(`the watcher has a glow: ${JSON.stringify([wv.legalCount, wv.highlights, wv.glow, wv.interactive])}`);
   if (wv.placeList !== 0) throw new Error("the watcher has a PlaceList (#376) of targets");
-  const pressable = wv.buttons.filter((t) => GAME_CONTROLS.includes(t));
+  const pressable = wv.buttons.filter((t) => GAME_CONTROLS.includes(t) || /^Fortunes/.test(t));
   if (pressable.length) throw new Error(`the watcher can press ${JSON.stringify(pressable)}`);
   if (!wv.buttons.includes("Leave table")) throw new Error(`the watcher has no Leave table button: ${JSON.stringify(wv.buttons)}`);
   if (!wv.turnBanner || wv.turnBanner.startsWith("Your")) throw new Error(`the watcher's turn line: "${wv.turnBanner}"`);

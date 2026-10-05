@@ -166,7 +166,7 @@ try {
   });
   console.log("offline steal picker:", JSON.stringify(steal));
 
-  // #184: the path, plenty, and monopoly fortunes each have a way to be played from the HUD.
+  // #184: the path, plenty, and monopoly fortunes each have a way to be played from the HUD (#423: through the fortune tray).
   const arm = (hidden) =>
     page.evaluate((hidden) => {
       const g = window.__emberisle;
@@ -209,10 +209,17 @@ try {
     };
   });
   console.log("path fortune:", JSON.stringify(road));
+  const tray = page.getByTestId("fortune-tray");
+  const openTray = async () => {
+    await page.getByTestId("fortunes-button").click({ timeout: 5000 });
+    await tray.waitFor({ timeout: 5000 });
+  };
   const before = await arm({ plenty: 1 });
-  await page.selectOption("select[name=plentyA]", "ore");
-  await page.selectOption("select[name=plentyB]", "wool");
-  await page.getByRole("button", { name: "Plenty", exact: true }).click();
+  await openTray();
+  await page.getByTestId("plenty-chip-ore").click();
+  await page.getByTestId("plenty-chip-wool").click();
+  await page.getByTestId("fortune-play-plenty").click();
+  await tray.waitFor({ state: "detached", timeout: 5000 });
   const plenty = await page.evaluate((before) => {
     const g = window.__emberisle;
     const me = g.getState().state.players.find((p) => p.id === g.getState().localId);
@@ -220,8 +227,10 @@ try {
   }, before);
   console.log("plenty fortune:", JSON.stringify(plenty));
   const mono = await arm({ monopoly: 1 });
-  await page.selectOption("select[name=monopoly]", "ore");
-  await page.getByRole("button", { name: "Monopoly", exact: true }).click();
+  await openTray();
+  await page.getByTestId("monopoly-chip-ore").click();
+  await page.getByTestId("fortune-play-monopoly").click();
+  await tray.waitFor({ state: "detached", timeout: 5000 });
   const monopoly = await page.evaluate((before) => {
     const g = window.__emberisle;
     const st = g.getState().state;
@@ -296,7 +305,9 @@ try {
     st.players[0].knightsPlayed = 0;
     g.setState({ state: st, localId: "p0", mode: "practice", buildMode: "none", pendingSteal: null, error: null });
   });
-  await page.getByTestId("knight-button").click({ timeout: 5000 });
+  await openTray();
+  await page.getByTestId("fortune-play-knight").click();
+  await tray.waitFor({ state: "detached", timeout: 5000 });
   const knight = await page.evaluate(() => {
     const g = window.__emberisle;
     const armed = g.getState().buildMode;
