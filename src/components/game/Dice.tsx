@@ -37,8 +37,9 @@ function Die({ value, big }: { value: number; big?: boolean }) {
   );
 }
 
-// True while the roll moment holds the dice centre screen, so the resting row waits for them to land (#440).
-const useMomentUp = create<{ up: boolean }>(() => ({ up: false }));
+// True while the roll moment holds the dice centre screen, so the resting row waits for them to land (#440), and the gains
+// and the turn moment wait for the centre to be free.
+export const useMomentUp = create<{ up: boolean }>(() => ({ up: false }));
 
 export function Dice({ values: [a, b] }: { values: [number, number] }) {
   const up = useMomentUp((s) => s.up);

@@ -1,6 +1,6 @@
 // #381: UI text meets WCAG 1.4.3 (4.5:1). Reads computed colours of the title's Play (primary), Host a table and Join (secondary)
-// buttons, the quiet row (Four seats, one table, How to play; #454) and the 12 px "3 bots, no network" line, and checks white on the `sea-ink` and `accent-ink` fills that Start,
-// End turn and the 7 use (#444 took them off the title).
+// buttons, the quiet row (Four seats, one table, How to play; #454) and the 12 px "3 bots, no network" line, and checks white on the `sea-ink` and `accent-ink` fills that Start
+// and the 7 use (#444 took them off the title; End turn is now the ink primary or a secondary).
 // #424: text chips over the island, sampled from screenshots. With the chip's text made transparent, its box (inside the
 // border and in from the rounded corners) is screenshotted; the computed text colour is measured against the mean and the darkest 5 % of those background pixels (both >= 4.5:1).
 // Chips: another seat's turn banner over the setup board (hotseat) at 1280x720 and 390x844, your own turn banner (versus the
@@ -80,7 +80,7 @@ try {
     ["Four seats, one table (quiet) on bg", ratio(read.quietSeats.fg, read.bg)],
     ["How to play (quiet) on surface", ratio(read.quietHow.fg, read.surface)],
     ["How to play (quiet) on bg", ratio(read.quietHow.fg, read.bg)],
-    ["white on sea-ink (Start, End turn)", ratio([255, 255, 255], read.seaInk)],
+    ["white on sea-ink (Start)", ratio([255, 255, 255], read.seaInk)],
     ["white on accent-ink", ratio([255, 255, 255], read.accentInk)],
     ["caption 12 px on surface", ratio(read.caption, read.surface)],
     ["caption 12 px on bg", ratio(read.caption, read.bg)],
