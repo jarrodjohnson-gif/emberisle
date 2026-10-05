@@ -33,8 +33,9 @@ export default function IslandCanvas() {
     const sync = () => {
       const s = useGame.getState();
       renderer.setTitleMode(s.screen !== "play");
-      // The chat dock and the trade sheet change the hole the HUD leaves without the game moving.
-      const nextChrome = `${s.chatOpen}|${s.tradeOpen}`;
+      // The chat dock and the trade sheet change the hole the HUD leaves without the game moving; chromeSeq counts the
+      // commits that land one of them from a chunk that was still loading when its flag flipped (#488).
+      const nextChrome = `${s.chatOpen}|${s.tradeOpen}|${s.chromeSeq}`;
       if (nextChrome !== chrome) renderer.remeasure();
       chrome = nextChrome;
       // A new state that drops the pending mark from the legal set, or changes what a tap would do, clears it.

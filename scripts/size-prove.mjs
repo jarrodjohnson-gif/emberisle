@@ -3,7 +3,8 @@
 //
 // To raise a budget on purpose: change its number below, in the same pull request that adds the
 // weight, and say why in the PR. Each budget is the gzip size on main on 2026-10-03 plus 10%
-// (index 105728 bytes, IslandCanvas 166209 bytes).
+// (index 105728 bytes, IslandCanvas 166209 bytes). #488 split the online-only lobby and chat (online) and the on-demand
+// How to play, trade panel and win screen (sheets) out of the index; their budgets are their 2026-10-05 size plus 10%.
 import { readdirSync, readFileSync } from "node:fs";
 import { gzipSync } from "node:zlib";
 
@@ -11,6 +12,8 @@ const DIR = "dist/assets";
 const BUDGETS = [
   { name: "index", gzipBytes: 116301 },
   { name: "IslandCanvas", gzipBytes: 182830 },
+  { name: "online", gzipBytes: 4939 },
+  { name: "sheets", gzipBytes: 4223 },
 ];
 
 let files;

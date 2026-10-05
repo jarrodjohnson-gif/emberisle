@@ -263,6 +263,10 @@ interface GameStore {
   // Who opened the panel, so focus can go back there on close (Safari does not focus buttons on click, #302).
   tradeOpener: HTMLElement | null;
   setTradeOpen: (v: boolean, opener?: HTMLElement | null) => void;
+  // #488: counts the commits that land a lazily loaded dock or panel after its flag above flipped, so the island measures
+  // the hole it leaves once more (IslandCanvas keys its measure on chatOpen, tradeOpen and this).
+  chromeSeq: number;
+  chromeLanded: () => void;
   askTable: (give: Bag, want: Bag) => void;
   answerTrade: (yes: boolean) => void;
   // The player whose action menu is open in the HUD rail or seat strip (docs/design/chat.md "The player action menu").
@@ -357,6 +361,7 @@ export const useGame = create<GameStore>((set, get) => ({
   tradeOutcome: null,
   tradeOpen: false,
   tradeOpener: null,
+  chromeSeq: 0,
   menuFor: null,
   setName: (n) => {
     const name = n.slice(0, 18) || "Ember";
@@ -721,6 +726,7 @@ export const useGame = create<GameStore>((set, get) => ({
     if (!get().spectator) get().net?.react(emote, to);
   },
   setTradeOpen: (v, opener) => set({ tradeOpen: v, tradeOpener: v ? (opener ?? null) : null }),
+  chromeLanded: () => set({ chromeSeq: get().chromeSeq + 1 }),
   askTable: (give, want) => {
     const { mode, state, localId, spectator, net } = get();
     set({ tradeOpen: false });

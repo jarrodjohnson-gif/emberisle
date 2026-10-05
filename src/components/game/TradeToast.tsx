@@ -2,7 +2,7 @@
 // The asker sees the same offer with who has declined, then the outcome for a moment.
 import { useEffect, useId, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { bagText } from "@/components/game/TradePanel";
+import { bagText } from "@/lib/game/trade";
 import { useGame } from "@/lib/game/store";
 import { RESOURCES } from "@/lib/game/types";
 import type { Bag } from "@/lib/net/table";
