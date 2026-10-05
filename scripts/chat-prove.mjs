@@ -539,6 +539,21 @@ try {
   await mutedFloat.waitFor({ timeout: 1500 });
   check(true, "mute: unmuting Pine restores the active reaction");
 
+  await a.page.getByRole("button", { name: "Mute player Pine", exact: true }).click();
+  await a.page.getByRole("button", { name: "Minimize chat" }).click();
+  const mutedUnread = `muted-unread-${Date.now()}`;
+  await c.page.evaluate((text) => window.__emberisle.getState().sendChat(text), mutedUnread);
+  await a.page.waitForFunction((text) => window.__emberisle.getState().chat.some((line) => line.text === text), mutedUnread);
+  check((await a.page.getByTestId("chat-unread").count()) === 0, "mute: a muted player's line does not add to unread");
+  const visibleUnread = `visible-unread-${Date.now()}`;
+  await b.page.evaluate((text) => window.__emberisle.getState().sendChat(text), visibleUnread);
+  await a.page.getByTestId("chat-unread").filter({ hasText: "1" }).waitFor({ timeout: 5000 });
+  check((await a.page.getByTestId("chat-unread").textContent()) === "1", "mute: unread counts only the unmuted player's line");
+  await a.page.getByRole("button", { name: "Open chat, 1 unread", exact: true }).click();
+  await a.page.getByTestId("chat-unread").waitFor({ state: "detached" });
+  await a.page.getByRole("button", { name: "Mute players", exact: true }).click();
+  await a.page.getByRole("button", { name: "Unmute player Pine", exact: true }).click();
+
   // Storage can be unavailable in a private or quota-limited context. The preference still applies in this tab.
   await a.page.evaluate(() => {
     const original = Storage.prototype.setItem;
@@ -812,7 +827,36 @@ try {
   await pMenu.waitFor({ state: "detached" });
   await phone.page.getByTestId("chat-sheet").waitFor({ timeout: 5000 });
   check((await phone.page.getByPlaceholder("Say something…").inputValue()) === "@Ember ", 'phone: Mention opens the sheet with "@Ember "');
+  await phone.page.setViewportSize({ width: 667, height: 375 });
+  const shortLandscape = await phone.page.evaluate(() => {
+    const sheet = document.querySelector('[data-testid="chat-sheet"]').getBoundingClientRect();
+    const header = document.querySelector('[data-testid="chat-sheet-header"]').getBoundingClientRect();
+    const mute = document.querySelector('[data-testid="chat-mute-toggle"]').getBoundingClientRect();
+    const minimize = document.querySelector('button[aria-label="Minimize chat"]').getBoundingClientRect();
+    const input = document.getElementById("chat-input").getBoundingClientRect();
+    const paddingBottom = Number.parseFloat(getComputedStyle(document.querySelector('[data-testid="chat-sheet"]')).paddingBottom) || 0;
+    return {
+      width: innerWidth,
+      height: innerHeight,
+      sheetBottom: sheet.bottom,
+      paddingBottom,
+      inputBottom: input.bottom,
+      header: { top: header.top, bottom: header.bottom },
+      mute: { top: mute.top, bottom: mute.bottom, right: mute.right },
+      minimize: { top: minimize.top, bottom: minimize.bottom, left: minimize.left },
+    };
+  });
+  const actionsInHeader =
+    shortLandscape.mute.top >= shortLandscape.header.top && shortLandscape.mute.bottom <= shortLandscape.header.bottom &&
+    shortLandscape.minimize.top >= shortLandscape.header.top && shortLandscape.minimize.bottom <= shortLandscape.header.bottom &&
+    shortLandscape.minimize.left >= shortLandscape.mute.right && shortLandscape.minimize.left - shortLandscape.mute.right <= 8;
+  check(actionsInHeader, "phone 667x375: Mute sits beside Minimize in the header");
+  check(
+    shortLandscape.inputBottom <= shortLandscape.sheetBottom - shortLandscape.paddingBottom + 1 && shortLandscape.inputBottom <= shortLandscape.height - shortLandscape.paddingBottom + 1,
+    `phone 667x375: chat input clears the bottom safe padding (${shortLandscape.paddingBottom}px)`,
+  );
   await phone.page.getByRole("button", { name: "Minimize chat" }).tap();
+  await phone.page.setViewportSize({ width: 390, height: 844 });
 
   // 7. The game log (#305): setup and the first roll through the store, then every dock lists the game's lines as muted
   // rows in with the chat, the Chat chip hides them, and Copy log puts the whole log on the clipboard.
