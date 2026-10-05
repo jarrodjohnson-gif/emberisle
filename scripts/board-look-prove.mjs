@@ -43,8 +43,9 @@ const drawn = (page, n) =>
   page.evaluate(async (n) => {
     const isle = window.__isle;
     const r0 = isle.renders;
-    await new Promise((res) => {
-      const poll = () => (isle.renders >= r0 + n ? res() : requestAnimationFrame(poll));
+    const t0 = performance.now();
+    await new Promise((res, rej) => {
+      const poll = () => (isle.renders >= r0 + n ? res() : performance.now() - t0 > 8000 ? rej(new Error(`drawn: ${n} frame(s) never came`)) : requestAnimationFrame(poll));
       poll();
     });
   }, n);
@@ -336,9 +337,10 @@ try {
         if (g.getState().state.phase === "main") g.getState().setBuildMode("path");
         const s = g.getState();
         const seq = s.state.seq;
-        await new Promise((res) => {
+        const t0 = performance.now();
+        await new Promise((res, rej) => {
           const isle = window.__isle;
-          const poll = () => (isle.lastSeq === seq && !isle.refitDue && !isle.glide ? res() : requestAnimationFrame(poll));
+          const poll = () => (isle.lastSeq === seq && !isle.refitDue && !isle.glide ? res() : performance.now() - t0 > 8000 ? rej(new Error("the fit never settled")) : requestAnimationFrame(poll));
           poll();
         });
         const isle = window.__isle;
@@ -411,7 +413,7 @@ try {
           if (document.elementFromPoint(p.x, p.y)?.tagName !== "CANVAS") covered.push(`${v.id}@${p.x | 0},${p.y | 0}`);
         }
         const fresh = ["left", "right", "top", "bottom", "x", "z"].every((k) => Math.abs(want[k] - isle.fit[k]) < 1e-6);
-        return { seq: st.seq, right: ins.right, fresh, railLeft, rightmost: Math.round(rightmost), covered, glide: isle.glide !== null };
+        return { seq: st.seq, ins: JSON.stringify(ins), pose: JSON.stringify(["x", "z", "left", "right", "top", "bottom"].map((k) => isle.fit[k])), right: ins.right, fresh, railLeft, rightmost: Math.round(rightmost), covered, glide: isle.glide !== null };
       }, rail);
     // The first-player notice leaves the phase bar a few seconds in, and housekeeping does not refit; start after it has
     // gone, with one measure asked for, so every fit below answers to the hole as it then stands.
@@ -452,6 +454,26 @@ try {
     await settled();
     const closed = await look(null);
     check("1024x768: closing the chat refits it back", closed.seq === online.seq && closed.right === online.right && closed.fresh && closed.covered.length === 0, { online, closed });
+    // Opening the table menu or a seat's popover is not chrome the island makes room for: the hole and the fit stay as they were.
+    await page.evaluate(() => window.__emberisle.getState().setChatOpen(false));
+    await settled();
+    const shut = await look(null);
+    await page.getByRole("button", { name: "Table menu" }).click();
+    await page.locator("#table-menu").waitFor({ timeout: STEP_MS });
+    await settled();
+    const menu = await look(null);
+    check("1024x768: opening the table menu leaves the hole and the fit unchanged", menu.ins === shut.ins && menu.pose === shut.pose && menu.seq === shut.seq, { shut, menu });
+    await page.keyboard.press("Escape");
+    await page.locator("#table-menu").waitFor({ state: "detached", timeout: STEP_MS });
+    await settled();
+    await page.evaluate(() => {
+      const g = window.__emberisle.getState();
+      g.openMenu(g.state.players[1].id);
+    });
+    await page.locator('[data-testid="player-menu"]').waitFor({ timeout: STEP_MS });
+    await settled();
+    const seatMenu = await look(null);
+    check("1024x768: opening a seat popover leaves the hole and the fit unchanged", seatMenu.ins === shut.ins && seatMenu.pose === shut.pose && seatMenu.seq === shut.seq, { shut, seatMenu });
     await page.context().close();
   }
   check("no console errors", errors.length === 0, errors);

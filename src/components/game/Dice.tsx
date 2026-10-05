@@ -110,8 +110,6 @@ export function RollMoment() {
       const dx = to.left + to.width / 2 - (box.left + el.offsetLeft + el.offsetWidth / 2);
       const dy = to.top + to.height / 2 - (box.top + el.offsetTop + el.offsetHeight / 2);
       const scale = Math.min(to.width / el.offsetWidth, to.height / el.offsetHeight);
-      // Armed before the animation, so an `animate` that throws still lets the moment go.
-      done = setTimeout(end, SETTLE_MS);
       try {
         flight = el.animate([{ transform: "none" }, { transform: `translate(${dx}px, ${dy}px) scale(${scale})` }], {
           duration: SETTLE_MS,
@@ -119,8 +117,9 @@ export function RollMoment() {
           fill: "forwards",
         });
       } catch {
-        // No flight: the moment goes when the timer does.
+        // No flight: the moment still goes on the timer below.
       }
+      done = setTimeout(end, SETTLE_MS);
     }, MOMENT_MS);
     window.addEventListener("pointerdown", end, true);
     window.addEventListener("keydown", end, true);

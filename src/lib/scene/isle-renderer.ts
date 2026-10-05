@@ -1008,10 +1008,10 @@ function landKey(state: GameState) {
 }
 
 // The chrome a tap cannot pass through, one box per child of the shell, in canvas pixels. An element that takes pointer
-// events catches taps across its whole box, so it is its own box together with whatever pokes out of it, even when a
-// decorative child inside it (absolute or fixed, pointer-events: none: a flash, a fade) lets taps through. An element that
-// lets taps through is only the union of what is inside it, and so is a taking element with such an in-flow child, since
-// that child is what gives it its size: the chat dock measures as its button and not as the 288 px preview list beside it.
+// events catches taps across its whole box, so it is its own box and nothing more (clipped overflow and sr-only text do not
+// count), even when a decorative child inside it (absolute or fixed, pointer-events: none: a flash, a fade) lets taps through.
+// An element that lets taps through is only the union of what is inside it, and so is a taking element with such an in-flow
+// child, since that child is what gives it its size: the chat dock measures as its button and not as the 288 px preview list.
 function solidRects(shell: Element, canvas: Element): Rect[] {
   const base = canvas.getBoundingClientRect();
   const local = (el: Element): Rect => {
@@ -1028,8 +1028,9 @@ function solidRects(shell: Element, canvas: Element): Rect[] {
     let u: Rect | null = null;
     for (const k of kids) u = join(u, k.r);
     if (cs.pointerEvents === "none") return { r: u, porous: cs.position !== "absolute" && cs.position !== "fixed" };
-    if (kids.some((k) => k.porous)) return { r: u, porous: true };
-    return { r: join(local(el), u), porous: false };
+    // A taking element whose only parts let taps through is still itself a target: its own box.
+    if (kids.some((k) => k.porous)) return { r: u ?? local(el), porous: true };
+    return { r: local(el), porous: false };
   };
   return [...shell.children].map((k) => box(k).r).filter((r): r is Rect => r !== null);
 }
