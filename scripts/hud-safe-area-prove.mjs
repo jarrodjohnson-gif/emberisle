@@ -213,7 +213,7 @@ async function pinned(p, moment, name, mustScroll) {
         name: (el.getAttribute("aria-label") || el.textContent.trim()).slice(0, 24),
         y: [Math.round(b.top), Math.round(b.bottom)],
         uncovered: el.contains(top),
-        cueClear: !cue || !end || cue.bottom <= end.top + 0.5,
+        cueClear: !cue || !end || Math.abs(cue.bottom - end.top) <= 1,
       };
     });
     if (!f) break;
@@ -223,6 +223,24 @@ async function pinned(p, moment, name, mustScroll) {
   const bad = seen.filter((f) => !f.uncovered);
   check(`${tag} ${moment}: Tab through ${seen.length} column controls, none hidden behind the pinned row`, seen.length > 3 && bad.length === 0, bad.length ? bad : undefined);
   check(`${tag} ${moment}: the "more below" cue sits above the pinned row`, seen.every((f) => f.cueClear));
+  // The fortune tray (#423) rises from the column's bottom edge over the pinned row: it covers the bar cleanly, inside the viewport.
+  await page.getByRole("button", { name: /^Fortunes/ }).click();
+  const tray = await page.getByRole("dialog").first().waitFor({ timeout: STEP_MS }).then(() => page.waitForTimeout(600)).then(() =>
+    page.evaluate((insets) => {
+      const t = document.querySelector("#fortune-title").closest('[role="dialog"]').getBoundingClientRect();
+      const sc = document.querySelector('[data-testid="turn-banner"]').parentElement;
+      const end = [...sc.querySelectorAll("button")].find((x) => x.textContent.trim() === "End turn");
+      const b = end.parentElement.getBoundingClientRect();
+      const hit = document.elementFromPoint((b.left + b.right) / 2, (b.top + b.bottom) / 2);
+      return {
+        covers: !!hit?.closest('[role="dialog"]'),
+        inside: t.left >= insets.left && t.top >= insets.top && t.right <= innerWidth - insets.right && t.bottom <= innerHeight - insets.bottom,
+        box: [t.left, t.top, t.right, t.bottom].map(Math.round),
+      };
+    }, insets),
+  );
+  check(`${tag} ${moment}: the open fortune tray covers the pinned row and sits inside the safe area`, tray.covers && tray.inside, tray);
+  await page.keyboard.press("Escape");
 }
 
 // One practice game against the bots, through its real phases.
