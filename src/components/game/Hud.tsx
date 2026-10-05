@@ -188,6 +188,17 @@ export function Hud() {
   // #422: on the player's own Roll or End row the dice ride beside the button instead of taking a row of their own.
   const dice = state.dice ? <Dice values={state.dice} /> : null;
   const diceInBar = mine && /^(main|roll)/.test(state.phase);
+  // #491: in the column the primary action is its own row, pinned to the bottom with a solid ground, so it never scrolls out of reach.
+  const pinned = column ? "sticky bottom-0 z-10 rounded-[16px] border border-border bg-surface p-1" : "";
+
+  const endRow = (
+    <div className={cn("flex gap-2 *:self-center", column ? cn(pinned, "justify-end") : "ml-auto")}>
+      {dice}
+      <Button size="sm" variant="sea" className={phone ? "h-11" : undefined} onClick={() => dispatch({ type: "endTurn" })}>
+        End turn
+      </Button>
+    </div>
+  );
 
   return (
     <>
@@ -373,19 +384,15 @@ export function Hud() {
                 ) : null}
                 {!state.playedCard && playable(me, "plenty") > 0 ? <PlentyForm /> : null}
                 {!state.playedCard && playable(me, "monopoly") > 0 ? <MonopolyForm /> : null}
-                <div className="ml-auto flex gap-2 *:self-center">
-                  {dice}
-                  <Button size="sm" variant="sea" className={phone ? "h-11" : undefined} onClick={() => dispatch({ type: "endTurn" })}>
-                    End turn
-                  </Button>
-                </div>
+                {column ? null : endRow}
               </div>
             ) : null}
+            {state.phase === "main" && mine && column ? endRow : null}
 
             {(state.phase === "roll" || state.phase === "rollOff") && mine ? (
               <div className="flex flex-col gap-2">
                 {knightButton ? <div className="flex flex-wrap gap-1">{knightButton}</div> : null}
-                <div className="flex gap-2 *:self-center">
+                <div className={cn("flex gap-2 *:self-center", pinned)}>
                   {dice}
                   <Button size="lg" className="flex-1" onClick={() => dispatch({ type: "roll" })}>
                     <Dices className="size-5" /> Roll

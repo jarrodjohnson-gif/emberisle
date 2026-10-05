@@ -10,6 +10,9 @@
 // - the hole the HUD leaves (`__isle.insets()`) lies inside the safe rect, and every corner of the island, docks
 //   included, projects inside that hole once the fit has settled (not checked over a full-screen sheet);
 // - zero console errors.
+// #491: on a sideways phone holding a full hand and every fortune, the column scrolls, and the Roll or End turn button
+// (scrolled back to the top, the worst case) still lies fully inside the safe rect, is the topmost element at its centre
+// and takes a real click.
 // The chat dock and sheet are Chat.tsx (another lane): their controls are measured and listed, and fail the run only
 // once CHAT_PENDING is set to false (#475's report names the change they need).
 // Run: npm run hud-safe-area-prove. Port from VITE_PORT, default 8475. Screenshots to test-results/hud-safe-*.png.
@@ -154,6 +157,44 @@ async function prove(p, moment, { island = true } = {}) {
   await page.screenshot({ path: `test-results/hud-safe-${tag}-${moment.replace(/[^a-z0-9]+/gi, "-")}.png` });
 }
 
+// A full hand and every fortune held, the column scrolled to its top: the primary action stays reachable (#491).
+async function pinned(p, moment, name, mustScroll) {
+  const { page, tag, insets } = p;
+  await page.evaluate(() => {
+    const g = window.__emberisle;
+    const st = structuredClone(g.getState().state);
+    const me = st.players.find((x) => x.id === g.getState().localId);
+    for (const r of Object.keys(me.resources)) me.resources[r] = 5;
+    for (const k of Object.keys(me.hidden)) me.hidden[k] = 2;
+    for (const k of Object.keys(me.boughtThisTurn)) me.boughtThisTurn[k] = 0;
+    st.playedCard = false;
+    st.seq += 1;
+    g.setState({ state: st });
+  });
+  await page.waitForTimeout(350);
+  const btn = page.getByRole("button", { name, exact: true });
+  await btn.waitFor({ timeout: STEP_MS });
+  const m = await btn.evaluate((el, insets) => {
+    let sc = el.parentElement;
+    while (sc && getComputedStyle(sc).overflowY !== "auto") sc = sc.parentElement;
+    sc.scrollTop = 0;
+    const b = el.getBoundingClientRect();
+    const top = document.elementFromPoint((b.left + b.right) / 2, (b.top + b.bottom) / 2);
+    return {
+      scrolls: sc.scrollHeight > sc.clientHeight,
+      inside: b.left >= insets.left && b.top >= insets.top && b.right <= innerWidth - insets.right && b.bottom <= innerHeight - insets.bottom,
+      box: [b.left, b.top, b.right, b.bottom].map(Math.round),
+      topmost: el.contains(top),
+      tall: b.height >= 44,
+    };
+  }, insets);
+  if (mustScroll) check(`${tag} ${moment}: the column scrolls (full hand, every fortune)`, m.scrolls);
+  check(`${tag} ${moment}: ${name} is inside the safe area, 44 px tall, uncovered, scrolled to the top`, m.inside && m.topmost && m.tall, m.box);
+  // A trial click runs Playwright's actionability checks (visible, stable, receives events at its point) without pressing.
+  const clickable = await btn.click({ trial: true, timeout: 5000 }).then(() => true, () => false);
+  check(`${tag} ${moment}: ${name} is clickable`, clickable);
+}
+
 // One practice game against the bots, through its real phases.
 async function practice(spec) {
   const p = await phone(spec);
@@ -208,6 +249,7 @@ async function practice(spec) {
   }
   await roll.waitFor({ timeout: STEP_MS });
   await prove(p, "roll");
+  if (spec.width > spec.height) await pinned(p, "roll, full hand", "Roll");
   await roll.click();
 
   // A 7 sends the wayfarer first; then the main phase.
@@ -236,6 +278,7 @@ async function practice(spec) {
   }
   await page.getByRole("button", { name: "End turn" }).waitFor({ timeout: STEP_MS });
   await prove(p, "main");
+  if (spec.width > spec.height) await pinned(p, "main, full hand", "End turn", true);
 
   // A seat's player menu, the Table menu and the trade panel, each opened by its own control.
   // The player's own seat: in its main phase the menu carries the bank trade row.
