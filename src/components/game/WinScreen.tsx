@@ -94,9 +94,12 @@ function Panel() {
       className="absolute inset-0 z-20 flex items-center justify-center bg-bg/60 p-safe backdrop-blur-sm"
     >
       <div className="flex max-h-full w-full max-w-2xl flex-col rounded-[28px] border border-white/50 bg-surface p-5 text-center sm:p-6">
-        <p id="win-headline" data-testid="win-headline" className="font-display text-3xl" style={{ color: winner.color }}>
-          {winner.name} wins
-        </p>
+        <div className="flex items-center justify-center gap-2.5">
+          <span aria-hidden="true" className="size-4 shrink-0 rounded-full" style={{ background: winner.color }} />
+          <p id="win-headline" data-testid="win-headline" className="font-display text-3xl text-fg">
+            {winner.name} wins
+          </p>
+        </div>
         <div className="mt-4 min-h-0 overflow-auto">
           <table className="w-full border-collapse text-sm">
             <thead>

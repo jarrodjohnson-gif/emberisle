@@ -6,6 +6,7 @@
 // Chips: another seat's turn banner over the setup board (hotseat) at 1280x720 and 390x844, your own turn banner (versus the
 // isle), and the log line at 1280x720. Worst case, computed: every text on a glass chip against the glass token
 // composited over black (the darkest board the blur can show).
+// #513: the win headline (dark text, seat colour as a dot) for each seat colour as winner, same text-transparent sampling.
 // Run: npm run contrast-prove
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
@@ -230,6 +231,29 @@ try {
     }, null, { polling: 100, timeout: 60_000 });
     sampled.push(...(await sample(pg, "turn-banner", `${tag} your turn banner`)));
     await pg.screenshot({ path: `test-results/contrast-prove-${tag}.png` });
+    await pg.close();
+  }
+  // #513: the win headline on the sheet, for every seat colour as the winner, sampled with its text made transparent.
+  {
+    const pg = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+    pg.on("console", (m) => m.type() === "error" && errors.push(m.text()));
+    pg.on("pageerror", (e) => errors.push(String(e)));
+    await pg.goto(`http://127.0.0.1:${PORT}/`);
+    await pg.getByRole("button", { name: "Join", exact: true }).waitFor();
+    await pg.evaluate(() => window.__emberisle.getState().startHotseat(4));
+    for (let i = 0; i < 4; i++) {
+      const seat = await pg.evaluate((i) => {
+        const g = window.__emberisle;
+        const st = structuredClone(g.getState().state);
+        st.phase = "over";
+        st.winner = st.players[i].id;
+        st.seq += 1;
+        g.setState({ state: st });
+        return st.players[i].color;
+      }, i);
+      await pg.getByTestId("win-headline").waitFor();
+      sampled.push(...(await sample(pg, "win-headline", `win headline, winner ${seat}`)));
+    }
     await pg.close();
   }
   for (const [name, r] of sampled) {
