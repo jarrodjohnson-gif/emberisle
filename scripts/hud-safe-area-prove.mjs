@@ -185,14 +185,44 @@ async function pinned(p, moment, name, mustScroll) {
       inside: b.left >= insets.left && b.top >= insets.top && b.right <= innerWidth - insets.right && b.bottom <= innerHeight - insets.bottom,
       box: [b.left, b.top, b.right, b.bottom].map(Math.round),
       topmost: el.contains(top),
+      inScroller: b.top >= sc.getBoundingClientRect().top && b.bottom <= sc.getBoundingClientRect().bottom,
       tall: b.height >= 44,
     };
   }, insets);
   if (mustScroll) check(`${tag} ${moment}: the column scrolls (full hand, every fortune)`, m.scrolls);
-  check(`${tag} ${moment}: ${name} is inside the safe area, 44 px tall, uncovered, scrolled to the top`, m.inside && m.topmost && m.tall, m.box);
-  // A trial click runs Playwright's actionability checks (visible, stable, receives events at its point) without pressing.
-  const clickable = await btn.click({ trial: true, timeout: 5000 }).then(() => true, () => false);
-  check(`${tag} ${moment}: ${name} is clickable`, clickable);
+  check(`${tag} ${moment}: ${name} is inside the safe area, 44 px tall, uncovered, scrolled to the top`, m.inside && m.topmost && m.inScroller && m.tall, m.box);
+  if (!mustScroll) return;
+  // Keyboard: Tab through the column from its top; every focused control stays uncovered (the pinned row does not hide it),
+  // and the "more below" cue does not sit under that row.
+  await page.evaluate(() => {
+    const sc = document.querySelector('[data-testid="turn-banner"]').parentElement;
+    sc.scrollTop = 0;
+    sc.querySelector("button").focus();
+  });
+  const seen = [];
+  for (let i = 0; i < 30; i++) {
+    const f = await page.evaluate(() => {
+      const el = document.activeElement;
+      const sc = document.querySelector('[data-testid="turn-banner"]').parentElement;
+      if (!sc.contains(el)) return null;
+      const b = el.getBoundingClientRect();
+      const top = document.elementFromPoint((b.left + b.right) / 2, (b.top + b.bottom) / 2);
+      const cue = document.querySelector('[data-testid="hud-more-below"]')?.getBoundingClientRect();
+      const end = [...sc.querySelectorAll("button")].find((x) => x.textContent.trim() === "End turn")?.parentElement.getBoundingClientRect();
+      return {
+        name: (el.getAttribute("aria-label") || el.textContent.trim()).slice(0, 24),
+        y: [Math.round(b.top), Math.round(b.bottom)],
+        uncovered: el.contains(top),
+        cueClear: !cue || !end || cue.bottom <= end.top + 0.5,
+      };
+    });
+    if (!f) break;
+    seen.push(f);
+    await page.keyboard.press("Tab");
+  }
+  const bad = seen.filter((f) => !f.uncovered);
+  check(`${tag} ${moment}: Tab through ${seen.length} column controls, none hidden behind the pinned row`, seen.length > 3 && bad.length === 0, bad.length ? bad : undefined);
+  check(`${tag} ${moment}: the "more below" cue sits above the pinned row`, seen.every((f) => f.cueClear));
 }
 
 // One practice game against the bots, through its real phases.

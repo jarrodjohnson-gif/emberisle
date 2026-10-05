@@ -188,11 +188,11 @@ export function Hud() {
   // #422: on the player's own Roll or End row the dice ride beside the button instead of taking a row of their own.
   const dice = state.dice ? <Dice values={state.dice} /> : null;
   const diceInBar = mine && /^(main|roll)/.test(state.phase);
-  // #491: in the column the primary action is its own row, pinned to the bottom with a solid ground, so it never scrolls out of reach.
-  const pinned = column ? "sticky bottom-0 z-10 rounded-[16px] border border-border bg-surface p-1" : "";
+  // #491: in the column End turn is its own row pinned to the bottom of the scroller on a solid ground, so it never scrolls out of reach.
+  const pinEnd = column && state.phase === "main" && mine;
 
   const endRow = (
-    <div className={cn("flex gap-2 *:self-center", column ? cn(pinned, "justify-end") : "ml-auto")}>
+    <div className={cn("flex gap-2 *:self-center", column ? "sticky bottom-0 z-10 justify-end rounded-[16px] bg-surface p-1" : "ml-auto")}>
       {dice}
       <Button size="sm" variant="sea" className={phone ? "h-11" : undefined} onClick={() => dispatch({ type: "endTurn" })}>
         End turn
@@ -272,7 +272,7 @@ export function Hud() {
               // #383: stop under the header (or the portrait seat strip) and leave the island at least ~8 rem.
               // #422: the column runs from under the header to the bottom edge every phase, so the hole beside it never moves.
               column
-                ? "h-[calc(100dvh-4.25rem-max(0.75rem,env(safe-area-inset-bottom)))] [&>:first-child]:mt-auto"
+                ? "h-[calc(100dvh-4.25rem-max(0.75rem,env(safe-area-inset-bottom)))] scroll-pb-16 [&>:first-child]:mt-auto"
                 : portrait ? "max-h-[calc(100dvh-16rem)]" : "max-h-[calc(100dvh-13rem)]",
             )}
           >
@@ -392,7 +392,7 @@ export function Hud() {
             {(state.phase === "roll" || state.phase === "rollOff") && mine ? (
               <div className="flex flex-col gap-2">
                 {knightButton ? <div className="flex flex-wrap gap-1">{knightButton}</div> : null}
-                <div className={cn("flex gap-2 *:self-center", pinned)}>
+                <div className={"flex gap-2 *:self-center"}>
                   {dice}
                   <Button size="lg" className="flex-1" onClick={() => dispatch({ type: "roll" })}>
                     <Dices className="size-5" /> Roll
@@ -414,7 +414,7 @@ export function Hud() {
             <div
               data-testid="hud-more-below"
               aria-hidden
-              className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-zinc-900/40 to-transparent"
+              className={cn("pointer-events-none absolute inset-x-0 h-8 bg-gradient-to-t from-zinc-900/40 to-transparent", pinEnd ? "bottom-14" : "bottom-0")}
             />
           ) : null}
         </div>
