@@ -867,6 +867,14 @@ try {
       const s = window.__emberisle.getState();
       return { you: s.localId, current: s.state.current, phase: s.state.phase, seq: s.state.seq, dice: s.state.dice, outpost: s.legal?.outpost ?? [], path: s.legal?.path ?? [] };
     });
+  const tabForTurn = (ownTurn) =>
+    until(async () => {
+      const states = await Promise.all(all.map(seen));
+      const current = states[0].current;
+      if (states.some((state) => state.phase !== "roll" || state.current !== current)) return null;
+      const index = states.findIndex((state) => (state.current === state.you) === ownTurn);
+      return index < 0 ? null : all[index];
+    }, `a consistent ${ownTurn ? "current" : "other"} player's roll view`);
   const byId = {};
   for (const t of all) byId[(await seen(t)).you] = t;
   for (let step = 0; step < 16; step++) {
@@ -986,15 +994,15 @@ try {
       check(before.boxes.every((box, i) => ["left", "top", "right", "bottom"].every((edge) => Math.abs(box[edge] - cleared.boxes[i][edge]) <= 1)), "chat dock: clearing the status banner does not move either portrait control");
     }
   };
-  const ownTab = byId[atRoll.current];
-  const otherTab = all.find((t) => t !== ownTab);
+  const ownTab = await tabForTurn(true);
+  const otherTab = await tabForTurn(false);
   const originalViewports = new Map([ownTab, otherTab].map((t) => [t, t.page.viewportSize()]));
   await phoneLayout(ownTab, true, true);
   await phoneLayout(otherTab, false);
   for (const [t, viewport] of originalViewports) {
     if (viewport) await t.page.setViewportSize(viewport);
   }
-  await act(byId[atRoll.current], "dispatch", [{ type: "roll" }]);
+  await act(await tabForTurn(true), "dispatch", [{ type: "roll" }]);
   await until(async () => ((await seen(a)).dice ? true : null), "the first roll reaches Ember");
   const rowsOf = (t) => t.page.getByTestId("chat-log").getByTestId("log-row").allTextContents();
   for (const t of all) {
