@@ -26,26 +26,30 @@
     .trit-d { color: #efc1be; }
     .trit-p { color: #336a63; }
     .seat-fill { fill: currentColor; }
+    .prot-e, .prot-t, .prot-d, .prot-p { --rim-dark: #1a1916; --rim-cream: #faf6e7; }
+    .deut-e, .deut-t, .deut-d, .deut-p { --rim-dark: #1b1a16; --rim-cream: #fcf8e8; }
+    .trit-e, .trit-t, .trit-d, .trit-p { --rim-dark: #1d1818; --rim-cream: #fff3f2; }
+    .seat-fill { fill: currentColor; }
   </style>
   <defs>
     <symbol id="path-piece" viewBox="-22 -18 44 36">
-      <rect x="-19" y="-5" width="38" height="12" rx="2" fill="#29231f"/>
-      <rect x="-17" y="-7" width="34" height="3" rx="1" fill="#fff6e8"/>
+      <rect x="-19" y="-5" width="38" height="12" rx="2" fill="var(--rim-dark, #29231f)"/>
+      <rect x="-17" y="-7" width="34" height="3" rx="1" fill="var(--rim-cream, #fff6e8)"/>
       <rect x="-15" y="-13" width="30" height="6" rx="1" class="seat-fill"/>
-      <path d="M-5-13v6M5-13v6" stroke="#29231f" stroke-width="1.3"/>
+      <path d="M-5-13v6M5-13v6" stroke="var(--rim-dark, #29231f)" stroke-width="1.3"/>
     </symbol>
     <symbol id="outpost-piece" viewBox="-22 -18 44 36">
-      <path d="M-18 12h36v4h-36z" fill="#29231f"/>
-      <path d="M-15 8h30v4h-30z" fill="#fff6e8"/>
+      <path d="M-18 12h36v4h-36z" fill="var(--rim-dark, #29231f)"/>
+      <path d="M-15 8h30v4h-30z" fill="var(--rim-cream, #fff6e8)"/>
       <path d="M-12-1h24v9h-24z" class="seat-fill"/>
-      <path d="M-16-2 0-14 16-2z" class="seat-fill" stroke="#29231f" stroke-width="1.5" stroke-linejoin="round"/>
-      <path d="M-5 2h5v6h-5z" fill="#29231f"/>
+      <path d="M-16-2 0-14 16-2z" class="seat-fill" stroke="var(--rim-dark, #29231f)" stroke-width="1.5" stroke-linejoin="round"/>
+      <path d="M-5 2h5v6h-5z" fill="var(--rim-dark, #29231f)"/>
     </symbol>
     <symbol id="stronghold-piece" viewBox="-22 -18 44 36">
-      <path d="M-19 12h38v4h-38z" fill="#29231f"/>
-      <path d="M-16 8h32v4h-32z" fill="#fff6e8"/>
-      <path d="M-13 7V-8h5v4h4v-4h8v4h4v-4h5V7z" class="seat-fill" stroke="#29231f" stroke-width="1.5" stroke-linejoin="round"/>
-      <path d="M-3-2h6v9h-6z" fill="#29231f"/>
+      <path d="M-19 12h38v4h-38z" fill="var(--rim-dark, #29231f)"/>
+      <path d="M-16 8h32v4h-32z" fill="var(--rim-cream, #fff6e8)"/>
+      <path d="M-13 7V-8h5v4h4v-4h8v4h4v-4h5V7z" class="seat-fill" stroke="var(--rim-dark, #29231f)" stroke-width="1.5" stroke-linejoin="round"/>
+      <path d="M-3-2h6v9h-6z" fill="var(--rim-dark, #29231f)"/>
     </symbol>
   </defs>
 
