@@ -2,13 +2,16 @@
 // `chunk(load)` wraps one dynamic import. `prefetch()` fetches it early and quietly (on idle, or on hover/focus of the
 // trigger); `pick(select)` makes a component for one export. Once the module is loaded the component renders it on its
 // first pass with no suspended frame, so a prefetched chunk never shows a blank frame or a fallback. Until then it
-// suspends on the shared load; a failed load reaches the LazyBoundary around it and is forgotten a second later, so the
-// next open or mount tries the network again.
+// suspends on the shared load; a failed load reaches the LazyBoundary around it and is forgotten there (or a second later
+// if only a prefetch asked), so the next open or mount tries the network again.
 import { Component, createElement, Suspense, use, type ComponentType, type ReactNode } from "react";
 
 // A promise React's `use` can read without suspending once it has settled: it carries its own status, as React's thenable
 // protocol allows, so a loaded chunk renders synchronously on every later pass (React must see `use` called on each pass).
-type Tracked<M> = Promise<M> & { status?: "fulfilled" | "rejected"; value?: M; reason?: unknown };
+type Tracked<M> = Promise<M> & { status?: "fulfilled" | "rejected"; value?: M; reason?: unknown; waited?: boolean };
+
+// The boundary that catches a chunk's failure forgets it, so the next mount asks the network: keyed by the error thrown.
+const caught = new WeakMap<object, () => void>();
 
 export function chunk<M>(load: () => Promise<M>) {
   let pending: Tracked<M> | undefined;
@@ -30,9 +33,14 @@ export function chunk<M>(load: () => Promise<M>) {
       (e: unknown) => {
         p.status = "rejected";
         p.reason = e;
-        // The rejected load stays for a second: React re-renders whatever suspended on it as soon as it settles, and that
-        // render has to reach the error boundary, not ask the network again. A retry comes later, from a press or a mount.
-        setTimeout(() => (pending = undefined), 1000);
+        // The rejected load stays: React re-renders whatever suspended on it as soon as it settles, and that render has to
+        // reach the error boundary, not ask the network again. The boundary forgets it once caught; a failed prefetch
+        // nobody rendered on is forgotten a second later (or by the first mount that meets it, below).
+        const forget = () => {
+          if (pending === p) pending = undefined;
+        };
+        setTimeout(forget, 1000);
+        if (typeof e === "object" && e !== null) caught.set(e, forget);
         failedUrl = chunkUrl(e) ?? failedUrl;
         throw e;
       },
@@ -43,8 +51,16 @@ export function chunk<M>(load: () => Promise<M>) {
   const prefetch = () => preload().then(() => true, () => false);
   const pick = <P extends object>(select: (m: M) => ComponentType<P>) =>
     function Lazy(props: P) {
+      let p = preload();
+      // A failed prefetch no render waited on (the table's idle one, with the win screen mounting at game over) is dropped,
+      // and this mount asks the network. A failure this component waited on has to reach the boundary, which forgets it.
+      if (p.status === "rejected" && !p.waited) {
+        pending = undefined;
+        p = preload();
+      }
+      if (!p.status) p.waited = true;
       // React's type for `use` wants one settled shape at a time; the promise reports whichever it is in at run time.
-      return createElement(select(use(preload() as Promise<M>)), props);
+      return createElement(select(use(p as Promise<M>)), props);
     };
   return { prefetch, pick };
 }
@@ -68,6 +84,9 @@ export class LazyBoundary extends Component<BoundaryProps, { failed: boolean; re
   state = { failed: false, retryKey: this.props.retryKey };
   static getDerivedStateFromError() {
     return { failed: true };
+  }
+  componentDidCatch(e: unknown) {
+    if (typeof e === "object" && e !== null) caught.get(e)?.();
   }
   static getDerivedStateFromProps(props: BoundaryProps, state: { failed: boolean; retryKey?: string }) {
     return props.retryKey !== state.retryKey ? { failed: false, retryKey: props.retryKey } : null;
