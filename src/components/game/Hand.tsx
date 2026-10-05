@@ -22,10 +22,6 @@ const PAINT: Record<Resource, string> = {
 
 const FLASH_MS = 1200;
 
-// The ring and the +N are not pointer-events-none on purpose: the renderer measures the hole from the HUD's rects, and a
-// pointer-transparent child makes its tile "porous", so for the flash's 1.2 s the hand measured as loose icons and the island
-// was fitted as if the hand were not there (#439). The tiles take no taps, so nothing is lost.
-
 // The hand's counts are diffed on every state, so a gain flashes +N green and a loss -N red whether it
 // came from a roll, a trade, a build, a discard, or a steal, hotseat and online alike (#170). Only this
 // hand is read: online, the other players arrive as a `goods` count with no `resources`. A change of
@@ -115,7 +111,7 @@ function ResourceHand({ me, flashes }: { me: PlayerState; flashes: ReturnType<ty
                   key={`ring-${flash.at}`}
                   data-testid="hand-ring"
                   aria-hidden
-                  className="absolute inset-0 rounded-chip"
+                  className="pointer-events-none absolute inset-0 rounded-chip"
                   style={{ animation: `resource-ring ${FLASH_MS}ms ease-out forwards` }}
                 />
                 <span
@@ -123,7 +119,7 @@ function ResourceHand({ me, flashes }: { me: PlayerState; flashes: ReturnType<ty
                   data-testid="resource-flash"
                   data-resource={r}
                   data-delta={label}
-                  className="absolute right-1 top-1 text-sm font-semibold tabular-nums"
+                  className="pointer-events-none absolute right-1 top-1 text-sm font-semibold tabular-nums"
                   style={{ animation: `resource-flash ${FLASH_MS}ms ease-out forwards` }}
                 >
                   {label}
@@ -137,9 +133,10 @@ function ResourceHand({ me, flashes }: { me: PlayerState; flashes: ReturnType<ty
   );
 }
 
-// #439: the hand is not on the table until the seat has held a good this game (or the game is in roll/main). Once it is
-// there it stays, so spending down to 0 or a robber does not make it come and go. Online `me` is the local seat; in
-// hotseat it is the seat on turn, so "held" is tracked per seat and a new roll-off starts it over.
+// #439: the hand is not on the table through the roll-off and setup until the seat holds a good. After that it is always
+// there, so spending down to 0 or a robber does not make it come and go. A pure rule of the state: goods cannot go down in
+// setup, so "holds a good" is as good as "has held one", and a reload, a rejoin or a rematch needs no reset. Online `me` is
+// the local seat; in hotseat it is the seat on turn.
 //
 // It is mounted at its full height in the same commit as the state change that brings it, so the renderer's next-frame
 // refit measures the hole with the hand in it; the motion is opacity and translateY only (docs/design/polish.md: never
@@ -148,10 +145,8 @@ function ResourceHand({ me, flashes }: { me: PlayerState; flashes: ReturnType<ty
 export function HandDock({ me, phase }: { me: PlayerState; phase: Phase }) {
   // Read here, not in the hand, so the +N that brings the first good in is not lost to the hand mounting after the change.
   const flashes = useResourceFlashes(me);
-  const held = useRef(new Set<string>());
-  if (phase === "rollOff") held.current.clear();
-  if (RESOURCES.some((r) => me.resources[r] > 0)) held.current.add(me.id);
-  const show = phase === "roll" || phase === "main" || held.current.has(me.id);
+  const hasGoods = RESOURCES.some((r) => me.resources[r] > 0);
+  const show = hasGoods || !["rollOff", "setupSettle", "setupRoad"].includes(phase);
   const [shown, setShown] = useState(show);
   const [rising, setRising] = useState(false);
   if (show !== shown) {

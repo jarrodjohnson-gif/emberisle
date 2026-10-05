@@ -22,7 +22,7 @@ export function TableMenu() {
   const setHowTo = useGame((s) => s.setHowTo);
   const goTitle = useGame((s) => s.goTitle);
   const muted = useMuted();
-  const { state: copied, copy } = useCopy<"code">();
+  const { state: copied, copy, reset } = useCopy<"code">();
   const [open, setOpen] = useState(false);
   const [asking, setAsking] = useState(false);
   const trigger = useRef<HTMLButtonElement>(null);
@@ -35,6 +35,7 @@ export function TableMenu() {
   const refocusLeave = useRef(false);
 
   const close = (refocus: boolean) => {
+    reset();
     setOpen(false);
     setAsking(false);
     if (refocus) trigger.current?.focus();
@@ -50,6 +51,7 @@ export function TableMenu() {
     const onDown = (e: PointerEvent) => {
       const t = e.target as Node | null;
       if (sheet.current?.contains(t) || trigger.current?.contains(t)) return;
+      reset();
       setOpen(false);
       setAsking(false);
     };

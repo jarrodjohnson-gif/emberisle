@@ -181,6 +181,7 @@ async function run(v, reduced) {
     const g = window.__emberisle;
     const st = structuredClone(g.getState().state);
     Object.assign(st.players.find((p) => p.id === st.current).resources, { timber: 0, clay: 0, wool: 0, grain: 0, ore: 0 });
+    st.phase = "main"; // goods only go down once setup is over
     st.seq += 1;
     g.setState({ state: st });
   });
@@ -193,6 +194,7 @@ async function run(v, reduced) {
     const g = window.__emberisle;
     const st = structuredClone(g.getState().state);
     st.current = st.players.find((p) => p.id !== st.current && p.resources && Object.values(p.resources).every((n) => n === 0)).id;
+    st.phase = "setupSettle"; // the hand is hidden for a seat with no goods only while setup is on
     st.seq += 1;
     g.setState({ state: st });
   });
@@ -201,6 +203,66 @@ async function run(v, reduced) {
   const isleGone = await island(page);
   assert.ok(isleGone.bottom < isleFull.bottom, `${tag}: the hole is bigger again without the hand (${isleGone.bottom} < ${isleFull.bottom})`);
   await stillFitted(page, tag, "hand left");
+
+  // #481 item 6: the hand follows the state alone. The seat that held goods is on turn again in a fresh setup with nothing
+  // (a rematch that never renders a roll-off): no hand. A sticky "held" set would still show it.
+  await page.evaluate(() => {
+    const g = window.__emberisle;
+    const st = structuredClone(g.getState().state);
+    const first = st.players[0];
+    for (const p of st.players) Object.assign(p.resources, { timber: 0, clay: 0, wool: 0, grain: 0, ore: 0 });
+    Object.assign(first.resources, { grain: 1 });
+    st.current = first.id;
+    st.seq += 1;
+    g.setState({ state: st });
+  });
+  await page.getByTestId("hand-dock").waitFor({ timeout: STEP_MS });
+  await page.evaluate(() => {
+    const g = window.__emberisle;
+    const st = structuredClone(g.getState().state);
+    for (const p of st.players) Object.assign(p.resources, { timber: 0, clay: 0, wool: 0, grain: 0, ore: 0 });
+    st.phase = "setupSettle";
+    st.seq += 1;
+    g.setState({ state: st });
+  });
+  await page.waitForFunction(() => !document.querySelector('[data-testid="hand-dock"]'), null, { timeout: STEP_MS });
+  assert.equal(await tiles(page), 0, `${tag}: a seat that held goods earlier has no hand in a fresh setup with none`);
+
+  // #481 item 7: a +N flash on a tile (pointer-events: none overlays) does not change what the island is fitted to.
+  await page.evaluate(() => {
+    const g = window.__emberisle;
+    const st = structuredClone(g.getState().state);
+    st.phase = "main";
+    st.seq += 1;
+    g.setState({ state: st });
+  });
+  await page.getByTestId("hand-dock").waitFor({ timeout: STEP_MS });
+  const calm = await island(page);
+  await page.evaluate(() => {
+    const g = window.__emberisle;
+    const st = structuredClone(g.getState().state);
+    st.players.find((p) => p.id === st.current).resources.grain += 1;
+    st.seq += 1;
+    g.setState({ state: st });
+  });
+  await page.getByTestId("resource-flash").waitFor({ timeout: STEP_MS });
+  const flashing = await page.evaluate(() => ({ bottom: window.__isle.insets().bottom, overlay: getComputedStyle(document.querySelector('[data-testid="resource-flash"]')).pointerEvents }));
+  assert.equal(flashing.overlay, "none", `${tag}: the flash overlay lets taps through`);
+  assert.equal(flashing.bottom, calm.bottom, `${tag}: with the flash up the hand still measures as the hand (${flashing.bottom} vs ${calm.bottom})`);
+  await stillFitted(page, tag, "hand flashing");
+  // A 4 px pointer-events: none dot in the corner of every tile (any decorative overlay): the hand is still measured as its
+  // tiles' own boxes, not as the union of the dots.
+  await page.evaluate(() => {
+    for (const t of document.querySelectorAll('[data-testid^="resource-"]:not([data-testid="resource-flash"])')) {
+      const dot = document.createElement("span");
+      dot.dataset.testid = "probe-dot";
+      dot.style.cssText = "position:absolute;left:0;top:0;width:4px;height:4px;pointer-events:none";
+      t.append(dot);
+    }
+  });
+  const dotted = await page.evaluate(() => window.__isle.insets().bottom);
+  assert.equal(dotted, calm.bottom, `${tag}: a pointer-transparent child in each tile leaves the hand measured as the hand (${dotted} vs ${calm.bottom})`);
+  await page.evaluate(() => document.querySelectorAll('[data-testid="probe-dot"]').forEach((d) => d.remove()));
   assert.deepEqual(errors, [], `${tag}: console errors`);
   console.log(`${tag} ${v.width}x${v.height}: 0 tiles through roll-off and setup, 5 once the second outpost paid (held ${JSON.stringify(shown.held.resources)}), banner bottom ${bare} -> ${full}, hole bottom inset ${isleFull.bottom} -> ${isleBare.bottom} without the hand; ` +
     `${reduced ? "1 ms step" : `220 ms rise, midpoint opacity ${m.opacity.toFixed(2)}, height ${m.h.toFixed(0)}/${dockH}, props ${m.props}`}; island unmoved by a forced re-measure on arrival and on leaving; stays at 0 goods; 0 console errors`);
