@@ -4,8 +4,11 @@
 // - each build button (Path, Outpost, Stronghold, Fortune) reads ready, short or blocked exactly as rules.ts says for that
 //   hand: COST and the hand give the shortfall, legalRoads / legalSettle / legalCities say whether a spot exists, and the
 //   piece supply or the deck says "None left"; a ready build wears the dot and is pressable, the others refuse;
-// - a short build's cost chips dim the goods it lacks and show "−N" beside them, visible with the pointer parked at 0,0
-//   (no hover), and the button's aria-description names the shortfall;
+// - a build 1-2 goods short in all dims the chips it lacks and shows "−N" beside them, visible with the pointer parked at
+//   0,0 (no hover); 3 or more short shows the plain cost with no red (an empty hand reads quiet); the aria-description
+//   names the full shortfall either way;
+// - on a phone (390x844, 360x640, 844x390) each build is a two-line 44 px tile, and the bottom stack's content height is
+//   at most main's (MAIN_STACK, measured on e61d665 with the same hand) plus 2 px, so the island's hole is no smaller;
 // - a build that just became payable pulses once (class build-ready), and under reduced motion the pulse has no animation;
 // - the Costs card opens from the Table menu: one row per build with the COST chips, the POINTS lines, the win line; focus
 //   lands on Close, Tab stays inside, it lies inside the safe rect, and Escape closes it with the focus back on the menu button;
@@ -25,8 +28,13 @@ const STEP_MS = 30_000;
 const VIEWS = [
   { tag: "1280x720", width: 1280, height: 720 },
   { tag: "390x844", width: 390, height: 844, touch: true, insets: { top: 47, right: 0, bottom: 34, left: 0 } },
+  { tag: "360x640", width: 360, height: 640, touch: true },
   { tag: "844x390", width: 844, height: 390, touch: true, insets: { top: 0, right: 47, bottom: 21, left: 47 } },
 ];
+// The bottom stack's scrollHeight on main (e61d665, 2026-10-05) in `main` with the "outpost goods, no spot" hand below, and
+// the island hole's bottom inset at 390x844 (`__isle.insets().bottom`, 398). The build row may not grow past these.
+const MAIN_STACK = { "390x844": 352, "360x640": 352, "844x390": 316 };
+const MAIN_HOLE_BOTTOM = 398;
 const KINDS = Object.keys(COST);
 const NONE = { timber: 0, clay: 0, wool: 0, grain: 0, ore: 0 };
 // Hands and supplies to craft; every expectation below is computed from rules.ts on the state the page then holds.
@@ -118,7 +126,7 @@ try {
                   dot: !!b.querySelector(".bg-accent"),
                   pulse: b.classList.contains("build-ready"),
                   animation: getComputedStyle(b).animationName,
-                  short: [...b.querySelectorAll("[data-short]")].map((el) => ({
+                  marks: [...b.querySelectorAll("[data-short]")].map((el) => ({
                     text: el.lastElementChild.textContent.trim(),
                     visible: visible(el.lastElementChild),
                     opacity: Number(getComputedStyle(el.lastElementChild).opacity),
@@ -140,6 +148,11 @@ try {
         const st = await craft(h);
         const want = expected(st);
         await page.getByTestId("build-card").waitFor();
+        // Software GL can hold a frame long enough that two crafted hands land in one React commit: wait for the row to show
+        // this hand (a wrong expectation still gets the assertions' detail below).
+        await page
+          .waitForFunction((want) => Object.entries(want).every(([k, w]) => document.querySelector(`[data-testid="build-${k}"]`)?.dataset.build === w.state), want, { timeout: 10_000 })
+          .catch(() => {});
         await page.mouse.move(0, 0);
         const row = await readRow();
         for (const k of KINDS) {
@@ -151,22 +164,35 @@ try {
           assert.equal(r.dot, w.state === "ready", `${at}: the ready dot`);
           if (w.state === "blocked") {
             assert.match(r.text, new RegExp(w.why), `${at}: says "${w.why}" (${r.text})`);
-            assert.equal(r.short.length, 0, `${at}: no shortfall chips on a blocked build`);
+            assert.equal(r.marks.length, 0, `${at}: no shortfall marks on a blocked build`);
           } else if (w.state === "short") {
-            assert.deepEqual(r.short.map((s) => s.text), w.short.map(([, n]) => `−${n}`), `${at}: the chips show the shortfall ${JSON.stringify(r.short)}`);
-            for (const s of r.short) {
-              assert.ok(s.visible && !s.hover, `${at}: the shortfall is on screen with no hover ${JSON.stringify(s)}`);
-              assert.equal(s.opacity, 1, `${at}: the "−N" is at full strength`);
-            }
+            const total = w.short.reduce((a, [, n]) => a + n, 0);
+            if (total <= 2) {
+              assert.deepEqual(r.marks.map((s) => s.text), w.short.map(([, n]) => `−${n}`), `${at}: ${total} short, the chips show the shortfall ${JSON.stringify(r.marks)}`);
+              for (const s of r.marks) {
+                assert.ok(s.visible && !s.hover, `${at}: the shortfall is on screen with no hover ${JSON.stringify(s)}`);
+                assert.equal(s.opacity, 1, `${at}: the "−N" is at full strength`);
+              }
+            } else assert.equal(r.marks.length, 0, `${at}: ${total} short, no red marks`);
             for (const [res, n] of w.short) assert.match(r.description, new RegExp(`${n} ${res}`), `${at}: aria-description names the shortfall (${r.description})`);
           } else {
-            assert.equal(r.short.length, 0, `${at}: no shortfall on a ready build`);
+            assert.equal(r.marks.length, 0, `${at}: no shortfall on a ready build`);
             assert.match(r.description, /Ready$/, `${at}: aria-description says Ready (${r.description})`);
           }
           // The 44 px touch target (docs/design/polish.md) and the safe area.
           const { rect } = r;
           if (v.touch) assert.ok(rect.height >= 44, `${at}: ${rect.height} px tall`);
           assert.ok(rect.left >= safe.left && rect.right <= v.width - safe.right && rect.top >= safe.top && rect.bottom <= v.height - safe.bottom, `${at}: inside the safe rect ${JSON.stringify(rect)}`);
+        }
+        // The build row has not grown: the stack's content is no taller than on main, and the island's hole no smaller.
+        if (v.touch && h.name === "outpost goods, no spot") {
+          const fit = await page.evaluate(() => ({
+            stack: document.querySelector('[data-testid="build-path"]').closest(".overflow-y-auto").scrollHeight,
+            holeBottom: window.__isle.insets().bottom,
+          }));
+          assert.ok(fit.stack <= MAIN_STACK[v.tag] + 2, `${tag}: the stack is ${fit.stack} px tall, main's ${MAIN_STACK[v.tag]}`);
+          if (v.tag === "390x844") assert.ok(fit.holeBottom <= MAIN_HOLE_BOTTOM + 2, `${tag}: the island hole's bottom inset is ${fit.holeBottom}, main's ${MAIN_HOLE_BOTTOM}`);
+          console.log(`${tag}: stack ${fit.stack} px (main ${MAIN_STACK[v.tag]}), hole bottom ${fit.holeBottom}`);
         }
         // A ready build arms on a press, a short or blocked one refuses.
         for (const k of ["path", "outpost", "stronghold"]) {
@@ -181,16 +207,27 @@ try {
         if (reducedMotion === "no-preference" && shots++ < 2) await page.screenshot({ path: `test-results/build-ready-${v.tag}${shots > 1 ? "-b" : ""}.png` });
       }
 
-      // The pulse: from nothing to a path's goods, the Path button pulses once; under reduced motion it has no animation.
-      await craft({ hand: NONE });
-      await craft({ hand: { ...NONE, timber: 1, clay: 1 } });
-      const pulsed = await page.evaluate(() => {
-        const b = document.querySelector('[data-testid="build-path"]');
-        return { pulse: b.classList.contains("build-ready"), animation: getComputedStyle(b).animationName, outpost: document.querySelector('[data-testid="build-outpost"]').classList.contains("build-ready") };
+      // The pulse: from nothing to a path's goods, the Path button alone starts the build-ready animation (recorded from its
+      // animationstart, since 280 ms can pass before a read); under reduced motion the class is on but no animation runs.
+      await craft({ hand: NONE, pathsLeft: 5 });
+      await page.waitForFunction(() => document.querySelector('[data-testid="build-path"]').dataset.build === "short");
+      await page.evaluate(() => {
+        window.__pulses = [];
+        document.addEventListener("animationstart", (e) => window.__pulses.push([e.target.dataset.testid, e.animationName]));
       });
-      assert.ok(pulsed.pulse && !pulsed.outpost, `${tag}: only the newly payable Path pulses ${JSON.stringify(pulsed)}`);
-      assert.equal(pulsed.animation, reducedMotion === "reduce" ? "none" : "build-ready", `${tag}: the pulse animation`);
-      if (reducedMotion === "no-preference") await page.waitForFunction(() => !document.querySelector('[data-testid="build-path"]').classList.contains("build-ready"));
+      await craft({ hand: { ...NONE, timber: 1, clay: 1 }, pathsLeft: 5 });
+      if (reducedMotion === "reduce") {
+        const still = await page.evaluate(() => {
+          const b = document.querySelector('[data-testid="build-path"]');
+          return { pulse: b.classList.contains("build-ready"), animation: getComputedStyle(b).animationName, started: window.__pulses };
+        });
+        assert.ok(still.pulse && still.animation === "none" && still.started.length === 0, `${tag}: the pulse is marked but runs no animation ${JSON.stringify(still)}`);
+      } else {
+        await page.waitForFunction(() => window.__pulses.some(([, name]) => name === "build-ready"));
+        const started = await page.evaluate(() => window.__pulses.filter(([, name]) => name === "build-ready"));
+        assert.deepEqual(started, [["build-path", "build-ready"]], `${tag}: only the newly payable Path pulses`);
+      }
+      const pulsed = { animation: reducedMotion === "reduce" ? "none" : "build-ready" };
 
       // The Costs card from the Table menu.
       const trigger = page.getByRole("button", { name: "Table menu" });

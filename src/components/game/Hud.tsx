@@ -132,8 +132,9 @@ export function Hud() {
   useEffect(() => setFortunesOpen(false), [turnKey]);
   const actor = mode === "hotseat" ? (state?.current ?? "") : localId;
   const me = state ? (state.players.find((p) => p.id === actor) ?? state.players[0]!) : null;
-  // A build that just became payable (a roll, a trade) pulses its button once; a change of seat is not that.
-  const affordKey = me ? `${me.id}|${PRICES.map((k) => (affords(me, k) ? 1 : 0)).join("")}` : "";
+  // A build that just became payable (a roll, a trade) pulses its button once; a change of seat is not that. A watcher's
+  // `me` is seat 0 of the opponent view, which has no `resources` online (docs/design/spectator.md), so it is checked first.
+  const affordKey = me?.resources ? `${me.id}|${PRICES.map((k) => (affords(me, k) ? 1 : 0)).join("")}` : "";
   const wasAffordable = useRef(affordKey);
   const [pulse, setPulse] = useState<Price[]>([]);
   useEffect(() => {
@@ -348,7 +349,7 @@ export function Hud() {
             <TakeFromBar />
 
             {state.phase === "main" && mine ? (
-              <div className="flex flex-wrap gap-1">
+              <div className="flex flex-wrap items-center gap-1">
                 {/* Each build says whether it can happen now: the cost chips dim what the hand is short of, a build with
                     nothing to build on or none left says so, and one the hand can pay for with a spot waiting wears the dot. */}
                 {(
@@ -360,8 +361,9 @@ export function Hud() {
                   ] as const
                 ).map(([kind, arm, Icon, label, left, hasSpot]) => {
                   const short = shortfall(me.resources, kind);
-                  const why = left <= 0 ? "None left" : Object.keys(short).length ? null : hasSpot() ? null : "No spot";
-                  const ready = !why && !Object.keys(short).length;
+                  const missing = Object.values(short).reduce((a, b) => a + b, 0);
+                  const why = left <= 0 ? "None left" : missing ? null : hasSpot() ? null : "No spot";
+                  const ready = !why && !missing;
                   const blocked = !ready || spectator;
                   const status = why ?? (ready ? "Ready" : `Short ${Object.entries(short).map(([r, n]) => `${n} ${r}`).join(", ")}`);
                   return (
@@ -371,7 +373,9 @@ export function Hud() {
                       variant={buildMode === arm ? "primary" : "secondary"}
                       data-testid={`build-${kind}`}
                       data-build={why ? "blocked" : ready ? "ready" : "short"}
-                      className={cn("relative", NOT_NOW, phone && "h-11 min-w-11", pulse.includes(kind) && "build-ready")}
+                      // A 44 px two-line tile, the piece over its chips (docs/design/polish.md: actions as tiles with their amount),
+                      // so the row keeps the lines it had before the chips: one at 1280x720, three builds a line on a phone.
+                      className={cn("relative h-11 min-w-11 flex-col gap-1 px-2.5 py-0", NOT_NOW, pulse.includes(kind) && "build-ready")}
                       onAnimationEnd={() => setPulse((p) => p.filter((k) => k !== kind))}
                       aria-pressed={arm ? buildMode === arm : undefined}
                       aria-disabled={blocked || undefined}
@@ -384,9 +388,12 @@ export function Hud() {
                         setBuildMode(buildMode === arm ? "none" : arm);
                       }}
                     >
-                      <Icon className="size-4" /> {label}
-                      {/* The chips and the reason are aria-hidden: the name stays the piece, the description says the rest. */}
-                      {why ? <span aria-hidden className="text-caption text-muted">{why}</span> : <CostChips kind={kind} hand={me.resources} />}
+                      <span className="flex items-center gap-1.5">
+                        <Icon className="size-4" /> {label}
+                      </span>
+                      {/* The chips and the reason are aria-hidden: the name stays the piece, the description says the rest. The
+                          shortfall marks show only when 1-2 goods away ("almost there"); further off, the plain cost and the Costs card. */}
+                      {why ? <span aria-hidden className="text-caption text-muted">{why}</span> : <CostChips kind={kind} hand={missing <= 2 ? me.resources : undefined} />}
                       {ready && buildMode !== arm ? READY_DOT : null}
                     </Button>
                   );
