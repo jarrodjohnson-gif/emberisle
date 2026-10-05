@@ -278,7 +278,7 @@ const CHAT_OPEN_KEY = "emberisle-chat-open";
 // The table code and this seat's secret from the last welcome, so a reload or a new tab can rejoin (#196).
 const SEAT_KEY = "emberisle-seat";
 
-function savedSeat(): { code: string; secret: string } | null {
+export function savedSeat(): { code: string; secret: string } | null {
   try {
     const raw = localStorage.getItem(SEAT_KEY);
     if (!raw) return null;

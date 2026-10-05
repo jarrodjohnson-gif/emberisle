@@ -135,6 +135,8 @@ export function Hud() {
   // #422: a sideways phone stacks the HUD in a full-height left column, so the island fills the height beside it.
   const column = phone && !portrait;
   const [hintDismissed, setHintDismissed] = useState(() => sessionStorage.getItem(HINT_KEY) === "1");
+  // #492: the sheets chunk failed with the game over, so the win screen cannot show; the winner line gets the way out.
+  const [sheetsLost, setSheetsLost] = useState(false);
   useEscapeDisarm();
   const [stackRef, moreBelow] = useMoreBelow();
   useEffect(() => preloadOnIdle(sheets.prefetch), []);
@@ -333,7 +335,8 @@ export function Hud() {
             <TurnCountdown />
             {winner || error ? (
               <p className="rounded-[16px] border border-white/50 bg-glass px-3 py-2 text-sm text-zinc-900 backdrop-blur-md">
-                {winner ? `${winner.name} wins with ${totalVP(state, winner.id)} points.` : null}
+                {winner ? <span id="hud-winner">{`${winner.name} wins with ${totalVP(state, winner.id)} points.`}</span> : null}
+                {winner && sheetsLost ? <WinFailed /> : null}
                 {error ? <span className={cn("block text-orange-700", winner && "mt-1")}>{error}</span> : null}
               </p>
             ) : null}
@@ -444,7 +447,7 @@ export function Hud() {
 
       {/* #488: the trade panel, How to play and the win screen share one lazy chunk, fetched on idle once the table is up.
           If it fails the table stands with no sheet; SheetsFailed drops the open flags so the next tap tries again. */}
-      <LazyBoundary failed={<SheetsFailed />} retryKey={`${tradeOpen}|${howTo}|${state.winner ?? ""}`}>
+      <LazyBoundary failed={<SheetsFailed onLost={setSheetsLost} />} retryKey={`${tradeOpen}|${howTo}|${state.winner ?? ""}`}>
         <TradePanel />
         {howTo ? <HowTo onClose={() => setHowTo(false)} /> : null}
         <WinScreen />
@@ -524,16 +527,18 @@ function PlaceChip({ column }: { column?: boolean }) {
   );
 }
 
-// The sheets chunk did not load: close what was asked for, so How to play or Trade can be pressed again and retry. At
-// game over the winner is named inline instead of the win screen (#492).
-function SheetsFailed() {
+// The sheets chunk did not load: close what was asked for, so How to play or Trade can be pressed again and retry, and
+// tell the HUD, whose winner line offers the way out while the win screen cannot show (#492).
+function SheetsFailed({ onLost }: { onLost: (lost: boolean) => void }) {
   const setHowTo = useGame((s) => s.setHowTo);
   const setTradeOpen = useGame((s) => s.setTradeOpen);
   useEffect(() => {
     setHowTo(false);
     setTradeOpen(false);
-  }, [setHowTo, setTradeOpen]);
-  return <WinFailed />;
+    onLost(true);
+    return () => onLost(false);
+  }, [setHowTo, setTradeOpen, onLost]);
+  return null;
 }
 
 // The same for the fortune tray: the next press of Fortunes mounts it again and tries the network again.

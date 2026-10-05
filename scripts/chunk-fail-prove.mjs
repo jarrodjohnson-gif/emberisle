@@ -6,11 +6,12 @@
 // instead of a blank page, and after the route recovers that Reload rejoins the saved seat into a working lobby.
 // #492: a join link whose online chunk fails once keeps its code across the reload; the title's How to play retries on
 // the first press after the route recovers; a stale-chunk reload waits while focus is in a text field; chunkUrl names
-// dev (.tsx) URLs as well as built ones. Game over with the sheets chunk gone for good (a deploy mid-game): the index names
-// the winner inline; practice's Back to menu reaches the title, and online's Reload rejoins the saved seat.
+// dev (.tsx) URLs as well as built ones. Game over with the sheets chunk gone for good (a deploy mid-game): the HUD's
+// winner line gets the way out; practice's Back to menu reaches the title, and a seated player's Reload rejoins the saved
+// seat into the finished table, where the win screen loads from the fresh chunk.
 // Run npm run build first.
 import { spawn } from "node:child_process";
-import { existsSync, mkdtempSync, readdirSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -18,6 +19,7 @@ import { chromium } from "playwright";
 import { preview } from "vite";
 
 const { chunkUrl } = await import("../src/lib/lazy.ts");
+const { createGame } = await import("../src/lib/game/board.ts");
 const PORT = Number(process.env.VITE_PORT) || 8109;
 const DIST = fileURLToPath(new URL("../dist/", import.meta.url));
 if (!existsSync(`${DIST}index.html`)) {
@@ -27,6 +29,16 @@ if (!existsSync(`${DIST}index.html`)) {
 
 const ROOMS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-rooms-"));
 process.on("exit", () => rmSync(ROOMS_DIR, { recursive: true, force: true }));
+// A finished table the host restores on boot (host.mjs load(); the file is what save() writes, shape 2), for case 9: a
+// saved seat at it rejoins straight into the game over. The host drops the file if its shape has moved on.
+const FINISHED = { code: "WNR7", secret: "f".repeat(32) };
+{
+  const game = createGame({ humans: ["Elm", "Sage", "Rook"].map((name) => ({ name })), bots: 0 });
+  game.phase = "over";
+  game.winner = game.players[1].id;
+  const seats = game.players.map((pl, n) => ({ id: `s${n}`, name: pl.name, color: pl.color, ready: true, pid: pl.id, secret: n === 0 ? FINISHED.secret : String(n).repeat(32) }));
+  writeFileSync(path.join(ROOMS_DIR, `${FINISHED.code}.json`), JSON.stringify({ code: FINISHED.code, host: "s0", next: 3, chat: [], chatSeq: 0, game, seats, shape: 2, savedAt: Date.now() }));
+}
 const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL("../server/", import.meta.url),
   env: { ...process.env, PORT: "0", ROOMS_DIR },
@@ -62,11 +74,13 @@ const until = async (cond, what, ms = 15_000) => {
 
 // A page whose requests for one chunk fail while `broken` is true. `loads` counts page loads (the reload under test),
 // `blocked` the chunk requests refused. Page errors other than the chunk's own failure count against the page.
-// `reloaded` seeds the session with chunk URLs it already reloaded for, so the title stays put when one is refused.
-async function tab(name, chunk, query = "", reloaded = []) {
-  const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+// `reloaded` seeds the session with chunk URLs it already reloaded for, so the title stays put when one is refused; `seat`
+// is a saved seat the page rejoins on load.
+async function tab(name, chunk, query = "", { reloaded = [], seat, viewport = { width: 1280, height: 720 } } = {}) {
+  const page = await browser.newPage({ viewport });
   const t = { page, loads: 0, blocked: 0, broken: true, errors: [] };
   if (reloaded.length) await page.addInitScript((urls) => sessionStorage.setItem("emberisle-chunk-reloaded", JSON.stringify(urls)), reloaded);
+  if (seat) await page.addInitScript((s) => localStorage.setItem("emberisle-seat", JSON.stringify(s)), seat);
   page.on("load", () => t.loads++);
   page.on("pageerror", (e) => t.errors.push(`${name}: ${e}`));
   page.on("console", (m) => {
@@ -260,26 +274,38 @@ try {
   check("typing: a typed code is still in the field after the reload Join released", before === 1 && (await gInput.inputValue()) === "K7QP", { before, loads: g.loads, value: await gInput.inputValue() });
   await g.page.close();
 
+  // --- 6. (#492) chunkUrl names dev source URLs (.tsx) as well as built ones, so dev retries too.
+  const dev = chunkUrl?.(new TypeError("Failed to fetch dynamically imported module: http://localhost:8080/src/components/game/online.tsx?t=1"));
+  const built = chunkUrl?.(new TypeError("Failed to fetch dynamically imported module: http://localhost/assets/online-AbCd1234.js?retry=2"));
+  check("dev: chunkUrl matches .tsx URLs and still the built .js ones", dev === "http://localhost:8080/src/components/game/online.tsx" && built === "http://localhost/assets/online-AbCd1234.js", { dev, built });
+
   // --- 9. (#492) Game over with the sheets chunk gone for good. The win screen cannot load: the retry at game over asks the
-  // network once more and is refused, so the index names the winner itself, and the way out works.
+  // network once more and is refused, so the HUD's winner line gets a focused way out, and it works.
   const over = (page) =>
     page.evaluate(() => {
-      const g = window.__emberisle;
-      const st = structuredClone(g.getState().state);
+      const store = window.__emberisle;
+      const st = structuredClone(store.getState().state);
       st.phase = "over";
       st.winner = st.players[1].id;
       st.seq += 1;
-      g.setState({ state: st });
+      store.setState({ state: st });
       return st.players[1].name;
     });
   const shown = (page) =>
-    page.evaluate(() => ({
-      text: document.querySelector('[data-testid="win-failed"]')?.textContent ?? "",
-      dialogs: document.querySelectorAll('[role="dialog"]').length,
-      screen: window.__emberisle.getState().screen,
-      header: Boolean(document.querySelector("header")),
-    }));
-  // Practice: no seat to rejoin, so the fallback offers the menu.
+    page.evaluate(() => {
+      const button = document.querySelector('[data-testid="win-failed"]');
+      const rect = button?.getBoundingClientRect();
+      return {
+        line: document.getElementById("hud-winner")?.textContent ?? "",
+        button: button?.textContent ?? "",
+        focused: document.activeElement === button,
+        inView: Boolean(rect) && rect.top >= 0 && rect.bottom <= innerHeight && rect.left >= 0 && rect.right <= innerWidth,
+        dialogs: document.querySelectorAll('[role="dialog"]').length,
+        screen: window.__emberisle.getState().screen,
+        header: Boolean(document.querySelector("header")),
+      };
+    });
+  // Practice, 1280x720: no seat to rejoin, so the way out is the menu.
   const h = await tab("Oak", "sheets");
   await title(h.page);
   await until(() => h.loads >= 2, "the title reloading once on the failed sheets prefetch");
@@ -287,70 +313,41 @@ try {
   await h.page.getByRole("button", { name: "Play", exact: true }).click();
   await h.page.waitForFunction(() => window.__emberisle?.getState().screen === "play", null, { timeout: 15_000 });
   await h.page.waitForSelector("header", { timeout: 15_000 });
-  await sleep(2500); // the table's idle prefetch is refused and forgotten; game over has to ask the network again
+  // The table mounts the sheets and prefetches them on idle, both refused; the next ask has to come from game over.
+  const atHeader = h.blocked;
+  await until(() => h.blocked > atHeader, "the table's own sheets request being refused");
   const hBefore = h.blocked;
   const hName = await over(h.page);
-  const hFailed = h.page.getByTestId("win-failed");
-  await hFailed.waitFor({ timeout: 15_000 });
+  const hButton = h.page.getByTestId("win-failed");
+  await hButton.waitFor({ timeout: 15_000 });
   const hShown = await shown(h.page);
-  check("game over (practice): the chunk is asked for again, refused, and the table names the winner inline", hShown.text.includes(`${hName} wins`) && hShown.dialogs === 0 && hShown.screen === "play" && hShown.header && h.blocked > hBefore && h.loads === 2, { ...hShown, name: hName, blocked: h.blocked, before: hBefore, loads: h.loads });
-  await hFailed.getByRole("button", { name: "Back to menu" }).click();
+  check("game over (practice): the chunk is asked for again, refused, and the winner line gets a focused Back to menu", hShown.line.startsWith(`${hName} wins with`) && hShown.button === "Back to menu" && hShown.focused && hShown.inView && hShown.dialogs === 0 && hShown.screen === "play" && hShown.header && h.blocked > hBefore && h.loads === 2, { ...hShown, name: hName, blocked: h.blocked, before: hBefore, loads: h.loads });
+  await h.page.screenshot({ path: "test-results/win-stale-1280x720.png" });
+  await hButton.click();
   await title(h.page);
   check("game over (practice): Back to menu reaches the title without a reload", h.loads === 2 && (await h.page.evaluate(() => window.__emberisle.getState().screen)) === "title", { loads: h.loads });
   check("game over (practice): no other page errors", h.errors.length === 0, h.errors);
   await h.page.close();
 
-  // Online: the host's sheets chunk is gone. Reload for the results rejoins the saved seat into the live table. The
-  // session has already had its one title reload for this URL, so the title stays put here.
+  // Online, 390x844: a saved seat at the finished table rejoins into the game over with the chunk gone. The session has
+  // already had its one title reload for this URL, so the title stays put while the rejoin dials.
   const sheetsUrl = `http://127.0.0.1:${PORT}/assets/${readdirSync(`${DIST}assets`).find((f) => /^sheets-[A-Za-z0-9_-]{8}\.js$/.test(f))}`;
-  const i = await tab("Elm", "sheets", "", [sheetsUrl]);
-  await title(i.page);
-  await i.page.getByRole("button", { name: "Host a table" }).click();
-  await i.page.getByTestId("table-code").waitFor({ timeout: 15_000 });
-  const iCode = (await i.page.getByTestId("table-code").textContent()).trim();
-  // Two more seats so the table can start. Three software-GL tabs starve each other's frames, and Playwright's clicks and
-  // waits poll on frames, so until the guests close this part goes through the store and polls on a timer.
-  const poll = { polling: 100, timeout: 15_000 };
-  const guests = [];
-  for (const name of ["Sage", "Rook"]) {
-    const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
-    await page.addInitScript((n) => localStorage.setItem("emberisle-name", n), name);
-    await page.goto(url);
-    // Once its island is up it stops drawing (as tabs-prove does at four seats), so the host's tab keeps its frames.
-    await page.waitForFunction(() => (window.__isle?.renderer ? (window.__isle.renderer.setAnimationLoop(null), true) : false), null, { polling: 100, timeout: 60_000 });
-    await page.evaluate((code) => window.__emberisle.getState().joinTable(code), iCode);
-    await page.waitForFunction(() => window.__emberisle.getState().seats.length > 0, null, poll);
-    await page.evaluate(() => window.__emberisle.getState().setReady(true));
-    guests.push(page);
-  }
-  await i.page.evaluate(() => window.__emberisle.getState().setReady(true));
-  await i.page.waitForFunction(() => window.__emberisle.getState().seats.length === 3 && window.__emberisle.getState().seats.every((x) => x.ready), null, poll);
-  await i.page.evaluate(() => window.__emberisle.getState().startTable());
-  await i.page.waitForFunction(() => window.__emberisle.getState().screen === "play", null, poll);
-  for (const page of guests) await page.close(); // the seats stay held; the host's tab gets its frames back
-  await i.page.waitForSelector("header", { timeout: 15_000 });
-  await sleep(2500);
-  const iBefore = i.blocked;
-  const iName = await over(i.page);
-  const iFailed = i.page.getByTestId("win-failed");
-  await iFailed.waitFor({ timeout: 15_000 });
+  const i = await tab("Elm", "sheets", "", { reloaded: [sheetsUrl], seat: FINISHED, viewport: { width: 390, height: 844 } });
+  await i.page.waitForFunction(() => window.__emberisle?.getState().state?.winner, null, { timeout: 15_000 });
+  const iButton = i.page.getByTestId("win-failed");
+  await iButton.waitFor({ timeout: 15_000 });
   const iShown = await shown(i.page);
-  check("game over (online): the chunk is asked for again, refused, and the table names the winner inline", iShown.text.includes(`${iName} wins`) && iShown.dialogs === 0 && iShown.screen === "play" && iShown.header && i.blocked > iBefore && i.loads === 1, { ...iShown, name: iName, blocked: i.blocked, before: iBefore, loads: i.loads });
-  // The deploy is done (the route recovers): Reload lands the saved seat back at the table.
+  check("game over (online): the rejoined seat finds the chunk refused, and the winner line gets a focused Reload inside the viewport", iShown.line.startsWith("Sage wins with") && iShown.button === "Reload for the results" && iShown.focused && iShown.inView && iShown.dialogs === 0 && iShown.screen === "play" && iShown.header && i.blocked >= 1 && i.loads === 1, { ...iShown, blocked: i.blocked, loads: i.loads });
+  await i.page.screenshot({ path: "test-results/win-stale-390x844.png" });
+  // The deploy is done (the route recovers): Reload rejoins the saved seat, and the win screen loads from the fresh chunk.
   i.broken = false;
-  await iFailed.getByRole("button", { name: "Reload for the results" }).click();
+  await iButton.click();
   await until(() => i.loads >= 2, "the page reloading on Reload for the results");
-  await i.page.waitForFunction(() => window.__emberisle?.getState().screen === "play", null, { timeout: 15_000 });
-  await i.page.waitForSelector("header", { timeout: 15_000 });
-  const back2 = await i.page.evaluate(() => ({ screen: window.__emberisle.getState().screen, mode: window.__emberisle.getState().mode, fallback: document.querySelectorAll('[data-testid="win-failed"]').length }));
-  check("game over (online): Reload for the results rejoins the saved seat into the live table", back2.screen === "play" && back2.mode === "online" && back2.fallback === 0 && i.loads === 2, { ...back2, loads: i.loads });
+  await i.page.getByTestId("win-screen").waitFor({ timeout: 15_000 });
+  const results = await i.page.evaluate(() => ({ headline: document.querySelector('[data-testid="win-headline"]')?.textContent, rows: document.querySelectorAll('[data-testid="win-row"]').length, fallback: document.querySelectorAll('[data-testid="win-failed"]').length }));
+  check("game over (online): Reload for the results rejoins into the finished table and the win screen shows the results", results.headline === "Sage wins" && results.rows === 3 && results.fallback === 0 && i.loads === 2, { ...results, loads: i.loads });
   check("game over (online): no other page errors", i.errors.length === 0, i.errors);
   await i.page.close();
-
-  // --- 6. (#492) chunkUrl names dev source URLs (.tsx) as well as built ones, so dev retries too.
-  const dev = chunkUrl?.(new TypeError("Failed to fetch dynamically imported module: http://localhost:8080/src/components/game/online.tsx?t=1"));
-  const built = chunkUrl?.(new TypeError("Failed to fetch dynamically imported module: http://localhost/assets/online-AbCd1234.js?retry=2"));
-  check("dev: chunkUrl matches .tsx URLs and still the built .js ones", dev === "http://localhost:8080/src/components/game/online.tsx" && built === "http://localhost/assets/online-AbCd1234.js", { dev, built });
 } catch (err) {
   fails.push(String(err));
   console.log(`FAIL ${err.stack ?? err}`);
