@@ -140,10 +140,10 @@ export function Hud() {
   const actor = mode === "hotseat" ? (state?.current ?? "") : localId;
   const me = state ? (state.players.find((p) => p.id === actor) ?? state.players[0]!) : null;
   // A build that just became ready (a roll, a trade) pulses its button once; a change of seat is not that, and a build with
-  // no spot or none left never is. The key is empty while the row is not on screen, and the hand's counts are in it, so any
+  // no spot or none left never is. The key is empty on another seat's turn (buildStatus does not look at the phase, so it is the same from a roll to main), and the hand's counts are in it, so any
   // other change (a steal, the row leaving) clears a pulse instead of leaving one to fire later. A watcher's `me` is seat 0 of
   // the opponent view, which has no `resources` online (docs/design/spectator.md), so it is checked first.
-  const rowShown = !!state && !!me?.resources && state.phase === "main" && state.current === actor;
+  const rowShown = !!state && !!me?.resources && state.current === actor;
   const readyKey = rowShown ? `${me!.id}|${PRICES.map((k) => (buildStatus(state, me!, k).ready ? 1 : 0)).join("")}|${RESOURCES.map((r) => me!.resources[r]).join(",")}` : "";
   const wasReady = useRef(readyKey);
   const [pulse, setPulse] = useState<Price[]>([]);
