@@ -5,7 +5,7 @@ import { HowTo, Lobby, online, sheets } from "@/components/game/chunks";
 import { Hud } from "@/components/game/Hud";
 import { PlaceList } from "@/components/game/PlaceList";
 import { useGame } from "@/lib/game/store";
-import { LazyBoundary, preloadOnIdle, reloadOnStaleChunk } from "@/lib/lazy";
+import { JOIN_CODE, LazyBoundary, preloadOnIdle, reloadOnStaleChunk } from "@/lib/lazy";
 import { play, setMuted, useMuted } from "@/lib/sound";
 import { useTurnTitle } from "@/lib/turn-title";
 import { PLAYER_COLORS, PLAYER_NAMES } from "@/lib/game/types";
@@ -65,8 +65,9 @@ export function EmberisleApp() {
   );
 }
 
-const LINK_KEY = "emberisle-join-link";
-const PEEK_CODE = /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{4}$/;
+const PEEK_CODE = JOIN_CODE;
+// A join link is read on the first Title of a page load only: later visits to the title (goTitle) start empty.
+let linkRead = false;
 
 function Title() {
   const name = useGame((s) => s.name);
@@ -104,40 +105,27 @@ function Title() {
     };
   }, [join, peekTable]);
 
-  // #304: a join link (?code=K7QP) fills the field so the peek above runs; nothing is sent until Join is pressed.
-  // The code then leaves the URL so a reload does not refill a dead one. A watch link (?watch=K7QP) does the same and
-  // makes Watch the primary button, so a reload never re-watches either. #492: until the online chunk has loaded the link
-  // is kept in sessionStorage, so the stale-chunk reload (which has the URL without it) refills the field.
+  // #304: a join link (?code=K7QP) fills the field so the peek above runs; nothing is sent until Join is pressed. A watch
+  // link (?watch=K7QP) does the same and makes Watch the primary button. #492: the link stays in the URL until the online
+  // chunk has loaded, so the stale-chunk reload refills the field; then it leaves the URL so a later reload does not refill
+  // a dead code. Only the first Title of a page load reads it.
   useEffect(() => {
+    if (linkRead) return;
+    linkRead = true;
     const url = new URL(location.href);
     const code = url.searchParams.get("code")?.toUpperCase();
     const watch = url.searchParams.get("watch")?.toUpperCase();
-    let link: { code?: string; watch?: string } = {};
-    if (code !== undefined || watch !== undefined) {
+    if (code === undefined && watch === undefined) return;
+    const strip = () => {
       url.searchParams.delete("code");
       url.searchParams.delete("watch");
       history.replaceState(history.state, "", `${url.pathname}${url.search}${url.hash}`);
-      link = { code, watch };
-      if (PEEK_CODE.test(code ?? watch!)) {
-        try {
-          sessionStorage.setItem(LINK_KEY, JSON.stringify(link));
-        } catch {}
-      }
-    } else {
-      try {
-        link = JSON.parse(sessionStorage.getItem(LINK_KEY) ?? "{}");
-      } catch {}
-    }
-    const fill = link.code ?? link.watch;
-    if (!fill || !PEEK_CODE.test(fill)) return;
+    };
+    const fill = code ?? watch!;
+    if (!PEEK_CODE.test(fill)) return strip();
     setJoin(fill);
-    void online.prefetch().then((ok) => {
-      if (!ok) return;
-      try {
-        sessionStorage.removeItem(LINK_KEY);
-      } catch {}
-    });
-    if (link.code === undefined) setWatchLink(true);
+    void online.prefetch().then((ok) => ok && strip());
+    if (code === undefined) setWatchLink(true);
   }, []);
 
   // #488: How to play is a lazy chunk; idle time on the title fetches it, and so does a pointer or focus on its button.

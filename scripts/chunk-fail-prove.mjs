@@ -61,7 +61,7 @@ const until = async (cond, what, ms = 15_000) => {
 
 // A page whose requests for one chunk fail while `broken` is true. `loads` counts page loads (the reload under test),
 // `blocked` the chunk requests refused. Page errors other than the chunk's own failure count against the page.
-async function tab(name, chunk) {
+async function tab(name, chunk, query = "") {
   const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
   const t = { page, loads: 0, blocked: 0, broken: true, errors: [] };
   page.on("load", () => t.loads++);
@@ -79,7 +79,7 @@ async function tab(name, chunk) {
     return route.abort("failed");
   });
   await page.addInitScript((n) => localStorage.setItem("emberisle-name", n), name);
-  await page.goto(url);
+  await page.goto(url + query);
   return t;
 }
 const title = (page) => page.getByRole("button", { name: "Play", exact: true }).waitFor({ timeout: 15_000 });
@@ -213,6 +213,42 @@ try {
   await e.page.locator("body").click({ position: { x: 5, y: 5 } }); // focus leaves the field
   await until(() => e.loads >= 2, "the held reload once focus left the field");
   check("typing: the reload fires after focus leaves the field", e.loads === 2, { loads: e.loads });
+  await e.page.close();
+
+  // --- 7. (#492) A watch link whose online chunk is refused twice, then recovers: the stale link never reaches a later title.
+  const f = await tab("Wren", "online", "&watch=K7QP");
+  const fInput = f.page.locator('input[aria-label="Join code"]');
+  await title(f.page);
+  await until(() => f.loads >= 2, "the watch link's title reloading once");
+  await title(f.page);
+  await until(() => f.blocked >= 2, "the reloaded title's online prefetch being refused");
+  const kept = await fInput.inputValue();
+  f.broken = false;
+  await sleep(1200);
+  await f.page.getByRole("button", { name: "Host a table" }).hover(); // the retry succeeds
+  await sleep(1000);
+  await fInput.fill("ZZZZ");
+  await f.page.getByRole("button", { name: "Play", exact: true }).click();
+  await f.page.waitForFunction(() => window.__emberisle.getState().screen === "play", null, { timeout: 15_000 });
+  await f.page.evaluate(() => window.__emberisle.getState().goTitle());
+  await title(f.page);
+  const back = { kept, value: await fInput.inputValue(), watch: await f.page.getByRole("button", { name: "Watch" }).count() };
+  check("watch link: the field survived the reload; a later title starts empty with Play primary", kept === "K7QP" && back.value === "" && back.watch === 0, back);
+  await f.page.close();
+
+  // --- 8. (#492) The online chunk always refused: a typed code survives the reload that the Join press releases.
+  const g = await tab("Pine", "online");
+  await title(g.page);
+  const gInput = g.page.locator('input[aria-label="Join code"]');
+  await gInput.click();
+  await gInput.pressSequentially("K7QP");
+  await sleep(1000); // the focus prefetch is refused; the reload is held
+  const before = g.loads;
+  await g.page.getByRole("button", { name: "Join", exact: true }).click();
+  await until(() => g.loads >= 2, "the held reload once Join took focus");
+  await title(g.page);
+  await sleep(500);
+  check("typing: a typed code is still in the field after the reload Join released", before === 1 && (await gInput.inputValue()) === "K7QP", { before, loads: g.loads, value: await gInput.inputValue() });
 
   // --- 6. (#492) chunkUrl names dev source URLs (.tsx) as well as built ones, so dev retries too.
   const dev = chunkUrl?.(new TypeError("Failed to fetch dynamically imported module: http://localhost:8080/src/components/game/online.tsx?t=1"));

@@ -88,7 +88,22 @@ export function chunkUrl(e: unknown): string | undefined {
 // A focused text field means the user is typing (a join code); a reload would throw that away.
 function typing() {
   const el = document.activeElement;
-  return el instanceof HTMLElement && (el.isContentEditable || el instanceof HTMLTextAreaElement || (el instanceof HTMLInputElement && !/^(button|submit|reset|checkbox|radio|range|color|file|image)$/.test(el.type)));
+  if (!(el instanceof HTMLElement)) return false;
+  if (el.isContentEditable || el instanceof HTMLTextAreaElement) return true;
+  return el instanceof HTMLInputElement && !/^(button|submit|reset|checkbox|radio|range|color|file|image)$/.test(el.type);
+}
+
+export const JOIN_CODE = /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{4}$/;
+
+// The focus change that releases a held reload can be the press on Join or Host, which the reload then swallows. A valid
+// code typed in the join field rides the reload in the URL (as a join link does) so the field refills; a watch link
+// still in the URL is left as it is.
+function keepJoinCode() {
+  const code = document.querySelector<HTMLInputElement>('input[aria-label="Join code"]')?.value;
+  const url = new URL(location.href);
+  if (!code || !JOIN_CODE.test(code) || url.searchParams.has("watch")) return;
+  url.searchParams.set("code", code);
+  history.replaceState(history.state, "", `${url.pathname}${url.search}${url.hash}`);
 }
 
 // A chunk that fails to load on a page that is still at the title is most likely a stale page after a new deploy: the
@@ -122,6 +137,7 @@ export function reloadOnStaleChunk(when: () => boolean) {
     } catch {
       return;
     }
+    keepJoinCode();
     location.reload();
   };
   const onError = (e: Event) => attempt(chunkUrl((e as Event & { payload?: unknown }).payload) ?? "?");
