@@ -41,6 +41,11 @@ export function EmberisleApp() {
     return reloadOnStaleChunk(() => useGame.getState().screen === "title");
   }, []);
 
+  // #492: a link whose chunk never loaded at the title still leaves the URL once the title is left.
+  useEffect(() => {
+    if (screen !== "title") stripLink();
+  }, [screen]);
+
   useEffect(() => {
     if (screen !== "play") return;
     const t = window.setTimeout(() => runBots(), 700);
@@ -68,6 +73,12 @@ export function EmberisleApp() {
 const PEEK_CODE = JOIN_CODE;
 // A join link is read on the first Title of a page load only: later visits to the title (goTitle) start empty.
 let linkRead = false;
+function stripLink() {
+  const url = new URL(location.href);
+  url.searchParams.delete("code");
+  url.searchParams.delete("watch");
+  history.replaceState(history.state, "", `${url.pathname}${url.search}${url.hash}`);
+}
 
 function Title() {
   const name = useGame((s) => s.name);
@@ -116,11 +127,7 @@ function Title() {
     const code = url.searchParams.get("code")?.toUpperCase();
     const watch = url.searchParams.get("watch")?.toUpperCase();
     if (code === undefined && watch === undefined) return;
-    const strip = () => {
-      url.searchParams.delete("code");
-      url.searchParams.delete("watch");
-      history.replaceState(history.state, "", `${url.pathname}${url.search}${url.hash}`);
-    };
+    const strip = stripLink;
     const fill = code ?? watch!;
     if (!PEEK_CODE.test(fill)) return strip();
     setJoin(fill);

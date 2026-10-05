@@ -95,14 +95,23 @@ function typing() {
 
 export const JOIN_CODE = /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{4}$/;
 
-// The focus change that releases a held reload can be the press on Join or Host, which the reload then swallows. A valid
-// code typed in the join field rides the reload in the URL (as a join link does) so the field refills; a watch link
-// still in the URL is left as it is.
+// The focus change that releases a held reload can be the press on Join or Host, which the reload then swallows. The join
+// field's value rides the reload in the URL (as a join link does) so the field refills: a valid code replaces whatever link
+// the URL held, and a cleared or partial field drops it.
 function keepJoinCode() {
-  const code = document.querySelector<HTMLInputElement>('input[aria-label="Join code"]')?.value;
+  const field = document.querySelector<HTMLInputElement>('input[aria-label="Join code"]');
+  if (!field) return;
   const url = new URL(location.href);
-  if (!code || !JOIN_CODE.test(code) || url.searchParams.has("watch")) return;
-  url.searchParams.set("code", code);
+  const code = field.value;
+  if (JOIN_CODE.test(code)) {
+    if (url.searchParams.get("watch")?.toUpperCase() !== code) {
+      url.searchParams.delete("watch");
+      url.searchParams.set("code", code);
+    }
+  } else {
+    url.searchParams.delete("watch");
+    url.searchParams.delete("code");
+  }
   history.replaceState(history.state, "", `${url.pathname}${url.search}${url.hash}`);
 }
 

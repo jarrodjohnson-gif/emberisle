@@ -232,8 +232,14 @@ try {
   await f.page.waitForFunction(() => window.__emberisle.getState().screen === "play", null, { timeout: 15_000 });
   await f.page.evaluate(() => window.__emberisle.getState().goTitle());
   await title(f.page);
+  const urlAfterPlay = await f.page.evaluate(() => location.search);
   const back = { kept, value: await fInput.inputValue(), watch: await f.page.getByRole("button", { name: "Watch" }).count() };
   check("watch link: the field survived the reload; a later title starts empty with Play primary", kept === "K7QP" && back.value === "" && back.watch === 0, back);
+  check("watch link: the URL has no watch/code once Play left the title", !/watch=|code=/.test(urlAfterPlay), { urlAfterPlay });
+  await f.page.reload();
+  await title(f.page);
+  await sleep(500);
+  check("watch link: a reload at the title does not refill the stale code", (await fInput.inputValue()) === "" && (await f.page.getByRole("button", { name: "Watch" }).count()) === 0, { value: await fInput.inputValue() });
   await f.page.close();
 
   // --- 8. (#492) The online chunk always refused: a typed code survives the reload that the Join press releases.
