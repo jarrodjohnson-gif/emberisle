@@ -256,7 +256,7 @@ Full rules: **[docs/FRAMEWORK.md](docs/FRAMEWORK.md)**. In short:
 | `src/lib/game/random.ts` | Seeded RNG for the board deal (not the dice) |
 | `src/lib/game/store.ts` | The zustand store the UI uses |
 | `src/lib/scene/isle-renderer.ts` | The Three.js island: slabs, trees, sheep, boats, and painted textures |
-| `src/components/game/` | `EmberisleApp.tsx` (title and modes) and `Hud.tsx` (in-game bar) |
+| `src/components/game/` | `EmberisleApp.tsx` (title and modes) and `Hud.tsx` (in-game bar), with the bar's parts `TakeFromBar.tsx`, `PlaceChip.tsx`, `TradeButton.tsx`, `SheetsFailed.tsx`, `TrayFailed.tsx` and `escape-disarm.ts` |
 | `src/components/game/Chat.tsx`, `PlayerMenu.tsx`, `TradePanel.tsx`, `TradeToast.tsx`, `DiscardBar.tsx`, `WinScreen.tsx` | Chat and reactions, the player action menu, the trade panel and toast, the discard bar, the win screen |
 | `src/components/scene/IslandCanvas.tsx` | The canvas that mounts the Three.js island |
 | `src/lib/scene/mobile-fit.ts`, `palette.ts` | Phone camera fit and touch picking (pure math); the painted terrain colours |

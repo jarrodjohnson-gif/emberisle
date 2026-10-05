@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import {
-  ArrowLeftRight,
   Dices,
   Home,
   Landmark,
@@ -20,10 +19,15 @@ import { TurnCountdown } from "@/components/game/TurnCountdown";
 import { Dice, RollMoment } from "@/components/game/Dice";
 import { TableMenu } from "@/components/game/TableMenu";
 import { HandDock } from "@/components/game/Hand";
+import { TakeFromBar } from "@/components/game/TakeFromBar";
+import { PlaceChip } from "@/components/game/PlaceChip";
+import { SheetsFailed } from "@/components/game/SheetsFailed";
+import { TrayFailed } from "@/components/game/TrayFailed";
+import { TradeButton } from "@/components/game/TradeButton";
+import { useEscapeDisarm } from "@/components/game/escape-disarm";
 import { COST, RESOURCES, type BuildMode, type PlayerState } from "@/lib/game/types";
 import { hiddenCount, playable, totalVP } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
-import { play } from "@/lib/sound";
 import { LazyBoundary, preloadOnIdle } from "@/lib/lazy";
 import { useViewport } from "@/lib/viewport";
 import { useMoreBelow } from "@/lib/scroll-fade";
@@ -82,29 +86,6 @@ type Price = keyof typeof COST;
 function priceLabel(kind: Price) {
   const name = { path: "Path", outpost: "Outpost", stronghold: "Stronghold", card: "Fortune" }[kind];
   return `${name} · ${RESOURCES.filter((r) => COST[kind][r]).map((r) => `${COST[kind][r]} ${r}`).join(", ")}`;
-}
-
-// Escape, topmost layer first. One press closes exactly one thing:
-//   1. TableMenu (and its Leave question): window capture + stopPropagation (it closes whenever HowTo opens, so the two never stack).
-//   2. HowTo: modal, so window capture + stopPropagation; nothing behind it hears the key.
-//   3. TradePanel (window) and PlayerMenu (document), bubble phase, each closes itself; PlaceChip's pending tap (window) likewise.
-//   4. Disarming a build mode: window capture, but it stands down when 1-3 are open or the key came from a text field
-//      (the chat box minimizes itself), because the layers above run later in the same event and must still see their own state.
-function useEscapeDisarm() {
-  const setBuildMode = useGame((s) => s.setBuildMode);
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== "Escape") return;
-      const s = useGame.getState();
-      if (s.buildMode === "none" || s.tradeOpen || s.menuFor || s.pendingPlace || s.howTo) return;
-      if ((e.target as HTMLElement | null)?.closest("input, select, textarea")) return;
-      if (document.querySelector('[data-testid="table-menu"]')) return;
-      play("ui_back");
-      setBuildMode("none");
-    };
-    window.addEventListener("keydown", onKey, true);
-    return () => window.removeEventListener("keydown", onKey, true);
-  }, [setBuildMode]);
 }
 
 // The rules' roll line ("Tide rolls 4+5 = 9."): the dice row already shows the roll, so the log line skips it (#440).
@@ -465,99 +446,5 @@ export function Hud() {
         ore.
       </p>
     </>
-  );
-}
-
-function TakeFromBar() {
-  const state = useGame((s) => s.state);
-  const pendingSteal = useGame((s) => s.pendingSteal);
-  const chooseSteal = useGame((s) => s.chooseSteal);
-  if (!state || !pendingSteal) return null;
-  return (
-    <div className="flex flex-wrap items-center gap-2 rounded-[16px] border border-accent/40 bg-surface p-2">
-      <span className="text-sm">Take from whom?</span>
-      {pendingSteal.targets.map((id) => {
-        const p = state.players.find((x) => x.id === id);
-        if (!p) return null;
-        return (
-          <Button key={id} size="sm" variant="secondary" onClick={() => chooseSteal(id)}>
-            <span className="mr-1 inline-block size-2.5 rounded-full" style={{ background: p.color }} />
-            {p.name}
-          </Button>
-        );
-      })}
-    </div>
-  );
-}
-
-// A column scrolled down to a fortune brings the Place chip back into view. Stable, so it runs when the chip mounts, not on
-// every render while a placement is pending (which would undo the player's own scrolling).
-const intoView = (el: HTMLElement | null) => el?.scrollIntoView({ block: "nearest" });
-
-// Coarse pointers pick a mark, then confirm here (docs/design/mobile-camera-touch.md). Enter confirms, Esc cancels.
-function PlaceChip({ column }: { column?: boolean }) {
-  const pending = useGame((s) => s.pendingPlace);
-  const confirmPlace = useGame((s) => s.confirmPlace);
-  const setPendingPlace = useGame((s) => s.setPendingPlace);
-  useEffect(() => {
-    if (!pending) return;
-    const key = (e: KeyboardEvent) => {
-      if (e.key === "Enter") confirmPlace();
-      if (e.key === "Escape") setPendingPlace(null);
-    };
-    window.addEventListener("keydown", key);
-    return () => window.removeEventListener("keydown", key);
-  }, [pending, confirmPlace, setPendingPlace]);
-  if (!pending) return null;
-  return (
-    <div
-      ref={column ? intoView : undefined}
-      className={
-        column
-          ? "flex shrink-0 items-center gap-3"
-          : "pointer-events-none absolute inset-x-0 bottom-[max(11rem,calc(env(safe-area-inset-bottom)+10.5rem))] z-20 flex items-center justify-end gap-3 px-safe"
-      }
-    >
-      <button type="button" className="pointer-events-auto h-11 px-2 text-sm text-fg underline" onClick={() => setPendingPlace(null)}>
-        Cancel
-      </button>
-      <button
-        type="button"
-        data-testid="place-chip"
-        className="pointer-events-auto h-11 min-w-[88px] rounded-[12px] bg-fg px-4 text-bg"
-        onClick={confirmPlace}
-      >
-        Place
-      </button>
-    </div>
-  );
-}
-
-// The sheets chunk did not load: close what was asked for, so How to play or Trade can be pressed again and retry, and
-// tell the HUD which ask failed, so the winner line offers the way out while the win screen cannot show (#492).
-function SheetsFailed({ sheetsKey, onLost }: { sheetsKey: string; onLost: (key: string | null) => void }) {
-  const setHowTo = useGame((s) => s.setHowTo);
-  const setTradeOpen = useGame((s) => s.setTradeOpen);
-  useEffect(() => {
-    setHowTo(false);
-    setTradeOpen(false);
-    onLost(sheetsKey);
-    return () => onLost(null);
-  }, [setHowTo, setTradeOpen, onLost, sheetsKey]);
-  return null;
-}
-
-// The same for the fortune tray: the next press of Fortunes mounts it again and tries the network again.
-function TrayFailed({ close }: { close: () => void }) {
-  useEffect(close, [close]);
-  return null;
-}
-
-function TradeButton() {
-  const setTradeOpen = useGame((s) => s.setTradeOpen);
-  return (
-    <Button size="sm" variant="secondary" onClick={(e) => setTradeOpen(true, e.currentTarget)}>
-      <ArrowLeftRight className="size-4" /> Trade
-    </Button>
   );
 }
