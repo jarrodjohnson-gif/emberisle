@@ -111,11 +111,13 @@ try {
   console.log(`turn announcements: ${JSON.stringify(turns)}`);
   if (!turns.includes("Your turn.") || !turns.some((t) => /^.+'s turn\.$/.test(t))) throw new Error(`turn announcements: ${JSON.stringify(turns)}`);
 
+  // The bots ahead of the human may ask the table (#445), and an ask waits up to 20 s for every seat's answer, so say No.
   const rolled = await page.evaluate(async () => {
     const g = window.__emberisle;
     const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     for (let i = 0; i < 200; i++) {
       const s = g.getState();
+      if (s.offer && s.offer.from !== s.localId) s.answerTrade(false);
       if (s.state.current === s.localId && s.state.phase === "roll") {
         const r = s.dispatch({ type: "roll" });
         return r.ok ? g.getState().state.dice : r.error;
