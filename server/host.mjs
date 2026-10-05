@@ -871,7 +871,7 @@ function talk(ws, room, msg) {
     const text = cleanText(msg.text);
     if (text === null) return;
     const line = { id: room.chatSeq++, seat: seat.id, player: seat.pid ?? null, name: seat.name, color: seat.color, text, at: Date.now() };
-    remember(room.chat, line);
+    remember(room.chat, line, 30);
     broadcast(room, { type: "chat", ...line });
     save(room);
     return;

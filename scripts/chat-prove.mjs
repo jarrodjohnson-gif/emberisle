@@ -834,6 +834,24 @@ try {
   }
   const atRoll = await seen(a);
   check(atRoll.phase === "roll", `game log: setup is done, phase ${atRoll.phase}`);
+
+  // #501: chat history from a started game is restored by the existing welcome.chat rejoin path.
+  const historyLines = [`reload-history-a-${Date.now()}`, `reload-history-c-${Date.now()}`];
+  await a.page.evaluate((text) => window.__emberisle.getState().sendChat(text), historyLines[0]);
+  await c.page.evaluate((text) => window.__emberisle.getState().sendChat(text), historyLines[1]);
+  const bSeat = await store(b, () => window.__emberisle.getState().seatId);
+  await b.page.waitForFunction((texts) => texts.every((text) => window.__emberisle.getState().chat.some((line) => line.text === text)), historyLines);
+  await b.page.reload();
+  await b.page.waitForFunction(({ seat, texts }) => {
+    const s = window.__emberisle.getState();
+    return s.seatId === seat && s.state?.phase === "roll" && texts.every((text) => s.chat.some((line) => line.text === text));
+  }, { seat: bSeat, texts: historyLines });
+  if (!(await store(b, () => window.__emberisle.getState().chatOpen))) {
+    await b.page.getByRole("button", { name: /^Open chat/ }).click();
+  }
+  for (const line of historyLines) await b.page.getByTestId("chat-log").locator("li", { hasText: line }).waitFor();
+  check(true, "chat history: Tide reloads mid-game in the same seat and sees earlier chat lines");
+
   const phoneLayout = async (t, ownTurn, checkBanner = false) => {
     const state = await seen(t);
     const own = state.current === state.you;
