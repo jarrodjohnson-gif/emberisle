@@ -2,7 +2,7 @@
 // small chip per good, painted like its hand card (#436), so the build button and the Costs card say the same thing from
 // the same COST table. As on the board game's card, a chip alone means one and carries its count only above that. With a
 // hand, a good the hand is short of dims and carries the shortfall, so a touch screen sees what is missing without a hover;
-// the button passes the hand only when the seat is close (1-2 goods short in all), so an empty hand reads quiet, not red.
+// the button passes the hand only when the seat is one good short in all, so an empty hand reads quiet, not red.
 import { RESOURCE_ICON, RESOURCE_PAINT } from "@/components/game/Hand";
 import { COST, RESOURCES, type Resource } from "@/lib/game/types";
 import { cn } from "@/lib/utils";
@@ -45,10 +45,10 @@ export function CostChips({ kind, hand, className }: { kind: Price; hand?: Recor
               <Icon className="size-3" />
               {(COST[kind][r] ?? 0) > 1 ? COST[kind][r] : null}
             </span>
-            {/* A badge on the chip's corner, not beside it, so a mark never widens the row (the desktop row stays one line);
-                it rises 4 px, the gap the build tile leaves between its label and its chips. */}
+            {/* A crimson badge (danger, not the orange ready dot) hung from the chip's top edge and flush with its right edge:
+                it widens nothing and never crosses the next chip; it sits in the gap the build tile leaves under its label. */}
             {missing ? (
-              <span className="absolute -right-1.5 -top-1 rounded-full bg-surface px-0.5 text-caption leading-3 tabular-nums text-danger ring-1 ring-black/10">
+              <span className="absolute bottom-full right-0 translate-y-0.5 rounded-full bg-danger px-1 text-[10px] font-semibold leading-3 tabular-nums text-white">
                 −{missing}
               </span>
             ) : null}

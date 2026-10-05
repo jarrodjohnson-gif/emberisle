@@ -136,8 +136,9 @@ try {
       // An outpost of the seat's own, so Path has an edge to lay and arms (a build with no spot refuses, build-ready-prove).
       st.vertices.find((v) => v.hexes.length === 3).building = { playerId: me.id, kind: "outpost" };
       st.seq += 1;
-      // An error line too (a real stack row): the build row is a line shorter since its tiles, and the sideways fixtures
-      // below must still overflow the column to check the "more below" cue.
+      // Fixture, not a product change: an error line (a real stack row, as after a refused build) is added because the
+      // build row got a line shorter with its 44 px tiles (build-ready-prove), and the 640x360 and 844x390 checks below
+      // need the column to overflow to test the "more below" cue.
       g.setState({ state: st, banner: "Rolled 3 and 4: 7.", buildMode: "none", pendingSteal: null, error: "The bank is short of ore." });
     });
     await page.getByRole("button", { name: "End turn" }).waitFor();

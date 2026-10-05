@@ -26,7 +26,7 @@ import { TrayFailed } from "@/components/game/TrayFailed";
 import { TradeButton } from "@/components/game/TradeButton";
 import { CostChips, priceLabel, shortfall, type Price } from "@/components/game/BuildCost";
 import { useEscapeDisarm } from "@/components/game/escape-disarm";
-import { COST, type BuildMode, type PlayerState } from "@/lib/game/types";
+import { COST, RESOURCES, type BuildMode, type GameState, type PlayerState } from "@/lib/game/types";
 import { hiddenCount, legalCities, legalRoads, legalSettle, playable, totalVP } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
 import { LazyBoundary, preloadOnIdle } from "@/lib/lazy";
@@ -34,11 +34,18 @@ import { useViewport } from "@/lib/viewport";
 import { useMoreBelow } from "@/lib/scroll-fade";
 import { cn } from "@/lib/utils";
 
-function affords(p: PlayerState, kind: Price) {
-  return Object.keys(shortfall(p.resources, kind)).length === 0;
-}
-
 const PRICES = Object.keys(COST) as Price[];
+
+// Whether a build can happen now and, if not, why: the supply (or the deck), then the hand, then a legal spot.
+function buildStatus(state: GameState, me: PlayerState, kind: Price) {
+  const short = shortfall(me.resources, kind);
+  const missing = Object.values(short).reduce((a, b) => a + b, 0);
+  const left = { path: me.pathsLeft, outpost: me.outpostsLeft, stronghold: me.strongholdsLeft, card: state.deckLeft ?? state.deck.length }[kind];
+  const spot = () =>
+    kind === "path" ? legalRoads(state, me.id, false).length > 0 : kind === "outpost" ? legalSettle(state, me.id, false).length > 0 : kind === "stronghold" ? legalCities(state, me.id).length > 0 : true;
+  const why = left <= 0 ? "None left" : missing ? null : spot() ? null : "No spot";
+  return { short, missing, why, ready: !why && !missing };
+}
 
 function phaseCopy(phase: string) {
   switch (phase) {
@@ -132,19 +139,26 @@ export function Hud() {
   useEffect(() => setFortunesOpen(false), [turnKey]);
   const actor = mode === "hotseat" ? (state?.current ?? "") : localId;
   const me = state ? (state.players.find((p) => p.id === actor) ?? state.players[0]!) : null;
-  // A build that just became payable (a roll, a trade) pulses its button once; a change of seat is not that. A watcher's
-  // `me` is seat 0 of the opponent view, which has no `resources` online (docs/design/spectator.md), so it is checked first.
-  const affordKey = me?.resources ? `${me.id}|${PRICES.map((k) => (affords(me, k) ? 1 : 0)).join("")}` : "";
-  const wasAffordable = useRef(affordKey);
+  // A build that just became ready (a roll, a trade) pulses its button once; a change of seat is not that, and a build with
+  // no spot or none left never is. The key is empty while the row is not on screen, and the hand's counts are in it, so any
+  // other change (a steal, the row leaving) clears a pulse instead of leaving one to fire later. A watcher's `me` is seat 0 of
+  // the opponent view, which has no `resources` online (docs/design/spectator.md), so it is checked first.
+  const rowShown = !!state && !!me?.resources && state.phase === "main" && state.current === actor;
+  const readyKey = rowShown ? `${me!.id}|${PRICES.map((k) => (buildStatus(state, me!, k).ready ? 1 : 0)).join("")}|${RESOURCES.map((r) => me!.resources[r]).join(",")}` : "";
+  const wasReady = useRef(readyKey);
   const [pulse, setPulse] = useState<Price[]>([]);
   useEffect(() => {
-    const [wasId, was = ""] = wasAffordable.current.split("|");
-    const [id, now = ""] = affordKey.split("|");
-    wasAffordable.current = affordKey;
-    if (wasId !== id) return;
-    const newly = PRICES.filter((_, i) => now[i] === "1" && was[i] === "0");
-    if (newly.length) setPulse(newly);
-  }, [affordKey]);
+    const [wasId, was = ""] = wasReady.current.split("|");
+    const [id, now = ""] = readyKey.split("|");
+    wasReady.current = readyKey;
+    const newly = wasId === id ? PRICES.filter((_, i) => now[i] === "1" && was[i] === "0") : [];
+    setPulse(newly);
+    // The button's animationend clears it; under reduced motion no animation runs, so a timer does. (Not a timer always: a
+    // frame can come late behind an island refit, and a class gone before the first frame never pulses.)
+    if (!newly.length || !matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const t = setTimeout(() => setPulse([]), 400);
+    return () => clearTimeout(t);
+  }, [readyKey]);
 
   if (!state || !me) return null;
   const mine = state.current === actor;
@@ -354,16 +368,13 @@ export function Hud() {
                     nothing to build on or none left says so, and one the hand can pay for with a spot waiting wears the dot. */}
                 {(
                   [
-                    ["path", "path", Route, "Path", me.pathsLeft, () => legalRoads(state, me.id, false).length > 0],
-                    ["outpost", "outpost", Home, "Outpost", me.outpostsLeft, () => legalSettle(state, me.id, false).length > 0],
-                    ["stronghold", "stronghold", Landmark, "Stronghold", me.strongholdsLeft, () => legalCities(state, me.id).length > 0],
-                    ["card", null, ScrollText, "Fortune", state.deckLeft ?? state.deck.length, () => true],
+                    ["path", "path", Route, "Path"],
+                    ["outpost", "outpost", Home, "Outpost"],
+                    ["stronghold", "stronghold", Landmark, "Stronghold"],
+                    ["card", null, ScrollText, "Fortune"],
                   ] as const
-                ).map(([kind, arm, Icon, label, left, hasSpot]) => {
-                  const short = shortfall(me.resources, kind);
-                  const missing = Object.values(short).reduce((a, b) => a + b, 0);
-                  const why = left <= 0 ? "None left" : missing ? null : hasSpot() ? null : "No spot";
-                  const ready = !why && !missing;
+                ).map(([kind, arm, Icon, label]) => {
+                  const { short, missing, why, ready } = buildStatus(state, me, kind);
                   const blocked = !ready || spectator;
                   const status = why ?? (ready ? "Ready" : `Short ${Object.entries(short).map(([r, n]) => `${n} ${r}`).join(", ")}`);
                   return (
@@ -375,8 +386,8 @@ export function Hud() {
                       data-build={why ? "blocked" : ready ? "ready" : "short"}
                       // A 44 px two-line tile, the piece over its chips (docs/design/polish.md: actions as tiles with their amount),
                       // so the row keeps the lines it had before the chips: one at 1280x720, three builds a line on a phone.
-                      className={cn("relative h-11 min-w-11 flex-col gap-1 px-2.5 py-0", NOT_NOW, pulse.includes(kind) && "build-ready")}
-                      onAnimationEnd={() => setPulse((p) => p.filter((k) => k !== kind))}
+                      className={cn("relative h-11 min-w-11 flex-col gap-2 px-2.5 py-0", NOT_NOW, pulse.includes(kind) && "build-ready")}
+                      onAnimationEnd={(e) => e.animationName === "build-ready" && setPulse((p) => p.filter((k) => k !== kind))}
                       aria-pressed={arm ? buildMode === arm : undefined}
                       aria-disabled={blocked || undefined}
                       title={priceLabel(kind)}
@@ -388,12 +399,12 @@ export function Hud() {
                         setBuildMode(buildMode === arm ? "none" : arm);
                       }}
                     >
-                      <span className="flex items-center gap-1.5">
+                      <span className="flex items-center gap-1.5 leading-4">
                         <Icon className="size-4" /> {label}
                       </span>
                       {/* The chips and the reason are aria-hidden: the name stays the piece, the description says the rest. The
-                          shortfall marks show only when 1-2 goods away ("almost there"); further off, the plain cost and the Costs card. */}
-                      {why ? <span aria-hidden className="text-caption text-muted">{why}</span> : <CostChips kind={kind} hand={missing <= 2 ? me.resources : undefined} />}
+                          shortfall mark shows only when one good away ("almost there"); further off, the plain cost and the Costs card. */}
+                      {why ? <span aria-hidden className="text-caption text-muted">{why}</span> : <CostChips kind={kind} hand={missing === 1 ? me.resources : undefined} />}
                       {ready && buildMode !== arm ? READY_DOT : null}
                     </Button>
                   );

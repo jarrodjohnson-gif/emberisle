@@ -227,7 +227,7 @@ export function publicVP(state: GameState, pid: string) {
 
 export function totalVP(state: GameState, pid: string) {
   const p = player(state, pid);
-  return publicVP(state, pid) + (p?.hidden.vp ?? 0);
+  return publicVP(state, pid) + (p?.hidden.vp ?? 0) * POINTS.pointsFortune;
 }
 
 function checkWin(state: GameState, pid: string) {

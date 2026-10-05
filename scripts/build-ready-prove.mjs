@@ -4,13 +4,16 @@
 // - each build button (Path, Outpost, Stronghold, Fortune) reads ready, short or blocked exactly as rules.ts says for that
 //   hand: COST and the hand give the shortfall, legalRoads / legalSettle / legalCities say whether a spot exists, and the
 //   piece supply or the deck says "None left"; a ready build wears the dot and is pressable, the others refuse;
-// - a build 1-2 goods short in all dims the chips it lacks and shows "−N" beside them, visible with the pointer parked at
-//   0,0 (no hover); 3 or more short shows the plain cost with no red (an empty hand reads quiet); the aria-description
-//   names the full shortfall either way;
+// - a build one good short in all dims that chip and hangs a "−1" badge on it, visible with the pointer parked at 0,0 (no
+//   hover); 2 or more short shows the plain cost with no red (an empty hand reads quiet); the aria-description names the
+//   full shortfall either way;
 // - on a phone (390x844, 360x640, 844x390) each build is a two-line 44 px tile, and the bottom stack's content height is
 //   at most main's (MAIN_STACK, measured on e61d665 with the same hand) plus 2 px, so the island's hole is no smaller;
-// - a build that just became payable pulses once (class build-ready), and under reduced motion the pulse has no animation;
-// - the Costs card opens from the Table menu: one row per build with the COST chips, the POINTS lines, the win line; focus
+// - a build that just became ready pulses once (class build-ready); one with no spot or none left never does, however the
+//   hand changes; under reduced motion the pulse has no animation;
+// - with Path armed, one Escape on the open Costs card closes the card and leaves Path armed;
+// - the Costs card opens from the Table menu: one row per build with the COST chips and the price as text for a screen
+//   reader, the POINTS lines, the win line; focus
 //   lands on Close, Tab stays inside, it lies inside the safe rect, and Escape closes it with the focus back on the menu button;
 // - zero console errors.
 // Saves test-results/build-ready-<size>.png and build-ready-card-<size>.png. Run: npm run build-ready-prove (VITE_PORT, default 8509).
@@ -31,15 +34,21 @@ const VIEWS = [
   { tag: "360x640", width: 360, height: 640, touch: true },
   { tag: "844x390", width: 844, height: 390, touch: true, insets: { top: 0, right: 47, bottom: 21, left: 47 } },
 ];
-// The bottom stack's scrollHeight on main (e61d665, 2026-10-05) in `main` with the "outpost goods, no spot" hand below, and
-// the island hole's bottom inset at 390x844 (`__isle.insets().bottom`, 398). The build row may not grow past these.
-const MAIN_STACK = { "390x844": 352, "360x640": 352, "844x390": 316 };
+// The bottom stack's scrollHeight on main (813022f, 2026-10-05: hotseat, `main`, the "outpost goods, no spot" hand below,
+// an outpost of the seat's own, dice 3+4, no fortunes) and the island hole's bottom inset at 390x844 (`__isle.insets()`).
+// The build row may not grow past these on a phone; at 1280x720 the 44 px tiles are 8 px taller than main's 36 px buttons,
+// which the review accepted (DESKTOP_GROW). When main's stack changes for another reason (a new row, a banner, the hand),
+// re-measure these on main with the same fixture and say so in the PR; do not loosen the margin.
+const MAIN_STACK = { "1280x720": 208, "390x844": 352, "360x640": 352, "844x390": 316 };
+const DESKTOP_GROW = 8;
 const MAIN_HOLE_BOTTOM = 398;
 const KINDS = Object.keys(COST);
+const NAME = { path: "Path", outpost: "Outpost", stronghold: "Stronghold", card: "Fortune" };
 const NONE = { timber: 0, clay: 0, wool: 0, grain: 0, ore: 0 };
 // Hands and supplies to craft; every expectation below is computed from rules.ts on the state the page then holds.
 const HANDS = [
   { name: "empty", hand: NONE },
+  { name: "one clay short", hand: { ...NONE, timber: 1, wool: 1, grain: 1, ore: 1 } },
   { name: "path only", hand: { ...NONE, timber: 1, clay: 1, ore: 1 } },
   { name: "outpost goods, no spot", hand: { ...NONE, timber: 1, clay: 1, wool: 1, grain: 1 } },
   { name: "stronghold and fortune", hand: { ...NONE, wool: 1, grain: 4, ore: 3 } },
@@ -167,7 +176,7 @@ try {
             assert.equal(r.marks.length, 0, `${at}: no shortfall marks on a blocked build`);
           } else if (w.state === "short") {
             const total = w.short.reduce((a, [, n]) => a + n, 0);
-            if (total <= 2) {
+            if (total === 1) {
               assert.deepEqual(r.marks.map((s) => s.text), w.short.map(([, n]) => `−${n}`), `${at}: ${total} short, the chips show the shortfall ${JSON.stringify(r.marks)}`);
               for (const s of r.marks) {
                 assert.ok(s.visible && !s.hover, `${at}: the shortfall is on screen with no hover ${JSON.stringify(s)}`);
@@ -185,12 +194,13 @@ try {
           assert.ok(rect.left >= safe.left && rect.right <= v.width - safe.right && rect.top >= safe.top && rect.bottom <= v.height - safe.bottom, `${at}: inside the safe rect ${JSON.stringify(rect)}`);
         }
         // The build row has not grown: the stack's content is no taller than on main, and the island's hole no smaller.
-        if (v.touch && h.name === "outpost goods, no spot") {
+        if (h.name === "outpost goods, no spot") {
           const fit = await page.evaluate(() => ({
             stack: document.querySelector('[data-testid="build-path"]').closest(".overflow-y-auto").scrollHeight,
             holeBottom: window.__isle.insets().bottom,
           }));
-          assert.ok(fit.stack <= MAIN_STACK[v.tag] + 2, `${tag}: the stack is ${fit.stack} px tall, main's ${MAIN_STACK[v.tag]}`);
+          const allow = MAIN_STACK[v.tag] + (v.touch ? 0 : DESKTOP_GROW) + 2;
+          assert.ok(fit.stack <= allow, `${tag}: the stack is ${fit.stack} px tall, main's ${MAIN_STACK[v.tag]} (allowed ${allow})`);
           if (v.tag === "390x844") assert.ok(fit.holeBottom <= MAIN_HOLE_BOTTOM + 2, `${tag}: the island hole's bottom inset is ${fit.holeBottom}, main's ${MAIN_HOLE_BOTTOM}`);
           console.log(`${tag}: stack ${fit.stack} px (main ${MAIN_STACK[v.tag]}), hole bottom ${fit.holeBottom}`);
         }
@@ -209,13 +219,13 @@ try {
 
       // The pulse: from nothing to a path's goods, the Path button alone starts the build-ready animation (recorded from its
       // animationstart, since 280 ms can pass before a read); under reduced motion the class is on but no animation runs.
-      await craft({ hand: NONE, pathsLeft: 5 });
+      await craft({ hand: NONE, pathsLeft: 5, deckLeft: 5 });
       await page.waitForFunction(() => document.querySelector('[data-testid="build-path"]').dataset.build === "short");
       await page.evaluate(() => {
         window.__pulses = [];
         document.addEventListener("animationstart", (e) => window.__pulses.push([e.target.dataset.testid, e.animationName]));
       });
-      await craft({ hand: { ...NONE, timber: 1, clay: 1 }, pathsLeft: 5 });
+      await craft({ hand: { ...NONE, timber: 1, clay: 1 }, pathsLeft: 5, deckLeft: 5 });
       if (reducedMotion === "reduce") {
         const still = await page.evaluate(() => {
           const b = document.querySelector('[data-testid="build-path"]');
@@ -228,8 +238,26 @@ try {
         assert.deepEqual(started, [["build-path", "build-ready"]], `${tag}: only the newly payable Path pulses`);
       }
       const pulsed = { animation: reducedMotion === "reduce" ? "none" : "build-ready" };
+      // From nothing to everything: Path, Stronghold and Fortune become ready and pulse; Outpost, affordable with no spot, does not.
+      await craft({ hand: NONE, pathsLeft: 5, deckLeft: 5 });
+      await page.waitForFunction(() => document.querySelector('[data-testid="build-path"]').dataset.build === "short");
+      await page.evaluate(() => (window.__pulses = []));
+      await craft({ hand: { timber: 5, clay: 5, wool: 5, grain: 5, ore: 5 }, pathsLeft: 5, deckLeft: 5 });
+      const rich = await page.evaluate(() => ({
+        outpost: document.querySelector('[data-testid="build-outpost"]').dataset.build,
+        classes: ["path", "outpost", "stronghold", "card"].filter((k) => document.querySelector(`[data-testid="build-${k}"]`).classList.contains("build-ready")),
+      }));
+      assert.equal(rich.outpost, "blocked", `${tag}: Outpost reads No spot with a full hand`);
+      assert.deepEqual(rich.classes, ["path", "stronghold", "card"], `${tag}: the ready builds pulse, No spot does not`);
+      if (reducedMotion === "no-preference") {
+        await page.waitForFunction(() => window.__pulses.filter(([, n]) => n === "build-ready").length >= 3);
+        assert.deepEqual(await page.evaluate(() => window.__pulses.filter(([, n]) => n === "build-ready").map(([id]) => id).sort()), ["build-card", "build-path", "build-stronghold"], `${tag}: animations started`);
+      }
+      // The pulse clears on its own (reduced motion has no animationend to clear it).
+      await page.waitForFunction(() => !document.querySelector('[data-testid="build-path"]').classList.contains("build-ready"));
 
-      // The Costs card from the Table menu.
+      // The Costs card from the Table menu, with Path armed underneath: one Escape closes the card alone.
+      await page.evaluate(() => window.__emberisle.getState().setBuildMode("path"));
       const trigger = page.getByRole("button", { name: "Table menu" });
       await trigger.click();
       await page.getByRole("dialog", { name: "Table menu" }).getByRole("button", { name: "Costs" }).click();
@@ -239,6 +267,9 @@ try {
       for (const k of KINDS) {
         const chips = await card.getByTestId(`cost-row-${k}`).evaluate((row) => [...row.querySelectorAll("[data-testid^=cost-]")].map((c) => [c.dataset.testid.split("-")[2], c.textContent.trim()]));
         assert.deepEqual(Object.fromEntries(chips), Object.fromEntries(RESOURCES.filter((r) => COST[k][r]).map((r) => [r, COST[k][r] > 1 ? String(COST[k][r]) : ""])), `${tag}: the ${k} row shows COST.${k} (a chip alone is one)`);
+        // What a screen reader gets: the piece and its price as words (the chips are aria-hidden).
+        const spoken = await card.getByTestId(`cost-row-${k}`).evaluate((row) => [...row.querySelectorAll(":scope > :not([aria-hidden])")].map((el) => el.textContent.trim()).join(" "));
+        assert.equal(spoken, `${NAME[k]} · ${RESOURCES.filter((r) => COST[k][r]).map((r) => `${COST[k][r]} ${r}`).join(", ")}`, `${tag}: the ${k} row reads its price aloud`);
       }
       const worth = await card.getByTestId("worth-row").evaluateAll((rows) => rows.map((r) => [...r.children].map((c) => c.textContent.trim())));
       assert.deepEqual(
@@ -248,6 +279,7 @@ try {
           ["Stronghold", String(POINTS.stronghold)],
           [`Longest path (${LONGEST_PATH_MIN}+)`, String(POINTS.longestPath)],
           [`Largest army (${LARGEST_ARMY_MIN} wayfarers)`, String(POINTS.largestArmy)],
+          ["Points fortune, hidden", String(POINTS.pointsFortune)],
         ],
         `${tag}: the worth lines come from POINTS`,
       );
@@ -264,7 +296,8 @@ try {
       await page.keyboard.press("Escape");
       await card.waitFor({ state: "detached" });
       assert.ok(await trigger.evaluate((el) => document.activeElement === el), `${tag}: Escape returns the focus to the menu button`);
-      assert.equal(await page.evaluate(() => window.__emberisle.getState().buildMode), "none", `${tag}: Escape on the card armed nothing`);
+      assert.equal(await page.evaluate(() => window.__emberisle.getState().buildMode), "path", `${tag}: one Escape closed the card and left Path armed`);
+      await page.evaluate(() => window.__emberisle.getState().setBuildMode("none"));
       console.log(`${tag}: ${HANDS.length} hands read as rules.ts says; shortfall chips visible without hover; pulse ${pulsed.animation}; Costs card opens, fits, traps focus, closes on Escape`);
       await ctx.close();
     }

@@ -4,7 +4,7 @@
 import { useEffect, useRef } from "react";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { CostChips, PRICE_NAME, type Price } from "@/components/game/BuildCost";
+import { CostChips, PRICE_NAME, priceLabel, type Price } from "@/components/game/BuildCost";
 import { useFocusTrap } from "@/lib/focus-trap";
 import { useGame } from "@/lib/game/store";
 import {
@@ -20,6 +20,7 @@ const WORTH: [string, number][] = [
   [PRICE_NAME.stronghold, POINTS.stronghold],
   [`Longest path (${LONGEST_PATH_MIN}+)`, POINTS.longestPath],
   [`Largest army (${LARGEST_ARMY_MIN} wayfarers)`, POINTS.largestArmy],
+  ["Points fortune, hidden", POINTS.pointsFortune],
 ];
 
 export function CostCard({ onClose }: { onClose: () => void }) {
@@ -71,14 +72,16 @@ export function CostCard({ onClose }: { onClose: () => void }) {
                 data-testid={`cost-row-${kind}`}
                 className="flex h-8 items-center justify-between gap-3 text-body"
               >
-                {PRICE_NAME[kind]}
+                {/* The chips are aria-hidden (a row of icons): the read-out carries the same price. */}
+                <span aria-hidden>{PRICE_NAME[kind]}</span>
+                <span className="sr-only">{priceLabel(kind)}</span>
                 <CostChips kind={kind} />
               </li>
             ))}
           </ul>
-          <ul className="mt-4 grid grid-cols-[1fr_auto] content-start gap-x-3 gap-y-1 text-caption text-muted sm:mt-2">
+          <ul className="mt-4 flex flex-col gap-1 text-caption text-muted sm:mt-2">
             {WORTH.map(([what, n]) => (
-              <li key={what} data-testid="worth-row" className="contents">
+              <li key={what} data-testid="worth-row" className="flex justify-between gap-3">
                 <span>{what}</span>
                 <span className="tabular-nums text-fg">{n}</span>
               </li>
