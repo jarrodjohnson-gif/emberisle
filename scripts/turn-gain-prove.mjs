@@ -20,11 +20,12 @@
 //   transparent, so the glass and the board under it), the lowest ratio at least 3:1;
 // - reduced motion at 1280x720: the lines and the turn moment run the moment-fade keyframes (opacity only, no transform in
 //   the keyframes or on any frame) over at least 1.5 s, each line still readable for 1.2 s.
-// Hotseat at 1280x720: the moment names the seat taking the device ("Seat 2's turn"). Zero console errors.
+// Hotseat at 1280x720: the moment names the seat taking the device ("Seat 2's turn"). A reconnect at 390x844 replays nothing
+// (reconnect(): a real connectTable over a controlled socket) and a live change after it still shows. Zero console errors.
 // Readable times come from each element's own animation (keyframes, duration, delay) capped by how long it stayed on the
 // page: software GL frames are too sparse to time it by sampling. For the placement and contrast measures only, the
 // moment being measured is held on screen (__hold), and "Your turn" is timed again on a later turn left untouched.
-// Run: npm run turn-gain-prove (ONLY=390x844, reduced or hotseat runs one part). Port from VITE_PORT, default 8476.
+// Run: npm run turn-gain-prove (ONLY=390x844, reduced or hotseat or reconnect runs one part). Port from VITE_PORT, default 8476.
 // Screenshots to test-results/turn-gain-*.png.
 import { existsSync, mkdirSync } from "node:fs";
 import { chromium } from "playwright";
@@ -165,7 +166,7 @@ function recorders() {
   requestAnimationFrame(frame);
 }
 
-async function open(view, { reduced = false } = {}) {
+async function open(view, { reduced = false, before, path = "/" } = {}) {
   const ctx = await browser.newContext({
     viewport: { width: view.width, height: view.height },
     hasTouch: !!view.touch,
@@ -179,7 +180,8 @@ async function open(view, { reduced = false } = {}) {
   page.on("pageerror", (e) => errors.push(`${tag}: ${e}`));
   if (view.insets) await (await ctx.newCDPSession(page)).send("Emulation.setSafeAreaInsetsOverride", { insets: view.insets });
   await page.addInitScript(recorders);
-  await page.goto(`http://127.0.0.1:${PORT}/`);
+  await before?.(ctx, page);
+  await page.goto(`http://127.0.0.1:${PORT}${path}`);
   return { ctx, page, tag };
 }
 
@@ -600,11 +602,96 @@ async function hotseat() {
   }
 }
 
+// A mid-game reconnect through the real connectTable and store, over a socket the proof controls (page.routeWebSocket): the
+// person's seat s0/p0 is welcomed at seq 20 (turn 2, main, p1's turn), the socket is dropped, the normal backoff redials,
+// and the same seat is welcomed again at seq 22 on their own roll (turn 3) with timber +2. A first load or a rejoin replays
+// nothing: no "Your turn", no "+2 Timber", and nothing left over from before the drop. A live change after the rejoin still shows.
+async function reconnect() {
+  const view = { width: 390, height: 844, touch: true, insets: { top: 47, right: 0, bottom: 34, left: 0 } };
+  const sent = { welcomes: 0 };
+  let states = [];
+  let sockets = [];
+  const { ctx, page, tag } = await open(view, {
+    path: "/?host=ws://127.0.0.1:9",
+    before: async (ctx, page) => {
+      await ctx.addInitScript(() => localStorage.setItem("emberisle-seat", JSON.stringify({ code: "ABCD", secret: "s3cret" })));
+      await page.routeWebSocket("ws://127.0.0.1:9/", (ws) => {
+        sockets.push(ws);
+        ws.onMessage(async (raw) => {
+          if (JSON.parse(String(raw)).type !== "hello") return;
+          sent.welcomes++;
+          ws.send(JSON.stringify({ type: "welcome", code: "ABCD", you: "p0", host: false, secret: "s3cret", chat: [] }));
+          // The state follows the welcome once the proof has built it (the first dial is at page load).
+          while (!states.length) await new Promise((r) => setTimeout(r, 20));
+          ws.send(JSON.stringify(states.shift()));
+        });
+      });
+    },
+  });
+  const legal = { outpost: [], path: [], stronghold: [], wayfarer: [], steal: {}, discard: 0, actions: [] };
+  try {
+    const base = await page.evaluate(async () => {
+      const { createGame } = await import("/src/lib/game/board.ts");
+      return createGame({ seed: 7, humans: [{ name: "Me" }], bots: 3 });
+    });
+    const at = (seq, turn, phase, current, timber) => ({
+      type: "state",
+      you: "p0",
+      legal,
+      game: { ...base, seq, turn, phase, current, players: base.players.map((p) => (p.id === "p0" ? { ...p, resources: { ...p.resources, timber } } : p)) },
+    });
+    const own = () => page.evaluate(() => window.__emberisle.getState().state?.players.find((p) => p.id === "p0")?.resources.timber);
+    const shown = () => page.evaluate(() => ({ turns: window.__turns.length, lines: window.__lines.length, up: !!document.querySelector('[data-testid="turn-moment"], [data-testid="gain-floats"]') }));
+    const seq = () => page.evaluate(() => window.__emberisle.getState().state?.seq);
+    const push = (m) => sockets.at(-1).send(JSON.stringify(m));
+    // Nothing new shows for a while after `n` has loaded: polled for 900 ms, longer than the store-to-DOM round trip.
+    const stays = async (label, was) => {
+      const end = Date.now() + 900;
+      let now = await shown();
+      while (Date.now() < end && now.turns === was.turns && now.lines === was.lines && !now.up) now = await shown();
+      check(now.turns === was.turns && now.lines === was.lines && !now.up, `${tag} ${label}: nothing shown`, now);
+    };
+
+    states = [at(20, 2, "main", "p1", 1)];
+    await page.waitForFunction(() => window.__emberisle?.getState().state?.seq === 20, null, { timeout: STEP_MS });
+    await stays("first load, seq 20", { turns: 0, lines: 0 });
+
+    // A float pending from before the drop must not outlive it: gain a good live, drop at once.
+    push(at(21, 2, "main", "p1", 2));
+    await page.waitForSelector('[data-testid="gain-float"]', { timeout: STEP_MS });
+    const before = await shown();
+    states = [at(22, 3, "roll", "p0", 4)];
+    sockets.at(-1).close();
+    await page.waitForFunction(() => /Reconnecting/.test(window.__emberisle.getState().error ?? ""), null, { timeout: STEP_MS });
+    await page.waitForFunction(() => window.__emberisle.getState().state?.seq === 22, null, { timeout: STEP_MS });
+    check(sent.welcomes === 2, `${tag} reconnect: the seat was re-welcomed through the redial`, sent);
+    check((await own()) === 4, `${tag} reconnect: the restored hand holds timber +2 over the last seen`, await own());
+    await stays("rejoin onto own roll at seq 22 (no Your turn, no +2 Timber, floats from before the drop gone)", before);
+    check((await page.locator('[data-testid="gain-float"]').count()) === 0, `${tag} reconnect: floats pending from before the drop were cancelled`);
+
+    // Live changes after the rejoin still show.
+    push(at(23, 3, "roll", "p0", 5));
+    await page.waitForFunction(() => [...document.querySelectorAll('[data-testid="gain-float"]')].some((e) => e.textContent === "+1 Timber"), null, { timeout: STEP_MS });
+    check(true, `${tag} reconnect: a live gain after the rejoin shows "+1 Timber"`);
+    push(at(24, 3, "main", "p0", 5));
+    push(at(25, 3, "main", "p1", 5));
+    push(at(26, 4, "roll", "p0", 5));
+    await page.waitForFunction(() => document.querySelector('[data-testid="turn-moment"]')?.textContent === "Your turn", null, { timeout: STEP_MS });
+    check(true, `${tag} reconnect: a live turn after the rejoin shows "Your turn"`);
+  } catch (e) {
+    console.error(`${tag} reconnect:`, e);
+    failures++;
+  } finally {
+    await ctx.close();
+  }
+}
+
 const ONLY = process.env.ONLY;
 try {
   for (const v of VIEWS) if (!ONLY || ONLY === `${v.width}x${v.height}`) await practice(v);
   if (!ONLY || ONLY === "reduced") await reduced();
   if (!ONLY || ONLY === "hotseat") await hotseat();
+  if (!ONLY || ONLY === "reconnect") await reconnect();
   check(errors.length === 0, "zero console errors", errors);
 } finally {
   await browser.close();

@@ -9,6 +9,7 @@ import { create } from "zustand";
 import { RESOURCE_ICON, RESOURCE_PAINT } from "@/components/game/Hand";
 import { useMomentUp } from "@/components/game/Dice";
 import { useStage } from "@/components/game/stage";
+import { useGame } from "@/lib/game/store";
 import { hiddenCount } from "@/lib/game/rules";
 import { RESOURCES, RESOURCE_LABEL, type PlayerState, type Resource } from "@/lib/game/types";
 
@@ -27,7 +28,8 @@ let next = 0;
 
 export function GainFloats({ me, rolls }: { me: PlayerState; rolls: number }) {
   const [lines, setLines] = useState<Line[]>([]);
-  const prev = useRef<{ me: PlayerState; rolls: number } | null>(null);
+  const synced = useGame((s) => s.synced);
+  const prev = useRef<{ me: PlayerState; rolls: number; synced: number } | null>(null);
   // What a roll's goods are waiting on (a timer and the moment's store), dropped on a hand-over or unmount.
   const waits = useRef(new Set<() => void>());
   const shown = useRef(false);
@@ -41,8 +43,14 @@ export function GainFloats({ me, rolls }: { me: PlayerState; rolls: number }) {
 
   useEffect(() => {
     const was = prev.current;
-    prev.current = { me, rolls };
+    prev.current = { me, rolls, synced };
     if (!was) return;
+    // A welcome's first state (a rejoin after a drop) is a new baseline: nothing in it is news, and goods still on their way
+    // from before the drop are dropped.
+    if (was.synced !== synced) {
+      dropWaits();
+      return setLines([]);
+    }
     // A hotseat hand-over: the next seat's hand is a new baseline, and the last seat's goods leave with it.
     if (was.me.id !== me.id) {
       dropWaits();
@@ -83,7 +91,7 @@ export function GainFloats({ me, rolls }: { me: PlayerState; rolls: number }) {
     };
     waits.current.add(stop);
     busy();
-  }, [me.id, counts, rolls]);
+  }, [me.id, counts, rolls, synced]);
 
   // The batch stays mounted until its last line has faded, so a finished line never moves the ones still rising.
   const last = lines.at(-1)?.key;

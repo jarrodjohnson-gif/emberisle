@@ -21,22 +21,32 @@ export function TurnMoment() {
   const spectator = useGame((s) => s.spectator);
   const rolling = useMomentUp((s) => s.up);
   const floating = useFloatsUp((s) => s.up);
+  const synced = useGame((s) => s.synced);
   const actor = mode === "hotseat" ? state?.current : localId;
   const key = state && !spectator && state.phase === "roll" && state.current === actor ? `${state.seed}|${state.turn}|${state.current}` : null;
   const [seen, setSeen] = useState(key);
   const [due, setDue] = useState<string | null>(null);
   const [up, setUp] = useState<string | null>(null);
+  const [baseline, setBaseline] = useState(synced);
 
-  if (key && key !== seen) {
+  if (baseline !== synced) {
+    // A welcome's first state (a rejoin after a drop) is a new baseline: no moment for it, and none still waiting or up.
+    setBaseline(synced);
     setSeen(key);
-    setDue(key);
-  }
-  // The turn moved on, or the seat rolled, before the centre was free: the moment is no longer news.
-  if (due && due !== key) setDue(null);
-  if (up && up !== key) setUp(null);
-  if (due && !rolling && !floating && !up) {
-    setUp(due);
     setDue(null);
+    setUp(null);
+  } else {
+    if (key && key !== seen) {
+      setSeen(key);
+      setDue(key);
+    }
+    // The turn moved on, or the seat rolled, before the centre was free: the moment is no longer news.
+    if (due && due !== key) setDue(null);
+    if (up && up !== key) setUp(null);
+    if (due && !rolling && !floating && !up) {
+      setUp(due);
+      setDue(null);
+    }
   }
 
   const [stage, { dy, how }] = useStage<HTMLParagraphElement>(up);
