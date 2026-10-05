@@ -4,10 +4,31 @@
 import { useEffect, useRef } from "react";
 import { MessageSquare, Landmark, AtSign, Handshake } from "lucide-react";
 import { EMOTES } from "@/components/game/emotes";
-import { RESOURCES, type PlayerState } from "@/lib/game/types";
-import { hiddenCount, publicVP } from "@/lib/game/rules";
+import type { DevKind, PlayerState } from "@/lib/game/types";
+import { cards, hiddenCount, publicVP } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
+import type { Seat } from "@/lib/net/table";
 import { cn } from "@/lib/utils";
+
+export const FORTUNE_NAMES: [DevKind, string][] = [
+  ["knight", "knight"],
+  ["road", "path"],
+  ["plenty", "plenty"],
+  ["monopoly", "monopoly"],
+  ["vp", "points"],
+];
+
+// Your own fortunes by kind, "knight ×1 · points ×2 (1 new)"; "" while you hold none.
+export function fortuneBreakdown(p: PlayerState) {
+  return FORTUNE_NAMES.filter(([k]) => p.hidden[k] > 0)
+    .map(([k, label]) => `${label} ×${p.hidden[k]}${p.boughtThisTurn[k] > 0 ? ` (${p.boughtThisTurn[k]} new)` : ""}`)
+    .join(" · ");
+}
+
+// The seat's socket dropped and the table is holding it (docs/design/spectator.md "away").
+export function seatAway(seats: Seat[], p: PlayerState) {
+  return seats.some((s) => s.away && (s.name === p.name || `${s.name} (bot)` === p.name));
+}
 
 const CHAT_INPUT = "chat-input";
 
@@ -22,6 +43,7 @@ export function PlayerMenu({ player: p, className }: { player: PlayerState; clas
   const state = useGame((s) => s.state)!;
   const mode = useGame((s) => s.mode);
   const localId = useGame((s) => s.localId);
+  const seats = useGame((s) => s.seats);
   const openMenu = useGame((s) => s.openMenu);
   const sendReact = useGame((s) => s.sendReact);
   const setChatOpen = useGame((s) => s.setChatOpen);
@@ -58,12 +80,15 @@ export function PlayerMenu({ player: p, className }: { player: PlayerState; clas
     };
   }, [p.id, openMenu]);
 
-  const facts: [string, number][] = [
-    ["Cards in hand", p.goods ?? RESOURCES.reduce((n, r) => n + p.resources[r], 0)],
+  // #443: your own fortunes by kind and a dropped seat's state are facts here, one tap from the seat line.
+  const facts: [string, number | string][] = [
+    ["Cards in hand", cards(p)],
     ["Fortunes held", p.fortunes ?? hiddenCount(p)],
     ["Points shown", publicVP(state, p.id)],
     ["Wayfarers played", p.knightsPlayed],
   ];
+  if (own && hiddenCount(p) > 0) facts.push(["Your fortunes", fortuneBreakdown(p)]);
+  if (seatAway(seats, p)) facts.push(["Connection", "reconnecting…"]);
 
   return (
     <div

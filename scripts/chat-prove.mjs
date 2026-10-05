@@ -441,16 +441,12 @@ try {
   await card.click();
   await menu.waitFor();
   check((await card.getAttribute("aria-expanded")) === "true", "menu: Tide's card is a button with aria-expanded");
-  // The roll-off die tile (#232) sits next to the vp in setup; read the card without it so its face does not run into a number.
-  const cardText = await a.page.getByTestId(`rail-${bId}`).evaluate((el) => {
-    const copy = el.cloneNode(true);
-    for (const d of copy.querySelectorAll('[data-testid="rolloff-die"]')) d.remove();
-    return copy.textContent;
-  });
+  // #443: the card is one line; a goods or fortunes count shows only when it is held, and the points read "N points".
+  const cardText = await a.page.getByTestId(`rail-${bId}`).textContent();
   const fromCard = [
-    Number(cardText.match(/(\d+) goods/)[1]),
-    Number(cardText.match(/(\d+) fortunes/)[1]),
-    Number(cardText.match(/(\d+) vp/)[1]),
+    Number(cardText.match(/(\d+) goods?/)?.[1] ?? 0),
+    Number(cardText.match(/(\d+) fortunes?/)?.[1] ?? 0),
+    Number(cardText.match(/(\d+) points/)[1]),
     await a.page.evaluate((id) => window.__emberisle.getState().state.players.find((p) => p.id === id).knightsPlayed, bId),
   ];
   const facts = (await menu.getByTestId("menu-facts").locator("dd").allTextContents()).map(Number);

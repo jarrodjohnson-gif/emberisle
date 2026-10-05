@@ -45,7 +45,8 @@
     "hand-hidden-prove": "node scripts/hand-hidden-prove.mjs",
     "install-prove": "node scripts/install-prove.mjs",
     "make-icons": "node scripts/make-icons.mjs",
-    "board-look-prove": "node scripts/board-look-prove.mjs"
+    "board-look-prove": "node scripts/board-look-prove.mjs",
+    "seat-rail-prove": "node scripts/seat-rail-prove.mjs"
   },
   "dependencies": {
     "clsx": "^2.1.1",
