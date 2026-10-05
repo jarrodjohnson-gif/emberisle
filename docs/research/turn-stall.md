@@ -25,14 +25,19 @@
 
 ## Recommendation
 
-Keep Jarrod's recorded choice: after **120 seconds without a game action**, show the same countdown to every seat. When it expires, the host bot takes that one move (roll then pass; a required discard is auto-halved). The player resumes control on their next action. This is the soft-timer option: it limits dead air without replacing the player for the rest of the game.
+Keep Jarrod's recorded choice. It is already implemented: when the game is waiting for a connected human seat with a legal action, the host starts a **120-second** window by default (`TURN_MS`, configurable by the host). The host sends the shared deadline and server time to seats and watchers; the HUD counts down from that deadline. An accepted action resets the window if the game still waits on that seat. The seat remains human throughout.
 
-The implementation should define inactivity by game actions, not socket heartbeats; start the countdown from a clear turn/action boundary; broadcast one shared deadline so all seats see the same remaining time; and cancel it as soon as the player acts. The issue's existing decision sets the 120-second duration and takeover behavior.
+When the window expires, the host plays one timeout action through the normal game action path: roll, setup placement, robber move, or discard where applicable. In the main phase it passes without spending anything. If no supported action is available, the host arms another window. A disconnected seat is handled by the separate grace timer, not this turn timer. This bounds a stall while keeping the returning player in the game.
 
 ## What I am not sure about
 
-- Whether a timer should run while the game is waiting on a non-turn choice, such as a trade response, or only during the active player's turn.
-- Whether a connected player should see a local warning before the shared 120-second countdown begins. The decision specifies the shared countdown after the inactivity threshold, not an earlier warning.
+- Whether later playtesting should change the 120-second duration or add a separate warning before the shared countdown. Those would be new product decisions; neither blocks the shipped timer.
+
+## Implementation and proof
+
+- `TURN_MS` and `armTurns` in `server/host.mjs` start and reset the window for connected human seats the game is waiting on. `turnOut` handles timeout actions; `pushState` shares the deadline and server clock with seats and watchers.
+- The client stores the host deadline and clock offset in `src/lib/game/store.ts`; `src/components/game/TurnCountdown.tsx` displays the countdown.
+- `server/turn-prove.mjs` covers the shared deadline, automatic timeout moves, a timely action resetting the window, discard, and the distinction between a dropped seat's grace period and the turn timer.
 
 ## Prove output
 
@@ -41,8 +46,8 @@ The implementation should define inactivity by game actions, not socket heartbea
 ## Handoff
 
 ```
-done: compared the no-timeout, hard-timeout, and soft-timer options with CATAN and Colonist; recorded the existing 120-second soft-timer decision
-left: implementation and proof are in the child issues planned by #324
+done: compared the no-timeout, hard-timeout, and soft-timer options with CATAN and Colonist; documented the shipped 120-second host timer and its proof
+left: review timer duration and warning behavior only if playtesting raises a new decision
 broke: nothing
-next agent: take the host timer/proof child, then the HUD countdown child
+next agent: no implementation follow-up required for #324
 ```
