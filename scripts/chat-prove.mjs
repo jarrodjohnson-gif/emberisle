@@ -886,6 +886,24 @@ try {
   }
   const atRoll = await seen(a);
   check(atRoll.phase === "roll", `game log: setup is done, phase ${atRoll.phase}`);
+
+  // #501: chat history from a started game is restored by the existing welcome.chat rejoin path.
+  const historyLines = [`reload-history-a-${Date.now()}`, `reload-history-c-${Date.now()}`];
+  await a.page.evaluate((text) => window.__emberisle.getState().sendChat(text), historyLines[0]);
+  await c.page.evaluate((text) => window.__emberisle.getState().sendChat(text), historyLines[1]);
+  const bSeat = await store(b, () => window.__emberisle.getState().seatId);
+  await b.page.waitForFunction((texts) => texts.every((text) => window.__emberisle.getState().chat.some((line) => line.text === text)), historyLines);
+  await b.page.reload();
+  await b.page.waitForFunction(({ seat, texts }) => {
+    const s = window.__emberisle.getState();
+    return s.seatId === seat && s.state?.phase === "roll" && texts.every((text) => s.chat.some((line) => line.text === text));
+  }, { seat: bSeat, texts: historyLines });
+  if (!(await store(b, () => window.__emberisle.getState().chatOpen))) {
+    await b.page.getByRole("button", { name: /^Open chat/ }).click();
+  }
+  for (const line of historyLines) await b.page.getByTestId("chat-log").locator("li", { hasText: line }).waitFor();
+  check(true, "chat history: Tide reloads mid-game in the same seat and sees earlier chat lines");
+
   // #477: Quick reactions and Open chat sit in the top row beside the Table menu, a place that depends on neither the turn nor the
   // HUD stack. At each phone size, with the notch insets emulated over CDP as hud-safe-area-prove does, on your own Roll turn and
   // another seat's turn: both buttons are 44 px, whole and inside the safe area, clear of the Table menu, the seat strip and the
