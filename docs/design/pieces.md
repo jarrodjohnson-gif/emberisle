@@ -145,6 +145,8 @@ not brown: overhead it is the only face you see.
 
 0.39 tall, 0.54 square: 23 px overhead at 1280×720. It differs from the outpost in silhouette from every
 angle: square, not oblong; a flat top with four corner blocks and a dark centre instead of a ridge; taller.
+(#312 later replaced the dark courtyard with the seat's mark in its ink, so the centre figure is the mark; see
+[seat-marks.md](seat-marks.md).)
 The dark courtyard against Pine is 2.85:1, the one pair in this note under 3.0; the four merlons (each 3.4 px
 at 1280, with the sun's shadow between them) carry the stronghold-ness for Pine, and the courtyard is a
 figure inside the piece, not its edge, which the rims already draw. Cream would be 1.49:1 against Dune, which

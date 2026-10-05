@@ -4,6 +4,7 @@
 import { useEffect, useRef } from "react";
 import { MessageSquare, Landmark, AtSign, Handshake } from "lucide-react";
 import { EMOTES } from "@/components/game/emotes";
+import { SeatDot } from "@/components/game/SeatDot";
 import type { PlayerState } from "@/lib/game/types";
 import { fortuneBreakdown } from "@/lib/game/fortunes";
 import { cards, hiddenCount, publicVP } from "@/lib/game/rules";
@@ -84,6 +85,11 @@ export function PlayerMenu({ player: p, className }: { player: PlayerState; clas
       aria-label={`${p.name}'s actions`}
       className={cn("flex flex-col gap-1 rounded-[16px] border border-white/50 bg-white/60 p-2 backdrop-blur-md", className)}
     >
+      {/* #312: the seat's dot and name head the menu, so whose facts these are never rests on the card above. */}
+      <p data-testid="menu-seat" className="flex items-center gap-2 px-2 pt-1 text-sm font-medium text-zinc-900">
+        <SeatDot color={p.color} className="size-3" />
+        {p.name}
+      </p>
       {online ? (
         <div className="grid grid-cols-6 gap-1" data-testid="menu-emotes">
           {Object.entries(EMOTES).map(([id, url]) => (
