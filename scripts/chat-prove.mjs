@@ -753,9 +753,14 @@ try {
 
   // 5. Phone: the open dock is a bottom sheet, and the tap that closes it does not reach the board.
   await phone.page.getByRole("button", { name: "Open chat" }).waitFor();
+  await phone.page.waitForFunction(() => /\b100dvh\b/.test(document.querySelector('[data-testid="chat-control-band"]')?.style.bottom ?? ""), null, { timeout: 5000 });
   r = await box(phone, '[aria-label^="Open chat"]');
+  const controlBand = await box(phone, '[data-testid="chat-control-band"]');
   const stackTop = await phone.page.locator(HUD_STACK).evaluate((el) => el.getBoundingClientRect().top);
-  check(r.right > r.vw - 20 && r.bottom <= stackTop - 7, "phone: the minimized button sits bottom-right above the measured HUD stack");
+  check(
+    r.left >= controlBand.left && r.right <= controlBand.right && controlBand.right - controlBand.left >= r.vw - 1 && controlBand.bottom <= stackTop - 7,
+    "phone: the minimized button sits in the full-width status-area band above the measured HUD stack",
+  );
   await polish(phone, "minimized", '[aria-label^="Open chat"]');
   await phone.page.getByRole("button", { name: "Open chat" }).click();
   await phone.page.getByTestId("chat-sheet").waitFor({ timeout: 5000 });
@@ -851,21 +856,32 @@ try {
     const layout = () => t.page.waitForFunction(() => {
       const stack = document.querySelector('[data-testid="turn-banner"]')?.parentElement;
       const persistentStack = document.querySelector(".pointer-events-none.absolute.bottom-0.inset-x-0.z-10 > .relative > .overflow-y-auto");
+      const controlBand = document.querySelector('[data-testid="chat-control-band"]');
       const controls = [
         document.querySelector('button[aria-label="Quick reactions"]'),
         document.querySelector('button[aria-label^="Open chat"]'),
       ];
-      if (!stack || persistentStack !== stack || controls.some((control) => !control)) return null;
-      if (!controls[1].parentElement.style.bottom.startsWith("calc(100dvh - ")) return null;
+      if (!stack || persistentStack !== stack || !controlBand || controls.some((control) => !control)) return null;
+      if (!/\b100dvh\b/.test(controlBand.style.bottom)) return null;
       const bottom = stack.getBoundingClientRect();
+      const band = controlBand.getBoundingClientRect();
+      const gapHit = document.elementFromPoint(innerWidth / 2, band.top + band.height / 2)?.tagName ?? null;
       const boxes = controls.map((control) => {
         const r = control.getBoundingClientRect();
         return { left: r.left, top: r.top, right: r.right, bottom: r.bottom, width: r.width, height: r.height };
       });
-      if (!boxes.every((r) => r.bottom <= bottom.top - 7)) return null;
+      const state = window.__emberisle.getState().state;
+      const corners = state.vertices.flatMap(({ id }) => {
+        const p = window.__isle.screenOf(id);
+        return p && p.x >= 0 && p.y >= 0 && p.x <= innerWidth && p.y <= innerHeight ? [{ id, x: p.x, y: p.y }] : [];
+      });
+      const coveredCorners = corners.filter((p) => boxes.some((r) => p.x >= r.left && p.x <= r.right && p.y >= r.top && p.y <= r.bottom));
       return {
         viewport: { width: innerWidth, height: innerHeight },
         persistentStack: persistentStack === stack,
+        band: { left: band.left, top: band.top, right: band.right, bottom: band.bottom },
+        gapHit,
+        coveredCorners,
         stack: { left: bottom.left, top: bottom.top, right: bottom.right, bottom: bottom.bottom },
         boxes,
         banner: document.querySelector('[data-testid="banner"]')?.getBoundingClientRect().toJSON() ?? null,
@@ -878,11 +894,13 @@ try {
     );
     check(geometry.viewport.width === 390 && geometry.viewport.height === 844, "chat dock: phone layout uses the 390x844 viewport");
     check(geometry.persistentStack, "chat dock: the hidden-banner fallback finds the persistent HUD scroller");
+    check(Math.abs(geometry.band.left) <= 1 && Math.abs(geometry.band.right - geometry.viewport.width) <= 1, "chat dock: the status-area row spans the phone width");
+    check(geometry.gapHit === "CANVAS", "chat dock: the gap between edge controls still passes taps to the board");
     check(geometry.boxes.every((r) => r.left >= 0 && r.top >= 0 && r.right <= geometry.viewport.width && r.bottom <= geometry.viewport.height), "chat dock: both controls fit in the phone viewport");
     check(geometry.boxes.every((r) => r.width >= 44 && r.height >= 44), `chat dock: both controls are at least 44 px at 390x844 (${geometry.boxes.map((r) => `${r.width}x${r.height}`).join(", ")})`);
-    check(Math.abs(geometry.boxes[1].top - geometry.boxes[0].bottom - 12) <= 1, "chat dock: portrait quick reactions sit 12 px above chat");
+    check(geometry.boxes[0].left < geometry.viewport.width / 4 && geometry.boxes[1].right > geometry.viewport.width * 3 / 4, "chat dock: portrait quick reactions and chat sit at opposite safe edges");
     check(clear, `chat dock: Quick reactions and Open chat clear the full bottom stack at 390x844, ${ownTurn ? "with Roll showing" : "on another seat's turn"}`);
-    check(await t.page.evaluate(() => document.querySelector('[data-testid="quick-reactions"]')?.classList.contains("right-safe") && document.querySelector('button[aria-label^="Open chat"]')?.parentElement?.classList.contains("right-safe")), "chat dock: both portrait controls use the shared right safe-area utility");
+    check(geometry.coveredCorners.length === 0, `chat dock: no board corner sits under either button at 390x844${geometry.coveredCorners.length ? ` (${JSON.stringify(geometry.coveredCorners)})` : ""}, ${ownTurn ? "with Roll showing" : "on another seat's turn"}`);
     if (checkBanner) {
       await t.page.evaluate(() => window.__emberisle.setState({ banner: null }));
       await t.page.waitForFunction(() => !document.querySelector('[data-testid="banner"]'));

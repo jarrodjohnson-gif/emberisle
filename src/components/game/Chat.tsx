@@ -14,7 +14,8 @@ export { ReactionFloats } from "@/components/game/Reactions";
 const PRESETS = ["gg", "nice roll", "your turn", "one sec", "ty"];
 const INPUT_ID = "chat-input";
 const HUD_STACK = ".pointer-events-none.absolute.bottom-0.inset-x-0.z-10 > .relative > .overflow-y-auto";
-const STATUS_BANNER_SLOT = 144;
+const CONTROL_BAND_HEIGHT = 56;
+const CONTROL_BAND_BOTTOM_OFFSET = 121;
 
 // Text renders only as React children. The mention is found with split() on the literal "@name", never a regex.
 function Mention({ text, name }: { text: string; name: string }) {
@@ -271,7 +272,7 @@ export function ChatBox({ rows, game, onEscape, className }: { rows: number; gam
   );
 }
 
-function Preview({ above }: { above?: boolean }) {
+function Preview({ above, className }: { above?: boolean; className?: string }) {
   const chat = useGame((s) => s.chat);
   const code = useGame((s) => s.code);
   const { muted } = useMutedSeats(code);
@@ -293,7 +294,7 @@ function Preview({ above }: { above?: boolean }) {
   }).slice(-3);
 
   return (
-    <ul className={cn("pointer-events-none flex w-72 flex-col items-end gap-1", above ? "mb-1" : "mt-1")} data-testid="chat-preview">
+    <ul className={cn("pointer-events-none flex w-72 flex-col items-end gap-1", above ? "mb-1" : "mt-1", className)} data-testid="chat-preview">
       {live.map((l) => (
         <li
           key={l.id}
@@ -355,7 +356,6 @@ export function ChatDock() {
   const { phone, portrait } = useViewport();
   const focusNext = useRef(false);
   const stackTop = useHudStackTop(phone && portrait && !open);
-  const controlsTop = stackTop === null ? null : stackTop - STATUS_BANNER_SLOT;
 
   // A remembered open dock must not cover the hand bar when Play starts on a phone. The stored value stays for desktop.
   useEffect(() => {
@@ -395,6 +395,27 @@ export function ChatDock() {
       <Minus className="size-4" />
     </button>
   );
+  const openButton = (
+    <button
+      type="button"
+      aria-label={unread ? `Open chat, ${unread} unread` : "Open chat"}
+      onClick={() => {
+        focusNext.current = true;
+        setOpen(true);
+      }}
+      className="pointer-events-auto relative flex size-11 cursor-pointer items-center justify-center rounded-control bg-glass text-zinc-700 backdrop-blur-md hover:text-zinc-900"
+    >
+      <MessageSquare className="size-5" />
+      {unread > 0 ? (
+        <span
+          data-testid="chat-unread"
+          className="absolute -right-1 -top-1 flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[11px] font-medium text-white"
+        >
+          {unread}
+        </span>
+      ) : null}
+    </button>
+  );
 
   // On a phone the open dock is a bottom sheet. The backdrop catches the tap that closes it, so that tap never reaches the board.
   if (phone && open) {
@@ -418,15 +439,35 @@ export function ChatDock() {
     );
   }
 
+  // Keep both board actions at the safe edges of the status area. The temporary status message stays below them, and
+  // pointer events pass through the gap between the two controls to the board.
+  if (phone && portrait) {
+    return (
+      <>
+        <div
+          data-testid="chat-control-band"
+          className="pointer-events-none absolute inset-x-0 z-20 flex items-center justify-between px-safe"
+          style={{
+            height: CONTROL_BAND_HEIGHT,
+            bottom: stackTop === null ? `${CONTROL_BAND_BOTTOM_OFFSET}px` : `calc(100dvh - ${stackTop}px + ${CONTROL_BAND_BOTTOM_OFFSET}px)`,
+          }}
+        >
+          <Preview above={phone} className="absolute bottom-full left-1/2 -translate-x-1/2" />
+          <QuickReactions inline />
+          {openButton}
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
-      <QuickReactions stackTop={phone && portrait && !open ? controlsTop : null} />
+      <QuickReactions />
       <div
         className={cn(
           "absolute right-safe z-20 flex items-end",
           phone ? cn("flex-col-reverse", !portrait && "bottom-[184px]") : "top-16 flex-col",
         )}
-        style={phone && portrait ? { bottom: controlsTop === null ? "84px" : `calc(100dvh - ${controlsTop}px + 12px)` } : undefined}
       >
         {open ? (
           <section
@@ -442,27 +483,7 @@ export function ChatDock() {
           </section>
         ) : (
           <>
-            <button
-              type="button"
-              aria-label={unread ? `Open chat, ${unread} unread` : "Open chat"}
-              onClick={() => {
-                focusNext.current = true;
-                setOpen(true);
-              }}
-              className={cn(
-                "relative flex size-11 cursor-pointer items-center justify-center rounded-control bg-glass text-zinc-700 backdrop-blur-md hover:text-zinc-900",
-              )}
-            >
-              <MessageSquare className="size-5" />
-              {unread > 0 ? (
-                <span
-                  data-testid="chat-unread"
-                  className="absolute -right-1 -top-1 flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[11px] font-medium text-white"
-                >
-                  {unread}
-                </span>
-              ) : null}
-            </button>
+            {openButton}
             <Preview above={phone} />
           </>
         )}
