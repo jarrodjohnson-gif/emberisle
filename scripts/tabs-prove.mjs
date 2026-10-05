@@ -200,8 +200,24 @@ try {
     }, `${t.name} sees ${SEATS} seats`);
     await t.page.getByRole("button", { name: "Ready", exact: true }).click();
   }
+  // #488: the chat dock is a lazy chunk the lobby already loaded, so it is in the HUD's first frame, never a frame late.
+  for (const t of tabs) {
+    await t.page.evaluate(() => {
+      window.__dockFrame = new Promise((resolve) => {
+        const tick = () => {
+          if (!document.querySelector("header")) return requestAnimationFrame(tick);
+          resolve(Boolean(document.querySelector('[aria-label="Table chat"], button[aria-label^="Open chat"]')));
+        };
+        requestAnimationFrame(tick);
+      });
+    });
+  }
   await a.page.getByRole("button", { name: "Start" }).click();
   let vs = await synced(tabs, -1, "start");
+  for (const t of tabs) {
+    if (!(await t.page.evaluate(() => window.__dockFrame))) throw new Error(`${t.name}: the chat dock missed the HUD's first frame`);
+  }
+  console.log(`chat dock on every tab in the HUD's first frame (${SERVED ? "built chunks" : "dev modules"})`);
   console.log(`table ${tableCode}: ${SEATS} seats, ${SEATS} tabs in, phase ${JSON.parse(vs[0].shared).phase}`);
   // Four 1280x720 islands under software GL starve every tab's HUD. The board is checked here as shared state and
   // the rail and dice are DOM, so at four seats each tab stops drawing the island (as trade-prove does).
