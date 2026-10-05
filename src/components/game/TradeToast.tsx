@@ -2,7 +2,7 @@
 // The asker sees the same offer with who has declined, then the outcome for a moment.
 import { useEffect, useId, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { bagText } from "@/components/game/TradePanel";
+import { bagText } from "@/lib/game/trade";
 import { useGame } from "@/lib/game/store";
 import { RESOURCES } from "@/lib/game/types";
 import type { Bag } from "@/lib/net/table";
@@ -122,7 +122,7 @@ export function TradeToast() {
         phone && portrait
           ? "inset-x-3 top-[calc(env(safe-area-inset-top)+7.5rem)]"
           : phone
-            ? "left-3 right-16 top-16"
+            ? "left-safe right-safe mr-13 top-16"
             : "left-3 right-16 top-16 md:left-[15.5rem] lg:inset-x-3 lg:justify-center",
       )}
     >

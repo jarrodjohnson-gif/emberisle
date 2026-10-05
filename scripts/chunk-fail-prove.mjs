@@ -1,0 +1,169 @@
+// #488: the lazy chunks (sheets: How to play, trade panel, win screen; online: lobby, chat dock, reactions) can fail to
+// load, and the page must stand. On the built dist/ (vite preview), with the sheets chunk routed to fail: the title's
+// idle prefetch fails, the page reloads itself once for that URL and not again (a stale page after a deploy), Play then renders the
+// table (HUD header and canvas, store at "play") with no sheet, and once the route recovers, How to play from the table
+// menu opens. With the online chunk routed to fail: Host shows "Couldn't load the table lobby." with a Reload button
+// instead of a blank page, and after the route recovers that Reload rejoins the saved seat into a working lobby.
+// Run npm run build first.
+import { spawn } from "node:child_process";
+import { existsSync, mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { chromium } from "playwright";
+import { preview } from "vite";
+
+const PORT = Number(process.env.VITE_PORT) || 8109;
+const DIST = fileURLToPath(new URL("../dist/", import.meta.url));
+if (!existsSync(`${DIST}index.html`)) {
+  console.log("FAIL no dist/index.html: run npm run build first");
+  process.exit(1);
+}
+
+const ROOMS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-rooms-"));
+process.on("exit", () => rmSync(ROOMS_DIR, { recursive: true, force: true }));
+const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
+  cwd: new URL("../server/", import.meta.url),
+  env: { ...process.env, PORT: "0", ROOMS_DIR },
+});
+process.on("exit", () => host.kill());
+for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
+const hostPort = await new Promise((resolve) =>
+  host.stdout.on("data", (d) => {
+    const m = String(d).match(/listening (\d+)/);
+    if (m) resolve(Number(m[1]));
+  }),
+);
+const server = await preview({ preview: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
+const url = `http://127.0.0.1:${PORT}/?host=ws://127.0.0.1:${hostPort}`;
+const browser = await chromium.launch({
+  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
+  args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
+});
+
+const fails = [];
+const check = (name, ok, detail) => {
+  console.log(`${ok ? "ok  " : "FAIL"} ${name}${detail === undefined ? "" : " " + JSON.stringify(detail)}`);
+  if (!ok) fails.push(name);
+};
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const until = async (cond, what, ms = 15_000) => {
+  const end = Date.now() + ms;
+  while (!cond()) {
+    if (Date.now() > end) throw new Error(`timed out: ${what}`);
+    await sleep(50);
+  }
+};
+
+// A page whose requests for one chunk fail while `broken` is true. `loads` counts page loads (the reload under test),
+// `blocked` the chunk requests refused. Page errors other than the chunk's own failure count against the page.
+async function tab(name, chunk) {
+  const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+  const t = { page, loads: 0, blocked: 0, broken: true, errors: [] };
+  page.on("load", () => t.loads++);
+  page.on("pageerror", (e) => t.errors.push(`${name}: ${e}`));
+  page.on("console", (m) => {
+    if (m.type() !== "error") return;
+    const text = m.text();
+    // The refused chunk logs its own failure (the import, and React reporting the boundary's catch); anything else counts.
+    if (/Failed to fetch dynamically imported module|ERR_FAILED|net::|The above error|LazyBoundary|Lazy/.test(text)) return;
+    t.errors.push(`${name}: ${text}`);
+  });
+  await page.route(new RegExp(`/assets/${chunk}-[A-Za-z0-9_-]{8}\\.js`), (route) => {
+    if (!t.broken) return route.continue();
+    t.blocked++;
+    return route.abort("failed");
+  });
+  await page.addInitScript((n) => localStorage.setItem("emberisle-name", n), name);
+  await page.goto(url);
+  return t;
+}
+const title = (page) => page.getByRole("button", { name: "Play", exact: true }).waitFor({ timeout: 15_000 });
+
+try {
+  // --- 1. The sheets chunk fails. Idle on the title prefetches it: one reload, then the flag holds.
+  const a = await tab("Ember", "sheets");
+  await title(a.page);
+  await until(() => a.loads >= 2, "the title reloading once on the failed idle prefetch");
+  await title(a.page);
+  // The reloaded title prefetches again, fails again, and must not reload a second time.
+  await until(() => a.blocked >= 2, "the reloaded title's prefetch being refused");
+  await sleep(1500);
+  const loads = a.loads;
+  check("sheets: the title reloaded itself once on the failed prefetch and not again", loads === 2 && a.blocked >= 2, { loads, blocked: a.blocked });
+
+  await a.page.getByRole("button", { name: "Play", exact: true }).click();
+  await a.page.waitForFunction(() => window.__emberisle?.getState().screen === "play", null, { timeout: 15_000 });
+  await a.page.waitForSelector("header", { timeout: 15_000 });
+  await a.page.waitForSelector("canvas", { timeout: 15_000 });
+  await sleep(2500); // the Hud's idle prefetch fails here too; the table must still stand
+  const table = await a.page.evaluate(() => ({
+    screen: window.__emberisle.getState().screen,
+    header: Boolean(document.querySelector("header")),
+    canvas: Boolean(document.querySelector("canvas")),
+    rootChildren: document.getElementById("root").children.length,
+    seats: document.querySelectorAll('[data-testid^="rail-"]').length,
+    loads: undefined,
+  }));
+  check("sheets: Play renders the table with the chunk still failing", table.screen === "play" && table.header && table.canvas && table.rootChildren > 0 && table.seats === 4 && a.loads === 2, { ...table, loads: a.loads, blocked: a.blocked });
+
+  // How to play while the chunk still fails: nothing opens, and the flag is dropped so the row can be pressed again.
+  await a.page.getByRole("button", { name: "Table menu" }).click();
+  await a.page.getByRole("dialog", { name: "Table menu" }).getByRole("button", { name: "How to play" }).click();
+  await a.page.waitForFunction(() => window.__emberisle.getState().howTo === false, null, { timeout: 15_000 });
+  const noSheet = await a.page.evaluate(() => ({ dialogs: document.querySelectorAll('[role="dialog"]').length, screen: window.__emberisle.getState().screen, header: Boolean(document.querySelector("header")) }));
+  check("sheets: How to play with the chunk failing opens nothing, closes its flag and leaves the table standing", noSheet.dialogs === 0 && noSheet.screen === "play" && noSheet.header, noSheet);
+
+  // The route recovers: the next press (a failed load is remembered for one second) loads the chunk and the dialog opens.
+  a.broken = false;
+  await sleep(1200);
+  await a.page.getByRole("button", { name: "Table menu" }).click();
+  await a.page.getByRole("dialog", { name: "Table menu" }).getByRole("button", { name: "How to play" }).click();
+  const howto = a.page.getByRole("dialog", { name: "How to play" });
+  await howto.waitFor({ timeout: 15_000 });
+  check("sheets: once the route recovers, How to play opens on the next press", await howto.isVisible(), { loads: a.loads });
+  await howto.getByRole("button", { name: "Close" }).click();
+  await howto.waitFor({ state: "detached" });
+  check("sheets: no other page errors", a.errors.length === 0, a.errors);
+
+  // --- 2. The online chunk fails. Hover Host prefetches it: one reload. Host then shows the message, not a blank page.
+  const b = await tab("Moss", "online");
+  await title(b.page);
+  await b.page.getByRole("button", { name: "Host a table" }).hover();
+  await until(() => b.loads >= 2, "the title reloading once on the failed Host prefetch");
+  await title(b.page);
+  const remembered = await b.page.evaluate(() => JSON.parse(sessionStorage.getItem("emberisle-chunk-reloaded") ?? "[]"));
+  check("online: the session remembers the chunk URL it reloaded for", remembered.length === 1 && /\/assets\/online-/.test(remembered[0]), remembered);
+  await b.page.getByRole("button", { name: "Host a table" }).click();
+  const failed = b.page.getByTestId("lobby-failed");
+  await failed.waitFor({ timeout: 15_000 });
+  const lobby = await b.page.evaluate(() => ({
+    screen: window.__emberisle.getState().screen,
+    text: document.querySelector('[data-testid="lobby-failed"]')?.textContent ?? "",
+    reload: Boolean(document.querySelector('[data-testid="lobby-failed"] button')),
+    rootChildren: document.getElementById("root").children.length,
+  }));
+  check("online: Host with the chunk failing shows the message and a Reload button, not a blank page", lobby.screen === "lobby" && /Couldn't load/.test(lobby.text) && lobby.reload && lobby.rootChildren > 0 && b.loads === 2, { ...lobby, loads: b.loads, blocked: b.blocked });
+
+  // The route recovers and Reload is pressed. The seat Host took was saved, so the reloaded page rejoins it (#196) and
+  // lands in a real lobby, the chunk fetched by the rejoin's own prefetch.
+  b.broken = false;
+  await sleep(1200);
+  await failed.getByRole("button", { name: "Reload" }).click();
+  await b.page.getByTestId("table-code").waitFor({ timeout: 15_000 });
+  const code = await b.page.getByTestId("table-code").textContent();
+  check("online: after Reload with the route recovered, the saved seat rejoins into a working lobby", /^[A-Z0-9]{4}$/.test(code ?? "") && b.loads === 3, { code, loads: b.loads });
+  check("online: no other page errors", b.errors.length === 0, b.errors);
+} catch (e) {
+  fails.push(String(e));
+  console.log(`FAIL ${e.stack ?? e}`);
+} finally {
+  await browser.close();
+  await new Promise((r) => server.httpServer.close(r));
+}
+if (fails.length) {
+  console.log(`chunk-fail prove: ${fails.length} failed`);
+  process.exit(1);
+}
+console.log("chunk-fail prove ok");
+process.exit(0);

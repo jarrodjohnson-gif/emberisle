@@ -21,7 +21,7 @@ Defaults this design adds (each is cheap to change):
 |---|---|---|
 | `SPECTATOR_MAX` | `8` per room | See "Cap". |
 | Anything a watcher sends after its hello | Refused with one error, `Watching only.`, and changes nothing | Explicit beats the accidental "not ready" a seatless socket would get today. |
-| A watcher's presence | **Shown.** `seats` carries `watching: n`, and the table logs "Someone is watching." / "A watcher left." (at most one line per room per 5 s, so a watch-and-close loop cannot flood the log) | Jarrod's decision 1 on #347 (2026-10-03). The HUD shows a small eye count (#348). |
+| A watcher's presence | **Shown.** `seats` carries `watching: n`, and the table logs "Someone is watching." / "A watcher left." (at most one line per room per 5 s, so a watch-and-close loop cannot flood the log) | Jarrod's decision 1 on #347 (2026-10-03). The table menu shows a small eye count (#348, moved into the menu by #442). |
 | Final hands at the win | **Revealed**, like the seats: at `phase === "over"` a watcher gets the seats' reveal minus `seed` and `rng`. Before the win it stays on the opponent view | Jarrod's decision 2 on #347 (2026-10-03), replacing the #346 completion test's "before or after a win". See "The view". |
 | Reconnect | None. A dropped watcher lands on the Title | It holds nothing worth saving. |
 
@@ -232,7 +232,7 @@ through that fallback. The `spectator` branch is taken before `me` is derived.
 
 | Part | Watcher sees |
 |---|---|
-| Header | A **Watching** badge (`data-testid="watching-badge"`) next to the table code. The leave button stays and says Leave. |
+| Header | A **Watching** chip (`data-testid="watching-badge"`), not a button, beside the table menu button (#442). The menu's rows for a watcher: the turn number and eye count, How to play, Table sounds, **Leave table** (no confirm: a watcher holds no seat). |
 | Hand bar, resource tiles, price chips | **Not rendered.** No `resource-*` test ids in the DOM. |
 | Build buttons, Roll, Pass, Buy, Trade, knight, discard bar | **Not rendered.** |
 | Board | Renders; no legal glow (`legal` is empty and `buildMode` is `none`); no place chip. |
@@ -288,7 +288,7 @@ it passes.
    by-flag-not-fallback check.
 2. Zero enabled game controls: no build, roll, pass, buy, trade or knight button; no `place-chip`; `chat` has no input and
    no emote tray; a seat click opens no menu.
-3. The board and every seat's counts render, the **Watching** badge is shown, and the tab title is `Watching - Emberisle`.
+3. The board and every seat's counts render, the **Watching** chip is shown with the table menu closed, and the tab title is `Watching - Emberisle`.
 4. At the win: the headline names the winner, the table shows every seat's hidden points like a seat's does, and there is no `Play again`.
 5. A watcher dropped by closing the host lands on the Title with `Lost the table`, and the saved seat in `localStorage`
    of a tab that holds one is untouched.

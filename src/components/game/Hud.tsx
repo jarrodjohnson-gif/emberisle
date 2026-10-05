@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
-  BookOpen,
+  ArrowLeftRight,
   Dices,
-  Eye,
   Home,
   Landmark,
   Route,
@@ -10,31 +9,24 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { WinScreen } from "@/components/game/WinScreen";
-import { ChatDock, ReactionFloats } from "@/components/game/Chat";
-import { TradeButton, TradePanel } from "@/components/game/TradePanel";
+import { ChatDock, ChromeLanded, HowTo, sheets, TradePanel, WinScreen } from "@/components/game/chunks";
 import { TradeToast } from "@/components/game/TradeToast";
 import { Announcer } from "@/components/game/Announcer";
 import { PlayerMenu } from "@/components/game/PlayerMenu";
+import { SeatRail, SeatStrip } from "@/components/game/SeatRail";
 import { DiscardBar } from "@/components/game/DiscardBar";
 import { TurnCountdown } from "@/components/game/TurnCountdown";
-import { Dice } from "@/components/game/Dice";
-import { ResourceHand } from "@/components/game/Hand";
-import { COST, RESOURCES, RESOURCE_LABEL, type BuildMode, type DevKind, type GameState, type PlayerState, type Resource } from "@/lib/game/types";
-import { hiddenCount, legalRoads, playable, publicVP, totalVP } from "@/lib/game/rules";
+import { Dice, RollMoment } from "@/components/game/Dice";
+import { TableMenu } from "@/components/game/TableMenu";
+import { HandDock } from "@/components/game/Hand";
+import { COST, RESOURCES, RESOURCE_LABEL, type BuildMode, type PlayerState, type Resource } from "@/lib/game/types";
+import { legalRoads, playable, totalVP } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
 import { play } from "@/lib/sound";
+import { LazyBoundary, preloadOnIdle } from "@/lib/lazy";
 import { useViewport } from "@/lib/viewport";
 import { useMoreBelow } from "@/lib/scroll-fade";
 import { cn } from "@/lib/utils";
-
-const FORTUNE_NAMES: [DevKind, string][] = [
-  ["knight", "knight"],
-  ["road", "path"],
-  ["plenty", "plenty"],
-  ["monopoly", "monopoly"],
-  ["vp", "points"],
-];
 
 function affords(p: PlayerState, kind: Price) {
   return RESOURCES.every((r) => p.resources[r] >= (COST[kind][r] ?? 0));
@@ -81,16 +73,6 @@ function armedCopy(mode: BuildMode, roadPicks: number): [string, string] | null 
   }
 }
 
-// The seat's roll-off die, shown through the roll-off and setup (docs/design/first-player.md); "–" until it rolls this round.
-function RollOffDie({ state, id, className }: { state: GameState; id: string; className: string }) {
-  if (!state.rollOff || state.turn !== 0) return null;
-  return (
-    <span data-testid="rolloff-die" className={cn("grid shrink-0 place-items-center rounded-[8px] bg-fg font-medium text-bg tabular-nums", className)}>
-      {state.rollOff.rolls[id] ?? "–"}
-    </span>
-  );
-}
-
 const HINT_KEY = "emberisle-landscape-hint";
 
 type Price = keyof typeof COST;
@@ -101,7 +83,7 @@ function priceLabel(kind: Price) {
 }
 
 // Escape, topmost layer first. One press closes exactly one thing:
-//   1. LeaveButton's confirm popover: window capture + stopPropagation (and it closes whenever HowTo opens, so the two never stack).
+//   1. TableMenu (and its Leave question): window capture + stopPropagation (it closes whenever HowTo opens, so the two never stack).
 //   2. HowTo: modal, so window capture + stopPropagation; nothing behind it hears the key.
 //   3. TradePanel (window) and PlayerMenu (document), bubble phase, each closes itself; PlaceChip's pending tap (window) likewise.
 //   4. QuickReactions picker: document bubble phase; its Escape must get the chance to close before a build mode disarms.
@@ -115,7 +97,7 @@ function useEscapeDisarm() {
       const s = useGame.getState();
       if (s.buildMode === "none" || s.tradeOpen || s.menuFor || s.pendingPlace || s.howTo || document.getElementById("quick-reaction-picker")) return;
       if ((e.target as HTMLElement | null)?.closest("input, select, textarea")) return;
-      if (document.querySelector('[data-testid="leave-confirm"]')) return;
+      if (document.querySelector('[data-testid="table-menu"]')) return;
       play("ui_back");
       setBuildMode("none");
     };
@@ -123,6 +105,9 @@ function useEscapeDisarm() {
     return () => window.removeEventListener("keydown", onKey, true);
   }, [setBuildMode]);
 }
+
+// The rules' roll line ("Tide rolls 4+5 = 9."): the dice row already shows the roll, so the log line skips it (#440).
+const ROLL_LOG = / rolls \d\+\d = \d+\.$/;
 
 // Unaffordable build buttons use aria-disabled, not disabled, so Tab still reaches them and the price is read out.
 const UNAFFORDABLE = "aria-disabled:cursor-not-allowed aria-disabled:opacity-50 aria-disabled:active:scale-100";
@@ -134,9 +119,10 @@ export function Hud() {
   const buildMode = useGame((s) => s.buildMode);
   const roadPicks = useGame((s) => s.roadPicks);
   const banner = useGame((s) => s.banner);
-  const seats = useGame((s) => s.seats);
   const error = useGame((s) => s.error);
   const howTo = useGame((s) => s.howTo);
+  const chatOpen = useGame((s) => s.chatOpen);
+  const tradeOpen = useGame((s) => s.tradeOpen);
   const dispatch = useGame((s) => s.dispatch);
   const setBuildMode = useGame((s) => s.setBuildMode);
   const setHowTo = useGame((s) => s.setHowTo);
@@ -144,11 +130,13 @@ export function Hud() {
   const openMenu = useGame((s) => s.openMenu);
   // A watcher (docs/design/spectator.md): `me` below falls back to seat 0, so its hand bar is hidden by this flag, never by `localId`.
   const spectator = useGame((s) => s.spectator);
-  const watching = useGame((s) => s.watching);
   const { phone, portrait } = useViewport();
+  // #422: a sideways phone stacks the HUD in a full-height left column, so the island fills the height beside it.
+  const column = phone && !portrait;
   const [hintDismissed, setHintDismissed] = useState(() => sessionStorage.getItem(HINT_KEY) === "1");
   useEscapeDisarm();
   const [stackRef, moreBelow] = useMoreBelow();
+  useEffect(() => preloadOnIdle(sheets.prefetch), []);
 
   if (!state) return null;
   const actor = mode === "hotseat" ? state.current : localId;
@@ -198,46 +186,32 @@ export function Hud() {
       : `${yours ? "Your" : `${subjectPlayer.name}'s`} turn — ${phaseText}`;
   const winner = state.winner ? state.players.find((p) => p.id === state.winner) : null;
   const menuPlayer = menuFor ? state.players.find((p) => p.id === menuFor) : null;
+  // #422: on the player's own Roll or End row the dice ride beside the button instead of taking a row of their own.
+  const dice = state.dice ? <Dice values={state.dice} /> : null;
+  const diceInBar = mine && /^(main|roll)/.test(state.phase);
 
   return (
     <>
-      <PlaceChip />
-      <header className="pointer-events-none absolute inset-x-0 top-0 z-20 p-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
-        <div className="pointer-events-auto mx-auto flex max-w-5xl items-center justify-between gap-2">
-          <div className="flex items-center gap-2 rounded-[20px] border border-white/50 bg-glass px-3 py-2 backdrop-blur-md">
-            <span className="font-display text-lg tracking-tight">Emberisle</span>
-            <span className="hidden text-xs text-zinc-700 sm:inline">Turn {Math.max(1, state.turn)}</span>
-            {spectator ? (
-              <span data-testid="watching-badge" className="rounded-full bg-fg px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-bg">
-                Watching
-              </span>
-            ) : null}
-            {watching > 0 ? (
-              <span
-                data-testid="watching-count"
-                title={`${watching} watching`}
-                aria-label={`${watching} watching`}
-                className="flex items-center gap-1 text-xs tabular-nums text-zinc-700"
-              >
-                <Eye className="size-3.5" aria-hidden="true" />
-                {watching}
-              </span>
-            ) : null}
-          </div>
-          {phone && !portrait ? <SeatStrip actor={actor} className="ml-auto min-w-0 max-w-[34rem] flex-1" /> : null}
-          <div className="flex gap-1">
-            <Button variant="secondary" size="icon" onClick={(e) => setHowTo(true, e.currentTarget)} aria-label="How to play">
-              <BookOpen className="size-4" />
-            </Button>
-            <LeaveButton confirm={mode === "online" && !spectator && state.phase !== "over"} />
-          </div>
+      {column ? null : <PlaceChip />}
+      {/* #442: one control up top. The turn number, watcher count, How to play, sound and Leave live in the menu, whose open
+          sheet rises over the z-20 chat dock (it reaches the header on a sideways phone). A watcher's badge stays out here,
+          a chip and not a button, so a watcher always sees why it has no controls (docs/design/spectator.md). */}
+      <header className="pointer-events-none absolute inset-x-0 top-0 z-20 px-safe pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] has-[#table-menu]:z-30">
+        <div className="pointer-events-auto flex items-center justify-end gap-2">
+          {phone && !portrait ? <SeatStrip actor={actor} className="min-w-0 max-w-[48rem] flex-1" /> : null}
+          {spectator ? (
+            <span data-testid="watching-badge" className="flex h-11 items-center rounded-chip bg-glass px-3 text-caption text-fg backdrop-blur-md">
+              Watching
+            </span>
+          ) : null}
+          <TableMenu />
         </div>
       </header>
 
       {phone && portrait ? (
         <SeatStrip
           actor={actor}
-          className="absolute inset-x-3 top-[calc(env(safe-area-inset-top)+4.25rem)] z-10"
+          className="absolute left-safe right-safe top-[calc(env(safe-area-inset-top)+4.25rem)] z-10"
         />
       ) : null}
       {phone && menuPlayer ? (
@@ -245,73 +219,38 @@ export function Hud() {
           player={menuPlayer}
           className={cn(
             "absolute z-20",
-            portrait ? "inset-x-3 top-[calc(env(safe-area-inset-top)+7.25rem)]" : "right-3 top-16 w-72",
+            portrait ? "left-safe right-safe top-[calc(env(safe-area-inset-top)+7.25rem)]" : "right-safe top-16 w-72",
           )}
         />
       ) : null}
 
-      {/* An open player menu is a popover, so the rail rises over the bottom stack while it shows (they overlap at 800x500). */}
-      {phone ? null : (
-      <aside className={cn("pointer-events-none absolute left-3 top-20 hidden w-56 flex-col gap-2 md:flex", menuFor ? "z-20" : "z-10")}>
-        {state.players.map((p) => (
-          <div key={p.id} className="pointer-events-auto flex flex-col gap-1">
-            <div
-              data-testid={`rail-${p.id}`}
-              className={cn(
-                "relative rounded-[16px] border bg-glass backdrop-blur-md",
-                p.id === state.current ? "border-accent" : "border-white/50",
-              )}
-            >
-              {/* The card is the menu's trigger (docs/design/chat.md "The player action menu"). */}
-              <button
-                type="button"
-                data-menu-trigger={p.id}
-                aria-expanded={menuFor === p.id}
-                aria-controls={`player-menu-${p.id}`}
-                onClick={() => openMenu(menuFor === p.id ? null : p.id)}
-                className="block w-full cursor-pointer rounded-[16px] px-3 py-2 text-left hover:bg-white/40"
-              >
-                <span className="flex items-center justify-between gap-2">
-                  <span className="flex items-center gap-2">
-                    <span className="size-2.5 rounded-full" style={{ background: p.color }} />
-                    <span className="text-sm font-medium">{p.name}</span>
-                    <RollOffDie state={state} id={p.id} className="size-6 text-sm" />
-                  </span>
-                  <span className="tabular-nums text-sm text-zinc-700">{publicVP(state, p.id)} vp{p.id === actor && p.hidden.vp > 0 ? ` (+${p.hidden.vp} hidden)` : ""}
-                  </span>
-                </span>
-                <span className="mt-1 block text-xs text-zinc-700">
-                  {p.goods ?? RESOURCES.reduce((n, r) => n + p.resources[r], 0)} goods · {p.fortunes ?? hiddenCount(p)} fortunes
-                  {seats.some((s) => s.away && (s.name === p.name || `${s.name} (bot)` === p.name)) ? " · reconnecting…" : ""}
-                </span>
-                {p.id === actor && hiddenCount(p) > 0 ? (
-                  <span className="mt-0.5 block text-xs text-zinc-700">
-                    {FORTUNE_NAMES.filter(([k]) => p.hidden[k] > 0)
-                      .map(([k, label]) => `${label} ×${p.hidden[k]}${p.boughtThisTurn[k] > 0 ? ` (${p.boughtThisTurn[k]} new)` : ""}`)
-                      .join(" · ")}
-                  </span>
-                ) : null}
-              </button>
-              <ReactionFloats by="player" id={p.id} />
-            </div>
-            {menuFor === p.id ? <PlayerMenu player={p} /> : null}
-          </div>
-        ))}
-      </aside>
-      )}
+      {phone ? null : <SeatRail actor={actor} />}
 
-      <ChatDock />
+      {/* #488: the dock comes from the online chunk the lobby already loaded, so it is in the HUD's first frame (tabs-prove).
+          A watcher or a rejoin can still be loading it; if that fails the table stands without a dock, and it tries again
+          when the chat is next opened or closed. */}
+      {mode === "online" ? (
+        <LazyBoundary failed={null} retryKey={String(chatOpen)}>
+          <ChatDock />
+          <ChromeLanded />
+        </LazyBoundary>
+      ) : null}
       <TradeToast />
       <Announcer />
+      <RollMoment />
 
-      <div className="pointer-events-none absolute bottom-0 inset-x-0 z-10 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-        <div className="relative mx-auto max-w-3xl">
+      <div className="pointer-events-none absolute bottom-0 inset-x-0 z-10 px-safe pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <div className={cn("relative", column ? "w-80 max-w-[48vw]" : "mx-auto max-w-3xl")}>
           {/* #459: floats above the stack, so it coming and going never reflows the turn banner. */}
           {banner ? (
             <p
               role="status"
               data-testid="banner"
-              className="pointer-events-none absolute inset-x-0 bottom-full mb-2 animate-[turn-fade_200ms_ease-out] rounded-[16px] border border-accent/40 bg-surface px-3 py-2 text-center text-sm font-medium text-zinc-900"
+              className={cn(
+                "pointer-events-none absolute inset-x-0 animate-[turn-fade_200ms_ease-out] rounded-[16px] border border-accent/40 bg-surface px-3 py-2 text-center text-sm font-medium text-zinc-900",
+                // #422: beside the column, over the top of the hole, as it floats over the board above the stack elsewhere.
+                column ? "left-full top-0 ml-3 w-max max-w-[calc(100vw-21.5rem-max(0.75rem,env(safe-area-inset-left))-max(0.75rem,env(safe-area-inset-right)))]" : "bottom-full mb-2",
+              )}
             >
               {banner}
             </p>
@@ -321,9 +260,15 @@ export function Hud() {
             className={cn(
               "pointer-events-auto flex flex-col gap-2 overflow-y-auto overscroll-contain",
               // #383: stop under the header (or the portrait seat strip) and leave the island at least ~8 rem.
-              phone && portrait ? "max-h-[calc(100dvh-16rem)]" : "max-h-[calc(100dvh-13rem)]",
+              // #422: the column runs from under the header to the bottom edge every phase, so the hole beside it never moves.
+              column
+                ? "h-[calc(100dvh-4.25rem-max(0.75rem,env(safe-area-inset-bottom)))] [&>:first-child]:mt-auto"
+                : portrait ? "max-h-[calc(100dvh-16rem)]" : "max-h-[calc(100dvh-13rem)]",
             )}
           >
+            {/* #422: in the column the Place chip is the first row, so it never covers the hand or the turn banner. Not
+                pointer-events-none: a porous child would make the stack's chrome only its parts, and the column no rail. */}
+            {column ? <PlaceChip column /> : null}
             {phone && portrait && !hintDismissed ? (
               <p
                 data-testid="landscape-hint"
@@ -366,7 +311,7 @@ export function Hud() {
               </p>
             ) : null}
 
-            {spectator ? null : <ResourceHand me={me} />}
+            {spectator ? null : <HandDock me={me} phase={state.phase} />}
 
             {discarder ? <DiscardBar key={`discard-${discarder}`} id={discarder} n={state.discardNeeded[discarder]!} /> : null}
             <TakeFromBar />
@@ -429,28 +374,34 @@ export function Hud() {
                 ) : null}
                 {!state.playedCard && playable(me, "plenty") > 0 ? <PlentyForm /> : null}
                 {!state.playedCard && playable(me, "monopoly") > 0 ? <MonopolyForm /> : null}
-                <Button size="sm" variant="sea" className="ml-auto" onClick={() => dispatch({ type: "endTurn" })}>
-                  End turn
-                </Button>
+                <div className="ml-auto flex gap-2 *:self-center">
+                  {dice}
+                  <Button size="sm" variant="sea" className={phone ? "h-11" : undefined} onClick={() => dispatch({ type: "endTurn" })}>
+                    End turn
+                  </Button>
+                </div>
               </div>
             ) : null}
 
             {(state.phase === "roll" || state.phase === "rollOff") && mine ? (
               <div className="flex flex-col gap-2">
                 {knightButton ? <div className="flex flex-wrap gap-1">{knightButton}</div> : null}
-                <Button size="lg" onClick={() => dispatch({ type: "roll" })}>
-                  <Dices className="size-5" /> Roll
-                </Button>
+                <div className="flex gap-2 *:self-center">
+                  {dice}
+                  <Button size="lg" className="flex-1" onClick={() => dispatch({ type: "roll" })}>
+                    <Dices className="size-5" /> Roll
+                  </Button>
+                </div>
               </div>
             ) : null}
 
-            {state.dice ? <Dice values={state.dice} /> : null}
+            {diceInBar ? null : dice}
 
             <p
               data-testid="log-line"
               className="hidden max-h-16 shrink-0 overflow-y-auto rounded-[16px] bg-glass px-3 py-1 text-xs text-zinc-700 backdrop-blur-md sm:block short:hidden"
             >
-              {state.log.slice(-3).join(" · ")}
+              {state.log.filter((l) => !ROLL_LOG.test(l)).slice(-3).join(" · ")}
             </p>
           </div>
           {moreBelow ? (
@@ -463,92 +414,20 @@ export function Hud() {
         </div>
       </div>
 
-      <TradePanel />
-      {howTo ? <HowTo onClose={() => setHowTo(false)} /> : null}
-      <WinScreen />
+      {/* #488: the trade panel, How to play and the win screen share one lazy chunk, fetched on idle once the table is up.
+          If it fails the table stands with no sheet; SheetsFailed drops the open flags so the next tap tries again. */}
+      <LazyBoundary failed={<SheetsFailed />} retryKey={`${tradeOpen}|${howTo}|${state.winner ?? ""}`}>
+        <TradePanel />
+        {howTo ? <HowTo onClose={() => setHowTo(false)} /> : null}
+        <WinScreen />
+        <ChromeLanded />
+      </LazyBoundary>
 
       <p className="sr-only">
         Costs: path {COST.path.timber} timber {COST.path.clay} clay. Outpost timber clay wool grain. Stronghold 3 grain 2
         ore.
       </p>
     </>
-  );
-}
-
-// Hotseat's "Seat 2" .. "Seat 4" would all read "Sea", so a trailing number keeps the initial and the number ("S2").
-function shortName(name: string) {
-  const n = /\d+$/.exec(name)?.[0];
-  return n ? `${name[0]}${n}` : name.slice(0, 3);
-}
-
-// Three letters is all an 89 px cell holds, so seats that still share a short form ("Ember", "Emberly") fall back to
-// the initial and the seat number ("E1", "E2").
-function shortNames(names: string[]) {
-  const short = names.map(shortName);
-  return short.map((s, i) => (short.some((o, j) => j !== i && o === s) ? `${names[i]![0]}${i + 1}` : s));
-}
-
-// Phone seat strip (docs/design/mobile-hud.md): 44 px, one cell per seat. Compact vs the rail: no per-fortune
-// breakdown (that line is rail-only), hidden points show as "+N", and "reconnecting…" replaces the counts line.
-function SeatStrip({ actor, className }: { actor: string; className: string }) {
-  const state = useGame((s) => s.state)!;
-  const seats = useGame((s) => s.seats);
-  const menuFor = useGame((s) => s.menuFor);
-  const openMenu = useGame((s) => s.openMenu);
-  const short = shortNames(state.players.map((p) => p.name));
-  return (
-    <div data-testid="seat-strip" className={cn("pointer-events-auto flex h-11 gap-1", className)}>
-      {state.players.map((p, i) => {
-        const away = seats.some((s) => s.away && (s.name === p.name || `${s.name} (bot)` === p.name));
-        const hidden = p.id === actor && p.hidden.vp > 0 ? p.hidden.vp : 0;
-        const goods = p.goods ?? RESOURCES.reduce((n, r) => n + p.resources[r], 0);
-        return (
-          <div
-            key={p.id}
-            data-testid={`seat-${p.id}`}
-            className={cn(
-              "@container relative h-11 min-w-0 flex-1 rounded-[12px] border bg-glass leading-tight backdrop-blur-md",
-              p.id === state.current ? "border-accent" : "border-white/50",
-            )}
-          >
-            <button
-              type="button"
-              data-menu-trigger={p.id}
-              aria-expanded={menuFor === p.id}
-              aria-controls={`player-menu-${p.id}`}
-              onClick={() => openMenu(menuFor === p.id ? null : p.id)}
-              className="flex h-full w-full cursor-pointer flex-col justify-center rounded-[12px] px-2 text-left @max-[100px]:px-1.5"
-            >
-              <span className="flex w-full items-center gap-1.5 @max-[100px]:gap-1">
-                <span className="size-3 shrink-0 rounded-full" style={{ background: p.color }} />
-                {/* #420: under 100 px a deliberate short form: three letters or initial + number (the full name stays for screen readers), and the
-                    die only while the roll-off is live, so it never sits beside the points as one number. */}
-                <span data-testid="seat-name" className="min-w-0 flex-1 truncate text-xs font-medium @max-[100px]:sr-only">{p.name}</span>
-                <span data-testid="seat-name" aria-hidden="true" className="hidden min-w-0 flex-1 text-xs font-medium @max-[100px]:block">
-                  {short[i]}
-                </span>
-                <RollOffDie
-                  state={state}
-                  id={p.id}
-                  className={cn("size-4 rounded-[4px] text-[10px]", state.phase !== "rollOff" && "@max-[100px]:hidden")}
-                />
-                <span
-                  data-testid="seat-vp"
-                  className={cn("shrink-0 text-xs tabular-nums text-zinc-700", state.phase === "rollOff" && "@max-[100px]:hidden")}
-                >
-                  {publicVP(state, p.id)}
-                  {hidden ? `+${hidden}` : ""}
-                </span>
-              </span>
-              <span className="block w-full truncate text-[10px] text-zinc-700">
-                {away ? "reconnecting…" : `${goods}g · ${p.fortunes ?? hiddenCount(p)}f`}
-              </span>
-            </button>
-            <ReactionFloats by="player" id={p.id} />
-          </div>
-        );
-      })}
-    </div>
   );
 }
 
@@ -574,8 +453,12 @@ function TakeFromBar() {
   );
 }
 
+// A column scrolled down to a fortune brings the Place chip back into view. Stable, so it runs when the chip mounts, not on
+// every render while a placement is pending (which would undo the player's own scrolling).
+const intoView = (el: HTMLElement | null) => el?.scrollIntoView({ block: "nearest" });
+
 // Coarse pointers pick a mark, then confirm here (docs/design/mobile-camera-touch.md). Enter confirms, Esc cancels.
-function PlaceChip() {
+function PlaceChip({ column }: { column?: boolean }) {
   const pending = useGame((s) => s.pendingPlace);
   const confirmPlace = useGame((s) => s.confirmPlace);
   const setPendingPlace = useGame((s) => s.setPendingPlace);
@@ -590,7 +473,14 @@ function PlaceChip() {
   }, [pending, confirmPlace, setPendingPlace]);
   if (!pending) return null;
   return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-[max(11rem,calc(env(safe-area-inset-bottom)+10.5rem))] z-20 flex items-center justify-end gap-3 px-3">
+    <div
+      ref={column ? intoView : undefined}
+      className={
+        column
+          ? "flex shrink-0 items-center gap-3"
+          : "pointer-events-none absolute inset-x-0 bottom-[max(11rem,calc(env(safe-area-inset-bottom)+10.5rem))] z-20 flex items-center justify-end gap-3 px-safe"
+      }
+    >
       <button type="button" className="pointer-events-auto h-11 px-2 text-sm text-fg underline" onClick={() => setPendingPlace(null)}>
         Cancel
       </button>
@@ -676,123 +566,22 @@ function MonopolyForm() {
   );
 }
 
-// A modal dialog: focus goes to Close on open and back to whatever opened it on close; Escape closes it (see useEscapeDisarm for the order).
-export function HowTo({ onClose }: { onClose: () => void }) {
-  const phone = useViewport().phone;
-  const closeRef = useRef<HTMLButtonElement>(null);
-  const dialogRef = useRef<HTMLDivElement>(null);
-  const onCloseRef = useRef(onClose);
-  onCloseRef.current = onClose;
+// The sheets chunk did not load: close what was asked for, so How to play or Trade can be pressed again and retry.
+function SheetsFailed() {
+  const setHowTo = useGame((s) => s.setHowTo);
+  const setTradeOpen = useGame((s) => s.setTradeOpen);
   useEffect(() => {
-    // Safari never focuses a button on click, so the opener comes from the store; activeElement is the fallback.
-    const opener = useGame.getState().howToOpener ?? (document.activeElement as HTMLElement | null);
-    closeRef.current?.focus();
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Tab") {
-        const items = [...(dialogRef.current?.querySelectorAll<HTMLElement>('a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])') ?? [])].filter(
-          (el) => !el.hasAttribute("disabled"),
-        );
-        if (!items.length) return;
-        const i = items.indexOf(document.activeElement as HTMLElement);
-        const next = e.shiftKey ? (i <= 0 ? items.length - 1 : i - 1) : i === -1 || i === items.length - 1 ? 0 : i + 1;
-        e.preventDefault();
-        items[next]!.focus();
-      }
-      if (e.key !== "Escape") return;
-      e.stopPropagation();
-      play("ui_back");
-      onCloseRef.current();
-    };
-    window.addEventListener("keydown", onKey, true);
-    return () => {
-      window.removeEventListener("keydown", onKey, true);
-      if (opener?.isConnected) opener.focus();
-    };
-  }, []);
-  return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="howto-title"
-      ref={dialogRef}
-      className="absolute inset-0 z-30 flex items-end justify-center bg-white/45 p-3 sm:items-center"
-    >
-      <div className="max-h-[80dvh] w-full max-w-md overflow-y-auto rounded-[28px] border border-white/50 bg-surface p-5">
-        <div className="flex items-start justify-between gap-3">
-          <h2 id="howto-title" className="font-display text-2xl">How to play</h2>
-          <Button ref={closeRef} variant="ghost" size="icon" className={phone ? "size-11" : undefined} onClick={onClose} aria-label="Close" back>
-            <X className="size-4" />
-          </Button>
-        </div>
-        <div className="mt-4 space-y-3 text-sm leading-relaxed text-zinc-600">
-          <p>Settle a wild hex island. Ten points wins.</p>
-          <p>Each turn: roll. Matching numbers pay goods from tiles you touch. A seven sends the wayfarer — blocked land pays nothing, and anyone with more than seven goods discards half.</p>
-          <p>Build paths (timber + clay), outposts (timber, clay, wool, grain), strongholds (three grain, two ore). Fortunes cost wool, grain, ore.</p>
-          <p>Outposts score 1, strongholds 2. Longest path of five and largest army of three wayfarer cards score 2 more. Ports cut bank trade to 3:1 or 2:1.</p>
-          <p>Drag to orbit the isle. Tap glowing corners and paths to build.</p>
-        </div>
-      </div>
-    </div>
-  );
+    setHowTo(false);
+    setTradeOpen(false);
+  }, [setHowTo, setTradeOpen]);
+  return null;
 }
 
-// Leaving an online table frees the seat for good (goTitle wipes the saved secret), so ask first. Stay, Escape or 5 s cancels.
-function LeaveButton({ confirm }: { confirm: boolean }) {
-  const goTitle = useGame((s) => s.goTitle);
-  const phone = useViewport().phone;
-  const [asking, setAsking] = useState(false);
-  const leaveRef = useRef<HTMLButtonElement>(null);
-  const stayRef = useRef<HTMLButtonElement>(null);
-  const cancel = () => {
-    setAsking(false);
-    leaveRef.current?.focus();
-  };
-  useEffect(() => {
-    if (!asking) return;
-    stayRef.current?.focus();
-    const timer = setTimeout(cancel, 5000);
-    // Capture phase, so this Escape closes only the popover and not the trade panel behind it.
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== "Escape") return;
-      e.stopPropagation();
-      play("ui_back");
-      cancel();
-    };
-    window.addEventListener("keydown", onKey, true);
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener("keydown", onKey, true);
-    };
-  }, [asking]);
-  const menuFor = useGame((s) => s.menuFor);
-  const howTo = useGame((s) => s.howTo);
-  useEffect(() => {
-    if (!confirm || menuFor || howTo) setAsking(false);
-  }, [confirm, menuFor, howTo]);
+function TradeButton() {
+  const setTradeOpen = useGame((s) => s.setTradeOpen);
   return (
-    <div className="relative">
-      <Button ref={leaveRef} variant="secondary" size="sm" onClick={confirm ? () => setAsking(true) : goTitle}>
-        Leave
-      </Button>
-      {asking ? (
-        <div
-          role="alertdialog"
-          aria-label="Leave the table?"
-          aria-describedby="leave-confirm-msg"
-          data-testid="leave-confirm"
-          className="absolute right-0 top-full z-20 mt-2 flex w-64 flex-col gap-2 rounded-[16px] border border-white/50 bg-surface p-3 text-sm shadow-lg"
-        >
-          <p id="leave-confirm-msg">Leave the table? Your seat goes to the bot.</p>
-          <div className="flex justify-end gap-2">
-            <Button ref={stayRef} back variant="secondary" size="sm" className={phone ? "h-11 min-w-11" : undefined} onClick={cancel}>
-              Stay
-            </Button>
-            <Button size="sm" className={phone ? "h-11 min-w-11" : undefined} onClick={goTitle}>
-              Leave
-            </Button>
-          </div>
-        </div>
-      ) : null}
-    </div>
+    <Button size="sm" variant="secondary" onClick={(e) => setTradeOpen(true, e.currentTarget)}>
+      <ArrowLeftRight className="size-4" /> Trade
+    </Button>
   );
 }

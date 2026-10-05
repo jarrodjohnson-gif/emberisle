@@ -10,10 +10,14 @@
 // - the default view is the fitted 25° overhead view; a drag (mouse, or one finger through CDP touch events) orbits it and
 //   places nothing even when it starts on a legal corner, nor does an out-and-back drag that ends on it; a wheel zooms;
 //   Home (desktop) and a double click or double tap on empty board glide back to the fitted view; a click on the corner
-//   still places afterwards; under reduced motion Home is instant; mid-game with an armed path the token size is read and
-//   reported (not gated: the main HUD leaves it under 24 px, #135's call); three long chat previews beside the dock button
+//   still places afterwards; under reduced motion Home is instant; mid-game at 1280x720 with the hand shown and an armed
+//   path a token is still at least 24 px across (#422: the dice ride in the End turn row); three long chat previews beside the dock button
 //   do not count as a rail or move the camera; at 1024x768 online, opening the chat and focusing the keyboard PlaceList
-//   (no state change) each refit the island clear of the rail they make, and closing or blurring refits it back.
+//   (no state change) each refit the island clear of the rail they make, and closing or blurring refits it back;
+// - #422: on a sideways phone (844x390 and 667x375, touch) in the main phase with the hand shown, the HUD is a left column
+//   and the island beside it is larger than on main before #422 (a 101x85 px island, 8581 and 8569 px²), at least 60 % as
+//   wide as the hole is tall, every corner clear of the HUD, and every two adjacent corners at least 24 px apart (the touch slop);
+//   with Path armed and an edge picked by touch, the Place chip is in view and covers neither the hand nor the turn banner.
 // Zero console errors. Saves test-results/board-look-{title,play}-<size>.png. Port from VITE_PORT, default 8112.
 import { existsSync, mkdirSync } from "node:fs";
 import { chromium } from "playwright";
@@ -43,8 +47,9 @@ const drawn = (page, n) =>
   page.evaluate(async (n) => {
     const isle = window.__isle;
     const r0 = isle.renders;
-    await new Promise((res) => {
-      const poll = () => (isle.renders >= r0 + n ? res() : requestAnimationFrame(poll));
+    const t0 = performance.now();
+    await new Promise((res, rej) => {
+      const poll = () => (isle.renders >= r0 + n ? res() : performance.now() - t0 > 8000 ? rej(new Error(`drawn: ${n} frame(s) never came`)) : requestAnimationFrame(poll));
       poll();
     });
   }, n);
@@ -60,6 +65,26 @@ async function open(width, height, touch) {
   page.waitForFunction = (fn, arg, opts) => wait(fn, arg, opts).catch((e) => { throw new Error(`waiting for ${String(fn).replace(/\s+/g, " ").slice(0, 160)}: ${e.message}`); });
   await page.goto(`http://127.0.0.1:${PORT}/`);
   await page.waitForFunction(() => window.__isle?.renders > 0, null, { timeout: STEP_MS });
+  // Plays the hotseat table on through the setup round and rolls (a 7 moves the wayfarer and robs) until a main phase.
+  await page.evaluate(() => {
+    window.__toMain = async () => {
+      const g = window.__emberisle;
+      for (let i = 0; i < 40; i++) {
+        const s = g.getState();
+        const ph = s.state.phase;
+        const hi = s.highlights();
+        if (ph === "rollOff") s.dispatch({ type: "roll" });
+        else if (ph === "setupSettle" && hi.vertices[0]) s.pickVertex(hi.vertices[0]);
+        else if (ph === "setupRoad" && hi.edges[0]) s.pickEdge(hi.edges[0]);
+        else if (ph === "roll") s.dispatch({ type: "roll" });
+        else if (ph === "robber" && hi.hexes[0]) {
+          s.pickHex(hi.hexes[0]);
+          const steal = g.getState().pendingSteal;
+          if (steal) g.getState().chooseSteal(steal.targets[0]);
+        } else break;
+      }
+    };
+  });
   // Copy every drawn frame into a 2D canvas, so pixels can be read back without preserveDrawingBuffer.
   await page.evaluate(() => {
     const isle = window.__isle;
@@ -314,38 +339,26 @@ try {
       check(`${tag}: under reduced motion Home snaps at once`, calmWasAway && noGlide && (await atHome(calmHome)), { before: brief(calmAway), noGlide, after: brief(calmHome) });
       await page.emulateMedia({ reducedMotion: "no-preference" });
 
-      // Mid-game: through the setup round, a roll, then an armed path. The phase bar is at its main-phase height with the
-      // armed banner; the fit follows (the marks changed) and the token is read there and reported, not gated: the main
-      // HUD at 1280x720 leaves a 321 px hole and a 19.6 px token, which is #135's call to make, not this proof's.
+      // Mid-game: through the setup round, a roll, then an armed path. The bottom stack is at its main-phase height (turn
+      // banner, hand, the build row with the dice and End turn) with the armed banner; the fit follows (the marks changed).
+      // Before #422 the dice had a row of their own and the token here was 23.2 px.
       const mid = await page.evaluate(async () => {
+        await window.__toMain();
         const g = window.__emberisle;
-        for (let i = 0; i < 40; i++) {
-          const s = g.getState();
-          const ph = s.state.phase;
-          const hi = s.highlights();
-          if (ph === "setupSettle" && hi.vertices[0]) s.pickVertex(hi.vertices[0]);
-          else if (ph === "setupRoad" && hi.edges[0]) s.pickEdge(hi.edges[0]);
-          else if (ph === "roll") s.dispatch({ type: "roll" });
-          else if (ph === "robber" && hi.hexes[0]) {
-            // A 7: move the wayfarer, and rob the first seat offered if asked whom.
-            s.pickHex(hi.hexes[0]);
-            const steal = g.getState().pendingSteal;
-            if (steal) g.getState().chooseSteal(steal.targets[0]);
-          } else break;
-        }
         if (g.getState().state.phase === "main") g.getState().setBuildMode("path");
         const s = g.getState();
         const seq = s.state.seq;
-        await new Promise((res) => {
+        const t0 = performance.now();
+        await new Promise((res, rej) => {
           const isle = window.__isle;
-          const poll = () => (isle.lastSeq === seq && !isle.refitDue && !isle.glide ? res() : requestAnimationFrame(poll));
+          const poll = () => (isle.lastSeq === seq && !isle.refitDue && !isle.glide ? res() : performance.now() - t0 > 8000 ? rej(new Error("the fit never settled")) : requestAnimationFrame(poll));
           poll();
         });
         const isle = window.__isle;
-        return { phase: s.state.phase, armed: s.buildMode, insets: isle.insets(), token: +((innerWidth / (isle.ortho.right - isle.ortho.left)) * isle.ortho.zoom * 0.68).toFixed(1) };
+        return { phase: s.state.phase, armed: s.buildMode, hand: !!document.querySelector('[data-testid="hand-dock"]'), insets: isle.insets(), token: +((innerWidth / (isle.ortho.right - isle.ortho.left)) * isle.ortho.zoom * 0.68).toFixed(1) };
       });
       await drawn(page, 2);
-      check(`${tag}: mid-game with an armed path the token is read (reported, not gated)`, mid.phase === "main" && mid.armed === "path" && mid.token > 0, mid);
+      check(`${tag}: mid-game with the hand shown and an armed path a token is at least 24 px across`, mid.phase === "main" && mid.armed === "path" && mid.hand && mid.token >= 24, mid);
       // Disarming changes the marks, so the fit follows once more; let it land before the baseline below is taken.
       await page.evaluate(() => window.__emberisle.getState().setBuildMode("none"));
       await page.waitForFunction(() => !window.__isle.refitDue && !window.__isle.glide, null, { timeout: STEP_MS });
@@ -411,7 +424,7 @@ try {
           if (document.elementFromPoint(p.x, p.y)?.tagName !== "CANVAS") covered.push(`${v.id}@${p.x | 0},${p.y | 0}`);
         }
         const fresh = ["left", "right", "top", "bottom", "x", "z"].every((k) => Math.abs(want[k] - isle.fit[k]) < 1e-6);
-        return { right: ins.right, fresh, railLeft, rightmost: Math.round(rightmost), covered, glide: isle.glide !== null };
+        return { seq: st.seq, ins: JSON.stringify(ins), pose: JSON.stringify(["x", "z", "left", "right", "top", "bottom"].map((k) => isle.fit[k])), right: ins.right, fresh, railLeft, rightmost: Math.round(rightmost), covered, glide: isle.glide !== null };
       }, rail);
     // The first-player notice leaves the phase bar a few seconds in, and housekeeping does not refit; start after it has
     // gone, with one measure asked for, so every fit below answers to the hole as it then stands.
@@ -420,15 +433,25 @@ try {
     await settled();
     const base = await look(null);
     check("1024x768: the fit is the one the hole asks for", base.fresh && base.covered.length === 0, base);
+    // A measure that finds the hole unchanged draws nothing extra: it does not wake the idle loop (#481).
+    const idleWake = await page.evaluate(async () => {
+      const isle = window.__isle;
+      await new Promise((r) => setTimeout(r, 1100));
+      const before = isle.busyUntil;
+      isle.remeasure();
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      return { before, after: isle.busyUntil };
+    });
+    check("1024x768: a remeasure that changes nothing does not wake the loop", idleWake.after === idleWake.before, idleWake);
     // The keyboard PlaceList shows while a button in it has focus (#376) and is a rail then.
     await page.evaluate(() => document.querySelector('[data-testid="place-list"] button').focus());
     await settled();
     const list = await look('[data-testid="place-list"]');
-    check("1024x768: focusing the PlaceList refits the island clear of it, with no state change", list.right > base.right && list.fresh && list.rightmost < list.railLeft && list.covered.length === 0, { base, list });
+    check("1024x768: focusing the PlaceList refits the island clear of it, with no state change", list.seq === base.seq && list.right > base.right && list.fresh && list.rightmost < list.railLeft && list.covered.length === 0, { base, list });
     await page.evaluate(() => document.activeElement.blur());
     await settled();
     const blurred = await look(null);
-    check("1024x768: blurring the PlaceList refits it back", blurred.right === base.right && blurred.fresh && blurred.covered.length === 0, { base, blurred });
+    check("1024x768: blurring the PlaceList refits it back", blurred.seq === base.seq && blurred.right === base.right && blurred.fresh && blurred.covered.length === 0, { base, blurred });
     // The chat dock shows online; the store is told so, then the dock is opened with no state change.
     await page.evaluate(() => window.__emberisle.setState({ mode: "online" }));
     await settled();
@@ -437,11 +460,102 @@ try {
     await page.waitForSelector('[aria-label="Table chat"]', { timeout: STEP_MS });
     await settled();
     const chat = await look('[aria-label="Table chat"]');
-    check("1024x768: opening the chat refits the island clear of the chat rail, with no state change", chat.right > online.right && chat.fresh && chat.rightmost < chat.railLeft && chat.covered.length === 0, { online, chat });
+    check("1024x768: opening the chat refits the island clear of the chat rail, with no state change", chat.seq === online.seq && chat.right > online.right && chat.fresh && chat.rightmost < chat.railLeft && chat.covered.length === 0, { online, chat });
     await page.evaluate(() => window.__emberisle.getState().setChatOpen(false));
     await settled();
     const closed = await look(null);
-    check("1024x768: closing the chat refits it back", closed.right === online.right && closed.fresh && closed.covered.length === 0, { online, closed });
+    check("1024x768: closing the chat refits it back", closed.seq === online.seq && closed.right === online.right && closed.fresh && closed.covered.length === 0, { online, closed });
+    // Opening the table menu or a seat's popover is not chrome the island makes room for: the hole and the fit stay as they were.
+    await page.evaluate(() => window.__emberisle.getState().setChatOpen(false));
+    await settled();
+    const shut = await look(null);
+    await page.getByRole("button", { name: "Table menu" }).click();
+    await page.locator("#table-menu").waitFor({ timeout: STEP_MS });
+    await settled();
+    const menu = await look(null);
+    check("1024x768: opening the table menu leaves the hole and the fit unchanged", menu.ins === shut.ins && menu.pose === shut.pose && menu.seq === shut.seq, { shut, menu });
+    await page.keyboard.press("Escape");
+    await page.locator("#table-menu").waitFor({ state: "detached", timeout: STEP_MS });
+    await settled();
+    await page.evaluate(() => {
+      const g = window.__emberisle.getState();
+      g.openMenu(g.state.players[1].id);
+    });
+    await page.locator('[data-testid="player-menu"]').waitFor({ timeout: STEP_MS });
+    await settled();
+    const seatMenu = await look(null);
+    check("1024x768: opening a seat popover leaves the hole and the fit unchanged", seatMenu.ins === shut.ins && seatMenu.pose === shut.pose && seatMenu.seq === shut.seq, { shut, seatMenu });
+    await page.context().close();
+  }
+  // 4. #422: a sideways phone, main phase, hand shown. The HUD is a left column and the island fills the height beside it.
+  for (const [w, h, before] of [
+    [844, 390, 8581],
+    [667, 375, 8569],
+  ]) {
+    const tag = `${w}x${h} touch`;
+    const page = await open(w, h, true);
+    await page.getByRole("button", { name: "Four seats, one table" }).click();
+    await page.waitForFunction(() => window.__emberisle?.getState().state && window.__isle.lastState, null, { timeout: STEP_MS });
+    await page.evaluate(() => window.__toMain());
+    await page.waitForFunction(() => window.__isle.lastSeq === window.__emberisle.getState().state.seq && !window.__isle.refitDue && !window.__isle.glide, null, { timeout: STEP_MS });
+    await drawn(page, 2);
+    const land = await page.evaluate(() => {
+      const isle = window.__isle;
+      const st = window.__emberisle.getState().state;
+      const ins = isle.insets();
+      const stack = document.querySelector('[data-testid="turn-banner"]').parentElement.getBoundingClientRect();
+      const at = Object.fromEntries(st.vertices.map((v) => [v.id, isle.screenOf(v.id)]));
+      const xs = Object.values(at).map((p) => p.x);
+      const ys = Object.values(at).map((p) => p.y);
+      const covered = st.vertices.filter((v) => document.elementFromPoint(at[v.id].x, at[v.id].y)?.tagName !== "CANVAS").map((v) => v.id);
+      const apart = Math.min(...st.edges.map((e) => Math.hypot(at[e.va].x - at[e.vb].x, at[e.va].y - at[e.vb].y)));
+      const isleW = Math.max(...xs) - Math.min(...xs);
+      const isleH = Math.max(...ys) - Math.min(...ys);
+      return {
+        phase: st.phase,
+        hand: !!document.querySelector('[data-testid="hand-dock"]'),
+        column: { left: Math.round(stack.left), right: Math.round(stack.right), top: Math.round(stack.top), bottom: Math.round(stack.bottom) },
+        insets: ins,
+        holeH: innerHeight - ins.top - ins.bottom,
+        isle: `${Math.round(isleW)}x${Math.round(isleH)}`,
+        area: Math.round(isleW * isleH),
+        token: +((innerWidth / (isle.ortho.right - isle.ortho.left)) * isle.ortho.zoom * 0.68).toFixed(1),
+        apart: +apart.toFixed(1),
+        widthOverHoleH: +(isleW / (innerHeight - ins.top - ins.bottom)).toFixed(2),
+        covered,
+      };
+    });
+    check(`${tag}: main phase with the hand shown, the HUD a left column`, land.phase === "main" && land.hand && land.column.right < w / 2 && land.insets.left > land.column.right, land);
+    check(`${tag}: the island is larger than before #422 (${before} px²)`, land.area > before, { area: land.area, isle: land.isle, token: land.token });
+    check(`${tag}: the island is at least 60 % as wide as the hole is tall, every corner clear of the HUD`, land.widthOverHoleH >= 0.6 && land.covered.length === 0, { widthOverHoleH: land.widthOverHoleH, holeH: land.holeH, covered: land.covered.slice(0, 6) });
+    check(`${tag}: adjacent corners at least 24 px apart`, land.apart >= 24, { apart: land.apart });
+    await page.screenshot({ path: `test-results/board-look-play-${w}x${h}.png` });
+    // A main-phase build by touch: Path armed, an edge picked, the column scrolled to its end first. Place and Cancel are
+    // the column's first row, in view, and cover neither the hand nor the turn banner.
+    await page.evaluate(() => {
+      const g = window.__emberisle.getState();
+      g.setBuildMode("path");
+      const sc = document.querySelector('[data-testid="turn-banner"]').parentElement;
+      sc.scrollTop = sc.scrollHeight;
+      g.setPendingPlace({ kind: "edge", id: g.highlights().edges[0] });
+    });
+    await page.getByTestId("place-chip").waitFor({ timeout: STEP_MS });
+    const chip = await page.evaluate(() => {
+      const box = (el) => {
+        const r = el.getBoundingClientRect();
+        return { l: Math.round(r.left), t: Math.round(r.top), r: Math.round(r.right), b: Math.round(r.bottom) };
+      };
+      const meets = (a, b) => a.l < b.r && b.l < a.r && a.t < b.b && b.t < a.b;
+      const place = document.querySelector('[data-testid="place-chip"]');
+      const row = box(place.parentElement);
+      const hand = box(document.querySelector('[data-testid="hand-dock"]'));
+      const turn = box(document.querySelector('[data-testid="turn-banner"]'));
+      const sc = box(document.querySelector('[data-testid="turn-banner"]').parentElement);
+      const p = box(place);
+      const onTop = place.contains(document.elementFromPoint((p.l + p.r) / 2, (p.t + p.b) / 2));
+      return { armed: window.__emberisle.getState().buildMode, row, hand, turn, onTop, inView: p.t >= sc.t && p.b <= sc.b, overHand: meets(row, hand), overTurn: meets(row, turn) };
+    });
+    check(`${tag}: an armed Path's Place chip is the column's first row, in view, clear of the hand and the turn banner`, chip.armed === "path" && chip.onTop && chip.inView && !chip.overHand && !chip.overTurn, chip);
     await page.context().close();
   }
   check("no console errors", errors.length === 0, errors);

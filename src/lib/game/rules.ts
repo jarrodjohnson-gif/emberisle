@@ -27,7 +27,7 @@ function player(state: GameState, id: string) {
 }
 
 // An opponent in the host's view carries only `goods`, the size of the hand (#186).
-function cards(p: PlayerState) {
+export function cards(p: PlayerState) {
   return p.goods ?? RESOURCES.reduce((n, r) => n + p.resources[r], 0);
 }
 

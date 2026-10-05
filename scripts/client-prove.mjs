@@ -67,20 +67,23 @@ try {
   const rollOff = await page.evaluate(async () => {
     const g = window.__emberisle;
     const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+    // #443: the seats' die tiles show only while the roll-off is live, so they are read on the way through.
+    let faces = [];
     for (let i = 0; i < 400; i++) {
       const s = g.getState();
-      if (s.state.phase !== "rollOff") return { phase: s.state.phase, order: s.state.players.map((p) => p.id), rolls: s.state.rollOff.rolls };
+      const shown = [...document.querySelectorAll('[data-testid="rolloff-die"]')].filter((e) => e.checkVisibility()).map((e) => e.textContent);
+      if (shown.length) faces = shown;
+      if (s.state.phase !== "rollOff") return { phase: s.state.phase, order: s.state.players.map((p) => p.id), rolls: s.state.rollOff.rolls, faces };
       if (s.state.current === s.localId) s.dispatch({ type: "roll" });
       await sleep(100);
     }
     return { phase: "stuck in rollOff" };
   });
-  const tiles = page.locator('[data-testid="rolloff-die"]:visible');
-  await page.waitForFunction(() => [...document.querySelectorAll('[data-testid="rolloff-die"]')].filter((e) => e.checkVisibility()).length === 4);
-  const faces = await tiles.allTextContents();
+  await page.waitForFunction(() => [...document.querySelectorAll('[data-testid="rolloff-die"]')].filter((e) => e.checkVisibility()).length === 0);
+  const faces = rollOff.faces ?? [];
   const placesFirst = await page.evaluate(() => window.__banners.find((b) => b.includes("places first, then")) ?? null);
-  console.log(`roll-off: ${rollOff.phase}, order ${rollOff.order?.join(" ")}, ${faces.length} die tiles [${faces.join(" ")}], banner ${JSON.stringify(placesFirst)}`);
-  if (rollOff.phase !== "setupSettle" || faces.length !== 4 || faces.some((f) => !/^[1-6]$/.test(f)) || !placesFirst) {
+  console.log(`roll-off: ${rollOff.phase}, order ${rollOff.order?.join(" ")}, ${faces.length} die tiles [${faces.join(" ")}] (gone after), banner ${JSON.stringify(placesFirst)}`);
+  if (rollOff.phase !== "setupSettle" || faces.length !== 4 || faces.some((f) => !/^[1-6–]$/.test(f)) || faces.filter((f) => /^[1-6]$/.test(f)).length < 3 || !placesFirst) {
     throw new Error(`roll-off: ${JSON.stringify({ rollOff, faces, placesFirst })}`);
   }
 
@@ -108,11 +111,13 @@ try {
   console.log(`turn announcements: ${JSON.stringify(turns)}`);
   if (!turns.includes("Your turn.") || !turns.some((t) => /^.+'s turn\.$/.test(t))) throw new Error(`turn announcements: ${JSON.stringify(turns)}`);
 
+  // The bots ahead of the human may ask the table (#445), and an ask waits up to 20 s for every seat's answer, so say No.
   const rolled = await page.evaluate(async () => {
     const g = window.__emberisle;
     const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     for (let i = 0; i < 200; i++) {
       const s = g.getState();
+      if (s.offer && s.offer.from !== s.localId) s.answerTrade(false);
       if (s.state.current === s.localId && s.state.phase === "roll") {
         const r = s.dispatch({ type: "roll" });
         return r.ok ? g.getState().state.dice : r.error;
@@ -347,7 +352,8 @@ try {
   }
   if (phase !== "roll" && phase !== "main" && phase !== "robber" && phase !== "discard") throw new Error(`setup: ${phase}`);
   if (!Array.isArray(rolled)) throw new Error(`roll: ${rolled}`);
-  if (!bannerText || !bannerText.includes(`rolls ${rolled[0]}+${rolled[1]} = ${rolled[0] + rolled[1]}`)) throw new Error(`roll banner: ${bannerText}`);
+  // #440: the banner says whose roll and who gathered; the numbers are the roll moment's and the dice row's alone.
+  if (!bannerText || !/^.+'s roll · /.test(bannerText) || bannerText.includes(`${rolled[0]}+${rolled[1]}`)) throw new Error(`roll banner: ${bannerText}`);
   if (steal.targets !== 2 || !steal.asked || steal.got !== 1 || steal.left !== 1 || steal.phase !== "main" || !steal.cleared) {
     throw new Error(`offline steal picker: ${JSON.stringify(steal)}`);
   }
@@ -366,7 +372,9 @@ try {
   if (knight.armed !== "knight" || knight.phase !== "roll" || knight.played !== 1 || knight.error || !knight.roll) {
     throw new Error(`knight before roll: ${JSON.stringify(knight)}`);
   }
-  if (!rail[0]?.includes("+2 hidden") || !rail[0].includes("points ×2") || rail.slice(1).some((t) => t === null || t.includes("hidden"))) {
+  // #443: "N points, plus 2 hidden" is the screen-reader text; the drawn "+2" follows it. The by-kind breakdown is a
+  // player-menu fact (seat-rail-prove).
+  if (!rail[0]?.includes("plus 2 hidden+2") || rail.slice(1).some((t) => t === null || t.includes("hidden"))) {
     throw new Error(`rail cards: ${JSON.stringify(rail)}`);
   }
   // The knight and hidden-points steps above left a live game, so return to the title for the next one.
@@ -522,10 +530,10 @@ try {
     await new Promise((r) => setTimeout(r, 1500));
   });
   const mutedPlays = await plays();
-  // Back on, through the own-seat menu this time, so both toggles are exercised.
-  await page.locator('[data-menu-trigger="p0"]').first().click();
-  await page.getByTestId("player-menu").getByTestId("sound-toggle").click();
-  const menuSays = await page.getByTestId("player-menu").getByTestId("sound-toggle").textContent();
+  // Back on, through the table menu this time (#442 moved the in-game toggle there), so both toggles are exercised.
+  await page.getByRole("button", { name: "Table menu" }).click();
+  await page.getByTestId("table-menu").getByTestId("sound-toggle").click();
+  const menuSays = await page.getByTestId("table-menu").getByTestId("sound-toggle").textContent();
   const cleared = await page.evaluate(() => localStorage.getItem("emberisle-muted"));
   const mute = { wasOn, stored, stillOff, mutedPlays, menuSays: menuSays?.trim(), cleared };
   console.log("mute:", JSON.stringify(mute));
@@ -682,19 +690,24 @@ try {
     window.__emberisle.setState({ mode: "online", net: { act: () => true, close: () => {} } });
   });
   const confirmBox = page.getByTestId("leave-confirm");
-  await page.getByRole("button", { name: "Leave", exact: true }).click();
+  // #442: Leave table is a row of the table menu, which stays open (rows back) after Stay or Escape on the question.
+  const leaveTable = async () => {
+    if (!(await page.getByTestId("table-menu").count())) await page.getByRole("button", { name: "Table menu" }).click();
+    await page.getByRole("button", { name: "Leave table" }).click();
+  };
+  await leaveTable();
   await confirmBox.waitFor({ timeout: 2000 });
   const asked = { text: await confirmBox.textContent(), ...(await leaveState()) };
   console.log("leave asks:", JSON.stringify(asked));
   if (asked.screen !== "play" || !asked.text.includes("Leave the table? Your seat goes to the bot.") || !asked.seat) throw new Error(`leave confirm: ${JSON.stringify(asked)}`);
   await confirmBox.getByRole("button", { name: "Stay" }).click();
   await confirmBox.waitFor({ state: "detached", timeout: 2000 });
-  await page.getByRole("button", { name: "Leave", exact: true }).click();
+  await leaveTable();
   await confirmBox.waitFor({ timeout: 2000 });
   await page.keyboard.press("Escape");
   await confirmBox.waitFor({ state: "detached", timeout: 2000 });
   if ((await leaveState()).screen !== "play") throw new Error("Stay/Escape left the table");
-  await page.getByRole("button", { name: "Leave", exact: true }).click();
+  await leaveTable();
   await confirmBox.getByRole("button", { name: "Leave" }).click();
   await page.waitForFunction(() => window.__emberisle.getState().screen === "title", null, { timeout: 5000 });
   const left = await leaveState();
@@ -705,7 +718,7 @@ try {
   await page.evaluate(() => window.__emberisle.setState({ mode: "online", net: { act: () => true, close: () => {} } }));
   await page.setViewportSize({ width: 390, height: 844 });
   await page.getByTestId("seat-strip").waitFor({ timeout: 5000 });
-  await page.getByRole("button", { name: "Leave", exact: true }).click();
+  await leaveTable();
   await confirmBox.waitFor({ timeout: 2000 });
   const topmost = await page.evaluate(() => {
     const q = document.querySelector("#leave-confirm-msg").getBoundingClientRect();
@@ -717,7 +730,7 @@ try {
   await page.keyboard.press("Escape");
   await page.setViewportSize({ width: 800, height: 500 });
   await freshPractice();
-  await page.getByRole("button", { name: "Leave", exact: true }).click();
+  await leaveTable();
   await page.waitForFunction(() => window.__emberisle.getState().screen === "title", null, { timeout: 5000 });
   if (await confirmBox.count()) throw new Error("practice Leave asked for confirmation");
   console.log("practice leave: one click");
@@ -793,8 +806,9 @@ try {
   const layer2 = await storeNow();
   console.log("escape order, trade over arm:", JSON.stringify({ layer1, layer2 }));
   if (layer1.tradeOpen || layer1.buildMode !== "path" || layer2.buildMode !== "none") throw new Error(`trade/arm order: ${JSON.stringify({ layer1, layer2 })}`);
-  // The How-to dialog is above an armed build: its Escape leaves the arm alone.
+  // The How-to dialog is above an armed build: its Escape leaves the arm alone (#442: it opens from the table menu).
   await pathBtn.click();
+  await page.getByRole("button", { name: "Table menu" }).click();
   await page.getByRole("button", { name: "How to play" }).click();
   await page.keyboard.press("Escape");
   const layer3 = await storeNow();
@@ -813,7 +827,8 @@ try {
   await page.setViewportSize({ width: 800, height: 500 });
 
   // #286: How to play is a dialog: focus goes to Close, Escape closes it, and focus returns to the opener (title and in-game).
-  const howToRound = async (opener, label) => {
+  // #442: in-game the row sits in the table menu and is gone once the dialog is up, so the focus goes back to the menu button.
+  const howToRound = async (opener, label, backTo = "How to play") => {
     // Safari does not focus a button on click: stop the mousedown focus and blur, so activeElement is <body> when the dialog opens.
     await opener.evaluate((el) => {
       el.addEventListener("mousedown", (e) => e.preventDefault(), { once: true });
@@ -830,12 +845,13 @@ try {
     await dlg.waitFor({ state: "detached", timeout: 3000 });
     const back = await page.evaluate(() => document.activeElement?.getAttribute("aria-label") ?? document.activeElement?.textContent?.trim());
     console.log(`how to play (${label}):`, JSON.stringify({ focusedOnOpen: at, focusedAfter: back }));
-    if (at !== "Close" || back !== "How to play") throw new Error(`how to play ${label}: ${JSON.stringify({ at, back })}`);
+    if (at !== "Close" || back !== backTo) throw new Error(`how to play ${label}: ${JSON.stringify({ at, back })}`);
   };
   await toTitle();
   await howToRound(page.getByRole("button", { name: "How to play" }), "title");
   await freshPractice();
-  await howToRound(page.getByRole("button", { name: "How to play" }), "header");
+  await page.getByRole("button", { name: "Table menu" }).click();
+  await howToRound(page.getByRole("button", { name: "How to play" }), "table menu", "Table menu");
 
   // #259: a saved seat whose table is gone fails quietly on page load: title card, no error, key cleared.
   const { spawn } = await import("node:child_process");

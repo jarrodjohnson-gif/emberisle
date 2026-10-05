@@ -179,6 +179,19 @@ try {
     await pg.waitForFunction(() => window.__isle && window.__emberisle.getState().state.phase === "setupSettle");
     sampled.push(...(await sample(pg, "turn-banner", `${tag} another seat's turn banner`)));
     if (viewport.width >= 640) sampled.push(...(await sample(pg, "log-line", `${tag} log line`)));
+    // #443: a mid-game seat line with its small counts and "+1" hidden points, so that zinc text is sampled too.
+    await pg.evaluate(() => {
+      const g = window.__emberisle;
+      const st = structuredClone(g.getState().state);
+      st.phase = "main";
+      const me = st.players.find((p) => p.id === st.current);
+      me.resources.timber = 3;
+      me.hidden.vp = 1;
+      me.hidden.knight = 1;
+      st.seq += 1;
+      g.setState({ state: st });
+    });
+    await pg.waitForFunction(() => [...document.querySelectorAll('[data-testid="seat-vp"]')].some((el) => el.textContent.includes("hidden")));
     // Worst case, computed: every text whose nearest painted background is a glass chip (banner, log line, header pill,
     // rail, seat strip, hint), against the glass token composited over black, the darkest board the blur can show.
     const worst = await pg.evaluate(() => {

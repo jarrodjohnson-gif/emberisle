@@ -2,13 +2,33 @@
 // "The player action menu". Illegal rows are hidden, not greyed out. Closes on Esc, a pointerdown outside the menu and
 // its trigger, or the same card again (the trigger toggles `openMenu`). Both trade rows open the trade panel (#163).
 import { useEffect, useRef } from "react";
-import { MessageSquare, Landmark, AtSign, Handshake, Volume2, VolumeX } from "lucide-react";
+import { MessageSquare, Landmark, AtSign, Handshake } from "lucide-react";
 import { EMOTES } from "@/components/game/emotes";
-import { RESOURCES, type PlayerState } from "@/lib/game/types";
-import { hiddenCount, publicVP } from "@/lib/game/rules";
+import type { DevKind, PlayerState } from "@/lib/game/types";
+import { cards, hiddenCount, publicVP } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
-import { setMuted, useMuted } from "@/lib/sound";
+import type { Seat } from "@/lib/net/table";
 import { cn } from "@/lib/utils";
+
+export const FORTUNE_NAMES: [DevKind, string][] = [
+  ["knight", "knight"],
+  ["road", "path"],
+  ["plenty", "plenty"],
+  ["monopoly", "monopoly"],
+  ["vp", "points"],
+];
+
+// Your own fortunes by kind, "knight ×1 · points ×2 (1 new)"; "" while you hold none.
+export function fortuneBreakdown(p: PlayerState) {
+  return FORTUNE_NAMES.filter(([k]) => p.hidden[k] > 0)
+    .map(([k, label]) => `${label} ×${p.hidden[k]}${p.boughtThisTurn[k] > 0 ? ` (${p.boughtThisTurn[k]} new)` : ""}`)
+    .join(" · ");
+}
+
+// The seat's socket dropped and the table is holding it (docs/design/spectator.md "away").
+export function seatAway(seats: Seat[], p: PlayerState) {
+  return seats.some((s) => s.away && (s.name === p.name || `${s.name} (bot)` === p.name));
+}
 
 const CHAT_INPUT = "chat-input";
 
@@ -23,12 +43,12 @@ export function PlayerMenu({ player: p, className }: { player: PlayerState; clas
   const state = useGame((s) => s.state)!;
   const mode = useGame((s) => s.mode);
   const localId = useGame((s) => s.localId);
+  const seats = useGame((s) => s.seats);
   const openMenu = useGame((s) => s.openMenu);
   const sendReact = useGame((s) => s.sendReact);
   const setChatOpen = useGame((s) => s.setChatOpen);
   const setChatDraft = useGame((s) => s.setChatDraft);
   const setTradeOpen = useGame((s) => s.setTradeOpen);
-  const muted = useMuted();
   const root = useRef<HTMLDivElement>(null);
 
   const actor = mode === "hotseat" ? state.current : localId;
@@ -60,12 +80,15 @@ export function PlayerMenu({ player: p, className }: { player: PlayerState; clas
     };
   }, [p.id, openMenu]);
 
-  const facts: [string, number][] = [
-    ["Cards in hand", p.goods ?? RESOURCES.reduce((n, r) => n + p.resources[r], 0)],
+  // #443: your own fortunes by kind and a dropped seat's state are facts here, one tap from the seat line.
+  const facts: [string, number | string][] = [
+    ["Cards in hand", cards(p)],
     ["Fortunes held", p.fortunes ?? hiddenCount(p)],
     ["Points shown", publicVP(state, p.id)],
     ["Wayfarers played", p.knightsPlayed],
   ];
+  if (own && hiddenCount(p) > 0) facts.push(["Your fortunes", fortuneBreakdown(p)]);
+  if (seatAway(seats, p)) facts.push(["Connection", "reconnecting…"]);
 
   return (
     <div
@@ -93,10 +116,10 @@ export function PlayerMenu({ player: p, className }: { player: PlayerState; clas
           ))}
         </div>
       ) : null}
-      <dl data-testid="menu-facts" className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-0.5 px-2 py-1 text-xs text-zinc-600">
+      <dl data-testid="menu-facts" className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 px-2 py-1 text-xs text-zinc-600">
         {facts.map(([label, n]) => (
           <div key={label} className="contents">
-            <dt>{label}</dt>
+            <dt className="whitespace-nowrap">{label}</dt>
             <dd className="tabular-nums text-right text-zinc-900">{n}</dd>
           </div>
         ))}
@@ -150,13 +173,6 @@ export function PlayerMenu({ player: p, className }: { player: PlayerState; clas
           }}
         >
           <MessageSquare className="size-4 shrink-0 text-zinc-600" /> Open chat
-        </button>
-      ) : null}
-      {own ? (
-        // A toggle, so the menu stays open to show the new state (#303).
-        <button type="button" className={ROW} data-testid="sound-toggle" aria-pressed={!muted} onClick={() => setMuted(!muted)}>
-          {muted ? <VolumeX className="size-4 shrink-0 text-zinc-600" /> : <Volume2 className="size-4 shrink-0 text-zinc-600" />}
-          Table sounds {muted ? "off" : "on"}
         </button>
       ) : null}
     </div>

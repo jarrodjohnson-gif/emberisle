@@ -591,16 +591,12 @@ try {
   await card.click();
   await menu.waitFor();
   check((await card.getAttribute("aria-expanded")) === "true", "menu: Tide's card is a button with aria-expanded");
-  // The roll-off die tile (#232) sits next to the vp in setup; read the card without it so its face does not run into a number.
-  const cardText = await a.page.getByTestId(`rail-${bId}`).evaluate((el) => {
-    const copy = el.cloneNode(true);
-    for (const d of copy.querySelectorAll('[data-testid="rolloff-die"]')) d.remove();
-    return copy.textContent;
-  });
+  // #443: the card is one line; a goods or fortunes count shows only when it is held, and the points read "N points".
+  const cardText = await a.page.getByTestId(`rail-${bId}`).textContent();
   const fromCard = [
-    Number(cardText.match(/(\d+) goods/)[1]),
-    Number(cardText.match(/(\d+) fortunes/)[1]),
-    Number(cardText.match(/(\d+) vp/)[1]),
+    Number(cardText.match(/(\d+) goods?/)?.[1] ?? 0),
+    Number(cardText.match(/(\d+) fortunes?/)?.[1] ?? 0),
+    Number(cardText.match(/(\d+) points/)[1]),
     await a.page.evaluate((id) => window.__emberisle.getState().state.players.find((p) => p.id === id).knightsPlayed, bId),
   ];
   const facts = (await menu.getByTestId("menu-facts").locator("dd").allTextContents()).map(Number);
@@ -638,7 +634,7 @@ try {
   check(true, "menu: the same card closes it");
   await card.click();
   await menu.waitFor();
-  await a.page.getByText("Emberisle", { exact: true }).click();
+  await a.page.getByTestId("turn-banner").click();
   await menu.waitFor({ state: "detached" });
   check(true, "menu: a click outside closes it");
   await card.click();
@@ -682,11 +678,14 @@ try {
 
   // #377: Enter on a focused button presses it; the chat shortcut is only for focus on the page itself.
   const chatOpen = () => a.page.evaluate(() => window.__emberisle.getState().chatOpen);
+  // #442: How to play is a row of the table menu; Enter opens the menu, then the row.
+  await a.page.getByRole("button", { name: "Table menu" }).focus();
+  await a.page.keyboard.press("Enter");
   const how = a.page.getByRole("button", { name: "How to play" });
   await how.focus();
   await a.page.keyboard.press("Enter");
   await a.page.getByRole("dialog", { name: "How to play" }).waitFor({ timeout: 5000 });
-  check((await chatOpen()) === false, "Enter on How to play opens its dialog and leaves the chat closed");
+  check((await chatOpen()) === false, "Enter on Table menu, then How to play, opens its dialog and leaves the chat closed");
   await a.page.keyboard.press("Escape");
   await a.page.getByRole("dialog", { name: "How to play" }).waitFor({ state: "detached" });
   await a.page.getByRole("button", { name: "Open chat" }).click();

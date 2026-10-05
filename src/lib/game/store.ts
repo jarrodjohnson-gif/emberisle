@@ -10,11 +10,12 @@ function showBanner(set: (p: { banner: string | null }) => void, text: string) {
   bannerTimer = setTimeout(() => set({ banner: null }), BANNER_MS);
 }
 
-// "Tide rolls 4+5 = 9 · Ember +1 wool · Pine +2 ore", ending "· bank short of grain" when the bank paid nobody some resource
-function rollLine(roller: string, dice: [number, number], gains: { name: string; resource: string; amount: number }[], short: string[]) {
+// "Tide's roll · Ember +1 wool · Pine +2 ore", ending "· bank short of grain" when the bank paid nobody some resource.
+// The numbers are not here: the roll moment and the dice row show them, and the moment reads them out (#440).
+function rollLine(roller: string, gains: { name: string; resource: string; amount: number }[], short: string[]) {
   const parts = gains.map((g) => `${g.name} +${g.amount} ${g.resource}`);
   const tail = short.length ? [`bank short of ${short.join(" and ")}`] : [];
-  return [`${roller} rolls ${dice[0]}+${dice[1]} = ${dice[0] + dice[1]}`, ...(parts.length ? parts : ["nobody gathers"]), ...tail].join(" · ");
+  return [`${roller}'s roll`, ...(parts.length ? parts : ["nobody gathers"]), ...tail].join(" · ");
 }
 
 function gainsBetween(before: GameState, after: GameState) {
@@ -262,6 +263,10 @@ interface GameStore {
   // Who opened the panel, so focus can go back there on close (Safari does not focus buttons on click, #302).
   tradeOpener: HTMLElement | null;
   setTradeOpen: (v: boolean, opener?: HTMLElement | null) => void;
+  // #488: counts the commits that land a lazily loaded dock or panel after its flag above flipped, so the island measures
+  // the hole it leaves once more (IslandCanvas keys its measure on chatOpen, tradeOpen and this). It only ever grows.
+  chromeSeq: number;
+  chromeLanded: () => void;
   askTable: (give: Bag, want: Bag) => void;
   answerTrade: (yes: boolean) => void;
   // The player whose action menu is open in the HUD rail or seat strip (docs/design/chat.md "The player action menu").
@@ -356,6 +361,7 @@ export const useGame = create<GameStore>((set, get) => ({
   tradeOutcome: null,
   tradeOpen: false,
   tradeOpener: null,
+  chromeSeq: 0,
   menuFor: null,
   setName: (n) => {
     const name = n.slice(0, 18) || "Ember";
@@ -510,7 +516,7 @@ export const useGame = create<GameStore>((set, get) => ({
       showBanner(set, rollOff);
     } else if (action.type === "roll" && res.state.dice) {
       const roller = state.players.find((p) => p.id === actor)?.name ?? actor;
-      showBanner(set, rollLine(roller, res.state.dice, gainsBetween(state, res.state), bankShort(res.state)));
+      showBanner(set, rollLine(roller, gainsBetween(state, res.state), bankShort(res.state)));
     } else {
       const swing = awardLine(state, res.state);
       if (swing) showBanner(set, swing);
@@ -720,6 +726,7 @@ export const useGame = create<GameStore>((set, get) => ({
     if (!get().spectator) get().net?.react(emote, to);
   },
   setTradeOpen: (v, opener) => set({ tradeOpen: v, tradeOpener: v ? (opener ?? null) : null }),
+  chromeLanded: () => set({ chromeSeq: get().chromeSeq + 1 }),
   askTable: (give, want) => {
     const { mode, state, localId, spectator, net } = get();
     set({ tradeOpen: false });
@@ -861,11 +868,11 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       setTimeout(() => set({ reactions: get().reactions.filter((x) => x !== r) }), 2000);
     },
     seats: ({ code, seats, watching }) => set({ code, seats, watching: watching ?? 0 }),
-    rolled: ({ dice, gains, short }) => {
+    rolled: ({ gains, short }) => {
       // The host sends this before the state that follows it, so `current` is still the roller.
       const st = get().state;
       const roller = st?.players.find((p) => p.id === st.current)?.name ?? "Someone";
-      showBanner(set, rollLine(roller, dice, gains, short));
+      showBanner(set, rollLine(roller, gains, short));
     },
     state: ({ you, game, legal, turnDeadline, turnPlayer, serverNow }) => {
       // A watcher's `you` is null: "" matches no player, so nothing is ever its turn and the your-turn chime never fires.

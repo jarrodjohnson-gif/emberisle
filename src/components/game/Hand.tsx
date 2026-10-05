@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { BrickWall, Cloud, Mountain, Trees, Wheat } from "lucide-react";
-import { RESOURCES, RESOURCE_LABEL, type PlayerState, type Resource } from "@/lib/game/types";
+import { RESOURCES, RESOURCE_LABEL, type Phase, type PlayerState, type Resource } from "@/lib/game/types";
 import { cn } from "@/lib/utils";
 
 const ICONS: Record<Resource, typeof Trees> = {
@@ -80,8 +80,7 @@ function useResourceFlashes(me: PlayerState) {
   return flashes;
 }
 
-export function ResourceHand({ me }: { me: PlayerState }) {
-  const flashes = useResourceFlashes(me);
+function ResourceHand({ me, flashes }: { me: PlayerState; flashes: ReturnType<typeof useResourceFlashes> }) {
   return (
     <div className="flex shrink-0 gap-1 overflow-x-auto rounded-[20px] border border-white/50 bg-glass p-2 backdrop-blur-md short:p-1">
       {RESOURCES.map((r) => {
@@ -130,6 +129,41 @@ export function ResourceHand({ me }: { me: PlayerState }) {
           </div>
         );
       })}
+    </div>
+  );
+}
+
+// #439: the hand is not on the table through the roll-off and setup until the seat holds a good. After that it is always
+// there, so spending down to 0 or a robber does not make it come and go. A pure rule of the state: goods cannot go down in
+// setup, so "holds a good" is as good as "has held one", and a reload, a rejoin or a rematch needs no reset. Online `me` is
+// the local seat; in hotseat it is the seat on turn.
+//
+// It is mounted at its full height in the same commit as the state change that brings it, so the renderer's next-frame
+// refit measures the hole with the hand in it; the motion is opacity and translateY only (docs/design/polish.md: never
+// animate layout). A hand that goes away (a hotseat seat that has held nothing takes the turn) is removed at once for the
+// same reason: nothing refits when an animation ends.
+export function HandDock({ me, phase }: { me: PlayerState; phase: Phase }) {
+  // Read here, not in the hand, so the +N that brings the first good in is not lost to the hand mounting after the change.
+  const flashes = useResourceFlashes(me);
+  const hasGoods = RESOURCES.some((r) => me.resources[r] > 0);
+  const show = hasGoods || !["rollOff", "setupSettle", "setupRoad"].includes(phase);
+  const [shown, setShown] = useState(show);
+  const [rising, setRising] = useState(false);
+  if (show !== shown) {
+    setShown(show);
+    setRising(show);
+  }
+  if (!show) return null;
+  return (
+    <div
+      data-testid="hand-dock"
+      data-rising={rising || undefined}
+      className={cn("shrink-0", rising && "hand-in")}
+      onAnimationEnd={(e) => {
+        if (e.target === e.currentTarget) setRising(false);
+      }}
+    >
+      <ResourceHand me={me} flashes={flashes} />
     </div>
   );
 }

@@ -18,7 +18,11 @@ export function useCopy<K extends string>() {
     if (!navigator.clipboard) done(false);
     else navigator.clipboard.writeText(text).then(() => done(true), () => done(false));
   };
-  return { state, copy };
+  const reset = () => {
+    window.clearTimeout(timer.current);
+    setState(null);
+  };
+  return { state, copy, reset };
 }
 
 // The polite live region is always mounted so a change is announced; the field shows only after a failed copy.

@@ -43,8 +43,8 @@ Required, desktop and phone:
 
 Phase strings reuse `phaseCopy` in `Hud.tsx`. The banner is always visible — it is not `hidden` below any
 breakpoint. On desktop it can sit in the top-left next to the wordmark or replace the current bottom phase
-pill; #129 picks the desktop seat. On phone it is the first row of the bottom stack (portrait) or the left
-chunk of the bottom strip (landscape).
+pill; #129 picks the desktop seat. On phone it is the first row of the bottom stack (portrait) or the first
+row of the full-height left column that holds the whole stack beside the island (landscape, #422).
 
 Motion: a 200 ms opacity fade when `state.current` changes. No pulse loop.
 
@@ -52,7 +52,8 @@ Motion: a 200 ms opacity fade when `state.current` changes. No pulse loop.
 
 The `aside` rail stays `hidden md:flex` for desktop. On `phone` render a horizontal strip instead:
 
-- One cell per seat: 12 px color dot, truncated name, VP. Current seat gets the accent border.
+- One cell per seat: 10 px color dot, truncated name, VP (#443: one line, the points at `text-title`; the seat on turn
+  pulses its dot and brightens, no accent border).
 - Height 44 px (thumb target). Portrait: top edge, under the wordmark, full width with 12 px side inset.
 - Landscape: top-right, after Leave, so it does not eat the short hole height.
 - `#119`'s avatar / action menu anchors to the tapped cell the same way it anchors to a desktop rail card.
