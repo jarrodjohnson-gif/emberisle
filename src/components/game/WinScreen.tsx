@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { SeatDot } from "@/components/game/SeatDot";
 import { totalVP } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
 import { useFocusTrap } from "@/lib/focus-trap";
@@ -95,7 +96,7 @@ function Panel() {
     >
       <div className="flex max-h-full w-full max-w-2xl flex-col rounded-[28px] border border-white/50 bg-surface p-5 text-center sm:p-6">
         <div className="flex items-center justify-center gap-2.5">
-          <span aria-hidden="true" className="size-4 shrink-0 rounded-full" style={{ background: winner.color }} />
+          <SeatDot color={winner.color} className="size-4" />
           <p id="win-headline" data-testid="win-headline" className="font-display text-3xl text-fg">
             {winner.name} wins
           </p>
@@ -132,7 +133,7 @@ function Panel() {
               {rows.map((r) => (
                 <tr key={r.p.id} data-testid="win-row" data-player={r.p.id} className="border-t border-border">
                   <td className="px-1 py-2 text-left font-medium sm:px-2">
-                    <span className="mr-1.5 inline-block align-middle size-2.5 rounded-full" style={{ background: r.p.color }} />
+                    <SeatDot color={r.p.color} className="mr-1.5 size-3 align-[-2px]" />
                     {r.p.name}
                   </td>
                   <td className={cell}>{r.outposts}</td>

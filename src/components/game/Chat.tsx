@@ -1,5 +1,5 @@
 // The table chat dock, the shared chat box, and floating reactions. Design: docs/design/chat.md.
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { MessageSquare, Minus, Smile, VolumeX } from "lucide-react";
 import { CopyFallback, useCopy } from "@/components/game/CopyText";
 import { EMOTES } from "@/components/game/emotes";
@@ -13,10 +13,8 @@ export { ReactionFloats } from "@/components/game/Reactions";
 
 const PRESETS = ["gg", "nice roll", "your turn", "one sec", "ty"];
 const INPUT_ID = "chat-input";
-const HUD_STACK = ".pointer-events-none.absolute.bottom-0.inset-x-0.z-10 > .relative > .overflow-y-auto";
-const CONTROL_BAND_HEIGHT = 56;
-// The outer board corners can rise into the old 121 px gap on some turns; keep actions above the fitted board.
-const CONTROL_BAND_BOTTOM_OFFSET = 350;
+// The Open chat button sets this before the dock opens, and the dock focuses the input once it has (the two are separate components).
+const focusNext = { current: false };
 
 // Text renders only as React children. The mention is found with split() on the literal "@name", never a regex.
 function Mention({ text, name }: { text: string; name: string }) {
@@ -285,7 +283,7 @@ function MuteMenu({ above = false }: { above?: boolean }) {
   );
 }
 
-function Preview({ above, className }: { above?: boolean; className?: string }) {
+function Preview({ className }: { className?: string }) {
   const chat = useGame((s) => s.chat);
   const code = useGame((s) => s.code);
   const { muted } = useMutedSeats(code);
@@ -307,7 +305,7 @@ function Preview({ above, className }: { above?: boolean; className?: string }) 
   }).slice(-3);
 
   return (
-    <ul className={cn("pointer-events-none flex w-72 flex-col items-end gap-1", above ? "mb-1" : "mt-1", className)} data-testid="chat-preview">
+    <ul className={cn("pointer-events-none flex w-72 flex-col items-end gap-1", className)} data-testid="chat-preview">
       {live.map((l) => (
         <li
           key={l.id}
@@ -325,46 +323,10 @@ function Preview({ above, className }: { above?: boolean; className?: string }) 
   );
 }
 
-function useHudStackTop(enabled: boolean) {
-  const [top, setTop] = useState<number | null>(null);
-
-  useLayoutEffect(() => {
-    if (!enabled) {
-      setTop(null);
-      return;
-    }
-
-    let stack: HTMLElement | null = null;
-    let observer: ResizeObserver | null = null;
-    const update = () => {
-      const anchor = document.querySelector<HTMLElement>('[data-testid="turn-banner"], [data-testid="landscape-hint"]');
-      const next = anchor?.parentElement ?? document.querySelector<HTMLElement>(HUD_STACK) ?? stack;
-      if (next !== stack) {
-        if (stack) observer?.unobserve(stack);
-        stack = next;
-        if (stack) observer?.observe(stack);
-      }
-      if (!stack) return;
-      const nextTop = stack.getBoundingClientRect().top;
-      setTop((previous) => previous !== null && Math.abs(previous - nextTop) < 0.1 ? previous : nextTop);
-    };
-    observer = new ResizeObserver(update);
-
-    update();
-    window.addEventListener("resize", update);
-    return () => {
-      window.removeEventListener("resize", update);
-      observer?.disconnect();
-    };
-  }, [enabled]);
-
-  return top;
-}
-
-export function ChatDock() {
-  const mode = useGame((s) => s.mode);
-  const open = useGame((s) => s.chatOpen);
+// The store's unread count, less the lines from seats this browser has muted (they are hidden in the chat too).
+function useUnmutedUnread() {
   const unreadTotal = useGame((s) => s.unread);
+  const open = useGame((s) => s.chatOpen);
   const chat = useGame((s) => s.chat);
   const seatId = useGame((s) => s.seatId);
   const code = useGame((s) => s.code);
@@ -372,10 +334,6 @@ export function ChatDock() {
   const [unreadBySeat, setUnreadBySeat] = useState<Map<string, number>>(() => new Map());
   const previousChat = useRef(chat);
   const unreadBySeatRef = useRef(new Map<string, number>());
-  const setOpen = useGame((s) => s.setChatOpen);
-  const { phone, portrait } = useViewport();
-  const focusNext = useRef(false);
-  const stackTop = useHudStackTop(phone && portrait && !open);
   useEffect(() => {
     if (open || unreadTotal === 0) {
       unreadBySeatRef.current.clear();
@@ -390,7 +348,52 @@ export function ChatDock() {
     previousChat.current = chat;
     setUnreadBySeat(new Map(unreadBySeatRef.current));
   }, [chat, open, seatId, unreadTotal]);
-  const unread = [...unreadBySeat].reduce((count, [seat, messages]) => count + (muted.has(seat) ? 0 : messages), 0);
+  return [...unreadBySeat].reduce((count, [seat, messages]) => count + (muted.has(seat) ? 0 : messages), 0);
+}
+
+// The two table buttons, in the top row beside the Table menu (Hud's header). They sit in that row's flow, so they keep the same
+// 44 px place on every phone and turn, and the seat strip beside them in a sideways phone gives way to them.
+export function ChatControls() {
+  const mode = useGame((s) => s.mode);
+  const open = useGame((s) => s.chatOpen);
+  const unread = useUnmutedUnread();
+  const setOpen = useGame((s) => s.setChatOpen);
+  if (mode !== "online") return null;
+  const openButton = (
+    <button
+      type="button"
+      aria-label={unread ? `Open chat, ${unread} unread` : "Open chat"}
+      onClick={() => {
+        focusNext.current = true;
+        setOpen(true);
+      }}
+      className="pointer-events-auto relative flex size-11 cursor-pointer items-center justify-center rounded-control bg-glass text-zinc-700 backdrop-blur-md hover:text-zinc-900"
+    >
+      <MessageSquare className="size-5" />
+      {unread > 0 ? (
+        <span
+          data-testid="chat-unread"
+          className="absolute -right-1 -top-1 flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[11px] font-medium text-white"
+        >
+          {unread}
+        </span>
+      ) : null}
+    </button>
+  );
+
+  return (
+    <>
+      {open ? null : openButton}
+      <QuickReactions />
+    </>
+  );
+}
+
+export function ChatDock() {
+  const mode = useGame((s) => s.mode);
+  const open = useGame((s) => s.chatOpen);
+  const setOpen = useGame((s) => s.setChatOpen);
+  const { phone, portrait } = useViewport();
 
   // A remembered open dock must not cover the hand bar when Play starts on a phone. The stored value stays for desktop.
   useEffect(() => {
@@ -430,33 +433,10 @@ export function ChatDock() {
       <Minus className="size-4" />
     </button>
   );
-  const openButton = (
-    <button
-      type="button"
-      aria-label={unread ? `Open chat, ${unread} unread` : "Open chat"}
-      onClick={() => {
-        focusNext.current = true;
-        setOpen(true);
-      }}
-      className="pointer-events-auto relative flex size-11 cursor-pointer items-center justify-center rounded-control bg-glass text-zinc-700 backdrop-blur-md hover:text-zinc-900"
-    >
-      <MessageSquare className="size-5" />
-      {unread > 0 ? (
-        <span
-          data-testid="chat-unread"
-          className="absolute -right-1 -top-1 flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[11px] font-medium text-white"
-        >
-          {unread}
-        </span>
-      ) : null}
-    </button>
-  );
-
   // On a phone the open dock is a bottom sheet. The backdrop catches the tap that closes it, so that tap never reaches the board.
   if (phone && open) {
     return (
       <>
-        <QuickReactions />
         <div data-testid="chat-backdrop" className="fixed inset-0 z-20" onClick={() => setOpen(false)} />
         <section
           aria-label="Table chat"
@@ -477,58 +457,33 @@ export function ChatDock() {
     );
   }
 
-  // Keep both board actions at the safe edges of the status area. The temporary status message stays below them, and
-  // pointer events pass through the gap between the two controls to the board.
-  if (phone && portrait) {
+  // Closed, the controls live in the top row (ChatControls); only the newest lines show here. Phone portrait puts them under the
+  // seat strip, so they cover neither the strip nor the top row. Open, the panel sits at the top right (desktop) or above the hand
+  // bar (sideways phone). Pointer events pass through the lines to the board.
+  if (!open) {
     return (
-      <>
-        <div
-          data-testid="chat-control-band"
-          className="pointer-events-none absolute inset-x-0 z-20 flex items-center justify-between px-safe"
-          style={{
-            height: CONTROL_BAND_HEIGHT,
-            bottom: stackTop === null ? `${CONTROL_BAND_BOTTOM_OFFSET}px` : `calc(100dvh - ${stackTop}px + ${CONTROL_BAND_BOTTOM_OFFSET}px)`,
-          }}
-        >
-          <Preview above={phone} className="absolute bottom-full left-1/2 -translate-x-1/2" />
-          <QuickReactions inline />
-          {openButton}
-        </div>
-      </>
+      <Preview
+        className={cn("absolute right-safe z-20", phone && portrait ? "top-[calc(env(safe-area-inset-top)+7.25rem)]" : "top-16")}
+      />
     );
   }
 
   return (
-    <>
-      <QuickReactions />
-      <div
-        className={cn(
-          "absolute right-safe z-20 flex items-end",
-          phone ? cn("flex-col-reverse", !portrait && "bottom-[184px]") : "top-16 flex-col",
-        )}
+    <div className={cn("absolute right-safe z-20", phone ? "bottom-[184px]" : "top-16")}>
+      <section
+        aria-label="Table chat"
+        className="flex w-72 flex-col gap-2 rounded-chip bg-glass p-3 backdrop-blur-md"
+        style={{ maxHeight: "min(360px, 50vh)" }}
       >
-        {open ? (
-          <section
-            aria-label="Table chat"
-            className="flex w-72 flex-col gap-2 rounded-chip bg-glass p-3 backdrop-blur-md"
-            style={{ maxHeight: "min(360px, 50vh)" }}
-          >
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-medium">Table chat</h2>
-              <div className="flex items-center gap-1">
-                <MuteMenu />
-                {minimize}
-              </div>
-            </div>
-            <ChatBox rows={6} game onEscape={() => setOpen(false)} />
-          </section>
-        ) : (
-          <>
-            {openButton}
-            <Preview above={phone} />
-          </>
-        )}
-      </div>
-    </>
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-medium">Table chat</h2>
+          <div className="flex items-center gap-1">
+            <MuteMenu />
+            {minimize}
+          </div>
+        </div>
+        <ChatBox rows={6} game onEscape={() => setOpen(false)} />
+      </section>
+    </div>
   );
 }

@@ -2,6 +2,7 @@
 // The asker sees the same offer with who has declined, then the outcome for a moment.
 import { useEffect, useId, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { SeatDot } from "@/components/game/SeatDot";
 import { bagText } from "@/lib/game/trade";
 import { useGame } from "@/lib/game/store";
 import { RESOURCES } from "@/lib/game/types";
@@ -69,6 +70,8 @@ export function TradeToast() {
       <>
         <div className="flex items-baseline justify-between gap-3">
           <p id={lineId} className="text-sm font-medium">
+            {/* #312: another seat's offer leads with that seat's dot and mark. */}
+            {!asker ? <SeatDot color={players?.find((p) => p.id === offer.from)?.color ?? "transparent"} className="mr-1.5 size-3 align-[-1px]" /> : null}
             {offerLine(asker ? null : offer.fromName, offer.give, offer.want)}
           </p>
           {/* For answerers the 250 ms tick would chatter, so it is hidden; the polite line below speaks once, at 5 s. */}
