@@ -1431,8 +1431,8 @@ function piece(parts: THREE.BufferGeometry[]) {
 }
 
 // #312: the seat's mark in its ink, `size` wide, lying on the seat colour at height y (docs/design/seat-marks.md). The
-// parts are merged into the piece, so a mark costs vertices and no draw call. `rot` turns it so it stands upright on
-// screen whatever way the piece faces; `gable` folds it over an outpost's ridge.
+// parts are merged into the piece, so a mark costs vertices and no draw call. `rot` undoes the piece's own turn so the
+// mark keeps one world orientation, like the number tokens; `gable` folds it over an outpost's ridge.
 function mark(seat: string, size: number, y: number, rot = 0, gable?: { rise: number; run: number }) {
   const m = seatMark(seat);
   if (!m) return [];
@@ -1489,7 +1489,8 @@ function poseLanding(l: { obj: THREE.Object3D; kind: PieceKind; start: number; r
   else obj.scale.setScalar(1.05 - 0.05 * easeSnap(u));
 }
 
-// `rot` is the path's own rotation.y; the mark counter-turns so it reads upright whichever way the seam runs.
+// `rot` is the path's own rotation.y; the mark counter-turns so every mark on the board faces the same way, like the
+// number tokens, whichever way the seam runs.
 function makePath(seat: string, len: number, rot: number) {
   return piece([
     slab(0.36, 0.03, len, RIM.dark),
@@ -1497,7 +1498,7 @@ function makePath(seat: string, len: number, rot: number) {
     slab(0.16, 0.04, len - 0.12, seat, 0.06),
     // A 7 px plank cannot hold an 8 px mark, so a round badge of the seat colour widens it at the middle, inside the
     // cream step, a hair above the plank so the two never share a face.
-    tint(new THREE.CylinderGeometry(0.12, 0.12, 0.045, 24).toNonIndexed().translate(0, 0.0825, 0), seat),
+    tint(new THREE.CylinderGeometry(0.12, 0.12, 0.045, 12).toNonIndexed().translate(0, 0.0825, 0), seat),
     ...mark(seat, 0.15, 0.105, -rot),
   ]);
 }

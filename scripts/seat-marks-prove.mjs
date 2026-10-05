@@ -1,10 +1,12 @@
 // #312: every seat is told apart by a mark as well as its colour (docs/design/seat-marks.md, option B). In hotseat with
 // a crafted mid-game board (paths, outposts and strongholds for all four seats) at 1280x720, 390x844 and 844x390 (touch):
 // - SEAT_MARKS gives the four seat colours four distinct marks;
-// - every seat's dot in the rail or strip carries its colour's mark (`data-seat-mark`), and so does the heading of its
-//   menu, a trade toast from that seat, the win line and every win-table row;
-// - on the board every path, outpost and stronghold is one mesh (one draw call) whose userData names its owner's mark and
-//   whose vertex colours hold that mark's ink (a mark costs vertices, never a draw call);
+// - every seat's dot in the rail or strip carries its colour's mark (`data-seat-mark`), and so does the phone menu's
+//   heading (which reads the seat's name; the desktop rail's menu has none, its card says it), a trade toast from that
+//   seat, the steal picker, the win line and every win-table row;
+// - on the board every path, outpost and stronghold is one mesh whose userData names its owner's mark and whose vertex
+//   colours hold that mark's ink *above the seat surface* (a path's badge top, a keep's top, an outpost's roof), so a
+//   build whose mark() returns [] fails here even though the rims already use both inks;
 // - the title's colour picker shows all four marks.
 // Zero console errors. Saves test-results/seat-marks-<size>.png and a zoomed test-results/seat-marks-zoom.png.
 // Run: npm run seat-marks-prove. Port from VITE_PORT, default 8685.
@@ -91,17 +93,21 @@ try {
     const dots = await page.evaluate((sel) => [...document.querySelectorAll(`[data-testid^="${sel}-p"]`)].map((el) => [el.dataset.testid.slice(sel.length + 1), el.querySelector(".seat-dot")?.dataset.seatMark ?? null]), v.seat);
     check(`${v.tag}: every seat's dot carries its mark`, dots.length === 4 && dots.every(([id, m]) => m === expect[id]), dots);
 
-    // Each seat's menu, opened from its card.
+    // Each seat's menu, opened from its card: on a phone it floats, so it heads with the seat's dot and name; in the
+    // desktop rail it sits under the card that already says both, so it has no heading.
     const menus = [];
     for (const p of players) {
       await page.getByTestId(`${v.seat}-${p.id}`).locator("button").first().click();
-      const head = page.getByTestId("menu-seat");
-      await head.waitFor({ timeout: STEP_MS });
-      menus.push([p.id, await head.locator("[data-seat-mark]").getAttribute("data-seat-mark"), (await head.textContent()).trim()]);
+      const menu = page.getByTestId("player-menu");
+      await menu.waitFor({ timeout: STEP_MS });
+      const head = menu.getByTestId("menu-seat");
+      const name = await page.getByTestId(`${v.seat}-${p.id}`).locator('[data-testid="seat-name"]').first().textContent();
+      menus.push([p.id, (await head.count()) ? await head.locator("[data-seat-mark]").getAttribute("data-seat-mark") : null, (await head.count()) ? (await head.textContent()).trim() : null, name.trim()]);
       await page.keyboard.press("Escape");
-      await page.getByTestId("player-menu").waitFor({ state: "detached", timeout: STEP_MS });
+      await menu.waitFor({ state: "detached", timeout: STEP_MS });
     }
-    check(`${v.tag}: every seat's menu heads with its mark and name`, menus.every(([id, m, t]) => m === expect[id] && t.length > 0), menus);
+    if (v.touch) check(`${v.tag}: every seat's menu heads with its mark and its name`, menus.every(([id, m, t, name]) => m === expect[id] && t === name), menus);
+    else check(`${v.tag}: the rail's menu has no heading (its card names the seat)`, menus.every(([, m, t]) => m === null && t === null), menus);
 
     // A trade toast from each other seat.
     const toasts = [];
@@ -114,32 +120,50 @@ try {
     await page.evaluate(() => window.__emberisle.setState({ offer: null, declined: [] }));
     check(`${v.tag}: a trade toast leads with the asker's mark`, toasts.length === 3 && toasts.every(([id, m]) => m === expect[id]), toasts);
 
+    // The steal picker: one button per target, each with its seat's mark.
+    await page.evaluate((targets) => window.__emberisle.setState({ pendingSteal: { hexId: "0,0", kind: "moveRobber", targets } }), players.slice(1).map((p) => p.id));
+    const picker = page.getByText("Take from whom?");
+    await picker.waitFor({ timeout: STEP_MS });
+    const steal = await picker.evaluate((el) => [...el.parentElement.querySelectorAll("button")].map((b) => [b.textContent.trim(), b.querySelector("[data-seat-mark]")?.dataset.seatMark ?? null]));
+    await page.evaluate(() => window.__emberisle.setState({ pendingSteal: null }));
+    check(`${v.tag}: the steal picker marks every target`, steal.length === 3 && steal.every(([, m], i) => m === expect[players[i + 1].id]), steal);
+
     // The board: one mesh per piece, each carrying its owner's mark in userData and the mark's ink in its vertex colours.
+    // The rims already use both inks, so the test is ink *above* the seat surface: over a path's badge (y > 0.105), a
+    // keep's top (y > 0.30) or an outpost's roof slope (y > 0.26, where the folded mark's faces lie), in the piece's
+    // own frame.
     const board = await page.evaluate((inks) => {
       const lin = (hex) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255).map((c) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
+      const above = { path: 0.105, outpost: 0.26, stronghold: 0.3 };
       const isle = window.__isle;
       const st = window.__emberisle.getState().state;
       const owner = (key) => (key.startsWith("e:") ? st.edges.find((e) => e.id === key.slice(2)).path : st.vertices.find((x) => x.id === key.slice(2)).building.playerId);
       const pieces = isle.pieces.children.map((o) => {
         const col = o.geometry.attributes.color;
-        const hasInk = (hex) => {
+        const pos = o.geometry.attributes.position;
+        const inkAbove = (hex) => {
           const [r, g, b] = lin(hex);
-          for (let i = 0; i < col.count; i++) if (Math.abs(col.getX(i) - r) < 0.002 && Math.abs(col.getY(i) - g) < 0.002 && Math.abs(col.getZ(i) - b) < 0.002) return true;
-          return false;
+          let n = 0;
+          for (let i = 0; i < col.count; i++) {
+            if (pos.getY(i) <= above[o.userData.piece]) continue;
+            if (Math.abs(col.getX(i) - r) < 0.002 && Math.abs(col.getY(i) - g) < 0.002 && Math.abs(col.getZ(i) - b) < 0.002) n++;
+          }
+          return n;
         };
-        return { kind: o.userData.piece, owner: owner(o.userData.key), mark: o.userData.mark, mesh: o.isMesh && o.children.length === 0, inks: Object.fromEntries(Object.entries(inks).map(([k, hex]) => [k, hasInk(hex)])) };
+        return { kind: o.userData.piece, owner: owner(o.userData.key), mark: o.userData.mark, mesh: o.isMesh && o.children.length === 0, inks: Object.fromEntries(Object.entries(inks).map(([k, hex]) => [k, inkAbove(hex)])) };
       });
       const want = st.edges.filter((e) => e.path).length + st.vertices.filter((x) => x.building).length;
       const vertices = isle.pieces.children.reduce((n, o) => n + o.geometry.attributes.position.count, 0);
       return { pieces, want, vertices };
     }, RIM);
     const inkOf = (id) => SEAT_MARKS[players.find((p) => p.id === id).color].ink;
-    const bad = board.pieces.filter((p) => p.mark !== expect[p.owner] || !p.mesh || !p.inks[Object.keys(RIM).find((k) => RIM[k] === inkOf(p.owner))]);
+    // The smallest mark is the triangle: two extruded halves, 24 vertices on or above their top faces.
+    const bad = board.pieces.filter((p) => p.mark !== expect[p.owner] || !p.mesh || p.inks[Object.keys(RIM).find((k) => RIM[k] === inkOf(p.owner))] < 24);
     check(`${v.tag}: ${board.pieces.length} pieces drawn for ${board.want} placed, one mesh each`, board.pieces.length === board.want && board.pieces.every((p) => p.mesh));
     for (const kind of ["path", "outpost", "stronghold"]) {
       const of = board.pieces.filter((p) => p.kind === kind);
       const seats = new Set(of.map((p) => p.owner));
-      check(`${v.tag}: every ${kind} (${of.length}, ${seats.size} seats) carries its seat's mark and ink`, of.length > 0 && seats.size === 4 && !bad.some((p) => p.kind === kind), bad.filter((p) => p.kind === kind).slice(0, 3));
+      check(`${v.tag}: every ${kind} (${of.length}, ${seats.size} seats) carries its seat's mark, in its ink, above the seat surface`, of.length > 0 && seats.size === 4 && !bad.some((p) => p.kind === kind), bad.filter((p) => p.kind === kind).slice(0, 3));
     }
     console.log(`info ${v.tag}: ${board.pieces.length} piece meshes, ${board.vertices} vertices between them`);
 

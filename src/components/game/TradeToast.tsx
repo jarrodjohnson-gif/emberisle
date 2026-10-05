@@ -71,7 +71,7 @@ export function TradeToast() {
         <div className="flex items-baseline justify-between gap-3">
           <p id={lineId} className="text-sm font-medium">
             {/* #312: another seat's offer leads with that seat's dot and mark. */}
-            {!asker && me ? <SeatDot color={players?.find((p) => p.id === offer.from)?.color ?? "transparent"} className="mr-1.5 inline-block size-3 align-[-1px]" /> : null}
+            {!asker ? <SeatDot color={players?.find((p) => p.id === offer.from)?.color ?? "transparent"} className="mr-1.5 size-3 align-[-1px]" /> : null}
             {offerLine(asker ? null : offer.fromName, offer.give, offer.want)}
           </p>
           {/* For answerers the 250 ms tick would chatter, so it is hidden; the polite line below speaks once, at 5 s. */}

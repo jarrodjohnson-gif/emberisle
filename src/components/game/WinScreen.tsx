@@ -133,7 +133,7 @@ function Panel() {
               {rows.map((r) => (
                 <tr key={r.p.id} data-testid="win-row" data-player={r.p.id} className="border-t border-border">
                   <td className="px-1 py-2 text-left font-medium sm:px-2">
-                    <SeatDot color={r.p.color} className="mr-1.5 inline-block size-3 align-[-2px]" />
+                    <SeatDot color={r.p.color} className="mr-1.5 size-3 align-[-2px]" />
                     {r.p.name}
                   </td>
                   <td className={cell}>{r.outposts}</td>

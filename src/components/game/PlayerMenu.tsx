@@ -26,7 +26,9 @@ function focusChat() {
 
 const ROW = "flex h-11 w-full cursor-pointer items-center gap-2 rounded-[8px] px-2 text-left text-sm text-zinc-900 hover:bg-white/70";
 
-export function PlayerMenu({ player: p, className }: { player: PlayerState; className?: string }) {
+// `heading` names the seat at the top: for the phone menus, which float away from their chip; the desktop rail's menu
+// sits under its card, which already says it.
+export function PlayerMenu({ player: p, className, heading }: { player: PlayerState; className?: string; heading?: boolean }) {
   const state = useGame((s) => s.state)!;
   const mode = useGame((s) => s.mode);
   const localId = useGame((s) => s.localId);
@@ -85,11 +87,12 @@ export function PlayerMenu({ player: p, className }: { player: PlayerState; clas
       aria-label={`${p.name}'s actions`}
       className={cn("flex flex-col gap-1 rounded-[16px] border border-white/50 bg-white/60 p-2 backdrop-blur-md", className)}
     >
-      {/* #312: the seat's dot and name head the menu, so whose facts these are never rests on the card above. */}
-      <p data-testid="menu-seat" className="flex items-center gap-2 px-2 pt-1 text-sm font-medium text-zinc-900">
-        <SeatDot color={p.color} className="size-3" />
-        {p.name}
-      </p>
+      {heading ? (
+        <p data-testid="menu-seat" className="flex items-center gap-2 px-2 pt-1 text-sm font-medium text-zinc-900">
+          <SeatDot color={p.color} className="size-3" />
+          {p.name}
+        </p>
+      ) : null}
       {online ? (
         <div className="grid grid-cols-6 gap-1" data-testid="menu-emotes">
           {Object.entries(EMOTES).map(([id, url]) => (

@@ -45,7 +45,7 @@ export const SEAT_MARKS: Record<(typeof PLAYER_COLORS)[number], { mark: SeatMark
   "#e4c9a0": { mark: "ring", ink: "#1c1916" },
   "#3d6b4f": { mark: "plus", ink: "#fff6e8" },
 };
-export const seatMark = (color: string) => (SEAT_MARKS as Record<string, { mark: SeatMark; ink: string } | undefined>)[color] ?? null;
+export const seatMark = (color: string) => (SEAT_MARKS as Record<string, { mark: SeatMark; ink: string } | undefined>)[color.toLowerCase()] ?? null;
 
 export const COST = {
   path: { timber: 1, clay: 1 } as Partial<Record<Resource, number>>,

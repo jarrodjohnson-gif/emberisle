@@ -66,13 +66,15 @@ export function markParts(mark: SeatMark, size: number): THREE.BufferGeometry[] 
 }
 
 // Fold a flat glyph over a gable ridge along z: each part turns about the ridge onto the slope its side faces, which
-// falls `rise` over `run` from the ridge.
+// falls `rise` over `run` from the ridge. The pivot is the part's top face, so the two halves meet at the ridge with no
+// seam in the face that shows.
 export function foldOverRidge(parts: THREE.BufferGeometry[], rise: number, run: number) {
   const tilt = Math.atan2(rise, run);
+  const top = MARK_RELIEF - SINK;
   for (const g of parts) {
     g.computeBoundingBox();
     const side = Math.sign(g.boundingBox!.min.x + g.boundingBox!.max.x) || 1;
-    g.rotateZ(-side * tilt);
+    g.translate(0, -top, 0).rotateZ(-side * tilt).translate(0, top, 0);
   }
   return parts;
 }
