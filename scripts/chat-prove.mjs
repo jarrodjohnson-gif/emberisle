@@ -513,6 +513,67 @@ try {
   check((await phone.page.evaluate(() => localStorage.getItem("emberisle-chat-open"))) === "1", "phone: the remembered open state is left in storage");
   await quickReactions(a, b, c, phone);
 
+  // #500: mute is local to this browser. The muted sender's line and reaction stay in store but vanish from this view,
+  // then return immediately when the seat is unmuted.
+  const mutedSeat = await store(c, () => window.__emberisle.getState().seatId);
+  const mutedPlayer = await store(c, () => window.__emberisle.getState().localId);
+  await a.page.getByRole("button", { name: "Open chat" }).click();
+  await a.page.getByRole("button", { name: "Mute players", exact: true }).click();
+  const mute = a.page.getByTestId(`chat-mute-seat-${mutedSeat}`);
+  await mute.click();
+  check(await mute.getAttribute("aria-pressed") === "true", "mute: Pine is muted in this chat dock");
+  await polish(a, "mute panel", "#chat-mute-panel", 3);
+  const mutedLine = `muted-line-${Date.now()}`;
+  await c.page.evaluate((text) => window.__emberisle.getState().sendChat(text), mutedLine);
+  await a.page.waitForFunction((text) => window.__emberisle.getState().chat.some((line) => line.text === text), mutedLine);
+  check((await a.page.getByTestId("chat-log").locator("li").filter({ hasText: mutedLine }).count()) === 0, "mute: Pine's chat line is hidden only in Ember's view");
+  await a.page.getByRole("button", { name: "Unmute player Pine", exact: true }).click();
+  await a.page.getByTestId("chat-log").locator("li").filter({ hasText: mutedLine }).waitFor();
+  check(true, "mute: unmuting Pine restores the earlier chat line");
+
+  await a.page.getByRole("button", { name: "Mute player Pine", exact: true }).click();
+  await c.page.getByRole("button", { name: "Quick reactions", exact: true }).click();
+  await c.page.getByRole("button", { name: "React fire", exact: true }).click();
+  await a.page.waitForFunction(({ seat, emote }) => window.__emberisle.getState().reactions.some((r) => r.seat === seat && r.emote === emote), { seat: mutedSeat, emote: "🔥" });
+  const mutedFloat = a.page.locator(`[data-testid="rail-${mutedPlayer}"] [data-testid="reaction"][data-emote="🔥"]`);
+  check((await mutedFloat.count()) === 0, "mute: Pine's reaction is hidden only in Ember's view");
+  await a.page.getByRole("button", { name: "Unmute player Pine", exact: true }).click();
+  await mutedFloat.waitFor({ timeout: 1500 });
+  check(true, "mute: unmuting Pine restores the active reaction");
+
+  await a.page.getByRole("button", { name: "Mute player Pine", exact: true }).click();
+  await a.page.getByRole("button", { name: "Minimize chat" }).click();
+  const mutedUnread = `muted-unread-${Date.now()}`;
+  await c.page.evaluate((text) => window.__emberisle.getState().sendChat(text), mutedUnread);
+  await a.page.waitForFunction((text) => window.__emberisle.getState().chat.some((line) => line.text === text), mutedUnread);
+  check((await a.page.getByTestId("chat-unread").count()) === 0, "mute: a muted player's line does not add to unread");
+  const visibleUnread = `visible-unread-${Date.now()}`;
+  await b.page.evaluate((text) => window.__emberisle.getState().sendChat(text), visibleUnread);
+  await a.page.getByTestId("chat-unread").filter({ hasText: "1" }).waitFor({ timeout: 5000 });
+  check((await a.page.getByTestId("chat-unread").textContent()) === "1", "mute: unread counts only the unmuted player's line");
+  await a.page.getByRole("button", { name: "Open chat, 1 unread", exact: true }).click();
+  await a.page.getByTestId("chat-unread").waitFor({ state: "detached" });
+  await a.page.getByRole("button", { name: "Mute players", exact: true }).click();
+  await a.page.getByRole("button", { name: "Unmute player Pine", exact: true }).click();
+
+  // Storage can be unavailable in a private or quota-limited context. The preference still applies in this tab.
+  await a.page.evaluate(() => {
+    const original = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (key, value) {
+      if (key.startsWith("emberisle-chat-muted-")) throw new DOMException("blocked", "QuotaExceededError");
+      return original.call(this, key, value);
+    };
+    window.__restoreStorageSetItem = () => { Storage.prototype.setItem = original; };
+  });
+  await a.page.getByRole("button", { name: "Mute player Pine", exact: true }).click();
+  check(await a.page.getByTestId(`chat-mute-seat-${mutedSeat}`).getAttribute("aria-pressed") === "true", "mute: blocked storage still mutes in the current tab");
+  check((await a.page.getByTestId("chat-log").locator("li").filter({ hasText: mutedLine }).count()) === 0, "mute: blocked storage still hides Pine's chat line");
+  await a.page.evaluate(() => window.__restoreStorageSetItem());
+  await a.page.getByRole("button", { name: "Unmute player Pine", exact: true }).click();
+  await a.page.getByTestId("chat-log").locator("li").filter({ hasText: mutedLine }).waitFor();
+  check(true, "mute: blocked-storage preference can be cleared in the current tab");
+  await a.page.getByRole("button", { name: "Minimize chat" }).click();
+
   // #232: roll off for first place; whichever seat is up rolls, until setup starts.
   await until(async () => {
     for (const t of [...tabs, phone]) {
@@ -761,7 +822,36 @@ try {
   await pMenu.waitFor({ state: "detached" });
   await phone.page.getByTestId("chat-sheet").waitFor({ timeout: 5000 });
   check((await phone.page.getByPlaceholder("Say something…").inputValue()) === "@Ember ", 'phone: Mention opens the sheet with "@Ember "');
+  await phone.page.setViewportSize({ width: 667, height: 375 });
+  const shortLandscape = await phone.page.evaluate(() => {
+    const sheet = document.querySelector('[data-testid="chat-sheet"]').getBoundingClientRect();
+    const header = document.querySelector('[data-testid="chat-sheet-header"]').getBoundingClientRect();
+    const mute = document.querySelector('[data-testid="chat-mute-toggle"]').getBoundingClientRect();
+    const minimize = document.querySelector('button[aria-label="Minimize chat"]').getBoundingClientRect();
+    const input = document.getElementById("chat-input").getBoundingClientRect();
+    const paddingBottom = Number.parseFloat(getComputedStyle(document.querySelector('[data-testid="chat-sheet"]')).paddingBottom) || 0;
+    return {
+      width: innerWidth,
+      height: innerHeight,
+      sheetBottom: sheet.bottom,
+      paddingBottom,
+      inputBottom: input.bottom,
+      header: { top: header.top, bottom: header.bottom },
+      mute: { top: mute.top, bottom: mute.bottom, right: mute.right },
+      minimize: { top: minimize.top, bottom: minimize.bottom, left: minimize.left },
+    };
+  });
+  const actionsInHeader =
+    shortLandscape.mute.top >= shortLandscape.header.top && shortLandscape.mute.bottom <= shortLandscape.header.bottom &&
+    shortLandscape.minimize.top >= shortLandscape.header.top && shortLandscape.minimize.bottom <= shortLandscape.header.bottom &&
+    shortLandscape.minimize.left >= shortLandscape.mute.right && shortLandscape.minimize.left - shortLandscape.mute.right <= 8;
+  check(actionsInHeader, "phone 667x375: Mute sits beside Minimize in the header");
+  check(
+    shortLandscape.inputBottom <= shortLandscape.sheetBottom - shortLandscape.paddingBottom + 1 && shortLandscape.inputBottom <= shortLandscape.height - shortLandscape.paddingBottom + 1,
+    `phone 667x375: chat input clears the bottom safe padding (${shortLandscape.paddingBottom}px)`,
+  );
   await phone.page.getByRole("button", { name: "Minimize chat" }).tap();
+  await phone.page.setViewportSize({ width: 390, height: 844 });
 
   // 7. The game log (#305): setup and the first roll through the store, then every dock lists the game's lines as muted
   // rows in with the chat, the Chat chip hides them, and Copy log puts the whole log on the clipboard.
