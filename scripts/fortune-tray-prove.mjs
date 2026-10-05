@@ -431,10 +431,14 @@ try {
         const own = !!e && (el.contains(e) || !!e.closest('[data-testid="fortune-tray-backdrop"]'));
         return { x, y, hit: name(e), own, banner: !!banner && !!e && banner.contains(e) };
       };
-      return { banner: !!banner, corners: [at(r.left + 3, r.top + 3), at(r.right - 3, r.top + 3)] };
+      const bd = document.querySelector('[data-testid="fortune-tray-backdrop"]');
+      const col = bd?.parentElement.getBoundingClientRect();
+      return { backdrop: bd ? { right: bd.getBoundingClientRect().right, colRight: col.right } : null, banner: !!banner, corners: [at(r.left + 3, r.top + 3), at(r.right - 3, r.top + 3)] };
     });
     await page.screenshot({ path: `test-results/fortune-tray-corners-${v.tag}.png` });
     assert.ok(hits.banner, `${v.tag}: the turn banner is up while the tray is open, or the check proves nothing`);
+    assert.ok(hits.backdrop, `${v.tag}: the column clears behind the open tray (fortune-tray-backdrop)`);
+    assert.ok(hits.backdrop.right <= hits.backdrop.colRight + 0.5, `${v.tag}: the backdrop stays in the column, right ${hits.backdrop.right} vs ${hits.backdrop.colRight}`);
     for (const c of hits.corners) {
       assert.ok(!c.banner, `${v.tag}: the banner shows through the tray corner at ${c.x},${c.y}: ${c.hit}`);
       assert.ok(c.own, `${v.tag}: tray corner at ${c.x},${c.y} is ${c.hit}, not the tray or its backdrop`);

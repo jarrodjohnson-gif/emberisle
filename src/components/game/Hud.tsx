@@ -415,6 +415,10 @@ export function Hud() {
           </div>
           {/* #423: the tray rises over the stack from its bottom edge and may cover the island, like a sheet, but never the
               header or the portrait seat strip; it is inside the sheets chunk, which the table prefetched on idle (#488). */}
+          {/* #511: in the column the tray's round top corners must not show the banner or the stack, so the column clears behind it. */}
+          {column && fortunes && fortunesOpen ? (
+            <div data-testid="fortune-tray-backdrop" aria-hidden className="hand-in pointer-events-auto absolute inset-0 z-10 rounded-b-[16px] bg-bg" />
+          ) : null}
           {fortunes && fortunesOpen ? (
             <LazyBoundary failed={<TrayFailed close={() => setFortunesOpen(false)} />}>
               <FortuneTray
@@ -423,7 +427,7 @@ export function Hud() {
                 onClose={() => setFortunesOpen(false)}
                 className={
                   column
-                    ? "max-h-full rounded-t-none" /* #511: it fills the column up to the header, so a round top only shows the banner behind */
+                    ? "max-h-full"
                     : portrait
                       ? "max-h-[calc(100dvh-7.25rem-env(safe-area-inset-top)-max(0.75rem,env(safe-area-inset-bottom)))]"
                       : "max-h-[calc(100dvh-5rem-env(safe-area-inset-top)-max(0.75rem,env(safe-area-inset-bottom)))]"
