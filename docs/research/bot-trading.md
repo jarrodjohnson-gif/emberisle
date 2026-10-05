@@ -14,7 +14,7 @@
 
 - **CATAN:** During their turn, a player may trade with other players; those players can accept, reject, or make a counteroffer. The tabletop rules describe human-to-human offers and do not define how an automated player should value or answer a trade.
 - **Colonist:** Its trading interface supports offers, responses, and counteroffers. Its published patch notes describe bots making and accepting offers, declining bad trades, avoiding deals that help the leader late in a game, and delaying acceptance while a disconnected player's offer is pending. This establishes that bots trade, though the notes do not expose a complete current evaluation formula.
-- **Emberisle today:** Bot seats do not answer “Ask the table,” and bots do not make offers. In an online game, that leaves asks unanswered when a bot has taken a disconnected player's seat; in practice, players have no bot trading.
+- **Emberisle today:** bot trading is shipped in online and practice games (#404, #414, #445; practice wiring merged in #450). Bots answer human offers and can make one ask per turn. Hotseat has no bot seats.
 
 ## Options
 
@@ -24,14 +24,18 @@
 
 ## Recommendation
 
-Keep Jarrod's recorded decision: bots both answer asks and make their own offers. Use one shared trade-evaluation policy for both paths so the bot does not accept trades it would not propose. Require the deal to improve the bot's resources or advance a current build goal; decline offers that do not help, and avoid helping the current leader late in the game. Limit each bot to one outgoing ask per turn, pause its turn while that offer is open, and delay incoming responses briefly so a human can answer first.
+Keep Jarrod's recorded decision; both kinds of bot trading are already implemented. The shipped policy is:
 
-The work is already split into evaluation (#404), online host wiring (#414), and practice-mode wiring (#445). Hotseat has no bots, so it needs no bot-trade behavior.
+- **Answering an offer:** `shouldAcceptTrade` rejects offers the bot cannot pay, offers that give it fewer cards than it gives, and offers from a player tied for the highest public VP when that player is ahead of the bot. It accepts only if the trade reduces how many resource cards the bot is missing for its current next-build goal.
+- **Making an offer:** `chooseTradeAsk` runs only for the current bot during the main phase, with no other offer open. It asks only when exactly one resource is missing for its next build, offering one card of its largest surplus resource for one card of the missing resource.
+- **Limits and timing:** a bot makes at most one ask per turn and waits for its own offer to close before continuing. Offers close after 20 seconds. Other bots answer after a randomized one-to-two-second delay, leaving people a chance to respond first. The same decision helpers are used in online host and practice mode.
+
+The decision helpers live in `src/lib/game/ai.ts`; the online host calls them from `server/host.mjs`, and practice mode uses the same helpers in `src/lib/game/store.ts`. This is the behavior to review against play, not a feature that still needs implementation.
 
 ## What I am not sure about
 
 - Colonist's patch notes describe outcomes but not enough detail to reproduce its current bot scoring or late-game threshold. Emberisle should treat those as product signals, not a formula to copy.
-- How long an offer should remain open and the exact definition of “late game” are implementation choices for the child issues; the recorded decision specifies the feature split, but not every tuning value.
+- Whether the 20-second offer window, one-to-two-second response delay, and current build-goal scoring need tuning is open to future playtesting. Any scoring change should be a new product decision; this brief describes the shipped rule.
 
 ## Prove output
 
@@ -40,8 +44,8 @@ The work is already split into evaluation (#404), online host wiring (#414), and
 ## Handoff
 
 ```
-done: compared human-only CATAN trading with Colonist's bot-trading behavior; recommended bots answer and initiate offers under one shared, bounded evaluation policy
-left: implementation is tracked in #404, #414, and #445
+done: compared human-only CATAN trading with Colonist's bot-trading behavior; documented shipped online and practice bot offers, answer rules, and limits
+left: review scoring and timing only if playtesting raises a new decision
 broke: nothing
-next agent: continue the evaluation child #404, then host and practice wiring as dependencies allow
+next agent: no implementation follow-up required for #363
 ```
