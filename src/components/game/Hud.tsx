@@ -237,7 +237,7 @@ export function Hud() {
               className={cn(
                 "pointer-events-none absolute inset-x-0 animate-[turn-fade_200ms_ease-out] rounded-[16px] border border-accent/40 bg-surface px-3 py-2 text-center text-sm font-medium text-zinc-900",
                 // #422: beside the column, over the top of the hole, as it floats over the board above the stack elsewhere.
-                column ? "left-full top-0 ml-3 w-max max-w-[calc(100vw-23rem)]" : "bottom-full mb-2",
+                column ? "left-full top-0 ml-3 w-max max-w-[calc(100vw-21.5rem-max(0.75rem,env(safe-area-inset-left))-max(0.75rem,env(safe-area-inset-right)))]" : "bottom-full mb-2",
               )}
             >
               {banner}
@@ -436,6 +436,10 @@ function TakeFromBar() {
   );
 }
 
+// A column scrolled down to a fortune brings the Place chip back into view. Stable, so it runs when the chip mounts, not on
+// every render while a placement is pending (which would undo the player's own scrolling).
+const intoView = (el: HTMLElement | null) => el?.scrollIntoView({ block: "nearest" });
+
 // Coarse pointers pick a mark, then confirm here (docs/design/mobile-camera-touch.md). Enter confirms, Esc cancels.
 function PlaceChip({ column }: { column?: boolean }) {
   const pending = useGame((s) => s.pendingPlace);
@@ -453,8 +457,7 @@ function PlaceChip({ column }: { column?: boolean }) {
   if (!pending) return null;
   return (
     <div
-      // A column scrolled down to a fortune brings the chip back into view.
-      ref={column ? (el) => el?.scrollIntoView({ block: "nearest" }) : undefined}
+      ref={column ? intoView : undefined}
       className={
         column
           ? "flex shrink-0 items-center gap-3"
