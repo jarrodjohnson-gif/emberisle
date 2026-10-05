@@ -1,9 +1,9 @@
 // The table chat dock, the shared chat box, and floating reactions. Design: docs/design/chat.md.
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
-import { MessageSquare, Minus, Smile } from "lucide-react";
+import { MessageSquare, Minus, Smile, VolumeX } from "lucide-react";
 import { CopyFallback, useCopy } from "@/components/game/CopyText";
 import { EMOTES } from "@/components/game/emotes";
-import { QuickReactions } from "@/components/game/Reactions";
+import { QuickReactions, useMutedSeats } from "@/components/game/Reactions";
 import { useGame, type GameLogLine } from "@/lib/game/store";
 import type { ChatLine } from "@/lib/net/table";
 import { cn } from "@/lib/utils";
@@ -64,6 +64,10 @@ const CHIP = "cursor-pointer rounded-full bg-glass px-2 py-0.5 text-xs text-zinc
 export function ChatBox({ rows, game, onEscape, className }: { rows: number; game?: boolean; onEscape?: () => void; className?: string }) {
   const chat = useGame((s) => s.chat);
   const gameLog = useGame((s) => s.gameLog);
+  const seats = useGame((s) => s.seats);
+  const seatId = useGame((s) => s.seatId);
+  const code = useGame((s) => s.code);
+  const mode = useGame((s) => s.mode);
   const filter = useGame((s) => s.logFilter);
   const setFilter = useGame((s) => s.setLogFilter);
   const draft = useGame((s) => s.chatDraft);
@@ -71,12 +75,16 @@ export function ChatBox({ rows, game, onEscape, className }: { rows: number; gam
   const sendChat = useGame((s) => s.sendChat);
   const sendReact = useGame((s) => s.sendReact);
   const spectator = useGame((s) => s.spectator);
+  const { muted, toggle: toggleMute } = useMutedSeats(code);
+  const [muteOpen, setMuteOpen] = useState(false);
   const me = useMyName();
   const [tray, setTray] = useState(false);
   const { state: copied, copy } = useCopy<"log">();
   const log = useRef<HTMLUListElement>(null);
   const stuck = useRef(true);
   const withLog = game && filter === "all";
+  const muteTargets = mode === "online" ? seats.filter((seat) => seat.id !== seatId && seat.name) : [];
+  const visibleChat = chat.filter((line) => !muted.has(line.seat));
 
   useEffect(() => {
     const el = log.current;
@@ -94,7 +102,7 @@ export function ChatBox({ rows, game, onEscape, className }: { rows: number; gam
 
   // Chat and game lines in the order this browser saw them (both `at` stamps are its own clock, store.ts). The sort is
   // stable, so each kind keeps its own order when stamps tie.
-  const lines: { at: number; node: ReactNode }[] = chat.map((line) => ({ at: line.at, node: <Line key={`c${line.id}`} line={line} me={me} /> }));
+  const lines: { at: number; node: ReactNode }[] = visibleChat.map((line) => ({ at: line.at, node: <Line key={`c${line.id}`} line={line} me={me} /> }));
   if (withLog) {
     for (const [i, line] of gameLog.entries()) lines.push({ at: line.at, node: <LogRow key={`g${i}`} line={line} /> });
     lines.sort((x, y) => x.at - y.at);
@@ -117,6 +125,48 @@ export function ChatBox({ rows, game, onEscape, className }: { rows: number; gam
               </button>
             ))}
           </div>
+          {muteTargets.length ? (
+            <div className="relative">
+              <button
+                type="button"
+                data-testid="chat-mute-toggle"
+                aria-label="Mute players"
+                aria-expanded={muteOpen}
+                aria-controls="chat-mute-panel"
+                onClick={() => setMuteOpen((open) => !open)}
+                className="flex h-11 cursor-pointer items-center gap-1 rounded-control bg-glass px-2 text-xs text-zinc-700 hover:text-zinc-900"
+              >
+                <VolumeX className="size-4" />
+                <span>Mute</span>
+              </button>
+              {muteOpen ? (
+                <div
+                  id="chat-mute-panel"
+                  data-testid="chat-mute-panel"
+                  role="group"
+                  aria-label="Mute players"
+                  className="absolute left-0 top-full z-40 mt-2 flex min-w-40 flex-col gap-1 rounded-chip bg-glass p-2 backdrop-blur-md"
+                >
+                  {muteTargets.map((seat) => {
+                    const isMuted = muted.has(seat.id);
+                    return (
+                      <button
+                        key={seat.id}
+                        type="button"
+                        data-testid={`chat-mute-seat-${seat.id}`}
+                        aria-label={`${isMuted ? "Unmute" : "Mute"} player ${seat.name}`}
+                        aria-pressed={isMuted}
+                        onClick={() => toggleMute(seat.id)}
+                        className="h-11 cursor-pointer rounded-control bg-glass px-3 text-left text-sm text-zinc-700 hover:text-zinc-900"
+                      >
+                        {isMuted ? `Unmute ${seat.name}` : `Mute ${seat.name}`}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
           <button type="button" onClick={copyLog} className={cn(CHIP, "ml-auto")}>
             {copied?.ok ? "Copied" : "Copy log"}
           </button>
@@ -223,6 +273,8 @@ export function ChatBox({ rows, game, onEscape, className }: { rows: number; gam
 
 function Preview({ above }: { above?: boolean }) {
   const chat = useGame((s) => s.chat);
+  const code = useGame((s) => s.code);
+  const { muted } = useMutedSeats(code);
   const seen = useRef<Map<number, number>>(new Map(chat.map((l) => [l.id, 0])));
   const [, tick] = useState(0);
 
@@ -235,6 +287,7 @@ function Preview({ above }: { above?: boolean }) {
 
   const now = Date.now();
   const live = chat.filter((l) => {
+    if (muted.has(l.seat)) return false;
     const at = seen.current.get(l.id) ?? 0;
     return at > 0 && now - at < 7000;
   }).slice(-3);

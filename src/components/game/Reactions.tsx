@@ -9,8 +9,64 @@ import { cn } from "@/lib/utils";
 import { useViewport } from "@/lib/viewport";
 
 const COOLDOWN = 1000;
+const MUTE_KEY = "emberisle-chat-muted-";
+const MUTE_EVENT = "emberisle:chat-mutes-changed";
+const mutedByCode = new Map<string, string[]>();
 const CONTROL =
   "flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-control bg-glass text-zinc-700 transition-transform duration-75 active:scale-[0.97] disabled:cursor-default disabled:opacity-50";
+
+function readMutedSeats(code: string) {
+  if (!code) return [];
+  if (mutedByCode.has(code)) return mutedByCode.get(code)!;
+  try {
+    const value = JSON.parse(localStorage.getItem(`${MUTE_KEY}${code}`) ?? "[]");
+    const seats = Array.isArray(value) ? value.filter((seat): seat is string => typeof seat === "string") : [];
+    mutedByCode.set(code, seats);
+    return seats;
+  } catch {
+    return [];
+  }
+}
+
+// Muting is a browser preference, scoped to one table code; no message reaches the host.
+export function useMutedSeats(code: string) {
+  const [seats, setSeats] = useState<string[]>(() => readMutedSeats(code));
+
+  useEffect(() => {
+    const syncLocal = () => setSeats(readMutedSeats(code));
+    const syncStorage = (event: StorageEvent) => {
+      if (event.key !== null && event.key !== `${MUTE_KEY}${code}`) return;
+      mutedByCode.delete(code);
+      setSeats(readMutedSeats(code));
+    };
+    window.addEventListener(MUTE_EVENT, syncLocal);
+    window.addEventListener("storage", syncStorage);
+    return () => {
+      window.removeEventListener(MUTE_EVENT, syncLocal);
+      window.removeEventListener("storage", syncStorage);
+    };
+  }, [code]);
+
+  useEffect(() => setSeats(readMutedSeats(code)), [code]);
+
+  const toggle = (seat: string) => {
+    if (!code || !seat) return;
+    const next = new Set(readMutedSeats(code));
+    if (next.has(seat)) next.delete(seat);
+    else next.add(seat);
+    const value = [...next];
+    mutedByCode.set(code, value);
+    try {
+      localStorage.setItem(`${MUTE_KEY}${code}`, JSON.stringify(value));
+    } catch {
+      // The in-memory preference still applies and syncs to this tab's chat and reaction views.
+    }
+    setSeats(value);
+    window.dispatchEvent(new Event(MUTE_EVENT));
+  };
+
+  return { muted: new Set(seats), toggle };
+}
 
 export function QuickReactions({ stackTop }: { stackTop?: number | null } = {}) {
   const mode = useGame((s) => s.mode);
@@ -284,10 +340,13 @@ export function ReactionFloats({
 }) {
   const reactions = useGame((s) => s.reactions);
   const seats = useGame((s) => s.seats);
+  const code = useGame((s) => s.code);
+  const { muted } = useMutedSeats(code);
   const players = useGame((s) => s.state?.players);
   const grouped = new Map<string, { reaction: Reaction; count: number }>();
   for (const reaction of reactions) {
     if ((by === "player" ? reaction.player : reaction.seat) !== id) continue;
+    if (muted.has(reaction.seat)) continue;
     if (
       !QUICK_REACTIONS.some((item) => item.emoji === reaction.emote) &&
       !Object.hasOwn(EMOTES, reaction.emote)
