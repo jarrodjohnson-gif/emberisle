@@ -128,12 +128,18 @@ const settle = await w0.next("state", (m) => m.game.phase === "setupSettle", 100
 for (const x of all) x.auto = false;
 const placer = byPid[settle.game.current];
 const w = all.find((x) => x !== placer);
+// Every seat is waited on in the roll-off, so an idle placer's own roll-off timer can log "took too long" there too
+// (it fires the same TURN after the deal, and the rest only start rolling once the opener's has). That line is
+// buffered by now and must not pass for the setup move: start from w's own copy of the setupSettle state, which
+// follows every roll-off log, and drop what came before it (w0 already took its copy as `settle`).
+const mine = w === w0 ? settle : await w.next("state", (m) => m.game.phase === "setupSettle" && m.game.seq === settle.game.seq, 10000);
+w.inbox = w.inbox.filter((m) => m.type !== "log");
 const seen0 = w.logs.length;
 console.log(`idle roll-off: "${tooLong(opener.name)}" after ${took} ms, "${die.text}", the rest rolled themselves, ${placer.name} places first`);
 
 // 1. Nobody moves. Within the window the log says so, the bot has placed the outpost, and the placer is still human.
 await w.next("log", (m) => m.text === tooLong(placer.name), TURN + 1000);
-const late = Date.now() - settle.turnDeadline;
+const late = Date.now() - mine.turnDeadline;
 if (late < -50 || late > 1000) fail(`the table moved ${late} ms from the deadline`);
 const placed = await w.next("state", (m) => m.game.seq > settle.game.seq && m.game.phase === "setupRoad");
 if (placed.game.current !== placer.state.you) fail("still the placer's setup after the outpost", placed.game.current);
