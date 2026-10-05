@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { ChatDock, ChromeLanded, FortuneTray, HowTo, sheets, TradePanel, WinScreen } from "@/components/game/chunks";
 import { TradeToast } from "@/components/game/TradeToast";
+import { WinFailed } from "@/components/game/WinFailed";
 import { Announcer } from "@/components/game/Announcer";
 import { PlayerMenu } from "@/components/game/PlayerMenu";
 import { SeatRail, SeatStrip } from "@/components/game/SeatRail";
@@ -134,6 +135,10 @@ export function Hud() {
   // #422: a sideways phone stacks the HUD in a full-height left column, so the island fills the height beside it.
   const column = phone && !portrait;
   const [hintDismissed, setHintDismissed] = useState(() => sessionStorage.getItem(HINT_KEY) === "1");
+  // #492: the sheets chunk is asked for again on each open and at the win (the boundary's key). When the ask made at the
+  // win fails, the win screen cannot show and the winner line gets the way out; a failure under an earlier key is not it.
+  const sheetsKey = `${tradeOpen}|${howTo}|${state?.winner ?? ""}`;
+  const [sheetsLost, setSheetsLost] = useState<string | null>(null);
   useEscapeDisarm();
   const [stackRef, moreBelow] = useMoreBelow();
   useEffect(() => preloadOnIdle(sheets.prefetch), []);
@@ -332,7 +337,8 @@ export function Hud() {
             <TurnCountdown />
             {winner || error ? (
               <p className="rounded-[16px] border border-white/50 bg-glass px-3 py-2 text-sm text-zinc-900 backdrop-blur-md">
-                {winner ? `${winner.name} wins with ${totalVP(state, winner.id)} points.` : null}
+                {winner ? <span id="hud-winner">{`${winner.name} wins with ${totalVP(state, winner.id)} points.`}</span> : null}
+                {winner && sheetsLost === sheetsKey ? <WinFailed /> : null}
                 {error ? <span className={cn("block text-orange-700", winner && "mt-1")}>{error}</span> : null}
               </p>
             ) : null}
@@ -443,7 +449,7 @@ export function Hud() {
 
       {/* #488: the trade panel, How to play and the win screen share one lazy chunk, fetched on idle once the table is up.
           If it fails the table stands with no sheet; SheetsFailed drops the open flags so the next tap tries again. */}
-      <LazyBoundary failed={<SheetsFailed />} retryKey={`${tradeOpen}|${howTo}|${state.winner ?? ""}`}>
+      <LazyBoundary failed={<SheetsFailed sheetsKey={sheetsKey} onLost={setSheetsLost} />} retryKey={sheetsKey}>
         <TradePanel />
         {howTo ? <HowTo onClose={() => setHowTo(false)} /> : null}
         <WinScreen />
@@ -523,14 +529,17 @@ function PlaceChip({ column }: { column?: boolean }) {
   );
 }
 
-// The sheets chunk did not load: close what was asked for, so How to play or Trade can be pressed again and retry.
-function SheetsFailed() {
+// The sheets chunk did not load: close what was asked for, so How to play or Trade can be pressed again and retry, and
+// tell the HUD which ask failed, so the winner line offers the way out while the win screen cannot show (#492).
+function SheetsFailed({ sheetsKey, onLost }: { sheetsKey: string; onLost: (key: string | null) => void }) {
   const setHowTo = useGame((s) => s.setHowTo);
   const setTradeOpen = useGame((s) => s.setTradeOpen);
   useEffect(() => {
     setHowTo(false);
     setTradeOpen(false);
-  }, [setHowTo, setTradeOpen]);
+    onLost(sheetsKey);
+    return () => onLost(null);
+  }, [setHowTo, setTradeOpen, onLost, sheetsKey]);
   return null;
 }
 
