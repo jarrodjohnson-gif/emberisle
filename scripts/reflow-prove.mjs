@@ -137,7 +137,7 @@ try {
       g.setState({ state: st, banner: "Rolled 3 and 4: 7.", buildMode: "none", pendingSteal: null, error: null });
     });
     await page.getByRole("button", { name: "End turn" }).waitFor();
-    await page.locator("form", { hasText: "Plenty" }).first().waitFor();
+    await page.getByTestId("fortunes-button").waitFor();
     // The island canvas is lazy-loaded and can mount after the HUD; the evaluate below reads all three.
     await page.locator("canvas").first().waitFor();
     await page.locator("header > .pointer-events-auto").waitFor();

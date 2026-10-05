@@ -193,7 +193,8 @@ if (typeof first.turnDeadline !== "number") fail("the watcher's state carries th
 checkClosed(first, "first state");
 await until(() => all.every((p, i) => p.logs.length > logsAtJoin[i]), "the seats hear the watcher");
 for (const [i, p] of all.entries()) if (!p.logs.slice(logsAtJoin[i]).includes("Someone is watching.")) fail(`${p.name} is told`, p.logs.slice(logsAtJoin[i]));
-for (const p of all) if (p.seatsSeen[p.seatsSeen.length - 1].watching !== 1) fail(`${p.name} counts the watcher`, p.seatsSeen[p.seatsSeen.length - 1]);
+// The count rides its own seats message, sent after the log line; the log landing does not mean the count has.
+await until(() => all.every((p) => p.seatsSeen[p.seatsSeen.length - 1].watching === 1), () => `every seat counting the watcher: ${JSON.stringify(all.map((p) => p.seatsSeen[p.seatsSeen.length - 1].watching))}`);
 const w2 = await watcher("w2");
 w2.send({ type: "hello", code, watch: true });
 const counted = (x) => x.seatsSeen[x.seatsSeen.length - 1]?.watching === 2;
