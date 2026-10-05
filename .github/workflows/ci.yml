@@ -129,6 +129,7 @@ jobs:
       - run: npm run table-menu-prove
       - run: npm run board-look-prove
       - run: npm run hand-cards-prove
+      - run: npm run seat-rail-prove
       - run: npm run hand-hidden-prove
       - run: npm run install-prove
       - if: always()
