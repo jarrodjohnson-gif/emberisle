@@ -298,7 +298,7 @@ WebSocket JSON. The client sends intents. The server answers with `state` or `er
 | Host → client | Meaning |
 |---|---|
 | `seats {code, seats[], watching}` | Seat list. `away: true` marks a dropped player whose seat is held. `watching` counts the spectators. |
-| `welcome {code, you, host, chat[], secret}` | `chat` is the room's last 50 lines. `secret` reclaims this seat with `hello {code, secret}`. A spectator gets `welcome {code, spectator:true, chat[]}` instead, with no `you`, `host` or `secret`. |
+| `welcome {code, you, host, chat[], secret}` | `chat` is the room's last 30 lines. `secret` reclaims this seat with `hello {code, secret}`. A spectator gets `welcome {code, spectator:true, chat[]}` instead, with no `you`, `host` or `secret`. |
 | `state {you, game, legal}` | The full game for you, plus `legal` = the ids you may click and the actions you may take |
 | `rolled {dice:[a,b], sum, gains[], short[]}` | The server's dice and who got what. `short` lists the resources the bank was too short to pay anyone |
 | `chat {id, seat, player, name, color, text, at}` | A chat line, sent to every seat, sender included |
