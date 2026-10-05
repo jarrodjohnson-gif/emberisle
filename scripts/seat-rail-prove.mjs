@@ -10,7 +10,7 @@
 //   both move when the turn moves; under reduced motion the ring stays and the animation goes;
 // - your own seat shows your hidden points as "+N" ("N points, plus N hidden" for screen readers) and nobody else's does;
 // - tapping a seat opens its facts, which match the line, tapping again closes them; your own facts list your fortunes by
-//   kind ("knight ×1 · points ×2 (1 new)");
+//   kind ("wayfarer ×1 · points ×2 (1 new)", the README's names, #423);
 // - a dropped seat shows a visible reconnecting marker at every size and its facts say so;
 // - no seat overlaps the Table menu button or the Watching chip, and every seat is inside the viewport.
 // Zero console errors. Saves test-results/seat-rail-<size>.png. Run: npm run seat-rail-prove
@@ -223,7 +223,7 @@ try {
     assert.deepEqual([aFacts["Cards in hand"], aFacts["Fortunes held"], aFacts["Points shown"]].map(Number), fromLine, `${v.tag}: facts ${JSON.stringify(aFacts)} match the line`);
     assert.equal(aFacts["Your fortunes"], undefined, `${v.tag}: another seat's facts list no fortunes by kind`);
     const myFacts = await factsOf(mid.me);
-    assert.equal(myFacts["Your fortunes"], "knight ×1 · points ×2 (1 new)", `${v.tag}: your facts list your fortunes by kind, got ${JSON.stringify(myFacts)}`);
+    assert.equal(myFacts["Your fortunes"], "wayfarer ×1 · points ×2 (1 new)", `${v.tag}: your facts list your fortunes by kind, got ${JSON.stringify(myFacts)}`);
 
     // A dropped seat: a visible marker on the line at every size, the word only where it fits, and a fact in its menu.
     await page.evaluate((name) => window.__emberisle.setState({ seats: [{ name, ready: true, host: false, away: true, url: null }] }), await page.evaluate((id) => window.__emberisle.getState().state.players.find((p) => p.id === id).name, mid.b));

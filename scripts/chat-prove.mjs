@@ -539,6 +539,21 @@ try {
   await mutedFloat.waitFor({ timeout: 1500 });
   check(true, "mute: unmuting Pine restores the active reaction");
 
+  await a.page.getByRole("button", { name: "Mute player Pine", exact: true }).click();
+  await a.page.getByRole("button", { name: "Minimize chat" }).click();
+  const mutedUnread = `muted-unread-${Date.now()}`;
+  await c.page.evaluate((text) => window.__emberisle.getState().sendChat(text), mutedUnread);
+  await a.page.waitForFunction((text) => window.__emberisle.getState().chat.some((line) => line.text === text), mutedUnread);
+  check((await a.page.getByTestId("chat-unread").count()) === 0, "mute: a muted player's line does not add to unread");
+  const visibleUnread = `visible-unread-${Date.now()}`;
+  await b.page.evaluate((text) => window.__emberisle.getState().sendChat(text), visibleUnread);
+  await a.page.getByTestId("chat-unread").filter({ hasText: "1" }).waitFor({ timeout: 5000 });
+  check((await a.page.getByTestId("chat-unread").textContent()) === "1", "mute: unread counts only the unmuted player's line");
+  await a.page.getByRole("button", { name: "Open chat, 1 unread", exact: true }).click();
+  await a.page.getByTestId("chat-unread").waitFor({ state: "detached" });
+  await a.page.getByRole("button", { name: "Mute players", exact: true }).click();
+  await a.page.getByRole("button", { name: "Unmute player Pine", exact: true }).click();
+
   // Storage can be unavailable in a private or quota-limited context. The preference still applies in this tab.
   await a.page.evaluate(() => {
     const original = Storage.prototype.setItem;
@@ -753,9 +768,14 @@ try {
 
   // 5. Phone: the open dock is a bottom sheet, and the tap that closes it does not reach the board.
   await phone.page.getByRole("button", { name: "Open chat" }).waitFor();
+  await phone.page.waitForFunction(() => /\b100dvh\b/.test(document.querySelector('[data-testid="chat-control-band"]')?.style.bottom ?? ""), null, { timeout: 5000 });
   r = await box(phone, '[aria-label^="Open chat"]');
+  const controlBand = await box(phone, '[data-testid="chat-control-band"]');
   const stackTop = await phone.page.locator(HUD_STACK).evaluate((el) => el.getBoundingClientRect().top);
-  check(r.right > r.vw - 20 && r.bottom <= stackTop - 7, "phone: the minimized button sits bottom-right above the measured HUD stack");
+  check(
+    r.left >= controlBand.left && r.right <= controlBand.right && controlBand.right - controlBand.left >= r.vw - 1 && controlBand.bottom <= stackTop - 7,
+    "phone: the minimized button sits in the full-width status-area band above the measured HUD stack",
+  );
   await polish(phone, "minimized", '[aria-label^="Open chat"]');
   await phone.page.getByRole("button", { name: "Open chat" }).click();
   await phone.page.getByTestId("chat-sheet").waitFor({ timeout: 5000 });
@@ -807,7 +827,36 @@ try {
   await pMenu.waitFor({ state: "detached" });
   await phone.page.getByTestId("chat-sheet").waitFor({ timeout: 5000 });
   check((await phone.page.getByPlaceholder("Say something…").inputValue()) === "@Ember ", 'phone: Mention opens the sheet with "@Ember "');
+  await phone.page.setViewportSize({ width: 667, height: 375 });
+  const shortLandscape = await phone.page.evaluate(() => {
+    const sheet = document.querySelector('[data-testid="chat-sheet"]').getBoundingClientRect();
+    const header = document.querySelector('[data-testid="chat-sheet-header"]').getBoundingClientRect();
+    const mute = document.querySelector('[data-testid="chat-mute-toggle"]').getBoundingClientRect();
+    const minimize = document.querySelector('button[aria-label="Minimize chat"]').getBoundingClientRect();
+    const input = document.getElementById("chat-input").getBoundingClientRect();
+    const paddingBottom = Number.parseFloat(getComputedStyle(document.querySelector('[data-testid="chat-sheet"]')).paddingBottom) || 0;
+    return {
+      width: innerWidth,
+      height: innerHeight,
+      sheetBottom: sheet.bottom,
+      paddingBottom,
+      inputBottom: input.bottom,
+      header: { top: header.top, bottom: header.bottom },
+      mute: { top: mute.top, bottom: mute.bottom, right: mute.right },
+      minimize: { top: minimize.top, bottom: minimize.bottom, left: minimize.left },
+    };
+  });
+  const actionsInHeader =
+    shortLandscape.mute.top >= shortLandscape.header.top && shortLandscape.mute.bottom <= shortLandscape.header.bottom &&
+    shortLandscape.minimize.top >= shortLandscape.header.top && shortLandscape.minimize.bottom <= shortLandscape.header.bottom &&
+    shortLandscape.minimize.left >= shortLandscape.mute.right && shortLandscape.minimize.left - shortLandscape.mute.right <= 8;
+  check(actionsInHeader, "phone 667x375: Mute sits beside Minimize in the header");
+  check(
+    shortLandscape.inputBottom <= shortLandscape.sheetBottom - shortLandscape.paddingBottom + 1 && shortLandscape.inputBottom <= shortLandscape.height - shortLandscape.paddingBottom + 1,
+    `phone 667x375: chat input clears the bottom safe padding (${shortLandscape.paddingBottom}px)`,
+  );
   await phone.page.getByRole("button", { name: "Minimize chat" }).tap();
+  await phone.page.setViewportSize({ width: 390, height: 844 });
 
   // 7. The game log (#305): setup and the first roll through the store, then every dock lists the game's lines as muted
   // rows in with the chat, the Chat chip hides them, and Copy log puts the whole log on the clipboard.
@@ -869,21 +918,32 @@ try {
     const layout = () => t.page.waitForFunction(() => {
       const stack = document.querySelector('[data-testid="turn-banner"]')?.parentElement;
       const persistentStack = document.querySelector(".pointer-events-none.absolute.bottom-0.inset-x-0.z-10 > .relative > .overflow-y-auto");
+      const controlBand = document.querySelector('[data-testid="chat-control-band"]');
       const controls = [
         document.querySelector('button[aria-label="Quick reactions"]'),
         document.querySelector('button[aria-label^="Open chat"]'),
       ];
-      if (!stack || persistentStack !== stack || controls.some((control) => !control)) return null;
-      if (!controls[1].parentElement.style.bottom.startsWith("calc(100dvh - ")) return null;
+      if (!stack || persistentStack !== stack || !controlBand || controls.some((control) => !control)) return null;
+      if (!/\b100dvh\b/.test(controlBand.style.bottom)) return null;
       const bottom = stack.getBoundingClientRect();
+      const band = controlBand.getBoundingClientRect();
+      const gapHit = document.elementFromPoint(innerWidth / 2, band.top + band.height / 2)?.tagName ?? null;
       const boxes = controls.map((control) => {
         const r = control.getBoundingClientRect();
         return { left: r.left, top: r.top, right: r.right, bottom: r.bottom, width: r.width, height: r.height };
       });
-      if (!boxes.every((r) => r.bottom <= bottom.top - 7)) return null;
+      const state = window.__emberisle.getState().state;
+      const corners = state.vertices.flatMap(({ id }) => {
+        const p = window.__isle.screenOf(id);
+        return p && p.x >= 0 && p.y >= 0 && p.x <= innerWidth && p.y <= innerHeight ? [{ id, x: p.x, y: p.y }] : [];
+      });
+      const coveredCorners = corners.filter((p) => boxes.some((r) => p.x >= r.left && p.x <= r.right && p.y >= r.top && p.y <= r.bottom));
       return {
         viewport: { width: innerWidth, height: innerHeight },
         persistentStack: persistentStack === stack,
+        band: { left: band.left, top: band.top, right: band.right, bottom: band.bottom },
+        gapHit,
+        coveredCorners,
         stack: { left: bottom.left, top: bottom.top, right: bottom.right, bottom: bottom.bottom },
         boxes,
         banner: document.querySelector('[data-testid="banner"]')?.getBoundingClientRect().toJSON() ?? null,
@@ -896,11 +956,13 @@ try {
     );
     check(geometry.viewport.width === 390 && geometry.viewport.height === 844, "chat dock: phone layout uses the 390x844 viewport");
     check(geometry.persistentStack, "chat dock: the hidden-banner fallback finds the persistent HUD scroller");
+    check(Math.abs(geometry.band.left) <= 1 && Math.abs(geometry.band.right - geometry.viewport.width) <= 1, "chat dock: the status-area row spans the phone width");
+    check(geometry.gapHit === "CANVAS", "chat dock: the gap between edge controls still passes taps to the board");
     check(geometry.boxes.every((r) => r.left >= 0 && r.top >= 0 && r.right <= geometry.viewport.width && r.bottom <= geometry.viewport.height), "chat dock: both controls fit in the phone viewport");
     check(geometry.boxes.every((r) => r.width >= 44 && r.height >= 44), `chat dock: both controls are at least 44 px at 390x844 (${geometry.boxes.map((r) => `${r.width}x${r.height}`).join(", ")})`);
-    check(Math.abs(geometry.boxes[1].top - geometry.boxes[0].bottom - 12) <= 1, "chat dock: portrait quick reactions sit 12 px above chat");
+    check(geometry.boxes[0].left < geometry.viewport.width / 4 && geometry.boxes[1].right > geometry.viewport.width * 3 / 4, "chat dock: portrait quick reactions and chat sit at opposite safe edges");
     check(clear, `chat dock: Quick reactions and Open chat clear the full bottom stack at 390x844, ${ownTurn ? "with Roll showing" : "on another seat's turn"}`);
-    check(await t.page.evaluate(() => document.querySelector('[data-testid="quick-reactions"]')?.classList.contains("right-safe") && document.querySelector('button[aria-label^="Open chat"]')?.parentElement?.classList.contains("right-safe")), "chat dock: both portrait controls use the shared right safe-area utility");
+    check(geometry.coveredCorners.length === 0, `chat dock: no board corner sits under either button at 390x844${geometry.coveredCorners.length ? ` (${JSON.stringify(geometry.coveredCorners)})` : ""}, ${ownTurn ? "with Roll showing" : "on another seat's turn"}`);
     if (checkBanner) {
       await t.page.evaluate(() => window.__emberisle.setState({ banner: null }));
       await t.page.waitForFunction(() => !document.querySelector('[data-testid="banner"]'));

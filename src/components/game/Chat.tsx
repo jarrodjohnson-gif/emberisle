@@ -14,7 +14,8 @@ export { ReactionFloats } from "@/components/game/Reactions";
 const PRESETS = ["gg", "nice roll", "your turn", "one sec", "ty"];
 const INPUT_ID = "chat-input";
 const HUD_STACK = ".pointer-events-none.absolute.bottom-0.inset-x-0.z-10 > .relative > .overflow-y-auto";
-const STATUS_BANNER_SLOT = 144;
+const CONTROL_BAND_HEIGHT = 56;
+const CONTROL_BAND_BOTTOM_OFFSET = 121;
 
 // Text renders only as React children. The mention is found with split() on the literal "@name", never a regex.
 function Mention({ text, name }: { text: string; name: string }) {
@@ -64,10 +65,7 @@ const CHIP = "cursor-pointer rounded-full bg-glass px-2 py-0.5 text-xs text-zinc
 export function ChatBox({ rows, game, onEscape, className }: { rows: number; game?: boolean; onEscape?: () => void; className?: string }) {
   const chat = useGame((s) => s.chat);
   const gameLog = useGame((s) => s.gameLog);
-  const seats = useGame((s) => s.seats);
-  const seatId = useGame((s) => s.seatId);
   const code = useGame((s) => s.code);
-  const mode = useGame((s) => s.mode);
   const filter = useGame((s) => s.logFilter);
   const setFilter = useGame((s) => s.setLogFilter);
   const draft = useGame((s) => s.chatDraft);
@@ -75,15 +73,13 @@ export function ChatBox({ rows, game, onEscape, className }: { rows: number; gam
   const sendChat = useGame((s) => s.sendChat);
   const sendReact = useGame((s) => s.sendReact);
   const spectator = useGame((s) => s.spectator);
-  const { muted, toggle: toggleMute } = useMutedSeats(code);
-  const [muteOpen, setMuteOpen] = useState(false);
+  const { muted } = useMutedSeats(code);
   const me = useMyName();
   const [tray, setTray] = useState(false);
   const { state: copied, copy } = useCopy<"log">();
   const log = useRef<HTMLUListElement>(null);
   const stuck = useRef(true);
   const withLog = game && filter === "all";
-  const muteTargets = mode === "online" ? seats.filter((seat) => seat.id !== seatId && seat.name) : [];
   const visibleChat = chat.filter((line) => !muted.has(line.seat));
 
   useEffect(() => {
@@ -125,48 +121,6 @@ export function ChatBox({ rows, game, onEscape, className }: { rows: number; gam
               </button>
             ))}
           </div>
-          {muteTargets.length ? (
-            <div className="relative">
-              <button
-                type="button"
-                data-testid="chat-mute-toggle"
-                aria-label="Mute players"
-                aria-expanded={muteOpen}
-                aria-controls="chat-mute-panel"
-                onClick={() => setMuteOpen((open) => !open)}
-                className="flex h-11 cursor-pointer items-center gap-1 rounded-control bg-glass px-2 text-xs text-zinc-700 hover:text-zinc-900"
-              >
-                <VolumeX className="size-4" />
-                <span>Mute</span>
-              </button>
-              {muteOpen ? (
-                <div
-                  id="chat-mute-panel"
-                  data-testid="chat-mute-panel"
-                  role="group"
-                  aria-label="Mute players"
-                  className="absolute left-0 top-full z-40 mt-2 flex min-w-40 flex-col gap-1 rounded-chip bg-glass p-2 backdrop-blur-md"
-                >
-                  {muteTargets.map((seat) => {
-                    const isMuted = muted.has(seat.id);
-                    return (
-                      <button
-                        key={seat.id}
-                        type="button"
-                        data-testid={`chat-mute-seat-${seat.id}`}
-                        aria-label={`${isMuted ? "Unmute" : "Mute"} player ${seat.name}`}
-                        aria-pressed={isMuted}
-                        onClick={() => toggleMute(seat.id)}
-                        className="h-11 cursor-pointer rounded-control bg-glass px-3 text-left text-sm text-zinc-700 hover:text-zinc-900"
-                      >
-                        {isMuted ? `Unmute ${seat.name}` : `Mute ${seat.name}`}
-                      </button>
-                    );
-                  })}
-                </div>
-              ) : null}
-            </div>
-          ) : null}
           <button type="button" onClick={copyLog} className={cn(CHIP, "ml-auto")}>
             {copied?.ok ? "Copied" : "Copy log"}
           </button>
@@ -271,7 +225,66 @@ export function ChatBox({ rows, game, onEscape, className }: { rows: number; gam
   );
 }
 
-function Preview({ above }: { above?: boolean }) {
+function MuteMenu({ above = false }: { above?: boolean }) {
+  const seats = useGame((s) => s.seats);
+  const seatId = useGame((s) => s.seatId);
+  const code = useGame((s) => s.code);
+  const mode = useGame((s) => s.mode);
+  const { muted, toggle } = useMutedSeats(code);
+  const [open, setOpen] = useState(false);
+  const targets = mode === "online" ? seats.filter((seat) => seat.id !== seatId && seat.name) : [];
+
+  if (!targets.length) return null;
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        data-testid="chat-mute-toggle"
+        aria-label="Mute players"
+        aria-expanded={open}
+        aria-controls="chat-mute-panel"
+        title="Mute players"
+        onClick={() => setOpen((value) => !value)}
+        className="flex h-8 shrink-0 cursor-pointer items-center gap-1 rounded-control bg-glass px-2 text-xs text-zinc-700 hover:text-zinc-900"
+      >
+        <VolumeX className="size-4" />
+        <span>Mute</span>
+      </button>
+      {open ? (
+        <div
+          id="chat-mute-panel"
+          data-testid="chat-mute-panel"
+          role="group"
+          aria-label="Mute players"
+          className={cn(
+            "absolute right-0 z-40 flex max-h-[min(50vh,220px)] min-w-40 flex-col gap-1 overflow-y-auto rounded-chip bg-glass p-2 backdrop-blur-md",
+            above ? "bottom-full mb-2" : "top-full mt-2",
+          )}
+        >
+          {targets.map((seat) => {
+            const isMuted = muted.has(seat.id);
+            return (
+              <button
+                key={seat.id}
+                type="button"
+                data-testid={`chat-mute-seat-${seat.id}`}
+                aria-label={`${isMuted ? "Unmute" : "Mute"} player ${seat.name}`}
+                aria-pressed={isMuted}
+                onClick={() => toggle(seat.id)}
+                className="h-11 shrink-0 cursor-pointer rounded-control bg-glass px-3 text-left text-sm text-zinc-700 hover:text-zinc-900"
+              >
+                {isMuted ? `Unmute ${seat.name}` : `Mute ${seat.name}`}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function Preview({ above, className }: { above?: boolean; className?: string }) {
   const chat = useGame((s) => s.chat);
   const code = useGame((s) => s.code);
   const { muted } = useMutedSeats(code);
@@ -293,7 +306,7 @@ function Preview({ above }: { above?: boolean }) {
   }).slice(-3);
 
   return (
-    <ul className={cn("pointer-events-none flex w-72 flex-col items-end gap-1", above ? "mb-1" : "mt-1")} data-testid="chat-preview">
+    <ul className={cn("pointer-events-none flex w-72 flex-col items-end gap-1", above ? "mb-1" : "mt-1", className)} data-testid="chat-preview">
       {live.map((l) => (
         <li
           key={l.id}
@@ -350,12 +363,33 @@ function useHudStackTop(enabled: boolean) {
 export function ChatDock() {
   const mode = useGame((s) => s.mode);
   const open = useGame((s) => s.chatOpen);
-  const unread = useGame((s) => s.unread);
+  const unreadTotal = useGame((s) => s.unread);
+  const chat = useGame((s) => s.chat);
+  const seatId = useGame((s) => s.seatId);
+  const code = useGame((s) => s.code);
+  const { muted } = useMutedSeats(code);
+  const [unreadBySeat, setUnreadBySeat] = useState<Map<string, number>>(() => new Map());
+  const previousChat = useRef(chat);
+  const unreadBySeatRef = useRef(new Map<string, number>());
   const setOpen = useGame((s) => s.setChatOpen);
   const { phone, portrait } = useViewport();
   const focusNext = useRef(false);
   const stackTop = useHudStackTop(phone && portrait && !open);
-  const controlsTop = stackTop === null ? null : stackTop - STATUS_BANNER_SLOT;
+  useEffect(() => {
+    if (open || unreadTotal === 0) {
+      unreadBySeatRef.current.clear();
+    } else {
+      const previousIds = new Set(previousChat.current.map((line) => line.id));
+      for (const line of chat) {
+        if (!previousIds.has(line.id) && line.seat !== seatId) {
+          unreadBySeatRef.current.set(line.seat, (unreadBySeatRef.current.get(line.seat) ?? 0) + 1);
+        }
+      }
+    }
+    previousChat.current = chat;
+    setUnreadBySeat(new Map(unreadBySeatRef.current));
+  }, [chat, open, seatId, unreadTotal]);
+  const unread = [...unreadBySeat].reduce((count, [seat, messages]) => count + (muted.has(seat) ? 0 : messages), 0);
 
   // A remembered open dock must not cover the hand bar when Play starts on a phone. The stored value stays for desktop.
   useEffect(() => {
@@ -395,6 +429,27 @@ export function ChatDock() {
       <Minus className="size-4" />
     </button>
   );
+  const openButton = (
+    <button
+      type="button"
+      aria-label={unread ? `Open chat, ${unread} unread` : "Open chat"}
+      onClick={() => {
+        focusNext.current = true;
+        setOpen(true);
+      }}
+      className="pointer-events-auto relative flex size-11 cursor-pointer items-center justify-center rounded-control bg-glass text-zinc-700 backdrop-blur-md hover:text-zinc-900"
+    >
+      <MessageSquare className="size-5" />
+      {unread > 0 ? (
+        <span
+          data-testid="chat-unread"
+          className="absolute -right-1 -top-1 flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[11px] font-medium text-white"
+        >
+          {unread}
+        </span>
+      ) : null}
+    </button>
+  );
 
   // On a phone the open dock is a bottom sheet. The backdrop catches the tap that closes it, so that tap never reaches the board.
   if (phone && open) {
@@ -410,7 +465,10 @@ export function ChatDock() {
         >
           <div data-testid="chat-sheet-header" className="flex shrink-0 items-center justify-between">
             <h2 className="text-sm font-medium">Table chat</h2>
-            {minimize}
+            <div className="flex items-center gap-1">
+              <MuteMenu above={phone} />
+              {minimize}
+            </div>
           </div>
           <ChatBox className="flex-1" rows={4} game onEscape={() => setOpen(false)} />
         </section>
@@ -418,15 +476,35 @@ export function ChatDock() {
     );
   }
 
+  // Keep both board actions at the safe edges of the status area. The temporary status message stays below them, and
+  // pointer events pass through the gap between the two controls to the board.
+  if (phone && portrait) {
+    return (
+      <>
+        <div
+          data-testid="chat-control-band"
+          className="pointer-events-none absolute inset-x-0 z-20 flex items-center justify-between px-safe"
+          style={{
+            height: CONTROL_BAND_HEIGHT,
+            bottom: stackTop === null ? `${CONTROL_BAND_BOTTOM_OFFSET}px` : `calc(100dvh - ${stackTop}px + ${CONTROL_BAND_BOTTOM_OFFSET}px)`,
+          }}
+        >
+          <Preview above={phone} className="absolute bottom-full left-1/2 -translate-x-1/2" />
+          <QuickReactions inline />
+          {openButton}
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
-      <QuickReactions stackTop={phone && portrait && !open ? controlsTop : null} />
+      <QuickReactions />
       <div
         className={cn(
           "absolute right-safe z-20 flex items-end",
           phone ? cn("flex-col-reverse", !portrait && "bottom-[184px]") : "top-16 flex-col",
         )}
-        style={phone && portrait ? { bottom: controlsTop === null ? "84px" : `calc(100dvh - ${controlsTop}px + 12px)` } : undefined}
       >
         {open ? (
           <section
@@ -436,33 +514,16 @@ export function ChatDock() {
           >
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-medium">Table chat</h2>
-              {minimize}
+              <div className="flex items-center gap-1">
+                <MuteMenu />
+                {minimize}
+              </div>
             </div>
             <ChatBox rows={6} game onEscape={() => setOpen(false)} />
           </section>
         ) : (
           <>
-            <button
-              type="button"
-              aria-label={unread ? `Open chat, ${unread} unread` : "Open chat"}
-              onClick={() => {
-                focusNext.current = true;
-                setOpen(true);
-              }}
-              className={cn(
-                "relative flex size-11 cursor-pointer items-center justify-center rounded-control bg-glass text-zinc-700 backdrop-blur-md hover:text-zinc-900",
-              )}
-            >
-              <MessageSquare className="size-5" />
-              {unread > 0 ? (
-                <span
-                  data-testid="chat-unread"
-                  className="absolute -right-1 -top-1 flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[11px] font-medium text-white"
-                >
-                  {unread}
-                </span>
-              ) : null}
-            </button>
+            {openButton}
             <Preview above={phone} />
           </>
         )}

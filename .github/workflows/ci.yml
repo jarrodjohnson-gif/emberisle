@@ -76,6 +76,7 @@ jobs:
       - run: npm run trade-prove
       - run: npm run practice-trade-prove
       - run: npm run hud-safe-area-prove
+      - run: npm run fortune-tray-prove
       - if: always()
         uses: actions/upload-artifact@v4
         with:

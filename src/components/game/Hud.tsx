@@ -9,7 +9,7 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ChatDock, ChromeLanded, HowTo, sheets, TradePanel, WinScreen } from "@/components/game/chunks";
+import { ChatDock, ChromeLanded, FortuneTray, HowTo, sheets, TradePanel, WinScreen } from "@/components/game/chunks";
 import { TradeToast } from "@/components/game/TradeToast";
 import { Announcer } from "@/components/game/Announcer";
 import { PlayerMenu } from "@/components/game/PlayerMenu";
@@ -19,8 +19,8 @@ import { TurnCountdown } from "@/components/game/TurnCountdown";
 import { Dice, RollMoment } from "@/components/game/Dice";
 import { TableMenu } from "@/components/game/TableMenu";
 import { HandDock } from "@/components/game/Hand";
-import { COST, RESOURCES, RESOURCE_LABEL, type BuildMode, type PlayerState, type Resource } from "@/lib/game/types";
-import { legalRoads, playable, totalVP } from "@/lib/game/rules";
+import { COST, RESOURCES, type BuildMode, type PlayerState } from "@/lib/game/types";
+import { hiddenCount, playable, totalVP } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
 import { play } from "@/lib/sound";
 import { LazyBoundary, preloadOnIdle } from "@/lib/lazy";
@@ -64,10 +64,11 @@ function armedCopy(mode: BuildMode, roadPicks: number): [string, string] | null 
       return ["Pick a glowing corner", "Outpost"];
     case "stronghold":
       return ["Pick an outpost to upgrade", "Stronghold"];
+    // #423: both fortunes are armed from the tray, and the Fortunes button stays pressed until the pick is made or cancelled.
     case "knight":
-      return ["Pick a hex for the wayfarer", "Wayfarer card"];
+      return ["Pick a hex for the wayfarer", "Fortunes"];
     case "roadCard":
-      return [roadPicks ? "Pick one more path" : "Pick two paths", "Path fortune"];
+      return [roadPicks ? "Pick one more path" : "Pick two paths", "Fortunes"];
     default:
       return null;
   }
@@ -137,6 +138,12 @@ export function Hud() {
   useEscapeDisarm();
   const [stackRef, moreBelow] = useMoreBelow();
   useEffect(() => preloadOnIdle(sheets.prefetch), []);
+  // #423: the fortune tray is open until a fortune is played, it is closed, the phase moves (a roll with the tray up) or the
+  // turn moves on (hotseat: to the next seat); it never comes back on its own.
+  const [fortunesOpen, setFortunesOpen] = useState(false);
+  const fortunesButton = useRef<HTMLButtonElement>(null);
+  const turnKey = state ? `${state.turn}|${state.current}|${state.phase}` : "";
+  useEffect(() => setFortunesOpen(false), [turnKey]);
 
   if (!state) return null;
   const actor = mode === "hotseat" ? state.current : localId;
@@ -153,19 +160,28 @@ export function Hud() {
         : (state.discardNeeded[actor] ?? 0) > 0
           ? actor
           : null;
-  const knightButton =
-    mine && !state.playedCard && playable(me, "knight") > 0 ? (
-      <Button
-        size="sm"
-        data-testid="knight-button"
-        className={phone ? "h-11 min-w-11" : undefined}
-        aria-pressed={buildMode === "knight"}
-        variant={buildMode === "knight" ? "primary" : "secondary"}
-        onClick={() => setBuildMode(buildMode === "knight" ? "none" : "knight")}
-      >
-        Wayfarer card{playable(me, "knight") > 1 ? ` ×${playable(me, "knight")}` : ""}
-      </Button>
-    ) : null;
+  // #423: one "Fortunes ×N" button opens the tray. In `main` it shows whenever a fortune is held; before the roll only a
+  // wayfarer can be played (#218), so it shows only then. While a fortune's pick is armed it stays pressed, and pressing it cancels.
+  const fortuneArmed = buildMode === "knight" || buildMode === "roadCard";
+  const fortunesShown =
+    mine && hiddenCount(me) > 0 && (state.phase === "main" || (state.phase === "roll" && !state.playedCard && playable(me, "knight") > 0));
+  const fortunes = fortunesShown ? (
+    <Button
+      ref={fortunesButton}
+      size="sm"
+      data-testid="fortunes-button"
+      className={phone ? "h-11 min-w-11" : undefined}
+      aria-pressed={fortunesOpen || fortuneArmed}
+      aria-expanded={fortunesOpen}
+      variant={fortunesOpen || fortuneArmed ? "primary" : "secondary"}
+      onClick={() => {
+        if (fortuneArmed) return setBuildMode("none");
+        setFortunesOpen((o) => !o);
+      }}
+    >
+      Fortunes ×{hiddenCount(me)}
+    </Button>
+  ) : null;
   // Hotseat has no "you": every seat is named. The turn banner sits out once the isle has a ruler (the pill says who).
   const subject = state.phase === "discard" && discarder ? discarder : state.current;
   const subjectPlayer = state.players.find((p) => p.id === subject) ?? state.players[0]!;
@@ -189,6 +205,17 @@ export function Hud() {
   // #422: on the player's own Roll or End row the dice ride beside the button instead of taking a row of their own.
   const dice = state.dice ? <Dice values={state.dice} /> : null;
   const diceInBar = mine && /^(main|roll)/.test(state.phase);
+  // #491: in the column End turn is its own row pinned to the bottom of the scroller on a solid ground, so it never scrolls out of reach.
+  const pinEnd = column && state.phase === "main" && mine;
+
+  const endRow = (
+    <div className={cn("flex gap-2 *:self-center", column ? "sticky bottom-0 z-10 justify-end rounded-[16px] bg-surface p-1" : "ml-auto")}>
+      {dice}
+      <Button size="sm" variant="sea" className={phone ? "h-11" : undefined} onClick={() => dispatch({ type: "endTurn" })}>
+        End turn
+      </Button>
+    </div>
+  );
 
   return (
     <>
@@ -262,7 +289,7 @@ export function Hud() {
               // #383: stop under the header (or the portrait seat strip) and leave the island at least ~8 rem.
               // #422: the column runs from under the header to the bottom edge every phase, so the hole beside it never moves.
               column
-                ? "h-[calc(100dvh-4.25rem-max(0.75rem,env(safe-area-inset-bottom)))] [&>:first-child]:mt-auto"
+                ? "h-[calc(100dvh-4.25rem-max(0.75rem,env(safe-area-inset-bottom)))] scroll-pb-16 rounded-b-[16px] [&>:first-child]:mt-auto"
                 : portrait ? "max-h-[calc(100dvh-16rem)]" : "max-h-[calc(100dvh-13rem)]",
             )}
           >
@@ -360,32 +387,15 @@ export function Hud() {
                   <ScrollText className="size-4" /> Fortune
                 </Button>
                 <TradeButton />
-                {knightButton}
-                {!state.playedCard && playable(me, "road") > 0 && me.pathsLeft > 0 && legalRoads(state, me.id, false).length > 0 ? (
-                  <Button
-                    size="sm"
-                    variant={buildMode === "roadCard" ? "primary" : "secondary"}
-                    className={phone ? "h-11 min-w-11" : undefined}
-                    aria-pressed={buildMode === "roadCard"}
-                    onClick={() => setBuildMode(buildMode === "roadCard" ? "none" : "roadCard")}
-                  >
-                    Path fortune{playable(me, "road") > 1 ? ` ×${playable(me, "road")}` : ""}
-                  </Button>
-                ) : null}
-                {!state.playedCard && playable(me, "plenty") > 0 ? <PlentyForm /> : null}
-                {!state.playedCard && playable(me, "monopoly") > 0 ? <MonopolyForm /> : null}
-                <div className="ml-auto flex gap-2 *:self-center">
-                  {dice}
-                  <Button size="sm" variant="sea" className={phone ? "h-11" : undefined} onClick={() => dispatch({ type: "endTurn" })}>
-                    End turn
-                  </Button>
-                </div>
+                {fortunes}
+                {column ? null : endRow}
               </div>
             ) : null}
+            {pinEnd ? endRow : null}
 
             {(state.phase === "roll" || state.phase === "rollOff") && mine ? (
               <div className="flex flex-col gap-2">
-                {knightButton ? <div className="flex flex-wrap gap-1">{knightButton}</div> : null}
+                {fortunes ? <div className="flex flex-wrap gap-1">{fortunes}</div> : null}
                 <div className="flex gap-2 *:self-center">
                   {dice}
                   <Button size="lg" className="flex-1" onClick={() => dispatch({ type: "roll" })}>
@@ -404,11 +414,29 @@ export function Hud() {
               {state.log.filter((l) => !ROLL_LOG.test(l)).slice(-3).join(" · ")}
             </p>
           </div>
+          {/* #423: the tray rises over the stack from its bottom edge and may cover the island, like a sheet, but never the
+              header or the portrait seat strip; it is inside the sheets chunk, which the table prefetched on idle (#488). */}
+          {fortunes && fortunesOpen ? (
+            <LazyBoundary failed={<TrayFailed close={() => setFortunesOpen(false)} />}>
+              <FortuneTray
+                me={me}
+                opener={fortunesButton.current}
+                onClose={() => setFortunesOpen(false)}
+                className={
+                  column
+                    ? "max-h-full"
+                    : portrait
+                      ? "max-h-[calc(100dvh-7.25rem-env(safe-area-inset-top)-max(0.75rem,env(safe-area-inset-bottom)))]"
+                      : "max-h-[calc(100dvh-5rem-env(safe-area-inset-top)-max(0.75rem,env(safe-area-inset-bottom)))]"
+                }
+              />
+            </LazyBoundary>
+          ) : null}
           {moreBelow ? (
             <div
               data-testid="hud-more-below"
               aria-hidden
-              className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-zinc-900/40 to-transparent"
+              className={cn("pointer-events-none absolute inset-x-0 h-8 bg-gradient-to-t from-zinc-900/40 to-transparent", pinEnd ? "bottom-13" : "bottom-0")}
             />
           ) : null}
         </div>
@@ -496,76 +524,6 @@ function PlaceChip({ column }: { column?: boolean }) {
   );
 }
 
-// Year of plenty: two resources from the bank (rules.ts playPlenty).
-function PlentyForm() {
-  const dispatch = useGame((s) => s.dispatch);
-  const bank = useGame((s) => s.state!.bank);
-  // The bank cannot pay what it has run out of (#360), so those are greyed out; rules.ts refuses them too.
-  const empty = RESOURCES.filter((r) => bank[r] <= 0);
-  const why = empty.length ? `The bank has no ${empty.join(" or ")}.` : undefined;
-  // Controlled, so a pick the bank empties while the form is open falls back to the first card it still has.
-  const [pick, setPick] = useState<[Resource, Resource]>(["timber", "timber"]);
-  const first = RESOURCES.find((r) => bank[r] > 0);
-  const chosen = pick.map((r) => (bank[r] > 0 ? r : first));
-  return (
-    <form
-      className="flex items-center gap-1"
-      onSubmit={(e) => {
-        e.preventDefault();
-        if (first) dispatch({ type: "playPlenty", resources: chosen as Resource[] });
-      }}
-    >
-      {[0, 1].map((i) => (
-        <select
-          key={i}
-          name={i === 0 ? "plentyA" : "plentyB"}
-          aria-label={i === 0 ? "First plenty resource" : "Second plenty resource"}
-          aria-description={why}
-          value={chosen[i] ?? ""}
-          onChange={(e) => setPick((p) => (i === 0 ? [e.target.value as Resource, p[1]] : [p[0], e.target.value as Resource]))}
-          className="h-9 rounded-[8px] border border-white/50 bg-raised px-2 text-sm"
-        >
-          {RESOURCES.map((r) => (
-            <option key={r} value={r} disabled={empty.includes(r)} aria-disabled={empty.includes(r) || undefined}>
-              {empty.includes(r) ? `${RESOURCE_LABEL[r]} (bank empty)` : RESOURCE_LABEL[r]}
-            </option>
-          ))}
-        </select>
-      ))}
-      <Button size="sm" variant="secondary" type="submit" disabled={!first}>
-        Plenty
-      </Button>
-      {first ? null : <span className="text-xs">The bank is empty.</span>}
-    </form>
-  );
-}
-
-// Monopoly: every other player's cards of one resource (rules.ts playMonopoly).
-function MonopolyForm() {
-  const dispatch = useGame((s) => s.dispatch);
-  return (
-    <form
-      className="flex items-center gap-1"
-      onSubmit={(e) => {
-        e.preventDefault();
-        const r = new FormData(e.currentTarget).get("monopoly") as Resource;
-        if (r) dispatch({ type: "playMonopoly", resource: r });
-      }}
-    >
-      <select name="monopoly" aria-label="Monopoly resource" className="h-9 rounded-[8px] border border-white/50 bg-raised px-2 text-sm">
-        {RESOURCES.map((r) => (
-          <option key={r} value={r}>
-            All {RESOURCE_LABEL[r]}
-          </option>
-        ))}
-      </select>
-      <Button size="sm" variant="secondary" type="submit">
-        Monopoly
-      </Button>
-    </form>
-  );
-}
-
 // The sheets chunk did not load: close what was asked for, so How to play or Trade can be pressed again and retry.
 function SheetsFailed() {
   const setHowTo = useGame((s) => s.setHowTo);
@@ -574,6 +532,12 @@ function SheetsFailed() {
     setHowTo(false);
     setTradeOpen(false);
   }, [setHowTo, setTradeOpen]);
+  return null;
+}
+
+// The same for the fortune tray: the next press of Fortunes mounts it again and tries the network again.
+function TrayFailed({ close }: { close: () => void }) {
+  useEffect(close, [close]);
   return null;
 }
 
