@@ -229,6 +229,7 @@ export function Hud() {
       {phone && menuPlayer ? (
         <PlayerMenu
           player={menuPlayer}
+          heading
           className={cn(
             "absolute z-20",
             portrait ? "left-safe right-safe top-[calc(env(safe-area-inset-top)+7.25rem)]" : "right-safe top-16 w-72",

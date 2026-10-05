@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { useGame } from "@/lib/game/store";
+import { SeatDot } from "@/components/game/SeatDot";
 
 export function TakeFromBar() {
   const state = useGame((s) => s.state);
@@ -14,7 +15,7 @@ export function TakeFromBar() {
         if (!p) return null;
         return (
           <Button key={id} size="sm" variant="secondary" onClick={() => chooseSteal(id)}>
-            <span className="mr-1 inline-block size-2.5 rounded-full" style={{ background: p.color }} />
+            <SeatDot color={p.color} className="mr-1 size-3" />
             {p.name}
           </Button>
         );
