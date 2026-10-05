@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { ChatDock, ChromeLanded, FortuneTray, HowTo, sheets, TradePanel, WinScreen } from "@/components/game/chunks";
 import { TradeToast } from "@/components/game/TradeToast";
+import { WinFailed } from "@/components/game/WinFailed";
 import { Announcer } from "@/components/game/Announcer";
 import { PlayerMenu } from "@/components/game/PlayerMenu";
 import { SeatRail, SeatStrip } from "@/components/game/SeatRail";
@@ -516,7 +517,8 @@ function PlaceChip({ column }: { column?: boolean }) {
   );
 }
 
-// The sheets chunk did not load: close what was asked for, so How to play or Trade can be pressed again and retry.
+// The sheets chunk did not load: close what was asked for, so How to play or Trade can be pressed again and retry. At
+// game over the winner is named inline instead of the win screen (#492).
 function SheetsFailed() {
   const setHowTo = useGame((s) => s.setHowTo);
   const setTradeOpen = useGame((s) => s.setTradeOpen);
@@ -524,7 +526,7 @@ function SheetsFailed() {
     setHowTo(false);
     setTradeOpen(false);
   }, [setHowTo, setTradeOpen]);
-  return null;
+  return <WinFailed />;
 }
 
 // The same for the fortune tray: the next press of Fortunes mounts it again and tries the network again.
