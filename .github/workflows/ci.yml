@@ -108,6 +108,7 @@ jobs:
           name: dist
           path: dist/
       - run: npm run served-prove
+      - run: npm run chunk-fail-prove
       - run: npm run night-prove
       - run: npm run chat-prove
       - run: npm run wayfarer-prove

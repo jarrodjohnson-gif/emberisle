@@ -5,11 +5,11 @@ import { HowTo, Lobby, online, sheets } from "@/components/game/chunks";
 import { Hud } from "@/components/game/Hud";
 import { PlaceList } from "@/components/game/PlaceList";
 import { useGame } from "@/lib/game/store";
+import { LazyBoundary, preloadOnIdle, reloadOnStaleChunk } from "@/lib/lazy";
 import { play, setMuted, useMuted } from "@/lib/sound";
 import { useTurnTitle } from "@/lib/turn-title";
 import { PLAYER_COLORS, PLAYER_NAMES } from "@/lib/game/types";
 import { cn } from "@/lib/utils";
-import { preloadOnIdle } from "@/lib/lazy";
 import { useViewport } from "@/lib/viewport";
 
 const IslandCanvas = lazy(() => import("@/components/scene/IslandCanvas"));
@@ -35,8 +35,10 @@ export function EmberisleApp() {
 
   useEffect(() => {
     (window as unknown as { __emberisle: typeof useGame }).__emberisle = useGame;
-    // A reload mid-game goes straight back to the held seat (#196).
-    useGame.getState().rejoinTable();
+    // A reload mid-game goes straight back to the held seat (#196); the dock it lands on is in the online chunk (#488).
+    if (useGame.getState().rejoinTable()) online.prefetch();
+    // #488: a chunk that fails to load while still at the title is read as a stale page after a deploy: reload once.
+    return reloadOnStaleChunk(() => useGame.getState().screen === "title");
   }, []);
 
   useEffect(() => {
@@ -50,9 +52,9 @@ export function EmberisleApp() {
       <ClientCanvas />
       {/* #488: the lobby (with chat) is online-only, so it is a lazy chunk; Host and Join prefetch it on hover or focus. */}
       {screen === "title" ? <Title /> : screen === "lobby" ? (
-        <Suspense fallback={null}>
+        <LazyBoundary failed={<LobbyFailed />}>
           <Lobby />
-        </Suspense>
+        </LazyBoundary>
       ) : (
         <>
           <Hud />
@@ -115,11 +117,12 @@ function Title() {
     const fill = code ?? watch!;
     if (!PEEK_CODE.test(fill)) return;
     setJoin(fill);
+    online.prefetch();
     if (code === undefined) setWatchLink(true);
   }, []);
 
   // #488: How to play is a lazy chunk; idle time on the title fetches it, and so does a pointer or focus on its button.
-  useEffect(() => preloadOnIdle(sheets.preload), []);
+  useEffect(() => preloadOnIdle(sheets.prefetch), []);
 
   // One primary per screen (docs/design/polish.md): Play, or Watch on a watch link. Watch only shows once there is a code.
   const showWatch = watchLink || join.length === 4;
@@ -183,7 +186,7 @@ function Title() {
               <p className="text-xs text-muted">3 bots, no network</p>
             </div>
             {/* #488: a pointer or focus on Host or Join fetches the online chunk (lobby and chat) before either is pressed. */}
-            <div className="flex flex-wrap gap-2" onPointerEnter={online.preload} onFocus={online.preload}>
+            <div className="flex flex-wrap gap-2" onPointerEnter={online.prefetch} onFocus={online.prefetch}>
               <Button size="lg" variant="secondary" className="grow" onClick={hostTable}>
                 Host a table
               </Button>
@@ -218,6 +221,8 @@ function Title() {
                 size="lg"
                 variant={watchLink ? "primary" : "secondary"}
                 type="button"
+                onPointerEnter={online.prefetch}
+                onFocus={online.prefetch}
                 onClick={() => {
                   if (join.length === 4) watchTable(join);
                 }}
@@ -238,7 +243,7 @@ function Title() {
               <Button variant="ghost" className="px-3" title="Pass one device around" onClick={() => startHotseat(4)}>
                 Four seats, one table
               </Button>
-              <Button variant="ghost" className="px-3" onPointerEnter={sheets.preload} onFocus={sheets.preload} onClick={(e) => setHowTo(!howTo, e.currentTarget)}>
+              <Button variant="ghost" className="px-3" onPointerEnter={sheets.prefetch} onFocus={sheets.prefetch} onClick={(e) => setHowTo(!howTo, e.currentTarget)}>
                 How to play
               </Button>
               <Button
@@ -263,10 +268,22 @@ function Title() {
       {/* Beside the card, not inside it: the card is absolute (and scrolls on a phone), so a dialog inside it is
           clipped to the card's box and its Close can sit off-screen. */}
       {howTo ? (
-        <Suspense fallback={null}>
+        <LazyBoundary failed={null}>
           <HowTo onClose={() => setHowTo(false)} />
-        </Suspense>
+        </LazyBoundary>
       ) : null}
     </>
+  );
+}
+
+// The online chunk did not load, so there is no lobby to show: say so where the lobby card goes, with the one way out.
+function LobbyFailed() {
+  return (
+    <div data-testid="lobby-failed" role="alert" className="absolute bottom-5 left-5 z-10 w-full max-w-sm rounded-[20px] border border-white/50 bg-white/45 p-5 backdrop-blur-md sm:bottom-10 sm:left-10">
+      <p className="text-sm">Couldn't load the table lobby.</p>
+      <Button size="lg" variant="primary" className="mt-3 w-full" onClick={() => location.reload()}>
+        Reload
+      </Button>
+    </div>
   );
 }

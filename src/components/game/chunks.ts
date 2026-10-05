@@ -1,7 +1,8 @@
 // #488: the lazily loaded UI chunks and their mount-site components. The lobby, the chat dock and the reactions only
-// render online, so they stay out of the first-load index as one chunk: a pointer or focus on Host or Join fetches it,
-// and the lobby renders from it, so the dock is already in memory when the table renders. The sheets (How to play, the
-// trade panel, the win screen) open on demand and load as another chunk, fetched on idle by the title and the table.
+// render online, so they stay out of the first-load index as one chunk: a pointer or focus on Host, Join or Watch, a
+// join or watch link and a saved seat's rejoin fetch it, and the lobby renders from it, so the dock is already in memory
+// when the table renders. The sheets (How to play, the trade panel, the win screen) open on demand and load as another
+// chunk, fetched on idle by the title and the table.
 import { useEffect } from "react";
 import { chunk } from "@/lib/lazy";
 import { useGame } from "@/lib/game/store";

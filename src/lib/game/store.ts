@@ -264,7 +264,7 @@ interface GameStore {
   tradeOpener: HTMLElement | null;
   setTradeOpen: (v: boolean, opener?: HTMLElement | null) => void;
   // #488: counts the commits that land a lazily loaded dock or panel after its flag above flipped, so the island measures
-  // the hole it leaves once more (IslandCanvas keys its measure on chatOpen, tradeOpen and this).
+  // the hole it leaves once more (IslandCanvas keys its measure on chatOpen, tradeOpen and this). It only ever grows.
   chromeSeq: number;
   chromeLanded: () => void;
   askTable: (give: Bag, want: Bag) => void;

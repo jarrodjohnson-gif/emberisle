@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ArrowLeftRight,
   Dices,
@@ -23,7 +23,7 @@ import { COST, RESOURCES, RESOURCE_LABEL, type BuildMode, type PlayerState, type
 import { legalRoads, playable, totalVP } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
 import { play } from "@/lib/sound";
-import { preloadOnIdle } from "@/lib/lazy";
+import { LazyBoundary, preloadOnIdle } from "@/lib/lazy";
 import { useViewport } from "@/lib/viewport";
 import { useMoreBelow } from "@/lib/scroll-fade";
 import { cn } from "@/lib/utils";
@@ -120,6 +120,8 @@ export function Hud() {
   const banner = useGame((s) => s.banner);
   const error = useGame((s) => s.error);
   const howTo = useGame((s) => s.howTo);
+  const chatOpen = useGame((s) => s.chatOpen);
+  const tradeOpen = useGame((s) => s.tradeOpen);
   const dispatch = useGame((s) => s.dispatch);
   const setBuildMode = useGame((s) => s.setBuildMode);
   const setHowTo = useGame((s) => s.setHowTo);
@@ -131,7 +133,7 @@ export function Hud() {
   const [hintDismissed, setHintDismissed] = useState(() => sessionStorage.getItem(HINT_KEY) === "1");
   useEscapeDisarm();
   const [stackRef, moreBelow] = useMoreBelow();
-  useEffect(() => preloadOnIdle(sheets.preload), []);
+  useEffect(() => preloadOnIdle(sheets.prefetch), []);
 
   if (!state) return null;
   const actor = mode === "hotseat" ? state.current : localId;
@@ -218,12 +220,14 @@ export function Hud() {
 
       {phone ? null : <SeatRail actor={actor} />}
 
-      {/* #488: the dock comes from the online chunk the lobby already loaded, so it is in the HUD's first frame (tabs-prove). */}
+      {/* #488: the dock comes from the online chunk the lobby already loaded, so it is in the HUD's first frame (tabs-prove).
+          A watcher or a rejoin can still be loading it; if that fails the table stands without a dock, and it tries again
+          when the chat is next opened or closed. */}
       {mode === "online" ? (
-        <Suspense fallback={null}>
+        <LazyBoundary failed={null} retryKey={String(chatOpen)}>
           <ChatDock />
           <ChromeLanded />
-        </Suspense>
+        </LazyBoundary>
       ) : null}
       <TradeToast />
       <Announcer />
@@ -388,13 +392,14 @@ export function Hud() {
         </div>
       </div>
 
-      {/* #488: the trade panel, How to play and the win screen share one lazy chunk, fetched on idle once the table is up. */}
-      <Suspense fallback={null}>
+      {/* #488: the trade panel, How to play and the win screen share one lazy chunk, fetched on idle once the table is up.
+          If it fails the table stands with no sheet; SheetsFailed drops the open flags so the next tap tries again. */}
+      <LazyBoundary failed={<SheetsFailed />} retryKey={`${tradeOpen}|${howTo}|${state.winner ?? ""}`}>
         <TradePanel />
         {howTo ? <HowTo onClose={() => setHowTo(false)} /> : null}
         <WinScreen />
         <ChromeLanded />
-      </Suspense>
+      </LazyBoundary>
 
       <p className="sr-only">
         Costs: path {COST.path.timber} timber {COST.path.clay} clay. Outpost timber clay wool grain. Stronghold 3 grain 2
@@ -526,6 +531,17 @@ function MonopolyForm() {
       </Button>
     </form>
   );
+}
+
+// The sheets chunk did not load: close what was asked for, so How to play or Trade can be pressed again and retry.
+function SheetsFailed() {
+  const setHowTo = useGame((s) => s.setHowTo);
+  const setTradeOpen = useGame((s) => s.setTradeOpen);
+  useEffect(() => {
+    setHowTo(false);
+    setTradeOpen(false);
+  }, [setHowTo, setTradeOpen]);
+  return null;
 }
 
 function TradeButton() {

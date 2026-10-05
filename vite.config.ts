@@ -11,14 +11,10 @@ export default defineConfig({
       output: {
         // #488: everything the first paint imports stays in the index chunk. Left alone, rolldown moves modules shared by the
         // index and two lazy chunks (the store, the button, ...) into a common chunk of their own, which the index would
-        // then load anyway. The lazy chunks hold only what the index does not (src/components/game/chunks.ts); the one
-        // icon the sheets and the online chunk share lives with the sheets, not in a third chunk of its own.
-        codeSplitting: {
-          groups: [
-            { name: "index", tags: ["$initial"] },
-            { name: "sheets", test: /[\\/]src[\\/]components[\\/]game[\\/]sheets\.ts$/ },
-          ],
-        },
+        // then load anyway. The lazy chunks hold only what the index does not (src/components/game/chunks.ts), and stay
+        // plain dynamic entries with named exports, which a retry under a fresh URL relies on (src/lib/lazy.ts). The one
+        // module both lazy chunks share and the index does not (the lucide Minus icon) gets a chunk of its own, `minus`.
+        codeSplitting: { groups: [{ name: "index", tags: ["$initial"] }] },
       },
     },
   },

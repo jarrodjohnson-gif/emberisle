@@ -5,9 +5,9 @@
 // `seat-turn`: its dot pulses softly (bible §4.3) and the card brightens over 200 ms (§8), with an ink ring on the dot and
 // aria-current so the turn never rests on colour or motion alone (#312). Your fortunes by kind and a dropped seat's
 // state are facts in the player menu, one tap away.
-import { Suspense } from "react";
 import { ScrollText } from "lucide-react";
 import { ReactionFloats } from "@/components/game/chunks";
+import { LazyBoundary } from "@/lib/lazy";
 import { PlayerMenu, seatAway } from "@/components/game/PlayerMenu";
 import type { GameState, PlayerState } from "@/lib/game/types";
 import { cards, hiddenCount, publicVP } from "@/lib/game/rules";
@@ -118,9 +118,9 @@ function SeatCard({ p, actor, short, className }: { p: PlayerState; actor: strin
         <SeatLine p={p} actor={actor} short={short} />
       </button>
       {online ? (
-        <Suspense fallback={null}>
+        <LazyBoundary failed={null}>
           <ReactionFloats by="player" id={p.id} />
-        </Suspense>
+        </LazyBoundary>
       ) : null}
     </div>
   );
