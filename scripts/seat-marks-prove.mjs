@@ -1,6 +1,6 @@
 // #312: every seat is told apart by a mark as well as its colour (docs/design/seat-marks.md, option B). In hotseat with
 // a crafted mid-game board (paths, outposts and strongholds for all four seats) at 1280x720, 390x844 and 844x390 (touch):
-// - SEAT_MARKS gives the four seat colours four distinct marks;
+// - SEAT_MARKS gives the four seat colours four distinct marks, each ink a piece rim at least 3:1 on its seat colour;
 // - every seat's dot in the rail or strip carries its colour's mark (`data-seat-mark`), and so does the phone menu's
 //   heading (which reads the seat's name; the desktop rail's menu has none, its card says it), a trade toast from that
 //   seat, the steal picker, the win line and every win-table row;
@@ -34,6 +34,14 @@ const check = (name, ok, detail) => {
 const marks = PLAYER_COLORS.map((c) => SEAT_MARKS[c]);
 check("four seat colours have four distinct marks", new Set(marks.map((m) => m.mark)).size === 4, marks.map((m) => m.mark));
 check("every mark's ink is a piece rim", marks.every((m) => Object.values(RIM).includes(m.ink)), marks.map((m) => m.ink));
+// WCAG 2 relative luminance; 3:1 is the non-text minimum, which the dark ink misses on Pine (2.85:1), hence its cream.
+const lum = (hex) => {
+  const c = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255).map((v) => (v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
+  return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+};
+const contrast = (a, b) => (Math.max(lum(a), lum(b)) + 0.05) / (Math.min(lum(a), lum(b)) + 0.05);
+const inkRatios = PLAYER_COLORS.map((c) => +contrast(c, SEAT_MARKS[c].ink).toFixed(2));
+check("every mark's ink is at least 3:1 on its seat colour", inkRatios.every((r) => r >= 3), inkRatios);
 
 mkdirSync("test-results", { recursive: true });
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });

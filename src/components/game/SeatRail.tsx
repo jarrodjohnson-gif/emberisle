@@ -49,7 +49,8 @@ function SeatLine({ p, actor, short }: { p: PlayerState; actor: string; short?: 
   const narrow = strip ? "@max-[200px]:hidden" : undefined;
   return (
     <>
-      <SeatDot color={p.color} className="seat-dot size-3" />
+      {/* Under 100 px a cell holds "Emb" and the points with 4 px gaps; the dot gives back its two extra pixels there (#420). */}
+      <SeatDot color={p.color} className={cn("seat-dot size-3", strip && "@max-[100px]:size-2.5")} />
       <span data-testid="seat-name" className={cn("min-w-0 flex-auto truncate text-sm font-medium", strip && "@max-[100px]:sr-only")}>
         {p.name}
       </span>
