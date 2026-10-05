@@ -130,7 +130,7 @@ export function PlaceList() {
   if (!targets) return null;
   const pick = targets.kind === "vertex" ? pickVertex : targets.kind === "edge" ? pickEdge : pickHex;
   return (
-    <div className="pointer-events-none absolute right-3 top-20 z-20 w-72">
+    <div className="pointer-events-none absolute right-safe top-20 z-20 w-72">
       <div
         ref={listRef}
         role="group"

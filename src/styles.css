@@ -3,6 +3,23 @@
 /* #383: a short viewport, such as a 1280x720 window at 200 % zoom (640x360). */
 @custom-variant short (@media (max-height: 480px));
 
+/* #475: 12 px from each edge, or the safe-area inset (a notch, the home bar) where that is more. Defined once here so
+   the long env() strings stay out of the JS bundle. */
+@utility p-safe {
+  padding: max(0.75rem, env(safe-area-inset-top)) max(0.75rem, env(safe-area-inset-right)) max(0.75rem, env(safe-area-inset-bottom))
+    max(0.75rem, env(safe-area-inset-left));
+}
+@utility px-safe {
+  padding-left: max(0.75rem, env(safe-area-inset-left));
+  padding-right: max(0.75rem, env(safe-area-inset-right));
+}
+@utility left-safe {
+  left: max(0.75rem, env(safe-area-inset-left));
+}
+@utility right-safe {
+  right: max(0.75rem, env(safe-area-inset-right));
+}
+
 /* Build bible 3.4: stone #efeae0, text #1c1915. Player colors from types.ts. */
 @theme {
   --color-bg: #efeae0;

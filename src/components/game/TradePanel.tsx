@@ -110,7 +110,7 @@ export function TradePanel() {
   };
 
   return (
-    <div className="absolute inset-0 z-30 flex items-end justify-center bg-white/45 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))] pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] sm:items-center" onClick={() => setTradeOpen(false)}>
+    <div className="absolute inset-0 z-30 flex items-end justify-center bg-white/45 p-safe sm:items-center" onClick={() => setTradeOpen(false)}>
       <section
         ref={panel}
         role="dialog"

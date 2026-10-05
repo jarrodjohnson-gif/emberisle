@@ -2,7 +2,7 @@
 // no standalone display mode; the page's env() is what installing changes), on three phones held both ways:
 //   844x390 (47 left, 47 right, 21 bottom), 390x844 (47 top, 34 bottom) and 667x375 (44 left, 44 right, 21 bottom).
 // At each, in a real practice game against the bots: the roll-off, the first setup outpost with the touch PlaceChip up,
-// the setup path, the player's own roll, the main phase, a seat's player menu, the Table menu open, the trade panel and
+// the setup path, the player's own roll, the main phase, a seat's player menu, the Table menu open, How to play, the trade panel and
 // the win screen; and at a real three-seat online table through server/host.mjs, the chat button and the open chat sheet.
 // Every time:
 // - every visible interactive element (button, link, field, [role=button], tab stop), as far as it shows past any
@@ -21,7 +21,8 @@ import { chromium } from "playwright";
 import { createServer } from "vite";
 
 const CHAT_PENDING = true;
-const STEP_MS = 60_000;
+// Software GL under a loaded CI runner can take seconds a frame; every wait gets this long.
+const STEP_MS = 120_000;
 const PORT = Number(process.env.VITE_PORT) || 8475;
 const PHONES = [
   { width: 844, height: 390, insets: { top: 0, right: 47, bottom: 21, left: 47 } },
@@ -64,6 +65,7 @@ const check = (name, ok, detail) => {
 async function phone({ width, height, insets }) {
   const ctx = await browser.newContext({ viewport: { width, height }, isMobile: true, hasTouch: true, deviceScaleFactor: 1 });
   const page = await ctx.newPage();
+  page.setDefaultTimeout(STEP_MS);
   const tag = `${width}x${height}`;
   page.on("console", (m) => m.type() === "error" && errors.push(`${tag}: ${m.text()}`));
   page.on("pageerror", (e) => errors.push(`${tag}: ${e}`));
@@ -174,12 +176,19 @@ async function practice(spec) {
     return s.state.phase === "setupSettle" && s.state.current === s.localId;
   });
   await prove(p, "setup");
-  const spot = await page.evaluate(() => {
-    const id = window.__emberisle.getState().highlights().vertices[0];
-    return window.__isle.screenOf(id);
-  });
-  await page.touchscreen.tap(spot.x, spot.y);
-  await page.getByTestId("place-chip").waitFor({ timeout: STEP_MS });
+  // A tap that lands while a slow frame is still settling the camera can miss the mark, so it is re-read and tapped
+  // again (it never places: the chip still has to be pressed).
+  const chip = page.getByTestId("place-chip");
+  for (let tries = 0; !(await chip.isVisible()); tries++) {
+    if (tries === 5) throw new Error("setup: five taps on a legal corner brought up no PlaceChip");
+    await settled(page);
+    const spot = await page.evaluate(() => {
+      const id = window.__emberisle.getState().highlights().vertices[0];
+      return window.__isle.screenOf(id);
+    });
+    await page.touchscreen.tap(spot.x, spot.y);
+    await chip.waitFor({ timeout: STEP_MS / 4 }).catch(() => {});
+  }
   await prove(p, "setup PlaceChip");
   await page.getByTestId("place-chip").click();
   await until(page, () => window.__emberisle.getState().state.phase === "setupRoad");
@@ -239,8 +248,11 @@ async function practice(spec) {
   await page.getByRole("button", { name: "Table menu" }).click();
   await page.getByTestId("table-menu").waitFor();
   await prove(p, "Table menu open", { island: false });
+  await page.getByRole("button", { name: "How to play" }).click();
+  await page.getByRole("dialog", { name: "How to play" }).waitFor();
+  await prove(p, "How to play", { island: false });
   await page.keyboard.press("Escape");
-  await page.getByTestId("table-menu").waitFor({ state: "detached" });
+  await page.getByRole("dialog", { name: "How to play" }).waitFor({ state: "detached" });
   await page.getByRole("button", { name: "Trade", exact: true }).click();
   await page.getByTestId("trade-panel").waitFor();
   await prove(p, "trade panel", { island: false });
@@ -271,8 +283,11 @@ async function online(spec) {
   for (let i = 0; i < 2; i++) {
     // Small, so their islands cost software GL little and the phone under test keeps its frames.
     const g = await browser.newPage({ viewport: { width: 360, height: 400 } });
+    g.setDefaultTimeout(STEP_MS);
     g.on("pageerror", (e) => errors.push(`guest: ${e}`));
     await g.goto(`${URL_}&code=${code}`);
+    // The join link fills the field after the first render; Enter before that submits nothing.
+    await g.waitForFunction((c) => document.querySelector('input[aria-label="Join code"]')?.value === c, code, { timeout: STEP_MS });
     // Enter in the filled field submits the join (the same form as the Join button).
     await g.getByRole("textbox", { name: "Join code" }).press("Enter");
     await g.getByTestId("table-code").waitFor({ timeout: STEP_MS });
