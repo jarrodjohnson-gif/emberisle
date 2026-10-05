@@ -28,10 +28,11 @@ export function chromeInsets(cssW: number, cssH: number, solids: Rect[], safe: P
   const bands = chrome.filter((r) => r.right - r.left >= cssW / 2);
   const rails = chrome.filter((r) => r.right - r.left < cssW / 2);
   // The chips on an edge: each within CHROME_GAP of the edge or of a chip already counted. `near` is a chip's distance
-  // from the edge, `reach` how far from the edge it extends.
-  const onEdge = (chips: Rect[], near: (r: Rect) => number, reach: (r: Rect) => number) => {
+  // from the edge, `reach` how far from the edge it extends. The edge starts at the safe area, since the HUD keeps clear of
+  // a notch or a home bar (#475): chrome set in by one still touches the edge.
+  const onEdge = (chips: Rect[], near: (r: Rect) => number, reach: (r: Rect) => number, from = 0) => {
     const found: Rect[] = [];
-    let edge = 0;
+    let edge = from;
     for (let again = true; again; ) {
       again = false;
       for (const r of chips) {
@@ -44,15 +45,16 @@ export function chromeInsets(cssW: number, cssH: number, solids: Rect[], safe: P
     }
     return { found, edge };
   };
-  const top = onEdge(bands.filter((r) => r.bottom < cssH / 2), (r) => r.top, (r) => r.bottom).edge;
-  const bottom = onEdge(bands.filter((r) => r.top > cssH / 2), (r) => cssH - r.bottom, (r) => cssH - r.top).edge;
+  const top = onEdge(bands.filter((r) => r.bottom < cssH / 2), (r) => r.top, (r) => r.bottom, safe.top).edge;
+  const bottom = onEdge(bands.filter((r) => r.top > cssH / 2), (r) => cssH - r.bottom, (r) => cssH - r.top, safe.bottom).edge;
   const rail = (side: ReturnType<typeof onEdge>) => {
     if (!side.found.length) return 0;
     const span = Math.max(...side.found.map((r) => r.bottom)) - Math.min(...side.found.map((r) => r.top));
     return span >= cssH / 4 ? side.edge : 0;
   };
-  const left = rail(onEdge(rails.filter((r) => r.right < cssW / 2), (r) => r.left, (r) => r.right));
-  const right = rail(onEdge(rails.filter((r) => r.left > cssW / 2), (r) => cssW - r.right, (r) => cssW - r.left));
+  // A rail is on the side its centre is on: a column set in by a notch may cross the middle (#422, 667x375).
+  const left = rail(onEdge(rails.filter((r) => r.left + r.right < cssW), (r) => r.left, (r) => r.right, safe.left));
+  const right = rail(onEdge(rails.filter((r) => r.left + r.right > cssW), (r) => cssW - r.right, (r) => cssW - r.left, safe.right));
   const inset = (chrome: number, safe: number) => (chrome > 0 ? chrome : safe) + CHROME_PAD;
   return { top: inset(top, safe.top ?? 0), right: inset(right, safe.right ?? 0), bottom: inset(bottom, safe.bottom ?? 0), left: inset(left, safe.left ?? 0) };
 }

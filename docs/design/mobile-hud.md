@@ -43,8 +43,8 @@ Required, desktop and phone:
 
 Phase strings reuse `phaseCopy` in `Hud.tsx`. The banner is always visible — it is not `hidden` below any
 breakpoint. On desktop it can sit in the top-left next to the wordmark or replace the current bottom phase
-pill; #129 picks the desktop seat. On phone it is the first row of the bottom stack (portrait) or the left
-chunk of the bottom strip (landscape).
+pill; #129 picks the desktop seat. On phone it is the first row of the bottom stack (portrait) or the first
+row of the full-height left column that holds the whole stack beside the island (landscape, #422).
 
 Motion: a 200 ms opacity fade when `state.current` changes. No pulse loop.
 
