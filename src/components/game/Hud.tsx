@@ -216,7 +216,8 @@ export function Hud() {
   // #491: in the column End turn is its own row pinned to the bottom of the scroller on a solid ground, so it never scrolls out of reach.
   const pinEnd = column && state.phase === "main" && mine;
   // docs/design/polish.md "Buttons": End turn is the one primary once nothing else can be bought and nothing is armed.
-  const canBuy = !fortuneBlocked || (["path", "outpost", "stronghold"] as const).some((k) => me[`${k}sLeft`] > 0 && affords(me, k));
+  // A watcher's `me` has no `resources` online (docs/design/spectator.md) and buys nothing, so it is checked first.
+  const canBuy = !spectator && (!fortuneBlocked || (["path", "outpost", "stronghold"] as const).some((k) => me[`${k}sLeft`] > 0 && affords(me, k)));
   const endPrimary = !canBuy && buildMode === "none";
 
   const endRow = (
