@@ -4,26 +4,12 @@
 import { useEffect, useRef } from "react";
 import { MessageSquare, Landmark, AtSign, Handshake } from "lucide-react";
 import { EMOTES } from "@/components/game/emotes";
-import type { DevKind, PlayerState } from "@/lib/game/types";
+import type { PlayerState } from "@/lib/game/types";
+import { fortuneBreakdown } from "@/lib/game/fortunes";
 import { cards, hiddenCount, publicVP } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
 import type { Seat } from "@/lib/net/table";
 import { cn } from "@/lib/utils";
-
-export const FORTUNE_NAMES: [DevKind, string][] = [
-  ["knight", "knight"],
-  ["road", "path"],
-  ["plenty", "plenty"],
-  ["monopoly", "monopoly"],
-  ["vp", "points"],
-];
-
-// Your own fortunes by kind, "knight ×1 · points ×2 (1 new)"; "" while you hold none.
-export function fortuneBreakdown(p: PlayerState) {
-  return FORTUNE_NAMES.filter(([k]) => p.hidden[k] > 0)
-    .map(([k, label]) => `${label} ×${p.hidden[k]}${p.boughtThisTurn[k] > 0 ? ` (${p.boughtThisTurn[k]} new)` : ""}`)
-    .join(" · ");
-}
 
 // The seat's socket dropped and the table is holding it (docs/design/spectator.md "away").
 export function seatAway(seats: Seat[], p: PlayerState) {
