@@ -188,7 +188,7 @@ export function Hud() {
 
   return (
     <>
-      <PlaceChip column={column} />
+      {column ? null : <PlaceChip />}
       {/* #442: one control up top. The turn number, watcher count, How to play, sound and Leave live in the menu, whose open
           sheet rises over the z-20 chat dock (it reaches the header on a sideways phone). A watcher's badge stays out here,
           a chip and not a button, so a watcher always sees why it has no controls (docs/design/spectator.md). */}
@@ -236,7 +236,8 @@ export function Hud() {
               data-testid="banner"
               className={cn(
                 "pointer-events-none absolute inset-x-0 animate-[turn-fade_200ms_ease-out] rounded-[16px] border border-accent/40 bg-surface px-3 py-2 text-center text-sm font-medium text-zinc-900",
-                column ? "top-0" : "bottom-full mb-2",
+                // #422: beside the column, over the top of the hole, as it floats over the board above the stack elsewhere.
+                column ? "left-full top-0 ml-3 w-max max-w-[calc(100vw-23rem)]" : "bottom-full mb-2",
               )}
             >
               {banner}
@@ -253,6 +254,9 @@ export function Hud() {
                 : portrait ? "max-h-[calc(100dvh-16rem)]" : "max-h-[calc(100dvh-13rem)]",
             )}
           >
+            {/* #422: in the column the Place chip is the first row, so it never covers the hand or the turn banner. Not
+                pointer-events-none: a porous child would make the stack's chrome only its parts, and the column no rail. */}
+            {column ? <PlaceChip column /> : null}
             {phone && portrait && !hintDismissed ? (
               <p
                 data-testid="landscape-hint"
@@ -433,7 +437,7 @@ function TakeFromBar() {
 }
 
 // Coarse pointers pick a mark, then confirm here (docs/design/mobile-camera-touch.md). Enter confirms, Esc cancels.
-function PlaceChip({ column }: { column: boolean }) {
+function PlaceChip({ column }: { column?: boolean }) {
   const pending = useGame((s) => s.pendingPlace);
   const confirmPlace = useGame((s) => s.confirmPlace);
   const setPendingPlace = useGame((s) => s.setPendingPlace);
@@ -448,9 +452,14 @@ function PlaceChip({ column }: { column: boolean }) {
   }, [pending, confirmPlace, setPendingPlace]);
   if (!pending) return null;
   return (
-    // #422: beside the island on a sideways phone it would cover the board, so it sits over the HUD column instead.
     <div
-      className={`pointer-events-none absolute inset-x-0 bottom-[max(11rem,calc(env(safe-area-inset-bottom)+10.5rem))] z-20 flex items-center gap-3 px-safe ${column ? "" : "justify-end"}`}
+      // A column scrolled down to a fortune brings the chip back into view.
+      ref={column ? (el) => el?.scrollIntoView({ block: "nearest" }) : undefined}
+      className={
+        column
+          ? "flex shrink-0 items-center gap-3"
+          : "pointer-events-none absolute inset-x-0 bottom-[max(11rem,calc(env(safe-area-inset-bottom)+10.5rem))] z-20 flex items-center justify-end gap-3 px-safe"
+      }
     >
       <button type="button" className="pointer-events-auto h-11 px-2 text-sm text-fg underline" onClick={() => setPendingPlace(null)}>
         Cancel

@@ -16,7 +16,8 @@
 //   (no state change) each refit the island clear of the rail they make, and closing or blurring refits it back;
 // - #422: on a sideways phone (844x390 and 667x375, touch) in the main phase with the hand shown, the HUD is a left column
 //   and the island beside it is larger than on main before #422 (a 101x85 px island, 8581 and 8569 px²), at least 60 % as
-//   wide as the hole is tall, every corner clear of the HUD, and every two adjacent corners at least 24 px apart (the touch slop).
+//   wide as the hole is tall, every corner clear of the HUD, and every two adjacent corners at least 24 px apart (the touch slop);
+//   with Path armed and an edge picked by touch, the Place chip is in view and covers neither the hand nor the turn banner.
 // Zero console errors. Saves test-results/board-look-{title,play}-<size>.png. Port from VITE_PORT, default 8112.
 import { existsSync, mkdirSync } from "node:fs";
 import { chromium } from "playwright";
@@ -529,6 +530,32 @@ try {
     check(`${tag}: the island is at least 60 % as wide as the hole is tall, every corner clear of the HUD`, land.widthOverHoleH >= 0.6 && land.covered.length === 0, { widthOverHoleH: land.widthOverHoleH, holeH: land.holeH, covered: land.covered.slice(0, 6) });
     check(`${tag}: adjacent corners at least 24 px apart`, land.apart >= 24, { apart: land.apart });
     await page.screenshot({ path: `test-results/board-look-play-${w}x${h}.png` });
+    // A main-phase build by touch: Path armed, an edge picked, the column scrolled to its end first. Place and Cancel are
+    // the column's first row, in view, and cover neither the hand nor the turn banner.
+    await page.evaluate(() => {
+      const g = window.__emberisle.getState();
+      g.setBuildMode("path");
+      const sc = document.querySelector('[data-testid="turn-banner"]').parentElement;
+      sc.scrollTop = sc.scrollHeight;
+      g.setPendingPlace({ kind: "edge", id: g.highlights().edges[0] });
+    });
+    await page.getByTestId("place-chip").waitFor({ timeout: STEP_MS });
+    const chip = await page.evaluate(() => {
+      const box = (el) => {
+        const r = el.getBoundingClientRect();
+        return { l: Math.round(r.left), t: Math.round(r.top), r: Math.round(r.right), b: Math.round(r.bottom) };
+      };
+      const meets = (a, b) => a.l < b.r && b.l < a.r && a.t < b.b && b.t < a.b;
+      const place = document.querySelector('[data-testid="place-chip"]');
+      const row = box(place.parentElement);
+      const hand = box(document.querySelector('[data-testid="hand-dock"]'));
+      const turn = box(document.querySelector('[data-testid="turn-banner"]'));
+      const sc = box(document.querySelector('[data-testid="turn-banner"]').parentElement);
+      const p = box(place);
+      const onTop = place.contains(document.elementFromPoint((p.l + p.r) / 2, (p.t + p.b) / 2));
+      return { armed: window.__emberisle.getState().buildMode, row, hand, turn, onTop, inView: p.t >= sc.t && p.b <= sc.b, overHand: meets(row, hand), overTurn: meets(row, turn) };
+    });
+    check(`${tag}: an armed Path's Place chip is the column's first row, in view, clear of the hand and the turn banner`, chip.armed === "path" && chip.onTop && chip.inView && !chip.overHand && !chip.overTurn, chip);
     await page.context().close();
   }
   check("no console errors", errors.length === 0, errors);

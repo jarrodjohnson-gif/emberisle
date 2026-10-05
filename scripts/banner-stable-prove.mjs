@@ -1,6 +1,8 @@
 // #459: the turn banner must not move when the status line (data-testid="banner") appears or clears.
-// Records the turn banner's bounding box with the line set, cleared and set again, at 1280x720 and 390x844 (touch), with
-// and without prefers-reduced-motion; every edge stays within 1 px. Zero console errors. Run: npm run banner-stable-prove
+// Records the turn banner's bounding box with the line set, cleared and set again, at 1280x720, 390x844, 844x390 and
+// 667x375 (touch; the last two put the HUD in a left column, #422), with and without prefers-reduced-motion; every edge
+// stays within 1 px, and the status line never overlaps the turn banner or the hand. Zero console errors.
+// Run: npm run banner-stable-prove
 import { existsSync } from "node:fs";
 import { chromium } from "playwright";
 import { createServer } from "vite";
@@ -20,7 +22,12 @@ const check = (ok, what, data) => {
 };
 let code = 0;
 try {
-  for (const viewport of [{ width: 1280, height: 720 }, { width: 390, height: 844, touch: true }]) {
+  for (const viewport of [
+    { width: 1280, height: 720 },
+    { width: 390, height: 844, touch: true },
+    { width: 844, height: 390, touch: true },
+    { width: 667, height: 375, touch: true },
+  ]) {
     for (const reducedMotion of ["no-preference", "reduce"]) {
       const tag = `${viewport.width}x${viewport.height} ${reducedMotion === "reduce" ? "reduced motion" : "motion"}`;
       const page = await browser.newPage({ viewport, reducedMotion, hasTouch: !!viewport.touch, isMobile: !!viewport.touch });
@@ -36,6 +43,7 @@ try {
         st.phase = "main";
         st.current = st.players[0].id;
         st.dice = [3, 4];
+        st.players[0].resources = { timber: 2, clay: 1, wool: 1, grain: 1, ore: 0 };
         st.seq += 1;
         g.setState({ state: st, banner: null, buildMode: "none", pendingSteal: null, error: null });
       });
@@ -48,7 +56,10 @@ try {
         await page.waitForTimeout(300);
         return page.evaluate(() => {
           const r = document.querySelector('[data-testid="turn-banner"]').getBoundingClientRect();
-          return { x: r.x, y: r.y, w: r.width, h: r.height };
+          const pill = document.querySelector('[data-testid="banner"]')?.getBoundingClientRect();
+          const hand = document.querySelector('[data-testid="hand-dock"]')?.getBoundingClientRect();
+          const meets = (a, b) => !!a && !!b && a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+          return { x: r.x, y: r.y, w: r.width, h: r.height, over: meets(pill, r) || meets(pill, hand) };
         });
       };
       const cleared = await setBanner(null);
@@ -57,6 +68,7 @@ try {
       const same = (a, b) => ["x", "y", "w", "h"].every((k) => Math.abs(a[k] - b[k]) <= 1);
       check(same(cleared, shown), `${tag}: turn banner box unchanged when the status line appears`, { cleared, shown });
       check(same(shown, clearedAgain), `${tag}: turn banner box unchanged when the status line clears`, { shown, clearedAgain });
+      check(!shown.over, `${tag}: the status line covers neither the turn banner nor the hand`, shown);
       await page.close();
     }
   }
