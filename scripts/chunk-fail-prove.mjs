@@ -11,7 +11,7 @@
 // seat into the finished table, where the win screen loads from the fresh chunk.
 // Run npm run build first.
 import { spawn } from "node:child_process";
-import { existsSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -29,15 +29,20 @@ if (!existsSync(`${DIST}index.html`)) {
 
 const ROOMS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-rooms-"));
 process.on("exit", () => rmSync(ROOMS_DIR, { recursive: true, force: true }));
-// A finished table the host restores on boot (host.mjs load(); the file is what save() writes, shape 2), for case 9: a
-// saved seat at it rejoins straight into the game over. The host drops the file if its shape has moved on.
+// A finished table the host restores on boot (host.mjs load(); the file is what save() writes), for case 9: a saved seat at
+// it rejoins straight into the game over. The shape stamp is read off host.mjs (importing it would start a host).
 const FINISHED = { code: "WNR7", secret: "f".repeat(32) };
 {
+  const shape = Number(/^const ROOM_SHAPE = (\d+);/m.exec(readFileSync(new URL("../server/host.mjs", import.meta.url), "utf8"))?.[1]);
+  if (!shape) {
+    console.log("FAIL could not read ROOM_SHAPE from server/host.mjs");
+    process.exit(1);
+  }
   const game = createGame({ humans: ["Elm", "Sage", "Rook"].map((name) => ({ name })), bots: 0 });
   game.phase = "over";
   game.winner = game.players[1].id;
   const seats = game.players.map((pl, n) => ({ id: `s${n}`, name: pl.name, color: pl.color, ready: true, pid: pl.id, secret: n === 0 ? FINISHED.secret : String(n).repeat(32) }));
-  writeFileSync(path.join(ROOMS_DIR, `${FINISHED.code}.json`), JSON.stringify({ code: FINISHED.code, host: "s0", next: 3, chat: [], chatSeq: 0, game, seats, shape: 2, savedAt: Date.now() }));
+  writeFileSync(path.join(ROOMS_DIR, `${FINISHED.code}.json`), JSON.stringify({ code: FINISHED.code, host: "s0", next: 3, chat: [], chatSeq: 0, game, seats, shape, savedAt: Date.now() }));
 }
 const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL("../server/", import.meta.url),
@@ -305,17 +310,26 @@ try {
         header: Boolean(document.querySelector("header")),
       };
     });
+  // A practice table with the sheets chunk refused, at rest: the table's own asks (the mount, the idle prefetch within
+  // preloadOnIdle's 2 s) have been refused and nothing has asked for longer than that, so the next ask is game over's.
+  const settled = async (t) => {
+    const atPlay = t.blocked;
+    await t.page.getByRole("button", { name: "Play", exact: true }).click();
+    await t.page.waitForFunction(() => window.__emberisle?.getState().screen === "play", null, { timeout: 15_000 });
+    await t.page.waitForSelector("header", { timeout: 15_000 });
+    await until(() => t.blocked > atPlay, "the table's own sheets request being refused");
+    let quiet = { n: t.blocked, since: Date.now() };
+    await until(() => {
+      if (t.blocked !== quiet.n) quiet = { n: t.blocked, since: Date.now() };
+      return Date.now() - quiet.since > 2500;
+    }, "the table's sheets requests going quiet");
+  };
   // Practice, 1280x720: no seat to rejoin, so the way out is the menu.
   const h = await tab("Oak", "sheets");
   await title(h.page);
   await until(() => h.loads >= 2, "the title reloading once on the failed sheets prefetch");
   await title(h.page);
-  await h.page.getByRole("button", { name: "Play", exact: true }).click();
-  await h.page.waitForFunction(() => window.__emberisle?.getState().screen === "play", null, { timeout: 15_000 });
-  await h.page.waitForSelector("header", { timeout: 15_000 });
-  // The table mounts the sheets and prefetches them on idle, both refused; the next ask has to come from game over.
-  const atHeader = h.blocked;
-  await until(() => h.blocked > atHeader, "the table's own sheets request being refused");
+  await settled(h);
   const hBefore = h.blocked;
   const hName = await over(h.page);
   const hButton = h.page.getByTestId("win-failed");
@@ -328,6 +342,29 @@ try {
   check("game over (practice): Back to menu reaches the title without a reload", h.loads === 2 && (await h.page.evaluate(() => window.__emberisle.getState().screen)) === "title", { loads: h.loads });
   check("game over (practice): no other page errors", h.errors.length === 0, h.errors);
   await h.page.close();
+
+  // The chunk failed mid-game but the route has recovered by the win: the retry at game over succeeds, the win screen
+  // opens with its focus, and the way-out button never mounts, not even for a frame.
+  const j = await tab("Fir", "sheets");
+  await title(j.page);
+  await until(() => j.loads >= 2, "the title reloading once on the failed sheets prefetch");
+  await title(j.page);
+  await settled(j);
+  await j.page.evaluate(() => {
+    window.__seen = [];
+    new MutationObserver((muts) => {
+      for (const m of muts) for (const n of m.addedNodes) if (n.nodeType === 1 && (n.matches?.('[data-testid="win-failed"]') || n.querySelector?.('[data-testid="win-failed"]'))) window.__seen.push("win-failed");
+    }).observe(document.body, { childList: true, subtree: true });
+    document.addEventListener("focusin", (e) => window.__seen.push(`focus:${e.target.getAttribute?.("data-testid") ?? e.target.tagName}`), true);
+  });
+  j.broken = false;
+  const jBefore = j.blocked;
+  const jName = await over(j.page);
+  await j.page.getByTestId("win-screen").waitFor({ timeout: 15_000 });
+  const jSeen = await j.page.evaluate(() => ({ seen: window.__seen, headline: document.querySelector('[data-testid="win-headline"]')?.textContent, focusInside: Boolean(document.querySelector('[data-testid="win-screen"]')?.contains(document.activeElement)) }));
+  check("game over (retry succeeds): the win screen opens with focus and the way-out button never mounts", jSeen.headline === `${jName} wins` && jSeen.focusInside && !jSeen.seen.includes("win-failed") && !jSeen.seen.some((x) => /win-failed/.test(x)) && j.blocked === jBefore, { ...jSeen, blocked: j.blocked, before: jBefore });
+  check("game over (retry succeeds): no other page errors", j.errors.length === 0, j.errors);
+  await j.page.close();
 
   // Online, 390x844: a saved seat at the finished table rejoins into the game over with the chunk gone. The session has
   // already had its one title reload for this URL, so the title stays put while the rejoin dials.
