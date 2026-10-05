@@ -5,7 +5,7 @@ import { HowTo, Lobby, online, sheets } from "@/components/game/chunks";
 import { Hud } from "@/components/game/Hud";
 import { PlaceList } from "@/components/game/PlaceList";
 import { useGame } from "@/lib/game/store";
-import { LazyBoundary, preloadOnIdle, reloadOnStaleChunk } from "@/lib/lazy";
+import { JOIN_CODE, LazyBoundary, preloadOnIdle, reloadOnStaleChunk } from "@/lib/lazy";
 import { play, setMuted, useMuted } from "@/lib/sound";
 import { useTurnTitle } from "@/lib/turn-title";
 import { PLAYER_COLORS, PLAYER_NAMES } from "@/lib/game/types";
@@ -41,6 +41,11 @@ export function EmberisleApp() {
     return reloadOnStaleChunk(() => useGame.getState().screen === "title");
   }, []);
 
+  // #492: a link whose chunk never loaded at the title still leaves the URL once the title is left.
+  useEffect(() => {
+    if (screen !== "title") stripLink();
+  }, [screen]);
+
   useEffect(() => {
     if (screen !== "play") return;
     const t = window.setTimeout(() => runBots(), 700);
@@ -65,7 +70,15 @@ export function EmberisleApp() {
   );
 }
 
-const PEEK_CODE = /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{4}$/;
+const PEEK_CODE = JOIN_CODE;
+// A join link is read on the first Title of a page load only: later visits to the title (goTitle) start empty.
+let linkRead = false;
+function stripLink() {
+  const url = new URL(location.href);
+  url.searchParams.delete("code");
+  url.searchParams.delete("watch");
+  history.replaceState(history.state, "", `${url.pathname}${url.search}${url.hash}`);
+}
 
 function Title() {
   const name = useGame((s) => s.name);
@@ -103,21 +116,22 @@ function Title() {
     };
   }, [join, peekTable]);
 
-  // #304: a join link (?code=K7QP) fills the field so the peek above runs; nothing is sent until Join is pressed.
-  // The code then leaves the URL so a reload does not refill a dead one. A watch link (?watch=K7QP) does the same and
-  // makes Watch the primary button, so a reload never re-watches either.
+  // #304: a join link (?code=K7QP) fills the field so the peek above runs; nothing is sent until Join is pressed. A watch
+  // link (?watch=K7QP) does the same and makes Watch the primary button. #492: the link stays in the URL until the online
+  // chunk has loaded, so the stale-chunk reload refills the field; then it leaves the URL so a later reload does not refill
+  // a dead code. Only the first Title of a page load reads it.
   useEffect(() => {
+    if (linkRead) return;
+    linkRead = true;
     const url = new URL(location.href);
     const code = url.searchParams.get("code")?.toUpperCase();
     const watch = url.searchParams.get("watch")?.toUpperCase();
     if (code === undefined && watch === undefined) return;
-    url.searchParams.delete("code");
-    url.searchParams.delete("watch");
-    history.replaceState(history.state, "", `${url.pathname}${url.search}${url.hash}`);
+    const strip = stripLink;
     const fill = code ?? watch!;
-    if (!PEEK_CODE.test(fill)) return;
+    if (!PEEK_CODE.test(fill)) return strip();
     setJoin(fill);
-    online.prefetch();
+    void online.prefetch().then((ok) => ok && strip());
     if (code === undefined) setWatchLink(true);
   }, []);
 
@@ -268,12 +282,19 @@ function Title() {
       {/* Beside the card, not inside it: the card is absolute (and scrolls on a phone), so a dialog inside it is
           clipped to the card's box and its Close can sit off-screen. */}
       {howTo ? (
-        <LazyBoundary failed={null}>
+        <LazyBoundary failed={<HowToFailed />}>
           <HowTo onClose={() => setHowTo(false)} />
         </LazyBoundary>
       ) : null}
     </>
   );
+}
+
+// The sheets chunk did not load: drop the open flag so the next press mounts How to play again and retries (#492).
+function HowToFailed() {
+  const setHowTo = useGame((s) => s.setHowTo);
+  useEffect(() => setHowTo(false), [setHowTo]);
+  return null;
 }
 
 // The online chunk did not load, so there is no lobby to show: say so where the lobby card goes, with the one way out.
