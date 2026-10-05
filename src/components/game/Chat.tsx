@@ -3,13 +3,18 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { MessageSquare, Minus, Smile } from "lucide-react";
 import { CopyFallback, useCopy } from "@/components/game/CopyText";
 import { EMOTES } from "@/components/game/emotes";
+import { QuickReactions } from "@/components/game/Reactions";
 import { useGame, type GameLogLine } from "@/lib/game/store";
 import type { ChatLine } from "@/lib/net/table";
 import { cn } from "@/lib/utils";
 import { useViewport } from "@/lib/viewport";
 
+export { ReactionFloats } from "@/components/game/Reactions";
+
 const PRESETS = ["gg", "nice roll", "your turn", "one sec", "ty"];
 const INPUT_ID = "chat-input";
+// The Open chat button sets this before the dock opens, and the dock focuses the input once it has (the two are separate components).
+const focusNext = { current: false };
 
 // Text renders only as React children. The mention is found with split() on the literal "@name", never a regex.
 function Mention({ text, name }: { text: string; name: string }) {
@@ -216,7 +221,7 @@ export function ChatBox({ rows, game, onEscape, className }: { rows: number; gam
   );
 }
 
-function Preview({ above }: { above?: boolean }) {
+function Preview({ className }: { className?: string }) {
   const chat = useGame((s) => s.chat);
   const seen = useRef<Map<number, number>>(new Map(chat.map((l) => [l.id, 0])));
   const [, tick] = useState(0);
@@ -235,7 +240,7 @@ function Preview({ above }: { above?: boolean }) {
   }).slice(-3);
 
   return (
-    <ul className={cn("pointer-events-none flex w-72 flex-col items-end gap-1", above ? "mb-1" : "mt-1")} data-testid="chat-preview">
+    <ul className={cn("pointer-events-none flex w-72 flex-col items-end gap-1", className)} data-testid="chat-preview">
       {live.map((l) => (
         <li
           key={l.id}
@@ -253,13 +258,49 @@ function Preview({ above }: { above?: boolean }) {
   );
 }
 
-export function ChatDock() {
+// The two table buttons, in the top row beside the Table menu (Hud's header). They sit in that row's flow, so they keep the same
+// 44 px place on every phone and turn, and the seat strip beside them in a sideways phone gives way to them.
+export function ChatControls() {
   const mode = useGame((s) => s.mode);
   const open = useGame((s) => s.chatOpen);
   const unread = useGame((s) => s.unread);
   const setOpen = useGame((s) => s.setChatOpen);
+  if (mode !== "online") return null;
+  const openButton = (
+    <button
+      type="button"
+      aria-label={unread ? `Open chat, ${unread} unread` : "Open chat"}
+      onClick={() => {
+        focusNext.current = true;
+        setOpen(true);
+      }}
+      className="pointer-events-auto relative flex size-11 cursor-pointer items-center justify-center rounded-control bg-glass text-zinc-700 backdrop-blur-md hover:text-zinc-900"
+    >
+      <MessageSquare className="size-5" />
+      {unread > 0 ? (
+        <span
+          data-testid="chat-unread"
+          className="absolute -right-1 -top-1 flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[11px] font-medium text-white"
+        >
+          {unread}
+        </span>
+      ) : null}
+    </button>
+  );
+
+  return (
+    <>
+      {open ? null : openButton}
+      <QuickReactions />
+    </>
+  );
+}
+
+export function ChatDock() {
+  const mode = useGame((s) => s.mode);
+  const open = useGame((s) => s.chatOpen);
+  const setOpen = useGame((s) => s.setChatOpen);
   const { phone, portrait } = useViewport();
-  const focusNext = useRef(false);
 
   // A remembered open dock must not cover the hand bar when Play starts on a phone. The stored value stays for desktop.
   useEffect(() => {
@@ -299,7 +340,6 @@ export function ChatDock() {
       <Minus className="size-4" />
     </button>
   );
-
   // On a phone the open dock is a bottom sheet. The backdrop catches the tap that closes it, so that tap never reaches the board.
   if (phone && open) {
     return (
@@ -308,7 +348,7 @@ export function ChatDock() {
         <section
           aria-label="Table chat"
           data-testid="chat-sheet"
-          className="fixed inset-x-0 bottom-0 z-30 flex flex-col gap-2 rounded-t-chip bg-glass px-3 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur-md"
+          className="fixed inset-x-0 bottom-0 z-30 flex flex-col gap-2 rounded-t-chip bg-glass px-safe pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur-md"
           style={{ height: "min(48vh, 320px)" }}
         >
           <div data-testid="chat-sheet-header" className="flex shrink-0 items-center justify-between">
@@ -321,88 +361,30 @@ export function ChatDock() {
     );
   }
 
-  return (
-    <div
-      className={cn(
-        "absolute right-3 z-20 flex items-end",
-        phone ? cn("flex-col-reverse", portrait ? "bottom-[196px]" : "bottom-[184px]") : "top-16 flex-col",
-      )}
-    >
-      {open ? (
-        <section
-          aria-label="Table chat"
-          className="flex w-72 flex-col gap-2 rounded-chip bg-glass p-3 backdrop-blur-md"
-          style={{ maxHeight: "min(360px, 50vh)" }}
-        >
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-medium">Table chat</h2>
-            {minimize}
-          </div>
-          <ChatBox rows={6} game onEscape={() => setOpen(false)} />
-        </section>
-      ) : (
-        <>
-          <button
-            type="button"
-            aria-label={unread ? `Open chat, ${unread} unread` : "Open chat"}
-            onClick={() => {
-              focusNext.current = true;
-              setOpen(true);
-            }}
-            className={cn(
-              "relative flex size-11 cursor-pointer items-center justify-center rounded-control bg-glass text-zinc-700 backdrop-blur-md hover:text-zinc-900",
-            )}
-          >
-            <MessageSquare className="size-5" />
-            {unread > 0 ? (
-              <span
-                data-testid="chat-unread"
-                className="absolute -right-1 -top-1 flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[11px] font-medium text-white"
-              >
-                {unread}
-              </span>
-            ) : null}
-          </button>
-          <Preview above={phone} />
-        </>
-      )}
-    </div>
-  );
-}
+  // Closed, the controls live in the top row (ChatControls); only the newest lines show here. Phone portrait puts them under the
+  // seat strip, so they cover neither the strip nor the top row. Open, the panel sits at the top right (desktop) or above the hand
+  // bar (sideways phone). Pointer events pass through the lines to the board.
+  if (!open) {
+    return (
+      <Preview
+        className={cn("absolute right-safe z-20", phone && portrait ? "top-[calc(env(safe-area-inset-top)+7.25rem)]" : "top-16")}
+      />
+    );
+  }
 
-// Floats over its parent (which must be `relative`): the live reactions from `anchor`, a player id or a seat id.
-export function ReactionFloats({ by, id }: { by: "player" | "seat"; id: string }) {
-  const reactions = useGame((s) => s.reactions);
-  const seats = useGame((s) => s.seats);
-  const players = useGame((s) => s.state?.players);
   return (
-    <>
-      {reactions
-        .filter((r) => (by === "player" ? r.player : r.seat) === id)
-        .map((r) => {
-          const url = EMOTES[r.emote];
-          if (!url) return null;
-          const to = r.to
-            ? (seats.find((s) => s.id === r.to) ?? players?.find((p) => p.id === r.to))
-            : undefined;
-          return (
-            <div
-              key={`${r.at}-${r.seat}-${r.emote}`}
-              data-testid="reaction"
-              data-emote={r.emote}
-              className="pointer-events-none absolute inset-x-0 top-0 z-30 flex justify-center"
-            >
-              <div className="flex flex-col items-center" style={{ animation: "emote-float 2s linear forwards" }}>
-                <img src={url} alt="" className="size-12 object-contain" />
-                {to ? (
-                  <span className="rounded-chip bg-glass px-1 text-[10px] font-medium text-zinc-700 backdrop-blur-md">
-                    → {to.name}
-                  </span>
-                ) : null}
-              </div>
-            </div>
-          );
-        })}
-    </>
+    <div className={cn("absolute right-safe z-20", phone ? "bottom-[184px]" : "top-16")}>
+      <section
+        aria-label="Table chat"
+        className="flex w-72 flex-col gap-2 rounded-chip bg-glass p-3 backdrop-blur-md"
+        style={{ maxHeight: "min(360px, 50vh)" }}
+      >
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-medium">Table chat</h2>
+          {minimize}
+        </div>
+        <ChatBox rows={6} game onEscape={() => setOpen(false)} />
+      </section>
+    </div>
   );
 }

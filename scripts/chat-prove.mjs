@@ -4,6 +4,9 @@
 // the lobby status line as seats join and ready up (#418), Start and Leave inside the 1280x720 lobby card (#417),
 // #460: computed glass surfaces, 12 px controls, one primary and >= 4.5:1 text contrast over black, on desktop and phone,
 // including emotes, previews, copy fallback and read-only chat. Zero console errors.
+// #467: board reactions, all six emoji, image delivery, keyboard/cooldown, coalescing, reduced motion and host rejection.
+// #477: Quick reactions and Open chat sit in the top row beside the Table menu: at 390x844, 360x640 and 844x390 with notch insets, on
+// an own Roll turn and another seat's turn, they are whole, in the safe area, clear of the menu and status, 12 px from every board target.
 // Design: docs/design/chat.md "Test plan". Screenshots go to test-results/.
 import { spawn } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
@@ -15,6 +18,7 @@ import { createServer } from "vite";
 
 const PORT = Number(process.env.VITE_PORT) || 8094;
 const SHOTS = fileURLToPath(new URL("../test-results/", import.meta.url));
+const HUD_STACK = ".pointer-events-none.absolute.bottom-0.inset-x-0.z-10 > .relative > .overflow-y-auto";
 mkdirSync(SHOTS, { recursive: true });
 
 // Rooms go to a temp folder, dropped on exit, so the real host never restores this proof's tables (#207).
@@ -189,6 +193,151 @@ async function polish(t, state, selector = 'section[aria-label="Table chat"]', m
   console.log(`${Object.values(result.bad).some((failures) => failures.length) ? "FAIL" : "ok"} chat polish ${result.viewport} ${state}: ${result.controls} controls, ${result.texts} texts, minimum ${result.min}:1, glass over black rgb(${result.glass})`);
 }
 
+async function quickReactions(a, b, c, phone) {
+  const choices = [["😠", "angry"], ["😊", "happy"], ["👏", "clap"], ["😂", "laugh"], ["🔥", "fire"], ["🐑", "sheep"]];
+  // Preserve incoming events beyond their two-second UI lifetime, including any forbidden host broadcast.
+  await b.page.evaluate(() => {
+    window.__reactionProofReceived = [];
+    window.__reactionProofUnsubscribe = window.__emberisle.subscribe((next, previous) => {
+      window.__reactionProofReceived.push(...next.reactions.filter((r) => !previous.reactions.includes(r)));
+    });
+  });
+  const identity = (t) => store(t, () => ({ seat: window.__emberisle.getState().seatId, player: window.__emberisle.getState().localId }));
+  const receivedCount = () => b.page.evaluate(() => window.__reactionProofReceived.length);
+  const delivered = async (t, emote, before) => {
+    const { seat } = await identity(t);
+    await b.page.waitForFunction(({ seat, emote, before }) => window.__reactionProofReceived.slice(before).some((r) => r.seat === seat && r.emote === emote), { seat, emote, before });
+    check(true, `quick reactions: ${emote} from ${t.name} reaches another seat through the host`);
+  };
+  const openPicker = async (t) => {
+    await t.page.getByRole("button", { name: "Quick reactions", exact: true }).click();
+    await t.page.getByRole("group", { name: "Choose a reaction" }).waitFor();
+    await t.page.waitForFunction(() => !document.querySelector('#quick-reaction-picker button')?.disabled);
+  };
+  await a.page.evaluate(() => window.__emberisle.getState().setBuildMode("path"));
+  await openPicker(a);
+  await a.page.keyboard.press("Escape");
+  await a.page.getByRole("group", { name: "Choose a reaction" }).waitFor({ state: "detached" });
+  check(await store(a, () => window.__emberisle.getState().buildMode === "path"), "quick reactions: first Escape closes the picker and keeps Path armed");
+  await a.page.keyboard.press("Escape");
+  check(await store(a, () => window.__emberisle.getState().buildMode === "none"), "quick reactions: second Escape disarms Path");
+  for (const t of [a, phone]) {
+    await t.page.getByRole("button", { name: "Quick reactions", exact: true }).waitFor();
+    check(await store(t, () => !window.__emberisle.getState().chatOpen), `quick reactions: ${t.name} starts with chat closed`);
+    if (t === phone) {
+      check(await t.page.getByRole("button", { name: "Quick reactions", exact: true }).evaluate((button) => {
+        const hint = document.querySelector('[data-testid="landscape-hint"]');
+        if (!hint) return false;
+        const a = button.getBoundingClientRect();
+        const b = hint.getBoundingClientRect();
+        return a.right <= b.left || a.left >= b.right || a.bottom <= b.top || a.top >= b.bottom;
+      }), "quick reactions: phone trigger leaves the rotate hint unobscured");
+    }
+    await openPicker(t);
+    for (const [, label] of choices) await t.page.getByRole("button", { name: `React ${label}`, exact: true }).waitFor();
+    await polish(t, "quick picker", '#quick-reaction-picker', 7);
+    const fits = await t.page.getByTestId("quick-reactions").evaluate((root) => [...root.querySelectorAll("button")].every((button) => {
+      const r = button.getBoundingClientRect();
+      return r.width >= 44 && r.height >= 44 && r.left >= 0 && r.top >= 0 && r.right <= innerWidth && r.bottom <= innerHeight;
+    }));
+    check(fits, `quick reactions: ${t.name} picker and 44 px controls fit the viewport`);
+    await shot(t, t === phone ? "reactions-phone.jpg" : "reactions-desktop.jpg");
+    await t.page.keyboard.press("Escape");
+  }
+  for (const [index, [emoji]] of choices.entries()) {
+    await openPicker(a);
+    const before = await receivedCount();
+    await a.page.keyboard.press(String(index + 1));
+    await delivered(a, emoji, before);
+    check(await a.page.getByRole("group", { name: "Choose a reaction" }).count() === 0 && await store(a, () => !window.__emberisle.getState().chatOpen), `quick reactions: key ${index + 1} sends and closes the picker without opening chat`);
+    if (index === 0) {
+      await a.page.getByRole("button", { name: "Quick reactions", exact: true }).click();
+      check(await a.page.getByRole("button", { name: "React angry", exact: true }).isDisabled(), "quick reactions: choices dim and disable during cooldown");
+      await a.page.keyboard.press("Escape");
+    }
+  }
+  await openPicker(a);
+  let before = await receivedCount();
+  await a.page.getByRole("button", { name: "React ben-10", exact: true }).click();
+  await delivered(a, "ben-10", before);
+  await b.page.locator('[data-testid="reaction"][data-emote="ben-10"] img').waitFor();
+  check(true, "quick reactions: an asset image also sends from the board");
+
+  await openPicker(phone);
+  before = await receivedCount();
+  await phone.page.getByRole("button", { name: "React sheep", exact: true }).click();
+  await delivered(phone, "🐑", before);
+  check(await store(phone, () => !window.__emberisle.getState().chatOpen), "quick reactions: phone tap sends without opening chat");
+
+  // Use the real chat input: keyboard navigation can focus it while the reaction picker remains open.
+  await a.page.getByRole("button", { name: "Open chat" }).click();
+  await openPicker(a);
+  const input = a.page.getByPlaceholder("Say something…");
+  await input.focus();
+  await input.press("1");
+  check(await input.inputValue() === "1" && await a.page.getByRole("group", { name: "Choose a reaction" }).count() === 1, "quick reactions: typing 1 in chat does not send or close the picker");
+  await input.fill("");
+  await input.press("Escape");
+  await a.page.getByRole("button", { name: "Open chat" }).waitFor();
+  await a.page.getByRole("group", { name: "Choose a reaction" }).waitFor({ state: "detached" });
+  check(await a.page.getByRole("group", { name: "Choose a reaction" }).count() === 0, "quick reactions: Escape from the chat input minimizes chat and closes its picker");
+
+  // This bypasses the picker allowlist. The valid chat marker on the same ordered socket proves the host processed all three bad frames.
+  const invalid = ["not-an-emote", "🙃", "https://example.invalid/reaction.png"];
+  const marker = `reaction-validation-${Date.now()}`;
+  await c.page.evaluate(({ invalid, marker }) => {
+    const s = window.__emberisle.getState();
+    for (const id of invalid) s.net.react(id);
+    s.sendChat(marker);
+  }, { invalid, marker });
+  await b.page.waitForFunction((marker) => window.__emberisle.getState().chat.some((line) => line.text === marker), marker);
+  check(await b.page.evaluate((invalid) => !window.__reactionProofReceived.some((r) => invalid.includes(r.emote)), invalid), "quick reactions: host drops an unknown id, unlisted emoji, and URL");
+
+  const target = (await identity(a)).seat;
+  const sender = await identity(phone);
+  await phone.page.evaluate((target) => {
+    const s = window.__emberisle.getState();
+    s.sendReact("🔥", target);
+    s.sendReact("🔥", target);
+  }, target);
+  for (const [t, anchor] of [[b, `rail-${sender.player}`], [phone, `seat-${sender.player}`]]) {
+    const float = t.page.getByTestId(anchor).getByTestId("reaction");
+    await float.getByTestId("reaction-count").getByText("×2", { exact: true }).waitFor();
+    check(await float.count() === 1, `quick reactions: repeats coalesce at ${t.name}'s sender seat`);
+    const fits = await float.evaluate((wrapper) => {
+      const element = wrapper.firstElementChild;
+      const animation = element.getAnimations()[0];
+      if (!animation) return false;
+      animation.pause();
+      for (const time of [0, 1500, 1999]) {
+        animation.currentTime = time;
+        for (const node of [element, ...element.querySelectorAll("img,span")]) {
+          const r = node.getBoundingClientRect();
+          if (r.left < 7.9 || r.top < 7.9 || r.right > innerWidth - 7.9 || r.bottom > innerHeight - 7.9) return false;
+        }
+      }
+      return true;
+    });
+    check(fits, `quick reactions: ${t.name} float, badge and target fit at every sampled animation frame`);
+  }
+  await phone.page.emulateMedia({ reducedMotion: "reduce" });
+  await phone.page.evaluate(() => window.__emberisle.getState().sendReact("👏"));
+  const reduced = phone.page.getByTestId(`seat-${sender.player}`).locator('[data-testid="reaction"][data-emote="👏"] > div');
+  await reduced.waitFor();
+  const fadeOnly = await reduced.evaluate((element) => {
+    const frames = element.getAnimations()[0]?.effect?.getKeyframes();
+    return frames?.length === 3 && frames.every((f) => !f.transform || f.transform === "none") && frames[0].opacity === "1" && frames[2].opacity === "0";
+  });
+  check(fadeOnly, "quick reactions: reduced motion fades without rising");
+  await phone.page.emulateMedia({ reducedMotion: "no-preference" });
+  for (const t of [a, b, c, phone]) {
+    await t.page.getByRole("button", { name: "Open chat" }).click();
+    await t.page.getByRole("button", { name: "Minimize chat" }).click();
+    await t.page.waitForFunction(() => document.querySelectorAll('[data-testid="reaction"]').length === 0, null, { timeout: 6000 });
+  }
+  await b.page.evaluate(() => window.__reactionProofUnsubscribe());
+}
+
 try {
   const tabs = [await tab("Ember"), await tab("Tide"), await tab("Pine")];
   const [a, b, c] = tabs;
@@ -359,6 +508,10 @@ try {
   for (const t of tabs) await t.page.getByRole("button", { name: "Open chat" }).waitFor();
   check(true, "game: every tab shows the minimized dock, and the lobby lines did not count as unread");
   for (const t of tabs) check((await t.page.getByTestId("chat-unread").count()) === 0, `game: ${t.name} has no unread badge`);
+  await phone.page.getByRole("button", { name: "Open chat" }).waitFor();
+  check((await phone.page.getByTestId("chat-sheet").count()) === 0, "phone: Play starts with the sheet closed although chat was remembered open");
+  check((await phone.page.evaluate(() => localStorage.getItem("emberisle-chat-open"))) === "1", "phone: the remembered open state is left in storage");
+  await quickReactions(a, b, c, phone);
 
   // #232: roll off for first place; whichever seat is up rolls, until setup starts.
   await until(async () => {
@@ -556,13 +709,11 @@ try {
 
   // 5. Phone: the open dock is a bottom sheet, and the tap that closes it does not reach the board.
   await phone.page.getByRole("button", { name: "Open chat" }).waitFor();
-  check((await phone.page.getByTestId("chat-sheet").count()) === 0, "phone: Play starts with the sheet closed although chat was remembered open");
-  check((await phone.page.evaluate(() => localStorage.getItem("emberisle-chat-open"))) === "1", "phone: the remembered open state is left in storage");
   r = await box(phone, '[aria-label^="Open chat"]');
-  check(r.right > r.vw - 20 && r.bottom < r.vh - 150, "phone: the minimized button sits bottom-right above the hand bar");
   await polish(phone, "minimized", '[aria-label^="Open chat"]');
   await phone.page.getByRole("button", { name: "Open chat" }).click();
   await phone.page.getByTestId("chat-sheet").waitFor({ timeout: 5000 });
+  check(await phone.page.getByTestId("chat-sheet").evaluate((el) => el.classList.contains("px-safe")), "phone: the chat sheet uses the shared horizontal safe-area utility");
   r = await box(phone, '[aria-label="Table chat"]');
   const cap = Math.min(0.48 * r.vh, 320);
   check(Math.abs(r.bottom - r.vh) < 1 && r.left === 0 && Math.abs(r.width - r.vw) < 1, `phone: chat is a sheet at the bottom, ${r.width.toFixed(0)} px wide of ${r.vw}`);
@@ -621,6 +772,14 @@ try {
       const s = window.__emberisle.getState();
       return { you: s.localId, current: s.state.current, phase: s.state.phase, seq: s.state.seq, dice: s.state.dice, outpost: s.legal?.outpost ?? [], path: s.legal?.path ?? [] };
     });
+  const tabForTurn = (ownTurn) =>
+    until(async () => {
+      const states = await Promise.all(all.map(seen));
+      const current = states[0].current;
+      if (states.some((state) => state.phase !== "roll" || state.current !== current)) return null;
+      const index = states.findIndex((state) => (state.current === state.you) === ownTurn);
+      return index < 0 ? null : all[index];
+    }, `a consistent ${ownTurn ? "current" : "other"} player's roll view`);
   const byId = {};
   for (const t of all) byId[(await seen(t)).you] = t;
   for (let step = 0; step < 16; step++) {
@@ -637,7 +796,128 @@ try {
   }
   const atRoll = await seen(a);
   check(atRoll.phase === "roll", `game log: setup is done, phase ${atRoll.phase}`);
-  await act(byId[atRoll.current], "dispatch", [{ type: "roll" }]);
+  // #477: Quick reactions and Open chat sit in the top row beside the Table menu, a place that depends on neither the turn nor the
+  // HUD stack. At each phone size, with the notch insets emulated over CDP as hud-safe-area-prove does, on your own Roll turn and
+  // another seat's turn: both buttons are 44 px, whole and inside the safe area, clear of the Table menu, the seat strip and the
+  // status line, at least 12 px from every on-screen vertex, edge and hex, and at the same y on both turns. The board is read
+  // with the camera settled (no glide, no refit due) and the projection unchanged between two reads.
+  const DOCK_SIZES = [
+    { width: 390, height: 844, insets: { top: 47, right: 0, bottom: 34, left: 0 } },
+    { width: 360, height: 640, insets: { top: 24, right: 0, bottom: 24, left: 0 } },
+    { width: 844, height: 390, insets: { top: 0, right: 47, bottom: 21, left: 47 } },
+  ];
+  const SLOP = 12;
+  const dockFailures = [];
+  const dockTop = new Map();
+  const dockSample = (t) =>
+    t.page.evaluate(() => {
+      const i = window.__isle;
+      const st = window.__emberisle.getState().state;
+      if (!i?.lastState || i.lastSeq !== st.seq || i.refitDue || i.glide) return null;
+      const rect = (el) => {
+        if (!el) return null;
+        const r = el.getBoundingClientRect();
+        return { left: r.left, top: r.top, right: r.right, bottom: r.bottom };
+      };
+      const qr = rect(document.querySelector('button[aria-label="Quick reactions"]'));
+      const chat = rect(document.querySelector('button[aria-label^="Open chat"]'));
+      const menu = rect(document.querySelector('button[aria-label="Table menu"]'));
+      if (!qr || !chat || !menu) return null;
+      const status = ["seat-strip", "banner", "turn-banner", "watching-badge"].flatMap((id) => {
+        const r = rect(document.querySelector(`[data-testid="${id}"]`));
+        return r ? [{ id, ...r }] : [];
+      });
+      const probe = document.createElement("div");
+      probe.style.cssText = "position:fixed;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)";
+      document.body.append(probe);
+      const cs = getComputedStyle(probe);
+      const env = [cs.paddingTop, cs.paddingRight, cs.paddingBottom, cs.paddingLeft].map(parseFloat);
+      probe.remove();
+      const targets = [...st.vertices, ...st.edges, ...st.hexes].flatMap(({ id }) => {
+        const p = i.screenOf(id);
+        return p && p.x >= 0 && p.y >= 0 && p.x <= innerWidth && p.y <= innerHeight ? [{ id, x: Math.round(p.x * 10) / 10, y: Math.round(p.y * 10) / 10 }] : [];
+      });
+      return { vw: innerWidth, vh: innerHeight, env, qr, chat, menu, status, targets };
+    });
+  const dockLayout = async (t) => {
+    let last = "";
+    return until(async () => {
+      const m = await dockSample(t);
+      const key = m ? JSON.stringify(m.targets) : "";
+      const stable = m && key === last;
+      last = key;
+      return stable ? m : null;
+    }, "the camera settles with a stable projection", 30_000);
+  };
+  const phoneLayout = async (t, ownTurn, checkBanner = false) => {
+    const state = await seen(t);
+    check(state.phase === "roll" && (state.current === state.you) === ownTurn, `chat dock: ${ownTurn ? "own" : "another seat's"} turn is available for the layout check`);
+    if (await store(t, () => window.__emberisle.getState().chatOpen)) await t.page.getByRole("button", { name: "Minimize chat" }).click();
+    const roll = t.page.getByRole("button", { name: "Roll", exact: true });
+    const turn = ownTurn ? "own Roll turn" : "another seat's turn";
+    const cdp = await t.page.context().newCDPSession(t.page);
+    for (const size of DOCK_SIZES) {
+      const tag = `${size.width}x${size.height}, ${turn}`;
+      await t.page.setViewportSize({ width: size.width, height: size.height });
+      await cdp.send("Emulation.setSafeAreaInsetsOverride", { insets: size.insets });
+      if (ownTurn) await roll.waitFor({ state: "visible" });
+      else if (await roll.count()) dockFailures.push(`${tag}: Roll is showing on another seat's turn`);
+      const m = await dockLayout(t);
+      const want = [size.insets.top, size.insets.right, size.insets.bottom, size.insets.left];
+      const bad = (what) => dockFailures.push(`${tag}: ${what}`);
+      if (m.vw !== size.width || m.vh !== size.height || m.env.some((v, i) => v !== want[i])) bad(`the viewport or inset emulation did not take (${m.vw}x${m.vh}, env ${m.env})`);
+      const safe = { left: size.insets.left, top: size.insets.top, right: size.width - size.insets.right, bottom: size.height - size.insets.bottom };
+      const hit = (a, b) => a.right > b.left && a.left < b.right && a.bottom > b.top && a.top < b.bottom;
+      for (const [name, r] of [["Quick reactions", m.qr], ["Open chat", m.chat]]) {
+        if (r.right - r.left < 44 - 0.5 || r.bottom - r.top < 44 - 0.5) bad(`${name} is ${(r.right - r.left).toFixed(0)}x${(r.bottom - r.top).toFixed(0)}, under 44 px`);
+        if (r.left < safe.left || r.top < safe.top || r.right > safe.right || r.bottom > safe.bottom) bad(`${name} is not fully inside the safe area ${JSON.stringify(r)}`);
+        if (hit(r, m.menu)) bad(`${name} overlaps the Table menu ${JSON.stringify(r)} vs ${JSON.stringify(m.menu)}`);
+        for (const sx of m.status) if (hit(r, sx)) bad(`${name} overlaps ${sx.id} ${JSON.stringify(r)} vs ${JSON.stringify(sx)}`);
+        const near = m.targets.filter((p) => p.x > r.left - SLOP && p.x < r.right + SLOP && p.y > r.top - SLOP && p.y < r.bottom + SLOP);
+        if (near.length) bad(`${near.length} board targets within ${SLOP} px of ${name} ${JSON.stringify(r)}: ${JSON.stringify(near.slice(0, 4))}`);
+      }
+      if (hit(m.qr, m.chat)) bad("Quick reactions overlaps Open chat");
+      const key = `${size.width}x${size.height}`;
+      const mine = Math.round(m.qr.top * 10) / 10;
+      const other = dockTop.get(key);
+      if (other !== undefined) {
+        if (Math.abs(other.qr - mine) > 0.5 || Math.abs(other.chat - m.chat.top) > 0.5) bad(`the buttons moved between turns: y ${other.qr}/${other.chat} before, ${mine}/${m.chat.top} now`);
+      } else dockTop.set(key, { qr: mine, chat: m.chat.top });
+      console.log(`dock ${tag}: ${m.targets.length} targets, Quick reactions x ${m.qr.left.toFixed(0)}-${m.qr.right.toFixed(0)}, Open chat x ${m.chat.left.toFixed(0)}-${m.chat.right.toFixed(0)}, y ${m.qr.top.toFixed(0)}-${m.qr.bottom.toFixed(0)}, Table menu x ${m.menu.left.toFixed(0)}-${m.menu.right.toFixed(0)}`);
+      // The picker opens below the row, whole and inside the safe area, and Escape closes it, with the chat still closed.
+      await t.page.getByRole("button", { name: "Quick reactions", exact: true }).click();
+      const picker = await t.page.locator("#quick-reaction-picker").evaluate((el) => {
+        const r = el.getBoundingClientRect();
+        return { left: r.left, top: r.top, right: r.right, bottom: r.bottom };
+      });
+      if (picker.left < safe.left || picker.right > safe.right || picker.top < m.qr.bottom || picker.bottom > safe.bottom) bad(`the reaction picker is not inside the safe area, below the buttons ${JSON.stringify(picker)}`);
+      await t.page.keyboard.press("Escape");
+      await t.page.locator("#quick-reaction-picker").waitFor({ state: "detached" });
+      if (await store(t, () => window.__emberisle.getState().chatOpen)) bad("opening the reaction picker opened the chat");
+      if (checkBanner && size.width === 390) {
+        await t.page.evaluate(() => window.__emberisle.setState({ banner: "Ember's roll · Ember +2 timber · Ember +1 grain · Pine +2 timber · Pine +1 grain · Tide +2 timber · Tide +1 grain · Moss +2 timber · Moss +1 grain · bank short of timber and grain" }));
+        await t.page.getByTestId("banner").waitFor();
+        const shown = await dockLayout(t);
+        const banner = shown.status.find((x) => x.id === "banner");
+        if (!banner || banner.bottom - banner.top < 90) bad("a multi-seat roll status did not wrap to four lines");
+        if (banner && [shown.qr, shown.chat].some((r) => hit(r, banner))) bad("a button overlaps the visible status banner");
+        if (Math.abs(shown.qr.top - m.qr.top) > 0.5 || Math.abs(shown.chat.top - m.chat.top) > 0.5 || Math.abs(shown.qr.left - m.qr.left) > 0.5) bad("showing the status banner moved the buttons");
+        await t.page.evaluate(() => window.__emberisle.setState({ banner: null }));
+        await t.page.waitForFunction(() => !document.querySelector('[data-testid="banner"]'));
+      }
+    }
+    await cdp.send("Emulation.setSafeAreaInsetsOverride", { insets: { top: 0, right: 0, bottom: 0, left: 0 } });
+  };
+  const ownTab = await tabForTurn(true);
+  const otherTab = await tabForTurn(false);
+  const originalViewports = new Map([ownTab, otherTab].map((t) => [t, t.page.viewportSize()]));
+  await phoneLayout(ownTab, true, true);
+  await phoneLayout(otherTab, false);
+  check(dockFailures.length === 0, `chat dock: top-row buttons at 390x844, 360x640 and 844x390, own and another seat's turn${dockFailures.length ? `\n${dockFailures.join("\n")}` : ""}`);
+  for (const [t, viewport] of originalViewports) {
+    if (viewport) await t.page.setViewportSize(viewport);
+  }
+  await act(await tabForTurn(true), "dispatch", [{ type: "roll" }]);
   await until(async () => ((await seen(a)).dice ? true : null), "the first roll reaches Ember");
   const rowsOf = (t) => t.page.getByTestId("chat-log").getByTestId("log-row").allTextContents();
   for (const t of all) {
@@ -701,6 +981,25 @@ try {
     await reader.page.getByRole("button", { name: "Watch", exact: true }).click();
     await reader.page.getByRole("button", { name: "Open chat" }).click();
     await reader.page.getByTestId("chat-readonly").waitFor();
+    check(await reader.page.getByTestId("quick-reactions").count() === 0, `quick reactions: ${isPhone ? "phone" : "desktop"} watcher has no sender control`);
+    const refused = await reader.page.evaluate((code) => new Promise((resolve, reject) => {
+      const socket = new WebSocket(new URLSearchParams(location.search).get("host"));
+      const frames = [];
+      const timer = setTimeout(() => { socket.close(); reject(new Error("watcher reaction rejection timed out")); }, 5000);
+      socket.onopen = () => socket.send(JSON.stringify({ type: "hello", code, watch: true }));
+      socket.onmessage = (event) => {
+        const message = JSON.parse(event.data);
+        frames.push(message);
+        if (message.type === "welcome" && message.spectator) socket.send(JSON.stringify({ type: "react", emote: "😊" }));
+        if (message.type === "error") socket.close();
+      };
+      socket.onerror = () => { clearTimeout(timer); reject(new Error("watcher proof socket failed")); };
+      socket.onclose = () => {
+        clearTimeout(timer);
+        resolve(frames.some((m) => m.type === "error" && m.message === "Watching only.") && !frames.some((m) => m.type === "react"));
+      };
+    }), tableCode);
+    check(refused, "quick reactions: host rejects an allowlisted emoji forged by a watcher");
     await polish(reader, "read-only", undefined, 4);
     await reader.page.evaluate(() => Object.defineProperty(navigator, "clipboard", { value: undefined, configurable: true }));
     await reader.page.getByRole("button", { name: "Copy log" }).click();
@@ -725,6 +1024,28 @@ try {
     "bots: the menu shows the 4 facts and nothing else",
   );
   await solo.context().close();
+
+  // The 844x390 board reaction shares the top-menu edge. The menu and its Leave question stay above it.
+  if (await phone.page.getByRole("button", { name: "Minimize chat" }).count()) {
+    await phone.page.getByRole("button", { name: "Minimize chat" }).click();
+  }
+  await phone.page.setViewportSize({ width: 844, height: 390 });
+  await phone.page.getByRole("button", { name: "Quick reactions", exact: true }).waitFor();
+  await phone.page.getByRole("button", { name: "Table menu", exact: true }).tap();
+  const tableMenu = phone.page.getByRole("dialog", { name: "Table menu" });
+  await tableMenu.waitFor();
+  await tableMenu.getByRole("button", { name: "Leave table" }).tap();
+  const leaveConfirm = phone.page.getByTestId("leave-confirm");
+  const leave = leaveConfirm.getByRole("button", { name: "Leave", exact: true });
+  await leave.waitFor();
+  const onTop = await leave.evaluate((button) => {
+    const r = button.getBoundingClientRect();
+    const target = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+    return target === button || button.contains(target);
+  });
+  check(onTop, "landscape phone: the Table menu Leave action is topmost above Quick reactions at 844x390");
+  await leave.tap();
+  await phone.page.waitForFunction(() => window.__emberisle.getState().screen === "title");
 
   // 6.
   check(polishFailures.length === 0, `chat polish at both sizes${polishFailures.length ? `\n${polishFailures.join("\n")}` : ""}`);
