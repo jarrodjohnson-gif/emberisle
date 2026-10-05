@@ -14,7 +14,11 @@
 //   is open is dropped, and with the bank empty of everything Plenty says so and refuses;
 // - Esc closes the tray and puts focus back on the Fortunes button, Tab stays inside it, and a press outside closes it;
 // - under reduced motion the tray's entry animation collapses to 1 ms;
-// - a seat change (hotseat) closes an open tray.
+// - a seat change (hotseat) closes an open tray even when the next seat holds fortunes, and a phase change within the turn
+//   (a roll with the tray up, through robber to main) closes it and it does not come back;
+// - your last fortune played takes the Fortunes button with the tray, and focus falls to End turn;
+// - a second pick of a good the bank has only one of is refused and says so, while a tap with two picked still replaces the
+//   oldest; Monopoly's chips are radios and Plenty's caption is a live region.
 // Zero console errors. Saves test-results/fortune-tray-<size>.png. Run: npm run fortune-tray-prove
 import assert from "node:assert/strict";
 import { existsSync, mkdirSync, readFileSync } from "node:fs";
@@ -79,7 +83,7 @@ try {
         return me.id;
       }, { hidden, bought, bank });
     const me = () => page.evaluate(() => { const st = window.__emberisle.getState().state; return st.players.find((p) => p.id === st.current); });
-    const store = (fn) => page.evaluate(fn);
+    const store = (fn, arg) => page.evaluate(fn, arg);
     const rect = (loc) => loc.evaluate((el) => { const r = el.getBoundingClientRect(); return { left: r.left, top: r.top, right: r.right, bottom: r.bottom, width: r.width, height: r.height }; });
     const button = page.getByTestId("fortunes-button");
     const tray = page.getByTestId("fortune-tray");
@@ -231,7 +235,8 @@ try {
     assert.equal(await page.locator('[data-testid^="monopoly-chip-"]').count(), 5, `${v.tag}: five monopoly chips`);
     assert.equal(await page.getByTestId("fortune-play-monopoly").getAttribute("aria-disabled"), "true", `${v.tag}: Monopoly waits for a pick`);
     await page.getByTestId("monopoly-chip-ore").click();
-    assert.equal(await page.getByTestId("monopoly-pick").textContent(), "Every seat's ore");
+    assert.equal(await page.getByTestId("monopoly-pick").textContent(), "Every other seat's ore");
+    assert.deepEqual(await page.locator('[role="radio"]').evaluateAll((els) => els.map((b) => b.getAttribute("aria-checked"))), ["false", "false", "false", "false", "true"], `${v.tag}: monopoly chips are radios`);
     await page.getByTestId("fortune-play-monopoly").click();
     await closed();
     const mono = await store(() => {
@@ -275,6 +280,17 @@ try {
     await page.getByTestId("plenty-chip-timber").click();
     await page.getByTestId("plenty-chip-clay").click();
     assert.equal(await page.getByTestId("plenty-picks").textContent(), "Timber and clay");
+    assert.equal(await page.getByTestId("plenty-picks").getAttribute("aria-live"), "polite");
+    // One timber in the bank and one picked: a second timber is short, said so, but with two picked a tap replaces the oldest
+    // (that timber), so the chip stays live.
+    await store(() => { const g = window.__emberisle; const st = structuredClone(g.getState().state); st.bank.timber = 1; st.seq += 1; g.setState({ state: st }); });
+    await page.waitForFunction(() => document.querySelector('[data-testid="plenty-chip-timber"]')?.getAttribute("aria-disabled") === null, null, { timeout: STEP_MS });
+    await page.getByTestId("plenty-chip-timber").click();
+    assert.equal(await page.getByTestId("plenty-picks").textContent(), "Clay and timber", `${v.tag}: with two picked, a tap replaces the oldest`);
+    const only = await page.getByTestId("plenty-chip-timber").evaluate((b) => [b.getAttribute("aria-disabled"), b.getAttribute("aria-description")]);
+    assert.deepEqual(only, ["true", "The bank has only 1 timber."], `${v.tag}: a second timber the bank lacks: ${JSON.stringify(only)}`);
+    await page.getByTestId("plenty-chip-clay").click();
+    assert.equal(await page.getByTestId("plenty-picks").textContent(), "Timber and clay");
     await store(() => {
       const g = window.__emberisle;
       const st = structuredClone(g.getState().state);
@@ -295,6 +311,20 @@ try {
     assert.deepEqual(dry, { why: "The bank is empty", play: "true", chips: 0 }, `${v.tag}: ${JSON.stringify(dry)}`);
     console.log(`${v.tag}: empty ore greyed, emptied timber dropped, empty bank refused`);
 
+    // The last fortune played takes the Fortunes button with the tray: focus falls to End turn, not to the body.
+    await page.keyboard.press("Escape");
+    await closed();
+    await craft({ plenty: 1 });
+    await open();
+    await page.getByTestId("plenty-chip-wool").click();
+    await page.getByTestId("plenty-chip-wool").click();
+    await page.getByTestId("fortune-play-plenty").click();
+    await closed();
+    assert.equal(await button.count(), 0, `${v.tag}: no fortunes left, no Fortunes button`);
+    assert.equal(await page.evaluate(() => document.activeElement?.textContent?.trim()), "End turn", `${v.tag}: focus fell to End turn`);
+    await craft({ plenty: 1 }, {}, { timber: 0, clay: 0, wool: 0, grain: 0, ore: 0 });
+    await open();
+
     // Esc closes and focus returns to Fortunes; Tab stays inside; a press outside closes.
     await page.keyboard.press("Escape");
     await closed();
@@ -308,19 +338,40 @@ try {
     await closed();
     console.log(`${v.tag}: Esc, Tab and a press outside behave`);
 
-    // A seat change closes an open tray (hotseat: the next seat must not see the last seat's tray).
+    // A seat change closes an open tray: the next seat holds a plenty in `main`, so it has the Fortunes button, and must not
+    // inherit the last seat's open tray.
     await open();
     await store(() => {
       const g = window.__emberisle;
       const st = structuredClone(g.getState().state);
-      st.current = st.players.find((p) => p.id !== st.current).id;
-      st.phase = "roll";
+      const next = st.players.find((p) => p.id !== st.current);
+      st.current = next.id;
+      next.hidden.plenty = 1;
+      next.boughtThisTurn.plenty = 0;
       st.turn += 1;
       st.seq += 1;
-      g.setState({ state: st });
+      g.setState({ state: st, buildMode: "none" });
     });
     await closed();
+    await button.waitFor({ timeout: STEP_MS });
+    await page.waitForTimeout(300);
+    assert.equal(await tray.count(), 0, `${v.tag}: the next seat's Fortunes button is up and its tray stays closed`);
     console.log(`${v.tag}: the tray closed with the seat change`);
+
+    // A phase change within one turn closes it and it stays closed: open before the roll (a wayfarer in hand), the roll is a 7,
+    // robber, then main; the tray must not come back or take focus when the Fortunes button returns in `main`.
+    await craft({ knight: 1, plenty: 1 });
+    await store(() => { const g = window.__emberisle; const st = structuredClone(g.getState().state); st.phase = "roll"; st.dice = null; st.seq += 1; g.setState({ state: st }); });
+    await open();
+    for (const phase of ["robber", "main"]) {
+      await store((phase) => { const g = window.__emberisle; const st = structuredClone(g.getState().state); st.phase = phase; st.dice = [3, 4]; st.seq += 1; g.setState({ state: st }); }, phase);
+      await page.waitForTimeout(300);
+      assert.equal(await tray.count(), 0, `${v.tag}: tray closed through ${phase}`);
+    }
+    await button.waitFor({ timeout: STEP_MS });
+    assert.equal(await button.getAttribute("aria-expanded"), "false", `${v.tag}: Fortunes is back in main, not expanded`);
+    assert.notEqual(await page.evaluate(() => document.activeElement?.closest('[data-testid="fortune-tray"]')?.tagName ?? null), "SECTION");
+    console.log(`${v.tag}: a roll with the tray up closed it for the rest of the turn`);
 
     // Reduced motion: the entry animation collapses to 1 ms.
     await page.emulateMedia({ reducedMotion: "reduce" });

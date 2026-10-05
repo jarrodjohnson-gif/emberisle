@@ -137,10 +137,11 @@ export function Hud() {
   useEscapeDisarm();
   const [stackRef, moreBelow] = useMoreBelow();
   useEffect(() => preloadOnIdle(sheets.prefetch), []);
-  // #423: the fortune tray is open until a fortune is played, it is closed, or the turn moves on (hotseat: to the next seat).
+  // #423: the fortune tray is open until a fortune is played, it is closed, the phase moves (a roll with the tray up) or the
+  // turn moves on (hotseat: to the next seat); it never comes back on its own.
   const [fortunesOpen, setFortunesOpen] = useState(false);
   const fortunesButton = useRef<HTMLButtonElement>(null);
-  const turnKey = state ? `${state.turn}|${state.current}` : "";
+  const turnKey = state ? `${state.turn}|${state.current}|${state.phase}` : "";
   useEffect(() => setFortunesOpen(false), [turnKey]);
 
   if (!state) return null;
@@ -417,8 +418,8 @@ export function Hud() {
                   column
                     ? "max-h-full"
                     : portrait
-                      ? "max-h-[calc(100dvh-8rem-env(safe-area-inset-top))]"
-                      : "max-h-[calc(100dvh-5.5rem-env(safe-area-inset-top))]"
+                      ? "max-h-[calc(100dvh-7.25rem-env(safe-area-inset-top)-max(0.75rem,env(safe-area-inset-bottom)))]"
+                      : "max-h-[calc(100dvh-5rem-env(safe-area-inset-top)-max(0.75rem,env(safe-area-inset-bottom)))]"
                 }
               />
             </LazyBoundary>

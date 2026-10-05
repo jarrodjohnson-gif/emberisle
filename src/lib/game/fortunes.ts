@@ -6,7 +6,7 @@ export const FORTUNES: { kind: DevKind; name: string; effect: string }[] = [
   { kind: "knight", name: "wayfarer", effect: "Move the wayfarer and steal a card" },
   { kind: "road", name: "path", effect: "Lay two paths for free" },
   { kind: "plenty", name: "plenty", effect: "Take two goods from the bank" },
-  { kind: "monopoly", name: "monopoly", effect: "Take every seat's goods of one kind" },
+  { kind: "monopoly", name: "monopoly", effect: "Take every other seat's goods of one kind" },
   { kind: "vp", name: "points", effect: "A hidden point toward the win" },
 ];
 
