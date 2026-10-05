@@ -36,7 +36,7 @@ function Count({ testid, n, unit, className }: { testid: string; n: number; unit
 }
 
 // `short` is the strip's under-100 px form (#420); its presence makes this a strip line, which also hides the counts in
-// a cell under 160 px so the name keeps its room. A dropped seat's marker shows at every width (the word only where it fits).
+// a cell under 200 px so the name keeps its room. A dropped seat's marker shows at every width (the word only where it fits).
 function SeatLine({ p, actor, short }: { p: PlayerState; actor: string; short?: string }) {
   const state = useGame((s) => s.state)!;
   const away = seatAway(useGame((s) => s.seats), p);
@@ -44,7 +44,7 @@ function SeatLine({ p, actor, short }: { p: PlayerState; actor: string; short?: 
   const hidden = p.id === actor && p.hidden.vp > 0 ? p.hidden.vp : 0;
   const goods = cards(p);
   const fortunes = p.fortunes ?? hiddenCount(p);
-  const narrow = strip ? "@max-[160px]:hidden" : undefined;
+  const narrow = strip ? "@max-[200px]:hidden" : undefined;
   return (
     <>
       <span className="seat-dot size-2.5 shrink-0 rounded-full" style={{ background: p.color }} />
