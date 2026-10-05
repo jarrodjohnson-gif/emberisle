@@ -962,7 +962,7 @@ try {
     check(geometry.boxes.every((r) => r.width >= 44 && r.height >= 44), `chat dock: both controls are at least 44 px at 390x844 (${geometry.boxes.map((r) => `${r.width}x${r.height}`).join(", ")})`);
     check(geometry.boxes[0].left < geometry.viewport.width / 4 && geometry.boxes[1].right > geometry.viewport.width * 3 / 4, "chat dock: portrait quick reactions and chat sit at opposite safe edges");
     check(clear, `chat dock: Quick reactions and Open chat clear the full bottom stack at 390x844, ${ownTurn ? "with Roll showing" : "on another seat's turn"}`);
-    check(geometry.coveredCorners.length === 0, `chat dock: no board corner sits under either button at 390x844${geometry.coveredCorners.length ? ` (${JSON.stringify(geometry.coveredCorners)})` : ""}, ${ownTurn ? "with Roll showing" : "on another seat's turn"}`);
+    check(geometry.coveredCorners.length === 0, `chat dock: no board corner sits under either button at 390x844${geometry.coveredCorners.length ? ` (${JSON.stringify(geometry.coveredCorners)}; controls ${JSON.stringify(geometry.boxes)})` : ""}, ${ownTurn ? "with Roll showing" : "on another seat's turn"}`);
     if (checkBanner) {
       await t.page.evaluate(() => window.__emberisle.setState({ banner: null }));
       await t.page.waitForFunction(() => !document.querySelector('[data-testid="banner"]'));
