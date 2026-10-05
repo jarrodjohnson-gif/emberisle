@@ -39,9 +39,8 @@ export function chunk<M>(load: () => Promise<M>) {
     );
     return (pending = p);
   };
-  const prefetch = () => {
-    preload().catch(() => {});
-  };
+  // Resolves true once the chunk is in memory, false if the load failed.
+  const prefetch = () => preload().then(() => true, () => false);
   const pick = <P extends object>(select: (m: M) => ComponentType<P>) =>
     function Lazy(props: P) {
       // React's type for `use` wants one settled shape at a time; the promise reports whichever it is in at run time.
@@ -79,9 +78,17 @@ export class LazyBoundary extends Component<BoundaryProps, { failed: boolean; re
   }
 }
 
-// The URL a failed chunk load names (Chromium and Firefox name it; Safari does not), without any retry query.
-function chunkUrl(e: unknown): string | undefined {
-  return /(https?:\/\/[^\s'"]+\.[cm]?js)/.exec(String(e))?.[1]?.split("?")[0];
+// The URL a failed chunk load names (Chromium and Firefox name it; Safari does not), without any retry query. Dev serves the
+// source files (.ts, .tsx), so the retry works there too; the stale-deploy reload below only runs on a build, because only
+// the built preload helper fires `vite:preloadError`.
+export function chunkUrl(e: unknown): string | undefined {
+  return /(https?:\/\/[^\s'"]+\.(?:[cm]?js|tsx?))/.exec(String(e))?.[1]?.split("?")[0];
+}
+
+// A focused text field means the user is typing (a join code); a reload would throw that away.
+function typing() {
+  const el = document.activeElement;
+  return el instanceof HTMLElement && (el.isContentEditable || el instanceof HTMLTextAreaElement || (el instanceof HTMLInputElement && !/^(button|submit|reset|checkbox|radio|range|color|file|image)$/.test(el.type)));
 }
 
 // A chunk that fails to load on a page that is still at the title is most likely a stale page after a new deploy: the
@@ -91,9 +98,23 @@ function chunkUrl(e: unknown): string | undefined {
 // never reloads itself.
 const RELOADED_KEY = "emberisle-chunk-reloaded";
 export function reloadOnStaleChunk(when: () => boolean) {
-  const onError = (e: Event) => {
+  let waiting = false;
+  const attempt = (url: string) => {
     if (!when()) return;
-    const url = chunkUrl((e as Event & { payload?: unknown }).payload) ?? "?";
+    if (typing()) {
+      if (waiting) return;
+      waiting = true;
+      document.addEventListener(
+        "focusout",
+        () => {
+          waiting = false;
+          // focusout fires before the next element is focused; look once focus has settled.
+          setTimeout(() => attempt(url), 0);
+        },
+        { once: true },
+      );
+      return;
+    }
     try {
       const done: string[] = JSON.parse(sessionStorage.getItem(RELOADED_KEY) ?? "[]");
       if (done.includes(url)) return;
@@ -103,6 +124,7 @@ export function reloadOnStaleChunk(when: () => boolean) {
     }
     location.reload();
   };
+  const onError = (e: Event) => attempt(chunkUrl((e as Event & { payload?: unknown }).payload) ?? "?");
   window.addEventListener("vite:preloadError", onError);
   return () => window.removeEventListener("vite:preloadError", onError);
 }

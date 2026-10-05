@@ -65,6 +65,7 @@ export function EmberisleApp() {
   );
 }
 
+const LINK_KEY = "emberisle-join-link";
 const PEEK_CODE = /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{4}$/;
 
 function Title() {
@@ -105,20 +106,38 @@ function Title() {
 
   // #304: a join link (?code=K7QP) fills the field so the peek above runs; nothing is sent until Join is pressed.
   // The code then leaves the URL so a reload does not refill a dead one. A watch link (?watch=K7QP) does the same and
-  // makes Watch the primary button, so a reload never re-watches either.
+  // makes Watch the primary button, so a reload never re-watches either. #492: until the online chunk has loaded the link
+  // is kept in sessionStorage, so the stale-chunk reload (which has the URL without it) refills the field.
   useEffect(() => {
     const url = new URL(location.href);
     const code = url.searchParams.get("code")?.toUpperCase();
     const watch = url.searchParams.get("watch")?.toUpperCase();
-    if (code === undefined && watch === undefined) return;
-    url.searchParams.delete("code");
-    url.searchParams.delete("watch");
-    history.replaceState(history.state, "", `${url.pathname}${url.search}${url.hash}`);
-    const fill = code ?? watch!;
-    if (!PEEK_CODE.test(fill)) return;
+    let link: { code?: string; watch?: string } = {};
+    if (code !== undefined || watch !== undefined) {
+      url.searchParams.delete("code");
+      url.searchParams.delete("watch");
+      history.replaceState(history.state, "", `${url.pathname}${url.search}${url.hash}`);
+      link = { code, watch };
+      if (PEEK_CODE.test(code ?? watch!)) {
+        try {
+          sessionStorage.setItem(LINK_KEY, JSON.stringify(link));
+        } catch {}
+      }
+    } else {
+      try {
+        link = JSON.parse(sessionStorage.getItem(LINK_KEY) ?? "{}");
+      } catch {}
+    }
+    const fill = link.code ?? link.watch;
+    if (!fill || !PEEK_CODE.test(fill)) return;
     setJoin(fill);
-    online.prefetch();
-    if (code === undefined) setWatchLink(true);
+    void online.prefetch().then((ok) => {
+      if (!ok) return;
+      try {
+        sessionStorage.removeItem(LINK_KEY);
+      } catch {}
+    });
+    if (link.code === undefined) setWatchLink(true);
   }, []);
 
   // #488: How to play is a lazy chunk; idle time on the title fetches it, and so does a pointer or focus on its button.
@@ -268,12 +287,19 @@ function Title() {
       {/* Beside the card, not inside it: the card is absolute (and scrolls on a phone), so a dialog inside it is
           clipped to the card's box and its Close can sit off-screen. */}
       {howTo ? (
-        <LazyBoundary failed={null}>
+        <LazyBoundary failed={<HowToFailed />}>
           <HowTo onClose={() => setHowTo(false)} />
         </LazyBoundary>
       ) : null}
     </>
   );
+}
+
+// The sheets chunk did not load: drop the open flag so the next press mounts How to play again and retries (#492).
+function HowToFailed() {
+  const setHowTo = useGame((s) => s.setHowTo);
+  useEffect(() => setHowTo(false), [setHowTo]);
+  return null;
 }
 
 // The online chunk did not load, so there is no lobby to show: say so where the lobby card goes, with the one way out.

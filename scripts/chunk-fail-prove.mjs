@@ -4,6 +4,9 @@
 // table (HUD header and canvas, store at "play") with no sheet, and once the route recovers, How to play from the table
 // menu opens. With the online chunk routed to fail: Host shows "Couldn't load the table lobby." with a Reload button
 // instead of a blank page, and after the route recovers that Reload rejoins the saved seat into a working lobby.
+// #492: a join link whose online chunk fails once keeps its code across the reload; the title's How to play retries on
+// the first press after the route recovers; a stale-chunk reload waits while focus is in a text field; chunkUrl names
+// dev (.tsx) URLs as well as built ones.
 // Run npm run build first.
 import { spawn } from "node:child_process";
 import { existsSync, mkdtempSync, rmSync } from "node:fs";
@@ -13,6 +16,7 @@ import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
 import { preview } from "vite";
 
+const { chunkUrl } = await import("../src/lib/lazy.ts");
 const PORT = Number(process.env.VITE_PORT) || 8109;
 const DIST = fileURLToPath(new URL("../dist/", import.meta.url));
 if (!existsSync(`${DIST}index.html`)) {
@@ -126,6 +130,7 @@ try {
   await howto.waitFor({ state: "detached" });
   check("sheets: no other page errors", a.errors.length === 0, a.errors);
 
+  await a.page.close(); // each page runs a WebGL canvas; idle ones starve the next section's idle prefetch
   // --- 2. The online chunk fails. Hover Host prefetches it: one reload. Host then shows the message, not a blank page.
   const b = await tab("Moss", "online");
   await title(b.page);
@@ -154,9 +159,68 @@ try {
   const code = await b.page.getByTestId("table-code").textContent();
   check("online: after Reload with the route recovered, the saved seat rejoins into a working lobby", /^[A-Z0-9]{4}$/.test(code ?? "") && b.loads === 3, { code, loads: b.loads });
   check("online: no other page errors", b.errors.length === 0, b.errors);
-} catch (e) {
-  fails.push(String(e));
-  console.log(`FAIL ${e.stack ?? e}`);
+  await b.page.close();
+
+  // --- 3. (#492) A join link whose online chunk fails once: the code survives the stale-chunk reload.
+  const c2 = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+  let cLoads = 0;
+  let cBlocked = 0;
+  c2.on("load", () => cLoads++);
+  await c2.route(/\/assets\/online-[A-Za-z0-9_-]{8}\.js/, (route) => {
+    if (cBlocked++ > 0) return route.continue(); // fails once, then the route recovers
+    return route.abort("failed");
+  });
+  await c2.addInitScript((n) => localStorage.setItem("emberisle-name", n), "Reed");
+  await c2.goto(`${url}&code=K7QP`);
+  await until(() => cLoads >= 2, "the join link's title reloading once on the failed online prefetch");
+  await title(c2);
+  const joinInput = c2.locator('input[aria-label="Join code"]');
+  await joinInput.waitFor({ timeout: 15_000 });
+  await sleep(500);
+  check("join link: the code is still in the field after the stale-chunk reload", (await joinInput.inputValue()) === "K7QP" && cLoads === 2, { value: await joinInput.inputValue(), loads: cLoads });
+  await c2.close();
+
+  // --- 4. (#492) The title's How to play retries on every press, the first one after the route recovers included.
+  const d = await tab("Ash", "sheets");
+  await title(d.page);
+  await until(() => d.loads >= 2, "the title reloading once on the failed sheets prefetch");
+  await title(d.page);
+  await sleep(1500);
+  const howBtn = d.page.getByRole("button", { name: "How to play" });
+  await howBtn.click();
+  await d.page.waitForFunction(() => window.__emberisle.getState().howTo === false, null, { timeout: 15_000 });
+  check("title How to play: a refused press opens nothing and drops its flag", (await d.page.locator('[role="dialog"]').count()) === 0);
+  d.broken = false;
+  await sleep(1200);
+  await howBtn.click();
+  const dHow = d.page.getByRole("dialog", { name: "How to play" });
+  await dHow.waitFor({ timeout: 5000 }).catch(() => {});
+  check("title How to play: the first press after the route recovers opens it", await dHow.isVisible());
+  await d.page.close();
+
+  // --- 5. (#492) A reload never fires while focus is in a text field; it fires once focus leaves.
+  const e = await tab("Fern", "online");
+  await title(e.page);
+  const typed = e.page.locator('input[aria-label="Join code"]');
+  await typed.click();
+  await typed.pressSequentially("K7");
+  await e.page.getByRole("button", { name: "Host a table" }).hover(); // prefetches online: refused
+  await until(() => e.blocked >= 1, "the online prefetch being refused");
+  await sleep(1500);
+  const held = { loads: e.loads, value: await typed.inputValue(), focused: await typed.evaluate((el) => el === document.activeElement) };
+  check("typing: no reload while focus is in the join-code input", held.loads === 1 && held.value === "K7" && held.focused, held);
+  e.broken = false;
+  await e.page.locator("body").click({ position: { x: 5, y: 5 } }); // focus leaves the field
+  await until(() => e.loads >= 2, "the held reload once focus left the field");
+  check("typing: the reload fires after focus leaves the field", e.loads === 2, { loads: e.loads });
+
+  // --- 6. (#492) chunkUrl names dev source URLs (.tsx) as well as built ones, so dev retries too.
+  const dev = chunkUrl?.(new TypeError("Failed to fetch dynamically imported module: http://localhost:8080/src/components/game/online.tsx?t=1"));
+  const built = chunkUrl?.(new TypeError("Failed to fetch dynamically imported module: http://localhost/assets/online-AbCd1234.js?retry=2"));
+  check("dev: chunkUrl matches .tsx URLs and still the built .js ones", dev === "http://localhost:8080/src/components/game/online.tsx" && built === "http://localhost/assets/online-AbCd1234.js", { dev, built });
+} catch (err) {
+  fails.push(String(err));
+  console.log(`FAIL ${err.stack ?? err}`);
 } finally {
   await browser.close();
   await new Promise((r) => server.httpServer.close(r));
