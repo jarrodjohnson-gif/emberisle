@@ -149,6 +149,7 @@ npm run title-prove      # headless Chromium at 6 sizes incl. 667x375 and 1280x5
 npm run reflow-prove     # headless Chromium at 640x360 (200 % zoom) and 320x568: title fits, HUD leaves the header and some island uncovered
 npm run polish-tokens-prove # headless Chromium at 3 sizes: the docs/design/polish.md tokens on :root, Button reads them, 0 console errors
 npm run table-menu-prove # headless Chromium at 3 sizes: one 44 px menu button tops the table; How to play, sounds, the code and Leave work from it; Escape closes and refocuses
+npm run build-ready-prove # headless Chromium at 3 sizes with insets: each build button reads ready, short or blocked as rules.ts says for crafted hands, the shortfall shows without hover, the Costs card opens from the menu with the COST and POINTS values, traps focus, fits the safe area and closes on Escape
 npm run board-look-prove # headless Chromium: one warm key lamp with soft shadows, a calm teal sea, the title orbit; in play the overhead board inside the hole the HUD leaves at 1280x720 and 390x844, a drag orbits and places nothing, a wheel zooms, Home and a double click or tap snap back
 npm run install-prove    # after build: manifest, icons and home-screen meta tags from the host and vite preview; Play, Ready and the HUD inside an iPhone's safe area; ?code= and ?watch= links
 npm run chat-prove       # 3 headless tabs chat in the lobby and the game: presets, reactions, unread badge, minimized dock covers no target, the game log in the dock with Chat/All and Copy log

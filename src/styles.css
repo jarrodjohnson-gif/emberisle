@@ -100,6 +100,12 @@ body {
 }
 .hand-in { animation: hand-in var(--duration-base) var(--ease-out) both; }
 
+/* A build the hand can newly pay for (after a roll, a trade) gives its button one soft pulse; none under reduced motion. */
+@keyframes build-ready {
+  50% { transform: scale(1.05); }
+}
+.build-ready { animation: build-ready var(--duration-settle) var(--ease-snap); }
+
 /* The animations are inline or utility styles, so the override has to out-rank them (#253). */
 @media (prefers-reduced-motion: reduce) {
   [style*="emote-float"],
@@ -108,6 +114,9 @@ body {
   [class*="turn-fade"],
   .hand-in {
     animation-duration: 1ms !important;
+  }
+  .build-ready {
+    animation: none;
   }
 }
 

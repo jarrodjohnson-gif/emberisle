@@ -13,6 +13,7 @@ export const ChatDock = online.pick((m) => m.ChatDock);
 export const ReactionFloats = online.pick((m) => m.ReactionFloats);
 
 export const sheets = chunk(() => import("@/components/game/sheets"));
+export const CostCard = sheets.pick((m) => m.CostCard);
 export const FortuneTray = sheets.pick((m) => m.FortuneTray);
 export const HowTo = sheets.pick((m) => m.HowTo);
 export const TradePanel = sheets.pick((m) => m.TradePanel);

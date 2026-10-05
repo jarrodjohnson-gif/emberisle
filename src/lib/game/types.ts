@@ -54,6 +54,11 @@ export const COST = {
   card: { wool: 1, grain: 1, ore: 1 } as Partial<Record<Resource, number>>,
 };
 
+// What a piece and each award is worth, and the win line; rules.ts scores with these and the Costs card shows them.
+export const POINTS = { outpost: 1, stronghold: 2, longestPath: 2, largestArmy: 2, win: 10 } as const;
+export const LONGEST_PATH_MIN = 5;
+export const LARGEST_ARMY_MIN = 3;
+
 export interface HexCell {
   id: string;
   q: number;

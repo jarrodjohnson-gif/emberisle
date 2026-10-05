@@ -1,4 +1,4 @@
-import { COST, RESOURCES, type Action, type DevKind, type GameState, type PlayerState, type Resource } from "./types";
+import { COST, LARGEST_ARMY_MIN, LONGEST_PATH_MIN, POINTS, RESOURCES, type Action, type DevKind, type GameState, type PlayerState, type Resource } from "./types";
 
 function clone<T>(s: T): T {
   return structuredClone(s);
@@ -194,7 +194,7 @@ function updateLongest(state: GameState) {
   const top = Math.max(...lengths.values());
   const leaders = [...lengths].filter(([, n]) => n === top).map(([id]) => id);
   const holder = state.longestRoad;
-  if (top < 5) state.longestRoad = null;
+  if (top < LONGEST_PATH_MIN) state.longestRoad = null;
   else if (holder && leaders.includes(holder)) state.longestRoad = holder;
   else state.longestRoad = leaders.length === 1 ? leaders[0]! : null;
   if (state.longestRoad !== holder) {
@@ -206,7 +206,7 @@ function updateLongest(state: GameState) {
 
 function updateArmy(state: GameState, pid: string) {
   const p = player(state, pid);
-  if (!p || p.knightsPlayed < 3) return;
+  if (!p || p.knightsPlayed < LARGEST_ARMY_MIN) return;
   const cur = state.largestArmy ? player(state, state.largestArmy) : null;
   if (!cur || p.knightsPlayed > cur.knightsPlayed) {
     if (state.largestArmy !== pid) log(state, `${p.name} holds the largest army.`);
@@ -218,10 +218,10 @@ export function publicVP(state: GameState, pid: string) {
   let n = 0;
   for (const v of state.vertices) {
     if (v.building?.playerId !== pid) continue;
-    n += v.building.kind === "stronghold" ? 2 : 1;
+    n += POINTS[v.building.kind];
   }
-  if (state.longestRoad === pid) n += 2;
-  if (state.largestArmy === pid) n += 2;
+  if (state.longestRoad === pid) n += POINTS.longestPath;
+  if (state.largestArmy === pid) n += POINTS.largestArmy;
   return n;
 }
 
@@ -232,7 +232,7 @@ export function totalVP(state: GameState, pid: string) {
 
 function checkWin(state: GameState, pid: string) {
   if (state.current !== pid) return;
-  if (totalVP(state, pid) >= 10) {
+  if (totalVP(state, pid) >= POINTS.win) {
     state.phase = "over";
     state.winner = pid;
     log(state, `${player(state, pid)?.name} claims the isle with ${totalVP(state, pid)} points.`);
