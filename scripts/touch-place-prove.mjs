@@ -85,6 +85,14 @@ for (const [w, h] of [
   assert.deepEqual(chromeInsets(390, 844, [], { top: 47, bottom: 34 }), { top: 59, right: 12, bottom: 46, left: 12 }, "bare edges keep the safe area");
   // Chrome on an edge already covers its safe area (the header pads for the notch itself).
   assert.equal(chromeInsets(390, 844, phone, { top: 47 }).top, 124, "a header already clear of the notch is not padded twice");
+  // Chrome set in by the safe area still touches its edge (#422): the portrait HUD under a notch and over a home bar, and
+  // the sideways phone's left column beside a notch. Before, each started 47 or 34 px in and counted for nothing.
+  const notched = [rect(0, 59, 390, 103), rect(12, 115, 378, 159), rect(12, 500, 378, 810)];
+  assert.deepEqual(chromeInsets(390, 844, notched, { top: 47, bottom: 34 }), { top: 171, right: 12, bottom: 356, left: 12 }, "a notched portrait HUD is chrome");
+  const column = [rect(47, 12, 797, 56), rect(47, 68, 367, 369)];
+  assert.deepEqual(chromeInsets(844, 390, column, { left: 47, right: 47, bottom: 21 }), { top: 68, right: 59, bottom: 33, left: 379 }, "a column beside the notch is a left rail");
+  // At 667x375 the same column, set in 44 px, crosses the middle (44..364); its centre is still on the left.
+  assert.deepEqual(chromeInsets(667, 375, [rect(44, 12, 623, 56), rect(44, 68, 364, 354)], { left: 44, right: 44, bottom: 21 }), { top: 68, right: 56, bottom: 33, left: 376 }, "a rail past the middle is on its centre's side");
   console.log("chrome insets: desktop 70/12/245/248, phone 124/12/305/12, rails need a quarter of the height, sheets ignored");
 }
 

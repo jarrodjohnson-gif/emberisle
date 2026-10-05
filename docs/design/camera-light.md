@@ -96,7 +96,10 @@ places nothing, a wheel zooms, Home and a double click or tap return home, reduc
 
 - **Budget and frame time**: draw calls in the overhead play view are about 480 a frame (docs/research/mobile-frame-time.md);
   a real-GPU frame time from Jarrod's PC and a budget line are #464.
-- **The phone hole**: the landscape hole and its island size are #422. The fit now follows the HUD, so growing the hole
-  is HUD work.
+- **The phone hole** (#422, done as HUD work): on a sideways phone the bottom stack is a full-height left column (20 rem,
+  at most 48 vw so it stays a rail), so the hole is the same in every phase. Main phase, hand shown: 844x390 went from a
+  101x85 px island and a 7.1 px token to 270x227 and 19 px (adjacent corners 28 px apart); 667x375 from 101x85 and 7.1 px
+  to 251x211 and 17.6 px. Everywhere, the dice ride in the Roll / End turn row instead of a row of their own: 1280x720
+  main went from a 23.2 px token to 25.7 px. Portrait stays width-bound (20.7 px).
 - **A free perspective view in play** (#463) is no longer needed for orbiting; it is open only if a low, perspective
   look is wanted on top of the orthographic orbit.

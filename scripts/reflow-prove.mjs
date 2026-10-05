@@ -2,7 +2,8 @@
 // - the title's "Emberisle" wordmark starts on screen, the Join button is fully on screen, no title button runs past the right
 //   edge, and the page has no horizontal scroll;
 // - in hotseat `main` with every fortune kind held, the bottom HUD stack starts below the header (landscape: header + 8 px)
-//   or the seat strip (portrait), and at least 120 px of the island between them stays uncovered and takes the pointer.
+//   or the seat strip (portrait), and at least 120 px of the island between them stays uncovered and takes the pointer;
+//   where the stack is a left column (a sideways phone, #422), that room is beside it, at least 120 px each way.
 // - #402: while the stack has content below the fold a static "more below" cue shows (it takes no pointer events), it is gone
 //   once the stack is scrolled to the end, and it never shows at 1280x720 where nothing overflows.
 // - #420: at 390x844 (touch) the four-seat strip stays 44 px and no seat name is cut off: under 100 px a cell
@@ -150,18 +151,22 @@ try {
       const stack = r(document.querySelector('[data-testid="turn-banner"]').closest(".pointer-events-auto"));
       const canvas = r(document.querySelector("canvas"));
       const chrome = portraitStrip ? portraitStrip.bottom : header.bottom;
+      // #422: on a sideways phone the stack is a left column, and the island's room is beside it, not above it.
+      const column = stack.width < innerWidth / 2;
       const gapTop = Math.max(canvas.top, chrome);
-      const gapBottom = Math.min(canvas.bottom, stack.top);
+      const gapBottom = column ? canvas.bottom : Math.min(canvas.bottom, stack.top);
+      const gapLeft = column ? stack.right : canvas.left;
       const midY = (gapTop + gapBottom) / 2;
       // Sample across the gap: the island must take the pointer there, not a HUD panel.
-      const xs = [0.25, 0.5, 0.75].map((f) => Math.round(innerWidth * f));
+      const xs = [0.25, 0.5, 0.75].map((f) => Math.round(gapLeft + (canvas.right - gapLeft) * f));
       const hits = gapBottom > gapTop ? xs.map((x) => document.elementFromPoint(x, midY)?.tagName ?? null) : [];
       return {
         headerBottom: Math.round(header.bottom),
         stripBottom: portraitStrip ? Math.round(portraitStrip.bottom) : null,
         stackTop: Math.round(stack.top),
         stackBottom: Math.round(stack.bottom),
-        uncovered: Math.round(gapBottom - gapTop),
+        column,
+        uncovered: Math.round(Math.min(gapBottom - gapTop, canvas.right - gapLeft)),
         hits,
         scrollWidth: document.documentElement.scrollWidth,
       };

@@ -128,6 +128,8 @@ export function Hud() {
   // A watcher (docs/design/spectator.md): `me` below falls back to seat 0, so its hand bar is hidden by this flag, never by `localId`.
   const spectator = useGame((s) => s.spectator);
   const { phone, portrait } = useViewport();
+  // #422: a sideways phone stacks the HUD in a full-height left column, so the island fills the height beside it.
+  const column = phone && !portrait;
   const [hintDismissed, setHintDismissed] = useState(() => sessionStorage.getItem(HINT_KEY) === "1");
   useEscapeDisarm();
   const [stackRef, moreBelow] = useMoreBelow();
@@ -180,10 +182,13 @@ export function Hud() {
       : `${yours ? "Your" : `${subjectPlayer.name}'s`} turn — ${phaseText}`;
   const winner = state.winner ? state.players.find((p) => p.id === state.winner) : null;
   const menuPlayer = menuFor ? state.players.find((p) => p.id === menuFor) : null;
+  // #422: on the player's own Roll or End row the dice ride beside the button instead of taking a row of their own.
+  const dice = state.dice ? <Dice values={state.dice} /> : null;
+  const diceInBar = mine && /^(main|roll)/.test(state.phase);
 
   return (
     <>
-      <PlaceChip />
+      <PlaceChip column={column} />
       {/* #442: one control up top. The turn number, watcher count, How to play, sound and Leave live in the menu, whose open
           sheet rises over the z-20 chat dock (it reaches the header on a sideways phone). A watcher's badge stays out here,
           a chip and not a button, so a watcher always sees why it has no controls (docs/design/spectator.md). */}
@@ -223,13 +228,16 @@ export function Hud() {
       <RollMoment />
 
       <div className="pointer-events-none absolute bottom-0 inset-x-0 z-10 px-safe pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-        <div className="relative mx-auto max-w-3xl">
+        <div className={cn("relative", column ? "w-80 max-w-[48vw]" : "mx-auto max-w-3xl")}>
           {/* #459: floats above the stack, so it coming and going never reflows the turn banner. */}
           {banner ? (
             <p
               role="status"
               data-testid="banner"
-              className="pointer-events-none absolute inset-x-0 bottom-full mb-2 animate-[turn-fade_200ms_ease-out] rounded-[16px] border border-accent/40 bg-surface px-3 py-2 text-center text-sm font-medium text-zinc-900"
+              className={cn(
+                "pointer-events-none absolute inset-x-0 animate-[turn-fade_200ms_ease-out] rounded-[16px] border border-accent/40 bg-surface px-3 py-2 text-center text-sm font-medium text-zinc-900",
+                column ? "top-0" : "bottom-full mb-2",
+              )}
             >
               {banner}
             </p>
@@ -239,7 +247,10 @@ export function Hud() {
             className={cn(
               "pointer-events-auto flex flex-col gap-2 overflow-y-auto overscroll-contain",
               // #383: stop under the header (or the portrait seat strip) and leave the island at least ~8 rem.
-              phone && portrait ? "max-h-[calc(100dvh-16rem)]" : "max-h-[calc(100dvh-13rem)]",
+              // #422: the column runs from under the header to the bottom edge every phase, so the hole beside it never moves.
+              column
+                ? "h-[calc(100dvh-4.25rem-max(0.75rem,env(safe-area-inset-bottom)))] [&>:first-child]:mt-auto"
+                : portrait ? "max-h-[calc(100dvh-16rem)]" : "max-h-[calc(100dvh-13rem)]",
             )}
           >
             {phone && portrait && !hintDismissed ? (
@@ -347,22 +358,28 @@ export function Hud() {
                 ) : null}
                 {!state.playedCard && playable(me, "plenty") > 0 ? <PlentyForm /> : null}
                 {!state.playedCard && playable(me, "monopoly") > 0 ? <MonopolyForm /> : null}
-                <Button size="sm" variant="sea" className="ml-auto" onClick={() => dispatch({ type: "endTurn" })}>
-                  End turn
-                </Button>
+                <div className="ml-auto flex gap-2 *:self-center">
+                  {dice}
+                  <Button size="sm" variant="sea" className={phone ? "h-11" : undefined} onClick={() => dispatch({ type: "endTurn" })}>
+                    End turn
+                  </Button>
+                </div>
               </div>
             ) : null}
 
             {(state.phase === "roll" || state.phase === "rollOff") && mine ? (
               <div className="flex flex-col gap-2">
                 {knightButton ? <div className="flex flex-wrap gap-1">{knightButton}</div> : null}
-                <Button size="lg" onClick={() => dispatch({ type: "roll" })}>
-                  <Dices className="size-5" /> Roll
-                </Button>
+                <div className="flex gap-2 *:self-center">
+                  {dice}
+                  <Button size="lg" className="flex-1" onClick={() => dispatch({ type: "roll" })}>
+                    <Dices className="size-5" /> Roll
+                  </Button>
+                </div>
               </div>
             ) : null}
 
-            {state.dice ? <Dice values={state.dice} /> : null}
+            {diceInBar ? null : dice}
 
             <p
               data-testid="log-line"
@@ -416,7 +433,7 @@ function TakeFromBar() {
 }
 
 // Coarse pointers pick a mark, then confirm here (docs/design/mobile-camera-touch.md). Enter confirms, Esc cancels.
-function PlaceChip() {
+function PlaceChip({ column }: { column: boolean }) {
   const pending = useGame((s) => s.pendingPlace);
   const confirmPlace = useGame((s) => s.confirmPlace);
   const setPendingPlace = useGame((s) => s.setPendingPlace);
@@ -431,7 +448,10 @@ function PlaceChip() {
   }, [pending, confirmPlace, setPendingPlace]);
   if (!pending) return null;
   return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-[max(11rem,calc(env(safe-area-inset-bottom)+10.5rem))] z-20 flex items-center justify-end gap-3 px-safe">
+    // #422: beside the island on a sideways phone it would cover the board, so it sits over the HUD column instead.
+    <div
+      className={`pointer-events-none absolute inset-x-0 bottom-[max(11rem,calc(env(safe-area-inset-bottom)+10.5rem))] z-20 flex items-center gap-3 px-safe ${column ? "" : "justify-end"}`}
+    >
       <button type="button" className="pointer-events-auto h-11 px-2 text-sm text-fg underline" onClick={() => setPendingPlace(null)}>
         Cancel
       </button>
