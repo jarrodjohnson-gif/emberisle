@@ -422,8 +422,10 @@ function armTurns(room) {
       const resume = seat.resume ?? null;
       seat.resume = null;
       seat.turnStartedAt ??= now;
-      if (resume !== null && resume - now < RESUME_MIN_MS) return turnOut(room, seat);
-      const ms = resume !== null ? resume - now : Math.max(0, Math.min(TURN_MS, seat.turnStartedAt + TURN_TOTAL_MS - now));
+      // A window that ran out while the host was down is spent on a 0 ms timer, not inline, so the other seats in this
+      // loop are still armed and turnOut's own move does not re-enter armTurns mid-loop.
+      const spent = resume !== null && resume - now < RESUME_MIN_MS;
+      const ms = spent ? 0 : resume !== null ? resume - now : Math.max(0, Math.min(TURN_MS, seat.turnStartedAt + TURN_TOTAL_MS - now));
       seat.turnDeadline = now + ms;
       seat.turnTimer = setTimeout(() => turnOut(room, seat), ms);
     }
