@@ -58,7 +58,7 @@ const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"],
   cwd: new URL(".", import.meta.url),
   env: { ...process.env, PORT: "0", ROOMS_DIR },
 });
-process.on("exit", () => host.kill());
+process.on("exit", () => host.kill("SIGKILL"));
 for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
 const port = await new Promise((resolve, reject) => {
   host.stdout.on("data", (d) => {
@@ -70,7 +70,7 @@ const port = await new Promise((resolve, reject) => {
 
 function fail(why, extra) {
   console.log("FAIL", why, extra ?? "");
-  host.kill();
+  host.kill("SIGKILL");
   process.exit(1);
 }
 
@@ -229,6 +229,6 @@ async function freshTable(names) {
   console.log("an over-limit frame closes only that socket; the table carries on");
 }
 
-host.kill();
+host.kill("SIGKILL");
 console.log("chat prove ok");
 process.exit(0);

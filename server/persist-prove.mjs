@@ -15,7 +15,7 @@ for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
 function start(port) {
   host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
     cwd: new URL(".", import.meta.url),
-    env: { ...process.env, PORT: String(port), ROOMS_DIR },
+    env: { ...process.env, PORT: String(port), ROOMS_DIR, SAVE_MS: "30" },
   });
   let out = "";
   err = "";
@@ -99,6 +99,7 @@ async function advance() {
   if (g.phase === "rollOff") {
     await step(() => ({ type: "roll" }));
     // The room on disk after the first roll-off die: still in the roll-off, with that one die (docs/design/first-player.md).
+    await wait(100); // saves are debounced (SAVE_MS, G5)
     midRollOff ??= JSON.parse(readFileSync(path.join(ROOMS_DIR, `${code}.json`), "utf8")).game;
   } else if (g.phase === "setupSettle") await step((s) => ({ type: "place", kind: "outpost", id: s.legal.outpost[0] }));
   else if (g.phase === "setupRoad") await step((s) => ({ type: "place", kind: "path", id: s.legal.path[0] }));
@@ -238,6 +239,7 @@ await lobby.next("seats", (m) => m.code === wl.code && m.seats.length === 3 && m
 lobby.send({ type: "chat", text: "all ready" });
 await lobby.next("chat");
 host.removeAllListeners("exit");
+await wait(100); // the last chat is within the debounce window (SAVE_MS, G5)
 host.kill("SIGKILL");
 await new Promise((r) => host.once("exit", r));
 for (const x of [lobby, ...lobbyMates]) x.ws.terminate();
@@ -253,7 +255,8 @@ console.log(`restored lobby ${wl.code}: start refused with "${notReady.message}"
 lobbyBack.ws.terminate();
 
 host.removeAllListeners("exit");
-host.kill();
+host.kill("SIGKILL");
+await new Promise((r) => host.once("exit", r));
 for (const x of [a2, b2, c2, w2]) x.ws.terminate();
 rmSync(ROOMS_DIR, { recursive: true, force: true });
 console.log("persist prove ok");

@@ -12,7 +12,7 @@ const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"],
   cwd: new URL(".", import.meta.url),
   env: { ...process.env, PORT: "0", ACT_RATE: "1000", ACT_CAP: "1000", LOBBY_HOLD_MS: "200", ROOMS_DIR },
 });
-process.on("exit", () => host.kill());
+process.on("exit", () => host.kill("SIGKILL"));
 for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
 const port = await new Promise((resolve, reject) => {
   host.stdout.on("data", (d) => {
@@ -24,7 +24,7 @@ const port = await new Promise((resolve, reject) => {
 
 function fail(why, extra) {
   console.log("FAIL", why, extra ?? "");
-  host.kill();
+  host.kill("SIGKILL");
   process.exit(1);
 }
 
@@ -344,6 +344,6 @@ handsAreCounts("after 20 rolls");
   o.ws.close();
 }
 
-host.kill();
+host.kill("SIGKILL");
 console.log("table prove ok");
 process.exit(0);

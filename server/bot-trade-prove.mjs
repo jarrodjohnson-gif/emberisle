@@ -24,7 +24,7 @@ const OFFER_MS = 20000;
 let host;
 function fail(why, extra) {
   console.log("FAIL", why, extra ?? "");
-  host?.kill();
+  host?.kill("SIGKILL");
   process.exit(1);
 }
 
@@ -81,7 +81,7 @@ host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL(".", import.meta.url),
   env: { ...process.env, PORT: "0", ACT_RATE: "1000", ACT_CAP: "1000", ROOMS_DIR },
 });
-process.on("exit", () => host.kill());
+process.on("exit", () => host.kill("SIGKILL"));
 for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
 const port = await new Promise((resolve, reject) => {
   host.stdout.on("data", (d) => {
@@ -235,6 +235,6 @@ console.log("D: the offer open at Ember's win closed at every seat; after the re
 const cMs = await roomC;
 console.log(`C: nobody answered the bot's ask; no bot answered it; it closed after ${cMs} ms and the bot's turn played on`);
 
-host.kill();
+host.kill("SIGKILL");
 console.log("bot trade prove ok");
 process.exit(0);

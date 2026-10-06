@@ -13,7 +13,7 @@ const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"],
   cwd: new URL(".", import.meta.url),
   env: { ...process.env, PORT: "0", ACT_RATE: "1000", ACT_CAP: "1000", ROOMS_DIR },
 });
-process.on("exit", () => host.kill());
+process.on("exit", () => host.kill("SIGKILL"));
 for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
 const port = await new Promise((resolve, reject) => {
   host.stdout.on("data", (d) => {
@@ -25,7 +25,7 @@ const port = await new Promise((resolve, reject) => {
 
 function fail(why, extra) {
   console.log("FAIL", why, extra ?? "");
-  host.kill();
+  host.kill("SIGKILL");
   process.exit(1);
 }
 
@@ -277,6 +277,6 @@ if (gone.message !== "Offer is gone.") fail(`${late.name} late yes after the spe
 for (const c of all) if (c.inbox.some((m) => m.type === "error")) fail(`${c.name} got an error`, c.inbox.filter((m) => m.type === "error"));
 console.log(`${spender.name} offered its ${spent} and bank-traded it away: all three seats got tradeClosed and the log line; late yes got:`, gone.message);
 
-host.kill();
+host.kill("SIGKILL");
 console.log("trade table prove ok");
 process.exit(0);

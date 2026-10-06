@@ -22,7 +22,7 @@ const VP_CARDS = 5;
 let host;
 function fail(why, extra) {
   console.log("FAIL", why, extra ?? "");
-  host?.kill();
+  host?.kill("SIGKILL");
   process.exit(1);
 }
 // The whole proof, both games, must end well inside npm test's patience.
@@ -35,7 +35,7 @@ host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL(".", import.meta.url),
   env: { ...process.env, PORT: "0", ACT_RATE: "1000", ACT_CAP: "1000", ROOMS_DIR },
 });
-process.on("exit", () => host.kill());
+process.on("exit", () => host.kill("SIGKILL"));
 for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
 const port = await new Promise((resolve) => host.stdout.on("data", (d) => {
   const m = String(d).match(/listening (\d+)/);
@@ -277,6 +277,7 @@ async function rematch(all, w, gone) {
   const goneStatus = (await http(gone.pic)).status;
   const keptStatus = (await http(hostSeat.pic)).status;
   if (goneStatus !== 404 || keptStatus !== 200) fail("pictures after the rematch", { gone: goneStatus, kept: keptStatus });
+  await new Promise((r) => setTimeout(r, 500)); // saves are debounced (SAVE_MS, G5)
   const saved = JSON.parse(readFileSync(path.join(ROOMS_DIR, `${code}.json`), "utf8")).game;
   if (saved.seed === final.seed || saved.phase !== "rollOff" || saved.players[0].name !== winnerName) fail("the rematch on disk", { seed: saved.seed, old: final.seed, phase: saved.phase });
   const wg = w.state;
@@ -316,6 +317,7 @@ async function shortTable(all) {
   const left = all.filter((p) => p !== gone);
   const refused = await againRefused(left, hostSeat, "again with two at the table");
   if (refused !== "Need 3 or 4 at the table.") fail("again with two at the table", refused);
+  await new Promise((r) => setTimeout(r, 500)); // saves are debounced (SAVE_MS, G5)
   const saved = JSON.parse(readFileSync(path.join(ROOMS_DIR, `${hostSeat.code}.json`), "utf8"));
   if (saved.game.phase !== "over" || saved.seats.length !== 3) fail("the short table on disk", { phase: saved.game.phase, seats: saved.seats.length });
   console.log("rematch: two at the table is refused, the finished game and all three seats kept");
@@ -345,6 +347,6 @@ await shortTable(all);
 for (const p of all) p.t.close();
 w.ws.close();
 console.log(`${GAMES} hosted games to the win in ${Date.now() - started} ms`);
-host.kill();
+host.kill("SIGKILL");
 console.log("finish prove ok");
 process.exit(0);

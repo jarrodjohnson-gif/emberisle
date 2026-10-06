@@ -17,7 +17,7 @@ const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"],
   cwd: new URL(".", import.meta.url),
   env: { ...process.env, PORT: "0", TURN_MS: String(TURN), GRACE_MS: String(GRACE), HOLD_MS: String(HOLD), ACT_RATE: "1000", ACT_CAP: "1000", ROOMS_DIR },
 });
-process.on("exit", () => host.kill());
+process.on("exit", () => host.kill("SIGKILL"));
 for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
 const port = await new Promise((resolve, reject) => {
   host.stdout.on("data", (d) => {
@@ -29,7 +29,7 @@ const port = await new Promise((resolve, reject) => {
 
 function fail(why, extra) {
   console.log("FAIL", why, extra ?? "");
-  host.kill();
+  host.kill("SIGKILL");
   process.exit(1);
 }
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -213,6 +213,6 @@ const bot = await watcher.next("state", (m) => m.game.seq > passed.game.seq && m
 console.log(`dropped seat: ${dropper.name} held ${graced} ms (TURN_MS ${TURN}, GRACE_MS ${GRACE}), no turn-timer line, then "${taken.text}", seq ${passed.game.seq} -> ${bot.game.seq}`);
 
 host.removeAllListeners("exit");
-host.kill();
+host.kill("SIGKILL");
 console.log("turn prove ok");
 process.exit(0);

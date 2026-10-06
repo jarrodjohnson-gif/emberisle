@@ -27,7 +27,7 @@ const DEV_KINDS = ["knight", "road", "plenty", "monopoly", "vp"];
 let host;
 function fail(why, extra) {
   console.log("FAIL", why, extra ?? "");
-  host?.kill();
+  host?.kill("SIGKILL");
   process.exit(1);
 }
 setTimeout(() => fail("the proof ran past 120 s"), 120_000);
@@ -39,7 +39,7 @@ host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL(".", import.meta.url),
   env: { ...process.env, PORT: "0", ACT_RATE: "1000", ACT_CAP: "1000", TURN_MS: String(TURN), GRACE_MS: String(GRACE), HOLD_MS: String(HOLD), SPECTATOR_MAX: String(WATCH_MAX), ROOMS_DIR },
 });
-process.on("exit", () => host.kill());
+process.on("exit", () => host.kill("SIGKILL"));
 for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
 const port = await new Promise((resolve, reject) => {
   host.stdout.on("data", (d) => {
@@ -346,6 +346,6 @@ if (w2.errors[w2.errors.length - 1] !== "The table closed.") fail("a dropped roo
 console.log(`dropped room: every seat gone, after HOLD_MS=${HOLD} the watcher got "The table closed." and its socket closed`);
 
 host.removeAllListeners("exit");
-host.kill();
+host.kill("SIGKILL");
 console.log("watch prove ok");
 process.exit(0);
