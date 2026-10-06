@@ -54,6 +54,7 @@
     "fortune-tray-prove": "node scripts/fortune-tray-prove.mjs",
     "save-prove": "node --import ./server/register.mjs server/save-prove.mjs",
     "stale-prove": "node --import ./server/register.mjs server/stale-prove.mjs",
+    "cap-prove": "node --import ./server/register.mjs server/cap-prove.mjs",
     "turn-gain-prove": "node scripts/turn-gain-prove.mjs"
   },
   "dependencies": {
