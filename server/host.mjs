@@ -168,7 +168,7 @@ function snapshot(room) {
     chat: room.chat,
     chatSeq: room.chatSeq,
     game: room.game,
-    seats: room.seats.map(({ id, name, color, ready, pid, secret }) => ({ id, name, color, ready, pid, secret })),
+    seats: room.seats.map(({ id, name, color, ready, pid, secret, turnDeadline, turnStartedAt }) => ({ id, name, color, ready, pid, secret, turnDeadline: turnDeadline ?? null, turnStartedAt: turnStartedAt ?? null })),
     shape: ROOM_SHAPE,
     savedAt: Date.now(),
   });
@@ -264,7 +264,9 @@ function load() {
       for (const s of saved.seats) {
         if (typeof s?.id !== "string" || typeof s.secret !== "string") throw new Error(`bad seat ${JSON.stringify(s)}`);
         // Avatars live in memory only, so a restored seat has none.
-        room.seats.push({ ...s, avatarId: null, ws: null, bucket: { tokens: 5, at: Date.now() }, act: { tokens: ACT_CAP, at: Date.now() } });
+        // G9: the saved window rides in `resume` until the seat is back and waited on; older files have none.
+        const at = (n) => (Number.isFinite(n) ? n : null);
+        room.seats.push({ ...s, turnDeadline: null, turnStartedAt: at(s.turnStartedAt), resume: at(s.turnDeadline), avatarId: null, ws: null, bucket: { tokens: 5, at: Date.now() }, act: { tokens: ACT_CAP, at: Date.now() } });
       }
     } catch (err) {
       console.error("unreadable room file:", name, err.message);
@@ -401,17 +403,27 @@ function disarmTurn(seat) {
 
 // Every connected human seat the game waits on gets TURN_MS from the moment it became waited on. An accepted action
 // from the seat disarms it first (play), so its window restarts, but never past TURN_TOTAL_MS from `turnStartedAt`
-// (G3: acting forever can't hold the table); a dropped seat is disarmed (hold) and left to GRACE_MS.
+// (G3: acting forever can't hold the table); a dropped seat is disarmed (hold) and left to GRACE_MS. The budget
+// outlives a drop and rejoin within the turn (only a turn that moves on clears it), and a window saved before a host
+// restart (`resume`, G9) is kept: the remainder is armed, and one that ran out while the host was down, or has under
+// RESUME_MIN_MS left, is spent at once so a timeout never lands mid-rejoin.
+const RESUME_MIN_MS = Math.min(5000, TURN_MS / 10);
 function armTurns(room) {
   for (const seat of room.seats) {
     const human = room.game?.players.find((p) => p.id === seat.pid)?.kind === "human";
-    if (!seat.ws || !human || !waitedOn(room.game, seat.pid)) {
-      disarmTurn(seat);
+    const waited = human && waitedOn(room.game, seat.pid);
+    if (!waited) {
       seat.turnStartedAt = null;
-    } else if (!seat.turnTimer) {
+      seat.resume = null;
+    }
+    if (!seat.ws || !waited) disarmTurn(seat);
+    else if (!seat.turnTimer) {
       const now = Date.now();
+      const resume = seat.resume ?? null;
+      seat.resume = null;
       seat.turnStartedAt ??= now;
-      const ms = Math.max(0, Math.min(TURN_MS, seat.turnStartedAt + TURN_TOTAL_MS - now));
+      if (resume !== null && resume - now < RESUME_MIN_MS) return turnOut(room, seat);
+      const ms = resume !== null ? resume - now : Math.max(0, Math.min(TURN_MS, seat.turnStartedAt + TURN_TOTAL_MS - now));
       seat.turnDeadline = now + ms;
       seat.turnTimer = setTimeout(() => turnOut(room, seat), ms);
     }
