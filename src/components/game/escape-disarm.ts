@@ -4,7 +4,7 @@ import { play } from "@/lib/sound";
 
 // Escape, topmost layer first. One press closes exactly one thing:
 //   1. TableMenu (and its Leave question): window capture + stopPropagation (it closes whenever HowTo opens, so the two never stack).
-//   2. HowTo: modal, so window capture + stopPropagation; nothing behind it hears the key.
+//   2. HowTo and the Costs card: modal, so window capture + stopPropagation; nothing behind it hears the key.
 //   3. TradePanel (window) and PlayerMenu (document), bubble phase, each closes itself; PlaceChip's pending tap (window) likewise.
 //   4. QuickReactions picker: document bubble phase; its Escape must get the chance to close before a build mode disarms.
 //   5. Disarming a build mode: window capture, but it stands down when 1-4 are open or the key came from a text field
@@ -15,7 +15,7 @@ export function useEscapeDisarm() {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
       const s = useGame.getState();
-      if (s.buildMode === "none" || s.tradeOpen || s.menuFor || s.pendingPlace || s.howTo || document.getElementById("quick-reaction-picker")) return;
+      if (s.buildMode === "none" || s.tradeOpen || s.menuFor || s.pendingPlace || s.howTo || s.costs || document.getElementById("quick-reaction-picker")) return;
       if ((e.target as HTMLElement | null)?.closest("input, select, textarea")) return;
       if (document.querySelector('[data-testid="table-menu"]')) return;
       play("ui_back");

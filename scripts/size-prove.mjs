@@ -5,7 +5,8 @@
 // weight, and say why in the PR. Each budget is the gzip size on main on 2026-10-03 plus 10%
 // (index 105728 bytes, IslandCanvas 166209 bytes). #488 split the online-only lobby and chat (online) and the on-demand
 // How to play, trade panel and win screen (sheets) out of the index. sheets is its 2026-10-05 size with the #423 fortune
-// tray (5.21 kB) plus 10%; online is set at 8000 for #500's mute menu and sender-aware unread count (7.27 kB) plus 10%.
+// tray (5.21 kB) plus 10%, then its 2026-10-05 size with the Costs card (5.71 kB, build-ready-prove) plus 10%; online is set at
+// 8000 for #500's mute menu and sender-aware unread count (7.27 kB) plus 10%.
 // moments (the turn moment and the gain lines, Jarrod's playtest) is its 2026-10-05 size (2.37 kB) plus 10%.
 import { readdirSync, readFileSync } from "node:fs";
 import { gzipSync } from "node:zlib";
@@ -15,7 +16,7 @@ const BUDGETS = [
   { name: "index", gzipBytes: 116301 },
   { name: "IslandCanvas", gzipBytes: 182830 },
   { name: "online", gzipBytes: 8000 },
-  { name: "sheets", gzipBytes: 5731 },
+  { name: "sheets", gzipBytes: 6282 },
   { name: "moments", gzipBytes: 2610 },
   // The lucide Minus icon, which Chat (online) and TradePanel (sheets) both use and nothing in the index does: rolldown
   // gives a module shared by two lazy chunks a chunk of its own. If the sharing ends, so does this chunk; drop the line.

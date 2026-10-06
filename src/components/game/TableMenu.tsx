@@ -1,10 +1,10 @@
 // #442: the table's one top-right control. A 44 px quiet "…" button opens a small sheet holding what the top chrome used
-// to spread out: the turn number and watcher count, How to play, the sound toggle, the table code (online) and Leave table.
+// to spread out: the turn number and watcher count, How to play, Costs, the sound toggle, the table code (online) and Leave table.
 // A watcher's own "Watching" chip stays in the header beside the button (docs/design/spectator.md), not in here.
 // Opens with focus on the first row; Escape, a pointerdown outside or focus leaving closes it, and Escape puts the focus
 // back on the button. Leaving an online seat asks first (the seat goes to a bot for good); Stay, Escape or 5 s cancels.
 import { useEffect, useRef, useState } from "react";
-import { BookOpen, Copy, Ellipsis, Eye, LogOut, Volume2, VolumeX } from "lucide-react";
+import { BookOpen, Copy, Ellipsis, Eye, Hammer, LogOut, Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CopyFallback, useCopy } from "@/components/game/CopyText";
 import { useGame } from "@/lib/game/store";
@@ -20,6 +20,7 @@ export function TableMenu() {
   const spectator = useGame((s) => s.spectator);
   const watching = useGame((s) => s.watching);
   const setHowTo = useGame((s) => s.setHowTo);
+  const setCosts = useGame((s) => s.setCosts);
   const goTitle = useGame((s) => s.goTitle);
   const muted = useMuted();
   const { state: copied, copy, reset } = useCopy<"code">();
@@ -155,6 +156,16 @@ export function TableMenu() {
                 }}
               >
                 <BookOpen className={ICON} /> How to play
+              </Button>
+              <Button
+                variant="ghost"
+                className={ROW}
+                onClick={() => {
+                  setCosts(true, trigger.current);
+                  close(false);
+                }}
+              >
+                <Hammer className={ICON} /> Costs
               </Button>
               {/* A toggle, so the menu stays open to show the new state (#303). */}
               <Button variant="ghost" className={ROW} data-testid="sound-toggle" aria-pressed={!muted} silent onClick={() => { setMuted(!muted); if (muted) play("ui_click"); }}>
