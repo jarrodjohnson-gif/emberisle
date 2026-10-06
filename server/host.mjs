@@ -52,6 +52,7 @@ const LOBBY_HOLD_MS = Number(process.env.LOBBY_HOLD_MS ?? 90 * 1000);
 // A connected player who stops taking their turn: after this long the host's bot makes that one move for the
 // seat and the seat stays human (#344, Jarrod's call on #324). A dropped seat follows GRACE_MS instead, never this.
 const TURN_MS = Number(process.env.TURN_MS ?? 120 * 1000);
+const TURN_TOTAL_MS = Number(process.env.TURN_TOTAL_MS ?? 6 * TURN_MS);
 // A bot seat answers a table ask after BOT_ANSWER_MS to twice that, so its Yes or No lands like a person's (#363).
 const BOT_ANSWER_MS = Number(process.env.BOT_ANSWER_MS ?? 1000);
 // Every socket is pinged this often; one that has not answered the last ping is cut, so a phone that
@@ -352,14 +353,20 @@ function disarmTurn(seat) {
 }
 
 // Every connected human seat the game waits on gets TURN_MS from the moment it became waited on. An accepted action
-// from the seat disarms it first (play), so its window restarts; a dropped seat is disarmed (hold) and left to GRACE_MS.
+// from the seat disarms it first (play), so its window restarts, but never past TURN_TOTAL_MS from `turnStartedAt`
+// (G3: acting forever can't hold the table); a dropped seat is disarmed (hold) and left to GRACE_MS.
 function armTurns(room) {
   for (const seat of room.seats) {
     const human = room.game?.players.find((p) => p.id === seat.pid)?.kind === "human";
-    if (!seat.ws || !human || !waitedOn(room.game, seat.pid)) disarmTurn(seat);
-    else if (!seat.turnTimer) {
-      seat.turnDeadline = Date.now() + TURN_MS;
-      seat.turnTimer = setTimeout(() => turnOut(room, seat), TURN_MS);
+    if (!seat.ws || !human || !waitedOn(room.game, seat.pid)) {
+      disarmTurn(seat);
+      seat.turnStartedAt = null;
+    } else if (!seat.turnTimer) {
+      const now = Date.now();
+      seat.turnStartedAt ??= now;
+      const ms = Math.max(0, Math.min(TURN_MS, seat.turnStartedAt + TURN_TOTAL_MS - now));
+      seat.turnDeadline = now + ms;
+      seat.turnTimer = setTimeout(() => turnOut(room, seat), ms);
     }
   }
 }
