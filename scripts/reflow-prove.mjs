@@ -133,8 +133,13 @@ try {
       me.resources = { timber: 4, clay: 4, wool: 4, grain: 4, ore: 4 };
       me.hidden = { knight: 1, road: 1, plenty: 1, monopoly: 1, vp: 1 };
       me.boughtThisTurn = { knight: 0, road: 0, plenty: 0, monopoly: 0, vp: 0 };
+      // An outpost of the seat's own, so Path has an edge to lay and arms (a build with no spot refuses, build-ready-prove).
+      st.vertices.find((v) => v.hexes.length === 3).building = { playerId: me.id, kind: "outpost" };
       st.seq += 1;
-      g.setState({ state: st, banner: "Rolled 3 and 4: 7.", buildMode: "none", pendingSteal: null, error: null });
+      // Fixture, not a product change: an error line (a real stack row, as after a refused build) is added because the
+      // build row got a line shorter with its 44 px tiles (build-ready-prove), and the 640x360 and 844x390 checks below
+      // need the column to overflow to test the "more below" cue.
+      g.setState({ state: st, banner: "Rolled 3 and 4: 7.", buildMode: "none", pendingSteal: null, error: "The bank is short of ore." });
     });
     await page.getByRole("button", { name: "End turn" }).waitFor();
     await page.getByTestId("fortunes-button").waitFor();
