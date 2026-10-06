@@ -6,11 +6,13 @@ import { useGame } from "@/lib/game/store";
 export function SheetsFailed({ sheetsKey, onLost }: { sheetsKey: string; onLost: (key: string | null) => void }) {
   const setHowTo = useGame((s) => s.setHowTo);
   const setTradeOpen = useGame((s) => s.setTradeOpen);
+  const setCosts = useGame((s) => s.setCosts);
   useEffect(() => {
     setHowTo(false);
     setTradeOpen(false);
+    setCosts(false);
     onLost(sheetsKey);
     return () => onLost(null);
-  }, [setHowTo, setTradeOpen, onLost, sheetsKey]);
+  }, [setHowTo, setTradeOpen, setCosts, onLost, sheetsKey]);
   return null;
 }

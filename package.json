@@ -52,6 +52,7 @@
     "seat-rail-prove": "node scripts/seat-rail-prove.mjs",
     "seat-marks-prove": "node --import ./server/register.mjs scripts/seat-marks-prove.mjs",
     "fortune-tray-prove": "node scripts/fortune-tray-prove.mjs",
+    "build-ready-prove": "node --import ./server/register.mjs scripts/build-ready-prove.mjs",
     "stale-prove": "node --import ./server/register.mjs server/stale-prove.mjs",
     "cap-prove": "node --import ./server/register.mjs server/cap-prove.mjs",
     "turn-gain-prove": "node scripts/turn-gain-prove.mjs"
