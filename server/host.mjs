@@ -1,4 +1,5 @@
 import { mkdirSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { mkdir, rename, writeFile } from "node:fs/promises";
 import { readFile } from "node:fs/promises";
 import http from "node:http";
 import path from "node:path";
@@ -61,6 +62,10 @@ const PING_MS = Number(process.env.PING_MS ?? 30 * 1000);
 // Every room is saved to ROOMS/<code>.json after each change and reloaded on boot, so a host PC
 // that sleeps or a Node crash does not end the game. Rooms saved more than a day ago are dropped.
 const ROOMS = path.resolve(process.env.ROOMS_DIR ?? fileURLToPath(new URL("./rooms/", import.meta.url)));
+// A change marks its room dirty and one write goes out SAVE_MS after the first change of a burst, so 50 quick
+// actions are a handful of writes, not 50 (G5). SIGTERM, SIGINT and a normal exit flush every dirty room at once;
+// kill -9 or a power cut can lose at most the last SAVE_MS of changes. The proofs shorten it through env.
+const SAVE_MS = Number(process.env.SAVE_MS ?? 250);
 const ROOM_TTL = 24 * 60 * 60 * 1000;
 // Stamped on every saved room. Bump it whenever GameState, the seat record or the chat record changes
 // shape: load() drops files with any other stamp (including none), so a bump ends the saved rooms on the next restart.
@@ -151,7 +156,12 @@ function watchersChanged(room, text) {
 // Sockets, timers and the open trade offer stay in memory; everything else goes to disk.
 function save(room) {
   if (!rooms.has(room.code)) return;
-  const out = {
+  room.dirty = true;
+  if (!room.saveTimer && !room.saving) room.saveTimer = setTimeout(() => flush(room), SAVE_MS);
+}
+
+function snapshot(room) {
+  return JSON.stringify({
     code: room.code,
     host: room.host,
     next: room.next,
@@ -161,20 +171,57 @@ function save(room) {
     seats: room.seats.map(({ id, name, color, ready, pid, secret }) => ({ id, name, color, ready, pid, secret })),
     shape: ROOM_SHAPE,
     savedAt: Date.now(),
-  };
+  });
+}
+
+// One write at a time per room: changes that land mid-write set `dirty` again and the next write follows.
+// Write then rename, so a crash mid-write never leaves half a room behind.
+async function flush(room) {
+  room.saveTimer = null;
+  if (!room.dirty || !rooms.has(room.code)) return;
+  room.dirty = false;
+  room.saving = true;
+  const file = path.join(ROOMS, `${room.code}.json`);
   try {
-    mkdirSync(ROOMS, { recursive: true });
-    const file = path.join(ROOMS, `${room.code}.json`);
-    // Write then rename, so a crash mid-write never leaves half a room behind.
-    writeFileSync(`${file}.tmp`, JSON.stringify(out));
-    renameSync(`${file}.tmp`, file);
+    const json = snapshot(room);
+    await mkdir(ROOMS, { recursive: true });
+    await writeFile(`${file}.tmp`, json);
+    await rename(`${file}.tmp`, file);
   } catch (err) {
     console.error("save failed:", err);
   }
+  room.saving = false;
+  // The table closed while the write was in flight: the rename may have landed after unsave(), so remove it again.
+  if (room.dropped) unsave(room);
+  else if (room.dirty) room.saveTimer = setTimeout(() => flush(room), SAVE_MS);
 }
 
+// Synchronous, for the end of the process: every room with a change not yet on disk (or a write in flight) is written now.
+function flushAll() {
+  for (const room of rooms.values()) {
+    if (!room.dirty && !room.saving) continue;
+    clearTimeout(room.saveTimer);
+    room.saveTimer = null;
+    room.dirty = false;
+    try {
+      const file = path.join(ROOMS, `${room.code}.json`);
+      mkdirSync(ROOMS, { recursive: true });
+      writeFileSync(`${file}.tmp`, snapshot(room));
+      renameSync(`${file}.tmp`, file);
+    } catch (err) {
+      console.error("save failed:", err);
+    }
+  }
+}
+process.on("exit", flushAll);
+for (const [sig, code] of [["SIGINT", 130], ["SIGTERM", 143]]) process.on(sig, () => process.exit(code));
+
 function unsave(room) {
+  room.dropped = true;
+  clearTimeout(room.saveTimer);
+  room.saveTimer = null;
   rmSync(path.join(ROOMS, `${room.code}.json`), { force: true });
+  rmSync(path.join(ROOMS, `${room.code}.json.tmp`), { force: true });
 }
 
 // Rebuild every saved room. Nobody is connected yet, so each seat is held as if it had just dropped.

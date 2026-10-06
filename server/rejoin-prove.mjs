@@ -16,7 +16,7 @@ const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"],
   cwd: new URL(".", import.meta.url),
   env: { ...process.env, PORT: "0", GRACE_MS: String(GRACE), HOLD_MS: String(HOLD), LOBBY_HOLD_MS: String(LOBBY_HOLD), PING_MS: String(PING), ROOMS_DIR },
 });
-process.on("exit", () => host.kill());
+process.on("exit", () => host.kill("SIGKILL"));
 for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
 const port = await new Promise((resolve, reject) => {
   host.stdout.on("data", (d) => {
@@ -28,7 +28,7 @@ const port = await new Promise((resolve, reject) => {
 
 function fail(why, extra) {
   console.log("FAIL", why, extra ?? "");
-  host.kill();
+  host.kill("SIGKILL");
   process.exit(1);
 }
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -236,6 +236,6 @@ console.log(`past the hold: "${late.message}"`);
 }
 
 host.removeAllListeners("exit");
-host.kill();
+host.kill("SIGKILL");
 console.log("rejoin prove ok");
 process.exit(0);

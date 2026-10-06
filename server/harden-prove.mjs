@@ -11,7 +11,7 @@ import { applyAction } from "../src/lib/game/rules.ts";
 let host;
 function fail(why, extra) {
   console.log("FAIL", why, extra ?? "");
-  host?.kill();
+  host?.kill("SIGKILL");
   process.exit(1);
 }
 
@@ -56,7 +56,7 @@ host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   env: { ...process.env, PORT: "0", GRACE_MS: "100", SPECTATOR_MAX: "0", ROOMS_DIR },
   stdio: ["ignore", "pipe", "pipe"],
 });
-process.on("exit", () => host.kill());
+process.on("exit", () => host.kill("SIGKILL"));
 for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
 const port = await new Promise((resolve, reject) => {
   host.stdout.on("data", (d) => {
@@ -203,13 +203,13 @@ console.log(`SPECTATOR_MAX=0: the first watcher of the started table got "${noWa
 
 // 4. A host with ROOM_MAX=3 opens three tables and refuses the fourth; one seat flooding non-chat messages is throttled (#281).
 const SMALL_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-rooms-"));
-process.on("exit", () => rmSync(SMALL_DIR, { recursive: true, force: true }));
+process.on("exit", () => rmSync(SMALL_DIR, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 }));
 const small3 = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL(".", import.meta.url),
   env: { ...process.env, PORT: "0", ROOMS_DIR: SMALL_DIR, ROOM_MAX: "3" },
   stdio: ["ignore", "pipe", "pipe"],
 });
-process.on("exit", () => small3.kill());
+process.on("exit", () => small3.kill("SIGKILL"));
 const port3 = await new Promise((resolve, reject) => {
   small3.stdout.on("data", (d) => {
     const mm = String(d).match(/listening (\d+)/);
@@ -226,6 +226,8 @@ for (const [i, x] of four.entries()) {
   await (i < 3 ? x.next("welcome").then((w) => codes.push(w.code)) : x.next("error").then((e) => (e.message === "The host is full." ? e : fail("fourth table answer", e.message))));
 }
 if (four[3].inbox.some((e) => e.type === "welcome")) fail("the fourth table opened");
+// Saves are debounced (SAVE_MS, G5), so give the three tables their write.
+await new Promise((r) => setTimeout(r, 500));
 const files = readdirSync(SMALL_DIR).filter((f) => f.endsWith(".json"));
 if (files.length !== 3) fail("rooms/ should hold three files", files);
 console.log("ROOM_MAX=3: three hellos got welcome, the fourth got 'The host is full.', rooms/ holds", files.length, "files");
@@ -291,9 +293,9 @@ console.log(`ROOM_MAX=3 with 2 watchers on ${codes[1]}: a new table still got "$
 for (const x of [...mates, ...watchers, fifth]) x.ws.close();
 for (const x of four) x.ws.close();
 small3.removeAllListeners("exit");
-small3.kill();
+small3.kill("SIGKILL");
 
 host.removeAllListeners("exit");
-host.kill();
+host.kill("SIGKILL");
 console.log("harden prove ok");
 process.exit(0);

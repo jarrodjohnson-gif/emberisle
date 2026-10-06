@@ -21,7 +21,7 @@ const code = "CPAA";
 const dir = mkdtempSync(path.join(tmpdir(), "emberisle-cap-"));
 let host;
 let stderr = "";
-process.on("exit", () => { host?.kill(); rmSync(dir, { recursive: true, force: true }); });
+process.on("exit", () => { host?.kill("SIGKILL"); rmSync(dir, { recursive: true, force: true }); });
 for (const signal of ["SIGINT", "SIGTERM"]) process.on(signal, () => process.exit(130));
 
 let g = createGame({ humans: [{ name: "Ember" }, { name: "Tide" }, { name: "Pine" }], bots: 0, seed: 11 });
