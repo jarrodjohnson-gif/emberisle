@@ -48,7 +48,7 @@ async function client(port, name) {
     for (const w of c.waiters.splice(0)) w();
   });
   ws.on("error", () => {});
-  c.send = (msg) => ws.send(JSON.stringify(msg));
+  c.send = (msg) => ws.send(JSON.stringify({ ...c.state?.actionStamp, cid: crypto.randomUUID(), ...msg }));
   c.next = async (type, ok = () => true, ms = 10000) => {
     const until = Date.now() + ms;
     for (;;) {

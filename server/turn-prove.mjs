@@ -54,7 +54,7 @@ async function client(name) {
     c.inbox.push(msg);
     for (const w of c.waiters.splice(0)) w();
   });
-  c.send = (msg) => ws.send(JSON.stringify(msg));
+  c.send = (msg) => ws.send(JSON.stringify({ ...c.state?.actionStamp, cid: crypto.randomUUID(), ...msg }));
   // The first message of `type` that passes `ok`, waiting up to `ms`.
   c.next = async (type, ok = () => true, ms = 3000) => {
     const until = Date.now() + ms;
