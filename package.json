@@ -52,7 +52,8 @@
     "seat-rail-prove": "node scripts/seat-rail-prove.mjs",
     "seat-marks-prove": "node --import ./server/register.mjs scripts/seat-marks-prove.mjs",
     "fortune-tray-prove": "node scripts/fortune-tray-prove.mjs",
-    "stale-prove": "node --import ./server/register.mjs server/stale-prove.mjs"
+    "stale-prove": "node --import ./server/register.mjs server/stale-prove.mjs",
+    "turn-gain-prove": "node scripts/turn-gain-prove.mjs"
   },
   "dependencies": {
     "clsx": "^2.1.1",
