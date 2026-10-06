@@ -668,7 +668,7 @@ try {
   console.log("win dialog:", JSON.stringify({ focused, modal }));
   if (focused?.trim() !== "Back to menu" || modal !== "true") throw new Error(`win dialog: ${JSON.stringify({ focused, modal })}`);
 
-  // #253: with reduced motion a resource flash is gone almost at once, and the banner fade is cut short.
+  // #253/#565: reduced motion retains the readable hand delta fade; the banner fade is cut short.
   await page.emulateMedia({ reducedMotion: "reduce" });
   await freshPractice();
   await page.evaluate(() => {
@@ -691,7 +691,7 @@ try {
   ).jsonValue();
   await page.emulateMedia({ reducedMotion: null });
   console.log("reduced motion:", JSON.stringify(motion));
-  if (motion.flash !== "0.001s" || motion.fade !== "0.001s") throw new Error(`reduced motion: ${JSON.stringify(motion)}`);
+  if (motion.flash !== "1.2s" || motion.fade !== "0.001s") throw new Error(`reduced motion: ${JSON.stringify(motion)}`);
   await toTitle();
   // #254: online, Leave asks first (Stay and Escape cancel); a second Leave goes to the title and clears the saved seat.
   // Practice keeps the one-click Leave.
