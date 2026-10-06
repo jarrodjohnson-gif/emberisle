@@ -109,6 +109,7 @@ jobs:
         with:
           name: dist
           path: dist/
+      - run: npm run hand-cards-prove
       - run: npm run served-prove
       - run: npm run chunk-fail-prove
       - run: npm run night-prove
@@ -135,7 +136,6 @@ jobs:
       - run: npm run table-menu-prove
       - run: npm run build-ready-prove
       - run: npm run board-look-prove
-      - run: npm run hand-cards-prove
       - run: npm run seat-rail-prove
       - run: npm run hand-hidden-prove
       - run: npm run install-prove

@@ -1,0 +1,22 @@
+/* Keep the hand delta readable when the painted card has dimmed to zero. Its sibling overlay does
+   not inherit the card's opacity. Card movement uses WAAPI and never changes this slot's dimensions. */
+@keyframes hand-resource-flash-fade {
+  0%, 65% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@media (max-height: 480px) {
+  /* The compact card reserves its upper left for the delta and its lower row for icon/count.
+     Fade in place so the label stays inside the existing 4px hand padding throughout its lifetime. */
+  .hand-resource-card-slot > .hand-resource-flash {
+    animation-name: hand-resource-flash-fade !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Outrank the global [style*="resource-flash"] 1ms override for this hand's numeric cue only. */
+  .hand-resource-card-slot > .hand-resource-flash[style*="resource-flash"] {
+    animation-name: hand-resource-flash-fade !important;
+    animation-duration: 1200ms !important;
+  }
+}
