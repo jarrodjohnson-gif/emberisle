@@ -131,6 +131,7 @@ jobs:
       - run: npm run tabs-prove-4
       - run: npm run polish-tokens-prove
       - run: npm run roll-moment-prove
+      - run: npm run turn-gain-prove
       - run: npm run table-menu-prove
       - run: npm run build-ready-prove
       - run: npm run board-look-prove

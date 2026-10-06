@@ -76,7 +76,7 @@ function client(at = port) {
     c.inbox.push(m);
     for (const w of c.waiters.splice(0)) w();
   });
-  c.send = (m) => ws.send(typeof m === "string" ? m : JSON.stringify(m));
+  c.send = (m) => ws.send(typeof m === "string" ? m : JSON.stringify({ ...c.state?.actionStamp, cid: crypto.randomUUID(), ...m }));
   c.next = async (type) => {
     for (;;) {
       const i = c.inbox.findIndex((m) => m.type === type);

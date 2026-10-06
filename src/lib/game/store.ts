@@ -234,6 +234,11 @@ interface GameStore {
   watchTable: (code: string) => void;
   // True from a `welcome {spectator:true}` until the Title; every seat-only action returns at once while it is set.
   spectator: boolean;
+  // Bumped by the first game state after each welcome, in the same update that loads it (a join, a page-load rejoin or a
+  // reconnect). The turn moment and gain lines take that state as their baseline and say nothing about it.
+  synced: number;
+  // A welcome has come and its first state has not: loadState bumps `synced`.
+  resync: boolean;
   // How many spectators the table has, from `seats {watching}` (#347).
   watching: number;
   // Sit back down in the seat this browser held (localStorage), e.g. after a reload (#196).
@@ -352,6 +357,8 @@ export const useGame = create<GameStore>((set, get) => ({
   turnTimer: null,
   lobbyLog: "",
   spectator: false,
+  synced: 0,
+  resync: false,
   watching: 0,
   pendingSteal: null,
   seatId: "",
@@ -447,6 +454,8 @@ export const useGame = create<GameStore>((set, get) => ({
       table: table ?? get().table,
       error: null,
       pendingSteal: null,
+      resync: false,
+      synced: get().resync ? get().synced + 1 : get().synced,
     }),
   goTitle: () => {
     // Leaving on purpose frees the seat; only a drop keeps it. A watcher never held one, and the saved seat may be another table's.
@@ -846,6 +855,7 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
     welcome: ({ code, you, host, chat, secret, spectator }) => {
       pending = false;
       welcomed = true;
+      set({ resync: true });
       if (secret) rememberSeat({ code, secret });
       // A page-load rejoin has no state yet, so it passes through the lobby until the host's state push moves it to play.
       // A mid-game reconnect already holds the game: stay on the board so the HUD keeps its local state.

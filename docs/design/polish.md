@@ -120,6 +120,7 @@ Neutrals (existing tokens, unchanged, plus `glass`, which is new and lands with 
 | `sea` / `sea-ink` | `#2a8f8a` / `#1b726e` | links, focus ring, Tide | ink 5.7:1 with white |
 | `accent` / `accent-ink` | `#c45c3e` / `#a94b30` | Ember; a 7 | ink 5.6:1 with white |
 | `danger` | `#b3261e` | errors, can't-afford (new, #435) | 6.5:1 on white |
+| `gain` / `loss` | `#10562a` / `#8a2219` | a good gained or lost, in the centre-screen gain line | 4.8:1 / 4.9:1 on glass over black |
 | `glass` | white ≥ 70 % + 16 px blur (`--color-glass`, **new in #424**, not on main yet) | every text chip over the island | text ≥ 4.5:1 sampled over the board |
 
 Resources, new. The fill is the terrain cap's own base colour from `PAINT`

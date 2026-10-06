@@ -38,7 +38,7 @@ function client(name, color) {
     c.inbox.push(msg);
     for (const w of c.waiters.splice(0)) w();
   });
-  c.send = (msg) => ws.send(JSON.stringify(msg));
+  c.send = (msg) => ws.send(JSON.stringify({ ...c.state?.actionStamp, cid: crypto.randomUUID(), ...msg }));
   c.next = async (type) => {
     for (;;) {
       const i = c.inbox.findIndex((m) => m.type === type || (type === "any" && m.type !== "log"));

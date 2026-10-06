@@ -351,14 +351,15 @@ try {
     return { mineText, bot: bot.name };
   });
   await page
-    .waitForFunction((name) => document.querySelector('[data-testid="turn-banner"]')?.textContent?.startsWith(`${name}'s turn`), turn.bot, { timeout: 5000 })
+    .waitForFunction((name) => document.querySelector('[data-testid="turn-banner"]')?.textContent?.startsWith(`Waiting for ${name}`), turn.bot, { timeout: 5000 })
     .catch(() => {});
   turn.theirs = await page.getByTestId("turn-banner").textContent();
   turn.strip = await page.getByTestId("seat-strip").count();
   await page.evaluate(() => window.__emberisle.setState({ state: window.__beforeBanner }));
   console.log("turn banner:", JSON.stringify(turn));
 
-  if (turn.theirs !== `${turn.bot}'s turn — Roll the dice to gather from the land.` || !/^Your turn — (Roll the dice|Build, trade|move the wayfarer|discard \d+)/.test(turn.mineText ?? "") || turn.strip) {
+  // Jarrod's playtest: another seat's turn says whom you wait for, not what to do.
+  if (turn.theirs !== `Waiting for ${turn.bot} to roll` || !/^Your turn — (Roll the dice|Build, trade|move the wayfarer|discard \d+)/.test(turn.mineText ?? "") || turn.strip) {
     throw new Error(`turn banner: ${JSON.stringify(turn)}`);
   }
   if (phase !== "roll" && phase !== "main" && phase !== "robber" && phase !== "discard") throw new Error(`setup: ${phase}`);
