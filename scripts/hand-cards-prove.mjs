@@ -200,16 +200,20 @@ async function proveResourceMotion(page, tag) {
     for (const r of ["wool", "ore"]) {
       const card = document.querySelector(`[data-testid="resource-${r}"]`);
       const anim = card.getAnimations().find((a) => a.effect?.target === card && a.effect.getKeyframes().some((f) => "transform" in f));
-      if (anim) { anim.currentTime = anim.effect.getTiming().duration; anim.play(); }
+      if (anim) {
+        const last = anim.effect.getKeyframes().at(-1);
+        if (Math.abs(new DOMMatrixReadOnly(last.transform).m42) > 0.1) throw new Error(`${r}: final movement keyframe does not return to rest`);
+        // play() at the end rewinds the native animation; finish the controlled timeline instead.
+        anim.finish();
+      }
     }
   });
-  await page.waitForTimeout(330);
   const settled = await page.evaluate(() => ["wool", "ore"].map((r) => {
     const c = document.querySelector(`[data-testid="resource-${r}"]`);
     const transform = getComputedStyle(c).transform;
     return [r, transform === "none" ? 0 : new DOMMatrixReadOnly(transform).m42, getComputedStyle(c).opacity];
   }));
-  for (const [r, y] of settled) assert.ok(Math.abs(y) <= 0.1, `${tag} ${r}: transform settled to zero within 320ms`);
+  for (const [r, y] of settled) assert.ok(Math.abs(y) <= 0.1, `${tag} ${r}: bounded animation returns to zero at its endpoint (y=${y})`);
   // Opacity uses its own CSS transition and can start on a later compositor frame on software GL.
   // Keep the immediate count check above; wait for this independent visual transition to settle.
   await page.waitForFunction(() => getComputedStyle(document.querySelector('[data-testid="resource-ore"]')).opacity === "0.4", null, { timeout: STEP_MS });
