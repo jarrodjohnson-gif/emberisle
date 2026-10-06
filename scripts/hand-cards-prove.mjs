@@ -210,7 +210,9 @@ async function proveResourceMotion(page, tag) {
     return [r, transform === "none" ? 0 : new DOMMatrixReadOnly(transform).m42, getComputedStyle(c).opacity];
   }));
   for (const [r, y] of settled) assert.ok(Math.abs(y) <= 0.1, `${tag} ${r}: transform settled to zero within 320ms`);
-  assert.equal(settled.find(([r]) => r === "ore")[2], "0.4", `${tag}: zero-count card settles to 40% opacity`);
+  // Opacity uses its own CSS transition and can start on a later compositor frame on software GL.
+  // Keep the immediate count check above; wait for this independent visual transition to settle.
+  await page.waitForFunction(() => getComputedStyle(document.querySelector('[data-testid="resource-ore"]')).opacity === "0.4", null, { timeout: STEP_MS });
 }
 
 async function proveDynamicMotionCancellation(page, tag) {
