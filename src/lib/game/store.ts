@@ -186,12 +186,16 @@ interface GameStore {
   howTo: boolean;
   /** The element that opened How to play; Safari does not focus buttons on click, so activeElement cannot be trusted. */
   howToOpener: HTMLElement | null;
+  // The Costs card (the building-costs card that comes with the board game), opened from the Table menu.
+  costs: boolean;
+  costsOpener: HTMLElement | null;
   toast: string | null;
   // One line everyone reads for a moment: the roll and who got what, or an award changing hands (#188).
   banner: string | null;
   setName: (n: string) => void;
   setColor: (c: string) => void;
   setHowTo: (v: boolean, opener?: HTMLElement | null) => void;
+  setCosts: (v: boolean, opener?: HTMLElement | null) => void;
   setBuildMode: (m: BuildMode) => void;
   startAi: () => void;
   startHotseat: (count: number) => void;
@@ -340,6 +344,8 @@ export const useGame = create<GameStore>((set, get) => ({
   roadPicks: [],
   howTo: false,
   howToOpener: null,
+  costs: false,
+  costsOpener: null,
   toast: null,
   banner: null,
   net: null,
@@ -380,6 +386,7 @@ export const useGame = create<GameStore>((set, get) => ({
     set({ color: c });
   },
   setHowTo: (v, opener) => set({ howTo: v, howToOpener: v ? (opener ?? null) : null }),
+  setCosts: (v, opener) => set({ costs: v, costsOpener: v ? (opener ?? null) : null }),
   setBuildMode: (m) => set({ buildMode: m, roadPicks: [] }),
   startAi: () => {
     // A table left dialing (a reload with a saved seat) must not pull a practice game back to the lobby.

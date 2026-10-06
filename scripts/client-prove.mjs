@@ -768,7 +768,8 @@ try {
     page.evaluate(() =>
       Object.fromEntries(
         ["Path", "Outpost", "Stronghold", "Fortune"].map((n) => {
-          const b = [...document.querySelectorAll("button")].find((x) => x.textContent.trim() === n);
+          // The build buttons carry their cost chips and state in their text; the aria-description leads with the piece.
+          const b = [...document.querySelectorAll("button")].find((x) => x.getAttribute("aria-description")?.startsWith(`${n} ·`));
           return [n, { disabled: b?.getAttribute("aria-disabled") === "true", native: b?.disabled, cursor: b && getComputedStyle(b).cursor, title: b?.title, desc: b?.getAttribute("aria-description"), pressed: b?.getAttribute("aria-pressed") }];
         }),
       ),
@@ -779,17 +780,17 @@ try {
   await page.getByRole("button", { name: "Path", exact: true }).waitFor({ timeout: 5000 });
   const empty = await buildRow();
   console.log("build row, empty hand:", JSON.stringify(empty));
-  for (const [n, p] of Object.entries(price)) if (!empty[n].disabled || empty[n].native || empty[n].cursor !== "not-allowed" || empty[n].title !== p || empty[n].desc !== p) throw new Error(`empty hand ${n}: ${JSON.stringify(empty[n])}`);
+  for (const [n, p] of Object.entries(price)) if (!empty[n].disabled || empty[n].native || empty[n].cursor !== "not-allowed" || empty[n].title !== p || !empty[n].desc.startsWith(`${p} · Short`)) throw new Error(`empty hand ${n}: ${JSON.stringify(empty[n])}`);
   // #302: an unaffordable button is still in the Tab order, reports aria-disabled and its price, and a click neither arms nor buys.
   await page.evaluate(() => document.activeElement?.blur());
   let tabbedTo = null;
   for (let i = 0; i < 40 && tabbedTo !== "Path"; i++) {
     await page.keyboard.press("Tab");
-    tabbedTo = await page.evaluate(() => document.activeElement?.textContent?.trim());
+    tabbedTo = await page.evaluate(() => document.activeElement?.getAttribute("aria-description")?.split(" ·")[0] ?? document.activeElement?.textContent?.trim());
   }
   const tabFocus = await page.evaluate(() => ({ aria: document.activeElement?.getAttribute("aria-disabled"), desc: document.activeElement?.getAttribute("aria-description") }));
   console.log("Tab to unaffordable Path:", JSON.stringify({ tabbedTo, ...tabFocus }));
-  if (tabbedTo !== "Path" || tabFocus.aria !== "true" || tabFocus.desc !== price.Path) throw new Error(`Tab/aria-disabled: ${JSON.stringify({ tabbedTo, ...tabFocus })}`);
+  if (tabbedTo !== "Path" || tabFocus.aria !== "true" || !tabFocus.desc.startsWith(price.Path)) throw new Error(`Tab/aria-disabled: ${JSON.stringify({ tabbedTo, ...tabFocus })}`);
   const cardsBefore = await page.evaluate(() => JSON.stringify([window.__emberisle.getState().state.deck.length, window.__emberisle.getState().error]));
   for (const n of ["Path", "Outpost", "Stronghold", "Fortune"]) await page.getByRole("button", { name: n, exact: true }).click({ force: true });
   await page.keyboard.press("Enter");
@@ -833,7 +834,7 @@ try {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.getByRole("button", { name: "Path", exact: true }).waitFor({ timeout: 5000 });
   await page.waitForFunction(() => document.querySelector("[data-testid='seat-strip']"), null, { timeout: 5000 });
-  const heights = await page.evaluate(() => ["Path", "Outpost", "Stronghold", "Fortune"].map((n) => [...document.querySelectorAll("button")].find((x) => x.textContent.trim() === n).getBoundingClientRect().height));
+  const heights = await page.evaluate(() => ["Path", "Outpost", "Stronghold", "Fortune"].map((n) => [...document.querySelectorAll("button")].find((x) => x.getAttribute("aria-description")?.startsWith(`${n} ·`)).getBoundingClientRect().height));
   console.log("phone build button heights:", JSON.stringify(heights));
   if (heights.some((h) => h < 44)) throw new Error(`phone build buttons under 44 px: ${JSON.stringify(heights)}`);
   await page.setViewportSize({ width: 800, height: 500 });
