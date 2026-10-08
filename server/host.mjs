@@ -503,14 +503,18 @@ function actionStamp(room, ws) {
 function freshAction(ws, room, msg) {
   const stamp = actionStamp(room, ws);
   const seen = (ws.seat.actionCids ??= []);
+  // Discards and offer replies from other seats can race with progress in the same turn.
+  // Their rules still validate the outstanding discard/offer; connection and cid prevent replays.
+  const parallel = ws.seat.pid !== room.game.current && ["discard", "tradeAnswer"].includes(msg.type);
   if (
     ws.seat.ws !== ws ||
     typeof msg.cid !== "string" || msg.cid.length === 0 || msg.cid.length > 64 ||
     !Number.isSafeInteger(msg.turn) || msg.turn !== stamp.turn ||
-    !Number.isSafeInteger(msg.baseSeq) || msg.baseSeq !== stamp.baseSeq ||
+    !Number.isSafeInteger(msg.baseSeq) || msg.baseSeq < 0 || msg.baseSeq > stamp.baseSeq ||
+    (!parallel && msg.baseSeq !== stamp.baseSeq) ||
     msg.connection !== stamp.connection || seen.includes(msg.cid)
   ) {
-    send(ws, { type: "error", message: "stale action: wait for the latest table state and try again." });
+    send(ws, { type: "error", message: "The table has updated. Please try again." });
     // Resync this seat only. Refusing an intent must not rearm any clock, run bots, or write a room.
     const soonest = room.seats.reduce((d, s) => (s.turnDeadline && (!d || s.turnDeadline < d.turnDeadline) ? s : d), null);
     send(ws, {

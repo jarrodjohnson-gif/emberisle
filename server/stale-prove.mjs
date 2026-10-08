@@ -34,6 +34,12 @@ function fixture(code, phase) {
   for (const p of g.players) {
     p.resources = { timber: 0, clay: 0, wool: 0, grain: 0, ore: 0 };
     if (p.id === "p0" && phase === "main") p.resources = { timber: 8, clay: 2, wool: 0, grain: 2, ore: 0 };
+    if (phase === "discard") p.resources[p.id === "p0" ? "ore" : "timber"] = 8;
+    if (code === "SGFF" && p.id !== "p0") p.resources.clay = 2;
+  }
+  if (phase === "discard") {
+    g.dice = [3, 4];
+    g.discardNeeded = { p0: 4, p1: 4, p2: 4 };
   }
   for (const r of RESOURCES) g.bank[r] = 19 - g.players.reduce((n, p) => n + p.resources[r], 0);
   g.players.sort((a, b) => a.id.localeCompare(b.id));
@@ -45,6 +51,8 @@ fixture("SGAA", "main");
 fixture("SGBB", "roll");
 fixture("SGCC", "over");
 fixture("SGDD", "main");
+fixture("SGEE", "discard");
+fixture("SGFF", "main");
 async function startHost(requestedPort = 0) {
   host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
     cwd: new URL(".", import.meta.url),
@@ -132,16 +140,87 @@ async function refused(c, msg, label, code = "SGAA") {
   const before = c.state;
   const saved = readFileSync(path.join(dir, `${code}.json`), "utf8");
   c.raw(msg);
-  assert.match((await c.next("error")).message, /stale/i, label);
+  assert.equal((await c.next("error")).message, "The table has updated. Please try again.", label);
   const after = await c.next("state");
   assert.deepEqual(after.game, before.game, `${label}: no game/hand/turn mutation`);
   assert.equal(after.turnDeadline, before.turnDeadline, `${label}: no clock rearm`);
   assert.equal(readFileSync(path.join(dir, `${code}.json`), "utf8"), saved, `${label}: no disk write`);
   assert(!c.inbox.some((m) => ["rolled", "tradeOffer", "tradeClosed", "tradeDeclined"].includes(m.type)), `${label}: no action broadcast`);
-  console.log(`ok ${label}: stale error, private resync, unchanged game/deadline/save`);
+  console.log(`ok ${label}: calm refusal, private resync, unchanged game/deadline/save`);
 }
 
 try {
+  // #563: both non-current seats submit from the same snapshot after a seven.
+  const currentDiscard = await client("SGEE", "p0");
+  let d1 = await client("SGEE", "p1");
+  let d2 = await client("SGEE", "p2");
+  const discard1 = d1.intent({ type: "discard", resources: { timber: 4 } });
+  const discard2 = d2.intent({ type: "discard", resources: { timber: 4 } });
+  const discard0 = currentDiscard.intent({ type: "discard", resources: { ore: 4 } });
+  const discardSeq = d1.state.game.seq;
+  assert.equal(discard2.baseSeq, discard1.baseSeq);
+  d1.inbox.length = d2.inbox.length = 0;
+  d1.raw(discard1);
+  d2.raw(discard2);
+  for (const c of [d1, d2]) {
+    const reply = await c.next("*", (m) => m.type === "error" || (m.type === "state" && m.game.seq === discardSeq + 2));
+    assert.equal(reply.type, "state", `parallel discard accepted: ${reply.message ?? ""}`);
+    assert.deepEqual(reply.game.discardNeeded, { p0: 4 });
+    assert.equal(reply.game.players.find((p) => p.id === reply.you).resources.timber, 4);
+    assert.equal(reply.game.bank.timber, 11);
+  }
+  console.log("ok same-baseline non-current discards both accepted exactly once");
+  await currentDiscard.next("state", (s) => s.game.seq === discardSeq + 2);
+  await refused(currentDiscard, discard0, "current-player discard still requires exact sequence", "SGEE");
+  await refused(d1, { ...discard1, ...d1.state.actionStamp }, "duplicate parallel discard with updated baseline", "SGEE");
+  for (const [label, patch] of [
+    ["parallel discard wrong turn", { turn: discard1.turn - 1 }],
+    ["parallel discard wrong connection", { connection: d2.state.actionStamp.connection }],
+    ["parallel discard malformed sequence", { baseSeq: String(discardSeq) }],
+    ["parallel discard future sequence", { baseSeq: d1.state.game.seq + 1 }],
+    ["parallel discard negative sequence", { baseSeq: -1 }],
+  ]) await refused(d1, { ...d1.intent({ type: "discard", resources: { timber: 4 } }), ...patch }, label, "SGEE");
+  await d1.drop();
+  d1 = await client("SGEE", "p1");
+  await refused(d1, discard1, "first parallel discard replay after reconnect", "SGEE");
+  await d2.drop();
+  d2 = await client("SGEE", "p2");
+  await refused(d2, discard2, "second parallel discard replay after reconnect", "SGEE");
+  currentDiscard.inbox.length = 0;
+  currentDiscard.raw(currentDiscard.intent({ type: "discard", resources: { ore: 3 } }));
+  assert.equal((await currentDiscard.next("error")).message, "Discard exactly 4.");
+  assert.equal(currentDiscard.state.game.seq, discardSeq + 2);
+  currentDiscard.raw(currentDiscard.intent({ type: "discard", resources: { ore: 4 } }));
+  await currentDiscard.next("state", (s) => s.game.phase === "robber");
+  assert.equal(currentDiscard.state.game.seq, discardSeq + 3);
+  console.log("ok rules validate discard contents; fresh current-player discard finishes the phase");
+
+  // A still-valid offer may be answered while another action advances the same turn.
+  const trader = await client("SGFF", "p0");
+  const responder = await client("SGFF", "p1");
+  const otherResponder = await client("SGFF", "p2");
+  trader.raw(trader.intent({ type: "tradeAsk", give: { grain: 1 }, want: { clay: 1 } }));
+  const responseOffer = await responder.next("tradeOffer");
+  await otherResponder.next("tradeOffer");
+  const yes = responder.intent({ type: "tradeAnswer", tradeId: responseOffer.tradeId, yes: true });
+  const otherYes = otherResponder.intent({ type: "tradeAnswer", tradeId: responseOffer.tradeId, yes: true });
+  trader.raw(trader.intent({ type: "tradeBank", give: "timber", take: "wool" }));
+  await trader.next("state", (s) => s.game.seq > yes.baseSeq);
+  await responder.next("state", (s) => s.game.seq > yes.baseSeq);
+  const beforeAnswer = responder.state.game.seq;
+  responder.inbox.length = 0;
+  responder.raw(yes);
+  const answered = await responder.next("*", (m) => m.type === "error" || (m.type === "tradeClosed" && m.taker === "p1"));
+  assert.equal(answered.type, "tradeClosed", `older-baseline trade response accepted: ${answered.message ?? ""}`);
+  await responder.next("state", (s) => s.game.seq > beforeAnswer);
+  assert.equal(responder.state.game.players.find((p) => p.id === "p1").resources.grain, 1);
+  assert.equal(responder.state.game.players.find((p) => p.id === "p1").resources.clay, 1);
+  otherResponder.inbox.length = 0;
+  otherResponder.raw(otherYes);
+  assert.equal((await otherResponder.next("error")).message, "Offer is gone.");
+  await refused(responder, yes, "duplicate older-baseline trade acceptance", "SGFF");
+  console.log("ok older-baseline trade reply accepted; racing reply cannot transfer twice");
+
   let a = await client("SGAA", "p0");
   const b = await client("SGAA", "p1");
   await client("SGAA", "p2");
