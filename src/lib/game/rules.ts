@@ -334,7 +334,7 @@ function produce(state: GameState, total: number) {
 
 // The resources the latest roll could not pay, read from the line produce() logs right after the roll line.
 export function bankShort(state: GameState): Resource[] {
-  const i = state.log.findLastIndex((l) => / rolls \d\+\d = \d+\.$/.test(l));
+  const i = state.log.findLastIndex((l) => /(?: rolls \d\+\d = \d+\.|^Bot rolled for .+: \d\+\d = \d+\.)$/.test(l));
   const m = /^The bank is short of (.+); nobody gathers it\.$/.exec(state.log[i + 1] ?? "");
   return m ? (m[1]!.split(" and ") as Resource[]) : [];
 }

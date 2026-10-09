@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { createGame } from "./board";
+import { logBotAction } from "./ai";
 import { applyAction, bankShort, legalCities, legalRoads, legalSettle, stealTargets } from "./rules";
 
 const BANNER_MS = 2500;
@@ -203,7 +204,7 @@ interface GameStore {
   startHotseat: (count: number) => void;
   loadState: (s: GameState, localId: string, host: boolean, table?: string) => void;
   goTitle: () => void;
-  dispatch: (action: Action, asId?: string) => { ok: boolean; state?: GameState; error?: string };
+  dispatch: (action: Action, asId?: string, automated?: boolean) => { ok: boolean; state?: GameState; error?: string };
   runBots: () => void;
   pickHex: (id: string) => void;
   pickVertex: (id: string) => void;
@@ -503,7 +504,7 @@ export const useGame = create<GameStore>((set, get) => ({
       tradeOpener: null,
     });
   },
-  dispatch: (action, asId) => {
+  dispatch: (action, asId, automated = false) => {
     const { state, localId, mode, net, spectator } = get();
     if (!state) return { ok: false, error: "No game." };
     if (spectator) return { ok: false, error: "Watching only." };
@@ -520,29 +521,32 @@ export const useGame = create<GameStore>((set, get) => ({
       play("ui_error");
       return { ok: false, error: res.error };
     }
-    set({ state: res.state, gameLog: appendLog(get().gameLog, newLog(state.log, res.state.log)), error: null, toast: null, buildMode: "none", roadPicks: [] });
-    hear(state, res.state, localId, mode);
+    const nextState = automated
+      ? logBotAction(state, res.state, action, actor, state.players.find((p) => p.id === actor)?.name.replace(/ \(bot\)$/i, "") ?? actor)
+      : res.state;
+    set({ state: nextState, gameLog: appendLog(get().gameLog, newLog(state.log, nextState.log)), error: null, toast: null, buildMode: "none", roadPicks: [] });
+    hear(state, nextState, localId, mode);
     // An offer lives only while its asker still has the turn in `main` and still holds the offered goods (as host.mjs play).
     const open = get().offer;
     if (open) {
-      const asker = res.state.players.find((p) => p.id === open.from);
-      const turnOver = res.state.current !== open.from || res.state.phase !== "main";
+      const asker = nextState.players.find((p) => p.id === open.from);
+      const turnOver = nextState.current !== open.from || nextState.phase !== "main";
       if (turnOver || RESOURCES.some((r) => (open.give[r] ?? 0) > (asker?.resources[r] ?? 0))) {
         endOffer(set, get, null);
         if (!turnOver) set({ gameLog: appendLog(get().gameLog, [`${asker?.name} spent the offered goods; the offer is withdrawn.`]) });
       }
     }
-    const rollOff = rollOffLine(state, res.state);
+    const rollOff = rollOffLine(state, nextState);
     if (rollOff) {
       showBanner(set, rollOff);
-    } else if (action.type === "roll" && res.state.dice) {
+    } else if (action.type === "roll" && nextState.dice) {
       const roller = state.players.find((p) => p.id === actor)?.name ?? actor;
-      showBanner(set, rollLine(roller, gainsBetween(state, res.state), bankShort(res.state)));
+      showBanner(set, rollLine(roller, gainsBetween(state, nextState), bankShort(nextState)));
     } else {
-      const swing = awardLine(state, res.state);
+      const swing = awardLine(state, nextState);
       if (swing) showBanner(set, swing);
     }
-    return { ok: true, state: res.state };
+    return { ok: true, state: nextState };
   },
   runBots: () => {
     const { state, dispatch, mode } = get();
@@ -552,7 +556,7 @@ export const useGame = create<GameStore>((set, get) => ({
       for (const p of state.players) {
         if (p.kind === "bot" && (state.discardNeeded[p.id] ?? 0) > 0) {
           const a = chooseBotAction(state, p.id);
-          if (a) dispatch(a, p.id);
+          if (a) dispatch(a, p.id, true);
           return;
         }
       }
@@ -569,7 +573,7 @@ export const useGame = create<GameStore>((set, get) => ({
       if (ask) return openOffer(set, get, cur.id, ask.give, ask.want);
     }
     const a = chooseBotAction(state, cur.id);
-    if (a) dispatch(a, cur.id);
+    if (a) dispatch(a, cur.id, true);
   },
   pickHex: (id) => {
     const { state, localId, mode, buildMode, legal, dispatch } = get();

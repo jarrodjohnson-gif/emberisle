@@ -74,6 +74,10 @@ async function client(name) {
   return c;
 }
 
+async function stateBarrier(peers, seq) {
+  await Promise.all(peers.map((peer) => peer.state?.game.seq >= seq ? Promise.resolve() : peer.next("state", (m) => m.game.seq >= seq)));
+}
+
 // A seat that plays at once (or, in "rollOff" mode, only its roll-off rolls): setup placements, roll, wayfarer, pass. It never discards, so a 7 that costs cards leaves
 // the owing seats idle for the timer. One action per state, so a stale state never doubles an action.
 function drive(c) {
@@ -121,10 +125,13 @@ for (const st of first) {
 await w0.next("log", (m) => m.text === tooLong(opener.name), TURN + 1000);
 const took = Date.now() - t0;
 if (took < TURN - 50 || took > TURN + 1000) fail(`the table moved after ${took} ms, wanted about ${TURN}`);
-const die = await w0.next("log", (m) => new RegExp(`^${opener.name} rolls a \\d\\.$`).test(m.text));
+const die = await w0.next("log", (m) => new RegExp(`^Bot rolled for ${opener.name}: roll-off die \\d+\\.$`).test(m.text));
+await Promise.all(all.map((seat) => seat.logs.includes(die.text) ? Promise.resolve() : seat.next("log", (m) => m.text === die.text)));
+for (const seat of all) if (seat.logs.filter((line) => line === die.text).length !== 1) fail("every seat receives one bot roll line", seat.logs.slice(-5));
 // The roll's state push follows its log lines, so the next state (not the stale pre-roll one) starts the rolling.
 for (const x of all) x.auto = "rollOff";
 const settle = await w0.next("state", (m) => m.game.phase === "setupSettle", 10000);
+await stateBarrier(all, settle.game.seq);
 for (const x of all) x.auto = false;
 const placer = byPid[settle.game.current];
 const w = all.find((x) => x !== placer);
@@ -145,9 +152,19 @@ const placed = await w.next("state", (m) => m.game.seq > settle.game.seq && m.ga
 if (placed.game.current !== placer.state.you) fail("still the placer's setup after the outpost", placed.game.current);
 if (placed.game.players.find((p) => p.id === placer.state.you).kind !== "human") fail("the placer stays human");
 if (!placed.game.vertices.some((v) => v.building?.playerId === placer.state.you)) fail("the bot placed the outpost");
+const outpostLine = `Bot built an outpost for ${placer.name}.`;
+if (placed.game.log.filter((line) => line === outpostLine).length !== 1) fail("one canonical setup action line", placed.game.log.slice(-8));
+await stateBarrier(all, placed.game.seq);
+await Promise.all(all.map((seat) => seat.logs.includes(outpostLine) ? Promise.resolve() : seat.next("log", (m) => m.text === outpostLine)));
+for (const seat of all) if (seat.logs.filter((line) => line === outpostLine).length !== 1) fail("every seated client receives one setup action line", seat.logs.slice(-8));
 // Idle again: the path goes down and play moves to the next seat.
 const moved = await w.next("state", (m) => m.game.seq > placed.game.seq && m.game.current !== placer.state.you, TURN + 1000);
 if (w.logs.slice(seen0).filter((t) => t === tooLong(placer.name)).length !== 2) fail("one log line per idle move", w.logs.slice(seen0));
+const pathLine = `Bot built a path for ${placer.name}.`;
+if (moved.game.log.filter((line) => line === pathLine).length !== 1) fail("one canonical setup path line", moved.game.log.slice(-8));
+await stateBarrier(all, moved.game.seq);
+await Promise.all(all.map((seat) => seat.logs.includes(pathLine) ? Promise.resolve() : seat.next("log", (m) => m.text === pathLine)));
+for (const seat of all) if (seat.logs.filter((line) => line === pathLine).length !== 1) fail("every seated client receives one setup path line", seat.logs.slice(-8));
 console.log(`idle setup: "${tooLong(placer.name)}" ${late} ms past the deadline, outpost and path placed, play moved to ${moved.game.current}, ${placer.name} is human`);
 
 // 2. The second seat acts inside the window (a deliberate pause of a third of it): accepted, never moved, deadline restarts.
@@ -181,16 +198,30 @@ for (const [pid, n] of owing) {
   const halved = await x.next("state", (m) => m.game.seq > owed.game.seq && !(m.game.discardNeeded[pid] > 0));
   const after = handOf(halved, pid);
   if (after !== before - n) fail("the idle hand was halved", { pid, before, n, after });
-  if (!x.logs.includes(`${x.name} discards ${n}.`)) fail("the discard is logged", x.logs.slice(-5));
+  const discardLine = `Bot discarded for ${x.name} (${n}).`;
+  if (halved.game.log.filter((line) => line === discardLine).length !== 1) fail("the discard action is logged once", { logs: x.logs.slice(-8), game: halved.game.log.slice(-8) });
+  await stateBarrier(all, halved.game.seq);
+  await Promise.all(all.map((seat) => seat.logs.includes(discardLine) ? Promise.resolve() : seat.next("log", (m) => m.text === discardLine)));
+  for (const seat of all) if (seat.logs.filter((line) => line === discardLine).length !== 1) fail("each seat receives one discard line", seat.logs.slice(-8));
   console.log(`idle discard: ${x.name} held ${before}, owed ${n}, holds ${after}`);
 }
 // The wayfarer then moves for the idle roller, and the idle main turn is passed with nothing spent.
 const roller = byPid[owed.game.current];
 const robbed = await roller.next("state", (m) => m.game.seq > owed.game.seq && m.game.phase === "main" && m.game.current === roller.state.you, TURN + 1000);
 const goods = handOf(robbed, roller.state.you);
+const recoveryMove = robbed.game.log.filter((line) => line.startsWith(`Bot moved the Wayfarer for ${roller.name}`));
+if (recoveryMove.length !== 1 || recoveryMove[0].includes("steals a card from") || recoveryMove[0].includes("sends the wayfarer")) fail("connected timeout wayfarer is one public action line", robbed.game.log.slice(-8));
+await stateBarrier(all, robbed.game.seq);
+await Promise.all(all.map((seat) => seat.logs.includes(recoveryMove[0]) ? Promise.resolve() : seat.next("log", (m) => m.text === recoveryMove[0])));
+for (const seat of all) if (seat.logs.filter((line) => line === recoveryMove[0]).length !== 1) fail("every seated client receives one connected timeout wayfarer line", seat.logs.slice(-8));
 const passed = await roller.next("state", (m) => m.game.seq > robbed.game.seq && m.game.current !== roller.state.you, TURN + 1000);
 if (handOf(passed, roller.state.you) !== goods) fail("an idle main turn spends nothing", { goods, after: handOf(passed, roller.state.you) });
 if (passed.game.players.find((p) => p.id === roller.state.you).kind !== "human") fail("the roller stays human");
+const passLine = `Bot passed for ${roller.name}; ${passed.game.players.find((p) => p.id === passed.game.current).name}'s turn.`;
+if (passed.game.log.filter((line) => line === passLine).length !== 1) fail("connected timeout pass is one canonical line", passed.game.log.slice(-8));
+await stateBarrier(all, passed.game.seq);
+await Promise.all(all.map((seat) => seat.logs.includes(passLine) ? Promise.resolve() : seat.next("log", (m) => m.text === passLine)));
+for (const seat of all) if (seat.logs.filter((line) => line === passLine).length !== 1) fail("every seated client receives one connected timeout pass", seat.logs.slice(-8));
 console.log(`idle wayfarer and pass: ${roller.name} moved on with ${goods} goods, phase ${passed.game.phase}, now ${passed.game.current}`);
 
 // 4. The next seat drops on its roll: the table waits the whole grace (not the turn window), then the bot takes over.

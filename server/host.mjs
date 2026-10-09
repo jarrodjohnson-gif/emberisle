@@ -6,7 +6,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { randomBytes, randomInt, timingSafeEqual } from "node:crypto";
 import { WebSocketServer } from "ws";
-import { chooseBotAction, chooseRecoveryAction, chooseTradeAsk, shouldAcceptTrade } from "../src/lib/game/ai.ts";
+import { chooseBotAction, chooseRecoveryAction, chooseTradeAsk, logBotAction, shouldAcceptTrade } from "../src/lib/game/ai.ts";
 import { createGame } from "../src/lib/game/board.ts";
 import { applyAction, bankShort, legalCities, legalRoads, legalSettle, playable, stealTargets, validBag } from "../src/lib/game/rules.ts";
 import { COST, PLAYER_COLORS, RESOURCES } from "../src/lib/game/types.ts";
@@ -399,8 +399,11 @@ function runBots(room) {
       if (recovery) return;
       const pass = applyAction(g, waiting.id, { type: "endTurn" });
       if (pass.error) return;
-      room.game = pass.state;
-    } else room.game = next.state;
+      room.game = logBotAction(g, pass.state, { type: "endTurn" }, waiting.id, room.seats.find((s) => s.pid === waiting.id)?.name ?? waiting.name.replace(/ \(bot\)$/i, ""));
+    } else {
+      const seatName = room.seats.find((s) => s.pid === waiting.id)?.name ?? waiting.name.replace(/ \(bot\)$/i, "");
+      room.game = logBotAction(g, next.state, action, waiting.id, seatName);
+    }
   }
 }
 
@@ -476,7 +479,7 @@ function turnOut(room, seat) {
   // A phase the bot has no move for yet: wait another window rather than send a move play() would refuse.
   if (!intent) return armTurns(room);
   say(room, `${seat.name} took too long; the table moved on.`);
-  play(seat.ws, room, intent);
+  play(seat.ws, room, intent, true);
 }
 
 // The soonest armed window at the table, or null.
@@ -963,9 +966,16 @@ function respond(room, actor, yes) {
     if (offer.declined.has(actor)) return;
     offer.declined.add(actor);
     hear("trade_no");
-    const name = room.game.players.find((p) => p.id === actor).name;
+    const player = room.game.players.find((p) => p.id === actor);
+    const name = player.name;
     broadcast(room, { type: "tradeDeclined", tradeId: offer.tradeId, by: actor, name });
-    say(room, `${name} declines.`);
+    const recovery = (room.recoveryPids ?? []).includes(actor);
+    const line = recovery ? `Bot declined a trade for ${room.seats.find((s) => s.pid === actor)?.name ?? name.replace(/ \(bot\)$/i, "")}.` : `${name} declines.`;
+    if (recovery) {
+      room.game = { ...room.game, log: [...room.game.log.slice(-40), line] };
+      save(room);
+    }
+    say(room, line);
     const askees = room.game.players.filter((p) => p.id !== offer.from);
     if (askees.every((p) => offer.declined.has(p.id))) {
       if (room.game.players.find((p) => p.id === offer.from)?.kind === "bot") {
@@ -1017,7 +1027,7 @@ function talk(ws, room, msg) {
   broadcast(room, { type: "react", seat: seat.id, player: seat.pid ?? null, emote: msg.emote, to, at: Date.now() });
 }
 
-function play(ws, room, msg) {
+function play(ws, room, msg, automated = false) {
   const before = room.game;
   const action = toAction(before, msg);
   if (!action) return send(ws, { type: "error", message: "not ready" });
@@ -1026,7 +1036,9 @@ function play(ws, room, msg) {
     hear("ui_error");
     return send(ws, { type: "error", message: next.error });
   }
-  room.game = next.state;
+  room.game = automated
+    ? logBotAction(before, next.state, action, ws.seat.pid, room.seats.find((s) => s.pid === ws.seat.pid)?.name ?? ws.seat.name)
+    : next.state;
   disarmTurn(ws.seat);
   hear(msg.type === "place" ? `${msg.kind}_place` : SOUND[msg.type]);
   // A roll-off die is not a production roll: its lines reach every seat through the log below.
@@ -1037,7 +1049,7 @@ function play(ws, room, msg) {
     broadcast(room, { type: "rolled", dice: [a, b], sum: a + b, gains: paid, short });
     const parts = paid.map((g) => `${g.name} +${g.amount} ${g.resource}`);
     if (short.length) parts.push(`bank short of ${short.join(" and ")}`);
-    say(room, [String(a + b), ...parts].join(" · "));
+    if (!automated) say(room, [String(a + b), ...parts].join(" · "));
   }
   // An offer lives only while its asker still has the turn in `main` and still holds the offered goods. Checked before
   // the bots play, so a bot never sees the stale offer of a seat that just passed.
