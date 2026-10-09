@@ -160,6 +160,8 @@ let offerTimers: ReturnType<typeof setTimeout>[] = [];
 let offerSeq = 0;
 // `${turn}:${bot}` of the last bot turn that had its one chance to ask the table.
 let botAsked = "";
+// The last proposal every bot was explicitly declined, keyed only by bot and named goods.
+let botDeclined = new Map<string, { give: Bag; want: Bag }>();
 function clearOfferTimers() {
   for (const t of offerTimers) clearTimeout(t);
   offerTimers = [];
@@ -396,6 +398,7 @@ export const useGame = create<GameStore>((set, get) => ({
     // A new game owes nothing to the last one's offer or bot ask.
     clearOfferTimers();
     botAsked = "";
+    botDeclined.clear();
     const name = get().name;
     const state = createGame({ humans: [{ name }], bots: 3 });
     set({
@@ -422,6 +425,7 @@ export const useGame = create<GameStore>((set, get) => ({
     get().net?.close();
     clearOfferTimers();
     botAsked = "";
+    botDeclined.clear();
     const humans = Array.from({ length: count }, (_, i) => ({
       name: i === 0 ? get().name : `Seat ${i + 1}`,
     }));
@@ -464,6 +468,7 @@ export const useGame = create<GameStore>((set, get) => ({
     clearKnocks();
     clearOfferTimers();
     botAsked = "";
+    botDeclined.clear();
     get().net?.close();
     set({
       screen: "title",
@@ -560,7 +565,7 @@ export const useGame = create<GameStore>((set, get) => ({
     // Once per bot turn, before its other moves, the bot may ask the table (#363).
     if (state.phase === "main" && !offer && botAsked !== `${state.turn}:${cur.id}`) {
       botAsked = `${state.turn}:${cur.id}`;
-      const ask = chooseTradeAsk(state, cur.id);
+      const ask = chooseTradeAsk(state, cur.id, botDeclined.get(cur.id));
       if (ask) return openOffer(set, get, cur.id, ask.give, ask.want);
     }
     const a = chooseBotAction(state, cur.id);
@@ -825,7 +830,12 @@ function respond(set: Set, get: Get, actor: string, yes: boolean): string | null
     if (declined.includes(actor)) return null;
     const now = [...declined, actor];
     set({ declined: now, gameLog: appendLog(gameLog, [`${state.players.find((p) => p.id === actor)?.name} declines.`]) });
-    if (state.players.every((p) => p.id === offer.from || now.includes(p.id))) endOffer(set, get, null);
+    if (state.players.every((p) => p.id === offer.from || now.includes(p.id))) {
+      if (state.players.find((p) => p.id === offer.from)?.kind === "bot") {
+        botDeclined.set(offer.from, { give: offer.give, want: offer.want });
+      }
+      endOffer(set, get, null);
+    }
     return null;
   }
   const offered = applyAction(state, offer.from, { type: "offerTrade", to: actor, give: offer.give, want: offer.want });

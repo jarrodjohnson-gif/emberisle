@@ -165,6 +165,7 @@ function snapshot(room) {
     code: room.code,
     host: room.host,
     next: room.next,
+    botDeclined: room.botDeclined ?? {},
     chat: room.chat,
     chatSeq: room.chatSeq,
     game: room.game,
@@ -259,7 +260,7 @@ function load() {
     // A file that parses but does not rebuild (a null seat, say) is skipped like one that does not parse.
     let room;
     try {
-      room = { ...saved, offer: null, offerTimer: null, seats: [], watchers: new Set() };
+      room = { ...saved, offer: null, offerTimer: null, botDeclined: saved.botDeclined ?? {}, seats: [], watchers: new Set() };
       delete room.savedAt;
       for (const s of saved.seats) {
         if (typeof s?.id !== "string" || typeof s.secret !== "string") throw new Error(`bad seat ${JSON.stringify(s)}`);
@@ -375,7 +376,7 @@ function runBots(room) {
     // Once per bot turn, before its other moves, the bot may ask the table (#363).
     if (g.phase === "main" && !room.offer && room.botAsked !== `${g.turn}:${waiting.id}`) {
       room.botAsked = `${g.turn}:${waiting.id}`;
-      const ask = chooseTradeAsk(g, waiting.id);
+      const ask = chooseTradeAsk(g, waiting.id, room.botDeclined?.[waiting.id]);
       if (ask) return openOffer(room, waiting.id, ask.give, ask.want);
     }
     const action = chooseBotAction(g, waiting.id);
@@ -710,7 +711,7 @@ function seatColor(room, raw) {
 
 function openTable(ws, msg) {
   if (rooms.size >= ROOM_MAX) return send(ws, { type: "error", message: "The host is full." });
-  const room = { code: code(), seats: [], game: null, host: null, next: 0, offer: null, offerTimer: null, chat: [], chatSeq: 0, watchers: new Set() };
+  const room = { code: code(), seats: [], game: null, host: null, next: 0, offer: null, offerTimer: null, botDeclined: {}, chat: [], chatSeq: 0, watchers: new Set() };
   rooms.set(room.code, room);
   const seat = {
     id: `s${room.next++}`,
@@ -784,6 +785,7 @@ function startGame(ws, room) {
     game.players[i].color = s.color;
   });
   room.game = game;
+  room.botDeclined = {};
   for (const seat of room.seats) if (seat.ws) seat.ws.actionConnection = randomBytes(16).toString("hex");
   hear("ui_confirm");
   say(room, "Roll for first place.");
@@ -809,6 +811,7 @@ function rematch(ws, room) {
   // Seats get new pids below, so no offer (or a bot's answer timer on it) may outlive the old game.
   if (room.offer) broadcast(room, { type: "tradeClosed", tradeId: room.offer.tradeId });
   closeOffer(room);
+  room.botDeclined = {};
   const winner = live.find((s) => s.pid === room.game.winner);
   const order = winner ? [winner, ...live.filter((s) => s !== winner)] : live;
   const game = createGame({ humans: order.map((s) => ({ name: s.name })), bots: 0, winnerFirst: Boolean(winner) });
@@ -947,6 +950,9 @@ function respond(room, actor, yes) {
     say(room, `${name} declines.`);
     const askees = room.game.players.filter((p) => p.id !== offer.from);
     if (askees.every((p) => offer.declined.has(p.id))) {
+      if (room.game.players.find((p) => p.id === offer.from)?.kind === "bot") {
+        (room.botDeclined ??= {})[offer.from] = { give: offer.give, want: offer.want };
+      }
       closeOffer(room);
       broadcast(room, { type: "tradeClosed", tradeId: offer.tradeId });
       botsOn(room, offer);

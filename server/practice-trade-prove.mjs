@@ -49,6 +49,9 @@ const s = () => useGame.getState();
 const hand = (pid) => s().state.players.find((p) => p.id === pid).resources;
 const logHas = (text) => s().gameLog.some((l) => l.text === text);
 const names = (ids) => ids.map((id) => s().state.players.find((p) => p.id === id).name);
+function rebalance(g) {
+  for (const r of RESOURCES) g.bank[r] = 19 - g.players.reduce((n, p) => n + p.resources[r], 0);
+}
 
 // The bot p2 saves for a stronghold (3 grain, 2 ore) and lacks one grain; p1 and p3 hold no wool and no grain.
 const HANDS = { p0: { ore: 1, timber: 1, grain: 1 }, p1: { clay: 1 }, p2: { grain: 2, ore: 2, wool: 2 }, p3: { timber: 1 } };
@@ -122,6 +125,14 @@ if (s().offer) fail("D: the offer is still open at 20 s");
 s().runBots();
 if (s().offer || s().state.seq === seqD) fail("D: the bot did not play on after its ask ran out");
 console.log("D ok: a bot's unanswered ask closes at 20 s and its turn plays on");
+const expiredRetry = structuredClone(gC);
+expiredRetry.turn = s().state.turn + 1;
+const expiredAsk = chooseTradeAsk(expiredRetry, "p2");
+if (!expiredAsk || JSON.stringify(expiredAsk) !== JSON.stringify(askC)) fail("D: the expired proposal changed", expiredAsk);
+useGame.setState({ state: expiredRetry, offer: null, declined: [] });
+s().runBots();
+if (!s().offer || s().offer.from !== "p2") fail("D: an expired ask was remembered as declined", s().offer);
+console.log("D boundary ok: an expired ask does not create declined-proposal memory");
 
 // E: the person asks the helpful ask and ends the turn before any bot answers.
 practice(structuredClone(gA));
@@ -144,6 +155,46 @@ for (const [how, leave] of [["goTitle", () => s().goTitle()], ["startAi", () => 
   if (s().offer || s().declined.length || JSON.stringify(s().state?.players.map((p) => p.resources) ?? null) !== held) fail(`F: a bot answered after ${how}`);
 }
 console.log("F ok: goTitle and startAi drop an open offer, and no bot answers it");
+
+// G: a bot's all-declined ask stays closed on a later turn despite a hand change, while a changed useful ask opens.
+practice(structuredClone(gC));
+s().runBots();
+const declinedOffer = s().offer;
+if (!declinedOffer || declinedOffer.from !== "p2") fail("G: the bot did not open its first ask", declinedOffer);
+mock.timers.tick(2000);
+if (JSON.stringify([...s().declined].sort()) !== JSON.stringify(["p1", "p3"])) fail("G: the other bots did not decline", s().declined);
+s().answerTrade(false);
+if (s().offer) fail("G: the person's No did not close the offer");
+const repeat = structuredClone(s().state);
+repeat.turn++;
+repeat.phase = "main";
+repeat.current = "p2";
+const unchangedProposal = chooseTradeAsk(repeat, "p2");
+if (!unchangedProposal || JSON.stringify(unchangedProposal) !== JSON.stringify({ give: declinedOffer.give, want: declinedOffer.want })) fail("G: unfiltered proposal changed on the next turn", unchangedProposal);
+useGame.setState({ state: repeat, offer: null, declined: [] });
+s().runBots();
+if (s().offer) fail("G: the same declined proposal reopened on a new turn with the same hand", s().offer);
+
+const changedHand = structuredClone(repeat);
+changedHand.turn++;
+changedHand.players.find((p) => p.id === "p2").resources.wool++;
+rebalance(changedHand);
+const repeatProposal = chooseTradeAsk(changedHand, "p2");
+if (!repeatProposal || JSON.stringify(repeatProposal) !== JSON.stringify(unchangedProposal)) fail("G: hand change altered the proposal", repeatProposal);
+useGame.setState({ state: changedHand, offer: null, declined: [] });
+s().runBots();
+if (s().offer) fail("G: the same declined proposal reopened after a hand-only change", s().offer);
+
+const changed = structuredClone(changedHand);
+changed.turn++;
+changed.players.find((p) => p.id === "p2").resources = { grain: 3, ore: 1, wool: 3, timber: 0, clay: 0 };
+rebalance(changed);
+const useful = chooseTradeAsk(changed, "p2");
+if (!useful || JSON.stringify(useful) === JSON.stringify(repeatProposal)) fail("G: changed useful proposal was not available", useful);
+useGame.setState({ state: changed, offer: null, declined: [] });
+s().runBots();
+if (!s().offer || JSON.stringify({ give: s().offer.give, want: s().offer.want }) !== JSON.stringify(useful)) fail("G: changed useful proposal did not open", s().offer);
+console.log("G ok: an all-declined proposal stays suppressed on the next turn with the same hand and after a hand-only change; a changed proposal opens");
 
 mock.timers.reset();
 console.log("practice trade prove ok");
