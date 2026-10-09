@@ -254,9 +254,9 @@ try {
         const R = window.__rules;
         const rolled = R.applyAction(pre, pre.current, { type: "roll" }).state;
         const done = R.applyAction(rolled, rolled.current, { type: "endTurn" }).state;
-        const hand = (st) => Object.fromEntries(["timber", "clay", "wool", "grain", "ore"].map((r) => [r, st.players.reduce((n, p) => n + p.resources[r], 0)]));
-        const gained = Object.keys(hand(pre)).filter((r) => hand(rolled)[r] > hand(pre)[r]);
-        const expected = pre.hexes.filter((h) => h.pip === sum && !h.blocked && gained.includes(h.terrain)).map((h) => h.id);
+        // Hand gains only identify resource kinds; a full bank can pay one hex of a kind
+        // and leave a later same-kind hex unpaid. Use the rules' per-hex grants as ground truth.
+        const expected = [...new Set((rolled.lastProduction ?? []).map((grant) => grant.hex))];
         g.setState({ state: done });
         return { jump: done.seq - pre.seq, rolls: done.rolls - pre.rolls, expected };
       });
