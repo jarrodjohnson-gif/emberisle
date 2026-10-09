@@ -57,7 +57,8 @@
     "stale-prove": "node --import ./server/register.mjs server/stale-prove.mjs",
     "cap-prove": "node --import ./server/register.mjs server/cap-prove.mjs",
     "restart-prove": "node --import ./server/register.mjs server/restart-prove.mjs",
-    "turn-gain-prove": "node scripts/turn-gain-prove.mjs"
+    "turn-gain-prove": "node scripts/turn-gain-prove.mjs",
+    "takeover-prove": "node --import ./server/register.mjs server/takeover-prove.mjs"
   },
   "dependencies": {
     "clsx": "^2.1.1",
