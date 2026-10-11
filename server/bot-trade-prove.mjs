@@ -6,9 +6,10 @@
 //   C. A bot asks and nobody answers: no bot answers its own ask, the offer runs out, and the bot's turn plays on.
 //   D. An offer open when its asker wins (by a build that does not spend the offered goods) is gone at the win, and
 //      after the rematch (#405) a late Yes to it moves nothing.
+//   E. A bot's fully declined proposal stays suppressed on its next turn.
 // Every wait is on a message; nothing sleeps a fixed time.
 import { spawn } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, watch, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import WebSocket from "ws";
@@ -45,16 +46,46 @@ function game(humans, bots, current, hands, seed) {
   for (const r of RESOURCES) g.bank[r] = 19 - g.players.reduce((n, p) => n + p.resources[r], 0);
   return g;
 }
+function quiet(g) {
+  for (const h of g.hexes) h.pip = null;
+  for (const v of g.vertices) v.harbor = null;
+  g.deck = [];
+  for (const p of g.players) p.hidden = { knight: 0, road: 0, plenty: 0, monopoly: 0, vp: 0 };
+  return g;
+}
 
 const ROOMS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-rooms-"));
 process.on("exit", () => rmSync(ROOMS_DIR, { recursive: true, force: true }));
 // Rooms carry a seat per person only; a bot player needs no seat.
-function saveRoom(code, g) {
+function saveRoom(code, g, botDeclined = {}) {
   const seats = g.players
     .filter((p) => p.kind === "human")
     .map((p, i) => ({ id: `s${i}`, name: p.name, color: PLAYER_COLORS[i], ready: true, pid: p.id, secret: `${code}-${p.id}-secret` }));
-  writeFileSync(path.join(ROOMS_DIR, `${code}.json`), JSON.stringify({ code, host: "s0", next: seats.length, chat: [], chatSeq: 0, game: g, seats, shape: 2, savedAt: Date.now() }));
+  writeFileSync(path.join(ROOMS_DIR, `${code}.json`), JSON.stringify({ code, host: "s0", next: seats.length, chat: [], chatSeq: 0, game: g, seats, botDeclined, shape: 2, savedAt: Date.now() }));
   return seats;
+}
+function waitForSavedRoom(code, ready) {
+  const file = path.join(ROOMS_DIR, `${code}.json`);
+  return new Promise((resolve, reject) => {
+    let watcher;
+    const timer = setTimeout(() => finish(new Error(`room ${code} was not saved`)), 5000);
+    const finish = (error, saved) => {
+      clearTimeout(timer);
+      watcher?.close();
+      if (error) reject(error);
+      else resolve(saved);
+    };
+    const check = () => {
+      try {
+        const saved = JSON.parse(readFileSync(file, "utf8"));
+        if (ready(saved)) finish(null, saved);
+      } catch {}
+    };
+    watcher = watch(ROOMS_DIR, { persistent: false }, (_event, name) => {
+      if (String(name) === `${code}.json`) check();
+    });
+    check();
+  });
 }
 
 // A: Ember (p0) asks; Tide (p1) is a person; the bot p2 saves for a stronghold (3 grain, 2 ore) and lacks one grain.
@@ -67,19 +98,32 @@ const gB = game(["Ember"], 2, "p2", { p0: { grain: 1, clay: 1 }, p1: { timber: 1
 const askB = chooseTradeAsk(gB, "p2");
 if (!askB || shouldAcceptTrade(gB, "p1", { from: "p2", ...askB })) fail("room B: the bot does not ask, or the other bot would take it", askB);
 // C: the same bot ask with only people to answer it, who stay silent.
-const gC = game(["Ember", "Tide"], 1, "p2", { p0: { grain: 1 }, p1: { clay: 1 }, p2: { grain: 2, ore: 2, wool: 2 } }, 13);
-if (!chooseTradeAsk(gC, "p2")) fail("room C: the bot does not ask");
+const gC = quiet(game(["Ember", "Tide"], 1, "p2", { p0: {}, p1: {}, p2: { grain: 2, ore: 2, wool: 2 } }, 13));
+const askC = chooseTradeAsk(gC, "p2");
+if (!askC) fail("room C: the bot does not ask");
 // D: three people; Ember holds 2 outposts and 7 hidden points, and the goods for a stronghold besides the offered wool.
 const gD = game(["Ember", "Tide", "Pine"], 0, "p0", { p0: { grain: 3, ore: 2, wool: 1 }, p1: { timber: 1 }, p2: { clay: 1 } }, 14);
 gD.players[0].hidden.vp = 7;
+const gE = quiet(game(["Ember", "Tide"], 1, "p2", { p0: {}, p1: {}, p2: { grain: 2, ore: 2, wool: 2 } }, 15));
+const askE = chooseTradeAsk(gE, "p2");
+if (!askE) fail("E: the bot has no first ask");
+const gF = quiet(game(["Ember", "Tide"], 1, "p2", { p0: {}, p1: {}, p2: { grain: 2, ore: 2, wool: 3 } }, 16));
+const askF = chooseTradeAsk(gF, "p2");
+if (JSON.stringify(askF) !== JSON.stringify(askE)) fail("F: changed hand changed the ask", askF);
+const gG = quiet(game(["Ember", "Tide"], 1, "p2", { p0: {}, p1: {}, p2: { grain: 3, ore: 1, wool: 3 } }, 17));
+const askG = chooseTradeAsk(gG, "p2");
+if (!askG || JSON.stringify(askG) === JSON.stringify(askE)) fail("G: no changed useful ask", askG);
 const seatsA = saveRoom("BTAA", gA);
 const seatsB = saveRoom("BTBB", gB);
 const seatsC = saveRoom("BTCC", gC);
 const seatsD = saveRoom("BTDD", gD);
+const seatsE = saveRoom("BTEE", gE);
+const seatsF = saveRoom("BTFF", gF, { p2: askE });
+const seatsG = saveRoom("BTGG", gG, { p2: askE });
 
 host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL(".", import.meta.url),
-  env: { ...process.env, PORT: "0", ACT_RATE: "1000", ACT_CAP: "1000", ROOMS_DIR },
+  env: { ...process.env, PORT: "0", ACT_RATE: "1000", ACT_CAP: "1000", SAVE_MS: "5", ROOMS_DIR },
 });
 process.on("exit", () => host.kill("SIGKILL"));
 for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
@@ -136,7 +180,9 @@ function delayed(offer, msg, what) {
 
 // C runs alongside A and B, since its offer has to run out.
 const C = rejoin("BTCC", seatsC.find((s) => s.pid === "p0"));
+const CT = rejoin("BTCC", seatsC.find((s) => s.pid === "p1"));
 const roomC = (async () => {
+  await Promise.all([C, CT].map((c) => c.until("seats", (m) => m.seats.every((s) => !s.away))));
   const offer = await C.next("tradeOffer");
   if (offer.from !== "p2") fail("C: the ask is not the bot's", offer);
   const closed = await C.next("tradeClosed", OFFER_MS + 5000);
@@ -232,8 +278,78 @@ if (gone.message !== "Offer is gone.") fail("D: a late Yes after the rematch", g
 if (TD.state.game.seq !== dSeq || D.some((c) => c.inbox.some((m) => m.type === "tradeClosed" && m.taker))) fail("D: a late Yes after the rematch moved the table");
 console.log("D: the offer open at Ember's win closed at every seat; after the rematch a late Yes got:", gone.message);
 
+// E. A person declines the bot's ask. Once the bot reaches another turn, the same ask remains closed.
+const E = rejoin("BTEE", seatsE.find((s) => s.pid === "p0"));
+const ET = rejoin("BTEE", seatsE.find((s) => s.pid === "p1"));
+await Promise.all([E, ET].map((c) => c.until("seats", (m) => m.seats.every((s) => !s.away))));
+offer = await E.next("tradeOffer");
+if (offer.from !== "p2" || JSON.stringify({ give: offer.give, want: offer.want }) !== JSON.stringify(askE)) fail("E: the first bot ask", offer);
+await Promise.all([E, ET].map((c) => c.until("state", (m) => m.game.current === "p2" && m.game.phase === "main")));
+E.send({ type: "tradeAnswer", tradeId: offer.tradeId, yes: false });
+ET.send({ type: "tradeAnswer", tradeId: offer.tradeId, yes: false });
+const declines = await Promise.all([E, ET].map((c) => c.until("tradeDeclined", (m) => m.by === c.pid)));
+if (declines.some((m) => !["p0", "p1"].includes(m.by))) fail("E: the humans' declines", declines);
+await E.until("tradeClosed", (m) => m.tradeId === offer.tradeId);
+const eTurn = E.state.game.turn;
+await rollAndPass(E);
+await rollAndPass(ET);
+await E.until("state", (m) => m.game.turn > eTurn && m.game.current === "p0" && m.game.phase === "roll");
+const savedE = await waitForSavedRoom("BTEE", (saved) => saved.game?.turn > eTurn && JSON.stringify(saved.botDeclined?.p2) === JSON.stringify(askE));
+const savedBotHand = savedE.game.players.find((p) => p.id === "p2").resources;
+if (JSON.stringify(savedBotHand) !== JSON.stringify(gE.players.find((p) => p.id === "p2").resources)) fail("E: the quiet bot hand changed before the next ask", { savedBotHand, original: gE.players.find((p) => p.id === "p2").resources, phase: savedE.game.phase, log: savedE.game.log.slice(-8), deck: savedE.game.deck.length });
+const repeatE = structuredClone(savedE.game);
+repeatE.current = "p2";
+repeatE.phase = "main";
+repeatE.turn++;
+const secondAsk = chooseTradeAsk(repeatE, "p2");
+if (JSON.stringify(secondAsk) !== JSON.stringify(askE)) fail("E: the bot's unfiltered second-turn proposal changed", secondAsk);
+if (E.seen.filter((m) => m.type === "tradeOffer" && m.from === "p2").length !== 1) fail("E: the declined offer reopened on the bot's next turn", E.seen.filter((m) => m.type === "tradeOffer"));
+console.log("E: the person declined the bot's offer; its unchanged proposal stayed suppressed on its next turn");
+
+// F: a fixture with the same stored decline and one more spare wool stays closed through the real host path.
+const F = rejoin("BTFF", seatsF.find((s) => s.pid === "p0"));
+const FT = rejoin("BTFF", seatsF.find((s) => s.pid === "p1"));
+await Promise.all([F, FT].map((c) => c.until("seats", (m) => m.seats.every((s) => !s.away))));
+await F.until("state", (m) => m.game.current === "p0" && m.game.phase === "roll");
+if (F.seen.some((m) => m.type === "tradeOffer" && m.from === "p2")) fail("F: same ask reopened after a hand-only change", F.seen.filter((m) => m.type === "tradeOffer"));
+console.log("F: the host kept the same ask closed after the bot gained wool");
+
+// G: the stored decline blocks the old proposal but lets a different useful proposal open.
+const G = rejoin("BTGG", seatsG.find((s) => s.pid === "p0"));
+const GT = rejoin("BTGG", seatsG.find((s) => s.pid === "p1"));
+await Promise.all([G, GT].map((c) => c.until("seats", (m) => m.seats.every((s) => !s.away))));
+const offerG = await G.next("tradeOffer");
+if (offerG.from !== "p2" || JSON.stringify({ give: offerG.give, want: offerG.want }) !== JSON.stringify(askG)) fail("G: changed useful proposal did not open", offerG);
+console.log("G: a different useful proposal opened through the host");
+
 const cMs = await roomC;
 console.log(`C: nobody answered the bot's ask; no bot answered it; it closed after ${cMs} ms and the bot's turn played on`);
+async function rollAndPass(c) {
+  const pid = c.pid;
+  if (c.state?.game.current !== pid || c.state.game.phase !== "roll") {
+    await c.until("state", (m) => m.game.current === pid && m.game.phase === "roll");
+  }
+  const seq = c.state.game.seq;
+  c.send({ type: "roll" });
+  let state = await c.until("state", (m) => m.game.current === pid && m.game.seq > seq);
+  if (state.game.phase === "robber") {
+    const hexId = state.legal.wayfarer.find((h) => (state.legal.steal[h]?.length ?? 0) === 0) ?? state.legal.wayfarer[0];
+    c.send({ type: "rob", hexId, stealFrom: state.legal.steal[hexId]?.[0] ?? null });
+    const robSeq = state.game.seq;
+    state = await c.until("state", (m) => m.game.current === pid && m.game.seq > robSeq);
+  }
+  if (state.game.phase !== "main") fail(`${c.name}: the turn did not reach main`, state.game.phase);
+  c.send({ type: "pass" });
+}
+await rollAndPass(C);
+await rollAndPass(CT);
+const savedC = await waitForSavedRoom("BTCC", (saved) => saved.game?.turn > gC.turn && saved.game.current === "p2" && saved.game.phase === "main");
+const retryC = structuredClone(savedC.game);
+const rawRetry = chooseTradeAsk(retryC, "p2");
+if (JSON.stringify(rawRetry) !== JSON.stringify(askC)) fail("C boundary: the raw offer changed before the retry", { rawRetry, askC, hand: savedC.game.players.find((p) => p.id === "p2").resources, declined: savedC.botDeclined });
+const retry = await C.next("tradeOffer");
+if (retry.from !== "p2" || JSON.stringify({ give: retry.give, want: retry.want }) !== JSON.stringify(askC)) fail("C boundary: the expired offer was remembered or changed", retry);
+console.log("C boundary: a 20-second expiry does not suppress the same proposal on a later turn");
 
 host.kill("SIGKILL");
 console.log("bot trade prove ok");
