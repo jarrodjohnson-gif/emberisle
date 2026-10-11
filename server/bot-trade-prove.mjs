@@ -315,7 +315,10 @@ if (F.seen.some((m) => m.type === "tradeOffer" && m.from === "p2")) fail("F: sam
 console.log("F: the host kept the same ask closed after the bot gained wool");
 
 // G: the stored decline blocks the old proposal but lets a different useful proposal open.
+// The host runs the bots on the first rejoin and a rejoin does not resend an open offer, so Ember is seated
+// before Tide dials: the bot's ask then reaches Ember's socket instead of racing it.
 const G = rejoin("BTGG", seatsG.find((s) => s.pid === "p0"));
+await G.until("state", () => true);
 const GT = rejoin("BTGG", seatsG.find((s) => s.pid === "p1"));
 await Promise.all([G, GT].map((c) => c.until("seats", (m) => m.seats.every((s) => !s.away))));
 const offerG = await G.next("tradeOffer");
