@@ -10,6 +10,7 @@ import { chooseBotAction, chooseRecoveryAction, chooseTradeAsk, logBotAction, sh
 import { createGame } from "../src/lib/game/board.ts";
 import { applyAction, bankShort, legalCities, legalRoads, legalSettle, playable, stealTargets, validBag } from "../src/lib/game/rules.ts";
 import { COST, PLAYER_COLORS, RESOURCES } from "../src/lib/game/types.ts";
+import { PROTO } from "../src/lib/net/proto.ts";
 import { allow, cleanText, loadEmotes, remember } from "./chat.mjs";
 import { cue } from "./cue.mjs";
 
@@ -749,7 +750,7 @@ function openTable(ws, msg) {
   room.host = seat.id;
   ws.room = room;
   ws.seat = seat;
-  send(ws, { type: "welcome", code: room.code, you: seat.id, host: true, chat: room.chat, secret: seat.secret, ...HOLD_INFO });
+  send(ws, { type: "welcome", proto: PROTO, code: room.code, you: seat.id, host: true, chat: room.chat, secret: seat.secret, ...HOLD_INFO });
   say(room, `${seat.name} sat down.`);
   publish(room);
 }
@@ -775,7 +776,7 @@ function sitDown(ws, msg) {
   room.seats.push(seat);
   ws.room = room;
   ws.seat = seat;
-  send(ws, { type: "welcome", code: room.code, you: seat.id, host: false, chat: room.chat, secret: seat.secret, ...HOLD_INFO });
+  send(ws, { type: "welcome", proto: PROTO, code: room.code, you: seat.id, host: false, chat: room.chat, secret: seat.secret, ...HOLD_INFO });
   say(room, `${seat.name} sat down.`);
   publish(room);
 }
@@ -788,7 +789,7 @@ function watch(ws, msg) {
   if (room.watchers.size >= SPECTATOR_MAX) return send(ws, { type: "error", message: "Table is full to watch." });
   room.watchers.add(ws);
   ws.watch = room;
-  send(ws, { type: "welcome", code: room.code, spectator: true, chat: room.chat });
+  send(ws, { type: "welcome", proto: PROTO, code: room.code, spectator: true, chat: room.chat });
   watchersChanged(room, "Someone is watching.");
   const soonest = room.seats.reduce((d, s) => (s.turnDeadline && (!d || s.turnDeadline < d.turnDeadline) ? s : d), null);
   send(ws, { type: "state", you: null, game: watchView(room.game), legal: legalFor(room.game, null), turnDeadline: deadlineOf(room), turnPlayer: soonest?.pid ?? null, serverNow: Date.now() });
@@ -1118,6 +1119,12 @@ function handle(ws, raw) {
     const ok = allow(ws.bucket, Date.now());
     if (msg.type === "peek") return ok ? peek(ws, msg) : undefined;
     if (!ok && (msg.type === "create" || msg.type === "join" || msg.type === "hello")) return send(ws, { type: "error", message: "Slow down." });
+    // G2: a hello on a protocol newer than this host, or on a version that is not a whole number, is refused before it opens,
+    // takes or watches a table. No proto counts as 0 (a page from before G2) and is still let in for now.
+    const proto = msg.proto ?? 0;
+    if ((msg.type === "create" || msg.type === "join" || msg.type === "hello") && !(Number.isSafeInteger(proto) && proto >= 0 && proto <= PROTO)) {
+      return send(ws, { type: "error", proto: PROTO, message: `Unknown protocol version; this table speaks protocol ${PROTO}. Reload to update.` });
+    }
     if (msg.type === "hello" && msg.watch === true) return watch(ws, msg);
     // hello with no code opens a table; hello with a code sits down (build bible 2.3, 10).
     if (msg.type === "create" || (msg.type === "hello" && !msg.code)) return openTable(ws, msg);
@@ -1167,7 +1174,7 @@ function rejoin(ws, msg) {
   seat.gone = null;
   ws.room = room;
   ws.seat = seat;
-  send(ws, { type: "welcome", code: room.code, you: seat.id, host: seat.id === room.host, chat: room.chat, secret: seat.secret, ...HOLD_INFO });
+  send(ws, { type: "welcome", proto: PROTO, code: room.code, you: seat.id, host: seat.id === room.host, chat: room.chat, secret: seat.secret, ...HOLD_INFO });
   say(room, `${seat.name} is back.`);
   publish(room);
   if (!room.game) return;
