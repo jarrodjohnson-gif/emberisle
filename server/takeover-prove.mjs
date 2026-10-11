@@ -116,8 +116,8 @@ let port = await startHost();
 
 async function client(code, pid) {
   const ws = new WebSocket(`ws://127.0.0.1:${port}`);
-  const c = { ws, code, pid, state: null, inbox: [], wake: null };
-  ws.on("message", (raw) => { const m = JSON.parse(String(raw)); if (m.type === "state") c.state = m; c.inbox.push(m); c.wake?.(); });
+  const c = { ws, code, pid, state: null, inbox: [], logs: [], wake: null };
+  ws.on("message", (raw) => { const m = JSON.parse(String(raw)); if (m.type === "state") c.state = m; if (m.type === "log") c.logs.push(m.text); c.inbox.push(m); c.wake?.(); });
   c.send = (m) => ws.send(JSON.stringify({ ...c.state?.actionStamp, cid: randomUUID(), ...m }));
   c.next = async (type, predicate = () => true, ms = 5000) => {
     const end = Date.now() + ms;
@@ -134,6 +134,10 @@ async function client(code, pid) {
   clients.push(c);
   await c.rejoin();
   return c;
+}
+
+async function stateBarrier(peers, seq) {
+  await Promise.all(peers.map((peer) => peer.state?.game.seq >= seq ? Promise.resolve() : peer.next("state", (m) => m.game.seq >= seq)));
 }
 
 const rooms = {};
@@ -169,8 +173,15 @@ const setup = await rooms.TA01[1].next("state", (m) => m.game.seq > 1 && m.game.
 assert.equal(setup.game.players.find((p) => p.id === "p0").kind, "bot");
 assert.equal(setup.game.players.find((p) => p.id === "p0").outpostsLeft, starts.TA01.outpostsLeft - 1);
 assert.equal(setup.game.players.find((p) => p.id === "p0").pathsLeft, starts.TA01.pathsLeft - 1);
-assert(setup.game.log.slice(starts.TA01.logLength).some((line) => line === "Ember (bot) raises an outpost."));
-assert(setup.game.log.slice(starts.TA01.logLength).some((line) => line === "Ember (bot) lays a path."));
+assert(setup.game.log.slice(starts.TA01.logLength).some((line) => line === "Bot built an outpost for Ember."));
+assert(setup.game.log.slice(starts.TA01.logLength).some((line) => line === "Bot built a path for Ember."));
+await stateBarrier(rooms.TA01.slice(1), setup.game.seq);
+for (const peer of rooms.TA01.slice(1)) {
+  for (const line of ["Bot built an outpost for Ember.", "Bot built a path for Ember."]) {
+    if (!peer.logs.includes(line)) await peer.next("log", (m) => m.text === line);
+    assert.equal(peer.logs.filter((seen) => seen === line).length, 1);
+  }
+}
 console.log(`setup: after GRACE_MS=${GRACE}, recovery completed the forced free outpost and path`);
 
 const main = await rooms.TA02[1].next("state", (m) => m.game.seq > 1 && m.game.current !== "p0", 3000);
@@ -178,11 +189,20 @@ const mainP = main.game.players.find((p) => p.id === "p0");
 assert.equal(main.game.phase, "roll");
 assert.equal(mainP.goods, 40);
 assert.equal(mainP.fortunes, 1);
+const nextName = main.game.players.find((p) => p.id === main.game.current).name;
+const passLine = `Bot passed for Ember; ${nextName}'s turn.`;
+assert.equal(main.game.log.filter((line) => line === passLine).length, 1);
+await stateBarrier(rooms.TA02.slice(1), main.game.seq);
+for (const peer of rooms.TA02.slice(1)) {
+  if (!peer.logs.includes(passLine)) await peer.next("log", (m) => m.text === passLine);
+  assert.equal(peer.logs.filter((line) => line === passLine).length, 1);
+}
 await new Promise((r) => setTimeout(r, 350));
 const mainSaved = JSON.parse(readFileSync(path.join(dir, "TA02.json"), "utf8")).game.players.find((p) => p.id === "p0");
 assert.deepEqual(mainSaved.resources, { timber: 8, clay: 8, wool: 8, grain: 8, ore: 8 });
 assert.equal(mainSaved.hidden.plenty, 1);
 assert.equal(mainSaved.boughtThisTurn.plenty, 0);
+assert(JSON.parse(readFileSync(path.join(dir, "TA02.json"), "utf8")).game.log.includes(passLine));
 assert(!rooms.TA02[1].inbox.some((m) => m.type === "tradeOffer" && m.from === "p0"));
 console.log("main: recovery passed with build materials and a playable fortune untouched");
 
@@ -196,20 +216,42 @@ console.log("own offer: takeover withdrew the old ask, rejected a late Yes, and 
 // Bring p0 back while still held and check that the same player is human again.
 const returning = await client("TA02", "p0");
 assert.equal(returning.state.game.players.find((p) => p.id === "p0").kind, "human");
+assert(returning.state.game.log.includes(passLine), "rejoined room retains the annotated action history");
 console.log("rejoin: the covered seat returned to human control");
 
 const roll = await rooms.TA03[1].next("state", (m) => m.game.seq > 1 && m.game.current !== "p0", 3000);
-assert(roll.game.log.slice(starts.TA03.logLength).some((line) => line.includes("Ember (bot) rolls")));
-console.log("roll: recovery rolled and advanced the engine phase");
+const rollLines = roll.game.log.slice(starts.TA03.logLength).filter((line) => /^Bot rolled for Ember: \d\+\d = \d+\.$/.test(line));
+assert.equal(rollLines.length, 1);
+await stateBarrier(rooms.TA03.slice(1), roll.game.seq);
+for (const peer of rooms.TA03.slice(1)) {
+  if (!peer.logs.includes(rollLines[0])) await peer.next("log", (m) => m.text === rollLines[0]);
+  assert.equal(peer.logs.filter((line) => line === rollLines[0]).length, 1);
+}
+console.log("roll: recovery rolled and advanced the engine phase with an explicit action line");
 
 const discard = await rooms.TA04[1].next("state", (m) => m.game.seq > 1 && m.game.current !== "p0" && m.game.discardNeeded.p0 === undefined, 3000);
-assert(discard.game.log.slice(starts.TA04.logLength).some((line) => line.includes("Ember (bot) discards 4.")));
+const discardLine = "Bot discarded for Ember (4).";
+assert.equal(discard.game.log.filter((line) => line === discardLine).length, 1);
+await stateBarrier(rooms.TA04.slice(1), discard.game.seq);
+for (const peer of rooms.TA04.slice(1)) {
+  if (!peer.logs.includes(discardLine)) await peer.next("log", (m) => m.text === discardLine);
+  assert.equal(peer.logs.filter((line) => line === discardLine).length, 1);
+}
 console.log("discard: recovery paid the mandatory half-hand discard");
 
 const robber = await rooms.TA05[1].next("state", (m) => m.game.seq > 1 && m.game.current !== "p0", 3000);
 assert.notEqual(robber.game.robberHex, starts.TA05.robberHex);
 assert.equal(robber.game.phase, "roll");
-console.log("wayfarer: recovery moved the robber and resolved the forced phase");
+const wayfarerLine = robber.game.log.find((line) => line.startsWith("Bot moved the Wayfarer for Ember"));
+assert(wayfarerLine, "recovery wayfarer action is attributed");
+assert.equal(robber.game.log.filter((line) => line.startsWith("Bot moved the Wayfarer for Ember")).length, 1);
+assert(!robber.game.log.some((line) => line.includes("steals a card from") || line.includes("sends the wayfarer")));
+await stateBarrier(rooms.TA05.slice(1), robber.game.seq);
+for (const peer of rooms.TA05.slice(1)) {
+  if (!peer.logs.includes(wayfarerLine)) await peer.next("log", (m) => m.text === wayfarerLine);
+  assert.equal(peer.logs.filter((line) => line === wayfarerLine).length, 1);
+}
+console.log("wayfarer: recovery moved the robber with one public action line");
 
 // TA06 omitted recoveryPids. Loading inferred the legacy takeover from the bot linked to its held seat.
 await rooms.TA06[1].next("state", (m) => m.game.seq > 1 && m.game.current !== "p0", 3000);
@@ -226,8 +268,16 @@ assert(shouldAcceptTrade(JSON.parse(readFileSync(path.join(dir, "TA06.json"), "u
 offerRoom.send({ type: "tradeAsk", give: helpful.give, want: helpful.want });
 const usefulOffer = await offerRoom.next("tradeOffer", (m) => m.from === "p1", 1000);
 await offerRoom.next("tradeDeclined", (m) => m.by === "p0" && m.tradeId === usefulOffer.tradeId, 2000);
+const declineLine = "Bot declined a trade for Ember (bot).";
+for (const peer of rooms.TA06.slice(1)) {
+  if (!peer.logs.includes(declineLine)) await peer.next("log", (m) => m.text === declineLine);
+  assert.equal(peer.logs.filter((line) => line === declineLine).length, 1);
+}
 assert.equal(offerRoom.state.game.players.find((p) => p.id === "p0").goods, beforeP0Goods);
 assert.deepEqual(offerRoom.state.game.players.find((p) => p.id === "p1").resources, beforeP1);
+await stateBarrier(rooms.TA06.slice(1), offerRoom.state.game.seq);
+await new Promise((r) => setTimeout(r, 350));
+assert.equal(JSON.parse(readFileSync(path.join(dir, "TA06.json"), "utf8")).game.log.filter((line) => line === declineLine).length, 1);
 console.log("trade: a helpful offer to a legacy recovery bot was declined with no goods transferred");
 
 const defaults = readFileSync(new URL("./host.mjs", import.meta.url), "utf8");

@@ -196,6 +196,88 @@ export function chooseRecoveryAction(state: GameState, pid: string): Action | nu
   return null;
 }
 
+// Keep automated moves in the canonical game log, replacing the generic engine event so host broadcasts,
+// offline practice and a rejoined table all see the same single action line.
+export function logBotAction(before: GameState, after: GameState, action: Action, pid: string, seatName: string): GameState {
+  const added = newLog(before.log, after.log);
+  if (!added.length) return after;
+
+  const replace = (pattern: RegExp, text: string) => {
+    const i = added.findIndex((line) => pattern.test(line));
+    if (i < 0) return false;
+    added[i] = text;
+    return true;
+  };
+
+  if (action.type === "roll") {
+    const i = added.findIndex((line) => / rolls \d\+\d = \d+\.$/.test(line) || / rolls a \d+\.$/.test(line));
+    if (i >= 0) {
+      const production = /rolls (\d\+\d = \d+)\.$/.exec(added[i]!);
+      const rollOff = /rolls a (\d+)\.$/.exec(added[i]!);
+      added[i] = production
+        ? `Bot rolled for ${seatName}: ${production[1]}.`
+        : `Bot rolled for ${seatName}: roll-off die ${rollOff?.[1] ?? ""}.`;
+    }
+  } else if (action.type === "discard") {
+    const line = added.find((entry) => / discards \d+\.$/.test(entry));
+    const amount = /discards (\d+)\.$/.exec(line ?? "")?.[1];
+    replace(/ discards \d+\.$/, `Bot discarded for ${seatName}${amount ? ` (${amount})` : ""}.`);
+  } else if (action.type === "moveRobber" || action.type === "playKnight") {
+    const moveAt = added.findIndex((line) => / sends the wayfarer into new land\.$/.test(line));
+    if (moveAt >= 0) {
+      const targets = stealTargets(before, action.hexId, pid);
+      const victimId = action.stealFrom && targets.includes(action.stealFrom)
+        ? action.stealFrom
+        : !action.stealFrom && targets.length === 1 ? targets[0] : null;
+      const victim = victimId ? before.players.find((p) => p.id === victimId) : null;
+      const top = Math.max(0, ...before.players.map((p) => publicVP(before, p.id)));
+      const leader = Boolean(victimId && publicVP(before, victimId) === top);
+      const leaderCount = before.players.filter((p) => publicVP(before, p.id) === top).length;
+      const leaderText = leader ? (leaderCount === 1 ? ", the public leader" : ", a joint public leader") : "";
+      const play = action.type === "playKnight" ? "played Wayfarer" : "moved the Wayfarer";
+      const steal = victim
+        ? `; ${seatName} stole one card from ${victim.name}${leaderText}`
+        : "";
+      added[moveAt] = `Bot ${play} for ${seatName}${steal}.`;
+      const stolenAt = added.findIndex((line, i) => i !== moveAt && / steals a card from .+\.$/.test(line));
+      if (stolenAt >= 0) added.splice(stolenAt, 1);
+    }
+  } else if (action.type === "setupSettle" || action.type === "buildOutpost") {
+    replace(/ (raises|founds) an outpost\.$/, `Bot built an outpost for ${seatName}.`);
+  } else if (action.type === "setupRoad" || action.type === "buildPath") {
+    replace(/ (lays|builds) a path\.$/, `Bot built a path for ${seatName}.`);
+  } else if (action.type === "buildStronghold") {
+    replace(/ raises a stronghold\.$/, `Bot built a stronghold for ${seatName}.`);
+  } else if (action.type === "buyCard") {
+    replace(/ draws a fortune\.$/, `Bot bought a Fortune for ${seatName}.`);
+  } else if (action.type === "playRoad") {
+    replace(/ uses a path fortune\.$/, `Bot played Path for ${seatName}.`);
+  } else if (action.type === "playPlenty") {
+    replace(/ calls a year of plenty\.$/, `Bot played Plenty for ${seatName}.`);
+  } else if (action.type === "playMonopoly") {
+    const line = added.find((entry) => / monopolizes [a-z]+ \(\d+\)\.$/.test(entry));
+    const result = / monopolizes ([a-z]+) \((\d+)\)\.$/.exec(line ?? "");
+    replace(/ monopolizes [a-z]+ \(\d+\)\.$/, `Bot played Monopoly for ${seatName}${result ? `: took ${result[2]} ${result[1]}` : ""}.`);
+  } else if (action.type === "bankTrade") {
+    const line = added.find((entry) => / trades \d+ [a-z]+ for [a-z]+\.$/.test(entry));
+    const trade = / trades (\d+) ([a-z]+) for ([a-z]+)\.$/.exec(line ?? "");
+    replace(/ trades \d+ [a-z]+ for [a-z]+\.$/, `Bot traded with the bank for ${seatName}${trade ? `: ${trade[1]} ${trade[2]} for 1 ${trade[3]}` : ""}.`);
+  } else if (action.type === "endTurn") {
+    const i = added.findIndex((line) => /'s turn\.$/.test(line));
+    if (i >= 0) added[i] = `Bot passed for ${seatName}; ${added[i]}`;
+  }
+
+  if (added.every((line, i) => line === newLog(before.log, after.log)[i])) return after;
+  return { ...after, log: [...before.log, ...added].slice(-41) };
+}
+
+function newLog(before: string[], after: string[]) {
+  for (let k = Math.min(before.length, after.length); k > 0; k--) {
+    if (before.slice(-k).every((line, i) => line === after[i])) return after.slice(k);
+  }
+  return after;
+}
+
 export function chooseBotAction(state: GameState, pid: string): Action | null {
   const me = state.players.find((p) => p.id === pid);
   if (!me) return null;
