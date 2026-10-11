@@ -13,14 +13,21 @@ const hosts = [];
 process.on("exit", () => hosts.forEach((h) => h.kill()));
 for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
 const temp = mkdtempSync(path.join(tmpdir(), "emberisle-dist-"));
-function done(code) {
-  for (const h of hosts) h.kill();
+let finishing = false;
+async function done(code) {
+  if (finishing) return;
+  finishing = true;
+  await Promise.all(hosts.map((h) => new Promise((resolve) => {
+    if (h.exitCode !== null || h.signalCode !== null) return resolve();
+    h.once("exit", resolve);
+    if (!h.killed) h.kill();
+  })));
   rmSync(temp, { recursive: true, force: true });
   process.exit(code);
 }
 function fail(why) {
   console.log("FAIL", why);
-  done(1);
+  void done(1);
 }
 function check(line, ok) {
   console.log(line.padEnd(56), ok ? "" : "<- wrong");
@@ -75,7 +82,7 @@ const empty = path.join(temp, "empty");
 mkdirSync(empty);
 
 const port = await start(dist);
-hosts[0].on("exit", (code) => fail(`host exited (${code})`));
+hosts[0].on("exit", (code) => { if (!finishing) fail(`host exited (${code})`); });
 
 // These run first, so every check below also proves the same host process survived them.
 for (const [target, want] of [["//", 400], ["//[", 400], ["//a b", 400], ["http://[", 400], ["/%", 404], ["http://x//", 404]]) {
@@ -252,4 +259,4 @@ for (const [href, dev, want] of [
 check(`hostUrl default dev under node -> ${hostUrl(loc("http://h:9/"))}`, hostUrl(loc("http://h:9/")) === "ws://h:9");
 
 console.log("serve prove ok");
-done(0);
+await done(0);
