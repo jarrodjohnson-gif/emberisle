@@ -144,7 +144,11 @@ export function shouldAcceptTrade(state: GameState, botId: string, offer: TradeA
 // What a bot asks the table for on its own turn (#363), or null. Only when exactly one card short of
 // its next build: that card, one for one, against its biggest spare (a card the build does not use).
 // Pure; the caller holds a bot to one ask per turn.
-export function chooseTradeAsk(state: GameState, botId: string): { give: Cost; want: Cost } | null {
+export function chooseTradeAsk(
+  state: GameState,
+  botId: string,
+  lastDeclined?: { give: Cost; want: Cost } | null,
+): { give: Cost; want: Cost } | null {
   const me = state.players.find((p) => p.id === botId);
   if (!me || state.phase !== "main" || state.current !== botId || state.trade) return null;
   const goal = goalFor(state, me);
@@ -153,7 +157,43 @@ export function chooseTradeAsk(state: GameState, botId: string): { give: Cost; w
   const want = short[0]!;
   const spare = (r: Resource) => me.resources[r] - (goal[r] ?? 0);
   const give = RESOURCES.filter((r) => r !== want && spare(r) > 0).sort((a, b) => spare(b) - spare(a))[0];
-  return give ? { give: { [give]: 1 }, want: { [want]: 1 } } : null;
+  if (!give) return null;
+  const ask = { give: { [give]: 1 }, want: { [want]: 1 } };
+  if (
+    lastDeclined &&
+    RESOURCES.every((r) => (lastDeclined.give[r] ?? 0) === (ask.give[r] ?? 0)) &&
+    RESOURCES.every((r) => (lastDeclined.want[r] ?? 0) === (ask.want[r] ?? 0))
+  ) return null;
+  return ask;
+}
+
+// A human seat covered by the host after its reconnect grace gets only the moves that keep play
+// flowing without spending or trading anything. Keep this separate from chooseBotAction so practice
+// bots retain their full strategy.
+export function chooseRecoveryAction(state: GameState, pid: string): Action | null {
+  const me = state.players.find((p) => p.id === pid);
+  if (!me) return null;
+
+  if (state.phase === "discard" && (state.discardNeeded[pid] ?? 0) > 0) {
+    return { type: "discard", resources: discardHalf(me, state.discardNeeded[pid]!) };
+  }
+  if (state.phase === "setupSettle" && state.current === pid) {
+    const opts = legalSettle(state, pid, true);
+    opts.sort((a, b) => pipScore(state, b) - pipScore(state, a));
+    if (opts[0]) return { type: "setupSettle", vertexId: opts[0] };
+  }
+  if (state.phase === "setupRoad" && state.current === pid) {
+    const opts = legalRoads(state, pid, true);
+    if (opts[0]) return { type: "setupRoad", edgeId: opts[0] };
+  }
+  if (state.current !== pid) return null;
+  if (state.phase === "roll" || state.phase === "rollOff") return { type: "roll" };
+  if (state.phase === "robber") {
+    const move = bestRobberHex(state, pid);
+    return { type: "moveRobber", hexId: move.hexId, stealFrom: move.stealFrom };
+  }
+  if (state.phase === "main") return { type: "endTurn" };
+  return null;
 }
 
 export function chooseBotAction(state: GameState, pid: string): Action | null {
