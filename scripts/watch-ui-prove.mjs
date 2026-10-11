@@ -6,7 +6,8 @@
 // refused with "Watching only." and the store's own actions send nothing. The seats then play to the win on the practice
 // bot and the watcher's win screen is the seats' full reveal (every hand and hidden point, the same rows as a seat) with
 // no seed or rng behind it. Leave takes it to the Title with no confirm and the count falls to 0; a dropped watcher
-// lands on the Title with "Lost the table" and leaves another table's saved seat alone. Zero console errors.
+// lands on the Title with "Lost the table" and leaves another table's saved seat alone. A welcome from a host on a newer
+// wire protocol (G2) shows "Reload to update". Zero console errors.
 // Run with: node --import ./server/register.mjs scripts/watch-ui-prove.mjs
 import { spawn } from "node:child_process";
 import { existsSync, mkdtempSync, rmSync } from "node:fs";
@@ -16,6 +17,7 @@ import { chromium } from "playwright";
 import { createServer } from "vite";
 import { chooseBotAction } from "../src/lib/game/ai.ts";
 import { connectTable } from "../src/lib/net/table.ts";
+import { PROTO } from "../src/lib/net/proto.ts";
 
 const PORT = 8102;
 
@@ -468,6 +470,30 @@ try {
   const kept = await w1.page.evaluate(() => localStorage.getItem("emberisle-seat"));
   if (kept !== saved) throw new Error(`the drop touched the saved seat: ${kept}`);
   console.log('drop: Title with "Lost the table", no redial, the saved seat for another table kept');
+
+  // --- 8. G2 (#525): a host on a newer wire protocol than this page. A fresh tab's socket runs through a relay that raises
+  // the welcome's proto (w1's socket recorder would bypass the route); the page says "Reload to update" where errors go,
+  // and still watches.
+  const w2 = await tab("Late");
+  await w2.page.routeWebSocket(new RegExp(`:${hostPort}/?$`), (ws) => {
+    const server = ws.connectToServer();
+    server.onMessage((raw) => {
+      const msg = JSON.parse(String(raw));
+      ws.send(JSON.stringify(msg.type === "welcome" ? { ...msg, proto: PROTO + 1 } : msg));
+    });
+  });
+  // The route takes effect from the next load.
+  await w2.page.reload();
+  await w2.page.getByPlaceholder(/code/i).fill(tableCode);
+  await w2.page.getByRole("button", { name: "Watch", exact: true }).click();
+  const stale = "This page is out of date. Reload to update.";
+  let last;
+  await until(async () => {
+    last = await view(w2);
+    return last.screen === "play" && last.spectator && last.error === stale;
+  }, () => `the newer-proto welcome showing Reload to update: ${JSON.stringify({ screen: last?.screen, spectator: last?.spectator, error: last?.error })}`);
+  if (!(await w2.page.getByText(stale).first().isVisible())) throw new Error("Reload to update is not on screen");
+  console.log(`proto: a welcome with proto ${PROTO + 1} over this page's ${PROTO} shows "${stale}" while it keeps watching`);
 
   if (errors.length) throw new Error(`console errors:\n${errors.join("\n")}`);
   console.log("watch ui prove ok");

@@ -1,5 +1,6 @@
 // The browser (or a Node proof) talking to server/host.mjs. Design: docs/design/online-client.md.
 import type { Action, GameState, Resource } from "@/lib/game/types";
+import { PROTO } from "@/lib/net/proto";
 
 export interface Seat {
   id: string;
@@ -58,8 +59,9 @@ export interface Reaction {
 export type Bag = Partial<Record<Resource, number>>;
 
 export interface TableEvents {
-  // A watcher's welcome (docs/design/spectator.md) has `spectator: true` and no `you`, `host` or `secret`.
-  welcome(msg: { code: string; you?: string; host?: boolean; chat?: ChatLine[]; secret?: string; spectator?: true }): void;
+  // A watcher's welcome (docs/design/spectator.md) has `spectator: true` and no `you`, `host` or `secret`. `proto` is the
+  // host's wire protocol (G2): newer than PROTO means this page is out of date.
+  welcome(msg: { proto?: number; code: string; you?: string; host?: boolean; chat?: ChatLine[]; secret?: string; spectator?: true }): void;
   // `watching`: how many spectators the table has (#347).
   seats(msg: { code: string; seats: Seat[]; watching?: number }): void;
   // `you` is null on a watcher's state. `turnDeadline` is the host's clock (epoch ms) for the seat `turnPlayer`;
@@ -221,7 +223,7 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
       // The rejoin hello goes out here only, never through the queue, so it is sent once per socket.
       if (seat && (attempt > 0 || rejoining)) {
         rejoining = true;
-        ws.send(JSON.stringify({ type: "hello", code: seat.code, secret: seat.secret }));
+        ws.send(JSON.stringify({ type: "hello", proto: PROTO, code: seat.code, secret: seat.secret }));
         // Anything sent while the socket was down is stale after a rejoin (a second roll, an old placement).
         queue.length = 0;
       }
@@ -258,7 +260,7 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
     switch (msg.type) {
       case "welcome": {
         stamp = null;
-        const m = msg as { code: string; you?: string; host?: boolean; chat?: ChatLine[]; secret?: string; spectator?: true };
+        const m = msg as { proto?: number; code: string; you?: string; host?: boolean; chat?: ChatLine[]; secret?: string; spectator?: true };
         if (typeof m.secret === "string") seat = { code: m.code, secret: m.secret };
         rejoining = false;
         taken = false;
@@ -318,16 +320,16 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
   dial();
 
   return {
-    open: (me) => send({ type: "hello", ...me }),
-    join: (code, me) => send({ type: "hello", code: code.toUpperCase(), ...me }),
-    watch: (code) => send({ type: "hello", code: code.toUpperCase(), watch: true }),
+    open: (me) => send({ type: "hello", proto: PROTO, ...me }),
+    join: (code, me) => send({ type: "hello", proto: PROTO, code: code.toUpperCase(), ...me }),
+    watch: (code) => send({ type: "hello", proto: PROTO, code: code.toUpperCase(), watch: true }),
     peek: (code) => send({ type: "peek", code: code.toUpperCase() }),
     rejoin: (code, secret) => {
       stamp = null;
       seat = { code: code.toUpperCase(), secret };
       rejoining = true;
       // Not queued: onopen sends it, so a failed first dial cannot leave a second hello behind.
-      if (ws.readyState === 1) ws.send(JSON.stringify({ type: "hello", code: seat.code, secret }));
+      if (ws.readyState === 1) ws.send(JSON.stringify({ type: "hello", proto: PROTO, code: seat.code, secret }));
     },
     ready: (value) => send({ type: "ready", value }),
     start: () => send({ type: "start" }),
