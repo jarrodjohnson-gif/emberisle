@@ -1,7 +1,8 @@
 // #521: a phone that rotates (390x844 <-> 844x390, 360x640 <-> 640x360) or a window that resizes refits the island to the
 // hole the HUD leaves now. Within 3 animation frames of the change `__isle.fit` is the fit that hole asks for (not the old
 // one, not a stale aspect); once the glide ends the camera's frustum is that fit, the drawing buffer is the canvas's size
-// (no stretch), and every corner of the island is inside the hole. Zero console errors. Run: npm run rotate-prove
+// (no stretch), and every corner of the island is inside the hole. The oracle is a fresh load: the island's settled
+// bounding box after each rotation of one page is within 10 % of the box a fresh page at that viewport draws. Zero console errors. Run: npm run rotate-prove
 import { existsSync } from "node:fs";
 import { chromium } from "playwright";
 import { createServer } from "vite";
@@ -45,29 +46,57 @@ const look = (page) =>
 const frames = (page, n) =>
   page.evaluate(async (n) => { for (let i = 0; i < n; i++) await new Promise((r) => requestAnimationFrame(r)); }, n);
 
+// The island's on-screen bounding box (every vertex), once the fit and its glide are done and two frames are drawn.
+const box = async (page) => {
+  await page.waitForFunction(() => !window.__isle.refitDue && !window.__isle.glide, null, { timeout: STEP_MS });
+  await frames(page, 2);
+  return page.evaluate(() => {
+    const xs = [];
+    const ys = [];
+    for (const v of window.__emberisle.getState().state.vertices) {
+      const p = window.__isle.screenOf(v.id);
+      xs.push(p.x);
+      ys.push(p.y);
+    }
+    return { x: Math.min(...xs), y: Math.min(...ys), w: Math.max(...xs) - Math.min(...xs), h: Math.max(...ys) - Math.min(...ys) };
+  });
+};
+const near = (a, b) => ["w", "h"].every((k) => Math.abs(a[k] / b[k] - 1) <= 0.1) && ["x", "y"].every((k) => Math.abs(a[k] - b[k]) <= 0.1 * Math.max(b.w, b.h));
+const round = (r) => Object.fromEntries(Object.entries(r).map(([k, v]) => [k, Math.round(v)]));
+async function start(w, h) {
+  const ctx = await browser.newContext({ viewport: { width: w, height: h }, isMobile: true, hasTouch: true });
+  const page = await ctx.newPage();
+  page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
+  page.on("pageerror", (e) => errors.push(String(e)));
+  page.on("response", (r) => r.status() >= 400 && errors.push(`${r.status()} ${r.url()}`));
+  await page.goto(`http://127.0.0.1:${PORT}/`);
+  await page.waitForFunction(() => window.__isle?.renders > 0, null, { timeout: STEP_MS });
+  await page.getByRole("button", { name: "Four seats, one table" }).click();
+  await page.waitForFunction(() => window.__emberisle?.getState().state && window.__isle.lastState, null, { timeout: STEP_MS });
+  await page.evaluate(() => {
+    const g = window.__emberisle;
+    while (g.getState().state.phase === "rollOff") g.getState().dispatch({ type: "roll" });
+  });
+  // A banner leaves the phase bar a few seconds in; start after it, with the fit at rest.
+  await page.waitForFunction(() => !document.querySelector('[data-testid="banner"]'), null, { timeout: STEP_MS });
+  await page.evaluate(() => window.__isle.remeasure());
+  return { ctx, page };
+}
+
 let code = 0;
 try {
   for (const [a, b] of [[[390, 844], [844, 390]], [[360, 640], [640, 360]]]) {
-    const ctx = await browser.newContext({ viewport: { width: a[0], height: a[1] }, isMobile: true, hasTouch: true });
-    const page = await ctx.newPage();
-    page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
-    page.on("pageerror", (e) => errors.push(String(e)));
-    page.on("response", (r) => r.status() >= 400 && errors.push(`${r.status()} ${r.url()}`));
-    await page.goto(`http://127.0.0.1:${PORT}/`);
-    await page.waitForFunction(() => window.__isle?.renders > 0, null, { timeout: STEP_MS });
-    await page.getByRole("button", { name: "Four seats, one table" }).click();
-    await page.waitForFunction(() => window.__emberisle?.getState().state && window.__isle.lastState, null, { timeout: STEP_MS });
-    await page.evaluate(() => {
-      const g = window.__emberisle;
-      while (g.getState().state.phase === "rollOff") g.getState().dispatch({ type: "roll" });
-    });
+    const fresh = {};
+    for (const [w, h] of [a, b]) {
+      const f = await start(w, h);
+      fresh[`${w}x${h}`] = await box(f.page);
+      await f.ctx.close();
+    }
+    const { ctx, page } = await start(a[0], a[1]);
     const settle = async () => {
       await page.waitForFunction(() => !window.__isle.refitDue && !window.__isle.glide, null, { timeout: STEP_MS });
       await frames(page, 2);
     };
-    // A banner leaves the phase bar a few seconds in; start after it, with the fit at rest.
-    await page.waitForFunction(() => !document.querySelector('[data-testid="banner"]'), null, { timeout: STEP_MS });
-    await page.evaluate(() => window.__isle.remeasure());
     await settle();
     const first = await look(page);
     check(first.fresh && first.onCamera && !first.stretched && first.outside === 0, `${a.join("x")} start: fitted to the hole`, first);
@@ -79,6 +108,8 @@ try {
       check(soon.size === `${w}x${h}` && soon.fresh, `${tag}: within 3 frames the fit is the one the new hole asks for`, soon);
       await settle();
       const done = await look(page);
+      const got = await box(page);
+      check(near(got, fresh[`${w}x${h}`]), `${tag}: island box within 10 % of a fresh load's`, { got: round(got), fresh: round(fresh[`${w}x${h}`]), ratio: [got.w / fresh[`${w}x${h}`].w, got.h / fresh[`${w}x${h}`].h].map((r) => +r.toFixed(3)) });
       check(done.fresh && done.onCamera && !done.stretched && done.outside === 0, `${tag}: settled, camera on the fit, not stretched, every corner in the hole`, done);
     }
     await ctx.close();
