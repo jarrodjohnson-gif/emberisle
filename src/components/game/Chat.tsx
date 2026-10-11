@@ -428,7 +428,10 @@ export function ChatDock() {
       type="button"
       aria-label="Minimize chat"
       onClick={() => setOpen(false)}
-      className="flex size-6 cursor-pointer items-center justify-center rounded-control bg-glass text-zinc-700 hover:text-zinc-900"
+      className={cn(
+        "flex cursor-pointer items-center justify-center rounded-control bg-glass text-zinc-700 hover:text-zinc-900",
+        phone ? "size-11" : "size-6",
+      )}
     >
       <Minus className="size-4" />
     </button>

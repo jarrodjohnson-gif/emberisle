@@ -47,6 +47,7 @@
     "hand-hidden-prove": "node scripts/hand-hidden-prove.mjs",
     "install-prove": "node scripts/install-prove.mjs",
     "hud-safe-area-prove": "node scripts/hud-safe-area-prove.mjs",
+    "rotate-overlays-prove": "node scripts/rotate-overlays-prove.mjs",
     "make-icons": "node scripts/make-icons.mjs",
     "board-look-prove": "node scripts/board-look-prove.mjs",
     "seat-rail-prove": "node scripts/seat-rail-prove.mjs",
