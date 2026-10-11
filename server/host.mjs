@@ -1081,8 +1081,8 @@ function handle(ws, raw) {
     const ok = allow(ws.bucket, Date.now());
     if (msg.type === "peek") return ok ? peek(ws, msg) : undefined;
     if (!ok && (msg.type === "create" || msg.type === "join" || msg.type === "hello")) return send(ws, { type: "error", message: "Slow down." });
-    // G2: a hello on a protocol newer than this host (or no version at all) is refused before it opens, takes or watches a
-    // table. No proto is 0, a page from before G2.
+    // G2: a hello on a protocol newer than this host, or on a version that is not a whole number, is refused before it opens,
+    // takes or watches a table. No proto counts as 0 (a page from before G2) and is still let in for now.
     const proto = msg.proto ?? 0;
     if ((msg.type === "create" || msg.type === "join" || msg.type === "hello") && !(Number.isSafeInteger(proto) && proto >= 0 && proto <= PROTO)) {
       return send(ws, { type: "error", proto: PROTO, message: `Unknown protocol version; this table speaks protocol ${PROTO}. Reload to update.` });
