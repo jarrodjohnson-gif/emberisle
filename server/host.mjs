@@ -1137,7 +1137,7 @@ function rejoin(ws, msg) {
   seat.gone = null;
   ws.room = room;
   ws.seat = seat;
-  send(ws, { type: "welcome", code: room.code, you: seat.id, host: seat.id === room.host, chat: room.chat, secret: seat.secret });
+  send(ws, { type: "welcome", code: room.code, you: seat.id, host: seat.id === room.host, chat: room.chat, secret: seat.secret, ...HOLD_INFO });
   say(room, `${seat.name} is back.`);
   publish(room);
   if (!room.game) return;

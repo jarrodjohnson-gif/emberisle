@@ -1,6 +1,7 @@
 // G7 (#528): the host's hold outlasts the client's redials. A table.ts client dials through a TCP relay the proof
 // can cut, so the host is up but unreachable: the last redial lands just before the hold, a rejoin there keeps the
 // seat, and when the host stays unreachable the client gives up before the host lets the seat go, never after.
+// The same holds for a reload, whose only welcome is the rejoin's.
 import { spawn } from "node:child_process";
 import { mkdtempSync, rmSync } from "node:fs";
 import net from "node:net";
@@ -166,7 +167,28 @@ if (a2.closedAt < HOLD - LAST_CALL - 50 || a2.closedAt >= letGoGameAt) fail("the
 if (a2.dials.at(-1) >= letGoGameAt) fail("a redial reached past the game hold", { dials: a2.dials, letGoAt: letGoGameAt });
 console.log(`game: relay cut, redials queued at ${a2.dials.join(", ")} ms, gave up at ${a2.closedAt} ms, host let go at ${letGoGameAt} ms (hold ${HOLD})`);
 
-for (const w of [b, c]) w.ws.close();
+// 4. A reload: a fresh client whose only welcome is the rejoin's. That welcome carries the holds too, so with the
+// relay cut again the client still gives up before the host lets the seat go.
+down = false;
+b.ws.close();
+await until(() => c.seats.at(-1)?.away.includes(b.welcome.you), "Tide away before the reload");
+const d = player("Tide reloaded");
+d.t.rejoin(code, b.welcome.secret);
+await until(() => d.welcomes.length === 1 && d.state, "rejoin on reload");
+if (d.welcomes[0].you !== b.welcome.you) fail("the reload should land in Tide's seat", d.welcomes[0]);
+if (d.welcomes[0].holdMs !== HOLD || d.welcomes[0].lobbyHoldMs !== LOBBY_HOLD) fail("the rejoin welcome carries the holds", d.welcomes[0]);
+down = true;
+d.drop();
+await until(() => d.closed.length, "give up after a reload", HOLD);
+const letGoReload = () => c.seats.find((m) => m.at > d.lostAt && !m.ids.includes(b.welcome.you));
+await until(() => letGoReload(), "the host lets the reloaded seat go", HOLD);
+const letGoReloadAt = letGoReload().at - d.lostAt;
+if (d.closed.join() !== "false") fail("a spent hold after a reload forgets the seat", d.closed);
+if (d.closedAt <= LOBBY_HOLD || d.closedAt < HOLD - LAST_CALL - 50 || d.closedAt >= letGoReloadAt) fail("after a reload the client must give up at the last call and before the host lets go", { closedAt: d.closedAt, letGoAt: letGoReloadAt });
+if (d.dials.at(-1) >= letGoReloadAt) fail("a redial reached past the hold after a reload", { dials: d.dials, letGoAt: letGoReloadAt });
+console.log(`reload: rejoin welcome says holdMs ${d.welcomes[0].holdMs}, relay cut, redials queued at ${d.dials.join(", ")} ms, gave up at ${d.closedAt} ms, host let go at ${letGoReloadAt} ms`);
+
+c.ws.close();
 host.kill("SIGKILL");
 console.log("hold prove ok");
 process.exit(0);
