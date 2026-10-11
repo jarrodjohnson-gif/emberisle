@@ -167,6 +167,35 @@ export function chooseTradeAsk(
   return ask;
 }
 
+// A human seat covered by the host after its reconnect grace gets only the moves that keep play
+// flowing without spending or trading anything. Keep this separate from chooseBotAction so practice
+// bots retain their full strategy.
+export function chooseRecoveryAction(state: GameState, pid: string): Action | null {
+  const me = state.players.find((p) => p.id === pid);
+  if (!me) return null;
+
+  if (state.phase === "discard" && (state.discardNeeded[pid] ?? 0) > 0) {
+    return { type: "discard", resources: discardHalf(me, state.discardNeeded[pid]!) };
+  }
+  if (state.phase === "setupSettle" && state.current === pid) {
+    const opts = legalSettle(state, pid, true);
+    opts.sort((a, b) => pipScore(state, b) - pipScore(state, a));
+    if (opts[0]) return { type: "setupSettle", vertexId: opts[0] };
+  }
+  if (state.phase === "setupRoad" && state.current === pid) {
+    const opts = legalRoads(state, pid, true);
+    if (opts[0]) return { type: "setupRoad", edgeId: opts[0] };
+  }
+  if (state.current !== pid) return null;
+  if (state.phase === "roll" || state.phase === "rollOff") return { type: "roll" };
+  if (state.phase === "robber") {
+    const move = bestRobberHex(state, pid);
+    return { type: "moveRobber", hexId: move.hexId, stealFrom: move.stealFrom };
+  }
+  if (state.phase === "main") return { type: "endTurn" };
+  return null;
+}
+
 export function chooseBotAction(state: GameState, pid: string): Action | null {
   const me = state.players.find((p) => p.id === pid);
   if (!me) return null;
