@@ -85,7 +85,7 @@ async function start(w, h) {
 
 let code = 0;
 try {
-  for (const [a, b] of [[[390, 844], [844, 390]], [[360, 640], [640, 360]]]) {
+  for (const [a, b] of [[[390, 844], [844, 390]], [[360, 640], [640, 360]], [[360, 640], [844, 390]]]) {
     const fresh = {};
     for (const [w, h] of [a, b]) {
       const f = await start(w, h);
