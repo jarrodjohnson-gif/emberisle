@@ -1,10 +1,37 @@
 import { fileURLToPath } from "node:url";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
-import { defineConfig } from "vite";
+import { defineConfig, type Plugin } from "vite";
+
+// #543: the island is dynamic-imported, so the browser learns its file only once the index has run. The built page names it
+// up front instead (the island sits behind every screen), and, for a reload with a held seat, the online chunk too: they
+// download and compile off the main thread while the index runs, and the import() that follows finds them in memory.
+function preloadChunks(): Plugin {
+  return {
+    name: "emberisle-preload-chunks",
+    apply: "build",
+    transformIndexHtml: {
+      order: "post",
+      handler(_html, ctx) {
+        const file = (name: string) => Object.keys(ctx.bundle ?? {}).find((f) => new RegExp(`^assets/${name}-[\\w-]+\\.js$`).test(f));
+        const island = file("IslandCanvas");
+        const online = file("online");
+        if (!island || !online) throw new Error("emberisle-preload-chunks: the IslandCanvas or online chunk is missing from the build");
+        return [
+          { tag: "link", attrs: { rel: "modulepreload", crossorigin: true, href: `/${island}` }, injectTo: "head" },
+          {
+            tag: "script",
+            children: `try{if(localStorage.getItem("emberisle-seat")){var l=document.createElement("link");l.rel="modulepreload";l.crossOrigin="";l.href="/${online}";document.head.appendChild(l)}}catch(e){}`,
+            injectTo: "head",
+          },
+        ];
+      },
+    },
+  };
+}
 
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), preloadChunks()],
   resolve: { alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) } },
   build: {
     rolldownOptions: {
