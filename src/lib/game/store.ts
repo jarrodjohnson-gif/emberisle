@@ -132,6 +132,7 @@ function withPaths(state: GameState, edgeIds: string[], pid: string): GameState 
 import { chooseBotAction, chooseTradeAsk, shouldAcceptTrade } from "./ai";
 import { PLAYER_COLORS, RESOURCES, type Action, type BuildMode, type GameState } from "./types";
 import { connectTable, hostUrl, type Bag, type ChatLine, type Legal, type Me, type Reaction, type Seat, type TableClient } from "@/lib/net/table";
+import { PROTO } from "@/lib/net/proto";
 import { play, yourTurn, type SoundName } from "@/lib/sound";
 import { calmMotion, LAND_MS } from "@/lib/scene/landing";
 
@@ -865,10 +866,13 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
   get().net?.close();
   let pending = kind === "quiet";
   let welcomed = false;
+  let outdated: string | null = null;
   const table = connectTable(hostUrl(window.location), {
-    welcome: ({ code, you, host, chat, secret, spectator }) => {
+    welcome: ({ proto, code, you, host, chat, secret, spectator }) => {
       pending = false;
       welcomed = true;
+      // G2: a host on a newer wire protocol than this page says so where errors go, and keeps saying it after every state.
+      outdated = (proto ?? 0) > PROTO ? "This page is out of date. Reload to update." : null;
       set({ resync: true });
       if (secret) rememberSeat({ code, secret });
       // A page-load rejoin has no state yet, so it passes through the lobby until the host's state push moves it to play.
@@ -881,10 +885,10 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       const history = (chat ?? []).slice(-50).map((l) => ({ ...l, at: known.get(l.id) ?? now }));
       if (spectator) {
         // No lobby for a watcher: the host's first `state`, which follows at once, moves it to the board.
-        set({ code, spectator: true, seatId: "", isHost: false, mode: "online", error: null, toast: null, chat: history, reactions: [], unread: 0 });
+        set({ code, spectator: true, seatId: "", isHost: false, mode: "online", error: outdated, toast: outdated, chat: history, reactions: [], unread: 0 });
         return;
       }
-      set({ code, spectator: false, seatId: you ?? "", isHost: host ?? false, screen: inGame ? "play" : "lobby", mode: "online", error: null, toast: null, chat: history, reactions: [], unread: 0 });
+      set({ code, spectator: false, seatId: you ?? "", isHost: host ?? false, screen: inGame ? "play" : "lobby", mode: "online", error: outdated, toast: outdated, chat: history, reactions: [], unread: 0 });
     },
     // The window may have closed while we were away; the next state brings it back rather than a chip stuck at 0:00.
     reconnecting: (attempt) => set({ error: `Reconnecting… (try ${attempt})`, toast: "Reconnecting…", turnTimer: null }),
@@ -922,6 +926,7 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       // A rematch's new game (#266): drop any half-made move or open panel left over from the win.
       if (get().state?.phase === "over" && game.phase !== "over") set({ buildMode: "none", roadPicks: [], pendingPlace: null, tradeOpen: false });
       get().loadState(game, me, get().isHost, get().code);
+      if (outdated) set({ error: outdated, toast: outdated });
       if (rollOff) showBanner(set, rollOff);
       else if (swing) showBanner(set, swing);
     },
