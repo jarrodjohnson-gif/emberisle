@@ -1,6 +1,7 @@
 // #196 review: src/lib/net/table.ts reconnect edge cases, against a fake socket (no host needed).
 // A second tab on a live seat keeps the saved seat; a failed first dial sends one hello; a half-open
 // old socket ("Seat is taken." after a drop) keeps the client backing off; actions queued while down are dropped.
+// G7 (#528): the redials stop at the last call before the hold the welcome announced, lobby or game.
 import { connectTable } from "../src/lib/net/table.ts";
 
 function fail(why, extra) {
@@ -204,6 +205,75 @@ function client(giveUpMs) {
   if (fresh.baseSeq !== 15 || fresh.turn !== 4 || fresh.connection !== "second-socket" || intents.some((m) => m.cid === fresh.cid)) fail("fresh action used an old stamp or cid", fresh);
   t.close();
   console.log("G1 client: fresh stamps and unique cids on actions/trades; offline and pre-state gameplay never queued");
+}
+
+// G7 (#528): the redials follow the hold the welcome announced, measured from the drop. The last one lands 1 s before
+// the host lets the seat go (`LAST_CALL_MS`), so a backoff step is cut short rather than reaching past the hold;
+// a rejoin on that last call still sits back down. The lobby hold applies until a `state` says a game started.
+{
+  // Lobby: hold 2500 → dials at 1 s and 1.5 s (2 s step clamped), then gives up and forgets the seat.
+  sockets.length = 0;
+  const { t, ev } = client();
+  t.join("abcd", { name: "Tide" });
+  last().open();
+  last().reply({ type: "welcome", code: "ABCD", you: "p1", host: false, secret: "s3", holdMs: 4000, lobbyHoldMs: 2500 });
+  const t0 = Date.now();
+  last().lose();
+  await tick(1100);
+  if (sockets.length !== 2) fail("lobby drop: redial at 1 s", sockets.length);
+  last().lose();
+  await tick(10);
+  if (ev.closed.length) fail("gave up before the lobby hold's last call", ev);
+  await tick(600);
+  if (sockets.length !== 3) fail("the 2 s step should be cut to land at the last call", sockets.length);
+  last().lose();
+  await tick(10);
+  const gaveUpAt = Date.now() - t0;
+  if (ev.closed.join() !== "false" || ev.reconnecting.join() !== "1,2") fail("lobby hold spent: give up and forget", ev);
+  if (gaveUpAt < 1400 || gaveUpAt >= 2500) fail("gave up outside [last call, lobby hold)", gaveUpAt);
+  console.log(`lobby hold 2500 ms from the welcome: dialed at 1 s and 1.5 s, gave up at ${gaveUpAt} ms, before the hold`);
+}
+{
+  // In a game: the same welcome, then a `state`, so the 4000 hold applies: dials at 1 s and 3 s (4 s step clamped).
+  sockets.length = 0;
+  const { t, ev } = client();
+  t.join("abcd", { name: "Tide" });
+  last().open();
+  last().reply({ type: "welcome", code: "ABCD", you: "p1", host: false, secret: "s3", holdMs: 4000, lobbyHoldMs: 2500 });
+  last().reply({ type: "state", actionStamp: { turn: 1, baseSeq: 1, connection: "c1" } });
+  const t0 = Date.now();
+  last().lose();
+  await tick(1100);
+  last().lose();
+  await tick(1500);
+  if (sockets.length !== 2 || ev.closed.length) fail("in a game the lobby hold must not apply", { sockets: sockets.length, ev });
+  await tick(500);
+  if (sockets.length !== 3) fail("the 4 s step should be cut to land at the last call", sockets.length);
+  const dialedAt = Date.now() - t0;
+  // A late close from the socket the redial replaced changes nothing.
+  sockets[1].onclose({});
+  await tick(10);
+  if (sockets.length !== 3 || ev.reconnecting.join() !== "1,2") fail("a replaced socket's late close must be ignored", ev);
+  // The last call reaches the host: the seat is kept.
+  last().open();
+  if (hellos(last()).length !== 1) fail("last call sends one rejoin hello", last().sent);
+  last().reply({ type: "welcome", code: "ABCD", you: "p1", host: false, secret: "s3", holdMs: 4000, lobbyHoldMs: 2500 });
+  if (ev.closed.length) fail("rejoin on the last call must keep the seat", ev);
+  t.close();
+  console.log(`game hold 4000 ms: last call dialed at ${dialedAt} ms, rejoin there kept the seat; a replaced socket's late close was ignored`);
+}
+{
+  // An old host says nothing: the 10 min / 90 s defaults stand in, so the first redial is a plain 1 s step.
+  sockets.length = 0;
+  const { t, ev } = client();
+  t.join("abcd", { name: "Tide" });
+  last().open();
+  last().reply({ type: "welcome", code: "ABCD", you: "p1", host: false, secret: "s4" });
+  last().lose();
+  await tick(1100);
+  if (sockets.length !== 2 || ev.closed.length) fail("without hold fields the default window applies", { sockets: sockets.length, ev });
+  t.close();
+  console.log("welcome without hold fields: the default window applies");
 }
 
 console.log("reconnect prove ok");
