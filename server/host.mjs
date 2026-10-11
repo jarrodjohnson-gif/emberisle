@@ -6,10 +6,11 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { randomBytes, randomInt, timingSafeEqual } from "node:crypto";
 import { WebSocketServer } from "ws";
-import { chooseBotAction, chooseRecoveryAction, chooseTradeAsk, shouldAcceptTrade } from "../src/lib/game/ai.ts";
+import { chooseBotAction, chooseRecoveryAction, chooseTradeAsk, logBotAction, shouldAcceptTrade } from "../src/lib/game/ai.ts";
 import { createGame } from "../src/lib/game/board.ts";
 import { applyAction, bankShort, legalCities, legalRoads, legalSettle, playable, stealTargets, validBag } from "../src/lib/game/rules.ts";
 import { COST, PLAYER_COLORS, RESOURCES } from "../src/lib/game/types.ts";
+import { PROTO } from "../src/lib/net/proto.ts";
 import { allow, cleanText, loadEmotes, remember } from "./chat.mjs";
 import { cue } from "./cue.mjs";
 
@@ -399,8 +400,11 @@ function runBots(room) {
       if (recovery) return;
       const pass = applyAction(g, waiting.id, { type: "endTurn" });
       if (pass.error) return;
-      room.game = pass.state;
-    } else room.game = next.state;
+      room.game = logBotAction(g, pass.state, { type: "endTurn" }, waiting.id, room.seats.find((s) => s.pid === waiting.id)?.name ?? waiting.name.replace(/ \(bot\)$/i, ""));
+    } else {
+      const seatName = room.seats.find((s) => s.pid === waiting.id)?.name ?? waiting.name.replace(/ \(bot\)$/i, "");
+      room.game = logBotAction(g, next.state, action, waiting.id, seatName);
+    }
   }
 }
 
@@ -476,7 +480,7 @@ function turnOut(room, seat) {
   // A phase the bot has no move for yet: wait another window rather than send a move play() would refuse.
   if (!intent) return armTurns(room);
   say(room, `${seat.name} took too long; the table moved on.`);
-  play(seat.ws, room, intent);
+  play(seat.ws, room, intent, true);
 }
 
 // The soonest armed window at the table, or null.
@@ -744,7 +748,7 @@ function openTable(ws, msg) {
   room.host = seat.id;
   ws.room = room;
   ws.seat = seat;
-  send(ws, { type: "welcome", code: room.code, you: seat.id, host: true, chat: room.chat, secret: seat.secret });
+  send(ws, { type: "welcome", proto: PROTO, code: room.code, you: seat.id, host: true, chat: room.chat, secret: seat.secret });
   say(room, `${seat.name} sat down.`);
   publish(room);
 }
@@ -770,7 +774,7 @@ function sitDown(ws, msg) {
   room.seats.push(seat);
   ws.room = room;
   ws.seat = seat;
-  send(ws, { type: "welcome", code: room.code, you: seat.id, host: false, chat: room.chat, secret: seat.secret });
+  send(ws, { type: "welcome", proto: PROTO, code: room.code, you: seat.id, host: false, chat: room.chat, secret: seat.secret });
   say(room, `${seat.name} sat down.`);
   publish(room);
 }
@@ -783,7 +787,7 @@ function watch(ws, msg) {
   if (room.watchers.size >= SPECTATOR_MAX) return send(ws, { type: "error", message: "Table is full to watch." });
   room.watchers.add(ws);
   ws.watch = room;
-  send(ws, { type: "welcome", code: room.code, spectator: true, chat: room.chat });
+  send(ws, { type: "welcome", proto: PROTO, code: room.code, spectator: true, chat: room.chat });
   watchersChanged(room, "Someone is watching.");
   const soonest = room.seats.reduce((d, s) => (s.turnDeadline && (!d || s.turnDeadline < d.turnDeadline) ? s : d), null);
   send(ws, { type: "state", you: null, game: watchView(room.game), legal: legalFor(room.game, null), turnDeadline: deadlineOf(room), turnPlayer: soonest?.pid ?? null, serverNow: Date.now() });
@@ -963,9 +967,16 @@ function respond(room, actor, yes) {
     if (offer.declined.has(actor)) return;
     offer.declined.add(actor);
     hear("trade_no");
-    const name = room.game.players.find((p) => p.id === actor).name;
+    const player = room.game.players.find((p) => p.id === actor);
+    const name = player.name;
     broadcast(room, { type: "tradeDeclined", tradeId: offer.tradeId, by: actor, name });
-    say(room, `${name} declines.`);
+    const recovery = (room.recoveryPids ?? []).includes(actor);
+    const line = recovery ? `Bot declined a trade for ${room.seats.find((s) => s.pid === actor)?.name ?? name.replace(/ \(bot\)$/i, "")}.` : `${name} declines.`;
+    if (recovery) {
+      room.game = { ...room.game, log: [...room.game.log.slice(-40), line] };
+      save(room);
+    }
+    say(room, line);
     const askees = room.game.players.filter((p) => p.id !== offer.from);
     if (askees.every((p) => offer.declined.has(p.id))) {
       if (room.game.players.find((p) => p.id === offer.from)?.kind === "bot") {
@@ -1017,7 +1028,7 @@ function talk(ws, room, msg) {
   broadcast(room, { type: "react", seat: seat.id, player: seat.pid ?? null, emote: msg.emote, to, at: Date.now() });
 }
 
-function play(ws, room, msg) {
+function play(ws, room, msg, automated = false) {
   const before = room.game;
   const action = toAction(before, msg);
   if (!action) return send(ws, { type: "error", message: "not ready" });
@@ -1026,7 +1037,9 @@ function play(ws, room, msg) {
     hear("ui_error");
     return send(ws, { type: "error", message: next.error });
   }
-  room.game = next.state;
+  room.game = automated
+    ? logBotAction(before, next.state, action, ws.seat.pid, room.seats.find((s) => s.pid === ws.seat.pid)?.name ?? ws.seat.name)
+    : next.state;
   disarmTurn(ws.seat);
   hear(msg.type === "place" ? `${msg.kind}_place` : SOUND[msg.type]);
   // A roll-off die is not a production roll: its lines reach every seat through the log below.
@@ -1037,7 +1050,7 @@ function play(ws, room, msg) {
     broadcast(room, { type: "rolled", dice: [a, b], sum: a + b, gains: paid, short });
     const parts = paid.map((g) => `${g.name} +${g.amount} ${g.resource}`);
     if (short.length) parts.push(`bank short of ${short.join(" and ")}`);
-    say(room, [String(a + b), ...parts].join(" · "));
+    if (!automated) say(room, [String(a + b), ...parts].join(" · "));
   }
   // An offer lives only while its asker still has the turn in `main` and still holds the offered goods. Checked before
   // the bots play, so a bot never sees the stale offer of a seat that just passed.
@@ -1104,6 +1117,12 @@ function handle(ws, raw) {
     const ok = allow(ws.bucket, Date.now());
     if (msg.type === "peek") return ok ? peek(ws, msg) : undefined;
     if (!ok && (msg.type === "create" || msg.type === "join" || msg.type === "hello")) return send(ws, { type: "error", message: "Slow down." });
+    // G2: a hello on a protocol newer than this host, or on a version that is not a whole number, is refused before it opens,
+    // takes or watches a table. No proto counts as 0 (a page from before G2) and is still let in for now.
+    const proto = msg.proto ?? 0;
+    if ((msg.type === "create" || msg.type === "join" || msg.type === "hello") && !(Number.isSafeInteger(proto) && proto >= 0 && proto <= PROTO)) {
+      return send(ws, { type: "error", proto: PROTO, message: `Unknown protocol version; this table speaks protocol ${PROTO}. Reload to update.` });
+    }
     if (msg.type === "hello" && msg.watch === true) return watch(ws, msg);
     // hello with no code opens a table; hello with a code sits down (build bible 2.3, 10).
     if (msg.type === "create" || (msg.type === "hello" && !msg.code)) return openTable(ws, msg);
@@ -1153,7 +1172,7 @@ function rejoin(ws, msg) {
   seat.gone = null;
   ws.room = room;
   ws.seat = seat;
-  send(ws, { type: "welcome", code: room.code, you: seat.id, host: seat.id === room.host, chat: room.chat, secret: seat.secret });
+  send(ws, { type: "welcome", proto: PROTO, code: room.code, you: seat.id, host: seat.id === room.host, chat: room.chat, secret: seat.secret });
   say(room, `${seat.name} is back.`);
   publish(room);
   if (!room.game) return;

@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { createGame } from "./board";
+import { logBotAction } from "./ai";
 import { applyAction, bankShort, legalCities, legalRoads, legalSettle, stealTargets } from "./rules";
 
 const BANNER_MS = 2500;
@@ -131,6 +132,7 @@ function withPaths(state: GameState, edgeIds: string[], pid: string): GameState 
 import { chooseBotAction, chooseTradeAsk, shouldAcceptTrade } from "./ai";
 import { PLAYER_COLORS, RESOURCES, type Action, type BuildMode, type GameState } from "./types";
 import { connectTable, hostUrl, type Bag, type ChatLine, type Legal, type Me, type Reaction, type Seat, type TableClient } from "@/lib/net/table";
+import { PROTO } from "@/lib/net/proto";
 import { play, yourTurn, type SoundName } from "@/lib/sound";
 import { calmMotion, LAND_MS } from "@/lib/scene/landing";
 
@@ -205,7 +207,7 @@ interface GameStore {
   // True from page load while a saved seat at a table in play is being reclaimed: the loading screen shows, not the title.
   restoring: boolean;
   goTitle: () => void;
-  dispatch: (action: Action, asId?: string) => { ok: boolean; state?: GameState; error?: string };
+  dispatch: (action: Action, asId?: string, automated?: boolean) => { ok: boolean; state?: GameState; error?: string };
   runBots: () => void;
   pickHex: (id: string) => void;
   pickVertex: (id: string) => void;
@@ -534,7 +536,7 @@ export const useGame = create<GameStore>((set, get) => ({
       tradeOpener: null,
     });
   },
-  dispatch: (action, asId) => {
+  dispatch: (action, asId, automated = false) => {
     const { state, localId, mode, net, spectator } = get();
     if (!state) return { ok: false, error: "No game." };
     if (spectator) return { ok: false, error: "Watching only." };
@@ -551,29 +553,32 @@ export const useGame = create<GameStore>((set, get) => ({
       play("ui_error");
       return { ok: false, error: res.error };
     }
-    set({ state: res.state, gameLog: appendLog(get().gameLog, newLog(state.log, res.state.log)), error: null, toast: null, buildMode: "none", roadPicks: [] });
-    hear(state, res.state, localId, mode);
+    const nextState = automated
+      ? logBotAction(state, res.state, action, actor, state.players.find((p) => p.id === actor)?.name.replace(/ \(bot\)$/i, "") ?? actor)
+      : res.state;
+    set({ state: nextState, gameLog: appendLog(get().gameLog, newLog(state.log, nextState.log)), error: null, toast: null, buildMode: "none", roadPicks: [] });
+    hear(state, nextState, localId, mode);
     // An offer lives only while its asker still has the turn in `main` and still holds the offered goods (as host.mjs play).
     const open = get().offer;
     if (open) {
-      const asker = res.state.players.find((p) => p.id === open.from);
-      const turnOver = res.state.current !== open.from || res.state.phase !== "main";
+      const asker = nextState.players.find((p) => p.id === open.from);
+      const turnOver = nextState.current !== open.from || nextState.phase !== "main";
       if (turnOver || RESOURCES.some((r) => (open.give[r] ?? 0) > (asker?.resources[r] ?? 0))) {
         endOffer(set, get, null);
         if (!turnOver) set({ gameLog: appendLog(get().gameLog, [`${asker?.name} spent the offered goods; the offer is withdrawn.`]) });
       }
     }
-    const rollOff = rollOffLine(state, res.state);
+    const rollOff = rollOffLine(state, nextState);
     if (rollOff) {
       showBanner(set, rollOff);
-    } else if (action.type === "roll" && res.state.dice) {
+    } else if (action.type === "roll" && nextState.dice) {
       const roller = state.players.find((p) => p.id === actor)?.name ?? actor;
-      showBanner(set, rollLine(roller, gainsBetween(state, res.state), bankShort(res.state)));
+      showBanner(set, rollLine(roller, gainsBetween(state, nextState), bankShort(nextState)));
     } else {
-      const swing = awardLine(state, res.state);
+      const swing = awardLine(state, nextState);
       if (swing) showBanner(set, swing);
     }
-    return { ok: true, state: res.state };
+    return { ok: true, state: nextState };
   },
   runBots: () => {
     const { state, dispatch, mode } = get();
@@ -583,7 +588,7 @@ export const useGame = create<GameStore>((set, get) => ({
       for (const p of state.players) {
         if (p.kind === "bot" && (state.discardNeeded[p.id] ?? 0) > 0) {
           const a = chooseBotAction(state, p.id);
-          if (a) dispatch(a, p.id);
+          if (a) dispatch(a, p.id, true);
           return;
         }
       }
@@ -600,7 +605,7 @@ export const useGame = create<GameStore>((set, get) => ({
       if (ask) return openOffer(set, get, cur.id, ask.give, ask.want);
     }
     const a = chooseBotAction(state, cur.id);
-    if (a) dispatch(a, cur.id);
+    if (a) dispatch(a, cur.id, true);
   },
   pickHex: (id) => {
     const { state, localId, mode, buildMode, legal, dispatch } = get();
@@ -892,10 +897,13 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
   get().net?.close();
   let pending = kind === "quiet";
   let welcomed = false;
+  let outdated: string | null = null;
   const table = connectTable(hostUrl(window.location), {
-    welcome: ({ code, you, host, chat, secret, spectator }) => {
+    welcome: ({ proto, code, you, host, chat, secret, spectator }) => {
       pending = false;
       welcomed = true;
+      // G2: a host on a newer wire protocol than this page says so where errors go, and keeps saying it after every state.
+      outdated = (proto ?? 0) > PROTO ? "This page is out of date. Reload to update." : null;
       set({ resync: true });
       if (secret) rememberSeat({ code, secret });
       // A page-load rejoin has no state yet, so it passes through the lobby until the host's state push moves it to play.
@@ -908,14 +916,14 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       const history = (chat ?? []).slice(-50).map((l) => ({ ...l, at: known.get(l.id) ?? now }));
       if (spectator) {
         // No lobby for a watcher: the host's first `state`, which follows at once, moves it to the board.
-        set({ code, spectator: true, seatId: "", isHost: false, mode: "online", error: null, toast: null, chat: history, reactions: [], unread: 0 });
+        set({ code, spectator: true, seatId: "", isHost: false, mode: "online", error: outdated, toast: outdated, chat: history, reactions: [], unread: 0 });
         return;
       }
       // A reload at a table that was in play (#543) waits on the loading screen for the state that follows at once, not the
       // lobby; if none comes (the table was reset meanwhile), the lobby is where the seat belongs.
       const restoring = get().restoring;
       if (restoring) setTimeout(() => get().restoring && get().net === table && set({ restoring: false, screen: "lobby" }), 1500);
-      set({ code, spectator: false, seatId: you ?? "", isHost: host ?? false, screen: restoring ? "title" : inGame ? "play" : "lobby", mode: "online", error: null, toast: null, chat: history, reactions: [], unread: 0 });
+      set({ code, spectator: false, seatId: you ?? "", isHost: host ?? false, screen: restoring ? "title" : inGame ? "play" : "lobby", mode: "online", error: outdated, toast: outdated, chat: history, reactions: [], unread: 0 });
     },
     // The window may have closed while we were away; the next state brings it back rather than a chip stuck at 0:00.
     reconnecting: (attempt) => set({ error: `Reconnecting… (try ${attempt})`, toast: "Reconnecting…", turnTimer: null }),
@@ -954,6 +962,7 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       if (get().state?.phase === "over" && game.phase !== "over") set({ buildMode: "none", roadPicks: [], pendingPlace: null, tradeOpen: false });
       get().loadState(game, me, get().isHost, get().code);
       if (!get().spectator) rememberLive(get().code);
+      if (outdated) set({ error: outdated, toast: outdated });
       if (rollOff) showBanner(set, rollOff);
       else if (swing) showBanner(set, swing);
     },
