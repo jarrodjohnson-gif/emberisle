@@ -36,6 +36,12 @@ function envNum(name, fallback) {
 const AVATAR_MAX = envNum("AVATAR_MAX", 128);
 const AVATAR_STORE_BYTES = envNum("AVATAR_STORE_BYTES", 16 * 1024 * 1024);
 const ROOM_MAX = envNum("ROOM_MAX", 64);
+// Opening a table is metered host-wide: a burst of OPEN_CAP, one more every OPEN_REFILL_MS (G10). A game night opens a
+// handful of tables; a loop of fresh sockets, each opening one, hits this long before it fills ROOM_MAX. Per-socket
+// counting cannot catch it (the flood is many sockets) and per-address cannot either (the tunnel gives every player one).
+const OPEN_CAP = envNum("OPEN_CAP", 8);
+const OPEN_REFILL_MS = envNum("OPEN_REFILL_MS", 30 * 1000);
+const opens = { tokens: OPEN_CAP, at: Date.now() };
 // Watchers per room (docs/design/spectator.md). A watcher has no seat and is never saved; 0 turns watching off.
 const SPECTATOR_MAX = envNum("SPECTATOR_MAX", 8);
 // A watcher coming or going is logged to the table at most this often per room, so a watch-and-close loop cannot
@@ -711,6 +717,7 @@ function seatColor(room, raw) {
 
 function openTable(ws, msg) {
   if (rooms.size >= ROOM_MAX) return send(ws, { type: "error", message: "The host is full." });
+  if (!allow(opens, Date.now(), OPEN_CAP, 1000 / OPEN_REFILL_MS)) return send(ws, { type: "error", message: "Too many new tables right now. Try again in a minute." });
   const room = { code: code(), seats: [], game: null, host: null, next: 0, offer: null, offerTimer: null, botDeclined: {}, chat: [], chatSeq: 0, watchers: new Set() };
   rooms.set(room.code, room);
   const seat = {
@@ -1113,12 +1120,15 @@ function handle(ws, raw) {
 
 const CODE = /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{4}$/;
 
-// Answers which seats a lobby holds, without sitting down (docs/design/color-peek.md).
+// Answers which seats a lobby holds, without sitting down (docs/design/color-peek.md). The asker has no seat, so it gets
+// what dims the swatches and nothing more: no names or pictures for whoever holds the code (G10). Those come with the
+// `seats` broadcast after sitting down.
 function peek(ws, msg) {
   const code = typeof msg.code === "string" ? msg.code.toUpperCase() : "";
   if (!CODE.test(code)) return;
   const room = rooms.get(code);
-  send(ws, { type: "seats", code, seats: room && !room.game ? seatsOf(room) : [] });
+  const seats = room && !room.game ? room.seats.map((s) => ({ id: s.id, color: s.color, ready: s.ready })) : [];
+  send(ws, { type: "seats", code, seats });
 }
 
 // hello {code, secret} puts a dropped player back in their own seat, even after the bot took over.
