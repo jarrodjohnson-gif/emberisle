@@ -919,7 +919,7 @@ function openOffer(room, from, give, want) {
   if (room.offer) broadcast(room, { type: "tradeClosed", tradeId: room.offer.tradeId });
   closeOffer(room);
   const tradeId = `t${room.game.seq}-${(room.offerSeq = (room.offerSeq ?? 0) + 1)}`;
-  const offer = (room.offer = { tradeId, from, give, want, declined: new Set(), botTimers: [] });
+  const offer = (room.offer = { tradeId, from, give, want, declined: new Set(), botTimers: [], until: Date.now() + 20000 });
   room.offerTimer = setTimeout(() => {
     closeOffer(room);
     broadcast(room, { type: "tradeClosed", tradeId });
@@ -1174,9 +1174,23 @@ function rejoin(ws, msg) {
   room.recoveryPids = (room.recoveryPids ?? []).filter((pid) => pid !== seat.pid);
   // Other seats may have become bots while nobody was here to watch them play.
   const seen = room.game.log;
+  const open = room.offer;
   runBots(room);
   for (const line of newLog(seen, room.game.log)) say(room, line);
   pushState(room);
+  // An ask the bots just opened was broadcast to this socket already; only one open from before is re-sent.
+  if (open && room.offer === open) resendOffer(ws, room, seat, open);
+}
+
+// A seat back inside an open ask it did not make sees the offer again with what is left of its window, then every No
+// it missed, so its panel matches the table (#576). After the state, so the client has the names.
+function resendOffer(ws, room, seat, offer) {
+  if (offer.from === seat.pid) return;
+  const seconds = Math.max(0, Math.floor((offer.until - Date.now()) / 1000));
+  send(ws, { type: "tradeOffer", tradeId: offer.tradeId, from: offer.from, give: offer.give, want: offer.want, seconds });
+  for (const by of offer.declined) {
+    send(ws, { type: "tradeDeclined", tradeId: offer.tradeId, by, name: room.game.players.find((p) => p.id === by).name });
+  }
 }
 
 function dropRoom(room) {
