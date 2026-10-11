@@ -6,7 +6,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { randomBytes, randomInt, timingSafeEqual } from "node:crypto";
 import { WebSocketServer } from "ws";
-import { chooseBotAction, chooseTradeAsk, shouldAcceptTrade } from "../src/lib/game/ai.ts";
+import { chooseBotAction, chooseRecoveryAction, chooseTradeAsk, shouldAcceptTrade } from "../src/lib/game/ai.ts";
 import { createGame } from "../src/lib/game/board.ts";
 import { applyAction, bankShort, legalCities, legalRoads, legalSettle, playable, stealTargets, validBag } from "../src/lib/game/rules.ts";
 import { COST, PLAYER_COLORS, RESOURCES } from "../src/lib/game/types.ts";
@@ -166,6 +166,7 @@ function snapshot(room) {
     host: room.host,
     next: room.next,
     botDeclined: room.botDeclined ?? {},
+    recoveryPids: [...new Set(room.recoveryPids ?? [])].slice(-4),
     chat: room.chat,
     chatSeq: room.chatSeq,
     game: room.game,
@@ -260,7 +261,18 @@ function load() {
     // A file that parses but does not rebuild (a null seat, say) is skipped like one that does not parse.
     let room;
     try {
-      room = { ...saved, offer: null, offerTimer: null, botDeclined: saved.botDeclined ?? {}, seats: [], watchers: new Set() };
+      const seatPids = new Set(saved.seats.map((seat) => seat?.pid).filter((pid) => typeof pid === "string"));
+      const legacyRecovery = (saved.game?.players ?? []).filter((p) => p.kind === "bot" && seatPids.has(p.id)).map((p) => p.id);
+      room = {
+        ...saved,
+        offer: null,
+        offerTimer: null,
+        botDeclined: saved.botDeclined ?? {},
+        // Legacy hosted snapshots had no practice-bot seats, so a bot linked to a held seat means takeover.
+        recoveryPids: [...new Set([...(Array.isArray(saved.recoveryPids) ? saved.recoveryPids : []), ...legacyRecovery])].slice(-4),
+        seats: [],
+        watchers: new Set(),
+      };
       delete room.savedAt;
       for (const s of saved.seats) {
         if (typeof s?.id !== "string" || typeof s.secret !== "string") throw new Error(`bad seat ${JSON.stringify(s)}`);
@@ -374,14 +386,17 @@ function runBots(room) {
     // A bot's own ask is open: its turn waits for the answers, and the offer's close plays on (botsOn).
     if (room.offer?.from === waiting.id) return;
     // Once per bot turn, before its other moves, the bot may ask the table (#363).
-    if (g.phase === "main" && !room.offer && room.botAsked !== `${g.turn}:${waiting.id}`) {
+    const recovery = (room.recoveryPids ?? []).includes(waiting.id);
+    if (!recovery && g.phase === "main" && !room.offer && room.botAsked !== `${g.turn}:${waiting.id}`) {
       room.botAsked = `${g.turn}:${waiting.id}`;
       const ask = chooseTradeAsk(g, waiting.id, room.botDeclined?.[waiting.id]);
       if (ask) return openOffer(room, waiting.id, ask.give, ask.want);
     }
-    const action = chooseBotAction(g, waiting.id);
+    const action = recovery ? chooseRecoveryAction(g, waiting.id) : chooseBotAction(g, waiting.id);
+    if (recovery && !action) return;
     const next = action && applyAction(g, waiting.id, action);
     if (!next || next.error) {
+      if (recovery) return;
       const pass = applyAction(g, waiting.id, { type: "endTurn" });
       if (pass.error) return;
       room.game = pass.state;
@@ -786,6 +801,7 @@ function startGame(ws, room) {
   });
   room.game = game;
   room.botDeclined = {};
+  room.recoveryPids = [];
   for (const seat of room.seats) if (seat.ws) seat.ws.actionConnection = randomBytes(16).toString("hex");
   hear("ui_confirm");
   say(room, "Roll for first place.");
@@ -812,6 +828,7 @@ function rematch(ws, room) {
   if (room.offer) broadcast(room, { type: "tradeClosed", tradeId: room.offer.tradeId });
   closeOffer(room);
   room.botDeclined = {};
+  room.recoveryPids = [];
   const winner = live.find((s) => s.pid === room.game.winner);
   const order = winner ? [winner, ...live.filter((s) => s !== winner)] : live;
   const game = createGame({ humans: order.map((s) => ({ name: s.name })), bots: 0, winnerFirst: Boolean(winner) });
@@ -911,7 +928,8 @@ function openOffer(room, from, give, want) {
 // The seat may have been taken back by its player, or the offer closed, while the bot was "thinking".
 function botAnswer(room, offer, pid) {
   if (room.offer !== offer || room.game.players.find((p) => p.id === pid)?.kind !== "bot") return;
-  respond(room, pid, shouldAcceptTrade(room.game, pid, offer));
+  const recovery = (room.recoveryPids ?? []).includes(pid);
+  respond(room, pid, recovery ? false : shouldAcceptTrade(room.game, pid, offer));
 }
 
 function ask(ws, room, msg) {
@@ -1143,6 +1161,7 @@ function rejoin(ws, msg) {
   if (p?.kind === "bot") {
     room.game = { ...room.game, players: room.game.players.map((x) => (x === p ? { ...x, kind: "human", name: seat.name } : x)) };
   }
+  room.recoveryPids = (room.recoveryPids ?? []).filter((pid) => pid !== seat.pid);
   // Other seats may have become bots while nobody was here to watch them play.
   const seen = room.game.log;
   runBots(room);
@@ -1189,6 +1208,12 @@ function takeOver(room, seat) {
   seat.graceTimer = null;
   const p = room.game.players.find((x) => x.id === seat.pid);
   if (!p || p.kind === "bot") return;
+  if (room.offer?.from === seat.pid) {
+    const tradeId = room.offer.tradeId;
+    closeOffer(room);
+    broadcast(room, { type: "tradeClosed", tradeId });
+  }
+  room.recoveryPids = [...new Set([...(room.recoveryPids ?? []), seat.pid])].slice(-4);
   room.game = { ...room.game, players: room.game.players.map((x) => (x === p ? { ...x, kind: "bot", name: `${x.name} (bot)` } : x)) };
   say(room, `${seat.name} is played by the bot until they return.`);
   save(room);
