@@ -13,7 +13,7 @@ import { connectTable, toIntent } from "../src/lib/net/table.ts";
 let host;
 function fail(why, extra) {
   console.log("FAIL", why, extra ?? "");
-  host?.kill();
+  host?.kill("SIGKILL");
   process.exit(1);
 }
 
@@ -27,7 +27,7 @@ host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL(".", import.meta.url),
   env: { ...process.env, PORT: "0", ACT_RATE: "1000", ACT_CAP: "1000", LOBBY_HOLD_MS: "200", ROOMS_DIR },
 });
-process.on("exit", () => host.kill());
+process.on("exit", () => host.kill("SIGKILL"));
 for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
 const port = await new Promise((resolve) => host.stdout.on("data", (d) => {
   const m = String(d).match(/listening (\d+)/);
@@ -206,6 +206,6 @@ const leaks = all.flatMap((x) => x.leaks.map((l) => ({ you: x.you, ...l })));
 if (leaks.length) fail("state pushed before the game ended carries seed or rng", leaks.slice(0, 5));
 console.log(`${all.reduce((n, x) => n + x.pushes, 0)} pushed states before the end, none carry seed or rng`);
 [a, b, c].forEach((p) => p.t.close());
-host.kill();
+host.kill("SIGKILL");
 console.log("net prove ok");
 process.exit(0);

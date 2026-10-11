@@ -533,7 +533,10 @@ export class IsleRenderer {
     this.refitDue = false;
     if (!this.overhead) return;
     const c = this.renderer.domElement;
-    const f = fitOrtho(c.clientWidth || 1, c.clientHeight || 1, this.insets(), OVERHEAD_LEAN);
+    const hole = this.insets();
+    // The hole's edges on the shell, so the HUD can centre a moment on the island (TurnMoment, GainFloats).
+    for (const k of ["top", "right", "bottom", "left"] as const) c.parentElement?.style.setProperty(`--hole-${k}`, `${hole[k]}px`);
+    const f = fitOrtho(c.clientWidth || 1, c.clientHeight || 1, hole, OVERHEAD_LEAN);
     const was = this.fit;
     if (was && FIT_KEYS.every((k) => Math.abs(this.fitPose(f)[k] - this.fitPose(was)[k]) < 1e-6)) return;
     this.fit = f;

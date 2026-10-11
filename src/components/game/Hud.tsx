@@ -8,7 +8,7 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ChatControls, ChatDock, ChromeLanded, FortuneTray, HowTo, sheets, TradePanel, WinScreen } from "@/components/game/chunks";
+import { ChatControls, ChatDock, ChromeLanded, CostCard, FortuneTray, GainFloats, HowTo, sheets, TradePanel, TurnMoment, WinScreen } from "@/components/game/chunks";
 import { TradeToast } from "@/components/game/TradeToast";
 import { WinFailed } from "@/components/game/WinFailed";
 import { Announcer } from "@/components/game/Announcer";
@@ -24,17 +24,27 @@ import { PlaceChip } from "@/components/game/PlaceChip";
 import { SheetsFailed } from "@/components/game/SheetsFailed";
 import { TrayFailed } from "@/components/game/TrayFailed";
 import { TradeButton } from "@/components/game/TradeButton";
+import { CostChips, priceLabel, shortfall, type Price } from "@/components/game/BuildCost";
 import { useEscapeDisarm } from "@/components/game/escape-disarm";
-import { COST, RESOURCES, type BuildMode, type PlayerState } from "@/lib/game/types";
-import { hiddenCount, playable, totalVP } from "@/lib/game/rules";
+import { COST, RESOURCES, type BuildMode, type GameState, type PlayerState } from "@/lib/game/types";
+import { hiddenCount, legalCities, legalRoads, legalSettle, playable, totalVP } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
 import { LazyBoundary, preloadOnIdle } from "@/lib/lazy";
 import { useViewport } from "@/lib/viewport";
 import { useMoreBelow } from "@/lib/scroll-fade";
 import { cn } from "@/lib/utils";
 
-function affords(p: PlayerState, kind: Price) {
-  return RESOURCES.every((r) => p.resources[r] >= (COST[kind][r] ?? 0));
+const PRICES = Object.keys(COST) as Price[];
+
+// Whether a build can happen now and, if not, why: the supply (or the deck), then the hand, then a legal spot.
+function buildStatus(state: GameState, me: PlayerState, kind: Price) {
+  const short = shortfall(me.resources, kind);
+  const missing = Object.values(short).reduce((a, b) => a + b, 0);
+  const left = { path: me.pathsLeft, outpost: me.outpostsLeft, stronghold: me.strongholdsLeft, card: state.deckLeft ?? state.deck.length }[kind];
+  const spot = () =>
+    kind === "path" ? legalRoads(state, me.id, false).length > 0 : kind === "outpost" ? legalSettle(state, me.id, false).length > 0 : kind === "stronghold" ? legalCities(state, me.id).length > 0 : true;
+  const why = left <= 0 ? "None left" : missing ? null : spot() ? null : "No spot";
+  return { short, missing, why, ready: !why && !missing };
 }
 
 function phaseCopy(phase: string) {
@@ -60,6 +70,26 @@ function phaseCopy(phase: string) {
   }
 }
 
+// Another seat's turn, seen from this one (online, practice, a watcher): whose turn it is and that this seat waits.
+function waitingCopy(phase: string, name: string) {
+  switch (phase) {
+    case "rollOff":
+      return `Waiting for ${name} to roll for first place`;
+    case "setupSettle":
+      return `Waiting for ${name} to place an outpost`;
+    case "setupRoad":
+      return `Waiting for ${name} to lay a path`;
+    case "roll":
+      return `Waiting for ${name} to roll`;
+    case "discard":
+      return "Waiting for discards";
+    case "robber":
+      return `Waiting for ${name} to move the wayfarer`;
+    default:
+      return `Waiting for ${name} to build or trade`;
+  }
+}
+
 // What to pick, and the label of the button that armed it (a touch screen cancels by tapping that button again).
 function armedCopy(mode: BuildMode, roadPicks: number): [string, string] | null {
   switch (mode) {
@@ -81,18 +111,14 @@ function armedCopy(mode: BuildMode, roadPicks: number): [string, string] | null 
 
 const HINT_KEY = "emberisle-landscape-hint";
 
-type Price = keyof typeof COST;
-
-function priceLabel(kind: Price) {
-  const name = { path: "Path", outpost: "Outpost", stronghold: "Stronghold", card: "Fortune" }[kind];
-  return `${name} · ${RESOURCES.filter((r) => COST[kind][r]).map((r) => `${COST[kind][r]} ${r}`).join(", ")}`;
-}
-
 // The rules' roll line ("Tide rolls 4+5 = 9."): the dice row already shows the roll, so the log line skips it (#440).
 const ROLL_LOG = / rolls \d\+\d = \d+\.$/;
 
-// Unaffordable build buttons use aria-disabled, not disabled, so Tab still reaches them and the price is read out.
-const UNAFFORDABLE = "aria-disabled:cursor-not-allowed aria-disabled:opacity-50 aria-disabled:active:scale-100";
+// A build that cannot happen now uses aria-disabled, not disabled, so Tab still reaches it and the price is read out. It
+// goes muted ink, not translucent, so the chips and the reason on it stay readable.
+const NOT_NOW = "aria-disabled:cursor-not-allowed aria-disabled:text-muted aria-disabled:active:scale-100";
+// A build the hand can pay for with a legal spot waiting: a small warm dot on the button's corner (docs/design/polish.md: no glows).
+const READY_DOT = <span aria-hidden className="absolute -right-1 -top-1 size-2.5 rounded-full bg-accent ring-2 ring-bg" />;
 
 export function Hud() {
   const state = useGame((s) => s.state);
@@ -103,6 +129,8 @@ export function Hud() {
   const banner = useGame((s) => s.banner);
   const error = useGame((s) => s.error);
   const howTo = useGame((s) => s.howTo);
+  const costs = useGame((s) => s.costs);
+  const setCosts = useGame((s) => s.setCosts);
   const chatOpen = useGame((s) => s.chatOpen);
   const tradeOpen = useGame((s) => s.tradeOpen);
   const dispatch = useGame((s) => s.dispatch);
@@ -118,7 +146,7 @@ export function Hud() {
   const [hintDismissed, setHintDismissed] = useState(() => sessionStorage.getItem(HINT_KEY) === "1");
   // #492: the sheets chunk is asked for again on each open and at the win (the boundary's key). When the ask made at the
   // win fails, the win screen cannot show and the winner line gets the way out; a failure under an earlier key is not it.
-  const sheetsKey = `${tradeOpen}|${howTo}|${state?.winner ?? ""}`;
+  const sheetsKey = `${tradeOpen}|${howTo}|${costs}|${state?.winner ?? ""}`;
   const [sheetsLost, setSheetsLost] = useState<string | null>(null);
   useEscapeDisarm();
   const [stackRef, moreBelow] = useMoreBelow();
@@ -129,13 +157,31 @@ export function Hud() {
   const fortunesButton = useRef<HTMLButtonElement>(null);
   const turnKey = state ? `${state.turn}|${state.current}|${state.phase}` : "";
   useEffect(() => setFortunesOpen(false), [turnKey]);
+  const actor = mode === "hotseat" ? (state?.current ?? "") : localId;
+  const me = state ? (state.players.find((p) => p.id === actor) ?? state.players[0]!) : null;
+  // A build that just became ready (a roll, a trade) pulses its button once; a change of seat is not that, and a build with
+  // no spot or none left never is. The key is empty on another seat's turn (buildStatus does not look at the phase, so it is the same from a roll to main), and the hand's counts are in it, so any
+  // other change (a steal, the row leaving) clears a pulse instead of leaving one to fire later. A watcher's `me` is seat 0 of
+  // the opponent view, which has no `resources` online (docs/design/spectator.md), so it is checked first.
+  const rowShown = !!state && !!me?.resources && state.current === actor;
+  const readyKey = rowShown ? `${me!.id}|${PRICES.map((k) => (buildStatus(state, me!, k).ready ? 1 : 0)).join("")}|${RESOURCES.map((r) => me!.resources[r]).join(",")}` : "";
+  const wasReady = useRef(readyKey);
+  const [pulse, setPulse] = useState<Price[]>([]);
+  useEffect(() => {
+    const [wasId, was = ""] = wasReady.current.split("|");
+    const [id, now = ""] = readyKey.split("|");
+    wasReady.current = readyKey;
+    const newly = wasId === id ? PRICES.filter((_, i) => now[i] === "1" && was[i] === "0") : [];
+    setPulse(newly);
+    // The button's animationend clears it; under reduced motion no animation runs, so a timer does. (Not a timer always: a
+    // frame can come late behind an island refit, and a class gone before the first frame never pulses.)
+    if (!newly.length || !matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const t = setTimeout(() => setPulse([]), 400);
+    return () => clearTimeout(t);
+  }, [readyKey]);
 
-  if (!state) return null;
-  const actor = mode === "hotseat" ? state.current : localId;
-  const me = state.players.find((p) => p.id === actor) ?? state.players[0]!;
+  if (!state || !me) return null;
   const mine = state.current === actor;
-  // A watcher's `me` is seat 0 in the opponent view, which has no `resources`, so the flag is checked first.
-  const fortuneBlocked = spectator || (state.deckLeft ?? state.deck.length) <= 0 || !affords(me, "card");
   // Hotseat has no bots: the first seat still owing a discard takes the bar, whoever rolled the 7.
   const discarder =
     state.phase !== "discard"
@@ -180,11 +226,14 @@ export function Hud() {
       : yours && state.phase === "robber"
         ? "move the wayfarer"
         : phaseCopy(state.phase);
+  const waiting = mode !== "hotseat" && !yours;
   // #430: in hotseat a seat that owes a discard on another seat's turn is named, not given the turn.
   const turnText =
     !yours && subject !== state.current
       ? `${subjectPlayer.name} — discard ${state.discardNeeded[subject] ?? 0}`
-      : `${yours ? "Your" : `${subjectPlayer.name}'s`} turn — ${phaseText}`;
+      : waiting
+        ? waitingCopy(state.phase, subjectPlayer.name)
+        : `${yours ? "Your" : `${subjectPlayer.name}'s`} turn — ${phaseText}`;
   const winner = state.winner ? state.players.find((p) => p.id === state.winner) : null;
   const menuPlayer = menuFor ? state.players.find((p) => p.id === menuFor) : null;
   // #422: on the player's own Roll or End row the dice ride beside the button instead of taking a row of their own.
@@ -192,11 +241,15 @@ export function Hud() {
   const diceInBar = mine && /^(main|roll)/.test(state.phase);
   // #491: in the column End turn is its own row pinned to the bottom of the scroller on a solid ground, so it never scrolls out of reach.
   const pinEnd = column && state.phase === "main" && mine;
+  // docs/design/polish.md "Buttons": End turn is the one primary once nothing else can be bought and nothing is armed.
+  // A watcher's `me` has no `resources` online (docs/design/spectator.md) and buys nothing, so it is checked first.
+  const canBuy = !spectator && PRICES.some((k) => buildStatus(state, me, k).ready);
+  const endPrimary = !canBuy && buildMode === "none";
 
   const endRow = (
     <div className={cn("flex gap-2 *:self-center", column ? "sticky bottom-0 z-10 justify-end rounded-[16px] bg-surface p-1" : "ml-auto")}>
       {dice}
-      <Button size="sm" variant="sea" className={phone ? "h-11" : undefined} onClick={() => dispatch({ type: "endTurn" })}>
+      <Button size="sm" variant={endPrimary ? "primary" : "secondary"} className={phone ? "h-11" : undefined} onClick={() => dispatch({ type: "endTurn" })}>
         End turn
       </Button>
     </div>
@@ -257,6 +310,11 @@ export function Hud() {
       <TradeToast />
       <Announcer />
       <RollMoment />
+      {/* If the moments' chunk cannot load, the table stands without them; the hand still flashes every change. */}
+      <LazyBoundary failed={null}>
+        <TurnMoment />
+        {spectator ? null : <GainFloats me={me} rolls={state.rolls ?? 0} />}
+      </LazyBoundary>
 
       <div className="pointer-events-none absolute bottom-0 inset-x-0 z-10 px-safe pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         <div className={cn("relative", column ? "w-80 max-w-[48vw]" : "mx-auto max-w-3xl")}>
@@ -276,6 +334,7 @@ export function Hud() {
           ) : null}
           <div
             ref={stackRef}
+            data-hud-stack
             className={cn(
               "pointer-events-auto flex flex-col gap-2 overflow-y-auto overscroll-contain",
               // #383: stop under the header (or the portrait seat strip) and leave the island at least ~8 rem.
@@ -314,7 +373,8 @@ export function Hud() {
                 data-testid="turn-banner"
                 style={{ borderLeftColor: yours ? undefined : subjectPlayer.color }}
                 className={cn(
-                  "animate-[turn-fade_200ms_ease-out] rounded-[16px] border bg-glass px-3 py-2 text-sm font-medium text-zinc-900 backdrop-blur-md",
+                  "animate-[turn-fade_200ms_ease-out] rounded-[16px] border bg-glass px-3 py-2 text-sm font-medium backdrop-blur-md",
+                  waiting ? "text-zinc-700" : "text-zinc-900",
                   // #424: the accent tint is a layer over the glass, not a replacement for it.
                   yours ? "border-accent bg-linear-to-r from-accent/20 to-accent/20" : "border-white/50 border-l-4",
                 )}
@@ -337,48 +397,52 @@ export function Hud() {
             <TakeFromBar />
 
             {state.phase === "main" && mine ? (
-              <div className="flex flex-wrap gap-1">
+              <div className="flex flex-wrap items-center gap-1">
+                {/* Each build says whether it can happen now: the cost chips dim what the hand is short of, a build with
+                    nothing to build on or none left says so, and one the hand can pay for with a spot waiting wears the dot. */}
                 {(
                   [
-                    ["path", "path", Route, "Path", me.pathsLeft],
-                    ["outpost", "outpost", Home, "Outpost", me.outpostsLeft],
-                    ["stronghold", "stronghold", Landmark, "Stronghold", me.strongholdsLeft],
+                    ["path", "path", Route, "Path"],
+                    ["outpost", "outpost", Home, "Outpost"],
+                    ["stronghold", "stronghold", Landmark, "Stronghold"],
+                    ["card", null, ScrollText, "Fortune"],
                   ] as const
-                ).map(([kind, arm, Icon, label, left]) => {
-                  const blocked = left <= 0 || !affords(me, kind);
+                ).map(([kind, arm, Icon, label]) => {
+                  const { short, missing, why, ready } = buildStatus(state, me, kind);
+                  const blocked = !ready || spectator;
+                  const status = why ?? (ready ? "Ready" : `Short ${Object.entries(short).map(([r, n]) => `${n} ${r}`).join(", ")}`);
                   return (
-                  <Button
-                    key={kind}
-                    size="sm"
-                    variant={buildMode === arm ? "primary" : "secondary"}
-                    className={cn(UNAFFORDABLE, phone && "h-11 min-w-11")}
-                    aria-pressed={buildMode === arm}
-                    aria-disabled={blocked || undefined}
-                    title={priceLabel(kind)}
-                    aria-description={priceLabel(kind)}
-                    onClick={() => {
-                      // aria-disabled keeps the button focusable, so the click itself must refuse (but may still disarm).
-                      if (blocked && buildMode !== arm) return;
-                      setBuildMode(buildMode === arm ? "none" : arm);
-                    }}
-                  >
-                    <Icon className="size-4" /> {label}
-                  </Button>
+                    <Button
+                      key={kind}
+                      size="sm"
+                      variant={buildMode === arm ? "primary" : "secondary"}
+                      data-testid={`build-${kind}`}
+                      data-build={why ? "blocked" : ready ? "ready" : "short"}
+                      // A 44 px two-line tile, the piece over its chips (docs/design/polish.md: actions as tiles with their amount),
+                      // so the row keeps the lines it had before the chips: one at 1280x720, three builds a line on a phone.
+                      className={cn("relative h-11 min-w-11 flex-col gap-2 px-2.5 py-0", NOT_NOW, pulse.includes(kind) && "build-ready")}
+                      onAnimationEnd={(e) => e.animationName === "build-ready" && setPulse((p) => p.filter((k) => k !== kind))}
+                      aria-pressed={arm ? buildMode === arm : undefined}
+                      aria-disabled={blocked || undefined}
+                      title={priceLabel(kind)}
+                      aria-description={`${priceLabel(kind)} · ${status}`}
+                      onClick={() => {
+                        // aria-disabled keeps the button focusable, so the click itself must refuse (but may still disarm).
+                        if (!arm) return void (blocked || dispatch({ type: "buyCard" }));
+                        if (blocked && buildMode !== arm) return;
+                        setBuildMode(buildMode === arm ? "none" : arm);
+                      }}
+                    >
+                      <span className="flex items-center gap-1.5 leading-4">
+                        <Icon className="size-4" /> {label}
+                      </span>
+                      {/* The chips and the reason are aria-hidden: the name stays the piece, the description says the rest. The
+                          shortfall mark shows only when one good away ("almost there"); further off, the plain cost and the Costs card. */}
+                      {why ? <span aria-hidden className="text-caption text-muted">{why}</span> : <CostChips kind={kind} hand={missing === 1 ? me.resources : undefined} />}
+                      {ready && buildMode !== arm ? READY_DOT : null}
+                    </Button>
                   );
                 })}
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  className={cn(UNAFFORDABLE, phone && "h-11 min-w-11")}
-                  aria-disabled={fortuneBlocked || undefined}
-                  title={priceLabel("card")}
-                  aria-description={priceLabel("card")}
-                  onClick={() => {
-                    if (!fortuneBlocked) dispatch({ type: "buyCard" });
-                  }}
-                >
-                  <ScrollText className="size-4" /> Fortune
-                </Button>
                 <TradeButton />
                 {fortunes}
                 {column ? null : endRow}
@@ -444,14 +508,10 @@ export function Hud() {
       <LazyBoundary failed={<SheetsFailed sheetsKey={sheetsKey} onLost={setSheetsLost} />} retryKey={sheetsKey}>
         <TradePanel />
         {howTo ? <HowTo onClose={() => setHowTo(false)} /> : null}
+        {costs ? <CostCard onClose={() => setCosts(false)} /> : null}
         <WinScreen />
         <ChromeLanded />
       </LazyBoundary>
-
-      <p className="sr-only">
-        Costs: path {COST.path.timber} timber {COST.path.clay} clay. Outpost timber clay wool grain. Stronghold 3 grain 2
-        ore.
-      </p>
     </>
   );
 }

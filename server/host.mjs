@@ -1,4 +1,5 @@
 import { mkdirSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { mkdir, rename, writeFile } from "node:fs/promises";
 import { readFile } from "node:fs/promises";
 import http from "node:http";
 import path from "node:path";
@@ -52,6 +53,7 @@ const LOBBY_HOLD_MS = Number(process.env.LOBBY_HOLD_MS ?? 90 * 1000);
 // A connected player who stops taking their turn: after this long the host's bot makes that one move for the
 // seat and the seat stays human (#344, Jarrod's call on #324). A dropped seat follows GRACE_MS instead, never this.
 const TURN_MS = Number(process.env.TURN_MS ?? 120 * 1000);
+const TURN_TOTAL_MS = Number(process.env.TURN_TOTAL_MS ?? 6 * TURN_MS);
 // A bot seat answers a table ask after BOT_ANSWER_MS to twice that, so its Yes or No lands like a person's (#363).
 const BOT_ANSWER_MS = Number(process.env.BOT_ANSWER_MS ?? 1000);
 // Every socket is pinged this often; one that has not answered the last ping is cut, so a phone that
@@ -60,6 +62,10 @@ const PING_MS = Number(process.env.PING_MS ?? 30 * 1000);
 // Every room is saved to ROOMS/<code>.json after each change and reloaded on boot, so a host PC
 // that sleeps or a Node crash does not end the game. Rooms saved more than a day ago are dropped.
 const ROOMS = path.resolve(process.env.ROOMS_DIR ?? fileURLToPath(new URL("./rooms/", import.meta.url)));
+// A change marks its room dirty and one write goes out SAVE_MS after the first change of a burst, so 50 quick
+// actions are a handful of writes, not 50 (G5). SIGTERM, SIGINT and a normal exit flush every dirty room at once;
+// kill -9 or a power cut can lose at most the last SAVE_MS of changes. The proofs shorten it through env.
+const SAVE_MS = Number(process.env.SAVE_MS ?? 250);
 const ROOM_TTL = 24 * 60 * 60 * 1000;
 // Stamped on every saved room. Bump it whenever GameState, the seat record or the chat record changes
 // shape: load() drops files with any other stamp (including none), so a bump ends the saved rooms on the next restart.
@@ -150,30 +156,73 @@ function watchersChanged(room, text) {
 // Sockets, timers and the open trade offer stay in memory; everything else goes to disk.
 function save(room) {
   if (!rooms.has(room.code)) return;
-  const out = {
+  room.dirty = true;
+  if (!room.saveTimer && !room.saving) room.saveTimer = setTimeout(() => flush(room), SAVE_MS);
+}
+
+function snapshot(room) {
+  return JSON.stringify({
     code: room.code,
     host: room.host,
     next: room.next,
+    botDeclined: room.botDeclined ?? {},
     chat: room.chat,
     chatSeq: room.chatSeq,
     game: room.game,
-    seats: room.seats.map(({ id, name, color, ready, pid, secret }) => ({ id, name, color, ready, pid, secret })),
+    seats: room.seats.map(({ id, name, color, ready, pid, secret, turnDeadline, turnStartedAt }) => ({ id, name, color, ready, pid, secret, turnDeadline: turnDeadline ?? null, turnStartedAt: turnStartedAt ?? null })),
     shape: ROOM_SHAPE,
     savedAt: Date.now(),
-  };
+  });
+}
+
+// One write at a time per room: changes that land mid-write set `dirty` again and the next write follows.
+// Write then rename, so a crash mid-write never leaves half a room behind.
+async function flush(room) {
+  room.saveTimer = null;
+  if (!room.dirty || !rooms.has(room.code)) return;
+  room.dirty = false;
+  room.saving = true;
+  const file = path.join(ROOMS, `${room.code}.json`);
   try {
-    mkdirSync(ROOMS, { recursive: true });
-    const file = path.join(ROOMS, `${room.code}.json`);
-    // Write then rename, so a crash mid-write never leaves half a room behind.
-    writeFileSync(`${file}.tmp`, JSON.stringify(out));
-    renameSync(`${file}.tmp`, file);
+    const json = snapshot(room);
+    await mkdir(ROOMS, { recursive: true });
+    await writeFile(`${file}.tmp`, json);
+    await rename(`${file}.tmp`, file);
   } catch (err) {
     console.error("save failed:", err);
   }
+  room.saving = false;
+  // The table closed while the write was in flight: the rename may have landed after unsave(), so remove it again.
+  if (room.dropped) unsave(room);
+  else if (room.dirty) room.saveTimer = setTimeout(() => flush(room), SAVE_MS);
 }
 
+// Synchronous, for the end of the process: every room with a change not yet on disk (or a write in flight) is written now.
+function flushAll() {
+  for (const room of rooms.values()) {
+    if (!room.dirty && !room.saving) continue;
+    clearTimeout(room.saveTimer);
+    room.saveTimer = null;
+    room.dirty = false;
+    try {
+      const file = path.join(ROOMS, `${room.code}.json`);
+      mkdirSync(ROOMS, { recursive: true });
+      writeFileSync(`${file}.tmp`, snapshot(room));
+      renameSync(`${file}.tmp`, file);
+    } catch (err) {
+      console.error("save failed:", err);
+    }
+  }
+}
+process.on("exit", flushAll);
+for (const [sig, code] of [["SIGINT", 130], ["SIGTERM", 143]]) process.on(sig, () => process.exit(code));
+
 function unsave(room) {
+  room.dropped = true;
+  clearTimeout(room.saveTimer);
+  room.saveTimer = null;
   rmSync(path.join(ROOMS, `${room.code}.json`), { force: true });
+  rmSync(path.join(ROOMS, `${room.code}.json.tmp`), { force: true });
 }
 
 // Rebuild every saved room. Nobody is connected yet, so each seat is held as if it had just dropped.
@@ -211,12 +260,14 @@ function load() {
     // A file that parses but does not rebuild (a null seat, say) is skipped like one that does not parse.
     let room;
     try {
-      room = { ...saved, offer: null, offerTimer: null, seats: [], watchers: new Set() };
+      room = { ...saved, offer: null, offerTimer: null, botDeclined: saved.botDeclined ?? {}, seats: [], watchers: new Set() };
       delete room.savedAt;
       for (const s of saved.seats) {
         if (typeof s?.id !== "string" || typeof s.secret !== "string") throw new Error(`bad seat ${JSON.stringify(s)}`);
         // Avatars live in memory only, so a restored seat has none.
-        room.seats.push({ ...s, avatarId: null, ws: null, bucket: { tokens: 5, at: Date.now() }, act: { tokens: ACT_CAP, at: Date.now() } });
+        // G9: the saved window rides in `resume` until the seat is back and waited on; older files have none.
+        const at = (n) => (Number.isFinite(n) ? n : null);
+        room.seats.push({ ...s, turnDeadline: null, turnStartedAt: at(s.turnStartedAt), resume: at(s.turnDeadline), avatarId: null, ws: null, bucket: { tokens: 5, at: Date.now() }, act: { tokens: ACT_CAP, at: Date.now() } });
       }
     } catch (err) {
       console.error("unreadable room file:", name, err.message);
@@ -325,7 +376,7 @@ function runBots(room) {
     // Once per bot turn, before its other moves, the bot may ask the table (#363).
     if (g.phase === "main" && !room.offer && room.botAsked !== `${g.turn}:${waiting.id}`) {
       room.botAsked = `${g.turn}:${waiting.id}`;
-      const ask = chooseTradeAsk(g, waiting.id);
+      const ask = chooseTradeAsk(g, waiting.id, room.botDeclined?.[waiting.id]);
       if (ask) return openOffer(room, waiting.id, ask.give, ask.want);
     }
     const action = chooseBotAction(g, waiting.id);
@@ -352,14 +403,32 @@ function disarmTurn(seat) {
 }
 
 // Every connected human seat the game waits on gets TURN_MS from the moment it became waited on. An accepted action
-// from the seat disarms it first (play), so its window restarts; a dropped seat is disarmed (hold) and left to GRACE_MS.
+// from the seat disarms it first (play), so its window restarts, but never past TURN_TOTAL_MS from `turnStartedAt`
+// (G3: acting forever can't hold the table); a dropped seat is disarmed (hold) and left to GRACE_MS. The budget
+// outlives a drop and rejoin within the turn (only a turn that moves on clears it), and a window saved before a host
+// restart (`resume`, G9) is kept: the remainder is armed, and one that ran out while the host was down, or has under
+// RESUME_MIN_MS left, is spent at once so a timeout never lands mid-rejoin.
+const RESUME_MIN_MS = Math.min(5000, TURN_MS / 10);
 function armTurns(room) {
   for (const seat of room.seats) {
     const human = room.game?.players.find((p) => p.id === seat.pid)?.kind === "human";
-    if (!seat.ws || !human || !waitedOn(room.game, seat.pid)) disarmTurn(seat);
+    const waited = human && waitedOn(room.game, seat.pid);
+    if (!waited) {
+      seat.turnStartedAt = null;
+      seat.resume = null;
+    }
+    if (!seat.ws || !waited) disarmTurn(seat);
     else if (!seat.turnTimer) {
-      seat.turnDeadline = Date.now() + TURN_MS;
-      seat.turnTimer = setTimeout(() => turnOut(room, seat), TURN_MS);
+      const now = Date.now();
+      const resume = seat.resume ?? null;
+      seat.resume = null;
+      seat.turnStartedAt ??= now;
+      // A window that ran out while the host was down is spent on a 0 ms timer, not inline, so the other seats in this
+      // loop are still armed and turnOut's own move does not re-enter armTurns mid-loop.
+      const spent = resume !== null && resume - now < RESUME_MIN_MS;
+      const ms = spent ? 0 : resume !== null ? resume - now : Math.max(0, Math.min(TURN_MS, seat.turnStartedAt + TURN_TOTAL_MS - now));
+      seat.turnDeadline = now + ms;
+      seat.turnTimer = setTimeout(() => turnOut(room, seat), ms);
     }
   }
 }
@@ -414,6 +483,7 @@ function pushState(room) {
       you: seat.pid,
       game: viewFor(room.game, seat.pid),
       legal: legalFor(room.game, seat.pid),
+      actionStamp: actionStamp(room, seat.ws),
       turnDeadline,
       turnPlayer: soonest?.pid ?? null,
       serverNow: Date.now(),
@@ -422,6 +492,44 @@ function pushState(room) {
   if (!room.watchers.size) return;
   const raw = JSON.stringify({ type: "state", you: null, game: watchView(room.game), legal: legalFor(room.game, null), turnDeadline, turnPlayer: soonest?.pid ?? null, serverNow: Date.now() });
   for (const ws of room.watchers) if (ws.readyState === ws.OPEN) ws.send(raw);
+}
+
+// A connection-bound baseline for gameplay intents. Rejoin/restart gets a new connection id even when
+// the game has not advanced; a rematch rotates it too, since turn/seq start over on the new island.
+function actionStamp(room, ws) {
+  ws.actionConnection ??= randomBytes(16).toString("hex");
+  return { turn: room.game.turn, baseSeq: room.game.seq, connection: ws.actionConnection };
+}
+
+function freshAction(ws, room, msg) {
+  const stamp = actionStamp(room, ws);
+  const seen = (ws.seat.actionCids ??= []);
+  // Discards and offer replies from other seats can race with progress in the same turn.
+  // Their rules still validate the outstanding discard/offer; connection and cid prevent replays.
+  const parallel = ws.seat.pid !== room.game.current && ["discard", "tradeAnswer"].includes(msg.type);
+  if (
+    ws.seat.ws !== ws ||
+    typeof msg.cid !== "string" || msg.cid.length === 0 || msg.cid.length > 64 ||
+    !Number.isSafeInteger(msg.turn) || msg.turn !== stamp.turn ||
+    !Number.isSafeInteger(msg.baseSeq) || msg.baseSeq < 0 || msg.baseSeq > stamp.baseSeq ||
+    (!parallel && msg.baseSeq !== stamp.baseSeq) ||
+    msg.connection !== stamp.connection || seen.includes(msg.cid)
+  ) {
+    send(ws, { type: "error", message: "The table has updated. Please try again." });
+    // Resync this seat only. Refusing an intent must not rearm any clock, run bots, or write a room.
+    const soonest = room.seats.reduce((d, s) => (s.turnDeadline && (!d || s.turnDeadline < d.turnDeadline) ? s : d), null);
+    send(ws, {
+      type: "state", you: ws.seat.pid, game: viewFor(room.game, ws.seat.pid),
+      legal: legalFor(room.game, ws.seat.pid), actionStamp: stamp,
+      turnDeadline: soonest?.turnDeadline ?? null, turnPlayer: soonest?.pid ?? null, serverNow: Date.now(),
+    });
+    return false;
+  }
+  // Consume once before dispatch, including a rules refusal: retrying is a new intent with a new cid.
+  // The bounded seat ledger also covers asks/declines, which do not advance game.seq.
+  seen.push(msg.cid);
+  if (seen.length > 32) seen.shift();
+  return true;
 }
 
 function gains(before, after) {
@@ -603,7 +711,7 @@ function seatColor(room, raw) {
 
 function openTable(ws, msg) {
   if (rooms.size >= ROOM_MAX) return send(ws, { type: "error", message: "The host is full." });
-  const room = { code: code(), seats: [], game: null, host: null, next: 0, offer: null, offerTimer: null, chat: [], chatSeq: 0, watchers: new Set() };
+  const room = { code: code(), seats: [], game: null, host: null, next: 0, offer: null, offerTimer: null, botDeclined: {}, chat: [], chatSeq: 0, watchers: new Set() };
   rooms.set(room.code, room);
   const seat = {
     id: `s${room.next++}`,
@@ -677,6 +785,8 @@ function startGame(ws, room) {
     game.players[i].color = s.color;
   });
   room.game = game;
+  room.botDeclined = {};
+  for (const seat of room.seats) if (seat.ws) seat.ws.actionConnection = randomBytes(16).toString("hex");
   hear("ui_confirm");
   say(room, "Roll for first place.");
   pushState(room);
@@ -701,6 +811,7 @@ function rematch(ws, room) {
   // Seats get new pids below, so no offer (or a bot's answer timer on it) may outlive the old game.
   if (room.offer) broadcast(room, { type: "tradeClosed", tradeId: room.offer.tradeId });
   closeOffer(room);
+  room.botDeclined = {};
   const winner = live.find((s) => s.pid === room.game.winner);
   const order = winner ? [winner, ...live.filter((s) => s !== winner)] : live;
   const game = createGame({ humans: order.map((s) => ({ name: s.name })), bots: 0, winnerFirst: Boolean(winner) });
@@ -709,6 +820,7 @@ function rematch(ws, room) {
     game.players[i].color = s.color;
   });
   room.game = game;
+  for (const seat of room.seats) seat.ws.actionConnection = randomBytes(16).toString("hex");
   hear("ui_confirm");
   say(room, winner ? `${winner.name} won last time and places first. The rest roll for their order.` : "Roll for first place.");
   publish(room);
@@ -838,6 +950,9 @@ function respond(room, actor, yes) {
     say(room, `${name} declines.`);
     const askees = room.game.players.filter((p) => p.id !== offer.from);
     if (askees.every((p) => offer.declined.has(p.id))) {
+      if (room.game.players.find((p) => p.id === offer.from)?.kind === "bot") {
+        (room.botDeclined ??= {})[offer.from] = { give: offer.give, want: offer.want };
+      }
       closeOffer(room);
       broadcast(room, { type: "tradeClosed", tradeId: offer.tradeId });
       botsOn(room, offer);
@@ -990,6 +1105,7 @@ function handle(ws, raw) {
   if (msg.type === "start") return room.game ? send(ws, { type: "error", message: "Game already started." }) : startGame(ws, room);
   if (msg.type === "again") return rematch(ws, room);
   if (!room.game) return send(ws, { type: "error", message: "not ready" });
+  if (!freshAction(ws, room, msg)) return;
   if (msg.type === "tradeAsk") return ask(ws, room, msg);
   if (msg.type === "tradeAnswer") return answer(ws, room, msg);
   return play(ws, room, msg);

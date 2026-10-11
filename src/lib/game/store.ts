@@ -160,6 +160,8 @@ let offerTimers: ReturnType<typeof setTimeout>[] = [];
 let offerSeq = 0;
 // `${turn}:${bot}` of the last bot turn that had its one chance to ask the table.
 let botAsked = "";
+// The last proposal every bot was explicitly declined, keyed only by bot and named goods.
+let botDeclined = new Map<string, { give: Bag; want: Bag }>();
 function clearOfferTimers() {
   for (const t of offerTimers) clearTimeout(t);
   offerTimers = [];
@@ -186,12 +188,16 @@ interface GameStore {
   howTo: boolean;
   /** The element that opened How to play; Safari does not focus buttons on click, so activeElement cannot be trusted. */
   howToOpener: HTMLElement | null;
+  // The Costs card (the building-costs card that comes with the board game), opened from the Table menu.
+  costs: boolean;
+  costsOpener: HTMLElement | null;
   toast: string | null;
   // One line everyone reads for a moment: the roll and who got what, or an award changing hands (#188).
   banner: string | null;
   setName: (n: string) => void;
   setColor: (c: string) => void;
   setHowTo: (v: boolean, opener?: HTMLElement | null) => void;
+  setCosts: (v: boolean, opener?: HTMLElement | null) => void;
   setBuildMode: (m: BuildMode) => void;
   startAi: () => void;
   startHotseat: (count: number) => void;
@@ -230,6 +236,11 @@ interface GameStore {
   watchTable: (code: string) => void;
   // True from a `welcome {spectator:true}` until the Title; every seat-only action returns at once while it is set.
   spectator: boolean;
+  // Bumped by the first game state after each welcome, in the same update that loads it (a join, a page-load rejoin or a
+  // reconnect). The turn moment and gain lines take that state as their baseline and say nothing about it.
+  synced: number;
+  // A welcome has come and its first state has not: loadState bumps `synced`.
+  resync: boolean;
   // How many spectators the table has, from `seats {watching}` (#347).
   watching: number;
   // Sit back down in the seat this browser held (localStorage), e.g. after a reload (#196).
@@ -335,6 +346,8 @@ export const useGame = create<GameStore>((set, get) => ({
   roadPicks: [],
   howTo: false,
   howToOpener: null,
+  costs: false,
+  costsOpener: null,
   toast: null,
   banner: null,
   net: null,
@@ -346,6 +359,8 @@ export const useGame = create<GameStore>((set, get) => ({
   turnTimer: null,
   lobbyLog: "",
   spectator: false,
+  synced: 0,
+  resync: false,
   watching: 0,
   pendingSteal: null,
   seatId: "",
@@ -373,6 +388,7 @@ export const useGame = create<GameStore>((set, get) => ({
     set({ color: c });
   },
   setHowTo: (v, opener) => set({ howTo: v, howToOpener: v ? (opener ?? null) : null }),
+  setCosts: (v, opener) => set({ costs: v, costsOpener: v ? (opener ?? null) : null }),
   setBuildMode: (m) => set({ buildMode: m, roadPicks: [] }),
   startAi: () => {
     // A table left dialing (a reload with a saved seat) must not pull a practice game back to the lobby.
@@ -382,6 +398,7 @@ export const useGame = create<GameStore>((set, get) => ({
     // A new game owes nothing to the last one's offer or bot ask.
     clearOfferTimers();
     botAsked = "";
+    botDeclined.clear();
     const name = get().name;
     const state = createGame({ humans: [{ name }], bots: 3 });
     set({
@@ -408,6 +425,7 @@ export const useGame = create<GameStore>((set, get) => ({
     get().net?.close();
     clearOfferTimers();
     botAsked = "";
+    botDeclined.clear();
     const humans = Array.from({ length: count }, (_, i) => ({
       name: i === 0 ? get().name : `Seat ${i + 1}`,
     }));
@@ -440,6 +458,8 @@ export const useGame = create<GameStore>((set, get) => ({
       table: table ?? get().table,
       error: null,
       pendingSteal: null,
+      resync: false,
+      synced: get().resync ? get().synced + 1 : get().synced,
     }),
   goTitle: () => {
     // Leaving on purpose frees the seat; only a drop keeps it. A watcher never held one, and the saved seat may be another table's.
@@ -448,6 +468,7 @@ export const useGame = create<GameStore>((set, get) => ({
     clearKnocks();
     clearOfferTimers();
     botAsked = "";
+    botDeclined.clear();
     get().net?.close();
     set({
       screen: "title",
@@ -544,7 +565,7 @@ export const useGame = create<GameStore>((set, get) => ({
     // Once per bot turn, before its other moves, the bot may ask the table (#363).
     if (state.phase === "main" && !offer && botAsked !== `${state.turn}:${cur.id}`) {
       botAsked = `${state.turn}:${cur.id}`;
-      const ask = chooseTradeAsk(state, cur.id);
+      const ask = chooseTradeAsk(state, cur.id, botDeclined.get(cur.id));
       if (ask) return openOffer(set, get, cur.id, ask.give, ask.want);
     }
     const a = chooseBotAction(state, cur.id);
@@ -809,7 +830,12 @@ function respond(set: Set, get: Get, actor: string, yes: boolean): string | null
     if (declined.includes(actor)) return null;
     const now = [...declined, actor];
     set({ declined: now, gameLog: appendLog(gameLog, [`${state.players.find((p) => p.id === actor)?.name} declines.`]) });
-    if (state.players.every((p) => p.id === offer.from || now.includes(p.id))) endOffer(set, get, null);
+    if (state.players.every((p) => p.id === offer.from || now.includes(p.id))) {
+      if (state.players.find((p) => p.id === offer.from)?.kind === "bot") {
+        botDeclined.set(offer.from, { give: offer.give, want: offer.want });
+      }
+      endOffer(set, get, null);
+    }
     return null;
   }
   const offered = applyAction(state, offer.from, { type: "offerTrade", to: actor, give: offer.give, want: offer.want });
@@ -839,6 +865,7 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
     welcome: ({ code, you, host, chat, secret, spectator }) => {
       pending = false;
       welcomed = true;
+      set({ resync: true });
       if (secret) rememberSeat({ code, secret });
       // A page-load rejoin has no state yet, so it passes through the lobby until the host's state push moves it to play.
       // A mid-game reconnect already holds the game: stay on the board so the HUD keeps its local state.

@@ -172,5 +172,39 @@ function client(giveUpMs) {
   console.log("wake: redials at once during a backoff, once; no-op otherwise");
 }
 
+// G1: stamp all gameplay, including trades, with a unique id and the state from this socket only.
+{
+  sockets.length = 0;
+  const { t } = client();
+  t.open({ name: "Ember" });
+  last().open();
+  last().reply({ type: "welcome", code: "ABCD", you: "p0", secret: "s1" });
+  if (t.act({ type: "roll" })) fail("welcome alone must not authorize gameplay");
+  const stamp = { turn: 3, baseSeq: 10, connection: "first-socket" };
+  last().reply({ type: "state", actionStamp: stamp });
+  if (!t.act({ type: "roll" })) fail("live stamped action was not sent");
+  t.ask({ timber: 1 }, { clay: 1 });
+  t.answer("t10-1", false);
+  const intents = last().sent.filter((m) => ["roll", "tradeAsk", "tradeAnswer"].includes(m.type));
+  if (intents.length !== 3 || new Set(intents.map((m) => m.cid)).size !== 3 || intents.some((m) => !m.cid || m.turn !== 3 || m.baseSeq !== 10 || m.connection !== stamp.connection)) fail("gameplay must carry distinct cids and the latest stamp", intents);
+  last().lose();
+  await tick(10);
+  if (t.act({ type: "roll" })) fail("disconnected gameplay must be refused");
+  t.ask({ timber: 1 }, { clay: 1 });
+  t.answer("t10-1", true);
+  t.wake();
+  last().open();
+  if (t.act({ type: "roll" })) fail("rejoin before welcome must not send gameplay");
+  last().reply({ type: "welcome", code: "ABCD", you: "p0", secret: "s1" });
+  if (t.act({ type: "roll" })) fail("rejoin before state must not send gameplay");
+  if (last().sent.length !== 1 || last().sent[0].type !== "hello") fail("disconnected gameplay/trades must never be queued", last().sent);
+  last().reply({ type: "state", actionStamp: { turn: 4, baseSeq: 15, connection: "second-socket" } });
+  if (!t.act({ type: "roll" })) fail("fresh post-rejoin action must send");
+  const fresh = last().sent.at(-1);
+  if (fresh.baseSeq !== 15 || fresh.turn !== 4 || fresh.connection !== "second-socket" || intents.some((m) => m.cid === fresh.cid)) fail("fresh action used an old stamp or cid", fresh);
+  t.close();
+  console.log("G1 client: fresh stamps and unique cids on actions/trades; offline and pre-state gameplay never queued");
+}
+
 console.log("reconnect prove ok");
 process.exit(0);

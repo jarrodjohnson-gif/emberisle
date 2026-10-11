@@ -61,11 +61,31 @@ const url = (query = "") => `http://127.0.0.1:${PORT}/?host=ws://127.0.0.1:${hos
 
 // `still`: stop this tab's island loop once it mounts. Under software GL every live canvas costs the others their frames,
 // and only the watcher's board is under test here (tabs-prove covers the seats' boards).
-async function tab(name, query = "", still = true) {
+async function tab(name, query = "", still = true, captureSockets = false) {
   const page = await browser.newPage({ viewport: { width: 800, height: 500 } });
   page.on("console", (m) => m.type() === "error" && errors.push(`${name}: ${m.text()}`));
   page.on("pageerror", (e) => errors.push(`${name}: ${e}`));
   page.on("response", (r) => r.status() >= 400 && errors.push(`${name}: ${r.status()} ${r.url()}`));
+  if (captureSockets) {
+    await page.addInitScript(() => {
+      const NativeWebSocket = window.WebSocket;
+      const captured = [];
+      Object.defineProperty(window, "__capturedWebSockets", { value: captured });
+      window.WebSocket = new Proxy(NativeWebSocket, {
+        construct(target, args, newTarget) {
+          const socket = Reflect.construct(target, args, newTarget);
+          const frames = [];
+          const send = socket.send.bind(socket);
+          socket.send = (data) => {
+            frames.push(String(data));
+            return send(data);
+          };
+          captured.push({ socket, frames });
+          return socket;
+        },
+      });
+    });
+  }
   await page.addInitScript((n) => localStorage.setItem("emberisle-name", n), name);
   await page.goto(url(query));
   if (still) {
@@ -260,7 +280,7 @@ try {
 
   // --- 2. The watch link: ?watch=CODE fills the field, leaves the URL (keeping ?host=), and makes Watch the primary button.
   await w.page.close();
-  const w1 = await tab("Watcher", `&watch=${tableCode.toLowerCase()}`, false);
+  const w1 = await tab("Watcher", `&watch=${tableCode.toLowerCase()}`, false, true);
   await until(() => w1.page.evaluate(() => document.querySelector('input[aria-label="Join code"]')?.value || null), "the watch link filling the field");
   // The link leaves the URL once the online chunk has loaded, a moment after the field fills.
   await w1.page.waitForFunction(() => !location.search.includes("watch="), null, { timeout: 15_000 });
@@ -341,10 +361,13 @@ try {
   if ((await w1.page.getByTestId("chat-log").locator("mark").count()) !== 0) throw new Error("a mention was highlighted for a watcher with no name");
   console.log(`dock: read-only line, 0 inputs, ${dock.buttons.length} buttons (${dock.buttons.join(", ")}); "hello watcher @Ember" from Ember shown plain`);
 
-  // --- 4. Refusals: an intent injected under the store gets "Watching only."; the store's own actions send nothing.
+  // --- 4. Refusals: the client blocks store actions without an action stamp; a raw frame still reaches the host and is refused.
   const sent = await w1.page.evaluate(() => {
     const s = window.__emberisle.getState();
     const net = s.net;
+    const hostUrl = new URLSearchParams(location.search).get("host");
+    const captured = window.__capturedWebSockets.find(({ socket }) => new URL(socket.url).href === new URL(hostUrl).href && socket.readyState === WebSocket.OPEN);
+    if (!captured) throw new Error(`could not find the watcher's open table socket for ${hostUrl}`);
     let n = 0;
     for (const k of ["act", "say", "react", "ask", "answer", "ready", "start"]) {
       const real = net[k].bind(net);
@@ -358,17 +381,34 @@ try {
     s.startTable();
     s.openMenu(s.state.players[0].id);
     const sentByStore = n;
-    net.act({ type: "roll" });
-    return { sentByStore, menuFor: window.__emberisle.getState().menuFor };
+    const before = window.__emberisle.getState();
+    const beforeFrames = captured.frames.length;
+    const actResult = net.act({ type: "roll" });
+    const clientFrames = captured.frames.length - beforeFrames;
+    const errorSeqBefore = window.__emberisle.getState().errorSeq;
+    const gameBefore = JSON.stringify(window.__emberisle.getState().state);
+    if (actResult !== false || clientFrames !== 0 || errorSeqBefore !== before.errorSeq) {
+      throw new Error(`net.act should refuse locally without a frame or server error: ${JSON.stringify({ actResult, clientFrames, errorSeqBefore, oldErrorSeq: before.errorSeq })}`);
+    }
+    const rawBefore = captured.frames.length;
+    captured.socket.send(JSON.stringify({ type: "roll" }));
+    const rawFrames = captured.frames.length - rawBefore;
+    if (rawFrames !== 1) throw new Error(`raw watcher roll sent ${rawFrames} frames`);
+    return { sentByStore, menuFor: window.__emberisle.getState().menuFor, errorSeqBefore, gameBefore, rawFrames };
   });
   if (sent.sentByStore !== 0 || sent.menuFor !== null) throw new Error(`the store sent ${sent.sentByStore} seat-only messages or opened a menu (${sent.menuFor}) for a watcher`);
   wv = await until(async () => {
     const v = await view(w1);
     return v.error === "Watching only." ? v : null;
-  }, 'the injected roll getting "Watching only."');
-  if (wv.seq !== seatViews[0].seq || (await view(a)).seq !== seatViews[0].seq) throw new Error("the injected intent moved the game");
+  }, 'the raw watcher roll getting "Watching only."');
+  const afterRaw = await w1.page.evaluate(() => ({
+    errorSeq: window.__emberisle.getState().errorSeq,
+    game: JSON.stringify(window.__emberisle.getState().state),
+  }));
+  if (sent.rawFrames !== 1 || afterRaw.errorSeq !== sent.errorSeqBefore + 1) throw new Error(`the raw watcher roll did not produce one server refusal: ${JSON.stringify({ rawFrames: sent.rawFrames, before: sent.errorSeqBefore, after: afterRaw.errorSeq })}`);
+  if (afterRaw.game !== sent.gameBefore || wv.seq !== seatViews[0].seq || (await view(a)).seq !== seatViews[0].seq) throw new Error("the raw watcher intent moved the game");
   if (c.chats.some((l) => l.text === "from the stands")) throw new Error("a watcher's chat reached a seat");
-  console.log(`refusals: dispatch, chat, react, ask, ready, start, menu -> 0 messages sent, no menu; net.act(roll) -> "Watching only." at seq ${wv.seq}`);
+  console.log(`refusals: dispatch, chat, react, ask, ready, start, menu -> 0 messages sent, no menu; net.act(roll) -> false/0 frames; raw socket roll -> "Watching only." at seq ${wv.seq} with no game mutation`);
 
   // --- 5. The seats play to the win; the watcher gets the full reveal, the same rows as a seat, with no seed or rng.
   // The watcher's live board is proven above (seq 0). Under software GL that loop plus 300 pushes starves the tab past the

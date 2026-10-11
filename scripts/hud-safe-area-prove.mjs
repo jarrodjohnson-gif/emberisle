@@ -170,7 +170,9 @@ async function pinned(p, moment, name, mustScroll) {
     for (const k of Object.keys(me.boughtThisTurn)) me.boughtThisTurn[k] = 0;
     st.playedCard = false;
     st.seq += 1;
-    g.setState({ state: st });
+    // Fixture, not a product change: an error line (a real stack row, as after a refused build) is added because the build
+    // row got a line shorter with its 44 px tiles (build-ready-prove), and the pinned-row checks need the column to overflow.
+    g.setState({ state: st, error: "The bank is short of ore." });
   });
   await page.waitForTimeout(350);
   const btn = page.getByRole("button", { name, exact: true });

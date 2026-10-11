@@ -351,14 +351,15 @@ try {
     return { mineText, bot: bot.name };
   });
   await page
-    .waitForFunction((name) => document.querySelector('[data-testid="turn-banner"]')?.textContent?.startsWith(`${name}'s turn`), turn.bot, { timeout: 5000 })
+    .waitForFunction((name) => document.querySelector('[data-testid="turn-banner"]')?.textContent?.startsWith(`Waiting for ${name}`), turn.bot, { timeout: 5000 })
     .catch(() => {});
   turn.theirs = await page.getByTestId("turn-banner").textContent();
   turn.strip = await page.getByTestId("seat-strip").count();
   await page.evaluate(() => window.__emberisle.setState({ state: window.__beforeBanner }));
   console.log("turn banner:", JSON.stringify(turn));
 
-  if (turn.theirs !== `${turn.bot}'s turn — Roll the dice to gather from the land.` || !/^Your turn — (Roll the dice|Build, trade|move the wayfarer|discard \d+)/.test(turn.mineText ?? "") || turn.strip) {
+  // Jarrod's playtest: another seat's turn says whom you wait for, not what to do.
+  if (turn.theirs !== `Waiting for ${turn.bot} to roll` || !/^Your turn — (Roll the dice|Build, trade|move the wayfarer|discard \d+)/.test(turn.mineText ?? "") || turn.strip) {
     throw new Error(`turn banner: ${JSON.stringify(turn)}`);
   }
   if (phase !== "roll" && phase !== "main" && phase !== "robber" && phase !== "discard") throw new Error(`setup: ${phase}`);
@@ -667,7 +668,7 @@ try {
   console.log("win dialog:", JSON.stringify({ focused, modal }));
   if (focused?.trim() !== "Back to menu" || modal !== "true") throw new Error(`win dialog: ${JSON.stringify({ focused, modal })}`);
 
-  // #253: with reduced motion a resource flash is gone almost at once, and the banner fade is cut short.
+  // #253/#565: reduced motion retains the readable hand delta fade; the banner fade is cut short.
   await page.emulateMedia({ reducedMotion: "reduce" });
   await freshPractice();
   await page.evaluate(() => {
@@ -690,7 +691,7 @@ try {
   ).jsonValue();
   await page.emulateMedia({ reducedMotion: null });
   console.log("reduced motion:", JSON.stringify(motion));
-  if (motion.flash !== "0.001s" || motion.fade !== "0.001s") throw new Error(`reduced motion: ${JSON.stringify(motion)}`);
+  if (motion.flash !== "1.2s" || motion.fade !== "0.001s") throw new Error(`reduced motion: ${JSON.stringify(motion)}`);
   await toTitle();
   // #254: online, Leave asks first (Stay and Escape cancel); a second Leave goes to the title and clears the saved seat.
   // Practice keeps the one-click Leave.
@@ -767,7 +768,8 @@ try {
     page.evaluate(() =>
       Object.fromEntries(
         ["Path", "Outpost", "Stronghold", "Fortune"].map((n) => {
-          const b = [...document.querySelectorAll("button")].find((x) => x.textContent.trim() === n);
+          // The build buttons carry their cost chips and state in their text; the aria-description leads with the piece.
+          const b = [...document.querySelectorAll("button")].find((x) => x.getAttribute("aria-description")?.startsWith(`${n} ·`));
           return [n, { disabled: b?.getAttribute("aria-disabled") === "true", native: b?.disabled, cursor: b && getComputedStyle(b).cursor, title: b?.title, desc: b?.getAttribute("aria-description"), pressed: b?.getAttribute("aria-pressed") }];
         }),
       ),
@@ -778,17 +780,17 @@ try {
   await page.getByRole("button", { name: "Path", exact: true }).waitFor({ timeout: 5000 });
   const empty = await buildRow();
   console.log("build row, empty hand:", JSON.stringify(empty));
-  for (const [n, p] of Object.entries(price)) if (!empty[n].disabled || empty[n].native || empty[n].cursor !== "not-allowed" || empty[n].title !== p || empty[n].desc !== p) throw new Error(`empty hand ${n}: ${JSON.stringify(empty[n])}`);
+  for (const [n, p] of Object.entries(price)) if (!empty[n].disabled || empty[n].native || empty[n].cursor !== "not-allowed" || empty[n].title !== p || !empty[n].desc.startsWith(`${p} · Short`)) throw new Error(`empty hand ${n}: ${JSON.stringify(empty[n])}`);
   // #302: an unaffordable button is still in the Tab order, reports aria-disabled and its price, and a click neither arms nor buys.
   await page.evaluate(() => document.activeElement?.blur());
   let tabbedTo = null;
   for (let i = 0; i < 40 && tabbedTo !== "Path"; i++) {
     await page.keyboard.press("Tab");
-    tabbedTo = await page.evaluate(() => document.activeElement?.textContent?.trim());
+    tabbedTo = await page.evaluate(() => document.activeElement?.getAttribute("aria-description")?.split(" ·")[0] ?? document.activeElement?.textContent?.trim());
   }
   const tabFocus = await page.evaluate(() => ({ aria: document.activeElement?.getAttribute("aria-disabled"), desc: document.activeElement?.getAttribute("aria-description") }));
   console.log("Tab to unaffordable Path:", JSON.stringify({ tabbedTo, ...tabFocus }));
-  if (tabbedTo !== "Path" || tabFocus.aria !== "true" || tabFocus.desc !== price.Path) throw new Error(`Tab/aria-disabled: ${JSON.stringify({ tabbedTo, ...tabFocus })}`);
+  if (tabbedTo !== "Path" || tabFocus.aria !== "true" || !tabFocus.desc.startsWith(price.Path)) throw new Error(`Tab/aria-disabled: ${JSON.stringify({ tabbedTo, ...tabFocus })}`);
   const cardsBefore = await page.evaluate(() => JSON.stringify([window.__emberisle.getState().state.deck.length, window.__emberisle.getState().error]));
   for (const n of ["Path", "Outpost", "Stronghold", "Fortune"]) await page.getByRole("button", { name: n, exact: true }).click({ force: true });
   await page.keyboard.press("Enter");
@@ -832,7 +834,7 @@ try {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.getByRole("button", { name: "Path", exact: true }).waitFor({ timeout: 5000 });
   await page.waitForFunction(() => document.querySelector("[data-testid='seat-strip']"), null, { timeout: 5000 });
-  const heights = await page.evaluate(() => ["Path", "Outpost", "Stronghold", "Fortune"].map((n) => [...document.querySelectorAll("button")].find((x) => x.textContent.trim() === n).getBoundingClientRect().height));
+  const heights = await page.evaluate(() => ["Path", "Outpost", "Stronghold", "Fortune"].map((n) => [...document.querySelectorAll("button")].find((x) => x.getAttribute("aria-description")?.startsWith(`${n} ·`)).getBoundingClientRect().height));
   console.log("phone build button heights:", JSON.stringify(heights));
   if (heights.some((h) => h < 44)) throw new Error(`phone build buttons under 44 px: ${JSON.stringify(heights)}`);
   await page.setViewportSize({ width: 800, height: 500 });
