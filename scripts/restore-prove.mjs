@@ -10,9 +10,10 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
 
-const RUNS = Number(process.env.RESTORE_RUNS) || 2;
-const ATTEMPTS = Number(process.env.RESTORE_ATTEMPTS) || 3;
+// The issue's rule: 5 reloads, none over HARD (no retry), the median inside BUDGET; one run in the BUDGET..HARD band may be re-measured once.
+const RUNS = Number(process.env.RESTORE_RUNS) || 5;
 const BUDGET = Number(process.env.RESTORE_BUDGET_MS) || 2000;
+const HARD = Number(process.env.RESTORE_HARD_MS) || 2500;
 const DIST = fileURLToPath(new URL("../dist/", import.meta.url));
 if (!existsSync(`${DIST}index.html`)) {
   console.log("FAIL no dist/index.html: run npm run build first");
@@ -20,12 +21,14 @@ if (!existsSync(`${DIST}index.html`)) {
 }
 
 const ROOMS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-rooms-"));
-process.on("exit", () => rmSync(ROOMS_DIR, { recursive: true, force: true, maxRetries: 5 }));
 const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL("../server/", import.meta.url),
   env: { ...process.env, PORT: "0", DIST, ROOMS_DIR },
 });
-process.on("exit", () => host.kill());
+process.on("exit", () => {
+  host.kill("SIGKILL");
+  rmSync(ROOMS_DIR, { recursive: true, force: true, maxRetries: 5 });
+});
 for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
 const hostPort = await new Promise((resolve) =>
   host.stdout.on("data", (d) => {
@@ -187,8 +190,9 @@ try {
   await page.waitForSelector('[data-testid="hand-dock"]');
   await sleep(1000);
 
-  // Each of the RUNS reloads must land inside the budget. This runs on shared machines where one reload in ten is slowed by a
-  // neighbour, so a reload over budget is measured again, up to ATTEMPTS times; a regression is slow every time and still fails.
+  // Every reload must land inside HARD, with no retry; the median must land inside BUDGET. One run in the BUDGET..HARD band
+  // (a neighbour's noise on a shared machine) may be measured once more; a run over HARD fails at once.
+  let remeasured = false;
   for (let run = 1, attempt = 1; run <= RUNS; run++, attempt = 1) {
    for (;; attempt++) {
     await page.reload({ waitUntil: "commit" });
@@ -214,10 +218,14 @@ try {
     console.log(`run ${run}.${attempt}: first paint ${t.paints["first-paint"]} fcp ${t.paints["first-contentful-paint"]} | socket dial ${w?.dial} open ${w?.open} welcome ${msgs.welcome} state ${msgs.state} | marks ${JSON.stringify(t.marks)}`);
     console.log(`run ${run}.${attempt}: long tasks ${t.long.join(" ")}`);
     const board = t.marks.board;
-    boards.push(board);
-    const slow = board > BUDGET && attempt < ATTEMPTS;
-    if (slow) console.log(`run ${run}.${attempt}: attempt ${attempt} took ${board} ms, over ${BUDGET}; measuring again`);
-    else check(`run ${run}: board + own hand on screen at ${board} ms (budget ${BUDGET}, attempt ${attempt})`, board <= BUDGET, t.marks);
+    const slow = board > BUDGET && board <= HARD && !remeasured;
+    if (slow) {
+      remeasured = true;
+      console.log(`run ${run}.${attempt}: took ${board} ms, in the ${BUDGET}-${HARD} band; measuring this run once more`);
+    } else {
+      boards.push(board);
+      check(`run ${run}: board + own hand on screen at ${board} ms (hard limit ${HARD}, attempt ${attempt})`, board <= HARD, t.marks);
+    }
     const fcp = t.paints["first-contentful-paint"];
     check(`run ${run}.${attempt}: the branded loading state painted (${fcp} ms) before any table content`, t.marks.loading !== undefined && fcp !== undefined && fcp < Math.min(t.marks.hud ?? 1e9, t.marks.canvas ?? 1e9), { paints: t.paints, loading: t.marks.loading });
     check(`run ${run}.${attempt}: no flash of the title`, t.marks.title === undefined, t.marks);
@@ -229,6 +237,8 @@ try {
   }
   const sorted = [...boards].sort((a, b) => a - b);
   console.log(`board on screen, ms from navigationStart: ${boards.join(", ")} (median ${sorted[Math.floor(sorted.length / 2)]}, max ${sorted.at(-1)})`);
+  const median = sorted[Math.floor(sorted.length / 2)];
+  check(`median ${median} ms inside ${BUDGET} ms`, median <= BUDGET);
   check("no page errors", errors.length === 0, errors);
   others.forEach((o) => o.close());
 } catch (err) {
@@ -241,5 +251,5 @@ if (fails.length) {
   console.log(`restore prove: ${fails.length} failed`);
   process.exit(1);
 }
-console.log(`restore prove ok (${RUNS} reloads inside ${BUDGET} ms)`);
+console.log(`restore prove ok (${RUNS} reloads, median inside ${BUDGET} ms, none over ${HARD} ms)`);
 process.exit(0);

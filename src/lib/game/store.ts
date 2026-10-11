@@ -922,7 +922,18 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       // A reload at a table that was in play (#543) waits on the loading screen for the state that follows at once, not the
       // lobby; if none comes (the table was reset meanwhile), the lobby is where the seat belongs.
       const restoring = get().restoring;
-      if (restoring) setTimeout(() => get().restoring && get().net === table && set({ restoring: false, screen: "lobby" }), 1500);
+      if (restoring)
+        setTimeout(() => {
+          if (!get().restoring || get().net !== table) return;
+          // The lobby is where this seat belongs now; a later reload has no game to wait for, so it skips the splash.
+          try {
+            localStorage.removeItem(LIVE_KEY);
+          } catch {
+            // storage can be blocked
+          }
+          liveCode = "";
+          set({ restoring: false, screen: "lobby" });
+        }, 1500);
       set({ code, spectator: false, seatId: you ?? "", isHost: host ?? false, screen: restoring ? "title" : inGame ? "play" : "lobby", mode: "online", error: outdated, toast: outdated, chat: history, reactions: [], unread: 0 });
     },
     // The window may have closed while we were away; the next state brings it back rather than a chip stuck at 0:00.
@@ -1007,12 +1018,16 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       }
       rememberSeat(null);
       if (pending) {
-        set({ restoring: false, error: null, toast: null, screen: "title", net: null, peeking: false, seats: [], code: "", state: null });
+        const gone = get().restoring ? "Seat is gone." : null;
+        set({ restoring: false, error: gone, toast: gone, screen: "title", net: null, peeking: false, seats: [], code: "", state: null });
         return;
       }
       set({ error: "Lost the table", toast: "Lost the table", screen: "title", net: null, peeking: false, seats: [], code: "", state: null });
     },
   });
+  // A host that cannot be dialled never welcomes, so the splash would wait out the whole backoff: after 3 s the Title shows
+  // with "Reconnecting…" while the retries go on.
+  if (kind === "quiet" && get().restoring) setTimeout(() => get().restoring && get().net === table && set({ restoring: false }), 3000);
   // A peek is not the player's action, so it leaves a join error ("Lost the table") on the Title card.
   set(kind === "peek" ? { net: table, peeking: true, mode: "online" } : { net: table, peeking: false, mode: "online", error: null });
   if (kind !== "peek") {

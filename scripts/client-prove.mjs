@@ -900,6 +900,38 @@ try {
     console.log("stale rejoin on load:", JSON.stringify(stale));
     if (stale.screen !== "title" || stale.error !== null || stale.toast !== null || !stale.net) throw new Error(`stale rejoin not quiet: ${JSON.stringify(stale)}`);
 
+    // #543: a held seat whose table was in play (live flag set) but is gone says why in one line, not a silent bounce.
+    await page.evaluate(() => {
+      localStorage.setItem("emberisle-seat", JSON.stringify({ code: "ZZZZ", secret: "x" }));
+      localStorage.setItem("emberisle-seat-live", "ZZZZ");
+    });
+    await page.reload();
+    await page.waitForFunction(() => localStorage.getItem("emberisle-seat") === null, null, { timeout: 5000 });
+    const gone = await page.evaluate(() => {
+      const t = window.__emberisle.getState();
+      return { screen: t.screen, error: t.error, restoring: t.restoring };
+    });
+    console.log("live seat at a missing table:", JSON.stringify(gone));
+    if (gone.screen !== "title" || gone.error !== "Seat is gone." || gone.restoring) throw new Error(`gone seat not explained: ${JSON.stringify(gone)}`);
+
+    // #543: a held seat with the live flag and a host that cannot be dialled must not sit on the splash through the backoff.
+    await page.goto(`http://127.0.0.1:${PORT}/?host=ws://127.0.0.1:1`);
+    await page.evaluate(() => {
+      localStorage.setItem("emberisle-seat", JSON.stringify({ code: "ZZZZ", secret: "x" }));
+      localStorage.setItem("emberisle-seat-live", "ZZZZ");
+    });
+    await page.reload();
+    const downAt = Date.now();
+    await page.getByTestId("title-card").waitFor({ timeout: 4000 });
+    const downMs = Date.now() - downAt;
+    console.log("live seat, host down: title card after", downMs, "ms");
+    if (downMs > 3500) throw new Error(`host-down restore took ${downMs} ms to show the title`);
+    await page.evaluate(() => {
+      localStorage.removeItem("emberisle-seat");
+      localStorage.removeItem("emberisle-seat-live");
+    });
+    await page.goto(`http://127.0.0.1:${PORT}/?host=ws://127.0.0.1:${hostPort}`);
+
     // #271 case 12: with the stale rejoin gone, a peek opens a connection of its own and stays quiet.
     await page.evaluate(() => window.__emberisle.getState().peekTable("ABCD"));
     await page.waitForFunction(() => { const t = window.__emberisle.getState(); return t.peeking === true && t.net !== null; }, null, { timeout: 6000 });

@@ -7,9 +7,13 @@ import { defineConfig, type Plugin } from "vite";
 // up front instead (the island sits behind every screen), and, for a reload with a held seat, the online chunk too: they
 // download and compile off the main thread while the index runs, and the import() that follows finds them in memory.
 function preloadChunks(): Plugin {
+  let base = "/";
   return {
     name: "emberisle-preload-chunks",
     apply: "build",
+    configResolved(c) {
+      base = c.base;
+    },
     transformIndexHtml: {
       order: "post",
       handler(_html, ctx) {
@@ -18,10 +22,10 @@ function preloadChunks(): Plugin {
         const online = file("online");
         if (!island || !online) throw new Error("emberisle-preload-chunks: the IslandCanvas or online chunk is missing from the build");
         return [
-          { tag: "link", attrs: { rel: "modulepreload", crossorigin: true, href: `/${island}` }, injectTo: "head" },
+          { tag: "link", attrs: { rel: "modulepreload", crossorigin: true, href: `${base}${island}` }, injectTo: "head" },
           {
             tag: "script",
-            children: `try{if(localStorage.getItem("emberisle-seat")){var l=document.createElement("link");l.rel="modulepreload";l.crossOrigin="";l.href="/${online}";document.head.appendChild(l)}}catch(e){}`,
+            children: `try{if(localStorage.getItem("emberisle-seat")){var l=document.createElement("link");l.rel="modulepreload";l.crossOrigin="";l.href="${base}${online}";document.head.appendChild(l)}}catch(e){}`,
             injectTo: "head",
           },
         ];
