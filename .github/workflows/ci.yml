@@ -112,6 +112,7 @@ jobs:
       - run: npm run hand-cards-prove
       - run: npm run served-prove
       - run: npm run chunk-fail-prove
+      - run: npm run restore-prove
       - run: npm run night-prove
       - run: npm run chat-prove
       - run: npm run react-prove

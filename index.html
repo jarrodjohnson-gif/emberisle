@@ -13,9 +13,24 @@
     <meta name="apple-mobile-web-app-title" content="Emberisle" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Cpolygon points=%2216,2 29,9 29,23 16,30 3,23 3,9%22 fill=%22%23efeae0%22 stroke=%22%23c45c3e%22 stroke-width=%222%22/%3E%3C/svg%3E" />
+    <!-- #543: a reload into a table in play paints the wordmark at once, before any script has run; the app swaps it for the
+         board. Everyone else gets the title as before. Keep the look the same as Restoring in EmberisleApp.tsx. -->
+    <style>
+      #splash { display: none; position: absolute; inset: 0; flex-direction: column; align-items: center; justify-content: center; gap: 0.75rem; background: #efeae0; color: #1c1915; }
+      .restoring #splash { display: flex; }
+      #splash h1 { margin: 0; font: 400 3rem/1 "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif; letter-spacing: -0.025em; }
+      @media (min-width: 640px) { #splash h1 { font-size: 3.75rem; } }
+      #splash p { margin: 0; font: 0.875rem/1.25rem ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; color: #6b645a; }
+    </style>
+    <script>
+      try {
+        var seat = JSON.parse(localStorage.getItem("emberisle-seat"));
+        if (seat && seat.code === localStorage.getItem("emberisle-seat-live")) document.documentElement.className = "restoring";
+      } catch (e) {}
+    </script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root"><div id="splash" role="status"><h1>Emberisle</h1><p>Back to your table…</p></div></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

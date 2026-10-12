@@ -28,6 +28,7 @@ function ClientCanvas() {
 
 export function EmberisleApp() {
   const screen = useGame((s) => s.screen);
+  const restoring = useGame((s) => s.restoring);
   const runBots = useGame((s) => s.runBots);
   const seq = useGame((s) => s.state?.seq);
   // A bot's turn waits while its own ask is open (#363); the offer's close wakes it again.
@@ -36,8 +37,6 @@ export function EmberisleApp() {
 
   useEffect(() => {
     (window as unknown as { __emberisle: typeof useGame }).__emberisle = useGame;
-    // A reload mid-game goes straight back to the held seat (#196); the dock it lands on is in the online chunk (#488).
-    if (useGame.getState().rejoinTable()) online.prefetch();
     // #488: a chunk that fails to load while still at the title is read as a stale page after a deploy: reload once.
     return reloadOnStaleChunk(() => useGame.getState().screen === "title");
   }, []);
@@ -57,7 +56,7 @@ export function EmberisleApp() {
     <div className="relative h-dvh w-full overflow-hidden bg-bg">
       <ClientCanvas />
       {/* #488: the lobby (with chat) is online-only, so it is a lazy chunk; Host and Join prefetch it on hover or focus. */}
-      {screen === "title" ? <Title /> : screen === "lobby" ? (
+      {screen === "title" ? restoring ? <Restoring /> : <Title /> : screen === "lobby" ? (
         <LazyBoundary failed={<LobbyFailed />}>
           <Lobby />
         </LazyBoundary>
@@ -67,6 +66,17 @@ export function EmberisleApp() {
           <PlaceList />
         </>
       )}
+    </div>
+  );
+}
+
+// #543: a reload into a table in play shows the wordmark, then the board, and never the title in between. The static copy of
+// this in index.html paints before any script runs; keep the two alike.
+function Restoring() {
+  return (
+    <div data-testid="restoring" role="status" className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-bg">
+      <h1 className="font-display text-5xl leading-none tracking-tight sm:text-6xl">Emberisle</h1>
+      <p className="text-sm text-muted">Back to your table…</p>
     </div>
   );
 }

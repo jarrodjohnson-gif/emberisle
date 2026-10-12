@@ -204,6 +204,8 @@ interface GameStore {
   startAi: () => void;
   startHotseat: (count: number) => void;
   loadState: (s: GameState, localId: string, host: boolean, table?: string) => void;
+  // True from page load while a saved seat at a table in play is being reclaimed: the loading screen shows, not the title.
+  restoring: boolean;
   goTitle: () => void;
   dispatch: (action: Action, asId?: string, automated?: boolean) => { ok: boolean; state?: GameState; error?: string };
   runBots: () => void;
@@ -302,10 +304,37 @@ export function savedSeat(): { code: string; secret: string } | null {
   }
 }
 
+// The table code whose game this browser last saw in play (#543). A reload with a seat at that table goes to a branded
+// loading screen and straight to the board: it never passes through the title or the lobby on the way.
+const LIVE_KEY = "emberisle-seat-live";
+
+function inPlayAtSavedSeat() {
+  try {
+    return savedSeat()?.code === localStorage.getItem(LIVE_KEY);
+  } catch {
+    return false;
+  }
+}
+
+let liveCode = "";
+function rememberLive(code: string) {
+  if (code === liveCode) return;
+  liveCode = code;
+  try {
+    localStorage.setItem(LIVE_KEY, code);
+  } catch {
+    // storage can be blocked; a reload then takes the lobby's way back
+  }
+}
+
 function rememberSeat(seat: { code: string; secret: string } | null) {
   try {
     if (seat) localStorage.setItem(SEAT_KEY, JSON.stringify(seat));
-    else localStorage.removeItem(SEAT_KEY);
+    else {
+      localStorage.removeItem(SEAT_KEY);
+      localStorage.removeItem(LIVE_KEY);
+      liveCode = "";
+    }
   } catch {
     // storage can be blocked; the game still plays, it just cannot rejoin after a reload
   }
@@ -450,8 +479,10 @@ export const useGame = create<GameStore>((set, get) => ({
       tradeOutcome: null,
     });
   },
+  restoring: typeof window !== "undefined" && inPlayAtSavedSeat(),
   loadState: (s, localId, host, table) =>
     set({
+      restoring: false,
       screen: "play",
       mode: "online",
       state: s,
@@ -888,7 +919,22 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
         set({ code, spectator: true, seatId: "", isHost: false, mode: "online", error: outdated, toast: outdated, chat: history, reactions: [], unread: 0 });
         return;
       }
-      set({ code, spectator: false, seatId: you ?? "", isHost: host ?? false, screen: inGame ? "play" : "lobby", mode: "online", error: outdated, toast: outdated, chat: history, reactions: [], unread: 0 });
+      // A reload at a table that was in play (#543) waits on the loading screen for the state that follows at once, not the
+      // lobby; if none comes (the table was reset meanwhile), the lobby is where the seat belongs.
+      const restoring = get().restoring;
+      if (restoring)
+        setTimeout(() => {
+          if (!get().restoring || get().net !== table) return;
+          // The lobby is where this seat belongs now; a later reload has no game to wait for, so it skips the splash.
+          try {
+            localStorage.removeItem(LIVE_KEY);
+          } catch {
+            // storage can be blocked
+          }
+          liveCode = "";
+          set({ restoring: false, screen: "lobby" });
+        }, 1500);
+      set({ code, spectator: false, seatId: you ?? "", isHost: host ?? false, screen: restoring ? "title" : inGame ? "play" : "lobby", mode: "online", error: outdated, toast: outdated, chat: history, reactions: [], unread: 0 });
     },
     // The window may have closed while we were away; the next state brings it back rather than a chip stuck at 0:00.
     reconnecting: (attempt) => set({ error: `Reconnecting… (try ${attempt})`, toast: "Reconnecting…", turnTimer: null }),
@@ -926,6 +972,7 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       // A rematch's new game (#266): drop any half-made move or open panel left over from the win.
       if (get().state?.phase === "over" && game.phase !== "over") set({ buildMode: "none", roadPicks: [], pendingPlace: null, tradeOpen: false });
       get().loadState(game, me, get().isHost, get().code);
+      if (!get().spectator) rememberLive(get().code);
       if (outdated) set({ error: outdated, toast: outdated });
       if (rollOff) showBanner(set, rollOff);
       else if (swing) showBanner(set, swing);
@@ -961,7 +1008,7 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
         return;
       }
       if (keepSeat) {
-        set({ error: "Your seat is open in another tab", toast: "Your seat is open in another tab", screen: "title", net: null, peeking: false, seats: [], code: "", state: null });
+        set({ restoring: false, error: "Your seat is open in another tab", toast: "Your seat is open in another tab", screen: "title", net: null, peeking: false, seats: [], code: "", state: null });
         return;
       }
       if (kind === "watch") {
@@ -971,12 +1018,16 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       }
       rememberSeat(null);
       if (pending) {
-        set({ error: null, toast: null, screen: "title", net: null, peeking: false, seats: [], code: "", state: null });
+        const gone = get().restoring ? "Seat is gone." : null;
+        set({ restoring: false, error: gone, toast: gone, screen: "title", net: null, peeking: false, seats: [], code: "", state: null });
         return;
       }
       set({ error: "Lost the table", toast: "Lost the table", screen: "title", net: null, peeking: false, seats: [], code: "", state: null });
     },
   });
+  // A host that cannot be dialled never welcomes, so the splash would wait out the whole backoff: after 3 s the Title shows
+  // with "Reconnecting…" while the retries go on.
+  if (kind === "quiet" && get().restoring) setTimeout(() => get().restoring && get().net === table && set({ restoring: false }), 3000);
   // A peek is not the player's action, so it leaves a join error ("Lost the table") on the Title card.
   set(kind === "peek" ? { net: table, peeking: true, mode: "online" } : { net: table, peeking: false, mode: "online", error: null });
   if (kind !== "peek") {
