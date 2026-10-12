@@ -87,6 +87,8 @@ const FIT_KEYS: (keyof Pose)[] = ["left", "right", "top", "bottom", "tx", "tz"];
 const EYE_KEYS: (keyof Pose)[] = ["polar", "azimuth", "zoom"];
 const ORBIT_RADIUS = 18;
 const GLIDE_MS = 280;
+// Frames after a resize that measure the hole again: the HUD settles into its new layout a frame or two after the event.
+const RELAYOUT_FRAMES = 4;
 const DOUBLE_TAP_MS = 350;
 const DOUBLE_TAP_PX = 32;
 const _eye = new THREE.Vector3();
@@ -114,6 +116,9 @@ export class IsleRenderer {
   // The hole is re-measured on the next frame after a view or state change (React has committed the HUD by then), never on
   // HUD housekeeping alone (a timed notice leaving, the Place chip): the camera moves with the game, and an idle board idles.
   private refitDue = false;
+  private relayout = 0;
+  private sizeW = 0;
+  private sizeH = 0;
   private raycaster = new THREE.Raycaster();
   private pointer = new THREE.Vector2();
   private land = new THREE.Group();
@@ -268,6 +273,8 @@ export class IsleRenderer {
     canvas.addEventListener("pointermove", this.onMove);
     canvas.addEventListener("pointercancel", this.onCancel);
     window.addEventListener("resize", this.resize);
+    // A phone's bars sliding in or out move the visual viewport without always firing a window resize.
+    window.visualViewport?.addEventListener("resize", this.onViewport);
     window.addEventListener("keydown", this.onKey);
     // Focus moving into or out of the chrome (the keyboard PlaceList shows while focused) changes the hole.
     canvas.parentElement?.addEventListener("focusin", this.remeasure);
@@ -468,6 +475,7 @@ export class IsleRenderer {
     this.orbit.dispose();
     this.calmMq?.removeEventListener("change", this.onCalm);
     window.removeEventListener("resize", this.resize);
+    window.visualViewport?.removeEventListener("resize", this.onViewport);
     window.removeEventListener("keydown", this.onKey);
     this.renderer.domElement.parentElement?.removeEventListener("focusin", this.remeasure);
     this.renderer.domElement.parentElement?.removeEventListener("focusout", this.remeasure);
@@ -506,11 +514,19 @@ export class IsleRenderer {
     this.busyUntil = performance.now() + 1000;
   };
 
+  // The visual viewport also moves with the keyboard and a pinch, which leave the canvas as it is: only the hole is measured then.
+  private onViewport = () => {
+    const c = this.renderer.domElement;
+    if ((c.clientWidth || 1) !== this.sizeW || (c.clientHeight || 1) !== this.sizeH) return this.resize();
+    this.remeasure();
+    this.relayout = RELAYOUT_FRAMES;
+  };
+
   private resize = () => {
     this.wake();
     const c = this.renderer.domElement;
-    const w = c.clientWidth || 1;
-    const h = c.clientHeight || 1;
+    const w = (this.sizeW = c.clientWidth || 1);
+    const h = (this.sizeH = c.clientHeight || 1);
     this.camera.aspect = w / h;
     // Dolly limit: OrbitControls.update() clamps the current distance to the new max on the next frame.
     this.controls.maxDistance = freeMaxDistance(h, hudInsets(w, h, this.coarse(), this.safe()), this.coarse());
@@ -519,6 +535,9 @@ export class IsleRenderer {
     this.composer?.setSize(w, h);
     this.ssao?.setSize(w, h);
     this.refit(true);
+    // The HUD re-lays out for the new size after this event (a rotation swaps its columns and rails), so the hole just
+    // measured is the old one: measure again on each of the next frames.
+    this.relayout = RELAYOUT_FRAMES;
   };
 
   // The player changed the chrome without the game moving (opened the chat or a sheet, focused the PlaceList): measure the
@@ -716,6 +735,10 @@ export class IsleRenderer {
       this.wake();
     }
     this.stepLandings(now, calm);
+    if (this.relayout > 0) {
+      this.relayout--;
+      this.refitDue = true;
+    }
     if (this.refitDue) this.refit(false);
     if (calm && this.walk) {
       this.walk = null;
