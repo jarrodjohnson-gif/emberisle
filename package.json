@@ -59,6 +59,8 @@
     "proto-prove": "node --import ./server/register.mjs server/proto-prove.mjs",
     "cap-prove": "node --import ./server/register.mjs server/cap-prove.mjs",
     "restart-prove": "node --import ./server/register.mjs server/restart-prove.mjs",
+    "preseat-prove": "node --import ./server/register.mjs server/preseat-prove.mjs",
+    "turn-gain-prove": "node scripts/turn-gain-prove.mjs",
     "turn-gain-prove": "node scripts/turn-gain-prove.mjs",
     "takeover-prove": "node --import ./server/register.mjs server/takeover-prove.mjs"
   },

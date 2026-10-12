@@ -35,7 +35,7 @@ One new client → host message, answered with a shape the client already handle
 
 | Client sends | Host answers | Side effects |
 |---|---|---|
-| `{ "type": "peek", "code" }` on a socket with no seat | `seats { code, seats[] }`, the exact `seatsOf(room)` shape | None. The socket is not seated, nothing is broadcast, nothing is saved. |
+| `{ "type": "peek", "code" }` on a socket with no seat | `seats { code, seats[] }`, each seat reduced to `{ id, color, ready }` (no name or picture for an unseated asker, G10 #530) | None. The socket is not seated, nothing is broadcast, nothing is saved. |
 | `peek` with a code that is not a 4-character alphabet string | nothing | The frame is dropped. |
 | `peek` for a code with no room, or a room whose game has started | `seats { code, seats: [] }` | None. |
 

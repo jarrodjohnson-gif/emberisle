@@ -171,10 +171,11 @@ const replaced = JSON.parse(r.body);
 const old = await get(port, aPic.url);
 check(`uploader replaces its picture -> ${r.status}; old url -> ${old.status}`, r.status === 200 && old.status === 404 && replaced.url !== aPic.url);
 
-// A stranger peeks the table, hellos with a seat's avatarId, and drops: the picture stays with its seat (#369).
+// A stranger peeks the table (and learns no picture, G10), hellos with a seat's avatarId, and drops: the picture stays
+// with its seat (#369).
 const stranger = seat({ type: "peek", code: welcome.code });
 const peeked = await stranger.next("seats");
-check(`stranger peeks -> sees ${peeked.seats[0].avatarId}`, peeked.seats[0].avatarId === replaced.avatarId);
+check(`stranger peeks -> sees ${JSON.stringify(Object.keys(peeked.seats[0]))}, no picture`, !("avatarId" in peeked.seats[0]) && !("url" in peeked.seats[0]) && peeked.seats.length === 3);
 stranger.ws.send(JSON.stringify({ type: "hello", name: "Grab", avatarId: replaced.avatarId }));
 const grab = await stranger.next("welcome");
 const grabSeats = await stranger.next("seats");
