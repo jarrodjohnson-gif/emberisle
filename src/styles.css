@@ -55,13 +55,6 @@ body {
   overscroll-behavior: none;
 }
 
-/* A reaction rises about 12 px over 2 s and fades in its last 0.5 s (docs/design/chat.md "Reactions"). */
-@keyframes emote-float {
-  0% { opacity: 1; transform: translateY(0); }
-  75% { opacity: 1; }
-  100% { opacity: 0; transform: translateY(-12px); }
-}
-
 /* A resource card's +N/-N holds briefly, then fades out over about a second (#170). */
 /* The turn banner fades in over 200 ms when the seat on turn changes (docs/design/mobile-hud.md). */
 @keyframes turn-fade {
@@ -130,7 +123,6 @@ body {
 
 /* The animations are inline or utility styles, so the override has to out-rank them (#253). */
 @media (prefers-reduced-motion: reduce) {
-  [style*="emote-float"],
   [style*="resource-flash"],
   [style*="resource-ring"],
   [class*="turn-fade"],

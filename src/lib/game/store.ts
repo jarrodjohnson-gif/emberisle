@@ -948,7 +948,8 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       set({ reactions: [...get().reactions, r] });
       setTimeout(() => set({ reactions: get().reactions.filter((x) => x !== r) }), 2000);
     },
-    seats: ({ code, seats, watching }) => set({ code, seats, watching: watching ?? 0 }),
+    // A peek answers id/color/ready only (G10); the lobby is not shown until the full broadcast after sitting replaces it.
+    seats: ({ code, seats, watching }) => set({ code, seats: seats as Seat[], watching: watching ?? 0 }),
     rolled: ({ gains, short }) => {
       // The host sends this before the state that follows it, so `current` is still the roller.
       const st = get().state;
