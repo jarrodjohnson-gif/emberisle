@@ -61,7 +61,8 @@ export type Bag = Partial<Record<Resource, number>>;
 export interface TableEvents {
   // A watcher's welcome (docs/design/spectator.md) has `spectator: true` and no `you`, `host` or `secret`. `proto` is the
   // host's wire protocol (G2): newer than PROTO means this page is out of date.
-  welcome(msg: { proto?: number; code: string; you?: string; host?: boolean; chat?: ChatLine[]; secret?: string; spectator?: true }): void;
+  // `holdMs`/`lobbyHoldMs`: how long the host holds this seat after a drop, in a game and in the lobby (G7).
+  welcome(msg: { proto?: number; code: string; you?: string; host?: boolean; chat?: ChatLine[]; secret?: string; spectator?: true; holdMs?: number; lobbyHoldMs?: number }): void;
   // `watching`: how many spectators the table has (#347).
   seats(msg: { code: string; seats: Seat[]; watching?: number }): void;
   // `you` is null on a watcher's state. `turnDeadline` is the host's clock (epoch ms) for the seat `turnPlayer`;
@@ -172,12 +173,16 @@ export function hostUrl(
   return dev ? `${scheme}://${loc.hostname}:8787` : `${scheme}://${loc.host}`;
 }
 
-// Waits between reconnect attempts, then every 15 s, for up to 10 minutes (docs/research/rejoin.md).
+// Waits between reconnect attempts, then every 15 s, for as long as the host holds the seat (docs/research/rejoin.md).
 const BACKOFF_MS = [1000, 2000, 4000, 8000, 15000];
+// What a host that says nothing about its hold is assumed to do: its own `HOLD_MS` and `LOBBY_HOLD_MS` defaults.
 const GIVE_UP_MS = 10 * 60 * 1000;
+const LOBBY_GIVE_UP_MS = 90 * 1000;
+// The last redial lands this long before the host lets the seat go, so the hold always outlasts the retries (G7, #528).
+const LAST_CALL_MS = 1000;
 
-// `giveUpMs` is only for proofs that cannot wait 10 minutes.
-export function connectTable(url: string, on: Partial<TableEvents>, Socket?: SocketCtor, giveUpMs = GIVE_UP_MS): TableClient {
+// `giveUpMs` is only for proofs that cannot wait 10 minutes: it stands in for both holds until a welcome says otherwise.
+export function connectTable(url: string, on: Partial<TableEvents>, Socket?: SocketCtor, giveUpMs?: number): TableClient {
   const Ctor = Socket ?? (globalThis.WebSocket as unknown as SocketCtor);
   const queue: string[] = [];
   let ws: SocketLike;
@@ -186,6 +191,9 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
   let seat: { code: string; secret: string } | null = null;
   let attempt = 0;
   let lostAt = 0;
+  // The host's hold on a dropped seat, from the welcome; which one applies is whether a game has started.
+  let hold = { game: giveUpMs ?? GIVE_UP_MS, lobby: giveUpMs ?? LOBBY_GIVE_UP_MS };
+  let inGame = false;
   // True while a hello {code, secret} is out; an error then means the seat is gone for good.
   let rejoining = false;
   // The last rejoin answer was "Seat is taken.": another tab of ours holds the seat, so giving up must keep the secret.
@@ -218,7 +226,7 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
   const dial = () => {
     timer = null;
     stamp = null;
-    ws = new Ctor(url);
+    const sock = (ws = new Ctor(url));
     ws.onopen = () => {
       // The rejoin hello goes out here only, never through the queue, so it is sent once per socket.
       if (seat && (attempt > 0 || rejoining)) {
@@ -230,6 +238,8 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
       for (const raw of queue.splice(0)) ws.send(raw);
     };
     ws.onclose = () => {
+      // A socket a later dial replaced closing late is not a drop of the live one.
+      if (sock !== ws) return;
       stamp = null;
       if (closedByUs) return;
       if (!seat) {
@@ -237,15 +247,18 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
         return;
       }
       if (attempt === 0) lostAt = Date.now();
-      if (Date.now() - lostAt > giveUpMs) {
+      // Redial until the last call before the host's hold ends; by then the seat is as good as gone.
+      const left = lostAt + (inGame ? hold.game : hold.lobby) - LAST_CALL_MS - Date.now();
+      if (left <= 0) {
         giveUp(taken);
         return;
       }
       attempt += 1;
       on.reconnecting?.(attempt);
-      timer = setTimeout(dial, BACKOFF_MS[Math.min(attempt, BACKOFF_MS.length) - 1]!);
+      timer = setTimeout(dial, Math.min(BACKOFF_MS[Math.min(attempt, BACKOFF_MS.length) - 1]!, left));
     };
     ws.onmessage = (ev) => {
+      if (sock !== ws) return;
       let msg: { type?: string; [k: string]: unknown };
       try {
         msg = JSON.parse(String(ev.data));
@@ -260,8 +273,9 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
     switch (msg.type) {
       case "welcome": {
         stamp = null;
-        const m = msg as { proto?: number; code: string; you?: string; host?: boolean; chat?: ChatLine[]; secret?: string; spectator?: true };
+        const m = msg as { proto?: number; code: string; you?: string; host?: boolean; chat?: ChatLine[]; secret?: string; spectator?: true; holdMs?: number; lobbyHoldMs?: number };
         if (typeof m.secret === "string") seat = { code: m.code, secret: m.secret };
+        if (typeof m.holdMs === "number" && typeof m.lobbyHoldMs === "number") hold = { game: m.holdMs, lobby: m.lobbyHoldMs };
         rejoining = false;
         taken = false;
         attempt = 0;
@@ -273,6 +287,7 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
         break;
       case "state":
         stamp = (msg as { actionStamp?: ActionStamp }).actionStamp ?? null;
+        inGame = true;
         on.state?.(msg as never);
         break;
       case "rolled":

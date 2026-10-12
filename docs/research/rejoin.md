@@ -94,11 +94,12 @@ phone or tunnel timing.
 
 ### Browser reconnect and reload
 
-`connectTable` retries after unexpected closes using 1, 2, 4, 8, then 15 s waits, capped at 15 s. It targets
-a ten-minute retry window. The time limit is checked on socket close, not by an independent deadline
-timer, so it is not a strict ten-minute cutoff for a socket stuck connecting or open without a reply.
-The host hold and browser retry window also begin at different observed closes. The shorter lobby hold
-can expire while the browser is still retrying.
+`connectTable` retries after unexpected closes using 1, 2, 4, 8, then 15 s waits, capped at 15 s. The window
+is the hold the host announced in `welcome` (`holdMs` in a game, `lobbyHoldMs` in the lobby; G7, #528), measured
+from the client's observed close: the last redial is cut to land 1 s before the hold ends and the client then
+gives up, so the host always outlasts the retries and no redial is pending when the seat is let go. The time
+limit is checked on socket close, not by an independent deadline timer, so a socket stuck connecting or open
+without a reply can outlive it. A host that announces no hold is assumed to use the 10 min / 90 s defaults.
 
 The rejoin hello is sent once per new socket. Messages queued while the connection was down are discarded
 on rejoin, preventing an old roll or placement from replaying into the returned state. `wake()` cancels a

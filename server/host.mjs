@@ -51,6 +51,8 @@ const ACT_RATE = Number(process.env.ACT_RATE ?? 4);
 const GRACE_MS = Number(process.env.GRACE_MS ?? 90 * 1000);
 const HOLD_MS = Number(process.env.HOLD_MS ?? 10 * 60 * 1000);
 const LOBBY_HOLD_MS = Number(process.env.LOBBY_HOLD_MS ?? 90 * 1000);
+// Both ride on a seat's welcome so the client's redials stop before the hold runs out, never after it (G7, #528).
+const HOLD_INFO = { holdMs: HOLD_MS, lobbyHoldMs: LOBBY_HOLD_MS };
 // A connected player who stops taking their turn: after this long the host's bot makes that one move for the
 // seat and the seat stays human (#344, Jarrod's call on #324). A dropped seat follows GRACE_MS instead, never this.
 const TURN_MS = Number(process.env.TURN_MS ?? 120 * 1000);
@@ -748,7 +750,7 @@ function openTable(ws, msg) {
   room.host = seat.id;
   ws.room = room;
   ws.seat = seat;
-  send(ws, { type: "welcome", proto: PROTO, code: room.code, you: seat.id, host: true, chat: room.chat, secret: seat.secret });
+  send(ws, { type: "welcome", proto: PROTO, code: room.code, you: seat.id, host: true, chat: room.chat, secret: seat.secret, ...HOLD_INFO });
   say(room, `${seat.name} sat down.`);
   publish(room);
 }
@@ -774,7 +776,7 @@ function sitDown(ws, msg) {
   room.seats.push(seat);
   ws.room = room;
   ws.seat = seat;
-  send(ws, { type: "welcome", proto: PROTO, code: room.code, you: seat.id, host: false, chat: room.chat, secret: seat.secret });
+  send(ws, { type: "welcome", proto: PROTO, code: room.code, you: seat.id, host: false, chat: room.chat, secret: seat.secret, ...HOLD_INFO });
   say(room, `${seat.name} sat down.`);
   publish(room);
 }
@@ -1172,7 +1174,7 @@ function rejoin(ws, msg) {
   seat.gone = null;
   ws.room = room;
   ws.seat = seat;
-  send(ws, { type: "welcome", proto: PROTO, code: room.code, you: seat.id, host: seat.id === room.host, chat: room.chat, secret: seat.secret });
+  send(ws, { type: "welcome", proto: PROTO, code: room.code, you: seat.id, host: seat.id === room.host, chat: room.chat, secret: seat.secret, ...HOLD_INFO });
   say(room, `${seat.name} is back.`);
   publish(room);
   if (!room.game) return;
