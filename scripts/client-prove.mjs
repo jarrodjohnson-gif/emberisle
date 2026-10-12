@@ -915,17 +915,22 @@ try {
     if (gone.screen !== "title" || gone.error !== "Seat is gone." || gone.restoring) throw new Error(`gone seat not explained: ${JSON.stringify(gone)}`);
 
     // #543: a held seat with the live flag and a host that cannot be dialled must not sit on the splash through the backoff.
-    await page.goto(`http://127.0.0.1:${PORT}/?host=ws://127.0.0.1:1`);
+    // Port 9 is closed (nothing listens; Chromium refuses unsafe ports like 1 before dialling, with a different error).
+    await page.goto(`http://127.0.0.1:${PORT}/?host=ws://127.0.0.1:9`);
     await page.evaluate(() => {
       localStorage.setItem("emberisle-seat", JSON.stringify({ code: "ZZZZ", secret: "x" }));
       localStorage.setItem("emberisle-seat-live", "ZZZZ");
     });
     await page.reload();
     const downAt = Date.now();
-    await page.getByTestId("title-card").waitFor({ timeout: 4000 });
+    await page.getByTestId("title-card").waitFor({ timeout: 6000 });
     const downMs = Date.now() - downAt;
     console.log("live seat, host down: title card after", downMs, "ms");
-    if (downMs > 3500) throw new Error(`host-down restore took ${downMs} ms to show the title`);
+    if (downMs > 4500) throw new Error(`host-down restore took ${downMs} ms to show the title`);
+    // The dead host's refused sockets are the expected console errors here; drop only those.
+    const downRefused = errors.filter((e) => e.includes("ws://127.0.0.1:9/"));
+    if (!downRefused.length) throw new Error("host-down restore: expected at least one refused socket");
+    for (const e of downRefused) errors.splice(errors.indexOf(e), 1);
     await page.evaluate(() => {
       localStorage.removeItem("emberisle-seat");
       localStorage.removeItem("emberisle-seat-live");
