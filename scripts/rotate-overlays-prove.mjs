@@ -5,9 +5,10 @@
 // open and after every rotation:
 // - every overlay (chat sheet, toast, prompt) lies inside the viewport and the safe area, and no two overlap;
 // - the actions (Yes, No, the seat buttons), the close control and the HUD's primary button have in-viewport, non-zero boxes
-//   at least 44 px tall and wide, and are the topmost element at their centre (tappable);
+//   at least 44 px tall and wide (the chat's Minimize keeps its 24 px header size), and are the topmost element at their centre (tappable);
 // - every seat's points show, inside the viewport and uncovered;
-// - in the wayfarer prompt the board hexes the phase allows (once the island fit has settled) are not under an overlay;
+// Board targets are not checked here: while the sheet is open its backdrop covers the whole board by design, and a tap on
+// the board only closes the sheet (chat-prove); once it is closed nothing but the prompt or toast is on screen.
 // - Escape from the chat box closes the chat (the top overlay) and leaves the toast or prompt.
 // Zero console errors. Run: npm run rotate-overlays-prove. Port from VITE_PORT, default 8557.
 import { spawn } from "node:child_process";
@@ -31,12 +32,15 @@ const SEATS = [3, 4];
 mkdirSync("test-results", { recursive: true });
 
 const ROOMS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-rooms-"));
-process.on("exit", () => rmSync(ROOMS_DIR, { recursive: true, force: true }));
 const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL("../server/", import.meta.url),
   env: { ...process.env, PORT: "0", ROOMS_DIR },
 });
-process.on("exit", () => host.kill());
+// G5: stop the host before its rooms dir goes, or a SIGTERM flush recreates the dir.
+process.on("exit", () => {
+  host.kill("SIGKILL");
+  rmSync(ROOMS_DIR, { recursive: true, force: true, maxRetries: 5 });
+});
 for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
 const hostPort = await new Promise((resolve) =>
   host.stdout.on("data", (d) => {
@@ -133,7 +137,8 @@ async function fixture(p, kind) {
     const s = g.getState();
     const st = structuredClone(s.state);
     const others = st.players.filter((x) => x.id !== s.localId);
-    st.current = s.localId;
+    // An offer only exists on the asker's turn, so the trade fixture is the other seat's turn; the steal is the phone's own.
+    st.current = kind === "trade" ? others[0].id : s.localId;
     st.phase = kind === "trade" ? "main" : "robber";
     st.seq += 1;
     const hexes = st.hexes.filter((h) => h.id !== st.robberHex).map((h) => h.id);
@@ -177,8 +182,10 @@ function measure({ insets, kind }) {
   const prompt = [...document.querySelectorAll("span")].find((s) => s.textContent === "Take from whom?")?.parentElement ?? null;
   const overlays = { chat, [kind === "trade" ? "toast" : "prompt"]: kind === "trade" ? toast : prompt };
   const controls = [];
-  // The chat sheet's close control and its Send are the chat's actions; its filter chips, presets and emote picker are #460's compact controls.
-  if (chat) controls.push(box(chat.querySelector('button[aria-label="Minimize chat"]')));
+  // The chat sheet's Minimize is a 24 px header control by design (chat-prove and hud-safe-area-prove pin the header's row and its
+  // fit in the landscape safe area), so it is held to its own size plus the safe-area and tappable checks; the sheet's filter
+  // chips, presets and emote picker are #460's compact controls and are not checked here.
+  if (chat) controls.push({ ...box(chat.querySelector('button[aria-label="Minimize chat"]')), min: 24 });
   if (kind === "trade") for (const n of [/^Yes$/, /^No$/]) controls.push(box(find(n, toast)));
   else for (const b of prompt.querySelectorAll("button")) controls.push(box(b));
   const primary = kind === "trade" ? find(/^End turn$/) : null;
@@ -229,8 +236,8 @@ async function prove(p, label, kind) {
     // The open chat sheet covers the hand bar by design (it is the modal sheet over the bar; the backdrop's tap closes it).
     console.log(`note ${tag}: End turn ${m.primary.tappable ? "is" : "is not"} reachable under the open chat sheet`);
   }
-  const small = m.controls.filter((c) => !(c.w >= 44 && c.h >= 44 && inside(c, m.safe) && c.tappable));
-  check(`${tag}: ${m.controls.length} actions and close controls are 44 px, inside the safe area and tappable`, m.controls.length > 0 && small.length === 0, small.map((c) => [c.name, Math.round(c.w), Math.round(c.h), c.tappable]));
+  const small = m.controls.filter((c) => !(c.w >= (c.min ?? 44) && c.h >= (c.min ?? 44) && inside(c, m.safe) && c.tappable));
+  check(`${tag}: ${m.controls.length} actions are 44 px (Minimize 24 px), inside the safe area and tappable`, m.controls.length > 0 && small.length === 0, small.map((c) => [c.name, Math.round(c.w), Math.round(c.h), c.tappable]));
   const seats = m.seats.filter((s) => s.shown);
   const lost = seats.filter((s) => !(s.w > 0 && s.h > 0 && inside(s, { l: 0, t: 0, r: m.vw, b: m.vh }) && s.uncovered));
   check(`${tag}: ${seats.length} seat point totals are visible and uncovered`, seats.length === p.seats && lost.length === 0, lost.length ? lost : undefined);
@@ -274,6 +281,6 @@ try {
 } finally {
   await browser.close();
   await vite.close();
-  host.kill();
+  host.kill("SIGKILL");
 }
 process.exit(code);

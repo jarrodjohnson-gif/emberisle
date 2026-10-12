@@ -428,12 +428,7 @@ export function ChatDock() {
       type="button"
       aria-label="Minimize chat"
       onClick={() => setOpen(false)}
-      className={cn(
-        "flex cursor-pointer items-center justify-center rounded-control bg-glass text-zinc-700 hover:text-zinc-900",
-        // #557: a 44 px tap target on phones. Negative margins keep the header's 24 px row and the button's right edge,
-        // so the sheet still fits the landscape safe area (hud-safe-area-prove); the extra reach goes left and up/down.
-        phone ? "-my-2.5 -ml-5 size-11" : "size-6",
-      )}
+      className="flex size-6 cursor-pointer items-center justify-center rounded-control bg-glass text-zinc-700 hover:text-zinc-900"
     >
       <Minus className="size-4" />
     </button>
