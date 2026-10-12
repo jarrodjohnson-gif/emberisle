@@ -14,6 +14,9 @@ export interface Seat {
   away?: boolean;
 }
 
+// What a peek answers (G10): enough to dim taken swatches, no names or pictures.
+export type PeekSeat = Pick<Seat, "id" | "color" | "ready">;
+
 export interface Legal {
   outpost: string[];
   path: string[];
@@ -64,7 +67,7 @@ export interface TableEvents {
   // `holdMs`/`lobbyHoldMs`: how long the host holds this seat after a drop, in a game and in the lobby (G7).
   welcome(msg: { proto?: number; code: string; you?: string; host?: boolean; chat?: ChatLine[]; secret?: string; spectator?: true; holdMs?: number; lobbyHoldMs?: number }): void;
   // `watching`: how many spectators the table has (#347).
-  seats(msg: { code: string; seats: Seat[]; watching?: number }): void;
+  seats(msg: { code: string; seats: Seat[] | PeekSeat[]; watching?: number }): void;
   // `you` is null on a watcher's state. `turnDeadline` is the host's clock (epoch ms) for the seat `turnPlayer`;
   // `serverNow` is the host's clock as it sent this.
   state(msg: { you: string | null; game: GameState; legal: Legal; actionStamp?: ActionStamp; turnDeadline?: number | null; turnPlayer?: string | null; serverNow?: number }): void;
