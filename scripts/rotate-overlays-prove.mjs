@@ -4,12 +4,13 @@
 // page that rotates away and back (portrait -> landscape -> portrait, and landscape -> portrait -> landscape), and after the
 // open and after every rotation:
 // - every overlay (chat sheet, toast, prompt) lies inside the viewport and the safe area, and no two overlap;
-// - the actions (Yes, No, the seat buttons), the close control and the HUD's primary button have in-viewport, non-zero boxes
-//   at least 44 px tall and wide (the chat's Minimize keeps its 24 px header size), and are the topmost element at their centre (tappable);
+// - the actions (Yes, No, the seat buttons) and the close control have in-viewport, non-zero boxes at least 44 px tall and
+//   wide (the chat's Minimize keeps its 24 px header size), and are the topmost element at their centre (tappable);
 // - every seat's points show, inside the viewport and uncovered;
-// Board targets are not checked here: while the sheet is open its backdrop covers the whole board by design, and a tap on
-// the board only closes the sheet (chat-prove); once it is closed nothing but the prompt or toast is on screen.
 // - Escape from the chat box closes the chat (the top overlay) and leaves the toast or prompt.
+// Board targets are not checked here: while the sheet is open its backdrop covers the whole board by design, and a tap on
+// the board only closes the sheet (chat-prove); once it is closed nothing but the prompt or toast is on screen. End turn is
+// not checked either: an offer only exists on the asker's turn, so it and the phone's End turn are never on screen together.
 // Zero console errors. Run: npm run rotate-overlays-prove. Port from VITE_PORT, default 8557.
 import { spawn } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
@@ -188,7 +189,6 @@ function measure({ insets, kind }) {
   if (chat) controls.push({ ...box(chat.querySelector('button[aria-label="Minimize chat"]')), min: 24 });
   if (kind === "trade") for (const n of [/^Yes$/, /^No$/]) controls.push(box(find(n, toast)));
   else for (const b of prompt.querySelectorAll("button")) controls.push(box(b));
-  const primary = kind === "trade" ? find(/^End turn$/) : null;
   const seats = [...document.querySelectorAll('[data-testid="seat-vp"]')].map((el) => {
     const b = el.getBoundingClientRect();
     const hit = seen(b);
@@ -200,7 +200,6 @@ function measure({ insets, kind }) {
     vh: innerHeight,
     overlays: Object.fromEntries(Object.entries(overlays).map(([k, el]) => [k, rect(el)])),
     controls,
-    primary: primary ? box(primary) : null,
     seats,
     strip: rect(document.querySelector('[data-testid="seat-strip"]')),
     focus: document.activeElement?.id ?? document.activeElement?.tagName,
@@ -229,12 +228,6 @@ async function prove(p, label, kind) {
     for (let j = i + 1; j < o.length; j++) {
       if (o[i][1] && o[j][1]) check(`${tag}: ${o[i][0]} and ${o[j][0]} do not overlap`, !hit(o[i][1], o[j][1]), [o[i][1], o[j][1]].map((b) => [b.l, b.t, b.r, b.b].map(Math.round)));
     }
-  }
-  if (m.primary) {
-    check(`${tag}: End turn has an in-viewport, safe-area box at least 44 px tall`, inside(m.primary, m.safe) && m.primary.h >= 44, m.primary);
-    check(`${tag}: the toast does not cover End turn`, !hit(m.overlays.toast, m.primary));
-    // The open chat sheet covers the hand bar by design (it is the modal sheet over the bar; the backdrop's tap closes it).
-    console.log(`note ${tag}: End turn ${m.primary.tappable ? "is" : "is not"} reachable under the open chat sheet`);
   }
   const small = m.controls.filter((c) => !(c.w >= (c.min ?? 44) && c.h >= (c.min ?? 44) && inside(c, m.safe) && c.tappable));
   check(`${tag}: ${m.controls.length} actions are 44 px (Minimize 24 px), inside the safe area and tappable`, m.controls.length > 0 && small.length === 0, small.map((c) => [c.name, Math.round(c.w), Math.round(c.h), c.tappable]));
