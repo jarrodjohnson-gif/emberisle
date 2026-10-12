@@ -9,8 +9,10 @@ import path from "node:path";
 import WebSocket from "ws";
 
 const OPEN_CAP = 4;
-const OPEN_REFILL_MS = 1500;
-const ROOM_MAX = 8;
+const OPEN_REFILL_MS = 3000;
+const ROOM_MAX = 16;
+const IP_CAP = 2;
+const IP_MS = 60000;
 const SAVE_MS = 50;
 const dir = mkdtempSync(path.join(tmpdir(), "emberisle-preseat-"));
 let host;
@@ -24,7 +26,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 function start() {
   host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
     cwd: new URL(".", import.meta.url),
-    env: { ...process.env, PORT: "0", ROOMS_DIR: dir, SAVE_MS: String(SAVE_MS), OPEN_CAP: String(OPEN_CAP), OPEN_REFILL_MS: String(OPEN_REFILL_MS), ROOM_MAX: String(ROOM_MAX) },
+    env: { ...process.env, PORT: "0", ROOMS_DIR: dir, SAVE_MS: String(SAVE_MS), OPEN_CAP: String(OPEN_CAP), OPEN_REFILL_MS: String(OPEN_REFILL_MS), OPEN_IP_CAP: String(IP_CAP), OPEN_IP_MS: String(IP_MS), ROOM_MAX: String(ROOM_MAX) },
   });
   host.stderr.on("data", (d) => process.stderr.write(d));
   let out = "";
@@ -39,8 +41,8 @@ function start() {
 }
 
 // One socket with an inbox: `next(type)` resolves with the first message of that type, in order.
-async function client(port) {
-  const ws = new WebSocket(`ws://127.0.0.1:${port}`);
+async function client(port, from) {
+  const ws = new WebSocket(`ws://127.0.0.1:${port}`, from ? { localAddress: from } : undefined);
   const c = { ws, inbox: [], waiters: [] };
   ws.on("error", () => {});
   ws.on("message", (raw) => {
@@ -94,6 +96,24 @@ assert.equal((await fresh.answer()).message, BUSY);
 assert.equal(files().length, OPEN_CAP);
 console.log(`12 hellos at once: ${opened.length} tables opened, ${refused.length} got "${BUSY}", ${files().length} room files, ROOM_MAX ${ROOM_MAX} untouched; a retry and a fresh create are still refused`);
 
+// 1b. Per-address budget: the flood above came from loopback (where the tunnel sits), which is not metered by address. A
+// direct client at 127.0.0.2 reconnecting for each hello is refused after IP_CAP tables with its own line, which spends
+// nothing from the shared bucket, so a client at 127.0.0.3 still opens one at the next refill.
+const GREEDY = "You have opened several tables lately. Try again in a minute.";
+await wait(OPEN_REFILL_MS * (IP_CAP + 1) + 300);
+for (let i = 0; i < IP_CAP; i++) {
+  const g = await client(port, "127.0.0.2");
+  g.send({ type: "hello", name: `Greedy${i}` });
+  assert.equal((await g.answer()).type, "welcome", `greedy ${i}`);
+}
+const greedy = await client(port, "127.0.0.2");
+greedy.send({ type: "hello", name: "Greedy" });
+assert.equal((await greedy.answer()).message, GREEDY);
+const other = await client(port, "127.0.0.3");
+other.send({ type: "hello", name: "Other" });
+assert.equal((await other.answer()).type, "welcome", "a second address opens while the first is capped");
+console.log(`one address opened ${IP_CAP} tables, then "${GREEDY}" without touching the shared cap; a different address still opened one`);
+
 // 2. The cap is on opening only: a player under it still joins a live lobby and peeks it.
 const code = opened[0].code;
 const joiner = await client(port);
@@ -130,7 +150,7 @@ const tooSoon = await client(port);
 tooSoon.send({ type: "hello", name: "TooSoon" });
 assert.equal((await tooSoon.answer()).message, BUSY);
 await wait(SAVE_MS * 4);
-assert.equal(files().length, OPEN_CAP + 1, `room files: ${files()}`);
+assert.equal(files().length, OPEN_CAP + IP_CAP + 2, `room files: ${files()}`);
 assert.equal(host.exitCode, null, "host still up");
 console.log(`after ${OPEN_REFILL_MS} ms one more hello opened ${laterAnswer.code} and the next was refused; ${files().length} room files; host up`);
 

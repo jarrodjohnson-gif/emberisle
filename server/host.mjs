@@ -41,7 +41,20 @@ const ROOM_MAX = envNum("ROOM_MAX", 64);
 // handful of tables; a loop of fresh sockets, each opening one, hits this long before it fills ROOM_MAX. Per-socket
 // counting cannot catch it (the flood is many sockets) and per-address cannot either (the tunnel gives every player one).
 const OPEN_CAP = envNum("OPEN_CAP", 8);
-const OPEN_REFILL_MS = envNum("OPEN_REFILL_MS", 30 * 1000);
+const OPEN_REFILL_MS = Math.max(1, envNum("OPEN_REFILL_MS", 30 * 1000));
+// In front of that, a client that reaches the host directly (not from loopback, where the tunnel and a local proxy sit and
+// every player shares one address) gets its own small bucket by address, so one address cannot hold the shared one at zero (#581).
+const OPEN_IP_CAP = envNum("OPEN_IP_CAP", 3);
+const OPEN_IP_MS = Math.max(1, envNum("OPEN_IP_MS", 60 * 1000));
+const openIps = new Map();
+const isLoopback = (a) => !a || a === "::1" || a === "127.0.0.1" || a === "::ffff:127.0.0.1";
+function allowIp(ip, now) {
+  if (isLoopback(ip)) return true;
+  if (openIps.size > 1024) for (const [k, b] of openIps) if (now - b.at > OPEN_IP_CAP * OPEN_IP_MS) openIps.delete(k);
+  let b = openIps.get(ip);
+  if (!b) openIps.set(ip, (b = { tokens: OPEN_IP_CAP, at: now }));
+  return allow(b, now, OPEN_IP_CAP, 1000 / OPEN_IP_MS);
+}
 const opens = { tokens: OPEN_CAP, at: Date.now() };
 // Watchers per room (docs/design/spectator.md). A watcher has no seat and is never saved; 0 turns watching off.
 const SPECTATOR_MAX = envNum("SPECTATOR_MAX", 8);
@@ -738,6 +751,7 @@ function seatColor(room, raw) {
 
 function openTable(ws, msg) {
   if (rooms.size >= ROOM_MAX) return send(ws, { type: "error", message: "The host is full." });
+  if (!allowIp(ws.ip, Date.now())) return send(ws, { type: "error", message: "You have opened several tables lately. Try again in a minute." });
   if (!allow(opens, Date.now(), OPEN_CAP, 1000 / OPEN_REFILL_MS)) return send(ws, { type: "error", message: "Too many new tables right now. Try again in a minute." });
   const room = { code: code(), seats: [], game: null, host: null, next: 0, offer: null, offerTimer: null, botDeclined: {}, chat: [], chatSeq: 0, watchers: new Set() };
   rooms.set(room.code, room);
@@ -1082,7 +1096,8 @@ function play(ws, room, msg, automated = false) {
   pushState(room);
 }
 
-wss.on("connection", (ws) => {
+wss.on("connection", (ws, req) => {
+  ws.ip = req.socket.remoteAddress;
   // An over-limit frame (maxPayload) raises 'error' on this one socket; with no listener here,
   // Node's default behavior is to throw and take down the whole host. One bad frame must only
   // close that socket (ws already sends close code 1009) and never the other tables.
