@@ -41,7 +41,35 @@ const ROOM_MAX = envNum("ROOM_MAX", 64);
 // handful of tables; a loop of fresh sockets, each opening one, hits this long before it fills ROOM_MAX. Per-socket
 // counting cannot catch it (the flood is many sockets) and per-address cannot either (the tunnel gives every player one).
 const OPEN_CAP = envNum("OPEN_CAP", 8);
-const OPEN_REFILL_MS = envNum("OPEN_REFILL_MS", 30 * 1000);
+const OPEN_REFILL_MS = Math.max(1, envNum("OPEN_REFILL_MS", 30 * 1000));
+// In front of that, a client that reaches the host directly (not from loopback, where the tunnel and a local proxy sit and
+// every player shares one address) gets its own small bucket by address, so one address cannot hold the shared one at zero (#581).
+const OPEN_IP_CAP = envNum("OPEN_IP_CAP", 3);
+const OPEN_IP_MS = Math.max(1, envNum("OPEN_IP_MS", 60 * 1000));
+const openIps = new Map();
+// One key per client: ::ffff:a.b.c.d is a.b.c.d, and an IPv6 address is its /64 (first four hextets).
+function normIp(raw) {
+  const a = String(raw).toLowerCase().replace(/^::ffff:/, "");
+  if (!a.includes(":")) return a;
+  const [head, tail = ""] = a.split("::");
+  const h = head ? head.split(":") : [];
+  const t = tail ? tail.split(":") : [];
+  const full = a.includes("::") ? [...h, ...Array(Math.max(0, 8 - h.length - t.length)).fill("0"), ...t] : h;
+  return full.slice(0, 4).map((x) => x.replace(/^0+(?=.)/, "")).join(":");
+}
+// Direct clients are keyed on their socket address. Loopback is the tunnel (or local dev): there the address says nothing, so a
+// cf-connecting-ip header is trusted (only a process on this machine can set it) and loopback without one is not metered.
+function ipKey(remote, header) {
+  const r = String(remote ?? "127.0.0.1").toLowerCase().replace(/^::ffff:/, "");
+  if (r !== "127.0.0.1" && r !== "::1") return normIp(r);
+  return typeof header === "string" && header ? normIp(header.slice(0, 64)) : null;
+}
+function ipBucket(key, now) {
+  if (openIps.size > 1024) for (const [k, b] of openIps) if (now - b.at > OPEN_IP_CAP * OPEN_IP_MS) openIps.delete(k);
+  let b = openIps.get(key);
+  if (!b) openIps.set(key, (b = { tokens: OPEN_IP_CAP, at: now }));
+  return b;
+}
 const opens = { tokens: OPEN_CAP, at: Date.now() };
 // Watchers per room (docs/design/spectator.md). A watcher has no seat and is never saved; 0 turns watching off.
 const SPECTATOR_MAX = envNum("SPECTATOR_MAX", 8);
@@ -738,7 +766,13 @@ function seatColor(room, raw) {
 
 function openTable(ws, msg) {
   if (rooms.size >= ROOM_MAX) return send(ws, { type: "error", message: "The host is full." });
-  if (!allow(opens, Date.now(), OPEN_CAP, 1000 / OPEN_REFILL_MS)) return send(ws, { type: "error", message: "Too many new tables right now. Try again in a minute." });
+  const now = Date.now();
+  const mine = ws.ipKey ? ipBucket(ws.ipKey, now) : null;
+  if (mine && !allow(mine, now, OPEN_IP_CAP, 1000 / OPEN_IP_MS)) return send(ws, { type: "error", message: "You have opened several tables lately. Try again in a minute." });
+  if (!allow(opens, now, OPEN_CAP, 1000 / OPEN_REFILL_MS)) {
+    if (mine) mine.tokens += 1;
+    return send(ws, { type: "error", message: "Too many new tables right now. Try again in a minute." });
+  }
   const room = { code: code(), seats: [], game: null, host: null, next: 0, offer: null, offerTimer: null, botDeclined: {}, chat: [], chatSeq: 0, watchers: new Set() };
   rooms.set(room.code, room);
   const seat = {
@@ -1082,7 +1116,8 @@ function play(ws, room, msg, automated = false) {
   pushState(room);
 }
 
-wss.on("connection", (ws) => {
+wss.on("connection", (ws, req) => {
+  ws.ipKey = ipKey(req.socket.remoteAddress, req.headers["cf-connecting-ip"]);
   // An over-limit frame (maxPayload) raises 'error' on this one socket; with no listener here,
   // Node's default behavior is to throw and take down the whole host. One bad frame must only
   // close that socket (ws already sends close code 1009) and never the other tables.
