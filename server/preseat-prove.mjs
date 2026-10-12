@@ -41,8 +41,8 @@ function start() {
 }
 
 // One socket with an inbox: `next(type)` resolves with the first message of that type, in order.
-async function client(port, from) {
-  const ws = new WebSocket(`ws://127.0.0.1:${port}`, from ? { localAddress: from } : undefined);
+async function client(port, from, headers) {
+  const ws = new WebSocket(`ws://127.0.0.1:${port}`, { ...(from ? { localAddress: from } : {}), ...(headers ? { headers } : {}) });
   const c = { ws, inbox: [], waiters: [] };
   ws.on("error", () => {});
   ws.on("message", (raw) => {
@@ -114,6 +114,23 @@ other.send({ type: "hello", name: "Other" });
 assert.equal((await other.answer()).type, "welcome", "a second address opens while the first is capped");
 console.log(`one address opened ${IP_CAP} tables, then "${GREEDY}" without touching the shared cap; a different address still opened one`);
 
+// 1c. Tunnelled players: sockets from loopback carrying cf-connecting-ip are keyed on that header. Again the shared bucket holds
+// exactly enough for the opens that should succeed, so a refused one that spent a token would starve the last open.
+await wait(OPEN_REFILL_MS * (IP_CAP + 1) + 300);
+const via = (ip) => client(port, undefined, { "cf-connecting-ip": ip });
+for (let i = 0; i < IP_CAP; i++) {
+  const t = await via("203.0.113.7");
+  t.send({ type: "hello", name: `Tunnel${i}` });
+  assert.equal((await t.answer()).type, "welcome", `tunnel ${i}`);
+}
+const tunnelGreedy = await via("203.0.113.7");
+tunnelGreedy.send({ type: "hello", name: "TunnelGreedy" });
+assert.equal((await tunnelGreedy.answer()).message, GREEDY);
+const tunnelOther = await via("203.0.113.8");
+tunnelOther.send({ type: "hello", name: "TunnelOther" });
+assert.equal((await tunnelOther.answer()).type, "welcome", "a second tunnelled address opens while the first is capped");
+console.log(`behind the tunnel one cf-connecting-ip opened ${IP_CAP} tables, then "${GREEDY}"; a different cf-connecting-ip still opened one`);
+
 // 2. The cap is on opening only: a player under it still joins a live lobby and peeks it.
 const code = opened[0].code;
 const joiner = await client(port);
@@ -150,7 +167,7 @@ const tooSoon = await client(port);
 tooSoon.send({ type: "hello", name: "TooSoon" });
 assert.equal((await tooSoon.answer()).message, BUSY);
 await wait(SAVE_MS * 4);
-assert.equal(files().length, OPEN_CAP + IP_CAP + 2, `room files: ${files()}`);
+assert.equal(files().length, OPEN_CAP + 2 * IP_CAP + 3, `room files: ${files()}`);
 assert.equal(host.exitCode, null, "host still up");
 console.log(`after ${OPEN_REFILL_MS} ms one more hello opened ${laterAnswer.code} and the next was refused; ${files().length} room files; host up`);
 
