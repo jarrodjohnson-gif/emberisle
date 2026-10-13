@@ -132,7 +132,7 @@ try {
                   disabled: b.getAttribute("aria-disabled") === "true",
                   description: b.getAttribute("aria-description"),
                   text: b.textContent.replace(/\s+/g, " ").trim(),
-                  dot: !!b.querySelector(".bg-accent"),
+                  dot: !!b.querySelector(".build-ready-mark"),
                   pulse: b.classList.contains("build-ready"),
                   animation: getComputedStyle(b).animationName,
                   marks: [...b.querySelectorAll("[data-short]")].map((el) => ({

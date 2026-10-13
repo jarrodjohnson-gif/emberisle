@@ -12,7 +12,7 @@ import { useStage } from "@/components/game/stage";
 import { useGame } from "@/lib/game/store";
 
 // --duration-base in, a 1.2 s hold, about 0.7x of the entry out (docs/design/polish.md "Motion").
-const MOMENT_MS = 1580;
+const MOMENT_MS = 1800;
 
 export function TurnMoment() {
   const state = useGame((s) => s.state);
@@ -78,7 +78,7 @@ export function TurnMoment() {
         data-shift={dy}
         data-stage={how}
         style={{ translate: `0 ${dy}px` }}
-        className="flex items-center gap-3 rounded-sheet bg-glass px-6 py-4 text-number text-fg backdrop-blur-md motion-safe:animate-[turn-moment_1580ms_both] motion-reduce:animate-[moment-fade_1580ms_linear_both]"
+        className="flex items-center gap-3 rounded-sheet turn-stamp bg-surface px-6 py-4 text-number text-fg backdrop-blur-md motion-safe:animate-[turn-moment_1800ms_both]"
       >
         <SeatDot color={player.color} className="size-5" />
         {mode === "hotseat" ? `${player.name}'s turn` : "Your turn"}

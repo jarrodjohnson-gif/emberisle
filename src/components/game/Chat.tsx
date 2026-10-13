@@ -57,7 +57,7 @@ function LogRow({ line }: { line: GameLogLine }) {
   );
 }
 
-const CHIP = "cursor-pointer rounded-full bg-glass px-2 py-0.5 text-xs text-zinc-700 hover:text-zinc-900";
+const CHIP = "inline-flex h-11 min-w-11 shrink-0 cursor-pointer items-center justify-center rounded-control bg-glass px-2 text-xs text-zinc-700 hover:text-zinc-900";
 
 // The log, the preset chips, the emote tray, and the input. `onEscape` is the dock's minimize.
 // `game` (the in-game dock, not the Lobby) lists the game log in with the chat, behind a Chat/All filter, with Copy log.
@@ -106,7 +106,7 @@ export function ChatBox({ rows, game, onEscape, className }: { rows: number; gam
   return (
     <div className={cn("flex min-h-0 flex-col gap-2", className)}>
       {game ? (
-        <div className="flex shrink-0 items-center gap-1">
+        <div className="chat-filters flex shrink-0 items-center gap-1">
           <div role="group" aria-label="Show" className="flex gap-1">
             {(["chat", "all"] as const).map((f) => (
               <button
@@ -154,7 +154,7 @@ export function ChatBox({ rows, game, onEscape, className }: { rows: number; gam
         </p>
       ) : (
         <>
-          <div className="flex shrink-0 flex-wrap gap-1">
+          <div className="chat-presets flex shrink-0 gap-1 overflow-x-auto">
             {PRESETS.map((p) => (
               <button
                 key={p}
@@ -177,7 +177,7 @@ export function ChatBox({ rows, game, onEscape, className }: { rows: number; gam
                     sendReact(id);
                     setTray(false);
                   }}
-                  className="cursor-pointer rounded-control bg-glass p-0.5"
+                  className="grid size-11 cursor-pointer place-items-center rounded-control bg-glass p-1"
                 >
                   <img src={url} alt="" className="size-8 object-contain" />
                 </button>
@@ -190,7 +190,7 @@ export function ChatBox({ rows, game, onEscape, className }: { rows: number; gam
               aria-label="Emotes"
               aria-expanded={tray}
               onClick={() => setTray(!tray)}
-              className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-control bg-glass text-zinc-700 hover:text-zinc-900"
+              className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-control bg-glass text-zinc-700 hover:text-zinc-900"
             >
               <Smile className="size-4" />
             </button>
@@ -208,12 +208,12 @@ export function ChatBox({ rows, game, onEscape, className }: { rows: number; gam
                   onEscape?.();
                 }
               }}
-              className="h-8 min-w-0 flex-1 rounded-control bg-glass px-2 text-sm text-zinc-900 placeholder:text-zinc-700"
+              className="h-11 min-w-0 flex-1 rounded-control bg-glass px-2 text-sm text-zinc-900 placeholder:text-zinc-700"
             />
             <button
               type="button"
               onClick={send}
-              className="h-8 cursor-pointer rounded-control bg-fg px-3 text-sm font-medium text-bg hover:bg-fg/90"
+              className="h-11 min-w-11 cursor-pointer rounded-control bg-fg px-3 text-sm font-medium text-bg hover:bg-fg/90"
             >
               Send
             </button>
@@ -245,7 +245,7 @@ function MuteMenu({ above = false }: { above?: boolean }) {
         aria-controls="chat-mute-panel"
         title="Mute players"
         onClick={() => setOpen((value) => !value)}
-        className="flex h-8 shrink-0 cursor-pointer items-center gap-1 rounded-control bg-glass px-2 text-xs text-zinc-700 hover:text-zinc-900"
+        className="flex h-11 min-w-11 shrink-0 cursor-pointer items-center gap-1 rounded-control bg-glass px-2 text-xs text-zinc-700 hover:text-zinc-900"
       >
         <VolumeX className="size-4" />
         <span>Mute</span>
@@ -390,10 +390,45 @@ export function ChatControls() {
 }
 
 export function ChatDock() {
+  const sheet = useRef<HTMLElement>(null);
+  const choiceOpen = useGame((s) => (!!s.offer && !s.declined.includes(s.localId)) || !!s.pendingSteal);
+  const [keyboardInset, setKeyboardInset] = useState(0);
   const mode = useGame((s) => s.mode);
   const open = useGame((s) => s.chatOpen);
   const setOpen = useGame((s) => s.setChatOpen);
   const { phone, portrait } = useViewport();
+
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    if (!phone || !open || !viewport) return;
+    let last = -1;
+    const update = () => {
+      const inset = Math.max(0, Math.round(innerHeight - viewport.height - viewport.offsetTop));
+      if (inset === last) return;
+      last = inset;
+      setKeyboardInset(inset);
+      document.documentElement.style.setProperty("--keyboard-inset", `${inset}px`);
+      useGame.getState().chromeLanded();
+    };
+    update();
+    viewport.addEventListener("resize", update);
+    viewport.addEventListener("scroll", update);
+    return () => {
+      viewport.removeEventListener("resize", update);
+      viewport.removeEventListener("scroll", update);
+      document.documentElement.style.removeProperty("--keyboard-inset");
+      setKeyboardInset(0);
+    };
+  }, [phone, open]);
+
+  useEffect(() => {
+    const el = sheet.current;
+    if (!phone || !open || !el) return;
+    const fit = () => { if (el.getBoundingClientRect().height < 128) setOpen(false); };
+    const observer = new ResizeObserver(fit);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [phone, open, setOpen]);
 
   // A remembered open dock must not cover the hand bar when Play starts on a phone. The stored value stays for desktop.
   useEffect(() => {
@@ -428,7 +463,7 @@ export function ChatDock() {
       type="button"
       aria-label="Minimize chat"
       onClick={() => setOpen(false)}
-      className="flex size-6 cursor-pointer items-center justify-center rounded-control bg-glass text-zinc-700 hover:text-zinc-900"
+      className="flex size-11 cursor-pointer items-center justify-center rounded-control bg-glass text-zinc-700 hover:text-zinc-900"
     >
       <Minus className="size-4" />
     </button>
@@ -439,10 +474,13 @@ export function ChatDock() {
       <>
         <div data-testid="chat-backdrop" className="fixed inset-0 z-20" onClick={() => setOpen(false)} />
         <section
+          ref={sheet}
           aria-label="Table chat"
           data-testid="chat-sheet"
-          className="fixed inset-x-0 bottom-0 z-30 flex flex-col gap-2 rounded-t-chip bg-glass px-safe pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur-md"
-          style={{ height: "min(48vh, 320px)" }}
+          data-keyboard-open={keyboardInset > 0 || undefined}
+          data-choice-open={choiceOpen || undefined}
+          className="fixed inset-x-0 bottom-0 z-30 flex flex-col gap-2 rounded-t-sheet bg-glass px-safe pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur-md"
+          style={{ height: "var(--chat-sheet-height)", bottom: "var(--keyboard-inset, 0px)" }}
         >
           <div data-testid="chat-sheet-header" className="flex shrink-0 items-center justify-between">
             <h2 className="text-sm font-medium">Table chat</h2>
@@ -463,7 +501,7 @@ export function ChatDock() {
   if (!open) {
     return (
       <Preview
-        className={cn("absolute right-safe z-20", phone && portrait ? "top-[calc(env(safe-area-inset-top)+7.25rem)]" : "top-16")}
+        className={cn("absolute right-safe z-20", phone && portrait ? "top-[calc(max(0.75rem,env(safe-area-inset-top))+6rem)]" : "top-16")}
       />
     );
   }

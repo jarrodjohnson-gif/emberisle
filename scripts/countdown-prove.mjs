@@ -191,7 +191,7 @@ try {
   console.log(`chip on every tab: ${vs.map((v) => `"${v.chip.text}"`).join(", ")}`);
 
   // Reduced motion: Pine's chip has no entry fade (the global 1 ms rule), Ember's keeps the 200 ms one.
-  if (vs[2].chip.fade !== "0.001s") throw new Error(`reduced-motion tab fades for ${vs[2].chip.fade}`);
+  if (vs[2].chip.fade !== "0s") throw new Error(`reduced-motion tab fades for ${vs[2].chip.fade}`);
   if (vs[0].chip.fade !== "0.2s") throw new Error(`motion tab fades for ${vs[0].chip.fade}`);
   console.log(`entry fade: ${vs[0].chip.fade} on Ember, ${vs[2].chip.fade} on Pine (prefers-reduced-motion)`);
 

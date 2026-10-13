@@ -1,3 +1,5 @@
+> The visual tokens and component direction are superseded by [Basalt Table](visual-direction.md). This document records the previous implementation.
+
 # Offsuit × Catan
 
 The look and feel of the browser table, as a small design system. Jarrod, 2026-10-04: "I want ux to be

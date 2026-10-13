@@ -37,15 +37,15 @@ const TILE_Y = 0.04;
 export function topOf(terrain: Terrain) {
   return TILE_Y + SLAB + hexHeight(terrain) * 0.35;
 }
-const STONE = 0xefeae0;
+const STONE = 0xe8ebe7;
 
 const SIDE: Record<Terrain, number> = {
-  timber: 0x3a5c32,
-  wool: 0x5d8a3e,
-  grain: 0xb8862a,
-  clay: 0x9a3f28,
-  ore: 0x4a5360,
-  waste: 0xb89b6a,
+  timber: 0x173d35,
+  wool: 0x617744,
+  grain: 0x8c722d,
+  clay: 0x74372b,
+  ore: 0x414d5b,
+  waste: 0x827963,
 };
 
 const TEX_FILE: Record<Terrain, string> = {
@@ -75,6 +75,7 @@ const FLASH_PEAK = 0.35;
 const FLASH_WARM = new THREE.Color(0xffa94d);
 // The pulse token (polish.md "Motion"): legal corners and paths breathe once per 1.2 s.
 const LEGAL_PULSE_S = 1.2;
+type OreWork = { cart: THREE.Mesh; arm: THREE.Mesh; z: number; phase: number };
 type Sheep = { g: THREE.Object3D; ox: number; oz: number; tx: number; tz: number; wait: number; graze: number };
 
 // The overhead view in play (docs/design/camera-light.md): a frustum and a look-at point from the fit to the HUD hole, and
@@ -130,6 +131,7 @@ export class IsleRenderer {
   private renderPass!: RenderPass;
   private wayfarer: THREE.Group;
   private sheep: Sheep[] = [];
+  private oreWork: OreWork[] = [];
   private boats: THREE.Group[] = [];
   private trees: THREE.Object3D[] = [];
   private wheat: THREE.Object3D[] = [];
@@ -185,7 +187,7 @@ export class IsleRenderer {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: "high-performance" });
     // Frame cost tracks pixels (#310): 1.5 on a phone is 2.25x the pixels of 1, against 4x at 2.
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, this.coarse() ? 1.5 : 2));
-    this.renderer.setClearColor(0x6a93a0, 1);
+    this.renderer.setClearColor(0x395f64, 1);
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -218,7 +220,7 @@ export class IsleRenderer {
     this.orbit.addEventListener("start", this.wake);
     this.orbit.addEventListener("change", this.wake);
 
-    this.scene.fog = new THREE.Fog(0x6a93a0, 26, 52);
+    this.scene.fog = new THREE.Fog(0x395f64, 26, 52);
     // A lit board on a table (polish.md "The board look target", #135): one warm key lamp carries the light, so the
     // slabs shade on their sides and every prop casts a soft shadow; the sky and ground bounce are low and nearly grey,
     // so the caps' own paint is the colour on screen. No flat ambient: that was what washed the caps out.
@@ -317,10 +319,14 @@ export class IsleRenderer {
 
   private safe(): Insets {
     const cs = getComputedStyle(this.safeProbe);
+    const viewport = window.visualViewport;
+    // A focused phone field can bring a keyboard over a canvas whose CSS height has not changed.
+    const typing = this.coarse() && document.activeElement?.matches("input, textarea") && viewport && Math.abs(viewport.scale - 1) < 0.01;
+    const keyboard = typing ? Math.max(0, this.renderer.domElement.clientHeight - viewport.height - viewport.offsetTop) : 0;
     return {
       top: parseFloat(cs.paddingTop) || 0,
       right: parseFloat(cs.paddingRight) || 0,
-      bottom: parseFloat(cs.paddingBottom) || 0,
+      bottom: Math.max(parseFloat(cs.paddingBottom) || 0, keyboard),
       left: parseFloat(cs.paddingLeft) || 0,
     };
   }
@@ -611,7 +617,7 @@ export class IsleRenderer {
   private stepGlide(now: number) {
     const g = this.glide;
     if (!g) return;
-    const u = Math.min(1, (now - g.start) / GLIDE_MS);
+    const u = this.calm() ? 1 : Math.min(1, (now - g.start) / GLIDE_MS);
     const e = 1 - (1 - u) ** 3;
     const p = this.pose();
     for (const k of g.keys) {
@@ -758,7 +764,10 @@ export class IsleRenderer {
     if (this.overhead) {
       this.orbit.update();
       this.stepGlide(now);
-    } else this.controls.update();
+    } else {
+      this.controls.enableDamping = !calm;
+      this.controls.update();
+    }
     if (calm) {
       this.pulseMarks(0, true);
       this.composer.render();
@@ -801,6 +810,10 @@ export class IsleRenderer {
       s.g.rotation.x = s.graze > 0 ? 0.32 : 0;
       if (s.graze > 0) s.graze -= dt;
     }
+    for (const work of this.oreWork) {
+      work.cart.position.z = work.z + 0.05 * Math.sin(t * Math.PI / 3 + work.phase);
+      work.arm.rotation.z = 0.22 * Math.sin(t * Math.PI / 2 + work.phase);
+    }
     for (const b of this.boats) {
       b.position.y = 0.06 + Math.sin(t * 1.6 + b.position.x) * 0.04;
       b.rotation.z = Math.sin(t * 1.35 + b.position.z) * 0.07;
@@ -814,6 +827,7 @@ export class IsleRenderer {
     disposeGroup(this.land);
     disposeGroup(this.living);
     this.sheep = [];
+    this.oreWork = [];
     this.boats = [];
     this.trees = [];
     this.wheat = [];
@@ -839,7 +853,7 @@ export class IsleRenderer {
       cap.material.emissive.copy(new THREE.Color(PAINT[h.terrain][0]).lerp(FLASH_WARM, 0.6));
       cap.material.emissiveIntensity = 0;
       this.caps.set(h.id, cap.material);
-      decorate(this.living, this.trees, this.wheat, this.sheep, h, x, z, topOf(h.terrain));
+      decorate(this.living, this.trees, this.wheat, this.sheep, this.oreWork, h, x, z, topOf(h.terrain));
       if (h.pip != null) {
         const tok = numberToken(h.pip);
         tok.userData.token = h.pip;
@@ -1100,9 +1114,9 @@ function makeWater() {
   return new THREE.ShaderMaterial({
     uniforms: {
       uTime: { value: 0 },
-      uShallow: { value: new THREE.Color(0x4596a0) },
-      uDeep: { value: new THREE.Color(0x225a68) },
-      uFog: { value: new THREE.Color(0x6a93a0) },
+      uShallow: { value: new THREE.Color(0x56858a) },
+      uDeep: { value: new THREE.Color(0x395f64) },
+      uFog: { value: new THREE.Color(0x395f64) },
     },
     vertexShader: /* glsl */ `
       // The circle is local XY; +Z is up after the mesh's rotation. Crests stay at or below y = 0.
@@ -1298,13 +1312,13 @@ function numberToken(n: number) {
   c.width = 256;
   c.height = 256;
   const ctx = c.getContext("2d")!;
-  ctx.fillStyle = "#f4ead6";
+  ctx.fillStyle = "#f7f8f4";
   ctx.beginPath();
   ctx.arc(128, 128, 124, 0, Math.PI * 2);
   ctx.fill();
   const ink = hot ? "#b3261e" : "#1c1916";
   ctx.fillStyle = ink;
-  ctx.font = "bold 170px Georgia, serif";
+  ctx.font = "bold 158px system-ui, sans-serif";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillText(String(n), 128, 96);
@@ -1336,6 +1350,7 @@ function decorate(
   trees: THREE.Object3D[],
   _wheat: THREE.Object3D[],
   sheep: Sheep[],
+  oreWork: OreWork[],
   h: HexCell,
   x: number,
   z: number,
@@ -1373,7 +1388,16 @@ function decorate(
     }
   }
   if (h.terrain === "ore") {
-    for (let i = 0; i < 5; i++) {
+    const work = makeOreWork();
+    work.cart.position.set(x - 0.50, top, z + 0.42);
+    work.miner.position.set(x + 0.48, top, z - 0.40);
+    work.arm.position.set(x + 0.48, top + 0.14, z - 0.40);
+    for (const [obj, prop] of [[work.cart, "wagon"], [work.miner, "miner"], [work.arm, "pickaxe"]] as const) {
+      obj.userData = { prop, hex: h.id, reach: 0.17 };
+      living.add(obj);
+    }
+    oreWork.push({ cart: work.cart, arm: work.arm, z: work.cart.position.z, phase: rng() * Math.PI * 2 });
+    for (let i = 0; i < 3; i++) {
       const { px, pz } = place(0.64, 0.8);
       const rockR = 0.12 + rng() * 0.12;
       const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(rockR, 0), ROCK_MAT);
@@ -1558,9 +1582,9 @@ function paintedTexture(kind: Terrain): THREE.Texture {
   ctx.fillRect(0, 0, size, size);
   const rand = mulberry32(hashStr(kind));
   ctx.fillStyle = dark;
-  for (let i = 0; i < 900; i++) {
+  for (let i = 0; i < 280; i++) {
     const r = 1 + rand() * 3;
-    ctx.globalAlpha = 0.15 + rand() * 0.35;
+    ctx.globalAlpha = 0.08 + rand() * 0.12;
     ctx.beginPath();
     ctx.arc(rand() * size, rand() * size, r, 0, Math.PI * 2);
     ctx.fill();
@@ -1638,3 +1662,34 @@ function makeBoat(kind: HarborKind) {
   return g;
 }
 
+
+// Three draw calls per ore hex. Fixed parts are merged, so wheels/load do not add separate meshes.
+function makeOreWork() {
+  const cartParts = [
+    placed(new THREE.BoxGeometry(0.22, 0.04, 0.18), 0x493f33, 0, 0.07, 0),
+    placed(new THREE.BoxGeometry(0.025, 0.09, 0.20), 0x796b53, -0.11, 0.10, 0),
+    placed(new THREE.BoxGeometry(0.025, 0.09, 0.20), 0x796b53, 0.11, 0.10, 0),
+    placed(new THREE.BoxGeometry(0.22, 0.09, 0.025), 0x796b53, 0, 0.10, -0.09),
+    placed(new THREE.BoxGeometry(0.22, 0.09, 0.025), 0x796b53, 0, 0.10, 0.09),
+  ];
+  for (const x of [-0.13, 0.13]) for (const z of [-0.065, 0.065]) {
+    cartParts.push(placed(new THREE.CylinderGeometry(0.043, 0.043, 0.024, 8).rotateZ(Math.PI / 2), 0x253131, x, 0.045, z));
+  }
+  for (const [x, z] of [[-0.06, -0.03], [0.04, 0.04], [0.03, -0.04]]) {
+    cartParts.push(placed(new THREE.DodecahedronGeometry(0.055, 0), 0x8796a5, x, 0.14, z));
+  }
+  const cart = figure(cartParts, PIECE_MAT, true);
+  const miner = figure([
+    placed(new THREE.BoxGeometry(0.065, 0.085, 0.06), 0x283c47, 0, 0.10, 0),
+    placed(new THREE.IcosahedronGeometry(0.044, 0), 0xc8ad87, 0, 0.174, 0),
+    placed(new THREE.CylinderGeometry(0.05, 0.05, 0.025, 8), 0xd1b14d, 0, 0.20, 0),
+    placed(new THREE.BoxGeometry(0.025, 0.07, 0.025), 0x202a2b, -0.02, 0.035, 0),
+    placed(new THREE.BoxGeometry(0.025, 0.07, 0.025), 0x202a2b, 0.02, 0.035, 0),
+  ], PIECE_MAT, true);
+  const arm = figure([
+    placed(new THREE.BoxGeometry(0.025, 0.025, 0.09), 0xc8ad87, 0.035, 0, 0.035),
+    placed(new THREE.BoxGeometry(0.015, 0.12, 0.015), 0x796b53, 0.06, 0.045, 0.07),
+    placed(new THREE.BoxGeometry(0.10, 0.025, 0.025), 0xa8b6bf, 0.06, 0.10, 0.07),
+  ], PIECE_MAT, false);
+  return { cart, miner, arm };
+}

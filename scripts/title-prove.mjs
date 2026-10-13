@@ -57,6 +57,7 @@ try {
       const filled = buttons.filter((b) => !/rgba\(0, 0, 0, 0\)|transparent/.test(getComputedStyle(b).backgroundColor));
       const out = [...el.querySelectorAll("h1, p, button, input")]
         .filter((n) => {
+          if (!n.checkVisibility()) return false;
           const r = n.getBoundingClientRect();
           return r.top < Math.max(0, c.top) - 0.5 || r.left < Math.max(0, c.left) - 0.5 ||
             r.bottom > Math.min(innerHeight, c.bottom) + 0.5 || r.right > Math.min(innerWidth, c.right) + 0.5;

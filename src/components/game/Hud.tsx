@@ -5,7 +5,6 @@ import {
   Landmark,
   Route,
   ScrollText,
-  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ChatControls, ChatDock, ChromeLanded, CostCard, FortuneTray, GainFloats, HowTo, sheets, TradePanel, TurnMoment, WinScreen } from "@/components/game/chunks";
@@ -50,19 +49,19 @@ function buildStatus(state: GameState, me: PlayerState, kind: Price) {
 function phaseCopy(phase: string) {
   switch (phase) {
     case "rollOff":
-      return "Roll one die for first place. The highest roll places first; a tie rolls again.";
+      return "Roll for first place";
     case "setupSettle":
-      return "Place an outpost on a highlighted corner.";
+      return "Place an outpost";
     case "setupRoad":
-      return "Lay a path from that outpost.";
+      return "Lay a path";
     case "roll":
-      return "Roll the dice to gather from the land.";
+      return "Roll";
     case "discard":
-      return "Too many goods. Discard half, rounded down.";
+      return "Choose goods to discard";
     case "robber":
-      return "Move the wayfarer onto another hex.";
+      return "Move the wayfarer";
     case "main":
-      return "Build, trade with the bank, or end your turn.";
+      return "Build or trade";
     case "over":
       return "The isle has a ruler.";
     default:
@@ -109,7 +108,6 @@ function armedCopy(mode: BuildMode, roadPicks: number): [string, string] | null 
   }
 }
 
-const HINT_KEY = "emberisle-landscape-hint";
 
 // The rules' roll line ("Tide rolls 4+5 = 9."): the dice row already shows the roll, so the log line skips it (#440).
 const ROLL_LOG = / rolls \d\+\d = \d+\.$/;
@@ -118,7 +116,7 @@ const ROLL_LOG = / rolls \d\+\d = \d+\.$/;
 // goes muted ink, not translucent, so the chips and the reason on it stay readable.
 const NOT_NOW = "aria-disabled:cursor-not-allowed aria-disabled:text-muted aria-disabled:active:scale-100";
 // A build the hand can pay for with a legal spot waiting: a small warm dot on the button's corner (docs/design/polish.md: no glows).
-const READY_DOT = <span aria-hidden className="absolute -right-1 -top-1 size-2.5 rounded-full bg-accent ring-2 ring-bg" />;
+const READY_DOT = <span aria-hidden className="build-ready-mark text-[10px] font-bold">✓</span>;
 
 export function Hud() {
   const state = useGame((s) => s.state);
@@ -126,6 +124,8 @@ export function Hud() {
   const mode = useGame((s) => s.mode);
   const buildMode = useGame((s) => s.buildMode);
   const roadPicks = useGame((s) => s.roadPicks);
+  const tradeVisible = useGame((s) => !!s.offer || !!s.tradeOutcome);
+  const tradeOutcome = useGame((s) => s.tradeOutcome);
   const banner = useGame((s) => s.banner);
   const error = useGame((s) => s.error);
   const howTo = useGame((s) => s.howTo);
@@ -143,7 +143,6 @@ export function Hud() {
   const { phone, portrait } = useViewport();
   // #422: a sideways phone stacks the HUD in a full-height left column, so the island fills the height beside it.
   const column = phone && !portrait;
-  const [hintDismissed, setHintDismissed] = useState(() => sessionStorage.getItem(HINT_KEY) === "1");
   // #492: the sheets chunk is asked for again on each open and at the win (the boundary's key). When the ask made at the
   // win fails, the win screen cannot show and the winner line gets the way out; a failure under an earlier key is not it.
   const sheetsKey = `${tradeOpen}|${howTo}|${costs}|${state?.winner ?? ""}`;
@@ -233,7 +232,7 @@ export function Hud() {
       ? `${subjectPlayer.name} — discard ${state.discardNeeded[subject] ?? 0}`
       : waiting
         ? waitingCopy(state.phase, subjectPlayer.name)
-        : `${yours ? "Your" : `${subjectPlayer.name}'s`} turn — ${phaseText}`;
+        : `${yours ? "Your" : `${subjectPlayer.name}'s`} turn · ${phaseText}`;
   const winner = state.winner ? state.players.find((p) => p.id === state.winner) : null;
   const menuPlayer = menuFor ? state.players.find((p) => p.id === menuFor) : null;
   // #422: on the player's own Roll or End row the dice ride beside the button instead of taking a row of their own.
@@ -246,9 +245,16 @@ export function Hud() {
   const canBuy = !spectator && PRICES.some((k) => buildStatus(state, me, k).ready);
   const endPrimary = !canBuy && buildMode === "none";
 
+  const instruction = state.phase === "over" ? null : (
+    <p key={`turn-${state.current}`} data-testid="turn-banner"
+      style={{ borderLeftColor: yours ? undefined : subjectPlayer.color }}
+      className={cn("turn-instruction rounded-control px-3 py-1.5 text-sm font-medium", yours ? "turn-instruction-own" : "border-l-4")}
+    >{turnText}</p>
+  );
+
   const endRow = (
-    <div className={cn("flex gap-2 *:self-center", column ? "sticky bottom-0 z-10 justify-end rounded-[16px] bg-surface p-1" : "ml-auto")}>
-      {dice}
+    <div className={cn("flex gap-2 *:self-center", column ? "end-footer sticky z-10 justify-between rounded-control bg-surface p-1" : "ml-auto")}>
+      {column ? <TradeButton /> : dice}
       <Button size="sm" variant={endPrimary ? "primary" : "secondary"} className={phone ? "h-11" : undefined} onClick={() => dispatch({ type: "endTurn" })}>
         End turn
       </Button>
@@ -257,20 +263,20 @@ export function Hud() {
 
   return (
     <>
-      {column ? null : <PlaceChip />}
+
       {/* #442: one control up top. The turn number, watcher count, How to play, sound and Leave live in the menu, whose open
           sheet rises over the z-20 chat dock (it reaches the header on a sideways phone). Online, Open chat and Quick reactions
           sit in this row too, left of the menu, so they never move with the turn and never reach the board. A watcher's badge stays out here,
           a chip and not a button, so a watcher always sees why it has no controls (docs/design/spectator.md). */}
-      <header className="pointer-events-none absolute inset-x-0 top-0 z-20 px-safe pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] has-[#table-menu]:z-30 has-[#quick-reaction-picker]:z-[25]">
-        <div className="pointer-events-auto flex items-center justify-end gap-2">
-          {phone && !portrait ? <SeatStrip actor={actor} className="min-w-0 max-w-[48rem] flex-1" /> : null}
-          {spectator ? (
+      <header className="hud-header pointer-events-none absolute inset-x-0 top-0 z-20 px-safe pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] has-[#table-menu]:z-30 has-[#quick-reaction-picker]:z-[25]">
+        <div className="pointer-events-auto flex items-center justify-end gap-1">
+          {phone ? <SeatStrip actor={actor} className="min-w-0 max-w-[48rem] flex-1" /> : <div className="mr-auto">{instruction}</div>}
+          {spectator && !(phone && portrait) ? (
             <span data-testid="watching-badge" className="flex h-11 items-center rounded-chip bg-glass px-3 text-caption text-fg backdrop-blur-md">
               Watching
             </span>
           ) : null}
-          {mode === "online" ? (
+          {mode === "online" && !portrait ? (
             <LazyBoundary failed={null} retryKey={String(chatOpen)}>
               <ChatControls />
             </LazyBoundary>
@@ -279,11 +285,11 @@ export function Hud() {
         </div>
       </header>
 
-      {phone && portrait ? (
-        <SeatStrip
-          actor={actor}
-          className="absolute left-safe right-safe top-[calc(env(safe-area-inset-top)+4.25rem)] z-10"
-        />
+      {phone && portrait && (mode === "online" || spectator) ? (
+        <div className="hud-utilities pointer-events-none absolute right-safe top-[calc(max(0.75rem,env(safe-area-inset-top))+3rem)] z-20 flex gap-1">
+          {spectator ? <span data-testid="watching-badge" className="pointer-events-auto flex h-11 items-center rounded-control bg-surface px-3 text-caption text-fg">Watching</span> : null}
+          {mode === "online" ? <LazyBoundary failed={null} retryKey={String(chatOpen)}><ChatControls /></LazyBoundary> : null}
+        </div>
       ) : null}
       {phone && menuPlayer ? (
         <PlayerMenu
@@ -291,7 +297,7 @@ export function Hud() {
           heading
           className={cn(
             "absolute z-20",
-            portrait ? "left-safe right-safe top-[calc(env(safe-area-inset-top)+7.25rem)]" : "right-safe top-16 w-72",
+            portrait ? "left-safe right-safe top-[calc(env(safe-area-inset-top)+4.25rem)]" : "right-safe top-16 w-72",
           )}
         />
       ) : null}
@@ -307,7 +313,6 @@ export function Hud() {
           <ChromeLanded />
         </LazyBoundary>
       ) : null}
-      <TradeToast />
       <Announcer />
       <RollMoment />
       {/* If the moments' chunk cannot load, the table stands without them; the hand still flashes every change. */}
@@ -317,9 +322,9 @@ export function Hud() {
       </LazyBoundary>
 
       <div className="pointer-events-none absolute bottom-0 inset-x-0 z-10 px-safe pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-        <div className={cn("relative", column ? "w-80 max-w-[48vw]" : "mx-auto max-w-3xl")}>
+        <div className={cn("relative", column ? "w-[260px] max-w-[42vw]" : "mx-auto max-w-[656px]")}>
           {/* #459: floats above the stack, so it coming and going never reflows the turn banner. */}
-          {banner ? (
+          {banner && !tradeOutcome ? (
             <p
               role="status"
               data-testid="banner"
@@ -336,7 +341,7 @@ export function Hud() {
             ref={stackRef}
             data-hud-stack
             className={cn(
-              "pointer-events-auto flex flex-col gap-2 overflow-y-auto overscroll-contain",
+              "hud-stack pointer-events-auto flex flex-col gap-1 overflow-y-auto overscroll-contain",
               // #383: stop under the header (or the portrait seat strip) and leave the island at least ~8 rem.
               // #422: the column runs from under the header to the bottom edge every phase, so the hole beside it never moves.
               column
@@ -346,42 +351,8 @@ export function Hud() {
           >
             {/* #422: in the column the Place chip is the first row, so it never covers the hand or the turn banner. Not
                 pointer-events-none: a porous child would make the stack's chrome only its parts, and the column no rail. */}
-            {column ? <PlaceChip column /> : null}
-            {phone && portrait && !hintDismissed ? (
-              <p
-                data-testid="landscape-hint"
-                className="pointer-events-none flex h-11 items-center justify-between gap-2 rounded-[16px] border border-white/50 bg-glass pl-3 text-sm text-zinc-900 backdrop-blur-md"
-              >
-                Turn the phone sideways to see the whole isle.
-                <button
-                  type="button"
-                  aria-label="Dismiss"
-                  data-testid="landscape-hint-dismiss"
-                  className="pointer-events-auto flex size-11 items-center justify-center"
-                  onClick={() => {
-                    sessionStorage.setItem(HINT_KEY, "1");
-                    setHintDismissed(true);
-                  }}
-                >
-                  <X className="size-4" />
-                </button>
-              </p>
-            ) : null}
-            {state.phase === "over" ? null : (
-              <p
-                key={`turn-${state.current}`}
-                data-testid="turn-banner"
-                style={{ borderLeftColor: yours ? undefined : subjectPlayer.color }}
-                className={cn(
-                  "animate-[turn-fade_200ms_ease-out] rounded-[16px] border bg-glass px-3 py-2 text-sm font-medium backdrop-blur-md",
-                  waiting ? "text-zinc-700" : "text-zinc-900",
-                  // #424: the accent tint is a layer over the glass, not a replacement for it.
-                  yours ? "border-accent bg-linear-to-r from-accent/20 to-accent/20" : "border-white/50 border-l-4",
-                )}
-              >
-                {turnText}
-              </p>
-            )}
+            <PlaceChip column />
+            {phone ? instruction : null}
             <TurnCountdown />
             {winner || error ? (
               <p className="rounded-[16px] border border-white/50 bg-glass px-3 py-2 text-sm text-zinc-900 backdrop-blur-md">
@@ -397,7 +368,8 @@ export function Hud() {
             <TakeFromBar />
 
             {state.phase === "main" && mine ? (
-              <div className="flex flex-wrap items-center gap-1">
+              <div className="hud-actions">
+                <div className="build-grid">
                 {/* Each build says whether it can happen now: the cost chips dim what the hand is short of, a build with
                     nothing to build on or none left says so, and one the hand can pay for with a spot waiting wears the dot. */}
                 {(
@@ -416,11 +388,12 @@ export function Hud() {
                       key={kind}
                       size="sm"
                       variant={buildMode === arm ? "primary" : "secondary"}
+                      aria-label={label}
                       data-testid={`build-${kind}`}
                       data-build={why ? "blocked" : ready ? "ready" : "short"}
                       // A 44 px two-line tile, the piece over its chips (docs/design/polish.md: actions as tiles with their amount),
                       // so the row keeps the lines it had before the chips: one at 1280x720, three builds a line on a phone.
-                      className={cn("relative h-11 min-w-11 flex-col gap-2 px-2.5 py-0", NOT_NOW, pulse.includes(kind) && "build-ready")}
+                      className={cn("build-tile relative h-[52px] min-w-11 flex-col gap-1 px-1 py-1", NOT_NOW, pulse.includes(kind) && "build-ready")}
                       onAnimationEnd={(e) => e.animationName === "build-ready" && setPulse((p) => p.filter((k) => k !== kind))}
                       aria-pressed={arm ? buildMode === arm : undefined}
                       aria-disabled={blocked || undefined}
@@ -433,19 +406,21 @@ export function Hud() {
                         setBuildMode(buildMode === arm ? "none" : arm);
                       }}
                     >
-                      <span className="flex items-center gap-1.5 leading-4">
-                        <Icon className="size-4" /> {label}
+                      <span className="flex items-center gap-1 text-caption leading-4">
+                        <Icon className="build-icon size-3.5" /> {phone && kind === "stronghold" ? "Upgrade" : label}{ready && buildMode !== arm ? READY_DOT : null}
                       </span>
                       {/* The chips and the reason are aria-hidden: the name stays the piece, the description says the rest. The
                           shortfall mark shows only when one good away ("almost there"); further off, the plain cost and the Costs card. */}
                       {why ? <span aria-hidden className="text-caption text-muted">{why}</span> : <CostChips kind={kind} hand={missing === 1 ? me.resources : undefined} />}
-                      {ready && buildMode !== arm ? READY_DOT : null}
                     </Button>
                   );
                 })}
-                <TradeButton />
-                {fortunes}
-                {column ? null : endRow}
+                </div>
+                {!column || fortunes ? <div className="action-utilities flex items-center gap-1">
+                  {column ? null : <TradeButton />}
+                  {fortunes}
+                  {column ? null : endRow}
+                </div> : null}
               </div>
             ) : null}
             {pinEnd ? endRow : null}
@@ -465,11 +440,13 @@ export function Hud() {
             {diceInBar ? null : dice}
 
             <p
+              hidden={tradeVisible}
               data-testid="log-line"
-              className="hidden max-h-16 shrink-0 overflow-y-auto rounded-[16px] bg-glass px-3 py-1 text-xs text-zinc-700 backdrop-blur-md sm:block short:hidden"
+              className="table-log hidden h-5 shrink-0 overflow-hidden rounded-control px-3 text-xs leading-5 sm:block short:hidden"
             >
-              {state.log.filter((l) => !ROLL_LOG.test(l)).slice(-3).join(" · ")}
+              {state.log.filter((l) => !ROLL_LOG.test(l)).at(-1)}
             </p>
+            <TradeToast />
           </div>
           {/* #423: the tray rises over the stack from its bottom edge and may cover the island, like a sheet, but never the
               header or the portrait seat strip; it is inside the sheets chunk, which the table prefetched on idle (#488). */}

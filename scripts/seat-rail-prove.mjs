@@ -110,7 +110,7 @@ try {
       const on = ls.filter((l) => l.turn);
       assert.deepEqual(on.map((l) => l.id), [`${v.seat}-${id}`], `${v.tag} ${phase}: seat-turn on ${JSON.stringify(on.map((l) => l.id))}, turn is ${id}`);
       assert.ok(ls.every((l) => l.turn === (l.current === "true")), `${v.tag} ${phase}: aria-current follows the turn`);
-      assert.ok(on[0].dotAnim === "seat-pulse" && on[0].dotRing, `${v.tag} ${phase}: the dot on turn pulses and wears a ring ${JSON.stringify({ anim: on[0].dotAnim, ring: on[0].dotRing })}`);
+      assert.ok(on[0].dotAnim === "none" && on[0].dotRing, `${v.tag} ${phase}: the dot on turn is static and wears a ring ${JSON.stringify({ anim: on[0].dotAnim, ring: on[0].dotRing })}`);
       assert.ok(ls.filter((l) => !l.turn).every((l) => l.dotAnim === "none" && !l.dotRing), `${v.tag} ${phase}: the other dots are still`);
     };
 
@@ -186,7 +186,7 @@ try {
     console.log(`${v.tag}: cells ${Math.round(cellW)} px, counts ${wide ? "shown" : "folded into the facts"}`);
     if (wide) {
       assert.equal(by(mid.a).goods, "3 goods", `${v.tag} main: seat a shows 3 goods, got ${JSON.stringify(by(mid.a).goods)}`);
-      assert.equal(by(mid.b).fortunes, "1 fortune", `${v.tag} main: seat b shows 1 fortune, got ${JSON.stringify(by(mid.b).fortunes)}`);
+      assert.equal(by(mid.b).fortunes, v.seat === "rail" ? null : "1 fortune", `${v.tag} main: seat b shows 1 fortune, got ${JSON.stringify(by(mid.b).fortunes)}`);
       assert.equal(by(mid.c).goods, "1 good", `${v.tag} main: seat c shows 1 good`);
     }
     assert.equal(by(mid.b).goods, null, `${v.tag} main: seat b holds nothing and shows no goods count`);
@@ -249,7 +249,7 @@ try {
     noClip(await lines(), "watching");
     await page.evaluate(() => window.__emberisle.setState({ spectator: false }));
     assert.ok(clash.badge && clash.hits === 0 && clash.inView, `${v.tag}: seats clear of the menu button and the Watching chip ${JSON.stringify(clash)}`);
-    console.log(`${v.tag}: four one-line seats (<= 44 px, points ${ls[0].vpFont}px/${ls[0].vpWeight}), pulse follows the turn, die only in the roll-off, counts only when held, facts on tap (fortunes by kind, dropped seat), clear of the menu and the Watching chip`);
+    console.log(`${v.tag}: four one-line seats (<= 44 px, points ${ls[0].vpFont}px/${ls[0].vpWeight}), static ring follows the turn, die only in the roll-off, counts only when held, facts on tap (fortunes by kind, dropped seat), clear of the menu and the Watching chip`);
     await ctx.close();
   }
   assert.deepEqual(errors, [], "console errors");

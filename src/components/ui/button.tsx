@@ -5,18 +5,18 @@ import { play } from "@/lib/sound";
 const VARIANT = {
   default: "bg-fg text-bg hover:bg-fg/90",
   primary: "bg-fg text-bg hover:bg-fg/90",
-  secondary: "border border-border bg-bg text-fg hover:brightness-105",
+  secondary: "border border-control-line bg-bg text-fg hover:brightness-105",
   sea: "bg-sea-ink text-white hover:brightness-90",
   accent: "bg-accent-ink text-white hover:brightness-90",
-  outline: "border border-fg/30 bg-transparent text-fg hover:bg-fg/5",
+  outline: "border border-control-line bg-transparent text-fg hover:bg-fg/5",
   ghost: "bg-transparent text-fg hover:bg-fg/5",
 } as const;
 
 const SIZE = {
-  default: "h-10 px-4 text-sm",
-  sm: "h-8 px-3 text-sm",
+  default: "h-11 min-w-11 px-4 text-sm",
+  sm: "h-11 min-w-11 px-3 text-sm",
   lg: "h-12 px-5 text-base",
-  icon: "size-9 p-0",
+  icon: "size-11 p-0",
 } as const;
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -40,7 +40,7 @@ export function Button({ variant = "default", size = "default", className, type 
     <button
       type={type}
       className={cn(
-        "inline-flex cursor-pointer items-center justify-center gap-2 rounded-control font-medium transition-[transform,filter,background-color] duration-(--duration-press) ease-out focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sea-ink active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50",
+        "inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-control font-medium transition-[transform,filter,background-color] duration-(--duration-press) ease-out focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sea-ink active:scale-[0.97] disabled:pointer-events-none disabled:text-muted disabled:bg-bg disabled:border-border",
         VARIANT[variant],
         SIZE[size],
         className,

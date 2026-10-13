@@ -195,11 +195,11 @@ try {
       g.setState({ state: st, buildMode: "none", error: null });
       return st.seq;
     });
-  // #419: the banner reads `${seat}'s turn — ${phase}` in hotseat.
+  // #419: the banner reads `${seat}'s turn · ${phase}` in hotseat.
   const bannerIs = async (phase) => {
     const want = await page.evaluate((phase) => {
       const st = window.__emberisle.getState().state;
-      return `${st.players.find((p) => p.id === st.current).name}'s turn — ${phase}`;
+      return `${st.players.find((p) => p.id === st.current).name}'s turn · ${phase}`;
     }, phase);
     await page.waitForFunction((t) => document.querySelector('[data-testid="turn-banner"]')?.textContent === t, want, { timeout: STEP_MS })
       .catch(async () => { throw new Error(`banner: want "${want}", got "${await page.getByTestId("turn-banner").textContent()}"`); });
@@ -223,7 +223,7 @@ try {
   await arm("Path", "Lay a path");
   await page.keyboard.press("Escape");
   await page.getByRole("group", { name: "Lay a path" }).waitFor({ state: "detached", timeout: STEP_MS });
-  console.log(`Escape: banner "${await bannerIs("Build, trade with the bank, or end your turn.")}"`);
+  console.log(`Escape: banner "${await bannerIs("Build or trade")}"`);
   // Two paths out from an outpost, so a corner two steps away is free for an outpost.
   for (let i = 0; i < 2; i++) {
     await fill();

@@ -13,7 +13,7 @@
 // - a key press skips a moment at once, and so does a touch pointerdown; the press still reaches the page (both are
 //   dispatched in the page as soon as the moment is up, so the harness cannot miss its second);
 // - online seats and watchers mount a table with loadState and get rolls as pushed states: a table loaded with dice on it
-//   shows nothing, one roll on shows one moment (a 7 in accent-ink, read out by name), a jump of two rolls shows none.
+//   shows nothing, one roll on shows one moment (a 7 in danger, read out by name), a jump of two rolls shows none.
 // Hotseat at 1280x720: a seat's roll shows one moment and is read out by the seat's name, not "You".
 // Reduced motion at 1280x720: the moment still shows centred and large, with no entry animation and no flight, and goes
 // after its hold. Zero console errors throughout.
@@ -243,7 +243,7 @@ async function settleChecks(page, tag, { applied, dice }, { reduced = false } = 
   check(Math.abs(m.centreX - m.vw / 2) <= m.vw * 0.1, `${tag}: centred horizontally (${m.centreX.toFixed(0)} of ${m.vw}, ±10 %)`);
   check(Math.abs(m.centreY - m.vh / 2) <= m.vh * 0.1, `${tag}: centred vertically (${m.centreY.toFixed(0)} of ${m.vh}, ±10 %)`);
   check(m.fontSize >= 48, `${tag}: the sum is ${m.fontSize}px (≥ 48)`);
-  check(m.sumColor === (sum === 7 ? "rgb(169, 75, 48)" : "rgb(28, 25, 21)"), `${tag}: the sum is ${sum === 7 ? "accent-ink on a 7" : "ink"} (${m.sumColor})`);
+  check(m.sumColor === (sum === 7 ? "rgb(179, 38, 30)" : "rgb(32, 41, 39)"), `${tag}: the sum is ${sum === 7 ? "danger on a 7" : "ink"} (${m.sumColor})`);
   check(m.rowHidden === true && m.shown.length === 1 && m.shown[0] === "roll-sum", `${tag}: while it is up the roll is on screen once (${JSON.stringify(m.shown)})`);
   check(!late.moment && gone - stall.gone <= 1400, `${tag}: gone by 1400 ms of the roll being applied (${gone.toFixed(0)} ms, ${stall.gone.toFixed(0)} of them stalled)`);
   check(late.rowVisible && late.row.join() === dice.join(), `${tag}: the resting row shows the same faces (${late.row})`);
@@ -372,7 +372,7 @@ async function practice(viewport, touch) {
   console.log(`${tag}: pushed states ${JSON.stringify(pushed)}`);
   check(pushed.loaded === 0, `${tag}: a table loaded with dice already on it shows no moment`);
   check(pushed.one === 1 && pushed.jump === 0, `${tag}: a pushed roll shows one moment, a jump of two rolls none`);
-  check(pushed.seven === 7 && pushed.color === "rgb(169, 75, 48)", `${tag}: a 7 shows in accent-ink`);
+  check(pushed.seven === 7 && pushed.color === "rgb(179, 38, 30)", `${tag}: a 7 shows in danger`);
   check(pushed.said.length === 1 && pushed.said[0] === `${pushed.roller} rolled 6 and 1: 7.`, `${tag}: a watcher hears the roll once, by the roller's name`);
   await page.close();
 }

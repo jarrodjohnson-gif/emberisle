@@ -54,12 +54,12 @@ export function Lobby() {
           Ready/Start and Leave stacked on the right, so none of them needs a scroll. */}
       <div
         className={cn(
-          "flex min-h-0 flex-1 flex-col overflow-y-auto rounded-[20px] border border-white/50 bg-white/45 p-5 backdrop-blur-md sm:p-6",
+          "lobby-cover flex min-h-0 flex-1 flex-col overflow-y-auto rounded-[20px] border border-white/50 bg-surface p-5 backdrop-blur-md sm:p-6",
           landscape && "grid grid-cols-2 grid-rows-[auto_1fr] gap-x-5 p-4 sm:p-4",
         )}
       >
         <div className={cn(landscape && "col-start-2 row-start-1")}>
-        <p className="text-xs uppercase tracking-[0.22em] text-sea-ink">Table code</p>
+        <p className="text-caption font-semibold text-sea-ink">Table code</p>
         <div className="mt-1 flex items-center gap-3">
           <p data-testid="table-code" className={cn("font-display tracking-[0.2em]", landscape ? "text-5xl" : "text-6xl")}>
             {code}
@@ -101,7 +101,7 @@ export function Lobby() {
         <div
           data-testid="lobby-actions"
           className={cn(
-            "mt-3 flex flex-col gap-2",
+            "mt-3 flex shrink-0 flex-col gap-2 sticky bottom-0 z-10 bg-surface",
             landscape && "col-start-2 row-start-2 justify-end",
             sheet &&
               "sticky -bottom-5 z-10 -mx-5 -mb-5 bg-surface px-5 pb-5 pt-2 before:pointer-events-none before:absolute before:inset-x-0 before:-top-6 before:h-6 before:bg-gradient-to-t before:from-surface before:to-transparent",

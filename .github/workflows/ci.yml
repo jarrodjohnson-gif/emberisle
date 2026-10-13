@@ -132,6 +132,7 @@ jobs:
       - run: npm run title-prove
       - run: npm run watch-ui-prove
       - run: npm run tabs-prove-4
+      - run: npm run visual-direction-prove
       - run: npm run polish-tokens-prove
       - run: npm run roll-moment-prove
       - run: npm run turn-gain-prove

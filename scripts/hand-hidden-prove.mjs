@@ -33,7 +33,7 @@ const browser = await chromium.launch({
 let code = 0;
 
 const tiles = (page) => page.locator('[data-testid^="resource-"]:not([data-testid="resource-flash"])').count();
-const bannerBottom = (page) => page.evaluate(() => document.querySelector('[data-testid="turn-banner"]').getBoundingClientRect().bottom);
+const bannerBottom = (page) => page.evaluate(() => document.querySelector("[data-hud-stack]").getBoundingClientRect().top);
 const game = (page) => page.evaluate(() => window.__emberisle.getState().state);
 // The island's on-screen height (extreme vertices) and the hole's bottom inset, read once the fit has stopped moving.
 async function island(page) {

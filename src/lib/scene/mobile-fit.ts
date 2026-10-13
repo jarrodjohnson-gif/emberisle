@@ -1,8 +1,8 @@
 // Camera fit and touch picking for phones (docs/design/mobile-camera-touch.md, issue #171). Pure math, no THREE
 // imports, so scripts/touch-place-prove.mjs can run it directly.
 
-// Half-extent of the island plus its docks, padded 8%, in world units (HEX_SIZE 1.12).
-export const ISLE_HALF = { x: 6.0, z: 5.6 };
+// Half-extent of the island plus its docks, padded for all corners and docks, in world units (HEX_SIZE 1.12).
+export const ISLE_HALF = { x: 5.8, z: 5.4 };
 
 export type Insets = { top: number; right: number; bottom: number; left: number };
 
@@ -25,8 +25,9 @@ export function chromeInsets(cssW: number, cssH: number, solids: Rect[], safe: P
     const h = r.bottom - r.top;
     return w >= 2 && h >= 2 && w * h < 0.9 * cssW * cssH;
   });
-  const bands = chrome.filter((r) => r.right - r.left >= cssW / 2);
-  const rails = chrome.filter((r) => r.right - r.left < cssW / 2);
+  const bandWidth = Math.min(cssW / 2, 480);
+  const bands = chrome.filter((r) => r.right - r.left >= bandWidth);
+  const rails = chrome.filter((r) => r.right - r.left < bandWidth);
   // The chips on an edge: each within CHROME_GAP of the edge or of a chip already counted. `near` is a chip's distance
   // from the edge, `reach` how far from the edge it extends. The edge starts at the safe area, since the HUD keeps clear of
   // a notch or a home bar (#475): chrome set in by one still touches the edge.
@@ -45,12 +46,12 @@ export function chromeInsets(cssW: number, cssH: number, solids: Rect[], safe: P
     }
     return { found, edge };
   };
-  const top = onEdge(bands.filter((r) => r.bottom < cssH / 2), (r) => r.top, (r) => r.bottom, safe.top).edge;
-  const bottom = onEdge(bands.filter((r) => r.top > cssH / 2), (r) => cssH - r.bottom, (r) => cssH - r.top, safe.bottom).edge;
+  const top = onEdge(bands.filter((r) => (r.top + r.bottom) / 2 < cssH / 2), (r) => r.top, (r) => r.bottom, safe.top).edge;
+  const bottom = onEdge(bands.filter((r) => (r.top + r.bottom) / 2 > cssH / 2), (r) => cssH - r.bottom, (r) => cssH - r.top, safe.bottom).edge;
   const rail = (side: ReturnType<typeof onEdge>) => {
     if (!side.found.length) return 0;
     const span = Math.max(...side.found.map((r) => r.bottom)) - Math.min(...side.found.map((r) => r.top));
-    return span >= cssH / 4 ? side.edge : 0;
+    return span >= Math.min(cssH / 4, 132) ? side.edge : 0;
   };
   // A rail is on the side its centre is on: a column set in by a notch may cross the middle (#422, 667x375).
   const left = rail(onEdge(rails.filter((r) => r.left + r.right < cssW), (r) => r.left, (r) => r.right, safe.left));

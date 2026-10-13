@@ -53,7 +53,7 @@ export function EmberisleApp() {
   }, [seq, screen, offerOpen, runBots]);
 
   return (
-    <div className="relative h-dvh w-full overflow-hidden bg-bg">
+    <div data-game-shell className="relative h-dvh w-full overflow-hidden bg-bg">
       <ClientCanvas />
       {/* #488: the lobby (with chat) is online-only, so it is a lazy chunk; Host and Join prefetch it on hover or focus. */}
       {screen === "title" ? restoring ? <Restoring /> : <Title /> : screen === "lobby" ? (
@@ -75,7 +75,7 @@ export function EmberisleApp() {
 function Restoring() {
   return (
     <div data-testid="restoring" role="status" className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-bg">
-      <h1 className="font-display text-5xl leading-none tracking-tight sm:text-6xl">Emberisle</h1>
+      <h1 className="title-wordmark font-display">Emberisle</h1>
       <p className="text-sm text-muted">Back to your table…</p>
     </div>
   );
@@ -161,8 +161,8 @@ function Title() {
       <div
         data-testid="title-card"
         className={cn(
-          "absolute z-10",
-          phone && "overflow-y-auto rounded-[20px] border border-white/50 bg-white/45 p-5 backdrop-blur-md",
+          "title-cover absolute z-10",
+          phone && "overflow-y-auto rounded-[20px] border border-white/50 bg-surface p-5 backdrop-blur-md",
           sheet
             ? "inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] max-h-[55vh]"
             : phone
@@ -172,12 +172,17 @@ function Title() {
       >
         <div
           className={cn(
-            !phone && "rounded-[20px] border border-white/50 bg-white/45 p-5 backdrop-blur-md sm:p-6",
+            !phone && "rounded-sheet bg-surface p-5 sm:p-6",
             landscape && "grid grid-cols-2 items-center gap-x-6",
           )}
         >
           <div>
-            <h1 className="font-display text-5xl leading-none tracking-tight sm:text-6xl">Emberisle</h1>
+            <h1 className="title-wordmark font-display">Emberisle</h1>
+            <details className="seat-settings">
+              <summary aria-label="Your seat">
+                <SeatDot color={color ?? PLAYER_COLORS[0]!} className="size-4" />
+                <span>{name || "Your seat"}</span>
+              </summary>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -196,13 +201,14 @@ function Title() {
                   title={taken.includes(c) ? `${PLAYER_NAMES[i]} (taken)` : PLAYER_NAMES[i]}
                   disabled={taken.includes(c)}
                   onClick={() => setColor(c)}
-                  className={cn("size-8 rounded-full border-2 p-0 transition", taken.includes(c) && "cursor-not-allowed opacity-35")}
+                  className={cn("grid size-11 place-items-center rounded-control border-2 p-1 transition", taken.includes(c) && "cursor-not-allowed opacity-35")}
                   style={{ borderColor: !taken.includes(c) && color === c ? "#1c1915" : "transparent" }}
                 >
-                  <SeatDot color={c} className="size-full" />
+                  <SeatDot color={c} className="size-7" />
                 </button>
               ))}
             </div>
+            </details>
           </div>
           <div className="mt-4 flex flex-col gap-2">
             <div className="flex flex-col items-center gap-1">
@@ -313,7 +319,7 @@ function HowToFailed() {
 // The online chunk did not load, so there is no lobby to show: say so where the lobby card goes, with the one way out.
 function LobbyFailed() {
   return (
-    <div data-testid="lobby-failed" role="alert" className="absolute bottom-5 left-5 z-10 w-full max-w-sm rounded-[20px] border border-white/50 bg-white/45 p-5 backdrop-blur-md sm:bottom-10 sm:left-10">
+    <div data-testid="lobby-failed" role="alert" className="absolute bottom-5 left-5 z-10 w-full max-w-sm rounded-[20px] border border-white/50 bg-surface p-5 backdrop-blur-md sm:bottom-10 sm:left-10">
       <p className="text-sm">Couldn't load the table lobby.</p>
       <Button size="lg" variant="primary" className="mt-3 w-full" onClick={() => location.reload()}>
         Reload

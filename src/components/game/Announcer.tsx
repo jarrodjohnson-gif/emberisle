@@ -1,8 +1,9 @@
 // Screen-reader status messages (#380, WCAG 4.1.3): whose turn it is, and what the isle just refused.
 // The roll speaks through Dice.tsx's RollMoment (#440); who gathered what and the roll-off ("Dune rolls a 4.",
-// "… places first") through the Hud's role="status" banner, trade news through TradeToast, and the win through
+// "… places first") through the Hud's role="status" banner, trade offers and outcomes through this persistent region, and the win through
 // WinScreen's dialog, so none of those are repeated here.
 import { useEffect, useState } from "react";
+import { offerLine } from "@/components/game/TradeToast";
 import { useGame } from "@/lib/game/store";
 
 export function Announcer() {
@@ -11,6 +12,11 @@ export function Announcer() {
     if (!st || st.phase === "over") return "";
     if (s.mode !== "hotseat" && st.current === s.localId) return "Your turn.";
     return `${st.players.find((p) => p.id === st.current)?.name ?? "Someone"}'s turn.`;
+  });
+  const trade = useGame((s) => {
+    if (!s.offer) return s.tradeOutcome ?? "";
+    if (s.declined.includes(s.localId)) return "Offer declined.";
+    return offerLine(s.offer.from === s.localId ? null : s.offer.fromName, s.offer.give, s.offer.want);
   });
   const error = useGame((s) => s.error);
   const errorSeq = useGame((s) => s.errorSeq);
@@ -23,6 +29,7 @@ export function Announcer() {
       <p data-testid="announce-turn" aria-live="polite" aria-atomic="true">
         {mounted ? turn : ""}
       </p>
+      <p data-testid="announce-trade" aria-live="polite" aria-atomic="true">{mounted ? trade : ""}</p>
       {/* Keyed by errorSeq: a repeat of the same error replaces the text node, so it is read again. */}
       <p data-testid="announce-error" role="alert">
         {error ? <span key={errorSeq}>{error}</span> : null}

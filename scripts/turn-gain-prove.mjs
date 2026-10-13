@@ -333,7 +333,8 @@ async function contrast(page, testid, index = 0) {
 // longer than it stayed on the page after its delay. Frames under software GL are too sparse to time it by sampling.
 const readable = (rec) => {
   const k = rec.anim?.keyframes.filter((f) => f.o !== null);
-  if (!k?.length || !rec.gone) return 0;
+  if (!rec.gone) return 0;
+  if (!k?.length) return rec.gone - rec.at;
   const at = (x) => {
     const j = k.findIndex((f) => f.at >= x);
     if (j <= 0) return k[Math.max(0, j)].o;
@@ -562,9 +563,9 @@ async function reduced() {
     const r = { lines, turns: await page.evaluate(() => window.__turns) };
     console.log(`${tag}: ${JSON.stringify(r.lines.map((l) => ({ text: l.text, at: l.at.toFixed(0), gone: l.gone?.toFixed(0), anim: l.anim && { d: l.anim.duration, delay: l.anim.delay } })))}`);
     const recs = [...r.lines, r.turns.at(-1)];
-    check(recs.every((x) => x.animation === "moment-fade"), `${tag}: lines and the turn moment fade only (moment-fade)`, recs.map((x) => x.animation));
-    check(recs.every((x) => x.frames.every((f) => f.tf === "none") && x.anim.keyframes.every((k) => !k.tf)), `${tag}: no transform in the keyframes or on any frame (no rise, no scale)`);
-    check(recs.every((x) => x.anim.duration >= 1500 && x.anim.keyframes.some((k) => k.o === 0) && x.anim.keyframes.some((k) => k.o === 1)), `${tag}: they still fade in and out, over at least 1.5 s`, recs.map((x) => [x.anim.duration, x.anim.keyframes.map((k) => k.o)]));
+    check(recs.every((x) => x.animation === "none" && x.anim === null), `${tag}: all cues are fully static under reduced motion`, recs.map((x) => x.animation));
+    check(recs.every((x) => x.frames.every((f) => f.tf === "none" && f.o === 1)), `${tag}: no fade, rise or scale on any frame`);
+    check(recs.every((x) => x.gone - x.at >= 1500), `${tag}: static cues retain a readable hold`, recs.map((x) => x.gone - x.at));
     check(r.lines.map(readable).every((s) => s >= 1200), `${tag}: each line readable for at least 1.2 s`, r.lines.map(readable).map((s) => s.toFixed(0)));
   } catch (e) {
     console.error(`${tag}:`, e);

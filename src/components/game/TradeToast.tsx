@@ -1,17 +1,17 @@
 // The ask-the-table toast (docs/BUILD_BIBLE.md 4.4): "Ember offers 2 wool for 1 ore", Yes / No, and the 20 s left.
 // The asker sees the same offer with who has declined, then the outcome for a moment.
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { useViewport } from "@/lib/viewport";
 import { Button } from "@/components/ui/button";
 import { SeatDot } from "@/components/game/SeatDot";
 import { bagText } from "@/lib/game/trade";
 import { useGame } from "@/lib/game/store";
 import { RESOURCES } from "@/lib/game/types";
 import type { Bag } from "@/lib/net/table";
-import { useViewport } from "@/lib/viewport";
-import { cn } from "@/lib/utils";
 
 // "Ember offers 2 wool for 1 ore"; the asker reads "You offer 2 wool for 1 ore".
-function offerLine(name: string | null, give: Bag, want: Bag) {
+export function offerLine(name: string | null, give: Bag, want: Bag) {
   const g = bagText(give);
   const w = bagText(want);
   const [who, offers, gives, asks] = name ? [name, "offers", "gives away", "asks for"] : ["You", "offer", "give away", "ask for"];
@@ -26,6 +26,9 @@ function declinedLine(names: string[]) {
 }
 
 export function TradeToast() {
+  const { phone } = useViewport();
+  const chatOpen = useGame((s) => s.chatOpen);
+  const aboveChat = phone && chatOpen;
   const offer = useGame((s) => s.offer);
   const declined = useGame((s) => s.declined);
   const outcome = useGame((s) => s.tradeOutcome);
@@ -35,9 +38,27 @@ export function TradeToast() {
   const spectator = useGame((s) => s.spectator);
   const answerTrade = useGame((s) => s.answerTrade);
   const [now, setNow] = useState(() => Date.now());
-  const { phone, portrait } = useViewport();
   const lineId = useId();
   const whyId = useId();
+  const dock = useRef<HTMLElement>(null);
+  const shown = !!offer && !declined.includes(localId);
+  useLayoutEffect(() => {
+    const el = dock.current;
+    if (!el) return;
+    const stack = el.closest<HTMLElement>("[data-hud-stack]");
+    const root = document.documentElement;
+    let lastHeight = -1;
+    const measure = () => {
+      const h = el.getBoundingClientRect().height;
+      stack?.style.setProperty("--trade-height", `${h + 4}px`);
+      root.style.setProperty("--active-offer-height", `${h + 8}px`);
+      if (h !== lastHeight) { lastHeight = h; useGame.getState().chromeLanded(); }
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => { observer.disconnect(); stack?.style.removeProperty("--trade-height"); root.style.removeProperty("--active-offer-height"); };
+  }, [shown, aboveChat]);
 
   useEffect(() => {
     if (!offer) return;
@@ -54,11 +75,7 @@ export function TradeToast() {
   let answering = false;
   let why: string | null = null;
   if (!offer) {
-    body = (
-      <p role="status" className="text-sm font-medium" data-testid="trade-outcome">
-        {outcome}
-      </p>
-    );
+    return <p className="trade-result table-log rounded-control px-3 py-1 text-caption" data-testid="trade-outcome">{outcome}</p>;
   } else {
     if (declined.includes(localId)) return null;
     const left = Math.max(0, Math.ceil((offer.until - now) / 1000));
@@ -68,14 +85,14 @@ export function TradeToast() {
     why = me && short.length ? `Need ${short.map((r) => `${offer.want[r]! - me.resources[r]} more ${r}`).join(", ")}` : null;
     body = (
       <>
-        <div className="flex items-baseline justify-between gap-3">
-          <p id={lineId} className="text-sm font-medium">
+        <div className="trade-summary flex min-w-0 items-center justify-between gap-2">
+          <p id={lineId} className="text-sm font-medium leading-5">
             {/* #312: another seat's offer leads with that seat's dot and mark. */}
             {!asker ? <SeatDot color={players?.find((p) => p.id === offer.from)?.color ?? "transparent"} className="mr-1.5 size-3 align-[-1px]" /> : null}
             {offerLine(asker ? null : offer.fromName, offer.give, offer.want)}
           </p>
           {/* For answerers the 250 ms tick would chatter, so it is hidden; the polite line below speaks once, at 5 s. */}
-          <span aria-hidden={!asker || undefined} className="shrink-0 tabular-nums text-xs text-zinc-600" data-testid="trade-countdown">
+          <span aria-hidden={!asker || undefined} className="trade-clock shrink-0 tabular-nums text-xs" data-testid="trade-countdown" data-urgent={left <= 5 || undefined}>
             {left} s
           </span>
         </div>
@@ -85,15 +102,15 @@ export function TradeToast() {
           </p>
         ) : null}
         {asker ? (
-          <p role="status" className="mt-1 text-xs text-zinc-600">
+          <p role="status" className="trade-wait text-xs">
             {declined.length ? declinedLine(declined.map(name)) : "Waiting…"}
           </p>
         ) : !answering ? null : (
           <>
-            <div className="mt-2 flex items-center gap-2">
+            <div className="trade-answers flex items-center gap-1">
               {/* aria-disabled, not disabled, so Tab still reaches Yes and reads the reason (#285); the click refuses instead. */}
               <Button
-                className="h-11 min-w-[88px] flex-1 aria-disabled:cursor-not-allowed aria-disabled:opacity-50 aria-disabled:active:scale-100"
+                className="trade-yes h-11 min-w-16 flex-1 aria-disabled:cursor-not-allowed aria-disabled:active:scale-100"
                 aria-disabled={why !== null || undefined}
                 aria-describedby={why ? whyId : undefined}
                 onClick={() => {
@@ -102,12 +119,12 @@ export function TradeToast() {
               >
                 Yes
               </Button>
-              <Button variant="secondary" className="h-11 min-w-[88px] flex-1" onClick={() => answerTrade(false)}>
+              <Button variant="secondary" className="trade-no h-11 min-w-16 flex-1" onClick={() => answerTrade(false)}>
                 No
               </Button>
             </div>
             {why ? (
-              <p id={whyId} className="mt-1 text-xs text-orange-700">
+              <p id={whyId} className="trade-short text-xs">
                 {why}
               </p>
             ) : null}
@@ -117,32 +134,22 @@ export function TradeToast() {
     );
   }
 
-  return (
-    <div
-      className={cn(
-        "pointer-events-none absolute z-20 flex",
-        // Under the portrait seat strip (#177); beside the chat button in landscape; clear of the rail on desktop.
-        phone && portrait
-          ? "inset-x-3 top-[calc(env(safe-area-inset-top)+7.5rem)]"
-          : phone
-            ? "left-safe right-safe mr-13 top-16"
-            : "left-3 right-16 top-16 md:left-[15.5rem] lg:inset-x-3 lg:justify-center",
-      )}
+  const card = (
+    <section
+      ref={dock}
+      data-testid="trade-toast"
+      className={`trade-dock pointer-events-auto shrink-0 rounded-chip p-2${aboveChat ? " trade-above-chat" : ""}`}
+      role="region"
+      aria-label="Trade offer"
+      aria-labelledby={lineId}
+      aria-describedby={why ? whyId : undefined}
+      onKeyDown={(e) => {
+        if (answering && e.key === "Escape") answerTrade(false);
+      }}
     >
-      {/* An answerable offer is an alertdialog so it is announced on arrival, but focus stays put (it would yank focus
-          mid-build); Escape from inside answers No. */}
-      <div
-        data-testid="trade-toast"
-        className="pointer-events-auto w-full max-w-sm rounded-[16px] border border-accent/40 bg-surface p-3"
-        role={answering ? "alertdialog" : undefined}
-        aria-labelledby={answering ? lineId : undefined}
-        aria-describedby={answering && why ? whyId : undefined}
-        onKeyDown={(e) => {
-          if (answering && e.key === "Escape") answerTrade(false);
-        }}
-      >
-        {body}
-      </div>
-    </div>
+      {body}
+    </section>
   );
+  const shell = document.querySelector("[data-game-shell]");
+  return aboveChat && shell ? createPortal(card, shell) : card;
 }
