@@ -28,7 +28,7 @@ The island orbits behind every screen. No panel covers the center third.
 
 Seat card: 64 px circle picture (or the color with the first letter), name, 6 px color bar, a Ready check. An empty seat says "Empty".
 
-Colors: `#c45c3e` Ember, `#2a8f8a` Tide, `#e4c9a0` Dune, `#3d6b4f` Pine. A taken color is 35% opacity and not clickable.
+Colors: `#e23d2e` Ember, `#2d6ee8` Tide, `#f3ecd9` Dune, `#8a4fd3` Pine. A taken color is 35% opacity and not clickable.
 
 ## Esc
 

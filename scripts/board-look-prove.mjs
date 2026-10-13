@@ -388,7 +388,7 @@ try {
       await page.evaluate(() => {
         const text = "A long line of table talk that runs to about ninety-five characters so the preview is as wide as it gets.";
         const at = Date.now();
-        window.__emberisle.setState({ chat: [1, 2, 3].map((i) => ({ id: 9000 + i, seat: "s1", player: "p1", name: "Tide", color: "#2a8f8a", text, at })) });
+        window.__emberisle.setState({ chat: [1, 2, 3].map((i) => ({ id: 9000 + i, seat: "s1", player: "p1", name: "Tide", color: "#2d6ee8", text, at })) });
       });
       await step("three previews show", page.waitForFunction(() => document.querySelectorAll('[data-testid="chat-preview"] li').length === 3, null, { timeout: STEP_MS }));
       const withChat = await page.evaluate(() => ({

@@ -134,7 +134,7 @@ console.log(`behind the tunnel one cf-connecting-ip opened ${IP_CAP} tables, the
 // 2. The cap is on opening only: a player under it still joins a live lobby and peeks it.
 const code = opened[0].code;
 const joiner = await client(port);
-joiner.send({ type: "hello", code, name: "Joiner", color: "#2a8f8a" });
+joiner.send({ type: "hello", code, name: "Joiner", color: "#2d6ee8" });
 const welcome = await joiner.answer();
 assert.equal(welcome.type, "welcome", JSON.stringify(welcome));
 assert.equal(welcome.code, code);

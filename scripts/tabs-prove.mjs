@@ -231,7 +231,7 @@ try {
     const s = window.__emberisle.getState();
     return s.state.players.find((p) => p.id === s.localId)?.color;
   });
-  if (hostColor !== "#2a8f8a") throw new Error(`host picked Tide's color but the seat shows ${hostColor}`);
+  if (hostColor !== "#2d6ee8") throw new Error(`host picked Tide's color but the seat shows ${hostColor}`);
   console.log(`host's chosen color round-tripped into the game: ${hostColor}`);
 
   // #232: roll off for first place. Each die is rolled by the tab whose seat is current, and no tab

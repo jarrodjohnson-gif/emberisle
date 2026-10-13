@@ -32,7 +32,7 @@ export const TERRAIN_LABEL: Record<Terrain, string> = {
   waste: "Wastes",
 };
 
-export const PLAYER_COLORS = ["#c45c3e", "#2a8f8a", "#e4c9a0", "#3d6b4f"] as const;
+export const PLAYER_COLORS = ["#e23d2e", "#2d6ee8", "#f3ecd9", "#8a4fd3"] as const;
 export const PLAYER_NAMES = ["Ember", "Tide", "Dune", "Pine"] as const;
 
 export const COST = {

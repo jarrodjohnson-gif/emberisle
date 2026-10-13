@@ -72,7 +72,7 @@ peeker.t.peek(a.code.toLowerCase());
 await until(() => peeker.seats, "peek reply");
 if (peeker.code) fail("a peek seated the client");
 if (peeker.seats.length !== 3) fail("peek seats", peeker.seats.length);
-peeker.t.join(a.code, { name: "Peeker", color: "#3d6b4f" });
+peeker.t.join(a.code, { name: "Peeker", color: "#8a4fd3" });
 await until(() => peeker.code === a.code, "join after peek");
 peeker.t.close();
 for (const p of [a, b, c]) p.t.ready(true);

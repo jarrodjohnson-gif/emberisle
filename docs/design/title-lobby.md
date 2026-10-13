@@ -23,7 +23,7 @@ and `02-lobby-1280x720.png` on a fresh `node scripts/shots.mjs` after #141 (the 
   reach that high; it is not a stated rule, so it breaks the moment the island's colors shift under it.
 - **Five same-weight buttons** on Title: Practice, Hotseat, Host, and Join (a field) all look equally important.
   The game-night path (Host, Join) is what four friends actually use.
-- **Dune's `#e4c9a0`** is a plain 12 px dot with no border, and it is close to `bg-surface` (`#f7f4ee`), the
+- **Dune's `#f3ecd9`** is a plain 12 px dot with no border, and it is close to `bg-surface` (`#f7f4ee`), the
   lobby row's own background — on a bright display the dot nearly disappears into the row (`docs/design/menus.md`
   already names ths exact swatch as a readability risk, `Row_Colors`).
 - **No copy button** next to the table code (`docs/design/menus.md` `WBP_Lobby` calls for one; the browser
@@ -103,8 +103,8 @@ Per `docs/research/title-menu.md` point 3 ("Weight the game-night path"):
   feedback, nothing new). Falls back to doing nothing but showing the code selectable if `navigator.clipboard`
   is unavailable — never throws.
 - **Every seat dot gets a ring**: `size-3 rounded-full ring-1 ring-inset ring-black/25`, not just `bg-{color}`.
-  Checked against all four `PLAYER_COLORS`: Ember `#c45c3e` and Pine `#3d6b4f` were already fine; the ring is
-  what fixes Dune `#e4c9a0` and keeps Tide `#2a8f8a` fine too. One class, on every dot, not a Dune-only special
+  Checked against all four `PLAYER_COLORS`: Ember `#e23d2e` and Pine `#8a4fd3` were already fine; the ring is
+  what fixes Dune `#f3ecd9` and keeps Tide `#2d6ee8` fine too. One class, on every dot, not a Dune-only special
   case.
 - **Ready** drops to `variant="outline"` (it is a toggle, not the table's action). **Start** stays
   `variant="sea"` but grows to the visually heaviest control on the screen (kept `size="lg"`, and it is now the

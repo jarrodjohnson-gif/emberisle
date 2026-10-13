@@ -124,7 +124,7 @@ if (colors.size !== seats.length) fail("two seats got the same default color", [
 console.log("host survived 6 malformed messages; default colors differ:", [...colors].join(" "));
 
 // 2b. Names are cleaned and made unique, and a colour must be a palette swatch (#251).
-const PALETTE = ["#c45c3e", "#2a8f8a", "#e4c9a0", "#3d6b4f"];
+const PALETTE = ["#e23d2e", "#2d6ee8", "#f3ecd9", "#8a4fd3"];
 const n = [client(), client(), client(), client()];
 await Promise.all(n.map((x) => x.open));
 n[0].send({ type: "hello", name: "Ember", color: "javascript:alert(1)" });

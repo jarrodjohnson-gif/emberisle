@@ -486,7 +486,7 @@ try {
       throw new Error(`hotseat rematch: ${JSON.stringify({ hot, names })}`);
     }
 
-    const seat = (id, name, host) => ({ id, name, color: "#c45c3e", avatarId: null, ready: true, host, away: false, url: null });
+    const seat = (id, name, host) => ({ id, name, color: "#e23d2e", avatarId: null, ready: true, host, away: false, url: null });
     const online = (seatId) => ({
       mode: "online",
       code: "ABCD",
@@ -559,7 +559,7 @@ try {
     await toTitle();
     await page.evaluate(
       ({ host, isHost }) => {
-        const seats = ["s0", "s1", "s2"].map((id, i) => ({ id, name: `P${i}`, color: "#c45c3e", avatarId: null, ready: true, host: id === "s0" ? !host : id === "s1" && host, away: false, url: null }));
+        const seats = ["s0", "s1", "s2"].map((id, i) => ({ id, name: `P${i}`, color: "#e23d2e", avatarId: null, ready: true, host: id === "s0" ? !host : id === "s1" && host, away: false, url: null }));
         window.__emberisle.setState({ screen: "lobby", mode: "online", code: "ABCD", seatId: "s1", seats, isHost });
       },
       { host, isHost },
@@ -980,10 +980,10 @@ try {
     };
     try {
       // #271: a Join the host refuses ("Color taken.") must not leave a socket that blocks later peeks.
-      const solo = await seat({ color: "#c45c3e" });
+      const solo = await seat({ color: "#e23d2e" });
       await page.evaluate(([code]) => {
         const g = window.__emberisle.getState();
-        g.setColor("#c45c3e");
+        g.setColor("#e23d2e");
         g.joinTable(code);
       }, [solo.welcome.code]);
       await page.waitForFunction(() => window.__emberisle.getState().error === "Color taken.", null, { timeout: 5000 });
@@ -994,7 +994,7 @@ try {
       await page.waitForFunction(
         (code) => {
           const t = window.__emberisle.getState();
-          return t.peeking && t.code === code && t.seats.some((x) => x.color === "#c45c3e");
+          return t.peeking && t.code === code && t.seats.some((x) => x.color === "#e23d2e");
         },
         solo.welcome.code,
         { timeout: 6000 },

@@ -54,7 +54,7 @@ function client(name, color) {
   return c;
 }
 
-const all = [client("Ember", "#c45c3e"), client("Tide", "#2a8f8a"), client("Pine", "#3d6b4f")];
+const all = [client("Ember", "#e23d2e"), client("Tide", "#2d6ee8"), client("Pine", "#8a4fd3")];
 await Promise.all(all.map((c) => c.open));
 all[0].send({ type: "hello", name: "Ember", color: all[0].color });
 const { code } = await all[0].next("welcome");

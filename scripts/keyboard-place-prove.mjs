@@ -344,7 +344,7 @@ try {
   const trough = await still.evaluate(() => {
     const g = window.__emberisle;
     const st = structuredClone(g.getState().state);
-    const pine = st.players.find((p) => p.color.toLowerCase() === "#3d6b4f") ?? st.players[0];
+    const pine = st.players.find((p) => p.color.toLowerCase() === "#8a4fd3") ?? st.players[0];
     st.current = pine.id;
     st.seq += 1;
     g.setState({ state: st, buildMode: "none", error: null });
