@@ -52,6 +52,7 @@
     "rotate-overlays-prove": "node scripts/rotate-overlays-prove.mjs",
     "make-icons": "node scripts/make-icons.mjs",
     "board-look-prove": "node scripts/board-look-prove.mjs",
+    "seat-marks-prove": "node --import ./server/register.mjs scripts/seat-marks-prove.mjs",
     "seat-rail-prove": "node scripts/seat-rail-prove.mjs",
     "fortune-tray-prove": "node scripts/fortune-tray-prove.mjs",
     "save-prove": "node --import ./server/register.mjs server/save-prove.mjs",

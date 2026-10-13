@@ -1,10 +1,10 @@
 # Emberisle visual audit — Basalt Table
 
-13 October 2026. Baseline commit: `9a27031`. Recommendation, three directions, component specifications and build order: [visual-direction.md](../design/visual-direction.md).
+13 October 2026. Baseline commit: `9a27031`; integrated main through `0196789`. Recommendation, three directions, component specifications and build order: [visual-direction.md](../design/visual-direction.md).
 
 ## Result
 
-Implemented an opaque graphite HUD, chalk goods, a compact phone header and action tray, readable affordability ticks, bottom trade offers, longer gain/turn stamps, a folded seat picker, clear victory scoring, and low-poly ore workers with loaded wagons. Existing sheep and wayfarer animation remains. No web fonts or chrome images were added. Reaction fades, dice flights and camera glides also stop immediately when reduced motion is enabled; live information remains visible for the same duration.
+Implemented an opaque graphite HUD, chalk goods, a compact phone header and action tray, readable affordability ticks, bottom trade offers, longer gain/turn stamps, a folded seat picker, clear victory scoring, and low-poly ore workers with loaded wagons. Existing sheep and wayfarer animation remains. The nine-dock fix and new seat colours were incorporated from main. Marks are retained under the brief’s explicit requirement, with legacy-colour support for saved tables. No web fonts or chrome images were added. Reaction fades, dice flights and camera glides also stop immediately when reduced motion is enabled; live information remains visible for the same duration.
 
 ## Measured board space
 
