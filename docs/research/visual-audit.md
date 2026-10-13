@@ -20,8 +20,8 @@ Also verified 1920×1080 and 320×568, simulated iPhone safe areas, 200% reflow,
 
 ## Audit findings fixed
 
-- Offers were near the top. They now occupy the bottom stack, keep Yes/No and a visible clock, and resolve to one log line for all receivers. A persistent live region announces the offer/result without moving focus. Simultaneous asker offers and robbery choices stack above chat; an impossibly short sheet minimizes while preserving its draft.
-- The portrait header wasted a row. Seats and menu now share a row; online utilities and Watching keep clear of points.
+- Offers were near the top. They now occupy the bottom stack, keep Yes/No and a visible clock, and resolve to one log line for all receivers. A persistent live region announces the offer/result without moving focus. Simultaneous asker offers and robbery choices stack above chat; a sheet that stays below 128 px for 500 ms minimizes while preserving its draft. Transient rotation heights do not close it.
+- The portrait header wasted a row. Seats and menu now share a row; online utilities and Watching keep clear of points. Narrow reconnecting seats use tighter internal gaps so the status mark cannot clip the short name.
 - The landscape hand clipped its fifth good. All five fit, with Trade/End and offers kept reachable when the column scrolls.
 - Camera classification missed compact seat rails, narrow centred trays on wide screens, and bottom stacks crossing the viewport midpoint. Those surfaces now reserve real board space. A local No and offer-height changes trigger a refit.
 - Chat controls were 20–32 px. Presets, fields, copy/filter controls, emotes and Minimize are 44 px. Phone fields are 16 px and the sheet follows the visual viewport keyboard inset. An offer or robbery choice reserves a strip above chat.
