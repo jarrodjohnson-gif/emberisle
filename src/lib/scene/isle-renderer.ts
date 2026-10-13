@@ -167,6 +167,7 @@ export class IsleRenderer {
   renders = 0;
   private foam!: THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial>;
   private coastMiter = new Map<string, { mx: number; mz: number }>();
+  private coastOrder: string[] = [];
   private onPick: (kind: "hex" | "vertex" | "edge", id: string) => void;
   private onSelect: (sel: { kind: "hex" | "vertex" | "edge"; id: string } | null) => void;
 
@@ -246,6 +247,7 @@ export class IsleRenderer {
 
     const coast = coastLoop();
     for (const c of coast) this.coastMiter.set(c.id, { mx: c.mx, mz: c.mz });
+    this.coastOrder = coast.map((c) => c.id);
     const beach = new THREE.Mesh(
       coastStrip(coast, -0.04, 0.22),
       new THREE.MeshStandardMaterial({ color: 0xe8d7b0, roughness: 1, metalness: 0 }),
@@ -846,29 +848,36 @@ export class IsleRenderer {
       }
     }
 
-    for (const v of state.vertices) {
-      if (!v.harbor) continue;
-      const m = this.coastMiter.get(v.id);
-      if (!m) continue; // every harbor is coastal; a miss here is a bug in coastLoop, not a fallback case
+    // A dock spans a coastal edge, so both its corners carry the harbor; the deal spaces docks at least three edges apart, so two
+    // neighbouring harbor corners on the coast loop of one kind are always one dock. One pier and one boat per dock.
+    const vbyId = new Map(state.vertices.map((v) => [v.id, v]));
+    const n = this.coastOrder.length;
+    for (let i = 0; i < n; i++) {
+      const va = vbyId.get(this.coastOrder[i]!);
+      const vb = vbyId.get(this.coastOrder[(i + 1) % n]!);
+      if (!va?.harbor || va.harbor !== vb?.harbor) continue;
+      const ma = this.coastMiter.get(va.id)!;
+      const mb = this.coastMiter.get(vb.id)!;
+      const cx = (va.x + vb.x) / 2;
+      const cz = (va.z + vb.z) / 2;
+      const mx = (ma.mx + mb.mx) / 2;
+      const mz = (ma.mz + mb.mz) / 2;
       const jettyStart = 0.22; // the beach's own outer offset (docs/design/ocean.md)
       const jettyLen = 0.24; // ends at 0.46: just past the foam's 0.42 outer offset
-      const px = v.x + m.mx * (jettyStart + jettyLen / 2);
-      const pz = v.z + m.mz * (jettyStart + jettyLen / 2);
       const pier = new THREE.Mesh(
         new THREE.BoxGeometry(0.16, 0.05, jettyLen),
         new THREE.MeshStandardMaterial({ color: 0x6b4a32, roughness: 0.82 }),
       );
-      pier.position.set(px, 0.1, pz);
-      pier.lookAt(v.x + m.mx, 0.1, v.z + m.mz);
+      pier.position.set(cx + mx * (jettyStart + jettyLen / 2), 0.1, cz + mz * (jettyStart + jettyLen / 2));
+      pier.lookAt(cx + mx, 0.1, cz + mz);
       pier.castShadow = true;
       this.land.add(pier);
 
-      const boat = makeBoat(v.harbor);
-      const bx = v.x + m.mx * (jettyStart + jettyLen + 0.16);
-      const bz = v.z + m.mz * (jettyStart + jettyLen + 0.16);
-      boat.position.set(bx, 0.08, bz);
-      boat.lookAt(v.x, 0.08, v.z);
-      boat.userData.vid = v.id;
+      const boat = makeBoat(va.harbor);
+      boat.position.set(cx + mx * (jettyStart + jettyLen + 0.16), 0.08, cz + mz * (jettyStart + jettyLen + 0.16));
+      boat.lookAt(cx, 0.08, cz);
+      boat.userData.vids = [va.id, vb.id];
+      boat.userData.kind = va.harbor;
       this.living.add(boat);
       this.boats.push(boat);
     }
@@ -925,8 +934,8 @@ export class IsleRenderer {
     }
 
     for (const b of this.boats) {
-      const v = vmap.get(b.userData.vid as string);
-      const claimed = v?.building?.playerId;
+      const corners = (b.userData.vids as string[]).map((id) => vmap.get(id));
+      const claimed = (corners.find((v) => v?.building) ?? null)?.building?.playerId;
       const sail = b.getObjectByName("sail") as THREE.Mesh | undefined;
       if (sail && sail.material instanceof THREE.MeshStandardMaterial) {
         sail.material.color.set(claimed ? pmap.get(claimed)?.color ?? "#eee" : "#f4efe4");
