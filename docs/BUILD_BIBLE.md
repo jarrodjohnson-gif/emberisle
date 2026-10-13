@@ -148,7 +148,7 @@ gear icon (server URL)
 
 1. Name (default "Ember"). 16 letters max.
 2. Color: four swatches, not a picker.
-   `#c45c3e` Ember, `#2a8f8a` Tide, `#e4c9a0` Dune, `#3d6b4f` Pine.
+   `#e23d2e` Ember, `#2d6ee8` Tide, `#f3ecd9` Dune, `#8a4fd3` Pine.
    Taken colors are dimmed.
 3. Picture: circle, 96 px. "Use a picture" opens a file dialog.
    PNG or JPG, under 256 KB. If they skip it, circle is the color + first letter.
@@ -453,7 +453,7 @@ Client → server is an **intent**. Server answers `state` or `error`.
 Client intents:
 
 ```json
-{ "type": "hello", "code": "K7QP", "name": "Jarrod", "color": "#c45c3e", "avatarId": "p1" }
+{ "type": "hello", "code": "K7QP", "name": "Jarrod", "color": "#e23d2e", "avatarId": "p1" }
 { "type": "hello", "code": "K7QP", "watch": true }
 { "type": "ready", "value": true }
 { "type": "start" }

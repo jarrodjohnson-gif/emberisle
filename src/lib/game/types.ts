@@ -32,20 +32,8 @@ export const TERRAIN_LABEL: Record<Terrain, string> = {
   waste: "Wastes",
 };
 
-export const PLAYER_COLORS = ["#c45c3e", "#2a8f8a", "#e4c9a0", "#3d6b4f"] as const;
+export const PLAYER_COLORS = ["#e23d2e", "#2d6ee8", "#f3ecd9", "#8a4fd3"] as const;
 export const PLAYER_NAMES = ["Ember", "Tide", "Dune", "Pine"] as const;
-
-// #312 (docs/design/seat-marks.md, option B): a non-colour mark per seat, fixed by its colour, so the seat dot, the trade
-// toast, the win table and every piece on the board carry the same shape. The ink is the piece rim that reads best on
-// that colour (RIM in src/lib/scene/palette.ts).
-export type SeatMark = "triangle" | "bars" | "ring" | "plus";
-export const SEAT_MARKS: Record<(typeof PLAYER_COLORS)[number], { mark: SeatMark; ink: string }> = {
-  "#c45c3e": { mark: "triangle", ink: "#1c1916" },
-  "#2a8f8a": { mark: "bars", ink: "#1c1916" },
-  "#e4c9a0": { mark: "ring", ink: "#1c1916" },
-  "#3d6b4f": { mark: "plus", ink: "#fff6e8" },
-};
-export const seatMark = (color: string) => (SEAT_MARKS as Record<string, { mark: SeatMark; ink: string } | undefined>)[color.toLowerCase()] ?? null;
 
 export const COST = {
   path: { timber: 1, clay: 1 } as Partial<Record<Resource, number>>,

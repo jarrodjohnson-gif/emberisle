@@ -53,9 +53,9 @@ function client(name, color) {
   return c;
 }
 
-const ember = client("Ember", "#c45c3e");
-const tide = client("Tide", "#2a8f8a");
-const pine = client("Pine", "#3d6b4f");
+const ember = client("Ember", "#e23d2e");
+const tide = client("Tide", "#2d6ee8");
+const pine = client("Pine", "#8a4fd3");
 await Promise.all([ember.open, tide.open, pine.open]);
 
 ember.send({ type: "hello", name: "Ember", color: ember.color });
@@ -74,7 +74,7 @@ pine.send({ type: "hello", code, name: "Pine", color: pine.color });
 await pine.next("welcome");
 
 // Peek (docs/design/color-peek.md): which seats a lobby holds, without sitting down.
-const peeker = client("Peeker", "#e4c9a0");
+const peeker = client("Peeker", "#f3ecd9");
 await peeker.open;
 await new Promise((r) => setTimeout(r, 100));
 const hostSeen = () => ember.inbox.filter((m) => m.type === "seats").length;
@@ -115,7 +115,7 @@ ember.send({ type: "start" });
 const all = [ember, tide, pine];
 await Promise.all(all.map((c) => c.next("state")));
 
-const late = client("Late", "#e4c9a0");
+const late = client("Late", "#f3ecd9");
 await late.open;
 late.send({ type: "peek", code });
 const started = await late.next("seats");
@@ -285,7 +285,7 @@ handsAreCounts("after 20 rolls");
   expectError(await late.next("error"), "Game already started.", "hello after the start");
 
   // A lobby: only the host starts, and 3 or 4 sit.
-  const lobby = [client("Host", "#c45c3e"), client("Two", "#2a8f8a"), client("Three", "#3d6b4f"), client("Four", "#7a5c9e"), client("Five", "#b8860b")];
+  const lobby = [client("Host", "#e23d2e"), client("Two", "#2d6ee8"), client("Three", "#8a4fd3"), client("Four", "#7a5c9e"), client("Five", "#b8860b")];
   await Promise.all(lobby.map((c) => c.open));
   const [h, two, three, four, five] = lobby;
   h.send({ type: "hello", name: "Host", color: h.color });
@@ -306,9 +306,9 @@ handsAreCounts("after 20 rolls");
 
 // The host leaves the lobby: the next seat is host, can start, and the table is told (#249).
 {
-  const h = client("Host", "#c45c3e");
-  const t = client("Tide", "#2a8f8a");
-  const p = client("Pine", "#3d6b4f");
+  const h = client("Host", "#e23d2e");
+  const t = client("Tide", "#2d6ee8");
+  const p = client("Pine", "#8a4fd3");
   const o = client("Oak", "#8a5a9e");
   await Promise.all([h.open, t.open, p.open, o.open]);
   h.send({ type: "hello", name: "Host", color: h.color });

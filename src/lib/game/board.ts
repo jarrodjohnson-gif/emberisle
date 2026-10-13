@@ -40,7 +40,7 @@ function makePlayer(i: number, name: string, kind: PlayerKind): PlayerState {
   return {
     id: `p${i}`,
     name,
-    color: PLAYER_COLORS[i] ?? "#c45c3e",
+    color: PLAYER_COLORS[i] ?? "#e23d2e",
     kind,
     resources: emptyRes(),
     hidden: { knight: 0, road: 0, plenty: 0, monopoly: 0, vp: 0 },

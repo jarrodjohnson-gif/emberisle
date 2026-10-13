@@ -135,7 +135,7 @@ ring.userData = { kind: "hex", id: h.id };
 - The band is 0.20 wide (HEX_SIZE × 0.18): 9 px at 1280 overhead, inset 0.07 from the tile's edge so two
   neighbouring targets show two rings, not one blob.
 - The lantern's orange as both colour and emissive (cream albedo washed out to the slab rims under ACES), so the glow is the wayfarer's own colour, not a seat's
-  colour (today's ember `#c45c3e` is Ember's seat colour, which reads as "Ember's hexes").
+  colour (today's ember `#e23d2e` is Ember's seat colour, which reads as "Ember's hexes").
 - The terrain, the token, and the trees inside the band stay visible, so the player can pick a target by its
   number. That is the whole point of the move.
 - Pulse in `tick`: `for (const m of this.marks.children) if (m.userData.kind === "hex") (m.material as THREE.MeshStandardMaterial).emissiveIntensity = 0.5 + 0.35 * (0.5 + 0.5 * Math.sin(t * 4));`

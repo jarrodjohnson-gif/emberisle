@@ -106,7 +106,7 @@ function client(name, color) {
 
 // A fresh table with `n` seated players, past the initial "seats" broadcast.
 async function freshTable(names) {
-  const clients = names.map((n, i) => client(n, ["#c45c3e", "#2a8f8a", "#3d6b4f", "#e4c9a0"][i]));
+  const clients = names.map((n, i) => client(n, ["#e23d2e", "#2d6ee8", "#8a4fd3", "#f3ecd9"][i]));
   await Promise.all(clients.map((c) => c.open));
   clients[0].send({ type: "hello", name: clients[0].name, color: clients[0].color });
   const welcome = await clients[0].next("welcome");
@@ -128,7 +128,7 @@ async function freshTable(names) {
     assert.equal(line.seat, "s0");
     assert.equal(line.player, null);
     assert.equal(line.name, "Ember");
-    assert.equal(line.color, "#c45c3e");
+    assert.equal(line.color, "#e23d2e");
     assert.equal(line.text, "hello");
   }
   console.log("lobby chat: host fills in the sender");
@@ -188,7 +188,7 @@ async function freshTable(names) {
   await Promise.all([ember.next("chat"), tide.next("chat")]);
   ember.send({ type: "chat", text: "second" });
   await Promise.all([ember.next("chat"), tide.next("chat")]);
-  const late = client("Late", "#e4c9a0");
+  const late = client("Late", "#f3ecd9");
   await late.open;
   late.send({ type: "hello", code, name: "Late", color: late.color });
   const lateWelcome = await late.next("welcome");
