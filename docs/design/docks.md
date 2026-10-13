@@ -5,7 +5,7 @@ Sources: [docs/research/visual-polish.md](../research/visual-polish.md) §3; the
 
 ## What is wrong today
 
-The harbor loop in `buildLand` places a pier along the vertex's direction from the world origin
+(Historical, before #587 drew one per dock.) The harbor loop in `buildLand` places a pier along the vertex's direction from the world origin
 (`v.x / len, v.z / len`), not along the coast's own outward miter from `docs/design/ocean.md`. On this
 convex island the two are close but not equal, and the pier's length (0.72, starting at the raw vertex) runs
 well past the foam's outer edge (0.42) into open water — the "stick out through the rim" from #124. The boat
@@ -39,33 +39,22 @@ for (const c of coast) this.coastMiter.set(c.id, { mx: c.mx, mz: c.mz });
 A short plank from the beach's outer edge to just past the foam, not a long one from the raw vertex:
 
 ```ts
-for (const v of state.vertices) {
-  if (!v.harbor) continue;
-  const m = this.coastMiter.get(v.id);
-  if (!m) continue; // every harbor is coastal; a miss here is a bug in coastLoop, not a fallback case
-  const jettyStart = 0.22; // the beach's own outer offset (docs/design/ocean.md)
-  const jettyLen = 0.24; // ends at 0.46: just past the foam's 0.42 outer offset
-  const px = v.x + m.mx * (jettyStart + jettyLen / 2);
-  const pz = v.z + m.mz * (jettyStart + jettyLen / 2);
-  const pier = new THREE.Mesh(
-    new THREE.BoxGeometry(0.16, 0.05, jettyLen),
-    new THREE.MeshStandardMaterial({ color: 0x6b4a32, roughness: 0.82 }),
-  );
-  pier.position.set(px, 0.1, pz);
-  pier.lookAt(v.x + m.mx, 0.1, v.z + m.mz);
-  pier.castShadow = true;
-  this.land.add(pier);
-
-  const boat = makeBoat(v.harbor);
-  const bx = v.x + m.mx * (jettyStart + jettyLen + 0.16);
-  const bz = v.z + m.mz * (jettyStart + jettyLen + 0.16);
-  boat.position.set(bx, 0.08, bz);
-  boat.lookAt(v.x, 0.08, v.z);
-  boat.userData.vid = v.id;
-  this.living.add(boat);
-  this.boats.push(boat);
+// A dock spans a coastal edge, so both corners carry the harbor. Walk the coast loop; two neighbouring corners
+// with the same harbor are one dock (the deal spaces docks at least three edges apart, so this is never ambiguous).
+for (let i = 0; i < n; i++) {
+  const va = vbyId.get(this.coastOrder[i]!);
+  const vb = vbyId.get(this.coastOrder[(i + 1) % n]!);
+  if (!va?.harbor || va.harbor !== vb?.harbor) continue;
+  // cx, cz: the edge midpoint; mx, mz: the average of the two corners' miters
+  pier.position.set(cx + mx * (jettyStart + jettyLen / 2), 0.1, cz + mz * (jettyStart + jettyLen / 2));
+  boat.position.set(cx + mx * (jettyStart + jettyLen + 0.16), 0.08, cz + mz * (jettyStart + jettyLen + 0.16));
+  boat.userData.vids = [va.id, vb.id]; // the sail takes the colour of the first built corner
 }
 ```
+
+One pier and one boat per dock: nine of each on a standard isle, not one per corner (18, #587). Both corners stay
+the rule anchors; `harborRate` is untouched.
+
 
 Width drops from 0.2 to 0.16 (a plank, not a road) and length from 0.72 to 0.24: it now starts where the
 sand ends and stops just past the foam, instead of spanning both. The boat sits a further 0.16 out, clear of

@@ -244,6 +244,19 @@ try {
     check(`${tag}: the overhead camera is on in play`, fit.overhead);
     check(`${tag}: every corner and dock inside the measured HUD hole`, fit.corners === 54 && fit.out.length === 0, { hole: fit.hole, scale: fit.scale, dockIn: fit.dockIn, out: fit.out.slice(0, 6) });
     check(`${tag}: every corner lands on the canvas (clear of the HUD)`, fit.covered.length === 0, fit.covered.slice(0, 6));
+    // #587: one pier and one boat per dock (nine on a standard isle), not one per harbor corner (18); each boat's kind is its dock's.
+    const docks = await page.evaluate(() => {
+      const isle = window.__isle;
+      const st = window.__emberisle.getState().state;
+      const piers = isle.land.children.filter((o) => o.geometry?.type === "BoxGeometry" && o.geometry.parameters.depth === 0.24).length;
+      const kinds = st.vertices.filter((v) => v.harbor).length;
+      const mismatched = isle.boats.filter((b) => {
+        const ks = (b.userData.vids ?? []).map((id) => st.vertices.find((v) => v.id === id)?.harbor);
+        return ks.length !== 2 || !ks[0] || ks[0] !== ks[1] || ks[0] !== b.userData.kind;
+      }).length;
+      return { piers, boats: isle.boats.length, corners: kinds, mismatched };
+    });
+    check(`${tag}: nine piers and nine boats, one per dock, each boat on its dock's two corners`, docks.piers === 9 && docks.boats === 9 && docks.corners === 18 && docks.mismatched === 0, docks);
     const tokenMin = touch ? 18 : 24;
     check(`${tag}: a number token is at least ${tokenMin} px across`, fit.token >= tokenMin, { token: fit.token });
     const p0 = await pose();
