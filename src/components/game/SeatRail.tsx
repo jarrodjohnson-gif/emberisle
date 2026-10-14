@@ -3,8 +3,8 @@
 // strip (docs/design/mobile-hud.md) share SeatLine: colour dot, name, goods and fortunes as two small counts only when
 // non-zero, the roll-off die only while the roll-off is live, and the points at text-title. The seat on turn carries
 // `seat-turn`: its dot pulses softly (bible §4.3) and the card brightens over 200 ms (§8), with an ink ring on the dot and
-// aria-current so the turn never rests on colour or motion alone (#312); the dot is a SeatDot, so it carries the seat's
-// mark. Your fortunes by kind and a dropped seat's state are facts in the player menu, one tap away.
+// aria-current so the turn never rests on colour or motion alone (#312); the dot is a SeatDot.
+// Your fortunes by kind and a dropped seat's state are facts in the player menu, one tap away.
 import { ScrollText } from "lucide-react";
 import { ReactionFloats } from "@/components/game/chunks";
 import { LazyBoundary } from "@/lib/lazy";
@@ -71,7 +71,7 @@ function SeatLine({ p, actor, short }: { p: PlayerState; actor: string; short?: 
       ) : (
         <>
           {goods > 0 ? <Count testid="seat-goods" n={goods} unit="good" className={narrow} /> : null}
-          {strip && fortunes > 0 ? <Count testid="seat-fortunes" n={fortunes} unit="fortune" className={narrow} /> : null}
+          {fortunes > 0 ? <Count testid="seat-fortunes" n={fortunes} unit="fortune" className={narrow} /> : null}
         </>
       )}
       <RollOffDie state={state} id={p.id} className={strip ? "size-5 rounded-[4px] text-xs" : "size-6 text-sm"} />
@@ -114,7 +114,7 @@ function SeatCard({ p, actor, short, className }: { p: PlayerState; actor: strin
         onClick={() => openMenu(menuFor === p.id ? null : p.id)}
         className={cn(
           "flex h-11 w-full cursor-pointer items-center rounded-[inherit] text-left hover:bg-white/40",
-          strip ? "gap-1.5 px-2 @max-[100px]:gap-1 @max-[100px]:px-1.5 @max-[100px]:has-[.seat-away]:gap-0.5 @max-[72px]:px-1 @max-[72px]:has-[.seat-away]:gap-0" : "gap-2 px-3",
+          strip ? "gap-1.5 px-2 @max-[100px]:gap-1 @max-[100px]:px-1.5 @max-[100px]:has-[.seat-away]:gap-0.5 @max-[72px]:px-1 @max-[72px]:has-[.seat-away]:gap-0" : "gap-1.5 px-2.5",
         )}
       >
         <SeatLine p={p} actor={actor} short={short} />
@@ -133,7 +133,7 @@ export function SeatRail({ actor }: { actor: string }) {
   const players = useGame((s) => s.state!.players);
   const menuFor = useGame((s) => s.menuFor);
   return (
-    <aside className={cn("pointer-events-none absolute left-3 top-20 hidden w-44 flex-col gap-1 md:flex", menuFor ? "z-20" : "z-10")}>
+    <aside className={cn("pointer-events-none absolute left-3 top-20 hidden w-48 flex-col gap-1 md:flex", menuFor ? "z-20" : "z-10")}>
       {players.map((p) => (
         <div key={p.id} className="pointer-events-auto flex flex-col gap-1">
           <SeatCard p={p} actor={actor} className="rounded-chip" />

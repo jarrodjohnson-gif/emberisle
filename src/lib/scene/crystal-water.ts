@@ -205,9 +205,10 @@ export function makeCrystalSea(coast: Coast, shared: SeaUniforms) {
     aCoast: [1, (o) => [o]],
     aInward: [2, (_, c) => inward(c)],
   });
-  // Absorption per unit of path, from the attenuation colour #38c7bf reached over 0.5 units: red goes first, so sand turns aqua.
-  const att = new THREE.Color(0x38c7bf);
-  const sigma = new THREE.Vector3(...[att.r, att.g, att.b].map((c) => -Math.log(c) / 0.5));
+  // Absorption per unit of path, from the pale attenuation colour #6fd6cf reached over 2 units: light enough that sand stays
+  // clear through the first few units off the coast.
+  const att = new THREE.Color(0x6fd6cf);
+  const sigma = new THREE.Vector3(...[att.r, att.g, att.b].map((c) => -Math.log(c) / 2));
   const mat = new THREE.ShaderMaterial({
     uniforms: {
       ...shared,
@@ -217,9 +218,13 @@ export function makeCrystalSea(coast: Coast, shared: SeaUniforms) {
       uNear: { value: 0.1 },
       uFar: { value: 80 },
       uSigma: { value: sigma },
-      // Pre-tonemap linear values, tuned by read-back so the drawn shallows land near #a8e6df and the deep near #2aa7a3.
-      uShallow: { value: lin(0, 2, 1.95) },
-      uDeep: { value: lin(0, 0.29, 0.28) },
+      // How fast the water's own colour takes over with depth, and the cool in-scatter tint on what is seen through it (a
+      // multiplier, so the floor keeps its contrast).
+      uBodyDepth: { value: 1.8 },
+      uTint: { value: new THREE.Vector3(0.6, 2.1, 3.0) },
+      // Pre-tonemap linear values, tuned by read-back so the drawn shallows land near #cdf1ec and the deep stays lighter than #4ab9b5.
+      uShallow: { value: lin(0.7, 3.4, 3.2) },
+      uDeep: { value: lin(0.04, 0.5, 0.5) },
       uSky: { value: lin(0.9, 1.15, 1.15) },
       uSunDir: { value: new THREE.Vector3(8, 16, 6).normalize() },
       uPaper: { value: PAPER },
@@ -257,6 +262,8 @@ export function makeCrystalSea(coast: Coast, shared: SeaUniforms) {
       uniform float uNear;
       uniform float uFar;
       uniform vec3 uSigma;
+      uniform float uBodyDepth;
+      uniform vec3 uTint;
       uniform vec3 uShallow;
       uniform vec3 uDeep;
       uniform vec3 uSky;
@@ -282,18 +289,22 @@ export function makeCrystalSea(coast: Coast, shared: SeaUniforms) {
         // Refraction: the scene below, shifted along the surface slope, never picking up something in front of the water.
         vec2 uv = gl_FragCoord.xy / uResolution;
         float d0 = max(vView.z - sceneZ(uv), 0.0);
-        vec2 ruv = uv + (viewMatrix * vec4(N, 0.0)).xy * 0.04 * min(d0, 1.0);
+        vec2 ruv = uv + (viewMatrix * vec4(N, 0.0)).xy * 0.02 * min(d0, 1.0);
         float d = vView.z - sceneZ(ruv);
         if (d < 0.0) { ruv = uv; d = d0; }
         vec3 under = texture2D(uUnder, ruv).rgb;
         // Absorb the floor by the path length; the water's own colour rises with depth, pale over sand, teal over the deep.
-        vec3 c = under * exp(-uSigma * d);
+        vec3 c = under * exp(-uSigma * d) * mix(vec3(1.0), uTint, smoothstep(0.0, 0.3, d));
         vec3 body = mix(uShallow, uDeep, smoothstep(0.15, 0.85, d));
-        c = mix(c, body, 1.0 - exp(-d / 0.55));
+        c = mix(c, body, 1.0 - exp(-d / uBodyDepth));
         // Fresnel sky and the sun's glint.
         float F = pow(1.0 - clamp(dot(N, V), 0.0, 1.0), 5.0);
         c = mix(c, uSky, 0.02 + 0.55 * F);
-        c += vec3(1.6, 1.5, 1.3) * pow(max(dot(reflect(-V, N), uSunDir), 0.0), 600.0) * uMotion;
+        // A fine, sparse sparkle: the glint only where the surface faces the sun and a fine noise peaks, on the crests.
+        float glint = pow(max(dot(reflect(-V, N), uSunDir), 0.0), 900.0);
+        float fleck = smoothstep(0.975, 1.0, vnoise(vRest * 70.0 + uTime * vec2(0.9, -0.6)))
+          * smoothstep(0.02, 0.05, vWorld.y) * smoothstep(0.85, 0.97, dot(reflect(-V, N), uSunDir));
+        c += vec3(1.8, 1.7, 1.5) * (glint * 0.6 + fleck * 0.5) * uMotion;
         // Breakers: fine foam on the crest in the last unit, fading within 1 s.
         float o = vCoast;
         float n = vnoise(vRest * 18.0 + uTime * 0.5) * 0.55 + vnoise(vRest * 41.0 - uTime * 0.8) * 0.45;

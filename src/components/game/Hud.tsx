@@ -253,8 +253,9 @@ export function Hud() {
   );
 
   const endRow = (
-    <div className={cn("flex gap-2 *:self-center", column ? "end-footer sticky z-10 justify-between rounded-control bg-surface p-1" : "ml-auto")}>
-      {column ? <TradeButton /> : dice}
+    <div className={cn("flex *:self-center", column ? "end-footer sticky z-10 justify-between gap-1 rounded-control bg-surface p-1" : "ml-auto gap-2")}>
+      {/* The 260 px column has room for Trade, End turn and the dice only with the faces shrunk (they are not targets). */}
+      {column ? <><TradeButton /><div className="[&>div]:gap-1 [&_[data-testid=die]]:size-6 [&_[data-testid=die]]:p-0.5 [&_[data-pip]]:size-1">{dice}</div></> : dice}
       <Button size="sm" variant={endPrimary ? "primary" : "secondary"} className={phone ? "h-11" : undefined} onClick={() => dispatch({ type: "endTurn" })}>
         End turn
       </Button>
@@ -324,7 +325,7 @@ export function Hud() {
       <div className="pointer-events-none absolute bottom-0 inset-x-0 z-10 px-safe pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         <div className={cn("relative", column ? "w-[260px] max-w-[42vw]" : "mx-auto max-w-[656px]")}>
           {/* #459: floats above the stack, so it coming and going never reflows the turn banner. */}
-          {banner && !tradeOutcome ? (
+          {banner && !(tradeOutcome && banner.endsWith("'s trade")) ? (
             <p
               role="status"
               data-testid="banner"

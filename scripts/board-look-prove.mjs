@@ -1,8 +1,8 @@
 // #135, polish.md "The board look target": the island reads like a lit board on a table. In the browser:
 // - the light rig is one warm key lamp (the only shadow caster, at least 3x the bounce), near-grey low bounce, no flat
 //   ambient, soft shadows (PCF blurred at least 4 texels) from a map of at most 1024, exposure at most 1.1;
-// - the crystal sea (crystal-water.md), read back at 1280x720 in play, is within 20/255 of the reference's deep #2aa7a3 and
-//   shallow #a8e6df, and still sea (no paper) at the canvas corner zoomed fully out; in the free view, tilted low, the far
+// - the crystal sea (crystal-water.md), read back at 1280x720 in play: shallows within 20/255 of the near-white aqua
+//   #cdf1ec, deep water a blue-green no darker or more saturated than #4ab9b5, and still sea (no paper) at the canvas corner zoomed fully out; in the free view, tilted low, the far
 //   horizon is the studio paper #f1efe9 the page sits on. Every other page pins the simple sea, so the gesture timings do not
 //   pay for the crystal sea on software GL;
 // - the title keeps the slow orbit (free camera, auto-rotate); in play, on a fine pointer at 1280x720 and a coarse one at
@@ -216,8 +216,9 @@ try {
       const deep = await patch(page, { x: spots.deep.x - 4, y: spots.deep.y - 4, w: 9, h: 9 });
       const rgb = (m) => ["r", "g", "b"].map((c) => Math.round(m[c] * 255));
       const near = (m, want) => Math.max(...rgb(m).map((v, i) => Math.abs(v - want[i]))) <= 20;
-      check("1280x720 crystal: deep water is the reference's teal #2aa7a3 (within 20/255)", near(deep.mean, [42, 167, 163]), { deep: rgb(deep.mean) });
-      check("1280x720 crystal: the shallow band is the reference's pale aqua #a8e6df (within 20/255), lighter than the deep", near(shore.mean, [168, 230, 223]) && lum(shore.mean) > lum(deep.mean) + 0.04, { shore: rgb(shore.mean), deep: rgb(deep.mean) });
+      const [dr, dg, db] = rgb(deep.mean);
+      check("1280x720 crystal: deep water is a light blue-green, no darker or more saturated than #4ab9b5", dg > dr * 1.3 && db > dr * 1.3 && dr >= 74 && dg >= 185 && db >= 181, { deep: rgb(deep.mean) });
+      check("1280x720 crystal: the shallow band is near-white aqua #cdf1ec (within 20/255), lighter than the deep", near(shore.mean, [205, 241, 236]) && lum(shore.mean) > lum(deep.mean) + 0.04, { shore: rgb(shore.mean), deep: rgb(deep.mean) });
     }
     await page.screenshot({ path: "test-results/board-look-crystal-1280x720.png" });
     await page.emulateMedia({ reducedMotion: "no-preference" });

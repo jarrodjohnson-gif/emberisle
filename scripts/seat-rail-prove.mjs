@@ -186,7 +186,7 @@ try {
     console.log(`${v.tag}: cells ${Math.round(cellW)} px, counts ${wide ? "shown" : "folded into the facts"}`);
     if (wide) {
       assert.equal(by(mid.a).goods, "3 goods", `${v.tag} main: seat a shows 3 goods, got ${JSON.stringify(by(mid.a).goods)}`);
-      assert.equal(by(mid.b).fortunes, v.seat === "rail" ? null : "1 fortune", `${v.tag} main: seat b shows 1 fortune, got ${JSON.stringify(by(mid.b).fortunes)}`);
+      assert.equal(by(mid.b).fortunes, "1 fortune", `${v.tag} main: seat b shows 1 fortune, got ${JSON.stringify(by(mid.b).fortunes)}`);
       assert.equal(by(mid.c).goods, "1 good", `${v.tag} main: seat c shows 1 good`);
     }
     assert.equal(by(mid.b).goods, null, `${v.tag} main: seat b holds nothing and shows no goods count`);
