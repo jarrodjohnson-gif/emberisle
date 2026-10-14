@@ -38,6 +38,7 @@ const browser = await chromium.launch({
   executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
 });
 
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const errors = [];
 let code = 0;
 
@@ -50,9 +51,11 @@ async function tab(name) {
   // #425: records every clip the page starts (the file name), without changing what play() does.
   await page.addInitScript(() => {
     window.__plays = [];
+    window.__heard = [];
     const play = HTMLMediaElement.prototype.play;
     HTMLMediaElement.prototype.play = function () {
       window.__plays.push(new URL(this.src).pathname);
+      window.__heard.push(`${new URL(this.src).pathname.replace("/audio/", "")}@${this.volume}`);
       return play.call(this);
     };
   });
@@ -102,6 +105,9 @@ async function synced(tabs, seq, what, ms) {
   return vs;
 }
 
+// #609: the clips this tab started since `forget`, as "file@volume", without the UI clicks.
+const forget = (tabs) => Promise.all(tabs.map((t) => t.page.evaluate(() => (window.__heard = []))));
+const trades = (t) => t.page.evaluate(() => window.__heard.filter((h) => /^(trade_offer|confirmation_001|error_002)/.test(h)));
 const act = (t, fn, arg) => t.page.evaluate(([f, a]) => window.__emberisle.getState()[f](...[].concat(a)), [fn, arg]);
 const total = (hand) => RES.reduce((n, r) => n + hand[r], 0);
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
@@ -250,7 +256,13 @@ try {
       return vs.every((v) => v.offer && v.toast) ? vs : null;
     }, "the offer reaches every tab");
   };
+  await forget(tabs);
   vs = await ask(give, want);
+  await until(async () => (await trades(B)).length && (await trades(C)).length, "the offer sound");
+  // #609: the offer's arrival ticks on the other seats, not on the asker.
+  for (const t of [B, C]) if (!same(await trades(t), ["trade_offer.wav@1"])) throw new Error(`${t.name} heard ${JSON.stringify(await trades(t))} for the offer`);
+  if ((await trades(A)).length) throw new Error(`the asker heard ${JSON.stringify(await trades(A))} for its own offer`);
+  console.log("#609: trade_offer plays on both other seats, not on the asker");
   if (await A.page.getByTestId("trade-panel").isVisible()) throw new Error("the panel stayed open after the ask");
   const afterAsk = await focusIs(A);
   if (afterAsk.label !== "Trade") throw new Error(`#378: the ask closed the panel but focus went to "${afterAsk.label}", not the Trade button`);
@@ -322,6 +334,7 @@ try {
   if (!vs[j].toast || vs.some((v) => !v.offer || v.offer.tradeId !== tradeId)) throw new Error("the offer closed on a single No");
   console.log(`${C.name} declined: asker sees "${C.name} declined", offer still open for ${B.name}`);
 
+  await forget(tabs);
   // 3. B says Yes (Enter on the focused button, the spy's positive control for #366): the goods move in every tab's next state.
   await spyAnswers(B);
   await B.page.getByTestId("trade-toast").getByRole("button", { name: "Yes", exact: true }).focus();
@@ -330,6 +343,11 @@ try {
   if (!same(yesSent, [[tradeId, true]])) throw new Error(`${B.name}'s Enter on an enabled Yes sent ${JSON.stringify(yesSent)}`);
   vs = await synced(tabs, before[0].seq, "the trade lands");
   await until(async () => (await views(tabs)).every((v) => !v.offer) || null, "offers cleared");
+  // #609: a deal is heard in full by the two who made it and softer by the bystander.
+  await until(async () => (await Promise.all(tabs.map(trades))).every((h) => h.length), "the deal sound");
+  for (const t of [A, B]) if (!same(await trades(t), ["confirmation_001.wav@1"])) throw new Error(`${t.name} heard ${JSON.stringify(await trades(t))} for the deal`);
+  if (!same(await trades(C), ["confirmation_001.wav@0.5"])) throw new Error(`${C.name} heard ${JSON.stringify(await trades(C))} for the deal`);
+  console.log("#609: trade_yes plays in full for the asker and taker, at half volume for the bystander");
   const [a0, b0, a1, b1] = [before[i].mine, before[j].mine, vs[i].mine, vs[j].mine];
   if (a1[give] !== a0[give] - 1 || a1[want] !== a0[want] + 1) throw new Error(`asker hand ${JSON.stringify([a0, a1])}`);
   if (b1[give] !== b0[give] + 1 || b1[want] !== b0[want] - 1) throw new Error(`taker hand ${JSON.stringify([b0, b1])}`);
@@ -347,6 +365,7 @@ try {
   if (vs[0].phase !== "main" || vs[0].current !== vs[i].you) throw new Error("the asker lost the turn");
   // It asks for one more than either other tab holds, so both see an aria-disabled Yes with its reason (#366).
   const n2 = Math.max(vs[j].mine[give], vs[k].mine[give]) + 1;
+  await forget(tabs);
   const again = await ask(want, give, n2);
   const tradeId2 = again[0].offer.tradeId;
   if (tradeId2 === tradeId) throw new Error("second ask reused the tradeId");
@@ -377,6 +396,11 @@ try {
     const vs = await views(tabs);
     return vs.every((v) => !v.offer && v.toast === null) ? vs : null;
   }, "the offer times out and every toast closes", 30_000);
+  // #609: nobody took it, so only the asker hears the No.
+  await sleep(500);
+  if (!same(await trades(A), ["error_002.wav@1"])) throw new Error(`the asker heard ${JSON.stringify(await trades(A))} for the expiry`);
+  for (const t of [B, C]) if (!same(await trades(t), ["trade_offer.wav@1"])) throw new Error(`${t.name} heard ${JSON.stringify(await trades(t))} for the expiry`);
+  console.log("#609: trade_no plays for the asker only");
   // The polite line stays silent while the clock ticks and says "5 seconds left" once, at 5 s.
   const heard = [...new Set((await B.page.evaluate(() => window.__said)).filter(Boolean))];
   if (!same(heard, ["5 seconds left"])) throw new Error(`${B.name}'s polite countdown line said ${JSON.stringify(heard)}`);
