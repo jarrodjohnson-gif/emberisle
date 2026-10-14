@@ -169,6 +169,8 @@ jobs:
       - if: matrix.suite == 'presentation'
         run: npm run roll-moment-prove
       - if: matrix.suite == 'presentation'
+        run: npm run goods-log-prove
+      - if: matrix.suite == 'presentation'
         run: npm run turn-gain-prove
       - if: matrix.suite == 'presentation'
         run: npm run turn-copy-prove
