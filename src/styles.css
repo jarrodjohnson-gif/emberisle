@@ -1,5 +1,16 @@
 @import "tailwindcss";
 
+/* Nunito, self-hosted (docs/design/direction.md): one variable file, latin only, 39 KB, inside the 60 KB font budget. */
+@font-face {
+  font-family: "Nunito";
+  font-style: normal;
+  font-weight: 200 1000;
+  font-display: swap;
+  src: url(/fonts/nunito-latin.woff2) format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+
 /* #383: a short viewport, such as a 1280x720 window at 200 % zoom (640x360). */
 @custom-variant short (@media (max-height: 480px));
 
