@@ -28,10 +28,13 @@ export default function IslandCanvas() {
     );
     api.current = renderer;
     (window as unknown as { __isle: IsleRenderer }).__isle = renderer;
+    // Reported from inside sync (and later by the probe), so the store update waits for sync to finish.
+    renderer.onWater = (water) => queueMicrotask(() => useGame.setState({ water }));
     let action = "";
     let chrome = "";
     const sync = () => {
       const s = useGame.getState();
+      renderer.setWaterChoice(s.waterChoice);
       renderer.setTitleMode(s.screen !== "play");
       // The chat dock and the trade sheet change the hole the HUD leaves without the game moving; chromeSeq counts the
       // commits that land one of them from a chunk that was still loading when its flag flipped (#488).

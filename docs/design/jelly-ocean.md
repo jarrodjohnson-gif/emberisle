@@ -6,7 +6,7 @@ Approved direction: the Jelly Diorama concept, adapted to a continuous ocean rat
 
 System sans and rounded system numerals; no downloaded fonts. Opaque cream text surfaces over an aquamarine ocean. The terrain uses warmer pasture, grain and clay paint, real low-poly grain fields and small clay outcrops. Four mineral/earth bands follow the hex walls; there is no square slab, tank border or squared-off sea. Number discs are cream, dark ink, red 6/8 and probability dots. Existing player colours remain; seats are identified by colour only for now (owner decision, 2026-10-13: no per-seat marks, colour-blind support deferred).
 
-The ocean is one unlit shader mesh with shallow turquoise, a broad transition to deeper water and faint moving cellular caustics. Water opacity is 0.88, so a submerged visitor reads as a subdued silhouette before surfacing. Fog and the clear colour meet at the outer water edge. No image textures, reflection capture, transmission pass or extra post-processing is introduced.
+The ocean is one unlit shader mesh with shallow turquoise, a broad transition to deeper water and faint moving cellular caustics. Water opacity is 0.88, so a submerged visitor reads as a subdued silhouette before surfacing. Fog and the clear colour meet at the outer water edge. No image textures, reflection capture, transmission pass or extra post-processing is introduced. (Since #597 this is the Simple sea; the default is [crystal-water.md](crystal-water.md), and the backdrop is the studio paper.)
 
 ```css
 :root {

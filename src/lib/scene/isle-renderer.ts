@@ -28,6 +28,7 @@ import { LAND_MS } from "@/lib/scene/landing";
 import { mulberry32, hashStr } from "@/lib/utils";
 import { PAINT, RIM } from "@/lib/scene/palette";
 import { OceanLife } from "@/lib/scene/ocean-life";
+import { CAUSTIC_GLSL, PAPER, makeCrystalSea, makeFloorProps, makeSeaFloor, makeSwell, makeWash, type WaterPath, type WaterStatus } from "@/lib/scene/crystal-water";
 import { payingHexes } from "@/lib/game/rules";
 import { type GameState, type HarborKind, type HexCell, type Terrain, type Vertex } from "@/lib/game/types";
 
@@ -162,6 +163,20 @@ export class IsleRenderer {
   private flashes: { mat: THREE.MeshStandardMaterial; age: number }[] = [];
   private clock = new THREE.Timer();
   private water = makeWater();
+  // The crystal sea, or the simple shader when the GPU cannot render to a float target, the one-time probe finds it slow, or
+  // the player chose Simple in the table menu (crystal-water.md). Reported through `onWater`.
+  waterPath: WaterPath = "crystal";
+  onWater: (w: WaterStatus) => void = () => {};
+  private choice: WaterPath | null = null;
+  private waterSet = false;
+  private probed: { path: WaterPath; ms: number } | null = null;
+  private probe: { frames: number; ms: number } | null = null;
+  private crystalOk = false;
+  private motion = { value: 1 };
+  private swell!: ReturnType<typeof makeSwell>;
+  private opaqueSea!: THREE.Mesh;
+  private crystalSea!: THREE.Mesh;
+  private wash!: THREE.Mesh;
   private titleMode = false;
   private lastFrame = 0;
   // Until when the loop runs at full rate: a drag, a camera move, a walk or a state change holds it there for 1 s (#331).
@@ -190,9 +205,10 @@ export class IsleRenderer {
       "position:fixed;visibility:hidden;pointer-events:none;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)";
     document.body.appendChild(this.safeProbe);
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: "high-performance" });
-    // Frame cost tracks pixels (#310): 1.5 on a phone is 2.25x the pixels of 1, against 4x at 2.
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, this.coarse() ? 1.5 : 2));
-    this.renderer.setClearColor(0x158e9a, 1);
+    // Frame cost tracks pixels (#310). The crystal sea runs at up to 2 everywhere (every player's phone is an iPhone Pro class
+    // GPU); `applyWater` keeps 1.5 on a phone for the simple sea (2.25x the pixels of 1, against 4x at 2).
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer.setClearColor(PAPER, 1);
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -225,7 +241,7 @@ export class IsleRenderer {
     this.orbit.addEventListener("start", this.wake);
     this.orbit.addEventListener("change", this.wake);
 
-    this.scene.fog = new THREE.Fog(0x158e9a, 26, 52);
+    this.scene.fog = new THREE.Fog(PAPER, 26, 52);
     // A lit board on a table (polish.md "The board look target", #135): one warm key lamp carries the light, so the
     // slabs shade on their sides and every prop casts a soft shadow; the sky and ground bounce are low and nearly grey,
     // so the caps' own paint is the colour on screen. No flat ambient: that was what washed the caps out.
@@ -247,13 +263,21 @@ export class IsleRenderer {
     this.scene.add(fill);
 
     // Water, beach, and foam (docs/design/ocean.md). Built once: the outline does not change when the isle is dealt.
-    const ocean = new THREE.Mesh(new THREE.CircleGeometry(48, 64), this.water);
-    ocean.rotation.x = -Math.PI / 2;
-    ocean.position.y = -0.02;
-    this.scene.add(ocean);
+    this.opaqueSea = new THREE.Mesh(new THREE.CircleGeometry(48, 64), this.water);
+    this.opaqueSea.rotation.x = -Math.PI / 2;
+    this.opaqueSea.position.y = -0.02;
+    this.scene.add(this.opaqueSea);
     this.scene.add(this.oceanLife.group);
 
     const coast = coastLoop();
+    const uTime = this.water.uniforms.uTime!;
+    this.crystalSea = makeCrystalSea(coast, uTime, this.motion);
+    this.wash = makeWash(coast, uTime, this.motion);
+    this.swell = makeSwell(coast);
+    this.scene.add(this.crystalSea, this.wash, makeSeaFloor(coast, uTime), makeFloorProps(coast));
+    // Transmission renders the scene into a half-float target first.
+    const ext = this.renderer.extensions;
+    this.crystalOk = this.renderer.capabilities.isWebGL2 && (ext.has("EXT_color_buffer_float") || ext.has("EXT_color_buffer_half_float"));
     for (const c of coast) this.coastMiter.set(c.id, { mx: c.mx, mz: c.mz });
     this.coastOrder = coast.map((c) => c.id);
     const beach = new THREE.Mesh(
@@ -775,15 +799,17 @@ export class IsleRenderer {
       this.controls.enableDamping = !calm;
       this.controls.update();
     }
+    // Reduced motion: a flat, still sea; only the foam lace stays.
+    this.motion.value = calm ? 0 : 1;
     if (calm) {
       this.pulseMarks(0, true);
-      this.composer.render();
-      this.renders += 1;
+      this.draw();
       return;
     }
     this.water.uniforms.uTime!.value = t;
     this.ambientTime += dt;
-    this.oceanLife.step(dt, true, this.oceanViewport);
+    const crystal = this.waterPath === "crystal";
+    this.oceanLife.step(dt, true, this.oceanViewport, crystal ? (x, z) => this.swell(x, z, t).y : undefined);
     this.foam.material.opacity = 0.32 + 0.23 * (0.5 + 0.5 * Math.sin(t * 0.8));
     for (const tr of this.trees) tr.rotation.z = Math.sin(t * 1.05 + tr.position.x * 2) * 0.028;
     if (this.walk) {
@@ -838,13 +864,62 @@ export class IsleRenderer {
       work.arm.rotation.set(0, work.body.rotation.y, cycle < 8 ? -0.15 + Math.sin(phase * 2.2) * 0.28 : 0);
     }
     for (const b of this.boats) {
-      b.position.y = 0.06 + Math.sin(t * 1.6 + b.position.x) * 0.04;
-      b.rotation.z = Math.sin(t * 1.35 + b.position.z) * 0.07;
-      b.rotation.x = Math.sin(t * 1.1) * 0.035;
+      if (!crystal) {
+        b.position.y = 0.06 + Math.sin(t * 1.6 + b.position.x) * 0.04;
+        b.rotation.z = Math.sin(t * 1.35 + b.position.z) * 0.07;
+        b.rotation.x = Math.sin(t * 1.1) * 0.035;
+        continue;
+      }
+      // Ride the same waves the sea draws: lift with the height, pitch and roll with the slope under the hull.
+      const sea = this.swell(b.position.x, b.position.z, t);
+      const yaw = b.rotation.y;
+      b.position.y = 0.07 + sea.y;
+      b.rotation.x = -Math.atan(sea.gx * Math.sin(yaw) + sea.gz * Math.cos(yaw));
+      b.rotation.z = Math.atan(sea.gx * Math.cos(yaw) - sea.gz * Math.sin(yaw));
     }
+    this.draw();
+  };
+
+  // The player's saved choice from the table menu, or null to let the probe decide. Switching swaps the sea in place.
+  setWaterChoice(choice: WaterPath | null) {
+    if (choice === this.choice && this.waterSet) return;
+    this.waterSet = true;
+    this.choice = choice;
+    // The probe measures the crystal sea only, once, when nothing has chosen for it.
+    this.probe = !choice && !this.probed && this.crystalOk ? { frames: 0, ms: 0 } : null;
+    this.applyWater();
+  }
+
+  private applyWater() {
+    const path: WaterPath = !this.crystalOk ? "simple" : (this.choice ?? this.probed?.path ?? "crystal");
+    this.waterPath = path;
+    this.crystalSea.visible = this.wash.visible = path === "crystal";
+    this.opaqueSea.visible = path === "simple";
+    const ratio = Math.min(window.devicePixelRatio, path === "simple" && this.coarse() ? 1.5 : 2);
+    this.renderer.setPixelRatio(ratio);
+    this.composer.setPixelRatio(ratio);
+    this.resize();
+    this.onWater({ path, source: this.choice ? "saved" : "probe", ms: this.probed?.ms ?? null });
+  }
+
+  // The one-time GPU check, on a built and warm scene: 10 crystal frames once the island has been drawn 5 times (past the
+  // shader compiles and uploads), each made to finish by a 1-pixel read. Over 22 ms a frame on average, the sea goes simple;
+  // once the frames so far already exceed the 10-frame budget (220 ms), it stops there, so a slow GPU stalls only briefly.
+  private draw() {
+    const t0 = performance.now();
     this.composer.render();
     this.renders += 1;
-  };
+    const p = this.probe;
+    if (!p || !this.lastState || ++p.frames <= 5) return;
+    const gl = this.renderer.getContext();
+    gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(4));
+    p.ms += performance.now() - t0;
+    if (p.frames < 15 && p.ms <= 220) return;
+    this.probe = null;
+    const ms = Math.round((p.ms / (p.frames - 5)) * 10) / 10;
+    this.probed = { path: ms > 22 ? "simple" : "crystal", ms };
+    this.applyWater();
+  }
 
   // Compute the visible water once when choosing a visit, not on every animal frame.
   private oceanViewport = () => {
@@ -1159,7 +1234,7 @@ function makeWater() {
       uTime: { value: 0 },
       uShallow: { value: new THREE.Color(0x65d8cb) },
       uDeep: { value: new THREE.Color(0x158e9a) },
-      uFog: { value: new THREE.Color(0x158e9a) },
+      uFog: { value: PAPER.clone() },
     },
     vertexShader: /* glsl */ `
       // The circle is local XY; +Z is up after the mesh's rotation. Crests stay at or below y = 0.
@@ -1179,23 +1254,7 @@ function makeWater() {
       uniform vec3 uDeep;
       uniform vec3 uFog;
       varying vec2 vXZ;
-      vec2 cellPoint(vec2 p) {
-        vec3 h = fract(vec3(p.xyx) * 0.1031);
-        h += dot(h, h.yzx + 33.33);
-        return fract((h.xx + h.yz) * h.zy);
-      }
-      float caustic(vec2 p) {
-        vec2 cell = floor(p), local = fract(p);
-        float near = 8.0, second = 8.0;
-        for (int y = -1; y <= 1; y++) for (int x = -1; x <= 1; x++) {
-          vec2 offset = vec2(float(x), float(y));
-          vec2 v = offset + 0.15 + 0.7 * cellPoint(cell + offset) - local;
-          float d = dot(v, v);
-          second = min(second, max(near, d));
-          near = min(near, d);
-        }
-        return 1.0 - smoothstep(0.014, 0.055, second - near);
-      }
+      ${CAUSTIC_GLSL}
       void main() {
         float d = length(vXZ);
         vec3 c = mix(uShallow, uDeep, smoothstep(8.0, 28.0, d));
@@ -1204,7 +1263,7 @@ function makeWater() {
         float light = caustic(p * 1.7 + vec2(uTime * 0.04, -uTime * 0.025));
         c *= 1.0 + 0.035 * ripple;
         c = mix(c, vec3(0.78, 0.97, 0.92), light * 0.07 * (1.0 - smoothstep(8.0, 20.0, d)));
-        c = mix(c, uFog, smoothstep(18.0, 40.0, d));
+        c = mix(c, uFog, smoothstep(10.0, 22.0, d));
         gl_FragColor = vec4(c, 0.88);
       }
     `,
