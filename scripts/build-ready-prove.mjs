@@ -174,8 +174,11 @@ try {
         await page
           .waitForFunction((want) => Object.entries(want).every(([k, w]) => document.querySelector(`[data-testid="build-${k}"]`)?.dataset.build === w.state), want, { timeout: 10_000 })
           .catch(() => {});
-        await page.mouse.move(0, 0);
-        // The move clears :hover from the last step's click only on the next frame, which software GL can hold a while.
+        // Under touch emulation the last hand's tap on the Stronghold chip leaves it :hover until the next tap lands somewhere
+        // else (a mouse move does not always clear it); the tap goes to the page corner, which is inset or margin on every
+        // phone size here. The frame that clears :hover can still lag on software GL, so wait for it.
+        if (v.touch) await page.touchscreen.tap(2, 2);
+        else await page.mouse.move(0, 0);
         await page.waitForFunction(() => !document.querySelector("[data-build-state]:hover"), null, { timeout: 5_000 }).catch(() => {});
         // The fill eases in with the Button's colour transition; read it once it has landed.
         await page
