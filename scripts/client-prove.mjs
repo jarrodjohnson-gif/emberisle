@@ -779,8 +779,9 @@ try {
   await setHand({});
   await page.getByRole("button", { name: "Path", exact: true }).waitFor({ timeout: 5000 });
   const empty = await buildRow();
+  // #606: a build with no legal spot reads No spot before it reads Short.
   console.log("build row, empty hand:", JSON.stringify(empty));
-  for (const [n, p] of Object.entries(price)) if (!empty[n].disabled || empty[n].native || empty[n].cursor !== "not-allowed" || empty[n].title !== p || !empty[n].desc.startsWith(`${p} · Short`)) throw new Error(`empty hand ${n}: ${JSON.stringify(empty[n])}`);
+  for (const [n, p] of Object.entries(price)) if (!empty[n].disabled || empty[n].native || empty[n].cursor !== "not-allowed" || empty[n].title !== p || !new RegExp(`^${p} · (Short|No spot)`).test(empty[n].desc)) throw new Error(`empty hand ${n}: ${JSON.stringify(empty[n])}`);
   // #302: an unaffordable button is still in the Tab order, reports aria-disabled and its price, and a click neither arms nor buys.
   await page.evaluate(() => document.activeElement?.blur());
   let tabbedTo = null;

@@ -92,9 +92,9 @@ body {
 
 /* A build the hand can newly pay for (after a roll, a trade) gives its button one soft pulse; none under reduced motion. */
 @keyframes build-ready {
-  50% { transform: scale(1.05); }
+  50% { transform: scale(1.04); box-shadow: inset 0 0 0 2px #46c27f; }
 }
-.build-ready { animation: build-ready var(--duration-settle) var(--ease-snap); }
+.build-ready { animation: build-ready 320ms var(--ease-snap); }
 
 /* A good gained or lost rises about 20 px and fades over 1.8 s, readable for well over 1.2 s (GainFloats.tsx). */
 /* The turn moment comes in over --duration-base with --ease-out, holds, and leaves over about 0.7x of that (TurnMoment.tsx). */
@@ -225,7 +225,10 @@ body {
 .build-tile[aria-pressed='true'] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
 .build-tile[aria-pressed='true'] [class*='text-muted'] { color: var(--paper); }
 .build-tile .build-icon { display: none; }
-.build-ready-mark { color: var(--accent); }
+/* #606: Ready is a green paper chip with a 2 px green outline and a corner check; missing goods read plain paper in muted ink. */
+.build-tile[data-build-state='ready']:not([aria-pressed='true']) { background: #e6f4e4; color: var(--ink); border-color: #2f8f5b; box-shadow: inset 0 0 0 1px #2f8f5b; }
+.build-tile[data-build-state='missing'] { color: var(--table-muted); }
+.build-ready-mark { background: #25784a; color: #fff; }
 .action-utilities button, .hud-stack > .sticky button { background: var(--table-raised); color: var(--table-ink); border: 1px solid var(--table-line); }
 .action-utilities button.bg-fg { background: var(--ink); color: var(--paper); border-color: var(--ink); }
 .action-utilities .sticky, .action-utilities > div { background: transparent; }
