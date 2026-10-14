@@ -18,7 +18,7 @@ const SURFACE = -0.02;
 // edge; out to 0.9 sand lies under 0.1-0.3 of water, then the floor drops to its 0.9 depth by 4 units out.
 const OFFSET = [-0.3, 0.22, 0.5, 0.9, 1.4, 2.0, 2.8, 4.0, 5.5, 8, 12, 20, 32, 48];
 const DEPTH = [0.08, 0.1, 0.16, 0.26, 0.42, 0.62, 0.82, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9];
-// The surface needs vertices close enough for a 1.3-unit chop near the island: 0.12 apart across the breaking band.
+// The breaking band needs vertices 0.12 apart: a breaking crest is 2-3 of them wide.
 const SURFACE_OFFSET = [
   -0.3, 0, 0.22,
   ...Array.from({ length: 18 }, (_, i) => 0.3 + i * 0.12),
