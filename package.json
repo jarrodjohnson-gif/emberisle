@@ -26,6 +26,7 @@
     "flash-prove": "node scripts/flash-prove.mjs",
     "orphan-check": "node scripts/orphan-check.mjs",
     "chat-prove": "node scripts/chat-prove.mjs",
+    "goods-log-prove": "node scripts/goods-log-prove.mjs",
     "react-prove": "node scripts/react-prove.mjs",
     "mobile-shots": "node scripts/mobile-shots.mjs",
     "touch-place-prove": "node scripts/touch-place-prove.mjs",
@@ -64,8 +65,7 @@
     "visual-direction-prove": "node scripts/visual-direction-prove.mjs",
     "turn-gain-prove": "node scripts/turn-gain-prove.mjs",
     "takeover-prove": "node --import ./server/register.mjs server/takeover-prove.mjs",
-    "jelly-ocean-prove": "node scripts/jelly-ocean-prove.mjs",
-    "goods-log-prove": "node scripts/goods-log-prove.mjs"
+    "jelly-ocean-prove": "node scripts/jelly-ocean-prove.mjs"
   },
   "dependencies": {
     "clsx": "^2.1.1",
