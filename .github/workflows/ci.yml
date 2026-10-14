@@ -46,6 +46,7 @@ jobs:
             server/package-lock.json
       - run: npm ci
       - run: npm ci --prefix server
+      - run: npm run wayfarer-modes-prove
       - run: npm test
       - run: npm run touch-place-prove
 
@@ -154,6 +155,8 @@ jobs:
         run: npm run howto-prove
       - if: matrix.suite == 'flows'
         run: npm run title-prove
+      - if: matrix.suite == 'presentation'
+        run: npm run wayfarer-setup-prove
       - if: matrix.suite == 'flows'
         run: npm run watch-ui-prove
       - if: matrix.suite == 'flows'

@@ -1,0 +1,76 @@
+// Real lobby controls and hosted rules: default 10, public 7/10 selection, host-only updates,
+// restart persistence, wins at the selected target, fixed live rules, and rematch inheritance/selection.
+import assert from 'node:assert/strict';
+import { spawn } from 'node:child_process';
+import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import WebSocket from '../server/node_modules/ws/wrapper.mjs';
+import { chromium } from 'playwright';
+import { createServer } from 'vite';
+const dir=mkdtempSync(path.join(tmpdir(),'emberisle-wayfarer-setup-'));
+const port=Number(process.env.VITE_PORT||18545),sockets=[];const wait=ms=>new Promise(r=>setTimeout(r,ms));
+let host,hostPort,browser;
+async function start(){
+ let stderr='';host=spawn(process.execPath,['--import','./register.mjs','host.mjs'],{cwd:new URL('../server/',import.meta.url),env:{...process.env,PORT:'0',ROOMS_DIR:dir,SAVE_MS:'20',GRACE_MS:'600000',HOLD_MS:'600000',LOBBY_HOLD_MS:'600000',TURN_MS:'600000',ACT_CAP:'1000',ACT_RATE:'1000'},stdio:['ignore','pipe','pipe']});
+ host.stderr.on('data',d=>stderr+=d);hostPort=await new Promise((resolve,reject)=>{host.stdout.on('data',d=>{const m=String(d).match(/listening (\d+)/);if(m)resolve(Number(m[1]));});host.on('exit',c=>reject(Error(`host ${c}: ${stderr}`)));});
+}
+async function client(hello){
+ const ws=new WebSocket(`ws://127.0.0.1:${hostPort}`),messages=[];sockets.push(ws);let state;
+ ws.on('message',d=>{const m=JSON.parse(String(d));messages.push(m);if(m.type==='state')state=m;});await new Promise(r=>ws.on('open',r));ws.send(JSON.stringify({type:'hello',...hello}));
+ const next=async(type,test=()=>true)=>{for(let i=0;i<400;i++){const m=messages.find(m=>m.type===type&&test(m));if(m)return structuredClone(m);await wait(10);}throw Error(`timeout ${type}: ${JSON.stringify(messages.slice(-3))}`);};
+ const welcome=await next('welcome');return{ws,messages,next,welcome,send:m=>ws.send(JSON.stringify({...state?.actionStamp,cid:crypto.randomUUID(),...m}))};
+}
+const restore=async welcome=>{await wait(150);return client({code:welcome.code,secret:welcome.secret});};
+async function close(peer){if(peer.ws.readyState===WebSocket.CLOSED)return;peer.ws.terminate();await new Promise(r=>peer.ws.once('close',r));}
+async function saved(code,test){for(let i=0;i<100;i++){try{const s=JSON.parse(readFileSync(path.join(dir,`${code}.json`)));if(test(s))return s;}catch{}await wait(20);}throw Error('save timeout');}
+const vite=await createServer({server:{host:'127.0.0.1',port,strictPort:true},logLevel:'error'});
+const tables=[],errors=[];
+const url=()=>`http://127.0.0.1:${port}/?host=${encodeURIComponent(`ws://127.0.0.1:${hostPort}`)}`;
+async function pageAt(width=390,height=844){const context=await browser.newContext({viewport:{width,height},hasTouch:width<900,reducedMotion:width<900?'reduce':'no-preference'});const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));await page.goto(url());await page.getByRole('button',{name:'Play',exact:true}).waitFor();return{context,page};}
+async function setup(page){await page.locator('[data-testid="wayfarer-setup"] > summary').click();}
+try{
+ await start();await vite.listen();browser=await chromium.launch({args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});mkdirSync('test-results',{recursive:true});
+ for(const contextName of ['ai','hotseat','online'])for(const mode of ['on','gentle','off']){
+  const {context,page}=await pageAt();await setup(page);
+  assert.equal(await page.getByLabel('Practice wayfarer',{exact:true}).inputValue(),'gentle');assert.equal(await page.getByLabel('Online wayfarer',{exact:true}).inputValue(),'on');assert.equal(await page.getByLabel('Hotseat wayfarer',{exact:true}).inputValue(),'on');
+  const label={ai:'Practice',hotseat:'Hotseat',online:'Online'}[contextName],select=page.getByLabel(`${label} wayfarer`,{exact:true});await select.selectOption(mode);
+  const b=await select.boundingBox();assert.ok(b.height>=44&&b.width>=44&&b.x>=0&&b.x+b.width<=390,'44px safe setup target');
+  const contrast=await select.evaluate(el=>{const s=getComputedStyle(el),c=document.createElement('canvas').getContext('2d');const l=css=>{c.fillStyle=css;c.fillRect(0,0,1,1);const a=[...c.getImageData(0,0,1,1).data].slice(0,3).map(v=>{v/=255;return v<=0.04045?v/12.92:((v+0.055)/1.055)**2.4;});return .2126*a[0]+.7152*a[1]+.0722*a[2];};const r=(a,b)=>(Math.max(a,b)+.05)/(Math.min(a,b)+.05),bg=l(s.backgroundColor);return{text:r(l(s.color),bg),border:r(l(s.borderTopColor),bg)};});assert.ok(contrast.text>=4.5&&contrast.border>=3,`AA setup control: ${JSON.stringify(contrast)}`);
+  await page.screenshot({path:`test-results/wayfarer-setup-${contextName}-${mode}-390.png`});
+  await page.getByRole('button',{name:{ai:'Play',hotseat:'Four seats, one table',online:'Host a table'}[contextName],exact:true}).click();
+  if(contextName==='online'){
+   await page.getByTestId('lobby-card').waitFor();await page.waitForFunction(()=>window.__emberisle.getState().code.length===4);
+   const seat=await page.evaluate(()=>JSON.parse(localStorage.getItem('emberisle-seat'))),code=seat.code;
+   assert.match(await page.getByTestId('lobby-card').innerText(),new RegExp(`Wayfarer ${mode}`,"i"));assert.equal(await page.getByRole('combobox').count(),0,'lobby has no mode toggle');
+   const guests=[await client({code,name:'Tide'}),await client({code,name:'Pine'})];for(const p of guests){assert.equal(p.welcome.wayfarerMode,mode);assert.equal((await p.next('seats',m=>m.seats.length===3)).wayfarerMode,mode);}
+   guests[0].send({type:'setWayfarerMode',value:mode==='off'?'on':'off'});assert.match((await guests[0].next('error')).message,/fixed when the table is created/);
+   // The real joining browser reads the rule before play; no selector is offered to a guest.
+   const guestWelcome=guests[1].welcome;await close(guests[1]);const guestContext=await browser.newContext({viewport:{width:390,height:844},hasTouch:true});await guestContext.addInitScript(w=>localStorage.setItem('emberisle-seat',JSON.stringify({code:w.code,secret:w.secret})),guestWelcome);
+   const guestPage=await guestContext.newPage();guestPage.on('pageerror',e=>errors.push(e.message));await guestPage.goto(url());await guestPage.getByTestId('lobby-card').waitFor();assert.match(await guestPage.getByTestId('lobby-card').innerText(),new RegExp(`Wayfarer ${mode}`,"i"));assert.equal(await guestPage.getByRole('combobox').count(),0);await guestContext.close();guests[1]=await restore(guestWelcome);
+   for(const p of guests)p.send({type:'ready',value:true});await page.getByRole('button',{name:'Ready',exact:true}).click();await page.getByRole('button',{name:'Start',exact:true}).click();await page.waitForFunction(()=>window.__emberisle.getState().state!==null);
+   assert.equal(await page.evaluate(()=>window.__emberisle.getState().state.wayfarerMode),mode);assert.equal(await page.getByLabel(/wayfarer$/).count(),0);
+   await context.close();await wait(150);const creator=await client({code,secret:seat.secret});assert.equal((await creator.next('state')).game.wayfarerMode,mode);tables.push({code,mode,peers:[creator,...guests]});await saved(code,s=>s.game?.wayfarerMode===mode);
+  }else{await page.waitForFunction(()=>window.__emberisle.getState().state!==null);assert.equal(await page.evaluate(()=>window.__emberisle.getState().state.wayfarerMode),mode);assert.equal(await page.getByTestId('wayfarer-setup').count(),0);const fixed=await page.evaluate(()=>{const g=window.__emberisle;g.getState().setWayfarerChoice('ai','off');return g.getState().wayfarerChoices;});assert.deepEqual(fixed,{});if(contextName==='hotseat'){await page.evaluate(()=>{const g=window.__emberisle,s=structuredClone(g.getState().state);s.phase='over';s.winner='p0';g.setState({state:s});g.getState().playAgain();});assert.equal(await page.evaluate(()=>window.__emberisle.getState().state.wayfarerMode),mode);}await context.close();}
+  console.log(`ok 390 ${contextName} ${mode}: visible pre-creation choice, correct default, fixed after creation${contextName==='online'?', public joiner rule':''}`);
+ }
+ // Only a recorded human practice win changes the future default; explicit overrides still work afterwards.
+ const {context:progressContext,page:progress}=await pageAt();await progress.getByRole('button',{name:'Play',exact:true}).click();
+ const win=async human=>progress.evaluate(human=>{const g=window.__emberisle,s=structuredClone(g.getState().state),p=s.players.find(p=>p.kind===(human?'human':'bot'));s.current=p.id;s.phase='main';s.playedCard=false;p.hidden.vp=10;p.hidden.knight=1;p.boughtThisTurn.knight=0;g.setState({state:s});const r=g.getState().dispatch({type:'playKnight',hexId:s.hexes.find(h=>h.id!==s.robberHex).id,stealFrom:null},p.id);return{ok:r.ok,phase:g.getState().state.phase,won:localStorage.getItem('emberisle-practice-win')};},human);
+ assert.deepEqual(await win(false),{ok:true,phase:'over',won:null});await progress.evaluate(()=>{const g=window.__emberisle.getState();g.goTitle();g.startAi();});assert.equal(await progress.evaluate(()=>window.__emberisle.getState().state.wayfarerMode),'gentle');assert.deepEqual(await win(true),{ok:true,phase:'over',won:'1'});await progress.evaluate(()=>window.__emberisle.getState().goTitle());await progress.reload();await progress.getByRole('button',{name:'Play',exact:true}).waitFor();await setup(progress);assert.equal(await progress.getByLabel('Practice wayfarer',{exact:true}).inputValue(),'on');await progress.getByLabel('Practice wayfarer',{exact:true}).selectOption('off');await progress.getByRole('button',{name:'Play',exact:true}).click();assert.equal(await progress.evaluate(()=>window.__emberisle.getState().state.wayfarerMode),'off');await progressContext.close();console.log('ok practice progress: bot win does not count, human win persists after reload, later On can be overridden');
+ for(const [width,height] of [[390,844],[1280,720],[844,390]]){
+  const {context,page}=await pageAt(width,height);await setup(page);await page.getByLabel('Practice wayfarer',{exact:true}).selectOption('off');await page.getByRole('button',{name:'Play',exact:true}).click();
+  await page.evaluate(()=>{const g=window.__emberisle,s=structuredClone(g.getState().state),p=s.players.find(p=>p.id===g.getState().localId);s.current=p.id;s.phase='roll';s.playedCard=false;p.hidden.knight=1;p.boughtThisTurn.knight=0;g.setState({state:s,banner:null});});await page.getByTestId('fortunes-button').click();await page.getByTestId('fortune-play-knight').waitFor();assert.equal(await page.getByTestId('fortune-play-knight').innerText(),'Muster');assert.match(await page.getByTestId('fortune-row-knight').innerText(),/No target needed/);const b=await page.getByTestId('fortune-play-knight').boundingBox();assert.ok(b.width>=44&&b.height>=44&&b.y>=0&&b.y+b.height<=height);await page.screenshot({path:`test-results/wayfarer-muster-${width}.png`});await page.getByTestId('fortune-play-knight').click();const played=await page.evaluate(()=>{const g=window.__emberisle.getState();return{phase:g.state.phase,army:g.state.players.find(p=>p.id===g.localId).knightsPlayed,mode:g.buildMode,pending:g.pendingSteal,blocked:g.state.hexes.some(h=>h.blocked)};});assert.deepEqual(played,{phase:'roll',army:1,mode:'none',pending:null,blocked:false});await context.close();console.log(`ok ${width}x${height}: Off fortune adds army immediately; no picker, blocker or lost roll`);
+ }
+ // Invalid choices and attempts to smuggle settings into join/rejoin never allocate or alter a rule.
+ const invalid=new WebSocket(`ws://127.0.0.1:${hostPort}`);sockets.push(invalid);await new Promise(r=>invalid.once('open',r));const refusal=new Promise(r=>invalid.once('message',d=>r(JSON.parse(String(d)))));invalid.send(JSON.stringify({type:'hello',name:'Invalid',wayfarerMode:'maybe'}));assert.match((await refusal).message,/Choose Wayfarer/);invalid.terminate();
+ for(const t of tables){t.peers[0].send({type:'setWayfarerMode',value:'off'});assert.match((await t.peers[0].next('error')).message,/fixed when/);const forged=new WebSocket(`ws://127.0.0.1:${hostPort}`);sockets.push(forged);await new Promise(r=>forged.once('open',r));const refused=new Promise(r=>forged.once('message',d=>r(JSON.parse(String(d)))));forged.send(JSON.stringify({type:'hello',code:t.code,secret:t.peers[0].welcome.secret,wayfarerMode:'off'}));assert.match((await refused).message,/fixed when/);forged.terminate();}
+ // Unmodified saved games survive a host restart and a browser reload into the same seat.
+ for(const ws of sockets)ws.terminate();host.kill('SIGKILL');await new Promise(r=>host.once('exit',r));await start();
+ for(const t of tables){const old=t.peers.map(p=>p.welcome);t.peers=[];for(const w of old)t.peers.push(await restore(w));for(const p of t.peers){assert.equal(p.welcome.wayfarerMode,t.mode);assert.equal((await p.next('state')).game.wayfarerMode,t.mode);}const w=t.peers[0].welcome;await close(t.peers[0]);const context=await browser.newContext({viewport:{width:390,height:844},hasTouch:true});await context.addInitScript(w=>{localStorage.setItem('emberisle-seat',JSON.stringify({code:w.code,secret:w.secret}));localStorage.setItem('emberisle-seat-live',w.code);},w);const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));await page.goto(url());await page.waitForFunction(()=>window.__emberisle?.getState().state);await page.reload();await page.waitForFunction(()=>window.__emberisle?.getState().state);assert.equal(await page.evaluate(()=>window.__emberisle.getState().state.wayfarerMode),t.mode);assert.equal(await page.getByRole('combobox').count(),0);await context.close();t.peers[0]=await restore(w);}
+ // A normal rematch reuses the creation rule, even after a saved endgame/restart.
+ for(const ws of sockets)ws.terminate();host.kill('SIGKILL');await new Promise(r=>host.once('exit',r));
+ for(const t of tables){const s=JSON.parse(readFileSync(path.join(dir,`${t.code}.json`)));s.game.phase='over';s.game.winner='p0';s.savedAt=Date.now();writeFileSync(path.join(dir,`${t.code}.json`),JSON.stringify(s));}
+ await start();for(const t of tables){const old=t.peers.map(p=>p.welcome);t.peers=[];for(const w of old)t.peers.push(await restore(w));await t.peers[0].next('state',m=>m.game.phase==='over');t.peers[0].send({type:'again'});for(const p of t.peers){const v=await p.next('state',m=>m.game.phase==='rollOff');assert.equal(v.game.wayfarerMode,t.mode);assert.equal(v.game.hexes.some(h=>h.blocked),t.mode!=='off');}}
+ assert.deepEqual(errors,[]);console.log('wayfarer-setup-prove: all passed; setup defaults/overrides, human-win progression, no-target fortunes, host refusal, join/rejoin/reload/restart/rematch persistence');
+}finally{await browser?.close();await vite.close();for(const ws of sockets)ws.terminate();if(host?.exitCode===null){host.kill('SIGKILL');await new Promise(r=>host.once('exit',r));}rmSync(dir,{recursive:true,force:true});}

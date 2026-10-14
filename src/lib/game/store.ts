@@ -139,8 +139,9 @@ function withPaths(state: GameState, edgeIds: string[], pid: string): GameState 
   if (!edgeIds.length) return state;
   return { ...state, edges: state.edges.map((e) => (edgeIds.includes(e.id) ? { ...e, path: pid } : e)) };
 }
+import { hasPracticeWin, recordPracticeWin } from "./practice-progress";
 import { chooseBotAction, chooseTradeAsk, shouldAcceptTrade } from "./ai";
-import { PLAYER_COLORS, RESOURCES, type Action, type BuildMode, type GameState } from "./types";
+import { PLAYER_COLORS, RESOURCES, type Action, type BuildMode, type GameState, type WayfarerMode } from "./types";
 import { connectTable, hostUrl, type Bag, type ChatLine, type Legal, type Me, type Reaction, type Seat, type TableClient } from "@/lib/net/table";
 import { PROTO } from "@/lib/net/proto";
 import { play, yourTurn, type SoundName } from "@/lib/sound";
@@ -212,6 +213,9 @@ interface GameStore {
   setHowTo: (v: boolean, opener?: HTMLElement | null) => void;
   setCosts: (v: boolean, opener?: HTMLElement | null) => void;
   setBuildMode: (m: BuildMode) => void;
+  wayfarerChoices: Partial<Record<"ai" | "online" | "hotseat", WayfarerMode>>;
+  setWayfarerChoice: (context: "ai" | "online" | "hotseat", mode: WayfarerMode) => void;
+  tableWayfarerMode: WayfarerMode;
   startAi: () => void;
   startHotseat: (count: number) => void;
   loadState: (s: GameState, localId: string, host: boolean, table?: string) => void;
@@ -439,6 +443,11 @@ export const useGame = create<GameStore>((set, get) => ({
   setHowTo: (v, opener) => set({ howTo: v, howToOpener: v ? (opener ?? null) : null }),
   setCosts: (v, opener) => set({ costs: v, costsOpener: v ? (opener ?? null) : null }),
   setBuildMode: (m) => set({ buildMode: m, roadPicks: [] }),
+  wayfarerChoices: {},
+  tableWayfarerMode: "on",
+  setWayfarerChoice: (context, mode) => {
+    if (get().screen === "title" && ["on", "gentle", "off"].includes(mode)) set({ wayfarerChoices: { ...get().wayfarerChoices, [context]: mode } });
+  },
   startAi: () => {
     // A table left dialing (a reload with a saved seat) must not pull a practice game back to the lobby.
     clearWake();
@@ -449,7 +458,9 @@ export const useGame = create<GameStore>((set, get) => ({
     botAsked = "";
     botDeclined.clear();
     const name = get().name;
-    const state = createGame({ humans: [{ name }], bots: 3 });
+    const { ai = hasPracticeWin() ? "on" : "gentle", ...rest } = get().wayfarerChoices;
+    const state = createGame({ humans: [{ name }], bots: 3, wayfarerMode: ai });
+    set({ wayfarerChoices: rest });
     set({
       screen: "play",
       mode: "ai",
@@ -478,7 +489,9 @@ export const useGame = create<GameStore>((set, get) => ({
     const humans = Array.from({ length: count }, (_, i) => ({
       name: i === 0 ? get().name : `Seat ${i + 1}`,
     }));
-    const state = createGame({ humans, bots: 0 });
+    const { hotseat = "on", ...rest } = get().wayfarerChoices;
+    const state = createGame({ humans, bots: 0, wayfarerMode: hotseat });
+    set({ wayfarerChoices: rest });
     set({
       screen: "play",
       mode: "hotseat",
@@ -575,6 +588,7 @@ export const useGame = create<GameStore>((set, get) => ({
       ? logBotAction(state, res.state, action, actor, state.players.find((p) => p.id === actor)?.name.replace(/ \(bot\)$/i, "") ?? actor)
       : res.state;
     set({ state: nextState, gameLog: appendLog(get().gameLog, newLog(state.log, nextState.log)), error: null, toast: null, buildMode: "none", roadPicks: [] });
+    if (mode === "ai" && state.phase !== "over" && nextState.phase === "over" && nextState.winner === localId && nextState.players.find(p => p.id === localId)?.kind === "human") recordPracticeWin();
     hear(state, nextState, localId, mode);
     // An offer lives only while its asker still has the turn in `main` and still holds the offered goods (as host.mjs play).
     const open = get().offer;
@@ -729,7 +743,11 @@ export const useGame = create<GameStore>((set, get) => ({
     if (buildMode === "path") return { vertices: [], edges: legalRoads(state, actor, false), hexes: [] };
     return { vertices: [], edges: [], hexes: [] };
   },
-  hostTable: () => connect(set, get, (t, me) => t.open(me)),
+  hostTable: () => {
+    const { online = "on", ...rest } = get().wayfarerChoices;
+    set({ wayfarerChoices: rest });
+    connect(set, get, (t, me) => t.open(me, { wayfarerMode: online }));
+  },
   joinTable: (code) => {
     // A color the peek showed taken at this table is sent as no color, so the host seats the first free one.
     const { code: peeked, seats, color } = get();
@@ -763,7 +781,7 @@ export const useGame = create<GameStore>((set, get) => ({
     if (mode !== "hotseat" || state?.phase !== "over") return;
     const winner = state.players.find((p) => p.id === state.winner)!;
     const ordered = [winner, ...state.players.filter((p) => p !== winner)];
-    const next = createGame({ humans: ordered.map((p) => ({ name: p.name })), bots: 0, winnerFirst: true });
+    const next = createGame({ humans: ordered.map((p) => ({ name: p.name })), bots: 0, winnerFirst: true, wayfarerMode: state.wayfarerMode ?? "on" });
     set({
       state: next,
       localId: "p0",
@@ -924,12 +942,12 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
   let welcomed = false;
   let outdated: string | null = null;
   const table = connectTable(hostUrl(window.location), {
-    welcome: ({ proto, code, you, host, chat, secret, spectator }) => {
+    welcome: ({ proto, code, you, host, chat, secret, spectator, wayfarerMode }) => {
       pending = false;
       welcomed = true;
       // G2: a host on a newer wire protocol than this page says so where errors go, and keeps saying it after every state.
       outdated = (proto ?? 0) > PROTO ? "This page is out of date. Reload to update." : null;
-      set({ resync: true });
+      set({ resync: true, tableWayfarerMode: wayfarerMode ?? "on" });
       if (secret) rememberSeat({ code, secret });
       // A page-load rejoin has no state yet, so it passes through the lobby until the host's state push moves it to play.
       // A mid-game reconnect already holds the game: stay on the board so the HUD keeps its local state.
@@ -974,7 +992,7 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       setTimeout(() => set({ reactions: get().reactions.filter((x) => x !== r) }), 2000);
     },
     // A peek answers id/color/ready only (G10); the lobby is not shown until the full broadcast after sitting replaces it.
-    seats: ({ code, seats, watching }) => set({ code, seats: seats as Seat[], watching: watching ?? 0 }),
+    seats: ({ code, seats, watching, wayfarerMode }) => set({ code, seats: seats as Seat[], watching: watching ?? 0, tableWayfarerMode: wayfarerMode ?? "on" }),
     rolled: ({ gains, short }) => {
       // The host sends this before the state that follows it, so `current` is still the roller.
       const st = get().state;

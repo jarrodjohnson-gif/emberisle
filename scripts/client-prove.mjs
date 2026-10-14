@@ -151,6 +151,7 @@ try {
     for (const p of st.players) p.resources = { timber: 0, clay: 0, wool: 0, grain: 0, ore: 0 };
     bots[0].resources.ore = 2;
     bots[1].resources.wool = 2;
+    st.wayfarerMode = "on"; // This fixture proves classic two-victim selection; practice now defaults to Gentle.
     st.phase = "robber";
     st.current = me;
     g.setState({ state: st, pendingSteal: null, error: null });

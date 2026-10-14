@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { RESOURCE_ICON, RESOURCE_PAINT } from "@/components/game/Hand";
 import { useFocusTrap } from "@/lib/focus-trap";
 import { FORTUNES } from "@/lib/game/fortunes";
-import { legalRoads, playable } from "@/lib/game/rules";
+import { legalRoads, playable, wayfarerMode } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
 import { RESOURCES, RESOURCE_LABEL, type DevKind, type PlayerState, type Resource } from "@/lib/game/types";
 import { play } from "@/lib/sound";
@@ -109,6 +109,10 @@ export function FortuneTray({ me, opener, onClose, className }: { me: PlayerStat
     return null;
   };
   const act = (kind: DevKind) => {
+    if (kind === "knight" && wayfarerMode(state) === "off") {
+      if (dispatch({ type: "playKnight", hexId: "", stealFrom: null }).ok) onClose();
+      return;
+    }
     if (kind === "knight" || kind === "road") {
       setBuildMode(kind === "knight" ? "knight" : "roadCard");
       return onClose();
@@ -150,7 +154,7 @@ export function FortuneTray({ me, opener, onClose, className }: { me: PlayerStat
                   <p className="text-body">
                     <span className="capitalize">{name}</span> <span className="tabular-nums text-muted">×{me.hidden[kind]}</span>
                   </p>
-                  <p className="text-caption text-muted">{effect}</p>
+                  <p className="text-caption text-muted">{kind === "knight" && wayfarerMode(state) !== "on" ? wayfarerMode(state) === "off" ? "Muster: add 1 to your army. No target needed." : "Move and block a hex. The wayfarer takes no cards." : effect}</p>
                   {why ? (
                     <p data-testid="fortune-blocked" className="text-caption text-danger">
                       {why}
@@ -168,7 +172,7 @@ export function FortuneTray({ me, opener, onClose, className }: { me: PlayerStat
                       if (open && ready) act(kind);
                     }}
                   >
-                    Play
+                    {kind === "knight" && wayfarerMode(state) === "off" ? "Muster" : "Play"}
                   </Button>
                 )}
               </div>

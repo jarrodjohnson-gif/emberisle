@@ -141,7 +141,12 @@ export function legalCities(state: GameState, pid: string): string[] {
   return state.vertices.filter((v) => v.building?.playerId === pid && v.building.kind === "outpost").map((v) => v.id);
 }
 
+export function wayfarerMode(state: Pick<GameState, "wayfarerMode">): import("./types").WayfarerMode {
+  return state.wayfarerMode ?? "on";
+}
+
 export function stealTargets(state: GameState, hexId: string, pid: string): string[] {
+  if (wayfarerMode(state) !== "on") return [];
   const h = hex(state, hexId);
   if (!h) return [];
   const ids = new Set<string>();
@@ -304,7 +309,7 @@ function produce(state: GameState, total: number) {
   const owed: Partial<Record<Resource, Set<string>>> = {};
   const grants: { p: PlayerState; res: Resource; n: number; pip: number; hex: string }[] = [];
   for (const h of state.hexes) {
-    if (h.pip !== total || h.blocked || h.terrain === "waste") continue;
+    if (h.pip !== total || (wayfarerMode(state) !== "off" && h.blocked) || h.terrain === "waste") continue;
     const res = h.terrain as Resource;
     for (const v of state.vertices) {
       if (!v.hexes.includes(h.id) || !v.building) continue;
@@ -374,6 +379,8 @@ function afterRobber(state: GameState) {
 }
 
 function applyRobber(state: GameState, pid: string, hexId: string, stealFrom: string | null) {
+  if (wayfarerMode(state) === "off") return "The wayfarer is off at this table.";
+  if (wayfarerMode(state) === "gentle" && stealFrom) return "Gentle wayfarers never take cards.";
   if (hexId === state.robberHex) return "The wayfarer must move.";
   const h = hex(state, hexId);
   if (!h) return "Unknown land.";
@@ -469,7 +476,7 @@ export function applyAction(prev: GameState, actor: string, action: Action): { s
           if (c > 7) need[p.id] = Math.floor(c / 2);
         }
         state.discardNeeded = need;
-        state.phase = Object.keys(need).length ? "discard" : "robber";
+        state.phase = Object.keys(need).length ? "discard" : wayfarerMode(state) === "off" ? "main" : "robber";
       } else {
         produce(state, total);
         state.phase = "main";
@@ -494,7 +501,7 @@ export function applyAction(prev: GameState, actor: string, action: Action): { s
       }
       delete state.discardNeeded[actor];
       log(state, `${me.name} discards ${need}.`);
-      if (Object.keys(state.discardNeeded).length === 0) state.phase = "robber";
+      if (Object.keys(state.discardNeeded).length === 0) state.phase = wayfarerMode(state) === "off" ? "main" : "robber";
       return { state };
     }
     case "moveRobber": {
@@ -566,12 +573,17 @@ export function applyAction(prev: GameState, actor: string, action: Action): { s
       if (state.phase !== "roll" && state.phase !== "main") {
         return { state: prev, error: "Cannot play that now." };
       }
+      if (wayfarerMode(state) === "off" && (action.hexId !== "" || action.stealFrom !== null)) return { state: prev, error: "Muster needs no land or target." };
       me.hidden.knight -= 1;
       me.knightsPlayed += 1;
       state.playedCard = true;
       updateArmy(state, actor);
-      const err = applyRobber(state, actor, action.hexId, action.stealFrom);
-      if (err) return { state: prev, error: err };
+      if (wayfarerMode(state) === "off") {
+        log(state, `${me.name} plays Wayfarer — musters army ${me.knightsPlayed}.`);
+      } else {
+        const err = applyRobber(state, actor, action.hexId, action.stealFrom);
+        if (err) return { state: prev, error: err };
+      }
       if (state.phase === "roll") {
         /* knight before roll stays in roll unless robber consumed phase */
       }

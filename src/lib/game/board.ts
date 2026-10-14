@@ -69,6 +69,7 @@ export function createGame(opts: {
   hostId?: string;
   // A rematch (#266): the first human is the last winner. It places first and sits out the roll-off.
   winnerFirst?: boolean;
+  wayfarerMode?: import("./types").WayfarerMode;
 }): GameState {
   const seed = opts.seed ?? (Math.floor(Math.random() * 1e9) | 0);
   const rand = mulberry32(seed);
@@ -92,7 +93,7 @@ export function createGame(opts: {
     r: c.r,
     terrain: terrains[i]!,
     pip: null,
-    blocked: terrains[i] === "waste",
+    blocked: opts.wayfarerMode !== "off" && terrains[i] === "waste",
   }));
 
   const pips = shuffle([2, 3, 3, 4, 4, 5, 5, 6, 6, 8, 8, 9, 9, 10, 10, 11, 11, 12], rand);
@@ -195,6 +196,7 @@ export function createGame(opts: {
     vertices: [...vmap.values()],
     edges: [...emap.values()],
     robberHex,
+    wayfarerMode: opts.wayfarerMode ?? "on",
     players,
     current: pending[0]!,
     phase: "rollOff",

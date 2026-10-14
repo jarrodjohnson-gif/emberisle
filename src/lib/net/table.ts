@@ -1,5 +1,5 @@
 // The browser (or a Node proof) talking to server/host.mjs. Design: docs/design/online-client.md.
-import type { Action, GameState, Resource } from "@/lib/game/types";
+import type { Action, GameState, Resource, WayfarerMode } from "@/lib/game/types";
 import { PROTO } from "@/lib/net/proto";
 
 export interface Seat {
@@ -65,9 +65,9 @@ export interface TableEvents {
   // A watcher's welcome (docs/design/spectator.md) has `spectator: true` and no `you`, `host` or `secret`. `proto` is the
   // host's wire protocol (G2): newer than PROTO means this page is out of date.
   // `holdMs`/`lobbyHoldMs`: how long the host holds this seat after a drop, in a game and in the lobby (G7).
-  welcome(msg: { proto?: number; code: string; you?: string; host?: boolean; chat?: ChatLine[]; secret?: string; spectator?: true; holdMs?: number; lobbyHoldMs?: number }): void;
+  welcome(msg: { proto?: number; code: string; you?: string; host?: boolean; chat?: ChatLine[]; secret?: string; spectator?: true; holdMs?: number; lobbyHoldMs?: number; wayfarerMode?: WayfarerMode }): void;
   // `watching`: how many spectators the table has (#347).
-  seats(msg: { code: string; seats: Seat[] | PeekSeat[]; watching?: number }): void;
+  seats(msg: { code: string; seats: Seat[] | PeekSeat[]; watching?: number; wayfarerMode?: WayfarerMode }): void;
   // `you` is null on a watcher's state. `turnDeadline` is the host's clock (epoch ms) for the seat `turnPlayer`;
   // `serverNow` is the host's clock as it sent this.
   state(msg: { you: string | null; game: GameState; legal: Legal; actionStamp?: ActionStamp; turnDeadline?: number | null; turnPlayer?: string | null; serverNow?: number }): void;
@@ -92,7 +92,7 @@ export interface Me {
 }
 
 export interface TableClient {
-  open(me: Me): void;
+  open(me: Me, options?: { wayfarerMode: WayfarerMode }): void;
   join(code: string, me: Me): void;
   // Watch a started table, read-only: hello {code, watch:true} (docs/design/spectator.md). No seat, no secret, so no redial.
   watch(code: string): void;
@@ -276,7 +276,7 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
     switch (msg.type) {
       case "welcome": {
         stamp = null;
-        const m = msg as { proto?: number; code: string; you?: string; host?: boolean; chat?: ChatLine[]; secret?: string; spectator?: true; holdMs?: number; lobbyHoldMs?: number };
+        const m = msg as { proto?: number; code: string; you?: string; host?: boolean; chat?: ChatLine[]; secret?: string; spectator?: true; holdMs?: number; lobbyHoldMs?: number; wayfarerMode?: WayfarerMode };
         if (typeof m.secret === "string") seat = { code: m.code, secret: m.secret };
         if (typeof m.holdMs === "number" && typeof m.lobbyHoldMs === "number") hold = { game: m.holdMs, lobby: m.lobbyHoldMs };
         rejoining = false;
@@ -338,7 +338,7 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
   dial();
 
   return {
-    open: (me) => send({ type: "hello", proto: PROTO, ...me }),
+    open: (me, options) => send({ type: "hello", proto: PROTO, ...me, ...options }),
     join: (code, me) => send({ type: "hello", proto: PROTO, code: code.toUpperCase(), ...me }),
     watch: (code) => send({ type: "hello", proto: PROTO, code: code.toUpperCase(), watch: true }),
     peek: (code) => send({ type: "peek", code: code.toUpperCase() }),

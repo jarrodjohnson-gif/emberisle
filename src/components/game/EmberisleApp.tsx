@@ -9,7 +9,8 @@ import { useGame } from "@/lib/game/store";
 import { JOIN_CODE, LazyBoundary, preloadOnIdle, reloadOnStaleChunk } from "@/lib/lazy";
 import { play, setMuted, useMuted } from "@/lib/sound";
 import { useTurnTitle } from "@/lib/turn-title";
-import { PLAYER_COLORS, PLAYER_NAMES } from "@/lib/game/types";
+import { hasPracticeWin } from "@/lib/game/practice-progress";
+import { PLAYER_COLORS, PLAYER_NAMES, type WayfarerMode } from "@/lib/game/types";
 import { cn } from "@/lib/utils";
 import { useViewport } from "@/lib/viewport";
 
@@ -98,6 +99,9 @@ function Title() {
   const setName = useGame((s) => s.setName);
   const color = useGame((s) => s.color);
   const setColor = useGame((s) => s.setColor);
+  const choices = useGame((s) => s.wayfarerChoices);
+  const chooseWayfarer = useGame((s) => s.setWayfarerChoice);
+  const rules = { ai: choices.ai ?? (hasPracticeWin() ? "on" : "gentle"), online: choices.online ?? "on", hotseat: choices.hotseat ?? "on" };
   const startAi = useGame((s) => s.startAi);
   const startHotseat = useGame((s) => s.startHotseat);
   const setHowTo = useGame((s) => s.setHowTo);
@@ -210,6 +214,18 @@ function Title() {
                 </button>
               ))}
             </div>
+            </details>
+            <details data-testid="wayfarer-setup" className="group border-t border-border">
+              <summary className="flex min-h-11 cursor-pointer flex-col justify-center text-xs text-muted">
+                <span className="flex w-full items-center justify-between text-sm font-medium text-fg">Wayfarer<svg aria-hidden viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4 group-open:rotate-180"><path d="m6 9 6 6 6-6" /></svg></span>
+                <span className="capitalize">Practice: {rules.ai} · Online: {rules.online} · Hotseat: {rules.hotseat}</span>
+              </summary>
+              {([["ai", "Practice"], ["online", "Online"], ["hotseat", "Hotseat"]] as const).map(([context, label]) => <label key={context} className="flex min-h-11 items-center justify-between gap-2 text-sm">
+                {label}<select aria-label={`${label} wayfarer`} aria-describedby="wayfarer-help" value={rules[context]} onChange={e => chooseWayfarer(context, e.target.value as WayfarerMode)} className="h-11 min-w-32 rounded-control border bg-surface px-2 text-fg">
+                  <option value="on">On</option><option value="gentle">Gentle</option><option value="off">Off</option>
+                </select>
+              </label>)}
+              <p id="wayfarer-help" className="py-2 text-xs text-muted">Gentle blocks, never takes. Off never moves or blocks. Sevens still discard. Off fortunes add to the army.</p>
             </details>
           </div>
           <div className="mt-4 flex flex-col gap-2">
