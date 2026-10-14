@@ -776,6 +776,7 @@ export class IsleRenderer {
       this.controls.update();
     }
     if (calm) {
+      this.oceanLife.step(0, false, this.oceanViewport);
       this.pulseMarks(0, true);
       this.composer.render();
       this.renders += 1;

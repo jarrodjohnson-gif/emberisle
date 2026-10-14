@@ -167,7 +167,18 @@ export class OceanLife {
   }
 
   step(dt: number, enabled: boolean, view: () => View) {
-    if (!enabled || dt <= 0) return;
+    if (!enabled) {
+      // Frozen (reduced motion, hidden page): a visitor must not stay posed mid-air or mid-spout, so the visit ends.
+      if (this.active) {
+        const c = this.creatures[this.active.species];
+        c.root.visible = false;
+        c.wake.visible = false;
+        this.active = null;
+        this.next = 6;
+      }
+      return;
+    }
+    if (dt <= 0) return;
     if (this.active) {
       this.active.age = Math.min(this.active.duration, this.active.age + dt);
       this.pose(this.active);
