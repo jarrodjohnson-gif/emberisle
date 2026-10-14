@@ -116,13 +116,13 @@ export function TableMenu() {
           role="dialog"
           aria-label="Table menu"
           data-testid="table-menu"
-          className="absolute right-0 top-full z-20 mt-2 flex max-h-[calc(100dvh-5rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))] w-64 flex-col gap-1 overflow-y-auto rounded-sheet bg-surface p-3 shadow-[0_8px_32px_rgb(28_25_21_/_0.18)]"
+          className="absolute right-0 top-full z-20 mt-2 flex max-h-[calc(100dvh-5rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))] w-64 flex-col overflow-y-auto rounded-sheet bg-surface p-2 shadow-[0_8px_32px_rgb(28_25_21_/_0.18)]"
           onBlur={(e) => {
             const to = e.relatedTarget as Node | null;
             if (to && !sheet.current?.contains(to) && !trigger.current?.contains(to)) close(false);
           }}
         >
-          <p className="flex items-center gap-2 px-3 py-2 text-caption text-muted">
+          <p className="flex items-center gap-2 px-3 py-1 text-caption text-muted">
             <span>Turn {Math.max(1, state.turn)}</span>
             {watching > 0 ? (
               <span data-testid="watching-count" aria-label={`${watching} watching`} className="ml-auto flex items-center gap-1 tabular-nums">

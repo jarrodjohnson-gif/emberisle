@@ -135,11 +135,15 @@ const TOKEN_NUMERAL_PX = 12;
 const TOKEN_MAX_SCALE = Math.min(1.25, (0.38 * SQRT3 * HEX_SIZE) / 0.68);
 const TOKEN_GLYPH = 0.31;
 // A tree standing between a token and the diorama camera (in front of it within TREE_SHADE_DEPTH, within TREE_SHADE_SIDE of
-// the line of sight) can hide part of the numeral at this angle (tokens-prove check 7 finds one or two on a deal): it is
-// drawn at TREE_SHADE_SCALE.
+// the line of sight) can hide the foot of the numeral at this angle: it is scaled down just enough that its top clears the
+// line from the eye to the glyph's lowest row (TOKEN_GLYPH_FOOT below the face's centre, plus TREE_SHADE_MARGIN), never
+// below TREE_SHADE_MIN. Trees in the zone that already clear it stay full size.
 const TREE_SHADE_DEPTH = 1.7;
 const TREE_SHADE_SIDE = 0.55;
-const TREE_SHADE_SCALE = 0.7;
+const TREE_SHADE_MARGIN = 0.05;
+const TREE_SHADE_MIN = 0.3;
+const TOKEN_GLYPH_FOOT = 0.13;
+const _box = new THREE.Box3();
 
 export class IsleRenderer {
   private renderer: THREE.WebGLRenderer;
@@ -861,17 +865,30 @@ export class IsleRenderer {
       t.position.y = (t.userData.restY as number) + lift;
       t.userData.lift = lift;
     });
-    const key = diorama ? `${az.toFixed(2)}|${this.lastLand}` : "";
+    const key = diorama ? `${cam.x.toFixed(2)},${cam.y.toFixed(2)},${cam.z.toFixed(2)}|${this.lastLand}` : "";
     if (key !== this.shadedFor) {
       this.shadedFor = key;
       const [sx, sz] = [Math.sin(az), Math.cos(az)];
       for (const tree of this.trees) {
-        const hides = diorama && this.tokens.some((t) => {
-          const [dx, dz] = [tree.position.x - t.position.x, tree.position.z - t.position.z];
-          const along = dx * sx + dz * sz;
-          return along > 0 && along < TREE_SHADE_DEPTH && Math.abs(dx * sz - dz * sx) < TREE_SHADE_SIDE;
-        });
-        tree.scale.setScalar(hides ? TREE_SHADE_SCALE : 1);
+        // The tree's own height, measured once at full size.
+        if (tree.userData.height === undefined) {
+          tree.scale.setScalar(1);
+          tree.updateMatrixWorld(true);
+          tree.userData.height = _box.setFromObject(tree).max.y - tree.position.y;
+        }
+        let k = 1;
+        if (diorama) {
+          for (const t of this.tokens) {
+            const [dx, dz] = [tree.position.x - t.position.x, tree.position.z - t.position.z];
+            const along = dx * sx + dz * sz;
+            if (along <= 0 || along >= TREE_SHADE_DEPTH || Math.abs(dx * sz - dz * sx) >= TREE_SHADE_SIDE) continue;
+            // The sight line's height over the tree's foot where it passes the tree.
+            const rise = (cam.y - t.position.y) / Math.hypot(cam.x - t.position.x, cam.z - t.position.z);
+            const clear = t.position.y - TOKEN_GLYPH_FOOT * t.scale.x - tree.position.y + along * rise - TREE_SHADE_MARGIN;
+            k = Math.min(k, Math.max(TREE_SHADE_MIN, clear / (tree.userData.height as number)));
+          }
+        }
+        tree.scale.setScalar(k);
       }
     }
     const st = this.lastState;

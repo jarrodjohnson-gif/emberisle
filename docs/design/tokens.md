@@ -98,9 +98,11 @@ flat disc would foreshorten to 0.62. There each token (`poseTokens` in `isle-ren
 - grows by `s` toward a 12 px numeral (0.31 world units on the face) at its own depth, but never past 1.25x nor past 38 %
   of a hex's width (0.68 × s against SQRT3 × HEX_SIZE = 1.94, so `s` stops at 1.08, which is the cap that binds), and
   shrinks while its disc would overlap another's on screen. Zoomed in, it is its own size again;
-- and a tree standing between it and the eye (in front of it within 1.7, within 0.55 of the line of sight) is drawn at
-  0.7: without that, `tokens-prove` found part of one numeral hidden on each of two deals (3 of 5 points across the 12's
-  glyph at 1280x720, 1 of 5 across a 9 at 844x390); at 0.7, none. Re-shaded when the camera's azimuth moves.
+- and a tree standing between it and the eye (in front of it within 1.7, within 0.55 of the line of sight) is scaled down
+  just enough that its top clears the line from the eye to the numeral's foot (0.13 × `s` below the face's centre, plus
+  0.05), never below 0.3; a tree in that zone that already clears it stays full size. A fixed 0.7 left part of a numeral
+  hidden on 4 of 12 deals at 1280x720 once the numeral grew to 192 px; this rule hides none in 12 deals and leaves 50 of 74
+  trees full size on the sample board (the smallest at 0.45). Re-shaded when the camera moves.
 
 For the diorama the face changed too (it is the same face in every view): the numeral is `bold 192px` at (128, 104), about
 1.2x the 158 px glyph it was and 0.31 world units tall, a two-digit one condensed to 176 canvas px so it stays inside the
