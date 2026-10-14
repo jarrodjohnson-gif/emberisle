@@ -158,7 +158,7 @@ npm run chat-prove       # 3 headless tabs chat in the lobby and the game: prese
 npm run watch-ui-prove   # 2 headless tabs and a client seat play; a third tab watches after the start: board, no glow, no controls, read-only dock, eye count on the seats, "Watching only." for an injected intent, the full reveal at the win
 ```
 
-CI runs `npm ci` in the root and in `server/`, then these checks in this order, and installs Chromium with `npx playwright install --with-deps chromium`. `client-prove` uses the Chromium that ships with cloud sessions (`/opt/pw-browsers/chromium`). On your own PC, run `npx playwright install chromium` once first. It saves a screenshot to `test-results/client-prove.png`.
+CI splits `browser-b` into `flows` and `presentation`; the required `checks` gate requires both. CI runs `npm ci` in the root and in `server/`, then these checks in this order, and installs Chromium with `npx playwright install --with-deps chromium`. `client-prove` uses the Chromium that ships with cloud sessions (`/opt/pw-browsers/chromium`). On your own PC, run `npx playwright install chromium` once first. It saves a screenshot to `test-results/client-prove.png`.
 
 ### Game night
 
