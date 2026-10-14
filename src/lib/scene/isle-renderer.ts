@@ -165,18 +165,21 @@ export class IsleRenderer {
   private water = makeWater();
   // The crystal sea, or the simple shader when the GPU cannot render to a float target, the one-time probe finds it slow, or
   // the player chose Simple in the table menu (crystal-water.md). Reported through `onWater`.
-  waterPath: WaterPath = "crystal";
+  // Every load starts simple; only a saved Crystal choice or a passed probe switches it (software GL stays cheap while a
+  // reloaded page rejoins its table).
+  waterPath: WaterPath = "simple";
   onWater: (w: WaterStatus) => void = () => {};
   private choice: WaterPath | null = null;
   private waterSet = false;
   private probed: { path: WaterPath; ms: number } | null = null;
-  private probe: { frames: number; ms: number } | null = null;
+  private probe: { stage: WaterPath; frames: number; ms: number } | null = null;
   private crystalOk = false;
   private motion = { value: 1 };
   // The sea's shared clock, motion and paper fade (inner and outer radius), for the crystal sea, its floor and the simple sea.
   private sea!: SeaUniforms;
   // The scene without the crystal sea, colour and depth, drawn each crystal frame for the sea to refract and absorb.
-  private under = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, depthTexture: new THREE.DepthTexture(1, 1) });
+  // Allocated on the first crystal frame.
+  private under: THREE.WebGLRenderTarget | null = null;
   private swell!: ReturnType<typeof makeSwell>;
   private opaqueSea!: THREE.Mesh;
   private crystalSea!: THREE.Mesh;
@@ -211,7 +214,7 @@ export class IsleRenderer {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: "high-performance" });
     // Frame cost tracks pixels (#310). The crystal sea runs at up to 2 everywhere (every player's phone is an iPhone Pro class
     // GPU); `applyWater` keeps 1.5 on a phone for the simple sea (2.25x the pixels of 1, against 4x at 2).
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, this.coarse() ? 1.5 : 2));
     this.renderer.setClearColor(PAPER, 1);
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
@@ -280,6 +283,7 @@ export class IsleRenderer {
     this.wash = makeWash(coast, this.sea);
     this.swell = makeSwell(coast);
     this.scene.add(this.crystalSea, this.wash, makeSeaFloor(coast, this.sea), makeFloorProps(coast));
+    this.crystalSea.visible = this.wash.visible = false;
     // The crystal sea refracts a half-float copy of the scene.
     const ext = this.renderer.extensions;
     this.crystalOk = this.renderer.capabilities.isWebGL2 && (ext.has("EXT_color_buffer_float") || ext.has("EXT_color_buffer_half_float"));
@@ -527,7 +531,7 @@ export class IsleRenderer {
     this.renderer.domElement.removeEventListener("pointercancel", this.onCancel);
     this.safeProbe.remove();
     this.oceanLife.dispose();
-    this.under.dispose();
+    this.under?.dispose();
     this.renderer.dispose();
   }
 
@@ -578,7 +582,7 @@ export class IsleRenderer {
     this.renderer.setSize(w, h, false);
     this.composer?.setSize(w, h);
     const ratio = this.renderer.getPixelRatio();
-    this.under.setSize(Math.round(w * ratio), Math.round(h * ratio));
+    this.under?.setSize(Math.round(w * ratio), Math.round(h * ratio));
     this.ssao?.setSize(w, h);
     this.refit(true);
     // The HUD re-lays out for the new size after this event (a rotation swaps its columns and rails), so the hole just
@@ -905,6 +909,10 @@ export class IsleRenderer {
   private drawUnder() {
     const cam = this.overhead ? this.ortho : this.camera;
     const r = this.renderer;
+    if (!this.under) {
+      const size = r.getDrawingBufferSize(new THREE.Vector2());
+      this.under = new THREE.WebGLRenderTarget(size.x, size.y, { type: THREE.HalfFloatType, depthTexture: new THREE.DepthTexture(size.x, size.y) });
+    }
     this.crystalSea.visible = this.wash.visible = false;
     r.setRenderTarget(this.under);
     try {
@@ -927,13 +935,13 @@ export class IsleRenderer {
     if (choice === this.choice && this.waterSet) return;
     this.waterSet = true;
     this.choice = choice;
-    // The probe measures the crystal sea only, once, when nothing has chosen for it.
-    this.probe = !choice && !this.probed && this.crystalOk ? { frames: 0, ms: 0 } : null;
+    // The probe runs once, when nothing has chosen for it: first on the simple sea, then (if that is quick) on the crystal one.
+    this.probe = !choice && !this.probed && this.crystalOk ? { stage: "simple", frames: 0, ms: 0 } : null;
     this.applyWater();
   }
 
   private applyWater() {
-    const path: WaterPath = !this.crystalOk ? "simple" : (this.choice ?? this.probed?.path ?? "crystal");
+    const path: WaterPath = !this.crystalOk ? "simple" : (this.choice ?? this.probed?.path ?? this.probe?.stage ?? "simple");
     this.waterPath = path;
     this.crystalSea.visible = this.wash.visible = path === "crystal";
     // The crystal sea's edge strip draws its own thin lace.
@@ -945,9 +953,10 @@ export class IsleRenderer {
     this.onWater({ path, source: this.choice ? "saved" : "probe", ms: this.probed?.ms ?? null });
   }
 
-  // The one-time GPU check, on a built and warm scene: 10 crystal frames once the island has been drawn 5 times (past the
-  // shader compiles and uploads), each made to finish by a 1-pixel read. Over 22 ms a frame on average, the sea goes simple;
-  // once the frames so far already exceed the 10-frame budget (220 ms), it stops there, so a slow GPU stalls only briefly.
+  // The one-time GPU check, on a built and warm scene, each frame made to finish by a 1-pixel read. First up to 10 simple
+  // frames once the island has been drawn 5 times: over 11 ms on average (the crystal sea draws the scene twice), the sea
+  // stays simple and the crystal one is never drawn. Otherwise up to 10 crystal frames after 3 warm ones: over 22 ms, back to
+  // simple. A stage stops as soon as its frames pass its 10-frame budget, so a slow GPU stalls for one frame.
   private draw() {
     const t0 = performance.now();
     this.fadeSea();
@@ -962,14 +971,20 @@ export class IsleRenderer {
     }
     this.renders += 1;
     const p = this.probe;
-    if (!p || !this.lastState || ++p.frames <= 5) return;
+    const warm = p?.stage === "simple" ? 5 : 3;
+    const budget = p?.stage === "simple" ? 11 : 22;
+    if (!p || p.stage !== this.waterPath || !this.lastState || ++p.frames <= warm) return;
     const gl = this.renderer.getContext();
     gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(4));
     p.ms += performance.now() - t0;
-    if (p.frames < 15 && p.ms <= 220) return;
-    this.probe = null;
-    const ms = Math.round((p.ms / (p.frames - 5)) * 10) / 10;
-    this.probed = { path: ms > 22 ? "simple" : "crystal", ms };
+    const n = p.frames - warm;
+    if (n < 10 && p.ms <= budget * 10) return;
+    const ms = Math.round((p.ms / n) * 10) / 10;
+    if (p.stage === "simple" && ms <= budget) this.probe = { stage: "crystal", frames: 0, ms: 0 };
+    else {
+      this.probe = null;
+      this.probed = { path: p.stage === "crystal" && ms <= budget ? "crystal" : "simple", ms };
+    }
     this.applyWater();
   }
 
