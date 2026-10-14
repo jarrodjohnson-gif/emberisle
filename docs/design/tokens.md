@@ -87,24 +87,27 @@ height, so the 150 px digit is still 22 px at the far pole at the default distan
 the canvas sharp at that angle. A billboard would turn the token into a card standing on the hex, which from
 overhead is an edge, and would leave the wayfarer (#132) nothing to stand on.
 
-**In the diorama view (#597)**, the default in play since #597, the camera is 32° above the horizon, where a flat
-disc would foreshorten to 0.53 and the far row's numerals fall under the 11 px floor. There each token (`poseTokens` in
-`isle-renderer.ts`, every drawn frame):
+**In the diorama view (#597)**, the default in play on a landscape screen, the camera is 38° above the horizon, where a
+flat disc would foreshorten to 0.62. There each token (`poseTokens` in `isle-renderer.ts`, every drawn frame):
 
-- turns to the camera's azimuth, so the numeral stays upright as the player orbits, and pitches **40°** toward it
-  (`TOKEN_TILT`): the face is 18° off square to the eye at home, so it reads at 0.95 of its height;
-- rests on its near edge: it is lifted by `s × (0.34 sin 40° + 0.03 cos 40°) − 0.03` (`userData.lift`), and the wayfarer
+- turns to the camera's azimuth, so the numeral stays upright as the player orbits, and pitches **22°** toward it
+  (`TOKEN_TILT`): the face is 30° off square to the eye at home, so it reads at 0.87 of its height, and it still reads as a
+  disc on the cap rather than a sign standing on it;
+- rests on its near edge: it is lifted by `s × (0.34 sin 22° + 0.03 cos 22°) − 0.03` (`userData.lift`), and the wayfarer
   stands on the lifted face;
-- grows by `s`, from 1 up to 1.7 (`TOKEN_MAX_SCALE`), until its numeral (0.254 world units on the face) is 12 px tall on
-  screen at its own depth; zoomed in, it is its own size again. On a desktop it stays 1; on a portrait phone, whose hole is
-  width-bound, they grow to 1.3-1.7;
+- grows by `s` toward a 12 px numeral (0.254 world units on the face) at its own depth, but never past 1.25x nor past 38 %
+  of a hex's width (0.68 × s against SQRT3 × HEX_SIZE = 1.94, so `s` stops at 1.08, which is the cap that binds), and
+  shrinks while its disc would overlap another's on screen. Zoomed in, it is its own size again;
 - and a tree standing between it and the eye (in front of it within 1.7, within 0.55 of the line of sight) is drawn at
-  0.45, a sapling, so the forest ring does not hide the numeral at this angle. Re-shaded when the camera's azimuth moves.
+  0.7: without that, `tokens-prove` found part of one numeral hidden on each of two deals (3 of 5 points across the 12's
+  glyph at 1280x720, 1 of 5 across a 9 at 844x390); at 0.7, none. Re-shaded when the camera's azimuth moves.
 
 The face, the rim rule, the 6 and 8's red and the pip rows are unchanged; in the overhead and free views the token lies flat
 at its own size as above. `tokens-prove` check 7 measures every token on screen in the diorama fit, from the label's own
-canvas through the camera: at 1280x720 the smallest numeral was 15.2-16.2 px over two deals and the smallest pip 2.64 px; at 390x844, 12.4 px
-and 2.15 px.
+canvas through the camera: at 1280x720 the smallest numeral is 12.7 px and the smallest pip 2.22 px, the largest disc 35 %
+of its hex, no two discs overlap and no numeral is behind a tree. At 844x390 the 38 % cap holds the token at 1.08x and the
+smallest numeral is 8.0 px and pip 1.34 px, under the 11 px / 2 px floor; the proof reports those rather than judging them.
+On an upright phone, where the floor is furthest out of reach, the default is the overhead view.
 
 ## Clear space
 

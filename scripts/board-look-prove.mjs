@@ -6,13 +6,13 @@
 //   horizon is the studio paper #f1efe9 the page sits on. Every other page pins the simple sea, so the gesture timings do not
 //   pay for the crystal sea on software GL;
 // - the title keeps the slow orbit (free camera, auto-rotate); in play, on a fine pointer at 1280x720 and a coarse one at
-//   390x844, the diorama camera (#597) is on and every corner of the island, and every dock's pier and boat (0.7 out along
-//   the coast), projects inside the hole the HUD leaves (`__isle.insets()`, measured from the HUD's own chrome), each
-//   corner's screen point lands on the canvas, and every number token is at least 24 px across on the desktop and 18 px on
-//   the phone; at 390x844 a path and an outpost on the far (north) coast measure at least the touch reach on screen;
+//   390x844, the default view for the screen's shape (#597: the diorama on the desktop, overhead on the upright phone) is
+//   on and every corner of the island, and every dock's pier and boat (0.7 out along the coast), projects inside the hole
+//   the HUD leaves (`__isle.insets()`, measured from the HUD's own chrome), each corner's screen point lands on the canvas,
+//   and every number token is at least 24 px across on the desktop and 18 px on the phone;
 // - the table menu's View switches to the fitted 25° overhead view (every corner in the hole, a drag orbits it) and the
 //   choice outlives a reload (`emberisle-view`);
-// - the default view is the fitted diorama view; a drag (mouse, or one finger through CDP touch events) orbits it and
+// - the default view is at its fitted home; a drag (mouse, or one finger through CDP touch events) orbits it and
 //   places nothing even when it starts on a legal corner, nor does an out-and-back drag that ends on it; a wheel zooms;
 //   Home (desktop) and a double click or double tap on empty board glide back to the fitted view; a click on the corner
 //   still places afterwards; under reduced motion Home is instant; mid-game at 1280x720 with the hand shown and an armed
@@ -21,8 +21,10 @@
 //   (no state change) each refit the island clear of the rail they make, and closing or blurring refits it back;
 // - #422: on a sideways phone (844x390 and 667x375, touch) in the main phase with the hand shown, the HUD is a left column
 //   and the island beside it is larger than on main before #422 (a 101x85 px island, 8581 and 8569 px²), at least 60 % as
-//   wide as the hole is tall, every corner clear of the HUD, and every two adjacent corners more than 14 px apart (the
-//   diorama's touch reach: the tilt foreshortens a step along the line of sight, so the overhead view's 24 px is not kept);
+//   wide as the hole is tall, every corner clear of the HUD, and every two adjacent corners at least 18 px apart (the
+//   diorama is the default there, and its tilt foreshortens a step along the line of sight, so the overhead view's 24 px
+//   is not kept; 18 px keeps a tap dead on a corner outside its neighbour's 14 px touch reach with room to spare); at
+//   844x390 a path and an outpost on the far (north) coast measure at least the touch slop on screen;
 //   with Path armed and an edge picked by touch, the Place chip is in view and covers neither the hand nor the turn banner.
 // Zero console errors. Saves test-results/board-look-{title,play}-<size>.png. Port from VITE_PORT, default 8112.
 import { existsSync, mkdirSync } from "node:fs";
@@ -281,7 +283,9 @@ try {
     // between does not move it; the next state change does).
     const home = () =>
       page.evaluate(async () => {
-        const { DIORAMA_POLAR, DIORAMA_AZIMUTH, CAP_LEVEL } = await import("/src/lib/scene/mobile-fit.ts");
+        const { DIORAMA_POLAR, DIORAMA_AZIMUTH, OVERHEAD_LEAN, CAP_LEVEL } = await import("/src/lib/scene/mobile-fit.ts");
+        const isle = window.__isle;
+        if (isle.view === "overhead") return { polar: OVERHEAD_LEAN, azimuth: 0, zoom: 1, target: [isle.fit.x, CAP_LEVEL, isle.fit.z] };
         return { polar: DIORAMA_POLAR, azimuth: DIORAMA_AZIMUTH, zoom: 1, target: [0, CAP_LEVEL, 0] };
       });
     const atHome = async (p) => {
@@ -311,7 +315,8 @@ try {
         const m = isle.coastMiter.get(v.id);
         const reach = v.harbor ? inside(isle.screenAt(v.x + m.mx * 0.7, 0.1, v.z + m.mz * 0.7)) : Infinity;
         if (v.harbor) dockIn = Math.min(dockIn, reach);
-        if (inside(p) < 0 || reach < 0) out.push(`${v.id}@${p.x | 0},${p.y | 0}`);
+        // A dock may come to the hole's edge (the diorama fit puts the nearest one there), not past it: half a pixel of float.
+        if (inside(p) < 0 || reach < -0.5) out.push(`${v.id}@${p.x | 0},${p.y | 0}`);
         if (document.elementFromPoint(p.x, p.y)?.tagName !== "CANVAS") covered.push(`${v.id}@${p.x | 0},${p.y | 0}`);
       }
       const tokens = isle.land.children.filter((o) => o.userData?.token != null);
@@ -319,7 +324,8 @@ try {
       return { view: isle.view, hole, corners: st.vertices.length, out, covered, dockIn: +dockIn.toFixed(1), token: +token.toFixed(1) };
     });
     const fit = await holeFit();
-    check(`${tag}: the diorama camera is on in play`, fit.view === "diorama", { view: fit.view });
+    const want = w > h ? "diorama" : "overhead";
+    check(`${tag}: the ${want} camera is on in play (the default for the screen's shape)`, fit.view === want, { view: fit.view });
     check(`${tag}: every corner and dock inside the measured HUD hole`, fit.corners === 54 && fit.out.length === 0, { hole: fit.hole, dockIn: fit.dockIn, out: fit.out.slice(0, 6) });
     check(`${tag}: every corner lands on the canvas (clear of the HUD)`, fit.covered.length === 0, fit.covered.slice(0, 6));
     // #587: one pier and one boat per dock (nine on a standard isle), not one per harbor corner (18); each boat's kind is its dock's.
@@ -338,7 +344,7 @@ try {
     const tokenMin = touch ? 18 : 24;
     check(`${tag}: every number token is at least ${tokenMin} px across`, fit.token >= tokenMin, { smallest: fit.token });
     const p0 = await pose();
-    check(`${tag}: the default view is the fitted diorama view, ${90 - lean}° above the horizon`, (await atHome(p0)) && !p0.glide, brief(p0));
+    check(`${tag}: the default view is at its fitted home, ${want === "diorama" ? `${90 - lean}° above the horizon` : `leaned ${lean}°`}`, (await atHome(p0)) && !p0.glide, brief(p0));
     await page.screenshot({ path: `test-results/board-look-play-${w}x${h}.png` });
 
     // A legal corner to start a drag on: the drag must orbit, not place.
@@ -520,54 +526,6 @@ try {
       await page.waitForFunction(() => window.__isle.view === "diorama" && !window.__isle.refitDue && !window.__isle.glide, null, { timeout: STEP_MS });
       check(`${tag}: View > Diorama switches back and is saved`, (await page.evaluate(() => localStorage.getItem("emberisle-view"))) === "diorama");
     }
-    if (touch) {
-      // #597: the far (north) coast is smallest on screen. A path on the northmost coast edge and an outpost on its corner
-      // (put there last, so nothing above sees them), measured from their own meshes' boxes on screen, and the touch pick
-      // reach there, against the 24 px touch slop. The outpost's size is reported, not judged: the pick reach is its target.
-      const far = await page.evaluate(async () => {
-        const isle = window.__isle;
-        const g = window.__emberisle;
-        const st = structuredClone(g.getState().state);
-        const coast = new Set(isle.coastOrder);
-        const edge = st.edges.filter((e) => coast.has(e.va) && coast.has(e.vb)).sort((a, b) => {
-          const z = (e) => st.vertices.find((v) => v.id === e.va).z + st.vertices.find((v) => v.id === e.vb).z;
-          return z(a) - z(b);
-        })[0];
-        edge.path = st.players[0].id;
-        const corner = st.vertices.find((v) => v.id === edge.va);
-        corner.building = { playerId: st.players[0].id, kind: "outpost" };
-        st.seq++;
-        g.setState({ state: st });
-        const t0 = performance.now();
-        await new Promise((res) => { const p = () => (isle.lastSeq === st.seq || performance.now() - t0 > 8000 ? res() : requestAnimationFrame(p)); p(); });
-        await new Promise((r) => setTimeout(r, 700));
-        const size = (key) => {
-          const o = isle.pieces.children.find((c) => c.userData.key === key);
-          const box = new isle.ortho.position.constructor();
-          o.updateMatrixWorld(true);
-          const pts = [];
-          o.traverse((m) => {
-            if (!m.geometry) return;
-            m.geometry.computeBoundingBox();
-            const b = m.geometry.boundingBox;
-            for (const x of [b.min.x, b.max.x]) for (const y of [b.min.y, b.max.y]) for (const z of [b.min.z, b.max.z]) {
-              box.set(x, y, z).applyMatrix4(m.matrixWorld);
-              pts.push(isle.screenAt(box.x, box.y, box.z));
-            }
-          });
-          const w = Math.max(...pts.map((p) => p.x)) - Math.min(...pts.map((p) => p.x));
-          const h = Math.max(...pts.map((p) => p.y)) - Math.min(...pts.map((p) => p.y));
-          return { w: +w.toFixed(1), h: +h.toFixed(1) };
-        };
-        const { pickReach } = await import("/src/lib/scene/mobile-fit.ts");
-        const depth = new isle.ortho.position.constructor(corner.x, 0.35, corner.z).sub(isle.persp.position).dot(isle.persp.getWorldDirection(new isle.ortho.position.constructor()));
-        const reachPx = (pickReach(depth, isle.lens.focal, true) * isle.lens.focal) / depth;
-        return { edge: edge.id, path: size(`e:${edge.id}`), outpost: size(`v:${corner.id}`), reachPx: +(2 * reachPx).toFixed(1), seq: st.seq };
-      });
-      const across = (b) => Math.max(b.w, b.h);
-      check(`${tag}: a path on the far coast spans at least the 24 px touch slop on screen, and the touch pick at its corner reaches 24 px across`, across(far.path) >= 24 && far.reachPx >= 24, far);
-    }
-
     await page.context().close();
   }
   // 3. Chrome the player opens without the game moving refits the board: the chat dock (online) and the focused keyboard
@@ -700,6 +658,7 @@ try {
         area: Math.round(isleW * isleH),
         token: +Math.min(...isle.land.children.filter((o) => o.userData?.token != null).map((t) => 0.68 * t.scale.x * isle.pxPerUnit(t.position.x, t.position.y, t.position.z))).toFixed(1),
         apart: +apart.toFixed(1),
+        view: isle.view,
         widthOverHoleH: +(isleW / (innerHeight - ins.top - ins.bottom)).toFixed(2),
         covered,
       };
@@ -707,7 +666,7 @@ try {
     check(`${tag}: main phase with the hand shown, the HUD a left column`, land.phase === "main" && land.hand && land.column.right < w / 2 && land.insets.left > land.column.right, land);
     check(`${tag}: the island is larger than before #422 (${before} px²)`, land.area > before, { area: land.area, isle: land.isle, token: land.token });
     check(`${tag}: the island is at least 60 % as wide as the hole is tall, every corner clear of the HUD`, land.widthOverHoleH >= 0.6 && land.covered.length === 0, { widthOverHoleH: land.widthOverHoleH, holeH: land.holeH, covered: land.covered.slice(0, 6) });
-    check(`${tag}: adjacent corners more than the 14 px touch reach apart`, land.apart > 14, { apart: land.apart });
+    check(`${tag}: the diorama is on and adjacent corners are at least 18 px apart`, land.view === "diorama" && land.apart >= 18, { view: land.view, apart: land.apart });
     await page.screenshot({ path: `test-results/board-look-play-${w}x${h}.png` });
     // A main-phase build by touch: Path armed, an edge picked, the column scrolled to its end first. Place and Cancel are
     // the column's first row, in view, and cover neither the hand nor the turn banner.
@@ -735,6 +694,54 @@ try {
       return { armed: window.__emberisle.getState().buildMode, row, hand, turn, onTop, inView: p.t >= sc.t && p.b <= sc.b, overHand: meets(row, hand), overTurn: meets(row, turn) };
     });
     check(`${tag}: an armed Path's Place chip is the column's first row, in view, clear of the hand and the turn banner`, chip.armed === "path" && chip.onTop && chip.inView && !chip.overHand && !chip.overTurn, chip);
+    if (w === 844) {
+      // #597: the far (north) coast is smallest on screen. A path on the northmost coast edge and an outpost on its corner
+      // measured from their own meshes' boxes on screen, and the touch pick
+      // reach there, against the 24 px touch slop. Last on the page, so nothing above sees them. The outpost's size is reported, not judged: the pick reach is its target.
+      const far = await page.evaluate(async () => {
+        const isle = window.__isle;
+        const g = window.__emberisle;
+        const st = structuredClone(g.getState().state);
+        const coast = new Set(isle.coastOrder);
+        const edge = st.edges.filter((e) => coast.has(e.va) && coast.has(e.vb)).sort((a, b) => {
+          const z = (e) => st.vertices.find((v) => v.id === e.va).z + st.vertices.find((v) => v.id === e.vb).z;
+          return z(a) - z(b);
+        })[0];
+        edge.path = st.players[0].id;
+        const corner = st.vertices.find((v) => v.id === edge.va);
+        corner.building = { playerId: st.players[0].id, kind: "outpost" };
+        st.seq++;
+        g.setState({ state: st });
+        const t0 = performance.now();
+        await new Promise((res) => { const p = () => (isle.lastSeq === st.seq || performance.now() - t0 > 8000 ? res() : requestAnimationFrame(p)); p(); });
+        await new Promise((r) => setTimeout(r, 700));
+        const size = (key) => {
+          const o = isle.pieces.children.find((c) => c.userData.key === key);
+          const box = new isle.ortho.position.constructor();
+          o.updateMatrixWorld(true);
+          const pts = [];
+          o.traverse((m) => {
+            if (!m.geometry) return;
+            m.geometry.computeBoundingBox();
+            const b = m.geometry.boundingBox;
+            for (const x of [b.min.x, b.max.x]) for (const y of [b.min.y, b.max.y]) for (const z of [b.min.z, b.max.z]) {
+              box.set(x, y, z).applyMatrix4(m.matrixWorld);
+              pts.push(isle.screenAt(box.x, box.y, box.z));
+            }
+          });
+          const w = Math.max(...pts.map((p) => p.x)) - Math.min(...pts.map((p) => p.x));
+          const h = Math.max(...pts.map((p) => p.y)) - Math.min(...pts.map((p) => p.y));
+          return { w: +w.toFixed(1), h: +h.toFixed(1) };
+        };
+        const { pickReach } = await import("/src/lib/scene/mobile-fit.ts");
+        const depth = new isle.ortho.position.constructor(corner.x, 0.35, corner.z).sub(isle.persp.position).dot(isle.persp.getWorldDirection(new isle.ortho.position.constructor()));
+        const reachPx = (pickReach(depth, isle.lens.focal, true) * isle.lens.focal) / depth;
+        return { edge: edge.id, path: size(`e:${edge.id}`), outpost: size(`v:${corner.id}`), reachPx: +(2 * reachPx).toFixed(1), seq: st.seq };
+      });
+      const across = (b) => Math.max(b.w, b.h);
+      check(`${tag}: a path on the far coast spans at least the 24 px touch slop on screen, and the touch pick at its corner reaches 24 px across`, across(far.path) >= 24 && far.reachPx >= 24, far);
+    }
+
     await page.context().close();
   }
   check("no console errors", errors.length === 0, errors);

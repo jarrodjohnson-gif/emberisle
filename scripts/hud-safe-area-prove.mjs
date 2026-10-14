@@ -134,7 +134,8 @@ async function prove(p, moment, { island = true } = {}) {
         // A dock's pier and boat reach 0.7 world units out along the coast, at the waterline.
         const m = isle.coastMiter.get(v.id);
         const pts = v.harbor ? [q, isle.screenAt(v.x + m.mx * 0.7, 0.1, v.z + m.mz * 0.7)] : [q];
-        if (pts.some((p) => Math.min(p.x - hole.l, hole.r - p.x, p.y - hole.t, hole.b - p.y) < 0)) corners.push(`${v.id}@${q.x | 0},${q.y | 0}`);
+        // A dock may come to the hole's edge (the diorama fit puts the nearest one there), not past it: half a pixel of float.
+        if (pts.some((p) => Math.min(p.x - hole.l, hole.r - p.x, p.y - hole.t, hole.b - p.y) < -0.5)) corners.push(`${v.id}@${q.x | 0},${q.y | 0}`);
       }
       return {
         reached, seen, out, chatOut, play: isle.view !== "free", vertices: st.vertices.length, corners, holeSafe,

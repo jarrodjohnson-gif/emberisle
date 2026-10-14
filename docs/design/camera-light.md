@@ -35,13 +35,16 @@ of open water in the drawn frame: luminance p95 - p5 went from 0.148 to 0.01.
 Three views on one scene:
 
 - **Title and lobby**: the free `PerspectiveCamera` (32°) on OrbitControls, auto-rotating, SSAO off.
-- **Play, by default: the diorama** (#597, reversing #128 by the owner's call): a `PerspectiveCamera` 32° above the
-  horizon and 20° off the island's north, fitted by `fitDiorama` to the hole the HUD leaves ("The diorama view" below).
-- **Play, by choice: overhead**: the `OrthographicCamera`, fitted by `fitOrtho` to the same hole, on every pointer.
+- **Play, diorama** (#597, reversing #128 by the owner's call): a `PerspectiveCamera` 38° above the horizon and 20° off
+  the island's north, fitted by `fitDiorama` to the hole the HUD leaves ("The diorama view" below).
+- **Play, overhead**: the `OrthographicCamera`, fitted by `fitOrtho` to the same hole, on every pointer.
 
-The table menu's **View** row switches between Diorama and Overhead; the choice is saved in `localStorage`
-(`emberisle-view`: `"diorama"` | `"overhead"`, like `emberisle-water`) and every entry to the table starts from the chosen
-view's home. SSAO is off in both play views. Picking and the highlights are the same meshes.
+With no choice saved, play opens in the diorama on a landscape canvas (desktop, a sideways phone) and overhead on a portrait
+one (`defaultView`: height over width), and a phone turned between the two switches with it: upright, the island is bound
+by the phone's width either way and the tilt would only shrink it and crowd its far corners. The table menu's **View** row
+switches between Diorama and Overhead; a choice is saved in `localStorage` (`emberisle-view`: `"diorama"` | `"overhead"`,
+like `emberisle-water`) and wins on every screen. Every entry to the table starts from the view's home. SSAO is off in both
+play views. Picking and the highlights are the same meshes.
 
 ### The hole
 
@@ -98,39 +101,39 @@ places nothing, a wheel zooms, Home and a double click or tap return home, reduc
 
 ### The diorama view (#597)
 
-The board seen from a chair: the reference's 3/4 tilt, the whole island and a margin of water in the hole, the far water
-fading into the paper.
+The board seen from a chair: the reference's 3/4 tilt, the whole island in the hole, the far water fading into the paper.
 
 | | Value | Where |
 |---|---|---|
-| Elevation | 32° above the horizon (polar 58°) | `DIORAMA_POLAR` |
+| Elevation | 38° above the horizon (polar 52°) | `DIORAMA_POLAR` |
 | Yaw | 20° off north: the eye sits south-south-east, the island's north is up-screen and a little left | `DIORAMA_AZIMUTH` |
 | Look-at | the island's centre at cap level, (0, 0.35, 0); the orbit pivots there | `applyPose` |
 | Focal length | 24° across the hole's height: `holeH / 2 / tan(12°)` px | `DIORAMA_FOV` |
 | Lens shift | the lens axis meets the canvas off centre (`setViewOffset`), so the island sits in the hole without turning the eye | `fitDiorama` |
 | Fog | starts 8 units past the eye's distance to the look-at point, 26 deep; the sea fades to paper 16 to 30 units out | `fadeSea` |
 
-**The fit rule.** The points the hole must hold are each coast corner (30) at cap level, the same corners at cap level
-plus 1.15 (the tallest pine), and each corner pushed 0.95 further out at the waterline (y 0.1: a dock's pier and boat reach
-0.7, plus water). `fitDiorama` bisects the eye's distance until the larger of the points' screen span over the hole's width
-and over its height is 1, then shifts the lens so the span's centre is the hole's centre. So the island fills the hole on one
-axis, centred, and the HUD covers no corner and no dock, whatever the hole. It is pure math in `mobile-fit.ts`;
-`touch-place-prove` checks it against the measured holes (desktop, portrait, the sideways phone, with and without an
-offer), and `board-look-prove`, `visual-direction-prove`, `hud-safe-area-prove` and `rotate-prove` against the live HUD.
+**The fit rule.** `fitDiorama` bisects the eye's distance twice: once until the 30 coast corners (at cap level) span 94 %
+of the hole on its limiting axis, once until the coast, every dock's reach (0.7 along the coast miter at the waterline) and the
+tallest prop's top wherever one can stand on the outer ring (0.86 from its hex's centre, 1.15 over cap level) just fill
+the hole. It takes the farther of the two, then shifts the lens so that whole span is centred in the hole. So the coast
+reaches within 6 % of the hole unless that would push a dock or a far pine past its edge, in which case those touch it.
+On every landscape hole measured the docks and pines bind: the coast spans 78 % of the hole's height (the far pines rise
+about 0.9 world units up-screen over the far coast, the near docks reach 0.43 below the near coast), and the hole's width
+is not the limit (a 1280x720 hole is 2.3 times as wide as tall; the island at this tilt about 1.5). It is pure math
+in `mobile-fit.ts`; `touch-place-prove` checks it on the measured holes, and `board-look-prove`, `visual-direction-prove`,
+`hud-safe-area-prove` and `rotate-prove` against the live HUD.
 
-Measured in the browser on a mid-game board (main phase, Path armed, the live HUD's hole; px per world unit across the
-screen at the far, middle and near row of hex centres):
+Measured in the browser on a mid-game board (main phase, Path armed; px per world unit across the screen at the far, middle
+and near row of hex centres):
 
-| Viewport | Hole (top / right / bottom / left) | Eye distance | px per unit far / centre / near | Token scale |
+| Viewport | Hole (top / right / bottom / left) | Eye distance | px per unit far / centre / near | Adjacent corners, closest |
 |---|---|---|---|---|
-| 1280x720 | 68 / 12 / 180 / 200 | 17.6 | 54.6 / 63.0 / 74.4 | 1 |
-| 390x844 | 68 / 12 / 270 / 12 | 36.8 | 30.1 / 32.3 / 34.9 | 1.37-1.7 |
-| 390x844, offer open | 68 / 12 / 373 / 12 | 29.4 | 29.5 / 32.3 / 35.5 | 1.34-1.7 |
-| 844x390 | 68 / 12 / 12 / 284 | 17.6 | 35.8 / 41.4 / 48.9 | 1-1.47 |
+| 1280x720 | 68 / 12 / 180 / 216 | 18.8 | 52.0 / 58.9 / 68.0 | 34.4 px |
+| 844x390 | 68 / 12 / 12 / 284 | 18.8 | 34.1 / 38.7 / 44.7 | 22.6 px |
 
-The 24° focal length is a choice between depth and evenness: on a desktop hole, at 30° the eye came to 14.5 units and the
-far row was 0.69 the size of the near one; at 24° it is 0.73 and the eye is 17.6 out. The portrait phone stays width-bound
-(the island and its docks span the hole's 366 px): its tokens are scaled instead (`docs/design/tokens.md` "Angle").
+At 32° (the first cut) the far side of a sideways phone had corners 20 px apart and a portrait phone 18 px; 38° shows more
+of the caps' tops and keeps every landscape hole at 18 px or more, which `board-look-prove` and `touch-place-prove` hold.
+The overhead view keeps 24 px; 18 px still puts a tap dead on one corner well outside its neighbour's 14 px touch reach.
 
 **Gestures.** As in the overhead view: drag orbits (polar 7°-66°, any azimuth, no damping, no pan), wheel and pinch zoom
 0.8x-2.4x (here the eye's distance, fitted distance over zoom), and Home, a double click or a double tap on empty board
@@ -140,14 +143,13 @@ leaves the eye where the player put it.
 **Picking.** The raycaster runs through the perspective camera. A corner or a path is picked when the ray passes within
 `pickReach` of it: 14 CSS px on screen at that depth for touch (8 for a mouse), never less than the overhead pick volume
 (0.28 for a corner, 0.18 for a path) and never more than 0.5, under half the 1.12 corner spacing; the nearest miss wins
-within a kind, corners still beat paths beat hexes. At 390x844 that is 0.38 world units on the near coast and 0.49 on the
-far one, 28 px across. The tilt foreshortens a step along the line of sight, so two corners can be 18 px apart on the far
-coast of a portrait phone (20 px on the sideways one); a tap dead on one is still outside its neighbour's reach. The
-keyboard route (the PlaceList) is unchanged.
+within a kind, corners still beat paths beat hexes. At 844x390 that is 0.28 world units on the near coast and 0.44 on the
+far one. The keyboard route (the PlaceList) is unchanged.
 
-**The far side.** Measured in `board-look-prove` at 390x844: a path on the northmost coast edge is 31.6 x 10.6 px on
-screen, an outpost on its corner 18.4 x 17.5 px, and the touch pick there 28 px across. No zoom bias: any zoom past the fit
-would push a dock out of the hole, and the pick reach, not the piece's drawn size, is the tap target.
+**The far side.** `board-look-prove` puts a path on the northmost coast edge and an outpost on its corner at 844x390 and
+measures their meshes on screen: the path is 34.0 x 11.7 px, the outpost 20.4 x 19.2 px, and the touch pick at that
+corner 28 px across (the 24 px touch slop or more). No zoom bias: any zoom past the fit pushes a
+dock or a pine out of the hole, and the pick reach, not the piece's drawn size, is the tap target.
 
 ## Open
 

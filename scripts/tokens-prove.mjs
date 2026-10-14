@@ -1,6 +1,7 @@
 // #239 Debug: number tokens are rimmed and legible, and nothing is placed or wanders within 0.39 of a hex centre.
-// The six checks in docs/design/tokens.md, and (#597) a seventh: in the diorama view, the default in play, every token
-// faces the camera and its numeral is at least 11 px tall and its pips at least 2 px across at 1280x720 and 390x844.
+// The six checks in docs/design/tokens.md, and (#597) a seventh: in the diorama view (the default on a landscape screen)
+// every token faces the camera, stays within 1.25x and 38 % of a hex's width, overlaps no other on screen and is not hidden
+// by a tree; at 1280x720 its numeral is at least 11 px tall and its pips 2 px across (at 844x390 those are reported).
 import { existsSync } from "node:fs";
 import { chromium } from "playwright";
 import { createServer } from "vite";
@@ -127,9 +128,12 @@ try {
     );
   }
 
-  // 7. The diorama view (#597): each token turned to the camera's azimuth and tilted toward it; the numeral's height and a
-  // pip's width measured on screen, from the label's own canvas (the glyph's dark rows, a pip's 20 px) through the camera.
-  for (const [width, height, phone] of [[1280, 720, false], [390, 844, true]]) {
+  // 7. The diorama view (#597), the default on a landscape screen: each token turned to the camera's azimuth and tilted
+  // toward it; the numeral's height and a pip's width measured on screen, from the label's own canvas (the glyph's dark
+  // rows, a pip's 20 px) through the camera; each disc at most 1.25x and at most 38 % of a hex's width on screen, no two
+  // discs overlapping on screen (their rims' 24 points, projected), and no numeral behind a tree (a ray from the eye to
+  // five points across the glyph meets no tree first).
+  for (const [width, height, phone] of [[1280, 720, false], [844, 390, true]]) {
     const ctx = await browser.newContext({ viewport: { width, height }, isMobile: phone, hasTouch: phone });
     const p = await ctx.newPage();
     p.on("console", (m) => m.type() === "error" && errors.push(m.text()));
@@ -146,9 +150,35 @@ try {
         return isle.screenAt(v.x, v.y, v.z);
       };
       const len = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+      const V = isle.persp.position.constructor;
+      const ray = new isle.raycaster.constructor();
+      const right = new V().setFromMatrixColumn(isle.persp.matrixWorld, 0);
+      // A disc's rim on screen, and whether a point is inside a convex polygon (either winding).
+      const rim = (g) => Array.from({ length: 24 }, (_, i) => {
+        const v = g.localToWorld(new V(0.34 * Math.cos((i * Math.PI) / 12), 0.03, 0.34 * Math.sin((i * Math.PI) / 12)));
+        return isle.screenAt(v.x, v.y, v.z);
+      });
+      const inside = (pt, poly) => {
+        let sign = 0;
+        for (let i = 0; i < poly.length; i++) {
+          const [a, b] = [poly[i], poly[(i + 1) % poly.length]];
+          const c = Math.sign((b.x - a.x) * (pt.y - a.y) - (b.y - a.y) * (pt.x - a.x));
+          if (c && sign && c !== sign) return false;
+          sign ||= c;
+        }
+        return true;
+      };
+      const groups = isle.land.children.filter((o) => o.userData?.token != null);
+      groups.forEach((g) => g.updateMatrixWorld(true));
+      const rims = groups.map(rim);
+      const overlaps = [];
+      for (let i = 0; i < rims.length; i++)
+        for (let j = i + 1; j < rims.length; j++)
+          if (rims[i].some((q) => inside(q, rims[j])) || rims[j].some((q) => inside(q, rims[i]))) overlaps.push(`${groups[i].userData.token}/${groups[j].userData.token}`);
       return {
         view: isle.view,
-        tokens: isle.land.children.filter((o) => o.userData?.token != null).map((g) => {
+        overlaps,
+        tokens: groups.map((g, gi) => {
           const label = g.children[1];
           g.updateMatrixWorld(true);
           const img = label.material.map.image.getContext("2d").getImageData(0, 0, 256, 176).data;
@@ -161,9 +191,24 @@ try {
           const n = g.userData.token;
           const pips = 6 - Math.abs(n - 7);
           const px = 128 - ((pips - 1) * 26) / 2;
+          // The hex's width across the screen at the token, against the disc's widest span on screen.
+          const hexPx = len(isle.screenAt(g.position.x - right.x * 0.97, g.position.y, g.position.z - right.z * 0.97), isle.screenAt(g.position.x + right.x * 0.97, g.position.y, g.position.z + right.z * 0.97));
+          const xs = rims[gi].map((q) => q.x);
+          const discPx = Math.max(...xs) - Math.min(...xs);
+          // Five points across the glyph; one is hidden when a tree is nearer the eye along the ray to it.
+          const top = rows[0], bottom = rows[rows.length - 1] + 1, mid = (top + bottom) / 2;
+          const hidden = [[128, mid], [128, top + 4], [128, bottom - 4], [88, mid], [168, mid]].filter(([cx, cy]) => {
+            const v = label.localToWorld(new V((cx / 128 - 1) * 0.29, (1 - cy / 128) * 0.29, 0));
+            const d = v.distanceTo(isle.persp.position);
+            ray.set(isle.persp.position, v.clone().sub(isle.persp.position).normalize());
+            return ray.intersectObjects(isle.trees, true).some((h) => h.distance < d - 0.01);
+          }).length;
           return {
             n,
-            facing: Math.abs(g.rotation.y - az) < 1e-6 && g.rotation.x > 0.5,
+            scale: g.scale.x,
+            share: discPx / hexPx,
+            hidden,
+            facing: Math.abs(g.rotation.y - az) < 1e-6 && g.rotation.x > 0.3,
             numeral: len(at(label, 128, rows[0]), at(label, 128, rows[rows.length - 1] + 1)),
             pip: Math.min(len(at(label, px - 10, 196), at(label, px + 10, 196)), len(at(label, px, 186), at(label, px, 206))),
           };
@@ -173,8 +218,15 @@ try {
     const t = m.tokens;
     const low = (k) => t.reduce((a, b) => (b[k] < a[k] ? b : a));
     check(`7 diorama tokens face the camera (${width}x${height})`, m.view === "diorama" && t.length === 18 && t.every((k) => k.facing), `${t.filter((k) => k.facing).length} of ${t.length}`);
-    check(`7 diorama numerals at least 11 px tall (${width}x${height})`, t.every((k) => k.numeral >= 11), `smallest ${low("numeral").numeral.toFixed(1)} px (the ${low("numeral").n})`);
-    check(`7 diorama pips at least 2 px across (${width}x${height})`, t.every((k) => k.pip >= 2), `smallest ${low("pip").pip.toFixed(2)} px (the ${low("pip").n})`);
+    // The 11 px / 2 px floor holds on the desktop. On the sideways phone the 38 % cap binds first (docs/design/tokens.md
+    // "Angle"), so there the sizes are reported, not judged.
+    const floor = width >= 1000 ? check : (name, ok, detail) => console.log(`note ${name}: ${detail}${ok ? "" : " (under the floor; the 38 % cap binds)"}`);
+    floor(`7 diorama numerals at least 11 px tall (${width}x${height})`, t.every((k) => k.numeral >= 11), `smallest ${low("numeral").numeral.toFixed(1)} px (the ${low("numeral").n})`);
+    floor(`7 diorama pips at least 2 px across (${width}x${height})`, t.every((k) => k.pip >= 2), `smallest ${low("pip").pip.toFixed(2)} px (the ${low("pip").n})`);
+    const big = t.reduce((a, b) => (b.share > a.share ? b : a));
+    check(`7 diorama discs at most 1.25x and 38 % of a hex across (${width}x${height})`, t.every((k) => k.scale <= 1.25 + 1e-9 && k.share <= 0.38 + 0.005), `largest ${(big.share * 100).toFixed(1)} % (the ${big.n}, ${big.scale.toFixed(3)}x)`);
+    check(`7 diorama discs never overlap on screen (${width}x${height})`, m.overlaps.length === 0, m.overlaps.join(" "));
+    check(`7 no numeral behind a tree (${width}x${height})`, t.every((k) => k.hidden === 0), t.filter((k) => k.hidden).map((k) => `the ${k.n}: ${k.hidden} of 5 points`).join(", ") || "0 of 90 points");
     await ctx.close();
   }
 } finally {
