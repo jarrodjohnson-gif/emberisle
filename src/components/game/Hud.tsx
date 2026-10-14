@@ -35,14 +35,14 @@ import { cn } from "@/lib/utils";
 
 const PRICES = Object.keys(COST) as Price[];
 
-// Whether a build can happen now and, if not, why: the supply (or the deck), then the hand, then a legal spot.
+// Whether a build can happen now and, if not, why: the supply (or the deck), then a legal spot; a spot with a hand that cannot pay is missing goods (#606).
 function buildStatus(state: GameState, me: PlayerState, kind: Price) {
   const short = shortfall(me.resources, kind);
   const missing = Object.values(short).reduce((a, b) => a + b, 0);
   const left = { path: me.pathsLeft, outpost: me.outpostsLeft, stronghold: me.strongholdsLeft, card: state.deckLeft ?? state.deck.length }[kind];
   const spot = () =>
     kind === "path" ? legalRoads(state, me.id, false).length > 0 : kind === "outpost" ? legalSettle(state, me.id, false).length > 0 : kind === "stronghold" ? legalCities(state, me.id).length > 0 : true;
-  const why = left <= 0 ? "None left" : missing ? null : spot() ? null : "No spot";
+  const why = left <= 0 ? "None left" : spot() ? null : "No spot";
   return { short, missing, why, ready: !why && !missing };
 }
 
@@ -116,7 +116,12 @@ const ROLL_LOG = / rolls \d\+\d = \d+\.$/;
 // goes muted ink, not translucent, so the chips and the reason on it stay readable.
 const NOT_NOW = "aria-disabled:cursor-not-allowed aria-disabled:text-muted aria-disabled:active:scale-100";
 // A build the hand can pay for with a legal spot waiting: a small warm dot on the button's corner (docs/design/polish.md: no glows).
-const READY_DOT = <span aria-hidden className="build-ready-mark text-[10px] font-bold">✓</span>;
+// #606: the corner check badge on a Ready chip (the chip's own fill and outline are in styles.css).
+const READY_DOT = (
+  <span aria-hidden className="build-ready-mark absolute right-0 top-0 flex size-4 items-center justify-center rounded-full text-[10px] font-bold leading-none">
+    ✓
+  </span>
+);
 
 export function Hud() {
   const state = useGame((s) => s.state);
@@ -392,6 +397,7 @@ export function Hud() {
                       aria-label={label}
                       data-testid={`build-${kind}`}
                       data-build={why ? "blocked" : ready ? "ready" : "short"}
+                      data-build-state={why ? "nospot" : ready ? "ready" : "missing"}
                       // A 44 px two-line tile, the piece over its chips (docs/design/polish.md: actions as tiles with their amount),
                       // so the row keeps the lines it had before the chips: one at 1280x720, three builds a line on a phone.
                       className={cn("build-tile relative h-[52px] min-w-11 flex-col gap-1 px-1 py-1", NOT_NOW, pulse.includes(kind) && "build-ready")}
@@ -410,9 +416,9 @@ export function Hud() {
                       <span className="flex items-center gap-1 text-caption leading-4">
                         <Icon className="build-icon size-3.5" /> {phone && kind === "stronghold" ? "Upgrade" : label}{ready && buildMode !== arm ? READY_DOT : null}
                       </span>
-                      {/* The chips and the reason are aria-hidden: the name stays the piece, the description says the rest. The
-                          shortfall mark shows only when one good away ("almost there"); further off, the plain cost and the Costs card. */}
-                      {why ? <span aria-hidden className="text-caption text-muted">{why}</span> : <CostChips kind={kind} hand={missing === 1 ? me.resources : undefined} />}
+                      {/* The chips and the reason are aria-hidden: the name stays the piece, the description says the rest. Missing
+                          goods ring what the hand lacks and say how many short. */}
+                      {why ? <span aria-hidden className="text-caption text-muted">{why}</span> : <CostChips kind={kind} hand={missing ? me.resources : undefined} />}
                     </Button>
                   );
                 })}
