@@ -21,13 +21,17 @@ the key light's shadow map is drawn once for both passes). The surface shader th
 
 1. samples that colour through the surface normal (offset 0.04 x the path, never picking up anything in front of the water);
 2. takes the real path length through the water from the depth buffer and absorbs the floor by it, per channel, from the
-   attenuation colour `#38c7bf` reached over 0.5 units (red goes first, so warm sand turns aqua);
-3. blends toward the water's own colour with depth (weight `1 - exp(-d / 0.55)`): shallow linear (0, 2, 1.95), deep linear
-   (0, 0.29, 0.28), pre-tonemap values tuned by read-back so the drawn shallows land near `#a8e6df` and the deep near `#2aa7a3`;
-4. adds a Fresnel sky (0.02 + 0.55 F) and a sun glint, then the breaker foam and whitecaps.
+   pale attenuation colour `#6fd6cf` reached over 2 units, then multiplies it by a cool in-scatter tint (0.6, 2.1, 3.0),
+   ramped in over the first 0.3 units: a multiplier, so the floor keeps its contrast while warm sand reads near-white aqua;
+3. blends toward the water's own colour only slowly with depth (weight `1 - exp(-d / 1.8)`): shallow linear (0.7, 3.4, 3.2),
+   deep linear (0.04, 0.5, 0.5), pre-tonemap values tuned by read-back;
+4. adds a Fresnel sky (0.02 + 0.55 F) so far water picks up the pale sky, a fine sun glint (power 900) and sparse sparkle
+   flecks on the crests that face the sun, then the breaker foam and whitecaps.
 
-Read back at 1280x720 in play with the waves at rest: deep [31,163,159] against the reference's [42,167,163], shallows
-[163,224,217] against [168,230,223]. A passing breaker deepens the shallow band by up to half and shifts it toward sand. A submerged visitor or prop is absorbed by its own depth; a surfaced one is drawn as is.
+Read back at 1280x720 in play with the waves at rest: shallows about [193-200,227-228,217-218] against the near-white aqua
+`#cdf1ec` [205,241,236]; deep about [135,210,211], a light blue-green, lighter than the `#4ab9b5` ceiling. A passing breaker
+deepens the shallow band by up to half. Through the first few units the sand and the props show; a prop's own colour is
+cooled by the tint (an orange starfish reads grey-beige), its shape and edges stay sharp. A submerged visitor or prop is absorbed by its own depth; a surfaced one is drawn as is.
 
 ### Paper
 
@@ -71,10 +75,13 @@ transmission pass it replaces did the same).
 
 Simple is used when the GPU cannot render to a half-float target (the under pass needs one: WebGL 2 with
 `EXT_color_buffer_float` or `EXT_color_buffer_half_float`), when the one-time probe finds the GPU slow, or when the player
-chose it. The probe runs once per page on the crystal sea: after the island has been drawn five times (shader compiles and
-uploads done), it times up to ten frames, each forced to finish with a 1-pixel read; over 22 ms a frame on average, the sea
-turns simple for the rest of the page. It stops early once the frames so far pass the ten-frame budget (220 ms), so a slow
-GPU stalls for one frame, not ten. On SwiftShader it measures about 400-1000 ms on the first frame and picks simple.
+chose it. Every page load starts on the simple sea (no under target is allocated), so a software-GL client that is
+reloading or rejoining a table pays nothing extra; only a saved Crystal choice or a passed probe switches it, between frames.
+The probe runs once per page, each frame forced to finish with a 1-pixel read. First, after the island has been drawn five
+times, up to ten simple frames: over 11 ms on average (the crystal sea draws the scene twice), the sea stays simple and the
+crystal sea is never drawn. Otherwise up to ten crystal frames after three warm ones: over 22 ms, back to simple. Each stage
+stops as soon as its frames pass its ten-frame budget, so a slow GPU stalls for one frame. On SwiftShader the first simple
+frame already takes a few hundred ms. `ms` reports the last stage's average.
 
 The table menu's **Water: Crystal / Simple** row saves the choice (`localStorage` `emberisle-water`), which then overrides
 the probe; switching swaps the sea in place, without a reload or a game change. `window.__emberisle.water` reports
@@ -82,8 +89,8 @@ the probe; switching swaps the sea in place, without a reload or a game change. 
 
 ## Proofs
 
-`board-look-prove` (crystal at 1280x720 in play: deep and shallow within 20/255 of the reference, the zoomed-out corner
-still sea, the free view's far horizon the paper), `jelly-ocean-prove` (crystal on, floor props under 2 k triangles, reduced motion lays the waves flat, plus the
+`board-look-prove` (crystal at 1280x720 in play: shallows within 20/255 of `#cdf1ec`, deep no darker than `#4ab9b5`, the
+zoomed-out corner still sea, the free view's far horizon the paper), `jelly-ocean-prove` (crystal on, floor props under 2 k triangles, reduced motion lays the waves flat, plus the
 visitor checks), `table-menu-prove` (the Water row flips the path both ways and the choice survives a reload) and
 `dpr-prove` (1.5 only for the simple sea on a phone). Proofs that do not read the water pin a path or let the probe pick.
 
