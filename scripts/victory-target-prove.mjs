@@ -47,6 +47,12 @@ try{
   await page.waitForFunction(()=>document.querySelector('[data-testid="victory-target"]')?.dataset.value==='10');
   assert.equal(await page.evaluate(()=>document.activeElement?.getAttribute('aria-label')),'10 points');
   await page.keyboard.press('ArrowLeft');await page.waitForFunction(()=>document.querySelector('[data-testid="victory-target"]')?.dataset.value==='7');
+  // Two keys in one task run before any host reply: follow focus, not the last acknowledged selection.
+  const at=seven.peers[1].messages.length;
+  assert.equal(await page.evaluate(()=>{const group=document.querySelector('[role="radiogroup"][aria-label="Victory target"]');group.querySelector('[aria-label="7 points"]').focus();for(let i=0;i<2;i++)document.activeElement.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true}));return document.activeElement.getAttribute('aria-label');}),'7 points');
+  for(let i=0;i<400;i++){const choices=seven.peers[1].messages.slice(at).filter(m=>m.type==='seats').map(m=>m.victoryTarget);if(choices.slice(-2).join(',')==='10,7')break;await wait(10);}
+  assert.deepEqual(seven.peers[1].messages.slice(at).filter(m=>m.type==='seats').map(m=>m.victoryTarget).slice(-2),[10,7]);
+  await page.waitForFunction(()=>document.querySelector('[data-testid="victory-target"]')?.dataset.value==='7');
   for(const radio of await page.getByRole('radio',{name:/^(7|10) points$/}).all()){const b=await radio.boundingBox();assert.ok(b.width>=44&&b.height>=44&&b.x>=0&&b.y>=0&&b.x+b.width<=width&&b.y+b.height<=height);}
   await page.screenshot({path:`test-results/victory-target-lobby-${width}.png`});for(const p of seven.peers.slice(1))await close(p);await wait(80);await context.close();await wait(80);seven.peers[0]=await restore(original);for(let i=1;i<3;i++)seven.peers[i]=await restore(seven.peers[i].welcome);
   console.log(`ok ${width}x${height}: host radio choice, keyboard arrows, 44px targets, public 7-point lobby`);

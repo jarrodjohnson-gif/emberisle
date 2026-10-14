@@ -15,7 +15,7 @@ export function VictoryTargetSelect({ value, onChange, label = "Win at" }: { val
             if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"].includes(e.key)) return;
             e.preventDefault();
             const group = e.currentTarget.parentElement;
-            const next = e.key === "Home" ? 7 : e.key === "End" ? 10 : value === 7 ? 10 : 7;
+            const next = e.key === "Home" ? 7 : e.key === "End" ? 10 : n === 7 ? 10 : 7;
             onChange(next);
             group?.querySelector<HTMLButtonElement>(`[aria-label="${next} points"]`)?.focus();
           }}
