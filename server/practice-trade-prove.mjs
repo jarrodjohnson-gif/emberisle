@@ -87,7 +87,7 @@ if (s().offer) fail("B: the offer is still open after p2's Yes");
 if (hand("p0").grain !== 0 || hand("p0").wool !== 1 || hand("p2").grain !== 3 || hand("p2").wool !== 1) fail("B: the goods did not move", [hand("p0"), hand("p2")]);
 const p2 = names(["p2"])[0];
 if (s().tradeOutcome !== `${p2} takes it.`) fail("B: the asker's outcome", s().tradeOutcome);
-if (!logHas(`${p2} accepts Ember's trade.`)) fail("B: no accept line in the log", s().gameLog);
+if (!logHas(`Ember gains 1 wool; Ember loses 1 grain; ${p2} gains 1 grain; ${p2} loses 1 wool — table trade.`)) fail("B: no accept line in the log", s().gameLog);
 console.log(`B ok: ${p2} takes the ask that helps it, 1-2 s after it`);
 
 // C: p2 has the turn and lacks one grain; Ember holds a grain, p1 and p3 hold none.

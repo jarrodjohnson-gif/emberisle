@@ -100,12 +100,13 @@ try {
     const row = await page.evaluate(() => {
       const bar = document.querySelector('[data-testid="fortunes-button"]').parentElement;
       return {
+        deck: window.__emberisle.getState().state.deckLeft ?? window.__emberisle.getState().state.deck.length,
         fortunes: [...document.querySelectorAll("button")].filter((b) => /^Fortunes/.test(b.textContent.trim())).map((b) => b.textContent.trim()),
         selects: document.querySelectorAll("select").length,
         stale: [...bar.querySelectorAll("button")].map((b) => b.textContent.trim()).filter((t) => /knight|Wayfarer card|Path fortune|Plenty|Monopoly/.test(t)),
       };
     });
-    assert.deepEqual(row.fortunes, ["Fortunes ×6"], `${v.tag}: one Fortunes button with the held count, got ${JSON.stringify(row.fortunes)}`);
+    assert.deepEqual(row.fortunes, [`Fortunes ${row.deck} left`], `${v.tag}: one Fortunes button with the public deck count, got ${JSON.stringify(row.fortunes)}`);
     assert.equal(row.selects, 0, `${v.tag}: no <select> on the page`);
     assert.deepEqual(row.stale, [], `${v.tag}: no per-fortune buttons left in the row`);
     // The row's buttons are 44 px on a phone, as the other build buttons are (the desktop row is 32 px under a fine pointer).
@@ -169,7 +170,7 @@ try {
     assert.equal(await store(() => window.__emberisle.getState().buildMode), "knight", `${v.tag}: wayfarer armed`);
     assert.equal(await button.getAttribute("aria-pressed"), "true", `${v.tag}: Fortunes pressed while armed`);
     const banner = await page.getByTestId("turn-banner").textContent();
-    assert.match(banner, /Pick a hex for the wayfarer · (tap Fortunes again to cancel|Esc cancels)/, `${v.tag}: banner "${banner}"`);
+    assert.match(banner, /Move the wayfarer · (tap Fortunes again to cancel|Esc cancels)/, `${v.tag}: banner "${banner}"`);
     await button.click();
     await page.waitForFunction(() => window.__emberisle.getState().buildMode === "none", null, { timeout: STEP_MS });
     await open();
@@ -313,7 +314,7 @@ try {
     assert.deepEqual(dry, { why: "The bank is empty", play: "true", chips: 0 }, `${v.tag}: ${JSON.stringify(dry)}`);
     console.log(`${v.tag}: empty ore greyed, emptied timber dropped, empty bank refused`);
 
-    // The last fortune played takes the Fortunes button with the tray: focus falls to End turn, not to the body.
+    // The public deck opener remains after the last held fortune; focus returns to it.
     await page.keyboard.press("Escape");
     await closed();
     await craft({ plenty: 1 });
@@ -322,8 +323,8 @@ try {
     await page.getByTestId("plenty-chip-wool").click();
     await page.getByTestId("fortune-play-plenty").click();
     await closed();
-    assert.equal(await button.count(), 0, `${v.tag}: no fortunes left, no Fortunes button`);
-    assert.equal(await page.evaluate(() => document.activeElement?.textContent?.trim()), "End turn", `${v.tag}: focus fell to End turn`);
+    assert.equal(await button.count(), 1, `${v.tag}: the public count stays available with no held fortunes`);
+    assert.equal(await page.evaluate(() => document.activeElement?.dataset.testid), "fortunes-button", `${v.tag}: focus returns to the persistent deck opener`);
     await craft({ plenty: 1 }, {}, { timber: 0, clay: 0, wool: 0, grain: 0, ore: 0 });
     await open();
 

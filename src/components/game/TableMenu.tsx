@@ -4,7 +4,7 @@
 // Opens with focus on the first row; Escape, a pointerdown outside or focus leaving closes it, and Escape puts the focus
 // back on the button. Leaving an online seat asks first (the seat goes to a bot for good); Stay, Escape or 5 s cancels.
 import { useEffect, useRef, useState } from "react";
-import { BookOpen, Copy, Ellipsis, Eye, Hammer, LogOut, Volume2, VolumeX } from "lucide-react";
+import { BookOpen, Copy, Ellipsis, Eye, Hammer, LogOut, Volume2, VolumeX, Waves } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CopyFallback, useCopy } from "@/components/game/CopyText";
 import { useGame } from "@/lib/game/store";
@@ -22,6 +22,8 @@ export function TableMenu() {
   const setHowTo = useGame((s) => s.setHowTo);
   const setCosts = useGame((s) => s.setCosts);
   const goTitle = useGame((s) => s.goTitle);
+  const water = useGame((s) => s.water?.path ?? "crystal");
+  const setWaterChoice = useGame((s) => s.setWaterChoice);
   const muted = useMuted();
   const { state: copied, copy, reset } = useCopy<"code">();
   const [open, setOpen] = useState(false);
@@ -112,7 +114,7 @@ export function TableMenu() {
           role="dialog"
           aria-label="Table menu"
           data-testid="table-menu"
-          className="absolute right-0 top-full z-20 mt-2 flex w-64 flex-col gap-1 rounded-sheet bg-surface p-3 shadow-[0_8px_32px_rgb(28_25_21_/_0.18)]"
+          className="absolute right-0 top-full z-20 mt-2 flex max-h-[calc(100dvh-5rem)] w-64 flex-col gap-1 overflow-y-auto rounded-sheet bg-surface p-3 shadow-[0_8px_32px_rgb(28_25_21_/_0.18)]"
           onBlur={(e) => {
             const to = e.relatedTarget as Node | null;
             if (to && !sheet.current?.contains(to) && !trigger.current?.contains(to)) close(false);
@@ -172,6 +174,17 @@ export function TableMenu() {
                 {muted ? <VolumeX className={ICON} /> : <Volume2 className={ICON} />}
                 Table sounds {muted ? "off" : "on"}
               </Button>
+              {/* The sea's look; the choice is remembered and overrides the GPU probe (docs/design/crystal-water.md). */}
+              <div role="group" aria-label="Water" data-testid="water-toggle" className="flex h-11 items-center gap-2 px-3 text-body">
+                <Waves className={ICON} /> Water
+                <span className="ml-auto flex gap-1">
+                  {(["crystal", "simple"] as const).map((p) => (
+                    <Button key={p} size="sm" variant={water === p ? "default" : "ghost"} aria-pressed={water === p} onClick={() => setWaterChoice(p)}>
+                      {p === "crystal" ? "Crystal" : "Simple"}
+                    </Button>
+                  ))}
+                </span>
+              </div>
               {mode === "online" && code ? (
                 <Button variant="ghost" className={ROW} onClick={() => copy("code", code)}>
                   <Copy className={ICON} /> {copied?.ok ? "Copied" : `Copy table code ${code}`}

@@ -52,7 +52,7 @@ function give(state: GameState, p: PlayerState, res: Resource, n: number) {
 }
 
 function log(state: GameState, line: string) {
-  state.log = [...state.log.slice(-40), line];
+  state.log = [...state.log.slice(-199), line];
 }
 
 function vertex(state: GameState, id: string) {
@@ -214,15 +214,21 @@ function updateArmy(state: GameState, pid: string) {
   }
 }
 
-export function publicVP(state: GameState, pid: string) {
-  let n = 0;
+// Public components only: never inspect held fortunes when deriving an opponent's score.
+export function publicScoreBreakdown(state: GameState, pid: string) {
+  const parts = { outposts: 0, strongholds: 0, longestPath: 0, largestArmy: 0 };
   for (const v of state.vertices) {
     if (v.building?.playerId !== pid) continue;
-    n += POINTS[v.building.kind];
+    if (v.building.kind === "outpost") parts.outposts += POINTS.outpost;
+    else parts.strongholds += POINTS.stronghold;
   }
-  if (state.longestRoad === pid) n += POINTS.longestPath;
-  if (state.largestArmy === pid) n += POINTS.largestArmy;
-  return n;
+  if (state.longestRoad === pid) parts.longestPath = POINTS.longestPath;
+  if (state.largestArmy === pid) parts.largestArmy = POINTS.largestArmy;
+  return parts;
+}
+
+export function publicVP(state: GameState, pid: string) {
+  return Object.values(publicScoreBreakdown(state, pid)).reduce((sum, n) => sum + n, 0);
 }
 
 export function totalVP(state: GameState, pid: string) {
@@ -337,10 +343,10 @@ function produce(state: GameState, total: number) {
   }
 }
 
-// The resources the latest roll could not pay, read from the line produce() logs right after the roll line.
+// The shortage travels with the canonical roll event, including after a rejoin.
 export function bankShort(state: GameState): Resource[] {
-  const i = state.log.findLastIndex((l) => /(?: rolls \d\+\d = \d+\.|^Bot rolled for .+: \d\+\d = \d+\.)$/.test(l));
-  const m = /^The bank is short of (.+); nobody gathers it\.$/.exec(state.log[i + 1] ?? "");
+  const i = state.log.findLastIndex((l) => / rolls \d\+\d = \d+\.| — .+'s roll[;.]/.test(l));
+  const m = /[Tt]he bank is short of ([a-z and]+);/.exec(`${state.log[i] ?? ""} ${state.log[i + 1] ?? ""}`);
   return m ? (m[1]!.split(" and ") as Resource[]) : [];
 }
 
@@ -414,7 +420,69 @@ function validRes(r: unknown): r is Resource {
   return (RESOURCES as readonly string[]).includes(r as string);
 }
 
+// One public event per goods-changing action. Derive amounts from the committed result, never
+// from UI guesses; theft and discard choices deliberately stay private. All seats use this voice.
 export function applyAction(prev: GameState, actor: string, action: Action): { state: GameState; error?: string } {
+  const result = applyActionInternal(prev, actor, action);
+  if (result.error) return result;
+  const next = result.state;
+  const me = next.players.find((p) => p.id === actor)!;
+  const goods = (bag: Partial<Record<Resource, number>>) => RESOURCES.filter((r) => bag[r]).map((r) => `${bag[r]} ${r}`).join(", ");
+  const changes = next.players.map((p) => {
+    const was = prev.players.find((x) => x.id === p.id)!;
+    const gain: Partial<Record<Resource, number>> = {}, loss: Partial<Record<Resource, number>> = {};
+    for (const r of RESOURCES) {
+      const d = p.resources[r] - was.resources[r];
+      if (d > 0) gain[r] = d;
+      if (d < 0) loss[r] = -d;
+    }
+    return { p, gain, loss };
+  });
+  const delta = changes.flatMap(({ p, gain, loss }) => [
+    ...(goods(gain) ? [`${p.name} gains ${goods(gain)}`] : []),
+    ...(goods(loss) ? [`${p.name} ${action.type.startsWith("build") || action.type === "buyCard" ? "spends" : "loses"} ${goods(loss)}`] : []),
+  ]).join("; ");
+  let line: string | null = null;
+  switch (action.type) {
+    case "roll": {
+      if (prev.phase === "rollOff") break;
+      const short = bankShort(next);
+      line = `${delta || "Nobody gains goods"} — ${me.name}'s roll${short.length ? `; the bank is short of ${short.join(" and ")}; nobody gains it` : ""}.`;
+      break;
+    }
+    case "setupSettle": if (delta) line = `${delta} — starting outpost.`; break;
+    case "buildPath": line = `${delta} — path.`; break;
+    case "buildOutpost": line = `${delta} — outpost.`; break;
+    case "buildStronghold": line = `${delta} — stronghold.`; break;
+    case "buyCard": line = `${delta} — buys a fortune.`; break;
+    case "discard": line = `${me.name} discards ${prev.discardNeeded[actor]} goods.`; break;
+    case "moveRobber":
+    case "playKnight": {
+      const victim = changes.find((c) => goods(c.loss));
+      const top = Math.max(...prev.players.map((p) => publicVP(prev, p.id)));
+      const leader = victim && publicVP(prev, victim.p.id) === top ? `; ${victim.p.name} is ${prev.players.filter((p) => publicVP(prev, p.id) === top).length === 1 ? "the" : "a joint"} public leader` : "";
+      const effect = victim ? `${me.name} gains 1 good; ${victim.p.name} loses 1 good` : "no goods change hands";
+      line = `${me.name} ${action.type === "playKnight" ? "plays Wayfarer" : "moves the wayfarer"} — ${effect}${leader}.`;
+      break;
+    }
+    case "playRoad": line = `${me.name} plays Path — places ${prev.players.find((p) => p.id === actor)!.pathsLeft - me.pathsLeft} ${prev.players.find((p) => p.id === actor)!.pathsLeft - me.pathsLeft === 1 ? "path" : "paths"}.`; break;
+    case "playPlenty": line = `${me.name} plays Plenty — ${delta}.`; break;
+    case "playMonopoly": line = `${me.name} plays Monopoly — ${delta || `gains 0 ${action.resource}`}.`; break;
+    case "bankTrade": line = `${delta} — bank trade.`; break;
+    case "respondTrade": if (action.accept) line = `${delta} — table trade.`; break;
+  }
+  if (!line) return result;
+  // Awards and victory remain separate public events; setup's transition also stays in order.
+  let overlap = Math.min(prev.log.length, next.log.length);
+  while (overlap && !prev.log.slice(-overlap).every((v, i) => v === next.log[i])) overlap--;
+  const added = next.log.slice(overlap);
+  const awards = added.filter((v) => / (holds|loses) the (longest path|largest army)\./.test(v));
+  const endings = added.filter((v) => / claims the isle |^The isle is settled/.test(v));
+  next.log = [...prev.log, ...awards, line, ...endings].slice(-200);
+  return result;
+}
+
+function applyActionInternal(prev: GameState, actor: string, action: Action): { state: GameState; error?: string } {
   const state = clone(prev);
   state.seq += 1;
   const me = player(state, actor);

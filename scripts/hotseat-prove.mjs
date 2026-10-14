@@ -153,7 +153,7 @@ try {
   const bannerIs = (want) =>
     page.waitForFunction((t) => document.querySelector('[data-testid="turn-banner"]')?.textContent === t, want, { timeout: STEP_MS })
       .catch(async () => { throw new Error(`banner: want "${want}", got "${await page.getByTestId("turn-banner").textContent()}"`); });
-  await bannerIs(`${p2Name} — discard 4`);
+  await bannerIs(`Discard 4 goods · ${p2Name}`);
   console.log(`banner while ${p2Name} discards on p0's turn: "${await page.getByTestId("turn-banner").textContent()}"`);
 
   const form = page.locator("form", { hasText: "discard 4" });
@@ -190,7 +190,7 @@ try {
   });
   console.log("after discard:", JSON.stringify(after));
   const p0Name = await page.evaluate(() => window.__emberisle.getState().state.players.find((p) => p.id === "p0").name);
-  await bannerIs(`${p0Name}'s turn · Move the wayfarer`);
+  await bannerIs("Move the wayfarer");
   console.log(`banner after the discard: "${await page.getByTestId("turn-banner").textContent()}"`);
   if (after.cards !== 5) throw new Error(`p2 should hold 5 cards, has ${after.cards}`);
 

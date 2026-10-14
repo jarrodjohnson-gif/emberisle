@@ -1,7 +1,10 @@
 // #135, polish.md "The board look target": the island reads like a lit board on a table. In the browser:
 // - the light rig is one warm key lamp (the only shadow caster, at least 3x the bounce), near-grey low bounce, no flat
 //   ambient, soft shadows (PCF blurred at least 4 texels) from a map of at most 1024, exposure at most 1.1;
-// - the sea is calm: a patch of open water, read back from the drawn frame, varies less than 6 % in luminance and is teal;
+// - the crystal sea (crystal-water.md), read back at 1280x720 in play: shallows within 20/255 of the near-white aqua
+//   #cdf1ec, deep water a blue-green no darker or more saturated than #4ab9b5, and still sea (no paper) at the canvas corner zoomed fully out; in the free view, tilted low, the far
+//   horizon is the studio paper #f1efe9 the page sits on. Every other page pins the simple sea, so the gesture timings do not
+//   pay for the crystal sea on software GL;
 // - the title keeps the slow orbit (free camera, auto-rotate); in play, on a fine pointer at 1280x720 and a coarse one at
 //   390x844, the overhead camera is on and every corner of the island, docks included, projects inside the hole the HUD
 //   leaves (`__isle.insets()`, measured from the HUD's own chrome), each corner's screen point lands on the canvas, and a
@@ -57,8 +60,9 @@ const drawn = (page, n) =>
     });
   }, n);
 
-async function open(width, height, touch) {
+async function open(width, height, touch, water = "simple") {
   const ctx = await browser.newContext({ viewport: { width, height }, ...(touch ? { isMobile: true, hasTouch: true } : {}) });
+  await ctx.addInitScript((w) => localStorage.setItem("emberisle-water", w), water);
   const page = await ctx.newPage();
   page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
   page.on("pageerror", (e) => errors.push(String(e)));
@@ -163,12 +167,82 @@ try {
   check("soft shadows: PCF blurred at least 4 texels, from a map of at most 1024", rig.shadowType === 1 && rig.shadowRadius >= 4 && rig.shadowMap <= 1024, { type: rig.shadowType, radius: rig.shadowRadius, map: rig.shadowMap });
   check("exposure at most 1.1", rig.exposure <= 1.1, { exposure: rig.exposure });
   check("the title keeps the free camera and its orbit", !rig.overhead && rig.autoRotate, { overhead: rig.overhead, autoRotate: rig.autoRotate });
-  // Open water, top right of the title, away from the island and the card.
-  const sea = await patch(title, { x: 1100, y: 20, w: 160, h: 110 });
-  check("the sea is calm: luminance p95 - p5 under 0.06", sea.p95 - sea.p5 < 0.06, { range: +(sea.p95 - sea.p5).toFixed(3), p5: +sea.p5.toFixed(3), p95: +sea.p95.toFixed(3) });
-  check("the sea is teal: green and blue over red", sea.mean.g > sea.mean.r * 1.3 && sea.mean.b > sea.mean.r * 1.3, { r: +sea.mean.r.toFixed(3), g: +sea.mean.g.toFixed(3), b: +sea.mean.b.toFixed(3) });
   await title.screenshot({ path: "test-results/board-look-title-1280x720.png" });
   await title.context().close();
+
+  // 1b. The crystal sea in play at 1280x720: teal over deep water, lighter where sand shows through the shallow band. Both
+  // points sit on the outward line from the middle of a coast edge with no dock, 0.6 and 3.5 units out, inside the HUD hole.
+  {
+    const page = await open(1280, 720, false, "crystal");
+    await page.getByRole("button", { name: "Four seats, one table" }).click();
+    await page.waitForFunction(() => window.__emberisle?.water?.path === "crystal" && window.__isle.lastState && !window.__isle.refitDue && !window.__isle.glide, null, { timeout: STEP_MS });
+    await page.waitForFunction((n) => window.__isle.renders > n, (await page.evaluate(() => window.__isle.renders)) + 2, { timeout: STEP_MS });
+    const spots = await page.evaluate(() => {
+      const isle = window.__isle;
+      const st = window.__emberisle.getState().state;
+      const ins = isle.insets();
+      const ids = isle.coastOrder;
+      const at = (x, z) => {
+        const p = new isle.ortho.position.constructor(x, -0.02, z).project(isle.ortho);
+        return { x: ((p.x + 1) * innerWidth) / 2, y: ((1 - p.y) * innerHeight) / 2 };
+      };
+      const inHole = (p) => p.x > ins.left + 8 && p.x < innerWidth - ins.right - 8 && p.y > ins.top + 8 && p.y < innerHeight - ins.bottom - 8;
+      for (let i = 0; i < ids.length; i++) {
+        const a = st.vertices.find((v) => v.id === ids[i]);
+        const b = st.vertices.find((v) => v.id === ids[(i + 1) % ids.length]);
+        if (a.harbor || b.harbor) continue;
+        const ma = isle.coastMiter.get(a.id), mb = isle.coastMiter.get(b.id);
+        const [cx, cz, mx, mz] = [(a.x + b.x) / 2, (a.z + b.z) / 2, (ma.mx + mb.mx) / 2, (ma.mz + mb.mz) / 2];
+        const shore = at(cx + mx * 0.6, cz + mz * 0.6), deep = at(cx + mx * 3.5, cz + mz * 3.5);
+        if (inHole(shore) && inHole(deep) && document.elementFromPoint(deep.x, deep.y)?.tagName === "CANVAS") return { shore, deep };
+      }
+      return null;
+    });
+    check("1280x720 crystal: a coast edge with open water beside it inside the hole", spots !== null, spots);
+    if (spots) {
+      // The colours at rest: under reduced motion the waves lie flat (a breaker over the shallow band changes its depth by half),
+      // and a 9 px patch averages over what is left.
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      await page.waitForFunction(() => window.__isle.wasCalm, null, { timeout: STEP_MS });
+      // Each wake holds the loop for 1 s, about one software-GL frame: wake until two frames have been drawn at rest.
+      await page.evaluate(async () => {
+        const isle = window.__isle, r0 = isle.renders;
+        await new Promise((res) => { const p = () => { if (isle.renders > r0 + 1) return res(); isle.wake(); requestAnimationFrame(p); }; p(); });
+      });
+      const lum = (m) => 0.2126 * m.r + 0.7152 * m.g + 0.0722 * m.b;
+      const shore = await patch(page, { x: spots.shore.x - 4, y: spots.shore.y - 4, w: 9, h: 9 });
+      const deep = await patch(page, { x: spots.deep.x - 4, y: spots.deep.y - 4, w: 9, h: 9 });
+      const rgb = (m) => ["r", "g", "b"].map((c) => Math.round(m[c] * 255));
+      const near = (m, want) => Math.max(...rgb(m).map((v, i) => Math.abs(v - want[i]))) <= 20;
+      const [dr, dg, db] = rgb(deep.mean);
+      check("1280x720 crystal: deep water is a light blue-green, no darker or more saturated than #4ab9b5", dg > dr * 1.3 && db > dr * 1.3 && dr >= 74 && dg >= 185 && db >= 181, { deep: rgb(deep.mean) });
+      check("1280x720 crystal: the shallow band is near-white aqua #cdf1ec (within 20/255), lighter than the deep", near(shore.mean, [205, 241, 236]) && lum(shore.mean) > lum(deep.mean) + 0.04, { shore: rgb(shore.mean), deep: rgb(deep.mean) });
+    }
+    await page.screenshot({ path: "test-results/board-look-crystal-1280x720.png" });
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await page.waitForFunction(() => !window.__isle.wasCalm, null, { timeout: STEP_MS });
+    // Zoomed out as far as the wheel goes, the sea still fills the canvas: its corner is teal, not paper.
+    await page.mouse.move(640, 300);
+    for (let i = 0; i < 6; i++) await page.mouse.wheel(0, 600);
+    await page.waitForFunction(() => Math.abs(window.__isle.ortho.zoom - window.__isle.orbit.minZoom) < 0.01, null, { timeout: STEP_MS });
+    await page.waitForFunction((n) => window.__isle.renders > n, (await page.evaluate(() => window.__isle.renders)) + 2, { timeout: STEP_MS });
+    const corner = await patch(page, { x: 0, y: 0, w: 6, h: 6 });
+    check("1280x720 crystal, zoomed out: the sea fills the canvas to its corner (teal, no paper)", corner.mean.g > corner.mean.r * 1.3 && corner.mean.b > corner.mean.r * 1.3, { rgb: ["r", "g", "b"].map((c) => Math.round(corner.mean[c] * 255)) });
+    // The free view, tilted low: the top of the frame is the far horizon, faded into the paper.
+    await page.evaluate(() => {
+      const isle = window.__isle;
+      isle.setView("free");
+      isle.controls.maxPolarAngle = 1.35;
+      isle.camera.position.set(9, 3.2, 9);
+      isle.controls.update();
+      isle.wake();
+    });
+    await page.waitForFunction((n) => window.__isle.renders > n, (await page.evaluate(() => window.__isle.renders)) + 3, { timeout: STEP_MS });
+    const horizon = await patch(page, { x: 560, y: 2, w: 160, h: 6 });
+    const off = Math.max(...[0xf1, 0xef, 0xe9].map((v, i) => Math.abs(horizon.mean["rgb"[i]] * 255 - v)));
+    check("1280x720 crystal, free view tilted low: the far horizon is the studio paper #f1efe9 (within 6/255)", off <= 6, { rgb: ["r", "g", "b"].map((c) => +(horizon.mean[c] * 255).toFixed(1)) });
+    await page.context().close();
+  }
 
   // 2. In play: the overhead board fits the hole the HUD leaves, on a desktop and on a phone, and the camera is the
   // player's: a drag orbits (and places nothing), a wheel zooms, Home and a double click or double tap glide back.

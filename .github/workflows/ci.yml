@@ -78,6 +78,7 @@ jobs:
       - run: npm run practice-trade-prove
       - run: npm run hud-safe-area-prove
       - run: npm run rotate-overlays-prove
+      - run: npm run fortune-count-prove
       - run: npm run fortune-tray-prove
       - if: always()
         uses: actions/upload-artifact@v4
@@ -163,13 +164,19 @@ jobs:
       - if: matrix.suite == 'presentation'
         run: npm run jelly-ocean-prove
       - if: matrix.suite == 'presentation'
+        run: npm run waves-prove
+      - if: matrix.suite == 'presentation'
         run: npm run polish-tokens-prove
       - if: matrix.suite == 'presentation'
         run: npm run roll-moment-prove
       - if: matrix.suite == 'presentation'
+        run: npm run goods-log-prove
+      - if: matrix.suite == 'presentation'
         run: npm run turn-gain-prove
       - if: matrix.suite == 'presentation'
         run: npm run win-action-prove
+      - if: matrix.suite == 'presentation'
+        run: npm run turn-copy-prove
       - if: matrix.suite == 'presentation'
         run: npm run table-menu-prove
       - if: matrix.suite == 'presentation'
@@ -178,6 +185,8 @@ jobs:
         run: npm run board-look-prove
       - if: matrix.suite == 'presentation'
         run: npm run seat-rail-prove
+      - if: matrix.suite == 'presentation'
+        run: npm run public-score-prove
       - if: matrix.suite == 'presentation'
         run: npm run hand-hidden-prove
       - if: matrix.suite == 'presentation'

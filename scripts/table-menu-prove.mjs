@@ -1,7 +1,8 @@
 // #442: the table's top chrome is one menu button. In hotseat at 1280x720, 390x844 (touch) and 844x390 (touch):
 // - no visible element on the table says "Emberisle", and the only button in the top 64 px (the seat strip aside, on a
 //   sideways phone) is the 44 px "Table menu" button, top-right;
-// - it opens a sheet with the turn number, How to play, Table sounds and Leave table, focus moving to the first row;
+// - it opens a sheet with the turn number, How to play, Table sounds, Water (Crystal / Simple) and Leave table, focus moving
+//   to the first row; at 1280x720 Water flips the sea's path both ways and the choice survives a reload (crystal-water.md);
 // - How to play opens its dialog and closing that puts the focus back on the menu button; the sound toggle flips and keeps
 //   the sheet open; Escape closes the sheet and refocuses the button; Enter on the button opens it; a tap outside closes it;
 // - online (a faked socket): the sheet shows the watcher count and "Copy table code" (copied where the clipboard works, the
@@ -72,7 +73,7 @@ try {
     await trigger.click();
     await menu.waitFor();
     const rows = await menu.getByRole("button").allTextContents();
-    assert.deepEqual(rows.map((t) => t.trim()), ["How to play", "Costs", "Table sounds on", "Leave table"], `${v.tag}: menu rows`);
+    assert.deepEqual(rows.map((t) => t.trim()), ["How to play", "Costs", "Table sounds on", "Crystal", "Simple", "Leave table"], `${v.tag}: menu rows`);
     assert.match(await menu.textContent(), /Turn 1/, `${v.tag}: the turn number moved into the menu`);
     assert.equal(await page.evaluate(() => document.activeElement?.textContent.trim()), "How to play", `${v.tag}: focus moves to the first row`);
     assert.equal(await trigger.getAttribute("aria-expanded"), "true", `${v.tag}: aria-expanded while open`);
@@ -134,7 +135,8 @@ try {
         await menu.getByRole("button", { name: "Copy table code K7QP" }).click();
         await menu.getByTestId("copy-fallback").waitFor();
         if (how === "escape") await page.keyboard.press("Escape");
-        else await canvas.tap({ position: { x: v.width / 2, y: v.height / 2 } });
+        // Left of the 256 px sheet on a narrow phone, where the taller sheet's copy field now reaches the middle.
+        else await canvas.tap({ position: { x: Math.min(v.width / 2, v.width - 320), y: v.height / 2 } });
         await menu.waitFor({ state: "detached" });
         await trigger.click();
         await menu.waitFor();
@@ -176,6 +178,25 @@ try {
     await menu.getByRole("button", { name: "Leave table" }).click();
     await page.waitForFunction(() => window.__emberisle.getState().screen === "title");
     assert.equal(await confirmBox.count(), 0, `${v.tag}: hotseat Leave asked for confirmation`);
+    if (v.tag === "1280x720") {
+      // Water: each chip switches the sea in place, as a saved choice, and the last one is still chosen after a reload.
+      const water = () => page.evaluate(() => ({ ...window.__emberisle.water, saved: localStorage.getItem("emberisle-water") }));
+      await page.evaluate(() => window.__emberisle.getState().startHotseat(4));
+      for (const [chip, path] of [["Crystal", "crystal"], ["Simple", "simple"]]) {
+        await trigger.click();
+        await menu.getByRole("button", { name: chip }).click();
+        await page.waitForFunction((p) => window.__emberisle.water?.path === p && window.__isle.waterPath === p, path);
+        const w = await water();
+        assert.ok(w.source === "saved" && w.saved === path, `${v.tag}: Water ${chip} is the saved choice: ${JSON.stringify(w)}`);
+        assert.equal(await menu.getByRole("button", { name: chip }).getAttribute("aria-pressed"), "true", `${v.tag}: ${chip} shows pressed`);
+        await page.keyboard.press("Escape");
+      }
+      await page.reload();
+      await page.waitForFunction(() => window.__emberisle?.water);
+      const kept = await water();
+      assert.ok(kept.path === "simple" && kept.source === "saved", `${v.tag}: the Water choice survives a reload: ${JSON.stringify(kept)}`);
+      console.log(`${v.tag}: Water flips the sea crystal <-> simple in place and keeps the choice across a reload`);
+    }
     console.log(`${v.tag}: one ${b.w}x${b.h} menu button top-right, no wordmark; rows ${rows.length}; How to play, sounds, code (${copied}), Leave (asks online, one press in hotseat) all work; Escape and Close refocus the button`);
     await ctx.close();
   }

@@ -1,13 +1,14 @@
 // Jarrod (playtest): "need some sort of indication on when you are eligible for building something. And a quick reference
 // card that in-game board comes with." In hotseat at 1280x720, 390x844 (touch, notch insets) and 844x390 (touch, notch
 // insets), with the seat on turn in `main` and its hand crafted through window.__emberisle:
-// - each build button (Path, Outpost, Stronghold, Fortune) reads ready, short or blocked exactly as rules.ts says for that
-//   hand: COST and the hand give the shortfall, legalRoads / legalSettle / legalCities say whether a spot exists, and the
-//   piece supply or the deck says "None left"; a ready build wears the dot and is pressable, the others refuse;
-// - a build one good short in all dims that chip and hangs a "−1" badge on it, visible with the pointer parked at 0,0 (no
-//   hover); 2 or more short shows the plain cost with no red (an empty hand reads quiet); the aria-description names the
-//   full shortfall either way;
-// - on a phone (390x844, 360x640, 844x390) each build is a two-line 44 px tile, and the bottom stack's content height is
+// - each build button (Path, Outpost, Stronghold, Fortune) reads ready, missing goods or no spot exactly as rules.ts says for
+//   that hand (#606: data-build-state ready | missing | nospot; a spot is judged before the hand, so no spot wins over
+//   missing goods): COST and the hand give the shortfall, legalRoads / legalSettle / legalCities say whether a spot exists,
+//   and the piece supply or the deck says "None left"; only a Ready build is pressable and wears the green paper fill
+//   (#e6f4e4), the 2 px #2f8f5b outline and the 16 px corner check; the others refuse a tap;
+// - a build missing goods rings each lacking good and hangs its own "-N" badge on it, visible with the pointer parked at
+//   0,0 (no hover); the aria-description names the full shortfall;
+// - on a phone (390x844, 360x640, 844x390) each build (and on desktop too) is a two-line tile at least 44 px square, and the bottom stack's content height is
 //   at most main's (MAIN_STACK, measured on e61d665 with the same hand) plus 2 px, so the island's hole is no smaller;
 // - a build that just became ready pulses once (class build-ready); one with no spot or none left never does, however the
 //   hand changes; under reduced motion the pulse has no animation;
@@ -16,7 +17,7 @@
 //   reader, the POINTS lines, the win line; focus
 //   lands on Close, Tab stays inside, it lies inside the safe rect, and Escape closes it with the focus back on the menu button;
 // - zero console errors.
-// Saves test-results/build-ready-<size>.png and build-ready-card-<size>.png. Run: npm run build-ready-prove (VITE_PORT, default 8509).
+// Saves test-results/build-ready-390.png and -1280.png (Path Ready, Outpost No spot, Stronghold Missing in one view), build-ready-<size>.png and build-ready-card-<size>.png. Run: npm run build-ready-prove (VITE_PORT, default 8509).
 import assert from "node:assert/strict";
 import { existsSync, mkdirSync } from "node:fs";
 import { chromium } from "playwright";
@@ -68,7 +69,7 @@ function expected(st) {
   const out = {};
   for (const k of KINDS) {
     const short = RESOURCES.filter((r) => (COST[k][r] ?? 0) > me.resources[r]).map((r) => [r, COST[k][r] - me.resources[r]]);
-    out[k] = left[k] <= 0 ? { state: "blocked", why: "None left" } : short.length ? { state: "short", short } : spot[k] ? { state: "ready" } : { state: "blocked", why: "No spot" };
+    out[k] = left[k] <= 0 ? { state: "blocked", why: "None left" } : !spot[k] ? { state: "blocked", why: "No spot" } : short.length ? { state: "short", short } : { state: "ready" };
   }
   return out;
 }
@@ -133,6 +134,17 @@ try {
                   description: b.getAttribute("aria-description"),
                   text: b.textContent.replace(/\s+/g, " ").trim(),
                   dot: !!b.querySelector(".build-ready-mark"),
+                  buildState: b.dataset.buildState,
+                  fill: getComputedStyle(b).backgroundColor,
+                  outline: getComputedStyle(b).borderTopColor,
+                  badge: (() => {
+                    const m = b.querySelector(".build-ready-mark");
+                    if (!m) return null;
+                    const r = m.getBoundingClientRect();
+                    const t = b.getBoundingClientRect();
+                    return { w: m.offsetWidth, h: m.offsetHeight, cx: r.left + r.width / 2 - t.right, cy: r.top + r.height / 2 - t.top };
+                  })(),
+                  ringed: [...b.querySelectorAll("[data-short]")].map((el) => el.dataset.testid.split("-")[2]),
                   pulse: b.classList.contains("build-ready"),
                   animation: getComputedStyle(b).animationName,
                   marks: [...b.querySelectorAll("[data-short]")].map((el) => ({
@@ -145,7 +157,7 @@ try {
                   rect: (() => {
                     const r = b.getBoundingClientRect();
                     const s = b.closest(".overflow-y-auto")?.getBoundingClientRect() ?? r;
-                    return { height: r.height, left: Math.max(r.left, s.left), top: Math.max(r.top, s.top), right: Math.min(r.right, s.right), bottom: Math.min(r.bottom, s.bottom) };
+                    return { height: r.height, width: r.width, left: Math.max(r.left, s.left), top: Math.max(r.top, s.top), right: Math.min(r.right, s.right), bottom: Math.min(r.bottom, s.bottom) };
                   })(),
                 },
               ];
@@ -162,7 +174,16 @@ try {
         await page
           .waitForFunction((want) => Object.entries(want).every(([k, w]) => document.querySelector(`[data-testid="build-${k}"]`)?.dataset.build === w.state), want, { timeout: 10_000 })
           .catch(() => {});
-        await page.mouse.move(0, 0);
+        // Under touch emulation the last hand's tap on the Stronghold chip leaves it :hover until the next tap lands somewhere
+        // else (a mouse move does not always clear it); the tap goes to the page corner, which is inset or margin on every
+        // phone size here. The frame that clears :hover can still lag on software GL, so wait for it.
+        if (v.touch) await page.touchscreen.tap(2, 2);
+        else await page.mouse.move(0, 0);
+        await page.waitForFunction(() => !document.querySelector("[data-build-state]:hover"), null, { timeout: 5_000 }).catch(() => {});
+        // The fill eases in with the Button's colour transition; read it once it has landed.
+        await page
+          .waitForFunction(() => [...document.querySelectorAll("[data-build-state]")].every((b) => (getComputedStyle(b).backgroundColor === "rgb(230, 244, 228)") === (b.dataset.buildState === "ready")), null, { timeout: 5_000 })
+          .catch(() => {});
         const row = await readRow();
         for (const k of KINDS) {
           const w = want[k];
@@ -171,18 +192,23 @@ try {
           assert.equal(r.state, w.state, `${at}: reads ${r.state} (${r.text}), rules say ${w.state} ${JSON.stringify(w)}`);
           assert.equal(r.disabled, w.state !== "ready", `${at}: aria-disabled`);
           assert.equal(r.dot, w.state === "ready", `${at}: the ready dot`);
+          assert.equal(r.buildState, { ready: "ready", short: "missing", blocked: "nospot" }[w.state], `${at}: data-build-state ${r.buildState}`);
+          if (w.state === "ready") {
+            assert.equal(r.fill, "rgb(230, 244, 228)", `${at}: green paper fill ${r.fill}`);
+            assert.equal(r.outline, "rgb(47, 143, 91)", `${at}: green outline ${r.outline}`);
+            assert.ok(r.badge.w === 16 && r.badge.h === 16 && Math.abs(r.badge.cx) <= 10 && Math.abs(r.badge.cy) <= 10, `${at}: 16 px check badge at the top-right corner ${JSON.stringify(r.badge)}`);
+          } else assert.notEqual(r.fill, "rgb(230, 244, 228)", `${at}: only Ready is green`);
           if (w.state === "blocked") {
             assert.match(r.text, new RegExp(w.why), `${at}: says "${w.why}" (${r.text})`);
             assert.equal(r.marks.length, 0, `${at}: no shortfall marks on a blocked build`);
           } else if (w.state === "short") {
-            const total = w.short.reduce((a, [, n]) => a + n, 0);
-            if (total === 1) {
-              assert.deepEqual(r.marks.map((s) => s.text), w.short.map(([, n]) => `−${n}`), `${at}: ${total} short, the chips show the shortfall ${JSON.stringify(r.marks)}`);
-              for (const s of r.marks) {
-                assert.ok(s.visible && !s.hover, `${at}: the shortfall is on screen with no hover ${JSON.stringify(s)}`);
-                assert.equal(s.opacity, 1, `${at}: the "−N" is at full strength`);
-              }
-            } else assert.equal(r.marks.length, 0, `${at}: ${total} short, no red marks`);
+            // #606: every lacking good is ringed and carries its own "−N", on screen with no hover.
+            assert.deepEqual(r.marks.map((m) => m.text), w.short.map(([, n]) => `−${n}`), `${at}: the chips show the shortfall ${JSON.stringify(r.marks)}`);
+            assert.deepEqual(r.ringed, w.short.map(([res]) => res), `${at}: the lacking goods are ringed ${JSON.stringify(r.ringed)}`);
+            for (const m of r.marks) {
+              assert.ok(m.visible && !m.hover, `${at}: the shortfall is on screen with no hover ${JSON.stringify(m)}`);
+              assert.equal(m.opacity, 1, `${at}: the "−N" is at full strength`);
+            }
             for (const [res, n] of w.short) assert.match(r.description, new RegExp(`${n} ${res}`), `${at}: aria-description names the shortfall (${r.description})`);
           } else {
             assert.equal(r.marks.length, 0, `${at}: no shortfall on a ready build`);
@@ -190,7 +216,7 @@ try {
           }
           // The 44 px touch target (docs/design/polish.md) and the safe area.
           const { rect } = r;
-          if (v.touch) assert.ok(rect.height >= 44, `${at}: ${rect.height} px tall`);
+          assert.ok(rect.height >= 44 && rect.width >= 44, `${at}: ${rect.height} px tall`);
           assert.ok(rect.left >= safe.left && rect.right <= v.width - safe.right && rect.top >= safe.top && rect.bottom <= v.height - safe.bottom, `${at}: inside the safe rect ${JSON.stringify(rect)}`);
         }
         // The build row has not grown: the stack's content is no taller than on main, and the island's hole no smaller.
@@ -213,6 +239,11 @@ try {
           const mode = await page.evaluate(() => window.__emberisle.getState().buildMode);
           assert.equal(mode, want[k].state === "ready" ? k : "none", `${tag} · ${h.name}: pressing ${k} (${want[k].state}) armed ${mode}`);
           if (mode !== "none") await page.evaluate(() => window.__emberisle.getState().setBuildMode("none"));
+        }
+        // #606: one chip in each state on one table (Path Ready, Outpost No spot, Stronghold Missing).
+        if (reducedMotion === "no-preference" && h.name === "path only" && (v.tag === "390x844" || v.tag === "1280x720")) {
+          assert.deepEqual(KINDS.slice(0, 3).map((k) => want[k].state), ["ready", "blocked", "short"], `${tag}: the screenshot hand shows all three states`);
+          await page.screenshot({ path: `test-results/build-ready-${v.tag.split("x")[0]}.png` });
         }
         if (reducedMotion === "no-preference" && shots++ < 2) await page.screenshot({ path: `test-results/build-ready-${v.tag}${shots > 1 ? "-b" : ""}.png` });
       }

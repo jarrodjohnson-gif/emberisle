@@ -367,33 +367,28 @@ try {
   for (let r = 0; r < ROLLS; r++) {
     const cur = JSON.parse(vs[0].shared).current;
     const i = vs.findIndex((v) => v.you === cur);
-    // #188: every tab shows the same roll banner (whose roll, who got what) for a moment. The proof rolls
-    // faster than a banner fades, so each tab's banner is cleared first and only a fresh one counts.
+    // #534: every tab keeps one canonical roll/goods event, without a second transient banner.
     for (const t of tabs) await t.page.evaluate(() => window.__emberisle.setState({ banner: null }));
     await act(tabs[i], "dispatch", [{ type: "roll" }]);
-    // The first roll follows the reconnect cases, and a reloaded tab can still be finishing its cold
-    // island render under software GL, so that one gets a longer window (#196).
     const slow = r === 0 ? 90_000 : undefined;
-    // Each tab is read on its own: a tab whose page is blocked answers late, after the others' 2.5 s
-    // banners are gone, so one poll across all three would never see them together.
-    const texts = await Promise.all(
-      tabs.map((t) => until(() => t.page.evaluate(() => document.querySelector('[data-testid="banner"]')?.textContent ?? null), `banner on ${t.name} after roll ${r + 1}`, slow)),
-    );
-    if (new Set(texts).size !== 1) throw new Error(`banner differs after roll ${r + 1}: ${texts.join(" | ")}`);
-    const banner = texts[0];
     vs = await synced(tabs, seqOf(vs[0]), `roll ${r + 1}`, slow);
+    const events = await Promise.all(tabs.map((t) => t.page.evaluate(() => {
+      const s = window.__emberisle.getState();
+      return { text: s.gameLog.at(-1)?.text, banner: s.banner, hud: document.querySelector('[data-testid="log-line"]')?.textContent };
+    })));
+    if (new Set(events.map((e) => e.text)).size !== 1 || events.some((e) => e.banner || e.hud !== e.text)) throw new Error(`roll event differs or repeats: ${JSON.stringify(events)}`);
     const d = JSON.parse(vs[0].shared).dice;
     dice.push(d);
-    // #440: the banner names the roller and carries no dice; the roll itself is the moment's, once on every tab.
     const roller = await tabs[i].page.evaluate((id) => window.__emberisle.getState().state.players.find((p) => p.id === id)?.name, cur);
-    if (!banner.startsWith(`${roller}'s roll · `) || banner.includes(`${d[0]}+${d[1]}`)) throw new Error(`banner after roll ${r + 1}: "${banner}" vs roller ${roller}`);
-    if (r === 0) console.log(`roll banner on all tabs: "${banner}"`);
+    const line = events[0].text;
+    if (!line?.includes(`— ${roller}'s roll`) || /\d\+\d/.test(line)) throw new Error(`roll event: ${line}`);
+    if (r === 0) console.log(`persistent roll event on all tabs: "${line}"; no goods banner`);
     for (const t of tabs) {
       const seen = await until(() => t.page.evaluate((n) => (window.__moments.length >= n ? window.__moments : null), r + 1), `roll moment on ${t.name} after roll ${r + 1}`, slow);
       if (seen.length !== r + 1 || seen[r].join() !== d.join()) throw new Error(`${t.name} roll moments ${JSON.stringify(seen)} after roll ${r + 1} of ${d}`);
     }
     if (r === 0) console.log(`roll moment on all tabs: ${d.join("+")}`);
-    // #322: every tab rests the roll as two pip faces that match the shared dice and the last roll line in the log.
+    // #322: every tab rests the roll as two pip faces that match the authoritative shared dice.
     const sum = d[0] + d[1];
     for (const t of tabs) {
       const faces = await until(
@@ -402,10 +397,9 @@ try {
             const els = [...document.querySelectorAll('[data-testid="dice-row"] [data-testid="die"]')];
             const values = els.map((e) => Number(e.dataset.value));
             if (els.length !== 2 || values.join("+") !== want) return null;
-            const line = window.__emberisle.getState().state.log.findLast((l) => /rolls \d\+\d/.test(l));
             return {
               values,
-              logged: line.match(/rolls (\d)\+(\d)/).slice(1).map(Number),
+              authoritative: window.__emberisle.getState().state.dice,
               pips: els.map((e) => e.querySelectorAll("[data-pip]").length),
               label: els[0].closest('[role="img"]')?.getAttribute("aria-label"),
               motion: getComputedStyle(els[0]).animationName,
@@ -415,7 +409,7 @@ try {
       );
       const [x, y] = faces.values;
       if (x + y !== sum) throw new Error(`${t.name} dice ${x}+${y} vs shared sum ${sum}`);
-      if (faces.logged.join() !== faces.values.join()) throw new Error(`${t.name} dice ${x}+${y} vs log ${faces.logged.join("+")}`);
+      if (faces.authoritative.join() !== faces.values.join()) throw new Error(`${t.name} dice ${x}+${y} vs host ${faces.authoritative.join("+")}`);
       if (faces.pips.join() !== faces.values.join()) throw new Error(`${t.name} dice ${x}+${y} drew ${faces.pips.join("+")} pips`);
       if (faces.label !== `Rolled ${x} and ${y}, ${sum}`) throw new Error(`${t.name} dice label "${faces.label}"`);
       const want = t === c ? "none" : "die-settle";

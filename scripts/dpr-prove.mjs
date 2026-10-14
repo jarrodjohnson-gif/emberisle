@@ -1,4 +1,5 @@
-// #329: the renderer's pixel ratio is capped at 1.5 on coarse pointers and 2 on fine ones, and a resize keeps the cap.
+// #329: the renderer's pixel ratio is capped at 2, and at 1.5 on a coarse pointer with the simple sea (the crystal sea runs at
+// up to 2 on a phone too, crystal-water.md); a resize keeps the cap.
 // Run: npm run dpr-prove
 import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
@@ -15,14 +16,16 @@ const browser = await chromium.launch({
 let code = 0;
 try {
   const cases = [
-    { name: "phone 390x844 @3x, coarse", opts: { viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true }, coarse: true, want: 1.5, resizeTo: { width: 844, height: 390 } },
-    { name: "desktop 1920x1080 @3x, fine", opts: { viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 3 }, coarse: false, want: 2, resizeTo: { width: 1280, height: 720 } },
+    { name: "phone 390x844 @3x, coarse, simple sea", water: "simple", opts: { viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true }, coarse: true, want: 1.5, resizeTo: { width: 844, height: 390 } },
+    { name: "phone 390x844 @3x, coarse, crystal sea", water: "crystal", opts: { viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true }, coarse: true, want: 2, resizeTo: { width: 844, height: 390 } },
+    { name: "desktop 1920x1080 @3x, fine", water: "simple", opts: { viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 3 }, coarse: false, want: 2, resizeTo: { width: 1280, height: 720 } },
   ];
   for (const c of cases) {
     const ctx = await browser.newContext(c.opts);
+    await ctx.addInitScript((w) => localStorage.setItem("emberisle-water", w), c.water);
     const page = await ctx.newPage();
     await page.goto(`http://127.0.0.1:${PORT}/`);
-    await page.waitForFunction(() => window.__isle?.renderer || window.__isle);
+    await page.waitForFunction(() => window.__emberisle?.water);
     const read = () =>
       page.evaluate(() => {
         const r = window.__isle.renderer;

@@ -140,7 +140,14 @@ try {
   const errors = [];
   page.on("pageerror", (e) => errors.push(String(e)));
   page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
-  await page.addInitScript(() => localStorage.setItem("emberisle-name", "Ember"));
+  // A saved water choice skips the one-time GPU probe (crystal-water.md). Unsaved, the probe starts a second after the
+  // client settles, which is exactly when the first timed reload below fires, and its blocking pixel reads under the 4x
+  // throttle held that reload's unload by about 2 s. The probe has its own proofs (jelly-ocean, table-menu); this one times
+  // the restore.
+  await page.addInitScript(() => {
+    localStorage.setItem("emberisle-name", "Ember");
+    localStorage.setItem("emberisle-water", "simple");
+  });
   await page.goto(`http://127.0.0.1:${hostPort}/`);
   await page.getByRole("button", { name: "Host a table" }).click();
   const code = (await page.getByTestId("table-code").textContent()).trim();
