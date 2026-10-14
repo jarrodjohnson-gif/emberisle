@@ -148,6 +148,10 @@ try {
       await reopen("an outside tap");
     } else await menu.getByRole("button", { name: "Copied" }).waitFor();
     const confirmBox = page.getByTestId("leave-confirm");
+    // The question folds itself away after 5 s, and a click needs the Stay button still over two animation frames. On
+    // software GL the GPU probe's measured frames (crystal-water.md) and a view's first glide are the slowest the island
+    // draws, so the sequence starts once the probe has reported and the camera is at rest.
+    await page.waitForFunction(() => window.__emberisle.getState().water && !window.__isle.probe && !window.__isle.glide && !window.__isle.refitDue, null, { timeout: 60_000 });
     await menu.getByRole("button", { name: "Leave table" }).click();
     await confirmBox.waitFor();
     assert.match(await confirmBox.textContent(), /Leave the table\? Your seat goes to the bot\./, `${v.tag}: the question`);
