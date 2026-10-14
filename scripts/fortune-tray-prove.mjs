@@ -169,7 +169,7 @@ try {
     assert.equal(await store(() => window.__emberisle.getState().buildMode), "knight", `${v.tag}: wayfarer armed`);
     assert.equal(await button.getAttribute("aria-pressed"), "true", `${v.tag}: Fortunes pressed while armed`);
     const banner = await page.getByTestId("turn-banner").textContent();
-    assert.match(banner, /Pick a hex for the wayfarer · (tap Fortunes again to cancel|Esc cancels)/, `${v.tag}: banner "${banner}"`);
+    assert.match(banner, /Move the wayfarer · (tap Fortunes again to cancel|Esc cancels)/, `${v.tag}: banner "${banner}"`);
     await button.click();
     await page.waitForFunction(() => window.__emberisle.getState().buildMode === "none", null, { timeout: STEP_MS });
     await open();

@@ -51,17 +51,17 @@ function phaseCopy(phase: string) {
     case "rollOff":
       return "Roll for first place";
     case "setupSettle":
-      return "Place an outpost";
+      return "Place an outpost · tap a glowing corner";
     case "setupRoad":
-      return "Lay a path";
+      return "Place a path · tap a glowing edge";
     case "roll":
-      return "Roll";
+      return "Roll the dice";
     case "discard":
-      return "Choose goods to discard";
+      return "Discard goods";
     case "robber":
       return "Move the wayfarer";
     case "main":
-      return "Build or trade";
+      return "Build, trade, or end your turn";
     case "over":
       return "The isle has a ruler.";
     default:
@@ -73,19 +73,19 @@ function phaseCopy(phase: string) {
 function waitingCopy(phase: string, name: string) {
   switch (phase) {
     case "rollOff":
-      return `Waiting for ${name} to roll for first place`;
+      return `Wait for ${name} to roll for first place`;
     case "setupSettle":
-      return `Waiting for ${name} to place an outpost`;
+      return `Wait for ${name} to place an outpost`;
     case "setupRoad":
-      return `Waiting for ${name} to lay a path`;
+      return `Wait for ${name} to place a path`;
     case "roll":
-      return `Waiting for ${name} to roll`;
+      return `Wait for ${name} to roll`;
     case "discard":
-      return "Waiting for discards";
+      return "Wait for discards";
     case "robber":
-      return `Waiting for ${name} to move the wayfarer`;
+      return `Wait for ${name} to move the wayfarer`;
     default:
-      return `Waiting for ${name} to build or trade`;
+      return `Wait for ${name} to build or trade`;
   }
 }
 
@@ -93,16 +93,16 @@ function waitingCopy(phase: string, name: string) {
 function armedCopy(mode: BuildMode, roadPicks: number): [string, string] | null {
   switch (mode) {
     case "path":
-      return ["Pick a glowing edge", "Path"];
+      return ["Place a path", "Path"];
     case "outpost":
-      return ["Pick a glowing corner", "Outpost"];
+      return ["Place an outpost", "Outpost"];
     case "stronghold":
-      return ["Pick an outpost to upgrade", "Stronghold"];
+      return ["Build a stronghold", "Stronghold"];
     // #423: both fortunes are armed from the tray, and the Fortunes button stays pressed until the pick is made or cancelled.
     case "knight":
-      return ["Pick a hex for the wayfarer", "Fortunes"];
+      return ["Move the wayfarer", "Fortunes"];
     case "roadCard":
-      return [roadPicks ? "Pick one more path" : "Pick two paths", "Fortunes"];
+      return [roadPicks ? "Place one more path" : "Place two paths", "Fortunes"];
     default:
       return null;
   }
@@ -215,24 +215,22 @@ export function Hud() {
   // Hotseat has no "you": every seat is named. The turn banner sits out once the isle has a ruler (the pill says who).
   const subject = state.phase === "discard" && discarder ? discarder : state.current;
   const subjectPlayer = state.players.find((p) => p.id === subject) ?? state.players[0]!;
-  const yours = mode !== "hotseat" && subject === actor;
+  const yours = mode !== "hotseat" && subject === actor && (state.phase !== "discard" || discarder !== null);
   // #419: an armed build says what to pick and how to cancel (a touch screen has no Esc key).
   const armed = mine ? armedCopy(buildMode, roadPicks.length) : null;
   const phaseText = armed
     ? `${armed[0]} · ${matchMedia("(pointer: coarse)").matches ? `tap ${armed[1]} again to cancel` : "Esc cancels"}`
-    : yours && state.phase === "discard"
-      ? `discard ${state.discardNeeded[subject] ?? 0}`
-      : yours && state.phase === "robber"
-        ? "move the wayfarer"
-        : phaseCopy(state.phase);
+    : state.phase === "discard"
+      ? `Discard ${state.discardNeeded[subject] ?? 0} goods`
+      : phaseCopy(state.phase);
   const waiting = mode !== "hotseat" && !yours;
   // #430: in hotseat a seat that owes a discard on another seat's turn is named, not given the turn.
   const turnText =
-    !yours && subject !== state.current
-      ? `${subjectPlayer.name} — discard ${state.discardNeeded[subject] ?? 0}`
+    mode === "hotseat" && subject !== state.current
+      ? `${phaseText} · ${subjectPlayer.name}`
       : waiting
         ? waitingCopy(state.phase, subjectPlayer.name)
-        : `${yours ? "Your" : `${subjectPlayer.name}'s`} turn · ${phaseText}`;
+        : phaseText;
   const winner = state.winner ? state.players.find((p) => p.id === state.winner) : null;
   const menuPlayer = menuFor ? state.players.find((p) => p.id === menuFor) : null;
   // #422: on the player's own Roll or End row the dice ride beside the button instead of taking a row of their own.
@@ -248,7 +246,7 @@ export function Hud() {
   const instruction = state.phase === "over" ? null : (
     <p key={`turn-${state.current}`} data-testid="turn-banner"
       style={{ borderLeftColor: yours ? undefined : subjectPlayer.color }}
-      className={cn("turn-instruction rounded-control px-3 py-1.5 text-sm font-medium", yours ? "turn-instruction-own" : "border-l-4")}
+      className={cn("turn-instruction rounded-control px-3 py-1.5 text-[15px] font-medium leading-5", yours ? "turn-instruction-own" : "border-l-4")}
     >{turnText}</p>
   );
 
