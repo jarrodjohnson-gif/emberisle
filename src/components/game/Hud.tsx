@@ -26,7 +26,7 @@ import { TradeButton } from "@/components/game/TradeButton";
 import { CostChips, priceLabel, shortfall, type Price } from "@/components/game/BuildCost";
 import { useEscapeDisarm } from "@/components/game/escape-disarm";
 import { COST, RESOURCES, type BuildMode, type GameState, type PlayerState } from "@/lib/game/types";
-import { hiddenCount, legalCities, legalRoads, legalSettle, playable, totalVP } from "@/lib/game/rules";
+import { legalCities, legalRoads, legalSettle, totalVP } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
 import { LazyBoundary, preloadOnIdle } from "@/lib/lazy";
 import { useViewport } from "@/lib/viewport";
@@ -193,17 +193,17 @@ export function Hud() {
         : (state.discardNeeded[actor] ?? 0) > 0
           ? actor
           : null;
-  // #423: one "Fortunes ×N" button opens the tray. In `main` it shows whenever a fortune is held; before the roll only a
-  // wayfarer can be played (#218), so it shows only then. While a fortune's pick is armed it stays pressed, and pressing it cancels.
+  // The shared deck count is inspectable with an empty hand and off turn too.
   const fortuneArmed = buildMode === "knight" || buildMode === "roadCard";
-  const fortunesShown =
-    mine && hiddenCount(me) > 0 && (state.phase === "main" || (state.phase === "roll" && !state.playedCard && playable(me, "knight") > 0));
-  const fortunes = fortunesShown ? (
+  const deckLeft = state.deckLeft ?? state.deck.length;
+  const fortunes = (
     <Button
       ref={fortunesButton}
       size="sm"
       data-testid="fortunes-button"
-      className={phone ? "h-11 min-w-11" : undefined}
+      data-deck-left={deckLeft}
+      aria-label={`Fortunes, ${deckLeft} left in deck`}
+      className="h-11 min-w-11 flex-col gap-0 px-2 text-xs leading-4 tabular-nums"
       aria-pressed={fortunesOpen || fortuneArmed}
       aria-expanded={fortunesOpen}
       variant={fortunesOpen || fortuneArmed ? "primary" : "secondary"}
@@ -212,9 +212,9 @@ export function Hud() {
         setFortunesOpen((o) => !o);
       }}
     >
-      Fortunes ×{hiddenCount(me)}
+      <span>Fortunes</span>{" "}<span>{deckLeft} left</span>
     </Button>
-  ) : null;
+  );
   // Hotseat has no "you": every seat is named. The turn banner sits out once the isle has a ruler (the pill says who).
   const subject = state.phase === "discard" && discarder ? discarder : state.current;
   const subjectPlayer = state.players.find((p) => p.id === subject) ?? state.players[0]!;
@@ -325,7 +325,7 @@ export function Hud() {
       </LazyBoundary>
 
       <div className="pointer-events-none absolute bottom-0 inset-x-0 z-10 px-safe pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-        <div className={cn("relative", column ? "w-[260px] max-w-[42vw]" : "mx-auto max-w-[656px]")}>
+        <div className={cn("relative", column ? "w-[260px] max-w-[42vw]" : "mx-auto max-w-[720px]")}>
           {/* #459: floats above the stack, so it coming and going never reflows the turn banner. */}
           {banner && !(tradeOutcome && banner.endsWith("'s trade")) ? (
             <p
@@ -430,9 +430,9 @@ export function Hud() {
 
             {(state.phase === "roll" || state.phase === "rollOff") && mine ? (
               <div className="flex flex-col gap-2">
-                {fortunes ? <div className="flex flex-wrap gap-1">{fortunes}</div> : null}
-                <div className="flex gap-2 *:self-center">
+                <div className="flex flex-wrap gap-2 *:self-center">
                   {dice}
+                  {fortunes}
                   <Button size="lg" className="flex-1" onClick={() => dispatch({ type: "roll" })}>
                     <Dices className="size-5" /> Roll
                   </Button>
@@ -440,7 +440,9 @@ export function Hud() {
               </div>
             ) : null}
 
-            {diceInBar ? null : dice}
+            {!mine || !["main", "roll", "rollOff"].includes(state.phase) ? (
+              <div className="flex flex-wrap items-center gap-2">{fortunes}{dice}</div>
+            ) : diceInBar ? null : dice}
 
             <p
               hidden={tradeVisible}
@@ -461,7 +463,7 @@ export function Hud() {
           {fortunes && fortunesOpen ? (
             <LazyBoundary failed={<TrayFailed close={() => setFortunesOpen(false)} />}>
               <FortuneTray
-                me={me}
+                me={spectator ? undefined : me}
                 opener={fortunesButton.current}
                 onClose={() => setFortunesOpen(false)}
                 className={

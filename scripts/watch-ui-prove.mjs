@@ -336,8 +336,13 @@ try {
   if (wv.hands.some((n) => n !== null) || wv.hiddenVp.some((n) => n !== 0) || wv.hasSeed) throw new Error(`hidden info reached the watcher before the win: ${JSON.stringify([wv.hands, wv.hiddenVp, wv.hasSeed])}`);
   if (wv.legalCount !== 0 || wv.highlights !== 0 || wv.glow !== 0 || wv.interactive !== false) throw new Error(`the watcher has a glow: ${JSON.stringify([wv.legalCount, wv.highlights, wv.glow, wv.interactive])}`);
   if (wv.placeList !== 0) throw new Error("the watcher has a PlaceList (#376) of targets");
-  const pressable = wv.buttons.filter((t) => GAME_CONTROLS.includes(t) || /^Fortunes/.test(t));
+  const pressable = wv.buttons.filter((t) => GAME_CONTROLS.includes(t));
   if (pressable.length) throw new Error(`the watcher can press ${JSON.stringify(pressable)}`);
+  await w1.page.getByTestId("fortunes-button").click();
+  await w1.page.getByTestId("fortune-deck-count").waitFor();
+  if (await w1.page.locator('[data-testid^="fortune-row-"]').count()) throw new Error("watcher deck tray exposes held fortune kinds");
+  if (await w1.page.getByTestId("fortune-tray").getByRole("button").count() !== 1) throw new Error("watcher deck tray exposes play actions");
+  await w1.page.keyboard.press("Escape");
   if (!wv.buttons.includes("Leave table")) throw new Error(`the watcher has no Leave table button: ${JSON.stringify(wv.buttons)}`);
   if (!wv.turnBanner || wv.turnBanner.startsWith("Your")) throw new Error(`the watcher's turn line: "${wv.turnBanner}"`);
   // The positive control: the seat whose roll it is has the Roll button and no badge. Its hand is empty in the roll-off, so no hand tiles are shown (#439).
