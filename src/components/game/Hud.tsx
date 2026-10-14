@@ -254,7 +254,7 @@ export function Hud() {
 
   const endRow = (
     <div className={cn("flex gap-2 *:self-center", column ? "end-footer sticky z-10 justify-between rounded-control bg-surface p-1" : "ml-auto")}>
-      {column ? <TradeButton /> : dice}
+      {column ? <><TradeButton />{dice}</> : dice}
       <Button size="sm" variant={endPrimary ? "primary" : "secondary"} className={phone ? "h-11" : undefined} onClick={() => dispatch({ type: "endTurn" })}>
         End turn
       </Button>

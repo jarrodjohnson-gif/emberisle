@@ -4,7 +4,8 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { chromium } from "playwright";
 import { createServer } from "vite";
 
-const vite = await createServer({ server: { host: "127.0.0.1", port: 8171, strictPort: true }, logLevel: "error" });
+const port = Number(process.env.VITE_PORT ?? 8171);
+const vite = await createServer({ server: { host: "127.0.0.1", port, strictPort: true }, logLevel: "error" });
 await vite.listen();
 const browser = await chromium.launch({ args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"] });
 const errors = [];
@@ -24,7 +25,7 @@ try {
     const context = await browser.newContext({ viewport: { width, height }, hasTouch: phone, isMobile: phone, reducedMotion: reduced ? "reduce" : "no-preference" });
     const page = await context.newPage();
     page.on("pageerror", e => errors.push(e.message));
-    await page.goto("http://127.0.0.1:8171/");
+    await page.goto(`http://127.0.0.1:${port}/`);
     await page.waitForFunction(() => window.__isle?.renders > 1);
     await page.locator(".seat-settings > summary").click();
     await page.getByRole("radio", { name: "Tide", exact: true }).click();
@@ -53,6 +54,13 @@ try {
       if (phase === "offer") await page.evaluate(() => window.__emberisle.setState({ offer: { tradeId: "audit", from: "p1", fromName: "Mira", give: { wool: 2 }, want: { ore: 1 }, until: Date.now() + 60000 }, declined: [] }));
       await settle(page);
       await targets();
+      if (phase === "main" && width === 844) {
+        const dice = await page.evaluate(() => {
+          const row = document.querySelector('[data-testid="dice-row"]'), r = row?.getBoundingClientRect();
+          return { dice: [...document.querySelectorAll('[data-testid="die"]')].filter(d => d.checkVisibility()).length, sum: row?.lastElementChild?.textContent, inside: !!r && r.width > 0 && r.left >= 0 && r.right <= innerWidth && r.bottom <= innerHeight };
+        });
+        assert.deepEqual(dice, { dice: 2, sum: "8", inside: true }, `${width}: two dice and the sum show in your own main phase`);
+      }
       const geometry = await page.evaluate(() => {
         const r = window.__isle;
         const i = r.insets();
