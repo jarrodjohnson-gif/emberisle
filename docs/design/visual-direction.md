@@ -1,3 +1,5 @@
+> The current approved direction is [Jelly Ocean](jelly-ocean.md). The earlier Basalt exploration below is retained for reference.
+
 # Emberisle — visual direction
 
 13 October 2026. Reference implementation: `design/basalt-table`.

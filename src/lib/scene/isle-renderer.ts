@@ -27,6 +27,7 @@ import { HEX_SIZE, SQRT3, hexCorners, hexesInRadius, vertexId } from "@/lib/game
 import { LAND_MS } from "@/lib/scene/landing";
 import { mulberry32, hashStr } from "@/lib/utils";
 import { PAINT, RIM } from "@/lib/scene/palette";
+import { OceanLife } from "@/lib/scene/ocean-life";
 import { foldOverRidge, markParts } from "@/lib/scene/seat-mark";
 import { payingHexes } from "@/lib/game/rules";
 import { seatMark, type GameState, type HarborKind, type HexCell, type Terrain, type Vertex } from "@/lib/game/types";
@@ -77,6 +78,7 @@ const FLASH_WARM = new THREE.Color(0xffa94d);
 // The pulse token (polish.md "Motion"): legal corners and paths breathe once per 1.2 s.
 const LEGAL_PULSE_S = 1.2;
 type OreWork = { cart: THREE.Mesh; arm: THREE.Mesh; z: number; phase: number };
+type FarmWork = { body: THREE.Mesh; arm: THREE.Mesh; x: number; z: number; y: number; phase: number; angle: number };
 type Sheep = { g: THREE.Object3D; ox: number; oz: number; tx: number; tz: number; wait: number; graze: number };
 
 // The overhead view in play (docs/design/camera-light.md): a frustum and a look-at point from the fit to the HUD hole, and
@@ -133,6 +135,9 @@ export class IsleRenderer {
   private wayfarer: THREE.Group;
   private sheep: Sheep[] = [];
   private oreWork: OreWork[] = [];
+  private farmWork: FarmWork[] = [];
+  private oceanLife = new OceanLife();
+  private ambientTime = 0;
   private boats: THREE.Group[] = [];
   private trees: THREE.Object3D[] = [];
   private wheat: THREE.Object3D[] = [];
@@ -188,7 +193,7 @@ export class IsleRenderer {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: "high-performance" });
     // Frame cost tracks pixels (#310): 1.5 on a phone is 2.25x the pixels of 1, against 4x at 2.
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, this.coarse() ? 1.5 : 2));
-    this.renderer.setClearColor(0x395f64, 1);
+    this.renderer.setClearColor(0x158e9a, 1);
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -221,7 +226,7 @@ export class IsleRenderer {
     this.orbit.addEventListener("start", this.wake);
     this.orbit.addEventListener("change", this.wake);
 
-    this.scene.fog = new THREE.Fog(0x395f64, 26, 52);
+    this.scene.fog = new THREE.Fog(0x158e9a, 26, 52);
     // A lit board on a table (polish.md "The board look target", #135): one warm key lamp carries the light, so the
     // slabs shade on their sides and every prop casts a soft shadow; the sky and ground bounce are low and nearly grey,
     // so the caps' own paint is the colour on screen. No flat ambient: that was what washed the caps out.
@@ -247,6 +252,7 @@ export class IsleRenderer {
     ocean.rotation.x = -Math.PI / 2;
     ocean.position.y = -0.02;
     this.scene.add(ocean);
+    this.scene.add(this.oceanLife.group);
 
     const coast = coastLoop();
     for (const c of coast) this.coastMiter.set(c.id, { mx: c.mx, mz: c.mz });
@@ -492,6 +498,7 @@ export class IsleRenderer {
     this.renderer.domElement.removeEventListener("pointermove", this.onMove);
     this.renderer.domElement.removeEventListener("pointercancel", this.onCancel);
     this.safeProbe.remove();
+    this.oceanLife.dispose();
     this.renderer.dispose();
   }
 
@@ -731,7 +738,7 @@ export class IsleRenderer {
   }
 
   private tick = () => {
-    if (this.stopped) return;
+    if (this.stopped || document.hidden) return;
     const now = performance.now();
     // Title: 30 fps. On the board with nothing moving: 12 fps, enough to keep the water, sheep and boats alive (#331).
     const pulsing = this.marks.children.some((m) => m.userData.kind === "hex" && m.userData.id !== this.pending?.id);
@@ -776,6 +783,8 @@ export class IsleRenderer {
       return;
     }
     this.water.uniforms.uTime!.value = t;
+    this.ambientTime += dt;
+    this.oceanLife.step(dt, true, this.oceanViewport);
     this.foam.material.opacity = 0.32 + 0.23 * (0.5 + 0.5 * Math.sin(t * 0.8));
     for (const tr of this.trees) tr.rotation.z = Math.sin(t * 1.05 + tr.position.x * 2) * 0.028;
     if (this.walk) {
@@ -807,13 +816,27 @@ export class IsleRenderer {
       s.g.position.x += (s.tx - s.g.position.x) * (1 - Math.exp(-dt * 1.6));
       s.g.position.z += (s.tz - s.g.position.z) * (1 - Math.exp(-dt * 1.6));
       const heading = Math.atan2(s.tx - s.g.position.x, s.tz - s.g.position.z);
-      s.g.rotation.y += (heading - s.g.rotation.y) * (1 - Math.exp(-dt * 3));
+      const turn = Math.atan2(Math.sin(heading - s.g.rotation.y), Math.cos(heading - s.g.rotation.y));
+      s.g.rotation.y += turn * (1 - Math.exp(-dt * 3));
       s.g.rotation.x = s.graze > 0 ? 0.32 : 0;
       if (s.graze > 0) s.graze -= dt;
     }
     for (const work of this.oreWork) {
-      work.cart.position.z = work.z + 0.05 * Math.sin(t * Math.PI / 3 + work.phase);
-      work.arm.rotation.z = 0.22 * Math.sin(t * Math.PI / 2 + work.phase);
+      const phase = this.ambientTime + work.phase;
+      work.cart.position.z = work.z + 0.05 * Math.sin(phase * Math.PI / 3);
+      work.cart.rotation.z = 0.035 * Math.sin(phase * 2.4);
+      work.cart.rotation.x = 0.018 * Math.sin(phase * 1.6);
+      work.arm.rotation.z = 0.22 * Math.sin(phase * Math.PI / 2);
+    }
+    for (const work of this.farmWork) {
+      const phase = this.ambientTime + work.phase;
+      const cycle = phase % 18;
+      const walking = cycle > 10 && cycle < 16;
+      const step = walking ? Math.sin((cycle - 10) * Math.PI / 6) * 0.10 : 0;
+      work.body.position.set(work.x + Math.cos(work.angle) * step, work.y + (walking ? Math.abs(Math.sin(phase * 6)) * 0.006 : 0), work.z + Math.sin(work.angle) * step);
+      work.body.rotation.y = Math.PI / 2 - work.angle + (walking && cycle > 13 ? Math.PI : 0);
+      work.arm.position.set(work.body.position.x, work.body.position.y + 0.13, work.body.position.z);
+      work.arm.rotation.set(0, work.body.rotation.y, cycle < 8 ? -0.15 + Math.sin(phase * 2.2) * 0.28 : 0);
     }
     for (const b of this.boats) {
       b.position.y = 0.06 + Math.sin(t * 1.6 + b.position.x) * 0.04;
@@ -824,11 +847,28 @@ export class IsleRenderer {
     this.renders += 1;
   };
 
+  // Compute the visible water once when choosing a visit, not on every animal frame.
+  private oceanViewport = () => {
+    const canvas = this.renderer.domElement;
+    const width = canvas.clientWidth, height = canvas.clientHeight;
+    const inset = this.insets();
+    const camera = this.overhead ? this.ortho : this.camera;
+    const scale = this.overhead ? width * this.ortho.zoom / (this.ortho.right - this.ortho.left) : 28;
+    const point = new THREE.Vector3();
+    return (x: number, z: number, reach: number) => {
+      point.set(x, 0.12, z).project(camera);
+      const px = (point.x + 1) * width / 2, py = (1 - point.y) * height / 2;
+      const margin = 8 + reach * scale;
+      return point.z > -1 && point.z < 1 && px > inset.left + margin && px < width - inset.right - margin && py > inset.top + margin && py < height - inset.bottom - margin;
+    };
+  };
+
   private buildLand(state: GameState) {
     disposeGroup(this.land);
     disposeGroup(this.living);
     this.sheep = [];
     this.oreWork = [];
+    this.farmWork = [];
     this.boats = [];
     this.trees = [];
     this.wheat = [];
@@ -836,6 +876,7 @@ export class IsleRenderer {
     this.pickables = [];
     this.caps.clear();
     this.flashes = [];
+    this.oceanLife.reset(landKey(state));
 
     for (const h of state.hexes) {
       const { x, z } = worldOfHex(h);
@@ -854,7 +895,7 @@ export class IsleRenderer {
       cap.material.emissive.copy(new THREE.Color(PAINT[h.terrain][0]).lerp(FLASH_WARM, 0.6));
       cap.material.emissiveIntensity = 0;
       this.caps.set(h.id, cap.material);
-      decorate(this.living, this.trees, this.wheat, this.sheep, this.oreWork, h, x, z, topOf(h.terrain));
+      decorate(this.living, this.trees, this.wheat, this.sheep, this.oreWork, this.farmWork, h, x, z, topOf(h.terrain));
       if (h.pip != null) {
         const tok = numberToken(h.pip);
         tok.userData.token = h.pip;
@@ -1113,11 +1154,13 @@ function disposeGroup(g: THREE.Group) {
 // (an added 0.022 was a third of the deep colour's linear value and drew dark blotches across the whole sea).
 function makeWater() {
   return new THREE.ShaderMaterial({
+    transparent: true,
+    depthWrite: false,
     uniforms: {
       uTime: { value: 0 },
-      uShallow: { value: new THREE.Color(0x56858a) },
-      uDeep: { value: new THREE.Color(0x395f64) },
-      uFog: { value: new THREE.Color(0x395f64) },
+      uShallow: { value: new THREE.Color(0x65d8cb) },
+      uDeep: { value: new THREE.Color(0x158e9a) },
+      uFog: { value: new THREE.Color(0x158e9a) },
     },
     vertexShader: /* glsl */ `
       // The circle is local XY; +Z is up after the mesh's rotation. Crests stay at or below y = 0.
@@ -1137,12 +1180,33 @@ function makeWater() {
       uniform vec3 uDeep;
       uniform vec3 uFog;
       varying vec2 vXZ;
+      vec2 cellPoint(vec2 p) {
+        vec3 h = fract(vec3(p.xyx) * 0.1031);
+        h += dot(h, h.yzx + 33.33);
+        return fract((h.xx + h.yz) * h.zy);
+      }
+      float caustic(vec2 p) {
+        vec2 cell = floor(p), local = fract(p);
+        float near = 8.0, second = 8.0;
+        for (int y = -1; y <= 1; y++) for (int x = -1; x <= 1; x++) {
+          vec2 offset = vec2(float(x), float(y));
+          vec2 v = offset + 0.15 + 0.7 * cellPoint(cell + offset) - local;
+          float d = dot(v, v);
+          second = min(second, max(near, d));
+          near = min(near, d);
+        }
+        return 1.0 - smoothstep(0.014, 0.055, second - near);
+      }
       void main() {
         float d = length(vXZ);
-        vec3 c = mix(uShallow, uDeep, smoothstep(4.2, 7.5, d));
-        c *= 1.0 + 0.03 * sin(vXZ.x * 2.1 + uTime * 0.9) * sin(vXZ.y * 1.7 - uTime * 0.7);
+        vec3 c = mix(uShallow, uDeep, smoothstep(8.0, 28.0, d));
+        vec2 p = vXZ + vec2(sin(vXZ.y * 0.9 + uTime * 0.32), cos(vXZ.x * 0.7 - uTime * 0.25)) * 0.16;
+        float ripple = sin(p.x * 2.1 + uTime * 0.45) * sin(p.y * 1.7 - uTime * 0.36);
+        float light = caustic(p * 1.7 + vec2(uTime * 0.04, -uTime * 0.025));
+        c *= 1.0 + 0.035 * ripple;
+        c = mix(c, vec3(0.78, 0.97, 0.92), light * 0.07 * (1.0 - smoothstep(8.0, 20.0, d)));
         c = mix(c, uFog, smoothstep(18.0, 40.0, d));
-        gl_FragColor = vec4(c, 1.0);
+        gl_FragColor = vec4(c, 0.88);
       }
     `,
   });
@@ -1257,11 +1321,21 @@ function hexShape(size: number) {
 function makeHexTile(size: number, height: number, tex: THREE.Texture | undefined, _side: number) {
   const g = new THREE.Group();
   const slabH = SLAB + height * 0.35;
-  const wallGeo = new THREE.ExtrudeGeometry(hexShape(size), { depth: slabH, bevelEnabled: false });
+  const wallGeo = new THREE.ExtrudeGeometry(hexShape(size), { depth: slabH, steps: 4, bevelEnabled: false });
   wallGeo.rotateX(-Math.PI / 2);
+  // Four geological bands on the hex island itself. The ocean has no box or cutaway perimeter.
+  const strata = [0xb68a56, 0xd0b080, 0xe5d6b5, 0xf4e9d2].map(c => new THREE.Color(c));
+  const pos = wallGeo.attributes.position;
+  const colours = new Float32Array(pos.count * 3);
+  for (let i = 0; i < pos.count; i += 3) {
+    const y = (pos.getY(i) + pos.getY(i + 1) + pos.getY(i + 2)) / 3;
+    const c = strata[Math.min(3, Math.max(0, Math.floor(y / slabH * 4)))]!;
+    for (let j = 0; j < 3; j++) c.toArray(colours, (i + j) * 3);
+  }
+  wallGeo.setAttribute("color", new THREE.BufferAttribute(colours, 3));
   const wall = new THREE.Mesh(
     wallGeo,
-    new THREE.MeshStandardMaterial({ color: STONE, roughness: 0.82, metalness: 0.02 }),
+    new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.86, metalness: 0 }),
   );
   wall.castShadow = true;
   wall.receiveShadow = true;
@@ -1313,7 +1387,7 @@ function numberToken(n: number) {
   c.width = 256;
   c.height = 256;
   const ctx = c.getContext("2d")!;
-  ctx.fillStyle = "#f7f8f4";
+  ctx.fillStyle = "#fff9f0";
   ctx.beginPath();
   ctx.arc(128, 128, 124, 0, Math.PI * 2);
   ctx.fill();
@@ -1352,6 +1426,7 @@ function decorate(
   _wheat: THREE.Object3D[],
   sheep: Sheep[],
   oreWork: OreWork[],
+  farmWork: FarmWork[],
   h: HexCell,
   x: number,
   z: number,
@@ -1386,6 +1461,44 @@ function decorate(
       s.position.set(px, top + 0.1, pz);
       living.add(s);
       sheep.push({ g: s, ox: x, oz: z, tx: px, tz: pz, wait: rng() * 2, graze: 0 });
+    }
+  }
+  if (h.terrain === "grain") {
+    // One merged field, with a real clear hole around the number token.
+    const stalks: THREE.BufferGeometry[] = [];
+    for (let row = -4; row <= 4; row++) for (let col = -4; col <= 4; col++) {
+      const px = col * 0.18 + (rng() - 0.5) * 0.025;
+      const pz = row * 0.18 + (rng() - 0.5) * 0.025;
+      const radius = Math.hypot(px, pz);
+      if (radius < 0.49 || radius > 0.82) continue;
+      const height = 0.12 + rng() * 0.05;
+      stalks.push(placed(new THREE.CylinderGeometry(0.008, 0.008, height, 3), 0xb38d35, px, height / 2, pz));
+      stalks.push(placed(new THREE.ConeGeometry(0.026, 0.07, 4), 0xf3d884, px, height + 0.025, pz));
+    }
+    const field = figure(stalks, PIECE_MAT, true);
+    field.name = "grain-field";
+    field.userData = { hex: h.id, field: true };
+    field.position.set(x, top, z);
+    living.add(field);
+    const work = makeFarmer();
+    const angle = rng() * Math.PI * 2;
+    const px = x + Math.cos(angle) * 0.65, pz = z + Math.sin(angle) * 0.65;
+    work.body.position.set(px, top, pz);
+    work.arm.position.set(px, top + 0.13, pz);
+    for (const [obj, prop] of [[work.body, "farmer"], [work.arm, "harvesting"]] as const) {
+      obj.userData = { prop, hex: h.id, reach: 0.14 };
+      living.add(obj);
+    }
+    farmWork.push({ ...work, x: px, z: pz, y: top, phase: rng() * 18, angle: angle + Math.PI / 2 });
+  }
+  if (h.terrain === "clay") {
+    for (let i = 0; i < 3; i++) {
+      const { px, pz } = place(0.65, 0.80);
+      const r = 0.12 + rng() * 0.065;
+      const mound = figure([placed(new THREE.IcosahedronGeometry(r, 0), i % 2 ? 0xc8794a : 0xa84c36, 0, 0, 0, rng(), 1, 0.65, 1)], PIECE_MAT, true);
+      mound.userData = { prop: "clay-mound", hex: h.id, reach: r };
+      mound.position.set(px, top + r * 0.2, pz);
+      living.add(mound);
     }
   }
   if (h.terrain === "ore") {
@@ -1708,4 +1821,24 @@ function makeOreWork() {
     placed(new THREE.BoxGeometry(0.10, 0.025, 0.025), 0xa8b6bf, 0.06, 0.10, 0.07),
   ], PIECE_MAT, false);
   return { cart, miner, arm };
+}
+
+// Hat, clothes, legs and loaded grain basket share a mesh; only the harvesting arm moves separately.
+function makeFarmer() {
+  const body = figure([
+    placed(new THREE.BoxGeometry(0.07, 0.09, 0.06), 0x4b7c67, 0, 0.10, 0),
+    placed(new THREE.IcosahedronGeometry(0.038, 0), 0xc49972, 0, 0.18, 0),
+    placed(new THREE.CylinderGeometry(0.057, 0.057, 0.018, 8), 0xb58d44, 0, 0.215, 0),
+    placed(new THREE.CylinderGeometry(0.036, 0.046, 0.04, 8), 0xd1b469, 0, 0.235, 0),
+    placed(new THREE.BoxGeometry(0.024, 0.07, 0.026), 0x334c42, -0.021, 0.035, 0),
+    placed(new THREE.BoxGeometry(0.024, 0.07, 0.026), 0x334c42, 0.021, 0.035, 0),
+    placed(new THREE.CylinderGeometry(0.038, 0.026, 0.06, 7), 0x9c7745, -0.06, 0.09, 0.02),
+    placed(new THREE.ConeGeometry(0.025, 0.035, 5), 0xe4c86c, -0.06, 0.13, 0.02),
+  ], PIECE_MAT, true);
+  const arm = figure([
+    placed(new THREE.BoxGeometry(0.024, 0.024, 0.085), 0xc49972, 0.045, 0, 0.04),
+    placed(new THREE.BoxGeometry(0.013, 0.013, 0.11), 0x7c6847, 0.06, -0.012, 0.07),
+    placed(new THREE.TorusGeometry(0.034, 0.009, 3, 7, Math.PI), 0xb0b9af, 0.06, -0.01, 0.13),
+  ], PIECE_MAT, false);
+  return { body, arm };
 }

@@ -1,16 +1,16 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { BrickWall, Cloud, Mountain, Trees, Wheat } from "lucide-react";
+import { useEffect, useLayoutEffect, useRef, useState, type ComponentType, type SVGProps } from "react";
+import { ClaySymbol, GrainSymbol, OreSymbol, TimberSymbol, WoolSymbol } from "@/components/game/ResourceSymbols";
 import { RESOURCES, RESOURCE_LABEL, type Phase, type PlayerState, type Resource } from "@/lib/game/types";
 import { cn } from "@/lib/utils";
 import { useGame } from "@/lib/game/store";
 import "./hand-motion.css";
 
-export const RESOURCE_ICON: Record<Resource, typeof Trees> = {
-  timber: Trees,
-  clay: BrickWall,
-  wool: Cloud,
-  grain: Wheat,
-  ore: Mountain,
+export const RESOURCE_ICON: Record<Resource, ComponentType<SVGProps<SVGSVGElement>>> = {
+  timber: TimberSymbol,
+  clay: ClaySymbol,
+  wool: WoolSymbol,
+  grain: GrainSymbol,
+  ore: OreSymbol,
 };
 
 // Each card is the terrain cap's colour (docs/design/polish.md, #436); full class names so Tailwind can see them.
@@ -129,15 +129,17 @@ function ResourceCard({ resource, count, flash }: { resource: Resource; count: n
         data-testid={`resource-${resource}`}
         title={RESOURCE_LABEL[resource]}
         className={cn(
-          "goods-card relative flex h-[68px] flex-col items-center justify-center rounded-control bg-surface text-fg",
+          "goods-card relative flex h-[62px] flex-col items-center justify-center rounded-control bg-surface text-fg",
           "short:h-11 short:flex-row short:gap-2",
           count === 0 && "goods-empty",
         )}
       >
-        <Icon className="goods-icon size-4" style={{ color: `var(--${resource === "wool" || resource === "grain" ? `${resource}-side` : resource})` }} aria-hidden />
-        <span data-testid="hand-count" className="text-number font-bold tabular-nums short:leading-7">
-          {count}
-        </span>
+        <div className="goods-value flex items-center justify-center gap-1.5">
+          <Icon className="goods-icon size-5" style={{ color: `var(--${resource === "wool" || resource === "grain" ? `${resource}-side` : resource})` }} aria-hidden />
+          <span data-testid="hand-count" className="text-number font-bold tabular-nums short:leading-7">
+            {count}
+          </span>
+        </div>
         <span className="goods-label text-[11px] font-semibold leading-[14px] short:hidden">{RESOURCE_LABEL[resource]}</span>
         {flash ? (
           <span

@@ -20,22 +20,22 @@
   right: max(0.75rem, env(safe-area-inset-right));
 }
 
-/* Basalt Table palette. Existing player colours/marks remain in types.ts. */
+/* Jelly Ocean palette. Existing player colours/marks remain in types.ts. */
 @theme {
-  --color-bg: #e8ebe7;
-  --color-surface: #f7f8f4;
+  --color-bg: #eeece7;
+  --color-surface: #fff9f0;
   --color-raised: #ffffff;
-  --color-fg: #202927;
-  --color-muted: #58645e;
-  --color-border: #c2cbc3;
-  --color-control-line: #75837a;
-  --color-sea: #395f64;
-  --color-accent: #d6e5aa;
+  --color-fg: #263d3c;
+  --color-muted: #555e58;
+  --color-border: #cbcfc6;
+  --color-control-line: #78837a;
+  --color-sea: #158e9a;
+  --color-accent: #246d72;
   /* Text and text-on-fill ink (WCAG 1.4.3, 4.5:1). The brand swatches above are for fills that carry no text. */
-  --color-sea-ink: #32575d;
-  --color-accent-ink: #40542b;
+  --color-sea-ink: #246d72;
+  --color-accent-ink: #246d72;
   /* Opaque paper: the legacy glass utility now guarantees contrast on every terrain. */
-  --color-glass: #f7f8f4;
+  --color-glass: #fff9f0;
   --font-display: ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
 }
 
@@ -110,7 +110,7 @@ body {
   100% { opacity: 0; }
 }
 
-/* Basalt Table tokens (docs/design/visual-direction.md). `static` so every token is on :root before a screen adopts it. */
+/* Jelly Ocean tokens (docs/design/jelly-ocean.md). `static` so every token is on :root before a screen adopts it. */
 @theme static {
   --text-caption: 0.75rem;
   --text-caption--line-height: 1rem;
@@ -135,15 +135,15 @@ body {
   --radius-sheet: 20px;
 
   /* Resource fills are the terrain caps' base colours (src/lib/scene/palette.ts PAINT); `-on` is text on that fill, ≥ 4.5:1. */
-  --color-timber: #285b4b;
+  --color-timber: #2f6a4f;
   --color-timber-on: #ffffff;
-  --color-clay: #af4a32;
+  --color-clay: #b8533d;
   --color-clay-on: #ffffff;
-  --color-wool: #9eb873;
-  --color-wool-on: #202927;
-  --color-grain: #d1b14d;
-  --color-grain-on: #202927;
-  --color-ore: #616f80;
+  --color-wool: #b2ce80;
+  --color-wool-on: #263d3c;
+  --color-grain: #e3c462;
+  --color-grain-on: #263d3c;
+  --color-ore: #63748a;
   --color-ore-on: #ffffff;
   --color-danger: #b3261e;
   --color-gain: #10562a;
@@ -160,48 +160,48 @@ body {
   --ease-in: cubic-bezier(0.4, 0, 1, 1);
 }
 
-/* Basalt Table. Opaque ground guarantees contrast over every terrain. */
+/* Jelly Ocean. Opaque ground guarantees contrast over every terrain. */
 :root {
-  --table: #202a2b;
-  --table-raised: #2b3738;
-  --table-ink: #f7f8f4;
-  --table-muted: #bdc9c3;
-  --table-line: #81918a;
-  --paper: #f7f8f4;
-  --ground: #e8ebe7;
-  --ink: #202927;
-  --muted: #58645e;
-  --line: #c2cbc3;
-  --control-line: #75837a;
-  --accent: #d6e5aa;
-  --accent-ink: #40542b;
-  --sea: #395f64;
-  --sea-shallow: #56858a;
-  --timber: #285b4b; --timber-on: #ffffff; --timber-side: #173d35;
-  --clay: #af4a32; --clay-on: #ffffff; --clay-side: #74372b;
-  --wool: #9eb873; --wool-on: #202927; --wool-side: #617744;
-  --grain: #d1b14d; --grain-on: #202927; --grain-side: #8c722d;
-  --ore: #616f80; --ore-on: #ffffff; --ore-side: #414d5b;
-  --waste: #b9af91; --waste-side: #827963;
+  --table: #fff9f0;
+  --table-raised: #f2eee5;
+  --table-ink: #263d3c;
+  --table-muted: #555e58;
+  --table-line: #78837a;
+  --paper: #fff9f0;
+  --ground: #eeece7;
+  --ink: #263d3c;
+  --muted: #555e58;
+  --line: #cbcfc6;
+  --control-line: #78837a;
+  --accent: #246d72;
+  --accent-ink: #246d72;
+  --sea: #158e9a;
+  --sea-shallow: #65d8cb;
+  --timber: #2f6a4f; --timber-on: #ffffff; --timber-side: #173d35;
+  --clay: #b8533d; --clay-on: #ffffff; --clay-side: #74372b;
+  --wool: #b2ce80; --wool-on: #263d3c; --wool-side: #617744;
+  --grain: #e3c462; --grain-on: #263d3c; --grain-side: #8c722d;
+  --ore: #63748a; --ore-on: #ffffff; --ore-side: #414d5b;
+  --waste: #dfc99a; --waste-side: #827963;
   --gain: #10562a; --loss: #8a2219; --danger: #b3261e;
   --font-ui: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-numeral: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
   --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
   --space-5: 20px; --space-6: 24px; --space-8: 32px;
   --radius-card: 8px;
-  --shadow-control: 0 2px 0 rgb(0 0 0 / 0.16);
-  --shadow-sheet: 0 12px 32px rgb(11 24 23 / 0.24);
+  --shadow-control: 0 1px 0 rgb(24 51 45 / 0.12);
+  --shadow-sheet: 0 10px 28px rgb(24 51 45 / 0.18);
   --duration-gain: 2200ms;
   --duration-turn: 1800ms;
   --chat-sheet-height: min(420px, calc(100dvh - max(12px, env(safe-area-inset-top)) - 68px - var(--active-offer-height, 0px) - var(--active-prompt-height, 0px) - var(--keyboard-inset, 0px)));
 }
 .seat-card { background: var(--table); color: var(--table-ink); box-shadow: inset 0 0 0 1px var(--table-line); }
 .seat-card [class*='text-zinc-700'] { color: var(--table-muted); }
-.seat-card.seat-turn { background: var(--paper); color: var(--ink); box-shadow: inset 0 0 0 1px var(--paper); }
+.seat-card.seat-turn { background: var(--paper); color: var(--ink); box-shadow: inset 0 -2px 0 var(--accent), inset 0 0 0 1px var(--table-line); }
 .seat-card.seat-turn [class*='text-zinc-700'] { color: var(--muted); }
 .seat-card button:hover { background: var(--table-raised); color: var(--table-ink); }
 .seat-card.seat-turn button:hover { background: var(--ground); color: var(--ink); }
-.seat-card button:focus-visible { outline: 2px solid var(--paper); outline-offset: 2px; }
+.seat-card button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 .seat-turn .seat-dot { animation: none; outline: 2px solid var(--ink); outline-offset: 2px; }
 .seat-card [data-testid='seat-vp'] { font-weight: 750; }
 .hud-header > div > div > button[aria-label='Table menu'] { background: var(--table); color: var(--table-ink); border: 1px solid var(--table-line); }
@@ -210,8 +210,9 @@ body {
 .turn-instruction { min-height: 32px; line-height: 20px; }
 .turn-instruction-own { color: var(--table-ink); }
 .turn-instruction-own::before { content: ''; display: inline-block; width: 6px; height: 6px; background: var(--accent); border-radius: 50%; margin-right: 8px; vertical-align: 2px; }
-.goods-tray { background: var(--table); }
-.goods-card { box-shadow: var(--shadow-control); }
+.goods-tray { background: transparent; }
+.goods-card { box-shadow: var(--shadow-control); padding-top: 12px; }
+.goods-value [data-testid='hand-count'] { line-height: 28px; }
 .goods-empty { background: var(--ground); }
 .goods-empty .goods-icon { color: var(--muted) !important; }
 .hud-actions { display: flex; align-items: center; gap: 4px; padding: 4px; background: var(--table); border-radius: var(--radius-control); }
@@ -219,23 +220,24 @@ body {
 .build-tile { width: 100%; background: var(--table-raised); color: var(--table-ink); border-color: var(--table-line); }
 .build-tile[aria-disabled='true'] { color: var(--table-muted); }
 .build-tile [class*='text-muted'] { color: var(--table-muted); }
-.build-tile[aria-pressed='true'] { background: var(--paper); color: var(--ink); border-color: var(--paper); }
+.build-tile[aria-pressed='true'] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.build-tile[aria-pressed='true'] [class*='text-muted'] { color: var(--paper); }
 .build-tile .build-icon { display: none; }
 .build-ready-mark { color: var(--accent); }
 .action-utilities button, .hud-stack > .sticky button { background: var(--table-raised); color: var(--table-ink); border: 1px solid var(--table-line); }
-.action-utilities button.bg-fg { background: var(--paper); color: var(--ink); border-color: var(--paper); }
+.action-utilities button.bg-fg { background: var(--ink); color: var(--paper); border-color: var(--ink); }
 .action-utilities .sticky, .action-utilities > div { background: transparent; }
-.hud-actions button:focus-visible { outline-color: var(--paper); }
-.trade-dock { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 4px 12px; background: var(--table); color: var(--table-ink); border: 1px solid var(--accent); box-shadow: var(--shadow-control); }
+.hud-actions button:focus-visible { outline-color: var(--ink); }
+.trade-dock { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 4px 12px; background: var(--table); color: var(--table-ink); border: 1px solid var(--table-line); border-top: 2px solid var(--accent); box-shadow: var(--shadow-control); }
 .trade-clock { color: var(--accent); min-width: 3ch; text-align: right; }
 .trade-clock[data-urgent='true'] { font-weight: 800; font-size: 15px; }
 .trade-answers { min-width: 132px; }
-.trade-yes { background: var(--paper); color: var(--ink); }
+.trade-yes { background: var(--ink); color: var(--paper); }
 .trade-yes[aria-disabled='true'] { background: var(--table-raised); color: var(--table-muted); border: 1px solid var(--table-line); }
 .trade-no { background: var(--table-raised); color: var(--table-ink); border-color: var(--table-line); }
 .trade-wait, .trade-short { grid-column: 1 / -1; color: var(--table-muted); }
 .trade-short { color: var(--accent); }
-.trade-dock button:focus-visible { outline-color: var(--paper); }
+.trade-dock button:focus-visible { outline-color: var(--ink); }
 .turn-stamp { box-shadow: var(--shadow-control); font-weight: 750; letter-spacing: -0.8px; border-bottom: 3px solid var(--table); }
 .gain-stamp { box-shadow: var(--shadow-control); }
 .title-cover { box-shadow: var(--shadow-sheet); }
@@ -278,15 +280,15 @@ body {
   100% { opacity: 0; transform: translateY(-8px); }
 }
 @media (min-width: 768px) and (pointer: fine) {
-  .goods-card { height: 52px; padding-left: 18px; }
-  .goods-card .goods-icon { position: absolute; left: 14px; top: 18px; }
+  .goods-card { height: 52px; padding-top: 0; }
+  .goods-card .goods-icon { position: static; width: 18px; height: 18px; }
   .goods-card [data-testid='hand-count'] { font-size: 24px; line-height: 28px; }
   .trade-dock { padding: 6px 8px; }
 }
 .table-log[hidden] { display: none; }
 .action-utilities { flex-wrap: wrap; }
 @media (max-height: 480px) {
-  .goods-card { flex-direction: column; gap: 0; padding: 0; }
+  .goods-card { flex-direction: column; gap: 0; padding: 12px 0 0; }
   .goods-card .goods-icon { width: 12px; height: 12px; }
   .goods-card [data-testid='hand-count'] { font-size: 24px; line-height: 28px; }
   .build-tile > span:first-child { font-size: 10.5px; letter-spacing: -0.2px; }
@@ -299,7 +301,7 @@ body {
 .trade-above-chat { position: fixed; bottom: calc(var(--chat-sheet-height) + var(--keyboard-inset, 0px) + 8px); left: max(12px, env(safe-area-inset-left)); right: max(12px, env(safe-area-inset-right)); z-index: 40; }
 .build-tile [data-testid^='cost-'] > span:first-child { height: 16px; padding-left: 1.5px; padding-right: 1.5px; }
 .build-tile [data-testid^='cost-'] svg { width: 9px; height: 9px; }
-.hud-header button:focus-visible, .hud-utilities button:focus-visible { outline-color: var(--paper); }
+.hud-header button:focus-visible, .hud-utilities button:focus-visible { outline-color: var(--ink); }
 .hud-stack > .trade-dock { position: sticky; bottom: 0; z-index: 12; }
 .hud-stack { scroll-padding-bottom: calc(var(--trade-height, 0px) + 52px); }
 .hand-resource-flash { top: 0; right: 0; font-size: 11px; line-height: 12px; padding-left: 3px; padding-right: 3px; }

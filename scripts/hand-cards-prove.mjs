@@ -1,4 +1,4 @@
-// Basalt hand: readable chalk faces, stable counts, bounded movement on actual game actions,
+// Jelly Ocean hand: readable chalk faces, stable counts, bounded movement on actual game actions,
 // isolated/restarting deltas, clipping, quiet reconnect/hotseat baselines and fully static reduced motion.
 // The tests hold WAAPI timelines and wait for cue cleanup between samples.
 import assert from "node:assert/strict";
@@ -470,8 +470,8 @@ try {
     for (const r of RESOURCES) {
       const c = cards[r];
       const fill = parse(c.fill);
-      assert.deepEqual(fill, rgb(want[r] === 0 ? "#e8ebe7" : "#f7f8f4"), `${v.tag} ${r}: fill ${c.fill}`);
-      assert.deepEqual(parse(c.color), rgb("#202927"), `${v.tag} ${r}: count colour ${c.color}`);
+      assert.deepEqual(fill, rgb(want[r] === 0 ? "#eeece7" : "#fff9f0"), `${v.tag} ${r}: fill ${c.fill}`);
+      assert.deepEqual(parse(c.color), rgb("#263d3c"), `${v.tag} ${r}: count colour ${c.color}`);
       const cr = ratio(parse(c.color), fill);
       assert.ok(cr >= 4.5, `${v.tag} ${r}: count contrast ${cr.toFixed(2)}`);
       assert.equal(c.text, String(want[r]), `${v.tag} ${r}: count`);

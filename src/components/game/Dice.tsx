@@ -21,7 +21,7 @@ function Die({ value, big }: { value: number; big?: boolean }) {
       data-testid="die"
       data-value={value}
       className={cn(
-        "grid grid-cols-3 grid-rows-3 place-items-center bg-fg text-bg motion-safe:animate-[die-settle_150ms_ease-out]",
+        "grid grid-cols-3 grid-rows-3 place-items-center border border-control-line bg-surface text-fg motion-safe:animate-[die-settle_150ms_ease-out]",
         big ? "size-16 rounded-control p-2" : "size-9 rounded-[8px] p-1",
       )}
     >

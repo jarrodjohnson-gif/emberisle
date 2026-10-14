@@ -1,0 +1,128 @@
+[
+  {
+    "width": 1280,
+    "height": 720,
+    "name": "main",
+    "insets": {
+      "top": 68,
+      "right": 12,
+      "bottom": 180,
+      "left": 200
+    },
+    "hole": {
+      "width": 1068,
+      "height": 472
+    },
+    "stack": {
+      "width": 656,
+      "height": 156,
+      "top": 552
+    },
+    "smallTargets": []
+  },
+  {
+    "width": 1280,
+    "height": 720,
+    "name": "offer",
+    "insets": {
+      "top": 68,
+      "right": 12,
+      "bottom": 219,
+      "left": 200
+    },
+    "hole": {
+      "width": 1068,
+      "height": 433
+    },
+    "stack": {
+      "width": 656,
+      "height": 195,
+      "top": 513
+    },
+    "smallTargets": []
+  },
+  {
+    "width": 390,
+    "height": 844,
+    "name": "main",
+    "insets": {
+      "top": 68,
+      "right": 12,
+      "bottom": 250,
+      "left": 12
+    },
+    "hole": {
+      "width": 366,
+      "height": 526
+    },
+    "stack": {
+      "width": 366,
+      "height": 226,
+      "top": 606
+    },
+    "smallTargets": []
+  },
+  {
+    "width": 390,
+    "height": 844,
+    "name": "offer",
+    "insets": {
+      "top": 68,
+      "right": 12,
+      "bottom": 353,
+      "left": 12
+    },
+    "hole": {
+      "width": 366,
+      "height": 423
+    },
+    "stack": {
+      "width": 366,
+      "height": 329,
+      "top": 503
+    },
+    "smallTargets": []
+  },
+  {
+    "width": 844,
+    "height": 390,
+    "name": "main",
+    "insets": {
+      "top": 68,
+      "right": 12,
+      "bottom": 12,
+      "left": 284
+    },
+    "hole": {
+      "width": 548,
+      "height": 310
+    },
+    "stack": {
+      "width": 260,
+      "height": 310,
+      "top": 68
+    },
+    "smallTargets": []
+  },
+  {
+    "width": 844,
+    "height": 390,
+    "name": "offer",
+    "insets": {
+      "top": 68,
+      "right": 12,
+      "bottom": 12,
+      "left": 284
+    },
+    "hole": {
+      "width": 548,
+      "height": 310
+    },
+    "stack": {
+      "width": 260,
+      "height": 310,
+      "top": 68
+    },
+    "smallTargets": []
+  }
+]

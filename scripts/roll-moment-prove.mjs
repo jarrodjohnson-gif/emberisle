@@ -243,7 +243,7 @@ async function settleChecks(page, tag, { applied, dice }, { reduced = false } = 
   check(Math.abs(m.centreX - m.vw / 2) <= m.vw * 0.1, `${tag}: centred horizontally (${m.centreX.toFixed(0)} of ${m.vw}, ±10 %)`);
   check(Math.abs(m.centreY - m.vh / 2) <= m.vh * 0.1, `${tag}: centred vertically (${m.centreY.toFixed(0)} of ${m.vh}, ±10 %)`);
   check(m.fontSize >= 48, `${tag}: the sum is ${m.fontSize}px (≥ 48)`);
-  check(m.sumColor === (sum === 7 ? "rgb(179, 38, 30)" : "rgb(32, 41, 39)"), `${tag}: the sum is ${sum === 7 ? "danger on a 7" : "ink"} (${m.sumColor})`);
+  check(m.sumColor === (sum === 7 ? "rgb(179, 38, 30)" : "rgb(38, 61, 60)"), `${tag}: the sum is ${sum === 7 ? "danger on a 7" : "ink"} (${m.sumColor})`);
   check(m.rowHidden === true && m.shown.length === 1 && m.shown[0] === "roll-sum", `${tag}: while it is up the roll is on screen once (${JSON.stringify(m.shown)})`);
   check(!late.moment && gone - stall.gone <= 1400, `${tag}: gone by 1400 ms of the roll being applied (${gone.toFixed(0)} ms, ${stall.gone.toFixed(0)} of them stalled)`);
   check(late.rowVisible && late.row.join() === dice.join(), `${tag}: the resting row shows the same faces (${late.row})`);

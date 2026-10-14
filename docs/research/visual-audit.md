@@ -1,3 +1,5 @@
+> The current approved direction is [Jelly Ocean](../design/jelly-ocean.md). The earlier Basalt exploration below is retained for reference.
+
 # Emberisle visual audit — Basalt Table
 
 13 October 2026. Baseline commit: `9a27031`; integrated main through `0196789`. Recommendation, three directions, component specifications and build order: [visual-direction.md](../design/visual-direction.md).
