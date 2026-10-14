@@ -18,6 +18,11 @@ const FILES = {
   win: "pluck_001.wav",
   // Reused as the your-turn chime.
   chip_gain: "click_005.wav",
+  // Synthesised by scripts/make-sounds.mjs (docs/design/sound.md).
+  wayfarer_move: "wayfarer_move.wav",
+  trade_offer: "trade_offer.wav",
+  chat_send: "chat_send.wav",
+  chat_recv: "chat_recv.wav",
 } as const;
 
 export type SoundName = keyof typeof FILES;
@@ -70,8 +75,27 @@ export function useMuted() {
   return useSyncExternalStore(subscribe, isMuted, () => false);
 }
 
-export function play(name: SoundName) {
-  if (!unlocked || muted || typeof Audio === "undefined") return;
+// A clip never starts twice within GAP_MS of its last request (a burst is one sound), and clips start at least GAP_MS apart
+// in the order asked, so a bot round of five moves is five separate sounds. A backlog past MAX_QUEUE is dropped, not played late.
+const GAP_MS = 150;
+const MAX_QUEUE = 8;
+const asked = new Map<SoundName, number>();
+const queue: [SoundName, number][] = [];
+let pacing = false;
+
+function pump() {
+  const next = queue.shift();
+  if (!next) {
+    pacing = false;
+    return;
+  }
+  pacing = true;
+  start(...next);
+  setTimeout(pump, GAP_MS);
+}
+
+function start(name: SoundName, volume: number) {
+  if (muted) return;
   try {
     let clip = clips.get(name);
     if (!clip) {
@@ -79,10 +103,20 @@ export function play(name: SoundName) {
       clips.set(name, clip);
     }
     clip.currentTime = 0;
+    clip.volume = volume;
     clip.play()?.catch(() => {});
   } catch {
     // a blocked or unsupported file stays quiet
   }
+}
+
+export function play(name: SoundName, volume = 1) {
+  if (!unlocked || muted || typeof Audio === "undefined") return;
+  const now = Date.now();
+  if (now - (asked.get(name) ?? -GAP_MS) < GAP_MS || queue.length >= MAX_QUEUE) return;
+  asked.set(name, now);
+  queue.push([name, volume]);
+  if (!pacing) pump();
 }
 
 // The your-turn chime, with a short buzz on phones that have a motor.
