@@ -99,6 +99,9 @@ export interface TradeOffer {
   want: Partial<Record<Resource, number>>;
 }
 
+export type VictoryTarget = 7 | 10;
+export type WinTrigger = "outpost" | "stronghold" | "longestPath" | "largestArmy" | "pointFortune" | "turnStart" | "points";
+
 export interface GameState {
   seed: number;
   rng: number;
@@ -120,6 +123,10 @@ export interface GameState {
   longestRoad: string | null;
   largestArmy: string | null;
   winner: string | null;
+  // Optional for existing saves; absent means the standard ten-point game.
+  victoryTarget?: VictoryTarget;
+  // Written only when the game ends, then persisted with the final state.
+  winReason?: { trigger: WinTrigger; points: number; target: VictoryTarget };
   bank: Record<Resource, number>;
   deck: DevKind[];
   // Online the host hides the deck order and sends only its size (server/host.mjs).

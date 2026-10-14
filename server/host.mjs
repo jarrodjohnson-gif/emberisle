@@ -388,7 +388,7 @@ function watchView(game) {
 function closedView(game, you) {
   // The seed rebuilds the whole fortune deck, and rng predicts which card a steal takes (#111).
   // Other players' hands go out as a count only, like cards held face down (#186).
-  const { seed, rng, ...open } = game;
+  const { seed, rng, winReason, ...open } = game;
   return {
     ...open,
     deck: [],
