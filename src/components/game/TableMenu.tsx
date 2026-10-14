@@ -24,7 +24,7 @@ export function TableMenu() {
   const goTitle = useGame((s) => s.goTitle);
   const water = useGame((s) => s.water?.path ?? "crystal");
   const setWaterChoice = useGame((s) => s.setWaterChoice);
-  const view = useGame((s) => s.viewChoice);
+  const view = useGame((s) => s.playView);
   const setViewChoice = useGame((s) => s.setViewChoice);
   const muted = useMuted();
   const { state: copied, copy, reset } = useCopy<"code">();
@@ -187,7 +187,8 @@ export function TableMenu() {
                   ))}
                 </span>
               </div>
-              {/* The camera in play (#597): the tilted diorama or the overhead board; remembered like the water. */}
+              {/* The camera in play (#597): the tilted diorama or the overhead board; remembered like the water. Unchosen, it shows
+                  the renderer's default for the screen's shape. */}
               <div role="group" aria-label="View" data-testid="view-toggle" className="flex h-11 items-center gap-2 px-3 text-body">
                 <Box className={ICON} /> View
                 <span className="ml-auto flex gap-1">

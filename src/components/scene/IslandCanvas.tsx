@@ -30,6 +30,7 @@ export default function IslandCanvas() {
     (window as unknown as { __isle: IsleRenderer }).__isle = renderer;
     // Reported from inside sync (and later by the probe), so the store update waits for sync to finish.
     renderer.onWater = (water) => queueMicrotask(() => useGame.setState({ water }));
+    renderer.onView = (playView) => queueMicrotask(() => useGame.setState({ playView }));
     let action = "";
     let chrome = "";
     const sync = () => {

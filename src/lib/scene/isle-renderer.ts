@@ -8,6 +8,7 @@ import {
   PICK_EDGE,
   PICK_VERTEX_RADIUS,
   chromeInsets,
+  defaultView,
   fitDiorama,
   fitOrtho,
   freeMaxDistance,
@@ -125,17 +126,20 @@ const _q = new THREE.Vector3();
 const _n = new THREE.Vector3();
 
 // Number tokens in the diorama view (docs/design/tokens.md "Angle"): each turns to face the camera's azimuth and pitches
-// TOKEN_TILT toward it, resting on its near edge, and grows (up to TOKEN_MAX_SCALE) until its numeral is TOKEN_NUMERAL_PX
-// tall on screen; zoomed in, it is its own size again. TOKEN_GLYPH is the numeral's height on the face, world units.
-const TOKEN_TILT = (40 * Math.PI) / 180;
+// TOKEN_TILT toward it, resting on its near edge, and grows until its numeral is TOKEN_NUMERAL_PX tall on screen, but never
+// past 1.25x nor past 38% of a hex's width (the disc is 0.68 across, a hex SQRT3 * HEX_SIZE, so that cap is the one that
+// binds, at 1.08x), and shrinks while its disc would overlap another's on screen. Zoomed in, it is its own size again.
+// TOKEN_GLYPH is the numeral's height on the face, world units.
+const TOKEN_TILT = (22 * Math.PI) / 180;
 const TOKEN_NUMERAL_PX = 12;
-const TOKEN_MAX_SCALE = 1.7;
+const TOKEN_MAX_SCALE = Math.min(1.25, (0.38 * SQRT3 * HEX_SIZE) / 0.68);
 const TOKEN_GLYPH = 0.254;
-// A tree standing between a token and the diorama camera (in front of it, within TREE_SHADE_DEPTH, and within
-// TREE_SHADE_SIDE of the line of sight) would hide the numeral at this angle: it is drawn at TREE_SHADE_SCALE, a sapling.
+// A tree standing between a token and the diorama camera (in front of it within TREE_SHADE_DEPTH, within TREE_SHADE_SIDE of
+// the line of sight) can hide part of the numeral at this angle (tokens-prove check 7 finds one or two on a deal): it is
+// drawn at TREE_SHADE_SCALE.
 const TREE_SHADE_DEPTH = 1.7;
 const TREE_SHADE_SIDE = 0.55;
-const TREE_SHADE_SCALE = 0.45;
+const TREE_SHADE_SCALE = 0.7;
 
 export class IsleRenderer {
   private renderer: THREE.WebGLRenderer;
@@ -143,9 +147,10 @@ export class IsleRenderer {
   private camera: THREE.PerspectiveCamera;
   private ortho = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 80);
   private persp = new THREE.PerspectiveCamera(24, 1, 0.5, 160);
-  // Free on the title and in the lobby; in play, the player's choice from the table menu (`playView`, diorama by default).
+  // Free on the title and in the lobby; in play, the player's choice from the table menu, or with none, `defaultView` for
+  // the canvas's shape (overhead on a portrait canvas, the diorama otherwise).
   view: "free" | PlayView = "free";
-  private playView: PlayView = "diorama";
+  private viewChoice: PlayView | null = null;
   // The diorama lens as last posed: focal length (px), fitted distance, and where its axis meets the canvas.
   private lens: DioramaFit = { focal: 1, dist: 1, cx: 0, cy: 0 };
   private tokens: THREE.Object3D[] = [];
@@ -217,6 +222,8 @@ export class IsleRenderer {
   // reloaded page rejoins its table).
   waterPath: WaterPath = "simple";
   onWater: (w: WaterStatus) => void = () => {};
+  // The play view now shown, for the table menu's View row.
+  onView: (v: PlayView) => void = () => {};
   private choice: WaterPath | null = null;
   private waterSet = false;
   private probed: { path: WaterPath; ms: number } | null = null;
@@ -390,13 +397,18 @@ export class IsleRenderer {
     if (v !== this.titleMode) this.wake();
     this.titleMode = v;
     this.ssao.enabled = !v && !this.play();
-    this.setView(v ? "free" : this.playView);
+    this.setView(v ? "free" : this.playView());
   }
 
   // The player's view in play, from the table menu: the tilted diorama (the default) or the overhead board.
-  setPlayView(v: PlayView) {
-    this.playView = v;
-    if (this.play()) this.setView(v);
+  setPlayView(v: PlayView | null) {
+    this.viewChoice = v;
+    if (this.play()) this.setView(this.playView());
+  }
+
+  private playView(): PlayView {
+    const c = this.renderer.domElement;
+    return this.viewChoice ?? defaultView(c.clientWidth || 1, c.clientHeight || 1);
   }
 
   private play() {
@@ -445,6 +457,7 @@ export class IsleRenderer {
     if (view === this.view) return;
     this.wake();
     this.view = view;
+    if (view !== "free") this.onView(view);
     const play = this.play();
     this.controls.enabled = !play;
     this.orbit.enabled = play;
@@ -654,6 +667,8 @@ export class IsleRenderer {
     const c = this.renderer.domElement;
     const w = (this.sizeW = c.clientWidth || 1);
     const h = (this.sizeH = c.clientHeight || 1);
+    // A phone turned upright or on its side changes the default view (setView resizes again, in the new view).
+    if (this.play() && this.view !== this.playView()) return this.setView(this.playView());
     this.camera.aspect = w / h;
     // Dolly limit: OrbitControls.update() clamps the current distance to the new max on the next frame.
     this.controls.maxDistance = freeMaxDistance(h, hudInsets(w, h, this.coarse(), this.safe()), this.coarse());
@@ -808,29 +823,42 @@ export class IsleRenderer {
     return (this.tokens.find((t) => t.userData.hex === hexId)?.userData.lift as number | undefined) ?? 0;
   }
 
-  // Tokens face the diorama camera (TOKEN_TILT toward it, turned to its azimuth) and grow until the numeral is
-  // TOKEN_NUMERAL_PX tall there; in the other views they lie flat at their own size. The wayfarer keeps standing on his.
+  // Tokens face the diorama camera (TOKEN_TILT toward it, turned to its azimuth) and grow toward a TOKEN_NUMERAL_PX numeral
+  // within TOKEN_MAX_SCALE, then shrink where two discs would overlap on screen; in the other views they lie flat at their
+  // own size. The wayfarer keeps standing on his.
   private poseTokens() {
     const diorama = this.view === "diorama";
     const az = diorama ? this.orbit.getAzimuthalAngle() : 0;
     // The face's normal once tilted and turned.
     _n.set(Math.sin(TOKEN_TILT) * Math.sin(az), Math.cos(TOKEN_TILT), Math.sin(TOKEN_TILT) * Math.cos(az));
     const cam = this.persp.position;
-    for (const t of this.tokens) {
-      let s = 1;
-      if (diorama) {
-        const d = _p.copy(t.position).sub(cam);
-        const along = d.dot(this.persp.getWorldDirection(_q));
-        const facing = Math.max(0.2, -d.normalize().dot(_n));
-        s = Math.min(TOKEN_MAX_SCALE, Math.max(1, (TOKEN_NUMERAL_PX * along) / (this.lens.focal * TOKEN_GLYPH * facing)));
+    // Each disc on screen: its centre, and its half-width and half-height at scale 1 (the tilt foreshortens the height).
+    const discs = this.tokens.map((t) => {
+      if (!diorama) return { s: 1, x: 0, y: 0, rx: 0, ry: 0 };
+      const d = _p.copy(t.position).sub(cam);
+      const along = d.dot(this.persp.getWorldDirection(_q));
+      const facing = Math.max(0.2, -d.normalize().dot(_n));
+      const s = Math.min(TOKEN_MAX_SCALE, Math.max(1, (TOKEN_NUMERAL_PX * along) / (this.lens.focal * TOKEN_GLYPH * facing)));
+      const at = this.screenAt(t.position.x, t.position.y, t.position.z);
+      const rx = (0.34 * this.lens.focal) / along;
+      return { s, x: at.x, y: at.y, rx, ry: rx * facing };
+    });
+    if (diorama) for (let i = 0; i < discs.length; i++) {
+      for (let j = i + 1; j < discs.length; j++) {
+        const [a, b] = [discs[i]!, discs[j]!];
+        const k = Math.hypot((a.x - b.x) / (a.rx * a.s + b.rx * b.s), (a.y - b.y) / (a.ry * a.s + b.ry * b.s));
+        if (k < 1) [a.s, b.s] = [a.s * k, b.s * k];
       }
+    }
+    this.tokens.forEach((t, i) => {
+      const s = discs[i]!.s;
       // The near edge of the 0.34 x 0.06 disc stays where the flat disc's underside was.
       const lift = diorama ? s * (0.34 * Math.sin(TOKEN_TILT) + 0.03 * Math.cos(TOKEN_TILT)) - 0.03 : 0;
       t.rotation.set(diorama ? TOKEN_TILT : 0, az, 0, "YXZ");
       t.scale.setScalar(s);
       t.position.y = (t.userData.restY as number) + lift;
       t.userData.lift = lift;
-    }
+    });
     const key = diorama ? `${az.toFixed(2)}|${this.lastLand}` : "";
     if (key !== this.shadedFor) {
       this.shadedFor = key;

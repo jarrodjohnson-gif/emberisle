@@ -127,12 +127,13 @@ function savedWater(): WaterPath | null {
   }
 }
 
-// The table's camera in play (#597): the tilted diorama unless the player chose overhead.
-function savedView(): PlayView {
+// The table's camera in play (#597) as the player chose it, or null for the default for the screen's shape.
+function savedView(): PlayView | null {
   try {
-    return localStorage.getItem(VIEW_KEY) === "overhead" ? "overhead" : "diorama";
+    const v = localStorage.getItem(VIEW_KEY);
+    return v === "diorama" || v === "overhead" ? v : null;
   } catch {
-    return "diorama";
+    return null;
   }
 }
 
@@ -297,8 +298,11 @@ interface GameStore {
   waterChoice: WaterPath | null;
   setWaterChoice: (v: WaterPath) => void;
   water: WaterStatus | null;
-  // The camera in play, from the table menu, remembered like the water: the tilted diorama (default) or the overhead board.
-  viewChoice: PlayView;
+  // The camera in play, from the table menu, remembered like the water: the tilted diorama or the overhead board; null
+  // until the player picks, which leaves the renderer's default (overhead on a portrait screen, the diorama otherwise).
+  viewChoice: PlayView | null;
+  // The view the renderer shows in play now, chosen or default.
+  playView: PlayView;
   setViewChoice: (v: PlayView) => void;
   // Ask-the-table trades (docs/BUILD_BIBLE.md 4.4): the open offer, who has said No to it, and the asker's closing line.
   offer: OpenOffer | null;
@@ -435,6 +439,7 @@ export const useGame = create<GameStore>((set, get) => ({
   waterChoice: savedWater(),
   water: null,
   viewChoice: savedView(),
+  playView: "diorama",
   offer: null,
   declined: [],
   tradeOutcome: null,
