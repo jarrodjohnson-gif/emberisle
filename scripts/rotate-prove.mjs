@@ -1,6 +1,6 @@
 // #521: a phone that rotates (390x844 <-> 844x390, 360x640 <-> 640x360) or a window that resizes refits the island to the
 // hole the HUD leaves now. Within 3 animation frames of the change `__isle.fit` is the fit that hole asks for (not the old
-// one, not a stale aspect); once the glide ends the camera's frustum is that fit, the drawing buffer is the canvas's size
+// one, not a stale aspect); once the glide ends the camera is on that fit (the overhead frustum upright, the diorama lens on its side, #597), the drawing buffer is the canvas's size
 // (no stretch), and every corner of the island is inside the hole. The oracle is a fresh load: the island's settled
 // bounding box after each rotation of one page is within 10 % of the box a fresh page at that viewport draws. Zero console errors. Run: npm run rotate-prove
 import { existsSync } from "node:fs";
@@ -25,15 +25,20 @@ const check = (ok, what, data) => {
 // The fit the hole asks for right now, whether `__isle.fit` is it, and (once settled) the camera and corners against it.
 const look = (page) =>
   page.evaluate(async () => {
-    const { fitOrtho, OVERHEAD_LEAN } = await import("/src/lib/scene/mobile-fit.ts");
+    const { defaultView, fitDiorama, fitOrtho, OVERHEAD_LEAN } = await import("/src/lib/scene/mobile-fit.ts");
     const isle = window.__isle;
     const c = document.querySelector("canvas");
     const hole = isle.insets();
-    const want = fitOrtho(c.clientWidth, c.clientHeight, hole, OVERHEAD_LEAN);
-    const keys = ["left", "right", "top", "bottom", "x", "z"];
-    const fresh = isle.fit !== null && keys.every((k) => Math.abs(want[k] - isle.fit[k]) < 1e-6);
-    const o = isle.ortho;
-    const onCamera = keys.slice(0, 4).every((k) => Math.abs(o[k] - want[k]) < 1e-3);
+    // The view is the default for the canvas's shape (#597): overhead upright, the diorama on its side. Overhead, the frustum
+    // is the fit; diorama, the lens is.
+    const view = defaultView(c.clientWidth, c.clientHeight);
+    const want = view === "overhead" ? fitOrtho(c.clientWidth, c.clientHeight, hole, OVERHEAD_LEAN) : fitDiorama(c.clientWidth, c.clientHeight, hole);
+    const keys = Object.keys(want);
+    const fresh = isle.view === view && isle.fit !== null && keys.every((k) => Math.abs(want[k] - isle.fit[k]) < 1e-6);
+    const onCamera =
+      view === "overhead"
+        ? ["left", "right", "top", "bottom"].every((k) => Math.abs(isle.ortho[k] - want[k]) < 1e-3)
+        : keys.every((k) => Math.abs(isle.lens[k] - want[k]) < 1e-3);
     const gl = isle.renderer.domElement;
     const stretched = gl.width !== Math.round(c.clientWidth * isle.renderer.getPixelRatio()) || gl.height !== Math.round(c.clientHeight * isle.renderer.getPixelRatio());
     const outside = [];
@@ -41,7 +46,7 @@ const look = (page) =>
       const p = isle.screenOf(v.id);
       if (p.x < hole.left - 1 || p.x > c.clientWidth - hole.right + 1 || p.y < hole.top - 1 || p.y > c.clientHeight - hole.bottom + 1) outside.push(v.id);
     }
-    return { size: `${c.clientWidth}x${c.clientHeight}`, fresh, onCamera, stretched, outside: outside.length, due: isle.refitDue, glide: isle.glide !== null };
+    return { size: `${c.clientWidth}x${c.clientHeight}`, view: isle.view, fresh, onCamera, stretched, outside: outside.length, due: isle.refitDue, glide: isle.glide !== null };
   });
 const frames = (page, n) =>
   page.evaluate(async (n) => { for (let i = 0; i < n; i++) await new Promise((r) => requestAnimationFrame(r)); }, n);
