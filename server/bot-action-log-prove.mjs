@@ -31,7 +31,7 @@ function balance(game) {
   for (const r of RESOURCES) game.bank[r] = 19 - game.players.reduce((n, p) => n + p.resources[r], 0);
 }
 
-// A controlled production roll uses the same real store path, and bankShort still finds the shortage directly after it.
+// A controlled production roll uses the real store path and keeps the shortage in its one event.
 {
   const game = setup(8);
   game.phase = "roll";
@@ -60,13 +60,13 @@ function balance(game) {
   });
   const state = hostPractice(game);
   Object.defineProperty(globalThis, "crypto", { configurable: true, value: originalCrypto });
-  const rollLine = state.state.log.find((line) => /^Bot rolled for .+: 4\+4 = 8\.$/.test(line));
+  const rollLine = state.state.log.find((line) => / — .+'s roll[;.]/.test(line));
   assert(rollLine);
   assert.equal(state.state.log.filter((line) => line === rollLine).length, 1);
   assert.deepEqual(bankShort(state.state), ["ore"]);
   const i = state.state.log.indexOf(rollLine);
-  assert.match(state.state.log[i + 1], /^The bank is short of ore;/);
-  console.log("practice roll: the bot marker remains parseable and bank shortage stays adjacent");
+  assert.match(state.state.log[i], /the bank is short of ore;/);
+  console.log("practice roll: canonical goods event retains the bank shortage");
 }
 
 // A legal path build runs through store.runBots -> dispatch, and is represented once in both logs.
@@ -81,7 +81,7 @@ function balance(game) {
   assert.equal(chooseBotAction(game, "p0").type, "buildPath");
   const beforePaths = bot.pathsLeft;
   const state = hostPractice(game);
-  const line = `Bot built a path for ${botName}.`;
+  const line = `${bot.name} spends 1 timber, 1 clay — path.`;
   assert.equal(state.state.log.filter((entry) => entry === line).length, 1);
   assert.equal(state.gameLog.filter((entry) => entry.text === line).length, 1);
   assert.equal(state.state.players.find((p) => p.id === "p0").pathsLeft, beforePaths - 1);
@@ -105,7 +105,7 @@ function balance(game) {
   assert.equal(action.give, "timber");
   const beforeWanted = bot.resources[action.want];
   const state = hostPractice(game);
-  const line = `Bot traded with the bank for ${botName}: 4 timber for 1 ${action.want}.`;
+  const line = `${bot.name} gains 1 ${action.want}; ${bot.name} loses 4 timber — bank trade.`;
   assert.equal(state.state.log.filter((entry) => entry === line).length, 1);
   assert.equal(state.gameLog.filter((entry) => entry.text === line).length, 1);
   assert.equal(state.state.players.find((p) => p.id === "p0").resources.timber, 1);
@@ -153,9 +153,9 @@ for (const [game, expectsLeader] of [[leaderFixture, true], [neutralFixture, fal
   const beforeVictimGoods = Object.values(victim.resources).reduce((sum, n) => sum + n, 0);
   const beforeActorGoods = Object.values(actor.resources).reduce((sum, n) => sum + n, 0);
   const state = hostPractice(game);
-  const lines = state.state.log.filter((entry) => entry.startsWith(`Bot played Wayfarer for ${actorName};`));
+  const lines = state.state.log.filter((entry) => entry.startsWith(`${actor.name} plays Wayfarer —`));
   assert.equal(lines.length, 1);
-  assert(lines[0].includes(`stole one card from ${victim.name}`));
+  assert(lines[0].includes(`${victim.name} loses 1 good`));
   assert.equal(lines[0].includes("public leader"), expectsLeader);
   assert(!lines[0].match(/\b(timber|clay|wool|grain|ore)\b/i));
   assert(!lines[0].match(/\b(point|VP|fortune card)\b/i));
@@ -179,12 +179,12 @@ console.log("practice Wayfarer: public leader rationale matches the selected vic
   assert.deepEqual(second, first);
   const a = applyAction(ordinary, "p0", first).state;
   const b = applyAction(privatePoints, "p0", second).state;
-  const firstLine = a.log.find((entry) => entry.includes("sends the wayfarer"));
-  const secondLine = b.log.find((entry) => entry.includes("sends the wayfarer"));
+  const firstLine = a.log.find((entry) => entry.includes("plays Wayfarer"));
+  const secondLine = b.log.find((entry) => entry.includes("plays Wayfarer"));
   const logA = logBotAction(ordinary, a, first, "p0", "Tide").log;
   const logB = logBotAction(privatePoints, b, second, "p0", "Tide").log;
   assert(firstLine && secondLine);
-  assert.equal(logA.find((line) => line.startsWith("Bot played Wayfarer")), logB.find((line) => line.startsWith("Bot played Wayfarer")));
+  assert.equal(logA.find((line) => line.includes(" plays Wayfarer —")), logB.find((line) => line.includes(" plays Wayfarer —")));
 }
 {
   const game = setup(19);
@@ -198,7 +198,7 @@ console.log("practice Wayfarer: public leader rationale matches the selected vic
   const next = applyAction(game, "p0", action);
   assert.ifError(next.error);
   const logged = logBotAction(game, next.state, action, "p0", "Ember");
-  assert(logged.log.at(-1).includes("stole one card from"));
+  assert(logged.log.at(-1).includes("loses 1 good"));
   assert(!logged.log.at(-1).includes("timber"));
   console.log("implicit victim: a null selected id is named only when the rules actually steal from the sole target");
 }
@@ -212,7 +212,7 @@ console.log("practice Wayfarer: public leader rationale matches the selected vic
   const before = chooseBotAction(game, "p0");
   const state = hostPractice(game);
   assert.deepEqual(before, action);
-  const line = state.state.log.find((entry) => entry.startsWith("Bot played Wayfarer for "));
+  const line = state.state.log.find((entry) => entry.includes(" plays Wayfarer —"));
   assert(line);
   assert(!line.includes("public leader"));
   console.log("hidden VP: raising the victim's unrevealed points does not create a public leader claim");

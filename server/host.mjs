@@ -148,7 +148,7 @@ function say(room, text) {
   broadcast(room, { type: "log", text });
 }
 
-// The engine keeps only the last 41 log lines (rules.ts `log`), so once the log is full its length never grows and
+// The engine keeps only the last 200 log lines (rules.ts `log`), so once the log is full its length never grows and
 // `after.slice(before.length)` is empty (#319: the winner line never reached a seat). The new lines are what follows
 // the longest tail of the old log that the new one still starts with.
 function newLog(before, after) {
@@ -1017,7 +1017,7 @@ function respond(room, actor, yes) {
     const recovery = (room.recoveryPids ?? []).includes(actor);
     const line = recovery ? `Bot declined a trade for ${room.seats.find((s) => s.pid === actor)?.name ?? name.replace(/ \(bot\)$/i, "")}.` : `${name} declines.`;
     if (recovery) {
-      room.game = { ...room.game, log: [...room.game.log.slice(-40), line] };
+      room.game = { ...room.game, log: [...room.game.log.slice(-199), line] };
       save(room);
     }
     say(room, line);
@@ -1043,7 +1043,9 @@ function respond(room, actor, yes) {
   const accepted = applyAction(offered.state, actor, { type: "respondTrade", accept: true });
   if (accepted.error) return accepted.error;
   closeOffer(room);
-  room.game = accepted.state;
+  const tradeLines = newLog(room.game.log, accepted.state.log).filter((line) => !line.includes(" offers a trade to "));
+  room.game = { ...accepted.state, log: [...room.game.log, ...tradeLines].slice(-200) };
+  for (const line of tradeLines) say(room, line);
   // The asker's trade went through: that is their action, so their window restarts (pushState re-arms it).
   const asker = room.seats.find((s) => s.pid === offer.from);
   if (asker) disarmTurn(asker);

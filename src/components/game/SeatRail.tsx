@@ -15,6 +15,11 @@ import { cards, hiddenCount, publicVP } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
 import { cn } from "@/lib/utils";
 
+// Same reminder for every viewer and hand; its presence never signals a held point card.
+export function HiddenPointHint() {
+  return <p data-testid="hidden-point-hint" className="rounded-control px-2 text-xs leading-3" style={{ background: "var(--table)", color: "var(--table-muted)" }}>Hidden fortunes may add points.</p>;
+}
+
 // The seat's roll-off die, "–" until it rolls this round; gone once the roll-off is settled (docs/design/first-player.md).
 function RollOffDie({ state, id, className }: { state: GameState; id: string; className: string }) {
   if (!state.rollOff || state.phase !== "rollOff") return null;
@@ -140,6 +145,7 @@ export function SeatRail({ actor }: { actor: string }) {
           {menuFor === p.id ? <PlayerMenu player={p} /> : null}
         </div>
       ))}
+      <HiddenPointHint />
     </aside>
   );
 }
