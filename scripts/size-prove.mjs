@@ -14,7 +14,7 @@ import { gzipSync } from "node:zlib";
 const DIR = "dist/assets";
 const BUDGETS = [
   // 2026-10-14 (#598): +600 B for the Water toggle, its store state and the probe; the old ceiling was 300 B away.
-  // #545: +1.60 kB for creation controls, practice-win progression and three-mode rules (~1.45 kB added).
+  // #545: +1.60 kB for creation controls, practice-win progression, contextual help and three-mode rules (~1.16 kB added).
   { name: "index", gzipBytes: 118500 },
   { name: "IslandCanvas", gzipBytes: 182830 },
   { name: "online", gzipBytes: 8000 },

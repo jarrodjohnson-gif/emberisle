@@ -26,7 +26,7 @@ for(const mode of ['on','gentle','off']){
  for(let n=1;n<=3;n++){s.playedCard=false;s.phase=n===2?'main':'roll';const phase=s.phase,hexId=mode==='off'?'':s.hexes.find(h=>h.id!==s.robberHex).id;
   if(mode==='off'){const bad=applyAction(s,'p0',{type:'playKnight',hexId:s.robberHex,stealFrom:null});assert.ok(bad.error);assert.equal(bad.state,s);}
   s=act(s,'p0',{type:'playKnight',hexId,stealFrom:null});assert.equal(s.phase,phase);assert.equal(s.players[0].knightsPlayed,n);assert.equal(s.players[0].hidden.knight,4-n);assert.ok(applyAction(s,'p0',{type:'playKnight',hexId,stealFrom:null}).error);
-  if(mode==='off'){assert.equal(s.hexes.some(h=>h.blocked),false);assert.match(s.log.at(-1),/Muster|musters/);}
+  if(mode==='off'){assert.equal(s.hexes.some(h=>h.blocked),false);assert.match(s.log.at(-1),/plays Wayfarer/);}
  }
  assert.equal(s.largestArmy,'p0');assert.equal(publicVP(s,'p0'),2);
  s.playedCard=false;s.players[0].boughtThisTurn.knight=1;assert.ok(applyAction(s,'p0',{type:'playKnight',hexId:mode==='off'?'':s.hexes.find(h=>h.id!==s.robberHex).id,stealFrom:null}).error);
