@@ -601,7 +601,7 @@ ok("a path cannot continue past an opponent's building (check 8 above)", true);
     wrong.error ?? r.error,
   );
   // #187: the shared log says a card moved, never which one.
-  const line = r.state.log.find((l) => l.includes("steals"));
+  const line = r.state.log.find((l) => l.includes("gains 1 good;"));
   ok("the stolen card stays between the two players", Boolean(line) && !RESOURCES.some((res) => line.includes(res)), line);
 }
 
@@ -723,7 +723,7 @@ const total = (g, r) => g.bank[r] + g.players.reduce((n, p) => n + p.resources[r
     b.resources.ore === 0 && c.resources.ore === 0 && a.resources.ore === 8 && a.resources.wool === 2 && b.resources.grain === 2 && c.resources.timber === 1 && a.hidden.monopoly === 0,
     s.players.map((p) => p.resources),
   );
-  effect("monopoly logs the total", s.log[s.log.length - 1] === "A monopolizes ore (7).", s.log.slice(-2));
+  effect("monopoly logs the total", s.log[s.log.length - 1] === "A plays Monopoly — A gains 7 ore; B loses 3 ore; C loses 4 ore.", s.log.slice(-2));
   effect("monopoly keeps 19 of each resource across hands and bank", RESOURCES.every((x) => total(s, x) === 19), s.bank);
 }
 {

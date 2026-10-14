@@ -133,7 +133,7 @@ try {
   const heard = Object.keys(SOUND).filter((n) => heardFiles.includes(SOUND[n]));
   console.log("sounds heard in setup and the first roll:", JSON.stringify(heardFiles));
   if (heard.length !== 3) throw new Error(`sounds: heard only ${heard.join(" ")} in ${JSON.stringify(heardFiles)}`);
-  // #188: the roll banner shows offline too.
+  // #534: goods narration lives in the persistent log, without a second banner.
   const bannerText = await page.getByTestId("banner").textContent({ timeout: 2000 }).catch(() => null);
   console.log("roll banner:", JSON.stringify(bannerText));
 
@@ -364,8 +364,8 @@ try {
   }
   if (phase !== "roll" && phase !== "main" && phase !== "robber" && phase !== "discard") throw new Error(`setup: ${phase}`);
   if (!Array.isArray(rolled)) throw new Error(`roll: ${rolled}`);
-  // #440: the banner says whose roll and who gathered; the numbers are the roll moment's and the dice row's alone.
-  if (!bannerText || !/^.+'s roll · /.test(bannerText) || bannerText.includes(`${rolled[0]}+${rolled[1]}`)) throw new Error(`roll banner: ${bannerText}`);
+  // #534: the transient banner does not repeat the persistent goods event.
+  if (bannerText) throw new Error(`roll goods are narrated only in the persistent log: ${bannerText}`);
   if (steal.targets !== 2 || !steal.asked || steal.got !== 1 || steal.left !== 1 || steal.phase !== "main" || !steal.cleared) {
     throw new Error(`offline steal picker: ${JSON.stringify(steal)}`);
   }

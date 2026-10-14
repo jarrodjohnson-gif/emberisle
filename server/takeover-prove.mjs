@@ -173,11 +173,12 @@ const setup = await rooms.TA01[1].next("state", (m) => m.game.seq > 1 && m.game.
 assert.equal(setup.game.players.find((p) => p.id === "p0").kind, "bot");
 assert.equal(setup.game.players.find((p) => p.id === "p0").outpostsLeft, starts.TA01.outpostsLeft - 1);
 assert.equal(setup.game.players.find((p) => p.id === "p0").pathsLeft, starts.TA01.pathsLeft - 1);
-assert(setup.game.log.slice(starts.TA01.logLength).some((line) => line === "Bot built an outpost for Ember."));
+const setupOutpost = setup.game.log.slice(starts.TA01.logLength).find((line) => line.endsWith("— starting outpost."));
+assert(setupOutpost && /^Ember(?: \(bot\))? gains /.test(setupOutpost), JSON.stringify(setup.game.log.slice(starts.TA01.logLength)));
 assert(setup.game.log.slice(starts.TA01.logLength).some((line) => line === "Bot built a path for Ember."));
 await stateBarrier(rooms.TA01.slice(1), setup.game.seq);
 for (const peer of rooms.TA01.slice(1)) {
-  for (const line of ["Bot built an outpost for Ember.", "Bot built a path for Ember."]) {
+  for (const line of [setupOutpost, "Bot built a path for Ember."]) {
     if (!peer.logs.includes(line)) await peer.next("log", (m) => m.text === line);
     assert.equal(peer.logs.filter((seen) => seen === line).length, 1);
   }
@@ -220,7 +221,7 @@ assert(returning.state.game.log.includes(passLine), "rejoined room retains the a
 console.log("rejoin: the covered seat returned to human control");
 
 const roll = await rooms.TA03[1].next("state", (m) => m.game.seq > 1 && m.game.current !== "p0", 3000);
-const rollLines = roll.game.log.slice(starts.TA03.logLength).filter((line) => /^Bot rolled for Ember: \d\+\d = \d+\.$/.test(line));
+const rollLines = roll.game.log.slice(starts.TA03.logLength).filter((line) => / — Ember(?: \(bot\))?'s roll[;.]/.test(line));
 assert.equal(rollLines.length, 1);
 await stateBarrier(rooms.TA03.slice(1), roll.game.seq);
 for (const peer of rooms.TA03.slice(1)) {
@@ -230,7 +231,7 @@ for (const peer of rooms.TA03.slice(1)) {
 console.log("roll: recovery rolled and advanced the engine phase with an explicit action line");
 
 const discard = await rooms.TA04[1].next("state", (m) => m.game.seq > 1 && m.game.current !== "p0" && m.game.discardNeeded.p0 === undefined, 3000);
-const discardLine = "Bot discarded for Ember (4).";
+const discardLine = `${discard.game.players.find((p) => p.id === "p0").name} discards 4 goods.`;
 assert.equal(discard.game.log.filter((line) => line === discardLine).length, 1);
 await stateBarrier(rooms.TA04.slice(1), discard.game.seq);
 for (const peer of rooms.TA04.slice(1)) {
@@ -242,9 +243,9 @@ console.log("discard: recovery paid the mandatory half-hand discard");
 const robber = await rooms.TA05[1].next("state", (m) => m.game.seq > 1 && m.game.current !== "p0", 3000);
 assert.notEqual(robber.game.robberHex, starts.TA05.robberHex);
 assert.equal(robber.game.phase, "roll");
-const wayfarerLine = robber.game.log.find((line) => line.startsWith("Bot moved the Wayfarer for Ember"));
+const wayfarerLine = robber.game.log.find((line) => /^Ember(?: \(bot\))? moves the wayfarer —/.test(line));
 assert(wayfarerLine, "recovery wayfarer action is attributed");
-assert.equal(robber.game.log.filter((line) => line.startsWith("Bot moved the Wayfarer for Ember")).length, 1);
+assert.equal(robber.game.log.filter((line) => /^Ember(?: \(bot\))? moves the wayfarer —/.test(line)).length, 1);
 assert(!robber.game.log.some((line) => line.includes("steals a card from") || line.includes("sends the wayfarer")));
 await stateBarrier(rooms.TA05.slice(1), robber.game.seq);
 for (const peer of rooms.TA05.slice(1)) {

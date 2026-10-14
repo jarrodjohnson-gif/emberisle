@@ -109,9 +109,6 @@ function armedCopy(mode: BuildMode, roadPicks: number): [string, string] | null 
 }
 
 
-// The rules' roll line ("Tide rolls 4+5 = 9."): the dice row already shows the roll, so the log line skips it (#440).
-const ROLL_LOG = / rolls \d\+\d = \d+\.$/;
-
 // A build that cannot happen now uses aria-disabled, not disabled, so Tab still reaches it and the price is read out. It
 // goes muted ink, not translucent, so the chips and the reason on it stay readable.
 const NOT_NOW = "aria-disabled:cursor-not-allowed aria-disabled:text-muted aria-disabled:active:scale-100";
@@ -119,6 +116,7 @@ const NOT_NOW = "aria-disabled:cursor-not-allowed aria-disabled:text-muted aria-
 const READY_DOT = <span aria-hidden className="build-ready-mark text-[10px] font-bold">✓</span>;
 
 export function Hud() {
+  const gameLog = useGame((s) => s.gameLog);
   const state = useGame((s) => s.state);
   const localId = useGame((s) => s.localId);
   const mode = useGame((s) => s.mode);
@@ -424,7 +422,6 @@ export function Hud() {
                 </div> : null}
               </div>
             ) : null}
-            {pinEnd ? endRow : null}
 
             {(state.phase === "roll" || state.phase === "rollOff") && mine ? (
               <div className="flex flex-col gap-2">
@@ -443,10 +440,11 @@ export function Hud() {
             <p
               hidden={tradeVisible}
               data-testid="log-line"
-              className="table-log hidden h-5 shrink-0 overflow-hidden rounded-control px-3 text-xs leading-5 sm:block short:hidden"
+              className="table-log block h-5 shrink-0 overflow-hidden rounded-control px-3 text-xs leading-5"
             >
-              {state.log.filter((l) => !ROLL_LOG.test(l)).at(-1)}
+              {gameLog.at(-1)?.text}
             </p>
+            {pinEnd ? endRow : null}
             <TradeToast />
           </div>
           {/* #423: the tray rises over the stack from its bottom edge and may cover the island, like a sheet, but never the
