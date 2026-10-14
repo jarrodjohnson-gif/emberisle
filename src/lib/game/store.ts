@@ -66,8 +66,10 @@ function soundsFor(before: GameState | null, after: GameState, mine: boolean): [
   else if (paths(after) > paths(before)) out.push(["path_place", 1]);
   else if ((after.deckLeft ?? after.deck.length) < (before.deckLeft ?? before.deck.length)) out.push(["card_buy", mine ? 1 : 0.6]);
   else if (after.playedCard && !before.playedCard) out.push(["card_play", 1]);
-  // A new game (same seed or not) moves the wayfarer back to the desert: only the same game's move is a sound.
-  if (after.seed === before.seed && after.robberHex !== before.robberHex) out.push(["wayfarer_move", 1]);
+  // A new game moves the wayfarer back to the desert: only a move within the same game is a sound. The host strips the seed
+  // from pushed states, so the same game is "not over before, same island, the turn count never fell".
+  const sameGame = before.phase !== "over" && after.turn >= before.turn && after.hexes.every((h, i) => h.terrain === before.hexes[i]?.terrain);
+  if (sameGame && after.robberHex !== before.robberHex) out.push(["wayfarer_move", 1]);
   return out;
 }
 
