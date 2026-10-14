@@ -175,6 +175,8 @@ try {
           .waitForFunction((want) => Object.entries(want).every(([k, w]) => document.querySelector(`[data-testid="build-${k}"]`)?.dataset.build === w.state), want, { timeout: 10_000 })
           .catch(() => {});
         await page.mouse.move(0, 0);
+        // The move clears :hover from the last step's click only on the next frame, which software GL can hold a while.
+        await page.waitForFunction(() => !document.querySelector("[data-build-state]:hover"), null, { timeout: 5_000 }).catch(() => {});
         // The fill eases in with the Button's colour transition; read it once it has landed.
         await page
           .waitForFunction(() => [...document.querySelectorAll("[data-build-state]")].every((b) => (getComputedStyle(b).backgroundColor === "rgb(230, 244, 228)") === (b.dataset.buildState === "ready")), null, { timeout: 5_000 })
