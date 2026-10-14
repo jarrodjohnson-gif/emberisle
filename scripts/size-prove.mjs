@@ -7,6 +7,7 @@
 // How to play, trade panel and win screen (sheets) out of the index. sheets is its 2026-10-05 size with the #423 fortune
 // tray (5.21 kB) plus 10%, then its 2026-10-05 size with the Costs card (5.71 kB, build-ready-prove) plus 10%; online is set at
 // 8000 for #500's mute menu and sender-aware unread count (7.27 kB) plus 10%.
+// src/lib/scene/assets.ts (the glTF loaders, #599) is imported only through import(); no budget here moves for it.
 // moments (the turn moment and the gain lines, Jarrod's playtest) is its 2026-10-05 size (2.37 kB) plus 10%.
 import { readdirSync, readFileSync } from "node:fs";
 import { gzipSync } from "node:zlib";

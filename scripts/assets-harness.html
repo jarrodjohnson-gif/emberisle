@@ -1,0 +1,40 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>Kit harness</title>
+<style>html,body{margin:0;background:#cfe6ea}canvas{display:block}</style>
+<script type="module">
+  // Dev-only page for scripts/assets-prove.mjs: loads a kit and draws one of each part, tiles in a row, props in front.
+  import * as THREE from "three";
+  import { loadKit, partStats } from "/src/lib/scene/assets.ts";
+  const url = new URLSearchParams(location.search).get("kit") ?? "/kits/placeholder/kit.glb";
+  const kit = await loadKit(url);
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(1280, 520);
+  renderer.shadowMap.enabled = true;
+  document.body.append(renderer.domElement);
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0xcfe6ea);
+  const camera = new THREE.PerspectiveCamera(32, 1280 / 520, 0.1, 50);
+  camera.position.set(0, 3.6, 4.6);
+  camera.lookAt(0, 0, 0.35);
+  const key = new THREE.DirectionalLight(0xffd9a8, 3.4);
+  key.position.set(-3, 5, 3);
+  key.castShadow = true;
+  key.shadow.camera.left = -4; key.shadow.camera.right = 4; key.shadow.camera.top = 4; key.shadow.camera.bottom = -4;
+  scene.add(key, new THREE.HemisphereLight(0xcfe6ea, 0x6b5a4a, 0.7));
+  const tiles = [...kit.parts.values()].filter((p) => p.name.startsWith("tile_"));
+  const props = [...kit.parts.values()].filter((p) => !p.name.startsWith("tile_"));
+  const place = (p, x, z) => {
+    const m = new THREE.InstancedMesh(p.geometry, p.material, 1);
+    m.setMatrixAt(0, new THREE.Matrix4().makeTranslation(x, 0, z));
+    m.castShadow = m.receiveShadow = true;
+    scene.add(m);
+  };
+  tiles.forEach((p, i) => place(p, (i - (tiles.length - 1) / 2) * 1.15, 0));
+  props.forEach((p, i) => place(p, (i - (props.length - 1) / 2) * 0.8, 1.2));
+  renderer.render(scene, camera);
+  renderer.shadowMap.autoUpdate = false; // the shadow pass above also draws each part; count the colour pass alone
+  renderer.render(scene, camera);
+  const box = (p) => { p.geometry.computeBoundingBox(); const b = p.geometry.boundingBox; return { x: b.max.x - b.min.x, y: b.max.y - b.min.y, z: b.max.z - b.min.z }; };
+  window.__kit = { stats: partStats(kit), names: [...kit.parts.keys()], boxes: Object.fromEntries([...kit.parts].map(([n, p]) => [n, box(p)])), drawn: renderer.info.render.calls };
+</script>
