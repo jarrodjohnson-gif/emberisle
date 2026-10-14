@@ -4,7 +4,7 @@
 // - "Your turn" (data-testid="turn-moment") shows when a bot's turn passes to the person and, untouched, is gone within
 //   2 s and readable (opacity ≥ 0.5) for at least 1.2 s; it never shows on a bot's turn, nor in the roll-off or setup; while
 //   it is the person's roll, Roll is the one filled primary and their seat card wears the turn ring (seat-turn,
-//   aria-current); on a bot's turn the banner reads "Waiting for {bot} …" and there is no Roll;
+//   aria-current); on a bot's turn the banner reads "Wait for {bot} …" and there is no Roll;
 // - a roll steered to pay the person shows one line per good gained (data-testid="gain-float"), "+N Good" with the right
 //   good and amount, in the gain green, none while the roll moment holds the centre; each readable for at least 1.2 s, the
 //   lines of one batch starting 150 ms apart, rising (a translateY keyframe);
@@ -465,7 +465,7 @@ async function practice(view) {
     const t0 = await page.evaluate(() => window.__turns.length);
     await page.evaluate(() => (window.__hold = "turn-moment") && window.__emberisle.getState().dispatch({ type: "endTurn" }));
     await page.waitForFunction(() => window.__emberisle.getState().state.current !== window.__emberisle.getState().localId, null, { timeout: STEP_MS });
-    await page.waitForFunction(() => /^Waiting for /.test(document.querySelector('[data-testid="turn-banner"]')?.textContent ?? ""), null, { timeout: STEP_MS });
+    await page.waitForFunction(() => /^Wait for /.test(document.querySelector('[data-testid="turn-banner"]')?.textContent ?? ""), null, { timeout: STEP_MS });
     const waiting = await page.evaluate(() => {
       const s = window.__emberisle.getState();
       return {
@@ -474,7 +474,7 @@ async function practice(view) {
         roll: [...document.querySelectorAll("button")].some((b) => b.textContent.trim() === "Roll"),
       };
     });
-    check(waiting.banner.startsWith(`Waiting for ${waiting.bot}`) && !waiting.roll, `${tag}: on a bot's turn the banner says whom the person waits for, and there is no Roll`, waiting);
+    check(waiting.banner.startsWith(`Wait for ${waiting.bot}`) && !waiting.roll, `${tag}: on a bot's turn the banner says whom the person waits for, and there is no Roll`, waiting);
     await page.screenshot({ path: `test-results/turn-gain-${view.width}x${view.height}-waiting.png` });
     await page.evaluate((n) => (window.__t0 = n), t0);
     await playUntil(page, () => window.__turns.length > window.__t0);
@@ -512,7 +512,7 @@ async function practice(view) {
     placement(`${tag} refit`, '"Your turn" after the hole changed under it', rbox, rlay, rstage);
     await page.evaluate(() => window.__release());
     check(cue.primaries.length === 1 && cue.primaries[0] === "Roll", `${tag}: on the person's roll, Roll is the one filled primary`, cue.primaries);
-    check(cue.seatTurn && cue.current && cue.banner.startsWith("Your turn"), `${tag}: the person's seat card wears the turn ring and the banner says "Your turn"`, cue);
+    check(cue.seatTurn && cue.current && cue.banner === "Roll the dice", `${tag}: the person's seat card wears the turn ring and the banner leads with Roll`, cue);
     await page.waitForFunction(() => !document.querySelector('[data-testid="turn-moment"]'), null, { timeout: STEP_MS });
     const turn = await page.evaluate((n) => window.__turns[n], t0);
     check(turn.text === "Your turn", `${tag}: the moment reads "Your turn"`, turn.text);
