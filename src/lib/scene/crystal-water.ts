@@ -58,6 +58,9 @@ const gust = (x: number, z: number, t: number) =>
   0.6 + 0.4 * (0.5 + 0.5 * Math.sin(GUST[0][0] * x + GUST[0][1] * z + GUST[0][2] * t) * Math.sin(GUST[1][0] * x + GUST[1][1] * z + GUST[1][2] * t));
 // The chops fade in from 0.5 to 2.5 units off the coast: in the surf zone the breaker owns the surface.
 const CHOP_IN = [0.5, 2.5] as const;
+// Breaker foam: noise features 0.45 and 0.14 units across (2.2 and 7 cycles per unit) drifting shoreward at 0.5 units/s; a
+// solid lip for the first 0.35 s after the crest, then lace whose threshold rises until it is gone at 2.2 s.
+const FOAM = { scales: [2.2, 7], drift: 0.5, lip: 0.35, life: 2.2 } as const;
 const TAU = Math.PI * 2;
 const k = (l: number) => TAU / l;
 const w = (t: number) => TAU / t;
@@ -254,6 +257,7 @@ export function makeCrystalSea(coast: Coast, shared: SeaUniforms) {
       attribute vec2 aInward;
       varying float vCoast;
       varying vec2 vRest;
+      varying vec2 vInward;
       varying vec3 vWaveN;
       varying vec3 vWorld;
       varying vec3 vView;
@@ -261,6 +265,7 @@ export function makeCrystalSea(coast: Coast, shared: SeaUniforms) {
       void main() {
         vec3 p = position + seaOffset(position.xz, aCoast, aInward, vWaveN);
         vCoast = aCoast;
+        vInward = aInward;
         vRest = position.xz;
         vec4 world = modelMatrix * vec4(p, 1.0);
         vWorld = world.xyz;
@@ -289,6 +294,7 @@ export function makeCrystalSea(coast: Coast, shared: SeaUniforms) {
       uniform vec3 uPaper;
       varying float vCoast;
       varying vec2 vRest;
+      varying vec2 vInward;
       varying vec3 vWaveN;
       varying vec3 vWorld;
       varying vec3 vView;
@@ -323,16 +329,15 @@ export function makeCrystalSea(coast: Coast, shared: SeaUniforms) {
         float fleck = smoothstep(0.975, 1.0, vnoise(vRest * 25.0 + uTime * vec2(0.3, -0.2)))
           * smoothstep(0.02, 0.05, vWorld.y) * smoothstep(0.85, 0.97, dot(reflect(-V, N), uSunDir));
         c += vec3(1.8, 1.7, 1.5) * (glint * 0.6 + fleck * 0.5) * uMotion;
-        // Breakers: fine foam on the crest in the last unit, fading within 1 s.
-        float o = vCoast;
-        float n = vnoise(vRest * 18.0 + uTime * 0.5) * 0.55 + vnoise(vRest * 41.0 - uTime * 0.8) * 0.45;
-        float life = smoothstep(0.2, 0.32, o) * (1.0 - smoothstep(0.35, 1.0, o)) * (1.0 - smoothstep(0.0, 1.0, sinceCrest(vRest, o)));
-        float crash = life * smoothstep(0.62, 0.7, n + 0.3 * life);
-        // Open-water whitecaps: small flecks where both chops crest inside sparse, drifting patches.
-        float caps = smoothstep(0.94, 1.0, sin(chop1Phase(vRest))) * smoothstep(0.6, 1.0, sin(chop2Phase(vRest)))
-          * smoothstep(0.8, 0.95, vnoise(vRest * 0.4 + vec2(uTime * 0.03, 0.0))) * smoothstep(0.6, 0.75, vnoise(vRest * 24.0))
-          * farFade(o) * (1.0 - shoreLift(o));
-        c = mix(c, vec3(2.6, 2.7, 2.65), uMotion * clamp(crash * 0.9 + caps * 0.5, 0.0, 1.0));
+        // Breakers: a solid lip behind the crest, then broad lace that drifts shoreward with the water and dissolves.
+        float o = vCoast, age = sinceCrest(vRest, o);
+        vec2 q = vRest - vInward * ${f(FOAM.drift)} * uTime;
+        float n = 0.7 * vnoise(q * ${f(FOAM.scales[0])}) + 0.3 * vnoise(q * ${f(FOAM.scales[1])});
+        float u = age / ${f(FOAM.life)}, thr = 0.1 + 0.8 * u * u;
+        float lip = 1.0 - smoothstep(${f(FOAM.lip * 0.7)}, ${f(FOAM.lip)}, age);
+        float alive = smoothstep(0.2, 0.32, o) * (1.0 - smoothstep(0.35, 1.0, o)) * (1.0 - smoothstep(0.85, 1.0, u));
+        float foam = alive * max(lip, smoothstep(thr - 0.06, thr + 0.06, n));
+        c = mix(c, vec3(2.6, 2.7, 2.65), uMotion * foam * 0.9);
         c = mix(c, uPaper, smoothstep(uFade.x, uFade.y, length(vRest)));
         gl_FragColor = vec4(c, 1.0);
       }
