@@ -1,4 +1,4 @@
-import { COST, LARGEST_ARMY_MIN, LONGEST_PATH_MIN, POINTS, RESOURCES, type Action, type DevKind, type GameState, type PlayerState, type Resource } from "./types";
+import { COST, LARGEST_ARMY_MIN, LONGEST_PATH_MIN, POINTS, RESOURCES, type Action, type DevKind, type GameState, type PlayerState, type Resource, type VictoryTarget } from "./types";
 
 function clone<T>(s: T): T {
   return structuredClone(s);
@@ -230,9 +230,13 @@ export function totalVP(state: GameState, pid: string) {
   return publicVP(state, pid) + (p?.hidden.vp ?? 0) * POINTS.pointsFortune;
 }
 
+export function victoryTarget(state: Pick<GameState, "victoryTarget">): VictoryTarget {
+  return state.victoryTarget === 7 ? 7 : POINTS.win;
+}
+
 function checkWin(state: GameState, pid: string) {
   if (state.current !== pid) return;
-  if (totalVP(state, pid) >= POINTS.win) {
+  if (totalVP(state, pid) >= victoryTarget(state)) {
     state.phase = "over";
     state.winner = pid;
     log(state, `${player(state, pid)?.name} claims the isle with ${totalVP(state, pid)} points.`);

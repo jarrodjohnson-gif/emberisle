@@ -6,6 +6,7 @@ import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CostChips, PRICE_NAME, priceLabel, type Price } from "@/components/game/BuildCost";
 import { useFocusTrap } from "@/lib/focus-trap";
+import { victoryTarget } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
 import {
   COST,
@@ -25,6 +26,7 @@ const WORTH: [string, number][] = [
 
 export function CostCard({ onClose }: { onClose: () => void }) {
   const opener = useGame((s) => s.costsOpener);
+  const target = useGame((s) => victoryTarget(s.state ?? {}));
   const root = useRef<HTMLDivElement>(null);
   useFocusTrap(root, true, undefined, opener);
   const onCloseRef = useRef(onClose);
@@ -88,7 +90,7 @@ export function CostCard({ onClose }: { onClose: () => void }) {
             ))}
           </ul>
         </div>
-        <p className="mt-3 text-body">{POINTS.win} points claims the isle.</p>
+        <p className="mt-3 text-body">{target} points claims the isle.</p>
       </div>
     </div>
   );

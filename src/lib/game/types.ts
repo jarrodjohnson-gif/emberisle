@@ -99,6 +99,8 @@ export interface TradeOffer {
   want: Partial<Record<Resource, number>>;
 }
 
+export type VictoryTarget = 7 | 10;
+
 export interface GameState {
   seed: number;
   rng: number;
@@ -120,6 +122,8 @@ export interface GameState {
   longestRoad: string | null;
   largestArmy: string | null;
   winner: string | null;
+  // Optional for existing saves; absent means the standard ten-point game.
+  victoryTarget?: VictoryTarget;
   bank: Record<Resource, number>;
   deck: DevKind[];
   // Online the host hides the deck order and sends only its size (server/host.mjs).

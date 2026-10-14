@@ -140,7 +140,7 @@ function withPaths(state: GameState, edgeIds: string[], pid: string): GameState 
   return { ...state, edges: state.edges.map((e) => (edgeIds.includes(e.id) ? { ...e, path: pid } : e)) };
 }
 import { chooseBotAction, chooseTradeAsk, shouldAcceptTrade } from "./ai";
-import { PLAYER_COLORS, RESOURCES, type Action, type BuildMode, type GameState } from "./types";
+import { PLAYER_COLORS, RESOURCES, type Action, type BuildMode, type GameState, type VictoryTarget } from "./types";
 import { connectTable, hostUrl, type Bag, type ChatLine, type Legal, type Me, type Reaction, type Seat, type TableClient } from "@/lib/net/table";
 import { PROTO } from "@/lib/net/proto";
 import { play, yourTurn, type SoundName } from "@/lib/sound";
@@ -237,6 +237,8 @@ interface GameStore {
   peeking: boolean;
   code: string;
   isHost: boolean;
+  tableVictoryTarget: VictoryTarget;
+  setVictoryTarget: (value: VictoryTarget) => void;
   seats: Seat[];
   legal: Legal | null;
   // The host's turn timer (#344): when it fires on this tab's clock, whose seat it is, and the host's own value
@@ -401,6 +403,7 @@ export const useGame = create<GameStore>((set, get) => ({
   peeking: false,
   code: "",
   isHost: false,
+  tableVictoryTarget: 10,
   seats: [],
   legal: null,
   turnTimer: null,
@@ -750,6 +753,9 @@ export const useGame = create<GameStore>((set, get) => ({
     connect(set, get, (t) => t.rejoin(seat.code, seat.secret), "quiet");
     return true;
   },
+  setVictoryTarget: (value) => {
+    if (!get().spectator) get().net?.setVictoryTarget(value);
+  },
   setReady: (value) => {
     if (!get().spectator) get().net?.ready(value);
   },
@@ -924,12 +930,12 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
   let welcomed = false;
   let outdated: string | null = null;
   const table = connectTable(hostUrl(window.location), {
-    welcome: ({ proto, code, you, host, chat, secret, spectator }) => {
+    welcome: ({ proto, code, you, host, chat, secret, spectator, victoryTarget }) => {
       pending = false;
       welcomed = true;
       // G2: a host on a newer wire protocol than this page says so where errors go, and keeps saying it after every state.
       outdated = (proto ?? 0) > PROTO ? "This page is out of date. Reload to update." : null;
-      set({ resync: true });
+      set({ resync: true, tableVictoryTarget: victoryTarget === 7 ? 7 : 10 });
       if (secret) rememberSeat({ code, secret });
       // A page-load rejoin has no state yet, so it passes through the lobby until the host's state push moves it to play.
       // A mid-game reconnect already holds the game: stay on the board so the HUD keeps its local state.
@@ -974,7 +980,7 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       setTimeout(() => set({ reactions: get().reactions.filter((x) => x !== r) }), 2000);
     },
     // A peek answers id/color/ready only (G10); the lobby is not shown until the full broadcast after sitting replaces it.
-    seats: ({ code, seats, watching }) => set({ code, seats: seats as Seat[], watching: watching ?? 0 }),
+    seats: ({ code, seats, watching, victoryTarget }) => set({ code, seats: seats as Seat[], watching: watching ?? 0, tableVictoryTarget: victoryTarget === 7 ? 7 : 10 }),
     rolled: ({ gains, short }) => {
       // The host sends this before the state that follows it, so `current` is still the roller.
       const st = get().state;

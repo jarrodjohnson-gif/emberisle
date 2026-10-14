@@ -172,7 +172,7 @@ function seatsOf(room) {
 }
 
 function seatsMsg(room) {
-  return { type: "seats", code: room.code, seats: seatsOf(room), watching: room.watchers.size };
+  return { type: "seats", code: room.code, seats: seatsOf(room), watching: room.watchers.size, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10 };
 }
 
 function publish(room) {
@@ -207,6 +207,7 @@ function snapshot(room) {
     chat: room.chat,
     chatSeq: room.chatSeq,
     game: room.game,
+    victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10,
     seats: room.seats.map(({ id, name, color, ready, pid, secret, turnDeadline, turnStartedAt }) => ({ id, name, color, ready, pid, secret, turnDeadline: turnDeadline ?? null, turnStartedAt: turnStartedAt ?? null })),
     shape: ROOM_SHAPE,
     savedAt: Date.now(),
@@ -773,7 +774,7 @@ function openTable(ws, msg) {
     if (mine) mine.tokens += 1;
     return send(ws, { type: "error", message: "Too many new tables right now. Try again in a minute." });
   }
-  const room = { code: code(), seats: [], game: null, host: null, next: 0, offer: null, offerTimer: null, botDeclined: {}, chat: [], chatSeq: 0, watchers: new Set() };
+  const room = { victoryTarget: 10, code: code(), seats: [], game: null, host: null, next: 0, offer: null, offerTimer: null, botDeclined: {}, chat: [], chatSeq: 0, watchers: new Set() };
   rooms.set(room.code, room);
   const seat = {
     id: `s${room.next++}`,
@@ -791,7 +792,7 @@ function openTable(ws, msg) {
   room.host = seat.id;
   ws.room = room;
   ws.seat = seat;
-  send(ws, { type: "welcome", proto: PROTO, code: room.code, you: seat.id, host: true, chat: room.chat, secret: seat.secret, ...HOLD_INFO });
+  send(ws, { type: "welcome", proto: PROTO, code: room.code, you: seat.id, host: true, chat: room.chat, secret: seat.secret, ...HOLD_INFO, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10 });
   say(room, `${seat.name} sat down.`);
   publish(room);
 }
@@ -817,7 +818,7 @@ function sitDown(ws, msg) {
   room.seats.push(seat);
   ws.room = room;
   ws.seat = seat;
-  send(ws, { type: "welcome", proto: PROTO, code: room.code, you: seat.id, host: false, chat: room.chat, secret: seat.secret, ...HOLD_INFO });
+  send(ws, { type: "welcome", proto: PROTO, code: room.code, you: seat.id, host: false, chat: room.chat, secret: seat.secret, ...HOLD_INFO, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10 });
   say(room, `${seat.name} sat down.`);
   publish(room);
 }
@@ -841,7 +842,7 @@ function startGame(ws, room) {
   if (ws.seat.id !== room.host) return send(ws, { type: "error", message: "Only the host can start." });
   if (n < 3 || n > 4) return send(ws, { type: "error", message: "Need 3 or 4 at the table." });
   if (room.seats.some((s) => !s.ready)) return send(ws, { type: "error", message: "Not everyone is ready." });
-  const game = createGame({ humans: room.seats.map((s) => ({ name: s.name })), bots: 0 });
+  const game = createGame({ humans: room.seats.map((s) => ({ name: s.name })), bots: 0, victoryTarget: room.victoryTarget ?? 10 });
   room.seats.forEach((s, i) => {
     s.pid = game.players[i].id;
     game.players[i].color = s.color;
@@ -878,7 +879,7 @@ function rematch(ws, room) {
   room.recoveryPids = [];
   const winner = live.find((s) => s.pid === room.game.winner);
   const order = winner ? [winner, ...live.filter((s) => s !== winner)] : live;
-  const game = createGame({ humans: order.map((s) => ({ name: s.name })), bots: 0, winnerFirst: Boolean(winner) });
+  const game = createGame({ humans: order.map((s) => ({ name: s.name })), bots: 0, winnerFirst: Boolean(winner), victoryTarget: room.victoryTarget ?? room.game.victoryTarget ?? 10 });
   order.forEach((s, i) => {
     s.pid = game.players[i].id;
     game.players[i].color = s.color;
@@ -1177,6 +1178,13 @@ function handle(ws, raw) {
   const room = ws.room;
   if (msg.type === "chat" || msg.type === "react") return talk(ws, room, msg);
   if (!allow(ws.seat.act, Date.now(), ACT_CAP, ACT_RATE)) return send(ws, { type: "error", message: "Slow down." });
+  if (msg.type === "setVictoryTarget") {
+    if (ws.seat.id !== room.host) return send(ws, { type: "error", message: "Only the host can choose the target." });
+    if (room.game && room.game.phase !== "over") return send(ws, { type: "error", message: "The target is fixed for this game." });
+    if (msg.value !== 7 && msg.value !== 10) return send(ws, { type: "error", message: "Choose 7 or 10 points." });
+    room.victoryTarget = msg.value;
+    return publish(room);
+  }
   if (msg.type === "ready") {
     const value = Boolean(msg.value);
     if (ws.seat.ready === value) return;
@@ -1219,7 +1227,7 @@ function rejoin(ws, msg) {
   seat.gone = null;
   ws.room = room;
   ws.seat = seat;
-  send(ws, { type: "welcome", proto: PROTO, code: room.code, you: seat.id, host: seat.id === room.host, chat: room.chat, secret: seat.secret, ...HOLD_INFO });
+  send(ws, { type: "welcome", proto: PROTO, code: room.code, you: seat.id, host: seat.id === room.host, chat: room.chat, secret: seat.secret, ...HOLD_INFO, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10 });
   say(room, `${seat.name} is back.`);
   publish(room);
   if (!room.game) return;

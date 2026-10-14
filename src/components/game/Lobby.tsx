@@ -1,5 +1,5 @@
 // The table lobby: code, seats, chat and Ready/Start. Online-only, so it loads with the chat as one lazy chunk (#488).
-import { useState } from "react";
+import { VictoryTargetSelect } from "@/components/game/VictoryTargetSelect";
 import { Button } from "@/components/ui/button";
 import { ChatBox, ReactionFloats } from "@/components/game/Chat";
 import { CopyFallback, useCopy } from "@/components/game/CopyText";
@@ -17,7 +17,10 @@ export function Lobby() {
   const setReady = useGame((s) => s.setReady);
   const startTable = useGame((s) => s.startTable);
   const goTitle = useGame((s) => s.goTitle);
-  const [ready, setReadyLocal] = useState(false);
+  const seatId = useGame((s) => s.seatId);
+  const ready = seats.find((s) => s.id === seatId)?.ready ?? false;
+  const target = useGame((s) => s.tableVictoryTarget);
+  const setTarget = useGame((s) => s.setVictoryTarget);
   const { state: copied, copy } = useCopy<"code" | "link">();
   // #304: the join link. `?host=` is kept so a Vite dev page's link still dials the same host (src/lib/net/table.ts hostUrl).
   const copyLink = () => {
@@ -102,20 +105,22 @@ export function Lobby() {
           data-testid="lobby-actions"
           className={cn(
             "mt-3 flex shrink-0 flex-col gap-2 sticky bottom-0 z-10 bg-surface",
-            landscape && "col-start-2 row-start-2 justify-end",
+            landscape && "col-start-2 row-start-2 justify-end gap-1",
             sheet &&
               "sticky -bottom-5 z-10 -mx-5 -mb-5 bg-surface px-5 pb-5 pt-2 before:pointer-events-none before:absolute before:inset-x-0 before:-top-6 before:h-6 before:bg-gradient-to-t before:from-surface before:to-transparent",
           )}
         >
           {/* #418: one line on what is still needed, in the slot the "sat down" echo had (the seat rows already say who is here). */}
-          <p data-testid="lobby-status" aria-live="polite" className="min-h-5 text-center text-xs text-muted">
-            {error ?? status}
-          </p>
+          <div className="flex items-center gap-2">
+            <p data-testid="lobby-status" aria-live="polite" className="min-h-5 min-w-0 flex-1 text-center text-xs text-muted">
+              {error ?? status}
+            </p>
+            <VictoryTargetSelect value={target} onChange={isHost ? setTarget : undefined} />
+          </div>
           <Button
             size="lg"
             variant="outline"
             onClick={() => {
-              setReadyLocal(!ready);
               setReady(!ready);
             }}
           >
