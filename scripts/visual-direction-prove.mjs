@@ -57,9 +57,10 @@ try {
       if (phase === "main" && width === 844) {
         const dice = await page.evaluate(() => {
           const row = document.querySelector('[data-testid="dice-row"]'), r = row?.getBoundingClientRect();
-          return { dice: [...document.querySelectorAll('[data-testid="die"]')].filter(d => d.checkVisibility()).length, sum: row?.lastElementChild?.textContent, inside: !!r && r.width > 0 && r.left >= 0 && r.right <= innerWidth && r.bottom <= innerHeight };
+          const foot = document.querySelector('.end-footer')?.getBoundingClientRect(), end = [...document.querySelectorAll('.end-footer button')].at(-1)?.getBoundingClientRect();
+          return { clipped: !foot || !end || end.right > foot.right + 0.5 || end.left < foot.left, dice: [...document.querySelectorAll('[data-testid="die"]')].filter(d => d.checkVisibility()).length, sum: row?.lastElementChild?.textContent, inside: !!r && r.width > 0 && r.left >= 0 && r.right <= innerWidth && r.bottom <= innerHeight };
         });
-        assert.deepEqual(dice, { dice: 2, sum: "8", inside: true }, `${width}: two dice and the sum show in your own main phase`);
+        assert.deepEqual(dice, { clipped: false, dice: 2, sum: "8", inside: true }, `${width}: two dice and the sum show in your own main phase`);
       }
       const geometry = await page.evaluate(() => {
         const r = window.__isle;
