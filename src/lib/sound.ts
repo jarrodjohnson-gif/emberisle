@@ -77,8 +77,10 @@ export function useMuted() {
 
 // A clip never starts twice within GAP_MS of its last request (a burst is one sound), and clips start at least GAP_MS apart
 // in the order asked, so a bot round of five moves is five separate sounds. A backlog past MAX_QUEUE is dropped, not played late.
+// The UI clips answer a person's own press, so a quick second press still clicks: they are paced but never dropped as a burst.
 const GAP_MS = 150;
 const MAX_QUEUE = 8;
+const UI: ReadonlySet<SoundName> = new Set<SoundName>(["ui_click", "ui_back", "ui_error"]);
 const asked = new Map<SoundName, number>();
 const queue: [SoundName, number][] = [];
 let pacing = false;
@@ -113,7 +115,7 @@ function start(name: SoundName, volume: number) {
 export function play(name: SoundName, volume = 1) {
   if (!unlocked || muted || typeof Audio === "undefined") return;
   const now = Date.now();
-  if (now - (asked.get(name) ?? -GAP_MS) < GAP_MS || queue.length >= MAX_QUEUE) return;
+  if ((!UI.has(name) && now - (asked.get(name) ?? -GAP_MS) < GAP_MS) || queue.length >= MAX_QUEUE) return;
   asked.set(name, now);
   queue.push([name, volume]);
   if (!pacing) pump();

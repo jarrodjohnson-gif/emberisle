@@ -30,7 +30,8 @@ counts the same game's seed).
 
 ## The burst rule
 
-- A clip asked for again within 150 ms of its last request is dropped: a burst is one sound.
+- A clip asked for again within 150 ms of its last request is dropped: a burst is one sound. The UI clips (`ui_click`, `ui_back`,
+  `ui_error`) are exempt, since each answers a person's own press; they are still paced.
 - Distinct clips start at least 150 ms apart, in the order asked (a queue paced by a timer from each actual start). A bot round of five
   actions is five spaced sounds. Pacing with bots is shared with #608.
 - More than 8 waiting is dropped rather than played late. Mute is checked when a clip is asked for and again when it starts,
