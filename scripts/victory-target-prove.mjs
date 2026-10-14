@@ -19,7 +19,7 @@ async function client(hello,retryTaken){
  const ws=new WebSocket(`ws://127.0.0.1:${hostPort}`),messages=[];sockets.push(ws);let state;
  ws.on('message',d=>{const m=JSON.parse(String(d));messages.push(m);if(m.type==='state')state=m;});await new Promise(r=>ws.on('open',r));ws.send(JSON.stringify({type:'hello',...hello}));
  const next=async(type,test=()=>true)=>{for(let i=0;i<400;i++){const m=messages.find(m=>m.type===type&&test(m));if(m)return structuredClone(m);await wait(10);}throw Error(`timeout ${type}: ${JSON.stringify(messages.slice(-3))}`);};
- if(retryTaken)for(let i=0;i<400&&!messages.some(m=>m.type==='welcome');i++){if(messages.some(m=>m.type==='error'&&m.message==='Seat is taken')){ws.terminate();throw Error('taken');}await wait(10);}
+ if(retryTaken)for(let i=0;i<400&&!messages.some(m=>m.type==='welcome');i++){if(messages.some(m=>m.type==='error'&&m.message==='Seat is taken.')){ws.terminate();throw Error('taken');}await wait(10);}
  const welcome=await next('welcome');return{ws,messages,next,welcome,send:m=>ws.send(JSON.stringify({...state?.actionStamp,cid:crypto.randomUUID(),...m}))};
 }
 // The host drops a socket asynchronously, so a rejoin can race the old socket's close: retry while the seat still looks taken.
