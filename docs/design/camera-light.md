@@ -39,9 +39,11 @@ Three views on one scene:
   the island's north, fitted by `fitDiorama` to the hole the HUD leaves ("The diorama view" below).
 - **Play, overhead**: the `OrthographicCamera`, fitted by `fitOrtho` to the same hole, on every pointer.
 
-With no choice saved, play opens in the diorama on a landscape canvas (desktop, a sideways phone) and overhead on a portrait
-one (`defaultView`: height over width), and a phone turned between the two switches with it: upright, the island is bound
-by the phone's width either way and the tilt would only shrink it and crowd its far corners. The table menu's **View** row
+With no choice saved, play opens in the diorama on a landscape canvas at least 900 CSS px wide (`DIORAMA_MIN_WIDTH`) and
+overhead otherwise (`defaultView`), and a canvas that crosses the line (a rotation, a resize) switches with it. Upright, the
+island is bound by the phone's width either way and the tilt would only shrink it and crowd its far corners; on a sideways
+phone (844x390) the diorama's tokens, held to 38 % of a hex, read at an 11.4 px numeral but 1.6 px pips, under the 2 px
+floor (`docs/design/tokens.md` "Angle"). The table menu's **View** row
 switches between Diorama and Overhead; a choice is saved in `localStorage` (`emberisle-view`: `"diorama"` | `"overhead"`,
 like `emberisle-water`) and wins on every screen. Every entry to the table starts from the view's home. SSAO is off in both
 play views. Picking and the highlights are the same meshes.
@@ -132,7 +134,8 @@ and near row of hex centres):
 | 844x390 | 68 / 12 / 12 / 284 | 18.8 | 34.1 / 38.7 / 44.7 | 22.6 px |
 
 At 32° (the first cut) the far side of a sideways phone had corners 20 px apart and a portrait phone 18 px; 38° shows more
-of the caps' tops and keeps every landscape hole at 18 px or more, which `board-look-prove` and `touch-place-prove` hold.
+of the caps' tops and keeps every landscape hole at 18 px or more, which `board-look-prove` (844x390 with the diorama
+chosen) and `touch-place-prove` hold.
 The overhead view keeps 24 px; 18 px still puts a tap dead on one corner well outside its neighbour's 14 px touch reach.
 
 **Gestures.** As in the overhead view: drag orbits (polar 7°-66°, any azimuth, no damping, no pan), wheel and pinch zoom
@@ -141,13 +144,17 @@ glide home over 280 ms (instant under reduced motion). A changed hole glides the
 leaves the eye where the player put it.
 
 **Picking.** The raycaster runs through the perspective camera. A corner or a path is picked when the ray passes within
-`pickReach` of it: 14 CSS px on screen at that depth for touch (8 for a mouse), never less than the overhead pick volume
-(0.28 for a corner, 0.18 for a path) and never more than 0.5, under half the 1.12 corner spacing; the nearest miss wins
-within a kind, corners still beat paths beat hexes. At 844x390 that is 0.28 world units on the near coast and 0.44 on the
-far one. The keyboard route (the PlaceList) is unchanged.
+`pickReach` of it: 14 CSS px on screen at that depth for touch (8 for a mouse), but never less than the overhead pick volume
+(0.28 world units for a corner, 0.18 for a path) and never more than 0.5 world units. The 0.5 cap is the real invariant: it
+is under half the 1.12 corner spacing, so two corners never share a pick however far out the eye is. The pixel reach is
+what is left after the cap and the floor, per corner (`touch-place-prove` asserts it at home): at 1280x720 14-20.7 px at
+home (the floor lifts the near corners) and 14-15.8 px zoomed fully out; at 844x390 (diorama by choice) 14 px at home and
+13.3-14 px zoomed out, where the cap binds on the far coast; on an upright phone by choice, 12.2 px at the far coast zoomed
+out. Within a kind the smallest miss on screen wins; corners still beat paths beat hexes. The keyboard route (the
+PlaceList) is unchanged.
 
-**The far side.** `board-look-prove` puts a path on the northmost coast edge and an outpost on its corner at 844x390 and
-measures their meshes on screen: the path is 34.0 x 11.7 px, the outpost 20.4 x 19.2 px, and the touch pick at that
+**The far side.** `board-look-prove` chooses the diorama at 844x390, puts a path on the northmost coast edge and an outpost
+on its corner, and measures their meshes on screen: the path is 34.0 x 11.7 px, the outpost 20.4 x 19.2 px, and the touch pick at that
 corner 28 px across (the 24 px touch slop or more). No zoom bias: any zoom past the fit pushes a
 dock or a pine out of the hole, and the pick reach, not the piece's drawn size, is the tap target.
 

@@ -1,7 +1,7 @@
 // #239 Debug: number tokens are rimmed and legible, and nothing is placed or wanders within 0.39 of a hex centre.
-// The six checks in docs/design/tokens.md, and (#597) a seventh: in the diorama view (the default on a landscape screen)
+// The six checks in docs/design/tokens.md, and (#597) a seventh: in the diorama view (the default on a landscape canvas at least 900 px wide)
 // every token faces the camera, stays within 1.25x and 38 % of a hex's width, overlaps no other on screen and is not hidden
-// by a tree; at 1280x720 its numeral is at least 11 px tall and its pips 2 px across (at 844x390 those are reported).
+// by a tree, and its numeral is at least 11 px tall and its pips 2 px across, at 1280x720 and 960x600.
 import { existsSync } from "node:fs";
 import { chromium } from "playwright";
 import { createServer } from "vite";
@@ -123,17 +123,18 @@ try {
     const fives = t.filter((k) => k.n === 5);
     check(
       `6 pips on canvas (${name})`,
-      fives.length > 0 && fives.every((k) => k.runs.length === 4 && k.runs.every((r) => r >= 19 && r <= 21)),
+      fives.length > 0 && fives.every((k) => k.runs.length === 4 && k.runs.every((r) => r >= 23 && r <= 25)),
       fives.map((k) => k.runs.join("/")).join(" "),
     );
   }
 
-  // 7. The diorama view (#597), the default on a landscape screen: each token turned to the camera's azimuth and tilted
+  // 7. The diorama view (#597), the default on a landscape canvas at least 900 px wide: each token turned to the camera's azimuth and tilted
   // toward it; the numeral's height and a pip's width measured on screen, from the label's own canvas (the glyph's dark
   // rows, a pip's 20 px) through the camera; each disc at most 1.25x and at most 38 % of a hex's width on screen, no two
   // discs overlapping on screen (their rims' 24 points, projected), and no numeral behind a tree (a ray from the eye to
   // five points across the glyph meets no tree first).
-  for (const [width, height, phone] of [[1280, 720, false], [844, 390, true]]) {
+  // Where the diorama is the default: 1280x720, and 960x600, near the narrowest canvas that gets it (900 wide).
+  for (const [width, height, phone] of [[1280, 720, false], [960, 600, false]]) {
     const ctx = await browser.newContext({ viewport: { width, height }, isMobile: phone, hasTouch: phone });
     const p = await ctx.newPage();
     p.on("console", (m) => m.type() === "error" && errors.push(m.text()));
@@ -181,16 +182,16 @@ try {
         tokens: groups.map((g, gi) => {
           const label = g.children[1];
           g.updateMatrixWorld(true);
-          const img = label.material.map.image.getContext("2d").getImageData(0, 0, 256, 176).data;
+          const img = label.material.map.image.getContext("2d").getImageData(0, 0, 256, 186).data;
           const rows = [];
-          for (let y = 0; y < 176; y++)
+          for (let y = 0; y < 186; y++)
             for (let x = 0; x < 256; x++) {
               const i = (y * 256 + x) * 4;
               if (img[i + 3] > 0 && 0.299 * img[i] + 0.587 * img[i + 1] + 0.114 * img[i + 2] < 128) { rows.push(y); break; }
             }
           const n = g.userData.token;
           const pips = 6 - Math.abs(n - 7);
-          const px = 128 - ((pips - 1) * 26) / 2;
+          const px = 128 - ((pips - 1) * 28) / 2;
           // The hex's width across the screen at the token, against the disc's widest span on screen.
           const hexPx = len(isle.screenAt(g.position.x - right.x * 0.97, g.position.y, g.position.z - right.z * 0.97), isle.screenAt(g.position.x + right.x * 0.97, g.position.y, g.position.z + right.z * 0.97));
           const xs = rims[gi].map((q) => q.x);
@@ -210,7 +211,7 @@ try {
             hidden,
             facing: Math.abs(g.rotation.y - az) < 1e-6 && g.rotation.x > 0.3,
             numeral: len(at(label, 128, rows[0]), at(label, 128, rows[rows.length - 1] + 1)),
-            pip: Math.min(len(at(label, px - 10, 196), at(label, px + 10, 196)), len(at(label, px, 186), at(label, px, 206))),
+            pip: Math.min(len(at(label, px - 12, 196), at(label, px + 12, 196)), len(at(label, px, 184), at(label, px, 208))),
           };
         }),
       };
@@ -218,11 +219,8 @@ try {
     const t = m.tokens;
     const low = (k) => t.reduce((a, b) => (b[k] < a[k] ? b : a));
     check(`7 diorama tokens face the camera (${width}x${height})`, m.view === "diorama" && t.length === 18 && t.every((k) => k.facing), `${t.filter((k) => k.facing).length} of ${t.length}`);
-    // The 11 px / 2 px floor holds on the desktop. On the sideways phone the 38 % cap binds first (docs/design/tokens.md
-    // "Angle"), so there the sizes are reported, not judged.
-    const floor = width >= 1000 ? check : (name, ok, detail) => console.log(`note ${name}: ${detail}${ok ? "" : " (under the floor; the 38 % cap binds)"}`);
-    floor(`7 diorama numerals at least 11 px tall (${width}x${height})`, t.every((k) => k.numeral >= 11), `smallest ${low("numeral").numeral.toFixed(1)} px (the ${low("numeral").n})`);
-    floor(`7 diorama pips at least 2 px across (${width}x${height})`, t.every((k) => k.pip >= 2), `smallest ${low("pip").pip.toFixed(2)} px (the ${low("pip").n})`);
+    check(`7 diorama numerals at least 11 px tall (${width}x${height})`, t.every((k) => k.numeral >= 11), `smallest ${low("numeral").numeral.toFixed(1)} px (the ${low("numeral").n})`);
+    check(`7 diorama pips at least 2 px across (${width}x${height})`, t.every((k) => k.pip >= 2), `smallest ${low("pip").pip.toFixed(2)} px (the ${low("pip").n})`);
     const big = t.reduce((a, b) => (b.share > a.share ? b : a));
     check(`7 diorama discs at most 1.25x and 38 % of a hex across (${width}x${height})`, t.every((k) => k.scale <= 1.25 + 1e-9 && k.share <= 0.38 + 0.005), `largest ${(big.share * 100).toFixed(1)} % (the ${big.n}, ${big.scale.toFixed(3)}x)`);
     check(`7 diorama discs never overlap on screen (${width}x${height})`, m.overlaps.length === 0, m.overlaps.join(" "));

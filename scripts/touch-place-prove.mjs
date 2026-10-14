@@ -86,12 +86,14 @@ for (const [w, h] of [
   for (const v of seen.values()) if (v.n < 3) coast.push(v);
   assert.equal(coast.length, 30, "30 coast corners");
   assert.equal(defaultView(1280, 720), "diorama", "desktop defaults to the diorama");
-  assert.equal(defaultView(844, 390), "diorama", "a sideways phone defaults to the diorama");
+  assert.equal(defaultView(900, 600), "diorama", "a landscape canvas 900 wide defaults to the diorama");
+  assert.equal(defaultView(899, 600), "overhead", "a landscape canvas under 900 wide defaults to overhead");
+  assert.equal(defaultView(844, 390), "overhead", "a sideways phone defaults to overhead");
   assert.equal(defaultView(390, 844), "overhead", "an upright phone defaults to overhead");
   for (const [w, h, ins, tag] of [
     [1280, 720, { top: 68, right: 12, bottom: 180, left: 200 }, "desktop"],
     [1280, 720, { top: 68, right: 12, bottom: 240, left: 200 }, "desktop, offer open"],
-    [844, 390, { top: 68, right: 12, bottom: 12, left: 284 }, "sideways"],
+    [844, 390, { top: 68, right: 12, bottom: 12, left: 284 }, "sideways (by choice)"],
     [390, 844, { top: 68, right: 12, bottom: 270, left: 12 }, "portrait (by choice)"],
   ]) {
     const f = fitDiorama(w, h, ins);
@@ -128,17 +130,26 @@ for (const [w, h] of [
       return Math.hypot(p.x - q.x, p.y - q.y);
     })));
     if (w > h) assert.ok(apart >= 18, `${w}x${h} ${tag}: adjacent corners ${apart.toFixed(1)} px apart`);
-    console.log(`${w}x${h} ${tag}: diorama fit at ${f.dist.toFixed(1)} units, coast fills ${coastFill.toFixed(3)} (docks and tree tops ${allFill.toFixed(3)}), adjacent corners >= ${apart.toFixed(1)} px`);
+    // The touch pick reach each corner actually gets on screen, at home (zoom 1) and zoomed fully out (0.8): 14 px unless
+    // the 0.5 world-unit cap binds (a far corner zoomed out on a small canvas) or the 0.28 floor lifts it (a near corner on
+    // a large one). At home on every hole it is at least 14 px; zoomed out it is what the cap leaves, reported.
+    const reachPx = (zoom) => corners.map(({ x, z }) => {
+      const d = dioramaProject(f, DIORAMA_POLAR, DIORAMA_AZIMUTH, x, CAP_LEVEL, z, f.dist / zoom).depth;
+      return (pickReach(d, f.focal, true) * f.focal) / d;
+    });
+    const [home, out8] = [reachPx(1), reachPx(0.8)];
+    assert.ok(home.every((px) => px >= 14 - 1e-9), `${w}x${h} ${tag}: every corner's touch reach at home is at least 14 px (smallest ${Math.min(...home).toFixed(1)})`);
+    console.log(`${w}x${h} ${tag}: diorama fit at ${f.dist.toFixed(1)} units, coast fills ${coastFill.toFixed(3)} (docks and tree tops ${allFill.toFixed(3)}), adjacent corners >= ${apart.toFixed(1)} px, touch reach ${Math.min(...home).toFixed(1)}-${Math.max(...home).toFixed(1)} px at home, ${Math.min(...out8).toFixed(1)}-${Math.max(...out8).toFixed(1)} px zoomed out`);
   }
-  // The pick reach grows with depth (a far corner is smaller on screen), never under the overhead volume and never as far
-  // as half the corner spacing, so two corners never share a pick.
-  const f = fitDiorama(844, 390, { top: 68, right: 12, bottom: 12, left: 284 });
-  const near = pickReach(f.dist - 4, f.focal, true);
-  const far = pickReach(f.dist + 4, f.focal, true);
-  assert.ok(far > near && near >= PICK_VERTEX_RADIUS && 2 * PICK_MAX < 1.12, `pick reach ${near.toFixed(3)} near, ${far.toFixed(3)} far`);
-  assert.ok(Math.abs((far * f.focal) / (f.dist + 4) - 14) < 1e-9 || far === PICK_MAX, "a touch reaches 14 px around a far corner");
+  // The invariant under the pixel reach: in world units it is never more than PICK_MAX, under half the 1.12 corner spacing,
+  // so two corners never share a pick however far out the eye is; and never under the overhead pick volume.
+  assert.ok(2 * PICK_MAX < 1.12, "two corners' reaches never meet");
+  for (const d of [1, 10, 20, 40, 80]) {
+    const r = pickReach(d, 700, true);
+    assert.ok(r <= PICK_MAX && r >= PICK_VERTEX_RADIUS, `reach at depth ${d}: ${r.toFixed(3)}`);
+  }
   assert.equal(pickReach(1, 1000, false), PICK_VERTEX_RADIUS, "a near mouse pick keeps the overhead volume");
-  console.log(`diorama pick reach at 844x390, touch: ${near.toFixed(3)} near, ${far.toFixed(3)} far (14 px)`);
+  console.log(`diorama pick reach: within [${PICK_VERTEX_RADIUS}, ${PICK_MAX}] world units at any depth, under half the corner spacing`);
 }
 
 // Straight down, the shift is the plain one; leaned, the ground shift is longer by 1/cos(lean).

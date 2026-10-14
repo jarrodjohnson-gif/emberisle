@@ -21,10 +21,10 @@
 //   (no state change) each refit the island clear of the rail they make, and closing or blurring refits it back;
 // - #422: on a sideways phone (844x390 and 667x375, touch) in the main phase with the hand shown, the HUD is a left column
 //   and the island beside it is larger than on main before #422 (a 101x85 px island, 8581 and 8569 px²), at least 60 % as
-//   wide as the hole is tall, every corner clear of the HUD, and every two adjacent corners at least 18 px apart (the
-//   diorama is the default there, and its tilt foreshortens a step along the line of sight, so the overhead view's 24 px
-//   is not kept; 18 px keeps a tap dead on a corner outside its neighbour's 14 px touch reach with room to spare); at
-//   844x390 a path and an outpost on the far (north) coast measure at least the touch slop on screen;
+//   wide as the hole is tall, every corner clear of the HUD, and (overhead, the default under 900 px wide) every two
+//   adjacent corners at least 24 px apart (the touch slop); at 844x390 with the diorama chosen, adjacent corners stay at
+//   least 18 px apart (the tilt foreshortens a step along the line of sight; 18 px keeps a tap dead on a corner outside its
+//   neighbour's 14 px touch reach), and a path and an outpost on the far (north) coast measure at least the touch slop;
 //   with Path armed and an edge picked by touch, the Place chip is in view and covers neither the hand nor the turn banner.
 // Zero console errors. Saves test-results/board-look-{title,play}-<size>.png. Port from VITE_PORT, default 8112.
 import { existsSync, mkdirSync } from "node:fs";
@@ -666,7 +666,7 @@ try {
     check(`${tag}: main phase with the hand shown, the HUD a left column`, land.phase === "main" && land.hand && land.column.right < w / 2 && land.insets.left > land.column.right, land);
     check(`${tag}: the island is larger than before #422 (${before} px²)`, land.area > before, { area: land.area, isle: land.isle, token: land.token });
     check(`${tag}: the island is at least 60 % as wide as the hole is tall, every corner clear of the HUD`, land.widthOverHoleH >= 0.6 && land.covered.length === 0, { widthOverHoleH: land.widthOverHoleH, holeH: land.holeH, covered: land.covered.slice(0, 6) });
-    check(`${tag}: the diorama is on and adjacent corners are at least 18 px apart`, land.view === "diorama" && land.apart >= 18, { view: land.view, apart: land.apart });
+    check(`${tag}: overhead by default (under 900 px wide) and adjacent corners at least 24 px apart`, land.view === "overhead" && land.apart >= 24, { view: land.view, apart: land.apart });
     await page.screenshot({ path: `test-results/board-look-play-${w}x${h}.png` });
     // A main-phase build by touch: Path armed, an edge picked, the column scrolled to its end first. Place and Cancel are
     // the column's first row, in view, and cover neither the hand nor the turn banner.
@@ -695,9 +695,19 @@ try {
     });
     check(`${tag}: an armed Path's Place chip is the column's first row, in view, clear of the hand and the turn banner`, chip.armed === "path" && chip.onTop && chip.inView && !chip.overHand && !chip.overTurn, chip);
     if (w === 844) {
-      // #597: the far (north) coast is smallest on screen. A path on the northmost coast edge and an outpost on its corner
-      // measured from their own meshes' boxes on screen, and the touch pick
-      // reach there, against the 24 px touch slop. Last on the page, so nothing above sees them. The outpost's size is reported, not judged: the pick reach is its target.
+      // #597: the diorama by choice on the sideways phone. Adjacent corners stay at least 18 px apart. The far (north) coast
+      // is smallest on screen: a path on the northmost coast edge and an outpost on its corner, measured from their own
+      // meshes' boxes on screen, and the touch pick reach there, against the 24 px touch slop. Last on the page, so nothing
+      // above sees them. The outpost's size is reported, not judged: the pick reach is its target.
+      await page.evaluate(() => window.__emberisle.getState().setViewChoice("diorama"));
+      await page.waitForFunction(() => window.__isle.view === "diorama" && !window.__isle.refitDue && !window.__isle.glide, null, { timeout: STEP_MS });
+      await drawn(page, 2);
+      const apart = await page.evaluate(() => {
+        const st = window.__emberisle.getState().state;
+        const at = Object.fromEntries(st.vertices.map((v) => [v.id, window.__isle.screenOf(v.id)]));
+        return +Math.min(...st.edges.map((e) => Math.hypot(at[e.va].x - at[e.vb].x, at[e.va].y - at[e.vb].y))).toFixed(1);
+      });
+      check(`${tag}: the diorama by choice keeps adjacent corners at least 18 px apart`, apart >= 18, { apart });
       const far = await page.evaluate(async () => {
         const isle = window.__isle;
         const g = window.__emberisle;

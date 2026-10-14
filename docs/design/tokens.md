@@ -67,7 +67,7 @@ Canvas 256 × 256, the same `fillStyle`/`arc` disc of radius 124 as today. Then:
 |---|---|---|---|---|
 | Digit | `bold 118px Georgia, serif`, baseline middle at y 108 (glyph about 83 px) | `bold 170px Georgia, serif`, `textBaseline = "middle"`, at (128, 96); the glyph is about 119 px tall, 0.27 on the board | 0.27 tall | 12 px (20 at 1920, 35 at zoom) |
 | 6 and 8 | fill `#c0392b` | fill `#b3261e`, then `strokeText` with `lineWidth 10`, `strokeStyle #b3261e`, `lineJoin "round"`: the digit is visibly heavier than the others, not only redder | | |
-| Pips | r 5.5, pitch 16, at y 188 | **r 10, pitch 26, at y 196**, fill `#1c1916` (or `#b3261e` for 6 and 8) | 0.045 each | 2 px (3.4 at 1920, 5.9 at zoom) |
+| Pips | r 5.5, pitch 16, at y 188 | **r 10, pitch 26, at y 196**, fill `#1c1916` (or `#b3261e` for 6 and 8); since #597 r 12 at a 28 px pitch ("Angle") | 0.045 each (0.054 since #597) | 2 px (3.4 at 1920, 5.9 at zoom) |
 
 The label is 0.58 across for 256 canvas px, so one canvas px is 0.00227 world units. The glyph of a 170 px
 Georgia bold numeral is about 0.7 em, 119 px, so it sits in y 37–155; "12" is about 187 px wide, and the
@@ -87,7 +87,7 @@ height, so the 150 px digit is still 22 px at the far pole at the default distan
 the canvas sharp at that angle. A billboard would turn the token into a card standing on the hex, which from
 overhead is an edge, and would leave the wayfarer (#132) nothing to stand on.
 
-**In the diorama view (#597)**, the default in play on a landscape screen, the camera is 38° above the horizon, where a
+**In the diorama view (#597)**, the default in play on a landscape canvas at least 900 px wide, the camera is 38° above the horizon, where a
 flat disc would foreshorten to 0.62. There each token (`poseTokens` in `isle-renderer.ts`, every drawn frame):
 
 - turns to the camera's azimuth, so the numeral stays upright as the player orbits, and pitches **22°** toward it
@@ -95,19 +95,22 @@ flat disc would foreshorten to 0.62. There each token (`poseTokens` in `isle-ren
   disc on the cap rather than a sign standing on it;
 - rests on its near edge: it is lifted by `s × (0.34 sin 22° + 0.03 cos 22°) − 0.03` (`userData.lift`), and the wayfarer
   stands on the lifted face;
-- grows by `s` toward a 12 px numeral (0.254 world units on the face) at its own depth, but never past 1.25x nor past 38 %
+- grows by `s` toward a 12 px numeral (0.31 world units on the face) at its own depth, but never past 1.25x nor past 38 %
   of a hex's width (0.68 × s against SQRT3 × HEX_SIZE = 1.94, so `s` stops at 1.08, which is the cap that binds), and
   shrinks while its disc would overlap another's on screen. Zoomed in, it is its own size again;
 - and a tree standing between it and the eye (in front of it within 1.7, within 0.55 of the line of sight) is drawn at
   0.7: without that, `tokens-prove` found part of one numeral hidden on each of two deals (3 of 5 points across the 12's
   glyph at 1280x720, 1 of 5 across a 9 at 844x390); at 0.7, none. Re-shaded when the camera's azimuth moves.
 
-The face, the rim rule, the 6 and 8's red and the pip rows are unchanged; in the overhead and free views the token lies flat
-at its own size as above. `tokens-prove` check 7 measures every token on screen in the diorama fit, from the label's own
-canvas through the camera: at 1280x720 the smallest numeral is 12.7 px and the smallest pip 2.22 px, the largest disc 35 %
-of its hex, no two discs overlap and no numeral is behind a tree. At 844x390 the 38 % cap holds the token at 1.08x and the
-smallest numeral is 8.0 px and pip 1.34 px, under the 11 px / 2 px floor; the proof reports those rather than judging them.
-On an upright phone, where the floor is furthest out of reach, the default is the overhead view.
+For the diorama the face changed too (it is the same face in every view): the numeral is `bold 192px` at (128, 104), about
+1.2x the 158 px glyph it was and 0.31 world units tall, a two-digit one condensed to 176 canvas px so it stays inside the
+face's chord; the pips are r 12 at a 28 px pitch on y 196 (from r 10 at 26), 0.054 world units each, so check 6 now reads
+runs of 23-25 px. The rim rule and the 6 and 8's red are unchanged; in the overhead and free views the token lies flat at
+its own size. `tokens-prove` check 7 measures every token on screen wherever the diorama is the default, from the label's
+own canvas through the camera, and holds the floor: at 1280x720 the smallest numeral is 19.7 px and pip 2.67 px; at 960x600
+(near the 900 px line) 15.5 px and 2.14 px; no disc over 36 % of its hex, none overlapping, no numeral behind a tree. On a
+sideways phone with the diorama chosen the 38 % cap holds the token at 1.08x: the numeral is 11.4 px but the pips 1.61 px,
+under 2 px, which is why the default there is overhead.
 
 ## Clear space
 
@@ -174,7 +177,7 @@ practice board after "Play versus the isle" is the second sample):
    (6.1 today), `contrast(#1c1916, #f4ead6) ≥ 7` (16 today).
 6. **Pips on the canvas.** In the browser, for a token with `n` = 5, read its label's
    `material.map.image` (the canvas) with `getImageData(0, 196, 256, 1)` and count the runs of dark pixels
-   (luma under 128) along that row: exactly four, each 19–21 px long. This catches the pitch and the radius
+   (luma under 128) along that row: exactly four, each 19–21 px long (23-25 since #597's r 12 pips). This catches the pitch and the radius
    regressing.
 
 `npm run client-prove` and `npm run tabs-prove` still pass.
