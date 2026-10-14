@@ -35,6 +35,8 @@ export default function IslandCanvas() {
     const sync = () => {
       const s = useGame.getState();
       renderer.setWaterChoice(s.waterChoice);
+      // The GPU probe waits for a settled client: the title with nothing dialling, or play with its first state.
+      renderer.setSettled(!s.restoring && ((s.screen === "title" && !s.net) || (s.screen === "play" && !!s.state)));
       renderer.setTitleMode(s.screen !== "play");
       // The chat dock and the trade sheet change the hole the HUD leaves without the game moving; chromeSeq counts the
       // commits that land one of them from a chunk that was still loading when its flag flipped (#488).

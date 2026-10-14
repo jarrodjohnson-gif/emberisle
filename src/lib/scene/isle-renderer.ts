@@ -180,10 +180,14 @@ export class IsleRenderer {
   // The scene without the crystal sea, colour and depth, drawn each crystal frame for the sea to refract and absorb.
   // Allocated on the first crystal frame.
   private under: THREE.WebGLRenderTarget | null = null;
-  private swell!: ReturnType<typeof makeSwell>;
   private opaqueSea!: THREE.Mesh;
-  private crystalSea!: THREE.Mesh;
-  private wash!: THREE.Mesh;
+  // The crystal sea, its edge strip, the floor and its props, and the CPU wave field: built on the first switch to crystal,
+  // so a page on the simple sea does no more at boot than before the crystal sea existed.
+  private coast!: ReturnType<typeof coastLoop>;
+  private crystal: { group: THREE.Group; sea: THREE.Mesh; wash: THREE.Mesh; swell: ReturnType<typeof makeSwell> } | null = null;
+  // The probe waits for a settled client (setSettled), then a second with no pointer on the canvas.
+  private settledAt = 0;
+  private lastPointer = 0;
   private titleMode = false;
   private lastFrame = 0;
   // Until when the loop runs at full rate: a drag, a camera move, a walk or a state change holds it there for 1 s (#331).
@@ -276,14 +280,9 @@ export class IsleRenderer {
     this.scene.add(this.opaqueSea);
     this.scene.add(this.oceanLife.group);
 
-    const coast = coastLoop();
+    const coast = (this.coast = coastLoop());
     this.sea = { uTime: this.water.uniforms.uTime!, uMotion: this.motion, uFade: { value: new THREE.Vector2(11, 22) } };
     this.water.uniforms.uFade = this.sea.uFade;
-    this.crystalSea = makeCrystalSea(coast, this.sea);
-    this.wash = makeWash(coast, this.sea);
-    this.swell = makeSwell(coast);
-    this.scene.add(this.crystalSea, this.wash, makeSeaFloor(coast, this.sea), makeFloorProps(coast));
-    this.crystalSea.visible = this.wash.visible = false;
     // The crystal sea refracts a half-float copy of the scene.
     const ext = this.renderer.extensions;
     this.crystalOk = this.renderer.capabilities.isWebGL2 && (ext.has("EXT_color_buffer_float") || ext.has("EXT_color_buffer_half_float"));
@@ -699,6 +698,7 @@ export class IsleRenderer {
   };
 
   private onDown = (e: PointerEvent) => {
+    this.lastPointer = performance.now();
     this.wake();
     this.down.x = e.clientX;
     this.down.y = e.clientY;
@@ -711,6 +711,7 @@ export class IsleRenderer {
   private onMove = (e: PointerEvent) => {
     if (!this.gesture.pointers.has(e.pointerId)) return;
     this.gesture.move(e.pointerId, e.clientX, e.clientY);
+    this.lastPointer = performance.now();
     this.wake();
     if (this.dragged || this.gesture.pointers.size !== 1) return;
     if (Math.hypot(e.clientX - this.down.x, e.clientY - this.down.y) > tapSlop(this.downType, this.coarse())) {
@@ -821,8 +822,8 @@ export class IsleRenderer {
     }
     this.water.uniforms.uTime!.value = t;
     this.ambientTime += dt;
-    const crystal = this.waterPath === "crystal";
-    this.oceanLife.step(dt, true, this.oceanViewport, crystal ? (x, z) => this.swell(x, z, t).y : undefined);
+    const swell = this.waterPath === "crystal" ? this.crystal?.swell : undefined;
+    this.oceanLife.step(dt, true, this.oceanViewport, swell ? (x, z) => swell(x, z, t).y : undefined);
     this.foam.material.opacity = 0.32 + 0.23 * (0.5 + 0.5 * Math.sin(t * 0.8));
     for (const tr of this.trees) tr.rotation.z = Math.sin(t * 1.05 + tr.position.x * 2) * 0.028;
     if (this.walk) {
@@ -877,14 +878,14 @@ export class IsleRenderer {
       work.arm.rotation.set(0, work.body.rotation.y, cycle < 8 ? -0.15 + Math.sin(phase * 2.2) * 0.28 : 0);
     }
     for (const b of this.boats) {
-      if (!crystal) {
+      if (!swell) {
         b.position.y = 0.06 + Math.sin(t * 1.6 + b.position.x) * 0.04;
         b.rotation.z = Math.sin(t * 1.35 + b.position.z) * 0.07;
         b.rotation.x = Math.sin(t * 1.1) * 0.035;
         continue;
       }
       // Ride the same waves the sea draws: lift with the height, pitch and roll with the slope under the hull.
-      const sea = this.swell(b.position.x, b.position.z, t);
+      const sea = swell(b.position.x, b.position.z, t);
       const yaw = b.rotation.y;
       b.position.y = 0.07 + sea.y;
       b.rotation.x = -Math.atan(sea.gx * Math.sin(yaw) + sea.gz * Math.cos(yaw));
@@ -906,28 +907,35 @@ export class IsleRenderer {
   }
 
   // The scene under the crystal sea, without it and its edge strip, into `under`.
-  private drawUnder() {
+  private drawUnder(c: NonNullable<IsleRenderer["crystal"]>) {
     const cam = this.overhead ? this.ortho : this.camera;
     const r = this.renderer;
     if (!this.under) {
       const size = r.getDrawingBufferSize(new THREE.Vector2());
       this.under = new THREE.WebGLRenderTarget(size.x, size.y, { type: THREE.HalfFloatType, depthTexture: new THREE.DepthTexture(size.x, size.y) });
     }
-    this.crystalSea.visible = this.wash.visible = false;
+    c.sea.visible = c.wash.visible = false;
     r.setRenderTarget(this.under);
     try {
       r.render(this.scene, cam);
     } finally {
       // A throw mid-render must not leave the target bound or the sea hidden for every later frame.
       r.setRenderTarget(null);
-      this.crystalSea.visible = this.wash.visible = true;
+      c.sea.visible = c.wash.visible = true;
     }
-    const u = (this.crystalSea.material as THREE.ShaderMaterial).uniforms;
+    const u = (c.sea.material as THREE.ShaderMaterial).uniforms;
     u.uUnder!.value = this.under.texture;
     u.uUnderDepth!.value = this.under.depthTexture;
     u.uResolution!.value.set(this.under.width, this.under.height);
     u.uNear!.value = cam.near;
     u.uFar!.value = cam.far;
+  }
+
+  // The client is settled (on the title with nothing dialling, or in play with its first state), so the probe may run: never
+  // during boot, a restore or a rejoin, when a slow GPU's measured frames would hold up the socket.
+  setSettled(v: boolean) {
+    if (!v) this.settledAt = 0;
+    else if (!this.settledAt) this.settledAt = performance.now();
   }
 
   // The player's saved choice from the table menu, or null to let the probe decide. Switching swaps the sea in place.
@@ -943,25 +951,36 @@ export class IsleRenderer {
   private applyWater() {
     const path: WaterPath = !this.crystalOk ? "simple" : (this.choice ?? this.probed?.path ?? this.probe?.stage ?? "simple");
     this.waterPath = path;
-    this.crystalSea.visible = this.wash.visible = path === "crystal";
+    if (path === "crystal" && !this.crystal) {
+      const sea = makeCrystalSea(this.coast, this.sea);
+      const wash = makeWash(this.coast, this.sea);
+      const group = new THREE.Group();
+      group.add(sea, wash, makeSeaFloor(this.coast, this.sea), makeFloorProps(this.coast));
+      this.scene.add(group);
+      this.crystal = { group, sea, wash, swell: makeSwell(this.coast) };
+    }
+    if (this.crystal) this.crystal.group.visible = path === "crystal";
     // The crystal sea's edge strip draws its own thin lace.
     this.opaqueSea.visible = this.foam.visible = path === "simple";
     const ratio = Math.min(window.devicePixelRatio, path === "simple" && this.coarse() ? 1.5 : 2);
-    this.renderer.setPixelRatio(ratio);
-    this.composer.setPixelRatio(ratio);
-    this.resize();
+    // The first call at boot is usually the simple sea at the ratio the constructor set: no second resize then.
+    if (ratio !== this.renderer.getPixelRatio()) {
+      this.renderer.setPixelRatio(ratio);
+      this.composer.setPixelRatio(ratio);
+      this.resize();
+    } else this.wake();
     this.onWater({ path, source: this.choice ? "saved" : "probe", ms: this.probed?.ms ?? null });
   }
 
-  // The one-time GPU check, on a built and warm scene, each frame made to finish by a 1-pixel read. First up to 10 simple
-  // frames once the island has been drawn 5 times: over 11 ms on average (the crystal sea draws the scene twice), the sea
+  // The one-time GPU check, on a built and warm scene of a settled client (a second after setSettled and after the last
+  // pointer on the canvas), each frame made to finish by a 1-pixel read. First up to 10 simple frames after 5 warm ones: over 11 ms on average (the crystal sea draws the scene twice), the sea
   // stays simple and the crystal one is never drawn. Otherwise up to 10 crystal frames after 3 warm ones: over 22 ms, back to
   // simple. A stage stops as soon as its frames pass its 10-frame budget, so a slow GPU stalls for one frame.
   private draw() {
     const t0 = performance.now();
     this.fadeSea();
-    const crystal = this.waterPath === "crystal";
-    if (crystal) this.drawUnder();
+    const crystal = this.waterPath === "crystal" ? this.crystal : null;
+    if (crystal) this.drawUnder(crystal);
     // The under pass already drew this frame's shadow map.
     this.renderer.shadowMap.autoUpdate = !crystal;
     try {
@@ -973,7 +992,9 @@ export class IsleRenderer {
     const p = this.probe;
     const warm = p?.stage === "simple" ? 5 : 3;
     const budget = p?.stage === "simple" ? 11 : 22;
-    if (!p || p.stage !== this.waterPath || !this.lastState || ++p.frames <= warm) return;
+    const now = performance.now();
+    const settled = this.settledAt > 0 && now - this.settledAt > 1000 && now - this.lastPointer > 1000;
+    if (!p || p.stage !== this.waterPath || !this.lastState || !settled || ++p.frames <= warm) return;
     const gl = this.renderer.getContext();
     gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(4));
     p.ms += performance.now() - t0;
