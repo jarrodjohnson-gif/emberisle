@@ -18,7 +18,8 @@ const BUDGETS = [
   { name: "index", gzipBytes: 118500 },
   { name: "IslandCanvas", gzipBytes: 182830 },
   { name: "online", gzipBytes: 8000 },
-  { name: "sheets", gzipBytes: 6282 },
+  // #545: 6.37 kB with the preceding target, win and deck changes; retain 0.13 kB of headroom.
+  { name: "sheets", gzipBytes: 6500 },
   { name: "moments", gzipBytes: 2610 },
   // The lucide Minus icon, which Chat (online) and TradePanel (sheets) both use and nothing in the index does: rolldown
   // gives a module shared by two lazy chunks a chunk of its own. If the sharing ends, so does this chunk; drop the line.
