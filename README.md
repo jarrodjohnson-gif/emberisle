@@ -246,6 +246,7 @@ Full rules: **[docs/FRAMEWORK.md](docs/FRAMEWORK.md)**. In short:
 | `docs/FRAMEWORK.md` | The Fractal Build: how work is organized and picked up |
 | `docs/BUILD_BIBLE.md` | Full product spec for the Unreal client: UX, sounds, messages, and the rules it must not re-decide |
 | `docs/design/` | Step-2 specs: hex-id map, menus, connection, placement, dice, install |
+| `docs/design/direction.md` | The chosen visual direction (cream chips on a teal table), with the mockup in `docs/design/mockups/` |
 | `.github/workflows/ci.yml` | CI: runs the Run-it checks on every PR |
 | `docs/research/` | Step-1 notes, one per topic (`_TEMPLATE.md`) |
 | `docs/VISION.md`, `docs/HARBORS.md`, `docs/IDEAS.md` | The look, the dock layout, and unscheduled ideas |
