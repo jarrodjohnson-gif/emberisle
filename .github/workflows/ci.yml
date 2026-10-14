@@ -177,6 +177,8 @@ jobs:
       - if: matrix.suite == 'presentation'
         run: npm run seat-rail-prove
       - if: matrix.suite == 'presentation'
+        run: npm run public-score-prove
+      - if: matrix.suite == 'presentation'
         run: npm run hand-hidden-prove
       - if: matrix.suite == 'presentation'
         run: npm run install-prove

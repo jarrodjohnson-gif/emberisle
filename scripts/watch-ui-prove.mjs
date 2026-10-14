@@ -381,7 +381,8 @@ try {
     s.askTable({ wool: 1 }, { ore: 1 });
     s.setReady(true);
     s.startTable();
-    s.openMenu(s.state.players[0].id);
+    const scorePlayer = s.state.players[0].id;
+    s.openMenu(scorePlayer);
     const sentByStore = n;
     const before = window.__emberisle.getState();
     const beforeFrames = captured.frames.length;
@@ -396,9 +397,12 @@ try {
     captured.socket.send(JSON.stringify({ type: "roll" }));
     const rawFrames = captured.frames.length - rawBefore;
     if (rawFrames !== 1) throw new Error(`raw watcher roll sent ${rawFrames} frames`);
-    return { sentByStore, menuFor: window.__emberisle.getState().menuFor, errorSeqBefore, gameBefore, rawFrames };
+    return { sentByStore, scorePlayer, menuFor: window.__emberisle.getState().menuFor, errorSeqBefore, gameBefore, rawFrames };
   });
-  if (sent.sentByStore !== 0 || sent.menuFor !== null) throw new Error(`the store sent ${sent.sentByStore} seat-only messages or opened a menu (${sent.menuFor}) for a watcher`);
+  if (sent.sentByStore !== 0 || sent.menuFor !== sent.scorePlayer) throw new Error(`the store sent ${sent.sentByStore} seat-only messages or failed to open public score details (${sent.menuFor}) for a watcher`);
+  await w1.page.getByTestId("score-breakdown").waitFor();
+  if (await w1.page.getByTestId("player-menu").getByRole("button").count()) throw new Error("watcher score detail exposes seat actions");
+  await w1.page.keyboard.press("Escape");
   wv = await until(async () => {
     const v = await view(w1);
     return v.error === "Watching only." ? v : null;
@@ -410,7 +414,7 @@ try {
   if (sent.rawFrames !== 1 || afterRaw.errorSeq !== sent.errorSeqBefore + 1) throw new Error(`the raw watcher roll did not produce one server refusal: ${JSON.stringify({ rawFrames: sent.rawFrames, before: sent.errorSeqBefore, after: afterRaw.errorSeq })}`);
   if (afterRaw.game !== sent.gameBefore || wv.seq !== seatViews[0].seq || (await view(a)).seq !== seatViews[0].seq) throw new Error("the raw watcher intent moved the game");
   if (c.chats.some((l) => l.text === "from the stands")) throw new Error("a watcher's chat reached a seat");
-  console.log(`refusals: dispatch, chat, react, ask, ready, start, menu -> 0 messages sent, no menu; net.act(roll) -> false/0 frames; raw socket roll -> "Watching only." at seq ${wv.seq} with no game mutation`);
+  console.log(`refusals: dispatch, chat, react, ask, ready, start -> 0 messages; public score menu read-only; net.act(roll) -> false/0 frames; raw socket roll -> "Watching only." at seq ${wv.seq} with no game mutation`);
 
   // --- 5. The seats play to the win; the watcher gets the full reveal, the same rows as a seat, with no seed or rng.
   // The watcher's live board is proven above (seq 0). Under software GL that loop plus 300 pushes starves the tab past the
