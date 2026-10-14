@@ -96,6 +96,7 @@ export interface GameLogLine {
 }
 const GAME_LOG_MAX = 200;
 const LOG_FILTER_KEY = "emberisle-log-filter";
+const WATER_KEY = "emberisle-water";
 
 // The engine keeps only the last 41 log lines (rules.ts `log`), so once the log is full its length never grows and
 // `after.slice(before.length)` would be empty. The new lines are what follows the longest tail of the old log that
@@ -114,6 +115,15 @@ function stamp(lines: string[]): GameLogLine[] {
 
 function appendLog(log: GameLogLine[], lines: string[]) {
   return lines.length ? [...log, ...stamp(lines)].slice(-GAME_LOG_MAX) : log;
+}
+
+function savedWater(): WaterPath | null {
+  try {
+    const v = localStorage.getItem(WATER_KEY);
+    return v === "crystal" || v === "simple" ? v : null;
+  } catch {
+    return null;
+  }
 }
 
 function savedLogFilter(): "all" | "chat" {
@@ -135,6 +145,7 @@ import { connectTable, hostUrl, type Bag, type ChatLine, type Legal, type Me, ty
 import { PROTO } from "@/lib/net/proto";
 import { play, yourTurn, type SoundName } from "@/lib/sound";
 import { calmMotion, LAND_MS } from "@/lib/scene/landing";
+import type { WaterPath, WaterStatus } from "@/lib/scene/crystal-water";
 
 // The ask-the-table offer every seat is looking at (docs/BUILD_BIBLE.md 4.4). `until` is when the host's 20 s run out.
 export interface OpenOffer {
@@ -270,6 +281,11 @@ interface GameStore {
   // Which rows the dock lists: the chat alone, or the chat and the game log together. Remembered like `chatOpen`.
   logFilter: "all" | "chat";
   setLogFilter: (v: "all" | "chat") => void;
+  // The sea (docs/design/crystal-water.md): the player's saved Water choice (null lets the GPU probe decide), and what the
+  // renderer actually shows.
+  waterChoice: WaterPath | null;
+  setWaterChoice: (v: WaterPath) => void;
+  water: WaterStatus | null;
   // Ask-the-table trades (docs/BUILD_BIBLE.md 4.4): the open offer, who has said No to it, and the asker's closing line.
   offer: OpenOffer | null;
   declined: string[];
@@ -402,6 +418,8 @@ export const useGame = create<GameStore>((set, get) => ({
   chatDraft: "",
   gameLog: [],
   logFilter: savedLogFilter(),
+  waterChoice: savedWater(),
+  water: null,
   offer: null,
   declined: [],
   tradeOutcome: null,
@@ -775,6 +793,14 @@ export const useGame = create<GameStore>((set, get) => ({
       // storage can be blocked; the filter still holds for this page
     }
     set({ logFilter: v });
+  },
+  setWaterChoice: (v) => {
+    try {
+      localStorage.setItem(WATER_KEY, v);
+    } catch {
+      // storage can be blocked; the choice still holds for this page
+    }
+    set({ waterChoice: v });
   },
   sendChat: (text) => {
     if (!get().spectator) get().net?.say(text);

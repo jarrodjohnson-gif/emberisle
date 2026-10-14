@@ -28,6 +28,7 @@ import { LAND_MS } from "@/lib/scene/landing";
 import { mulberry32, hashStr } from "@/lib/utils";
 import { PAINT, RIM } from "@/lib/scene/palette";
 import { OceanLife } from "@/lib/scene/ocean-life";
+import { CAUSTIC_GLSL, PAPER, makeCrystalSea, makeFloorProps, makeSeaFloor, makeSwell, makeWash, type SeaUniforms, type WaterPath, type WaterStatus } from "@/lib/scene/crystal-water";
 import { payingHexes } from "@/lib/game/rules";
 import { type GameState, type HarborKind, type HexCell, type Terrain, type Vertex } from "@/lib/game/types";
 
@@ -162,6 +163,31 @@ export class IsleRenderer {
   private flashes: { mat: THREE.MeshStandardMaterial; age: number }[] = [];
   private clock = new THREE.Timer();
   private water = makeWater();
+  // The crystal sea, or the simple shader when the GPU cannot render to a float target, the one-time probe finds it slow, or
+  // the player chose Simple in the table menu (crystal-water.md). Reported through `onWater`.
+  // Every load starts simple; only a saved Crystal choice or a passed probe switches it (software GL stays cheap while a
+  // reloaded page rejoins its table).
+  waterPath: WaterPath = "simple";
+  onWater: (w: WaterStatus) => void = () => {};
+  private choice: WaterPath | null = null;
+  private waterSet = false;
+  private probed: { path: WaterPath; ms: number } | null = null;
+  private probe: { stage: WaterPath; frames: number; ms: number } | null = null;
+  private crystalOk = false;
+  private motion = { value: 1 };
+  // The sea's shared clock, motion and paper fade (inner and outer radius), for the crystal sea, its floor and the simple sea.
+  private sea!: SeaUniforms;
+  // The scene without the crystal sea, colour and depth, drawn each crystal frame for the sea to refract and absorb.
+  // Allocated on the first crystal frame.
+  private under: THREE.WebGLRenderTarget | null = null;
+  private opaqueSea!: THREE.Mesh;
+  // The crystal sea, its edge strip, the floor and its props, and the CPU wave field: built on the first switch to crystal,
+  // so a page on the simple sea does no more at boot than before the crystal sea existed.
+  private coast!: ReturnType<typeof coastLoop>;
+  private crystal: { group: THREE.Group; sea: THREE.Mesh; wash: THREE.Mesh; swell: ReturnType<typeof makeSwell> } | null = null;
+  // The probe waits for a settled client (setSettled), then a second with no pointer on the canvas.
+  private settledAt = 0;
+  private lastPointer = 0;
   private titleMode = false;
   private lastFrame = 0;
   // Until when the loop runs at full rate: a drag, a camera move, a walk or a state change holds it there for 1 s (#331).
@@ -190,9 +216,10 @@ export class IsleRenderer {
       "position:fixed;visibility:hidden;pointer-events:none;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)";
     document.body.appendChild(this.safeProbe);
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: "high-performance" });
-    // Frame cost tracks pixels (#310): 1.5 on a phone is 2.25x the pixels of 1, against 4x at 2.
+    // Frame cost tracks pixels (#310). The crystal sea runs at up to 2 everywhere (every player's phone is an iPhone Pro class
+    // GPU); `applyWater` keeps 1.5 on a phone for the simple sea (2.25x the pixels of 1, against 4x at 2).
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, this.coarse() ? 1.5 : 2));
-    this.renderer.setClearColor(0x158e9a, 1);
+    this.renderer.setClearColor(PAPER, 1);
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -225,7 +252,7 @@ export class IsleRenderer {
     this.orbit.addEventListener("start", this.wake);
     this.orbit.addEventListener("change", this.wake);
 
-    this.scene.fog = new THREE.Fog(0x158e9a, 26, 52);
+    this.scene.fog = new THREE.Fog(PAPER, 26, 52);
     // A lit board on a table (polish.md "The board look target", #135): one warm key lamp carries the light, so the
     // slabs shade on their sides and every prop casts a soft shadow; the sky and ground bounce are low and nearly grey,
     // so the caps' own paint is the colour on screen. No flat ambient: that was what washed the caps out.
@@ -247,13 +274,18 @@ export class IsleRenderer {
     this.scene.add(fill);
 
     // Water, beach, and foam (docs/design/ocean.md). Built once: the outline does not change when the isle is dealt.
-    const ocean = new THREE.Mesh(new THREE.CircleGeometry(48, 64), this.water);
-    ocean.rotation.x = -Math.PI / 2;
-    ocean.position.y = -0.02;
-    this.scene.add(ocean);
+    this.opaqueSea = new THREE.Mesh(new THREE.CircleGeometry(48, 64), this.water);
+    this.opaqueSea.rotation.x = -Math.PI / 2;
+    this.opaqueSea.position.y = -0.02;
+    this.scene.add(this.opaqueSea);
     this.scene.add(this.oceanLife.group);
 
-    const coast = coastLoop();
+    const coast = (this.coast = coastLoop());
+    this.sea = { uTime: this.water.uniforms.uTime!, uMotion: this.motion, uFade: { value: new THREE.Vector2(11, 22) } };
+    this.water.uniforms.uFade = this.sea.uFade;
+    // The crystal sea refracts a half-float copy of the scene.
+    const ext = this.renderer.extensions;
+    this.crystalOk = this.renderer.capabilities.isWebGL2 && (ext.has("EXT_color_buffer_float") || ext.has("EXT_color_buffer_half_float"));
     for (const c of coast) this.coastMiter.set(c.id, { mx: c.mx, mz: c.mz });
     this.coastOrder = coast.map((c) => c.id);
     const beach = new THREE.Mesh(
@@ -498,6 +530,7 @@ export class IsleRenderer {
     this.renderer.domElement.removeEventListener("pointercancel", this.onCancel);
     this.safeProbe.remove();
     this.oceanLife.dispose();
+    this.under?.dispose();
     this.renderer.dispose();
   }
 
@@ -547,6 +580,8 @@ export class IsleRenderer {
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(w, h, false);
     this.composer?.setSize(w, h);
+    const ratio = this.renderer.getPixelRatio();
+    this.under?.setSize(Math.round(w * ratio), Math.round(h * ratio));
     this.ssao?.setSize(w, h);
     this.refit(true);
     // The HUD re-lays out for the new size after this event (a rotation swaps its columns and rails), so the hole just
@@ -663,6 +698,7 @@ export class IsleRenderer {
   };
 
   private onDown = (e: PointerEvent) => {
+    this.lastPointer = performance.now();
     this.wake();
     this.down.x = e.clientX;
     this.down.y = e.clientY;
@@ -675,6 +711,7 @@ export class IsleRenderer {
   private onMove = (e: PointerEvent) => {
     if (!this.gesture.pointers.has(e.pointerId)) return;
     this.gesture.move(e.pointerId, e.clientX, e.clientY);
+    this.lastPointer = performance.now();
     this.wake();
     if (this.dragged || this.gesture.pointers.size !== 1) return;
     if (Math.hypot(e.clientX - this.down.x, e.clientY - this.down.y) > tapSlop(this.downType, this.coarse())) {
@@ -775,16 +812,18 @@ export class IsleRenderer {
       this.controls.enableDamping = !calm;
       this.controls.update();
     }
+    // Reduced motion: a flat, still sea; only the foam lace stays.
+    this.motion.value = calm ? 0 : 1;
     if (calm) {
       this.oceanLife.step(0, false, this.oceanViewport);
       this.pulseMarks(0, true);
-      this.composer.render();
-      this.renders += 1;
+      this.draw();
       return;
     }
     this.water.uniforms.uTime!.value = t;
     this.ambientTime += dt;
-    this.oceanLife.step(dt, true, this.oceanViewport);
+    const swell = this.waterPath === "crystal" ? this.crystal?.swell : undefined;
+    this.oceanLife.step(dt, true, this.oceanViewport, swell ? (x, z) => swell(x, z, t).y : undefined);
     this.foam.material.opacity = 0.32 + 0.23 * (0.5 + 0.5 * Math.sin(t * 0.8));
     for (const tr of this.trees) tr.rotation.z = Math.sin(t * 1.05 + tr.position.x * 2) * 0.028;
     if (this.walk) {
@@ -839,13 +878,136 @@ export class IsleRenderer {
       work.arm.rotation.set(0, work.body.rotation.y, cycle < 8 ? -0.15 + Math.sin(phase * 2.2) * 0.28 : 0);
     }
     for (const b of this.boats) {
-      b.position.y = 0.06 + Math.sin(t * 1.6 + b.position.x) * 0.04;
-      b.rotation.z = Math.sin(t * 1.35 + b.position.z) * 0.07;
-      b.rotation.x = Math.sin(t * 1.1) * 0.035;
+      if (!swell) {
+        b.position.y = 0.06 + Math.sin(t * 1.6 + b.position.x) * 0.04;
+        b.rotation.z = Math.sin(t * 1.35 + b.position.z) * 0.07;
+        b.rotation.x = Math.sin(t * 1.1) * 0.035;
+        continue;
+      }
+      // Ride the same waves the sea draws: lift with the height, pitch and roll with the slope under the hull.
+      const sea = swell(b.position.x, b.position.z, t);
+      const yaw = b.rotation.y;
+      b.position.y = 0.07 + sea.y;
+      b.rotation.x = -Math.atan(sea.gx * Math.sin(yaw) + sea.gz * Math.cos(yaw));
+      b.rotation.z = Math.atan(sea.gx * Math.cos(yaw) - sea.gz * Math.sin(yaw));
     }
-    this.composer.render();
-    this.renders += 1;
+    this.draw();
   };
+
+  // In play (overhead) the sea fills the canvas: the fade to paper starts 1.5x past the farthest visible point. In the free
+  // view the far horizon reaches the paper.
+  private fadeSea() {
+    const fade = this.sea.uFade.value;
+    if (!this.overhead) return fade.set(11, 22);
+    const o = this.ortho;
+    const halfW = (o.right - o.left) / 2 / o.zoom;
+    const halfH = (o.top - o.bottom) / 2 / o.zoom / Math.max(0.3, Math.cos(this.orbit.getPolarAngle()));
+    const far = Math.hypot(halfW, halfH) + Math.hypot(this.orbit.target.x, this.orbit.target.z);
+    fade.set(Math.min(40, far * 1.5), Math.min(47, far * 1.5 + 10));
+  }
+
+  // The scene under the crystal sea, without it and its edge strip, into `under`.
+  private drawUnder(c: NonNullable<IsleRenderer["crystal"]>) {
+    const cam = this.overhead ? this.ortho : this.camera;
+    const r = this.renderer;
+    if (!this.under) {
+      const size = r.getDrawingBufferSize(new THREE.Vector2());
+      this.under = new THREE.WebGLRenderTarget(size.x, size.y, { type: THREE.HalfFloatType, depthTexture: new THREE.DepthTexture(size.x, size.y) });
+    }
+    c.sea.visible = c.wash.visible = false;
+    r.setRenderTarget(this.under);
+    try {
+      r.render(this.scene, cam);
+    } finally {
+      // A throw mid-render must not leave the target bound or the sea hidden for every later frame.
+      r.setRenderTarget(null);
+      c.sea.visible = c.wash.visible = true;
+    }
+    const u = (c.sea.material as THREE.ShaderMaterial).uniforms;
+    u.uUnder!.value = this.under.texture;
+    u.uUnderDepth!.value = this.under.depthTexture;
+    u.uResolution!.value.set(this.under.width, this.under.height);
+    u.uNear!.value = cam.near;
+    u.uFar!.value = cam.far;
+  }
+
+  // The client is settled (on the title with nothing dialling, or in play with its first state), so the probe may run: never
+  // during boot, a restore or a rejoin, when a slow GPU's measured frames would hold up the socket.
+  setSettled(v: boolean) {
+    if (!v) this.settledAt = 0;
+    else if (!this.settledAt) this.settledAt = performance.now();
+  }
+
+  // The player's saved choice from the table menu, or null to let the probe decide. Switching swaps the sea in place.
+  setWaterChoice(choice: WaterPath | null) {
+    if (choice === this.choice && this.waterSet) return;
+    this.waterSet = true;
+    this.choice = choice;
+    // The probe runs once, when nothing has chosen for it: first on the simple sea, then (if that is quick) on the crystal one.
+    this.probe = !choice && !this.probed && this.crystalOk ? { stage: "simple", frames: 0, ms: 0 } : null;
+    this.applyWater();
+  }
+
+  private applyWater() {
+    const path: WaterPath = !this.crystalOk ? "simple" : (this.choice ?? this.probed?.path ?? this.probe?.stage ?? "simple");
+    this.waterPath = path;
+    if (path === "crystal" && !this.crystal) {
+      const sea = makeCrystalSea(this.coast, this.sea);
+      const wash = makeWash(this.coast, this.sea);
+      const group = new THREE.Group();
+      group.add(sea, wash, makeSeaFloor(this.coast, this.sea), makeFloorProps(this.coast));
+      this.scene.add(group);
+      this.crystal = { group, sea, wash, swell: makeSwell(this.coast) };
+    }
+    if (this.crystal) this.crystal.group.visible = path === "crystal";
+    // The crystal sea's edge strip draws its own thin lace.
+    this.opaqueSea.visible = this.foam.visible = path === "simple";
+    const ratio = Math.min(window.devicePixelRatio, path === "simple" && this.coarse() ? 1.5 : 2);
+    // The first call at boot is usually the simple sea at the ratio the constructor set: no second resize then.
+    if (ratio !== this.renderer.getPixelRatio()) {
+      this.renderer.setPixelRatio(ratio);
+      this.composer.setPixelRatio(ratio);
+      this.resize();
+    } else this.wake();
+    this.onWater({ path, source: this.choice ? "saved" : "probe", ms: this.probed?.ms ?? null });
+  }
+
+  // The one-time GPU check, on a built and warm scene of a settled client (a second after setSettled and after the last
+  // pointer on the canvas), each frame made to finish by a 1-pixel read. First up to 10 simple frames after 5 warm ones: over 11 ms on average (the crystal sea draws the scene twice), the sea
+  // stays simple and the crystal one is never drawn. Otherwise up to 10 crystal frames after 3 warm ones: over 22 ms, back to
+  // simple. A stage stops as soon as its frames pass its 10-frame budget, so a slow GPU stalls for one frame.
+  private draw() {
+    const t0 = performance.now();
+    this.fadeSea();
+    const crystal = this.waterPath === "crystal" ? this.crystal : null;
+    if (crystal) this.drawUnder(crystal);
+    // The under pass already drew this frame's shadow map.
+    this.renderer.shadowMap.autoUpdate = !crystal;
+    try {
+      this.composer.render();
+    } finally {
+      this.renderer.shadowMap.autoUpdate = true;
+    }
+    this.renders += 1;
+    const p = this.probe;
+    const warm = p?.stage === "simple" ? 5 : 3;
+    const budget = p?.stage === "simple" ? 11 : 22;
+    const now = performance.now();
+    const settled = this.settledAt > 0 && now - this.settledAt > 1000 && now - this.lastPointer > 1000;
+    if (!p || p.stage !== this.waterPath || !this.lastState || !settled || ++p.frames <= warm) return;
+    const gl = this.renderer.getContext();
+    gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(4));
+    p.ms += performance.now() - t0;
+    const n = p.frames - warm;
+    if (n < 10 && p.ms <= budget * 10) return;
+    const ms = Math.round((p.ms / n) * 10) / 10;
+    if (p.stage === "simple" && ms <= budget) this.probe = { stage: "crystal", frames: 0, ms: 0 };
+    else {
+      this.probe = null;
+      this.probed = { path: p.stage === "crystal" && ms <= budget ? "crystal" : "simple", ms };
+    }
+    this.applyWater();
+  }
 
   // Compute the visible water once when choosing a visit, not on every animal frame.
   private oceanViewport = () => {
@@ -1160,7 +1322,8 @@ function makeWater() {
       uTime: { value: 0 },
       uShallow: { value: new THREE.Color(0x65d8cb) },
       uDeep: { value: new THREE.Color(0x158e9a) },
-      uFog: { value: new THREE.Color(0x158e9a) },
+      uFog: { value: PAPER.clone() },
+      uFade: { value: new THREE.Vector2(11, 22) },
     },
     vertexShader: /* glsl */ `
       // The circle is local XY; +Z is up after the mesh's rotation. Crests stay at or below y = 0.
@@ -1179,24 +1342,9 @@ function makeWater() {
       uniform vec3 uShallow;
       uniform vec3 uDeep;
       uniform vec3 uFog;
+      uniform vec2 uFade;
       varying vec2 vXZ;
-      vec2 cellPoint(vec2 p) {
-        vec3 h = fract(vec3(p.xyx) * 0.1031);
-        h += dot(h, h.yzx + 33.33);
-        return fract((h.xx + h.yz) * h.zy);
-      }
-      float caustic(vec2 p) {
-        vec2 cell = floor(p), local = fract(p);
-        float near = 8.0, second = 8.0;
-        for (int y = -1; y <= 1; y++) for (int x = -1; x <= 1; x++) {
-          vec2 offset = vec2(float(x), float(y));
-          vec2 v = offset + 0.15 + 0.7 * cellPoint(cell + offset) - local;
-          float d = dot(v, v);
-          second = min(second, max(near, d));
-          near = min(near, d);
-        }
-        return 1.0 - smoothstep(0.014, 0.055, second - near);
-      }
+      ${CAUSTIC_GLSL}
       void main() {
         float d = length(vXZ);
         vec3 c = mix(uShallow, uDeep, smoothstep(8.0, 28.0, d));
@@ -1205,7 +1353,7 @@ function makeWater() {
         float light = caustic(p * 1.7 + vec2(uTime * 0.04, -uTime * 0.025));
         c *= 1.0 + 0.035 * ripple;
         c = mix(c, vec3(0.78, 0.97, 0.92), light * 0.07 * (1.0 - smoothstep(8.0, 20.0, d)));
-        c = mix(c, uFog, smoothstep(18.0, 40.0, d));
+        c = mix(c, uFog, smoothstep(uFade.x, uFade.y, d));
         gl_FragColor = vec4(c, 0.88);
       }
     `,

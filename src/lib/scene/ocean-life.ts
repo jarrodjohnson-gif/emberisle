@@ -14,7 +14,7 @@ const SETTINGS = {
 } satisfies Record<OceanSpecies, { radius: number; reach: number; duration: number; arc: number }>;
 const MAT = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.72, flatShading: true });
 
-function part(geo: THREE.BufferGeometry, colour: number, x = 0, y = 0, z = 0, sx = 1, sy = 1, sz = 1) {
+export function part(geo: THREE.BufferGeometry, colour: number, x = 0, y = 0, z = 0, sx = 1, sy = 1, sz = 1) {
   let g = geo.index ? geo.toNonIndexed() : geo;
   if (g !== geo) geo.dispose();
   g = g.scale(sx, sy, sz).translate(x, y, z);
@@ -122,6 +122,8 @@ export class OceanLife {
   private next = 10;
   private active: Visit | null = null;
   private visits = 0;
+  // The height of the sea's waves at a point, so a surfaced animal and its wake ride them (crystal-water.md).
+  private surface: (x: number, z: number) => number = () => 0;
 
   constructor() {
     this.group.name = "ocean-life";
@@ -166,7 +168,7 @@ export class OceanLife {
     this.pose(this.active);
   }
 
-  step(dt: number, enabled: boolean, view: () => View) {
+  step(dt: number, enabled: boolean, view: () => View, surface: (x: number, z: number) => number = () => 0) {
     if (!enabled) {
       // Frozen (reduced motion, hidden page): a visitor must not stay posed mid-air or mid-spout, so the visit ends.
       if (this.active) {
@@ -179,6 +181,7 @@ export class OceanLife {
       return;
     }
     if (dt <= 0) return;
+    this.surface = surface;
     if (this.active) {
       this.active.age = Math.min(this.active.duration, this.active.age + dt);
       this.pose(this.active);
@@ -205,7 +208,9 @@ export class OceanLife {
     const c = this.creatures[v.species];
     // Surface and dive over two seconds: geometry appears through the ocean plane without a popup/fade.
     const visible = Math.min(1, v.age / 2, (v.duration - v.age) / 2);
-    c.root.position.set(Math.cos(a) * v.radius, -0.48 + visible * 0.46, Math.sin(a) * v.radius);
+    const x = Math.cos(a) * v.radius, z = Math.sin(a) * v.radius;
+    const sea = this.surface(x, z);
+    c.root.position.set(x, -0.48 + visible * (0.46 + sea), z);
     c.root.rotation.y = -a + (v.direction > 0 ? 0 : Math.PI);
     c.root.rotation.x = 0;
     if (c.tail) c.tail.rotation.x = Math.sin(v.age * (v.species === "whale" ? 1.25 : 3.2)) * 0.16;
@@ -220,7 +225,7 @@ export class OceanLife {
       c.breath.visible = puff > 0;
       c.breath.scale.y = puff;
     }
-    c.wake.position.set(c.root.position.x, 0.006, c.root.position.z);
+    c.wake.position.set(c.root.position.x, 0.006 + sea, c.root.position.z);
     c.wake.rotation.set(-Math.PI / 2, 0, c.root.rotation.y);
     c.wake.scale.set(1.4 + 0.2 * Math.sin(v.age), 2.2, 1);
     (c.wake.material as THREE.MeshBasicMaterial).opacity = visible * 0.13;

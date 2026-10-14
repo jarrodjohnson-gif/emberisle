@@ -14,6 +14,8 @@ const settle = page => page.waitForFunction(() => !window.__isle.refitDue && !wi
 try {
   for (const [width, height, phone] of [[1280,720,false],[390,844,true],[844,390,true]]) {
     const context = await browser.newContext({ viewport: { width, height }, hasTouch: phone, isMobile: phone });
+    // The crystal sea (crystal-water.md), whatever the probe would pick on software GL: the visitors ride its waves.
+    await context.addInitScript(() => localStorage.setItem("emberisle-water", "crystal"));
     const page = await context.newPage();
     page.on("pageerror", e => errors.push(e.message));
     page.on("console", m => m.type() === "error" && errors.push(m.text()));
@@ -81,8 +83,12 @@ try {
       const pickable = new Set(r.pickables.flatMap(o => { const nodes=[];o.traverse(n=>nodes.push(n));return nodes; }));
       let visitorPickables=0;
       life.group.traverse(o => { if(pickable.has(o))visitorPickables++; });
-      return {seq, stateUnchanged:before===JSON.stringify(state),routes,observed:[...observed],minRadius,maxMeshes,waitAfterVisit,disabledUnchanged,fieldMargins,farms:r.farmWork.length,ore:r.oreWork.length,visitorPickables};
+      const props = r.scene.getObjectByName("floor-props");
+      const floorTris = props.geometry.index ? props.geometry.index.count / 3 : props.geometry.attributes.position.count / 3;
+      return {floorTris, water: window.__emberisle.water, seq, stateUnchanged:before===JSON.stringify(state),routes,observed:[...observed],minRadius,maxMeshes,waitAfterVisit,disabledUnchanged,fieldMargins,farms:r.farmWork.length,ore:r.oreWork.length,visitorPickables};
     });
+    assert.equal(geometry.water?.path, "crystal", `${width}: the crystal sea is on`);
+    assert.ok(geometry.floorTris > 0 && geometry.floorTris < 2000, `${width}: sea-floor props under 2k triangles (${geometry.floorTris})`);
     assert.ok(geometry.stateUnchanged, `${width}: ambient events preserve full game state/RNG`);
     assert.ok(geometry.minRadius > 5.65, `${width}: wildlife clears the entire coast, piers and build targets`);
     assert.ok(geometry.maxMeshes <= 4, `${width}: at most four visitor draw meshes`);
@@ -107,6 +113,7 @@ try {
       return JSON.stringify({life:r.oceanLife.snapshot(),time:r.ambientTime,water:r.water.uniforms.uTime.value,props:r.living.children.filter(o=>o.userData.prop).map(o=>[o.position.toArray(),o.rotation.toArray()])});
     });
     const frozen=await snapshot();
+    assert.equal(await page.evaluate(()=>window.__isle.motion.value),0,`${width}: reduced motion lays the waves and the breakers flat`);
     await page.waitForTimeout(1250);
     assert.equal(await snapshot(),frozen,`${width}: reduced motion freezes ocean, sheep, farmers and miners`);
     await page.emulateMedia({reducedMotion:"no-preference"});

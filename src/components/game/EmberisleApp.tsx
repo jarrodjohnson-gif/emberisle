@@ -37,6 +37,8 @@ export function EmberisleApp() {
 
   useEffect(() => {
     (window as unknown as { __emberisle: typeof useGame }).__emberisle = useGame;
+    // `__emberisle.water`: the sea's path, why, and the probe's ms a frame, for proofs and the console (crystal-water.md).
+    Object.defineProperty(useGame, "water", { configurable: true, get: () => useGame.getState().water });
     // #488: a chunk that fails to load while still at the title is read as a stale page after a deploy: reload once.
     return reloadOnStaleChunk(() => useGame.getState().screen === "title");
   }, []);
@@ -53,7 +55,7 @@ export function EmberisleApp() {
   }, [seq, screen, offerOpen, runBots]);
 
   return (
-    <div data-game-shell className="relative h-dvh w-full overflow-hidden bg-bg">
+    <div data-game-shell className="relative h-dvh w-full overflow-hidden bg-studio">
       <ClientCanvas />
       {/* #488: the lobby (with chat) is online-only, so it is a lazy chunk; Host and Join prefetch it on hover or focus. */}
       {screen === "title" ? restoring ? <Restoring /> : <Title /> : screen === "lobby" ? (

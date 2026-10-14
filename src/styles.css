@@ -23,6 +23,8 @@
 /* Jelly Ocean palette. Existing player colours/marks remain in types.ts. */
 @theme {
   --color-bg: #eeece7;
+  /* The studio paper behind the canvas; the sea fades into the same colour at its horizon (crystal-water.md). */
+  --color-studio: #f1efe9;
   --color-surface: #fff9f0;
   --color-raised: #ffffff;
   --color-fg: #263d3c;
@@ -44,7 +46,7 @@ body,
 #root {
   height: 100%;
   margin: 0;
-  background: var(--color-bg);
+  background: var(--color-studio);
   color: var(--color-fg);
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 }
