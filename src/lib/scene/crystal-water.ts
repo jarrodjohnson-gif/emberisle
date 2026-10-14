@@ -27,10 +27,8 @@ const SURFACE_OFFSET = [
   13, 15, 17.5, 20, 24, 28, 34, 40, 48,
 ];
 const SUBDIVIDE = 8; // surface points per coast edge (0.14 apart at the coast)
-// Beach sand at the waterline, a paler cool sand under the shallow band (warm sand under teal water reads olive, pale sand
-// reads aqua), then teal sand under deep water.
-const SAND = new THREE.Color(0xdcc9a0);
-const PALE_SAND = new THREE.Color(0xe6ead8);
+// Warm sand under the shallow band (the water's red absorption turns it pale aqua), then teal sand under deep water.
+const SAND = new THREE.Color(0xe2d3a8);
 const DEEP_SAND = new THREE.Color(0xb8d8e0);
 
 // Three Gerstner waves (direction of travel, wavelength, amplitude, period, steepness). The swell rolls in from the north-east
@@ -41,11 +39,11 @@ const rot = (d: [number, number], deg: number): [number, number] => {
 };
 const SW_DIR: [number, number] = [-Math.SQRT1_2, Math.SQRT1_2];
 export const WAVES = {
-  swell: { dir: SW_DIR, length: 7, amp: 0.045, period: 6, q: 0.6 },
+  swell: { dir: SW_DIR, length: 7, amp: 0.06, period: 6, q: 0.6 },
   chop1: { dir: rot(SW_DIR, 35), length: 2.2, amp: 0.015, period: 3.4, q: 0.4 },
   chop2: { dir: rot(SW_DIR, -50), length: 1.3, amp: 0.008, period: 2.6, q: 0.3 },
   // In the last 2 units the swell turns to run straight at the beach (refraction), 1.6x as tall and 0.6x as long.
-  shore: { band: 2, amp: 0.045 * 1.6, length: 7 * 0.6, period: 6, q: 0.8 },
+  shore: { band: 2, amp: 0.06 * 1.6, length: 7 * 0.6, period: 6, q: 0.8 },
 };
 const TAU = Math.PI * 2;
 const k = (l: number) => TAU / l;
@@ -70,6 +68,18 @@ export const CAUSTIC_GLSL = /* glsl */ `
       near = min(near, d);
     }
     return 1.0 - smoothstep(0.014, 0.055, second - near);
+  }
+  float softCaustic(vec2 p) {
+    vec2 cell = floor(p), local = fract(p);
+    float near = 8.0, second = 8.0;
+    for (int y = -1; y <= 1; y++) for (int x = -1; x <= 1; x++) {
+      vec2 offset = vec2(float(x), float(y));
+      vec2 v = offset + 0.15 + 0.7 * cellPoint(cell + offset) - local;
+      float d = dot(v, v);
+      second = min(second, max(near, d));
+      near = min(near, d);
+    }
+    return 1.0 - smoothstep(0.0, 0.35, second - near);
   }
 `;
 
@@ -178,85 +188,137 @@ const inward = (c: Coast[number] | null) => {
   return [-c.mx / l, -c.mz / l];
 };
 
-/** The sea surface: Gerstner swell, chop and breakers; refraction through a transmission pass, absorbed toward teal with depth. */
-export function makeCrystalSea(coast: Coast, uTime: Uniform, uMotion: Uniform) {
+/** A linear colour, components above 1 allowed (pre-tonemap values). */
+const lin = (r: number, g: number, b: number) => new THREE.Color().setRGB(r, g, b, THREE.LinearSRGBColorSpace);
+
+/** Uniforms the renderer drives: the clock, motion (0 under reduced motion) and the radius band where the sea meets the paper. */
+export type SeaUniforms = { uTime: Uniform; uMotion: Uniform; uFade: { value: THREE.Vector2 } };
+
+/**
+ * The sea surface: Gerstner swell, chop and breakers over a refraction of the scene beneath it. The renderer draws the scene
+ * without the sea into `uUnder` (colour and depth) each frame; the surface samples it through its ripple normal, absorbs it by
+ * the real path length through the water (from the depth buffer), blends toward the water's own colour with depth, and adds a
+ * Fresnel sky and a sun glint.
+ */
+export function makeCrystalSea(coast: Coast, shared: SeaUniforms) {
   const geo = coastRings(subdivide(coast, SUBDIVIDE), SURFACE_OFFSET, () => SURFACE, {
     aCoast: [1, (o) => [o]],
     aInward: [2, (_, c) => inward(c)],
-    aDepth: [1, (o) => [depthAt(o)]],
   });
-  const mat = new THREE.MeshPhysicalMaterial({
-    color: 0x7fd8cf,
-    roughness: 0.06,
-    metalness: 0,
-    transmission: 0.92,
-    ior: 1.33,
-    // Per unit of depth: 1.0 over the 0.9 deep floor, 0.11-0.29 over the shallow band.
-    thickness: 1.1,
-    attenuationColor: new THREE.Color(0x2fb8b0),
-    attenuationDistance: 3.2,
-    specularIntensity: 0.5,
+  // Absorption per unit of path, from the attenuation colour #38c7bf reached over 0.5 units: red goes first, so sand turns aqua.
+  const att = new THREE.Color(0x38c7bf);
+  const sigma = new THREE.Vector3(...[att.r, att.g, att.b].map((c) => -Math.log(c) / 0.5));
+  const mat = new THREE.ShaderMaterial({
+    uniforms: {
+      ...shared,
+      uUnder: { value: null },
+      uUnderDepth: { value: null },
+      uResolution: { value: new THREE.Vector2(1, 1) },
+      uNear: { value: 0.1 },
+      uFar: { value: 80 },
+      uSigma: { value: sigma },
+      // Pre-tonemap linear values, tuned by read-back so the drawn shallows land near #a8e6df and the deep near #2aa7a3.
+      uShallow: { value: lin(0, 2, 1.95) },
+      uDeep: { value: lin(0, 0.29, 0.28) },
+      uSky: { value: lin(0.9, 1.15, 1.15) },
+      uSunDir: { value: new THREE.Vector3(8, 16, 6).normalize() },
+      uPaper: { value: PAPER },
+    },
+    vertexShader: /* glsl */ `
+      uniform float uTime;
+      uniform float uMotion;
+      attribute float aCoast;
+      attribute vec2 aInward;
+      varying float vCoast;
+      varying vec2 vRest;
+      varying vec3 vWaveN;
+      varying vec3 vWorld;
+      varying vec3 vView;
+      ${WAVE_GLSL}
+      void main() {
+        vec3 p = position + seaOffset(position.xz, aCoast, aInward, vWaveN);
+        vCoast = aCoast;
+        vRest = position.xz;
+        vec4 world = modelMatrix * vec4(p, 1.0);
+        vWorld = world.xyz;
+        vec4 view = viewMatrix * world;
+        vView = view.xyz;
+        gl_Position = projectionMatrix * view;
+      }
+    `,
+    fragmentShader: /* glsl */ `
+      #include <packing>
+      uniform float uTime;
+      uniform float uMotion;
+      uniform vec2 uFade;
+      uniform sampler2D uUnder;
+      uniform sampler2D uUnderDepth;
+      uniform vec2 uResolution;
+      uniform float uNear;
+      uniform float uFar;
+      uniform vec3 uSigma;
+      uniform vec3 uShallow;
+      uniform vec3 uDeep;
+      uniform vec3 uSky;
+      uniform vec3 uSunDir;
+      uniform vec3 uPaper;
+      varying float vCoast;
+      varying vec2 vRest;
+      varying vec3 vWaveN;
+      varying vec3 vWorld;
+      varying vec3 vView;
+      ${WAVE_GLSL}
+      float sceneZ(vec2 uv) {
+        float d = texture2D(uUnderDepth, uv).x;
+        return isOrthographic ? orthographicDepthToViewZ(d, uNear, uFar) : perspectiveDepthToViewZ(d, uNear, uFar);
+      }
+      void main() {
+        // The waves' own normal plus a small ripple.
+        vec2 p = vRest;
+        float a = p.x * 2.1 + uTime * 0.45, b = p.y * 1.7 - uTime * 0.36;
+        vec2 g = 0.02 * uMotion * vec2(2.1 * cos(a) * sin(b), 1.7 * sin(a) * cos(b));
+        vec3 N = normalize(vWaveN + vec3(-g.x, 0.0, -g.y));
+        vec3 V = isOrthographic ? normalize(vec3(viewMatrix[0][2], viewMatrix[1][2], viewMatrix[2][2])) : normalize(cameraPosition - vWorld);
+        // Refraction: the scene below, shifted along the surface slope, never picking up something in front of the water.
+        vec2 uv = gl_FragCoord.xy / uResolution;
+        float d0 = max(vView.z - sceneZ(uv), 0.0);
+        vec2 ruv = uv + (viewMatrix * vec4(N, 0.0)).xy * 0.04 * min(d0, 1.0);
+        float d = vView.z - sceneZ(ruv);
+        if (d < 0.0) { ruv = uv; d = d0; }
+        vec3 under = texture2D(uUnder, ruv).rgb;
+        // Absorb the floor by the path length; the water's own colour rises with depth, pale over sand, teal over the deep.
+        vec3 c = under * exp(-uSigma * d);
+        vec3 body = mix(uShallow, uDeep, smoothstep(0.15, 0.85, d));
+        c = mix(c, body, 1.0 - exp(-d / 0.55));
+        // Fresnel sky and the sun's glint.
+        float F = pow(1.0 - clamp(dot(N, V), 0.0, 1.0), 5.0);
+        c = mix(c, uSky, 0.02 + 0.55 * F);
+        c += vec3(1.6, 1.5, 1.3) * pow(max(dot(reflect(-V, N), uSunDir), 0.0), 600.0) * uMotion;
+        // Breakers: fine foam on the crest in the last unit, fading within 1 s.
+        float o = vCoast;
+        float n = vnoise(vRest * 18.0 + uTime * 0.5) * 0.55 + vnoise(vRest * 41.0 - uTime * 0.8) * 0.45;
+        float life = smoothstep(0.2, 0.32, o) * (1.0 - smoothstep(0.35, 1.0, o)) * (1.0 - smoothstep(0.0, 1.0, sinceCrest(vRest, o)));
+        float crash = life * smoothstep(0.62, 0.7, n + 0.3 * life);
+        // Open-water whitecaps: small flecks where both chops crest inside sparse, drifting patches.
+        float caps = smoothstep(0.94, 1.0, sin(chop1Phase(vRest))) * smoothstep(0.6, 1.0, sin(chop2Phase(vRest)))
+          * smoothstep(0.8, 0.95, vnoise(vRest * 0.4 + vec2(uTime * 0.03, 0.0))) * smoothstep(0.6, 0.75, vnoise(vRest * 24.0))
+          * farFade(o) * (1.0 - shoreLift(o));
+        c = mix(c, vec3(2.6, 2.7, 2.65), uMotion * clamp(crash * 0.9 + caps * 0.5, 0.0, 1.0));
+        c = mix(c, uPaper, smoothstep(uFade.x, uFade.y, length(vRest)));
+        gl_FragColor = vec4(c, 1.0);
+      }
+    `,
   });
-  mat.onBeforeCompile = (shader) => {
-    shader.uniforms.uTime = uTime;
-    shader.uniforms.uMotion = uMotion;
-    shader.uniforms.uPaper = { value: PAPER };
-    shader.vertexShader = shader.vertexShader
-      .replace(
-        "void main() {",
-        `uniform float uTime;\nuniform float uMotion;\nattribute float aCoast;\nattribute vec2 aInward;\nattribute float aDepth;\nvarying float vDepth;\nvarying float vCoast;\nvarying vec2 vRest;\nvarying vec3 vWaveN;\n${WAVE_GLSL}\nvoid main() {`,
-      )
-      .replace(
-        "#include <begin_vertex>",
-        "#include <begin_vertex>\ntransformed += seaOffset(position.xz, aCoast, aInward, vWaveN);\nvDepth = aDepth;\nvCoast = aCoast;\nvRest = position.xz;",
-      );
-    shader.fragmentShader = shader.fragmentShader
-      .replace(
-        "void main() {",
-        `uniform float uTime;\nuniform float uMotion;\nuniform vec3 uPaper;\nvarying float vDepth;\nvarying float vCoast;\nvarying vec2 vRest;\nvarying vec3 vWaveN;\n${WAVE_GLSL}\nvoid main() {`,
-      )
-      .replace(
-        "#include <normal_fragment_maps>",
-        /* glsl */ `#include <normal_fragment_maps>
-        {
-          // The waves' own normal, plus the small ripple the simple sea paints as colour, here as surface slope.
-          vec2 p = vRest;
-          float a = p.x * 2.1 + uTime * 0.45, b = p.y * 1.7 - uTime * 0.36;
-          vec2 g = 0.035 * uMotion * vec2(2.1 * cos(a) * sin(b), 1.7 * sin(a) * cos(b));
-          normal = normalize((viewMatrix * vec4(normalize(vWaveN + vec3(-g.x, 0.0, -g.y)), 0.0)).xyz);
-        }`,
-      )
-      .replace(
-        "#include <transmission_fragment>",
-        THREE.ShaderChunk.transmission_fragment.replace("material.thickness = thickness;", "material.thickness = thickness * vDepth;"),
-      )
-      .replace(
-        "#include <opaque_fragment>",
-        /* glsl */ `#include <opaque_fragment>
-        {
-          // Breakers: foam on the crest in the last 1.4 units, trailing behind it and fading over 1.5 s, broken up by noise.
-          float o = vCoast;
-          float n = vnoise(vRest * 9.0 + uTime * 0.4) * 0.6 + vnoise(vRest * 23.0 - uTime * 0.7) * 0.4;
-          float life = smoothstep(0.15, 0.3, o) * (1.0 - smoothstep(0.4, 1.2, o)) * (1.0 - smoothstep(0.0, 1.5, sinceCrest(vRest, o)));
-          // Lace, not haze: fresh foam covers most of the noise, ageing foam only its peaks.
-          float crash = life * smoothstep(0.6, 0.7, n + 0.4 * life);
-          // Open-water whitecaps: where both chops crest at once, inside sparse slow patches.
-          float caps = smoothstep(0.9, 1.0, sin(chop1Phase(vRest))) * smoothstep(0.4, 1.0, sin(chop2Phase(vRest)))
-            * smoothstep(0.76, 0.92, vnoise(vRest * 0.4 + vec2(uTime * 0.03, 0.0))) * smoothstep(0.5, 0.8, vnoise(vRest * 11.0))
-            * farFade(o) * (1.0 - shoreLift(o));
-          float foam = uMotion * clamp(crash * 0.85 + caps * 0.35, 0.0, 1.0);
-          gl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(1.1, 1.2, 1.18), foam);
-          gl_FragColor.rgb = mix(gl_FragColor.rgb, uPaper, smoothstep(10.0, 22.0, length(vRest)));
-        }`,
-      );
-  };
   const mesh = new THREE.Mesh(geo, mat);
   mesh.name = "crystal-sea";
   return mesh;
 }
 
-/** The swash: after each breaker, foam runs up the sand and slides back, fading over 1.5 s. Above the beach, below the lace. */
-export function makeWash(coast: Coast, uTime: Uniform, uMotion: Uniform) {
+/**
+ * The edge of the crystal sea, over the beach and the first 0.42 units of water: a thin, broken lace line where the water meets
+ * the sand (it stays under reduced motion), and the swash, foam that runs up the sand after each breaker and slides back.
+ */
+export function makeWash(coast: Coast, { uTime, uMotion }: SeaUniforms) {
   const geo = coastRings(subdivide(coast, SUBDIVIDE), [0, 0.06, 0.12, 0.18, 0.24, 0.3, 0.36, 0.42], () => 0, { aCoast: [1, (o) => [o]] }, false);
   const mat = new THREE.ShaderMaterial({
     transparent: true,
@@ -284,8 +346,10 @@ export function makeWash(coast: Coast, uTime: Uniform, uMotion: Uniform) {
         float sheet = step(edge, vCoast) * (1.0 - smoothstep(0.3, 0.42, vCoast)) * (1.0 - smoothstep(0.3, 1.8, t));
         float n = vnoise(vRest * 7.0 + uTime * 0.5);
         float line = (1.0 - smoothstep(0.0, 0.035, abs(vCoast - edge))) * (1.0 - smoothstep(1.4, 2.4, t));
-        float a = uMotion * clamp(sheet * (0.3 + 0.45 * n) + line * 0.7, 0.0, 1.0);
-        gl_FragColor = vec4(0.81, 0.94, 0.94, a);
+        float swash = uMotion * clamp(sheet * (0.3 + 0.45 * n) + line * 0.7, 0.0, 1.0);
+        float waterline = 0.25 + 0.015 * sin(uTime * 0.8 + vRest.x * 1.3) * uMotion;
+        float lace = (1.0 - smoothstep(0.012, 0.03, abs(vCoast - waterline))) * smoothstep(0.35, 0.55, vnoise(vRest * 34.0 + uTime * 0.3 * uMotion));
+        gl_FragColor = vec4(0.88, 0.97, 0.96, clamp(max(swash, lace * 0.9), 0.0, 1.0));
       }
     `,
   });
@@ -329,33 +393,35 @@ export function makeSwell(coast: Coast) {
   };
 }
 
-/** The sea floor: sand under the shallows grading to teal sand, with the caustic pattern drifting over it. */
-export function makeSeaFloor(coast: Coast, uTime: Uniform) {
+/** The sea floor: sand under the shallows grading to teal sand, with soft caustic light drifting over it. */
+export function makeSeaFloor(coast: Coast, { uTime, uFade }: SeaUniforms) {
   const c = new THREE.Color();
   const geo = coastRings(coast, OFFSET, (o) => SURFACE - depthAt(o), {
-    color: [3, (o) => c.copy(SAND).lerp(PALE_SAND, THREE.MathUtils.smoothstep(o, 0.3, 1.0)).lerp(DEEP_SAND, THREE.MathUtils.smoothstep(o, 1.0, 2.6)).toArray()],
+    color: [3, (o) => c.copy(SAND).lerp(DEEP_SAND, THREE.MathUtils.smoothstep(o, 1.0, 2.6)).toArray()],
   });
   const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1, metalness: 0 });
   mat.onBeforeCompile = (shader) => {
     shader.uniforms.uTime = uTime;
+    shader.uniforms.uFade = uFade;
     shader.uniforms.uPaper = { value: PAPER };
     shader.vertexShader = shader.vertexShader
       .replace("void main() {", "varying vec2 vFloorXZ;\nvoid main() {")
       .replace("#include <project_vertex>", "#include <project_vertex>\nvFloorXZ = (modelMatrix * vec4(transformed, 1.0)).xz;");
     shader.fragmentShader = shader.fragmentShader
-      .replace("void main() {", `uniform float uTime;\nuniform vec3 uPaper;\nvarying vec2 vFloorXZ;\n${CAUSTIC_GLSL}\nvoid main() {`)
+      .replace("void main() {", `uniform float uTime;\nuniform vec2 uFade;\nuniform vec3 uPaper;\nvarying vec2 vFloorXZ;\n${CAUSTIC_GLSL}\nvoid main() {`)
       .replace(
-        "#include <emissivemap_fragment>",
-        /* glsl */ `#include <emissivemap_fragment>
+        "#include <color_fragment>",
+        /* glsl */ `#include <color_fragment>
         {
-          vec2 p = vFloorXZ + vec2(sin(vFloorXZ.y * 0.9 + uTime * 0.32), cos(vFloorXZ.x * 0.7 - uTime * 0.25)) * 0.16;
-          float light = caustic(p * 2.6 + vec2(uTime * 0.06, -uTime * 0.04));
-          totalEmissiveRadiance += vec3(0.55, 0.78, 0.72) * light * 0.14 * (1.0 - smoothstep(6.0, 14.0, length(vFloorXZ)));
+          // Soft light, not a net: two drifting scales of wide-edged cells, at most 25 % contrast, gone by 14 units out.
+          vec2 p = vFloorXZ + vec2(sin(vFloorXZ.y * 0.9 + uTime * 0.2), cos(vFloorXZ.x * 0.7 - uTime * 0.16)) * 0.2;
+          float soft = 0.6 * softCaustic(p * 1.3 + vec2(uTime * 0.05, -uTime * 0.03)) + 0.4 * softCaustic(mat2(0.8, -0.6, 0.6, 0.8) * p * 2.4 - vec2(uTime * 0.04, uTime * 0.05));
+          diffuseColor.rgb *= 1.0 + 0.25 * (soft - 0.4) * (1.0 - smoothstep(6.0, 14.0, length(vFloorXZ)));
         }`,
       )
       .replace(
         "#include <opaque_fragment>",
-        "#include <opaque_fragment>\ngl_FragColor.rgb = mix(gl_FragColor.rgb, uPaper, smoothstep(10.0, 22.0, length(vFloorXZ)));",
+        "#include <opaque_fragment>\ngl_FragColor.rgb = mix(gl_FragColor.rgb, uPaper, smoothstep(uFade.x, uFade.y, length(vFloorXZ)));",
       );
   };
   const mesh = new THREE.Mesh(geo, mat);
@@ -393,7 +459,7 @@ export function makeFloorProps(coast: Coast) {
     parts.push(part(new THREE.IcosahedronGeometry(1, 0), rng() < 0.5 ? 0x8d8a80 : 0xa39d8c, s.x, s.y + r * 0.4, s.z, r * 1.3, r * 0.8, r));
   }
   for (let i = 0; i < 2; i++) {
-    const s = spot(1.0, 3.0);
+    const s = spot(0.6, 1.3);
     const turn = rng() * Math.PI;
     for (let arm = 0; arm < 5; arm++) {
       const g = part(new THREE.ConeGeometry(0.045, 0.17, 3), 0xd9774a);

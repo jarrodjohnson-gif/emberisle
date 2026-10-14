@@ -28,7 +28,7 @@ import { LAND_MS } from "@/lib/scene/landing";
 import { mulberry32, hashStr } from "@/lib/utils";
 import { PAINT, RIM } from "@/lib/scene/palette";
 import { OceanLife } from "@/lib/scene/ocean-life";
-import { CAUSTIC_GLSL, PAPER, makeCrystalSea, makeFloorProps, makeSeaFloor, makeSwell, makeWash, type WaterPath, type WaterStatus } from "@/lib/scene/crystal-water";
+import { CAUSTIC_GLSL, PAPER, makeCrystalSea, makeFloorProps, makeSeaFloor, makeSwell, makeWash, type SeaUniforms, type WaterPath, type WaterStatus } from "@/lib/scene/crystal-water";
 import { payingHexes } from "@/lib/game/rules";
 import { type GameState, type HarborKind, type HexCell, type Terrain, type Vertex } from "@/lib/game/types";
 
@@ -173,6 +173,10 @@ export class IsleRenderer {
   private probe: { frames: number; ms: number } | null = null;
   private crystalOk = false;
   private motion = { value: 1 };
+  // The sea's shared clock, motion and paper fade (inner and outer radius), for the crystal sea, its floor and the simple sea.
+  private sea!: SeaUniforms;
+  // The scene without the crystal sea, colour and depth, drawn each crystal frame for the sea to refract and absorb.
+  private under = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, depthTexture: new THREE.DepthTexture(1, 1) });
   private swell!: ReturnType<typeof makeSwell>;
   private opaqueSea!: THREE.Mesh;
   private crystalSea!: THREE.Mesh;
@@ -270,12 +274,13 @@ export class IsleRenderer {
     this.scene.add(this.oceanLife.group);
 
     const coast = coastLoop();
-    const uTime = this.water.uniforms.uTime!;
-    this.crystalSea = makeCrystalSea(coast, uTime, this.motion);
-    this.wash = makeWash(coast, uTime, this.motion);
+    this.sea = { uTime: this.water.uniforms.uTime!, uMotion: this.motion, uFade: { value: new THREE.Vector2(11, 22) } };
+    this.water.uniforms.uFade = this.sea.uFade;
+    this.crystalSea = makeCrystalSea(coast, this.sea);
+    this.wash = makeWash(coast, this.sea);
     this.swell = makeSwell(coast);
-    this.scene.add(this.crystalSea, this.wash, makeSeaFloor(coast, uTime), makeFloorProps(coast));
-    // Transmission renders the scene into a half-float target first.
+    this.scene.add(this.crystalSea, this.wash, makeSeaFloor(coast, this.sea), makeFloorProps(coast));
+    // The crystal sea refracts a half-float copy of the scene.
     const ext = this.renderer.extensions;
     this.crystalOk = this.renderer.capabilities.isWebGL2 && (ext.has("EXT_color_buffer_float") || ext.has("EXT_color_buffer_half_float"));
     for (const c of coast) this.coastMiter.set(c.id, { mx: c.mx, mz: c.mz });
@@ -522,6 +527,7 @@ export class IsleRenderer {
     this.renderer.domElement.removeEventListener("pointercancel", this.onCancel);
     this.safeProbe.remove();
     this.oceanLife.dispose();
+    this.under.dispose();
     this.renderer.dispose();
   }
 
@@ -571,6 +577,8 @@ export class IsleRenderer {
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(w, h, false);
     this.composer?.setSize(w, h);
+    const ratio = this.renderer.getPixelRatio();
+    this.under.setSize(Math.round(w * ratio), Math.round(h * ratio));
     this.ssao?.setSize(w, h);
     this.refit(true);
     // The HUD re-lays out for the new size after this event (a rotation swaps its columns and rails), so the hole just
@@ -880,6 +888,35 @@ export class IsleRenderer {
     this.draw();
   };
 
+  // In play (overhead) the sea fills the canvas: the fade to paper starts 1.5x past the farthest visible point. In the free
+  // view the far horizon reaches the paper.
+  private fadeSea() {
+    const fade = this.sea.uFade.value;
+    if (!this.overhead) return fade.set(11, 22);
+    const o = this.ortho;
+    const halfW = (o.right - o.left) / 2 / o.zoom;
+    const halfH = (o.top - o.bottom) / 2 / o.zoom / Math.max(0.3, Math.cos(this.orbit.getPolarAngle()));
+    const far = Math.hypot(halfW, halfH) + Math.hypot(this.orbit.target.x, this.orbit.target.z);
+    fade.set(Math.min(40, far * 1.5), Math.min(47, far * 1.5 + 10));
+  }
+
+  // The scene under the crystal sea, without it and its edge strip, into `under`.
+  private drawUnder() {
+    const cam = this.overhead ? this.ortho : this.camera;
+    const r = this.renderer;
+    this.crystalSea.visible = this.wash.visible = false;
+    r.setRenderTarget(this.under);
+    r.render(this.scene, cam);
+    r.setRenderTarget(null);
+    this.crystalSea.visible = this.wash.visible = true;
+    const u = (this.crystalSea.material as THREE.ShaderMaterial).uniforms;
+    u.uUnder!.value = this.under.texture;
+    u.uUnderDepth!.value = this.under.depthTexture;
+    u.uResolution!.value.set(this.under.width, this.under.height);
+    u.uNear!.value = cam.near;
+    u.uFar!.value = cam.far;
+  }
+
   // The player's saved choice from the table menu, or null to let the probe decide. Switching swaps the sea in place.
   setWaterChoice(choice: WaterPath | null) {
     if (choice === this.choice && this.waterSet) return;
@@ -894,7 +931,8 @@ export class IsleRenderer {
     const path: WaterPath = !this.crystalOk ? "simple" : (this.choice ?? this.probed?.path ?? "crystal");
     this.waterPath = path;
     this.crystalSea.visible = this.wash.visible = path === "crystal";
-    this.opaqueSea.visible = path === "simple";
+    // The crystal sea's edge strip draws its own thin lace.
+    this.opaqueSea.visible = this.foam.visible = path === "simple";
     const ratio = Math.min(window.devicePixelRatio, path === "simple" && this.coarse() ? 1.5 : 2);
     this.renderer.setPixelRatio(ratio);
     this.composer.setPixelRatio(ratio);
@@ -907,7 +945,13 @@ export class IsleRenderer {
   // once the frames so far already exceed the 10-frame budget (220 ms), it stops there, so a slow GPU stalls only briefly.
   private draw() {
     const t0 = performance.now();
+    this.fadeSea();
+    const crystal = this.waterPath === "crystal";
+    if (crystal) this.drawUnder();
+    // The under pass already drew this frame's shadow map.
+    this.renderer.shadowMap.autoUpdate = !crystal;
     this.composer.render();
+    this.renderer.shadowMap.autoUpdate = true;
     this.renders += 1;
     const p = this.probe;
     if (!p || !this.lastState || ++p.frames <= 5) return;
@@ -1235,6 +1279,7 @@ function makeWater() {
       uShallow: { value: new THREE.Color(0x65d8cb) },
       uDeep: { value: new THREE.Color(0x158e9a) },
       uFog: { value: PAPER.clone() },
+      uFade: { value: new THREE.Vector2(11, 22) },
     },
     vertexShader: /* glsl */ `
       // The circle is local XY; +Z is up after the mesh's rotation. Crests stay at or below y = 0.
@@ -1253,6 +1298,7 @@ function makeWater() {
       uniform vec3 uShallow;
       uniform vec3 uDeep;
       uniform vec3 uFog;
+      uniform vec2 uFade;
       varying vec2 vXZ;
       ${CAUSTIC_GLSL}
       void main() {
@@ -1263,7 +1309,7 @@ function makeWater() {
         float light = caustic(p * 1.7 + vec2(uTime * 0.04, -uTime * 0.025));
         c *= 1.0 + 0.035 * ripple;
         c = mix(c, vec3(0.78, 0.97, 0.92), light * 0.07 * (1.0 - smoothstep(8.0, 20.0, d)));
-        c = mix(c, uFog, smoothstep(10.0, 22.0, d));
+        c = mix(c, uFog, smoothstep(uFade.x, uFade.y, d));
         gl_FragColor = vec4(c, 0.88);
       }
     `,

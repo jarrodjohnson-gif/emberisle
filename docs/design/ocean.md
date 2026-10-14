@@ -1,6 +1,6 @@
 # Ocean and a coast that follows the hexes (issue #130)
 
-> The water itself is now [crystal-water.md](crystal-water.md): a transmissive, wave-displaced sea over a visible floor; the shader below is its Simple fallback. The coast walk, beach and foam lace here still stand.
+> The water itself is now [crystal-water.md](crystal-water.md): a refractive, wave-displaced sea over a visible floor; the shader below is its Simple fallback. The coast walk, beach and foam lace here still stand.
 
 Sources: [docs/research/visual-polish.md](../research/visual-polish.md) §2 and "Cost now"; the constructor in `src/lib/scene/isle-renderer.ts`; the coastal-edge walk in `src/lib/game/board.ts`; `src/components/scene/IslandCanvas.tsx`.
 
