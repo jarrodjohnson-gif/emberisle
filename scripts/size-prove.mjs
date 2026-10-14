@@ -13,7 +13,8 @@ import { gzipSync } from "node:zlib";
 
 const DIR = "dist/assets";
 const BUDGETS = [
-  { name: "index", gzipBytes: 116301 },
+  // 2026-10-14 (#598): +600 B for the Water toggle, its store state and the probe; the old ceiling was 300 B away.
+  { name: "index", gzipBytes: 116900 },
   { name: "IslandCanvas", gzipBytes: 182830 },
   { name: "online", gzipBytes: 8000 },
   { name: "sheets", gzipBytes: 6282 },

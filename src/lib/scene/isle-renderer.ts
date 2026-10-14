@@ -907,9 +907,13 @@ export class IsleRenderer {
     const r = this.renderer;
     this.crystalSea.visible = this.wash.visible = false;
     r.setRenderTarget(this.under);
-    r.render(this.scene, cam);
-    r.setRenderTarget(null);
-    this.crystalSea.visible = this.wash.visible = true;
+    try {
+      r.render(this.scene, cam);
+    } finally {
+      // A throw mid-render must not leave the target bound or the sea hidden for every later frame.
+      r.setRenderTarget(null);
+      this.crystalSea.visible = this.wash.visible = true;
+    }
     const u = (this.crystalSea.material as THREE.ShaderMaterial).uniforms;
     u.uUnder!.value = this.under.texture;
     u.uUnderDepth!.value = this.under.depthTexture;
@@ -951,8 +955,11 @@ export class IsleRenderer {
     if (crystal) this.drawUnder();
     // The under pass already drew this frame's shadow map.
     this.renderer.shadowMap.autoUpdate = !crystal;
-    this.composer.render();
-    this.renderer.shadowMap.autoUpdate = true;
+    try {
+      this.composer.render();
+    } finally {
+      this.renderer.shadowMap.autoUpdate = true;
+    }
     this.renders += 1;
     const p = this.probe;
     if (!p || !this.lastState || ++p.frames <= 5) return;
