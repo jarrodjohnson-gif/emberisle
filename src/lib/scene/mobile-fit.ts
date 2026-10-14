@@ -135,10 +135,12 @@ export const DIORAMA_FOV = (24 * Math.PI) / 180;
 const DOCK_REACH = 0.7;
 const COAST_FILL = 0.94;
 
-// The view in play when the player has not chosen one: overhead on a portrait canvas (a phone held upright, where the
-// width-bound island is small and a tilt would crowd its far corners), the diorama otherwise.
+// The view in play when the player has not chosen one: the diorama on a landscape canvas at least DIORAMA_MIN_WIDTH wide,
+// overhead otherwise. Upright, the width-bound island is small and a tilt would crowd its far corners; on a sideways phone
+// the tokens, held to 38 % of a hex, read under the 11 px numeral floor in the diorama (docs/design/tokens.md "Angle").
+export const DIORAMA_MIN_WIDTH = 900;
 export function defaultView(cssW: number, cssH: number): PlayView {
-  return cssH > cssW ? "overhead" : "diorama";
+  return cssH > cssW || cssW < DIORAMA_MIN_WIDTH ? "overhead" : "diorama";
 }
 
 // The island's coast corners (19 hexes, |q|,|r|,|s| <= 2, pointy-top at HEX_SIZE 1.12): a corner shared by fewer than three

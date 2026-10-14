@@ -133,7 +133,7 @@ const _n = new THREE.Vector3();
 const TOKEN_TILT = (22 * Math.PI) / 180;
 const TOKEN_NUMERAL_PX = 12;
 const TOKEN_MAX_SCALE = Math.min(1.25, (0.38 * SQRT3 * HEX_SIZE) / 0.68);
-const TOKEN_GLYPH = 0.254;
+const TOKEN_GLYPH = 0.31;
 // A tree standing between a token and the diorama camera (in front of it within TREE_SHADE_DEPTH, within TREE_SHADE_SIDE of
 // the line of sight) can hide part of the numeral at this angle (tokens-prove check 7 finds one or two on a deal): it is
 // drawn at TREE_SHADE_SCALE.
@@ -461,6 +461,8 @@ export class IsleRenderer {
     this.controls.enabled = !play;
     this.orbit.enabled = play;
     this.orbit.object = view === "diorama" ? this.persp : this.ortho;
+    // The diorama's dolly limits (applyPose) would clamp the overhead eye's orbit radius; overhead zooms by the frustum.
+    if (view !== "diorama") [this.orbit.minDistance, this.orbit.maxDistance] = [0, Infinity];
     this.ssao.enabled = !play && !this.titleMode;
     const cam = this.cam();
     this.renderPass.camera = cam;
@@ -792,7 +794,7 @@ export class IsleRenderer {
   }
 
   // The legal marks a ray passes near, in the diorama view: a corner or a path within `pickReach` of the ray where it passes
-  // (a far one is smaller on screen, so its reach in world units is larger), nearest miss first; hexes as the ray meets them.
+  // (a far one is smaller on screen, so its reach in world units is larger), nearest miss on screen first; hexes as the ray meets them.
   private reachHits(coarse: boolean) {
     const ray = this.raycaster.ray;
     const hits: { kind: "hex" | "vertex" | "edge"; id: string; distance: number }[] = [];
@@ -809,7 +811,8 @@ export class IsleRenderer {
         miss = Math.sqrt(ray.distanceSqToSegment(_p.copy(o.position).sub(_n), _eye.copy(o.position).add(_n), _q));
       }
       const depth = _q.sub(this.persp.position).dot(this.persp.getWorldDirection(_n));
-      if (miss <= pickReach(depth, this.lens.focal, coarse, kind === "edge" ? PICK_EDGE.w / 2 : PICK_VERTEX_RADIUS)) hits.push({ kind, id, distance: miss });
+      // Ranked by the miss on screen, so a near mark and a far one compare in what the finger sees.
+      if (miss <= pickReach(depth, this.lens.focal, coarse, kind === "edge" ? PICK_EDGE.w / 2 : PICK_VERTEX_RADIUS)) hits.push({ kind, id, distance: (miss * this.lens.focal) / depth });
     }
     for (const h of this.raycaster.intersectObjects(this.pickables.filter((o) => o.userData.kind === "hex"), true)) {
       if (h.object.userData.id) hits.push({ kind: "hex", id: h.object.userData.id as string, distance: h.distance });
@@ -1763,21 +1766,27 @@ function numberToken(n: number) {
   ctx.fill();
   const ink = hot ? "#b3261e" : "#1c1916";
   ctx.fillStyle = ink;
-  ctx.font = "bold 158px system-ui, sans-serif";
+  // The numeral fills the face above the pips (#597: about 1.2x the glyph it was, so it still reads on the tilted diorama
+  // token); a two-digit one is condensed to the face's chord.
+  ctx.font = "bold 192px system-ui, sans-serif";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillText(String(n), 128, 96);
+  const squeeze = Math.min(1, 176 / ctx.measureText(String(n)).width);
+  ctx.setTransform(squeeze, 0, 0, 1, 128 * (1 - squeeze), 0);
+  ctx.fillText(String(n), 128, 104);
   if (hot) {
     ctx.strokeStyle = ink;
     ctx.lineWidth = 10;
     ctx.lineJoin = "round";
-    ctx.strokeText(String(n), 128, 96);
+    ctx.strokeText(String(n), 128, 104);
   }
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  // Pips r 12 at a 28 px pitch under the numeral (#597: from r 10 at 26, so they stay 2 px on the diorama token).
   const pips = 6 - Math.abs(n - 7);
-  const span = (pips - 1) * 26;
+  const span = (pips - 1) * 28;
   for (let i = 0; i < pips; i++) {
     ctx.beginPath();
-    ctx.arc(128 - span / 2 + i * 26, 196, 10, 0, Math.PI * 2);
+    ctx.arc(128 - span / 2 + i * 28, 196, 12, 0, Math.PI * 2);
     ctx.fill();
   }
   const tex = new THREE.CanvasTexture(c);
