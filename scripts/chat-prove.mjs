@@ -1031,7 +1031,7 @@ try {
     if (await t.page.getByRole("button", { name: "Open chat" }).count()) await t.page.getByRole("button", { name: "Open chat" }).click();
     const rows = await until(async () => {
       const r = await rowsOf(t);
-      return r.length >= 3 && r.some((x) => /rolls \d\+\d = \d+/.test(x)) && r.some((x) => /raises an outpost|founds an outpost/.test(x)) ? r : null;
+      return r.length >= 3 && r.some((x) => / — .+'s roll[;.]/.test(x)) && r.some((x) => /raises an outpost|founds an outpost/.test(x)) ? r : null;
     }, `${t.name} lists the roll and an outpost in the game log`);
     check(true, `game log: ${t.name} shows ${rows.length} rows, with the roll and an outpost${t === phone ? ", in the phone sheet" : ""}`);
   }
