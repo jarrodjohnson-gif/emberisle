@@ -83,7 +83,14 @@ try {
     });
     await page.goto(`http://127.0.0.1:${PORT}/`);
     await page.waitForFunction(() => window.__emberisle);
-    const plays = () => page.evaluate(() => window.__plays.map((p) => p.split("/").pop()));
+    // Clips start 150 ms apart (#609), so read the list once it has been still for 400 ms.
+    const plays = async () => {
+      await page.waitForFunction(() => {
+        const n = window.__plays.length;
+        return new Promise((r) => setTimeout(() => r(window.__plays.length === n), 400));
+      }, null, { timeout: 4000 });
+      return page.evaluate(() => window.__plays.map((p) => p.split("/").pop()));
+    };
     const dialog = page.getByRole("dialog", { name: "How to play" });
     await page.getByRole("button", { name: "How to play" }).click();
     await dialog.waitFor();
