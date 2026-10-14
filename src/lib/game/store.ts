@@ -97,6 +97,7 @@ export interface GameLogLine {
 const GAME_LOG_MAX = 200;
 const LOG_FILTER_KEY = "emberisle-log-filter";
 const WATER_KEY = "emberisle-water";
+const VIEW_KEY = "emberisle-view";
 
 // The engine keeps only the last 41 log lines (rules.ts `log`), so once the log is full its length never grows and
 // `after.slice(before.length)` would be empty. The new lines are what follows the longest tail of the old log that
@@ -126,6 +127,15 @@ function savedWater(): WaterPath | null {
   }
 }
 
+// The table's camera in play (#597): the tilted diorama unless the player chose overhead.
+function savedView(): PlayView {
+  try {
+    return localStorage.getItem(VIEW_KEY) === "overhead" ? "overhead" : "diorama";
+  } catch {
+    return "diorama";
+  }
+}
+
 function savedLogFilter(): "all" | "chat" {
   try {
     return localStorage.getItem(LOG_FILTER_KEY) === "chat" ? "chat" : "all";
@@ -146,6 +156,7 @@ import { PROTO } from "@/lib/net/proto";
 import { play, yourTurn, type SoundName } from "@/lib/sound";
 import { calmMotion, LAND_MS } from "@/lib/scene/landing";
 import type { WaterPath, WaterStatus } from "@/lib/scene/crystal-water";
+import type { PlayView } from "@/lib/scene/mobile-fit";
 
 // The ask-the-table offer every seat is looking at (docs/BUILD_BIBLE.md 4.4). `until` is when the host's 20 s run out.
 export interface OpenOffer {
@@ -286,6 +297,9 @@ interface GameStore {
   waterChoice: WaterPath | null;
   setWaterChoice: (v: WaterPath) => void;
   water: WaterStatus | null;
+  // The camera in play, from the table menu, remembered like the water: the tilted diorama (default) or the overhead board.
+  viewChoice: PlayView;
+  setViewChoice: (v: PlayView) => void;
   // Ask-the-table trades (docs/BUILD_BIBLE.md 4.4): the open offer, who has said No to it, and the asker's closing line.
   offer: OpenOffer | null;
   declined: string[];
@@ -420,6 +434,7 @@ export const useGame = create<GameStore>((set, get) => ({
   logFilter: savedLogFilter(),
   waterChoice: savedWater(),
   water: null,
+  viewChoice: savedView(),
   offer: null,
   declined: [],
   tradeOutcome: null,
@@ -801,6 +816,14 @@ export const useGame = create<GameStore>((set, get) => ({
       // storage can be blocked; the choice still holds for this page
     }
     set({ waterChoice: v });
+  },
+  setViewChoice: (v) => {
+    try {
+      localStorage.setItem(VIEW_KEY, v);
+    } catch {
+      // storage can be blocked; the choice still holds for this page
+    }
+    set({ viewChoice: v });
   },
   sendChat: (text) => {
     if (!get().spectator) get().net?.say(text);

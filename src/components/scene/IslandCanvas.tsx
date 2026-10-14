@@ -35,6 +35,7 @@ export default function IslandCanvas() {
     const sync = () => {
       const s = useGame.getState();
       renderer.setWaterChoice(s.waterChoice);
+      renderer.setPlayView(s.viewChoice);
       renderer.setTitleMode(s.screen !== "play");
       // The chat dock and the trade sheet change the hole the HUD leaves without the game moving; chromeSeq counts the
       // commits that land one of them from a chunk that was still loading when its flag flipped (#488).

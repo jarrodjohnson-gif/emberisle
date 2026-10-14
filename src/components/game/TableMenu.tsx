@@ -4,7 +4,7 @@
 // Opens with focus on the first row; Escape, a pointerdown outside or focus leaving closes it, and Escape puts the focus
 // back on the button. Leaving an online seat asks first (the seat goes to a bot for good); Stay, Escape or 5 s cancels.
 import { useEffect, useRef, useState } from "react";
-import { BookOpen, Copy, Ellipsis, Eye, Hammer, LogOut, Volume2, VolumeX, Waves } from "lucide-react";
+import { BookOpen, Box, Copy, Ellipsis, Eye, Hammer, LogOut, Volume2, VolumeX, Waves } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CopyFallback, useCopy } from "@/components/game/CopyText";
 import { useGame } from "@/lib/game/store";
@@ -24,6 +24,8 @@ export function TableMenu() {
   const goTitle = useGame((s) => s.goTitle);
   const water = useGame((s) => s.water?.path ?? "crystal");
   const setWaterChoice = useGame((s) => s.setWaterChoice);
+  const view = useGame((s) => s.viewChoice);
+  const setViewChoice = useGame((s) => s.setViewChoice);
   const muted = useMuted();
   const { state: copied, copy, reset } = useCopy<"code">();
   const [open, setOpen] = useState(false);
@@ -114,7 +116,7 @@ export function TableMenu() {
           role="dialog"
           aria-label="Table menu"
           data-testid="table-menu"
-          className="absolute right-0 top-full z-20 mt-2 flex max-h-[calc(100dvh-5rem)] w-64 flex-col gap-1 overflow-y-auto rounded-sheet bg-surface p-3 shadow-[0_8px_32px_rgb(28_25_21_/_0.18)]"
+          className="absolute right-0 top-full z-20 mt-2 flex max-h-[calc(100dvh-5rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))] w-64 flex-col gap-1 overflow-y-auto rounded-sheet bg-surface p-3 shadow-[0_8px_32px_rgb(28_25_21_/_0.18)]"
           onBlur={(e) => {
             const to = e.relatedTarget as Node | null;
             if (to && !sheet.current?.contains(to) && !trigger.current?.contains(to)) close(false);
@@ -181,6 +183,17 @@ export function TableMenu() {
                   {(["crystal", "simple"] as const).map((p) => (
                     <Button key={p} size="sm" variant={water === p ? "default" : "ghost"} aria-pressed={water === p} onClick={() => setWaterChoice(p)}>
                       {p === "crystal" ? "Crystal" : "Simple"}
+                    </Button>
+                  ))}
+                </span>
+              </div>
+              {/* The camera in play (#597): the tilted diorama or the overhead board; remembered like the water. */}
+              <div role="group" aria-label="View" data-testid="view-toggle" className="flex h-11 items-center gap-2 px-3 text-body">
+                <Box className={ICON} /> View
+                <span className="ml-auto flex gap-1">
+                  {(["diorama", "overhead"] as const).map((v) => (
+                    <Button key={v} size="sm" variant={view === v ? "default" : "ghost"} aria-pressed={view === v} onClick={() => setViewChoice(v)}>
+                      {v === "diorama" ? "Diorama" : "Overhead"}
                     </Button>
                   ))}
                 </span>
