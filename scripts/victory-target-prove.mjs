@@ -15,13 +15,16 @@ async function start(){
  let stderr='';host=spawn(process.execPath,['--import','./register.mjs','host.mjs'],{cwd:new URL('../server/',import.meta.url),env:{...process.env,PORT:'0',ROOMS_DIR:dir,SAVE_MS:'20',GRACE_MS:'600000',HOLD_MS:'600000',LOBBY_HOLD_MS:'600000',TURN_MS:'600000',ACT_CAP:'1000',ACT_RATE:'1000'},stdio:['ignore','pipe','pipe']});
  host.stderr.on('data',d=>stderr+=d);hostPort=await new Promise((resolve,reject)=>{host.stdout.on('data',d=>{const m=String(d).match(/listening (\d+)/);if(m)resolve(Number(m[1]));});host.on('exit',c=>reject(Error(`host ${c}: ${stderr}`)));});
 }
-async function client(hello){
+async function client(hello,retryTaken){
  const ws=new WebSocket(`ws://127.0.0.1:${hostPort}`),messages=[];sockets.push(ws);let state;
  ws.on('message',d=>{const m=JSON.parse(String(d));messages.push(m);if(m.type==='state')state=m;});await new Promise(r=>ws.on('open',r));ws.send(JSON.stringify({type:'hello',...hello}));
  const next=async(type,test=()=>true)=>{for(let i=0;i<400;i++){const m=messages.find(m=>m.type===type&&test(m));if(m)return structuredClone(m);await wait(10);}throw Error(`timeout ${type}: ${JSON.stringify(messages.slice(-3))}`);};
+ if(retryTaken)for(let i=0;i<400&&!messages.some(m=>m.type==='welcome');i++){if(messages.some(m=>m.type==='error'&&m.message==='Seat is taken')){ws.terminate();throw Error('taken');}await wait(10);}
  const welcome=await next('welcome');return{ws,messages,next,welcome,send:m=>ws.send(JSON.stringify({...state?.actionStamp,cid:crypto.randomUUID(),...m}))};
 }
-const restore=welcome=>client({code:welcome.code,secret:welcome.secret});
+// The host drops a socket asynchronously, so a rejoin can race the old socket's close: retry while the seat still looks taken.
+async function restore(welcome){for(let i=0;i<100;i++){try{return await client({code:welcome.code,secret:welcome.secret},true);}catch(e){if(e.message!=='taken')throw e;await wait(20);}}throw Error('seat stayed taken');}
+async function guestsAway(host){for(let i=0;i<400;i++){const last=host.messages.findLast(m=>m.type==='seats');if(last?.seats.slice(1).every(x=>x.away))return;await wait(10);}throw Error('guests never marked away');}
 async function close(peer){if(peer.ws.readyState===WebSocket.CLOSED)return;peer.ws.terminate();await new Promise(r=>peer.ws.once('close',r));}
 async function room(){const peers=[await client({name:'Ember'})],code=peers[0].welcome.code;for(const name of ['Tide','Pine'])peers.push(await client({code,name}));for(const p of peers){const m=await p.next('seats',m=>m.seats.length===3);assert.equal(m.victoryTarget,10);}return{code,peers};}
 async function setting(table,n){for(const p of table.peers)await p.next('seats',m=>m.victoryTarget===n);}
@@ -36,7 +39,7 @@ try{
  change.peers[0].send({type:'setVictoryTarget',value:7});await setting(change,7);
  const original=seven.peers[0].welcome;
  for(const [width,height,touch] of [[390,844,true],[1280,720,false],[844,390,true]]){
-  for(const p of seven.peers.slice(1))await close(p);await close(seven.peers[0]);await wait(80);const context=await browser.newContext({viewport:{width,height},hasTouch:touch,reducedMotion:touch?'reduce':'no-preference'});
+  for(const p of seven.peers.slice(1))await close(p);await guestsAway(seven.peers[0]);await close(seven.peers[0]);await wait(80);const context=await browser.newContext({viewport:{width,height},hasTouch:touch,reducedMotion:touch?'reduce':'no-preference'});
   await context.addInitScript(w=>localStorage.setItem('emberisle-seat',JSON.stringify({code:w.code,secret:w.secret})),original);
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));await page.goto(`http://127.0.0.1:${port}/?host=${encodeURIComponent(`ws://127.0.0.1:${hostPort}`)}`);
   await page.getByTestId('lobby-card').waitFor();for(let i=1;i<3;i++)seven.peers[i]=await restore(seven.peers[i].welcome);
@@ -54,7 +57,7 @@ try{
   assert.deepEqual(seven.peers[1].messages.slice(at).filter(m=>m.type==='seats').map(m=>m.victoryTarget).slice(-2),[10,7]);
   await page.waitForFunction(()=>document.querySelector('[data-testid="victory-target"]')?.dataset.value==='7');
   for(const radio of await page.getByRole('radio',{name:/^(7|10) points$/}).all()){const b=await radio.boundingBox();assert.ok(b.width>=44&&b.height>=44&&b.x>=0&&b.y>=0&&b.x+b.width<=width&&b.y+b.height<=height);}
-  await page.screenshot({path:`test-results/victory-target-lobby-${width}.png`});for(const p of seven.peers.slice(1))await close(p);await wait(80);await context.close();await wait(80);seven.peers[0]=await restore(original);for(let i=1;i<3;i++)seven.peers[i]=await restore(seven.peers[i].welcome);
+  await page.screenshot({path:`test-results/victory-target-lobby-${width}.png`});for(const p of seven.peers.slice(1))await close(p);await page.waitForFunction(()=>window.__emberisle.getState().seats.slice(1).every(x=>x.away));await context.close();await wait(80);seven.peers[0]=await restore(original);for(let i=1;i<3;i++)seven.peers[i]=await restore(seven.peers[i].welcome);
   console.log(`ok ${width}x${height}: host radio choice, keyboard arrows, 44px targets, public 7-point lobby`);
  }
  // A guest gets the same visible value without host controls.
@@ -77,6 +80,8 @@ try{
  }
  // Unchanged tables inherit 7 and 10; a finished table may choose a different next target.
  for(const table of [seven,ten]){const a=table.peers[0],before=await a.next('state',m=>m.game.phase==='over');a.send({type:'again'});for(const p of table.peers){const v=await p.next('state',m=>m.game.seq===0&&m.game.phase==='rollOff'&&m.game.seed!==before.game.seed);assert.equal(v.game.victoryTarget,table===ten?10:7);}}
+ // A watcher's welcome carries the table's target, so its win screen labels the next game correctly.
+ for(const table of [seven,ten]){const w=await client({code:table.code,watch:true});assert.equal(w.welcome.victoryTarget,table===ten?10:7);}
  const hostWelcome=change.peers[0].welcome;await close(change.peers[0]);
  const endContext=await browser.newContext({viewport:{width:390,height:844},hasTouch:true});await endContext.addInitScript(w=>{localStorage.setItem('emberisle-seat',JSON.stringify({code:w.code,secret:w.secret}));localStorage.setItem('emberisle-seat-live',w.code);},hostWelcome);
  const end=await endContext.newPage();end.on('pageerror',e=>errors.push(e.message));await end.goto(`http://127.0.0.1:${port}/?host=${encodeURIComponent(`ws://127.0.0.1:${hostPort}`)}`);await end.getByTestId('win-screen').waitFor();await end.getByRole('radio',{name:'10 points',exact:true}).click();await end.waitForFunction(()=>window.__emberisle.getState().tableVictoryTarget===10);assert.equal(await end.evaluate(()=>window.__emberisle.getState().state.victoryTarget),7);await end.getByTestId('win-again').click();await end.waitForFunction(()=>window.__emberisle.getState().state.phase==='rollOff');assert.equal(await end.evaluate(()=>window.__emberisle.getState().state.victoryTarget),10);await endContext.close();
