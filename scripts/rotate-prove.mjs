@@ -1,6 +1,6 @@
 // #521: a phone that rotates (390x844 <-> 844x390, 360x640 <-> 640x360) or a window that resizes refits the island to the
 // hole the HUD leaves now. Within 3 animation frames of the change `__isle.fit` is the fit that hole asks for (not the old
-// one, not a stale aspect); once the glide ends the camera's frustum is that fit, the drawing buffer is the canvas's size
+// one, not a stale aspect); once the glide ends the diorama camera's lens is that fit, the drawing buffer is the canvas's size
 // (no stretch), and every corner of the island is inside the hole. The oracle is a fresh load: the island's settled
 // bounding box after each rotation of one page is within 10 % of the box a fresh page at that viewport draws. Zero console errors. Run: npm run rotate-prove
 import { existsSync } from "node:fs";
@@ -25,15 +25,15 @@ const check = (ok, what, data) => {
 // The fit the hole asks for right now, whether `__isle.fit` is it, and (once settled) the camera and corners against it.
 const look = (page) =>
   page.evaluate(async () => {
-    const { fitOrtho, OVERHEAD_LEAN } = await import("/src/lib/scene/mobile-fit.ts");
+    const { fitDiorama } = await import("/src/lib/scene/mobile-fit.ts");
     const isle = window.__isle;
     const c = document.querySelector("canvas");
     const hole = isle.insets();
-    const want = fitOrtho(c.clientWidth, c.clientHeight, hole, OVERHEAD_LEAN);
-    const keys = ["left", "right", "top", "bottom", "x", "z"];
+    // The diorama view (#597), the default in play: its lens is the fit.
+    const want = fitDiorama(c.clientWidth, c.clientHeight, hole);
+    const keys = Object.keys(want);
     const fresh = isle.fit !== null && keys.every((k) => Math.abs(want[k] - isle.fit[k]) < 1e-6);
-    const o = isle.ortho;
-    const onCamera = keys.slice(0, 4).every((k) => Math.abs(o[k] - want[k]) < 1e-3);
+    const onCamera = isle.view === "diorama" && keys.every((k) => Math.abs(isle.lens[k] - want[k]) < 1e-3);
     const gl = isle.renderer.domElement;
     const stretched = gl.width !== Math.round(c.clientWidth * isle.renderer.getPixelRatio()) || gl.height !== Math.round(c.clientHeight * isle.renderer.getPixelRatio());
     const outside = [];

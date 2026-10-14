@@ -1,10 +1,11 @@
 // #239 Debug: number tokens are rimmed and legible, and nothing is placed or wanders within 0.39 of a hex centre.
-// The six checks in docs/design/tokens.md.
+// The six checks in docs/design/tokens.md, and (#597) a seventh: in the diorama view, the default in play, every token
+// faces the camera and its numeral is at least 11 px tall and its pips at least 2 px across at 1280x720 and 390x844.
 import { existsSync } from "node:fs";
 import { chromium } from "playwright";
 import { createServer } from "vite";
 
-const PORT = 8093;
+const PORT = Number(process.env.VITE_PORT) || 8093;
 const CLEAR = 0.39;
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();
@@ -60,7 +61,8 @@ const readScene = (demoBoard) => {
           rim: disc.material.color.getHexString(),
           rTop: disc.geometry.parameters.radiusTop,
           rLabel: label.geometry.parameters.radius,
-          dy: g.position.y - (0.04 + 0.26 + hexHeight(hex.terrain) * 0.35), // TILE_Y + SLAB + height * 0.35 = topOf
+          // TILE_Y + SLAB + height * 0.35 = topOf; a tilted token (the diorama view) is lifted onto its near edge by `lift`.
+          dy: g.position.y - g.userData.lift - (0.04 + 0.26 + hexHeight(hex.terrain) * 0.35),
           runs,
         };
       });
@@ -123,6 +125,57 @@ try {
       fives.length > 0 && fives.every((k) => k.runs.length === 4 && k.runs.every((r) => r >= 19 && r <= 21)),
       fives.map((k) => k.runs.join("/")).join(" "),
     );
+  }
+
+  // 7. The diorama view (#597): each token turned to the camera's azimuth and tilted toward it; the numeral's height and a
+  // pip's width measured on screen, from the label's own canvas (the glyph's dark rows, a pip's 20 px) through the camera.
+  for (const [width, height, phone] of [[1280, 720, false], [390, 844, true]]) {
+    const ctx = await browser.newContext({ viewport: { width, height }, isMobile: phone, hasTouch: phone });
+    const p = await ctx.newPage();
+    p.on("console", (m) => m.type() === "error" && errors.push(m.text()));
+    p.on("pageerror", (e) => errors.push(String(e)));
+    await p.goto(`http://127.0.0.1:${PORT}/`);
+    await p.getByRole("button", { name: "Play", exact: true }).click();
+    await p.waitForFunction(() => window.__emberisle.getState().screen === "play" && window.__isle?.lastState && window.__isle.fit && !window.__isle.refitDue && !window.__isle.glide);
+    await p.waitForFunction((r) => window.__isle.renders > r + 2, await p.evaluate(() => window.__isle.renders));
+    const m = await p.evaluate(() => {
+      const isle = window.__isle;
+      const az = isle.orbit.getAzimuthalAngle();
+      const at = (label, cx, cy) => {
+        const v = label.localToWorld(new label.position.constructor((cx / 128 - 1) * 0.29, (1 - cy / 128) * 0.29, 0));
+        return isle.screenAt(v.x, v.y, v.z);
+      };
+      const len = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+      return {
+        view: isle.view,
+        tokens: isle.land.children.filter((o) => o.userData?.token != null).map((g) => {
+          const label = g.children[1];
+          g.updateMatrixWorld(true);
+          const img = label.material.map.image.getContext("2d").getImageData(0, 0, 256, 176).data;
+          const rows = [];
+          for (let y = 0; y < 176; y++)
+            for (let x = 0; x < 256; x++) {
+              const i = (y * 256 + x) * 4;
+              if (img[i + 3] > 0 && 0.299 * img[i] + 0.587 * img[i + 1] + 0.114 * img[i + 2] < 128) { rows.push(y); break; }
+            }
+          const n = g.userData.token;
+          const pips = 6 - Math.abs(n - 7);
+          const px = 128 - ((pips - 1) * 26) / 2;
+          return {
+            n,
+            facing: Math.abs(g.rotation.y - az) < 1e-6 && g.rotation.x > 0.5,
+            numeral: len(at(label, 128, rows[0]), at(label, 128, rows[rows.length - 1] + 1)),
+            pip: Math.min(len(at(label, px - 10, 196), at(label, px + 10, 196)), len(at(label, px, 186), at(label, px, 206))),
+          };
+        }),
+      };
+    });
+    const t = m.tokens;
+    const low = (k) => t.reduce((a, b) => (b[k] < a[k] ? b : a));
+    check(`7 diorama tokens face the camera (${width}x${height})`, m.view === "diorama" && t.length === 18 && t.every((k) => k.facing), `${t.filter((k) => k.facing).length} of ${t.length}`);
+    check(`7 diorama numerals at least 11 px tall (${width}x${height})`, t.every((k) => k.numeral >= 11), `smallest ${low("numeral").numeral.toFixed(1)} px (the ${low("numeral").n})`);
+    check(`7 diorama pips at least 2 px across (${width}x${height})`, t.every((k) => k.pip >= 2), `smallest ${low("pip").pip.toFixed(2)} px (the ${low("pip").n})`);
+    await ctx.close();
   }
 } finally {
   await browser.close();

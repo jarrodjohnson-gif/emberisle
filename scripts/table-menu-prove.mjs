@@ -1,7 +1,8 @@
 // #442: the table's top chrome is one menu button. In hotseat at 1280x720, 390x844 (touch) and 844x390 (touch):
 // - no visible element on the table says "Emberisle", and the only button in the top 64 px (the seat strip aside, on a
 //   sideways phone) is the 44 px "Table menu" button, top-right;
-// - it opens a sheet with the turn number, How to play, Table sounds, Water (Crystal / Simple) and Leave table, focus moving
+// - it opens a sheet with the turn number, How to play, Table sounds, Water (Crystal / Simple), View (Diorama / Overhead,
+//   #597) and Leave table, focus moving
 //   to the first row; at 1280x720 Water flips the sea's path both ways and the choice survives a reload (crystal-water.md);
 // - How to play opens its dialog and closing that puts the focus back on the menu button; the sound toggle flips and keeps
 //   the sheet open; Escape closes the sheet and refocuses the button; Enter on the button opens it; a tap outside closes it;
@@ -73,7 +74,7 @@ try {
     await trigger.click();
     await menu.waitFor();
     const rows = await menu.getByRole("button").allTextContents();
-    assert.deepEqual(rows.map((t) => t.trim()), ["How to play", "Costs", "Table sounds on", "Crystal", "Simple", "Leave table"], `${v.tag}: menu rows`);
+    assert.deepEqual(rows.map((t) => t.trim()), ["How to play", "Costs", "Table sounds on", "Crystal", "Simple", "Diorama", "Overhead", "Leave table"], `${v.tag}: menu rows`);
     assert.match(await menu.textContent(), /Turn 1/, `${v.tag}: the turn number moved into the menu`);
     assert.equal(await page.evaluate(() => document.activeElement?.textContent.trim()), "How to play", `${v.tag}: focus moves to the first row`);
     assert.equal(await trigger.getAttribute("aria-expanded"), "true", `${v.tag}: aria-expanded while open`);

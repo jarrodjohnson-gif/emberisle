@@ -6,11 +6,13 @@
 //   horizon is the studio paper #f1efe9 the page sits on. Every other page pins the simple sea, so the gesture timings do not
 //   pay for the crystal sea on software GL;
 // - the title keeps the slow orbit (free camera, auto-rotate); in play, on a fine pointer at 1280x720 and a coarse one at
-//   390x844, the overhead camera is on and every corner of the island, docks included, projects inside the hole the HUD
-//   leaves (`__isle.insets()`, measured from the HUD's own chrome), each corner's screen point lands on the canvas, and a
-//   number token is at least 24 px across on the desktop and 18 px on the phone (the phone hole is width-bound; #422 owns
-//   growing it);
-// - the default view is the fitted 25° overhead view; a drag (mouse, or one finger through CDP touch events) orbits it and
+//   390x844, the diorama camera (#597) is on and every corner of the island, and every dock's pier and boat (0.7 out along
+//   the coast), projects inside the hole the HUD leaves (`__isle.insets()`, measured from the HUD's own chrome), each
+//   corner's screen point lands on the canvas, and every number token is at least 24 px across on the desktop and 18 px on
+//   the phone; at 390x844 a path and an outpost on the far (north) coast measure at least the touch reach on screen;
+// - the table menu's View switches to the fitted 25° overhead view (every corner in the hole, a drag orbits it) and the
+//   choice outlives a reload (`emberisle-view`);
+// - the default view is the fitted diorama view; a drag (mouse, or one finger through CDP touch events) orbits it and
 //   places nothing even when it starts on a legal corner, nor does an out-and-back drag that ends on it; a wheel zooms;
 //   Home (desktop) and a double click or double tap on empty board glide back to the fitted view; a click on the corner
 //   still places afterwards; under reduced motion Home is instant; mid-game at 1280x720 with the hand shown and an armed
@@ -19,7 +21,8 @@
 //   (no state change) each refit the island clear of the rail they make, and closing or blurring refits it back;
 // - #422: on a sideways phone (844x390 and 667x375, touch) in the main phase with the hand shown, the HUD is a left column
 //   and the island beside it is larger than on main before #422 (a 101x85 px island, 8581 and 8569 px²), at least 60 % as
-//   wide as the hole is tall, every corner clear of the HUD, and every two adjacent corners at least 24 px apart (the touch slop);
+//   wide as the hole is tall, every corner clear of the HUD, and every two adjacent corners more than 14 px apart (the
+//   diorama's touch reach: the tilt foreshortens a step along the line of sight, so the overhead view's 24 px is not kept);
 //   with Path armed and an edge picked by touch, the Place chip is in view and covers neither the hand nor the turn banner.
 // Zero console errors. Saves test-results/board-look-{title,play}-<size>.png. Port from VITE_PORT, default 8112.
 import { existsSync, mkdirSync } from "node:fs";
@@ -60,9 +63,10 @@ const drawn = (page, n) =>
     });
   }, n);
 
-async function open(width, height, touch, water = "simple") {
+async function open(width, height, touch, water = "simple", view = null) {
   const ctx = await browser.newContext({ viewport: { width, height }, ...(touch ? { isMobile: true, hasTouch: true } : {}) });
   await ctx.addInitScript((w) => localStorage.setItem("emberisle-water", w), water);
+  if (view) await ctx.addInitScript((v) => localStorage.setItem("emberisle-view", v), view);
   const page = await ctx.newPage();
   page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
   page.on("pageerror", (e) => errors.push(String(e)));
@@ -156,7 +160,7 @@ try {
       shadowMap: key ? key.shadow.mapSize.x : 0,
       shadowRadius: key ? key.shadow.radius : 0,
       exposure: isle.renderer.toneMappingExposure,
-      overhead: isle.overhead,
+      view: isle.view,
       autoRotate: isle.controls.autoRotate,
     };
   });
@@ -166,14 +170,15 @@ try {
   // THREE.PCFShadowMap === 1; three 0.186 dropped PCFSoftShadowMap, so the softness is the PCF blur radius.
   check("soft shadows: PCF blurred at least 4 texels, from a map of at most 1024", rig.shadowType === 1 && rig.shadowRadius >= 4 && rig.shadowMap <= 1024, { type: rig.shadowType, radius: rig.shadowRadius, map: rig.shadowMap });
   check("exposure at most 1.1", rig.exposure <= 1.1, { exposure: rig.exposure });
-  check("the title keeps the free camera and its orbit", !rig.overhead && rig.autoRotate, { overhead: rig.overhead, autoRotate: rig.autoRotate });
+  check("the title keeps the free camera and its orbit", rig.view === "free" && rig.autoRotate, { view: rig.view, autoRotate: rig.autoRotate });
   await title.screenshot({ path: "test-results/board-look-title-1280x720.png" });
   await title.context().close();
 
-  // 1b. The crystal sea in play at 1280x720: teal over deep water, lighter where sand shows through the shallow band. Both
-  // points sit on the outward line from the middle of a coast edge with no dock, 0.6 and 3.5 units out, inside the HUD hole.
+  // 1b. The crystal sea in play at 1280x720, in the overhead view (where the sea fills the canvas): teal over deep water,
+  // lighter where sand shows through the shallow band. Both points sit on the outward line from the middle of a coast edge
+  // with no dock, 0.6 and 3.5 units out, inside the HUD hole.
   {
-    const page = await open(1280, 720, false, "crystal");
+    const page = await open(1280, 720, false, "crystal", "overhead");
     await page.getByRole("button", { name: "Four seats, one table" }).click();
     await page.waitForFunction(() => window.__emberisle?.water?.path === "crystal" && window.__isle.lastState && !window.__isle.refitDue && !window.__isle.glide, null, { timeout: STEP_MS });
     await page.waitForFunction((n) => window.__isle.renders > n, (await page.evaluate(() => window.__isle.renders)) + 2, { timeout: STEP_MS });
@@ -182,10 +187,7 @@ try {
       const st = window.__emberisle.getState().state;
       const ins = isle.insets();
       const ids = isle.coastOrder;
-      const at = (x, z) => {
-        const p = new isle.ortho.position.constructor(x, -0.02, z).project(isle.ortho);
-        return { x: ((p.x + 1) * innerWidth) / 2, y: ((1 - p.y) * innerHeight) / 2 };
-      };
+      const at = (x, z) => isle.screenAt(x, -0.02, z);
       const inHole = (p) => p.x > ins.left + 8 && p.x < innerWidth - ins.right - 8 && p.y > ins.top + 8 && p.y < innerHeight - ins.bottom - 8;
       for (let i = 0; i < ids.length; i++) {
         const a = st.vertices.find((v) => v.id === ids[i]);
@@ -243,7 +245,7 @@ try {
     await page.context().close();
   }
 
-  // 2. In play: the overhead board fits the hole the HUD leaves, on a desktop and on a phone, and the camera is the
+  // 2. In play: the diorama board fits the hole the HUD leaves, on a desktop and on a phone, and the camera is the
   // player's: a drag orbits (and places nothing), a wheel zooms, Home and a double click or double tap glide back.
   for (const [w, h, touch] of [
     [1280, 720, false],
@@ -267,7 +269,7 @@ try {
         return {
           polar: i.orbit.getPolarAngle(),
           azimuth: i.orbit.getAzimuthalAngle(),
-          zoom: i.ortho.zoom,
+          zoom: i.pose().zoom,
           target: [i.orbit.target.x, i.orbit.target.y, i.orbit.target.z],
           glide: i.glide !== null,
           seq: window.__emberisle.getState().state.seq,
@@ -278,13 +280,12 @@ try {
     // between does not move it; the next state change does).
     const home = () =>
       page.evaluate(async () => {
-        const { OVERHEAD_LEAN, CAP_LEVEL } = await import("/src/lib/scene/mobile-fit.ts");
-        const f = window.__isle.fit;
-        return { polar: OVERHEAD_LEAN, azimuth: 0, zoom: 1, target: [f.x, CAP_LEVEL, f.z] };
+        const { DIORAMA_POLAR, DIORAMA_AZIMUTH, CAP_LEVEL } = await import("/src/lib/scene/mobile-fit.ts");
+        return { polar: DIORAMA_POLAR, azimuth: DIORAMA_AZIMUTH, zoom: 1, target: [0, CAP_LEVEL, 0] };
       });
     const atHome = async (p) => {
       const h = await home();
-      return Math.abs(p.polar - h.polar) < 0.01 && Math.abs(p.azimuth) < 0.01 && Math.abs(p.zoom - 1) < 0.01 && p.target.every((v, k) => Math.abs(v - h.target[k]) < 0.02);
+      return Math.abs(p.polar - h.polar) < 0.01 && Math.abs(p.azimuth - h.azimuth) < 0.01 && Math.abs(p.zoom - 1) < 0.01 && p.target.every((v, k) => Math.abs(v - h.target[k]) < 0.02);
     };
     const lean = Math.round(((await home()).polar * 180) / Math.PI);
     const brief = (p) => ({ polar: +p.polar.toFixed(3), azimuth: +p.azimuth.toFixed(3), zoom: +p.zoom.toFixed(3), target: p.target.map((v) => +v.toFixed(2)), glide: p.glide });
@@ -293,29 +294,32 @@ try {
       await drawn(page, 2);
       return pose();
     };
-    const fit = await page.evaluate(() => {
+    // Every corner, and every dock's pier and boat (0.7 out along the coast, at the waterline), inside the hole; every corner
+    // on the canvas; the smallest number token on screen (0.68 across, times its diorama scale, at its own depth).
+    const holeFit = () => page.evaluate(() => {
       const isle = window.__isle;
       const st = window.__emberisle.getState().state;
       const ins = isle.insets();
       const hole = { l: ins.left, t: ins.top, r: innerWidth - ins.right, b: innerHeight - ins.bottom };
-      // Pixels per world unit across the screen, from the frustum (the lean foreshortens depth, not width).
-      const scale = (innerWidth / (isle.ortho.right - isle.ortho.left)) * isle.ortho.zoom;
+      const inside = (p) => Math.min(p.x - hole.l, hole.r - p.x, p.y - hole.t, hole.b - p.y);
       const out = [];
       const covered = [];
       let dockIn = Infinity;
       for (const v of st.vertices) {
         const p = isle.screenOf(v.id);
-        // A dock's pier and boat reach 0.7 world units past its corner.
-        const m = v.harbor ? 0.7 * scale : 0;
-        const inside = Math.min(p.x - hole.l, hole.r - p.x, p.y - hole.t, hole.b - p.y);
-        if (v.harbor) dockIn = Math.min(dockIn, inside);
-        if (inside < m) out.push(`${v.id}@${p.x | 0},${p.y | 0}`);
+        const m = isle.coastMiter.get(v.id);
+        const reach = v.harbor ? inside(isle.screenAt(v.x + m.mx * 0.7, 0.1, v.z + m.mz * 0.7)) : Infinity;
+        if (v.harbor) dockIn = Math.min(dockIn, reach);
+        if (inside(p) < 0 || reach < 0) out.push(`${v.id}@${p.x | 0},${p.y | 0}`);
         if (document.elementFromPoint(p.x, p.y)?.tagName !== "CANVAS") covered.push(`${v.id}@${p.x | 0},${p.y | 0}`);
       }
-      return { overhead: isle.overhead, hole, scale: +scale.toFixed(1), corners: st.vertices.length, out, covered, dockIn: +dockIn.toFixed(1), token: +(0.68 * scale).toFixed(1) };
+      const tokens = isle.land.children.filter((o) => o.userData?.token != null);
+      const token = Math.min(...tokens.map((t) => 0.68 * t.scale.x * isle.pxPerUnit(t.position.x, t.position.y, t.position.z)));
+      return { view: isle.view, hole, corners: st.vertices.length, out, covered, dockIn: +dockIn.toFixed(1), token: +token.toFixed(1) };
     });
-    check(`${tag}: the overhead camera is on in play`, fit.overhead);
-    check(`${tag}: every corner and dock inside the measured HUD hole`, fit.corners === 54 && fit.out.length === 0, { hole: fit.hole, scale: fit.scale, dockIn: fit.dockIn, out: fit.out.slice(0, 6) });
+    const fit = await holeFit();
+    check(`${tag}: the diorama camera is on in play`, fit.view === "diorama", { view: fit.view });
+    check(`${tag}: every corner and dock inside the measured HUD hole`, fit.corners === 54 && fit.out.length === 0, { hole: fit.hole, dockIn: fit.dockIn, out: fit.out.slice(0, 6) });
     check(`${tag}: every corner lands on the canvas (clear of the HUD)`, fit.covered.length === 0, fit.covered.slice(0, 6));
     // #587: one pier and one boat per dock (nine on a standard isle), not one per harbor corner (18); each boat's kind is its dock's.
     const docks = await page.evaluate(() => {
@@ -331,9 +335,9 @@ try {
     });
     check(`${tag}: nine piers and nine boats, one per dock, each boat on its dock's two corners`, docks.piers === 9 && docks.boats === 9 && docks.corners === 18 && docks.mismatched === 0, docks);
     const tokenMin = touch ? 18 : 24;
-    check(`${tag}: a number token is at least ${tokenMin} px across`, fit.token >= tokenMin, { token: fit.token });
+    check(`${tag}: every number token is at least ${tokenMin} px across`, fit.token >= tokenMin, { smallest: fit.token });
     const p0 = await pose();
-    check(`${tag}: the default view is the fitted ${lean}° overhead view`, (await atHome(p0)) && !p0.glide, brief(p0));
+    check(`${tag}: the default view is the fitted diorama view, ${90 - lean}° above the horizon`, (await atHome(p0)) && !p0.glide, brief(p0));
     await page.screenshot({ path: `test-results/board-look-play-${w}x${h}.png` });
 
     // A legal corner to start a drag on: the drag must orbit, not place.
@@ -452,10 +456,12 @@ try {
           poll();
         });
         const isle = window.__isle;
-        return { phase: s.state.phase, armed: s.buildMode, hand: !!document.querySelector('[data-testid="hand-dock"]'), insets: isle.insets(), token: +((innerWidth / (isle.ortho.right - isle.ortho.left)) * isle.ortho.zoom * 0.68).toFixed(1) };
+        const tokens = isle.land.children.filter((o) => o.userData?.token != null);
+        const token = Math.min(...tokens.map((t) => 0.68 * t.scale.x * isle.pxPerUnit(t.position.x, t.position.y, t.position.z)));
+        return { phase: s.state.phase, armed: s.buildMode, hand: !!document.querySelector('[data-testid="hand-dock"]'), insets: isle.insets(), token: +token.toFixed(1) };
       });
       await drawn(page, 2);
-      check(`${tag}: mid-game with the hand shown and an armed path a token is at least 24 px across`, mid.phase === "main" && mid.armed === "path" && mid.hand && mid.token >= 24, mid);
+      check(`${tag}: mid-game with the hand shown and an armed path every token is at least 24 px across`, mid.phase === "main" && mid.armed === "path" && mid.hand && mid.token >= 24, mid);
       // Disarming changes the marks, so the fit follows once more; let it land before the baseline below is taken.
       await page.evaluate(() => window.__emberisle.getState().setBuildMode("none"));
       await page.waitForFunction(() => !window.__isle.refitDue && !window.__isle.glide, null, { timeout: STEP_MS });
@@ -486,6 +492,81 @@ try {
       const t1 = await pose();
       check(`${tag}: chat previews are not a rail: the right inset stays 12 and the camera stays put`, withChat.previews === 3 && withChat.previewW >= 200 && withChat.right === 12 && !t1.glide && t1.target.every((v, k) => Math.abs(v - t0.target[k]) < 1e-6), { ...withChat, target: brief(t1).target, before: brief(t0).target });
     }
+    if (!touch) {
+      // The table menu's View: Overhead switches to the fitted 25° overhead view, which fits the same hole and orbits on a
+      // drag; the choice is remembered across a reload; Diorama switches back.
+      const choose = async (name) => {
+        await page.getByRole("button", { name: "Table menu" }).click();
+        await page.getByTestId("view-toggle").getByRole("button", { name, exact: true }).click();
+        await page.keyboard.press("Escape");
+      };
+      await choose("Overhead");
+      await page.waitForFunction(() => window.__isle.view === "overhead" && window.__isle.fit && !window.__isle.refitDue && !window.__isle.glide, null, { timeout: STEP_MS });
+      await drawn(page, 2);
+      const over = await holeFit();
+      const overPose = await pose();
+      const lean = await page.evaluate(async () => (await import("/src/lib/scene/mobile-fit.ts")).OVERHEAD_LEAN);
+      const overHome = Math.abs(overPose.polar - lean) < 0.01 && Math.abs(overPose.azimuth) < 0.01 && Math.abs(overPose.zoom - 1) < 0.01;
+      const saved = await page.evaluate(() => localStorage.getItem("emberisle-view"));
+      check(`${tag}: View > Overhead shows the fitted 25° overhead view, every corner and dock in the hole, and is saved`, over.view === "overhead" && overHome && over.out.length === 0 && over.covered.length === 0 && saved === "overhead", { view: over.view, ...brief(overPose), out: over.out.slice(0, 6), covered: over.covered.slice(0, 6), saved });
+      const overDrag = await drag([{ x: w / 2, y: h / 2 }, ...Array.from({ length: 6 }, (_, i) => ({ x: w / 2 + 20 * (i + 1), y: h / 2 + 5 * (i + 1) }))]);
+      check(`${tag}: the overhead view still orbits on a drag`, Math.abs(overDrag.azimuth - overPose.azimuth) > 0.05 || Math.abs(overDrag.polar - overPose.polar) > 0.05, brief(overDrag));
+      await page.reload();
+      await page.getByRole("button", { name: "Four seats, one table" }).click();
+      await page.waitForFunction(() => window.__isle?.lastState && window.__isle.fit && !window.__isle.refitDue, null, { timeout: STEP_MS });
+      check(`${tag}: the overhead choice outlives a reload`, (await page.evaluate(() => window.__isle.view)) === "overhead");
+      await choose("Diorama");
+      await page.waitForFunction(() => window.__isle.view === "diorama" && !window.__isle.refitDue && !window.__isle.glide, null, { timeout: STEP_MS });
+      check(`${tag}: View > Diorama switches back and is saved`, (await page.evaluate(() => localStorage.getItem("emberisle-view"))) === "diorama");
+    }
+    if (touch) {
+      // #597: the far (north) coast is smallest on screen. A path on the northmost coast edge and an outpost on its corner
+      // (put there last, so nothing above sees them), measured from their own meshes' boxes on screen, and the touch pick
+      // reach there, against the 24 px touch slop. The outpost's size is reported, not judged: the pick reach is its target.
+      const far = await page.evaluate(async () => {
+        const isle = window.__isle;
+        const g = window.__emberisle;
+        const st = structuredClone(g.getState().state);
+        const coast = new Set(isle.coastOrder);
+        const edge = st.edges.filter((e) => coast.has(e.va) && coast.has(e.vb)).sort((a, b) => {
+          const z = (e) => st.vertices.find((v) => v.id === e.va).z + st.vertices.find((v) => v.id === e.vb).z;
+          return z(a) - z(b);
+        })[0];
+        edge.path = st.players[0].id;
+        const corner = st.vertices.find((v) => v.id === edge.va);
+        corner.building = { playerId: st.players[0].id, kind: "outpost" };
+        st.seq++;
+        g.setState({ state: st });
+        const t0 = performance.now();
+        await new Promise((res) => { const p = () => (isle.lastSeq === st.seq || performance.now() - t0 > 8000 ? res() : requestAnimationFrame(p)); p(); });
+        await new Promise((r) => setTimeout(r, 700));
+        const size = (key) => {
+          const o = isle.pieces.children.find((c) => c.userData.key === key);
+          const box = new isle.ortho.position.constructor();
+          o.updateMatrixWorld(true);
+          const pts = [];
+          o.traverse((m) => {
+            if (!m.geometry) return;
+            m.geometry.computeBoundingBox();
+            const b = m.geometry.boundingBox;
+            for (const x of [b.min.x, b.max.x]) for (const y of [b.min.y, b.max.y]) for (const z of [b.min.z, b.max.z]) {
+              box.set(x, y, z).applyMatrix4(m.matrixWorld);
+              pts.push(isle.screenAt(box.x, box.y, box.z));
+            }
+          });
+          const w = Math.max(...pts.map((p) => p.x)) - Math.min(...pts.map((p) => p.x));
+          const h = Math.max(...pts.map((p) => p.y)) - Math.min(...pts.map((p) => p.y));
+          return { w: +w.toFixed(1), h: +h.toFixed(1) };
+        };
+        const { pickReach } = await import("/src/lib/scene/mobile-fit.ts");
+        const depth = new isle.ortho.position.constructor(corner.x, 0.35, corner.z).sub(isle.persp.position).dot(isle.persp.getWorldDirection(new isle.ortho.position.constructor()));
+        const reachPx = (pickReach(depth, isle.lens.focal, true) * isle.lens.focal) / depth;
+        return { edge: edge.id, path: size(`e:${edge.id}`), outpost: size(`v:${corner.id}`), reachPx: +(2 * reachPx).toFixed(1), seq: st.seq };
+      });
+      const across = (b) => Math.max(b.w, b.h);
+      check(`${tag}: a path on the far coast spans at least the 24 px touch slop on screen, and the touch pick at its corner reaches 24 px across`, across(far.path) >= 24 && far.reachPx >= 24, far);
+    }
+
     await page.context().close();
   }
   // 3. Chrome the player opens without the game moving refits the board: the chat dock (online) and the focused keyboard
@@ -506,10 +587,10 @@ try {
     // rightmost corner sits against the rail on the right.
     const look = (rail) =>
       page.evaluate(async (rail) => {
-        const { fitOrtho, OVERHEAD_LEAN } = await import("/src/lib/scene/mobile-fit.ts");
+        const { fitDiorama } = await import("/src/lib/scene/mobile-fit.ts");
         const isle = window.__isle;
         const ins = isle.insets();
-        const want = fitOrtho(innerWidth, innerHeight, ins, OVERHEAD_LEAN);
+        const want = fitDiorama(innerWidth, innerHeight, ins);
         const st = window.__emberisle.getState().state;
         const el = rail ? document.querySelector(rail) : null;
         const railLeft = el ? Math.round(el.getBoundingClientRect().left) : null;
@@ -520,8 +601,8 @@ try {
           rightmost = Math.max(rightmost, p.x);
           if (document.elementFromPoint(p.x, p.y)?.tagName !== "CANVAS") covered.push(`${v.id}@${p.x | 0},${p.y | 0}`);
         }
-        const fresh = ["left", "right", "top", "bottom", "x", "z"].every((k) => Math.abs(want[k] - isle.fit[k]) < 1e-6);
-        return { seq: st.seq, ins: JSON.stringify(ins), pose: JSON.stringify(["x", "z", "left", "right", "top", "bottom"].map((k) => isle.fit[k])), right: ins.right, fresh, railLeft, rightmost: Math.round(rightmost), covered, glide: isle.glide !== null };
+        const fresh = Object.keys(want).every((k) => Math.abs(want[k] - isle.fit[k]) < 1e-6);
+        return { seq: st.seq, ins: JSON.stringify(ins), pose: JSON.stringify(isle.fit), right: ins.right, fresh, railLeft, rightmost: Math.round(rightmost), covered, glide: isle.glide !== null };
       }, rail);
     // The first-player notice leaves the phase bar a few seconds in, and housekeeping does not refit; start after it has
     // gone, with one measure asked for, so every fit below answers to the hole as it then stands.
@@ -616,7 +697,7 @@ try {
         holeH: innerHeight - ins.top - ins.bottom,
         isle: `${Math.round(isleW)}x${Math.round(isleH)}`,
         area: Math.round(isleW * isleH),
-        token: +((innerWidth / (isle.ortho.right - isle.ortho.left)) * isle.ortho.zoom * 0.68).toFixed(1),
+        token: +Math.min(...isle.land.children.filter((o) => o.userData?.token != null).map((t) => 0.68 * t.scale.x * isle.pxPerUnit(t.position.x, t.position.y, t.position.z))).toFixed(1),
         apart: +apart.toFixed(1),
         widthOverHoleH: +(isleW / (innerHeight - ins.top - ins.bottom)).toFixed(2),
         covered,
@@ -625,7 +706,7 @@ try {
     check(`${tag}: main phase with the hand shown, the HUD a left column`, land.phase === "main" && land.hand && land.column.right < w / 2 && land.insets.left > land.column.right, land);
     check(`${tag}: the island is larger than before #422 (${before} px²)`, land.area > before, { area: land.area, isle: land.isle, token: land.token });
     check(`${tag}: the island is at least 60 % as wide as the hole is tall, every corner clear of the HUD`, land.widthOverHoleH >= 0.6 && land.covered.length === 0, { widthOverHoleH: land.widthOverHoleH, holeH: land.holeH, covered: land.covered.slice(0, 6) });
-    check(`${tag}: adjacent corners at least 24 px apart`, land.apart >= 24, { apart: land.apart });
+    check(`${tag}: adjacent corners more than the 14 px touch reach apart`, land.apart > 14, { apart: land.apart });
     await page.screenshot({ path: `test-results/board-look-play-${w}x${h}.png` });
     // A main-phase build by touch: Path armed, an edge picked, the column scrolled to its end first. Place and Cancel are
     // the column's first row, in view, and cover neither the hand nor the turn banner.

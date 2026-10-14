@@ -4,15 +4,21 @@
 import assert from "node:assert/strict";
 import {
   CAP_LEVEL,
+  DIORAMA_AZIMUTH,
+  DIORAMA_POLAR,
   ISLE_HALF,
   OVERHEAD_LEAN,
+  PICK_MAX,
   PICK_VERTEX_RADIUS,
   chromeInsets,
+  dioramaProject,
+  fitDiorama,
   fitOrtho,
   freeMaxDistance,
   hudInsets,
   isSelectTap,
   pickBest,
+  pickReach,
   tapSlop,
   TouchGesture,
 } from "../src/lib/scene/mobile-fit.ts";
@@ -53,6 +59,64 @@ for (const [w, h] of [
   assert.ok(Math.abs(c.x - (hole.l + hole.r) / 2) < 1 && Math.abs(c.y - (hole.t + hole.b) / 2) < 1, `${w}x${h}: island center at ${c.x.toFixed(1)},${c.y.toFixed(1)} is not at the hole center ${(hole.l + hole.r) / 2},${(hole.t + hole.b) / 2}`);
   console.log(`${w}x${h}: leaned island fits the hole, centered`);
 }
+// The diorama view (#597), the default in play: 32° above the horizon, 20° off north, fitted to the same holes (the
+// measured ones from the HUD: desktop, portrait, and the sideways phone's left column, with and without an offer open).
+// Every coast corner, at cap level and at the tallest prop's height, and every dock's reach (0.95 past its corner at the
+// waterline) lands in the hole, and the island fills it on one axis.
+{
+  const coast = [];
+  const seen = new Map();
+  for (let q = -2; q <= 2; q++)
+    for (let r = Math.max(-2, -q - 2); r <= Math.min(2, -q + 2); r++)
+      for (let i = 0; i < 6; i++) {
+        const a = (Math.PI / 180) * (60 * i - 30);
+        const x = 1.12 * Math.sqrt(3) * (q + r / 2) + 1.12 * Math.cos(a);
+        const z = 1.12 * 1.5 * r + 1.12 * Math.sin(a);
+        const k = `${Math.round(x * 1000)},${Math.round(z * 1000)}`;
+        seen.set(k, { x, z, n: (seen.get(k)?.n ?? 0) + 1 });
+      }
+  for (const v of seen.values()) if (v.n < 3) coast.push(v);
+  assert.equal(coast.length, 30, "30 coast corners");
+  for (const [w, h, ins, tag] of [
+    [1280, 720, { top: 70, right: 12, bottom: 245, left: 248 }, "desktop"],
+    [1280, 720, { top: 68, right: 12, bottom: 240, left: 248 }, "desktop, offer open"],
+    [390, 844, { top: 124, right: 12, bottom: 305, left: 12 }, "portrait"],
+    [390, 844, { top: 80, right: 12, bottom: 385, left: 12 }, "portrait, offer open"],
+    [844, 390, { top: 68, right: 12, bottom: 12, left: 284 }, "sideways"],
+  ]) {
+    const f = fitDiorama(w, h, ins);
+    const hole = { l: ins.left, r: w - ins.right, t: ins.top, b: h - ins.bottom };
+    const at = (x, y, z) => dioramaProject(f, DIORAMA_POLAR, DIORAMA_AZIMUTH, x, y, z);
+    const pts = coast.flatMap(({ x, z }) => {
+      const k = 1 + 0.95 / Math.hypot(x, z);
+      return [at(x, CAP_LEVEL, z), at(x, CAP_LEVEL + 1.15, z), at(x * k, 0.1, z * k)];
+    });
+    const out = pts.filter((p) => p.x < hole.l - 0.5 || p.x > hole.r + 0.5 || p.y < hole.t - 0.5 || p.y > hole.b + 0.5);
+    assert.deepEqual(out, [], `${w}x${h} ${tag}: every corner, tree top and dock inside the hole`);
+    const [l, r, t, b] = [Math.min(...pts.map((p) => p.x)), Math.max(...pts.map((p) => p.x)), Math.min(...pts.map((p) => p.y)), Math.max(...pts.map((p) => p.y))];
+    const fill = Math.max((r - l) / (hole.r - hole.l), (b - t) / (hole.b - hole.t));
+    assert.ok(fill > 0.995, `${w}x${h} ${tag}: the island fills the hole on one axis (${fill.toFixed(3)})`);
+    assert.ok(Math.abs((l + r) / 2 - (hole.l + hole.r) / 2) < 0.5 && Math.abs((t + b) / 2 - (hole.t + hole.b) / 2) < 0.5, `${w}x${h} ${tag}: centred in the hole`);
+    // The far (north) corners are smaller on screen than the near ones, and a corner-to-corner step along the line of sight
+    // is foreshortened by the tilt; still, a tap dead on a corner is outside its neighbour's 14 px touch reach.
+    const apart = Math.min(...coast.flatMap((a) => coast.filter((c) => c !== a && Math.hypot(c.x - a.x, c.z - a.z) < 1.2).map((c) => {
+      const [p, q] = [at(a.x, CAP_LEVEL, a.z), at(c.x, CAP_LEVEL, c.z)];
+      return Math.hypot(p.x - q.x, p.y - q.y);
+    })));
+    assert.ok(apart > 14, `${w}x${h} ${tag}: adjacent coast corners ${apart.toFixed(1)} px apart`);
+    console.log(`${w}x${h} ${tag}: diorama fit at ${f.dist.toFixed(1)} units, fills ${fill.toFixed(3)}, adjacent corners >= ${apart.toFixed(1)} px`);
+  }
+  // The pick reach grows with depth (a far corner is smaller on screen), never under the overhead volume and never as far
+  // as half the corner spacing, so two corners never share a pick.
+  const f = fitDiorama(390, 844, { top: 124, right: 12, bottom: 305, left: 12 });
+  const near = pickReach(f.dist - 4, f.focal, true);
+  const far = pickReach(f.dist + 4, f.focal, true);
+  assert.ok(far > near && near >= PICK_VERTEX_RADIUS && 2 * PICK_MAX < 1.12, `pick reach ${near.toFixed(3)} near, ${far.toFixed(3)} far`);
+  assert.ok(Math.abs((far * f.focal) / (f.dist + 4) - 14) < 1e-9 || far === PICK_MAX, "a touch reaches 14 px around a far corner");
+  assert.equal(pickReach(1, 1000, false), PICK_VERTEX_RADIUS, "a near mouse pick keeps the overhead volume");
+  console.log(`diorama pick reach at 390x844, touch: ${near.toFixed(3)} near, ${far.toFixed(3)} far (14 px)`);
+}
+
 // Straight down, the shift is the plain one; leaned, the ground shift is longer by 1/cos(lean).
 {
   const ins = { top: 100, right: 0, bottom: 300, left: 0 };

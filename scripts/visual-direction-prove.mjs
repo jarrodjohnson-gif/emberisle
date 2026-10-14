@@ -4,7 +4,8 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { chromium } from "playwright";
 import { createServer } from "vite";
 
-const vite = await createServer({ server: { host: "127.0.0.1", port: 8171, strictPort: true }, logLevel: "error" });
+const PORT = Number(process.env.VITE_PORT) || 8171;
+const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();
 const browser = await chromium.launch({ args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"] });
 const errors = [];
@@ -24,7 +25,7 @@ try {
     const context = await browser.newContext({ viewport: { width, height }, hasTouch: phone, isMobile: phone, reducedMotion: reduced ? "reduce" : "no-preference" });
     const page = await context.newPage();
     page.on("pageerror", e => errors.push(e.message));
-    await page.goto("http://127.0.0.1:8171/");
+    await page.goto(`http://127.0.0.1:${PORT}/`);
     await page.waitForFunction(() => window.__isle?.renders > 1);
     await page.locator(".seat-settings > summary").click();
     await page.getByRole("radio", { name: "Tide", exact: true }).click();
@@ -57,19 +58,24 @@ try {
         const r = window.__isle;
         const i = r.insets();
         const hole = { left: i.left, top: i.top, right: innerWidth - i.right, bottom: innerHeight - i.bottom };
-        const scale = innerWidth / (r.ortho.right - r.ortho.left) * r.ortho.zoom;
+        // Px per world unit at the island's centre (the diorama view, #597, is the default; a far corner is smaller).
+        const scale = r.pxPerUnit(0, 0.35, 0);
+        // Every corner, and a dock's pier and boat 0.7 out along the coast at the waterline, inside the hole.
+        const inHole = p => Math.min(p.x - hole.left, hole.right - p.x, p.y - hole.top, hole.bottom - p.y) >= -0.5;
         const out = window.__emberisle.getState().state.vertices.filter(v => {
-          const p = r.screenOf(v.id);
-          const pad = v.harbor ? 0.7 * scale : 0;
-          return Math.min(p.x - hole.left, hole.right - p.x, p.y - hole.top, hole.bottom - p.y) < pad - 0.5;
+          const m = r.coastMiter.get(v.id);
+          return !inHole(r.screenOf(v.id)) || (v.harbor && !inHole(r.screenAt(v.x + m.mx * 0.7, 0.1, v.z + m.mz * 0.7)));
         }).map(v => v.id);
+        // No corner (so no legal one) under the HUD: each one's screen point is the canvas.
+        const covered = window.__emberisle.getState().state.vertices.map(v => v.id).filter(id => { const p = r.screenOf(id); return document.elementFromPoint(p.x, p.y)?.tagName !== 'CANVAS'; });
         const clippedCosts = [...document.querySelectorAll('.build-tile')].filter(el => el.scrollWidth > el.clientWidth + 1).map(el => el.getAttribute('aria-label'));
         const offer = document.querySelector('[data-testid="trade-toast"]');
         const stack = document.querySelector('[data-hud-stack]').getBoundingClientRect();
         const b = offer?.getBoundingClientRect();
-        return { scale, hole, out, clippedCosts, offer: b ? { top: b.top, bottom: b.bottom, left: b.left, right: b.right, insideStack: b.top >= stack.top && b.bottom <= stack.bottom + 0.5, modal: offer.getAttribute('aria-modal') } : null };
+        return { scale, hole, out, covered, clippedCosts, offer: b ? { top: b.top, bottom: b.bottom, left: b.left, right: b.right, insideStack: b.top >= stack.top && b.bottom <= stack.bottom + 0.5, modal: offer.getAttribute('aria-modal') } : null };
       });
       assert.deepEqual(geometry.out, [], `${width} ${phase}: all corners and dock clearance inside board hole`);
+      assert.deepEqual(geometry.covered, [], `${width} ${phase}: no corner under the HUD`);
       assert.deepEqual(geometry.clippedCosts, [], `${width} ${phase}: all build prices fit`);
       if (baseline[width]) {
         const [w, h] = baseline[width][phase];

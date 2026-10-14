@@ -128,15 +128,16 @@ async function prove(p, moment, { island = true } = {}) {
       const ins = isle.insets();
       const hole = { l: ins.left, t: ins.top, r: innerWidth - ins.right, b: innerHeight - ins.bottom };
       const holeSafe = hole.l >= safe.l && hole.t >= safe.t && hole.r <= safe.r && hole.b <= safe.b;
-      const scale = (innerWidth / (isle.ortho.right - isle.ortho.left)) * isle.ortho.zoom;
       const corners = [];
       for (const v of st.vertices) {
         const q = isle.screenOf(v.id);
-        const m = v.harbor ? 0.7 * scale : 0;
-        if (Math.min(q.x - hole.l, hole.r - q.x, q.y - hole.t, hole.b - q.y) < m) corners.push(`${v.id}@${q.x | 0},${q.y | 0}`);
+        // A dock's pier and boat reach 0.7 world units out along the coast, at the waterline.
+        const m = isle.coastMiter.get(v.id);
+        const pts = v.harbor ? [q, isle.screenAt(v.x + m.mx * 0.7, 0.1, v.z + m.mz * 0.7)] : [q];
+        if (pts.some((p) => Math.min(p.x - hole.l, hole.r - p.x, p.y - hole.t, hole.b - p.y) < 0)) corners.push(`${v.id}@${q.x | 0},${q.y | 0}`);
       }
       return {
-        reached, seen, out, chatOut, overhead: isle.overhead, vertices: st.vertices.length, corners, holeSafe,
+        reached, seen, out, chatOut, play: isle.view !== "free", vertices: st.vertices.length, corners, holeSafe,
         hole: Object.fromEntries(Object.entries(hole).map(([k, v]) => [k, Math.round(v)])),
       };
     },
@@ -152,7 +153,7 @@ async function prove(p, moment, { island = true } = {}) {
     } else check(`${tag} ${moment}: chat controls inside the safe area`, false, m.chatOut);
   }
   if (island) {
-    check(`${tag} ${moment}: the HUD hole is inside the safe area`, m.overhead && m.holeSafe, m.hole);
+    check(`${tag} ${moment}: the HUD hole is inside the safe area`, m.play && m.holeSafe, m.hole);
     check(`${tag} ${moment}: all ${m.vertices} island corners and docks inside the hole`, m.vertices === 54 && m.corners.length === 0, m.corners.length ? m.corners.slice(0, 6) : undefined);
   }
   await page.screenshot({ path: `test-results/hud-safe-${tag}-${moment.replace(/[^a-z0-9]+/gi, "-")}.png` });

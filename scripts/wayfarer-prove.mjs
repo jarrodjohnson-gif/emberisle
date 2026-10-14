@@ -3,7 +3,7 @@ import { existsSync } from "node:fs";
 import { chromium } from "playwright";
 import { createServer } from "vite";
 
-const PORT = 8092;
+const PORT = Number(process.env.VITE_PORT) || 8092;
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();
 
@@ -56,6 +56,8 @@ try {
   await page.evaluate(async () => {
     window.__topOf = (await import("/src/lib/scene/isle-renderer.ts")).topOf;
     window.__worldOfHex = (await import("/src/lib/game/board.ts")).worldOfHex;
+    // In the diorama view (#597) a token tilts toward the camera and is lifted onto its near edge; he stands on its face.
+    window.__lift = (id) => window.__isle.land.children.find((o) => o.userData?.token != null && o.userData.hex === id)?.userData.lift ?? 0;
   });
   await page.waitForTimeout(1500);
 
@@ -66,7 +68,7 @@ try {
     const h = st.hexes.find((x) => x.id === st.robberHex);
     const w = window.__worldOfHex(h);
     const p = isle.wayfarer.position;
-    return { dy: p.y - (window.__topOf(h.terrain) + (h.pip === null ? 0 : 0.07)), dx: p.x - w.x, dz: p.z - w.z, walking: !!isle.walk };
+    return { dy: p.y - (window.__topOf(h.terrain) + (h.pip === null ? 0 : 0.07 + window.__lift(h.id))), dx: p.x - w.x, dz: p.z - w.z, walking: !!isle.walk };
   });
   check("1 on the token", !on.walking && Math.abs(on.dy) <= 0.001 && Math.abs(on.dx) <= 0.001 && Math.abs(on.dz) <= 0.001, on);
 
@@ -81,7 +83,7 @@ try {
       const w = window.__worldOfHex(x);
       return Math.abs(Math.hypot(w.x - fw.x, w.z - fw.z) - 2 * 1.12 * Math.sqrt(3)) < 0.05;
     });
-    const face = window.__topOf(to.terrain) + (to.pip === null ? 0 : 0.07);
+    const face = window.__topOf(to.terrain) + (to.pip === null ? 0 : 0.07 + window.__lift(to.id));
     // Software GL renders ~7 frames a second, too few to see a 300 ms hop. Run the renderer's own tick on a virtual clock in 50 ms steps.
     let vt = isle.clock.getElapsed();
     isle.clock.getElapsed = () => vt;
@@ -90,11 +92,17 @@ try {
     st.robberHex = to.id;
     st.seq += 1;
     g.setState({ state: st, pendingSteal: null, error: null });
+    // Each sample's height over the straight line from where he stood to the new face: the walk eases height and ground
+    // together, so the fraction of the ground covered is the fraction of the rise (the two faces can differ by a token's lift).
+    const stood = isle.wayfarer.position.clone();
+    const tw = window.__worldOfHex(to);
     const ys = [];
     for (let ms = 0; ms < 700; ms += 50) {
       vt += 0.05;
       isle.tick();
-      ys.push(isle.wayfarer.position.y - face);
+      const p = isle.wayfarer.position;
+      const e = Math.hypot(p.x - stood.x, p.z - stood.z) / Math.hypot(tw.x - stood.x, tw.z - stood.z);
+      ys.push(p.y - (stood.y + (face - stood.y) * e));
     }
     let rises = 0;
     for (let i = 1; i < ys.length; i++) if (ys[i - 1] <= 0.2 && ys[i] > 0.2) rises++;
