@@ -87,7 +87,7 @@ export function TradeToast() {
       <>
         <div className="trade-summary flex min-w-0 items-center justify-between gap-2">
           <p id={lineId} className="text-sm font-medium leading-5">
-            {/* #312: another seat's offer leads with that seat's dot and mark. */}
+            {/* #312: another seat's offer leads with that seat's dot. */}
             {!asker ? <SeatDot color={players?.find((p) => p.id === offer.from)?.color ?? "transparent"} className="mr-1.5 size-3 align-[-1px]" /> : null}
             {offerLine(asker ? null : offer.fromName, offer.give, offer.want)}
           </p>

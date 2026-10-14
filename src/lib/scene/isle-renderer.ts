@@ -810,6 +810,7 @@ export class IsleRenderer {
     // Reduced motion: a flat, still sea; only the foam lace stays.
     this.motion.value = calm ? 0 : 1;
     if (calm) {
+      this.oceanLife.step(0, false, this.oceanViewport);
       this.pulseMarks(0, true);
       this.draw();
       return;
