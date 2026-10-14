@@ -256,6 +256,61 @@ try {
     }
     await pg.close();
   }
+  // #606: the build chips. A Ready chip's ink on its green paper, the check badge's white on its green, the red shortfall ring on
+  // the paper the chip sits on (>= 3:1, a graphic) and the "-N" badge's white on its red; read as computed from the live chips.
+  for (const viewport of [{ width: 1280, height: 720 }, { width: 390, height: 844 }]) {
+    const tag = `${viewport.width}x${viewport.height}`;
+    const pg = await browser.newPage({ viewport });
+    pg.on("console", (m) => m.type() === "error" && errors.push(m.text()));
+    pg.on("pageerror", (e) => errors.push(String(e)));
+    await pg.goto(`http://127.0.0.1:${PORT}/`);
+    await pg.getByRole("button", { name: "Join", exact: true }).waitFor();
+    await pg.evaluate(() => window.__emberisle.getState().startHotseat(4));
+    await pg.evaluate(() => {
+      const g = window.__emberisle;
+      const st = structuredClone(g.getState().state);
+      const me = st.players.find((p) => p.id === st.current);
+      st.phase = "main";
+      st.dice = [3, 4];
+      me.resources = { timber: 1, clay: 1, wool: 0, grain: 0, ore: 0 };
+      st.vertices.find((x) => x.hexes.length === 3).building = { playerId: me.id, kind: "outpost" };
+      st.seq += 1;
+      g.setState({ state: st, buildMode: "none" });
+    });
+    await pg.waitForFunction(() => document.querySelector('[data-testid="build-path"]')?.dataset.buildState === "ready" && document.querySelector('[data-testid="build-stronghold"]')?.dataset.buildState === "missing");
+    const chips = await pg.evaluate(() => {
+      const px = (css) => {
+        const c = document.createElement("canvas").getContext("2d", { willReadFrequently: true });
+        c.fillStyle = "#000";
+        c.fillStyle = css;
+        c.fillRect(0, 0, 1, 1);
+        return [...c.getImageData(0, 0, 1, 1).data].slice(0, 3);
+      };
+      const path = document.querySelector('[data-testid="build-path"]');
+      const strong = document.querySelector('[data-testid="build-stronghold"]');
+      const ringed = strong.querySelector("[data-short] > span:first-child");
+      const badge = strong.querySelector("[data-short] > span:last-child");
+      return {
+        ink: px(getComputedStyle(path).color),
+        green: px(getComputedStyle(path).backgroundColor),
+        check: px(getComputedStyle(path.querySelector(".build-ready-mark")).color),
+        checkFill: px(getComputedStyle(path.querySelector(".build-ready-mark")).backgroundColor),
+        label: px(getComputedStyle(strong).color),
+        paper: px(getComputedStyle(strong).backgroundColor),
+        ring: px(getComputedStyle(ringed).getPropertyValue("--tw-ring-color")),
+        badgeInk: px(getComputedStyle(badge).color),
+        badgeFill: px(getComputedStyle(badge).backgroundColor),
+      };
+    });
+    sampled.push([`${tag} Ready chip ink on green paper`, ratio(chips.ink, chips.green)]);
+    sampled.push([`${tag} Ready check badge white on green`, ratio(chips.check, chips.checkFill)]);
+    sampled.push([`${tag} Missing chip label on paper`, ratio(chips.label, chips.paper)]);
+    sampled.push([`${tag} shortfall badge white on red`, ratio(chips.badgeInk, chips.badgeFill)]);
+    const ring = ratio(chips.ring, chips.paper);
+    console.log(`  ${tag}: red ring rgb(${chips.ring}) on paper rgb(${chips.paper}) ${ring.toFixed(2)}:1 (needs 3:1)`);
+    if (ring < 3) bad.push(`${tag} red ring on paper is ${ring.toFixed(2)}:1`);
+    await pg.close();
+  }
   for (const [name, r] of sampled) {
     console.log(`${r.toFixed(2)}:1  ${name}`);
     if (r < MIN) bad.push(`${name} is ${r.toFixed(2)}:1`);
