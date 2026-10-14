@@ -28,9 +28,8 @@ import { LAND_MS } from "@/lib/scene/landing";
 import { mulberry32, hashStr } from "@/lib/utils";
 import { PAINT, RIM } from "@/lib/scene/palette";
 import { OceanLife } from "@/lib/scene/ocean-life";
-import { foldOverRidge, markParts } from "@/lib/scene/seat-mark";
 import { payingHexes } from "@/lib/game/rules";
-import { seatMark, type GameState, type HarborKind, type HexCell, type Terrain, type Vertex } from "@/lib/game/types";
+import { type GameState, type HarborKind, type HexCell, type Terrain, type Vertex } from "@/lib/game/types";
 
 const SLAB = 0.26;
 const TILE_Y = 0.04;
@@ -949,7 +948,7 @@ export class IsleRenderer {
     this.placed = new Map();
     this.landings = [];
     const land = (obj: THREE.Object3D, key: string, kind: PieceKind, seat: string) => {
-      obj.userData = { piece: kind, key, restY: obj.position.y, mark: seatMark(seat)?.mark ?? null };
+      obj.userData = { piece: kind, key, restY: obj.position.y };
       this.placed.set(key, kind);
       const start = !fresh && !calm && before.get(key) !== kind ? now : this.landStart.get(key);
       if (start === undefined || now - start >= LAND_MS[LAND_SOUND[kind]]) {
@@ -973,7 +972,7 @@ export class IsleRenderer {
       const dx = b.x - a.x;
       const dz = b.z - a.z;
       const rot = Math.atan2(dx, dz);
-      const road = makePath(color, Math.hypot(dx, dz) * 0.9, rot);
+      const road = makePath(color, Math.hypot(dx, dz) * 0.9);
       road.position.set((a.x + b.x) / 2, edgeTop(tops, a, b), (a.z + b.z) / 2);
       road.rotation.y = rot;
       this.pieces.add(road);
@@ -1602,17 +1601,6 @@ function piece(parts: THREE.BufferGeometry[]) {
   return m;
 }
 
-// #312: the seat's mark in its ink, `size` wide, lying on the seat colour at height y (docs/design/seat-marks.md). The
-// parts are merged into the piece, so a mark costs vertices and no draw call. `rot` undoes the piece's own turn so the
-// mark keeps one world orientation, like the number tokens; `gable` folds it over an outpost's ridge.
-function mark(seat: string, size: number, y: number, rot = 0, gable?: { rise: number; run: number }) {
-  const m = seatMark(seat);
-  if (!m) return [];
-  const parts = markParts(m.mark, size);
-  if (gable) foldOverRidge(parts, gable.rise, gable.run);
-  return parts.map((g) => tint(g.rotateY(rot).translate(0, y, 0), m.ink));
-}
-
 function makeOutpost(seat: string) {
   const shape = new THREE.Shape();
   shape.moveTo(-0.14, 0);
@@ -1625,7 +1613,6 @@ function makeOutpost(seat: string) {
     slab(0.38, 0.04, 0.34, RIM.light, 0.04),
     slab(0.26, 0.14, 0.22, seat, 0.08),
     roof,
-    ...mark(seat, 0.2, 0.34, 0, { rise: 0.12, run: 0.14 }),
   ]);
 }
 
@@ -1634,7 +1621,6 @@ function makeStronghold(seat: string) {
     slab(0.54, 0.04, 0.54, RIM.dark),
     slab(0.44, 0.04, 0.44, RIM.light, 0.04),
     slab(0.32, 0.22, 0.32, seat, 0.08),
-    ...mark(seat, 0.15, 0.3),
   ];
   for (const x of [-0.12, 0.12]) for (const z of [-0.12, 0.12]) parts.push(slab(0.08, 0.09, 0.08, seat, 0.3, x, z));
   return piece(parts);
@@ -1659,13 +1645,12 @@ function poseLanding(l: { obj: THREE.Object3D; kind: PieceKind; start: number; r
   else obj.scale.setScalar(1.05 - 0.05 * easeSnap(u));
 }
 
-function makePath(seat: string, len: number, rot: number) {
+function makePath(seat: string, len: number) {
   return piece([
     slab(0.36, 0.03, len, RIM.dark),
     slab(0.26, 0.03, len - 0.06, RIM.light, 0.03),
     slab(0.16, 0.04, len - 0.12, seat, 0.06),
     tint(new THREE.CylinderGeometry(0.12, 0.12, 0.045, 12).toNonIndexed().translate(0, 0.0825, 0), seat),
-    ...mark(seat, 0.15, 0.105, -rot),
   ]);
 }
 

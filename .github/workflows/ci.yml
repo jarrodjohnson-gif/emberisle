@@ -133,8 +133,6 @@ jobs:
       - if: matrix.suite == 'flows'
         run: npm run tokens-prove
       - if: matrix.suite == 'flows'
-        run: npm run seat-marks-prove
-      - if: matrix.suite == 'flows'
         run: npm run pieces-prove
       - if: matrix.suite == 'flows'
         run: npm run pieces-land-prove

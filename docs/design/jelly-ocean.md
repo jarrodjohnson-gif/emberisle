@@ -4,7 +4,7 @@ Approved direction: the Jelly Diorama concept, adapted to a continuous ocean rat
 
 ## Appearance
 
-System sans and rounded system numerals; no downloaded fonts. Opaque cream text surfaces over an aquamarine ocean. The terrain uses warmer pasture, grain and clay paint, real low-poly grain fields and small clay outcrops. Four mineral/earth bands follow the hex walls; there is no square slab, tank border or squared-off sea. Number discs are cream, dark ink, red 6/8 and probability dots. Existing player colours and distinct marks remain.
+System sans and rounded system numerals; no downloaded fonts. Opaque cream text surfaces over an aquamarine ocean. The terrain uses warmer pasture, grain and clay paint, real low-poly grain fields and small clay outcrops. Four mineral/earth bands follow the hex walls; there is no square slab, tank border or squared-off sea. Number discs are cream, dark ink, red 6/8 and probability dots. Existing player colours remain; seats are identified by colour only for now (owner decision, 2026-10-13: no per-seat marks, colour-blind support deferred).
 
 The ocean is one unlit shader mesh with shallow turquoise, a broad transition to deeper water and faint moving cellular caustics. Water opacity is 0.88, so a submerged visitor reads as a subdued silhouette before surfacing. Fog and the clear colour meet at the outer water edge. No image textures, reflection capture, transmission pass or extra post-processing is introduced.
 
@@ -34,7 +34,7 @@ The existing component behaviour and responsive geometry in [visual-direction.md
 
 | Component | Current treatment |
 |---|---|
-| Hud / SeatRail | Cream frame, small marked discs, dark names/points, thin active underline and fixed dot outline. No text sits directly on water. |
+| Hud / SeatRail | Cream frame, small plain discs, dark names/points, thin active underline and fixed dot outline. No text sits directly on water. |
 | Hand | Five cream cards, 62 px in portrait, 52 px on desktop, 44 px in short phone view. A compact icon/count row and 11 px label replace the stacked illustration. Content reserves the top corner for gain/loss badges, even during the 3 px card lift. Zero values stay opaque. |
 | ResourceSymbols / BuildCost | Shared CSS-coloured SVG timber, bricks, fleece, grain and ore symbols. Counts and costs keep their actual game values and accessible shortage descriptions. |
 | Dice | Cream faces, dark pips, control-line boundary. Existing roll timing and screen-reader summary remain. |
