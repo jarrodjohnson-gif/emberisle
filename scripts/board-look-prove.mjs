@@ -1,9 +1,10 @@
 // #135, polish.md "The board look target": the island reads like a lit board on a table. In the browser:
 // - the light rig is one warm key lamp (the only shadow caster, at least 3x the bounce), near-grey low bounce, no flat
 //   ambient, soft shadows (PCF blurred at least 4 texels) from a map of at most 1024, exposure at most 1.1;
-// - the crystal sea (crystal-water.md), read back at 1280x720 in play, is teal over deep water and lighter over the shallow
-//   band at the coast, and zoomed fully out the frame's corner, over 18 units out, is the studio paper #f1efe9 the page sits
-//   on. Every other page pins the simple sea, so the gesture timings do not pay for the crystal sea on software GL;
+// - the crystal sea (crystal-water.md), read back at 1280x720 in play, is within 20/255 of the reference's deep #2aa7a3 and
+//   shallow #a8e6df, and still sea (no paper) at the canvas corner zoomed fully out; in the free view, tilted low, the far
+//   horizon is the studio paper #f1efe9 the page sits on. Every other page pins the simple sea, so the gesture timings do not
+//   pay for the crystal sea on software GL;
 // - the title keeps the slow orbit (free camera, auto-rotate); in play, on a fine pointer at 1280x720 and a coarse one at
 //   390x844, the overhead camera is on and every corner of the island, docks included, projects inside the hole the HUD
 //   leaves (`__isle.insets()`, measured from the HUD's own chrome), each corner's screen point lands on the canvas, and a
@@ -199,32 +200,46 @@ try {
     });
     check("1280x720 crystal: a coast edge with open water beside it inside the hole", spots !== null, spots);
     if (spots) {
-      // A visitor or a breaker can cross one sample; a 9 px patch averages over the ripple.
+      // The colours at rest: under reduced motion the waves lie flat (a breaker over the shallow band changes its depth by half),
+      // and a 9 px patch averages over what is left.
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      await page.waitForFunction(() => window.__isle.wasCalm, null, { timeout: STEP_MS });
+      // Each wake holds the loop for 1 s, about one software-GL frame: wake until two frames have been drawn at rest.
+      await page.evaluate(async () => {
+        const isle = window.__isle, r0 = isle.renders;
+        await new Promise((res) => { const p = () => { if (isle.renders > r0 + 1) return res(); isle.wake(); requestAnimationFrame(p); }; p(); });
+      });
       const lum = (m) => 0.2126 * m.r + 0.7152 * m.g + 0.0722 * m.b;
       const shore = await patch(page, { x: spots.shore.x - 4, y: spots.shore.y - 4, w: 9, h: 9 });
       const deep = await patch(page, { x: spots.deep.x - 4, y: spots.deep.y - 4, w: 9, h: 9 });
       const rgb = (m) => ["r", "g", "b"].map((c) => Math.round(m[c] * 255));
-      check("1280x720 crystal: deep water is teal (green and blue over 1.3x red)", deep.mean.g > deep.mean.r * 1.3 && deep.mean.b > deep.mean.r * 1.3, { deep: rgb(deep.mean) });
-      check("1280x720 crystal: the shallow band is lighter than deep water", lum(shore.mean) > lum(deep.mean) + 0.04, { shore: rgb(shore.mean), deep: rgb(deep.mean) });
+      const near = (m, want) => Math.max(...rgb(m).map((v, i) => Math.abs(v - want[i]))) <= 20;
+      check("1280x720 crystal: deep water is the reference's teal #2aa7a3 (within 20/255)", near(deep.mean, [42, 167, 163]), { deep: rgb(deep.mean) });
+      check("1280x720 crystal: the shallow band is the reference's pale aqua #a8e6df (within 20/255), lighter than the deep", near(shore.mean, [168, 230, 223]) && lum(shore.mean) > lum(deep.mean) + 0.04, { shore: rgb(shore.mean), deep: rgb(deep.mean) });
     }
     await page.screenshot({ path: "test-results/board-look-crystal-1280x720.png" });
-    // Zoomed out as far as the wheel goes, the canvas corner (about 20 units out, past most of the 10-22 fade) is the paper backdrop.
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await page.waitForFunction(() => !window.__isle.wasCalm, null, { timeout: STEP_MS });
+    // Zoomed out as far as the wheel goes, the sea still fills the canvas: its corner is teal, not paper.
     await page.mouse.move(640, 300);
     for (let i = 0; i < 6; i++) await page.mouse.wheel(0, 600);
     await page.waitForFunction(() => Math.abs(window.__isle.ortho.zoom - window.__isle.orbit.minZoom) < 0.01, null, { timeout: STEP_MS });
     await page.waitForFunction((n) => window.__isle.renders > n, (await page.evaluate(() => window.__isle.renders)) + 2, { timeout: STEP_MS });
-    const corner = await page.evaluate(() => {
+    const corner = await patch(page, { x: 0, y: 0, w: 6, h: 6 });
+    check("1280x720 crystal, zoomed out: the sea fills the canvas to its corner (teal, no paper)", corner.mean.g > corner.mean.r * 1.3 && corner.mean.b > corner.mean.r * 1.3, { rgb: ["r", "g", "b"].map((c) => Math.round(corner.mean[c] * 255)) });
+    // The free view, tilted low: the top of the frame is the far horizon, faded into the paper.
+    await page.evaluate(() => {
       const isle = window.__isle;
-      const ray = new isle.raycaster.constructor();
-      ray.setFromCamera(new isle.pointer.constructor(-1, 1), isle.ortho);
-      const t = (-0.02 - ray.ray.origin.y) / ray.ray.direction.y;
-      const hit = ray.ray.origin.clone().addScaledVector(ray.ray.direction, t);
-      return Math.hypot(hit.x, hit.z);
+      isle.setView("free");
+      isle.controls.maxPolarAngle = 1.35;
+      isle.camera.position.set(9, 3.2, 9);
+      isle.controls.update();
+      isle.wake();
     });
-    const far = await patch(page, { x: 0, y: 0, w: 6, h: 6 });
-    const paper = { r: 0xf1 / 255, g: 0xef / 255, b: 0xe9 / 255 };
-    const off = Math.max(...["r", "g", "b"].map((c) => Math.abs(far.mean[c] - paper[c]))) * 255;
-    check("1280x720 crystal, zoomed out: the far corner is the studio paper #f1efe9 (within 6/255)", corner > 18 && off <= 6, { radius: +corner.toFixed(1), rgb: ["r", "g", "b"].map((c) => +(far.mean[c] * 255).toFixed(1)) });
+    await page.waitForFunction((n) => window.__isle.renders > n, (await page.evaluate(() => window.__isle.renders)) + 3, { timeout: STEP_MS });
+    const horizon = await patch(page, { x: 560, y: 2, w: 160, h: 6 });
+    const off = Math.max(...[0xf1, 0xef, 0xe9].map((v, i) => Math.abs(horizon.mean["rgb"[i]] * 255 - v)));
+    check("1280x720 crystal, free view tilted low: the far horizon is the studio paper #f1efe9 (within 6/255)", off <= 6, { rgb: ["r", "g", "b"].map((c) => +(horizon.mean[c] * 255).toFixed(1)) });
     await page.context().close();
   }
 
