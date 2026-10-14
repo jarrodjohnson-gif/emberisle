@@ -819,7 +819,7 @@ export const useGame = create<GameStore>((set, get) => ({
     }
   },
   openMenu: (id) => {
-    if (!get().spectator) set({ menuFor: id });
+    set({ menuFor: id });
   },
 }));
 

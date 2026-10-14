@@ -214,15 +214,21 @@ function updateArmy(state: GameState, pid: string) {
   }
 }
 
-export function publicVP(state: GameState, pid: string) {
-  let n = 0;
+// Public components only: never inspect held fortunes when deriving an opponent's score.
+export function publicScoreBreakdown(state: GameState, pid: string) {
+  const parts = { outposts: 0, strongholds: 0, longestPath: 0, largestArmy: 0 };
   for (const v of state.vertices) {
     if (v.building?.playerId !== pid) continue;
-    n += POINTS[v.building.kind];
+    if (v.building.kind === "outpost") parts.outposts += POINTS.outpost;
+    else parts.strongholds += POINTS.stronghold;
   }
-  if (state.longestRoad === pid) n += POINTS.longestPath;
-  if (state.largestArmy === pid) n += POINTS.largestArmy;
-  return n;
+  if (state.longestRoad === pid) parts.longestPath = POINTS.longestPath;
+  if (state.largestArmy === pid) parts.largestArmy = POINTS.largestArmy;
+  return parts;
+}
+
+export function publicVP(state: GameState, pid: string) {
+  return Object.values(publicScoreBreakdown(state, pid)).reduce((sum, n) => sum + n, 0);
 }
 
 export function totalVP(state: GameState, pid: string) {

@@ -1127,8 +1127,8 @@ try {
   await solo.getByTestId("rail-p1").getByRole("button").click();
   await solo.getByTestId("player-menu").waitFor();
   check(
-    (await solo.getByTestId("player-menu").locator("dd").count()) === 4 && (await solo.getByTestId("player-menu").locator("button").count()) === 0,
-    "bots: the menu shows the 4 facts and nothing else",
+    (await solo.getByTestId("menu-facts").locator("dd").count()) === 4 && (await solo.getByTestId("score-breakdown").locator("dd").count()) === 4 && (await solo.getByTestId("player-menu").locator("button").count()) === 0,
+    "bots: the menu shows four facts, four public score components and no seat actions",
   );
   await solo.context().close();
 

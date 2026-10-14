@@ -12,7 +12,7 @@ import { TradeToast } from "@/components/game/TradeToast";
 import { WinFailed } from "@/components/game/WinFailed";
 import { Announcer } from "@/components/game/Announcer";
 import { PlayerMenu } from "@/components/game/PlayerMenu";
-import { SeatRail, SeatStrip } from "@/components/game/SeatRail";
+import { SeatRail, SeatStrip, HiddenPointHint } from "@/components/game/SeatRail";
 import { DiscardBar } from "@/components/game/DiscardBar";
 import { TurnCountdown } from "@/components/game/TurnCountdown";
 import { Dice, RollMoment } from "@/components/game/Dice";
@@ -270,7 +270,7 @@ export function Hud() {
           sheet rises over the z-20 chat dock (it reaches the header on a sideways phone). Online, Open chat and Quick reactions
           sit in this row too, left of the menu, so they never move with the turn and never reach the board. A watcher's badge stays out here,
           a chip and not a button, so a watcher always sees why it has no controls (docs/design/spectator.md). */}
-      <header className="hud-header pointer-events-none absolute inset-x-0 top-0 z-20 px-safe pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] has-[#table-menu]:z-30 has-[#quick-reaction-picker]:z-[25]">
+      <header className={cn("hud-header pointer-events-none absolute inset-x-0 top-0 z-20 px-safe pt-[max(0.75rem,env(safe-area-inset-top))] has-[#table-menu]:z-30 has-[#quick-reaction-picker]:z-[25]", phone ? "pb-0" : "pb-3")}>
         <div className="pointer-events-auto flex items-center justify-end gap-1">
           {phone ? <SeatStrip actor={actor} className="min-w-0 max-w-[48rem] flex-1" /> : <div className="mr-auto">{instruction}</div>}
           {spectator && !(phone && portrait) ? (
@@ -285,6 +285,7 @@ export function Hud() {
           ) : null}
           <TableMenu />
         </div>
+        {phone ? <HiddenPointHint /> : null}
       </header>
 
       {phone && portrait && (mode === "online" || spectator) ? (
