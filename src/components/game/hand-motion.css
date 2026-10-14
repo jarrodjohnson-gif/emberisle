@@ -16,7 +16,6 @@
 @media (prefers-reduced-motion: reduce) {
   /* Outrank the global [style*="resource-flash"] 1ms override for this hand's numeric cue only. */
   .hand-resource-card-slot > .hand-resource-flash[style*="resource-flash"] {
-    animation-name: hand-resource-flash-fade !important;
-    animation-duration: 1200ms !important;
+    animation: none !important;
   }
 }

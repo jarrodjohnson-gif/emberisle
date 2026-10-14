@@ -1,16 +1,16 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { BrickWall, Cloud, Mountain, Trees, Wheat } from "lucide-react";
+import { useEffect, useLayoutEffect, useRef, useState, type ComponentType, type SVGProps } from "react";
+import { ClaySymbol, GrainSymbol, OreSymbol, TimberSymbol, WoolSymbol } from "@/components/game/ResourceSymbols";
 import { RESOURCES, RESOURCE_LABEL, type Phase, type PlayerState, type Resource } from "@/lib/game/types";
 import { cn } from "@/lib/utils";
 import { useGame } from "@/lib/game/store";
 import "./hand-motion.css";
 
-export const RESOURCE_ICON: Record<Resource, typeof Trees> = {
-  timber: Trees,
-  clay: BrickWall,
-  wool: Cloud,
-  grain: Wheat,
-  ore: Mountain,
+export const RESOURCE_ICON: Record<Resource, ComponentType<SVGProps<SVGSVGElement>>> = {
+  timber: TimberSymbol,
+  clay: ClaySymbol,
+  wool: WoolSymbol,
+  grain: GrainSymbol,
+  ore: OreSymbol,
 };
 
 // Each card is the terrain cap's colour (docs/design/polish.md, #436); full class names so Tailwind can see them.
@@ -22,7 +22,7 @@ export const RESOURCE_PAINT: Record<Resource, string> = {
   ore: "bg-ore text-ore-on",
 };
 
-const FLASH_MS = 1200;
+const FLASH_MS = 2200;
 const SETTLE_MS = 280;
 type ResourceFlash = { delta: number; id: number };
 
@@ -123,23 +123,24 @@ function ResourceCard({ resource, count, flash }: { resource: Resource; count: n
     };
   }, [flash?.id]);
   return (
-    <div className="hand-resource-card-slot relative min-w-[3.5rem] flex-1">
+    <div className="hand-resource-card-slot relative min-w-0 flex-1">
       <div
         ref={card}
         data-testid={`resource-${resource}`}
         title={RESOURCE_LABEL[resource]}
         className={cn(
-          "relative flex flex-col items-center gap-1 rounded-chip px-2 py-2 ring-1 ring-inset ring-black/10 transition-opacity duration-base",
-          "short:h-11 short:flex-row short:justify-center short:py-0",
-          RESOURCE_PAINT[resource],
-          count === 0 && "opacity-40",
+          "goods-card relative flex h-[62px] flex-col items-center justify-center rounded-control bg-surface text-fg",
+          "short:h-11 short:flex-row short:gap-2",
+          count === 0 && "goods-empty",
         )}
       >
-        <Icon className="size-4 opacity-70 short:translate-y-1" aria-hidden />
-        <span data-testid="hand-count" className="text-number tabular-nums short:translate-y-2 short:leading-7">
-          {count}
-        </span>
-        <span className="sr-only">{RESOURCE_LABEL[resource]}</span>
+        <div className="goods-value flex items-center justify-center gap-1.5">
+          <Icon className="goods-icon size-5" style={{ color: `var(--${resource === "wool" || resource === "grain" ? `${resource}-side` : resource})` }} aria-hidden />
+          <span data-testid="hand-count" className="text-number font-bold tabular-nums short:leading-7">
+            {count}
+          </span>
+        </div>
+        <span className="goods-label text-[11px] font-semibold leading-[14px] short:hidden">{RESOURCE_LABEL[resource]}</span>
         {flash ? (
           <span
             key={`ring-${flash.id}`}
@@ -157,7 +158,7 @@ function ResourceCard({ resource, count, flash }: { resource: Resource; count: n
           data-resource={resource}
           data-delta={label}
           className={cn(
-            "hand-resource-flash pointer-events-none absolute right-1 top-1 rounded-control bg-surface px-1 text-sm font-semibold tabular-nums short:left-1 short:right-auto short:top-0 short:text-caption short:leading-3",
+            "hand-resource-flash pointer-events-none absolute right-0.5 top-0.5 rounded-control bg-surface px-1 text-caption font-semibold tabular-nums short:left-1 short:right-auto short:top-0 short:text-caption short:leading-3",
             flash.delta > 0 ? "text-gain" : "text-loss",
           )}
           style={{ animation: `resource-flash ${FLASH_MS}ms ease-out forwards` }}
@@ -171,7 +172,7 @@ function ResourceCard({ resource, count, flash }: { resource: Resource; count: n
 
 function ResourceHand({ me, flashes }: { me: PlayerState; flashes: ReturnType<typeof useResourceFlashes> }) {
   return (
-    <div className="flex shrink-0 gap-1 overflow-x-auto rounded-[20px] border border-white/50 bg-glass p-2 backdrop-blur-md short:p-1">
+    <div className="goods-tray flex shrink-0 gap-1 overflow-x-auto rounded-chip p-2 short:p-1">
       {RESOURCES.map((r) => (
         <ResourceCard key={r} resource={r} count={me.resources[r]} flash={flashes[r]} />
       ))}
@@ -199,6 +200,14 @@ export function HandDock({ me, phase }: { me: PlayerState; phase: Phase }) {
     setShown(show);
     setRising(show);
   }
+  useLayoutEffect(() => {
+    if (!rising) return;
+    const preference = matchMedia("(prefers-reduced-motion: reduce)");
+    const settle = () => { if (preference.matches) setRising(false); };
+    settle();
+    preference.addEventListener("change", settle);
+    return () => preference.removeEventListener("change", settle);
+  }, [rising]);
   if (!show) return null;
   return (
     <div

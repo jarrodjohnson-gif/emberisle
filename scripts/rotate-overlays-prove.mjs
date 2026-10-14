@@ -186,7 +186,7 @@ function measure({ insets, kind }) {
   // The chat sheet's Minimize is a 24 px header control by design (chat-prove and hud-safe-area-prove pin the header's row and its
   // fit in the landscape safe area), so it is held to its own size plus the safe-area and tappable checks; the sheet's filter
   // chips, presets and emote picker are #460's compact controls and are not checked here.
-  if (chat) controls.push({ ...box(chat.querySelector('button[aria-label="Minimize chat"]')), min: 24 });
+  if (chat) controls.push({ ...box(chat.querySelector('button[aria-label="Minimize chat"]')), min: 44 });
   if (kind === "trade") for (const n of [/^Yes$/, /^No$/]) controls.push(box(find(n, toast)));
   else for (const b of prompt.querySelectorAll("button")) controls.push(box(b));
   const seats = [...document.querySelectorAll('[data-testid="seat-vp"]')].map((el) => {
@@ -230,7 +230,7 @@ async function prove(p, label, kind) {
     }
   }
   const small = m.controls.filter((c) => !(c.w >= (c.min ?? 44) && c.h >= (c.min ?? 44) && inside(c, m.safe) && c.tappable));
-  check(`${tag}: ${m.controls.length} actions are 44 px (Minimize 24 px), inside the safe area and tappable`, m.controls.length > 0 && small.length === 0, small.map((c) => [c.name, Math.round(c.w), Math.round(c.h), c.tappable]));
+  check(`${tag}: ${m.controls.length} actions are 44 px (Minimize 44 px), inside the safe area and tappable`, m.controls.length > 0 && small.length === 0, small.map((c) => [c.name, Math.round(c.w), Math.round(c.h), c.tappable]));
   const seats = m.seats.filter((s) => s.shown);
   const lost = seats.filter((s) => !(s.w > 0 && s.h > 0 && inside(s, { l: 0, t: 0, r: m.vw, b: m.vh }) && s.uncovered));
   check(`${tag}: ${seats.length} seat point totals are visible and uncovered`, seats.length === p.seats && lost.length === 0, lost.length ? lost : undefined);

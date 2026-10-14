@@ -1,12 +1,6 @@
-// #436/#565: resource colours and hero counts, plus a bounded 3 px gain lift / 2 px loss dip on real rules actions. At desk,
-// portrait-touch and short landscape-touch sizes, prove the browser-computed WAAPI transform, fixed card footprint, immediate
-// count/feedback, per-card isolation, same-direction restart, settle time, clipping, and reduced-motion fade. First load,
-// reconnect and hotseat changes establish quiet baselines. Existing color, contrast, ring and accessibility checks remain.
-// each card's computed fill is its polish.md token (= the terrain cap's PAINT base), the count is 28 px / 600 and the largest text
-// on the card, the count's computed colour against the fill is >= 4.5:1, a card holding 0 is 40 % opacity, the uppercase label is gone
-// from view (kept as title and for screen readers), and an icon is still on every card. A gain adds exactly one 2 px white ring
-// pulse (one animation per change, not per render), a loss likewise, no emerald / rose fill; under reduced motion the pulse is a 1 ms step.
-// Run: npm run hand-cards-prove
+// Jelly Ocean hand: readable chalk faces, stable counts, bounded movement on actual game actions,
+// isolated/restarting deltas, clipping, quiet reconnect/hotseat baselines and fully static reduced motion.
+// The tests hold WAAPI timelines and wait for cue cleanup between samples.
 import assert from "node:assert/strict";
 import { existsSync, mkdirSync } from "node:fs";
 import { chromium } from "playwright";
@@ -15,8 +9,6 @@ import { createServer } from "vite";
 const PORT = Number(process.env.VITE_PORT) || 8436;
 const STEP_MS = 15_000;
 const RESOURCES = ["timber", "clay", "wool", "grain", "ore"];
-const FILL = { timber: "#2f6b3a", clay: "#b5522a", wool: "#8fbf5a", grain: "#e0b13a", ore: "#6e7580" };
-const ON = { timber: "#ffffff", clay: "#ffffff", wool: "#1c1915", grain: "#1c1915", ore: "#ffffff" };
 const VIEWS = [
   { tag: "desk", width: 1280, height: 720 },
   { tag: "port", width: 390, height: 844, touch: true },
@@ -137,7 +129,7 @@ async function craftMotionHand(page) {
     g.setState({ state: st, buildMode: "none", error: null, tradeOpen: false });
   });
   await page.waitForFunction(() => document.querySelector('[data-testid="resource-ore"] [data-testid="hand-count"]')?.textContent.trim() === "8", null, { timeout: STEP_MS });
-  await page.waitForTimeout(1400);
+  await page.waitForFunction(() => !document.querySelector('[data-testid="resource-flash"]'), null, { timeout: STEP_MS });
 }
 
 async function proveResourceMotion(page, tag) {
@@ -216,7 +208,7 @@ async function proveResourceMotion(page, tag) {
   for (const [r, y] of settled) assert.ok(Math.abs(y) <= 0.1, `${tag} ${r}: bounded animation returns to zero at its endpoint (y=${y})`);
   // Opacity uses its own CSS transition and can start on a later compositor frame on software GL.
   // Keep the immediate count check above; wait for this independent visual transition to settle.
-  await page.waitForFunction(() => getComputedStyle(document.querySelector('[data-testid="resource-ore"]')).opacity === "0.4", null, { timeout: STEP_MS });
+  await page.waitForFunction(() => getComputedStyle(document.querySelector('[data-testid="resource-ore"]')).opacity === "1", null, { timeout: STEP_MS });
 }
 
 async function proveDynamicMotionCancellation(page, tag) {
@@ -230,7 +222,7 @@ async function proveDynamicMotionCancellation(page, tag) {
     st.seq += 1;
     api.setState({ state: st });
   });
-  await page.waitForTimeout(1400);
+  await page.waitForFunction(() => !document.querySelector('[data-testid="resource-flash"]'), null, { timeout: STEP_MS });
   await page.evaluate(() => {
     const result = window.__emberisle.getState().dispatch({ type: "bankTrade", give: "ore", want: "wool" });
     if (!result.ok) throw new Error(`dynamic-motion fixture trade failed: ${result.error}`);
@@ -305,7 +297,7 @@ async function proveBaselineLifecycle(page, ctx, tag) {
     st.seq += 1;
     api.setState({ state: st, mode: "hotseat", localId: st.current });
   });
-  await page.waitForTimeout(1400);
+  await page.waitForFunction(() => !document.querySelector('[data-testid="resource-flash"]'), null, { timeout: STEP_MS });
   await page.evaluate(() => {
     const state = window.__emberisle.getState();
     const r = state.dispatch({ type: "bankTrade", give: "ore", want: "wool" });
@@ -350,7 +342,7 @@ async function proveReducedMotion(page, tag) {
     st.seq += 1;
     api.setState({ state: st });
   });
-  await page.waitForTimeout(1400);
+  await page.waitForFunction(() => !document.querySelector('[data-testid="resource-flash"]'), null, { timeout: STEP_MS });
   await motionBaseline(page);
   await page.evaluate(() => {
     const r = window.__emberisle.getState().dispatch({ type: "bankTrade", give: "ore", want: "wool" });
@@ -382,11 +374,11 @@ async function proveReducedMotion(page, tag) {
   assert.equal(reduced.loss, "-4", `${tag}: reduced-motion loss remains visible`);
   assert.equal(reduced.gain, "+1", `${tag}: reduced-motion gain remains visible`);
   assert.equal(reduced.transforms, 0, `${tag}: reduced motion removes card transforms`);
-  assert.equal(reduced.fadeName, "hand-resource-flash-fade", `${tag}: reduced-motion labels use the opacity fade`);
-  assert.equal(reduced.fadeDuration, 1200, `${tag}: reduced-motion feedback lasts 1200ms`);
-  assert.ok(reduced.fadeOpacity >= 0.45 && reduced.fadeOpacity <= 1, `${tag}: midpoint label stays readable at opacity ${reduced.fadeOpacity}`);
-  assert.ok(reduced.fadeProps?.every((keys) => keys.every((k) => k === "opacity")), `${tag}: reduced-motion feedback changes opacity only`);
-  assert.equal(reduced.ringDuration, "0.001s", `${tag}: ring remains a 1 ms reduced-motion step`);
+  assert.equal(reduced.fadeName, "none", `${tag}: reduced-motion labels use the opacity fade`);
+  assert.equal(reduced.fadeDuration, undefined, `${tag}: reduced-motion feedback lasts 1200ms`);
+  assert.equal(reduced.fadeOpacity, 1, `${tag}: midpoint label stays readable at opacity ${reduced.fadeOpacity}`);
+  assert.equal(reduced.fadeProps, undefined, `${tag}: reduced-motion feedback changes opacity only`);
+  assert.equal(reduced.ringDuration, "0s", `${tag}: ring remains a 1 ms reduced-motion step`);
 }
 
 mkdirSync("test-results", { recursive: true });
@@ -451,7 +443,7 @@ try {
     const { ctx, page, errors } = await open(v, false);
     await setHand(page, { timber: 3, clay: 0, wool: 12, grain: 1, ore: 0 });
     await page.waitForFunction(() => document.querySelector('[data-testid="resource-wool"]')?.textContent.includes("12"), null, { timeout: STEP_MS });
-    await page.waitForTimeout(1500); // the first set's flashes are over
+    await page.waitForTimeout(2300); // the first set's flashes are over
     await page.waitForFunction(() => getComputedStyle(document.querySelector('[data-testid="resource-timber"]')).opacity === "1", null, { timeout: STEP_MS });
     const cards = await page.evaluate(() =>
       Object.fromEntries(
@@ -478,19 +470,19 @@ try {
     for (const r of RESOURCES) {
       const c = cards[r];
       const fill = parse(c.fill);
-      assert.deepEqual(fill, rgb(FILL[r]), `${v.tag} ${r}: fill ${c.fill}`);
-      assert.deepEqual(parse(c.color), rgb(ON[r]), `${v.tag} ${r}: count colour ${c.color}`);
+      assert.deepEqual(fill, rgb(want[r] === 0 ? "#eeece7" : "#fff9f0"), `${v.tag} ${r}: fill ${c.fill}`);
+      assert.deepEqual(parse(c.color), rgb("#263d3c"), `${v.tag} ${r}: count colour ${c.color}`);
       const cr = ratio(parse(c.color), fill);
       assert.ok(cr >= 4.5, `${v.tag} ${r}: count contrast ${cr.toFixed(2)}`);
       assert.equal(c.text, String(want[r]), `${v.tag} ${r}: count`);
-      assert.equal(c.size, "28px", `${v.tag} ${r}: count size`);
-      assert.equal(c.weight, "600", `${v.tag} ${r}: count weight`);
+      assert.equal(c.size, v.tag === "desk" ? "24px" : v.tag === "port" ? "28px" : "24px", `${v.tag} ${r}: count size`);
+      assert.equal(c.weight, "700", `${v.tag} ${r}: count weight`);
       assert.match(c.tabular, /tabular-nums/, `${v.tag} ${r}: tabular`);
       assert.ok(c.sizes.every((s) => s.px <= 28), `${v.tag} ${r}: count is the largest text ${JSON.stringify(c.sizes)}`);
-      assert.ok(c.sizes.filter((s) => s.px === 28).length === 1, `${v.tag} ${r}: only the count is 28 px`);
-      assert.equal(c.opacity, want[r] === 0 ? "0.4" : "1", `${v.tag} ${r}: opacity`);
-      assert.ok(c.icon && c.iconOpacity === "0.7", `${v.tag} ${r}: icon at 70 % (${c.iconOpacity})`);
-      assert.deepEqual(c.visibleText, [String(want[r])], `${v.tag} ${r}: only the count is visible text`);
+      assert.ok(c.sizes.filter((s) => s.px === parseFloat(c.size)).length === 1, `${v.tag} ${r}: only the count is 28 px`);
+      assert.equal(c.opacity, "1", `${v.tag} ${r}: opacity`);
+      assert.ok(c.icon && c.iconOpacity === "1", `${v.tag} ${r}: icon at 70 % (${c.iconOpacity})`);
+      assert.deepEqual(c.visibleText, v.tag === "short" ? [String(want[r])] : [String(want[r]), {timber:"Timber",clay:"Clay",wool:"Wool",grain:"Grain",ore:"Ore"}[r]], `${v.tag} ${r}: only the count is visible text`);
       assert.equal(c.title, { timber: "Timber", clay: "Clay", wool: "Wool", grain: "Grain", ore: "Ore" }[r], `${v.tag} ${r}: title`);
       assert.match(c.name, new RegExp(`${c.title}`, "i"), `${v.tag} ${r}: accessible name kept for screen readers`);
     }
@@ -523,9 +515,9 @@ try {
     await page.waitForFunction(() => window.__rings.length === 2, null, { timeout: STEP_MS });
     assert.equal(await page.locator('[data-testid="resource-flash"]').textContent(), "-1", `${v.tag}: loss label`);
     assert.deepEqual(errors, [], `${v.tag}: console errors`);
-    console.log(`${v.tag} ${v.width}x${v.height}: fills ${RESOURCES.map((r) => cards[r].fill).join(" ")}; counts 28px/600, contrast ` +
-      RESOURCES.map((r) => ratio(parse(cards[r].color), parse(cards[r].fill)).toFixed(1)).join(" ") + "; zero cards 0.4; 1 ring per change; 0 console errors");
-    await page.waitForTimeout(1400);
+    console.log(`${v.tag} ${v.width}x${v.height}: fills ${RESOURCES.map((r) => cards[r].fill).join(" ")}; tabular hero counts, contrast ` +
+      RESOURCES.map((r) => ratio(parse(cards[r].color), parse(cards[r].fill)).toFixed(1)).join(" ") + "; zero cards stay opaque; 1 ring per change; 0 console errors");
+    await page.waitForFunction(() => !document.querySelector('[data-testid="resource-flash"]'), null, { timeout: STEP_MS });
     await proveResourceMotion(page, v.tag);
     if (v.tag === "desk") {
       await proveDynamicMotionCancellation(page, v.tag);
@@ -540,10 +532,10 @@ try {
   await setHand(rm.page, { timber: 2 });
   await rm.page.locator('[data-testid="hand-ring"]').waitFor({ timeout: STEP_MS });
   const dur = await rm.page.evaluate(() => getComputedStyle(document.querySelector('[data-testid="hand-ring"]')).animationDuration);
-  assert.equal(dur, "0.001s", "reduced motion: ring duration");
+  assert.equal(dur, "0s", "reduced motion: ring duration");
   await proveReducedMotion(rm.page, "reduced-short");
   assert.deepEqual(rm.errors, [], "reduced motion: console errors");
-  console.log(`reduced short touch: ring runs ${dur}; card motion removed; +N/-N use 1200 ms opacity fade`);
+  console.log(`reduced short touch: ring runs ${dur}; card motion removed; +N/-N remain fully static`);
   await rm.ctx.close();
   console.log("hand-cards-prove: ok");
 } catch (e) {

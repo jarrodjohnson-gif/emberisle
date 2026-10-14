@@ -826,15 +826,14 @@ type Get = () => GameStore;
 
 // The open offer is over, taken by `taker` or by nobody: the toast goes, and the asker reads the outcome for a moment.
 function endOffer(set: Set, get: Get, taker: string | null) {
-  const { offer, localId, state } = get();
+  const { offer, state } = get();
   if (!offer) return;
   clearOfferTimers();
   const takerName = state?.players.find((p) => p.id === taker)?.name ?? "Someone";
   set({ offer: null, declined: [] });
   play(taker ? "trade_yes" : "trade_no");
   if (taker) showBanner(set, `${takerName} takes ${offer.fromName}'s trade`);
-  if (offer.from !== localId) return;
-  // The asker's toast lingers with the outcome for as long as a banner would.
+  // Every receiver gets the resolved offer as one brief log line, with no response controls.
   if (outcomeTimer) clearTimeout(outcomeTimer);
   set({ tradeOutcome: taker ? `${takerName} takes it.` : "Nobody took it." });
   outcomeTimer = setTimeout(() => set({ tradeOutcome: null }), BANNER_MS);

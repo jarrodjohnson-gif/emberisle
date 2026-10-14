@@ -21,7 +21,7 @@ function Die({ value, big }: { value: number; big?: boolean }) {
       data-testid="die"
       data-value={value}
       className={cn(
-        "grid grid-cols-3 grid-rows-3 place-items-center bg-fg text-bg motion-safe:animate-[die-settle_150ms_ease-out]",
+        "grid grid-cols-3 grid-rows-3 place-items-center border border-control-line bg-surface text-fg motion-safe:animate-[die-settle_150ms_ease-out]",
         big ? "size-16 rounded-control p-2" : "size-9 rounded-[8px] p-1",
       )}
     >
@@ -122,12 +122,16 @@ export function RollMoment() {
       }
       done = setTimeout(end, SETTLE_MS);
     }, MOMENT_MS);
+    const preference = matchMedia("(prefers-reduced-motion: reduce)");
+    const stopFlight = () => { if (preference.matches && flight) end(); };
+    preference.addEventListener("change", stopFlight);
     window.addEventListener("pointerdown", end, true);
     window.addEventListener("keydown", end, true);
     return () => {
       clearTimeout(hold);
       clearTimeout(done);
       flight?.cancel();
+      preference.removeEventListener("change", stopFlight);
       window.removeEventListener("pointerdown", end, true);
       window.removeEventListener("keydown", end, true);
       useMomentUp.setState({ up: false });
@@ -152,7 +156,7 @@ export function RollMoment() {
             <Die value={roll.dice[0]} big />
             <Die value={roll.dice[1]} big />
             {/* Not cn: tailwind-merge reads text-display as a colour and would drop it beside the ink. */}
-            <span data-testid="roll-sum" className={`text-display tabular-nums ${sum === 7 ? "text-accent-ink" : "text-fg"}`}>
+            <span data-testid="roll-sum" className={`text-display tabular-nums ${sum === 7 ? "text-danger" : "text-fg"}`}>
               {sum}
             </span>
           </div>

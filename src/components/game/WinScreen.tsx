@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { SeatDot } from "@/components/game/SeatDot";
 import { totalVP } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
+import { useViewport } from "@/lib/viewport";
 import { useFocusTrap } from "@/lib/focus-trap";
 
 // Build bible 4.7: the island stays visible. "Look around" hides the panel and leaves a small chip.
@@ -12,6 +13,7 @@ export function WinScreen() {
 }
 
 function Panel() {
+  const { phone, portrait } = useViewport();
   const state = useGame((s) => s.state)!;
   const goTitle = useGame((s) => s.goTitle);
   const playAgain = useGame((s) => s.playAgain);
@@ -66,7 +68,8 @@ function Panel() {
       <div
         ref={chip}
         data-testid="win-chip"
-        className="absolute left-1/2 top-16 z-20 flex -translate-x-1/2 items-center gap-1 rounded-[20px] border border-white/50 bg-white/60 p-1 backdrop-blur-md"
+        style={{ top: `calc(max(12px, env(safe-area-inset-top)) + ${phone && portrait && mode === "online" ? 96 : 48}px)` }}
+        className="absolute left-1/2 z-20 flex -translate-x-1/2 items-center gap-1 rounded-[20px] border border-white/50 bg-white/60 p-1 backdrop-blur-md"
       >
         <Button size="sm" variant="secondary" className="whitespace-nowrap" data-testid="win-show" onClick={() => setHidden(false)}>
           Show scores
@@ -83,6 +86,14 @@ function Panel() {
     );
   }
 
+  const winning = rows.find((r) => r.p.id === winner.id)!;
+  const contribution = [
+    winning.outposts ? `${winning.outposts} outpost${winning.outposts === 1 ? "" : "s"}` : null,
+    winning.strongholds ? `${winning.strongholds * 2} stronghold points` : null,
+    winning.path ? "2 longest path" : null,
+    winning.army ? "2 largest army" : null,
+    winning.hiddenVp ? `${winning.hiddenVp} hidden` : null,
+  ].filter(Boolean);
   const head = "px-1 py-2 text-right text-[11px] sm:px-2 font-medium uppercase tracking-wide text-zinc-600";
   const cell = "px-1 py-2 sm:px-2 text-right tabular-nums";
   return (
@@ -94,37 +105,34 @@ function Panel() {
       data-testid="win-screen"
       className="absolute inset-0 z-20 flex items-center justify-center bg-bg/60 p-safe backdrop-blur-sm"
     >
-      <div className="flex max-h-full w-full max-w-2xl flex-col rounded-[28px] border border-white/50 bg-surface p-5 text-center sm:p-6">
+      <div className="flex max-h-full w-full max-w-2xl flex-col rounded-sheet border border-white/50 bg-surface p-5 text-center sm:p-6">
         <div className="flex items-center justify-center gap-2.5">
           <SeatDot color={winner.color} className="size-4" />
           <p id="win-headline" data-testid="win-headline" className="font-display text-3xl text-fg">
             {winner.name} wins
           </p>
         </div>
+        <p className="win-total-hero mt-3" data-testid="win-points">{winning.total}<span className="ml-2 text-body font-medium tracking-normal">points</span></p>
+        <div className="win-equation" data-testid="win-reason">{contribution.map((part, i) => <span key={part}>{i > 0 ? "+ " : ""}{part}</span>)}</div>
         <div className="mt-4 min-h-0 overflow-auto">
-          <table className="w-full border-collapse text-sm">
+          <table className="w-full min-w-[560px] border-collapse text-sm">
             <thead>
               <tr>
                 <th className={`${head} text-left`}>Player</th>
                 <th className={head} title="Outposts">
-                  <span className="sm:hidden">Out</span>
-                  <span className="hidden sm:inline">Outposts</span>
+                  Outposts
                 </th>
                 <th className={head} title="Strongholds">
-                  <span className="sm:hidden">Str</span>
-                  <span className="hidden sm:inline">Strongholds</span>
+                  Strongholds
                 </th>
                 <th className={head} title="Longest path">
-                  <span className="sm:hidden">Path</span>
-                  <span className="hidden sm:inline">Longest path</span>
+                  Longest path
                 </th>
                 <th className={head} title="Largest army">
-                  <span className="sm:hidden">Army</span>
-                  <span className="hidden sm:inline">Largest army</span>
+                  Largest army
                 </th>
                 <th className={head} title="Hidden">
-                  <span className="sm:hidden">Hid</span>
-                  <span className="hidden sm:inline">Hidden</span>
+                  Hidden
                 </th>
                 <th className={head}>Total</th>
               </tr>

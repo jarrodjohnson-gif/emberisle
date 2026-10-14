@@ -39,7 +39,7 @@ export function CostChips({ kind, hand, className }: { kind: Price; hand?: Recor
               className={cn(
                 "inline-flex h-5 items-center gap-0.5 rounded-[6px] px-1 text-caption tabular-nums ring-1 ring-inset ring-black/10",
                 RESOURCE_PAINT[r],
-                missing && "opacity-40",
+                missing && "ring-2 ring-danger",
               )}
             >
               <Icon className="size-3" />

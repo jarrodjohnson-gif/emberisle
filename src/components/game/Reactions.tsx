@@ -240,13 +240,10 @@ function ReactionFloat({
       element.style.left = `${dx}px`;
       element.style.top = `${dy}px`;
       const rise = Math.min(12, Math.max(0, top + dy - 8));
-      const start = preference.matches ? {} : { transform: "translateY(0)" };
-      const middle = preference.matches
-        ? {}
-        : { transform: `translateY(${-rise * 0.75}px)` };
-      const end = preference.matches
-        ? {}
-        : { transform: `translateY(${-rise}px)` };
+      if (preference.matches) return;
+      const start = { transform: "translateY(0)" };
+      const middle = { transform: `translateY(${-rise * 0.75}px)` };
+      const end = { transform: `translateY(${-rise}px)` };
       animation = float.current?.animate(
         [
           { opacity: 1, ...start },

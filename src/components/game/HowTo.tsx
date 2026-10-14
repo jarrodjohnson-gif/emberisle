@@ -46,7 +46,7 @@ export function HowTo({ onClose }: { onClose: () => void }) {
       ref={dialogRef}
       className="absolute inset-0 z-30 flex items-end justify-center bg-white/45 p-safe sm:items-center"
     >
-      <div className="max-h-[80dvh] w-full max-w-md overflow-y-auto rounded-[28px] border border-white/50 bg-surface p-5">
+      <div className="max-h-[80dvh] w-full max-w-md overflow-y-auto rounded-sheet border border-white/50 bg-surface p-5">
         <div className="flex items-start justify-between gap-3">
           <h2 id="howto-title" className="font-display text-2xl">How to play</h2>
           <Button ref={closeRef} variant="ghost" size="icon" className={phone ? "size-11" : undefined} onClick={onClose} aria-label="Close" back>
@@ -57,7 +57,7 @@ export function HowTo({ onClose }: { onClose: () => void }) {
           <p>Settle a wild hex island. Ten points wins.</p>
           <p>Each turn: roll. Matching numbers pay goods from tiles you touch. A seven sends the wayfarer — blocked land pays nothing, and anyone with more than seven goods discards half.</p>
           <p>Build paths (timber + clay), outposts (timber, clay, wool, grain), strongholds (three grain, two ore). Fortunes cost wool, grain, ore.</p>
-          <p>Outposts score 1, strongholds 2. Longest path of five and largest army of three wayfarer cards score 2 more. Ports cut bank trade to 3:1 or 2:1.</p>
+          <p>Outposts score 1, strongholds 2. Longest path of five and largest army of three wayfarer cards score 2 more. Docks cut bank trade to 3:1 or 2:1.</p>
           <p>Drag to orbit the isle. Tap glowing corners and paths to build.</p>
         </div>
       </div>

@@ -3,8 +3,8 @@
 // strip (docs/design/mobile-hud.md) share SeatLine: colour dot, name, goods and fortunes as two small counts only when
 // non-zero, the roll-off die only while the roll-off is live, and the points at text-title. The seat on turn carries
 // `seat-turn`: its dot pulses softly (bible §4.3) and the card brightens over 200 ms (§8), with an ink ring on the dot and
-// aria-current so the turn never rests on colour or motion alone (#312); the dot is a SeatDot, so it carries the seat's
-// mark. Your fortunes by kind and a dropped seat's state are facts in the player menu, one tap away.
+// aria-current so the turn never rests on colour or motion alone (#312); the dot is a SeatDot.
+// Your fortunes by kind and a dropped seat's state are facts in the player menu, one tap away.
 import { ScrollText } from "lucide-react";
 import { ReactionFloats } from "@/components/game/chunks";
 import { LazyBoundary } from "@/lib/lazy";
@@ -51,20 +51,20 @@ function SeatLine({ p, actor, short }: { p: PlayerState; actor: string; short?: 
     <>
       {/* Under 100 px a cell holds "Emb" and the points with 4 px gaps; the dot gives back its two extra pixels there (#420). */}
       <SeatDot color={p.color} className={cn("seat-dot size-3", strip && "@max-[100px]:size-2.5")} />
-      <span data-testid="seat-name" className={cn("min-w-0 flex-auto truncate text-sm font-medium", strip && "@max-[100px]:sr-only")}>
+      <span data-testid="seat-name" className={cn("min-w-0 flex-auto truncate text-sm font-medium", strip && "@max-[128px]:sr-only")}>
         {p.name}
       </span>
       {strip ? (
-        <span data-testid="seat-name" aria-hidden="true" className="hidden min-w-0 flex-auto text-xs font-medium @max-[100px]:block">
+        <span data-testid="seat-name" aria-hidden="true" className="hidden min-w-0 flex-auto truncate text-xs font-medium @max-[128px]:block">
           {short}
         </span>
       ) : null}
       {away ? (
-        <span data-testid="seat-away" className="flex min-w-4 shrink-[9] items-center gap-0.5 text-caption text-zinc-700">
+        <span data-testid="seat-away" className={cn("seat-away flex min-w-4 shrink-[9] items-center gap-0.5 text-caption text-zinc-700", strip && "@max-[100px]:min-w-3")}>
           {/* A struck ring: the seat's circle with a line through it, in CSS so it costs no icon. */}
           <span className="relative size-2.5 shrink-0 rounded-full border-[1.5px] border-current after:absolute after:-inset-x-0.5 after:top-1/2 after:h-[1.5px] after:-rotate-45 after:bg-current" />
           <span aria-hidden="true" className={cn("truncate", narrow)}>
-            reconnecting…
+            Away
           </span>
           <span className="sr-only">reconnecting</span>
         </span>
@@ -82,7 +82,7 @@ function SeatLine({ p, actor, short }: { p: PlayerState; actor: string; short?: 
         {publicVP(state, p.id)}
         <span className="sr-only"> points{hidden ? `, plus ${hidden} hidden` : ""}</span>
         {hidden ? (
-          <span aria-hidden="true" className="text-caption text-zinc-700">
+          <span aria-hidden="true" className={cn("text-caption text-zinc-700", strip && "sr-only")}>
             +{hidden}
           </span>
         ) : null}
@@ -103,7 +103,7 @@ function SeatCard({ p, actor, short, className }: { p: PlayerState; actor: strin
   return (
     <div
       data-testid={`${strip ? "seat" : "rail"}-${p.id}`}
-      className={cn("relative bg-glass backdrop-blur-md transition-colors duration-200 [&.seat-turn]:bg-raised/90", className, p.id === current && "seat-turn")}
+      className={cn("seat-card relative transition-colors duration-200", className, p.id === current && "seat-turn")}
     >
       <button
         type="button"
@@ -114,7 +114,7 @@ function SeatCard({ p, actor, short, className }: { p: PlayerState; actor: strin
         onClick={() => openMenu(menuFor === p.id ? null : p.id)}
         className={cn(
           "flex h-11 w-full cursor-pointer items-center rounded-[inherit] text-left hover:bg-white/40",
-          strip ? "gap-1.5 px-2 @max-[100px]:gap-1 @max-[100px]:px-1.5" : "gap-2 px-3",
+          strip ? "gap-1.5 px-2 @max-[100px]:gap-1 @max-[100px]:px-1.5 @max-[100px]:has-[.seat-away]:gap-0.5 @max-[72px]:px-1 @max-[72px]:has-[.seat-away]:gap-0" : "gap-1.5 px-2.5",
         )}
       >
         <SeatLine p={p} actor={actor} short={short} />
@@ -133,7 +133,7 @@ export function SeatRail({ actor }: { actor: string }) {
   const players = useGame((s) => s.state!.players);
   const menuFor = useGame((s) => s.menuFor);
   return (
-    <aside className={cn("pointer-events-none absolute left-3 top-20 hidden w-56 flex-col gap-2 md:flex", menuFor ? "z-20" : "z-10")}>
+    <aside className={cn("pointer-events-none absolute left-3 top-20 hidden w-48 flex-col gap-1 md:flex", menuFor ? "z-20" : "z-10")}>
       {players.map((p) => (
         <div key={p.id} className="pointer-events-auto flex flex-col gap-1">
           <SeatCard p={p} actor={actor} className="rounded-chip" />

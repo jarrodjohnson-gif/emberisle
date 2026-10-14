@@ -1,6 +1,6 @@
 # Seat marks alongside colour
 
-**Status:** removed on 2026-10-13 by the owner's decision (colour-only identification for now; the seat colours were re-picked instead). The rest of this document is history. See PR on branch `claude/seat-colors-no-marks`.
+**Current redesign:** [Basalt Table](visual-direction.md) requires colour plus a mark. It uses the new seat colours from #588 and restores non-colour identification, including legacy colours in saved tables. The 2026-10-13 main change removed marks; this design deliberately retains them to satisfy the current brief. The simulation figure below records the original palette.
 
 ## Current palette under colour-vision simulations
 

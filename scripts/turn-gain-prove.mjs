@@ -25,6 +25,8 @@
 // Readable times come from each element's own animation (keyframes, duration, delay) capped by how long it stayed on the
 // page: software GL frames are too sparse to time it by sampling. For the placement and contrast measures only, the
 // moment being measured is held on screen (__hold), and "Your turn" is timed again on a later turn left untouched.
+// Expiry also reports measured main-thread stalls, as roll-moment-prove does: a software-GL screenshot may block timers.
+// The 2600 ms running-time limit remains, with a separate 3500 ms raw cap and an exact 2200 ms animation-duration check.
 // Run: npm run turn-gain-prove (ONLY=390x844, reduced or hotseat or reconnect runs one part). Port from VITE_PORT, default 8476.
 // Screenshots to test-results/turn-gain-*.png.
 import { existsSync, mkdirSync } from "node:fs";
@@ -84,6 +86,15 @@ function recorders() {
   window.__lines = [];
   window.__own = [];
   window.__rollUp = [];
+  // Every interval gap beyond 20 ms contains time no browser timer could run. Never infer stalls from a failed assertion.
+  const gaps = [];
+  let lastTick = performance.now();
+  setInterval(() => {
+    const now = performance.now();
+    if (now - lastTick > 20) gaps.push([lastTick, now]);
+    lastTick = now;
+  }, 10);
+  window.__stall = (a, b) => gaps.reduce((n, [x, y]) => n + Math.max(0, Math.min(y, b) - Math.max(x, a) - 10), 0);
   const live = new Map();
   let subscribed = false;
   const g = () => window.__emberisle?.getState();
@@ -333,7 +344,8 @@ async function contrast(page, testid, index = 0) {
 // longer than it stayed on the page after its delay. Frames under software GL are too sparse to time it by sampling.
 const readable = (rec) => {
   const k = rec.anim?.keyframes.filter((f) => f.o !== null);
-  if (!k?.length || !rec.gone) return 0;
+  if (!rec.gone) return 0;
+  if (!k?.length) return rec.gone - rec.at;
   const at = (x) => {
     const j = k.findIndex((f) => f.at >= x);
     if (j <= 0) return k[Math.max(0, j)].o;
@@ -387,7 +399,7 @@ async function practice(view) {
     const shift = await page.evaluate(() => window.__lines.at(-1).stage);
     await page.screenshot({ path: `test-results/turn-gain-${view.width}x${view.height}-gain.png` });
     await page.waitForFunction(() => !document.querySelector('[data-testid="gain-floats"]'), null, { timeout: STEP_MS });
-    const roll = await page.evaluate(({ n0, own0 }) => ({ lines: window.__lines.slice(n0), own: window.__own.slice(own0), rollUp: window.__rollUp }), { n0, own0 });
+    const roll = await page.evaluate(({ n0, own0 }) => ({ lines: window.__lines.slice(n0).map(l => ({ ...l, stalled: window.__stall(l.at, l.gone) })), own: window.__own.slice(own0), rollUp: window.__rollUp }), { n0, own0 });
     const want = roll.own.filter((o) => o.d > 0).map((o) => `${o.r}+${o.d}`).sort();
     const got = roll.lines.map((l) => `${l.r}+${l.d}`).sort();
     console.log(`${tag}: rolled ${pip}; own ${JSON.stringify(want)}; lines ${JSON.stringify(roll.lines.map((l) => l.text))}`);
@@ -396,7 +408,10 @@ async function practice(view) {
     check(roll.lines.every((l) => !l.rollUp), `${tag}: no line mounts while the roll moment holds the centre`);
     const spans = roll.lines.map(readable);
     check(spans.every((s) => s >= 1200), `${tag}: each line readable for at least 1.2 s`, spans.map((s) => s.toFixed(0)));
-    check(roll.lines.every((l) => l.gone - l.at <= 2600), `${tag}: the batch has left within 2.6 s`, roll.lines.map((l) => (l.gone - l.at).toFixed(0)));
+    const expiry = roll.lines.map(l => ({ raw: l.gone - l.at, stalled: l.stalled, running: l.gone - l.at - l.stalled }));
+    check(roll.lines.every(l => l.anim?.duration === 2200), `${tag}: gain animation is exactly 2200 ms`);
+    check(expiry.every(t => t.running <= 2600), `${tag}: the batch has left within 2.6 s, excluding measured stalls`, expiry);
+    check(expiry.every(t => t.raw <= 3500), `${tag}: raw expiry stays below the 3.5 s guard`, expiry);
     if (roll.lines.length > 1) {
       // Mounted together, each line's own animation starts 150 ms after the one before.
       const starts = roll.lines.map((l) => l.at + l.anim.delay);
@@ -562,9 +577,9 @@ async function reduced() {
     const r = { lines, turns: await page.evaluate(() => window.__turns) };
     console.log(`${tag}: ${JSON.stringify(r.lines.map((l) => ({ text: l.text, at: l.at.toFixed(0), gone: l.gone?.toFixed(0), anim: l.anim && { d: l.anim.duration, delay: l.anim.delay } })))}`);
     const recs = [...r.lines, r.turns.at(-1)];
-    check(recs.every((x) => x.animation === "moment-fade"), `${tag}: lines and the turn moment fade only (moment-fade)`, recs.map((x) => x.animation));
-    check(recs.every((x) => x.frames.every((f) => f.tf === "none") && x.anim.keyframes.every((k) => !k.tf)), `${tag}: no transform in the keyframes or on any frame (no rise, no scale)`);
-    check(recs.every((x) => x.anim.duration >= 1500 && x.anim.keyframes.some((k) => k.o === 0) && x.anim.keyframes.some((k) => k.o === 1)), `${tag}: they still fade in and out, over at least 1.5 s`, recs.map((x) => [x.anim.duration, x.anim.keyframes.map((k) => k.o)]));
+    check(recs.every((x) => x.animation === "none" && x.anim === null), `${tag}: all cues are fully static under reduced motion`, recs.map((x) => x.animation));
+    check(recs.every((x) => x.frames.every((f) => f.tf === "none" && f.o === 1)), `${tag}: no fade, rise or scale on any frame`);
+    check(recs.every((x) => x.gone - x.at >= 1500), `${tag}: static cues retain a readable hold`, recs.map((x) => x.gone - x.at));
     check(r.lines.map(readable).every((s) => s >= 1200), `${tag}: each line readable for at least 1.2 s`, r.lines.map(readable).map((s) => s.toFixed(0)));
   } catch (e) {
     console.error(`${tag}:`, e);

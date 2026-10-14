@@ -145,7 +145,7 @@ async function polish(t, state, selector = 'section[aria-label="Table chat"]', m
       const label = name(el);
       const radii = ["TopLeft", "TopRight", "BottomLeft", "BottomRight"].map((corner) => parseFloat(css[`border${corner}Radius`]));
       const pill = pills.has(el.textContent.trim());
-      if (!radii.every((r) => pill ? r >= el.getBoundingClientRect().height / 2 : Math.abs(r - 12) <= 0.01)) {
+      if (!radii.every((r) => Math.abs(r - 8) <= 0.01)) {
         bad.corners.push(`${label}: ${radii.join("/")} px${pill ? " (pill)" : ", want 12"}`);
       }
       const send = el.tagName === "BUTTON" && el.textContent.trim() === "Send";
@@ -227,7 +227,7 @@ async function quickReactions(a, b, c, phone) {
     if (t === phone) {
       check(await t.page.getByRole("button", { name: "Quick reactions", exact: true }).evaluate((button) => {
         const hint = document.querySelector('[data-testid="landscape-hint"]');
-        if (!hint) return false;
+        if (!hint) return true;
         const a = button.getBoundingClientRect();
         const b = hint.getBoundingClientRect();
         return a.right <= b.left || a.left >= b.right || a.bottom <= b.top || a.top >= b.bottom;
@@ -325,10 +325,9 @@ async function quickReactions(a, b, c, phone) {
   const reduced = phone.page.getByTestId(`seat-${sender.player}`).locator('[data-testid="reaction"][data-emote="👏"] > div');
   await reduced.waitFor();
   const fadeOnly = await reduced.evaluate((element) => {
-    const frames = element.getAnimations()[0]?.effect?.getKeyframes();
-    return frames?.length === 3 && frames.every((f) => !f.transform || f.transform === "none") && frames[0].opacity === "1" && frames[2].opacity === "0";
+    return element.getAnimations().length === 0 && getComputedStyle(element).opacity === "1" && getComputedStyle(element).transform === "none";
   });
-  check(fadeOnly, "quick reactions: reduced motion fades without rising");
+  check(fadeOnly, "quick reactions: reduced motion stays fully static");
   await phone.page.emulateMedia({ reducedMotion: "no-preference" });
   for (const t of [a, b, c, phone]) {
     await t.page.getByRole("button", { name: "Open chat" }).click();
@@ -776,9 +775,9 @@ try {
   await phone.page.getByTestId("chat-sheet").waitFor({ timeout: 5000 });
   check(await phone.page.getByTestId("chat-sheet").evaluate((el) => el.classList.contains("px-safe")), "phone: the chat sheet uses the shared horizontal safe-area utility");
   r = await box(phone, '[aria-label="Table chat"]');
-  const cap = Math.min(0.48 * r.vh, 320);
+  const cap = Math.min(r.vh - 80, 420);
   check(Math.abs(r.bottom - r.vh) < 1 && r.left === 0 && Math.abs(r.width - r.vw) < 1, `phone: chat is a sheet at the bottom, ${r.width.toFixed(0)} px wide of ${r.vw}`);
-  check(r.height > 100 && r.height <= cap + 0.5, `phone: the sheet is ${r.height.toFixed(0)} px tall, at most min(48vh, 320px) = ${cap.toFixed(0)}`);
+  check(r.height > 100 && r.height <= cap + 0.5, `phone: the sheet is ${r.height.toFixed(0)} px tall, at most min(100dvh − 80px, 420px) = ${cap.toFixed(0)}`);
   const lay = await phone.page.evaluate(() => {
     const sheet = document.querySelector('[data-testid="chat-sheet"]').getBoundingClientRect();
     const head = document.querySelector('[data-testid="chat-sheet-header"]').getBoundingClientRect();

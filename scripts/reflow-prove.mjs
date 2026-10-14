@@ -56,6 +56,7 @@ try {
     const fold = await page.evaluate(() => {
       const card = document.querySelector('[data-testid="title-card"]');
       const out = [...card.querySelectorAll("p, h1, button, input")].filter((el) => {
+        if (!el.checkVisibility()) return false;
         const r = el.getBoundingClientRect();
         return r.top < 0 || r.left < 0 || r.bottom > innerHeight + 0.5 || r.right > innerWidth + 0.5;
       }).map((el) => (el.textContent.trim() || el.getAttribute("aria-label") || el.tagName).slice(0, 24));
@@ -93,7 +94,7 @@ try {
     const strip = () =>
       page.evaluate(() => {
         const el = document.querySelector('[data-testid="seat-strip"]');
-        if (!el || el.closest("header")) return null;
+        if (!el) return null;
         const shown = (x) => !!x && x.getClientRects().length > 0 && getComputedStyle(x).position !== "absolute";
         return {
           h: el.getBoundingClientRect().height,
@@ -139,7 +140,7 @@ try {
       // Fixture, not a product change: an error line (a real stack row, as after a refused build) is added because the
       // build row got a line shorter with its 44 px tiles (build-ready-prove), and the 640x360 and 844x390 checks below
       // need the column to overflow to test the "more below" cue.
-      g.setState({ state: st, banner: "Rolled 3 and 4: 7.", buildMode: "none", pendingSteal: null, error: "The bank is short of ore." });
+      g.setState({ state: st, banner: "Rolled 3 and 4: 7.", buildMode: "none", pendingSteal: null, error: "The bank is short of ore. ".repeat(16) });
     });
     await page.getByRole("button", { name: "End turn" }).waitFor();
     await page.getByTestId("fortunes-button").waitFor();
@@ -153,7 +154,7 @@ try {
       const header = r(document.querySelector("header > .pointer-events-auto"));
       const strip = document.querySelector('[data-testid="seat-strip"]');
       const portraitStrip = strip && !strip.closest("header") ? r(strip) : null;
-      const stack = r(document.querySelector('[data-testid="turn-banner"]').closest(".pointer-events-auto"));
+      const stack = r(document.querySelector("[data-hud-stack]"));
       const canvas = r(document.querySelector("canvas"));
       const chrome = portraitStrip ? portraitStrip.bottom : header.bottom;
       // #422: on a sideways phone the stack is a left column, and the island's room is beside it, not above it.
@@ -194,10 +195,10 @@ try {
       const path = page.getByRole("button", { name: "Path", exact: true });
       const bannerIs = (t) => page.waitForFunction((t) => document.querySelector('[data-testid="turn-banner"]')?.textContent === t, t, { timeout: 5000 }).then(() => true, () => false);
       await path.tap();
-      const armed = `${name}'s turn — Pick a glowing edge · tap Path again to cancel`;
+      const armed = `${name}'s turn · Pick a glowing edge · tap Path again to cancel`;
       check(await bannerIs(armed), `${tag} armed Path on touch: banner says what to pick and how to cancel`, await page.getByTestId("turn-banner").textContent());
       await path.tap();
-      check(await bannerIs(`${name}'s turn — Build, trade with the bank, or end your turn.`), `${tag} second tap: banner back to the main line`, await page.getByTestId("turn-banner").textContent());
+      check(await bannerIs(`${name}'s turn · Build or trade`), `${tag} second tap: banner back to the main line`, await page.getByTestId("turn-banner").textContent());
     }
     const floor = hud.stripBottom ?? hud.headerBottom + 8;
     check(hud.stackTop >= floor, `${tag} hud: bottom stack starts below the ${hud.stripBottom ? "seat strip" : "header + 8 px"}`, hud);
@@ -207,7 +208,7 @@ try {
     // #402: the cue tracks overflow. The scroller is the stack's `overflow-y-auto` element.
     const stackState = () =>
       page.evaluate(() => {
-        const sc = document.querySelector('[data-testid="turn-banner"]').closest(".pointer-events-auto");
+        const sc = document.querySelector("[data-hud-stack]");
         const cue = document.querySelector('[data-testid="hud-more-below"]');
         return {
           overflow: sc.scrollHeight - sc.scrollTop - sc.clientHeight > 1,
@@ -232,7 +233,7 @@ try {
     check(reach.onTop && reach.bottom <= viewport.height, `${tag} hud: End turn reachable by scrolling the stack`, reach);
     if (before.overflow) {
       await page.evaluate(() => {
-        const sc = document.querySelector('[data-testid="turn-banner"]').closest(".pointer-events-auto");
+        const sc = document.querySelector("[data-hud-stack]");
         sc.scrollTop = sc.scrollHeight;
       });
       await page.waitForSelector('[data-testid="hud-more-below"]', { state: "detached", timeout: 2000 });

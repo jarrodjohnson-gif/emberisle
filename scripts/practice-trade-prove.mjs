@@ -89,14 +89,14 @@ try {
   await watchClose();
   await panel.getByRole("button", { name: "Ask the table" }).click();
   await page.waitForFunction(() => window.__emberisle.getState().offer?.from === "p0", null, { timeout: STEP_MS });
-  await toast.getByText(`${bot} takes it.`).waitFor({ timeout: STEP_MS });
+  await page.getByTestId("trade-outcome").getByText(`${bot} takes it.`).waitFor({ timeout: STEP_MS });
   const h1 = await closedHands();
   console.log(`person asks: "${bot} takes it."; Ember ${JSON.stringify(h1.p0)}, ${bot} ${JSON.stringify(h1.p2)}`);
   if (h1.p0.grain !== 0 || h1.p0.wool !== 1 || h1.p2.grain !== 3 || h1.p2.wool !== 1) throw new Error("the goods did not move");
 
   // 2. The bot asks on its turn; the person answers from the toast.
   await load(gC);
-  const dialog = page.getByRole("alertdialog");
+  const dialog = page.getByRole("region", { name: /offers/ });
   await dialog.waitFor({ timeout: STEP_MS });
   await watchClose();
   const line = await dialog.locator("p").first().textContent();

@@ -1,0 +1,244 @@
+[
+  {
+    "width": 1920,
+    "height": 1080,
+    "reduced": false,
+    "phase": "main",
+    "scale": 77.32237017166518,
+    "hole": {
+      "left": 200,
+      "top": 68,
+      "right": 1908,
+      "bottom": 900
+    },
+    "out": [],
+    "clippedCosts": [],
+    "offer": null
+  },
+  {
+    "width": 1920,
+    "height": 1080,
+    "reduced": false,
+    "phase": "offer",
+    "scale": 73.7908196109401,
+    "hole": {
+      "left": 200,
+      "top": 68,
+      "right": 1908,
+      "bottom": 862
+    },
+    "out": [],
+    "clippedCosts": [],
+    "offer": {
+      "top": 1010,
+      "bottom": 1068,
+      "left": 632,
+      "right": 1288,
+      "insideStack": true,
+      "modal": null
+    }
+  },
+  {
+    "width": 1280,
+    "height": 720,
+    "reduced": false,
+    "phase": "main",
+    "scale": 43.865575385848516,
+    "hole": {
+      "left": 200,
+      "top": 68,
+      "right": 1268,
+      "bottom": 540
+    },
+    "out": [],
+    "clippedCosts": [],
+    "offer": null,
+    "boardAreaGainPercent": 40
+  },
+  {
+    "width": 1280,
+    "height": 720,
+    "reduced": false,
+    "phase": "offer",
+    "scale": 40.33402482512343,
+    "hole": {
+      "left": 200,
+      "top": 68,
+      "right": 1268,
+      "bottom": 502
+    },
+    "out": [],
+    "clippedCosts": [],
+    "offer": {
+      "top": 650,
+      "bottom": 708,
+      "left": 312,
+      "right": 968,
+      "insideStack": true,
+      "modal": null
+    },
+    "boardAreaGainPercent": 19
+  },
+  {
+    "width": 390,
+    "height": 844,
+    "reduced": false,
+    "phase": "main",
+    "scale": 31.551724137931032,
+    "hole": {
+      "left": 12,
+      "top": 68,
+      "right": 378,
+      "bottom": 588
+    },
+    "out": [],
+    "clippedCosts": [],
+    "offer": null,
+    "boardAreaGainPercent": 7
+  },
+  {
+    "width": 390,
+    "height": 844,
+    "reduced": false,
+    "phase": "offer",
+    "scale": 31.551724137931032,
+    "hole": {
+      "left": 12,
+      "top": 68,
+      "right": 378,
+      "bottom": 486
+    },
+    "out": [],
+    "clippedCosts": [],
+    "offer": {
+      "top": 734,
+      "bottom": 832,
+      "left": 12,
+      "right": 378,
+      "insideStack": true,
+      "modal": null
+    },
+    "boardAreaGainPercent": 117
+  },
+  {
+    "width": 844,
+    "height": 390,
+    "reduced": false,
+    "phase": "main",
+    "scale": 28.810017732231017,
+    "hole": {
+      "left": 284,
+      "top": 68,
+      "right": 832,
+      "bottom": 378
+    },
+    "out": [],
+    "clippedCosts": [],
+    "offer": null,
+    "boardAreaGainPercent": 7
+  },
+  {
+    "width": 844,
+    "height": 390,
+    "reduced": false,
+    "phase": "offer",
+    "scale": 28.810017732231017,
+    "hole": {
+      "left": 284,
+      "top": 68,
+      "right": 832,
+      "bottom": 378
+    },
+    "out": [],
+    "clippedCosts": [],
+    "offer": {
+      "top": 288,
+      "bottom": 378,
+      "left": 12,
+      "right": 272,
+      "insideStack": true,
+      "modal": null
+    },
+    "boardAreaGainPercent": 7
+  },
+  {
+    "width": 320,
+    "height": 568,
+    "reduced": false,
+    "phase": "main",
+    "scale": 22.67627202149796,
+    "hole": {
+      "left": 12,
+      "top": 68,
+      "right": 308,
+      "bottom": 312
+    },
+    "out": [],
+    "clippedCosts": [],
+    "offer": null
+  },
+  {
+    "width": 320,
+    "height": 568,
+    "reduced": false,
+    "phase": "offer",
+    "scale": 15.241428735760923,
+    "hole": {
+      "left": 12,
+      "top": 68,
+      "right": 308,
+      "bottom": 232
+    },
+    "out": [],
+    "clippedCosts": [],
+    "offer": {
+      "top": 458,
+      "bottom": 556,
+      "left": 12,
+      "right": 308,
+      "insideStack": true,
+      "modal": null
+    }
+  },
+  {
+    "width": 390,
+    "height": 844,
+    "reduced": true,
+    "phase": "main",
+    "scale": 31.551724137931032,
+    "hole": {
+      "left": 12,
+      "top": 68,
+      "right": 378,
+      "bottom": 588
+    },
+    "out": [],
+    "clippedCosts": [],
+    "offer": null,
+    "boardAreaGainPercent": 7
+  },
+  {
+    "width": 390,
+    "height": 844,
+    "reduced": true,
+    "phase": "offer",
+    "scale": 31.551724137931032,
+    "hole": {
+      "left": 12,
+      "top": 68,
+      "right": 378,
+      "bottom": 486
+    },
+    "out": [],
+    "clippedCosts": [],
+    "offer": {
+      "top": 734,
+      "bottom": 832,
+      "left": 12,
+      "right": 378,
+      "insideStack": true,
+      "modal": null
+    },
+    "boardAreaGainPercent": 117
+  }
+]

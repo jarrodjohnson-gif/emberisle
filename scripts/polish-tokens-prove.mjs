@@ -13,9 +13,9 @@ const TOKENS = {
   "--text-title": "1.25rem",
   "--text-number": "1.75rem",
   "--text-display": "3.5rem",
-  "--radius-control": "12px",
-  "--radius-chip": "16px",
-  "--radius-sheet": "24px",
+  "--radius-control": "8px",
+  "--radius-chip": "12px",
+  "--radius-sheet": "20px",
   "--duration-press": "80ms",
   "--duration-quick": "150ms",
   "--duration-base": "220ms",
@@ -23,7 +23,7 @@ const TOKENS = {
   "--duration-pulse": "1.2s",
   "--duration-moment": "900ms",
   "--ease-out": "cubic-bezier(0.22, 1, 0.36, 1)",
-  "--ease-snap": "cubic-bezier(0.34, 1.56, 0.64, 1)",
+  "--ease-snap": "cubic-bezier(0.2, 0.8, 0.2, 1)",
   "--ease-in": "cubic-bezier(0.4, 0, 1, 1)",
 };
 const RESOURCES = ["timber", "clay", "wool", "grain", "ore"];
@@ -83,7 +83,7 @@ try {
     }
 
     const host = await buttonStyle(page, "Play");
-    assert.deepEqual(host, { radius: "12px", duration: "0.08s", easing: TOKENS["--ease-out"] }, `${v.tag}: Play`);
+    assert.deepEqual(host, { radius: "8px", duration: "0.08s", easing: TOKENS["--ease-out"] }, `${v.tag}: Play`);
     await page.screenshot({ path: `test-results/polish-tokens-${v.tag}-title.png` });
 
     await page.getByRole("button", { name: "Play", exact: true }).click();

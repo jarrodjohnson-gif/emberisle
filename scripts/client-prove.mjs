@@ -359,7 +359,7 @@ try {
   console.log("turn banner:", JSON.stringify(turn));
 
   // Jarrod's playtest: another seat's turn says whom you wait for, not what to do.
-  if (turn.theirs !== `Waiting for ${turn.bot} to roll` || !/^Your turn — (Roll the dice|Build, trade|move the wayfarer|discard \d+)/.test(turn.mineText ?? "") || turn.strip) {
+  if (turn.theirs !== `Waiting for ${turn.bot} to roll` || !/^Your turn · (Roll|Build or trade|move the wayfarer|discard \d+)/.test(turn.mineText ?? "") || turn.strip) {
     throw new Error(`turn banner: ${JSON.stringify(turn)}`);
   }
   if (phase !== "roll" && phase !== "main" && phase !== "robber" && phase !== "discard") throw new Error(`setup: ${phase}`);
@@ -691,7 +691,7 @@ try {
   ).jsonValue();
   await page.emulateMedia({ reducedMotion: null });
   console.log("reduced motion:", JSON.stringify(motion));
-  if (motion.flash !== "1.2s" || motion.fade !== "0.001s") throw new Error(`reduced motion: ${JSON.stringify(motion)}`);
+  if (motion.flash !== "0s" || motion.fade !== "0s") throw new Error(`reduced motion: ${JSON.stringify(motion)}`);
   await toTitle();
   // #254: online, Leave asks first (Stay and Escape cancel); a second Leave goes to the title and clears the saved seat.
   // Practice keeps the one-click Leave.

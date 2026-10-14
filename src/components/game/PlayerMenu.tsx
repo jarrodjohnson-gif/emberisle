@@ -85,7 +85,7 @@ export function PlayerMenu({ player: p, className, heading }: { player: PlayerSt
       id={`player-menu-${p.id}`}
       data-testid="player-menu"
       aria-label={`${p.name}'s actions`}
-      className={cn("flex flex-col gap-1 rounded-[16px] border border-white/50 bg-white/60 p-2 backdrop-blur-md", className)}
+      className={cn("flex flex-col gap-1 rounded-sheet border border-white/50 bg-white/60 p-2 backdrop-blur-md", className)}
     >
       {heading ? (
         <p data-testid="menu-seat" className="flex items-center gap-2 px-2 pt-1 text-sm font-medium text-zinc-900">

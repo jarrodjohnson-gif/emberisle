@@ -77,7 +77,7 @@ const view = (t) =>
       goods: Object.fromEntries(g.players.map((p) => [p.id, p.goods ?? Object.values(p.resources).reduce((a, b) => a + b, 0)])),
       offer: s.offer,
       declined: s.declined,
-      toast: document.querySelector('[data-testid="trade-toast"]')?.textContent ?? null,
+      toast: document.querySelector('[data-testid="trade-toast"], [data-testid="trade-outcome"]')?.textContent ?? null,
     };
   });
 const views = (tabs) => Promise.all(tabs.map(view));
@@ -286,8 +286,8 @@ try {
       return out;
     });
     const where = `${t.name} (${JSON.stringify(got)})`;
-    if (got.role !== "alertdialog") throw new Error(`${where}: the offer is not an alertdialog`);
-    if ((await t.page.getByRole("alertdialog", { name: line, exact: true }).count()) !== 1) throw new Error(`${where}: alertdialog not named "${line}"`);
+    if (got.role !== "region") throw new Error(`${where}: the offer is not an alertdialog`);
+    if ((await t.page.getByRole("region", { name: line, exact: true }).count()) !== 1) throw new Error(`${where}: alertdialog not named "${line}"`);
     if (got.focusInside) throw new Error(`${where}: the offer took focus`);
     if (got.countdownHidden !== "true") throw new Error(`${where}: the ticking countdown is not aria-hidden`);
     if (got.disabled) throw new Error(`${where}: Yes uses disabled, so Tab cannot reach it`);
@@ -307,7 +307,7 @@ try {
     hidden: el.querySelector('[data-testid="trade-countdown"]')?.getAttribute("aria-hidden") ?? null,
     role: el.getAttribute("role"),
   }));
-  if (askerView.live || askerView.hidden !== null || askerView.role !== null) throw new Error(`asker's toast changed: ${JSON.stringify(askerView)}`);
+  if (askerView.live || askerView.hidden !== null || askerView.role !== "region") throw new Error(`asker's toast changed: ${JSON.stringify(askerView)}`);
   console.log(`#366: ${B.name} and ${C.name} see an alertdialog named "${line}", focus untouched, countdown aria-hidden`);
 
   // 2. C says No: everyone sees it, C's toast goes, the offer stays open for B.
