@@ -75,10 +75,14 @@ transmission pass it replaces did the same).
 
 Simple is used when the GPU cannot render to a half-float target (the under pass needs one: WebGL 2 with
 `EXT_color_buffer_float` or `EXT_color_buffer_half_float`), when the one-time probe finds the GPU slow, or when the player
-chose it. Every page load starts on the simple sea (no under target is allocated), so a software-GL client that is
-reloading or rejoining a table pays nothing extra; only a saved Crystal choice or a passed probe switches it, between frames.
-The probe runs once per page, each frame forced to finish with a 1-pixel read. First, after the island has been drawn five
-times, up to ten simple frames: over 11 ms on average (the crystal sea draws the scene twice), the sea stays simple and the
+chose it. Every page load starts on the simple sea, and nothing of the crystal sea exists until the first switch to it: the
+surface, the edge strip, the floor and its props, the CPU wave field and the under target are all built then. So a page on
+the simple sea draws and builds what it did before the crystal sea, and a software-GL client that is reloading or rejoining a
+table pays nothing extra; only a saved Crystal choice or a passed probe switches it, between frames. The probe never runs
+during boot, a restore or a rejoin: `IslandCanvas` marks the client settled (the title with nothing dialling, or play once
+its first state has landed), and the probe starts a second after that and a second after the last pointer on the canvas.
+It runs once per page, each frame forced to finish with a 1-pixel read. First, after five warm frames, up to ten simple
+frames: over 11 ms on average (the crystal sea draws the scene twice), the sea stays simple and the
 crystal sea is never drawn. Otherwise up to ten crystal frames after three warm ones: over 22 ms, back to simple. Each stage
 stops as soon as its frames pass its ten-frame budget, so a slow GPU stalls for one frame. On SwiftShader the first simple
 frame already takes a few hundred ms. `ms` reports the last stage's average.
