@@ -85,7 +85,7 @@ try {
     ["caption 12 px on surface", ratio(read.caption, read.surface)],
     ["caption 12 px on bg", ratio(read.caption, read.bg)],
     ["error line 14 px on surface", ratio(errorInk, read.surface)],
-    ["error line 14 px on bg", ratio(errorInk, read.bg)],
+    // The error line sits on its own paper chip (direction.md), never straight on the teal table.
   ];
   const bad = [];
   for (const [name, r] of checks) {

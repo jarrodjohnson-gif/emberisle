@@ -76,7 +76,7 @@ function Restoring() {
   return (
     <div data-testid="restoring" role="status" className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-bg">
       <h1 className="font-display text-5xl leading-none tracking-tight sm:text-6xl">Emberisle</h1>
-      <p className="text-sm text-muted">Back to your table…</p>
+      <p className="text-sm text-ink">Back to your table…</p>
     </div>
   );
 }
@@ -210,7 +210,7 @@ function Title() {
                 Play
               </Button>
               {/* #411: the offline button says what it is in one tiny muted line. */}
-              <p className="text-xs text-muted">3 bots, no network</p>
+              <p className="text-xs text-ink">3 bots, no network</p>
             </div>
             {/* #488: a pointer or focus on Host or Join fetches the online chunk (lobby and chat) before either is pressed. */}
             <div className="flex flex-wrap gap-2" onPointerEnter={online.prefetch} onFocus={online.prefetch}>
@@ -262,7 +262,7 @@ function Title() {
               {showWatch ? "Watch available" : ""}
             </p>
             {error ? (
-              <p role="alert" className="text-sm text-accent-ink">
+              <p role="alert" className="rounded-[14px] bg-paper px-3 py-1.5 text-sm text-accent-ink">
                 {error}
               </p>
             ) : null}

@@ -4,9 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Emberisle</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&display=swap" rel="stylesheet" />
     <!-- #468: Add to Home Screen opens full-screen. Relative paths, so the page works wherever it is served from. -->
     <link rel="manifest" href="./manifest.webmanifest" />
-    <meta name="theme-color" content="#efeae0" />
+    <meta name="theme-color" content="#9fdcd8" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -16,11 +19,11 @@
     <!-- #543: a reload into a table in play paints the wordmark at once, before any script has run; the app swaps it for the
          board. Everyone else gets the title as before. Keep the look the same as Restoring in EmberisleApp.tsx. -->
     <style>
-      #splash { display: none; position: absolute; inset: 0; flex-direction: column; align-items: center; justify-content: center; gap: 0.75rem; background: #efeae0; color: #1c1915; }
+      #splash { display: none; position: absolute; inset: 0; flex-direction: column; align-items: center; justify-content: center; gap: 0.75rem; background: #9fdcd8; color: #22312f; }
       .restoring #splash { display: flex; }
       #splash h1 { margin: 0; font: 400 3rem/1 "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif; letter-spacing: -0.025em; }
       @media (min-width: 640px) { #splash h1 { font-size: 3.75rem; } }
-      #splash p { margin: 0; font: 0.875rem/1.25rem ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; color: #6b645a; }
+      #splash p { margin: 0; font: 0.875rem/1.25rem ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; color: #22312f; }
     </style>
     <script>
       try {

@@ -38,6 +38,53 @@ export function topOf(terrain: Terrain) {
   return TILE_Y + SLAB + hexHeight(terrain) * 0.35;
 }
 const STONE = 0xefeae0;
+// The page's table teal (--color-table in styles.css): the clear colour, fog and ocean, so board and page are one surface.
+const TABLE_HEX = 0x9fdcd8;
+const EXPOSURE = 1.05;
+
+// The composer's OutputPass runs ACES at EXPOSURE over every pixel, the sea and the clear colour included, so a plain
+// 0x9fdcd8 would land on screen as a paler, greyer teal than the page. This inverts the curve (Newton, finite-difference
+// Jacobian; three's ACESFilmic: input matrix, RRT/ODT fit, output matrix) so the sea comes out as exactly the table.
+function aces([r, g, b]: number[]): number[] {
+  const k = EXPOSURE / 0.6;
+  const v = [r * k, g * k, b * k];
+  const m = [
+    [0.59719, 0.35458, 0.04823],
+    [0.076, 0.90834, 0.01566],
+    [0.0284, 0.13383, 0.83777],
+  ];
+  const o = [
+    [1.60475, -0.53108, -0.07367],
+    [-0.10208, 1.10813, -0.00605],
+    [-0.00327, -0.07276, 1.07602],
+  ];
+  const mul = (a: number[][], x: number[]) => a.map((row) => row[0]! * x[0]! + row[1]! * x[1]! + row[2]! * x[2]!);
+  const fit = mul(m, v).map((x) => (x * (x + 0.0245786) - 0.000090537) / (x * (0.983729 * x + 0.432951) + 0.238081));
+  return mul(o, fit);
+}
+function tableLinear(): THREE.Color {
+  const goal = new THREE.Color(TABLE_HEX); // linear working space
+  const want = [goal.r, goal.g, goal.b];
+  let x = [...want];
+  for (let n = 0; n < 40; n++) {
+    const f = aces(x).map((y, i) => y - want[i]!);
+    const J = [0, 1, 2].map((j) => {
+      const h = 1e-5;
+      const xs = [...x];
+      xs[j] = xs[j]! + h;
+      return aces(xs).map((y, i) => (y - (f[i]! + want[i]!)) / h);
+    }); // J[j][i] = d out_i / d in_j
+    const a = [0, 1, 2].map((i) => [J[0]![i]!, J[1]![i]!, J[2]![i]!]);
+    const det = (c: number[][]) =>
+      c[0]![0]! * (c[1]![1]! * c[2]![2]! - c[1]![2]! * c[2]![1]!) - c[0]![1]! * (c[1]![0]! * c[2]![2]! - c[1]![2]! * c[2]![0]!) + c[0]![2]! * (c[1]![0]! * c[2]![1]! - c[1]![1]! * c[2]![0]!);
+    const d = det(a);
+    const step = [0, 1, 2].map((col) => det(a.map((row, i) => row.map((val, j) => (j === col ? f[i]! : val)))) / d);
+    x = x.map((v, i) => v - step[i]!);
+    if (Math.max(...step.map(Math.abs)) < 1e-7) break;
+  }
+  return new THREE.Color().setRGB(x[0]!, x[1]!, x[2]!, THREE.LinearSRGBColorSpace);
+}
+const TABLE = tableLinear();
 
 const SIDE: Record<Terrain, number> = {
   timber: 0x3a5c32,
@@ -185,11 +232,11 @@ export class IsleRenderer {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: "high-performance" });
     // Frame cost tracks pixels (#310): 1.5 on a phone is 2.25x the pixels of 1, against 4x at 2.
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, this.coarse() ? 1.5 : 2));
-    this.renderer.setClearColor(0x6a93a0, 1);
+    this.renderer.setClearColor(TABLE, 1);
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.05;
+    this.renderer.toneMappingExposure = EXPOSURE;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
 
     this.camera = new THREE.PerspectiveCamera(32, 1, 0.1, 80);
@@ -218,7 +265,7 @@ export class IsleRenderer {
     this.orbit.addEventListener("start", this.wake);
     this.orbit.addEventListener("change", this.wake);
 
-    this.scene.fog = new THREE.Fog(0x6a93a0, 26, 52);
+    this.scene.fog = new THREE.Fog(TABLE, 26, 52);
     // A lit board on a table (polish.md "The board look target", #135): one warm key lamp carries the light, so the
     // slabs shade on their sides and every prop casts a soft shadow; the sky and ground bounce are low and nearly grey,
     // so the caps' own paint is the colour on screen. No flat ambient: that was what washed the caps out.
@@ -250,7 +297,7 @@ export class IsleRenderer {
     this.coastOrder = coast.map((c) => c.id);
     const beach = new THREE.Mesh(
       coastStrip(coast, -0.04, 0.22),
-      new THREE.MeshStandardMaterial({ color: 0xe8d7b0, roughness: 1, metalness: 0 }),
+      new THREE.MeshStandardMaterial({ color: 0xe9d9b8, roughness: 1, metalness: 0 }),
     );
     beach.position.y = 0.015;
     beach.receiveShadow = true;
@@ -1093,16 +1140,16 @@ function disposeGroup(g: THREE.Group) {
   }
 }
 
-// The sea: an unlit shader, so the sun cannot paint a hotspot on it. Shallow to deep, a slow ripple, then the fog.
+// The sea: an unlit shader, so the sun cannot paint a hotspot on it. One flat table teal with a slow ripple (no depth gradient).
 // A calm teal that never competes with the land: the ripple scales the colour by a few percent rather than adding to it
 // (an added 0.022 was a third of the deep colour's linear value and drew dark blotches across the whole sea).
 function makeWater() {
   return new THREE.ShaderMaterial({
     uniforms: {
       uTime: { value: 0 },
-      uShallow: { value: new THREE.Color(0x4596a0) },
-      uDeep: { value: new THREE.Color(0x225a68) },
-      uFog: { value: new THREE.Color(0x6a93a0) },
+      uShallow: { value: TABLE.clone() },
+      uDeep: { value: TABLE.clone() },
+      uFog: { value: TABLE.clone() },
     },
     vertexShader: /* glsl */ `
       // The circle is local XY; +Z is up after the mesh's rotation. Crests stay at or below y = 0.
@@ -1125,7 +1172,6 @@ function makeWater() {
       void main() {
         float d = length(vXZ);
         vec3 c = mix(uShallow, uDeep, smoothstep(4.2, 7.5, d));
-        c *= 1.0 + 0.03 * sin(vXZ.x * 2.1 + uTime * 0.9) * sin(vXZ.y * 1.7 - uTime * 0.7);
         c = mix(c, uFog, smoothstep(18.0, 40.0, d));
         gl_FragColor = vec4(c, 1.0);
       }

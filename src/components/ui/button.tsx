@@ -2,14 +2,15 @@ import type { ButtonHTMLAttributes, Ref, SyntheticEvent } from "react";
 import { cn } from "@/lib/utils";
 import { play } from "@/lib/sound";
 
+// The chip look (docs/design/direction.md, ui/chip.tsx): paper, 1 px outline, shadow, 14 px corners; primary is the filled yes.
 const VARIANT = {
-  default: "bg-fg text-bg hover:bg-fg/90",
-  primary: "bg-fg text-bg hover:bg-fg/90",
-  secondary: "border border-border bg-bg text-fg hover:brightness-105",
-  sea: "bg-sea-ink text-white hover:brightness-90",
-  accent: "bg-accent-ink text-white hover:brightness-90",
-  outline: "border border-fg/30 bg-transparent text-fg hover:bg-fg/5",
-  ghost: "bg-transparent text-fg hover:bg-fg/5",
+  default: "border border-outline bg-paper text-ink shadow-chip active:bg-paper-2 active:shadow-[0_2px_0_rgb(34_49_47/0.18)]",
+  primary: "border border-outline bg-yes text-yes-text shadow-chip active:shadow-[0_2px_0_rgb(34_49_47/0.18)]",
+  secondary: "border border-outline bg-paper text-ink shadow-chip active:bg-paper-2 active:shadow-[0_2px_0_rgb(34_49_47/0.18)]",
+  sea: "border border-outline bg-yes text-yes-text shadow-chip active:shadow-[0_2px_0_rgb(34_49_47/0.18)]",
+  accent: "border border-outline bg-paper text-no shadow-chip active:bg-paper-2 active:shadow-[0_2px_0_rgb(34_49_47/0.18)]",
+  outline: "border border-outline bg-paper text-ink shadow-chip active:bg-paper-2 active:shadow-[0_2px_0_rgb(34_49_47/0.18)]",
+  ghost: "bg-transparent text-ink hover:bg-ink/5",
 } as const;
 
 const SIZE = {
@@ -29,7 +30,7 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   ref?: Ref<HTMLButtonElement>;
 }
 
-// Build bible 3.4: press scales to 0.97 for 80 ms. Corners are rounded-control, 12 px (docs/design/polish.md).
+// Pressed: the fill dips to paper-2, the shadow collapses to its 2 px line and the chip drops 1 px, over 80 ms.
 export function Button({ variant = "default", size = "default", className, type = "button", back, silent, onPointerDown, onKeyDown, ...props }: ButtonProps) {
   // A disabled or aria-disabled button (an unaffordable build) refuses the press, so it stays quiet.
   const press = (e: SyntheticEvent<HTMLButtonElement>) => {
@@ -40,7 +41,7 @@ export function Button({ variant = "default", size = "default", className, type 
     <button
       type={type}
       className={cn(
-        "inline-flex cursor-pointer items-center justify-center gap-2 rounded-control font-medium transition-[transform,filter,background-color] duration-(--duration-press) ease-out focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sea-ink active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50",
+        "inline-flex cursor-pointer items-center justify-center gap-2 rounded-[14px] font-bold transition-[transform,background-color,box-shadow] duration-(--duration-press) ease-out focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-ink active:translate-y-px disabled:pointer-events-none disabled:border-outline/50 disabled:bg-paper-2 disabled:text-ink-2 disabled:shadow-none",
         VARIANT[variant],
         SIZE[size],
         className,

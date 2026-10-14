@@ -20,21 +20,36 @@
   right: max(0.75rem, env(safe-area-inset-right));
 }
 
-/* Build bible 3.4: stone #efeae0, text #1c1915. Player colors from types.ts. */
+/* Visual direction (docs/design/direction.md). The old names below the new set are aliases until each screen moves over.
+   Player colors from types.ts. */
 @theme {
-  --color-bg: #efeae0;
-  --color-surface: #f7f4ee;
-  --color-raised: #ffffff;
-  --color-fg: #1c1915;
-  --color-muted: #6b645a;
-  --color-border: #d8d1c3;
-  --color-sea: #2a8f8a;
-  --color-accent: #c45c3e;
-  /* Text and text-on-fill ink (WCAG 1.4.3, 4.5:1). The brand swatches above are for fills that carry no text. */
-  --color-sea-ink: #1b726e;
-  --color-accent-ink: #a94b30;
-  /* #424: the one glass behind text chips over the island; at 45 % the text washed out over dark hexes. */
-  --color-glass: rgb(255 255 255 / 0.75);
+  --color-table: #9fdcd8;
+  --color-table-2: #8fd0cc;
+  --color-paper: #fbf7ee;
+  --color-paper-2: #f3eee2;
+  --color-ink: #22312f;
+  --color-ink-2: #5f6b69;
+  --color-outline: rgb(34 49 47 / 0.9);
+  --color-yes: #244a47;
+  --color-yes-text: #fbf7ee;
+  --color-teal-ink: #1f7f7a;
+  --color-no: #b23a2e;
+  --shadow-chip: 0 2px 0 rgb(34 49 47 / 0.18), 0 6px 14px rgb(34 49 47 / 0.1);
+  --shadow-card: 0 3px 0 rgb(34 49 47 / 0.18), 0 10px 24px rgb(34 49 47 / 0.12);
+  --radius-card: 18px;
+  --radius-tile: 16px;
+
+  --color-bg: var(--color-table);
+  --color-surface: var(--color-paper);
+  --color-raised: var(--color-paper);
+  --color-glass: var(--color-paper);
+  --color-fg: var(--color-ink);
+  --color-muted: var(--color-ink-2);
+  --color-border: var(--color-outline);
+  --color-sea: var(--color-teal-ink);
+  --color-sea-ink: var(--color-yes);
+  --color-accent: var(--color-no);
+  --color-accent-ink: var(--color-no);
   --font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
 }
 
@@ -43,9 +58,16 @@ body,
 #root {
   height: 100%;
   margin: 0;
-  background: var(--color-bg);
-  color: var(--color-fg);
-  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  background: var(--color-table);
+  color: var(--color-ink);
+  font-family: "Nunito", "Avenir Next Rounded", "Segoe UI", system-ui, sans-serif;
+}
+
+/* The table: flat teal with a faint hex tile (48 px cell, about 6 % darker). */
+body {
+  background-color: var(--color-table);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='83.14' viewBox='0 0 48 83.14'%3E%3Cpath d='M24 0 48 13.86V41.57L24 55.43 0 41.57V13.86ZM24 55.43V83.14' fill='none' stroke='%238fd0cc' stroke-width='2'/%3E%3C/svg%3E");
+  background-size: 48px 83.14px;
 }
 
 /* #468: the page itself never scrolls or rubber-bands behind the canvas, in a tab or installed; only cards and sheets scroll. */
