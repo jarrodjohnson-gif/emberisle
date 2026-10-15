@@ -123,13 +123,18 @@ export type Layout = {
   amp: number;
   feature: { x: number; z: number; r: number };
   spots: Spot[];
-  stands: { x: number; z: number; s: number }[];
-  // A long soft swell along a segment (a, b) of half-width w and height h: the pasture's ridge, the ore's spine.
-  ridge: { ax: number; az: number; bx: number; bz: number; w: number; h: number } | null;
+  // Where tall things stand: a forest's pines (s their scale), the clay's derrick, the ore's peaks (s their radius, h their
+  // height, snow on the tallest).
+  stands: { x: number; z: number; s: number; h?: number; snow?: boolean }[];
+  // Long soft swells along segments (a, b) of half-width w, ha high at a and hb at b, sagging by `sag` between (a negative sag
+  // bulges): the pasture's ridge, the ore's chain of peaks.
+  ridges: Ridge[];
   // Grain: the saddle's rising axis, as an angle from +x.
   axis: number;
   room: Room;
 };
+
+export type Ridge = { ax: number; az: number; bx: number; bz: number; w: number; ha: number; hb: number; sag: number };
 
 export type Sculpt = {
   geo: THREE.BufferGeometry;
@@ -148,10 +153,11 @@ export function layoutOf(rng: () => number, t: Terrain): Layout {
   const feature = { x: c.x * 0.7, z: c.z * 0.7, r: 0.33 };
   const room = new Room(rng, (HEX_SIZE * 0.995 * SQ3) / 2);
   // The saddle's diagonals (its paths) run corner to corner and midpoint to midpoint.
-  const L: Layout = { k, rot, seed, amp, feature, spots: [], stands: [], ridge: null, axis: rot + Math.PI / 6 + Math.PI / 4, room };
+  const L: Layout = { k, rot, seed, amp, feature, spots: [], stands: [], ridges: [], axis: rot + Math.PI / 6 + Math.PI / 4, room };
   if (t === "timber") forestLayout(L, rng);
   if (t === "wool") pastureLayout(L, rng);
   if (t === "clay") clayLayout(L, rng);
+  if (t === "ore") oreLayout(L, rng);
   return L;
 }
 
@@ -193,7 +199,8 @@ function pastureLayout(L: Layout, rng: () => number) {
   const a = L.rot + (rng() - 0.5) * 0.6;
   const [cx, cz, tx, tz] = [Math.cos(a) * 0.66, Math.sin(a) * 0.66, -Math.sin(a), Math.cos(a)];
   const half = 0.3 + rng() * 0.08;
-  L.ridge = { ax: cx - tx * half, az: cz - tz * half, bx: cx + tx * half, bz: cz + tz * half, w: 0.17, h: (0.07 + rng() * 0.02) * L.amp };
+  const h = (0.07 + rng() * 0.02) * L.amp;
+  L.ridges.push({ ax: cx - tx * half, az: cz - tz * half, bx: cx + tx * half, bz: cz + tz * half, w: 0.17, ha: 0.75 * h, hb: 0.75 * h, sag: -0.25 * h });
   const n = 2 + Math.floor(rng() * 2);
   for (let i = 0; i < n; i++) {
     const b = a + Math.PI + ((i - (n - 1) / 2) * 2.2) / n + (rng() - 0.5) * 0.4;
@@ -216,12 +223,43 @@ function clayLayout(L: Layout, rng: () => number) {
   }
 }
 
-// The ridge's height at a point: a soft swell along the segment, its crest rising a little toward the middle.
-function ridgeAt(x: number, z: number, g: NonNullable<Layout["ridge"]>) {
-  const [dx, dz] = [g.bx - g.ax, g.bz - g.az];
-  const u = Math.min(1, Math.max(0, ((x - g.ax) * dx + (z - g.az) * dz) / (dx * dx + dz * dz)));
-  const d2 = ((x - g.ax - u * dx) ** 2 + (z - g.az - u * dz) ** 2) / (g.w * g.w);
-  return d2 < 1 ? g.h * (1 - d2) * (1 - d2) * (0.75 + u * (1 - u)) : 0;
+// Ore: a chain of three faceted peaks along the ring through the feature's corner, the tallest (snow-capped) in the middle,
+// on a ridge that rises to each peak and sags between them, then runs on past the last peak to a tail, where the mine is
+// cut into it (a notch, a shelf in front of the portal). The ridge's flanks are scree.
+function oreLayout(L: Layout, rng: () => number) {
+  const a0 = Math.atan2(L.feature.z, L.feature.x);
+  const dir = rng() < 0.5 ? -1 : 1;
+  const at = (a: number, r: number) => ({ x: Math.cos(a) * r, z: Math.sin(a) * r });
+  const peaks = [
+    { ...at(a0 - dir * 0.6, 0.64), s: 0.16, h: 0.34 + rng() * 0.05 },
+    { ...at(a0, 0.64), s: 0.22, h: 0.56 + rng() * 0.08, snow: true },
+    { ...at(a0 + dir * 0.6, 0.64), s: 0.18, h: 0.42 + rng() * 0.06 },
+  ];
+  const tail = at(a0 + dir * 1.18, 0.66);
+  const lift = [0.11, 0.16, 0.13].map((v) => v * L.amp);
+  const seg = (a: { x: number; z: number }, b: { x: number; z: number }, ha: number, hb: number, sag: number): Ridge => ({ ax: a.x, az: a.z, bx: b.x, bz: b.z, w: 0.21, ha, hb, sag });
+  L.ridges.push(seg(peaks[0]!, peaks[1]!, lift[0]!, lift[1]!, 0.03), seg(peaks[1]!, peaks[2]!, lift[1]!, lift[2]!, 0.03), seg(peaks[2]!, tail, lift[2]!, 0.035, 0.0));
+  for (const p of peaks) {
+    L.stands.push(p);
+    L.room.claim(p.x, p.z, p.s);
+  }
+  // The mine: the portal in the tail's notch, opening along the ring away from the peaks.
+  const m = at(a0 + dir * 1.12, 0.66);
+  L.feature = { x: m.x, z: m.z, r: dir };
+  const fwd = { x: -Math.sin(a0 + dir * 1.12) * dir, z: Math.cos(a0 + dir * 1.12) * dir };
+  L.spots.push({ x: m.x + fwd.x * 0.1, z: m.z + fwd.z * 0.1, r: 0.15, h: -0.045 * L.amp });
+}
+
+// The ridges' height at a point: the highest of their soft swells, each along its segment.
+function ridgeAt(x: number, z: number, ridges: Ridge[]) {
+  let best = 0;
+  for (const g of ridges) {
+    const [dx, dz] = [g.bx - g.ax, g.bz - g.az];
+    const u = Math.min(1, Math.max(0, ((x - g.ax) * dx + (z - g.az) * dz) / (dx * dx + dz * dz)));
+    const d2 = ((x - g.ax - u * dx) ** 2 + (z - g.az - u * dz) ** 2) / (g.w * g.w);
+    if (d2 < 1) best = Math.max(best, (g.ha + (g.hb - g.ha) * u - 4 * g.sag * u * (1 - u)) * (1 - d2) * (1 - d2));
+  }
+  return best;
 }
 
 // The terrain's own relief, before the masks that hold the token, the corners and the path rests. Positive is up.
@@ -233,7 +271,7 @@ function relief(t: Terrain, x: number, z: number, L: Layout): number {
       return h;
     }
     case "wool": {
-      let h = 0.02 * fbm(x * 1.6, z * 1.6, L.seed) + ridgeAt(x, z, L.ridge!);
+      let h = 0.02 * fbm(x * 1.6, z * 1.6, L.seed) + ridgeAt(x, z, L.ridges);
       for (const p of L.spots) h += bump(x, z, p);
       return h;
     }
@@ -245,8 +283,11 @@ function relief(t: Terrain, x: number, z: number, L: Layout): number {
       return h;
     }
     case "ore": {
-      const n = 1 - Math.abs(noise(x * 2.6, z * 2.6, L.seed));
-      return 0.075 * L.amp * n * n - 0.012;
+      // The ridge, broken by scree on its flanks; a little rough ground everywhere; the mine's notch.
+      const ridge = ridgeAt(x, z, L.ridges);
+      let h = ridge + 0.012 * fbm(x * 2.6, z * 2.6, L.seed) + 0.008 * Math.min(1, ridge * 20) * noise(x * 7, z * 7, L.seed + 5);
+      for (const p of L.spots) h += bump(x, z, p);
+      return h;
     }
     case "waste": {
       const u = x * Math.cos(L.rot) + z * Math.sin(L.rot);
@@ -421,13 +462,14 @@ export function sculptHex(h: HexCell, size: number, slabH: number, tileY: number
   const [base, shade, sun] = PAINT[t].map(col) as [THREE.Color, THREE.Color, THREE.Color];
   const crest = base.clone().lerp(sun, 0.5);
   const spoil = col(PROP.spoil);
+  const scree = col(PROP.scree);
   const sand = col(STRATA.sand);
   const soil = col(PROP.furrow);
   // One scratch colour: `paint` fills it, the caller reads it at once.
   const c = new THREE.Color();
   // Two tones per surface: a hollow leans to the shade and a crest to the sunlit tint, then a slope that faces the key lamp
   // warms toward the sunlit tint and one that faces away cools toward the shade; the beach is sand.
-  const paint = (x: number, z: number, hh: number, lit: number, beach: number, field = 0) => {
+  const paint = (x: number, z: number, hh: number, lit: number, beach: number, field = 0, ny = 1) => {
     c.copy(base);
     if (hh < 0) c.lerp(shade, Math.min(1, -hh * 14));
     else c.lerp(crest, Math.min(1, hh * 9));
@@ -439,6 +481,11 @@ export function sculptHex(h: HexCell, size: number, slabH: number, tileY: number
       const path = pathDist(x, z, L.axis);
       c.lerp(soil, 0.9 * field);
       c.lerp(sand, 0.7 * (1 - smooth(0.02, 0.06, path)) * smooth(0.44, 0.5, Math.hypot(x, z)));
+    }
+    // Ore's slopes are scree: paler loose stone, speckled stone by stone.
+    if (t === "ore") {
+      const steep = smooth(0.985, 0.9, ny);
+      c.lerp(scree, 0.6 * steep).multiplyScalar(1 + 0.09 * steep * lattice(Math.round(x * 400), Math.round(z * 400), 3));
     }
     // The spoil heaps are fresher clay than the ground they lie on.
     if (t === "clay" && hh > 0.01) c.lerp(spoil, Math.min(1, (hh - 0.01) * 22));
@@ -521,7 +568,7 @@ export function sculptHex(h: HexCell, size: number, slabH: number, tileY: number
     const il = 1 / Math.hypot(gx, 1, gz);
     const [nx, ny, nz] = [-gx * il, il, -gz * il];
     const field = t === "grain" ? fieldOf(T.r[i]!, T.d[i]!, T.dc[i]!, pathDist(T.x[i]!, T.z[i]!, L.axis)) : 0;
-    paint(T.x[i]!, T.z[i]!, h0, nx * KEY.x + ny * KEY.y + nz * KEY.z, sea[i]!, field);
+    paint(T.x[i]!, T.z[i]!, h0, nx * KEY.x + ny * KEY.y + nz * KEY.z, sea[i]!, field, ny);
     vert(T.x[i]!, slabH + h0, T.z[i]!, nx, ny, nz, c, 1);
   }
 
@@ -942,8 +989,9 @@ function pineGeo() {
 }
 
 // A faceted peak, unit radius and height, its jitter fixed so every instance is the same rock seen at its own scale and
-// turn; each face painted by its height, grey at the foot to pale stone at the summit.
-function peakGeo() {
+// turn: seven sides in four jittered bands (two or three facet planes a face), each face painted by its height, grey at the
+// foot to pale stone; `snow` caps the summit, its edge ragged with the facets.
+function peakGeo(snow = false) {
   const g = new THREE.ConeGeometry(1, 1, 7, 4).translate(0, 0.5, 0);
   const p = g.attributes.position!;
   for (let i = 0; i < p.count; i++) {
@@ -956,12 +1004,13 @@ function peakGeo() {
   g.dispose();
   flat.deleteAttribute("uv");
   flat.computeVertexNormals();
-  const [low, high] = [new THREE.Color(PROP.peakLow), new THREE.Color(PROP.peakHigh)];
+  const [low, high, white] = [PROP.peakLow, PROP.peakHigh, PROP.snow].map(col) as [THREE.Color, THREE.Color, THREE.Color];
   const fp = flat.attributes.position!;
   const a = new Float32Array(fp.count * 3);
   for (let i = 0; i < fp.count; i += 3) {
     const y = (fp.getY(i) + fp.getY(i + 1) + fp.getY(i + 2)) / 3;
-    const c = low.clone().lerp(high, smooth(0.42, 0.8, y));
+    const c = low.clone().lerp(high, smooth(0.3, 0.8, y));
+    if (snow && y > 0.66 + 0.08 * lattice(i, 7, 5)) c.copy(white);
     for (let k = 0; k < 3; k++) c.toArray(a, (i + k) * 3);
   }
   flat.setAttribute("color", new THREE.BufferAttribute(a, 3));
@@ -1011,35 +1060,41 @@ function sheepGeo(lying = false) {
   return mergeGeometries(parts);
 }
 
-// The ore cart, long along x, wheels 0.13 apart across z (the rails' gauge).
+// The ore cart, long along x, wheels 0.13 apart across z (the rails' gauge): a planked tub with iron corners on four stout
+// wheels, heaped with ore.
 function cartGeo() {
   const parts = [
-    part(new THREE.BoxGeometry(0.22, 0.04, 0.18), "#493f33", 0, 0.07, 0),
-    part(new THREE.BoxGeometry(0.025, 0.09, 0.2), "#796b53", -0.11, 0.1, 0),
-    part(new THREE.BoxGeometry(0.025, 0.09, 0.2), "#796b53", 0.11, 0.1, 0),
-    part(new THREE.BoxGeometry(0.22, 0.09, 0.025), "#796b53", 0, 0.1, -0.09),
-    part(new THREE.BoxGeometry(0.22, 0.09, 0.025), "#796b53", 0, 0.1, 0.09),
+    part(tone(new THREE.BoxGeometry(0.2, 0.08, 0.16), PROP.cart, PROP.cartLight, PROP.woodDark), null, 0, 0.1, 0),
+    part(new THREE.BoxGeometry(0.21, 0.014, 0.17), PROP.iron, 0, 0.14, 0),
+    part(new THREE.BoxGeometry(0.21, 0.014, 0.17), PROP.iron, 0, 0.066, 0),
   ];
-  for (const x of [-0.07, 0.07]) for (const z of [-0.065, 0.065]) parts.push(part(new THREE.CylinderGeometry(0.043, 0.043, 0.024, 8).rotateX(Math.PI / 2), "#253131", x, 0.045, z));
-  for (const [x, z] of [[-0.06, -0.03], [0.04, 0.04], [0.03, -0.04]] as const) parts.push(part(new THREE.DodecahedronGeometry(0.055, 0), "#8796a5", x, 0.14, z, 0, 1, 1, 1, true));
+  for (const x of [-0.07, 0.07]) for (const z of [-0.065, 0.065]) {
+    parts.push(part(new THREE.CylinderGeometry(0.036, 0.036, 0.024, 12).rotateX(Math.PI / 2), PROP.iron, x, 0.04, z));
+    parts.push(part(new THREE.CylinderGeometry(0.014, 0.014, 0.028, 8).rotateX(Math.PI / 2), PROP.ironLight, x, 0.04, z));
+  }
+  for (const [x, z, r] of [[-0.05, -0.03, 0.05], [0.045, 0.035, 0.048], [0.03, -0.04, 0.042], [-0.035, 0.04, 0.04], [0, 0, 0.052]] as const)
+    parts.push(part(new THREE.DodecahedronGeometry(r, 0), PROP.ore, x, 0.155, z, x * 30, 1, 0.8, 1, true));
   return mergeGeometries(parts);
 }
 
+// The miner, facing +z: a round body in blue overalls, a round head under a helmet with a lit lamp, stubby legs. 0.24 tall.
 function minerGeo() {
   return mergeGeometries([
-    part(new THREE.BoxGeometry(0.065, 0.085, 0.06), "#283c47", 0, 0.1, 0),
-    part(new THREE.IcosahedronGeometry(0.044, 0), "#c8ad87", 0, 0.174, 0),
-    part(new THREE.CylinderGeometry(0.05, 0.05, 0.025, 8), "#d1b14d", 0, 0.2, 0),
-    part(new THREE.BoxGeometry(0.025, 0.07, 0.025), "#202a2b", -0.02, 0.035, 0),
-    part(new THREE.BoxGeometry(0.025, 0.07, 0.025), "#202a2b", 0.02, 0.035, 0),
+    part(tone(new THREE.CapsuleGeometry(0.034, 0.045, 4, 10), PROP.overalls, PROP.overallsLight, PROP.trousers), null, 0, 0.105, 0, 0, 1, 1, 0.85),
+    part(tone(new THREE.SphereGeometry(0.031, 12, 9), PROP.skin, PROP.skinLight, PROP.skin), null, 0, 0.178, 0),
+    part(tone(new THREE.SphereGeometry(0.036, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2), PROP.helmet, PROP.helmetLight, PROP.helmet), null, 0, 0.188, 0),
+    part(new THREE.CylinderGeometry(0.042, 0.042, 0.008, 14), PROP.helmet, 0, 0.19, 0),
+    part(new THREE.CylinderGeometry(0.012, 0.012, 0.012, 10).rotateX(Math.PI / 2), PROP.lamp, 0, 0.205, 0.034),
+    ...[-0.016, 0.016].map((lx) => part(new THREE.CapsuleGeometry(0.014, 0.03, 3, 8), PROP.trousers, lx, 0.03, 0)),
   ]);
 }
 
+// The pickaxe in the miner's swinging arm: a stout haft and a curved iron head.
 function pickaxeGeo() {
   return mergeGeometries([
-    part(new THREE.BoxGeometry(0.025, 0.025, 0.09), "#c8ad87", 0.035, 0, 0.035),
-    part(new THREE.BoxGeometry(0.015, 0.12, 0.015), "#796b53", 0.06, 0.045, 0.07),
-    part(new THREE.BoxGeometry(0.1, 0.025, 0.025), "#a8b6bf", 0.06, 0.1, 0.07),
+    part(new THREE.CapsuleGeometry(0.014, 0.05, 3, 8).rotateX(Math.PI / 2), PROP.overalls, 0.035, 0, 0.035),
+    beam(new THREE.Vector3(0.06, -0.01, 0.07), new THREE.Vector3(0.06, 0.11, 0.07), 0.008, PROP.wood),
+    part(new THREE.TorusGeometry(0.05, 0.009, 5, 9, Math.PI * 0.7).rotateZ(Math.PI * 0.15), PROP.ironLight, 0.06, 0.06, 0.07),
   ]);
 }
 
@@ -1181,21 +1236,23 @@ const barrow = () => [
     beam(new THREE.Vector3(-0.04, 0.05, sd * 0.03), new THREE.Vector3(-0.045, 0.0, sd * 0.035), 0.008, PROP.wood),
   ]),
 ];
-// A rock face with a dark adit and its timber frame, opening toward +z; reach 0.16.
+// The mine's mouth, opening toward +z: a rock face with the adit cut into it, a stout timber frame, and a lantern hung by the
+// door. Reach 0.16.
 function portal() {
   return [
-    part(new THREE.DodecahedronGeometry(0.15, 0), PROP.peakLow, 0, 0.06, -0.02, 0.3, 1.1, 0.85, 0.85, true),
-    part(new THREE.BoxGeometry(0.08, 0.095, 0.03), PROP.portal, 0, 0.048, 0.115),
-    part(new THREE.BoxGeometry(0.018, 0.11, 0.024), PROP.wood, -0.05, 0.055, 0.128),
-    part(new THREE.BoxGeometry(0.018, 0.11, 0.024), PROP.wood, 0.05, 0.055, 0.128),
-    part(new THREE.BoxGeometry(0.13, 0.022, 0.028), PROP.wood, 0, 0.118, 0.128),
+    part(new THREE.DodecahedronGeometry(0.16, 1), PROP.peakLow, 0, 0.06, -0.03, 0.3, 1.1, 0.8, 0.8, true),
+    part(new THREE.BoxGeometry(0.085, 0.1, 0.03), PROP.portal, 0, 0.05, 0.11),
+    part(new THREE.BoxGeometry(0.024, 0.12, 0.03), PROP.wood, -0.054, 0.06, 0.124),
+    part(new THREE.BoxGeometry(0.024, 0.12, 0.03), PROP.wood, 0.054, 0.06, 0.124),
+    part(new THREE.BoxGeometry(0.15, 0.028, 0.034), PROP.woodDark, 0, 0.126, 0.124),
+    part(new THREE.SphereGeometry(0.014, 8, 6), PROP.lamp, 0.078, 0.095, 0.14),
   ];
 }
 // Two rails 0.13 apart on sleepers, running along +z from z0 to z1.
 function rails(z0: number, z1: number) {
   const len = z1 - z0;
-  const parts = [-0.065, 0.065].map((x) => part(new THREE.BoxGeometry(0.01, 0.01, len), PROP.iron, x, 0.016, (z0 + z1) / 2));
-  for (let z = z0 + 0.03; z < z1; z += 0.06) parts.push(part(new THREE.BoxGeometry(0.17, 0.012, 0.022), PROP.wood, 0, 0.006, z));
+  const parts = [-0.065, 0.065].map((x) => part(new THREE.BoxGeometry(0.014, 0.014, len), PROP.iron, x, 0.02, (z0 + z1) / 2));
+  for (let z = z0 + 0.03; z < z1; z += 0.055) parts.push(part(new THREE.BoxGeometry(0.17, 0.014, 0.026), PROP.wood, 0, 0.007, z));
   return parts;
 }
 function cactus() {
@@ -1268,7 +1325,6 @@ export function decorate(kit: PropKit, life: Life, h: HexCell, x: number, z: num
   const put = (name: string, parts: THREE.BufferGeometry[], lx: number, lz: number, reach: number | null, rotY = rng() * Math.PI * 2, sink = 0.006) =>
     kit.add(name, placeAt(parts, x + lx, y(lx, lz) - sink, z + lz, rotY), reach === null ? null : fp(lx, lz, reach));
   const t = h.terrain;
-  const corner = dirAt(30 + 60 * L.k);
 
   if (t === "timber") {
     for (const { x: tx, z: tz, s } of L.stands) {
@@ -1310,7 +1366,7 @@ export function decorate(kit: PropKit, life: Life, h: HexCell, x: number, z: num
       life.sheep.push({ g, ox: x, oz: z, tx: x + lx, tz: z + lz, wait: rng() * 2, graze: 0, ground: (wx, wz) => sc.ground(wx - x, wz - z) });
     }
     // A hedgerow along the ridge's crest, its puffs a little uneven, with blossom.
-    const rg = L.ridge!;
+    const rg = L.ridges[0]!;
     for (let i = 0, n = Math.round(Math.hypot(rg.bx - rg.ax, rg.bz - rg.az) / 0.085); i <= n; i++) {
       const u = i / n;
       const [lx, lz] = [rg.ax + (rg.bx - rg.ax) * u, rg.az + (rg.bz - rg.az) * u];
@@ -1429,24 +1485,20 @@ export function decorate(kit: PropKit, life: Life, h: HexCell, x: number, z: num
   }
 
   if (t === "ore") {
-    // Two or three peaks leaning toward the feature's corner, the tallest in the middle.
-    const a0 = Math.atan2(corner.z, corner.x);
-    const peaks: [number, number, number][] = [[0, 0.23, 0.6 + rng() * 0.08], [0.62, 0.19, 0.42 + rng() * 0.08]];
-    if (rng() < 0.7) peaks.push([-0.62, 0.17, 0.36 + rng() * 0.06]);
-    for (const [da, r, ht] of peaks) {
-      const [lx, lz] = [Math.cos(a0 + da) * 0.66, Math.sin(a0 + da) * 0.66];
-      room.claim(lx, lz, r);
-      const peak = kit.proxy("peak", peakGeo, { prop: "peak", hex: h.id, reach: r * 1.12 });
-      peak.position.set(x + lx, y(lx, lz) - 0.02, z + lz);
+    // The peaks on their ridge, the tallest snow-capped.
+    for (const p of L.stands) {
+      const peak = kit.proxy(p.snow ? "peak-snow" : "peak", () => peakGeo(p.snow), { prop: "peak", hex: h.id, reach: p.s * 1.12 });
+      peak.position.set(x + p.x, y(p.x, p.z) - 0.03, z + p.z);
       peak.rotation.y = rng() * Math.PI * 2;
-      peak.scale.set(r, ht, r);
+      peak.scale.set(p.s, p.h!, p.s);
       peak.userData.base = peak.scale.clone();
       life.tall.push(peak);
     }
-    // The mine on the far side: the adit faces along the ring, its rails run out of it, the cart on them, the miner by it.
-    const am = a0 + Math.PI;
-    const [px, pz] = [Math.cos(am) * 0.68, Math.sin(am) * 0.68];
-    const tan = { x: -Math.sin(am), z: Math.cos(am) };
+    // The mine in the ridge's notch: the portal opens along the ring, its rails run out of it, the cart on them, the miner
+    // beside them.
+    const { x: px, z: pz, r: dir } = L.feature;
+    const am = Math.atan2(pz, px);
+    const tan = { x: -Math.sin(am) * dir, z: Math.cos(am) * dir };
     const face = Math.atan2(tan.x, tan.z);
     put("ore", portal(), px, pz, 0.16, face, 0.01);
     put("ore", rails(0.13, 0.43), px, pz, null, face, 0.004);
@@ -1455,9 +1507,9 @@ export function decorate(kit: PropKit, life: Life, h: HexCell, x: number, z: num
     room.claim(px + tan.x * 0.28, pz + tan.z * 0.28, 0.17);
     const [cx, cz] = [px + tan.x * 0.3, pz + tan.z * 0.3];
     const cart = kit.proxy("wagon", cartGeo, { prop: "wagon", hex: h.id, reach: 0.17 });
-    cart.position.set(x + cx, y(cx, cz) + 0.012, z + cz);
+    cart.position.set(x + cx, y(cx, cz) + 0.016, z + cz);
     cart.rotation.y = Math.atan2(-tan.z, tan.x);
-    const mAng = am - side3(rng) * 0.85;
+    const mAng = am + dir * 0.32;
     const [mx, mz] = [Math.cos(mAng) * 0.6, Math.sin(mAng) * 0.6];
     room.claim(mx, mz, 0.12);
     const miner = kit.proxy("miner", minerGeo, { prop: "miner", hex: h.id, reach: 0.17 });
@@ -1466,10 +1518,22 @@ export function decorate(kit: PropKit, life: Life, h: HexCell, x: number, z: num
     pick.position.set(x + mx, y(mx, mz) + 0.14, z + mz);
     miner.rotation.y = pick.rotation.y = Math.atan2(px - mx, pz - mz);
     life.oreWork.push({ cart, arm: pick, x: x + cx, z: z + cz, dx: tan.x, dz: tan.z, phase: rng() * Math.PI * 2 });
-    for (let i = 0; i < 2; i++) {
-      const r = 0.04 + rng() * 0.03;
-      const at = room.find(r, 0.45, 0.9);
-      if (at) put("ore", rock(r, PROP.peakLow), at.x, at.z, r);
+    // Rubble at the peaks' feet, where the scree runs out, and a few boulders farther off.
+    for (let i = 0, placed = 0; i < 40 && placed < 7; i++) {
+      const p = L.stands[i % L.stands.length]!;
+      const a = Math.atan2(p.z, p.x) + (rng() - 0.5) * 1.2;
+      const rad = Math.hypot(p.x, p.z) - p.s - 0.02 - rng() * 0.08;
+      const r = 0.025 + rng() * 0.03;
+      const [rx, rz] = [Math.cos(a) * rad, Math.sin(a) * rad];
+      if (!room.free(rx, rz, r, 0.8)) continue;
+      room.claim(rx, rz, r);
+      put("ore", rock(r, placed % 2 ? PROP.peakLow : PROP.scree), rx, rz, r);
+      placed++;
+    }
+    for (let i = 0; i < 3; i++) {
+      const r = 0.04 + rng() * 0.025;
+      const at = room.find(r * 1.5, 0.5, 0.86);
+      if (at) put("ore", boulder(r, PROP.peakLow), at.x, at.z, r * 1.5);
     }
   }
 
@@ -1490,4 +1554,3 @@ export function decorate(kit: PropKit, life: Life, h: HexCell, x: number, z: num
   }
 }
 
-const side3 = (rng: () => number) => (rng() < 0.5 ? -1 : 1);
