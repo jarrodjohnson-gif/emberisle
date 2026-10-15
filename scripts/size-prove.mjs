@@ -16,7 +16,8 @@ const BUDGETS = [
   // 2026-10-14 (#598): +600 B for the Water toggle, its store state and the probe; the old ceiling was 300 B away.
   { name: "index", gzipBytes: 116900 },
   // 2026-10-14 (#597): +1100 B for the diorama camera, its fit and the token pose on top of the lazy sea (182.92 kB measured).
-  { name: "IslandCanvas", gzipBytes: 183930 },
+  // 2026-10-15 (#599): +5.6 kB for the sculpted tiles and code-built props (terrain.ts; 188.80 kB measured), less the photo-texture path.
+  { name: "IslandCanvas", gzipBytes: 189500 },
   { name: "online", gzipBytes: 8000 },
   { name: "sheets", gzipBytes: 6282 },
   { name: "moments", gzipBytes: 2610 },

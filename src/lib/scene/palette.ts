@@ -11,12 +11,13 @@ export const PAINT: Record<Terrain, [string, string]> = {
   waste: ["#ecd8ab", "#c8ae81"],
 };
 
-// The side of every tile under the terrain's lip, top to bottom: sand, soil, rock (the strata of the Atoll Jelly slab).
-export const STRATA = { sand: "#ecdbb2", soil: "#b27b4b", rock: "#78665a" } as const;
+// The side of every tile under the terrain's lip, top to bottom: sand, a thin shell band, caramel soil, chocolate rock
+// (the candy strata of the Atoll Jelly slab).
+export const STRATA = { sand: "#ecdbb2", shell: "#f7f0e2", soil: "#bb7a42", rock: "#5f4234" } as const;
 
 // The props on the tiles (#599). Pines are three greens, bottom tier darkest.
 export const PROP = {
-  pine: ["#2b6b34", "#3a853d", "#56a046"],
+  pine: ["#265f30", "#2f7337", "#3a853d", "#4a9642", "#5aa348"],
   trunk: "#6b4428",
   wood: "#9b6a40",
   woodEnd: "#d9b47e",
@@ -25,6 +26,8 @@ export const PROP = {
   stone: "#a3a8ad",
   straw: "#e8c15a",
   strawEnd: "#f6dc8f",
+  strawCore: "#b98f38",
+  twine: "#8a6a3c",
   wheat: "#f4d46a",
   brick: ["#b84a2c", "#c65a36", "#a5412a"],
   rope: "#e3d1a4",
