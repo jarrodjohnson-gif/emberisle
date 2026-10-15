@@ -21,6 +21,7 @@ const map = {
   trade_offer: "trade_offer.wav",
   chat_send: "chat_send.wav",
   chat_recv: "chat_recv.wav",
+  plop: "plop.wav",
 };
 
 export function cue(name) {

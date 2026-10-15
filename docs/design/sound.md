@@ -24,6 +24,7 @@ so their message handlers play them (`tradeOffer`, `tradeClosed`, `chat`, `sendC
 | Chat sent | `chat_send` (new) | the sender |
 | Chat received | `chat_recv` (new) | other seats; silent while the chat input has focus |
 | Dice rolled, your turn, win | `dice_land`, `chip_gain`, `win` | as before |
+| A tap on open water (not a drag's stir), #616 | `plop` (new) | the tapper only (the renderer plays it) |
 
 Pieces knock when they land (`LAND_MS`, #438), not when picked. A new game does not play `wayfarer_move` (the diff only
 counts the same game's seed).
@@ -49,8 +50,9 @@ Mono, 16-bit, 22.05 kHz, peak-normalised to 29000, which is where the Kenney cli
 | `trade_offer.wav` | light double tap | 260 ms | 11510 |
 | `chat_send.wav` | tiny soft pop | 140 ms | 6218 |
 | `chat_recv.wav` | the same pop, higher | 140 ms | 6218 |
+| `plop.wav` | a soft water plop: a bloop rising 260 to 620 Hz over a short dark splash (#616) | 150 ms | 6660 |
 
-Total 38984 bytes. `server/cue.mjs` maps the same names for the host.
+Total 45644 bytes. `server/cue.mjs` maps the same names for the host.
 
 ## Proof
 
