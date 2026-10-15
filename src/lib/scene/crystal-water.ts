@@ -65,6 +65,16 @@ const CHOP_IN = [0.5, 2.5] as const;
 // Breaker foam: noise features 0.45 and 0.14 units across (2.2 and 7 cycles per unit), carried shoreward 0.5 units per second of
 // its age; a solid lip for the first 0.35 s after the crest, then lace whose threshold rises 0.17 a second until it is gone at 2.2 s.
 const FOAM = { scales: [2.2, 7], drift: 0.5, lip: 0.35, life: 2.2 } as const;
+// Touch the sea (crystal-water.md "Touch the sea"): at most `max` live splashes, the oldest replaced. Each is a crater that
+// dips `depth` and rebounds (period, decay), then `rings` ripple rings leaving `r0` out at `speed`, `gap` s apart, of height
+// `amp` x 1, 0.7, 0.4 and half-width `width`, dying by e every `ringDecay` s; a foam patch `foam` across for `foamLife` s.
+// All of it fades out over the last 40 % of `life`. A splash is not made within `minOffset` of the coast (the beach).
+export const SPLASH = {
+  max: 8, life: 1.8, depth: 0.07, radius: 0.22, period: 0.42, decay: 0.32,
+  rings: 3, r0: 0.1, speed: 1.1, gap: 0.16, amp: 0.022, width: 0.08, ringDecay: 0.75,
+  foam: 0.3, foamLife: 0.9, minOffset: 0.15, droplets: 6,
+} as const;
+const SPLASH_REACH = SPLASH.r0 + SPLASH.speed * SPLASH.life + 3 * SPLASH.width;
 const TAU = Math.PI * 2;
 const k = (l: number) => TAU / l;
 const w = (t: number) => TAU / t;
@@ -122,6 +132,43 @@ export const CAUSTIC_GLSL = /* glsl */ `
       near = min(near, d);
     }
     return 1.0 - smoothstep(0.0, 0.35, second - near);
+  }
+`;
+
+// The splashes, shared by the crystal sea, its droplets and (rings only) the simple sea; ported line for line in makeSplashes.
+// uSplash[i] is (x, z, start time, strength); a strength of 0 is an empty slot.
+export const SPLASH_GLSL = /* glsl */ `
+  uniform vec4 uSplash[${SPLASH.max}];
+  uniform float uSplashNow;
+  // Every live splash at p: x the height, yz its gradient, w how white (the rings' crests, plus the foam patch x foam).
+  vec4 splashField(vec2 p, float motion, float foam) {
+    vec4 acc = vec4(0.0);
+    for (int i = 0; i < ${SPLASH.max}; i++) {
+      vec4 s = uSplash[i];
+      float a = uSplashNow - s.z;
+      if (s.w <= 0.0 || a < 0.0 || a > ${f(SPLASH.life)}) continue;
+      vec2 dv = p - s.xy;
+      float r = length(dv);
+      if (r > ${f(SPLASH_REACH)}) continue;
+      float fade = s.w * (1.0 - smoothstep(${f(SPLASH.life * 0.6)}, ${f(SPLASH.life)}, a));
+      float h = -${f(SPLASH.depth)} * exp(-r * r / ${f(SPLASH.radius ** 2)}) * cos(${f(TAU / SPLASH.period)} * a) * exp(-a / ${f(SPLASH.decay)});
+      float dh = -2.0 * r / ${f(SPLASH.radius ** 2)} * h;
+      float white = 0.0;
+      for (int k = 0; k < ${SPLASH.rings}; k++) {
+        float ak = a - float(k) * ${f(SPLASH.gap)};
+        float u = (r - ${f(SPLASH.r0)} - ${f(SPLASH.speed)} * max(ak, 0.0)) / ${f(SPLASH.width)};
+        float e = exp(-u * u);
+        float amp = ${f(SPLASH.amp)} * (1.0 - 0.3 * float(k)) * exp(-a / ${f(SPLASH.ringDecay)}) * smoothstep(0.0, 0.08, ak);
+        h += amp * e * (1.0 - 2.0 * u * u);
+        dh -= amp * e * 2.0 * u * (3.0 - 2.0 * u * u) / ${f(SPLASH.width)};
+        white += amp / ${f(SPLASH.amp)} * max(e * (1.0 - 2.0 * u * u), 0.0);
+      }
+      acc.x += motion * fade * h;
+      acc.yz += motion * fade * dh * dv / max(r, 1e-4);
+      float spot = (1.0 - smoothstep(${f(SPLASH.foam * 0.4)}, ${f(SPLASH.foam)}, r)) * (1.0 - smoothstep(0.0, ${f(SPLASH.foamLife)}, a));
+      acc.w += motion * fade * white * 0.6 + foam * s.w * spot;
+    }
+    return acc;
   }
 `;
 
@@ -274,8 +321,11 @@ const inward = (c: Coast[number] | null) => {
 /** A linear colour, components above 1 allowed (pre-tonemap values). */
 const lin = (r: number, g: number, b: number) => new THREE.Color().setRGB(r, g, b, THREE.LinearSRGBColorSpace);
 
-/** Uniforms the renderer drives: the clock, motion (0 under reduced motion) and the radius band where the sea meets the paper. */
-export type SeaUniforms = { uTime: Uniform; uMotion: Uniform; uFade: { value: THREE.Vector2 } };
+/**
+ * Uniforms the renderer drives: the clock, motion (0 under reduced motion), the radius band where the sea meets the paper, and
+ * the splashes with their own clock (it runs under reduced motion too, so the foam patch fades).
+ */
+export type SeaUniforms = { uTime: Uniform; uMotion: Uniform; uFade: { value: THREE.Vector2 } } & SplashUniforms;
 
 /**
  * The sea surface: Gerstner swell, chop and breakers over a refraction of the scene beneath it. The renderer draws the scene
@@ -330,8 +380,10 @@ export function makeCrystalSea(coast: Coast, shared: SeaUniforms) {
       varying vec3 vWorld;
       varying vec3 vView;
       ${WAVE_GLSL}
+      ${SPLASH_GLSL}
       void main() {
         vec3 p = position + seaOffset(position.xz, aCoast, aInward, aTravel, aDepth, vWaveN);
+        p.y += splashField(position.xz, uMotion, 0.0).x * beachTaper(aCoast);
         vCoast = aCoast;
         vInward = aInward;
         vTravel = aTravel;
@@ -371,6 +423,7 @@ export function makeCrystalSea(coast: Coast, shared: SeaUniforms) {
       varying vec3 vWorld;
       varying vec3 vView;
       ${WAVE_GLSL}
+      ${SPLASH_GLSL}
       float sceneZ(vec2 uv) {
         float d = texture2D(uUnderDepth, uv).x;
         return isOrthographic ? orthographicDepthToViewZ(d, uNear, uFar) : perspectiveDepthToViewZ(d, uNear, uFar);
@@ -380,7 +433,9 @@ export function makeCrystalSea(coast: Coast, shared: SeaUniforms) {
         vec2 p = vRest;
         float a = p.x * 0.8 + uTime * 0.17, b = p.y * 0.6 - uTime * 0.13;
         vec2 g = 0.01 * uMotion * vec2(0.8 * cos(a) * sin(b), 0.6 * sin(a) * cos(b));
-        vec3 N = normalize(vWaveN + vec3(-g.x, 0.0, -g.y));
+        // The splashes' craters and rings, drawn to the pixel (the vertices carry only their broad height).
+        vec4 sp = splashField(vRest, uMotion, 1.0);
+        vec3 N = normalize(vWaveN + vec3(-g.x - sp.y, 0.0, -g.y - sp.z));
         vec3 V = isOrthographic ? normalize(vec3(viewMatrix[0][2], viewMatrix[1][2], viewMatrix[2][2])) : normalize(cameraPosition - vWorld);
         // Refraction: the scene below, shifted along the surface slope, never picking up something in front of the water.
         vec2 uv = gl_FragCoord.xy / uResolution;
@@ -419,6 +474,7 @@ export function makeCrystalSea(coast: Coast, shared: SeaUniforms) {
           return;
         #endif
         c = mix(c, vec3(2.6, 2.7, 2.65), uMotion * foam * 0.9);
+        c = mix(c, vec3(2.6, 2.7, 2.65), clamp(sp.w * (0.75 + 0.25 * vnoise(vRest * 9.0 + uTime)), 0.0, 1.0) * 0.85);
         c = mix(c, uPaper, smoothstep(uFade.x, uFade.y, length(vRest)));
         gl_FragColor = vec4(c, 1.0);
       }
@@ -426,6 +482,8 @@ export function makeCrystalSea(coast: Coast, shared: SeaUniforms) {
   });
   const mesh = new THREE.Mesh(geo, mat);
   mesh.name = "crystal-sea";
+  // The droplets ride with the sea, so the refraction's under pass leaves them out with it.
+  mesh.add(makeDroplets(mat.uniforms as unknown as SeaUniforms & { uResolution: { value: THREE.Vector2 } }));
   return mesh;
 }
 
@@ -495,8 +553,7 @@ export function makeWash(coast: Coast, { uTime, uMotion }: SeaUniforms) {
  * (the height is taken at the rest point, not the displaced one). `brk` is how much the wave is breaking there, `group` the
  * height of the swells' group (the set envelope).
  */
-export function makeSwell(coast: Coast) {
-  const n = coast.length;
+export function makeSwell(coast: Coast, splash?: Splashes) {
   const smooth = (a: number, b: number, x: number) => THREE.MathUtils.smoothstep(x, a, b);
   const [b0, b1] = SHOAL.blend;
   const blend = (o: number) => 1 - smooth(b0, b1, o);
@@ -506,16 +563,7 @@ export function makeSwell(coast: Coast) {
   };
   const green = (d: number) => (SHOAL.deep / Math.max(d, SHOAL.minDepth)) ** 0.25;
   return (x: number, z: number, t: number) => {
-    // Distance to the nearest coast edge, and the direction back to it.
-    let o = Infinity, ix = 0, iz = 0;
-    for (let i = 0; i < n; i++) {
-      const a = coast[i]!, b = coast[(i + 1) % n]!;
-      const dx = b.x - a.x, dz = b.z - a.z;
-      const u = Math.max(0, Math.min(1, ((x - a.x) * dx + (z - a.z) * dz) / (dx * dx + dz * dz)));
-      const px = a.x + dx * u, pz = a.z + dz * u;
-      const d = Math.hypot(x - px, z - pz);
-      if (d < o) [o, ix, iz] = [d, (px - x) / (d || 1), (pz - z) / (d || 1)];
-    }
+    const { o, ix, iz } = nearestCoast(coast, x, z);
     const depth = depthAt(o), tau = travelAt(o), s = blend(o), m = smooth(0, 0.45, o);
     const c = celerity(Math.max(depth, SHOAL.minDepth));
     const r = Math.hypot(x, z) || 1;
@@ -538,8 +586,150 @@ export function makeSwell(coast: Coast) {
     }
     const chop = m * (1 - smooth(12, 20, o)) * smooth(CHOP_IN[0], CHOP_IN[1], o) * gust(x, z, t);
     for (const wv of [chop1, chop2]) add(k(wv.length) * (wv.dir[0] * x + wv.dir[1] * z) - w(wv.period) * t, k(wv.length) * wv.dir[0], k(wv.length) * wv.dir[1], wv.amp * chop);
+    if (splash) {
+      const sp = splash.field(x, z, t);
+      y += sp.y * m;
+      gx += sp.gx * m;
+      gz += sp.gz * m;
+    }
     return { y, gx, gz, brk, group };
   };
+}
+
+/** Distance to the nearest coast edge, the direction back to it, and whether the point is off the island (out of the loop). */
+export function nearestCoast(coast: Coast, x: number, z: number) {
+  const n = coast.length;
+  let o = Infinity, ix = 0, iz = 0, px = 0, pz = 0;
+  for (let i = 0; i < n; i++) {
+    const a = coast[i]!, b = coast[(i + 1) % n]!;
+    const dx = b.x - a.x, dz = b.z - a.z;
+    const u = Math.max(0, Math.min(1, ((x - a.x) * dx + (z - a.z) * dz) / (dx * dx + dz * dz)));
+    const qx = a.x + dx * u, qz = a.z + dz * u;
+    const d = Math.hypot(x - qx, z - qz);
+    if (d < o) [o, ix, iz, px, pz] = [d, (qx - x) / (d || 1), (qz - z) / (d || 1), qx, qz];
+  }
+  // Off the island when the way back to the coast points toward the island's middle.
+  return { o, ix, iz, offshore: ix * px + iz * pz < 0 };
+}
+
+type SplashUniforms = { uSplash: { value: THREE.Vector4[] }; uSplashNow: Uniform };
+export type Splashes = ReturnType<typeof makeSplashes>;
+
+/**
+ * The live splashes: a small uniform array (SPLASH.max slots, the oldest replaced) and its CPU twin `field`, line for line
+ * from SPLASH_GLSL at full motion, so the boats and the surfaced visitors bob when a ring passes.
+ */
+export function makeSplashes() {
+  const slots = Array.from({ length: SPLASH.max }, () => new THREE.Vector4(0, 0, -1e3, 0));
+  const uniforms: SplashUniforms = { uSplash: { value: slots }, uSplashNow: { value: 0 } };
+  const alive = (s: THREE.Vector4, t: number) => s.w > 0 && t - s.z >= 0 && t - s.z <= SPLASH.life;
+  const smooth = (a: number, b: number, x: number) => THREE.MathUtils.smoothstep(x, a, b);
+  const R2 = SPLASH.radius ** 2;
+  return {
+    uniforms,
+    /** A splash at (x, z) of `strength` (1 a tap, less for a drag's trail) starting at clock time t. */
+    add(x: number, z: number, strength: number, t: number) {
+      const slot = slots.find((s) => !alive(s, t)) ?? slots.reduce((a, b) => (b.z < a.z ? b : a));
+      slot.set(x, z, t, strength);
+    },
+    step(t: number) {
+      uniforms.uSplashNow.value = t;
+    },
+    live(t: number) {
+      return slots.filter((s) => alive(s, t)).length;
+    },
+    field(x: number, z: number, t: number) {
+      let y = 0, gx = 0, gz = 0;
+      for (const s of slots) {
+        const a = t - s.z;
+        if (s.w <= 0 || a < 0 || a > SPLASH.life) continue;
+        const dx = x - s.x, dz = z - s.y;
+        const r = Math.hypot(dx, dz);
+        if (r > SPLASH_REACH) continue;
+        const fade = s.w * (1 - smooth(SPLASH.life * 0.6, SPLASH.life, a));
+        let h = -SPLASH.depth * Math.exp(-(r * r) / R2) * Math.cos((TAU / SPLASH.period) * a) * Math.exp(-a / SPLASH.decay);
+        let dh = ((-2 * r) / R2) * h;
+        for (let k = 0; k < SPLASH.rings; k++) {
+          const ak = a - k * SPLASH.gap;
+          const u = (r - SPLASH.r0 - SPLASH.speed * Math.max(ak, 0)) / SPLASH.width;
+          const e = Math.exp(-u * u);
+          const amp = SPLASH.amp * (1 - 0.3 * k) * Math.exp(-a / SPLASH.ringDecay) * smooth(0, 0.08, ak);
+          h += amp * e * (1 - 2 * u * u);
+          dh -= (amp * e * 2 * u * (3 - 2 * u * u)) / SPLASH.width;
+        }
+        y += fade * h;
+        gx += (fade * dh * dx) / Math.max(r, 1e-4);
+        gz += (fade * dh * dz) / Math.max(r, 1e-4);
+      }
+      return { y, gx, gz };
+    },
+  };
+}
+
+/**
+ * A few droplets thrown up by each tap's splash (strength 0.6 and up): SPLASH.droplets points per slot, one draw call,
+ * flown on the GPU from the slot's start time. None under reduced motion.
+ */
+function makeDroplets(u: SeaUniforms & { uResolution: { value: THREE.Vector2 } }) {
+  const rng = mulberry32(hashStr("emberisle-droplets"));
+  const slot: number[] = [], vel: number[] = [];
+  for (let i = 0; i < SPLASH.max; i++) {
+    for (let j = 0; j < SPLASH.droplets; j++) {
+      const a = ((j + rng() * 0.6) / SPLASH.droplets) * TAU, out = 0.3 + rng() * 0.25;
+      slot.push(i);
+      vel.push(Math.cos(a) * out, 0.9 + rng() * 0.35, Math.sin(a) * out);
+    }
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.Float32BufferAttribute(new Float32Array(slot.length * 3), 3));
+  geo.setAttribute("aSlot", new THREE.Float32BufferAttribute(slot, 1));
+  geo.setAttribute("aVel", new THREE.Float32BufferAttribute(vel, 3));
+  const mat = new THREE.ShaderMaterial({
+    transparent: true,
+    depthWrite: false,
+    uniforms: { uSplash: u.uSplash, uSplashNow: u.uSplashNow, uMotion: u.uMotion, uResolution: u.uResolution },
+    vertexShader: /* glsl */ `
+      uniform vec4 uSplash[${SPLASH.max}];
+      uniform float uSplashNow;
+      uniform float uMotion;
+      uniform vec2 uResolution;
+      attribute float aSlot;
+      attribute vec3 aVel;
+      varying float vAlpha;
+      void main() {
+        vec4 s = uSplash[int(aSlot)];
+        float a = uSplashNow - s.z;
+        // Thrown from the crater, falling at 4 units/s², gone at 0.7 s or back under the surface.
+        vec3 p = vec3(s.x, 0.0, s.y) + aVel * a - vec3(0.0, 2.0 * a * a, 0.0);
+        float on = uMotion * step(0.6, s.w) * step(0.0, a) * step(a, 0.7) * step(0.0, p.y);
+        vAlpha = on * (1.0 - smoothstep(0.4, 0.7, a));
+        vec4 mv = modelViewMatrix * vec4(p, 1.0);
+        gl_Position = projectionMatrix * mv;
+        gl_PointSize = on * max(1.0, 0.035 * projectionMatrix[1][1] * 0.5 * uResolution.y / (isOrthographic ? 1.0 : -mv.z));
+      }
+    `,
+    fragmentShader: /* glsl */ `
+      varying float vAlpha;
+      void main() {
+        vec2 c = gl_PointCoord - 0.5;
+        float d = dot(c, c);
+        if (d > 0.25 || vAlpha <= 0.0) discard;
+        gl_FragColor = vec4(2.4, 2.6, 2.6, vAlpha * (1.0 - smoothstep(0.1, 0.25, d)));
+      }
+    `,
+  });
+  const points = new THREE.Points(geo, mat);
+  points.name = "droplets";
+  points.frustumCulled = false;
+  return points;
+}
+
+/** The simple sea's splash: the rings alone, drawn as lighter lines in its fragment shader. No crater, foam or droplets. */
+export function addSplashRings(mat: THREE.ShaderMaterial, u: SeaUniforms) {
+  Object.assign(mat.uniforms, { uSplash: u.uSplash, uSplashNow: u.uSplashNow, uMotion: u.uMotion });
+  mat.fragmentShader = mat.fragmentShader
+    .replace("void main() {", `uniform float uMotion;\n${SPLASH_GLSL}\nvoid main() {`)
+    .replace("c = mix(c, uFog", "c = mix(c, vec3(0.8, 0.98, 0.95), clamp(splashField(vXZ, uMotion, 0.0).w * 1.6, 0.0, 1.0) * 0.8);\n        c = mix(c, uFog");
 }
 
 /** The sea floor: sand under the shallows grading to teal sand, with soft caustic light drifting over it. */
