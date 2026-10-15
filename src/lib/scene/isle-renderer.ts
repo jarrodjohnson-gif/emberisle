@@ -1037,6 +1037,7 @@ export class IsleRenderer {
     this.stepLandings(now, calm);
     if (this.relayout > 0) {
       this.relayout--;
+      this.refitDue = true;
     }
     if (this.refitDue) this.refit(false);
     if (calm && this.walk) {
