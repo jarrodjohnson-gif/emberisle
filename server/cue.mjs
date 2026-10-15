@@ -17,6 +17,10 @@ const map = {
   trade_yes: "confirmation_001.wav",
   trade_no: "error_002.wav",
   win: "pluck_001.wav",
+  wayfarer_move: "wayfarer_move.wav",
+  trade_offer: "trade_offer.wav",
+  chat_send: "chat_send.wav",
+  chat_recv: "chat_recv.wav",
   plop: "plop.wav",
 };
 

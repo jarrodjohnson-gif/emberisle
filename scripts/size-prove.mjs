@@ -24,9 +24,9 @@ const BUDGETS = [
   { name: "online", gzipBytes: 8000 },
   { name: "sheets", gzipBytes: 6282 },
   { name: "moments", gzipBytes: 2610 },
-  // The lucide Minus icon, which Chat (online) and TradePanel (sheets) both use and nothing in the index does: rolldown
-  // gives a module shared by two lazy chunks a chunk of its own. If the sharing ends, so does this chunk; drop the line.
-  { name: "minus", gzipBytes: 500 },
+  // 2026-10-14 (#611): the lobby and win screen share their target selector; rolldown coalesces the shared Minus icon here too.
+  // 0.65 kB at introduction, with a 0.75 kB ceiling; replaces the former minus-only chunk.
+  { name: "VictoryTargetSelect", gzipBytes: 750 },
 ];
 
 let files;

@@ -327,6 +327,11 @@ try {
   // #425: Leave plays click_001 once (a hotseat table has no confirm popover, so it goes straight to the title).
   // #442: Leave table is a row of the table menu; the menu's own open click is not counted.
   await page.getByRole("button", { name: "Table menu" }).click();
+  // Clips start 150 ms apart (#609): let the tray's Escape and the menu's open click start before counting.
+  await page.waitForFunction(() => {
+    const n = window.__plays.length;
+    return new Promise((r) => setTimeout(() => r(window.__plays.length === n), 400));
+  }, null, { timeout: 4000 });
   const playsBeforeLeave = await page.evaluate(() => window.__plays.length);
   await page.getByRole("button", { name: "Leave table" }).click();
   await page.waitForFunction(() => !window.__emberisle.getState().state, null, { timeout: STEP_MS });

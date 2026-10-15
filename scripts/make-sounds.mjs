@@ -1,4 +1,4 @@
-// Synthesises the table clips Kenney's set lacks into public/audio/ (docs/design/sound.md "The generator").
+// #609, #616: synthesises the table clips Kenney's set lacks into public/audio/ (docs/design/sound.md "The generator").
 // Plain sine and filtered noise, a fixed noise seed: the same bytes every run, no sample taken from anywhere, no licence
 // to carry. Mono, 16-bit, 22.05 kHz, each peak-normalised to the Kenney clips' level (about 29000 of 32767).
 // Run: node scripts/make-sounds.mjs
@@ -16,6 +16,7 @@ const noise = () => {
 
 // One clip is a sum of voices; a voice is a function of time in seconds, already enveloped.
 const env = (t, at, decay) => (t < at ? 0 : Math.exp(-(t - at) / decay) * Math.min(1, (t - at) / 0.002));
+const tone = (hz, at, decay, gain = 1) => (t) => gain * Math.sin(2 * Math.PI * hz * Math.max(0, t - at)) * env(t, at, decay);
 // A one-pole low-passed noise burst: `k` near 0 is dark, near 1 is bright.
 const hiss = (at, decay, k, gain = 1) => {
   let y = 0;
@@ -36,6 +37,13 @@ const slide = (from, to, glide, at, decay, gain = 1) => {
 };
 
 const CLIPS = {
+  // Low thud, then a short rustle.
+  wayfarer_move: { ms: 340, voices: [tone(95, 0, 0.05, 1), tone(60, 0, 0.07, 0.8), hiss(0.09, 0.05, 0.35, 0.9)] },
+  // Light double tap.
+  trade_offer: { ms: 260, voices: [tone(880, 0, 0.018, 1), tone(1320, 0, 0.012, 0.4), tone(1175, 0.11, 0.02, 1), tone(1760, 0.11, 0.012, 0.4)] },
+  // Tiny soft pop, then the same a little higher.
+  chat_send: { ms: 140, voices: [tone(520, 0, 0.022, 1), tone(1040, 0, 0.012, 0.3)] },
+  chat_recv: { ms: 140, voices: [tone(700, 0, 0.022, 1), tone(1400, 0, 0.012, 0.3)] },
   // #616: a soft water plop for a tap on the sea, a rising bloop over a short dark splash.
   plop: { ms: 150, voices: [slide(260, 620, 0.03, 0, 0.045, 1), hiss(0.004, 0.03, 0.12, 0.35)] },
 };
