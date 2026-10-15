@@ -105,7 +105,7 @@ export function Lobby() {
           data-testid="lobby-actions"
           className={cn(
             "mt-3 flex shrink-0 flex-col gap-2 sticky bottom-0 z-10 bg-surface",
-            landscape && "col-start-2 row-start-2 justify-end gap-1",
+            landscape && "col-start-2 row-start-2 mt-1 justify-end gap-1",
             sheet &&
               "sticky -bottom-5 z-10 -mx-5 -mb-5 bg-surface px-5 pb-5 pt-2 before:pointer-events-none before:absolute before:inset-x-0 before:-top-6 before:h-6 before:bg-gradient-to-t before:from-surface before:to-transparent",
           )}
