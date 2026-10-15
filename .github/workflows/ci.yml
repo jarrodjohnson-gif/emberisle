@@ -132,6 +132,8 @@ jobs:
       - if: matrix.suite == 'flows'
         run: npm run wayfarer-prove
       - if: matrix.suite == 'flows'
+        run: npm run sounds-prove
+      - if: matrix.suite == 'flows'
         run: npm run tokens-prove
       - if: matrix.suite == 'flows'
         run: npm run pieces-prove
@@ -155,6 +157,8 @@ jobs:
         run: npm run howto-prove
       - if: matrix.suite == 'flows'
         run: npm run title-prove
+      - if: matrix.suite == 'flows'
+        run: npm run victory-target-prove
       - if: matrix.suite == 'flows'
         run: npm run watch-ui-prove
       - if: matrix.suite == 'flows'

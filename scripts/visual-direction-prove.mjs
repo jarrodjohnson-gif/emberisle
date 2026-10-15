@@ -121,15 +121,16 @@ try {
         const g=window.__emberisle, st=structuredClone(g.getState().state);
         st.players[0].resources.wool++; st.seq++; g.setState({state:st});
       });
-      await page.getByTestId('gain-float').waitFor();
+      // Several goods may float at once (the crafted hand's own floats can still be up), so any one float satisfies the wait.
+      await page.getByTestId('gain-float').first().waitFor();
       const cues=await page.evaluate(()=>[...document.querySelectorAll('[data-testid="gain-float"], [data-testid="resource-flash"]')].map(e=>({animation:getComputedStyle(e).animationName, opacity:getComputedStyle(e).opacity})));
       assert.ok(cues.every(c=>c.animation==='none'&&c.opacity==='1'), 'reduced motion retains fully static readable gain information');
       const a=await page.evaluate(()=>window.__isle.oreWork.map(w=>[w.cart.position.z,w.arm.rotation.z]));
       await page.waitForTimeout(1700);
       const b=await page.evaluate(()=>window.__isle.oreWork.map(w=>[w.cart.position.z,w.arm.rotation.z]));
       assert.deepEqual(b,a,'reduced motion freezes wagons and miners');
-      assert.ok(await page.getByTestId('gain-float').isVisible(),'gain still visible after 1700ms');
-      await page.getByTestId('gain-float').waitFor({state:'detached'});
+      assert.ok(await page.getByTestId('gain-float').first().isVisible(),'gain still visible after 1700ms');
+      await page.waitForFunction(() => !document.querySelector('[data-testid="gain-float"]'));
     }
     if (phone && !reduced) {
       await page.evaluate(async () => {

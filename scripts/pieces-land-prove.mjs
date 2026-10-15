@@ -237,6 +237,11 @@ try {
       };
     });
     await toMySetup(page);
+    // Clips start 150 ms apart (#609) and the bots' setup knocks were just queued, so let them drain before timing ours.
+    await page.waitForFunction(() => {
+      const n = window.__plays.length;
+      return new Promise((r) => setTimeout(() => r(window.__plays.length === n), 400));
+    }, null, { timeout: 4000 });
     const o = await placeOutpost(page);
     assert.equal(o.samples, null, "reduced motion: the outpost is landing");
     assert.ok(o.built && o.built.y === o.built.restY, `reduced motion: built off rest ${JSON.stringify(o.built)}`);

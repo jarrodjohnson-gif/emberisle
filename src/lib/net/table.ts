@@ -1,5 +1,5 @@
 // The browser (or a Node proof) talking to server/host.mjs. Design: docs/design/online-client.md.
-import type { Action, GameState, Resource } from "@/lib/game/types";
+import type { Action, GameState, Resource, VictoryTarget } from "@/lib/game/types";
 import { PROTO } from "@/lib/net/proto";
 
 export interface Seat {
@@ -65,9 +65,9 @@ export interface TableEvents {
   // A watcher's welcome (docs/design/spectator.md) has `spectator: true` and no `you`, `host` or `secret`. `proto` is the
   // host's wire protocol (G2): newer than PROTO means this page is out of date.
   // `holdMs`/`lobbyHoldMs`: how long the host holds this seat after a drop, in a game and in the lobby (G7).
-  welcome(msg: { proto?: number; code: string; you?: string; host?: boolean; chat?: ChatLine[]; secret?: string; spectator?: true; holdMs?: number; lobbyHoldMs?: number }): void;
+  welcome(msg: { proto?: number; code: string; you?: string; host?: boolean; chat?: ChatLine[]; secret?: string; spectator?: true; holdMs?: number; lobbyHoldMs?: number; victoryTarget?: VictoryTarget }): void;
   // `watching`: how many spectators the table has (#347).
-  seats(msg: { code: string; seats: Seat[] | PeekSeat[]; watching?: number }): void;
+  seats(msg: { code: string; seats: Seat[] | PeekSeat[]; watching?: number; victoryTarget?: VictoryTarget }): void;
   // `you` is null on a watcher's state. `turnDeadline` is the host's clock (epoch ms) for the seat `turnPlayer`;
   // `serverNow` is the host's clock as it sent this.
   state(msg: { you: string | null; game: GameState; legal: Legal; actionStamp?: ActionStamp; turnDeadline?: number | null; turnPlayer?: string | null; serverNow?: number }): void;
@@ -104,6 +104,7 @@ export interface TableClient {
   drop(): void;
   ready(value: boolean): void;
   start(): void;
+  setVictoryTarget(value: VictoryTarget): void;
   // A rematch at the same table (#266). Host only, once the game is over.
   again(): void;
   act(action: Action): boolean;
@@ -276,7 +277,7 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
     switch (msg.type) {
       case "welcome": {
         stamp = null;
-        const m = msg as { proto?: number; code: string; you?: string; host?: boolean; chat?: ChatLine[]; secret?: string; spectator?: true; holdMs?: number; lobbyHoldMs?: number };
+        const m = msg as { proto?: number; code: string; you?: string; host?: boolean; chat?: ChatLine[]; secret?: string; spectator?: true; holdMs?: number; lobbyHoldMs?: number; victoryTarget?: VictoryTarget };
         if (typeof m.secret === "string") seat = { code: m.code, secret: m.secret };
         if (typeof m.holdMs === "number" && typeof m.lobbyHoldMs === "number") hold = { game: m.holdMs, lobby: m.lobbyHoldMs };
         rejoining = false;
@@ -351,6 +352,7 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
     },
     ready: (value) => send({ type: "ready", value }),
     start: () => send({ type: "start" }),
+    setVictoryTarget: (value) => send({ type: "setVictoryTarget", value }),
     again: () => send({ type: "again" }),
     act: (action) => {
       const intent = toIntent(action);
