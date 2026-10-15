@@ -198,7 +198,7 @@ for (const [pid, n] of owing) {
   const halved = await x.next("state", (m) => m.game.seq > owed.game.seq && !(m.game.discardNeeded[pid] > 0));
   const after = handOf(halved, pid);
   if (after !== before - n) fail("the idle hand was halved", { pid, before, n, after });
-  const discardLine = `Bot discarded for ${x.name} (${n}).`;
+  const discardLine = `${x.name} discards ${n} goods.`;
   if (halved.game.log.filter((line) => line === discardLine).length !== 1) fail("the discard action is logged once", { logs: x.logs.slice(-8), game: halved.game.log.slice(-8) });
   await stateBarrier(all, halved.game.seq);
   await Promise.all(all.map((seat) => seat.logs.includes(discardLine) ? Promise.resolve() : seat.next("log", (m) => m.text === discardLine)));
@@ -209,7 +209,9 @@ for (const [pid, n] of owing) {
 const roller = byPid[owed.game.current];
 const robbed = await roller.next("state", (m) => m.game.seq > owed.game.seq && m.game.phase === "main" && m.game.current === roller.state.you, TURN + 1000);
 const goods = handOf(robbed, roller.state.you);
-const recoveryMove = robbed.game.log.filter((line) => line.startsWith(`Bot moved the Wayfarer for ${roller.name}`));
+let overlap = Math.min(owed.game.log.length, robbed.game.log.length);
+while (overlap && !owed.game.log.slice(-overlap).every((line, i) => line === robbed.game.log[i])) overlap--;
+const recoveryMove = robbed.game.log.slice(overlap).filter((line) => line.startsWith(`${roller.name} moves the wayfarer —`));
 if (recoveryMove.length !== 1 || recoveryMove[0].includes("steals a card from") || recoveryMove[0].includes("sends the wayfarer")) fail("connected timeout wayfarer is one public action line", robbed.game.log.slice(-8));
 await stateBarrier(all, robbed.game.seq);
 await Promise.all(all.map((seat) => seat.logs.includes(recoveryMove[0]) ? Promise.resolve() : seat.next("log", (m) => m.text === recoveryMove[0])));

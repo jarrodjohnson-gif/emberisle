@@ -122,6 +122,148 @@ export function fitOrtho(cssW: number, cssH: number, insets: Insets, lean = 0): 
   };
 }
 
+// The diorama view (#597), the default in play on a landscape canvas: a perspective camera 38° above the horizon (polar
+// 52°), turned 20° off the island's north, looking at cap level over the island's centre. The lens is shifted so the island
+// sits in the HUD hole, and the focal length gives DIORAMA_FOV across the hole's height; the fit is the distance at which
+// the coast spans COAST_FILL of the hole on its limiting axis, or, if that would push a dock or a tree top past the hole's
+// edge, the distance that just holds them. Orbit and zoom work as in the overhead view, around the island's centre.
+export type PlayView = "diorama" | "overhead";
+export const DIORAMA_POLAR = (52 * Math.PI) / 180;
+export const DIORAMA_AZIMUTH = (20 * Math.PI) / 180;
+export const DIORAMA_FOV = (24 * Math.PI) / 180;
+// How far the docks' piers and boats reach past a coast corner, in world units.
+const DOCK_REACH = 0.7;
+const COAST_FILL = 0.94;
+
+// The view in play when the player has not chosen one: the diorama on a landscape canvas at least DIORAMA_MIN_WIDTH wide,
+// overhead otherwise. Upright, the width-bound island is small and a tilt would crowd its far corners; on a sideways phone
+// the tokens, held to 38 % of a hex, read under the 11 px numeral floor in the diorama (docs/design/tokens.md "Angle").
+export const DIORAMA_MIN_WIDTH = 900;
+export function defaultView(cssW: number, cssH: number): PlayView {
+  return cssH > cssW || cssW < DIORAMA_MIN_WIDTH ? "overhead" : "diorama";
+}
+
+// The island's coast corners (19 hexes, |q|,|r|,|s| <= 2, pointy-top at HEX_SIZE 1.12): a corner shared by fewer than three
+// hexes. Inlined from src/lib/game/hex.ts so this file stays importable by the node proofs. (mx, mz) is the renderer's coast
+// miter (coastLoop): away from the mean of the corner's hexes' centres, the bisector of its two coast edges' normals, scaled
+// by 1 / cos 30° so an offset along it keeps that distance from both edges.
+const COAST: { x: number; z: number; mx: number; mz: number }[] = (() => {
+  const size = 1.12;
+  const seen = new Map<string, { x: number; z: number; n: number; sx: number; sz: number }>();
+  for (let q = -2; q <= 2; q++) {
+    for (let r = Math.max(-2, -q - 2); r <= Math.min(2, -q + 2); r++) {
+      const cx = size * Math.sqrt(3) * (q + r / 2);
+      const cz = size * 1.5 * r;
+      for (let i = 0; i < 6; i++) {
+        const a = (Math.PI / 180) * (60 * i - 30);
+        const x = cx + size * Math.cos(a);
+        const z = cz + size * Math.sin(a);
+        const k = `${Math.round(x * 1000)},${Math.round(z * 1000)}`;
+        const v = seen.get(k) ?? { x, z, n: 0, sx: 0, sz: 0 };
+        v.n++;
+        v.sx += cx;
+        v.sz += cz;
+        seen.set(k, v);
+      }
+    }
+  }
+  return [...seen.values()]
+    .filter((v) => v.n < 3)
+    .map(({ x, z, n, sx, sz }) => {
+      const [dx, dz] = [x - sx / n, z - sz / n];
+      const k = 1 / Math.hypot(dx, dz) / Math.cos(Math.PI / 6);
+      return { x, z, mx: dx * k, mz: dz * k };
+    });
+})();
+
+// The centres of the outer ring's 12 hexes.
+const OUTER_RING: { x: number; z: number }[] = [];
+for (let q = -2; q <= 2; q++) {
+  for (let r = Math.max(-2, -q - 2); r <= Math.min(2, -q + 2); r++) {
+    if (Math.max(Math.abs(q), Math.abs(r), Math.abs(q + r)) === 2) OUTER_RING.push({ x: 1.12 * Math.sqrt(3) * (q + r / 2), z: 1.12 * 1.5 * r });
+  }
+}
+
+// What the diorama fit measures: each coast corner at cap level, and (held inside the hole) a dock's reach past it at the
+// waterline and the tallest prop's top wherever one can stand on the outer ring: up to 0.86 from its hex's centre
+// (decorate's tree ring) and LEAN_RISE over cap level.
+const COAST_POINTS: [number, number, number][] = COAST.map(({ x, z }) => [x, CAP_LEVEL, z]);
+const DIORAMA_POINTS: [number, number, number][] = [
+  ...COAST.flatMap(({ x, z, mx, mz }) => [
+    [x, CAP_LEVEL, z],
+    [x + mx * DOCK_REACH, 0.1, z + mz * DOCK_REACH],
+  ] as [number, number, number][]),
+  ...OUTER_RING.flatMap(({ x, z }) =>
+    Array.from({ length: 12 }, (_, i) => [x + 0.86 * Math.cos((i * Math.PI) / 6), CAP_LEVEL + LEAN_RISE, z + 0.86 * Math.sin((i * Math.PI) / 6)] as [number, number, number]),
+  ),
+];
+
+// focal: px per unit of tan at the lens; dist: the eye's distance from the look-at point at zoom 1; cx, cy: where the lens
+// axis meets the canvas, in CSS px from its top left.
+export type DioramaFit = { focal: number; dist: number; cx: number; cy: number };
+
+// Where a world point lands on the canvas, in CSS px, for a diorama eye `dist` from (0, CAP_LEVEL, 0) at polar and azimuth
+// (three's Spherical: +Y up, azimuth from +Z toward +X). `depth` is along the lens axis.
+export function dioramaProject(f: DioramaFit, polar: number, azimuth: number, x: number, y: number, z: number, dist = f.dist) {
+  const ex = Math.sin(polar) * Math.sin(azimuth);
+  const ey = Math.cos(polar);
+  const ez = Math.sin(polar) * Math.cos(azimuth);
+  const rl = Math.hypot(ez, ex);
+  const [rx, rz] = [ez / rl, -ex / rl];
+  // up = e x right
+  const ux = ey * rz;
+  const uy = ez * rx - ex * rz;
+  const uz = -ey * rx;
+  const vy = y - CAP_LEVEL;
+  const xc = x * rx + z * rz;
+  const yc = x * ux + vy * uy + z * uz;
+  const depth = dist - (x * ex + vy * ey + z * ez);
+  return { x: f.cx + (f.focal * xc) / depth, y: f.cy - (f.focal * yc) / depth, depth };
+}
+
+export function fitDiorama(cssW: number, cssH: number, insets: Insets, polar = DIORAMA_POLAR, azimuth = DIORAMA_AZIMUTH): DioramaFit {
+  const holeW = Math.max(1, cssW - insets.left - insets.right);
+  const holeH = Math.max(1, cssH - insets.top - insets.bottom);
+  const focal = holeH / 2 / Math.tan(DIORAMA_FOV / 2);
+  const span = (dist: number, pts = DIORAMA_POINTS) => {
+    const lens = { focal, dist, cx: 0, cy: 0 };
+    let [l, r, t, b] = [Infinity, -Infinity, Infinity, -Infinity];
+    for (const [x, y, z] of pts) {
+      const p = dioramaProject(lens, polar, azimuth, x, y, z);
+      [l, r, t, b] = [Math.min(l, p.x), Math.max(r, p.x), Math.min(t, p.y), Math.max(b, p.y)];
+    }
+    return { l, r, t, b, over: Math.max((r - l) / holeW, (b - t) / holeH) };
+  };
+  // The island's size on screen falls as the eye backs off: bisect for the distance where a span just fills `fill`.
+  const fit = (fill: number, pts?: [number, number, number][]) => {
+    let lo = 8;
+    let hi = 400;
+    for (let i = 0; i < 60; i++) {
+      const mid = (lo + hi) / 2;
+      if (span(mid, pts).over > fill) lo = mid;
+      else hi = mid;
+    }
+    return hi;
+  };
+  const dist = Math.max(fit(COAST_FILL, COAST_POINTS), fit(1));
+  const s = span(dist);
+  return {
+    focal,
+    dist,
+    cx: insets.left + holeW / 2 - (s.l + s.r) / 2,
+    cy: insets.top + holeH / 2 - (s.t + s.b) / 2,
+  };
+}
+
+// The pick reach around a legal corner or path in the diorama view, in world units, for a ray that meets it `depth` along
+// the lens axis: at least `px` CSS px on screen there (a far corner is smaller than a near one), never less than the
+// overhead pick volume, and under half the corner spacing so two corners never share a pick.
+export const PICK_MAX = 0.5;
+export function pickReach(depth: number, focal: number, coarse: boolean, floor = PICK_VERTEX_RADIUS): number {
+  const px = coarse ? 14 : 8;
+  return Math.min(PICK_MAX, Math.max(floor, (px * depth) / focal));
+}
+
 const FOV = (32 * Math.PI) / 180;
 
 // Free-mode farthest dolly: far enough to see the whole isle inside the hole, never below 18. Desktop keeps 18

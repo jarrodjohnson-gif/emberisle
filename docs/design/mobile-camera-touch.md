@@ -197,6 +197,10 @@ Both visual and pick mesh get the same `userData = { kind, id }`. Only the pick 
 `this.pickables` for vertices and edges (today the visual torus *is* the pickable — swap it). Hexes stay
 one mesh.
 
+In the diorama view (#597, `docs/design/camera-light.md` "Picking") these volumes are replaced by a reach around each legal
+corner and path of 14 CSS px on screen for touch, bounded to 0.28-0.5 world units: the 0.5 cap keeps two corners from sharing
+a pick, and where it binds (the far coast zoomed fully out on a phone-sized canvas) the reach is 12-13 px, not 14.
+
 Raycast order: vertices first, then edges, then hexes. Implementation sorts `intersectObjects` hits by that
 rank, not by distance, so a vertex sphere sitting on an edge box wins. Two vertex spheres never overlap
 (0.56 < 1.12).

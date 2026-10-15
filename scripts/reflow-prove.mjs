@@ -191,14 +191,13 @@ try {
       const twins = await strip();
       const shown = twins.cells.map((c) => c.name);
       check(new Set(shown).size === 4 && twins.cells.every((c) => !c.cut), `${tag} strip: "Ember" and "Emberly" read differently`, shown);
-      const name = await page.evaluate(() => window.__emberisle.getState().state.players[0].name);
       const path = page.getByRole("button", { name: "Path", exact: true });
       const bannerIs = (t) => page.waitForFunction((t) => document.querySelector('[data-testid="turn-banner"]')?.textContent === t, t, { timeout: 5000 }).then(() => true, () => false);
       await path.tap();
-      const armed = `${name}'s turn · Pick a glowing edge · tap Path again to cancel`;
+      const armed = `Place a path · tap Path again to cancel`;
       check(await bannerIs(armed), `${tag} armed Path on touch: banner says what to pick and how to cancel`, await page.getByTestId("turn-banner").textContent());
       await path.tap();
-      check(await bannerIs(`${name}'s turn · Build or trade`), `${tag} second tap: banner back to the main line`, await page.getByTestId("turn-banner").textContent());
+      check(await bannerIs(`Build, trade, or end your turn`), `${tag} second tap: banner back to the main line`, await page.getByTestId("turn-banner").textContent());
     }
     const floor = hud.stripBottom ?? hud.headerBottom + 8;
     check(hud.stackTop >= floor, `${tag} hud: bottom stack starts below the ${hud.stripBottom ? "seat strip" : "header + 8 px"}`, hud);

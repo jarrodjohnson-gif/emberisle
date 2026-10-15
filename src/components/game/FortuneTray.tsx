@@ -57,7 +57,7 @@ function Chips({ kind, picks, bank, onPick }: { kind: "plenty" | "monopoly"; pic
   );
 }
 
-export function FortuneTray({ me, opener, onClose, className }: { me: PlayerState; opener: HTMLElement | null; onClose: () => void; className?: string }) {
+export function FortuneTray({ me, opener, onClose, className }: { me?: PlayerState; opener: HTMLElement | null; onClose: () => void; className?: string }) {
   const state = useGame((s) => s.state)!;
   const dispatch = useGame((s) => s.dispatch);
   const setBuildMode = useGame((s) => s.setBuildMode);
@@ -67,14 +67,6 @@ export function FortuneTray({ me, opener, onClose, className }: { me: PlayerStat
 
   // #378: focus lands on Close, Tab cycles inside, and goes back to the Fortunes button on close. Esc or a press outside closes.
   useFocusTrap(root, true, undefined, opener);
-  // Your last fortune played: the Fortunes button is gone with the tray, so focus moves to the row's End turn (or Roll).
-  useEffect(
-    () => () => {
-      if (opener?.isConnected) return;
-      [...document.querySelectorAll("button")].find((b) => /^(End turn|Roll)$/.test(b.textContent?.trim() ?? ""))?.focus();
-    },
-    [opener],
-  );
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
@@ -96,11 +88,14 @@ export function FortuneTray({ me, opener, onClose, className }: { me: PlayerStat
 
   // A pick the bank empties while the tray is open is dropped, so Play waits for two the bank can still pay (#412).
   const bank = state.bank;
+  const held = me?.hidden;
+  const deckLeft = state.deckLeft ?? state.deck.length;
   const picks = plenty.filter((r, i) => bank[r] > plenty.slice(0, i).filter((x) => x === r).length);
   const bankEmpty = RESOURCES.every((r) => bank[r] <= 0);
 
   // Why a kind cannot be played right now; null when it can. Points are never played: they count at the end.
   const blocked = (kind: DevKind): string | null => {
+    if (!me || state.current !== me.id || !["main", "roll"].includes(state.phase)) return "On your turn";
     if (playable(me, kind) <= 0) return "Bought this turn";
     if (state.playedCard) return "One fortune a turn";
     if (state.phase !== "main") return kind === "knight" ? null : "After the roll";
@@ -137,8 +132,10 @@ export function FortuneTray({ me, opener, onClose, className }: { me: PlayerStat
           <X className="size-4" />
         </Button>
       </div>
+      <p data-testid="fortune-deck-count" data-deck-left={deckLeft} className="px-1 text-caption text-muted">{deckLeft} left in deck</p>
+      {me && !Object.values(me.hidden).some(Boolean) ? <p className="px-1 text-body text-muted">None held</p> : null}
       <ul className="flex flex-col gap-1">
-        {FORTUNES.filter(({ kind }) => me.hidden[kind] > 0).map(({ kind, name, effect }) => {
+        {FORTUNES.filter(({ kind }) => (held?.[kind] ?? 0) > 0).map(({ kind, name, effect }) => {
           const why = kind === "vp" ? null : blocked(kind);
           const open = why === null;
           // Plenty waits for two picks and Monopoly for one; the others play on the press.
@@ -148,7 +145,7 @@ export function FortuneTray({ me, opener, onClose, className }: { me: PlayerStat
               <div className="flex items-center gap-3">
                 <div className="min-w-0 flex-1">
                   <p className="text-body">
-                    <span className="capitalize">{name}</span> <span className="tabular-nums text-muted">×{me.hidden[kind]}</span>
+                    <span className="capitalize">{name}</span> <span className="tabular-nums text-muted">×{held?.[kind]}</span>
                   </p>
                   <p className="text-caption text-muted">{effect}</p>
                   {why ? (
