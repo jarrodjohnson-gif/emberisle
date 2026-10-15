@@ -93,6 +93,16 @@ THE SIX WORLDS
    fades. The wayfarer (the robber) stands here at person scale (0.11) under a hooded cloak with a lantern. Surprise: a
    lizard basks on a rock and darts when the tumbleweed passes.
 
+VARIATION (open, owner 2026-10-15: "we will want some variations so the whole map isn't repeated"; decide later)
+- Today every tile is seeded: which back edge the landform leans to, its relief, every scatter, and so where the stream, the
+  pool and the camp fall. Seven forests in a ring already differ in layout but tell the same story.
+- Options to choose from: (a) subtle: the same story, different arrangement and small swaps (two deer or a stag, a tent or a
+  lean-to, a pond or a beaver dam); (b) rotations: the landform free to face any back edge, so silhouettes vary; (c) story
+  variants per kind (forest: Salmon Run, Woodcutter's Cabin, Old Ruin; pasture: Shearing Day, Haymaking, Lambing), dealt so
+  neighbours never repeat. These combine.
+- Camera: the owner is fine with the tall landform as is (it sits behind the token from the default view; orbiting 180°
+  lets hills hide tokens, seen in the studio's ring=1&az=200 shot).
+
 NUMBER TOKENS
 - One size everywhere (radius 0.26, 0.05 thick): cream face, caramel rim (#6b3f22; red #b3261e with red ink for 6 and 8),
   bold numeral and pips, tilted 22° toward the camera, resting on its pad.
