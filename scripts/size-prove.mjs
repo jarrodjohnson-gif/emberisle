@@ -25,7 +25,7 @@ const BUDGETS = [
   { name: "IslandCanvas", gzipBytes: 191500 },
   { name: "online", gzipBytes: 8000 },
   // 2026-10-15 (#603): 6.33 kB measured with the win screen's winning action on top of #611's lobby selector; +170 B.
-  // 2026-10-15 (#612): wayfarer modes add to the sheets chunk on top of #603's 6.33 kB; ceiling re-measured after the merge.
+  // 2026-10-15 (#612): 6.37 kB measured with wayfarer modes on top of #603; the #603 ceiling holds, no raise.
   { name: "sheets", gzipBytes: 6500 },
   { name: "moments", gzipBytes: 2610 },
   // 2026-10-14 (#611): the lobby and win screen share their target selector; rolldown coalesces the shared Minus icon here too.
