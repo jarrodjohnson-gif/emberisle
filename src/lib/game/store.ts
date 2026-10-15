@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { createGame } from "./board";
 import { logBotAction } from "./ai";
-import { applyAction, bankShort, legalCities, legalRoads, legalSettle, stealTargets } from "./rules";
+import { applyAction, legalCities, legalRoads, legalSettle, stealTargets } from "./rules";
 
 const BANNER_MS = 2500;
 let bannerTimer: ReturnType<typeof setTimeout> | null = null;
@@ -9,27 +9,6 @@ function showBanner(set: (p: { banner: string | null }) => void, text: string) {
   if (bannerTimer) clearTimeout(bannerTimer);
   set({ banner: text });
   bannerTimer = setTimeout(() => set({ banner: null }), BANNER_MS);
-}
-
-// "Tide's roll · Ember +1 wool · Pine +2 ore", ending "· bank short of grain" when the bank paid nobody some resource.
-// The numbers are not here: the roll moment and the dice row show them, and the moment reads them out (#440).
-function rollLine(roller: string, gains: { name: string; resource: string; amount: number }[], short: string[]) {
-  const parts = gains.map((g) => `${g.name} +${g.amount} ${g.resource}`);
-  const tail = short.length ? [`bank short of ${short.join(" and ")}`] : [];
-  return [`${roller}'s roll`, ...(parts.length ? parts : ["nobody gathers"]), ...tail].join(" · ");
-}
-
-function gainsBetween(before: GameState, after: GameState) {
-  const out: { name: string; resource: string; amount: number }[] = [];
-  for (const p of after.players) {
-    const was = before.players.find((x) => x.id === p.id);
-    if (!was) continue;
-    for (const r of RESOURCES) {
-      const d = p.resources[r] - was.resources[r];
-      if (d > 0) out.push({ name: p.name, resource: r, amount: d });
-    }
-  }
-  return out;
 }
 
 // An award that changed hands between two states, as one line, or null.
@@ -99,7 +78,7 @@ const LOG_FILTER_KEY = "emberisle-log-filter";
 const WATER_KEY = "emberisle-water";
 const VIEW_KEY = "emberisle-view";
 
-// The engine keeps only the last 41 log lines (rules.ts `log`), so once the log is full its length never grows and
+// The engine keeps only the last 200 log lines (rules.ts `log`), so once the log is full its length never grows and
 // `after.slice(before.length)` would be empty. The new lines are what follows the longest tail of the old log that
 // the new one still starts with.
 function newLog(before: string[], after: string[]) {
@@ -609,9 +588,6 @@ export const useGame = create<GameStore>((set, get) => ({
     const rollOff = rollOffLine(state, nextState);
     if (rollOff) {
       showBanner(set, rollOff);
-    } else if (action.type === "roll" && nextState.dice) {
-      const roller = state.players.find((p) => p.id === actor)?.name ?? actor;
-      showBanner(set, rollLine(roller, gainsBetween(state, nextState), bankShort(nextState)));
     } else {
       const swing = awardLine(state, nextState);
       if (swing) showBanner(set, swing);
@@ -871,7 +847,7 @@ export const useGame = create<GameStore>((set, get) => ({
     }
   },
   openMenu: (id) => {
-    if (!get().spectator) set({ menuFor: id });
+    set({ menuFor: id });
   },
 }));
 
@@ -886,7 +862,6 @@ function endOffer(set: Set, get: Get, taker: string | null) {
   const takerName = state?.players.find((p) => p.id === taker)?.name ?? "Someone";
   set({ offer: null, declined: [] });
   play(taker ? "trade_yes" : "trade_no");
-  if (taker) showBanner(set, `${takerName} takes ${offer.fromName}'s trade`);
   // Every receiver gets the resolved offer as one brief log line, with no response controls.
   if (outcomeTimer) clearTimeout(outcomeTimer);
   set({ tradeOutcome: taker ? `${takerName} takes it.` : "Nobody took it." });
@@ -935,7 +910,8 @@ function respond(set: Set, get: Get, actor: string, yes: boolean): string | null
   }
   const accepted = applyAction(offered.state, actor, { type: "respondTrade", accept: true });
   if (accepted.error) return accepted.error;
-  set({ state: accepted.state, gameLog: appendLog(gameLog, newLog(state.log, accepted.state.log)) });
+  const tradeLines = newLog(state.log, accepted.state.log).filter((line) => !line.includes(" offers a trade to "));
+  set({ state: { ...accepted.state, log: [...state.log, ...tradeLines].slice(-200) }, gameLog: appendLog(gameLog, tradeLines) });
   endOffer(set, get, actor);
   return null;
 }
@@ -1003,12 +979,8 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
     },
     // A peek answers id/color/ready only (G10); the lobby is not shown until the full broadcast after sitting replaces it.
     seats: ({ code, seats, watching }) => set({ code, seats: seats as Seat[], watching: watching ?? 0 }),
-    rolled: ({ gains, short }) => {
-      // The host sends this before the state that follows it, so `current` is still the roller.
-      const st = get().state;
-      const roller = st?.players.find((p) => p.id === st.current)?.name ?? "Someone";
-      showBanner(set, rollLine(roller, gains, short));
-    },
+    // Dice and gain floats present the roll; its words live only in the persistent log.
+    rolled: () => {},
     state: ({ you, game, legal, turnDeadline, turnPlayer, serverNow }) => {
       // A watcher's `you` is null: "" matches no player, so nothing is ever its turn and the your-turn chime never fires.
       const me = you ?? "";

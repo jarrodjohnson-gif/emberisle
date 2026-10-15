@@ -133,7 +133,7 @@ try {
   const heard = Object.keys(SOUND).filter((n) => heardFiles.includes(SOUND[n]));
   console.log("sounds heard in setup and the first roll:", JSON.stringify(heardFiles));
   if (heard.length !== 3) throw new Error(`sounds: heard only ${heard.join(" ")} in ${JSON.stringify(heardFiles)}`);
-  // #188: the roll banner shows offline too.
+  // #534: goods narration lives in the persistent log, without a second banner.
   const bannerText = await page.getByTestId("banner").textContent({ timeout: 2000 }).catch(() => null);
   console.log("roll banner:", JSON.stringify(bannerText));
 
@@ -351,7 +351,7 @@ try {
     return { mineText, bot: bot.name };
   });
   await page
-    .waitForFunction((name) => document.querySelector('[data-testid="turn-banner"]')?.textContent?.startsWith(`Waiting for ${name}`), turn.bot, { timeout: 5000 })
+    .waitForFunction((name) => document.querySelector('[data-testid="turn-banner"]')?.textContent?.startsWith(`Wait for ${name}`), turn.bot, { timeout: 5000 })
     .catch(() => {});
   turn.theirs = await page.getByTestId("turn-banner").textContent();
   turn.strip = await page.getByTestId("seat-strip").count();
@@ -359,13 +359,13 @@ try {
   console.log("turn banner:", JSON.stringify(turn));
 
   // Jarrod's playtest: another seat's turn says whom you wait for, not what to do.
-  if (turn.theirs !== `Waiting for ${turn.bot} to roll` || !/^Your turn · (Roll|Build or trade|move the wayfarer|discard \d+)/.test(turn.mineText ?? "") || turn.strip) {
+  if (turn.theirs !== `Wait for ${turn.bot} to roll` || !/^(Roll|Place|Build|Move|Discard)\b/.test(turn.mineText ?? "") || turn.strip) {
     throw new Error(`turn banner: ${JSON.stringify(turn)}`);
   }
   if (phase !== "roll" && phase !== "main" && phase !== "robber" && phase !== "discard") throw new Error(`setup: ${phase}`);
   if (!Array.isArray(rolled)) throw new Error(`roll: ${rolled}`);
-  // #440: the banner says whose roll and who gathered; the numbers are the roll moment's and the dice row's alone.
-  if (!bannerText || !/^.+'s roll · /.test(bannerText) || bannerText.includes(`${rolled[0]}+${rolled[1]}`)) throw new Error(`roll banner: ${bannerText}`);
+  // #534: the transient banner does not repeat the persistent goods event.
+  if (bannerText) throw new Error(`roll goods are narrated only in the persistent log: ${bannerText}`);
   if (steal.targets !== 2 || !steal.asked || steal.got !== 1 || steal.left !== 1 || steal.phase !== "main" || !steal.cleared) {
     throw new Error(`offline steal picker: ${JSON.stringify(steal)}`);
   }

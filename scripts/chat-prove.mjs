@@ -1031,7 +1031,7 @@ try {
     if (await t.page.getByRole("button", { name: "Open chat" }).count()) await t.page.getByRole("button", { name: "Open chat" }).click();
     const rows = await until(async () => {
       const r = await rowsOf(t);
-      return r.length >= 3 && r.some((x) => /rolls \d\+\d = \d+/.test(x)) && r.some((x) => /raises an outpost|founds an outpost/.test(x)) ? r : null;
+      return r.length >= 3 && r.some((x) => / — .+'s roll[;.]/.test(x)) && r.some((x) => /raises an outpost|founds an outpost/.test(x)) ? r : null;
     }, `${t.name} lists the roll and an outpost in the game log`);
     check(true, `game log: ${t.name} shows ${rows.length} rows, with the roll and an outpost${t === phone ? ", in the phone sheet" : ""}`);
   }
@@ -1127,8 +1127,8 @@ try {
   await solo.getByTestId("rail-p1").getByRole("button").click();
   await solo.getByTestId("player-menu").waitFor();
   check(
-    (await solo.getByTestId("player-menu").locator("dd").count()) === 4 && (await solo.getByTestId("player-menu").locator("button").count()) === 0,
-    "bots: the menu shows the 4 facts and nothing else",
+    (await solo.getByTestId("menu-facts").locator("dd").count()) === 4 && (await solo.getByTestId("score-breakdown").locator("dd").count()) === 4 && (await solo.getByTestId("player-menu").locator("button").count()) === 0,
+    "bots: the menu shows four facts, four public score components and no seat actions",
   );
   await solo.context().close();
 

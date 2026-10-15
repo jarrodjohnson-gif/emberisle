@@ -248,7 +248,7 @@ async function settleChecks(page, tag, { applied, dice }, { reduced = false } = 
   check(!late.moment && gone - stall.gone <= 1400, `${tag}: gone by 1400 ms of the roll being applied (${gone.toFixed(0)} ms, ${stall.gone.toFixed(0)} of them stalled)`);
   check(late.rowVisible && late.row.join() === dice.join(), `${tag}: the resting row shows the same faces (${late.row})`);
   check(late.shown.length === 1 && late.shown[0] === "dice-row", `${tag}: afterwards the sum is on screen once, in the row (${JSON.stringify(late.shown)})`);
-  check(!/\b\d\+\d\b/.test(late.banner ?? "") && !/\b\d\+\d\b/.test(late.log ?? ""), `${tag}: neither the banner nor the log line repeats the dice`);
+  check(!late.banner && / — .+'s roll[;.]/.test(late.log ?? ""), `${tag}: one persistent roll event and no duplicate goods banner`);
   if (reduced) {
     check(flights.length === 0, `${tag}: reduced motion, no flight (${flights.length})`);
     check(m.animation === "none", `${tag}: reduced motion, no entry animation (${m.animation})`);

@@ -53,7 +53,7 @@ if (after.some((n, i) => n !== JSON.parse(before)[i]) || g.bank.timber !== 1) {
   process.exit(1);
 }
 console.log("short bank pays nobody: timber hands", after, "bank", g.bank.timber);
-if (g.log.at(-1) !== "The bank is short of timber; nobody gathers it.") {
+if (!g.log.at(-1).includes("the bank is short of timber; nobody gains it")) {
   console.log("FAIL short bank log", g.log.at(-1));
   process.exit(1);
 }
