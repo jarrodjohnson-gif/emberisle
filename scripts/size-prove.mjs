@@ -21,7 +21,8 @@ const BUDGETS = [
   // landed; each fit its own raise alone. +1.5 kB over the measurement for the touch-splash work in flight (#616).
   { name: "IslandCanvas", gzipBytes: 186500 },
   { name: "online", gzipBytes: 8000 },
-  { name: "sheets", gzipBytes: 6282 },
+  // 2026-10-15 (#603): 6.33 kB measured with the win screen's winning action on top of #611's lobby selector; +170 B.
+  { name: "sheets", gzipBytes: 6500 },
   { name: "moments", gzipBytes: 2610 },
   // 2026-10-14 (#611): the lobby and win screen share their target selector; rolldown coalesces the shared Minus icon here too.
   // 0.65 kB at introduction, with a 0.75 kB ceiling; replaces the former minus-only chunk.
