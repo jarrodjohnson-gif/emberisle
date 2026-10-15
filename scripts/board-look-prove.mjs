@@ -759,8 +759,9 @@ try {
     await page.context().close();
   }
   // #599, docs/design/terrain.md: the sculpted tiles. On the play board (diorama 1280x720, crystal sea): every terrain kind has
-  // a sculpted top (a height spread over 0.01 and under 0.3 world units) that is exactly at topOf under the token (within 0.4
-  // of the centre) and within 0.12 of every corner (pieces land there); within 0.18 of an edge (a path's or a piece's
+  // a sculpted top (a height spread over 0.01 and under 0.4 world units; 0.3 until 2026-10-15, raised for #599's
+  // owner verdict that the grounds read flat: the forest's knolls and hollow now span about 0.33) that is exactly at topOf under the token (within
+  // 0.33 of the centre, the 0.26 token's pad since #599) and within 0.12 of every corner (pieces land there); within 0.18 of an edge (a path's or a piece's
   // footprint) nothing rises over topOf, and round each edge's midpoint the ground reaches topOf, so a path rests on it (a
   // coastal beach dips under the path's outer half); its side shows the sand, shell, soil and rock strata; no two tiles
   // of a kind are the same; terrain and props draw in at most 60 calls (window.__terrain) and the whole island (land, props,
@@ -800,7 +801,7 @@ try {
           const d = Math.max(Math.abs(x), Math.abs(0.5 * x + 0.866 * z), Math.abs(0.5 * x - 0.866 * z));
           if (d > 0.9135) continue;
           lo = Math.min(lo, y); hi = Math.max(hi, y);
-          if (Math.hypot(x, z) < 0.4) plateau = Math.max(plateau, Math.abs(y - top));
+          if (Math.hypot(x, z) < 0.33) plateau = Math.max(plateau, Math.abs(y - top));
           if (corners.some(([cx, cz]) => Math.hypot(x - cx, z - cz) < 0.12)) corner = Math.max(corner, Math.abs(y - top));
           if (d >= 0.785) over = Math.max(over, y - top);
           mids.forEach(([mx, mz], j) => Math.hypot(x - mx, z - mz) < 0.2 && (rest[j] = Math.max(rest[j], y - top)));
@@ -848,7 +849,7 @@ try {
     check("terrain: all six kinds are on the board", kinds.join() === "clay,grain,ore,timber,waste,wool", kinds);
     for (const k of kinds) {
       const s = t.kinds[k];
-      check(`terrain ${k}: a sculpted top (height spread over 0.01, under 0.3), flat at topOf under the token and in a disc at every corner`, s.spread.every((x) => x > 0.01 && x < 0.3) && s.plateau < 1e-4 && s.corner < 1e-4, { spread: s.spread, plateau: s.plateau, corner: s.corner });
+      check(`terrain ${k}: a sculpted top (height spread over 0.01, under 0.4), flat at topOf under the token and in a disc at every corner`, s.spread.every((x) => x > 0.01 && x < 0.4) && s.plateau < 1e-4 && s.corner < 1e-4, { spread: s.spread, plateau: s.plateau, corner: s.corner });
       check(`terrain ${k}: nothing above topOf where a path or a piece lies (within 0.18 of an edge), and ground at topOf for a path to rest on at every edge's midpoint`, s.over <= 0.004 && s.rest.every((r) => r > -0.002 && r <= 0.004), { over: s.over, rest: [Math.min(...s.rest), Math.max(...s.rest)] });
       check(`terrain ${k}: side strata (sand, shell, soil, rock) on every tile; no two tiles alike`, s.strata && s.distinct, { tiles: s.tiles, distinct: s.distinct });
     }

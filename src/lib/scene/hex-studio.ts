@@ -14,7 +14,7 @@ import { demoBoard, worldOfHex } from "@/lib/game/board";
 import type { HexCell, Terrain } from "@/lib/game/types";
 import { DIORAMA_AZIMUTH, DIORAMA_POLAR, CAP_LEVEL } from "@/lib/scene/mobile-fit";
 import { PAPER } from "@/lib/scene/crystal-water";
-import { TOKEN_TILT, landHex, lightRig, makeWayfarer, topOf } from "@/lib/scene/isle-renderer";
+import { TOKEN_LIFT, TOKEN_TILT, landHex, lightRig, makeWayfarer, topOf } from "@/lib/scene/isle-renderer";
 import { PropKit, coastOf, type Life } from "@/lib/scene/terrain";
 
 // The diorama's eye distance on a 1280x720 board (docs/design/camera-light.md), so a hex keeps the board's perspective.
@@ -81,9 +81,8 @@ for (const h of hexes) {
   scene.add(l.tile);
   if (l.token) {
     // The diorama pose at the token's own size (poseTokens, zoomed in): turned to the eye, tilted toward it, on its near edge.
-    const lift = 0.34 * Math.sin(TOKEN_TILT) + 0.03 * Math.cos(TOKEN_TILT) - 0.03;
     l.token.rotation.set(TOKEN_TILT, DIORAMA_AZIMUTH, 0, "YXZ");
-    l.token.position.y += lift;
+    l.token.position.y += TOKEN_LIFT;
     scene.add(l.token);
   } else if (h.terrain === "waste") {
     const w = makeWayfarer();

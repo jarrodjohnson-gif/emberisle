@@ -71,6 +71,10 @@ function nearest(pts: Float32Array, x: number, z: number) {
   return Math.sqrt(d);
 }
 
+// The token's pad: flat ground PAD_R round the centre (the 0.26 token and a little), painted a paler trodden tone out to
+// PAD_PAINT; the ground may only start to move beyond it.
+const PAD_R = 0.33;
+const PAD_PAINT = 0.31;
 // What the ground may do at a hex-local point. `rise`: how much of a rise it takes; none under the token (within 0.40 of the
 // centre) nor round a corner (a piece's base), fading out before the band along each edge that a path covers. `dip`: how
 // much of a hollow; none under the token, in a small disc at each corner or at an edge's midpoint (a path rests there).
@@ -85,11 +89,11 @@ const FLAT_SIN = [0, 1, 2, 3, 4, 5].map((k) => Math.sin((k * Math.PI) / 3));
 function masksAt(x: number, z: number, m: Masks, o = 0) {
   const r = Math.hypot(x, z);
   const d = hexDist(x, z);
-  const token = smooth(0.4, 0.52, r);
+  const token = smooth(PAD_R, PAD_R + 0.12, r);
   const dc = nearest(CORNERS, x, z);
   const corner = smooth(0.14, 0.3, dc);
   m.rise = token * smooth(0.22, 0.42, dc) * (1 - smooth(0.62, 0.78, d));
-  m.wide = token * smooth(0.16, 0.34, dc) * (1 - smooth(0.7, 0.85, d));
+  m.wide = token * smooth(0.16, 0.34, dc) * (1 - smooth(0.64, 0.79, d));
   m.dip = token * corner * smooth(0.2, 0.32, nearest(MIDS, x, z));
   // A beach reaches 0.11 in from its edge; nearer the centre than that from every edge, there is none.
   const near = d > TOP_INR - 0.11;
@@ -171,7 +175,7 @@ function forestLayout(L: Layout, rng: () => number) {
   const a0 = L.rot + rng() * 0.8;
   const angles = [a0, a0 + 1.95 + rng() * 0.5, a0 + 4.05 + rng() * 0.5];
   for (const a of angles) {
-    L.spots.push({ x: Math.cos(a) * 0.7, z: Math.sin(a) * 0.7, r: 0.4 + rng() * 0.06, h: (0.17 + rng() * 0.05) * L.amp });
+    L.spots.push({ x: Math.cos(a) * 0.7, z: Math.sin(a) * 0.7, r: 0.4 + rng() * 0.06, h: (0.16 + rng() * 0.04) * L.amp });
     const n = 4 + Math.floor(rng() * 2);
     for (let i = 0, placed = 0; i < 60 && placed < n; i++) {
       // The tallest at the heart; the rest smaller toward the token, so the clump rises away from the clearing.
@@ -518,13 +522,14 @@ export function sculptHex(h: HexCell, size: number, slabH: number, tileY: number
     return SHORE_DIP * w;
   };
   const height = (x: number, z: number) => {
-    if (x * x + z * z < 0.16) return 0;
+    if (x * x + z * z < PAD_R * PAD_R) return 0;
     masksAt(x, z, m);
     const raw = relief(t, x, z, L);
     return (raw > 0 ? raw * (wideRise ? m.wide : m.rise) : raw * m.dip) - shoreOf(m.shore, 0);
   };
   const [base, shade, sun] = PAINT[t].map(col) as [THREE.Color, THREE.Color, THREE.Color];
   const crest = base.clone().lerp(sun, 0.5);
+  const padTone = base.clone().lerp(col(STRATA.sand), 0.45).lerp(sun, 0.25);
   const spoil = col(PROP.spoil);
   const scree = col(PROP.scree);
   const playa = col(PROP.playa);
@@ -540,6 +545,8 @@ export function sculptHex(h: HexCell, size: number, slabH: number, tileY: number
   // warms toward the sunlit tint and one that faces away cools toward the shade; the beach is sand.
   const paint = (x: number, z: number, hh: number, lit: number, beach: number, field = 0, ny = 1) => {
     c.copy(base);
+    // The pad under the token: paler and flat-lit, a soft edge into the ground.
+    c.lerp(padTone, 0.55 * (1 - smooth(PAD_PAINT - 0.04, PAD_PAINT + 0.02, Math.hypot(x, z))));
     if (hh < 0) c.lerp(shade, Math.min(1, -hh * 14));
     else c.lerp(crest, Math.min(1, hh * 9));
     const f = (lit - KEY.y) * 4;

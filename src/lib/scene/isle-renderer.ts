@@ -115,15 +115,15 @@ const _p = new THREE.Vector3();
 const _q = new THREE.Vector3();
 const _n = new THREE.Vector3();
 
-// Number tokens in the diorama view (docs/design/tokens.md "Angle"): each turns to face the camera's azimuth and pitches
-// TOKEN_TILT toward it, resting on its near edge, and grows until its numeral is TOKEN_NUMERAL_PX tall on screen, but never
-// past 1.25x nor past 38% of a hex's width (the disc is 0.68 across, a hex SQRT3 * HEX_SIZE, so that cap is the one that
-// binds, at 1.08x), and shrinks while its disc would overlap another's on screen. Zoomed in, it is its own size again.
-// TOKEN_GLYPH is the numeral's height on the face, world units.
+// Number tokens (docs/design/tokens.md): one size in every view and at every zoom (#599, the owner: "consistent across the
+// full game"), a cream disc TOKEN_R across its radius and TOKEN_H thick with a face TOKEN_FACE in radius. In the diorama view
+// each turns to face the camera's azimuth and pitches TOKEN_TILT toward it, resting on its near edge.
 export const TOKEN_TILT = (22 * Math.PI) / 180;
-const TOKEN_NUMERAL_PX = 12;
-const TOKEN_MAX_SCALE = Math.min(1.25, (0.38 * SQRT3 * HEX_SIZE) / 0.68);
-const TOKEN_GLYPH = 0.31;
+export const TOKEN_R = 0.26;
+export const TOKEN_H = 0.05;
+export const TOKEN_FACE = 0.245;
+// How far a tilted token is lifted so its near edge stays where the flat disc's underside was.
+export const TOKEN_LIFT = TOKEN_R * Math.sin(TOKEN_TILT) + (TOKEN_H / 2) * Math.cos(TOKEN_TILT) - TOKEN_H / 2;
 // A tree standing between a token and the diorama camera (in front of it within TREE_SHADE_DEPTH, within TREE_SHADE_SIDE of
 // the line of sight) can hide the foot of the numeral at this angle: it is scaled down just enough that its top clears the
 // line from the eye to the glyph's lowest row (TOKEN_GLYPH_FOOT below the face's centre, plus TREE_SHADE_MARGIN), never
@@ -132,7 +132,7 @@ const TREE_SHADE_DEPTH = 1.7;
 const TREE_SHADE_SIDE = 0.55;
 const TREE_SHADE_MARGIN = 0.05;
 const TREE_SHADE_MIN = 0.3;
-const TOKEN_GLYPH_FOOT = 0.13;
+const TOKEN_GLYPH_FOOT = 0.13 * (TOKEN_FACE / 0.29);
 const _box = new THREE.Box3();
 
 export class IsleRenderer {
@@ -777,42 +777,18 @@ export class IsleRenderer {
     return (this.tokens.find((t) => t.userData.hex === hexId)?.userData.lift as number | undefined) ?? 0;
   }
 
-  // Tokens face the diorama camera (TOKEN_TILT toward it, turned to its azimuth) and grow toward a TOKEN_NUMERAL_PX numeral
-  // within TOKEN_MAX_SCALE, then shrink where two discs would overlap on screen; in the other views they lie flat at their
-  // own size. The wayfarer keeps standing on his.
+  // Tokens face the diorama camera (TOKEN_TILT toward it, turned to its azimuth); in the other views they lie flat. Always
+  // their own size. The wayfarer keeps standing on his.
   private poseTokens() {
     const diorama = this.view === "diorama";
     const az = diorama ? this.orbit.getAzimuthalAngle() : 0;
-    // The face's normal once tilted and turned.
-    _n.set(Math.sin(TOKEN_TILT) * Math.sin(az), Math.cos(TOKEN_TILT), Math.sin(TOKEN_TILT) * Math.cos(az));
     const cam = this.persp.position;
-    // Each disc on screen: its centre, and its half-width and half-height at scale 1 (the tilt foreshortens the height).
-    const discs = this.tokens.map((t) => {
-      if (!diorama) return { s: 1, x: 0, y: 0, rx: 0, ry: 0 };
-      const d = _p.copy(t.position).sub(cam);
-      const along = d.dot(this.persp.getWorldDirection(_q));
-      const facing = Math.max(0.2, -d.normalize().dot(_n));
-      const s = Math.min(TOKEN_MAX_SCALE, Math.max(1, (TOKEN_NUMERAL_PX * along) / (this.lens.focal * TOKEN_GLYPH * facing)));
-      const at = this.screenAt(t.position.x, t.position.y, t.position.z);
-      const rx = (0.34 * this.lens.focal) / along;
-      return { s, x: at.x, y: at.y, rx, ry: rx * facing };
-    });
-    if (diorama) for (let i = 0; i < discs.length; i++) {
-      for (let j = i + 1; j < discs.length; j++) {
-        const [a, b] = [discs[i]!, discs[j]!];
-        const k = Math.hypot((a.x - b.x) / (a.rx * a.s + b.rx * b.s), (a.y - b.y) / (a.ry * a.s + b.ry * b.s));
-        if (k < 1) [a.s, b.s] = [a.s * k, b.s * k];
-      }
-    }
-    this.tokens.forEach((t, i) => {
-      const s = discs[i]!.s;
-      // The near edge of the 0.34 x 0.06 disc stays where the flat disc's underside was.
-      const lift = diorama ? s * (0.34 * Math.sin(TOKEN_TILT) + 0.03 * Math.cos(TOKEN_TILT)) - 0.03 : 0;
+    const lift = diorama ? TOKEN_LIFT : 0;
+    for (const t of this.tokens) {
       t.rotation.set(diorama ? TOKEN_TILT : 0, az, 0, "YXZ");
-      t.scale.setScalar(s);
       t.position.y = (t.userData.restY as number) + lift;
       t.userData.lift = lift;
-    });
+    }
     const key = diorama ? `${cam.x.toFixed(2)},${cam.y.toFixed(2)},${cam.z.toFixed(2)}|${this.lastLand}` : "";
     if (key !== this.shadedFor) {
       this.shadedFor = key;
@@ -1726,10 +1702,9 @@ function hexRing(outer: number, inner: number) {
 export function numberToken(n: number) {
   const g = new THREE.Group();
   const hot = n === 6 || n === 8;
-  const disc = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.34, 0.34, 0.06, 32),
-    new THREE.MeshStandardMaterial({ color: hot ? 0xb3261e : 0x1c1916, roughness: 0.6 }),
-  );
+  // A cream face on a thin disc whose edge (a ring round the face, and its side) is caramel-dark, or red for 6 and 8: the
+  // edge is the contrast on the light caps, the face on the dark ones (docs/design/tokens.md).
+  const disc = new THREE.Mesh(new THREE.CylinderGeometry(TOKEN_R, TOKEN_R, TOKEN_H, 40), new THREE.MeshStandardMaterial({ color: hot ? 0xb3261e : 0x6b3f22, roughness: 0.6 }));
   disc.castShadow = true;
   g.add(disc);
   const c = document.createElement("canvas");
@@ -1757,20 +1732,20 @@ export function numberToken(n: number) {
     ctx.strokeText(String(n), 128, 104);
   }
   ctx.setTransform(1, 0, 0, 1, 0, 0);
-  // Pips r 12 at a 28 px pitch under the numeral (#597: from r 10 at 26, so they stay 2 px on the diorama token).
+  // Pips r 14 at a 32 px pitch under the numeral (#599: from r 12 at 28, so they stay 2 px on the smaller token).
   const pips = 6 - Math.abs(n - 7);
-  const span = (pips - 1) * 28;
+  const span = (pips - 1) * 32;
   for (let i = 0; i < pips; i++) {
     ctx.beginPath();
-    ctx.arc(128 - span / 2 + i * 28, 196, 12, 0, Math.PI * 2);
+    ctx.arc(128 - span / 2 + i * 32, 196, 14, 0, Math.PI * 2);
     ctx.fill();
   }
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.anisotropy = 8;
-  const label = new THREE.Mesh(new THREE.CircleGeometry(0.29, 32), new THREE.MeshBasicMaterial({ map: tex }));
+  const label = new THREE.Mesh(new THREE.CircleGeometry(TOKEN_FACE, 40), new THREE.MeshBasicMaterial({ map: tex }));
   label.rotation.x = -Math.PI / 2;
-  label.position.y = 0.031;
+  label.position.y = TOKEN_H / 2 + 0.001;
   g.add(label);
   return g;
 }

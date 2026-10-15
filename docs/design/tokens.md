@@ -40,6 +40,15 @@ across at 43 px per unit; at 1920×1080 the same token is 20 px and 3.5 px, and 
 
 ## The token
 
+**#599 (the owner: one size across the full game, smaller, lower, on a flat pad, so the terrain reads first).** The token is
+now `CylinderGeometry(TOKEN_R 0.26, 0.26, TOKEN_H 0.05, 40)` with a `CircleGeometry(TOKEN_FACE 0.245, 40)` face, the
+same size in every view and at every zoom: `poseTokens` no longer grows or shrinks it (scale is always 1). The rim is
+caramel `#6b3f22` (from `#1c1916`; `#b3261e` for 6 and 8 as before), which keeps the better-of-two contrast at least
+3.81:1 on every cap. The pips are r 14 at a 32 px pitch (check 6 reads runs of 27-29 px). The ground under it is a flat
+pad `PAD_R` 0.33 across its radius, painted a paler trodden tone (`terrain.ts`); the relief may rise from there. At
+1280x720 the smallest numeral is 15.3 px and pip 2.62 px; at 960x600 12.0 px and 2.06 px; the largest disc 26.8 % of its
+hex. The tables and notes below are the #239/#597 history; where they give 0.34, 0.29, 1.25x or 38 %, read the above.
+
 | | Today | Now |
 |---|---|---|
 | Disc | `CylinderGeometry(0.3, 0.3, 0.05, 32)`, cream `#f4ead6` | `CylinderGeometry(0.34, 0.34, 0.06, 32)`, **rim colour** (below), roughness 0.6 |
@@ -117,7 +126,8 @@ under 2 px, which is why the default there is overhead.
 
 ## Clear space
 
-**Nothing is placed, and nothing wanders, within 0.39 of a hex centre**: the token's 0.34 plus 0.05 of ground.
+**Nothing is placed, and nothing wanders, within 0.39 of a hex centre**: the token's 0.34 plus 0.05 of ground (since
+#599 the token is 0.26; the clear ring stays at 0.39).
 Measured at a prop's nearest point, not its position, so each kind's minimum radius is the clear radius plus
 that kind's reach:
 
