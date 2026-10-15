@@ -1351,9 +1351,10 @@ export class IsleRenderer {
       }
     }
     // The props (the heavier half of the build) draw a frame after the tiles, so the board and its pieces are not held for them
-    // (#543 restore budget). A rebuild before then drops them with the old land.
+    // (#543 restore budget). Two frames on: the next one also runs the first draw, and a frame is not shown until all of its
+    // callbacks are done. A rebuild before then drops them with the old land.
     const gen = ++this.landGen;
-    requestAnimationFrame(() => {
+    requestAnimationFrame(() => requestAnimationFrame(() => {
       if (gen !== this.landGen) return;
       performance.mark("props-start");
       props.forEach((f) => f());
@@ -1363,7 +1364,7 @@ export class IsleRenderer {
       (window as unknown as { __terrain: TerrainStats }).__terrain = this.terrainStats();
       this.wake();
       performance.mark("props-end");
-    });
+    }));
 
     // A dock spans a coastal edge, so both its corners carry the harbor; the deal spaces docks at least three edges apart, so two
     // neighbouring harbor corners on the coast loop of one kind are always one dock. One pier and one boat per dock.

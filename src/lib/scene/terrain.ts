@@ -9,7 +9,7 @@ import { PAINT, PROP, STRATA } from "@/lib/scene/palette";
 
 const SQ3 = Math.sqrt(3);
 // Lattice rings across the top (6 R^2 triangles), the rim's width and drop (corner-radius units) and its segments.
-const RINGS = 14;
+const RINGS = 12;
 const BEVEL_W = 0.06;
 const BEVEL_H = 0.045;
 const BEVEL_SEGS = 3;
@@ -130,10 +130,17 @@ function pitLevel(x: number, z: number, L: Layout) {
 
 const col = (hex: string) => new THREE.Color(hex);
 
-// The top's lattice, the same for every hex of a given RINGS: the points (axial q, r) and the upward triangles over them.
-const topologies = new Map<number, { count: number; q: Int16Array; r: Int16Array; index: Uint16Array }>();
-function topology(R: number) {
-  let t = topologies.get(R);
+// The step the top's normals are taken over.
+const E = 0.01;
+
+type RingPoint = { x: number; z: number; ox: number; oz: number; edge: number };
+// The top's lattice, the same for every hex of a given RINGS and size: the points (x, z), the upward triangles over them, and
+// at each point and its two gradient samples (+E in x, +E in z) the masks' weight for a bump and for a dip. Also the top's
+// boundary ring and, per ring point and rim step, the rim vertex below the slab's top: x, drop, z and the unit normal.
+type Topology = { count: number; x: Float64Array; z: Float64Array; up: Float64Array; down: Float64Array; index: Uint16Array; ring: RingPoint[]; rim: Float64Array };
+const topologies = new Map<string, Topology>();
+function topology(R: number, size: number) {
+  let t = topologies.get(`${R}:${size}`);
   if (t) return t;
   const id = new Map<number, number>();
   const key = (q: number, r: number) => (q + R + 1) * 64 + (r + R + 1);
@@ -155,8 +162,49 @@ function topology(R: number) {
       if (p1 !== undefined && p3 !== undefined && p2 !== undefined) index.push(p1, p2, p3);
     }
   }
-  t = { count: q.length, q: Int16Array.from(q), r: Int16Array.from(r), index: Uint16Array.from(index) };
-  topologies.set(R, t);
+  const top = size - BEVEL_W;
+  const s = top / R;
+  const inr = (size * SQ3) / 2;
+  const [x, z] = [new Float64Array(q.length), new Float64Array(q.length)];
+  const [up, down] = [new Float64Array(q.length * 3), new Float64Array(q.length * 3)];
+  for (let i = 0; i < q.length; i++) {
+    x[i] = (SQ3 / 2) * s * q[i]!;
+    z[i] = 0.5 * s * q[i]! + s * r[i]!;
+    [[0, 0], [E, 0], [0, E]].forEach(([dx, dz], j) => {
+      const [px, pz] = [x[i]! + dx!, z[i]! + dz!];
+      const centre = smooth(0.4, 0.56, Math.hypot(px, pz));
+      const d = hexDist(px, pz) / inr;
+      up[i * 3 + j] = centre * (1 - smooth(0.6, 0.78, d));
+      down[i * 3 + j] = centre * (1 - smooth(0.8, 0.93, d));
+    });
+  }
+  // The boundary ring, corner to corner, with each point's outward direction (a corner's own, or its flat's).
+  const steps: [number, number][] = [[-1, 1], [-1, 0], [0, -1], [1, -1], [1, 0], [0, 1]];
+  const corners: [number, number][] = [[R, 0], [0, R], [-R, R], [-R, 0], [0, -R], [R, -R]];
+  const ring: RingPoint[] = [];
+  for (let k = 0; k < 6; k++) {
+    const flat = dirAt(60 + 60 * k);
+    for (let i = 0; i < R; i++) {
+      const [a, b] = [corners[k]![0] + steps[k]![0] * i, corners[k]![1] + steps[k]![1] * i];
+      const px = (SQ3 / 2) * s * a;
+      const pz = 0.5 * s * a + s * b;
+      const o = i === 0 ? { x: px / top, z: pz / top } : flat;
+      ring.push({ x: px, z: pz, ox: o.x, oz: o.z, edge: k });
+    }
+  }
+  // The rim: a quarter round from the top's edge out to the full hex, BEVEL_H down.
+  const rim = new Float64Array(ring.length * (BEVEL_SEGS + 1) * 6);
+  ring.forEach((p, i) => {
+    for (let j = 0; j <= BEVEL_SEGS; j++) {
+      const a = (j / BEVEL_SEGS) * (Math.PI / 2);
+      const f = (top + (size - top) * Math.sin(a)) / top;
+      const [nx, ny, nz] = [p.ox * Math.sin(a), Math.cos(a), p.oz * Math.sin(a)];
+      const il = 1 / Math.hypot(nx, ny, nz);
+      rim.set([p.x * f, BEVEL_H * (1 - Math.cos(a)), p.z * f, nx * il, ny * il, nz * il], (i * (BEVEL_SEGS + 1) + j) * 6);
+    }
+  });
+  t = { count: q.length, x, z, up, down, index: Uint16Array.from(index), ring, rim };
+  topologies.set(`${R}:${size}`, t);
   return t;
 }
 
@@ -201,7 +249,7 @@ export function sculptHex(h: HexCell, size: number, slabH: number, tileY: number
   };
 
   const R = RINGS;
-  const T = topology(R);
+  const T = topology(R, size);
   const N = 6 * R;
   const verts = T.count + N * (BEVEL_SEGS + 1) + N * 5 * 4;
   const pos = new Float32Array(verts * 3);
@@ -228,8 +276,12 @@ export function sculptHex(h: HexCell, size: number, slabH: number, tileY: number
   };
   // A triangle wound so its face points along (rx, ry, rz).
   const tri = (a: number, b: number, d: number, rx: number, ry: number, rz: number) => {
-    const [ux, uy, uz] = [pos[b * 3]! - pos[a * 3]!, pos[b * 3 + 1]! - pos[a * 3 + 1]!, pos[b * 3 + 2]! - pos[a * 3 + 2]!];
-    const [vx, vy, vz] = [pos[d * 3]! - pos[a * 3]!, pos[d * 3 + 1]! - pos[a * 3 + 1]!, pos[d * 3 + 2]! - pos[a * 3 + 2]!];
+    const ux = pos[b * 3]! - pos[a * 3]!;
+    const uy = pos[b * 3 + 1]! - pos[a * 3 + 1]!;
+    const uz = pos[b * 3 + 2]! - pos[a * 3 + 2]!;
+    const vx = pos[d * 3]! - pos[a * 3]!;
+    const vy = pos[d * 3 + 1]! - pos[a * 3 + 1]!;
+    const vz = pos[d * 3 + 2]! - pos[a * 3 + 2]!;
     const dot = (uy * vz - uz * vy) * rx + (uz * vx - ux * vz) * ry + (ux * vy - uy * vx) * rz;
     idx[ni++] = a;
     if (dot >= 0) (idx[ni++] = b, idx[ni++] = d);
@@ -237,45 +289,38 @@ export function sculptHex(h: HexCell, size: number, slabH: number, tileY: number
   };
 
   // The top: the lattice points within R steps of the centre, each displaced, shaded by its slope and painted by its height.
-  // The lattice topology (which points, which triangles) is the same for every hex; only the heights and colours are per hex.
-  const e = 0.01;
+  // The lattice (its points, triangles and masks) is the same for every hex; only the relief and colours are per hex, and the
+  // relief is skipped where the masks hold the top flat.
+  const lift = (j: number, x: number, z: number) => {
+    // A dip's mask reaches further out than a bump's, so no dip means neither.
+    if (T.down[j] === 0) return 0;
+    const raw = relief(t, x, z, L, s);
+    return raw * (raw > 0 ? T.up[j]! : T.down[j]!);
+  };
   for (let i = 0; i < T.count; i++) {
-    const x = (SQ3 / 2) * s * T.q[i]!;
-    const z = 0.5 * s * T.q[i]! + s * T.r[i]!;
-    const h0 = height(x, z);
-    const gx = (height(x + e, z) - h0) / e;
-    const gz = (height(x, z + e) - h0) / e;
+    const x = T.x[i]!;
+    const z = T.z[i]!;
+    const h0 = lift(i * 3, x, z);
+    const gx = (lift(i * 3 + 1, x + E, z) - h0) / E;
+    const gz = (lift(i * 3 + 2, x, z + E) - h0) / E;
     const il = 1 / Math.hypot(gx, 1, gz);
     paint(x, z, h0);
     vert(x, slabH + h0, z, -gx * il, il, -gz * il, c, 1);
   }
 
-  // The boundary ring of the top, corner to corner, with each point's outward direction (a corner's own, or its flat's).
-  const steps: [number, number][] = [[-1, 1], [-1, 0], [0, -1], [1, -1], [1, 0], [0, 1]];
-  const corners: [number, number][] = [[R, 0], [0, R], [-R, R], [-R, 0], [0, -R], [R, -R]];
-  const ring: { x: number; z: number; ox: number; oz: number; edge: number }[] = [];
-  for (let k = 0; k < 6; k++) {
-    const flat = dirAt(60 + 60 * k);
-    for (let i = 0; i < R; i++) {
-      const [q, r] = [corners[k]![0] + steps[k]![0] * i, corners[k]![1] + steps[k]![1] * i];
-      const x = (SQ3 / 2) * s * q;
-      const z = 0.5 * s * q + s * r;
-      const o = i === 0 ? { x: x / top, z: z / top } : flat;
-      ring.push({ x, z, ox: o.x, oz: o.z, edge: k });
-    }
-  }
+  const ring = T.ring;
   const lip = shade.clone().multiplyScalar(0.92);
-  // The rim: a quarter round from the top's edge out to the full hex, BEVEL_H down; one vertex per ring point and step.
+  // The rim, one vertex per ring point and step, painted from the top's edge colour to the lip.
   const rim = new Int32Array(N * (BEVEL_SEGS + 1));
+  const edgeCol = new THREE.Color();
+  const v = T.rim;
   for (let i = 0; i < N; i++) {
     const p = ring[i]!;
+    edgeCol.copy(paint(p.x, p.z, 0));
     for (let j = 0; j <= BEVEL_SEGS; j++) {
-      const a = (j / BEVEL_SEGS) * (Math.PI / 2);
-      const f = (top + (size - top) * Math.sin(a)) / top;
-      const [nx, ny, nz] = [p.ox * Math.sin(a), Math.cos(a), p.oz * Math.sin(a)];
-      const il = 1 / Math.hypot(nx, ny, nz);
-      paint(p.x, p.z, 0).lerp(lip, j / BEVEL_SEGS);
-      rim[i * (BEVEL_SEGS + 1) + j] = vert(p.x * f, slabH - BEVEL_H * (1 - Math.cos(a)), p.z * f, nx * il, ny * il, nz * il, c, 1);
+      const o = (i * (BEVEL_SEGS + 1) + j) * 6;
+      c.copy(edgeCol).lerp(lip, j / BEVEL_SEGS);
+      rim[i * (BEVEL_SEGS + 1) + j] = vert(v[o]!, slabH - v[o + 1]!, v[o + 2]!, v[o + 3]!, v[o + 4]!, v[o + 5]!, c, 1);
     }
   }
   const W = BEVEL_SEGS + 1;
