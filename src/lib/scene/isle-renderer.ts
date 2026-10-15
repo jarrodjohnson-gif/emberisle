@@ -167,6 +167,7 @@ export class IsleRenderer {
   private boats: THREE.Group[] = [];
   private trees: THREE.Object3D[] = [];
   private kit: PropKit | null = null;
+  private landGen = 0;
   private lastLand: string | null = null;
   private lastSeq = -1;
   private lastState: GameState | null = null;
@@ -963,7 +964,6 @@ export class IsleRenderer {
     this.stepLandings(now, calm);
     if (this.relayout > 0) {
       this.relayout--;
-      this.refitDue = true;
     }
     if (this.refitDue) this.refit(false);
     if (calm && this.walk) {
@@ -1242,6 +1242,7 @@ export class IsleRenderer {
     this.flashes = [];
     this.oceanLife.reset(landKey(state));
     const kit = (this.kit = new PropKit(this.living));
+    const props: (() => void)[] = [];
     const life = { sheep: this.sheep, oreWork: this.oreWork, farmWork: this.farmWork, tall: this.trees };
 
     for (const h of state.hexes) {
@@ -1262,7 +1263,7 @@ export class IsleRenderer {
       cap.material.emissive.copy(new THREE.Color(PAINT[h.terrain][0]).lerp(FLASH_WARM, 0.6));
       cap.material.emissiveIntensity = 0;
       this.caps.set(h.id, cap.material);
-      decorate(kit, life, h, x, z, sculpt, rng);
+      props.push(() => decorate(kit, life, h, x, z, sculpt, rng));
       if (h.pip != null) {
         const tok = numberToken(h.pip);
         tok.userData.token = h.pip;
@@ -1274,8 +1275,18 @@ export class IsleRenderer {
         this.tokens.push(tok);
       }
     }
-    kit.finish();
-    (window as unknown as { __terrain: TerrainStats }).__terrain = this.terrainStats();
+    // The props (the heavier half of the build) draw a frame after the tiles, so the board and its pieces are not held for them
+    // (#543 restore budget). A rebuild before then drops them with the old land.
+    const gen = ++this.landGen;
+    requestAnimationFrame(() => {
+      if (gen !== this.landGen) return;
+      performance.mark("props-start");
+      props.forEach((f) => f());
+      kit.finish();
+      (window as unknown as { __terrain: TerrainStats }).__terrain = this.terrainStats();
+      this.wake();
+      performance.mark("props-end");
+    });
 
     // A dock spans a coastal edge, so both its corners carry the harbor; the deal spaces docks at least three edges apart, so two
     // neighbouring harbor corners on the coast loop of one kind are always one dock. One pier and one boat per dock.

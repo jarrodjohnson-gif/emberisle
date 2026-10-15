@@ -9,7 +9,7 @@ import { PAINT, PROP, STRATA } from "@/lib/scene/palette";
 
 const SQ3 = Math.sqrt(3);
 // Lattice rings across the top (6 R^2 triangles), the rim's width and drop (corner-radius units) and its segments.
-const RINGS = 20;
+const RINGS = 14;
 const BEVEL_W = 0.06;
 const BEVEL_H = 0.045;
 const BEVEL_SEGS = 3;
@@ -130,6 +130,36 @@ function pitLevel(x: number, z: number, L: Layout) {
 
 const col = (hex: string) => new THREE.Color(hex);
 
+// The top's lattice, the same for every hex of a given RINGS: the points (axial q, r) and the upward triangles over them.
+const topologies = new Map<number, { count: number; q: Int16Array; r: Int16Array; index: Uint16Array }>();
+function topology(R: number) {
+  let t = topologies.get(R);
+  if (t) return t;
+  const id = new Map<number, number>();
+  const key = (q: number, r: number) => (q + R + 1) * 64 + (r + R + 1);
+  const q: number[] = [];
+  const r: number[] = [];
+  for (let a = -R; a <= R; a++) {
+    for (let b = Math.max(-R, -a - R); b <= Math.min(R, -a + R); b++) {
+      id.set(key(a, b), q.length);
+      q.push(a);
+      r.push(b);
+    }
+  }
+  // Counter-clockwise seen from above (+y): the lattice's x runs along q and z along r + q / 2.
+  const index: number[] = [];
+  for (let a = -R; a < R; a++) {
+    for (let b = -R; b < R; b++) {
+      const [p0, p1, p2, p3] = [id.get(key(a, b)), id.get(key(a + 1, b)), id.get(key(a, b + 1)), id.get(key(a + 1, b + 1))];
+      if (p0 !== undefined && p1 !== undefined && p2 !== undefined) index.push(p0, p2, p1);
+      if (p1 !== undefined && p3 !== undefined && p2 !== undefined) index.push(p1, p2, p3);
+    }
+  }
+  t = { count: q.length, q: Int16Array.from(q), r: Int16Array.from(r), index: Uint16Array.from(index) };
+  topologies.set(R, t);
+  return t;
+}
+
 // Every hex: a slab of `size` (corner radius) and `slabH`, base at y 0 in its own frame, standing at `tileY` in the world.
 export function sculptHex(h: HexCell, size: number, slabH: number, tileY: number, rng: () => number): Sculpt {
   const L = layoutOf(rng);
@@ -138,6 +168,7 @@ export function sculptHex(h: HexCell, size: number, slabH: number, tileY: number
   const s = top / RINGS;
   const inr = (size * SQ3) / 2;
   const height = (x: number, z: number) => {
+    if (x * x + z * z < 0.16) return 0;
     const raw = relief(t, x, z, L, s);
     const centre = smooth(0.4, 0.56, Math.hypot(x, z));
     const d = hexDist(x, z) / inr;
@@ -145,104 +176,115 @@ export function sculptHex(h: HexCell, size: number, slabH: number, tileY: number
     return raw * centre * mask;
   };
   const [base, shade] = [col(PAINT[t][0]), col(PAINT[t][1])];
-  const light = base.clone().lerp(new THREE.Color(1, 1, 1), 0.22);
+  const light = base.clone().lerp(WHITE, 0.22);
+  const terrace = base.clone().lerp(light, 0.5);
+  const pit = shade.clone().multiplyScalar(0.8);
   const sand = col(STRATA.sand);
+  // One scratch colour: `paint` fills it, the caller reads it at once.
+  const c = new THREE.Color();
   const paint = (x: number, z: number, dh: number) => {
-    const c = shade.clone().lerp(base, Math.min(1, Math.max(0, 0.66 + dh * 7)));
+    c.copy(shade).lerp(base, Math.min(1, Math.max(0, 0.66 + dh * 7)));
     if (dh > 0.025) c.lerp(light, Math.min(1, (dh - 0.025) * 18));
     if (t === "grain") {
       const g = grainRows(x, z, L, s);
-      c.lerp(shade, 0.5 * g.furrow * (1 - g.path) * smooth(0.36, 0.5, Math.hypot(x, z)));
-      c.lerp(sand, 0.8 * g.path * smooth(0.38, 0.5, Math.hypot(x, z)));
+      const m = Math.hypot(x, z);
+      c.lerp(shade, 0.5 * g.furrow * (1 - g.path) * smooth(0.36, 0.5, m));
+      c.lerp(sand, 0.8 * g.path * smooth(0.38, 0.5, m));
     }
     if (t === "clay") {
       const p = pitLevel(x, z, L);
       if (p.riser) c.copy(shade);
-      else if (p.step > 0.5) c.copy(p.level % 2 ? base : base.clone().lerp(light, 0.5));
-      if (p.step >= 2.99) c.copy(shade).multiplyScalar(0.8);
+      else if (p.step > 0.5) c.copy(p.level % 2 ? base : terrace);
+      if (p.step >= 2.99) c.copy(pit);
     }
     return c;
   };
 
-  const pos: number[] = [];
-  const nor: number[] = [];
-  const cols: number[] = [];
-  const glow: number[] = [];
-  type V = { p: [number, number, number]; n: [number, number, number]; c: THREE.Color; g: number };
-  const push = (v: V) => {
-    pos.push(...v.p);
-    nor.push(...v.n);
-    cols.push(v.c.r, v.c.g, v.c.b);
-    glow.push(v.g);
+  const R = RINGS;
+  const T = topology(R);
+  const N = 6 * R;
+  const verts = T.count + N * (BEVEL_SEGS + 1) + N * 5 * 4;
+  const pos = new Float32Array(verts * 3);
+  const nor = new Float32Array(verts * 3);
+  const cols = new Float32Array(verts * 3);
+  const glow = new Float32Array(verts).fill(1);
+  const idx = new Uint16Array(T.index.length + N * BEVEL_SEGS * 6 + N * 5 * 6);
+  idx.set(T.index);
+  let nv = 0;
+  let ni = T.index.length;
+  const vert = (px: number, py: number, pz: number, nx: number, ny: number, nz: number, col: THREE.Color, g: number) => {
+    const o = nv * 3;
+    pos[o] = px;
+    pos[o + 1] = py;
+    pos[o + 2] = pz;
+    nor[o] = nx;
+    nor[o + 1] = ny;
+    nor[o + 2] = nz;
+    cols[o] = col.r;
+    cols[o + 1] = col.g;
+    cols[o + 2] = col.b;
+    glow[nv] = g;
+    return nv++;
   };
-  // A triangle wound so its face points along `ref`.
-  const tri = (a: V, b: V, c: V, ref: [number, number, number]) => {
-    const [ux, uy, uz] = [b.p[0] - a.p[0], b.p[1] - a.p[1], b.p[2] - a.p[2]];
-    const [vx, vy, vz] = [c.p[0] - a.p[0], c.p[1] - a.p[1], c.p[2] - a.p[2]];
-    const dot = (uy * vz - uz * vy) * ref[0] + (uz * vx - ux * vz) * ref[1] + (ux * vy - uy * vx) * ref[2];
-    push(a);
-    if (dot >= 0) (push(b), push(c));
-    else (push(c), push(b));
+  // A triangle wound so its face points along (rx, ry, rz).
+  const tri = (a: number, b: number, d: number, rx: number, ry: number, rz: number) => {
+    const [ux, uy, uz] = [pos[b * 3]! - pos[a * 3]!, pos[b * 3 + 1]! - pos[a * 3 + 1]!, pos[b * 3 + 2]! - pos[a * 3 + 2]!];
+    const [vx, vy, vz] = [pos[d * 3]! - pos[a * 3]!, pos[d * 3 + 1]! - pos[a * 3 + 1]!, pos[d * 3 + 2]! - pos[a * 3 + 2]!];
+    const dot = (uy * vz - uz * vy) * rx + (uz * vx - ux * vz) * ry + (ux * vy - uy * vx) * rz;
+    idx[ni++] = a;
+    if (dot >= 0) (idx[ni++] = b, idx[ni++] = d);
+    else (idx[ni++] = d, idx[ni++] = b);
   };
-  const UP: [number, number, number] = [0, 1, 0];
 
   // The top: the lattice points within R steps of the centre, each displaced, shaded by its slope and painted by its height.
-  const R = RINGS;
-  const grid = new Map<number, V>();
-  const key = (q: number, r: number) => (q + R + 1) * 64 + (r + R + 1);
+  // The lattice topology (which points, which triangles) is the same for every hex; only the heights and colours are per hex.
   const e = 0.01;
-  for (let q = -R; q <= R; q++) {
-    for (let r = Math.max(-R, -q - R); r <= Math.min(R, -q + R); r++) {
-      const x = (SQ3 / 2) * s * q;
-      const z = 0.5 * s * q + s * r;
-      const dh = height(x, z);
-      const n = new THREE.Vector3(-(height(x + e, z) - height(x - e, z)) / (2 * e), 1, -(height(x, z + e) - height(x, z - e)) / (2 * e)).normalize();
-      grid.set(key(q, r), { p: [x, slabH + dh, z], n: [n.x, n.y, n.z], c: paint(x, z, dh), g: 1 });
-    }
-  }
-  for (let q = -R; q < R; q++) {
-    for (let r = -R; r < R; r++) {
-      const a = grid.get(key(q, r));
-      const b = grid.get(key(q + 1, r));
-      const c = grid.get(key(q, r + 1));
-      const d = grid.get(key(q + 1, r + 1));
-      if (a && b && c) tri(a, b, c, UP);
-      if (b && d && c) tri(b, d, c, UP);
-    }
+  for (let i = 0; i < T.count; i++) {
+    const x = (SQ3 / 2) * s * T.q[i]!;
+    const z = 0.5 * s * T.q[i]! + s * T.r[i]!;
+    const h0 = height(x, z);
+    const gx = (height(x + e, z) - h0) / e;
+    const gz = (height(x, z + e) - h0) / e;
+    const il = 1 / Math.hypot(gx, 1, gz);
+    paint(x, z, h0);
+    vert(x, slabH + h0, z, -gx * il, il, -gz * il, c, 1);
   }
 
   // The boundary ring of the top, corner to corner, with each point's outward direction (a corner's own, or its flat's).
   const steps: [number, number][] = [[-1, 1], [-1, 0], [0, -1], [1, -1], [1, 0], [0, 1]];
   const corners: [number, number][] = [[R, 0], [0, R], [-R, R], [-R, 0], [0, -R], [R, -R]];
   const ring: { x: number; z: number; ox: number; oz: number; edge: number }[] = [];
-  for (let c = 0; c < 6; c++) {
-    const flat = dirAt(60 + 60 * c);
+  for (let k = 0; k < 6; k++) {
+    const flat = dirAt(60 + 60 * k);
     for (let i = 0; i < R; i++) {
-      const [q, r] = [corners[c]![0] + steps[c]![0] * i, corners[c]![1] + steps[c]![1] * i];
+      const [q, r] = [corners[k]![0] + steps[k]![0] * i, corners[k]![1] + steps[k]![1] * i];
       const x = (SQ3 / 2) * s * q;
       const z = 0.5 * s * q + s * r;
       const o = i === 0 ? { x: x / top, z: z / top } : flat;
-      ring.push({ x, z, ox: o.x, oz: o.z, edge: c });
+      ring.push({ x, z, ox: o.x, oz: o.z, edge: k });
     }
   }
   const lip = shade.clone().multiplyScalar(0.92);
-  const N = ring.length;
-  // The rim: a quarter round from the top's edge out to the full hex, BEVEL_H down.
-  const rimAt = (i: number, j: number): V => {
-    const p = ring[i % N]!;
-    const a = (j / BEVEL_SEGS) * (Math.PI / 2);
-    const f = (top + (size - top) * Math.sin(a)) / top;
-    const n = new THREE.Vector3(p.ox * Math.sin(a), Math.cos(a), p.oz * Math.sin(a)).normalize();
-    const c = paint(p.x, p.z, 0).lerp(lip, j / BEVEL_SEGS);
-    return { p: [p.x * f, slabH - BEVEL_H * (1 - Math.cos(a)), p.z * f], n: [n.x, n.y, n.z], c, g: 1 };
-  };
+  // The rim: a quarter round from the top's edge out to the full hex, BEVEL_H down; one vertex per ring point and step.
+  const rim = new Int32Array(N * (BEVEL_SEGS + 1));
+  for (let i = 0; i < N; i++) {
+    const p = ring[i]!;
+    for (let j = 0; j <= BEVEL_SEGS; j++) {
+      const a = (j / BEVEL_SEGS) * (Math.PI / 2);
+      const f = (top + (size - top) * Math.sin(a)) / top;
+      const [nx, ny, nz] = [p.ox * Math.sin(a), Math.cos(a), p.oz * Math.sin(a)];
+      const il = 1 / Math.hypot(nx, ny, nz);
+      paint(p.x, p.z, 0).lerp(lip, j / BEVEL_SEGS);
+      rim[i * (BEVEL_SEGS + 1) + j] = vert(p.x * f, slabH - BEVEL_H * (1 - Math.cos(a)), p.z * f, nx * il, ny * il, nz * il, c, 1);
+    }
+  }
+  const W = BEVEL_SEGS + 1;
   for (let i = 0; i < N; i++) {
     for (let j = 0; j < BEVEL_SEGS; j++) {
       const p = ring[i]!;
-      const ref: [number, number, number] = [p.ox, 1, p.oz];
-      const [a, b, c, d] = [rimAt(i, j), rimAt(i + 1, j), rimAt(i, j + 1), rimAt(i + 1, j + 1)];
-      tri(a, b, d, ref);
-      tri(a, d, c, ref);
+      const [a, b, cc, d] = [rim[i * W + j]!, rim[((i + 1) % N) * W + j]!, rim[i * W + j + 1]!, rim[((i + 1) % N) * W + j + 1]!];
+      tri(a, b, d, p.ox, 1, p.oz);
+      tri(a, d, cc, p.ox, 1, p.oz);
     }
   }
 
@@ -262,24 +304,29 @@ export function sculptHex(h: HexCell, size: number, slabH: number, tileY: number
     ];
   };
   const k = size / top;
+  let b0 = borders(0);
   for (let i = 0; i < N; i++) {
     const [p0, p1] = [ring[i]!, ring[(i + 1) % N]!];
     const n = dirAt(60 + 60 * p0.edge);
-    const nn: [number, number, number] = [n.x, 0, n.z];
-    const [b0, b1] = [borders(i), borders(i + 1)];
+    const b1 = borders(i + 1);
     for (let band = 0; band < bands.length; band++) {
-      const v = (p: typeof p0, y: number): V => ({ p: [p.x * k, y, p.z * k], n: nn, c: bands[band]!, g: 0 });
-      const [a, b, c, d] = [v(p0, b0[band]!), v(p1, b1[band]!), v(p0, b0[band + 1]!), v(p1, b1[band + 1]!)];
-      tri(a, b, d, nn);
-      tri(a, d, c, nn);
+      const bc = bands[band]!;
+      const a = vert(p0.x * k, b0[band]!, p0.z * k, n.x, 0, n.z, bc, 0);
+      const b = vert(p1.x * k, b1[band]!, p1.z * k, n.x, 0, n.z, bc, 0);
+      const cc = vert(p0.x * k, b0[band + 1]!, p0.z * k, n.x, 0, n.z, bc, 0);
+      const d = vert(p1.x * k, b1[band + 1]!, p1.z * k, n.x, 0, n.z, bc, 0);
+      tri(a, b, d, n.x, 0, n.z);
+      tri(a, d, cc, n.x, 0, n.z);
     }
+    b0 = b1;
   }
 
   const geo = new THREE.BufferGeometry();
-  geo.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
-  geo.setAttribute("normal", new THREE.Float32BufferAttribute(nor, 3));
-  geo.setAttribute("color", new THREE.Float32BufferAttribute(cols, 3));
-  geo.setAttribute("aGlow", new THREE.Float32BufferAttribute(glow, 1));
+  geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+  geo.setAttribute("normal", new THREE.BufferAttribute(nor, 3));
+  geo.setAttribute("color", new THREE.BufferAttribute(cols, 3));
+  geo.setAttribute("aGlow", new THREE.BufferAttribute(glow, 1));
+  geo.setIndex(new THREE.BufferAttribute(idx, 1));
   return { geo, layout: L, ground: (lx, lz) => tileY + slabH + height(lx, lz) };
 }
 
