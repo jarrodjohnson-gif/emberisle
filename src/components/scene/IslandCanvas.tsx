@@ -30,11 +30,13 @@ export default function IslandCanvas() {
     (window as unknown as { __isle: IsleRenderer }).__isle = renderer;
     // Reported from inside sync (and later by the probe), so the store update waits for sync to finish.
     renderer.onWater = (water) => queueMicrotask(() => useGame.setState({ water }));
+    renderer.onView = (playView) => queueMicrotask(() => useGame.setState({ playView }));
     let action = "";
     let chrome = "";
     const sync = () => {
       const s = useGame.getState();
       renderer.setWaterChoice(s.waterChoice);
+      renderer.setPlayView(s.viewChoice);
       // The GPU probe waits for a settled client: the title with nothing dialling, or play with its first state.
       renderer.setSettled(!s.restoring && ((s.screen === "title" && !s.net) || (s.screen === "play" && !!s.state)));
       renderer.setTitleMode(s.screen !== "play");

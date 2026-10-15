@@ -32,12 +32,21 @@ of open water in the drawn frame: luminance p95 - p5 went from 0.148 to 0.01.
 
 ## Camera
 
-Two modes on one scene (#128), unchanged in kind:
+Three views on one scene:
 
 - **Title and lobby**: the free `PerspectiveCamera` (32°) on OrbitControls, auto-rotating, SSAO off.
-- **Play**: the overhead `OrthographicCamera`, fitted by `fitOrtho` to the hole the HUD leaves, on every pointer
-  (before, only a coarse pointer got it; a desktop kept the tilted camera and the bottom row sat under the HUD). SSAO
-  off. Picking and the highlights are the same meshes.
+- **Play, diorama** (#597, reversing #128 by the owner's call): a `PerspectiveCamera` 38° above the horizon and 20° off
+  the island's north, fitted by `fitDiorama` to the hole the HUD leaves ("The diorama view" below).
+- **Play, overhead**: the `OrthographicCamera`, fitted by `fitOrtho` to the same hole, on every pointer.
+
+With no choice saved, play opens in the diorama on a landscape canvas at least 900 CSS px wide (`DIORAMA_MIN_WIDTH`) and
+overhead otherwise (`defaultView`), and a canvas that crosses the line (a rotation, a resize) switches with it. Upright, the
+island is bound by the phone's width either way and the tilt would only shrink it and crowd its far corners; on a sideways
+phone (844x390) the diorama's tokens, held to 38 % of a hex, read at an 11.4 px numeral but 1.6 px pips, under the 2 px
+floor (`docs/design/tokens.md` "Angle"). The table menu's **View** row
+switches between Diorama and Overhead; a choice is saved in `localStorage` (`emberisle-view`: `"diorama"` | `"overhead"`,
+like `emberisle-water`) and wins on every screen. Every entry to the table starts from the view's home. SSAO is off in both
+play views. Picking and the highlights are the same meshes.
 
 ### The hole
 
@@ -92,6 +101,63 @@ Proof: `npm run board-look-prove` (the measured hole, every corner on the canvas
 places nothing, a wheel zooms, Home and a double click or tap return home, reduced motion snaps) and
 `npm run touch-place-prove` (the leaned fit and the `chromeInsets` rules, no browser).
 
+### The diorama view (#597)
+
+The board seen from a chair: the reference's 3/4 tilt, the whole island in the hole, the far water fading into the paper.
+
+| | Value | Where |
+|---|---|---|
+| Elevation | 38° above the horizon (polar 52°) | `DIORAMA_POLAR` |
+| Yaw | 20° off north: the eye sits south-south-east, the island's north is up-screen and a little left | `DIORAMA_AZIMUTH` |
+| Look-at | the island's centre at cap level, (0, 0.35, 0); the orbit pivots there | `applyPose` |
+| Focal length | 24° across the hole's height: `holeH / 2 / tan(12°)` px | `DIORAMA_FOV` |
+| Lens shift | the lens axis meets the canvas off centre (`setViewOffset`), so the island sits in the hole without turning the eye | `fitDiorama` |
+| Fog | starts 8 units past the eye's distance to the look-at point, 26 deep; the sea fades to paper 16 to 30 units out | `fadeSea` |
+
+**The fit rule.** `fitDiorama` bisects the eye's distance twice: once until the 30 coast corners (at cap level) span 94 %
+of the hole on its limiting axis, once until the coast, every dock's reach (0.7 along the coast miter at the waterline) and the
+tallest prop's top wherever one can stand on the outer ring (0.86 from its hex's centre, 1.15 over cap level) just fill
+the hole. It takes the farther of the two, then shifts the lens so that whole span is centred in the hole. So the coast
+reaches within 6 % of the hole unless that would push a dock or a far pine past its edge, in which case those touch it.
+On every landscape hole measured the docks and pines bind: the coast spans 78 % of the hole's height (the far pines rise
+about 0.9 world units up-screen over the far coast, the near docks reach 0.43 below the near coast), and the hole's width
+is not the limit (a 1280x720 hole is 2.3 times as wide as tall; the island at this tilt about 1.5). It is pure math
+in `mobile-fit.ts`; `touch-place-prove` checks it on the measured holes, and `board-look-prove`, `visual-direction-prove`,
+`hud-safe-area-prove` and `rotate-prove` against the live HUD.
+
+Measured in the browser on a mid-game board (main phase, Path armed; px per world unit across the screen at the far, middle
+and near row of hex centres):
+
+| Viewport | Hole (top / right / bottom / left) | Eye distance | px per unit far / centre / near | Adjacent corners, closest |
+|---|---|---|---|---|
+| 1280x720 | 68 / 12 / 180 / 216 | 18.8 | 52.0 / 58.9 / 68.0 | 34.4 px |
+| 844x390 | 68 / 12 / 12 / 284 | 18.8 | 34.1 / 38.7 / 44.7 | 22.6 px |
+
+At 32° (the first cut) the far side of a sideways phone had corners 20 px apart and a portrait phone 18 px; 38° shows more
+of the caps' tops and keeps every landscape hole at 18 px or more, which `board-look-prove` (844x390 with the diorama
+chosen) and `touch-place-prove` hold.
+The overhead view keeps 24 px; 18 px still puts a tap dead on one corner well outside its neighbour's 14 px touch reach.
+
+**Gestures.** As in the overhead view: drag orbits (polar 7°-66°, any azimuth, no damping, no pan), wheel and pinch zoom
+0.8x-2.4x (here the eye's distance, fitted distance over zoom), and Home, a double click or a double tap on empty board
+glide home over 280 ms (instant under reduced motion). A changed hole glides the lens (focal length, distance, axis) and
+leaves the eye where the player put it.
+
+**Picking.** The raycaster runs through the perspective camera. A corner or a path is picked when the ray passes within
+`pickReach` of it: 14 CSS px on screen at that depth for touch (8 for a mouse), but never less than the overhead pick volume
+(0.28 world units for a corner, 0.18 for a path) and never more than 0.5 world units. The 0.5 cap is the real invariant: it
+is under half the 1.12 corner spacing, so two corners never share a pick however far out the eye is. The pixel reach is
+what is left after the cap and the floor, per corner (`touch-place-prove` asserts it at home): at 1280x720 14-20.7 px at
+home (the floor lifts the near corners) and 14-15.8 px zoomed fully out; at 844x390 (diorama by choice) 14 px at home and
+13.3-14 px zoomed out, where the cap binds on the far coast; on an upright phone by choice, 12.2 px at the far coast zoomed
+out. Within a kind the smallest miss on screen wins; corners still beat paths beat hexes. The keyboard route (the
+PlaceList) is unchanged.
+
+**The far side.** `board-look-prove` chooses the diorama at 844x390, puts a path on the northmost coast edge and an outpost
+on its corner, and measures their meshes on screen: the path is 34.0 x 11.7 px, the outpost 20.4 x 19.2 px, and the touch pick at that
+corner 28 px across (the 24 px touch slop or more). No zoom bias: any zoom past the fit pushes a
+dock or a pine out of the hole, and the pick reach, not the piece's drawn size, is the tap target.
+
 ## Open
 
 - **Budget and frame time**: draw calls in the overhead play view are about 480 a frame (docs/research/mobile-frame-time.md);
@@ -101,5 +167,4 @@ places nothing, a wheel zooms, Home and a double click or tap return home, reduc
   101x85 px island and a 7.1 px token to 270x227 and 19 px (adjacent corners 28 px apart); 667x375 from 101x85 and 7.1 px
   to 251x211 and 17.6 px. Everywhere, the dice ride in the Roll / End turn row instead of a row of their own: 1280x720
   main went from a 23.2 px token to 25.7 px. Portrait stays width-bound (20.7 px).
-- **A free perspective view in play** (#463) is no longer needed for orbiting; it is open only if a low, perspective
-  look is wanted on top of the orthographic orbit.
+- **A free perspective view in play** (#463): answered by the diorama view (#597).
