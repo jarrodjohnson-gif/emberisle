@@ -1,19 +1,26 @@
 import * as THREE from "three";
 import {
   CAP_LEVEL,
+  DIORAMA_AZIMUTH,
+  DIORAMA_POLAR,
   OVERHEAD_LEAN,
   TouchGesture,
   PICK_EDGE,
   PICK_VERTEX_RADIUS,
   chromeInsets,
+  defaultView,
+  fitDiorama,
   fitOrtho,
   freeMaxDistance,
   hudInsets,
   isSelectTap,
   pickBest,
+  pickReach,
   tapSlop,
+  type DioramaFit,
   type Insets,
   type OrthoFit,
+  type PlayView,
   type Rect,
 } from "@/lib/scene/mobile-fit";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
@@ -81,12 +88,30 @@ type OreWork = { cart: THREE.Mesh; arm: THREE.Mesh; z: number; phase: number };
 type FarmWork = { body: THREE.Mesh; arm: THREE.Mesh; x: number; z: number; y: number; phase: number; angle: number };
 type Sheep = { g: THREE.Object3D; ox: number; oz: number; tx: number; tz: number; wait: number; graze: number };
 
-// The overhead view in play (docs/design/camera-light.md): a frustum and a look-at point from the fit to the HUD hole, and
-// the eye on an orbit around that point, ORBIT_RADIUS out. Home is the fitted OVERHEAD_LEAN at zoom 1; a drag orbits, a
-// wheel or a pinch zooms, and Home, a double tap or a double click on empty board glides back over GLIDE_MS (instant under
-// reduced motion). A HUD that grows or shrinks glides the fit alone and leaves the eye where the player put it.
-type Pose = { left: number; right: number; top: number; bottom: number; tx: number; tz: number; polar: number; azimuth: number; zoom: number };
-const FIT_KEYS: (keyof Pose)[] = ["left", "right", "top", "bottom", "tx", "tz"];
+// The two views in play (docs/design/camera-light.md). Overhead: a frustum and a look-at point from the fit to the HUD hole,
+// and the eye on an orbit around that point, ORBIT_RADIUS out. Diorama (the default, #597): a perspective eye on an orbit
+// around the island's centre, its lens shifted onto the hole, `dist / zoom` out. Home is the fitted angle at zoom 1; a drag
+// orbits, a wheel or a pinch zooms, and Home, a double tap or a double click on empty board glides back over GLIDE_MS
+// (instant under reduced motion). A HUD that grows or shrinks glides the fit alone and leaves the eye where the player put it.
+// The frustum keys are the overhead view's, the lens keys (`focal`, `dist`, `cx`, `cy`) the diorama's; each view leaves the
+// other's at 0.
+type Pose = {
+  left: number;
+  right: number;
+  top: number;
+  bottom: number;
+  tx: number;
+  tz: number;
+  focal: number;
+  dist: number;
+  cx: number;
+  cy: number;
+  polar: number;
+  azimuth: number;
+  zoom: number;
+};
+const FIT_KEYS: (keyof Pose)[] = ["left", "right", "top", "bottom", "tx", "tz", "focal", "dist", "cx", "cy"];
+const NO_FIT = { left: 0, right: 0, top: 0, bottom: 0, tx: 0, tz: 0, focal: 0, dist: 0, cx: 0, cy: 0 };
 const EYE_KEYS: (keyof Pose)[] = ["polar", "azimuth", "zoom"];
 const ORBIT_RADIUS = 18;
 const GLIDE_MS = 280;
@@ -96,13 +121,45 @@ const DOUBLE_TAP_MS = 350;
 const DOUBLE_TAP_PX = 32;
 const _eye = new THREE.Vector3();
 const _sph = new THREE.Spherical();
+const _p = new THREE.Vector3();
+const _q = new THREE.Vector3();
+const _n = new THREE.Vector3();
+
+// Number tokens in the diorama view (docs/design/tokens.md "Angle"): each turns to face the camera's azimuth and pitches
+// TOKEN_TILT toward it, resting on its near edge, and grows until its numeral is TOKEN_NUMERAL_PX tall on screen, but never
+// past 1.25x nor past 38% of a hex's width (the disc is 0.68 across, a hex SQRT3 * HEX_SIZE, so that cap is the one that
+// binds, at 1.08x), and shrinks while its disc would overlap another's on screen. Zoomed in, it is its own size again.
+// TOKEN_GLYPH is the numeral's height on the face, world units.
+const TOKEN_TILT = (22 * Math.PI) / 180;
+const TOKEN_NUMERAL_PX = 12;
+const TOKEN_MAX_SCALE = Math.min(1.25, (0.38 * SQRT3 * HEX_SIZE) / 0.68);
+const TOKEN_GLYPH = 0.31;
+// A tree standing between a token and the diorama camera (in front of it within TREE_SHADE_DEPTH, within TREE_SHADE_SIDE of
+// the line of sight) can hide the foot of the numeral at this angle: it is scaled down just enough that its top clears the
+// line from the eye to the glyph's lowest row (TOKEN_GLYPH_FOOT below the face's centre, plus TREE_SHADE_MARGIN), never
+// below TREE_SHADE_MIN. Trees in the zone that already clear it stay full size.
+const TREE_SHADE_DEPTH = 1.7;
+const TREE_SHADE_SIDE = 0.55;
+const TREE_SHADE_MARGIN = 0.05;
+const TREE_SHADE_MIN = 0.3;
+const TOKEN_GLYPH_FOOT = 0.13;
+const _box = new THREE.Box3();
 
 export class IsleRenderer {
   private renderer: THREE.WebGLRenderer;
   private scene = new THREE.Scene();
   private camera: THREE.PerspectiveCamera;
   private ortho = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 80);
-  private overhead = false;
+  private persp = new THREE.PerspectiveCamera(24, 1, 0.5, 160);
+  // Free on the title and in the lobby; in play, the player's choice from the table menu, or with none, `defaultView` for
+  // the canvas's shape (overhead on a portrait canvas, the diorama otherwise).
+  view: "free" | PlayView = "free";
+  private viewChoice: PlayView | null = null;
+  // The diorama lens as last posed: focal length (px), fitted distance, and where its axis meets the canvas.
+  private lens: DioramaFit = { focal: 1, dist: 1, cx: 0, cy: 0 };
+  private tokens: THREE.Object3D[] = [];
+  // The camera azimuth (and the island) the trees were last shaded for, so an idle frame does not redo it.
+  private shadedFor = "";
   private pending: { kind: string; id: string } | null = null;
   private downType = "mouse";
   private gesture = new TouchGesture();
@@ -112,8 +169,8 @@ export class IsleRenderer {
   private safeProbe: HTMLDivElement;
   private controls: OrbitControls;
   private orbit: OrbitControls;
-  // The fit the overhead view is on, null until the view is first shown; `shownAt` is `renders` when it was switched to.
-  private fit: OrthoFit | null = null;
+  // The fit the play view is on, null until the view is first shown; `shownAt` is `renders` when it was switched to.
+  private fit: OrthoFit | DioramaFit | null = null;
   private shownAt = -1;
   private glide: { from: Pose; to: Pose; keys: (keyof Pose)[]; start: number } | null = null;
   // The hole is re-measured on the next frame after a view or state change (React has committed the HUD by then), never on
@@ -169,6 +226,8 @@ export class IsleRenderer {
   // reloaded page rejoins its table).
   waterPath: WaterPath = "simple";
   onWater: (w: WaterStatus) => void = () => {};
+  // The play view now shown, for the table menu's View row.
+  onView: (v: PlayView) => void = () => {};
   private choice: WaterPath | null = null;
   private waterSet = false;
   private probed: { path: WaterPath; ms: number } | null = null;
@@ -336,12 +395,31 @@ export class IsleRenderer {
   }
 
   // Off the table (title and lobby) the island is a backdrop under a card: the slow orbit, no SSAO, 30 frames a second.
-  // In play it is the overhead board fitted to the HUD hole, which the player may orbit and zoom and snap home again.
+  // In play it is the board fitted to the HUD hole, which the player may orbit and zoom and snap home again.
   setTitleMode(v: boolean) {
     if (v !== this.titleMode) this.wake();
     this.titleMode = v;
-    this.ssao.enabled = !v && !this.overhead;
-    this.setView(v ? "free" : "overhead");
+    this.ssao.enabled = !v && !this.play();
+    this.setView(v ? "free" : this.playView());
+  }
+
+  // The player's view in play, from the table menu: the tilted diorama (the default) or the overhead board.
+  setPlayView(v: PlayView | null) {
+    this.viewChoice = v;
+    if (this.play()) this.setView(this.playView());
+  }
+
+  private playView(): PlayView {
+    const c = this.renderer.domElement;
+    return this.viewChoice ?? defaultView(c.clientWidth || 1, c.clientHeight || 1);
+  }
+
+  private play() {
+    return this.view !== "free";
+  }
+
+  private cam(): THREE.Camera {
+    return this.view === "overhead" ? this.ortho : this.view === "diorama" ? this.persp : this.camera;
   }
 
   private coarse() {
@@ -376,16 +454,21 @@ export class IsleRenderer {
     return chromeInsets(c.clientWidth, c.clientHeight, shell ? solidRects(shell, c) : [], this.safe());
   }
 
-  // Overhead is one orthographic camera fitted to the HUD hole, on its own orbit; Free is the tilted title view.
-  setView(view: "overhead" | "free") {
-    const over = view === "overhead";
-    if (over === this.overhead) return;
+  // Overhead is one orthographic camera fitted to the HUD hole and diorama one perspective camera fitted to it, sharing one
+  // orbit; Free is the title's view.
+  setView(view: "free" | PlayView) {
+    if (view === this.view) return;
     this.wake();
-    this.overhead = over;
-    this.controls.enabled = !over;
-    this.orbit.enabled = over;
-    this.ssao.enabled = !over && !this.titleMode;
-    const cam = over ? this.ortho : this.camera;
+    this.view = view;
+    if (view !== "free") this.onView(view);
+    const play = this.play();
+    this.controls.enabled = !play;
+    this.orbit.enabled = play;
+    this.orbit.object = view === "diorama" ? this.persp : this.ortho;
+    // The diorama's dolly limits (applyPose) would clamp the overhead eye's orbit radius; overhead zooms by the frustum.
+    if (view !== "diorama") [this.orbit.minDistance, this.orbit.maxDistance] = [0, Infinity];
+    this.ssao.enabled = !play && !this.titleMode;
+    const cam = this.cam();
     this.renderPass.camera = cam;
     this.ssao.camera = cam;
     // Each entry to the table starts from home.
@@ -463,7 +546,7 @@ export class IsleRenderer {
     if (rh) {
       const w = worldOfHex(rh);
       // The wastes have no token, so his feet are on the cap there.
-      this.robberTarget.set(w.x, topOf(rh.terrain) + (rh.pip === null ? 0 : 0.07), w.z);
+      this.robberTarget.set(w.x, topOf(rh.terrain) + (rh.pip === null ? 0 : 0.07 + this.liftOf(rh.id)), w.z);
       if (!this.wayfarer.userData.placed || landChanged) {
         this.walk = null;
         this.wayfarer.position.copy(this.robberTarget);
@@ -508,9 +591,24 @@ export class IsleRenderer {
       const w = worldOfHex(h);
       p.set(w.x, topOf(h.terrain), w.z);
     } else return null;
-    p.project(this.overhead ? this.ortho : this.camera);
+    return this.screenAt(p.x, p.y, p.z);
+  }
+
+  // Where a world point sits on screen, in page pixels, through the camera in use. Proofs read it too.
+  screenAt(x: number, y: number, z: number): { x: number; y: number } {
+    const p = _p.set(x, y, z).project(this.cam());
     const r = this.renderer.domElement.getBoundingClientRect();
     return { x: r.left + ((p.x + 1) / 2) * r.width, y: r.top + ((1 - p.y) / 2) * r.height };
+  }
+
+  // CSS px per world unit at a point, across the screen: a token's or a piece's size there. Proofs read it.
+  pxPerUnit(x: number, y: number, z: number): number {
+    const cam = this.cam();
+    cam.updateMatrixWorld();
+    const a = this.screenAt(x, y, z);
+    _q.setFromMatrixColumn(cam.matrixWorld, 0);
+    const b = this.screenAt(x + _q.x, y + _q.y, z + _q.z);
+    return Math.hypot(b.x - a.x, b.y - a.y);
   }
 
   dispose() {
@@ -574,6 +672,8 @@ export class IsleRenderer {
     const c = this.renderer.domElement;
     const w = (this.sizeW = c.clientWidth || 1);
     const h = (this.sizeH = c.clientHeight || 1);
+    // A phone turned upright or on its side changes the default view (setView resizes again, in the new view).
+    if (this.play() && this.view !== this.playView()) return this.setView(this.playView());
     this.camera.aspect = w / h;
     // Dolly limit: OrbitControls.update() clamps the current distance to the new max on the next frame.
     this.controls.maxDistance = freeMaxDistance(h, hudInsets(w, h, this.coarse(), this.safe()), this.coarse());
@@ -595,16 +695,17 @@ export class IsleRenderer {
     this.refitDue = true;
   };
 
-  // Fit the overhead view to the hole the HUD leaves now. The first fit of a view lands at home; a later change of hole
+  // Fit the play view to the hole the HUD leaves now. The first fit of a view lands at home; a later change of hole
   // (the phase bar grew with the state) glides the frustum and the look-at point and keeps the eye the player set.
   private refit(instant: boolean) {
     this.refitDue = false;
-    if (!this.overhead) return;
+    if (!this.play()) return;
     const c = this.renderer.domElement;
     const hole = this.insets();
     // The hole's edges on the shell, so the HUD can centre a moment on the island (TurnMoment, GainFloats).
     for (const k of ["top", "right", "bottom", "left"] as const) c.parentElement?.style.setProperty(`--hole-${k}`, `${hole[k]}px`);
-    const f = fitOrtho(c.clientWidth || 1, c.clientHeight || 1, hole, OVERHEAD_LEAN);
+    const [w, h] = [c.clientWidth || 1, c.clientHeight || 1];
+    const f = this.view === "diorama" ? fitDiorama(w, h, hole) : fitOrtho(w, h, hole, OVERHEAD_LEAN);
     const was = this.fit;
     if (was && FIT_KEYS.every((k) => Math.abs(this.fitPose(f)[k] - this.fitPose(was)[k]) < 1e-6)) return;
     this.fit = f;
@@ -616,19 +717,43 @@ export class IsleRenderer {
     this.moveTo(this.fitPose(f), FIT_KEYS, instant || this.renders <= this.shownAt);
   }
 
-  private fitPose(f: OrthoFit): Pose {
-    return { left: f.left, right: f.right, top: f.top, bottom: f.bottom, tx: f.x, tz: f.z, polar: OVERHEAD_LEAN, azimuth: 0, zoom: 1 };
+  private fitPose(f: OrthoFit | DioramaFit): Pose {
+    if ("focal" in f) return { ...NO_FIT, focal: f.focal, dist: f.dist, cx: f.cx, cy: f.cy, polar: DIORAMA_POLAR, azimuth: DIORAMA_AZIMUTH, zoom: 1 };
+    return { ...NO_FIT, left: f.left, right: f.right, top: f.top, bottom: f.bottom, tx: f.x, tz: f.z, polar: OVERHEAD_LEAN, azimuth: 0, zoom: 1 };
   }
 
   // Read from the camera itself, so it is right straight after applyPose, before the controls' next update.
   private pose(): Pose {
+    const cam = this.view === "diorama" ? this.persp : this.ortho;
+    _sph.setFromVector3(_eye.copy(cam.position).sub(this.orbit.target));
+    const eye = { polar: _sph.phi, azimuth: _sph.theta };
+    if (this.view === "diorama") return { ...NO_FIT, ...this.lens, ...eye, zoom: this.lens.dist / _sph.radius };
     const o = this.ortho;
-    _sph.setFromVector3(_eye.copy(o.position).sub(this.orbit.target));
-    return { left: o.left, right: o.right, top: o.top, bottom: o.bottom, tx: this.orbit.target.x, tz: this.orbit.target.z, polar: _sph.phi, azimuth: _sph.theta, zoom: o.zoom };
+    return { ...NO_FIT, left: o.left, right: o.right, top: o.top, bottom: o.bottom, tx: this.orbit.target.x, tz: this.orbit.target.z, ...eye, zoom: o.zoom };
   }
 
-  // Leaned toward the player (+Z is screen-down), looking at cap level over the hole's centre.
+  // Overhead: leaned toward the player (+Z is screen-down), looking at cap level over the hole's centre. Diorama: looking at
+  // cap level over the island's centre, the lens axis meeting the canvas at (cx, cy), so the island sits in the hole.
   private applyPose(p: Pose) {
+    if (this.view === "diorama") {
+      const c = this.persp;
+      const [w, h] = [this.sizeW || 1, this.sizeH || 1];
+      // A frame centred on the lens axis that holds the canvas, and the canvas as a view into it.
+      const fullW = 2 * Math.max(p.cx, w - p.cx, 1);
+      const fullH = 2 * Math.max(p.cy, h - p.cy, 1);
+      c.fov = (2 * Math.atan(fullH / 2 / p.focal) * 180) / Math.PI;
+      c.aspect = fullW / fullH;
+      c.setViewOffset(fullW, fullH, fullW / 2 - p.cx, fullH / 2 - p.cy, w, h);
+      this.lens = { focal: p.focal, dist: p.dist, cx: p.cx, cy: p.cy };
+      this.orbit.minDistance = p.dist / this.orbit.maxZoom;
+      this.orbit.maxDistance = p.dist / this.orbit.minZoom;
+      this.orbit.target.set(0, CAP_LEVEL, 0);
+      c.up.set(0, 1, 0);
+      c.position.setFromSphericalCoords(p.dist / p.zoom, p.polar, p.azimuth).add(this.orbit.target);
+      c.lookAt(this.orbit.target);
+      c.updateProjectionMatrix();
+      return;
+    }
     const o = this.ortho;
     o.left = p.left;
     o.right = p.right;
@@ -672,9 +797,114 @@ export class IsleRenderer {
     if (u >= 1) this.glide = null;
   }
 
-  // Back to the fitted lean, zoom 1, over the hole's centre.
+  // The legal marks a ray passes near, in the diorama view: a corner or a path within `pickReach` of the ray where it passes
+  // (a far one is smaller on screen, so its reach in world units is larger), nearest miss on screen first; hexes as the ray meets them.
+  private reachHits(coarse: boolean) {
+    const ray = this.raycaster.ray;
+    const hits: { kind: "hex" | "vertex" | "edge"; id: string; distance: number }[] = [];
+    for (const o of this.pickables) {
+      const { kind, id } = o.userData as { kind: "hex" | "vertex" | "edge"; id: string };
+      if (!id || kind === "hex") continue;
+      let miss: number;
+      if (kind === "vertex") {
+        miss = ray.distanceToPoint(o.position);
+        ray.closestPointToPoint(o.position, _q);
+      } else {
+        const half = ((o as THREE.Mesh<THREE.BoxGeometry>).geometry.parameters.depth / 2);
+        _n.set(Math.sin(o.rotation.y), 0, Math.cos(o.rotation.y)).multiplyScalar(half);
+        miss = Math.sqrt(ray.distanceSqToSegment(_p.copy(o.position).sub(_n), _eye.copy(o.position).add(_n), _q));
+      }
+      const depth = _q.sub(this.persp.position).dot(this.persp.getWorldDirection(_n));
+      // Ranked by the miss on screen, so a near mark and a far one compare in what the finger sees.
+      if (miss <= pickReach(depth, this.lens.focal, coarse, kind === "edge" ? PICK_EDGE.w / 2 : PICK_VERTEX_RADIUS)) hits.push({ kind, id, distance: (miss * this.lens.focal) / depth });
+    }
+    for (const h of this.raycaster.intersectObjects(this.pickables.filter((o) => o.userData.kind === "hex"), true)) {
+      if (h.object.userData.id) hits.push({ kind: "hex", id: h.object.userData.id as string, distance: h.distance });
+    }
+    return hits;
+  }
+
+  // How far the token on a hex is lifted off the cap: tilted in the diorama view, it rests on its near edge.
+  private liftOf(hexId: string) {
+    return (this.tokens.find((t) => t.userData.hex === hexId)?.userData.lift as number | undefined) ?? 0;
+  }
+
+  // Tokens face the diorama camera (TOKEN_TILT toward it, turned to its azimuth) and grow toward a TOKEN_NUMERAL_PX numeral
+  // within TOKEN_MAX_SCALE, then shrink where two discs would overlap on screen; in the other views they lie flat at their
+  // own size. The wayfarer keeps standing on his.
+  private poseTokens() {
+    const diorama = this.view === "diorama";
+    const az = diorama ? this.orbit.getAzimuthalAngle() : 0;
+    // The face's normal once tilted and turned.
+    _n.set(Math.sin(TOKEN_TILT) * Math.sin(az), Math.cos(TOKEN_TILT), Math.sin(TOKEN_TILT) * Math.cos(az));
+    const cam = this.persp.position;
+    // Each disc on screen: its centre, and its half-width and half-height at scale 1 (the tilt foreshortens the height).
+    const discs = this.tokens.map((t) => {
+      if (!diorama) return { s: 1, x: 0, y: 0, rx: 0, ry: 0 };
+      const d = _p.copy(t.position).sub(cam);
+      const along = d.dot(this.persp.getWorldDirection(_q));
+      const facing = Math.max(0.2, -d.normalize().dot(_n));
+      const s = Math.min(TOKEN_MAX_SCALE, Math.max(1, (TOKEN_NUMERAL_PX * along) / (this.lens.focal * TOKEN_GLYPH * facing)));
+      const at = this.screenAt(t.position.x, t.position.y, t.position.z);
+      const rx = (0.34 * this.lens.focal) / along;
+      return { s, x: at.x, y: at.y, rx, ry: rx * facing };
+    });
+    if (diorama) for (let i = 0; i < discs.length; i++) {
+      for (let j = i + 1; j < discs.length; j++) {
+        const [a, b] = [discs[i]!, discs[j]!];
+        const k = Math.hypot((a.x - b.x) / (a.rx * a.s + b.rx * b.s), (a.y - b.y) / (a.ry * a.s + b.ry * b.s));
+        if (k < 1) [a.s, b.s] = [a.s * k, b.s * k];
+      }
+    }
+    this.tokens.forEach((t, i) => {
+      const s = discs[i]!.s;
+      // The near edge of the 0.34 x 0.06 disc stays where the flat disc's underside was.
+      const lift = diorama ? s * (0.34 * Math.sin(TOKEN_TILT) + 0.03 * Math.cos(TOKEN_TILT)) - 0.03 : 0;
+      t.rotation.set(diorama ? TOKEN_TILT : 0, az, 0, "YXZ");
+      t.scale.setScalar(s);
+      t.position.y = (t.userData.restY as number) + lift;
+      t.userData.lift = lift;
+    });
+    const key = diorama ? `${cam.x.toFixed(2)},${cam.y.toFixed(2)},${cam.z.toFixed(2)}|${this.lastLand}` : "";
+    if (key !== this.shadedFor) {
+      this.shadedFor = key;
+      const [sx, sz] = [Math.sin(az), Math.cos(az)];
+      for (const tree of this.trees) {
+        // The tree's own height, measured once at full size.
+        if (tree.userData.height === undefined) {
+          tree.scale.setScalar(1);
+          tree.updateMatrixWorld(true);
+          tree.userData.height = _box.setFromObject(tree).max.y - tree.position.y;
+        }
+        let k = 1;
+        if (diorama) {
+          for (const t of this.tokens) {
+            const [dx, dz] = [tree.position.x - t.position.x, tree.position.z - t.position.z];
+            const along = dx * sx + dz * sz;
+            if (along <= 0 || along >= TREE_SHADE_DEPTH || Math.abs(dx * sz - dz * sx) >= TREE_SHADE_SIDE) continue;
+            // The sight line's height over the tree's foot where it passes the tree.
+            const rise = (cam.y - t.position.y) / Math.hypot(cam.x - t.position.x, cam.z - t.position.z);
+            const clear = t.position.y - TOKEN_GLYPH_FOOT * t.scale.x - tree.position.y + along * rise - TREE_SHADE_MARGIN;
+            k = Math.min(k, Math.max(TREE_SHADE_MIN, clear / (tree.userData.height as number)));
+          }
+        }
+        tree.scale.setScalar(k);
+      }
+    }
+    const st = this.lastState;
+    const rh = st?.hexes.find((h) => h.id === st.robberHex);
+    if (rh && rh.pip !== null) {
+      const y = topOf(rh.terrain) + 0.07 + this.liftOf(rh.id);
+      if (Math.abs(this.robberTarget.y - y) > 1e-6) {
+        this.robberTarget.y = y;
+        if (!this.walk) this.wayfarer.position.y = y;
+      }
+    }
+  }
+
+  // Back to the fitted view, zoom 1, over the hole's centre.
   goHome() {
-    if (!this.overhead || !this.fit) return;
+    if (!this.play() || !this.fit) return;
     this.moveTo(this.fitPose(this.fit), [...FIT_KEYS, ...EYE_KEYS], false);
   }
 
@@ -688,7 +918,7 @@ export class IsleRenderer {
   // Home snaps the view unless the key means something where it landed: a text field, a dialog, a scrolling region (the
   // chat log, the bottom stack), a modifier chord, or a handler that already took it.
   private onKey = (e: KeyboardEvent) => {
-    if (e.key !== "Home" || !this.overhead || this.titleMode) return;
+    if (e.key !== "Home" || !this.play() || this.titleMode) return;
     if (e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey) return;
     const t = e.target instanceof HTMLElement ? e.target : null;
     if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return;
@@ -731,8 +961,8 @@ export class IsleRenderer {
     const rect = this.renderer.domElement.getBoundingClientRect();
     this.pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
     this.pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-    this.raycaster.setFromCamera(this.pointer, this.overhead ? this.ortho : this.camera);
-    const hits = this.raycaster
+    this.raycaster.setFromCamera(this.pointer, this.cam());
+    const hits = this.view === "diorama" ? this.reachHits(coarse || this.downType === "touch") : this.raycaster
       .intersectObjects(this.pickables, true)
       .filter((h) => h.object.userData.id)
       .map((h) => ({ kind: h.object.userData.kind as "hex" | "vertex" | "edge", id: h.object.userData.id as string, distance: h.distance }));
@@ -741,7 +971,7 @@ export class IsleRenderer {
     // Two taps on empty board (nothing legal under either) within DOUBLE_TAP_MS and DOUBLE_TAP_PX snap the view home.
     const now = performance.now();
     const again = now - this.lastTap.t < DOUBLE_TAP_MS && Math.hypot(e.clientX - this.lastTap.x, e.clientY - this.lastTap.y) <= DOUBLE_TAP_PX;
-    if (this.overhead && !legal && again && this.lastTap.empty) {
+    if (this.play() && !legal && again && this.lastTap.empty) {
       this.lastTap.t = 0;
       if (this.pending) this.onSelect(null);
       this.goHome();
@@ -805,7 +1035,7 @@ export class IsleRenderer {
     const dt = Math.min(this.clock.getDelta(), 0.1);
     this.stepFlashes(dt, calm);
     this.controls.autoRotate = this.titleMode && !calm;
-    if (this.overhead) {
+    if (this.play()) {
       this.orbit.update();
       this.stepGlide(now);
     } else {
@@ -894,11 +1124,17 @@ export class IsleRenderer {
     this.draw();
   };
 
-  // In play (overhead) the sea fills the canvas: the fade to paper starts 1.5x past the farthest visible point. In the free
-  // view the far horizon reaches the paper.
+  // In the overhead view the sea fills the canvas: the fade to paper starts 1.5x past the farthest visible point. In the free
+  // view the far horizon reaches the paper; in the diorama the paper starts past the water the hole shows, and the fog
+  // starts past the island however far the eye has backed off.
   private fadeSea() {
     const fade = this.sea.uFade.value;
-    if (!this.overhead) return fade.set(11, 22);
+    const fog = this.scene.fog as THREE.Fog;
+    const diorama = this.view === "diorama";
+    fog.near = diorama ? this.persp.position.distanceTo(this.orbit.target) + 8 : 26;
+    fog.far = fog.near + 26;
+    if (diorama) return fade.set(16, 30);
+    if (!this.play()) return fade.set(11, 22);
     const o = this.ortho;
     const halfW = (o.right - o.left) / 2 / o.zoom;
     const halfH = (o.top - o.bottom) / 2 / o.zoom / Math.max(0.3, Math.cos(this.orbit.getPolarAngle()));
@@ -908,7 +1144,7 @@ export class IsleRenderer {
 
   // The scene under the crystal sea, without it and its edge strip, into `under`.
   private drawUnder(c: NonNullable<IsleRenderer["crystal"]>) {
-    const cam = this.overhead ? this.ortho : this.camera;
+    const cam = this.cam() as THREE.PerspectiveCamera | THREE.OrthographicCamera;
     const r = this.renderer;
     if (!this.under) {
       const size = r.getDrawingBufferSize(new THREE.Vector2());
@@ -978,6 +1214,7 @@ export class IsleRenderer {
   // simple. A stage stops as soon as its frames pass its 10-frame budget, so a slow GPU stalls for one frame.
   private draw() {
     const t0 = performance.now();
+    this.poseTokens();
     this.fadeSea();
     const crystal = this.waterPath === "crystal" ? this.crystal : null;
     if (crystal) this.drawUnder(crystal);
@@ -1014,8 +1251,8 @@ export class IsleRenderer {
     const canvas = this.renderer.domElement;
     const width = canvas.clientWidth, height = canvas.clientHeight;
     const inset = this.insets();
-    const camera = this.overhead ? this.ortho : this.camera;
-    const scale = this.overhead ? width * this.ortho.zoom / (this.ortho.right - this.ortho.left) : 28;
+    const camera = this.cam();
+    const scale = this.view === "overhead" ? width * this.ortho.zoom / (this.ortho.right - this.ortho.left) : this.view === "diorama" ? this.pxPerUnit(0, CAP_LEVEL, 0) : 28;
     const point = new THREE.Vector3();
     return (x: number, z: number, reach: number) => {
       point.set(x, 0.12, z).project(camera);
@@ -1036,6 +1273,7 @@ export class IsleRenderer {
     this.wheat = [];
     this.living.add(this.wayfarer);
     this.pickables = [];
+    this.tokens = [];
     this.caps.clear();
     this.flashes = [];
     this.oceanLife.reset(landKey(state));
@@ -1061,8 +1299,12 @@ export class IsleRenderer {
       if (h.pip != null) {
         const tok = numberToken(h.pip);
         tok.userData.token = h.pip;
+        tok.userData.hex = h.id;
+        tok.userData.restY = topOf(h.terrain) + 0.04;
+        tok.userData.lift = 0;
         tok.position.set(x, topOf(h.terrain) + 0.04, z);
         this.land.add(tok);
+        this.tokens.push(tok);
       }
     }
 
@@ -1541,21 +1783,27 @@ function numberToken(n: number) {
   ctx.fill();
   const ink = hot ? "#b3261e" : "#1c1916";
   ctx.fillStyle = ink;
-  ctx.font = "bold 158px system-ui, sans-serif";
+  // The numeral fills the face above the pips (#597: about 1.2x the glyph it was, so it still reads on the tilted diorama
+  // token); a two-digit one is condensed to the face's chord.
+  ctx.font = "bold 192px system-ui, sans-serif";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillText(String(n), 128, 96);
+  const squeeze = Math.min(1, 176 / ctx.measureText(String(n)).width);
+  ctx.setTransform(squeeze, 0, 0, 1, 128 * (1 - squeeze), 0);
+  ctx.fillText(String(n), 128, 104);
   if (hot) {
     ctx.strokeStyle = ink;
     ctx.lineWidth = 10;
     ctx.lineJoin = "round";
-    ctx.strokeText(String(n), 128, 96);
+    ctx.strokeText(String(n), 128, 104);
   }
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  // Pips r 12 at a 28 px pitch under the numeral (#597: from r 10 at 26, so they stay 2 px on the diorama token).
   const pips = 6 - Math.abs(n - 7);
-  const span = (pips - 1) * 26;
+  const span = (pips - 1) * 28;
   for (let i = 0; i < pips; i++) {
     ctx.beginPath();
-    ctx.arc(128 - span / 2 + i * 26, 196, 10, 0, Math.PI * 2);
+    ctx.arc(128 - span / 2 + i * 28, 196, 12, 0, Math.PI * 2);
     ctx.fill();
   }
   const tex = new THREE.CanvasTexture(c);
