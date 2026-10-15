@@ -335,6 +335,8 @@ try {
   const playsBeforeLeave = await page.evaluate(() => window.__plays.length);
   await page.getByRole("button", { name: "Leave table" }).click();
   await page.waitForFunction(() => !window.__emberisle.getState().state, null, { timeout: STEP_MS });
+  // The click is paced 150 ms behind whatever queued before it (#609), so give it a moment to start before counting.
+  await page.waitForFunction((n) => window.__plays.length > n, playsBeforeLeave, { timeout: 2000 }).catch(() => {});
   const leavePlays = await page.evaluate((n) => window.__plays.slice(n), playsBeforeLeave);
   console.log("Leave played", JSON.stringify(leavePlays));
   if (leavePlays.join() !== "/audio/click_001.wav") throw new Error(`Leave played ${JSON.stringify(leavePlays)}, not click_001.wav once`);
