@@ -1355,7 +1355,7 @@ export class IsleRenderer {
     // callbacks are done. A rebuild before then drops them with the old land.
     const gen = ++this.landGen;
     requestAnimationFrame(() => requestAnimationFrame(() => {
-      if (gen !== this.landGen) return;
+      if (gen !== this.landGen || this.stopped) return;
       performance.mark("props-start");
       props.forEach((f) => f());
       kit.finish();

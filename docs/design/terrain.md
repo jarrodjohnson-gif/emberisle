@@ -60,8 +60,8 @@ of 40 synchronous draws, three interleaved runs against the camera branch): simp
 crystal sea 316-447 ms before, 391-679 ms after (noisy). Renderer calls per frame (every pass) fell from about 490 to 245
 (simple) and 790 to 420 (crystal); frame triangles rose from about 66k to 260k (simple). Software GL is vertex bound, so it
 pays for the triangles; an iPhone 15 Pro's GPU is bound by calls and fill long before 260k triangles. The knob, if a real-GPU
-measurement (#464) says otherwise, is `RINGS` in `terrain.ts` (16 rings is 52k triangles of tiles instead of 82k; grain's
-rows stay exact at any ring count).
+measurement (#464) says otherwise, is `RINGS` in `terrain.ts` (now 12 rings, 864 triangles per tile top; grain's rows stay exact at any
+ring count).
 
 ## What a real asset kit would replace
 
