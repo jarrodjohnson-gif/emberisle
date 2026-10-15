@@ -19,7 +19,9 @@ const BUDGETS = [
   // 2026-10-14 (#597): +1100 B for the diorama camera, its fit and the token pose on top of the lazy sea (182.92 kB measured).
   // 2026-10-15 (#599): +5.6 kB for the sculpted tiles and code-built props (terrain.ts; 188.80 kB measured), less the photo-texture path.
   // 2026-10-15 (#618): 190.76 kB measured with the sculpted terrain on top of the diorama and the waves; +750 B headroom.
-  { name: "IslandCanvas", gzipBytes: 191500 },
+  // 2026-10-15 (#599 hex studio, forest): 193.45 kB measured with the lattice masks, coastal beaches, the toon ramp and the
+  // frond pines; +750 B headroom.
+  { name: "IslandCanvas", gzipBytes: 194200 },
   { name: "online", gzipBytes: 8000 },
   { name: "sheets", gzipBytes: 6282 },
   { name: "moments", gzipBytes: 2610 },

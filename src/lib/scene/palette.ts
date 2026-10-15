@@ -1,14 +1,14 @@
 import type { Terrain } from "@/lib/game/types";
 
 // The sculpted tiles' tops (#599, docs/design/terrain.md): saturated but soft, a lit cartoon diorama rather than a photo.
-// [base, shade]: hollows, furrows and the tile's lip lean to the shade, crests to the base.
-export const PAINT: Record<Terrain, [string, string]> = {
-  timber: ["#4f9b47", "#2f6c3a"],
-  clay: ["#d56b3b", "#9b4528"],
-  wool: ["#94cf56", "#629c36"],
-  grain: ["#f1c540", "#c9962c"],
-  ore: ["#8e959f", "#5f6771"],
-  waste: ["#ecd8ab", "#c8ae81"],
+// [base, shade, sun]: hollows and slopes turned from the key lamp lean to the shade, crests and slopes turned to it to the sun.
+export const PAINT: Record<Terrain, [string, string, string]> = {
+  timber: ["#4f9b47", "#2f6c3a", "#86c24a"],
+  clay: ["#d56b3b", "#9b4528", "#ec9452"],
+  wool: ["#94cf56", "#629c36", "#c3e46e"],
+  grain: ["#f1c540", "#c9962c", "#ffe07a"],
+  ore: ["#8e959f", "#5f6771", "#b9bec4"],
+  waste: ["#ecd8ab", "#c8ae81", "#f7ead0"],
 };
 
 // The side of every tile under the terrain's lip, top to bottom: sand, a thin shell band, caramel soil, chocolate rock
@@ -18,7 +18,14 @@ export const STRATA = { sand: "#ecdbb2", shell: "#f7f0e2", soil: "#bb7a42", rock
 // The props on the tiles (#599). Pines are three greens, bottom tier darkest.
 export const PROP = {
   pine: ["#265f30", "#2f7337", "#3a853d", "#4a9642", "#5aa348"],
+  pineLight: "#86c552",
+  pineDark: "#163f2a",
+  fern: "#4f9e45",
+  fernLight: "#a6d86a",
+  berry: "#d8443a",
+  cap: "#d9473b",
   trunk: "#6b4428",
+  trunkDark: "#4e3020",
   wood: "#9b6a40",
   woodEnd: "#d9b47e",
   hedge: "#3f8b3b",

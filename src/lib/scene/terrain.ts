@@ -4,17 +4,24 @@ import { HEX_SIZE } from "@/lib/game/hex";
 import type { HexCell, Terrain } from "@/lib/game/types";
 import { PAINT, PROP, STRATA } from "@/lib/scene/palette";
 
-// The sculpted tiles (#599, docs/design/terrain.md): a raised slab per hex whose top is a gentle heightfield on a triangular
-// lattice, flat where the token and the pieces stand, a rounded rim, and a side cut into sand, soil and rock strata.
+// The sculpted tiles (#599, docs/design/terrain.md): a raised slab per hex whose top is a heightfield on a triangular lattice,
+// flat where the token and the pieces stand, a rounded lip over a sand beach, and a side cut into sand, soil and rock strata.
 
 const SQ3 = Math.sqrt(3);
-// Lattice rings across the top (6 R^2 triangles), the rim's width and drop (corner-radius units) and its segments.
-const RINGS = 14;
+// Lattice rings across the top (6 R^2 triangles). The rim: its width and drop (corner-radius units), its segments, how far
+// the rounded lip stands out over the strata (the cut-cake overhang) and how far it tucks back under before they start.
+const RINGS = 18;
 const BEVEL_W = 0.06;
-const BEVEL_H = 0.045;
+const BEVEL_H = 0.04;
 const BEVEL_SEGS = 3;
+const OVERHANG = 0.014;
+const TUCK = 0.014;
 // The side runs a little below the tile's base, so no seam shows through the crystal sea.
 const SKIRT = 0.04;
+// The beach along the rim dips this far below topOf between the corners and the edge midpoints (where pieces and paths rest).
+const SHORE_DIP = 0.016;
+// The key lamp's direction (lightRig): a slope that faces it takes the sunlit tint, one that faces away the shade.
+const KEY = new THREE.Vector3(8, 16, 6).normalize();
 
 export const smooth = (a: number, b: number, x: number) => {
   const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
@@ -50,9 +57,75 @@ function noise(x: number, y: number, seed: number) {
 
 const fbm = (x: number, y: number, seed: number) => 0.68 * noise(x, y, seed) + 0.32 * noise(x * 2.1 + 5.3, y * 2.1 - 1.7, seed + 7);
 
+// A unit vector at a corner (j even) or a flat's normal (j odd), in 30 degree steps from +x: corners sit at 30 + 60 n.
+export const dirAt = (deg: number) => ({ x: Math.cos((deg * Math.PI) / 180), z: Math.sin((deg * Math.PI) / 180) });
+
+// --- where the ground may move
+
+// The six corners (where pieces stand, HEX_SIZE out) and the six edge midpoints (where a path rests), x and z interleaved.
+const CORNERS = Float32Array.from({ length: 12 }, (_, i) => (i % 2 ? Math.sin : Math.cos)(((30 + 60 * (i >> 1)) * Math.PI) / 180) * HEX_SIZE);
+const MIDS = Float32Array.from({ length: 12 }, (_, i) => (i % 2 ? Math.sin : Math.cos)(((60 * (i >> 1)) * Math.PI) / 180) * ((HEX_SIZE * SQ3) / 2));
+function nearest(pts: Float32Array, x: number, z: number) {
+  let d = Infinity;
+  for (let i = 0; i < 12; i += 2) d = Math.min(d, (x - pts[i]!) ** 2 + (z - pts[i + 1]!) ** 2);
+  return Math.sqrt(d);
+}
+
+// What the ground may do at a hex-local point. `rise`: how much of a rise it takes; none under the token (within 0.40 of the
+// centre) nor round a corner (a piece's base), fading out before the band along each edge that a path covers. `dip`: how
+// much of a hollow; none under the token, in a small disc at each corner or at an edge's midpoint (a path rests there).
+// `band[k]`: how far into edge k's beach it is (edge k's flat faces 60 k degrees), which a coastal edge paints as sand;
+// `shore[k]`: how much of that beach's dip it takes, none in the corner discs where pieces land.
+type Masks = { rise: number; dip: number; band: Float32Array; shore: Float32Array };
+// The lattice's own edge, as a distance from the centre to its flats.
+const TOP_INR = ((HEX_SIZE * 0.995 - BEVEL_W) * SQ3) / 2;
+const FLAT_COS = [0, 1, 2, 3, 4, 5].map((k) => Math.cos((k * Math.PI) / 3));
+const FLAT_SIN = [0, 1, 2, 3, 4, 5].map((k) => Math.sin((k * Math.PI) / 3));
+function masksAt(x: number, z: number, m: Masks, o = 0) {
+  const r = Math.hypot(x, z);
+  const d = hexDist(x, z);
+  const token = smooth(0.4, 0.52, r);
+  const dc = nearest(CORNERS, x, z);
+  const corner = smooth(0.14, 0.3, dc);
+  m.rise = token * smooth(0.22, 0.42, dc) * (1 - smooth(0.62, 0.78, d));
+  m.dip = token * corner * smooth(0.16, 0.3, nearest(MIDS, x, z));
+  // A beach reaches 0.11 in from its edge; nearer the centre than that from every edge, there is none.
+  const near = d > TOP_INR - 0.11;
+  for (let k = 0; k < 6; k++) {
+    const e = TOP_INR - (x * FLAT_COS[k]! + z * FLAT_SIN[k]!);
+    m.band[o + k] = near ? 1 - smooth(0.015, 0.085, e) : 0;
+    m.shore[o + k] = near ? (1 - smooth(0, 0.11, e)) * corner : 0;
+  }
+  return m;
+}
+
+// Which of a hex's six edges face the sea: edge k is the flat facing 60 k degrees, whose neighbour is at these axial steps.
+const FLAT_STEP: [number, number][] = [[1, 0], [0, 1], [-1, 1], [-1, 0], [0, -1], [1, -1]];
+export const coastOf = (h: { q: number; r: number }, land: (q: number, r: number) => boolean) => FLAT_STEP.map(([dq, dr]) => !land(h.q + dq, h.r + dr));
+
+// --- the per-hex layout
+
+// A soft bump (h > 0) or hollow (h < 0) of radius r; `bump` adds it, with a smooth (C1) edge.
+export type Spot = { x: number; z: number; r: number; h: number };
+const bump = (x: number, z: number, p: Spot) => {
+  const d2 = ((x - p.x) ** 2 + (z - p.z) ** 2) / (p.r * p.r);
+  return d2 < 1 ? p.h * (1 - d2) * (1 - d2) : 0;
+};
+
 // The per-hex layout, drawn from the hex's own seeded stream: a rotation in 60 degree steps, the noise seed, the relief's
-// strength, and where the terrain's feature sits (the clay pit, the ore peaks), in hex-local coordinates.
-export type Layout = { k: number; rot: number; seed: number; amp: number; feature: { x: number; z: number; r: number } };
+// strength, where the terrain's feature sits (the clay pit, the ore peaks) in hex-local coordinates, the ground's mounds and
+// hollows, and for a forest where each pine stands (its trunk in a rooty bump). `room` keeps what is placed, so the props
+// that follow (decorate, a frame later) find their own spots around it.
+export type Layout = {
+  k: number;
+  rot: number;
+  seed: number;
+  amp: number;
+  feature: { x: number; z: number; r: number };
+  spots: Spot[];
+  stands: { x: number; z: number; s: number }[];
+  room: Room;
+};
 
 export type Sculpt = {
   geo: THREE.BufferGeometry;
@@ -61,10 +134,7 @@ export type Sculpt = {
   ground: (lx: number, lz: number) => number;
 };
 
-// A unit vector at a corner (j even) or a flat's normal (j odd), in 30 degree steps from +x: corners sit at 30 + 60 n.
-export const dirAt = (deg: number) => ({ x: Math.cos((deg * Math.PI) / 180), z: Math.sin((deg * Math.PI) / 180) });
-
-export function layoutOf(rng: () => number): Layout {
+export function layoutOf(rng: () => number, t: Terrain): Layout {
   const k = Math.floor(rng() * 6);
   const rot = (k * Math.PI) / 3;
   const seed = Math.floor(rng() * 1e6);
@@ -72,14 +142,52 @@ export function layoutOf(rng: () => number): Layout {
   // The feature leans toward a corner, where the hex has the most room between the token and the rim.
   const c = dirAt(30 + 60 * k);
   const feature = { x: c.x * 0.7, z: c.z * 0.7, r: 0.33 };
-  return { k, rot, seed, amp, feature };
+  const room = new Room(rng, (HEX_SIZE * 0.995 * SQ3) / 2);
+  const L: Layout = { k, rot, seed, amp, feature, spots: [], stands: [], room };
+  if (t === "timber") forestLayout(L, rng);
+  return L;
 }
 
-// The terrain's own relief, before the masks that hold the centre and the rim flat. Positive is up.
+// Forest: three clumps of pines round the token, each an arc on a soft mound with its tallest pine at the heart, and a hollow
+// (a clearing) in the widest gap between two of them. Every trunk stands in a small rooty bump. The ring between the token's
+// clearing and the band the paths and pieces take is only about 0.2 wide, so a clump runs along it.
+function forestLayout(L: Layout, rng: () => number) {
+  const a0 = L.rot + rng() * 0.8;
+  const angles = [a0, a0 + 1.95 + rng() * 0.5, a0 + 4.05 + rng() * 0.5];
+  for (const a of angles) {
+    L.spots.push({ x: Math.cos(a) * 0.68, z: Math.sin(a) * 0.68, r: 0.3 + rng() * 0.06, h: (0.07 + rng() * 0.03) * L.amp });
+    const n = 4 + Math.floor(rng() * 2);
+    for (let i = 0, placed = 0; i < 60 && placed < n; i++) {
+      // The tallest at the heart; the rest smaller toward the token, so the clump rises away from the clearing.
+      const heart = placed === 0;
+      const ang = a + (rng() - 0.5) * (heart ? 0.2 : 1.1);
+      const rad = heart ? 0.65 + rng() * 0.06 : 0.56 + rng() * 0.24;
+      const s = heart ? 1.1 + rng() * 0.15 : 0.7 + (rad - 0.56) * 1.1 + rng() * 0.12;
+      const [x, z] = [Math.cos(ang) * rad, Math.sin(ang) * rad];
+      if (!L.room.free(x, z, 0.15 * s, 0.72, true)) continue;
+      L.room.claim(x, z, 0.15 * s);
+      L.stands.push({ x, z, s });
+      L.spots.push({ x, z, r: 0.085 * s, h: 0.024 * s });
+      placed++;
+    }
+  }
+  // The clearing: the middle of the widest gap between clumps.
+  let best = 0;
+  for (let i = 0; i < 3; i++) {
+    const gap = (angles[(i + 1) % 3]! - angles[i]! + Math.PI * 4) % (Math.PI * 2);
+    if (gap > best) (best = gap), (L.feature = { x: Math.cos(angles[i]! + gap / 2) * 0.64, z: Math.sin(angles[i]! + gap / 2) * 0.64, r: 0.22 });
+  }
+  L.spots.push({ x: L.feature.x, z: L.feature.z, r: L.feature.r, h: -0.05 * L.amp });
+}
+
+// The terrain's own relief, before the masks that hold the token, the corners and the path rests. Positive is up.
 function relief(t: Terrain, x: number, z: number, L: Layout, s: number): number {
   switch (t) {
-    case "timber":
-      return 0.045 * L.amp * fbm(x * 2.2, z * 2.2, L.seed);
+    case "timber": {
+      let h = 0.012 * fbm(x * 3.2, z * 3.2, L.seed);
+      for (const p of L.spots) h += bump(x, z, p);
+      return h;
+    }
     case "wool":
       return 0.07 * L.amp * fbm(x * 1.7, z * 1.7, L.seed) + 0.012;
     case "grain": {
@@ -130,66 +238,116 @@ function pitLevel(x: number, z: number, L: Layout) {
 
 const col = (hex: string) => new THREE.Color(hex);
 
-// The top's lattice, the same for every hex of a given RINGS: the points (axial q, r) and the upward triangles over them.
-const topologies = new Map<number, { count: number; q: Int16Array; r: Int16Array; index: Uint16Array }>();
-function topology(R: number) {
-  let t = topologies.get(R);
+// The top's lattice for RINGS and the tile's size, the same for every hex: the points (x, z), the upward triangles, each
+// point's four lattice neighbours (q +- 1, r +- 1; -1 off the lattice) for its normal, the boundary ring corner to corner,
+// and each point's masks.
+type Lattice = {
+  count: number;
+  x: Float32Array;
+  z: Float32Array;
+  index: Uint16Array;
+  nb: Int32Array;
+  ring: Uint16Array;
+  rise: Float32Array;
+  dip: Float32Array;
+  band: Float32Array;
+  shore: Float32Array;
+};
+const lattices = new Map<number, Lattice>();
+function latticeOf(R: number, s: number): Lattice {
+  let t = lattices.get(R);
   if (t) return t;
-  const id = new Map<number, number>();
-  const key = (q: number, r: number) => (q + R + 1) * 64 + (r + R + 1);
-  const q: number[] = [];
-  const r: number[] = [];
+  // Each lattice point's index by (q, r) on a dense grid, -1 off the hexagon.
+  const S = 2 * R + 1;
+  const grid = new Int32Array(S * S).fill(-1);
+  const id = (q: number, r: number) => (Math.abs(q) > R || Math.abs(r) > R ? -1 : grid[(q + R) * S + r + R]!);
+  const qs: number[] = [];
+  const rs: number[] = [];
   for (let a = -R; a <= R; a++) {
     for (let b = Math.max(-R, -a - R); b <= Math.min(R, -a + R); b++) {
-      id.set(key(a, b), q.length);
-      q.push(a);
-      r.push(b);
+      grid[(a + R) * S + b + R] = qs.length;
+      qs.push(a);
+      rs.push(b);
     }
   }
   // Counter-clockwise seen from above (+y): the lattice's x runs along q and z along r + q / 2.
   const index: number[] = [];
   for (let a = -R; a < R; a++) {
     for (let b = -R; b < R; b++) {
-      const [p0, p1, p2, p3] = [id.get(key(a, b)), id.get(key(a + 1, b)), id.get(key(a, b + 1)), id.get(key(a + 1, b + 1))];
-      if (p0 !== undefined && p1 !== undefined && p2 !== undefined) index.push(p0, p2, p1);
-      if (p1 !== undefined && p3 !== undefined && p2 !== undefined) index.push(p1, p2, p3);
+      const [p0, p1, p2, p3] = [id(a, b), id(a + 1, b), id(a, b + 1), id(a + 1, b + 1)];
+      if (p0 >= 0 && p1 >= 0 && p2 >= 0) index.push(p0, p2, p1);
+      if (p1 >= 0 && p3 >= 0 && p2 >= 0) index.push(p1, p2, p3);
     }
   }
-  t = { count: q.length, q: Int16Array.from(q), r: Int16Array.from(r), index: Uint16Array.from(index) };
-  topologies.set(R, t);
+  const n = qs.length;
+  const nb = new Int32Array(n * 4);
+  const [x, z] = [new Float32Array(n), new Float32Array(n)];
+  const [rise, dip] = [new Float32Array(n), new Float32Array(n)];
+  const m: Masks = { rise: 0, dip: 0, band: new Float32Array(n * 6), shore: new Float32Array(n * 6) };
+  for (let i = 0; i < n; i++) {
+    const [a, b] = [qs[i]!, rs[i]!];
+    nb[i * 4] = id(a + 1, b);
+    nb[i * 4 + 1] = id(a - 1, b);
+    nb[i * 4 + 2] = id(a, b + 1);
+    nb[i * 4 + 3] = id(a, b - 1);
+    x[i] = (SQ3 / 2) * s * a;
+    z[i] = 0.5 * s * a + s * b;
+    masksAt(x[i]!, z[i]!, m, i * 6);
+    [rise[i], dip[i]] = [m.rise, m.dip];
+  }
+  // The boundary ring, corner to corner.
+  const steps: [number, number][] = [[-1, 1], [-1, 0], [0, -1], [1, -1], [1, 0], [0, 1]];
+  const corners: [number, number][] = [[R, 0], [0, R], [-R, R], [-R, 0], [0, -R], [R, -R]];
+  const ring: number[] = [];
+  for (let k = 0; k < 6; k++) for (let i = 0; i < R; i++) ring.push(id(corners[k]![0] + steps[k]![0] * i, corners[k]![1] + steps[k]![1] * i));
+  t = { count: n, x, z, index: Uint16Array.from(index), nb, ring: Uint16Array.from(ring), rise, dip, band: m.band, shore: m.shore };
+  lattices.set(R, t);
   return t;
 }
 
-// Every hex: a slab of `size` (corner radius) and `slabH`, base at y 0 in its own frame, standing at `tileY` in the world.
-export function sculptHex(h: HexCell, size: number, slabH: number, tileY: number, rng: () => number): Sculpt {
-  const L = layoutOf(rng);
+// Every hex: a slab of `size` (corner radius) and `slabH`, base at y 0 in its own frame, standing at `tileY` in the world;
+// `coast[k]` when the edge facing 60 k degrees faces the sea (a sand beach dips to it there).
+export function sculptHex(h: HexCell, size: number, slabH: number, tileY: number, rng: () => number, coast: boolean[]): Sculpt {
   const t = h.terrain;
+  const L = layoutOf(rng, t);
   const top = size - BEVEL_W;
   const s = top / RINGS;
-  const inr = (size * SQ3) / 2;
+  const R = RINGS;
+  const T = latticeOf(R, s);
+  // The ground at any hex-local point (props stand on it); the lattice samples the same function once per point.
+  const m: Masks = { rise: 0, dip: 0, band: new Float32Array(6), shore: new Float32Array(6) };
+  const shoreOf = (sh: Float32Array, o: number) => {
+    let w = 0;
+    for (let k = 0; k < 6; k++) if (coast[k]) w = Math.max(w, sh[o + k]!);
+    return SHORE_DIP * w;
+  };
   const height = (x: number, z: number) => {
     if (x * x + z * z < 0.16) return 0;
+    masksAt(x, z, m);
     const raw = relief(t, x, z, L, s);
-    const centre = smooth(0.4, 0.56, Math.hypot(x, z));
-    const d = hexDist(x, z) / inr;
-    const mask = raw > 0 ? 1 - smooth(0.6, 0.78, d) : 1 - smooth(0.8, 0.93, d);
-    return raw * centre * mask;
+    return (raw > 0 ? raw * m.rise : raw * m.dip) - shoreOf(m.shore, 0);
   };
-  const [base, shade] = [col(PAINT[t][0]), col(PAINT[t][1])];
-  const light = base.clone().lerp(WHITE, 0.22);
-  const terrace = base.clone().lerp(light, 0.5);
+  const [base, shade, sun] = PAINT[t].map(col) as [THREE.Color, THREE.Color, THREE.Color];
+  const crest = base.clone().lerp(sun, 0.5);
+  const terrace = base.clone().lerp(WHITE, 0.11);
   const pit = shade.clone().multiplyScalar(0.8);
   const sand = col(STRATA.sand);
   // One scratch colour: `paint` fills it, the caller reads it at once.
   const c = new THREE.Color();
-  const paint = (x: number, z: number, dh: number) => {
-    c.copy(shade).lerp(base, Math.min(1, Math.max(0, 0.66 + dh * 7)));
-    if (dh > 0.025) c.lerp(light, Math.min(1, (dh - 0.025) * 18));
+  // Two tones per surface: a hollow leans to the shade and a crest to the sunlit tint, then a slope that faces the key lamp
+  // warms toward the sunlit tint and one that faces away cools toward the shade; the beach is sand.
+  const paint = (x: number, z: number, hh: number, lit: number, beach: number) => {
+    c.copy(base);
+    if (hh < 0) c.lerp(shade, Math.min(1, -hh * 14));
+    else c.lerp(crest, Math.min(1, hh * 9));
+    const f = (lit - KEY.y) * 4;
+    if (f > 0) c.lerp(sun, Math.min(0.7, f));
+    else c.lerp(shade, Math.min(0.7, -f));
     if (t === "grain") {
       const g = grainRows(x, z, L, s);
-      const m = Math.hypot(x, z);
-      c.lerp(shade, 0.5 * g.furrow * (1 - g.path) * smooth(0.36, 0.5, m));
-      c.lerp(sand, 0.8 * g.path * smooth(0.38, 0.5, m));
+      const r = Math.hypot(x, z);
+      c.lerp(shade, 0.5 * g.furrow * (1 - g.path) * smooth(0.36, 0.5, r));
+      c.lerp(sand, 0.8 * g.path * smooth(0.38, 0.5, r));
     }
     if (t === "clay") {
       const p = pitLevel(x, z, L);
@@ -197,18 +355,18 @@ export function sculptHex(h: HexCell, size: number, slabH: number, tileY: number
       else if (p.step > 0.5) c.copy(p.level % 2 ? base : terrace);
       if (p.step >= 2.99) c.copy(pit);
     }
-    return c;
+    return c.lerp(sand, beach);
   };
 
-  const R = RINGS;
-  const T = topology(R);
   const N = 6 * R;
-  const verts = T.count + N * (BEVEL_SEGS + 1) + N * 5 * 4;
+  const W = BEVEL_SEGS + 2;
+  const FACE = R + 1;
+  const verts = T.count + N * (W - 1) + 6 * FACE * 8;
   const pos = new Float32Array(verts * 3);
   const nor = new Float32Array(verts * 3);
   const cols = new Float32Array(verts * 3);
   const glow = new Float32Array(verts).fill(1);
-  const idx = new Uint16Array(T.index.length + N * BEVEL_SEGS * 6 + N * 5 * 6);
+  const idx = new Uint16Array(T.index.length + N * (W - 1) * 6 + 6 * R * 4 * 6);
   idx.set(T.index);
   let nv = 0;
   let ni = T.index.length;
@@ -236,89 +394,110 @@ export function sculptHex(h: HexCell, size: number, slabH: number, tileY: number
     else (idx[ni++] = d, idx[ni++] = b);
   };
 
-  // The top: the lattice points within R steps of the centre, each displaced, shaded by its slope and painted by its height.
-  // The lattice topology (which points, which triangles) is the same for every hex; only the heights and colours are per hex.
-  const e = 0.01;
+  // The top: one height per lattice point, its normal from its lattice neighbours' heights, its colour from the height, the
+  // slope's light and the beach. The lattice (which points, which triangles, the masks) is the same for every hex.
+  const hs = new Float32Array(T.count);
+  const sea = new Float32Array(T.count);
   for (let i = 0; i < T.count; i++) {
-    const x = (SQ3 / 2) * s * T.q[i]!;
-    const z = 0.5 * s * T.q[i]! + s * T.r[i]!;
-    const h0 = height(x, z);
-    const gx = (height(x + e, z) - h0) / e;
-    const gz = (height(x, z + e) - h0) / e;
+    const shore = shoreOf(T.shore, i * 6);
+    for (let k = 0; k < 6; k++) if (coast[k]) sea[i] = Math.max(sea[i]!, T.band[i * 6 + k]!);
+    if (T.rise[i] === 0 && T.dip[i] === 0) hs[i] = -shore;
+    else {
+      const raw = relief(t, T.x[i]!, T.z[i]!, L, s);
+      hs[i] = (raw > 0 ? raw * T.rise[i]! : raw * T.dip[i]!) - shore;
+    }
+  }
+  for (let i = 0; i < T.count; i++) {
+    const h0 = hs[i]!;
+    const at = (j: number) => {
+      const n = T.nb[i * 4 + j]!;
+      return n < 0 ? h0 : hs[n]!;
+    };
+    // Central differences along q and r (one-sided at the boundary), then to x and z.
+    const [hq, hr] = [(at(0) - at(1)) / (T.nb[i * 4]! < 0 || T.nb[i * 4 + 1]! < 0 ? 1 : 2), (at(2) - at(3)) / (T.nb[i * 4 + 2]! < 0 || T.nb[i * 4 + 3]! < 0 ? 1 : 2)];
+    const gz = hr / s;
+    const gx = (hq - 0.5 * hr) / ((SQ3 / 2) * s);
     const il = 1 / Math.hypot(gx, 1, gz);
-    paint(x, z, h0);
-    vert(x, slabH + h0, z, -gx * il, il, -gz * il, c, 1);
+    const [nx, ny, nz] = [-gx * il, il, -gz * il];
+    paint(T.x[i]!, T.z[i]!, h0, nx * KEY.x + ny * KEY.y + nz * KEY.z, sea[i]!);
+    vert(T.x[i]!, slabH + h0, T.z[i]!, nx, ny, nz, c, 1);
   }
 
-  // The boundary ring of the top, corner to corner, with each point's outward direction (a corner's own, or its flat's).
-  const steps: [number, number][] = [[-1, 1], [-1, 0], [0, -1], [1, -1], [1, 0], [0, 1]];
-  const corners: [number, number][] = [[R, 0], [0, R], [-R, R], [-R, 0], [0, -R], [R, -R]];
-  const ring: { x: number; z: number; ox: number; oz: number; edge: number }[] = [];
-  for (let k = 0; k < 6; k++) {
-    const flat = dirAt(60 + 60 * k);
-    for (let i = 0; i < R; i++) {
-      const [q, r] = [corners[k]![0] + steps[k]![0] * i, corners[k]![1] + steps[k]![1] * i];
-      const x = (SQ3 / 2) * s * q;
-      const z = 0.5 * s * q + s * r;
-      const o = i === 0 ? { x: x / top, z: z / top } : flat;
-      ring.push({ x, z, ox: o.x, oz: o.z, edge: k });
+  // The rim: the top's boundary ring rolls over a rounded lip that stands OVERHANG out past the strata and tucks back under.
+  // Row 0 is the lattice's own boundary; the quarter round's rows follow, then the tuck. Outward is a corner's own direction,
+  // or its flat's.
+  const outward = new Float32Array(N * 2);
+  for (let i = 0; i < N; i++) {
+    const p = T.ring[i]!;
+    const o = i % R === 0 ? { x: T.x[p]! / top, z: T.z[p]! / top } : dirAt(60 + 60 * Math.floor(i / R));
+    outward[i * 2] = o.x;
+    outward[i * 2 + 1] = o.z;
+  }
+  const rim = new Int32Array(N * W);
+  const lipC = new THREE.Color();
+  const under = shade.clone().lerp(sand, 0.15);
+  for (let i = 0; i < N; i++) {
+    const p = T.ring[i]!;
+    const [ox, oz] = [outward[i * 2]!, outward[i * 2 + 1]!];
+    const y0 = slabH + hs[p]!;
+    rim[i * W] = p;
+    lipC.setRGB(cols[p * 3]!, cols[p * 3 + 1]!, cols[p * 3 + 2]!);
+    const lipTo = sea[p]! > 0.5 ? sand : under;
+    for (let j = 1; j < W; j++) {
+      const tuck = j === W - 1;
+      const a = (Math.min(j, BEVEL_SEGS) / BEVEL_SEGS) * (Math.PI / 2);
+      const f = tuck ? size / top : (top + (size + OVERHANG - top) * Math.sin(a)) / top;
+      const y = tuck ? y0 - BEVEL_H - TUCK : y0 - BEVEL_H * (1 - Math.cos(a));
+      // The quarter round's normal turns from up to outward; the tuck's faces down and out.
+      const [nh, ny] = tuck ? [0.45, -0.89] : [BEVEL_H * Math.sin(a), (size + OVERHANG - top) * Math.cos(a)];
+      const il = 1 / Math.hypot(nh, ny);
+      c.copy(lipC).lerp(lipTo, j / (W - 1));
+      rim[i * W + j] = vert(T.x[p]! * f, y, T.z[p]! * f, ox * nh * il, ny * il, oz * nh * il, c, tuck ? 0 : 1);
     }
   }
-  const lip = shade.clone().multiplyScalar(0.92);
-  // The rim: a quarter round from the top's edge out to the full hex, BEVEL_H down; one vertex per ring point and step.
-  const rim = new Int32Array(N * (BEVEL_SEGS + 1));
   for (let i = 0; i < N; i++) {
-    const p = ring[i]!;
-    for (let j = 0; j <= BEVEL_SEGS; j++) {
-      const a = (j / BEVEL_SEGS) * (Math.PI / 2);
-      const f = (top + (size - top) * Math.sin(a)) / top;
-      const [nx, ny, nz] = [p.ox * Math.sin(a), Math.cos(a), p.oz * Math.sin(a)];
-      const il = 1 / Math.hypot(nx, ny, nz);
-      paint(p.x, p.z, 0).lerp(lip, j / BEVEL_SEGS);
-      rim[i * (BEVEL_SEGS + 1) + j] = vert(p.x * f, slabH - BEVEL_H * (1 - Math.cos(a)), p.z * f, nx * il, ny * il, nz * il, c, 1);
-    }
-  }
-  const W = BEVEL_SEGS + 1;
-  for (let i = 0; i < N; i++) {
-    for (let j = 0; j < BEVEL_SEGS; j++) {
-      const p = ring[i]!;
-      const [a, b, cc, d] = [rim[i * W + j]!, rim[((i + 1) % N) * W + j]!, rim[i * W + j + 1]!, rim[((i + 1) % N) * W + j + 1]!];
-      tri(a, b, d, p.ox, 1, p.oz);
-      tri(a, d, cc, p.ox, 1, p.oz);
+    const i1 = (i + 1) % N;
+    for (let j = 0; j < W - 1; j++) {
+      const [a, b, cc, d] = [rim[i * W + j]!, rim[i1 * W + j]!, rim[i * W + j + 1]!, rim[i1 * W + j + 1]!];
+      const [ox, oz] = [outward[i * 2]!, outward[i * 2 + 1]!];
+      const up = j === W - 2 ? -1 : 1;
+      tri(a, b, d, ox, up, oz);
+      tri(a, d, cc, ox, up, oz);
     }
   }
 
-  // The side: five bands with wavy borders (the lip in the terrain's shade, sand, a thin shell band, caramel soil, chocolate
-  // rock), flat per face.
-  const H = slabH - BEVEL_H;
-  const bands = [lip, sand, col(STRATA.shell), col(STRATA.soil), col(STRATA.rock)];
-  const borders = (i: number) => {
-    const u = (i % N) / N;
-    return [
-      H,
-      H - 0.028 - 0.012 * (0.5 + 0.5 * noise(u * 14, 0.5, L.seed)),
-      H * 0.56 + 0.025 * noise(u * 9, 3.5, L.seed),
-      H * 0.5 + 0.025 * noise(u * 9, 3.5, L.seed),
-      H * 0.2 + 0.018 * noise(u * 11, 9.5, L.seed),
-      -SKIRT,
-    ];
-  };
+  // The side, under the tuck: four bands with wavy borders (sand, a thin shell band, caramel soil, chocolate rock), flat per
+  // face; each face's points are shared along it.
+  const bands = [sand, col(STRATA.shell), col(STRATA.soil), col(STRATA.rock)];
+  const H = slabH - BEVEL_H - TUCK;
   const k = size / top;
-  let b0 = borders(0);
-  for (let i = 0; i < N; i++) {
-    const [p0, p1] = [ring[i]!, ring[(i + 1) % N]!];
-    const n = dirAt(60 + 60 * p0.edge);
-    const b1 = borders(i + 1);
-    for (let band = 0; band < bands.length; band++) {
-      const bc = bands[band]!;
-      const a = vert(p0.x * k, b0[band]!, p0.z * k, n.x, 0, n.z, bc, 0);
-      const b = vert(p1.x * k, b1[band]!, p1.z * k, n.x, 0, n.z, bc, 0);
-      const cc = vert(p0.x * k, b0[band + 1]!, p0.z * k, n.x, 0, n.z, bc, 0);
-      const d = vert(p1.x * k, b1[band + 1]!, p1.z * k, n.x, 0, n.z, bc, 0);
-      tri(a, b, d, n.x, 0, n.z);
-      tri(a, d, cc, n.x, 0, n.z);
+  for (let face = 0; face < 6; face++) {
+    const n = dirAt(60 + 60 * face);
+    const first = nv;
+    for (let i = 0; i <= R; i++) {
+      const ri = (face * R + i) % N;
+      const p = T.ring[ri]!;
+      const u = ri / N;
+      const borders = [
+        H + hs[p]!,
+        H * 0.56 + 0.025 * noise(u * 9, 3.5, L.seed),
+        H * 0.5 + 0.025 * noise(u * 9, 3.5, L.seed),
+        H * 0.2 + 0.018 * noise(u * 11, 9.5, L.seed),
+        -SKIRT,
+      ];
+      for (let band = 0; band < 4; band++) {
+        vert(T.x[p]! * k, borders[band]!, T.z[p]! * k, n.x, 0, n.z, bands[band]!, 0);
+        vert(T.x[p]! * k, borders[band + 1]!, T.z[p]! * k, n.x, 0, n.z, bands[band]!, 0);
+      }
     }
-    b0 = b1;
+    for (let i = 0; i < R; i++) {
+      for (let band = 0; band < 4; band++) {
+        const a = first + i * 8 + band * 2;
+        const b = a + 8;
+        tri(a, b, b + 1, n.x, 0, n.z);
+        tri(a, b + 1, a + 1, n.x, 0, n.z);
+      }
+    }
   }
 
   const geo = new THREE.BufferGeometry();
@@ -330,14 +509,26 @@ export function sculptHex(h: HexCell, size: number, slabH: number, tileY: number
   return { geo, layout: L, ground: (lx, lz) => tileY + slabH + height(lx, lz) };
 }
 
-// The tile's material: vertex colours, matte, and the paying-hex flash (docs/design/dice.md) on the top and rim only.
+// The tile's material: vertex colours, matte, the toon ramp, and the paying-hex flash (docs/design/dice.md) on the top and rim
+// only.
 const glowOnTop = (shader: THREE.WebGLProgramParametersWithUniforms) => {
   shader.vertexShader = "attribute float aGlow;\nvarying float vGlow;\n" + shader.vertexShader.replace("#include <begin_vertex>", "#include <begin_vertex>\n\tvGlow = aGlow;");
   shader.fragmentShader = "varying float vGlow;\n" + shader.fragmentShader.replace("#include <emissivemap_fragment>", "#include <emissivemap_fragment>\n\ttotalEmissiveRadiance *= vGlow;");
 };
+// The soft three-step toon ramp on the key and fill lamps' diffuse light (docs/design/terrain.md "Colour and light"): a face
+// turned from the lamp keeps half the light instead of going dark (no black crevices), flat ground keeps its own 0.82, and a
+// face turned to the lamp rises softly to full. Specular keeps the true angle, so faces turned away never glint.
+const DIFFUSE = "reflectedLight.directDiffuse += irradiance * BRDF_Lambert( material.diffuseContribution ) * ( 1.0 - F );";
+const RAMPED =
+  "float toonStep( float x ) { return 0.5 + 0.32 * smoothstep( 0.12, 0.38, x ) + 0.18 * smoothstep( 0.86, 0.99, x ); }\n" +
+  THREE.ShaderChunk.lights_physical_pars_fragment.replace(DIFFUSE, DIFFUSE.replace("irradiance", "toonStep( dotNL ) * directLight.color"));
+if (!RAMPED.includes("toonStep( dotNL )")) console.error("terrain: three's diffuse line moved; the toon ramp is off");
+const toonify = (shader: THREE.WebGLProgramParametersWithUniforms) => {
+  shader.fragmentShader = shader.fragmentShader.replace("#include <lights_physical_pars_fragment>", RAMPED);
+};
 export function tileMaterial() {
   const m = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9, metalness: 0 });
-  m.onBeforeCompile = glowOnTop;
+  m.onBeforeCompile = (sh) => (glowOnTop(sh), toonify(sh));
   m.customProgramCacheKey = () => "sculpted-tile";
   return m;
 }
@@ -350,6 +541,8 @@ export function tileMaterial() {
 
 const PROP_MAT = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9, metalness: 0 });
 PROP_MAT.userData.shared = true; // disposeGroup leaves it alone
+PROP_MAT.onBeforeCompile = toonify;
+PROP_MAT.customProgramCacheKey = () => "toon-prop";
 
 export type Footprint = { hex: string; x: number; z: number; reach: number };
 export type Sheep = { g: THREE.Object3D; ox: number; oz: number; tx: number; tz: number; wait: number; graze: number; ground: (x: number, z: number) => number };
@@ -362,6 +555,10 @@ const WHITE = new THREE.Color(1, 1, 1);
 // Per-tree tints over the pine's own three greens: as is, cooler and darker, warmer and lighter.
 const PINE_TINTS = [WHITE, new THREE.Color(0.8, 0.93, 0.86), new THREE.Color(1.12, 1.08, 0.86)];
 
+// Each instanced kind's shape, built once a page: every builder is deterministic, and a rebuilt board's disposeGroup only frees
+// the GPU copy, which three uploads again on the next draw.
+const SHAPES = new Map<string, THREE.BufferGeometry>();
+
 export class PropKit {
   private kinds = new Map<string, { geo: THREE.BufferGeometry; shadow: boolean; proxies: THREE.Mesh[]; tints: THREE.Color[] }>();
   private statics = new Map<string, { parts: THREE.BufferGeometry[]; footprints: Footprint[] }>();
@@ -370,7 +567,8 @@ export class PropKit {
 
   proxy(kind: string, make: () => THREE.BufferGeometry, data: Record<string, unknown>, shadow = true, tint = WHITE) {
     let k = this.kinds.get(kind);
-    if (!k) this.kinds.set(kind, (k = { geo: make(), shadow, proxies: [], tints: [] }));
+    if (!SHAPES.has(kind)) SHAPES.set(kind, make());
+    if (!k) this.kinds.set(kind, (k = { geo: SHAPES.get(kind)!, shadow, proxies: [], tints: [] }));
     const m = new THREE.Mesh(k.geo, PROP_MAT);
     m.visible = false;
     m.userData = data;
@@ -450,15 +648,57 @@ function paintAll(g: THREE.BufferGeometry, hex: string | THREE.Color) {
   return g;
 }
 
+// Two tones by how much each normal faces up: tops lean to `light`, sides keep `base`, undersides lean to `dark`. A turn about
+// y leaves it right, so an instanced prop may stand at any angle.
+function tone(g: THREE.BufferGeometry, base: string, light: string, dark: string) {
+  const [b, l, d] = [base, light, dark].map(col) as [THREE.Color, THREE.Color, THREE.Color];
+  const n = g.attributes.normal!;
+  const a = new Float32Array(n.count * 3);
+  const c = new THREE.Color();
+  for (let i = 0; i < n.count; i++) {
+    const y = n.getY(i);
+    c.copy(b).lerp(y > 0 ? l : d, smooth(0.2, 1, Math.abs(y)) * (y > 0 ? 0.5 : 0.6)).toArray(a, i * 3);
+  }
+  g.setAttribute("color", new THREE.BufferAttribute(a, 3));
+  return g;
+}
+
+// A smooth, closed lathe: `shape` may move each point (x, y, z, its radius over the lathe's widest) before the normals are
+// taken, and the seam's twin columns share their normals so the shading runs round unbroken.
+function lathe(profile: [number, number][], segs: number, shape?: (v: THREE.Vector3, f: number) => void) {
+  const g = new THREE.LatheGeometry(profile.map(([x, y]) => new THREE.Vector2(x, y)), segs);
+  g.deleteAttribute("uv");
+  const p = g.attributes.position!;
+  if (shape) {
+    const widest = Math.max(...profile.map(([x]) => x));
+    const v = new THREE.Vector3();
+    for (let i = 0; i < p.count; i++) {
+      v.fromBufferAttribute(p, i);
+      shape(v, Math.hypot(v.x, v.z) / widest);
+      p.setXYZ(i, v.x, v.y, v.z);
+    }
+  }
+  g.computeVertexNormals();
+  const n = g.attributes.normal!;
+  const v = new THREE.Vector3();
+  for (let j = 0, last = segs * profile.length; j < profile.length; j++) {
+    v.set(n.getX(j) + n.getX(last + j), n.getY(j) + n.getY(last + j), n.getZ(j) + n.getZ(last + j)).normalize();
+    n.setXYZ(j, v.x, v.y, v.z);
+    n.setXYZ(last + j, v.x, v.y, v.z);
+  }
+  return g;
+}
+
 // A part: non-indexed, without uvs (so every part merges), placed (position, y rotation, scale) and painted one colour.
 // `flat` gives it faceted normals.
-function part(geo: THREE.BufferGeometry, hex: string | THREE.Color, x = 0, y = 0, z = 0, rotY = 0, sx = 1, sy = sx, sz = sx, flat = false) {
+// `hex` null keeps the colours the geometry already has (a toned part).
+function part(geo: THREE.BufferGeometry, hex: string | THREE.Color | null, x = 0, y = 0, z = 0, rotY = 0, sx = 1, sy = sx, sz = sx, flat = false) {
   const g = geo.index ? geo.toNonIndexed() : geo;
   if (g !== geo) geo.dispose();
   g.deleteAttribute("uv");
   g.applyMatrix4(_m.compose(new THREE.Vector3(x, y, z), _qt.setFromAxisAngle(AXIS_Y, rotY), new THREE.Vector3(sx, sy, sz)));
   if (flat) g.computeVertexNormals();
-  return paintAll(g, hex);
+  return hex === null ? g : paintAll(g, hex);
 }
 
 // A round beam from a to b.
@@ -480,15 +720,28 @@ function placeAt(parts: THREE.BufferGeometry[], x: number, y: number, z: number,
 
 // --- the props' shapes, each in its own frame with its foot at y 0
 
-// A pine tier: a soft bell, not a cone.
-const tier = (r: number, h: number) =>
-  new THREE.LatheGeometry([new THREE.Vector2(0, 0), new THREE.Vector2(r * 0.9, 0), new THREE.Vector2(r, 0.06 * h), new THREE.Vector2(r * 0.72, 0.42 * h), new THREE.Vector2(r * 0.3, 0.82 * h), new THREE.Vector2(0, h)], 8);
+// A frond tier: a plump bell whose lip hangs in seven rounded lobes, smooth-shaded, lit on top and shaded under the lip.
+function frond(r: number, h: number, hex: string, light: string, dark: string) {
+  const g = lathe([[0, 0], [0.8 * r, -0.03 * h], [r, 0.07 * h], [0.86 * r, 0.32 * h], [0.5 * r, 0.66 * h], [0, h]], 21, (v, f) => {
+    const w = smooth(0.5, 1, f);
+    const lobe = Math.cos(7 * Math.atan2(v.z, v.x));
+    v.x *= 1 + 0.1 * lobe * w;
+    v.z *= 1 + 0.1 * lobe * w;
+    v.y -= 0.07 * h * w * (0.5 + 0.5 * lobe);
+  });
+  return tone(g, hex, light, dark);
+}
 
-// A trunk under five stacked frond tiers, darkest at the foot. 0.52 tall at scale 1; reach 0.15.
+// Roots: three small lobes splayed at the foot of a trunk or a stump of radius r.
+const roots = (r: number, hex: string) =>
+  [0, 1, 2].map((i) => part(new THREE.SphereGeometry(r * 0.55, 7, 5), hex, Math.cos(i * 2.2 + 0.4) * r * 0.95, r * 0.12, Math.sin(i * 2.2 + 0.4) * r * 0.95, -(i * 2.2 + 0.4), 1.5, 0.55, 0.85));
+
+// A pine: a tapered trunk on its roots under five plump frond tiers, dark at the foot to light at the crown. 0.54 tall at
+// scale 1; reach 0.15.
 function pineGeo() {
-  const parts = [part(new THREE.CylinderGeometry(0.018, 0.028, 0.12, 6), PROP.trunk, 0, 0.06, 0)];
-  const tiers: [number, number, number][] = [[0.15, 0.17, 0.08], [0.13, 0.15, 0.17], [0.108, 0.14, 0.25], [0.084, 0.13, 0.33], [0.058, 0.13, 0.4]];
-  tiers.forEach(([r, h, y], i) => parts.push(part(tier(r, h), PROP.pine[i]!, 0, y, 0, i * 0.7)));
+  const parts = [part(new THREE.CylinderGeometry(0.021, 0.031, 0.18, 8), PROP.trunk, 0, 0.09, 0), ...roots(0.031, PROP.trunkDark)];
+  const tiers: [number, number, number][] = [[0.16, 0.17, 0.1], [0.135, 0.155, 0.185], [0.11, 0.14, 0.265], [0.085, 0.13, 0.34], [0.06, 0.13, 0.41]];
+  tiers.forEach(([r, h, y], i) => parts.push(part(frond(r, h, PROP.pine[i]!, PROP.pineLight, PROP.pineDark), null, 0, y, 0, i * 0.7)));
   return mergeGeometries(parts);
 }
 
@@ -603,13 +856,34 @@ function sickleGeo() {
   ]);
 }
 
-const stump = () => [part(new THREE.CylinderGeometry(0.04, 0.047, 0.05, 8), PROP.trunk, 0, 0.025, 0), part(new THREE.CylinderGeometry(0.036, 0.036, 0.004, 8), PROP.woodEnd, 0, 0.051, 0)];
-const log = () => [
-  part(new THREE.CylinderGeometry(0.03, 0.03, 0.2, 8).rotateZ(Math.PI / 2), PROP.trunk, 0, 0.03, 0),
-  part(new THREE.CylinderGeometry(0.027, 0.027, 0.004, 8).rotateZ(Math.PI / 2), PROP.woodEnd, 0.101, 0.03, 0),
-  part(new THREE.CylinderGeometry(0.027, 0.027, 0.004, 8).rotateZ(Math.PI / 2), PROP.woodEnd, -0.101, 0.03, 0),
+// A fat stump on its roots, its cut face pale with a darker ring.
+const stump = () => [
+  part(new THREE.CylinderGeometry(0.046, 0.052, 0.06, 10), PROP.trunk, 0, 0.03, 0),
+  part(new THREE.CylinderGeometry(0.042, 0.042, 0.006, 10), PROP.woodEnd, 0, 0.062, 0),
+  part(new THREE.CylinderGeometry(0.024, 0.024, 0.007, 10), PROP.wood, 0, 0.063, 0),
+  ...roots(0.05, PROP.trunkDark),
 ];
-const bush = (r: number, hex: string) => [part(new THREE.IcosahedronGeometry(r, 1), hex, 0, r * 0.7, 0, 0, 1, 0.8, 1)];
+// A fallen log, pale ring ends, a red-capped mushroom on its back.
+const log = () => [
+  part(new THREE.CylinderGeometry(0.038, 0.038, 0.22, 10).rotateZ(Math.PI / 2), PROP.trunk, 0, 0.036, 0),
+  ...[0.111, -0.111].map((x) => part(new THREE.CylinderGeometry(0.033, 0.033, 0.006, 10).rotateZ(Math.PI / 2), PROP.woodEnd, x, 0.036, 0)),
+  part(new THREE.CylinderGeometry(0.008, 0.01, 0.03, 6), PROP.bleached, 0.03, 0.08, 0.01),
+  part(new THREE.SphereGeometry(0.022, 10, 5, 0, Math.PI * 2, 0, Math.PI / 2), PROP.cap, 0.03, 0.093, 0.01, 0, 1, 0.75, 1),
+];
+// A fern: seven arching leaves round a low heart.
+const fern = () =>
+  Array.from({ length: 7 }, (_, i) => {
+    const a = (i / 7) * Math.PI * 2;
+    const g = new THREE.SphereGeometry(1, 8, 4).scale(0.05, 0.012, 0.018).translate(0.045, 0.02, 0).rotateZ(0.42);
+    return part(tone(g, PROP.fern, PROP.fernLight, PROP.pineDark), null, 0, 0, 0, a);
+  });
+// A rounded bush of three puffs, with a few berries.
+const bush = (r: number, hex: string) => [
+  ...[[0, 0.75, 0, 1], [0.6, 0.5, 0.3, 0.75], [-0.45, 0.48, -0.4, 0.7]].map(([x, y, z, k]) =>
+    part(tone(new THREE.IcosahedronGeometry(r * k!, 2), hex, PROP.pineLight, PROP.pineDark), null, x! * r, y! * r, z! * r, 0, 1, 0.85, 1),
+  ),
+  ...[[0.55, 1.1, 0.5], [-0.2, 1.3, 0.62], [0.75, 0.8, -0.35]].map(([x, y, z]) => part(new THREE.SphereGeometry(r * 0.13, 6, 4), PROP.berry, x! * r, y! * r, z! * r)),
+];
 const rock = (r: number, hex: string) => [part(new THREE.DodecahedronGeometry(r, 0), hex, 0, r * 0.45, 0, 0, 1, 0.7, 1, true)];
 const tuft = (hex: string) =>
   [-0.3, 0, 0.3].map((lean, i) => part(new THREE.ConeGeometry(0.011, 0.075, 4).rotateZ(lean).translate(0, 0.035, 0), hex, (i - 1) * 0.012, 0, (i % 2) * 0.01));
@@ -718,6 +992,11 @@ class Room {
     }
     return null;
   }
+  // Whether something of `reach` fits at (x, z) clear of what is placed; `tall` keeps it off the corners, where pieces land.
+  free(x: number, z: number, reach: number, gap = 1, tall = false) {
+    if (!this.fits(x, z, reach) || (tall && nearest(CORNERS, x, z) < 0.24 + reach * 0.6)) return false;
+    return !this.taken.some((t) => Math.hypot(t.x - x, t.z - z) < (t.r + reach) * gap);
+  }
   claim(x: number, z: number, r: number) {
     this.taken.push({ x, z, r });
   }
@@ -726,8 +1005,7 @@ class Room {
 // Every prop on one hex, from the same seeded stream that laid out its top.
 export function decorate(kit: PropKit, life: Life, h: HexCell, x: number, z: number, sc: Sculpt, rng: () => number) {
   const L = sc.layout;
-  const inr = (HEX_SIZE * 0.995 * SQ3) / 2;
-  const room = new Room(rng, inr);
+  const room = L.room;
   const y = (lx: number, lz: number) => sc.ground(lx, lz);
   const fp = (lx: number, lz: number, reach: number): Footprint => ({ hex: h.id, x: x + lx, z: z + lz, reach });
   const put = (name: string, parts: THREE.BufferGeometry[], lx: number, lz: number, reach: number | null, rotY = rng() * Math.PI * 2, sink = 0.006) =>
@@ -736,20 +1014,21 @@ export function decorate(kit: PropKit, life: Life, h: HexCell, x: number, z: num
   const corner = dirAt(30 + 60 * L.k);
 
   if (t === "timber") {
-    const n = 22 + Math.floor(rng() * 6);
-    for (let i = 0, placed = 0; i < n * 4 && placed < n; i++) {
-      const s = 0.85 + rng() * 0.45;
-      const at = room.find(0.15 * s, 0, 1, 0.72, 1);
-      if (!at) continue;
-      placed++;
+    for (const { x: tx, z: tz, s } of L.stands) {
       const tree = kit.proxy("tree", pineGeo, { prop: "tree", hex: h.id, reach: 0.15 * s }, true, PINE_TINTS[Math.floor(rng() * 3)]);
-      tree.position.set(x + at.x, y(at.x, at.z) - 0.01, z + at.z);
+      tree.position.set(x + tx, y(tx, tz) - 0.01, z + tz);
       tree.rotation.y = rng() * Math.PI * 2;
       tree.scale.setScalar(s);
       tree.userData.base = tree.scale.clone();
       life.tall.push(tree);
     }
-    for (const [make, reach, count] of [[stump, 0.05, 2], [log, 0.11, 1], [() => bush(0.06, PROP.hedge), 0.06, 2]] as const) {
+    // The log lies in the clearing's hollow; stumps, ferns and a bush or two wherever there is room.
+    const f = L.feature;
+    if (room.free(f.x, f.z, 0.12)) {
+      room.claim(f.x, f.z, 0.12);
+      put("timber", log(), f.x, f.z, 0.12, Math.atan2(f.z, f.x) + Math.PI / 2 + (rng() - 0.5) * 0.8);
+    }
+    for (const [make, reach, count] of [[stump, 0.06, 2], [fern, 0.07, 4], [() => bush(0.05, PROP.hedge), 0.07, 2]] as const) {
       for (let i = 0; i < count; i++) {
         const at = room.find(reach, 0, 1, 0.9);
         if (at) put("timber", make(), at.x, at.z, reach);

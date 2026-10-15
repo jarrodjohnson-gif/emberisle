@@ -34,7 +34,7 @@ import { HEX_SIZE, SQRT3, hexCorners, hexesInRadius, vertexId } from "@/lib/game
 import { LAND_MS } from "@/lib/scene/landing";
 import { mulberry32, hashStr } from "@/lib/utils";
 import { PAINT, RIM } from "@/lib/scene/palette";
-import { PropKit, decorate, sculptHex, tileMaterial, type FarmWork, type Life, type OreWork, type Sheep } from "@/lib/scene/terrain";
+import { PropKit, coastOf, decorate, sculptHex, tileMaterial, type FarmWork, type Life, type OreWork, type Sheep } from "@/lib/scene/terrain";
 import { OceanLife } from "@/lib/scene/ocean-life";
 import { CAUSTIC_GLSL, PAPER, makeCrystalSea, makeFloorProps, makeSeaFloor, makeSwell, makeWash, type SeaUniforms, type WaterPath, type WaterStatus } from "@/lib/scene/crystal-water";
 import { payingHexes } from "@/lib/game/rules";
@@ -1248,8 +1248,9 @@ export class IsleRenderer {
     const props: (() => void)[] = [];
     const life = { sheep: this.sheep, oreWork: this.oreWork, farmWork: this.farmWork, tall: this.trees };
 
+    const isLand = new Set(state.hexes.map((h) => `${h.q},${h.r}`));
     for (const h of state.hexes) {
-      const { tile, cap, token, decorate } = landHex(h);
+      const { tile, cap, token, decorate } = landHex(h, coastOf(h, (q, r) => isLand.has(`${q},${r}`)));
       this.land.add(tile);
       this.pickables.push(tile);
       this.caps.set(h.id, cap.material);
@@ -1268,6 +1269,8 @@ export class IsleRenderer {
       props.forEach((f) => f());
       kit.finish();
       (window as unknown as { __terrain: TerrainStats }).__terrain = this.terrainStats();
+      // The tiles' frame already shaded for this camera with no trees yet: shade the new ones on the next frame.
+      this.shadedFor = "";
       this.wake();
       performance.mark("props-end");
     });
@@ -1444,12 +1447,12 @@ export class IsleRenderer {
   }
 }
 
-// One hex as the board draws it: the sculpted tile at its spot, its number token at rest, and its prop pass, which the board
-// runs a frame later. The hex studio (scripts/hex-studio.mjs) draws its hexes with this too.
-export function landHex(h: HexCell) {
+// One hex as the board draws it: the sculpted tile at its spot (a beach on each edge that faces the sea, `coast`), its number
+// token at rest, and its prop pass, which the board runs a frame later. The hex studio (scripts/hex-studio.mjs) uses it too.
+export function landHex(h: HexCell, coast: boolean[]) {
   const { x, z } = worldOfHex(h);
   const rng = mulberry32(hashStr(h.id + h.terrain));
-  const sculpt = sculptHex(h, HEX_SIZE * 0.995, topOf(h.terrain) - TILE_Y, TILE_Y, rng);
+  const sculpt = sculptHex(h, HEX_SIZE * 0.995, topOf(h.terrain) - TILE_Y, TILE_Y, rng, coast);
   const tile = makeHexTile(sculpt.geo);
   tile.position.set(x, TILE_Y, z);
   tile.userData = { kind: "hex", id: h.id, land: true };

@@ -26,7 +26,8 @@
 //   least 18 px apart (the tilt foreshortens a step along the line of sight; 18 px keeps a tap dead on a corner outside its
 //   neighbour's 14 px touch reach), and a path and an outpost on the far (north) coast measure at least the touch slop;
 //   with Path armed and an edge picked by touch, the Place chip is in view and covers neither the hand nor the turn banner.
-// - #599 (docs/design/terrain.md): every terrain kind has a sculpted top, flat at topOf under the token and on the rim, side
+// - #599 (docs/design/terrain.md): every terrain kind has a sculpted top, flat at topOf under the token and in a disc at every
+//   corner, never above topOf where a path or a piece lies and at topOf at every edge's midpoint for a path to rest on, side
 //   strata, no two tiles alike; terrain and props in at most 40 draw calls, the island under 220k triangles, no prop vertex
 //   within 0.37 of a token's centre; saves test-results/terrain-1280.png (diorama) and terrain-390.png (overhead).
 // Zero console errors. Saves test-results/board-look-{title,play}-<size>.png. Port from VITE_PORT, default 8112.
@@ -758,8 +759,10 @@ try {
     await page.context().close();
   }
   // #599, docs/design/terrain.md: the sculpted tiles. On the play board (diorama 1280x720, crystal sea): every terrain kind has
-  // a sculpted top (a height spread over 0.01 and under 0.2 world units) that is exactly at topOf under the token (within
-  // 0.4 of the centre) and on the rim where the pieces stand; its side shows the sand, shell, soil and rock strata; no two tiles
+  // a sculpted top (a height spread over 0.01 and under 0.3 world units) that is exactly at topOf under the token (within 0.4
+  // of the centre) and within 0.12 of every corner (pieces land there); within 0.18 of an edge (a path's or a piece's
+  // footprint) nothing rises over topOf, and round each edge's midpoint the ground reaches topOf, so a path rests on it (a
+  // coastal beach dips under the path's outer half); its side shows the sand, shell, soil and rock strata; no two tiles
   // of a kind are the same; terrain and props draw in at most 40 calls (window.__terrain) and the whole island (land, props,
   // tokens, docks, pieces) holds at most 220k triangles; no vertex of any prop comes within 0.37 of a token's centre (the
   // 0.34 disc at its 1.08x diorama scale). Then test-results/terrain-1280.png and, overhead on a 390x844 phone, terrain-390.png.
@@ -784,23 +787,32 @@ try {
         const g = cap.geometry;
         const [p, c, glow] = [g.attributes.position, g.attributes.color, g.attributes.aGlow];
         const top = topOf(h.terrain) - tile.position.y;
-        let lo = Infinity, hi = -Infinity, plateau = 0, rim = 0;
+        // The top's lattice ends 0.913 from the centre (its flats); past it the rounded lip falls away.
+        const corners = [0, 1, 2, 3, 4, 5].map((n) => [1.12 * Math.cos(((30 + 60 * n) * Math.PI) / 180), 1.12 * Math.sin(((30 + 60 * n) * Math.PI) / 180)]);
+        const mids = [0, 1, 2, 3, 4, 5].map((n) => [0.97 * Math.cos((n * Math.PI) / 3), 0.97 * Math.sin((n * Math.PI) / 3)]);
+        let lo = Infinity, hi = -Infinity, plateau = 0, corner = 0, over = -Infinity;
+        const rest = mids.map(() => -Infinity);
         const side = new Set();
         let sig = 0;
         for (let i = 0; i < p.count; i++) {
           const [x, y, z] = [p.getX(i), p.getY(i), p.getZ(i)];
           if (glow.getX(i) === 0) { side.add(hexOf(c.getX(i), c.getY(i), c.getZ(i))); continue; }
           const d = Math.max(Math.abs(x), Math.abs(0.5 * x + 0.866 * z), Math.abs(0.5 * x - 0.866 * z));
-          if (d > 0.9) { if (d < 0.92) rim = Math.max(rim, Math.abs(y - top)); continue; }
+          if (d > 0.9135) continue;
           lo = Math.min(lo, y); hi = Math.max(hi, y);
           if (Math.hypot(x, z) < 0.4) plateau = Math.max(plateau, Math.abs(y - top));
+          if (corners.some(([cx, cz]) => Math.hypot(x - cx, z - cz) < 0.12)) corner = Math.max(corner, Math.abs(y - top));
+          if (d >= 0.785) over = Math.max(over, y - top);
+          mids.forEach(([mx, mz], j) => Math.hypot(x - mx, z - mz) < 0.2 && (rest[j] = Math.max(rest[j], y - top)));
           sig += y * ((i % 97) + 1);
         }
-        const k = (kinds[h.terrain] ??= { tiles: 0, spread: [], plateau: 0, rim: 0, strata: true, sigs: [] });
+        const k = (kinds[h.terrain] ??= { tiles: 0, spread: [], plateau: 0, corner: 0, over: -Infinity, rest: [], strata: true, sigs: [] });
         k.tiles++;
         k.spread.push(+(hi - lo).toFixed(3));
         k.plateau = Math.max(k.plateau, plateau);
-        k.rim = Math.max(k.rim, rim);
+        k.corner = Math.max(k.corner, corner);
+        k.over = Math.max(k.over, +over.toFixed(4));
+        k.rest.push(...rest.map((r) => +r.toFixed(4)));
         k.strata &&= [STRATA.sand, STRATA.shell, STRATA.soil, STRATA.rock].every((s) => side.has(s));
         k.sigs.push(sig.toFixed(4));
       }
@@ -836,7 +848,8 @@ try {
     check("terrain: all six kinds are on the board", kinds.join() === "clay,grain,ore,timber,waste,wool", kinds);
     for (const k of kinds) {
       const s = t.kinds[k];
-      check(`terrain ${k}: a sculpted top (height spread over 0.01, under 0.2), flat at topOf under the token and on the rim`, s.spread.every((x) => x > 0.01 && x < 0.2) && s.plateau < 1e-4 && s.rim < 1e-4, { spread: s.spread, plateau: s.plateau, rim: s.rim });
+      check(`terrain ${k}: a sculpted top (height spread over 0.01, under 0.3), flat at topOf under the token and in a disc at every corner`, s.spread.every((x) => x > 0.01 && x < 0.3) && s.plateau < 1e-4 && s.corner < 1e-4, { spread: s.spread, plateau: s.plateau, corner: s.corner });
+      check(`terrain ${k}: nothing above topOf where a path or a piece lies (within 0.18 of an edge), and ground at topOf for a path to rest on at every edge's midpoint`, s.over <= 0.004 && s.rest.every((r) => r > -0.002 && r <= 0.004), { over: s.over, rest: [Math.min(...s.rest), Math.max(...s.rest)] });
       check(`terrain ${k}: side strata (sand, shell, soil, rock) on every tile; no two tiles alike`, s.strata && s.distinct, { tiles: s.tiles, distinct: s.distinct });
     }
     check("terrain: tiles and props draw in at most 40 calls", t.stats.drawCalls <= 40, t.stats);

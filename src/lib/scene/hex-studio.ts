@@ -15,7 +15,7 @@ import type { HexCell, Terrain } from "@/lib/game/types";
 import { DIORAMA_AZIMUTH, DIORAMA_POLAR, CAP_LEVEL } from "@/lib/scene/mobile-fit";
 import { PAPER } from "@/lib/scene/crystal-water";
 import { TOKEN_TILT, landHex, lightRig, makeWayfarer, topOf } from "@/lib/scene/isle-renderer";
-import { PropKit, type Life } from "@/lib/scene/terrain";
+import { PropKit, coastOf, type Life } from "@/lib/scene/terrain";
 
 // The diorama's eye distance on a 1280x720 board (docs/design/camera-light.md), so a hex keeps the board's perspective.
 const EYE = 18.8;
@@ -74,8 +74,10 @@ const camera = new THREE.PerspectiveCamera(10, window.innerWidth / window.innerH
 camera.position.setFromSphericalCoords(EYE, DIORAMA_POLAR, DIORAMA_AZIMUTH).add(new THREE.Vector3(0, CAP_LEVEL, 0));
 camera.lookAt(0, CAP_LEVEL, 0);
 
+// The ring's outer edges face the sea; the hex alone faces it on its two edges nearest the eye, as on the board's near coast.
+const isLand = new Set(hexes.map((h) => `${h.q},${h.r}`));
 for (const h of hexes) {
-  const l = landHex(h);
+  const l = landHex(h, ring ? coastOf(h, (cq, cr) => isLand.has(`${cq},${cr}`)) : [false, true, true, false, false, false]);
   scene.add(l.tile);
   if (l.token) {
     // The diorama pose at the token's own size (poseTokens, zoomed in): turned to the eye, tilted toward it, on its near edge.
