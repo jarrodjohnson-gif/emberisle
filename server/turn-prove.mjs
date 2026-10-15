@@ -186,6 +186,8 @@ for (const x of all) {
 }
 const owed = await Promise.race(all.map((x) => x.next("state", (m) => m.game.phase === "discard", 60000)));
 for (const x of all) x.auto = false;
+// Auto play may already have moved the wayfarer with this very text (same mover, same victim), so count from here.
+const owedLogs = new Map(all.map((x) => [x, x.logs.length]));
 const owing = Object.entries(owed.game.discardNeeded).filter(([, n]) => n > 0);
 if (!owing.length) fail("a discard phase with nobody owing", owed.game.discardNeeded);
 if (w.logs.slice(seen0).filter((t) => t.endsWith("took too long; the table moved on.")).length !== 2) fail("auto play was moved on", w.logs.slice(seen0));
@@ -214,8 +216,9 @@ while (overlap && !owed.game.log.slice(-overlap).every((line, i) => line === rob
 const recoveryMove = robbed.game.log.slice(overlap).filter((line) => line.startsWith(`${roller.name} moves the wayfarer —`));
 if (recoveryMove.length !== 1 || recoveryMove[0].includes("steals a card from") || recoveryMove[0].includes("sends the wayfarer")) fail("connected timeout wayfarer is one public action line", robbed.game.log.slice(-8));
 await stateBarrier(all, robbed.game.seq);
-await Promise.all(all.map((seat) => seat.logs.includes(recoveryMove[0]) ? Promise.resolve() : seat.next("log", (m) => m.text === recoveryMove[0])));
-for (const seat of all) if (seat.logs.filter((line) => line === recoveryMove[0]).length !== 1) fail("every seated client receives one connected timeout wayfarer line", seat.logs.slice(-8));
+const recoveryLogs = (seat) => seat.logs.slice(owedLogs.get(seat)).filter((line) => line === recoveryMove[0]);
+await Promise.all(all.map((seat) => recoveryLogs(seat).length ? Promise.resolve() : seat.next("log", (m) => m.text === recoveryMove[0])));
+for (const seat of all) if (recoveryLogs(seat).length !== 1) fail("every seated client receives one connected timeout wayfarer line", seat.logs.slice(-8));
 const passed = await roller.next("state", (m) => m.game.seq > robbed.game.seq && m.game.current !== roller.state.you, TURN + 1000);
 if (handOf(passed, roller.state.you) !== goods) fail("an idle main turn spends nothing", { goods, after: handOf(passed, roller.state.you) });
 if (passed.game.players.find((p) => p.id === roller.state.you).kind !== "human") fail("the roller stays human");
