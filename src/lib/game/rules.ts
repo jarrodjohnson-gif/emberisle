@@ -1,4 +1,4 @@
-import { COST, LARGEST_ARMY_MIN, LONGEST_PATH_MIN, POINTS, RESOURCES, type Action, type DevKind, type GameState, type PlayerState, type Resource, type VictoryTarget } from "./types";
+import { COST, LARGEST_ARMY_MIN, LONGEST_PATH_MIN, POINTS, RESOURCES, type Action, type DevKind, type GameState, type PlayerState, type Resource, type VictoryTarget, type WinTrigger } from "./types";
 
 function clone<T>(s: T): T {
   return structuredClone(s);
@@ -245,11 +245,12 @@ export function victoryTarget(state: Pick<GameState, "victoryTarget">): VictoryT
   return state.victoryTarget === 7 ? 7 : POINTS.win;
 }
 
-function checkWin(state: GameState, pid: string) {
+function checkWin(state: GameState, pid: string, trigger: WinTrigger) {
   if (state.current !== pid) return;
   if (totalVP(state, pid) >= victoryTarget(state)) {
     state.phase = "over";
     state.winner = pid;
+    state.winReason = { trigger, points: totalVP(state, pid), target: victoryTarget(state) };
     log(state, `${player(state, pid)?.name} claims the isle with ${totalVP(state, pid)} points.`);
   }
 }
@@ -594,7 +595,7 @@ function applyActionInternal(prev: GameState, actor: string, action: Action): { 
       me.pathsLeft -= 1;
       updateLongest(state);
       log(state, `${me.name} builds a path.`);
-      checkWin(state, actor);
+      checkWin(state, actor, state.longestRoad === actor && prev.longestRoad !== actor ? "longestPath" : "points");
       return { state };
     }
     case "buildOutpost": {
@@ -609,7 +610,7 @@ function applyActionInternal(prev: GameState, actor: string, action: Action): { 
       me.outpostsLeft -= 1;
       updateLongest(state);
       log(state, `${me.name} founds an outpost.`);
-      checkWin(state, actor);
+      checkWin(state, actor, state.longestRoad === actor && prev.longestRoad !== actor ? "longestPath" : "outpost");
       return { state };
     }
     case "buildStronghold": {
@@ -624,7 +625,7 @@ function applyActionInternal(prev: GameState, actor: string, action: Action): { 
       me.strongholdsLeft -= 1;
       me.outpostsLeft += 1;
       log(state, `${me.name} raises a stronghold.`);
-      checkWin(state, actor);
+      checkWin(state, actor, "stronghold");
       return { state };
     }
     case "buyCard": {
@@ -636,7 +637,7 @@ function applyActionInternal(prev: GameState, actor: string, action: Action): { 
       me.hidden[card] += 1;
       me.boughtThisTurn[card] += 1;
       log(state, `${me.name} draws a fortune.`);
-      if (card === "vp") checkWin(state, actor);
+      if (card === "vp") checkWin(state, actor, "pointFortune");
       return { state };
     }
     case "playKnight": {
@@ -661,7 +662,7 @@ function applyActionInternal(prev: GameState, actor: string, action: Action): { 
       }
       if (prev.phase === "roll") state.phase = "roll";
       else state.phase = "main";
-      checkWin(state, actor);
+      checkWin(state, actor, state.largestArmy === actor && prev.largestArmy !== actor ? "largestArmy" : "points");
       return { state };
     }
     case "playRoad": {
@@ -688,7 +689,7 @@ function applyActionInternal(prev: GameState, actor: string, action: Action): { 
       }
       updateLongest(state);
       log(state, `${me.name} uses a path fortune.`);
-      checkWin(state, actor);
+      checkWin(state, actor, state.longestRoad === actor && prev.longestRoad !== actor ? "longestPath" : "points");
       return { state };
     }
     case "playPlenty": {
@@ -790,7 +791,7 @@ function applyActionInternal(prev: GameState, actor: string, action: Action): { 
       if (idx === state.players.length - 1) state.turn += 1;
       log(state, `${next.name}'s turn.`);
       // Points can arrive on someone else's turn (an award handed over by a cut); they win as this turn starts.
-      checkWin(state, next.id);
+      checkWin(state, next.id, "turnStart");
       return { state };
     }
     default:

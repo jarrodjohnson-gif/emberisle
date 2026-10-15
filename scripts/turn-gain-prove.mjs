@@ -187,6 +187,27 @@ async function open(view, { reduced = false, before, path = "/" } = {}) {
   });
   const page = await ctx.newPage();
   const tag = `${view.width}x${view.height}${reduced ? " reduced" : ""}`;
+  // No roll in the page comes up 7. A bot's 7 before the person's first roll once parked the wayfarer on the seat's only
+  // paying token (CI, #618: "no token beside p0's outposts can pay"), and a 7 later would do the same to the second
+  // steered roll. rollDie draws one Uint32 per die and rejects values at or over its limit, so the dice are the accepted
+  // single-Uint32 draws in pairs; the second of a pair that would complete a 7 is nudged to the next face. The seat's own
+  // steered rolls (steerPayingRoll) queue their dice ahead of this. Table codes draw a Uint8Array and are untouched.
+  await page.addInitScript(() => {
+    const real = crypto.getRandomValues.bind(crypto);
+    const limit = Math.floor(0x1_0000_0000 / 6) * 6;
+    let first = null;
+    crypto.getRandomValues = (buf) => {
+      real(buf);
+      if (!(buf instanceof Uint32Array) || buf.length !== 1 || buf[0] >= limit) return buf;
+      const die = 1 + (buf[0] % 6);
+      if (first === null) first = die;
+      else {
+        if (first + die === 7) buf[0] += 1;
+        first = null;
+      }
+      return buf;
+    };
+  });
   page.on("console", (m) => m.type() === "error" && errors.push(`${tag}: ${m.text()}`));
   page.on("pageerror", (e) => errors.push(`${tag}: ${e}`));
   if (view.insets) await (await ctx.newCDPSession(page)).send("Emulation.setSafeAreaInsetsOverride", { insets: view.insets });
@@ -364,7 +385,11 @@ async function steerPayingRoll(page) {
     const g = window.__emberisle.getState();
     const st = g.state;
     const mine = st.vertices.filter((v) => v.building?.playerId === g.localId).flatMap((v) => v.hexes);
-    const hex = st.hexes.find((h) => mine.includes(h.id) && h.pip && h.pip !== 7 && h.terrain !== "waste" && h.id !== st.robberHex && st.bank[h.terrain] > 2);
+    // A random deal can leave the seat's outposts beside only thin stock, so take the best-stocked token that still pays
+    // at least one good rather than none (and say which seat and tokens when nothing can pay).
+    const paying = st.hexes.filter((h) => mine.includes(h.id) && h.pip && h.pip !== 7 && h.terrain !== "waste" && h.id !== st.robberHex && st.bank[h.terrain] > 0);
+    const hex = paying.sort((x, y) => st.bank[y.terrain] - st.bank[x.terrain])[0];
+    if (!hex) throw new Error(`no token beside ${g.localId}'s outposts can pay: ${JSON.stringify(st.hexes.filter((h) => mine.includes(h.id)).map((h) => [h.id, h.terrain, h.pip, st.bank[h.terrain]]))}`);
     const a = Math.max(1, hex.pip - 6);
     window.__queue = [a - 1, hex.pip - a - 1];
     if (!window.__steered) {

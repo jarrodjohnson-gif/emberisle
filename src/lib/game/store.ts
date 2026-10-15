@@ -30,19 +30,26 @@ function rollOffLine(before: GameState | null, after: GameState) {
   return lines.length ? lines.join(" · ") : null;
 }
 
-// The table sound a change of state makes, if any (#303): the same diff serves practice, hotseat, and the host's pushes.
-function soundFor(before: GameState | null, after: GameState): SoundName | null {
-  if (!before) return null;
-  if (after.winner && !before.winner) return "win";
-  if (after.dice && !before.dice) return "dice_land";
+// The table sounds a change of state makes, with their volume (#303, #609): the same diff serves practice, hotseat, and the
+// host's pushes, so a bot's placement knocks like yours. `mine` is whether this browser's seat took the action (a fortune
+// bought by someone else is a touch quieter).
+function soundsFor(before: GameState | null, after: GameState, mine: boolean): [SoundName, number][] {
+  if (!before) return [];
+  if (after.winner && !before.winner) return [["win", 1]];
+  const out: [SoundName, number][] = [];
   const built = (s: GameState, kind: "outpost" | "stronghold") => s.vertices.filter((v) => v.building?.kind === kind).length;
-  if (built(after, "stronghold") > built(before, "stronghold")) return "stronghold_place";
-  if (built(after, "outpost") > built(before, "outpost")) return "outpost_place";
   const paths = (s: GameState) => s.edges.filter((e) => e.path).length;
-  if (paths(after) > paths(before)) return "path_place";
-  if ((after.deckLeft ?? after.deck.length) < (before.deckLeft ?? before.deck.length)) return "card_buy";
-  if (after.playedCard && !before.playedCard) return "card_play";
-  return null;
+  if (after.dice && !before.dice) out.push(["dice_land", 1]);
+  else if (built(after, "stronghold") > built(before, "stronghold")) out.push(["stronghold_place", 1]);
+  else if (built(after, "outpost") > built(before, "outpost")) out.push(["outpost_place", 1]);
+  else if (paths(after) > paths(before)) out.push(["path_place", 1]);
+  else if ((after.deckLeft ?? after.deck.length) < (before.deckLeft ?? before.deck.length)) out.push(["card_buy", mine ? 1 : 0.6]);
+  else if (after.playedCard && !before.playedCard) out.push(["card_play", 1]);
+  // A new game moves the wayfarer back to the desert: only a move within the same game is a sound. The host strips the seed
+  // from pushed states, so the same game is "not over before, same island, the turn count never fell".
+  const sameGame = before.phase !== "over" && after.turn >= before.turn && after.hexes.every((h, i) => h.terrain === before.hexes[i]?.terrain);
+  if (sameGame && after.robberHex !== before.robberHex) out.push(["wayfarer_move", 1]);
+  return out;
 }
 
 // Knocks waiting for their piece to land (#438). Leaving the table or starting a game drops them, so none plays late.
@@ -55,16 +62,17 @@ function clearKnocks() {
 // Play the sound for a state change, and the your-turn chime when the turn comes round to this browser's seat
 // (not in hotseat, where every seat is this browser).
 function hear(before: GameState | null, after: GameState, me: string, mode: GameStore["mode"]) {
-  const sound = soundFor(before, after);
-  // A piece knocks when it lands, not when it is picked (#438); reduced motion has no fall, so it knocks at once.
-  const land = sound && sound in LAND_MS && !calmMotion() ? LAND_MS[sound as keyof typeof LAND_MS] : 0;
-  if (sound && land) {
-    const t = setTimeout(() => {
-      knocks.delete(t);
-      play(sound);
-    }, land);
-    knocks.add(t);
-  } else if (sound) play(sound);
+  for (const [sound, volume] of soundsFor(before, after, mode === "hotseat" || after.current === me)) {
+    // A piece knocks when it lands, not when it is picked (#438); reduced motion has no fall, so it knocks at once.
+    const land = sound in LAND_MS && !calmMotion() ? LAND_MS[sound as keyof typeof LAND_MS] : 0;
+    if (land) {
+      const t = setTimeout(() => {
+        knocks.delete(t);
+        play(sound, volume);
+      }, land);
+      knocks.add(t);
+    } else play(sound, volume);
+  }
   if (mode !== "hotseat" && before && after.current === me && before.current !== me && after.phase !== "over") yourTurn();
 }
 
@@ -831,7 +839,10 @@ export const useGame = create<GameStore>((set, get) => ({
     set({ viewChoice: v });
   },
   sendChat: (text) => {
-    if (!get().spectator) get().net?.say(text);
+    const { spectator, net } = get();
+    if (spectator || !net) return;
+    net.say(text);
+    play("chat_send");
   },
   sendReact: (emote, to) => {
     if (!get().spectator) get().net?.react(emote, to);
@@ -885,7 +896,10 @@ function endOffer(set: Set, get: Get, taker: string | null) {
   clearOfferTimers();
   const takerName = state?.players.find((p) => p.id === taker)?.name ?? "Someone";
   set({ offer: null, declined: [] });
-  play(taker ? "trade_yes" : "trade_no");
+  // Both parties hear a deal in full and the rest of the table softer; only the asker hears a No (#609).
+  const me = get().localId;
+  if (taker) play("trade_yes", me === taker || me === offer.from ? 1 : 0.5);
+  else if (me === offer.from) play("trade_no");
   // Every receiver gets the resolved offer as one brief log line, with no response controls.
   if (outcomeTimer) clearTimeout(outcomeTimer);
   set({ tradeOutcome: taker ? `${takerName} takes it.` : "Nobody took it." });
@@ -899,6 +913,7 @@ function openOffer(set: Set, get: Get, from: string, give: Bag, want: Bag) {
   const tradeId = `t${state.seq}-${++offerSeq}`;
   const fromName = state.players.find((p) => p.id === from)?.name ?? "Someone";
   set({ offer: { tradeId, from, fromName, give, want, until: Date.now() + OFFER_MS }, declined: [], tradeOutcome: null });
+  if (from !== get().localId) play("trade_offer");
   offerTimers.push(setTimeout(() => endOffer(set, get, null), OFFER_MS));
   for (const p of state.players) {
     if (p.kind !== "bot" || p.id === from) continue;
@@ -996,6 +1011,8 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       // The lobby box is always open, so only lines that arrive during the game can be unread.
       const counts = screen === "play" && !chatOpen && line.seat !== seatId;
       set({ chat: [...chat, { ...line, at: Date.now() }].slice(-50), unread: counts ? unread + 1 : unread });
+      // Others' lines tick; the sender's echo does not, and nothing ticks under the hands of someone typing in the chat (#609).
+      if (line.seat !== seatId && document.activeElement?.id !== "chat-input") play("chat_recv");
     },
     react: (r) => {
       set({ reactions: [...get().reactions, r] });
@@ -1031,6 +1048,7 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
     tradeOffer: ({ tradeId, from, give, want, seconds }) => {
       const fromName = get().state?.players.find((p) => p.id === from)?.name ?? "Someone";
       set({ offer: { tradeId, from, fromName, give, want, until: Date.now() + seconds * 1000 }, declined: [], tradeOutcome: null });
+      if (from !== get().localId) play("trade_offer");
     },
     tradeDeclined: ({ tradeId, by }) => {
       const { offer, declined } = get();

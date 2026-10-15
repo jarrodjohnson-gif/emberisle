@@ -13,6 +13,11 @@ const SETTINGS = {
   whale: { radius: 6.9, reach: 1.10, duration: 30, arc: 0.32 },
 } satisfies Record<OceanSpecies, { radius: number; reach: number; duration: number; arc: number }>;
 const MAT = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.72, flatShading: true });
+// Two small schools circle under the shallows just off the coast (crystal-water.md "Touch the sea"). A splash within `reach`
+// sends a fish (or the visitor) darting away from it over `dart` s; it holds there until `hold` and is back on its round by `back`.
+const FISH = { schools: 2, per: 5, radius: 5.75, orbit: 0.28, speed: 0.5, y: -0.1 } as const;
+const SCATTER = { reach: 1.5, dart: 0.25, hold: 1.5, back: 4, far: 0.9 } as const;
+type Flee = { dx: number; dz: number; age: number };
 
 export function part(geo: THREE.BufferGeometry, colour: number, x = 0, y = 0, z = 0, sx = 1, sy = 1, sz = 1) {
   let g = geo.index ? geo.toNonIndexed() : geo;
@@ -38,6 +43,38 @@ function fin(points: number[][], colour: number) {
   geo.setAttribute("position", new THREE.Float32BufferAttribute([...points.flat(), ...[...points].reverse().flat()], 3));
   geo.computeVertexNormals();
   return part(geo, colour);
+}
+
+// How far along its dart a scattered animal is: out fast, a hold, then an eased return.
+function fled(f: Flee | null) {
+  if (!f || f.age >= SCATTER.back) return 0;
+  if (f.age < SCATTER.dart) return 1 - (1 - f.age / SCATTER.dart) ** 2;
+  if (f.age < SCATTER.hold) return 1;
+  return 1 - THREE.MathUtils.smoothstep(f.age, SCATTER.hold, SCATTER.back);
+}
+
+// Away from the splash at (sx, sz), never toward the island: the inward part of the dart is dropped.
+function flee(x: number, z: number, sx: number, sz: number): Flee | null {
+  const d = Math.hypot(x - sx, z - sz);
+  if (d > SCATTER.reach) return null;
+  let dx = d > 1e-3 ? (x - sx) / d : x, dz = d > 1e-3 ? (z - sz) / d : z;
+  const r = Math.hypot(x, z) || 1, radial = (dx * x + dz * z) / r;
+  if (radial < 0) [dx, dz] = [dx - (radial * x) / r, dz - (radial * z) / r];
+  const l = Math.hypot(dx, dz) || 1;
+  const far = SCATTER.far * (0.5 + 0.5 * (1 - d / SCATTER.reach));
+  return { dx: (dx / l) * far, dz: (dz / l) * far, age: 0 };
+}
+
+function fishMesh() {
+  const { geometry } = merge([
+    part(new THREE.SphereGeometry(1, 6, 4), 0xf2a25a, 0, 0, 0, 0.022, 0.02, 0.05),
+    part(new THREE.ConeGeometry(0.018, 0.035, 4).rotateX(-Math.PI / 2), 0xe07f3c, 0, 0, -0.06),
+  ]);
+  const mesh = new THREE.InstancedMesh(geometry, MAT, FISH.schools * FISH.per);
+  mesh.name = "fish";
+  // The instances move every frame; the bounds three caches would cull them by where they first were.
+  mesh.frustumCulled = false;
+  return mesh;
 }
 
 function wake() {
@@ -124,6 +161,14 @@ export class OceanLife {
   private visits = 0;
   // The height of the sea's waves at a point, so a surfaced animal and its wake ride them (crystal-water.md).
   private surface: (x: number, z: number) => number = () => 0;
+  // The schools, apart from the visitors' group (the visitor budget counts that one), and the visitor's dart.
+  readonly fish = new THREE.Group();
+  private fishMesh = fishMesh();
+  private schools: { angle: number; turn: number }[] = [];
+  private fishFlee: (Flee | null)[] = Array.from({ length: FISH.schools * FISH.per }, () => null);
+  private fishTime = 0;
+  private visitorFlee: Flee | null = null;
+  private dummy = new THREE.Object3D();
 
   constructor() {
     this.group.name = "ocean-life";
@@ -134,6 +179,19 @@ export class OceanLife {
       c.root.userData = { ambient: true, species };
       this.group.add(c.root, c.wake);
     }
+    this.fish.name = "fish";
+    this.fish.add(this.fishMesh);
+    this.seedFish("");
+  }
+
+  private seedFish(seed: string) {
+    const fr = mulberry32(hashStr(`fish:${seed}`));
+    const first = fr() * Math.PI * 2;
+    this.schools = Array.from({ length: FISH.schools }, (_, i) => ({ angle: first + (i * Math.PI * 2) / FISH.schools + (fr() - 0.5), turn: fr() < 0.5 ? -1 : 1 }));
+    this.fishFlee.fill(null);
+    this.visitorFlee = null;
+    this.fishTime = 0;
+    this.swim();
   }
 
   reset(seed: string) {
@@ -141,6 +199,7 @@ export class OceanLife {
     this.next = 8 + this.rng() * 8;
     this.active = null;
     this.visits = 0;
+    this.seedFish(seed);
     Object.values(this.creatures).forEach(c => { c.root.visible = false; c.wake.visible = false; });
   }
 
@@ -182,6 +241,10 @@ export class OceanLife {
     }
     if (dt <= 0) return;
     this.surface = surface;
+    this.fishTime += dt;
+    for (const f of this.fishFlee) if (f) f.age += dt;
+    if (this.visitorFlee) this.visitorFlee.age += dt;
+    this.swim();
     if (this.active) {
       this.active.age = Math.min(this.active.duration, this.active.age + dt);
       this.pose(this.active);
@@ -189,6 +252,7 @@ export class OceanLife {
         this.creatures[this.active.species].root.visible = false;
         this.creatures[this.active.species].wake.visible = false;
         this.active = null;
+        this.visitorFlee = null;
         this.next = 20 + this.rng() * 24;
       }
       return;
@@ -202,15 +266,59 @@ export class OceanLife {
     else this.next = 6 + this.rng() * 4;
   }
 
+  /** A splash at (x, z): fish and the visitor within reach dart away from it, and come back a few seconds later. */
+  scatter(x: number, z: number) {
+    this.fishAt().forEach((p, i) => {
+      const f = flee(p.x, p.z, x, z);
+      if (f) this.fishFlee[i] = f;
+    });
+    const root = this.active && this.creatures[this.active.species].root;
+    const f = root && flee(root.position.x, root.position.z, x, z);
+    if (f) this.visitorFlee = f;
+  }
+
+  /** Where each fish is now, for the scatter and the proof. */
+  fishAt() {
+    const m = new THREE.Matrix4(), p = new THREE.Vector3();
+    return Array.from({ length: this.fishMesh.count }, (_, i) => {
+      this.fishMesh.getMatrixAt(i, m);
+      p.setFromMatrixPosition(m);
+      return { x: p.x, z: p.z };
+    });
+  }
+
+  // Each school follows its leader round a small circle; a scattered fish is carried off its place and faces its dart.
+  private swim() {
+    const d = this.dummy;
+    this.schools.forEach((s, si) => {
+      const cx = Math.cos(s.angle) * FISH.radius, cz = Math.sin(s.angle) * FISH.radius;
+      for (let j = 0; j < FISH.per; j++) {
+        const i = si * FISH.per + j;
+        const a = s.turn * (this.fishTime * FISH.speed - j * 0.32) + si;
+        const r = FISH.orbit * (1 + 0.15 * Math.sin(this.fishTime * 0.7 + j));
+        const f = this.fishFlee[i] ?? null, u = fled(f);
+        d.position.set(cx + Math.cos(a) * r + (f ? f.dx * u : 0), FISH.y + 0.01 * Math.sin(this.fishTime * 2 + j), cz + Math.sin(a) * r + (f ? f.dz * u : 0));
+        // Along the circle (its tangent), or along the dart while it is going out.
+        const darting = f && f.age < SCATTER.hold;
+        d.rotation.set(0, darting ? Math.atan2(f.dx, f.dz) : Math.atan2(-Math.sin(a) * s.turn, Math.cos(a) * s.turn), 0);
+        d.updateMatrix();
+        this.fishMesh.setMatrixAt(i, d.matrix);
+      }
+    });
+    this.fishMesh.instanceMatrix.needsUpdate = true;
+  }
+
   private pose(v: Visit) {
     const u = v.age / v.duration;
     const a = v.angle + (u - 0.5) * v.arc * v.direction;
     const c = this.creatures[v.species];
     // Surface and dive over two seconds: geometry appears through the ocean plane without a popup/fade.
     const visible = Math.min(1, v.age / 2, (v.duration - v.age) / 2);
-    const x = Math.cos(a) * v.radius, z = Math.sin(a) * v.radius;
+    // A visitor startled by a splash darts off its lane and dips, then comes back to it.
+    const f = this.visitorFlee, off = fled(f);
+    const x = Math.cos(a) * v.radius + (f ? f.dx * off : 0), z = Math.sin(a) * v.radius + (f ? f.dz * off : 0);
     const sea = this.surface(x, z);
-    c.root.position.set(x, -0.48 + visible * (0.46 + sea), z);
+    c.root.position.set(x, -0.48 + visible * (0.46 + sea) - 0.15 * off, z);
     c.root.rotation.y = -a + (v.direction > 0 ? 0 : Math.PI);
     c.root.rotation.x = 0;
     if (c.tail) c.tail.rotation.x = Math.sin(v.age * (v.species === "whale" ? 1.25 : 3.2)) * 0.16;
@@ -243,5 +351,8 @@ export class OceanLife {
       }
     });
     this.group.removeFromParent();
+    this.fishMesh.geometry.dispose();
+    this.fishMesh.dispose();
+    this.fish.removeFromParent();
   }
 }

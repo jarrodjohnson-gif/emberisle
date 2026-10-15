@@ -35,7 +35,9 @@ import { LAND_MS } from "@/lib/scene/landing";
 import { mulberry32, hashStr } from "@/lib/utils";
 import { PAINT, RIM } from "@/lib/scene/palette";
 import { OceanLife } from "@/lib/scene/ocean-life";
-import { CAUSTIC_GLSL, PAPER, makeCrystalSea, makeFloorProps, makeSeaFloor, makeSwell, makeWash, type SeaUniforms, type WaterPath, type WaterStatus } from "@/lib/scene/crystal-water";
+import { CAUSTIC_GLSL, PAPER, SPLASH, addSplashRings, makeCrystalSea, makeFloorProps, makeSeaFloor, makeSplashes, makeSwell, makeWash, nearestCoast, type SeaUniforms, type WaterPath, type WaterStatus } from "@/lib/scene/crystal-water";
+import { Wobble } from "@/lib/scene/wobble";
+import { play } from "@/lib/sound";
 import { payingHexes } from "@/lib/game/rules";
 import { type GameState, type HarborKind, type HexCell, type Terrain, type Vertex } from "@/lib/game/types";
 
@@ -124,6 +126,7 @@ const _sph = new THREE.Spherical();
 const _p = new THREE.Vector3();
 const _q = new THREE.Vector3();
 const _n = new THREE.Vector3();
+const _sea = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 
 // Number tokens in the diorama view (docs/design/tokens.md "Angle"): each turns to face the camera's azimuth and pitches
 // TOKEN_TILT toward it, resting on its near edge, and grows until its numeral is TOKEN_NUMERAL_PX tall on screen, but never
@@ -194,6 +197,10 @@ export class IsleRenderer {
   private oreWork: OreWork[] = [];
   private farmWork: FarmWork[] = [];
   private oceanLife = new OceanLife();
+  // Touch the sea (crystal-water.md): the live splashes, the tiles giving under a tap, and where a drag on the water last stirred.
+  private splash = makeSplashes();
+  private wobble = new Wobble();
+  private trail: { x: number; z: number; t: number } | null = null;
   private ambientTime = 0;
   private boats: THREE.Group[] = [];
   private trees: THREE.Object3D[] = [];
@@ -337,11 +344,12 @@ export class IsleRenderer {
     this.opaqueSea.rotation.x = -Math.PI / 2;
     this.opaqueSea.position.y = -0.02;
     this.scene.add(this.opaqueSea);
-    this.scene.add(this.oceanLife.group);
+    this.scene.add(this.oceanLife.group, this.oceanLife.fish);
 
     const coast = (this.coast = coastLoop());
-    this.sea = { uTime: this.water.uniforms.uTime!, uMotion: this.motion, uFade: { value: new THREE.Vector2(11, 22) } };
+    this.sea = { uTime: this.water.uniforms.uTime!, uMotion: this.motion, uFade: { value: new THREE.Vector2(11, 22) }, ...this.splash.uniforms };
     this.water.uniforms.uFade = this.sea.uFade;
+    addSplashRings(this.water, this.sea);
     // The crystal sea refracts a half-float copy of the scene.
     const ext = this.renderer.extensions;
     this.crystalOk = this.renderer.capabilities.isWebGL2 && (ext.has("EXT_color_buffer_float") || ext.has("EXT_color_buffer_half_float"));
@@ -935,6 +943,7 @@ export class IsleRenderer {
     this.downType = e.pointerType;
     this.dragged = false;
     this.gesture.down(e.pointerId, e.clientX, e.clientY);
+    this.poke(e);
   };
 
   // The orbit controls own the drag and the pinch; this keeps the finger count and whether the pointer ever left the tap.
@@ -946,27 +955,25 @@ export class IsleRenderer {
     if (this.dragged || this.gesture.pointers.size !== 1) return;
     if (Math.hypot(e.clientX - this.down.x, e.clientY - this.down.y) > tapSlop(this.downType, this.coarse())) {
       this.dragged = true;
+      // A drag orbits the camera: the stir ends where the tap slop does, so an orbit never splashes.
+      this.trail = null;
       this.dragTakesEye();
+      return;
     }
+    if (this.trail) this.stir(e);
   };
 
   private onCancel = (e: PointerEvent) => {
+    this.trail = null;
     this.gesture.up(e.pointerId);
   };
 
   private onUp = (e: PointerEvent) => {
+    this.trail = null;
     if (this.gesture.up(e.pointerId) || this.dragged) return;
     const coarse = this.coarse();
     if (Math.hypot(e.clientX - this.down.x, e.clientY - this.down.y) > tapSlop(this.downType, coarse)) return;
-    const rect = this.renderer.domElement.getBoundingClientRect();
-    this.pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-    this.pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-    this.raycaster.setFromCamera(this.pointer, this.cam());
-    const hits = this.view === "diorama" ? this.reachHits(coarse || this.downType === "touch") : this.raycaster
-      .intersectObjects(this.pickables, true)
-      .filter((h) => h.object.userData.id)
-      .map((h) => ({ kind: h.object.userData.kind as "hex" | "vertex" | "edge", id: h.object.userData.id as string, distance: h.distance }));
-    const hit = pickBest(hits);
+    const hit = pickBest(this.hitsAt(e, coarse || this.downType === "touch"));
     const legal = hit !== undefined && this.legalIds.has(hit.id);
     // Two taps on empty board (nothing legal under either) within DOUBLE_TAP_MS and DOUBLE_TAP_PX snap the view home.
     const now = performance.now();
@@ -990,6 +997,70 @@ export class IsleRenderer {
     if (isSelectTap(coarse, this.downType, this.pending?.id ?? null, hit.id)) this.onSelect({ kind: hit.kind, id: hit.id });
     else this.onPick(hit.kind, hit.id);
   };
+
+  // What a press at this pointer would pick: every hex, corner and path target under it (the ray is left set for seaPoint).
+  private hitsAt(e: PointerEvent, coarse: boolean) {
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    this.pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    this.pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+    this.raycaster.setFromCamera(this.pointer, this.cam());
+    return this.view === "diorama" ? this.reachHits(coarse) : this.raycaster
+      .intersectObjects(this.pickables, true)
+      .filter((h) => h.object.userData.id)
+      .map((h) => ({ kind: h.object.userData.kind as "hex" | "vertex" | "edge", id: h.object.userData.id as string, distance: h.distance }));
+  }
+
+  // Where the last ray meets the sea, if that is open water and not the beach.
+  private seaPoint() {
+    const p = this.raycaster.ray.intersectPlane(_sea, _p);
+    if (!p) return null;
+    const c = nearestCoast(this.coast, p.x, p.z);
+    return c.offshore && c.o >= SPLASH.minOffset ? { x: p.x, z: p.z } : null;
+  }
+
+  // Touch the sea (crystal-water.md): on the press, not the release. A press on a tile wobbles it; one that picks no target at
+  // all splashes the water under it. A corner or a path under the finger takes the press for the game: nothing here.
+  private poke(e: PointerEvent) {
+    this.trail = null;
+    if (e.button !== 0 || this.gesture.pointers.size !== 1) return;
+    const hit = pickBest(this.hitsAt(e, this.coarse() || e.pointerType === "touch"));
+    if (hit) {
+      if (hit.kind === "hex") this.wobbleHex(hit.id);
+      return;
+    }
+    const p = this.seaPoint();
+    if (!p) return;
+    this.splashAt(p.x, p.z, 1);
+    this.trail = { ...p, t: performance.now() };
+  }
+
+  // A finger moved on the water within the tap slop stirs a short trail of small ripples.
+  private stir(e: PointerEvent) {
+    const now = performance.now();
+    if (!this.trail || now - this.trail.t < 80) return;
+    this.hitsAt(e, false);
+    const p = this.seaPoint();
+    if (!p || Math.hypot(p.x - this.trail.x, p.z - this.trail.z) < 0.35) return;
+    this.splashAt(p.x, p.z, 0.45);
+    this.trail = { ...p, t: now };
+  }
+
+  /** A splash on the sea at (x, z), 1 for a tap. Starts at once; the fish and the visitor near it scatter. */
+  splashAt(x: number, z: number, strength: number) {
+    this.splash.add(x, z, strength, this.clock.getElapsed() + (performance.now() - this.lastFrame) / 1000);
+    if (!this.calm()) this.oceanLife.scatter(x, z);
+    // A tap plops (sound.ts keeps it quiet while muted); a drag's trail does not.
+    if (strength >= 1) play("plop");
+    this.busyUntil = Math.max(this.busyUntil, performance.now() + SPLASH.life * 1000);
+  }
+
+  /** The tapped tile, its token and its props give a little; never under reduced motion or while a piece is landing. */
+  wobbleHex(id: string) {
+    if (this.calm() || this.landings.length) return;
+    const parts = [...this.land.children, ...this.living.children].filter((o) => (o.userData.land && o.userData.id === id) || o.userData.hex === id);
+    this.wobble.start(id, parts, TILE_Y, performance.now());
+    this.wake();
+  }
 
   // The legal marks breathe between 0.6x and 1.2x of their base glow on the 1.2 s pulse token, one shared phase (#437).
   // Reduced motion holds the base glow. The wayfarer's hex ring keeps its own faster pulse. Marks pulse at the idle 12 fps by design.
@@ -1044,6 +1115,7 @@ export class IsleRenderer {
     }
     // Reduced motion: a flat, still sea; only the foam lace stays.
     this.motion.value = calm ? 0 : 1;
+    this.splash.step(t);
     if (calm) {
       this.oceanLife.step(0, false, this.oceanViewport);
       this.pulseMarks(0, true);
@@ -1121,6 +1193,7 @@ export class IsleRenderer {
       b.rotation.x = -Math.atan(sea.gx * Math.sin(yaw) + sea.gz * Math.cos(yaw));
       b.rotation.z = Math.atan(sea.gx * Math.cos(yaw) - sea.gz * Math.sin(yaw));
     }
+    this.wobble.step(now);
     this.draw();
   };
 
@@ -1193,7 +1266,7 @@ export class IsleRenderer {
       const group = new THREE.Group();
       group.add(sea, wash, makeSeaFloor(this.coast, this.sea), makeFloorProps(this.coast));
       this.scene.add(group);
-      this.crystal = { group, sea, wash, swell: makeSwell(this.coast) };
+      this.crystal = { group, sea, wash, swell: makeSwell(this.coast, this.splash) };
     }
     if (this.crystal) this.crystal.group.visible = path === "crystal";
     // The crystal sea's edge strip draws its own thin lace.

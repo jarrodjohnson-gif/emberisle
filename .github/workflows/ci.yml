@@ -133,6 +133,8 @@ jobs:
       - if: matrix.suite == 'flows'
         run: npm run wayfarer-prove
       - if: matrix.suite == 'flows'
+        run: npm run sounds-prove
+      - if: matrix.suite == 'flows'
         run: npm run tokens-prove
       - if: matrix.suite == 'flows'
         run: npm run pieces-prove
@@ -171,6 +173,8 @@ jobs:
       - if: matrix.suite == 'presentation'
         run: npm run waves-prove
       - if: matrix.suite == 'presentation'
+        run: npm run splash-prove
+      - if: matrix.suite == 'presentation'
         run: npm run polish-tokens-prove
       - if: matrix.suite == 'presentation'
         run: npm run roll-moment-prove
@@ -178,6 +182,8 @@ jobs:
         run: npm run goods-log-prove
       - if: matrix.suite == 'presentation'
         run: npm run turn-gain-prove
+      - if: matrix.suite == 'presentation'
+        run: npm run win-action-prove
       - if: matrix.suite == 'presentation'
         run: npm run turn-copy-prove
       - if: matrix.suite == 'presentation'
