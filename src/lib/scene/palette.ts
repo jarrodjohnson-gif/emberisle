@@ -80,7 +80,12 @@ export const PROP = {
   iron: "#4a4f55",
   ironLight: "#7d858d",
   cactus: "#5e9e4b",
-  deadwood: "#8d7864",
+  cactusRib: "#4a8a3e",
+  flower: "#f28bb3",
+  flowerHeart: "#f7d54a",
+  playa: "#f6ecd6",
+  deadwood: "#b8a58c",
+  deadwoodDark: "#8d7864",
   bleached: "#eee4cf",
 } as const;
 

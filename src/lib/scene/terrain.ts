@@ -158,6 +158,7 @@ export function layoutOf(rng: () => number, t: Terrain): Layout {
   if (t === "wool") pastureLayout(L, rng);
   if (t === "clay") clayLayout(L, rng);
   if (t === "ore") oreLayout(L, rng);
+  if (t === "waste") sandLayout(L, rng);
   return L;
 }
 
@@ -250,6 +251,42 @@ function oreLayout(L: Layout, rng: () => number) {
   L.spots.push({ x: m.x + fwd.x * 0.1, z: m.z + fwd.z * 0.1, r: 0.15, h: -0.045 * L.amp });
 }
 
+// Sand: dunes marching across the hex before the wind (heading `axis`), and a shallow pan toward the feature's corner.
+function sandLayout(L: Layout, rng: () => number) {
+  L.axis = L.rot + (rng() - 0.5) * 0.7;
+  const a = Math.atan2(L.feature.z, L.feature.x) + (rng() - 0.5) * 0.6;
+  L.feature = { x: Math.cos(a) * 0.64, z: Math.sin(a) * 0.64, r: 0.21 };
+  // Mud cracks on the pan's dry floor: eight junctions scattered over it, each cracked through to its two nearest, so the
+  // floor breaks into the irregular polygons of dried mud.
+  const k = L.feature.r * 0.62;
+  const pts = Array.from({ length: 8 }, () => {
+    const [b, rr] = [rng() * Math.PI * 2, k * Math.sqrt(rng())];
+    return { x: L.feature.x + Math.cos(b) * rr, z: L.feature.z + Math.sin(b) * rr };
+  });
+  const seen = new Set<string>();
+  pts.forEach((p, i) => {
+    const near = pts.map((q, j) => [Math.hypot(q.x - p.x, q.z - p.z), j] as const).filter(([, j]) => j !== i).sort((a, b) => a[0] - b[0]);
+    for (const [, j] of near.slice(0, 2)) {
+      const key = i < j ? `${i}-${j}` : `${j}-${i}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      L.ridges.push({ ax: p.x, az: p.z, bx: pts[j]!.x, bz: pts[j]!.z, w: 0, ha: 0, hb: 0, sag: 0 });
+    }
+  });
+}
+
+// Sand's dunes, in DUNE wavelengths along the wind: each rises gently over most of its length to a sharp brink, then drops
+// down a steep slip face; the crest lines bend a little. `rising` is whether a point is on a windward slope (ripples form
+// there). The pan flattens them out.
+const DUNE = 0.5;
+function dunes(x: number, z: number, L: Layout) {
+  const u = (x * Math.cos(L.axis) + z * Math.sin(L.axis)) / DUNE + 0.3 * noise(x * 1.4, z * 1.4, L.seed);
+  const f = u - Math.floor(u);
+  const shape = f < 0.72 ? smooth(0, 0.72, f) : (1 - (f - 0.72) / 0.28) ** 2;
+  const pan = 1 - smooth(L.feature.r * 0.55, L.feature.r, Math.hypot(x - L.feature.x, z - L.feature.z));
+  return { h: 0.075 * L.amp * (shape - 0.42) * (0.8 + 0.4 * noise(x * 2.2 + 3, z * 2.2, L.seed + 9)) * (1 - pan) - 0.035 * pan, rising: f < 0.68 ? 1 - pan : 0, pan };
+}
+
 // The ridges' height at a point: the highest of their soft swells, each along its segment.
 function ridgeAt(x: number, z: number, ridges: Ridge[]) {
   let best = 0;
@@ -289,12 +326,8 @@ function relief(t: Terrain, x: number, z: number, L: Layout): number {
       for (const p of L.spots) h += bump(x, z, p);
       return h;
     }
-    case "waste": {
-      const u = x * Math.cos(L.rot) + z * Math.sin(L.rot);
-      const dune = Math.sin(u * 4.2 + 1.4 * noise(x * 1.3, z * 1.3, L.seed));
-      const ripple = Math.sin(u * 24 + 3 * noise(x * 2, z * 2, L.seed + 3));
-      return 0.04 * L.amp * dune + 0.006 * ripple;
-    }
+    case "waste":
+      return dunes(x, z, L).h;
   }
 }
 
@@ -320,6 +353,32 @@ const fieldAt = (x: number, z: number, axis: number) => fieldOf(Math.hypot(x, z)
 // its spacing wide.
 const FURROW_DC = 0.095;
 const FURROW_H = 0.021;
+
+// Sand's wind ripples: low ridges RIPPLE apart across the wind, bending a little, kept on the dunes' windward slopes and out
+// of the token's clearing, the corners' discs, the pan and the band along the edges where paths and pieces lie.
+const RIPPLE = 0.05;
+function ripples(L: Layout) {
+  const [cw, sw] = [Math.cos(L.axis), Math.sin(L.axis)];
+  const runs: number[][] = [];
+  for (let k = -16; k <= 16; k++) {
+    // The field lies within 0.85 of the centre: only that stretch of each line is sampled.
+    const reach = Math.sqrt(Math.max(0, 0.72 - (k * RIPPLE) ** 2));
+    let run: number[] = [];
+    for (let t = -reach; t <= reach; t += 0.03) {
+      const [bx, bz] = [k * RIPPLE * cw - t * sw, k * RIPPLE * sw + t * cw];
+      const bend = 0.35 * RIPPLE * noise(bx * 2.5, bz * 2.5, L.seed + 11);
+      const [x, z] = [bx + bend * cw, bz + bend * sw];
+      const w = dunes(x, z, L).rising * fieldOf(Math.hypot(x, z), hexDist(x, z), nearest(CORNERS, x, z), 1);
+      if (w > 0.05) run.push(x, z, w);
+      else if (run.length) {
+        if (run.length >= 9) runs.push(run);
+        run = [];
+      }
+    }
+    if (run.length >= 9) runs.push(run);
+  }
+  return runs;
+}
 
 // Each furrow ridge across the field, as runs of [x, z, how much of the field holds there]: the saddle's level sets
 // u^2 - v^2 = c, traced as hyperbola branches (by v where c > 0, by u where c < 0).
@@ -463,6 +522,7 @@ export function sculptHex(h: HexCell, size: number, slabH: number, tileY: number
   const crest = base.clone().lerp(sun, 0.5);
   const spoil = col(PROP.spoil);
   const scree = col(PROP.scree);
+  const playa = col(PROP.playa);
   const sand = col(STRATA.sand);
   const soil = col(PROP.furrow);
   // One scratch colour: `paint` fills it, the caller reads it at once.
@@ -482,6 +542,11 @@ export function sculptHex(h: HexCell, size: number, slabH: number, tileY: number
       c.lerp(soil, 0.9 * field);
       c.lerp(sand, 0.7 * (1 - smooth(0.02, 0.06, path)) * smooth(0.44, 0.5, Math.hypot(x, z)));
     }
+    // Sand's pan is a pale dry floor with a darker rim where the dunes run out.
+    if (t === "waste") {
+      const pan = Math.hypot(x - L.feature.x, z - L.feature.z) / L.feature.r;
+      c.lerp(playa, 0.85 * (1 - smooth(0.62, 0.8, pan))).lerp(shade, 0.35 * smooth(0.6, 0.8, pan) * (1 - smooth(0.85, 1.05, pan)));
+    }
     // Ore's slopes are scree: paler loose stone, speckled stone by stone.
     if (t === "ore") {
       const steep = smooth(0.985, 0.9, ny);
@@ -495,17 +560,20 @@ export function sculptHex(h: HexCell, size: number, slabH: number, tileY: number
   const N = 6 * R;
   const W = BEVEL_SEGS + 2;
   const FACE = R + 1;
-  const ridges = t === "grain" ? furrows(L.axis) : [];
+  const ridges = t === "grain" ? furrows(L.axis) : t === "waste" ? ripples(L) : [];
   const ridgePts = ridges.reduce((a, r) => a + r.length / 3, 0);
   // Clay's pit: eight bands of PIT_SEGS quads round the centre (apron, lip, three risers, two ledges), and the floor's fan.
   const PIT_SEGS = 36;
   const pitBands = t === "clay" ? 8 : 0;
-  const verts = T.count + N * (W - 1) + 6 * FACE * 8 + ridgePts * 3 + (pitBands ? pitBands * 2 * (PIT_SEGS + 1) + PIT_SEGS + 2 : 0);
+  // Sand's mud cracks: each chord CRACK_PTS points, two vertices each.
+  const CRACK_PTS = 12;
+  const cracks = t === "waste" ? L.ridges.length : 0;
+  const verts = T.count + N * (W - 1) + 6 * FACE * 8 + ridgePts * 3 + (pitBands ? pitBands * 2 * (PIT_SEGS + 1) + PIT_SEGS + 2 : 0) + cracks * CRACK_PTS * 2;
   const pos = new Float32Array(verts * 3);
   const nor = new Float32Array(verts * 3);
   const cols = new Float32Array(verts * 3);
   const glow = new Float32Array(verts).fill(1);
-  const idx = new Uint16Array(T.index.length + N * (W - 1) * 6 + 6 * R * 4 * 6 + (ridgePts - ridges.length) * 12 + (pitBands ? pitBands * PIT_SEGS * 6 + PIT_SEGS * 3 : 0));
+  const idx = new Uint16Array(T.index.length + N * (W - 1) * 6 + 6 * R * 4 * 6 + (ridgePts - ridges.length) * 12 + (pitBands ? pitBands * PIT_SEGS * 6 + PIT_SEGS * 3 : 0) + cracks * (CRACK_PTS - 1) * 6);
   idx.set(T.index);
   let nv = 0;
   let ni = T.index.length;
@@ -645,8 +713,8 @@ export function sculptHex(h: HexCell, size: number, slabH: number, tileY: number
     }
   }
 
-  // Grain's furrow ridges, draped on the rendered ground (the lattice's own triangles): each point a crest between two feet;
-  // the crest catches the light, a flank facing the lamp warms and one facing away cools, and the feet melt into the soil.
+  // Grain's furrows and sand's ripples, draped on the rendered ground (the lattice's own triangles): each point a crest between
+  // two feet; the crest catches the light, a flank facing the lamp warms and one facing away cools.
   const surface = (x: number, z: number) => {
     const qf = x / ((SQ3 / 2) * s);
     const rf = z / s - 0.5 * qf;
@@ -656,7 +724,10 @@ export function sculptHex(h: HexCell, size: number, slabH: number, tileY: number
     if (fq + fr <= 1) return at(q0, r0) + fq * (at(q0 + 1, r0) - at(q0, r0)) + fr * (at(q0, r0 + 1) - at(q0, r0));
     return at(q0 + 1, r0 + 1) + (1 - fq) * (at(q0, r0 + 1) - at(q0 + 1, r0 + 1)) + (1 - fr) * (at(q0 + 1, r0) - at(q0 + 1, r0 + 1));
   };
-  const crestC = base.clone().lerp(sun, 0.3);
+  // Grain's furrows are broad and tall over turned soil; sand's ripples low and narrow over sand.
+  const grain = t === "grain";
+  const crestC = base.clone().lerp(sun, grain ? 0.3 : 0.22);
+  const footC = grain ? soil : shade;
   for (const run of ridges) {
     const n = run.length / 3;
     const first = nv;
@@ -670,8 +741,8 @@ export function sculptHex(h: HexCell, size: number, slabH: number, tileY: number
       // the run's ends and where the field fades.
       const nx = -(run[b + 1]! - run[a + 1]!) / tl;
       const nz = (run[b]! - run[a]!) / tl;
-      const hh = FURROW_H * Math.min(1, run[i * 3 + 2]! * 1.4, i / 2, (n - 1 - i) / 2);
-      const half = (0.35 * FURROW_DC) / (2 * Math.hypot(px, pz));
+      const hh = (grain ? FURROW_H : 0.0055) * Math.min(1, run[i * 3 + 2]! * 1.4, i / 2, (n - 1 - i) / 2);
+      const half = grain ? (0.35 * FURROW_DC) / (2 * Math.hypot(px, pz)) : 0.45 * RIPPLE;
       const fl = 1 / Math.hypot(hh, half);
       for (let sd = -1; sd <= 1; sd++) {
         const vx = px + nx * sd * half;
@@ -680,7 +751,7 @@ export function sculptHex(h: HexCell, size: number, slabH: number, tileY: number
         if (sd) {
           const [ox, oy, oz] = [nx * sd * hh * fl, half * fl, nz * sd * hh * fl];
           const lit = (ox * KEY.x + oy * KEY.y + oz * KEY.z - KEY.y) * 3;
-          c.copy(base).lerp(lit > 0 ? sun : shade, Math.min(0.6, Math.abs(lit))).lerp(soil, 0.25);
+          c.copy(base).lerp(lit > 0 ? sun : shade, Math.min(0.6, Math.abs(lit))).lerp(footC, 0.25);
           vert(vx, vy, vz, ox, oy, oz, c, 1);
         } else vert(vx, vy, vz, 0, 1, 0, crestC, 1);
       }
@@ -691,6 +762,25 @@ export function sculptHex(h: HexCell, size: number, slabH: number, tileY: number
       quad(a, a + 1, a + 3, a + 4, false);
       quad(a + 1, a + 2, a + 4, a + 5, false);
     }
+  }
+
+  // Sand's mud cracks: thin dark lines lying on the pan's floor.
+  for (let k = 0; k < cracks; k++) {
+    const g = L.ridges[k]!;
+    const [dx, dz] = [g.bx - g.ax, g.bz - g.az];
+    const len = Math.hypot(dx, dz) || 1;
+    const [nx, nz] = [(-dz / len) * 0.005, (dx / len) * 0.005];
+    const first = nv;
+    const crackC = c.copy(shade).lerp(base, 0.2);
+    for (let i = 0; i < CRACK_PTS; i++) {
+      // Each crack wanders a little off the straight line between its junctions.
+      const u = i / (CRACK_PTS - 1);
+      const wander = 1.6 * Math.sin(u * Math.PI) * noise(u * 2.5, k * 3.1, 21);
+      const [px, pz] = [g.ax + dx * u + nx * wander, g.az + dz * u + nz * wander];
+      for (const sd of [-1, 1]) vert(px + nx * sd, slabH + surface(px + nx * sd, pz + nz * sd) + 0.0015, pz + nz * sd, 0, 1, 0, crackC, 1);
+    }
+    const flip = flipped(first, first + 2, first + 3, 0, 1, 0);
+    for (let i = 0; i < CRACK_PTS - 1; i++) quad(first + i * 2, first + i * 2 + 2, first + i * 2 + 1, first + i * 2 + 3, flip);
   }
 
   if (pitBands) {
@@ -1255,24 +1345,47 @@ function rails(z0: number, z1: number) {
   for (let z = z0 + 0.03; z < z1; z += 0.055) parts.push(part(new THREE.BoxGeometry(0.17, 0.014, 0.026), PROP.wood, 0, 0.007, z));
   return parts;
 }
+// A saguaro: a ribbed trunk with two upturned arms, a pink flower on its crown. 0.3 tall; reach 0.1.
 function cactus() {
-  const cap = (r: number, len: number, x: number, y: number) => part(new THREE.CapsuleGeometry(r, len, 3, 8), PROP.cactus, x, y, 0);
+  const ribbed = (g: THREE.BufferGeometry) => {
+    const [c0, c1] = [col(PROP.cactus), col(PROP.cactusRib)];
+    const p = g.attributes.position!;
+    const a = new Float32Array(p.count * 3);
+    for (let i = 0; i < p.count; i++) (Math.cos(8 * Math.atan2(p.getZ(i), p.getX(i))) > 0.6 ? c1 : c0).toArray(a, i * 3);
+    return g.setAttribute("color", new THREE.BufferAttribute(a, 3));
+  };
+  const cap = (r: number, len: number, x: number, y: number, rz = 0) => part(ribbed(new THREE.CapsuleGeometry(r, len, 4, 16)).rotateZ(rz), null, x, y, 0);
   return [
-    cap(0.036, 0.17, 0, 0.12),
-    cap(0.022, 0.07, 0.065, 0.17),
-    part(new THREE.CapsuleGeometry(0.02, 0.04, 3, 8).rotateZ(Math.PI / 2), PROP.cactus, 0.04, 0.12, 0),
-    cap(0.02, 0.05, -0.06, 0.13),
-    part(new THREE.CapsuleGeometry(0.018, 0.035, 3, 8).rotateZ(Math.PI / 2), PROP.cactus, -0.035, 0.1, 0),
+    cap(0.042, 0.2, 0, 0.14),
+    cap(0.026, 0.05, 0.05, 0.14, Math.PI / 2),
+    cap(0.025, 0.08, 0.075, 0.19),
+    cap(0.024, 0.04, -0.045, 0.1, Math.PI / 2),
+    cap(0.023, 0.06, -0.068, 0.14),
+    ...[0, 1, 2, 3, 4].map((i) => part(new THREE.SphereGeometry(0.014, 6, 4), PROP.flower, Math.cos(i * 1.26) * 0.016, 0.29, Math.sin(i * 1.26) * 0.016, 0, 1, 0.6, 1)),
+    part(new THREE.SphereGeometry(0.01, 6, 4), PROP.flowerHeart, 0, 0.296, 0),
   ];
 }
+// A bleached dead tree: a gnarled trunk bent once, three thick branches (two forked), splayed roots. 0.32 tall; reach 0.1.
 function deadTree() {
   const V = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z);
+  const wood = (a: THREE.Vector3, b: THREE.Vector3, r: number) => beam(a, b, r, PROP.deadwood);
   return [
-    part(new THREE.CylinderGeometry(0.012, 0.024, 0.22, 6), PROP.deadwood, 0, 0.11, 0),
-    beam(V(0, 0.15, 0), V(0.08, 0.25, 0.02), 0.008, PROP.deadwood),
-    beam(V(0, 0.12, 0), V(-0.07, 0.2, -0.02), 0.008, PROP.deadwood),
-    beam(V(0, 0.2, 0), V(0.01, 0.29, -0.06), 0.006, PROP.deadwood),
+    wood(V(0, -0.01, 0), V(0.02, 0.13, 0.01), 0.026),
+    wood(V(0.02, 0.12, 0.01), V(-0.005, 0.24, -0.01), 0.019),
+    wood(V(0.018, 0.15, 0.01), V(0.1, 0.24, 0.03), 0.013),
+    wood(V(0.08, 0.22, 0.025), V(0.09, 0.3, -0.02), 0.009),
+    wood(V(0.005, 0.18, 0), V(-0.085, 0.26, -0.03), 0.012),
+    wood(V(-0.07, 0.25, -0.025), V(-0.12, 0.27, 0.02), 0.008),
+    wood(V(0, 0.23, -0.01), V(0.02, 0.32, -0.05), 0.01),
+    ...roots(0.034, PROP.deadwoodDark),
   ];
+}
+// A tumbleweed: a lumpy ball of dry twigs.
+function tumbleweed() {
+  const g = new THREE.IcosahedronGeometry(0.045, 1);
+  const p = g.attributes.position!;
+  for (let i = 0; i < p.count; i++) p.setXYZ(i, ...(new THREE.Vector3().fromBufferAttribute(p, i).multiplyScalar(1 + 0.22 * lattice(Math.round(p.getX(i) * 900), Math.round(p.getZ(i) * 900) + Math.round(p.getY(i) * 900), 4)).toArray() as [number, number, number]));
+  return [part(g, PROP.deadwood, 0, 0.04, 0, 0, 1, 0.9, 1, true)];
 }
 
 // --- where props may stand
@@ -1538,16 +1651,18 @@ export function decorate(kit: PropKit, life: Life, h: HexCell, x: number, z: num
   }
 
   if (t === "waste") {
-    for (const [make, reach] of [[cactus, 0.09], [deadTree, 0.09]] as const) {
+    // The pan stays open; the cactus, the dead tree and a tumbleweed stand on the dunes, bleached stones and dry tufts about.
+    room.claim(L.feature.x, L.feature.z, L.feature.r * 0.8);
+    for (const [make, reach] of [[cactus, 0.1], [deadTree, 0.1], [tumbleweed, 0.05]] as const) {
       const at = room.find(reach, 0.55, 0.85);
       if (at) put("waste", make(), at.x, at.z, reach);
     }
     for (let i = 0; i < 3; i++) {
-      const r = 0.03 + rng() * 0.03;
-      const at = room.find(r, 0.5, 0.92);
-      if (at) put("waste", rock(r, PROP.bleached), at.x, at.z, r);
+      const r = 0.03 + rng() * 0.02;
+      const at = room.find(r * 1.5, 0.5, 0.9);
+      if (at) put("waste", boulder(r, PROP.bleached), at.x, at.z, r * 1.5);
     }
-    for (let i = 0; i < 2; i++) {
+    for (let i = 0; i < 3; i++) {
       const at = room.find(0.04, 0.5, 0.9);
       if (at) put("waste", tuft(PROP.deadwood), at.x, at.z, 0.04);
     }

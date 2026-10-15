@@ -25,7 +25,9 @@ const BUDGETS = [
   // furrow ridges, bales, sheaves and scarecrow; +750 B headroom.
   // 2026-10-15 (#599 hex studio, clay): 196.25 kB measured with the quarry pit's own geometry, the derrick, the barrow and
   // the spoil heaps' clods and shovel; +750 B headroom.
-  { name: "IslandCanvas", gzipBytes: 197000 },
+  // 2026-10-15 (#599 hex studio, ore and sand): 197.86 kB measured with the ridge chain, scree, snow-capped peaks and the
+  // rounded miner, and the dunes, wind ripples, the cracked pan, the saguaro and the bleached tree; +750 B headroom.
+  { name: "IslandCanvas", gzipBytes: 198600 },
   { name: "online", gzipBytes: 8000 },
   { name: "sheets", gzipBytes: 6282 },
   { name: "moments", gzipBytes: 2610 },
