@@ -952,19 +952,24 @@ export class IsleRenderer {
     this.gesture.move(e.pointerId, e.clientX, e.clientY);
     this.lastPointer = performance.now();
     this.wake();
-    if (this.trail && this.gesture.pointers.size === 1) this.stir(e);
     if (this.dragged || this.gesture.pointers.size !== 1) return;
     if (Math.hypot(e.clientX - this.down.x, e.clientY - this.down.y) > tapSlop(this.downType, this.coarse())) {
       this.dragged = true;
+      // A drag orbits the camera: the stir ends where the tap slop does, so an orbit never splashes.
+      this.trail = null;
       this.dragTakesEye();
+      return;
     }
+    if (this.trail) this.stir(e);
   };
 
   private onCancel = (e: PointerEvent) => {
+    this.trail = null;
     this.gesture.up(e.pointerId);
   };
 
   private onUp = (e: PointerEvent) => {
+    this.trail = null;
     if (this.gesture.up(e.pointerId) || this.dragged) return;
     const coarse = this.coarse();
     if (Math.hypot(e.clientX - this.down.x, e.clientY - this.down.y) > tapSlop(this.downType, coarse)) return;
@@ -1029,7 +1034,7 @@ export class IsleRenderer {
     this.trail = { ...p, t: performance.now() };
   }
 
-  // A finger dragged from the water stirs a trail of small ripples behind it.
+  // A finger moved on the water within the tap slop stirs a short trail of small ripples.
   private stir(e: PointerEvent) {
     const now = performance.now();
     if (!this.trail || now - this.trail.t < 80) return;

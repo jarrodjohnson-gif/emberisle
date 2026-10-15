@@ -12,7 +12,10 @@ export class Wobble {
   start(id: string, objects: THREE.Object3D[], base: number, now: number) {
     const was = this.live.get(id);
     if (was) {
-      was.start = now;
+      // Back onto the rising half of the curve at the scale it stands at, so it swells on from there without a jump.
+      const k = scaleAt((now - was.start) / WOBBLE.ms);
+      const eased = Math.asin(Math.min(1, (k - 1) / WOBBLE.peak)) / Math.PI;
+      was.start = now - (1 - Math.sqrt(1 - eased)) * WOBBLE.ms;
       return;
     }
     this.live.set(id, { parts: objects.map((o) => ({ o, y: o.position.y, scale: o.scale.clone() })), base, start: now });

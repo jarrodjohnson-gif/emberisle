@@ -346,6 +346,23 @@ try {
     await tap(page, hex.s, touch);
     assert.equal(await page.evaluate(() => window.__wobbles.length), 0, `${tag}: reduced motion: a tile tap does not wobble`);
     console.log(`${tag}: reduced motion: foam ${calmFoam.toFixed(1)}/255 at the point, ring ${calmRing.toFixed(2)}, gone by 1 s (${calmGone.toFixed(2)}), no wobble`);
+    // 6. A press on the water that becomes a drag (an orbit) splashes once, on the press, and never after the drag starts.
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await page.waitForFunction(() => !window.__isle.wasCalm);
+    await page.evaluate(() => { for (const s of window.__isle.splash.uniforms.uSplash.value) s.w = 0; });
+    const from = await page.evaluate((m) => window.__isle.screenAt(m.x, 0, m.z), made);
+    await page.mouse.move(from.x, from.y);
+    await page.mouse.down();
+    const count = () => page.evaluate(() => ({ dragged: window.__isle.dragged, n: window.__isle.splash.uniforms.uSplash.value.filter((s) => s.w > 0).length }));
+    let atDrag = null, last;
+    for (let i = 1; i <= 12; i++) {
+      await page.mouse.move(from.x - i * 12, from.y + i * 4);
+      last = await count();
+      if (last.dragged && atDrag === null) atDrag = last.n;
+    }
+    await page.mouse.up();
+    assert.ok(atDrag !== null && last.n === atDrag, `${tag}: a press that drags past the slop adds no splash after the drag starts (${atDrag} at the drag, ${last.n} after)`);
+    console.log(`${tag}: a press that turns into an orbit drag: ${atDrag} splash at the drag start, ${last.n} after 12 moves`);
     await context.close();
 
     // 6. The simple sea: the ring, no foam (and nothing of the crystal sea is built).

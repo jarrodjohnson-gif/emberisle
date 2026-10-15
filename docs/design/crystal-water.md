@@ -109,8 +109,9 @@ The island answers a finger (#616): on `pointerdown`, not the release, so it sta
 - **What a press does.** The renderer runs the same pick as a tap. A corner or a path under the finger (in build mode, inside
   its pick reach) takes the press for the game: no splash, no wobble. A tile wobbles. Anything else that lands on open water
   (off the island, at least 0.15 past the coast, so not the beach) splashes there at strength 1 and plays `plop`
-  ([sound.md](sound.md)). A drag that started on the water stirs a trail: a splash of strength 0.45 every 0.35 units and
-  80 ms at most, silent and without droplets.
+  ([sound.md](sound.md)). A finger moved on the water within the tap slop stirs a short trail: a splash of strength 0.45
+  every 0.35 units and 80 ms at most, silent and without droplets. Past the slop the press is a drag that orbits the camera,
+  and the stir ends: an orbit never splashes.
 - **A splash** is a crater 0.07 deep and 0.22 across (Gaussian) that rebounds on a 0.42 s period, decaying by e every 0.32 s
   (it lifts about 0.035 above the swell before settling); then three rings leaving 0.1 out at 1.1 units/s, 0.16 s apart, heights
   0.022 x 1, 0.7, 0.4, half-width 0.08, dying by e every 0.75 s: the crest is 0.43, 0.76 and 1.09 out after 0.3, 0.6 and
