@@ -4,15 +4,22 @@
 import assert from "node:assert/strict";
 import {
   CAP_LEVEL,
+  DIORAMA_AZIMUTH,
+  DIORAMA_POLAR,
   ISLE_HALF,
   OVERHEAD_LEAN,
+  PICK_MAX,
   PICK_VERTEX_RADIUS,
   chromeInsets,
+  defaultView,
+  dioramaProject,
+  fitDiorama,
   fitOrtho,
   freeMaxDistance,
   hudInsets,
   isSelectTap,
   pickBest,
+  pickReach,
   tapSlop,
   TouchGesture,
 } from "../src/lib/scene/mobile-fit.ts";
@@ -53,6 +60,98 @@ for (const [w, h] of [
   assert.ok(Math.abs(c.x - (hole.l + hole.r) / 2) < 1 && Math.abs(c.y - (hole.t + hole.b) / 2) < 1, `${w}x${h}: island center at ${c.x.toFixed(1)},${c.y.toFixed(1)} is not at the hole center ${(hole.l + hole.r) / 2},${(hole.t + hole.b) / 2}`);
   console.log(`${w}x${h}: leaned island fits the hole, centered`);
 }
+// The diorama view (#597), the default in play on a landscape screen: 38° above the horizon, 20° off north, fitted to the
+// same holes (the measured ones from the HUD: desktop, the sideways phone's left column, with and without an offer open;
+// portrait too, for a player who chooses it there). Every coast corner, every dock's reach (0.7 past its corner at the
+// waterline) and every tree top the outer ring can hold (0.86 from a hex centre, 1.15 over cap level) lands in the hole;
+// the coast spans at least 94 % of the hole on its limiting axis unless that would push a dock or a tree top past the edge,
+// in which case those touch it. On a landscape screen, adjacent corners stay at least 18 px apart.
+{
+  const coast = [];
+  const ring = [];
+  const seen = new Map();
+  for (let q = -2; q <= 2; q++)
+    for (let r = Math.max(-2, -q - 2); r <= Math.min(2, -q + 2); r++) {
+      const [cx, cz] = [1.12 * Math.sqrt(3) * (q + r / 2), 1.12 * 1.5 * r];
+      if (Math.max(Math.abs(q), Math.abs(r), Math.abs(q + r)) === 2) ring.push({ x: cx, z: cz });
+      for (let i = 0; i < 6; i++) {
+        const a = (Math.PI / 180) * (60 * i - 30);
+        const x = cx + 1.12 * Math.cos(a);
+        const z = cz + 1.12 * Math.sin(a);
+        const k = `${Math.round(x * 1000)},${Math.round(z * 1000)}`;
+        const v = seen.get(k) ?? { x, z, n: 0, sx: 0, sz: 0 };
+        seen.set(k, { ...v, n: v.n + 1, sx: v.sx + cx, sz: v.sz + cz });
+      }
+    }
+  for (const v of seen.values()) if (v.n < 3) coast.push(v);
+  assert.equal(coast.length, 30, "30 coast corners");
+  assert.equal(defaultView(1280, 720), "diorama", "desktop defaults to the diorama");
+  assert.equal(defaultView(900, 600), "diorama", "a landscape canvas 900 wide defaults to the diorama");
+  assert.equal(defaultView(899, 600), "overhead", "a landscape canvas under 900 wide defaults to overhead");
+  assert.equal(defaultView(844, 390), "overhead", "a sideways phone defaults to overhead");
+  assert.equal(defaultView(390, 844), "overhead", "an upright phone defaults to overhead");
+  for (const [w, h, ins, tag] of [
+    [1280, 720, { top: 68, right: 12, bottom: 180, left: 200 }, "desktop"],
+    [1280, 720, { top: 68, right: 12, bottom: 240, left: 200 }, "desktop, offer open"],
+    [844, 390, { top: 68, right: 12, bottom: 12, left: 284 }, "sideways (by choice)"],
+    [390, 844, { top: 68, right: 12, bottom: 270, left: 12 }, "portrait (by choice)"],
+  ]) {
+    const f = fitDiorama(w, h, ins);
+    const hole = { l: ins.left, r: w - ins.right, t: ins.top, b: h - ins.bottom, w: w - ins.left - ins.right, h: h - ins.top - ins.bottom };
+    const at = (x, y, z) => dioramaProject(f, DIORAMA_POLAR, DIORAMA_AZIMUTH, x, y, z);
+    const shore = coast.map(({ x, z }) => at(x, CAP_LEVEL, z));
+    // A dock reaches 0.7 along the coast miter (the renderer's coastLoop: the bisector of the corner's two coast edges'
+    // normals, which is away from the mean of its hexes' centres, at 1 / cos 30° so it keeps 0.7 from both edges).
+    const docks = coast.map(({ x, z, sx, sz, n }) => {
+      const [dx, dz] = [x - sx / n, z - sz / n];
+      const k = 0.7 / Math.hypot(dx, dz) / Math.cos(Math.PI / 6);
+      return at(x + dx * k, 0.1, z + dz * k);
+    });
+    const trees = ring.flatMap(({ x, z }) => Array.from({ length: 12 }, (_, i) => at(x + 0.86 * Math.cos((i * Math.PI) / 6), CAP_LEVEL + 1.15, z + 0.86 * Math.sin((i * Math.PI) / 6))));
+    const all = [...shore, ...docks, ...trees];
+    const out = all.filter((p) => p.x < hole.l - 0.5 || p.x > hole.r + 0.5 || p.y < hole.t - 0.5 || p.y > hole.b + 0.5);
+    assert.deepEqual(out, [], `${w}x${h} ${tag}: every corner, tree top and dock inside the hole`);
+    const fill = (pts) => {
+      const xs = pts.map((p) => p.x);
+      const ys = pts.map((p) => p.y);
+      return Math.max((Math.max(...xs) - Math.min(...xs)) / hole.w, (Math.max(...ys) - Math.min(...ys)) / hole.h);
+    };
+    const [coastFill, allFill] = [fill(shore), fill(all)];
+    assert.ok(coastFill > 0.935 || allFill > 0.995, `${w}x${h} ${tag}: the coast fills ${coastFill.toFixed(3)} of the hole, docks and tree tops ${allFill.toFixed(3)}`);
+    const xs = all.map((p) => p.x);
+    const ys = all.map((p) => p.y);
+    assert.ok(Math.abs((Math.min(...xs) + Math.max(...xs)) / 2 - (hole.l + hole.r) / 2) < 0.5 && Math.abs((Math.min(...ys) + Math.max(...ys)) / 2 - (hole.t + hole.b) / 2) < 0.5, `${w}x${h} ${tag}: centred in the hole`);
+    // The far (north) corners are smaller on screen than the near ones, and a corner-to-corner step along the line of sight
+    // is foreshortened by the tilt. On a landscape screen they stay 18 px apart (the overhead view keeps 24; a tap dead on a
+    // corner is still outside its neighbour's 14 px touch reach). Portrait is overhead by default and only reported here.
+    const corners = [...seen.values()];
+    const apart = Math.min(...corners.flatMap((a) => corners.filter((c) => c !== a && Math.hypot(c.x - a.x, c.z - a.z) < 1.2).map((c) => {
+      const [p, q] = [at(a.x, CAP_LEVEL, a.z), at(c.x, CAP_LEVEL, c.z)];
+      return Math.hypot(p.x - q.x, p.y - q.y);
+    })));
+    if (w > h) assert.ok(apart >= 18, `${w}x${h} ${tag}: adjacent corners ${apart.toFixed(1)} px apart`);
+    // The touch pick reach each corner actually gets on screen, at home (zoom 1) and zoomed fully out (0.8): 14 px unless
+    // the 0.5 world-unit cap binds (a far corner zoomed out on a small canvas) or the 0.28 floor lifts it (a near corner on
+    // a large one). At home on every hole it is at least 14 px; zoomed out it is what the cap leaves, reported.
+    const reachPx = (zoom) => corners.map(({ x, z }) => {
+      const d = dioramaProject(f, DIORAMA_POLAR, DIORAMA_AZIMUTH, x, CAP_LEVEL, z, f.dist / zoom).depth;
+      return (pickReach(d, f.focal, true) * f.focal) / d;
+    });
+    const [home, out8] = [reachPx(1), reachPx(0.8)];
+    assert.ok(home.every((px) => px >= 14 - 1e-9), `${w}x${h} ${tag}: every corner's touch reach at home is at least 14 px (smallest ${Math.min(...home).toFixed(1)})`);
+    console.log(`${w}x${h} ${tag}: diorama fit at ${f.dist.toFixed(1)} units, coast fills ${coastFill.toFixed(3)} (docks and tree tops ${allFill.toFixed(3)}), adjacent corners >= ${apart.toFixed(1)} px, touch reach ${Math.min(...home).toFixed(1)}-${Math.max(...home).toFixed(1)} px at home, ${Math.min(...out8).toFixed(1)}-${Math.max(...out8).toFixed(1)} px zoomed out`);
+  }
+  // The invariant under the pixel reach: in world units it is never more than PICK_MAX, under half the 1.12 corner spacing,
+  // so two corners never share a pick however far out the eye is; and never under the overhead pick volume.
+  assert.ok(2 * PICK_MAX < 1.12, "two corners' reaches never meet");
+  for (const d of [1, 10, 20, 40, 80]) {
+    const r = pickReach(d, 700, true);
+    assert.ok(r <= PICK_MAX && r >= PICK_VERTEX_RADIUS, `reach at depth ${d}: ${r.toFixed(3)}`);
+  }
+  assert.equal(pickReach(1, 1000, false), PICK_VERTEX_RADIUS, "a near mouse pick keeps the overhead volume");
+  console.log(`diorama pick reach: within [${PICK_VERTEX_RADIUS}, ${PICK_MAX}] world units at any depth, under half the corner spacing`);
+}
+
 // Straight down, the shift is the plain one; leaned, the ground shift is longer by 1/cos(lean).
 {
   const ins = { top: 100, right: 0, bottom: 300, left: 0 };

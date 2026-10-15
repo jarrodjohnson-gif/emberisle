@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { createGame } from "./board";
 import { logBotAction } from "./ai";
-import { applyAction, bankShort, legalCities, legalRoads, legalSettle, stealTargets } from "./rules";
+import { applyAction, legalCities, legalRoads, legalSettle, stealTargets } from "./rules";
 
 const BANNER_MS = 2500;
 let bannerTimer: ReturnType<typeof setTimeout> | null = null;
@@ -9,27 +9,6 @@ function showBanner(set: (p: { banner: string | null }) => void, text: string) {
   if (bannerTimer) clearTimeout(bannerTimer);
   set({ banner: text });
   bannerTimer = setTimeout(() => set({ banner: null }), BANNER_MS);
-}
-
-// "Tide's roll · Ember +1 wool · Pine +2 ore", ending "· bank short of grain" when the bank paid nobody some resource.
-// The numbers are not here: the roll moment and the dice row show them, and the moment reads them out (#440).
-function rollLine(roller: string, gains: { name: string; resource: string; amount: number }[], short: string[]) {
-  const parts = gains.map((g) => `${g.name} +${g.amount} ${g.resource}`);
-  const tail = short.length ? [`bank short of ${short.join(" and ")}`] : [];
-  return [`${roller}'s roll`, ...(parts.length ? parts : ["nobody gathers"]), ...tail].join(" · ");
-}
-
-function gainsBetween(before: GameState, after: GameState) {
-  const out: { name: string; resource: string; amount: number }[] = [];
-  for (const p of after.players) {
-    const was = before.players.find((x) => x.id === p.id);
-    if (!was) continue;
-    for (const r of RESOURCES) {
-      const d = p.resources[r] - was.resources[r];
-      if (d > 0) out.push({ name: p.name, resource: r, amount: d });
-    }
-  }
-  return out;
 }
 
 // An award that changed hands between two states, as one line, or null.
@@ -97,8 +76,9 @@ export interface GameLogLine {
 const GAME_LOG_MAX = 200;
 const LOG_FILTER_KEY = "emberisle-log-filter";
 const WATER_KEY = "emberisle-water";
+const VIEW_KEY = "emberisle-view";
 
-// The engine keeps only the last 41 log lines (rules.ts `log`), so once the log is full its length never grows and
+// The engine keeps only the last 200 log lines (rules.ts `log`), so once the log is full its length never grows and
 // `after.slice(before.length)` would be empty. The new lines are what follows the longest tail of the old log that
 // the new one still starts with.
 function newLog(before: string[], after: string[]) {
@@ -126,6 +106,16 @@ function savedWater(): WaterPath | null {
   }
 }
 
+// The table's camera in play (#597) as the player chose it, or null for the default for the screen's shape.
+function savedView(): PlayView | null {
+  try {
+    const v = localStorage.getItem(VIEW_KEY);
+    return v === "diorama" || v === "overhead" ? v : null;
+  } catch {
+    return null;
+  }
+}
+
 function savedLogFilter(): "all" | "chat" {
   try {
     return localStorage.getItem(LOG_FILTER_KEY) === "chat" ? "chat" : "all";
@@ -141,12 +131,13 @@ function withPaths(state: GameState, edgeIds: string[], pid: string): GameState 
 }
 import { hasPracticeWin, recordPracticeWin } from "./practice-progress";
 import { chooseBotAction, chooseTradeAsk, shouldAcceptTrade } from "./ai";
-import { PLAYER_COLORS, RESOURCES, type Action, type BuildMode, type GameState, type WayfarerMode } from "./types";
+import { PLAYER_COLORS, RESOURCES, type Action, type BuildMode, type GameState, type VictoryTarget, type WayfarerMode } from "./types";
 import { connectTable, hostUrl, type Bag, type ChatLine, type Legal, type Me, type Reaction, type Seat, type TableClient } from "@/lib/net/table";
 import { PROTO } from "@/lib/net/proto";
 import { play, yourTurn, type SoundName } from "@/lib/sound";
 import { calmMotion, LAND_MS } from "@/lib/scene/landing";
 import type { WaterPath, WaterStatus } from "@/lib/scene/crystal-water";
+import type { PlayView } from "@/lib/scene/mobile-fit";
 
 // The ask-the-table offer every seat is looking at (docs/BUILD_BIBLE.md 4.4). `until` is when the host's 20 s run out.
 export interface OpenOffer {
@@ -241,6 +232,8 @@ interface GameStore {
   peeking: boolean;
   code: string;
   isHost: boolean;
+  tableVictoryTarget: VictoryTarget;
+  setVictoryTarget: (value: VictoryTarget) => void;
   seats: Seat[];
   legal: Legal | null;
   // The host's turn timer (#344): when it fires on this tab's clock, whose seat it is, and the host's own value
@@ -290,6 +283,12 @@ interface GameStore {
   waterChoice: WaterPath | null;
   setWaterChoice: (v: WaterPath) => void;
   water: WaterStatus | null;
+  // The camera in play, from the table menu, remembered like the water: the tilted diorama or the overhead board; null
+  // until the player picks, which leaves the renderer's default (overhead on a portrait screen, the diorama otherwise).
+  viewChoice: PlayView | null;
+  // The view the renderer shows in play now, chosen or default.
+  playView: PlayView;
+  setViewChoice: (v: PlayView) => void;
   // Ask-the-table trades (docs/BUILD_BIBLE.md 4.4): the open offer, who has said No to it, and the asker's closing line.
   offer: OpenOffer | null;
   declined: string[];
@@ -405,6 +404,7 @@ export const useGame = create<GameStore>((set, get) => ({
   peeking: false,
   code: "",
   isHost: false,
+  tableVictoryTarget: 10,
   seats: [],
   legal: null,
   turnTimer: null,
@@ -424,6 +424,8 @@ export const useGame = create<GameStore>((set, get) => ({
   logFilter: savedLogFilter(),
   waterChoice: savedWater(),
   water: null,
+  viewChoice: savedView(),
+  playView: "diorama",
   offer: null,
   declined: [],
   tradeOutcome: null,
@@ -603,9 +605,6 @@ export const useGame = create<GameStore>((set, get) => ({
     const rollOff = rollOffLine(state, nextState);
     if (rollOff) {
       showBanner(set, rollOff);
-    } else if (action.type === "roll" && nextState.dice) {
-      const roller = state.players.find((p) => p.id === actor)?.name ?? actor;
-      showBanner(set, rollLine(roller, gainsBetween(state, nextState), bankShort(nextState)));
     } else {
       const swing = awardLine(state, nextState);
       if (swing) showBanner(set, swing);
@@ -768,6 +767,9 @@ export const useGame = create<GameStore>((set, get) => ({
     connect(set, get, (t) => t.rejoin(seat.code, seat.secret), "quiet");
     return true;
   },
+  setVictoryTarget: (value) => {
+    if (!get().spectator) get().net?.setVictoryTarget(value);
+  },
   setReady: (value) => {
     if (!get().spectator) get().net?.ready(value);
   },
@@ -820,6 +822,14 @@ export const useGame = create<GameStore>((set, get) => ({
     }
     set({ waterChoice: v });
   },
+  setViewChoice: (v) => {
+    try {
+      localStorage.setItem(VIEW_KEY, v);
+    } catch {
+      // storage can be blocked; the choice still holds for this page
+    }
+    set({ viewChoice: v });
+  },
   sendChat: (text) => {
     if (!get().spectator) get().net?.say(text);
   },
@@ -861,7 +871,7 @@ export const useGame = create<GameStore>((set, get) => ({
     }
   },
   openMenu: (id) => {
-    if (!get().spectator) set({ menuFor: id });
+    set({ menuFor: id });
   },
 }));
 
@@ -876,7 +886,6 @@ function endOffer(set: Set, get: Get, taker: string | null) {
   const takerName = state?.players.find((p) => p.id === taker)?.name ?? "Someone";
   set({ offer: null, declined: [] });
   play(taker ? "trade_yes" : "trade_no");
-  if (taker) showBanner(set, `${takerName} takes ${offer.fromName}'s trade`);
   // Every receiver gets the resolved offer as one brief log line, with no response controls.
   if (outcomeTimer) clearTimeout(outcomeTimer);
   set({ tradeOutcome: taker ? `${takerName} takes it.` : "Nobody took it." });
@@ -925,7 +934,8 @@ function respond(set: Set, get: Get, actor: string, yes: boolean): string | null
   }
   const accepted = applyAction(offered.state, actor, { type: "respondTrade", accept: true });
   if (accepted.error) return accepted.error;
-  set({ state: accepted.state, gameLog: appendLog(gameLog, newLog(state.log, accepted.state.log)) });
+  const tradeLines = newLog(state.log, accepted.state.log).filter((line) => !line.includes(" offers a trade to "));
+  set({ state: { ...accepted.state, log: [...state.log, ...tradeLines].slice(-200) }, gameLog: appendLog(gameLog, tradeLines) });
   endOffer(set, get, actor);
   return null;
 }
@@ -942,12 +952,12 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
   let welcomed = false;
   let outdated: string | null = null;
   const table = connectTable(hostUrl(window.location), {
-    welcome: ({ proto, code, you, host, chat, secret, spectator, wayfarerMode }) => {
+    welcome: ({ proto, code, you, host, chat, secret, spectator, victoryTarget, wayfarerMode }) => {
       pending = false;
       welcomed = true;
       // G2: a host on a newer wire protocol than this page says so where errors go, and keeps saying it after every state.
       outdated = (proto ?? 0) > PROTO ? "This page is out of date. Reload to update." : null;
-      set({ resync: true, tableWayfarerMode: wayfarerMode ?? "on" });
+      set({ resync: true, tableVictoryTarget: victoryTarget === 7 ? 7 : 10, tableWayfarerMode: wayfarerMode ?? "on" });
       if (secret) rememberSeat({ code, secret });
       // A page-load rejoin has no state yet, so it passes through the lobby until the host's state push moves it to play.
       // A mid-game reconnect already holds the game: stay on the board so the HUD keeps its local state.
@@ -992,13 +1002,9 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       setTimeout(() => set({ reactions: get().reactions.filter((x) => x !== r) }), 2000);
     },
     // A peek answers id/color/ready only (G10); the lobby is not shown until the full broadcast after sitting replaces it.
-    seats: ({ code, seats, watching, wayfarerMode }) => set({ code, seats: seats as Seat[], watching: watching ?? 0, tableWayfarerMode: wayfarerMode ?? "on" }),
-    rolled: ({ gains, short }) => {
-      // The host sends this before the state that follows it, so `current` is still the roller.
-      const st = get().state;
-      const roller = st?.players.find((p) => p.id === st.current)?.name ?? "Someone";
-      showBanner(set, rollLine(roller, gains, short));
-    },
+    seats: ({ code, seats, watching, victoryTarget, wayfarerMode }) => set({ code, seats: seats as Seat[], watching: watching ?? 0, tableVictoryTarget: victoryTarget === 7 ? 7 : 10, tableWayfarerMode: wayfarerMode ?? "on" }),
+    // Dice and gain floats present the roll; its words live only in the persistent log.
+    rolled: () => {},
     state: ({ you, game, legal, turnDeadline, turnPlayer, serverNow }) => {
       // A watcher's `you` is null: "" matches no player, so nothing is ever its turn and the your-turn chime never fires.
       const me = you ?? "";

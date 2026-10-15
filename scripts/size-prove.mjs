@@ -14,16 +14,19 @@ import { gzipSync } from "node:zlib";
 const DIR = "dist/assets";
 const BUDGETS = [
   // 2026-10-14 (#598): +600 B for the Water toggle, its store state and the probe; the old ceiling was 300 B away.
-  // #545: +1.60 kB for creation controls, practice-win progression, contextual help and three-mode rules (~1.16 kB added).
-  { name: "index", gzipBytes: 118500 },
-  { name: "IslandCanvas", gzipBytes: 182830 },
+  // 2026-10-15: 116.91 kB measured on main after the four HUD merges (#601 #602 #605 #607) landed on the camera; +600 B.
+  { name: "index", gzipBytes: 117500 },
+  // 2026-10-14 (#597): +1100 B for the diorama camera, its fit and the token pose on top of the lazy sea (182.92 kB measured).
+  // 2026-10-15: 185.01 kB measured on main once the diorama (#604, +1.1 kB) and the natural waves (#614, +1.0 kB) both
+  // landed; each fit its own raise alone. +1.5 kB over the measurement for the touch-splash work in flight (#616).
+  { name: "IslandCanvas", gzipBytes: 186500 },
   { name: "online", gzipBytes: 8000 },
   // #545: 6.37 kB with the preceding target, win and deck changes; retain 0.13 kB of headroom.
   { name: "sheets", gzipBytes: 6500 },
   { name: "moments", gzipBytes: 2610 },
-  // The lucide Minus icon, which Chat (online) and TradePanel (sheets) both use and nothing in the index does: rolldown
-  // gives a module shared by two lazy chunks a chunk of its own. If the sharing ends, so does this chunk; drop the line.
-  { name: "minus", gzipBytes: 500 },
+  // 2026-10-14 (#611): the lobby and win screen share their target selector; rolldown coalesces the shared Minus icon here too.
+  // 0.65 kB at introduction, with a 0.75 kB ceiling; replaces the former minus-only chunk.
+  { name: "VictoryTargetSelect", gzipBytes: 750 },
 ];
 
 let files;

@@ -100,6 +100,7 @@ export interface TradeOffer {
 }
 
 export type WayfarerMode = "on" | "gentle" | "off";
+export type VictoryTarget = 7 | 10;
 
 export interface GameState {
   // Legacy saves use classic On. Fixed when the table is created.
@@ -124,6 +125,8 @@ export interface GameState {
   longestRoad: string | null;
   largestArmy: string | null;
   winner: string | null;
+  // Optional for existing saves; absent means the standard ten-point game.
+  victoryTarget?: VictoryTarget;
   bank: Record<Resource, number>;
   deck: DevKind[];
   // Online the host hides the deck order and sends only its size (server/host.mjs).

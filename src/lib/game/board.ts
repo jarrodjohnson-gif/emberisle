@@ -20,6 +20,7 @@ import type {
   Resource,
   Terrain,
   Vertex,
+  VictoryTarget,
 } from "./types";
 import { PLAYER_COLORS, PLAYER_NAMES, RESOURCES } from "./types";
 
@@ -70,6 +71,7 @@ export function createGame(opts: {
   // A rematch (#266): the first human is the last winner. It places first and sits out the roll-off.
   winnerFirst?: boolean;
   wayfarerMode?: import("./types").WayfarerMode;
+  victoryTarget?: VictoryTarget;
 }): GameState {
   const seed = opts.seed ?? (Math.floor(Math.random() * 1e9) | 0);
   const rand = mulberry32(seed);
@@ -208,6 +210,7 @@ export function createGame(opts: {
     longestRoad: null,
     largestArmy: null,
     winner: null,
+    victoryTarget: opts.victoryTarget === 7 ? 7 : 10,
     bank: { timber: 19, clay: 19, wool: 19, grain: 19, ore: 19 },
     deck,
     trade: null,

@@ -28,6 +28,7 @@
     "flash-prove": "node scripts/flash-prove.mjs",
     "orphan-check": "node scripts/orphan-check.mjs",
     "chat-prove": "node scripts/chat-prove.mjs",
+    "goods-log-prove": "node scripts/goods-log-prove.mjs",
     "react-prove": "node scripts/react-prove.mjs",
     "mobile-shots": "node scripts/mobile-shots.mjs",
     "touch-place-prove": "node scripts/touch-place-prove.mjs",
@@ -55,7 +56,9 @@
     "make-icons": "node scripts/make-icons.mjs",
     "board-look-prove": "node scripts/board-look-prove.mjs",
     "seat-rail-prove": "node scripts/seat-rail-prove.mjs",
+    "public-score-prove": "node --import ./server/register.mjs scripts/public-score-prove.mjs",
     "fortune-tray-prove": "node scripts/fortune-tray-prove.mjs",
+    "fortune-count-prove": "node --import ./server/register.mjs scripts/fortune-count-prove.mjs",
     "save-prove": "node --import ./server/register.mjs server/save-prove.mjs",
     "build-ready-prove": "node --import ./server/register.mjs scripts/build-ready-prove.mjs",
     "stale-prove": "node --import ./server/register.mjs server/stale-prove.mjs",
@@ -63,10 +66,13 @@
     "cap-prove": "node --import ./server/register.mjs server/cap-prove.mjs",
     "restart-prove": "node --import ./server/register.mjs server/restart-prove.mjs",
     "preseat-prove": "node --import ./server/register.mjs server/preseat-prove.mjs",
+    "victory-target-prove": "node --import ./server/register.mjs scripts/victory-target-prove.mjs",
     "visual-direction-prove": "node scripts/visual-direction-prove.mjs",
+    "turn-copy-prove": "node scripts/turn-copy-prove.mjs",
     "turn-gain-prove": "node scripts/turn-gain-prove.mjs",
     "takeover-prove": "node --import ./server/register.mjs server/takeover-prove.mjs",
-    "jelly-ocean-prove": "node scripts/jelly-ocean-prove.mjs"
+    "jelly-ocean-prove": "node scripts/jelly-ocean-prove.mjs",
+    "waves-prove": "node --import ./server/register.mjs scripts/waves-prove.mjs"
   },
   "dependencies": {
     "clsx": "^2.1.1",

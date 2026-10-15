@@ -148,7 +148,7 @@ function say(room, text) {
   broadcast(room, { type: "log", text });
 }
 
-// The engine keeps only the last 41 log lines (rules.ts `log`), so once the log is full its length never grows and
+// The engine keeps only the last 200 log lines (rules.ts `log`), so once the log is full its length never grows and
 // `after.slice(before.length)` is empty (#319: the winner line never reached a seat). The new lines are what follows
 // the longest tail of the old log that the new one still starts with.
 function newLog(before, after) {
@@ -172,7 +172,7 @@ function seatsOf(room) {
 }
 
 function seatsMsg(room) {
-  return { type: "seats", code: room.code, seats: seatsOf(room), watching: room.watchers.size, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on" };
+  return { type: "seats", code: room.code, seats: seatsOf(room), watching: room.watchers.size, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on" };
 }
 
 function publish(room) {
@@ -207,6 +207,7 @@ function snapshot(room) {
     chat: room.chat,
     chatSeq: room.chatSeq,
     game: room.game,
+    victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10,
     wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on",
     seats: room.seats.map(({ id, name, color, ready, pid, secret, turnDeadline, turnStartedAt }) => ({ id, name, color, ready, pid, secret, turnDeadline: turnDeadline ?? null, turnStartedAt: turnStartedAt ?? null })),
     shape: ROOM_SHAPE,
@@ -775,7 +776,7 @@ function openTable(ws, msg) {
     if (mine) mine.tokens += 1;
     return send(ws, { type: "error", message: "Too many new tables right now. Try again in a minute." });
   }
-  const room = { wayfarerMode: msg.wayfarerMode ?? "on", code: code(), seats: [], game: null, host: null, next: 0, offer: null, offerTimer: null, botDeclined: {}, chat: [], chatSeq: 0, watchers: new Set() };
+  const room = { victoryTarget: 10, wayfarerMode: msg.wayfarerMode ?? "on", code: code(), seats: [], game: null, host: null, next: 0, offer: null, offerTimer: null, botDeclined: {}, chat: [], chatSeq: 0, watchers: new Set() };
   rooms.set(room.code, room);
   const seat = {
     id: `s${room.next++}`,
@@ -793,7 +794,7 @@ function openTable(ws, msg) {
   room.host = seat.id;
   ws.room = room;
   ws.seat = seat;
-  send(ws, { type: "welcome", proto: PROTO, code: room.code, you: seat.id, host: true, chat: room.chat, secret: seat.secret, ...HOLD_INFO, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on" });
+  send(ws, { type: "welcome", proto: PROTO, code: room.code, you: seat.id, host: true, chat: room.chat, secret: seat.secret, ...HOLD_INFO, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on" });
   say(room, `${seat.name} sat down.`);
   publish(room);
 }
@@ -819,7 +820,7 @@ function sitDown(ws, msg) {
   room.seats.push(seat);
   ws.room = room;
   ws.seat = seat;
-  send(ws, { type: "welcome", proto: PROTO, code: room.code, you: seat.id, host: false, chat: room.chat, secret: seat.secret, ...HOLD_INFO, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on" });
+  send(ws, { type: "welcome", proto: PROTO, code: room.code, you: seat.id, host: false, chat: room.chat, secret: seat.secret, ...HOLD_INFO, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on" });
   say(room, `${seat.name} sat down.`);
   publish(room);
 }
@@ -832,7 +833,7 @@ function watch(ws, msg) {
   if (room.watchers.size >= SPECTATOR_MAX) return send(ws, { type: "error", message: "Table is full to watch." });
   room.watchers.add(ws);
   ws.watch = room;
-  send(ws, { type: "welcome", proto: PROTO, code: room.code, spectator: true, chat: room.chat });
+  send(ws, { type: "welcome", proto: PROTO, code: room.code, spectator: true, chat: room.chat, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on" });
   watchersChanged(room, "Someone is watching.");
   const soonest = room.seats.reduce((d, s) => (s.turnDeadline && (!d || s.turnDeadline < d.turnDeadline) ? s : d), null);
   send(ws, { type: "state", you: null, game: watchView(room.game), legal: legalFor(room.game, null), turnDeadline: deadlineOf(room), turnPlayer: soonest?.pid ?? null, serverNow: Date.now() });
@@ -843,7 +844,7 @@ function startGame(ws, room) {
   if (ws.seat.id !== room.host) return send(ws, { type: "error", message: "Only the host can start." });
   if (n < 3 || n > 4) return send(ws, { type: "error", message: "Need 3 or 4 at the table." });
   if (room.seats.some((s) => !s.ready)) return send(ws, { type: "error", message: "Not everyone is ready." });
-  const game = createGame({ humans: room.seats.map((s) => ({ name: s.name })), bots: 0, wayfarerMode: room.wayfarerMode ?? "on" });
+  const game = createGame({ humans: room.seats.map((s) => ({ name: s.name })), bots: 0, victoryTarget: room.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? "on" });
   room.seats.forEach((s, i) => {
     s.pid = game.players[i].id;
     game.players[i].color = s.color;
@@ -880,7 +881,7 @@ function rematch(ws, room) {
   room.recoveryPids = [];
   const winner = live.find((s) => s.pid === room.game.winner);
   const order = winner ? [winner, ...live.filter((s) => s !== winner)] : live;
-  const game = createGame({ humans: order.map((s) => ({ name: s.name })), bots: 0, winnerFirst: Boolean(winner), wayfarerMode: room.wayfarerMode ?? room.game.wayfarerMode ?? "on" });
+  const game = createGame({ humans: order.map((s) => ({ name: s.name })), bots: 0, winnerFirst: Boolean(winner), victoryTarget: room.victoryTarget ?? room.game.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game.wayfarerMode ?? "on" });
   order.forEach((s, i) => {
     s.pid = game.players[i].id;
     game.players[i].color = s.color;
@@ -1018,7 +1019,7 @@ function respond(room, actor, yes) {
     const recovery = (room.recoveryPids ?? []).includes(actor);
     const line = recovery ? `Bot declined a trade for ${room.seats.find((s) => s.pid === actor)?.name ?? name.replace(/ \(bot\)$/i, "")}.` : `${name} declines.`;
     if (recovery) {
-      room.game = { ...room.game, log: [...room.game.log.slice(-40), line] };
+      room.game = { ...room.game, log: [...room.game.log.slice(-199), line] };
       save(room);
     }
     say(room, line);
@@ -1044,7 +1045,9 @@ function respond(room, actor, yes) {
   const accepted = applyAction(offered.state, actor, { type: "respondTrade", accept: true });
   if (accepted.error) return accepted.error;
   closeOffer(room);
-  room.game = accepted.state;
+  const tradeLines = newLog(room.game.log, accepted.state.log).filter((line) => !line.includes(" offers a trade to "));
+  room.game = { ...accepted.state, log: [...room.game.log, ...tradeLines].slice(-200) };
+  for (const line of tradeLines) say(room, line);
   // The asker's trade went through: that is their action, so their window restarts (pushState re-arms it).
   const asker = room.seats.find((s) => s.pid === offer.from);
   if (asker) disarmTurn(asker);
@@ -1181,6 +1184,13 @@ function handle(ws, raw) {
   if (msg.wayfarerMode !== undefined || msg.type === "setWayfarerMode") return send(ws, { type: "error", message: "Wayfarer mode is fixed when the table is created." });
   if (msg.type === "chat" || msg.type === "react") return talk(ws, room, msg);
   if (!allow(ws.seat.act, Date.now(), ACT_CAP, ACT_RATE)) return send(ws, { type: "error", message: "Slow down." });
+  if (msg.type === "setVictoryTarget") {
+    if (ws.seat.id !== room.host) return send(ws, { type: "error", message: "Only the host can choose the target." });
+    if (room.game && room.game.phase !== "over") return send(ws, { type: "error", message: "The target is fixed for this game." });
+    if (msg.value !== 7 && msg.value !== 10) return send(ws, { type: "error", message: "Choose 7 or 10 points." });
+    room.victoryTarget = msg.value;
+    return publish(room);
+  }
   if (msg.type === "ready") {
     const value = Boolean(msg.value);
     if (ws.seat.ready === value) return;
@@ -1223,7 +1233,7 @@ function rejoin(ws, msg) {
   seat.gone = null;
   ws.room = room;
   ws.seat = seat;
-  send(ws, { type: "welcome", proto: PROTO, code: room.code, you: seat.id, host: seat.id === room.host, chat: room.chat, secret: seat.secret, ...HOLD_INFO, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on" });
+  send(ws, { type: "welcome", proto: PROTO, code: room.code, you: seat.id, host: seat.id === room.host, chat: room.chat, secret: seat.secret, ...HOLD_INFO, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on" });
   say(room, `${seat.name} is back.`);
   publish(room);
   if (!room.game) return;
