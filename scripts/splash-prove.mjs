@@ -18,6 +18,11 @@ mkdirSync("test-results", { recursive: true });
 async function open(width, height, touch, water) {
   const context = await browser.newContext({ viewport: { width, height }, hasTouch: touch, isMobile: touch });
   await context.addInitScript((w) => localStorage.setItem("emberisle-water", w), water);
+  // Each clip sound.ts starts, by file, without making a sound.
+  await context.addInitScript(() => {
+    window.__played = [];
+    HTMLMediaElement.prototype.play = function () { window.__played.push(this.src.split("/").pop()); return Promise.resolve(); };
+  });
   const page = await context.newPage();
   page.on("pageerror", (e) => errors.push(`${width}: ${e.message}`));
   page.on("console", (m) => m.type() === "error" && errors.push(`${width}: ${m.text()}`));
@@ -118,7 +123,7 @@ async function heldPair(page, at, age) {
     for (const s of sp.uniforms.uSplash.value) s.w = 0;
     const slot = sp.uniforms.uSplash.value[0];
     window.__step ??= sp.step;
-    sp.step = (t) => { window.__step(t); slot.set(at.x, at.z, t - age, window.__held ? 1 : 0); };
+    sp.step = (t) => { slot.set(at.x, at.z, t - age, window.__held ? 1 : 0); window.__step(t); };
     window.__held = true;
   }, { at, age });
   await page.evaluate(() => window.__grab("with"));
@@ -189,6 +194,8 @@ try {
       return { x: s.x, z: s.y, t0: s.z, w: s.w };
     });
     assert.ok(Math.hypot(made.x - spot.x, made.z - spot.z) < 0.08 && made.w === 1, `${tag}: one full splash where the finger met the water (${JSON.stringify(made)})`);
+    await page.waitForTimeout(300);
+    assert.equal(await page.evaluate(() => window.__played.filter((f) => f === "plop.wav").length), 1, `${tag}: the splash asks for the plop once`);
 
     // The CPU twin: the boats' sea includes it. The point dips, then lifts above the undisturbed swell; the rings run outward.
     const twin = await page.evaluate((m) => {
@@ -260,7 +267,7 @@ try {
     await page.evaluate((m) => {
       const isle = window.__isle, sp = isle.splash, slot = sp.uniforms.uSplash.value[0];
       window.__step ??= sp.step;
-      sp.step = (t) => { window.__step(t); slot.set(m.x, m.z, t - 0.3, 1); };
+      sp.step = (t) => { slot.set(m.x, m.z, t - 0.3, 1); window.__step(t); };
     }, made);
     await page.evaluate(() => window.__grab("shot"));
     await page.screenshot({ path: `test-results/splash-${width}.png` });

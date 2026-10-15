@@ -100,6 +100,43 @@ it went from 4.4 ms (main) to 4.7-5.9 ms (median about 5.4), about +20 %. A phon
 a millisecond. The two new attributes are 104 KB. The refraction's under pass draws the scene a second time (the transmission
 pass it replaces did the same).
 
+## Touch the sea
+
+The island answers a finger (#616): on `pointerdown`, not the release, so it starts in the next frame. Code: `SPLASH`,
+`SPLASH_GLSL` and `makeSplashes` in `crystal-water.ts`, the scatter in `ocean-life.ts`, `wobble.ts`, and `poke` / `stir` /
+`splashAt` / `wobbleHex` in `isle-renderer.ts`.
+
+- **What a press does.** The renderer runs the same pick as a tap. A corner or a path under the finger (in build mode, inside
+  its pick reach) takes the press for the game: no splash, no wobble. A tile wobbles. Anything else that lands on open water
+  (off the island, at least 0.15 past the coast, so not the beach) splashes there at strength 1 and plays `plop`
+  ([sound.md](sound.md)). A drag that started on the water stirs a trail: a splash of strength 0.45 every 0.35 units and
+  80 ms at most, silent and without droplets.
+- **A splash** is a crater 0.07 deep and 0.22 across (Gaussian) that rebounds on a 0.42 s period, decaying by e every 0.32 s
+  (it lifts about 0.035 above the swell before settling); then three rings leaving 0.1 out at 1.1 units/s, 0.16 s apart, heights
+  0.022 x 1, 0.7, 0.4, half-width 0.08, dying by e every 0.75 s: the crest is 0.43, 0.76 and 1.09 out after 0.3, 0.6 and
+  0.9 s. A foam patch 0.3 across fades over 0.9 s; six droplets fly on the GPU for up to 0.7 s (a tap only). All of it fades
+  out over the last 40 % of its 1.8 s life. The rings add to the swell: the vertices carry the height (times the beach taper),
+  the pixels its slope and the crests' white, so a ring reads on the coarse outer rings of the mesh too.
+- **The CPU twin.** `makeSplashes().field` is `splashField` line for line, and `makeSwell` adds it, so a boat lifts and rolls
+  as a ring passes.
+- **Budget.** One `vec4[8]` uniform (x, z, start, strength) and a live flag; no render target. At most 8 live: a new splash
+  takes a dead slot, else the oldest. The loop holds full frame rate for a splash's life.
+- **Fish.** Two schools of five small fish (one instanced draw) circle 0.28 across about 5.75 from the middle, under the
+  shallows. A splash within 1.5 sends each fish, and a visitor, darting away (0.45-0.9 units, further the closer it was) over
+  0.25 s; it holds there to 1.5 s and is back on its round by 4 s. A dart never points toward the island; a visitor also dips
+  0.15.
+- **The tile.** A tap on a hex scales the tile, its token and its props about the tile's base, 1.0 to 1.03 and back over
+  220 ms (a half sine on an eased-out clock, peak at 64 ms). Never on a corner or path pick, never under reduced motion, never
+  while a piece is landing (a bot's placement included).
+- **Reduced motion:** no crater, rings, droplets, scatter or wobble; the foam patch alone shows and fades by 0.9 s.
+- **Simple sea:** the rings alone, as lighter lines in its fragment shader; no crater, foam, droplets or boat bob (its boats
+  keep their own bob). Under reduced motion it draws nothing.
+- **Cost** (the crystal sea alone on SwiftShader on a loaded 4-core machine, median of 20 frames; main / this, nothing live /
+  this, 8 live in view): vertex work to a 1x1 target 2.7-2.9 / 2.9-3.6 / 5.0-7.4 ms; a 1280x720 frame 38-40 / 47-50 / 95 ms.
+  With nothing live the field returns at once on the live flag; the rest is the bigger shader. Eight live splashes are a
+  burst of at most 1.8 s; a phone or desktop GPU runs the 8-slot loop in a small fraction of a millisecond.
+- **Proof:** `splash-prove` (README).
+
 ## Two paths
 
 - **Crystal**, the default everywhere, phones included (every player is on an iPhone 15 Pro Max or newer). Pixel ratio up to 2.
