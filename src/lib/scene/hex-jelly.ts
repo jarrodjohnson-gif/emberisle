@@ -119,8 +119,14 @@ export type Layout = {
   camp: (Pt & { a: number }) | null;
   deer: (Pt & { face: number }) | null;
   ring: Pt | null;
+  // Long swells along a segment (the pasture's ridge), and named story spots for the other tiles.
+  ridges: { a: Pt; b: Pt; w: number; h: number }[];
+  marks: Record<string, Pt>;
 };
 
+// Creatures, people and their things are built at a base size and drawn FOLK times larger, so they read from the diorama
+// angle (prompt "SCALE AND CRAFT": a person 0.17 tall, a sheep 0.13 long, a deer 0.13 at the shoulder).
+const FOLK = 1.6;
 const at = (a: number, d: number) => ({ x: Math.cos(a) * d, z: Math.sin(a) * d });
 const DEG = Math.PI / 180;
 
@@ -129,7 +135,7 @@ const DEG = Math.PI / 180;
 export function layoutOf(kind: Terrain, seed: number): Layout {
   const r = rng32(seed);
   const hillAt = ((r() < 0.5 ? 240 : 300) + (r() - 0.5) * 12) * DEG;
-  const L: Layout = { kind, seed, hillAt, spots: [], stream: [], pool: null, camp: null, deer: null, ring: null };
+  const L: Layout = { kind, seed, hillAt, spots: [], stream: [], pool: null, camp: null, deer: null, ring: null, ridges: [], marks: {} };
   if (kind === "timber") {
     // The stream runs away from the hill's crest toward the front, on the side `s` (round toward the nearer front edge).
     const s = hillAt < 270 * DEG ? -1 : 1;
@@ -150,7 +156,7 @@ export function layoutOf(kind: Terrain, seed: number): Layout {
     let bestScore = -Infinity;
     for (let k = 0; k < 24; k++) {
       const a = (k / 24) * Math.PI * 2;
-      const p = { x: L.pool.x + Math.cos(a) * 0.23, z: L.pool.z + Math.sin(a) * 0.23 };
+      const p = { x: L.pool.x + Math.cos(a) * 0.26, z: L.pool.z + Math.sin(a) * 0.26 };
       const away = Math.abs(Math.atan2(Math.sin(a - inflow), Math.cos(a - inflow)));
       if (Math.hypot(p.x, p.z) < 0.46 || nearestCorner(p.x, p.z) < 0.24 || hexDist(p.x, p.z) > 0.76) continue;
       // Away from the inflow, and toward the eye (+z) so the deer read side-on.
@@ -159,6 +165,24 @@ export function layoutOf(kind: Terrain, seed: number): Layout {
     }
     L.deer = best;
     L.ring = at(hillAt - s * 0.6, 0.55);
+  }
+  if (kind === "wool") {
+    // The ridge runs along the back edge, tangent to it; the wall along its crest; the oak on it toward one end.
+    const s = r() < 0.5 ? -1 : 1;
+    const c = at(hillAt, 0.6);
+    const [tx, tz] = [-Math.sin(hillAt), Math.cos(hillAt)];
+    const half = 0.4;
+    L.ridges.push({ a: { x: c.x - tx * half, z: c.z - tz * half }, b: { x: c.x + tx * half, z: c.z + tz * half }, w: 0.3, h: 0.3 + r() * 0.05 });
+    L.spots.push({ ...at(hillAt + Math.PI - 0.55, 0.62), r: 0.26, h: 0.05 }, { ...at(hillAt + Math.PI + 0.6, 0.64), r: 0.22, h: 0.04 });
+    L.spots.push({ ...at(hillAt + Math.PI, 0.6), r: 0.2, h: -0.022 });
+    L.marks = {
+      oak: { x: c.x + tx * half * 0.45 * s, z: c.z + tz * half * 0.45 * s },
+      gate: { x: c.x - tx * half * 0.55 * s, z: c.z - tz * half * 0.55 * s },
+      hut: at(hillAt - s * 62 * DEG, 0.62),
+      flock: at(hillAt + Math.PI - s * 0.62, 0.6),
+      shear: at(hillAt + Math.PI + s * 0.78, 0.58),
+      trough: at(hillAt + Math.PI - s * 1.25, 0.6),
+    };
   }
   return L;
 }
@@ -185,6 +209,12 @@ const POOL_LEVEL = -0.014;
 export function heightAt(L: Layout, x: number, z: number) {
   let raw = 0.018 * fbm(x * 3, z * 3, L.seed);
   for (const p of L.spots) raw += bump(x, z, p);
+  for (const g of L.ridges) {
+    const [dx, dz] = [g.b.x - g.a.x, g.b.z - g.a.z];
+    const u = Math.min(1, Math.max(0, ((x - g.a.x) * dx + (z - g.a.z) * dz) / (dx * dx + dz * dz)));
+    const d2 = ((x - g.a.x - u * dx) ** 2 + (z - g.a.z - u * dz) ** 2) / (g.w * g.w);
+    if (d2 < 1) raw += g.h * (1 - d2) * (1 - d2) * (1 - (2 * u - 1) ** 4 * 0.5);
+  }
   const pad = smooth(PAD_R, PAD_R + 0.3, Math.hypot(x, z));
   const corner = smooth(CORNER_DISC, CORNER_DISC + 0.16, nearestCorner(x, z));
   const edge = 1 - smooth(INR - EDGE_BAND - 0.1, INR - EDGE_BAND, hexDist(x, z));
@@ -218,6 +248,7 @@ const C = (h: string) => new THREE.Color(h);
 type Paint = { low: THREE.Color; high: THREE.Color; steep: THREE.Color; crease: THREE.Color; pad: THREE.Color; lip: string };
 const PAINTS: Partial<Record<Terrain, Paint>> = {
   timber: { low: C("#5fae47"), high: C("#8cc65a"), steep: C("#7d8a4a"), crease: C("#2f5a2e"), pad: C("#a9cf7c"), lip: "#6db64f" },
+  wool: { low: C("#86cc52"), high: C("#b6e070"), steep: C("#93b85a"), crease: C("#4a8a38"), pad: C("#c6e49c"), lip: "#96d45c" },
 };
 
 // --- materials
@@ -550,7 +581,7 @@ function deer(fawn: boolean, m: THREE.Material) {
     ears.push(ear);
   }
   g.add(neck);
-  if (fawn) g.scale.setScalar(0.66);
+  g.scale.setScalar(FOLK * (fawn ? 0.66 : 1));
   return { g, neck, ears };
 }
 
@@ -952,7 +983,7 @@ function forest(L: Layout, ground: (x: number, z: number) => number, r: () => nu
     const face = L.deer.face;
     doe.g.position.set(L.deer.x, Y(L.deer.x, L.deer.z), L.deer.z);
     doe.g.rotation.y = -face;
-    const fp = { x: L.deer.x - Math.cos(face) * 0.03 + Math.cos(face + 1.57) * 0.07, z: L.deer.z - Math.sin(face) * 0.03 + Math.sin(face + 1.57) * 0.07 };
+    const fp = { x: L.deer.x - Math.cos(face) * 0.05 + Math.cos(face + 1.57) * 0.1, z: L.deer.z - Math.sin(face) * 0.05 + Math.sin(face + 1.57) * 0.1 };
     fawn.g.position.set(fp.x, Y(fp.x, fp.z), fp.z);
     fawn.g.rotation.y = -face + 0.5;
     g.add(doe.g, fawn.g);
@@ -972,7 +1003,7 @@ function forest(L: Layout, ground: (x: number, z: number) => number, r: () => nu
 
   // Salmon: two take turns leaping out of the pool in an arc and splashing back, a ring rippling out where each lands; fish
   // shadows drift under the surface.
-  const sg = salmonGeo();
+  const sg = salmonGeo().scale(1.3, 1.3, 1.3);
   const wy = BLOCK_H + POOL_LEVEL;
   const ringMat = () => new THREE.MeshBasicMaterial({ color: "#f4fbf8", transparent: true, opacity: 0, depthWrite: false, toneMapped: false });
   const leaps = [0, 1].map((i) => {
@@ -1049,6 +1080,447 @@ function forest(L: Layout, ground: (x: number, z: number) => number, r: () => nu
   return { g, stands, life };
 }
 
+// --- pasture folk
+
+// A sheep along +x, hooves at y 0: a body of cream wool blobs, black legs, and a black head with ears on its own pivot so it can
+// graze. `lying` folds the legs under; `shorn` leaves the near side (+z) bare pink; `lamb` is small and whiter.
+function sheep(m: THREE.Material, o: { lying?: boolean; shorn?: boolean; lamb?: boolean } = {}) {
+  const WOOL = o.lamb ? "#fbf8f1" : "#f3ecdf";
+  const g = new THREE.Group();
+  const lift = o.lying ? 0.012 : 0.034;
+  const body: THREE.BufferGeometry[] = [];
+  const puffs: [number, number, number, number][] = [
+    [0, 0.02, 0, 0.026], [0.018, 0.022, 0.008, 0.02], [-0.018, 0.022, -0.008, 0.021], [0.016, 0.018, -0.012, 0.019],
+    [-0.016, 0.018, 0.012, 0.02], [0, 0.034, 0, 0.02], [-0.026, 0.02, 0, 0.017], [0.024, 0.026, 0, 0.017],
+  ];
+  puffs.forEach(([x, y, z, rr], i) => {
+    if (o.shorn && z > 0.004) return;
+    body.push(part(blobGeo(i + 3), WOOL, [x, y + lift, z], [0, i, 0], [rr, rr * 0.9, rr]));
+  });
+  if (o.shorn) body.push(part(sphere(), "#efc3b4", [0, 0.022 + lift, 0.004], [0, 0, 0], [0.032, 0.02, 0.018]));
+  if (!o.lying)
+    for (const [x, z] of [[0.017, 0.009], [0.017, -0.009], [-0.017, 0.009], [-0.017, -0.009]]) body.push(part(cyl(0.004, 0.0035, 6), "#2a2422", [x!, 0.017, z!], [0, 0, 0], [1, 0.034, 1]));
+  g.add(mesh(merge(body), m));
+  const head = new THREE.Group();
+  head.position.set(0.03, 0.036 + lift - 0.034 + 0.034, 0);
+  head.add(
+    mesh(
+      merge([
+        part(sphere(), "#2b2523", [0.012, -0.002, 0], [0, 0, -0.5], [0.013, 0.01, 0.009]),
+        part(blobGeo(9), WOOL, [0.002, 0.006, 0], [0, 0, 0], [0.009, 0.007, 0.009]),
+        part(sphere(8), "#2b2523", [0.004, 0.002, 0.011], [0.9, 0, 0], [0.008, 0.003, 0.004]),
+        part(sphere(8), "#2b2523", [0.004, 0.002, -0.011], [-0.9, 0, 0], [0.008, 0.003, 0.004]),
+        part(sphere(6), "#f6f0e2", [0.016, 0.002, 0.006], [0, 0, 0], [0.002, 0.002, 0.002]),
+        part(sphere(6), "#f6f0e2", [0.016, 0.002, -0.006], [0, 0, 0], [0.002, 0.002, 0.002]),
+      ]),
+      m,
+    ),
+  );
+  g.add(head);
+  g.scale.setScalar(FOLK * (o.lamb ? 0.62 : 1));
+  return { g, head };
+}
+
+// A person 0.11 tall facing +x: boots, trousers, a smock, arms, a head and a straw hat; `bend` tips the body forward from the hips.
+function person(m: THREE.Material, smock: string, bend = 0, hat = "#e8c56a") {
+  const g = new THREE.Group();
+  g.add(
+    mesh(
+      merge([
+        part(cyl(0.006, 0.006, 8), "#3d3530", [0, 0.004, 0.007], [0, 0, 0], [1, 0.008, 1.1]),
+        part(cyl(0.006, 0.006, 8), "#3d3530", [0, 0.004, -0.007], [0, 0, 0], [1, 0.008, 1.1]),
+        part(cyl(0.0055, 0.0055, 8), "#5a4a3c", [0, 0.026, 0.007], [0, 0, 0], [1, 0.042, 1]),
+        part(cyl(0.0055, 0.0055, 8), "#5a4a3c", [0, 0.026, -0.007], [0, 0, 0], [1, 0.042, 1]),
+      ]),
+      m,
+    ),
+  );
+  const top = new THREE.Group();
+  top.position.y = 0.046;
+  top.rotation.z = -bend;
+  top.add(
+    mesh(
+      merge([
+        part(cyl(0.011, 0.015, 10), smock, [0, 0.019, 0], [0, 0, 0], [1, 0.04, 1]),
+        part(cyl(0.004, 0.004, 6), smock, [0.006, 0.02, 0.016], [0, 0, 0.9], [1, 0.03, 1]),
+        part(cyl(0.004, 0.004, 6), smock, [0.006, 0.02, -0.016], [0, 0, 0.9], [1, 0.03, 1]),
+        part(sphere(8), "#f0c49c", [0.018, 0.012, 0.016], [0, 0, 0], [0.004, 0.004, 0.004]),
+        part(sphere(8), "#f0c49c", [0.018, 0.012, -0.016], [0, 0, 0], [0.004, 0.004, 0.004]),
+        part(sphere(), "#f0c49c", [0, 0.05, 0], [0, 0, 0], [0.011, 0.012, 0.011]),
+        part(cyl(1, 1, 16), hat, [0, 0.058, 0], [0, 0, 0], [0.019, 0.002, 0.019]),
+        part(cyl(0.8, 1, 12), hat, [0, 0.064, 0], [0, 0, 0], [0.01, 0.01, 0.01]),
+        part(cyl(1, 1, 12), "#b8463a", [0, 0.061, 0], [0, 0, 0], [0.0102, 0.002, 0.0102]),
+      ]),
+      m,
+    ),
+  );
+  g.add(top);
+  g.scale.setScalar(FOLK);
+  return { g, top };
+}
+
+// A black-and-white collie facing +x, legs on their own meshes so it can trot.
+function dog(m: THREE.Material) {
+  const g = new THREE.Group();
+  g.add(
+    mesh(
+      merge([
+        part(sphere(), "#222022", [0, 0.034, 0], [0, 0, 0.05], [0.026, 0.012, 0.011]),
+        part(sphere(), "#f5f1ea", [0.014, 0.03, 0], [0, 0, 0.3], [0.012, 0.01, 0.009]),
+        part(sphere(), "#222022", [0.03, 0.048, 0], [0, 0, 0], [0.01, 0.009, 0.008]),
+        part(sphere(), "#f5f1ea", [0.039, 0.045, 0], [0, 0, -0.2], [0.007, 0.004, 0.0045]),
+        part(sphere(6), "#1a1414", [0.045, 0.046, 0], [0, 0, 0], [0.002, 0.002, 0.002]),
+        part(new THREE.ConeGeometry(1, 1, 6), "#222022", [0.027, 0.058, 0.005], [0.3, 0, 0], [0.0035, 0.008, 0.003]),
+        part(new THREE.ConeGeometry(1, 1, 6), "#222022", [0.027, 0.058, -0.005], [-0.3, 0, 0], [0.0035, 0.008, 0.003]),
+        part(sphere(8), "#222022", [-0.03, 0.044, 0], [0, 0, 0.9], [0.013, 0.004, 0.004]),
+        part(sphere(8), "#f5f1ea", [-0.04, 0.052, 0], [0, 0, 0.9], [0.004, 0.003, 0.003]),
+      ]),
+      m,
+    ),
+  );
+  const legs = [[0.015, 0.006], [0.015, -0.006], [-0.016, 0.006], [-0.016, -0.006]].map(([x, z], i) => {
+    const l = mesh(merge([part(cyl(0.003, 0.0028, 6), i < 2 ? "#f5f1ea" : "#222022", [0, -0.012, 0], [0, 0, 0], [1, 0.024, 1])]), m);
+    l.position.set(x!, 0.026, z!);
+    g.add(l);
+    return l;
+  });
+  g.scale.setScalar(FOLK);
+  return { g, legs };
+}
+
+// WOOL, "Shearing Day" (docs/design/hex-jelly-prompt.md): the ridge with its dry-stone wall, gate and oak; the flock grazing,
+// lying, a lamb hopping, another on a boulder; the collie trotting round them; the shepherd shearing a half-shorn ewe by the
+// fleece pile and wool sacks; the shepherd's hut with its stove smoke; the trough; clover and flowers.
+function pasture(L: Layout, ground: (x: number, z: number) => number, r: () => number): Built {
+  const g = new THREE.Group();
+  const life: Life[] = [];
+  const stands: { x: number; z: number; r: number }[] = [];
+  const Y = (x: number, z: number) => BLOCK_H + ground(x, z);
+  const cm = critterMat();
+  const M = L.marks;
+  const ridge = L.ridges[0]!;
+  const place = (o: THREE.Object3D, p: Pt, face: number, lift = 0) => {
+    o.position.set(p.x, Y(p.x, p.z) + lift, p.z);
+    o.rotation.y = -face;
+    g.add(o);
+  };
+  const faceTo = (a: Pt, b: Pt) => Math.atan2(b.z - a.z, b.x - a.x);
+  const EYE = { x: Math.sin(20 * DEG), z: Math.cos(20 * DEG) };
+
+  // The dry-stone wall along the crest, two courses of grey blob stones, broken where the gate stands.
+  const [dx, dz] = [ridge.b.x - ridge.a.x, ridge.b.z - ridge.a.z];
+  const len = Math.hypot(dx, dz);
+  const [tx, tz] = [dx / len, dz / len];
+  const wall: THREE.BufferGeometry[] = [];
+  const STONE = ["#a7a59b", "#b9b6aa", "#958f86", "#c6c1b2"];
+  for (let d = 0.04; d < len - 0.04; d += 0.034) {
+    const p = { x: ridge.a.x + tx * d, z: ridge.a.z + tz * d };
+    if (Math.hypot(p.x - M.gate!.x, p.z - M.gate!.z) < 0.075 || nearestCorner(p.x, p.z) < 0.18 || hexDist(p.x, p.z) > INR - 0.17) continue;
+    const y = Y(p.x, p.z);
+    for (let c = 0; c < 2; c++) {
+      const k = 0.018 + r() * 0.005 - c * 0.003;
+      wall.push(part(blobGeo(Math.floor(r() * 50)), STONE[Math.floor(r() * 4)]!, [p.x + (r() - 0.5) * 0.008, y + 0.011 + c * 0.024, p.z + (r() - 0.5) * 0.008], [0, r() * 6, 0], [k * 1.2, k * 0.75, k]));
+    }
+    // A little moss on the top course now and then.
+    if (r() < 0.3) wall.push(part(blobGeo(7), "#7fae4f", [p.x, y + 0.043, p.z], [0, r() * 6, 0], [0.008, 0.003, 0.008]));
+    stands.push({ x: p.x, z: p.z, r: 0.02 });
+  }
+  g.add(mesh(merge(wall), cm));
+
+  // The gate across the gap: two posts, three rails and a brace.
+  {
+    const gate = new THREE.Group();
+    const W = "#a87c4f";
+    gate.add(
+      mesh(
+        merge([
+          part(cyl(0.004, 0.004, 6), "#7a5434", [0, 0.022, -0.04], [0, 0, 0], [1, 0.046, 1]),
+          part(cyl(0.004, 0.004, 6), "#7a5434", [0, 0.022, 0.04], [0, 0, 0], [1, 0.046, 1]),
+          ...[0.012, 0.024, 0.036].map((y) => part(new THREE.BoxGeometry(1, 1, 1), W, [0, y, 0], [0, 0, 0], [0.003, 0.004, 0.078])),
+          part(new THREE.BoxGeometry(1, 1, 1), W, [0, 0.024, 0], [0.42, 0, 0], [0.003, 0.004, 0.08]),
+        ]),
+        cm,
+      ),
+    );
+    gate.scale.setScalar(FOLK);
+    place(gate, M.gate!, Math.atan2(tz, tx) + Math.PI / 2);
+    gate.rotation.y = -Math.atan2(tz, tx);
+  }
+
+  // The oak on the crest: a fat trunk and a big round crown of blobs.
+  {
+    const o = M.oak!;
+    const y = Y(o.x, o.z);
+    const leaves: THREE.BufferGeometry[] = [part(cyl(0.7, 1, 10), "#6e4128", [o.x, y + 0.06, o.z], [0, 0, 0], [0.028, 0.12, 0.028])];
+    const LEAF = ["#3f8c38", "#58a443", "#7cbd4f"];
+    for (let i = 0; i < 9; i++) {
+      const a = (i / 9) * Math.PI * 2;
+      const up = i % 3;
+      leaves.push(part(blobGeo(i + 20), LEAF[up]!, [o.x + Math.cos(a) * 0.07, y + 0.14 + up * 0.04, o.z + Math.sin(a) * 0.07], [0, a, 0], [0.07, 0.062, 0.07]));
+    }
+    leaves.push(part(blobGeo(33), LEAF[2]!, [o.x, y + 0.23, o.z], [0, 0, 0], [0.075, 0.062, 0.075]));
+    g.add(mesh(merge(leaves), cm));
+    stands.push({ x: o.x, z: o.z, r: 0.14 });
+  }
+
+  // The shepherd's hut: green-planked walls, a curved red roof, wheels, a step to the door, a stove pipe and its smoke.
+  {
+    const h = new THREE.Group();
+    const roof = new THREE.CylinderGeometry(1, 1, 1, 16, 1, false, 0, Math.PI);
+    h.add(
+      mesh(
+        merge([
+          part(new THREE.BoxGeometry(1, 1, 1), "#4f7d64", [0, 0.05, 0], [0, 0, 0], [0.11, 0.05, 0.065]),
+          part(roof, "#c6423a", [0, 0.075, 0], [Math.PI / 2, 0, Math.PI / 2], [0.038, 0.122, 0.022]),
+          part(new THREE.BoxGeometry(1, 1, 1), "#f3e9d6", [0.0555, 0.05, 0], [0, 0, 0], [0.002, 0.034, 0.02]),
+          part(new THREE.BoxGeometry(1, 1, 1), "#f3e9d6", [0, 0.055, 0.0335], [0, 0, 0], [0.024, 0.016, 0.002]),
+          ...[-0.035, 0.035].flatMap((x) => [-0.034, 0.034].map((z) => part(cyl(1, 1, 12), "#3a2a24", [x, 0.016, z], [Math.PI / 2, 0, 0], [0.016, 0.006, 0.016]))),
+          ...[-0.035, 0.035].flatMap((x) => [-0.034, 0.034].map((z) => part(cyl(1, 1, 12), "#c6423a", [x, 0.016, z + Math.sign(z) * 0.0032], [Math.PI / 2, 0, 0], [0.006, 0.001, 0.006]))),
+          part(new THREE.BoxGeometry(1, 1, 1), "#8a6440", [0.068, 0.01, 0], [0, 0, 0], [0.018, 0.004, 0.02]),
+          part(cyl(0.004, 0.004, 8), "#2f2b2a", [-0.03, 0.11, 0.01], [0, 0, 0], [1, 0.03, 1]),
+        ]),
+        cm,
+      ),
+    );
+    h.scale.setScalar(FOLK);
+    // Its door toward the clearing.
+    place(h, M.hut!, faceTo(M.hut!, { x: 0, z: 0 }));
+    stands.push({ x: M.hut!.x, z: M.hut!.z, r: 0.14 });
+    const pipe = new THREE.Vector3(-0.03, 0.13, 0.01).multiplyScalar(FOLK).applyEuler(h.rotation).add(h.position);
+    const smokes = Array.from({ length: 4 }, (_, i) => {
+      const o = new THREE.Mesh(blobGeo(60 + i), new THREE.MeshStandardMaterial({ color: "#e4e0d8", roughness: 1, transparent: true, opacity: 0.4, depthWrite: false }));
+      o.userData.loose = true;
+      g.add(o);
+      return { o, ph: i / 4 };
+    });
+    life.push((t) => {
+      for (const s of smokes) {
+        const u = (t * 0.1 + s.ph) % 1;
+        s.o.position.set(pipe.x + u * 0.04, pipe.y + u * 0.16, pipe.z - u * 0.03);
+        s.o.scale.setScalar(0.007 + u * 0.018);
+        (s.o.material as THREE.MeshStandardMaterial).opacity = 0.3 * Math.sin(Math.PI * u);
+      }
+    });
+  }
+
+  // The trough: a plank box of jelly water.
+  {
+    const tr = new THREE.Group();
+    tr.add(
+      mesh(
+        merge([
+          part(new THREE.BoxGeometry(1, 1, 1), "#9a7048", [0, 0.012, 0], [0, 0, 0], [0.07, 0.022, 0.028]),
+          ...[-0.03, 0.03].map((x) => part(new THREE.BoxGeometry(1, 1, 1), "#7a5434", [x, 0.008, 0], [0, 0, 0], [0.006, 0.016, 0.034])),
+        ]),
+        cm,
+      ),
+    );
+    const water = new THREE.Mesh(new THREE.PlaneGeometry(0.064, 0.022).rotateX(-Math.PI / 2), waterMat(false));
+    water.position.y = 0.0235;
+    tr.add(water);
+    tr.scale.setScalar(FOLK);
+    place(tr, M.trough!, faceTo(M.trough!, { x: 0, z: 0 }) + Math.PI / 2);
+    stands.push({ x: M.trough!.x, z: M.trough!.z, r: 0.08 });
+    life.push((t) => ((water.material as THREE.MeshStandardMaterial).userData.time.value = t));
+  }
+
+  // Boulders; a lamb stands on the biggest.
+  const boulders: (Pt & { k: number })[] = [];
+  for (let tries = 0; tries < 300 && boulders.length < 3; tries++) {
+    const a = r() * Math.PI * 2;
+    const d = 0.45 + r() * 0.35;
+    const p = { x: Math.cos(a) * d, z: Math.sin(a) * d, k: boulders.length ? 0.03 + r() * 0.012 : 0.048 };
+    if (nearestCorner(p.x, p.z) < 0.22 || hexDist(p.x, p.z) > INR - 0.18 || stands.some((q) => Math.hypot(q.x - p.x, q.z - p.z) < q.r + 0.07)) continue;
+    boulders.push(p);
+    stands.push({ x: p.x, z: p.z, r: p.k });
+  }
+  g.add(mesh(merge(boulders.map((b, i) => part(blobGeo(70 + i), "#a9a79d", [b.x, Y(b.x, b.z) + b.k * 0.45, b.z], [0, i * 2, 0], [b.k * 1.1, b.k * 0.8, b.k]))), cm));
+
+  // The flock: three grazing, one lying, a lamb that hops; the second lamb on the boulder.
+  const flock: { s: ReturnType<typeof sheep>; ph: number; graze: boolean; hop?: boolean; base: number }[] = [];
+  const spots: Pt[] = [];
+  for (let tries = 0; tries < 600 && spots.length < 7; tries++) {
+    const p = { x: M.flock!.x + (r() - 0.5) * 0.42, z: M.flock!.z + (r() - 0.5) * 0.42 };
+    if (Math.hypot(p.x, p.z) < 0.42 || nearestCorner(p.x, p.z) < 0.2 || hexDist(p.x, p.z) > INR - 0.18 || spots.some((q) => Math.hypot(q.x - p.x, q.z - p.z) < 0.12) || stands.some((q) => Math.hypot(q.x - p.x, q.z - p.z) < q.r + 0.07)) continue;
+    spots.push(p);
+  }
+  spots.forEach((p, i) => {
+    const kind = i === 3 ? { lying: true } : i === 4 || i === 6 ? { lamb: true } : {};
+    const sh = sheep(cm, kind);
+    // Mostly side-on to the eye, so their silhouettes read.
+    const face = Math.atan2(EYE.x, -EYE.z) + (r() < 0.5 ? 0 : Math.PI) + (r() - 0.5) * 0.9;
+    place(sh.g, p, face);
+    stands.push({ x: p.x, z: p.z, r: 0.06 });
+    flock.push({ s: sh, ph: r() * 6, graze: i < 3 || i === 5, hop: i === 4, base: sh.g.position.y });
+  });
+  if (boulders[0]) {
+    const lamb = sheep(cm, { lamb: true });
+    place(lamb.g, boulders[0], faceTo(boulders[0], { x: 0, z: 0 }) + 0.8, boulders[0].k * 1.2);
+    flock.push({ s: lamb, ph: 1, graze: false, base: lamb.g.position.y });
+  }
+  life.push((t) => {
+    for (const f of flock) {
+      const c = ((t + f.ph) % 5) / 5;
+      if (f.graze) f.s.head.rotation.z = -0.9 * smooth(0.1, 0.25, c) * (1 - smooth(0.7, 0.85, c));
+      else f.s.head.rotation.y = 0.4 * Math.sin(t * 0.7 + f.ph);
+      if (f.hop) {
+        const u = (t + f.ph) % 2.4;
+        f.s.g.position.y = f.base + (u < 0.35 ? 0.03 * Math.sin((u / 0.35) * Math.PI) : 0);
+      }
+    }
+  });
+
+  // The shearing: the shepherd bent over a half-shorn ewe, the fleece pile, two wool sacks.
+  {
+    const sp = M.shear!;
+    const ewe = sheep(cm, { shorn: true });
+    // The bare side toward the eye.
+    const side = Math.atan2(EYE.x, -EYE.z);
+    place(ewe.g, sp, side);
+    const fwd = { x: Math.cos(side), z: Math.sin(side) };
+    const across = { x: -fwd.z, z: fwd.x };
+    const shepherd = person(cm, "#3e6fb0", 0.55);
+    const pp = { x: sp.x - across.x * 0.07, z: sp.z - across.z * 0.07 };
+    place(shepherd.g, pp, faceTo(pp, sp));
+    const fleece: THREE.BufferGeometry[] = [];
+    const fp = { x: sp.x - fwd.x * 0.11 + across.x * 0.03, z: sp.z - fwd.z * 0.11 + across.z * 0.03 };
+    for (let i = 0; i < 9; i++) fleece.push(part(blobGeo(80 + i), "#f3ecdf", [fp.x + (r() - 0.5) * 0.05, Y(fp.x, fp.z) + 0.012 + (i > 5 ? 0.018 : 0), fp.z + (r() - 0.5) * 0.05], [0, i, 0], [0.022, 0.016, 0.022]));
+    for (const k of [-1, 1]) {
+      const q = { x: sp.x + fwd.x * 0.05 * k - across.x * 0.14, z: sp.z + fwd.z * 0.05 * k - across.z * 0.14 };
+      fleece.push(part(blobGeo(90 + k), "#d9c79e", [q.x, Y(q.x, q.z) + 0.035, q.z], [0, k, 0], [0.027, 0.038, 0.027]));
+      fleece.push(part(cyl(1, 1, 8), "#9a7a4e", [q.x, Y(q.x, q.z) + 0.073, q.z], [0, 0, 0], [0.009, 0.009, 0.009]));
+    }
+    g.add(mesh(merge(fleece), cm));
+    stands.push({ x: sp.x, z: sp.z, r: 0.2 });
+    life.push((t) => {
+      shepherd.top.rotation.z = -0.55 - 0.08 * Math.sin(t * 3);
+      ewe.head.rotation.y = 0.3 * Math.sin(t * 0.9);
+    });
+  }
+
+  // The collie trots a slow loop round the flock.
+  {
+    const d = dog(cm);
+    g.add(d.g);
+    const c = M.flock!;
+    life.push((t) => {
+      const a = t * 0.35;
+      let [x, z] = [c.x + Math.cos(a) * 0.27, c.z + Math.sin(a) * 0.2];
+      // Never over the pad or past the rim.
+      const k = Math.min(1, (INR - 0.2) / Math.max(1e-6, hexDist(x, z)));
+      [x, z] = [x * k, z * k];
+      const rr = Math.hypot(x, z);
+      if (rr < 0.4) [x, z] = [(x / rr) * 0.4, (z / rr) * 0.4];
+      d.g.position.set(x, Y(x, z) + Math.abs(Math.sin(t * 9)) * 0.004, z);
+      d.g.rotation.y = -(a + Math.PI / 2 - 0.3);
+      d.legs.forEach((l, i) => (l.rotation.z = 0.6 * Math.sin(t * 9 + (i % 2 ? Math.PI : 0) + (i > 1 ? Math.PI / 2 : 0))));
+    });
+  }
+
+  // The pen by the shearing: hurdle panels round a square, two ewes waiting their turn.
+  {
+    const sp = M.shear!;
+    const side = Math.atan2(EYE.x, -EYE.z);
+    const fwd = { x: Math.cos(side), z: Math.sin(side) };
+    for (const [k, off] of [[1, 0], [-1, 0], [1, 0.12], [-1, 0.12], [1, -0.12], [-1, -0.12]] as [number, number][]) {
+      const c = { x: sp.x + fwd.x * 0.22 * k - fwd.z * off, z: sp.z + fwd.z * 0.22 * k + fwd.x * off };
+      if (Math.hypot(c.x, c.z) < 0.47 || nearestCorner(c.x, c.z) < 0.24 || hexDist(c.x, c.z) > INR - 0.22 || stands.some((q) => Math.hypot(q.x - c.x, q.z - c.z) < q.r + 0.06)) continue;
+      const pen: THREE.BufferGeometry[] = [];
+      const H = 0.085;
+      for (let e = 0; e < 4; e++) {
+        const a = side + (e * Math.PI) / 2;
+        const [ex, ez] = [Math.cos(a), Math.sin(a)];
+        const [ax, az] = [-ez, ex];
+        // The front panel (toward the shearer) stays open.
+        if (e === (k > 0 ? 2 : 0)) continue;
+        for (const u of [-1, 0, 1]) {
+          const px = c.x + ex * H + ax * H * u;
+          const pz = c.z + ez * H + az * H * u;
+          pen.push(part(cyl(0.004, 0.004, 6), "#7a5434", [px, Y(px, pz) + 0.022, pz], [0, 0, 0], [1, 0.044, 1]));
+        }
+        for (const y of [0.016, 0.032]) {
+          const px = c.x + ex * H;
+          const pz = c.z + ez * H;
+          pen.push(part(new THREE.BoxGeometry(1, 1, 1), "#b08a5a", [px, Y(px, pz) + y, pz], [0, -Math.atan2(az, ax), 0], [H * 2, 0.005, 0.004]));
+        }
+      }
+      g.add(mesh(merge(pen), cm));
+      for (let i = 0; i < 2; i++) {
+        const w = sheep(cm);
+        place(w.g, { x: c.x + (i ? 0.03 : -0.03) * fwd.z, z: c.z - (i ? 0.03 : -0.03) * fwd.x }, side + (i ? 0.4 : Math.PI - 0.3));
+        flock.push({ s: w, ph: i * 2, graze: true, base: w.g.position.y });
+      }
+      stands.push({ x: c.x, z: c.z, r: 0.12 });
+      break;
+    }
+  }
+
+  // A hedgerow along one front flank and two round trees, so the field has edges and shade.
+  {
+    const hedge: THREE.BufferGeometry[] = [];
+    const s0 = L.hillAt + Math.PI + (r() < 0.5 ? 1 : -1) * 1.05;
+    for (let k = -4; k <= 4; k++) {
+      const p = at(s0 + k * 0.075, 0.72);
+      if (nearestCorner(p.x, p.z) < 0.24 || hexDist(p.x, p.z) > INR - 0.17 || stands.some((q) => Math.hypot(q.x - p.x, q.z - p.z) < q.r + 0.03)) continue;
+      const y = Y(p.x, p.z);
+      for (let i = 0; i < 2; i++) hedge.push(part(blobGeo(100 + k * 2 + i), i ? "#5aa443" : "#3f8a3a", [p.x + (r() - 0.5) * 0.02, y + 0.024 + i * 0.02, p.z + (r() - 0.5) * 0.02], [0, r() * 6, 0], [0.034, 0.03, 0.034]));
+      if (r() < 0.35) hedge.push(part(sphere(6), "#f7f2ff", [p.x, y + 0.058, p.z + 0.01], [0, 0, 0], [0.005, 0.005, 0.005]));
+      stands.push({ x: p.x, z: p.z, r: 0.04 });
+    }
+    for (let t = 0, tries = 0; t < 2 && tries < 300; tries++) {
+      const a = r() * Math.PI * 2;
+      const d = 0.5 + r() * 0.25;
+      const p = { x: Math.cos(a) * d, z: Math.sin(a) * d };
+      if (nearestCorner(p.x, p.z) < 0.24 || hexDist(p.x, p.z) > INR - 0.18 || stands.some((q) => Math.hypot(q.x - p.x, q.z - p.z) < q.r + 0.09)) continue;
+      // Not between the eye and the flock or the shearing.
+      if ([M.flock!, M.shear!].some((q) => {
+        const [dx, dz] = [p.x - q.x, p.z - q.z];
+        const along = dx * EYE.x + dz * EYE.z;
+        return along > 0 && along < 0.35 && Math.abs(dx * EYE.z - dz * EYE.x) < 0.18;
+      })) continue;
+      const y = Y(p.x, p.z);
+      hedge.push(part(cyl(0.7, 1, 8), "#6e4128", [p.x, y + 0.035, p.z], [0, 0, 0], [0.016, 0.07, 0.016]));
+      for (let i = 0; i < 5; i++) {
+        const b = (i / 5) * Math.PI * 2;
+        hedge.push(part(blobGeo(120 + i + t * 5), ["#3f8c38", "#58a443", "#7cbd4f"][i % 3]!, [p.x + Math.cos(b) * 0.03, y + 0.09 + (i % 2) * 0.02, p.z + Math.sin(b) * 0.03], [0, b, 0], [0.042, 0.038, 0.042]));
+      }
+      hedge.push(part(blobGeo(140 + t), "#7cbd4f", [p.x, y + 0.13, p.z], [0, 0, 0], [0.045, 0.038, 0.045]));
+      stands.push({ x: p.x, z: p.z, r: 0.08 });
+      t++;
+    }
+    if (hedge.length) g.add(mesh(merge(hedge), cm));
+  }
+
+  // Clover patches and flower specks over the grass, kept off the pad, the corners and the things standing there.
+  {
+    const dots: Inst[] = [];
+    const COL = [new THREE.Color("#ffffff"), new THREE.Color("#ffe14d"), new THREE.Color("#f6f1ff"), new THREE.Color("#ffd23a")];
+    for (let i = 0; i < 260; i++) {
+      const a = r() * Math.PI * 2;
+      const d = 0.36 + Math.sqrt(r()) * 0.55;
+      const [x, z] = [Math.cos(a) * d, Math.sin(a) * d];
+      if (hexDist(x, z) > INR - 0.08 || stands.some((q) => Math.hypot(q.x - x, q.z - z) < q.r + 0.01)) continue;
+      const clover = i % 4 === 0;
+      const k = clover ? 0.012 : 0.0035;
+      dots.push({ m: mat(x, Y(x, z) + (clover ? 0.001 : 0.004), z, k, clover ? 0.002 : k, k), c: clover ? new THREE.Color("#5ea640") : COL[i % 4]! });
+    }
+    g.add(instanced(sphere(8), dots, blobMat()));
+    // Grass tufts: little three-blade cones, darker and lighter, so the turf has a nap.
+    const tufts: Inst[] = [];
+    const TUFT = [new THREE.Color("#5a9e3c"), new THREE.Color("#79b84a"), new THREE.Color("#4a8a34")];
+    for (let i = 0; i < 420; i++) {
+      const a = r() * Math.PI * 2;
+      const d = 0.35 + Math.sqrt(r()) * 0.57;
+      const [x, z] = [Math.cos(a) * d, Math.sin(a) * d];
+      if (hexDist(x, z) > INR - 0.07 || stands.some((q) => Math.hypot(q.x - x, q.z - z) < q.r)) continue;
+      const k = 0.006 + r() * 0.005;
+      tufts.push({ m: mat(x, Y(x, z) + k * 0.8, z, k * 0.7, k * 1.8, k * 0.7, r() * 6, (r() - 0.5) * 0.4, (r() - 0.5) * 0.4), c: TUFT[i % 3]! });
+    }
+    g.add(instanced(new THREE.ConeGeometry(1, 1, 3), tufts, blobMat()));
+  }
+  return { g, stands, life };
+}
+
 // --- the tile
 
 export type Tile = { group: THREE.Group; layout: Layout; ground: (x: number, z: number) => number; update: (t: number) => void };
@@ -1058,7 +1530,7 @@ export function buildTile(kind: Terrain, seed: number, rings = 64): Tile {
   const ground = (x: number, z: number) => heightAt(L, x, z);
   const group = new THREE.Group();
   const r = rng32(seed ^ 0x9e3779b9);
-  const props = kind === "timber" ? forest(L, ground, r) : null;
+  const props = kind === "timber" ? forest(L, ground, r) : kind === "wool" ? pasture(L, ground, r) : null;
   const stands = props?.stands ?? [];
   // Canopy cover and contact: the ground darkens under each stand.
   const occlude = (x: number, z: number) => {

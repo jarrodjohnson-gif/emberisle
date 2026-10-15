@@ -42,8 +42,8 @@ JELLY WATER (shared by every tile that has it)
   vertex ripples; a slow soft caustic shimmer on the bed. It never looks like glass or chrome: it looks like jelly.
 
 SCALE AND CRAFT
-- One scale everywhere: a person 0.11 tall, a deer 0.09 at the shoulder, a sheep 0.08 long, a pine 0.25 to 0.5, a tent
-  0.1. Props are chunky and rounded: fat trunks, soft blob canopies, nothing spindly or toy-thin.
+- One scale everywhere: a person 0.17 tall, a deer 0.13 at the shoulder, a sheep 0.13 long, a pine 0.25 to 0.5, a tent
+  0.15. Props are chunky and rounded: fat trunks, soft blob canopies, nothing spindly or toy-thin.
 - Foliage is clusters of lumpy noise-displaced icosphere blobs (3–6 per tree), packed so canopies touch, each blob shaded by
   how buried it is among its neighbours and brighter toward the sky. Pines are stacked flattened blobs.
 - Every repeated thing is instanced. Everything that lives moves: a small idle loop per creature, nothing frozen.
@@ -63,11 +63,13 @@ THE SIX WORLDS
    owl's two yellow eyes blink in the dark of one pine.
 
 2. WOOL — "Shearing Day". Bright rolling green: a long grassy ridge along one back side with a dry-stone wall running its
-   crest and a round oak on top, a soft dip in front. A flock of five fluffy sheep (clustered wool blobs, black faces and
-   legs): three grazing with nodding heads, one lying down, one lamb that hops now and then. A sheepdog (black and white)
-   trots a slow loop round the flock. A little red-roofed shepherd's hut on wheels by the wall, a wooden gate, a water
-   trough with jelly water. Clover and white-and-yellow flower specks, three grey boulders. Surprise: a lamb has climbed
-   onto one of the boulders.
+   crest (a gap in it closed by a wooden gate) and a big round oak on top, soft swells and a dip in front. A flock of five
+   fluffy sheep (clustered cream wool blobs, black faces, legs and ears): three grazing with nodding heads, one lying down
+   chewing, one lamb that hops now and then. A black-and-white sheepdog trots a slow loop round the flock, tail up. On the
+   flat by the hut the shearing: a shepherd in a blue smock and a straw hat bent over a sheep that is half shorn (one side
+   pink and bare, one side woolly), a fluffy pile of fleece beside them and two stuffed wool sacks. A little red-roofed
+   shepherd's hut on wheels by the wall with a stove pipe and a wisp of smoke; a wooden water trough with jelly water.
+   Clover patches, white and yellow flower specks, three grey boulders. Surprise: a lamb has climbed onto a boulder.
 
 3. GRAIN — "Harvest". A golden field on a gentle saddle, ploughed into four strips with real furrow relief, thick with
    instanced wheat tufts that sway in a slow travelling wave of wind. One strip is half cut: stubble, a row of sheaves and a
@@ -90,7 +92,7 @@ THE SIX WORLDS
 6. WASTE — "The Wayfarer's Rest". Pale dunes with crisp slip faces and wind-ripple stripes, a rust-red rocky mesa at the
    back. A tiny oasis: a palm pair over a round jelly pool. Two saguaro cacti (one flowering pink), a bleached dead tree, a
    half-buried ox skull, scattered stones, tumbleweed that rolls across now and then, a thin dust devil that wanders and
-   fades. The wayfarer (the robber) stands here at person scale (0.11) under a hooded cloak with a lantern. Surprise: a
+   fades. The wayfarer (the robber) stands here at person scale (0.17) under a hooded cloak with a lantern. Surprise: a
    lizard basks on a rock and darts when the tumbleweed passes.
 
 VARIATION (open, owner 2026-10-15: "we will want some variations so the whole map isn't repeated"; decide later)
