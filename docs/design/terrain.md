@@ -30,7 +30,8 @@ Proof: `npm run board-look-prove` (the "terrain" checks) with `tokens-prove`, `j
 Nothing comes within 0.42 of a hex centre (the token's 0.34 plus its 0.05 of ground, and a little more; `tokens.md`), and
 nothing reaches past 0.95 of the inradius. The #604 rule (a prop between a token and the diorama eye shrinks until the
 numeral clears it, never below 0.3) now covers the ore peaks and the clay derricks as well as the pines: they are in
-`trees`, and each keeps its own base scale (`userData.base`); only pines sway.
+`trees`, and each keeps its own base scale (`userData.base`); only pines sway. The props arrive a frame after the tiles,
+so their arrival clears the shade pass's cached pose and the rule runs again with them in `trees`.
 
 ## How the props stay cheap
 

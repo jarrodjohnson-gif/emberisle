@@ -1283,6 +1283,8 @@ export class IsleRenderer {
       performance.mark("props-start");
       props.forEach((f) => f());
       kit.finish();
+      // The tall props are new: the shade pass cached on this pose ran without them.
+      this.shadedFor = "";
       (window as unknown as { __terrain: TerrainStats }).__terrain = this.terrainStats();
       this.wake();
       performance.mark("props-end");
