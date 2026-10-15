@@ -23,7 +23,9 @@ const BUDGETS = [
   // frond pines; +750 B headroom.
   // 2026-10-15 (#599 hex studio, pasture and grain): 195.39 kB measured with the sheep, the hedgerow and the grain's saddle,
   // furrow ridges, bales, sheaves and scarecrow; +750 B headroom.
-  { name: "IslandCanvas", gzipBytes: 196150 },
+  // 2026-10-15 (#599 hex studio, clay): 196.25 kB measured with the quarry pit's own geometry, the derrick, the barrow and
+  // the spoil heaps' clods and shovel; +750 B headroom.
+  { name: "IslandCanvas", gzipBytes: 197000 },
   { name: "online", gzipBytes: 8000 },
   { name: "sheets", gzipBytes: 6282 },
   { name: "moments", gzipBytes: 2610 },

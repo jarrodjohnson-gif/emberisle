@@ -35,7 +35,10 @@ async function shoot(query, file) {
   page.on("console", (m) => m.type() === "error" && errors.push(`${file}: ${m.text()}`));
   page.on("pageerror", (e) => errors.push(`${file}: ${e}`));
   await page.goto(`http://127.0.0.1:${PORT}/scripts/hex-studio.html?${query}`);
-  await page.waitForFunction(() => window.__studio?.ready, null, { timeout: 120_000 });
+  // A page that throws never gets ready: say why rather than only that it timed out.
+  await page.waitForFunction(() => window.__studio?.ready, null, { timeout: 120_000 }).catch((e) => {
+    throw new Error(`${file}: ${errors.join(" | ") || e.message}`);
+  });
   await page.screenshot({ path: file });
   await page.close();
   console.log(`wrote ${file}`);

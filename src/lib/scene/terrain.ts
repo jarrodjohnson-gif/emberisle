@@ -151,6 +151,7 @@ export function layoutOf(rng: () => number, t: Terrain): Layout {
   const L: Layout = { k, rot, seed, amp, feature, spots: [], stands: [], ridge: null, axis: rot + Math.PI / 6 + Math.PI / 4, room };
   if (t === "timber") forestLayout(L, rng);
   if (t === "wool") pastureLayout(L, rng);
+  if (t === "clay") clayLayout(L, rng);
   return L;
 }
 
@@ -200,6 +201,21 @@ function pastureLayout(L: Layout, rng: () => number) {
   }
 }
 
+// Clay: the quarry pit toward the feature's corner; the derrick on one flank (its spot is the layout's one stand), and on
+// the other the two heaps of clay dug out of the pit.
+function clayLayout(L: Layout, rng: () => number) {
+  const a = Math.atan2(L.feature.z, L.feature.x);
+  L.feature = { x: Math.cos(a) * PIT_AT, z: Math.sin(a) * PIT_AT, r: PIT_R[0]! };
+  L.room.claim(L.feature.x, L.feature.z, PIT_R[0]! + PIT_APRON);
+  const side = rng() < 0.5 ? -1 : 1;
+  L.stands.push({ x: Math.cos(a + side * 0.58) * 0.66, z: Math.sin(a + side * 0.58) * 0.66, s: 1 });
+  for (const off of [0.66, 1.3]) {
+    const b = a - side * (off + rng() * 0.12);
+    const rad = 0.6 + rng() * 0.06;
+    L.spots.push({ x: Math.cos(b) * rad, z: Math.sin(b) * rad, r: 0.13 + rng() * 0.03, h: (0.07 + rng() * 0.02) * L.amp });
+  }
+}
+
 // The ridge's height at a point: a soft swell along the segment, its crest rising a little toward the middle.
 function ridgeAt(x: number, z: number, g: NonNullable<Layout["ridge"]>) {
   const [dx, dz] = [g.bx - g.ax, g.bz - g.az];
@@ -224,8 +240,9 @@ function relief(t: Terrain, x: number, z: number, L: Layout): number {
     case "grain":
       return GRAIN_SADDLE * L.amp * saddle(x, z, L.axis) * (1 - smooth(0.68, 0.86, hexDist(x, z))) + 0.006 * fbm(x * 2, z * 2, L.seed);
     case "clay": {
-      const p = pitLevel(x, z, L);
-      return 0.025 * L.amp * fbm(x * 2.4, z * 2.4, L.seed) - 0.045 * p.step;
+      let h = 0.014 * L.amp * fbm(x * 2.4, z * 2.4, L.seed);
+      for (const p of L.spots) h += bump(x, z, p);
+      return h;
     }
     case "ore": {
       const n = 1 - Math.abs(noise(x * 2.6, z * 2.6, L.seed));
@@ -292,15 +309,15 @@ function furrows(axis: number) {
   return runs;
 }
 
-// Clay: a quarry pit of three terraces, each ledge flat and each riser short and steep.
-function pitLevel(x: number, z: number, L: Layout) {
-  const d = Math.hypot(x - L.feature.x, z - L.feature.z) / L.feature.r;
-  if (d >= 1) return { step: 0, riser: false, level: 0 };
-  const level = (1 - d) * 3;
-  const f = level - Math.floor(level);
-  const step = Math.min(3, Math.floor(level) + smooth(0.72, 1, f));
-  return { step, riser: f > 0.72 && level < 3, level: Math.floor(level) };
-}
+// Clay's quarry pit, cut into the ground PIT_AT out toward a corner: the lip and two ledges at these radii, each PIT_STEP
+// deeper behind a riser PIT_RISER wide, a floor inside the last; a trodden apron PIT_APRON wide rings the lip. The pit is its
+// own geometry on the tile; the lattice under it drops out of sight, and the apron is wide enough to cover every lattice
+// triangle that dips (a lattice step and a little).
+const PIT_AT = 0.7;
+const PIT_R = [0.2, 0.14, 0.08];
+const PIT_STEP = 0.032;
+const PIT_RISER = 0.012;
+const PIT_APRON = 0.075;
 
 const col = (hex: string) => new THREE.Color(hex);
 
@@ -403,8 +420,7 @@ export function sculptHex(h: HexCell, size: number, slabH: number, tileY: number
   };
   const [base, shade, sun] = PAINT[t].map(col) as [THREE.Color, THREE.Color, THREE.Color];
   const crest = base.clone().lerp(sun, 0.5);
-  const terrace = base.clone().lerp(WHITE, 0.11);
-  const pit = shade.clone().multiplyScalar(0.8);
+  const spoil = col(PROP.spoil);
   const sand = col(STRATA.sand);
   const soil = col(PROP.furrow);
   // One scratch colour: `paint` fills it, the caller reads it at once.
@@ -424,12 +440,8 @@ export function sculptHex(h: HexCell, size: number, slabH: number, tileY: number
       c.lerp(soil, 0.9 * field);
       c.lerp(sand, 0.7 * (1 - smooth(0.02, 0.06, path)) * smooth(0.44, 0.5, Math.hypot(x, z)));
     }
-    if (t === "clay") {
-      const p = pitLevel(x, z, L);
-      if (p.riser) c.copy(shade);
-      else if (p.step > 0.5) c.copy(p.level % 2 ? base : terrace);
-      if (p.step >= 2.99) c.copy(pit);
-    }
+    // The spoil heaps are fresher clay than the ground they lie on.
+    if (t === "clay" && hh > 0.01) c.lerp(spoil, Math.min(1, (hh - 0.01) * 22));
     return c.lerp(sand, beach);
   };
 
@@ -438,12 +450,15 @@ export function sculptHex(h: HexCell, size: number, slabH: number, tileY: number
   const FACE = R + 1;
   const ridges = t === "grain" ? furrows(L.axis) : [];
   const ridgePts = ridges.reduce((a, r) => a + r.length / 3, 0);
-  const verts = T.count + N * (W - 1) + 6 * FACE * 8 + ridgePts * 3;
+  // Clay's pit: eight bands of PIT_SEGS quads round the centre (apron, lip, three risers, two ledges), and the floor's fan.
+  const PIT_SEGS = 36;
+  const pitBands = t === "clay" ? 8 : 0;
+  const verts = T.count + N * (W - 1) + 6 * FACE * 8 + ridgePts * 3 + (pitBands ? pitBands * 2 * (PIT_SEGS + 1) + PIT_SEGS + 2 : 0);
   const pos = new Float32Array(verts * 3);
   const nor = new Float32Array(verts * 3);
   const cols = new Float32Array(verts * 3);
   const glow = new Float32Array(verts).fill(1);
-  const idx = new Uint16Array(T.index.length + N * (W - 1) * 6 + 6 * R * 4 * 6 + (ridgePts - ridges.length) * 12);
+  const idx = new Uint16Array(T.index.length + N * (W - 1) * 6 + 6 * R * 4 * 6 + (ridgePts - ridges.length) * 12 + (pitBands ? pitBands * PIT_SEGS * 6 + PIT_SEGS * 3 : 0));
   idx.set(T.index);
   let nv = 0;
   let ni = T.index.length;
@@ -490,6 +505,8 @@ export function sculptHex(h: HexCell, size: number, slabH: number, tileY: number
       const raw = relief(t, T.x[i]!, T.z[i]!, L);
       hs[i] = (raw > 0 ? raw * T.rise[i]! : raw * T.dip[i]!) - shore;
     }
+    // Under clay's pit the lattice drops out of sight; the pit's own geometry is the ground there.
+    if (t === "clay" && Math.hypot(T.x[i]! - L.feature.x, T.z[i]! - L.feature.z) < PIT_R[0]! + 0.01) hs[i] -= 0.17;
   }
   for (let i = 0; i < T.count; i++) {
     const h0 = hs[i]!;
@@ -626,6 +643,56 @@ export function sculptHex(h: HexCell, size: number, slabH: number, tileY: number
       const a = first + i * 3;
       quad(a, a + 1, a + 3, a + 4, false);
       quad(a + 1, a + 2, a + 4, a + 5, false);
+    }
+  }
+
+  if (pitBands) {
+    // From the apron's outer edge (on the lattice, which is undisturbed there) in: each band its own strip, so every
+    // ledge's edge is crisp. Ledges are level, set from the lowest point of the lip; risers show the clay's layers.
+    const [px, pz] = [L.feature.x, L.feature.z];
+    const [r0, r1, r2] = PIT_R as [number, number, number];
+    let lip = Infinity;
+    for (let k = 0; k < PIT_SEGS; k++) lip = Math.min(lip, height(px + Math.cos((k / PIT_SEGS) * Math.PI * 2) * r0, pz + Math.sin((k / PIT_SEGS) * Math.PI * 2) * r0));
+    const level = (n: number) => lip - n * PIT_STEP;
+    const [apron, lipC, ledge, floor] = [PROP.pitApron, PROP.pitLip, PROP.pitLedge, PROP.pitFloor].map(col) as THREE.Color[];
+    const walls = PROP.pitWall.map(col);
+    // [inner radius, outer radius, the height at a ring (a point and whether it is the outer one), colour, the band faces up]
+    type Band = [number, number, (x: number, z: number, outer: boolean) => number, THREE.Color, boolean];
+    const bands: Band[] = [
+      [r0 + 0.035, r0 + PIT_APRON, (x, z, outer) => (outer ? surface(x, z) + 0.001 : height(x, z) + 0.003), apron!, true],
+      [r0, r0 + 0.035, (x, z, outer) => (outer ? height(x, z) + 0.003 : height(x, z) + 0.002), lipC!, true],
+      [r0 - PIT_RISER, r0, (x, z, outer) => (outer ? height(x, z) + 0.002 : level(1)), walls[0]!, false],
+      [r1, r0 - PIT_RISER, () => level(1), ledge!, true],
+      [r1 - PIT_RISER, r1, (_x, _z, outer) => (outer ? level(1) : level(2)), walls[1]!, false],
+      [r2, r1 - PIT_RISER, () => level(2), ledge!, true],
+      [r2 - PIT_RISER, r2, (_x, _z, outer) => (outer ? level(2) : level(3)), walls[2]!, false],
+      [r2 - PIT_RISER - 0.001, r2 - PIT_RISER, () => level(3), floor!, true],
+    ];
+    for (const [ri, ro, hy, colour, up] of bands) {
+      const first = nv;
+      for (let k = 0; k <= PIT_SEGS; k++) {
+        const a = (k / PIT_SEGS) * Math.PI * 2;
+        const [ca, sa] = [Math.cos(a), Math.sin(a)];
+        for (const outer of [false, true]) {
+          const rr = outer ? ro : ri;
+          const [vx, vz] = [px + ca * rr, pz + sa * rr];
+          // A riser faces in toward the pit's centre (and a little up); a ledge, the lip and the apron face up.
+          vert(vx, slabH + hy(vx, vz, outer), vz, up ? 0 : -ca * 0.96, up ? 1 : 0.28, up ? 0 : -sa * 0.96, colour, 1);
+        }
+      }
+      for (let k = 0; k < PIT_SEGS; k++) quad(first + k * 2, first + k * 2 + 2, first + k * 2 + 1, first + k * 2 + 3, false);
+    }
+    // The floor: wet clay darkening to a puddle at the centre.
+    const centre = vert(px, slabH + level(3), pz, 0, 1, 0, c.copy(floor!).lerp(col(PROP.puddle), 0.8), 1);
+    const rim0 = nv;
+    for (let k = 0; k <= PIT_SEGS; k++) {
+      const a = (k / PIT_SEGS) * Math.PI * 2;
+      vert(px + Math.cos(a) * (r2 - PIT_RISER), slabH + level(3), pz + Math.sin(a) * (r2 - PIT_RISER), 0, 1, 0, floor!, 1);
+    }
+    for (let k = 0; k < PIT_SEGS; k++) {
+      idx[ni++] = centre;
+      idx[ni++] = rim0 + k + 1;
+      idx[ni++] = rim0 + k;
     }
   }
 
@@ -833,7 +900,7 @@ function part(geo: THREE.BufferGeometry, hex: string | THREE.Color | null, x = 0
 // A round beam from a to b.
 function beam(a: THREE.Vector3, b: THREE.Vector3, r: number, hex: string) {
   const d = b.clone().sub(a);
-  const g = new THREE.CylinderGeometry(r, r, d.length(), 5).toNonIndexed();
+  const g = new THREE.CylinderGeometry(r, r, d.length(), r > 0.008 ? 7 : 5).toNonIndexed();
   g.deleteAttribute("uv");
   g.applyQuaternion(_qt.setFromUnitVectors(AXIS_Y, d.normalize()));
   g.translate((a.x + b.x) / 2, (a.y + b.y) / 2, (a.z + b.z) / 2);
@@ -901,21 +968,27 @@ function peakGeo() {
   return flat;
 }
 
-// A clay-pit derrick: a timber tripod, a boom out along +x with a pulley, a rope and a bucket. 0.39 tall; reach 0.27.
+// A clay-pit derrick: a stout timber tripod, braced, a boom out along +x to a pulley, a rope down to a bucket of clay, and a
+// red pennant on a mast at the apex. 0.48 tall; reach 0.27 (the boom over the pit).
 function derrickGeo() {
   const V = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z);
-  const apex = V(0, 0.38, 0);
-  const feet = [60, 180, 300].map((d) => V(Math.cos((d * Math.PI) / 180) * 0.1, 0, Math.sin((d * Math.PI) / 180) * 0.1));
-  const parts = feet.map((f) => beam(f, apex, 0.011, PROP.wood));
-  const mids = feet.map((f) => f.clone().lerp(apex, 0.35));
-  mids.forEach((m, i) => parts.push(beam(m, mids[(i + 1) % 3]!, 0.007, PROP.wood)));
-  parts.push(beam(V(-0.04, 0.37, 0), V(0.25, 0.34, 0), 0.01, PROP.wood));
-  parts.push(part(new THREE.CylinderGeometry(0.022, 0.022, 0.012, 8).rotateX(Math.PI / 2), PROP.iron, 0.24, 0.335, 0));
-  parts.push(beam(V(0.24, 0.32, 0), V(0.24, 0.12, 0), 0.0035, PROP.rope));
-  parts.push(part(new THREE.CylinderGeometry(0.026, 0.02, 0.036, 8), PROP.iron, 0.24, 0.1, 0));
-  // A pennant on the apex.
-  parts.push(beam(V(0, 0.37, 0), V(0, 0.47, 0), 0.004, PROP.wood));
-  parts.push(part(new THREE.BufferGeometry().setAttribute("position", new THREE.Float32BufferAttribute([0, 0.47, 0, 0, 0.42, 0, -0.07, 0.445, 0, 0, 0.47, 0, -0.07, 0.445, 0, 0, 0.42, 0], 3)).setAttribute("normal", new THREE.Float32BufferAttribute([0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1], 3)), PROP.brick[0]!));
+  const apex = V(0, 0.37, 0);
+  const feet = [60, 180, 300].map((d) => V(Math.cos((d * Math.PI) / 180) * 0.11, 0, Math.sin((d * Math.PI) / 180) * 0.11));
+  const parts = feet.map((f) => beam(f, apex, 0.016, PROP.wood));
+  const mids = feet.map((f) => f.clone().lerp(apex, 0.32));
+  mids.forEach((m, i) => parts.push(beam(m, mids[(i + 1) % 3]!, 0.01, PROP.woodDark)));
+  parts.push(part(new THREE.SphereGeometry(0.024, 8, 6), PROP.woodDark, 0, 0.37, 0));
+  parts.push(beam(V(-0.05, 0.375, 0), V(0.26, 0.345, 0), 0.014, PROP.wood));
+  parts.push(part(new THREE.CylinderGeometry(0.03, 0.03, 0.018, 12).rotateX(Math.PI / 2), PROP.iron, 0.25, 0.33, 0));
+  // The bucket hangs down into the pit, between its first and second ledges.
+  parts.push(beam(V(0.25, 0.31, 0), V(0.25, 0.012, 0), 0.0045, PROP.rope));
+  parts.push(part(new THREE.CylinderGeometry(0.032, 0.025, 0.045, 10), PROP.iron, 0.25, -0.012, 0));
+  parts.push(part(new THREE.CylinderGeometry(0.033, 0.033, 0.008, 10), PROP.ironLight, 0.25, 0.012, 0));
+  parts.push(part(new THREE.IcosahedronGeometry(0.026, 1), PROP.spoil, 0.25, 0.013, 0, 0, 1, 0.55, 1));
+  parts.push(beam(V(0, 0.38, 0), V(0, 0.48, 0), 0.006, PROP.wood));
+  const flag = new THREE.BufferGeometry().setAttribute("position", new THREE.Float32BufferAttribute([0, 0.48, 0, 0, 0.43, 0, -0.08, 0.455, 0.004], 3));
+  flag.computeVertexNormals();
+  parts.push(part(flag, PROP.brick[0]!), part(flag.clone().scale(1, 1, -1), PROP.brick[0]!));
   return mergeGeometries(parts);
 }
 
@@ -1054,11 +1127,6 @@ function roundBale() {
   g.setAttribute("color", new THREE.BufferAttribute(a, 3));
   return [part(g.rotateZ(Math.PI / 2), null, 0, R, 0)];
 }
-const squareBale = () => [
-  part(new THREE.BoxGeometry(0.11, 0.06, 0.07), PROP.straw, 0, 0.03, 0),
-  part(new THREE.BoxGeometry(0.008, 0.062, 0.072), PROP.twine, -0.03, 0.03, 0),
-  part(new THREE.BoxGeometry(0.008, 0.062, 0.072), PROP.twine, 0.03, 0.03, 0),
-];
 // A wheat sheaf: a plump bundle of straw bound with twine, its crown of eight fat ears fanning out. 0.17 tall; reach 0.05.
 function sheafGeo() {
   const parts = [
@@ -1084,18 +1152,35 @@ const scarecrow = () => [
   part(new THREE.CylinderGeometry(0.075, 0.08, 0.012, 12), PROP.straw, 0, 0.27, 0),
   part(new THREE.CylinderGeometry(0.03, 0.038, 0.04, 10), PROP.straw, 0, 0.29, 0),
 ];
+// Six bricks on a pallet, three and three crossed, each brick a little different.
 function bricks() {
   const parts = [part(new THREE.BoxGeometry(0.13, 0.016, 0.11), PROP.wood, 0, 0.008, 0)];
   for (let layer = 0; layer < 2; layer++) {
     for (let i = 0; i < 3; i++) {
       const o = (i - 1) * 0.036;
       const hex = PROP.brick[(i + layer) % 3]!;
-      parts.push(layer ? part(new THREE.BoxGeometry(0.034, 0.026, 0.1), hex, o, 0.016 + 0.013 + 0.026, 0) : part(new THREE.BoxGeometry(0.11, 0.026, 0.034), hex, 0, 0.016 + 0.013, o));
+      parts.push(layer ? part(new THREE.BoxGeometry(0.032, 0.026, 0.1), hex, o, 0.016 + 0.013 + 0.027, 0) : part(new THREE.BoxGeometry(0.11, 0.026, 0.032), hex, 0, 0.016 + 0.013, o));
     }
   }
   return parts;
 }
-const mound = (r: number, hex: string) => [part(new THREE.IcosahedronGeometry(r, 0), hex, 0, r * 0.25, 0, 0.6, 1, 0.6, 1, true)];
+// A shovel stuck in the ground, its blade half buried, leaning a little.
+const shovel = () => [
+  beam(new THREE.Vector3(0, 0.0, 0), new THREE.Vector3(0.03, 0.17, 0.01), 0.008, PROP.wood),
+  part(new THREE.BoxGeometry(0.05, 0.06, 0.012), PROP.ironLight, -0.004, 0.0, -0.001, 0, 1, 1, 1),
+  part(new THREE.BoxGeometry(0.05, 0.012, 0.012), PROP.woodDark, 0.031, 0.175, 0.01),
+];
+// A wheelbarrow along +x, wheel first: a painted tub on two legs and two handles, heaped with clay. Reach 0.1.
+const barrow = () => [
+  part(tone(new THREE.CylinderGeometry(0.058, 0.042, 0.045, 4, 1).rotateY(Math.PI / 4), PROP.barrow, PROP.ironLight, PROP.iron), null, 0, 0.07, 0, 0, 1.25, 1, 0.95),
+  part(new THREE.IcosahedronGeometry(0.045, 1), PROP.spoil, 0.005, 0.095, 0, 0, 1.15, 0.55, 0.9),
+  part(new THREE.CylinderGeometry(0.03, 0.03, 0.018, 12).rotateX(Math.PI / 2), PROP.iron, 0.085, 0.03, 0),
+  part(new THREE.CylinderGeometry(0.012, 0.012, 0.022, 8).rotateX(Math.PI / 2), PROP.ironLight, 0.085, 0.03, 0),
+  ...[-1, 1].flatMap((sd) => [
+    beam(new THREE.Vector3(0.06, 0.05, sd * 0.03), new THREE.Vector3(-0.13, 0.075, sd * 0.045), 0.008, PROP.wood),
+    beam(new THREE.Vector3(-0.04, 0.05, sd * 0.03), new THREE.Vector3(-0.045, 0.0, sd * 0.035), 0.008, PROP.wood),
+  ]),
+];
 // A rock face with a dark adit and its timber frame, opening toward +z; reach 0.16.
 function portal() {
   return [
@@ -1316,26 +1401,30 @@ export function decorate(kit: PropKit, life: Life, h: HexCell, x: number, z: num
   }
 
   if (t === "clay") {
+    // The derrick stands beside the pit (clear of its apron), its boom over the ledges and its bucket hung above them.
     const pit = L.feature;
-    room.claim(pit.x, pit.z, pit.r);
-    // The derrick stands beside the pit, its boom over the terraces.
-    const side = rng() < 0.5 ? -1 : 1;
-    const a = Math.atan2(pit.z, pit.x) + side * 0.62;
-    const [dx, dz] = [Math.cos(a) * 0.72, Math.sin(a) * 0.72];
+    const { x: dx, z: dz } = L.stands[0]!;
     room.claim(dx, dz, 0.12);
     const derrick = kit.proxy("derrick", derrickGeo, { prop: "derrick", hex: h.id, reach: 0.27 });
     derrick.position.set(x + dx, y(dx, dz) - 0.005, z + dz);
     derrick.rotation.y = Math.atan2(-(pit.z - dz), pit.x - dx);
     derrick.userData.base = derrick.scale.clone();
     life.tall.push(derrick);
-    for (let i = 0; i < 2; i++) {
-      const at = room.find(0.09, 0.5, 0.9);
-      if (at) put("clay", bricks(), at.x, at.z, 0.09);
-    }
-    for (let i = 0; i < 2; i++) {
-      const r = 0.07 + rng() * 0.04;
-      const at = room.find(r, 0.5, 0.9);
-      if (at) put("clay", mound(r, i % 2 ? PAINT.clay[1] : PAINT.clay[0]), at.x, at.z, r);
+    // Clods on each spoil heap, and a shovel stuck in one.
+    L.spots.forEach((sp, i) => {
+      const clods = [0, 1, 2, 3].map((k) => part(new THREE.IcosahedronGeometry(0.022 + 0.008 * (k % 2), 0), PROP.spoil, Math.cos(k * 1.9 + i) * sp.r * 0.45, 0.01, Math.sin(k * 1.9 + i) * sp.r * 0.45, k, 1, 0.75, 1, true));
+      if (i === 0) clods.push(...shovel());
+      put("clay", clods, sp.x, sp.z, null, rng() * Math.PI * 2, -0.004);
+    });
+    // Bricks stacked and the barrow by them, on the far flank from the derrick.
+    for (const [make, reach] of [[bricks, 0.09], [barrow, 0.1]] as const) {
+      for (let i = 0; i < 30; i++) {
+        const at = room.spot(0.5, 0.78);
+        if (!room.free(at.x, at.z, reach)) continue;
+        room.claim(at.x, at.z, reach);
+        put("clay", make(), at.x, at.z, reach);
+        break;
+      }
     }
   }
 
