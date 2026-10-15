@@ -216,7 +216,7 @@ function clayLayout(L: Layout, rng: () => number) {
   L.feature = { x: Math.cos(a) * PIT_AT, z: Math.sin(a) * PIT_AT, r: PIT_R[0]! };
   L.room.claim(L.feature.x, L.feature.z, PIT_R[0]! + PIT_APRON);
   const side = rng() < 0.5 ? -1 : 1;
-  L.stands.push({ x: Math.cos(a + side * 0.58) * 0.66, z: Math.sin(a + side * 0.58) * 0.66, s: 1 });
+  L.stands.push({ x: Math.cos(a + side * 0.58) * 0.67, z: Math.sin(a + side * 0.58) * 0.67, s: 1 });
   for (const off of [0.66, 1.3]) {
     const b = a - side * (off + rng() * 0.12);
     const rad = 0.6 + rng() * 0.06;
