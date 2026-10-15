@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { HEX_SIZE } from "@/lib/game/hex";
 import type { HexCell, Terrain } from "@/lib/game/types";
-import { PAINT, PROP, STRATA } from "@/lib/scene/palette";
+import { LIGHT, PAINT, PROP, STRATA } from "@/lib/scene/palette";
 
 // The sculpted tiles (#599, docs/design/terrain.md): a raised slab per hex whose top is a heightfield on a triangular lattice,
 // flat where the token and the pieces stand, a rounded lip over a sand beach, and a side cut into sand, soil and rock strata.
@@ -21,7 +21,7 @@ const SKIRT = 0.04;
 // The beach along the rim dips this far below topOf between the corners and the edge midpoints (where pieces and paths rest).
 const SHORE_DIP = 0.016;
 // The key lamp's direction (lightRig): a slope that faces it takes the sunlit tint, one that faces away the shade.
-const KEY = new THREE.Vector3(8, 16, 6).normalize();
+const KEY = new THREE.Vector3(...LIGHT.key).normalize();
 
 export const smooth = (a: number, b: number, x: number) => {
   const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
@@ -535,10 +535,9 @@ export function sculptHex(h: HexCell, size: number, slabH: number, tileY: number
   const playa = col(PROP.playa);
   const sand = col(STRATA.sand);
   const soil = col(PROP.furrow);
-  // Pines cast no shadow (a small prop's shadow pass is not worth its cost): a soft shade is baked into the forest floor under
-  // each instead, a little way along the key lamp's shadow (tiles are never turned, so the lamp's direction holds here).
-  const [shx, shz] = [-KEY.x / Math.hypot(KEY.x, KEY.z), -KEY.z / Math.hypot(KEY.x, KEY.z)];
-  const shadeUnder = L.stands.map((p) => ({ x: p.x + shx * 0.22 * p.s, z: p.z + shz * 0.22 * p.s, r2: (0.22 * p.s) ** 2 }));
+  // Pines cast the key lamp's soft shadow (one instanced draw in the shadow pass, #599: the owner wants long soft shadows);
+  // a small contact shade is baked into the floor round each trunk, so a tree sits in the ground rather than on it.
+  const shadeUnder = L.stands.map((p) => ({ x: p.x, z: p.z, r2: (0.14 * p.s) ** 2 }));
   // One scratch colour: `paint` fills it, the caller reads it at once.
   const c = new THREE.Color();
   // Two tones per surface: a hollow leans to the shade and a crest to the sunlit tint, then a slope that faces the key lamp
@@ -879,8 +878,14 @@ const RAMPED =
   "float toonStep( float x ) { return 0.5 + 0.32 * smoothstep( 0.12, 0.38, x ) + 0.18 * smoothstep( 0.86, 0.99, x ); }\n" +
   THREE.ShaderChunk.lights_physical_pars_fragment.replace(DIFFUSE, DIFFUSE.replace("irradiance", "toonStep( dotNL ) * directLight.color"));
 if (!RAMPED.includes("toonStep( dotNL )")) console.error("terrain: three's diffuse line moved; the toon ramp is off");
+// The jelly sheen: a soft pale rim where a surface turns from the eye (a Fresnel term), tinted by the surface's own colour
+// toward the sky fill, so slopes and props read as glossy candy rather than flat matte.
+const SHEEN = new THREE.Color(LIGHT.sky);
+const SHEEN_GLSL = `\n\treflectedLight.indirectDiffuse += mix( material.diffuseColor, vec3( ${SHEEN.r.toFixed(3)}, ${SHEEN.g.toFixed(3)}, ${SHEEN.b.toFixed(3)} ), 0.6 ) * 0.3 * pow( 1.0 - saturate( dot( geometryNormal, geometryViewDir ) ), 3.0 );`;
 const toonify = (shader: THREE.WebGLProgramParametersWithUniforms) => {
-  shader.fragmentShader = shader.fragmentShader.replace("#include <lights_physical_pars_fragment>", RAMPED);
+  shader.fragmentShader = shader.fragmentShader
+    .replace("#include <lights_physical_pars_fragment>", RAMPED)
+    .replace("#include <lights_fragment_end>", "#include <lights_fragment_end>" + SHEEN_GLSL);
 };
 export function tileMaterial() {
   const m = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9, metalness: 0 });
@@ -1481,7 +1486,7 @@ export function decorate(kit: PropKit, life: Life, h: HexCell, x: number, z: num
 
   if (t === "timber") {
     for (const { x: tx, z: tz, s } of L.stands) {
-      const tree = kit.proxy("tree", pineGeo, { prop: "tree", hex: h.id, reach: 0.15 * s, sway: 0.028 }, false, PINE_TINTS[Math.floor(rng() * 3)]);
+      const tree = kit.proxy("tree", pineGeo, { prop: "tree", hex: h.id, reach: 0.15 * s, sway: 0.028 }, true, PINE_TINTS[Math.floor(rng() * 3)]);
       tree.position.set(x + tx, y(tx, tz) - 0.01, z + tz);
       tree.rotation.y = rng() * Math.PI * 2;
       tree.scale.setScalar(s);

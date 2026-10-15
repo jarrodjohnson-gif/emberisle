@@ -33,7 +33,7 @@ import { hexHeight, worldOfHex } from "@/lib/game/board";
 import { HEX_SIZE, SQRT3, hexCorners, hexesInRadius, vertexId } from "@/lib/game/hex";
 import { LAND_MS } from "@/lib/scene/landing";
 import { mulberry32, hashStr } from "@/lib/utils";
-import { PAINT, RIM } from "@/lib/scene/palette";
+import { LIGHT, PAINT, RIM } from "@/lib/scene/palette";
 import { PropKit, coastOf, decorate, sculptHex, tileMaterial, type FarmWork, type Life, type OreWork, type Sheep } from "@/lib/scene/terrain";
 import { OceanLife } from "@/lib/scene/ocean-life";
 import { CAUSTIC_GLSL, PAPER, makeCrystalSea, makeFloorProps, makeSeaFloor, makeSwell, makeWash, type SeaUniforms, type WaterPath, type WaterStatus } from "@/lib/scene/crystal-water";
@@ -51,21 +51,22 @@ export function topOf(terrain: Terrain) {
 // on their sides and every prop casts a soft shadow; the sky and ground bounce are low and nearly grey, so the caps' own paint
 // is the colour on screen. No flat ambient: that was what washed the caps out. The hex studio lights its hex with the same rig.
 export function lightRig(scene: THREE.Scene) {
-  scene.add(new THREE.HemisphereLight(0xe9e4da, 0xc8ad86, 0.55));
-  const sun = new THREE.DirectionalLight(0xffe3bd, 2.1);
-  sun.position.set(8, 16, 6);
+  scene.add(new THREE.HemisphereLight(LIGHT.sky, LIGHT.ground, 0.52));
+  const sun = new THREE.DirectionalLight(LIGHT.keyColor, 2.4);
+  sun.position.set(...LIGHT.key).normalize().multiplyScalar(18);
   sun.castShadow = true;
-  // 1024 over 18 units, blurred 6 texels: shadow edges soften over about a tenth of a hex, like a lamp, not the noon sun.
+  // 1024 over 18 units, blurred 4 texels: soft edges that still keep a pine's shadow (wider blurs smeared it away).
   sun.shadow.mapSize.set(1024, 1024);
-  sun.shadow.radius = 6;
+  sun.shadow.radius = 4;
   sun.shadow.camera.left = -9;
   sun.shadow.camera.right = 9;
   sun.shadow.camera.top = 9;
   sun.shadow.camera.bottom = -9;
   sun.shadow.bias = -0.0003;
   scene.add(sun);
-  const fill = new THREE.DirectionalLight(0xd9e4ea, 0.3);
-  fill.position.set(-8, 8, -4);
+  // A cool lamp from behind and right, opposite the key: it rims the far sides so nothing turned from the key goes dead.
+  const fill = new THREE.DirectionalLight(0xd6eef0, 0.35);
+  fill.position.set(-LIGHT.key[0] * 10, 7, -LIGHT.key[2] * 10 - 4);
   scene.add(fill);
 }
 type TerrainStats = { tiles: number; props: number; drawCalls: number; tileTriangles: number; propTriangles: number; triangles: number };
