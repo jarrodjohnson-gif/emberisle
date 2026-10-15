@@ -21,6 +21,7 @@
     "pieces-prove": "node --import ./server/register.mjs scripts/pieces-prove.mjs",
     "pieces-land-prove": "node scripts/pieces-land-prove.mjs",
     "watch-ui-prove": "node --import ./server/register.mjs scripts/watch-ui-prove.mjs",
+    "win-action-prove": "node --import ./server/register.mjs scripts/win-action-prove.mjs",
     "tokens-prove": "node scripts/tokens-prove.mjs",
     "idle-prove": "node scripts/idle-prove.mjs",
     "keyboard-place-prove": "node scripts/keyboard-place-prove.mjs",
@@ -71,7 +72,8 @@
     "turn-gain-prove": "node scripts/turn-gain-prove.mjs",
     "takeover-prove": "node --import ./server/register.mjs server/takeover-prove.mjs",
     "jelly-ocean-prove": "node scripts/jelly-ocean-prove.mjs",
-    "waves-prove": "node --import ./server/register.mjs scripts/waves-prove.mjs"
+    "waves-prove": "node --import ./server/register.mjs scripts/waves-prove.mjs",
+    "splash-prove": "node scripts/splash-prove.mjs"
   },
   "dependencies": {
     "clsx": "^2.1.1",

@@ -182,10 +182,11 @@ try {
     // The same three.js module instance the sea's module imports.
     const src = await (await fetch("/src/lib/scene/crystal-water.ts")).text();
     const THREE = await import(src.match(/from\s+"([^"]*three[^"]*\.js[^"]*)"/)[1]);
-    const { makeCrystalSea } = await import("/src/lib/scene/crystal-water.ts");
+    const { makeCrystalSea, makeSplashes } = await import("/src/lib/scene/crystal-water.ts");
     const S = 96, renderer = new THREE.WebGLRenderer({ canvas: document.createElement("canvas"), preserveDrawingBuffer: true });
     renderer.setSize(S, S, false);
-    const uni = { uTime: { value: 0 }, uMotion: { value: 1 }, uFade: { value: new THREE.Vector2(40, 47) } };
+    // No splashes: the sea's splash uniforms with every slot empty.
+    const uni = { uTime: { value: 0 }, uMotion: { value: 1 }, uFade: { value: new THREE.Vector2(40, 47) }, ...makeSplashes().uniforms };
     const sea = makeCrystalSea(coast, uni);
     sea.material.defines = { FOAM_ONLY: 1 };
     const scene = new THREE.Scene().add(sea);

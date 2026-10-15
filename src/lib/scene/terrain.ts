@@ -364,7 +364,10 @@ const PINE_TINTS = [WHITE, new THREE.Color(0.8, 0.93, 0.86), new THREE.Color(1.1
 
 export class PropKit {
   private kinds = new Map<string, { geo: THREE.BufferGeometry; shadow: boolean; proxies: THREE.Mesh[]; tints: THREE.Color[] }>();
-  private statics = new Map<string, { parts: THREE.BufferGeometry[]; footprints: Footprint[] }>();
+  private statics = new Map<string, { parts: THREE.BufferGeometry[]; hexes: string[]; footprints: Footprint[] }>();
+  // Each hex's run of vertices in the merged statics, and the stand-in a tile wobble scales them by (about its origin).
+  private spans = new Map<string, { attr: THREE.BufferAttribute; rest: ArrayLike<number>; start: number; end: number }[]>();
+  private anchors = new Map<string, { o: THREE.Object3D; k: number }>();
   private drawers: { mesh: THREE.InstancedMesh; proxies: THREE.Mesh[] }[] = [];
   constructor(private living: THREE.Group) {}
 
@@ -380,10 +383,11 @@ export class PropKit {
     return m;
   }
 
-  add(name: string, geo: THREE.BufferGeometry, fp: Footprint | null) {
+  add(name: string, hex: string, geo: THREE.BufferGeometry, fp: Footprint | null) {
     let s = this.statics.get(name);
-    if (!s) this.statics.set(name, (s = { parts: [], footprints: [] }));
+    if (!s) this.statics.set(name, (s = { parts: [], hexes: [], footprints: [] }));
     s.parts.push(geo);
+    s.hexes.push(hex);
     if (fp) s.footprints.push(fp);
   }
 
@@ -418,7 +422,17 @@ export class PropKit {
     }
     for (const [name, s] of this.statics) {
       const mesh = new THREE.Mesh(mergeGeometries(s.parts), PROP_MAT);
-      s.parts.forEach((p) => p.dispose());
+      const attr = mesh.geometry.attributes.position as THREE.BufferAttribute;
+      const rest = attr.array.slice();
+      let start = 0;
+      s.parts.forEach((p, i) => {
+        const end = start + p.attributes.position!.count * 3;
+        let list = this.spans.get(s.hexes[i]!);
+        if (!list) this.spans.set(s.hexes[i]!, (list = []));
+        list.push({ attr, rest, start, end });
+        start = end;
+        p.dispose();
+      });
       mesh.name = `props-${name}`;
       mesh.castShadow = mesh.receiveShadow = true;
       mesh.userData = { terrainProps: name, footprints: s.footprints };
@@ -435,6 +449,25 @@ export class PropKit {
       });
       d.mesh.instanceMatrix.needsUpdate = true;
     }
+    for (const [hex, a] of this.anchors) {
+      const k = a.o.scale.x;
+      if (k === a.k) continue;
+      a.k = k;
+      const o = a.o.position.toArray();
+      for (const s of this.spans.get(hex) ?? []) {
+        const v = s.attr.array;
+        for (let i = s.start; i < s.end; i++) v[i] = o[i % 3]! + (s.rest[i]! - o[i % 3]!) * k;
+        s.attr.needsUpdate = true;
+      }
+    }
+  }
+
+  // What a tile wobble scales for a hex's merged static props: they follow it about (x, y, z), the tile's own origin.
+  anchor(hex: string, x: number, y: number, z: number) {
+    let a = this.anchors.get(hex);
+    if (!a) this.anchors.set(hex, (a = { o: new THREE.Object3D(), k: 1 }));
+    a.o.position.set(x, y, z);
+    return a.o;
   }
 }
 
@@ -731,7 +764,7 @@ export function decorate(kit: PropKit, life: Life, h: HexCell, x: number, z: num
   const y = (lx: number, lz: number) => sc.ground(lx, lz);
   const fp = (lx: number, lz: number, reach: number): Footprint => ({ hex: h.id, x: x + lx, z: z + lz, reach });
   const put = (name: string, parts: THREE.BufferGeometry[], lx: number, lz: number, reach: number | null, rotY = rng() * Math.PI * 2, sink = 0.006) =>
-    kit.add(name, placeAt(parts, x + lx, y(lx, lz) - sink, z + lz, rotY), reach === null ? null : fp(lx, lz, reach));
+    kit.add(name, h.id, placeAt(parts, x + lx, y(lx, lz) - sink, z + lz, rotY), reach === null ? null : fp(lx, lz, reach));
   const t = h.terrain;
   const corner = dirAt(30 + 60 * L.k);
 
@@ -782,7 +815,7 @@ export function decorate(kit: PropKit, life: Life, h: HexCell, x: number, z: num
       const [a, b] = [posts[i]!, posts[i + 1]!];
       for (const ry of [0.04, 0.075]) fenceParts.push(part(new THREE.BoxGeometry(0.15, 0.014, 0.01), PROP.wood, x + (a[0] + b[0]) / 2, (a[1] + b[1]) / 2 + ry, z + (a[2] + b[2]) / 2, along));
     }
-    kit.add("wool", mergeGeometries(fenceParts), fp(fence.x * 0.86, fence.z * 0.86, 0.3));
+    kit.add("wool", h.id, mergeGeometries(fenceParts), fp(fence.x * 0.86, fence.z * 0.86, 0.3));
     fenceParts.forEach((p) => p.dispose());
     const hedge = flat(3);
     for (let i = -2; i <= 2; i++) {

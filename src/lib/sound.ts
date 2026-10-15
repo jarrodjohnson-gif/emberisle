@@ -23,6 +23,8 @@ const FILES = {
   trade_offer: "trade_offer.wav",
   chat_send: "chat_send.wav",
   chat_recv: "chat_recv.wav",
+  // A tap on the sea (#616): a normal table clip, paced and burst-dropped like the rest.
+  plop: "plop.wav",
 } as const;
 
 export type SoundName = keyof typeof FILES;

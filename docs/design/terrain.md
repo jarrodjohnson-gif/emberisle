@@ -40,6 +40,8 @@ Every prop kind that moves or is shrunk per object (pines, peaks, derricks, shee
 (`prop`, `hex`, `reach`) and the real geometry, so a proof's raycast or bounding box measures what is drawn; `PropKit.sync`
 copies the proxies' matrices into the instances on every drawn frame. Everything that stands still is merged into one mesh per
 terrain (grain's per hex, as its `field`), each listing its `footprints`. All props share one material.
+A tile tap's wobble (`wobble.ts`) scales the proxies and the grain field with the tile; for the merged statics it scales
+`PropKit.anchor(hex)`, and `sync` rescales that hex's run of vertices about the tile's origin from a rest copy.
 
 ## Numbers (standard 19-hex board, measured by `board-look-prove`, `window.__terrain`)
 
