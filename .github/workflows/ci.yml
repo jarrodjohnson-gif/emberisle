@@ -156,6 +156,8 @@ jobs:
       - if: matrix.suite == 'flows'
         run: npm run title-prove
       - if: matrix.suite == 'flows'
+        run: npm run victory-target-prove
+      - if: matrix.suite == 'flows'
         run: npm run watch-ui-prove
       - if: matrix.suite == 'flows'
         run: npm run tabs-prove-4
