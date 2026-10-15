@@ -28,7 +28,7 @@
 //   with Path armed and an edge picked by touch, the Place chip is in view and covers neither the hand nor the turn banner.
 // - #599 (docs/design/terrain.md): every terrain kind has a sculpted top, flat at topOf under the token and in a disc at every
 //   corner, never above topOf where a path or a piece lies and at topOf at every edge's midpoint for a path to rest on, side
-//   strata, no two tiles alike; terrain and props in at most 40 draw calls, the island under 220k triangles, no prop vertex
+//   strata, no two tiles alike; terrain and props in at most 60 draw calls, the island under 400k triangles, no prop vertex
 //   within 0.37 of a token's centre; saves test-results/terrain-1280.png (diorama) and terrain-390.png (overhead).
 // Zero console errors. Saves test-results/board-look-{title,play}-<size>.png. Port from VITE_PORT, default 8112.
 import { existsSync, mkdirSync } from "node:fs";
@@ -763,8 +763,8 @@ try {
   // of the centre) and within 0.12 of every corner (pieces land there); within 0.18 of an edge (a path's or a piece's
   // footprint) nothing rises over topOf, and round each edge's midpoint the ground reaches topOf, so a path rests on it (a
   // coastal beach dips under the path's outer half); its side shows the sand, shell, soil and rock strata; no two tiles
-  // of a kind are the same; terrain and props draw in at most 40 calls (window.__terrain) and the whole island (land, props,
-  // tokens, docks, pieces) holds at most 220k triangles; no vertex of any prop comes within 0.37 of a token's centre (the
+  // of a kind are the same; terrain and props draw in at most 60 calls (window.__terrain) and the whole island (land, props,
+  // tokens, docks, pieces) holds at most 400k triangles; no vertex of any prop comes within 0.37 of a token's centre (the
   // 0.34 disc at its 1.08x diorama scale). Then test-results/terrain-1280.png and, overhead on a 390x844 phone, terrain-390.png.
   {
     const page = await open(1280, 720, false, "crystal");
@@ -852,8 +852,9 @@ try {
       check(`terrain ${k}: nothing above topOf where a path or a piece lies (within 0.18 of an edge), and ground at topOf for a path to rest on at every edge's midpoint`, s.over <= 0.004 && s.rest.every((r) => r > -0.002 && r <= 0.004), { over: s.over, rest: [Math.min(...s.rest), Math.max(...s.rest)] });
       check(`terrain ${k}: side strata (sand, shell, soil, rock) on every tile; no two tiles alike`, s.strata && s.distinct, { tiles: s.tiles, distinct: s.distinct });
     }
-    check("terrain: tiles and props draw in at most 40 calls", t.stats.drawCalls <= 40, t.stats);
-    check("terrain: the island holds at most 220k triangles", t.island <= 220000, { island: t.island, terrain: t.stats.triangles });
+    // The owner's budget for the sculpted island on an iPhone 15 Pro class GPU (#599 hex studio): 60 calls, 400k triangles.
+    check("terrain: tiles and props draw in at most 60 calls", t.stats.drawCalls <= 60, t.stats);
+    check("terrain: the island holds at most 400k triangles", t.island <= 400000, { island: t.island, terrain: t.stats.triangles });
     check("terrain: no prop vertex within 0.37 of a token's centre", t.nearest >= 0.37 && t.proxies > 0 && t.footprints > 0, { nearest: t.nearest, proxies: t.proxies, footprints: t.footprints });
     await page.screenshot({ path: "test-results/terrain-1280.png" });
     await page.context().close();

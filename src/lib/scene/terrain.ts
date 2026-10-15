@@ -126,6 +126,8 @@ export type Layout = {
   stands: { x: number; z: number; s: number }[];
   // A long soft swell along a segment (a, b) of half-width w and height h: the pasture's ridge, the ore's spine.
   ridge: { ax: number; az: number; bx: number; bz: number; w: number; h: number } | null;
+  // Grain: the saddle's rising axis, as an angle from +x.
+  axis: number;
   room: Room;
 };
 
@@ -145,7 +147,8 @@ export function layoutOf(rng: () => number, t: Terrain): Layout {
   const c = dirAt(30 + 60 * k);
   const feature = { x: c.x * 0.7, z: c.z * 0.7, r: 0.33 };
   const room = new Room(rng, (HEX_SIZE * 0.995 * SQ3) / 2);
-  const L: Layout = { k, rot, seed, amp, feature, spots: [], stands: [], ridge: null, room };
+  // The saddle's diagonals (its paths) run corner to corner and midpoint to midpoint.
+  const L: Layout = { k, rot, seed, amp, feature, spots: [], stands: [], ridge: null, axis: rot + Math.PI / 6 + Math.PI / 4, room };
   if (t === "timber") forestLayout(L, rng);
   if (t === "wool") pastureLayout(L, rng);
   return L;
@@ -206,7 +209,7 @@ function ridgeAt(x: number, z: number, g: NonNullable<Layout["ridge"]>) {
 }
 
 // The terrain's own relief, before the masks that hold the token, the corners and the path rests. Positive is up.
-function relief(t: Terrain, x: number, z: number, L: Layout, s: number): number {
+function relief(t: Terrain, x: number, z: number, L: Layout): number {
   switch (t) {
     case "timber": {
       let h = 0.012 * fbm(x * 3.2, z * 3.2, L.seed);
@@ -218,10 +221,8 @@ function relief(t: Terrain, x: number, z: number, L: Layout, s: number): number 
       for (const p of L.spots) h += bump(x, z, p);
       return h;
     }
-    case "grain": {
-      const g = grainRows(x, z, L, s);
-      return -0.016 * g.furrow * (1 - g.path) - 0.022 * g.path + 0.008 * fbm(x * 2, z * 2, L.seed);
-    }
+    case "grain":
+      return GRAIN_SADDLE * L.amp * saddle(x, z, L.axis) * (1 - smooth(0.68, 0.86, hexDist(x, z))) + 0.006 * fbm(x * 2, z * 2, L.seed);
     case "clay": {
       const p = pitLevel(x, z, L);
       return 0.025 * L.amp * fbm(x * 2.4, z * 2.4, L.seed) - 0.045 * p.step;
@@ -239,19 +240,56 @@ function relief(t: Terrain, x: number, z: number, L: Layout, s: number): number 
   }
 }
 
-// Grain: three plots of ploughed rows, each running along one of the lattice's own directions so a furrow is exactly one
-// lattice line in three (crisp, never aliased), split by a shallow path along the plots' borders.
-function grainRows(x: number, z: number, L: Layout, s: number) {
-  const q = x / ((SQ3 / 2) * s);
-  const r = z / s - 0.5 * q;
-  const a = (((Math.atan2(z, x) - L.rot) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
-  const sector = Math.min(2, Math.floor(a / ((2 * Math.PI) / 3)));
-  const idx = [r, q, q + r][(sector + L.k) % 3]!;
-  const furrow = Math.max(0, Math.cos((2 * Math.PI * idx) / 3));
-  const off = a - sector * ((2 * Math.PI) / 3);
-  const perp = Math.hypot(x, z) * Math.sin(Math.min(off, (2 * Math.PI) / 3 - off, Math.PI / 2));
-  const path = 1 - smooth(0.025, 0.05, perp);
-  return { furrow, path };
+// Grain: a shallow saddle, its saddle point under the token: the ground rises along `axis` and falls across it, fading out
+// before the rim. `saddle` gives u^2 - v^2 in the saddle's frame (u along the axis), whose level sets the furrows follow.
+const GRAIN_SADDLE = 0.075;
+const saddle = (x: number, z: number, axis: number) => {
+  const [c, s] = [Math.cos(axis), Math.sin(axis)];
+  const [u, v] = [x * c + z * s, -x * s + z * c];
+  return u * u - v * v;
+};
+// How far a point is from the saddle's two diagonals, where its level sets run out from the centre: the paths between plots.
+const pathDist = (x: number, z: number, axis: number) => {
+  const [c, s] = [Math.cos(axis), Math.sin(axis)];
+  const [u, v] = [x * c + z * s, -x * s + z * c];
+  return Math.abs(Math.abs(u) - Math.abs(v)) * Math.SQRT1_2;
+};
+// The ploughed field: four plots in the ring between the token's clearing and an unploughed headland, split by the paths,
+// clear of the corners' discs.
+const fieldOf = (r: number, d: number, dc: number, path: number) => smooth(0.46, 0.52, r) * (1 - smooth(0.66, 0.73, d)) * smooth(0.3, 0.38, dc) * smooth(0.035, 0.065, path);
+const fieldAt = (x: number, z: number, axis: number) => fieldOf(Math.hypot(x, z), hexDist(x, z), nearest(CORNERS, x, z), pathDist(x, z, axis));
+// The furrows: a ridge every FURROW_DC of u^2 - v^2 (0.095 apart beside the token, 0.068 at the headland), each ridge 0.7 of
+// its spacing wide.
+const FURROW_DC = 0.095;
+const FURROW_H = 0.021;
+
+// Each furrow ridge across the field, as runs of [x, z, how much of the field holds there]: the saddle's level sets
+// u^2 - v^2 = c, traced as hyperbola branches (by v where c > 0, by u where c < 0).
+function furrows(axis: number) {
+  const [cs, sn] = [Math.cos(axis), Math.sin(axis)];
+  const runs: number[][] = [];
+  for (let k = -6; k < 6; k++) {
+    const c = (k + 0.5) * FURROW_DC;
+    for (const side of [-1, 1]) {
+      // The field reaches 0.85 from the centre at most: u^2 + v^2 = 2 t^2 + |c| <= 0.72.
+      const reach = Math.sqrt(Math.max(0, (0.72 - Math.abs(c)) / 2));
+      let run: number[] = [];
+      for (let t = -reach; t <= reach; t += 0.022) {
+        const u = c > 0 ? side * Math.sqrt(c + t * t) : t;
+        const v = c > 0 ? t : side * Math.sqrt(t * t - c);
+        const x = u * cs - v * sn;
+        const z = u * sn + v * cs;
+        const w = fieldAt(x, z, axis);
+        if (w > 0.02) run.push(x, z, w);
+        else if (run.length) {
+          if (run.length >= 9) runs.push(run);
+          run = [];
+        }
+      }
+      if (run.length >= 9) runs.push(run);
+    }
+  }
+  return runs;
 }
 
 // Clay: a quarry pit of three terraces, each ledge flat and each riser short and steep.
@@ -271,8 +309,14 @@ const col = (hex: string) => new THREE.Color(hex);
 // and each point's masks.
 type Lattice = {
   count: number;
+  // Each point's index by (q + R) * (2 R + 1) + r + R, -1 off the hexagon.
+  grid: Int32Array;
   x: Float32Array;
   z: Float32Array;
+  // Each point's distance from the centre, from it to the flats (hexDist) and to the nearest corner.
+  r: Float32Array;
+  d: Float32Array;
+  dc: Float32Array;
   index: Uint16Array;
   nb: Int32Array;
   ring: Uint16Array;
@@ -311,6 +355,7 @@ function latticeOf(R: number, s: number): Lattice {
   const nb = new Int32Array(n * 4);
   const [x, z] = [new Float32Array(n), new Float32Array(n)];
   const [rise, dip] = [new Float32Array(n), new Float32Array(n)];
+  const [rr, dd, dc] = [new Float32Array(n), new Float32Array(n), new Float32Array(n)];
   const m: Masks = { rise: 0, dip: 0, band: new Float32Array(n * 6), shore: new Float32Array(n * 6) };
   for (let i = 0; i < n; i++) {
     const [a, b] = [qs[i]!, rs[i]!];
@@ -322,13 +367,14 @@ function latticeOf(R: number, s: number): Lattice {
     z[i] = 0.5 * s * a + s * b;
     masksAt(x[i]!, z[i]!, m, i * 6);
     [rise[i], dip[i]] = [m.rise, m.dip];
+    [rr[i], dd[i], dc[i]] = [Math.hypot(x[i]!, z[i]!), hexDist(x[i]!, z[i]!), nearest(CORNERS, x[i]!, z[i]!)];
   }
   // The boundary ring, corner to corner.
   const steps: [number, number][] = [[-1, 1], [-1, 0], [0, -1], [1, -1], [1, 0], [0, 1]];
   const corners: [number, number][] = [[R, 0], [0, R], [-R, R], [-R, 0], [0, -R], [R, -R]];
   const ring: number[] = [];
   for (let k = 0; k < 6; k++) for (let i = 0; i < R; i++) ring.push(id(corners[k]![0] + steps[k]![0] * i, corners[k]![1] + steps[k]![1] * i));
-  t = { count: n, x, z, index: Uint16Array.from(index), nb, ring: Uint16Array.from(ring), rise, dip, band: m.band, shore: m.shore };
+  t = { count: n, grid, x, z, r: rr, d: dd, dc, index: Uint16Array.from(index), nb, ring: Uint16Array.from(ring), rise, dip, band: m.band, shore: m.shore };
   lattices.set(R, t);
   return t;
 }
@@ -352,7 +398,7 @@ export function sculptHex(h: HexCell, size: number, slabH: number, tileY: number
   const height = (x: number, z: number) => {
     if (x * x + z * z < 0.16) return 0;
     masksAt(x, z, m);
-    const raw = relief(t, x, z, L, s);
+    const raw = relief(t, x, z, L);
     return (raw > 0 ? raw * m.rise : raw * m.dip) - shoreOf(m.shore, 0);
   };
   const [base, shade, sun] = PAINT[t].map(col) as [THREE.Color, THREE.Color, THREE.Color];
@@ -360,22 +406,23 @@ export function sculptHex(h: HexCell, size: number, slabH: number, tileY: number
   const terrace = base.clone().lerp(WHITE, 0.11);
   const pit = shade.clone().multiplyScalar(0.8);
   const sand = col(STRATA.sand);
+  const soil = col(PROP.furrow);
   // One scratch colour: `paint` fills it, the caller reads it at once.
   const c = new THREE.Color();
   // Two tones per surface: a hollow leans to the shade and a crest to the sunlit tint, then a slope that faces the key lamp
   // warms toward the sunlit tint and one that faces away cools toward the shade; the beach is sand.
-  const paint = (x: number, z: number, hh: number, lit: number, beach: number) => {
+  const paint = (x: number, z: number, hh: number, lit: number, beach: number, field = 0) => {
     c.copy(base);
     if (hh < 0) c.lerp(shade, Math.min(1, -hh * 14));
     else c.lerp(crest, Math.min(1, hh * 9));
     const f = (lit - KEY.y) * 4;
     if (f > 0) c.lerp(sun, Math.min(0.7, f));
     else c.lerp(shade, Math.min(0.7, -f));
+    // Between the furrow ridges the field is turned soil; the paths between plots are sandy.
     if (t === "grain") {
-      const g = grainRows(x, z, L, s);
-      const r = Math.hypot(x, z);
-      c.lerp(shade, 0.5 * g.furrow * (1 - g.path) * smooth(0.36, 0.5, r));
-      c.lerp(sand, 0.8 * g.path * smooth(0.38, 0.5, r));
+      const path = pathDist(x, z, L.axis);
+      c.lerp(soil, 0.9 * field);
+      c.lerp(sand, 0.7 * (1 - smooth(0.02, 0.06, path)) * smooth(0.44, 0.5, Math.hypot(x, z)));
     }
     if (t === "clay") {
       const p = pitLevel(x, z, L);
@@ -389,12 +436,14 @@ export function sculptHex(h: HexCell, size: number, slabH: number, tileY: number
   const N = 6 * R;
   const W = BEVEL_SEGS + 2;
   const FACE = R + 1;
-  const verts = T.count + N * (W - 1) + 6 * FACE * 8;
+  const ridges = t === "grain" ? furrows(L.axis) : [];
+  const ridgePts = ridges.reduce((a, r) => a + r.length / 3, 0);
+  const verts = T.count + N * (W - 1) + 6 * FACE * 8 + ridgePts * 3;
   const pos = new Float32Array(verts * 3);
   const nor = new Float32Array(verts * 3);
   const cols = new Float32Array(verts * 3);
   const glow = new Float32Array(verts).fill(1);
-  const idx = new Uint16Array(T.index.length + N * (W - 1) * 6 + 6 * R * 4 * 6);
+  const idx = new Uint16Array(T.index.length + N * (W - 1) * 6 + 6 * R * 4 * 6 + (ridgePts - ridges.length) * 12);
   idx.set(T.index);
   let nv = 0;
   let ni = T.index.length;
@@ -412,14 +461,21 @@ export function sculptHex(h: HexCell, size: number, slabH: number, tileY: number
     glow[nv] = g;
     return nv++;
   };
-  // A triangle wound so its face points along (rx, ry, rz).
-  const tri = (a: number, b: number, d: number, rx: number, ry: number, rz: number) => {
+  // Whether the triangle (a, b, d) as given faces against (rx, ry, rz): a strip of quads laid out the same way round all
+  // winds the same, so each strip asks once.
+  const flipped = (a: number, b: number, d: number, rx: number, ry: number, rz: number) => {
     const [ux, uy, uz] = [pos[b * 3]! - pos[a * 3]!, pos[b * 3 + 1]! - pos[a * 3 + 1]!, pos[b * 3 + 2]! - pos[a * 3 + 2]!];
     const [vx, vy, vz] = [pos[d * 3]! - pos[a * 3]!, pos[d * 3 + 1]! - pos[a * 3 + 1]!, pos[d * 3 + 2]! - pos[a * 3 + 2]!];
-    const dot = (uy * vz - uz * vy) * rx + (uz * vx - ux * vz) * ry + (ux * vy - uy * vx) * rz;
-    idx[ni++] = a;
-    if (dot >= 0) (idx[ni++] = b, idx[ni++] = d);
-    else (idx[ni++] = d, idx[ni++] = b);
+    return (uy * vz - uz * vy) * rx + (uz * vx - ux * vz) * ry + (ux * vy - uy * vx) * rz < 0;
+  };
+  // The quad a-b along the strip, c-d the next row: two triangles, wound by `flip`.
+  const quad = (a: number, b: number, cc: number, d: number, flip: boolean) => {
+    idx[ni] = idx[ni + 3] = a;
+    idx[ni + 1] = flip ? d : b;
+    idx[ni + 2] = flip ? b : d;
+    idx[ni + 4] = flip ? cc : d;
+    idx[ni + 5] = flip ? d : cc;
+    ni += 6;
   };
 
   // The top: one height per lattice point, its normal from its lattice neighbours' heights, its colour from the height, the
@@ -431,7 +487,7 @@ export function sculptHex(h: HexCell, size: number, slabH: number, tileY: number
     for (let k = 0; k < 6; k++) if (coast[k]) sea[i] = Math.max(sea[i]!, T.band[i * 6 + k]!);
     if (T.rise[i] === 0 && T.dip[i] === 0) hs[i] = -shore;
     else {
-      const raw = relief(t, T.x[i]!, T.z[i]!, L, s);
+      const raw = relief(t, T.x[i]!, T.z[i]!, L);
       hs[i] = (raw > 0 ? raw * T.rise[i]! : raw * T.dip[i]!) - shore;
     }
   }
@@ -447,7 +503,8 @@ export function sculptHex(h: HexCell, size: number, slabH: number, tileY: number
     const gx = (hq - 0.5 * hr) / ((SQ3 / 2) * s);
     const il = 1 / Math.hypot(gx, 1, gz);
     const [nx, ny, nz] = [-gx * il, il, -gz * il];
-    paint(T.x[i]!, T.z[i]!, h0, nx * KEY.x + ny * KEY.y + nz * KEY.z, sea[i]!);
+    const field = t === "grain" ? fieldOf(T.r[i]!, T.d[i]!, T.dc[i]!, pathDist(T.x[i]!, T.z[i]!, L.axis)) : 0;
+    paint(T.x[i]!, T.z[i]!, h0, nx * KEY.x + ny * KEY.y + nz * KEY.z, sea[i]!, field);
     vert(T.x[i]!, slabH + h0, T.z[i]!, nx, ny, nz, c, 1);
   }
 
@@ -483,14 +540,11 @@ export function sculptHex(h: HexCell, size: number, slabH: number, tileY: number
       rim[i * W + j] = vert(T.x[p]! * f, y, T.z[p]! * f, ox * nh * il, ny * il, oz * nh * il, c, tuck ? 0 : 1);
     }
   }
-  for (let i = 0; i < N; i++) {
-    const i1 = (i + 1) % N;
-    for (let j = 0; j < W - 1; j++) {
-      const [a, b, cc, d] = [rim[i * W + j]!, rim[i1 * W + j]!, rim[i * W + j + 1]!, rim[i1 * W + j + 1]!];
-      const [ox, oz] = [outward[i * 2]!, outward[i * 2 + 1]!];
-      const up = j === W - 2 ? -1 : 1;
-      tri(a, b, d, ox, up, oz);
-      tri(a, d, cc, ox, up, oz);
+  for (let j = 0; j < W - 1; j++) {
+    const flip = flipped(rim[j]!, rim[W + j]!, rim[W + j + 1]!, outward[0]!, j === W - 2 ? -1 : 1, outward[1]!);
+    for (let i = 0; i < N; i++) {
+      const i1 = (i + 1) % N;
+      quad(rim[i * W + j]!, rim[i1 * W + j]!, rim[i * W + j + 1]!, rim[i1 * W + j + 1]!, flip);
     }
   }
 
@@ -518,13 +572,60 @@ export function sculptHex(h: HexCell, size: number, slabH: number, tileY: number
         vert(T.x[p]! * k, borders[band + 1]!, T.z[p]! * k, n.x, 0, n.z, bands[band]!, 0);
       }
     }
+    const flip = flipped(first, first + 8, first + 9, n.x, 0, n.z);
     for (let i = 0; i < R; i++) {
       for (let band = 0; band < 4; band++) {
         const a = first + i * 8 + band * 2;
-        const b = a + 8;
-        tri(a, b, b + 1, n.x, 0, n.z);
-        tri(a, b + 1, a + 1, n.x, 0, n.z);
+        quad(a, a + 8, a + 1, a + 9, flip);
       }
+    }
+  }
+
+  // Grain's furrow ridges, draped on the rendered ground (the lattice's own triangles): each point a crest between two feet;
+  // the crest catches the light, a flank facing the lamp warms and one facing away cools, and the feet melt into the soil.
+  const surface = (x: number, z: number) => {
+    const qf = x / ((SQ3 / 2) * s);
+    const rf = z / s - 0.5 * qf;
+    const [q0, r0] = [Math.floor(qf), Math.floor(rf)];
+    const [fq, fr] = [qf - q0, rf - r0];
+    const at = (q: number, r: number) => hs[T.grid[(q + R) * (2 * R + 1) + r + R]!] ?? 0;
+    if (fq + fr <= 1) return at(q0, r0) + fq * (at(q0 + 1, r0) - at(q0, r0)) + fr * (at(q0, r0 + 1) - at(q0, r0));
+    return at(q0 + 1, r0 + 1) + (1 - fq) * (at(q0, r0 + 1) - at(q0 + 1, r0 + 1)) + (1 - fr) * (at(q0 + 1, r0) - at(q0 + 1, r0 + 1));
+  };
+  const crestC = base.clone().lerp(sun, 0.3);
+  for (const run of ridges) {
+    const n = run.length / 3;
+    const first = nv;
+    for (let i = 0; i < n; i++) {
+      const px = run[i * 3]!;
+      const pz = run[i * 3 + 1]!;
+      const a = Math.max(0, i - 1) * 3;
+      const b = Math.min(n - 1, i + 1) * 3;
+      const tl = Math.hypot(run[b]! - run[a]!, run[b + 1]! - run[a + 1]!) || 1;
+      // Across the furrow (to the left of its run), its half-width (0.35 of the spacing there) and its height, tapering at
+      // the run's ends and where the field fades.
+      const nx = -(run[b + 1]! - run[a + 1]!) / tl;
+      const nz = (run[b]! - run[a]!) / tl;
+      const hh = FURROW_H * Math.min(1, run[i * 3 + 2]! * 1.4, i / 2, (n - 1 - i) / 2);
+      const half = (0.35 * FURROW_DC) / (2 * Math.hypot(px, pz));
+      const fl = 1 / Math.hypot(hh, half);
+      for (let sd = -1; sd <= 1; sd++) {
+        const vx = px + nx * sd * half;
+        const vz = pz + nz * sd * half;
+        const vy = slabH + surface(vx, vz) + (sd ? -0.002 : 0.003 + hh);
+        if (sd) {
+          const [ox, oy, oz] = [nx * sd * hh * fl, half * fl, nz * sd * hh * fl];
+          const lit = (ox * KEY.x + oy * KEY.y + oz * KEY.z - KEY.y) * 3;
+          c.copy(base).lerp(lit > 0 ? sun : shade, Math.min(0.6, Math.abs(lit))).lerp(soil, 0.25);
+          vert(vx, vy, vz, ox, oy, oz, c, 1);
+        } else vert(vx, vy, vz, 0, 1, 0, crestC, 1);
+      }
+    }
+    // Both flanks face up: left foot, crest, right foot along the run, wound counter-clockwise from above.
+    for (let i = 0; i < n - 1; i++) {
+      const a = first + i * 3;
+      quad(a, a + 1, a + 3, a + 4, false);
+      quad(a + 1, a + 2, a + 4, a + 5, false);
     }
   }
 
@@ -750,7 +851,7 @@ function placeAt(parts: THREE.BufferGeometry[], x: number, y: number, z: number,
 
 // A frond tier: a plump bell whose lip hangs in seven rounded lobes, smooth-shaded, lit on top and shaded under the lip.
 function frond(r: number, h: number, hex: string, light: string, dark: string) {
-  const g = lathe([[0, 0], [0.8 * r, -0.03 * h], [r, 0.07 * h], [0.86 * r, 0.32 * h], [0.5 * r, 0.66 * h], [0, h]], 21, (v, f) => {
+  const g = lathe([[0.8 * r, -0.03 * h], [r, 0.07 * h], [0.86 * r, 0.32 * h], [0.5 * r, 0.66 * h], [0, h]], 21, (v, f) => {
     const w = smooth(0.5, 1, f);
     const lobe = Math.cos(7 * Math.atan2(v.z, v.x));
     v.x *= 1 + 0.1 * lobe * w;
@@ -762,7 +863,7 @@ function frond(r: number, h: number, hex: string, light: string, dark: string) {
 
 // Roots: three small lobes splayed at the foot of a trunk or a stump of radius r.
 const roots = (r: number, hex: string) =>
-  [0, 1, 2].map((i) => part(new THREE.SphereGeometry(r * 0.55, 7, 5), hex, Math.cos(i * 2.2 + 0.4) * r * 0.95, r * 0.12, Math.sin(i * 2.2 + 0.4) * r * 0.95, -(i * 2.2 + 0.4), 1.5, 0.55, 0.85));
+  [0, 1, 2].map((i) => part(new THREE.SphereGeometry(r * 0.55, 6, 4), hex, Math.cos(i * 2.2 + 0.4) * r * 0.95, r * 0.12, Math.sin(i * 2.2 + 0.4) * r * 0.95, -(i * 2.2 + 0.4), 1.5, 0.55, 0.85));
 
 // A pine: a tapered trunk on its roots under five plump frond tiers, dark at the foot to light at the crown. 0.54 tall at
 // scale 1; reach 0.15.
@@ -822,7 +923,7 @@ function derrickGeo() {
 // Body centred at y 0 (the sheep stands 0.1 above the ground); reach 0.115. Lying down, it sits on its tucked legs instead.
 function sheepGeo(lying = false) {
   const wool = (r: number, x: number, y: number, z: number, sx = 1, sy = 1, sz = 1) =>
-    part(tone(new THREE.IcosahedronGeometry(r, 2), PROP.wool, PROP.woolLight, PROP.woolShade), null, x, y, z, 0, sx, sy, sz);
+    part(tone(new THREE.IcosahedronGeometry(r, 1), PROP.wool, PROP.woolLight, PROP.woolShade), null, x, y, z, 0, sx, sy, sz);
   const dy = lying ? -0.045 : 0;
   const parts = [
     wool(0.07, 0, dy, 0, 1.05, 0.9, 1.3),
@@ -869,17 +970,17 @@ function pickaxeGeo() {
   ]);
 }
 
-// Hat, clothes, legs and a loaded basket; the harvesting arm is its own kind.
+// The farmer: a round body in a green smock, a round head under a domed straw hat with a wide brim, stubby legs, and a
+// basket of ears at his hip; the harvesting arm is its own kind. 0.24 tall.
 function farmerGeo() {
   return mergeGeometries([
-    part(new THREE.BoxGeometry(0.07, 0.09, 0.06), "#4b7c67", 0, 0.1, 0),
-    part(new THREE.IcosahedronGeometry(0.038, 0), "#c49972", 0, 0.18, 0),
-    part(new THREE.CylinderGeometry(0.057, 0.057, 0.018, 8), "#b58d44", 0, 0.215, 0),
-    part(new THREE.CylinderGeometry(0.036, 0.046, 0.04, 8), "#d1b469", 0, 0.235, 0),
-    part(new THREE.BoxGeometry(0.024, 0.07, 0.026), "#334c42", -0.021, 0.035, 0),
-    part(new THREE.BoxGeometry(0.024, 0.07, 0.026), "#334c42", 0.021, 0.035, 0),
-    part(new THREE.CylinderGeometry(0.038, 0.026, 0.06, 7), "#9c7745", -0.06, 0.09, 0.02),
-    part(new THREE.ConeGeometry(0.025, 0.035, 5), "#e4c86c", -0.06, 0.13, 0.02),
+    part(tone(new THREE.CapsuleGeometry(0.034, 0.045, 4, 10), PROP.smock, PROP.smockLight, PROP.trousers), null, 0, 0.105, 0, 0, 1, 1, 0.85),
+    part(tone(new THREE.SphereGeometry(0.031, 12, 9), PROP.skin, PROP.skinLight, PROP.skin), null, 0, 0.178, 0),
+    part(tone(new THREE.CylinderGeometry(0.064, 0.068, 0.01, 16), PROP.straw, PROP.strawEnd, PROP.strawCore), null, 0, 0.198, 0),
+    part(tone(new THREE.SphereGeometry(0.034, 12, 5, 0, Math.PI * 2, 0, Math.PI / 2), PROP.straw, PROP.strawEnd, PROP.straw), null, 0, 0.2, 0, 0, 1, 0.9, 1),
+    ...[-0.016, 0.016].map((lx) => part(new THREE.CapsuleGeometry(0.014, 0.03, 3, 8), PROP.trousers, lx, 0.03, 0)),
+    part(new THREE.CylinderGeometry(0.03, 0.024, 0.045, 10), PROP.wood, -0.058, 0.09, 0.012),
+    ...[0, 1, 2].map((k) => part(new THREE.SphereGeometry(0.011, 6, 4), PROP.wheat, -0.058 + (k - 1) * 0.013, 0.118, 0.012, 0, 1, 1.8, 1)),
   ]);
 }
 
@@ -915,9 +1016,9 @@ const fern = () =>
 // A rounded bush of three puffs, with a few berries (or blossom).
 const bush = (r: number, hex: string, dots: string = PROP.berry) => [
   ...[[0, 0.75, 0, 1], [0.6, 0.5, 0.3, 0.75], [-0.45, 0.48, -0.4, 0.7]].map(([x, y, z, k]) =>
-    part(tone(new THREE.IcosahedronGeometry(r * k!, 2), hex, PROP.pineLight, PROP.pineDark), null, x! * r, y! * r, z! * r, 0, 1, 0.85, 1),
+    part(tone(new THREE.IcosahedronGeometry(r * k!, 1), hex, PROP.pineLight, PROP.pineDark), null, x! * r, y! * r, z! * r, 0, 1, 0.85, 1),
   ),
-  ...[[0.55, 1.1, 0.5], [-0.2, 1.3, 0.62], [0.75, 0.8, -0.35]].map(([x, y, z]) => part(new THREE.SphereGeometry(r * 0.13, 6, 4), dots, x! * r, y! * r, z! * r)),
+  ...[[0.55, 1.1, 0.5], [-0.2, 1.3, 0.62], [0.75, 0.8, -0.35]].map(([x, y, z]) => part(new THREE.IcosahedronGeometry(r * 0.13, 0), dots, x! * r, y! * r, z! * r)),
 ];
 const rock = (r: number, hex: string) => [part(new THREE.DodecahedronGeometry(r, 0), hex, 0, r * 0.45, 0, 0, 1, 0.7, 1, true)];
 // A rounded boulder with a pebble at its foot.
@@ -934,37 +1035,55 @@ const flowers = (hex: string) =>
 // A tuft of five broad blades leaning out from a common root.
 const tuft = (hex: string) =>
   [0, 1, 2, 3, 4].map((i) => part(new THREE.ConeGeometry(0.014, 0.07, 4).translate(0, 0.035, 0).rotateZ(0.18 + (i % 2) * 0.2), hex, 0, 0, 0, i * 1.26));
-// A round bale lying along x: two twine bands round it, and on each end pale rolled straw around a darker core.
+// A round bale lying along x: a soft roll with rounded shoulders, two faint twine bands, and on each end the rolled straw's
+// rings round a darker core. 0.12 across; reach 0.08.
 function roundBale() {
-  const g = part(new THREE.CylinderGeometry(0.055, 0.055, 0.085, 12, 6).rotateZ(Math.PI / 2), PROP.straw, 0, 0.055, 0);
+  const [R, H] = [0.06, 0.046];
+  const ends = [[0, H], [0.22, H], [0.24, H], [0.5, H], [0.52, H], [0.8, H], [0.94, H - 0.006]] as const;
+  const side = [[1, H - 0.02], [1, 0.026], [1, 0.024], [1, 0.014], [1, 0.012]] as const;
+  const profile = [...ends.map(([r, y]) => [r * R, -y]), ...side.map(([r, y]) => [r * R, -y]), ...[...side].reverse().map(([r, y]) => [r * R, y]), ...[...ends].reverse().map(([r, y]) => [r * R, y])] as [number, number][];
+  const g = lathe(profile, 16);
+  const [straw, end, core, ring, twine] = [PROP.straw, PROP.strawEnd, PROP.strawCore, PROP.strawRing, PROP.twine].map(col);
   const p = g.attributes.position!;
-  const n = g.attributes.normal!;
-  const c = g.attributes.color!;
-  const [end, core, twine] = [PROP.strawEnd, PROP.strawCore, PROP.twine].map((h) => new THREE.Color(h));
-  for (let i = 0; i < p.count; i += 3) {
-    const cx = (p.getX(i) + p.getX(i + 1) + p.getX(i + 2)) / 3;
-    const r = Math.hypot((p.getY(i) + p.getY(i + 1) + p.getY(i + 2)) / 3 - 0.055, (p.getZ(i) + p.getZ(i + 1) + p.getZ(i + 2)) / 3);
-    const pick = Math.abs(n.getX(i)) > 0.9 ? (r < 0.02 ? core : end) : Math.abs(Math.abs(cx) - 0.021) < 0.006 ? twine : null;
-    if (pick) for (let k = 0; k < 3; k++) c.setXYZ(i + k, pick.r, pick.g, pick.b);
+  const a = new Float32Array(p.count * 3);
+  for (let i = 0; i < p.count; i++) {
+    const [r, y] = [Math.hypot(p.getX(i), p.getZ(i)) / R, Math.abs(p.getY(i))];
+    const c = y > H - 0.001 ? (r < 0.23 ? core : r > 0.5 && r < 0.53 ? ring : end) : y < 0.025 && y > 0.013 ? twine : straw;
+    c.toArray(a, i * 3);
   }
-  return [g];
+  g.setAttribute("color", new THREE.BufferAttribute(a, 3));
+  return [part(g.rotateZ(Math.PI / 2), null, 0, R, 0)];
 }
 const squareBale = () => [
   part(new THREE.BoxGeometry(0.11, 0.06, 0.07), PROP.straw, 0, 0.03, 0),
   part(new THREE.BoxGeometry(0.008, 0.062, 0.072), PROP.twine, -0.03, 0.03, 0),
   part(new THREE.BoxGeometry(0.008, 0.062, 0.072), PROP.twine, 0.03, 0.03, 0),
 ];
-function wheatTuft(rng: () => number) {
-  const parts: THREE.BufferGeometry[] = [];
-  for (let i = 0; i < 7; i++) {
-    const a = (i / 7) * Math.PI * 2;
-    const [x, z] = [Math.cos(a) * 0.022 * (i % 2 ? 1 : 0.4), Math.sin(a) * 0.022 * (i % 2 ? 1 : 0.4)];
-    const h = 0.11 + rng() * 0.05;
-    parts.push(part(new THREE.CylinderGeometry(0.005, 0.006, h, 3), PROP.straw, x, h / 2, z));
-    parts.push(part(new THREE.SphereGeometry(0.014, 5, 4), PROP.wheat, x, h + 0.02, z, 0, 1, 2.2, 1));
+// A wheat sheaf: a plump bundle of straw bound with twine, its crown of eight fat ears fanning out. 0.17 tall; reach 0.05.
+function sheafGeo() {
+  const parts = [
+    part(tone(lathe([[0.03, 0], [0.024, 0.05], [0.02, 0.075], [0.026, 0.1], [0.036, 0.115], [0, 0.12]], 10), PROP.straw, PROP.strawEnd, PROP.strawCore), null),
+    part(new THREE.CylinderGeometry(0.022, 0.022, 0.012, 10), PROP.twine, 0, 0.07, 0),
+  ];
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2;
+    const lean = i % 2 ? 0.55 : 0.3;
+    const g = tone(new THREE.SphereGeometry(0.014, 6, 4).scale(1, 2.4, 1).translate(0, 0.03, 0).rotateZ(lean), PROP.wheat, PROP.strawEnd, PROP.straw);
+    parts.push(part(g, null, Math.cos(a) * 0.012, 0.115, Math.sin(a) * 0.012, -a));
   }
-  return parts;
+  return mergeGeometries(parts);
 }
+
+// A scarecrow: a post and a cross-arm in a patched shirt, a sack head under a wide straw hat. 0.3 tall; reach 0.1.
+const scarecrow = () => [
+  part(new THREE.CylinderGeometry(0.012, 0.014, 0.2, 6), PROP.wood, 0, 0.1, 0),
+  part(new THREE.CylinderGeometry(0.01, 0.01, 0.17, 6).rotateZ(Math.PI / 2), PROP.wood, 0, 0.19, 0),
+  part(tone(new THREE.CylinderGeometry(0.04, 0.05, 0.09, 8), PROP.shirt, PROP.shirtLight, PROP.shirt), null, 0, 0.17, 0),
+  ...[-1, 1].map((sd) => part(new THREE.CylinderGeometry(0.018, 0.022, 0.06, 7).rotateZ(Math.PI / 2), PROP.shirt, sd * 0.065, 0.19, 0)),
+  part(tone(new THREE.SphereGeometry(0.035, 10, 8), PROP.sack, PROP.strawEnd, PROP.sack), null, 0, 0.245, 0),
+  part(new THREE.CylinderGeometry(0.075, 0.08, 0.012, 12), PROP.straw, 0, 0.27, 0),
+  part(new THREE.CylinderGeometry(0.03, 0.038, 0.04, 10), PROP.straw, 0, 0.29, 0),
+];
 function bricks() {
   const parts = [part(new THREE.BoxGeometry(0.13, 0.016, 0.11), PROP.wood, 0, 0.008, 0)];
   for (let layer = 0; layer < 2; layer++) {
@@ -1047,6 +1166,12 @@ class Room {
   claim(x: number, z: number, r: number) {
     this.taken.push({ x, z, r });
   }
+  // A random point between lo and hi from the centre, not yet claimed (the caller may move it, check it and claim it).
+  spot(lo: number, hi: number) {
+    const a = this.rng() * Math.PI * 2;
+    const rad = lo + this.rng() * (hi - lo);
+    return { x: Math.cos(a) * rad, z: Math.sin(a) * rad };
+  }
 }
 
 // Every prop on one hex, from the same seeded stream that laid out its top.
@@ -1062,7 +1187,7 @@ export function decorate(kit: PropKit, life: Life, h: HexCell, x: number, z: num
 
   if (t === "timber") {
     for (const { x: tx, z: tz, s } of L.stands) {
-      const tree = kit.proxy("tree", pineGeo, { prop: "tree", hex: h.id, reach: 0.15 * s }, true, PINE_TINTS[Math.floor(rng() * 3)]);
+      const tree = kit.proxy("tree", pineGeo, { prop: "tree", hex: h.id, reach: 0.15 * s, sway: 0.028 }, true, PINE_TINTS[Math.floor(rng() * 3)]);
       tree.position.set(x + tx, y(tx, tz) - 0.01, z + tz);
       tree.rotation.y = rng() * Math.PI * 2;
       tree.scale.setScalar(s);
@@ -1134,7 +1259,7 @@ export function decorate(kit: PropKit, life: Life, h: HexCell, x: number, z: num
   if (t === "grain") {
     const angle = rng() * Math.PI * 2;
     const [fx, fz] = [Math.cos(angle) * 0.65, Math.sin(angle) * 0.65];
-    room.claim(fx, fz, 0.24);
+    room.claim(fx, fz, 0.2);
     const body = kit.proxy("farmer", farmerGeo, { prop: "farmer", hex: h.id, reach: 0.14 });
     const arm = kit.proxy("harvesting", sickleGeo, { prop: "harvesting", hex: h.id, reach: 0.14 }, false);
     body.position.set(x + fx, y(fx, fz), z + fz);
@@ -1142,14 +1267,49 @@ export function decorate(kit: PropKit, life: Life, h: HexCell, x: number, z: num
     life.farmWork.push({ body, arm, x: x + fx, z: z + fz, phase: rng() * 18, angle: angle + Math.PI / 2, ground: (wx, wz) => sc.ground(wx - x, wz - z) });
     const parts: THREE.BufferGeometry[] = [];
     const prints: Footprint[] = [];
-    const local = (geo: THREE.BufferGeometry[], at: { x: number; z: number }, reach: number) => {
-      parts.push(placeAt(geo, at.x, y(at.x, at.z) - 0.004, at.z, rng() * Math.PI * 2));
-      prints.push(fp(at.x, at.z, reach));
+    // A point moved onto the nearest furrow trough (between two ridges) or crest, and the furrow's direction there.
+    const [cs, sn] = [Math.cos(L.axis), Math.sin(L.axis)];
+    const onFurrow = (px: number, pz: number, crest: boolean) => {
+      for (let i = 0; i < 3; i++) {
+        const [u, v] = [px * cs + pz * sn, -px * sn + pz * cs];
+        const c = u * u - v * v;
+        const want = (Math.round(c / FURROW_DC - (crest ? 0.5 : 0)) + (crest ? 0.5 : 0)) * FURROW_DC;
+        const [gu, gv] = [2 * u, -2 * v];
+        const k = (want - c) / (gu * gu + gv * gv || 1);
+        [px, pz] = [px + k * (gu * cs - gv * sn), pz + k * (gu * sn + gv * cs)];
+      }
+      const [u, v] = [px * cs + pz * sn, -px * sn + pz * cs];
+      const [gx, gz] = [2 * u * cs + 2 * v * sn, 2 * u * sn - 2 * v * cs];
+      return { x: px, z: pz, along: Math.atan2(gx, gz) };
     };
-    for (const [make, reach, count] of [[roundBale, 0.07, 2], [squareBale, 0.07, 1], [() => wheatTuft(rng), 0.05, 2]] as const) {
-      for (let i = 0; i < count; i++) {
-        const at = room.find(reach, 0.45, 0.9);
-        if (at) local(make(), at, reach);
+    // Three round bales lie in the furrows' shadow, along them; a sheaf or two stand on the crests.
+    for (let i = 0, placed = 0; i < 40 && placed < 3; i++) {
+      const at = room.spot(0.55, 0.72);
+      const b = onFurrow(at.x, at.z, false);
+      if (fieldAt(b.x, b.z, L.axis) < 0.6 || !room.free(b.x, b.z, 0.08)) continue;
+      room.claim(b.x, b.z, 0.08);
+      parts.push(placeAt(roundBale(), b.x, y(b.x, b.z) - 0.004, b.z, b.along));
+      prints.push(fp(b.x, b.z, 0.08));
+      placed++;
+    }
+    for (let i = 0, placed = 0; i < 60 && placed < 8; i++) {
+      const at = room.spot(0.5, 0.75);
+      const w = onFurrow(at.x, at.z, true);
+      if (fieldAt(w.x, w.z, L.axis) < 0.5 || !room.free(w.x, w.z, 0.05, 0.8)) continue;
+      room.claim(w.x, w.z, 0.05);
+      const sheaf = kit.proxy("wheat", sheafGeo, { prop: "wheat", hex: h.id, reach: 0.05, sway: 0.035 }, false);
+      sheaf.position.set(x + w.x, y(w.x, w.z) + 0.006, z + w.z);
+      sheaf.rotation.y = rng() * Math.PI * 2;
+      sheaf.userData.base = sheaf.scale.clone();
+      life.tall.push(sheaf);
+      placed++;
+    }
+    // A scarecrow keeps watch over one field in ten.
+    if (rng() < 0.1) {
+      const at = room.find(0.1, 0.55, 0.75);
+      if (at) {
+        parts.push(placeAt(scarecrow(), at.x, y(at.x, at.z) - 0.004, at.z, rng() * Math.PI * 2));
+        prints.push(fp(at.x, at.z, 0.1));
       }
     }
     if (parts.length) kit.field(h.id, x, z, parts, prints);

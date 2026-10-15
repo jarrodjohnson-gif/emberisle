@@ -1003,7 +1003,8 @@ export class IsleRenderer {
     const swell = this.waterPath === "crystal" ? this.crystal?.swell : undefined;
     this.oceanLife.step(dt, true, this.oceanViewport, swell ? (x, z) => swell(x, z, t).y : undefined);
     this.foam.material.opacity = 0.32 + 0.23 * (0.5 + 0.5 * Math.sin(t * 0.8));
-    for (const tr of this.trees) if (tr.userData.prop === "tree") tr.rotation.z = Math.sin(t * 1.05 + tr.position.x * 2) * 0.028;
+    // Pines and wheat sheaves sway in the breeze, each by its own `sway` (radians).
+    for (const tr of this.trees) if (tr.userData.sway) tr.rotation.z = Math.sin(t * 1.05 + tr.position.x * 2) * (tr.userData.sway as number);
     if (this.walk) {
       const w = this.walk;
       const u = Math.min(1, (t - w.start) / w.dur);

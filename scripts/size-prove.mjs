@@ -21,7 +21,9 @@ const BUDGETS = [
   // 2026-10-15 (#618): 190.76 kB measured with the sculpted terrain on top of the diorama and the waves; +750 B headroom.
   // 2026-10-15 (#599 hex studio, forest): 193.45 kB measured with the lattice masks, coastal beaches, the toon ramp and the
   // frond pines; +750 B headroom.
-  { name: "IslandCanvas", gzipBytes: 194200 },
+  // 2026-10-15 (#599 hex studio, pasture and grain): 195.39 kB measured with the sheep, the hedgerow and the grain's saddle,
+  // furrow ridges, bales, sheaves and scarecrow; +750 B headroom.
+  { name: "IslandCanvas", gzipBytes: 196150 },
   { name: "online", gzipBytes: 8000 },
   { name: "sheets", gzipBytes: 6282 },
   { name: "moments", gzipBytes: 2610 },
