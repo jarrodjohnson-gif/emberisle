@@ -17,7 +17,9 @@ const BUDGETS = [
   // 2026-10-15: 116.91 kB measured on main after the four HUD merges (#601 #602 #605 #607) landed on the camera; +600 B.
   { name: "index", gzipBytes: 117500 },
   // 2026-10-14 (#597): +1100 B for the diorama camera, its fit and the token pose on top of the lazy sea (182.92 kB measured).
-  // 2026-10-15 (#616): 189.63 kB measured with the touch splash (+4.6 kB) on the diorama and the waves (185.01 on main).
+  // 2026-10-15: 185.01 kB measured on main once the diorama (#604, +1.1 kB) and the natural waves (#614, +1.0 kB) both
+  // landed; each fit its own raise alone.
+  // 2026-10-15 (#616): 189.76 kB measured with the touch splash (+4.7 kB: splash field, droplets, fish, wobble) on top.
   { name: "IslandCanvas", gzipBytes: 191500 },
   { name: "online", gzipBytes: 8000 },
   { name: "sheets", gzipBytes: 6282 },
