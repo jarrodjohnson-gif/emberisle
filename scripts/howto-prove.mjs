@@ -85,7 +85,16 @@ try {
     });
     await page.goto(`http://127.0.0.1:${PORT}/`);
     await page.waitForFunction(() => window.__emberisle);
-    const plays = () => page.evaluate(() => window.__plays.map((p) => p.split("/").pop()));
+    // Clips start 150 ms apart (#609) and a slow frame can hold that timer longer, so wait for the count a step should
+    // reach (a missing clip still shows in the assertion), then a further 400 ms of quiet so an extra one shows too.
+    const plays = async (want) => {
+      if (want) await page.waitForFunction((n) => window.__plays.length >= n, want, { timeout: 4000 }).catch(() => {});
+      await page.waitForFunction(() => {
+        const n = window.__plays.length;
+        return new Promise((r) => setTimeout(() => r(window.__plays.length === n), 400));
+      }, null, { timeout: 4000 });
+      return page.evaluate(() => window.__plays.map((p) => p.split("/").pop()));
+    };
     const dialog = page.getByRole("dialog", { name: "How to play" });
     await page.getByRole("button", { name: "How to play" }).click();
     await dialog.waitFor();
@@ -95,14 +104,14 @@ try {
     await dialog.waitFor();
     await page.keyboard.press("Escape");
     await dialog.waitFor({ state: "detached" });
-    assert.deepEqual(await plays(), ["click_001.wav", "back_001.wav", "click_001.wav", "back_001.wav"], "open, Close, open, Escape");
+    assert.deepEqual(await plays(4), ["click_001.wav", "back_001.wav", "click_001.wav", "back_001.wav"], "open, Close, open, Escape");
     // Enter on a focused button clicks too (no pointer).
     await page.getByRole("button", { name: "How to play" }).focus();
     await page.keyboard.press("Enter");
     await dialog.waitFor();
     await page.keyboard.press("Escape");
     await dialog.waitFor({ state: "detached" });
-    assert.deepEqual((await plays()).slice(4), ["click_001.wav", "back_001.wav"], "Enter on How to play, Escape");
+    assert.deepEqual((await plays(6)).slice(4), ["click_001.wav", "back_001.wav"], "Enter on How to play, Escape");
     // Muting is silent.
     await page.getByRole("button", { name: "Table sounds on" }).click();
     assert.equal((await plays()).length, 6, "muting is silent");
@@ -118,7 +127,7 @@ try {
     assert.equal((await plays()).length, before, "muted: nothing plays");
     // Unmuting clicks.
     await page.getByRole("button", { name: "Table sounds off" }).click();
-    assert.deepEqual((await plays()).slice(before), ["click_001.wav"], "unmuting clicks once");
+    assert.deepEqual((await plays(before + 1)).slice(before), ["click_001.wav"], "unmuting clicks once");
     console.log("sounds: open click_001, Close back_001, Escape back_001, Enter click_001, once each; muting and muted play nothing; unmuting clicks");
     await ctx.close();
   }

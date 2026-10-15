@@ -128,7 +128,9 @@ try {
   });
   console.log("rolled:", rolled);
   // #303: setup and the first roll made the table sounds (server/cue.mjs names).
+  // Clips start at least 150 ms apart (#609), so the roll's clip may trail the your-turn chime: wait for it, up to 1 s.
   const SOUND = { dice_land: "drop_001.wav", path_place: "drop_002.wav", outpost_place: "drop_003.wav" };
+  await page.waitForFunction((f) => window.__plays.some((p) => p.endsWith(f)), SOUND.dice_land, { timeout: 1000 }).catch(() => {});
   const heardFiles = await plays();
   const heard = Object.keys(SOUND).filter((n) => heardFiles.includes(SOUND[n]));
   console.log("sounds heard in setup and the first roll:", JSON.stringify(heardFiles));
