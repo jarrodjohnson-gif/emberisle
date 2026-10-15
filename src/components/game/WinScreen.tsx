@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { VictoryTargetSelect } from "@/components/game/VictoryTargetSelect";
 import { Button } from "@/components/ui/button";
 import { SeatDot } from "@/components/game/SeatDot";
 import { totalVP } from "@/lib/game/rules";
@@ -15,6 +16,8 @@ export function WinScreen() {
 function Panel() {
   const { phone, portrait } = useViewport();
   const state = useGame((s) => s.state)!;
+  const target = useGame((s) => s.tableVictoryTarget);
+  const setTarget = useGame((s) => s.setVictoryTarget);
   const goTitle = useGame((s) => s.goTitle);
   const playAgain = useGame((s) => s.playAgain);
   const mode = useGame((s) => s.mode);
@@ -162,7 +165,8 @@ function Panel() {
             Waiting for {hostName} to start another.
           </p>
         ) : null}
-        <div className="mt-5 flex flex-wrap gap-2">
+        <div className="mt-5 flex flex-wrap items-center gap-2">
+          {mode === "online" ? <VictoryTargetSelect label="Next game" value={target} onChange={isHost && !spectator ? setTarget : undefined} /> : null}
           <Button variant="secondary" className="min-w-fit flex-1 whitespace-nowrap" data-testid="win-look" onClick={() => setHidden(true)}>
             Look around
           </Button>
