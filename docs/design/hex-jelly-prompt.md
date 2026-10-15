@@ -71,11 +71,14 @@ THE SIX WORLDS
    shepherd's hut on wheels by the wall with a stove pipe and a wisp of smoke; a wooden water trough with jelly water.
    Clover patches, white and yellow flower specks, three grey boulders. Surprise: a lamb has climbed onto a boulder.
 
-3. GRAIN — "Harvest". A golden field on a gentle saddle, ploughed into four strips with real furrow relief, thick with
-   instanced wheat tufts that sway in a slow travelling wave of wind. One strip is half cut: stubble, a row of sheaves and a
-   farmer swinging a scythe. Three round hay bales (banded, darker core), a red wheelbarrow, a small windmill on the back
-   rise whose sails turn slowly. A scarecrow with a straw hat, two crows that hop near it and take off. Poppies at the
-   field's edge. Surprise: a hare sits up between two rows.
+3. GRAIN — "Harvest". A patchwork, not a beige sheet: green meadow land with the field in front cut into four gold-and-brown
+   strips seamed by green hedgerows. Two strips of standing wheat (instanced tufts with plump ears) sway in a slow travelling
+   wave of wind; one is half cut (stubble, stooks in rows, a farmer swinging a scythe into the standing edge); one is freshly
+   ploughed, rich brown furrows worked by hopping crows that now and then flap up and settle. The hero cluster at the rise's
+   foot: a red barn with white trim and a hay loft, a cream farmhouse with chimney smoke, a grey silo, a hay wagon piled
+   high, hens pecking the yard. A windmill crowns the back rise, sails turning. On the other side a duck pond of jelly water
+   with reeds and bulrushes, two ducks paddling round. Round hay bales and round trees in the meadow, a red wheelbarrow of
+   sheaves, a scarecrow in a straw hat, poppies and cornflowers on the margins. Surprise: a hare sits up between two rows.
 
 4. CLAY — "The Brickworks". Burnt-orange ground with a deep stepped quarry pit (three ledges, 0.18 deep) cut toward one back
    side, a pool of muddy jelly water in its floor. A stout plank derrick over the pit lifts a bucket of clay up and down on

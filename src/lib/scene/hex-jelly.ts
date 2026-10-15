@@ -178,7 +178,10 @@ export function layoutOf(kind: Terrain, seed: number): Layout {
     }
     const edges = [-0.95, -0.47, 0, 0.47, 0.95];
     L.strips = crops.map((crop, i) => ({ u0: edges[i]! + (i ? 0.025 : 0), u1: edges[i + 1]! - (i < 3 ? 0.025 : 0), crop }));
-    L.marks = { mill: at(hillAt, 0.6) };
+    // The farmstead at the rise's foot on one side, the duck pond on the other.
+    const s = r() < 0.5 ? -1 : 1;
+    L.pool = { ...at(hillAt - s * 62 * DEG, 0.6), r: 0.13 };
+    L.marks = { mill: at(hillAt, 0.6), yard: at(hillAt + s * 74 * DEG, 0.6), side: { x: s, z: 0 } };
   }
   if (kind === "wool") {
     // The ridge runs along the back edge, tangent to it; the wall along its crest; the oak on it toward one end.
@@ -242,14 +245,14 @@ export function heightAt(L: Layout, x: number, z: number) {
   const corner = smooth(CORNER_DISC, CORNER_DISC + 0.16, nearestCorner(x, z));
   const edge = 1 - smooth(INR - EDGE_BAND - 0.1, INR - EDGE_BAND, hexDist(x, z));
   let h = raw * pad * corner * edge;
+  const cut = smooth(PAD_R, PAD_R + 0.05, Math.hypot(x, z)) * smooth(CORNER_DISC, CORNER_DISC + 0.04, nearestCorner(x, z));
   if (L.stream.length) {
-    const cut = smooth(PAD_R, PAD_R + 0.05, Math.hypot(x, z)) * smooth(CORNER_DISC, CORNER_DISC + 0.04, nearestCorner(x, z));
     const d = streamDist(L, x, z) / STREAM_W;
     if (d < 1) h -= STREAM_D * (1 - d * d) * (1 - d * d) * cut;
-    if (L.pool) {
-      const q = Math.hypot(x - L.pool.x, z - L.pool.z) / L.pool.r;
-      if (q < 1) h = Math.min(h, -POOL_D * (1 - q * q) * (1 - q * q) * cut + h * q * q);
-    }
+  }
+  if (L.pool) {
+    const q = Math.hypot(x - L.pool.x, z - L.pool.z) / L.pool.r;
+    if (q < 1) h = Math.min(h, -POOL_D * (1 - q * q) * (1 - q * q) * cut + h * q * q);
   }
   return h;
 }
@@ -265,7 +268,7 @@ export function fieldAt(L: Layout, x: number, z: number) {
     if (u >= s.u0 && u <= s.u1) (strip = i), (inside = Math.min(u - s.u0, s.u1 - u));
   });
   // The field stops at the rise's foot and round the pad.
-  const keep = (1 - smooth(0.12, 0.26, v)) * smooth(0.36, 0.42, Math.hypot(x, z)) * (1 - smooth(INR - 0.12, INR - 0.06, hexDist(x, z)));
+  const keep = (1 - smooth(-0.08, 0.02, v)) * smooth(0.36, 0.42, Math.hypot(x, z)) * (1 - smooth(INR - 0.12, INR - 0.06, hexDist(x, z)));
   return { u, v, strip, inside, keep };
 }
 const FURROW = 0.05;
@@ -288,7 +291,7 @@ const C = (h: string) => new THREE.Color(h);
 type Paint = { low: THREE.Color; high: THREE.Color; steep: THREE.Color; crease: THREE.Color; pad: THREE.Color; lip: string };
 const PAINTS: Partial<Record<Terrain, Paint>> = {
   timber: { low: C("#5fae47"), high: C("#8cc65a"), steep: C("#7d8a4a"), crease: C("#2f5a2e"), pad: C("#a9cf7c"), lip: "#6db64f" },
-  grain: { low: C("#e8bf4a"), high: C("#9cc85a"), steep: C("#8fb054"), crease: C("#a8802c"), pad: C("#f3dd96"), lip: "#a6cf5e" },
+  grain: { low: C("#86c450"), high: C("#a8d468"), steep: C("#8db45a"), crease: C("#4a8a38"), pad: C("#e6e2ae"), lip: "#96cf5a" },
   wool: { low: C("#86cc52"), high: C("#b6e070"), steep: C("#93b85a"), crease: C("#4a8a38"), pad: C("#c6e49c"), lip: "#96d45c" },
 };
 
@@ -1707,6 +1710,220 @@ function farm(L: Layout, ground: (x: number, z: number) => number, r: () => numb
     life.push((t) => (sails.rotation.x = t * 0.9));
   }
 
+  // A gable roof along x: a triangular prism of `w` across, `h` high, `d` long.
+  const gable = (w: number, h: number, d: number) => {
+    const sh = new THREE.Shape();
+    sh.moveTo(-w / 2, 0);
+    sh.lineTo(w / 2, 0);
+    sh.lineTo(0, h);
+    sh.closePath();
+    return new THREE.ExtrudeGeometry(sh, { depth: d, bevelEnabled: false }).translate(0, 0, -d / 2).rotateY(Math.PI / 2);
+  };
+  const box = () => new THREE.BoxGeometry(1, 1, 1);
+
+  // The farmstead at the rise's foot: a red barn with white trim and a hay loft, the farmhouse with its chimney smoke, a silo,
+  // a hay wagon, and hens pecking in the yard.
+  {
+    const yard = L.marks.yard!;
+    const out = Math.atan2(yard.z, yard.x);
+    // The buildings face the clearing, side by side along the tile's rim.
+    const along = { x: -Math.sin(out), z: Math.cos(out) };
+    const inward = { x: -Math.cos(out), z: -Math.sin(out) };
+    const spot = (k: number, d: number) => ({ x: yard.x + along.x * k + inward.x * d, z: yard.z + along.z * k + inward.z * d });
+    const facing = Math.atan2(inward.z, inward.x);
+    const set = (o: THREE.Object3D, p: Pt, scale: number) => {
+      o.scale.setScalar(scale);
+      o.position.set(p.x, Y(p.x, p.z), p.z);
+      o.rotation.y = -facing;
+      g.add(o);
+    };
+    const barnAt = spot(0, 0);
+    const barn = new THREE.Group();
+    barn.add(
+      mesh(
+        merge([
+          part(box(), "#c23b30", [0, 0.045, 0], [0, 0, 0], [0.11, 0.09, 0.14]),
+          part(gable(0.13, 0.06, 0.15), "#4d4a52", [0, 0.09, 0]),
+          part(box(), "#f4efe4", [0.0555, 0.045, 0], [0, 0, 0], [0.002, 0.07, 0.05]),
+          part(box(), "#c23b30", [0.057, 0.045, 0], [0, 0, 0], [0.002, 0.062, 0.042]),
+          part(box(), "#f4efe4", [0.058, 0.045, 0], [0.98, 0, 0], [0.002, 0.075, 0.004]),
+          part(box(), "#f4efe4", [0.058, 0.045, 0], [-0.98, 0, 0], [0.002, 0.075, 0.004]),
+          part(box(), "#f4efe4", [0.0555, 0.105, 0], [0, 0, 0], [0.002, 0.024, 0.024]),
+          part(box(), "#e2b54c", [0.057, 0.102, 0], [0, 0, 0], [0.002, 0.016, 0.016]),
+          part(box(), "#f4efe4", [0, 0.091, 0], [0, 0, 0], [0.114, 0.003, 0.144]),
+        ]),
+        cm,
+      ),
+    );
+    set(barn, barnAt, FOLK * 0.85);
+    stands.push({ x: barnAt.x, z: barnAt.z, r: 0.13 });
+
+    const houseAt = spot(-0.2, 0.03);
+    const house = new THREE.Group();
+    house.add(
+      mesh(
+        merge([
+          part(box(), "#f2e6cc", [0, 0.032, 0], [0, 0, 0], [0.07, 0.064, 0.09]),
+          part(gable(0.086, 0.048, 0.1), "#8a4a2c", [0, 0.064, 0]),
+          part(box(), "#6a4a32", [0.036, 0.018, 0], [0, 0, 0], [0.002, 0.034, 0.016]),
+          part(box(), "#5f8fb0", [0.036, 0.042, 0.026], [0, 0, 0], [0.002, 0.014, 0.012]),
+          part(box(), "#5f8fb0", [0.036, 0.042, -0.026], [0, 0, 0], [0.002, 0.014, 0.012]),
+          part(box(), "#a85a3a", [-0.015, 0.1, 0.03], [0, 0, 0], [0.012, 0.03, 0.012]),
+          part(box(), "#4f8a3a", [0.04, 0.006, 0.02], [0, 0, 0], [0.008, 0.012, 0.03]),
+        ]),
+        cm,
+      ),
+    );
+    set(house, houseAt, FOLK * 0.85);
+    stands.push({ x: houseAt.x, z: houseAt.z, r: 0.1 });
+    const chimney = new THREE.Vector3(-0.015, 0.12, 0.03).multiplyScalar(FOLK * 0.85).applyEuler(house.rotation).add(house.position);
+    const smokes = Array.from({ length: 4 }, (_, i) => {
+      const o = new THREE.Mesh(blobGeo(200 + i), new THREE.MeshStandardMaterial({ color: "#e4e0d8", roughness: 1, transparent: true, opacity: 0.4, depthWrite: false }));
+      o.userData.loose = true;
+      g.add(o);
+      return { o, ph: i / 4 };
+    });
+    life.push((t) => {
+      for (const sm of smokes) {
+        const u = (t * 0.1 + sm.ph) % 1;
+        sm.o.position.set(chimney.x + u * 0.04, chimney.y + u * 0.16, chimney.z - u * 0.03);
+        sm.o.scale.setScalar(0.008 + u * 0.02);
+        (sm.o.material as THREE.MeshStandardMaterial).opacity = 0.32 * Math.sin(Math.PI * u);
+      }
+    });
+
+    const siloAt = spot(0.16, -0.01);
+    const silo = new THREE.Group();
+    silo.add(
+      mesh(
+        merge([
+          part(cyl(1, 1, 16), "#b9c4cc", [0, 0.07, 0], [0, 0, 0], [0.026, 0.14, 0.026]),
+          part(new THREE.SphereGeometry(1, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), "#8a9aa6", [0, 0.14, 0], [0, 0, 0], [0.027, 0.02, 0.027]),
+          ...[0.035, 0.07, 0.105].map((y) => part(cyl(1, 1, 16), "#8a9aa6", [0, y, 0], [0, 0, 0], [0.0268, 0.004, 0.0268])),
+        ]),
+        cm,
+      ),
+    );
+    set(silo, siloAt, FOLK * 0.85);
+    stands.push({ x: siloAt.x, z: siloAt.z, r: 0.06 });
+
+    // The hay wagon in front of the barn, piled high.
+    const wagonAt = spot(0.05, 0.17);
+    const wagon = new THREE.Group();
+    wagon.add(
+      mesh(
+        merge([
+          part(box(), "#9a6e44", [0, 0.022, 0], [0, 0, 0], [0.07, 0.006, 0.04]),
+          ...[-0.022, 0.022].flatMap((x) => [-0.024, 0.024].map((z) => part(cyl(1, 1, 12), "#5a3a26", [x, 0.012, z], [Math.PI / 2, 0, 0], [0.012, 0.005, 0.012]))),
+          part(blobGeo(210), "#e8c25a", [0, 0.04, 0], [0, 0, 0], [0.04, 0.024, 0.024]),
+          part(blobGeo(211), "#f0cf6a", [0.01, 0.055, 0.004], [0, 1, 0], [0.026, 0.016, 0.018]),
+          part(cyl(0.0018, 0.0018, 6), "#7a5434", [0.05, 0.016, 0], [0, 0, 1.3], [1, 0.04, 1]),
+        ]),
+        cm,
+      ),
+    );
+    if (ok(wagonAt.x, wagonAt.z, 0.02)) {
+      set(wagon, wagonAt, FOLK);
+      wagon.rotation.y += 1.2;
+      stands.push({ x: wagonAt.x, z: wagonAt.z, r: 0.07 });
+    }
+
+    // Hens pecking about the yard.
+    const hens = [0, 1, 2, 3].map((i) => {
+      const h = new THREE.Group();
+      const body = mesh(
+        merge([
+          part(sphere(), i === 3 ? "#a8643a" : "#f6f1e6", [0, 0.008, 0], [0, 0, 0.2], [0.009, 0.007, 0.007]),
+          part(sphere(8), "#d8392b", [0.008, 0.016, 0], [0, 0, 0], [0.002, 0.003, 0.0015]),
+          part(new THREE.ConeGeometry(1, 1, 5), "#f0a830", [0.012, 0.012, 0], [0, 0, -Math.PI / 2], [0.0015, 0.004, 0.0015]),
+          part(sphere(6), i === 3 ? "#7a4428" : "#efe8da", [-0.009, 0.012, 0], [0, 0, 0.6], [0.004, 0.005, 0.003]),
+        ]),
+        cm,
+      );
+      h.add(body);
+      h.scale.setScalar(FOLK);
+      g.add(h);
+      const p = spot(-0.08 + i * 0.06, 0.13 + (i % 2) * 0.05);
+      return { h, body, p, ph: i * 1.3 };
+    });
+    life.push((t) => {
+      for (const k of hens) {
+        const x = k.p.x + Math.sin(t * 0.5 + k.ph) * 0.025;
+        const z = k.p.z + Math.cos(t * 0.4 + k.ph) * 0.02;
+        k.h.position.set(x, Y(x, z), z);
+        k.h.rotation.y = -(t * 0.5 + k.ph);
+        k.body.rotation.z = -0.5 * Math.max(0, Math.sin(t * 5 + k.ph * 3)) ** 6;
+      }
+    });
+  }
+
+  // The duck pond: a jelly disc, reeds, two ducks paddling round.
+  if (L.pool) {
+    const pool = L.pool;
+    const disc = new THREE.Mesh(new THREE.CircleGeometry(pool.r * 0.8, 40).rotateX(-Math.PI / 2), waterMat(false));
+    disc.position.set(pool.x, BLOCK_H + POOL_LEVEL, pool.z);
+    disc.renderOrder = 1;
+    g.add(disc);
+    const reeds: THREE.BufferGeometry[] = [];
+    for (let i = 0; i < 14; i++) {
+      const a = (i / 14) * Math.PI * 2 + r() * 0.3;
+      if (Math.sin(a - Math.atan2(EYE.z, EYE.x)) > 0.3 && i % 2) continue;
+      const [x, z] = [pool.x + Math.cos(a) * pool.r * 0.85, pool.z + Math.sin(a) * pool.r * 0.85];
+      const y = Y(x, z);
+      for (let k = 0; k < 3; k++) reeds.push(part(cyl(0.0015, 0.002, 4), "#5a8f3a", [x + (r() - 0.5) * 0.01, y + 0.02, z + (r() - 0.5) * 0.01], [(r() - 0.5) * 0.3, 0, (r() - 0.5) * 0.3], [1, 0.04 + r() * 0.02, 1]));
+      if (i % 3 === 0) reeds.push(part(cyl(1, 1, 6), "#6a4428", [x, y + 0.045, z], [0, 0, 0], [0.003, 0.012, 0.003]));
+    }
+    g.add(mesh(merge(reeds), cm));
+    stands.push({ x: pool.x, z: pool.z, r: pool.r + 0.03 });
+    const ducks = [0, 1].map((i) => {
+      const d = new THREE.Group();
+      d.add(
+        mesh(
+          merge([
+            part(sphere(), "#f6f1e6", [0, 0.004, 0], [0, 0, 0], [0.011, 0.006, 0.007]),
+            part(sphere(), i ? "#2f6a46" : "#f6f1e6", [0.008, 0.012, 0], [0, 0, 0], [0.005, 0.005, 0.005]),
+            part(new THREE.ConeGeometry(1, 1, 5), "#f0a830", [0.014, 0.011, 0], [0, 0, -Math.PI / 2], [0.002, 0.005, 0.0025]),
+            part(sphere(6), "#efe8da", [-0.01, 0.007, 0], [0, 0, 0.8], [0.004, 0.003, 0.003]),
+          ]),
+          cm,
+        ),
+      );
+      d.scale.setScalar(FOLK);
+      g.add(d);
+      return { d, ph: i * Math.PI };
+    });
+    life.push((t) => {
+      disc.material && ((disc.material as THREE.MeshStandardMaterial).userData.time.value = t);
+      for (const k of ducks) {
+        const a = t * 0.35 + k.ph;
+        k.d.position.set(pool.x + Math.cos(a) * pool.r * 0.45, BLOCK_H + POOL_LEVEL + 0.002 * Math.sin(t * 3 + k.ph), pool.z + Math.sin(a) * pool.r * 0.45);
+        k.d.rotation.y = -(a + Math.PI / 2);
+      }
+    });
+  }
+
+  // Hedgerows between the strips and along the field's back edge: the patchwork's seams.
+  {
+    const hedge: THREE.BufferGeometry[] = [];
+    const lines: [number, number, number, number][] = [];
+    for (let i = 1; i < L.strips.length; i++) {
+      const u = (L.strips[i - 1]!.u1 + L.strips[i]!.u0) / 2;
+      lines.push([u, -1, u, -0.03]);
+    }
+    for (const [u0, v0, u1, v1] of lines) {
+      const n = Math.ceil(Math.hypot(u1 - u0, v1 - v0) / 0.036);
+      for (let k = 0; k <= n; k++) {
+        const p = xz(u0 + ((u1 - u0) * k) / n, v0 + ((v1 - v0) * k) / n);
+        if (Math.hypot(p.x, p.z) < 0.42 || nearestCorner(p.x, p.z) < 0.22 || hexDist(p.x, p.z) > INR - 0.14) continue;
+        const y = Y(p.x, p.z);
+        hedge.push(part(blobGeo(220 + (k % 9)), k % 3 ? "#3f8a3a" : "#5aa443", [p.x + (r() - 0.5) * 0.01, y + 0.018, p.z + (r() - 0.5) * 0.01], [0, r() * 6, 0], [0.024, 0.022, 0.024]));
+        if (k % 7 === 3) hedge.push(part(blobGeo(240 + k), "#6aad47", [p.x, y + 0.05, p.z], [0, 0, 0], [0.03, 0.032, 0.03]));
+        stands.push({ x: p.x, z: p.z, r: 0.022 });
+      }
+    }
+    if (hedge.length) g.add(mesh(merge(hedge), cm));
+  }
+
   // The scarecrow in a standing strip, the hare between two rows of another.
   const wheatStrips = L.strips.filter((s) => s.crop === "wheat");
   const sc = xz(mid(wheatStrips[0]!) + 0.012, -0.5);
@@ -1941,7 +2158,6 @@ function farm(L: Layout, ground: (x: number, z: number) => number, r: () => numb
 // Grain's ground paint: the tracks sandy, standing wheat's soil a deep gold, stubble pale straw, the ploughed strip brown with
 // darker grooves.
 function farmTint(L: Layout) {
-  const TRACK = new THREE.Color("#e6d29a");
   const WHEAT = new THREE.Color("#d4a63c");
   const STUB = new THREE.Color("#ead07a");
   const SOIL = new THREE.Color("#8d5a34");
@@ -1949,14 +2165,13 @@ function farmTint(L: Layout) {
   return (x: number, z: number, y: number, c: THREE.Color) => {
     const f = fieldAt(L, x, z);
     if (f.keep < 0.02) return;
-    if (f.strip < 0) return void c.lerp(TRACK, 0.8 * f.keep);
+    if (f.strip < 0) return;
     const s = L.strips[f.strip]!;
     const edge = smooth(0, 0.02, f.inside) * f.keep;
     const ridge = 0.5 + 0.5 * Math.cos(((f.u - s.u0) / FURROW) * Math.PI * 2);
     if (s.crop === "plough") c.lerp(SOIL, edge).lerp(GROOVE, edge * (1 - ridge) * 0.7);
     else if (s.crop === "cut" && f.v < 0) c.lerp(STUB, edge * 0.9);
     else c.lerp(WHEAT, edge * 0.85);
-    c.lerp(TRACK, (1 - smooth(0, 0.02, f.inside)) * f.keep * 0.7);
   };
 }
 
