@@ -75,7 +75,12 @@ try {
     const page = await ctx.newPage();
     page.on("console", (m) => m.type() === "error" && errors.push(`sound: ${m.text()}`));
     page.on("pageerror", (e) => errors.push(`sound: ${e}`));
+    // The sea choice is saved so the GPU probe never runs here: it starts a second after the title settles, which is when
+    // these clicks happen, and on SwiftShader its crystal stage draws the real scene and blocks on a pixel read for most
+    // of a second per frame, starving the quiet wait below (main's CI run 803 timed out after Enter/Escape). The same
+    // saved choice keeps idle-prove and restore-prove (#614) out of the probe; the clicks measured here are not the water's.
     await page.addInitScript(() => {
+      localStorage.setItem("emberisle-water", "simple");
       window.__plays = [];
       const play = HTMLMediaElement.prototype.play;
       HTMLMediaElement.prototype.play = function () {
@@ -89,10 +94,11 @@ try {
     // reach (a missing clip still shows in the assertion), then a further 400 ms of quiet so an extra one shows too.
     const plays = async (want) => {
       if (want) await page.waitForFunction((n) => window.__plays.length >= n, want, { timeout: 4000 }).catch(() => {});
+      // Polled on a timer, not on a frame: a slow software-GL frame would hold a frame poll past the budget.
       await page.waitForFunction(() => {
         const n = window.__plays.length;
         return new Promise((r) => setTimeout(() => r(window.__plays.length === n), 400));
-      }, null, { timeout: 4000 });
+      }, null, { polling: 100, timeout: 6000 });
       return page.evaluate(() => window.__plays.map((p) => p.split("/").pop()));
     };
     const dialog = page.getByRole("dialog", { name: "How to play" });
