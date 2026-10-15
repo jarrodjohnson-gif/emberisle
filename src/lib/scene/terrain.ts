@@ -525,6 +525,10 @@ export function sculptHex(h: HexCell, size: number, slabH: number, tileY: number
   const playa = col(PROP.playa);
   const sand = col(STRATA.sand);
   const soil = col(PROP.furrow);
+  // Pines cast no shadow (a small prop's shadow pass is not worth its cost): a soft shade is baked into the forest floor under
+  // each instead, a little way along the key lamp's shadow (tiles are never turned, so the lamp's direction holds here).
+  const [shx, shz] = [-KEY.x / Math.hypot(KEY.x, KEY.z), -KEY.z / Math.hypot(KEY.x, KEY.z)];
+  const shadeUnder = L.stands.map((p) => ({ x: p.x + shx * 0.22 * p.s, z: p.z + shz * 0.22 * p.s, r2: (0.22 * p.s) ** 2 }));
   // One scratch colour: `paint` fills it, the caller reads it at once.
   const c = new THREE.Color();
   // Two tones per surface: a hollow leans to the shade and a crest to the sunlit tint, then a slope that faces the key lamp
@@ -546,6 +550,12 @@ export function sculptHex(h: HexCell, size: number, slabH: number, tileY: number
     if (t === "waste") {
       const pan = Math.hypot(x - L.feature.x, z - L.feature.z) / L.feature.r;
       c.lerp(playa, 0.85 * (1 - smooth(0.62, 0.8, pan))).lerp(shade, 0.35 * smooth(0.6, 0.8, pan) * (1 - smooth(0.85, 1.05, pan)));
+    }
+    if (t === "timber") {
+      for (const b of shadeUnder) {
+        const d2 = ((x - b.x) ** 2 + (z - b.z) ** 2) / b.r2;
+        if (d2 < 1) c.lerp(shade, 0.7 * (1 - d2) * (1 - d2));
+      }
     }
     // Ore's slopes are scree: paler loose stone, speckled stone by stone.
     if (t === "ore") {
@@ -884,21 +894,22 @@ export type FarmWork = { body: THREE.Mesh; arm: THREE.Mesh; x: number; z: number
 // What the renderer animates or shades: `tall` is every prop the #604 rule may shrink in front of a token.
 export type Life = { sheep: Sheep[]; oreWork: OreWork[]; farmWork: FarmWork[]; tall: THREE.Object3D[] };
 
-const WHITE = new THREE.Color(1, 1, 1);
 // Per-tree tints over the pine's own three greens: as is, cooler and darker, warmer and lighter.
-const PINE_TINTS = [WHITE, new THREE.Color(0.8, 0.93, 0.86), new THREE.Color(1.12, 1.08, 0.86)];
+const PINE_TINTS = [new THREE.Color(1, 1, 1), new THREE.Color(0.8, 0.93, 0.86), new THREE.Color(1.12, 1.08, 0.86)];
 
 // Each instanced kind's shape, built once a page: every builder is deterministic, and a rebuilt board's disposeGroup only frees
 // the GPU copy, which three uploads again on the next draw.
 const SHAPES = new Map<string, THREE.BufferGeometry>();
 
 export class PropKit {
-  private kinds = new Map<string, { geo: THREE.BufferGeometry; shadow: boolean; proxies: THREE.Mesh[]; tints: THREE.Color[] }>();
+  private kinds = new Map<string, { geo: THREE.BufferGeometry; shadow: boolean; proxies: THREE.Mesh[]; tints: (THREE.Color | undefined)[] }>();
   private statics = new Map<string, { parts: THREE.BufferGeometry[]; footprints: Footprint[] }>();
   private drawers: { mesh: THREE.InstancedMesh; proxies: THREE.Mesh[] }[] = [];
   constructor(private living: THREE.Group) {}
 
-  proxy(kind: string, make: () => THREE.BufferGeometry, data: Record<string, unknown>, shadow = true, tint = WHITE) {
+  // A prop of `kind` drawn by its kind's InstancedMesh. Only the big ones (peaks, derricks) cast shadows; `tint` multiplies
+  // this one's colours (a kind with no tints has no instance colours).
+  proxy(kind: string, make: () => THREE.BufferGeometry, data: Record<string, unknown>, shadow = false, tint?: THREE.Color) {
     let k = this.kinds.get(kind);
     if (!SHAPES.has(kind)) SHAPES.set(kind, make());
     if (!k) this.kinds.set(kind, (k = { geo: SHAPES.get(kind)!, shadow, proxies: [], tints: [] }));
@@ -929,7 +940,7 @@ export class PropKit {
     parts.forEach((p) => p.dispose());
     m.name = "grain-field";
     m.position.set(x, 0, z);
-    m.castShadow = m.receiveShadow = true;
+    m.receiveShadow = true;
     m.userData = { hex, field: true, terrainProps: "grain-field", footprints };
     this.living.add(m);
   }
@@ -943,7 +954,7 @@ export class PropKit {
       // The instances move (sheep, carts) and shrink (the tree rule); one box for the lot is not worth keeping current.
       mesh.frustumCulled = false;
       mesh.userData = { terrainProps: kind };
-      if (k.tints.some((c) => c !== WHITE)) k.tints.forEach((c, i) => mesh.setColorAt(i, c));
+      if (k.tints.some((c) => c)) k.tints.forEach((c, i) => mesh.setColorAt(i, c ?? WHITE));
       this.living.add(mesh);
       this.drawers.push({ mesh, proxies: k.proxies });
     }
@@ -951,24 +962,36 @@ export class PropKit {
       const mesh = new THREE.Mesh(mergeGeometries(s.parts), PROP_MAT);
       s.parts.forEach((p) => p.dispose());
       mesh.name = `props-${name}`;
-      mesh.castShadow = mesh.receiveShadow = true;
+      mesh.receiveShadow = true;
       mesh.userData = { terrainProps: name, footprints: s.footprints };
       this.living.add(mesh);
     }
     this.sync();
   }
 
+  // Copies the proxies' matrices into their instances, and uploads a kind's instances only when one of them changed: sheep,
+  // carts, workers and swaying pines most frames; peaks and derricks only when the tree rule rescales them.
   sync() {
     for (const d of this.drawers) {
-      d.proxies.forEach((p, i) => {
+      const a = d.mesh.instanceMatrix.array;
+      let dirty = false;
+      for (let i = 0; i < d.proxies.length; i++) {
+        const p = d.proxies[i]!;
         p.updateMatrix();
-        d.mesh.setMatrixAt(i, p.matrix);
-      });
-      d.mesh.instanceMatrix.needsUpdate = true;
+        const e = p.matrix.elements;
+        for (let k = 0; k < 16; k++) {
+          if (a[i * 16 + k] === Math.fround(e[k]!)) continue;
+          a.set(e, i * 16);
+          dirty = true;
+          break;
+        }
+      }
+      if (dirty) d.mesh.instanceMatrix.needsUpdate = true;
     }
   }
 }
 
+const WHITE = new THREE.Color(1, 1, 1);
 const AXIS_Y = new THREE.Vector3(0, 1, 0);
 const _m = new THREE.Matrix4();
 const _qt = new THREE.Quaternion();
@@ -1441,7 +1464,7 @@ export function decorate(kit: PropKit, life: Life, h: HexCell, x: number, z: num
 
   if (t === "timber") {
     for (const { x: tx, z: tz, s } of L.stands) {
-      const tree = kit.proxy("tree", pineGeo, { prop: "tree", hex: h.id, reach: 0.15 * s, sway: 0.028 }, true, PINE_TINTS[Math.floor(rng() * 3)]);
+      const tree = kit.proxy("tree", pineGeo, { prop: "tree", hex: h.id, reach: 0.15 * s, sway: 0.028 }, false, PINE_TINTS[Math.floor(rng() * 3)]);
       tree.position.set(x + tx, y(tx, tz) - 0.01, z + tz);
       tree.rotation.y = rng() * Math.PI * 2;
       tree.scale.setScalar(s);
@@ -1473,7 +1496,7 @@ export function decorate(kit: PropKit, life: Life, h: HexCell, x: number, z: num
       if (!room.free(lx, lz, 0.115)) continue;
       room.claim(lx, lz, 0.115);
       placed++;
-      const g = kit.proxy("sheep", sheepGeo, { prop: "sheep", hex: h.id, reach: 0.115 }, false);
+      const g = kit.proxy("sheep", sheepGeo, { prop: "sheep", hex: h.id, reach: 0.115 });
       g.position.set(x + lx, y(lx, lz) + 0.1, z + lz);
       g.rotation.y = rng() * Math.PI * 2;
       life.sheep.push({ g, ox: x, oz: z, tx: x + lx, tz: z + lz, wait: rng() * 2, graze: 0, ground: (wx, wz) => sc.ground(wx - x, wz - z) });
@@ -1491,7 +1514,7 @@ export function decorate(kit: PropKit, life: Life, h: HexCell, x: number, z: num
     // One sheep lies in the grass and stays.
     const lie = room.find(0.115, 0.55, 0.8);
     if (lie) {
-      const rest = kit.proxy("sheep-rest", () => sheepGeo(true), { prop: "sheep-rest", hex: h.id, reach: 0.115 }, false);
+      const rest = kit.proxy("sheep-rest", () => sheepGeo(true), { prop: "sheep-rest", hex: h.id, reach: 0.115 });
       rest.position.set(x + lie.x, y(lie.x, lie.z) + 0.1, z + lie.z);
       rest.rotation.y = rng() * Math.PI * 2;
     }
@@ -1515,7 +1538,7 @@ export function decorate(kit: PropKit, life: Life, h: HexCell, x: number, z: num
     const [fx, fz] = [Math.cos(angle) * 0.65, Math.sin(angle) * 0.65];
     room.claim(fx, fz, 0.2);
     const body = kit.proxy("farmer", farmerGeo, { prop: "farmer", hex: h.id, reach: 0.14 });
-    const arm = kit.proxy("harvesting", sickleGeo, { prop: "harvesting", hex: h.id, reach: 0.14 }, false);
+    const arm = kit.proxy("harvesting", sickleGeo, { prop: "harvesting", hex: h.id, reach: 0.14 });
     body.position.set(x + fx, y(fx, fz), z + fz);
     arm.position.set(x + fx, y(fx, fz) + 0.13, z + fz);
     life.farmWork.push({ body, arm, x: x + fx, z: z + fz, phase: rng() * 18, angle: angle + Math.PI / 2, ground: (wx, wz) => sc.ground(wx - x, wz - z) });
@@ -1551,7 +1574,7 @@ export function decorate(kit: PropKit, life: Life, h: HexCell, x: number, z: num
       const w = onFurrow(at.x, at.z, true);
       if (fieldAt(w.x, w.z, L.axis) < 0.5 || !room.free(w.x, w.z, 0.05, 0.8)) continue;
       room.claim(w.x, w.z, 0.05);
-      const sheaf = kit.proxy("wheat", sheafGeo, { prop: "wheat", hex: h.id, reach: 0.05, sway: 0.035 }, false);
+      const sheaf = kit.proxy("wheat", sheafGeo, { prop: "wheat", hex: h.id, reach: 0.05, sway: 0.035 });
       sheaf.position.set(x + w.x, y(w.x, w.z) + 0.006, z + w.z);
       sheaf.rotation.y = rng() * Math.PI * 2;
       sheaf.userData.base = sheaf.scale.clone();
@@ -1574,7 +1597,7 @@ export function decorate(kit: PropKit, life: Life, h: HexCell, x: number, z: num
     const pit = L.feature;
     const { x: dx, z: dz } = L.stands[0]!;
     room.claim(dx, dz, 0.12);
-    const derrick = kit.proxy("derrick", derrickGeo, { prop: "derrick", hex: h.id, reach: 0.27 });
+    const derrick = kit.proxy("derrick", derrickGeo, { prop: "derrick", hex: h.id, reach: 0.27 }, true);
     derrick.position.set(x + dx, y(dx, dz) - 0.005, z + dz);
     derrick.rotation.y = Math.atan2(-(pit.z - dz), pit.x - dx);
     derrick.userData.base = derrick.scale.clone();
@@ -1600,7 +1623,7 @@ export function decorate(kit: PropKit, life: Life, h: HexCell, x: number, z: num
   if (t === "ore") {
     // The peaks on their ridge, the tallest snow-capped.
     for (const p of L.stands) {
-      const peak = kit.proxy(p.snow ? "peak-snow" : "peak", () => peakGeo(p.snow), { prop: "peak", hex: h.id, reach: p.s * 1.12 });
+      const peak = kit.proxy(p.snow ? "peak-snow" : "peak", () => peakGeo(p.snow), { prop: "peak", hex: h.id, reach: p.s * 1.12 }, true);
       peak.position.set(x + p.x, y(p.x, p.z) - 0.03, z + p.z);
       peak.rotation.y = rng() * Math.PI * 2;
       peak.scale.set(p.s, p.h!, p.s);
@@ -1626,7 +1649,7 @@ export function decorate(kit: PropKit, life: Life, h: HexCell, x: number, z: num
     const [mx, mz] = [Math.cos(mAng) * 0.6, Math.sin(mAng) * 0.6];
     room.claim(mx, mz, 0.12);
     const miner = kit.proxy("miner", minerGeo, { prop: "miner", hex: h.id, reach: 0.17 });
-    const pick = kit.proxy("pickaxe", pickaxeGeo, { prop: "pickaxe", hex: h.id, reach: 0.17 }, false);
+    const pick = kit.proxy("pickaxe", pickaxeGeo, { prop: "pickaxe", hex: h.id, reach: 0.17 });
     miner.position.set(x + mx, y(mx, mz), z + mz);
     pick.position.set(x + mx, y(mx, mz) + 0.14, z + mz);
     miner.rotation.y = pick.rotation.y = Math.atan2(px - mx, pz - mz);
