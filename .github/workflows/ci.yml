@@ -180,6 +180,8 @@ jobs:
       - if: matrix.suite == 'presentation'
         run: npm run turn-gain-prove
       - if: matrix.suite == 'presentation'
+        run: npm run win-action-prove
+      - if: matrix.suite == 'presentation'
         run: npm run turn-copy-prove
       - if: matrix.suite == 'presentation'
         run: npm run table-menu-prove
