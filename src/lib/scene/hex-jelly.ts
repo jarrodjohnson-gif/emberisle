@@ -126,9 +126,31 @@ export type Layout = {
   strips: { u0: number; u1: number; crop: "wheat" | "cut" | "plough" }[];
 };
 
-// Creatures, people and their things are built at a base size and drawn FOLK times larger, so they read from the diorama
-// angle (prompt "SCALE AND CRAFT": a person 0.17 tall, a sheep 0.13 long, a deer 0.13 at the shoulder).
-const FOLK = 1.6;
+// The size ladder (prompt "SCALE"): every figure and building is built at a base size and drawn SIZE[k] times larger, so all
+// six tiles share one toy-town scale: not life-size ratios, but always the same ones. Drawn heights: a person 0.13, a sheep
+// 0.09 long, a deer 0.12 at the shoulder, a tent 0.12, a shepherd's hut 0.2, a farmhouse 0.24 to the ridge, a barn 0.28, a
+// silo 0.32, a windmill 0.4 to the cap; a tree 0.25 to 0.5. scripts/hex-jelly.mjs --lineup draws them side by side.
+export const SIZE = {
+  person: 1.15,
+  sheep: 1.45,
+  dog: 1.35,
+  deer: 1.15,
+  hare: 1.3,
+  small: 1.5,
+  tent: 1.15,
+  hut: 1.5,
+  trough: 1.35,
+  gate: 1.35,
+  wagon: 1.4,
+  barrow: 1.3,
+  scarecrow: 1.25,
+  stook: 1.3,
+  bale: 1.1,
+  house: 2.1,
+  barn: 1.9,
+  silo: 2.0,
+  mill: 1.5,
+};
 const at = (a: number, d: number) => ({ x: Math.cos(a) * d, z: Math.sin(a) * d });
 const DEG = Math.PI / 180;
 
@@ -626,7 +648,8 @@ function deer(fawn: boolean, m: THREE.Material) {
     ears.push(ear);
   }
   g.add(neck);
-  g.scale.setScalar(FOLK * (fawn ? 0.66 : 1));
+  g.scale.setScalar(SIZE.deer * (fawn ? 0.66 : 1));
+  g.userData.ref = fawn ? "fawn" : "deer";
   return { g, neck, ears };
 }
 
@@ -830,6 +853,8 @@ function forest(L: Layout, ground: (x: number, z: number) => number, r: () => nu
   door.closePath();
   const tent = new THREE.Group();
   tent.add(mesh(merge([part(canvas, "#e8793a", [0, 0, 0]), part(new THREE.ShapeGeometry(door), "#5a2612", [0, 0.002, 0.0815]), part(cyl(0.003, 0.003, 6), "#7a4a2c", [0, 0.104, 0], [Math.PI / 2, 0, 0], [1, 0.19, 1]), part(cyl(0.0025, 0.0025, 6), "#7a4a2c", [0, 0.05, 0.088], [0, 0, 0], [1, 0.11, 1])]), cm));
+  tent.scale.setScalar(SIZE.tent);
+  tent.userData.ref = "tent";
   tent.position.set(tentAt.x, Y(tentAt.x, tentAt.z), tentAt.z);
   // Door (+z) toward the fire, turned a little toward the eye so it shows.
   const toFire = Math.atan2(fire.x - tentAt.x, fire.z - tentAt.z);
@@ -1162,7 +1187,8 @@ function sheep(m: THREE.Material, o: { lying?: boolean; shorn?: boolean; lamb?: 
     ),
   );
   g.add(head);
-  g.scale.setScalar(FOLK * (o.lamb ? 0.62 : 1));
+  g.scale.setScalar(SIZE.sheep * (o.lamb ? 0.62 : 1));
+  g.userData.ref = o.lamb ? "lamb" : "sheep";
   return { g, head };
 }
 
@@ -1200,7 +1226,8 @@ function person(m: THREE.Material, smock: string, bend = 0, hat = "#e8c56a") {
     ),
   );
   g.add(top);
-  g.scale.setScalar(FOLK);
+  g.scale.setScalar(SIZE.person);
+  g.userData.ref = "person";
   return { g, top };
 }
 
@@ -1229,7 +1256,8 @@ function dog(m: THREE.Material) {
     g.add(l);
     return l;
   });
-  g.scale.setScalar(FOLK);
+  g.scale.setScalar(SIZE.dog);
+  g.userData.ref = "dog";
   return { g, legs };
 }
 
@@ -1287,7 +1315,8 @@ function pasture(L: Layout, ground: (x: number, z: number) => number, r: () => n
         cm,
       ),
     );
-    gate.scale.setScalar(FOLK);
+    gate.scale.setScalar(SIZE.gate);
+    gate.userData.ref = "gate";
     place(gate, M.gate!, Math.atan2(tz, tx) + Math.PI / 2);
     gate.rotation.y = -Math.atan2(tz, tx);
   }
@@ -1327,11 +1356,12 @@ function pasture(L: Layout, ground: (x: number, z: number) => number, r: () => n
         cm,
       ),
     );
-    h.scale.setScalar(FOLK);
+    h.scale.setScalar(SIZE.hut);
+    h.userData.ref = "hut";
     // Its door toward the clearing.
     place(h, M.hut!, faceTo(M.hut!, { x: 0, z: 0 }));
     stands.push({ x: M.hut!.x, z: M.hut!.z, r: 0.14 });
-    const pipe = new THREE.Vector3(-0.03, 0.13, 0.01).multiplyScalar(FOLK).applyEuler(h.rotation).add(h.position);
+    const pipe = new THREE.Vector3(-0.03, 0.13, 0.01).multiplyScalar(SIZE.hut).applyEuler(h.rotation).add(h.position);
     const smokes = Array.from({ length: 4 }, (_, i) => {
       const o = new THREE.Mesh(blobGeo(60 + i), new THREE.MeshStandardMaterial({ color: "#e4e0d8", roughness: 1, transparent: true, opacity: 0.4, depthWrite: false }));
       o.userData.loose = true;
@@ -1363,7 +1393,8 @@ function pasture(L: Layout, ground: (x: number, z: number) => number, r: () => n
     const water = new THREE.Mesh(new THREE.PlaneGeometry(0.064, 0.022).rotateX(-Math.PI / 2), waterMat(false));
     water.position.y = 0.0235;
     tr.add(water);
-    tr.scale.setScalar(FOLK);
+    tr.scale.setScalar(SIZE.trough);
+    tr.userData.ref = "trough";
     place(tr, M.trough!, faceTo(M.trough!, { x: 0, z: 0 }) + Math.PI / 2);
     stands.push({ x: M.trough!.x, z: M.trough!.z, r: 0.08 });
     life.push((t) => ((water.material as THREE.MeshStandardMaterial).userData.time.value = t));
@@ -1644,7 +1675,8 @@ function crow(m: THREE.Material) {
     g.add(w);
     return w;
   });
-  g.scale.setScalar(FOLK);
+  g.scale.setScalar(SIZE.small);
+  g.userData.ref = "crow";
   return { g, wings };
 }
 
@@ -1702,7 +1734,8 @@ function farm(L: Layout, ground: (x: number, z: number) => number, r: () => numb
     }
     sails.add(mesh(merge(blades), cm));
     mill.add(sails);
-    mill.scale.setScalar(FOLK * 0.9);
+    mill.scale.setScalar(SIZE.mill);
+    mill.userData.ref = "windmill";
     mill.position.set(m.x, y - 0.01, m.z);
     mill.rotation.y = -face;
     g.add(mill);
@@ -1755,10 +1788,11 @@ function farm(L: Layout, ground: (x: number, z: number) => number, r: () => numb
         cm,
       ),
     );
-    set(barn, barnAt, FOLK * 0.85);
-    stands.push({ x: barnAt.x, z: barnAt.z, r: 0.13 });
+    set(barn, barnAt, SIZE.barn);
+    barn.userData.ref = "barn";
+    stands.push({ x: barnAt.x, z: barnAt.z, r: 0.18 });
 
-    const houseAt = spot(-0.2, 0.03);
+    const houseAt = spot(-0.28, 0.04);
     const house = new THREE.Group();
     house.add(
       mesh(
@@ -1774,9 +1808,10 @@ function farm(L: Layout, ground: (x: number, z: number) => number, r: () => numb
         cm,
       ),
     );
-    set(house, houseAt, FOLK * 0.85);
-    stands.push({ x: houseAt.x, z: houseAt.z, r: 0.1 });
-    const chimney = new THREE.Vector3(-0.015, 0.12, 0.03).multiplyScalar(FOLK * 0.85).applyEuler(house.rotation).add(house.position);
+    set(house, houseAt, SIZE.house);
+    house.userData.ref = "house";
+    stands.push({ x: houseAt.x, z: houseAt.z, r: 0.14 });
+    const chimney = new THREE.Vector3(-0.015, 0.12, 0.03).multiplyScalar(SIZE.house).applyEuler(house.rotation).add(house.position);
     const smokes = Array.from({ length: 4 }, (_, i) => {
       const o = new THREE.Mesh(blobGeo(200 + i), new THREE.MeshStandardMaterial({ color: "#e4e0d8", roughness: 1, transparent: true, opacity: 0.4, depthWrite: false }));
       o.userData.loose = true;
@@ -1792,7 +1827,7 @@ function farm(L: Layout, ground: (x: number, z: number) => number, r: () => numb
       }
     });
 
-    const siloAt = spot(0.16, -0.01);
+    const siloAt = spot(0.21, -0.02);
     const silo = new THREE.Group();
     silo.add(
       mesh(
@@ -1804,11 +1839,12 @@ function farm(L: Layout, ground: (x: number, z: number) => number, r: () => numb
         cm,
       ),
     );
-    set(silo, siloAt, FOLK * 0.85);
+    set(silo, siloAt, SIZE.silo);
+    silo.userData.ref = "silo";
     stands.push({ x: siloAt.x, z: siloAt.z, r: 0.06 });
 
     // The hay wagon in front of the barn, piled high.
-    const wagonAt = spot(0.05, 0.17);
+    const wagonAt = spot(0.03, 0.24);
     const wagon = new THREE.Group();
     wagon.add(
       mesh(
@@ -1823,7 +1859,8 @@ function farm(L: Layout, ground: (x: number, z: number) => number, r: () => numb
       ),
     );
     if (ok(wagonAt.x, wagonAt.z, 0.02)) {
-      set(wagon, wagonAt, FOLK);
+      set(wagon, wagonAt, SIZE.wagon);
+      wagon.userData.ref = "wagon";
       wagon.rotation.y += 1.2;
       stands.push({ x: wagonAt.x, z: wagonAt.z, r: 0.07 });
     }
@@ -1841,9 +1878,10 @@ function farm(L: Layout, ground: (x: number, z: number) => number, r: () => numb
         cm,
       );
       h.add(body);
-      h.scale.setScalar(FOLK);
+      h.scale.setScalar(SIZE.small);
+      h.userData.ref = "hen";
       g.add(h);
-      const p = spot(-0.08 + i * 0.06, 0.13 + (i % 2) * 0.05);
+      const p = spot(-0.14 + i * 0.06, 0.2 + (i % 2) * 0.05);
       return { h, body, p, ph: i * 1.3 };
     });
     life.push((t) => {
@@ -1888,7 +1926,8 @@ function farm(L: Layout, ground: (x: number, z: number) => number, r: () => numb
           cm,
         ),
       );
-      d.scale.setScalar(FOLK);
+      d.scale.setScalar(SIZE.small);
+      d.userData.ref = "duck";
       g.add(d);
       return { d, ph: i * Math.PI };
     });
@@ -1937,7 +1976,7 @@ function farm(L: Layout, ground: (x: number, z: number) => number, r: () => numb
     for (const u of [cut.u0 + 0.1, cut.u1 - 0.1]) {
       const p = xz(u + (r() - 0.5) * 0.03, v);
       if (!ok(p.x, p.z, 0.03)) continue;
-      stooks.push({ m: mat(p.x, Y(p.x, p.z), p.z, FOLK, FOLK, FOLK, r() * 6), c: new THREE.Color(1, 1, 1) });
+      stooks.push({ m: mat(p.x, Y(p.x, p.z), p.z, SIZE.stook, SIZE.stook, SIZE.stook, r() * 6), c: new THREE.Color(1, 1, 1) });
       stands.push({ x: p.x, z: p.z, r: 0.035 });
     }
   // Bales: one on the stubble, the rest in the meadow beside the rise, where the field stops.
@@ -1946,7 +1985,7 @@ function farm(L: Layout, ground: (x: number, z: number) => number, r: () => numb
     const p = onCut ? xz(mid(cut) + (r() - 0.5) * 0.2, split - 0.15 - r() * 0.3) : xz((r() < 0.5 ? -1 : 1) * (0.35 + r() * 0.45), 0.12 + r() * 0.3);
     if (!ok(p.x, p.z, 0.05) || (!onCut && ground(p.x, p.z) > 0.14)) continue;
     const a = r() * Math.PI;
-    bales.push({ m: mat(p.x, Y(p.x, p.z) + 0.036 * FOLK * 0.7, p.z, FOLK * 0.7, FOLK * 0.7, FOLK * 0.7, a), c: new THREE.Color(1, 1, 1) });
+    bales.push({ m: mat(p.x, Y(p.x, p.z) + 0.036 * SIZE.bale, p.z, SIZE.bale, SIZE.bale, SIZE.bale, a), c: new THREE.Color(1, 1, 1) });
     stands.push({ x: p.x, z: p.z, r: 0.07 });
     k++;
   }
@@ -2021,7 +2060,8 @@ function farm(L: Layout, ground: (x: number, z: number) => number, r: () => numb
           cm,
         ),
       );
-      b.scale.setScalar(FOLK);
+      b.scale.setScalar(SIZE.barrow);
+      b.userData.ref = "barrow";
       b.position.set(p.x, Y(p.x, p.z), p.z);
       b.rotation.y = -Math.atan2(hz, hx) + 0.6;
       g.add(b);
@@ -2052,7 +2092,8 @@ function farm(L: Layout, ground: (x: number, z: number) => number, r: () => numb
         cm,
       ),
     );
-    s.scale.setScalar(FOLK);
+    s.scale.setScalar(SIZE.scarecrow);
+    s.userData.ref = "scarecrow";
     s.position.set(sc.x, Y(sc.x, sc.z), sc.z);
     s.rotation.y = -Math.atan2(EYE.z, EYE.x);
     g.add(s);
@@ -2099,7 +2140,8 @@ function farm(L: Layout, ground: (x: number, z: number) => number, r: () => numb
         cm,
       ),
     );
-    h.scale.setScalar(FOLK);
+    h.scale.setScalar(SIZE.hare);
+    h.userData.ref = "hare";
     h.position.set(hareAt.x, Y(hareAt.x, hareAt.z), hareAt.z);
     h.rotation.y = -Math.atan2(EYE.z, -EYE.x);
     g.add(h);

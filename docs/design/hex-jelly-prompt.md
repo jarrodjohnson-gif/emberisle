@@ -42,8 +42,13 @@ JELLY WATER (shared by every tile that has it)
   vertex ripples; a slow soft caustic shimmer on the bed. It never looks like glass or chrome: it looks like jelly.
 
 SCALE AND CRAFT
-- One scale everywhere: a person 0.17 tall, a deer 0.13 at the shoulder, a sheep 0.13 long, a pine 0.25 to 0.5, a tent
-  0.15. Props are chunky and rounded: fat trunks, soft blob canopies, nothing spindly or toy-thin.
+- One size ladder on every tile (owner 2026-10-15: "referenced for sizing, not 1-to-1 to real life, but across all hexes"):
+  toy-town ratios, buildings big and figures small, always the same ones. Heights: hen, duck, crow 0.03-0.04; hare 0.09;
+  sheep 0.12 (0.09 long), lamb 0.08; dog 0.08; deer 0.17 to the ears (0.12 at the shoulder), fawn 0.11; person 0.13;
+  scarecrow 0.15; tent 0.13; shepherd's hut 0.19; farmhouse 0.24; barn 0.29; silo 0.32; windmill 0.54 with its sails; a
+  tree 0.25 to 0.5; the number token 0.52 across. One table (SIZE in hex-jelly.ts) sets them, and the line-up shot
+  (node scripts/hex-jelly.mjs --lineup) shows them side by side. Props are chunky and rounded: fat trunks, soft blob
+  canopies, nothing spindly or toy-thin.
 - Foliage is clusters of lumpy noise-displaced icosphere blobs (3–6 per tree), packed so canopies touch, each blob shaded by
   how buried it is among its neighbours and brighter toward the sky. Pines are stacked flattened blobs.
 - Every repeated thing is instanced. Everything that lives moves: a small idle loop per creature, nothing frozen.
