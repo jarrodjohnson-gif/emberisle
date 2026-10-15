@@ -1,5 +1,6 @@
-// Real lobby controls and hosted rules: default 10, public 7/10 selection, host-only updates,
-// restart persistence, wins at the selected target, fixed live rules, and rematch inheritance/selection.
+// Wayfarer mode at table setup, through real lobby controls and the hosted rules: default On, the On / Gentle / Off
+// choice, host-only updates, restart persistence, the chosen rules in play, rematch inheritance, and practice defaulting
+// to Gentle until the person's first practice win.
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync } from 'node:fs';
