@@ -140,9 +140,12 @@ export const CAUSTIC_GLSL = /* glsl */ `
 export const SPLASH_GLSL = /* glsl */ `
   uniform vec4 uSplash[${SPLASH.max}];
   uniform float uSplashNow;
+  uniform float uSplashLive;
   // Every live splash at p: x the height, yz its gradient, w how white (the rings' crests, plus the foam patch x foam).
   vec4 splashField(vec2 p, float motion, float foam) {
     vec4 acc = vec4(0.0);
+    // Nothing live (nearly always): skip the loop, so a still sea costs what it did before.
+    if (uSplashLive < 0.5) return acc;
     for (int i = 0; i < ${SPLASH.max}; i++) {
       vec4 s = uSplash[i];
       float a = uSplashNow - s.z;
@@ -474,7 +477,7 @@ export function makeCrystalSea(coast: Coast, shared: SeaUniforms) {
           return;
         #endif
         c = mix(c, vec3(2.6, 2.7, 2.65), uMotion * foam * 0.9);
-        c = mix(c, vec3(2.6, 2.7, 2.65), clamp(sp.w * (0.75 + 0.25 * vnoise(vRest * 9.0 + uTime)), 0.0, 1.0) * 0.85);
+        if (sp.w > 0.0) c = mix(c, vec3(2.6, 2.7, 2.65), clamp(sp.w * (0.75 + 0.25 * vnoise(vRest * 9.0 + uTime)), 0.0, 1.0) * 0.85);
         c = mix(c, uPaper, smoothstep(uFade.x, uFade.y, length(vRest)));
         gl_FragColor = vec4(c, 1.0);
       }
@@ -612,7 +615,7 @@ export function nearestCoast(coast: Coast, x: number, z: number) {
   return { o, ix, iz, offshore: ix * px + iz * pz < 0 };
 }
 
-type SplashUniforms = { uSplash: { value: THREE.Vector4[] }; uSplashNow: Uniform };
+type SplashUniforms = { uSplash: { value: THREE.Vector4[] }; uSplashNow: Uniform; uSplashLive: Uniform };
 export type Splashes = ReturnType<typeof makeSplashes>;
 
 /**
@@ -621,7 +624,7 @@ export type Splashes = ReturnType<typeof makeSplashes>;
  */
 export function makeSplashes() {
   const slots = Array.from({ length: SPLASH.max }, () => new THREE.Vector4(0, 0, -1e3, 0));
-  const uniforms: SplashUniforms = { uSplash: { value: slots }, uSplashNow: { value: 0 } };
+  const uniforms: SplashUniforms = { uSplash: { value: slots }, uSplashNow: { value: 0 }, uSplashLive: { value: 0 } };
   const alive = (s: THREE.Vector4, t: number) => s.w > 0 && t - s.z >= 0 && t - s.z <= SPLASH.life;
   const smooth = (a: number, b: number, x: number) => THREE.MathUtils.smoothstep(x, a, b);
   const R2 = SPLASH.radius ** 2;
@@ -634,6 +637,7 @@ export function makeSplashes() {
     },
     step(t: number) {
       uniforms.uSplashNow.value = t;
+      uniforms.uSplashLive.value = slots.some((s) => alive(s, t)) ? 1 : 0;
     },
     live(t: number) {
       return slots.filter((s) => alive(s, t)).length;
@@ -726,7 +730,7 @@ function makeDroplets(u: SeaUniforms & { uResolution: { value: THREE.Vector2 } }
 
 /** The simple sea's splash: the rings alone, drawn as lighter lines in its fragment shader. No crater, foam or droplets. */
 export function addSplashRings(mat: THREE.ShaderMaterial, u: SeaUniforms) {
-  Object.assign(mat.uniforms, { uSplash: u.uSplash, uSplashNow: u.uSplashNow, uMotion: u.uMotion });
+  Object.assign(mat.uniforms, { uSplash: u.uSplash, uSplashNow: u.uSplashNow, uSplashLive: u.uSplashLive, uMotion: u.uMotion });
   mat.fragmentShader = mat.fragmentShader
     .replace("void main() {", `uniform float uMotion;\n${SPLASH_GLSL}\nvoid main() {`)
     .replace("c = mix(c, uFog", "c = mix(c, vec3(0.8, 0.98, 0.95), clamp(splashField(vXZ, uMotion, 0.0).w * 1.6, 0.0, 1.0) * 0.8);\n        c = mix(c, uFog");

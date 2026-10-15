@@ -37,6 +37,7 @@ import { PAINT, RIM } from "@/lib/scene/palette";
 import { OceanLife } from "@/lib/scene/ocean-life";
 import { CAUSTIC_GLSL, PAPER, SPLASH, addSplashRings, makeCrystalSea, makeFloorProps, makeSeaFloor, makeSplashes, makeSwell, makeWash, nearestCoast, type SeaUniforms, type WaterPath, type WaterStatus } from "@/lib/scene/crystal-water";
 import { Wobble } from "@/lib/scene/wobble";
+import { play } from "@/lib/sound";
 import { payingHexes } from "@/lib/game/rules";
 import { type GameState, type HarborKind, type HexCell, type Terrain, type Vertex } from "@/lib/game/types";
 
@@ -1043,6 +1044,8 @@ export class IsleRenderer {
   splashAt(x: number, z: number, strength: number) {
     this.splash.add(x, z, strength, this.clock.getElapsed() + (performance.now() - this.lastFrame) / 1000);
     if (!this.calm()) this.oceanLife.scatter(x, z);
+    // A tap plops (sound.ts keeps it quiet while muted); a drag's trail does not.
+    if (strength >= 1) play("plop");
     this.busyUntil = Math.max(this.busyUntil, performance.now() + SPLASH.life * 1000);
   }
 

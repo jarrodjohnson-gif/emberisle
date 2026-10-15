@@ -17,6 +17,7 @@ const map = {
   trade_yes: "confirmation_001.wav",
   trade_no: "error_002.wav",
   win: "pluck_001.wav",
+  plop: "plop.wav",
 };
 
 export function cue(name) {

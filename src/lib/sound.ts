@@ -18,6 +18,8 @@ const FILES = {
   win: "pluck_001.wav",
   // Reused as the your-turn chime.
   chip_gain: "click_005.wav",
+  // Synthesised by scripts/make-sounds.mjs (docs/design/sound.md): a tap on the sea (#616).
+  plop: "plop.wav",
 } as const;
 
 export type SoundName = keyof typeof FILES;
