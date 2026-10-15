@@ -76,7 +76,8 @@ function nearest(pts: Float32Array, x: number, z: number) {
 // much of a hollow; none under the token, in a small disc at each corner or at an edge's midpoint (a path rests there).
 // `band[k]`: how far into edge k's beach it is (edge k's flat faces 60 k degrees), which a coastal edge paints as sand;
 // `shore[k]`: how much of that beach's dip it takes, none in the corner discs where pieces land.
-type Masks = { rise: number; dip: number; band: Float32Array; shore: Float32Array };
+// `wide`: a rise that reaches nearer the corners and the rim, for a terrain whose landform needs the room (the forest's knolls).
+type Masks = { rise: number; wide: number; dip: number; band: Float32Array; shore: Float32Array };
 // The lattice's own edge, as a distance from the centre to its flats.
 const TOP_INR = ((HEX_SIZE * 0.995 - BEVEL_W) * SQ3) / 2;
 const FLAT_COS = [0, 1, 2, 3, 4, 5].map((k) => Math.cos((k * Math.PI) / 3));
@@ -88,6 +89,7 @@ function masksAt(x: number, z: number, m: Masks, o = 0) {
   const dc = nearest(CORNERS, x, z);
   const corner = smooth(0.14, 0.3, dc);
   m.rise = token * smooth(0.22, 0.42, dc) * (1 - smooth(0.62, 0.78, d));
+  m.wide = token * smooth(0.16, 0.34, dc) * (1 - smooth(0.7, 0.85, d));
   m.dip = token * corner * smooth(0.2, 0.32, nearest(MIDS, x, z));
   // A beach reaches 0.11 in from its edge; nearer the centre than that from every edge, there is none.
   const near = d > TOP_INR - 0.11;
@@ -169,7 +171,7 @@ function forestLayout(L: Layout, rng: () => number) {
   const a0 = L.rot + rng() * 0.8;
   const angles = [a0, a0 + 1.95 + rng() * 0.5, a0 + 4.05 + rng() * 0.5];
   for (const a of angles) {
-    L.spots.push({ x: Math.cos(a) * 0.68, z: Math.sin(a) * 0.68, r: 0.3 + rng() * 0.06, h: (0.07 + rng() * 0.03) * L.amp });
+    L.spots.push({ x: Math.cos(a) * 0.7, z: Math.sin(a) * 0.7, r: 0.4 + rng() * 0.06, h: (0.17 + rng() * 0.05) * L.amp });
     const n = 4 + Math.floor(rng() * 2);
     for (let i = 0, placed = 0; i < 60 && placed < n; i++) {
       // The tallest at the heart; the rest smaller toward the token, so the clump rises away from the clearing.
@@ -191,7 +193,8 @@ function forestLayout(L: Layout, rng: () => number) {
     const gap = (angles[(i + 1) % 3]! - angles[i]! + Math.PI * 4) % (Math.PI * 2);
     if (gap > best) (best = gap), (L.feature = { x: Math.cos(angles[i]! + gap / 2) * 0.64, z: Math.sin(angles[i]! + gap / 2) * 0.64, r: 0.22 });
   }
-  L.spots.push({ x: L.feature.x, z: L.feature.z, r: L.feature.r, h: -0.05 * L.amp });
+  L.spots.push({ x: L.feature.x, z: L.feature.z, r: L.feature.r * 1.5, h: 0.035 * L.amp });
+  L.spots.push({ x: L.feature.x, z: L.feature.z, r: L.feature.r * 1.1, h: -0.12 * L.amp });
 }
 
 // Pasture: one gentle ridge tangent to the ring on one side (a hedgerow will run along its crest) and two or three rolling
@@ -438,6 +441,7 @@ type Lattice = {
   nb: Int32Array;
   ring: Uint16Array;
   rise: Float32Array;
+  wide: Float32Array;
   dip: Float32Array;
   band: Float32Array;
   shore: Float32Array;
@@ -471,9 +475,9 @@ function latticeOf(R: number, s: number): Lattice {
   const n = qs.length;
   const nb = new Int32Array(n * 4);
   const [x, z] = [new Float32Array(n), new Float32Array(n)];
-  const [rise, dip] = [new Float32Array(n), new Float32Array(n)];
+  const [rise, wide, dip] = [new Float32Array(n), new Float32Array(n), new Float32Array(n)];
   const [rr, dd, dc] = [new Float32Array(n), new Float32Array(n), new Float32Array(n)];
-  const m: Masks = { rise: 0, dip: 0, band: new Float32Array(n * 6), shore: new Float32Array(n * 6) };
+  const m: Masks = { rise: 0, wide: 0, dip: 0, band: new Float32Array(n * 6), shore: new Float32Array(n * 6) };
   for (let i = 0; i < n; i++) {
     const [a, b] = [qs[i]!, rs[i]!];
     nb[i * 4] = id(a + 1, b);
@@ -483,7 +487,7 @@ function latticeOf(R: number, s: number): Lattice {
     x[i] = (SQ3 / 2) * s * a;
     z[i] = 0.5 * s * a + s * b;
     masksAt(x[i]!, z[i]!, m, i * 6);
-    [rise[i], dip[i]] = [m.rise, m.dip];
+    [rise[i], wide[i], dip[i]] = [m.rise, m.wide, m.dip];
     [rr[i], dd[i], dc[i]] = [Math.hypot(x[i]!, z[i]!), hexDist(x[i]!, z[i]!), nearest(CORNERS, x[i]!, z[i]!)];
   }
   // The boundary ring, corner to corner.
@@ -491,7 +495,7 @@ function latticeOf(R: number, s: number): Lattice {
   const corners: [number, number][] = [[R, 0], [0, R], [-R, R], [-R, 0], [0, -R], [R, -R]];
   const ring: number[] = [];
   for (let k = 0; k < 6; k++) for (let i = 0; i < R; i++) ring.push(id(corners[k]![0] + steps[k]![0] * i, corners[k]![1] + steps[k]![1] * i));
-  t = { count: n, grid, x, z, r: rr, d: dd, dc, index: Uint16Array.from(index), nb, ring: Uint16Array.from(ring), rise, dip, band: m.band, shore: m.shore };
+  t = { count: n, grid, x, z, r: rr, d: dd, dc, index: Uint16Array.from(index), nb, ring: Uint16Array.from(ring), rise, wide, dip, band: m.band, shore: m.shore };
   lattices.set(R, t);
   return t;
 }
@@ -506,7 +510,8 @@ export function sculptHex(h: HexCell, size: number, slabH: number, tileY: number
   const R = RINGS;
   const T = latticeOf(R, s);
   // The ground at any hex-local point (props stand on it); the lattice samples the same function once per point.
-  const m: Masks = { rise: 0, dip: 0, band: new Float32Array(6), shore: new Float32Array(6) };
+  const m: Masks = { rise: 0, wide: 0, dip: 0, band: new Float32Array(6), shore: new Float32Array(6) };
+  const wideRise = t === "timber";
   const shoreOf = (sh: Float32Array, o: number) => {
     let w = 0;
     for (let k = 0; k < 6; k++) if (coast[k]) w = Math.max(w, sh[o + k]!);
@@ -516,7 +521,7 @@ export function sculptHex(h: HexCell, size: number, slabH: number, tileY: number
     if (x * x + z * z < 0.16) return 0;
     masksAt(x, z, m);
     const raw = relief(t, x, z, L);
-    return (raw > 0 ? raw * m.rise : raw * m.dip) - shoreOf(m.shore, 0);
+    return (raw > 0 ? raw * (wideRise ? m.wide : m.rise) : raw * m.dip) - shoreOf(m.shore, 0);
   };
   const [base, shade, sun] = PAINT[t].map(col) as [THREE.Color, THREE.Color, THREE.Color];
   const crest = base.clone().lerp(sun, 0.5);
@@ -625,10 +630,11 @@ export function sculptHex(h: HexCell, size: number, slabH: number, tileY: number
   for (let i = 0; i < T.count; i++) {
     const shore = shoreOf(T.shore, i * 6);
     for (let k = 0; k < 6; k++) if (coast[k]) sea[i] = Math.max(sea[i]!, T.band[i * 6 + k]!);
-    if (T.rise[i] === 0 && T.dip[i] === 0) hs[i] = -shore;
+    const up = (wideRise ? T.wide : T.rise)[i]!;
+    if (up === 0 && T.dip[i] === 0) hs[i] = -shore;
     else {
       const raw = relief(t, T.x[i]!, T.z[i]!, L);
-      hs[i] = (raw > 0 ? raw * T.rise[i]! : raw * T.dip[i]!) - shore;
+      hs[i] = (raw > 0 ? raw * up : raw * T.dip[i]!) - shore;
     }
     // Under clay's pit the lattice drops out of sight; the pit's own geometry is the ground there.
     if (t === "clay" && Math.hypot(T.x[i]! - L.feature.x, T.z[i]! - L.feature.z) < PIT_R[0]! + 0.01) hs[i] -= 0.17;
