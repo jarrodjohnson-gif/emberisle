@@ -122,6 +122,8 @@ export type Layout = {
   // Long swells along a segment (the pasture's ridge), and named story spots for the other tiles.
   ridges: { a: Pt; b: Pt; w: number; h: number }[];
   marks: Record<string, Pt>;
+  // Grain: the field's four strips across the front, each a band of the field's `u` (along the back edge) and what grows there.
+  strips: { u0: number; u1: number; crop: "wheat" | "cut" | "plough" }[];
 };
 
 // Creatures, people and their things are built at a base size and drawn FOLK times larger, so they read from the diorama
@@ -135,7 +137,7 @@ const DEG = Math.PI / 180;
 export function layoutOf(kind: Terrain, seed: number): Layout {
   const r = rng32(seed);
   const hillAt = ((r() < 0.5 ? 240 : 300) + (r() - 0.5) * 12) * DEG;
-  const L: Layout = { kind, seed, hillAt, spots: [], stream: [], pool: null, camp: null, deer: null, ring: null, ridges: [], marks: {} };
+  const L: Layout = { kind, seed, hillAt, spots: [], stream: [], pool: null, camp: null, deer: null, ring: null, ridges: [], marks: {}, strips: [] };
   if (kind === "timber") {
     // The stream runs away from the hill's crest toward the front, on the side `s` (round toward the nearer front edge).
     const s = hillAt < 270 * DEG ? -1 : 1;
@@ -165,6 +167,18 @@ export function layoutOf(kind: Terrain, seed: number): Layout {
     }
     L.deer = best;
     L.ring = at(hillAt - s * 0.6, 0.55);
+  }
+  if (kind === "grain") {
+    // The back rise with the windmill, the field across the front in four strips: standing wheat, half-cut, ploughed.
+    L.spots.push({ ...at(hillAt, 0.62), r: 0.46, h: 0.3 + r() * 0.04 }, { ...at(hillAt, 0.6), r: 0.7, h: 0.06 });
+    const crops: ("wheat" | "cut" | "plough")[] = ["wheat", "wheat", "cut", "plough"];
+    for (let i = crops.length - 1; i > 0; i--) {
+      const j = Math.floor(r() * (i + 1));
+      [crops[i], crops[j]] = [crops[j]!, crops[i]!];
+    }
+    const edges = [-0.95, -0.47, 0, 0.47, 0.95];
+    L.strips = crops.map((crop, i) => ({ u0: edges[i]! + (i ? 0.025 : 0), u1: edges[i + 1]! - (i < 3 ? 0.025 : 0), crop }));
+    L.marks = { mill: at(hillAt, 0.6) };
   }
   if (kind === "wool") {
     // The ridge runs along the back edge, tangent to it; the wall along its crest; the oak on it toward one end.
@@ -216,6 +230,15 @@ export function heightAt(L: Layout, x: number, z: number) {
     if (d2 < 1) raw += g.h * (1 - d2) * (1 - d2) * (1 - (2 * u - 1) ** 4 * 0.5);
   }
   const pad = smooth(PAD_R, PAD_R + 0.3, Math.hypot(x, z));
+  if (L.strips.length) {
+    // Furrows: a ridge every FURROW across each strip (deeper where it is ploughed), none on the tracks.
+    const f = fieldAt(L, x, z);
+    if (f.strip >= 0) {
+      const crop = L.strips[f.strip]!.crop;
+      const ridge = 0.5 + 0.5 * Math.cos(((f.u - L.strips[f.strip]!.u0) / FURROW) * Math.PI * 2);
+      raw += (crop === "plough" ? 0.014 : 0.008) * ridge * smooth(0, 0.02, f.inside) * f.keep;
+    }
+  }
   const corner = smooth(CORNER_DISC, CORNER_DISC + 0.16, nearestCorner(x, z));
   const edge = 1 - smooth(INR - EDGE_BAND - 0.1, INR - EDGE_BAND, hexDist(x, z));
   let h = raw * pad * corner * edge;
@@ -230,6 +253,23 @@ export function heightAt(L: Layout, x: number, z: number) {
   }
   return h;
 }
+// Grain's field frame at a point: `u` along the back edge, `v` toward the back rise; which strip it is in (or -1 on a track,
+// on the rise or on the pad), and how far inside that strip's edges it is.
+export function fieldAt(L: Layout, x: number, z: number) {
+  const [hx, hz] = [Math.cos(L.hillAt), Math.sin(L.hillAt)];
+  const u = x * -hz + z * hx;
+  const v = x * hx + z * hz;
+  let strip = -1;
+  let inside = 0;
+  L.strips.forEach((s, i) => {
+    if (u >= s.u0 && u <= s.u1) (strip = i), (inside = Math.min(u - s.u0, s.u1 - u));
+  });
+  // The field stops at the rise's foot and round the pad.
+  const keep = (1 - smooth(0.12, 0.26, v)) * smooth(0.36, 0.42, Math.hypot(x, z)) * (1 - smooth(INR - 0.12, INR - 0.06, hexDist(x, z)));
+  return { u, v, strip, inside, keep };
+}
+const FURROW = 0.05;
+
 // How much of the bed under the water a point is (0 dry, 1 deep), for its colour.
 function wetAt(L: Layout, x: number, z: number) {
   let w = 0;
@@ -248,6 +288,7 @@ const C = (h: string) => new THREE.Color(h);
 type Paint = { low: THREE.Color; high: THREE.Color; steep: THREE.Color; crease: THREE.Color; pad: THREE.Color; lip: string };
 const PAINTS: Partial<Record<Terrain, Paint>> = {
   timber: { low: C("#5fae47"), high: C("#8cc65a"), steep: C("#7d8a4a"), crease: C("#2f5a2e"), pad: C("#a9cf7c"), lip: "#6db64f" },
+  grain: { low: C("#e8bf4a"), high: C("#9cc85a"), steep: C("#8fb054"), crease: C("#a8802c"), pad: C("#f3dd96"), lip: "#a6cf5e" },
   wool: { low: C("#86cc52"), high: C("#b6e070"), steep: C("#93b85a"), crease: C("#4a8a38"), pad: C("#c6e49c"), lip: "#96d45c" },
 };
 
@@ -326,7 +367,7 @@ function strataMat(lip: string) {
 
 // The block with its top, rim and strata: a hex lattice of `rings` rings warped onto the rounded outline, a rim that rolls
 // over ROUND_E, the side straight down to the base. `occlude` darkens the ground under a prop (canopy cover, contact).
-function block(L: Layout, rings: number, occlude: (x: number, z: number) => number) {
+function block(L: Layout, rings: number, occlude: (x: number, z: number) => number, tint?: (x: number, z: number, y: number, c: THREE.Color) => void) {
   const P = PAINTS[L.kind]!;
   const inrTop = INR - ROUND_E;
   const rcTop = ROUND_C - ROUND_E;
@@ -433,6 +474,7 @@ function block(L: Layout, rings: number, occlude: (x: number, z: number) => numb
     }
     const steep = smooth(0.82, 0.55, ny);
     c.copy(P.low).lerp(P.high, smooth(0.0, 0.45, y)).lerp(P.steep, steep * 0.7);
+    if (tint && v < n) tint(x, z, y, c);
     c.lerp(P.pad, 0.6 * (1 - smooth(PAD_R - 0.04, PAD_R + 0.03, Math.hypot(x, z))));
     // Creases go warm and soft, never black.
     c.lerp(P.crease, Math.min(0.75, occ * 1.6 + occlude(x, z) * 0.6));
@@ -1521,6 +1563,403 @@ function pasture(L: Layout, ground: (x: number, z: number) => number, r: () => n
   return { g, stands, life };
 }
 
+// --- the farm
+
+// A wheat tuft: four stalks leaning out a little, each with a plump ear; the material sways it in a travelling wind wave.
+function tuftGeo() {
+  const parts: THREE.BufferGeometry[] = [];
+  for (let i = 0; i < 4; i++) {
+    const a = (i / 4) * Math.PI * 2 + 0.4;
+    const lean = 0.12 + (i % 2) * 0.1;
+    const [x, z] = [Math.cos(a) * 0.004, Math.sin(a) * 0.004];
+    const h = 0.052 + (i % 3) * 0.006;
+    parts.push(part(cyl(0.0012, 0.0016, 3), "#c99a3a", [x, h / 2, z], [Math.sin(a) * lean, 0, -Math.cos(a) * lean], [1, h, 1]));
+    parts.push(part(new THREE.SphereGeometry(1, 5, 4), "#f2c95a", [x + Math.cos(a) * h * lean, h + 0.006, z + Math.sin(a) * h * lean], [Math.sin(a) * lean, 0, -Math.cos(a) * lean], [0.0042, 0.011, 0.0042]));
+  }
+  return merge(parts);
+}
+function swayMat(seed: number) {
+  const m = jellyfy(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.7, metalness: 0 }), `jelly-sway-${seed}`, (sh) => {
+    sh.uniforms.uTime = m.userData.time;
+    sh.vertexShader = "uniform float uTime;\n" + sh.vertexShader.replace(
+      "#include <begin_vertex>",
+      `#include <begin_vertex>
+      #ifdef USE_INSTANCING
+      vec3 root = instanceMatrix[3].xyz;
+      float gust = sin( uTime * 1.6 - root.x * 6.0 - root.z * 4.0 ) * 0.6 + sin( uTime * 2.9 - root.x * 13.0 ) * 0.25;
+      transformed.x += position.y * position.y * 9.0 * gust;
+      transformed.z += position.y * position.y * 4.0 * gust;
+      #endif`,
+    );
+  });
+  m.userData.time = { value: 0 };
+  return m;
+}
+
+// A round hay bale lying on its side along x: gold, two darker bands, a darker rolled core on each face.
+function baleGeo() {
+  const p: THREE.BufferGeometry[] = [part(cyl(1, 1, 18), "#e2b54c", [0, 0, 0], [0, 0, Math.PI / 2], [0.036, 0.05, 0.036])];
+  for (const x of [-0.012, 0.012]) p.push(part(cyl(1, 1, 18), "#bf8f2f", [x, 0, 0], [0, 0, Math.PI / 2], [0.0368, 0.004, 0.0368]));
+  for (const x of [-0.0252, 0.0252]) {
+    p.push(part(cyl(1, 1, 18), "#cfa040", [x, 0, 0], [0, 0, Math.PI / 2], [0.03, 0.002, 0.03]));
+    p.push(part(cyl(1, 1, 14), "#a87a26", [x * 1.02, 0, 0], [0, 0, Math.PI / 2], [0.014, 0.002, 0.014]));
+  }
+  return merge(p);
+}
+// A stook: five sheaves leaned together, tied at the waist, ears up.
+function stookGeo() {
+  const p: THREE.BufferGeometry[] = [];
+  for (let i = 0; i < 5; i++) {
+    const a = (i / 5) * Math.PI * 2;
+    p.push(part(cyl(0.006, 0.009, 6), "#d9ad4a", [Math.cos(a) * 0.007, 0.022, Math.sin(a) * 0.007], [Math.sin(a) * 0.25, 0, -Math.cos(a) * 0.25], [1, 0.044, 1]));
+    p.push(part(sphere(6), "#f0c860", [Math.cos(a) * 0.004, 0.048, Math.sin(a) * 0.004], [0, 0, 0], [0.008, 0.01, 0.008]));
+  }
+  p.push(part(cyl(1, 1, 10), "#a5762a", [0, 0.026, 0], [0, 0, 0], [0.011, 0.003, 0.011]));
+  return merge(p);
+}
+// A crow facing +x: black body, a grey-black head, a dark beak; wings on their own so it can flap off.
+function crow(m: THREE.Material) {
+  const g = new THREE.Group();
+  g.add(
+    mesh(
+      merge([
+        part(sphere(), "#1f1d24", [0, 0.012, 0], [0, 0, 0.3], [0.012, 0.008, 0.007]),
+        part(sphere(), "#2a2830", [0.011, 0.019, 0], [0, 0, 0], [0.006, 0.006, 0.0055]),
+        part(new THREE.ConeGeometry(1, 1, 5), "#3a3532", [0.019, 0.018, 0], [0, 0, -Math.PI / 2], [0.0022, 0.007, 0.0022]),
+        part(sphere(6), "#e8d36a", [0.014, 0.021, 0.004], [0, 0, 0], [0.0012, 0.0012, 0.0012]),
+        part(sphere(6), "#e8d36a", [0.014, 0.021, -0.004], [0, 0, 0], [0.0012, 0.0012, 0.0012]),
+        part(new THREE.BoxGeometry(1, 1, 1), "#1f1d24", [-0.013, 0.012, 0], [0, 0, 0.3], [0.01, 0.002, 0.007]),
+        part(cyl(0.0008, 0.0008, 4), "#3a3532", [0.002, 0.003, 0.003], [0, 0, 0], [1, 0.006, 1]),
+        part(cyl(0.0008, 0.0008, 4), "#3a3532", [0.002, 0.003, -0.003], [0, 0, 0], [1, 0.006, 1]),
+      ]),
+      m,
+    ),
+  );
+  const wings = [1, -1].map((side) => {
+    const w = mesh(merge([part(sphere(8), "#26242c", [0, 0, 0.011 * side], [0, 0, 0], [0.01, 0.0015, 0.012])]), m);
+    w.position.set(0, 0.015, 0.002 * side);
+    g.add(w);
+    return w;
+  });
+  g.scale.setScalar(FOLK);
+  return { g, wings };
+}
+
+// GRAIN, "Harvest" (docs/design/hex-jelly-prompt.md): the field in four strips (standing wheat swaying in a wind wave, a
+// half-cut strip with stubble, stooks and the farmer scything, a ploughed strip the crows work), the windmill on the back rise
+// turning, three round bales, a red wheelbarrow of sheaves, the scarecrow, poppies and cornflowers, and a hare sitting up.
+function farm(L: Layout, ground: (x: number, z: number) => number, r: () => number): Built {
+  const g = new THREE.Group();
+  const life: Life[] = [];
+  const stands: { x: number; z: number; r: number }[] = [];
+  const Y = (x: number, z: number) => BLOCK_H + ground(x, z);
+  const cm = critterMat();
+  const [hx, hz] = [Math.cos(L.hillAt), Math.sin(L.hillAt)];
+  // From field (u, v) back to the tile.
+  const xz = (u: number, v: number) => ({ x: -hz * u + hx * v, z: hx * u + hz * v });
+  const EYE = { x: Math.sin(20 * DEG), z: Math.cos(20 * DEG) };
+  const ok = (x: number, z: number, room: number) =>
+    Math.hypot(x, z) > 0.4 + room && nearestCorner(x, z) > 0.2 + room && hexDist(x, z) < INR - 0.14 - room && stands.every((q) => Math.hypot(q.x - x, q.z - z) > q.r + room);
+  const strip = (crop: string) => L.strips.find((s) => s.crop === crop)!;
+  const cut = strip("cut");
+  const split = -0.42 + r() * 0.1;
+  const mid = (s: { u0: number; u1: number }) => (s.u0 + s.u1) / 2;
+
+  // The windmill on the rise: a cream tower, a red cap, a door and windows, four sails turning toward the token.
+  {
+    const m = L.marks.mill!;
+    const y = Y(m.x, m.z);
+    const face = Math.atan2(-m.z, -m.x);
+    const mill = new THREE.Group();
+    mill.add(
+      mesh(
+        merge([
+          part(cyl(0.75, 1, 14), "#efe4cc", [0, 0.1, 0], [0, 0, 0], [0.05, 0.2, 0.05]),
+          part(new THREE.ConeGeometry(1, 1, 14), "#c44a36", [0, 0.235, 0], [0, 0, 0], [0.048, 0.07, 0.048]),
+          part(cyl(1, 1, 14), "#a33a2a", [0, 0.2, 0], [0, 0, 0], [0.042, 0.006, 0.042]),
+          part(new THREE.BoxGeometry(1, 1, 1), "#6a4a32", [0.048, 0.025, 0], [0, 0, 0], [0.006, 0.045, 0.026]),
+          part(new THREE.BoxGeometry(1, 1, 1), "#3e5a6a", [0.043, 0.11, 0], [0, 0, 0], [0.004, 0.022, 0.016]),
+          part(new THREE.BoxGeometry(1, 1, 1), "#3e5a6a", [0.0, 0.1, 0.044], [0, 0, 0], [0.014, 0.02, 0.004]),
+          part(cyl(1, 1, 8), "#6a4a32", [0.05, 0.2, 0], [0, 0, Math.PI / 2], [0.008, 0.03, 0.008]),
+        ]),
+        cm,
+      ),
+    );
+    const sails = new THREE.Group();
+    sails.position.set(0.068, 0.2, 0);
+    const blades: THREE.BufferGeometry[] = [part(sphere(8), "#6a4a32", [0, 0, 0], [0, 0, 0], [0.012, 0.012, 0.012])];
+    for (let k = 0; k < 4; k++) {
+      const a = (k * Math.PI) / 2;
+      const [cy, cz] = [Math.cos(a), Math.sin(a)];
+      blades.push(part(new THREE.BoxGeometry(1, 1, 1), "#7a5434", [0, cy * 0.08, cz * 0.08], [a, 0, 0], [0.004, 0.16, 0.004]));
+      // The canvas on the trailing side of each arm, framed.
+      const [ox, oz] = [-Math.sin(a), Math.cos(a)];
+      blades.push(part(new THREE.BoxGeometry(1, 1, 1), "#f5ecd8", [0.002, cy * 0.095 + ox * 0.018, cz * 0.095 + oz * 0.018], [a, 0, 0], [0.002, 0.12, 0.032]));
+      for (const t of [0.05, 0.095, 0.14]) blades.push(part(new THREE.BoxGeometry(1, 1, 1), "#7a5434", [0.003, cy * t + ox * 0.018, cz * t + oz * 0.018], [a, 0, 0], [0.002, 0.003, 0.036]));
+    }
+    sails.add(mesh(merge(blades), cm));
+    mill.add(sails);
+    mill.scale.setScalar(FOLK * 0.9);
+    mill.position.set(m.x, y - 0.01, m.z);
+    mill.rotation.y = -face;
+    g.add(mill);
+    stands.push({ x: m.x, z: m.z, r: 0.12 });
+    life.push((t) => (sails.rotation.x = t * 0.9));
+  }
+
+  // The scarecrow in a standing strip, the hare between two rows of another.
+  const wheatStrips = L.strips.filter((s) => s.crop === "wheat");
+  const sc = xz(mid(wheatStrips[0]!) + 0.012, -0.5);
+  const hareAt = xz(wheatStrips[1]!.u0 + FURROW * 2.5, -0.55);
+  for (const p of [sc, hareAt]) stands.push({ x: p.x, z: p.z, r: 0.05 });
+
+  // The cut strip's front: stooks in rows, three bales, the barrow at its edge; the farmer at the line of standing wheat.
+  const stooks: Inst[] = [];
+  const bales: Inst[] = [];
+  for (let v = split - 0.08; v > -0.95; v -= 0.12)
+    for (const u of [cut.u0 + 0.1, cut.u1 - 0.1]) {
+      const p = xz(u + (r() - 0.5) * 0.03, v);
+      if (!ok(p.x, p.z, 0.03)) continue;
+      stooks.push({ m: mat(p.x, Y(p.x, p.z), p.z, FOLK, FOLK, FOLK, r() * 6), c: new THREE.Color(1, 1, 1) });
+      stands.push({ x: p.x, z: p.z, r: 0.035 });
+    }
+  // Bales: one on the stubble, the rest in the meadow beside the rise, where the field stops.
+  for (let k = 0, tries = 0; k < 4 && tries < 600; tries++) {
+    const onCut = k < 1 && tries < 150;
+    const p = onCut ? xz(mid(cut) + (r() - 0.5) * 0.2, split - 0.15 - r() * 0.3) : xz((r() < 0.5 ? -1 : 1) * (0.35 + r() * 0.45), 0.12 + r() * 0.3);
+    if (!ok(p.x, p.z, 0.05) || (!onCut && ground(p.x, p.z) > 0.14)) continue;
+    const a = r() * Math.PI;
+    bales.push({ m: mat(p.x, Y(p.x, p.z) + 0.036 * FOLK * 0.7, p.z, FOLK * 0.7, FOLK * 0.7, FOLK * 0.7, a), c: new THREE.Color(1, 1, 1) });
+    stands.push({ x: p.x, z: p.z, r: 0.07 });
+    k++;
+  }
+  // Round trees and a hedge clump in the meadow corners beside the rise.
+  {
+    const trees: THREE.BufferGeometry[] = [];
+    for (let k = 0, tries = 0; k < 4 && tries < 600; tries++) {
+      const p = xz((r() < 0.5 ? -1 : 1) * (0.3 + r() * 0.55), 0.05 + r() * 0.4);
+      if (!ok(p.x, p.z, 0.06) || ground(p.x, p.z) > 0.08) continue;
+      const y = Y(p.x, p.z);
+      const big = k < 2;
+      const sz = big ? 1 : 0.6;
+      if (big) trees.push(part(cyl(0.7, 1, 8), "#6e4128", [p.x, y + 0.035, p.z], [0, 0, 0], [0.016, 0.07, 0.016]));
+      for (let i = 0; i < 5; i++) {
+        const b = (i / 5) * Math.PI * 2;
+        trees.push(part(blobGeo(150 + i + k * 5), ["#4f9a3c", "#6aad47", "#8cc65a"][i % 3]!, [p.x + Math.cos(b) * 0.03 * sz, y + (big ? 0.09 : 0.025) + (i % 2) * 0.02 * sz, p.z + Math.sin(b) * 0.03 * sz], [0, b, 0], [0.042 * sz, 0.036 * sz, 0.042 * sz]));
+      }
+      if (big) trees.push(part(blobGeo(170 + k), "#8cc65a", [p.x, y + 0.13, p.z], [0, 0, 0], [0.045, 0.038, 0.045]));
+      stands.push({ x: p.x, z: p.z, r: big ? 0.08 : 0.05 });
+      k++;
+    }
+    if (trees.length) g.add(mesh(merge(trees), cm));
+  }
+  if (stooks.length) g.add(instanced(stookGeo(), stooks, critterMat()));
+  if (bales.length) g.add(instanced(baleGeo(), bales, critterMat()));
+  // Any fixed vertexColors instanced mesh needs white instance colour; set above.
+
+  // The farmer, scything into the standing wheat.
+  {
+    const p = xz(mid(cut), split - 0.05);
+    const f = person(cm, "#c4553f", 0.25, "#e8c56a");
+    f.g.position.set(p.x, Y(p.x, p.z), p.z);
+    const face = Math.atan2(hz, hx);
+    f.g.rotation.y = -face;
+    const scythe = new THREE.Group();
+    scythe.add(
+      mesh(
+        merge([
+          part(cyl(0.0018, 0.0018, 6), "#9a6e44", [0, 0, 0], [0, 0, 0.9], [1, 0.11, 1]),
+          part(new THREE.TorusGeometry(0.035, 0.0025, 4, 14, 1.4), "#c9ced2", [-0.045, -0.035, 0.02], [Math.PI / 2, 0, 0.3], [1, 1, 0.6]),
+        ]),
+        cm,
+      ),
+    );
+    scythe.position.set(0.02, 0.01, 0);
+    f.top.add(scythe);
+    g.add(f.g);
+    stands.push({ x: p.x, z: p.z, r: 0.06 });
+    life.push((t) => {
+      const sw = Math.sin(t * 2.2);
+      f.top.rotation.y = 0.7 * sw;
+      f.top.rotation.z = -0.25 - 0.1 * Math.abs(sw);
+    });
+  }
+
+  // The red wheelbarrow, sheaves in it, on the track beside the cut strip.
+  {
+    const p = xz(cut.u0 - 0.025, split - 0.25);
+    if (ok(p.x, p.z, 0.02)) {
+      const b = new THREE.Group();
+      b.add(
+        mesh(
+          merge([
+            part(new THREE.BoxGeometry(1, 1, 1), "#c8392f", [0, 0.022, 0], [0, 0, 0.12], [0.05, 0.016, 0.034]),
+            part(cyl(1, 1, 12), "#3a2a24", [0.03, 0.01, 0], [Math.PI / 2, 0, 0], [0.01, 0.006, 0.01]),
+            part(cyl(0.0018, 0.0018, 6), "#7a5434", [-0.035, 0.022, 0.012], [0, 0, 1.35], [1, 0.05, 1]),
+            part(cyl(0.0018, 0.0018, 6), "#7a5434", [-0.035, 0.022, -0.012], [0, 0, 1.35], [1, 0.05, 1]),
+            part(cyl(0.0016, 0.0016, 6), "#7a5434", [-0.012, 0.008, 0.012], [0, 0, 0], [1, 0.016, 1]),
+            part(cyl(0.0016, 0.0016, 6), "#7a5434", [-0.012, 0.008, -0.012], [0, 0, 0], [1, 0.016, 1]),
+            ...[0, 1, 2].map((i) => part(cyl(0.006, 0.007, 6), "#e2b54c", [-0.005 + i * 0.01, 0.036, (i - 1) * 0.008], [0.2 * (i - 1), 0, 1.4], [1, 0.05, 1])),
+          ]),
+          cm,
+        ),
+      );
+      b.scale.setScalar(FOLK);
+      b.position.set(p.x, Y(p.x, p.z), p.z);
+      b.rotation.y = -Math.atan2(hz, hx) + 0.6;
+      g.add(b);
+      stands.push({ x: p.x, z: p.z, r: 0.06 });
+    }
+  }
+
+  // The scarecrow: a post and crossbar, a patched blue shirt, a sack head, a straw hat, straw at the cuffs.
+  {
+    const s = new THREE.Group();
+    s.add(
+      mesh(
+        merge([
+          part(cyl(0.003, 0.003, 6), "#7a5434", [0, 0.05, 0], [0, 0, 0], [1, 0.1, 1]),
+          part(cyl(0.0025, 0.0025, 6), "#7a5434", [0, 0.075, 0], [Math.PI / 2, 0, 0], [1, 0.07, 1]),
+          part(cyl(0.012, 0.015, 8), "#4a74b4", [0, 0.068, 0], [0, 0, 0], [1, 0.035, 1]),
+          part(new THREE.BoxGeometry(1, 1, 1), "#c8392f", [0.012, 0.064, 0.004], [0, 0, 0], [0.003, 0.008, 0.008]),
+          part(cyl(0.005, 0.005, 6), "#4a74b4", [0, 0.076, 0.022], [Math.PI / 2, 0, 0], [1, 0.024, 1]),
+          part(cyl(0.005, 0.005, 6), "#4a74b4", [0, 0.076, -0.022], [Math.PI / 2, 0, 0], [1, 0.024, 1]),
+          part(sphere(6), "#e8c060", [0, 0.074, 0.036], [0, 0, 0], [0.004, 0.005, 0.006]),
+          part(sphere(6), "#e8c060", [0, 0.074, -0.036], [0, 0, 0], [0.004, 0.005, 0.006]),
+          part(sphere(), "#dcc79a", [0, 0.097, 0], [0, 0, 0], [0.011, 0.012, 0.011]),
+          part(sphere(6), "#3a2a24", [0.01, 0.099, 0.004], [0, 0, 0], [0.0015, 0.0015, 0.0015]),
+          part(sphere(6), "#3a2a24", [0.01, 0.099, -0.004], [0, 0, 0], [0.0015, 0.0015, 0.0015]),
+          part(cyl(1, 1, 14), "#e0b85a", [0, 0.107, 0], [0, 0, 0.1], [0.022, 0.002, 0.022]),
+          part(cyl(0.7, 1, 10), "#e0b85a", [0, 0.114, 0], [0, 0, 0.1], [0.011, 0.012, 0.011]),
+        ]),
+        cm,
+      ),
+    );
+    s.scale.setScalar(FOLK);
+    s.position.set(sc.x, Y(sc.x, sc.z), sc.z);
+    s.rotation.y = -Math.atan2(EYE.z, EYE.x);
+    g.add(s);
+  }
+
+  // Crows on the ploughed strip: hopping, and now and then one flaps up and settles again.
+  {
+    const s = strip("plough");
+    const crows = [0, 1, 2].map((i) => {
+      const c = crow(cm);
+      g.add(c.g);
+      const p = xz(mid(s) + (i - 1) * 0.1, -0.4 - i * 0.12);
+      return { c, p, ph: i * 1.7 };
+    });
+    life.push((t) => {
+      for (const k of crows) {
+        const u = (t + k.ph) % 6;
+        const fly = u > 4.2 && u < 5.6 ? Math.sin(((u - 4.2) / 1.4) * Math.PI) : 0;
+        const hop = Math.abs(Math.sin((t + k.ph) * 4)) * 0.006;
+        const x = k.p.x + Math.sin((t + k.ph) * 0.4) * 0.03;
+        const z = k.p.z + Math.cos((t + k.ph) * 0.3) * 0.03;
+        k.c.g.position.set(x, Y(x, z) + hop + fly * 0.12, z);
+        k.c.g.rotation.y = -(t * 0.4 + k.ph);
+        k.c.wings.forEach((w, i) => (w.rotation.x = (i ? -1 : 1) * (fly > 0 ? 0.9 * Math.sin(t * 30) : 0.05)));
+      }
+    });
+  }
+
+  // The hare, sitting up between two rows, ears twitching.
+  {
+    const h = new THREE.Group();
+    h.add(
+      mesh(
+        merge([
+          part(sphere(), "#a8784e", [0, 0.022, 0], [0, 0, -0.9], [0.013, 0.02, 0.012]),
+          part(sphere(), "#e9dcc4", [0.006, 0.02, 0], [0, 0, -0.9], [0.008, 0.013, 0.009]),
+          part(sphere(), "#a8784e", [0.01, 0.043, 0], [0, 0, 0], [0.009, 0.008, 0.008]),
+          part(sphere(6), "#2a1d17", [0.017, 0.045, 0.004], [0, 0, 0], [0.0015, 0.0015, 0.0015]),
+          part(sphere(6), "#2a1d17", [0.017, 0.045, -0.004], [0, 0, 0], [0.0015, 0.0015, 0.0015]),
+          part(sphere(6), "#f6efe2", [-0.012, 0.012, 0], [0, 0, 0], [0.005, 0.005, 0.005]),
+          part(sphere(8), "#a8784e", [0.006, 0.062, 0.004], [0.15, 0, 0.2], [0.003, 0.016, 0.004]),
+          part(sphere(8), "#a8784e", [0.006, 0.062, -0.004], [-0.15, 0, 0.2], [0.003, 0.016, 0.004]),
+        ]),
+        cm,
+      ),
+    );
+    h.scale.setScalar(FOLK);
+    h.position.set(hareAt.x, Y(hareAt.x, hareAt.z), hareAt.z);
+    h.rotation.y = -Math.atan2(EYE.z, -EYE.x);
+    g.add(h);
+    life.push((t) => (h.rotation.z = 0.08 * Math.max(0, Math.sin(t * 2.7)) ** 8));
+  }
+
+  // The wheat: tufts along every furrow ridge of the standing strips and the cut strip's back half; stubble in its front half.
+  const tufts: Inst[] = [];
+  const stubble: Inst[] = [];
+  const GOLD = [new THREE.Color(1, 1, 1), new THREE.Color(1.06, 1.0, 0.85), new THREE.Color(0.92, 0.9, 0.86)];
+  L.strips.forEach((s) => {
+    if (s.crop === "plough") return;
+    for (let u = s.u0 + FURROW * 0.5; u < s.u1 - FURROW * 0.3; u += FURROW / 2) {
+      const onRidge = Math.round((u - s.u0) / (FURROW / 2)) % 2 === 0;
+      for (let v = -0.98; v < 0.25; v += 0.024) {
+        const w = { u: u + (r() - 0.5) * 0.008, v: v + (r() - 0.5) * 0.012 };
+        const p = xz(w.u, w.v);
+        const f = fieldAt(L, p.x, p.z);
+        if (f.keep < 0.6 || f.strip < 0 || hexDist(p.x, p.z) > INR - 0.1) continue;
+        if (stands.some((q) => Math.hypot(q.x - p.x, q.z - p.z) < q.r * 0.8)) continue;
+        if (s.crop === "cut" && w.v < split) {
+          if (onRidge && r() < 0.8) stubble.push({ m: mat(p.x, Y(p.x, p.z) + 0.004, p.z, 0.006, 0.008, 0.006, r() * 6), c: new THREE.Color("#d8b860") });
+          continue;
+        }
+        if (!onRidge && r() < 0.5) continue;
+        const k = 1 + (r() - 0.5) * 0.3;
+        tufts.push({ m: mat(p.x, Y(p.x, p.z) - 0.002, p.z, k * 1.15, k * (1.1 + r() * 0.2), k * 1.15, r() * 6), c: GOLD[Math.floor(r() * 3)]! });
+      }
+    }
+  });
+  const sway = swayMat(L.seed);
+  g.add(instanced(tuftGeo(), tufts, sway));
+  if (stubble.length) g.add(instanced(cyl(0.6, 1, 4), stubble, blobMat()));
+  life.push((t) => (sway.userData.time.value = t));
+
+  // Poppies and cornflowers along the tracks and the field's edge.
+  {
+    const dots: Inst[] = [];
+    for (let i = 0; i < 500 && dots.length < 180; i++) {
+      const a = r() * Math.PI * 2;
+      const d = 0.4 + Math.sqrt(r()) * 0.52;
+      const [x, z] = [Math.cos(a) * d, Math.sin(a) * d];
+      const f = fieldAt(L, x, z);
+      // Only along the field's margins: the tracks between strips and the strips' outer edges.
+      const margin = f.keep > 0.3 && (f.strip < 0 || f.inside < 0.03);
+      if (hexDist(x, z) > INR - 0.07 || !margin) continue;
+      const blue = i % 5 === 0;
+      dots.push({ m: mat(x, Y(x, z) + 0.012, z, 0.006, 0.004, 0.006), c: new THREE.Color(blue ? "#5a7fe0" : "#e0312a") });
+      dots.push({ m: mat(x, Y(x, z) + 0.005, z, 0.0012, 0.008, 0.0012), c: new THREE.Color("#4f8a34") });
+    }
+    g.add(instanced(sphere(6), dots, blobMat()));
+  }
+  return { g, stands, life };
+}
+
+// Grain's ground paint: the tracks sandy, standing wheat's soil a deep gold, stubble pale straw, the ploughed strip brown with
+// darker grooves.
+function farmTint(L: Layout) {
+  const TRACK = new THREE.Color("#e6d29a");
+  const WHEAT = new THREE.Color("#d4a63c");
+  const STUB = new THREE.Color("#ead07a");
+  const SOIL = new THREE.Color("#8d5a34");
+  const GROOVE = new THREE.Color("#6a4126");
+  return (x: number, z: number, y: number, c: THREE.Color) => {
+    const f = fieldAt(L, x, z);
+    if (f.keep < 0.02) return;
+    if (f.strip < 0) return void c.lerp(TRACK, 0.8 * f.keep);
+    const s = L.strips[f.strip]!;
+    const edge = smooth(0, 0.02, f.inside) * f.keep;
+    const ridge = 0.5 + 0.5 * Math.cos(((f.u - s.u0) / FURROW) * Math.PI * 2);
+    if (s.crop === "plough") c.lerp(SOIL, edge).lerp(GROOVE, edge * (1 - ridge) * 0.7);
+    else if (s.crop === "cut" && f.v < 0) c.lerp(STUB, edge * 0.9);
+    else c.lerp(WHEAT, edge * 0.85);
+    c.lerp(TRACK, (1 - smooth(0, 0.02, f.inside)) * f.keep * 0.7);
+  };
+}
+
 // --- the tile
 
 export type Tile = { group: THREE.Group; layout: Layout; ground: (x: number, z: number) => number; update: (t: number) => void };
@@ -1530,7 +1969,7 @@ export function buildTile(kind: Terrain, seed: number, rings = 64): Tile {
   const ground = (x: number, z: number) => heightAt(L, x, z);
   const group = new THREE.Group();
   const r = rng32(seed ^ 0x9e3779b9);
-  const props = kind === "timber" ? forest(L, ground, r) : kind === "wool" ? pasture(L, ground, r) : null;
+  const props = kind === "timber" ? forest(L, ground, r) : kind === "wool" ? pasture(L, ground, r) : kind === "grain" ? farm(L, ground, r) : null;
   const stands = props?.stands ?? [];
   // Canopy cover and contact: the ground darkens under each stand.
   const occlude = (x: number, z: number) => {
@@ -1541,7 +1980,7 @@ export function buildTile(kind: Terrain, seed: number, rings = 64): Tile {
     }
     return o;
   };
-  const b = block(L, rings, occlude);
+  const b = block(L, rings, occlude, kind === "grain" ? farmTint(L) : undefined);
   group.add(b.top, b.side);
   if (props) group.add(props.g);
   const life = props?.life ?? [];

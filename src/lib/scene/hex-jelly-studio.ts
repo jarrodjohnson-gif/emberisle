@@ -166,4 +166,4 @@ if (frozen !== null) {
   const clock = new THREE.Clock();
   renderer.setAnimationLoop(() => draw(clock.getElapsedTime()));
 }
-(window as unknown as { __jelly: unknown }).__jelly = { ready: true, kind, seed, info: renderer.info.render };
+(window as unknown as { __jelly: unknown }).__jelly = { ready: true, kind, seed, info: renderer.info.render, scene };
