@@ -166,6 +166,8 @@ jobs:
       - if: matrix.suite == 'presentation'
         run: npm run waves-prove
       - if: matrix.suite == 'presentation'
+        run: npm run splash-prove
+      - if: matrix.suite == 'presentation'
         run: npm run polish-tokens-prove
       - if: matrix.suite == 'presentation'
         run: npm run roll-moment-prove
