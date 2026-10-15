@@ -2,7 +2,8 @@
 // up, 20 round from the south), under the prompt's light, on the paper, with a subtle tilt-shift. Dev only: scripts/hex-jelly.html
 // loads it and scripts/hex-jelly.mjs screenshots it. Query: kind=<terrain> (default timber), seed=<n>, pip=<n> (0 for none),
 // t=<seconds> to freeze the tile's life at that moment (otherwise it runs live), props=0 for the bare ground, focus=pool|camp
-// to frame that corner of the story close up.
+// to frame that corner of the story close up, ring=1 for six neighbours round it at board spacing (to see what the landform
+// hides), az=<degrees> to orbit the eye.
 import * as THREE from "three";
 import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
@@ -21,7 +22,8 @@ const frozen = q.get("t");
 const focus = q.get("focus");
 const PAPER = 0xebe8e1;
 const POLAR = (52 * Math.PI) / 180;
-const AZ = (20 * Math.PI) / 180;
+const AZ = (Number(q.get("az") ?? 20) * Math.PI) / 180;
+const ring = q.get("ring") === "1";
 const EYE = 18.8;
 
 const canvas = document.querySelector("canvas")!;
@@ -44,7 +46,8 @@ key.shadow.mapSize.set(2048, 2048);
 key.shadow.radius = 3;
 key.shadow.bias = -0.0004;
 key.shadow.normalBias = 0.01;
-Object.assign(key.shadow.camera, { left: -2, right: 2, top: 2, bottom: -2, near: 1, far: 20 });
+const reach = q.get("ring") === "1" ? 5 : 2;
+Object.assign(key.shadow.camera, { left: -reach, right: reach, top: reach, bottom: -reach, near: 1, far: 20 });
 scene.add(key);
 const back = new THREE.DirectionalLight(0xd6eef0, 0.45);
 back.position.set(-LIGHT.key[0] * 5, 4, -LIGHT.key[2] * 5 - 3);
@@ -52,7 +55,7 @@ scene.add(back);
 
 // The paper takes the block's shadow, fading out with distance so it never streaks across the page.
 const paper = new THREE.Mesh(
-  new THREE.CircleGeometry(4, 64),
+  new THREE.CircleGeometry(9, 64),
   new THREE.ShadowMaterial({ opacity: 0.22, transparent: true }),
 );
 paper.rotation.x = -Math.PI / 2;
@@ -62,6 +65,20 @@ scene.add(paper);
 const tile = buildTile(kind, seed);
 scene.add(tile.group);
 if (q.get("props") === "0") tile.group.children.slice(2).forEach((o) => (o.visible = false));
+// The ring: six more tiles of the same kind (other seeds) at the board's spacing, each with a token.
+const others: ReturnType<typeof buildTile>[] = [];
+if (ring)
+  for (let k = 0; k < 6; k++) {
+    const t = buildTile(kind, seed + 101 * (k + 1));
+    const a = (k * Math.PI) / 3;
+    t.group.position.set(Math.cos(a) * CORNER_R * Math.sqrt(3), 0, Math.sin(a) * CORNER_R * Math.sqrt(3));
+    scene.add(t.group);
+    others.push(t);
+    const tk = numberToken([3, 5, 9, 4, 11, 6][k]!);
+    tk.position.set(t.group.position.x, BLOCK_H + 0.04 + TOKEN_LIFT, t.group.position.z);
+    tk.rotation.set(TOKEN_TILT, AZ, 0, "YXZ");
+    scene.add(tk);
+  }
 if (pip) {
   const t = numberToken(pip);
   t.position.set(0, BLOCK_H + 0.04 + TOKEN_LIFT, 0);
@@ -71,6 +88,7 @@ if (pip) {
 
 // Pose the tile's life before measuring it (smoke, embers and leaping fish start at the origin).
 tile.update(frozen !== null ? Number(frozen) : 0);
+others.forEach((o) => o.update(frozen !== null ? Number(frozen) : 0));
 // Fit: the eye on the diorama's line, the lens narrowed until the block and its props fill 92 % of the frame.
 const camera = new THREE.PerspectiveCamera(10, innerWidth / innerHeight, 1, 60);
 scene.updateMatrixWorld(true);
@@ -81,9 +99,9 @@ for (let i = 0; i < 6; i++) {
 }
 // The block and its standing props only: smoke and embers drift up out of frame.
 const box = new THREE.Box3();
-tile.group.traverse((o) => {
+[tile, ...others].forEach((tl) => tl.group.traverse((o) => {
   if ((o as THREE.Mesh).isMesh && !o.userData.loose) box.expandByObject(o);
-});
+}));
 for (let i = 0; i < 8; i++) pts.push(new THREE.Vector3(i & 1 ? box.max.x : box.min.x, i & 2 ? box.max.y : box.min.y, i & 4 ? box.max.z : box.min.z));
 // A close-up frames a disc round the story's spot instead of the whole tile.
 const spot = focus === "pool" ? tile.layout.pool : focus === "camp" ? tile.layout.camp && { x: Math.cos(tile.layout.camp.a) * 0.58, z: Math.sin(tile.layout.camp.a) * 0.58 } : null;
@@ -138,6 +156,7 @@ composer.addPass(tilt(1, 0));
 composer.addPass(tilt(0, 1));
 const draw = (t: number) => {
   tile.update(t);
+  others.forEach((o) => o.update(t));
   composer.render();
 };
 if (frozen !== null) {

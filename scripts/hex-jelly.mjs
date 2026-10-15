@@ -1,6 +1,6 @@
 // Screenshots the Hex Jelly studio (docs/design/hex-jelly-prompt.md): test-results/jelly-<kind>-<seed>.png for each kind and
 // seed asked, 1024x768, frozen at --t seconds. Headless Chromium here is SwiftShader. Run: node scripts/hex-jelly.mjs [timber]
-// [--seeds 7,11,23] [--t 2.05]
+// [--seeds 7,11,23] [--t 2.05] [--focus pool,camp] [--q ring=1&az=200]
 import { existsSync, mkdirSync } from "node:fs";
 import { chromium } from "playwright";
 import { createServer } from "vite";
@@ -16,6 +16,10 @@ const T = ti >= 0 ? Number(args[ti + 1]) : 2.05;
 const fi = args.indexOf("--focus");
 // Close-ups: the whole tile, then each story spot asked (pool, camp).
 const views = ["", ...(fi >= 0 ? args[fi + 1].split(",") : [])];
+const qi = args.indexOf("--q");
+// Extra query for every shot (ring=1, az=200), and its name in the file.
+const extra = qi >= 0 ? `&${args[qi + 1]}` : "";
+const tag = qi >= 0 ? `-${args[qi + 1].replace(/[=&]/g, "")}` : "";
 const PORT = Number(process.env.VITE_PORT) || 8132;
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();
@@ -33,11 +37,11 @@ try {
       const page = await browser.newPage({ viewport: { width: 1024, height: 768 } });
       page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
       page.on("pageerror", (e) => errors.push(String(e)));
-      await page.goto(`http://127.0.0.1:${PORT}/scripts/hex-jelly.html?kind=${kind}&seed=${seed}&t=${T}${view ? `&focus=${view}` : ""}`);
+      await page.goto(`http://127.0.0.1:${PORT}/scripts/hex-jelly.html?kind=${kind}&seed=${seed}&t=${T}${view ? `&focus=${view}` : ""}${extra}`);
       await page.waitForFunction(() => window.__jelly?.ready, null, { timeout: 120_000 }).catch((e) => {
         throw new Error(errors.join(" | ") || e.message);
       });
-      const file = `test-results/jelly-${kind}-${seed}${view ? `-${view}` : ""}.png`;
+      const file = `test-results/jelly-${kind}-${seed}${view ? `-${view}` : ""}${tag}.png`;
       await page.screenshot({ path: file });
       console.log(`wrote ${file}`, JSON.stringify(await page.evaluate(() => window.__jelly.info)));
       if (errors.length) (failed = true), console.log("console errors:", errors.join(" | "));
