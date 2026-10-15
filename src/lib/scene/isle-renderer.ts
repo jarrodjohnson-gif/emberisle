@@ -34,7 +34,7 @@ import { HEX_SIZE, SQRT3, hexCorners, hexesInRadius, vertexId } from "@/lib/game
 import { LAND_MS } from "@/lib/scene/landing";
 import { mulberry32, hashStr } from "@/lib/utils";
 import { PAINT, RIM } from "@/lib/scene/palette";
-import { PropKit, decorate, sculptHex, tileMaterial, type FarmWork, type OreWork, type Sheep } from "@/lib/scene/terrain";
+import { PropKit, decorate, sculptHex, tileMaterial, type FarmWork, type Life, type OreWork, type Sheep } from "@/lib/scene/terrain";
 import { OceanLife } from "@/lib/scene/ocean-life";
 import { CAUSTIC_GLSL, PAPER, makeCrystalSea, makeFloorProps, makeSeaFloor, makeSwell, makeWash, type SeaUniforms, type WaterPath, type WaterStatus } from "@/lib/scene/crystal-water";
 import { payingHexes } from "@/lib/game/rules";
@@ -46,6 +46,27 @@ const TILE_Y = 0.04;
 // The y of a hex's top surface: the sculpted top is exactly here at the centre (the token) and on the rim (the pieces).
 export function topOf(terrain: Terrain) {
   return TILE_Y + SLAB + hexHeight(terrain) * 0.35;
+}
+// A lit board on a table (polish.md "The board look target", #135): one warm key lamp carries the light, so the slabs shade
+// on their sides and every prop casts a soft shadow; the sky and ground bounce are low and nearly grey, so the caps' own paint
+// is the colour on screen. No flat ambient: that was what washed the caps out. The hex studio lights its hex with the same rig.
+export function lightRig(scene: THREE.Scene) {
+  scene.add(new THREE.HemisphereLight(0xe9e4da, 0xc8ad86, 0.55));
+  const sun = new THREE.DirectionalLight(0xffe3bd, 2.1);
+  sun.position.set(8, 16, 6);
+  sun.castShadow = true;
+  // 1024 over 18 units, blurred 6 texels: shadow edges soften over about a tenth of a hex, like a lamp, not the noon sun.
+  sun.shadow.mapSize.set(1024, 1024);
+  sun.shadow.radius = 6;
+  sun.shadow.camera.left = -9;
+  sun.shadow.camera.right = 9;
+  sun.shadow.camera.top = 9;
+  sun.shadow.camera.bottom = -9;
+  sun.shadow.bias = -0.0003;
+  scene.add(sun);
+  const fill = new THREE.DirectionalLight(0xd9e4ea, 0.3);
+  fill.position.set(-8, 8, -4);
+  scene.add(fill);
 }
 type TerrainStats = { tiles: number; props: number; drawCalls: number; tileTriangles: number; propTriangles: number; triangles: number };
 type Highlights = { vertices: string[]; edges: string[]; hexes: string[] };
@@ -99,7 +120,7 @@ const _n = new THREE.Vector3();
 // past 1.25x nor past 38% of a hex's width (the disc is 0.68 across, a hex SQRT3 * HEX_SIZE, so that cap is the one that
 // binds, at 1.08x), and shrinks while its disc would overlap another's on screen. Zoomed in, it is its own size again.
 // TOKEN_GLYPH is the numeral's height on the face, world units.
-const TOKEN_TILT = (22 * Math.PI) / 180;
+export const TOKEN_TILT = (22 * Math.PI) / 180;
 const TOKEN_NUMERAL_PX = 12;
 const TOKEN_MAX_SCALE = Math.min(1.25, (0.38 * SQRT3 * HEX_SIZE) / 0.68);
 const TOKEN_GLYPH = 0.31;
@@ -281,25 +302,7 @@ export class IsleRenderer {
     this.orbit.addEventListener("change", this.wake);
 
     this.scene.fog = new THREE.Fog(PAPER, 26, 52);
-    // A lit board on a table (polish.md "The board look target", #135): one warm key lamp carries the light, so the
-    // slabs shade on their sides and every prop casts a soft shadow; the sky and ground bounce are low and nearly grey,
-    // so the caps' own paint is the colour on screen. No flat ambient: that was what washed the caps out.
-    this.scene.add(new THREE.HemisphereLight(0xe9e4da, 0xc8ad86, 0.55));
-    const sun = new THREE.DirectionalLight(0xffe3bd, 2.1);
-    sun.position.set(8, 16, 6);
-    sun.castShadow = true;
-    // 1024 over 18 units, blurred 6 texels: shadow edges soften over about a tenth of a hex, like a lamp, not the noon sun.
-    sun.shadow.mapSize.set(1024, 1024);
-    sun.shadow.radius = 6;
-    sun.shadow.camera.left = -9;
-    sun.shadow.camera.right = 9;
-    sun.shadow.camera.top = 9;
-    sun.shadow.camera.bottom = -9;
-    sun.shadow.bias = -0.0003;
-    this.scene.add(sun);
-    const fill = new THREE.DirectionalLight(0xd9e4ea, 0.3);
-    fill.position.set(-8, 8, -4);
-    this.scene.add(fill);
+    lightRig(this.scene);
 
     // Water, beach, and foam (docs/design/ocean.md). Built once: the outline does not change when the isle is dealt.
     this.opaqueSea = new THREE.Mesh(new THREE.CircleGeometry(48, 64), this.water);
@@ -1246,33 +1249,14 @@ export class IsleRenderer {
     const life = { sheep: this.sheep, oreWork: this.oreWork, farmWork: this.farmWork, tall: this.trees };
 
     for (const h of state.hexes) {
-      const { x, z } = worldOfHex(h);
-      const rng = mulberry32(hashStr(h.id + h.terrain));
-      const sculpt = sculptHex(h, HEX_SIZE * 0.995, topOf(h.terrain) - TILE_Y, TILE_Y, rng);
-      const tile = makeHexTile(sculpt.geo);
-      tile.position.set(x, TILE_Y, z);
-      tile.userData = { kind: "hex", id: h.id, land: true };
-      tile.traverse((o) => {
-        o.userData = tile.userData;
-        o.castShadow = true;
-        o.receiveShadow = true;
-      });
+      const { tile, cap, token, decorate } = landHex(h);
       this.land.add(tile);
       this.pickables.push(tile);
-      const cap = tile.getObjectByName("cap") as THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>;
-      cap.material.emissive.copy(new THREE.Color(PAINT[h.terrain][0]).lerp(FLASH_WARM, 0.6));
-      cap.material.emissiveIntensity = 0;
       this.caps.set(h.id, cap.material);
-      props.push(() => decorate(kit, life, h, x, z, sculpt, rng));
-      if (h.pip != null) {
-        const tok = numberToken(h.pip);
-        tok.userData.token = h.pip;
-        tok.userData.hex = h.id;
-        tok.userData.restY = topOf(h.terrain) + 0.04;
-        tok.userData.lift = 0;
-        tok.position.set(x, topOf(h.terrain) + 0.04, z);
-        this.land.add(tok);
-        this.tokens.push(tok);
+      props.push(() => decorate(kit, life));
+      if (token) {
+        this.land.add(token);
+        this.tokens.push(token);
       }
     }
     // The props (the heavier half of the build) draw a frame after the tiles, so the board and its pieces are not held for them
@@ -1458,6 +1442,35 @@ export class IsleRenderer {
     }
     this.setPending(this.pending);
   }
+}
+
+// One hex as the board draws it: the sculpted tile at its spot, its number token at rest, and its prop pass, which the board
+// runs a frame later. The hex studio (scripts/hex-studio.mjs) draws its hexes with this too.
+export function landHex(h: HexCell) {
+  const { x, z } = worldOfHex(h);
+  const rng = mulberry32(hashStr(h.id + h.terrain));
+  const sculpt = sculptHex(h, HEX_SIZE * 0.995, topOf(h.terrain) - TILE_Y, TILE_Y, rng);
+  const tile = makeHexTile(sculpt.geo);
+  tile.position.set(x, TILE_Y, z);
+  tile.userData = { kind: "hex", id: h.id, land: true };
+  tile.traverse((o) => {
+    o.userData = tile.userData;
+    o.castShadow = true;
+    o.receiveShadow = true;
+  });
+  const cap = tile.getObjectByName("cap") as THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>;
+  cap.material.emissive.copy(new THREE.Color(PAINT[h.terrain][0]).lerp(FLASH_WARM, 0.6));
+  cap.material.emissiveIntensity = 0;
+  let token: THREE.Group | null = null;
+  if (h.pip != null) {
+    token = numberToken(h.pip);
+    token.userData.token = h.pip;
+    token.userData.hex = h.id;
+    token.userData.restY = topOf(h.terrain) + 0.04;
+    token.userData.lift = 0;
+    token.position.set(x, topOf(h.terrain) + 0.04, z);
+  }
+  return { tile, cap, token, decorate: (kit: PropKit, life: Life) => decorate(kit, life, h, x, z, sculpt, rng) };
 }
 
 // Each hex id's top y.
@@ -1706,7 +1719,7 @@ function hexRing(outer: number, inner: number) {
   return geo;
 }
 
-function numberToken(n: number) {
+export function numberToken(n: number) {
   const g = new THREE.Group();
   const hot = n === 6 || n === 8;
   const disc = new THREE.Mesh(
@@ -1834,7 +1847,7 @@ function makePath(seat: string, len: number) {
   ]);
 }
 
-function makeWayfarer() {
+export function makeWayfarer() {
   const g = new THREE.Group();
   const charcoal = new THREE.MeshStandardMaterial({ color: 0x2b2420, roughness: 0.75 });
   const part = (geo: THREE.BufferGeometry, mat: THREE.Material, x: number, y: number, z: number) => {
