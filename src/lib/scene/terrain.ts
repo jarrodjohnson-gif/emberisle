@@ -8,7 +8,7 @@ import { PAINT, PROP, STRATA } from "@/lib/scene/palette";
 // flat where the token and the pieces stand, a rounded lip over a sand beach, and a side cut into sand, soil and rock strata.
 
 const SQ3 = Math.sqrt(3);
-// Lattice rings across the top (6 R^2 triangles). The rim: its width and drop (corner-radius units), its segments, how far
+// Lattice rings across the top (6 R^2 triangles): the first cost knob (docs/design/terrain.md "Numbers"). The rim: its width and drop (corner-radius units), its segments, how far
 // the rounded lip stands out over the strata (the cut-cake overhang) and how far it tucks back under before they start.
 const RINGS = 18;
 const BEVEL_W = 0.06;
@@ -88,7 +88,7 @@ function masksAt(x: number, z: number, m: Masks, o = 0) {
   const dc = nearest(CORNERS, x, z);
   const corner = smooth(0.14, 0.3, dc);
   m.rise = token * smooth(0.22, 0.42, dc) * (1 - smooth(0.62, 0.78, d));
-  m.dip = token * corner * smooth(0.16, 0.3, nearest(MIDS, x, z));
+  m.dip = token * corner * smooth(0.2, 0.32, nearest(MIDS, x, z));
   // A beach reaches 0.11 in from its edge; nearer the centre than that from every edge, there is none.
   const near = d > TOP_INR - 0.11;
   for (let k = 0; k < 6; k++) {
@@ -412,12 +412,12 @@ function furrows(axis: number) {
 // Clay's quarry pit, cut into the ground PIT_AT out toward a corner: the lip and two ledges at these radii, each PIT_STEP
 // deeper behind a riser PIT_RISER wide, a floor inside the last; a trodden apron PIT_APRON wide rings the lip. The pit is its
 // own geometry on the tile; the lattice under it drops out of sight, and the apron is wide enough to cover every lattice
-// triangle that dips (a lattice step and a little).
+// triangle that dips (a lattice step and a little, so it follows RINGS).
 const PIT_AT = 0.7;
 const PIT_R = [0.2, 0.14, 0.08];
 const PIT_STEP = 0.032;
 const PIT_RISER = 0.012;
-const PIT_APRON = 0.075;
+const PIT_APRON = (HEX_SIZE * 0.995 - BEVEL_W) / RINGS + 0.017;
 
 const col = (hex: string) => new THREE.Color(hex);
 
@@ -1076,9 +1076,13 @@ function placeAt(parts: THREE.BufferGeometry[], x: number, y: number, z: number,
 
 // --- the props' shapes, each in its own frame with its foot at y 0
 
+// Segments round a pine's frond tier, three to each of its seven lobes: the second cost knob (docs/design/terrain.md
+// "Numbers"; 14 gives sharper lobes and a pine of about 720 triangles instead of 1,000).
+const FROND_SEGS = 21;
+
 // A frond tier: a plump bell whose lip hangs in seven rounded lobes, smooth-shaded, lit on top and shaded under the lip.
 function frond(r: number, h: number, hex: string, light: string, dark: string) {
-  const g = lathe([[0.8 * r, -0.03 * h], [r, 0.07 * h], [0.86 * r, 0.32 * h], [0.5 * r, 0.66 * h], [0, h]], 21, (v, f) => {
+  const g = lathe([[0.8 * r, -0.03 * h], [r, 0.07 * h], [0.86 * r, 0.32 * h], [0.5 * r, 0.66 * h], [0, h]], FROND_SEGS, (v, f) => {
     const w = smooth(0.5, 1, f);
     const lobe = Math.cos(7 * Math.atan2(v.z, v.x));
     v.x *= 1 + 0.1 * lobe * w;
