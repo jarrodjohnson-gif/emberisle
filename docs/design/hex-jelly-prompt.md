@@ -1,79 +1,102 @@
 # Hex Jelly — the build prompt (#599)
 
 Written 2026-10-15 from the owner's references (the "Material Studies" jelly dioramas: Atoll, Iceberg, Pirate, Harbor,
-and the Torii and Harbor prompts). Those squares are the look; this is the same recipe for a hexagonal tile. Built first
-as a standalone studio (`scripts/hex-jelly.html`, `src/lib/scene/hex-jelly.ts`), then ported into the board.
+and the Torii and Harbor prompts). Design only: a standalone studio (`scripts/hex-jelly.html`,
+`src/lib/scene/hex-jelly.ts`, `node scripts/hex-jelly.mjs`), one tile at a time, until the owner signs each off.
 
 PROMPT
 
-Build "Hex Jelly", a procedural Three.js diorama tile set: six kinds of hexagonal land tile (forest, pasture, grain field,
-clay pit, ore mountain, sand waste) that each read as a finished miniature on their own and sit edge to edge as a board.
-Everything is procedural: no external models, no textures, no external requests. One studio page shows one tile large
-on a warm washi-paper background (#ebe8e1), seen 3/4 from 38° above the horizon and 20° round from the south, with a
-soft floor shadow that fades out with distance. The look is the Material Studies series: a chunky cut-cake block of
-candy-coloured land, soft studio light, a tilt-shift miniature feel.
+Build "Hex Jelly", a series of six living miniature worlds, each on a single hexagonal tile: a forest, a pasture, a grain
+farm, a clay pit, an ore mountain and a sand waste. Every tile is a finished little story you could stare at for a minute:
+something is always moving, someone is always busy, and there is one small surprise to find. Everything is procedural
+Three.js: no models, no textures, no external requests. The look is the Material Studies series: a chunky cut-cake block of
+candy-coloured land, glossy soft-lit forms, translucent jelly water, a tilt-shift miniature on warm washi paper.
+
+THE STAGE
+- Washi-paper background (#ebe8e1) with the faintest fibre grain; a soft floor shadow under the tile that fades out with
+  distance. Camera 3/4: 38° above the horizon, 20° round from the south, lens narrow (about 10°) so it reads as a model
+  on a table. A subtle tilt-shift blur on the top and bottom fifths of the frame. ACES tone mapping, exposure ~1.05.
+- Light: one warm key (#ffe2b8) 55° up from the viewer's front left with soft PCF shadows that keep a small prop's shadow
+  readable; hemisphere fill (sky #dff6f4, ground #c9b58f); a cool back light that rims far edges. Lambert with a gentle
+  three-step ramp so nothing turned from the key goes below half light; a pale sky-tinted Fresnel sheen on every surface
+  so it reads as glossy candy. Creases go warm and soft, never black. No outlines.
 
 THE BLOCK (every tile)
-- A hexagonal slab 1.94 across the flats (corner radius 1.12), 0.30 tall, with vertical corners rounded (radius ~0.10)
-  and a rounded top edge (radius ~0.05), so it reads as a soft moulded block, never a sharp prism.
-- The top is a heightfield ~120 samples across, clipped to the rounded hex, with a boundary skirt down to the strata so
-  the cross-section is continuous.
-- The cut sides show five candy strata with wavy borders: a thin jelly-green or surface-coloured lip, pale sand
-  (#ecdbb2) speckled with white pebbles, a thin shell-white band (#f7f0e2), caramel soil (#bb7a42) speckled with darker
-  grit, and chocolate rock (#5f4234) at the base. The speckles are small flattened discs instanced on the faces.
-- Gameplay ground rules: the top is exactly flat and level in a disc of radius 0.33 at the centre (the number token's
-  pad) and in a disc of radius 0.14 at every corner (where pieces stand); within 0.18 of each edge the ground does not
-  rise above the pad level (roads lie there). Everything else is the tile's landform, and it must be big: the tallest
-  landform rises 0.35 to 0.6 above the pad, so the tile has a real silhouette from the diorama angle. Landforms sit
-  toward the back and sides (away from the camera) so they never hide the token.
-- Seeded per tile id: a 60° rotation of the landform, its relief and the prop scatter, so no two tiles of a kind match.
+- A hexagonal slab 1.94 across the flats (corner radius 1.12), 0.30 tall, its vertical corners rounded (~0.12) and its top
+  edge rolled over (~0.05), like a moulded jelly, never a sharp prism.
+- The top is a heightfield ~120 samples across, clipped to the rounded hex, stitched to the roll and the sides.
+- The cut sides show five candy strata with wavy borders: a lip in the surface's own colour; pale sand (#ecdbb2) with white
+  pebbles; a thin shell-white band (#f7f0e2); caramel soil (#bb7a42) with dark grit; chocolate rock (#5f4234) with pale
+  flecks. Where water meets the side, the cut shows the water as a translucent jelly window with a bright meniscus line.
+- Game rules the land must keep: exactly flat and level in a disc of radius 0.33 at the centre (the number token's pad, a
+  pale trodden clearing) and in a disc of 0.14 at every corner (where pieces stand); within 0.18 of each edge the ground
+  never rises above the pad (roads lie there). Everything else is landform, and it is big: the tallest feature rises 0.35
+  to 0.6 above the pad. The big features sit toward the back (away from the eye) so they frame the token, never hide it.
+- Seeded per tile: which back edge the landform leans toward, its relief, and every scatter, so no two tiles match.
+- Terrain colour by height and slope (grass or field on gentle ground, the kind's rock on steep, sand at the water), then
+  CPU-baked horizon AO per vertex, plus darkening under canopies and at the foot of every prop.
 
-TERRAIN SHADING (one vertex-coloured mesh per tile, then a terrain shader)
-- Colour by slope and height: grass/field colour on gentle ground, the kind's rock on steep slopes (speckled, darker in
-  creases), sand at the rim, a trodden paler disc under the token.
-- CPU-baked horizon AO per vertex (sample the heightfield in 8 directions, the steepest horizon angle darkens it), plus
-  canopy-cover darkening under trees and contact darkening at every prop's foot. Creases go soft and warm, never black.
-- Brighter tops: upward-facing surfaces lift toward a warm sun tint; downward and away-facing toward a cool shade tint.
+JELLY WATER (shared by every tile that has it)
+- Translucent, slightly milky turquoise (#7fd6cf at the edge, #3fa8a8 in the deep), its bed visible through it; depth
+  read from a stepped bed so the shallows are pale and the middle darker; a bright cream rim where water meets land; gentle
+  vertex ripples; a slow soft caustic shimmer on the bed. It never looks like glass or chrome: it looks like jelly.
 
-LIGHT AND FINISH
-- One warm key (#ffe2b8) 55° up from the viewer's front left casting soft PCF shadows (prop shadows must stay readable),
-  a hemisphere fill (sky #dff6f4, ground #c9b58f), a weak cool back light that rims far edges.
-- Toon-soft lambert: a gentle three-step ramp so faces turned from the key keep half their light; a Fresnel sheen on
-  everything (pale, sky-tinted) so surfaces read as glossy candy.
-- ACES tone mapping, sRGB, exposure ~1.05, and a subtle tilt-shift blur (top and bottom of frame) for the miniature feel.
+SCALE AND CRAFT
+- One scale everywhere: a person 0.11 tall, a deer 0.09 at the shoulder, a sheep 0.08 long, a pine 0.25 to 0.5, a tent
+  0.1. Props are chunky and rounded: fat trunks, soft blob canopies, nothing spindly or toy-thin.
+- Foliage is clusters of lumpy noise-displaced icosphere blobs (3–6 per tree), packed so canopies touch, each blob shaded by
+  how buried it is among its neighbours and brighter toward the sky. Pines are stacked flattened blobs.
+- Every repeated thing is instanced. Everything that lives moves: a small idle loop per creature, nothing frozen.
 
-VEGETATION AND PROPS (the reason the references read rich: density, clustering and chunk)
-- Canopy: an InstancedMesh of low-poly icospheres with vertex-noise displacement, clustered 3–6 blobs per tree, trees
-  packed so canopies touch, per-instance AO from neighbour occlusion (blobs deep in a cluster are darker), brighter tops.
-  Kinds via an instance colour: broadleaf (round, deep to bright green), pine (flattened pads stacked in a cone), bush.
-- Props are chunky: thick trunks, fat rounded forms, nothing spindly. Scale is consistent: a sheep about 0.12 long, a
-  person about 0.18 tall, a tree 0.25 to 0.5 tall.
+THE SIX WORLDS
 
-THE SIX TILES
-1. Forest. A forested dome hill at the back (0.5 above the pad) and a lower wooded shoulder on one side, with a small
-   clearing and a fallen log in front of the token. 25–40 trees: broadleaf blobs on the hill, pines along the ridge, a
-   few bushes at the edge, two stumps. The canopy reads as one dense rolling mass with a lumpy silhouette.
-2. Pasture. Rolling bright-green ground: a long grassy ridge along one back side (0.3), a dip in front. A dry-stone wall
-   or hedge following the ridge, a small round tree or two, five sheep (one lying), white and yellow flower specks,
-   three grey boulders.
-3. Grain. Golden field on a gentle saddle; four ploughed strips with real furrow relief and gold wheat tufts (instanced
-   blades) standing in them; three round hay bales; a scarecrow on 1 tile in 10; a hedge clump at one corner.
-4. Clay. Burnt-orange ground with a deep stepped quarry pit (three ledges, 0.18 deep) cut into one back side, spoil heaps
-   of fresh clay beside it, a stout plank derrick over the pit with a rope and bucket and a pennant, a stack of bricks,
-   a wheelbarrow.
-5. Ore. Grey stony ground rising into a ridge at the back from which two or three tall faceted peaks grow (the tallest
-   0.6 with snow), scree fans, a timber-framed mine mouth in the ridge foot with rails and a cart, rubble.
-6. Sand waste. Pale dunes with slip faces and wind ripples, a rocky outcrop at the back (0.3), a bleached dead tree,
-   two cacti, scattered stones and a skull; the wayfarer (robber) stands here at the person scale (0.18).
+1. TIMBER — "The Salmon Run". A wooded dome hill rises at the back, dense with broadleaf blobs on its flanks and dark pines
+   along its crest, a lumpy rolling canopy silhouette. From a mossy spring in a rock cleft high on the hill a little stream
+   tumbles in two short falls (white jelly foam at each), winds round one side of the clearing and widens into a small
+   round pool at the front side. In the pool: two salmon (coral-pink, darker backs) take turns leaping in an arc and
+   splashing back with a ring ripple; small dark fish shadows drift under the surface. At the pool's edge a doe and her
+   fawn: the doe lowers her head to drink and lifts it to look around, ears flicking; the fawn stays close. On the other
+   side of the clearing, a campsite: an orange canvas A-frame tent, two sitting logs, a ring of stones round a bonfire
+   whose flame blobs (yellow core, orange, red tips) flicker and whose embers drift up and fade; a thin curl of smoke; a
+   warm point light from the fire on the ground nearby. A felled stump with an axe in it and a small stack of split
+   logs. Red-capped toadstools in a fairy ring under the trees, ferns at the stream, a mossy boulder or two. Surprise: an
+   owl's two yellow eyes blink in the dark of one pine.
+
+2. WOOL — "Shearing Day". Bright rolling green: a long grassy ridge along one back side with a dry-stone wall running its
+   crest and a round oak on top, a soft dip in front. A flock of five fluffy sheep (clustered wool blobs, black faces and
+   legs): three grazing with nodding heads, one lying down, one lamb that hops now and then. A sheepdog (black and white)
+   trots a slow loop round the flock. A little red-roofed shepherd's hut on wheels by the wall, a wooden gate, a water
+   trough with jelly water. Clover and white-and-yellow flower specks, three grey boulders. Surprise: a lamb has climbed
+   onto one of the boulders.
+
+3. GRAIN — "Harvest". A golden field on a gentle saddle, ploughed into four strips with real furrow relief, thick with
+   instanced wheat tufts that sway in a slow travelling wave of wind. One strip is half cut: stubble, a row of sheaves and a
+   farmer swinging a scythe. Three round hay bales (banded, darker core), a red wheelbarrow, a small windmill on the back
+   rise whose sails turn slowly. A scarecrow with a straw hat, two crows that hop near it and take off. Poppies at the
+   field's edge. Surprise: a hare sits up between two rows.
+
+4. CLAY — "The Brickworks". Burnt-orange ground with a deep stepped quarry pit (three ledges, 0.18 deep) cut toward one back
+   side, a pool of muddy jelly water in its floor. A stout plank derrick over the pit lifts a bucket of clay up and down on
+   its rope, a pennant fluttering on top. Fresh orange spoil heaps beside it, a worker with a spade digging, a beehive-dome
+   kiln with a glowing mouth and a curl of smoke, neat stacks of fired red bricks and a row of grey unfired ones drying on
+   a rack, a wheelbarrow of clay. Surprise: a hand-print in one brick.
+
+5. ORE — "The Old Mine". Grey stony ground rising into a ridge at the back from which three faceted peaks grow (the tallest
+   0.6, snow-capped with a wisp of cloud caught on it), scree fans at their feet. A timber-framed mine mouth in the ridge
+   foot glows warm inside with a hanging lantern; rails run out of it to a cart that rolls out, tips its load of ore on
+   a heap and rolls back. A miner with a pick chips at a blue-veined crystal outcrop that sparkles. A small mountain goat
+   on a ledge. Surprise: a single gold nugget glints in the scree.
+
+6. WASTE — "The Wayfarer's Rest". Pale dunes with crisp slip faces and wind-ripple stripes, a rust-red rocky mesa at the
+   back. A tiny oasis: a palm pair over a round jelly pool. Two saguaro cacti (one flowering pink), a bleached dead tree, a
+   half-buried ox skull, scattered stones, tumbleweed that rolls across now and then, a thin dust devil that wanders and
+   fades. The wayfarer (the robber) stands here at person scale (0.11) under a hooded cloak with a lantern. Surprise: a
+   lizard basks on a rock and darts when the tumbleweed passes.
 
 NUMBER TOKENS
-- One size everywhere (radius 0.26, 0.05 thick): cream face, caramel rim (#6b3f22; red #b3261e and red ink for 6 and 8),
+- One size everywhere (radius 0.26, 0.05 thick): cream face, caramel rim (#6b3f22; red #b3261e with red ink for 6 and 8),
   bold numeral and pips, tilted 22° toward the camera, resting on its pad.
 
-BUDGET
-- A whole 19-tile board at 60 fps on an iPhone 15 Pro Max: tiles merged per tile, every repeated prop instanced, the
-  board at most 40 draw calls for terrain and props and about 220k triangles (blob detail 1, LOD by count, not by mesh).
-
 QUALITY BAR
-- The studio shot of each tile, side by side with the reference squares, must read as the same series: dense, chunky,
-  soft-lit, candy strata, big landform. No console errors.
+- Each tile, set beside the reference squares, reads as the same series: dense, chunky, glossy, soft-lit, with big landform,
+  living motion and one surprise. Smooth on a laptop in the studio; no console errors. (Board budgets come later.)

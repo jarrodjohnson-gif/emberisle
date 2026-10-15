@@ -1,6 +1,8 @@
 // The Hex Jelly studio (docs/design/hex-jelly-prompt.md): one tile built to the prompt, large, at the diorama's angle (38 degrees
 // up, 20 round from the south), under the prompt's light, on the paper, with a subtle tilt-shift. Dev only: scripts/hex-jelly.html
-// loads it and scripts/hex-jelly.mjs screenshots it. Query: kind=<terrain> (default timber), seed=<n>, pip=<n> (0 for none).
+// loads it and scripts/hex-jelly.mjs screenshots it. Query: kind=<terrain> (default timber), seed=<n>, pip=<n> (0 for none),
+// t=<seconds> to freeze the tile's life at that moment (otherwise it runs live), props=0 for the bare ground, focus=pool|camp
+// to frame that corner of the story close up.
 import * as THREE from "three";
 import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
@@ -15,6 +17,8 @@ const q = new URLSearchParams(location.search);
 const kind = (q.get("kind") ?? "timber") as Terrain;
 const seed = Number(q.get("seed") ?? 7);
 const pip = Number(q.get("pip") ?? 10);
+const frozen = q.get("t");
+const focus = q.get("focus");
 const PAPER = 0xebe8e1;
 const POLAR = (52 * Math.PI) / 180;
 const AZ = (20 * Math.PI) / 180;
@@ -57,6 +61,7 @@ scene.add(paper);
 
 const tile = buildTile(kind, seed);
 scene.add(tile.group);
+if (q.get("props") === "0") tile.group.children.slice(2).forEach((o) => (o.visible = false));
 if (pip) {
   const t = numberToken(pip);
   t.position.set(0, BLOCK_H + 0.04 + TOKEN_LIFT, 0);
@@ -64,6 +69,8 @@ if (pip) {
   scene.add(t);
 }
 
+// Pose the tile's life before measuring it (smoke, embers and leaping fish start at the origin).
+tile.update(frozen !== null ? Number(frozen) : 0);
 // Fit: the eye on the diorama's line, the lens narrowed until the block and its props fill 92 % of the frame.
 const camera = new THREE.PerspectiveCamera(10, innerWidth / innerHeight, 1, 60);
 scene.updateMatrixWorld(true);
@@ -72,8 +79,21 @@ for (let i = 0; i < 6; i++) {
   const a = ((30 + 60 * i) * Math.PI) / 180;
   for (const y of [0, BLOCK_H]) pts.push(new THREE.Vector3(Math.cos(a) * CORNER_R, y, Math.sin(a) * CORNER_R));
 }
-const box = new THREE.Box3().setFromObject(tile.group);
+// The block and its standing props only: smoke and embers drift up out of frame.
+const box = new THREE.Box3();
+tile.group.traverse((o) => {
+  if ((o as THREE.Mesh).isMesh && !o.userData.loose) box.expandByObject(o);
+});
 for (let i = 0; i < 8; i++) pts.push(new THREE.Vector3(i & 1 ? box.max.x : box.min.x, i & 2 ? box.max.y : box.min.y, i & 4 ? box.max.z : box.min.z));
+// A close-up frames a disc round the story's spot instead of the whole tile.
+const spot = focus === "pool" ? tile.layout.pool : focus === "camp" ? tile.layout.camp && { x: Math.cos(tile.layout.camp.a) * 0.58, z: Math.sin(tile.layout.camp.a) * 0.58 } : null;
+if (spot) {
+  pts.length = 0;
+  for (let i = 0; i < 12; i++) {
+    const a = (i / 12) * Math.PI * 2;
+    for (const y of [BLOCK_H - 0.02, BLOCK_H + 0.14]) pts.push(new THREE.Vector3(spot.x + Math.cos(a) * 0.24, y, spot.z + Math.sin(a) * 0.24));
+  }
+}
 const look = new THREE.Vector3(0, BLOCK_H, 0);
 const dir = new THREE.Vector3().setFromSphericalCoords(1, POLAR, AZ);
 for (let k = 0; k < 4; k++) {
@@ -116,6 +136,15 @@ composer.addPass(new RenderPass(scene, camera));
 composer.addPass(new OutputPass());
 composer.addPass(tilt(1, 0));
 composer.addPass(tilt(0, 1));
-composer.render();
-composer.render();
-(window as unknown as { __jelly: unknown }).__jelly = { ready: true, kind, seed, stats: tile.stats, info: renderer.info.render };
+const draw = (t: number) => {
+  tile.update(t);
+  composer.render();
+};
+if (frozen !== null) {
+  draw(Number(frozen));
+  draw(Number(frozen));
+} else {
+  const clock = new THREE.Clock();
+  renderer.setAnimationLoop(() => draw(clock.getElapsedTime()));
+}
+(window as unknown as { __jelly: unknown }).__jelly = { ready: true, kind, seed, info: renderer.info.render };
