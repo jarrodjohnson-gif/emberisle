@@ -124,6 +124,8 @@ export type Layout = {
   feature: { x: number; z: number; r: number };
   spots: Spot[];
   stands: { x: number; z: number; s: number }[];
+  // A long soft swell along a segment (a, b) of half-width w and height h: the pasture's ridge, the ore's spine.
+  ridge: { ax: number; az: number; bx: number; bz: number; w: number; h: number } | null;
   room: Room;
 };
 
@@ -143,8 +145,9 @@ export function layoutOf(rng: () => number, t: Terrain): Layout {
   const c = dirAt(30 + 60 * k);
   const feature = { x: c.x * 0.7, z: c.z * 0.7, r: 0.33 };
   const room = new Room(rng, (HEX_SIZE * 0.995 * SQ3) / 2);
-  const L: Layout = { k, rot, seed, amp, feature, spots: [], stands: [], room };
+  const L: Layout = { k, rot, seed, amp, feature, spots: [], stands: [], ridge: null, room };
   if (t === "timber") forestLayout(L, rng);
+  if (t === "wool") pastureLayout(L, rng);
   return L;
 }
 
@@ -180,6 +183,28 @@ function forestLayout(L: Layout, rng: () => number) {
   L.spots.push({ x: L.feature.x, z: L.feature.z, r: L.feature.r, h: -0.05 * L.amp });
 }
 
+// Pasture: one gentle ridge tangent to the ring on one side (a hedgerow will run along its crest) and two or three rolling
+// swells round the rest, where the sheep graze.
+function pastureLayout(L: Layout, rng: () => number) {
+  const a = L.rot + (rng() - 0.5) * 0.6;
+  const [cx, cz, tx, tz] = [Math.cos(a) * 0.66, Math.sin(a) * 0.66, -Math.sin(a), Math.cos(a)];
+  const half = 0.3 + rng() * 0.08;
+  L.ridge = { ax: cx - tx * half, az: cz - tz * half, bx: cx + tx * half, bz: cz + tz * half, w: 0.17, h: (0.07 + rng() * 0.02) * L.amp };
+  const n = 2 + Math.floor(rng() * 2);
+  for (let i = 0; i < n; i++) {
+    const b = a + Math.PI + ((i - (n - 1) / 2) * 2.2) / n + (rng() - 0.5) * 0.4;
+    L.spots.push({ x: Math.cos(b) * (0.62 + rng() * 0.08), z: Math.sin(b) * (0.62 + rng() * 0.08), r: 0.3 + rng() * 0.08, h: (0.05 + rng() * 0.025) * L.amp });
+  }
+}
+
+// The ridge's height at a point: a soft swell along the segment, its crest rising a little toward the middle.
+function ridgeAt(x: number, z: number, g: NonNullable<Layout["ridge"]>) {
+  const [dx, dz] = [g.bx - g.ax, g.bz - g.az];
+  const u = Math.min(1, Math.max(0, ((x - g.ax) * dx + (z - g.az) * dz) / (dx * dx + dz * dz)));
+  const d2 = ((x - g.ax - u * dx) ** 2 + (z - g.az - u * dz) ** 2) / (g.w * g.w);
+  return d2 < 1 ? g.h * (1 - d2) * (1 - d2) * (0.75 + u * (1 - u)) : 0;
+}
+
 // The terrain's own relief, before the masks that hold the token, the corners and the path rests. Positive is up.
 function relief(t: Terrain, x: number, z: number, L: Layout, s: number): number {
   switch (t) {
@@ -188,8 +213,11 @@ function relief(t: Terrain, x: number, z: number, L: Layout, s: number): number 
       for (const p of L.spots) h += bump(x, z, p);
       return h;
     }
-    case "wool":
-      return 0.07 * L.amp * fbm(x * 1.7, z * 1.7, L.seed) + 0.012;
+    case "wool": {
+      let h = 0.02 * fbm(x * 1.6, z * 1.6, L.seed) + ridgeAt(x, z, L.ridge!);
+      for (const p of L.spots) h += bump(x, z, p);
+      return h;
+    }
     case "grain": {
       const g = grainRows(x, z, L, s);
       return -0.016 * g.furrow * (1 - g.path) - 0.022 * g.path + 0.008 * fbm(x * 2, z * 2, L.seed);
@@ -790,15 +818,22 @@ function derrickGeo() {
   return mergeGeometries(parts);
 }
 
-// Body centred at y 0 (the sheep stands 0.1 above the ground); reach 0.115.
-function sheepGeo() {
+// A sheep, facing +z: a cloud of wool puffs round a body, a dark face with ears and a woolly tuft, stubby legs and a tail.
+// Body centred at y 0 (the sheep stands 0.1 above the ground); reach 0.115. Lying down, it sits on its tucked legs instead.
+function sheepGeo(lying = false) {
+  const wool = (r: number, x: number, y: number, z: number, sx = 1, sy = 1, sz = 1) =>
+    part(tone(new THREE.IcosahedronGeometry(r, 2), PROP.wool, PROP.woolLight, PROP.woolShade), null, x, y, z, 0, sx, sy, sz);
+  const dy = lying ? -0.045 : 0;
   const parts = [
-    part(new THREE.SphereGeometry(0.085, 10, 8), "#f7f3ea", 0, 0, 0, 0, 1.35, 0.9, 1),
-    part(new THREE.SphereGeometry(0.04, 8, 8), "#2a2a2a", 0, 0.03, 0.1),
+    wool(0.07, 0, dy, 0, 1.05, 0.9, 1.3),
+    ...[[0.045, 0.03, 0.04], [-0.045, 0.03, 0.04], [0.04, 0.035, -0.045], [-0.04, 0.035, -0.045], [0, 0.05, 0]].map(([x, y, z]) => wool(0.042, x!, y! + dy, z!)),
+    wool(0.022, 0, 0.03 + dy, -0.1),
+    part(tone(new THREE.SphereGeometry(0.036, 12, 9), PROP.face, PROP.faceLight, PROP.face), null, 0, 0.035 + dy * 0.7, 0.105, 0, 0.9, 1, 1.2),
+    wool(0.022, 0, 0.068 + dy * 0.7, 0.095),
+    ...[-1, 1].map((sd) => part(new THREE.SphereGeometry(0.012, 8, 6), PROP.face, sd * 0.034, 0.048 + dy * 0.7, 0.098, sd * 0.5, 1.5, 0.6, 0.9)),
   ];
-  for (const [lx, lz] of [[-0.05, 0.05], [0.05, 0.05], [-0.05, -0.05], [0.05, -0.05]] as const) {
-    parts.push(part(new THREE.CylinderGeometry(0.012, 0.012, 0.06, 5), "#2a2a2a", lx, -0.07, lz));
-  }
+  // Stubby legs, half hidden under the fleece.
+  if (!lying) for (const [lx, lz] of [[-0.036, 0.045], [0.036, 0.045], [-0.036, -0.045], [0.036, -0.045]] as const) parts.push(part(new THREE.CylinderGeometry(0.022, 0.019, 0.07, 8), PROP.face, lx, -0.065, lz));
   return mergeGeometries(parts);
 }
 
@@ -877,16 +912,28 @@ const fern = () =>
     const g = new THREE.SphereGeometry(1, 8, 4).scale(0.05, 0.012, 0.018).translate(0.045, 0.02, 0).rotateZ(0.42);
     return part(tone(g, PROP.fern, PROP.fernLight, PROP.pineDark), null, 0, 0, 0, a);
   });
-// A rounded bush of three puffs, with a few berries.
-const bush = (r: number, hex: string) => [
+// A rounded bush of three puffs, with a few berries (or blossom).
+const bush = (r: number, hex: string, dots: string = PROP.berry) => [
   ...[[0, 0.75, 0, 1], [0.6, 0.5, 0.3, 0.75], [-0.45, 0.48, -0.4, 0.7]].map(([x, y, z, k]) =>
     part(tone(new THREE.IcosahedronGeometry(r * k!, 2), hex, PROP.pineLight, PROP.pineDark), null, x! * r, y! * r, z! * r, 0, 1, 0.85, 1),
   ),
-  ...[[0.55, 1.1, 0.5], [-0.2, 1.3, 0.62], [0.75, 0.8, -0.35]].map(([x, y, z]) => part(new THREE.SphereGeometry(r * 0.13, 6, 4), PROP.berry, x! * r, y! * r, z! * r)),
+  ...[[0.55, 1.1, 0.5], [-0.2, 1.3, 0.62], [0.75, 0.8, -0.35]].map(([x, y, z]) => part(new THREE.SphereGeometry(r * 0.13, 6, 4), dots, x! * r, y! * r, z! * r)),
 ];
 const rock = (r: number, hex: string) => [part(new THREE.DodecahedronGeometry(r, 0), hex, 0, r * 0.45, 0, 0, 1, 0.7, 1, true)];
+// A rounded boulder with a pebble at its foot.
+const boulder = (r: number, hex: string) => [
+  part(new THREE.IcosahedronGeometry(r, 1), hex, 0, r * 0.5, 0, 0, 1.15, 0.75, 1, true),
+  part(new THREE.IcosahedronGeometry(r * 0.45, 1), hex, r * 1.05, r * 0.2, r * 0.5, 0.7, 1, 0.7, 1, true),
+];
+// A cluster of wildflowers: five dots of one colour on short green stems.
+const flowers = (hex: string) =>
+  [0, 1, 2, 3, 4].flatMap((i) => {
+    const [fx, fz] = [Math.cos(i * 2.4) * 0.03 * (i % 3 ? 1 : 0.4), Math.sin(i * 2.4) * 0.03 * (i % 3 ? 1 : 0.4)];
+    return [part(new THREE.CylinderGeometry(0.004, 0.006, 0.026, 4), PROP.grass, fx, 0.013, fz), part(new THREE.IcosahedronGeometry(0.011, 0), hex, fx, 0.03, fz, 0, 1, 0.6, 1)];
+  });
+// A tuft of five broad blades leaning out from a common root.
 const tuft = (hex: string) =>
-  [-0.3, 0, 0.3].map((lean, i) => part(new THREE.ConeGeometry(0.011, 0.075, 4).rotateZ(lean).translate(0, 0.035, 0), hex, (i - 1) * 0.012, 0, (i % 2) * 0.01));
+  [0, 1, 2, 3, 4].map((i) => part(new THREE.ConeGeometry(0.014, 0.07, 4).translate(0, 0.035, 0).rotateZ(0.18 + (i % 2) * 0.2), hex, 0, 0, 0, i * 1.26));
 // A round bale lying along x: two twine bands round it, and on each end pale rolled straw around a darker core.
 function roundBale() {
   const g = part(new THREE.CylinderGeometry(0.055, 0.055, 0.085, 12, 6).rotateZ(Math.PI / 2), PROP.straw, 0, 0.055, 0);
@@ -1037,46 +1084,50 @@ export function decorate(kit: PropKit, life: Life, h: HexCell, x: number, z: num
   }
 
   if (t === "wool") {
-    const n = 4 + Math.floor(rng() * 2);
-    for (let i = 0; i < n; i++) {
-      const a = rng() * Math.PI * 2;
-      const rad = 0.54 + Math.sqrt(rng()) * 0.2;
+    // Sheep graze on the swells (they wander the 0.54-0.74 ring).
+    const swells = L.spots.length ? L.spots : [{ x: 0.66, z: 0, r: 0.3, h: 0 }];
+    for (let i = 0, placed = 0; i < 24 && placed < 4; i++) {
+      const sw = swells[placed % swells.length]!;
+      const a = Math.atan2(sw.z, sw.x) + (rng() - 0.5) * 0.9;
+      const rad = 0.56 + rng() * 0.16;
       const [lx, lz] = [Math.cos(a) * rad, Math.sin(a) * rad];
+      if (!room.free(lx, lz, 0.115)) continue;
+      room.claim(lx, lz, 0.115);
+      placed++;
       const g = kit.proxy("sheep", sheepGeo, { prop: "sheep", hex: h.id, reach: 0.115 }, false);
       g.position.set(x + lx, y(lx, lz) + 0.1, z + lz);
+      g.rotation.y = rng() * Math.PI * 2;
       life.sheep.push({ g, ox: x, oz: z, tx: x + lx, tz: z + lz, wait: rng() * 2, graze: 0, ground: (wx, wz) => sc.ground(wx - x, wz - z) });
     }
-    // A fence along one flat and a hedge along another, outside the sheep's 0.54-0.74 ring; rocks in three corners.
-    const flat = (j: number) => dirAt(60 * (L.k + j));
-    const fence = flat(1);
-    const tan = { x: -fence.z, z: fence.x };
-    const posts: [number, number, number][] = [];
-    for (let i = -2; i <= 2; i++) {
-      const [lx, lz] = [fence.x * 0.86 + tan.x * i * 0.14, fence.z * 0.86 + tan.z * i * 0.14];
-      posts.push([lx, y(lx, lz), lz]);
+    // A hedgerow along the ridge's crest, its puffs a little uneven, with blossom.
+    const rg = L.ridge!;
+    for (let i = 0, n = Math.round(Math.hypot(rg.bx - rg.ax, rg.bz - rg.az) / 0.085); i <= n; i++) {
+      const u = i / n;
+      const [lx, lz] = [rg.ax + (rg.bx - rg.ax) * u, rg.az + (rg.bz - rg.az) * u];
+      const r = 0.045 + rng() * 0.012;
+      if (!room.fits(lx, lz, r)) continue;
+      room.claim(lx, lz, r);
+      put("wool", bush(r, PROP.hedge, PROP.blossom), lx, lz, r);
     }
-    const along = Math.atan2(-tan.z, tan.x);
-    const fenceParts = posts.map(([lx, ly, lz]) => part(new THREE.BoxGeometry(0.022, 0.1, 0.022), PROP.wood, x + lx, ly + 0.045, z + lz));
-    for (let i = 0; i < 4; i++) {
-      const [a, b] = [posts[i]!, posts[i + 1]!];
-      for (const ry of [0.04, 0.075]) fenceParts.push(part(new THREE.BoxGeometry(0.15, 0.014, 0.01), PROP.wood, x + (a[0] + b[0]) / 2, (a[1] + b[1]) / 2 + ry, z + (a[2] + b[2]) / 2, along));
+    // One sheep lies in the grass and stays.
+    const lie = room.find(0.115, 0.55, 0.8);
+    if (lie) {
+      const rest = kit.proxy("sheep-rest", () => sheepGeo(true), { prop: "sheep-rest", hex: h.id, reach: 0.115 }, false);
+      rest.position.set(x + lie.x, y(lie.x, lie.z) + 0.1, z + lie.z);
+      rest.rotation.y = rng() * Math.PI * 2;
     }
-    kit.add("wool", mergeGeometries(fenceParts), fp(fence.x * 0.86, fence.z * 0.86, 0.3));
-    fenceParts.forEach((p) => p.dispose());
-    const hedge = flat(3);
-    for (let i = -2; i <= 2; i++) {
-      const r = 0.05 + rng() * 0.008;
-      const [lx, lz] = [hedge.x * 0.86 - hedge.z * i * 0.085, hedge.z * 0.86 + hedge.x * i * 0.085];
-      put("wool", bush(r, PROP.hedge), lx, lz, r);
+    for (let i = 0; i < 3; i++) {
+      const r = 0.035 + rng() * 0.015;
+      const at = room.find(r * 1.5, 0.5, 0.95);
+      if (at) put("wool", boulder(r, PROP.stone), at.x, at.z, r * 1.5);
     }
-    for (const j of [2, 4, 5]) {
-      const c = dirAt(30 + 60 * (L.k + j));
-      const r = 0.03 + rng() * 0.02;
-      put("wool", rock(r, PROP.stone), c.x * 0.92, c.z * 0.92, r);
-    }
-    for (let i = 0; i < 4; i++) {
-      const at = room.find(0.04, 0.45, 0.9);
+    for (let i = 0; i < 5; i++) {
+      const at = room.find(0.04, 0.45, 0.95);
       if (at) put("wool", tuft(PROP.grass), at.x, at.z, 0.04);
+    }
+    for (let i = 0; i < 6; i++) {
+      const at = room.find(0.04, 0.45, 0.95, 0.6);
+      if (at) put("wool", flowers(PROP.flowers[i % PROP.flowers.length]!), at.x, at.z, 0.04);
     }
   }
 
