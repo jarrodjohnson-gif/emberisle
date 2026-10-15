@@ -15,7 +15,8 @@ const DIR = "dist/assets";
 const BUDGETS = [
   // 2026-10-14 (#598): +600 B for the Water toggle, its store state and the probe; the old ceiling was 300 B away.
   // 2026-10-15: 116.91 kB measured on main after the four HUD merges (#601 #602 #605 #607) landed on the camera; +600 B.
-  { name: "index", gzipBytes: 117500 },
+  // 2026-10-15 (#603): 117.50 kB measured with the win reason on top of the sounds (#613) and the victory target (#611); +500 B.
+  { name: "index", gzipBytes: 118000 },
   // 2026-10-14 (#597): +1100 B for the diorama camera, its fit and the token pose on top of the lazy sea (182.92 kB measured).
   // 2026-10-15: 185.01 kB measured on main once the diorama (#604, +1.1 kB) and the natural waves (#614, +1.0 kB) both
   // landed; each fit its own raise alone. +1.5 kB over the measurement for the touch-splash work in flight (#616).
