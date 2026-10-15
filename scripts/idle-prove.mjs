@@ -22,6 +22,11 @@ const browser = await chromium.launch({
 });
 try {
   const page = await browser.newPage({ viewport: { width: 640, height: 400 } });
+  // The sea choice is saved so the GPU probe never runs: with the composer's draw stubbed, its simple stage passes trivially
+  // and the crystal stage then draws the real scene into the refraction target and blocks on a pixel read for most of a
+  // second (720 ms with the sculpted tiles on SwiftShader), inside the title window measured below (#614 did the same for
+  // restore-prove). What is measured here is the loop's gating, not the water.
+  await page.addInitScript(() => localStorage.setItem("emberisle-water", "simple"));
   page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
   page.on("pageerror", (e) => errors.push(String(e)));
   await page.goto(`http://127.0.0.1:${PORT}/`);
