@@ -1,8 +1,8 @@
 # Lanes
 
-Several AIs can work on Emberisle at once. Lanes keep them out of each other's files. Each lane is an
-area of the code, and **only one issue per lane is in progress at a time**. Five AIs started a few
-minutes apart therefore spread across the lanes on their own, with nobody assigning them.
+Several AIs can work on Emberisle at once. Lanes sort work by code area; **they do not lock an
+entire area**. Several issues in the same lane may be active at once when their claimed files do
+not overlap. Claims reserve files, including while a PR waits for review.
 
 | Label | Files |
 |---|---|
@@ -14,18 +14,45 @@ minutes apart therefore spread across the lanes on their own, with nobody assign
 
 ## Picking an issue
 
-1. List the open issues with `status:in-progress` or a `claimed:` comment that has no later `paused:`,
-   plus the open PRs. Each lane label on them is
-   **busy**.
-2. Take the next open `status:todo` issue whose lane labels are all free. Use the order in
-   `docs/FRAMEWORK.md` section 7: earliest milestone, lowest step, `Depends on` closed. An issue with
-   two lane labels needs both lanes free.
-3. Claim it as section 7 says: the `claimed:` and `files:` comment, plus the `status:in-progress`
-   label.
-4. If you find you need a file in another lane, list it in `files:`. If that lane is busy with an issue
-   that touches the same file, post a `paused:` comment and pick again.
-5. No free lane? Stop and say so. Don't wait in a loop on a busy lane.
+1. **Find eligible work:** an open `status:todo` issue with a lane label, every `Depends on` issue
+   closed, no active claim, and no open PR for it (drafts count). Use `docs/FRAMEWORK.md` section 7's
+   order: earliest milestone, lowest step. Helpers additionally require `helper-ok` and must respect
+   their open-PR limit in [`HELPERS.md`](HELPERS.md).
+2. **Check files across all lanes:** read active claims and their open PRs, including work In Review.
+   A `claimed:` remains active until that agent posts a later pause, or its PR merges or closes.
+   Historical same-agent `paused:` comments also release claims; new pauses must include `/paused`.
+   Ignore released historical claims. If your planned files overlap another active claim's files or
+   PR changes, pick a different issue. A shared lane alone is not a conflict.
+3. **Re-check immediately before claiming:** re-read the issue and all comments, not a cached list.
+   Do this again after any user wait, thinking break or check-in. Recheck eligibility and file
+   ownership; if someone has claimed it, pick another. Post the claim before research or design:
+
+   ```
+   /claim
+   claimed: <agent name>, <YYYY-MM-DD>
+   files: <paths you expect to touch, or none>
+   ```
+
+   The agent name is required: different agents often post through the same GitHub account.
+4. **Re-read immediately after posting:** first active claim wins. If another agent's active claim
+   has an earlier timestamp, release only your own claim with a new comment and pick another issue:
+
+   ```
+   /paused
+   paused: <your agent name>, <YYYY-MM-DD>
+   lost the claim to <winning agent name>
+   ```
+
+   Compare agents, not GitHub account names. A loser's pause never releases the winner's claim.
+   For equal timestamps, the earlier comment in the issue timeline wins. No fixed wait is needed.
+5. **Keep the file list current:** before adding files, recheck other active claims/PRs and update
+   `files:`. If the added files conflict, post `/paused` identifying your agent and pick another issue.
+6. **Keep going:** never stop while eligible work exists. A busy file means choose different work,
+   not reserve its entire lane. If none is eligible, follow the applicable workflow's idle guidance;
+   helpers use the Timing block in [`HELPERS.md`](HELPERS.md).
 
 An issue with no lane label isn't ready. Skip it; the orchestrator labels it.
 
-Your lane frees up when your PR is merged or closed, or when you post `paused:`.
+Your claim and its file reservations release when your PR merges or closes, or when you post
+`/paused` identifying your own agent. Pausing does not make an issue eligible until it is open
+`status:todo` again; do not claim paused In Progress work as a shortcut around the eligibility check.

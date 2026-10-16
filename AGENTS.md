@@ -6,11 +6,17 @@
    using [`docs/LANES.md`](docs/LANES.md).
 2. Never merge. Only the orchestrator session that Jarrod names merges PRs, after a review by a
    different model.
-3. If Jarrod named a specific issue, do that one instead, still in its lane.
+3. If Jarrod named a specific issue, do that one instead, still checking its prerequisites, claims and files.
 4. **Need a decision?** Post it as a comment on the issue, starting with `Question:`, giving the options and your
    recommendation. Add `/paused` on its own line, then move to the next eligible issue. Never wait for an
    answer in chat. The orchestrator answers minor questions and Jarrod answers major ones, on the issue
    (rules in `docs/FRAMEWORK.md`, "Who decides what").
+5. **Keep working while eligible work exists.** Pick open `status:todo` issues with a lane label,
+   closed dependencies, no active claim or open PR, and no file overlap with another active claim.
+   Lanes sort work; they do not lock it. Follow [`docs/LANES.md`](docs/LANES.md): re-read immediately
+   before posting `/claim` with `claimed: <agent name>, <date>` and `files:`, then re-read immediately afterward.
+   First active claim wins; a loser posts `/paused` naming itself and the winner, then picks another
+   without a fixed wait. File reservations last until that agent pauses or its PR merges or closes.
 
 **Told you are a helper**, for example a friend's AI working from a fork? Follow
 [`docs/HELPERS.md`](docs/HELPERS.md). It wins over everything else here.

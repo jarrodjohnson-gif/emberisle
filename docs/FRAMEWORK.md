@@ -130,41 +130,50 @@ Jarrod's board automation, or the next agent with `gh`, syncs the field from the
 **"What's next?" with no project named:** list Jarrod's projects as numbered options (In Progress
 first, then on hold), each with its next open issue, and ask which one. Do not start until he picks.
 
-**Next open issue** = one already In Progress that you can resume (read its last pause comment);
-otherwise the first **Todo** in the **earliest milestone**, lowest step first (1 → 4), skipping
-anything whose `Depends on` is still open.
+**Next open issue** = the first eligible open `status:todo` issue in the **earliest milestone**,
+lowest step first (1 → 4). It must have a lane label, every `Depends on` closed, no active claim or
+open PR, and no file conflict with another active claim. Continue your own existing work first;
+do not adopt someone else's In Progress claim or treat a pause alone as Todo eligibility.
 
 **Claim:**
 1. Search open PRs for the issue number (title or body). A PR already open against it — even a draft,
    even before the issue shows any `claimed:` comment — means another agent is already on it. The issue's
    own label can lag behind real work in flight, so this check comes first and the PR search is the one
    that actually catches a concurrent session; skip to the next candidate issue if you find one.
-2. Re-read the issue's comments fresh (not from a list fetched earlier in your session — another agent
-   may have claimed it since). If it is In Progress with a `claimed:` comment from someone else, skip it.
-3. Never take an issue whose files overlap an In Progress issue's files.
-4. Post the claim comment immediately, before any research or design work, to shrink the window another
-   agent could start the same issue in: move it to In Progress and comment:
+2. Check active claims and open PR file changes across every lane, including In Review. A claim remains
+   active until that agent pauses or its PR merges or closes. Historical same-agent `paused:` comments
+   also release claims; new pauses must include `/paused`. Never take files reserved by another
+   active claim; sharing a lane is allowed.
+3. Immediately before posting a claim, re-read the issue and every comment fresh. Recheck after any
+   user wait, thinking break or check-in; an old issue-list result is not enough. If the issue is no
+   longer eligible or now claimed, pick another.
+4. Post immediately, before research or design, with `/claim` on its own line and an agent name
+   (required because different agents often use the same GitHub account):
    ```
-   claimed: <AI name>, <YYYY-MM-DD>
+   /claim
+   claimed: <agent name>, <YYYY-MM-DD>
    files: <paths you expect to touch, or none>
    ```
-   If you later find another agent's claim comment posted before yours on the same issue, stop and defer
-   to it (whoever claimed first keeps it) rather than both continuing.
+5. Immediately re-read the comments after posting. First active claim wins: if another agent's active
+   claim has an earlier timestamp, post `/paused` naming yourself and saying
+   `lost the claim to <winning agent name>`, then pick another issue without a fixed wait. For equal
+   timestamps use issue-timeline order. A losing agent's pause releases only its own claim.
+6. Before expanding `files:`, recheck active claims/PRs and update the list. If files overlap, pause
+   and pick different work. Never stop while eligible work exists; a whole lane is not reserved.
 
-**Starting more than one session at once:** the checks above shrink the collision window but cannot close
-it. Two sessions launched within the same few seconds can each pass steps 1-2 before either one's claim
-comment lands. This happened: three sessions all picked issue #81 and produced three overlapping PRs.
-[LANES.md](LANES.md) narrows it further (one in-progress issue per lane), but it has the same race. So
-start sessions with the generic `Work on Emberisle.` line **at least a few minutes apart**. To start
-several at the same moment, hand each one a specific issue number in a different lane.
+**Starting more than one session at once:** use the same immediate pre-claim/post-claim checks;
+first active claim wins, with no fixed launch delay. Several issues in one lane may proceed when
+their files do not overlap. [`LANES.md`](LANES.md) is the shared eligibility and claim procedure.
 
 **Pause** (out of limit, or blocked):
 ```
-paused: <AI name>, <YYYY-MM-DD>
+/paused
+paused: <agent name>, <YYYY-MM-DD>
 done so far: <one line>
 left: <exactly what is unfinished, and the next command to run>
 ```
-Leave it In Progress. The next AI resumes from `left:`.
+This releases your own claim and files. Record the next step in `left:`; new claimants still need
+open `status:todo` eligibility after the issue is rescheduled. Do not resume a stale claim blindly.
 
 **Finish:**
 ```
@@ -217,7 +226,8 @@ runs the README "Run it" checks. A red PR is never merged.
 | Reviewer | the **orchestrator**: the one session Jarrod names to review and merge | Reviews every open PR with a different model than its builder: reads the diff against the issue's completion test, checks CI and the framework rules (no to-do lists in files, issue comments present). If CI is green and nothing is wrong, it **merges**. If something is wrong, it comments exactly what, and the PR stays open for its Builder. **No other session merges.** |
 | Jarrod | the owner | Accepts results: moves In Review to Done. No code reading needed. |
 
-A new Builder chat therefore starts: take the next open issue in a free lane ([LANES.md](LANES.md)).
+A new Builder chat therefore starts: take the next eligible issue with no file conflict
+([LANES.md](LANES.md)).
 
 **End of a chat, or a finished task:** give Jarrod one line to paste into a new chat:
 `Work on Emberisle.` (AGENTS.md covers the rest.)
