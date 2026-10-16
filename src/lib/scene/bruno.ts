@@ -48,7 +48,7 @@ export function makeBruno(): Bruno {
   };
   // He stands on a round dark base, a game piece's, so he reads on every hex from the overhead view (a green poncho alone
   // would sink into a forest).
-  const base = mesh(merge([part(cyl(1, 1.06, 28), "#2b2420", [0, 0.012, 0], [0, 0, 0], [0.15, 0.024, 0.15]), part(cyl(1, 1, 28), "#e2b84a", [0, 0.025, 0], [0, 0, 0], [0.135, 0.003, 0.135])]));
+  const base = mesh(merge([part(cyl(1, 1.06, 28), "#2b2420", [0, 0.012, 0], [0, 0, 0], [0.11, 0.024, 0.11]), part(cyl(1, 1, 28), "#e2b84a", [0, 0.025, 0], [0, 0, 0], [0.098, 0.003, 0.098])]));
   base.receiveShadow = true;
   g.add(base);
   // Built facing +x (as in the waste's scene), turned to face +z, standing on the base.

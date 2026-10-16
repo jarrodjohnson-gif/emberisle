@@ -67,6 +67,8 @@ const loadJelly = (): Promise<typeof import("@/lib/scene/jelly-board")> =>
     throw e;
   });
 const JELLY_RETRY_MS = 4000;
+// How far beside a hex's token the wayfarer stands (robberSpot).
+const WAYFARER_ASIDE = 0.43;
 // The jelly shore is its own chunk (harbor-jelly), loaded once the hexes have swapped in.
 const loadShore = () => import("@/lib/scene/harbor-jelly");
 let shoreFailed = false;
@@ -611,15 +613,24 @@ export class IsleRenderer {
     this.jelly?.robber(state.robberHex ?? null);
     const rh = state.hexes.find((h) => h.id === state.robberHex);
     if (rh) {
-      const w = worldOfHex(rh);
-      // The wastes have no token, so his feet are on the cap there.
-      this.robberTarget.set(w.x, topOf(rh.terrain) + (rh.pip === null ? 0 : 0.07 + this.liftOf(rh.id)), w.z);
+      this.robberSpot(rh);
       if (!this.wayfarer.userData.placed || landChanged) {
         this.walk = null;
         this.wayfarer.position.copy(this.robberTarget);
         this.wayfarer.userData.placed = true;
       } else if (!this.walk) this.startWalk();
     }
+  }
+
+  // Where the wayfarer stands on a hex: on the waste (no token) its centre; on a hex with a number, beside the token, to its
+  // left as the camera looks (0.43 out, past the token's 0.26 and his base), on the scene's own ground there, so the numeral
+  // and its pips stay in sight (tokens-prove checks his figure as an occluder).
+  private robberSpot(rh: HexCell) {
+    const w = worldOfHex(rh);
+    if (rh.pip === null) return this.robberTarget.set(w.x, topOf(rh.terrain), w.z);
+    const [dx, dz] = [-Math.cos(DIORAMA_AZIMUTH) * WAYFARER_ASIDE, Math.sin(DIORAMA_AZIMUTH) * WAYFARER_ASIDE];
+    const g = this.jelly?.groundAt(rh.id, dx, dz);
+    return this.robberTarget.set(w.x + dx, g !== undefined && Number.isFinite(g) ? g : topOf(rh.terrain), w.z + dz);
   }
 
   // One 0.3-high hop per hex of distance, 300 ms each, 900 ms at most.
@@ -906,15 +917,6 @@ export class IsleRenderer {
       t.rotation.set(diorama ? TOKEN_TILT : 0, az, 0, "YXZ");
       t.position.y = (t.userData.restY as number) + lift;
       t.userData.lift = lift;
-    }
-    const st = this.lastState;
-    const rh = st?.hexes.find((h) => h.id === st.robberHex);
-    if (rh && rh.pip !== null) {
-      const y = topOf(rh.terrain) + 0.07 + this.liftOf(rh.id);
-      if (Math.abs(this.robberTarget.y - y) > 1e-6) {
-        this.robberTarget.y = y;
-        if (!this.walk) this.wayfarer.position.y = y;
-      }
     }
   }
 
@@ -1460,6 +1462,12 @@ export class IsleRenderer {
           if (!alive()) return jelly.dispose();
           this.jelly = jelly;
           jelly.robber(this.lastState?.robberHex ?? null);
+          // The scenes' ground beside the token can stand off the flat cap: he steps onto it.
+          const rh = this.lastState?.hexes.find((h) => h.id === this.lastState?.robberHex);
+          if (rh) {
+            this.robberSpot(rh);
+            if (!this.walk) this.wayfarer.position.copy(this.robberTarget);
+          }
           jelly.update(this.jellyT, true, true);
           if (this.slabs) {
             this.land.remove(this.slabs);
