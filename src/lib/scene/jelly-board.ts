@@ -358,6 +358,7 @@ export class JellyBoard {
   private sprites: SpriteBatch[] = [];
   private byHex = new Map<string, { k: Kind; h: Hx }>();
   private t = 0;
+  private t0: number | undefined;
 
   private constructor() {
     this.group.name = "jelly-board";
@@ -787,7 +788,10 @@ export class JellyBoard {
   update(t: number, all = false, snap = false) {
     const dt = Math.max(0, t - this.t);
     this.t = t;
+    // The board's age: a story that starts with the match (the ore's climber) counts from the first frame drawn.
+    this.t0 ??= t;
     for (const k of this.kinds) {
+      k.tile.env.age = t - this.t0;
       k.tile.update(t);
       k.tile.group.updateMatrixWorld(true);
       // The hex level: its squash (the roll's jelly wobble, a tap's smaller one) and its colour (flash, dulling).
