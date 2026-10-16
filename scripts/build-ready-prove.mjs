@@ -311,7 +311,7 @@ try {
               // Read the moment the chip appears: where it sits, what else is on screen, and what the alert region holds.
               const r = el.getBoundingClientRect();
               const s = el.closest("[data-hud-stack]").getBoundingClientRect();
-              p.rect = { left: r.left, right: r.right, top: r.top, bottom: r.bottom, stackLeft: s.left, stackRight: s.right, innerWidth };
+              p.rect = { left: r.left, right: r.right, top: r.top, bottom: r.bottom, stackLeft: s.left, stackRight: s.right, innerWidth, innerHeight };
               const said = document.querySelector('[data-testid="announce-error"]').textContent.trim();
               p.said = said;
               p.errSeqNow = window.__emberisle.getState().errorSeq;
@@ -343,7 +343,7 @@ try {
         assert.ok(probe.shown - probe.down <= 300, `${at}: the hint is up ${Math.round(probe.shown - probe.down)} ms after the press, within 300`);
         assert.ok(probe.gone - probe.down <= 2000 && probe.gone - probe.shown >= 1400, `${at}: shown ${Math.round(probe.gone - probe.shown)} ms, gone ${Math.round(probe.gone - probe.down)} ms after the press`);
         const { rect } = probe;
-        assert.ok(rect.left >= rect.stackLeft - 0.5 && rect.right <= rect.stackRight + 0.5 && rect.top >= 0 && rect.right <= rect.innerWidth, `${at}: the chip is on screen and inside the HUD stack ${JSON.stringify(rect)}`);
+        assert.ok(rect.left >= rect.stackLeft - 0.5 && rect.right <= rect.stackRight + 0.5 && rect.top >= 0 && rect.left >= 0 && rect.right <= rect.innerWidth && rect.bottom <= rect.innerHeight, `${at}: the chip is on screen and inside the HUD stack ${JSON.stringify(rect)}`);
         assert.equal(probe.said, saidFor(hand, k), `${at}: the screen reader gets the full sentence`);
         assert.equal(probe.errSeqNow, probe.errSeq + 1, `${at}: the error cue fired once (errorSeq)`);
         assert.equal(probe.stateError, null, `${at}: no error line is set for the HUD`);
