@@ -89,17 +89,19 @@ THE SIX WORLDS
    with reeds and bulrushes, two ducks paddling round. Round hay bales and round trees in the meadow, a red wheelbarrow of
    sheaves, a scarecrow in a straw hat, poppies and cornflowers on the margins. Surprise: a hare sits up between two rows.
 
-4. BRICK (the clay tile) — "The Brickworks". Bricks are the hero; the clay quarry is where they come from. Warm terracotta ground. On a front flank, where the eye looks down into it, a big irregular
-   open-cut dug into the earth: rough walls banded cream, apricot and rust by the layers it cut through, a bench halfway
-   down, a damp floor with a turquoise jelly puddle in its low corner, and a narrow trench slot running off one end. Faceted
-   rocks pile along its rim, rubble and crates lie on its floor. A timber headframe stands over a square shaft mouth, its
-   wheel turning as a bucket of clay rises out of the shaft and sinks back; a plank scaffold deck against the back wall with
-   a ladder, another ladder up over the rim. Sand martins dart from nest holes in the quarry wall. At the back, the tall
-   things: a beehive kiln with a glowing mouth and a curl of smoke (a cat asleep on top, the surprise), a tall square brick
-   chimney trailing smoke, a drying yard of long hacks (green bricks stacked in open lattice courses under little plank
-   roofs), pallets of finished red bricks stacked high, a red-brick cottage with a slate roof, amphorae, a few cypresses; green scrub and poppies against the orange. Two
-   villagers carry hods of clay from the quarry's rim to the kiln and walk back. Roll: the bucket comes up full, the kiln
-   puffs sparks, the martins burst out, the carriers hurry. Night: the kiln mouth, the headframe lantern, the cottage window.
+4. BRICK (the clay tile) — "The Brickworks", Arizona red-rock country. Bricks are the hero; the clay quarry is where they
+   come from. Warm terracotta ground, sun-cracked into dried-mud plates in patches. On a front flank, where the eye looks
+   down into it, a big irregular open-cut: rough walls banded by the layers it cut through, a bench halfway down, a cracked
+   floor with a turquoise puddle, a trench slot off one end, faceted rocks piled on the rim. In it: a timber headframe over a
+   square shaft (wheel turning, a bucket of clay rising and sinking), a scaffold deck with a ladder, a plank ramp up the back
+   wall, rails across the floor with an ore cart rolling on them, crates and rubble. Sand martins dart from nest holes in the
+   wall. Beside it, the pug mill: a donkey walking a worn ring, turning the clay mixer's sweep arm. At the back: a tall brick
+   chimney trailing smoke, a beehive kiln with a glowing mouth (a cat asleep on top), a drying yard of brick hacks under
+   plank roofs, pallets of red bricks, a red-brick cottage with a slate roof and an old wagon wheel. Desert life, sparse:
+   prickly pear with pink fruit, agave, sage-green creosote, desert marigolds; a rattlesnake coiled on a warm rock, rattling
+   now and then; one coyote asleep curled in the shade, one trotting a slow loop. Two villagers carry hods of clay to the
+   kiln. Roll: the bucket comes up full, kiln and chimney puff, the donkey and carriers hurry, the martins burst out.
+   Night: the kiln mouth, the headframe lantern, the cottage window.
 
 5. ORE — "The Old Mine". Grey stony ground rising into a ridge at the back from which three faceted peaks grow (the tallest
    0.6, snow-capped with a wisp of cloud caught on it), scree fans at their feet. A timber-framed mine mouth in the ridge

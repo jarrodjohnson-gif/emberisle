@@ -212,7 +212,7 @@ export function layoutOf(kind: Terrain, seed: number): Layout {
     // The quarry sits on a front flank, where the eye looks down into it; tall things (kiln, cottage, cypresses) stand at
     // the back.
     const qAng = hillAt + Math.PI - s * 0.5;
-    const qc = at(qAng, 0.6);
+    const qc = at(qAng, 0.62);
     const [tx, tz] = [-Math.sin(qAng), Math.cos(qAng)];
     const [hx, hz] = [Math.cos(qAng), Math.sin(qAng)];
     const q = (u: number, v: number) => ({ x: qc.x + tx * u + hx * v, z: qc.z + tz * u + hz * v });
@@ -221,12 +221,13 @@ export function layoutOf(kind: Terrain, seed: number): Layout {
       qaxis: { x: qAng, z: 0 },
       side: { x: s, z: 0 },
       kiln: at(hillAt + s * 0.55, 0.6),
-      trA: q(s * 0.36, -0.03),
+      trA: q(s * 0.44, -0.03),
       trB: at(qAng + s * 0.82, 0.62),
-      shaft: q(-s * 0.15, -0.02),
-      deck: q(s * 0.02, 0.09),
+      shaft: q(-s * 0.2, -0.02),
+      deck: q(s * 0.03, 0.1),
+      mill: at(hillAt + s * 1.6, 0.6),
     };
-    L.pool = { ...q(s * 0.17, -0.04), r: 0.075 };
+    L.pool = { ...q(s * 0.22, -0.05), r: 0.085 };
   }
   if (kind === "wool") {
     // The ridge runs along the back edge, tangent to it; the wall along its crest; the oak on it toward one end.
@@ -318,8 +319,8 @@ export function heightAt(L: Layout, x: number, z: number) {
 }
 // Clay's open-cut quarry: half-length along the back edge, half-width toward the token, depth. `quarryAt` gives a point's
 // place in it: `d` < 1 inside (its edge broken by noise), `v` toward the back, `trench` < 1 inside the trench slot.
-const QA = 0.5;
-const QB = 0.29;
+const QA = 0.6;
+const QB = 0.33;
 const Q_D = 0.17;
 const PIT_WATER = -Q_D + 0.02;
 const MESA_STEP = 0.06;
@@ -2560,8 +2561,102 @@ function martin(m: THREE.Material) {
     g.add(w);
     return { w, side };
   });
-  g.scale.setScalar(SIZE.small * 0.85);
+  g.scale.setScalar(SIZE.small * 0.6);
   return { g, wings };
+}
+
+// A donkey facing +x: grey-brown, pale muzzle and belly, long ears, a dark mane; legs and head on their own for walking.
+function donkey(m: THREE.Material) {
+  const g = new THREE.Group();
+  g.add(
+    mesh(
+      merge([
+        part(sphere(), "#8c8178", [0, 0.05, 0], [0, 0, 0], [0.034, 0.018, 0.015]),
+        part(sphere(), "#d8cfc4", [0.002, 0.044, 0], [0, 0, 0], [0.026, 0.011, 0.012]),
+        part(sphere(8), "#3a3230", [-0.034, 0.05, 0], [0, 0, 0.9], [0.012, 0.003, 0.003]),
+      ]),
+      m,
+    ),
+  );
+  const head = new THREE.Group();
+  head.position.set(0.03, 0.062, 0);
+  head.add(
+    mesh(
+      merge([
+        part(cyl(0.008, 0.01, 8), "#8c8178", [0.008, 0.008, 0], [0, 0, -0.7], [1, 0.03, 1]),
+        part(sphere(), "#8c8178", [0.02, 0.016, 0], [0, 0, -0.5], [0.014, 0.008, 0.008]),
+        part(sphere(8), "#d8cfc4", [0.03, 0.01, 0], [0, 0, -0.5], [0.007, 0.006, 0.0065]),
+        part(new THREE.ConeGeometry(1, 1, 6), "#7a6f66", [0.012, 0.032, 0.005], [0.25, 0, 0], [0.003, 0.018, 0.0022]),
+        part(new THREE.ConeGeometry(1, 1, 6), "#7a6f66", [0.012, 0.032, -0.005], [-0.25, 0, 0], [0.003, 0.018, 0.0022]),
+        part(new THREE.BoxGeometry(1, 1, 1), "#3a3230", [0.002, 0.016, 0], [0, 0, -0.7], [0.004, 0.02, 0.003]),
+        part(sphere(6), "#1a1414", [0.022, 0.02, 0.005], [0, 0, 0], [0.0015, 0.0015, 0.0015]),
+        part(sphere(6), "#1a1414", [0.022, 0.02, -0.005], [0, 0, 0], [0.0015, 0.0015, 0.0015]),
+      ]),
+      m,
+    ),
+  );
+  g.add(head);
+  const legs = [[0.02, 0.008], [0.02, -0.008], [-0.022, 0.008], [-0.022, -0.008]].map(([x, z]) => {
+    const l = mesh(merge([part(cyl(0.0042, 0.0036, 6), "#8c8178", [0, -0.017, 0], [0, 0, 0], [1, 0.034, 1]), part(cyl(0.0042, 0.0042, 6), "#3a3230", [0, -0.033, 0], [0, 0, 0], [1, 0.004, 1])]), m);
+    l.position.set(x!, 0.036, z!);
+    g.add(l);
+    return l;
+  });
+  g.scale.setScalar(SIZE.sheep);
+  g.userData.ref = "donkey";
+  return { g, legs, head };
+}
+
+// A coyote facing +x: tawny grey with a pale belly, big pointed ears, a bushy tail tipped dark. Asleep it curls nose to tail.
+function coyote(m: THREE.Material, asleep: boolean) {
+  const g = new THREE.Group();
+  const C = { fur: "#b39066", back: "#8a7056", belly: "#eadcc2", tip: "#3a2e26" };
+  let legs: THREE.Mesh[] | undefined;
+  if (asleep) {
+    g.add(
+      mesh(
+        merge([
+          part(new THREE.TorusGeometry(0.016, 0.01, 8, 18, Math.PI * 1.55), C.fur, [0, 0.009, 0], [Math.PI / 2, 0, 0]),
+          part(new THREE.TorusGeometry(0.016, 0.006, 6, 14, Math.PI * 1.2), C.back, [0, 0.015, 0], [Math.PI / 2, 0, 0.3]),
+          part(sphere(), C.fur, [0.014, 0.01, 0.011], [0, -0.6, 0], [0.01, 0.007, 0.008]),
+          part(sphere(8), C.belly, [0.022, 0.008, 0.016], [0, -0.6, 0], [0.006, 0.004, 0.004]),
+          part(new THREE.ConeGeometry(1, 1, 5), C.back, [0.01, 0.019, 0.006], [0.3, 0, 0.2], [0.0035, 0.009, 0.0025]),
+          part(new THREE.ConeGeometry(1, 1, 5), C.back, [0.016, 0.019, 0.004], [0.3, 0, -0.2], [0.0035, 0.009, 0.0025]),
+          part(sphere(8), C.fur, [-0.004, 0.008, 0.022], [0, 0.6, 0], [0.014, 0.006, 0.006]),
+          part(sphere(6), C.tip, [0.008, 0.008, 0.024], [0, 0, 0], [0.004, 0.004, 0.004]),
+        ]),
+        m,
+      ),
+    );
+  } else {
+    g.add(
+      mesh(
+        merge([
+          part(sphere(), C.fur, [0, 0.036, 0], [0, 0, 0.05], [0.026, 0.012, 0.01]),
+          part(sphere(), C.back, [0, 0.042, 0], [0, 0, 0.05], [0.022, 0.006, 0.008]),
+          part(sphere(), C.belly, [0.004, 0.031, 0], [0, 0, 0], [0.018, 0.006, 0.008]),
+          part(sphere(), C.fur, [0.032, 0.048, 0], [0, 0, 0], [0.009, 0.008, 0.007]),
+          part(new THREE.ConeGeometry(1, 1, 6), C.fur, [0.043, 0.045, 0], [0, 0, -Math.PI / 2], [0.004, 0.012, 0.004]),
+          part(sphere(6), C.tip, [0.049, 0.045, 0], [0, 0, 0], [0.0018, 0.0018, 0.0018]),
+          part(new THREE.ConeGeometry(1, 1, 5), C.back, [0.03, 0.06, 0.004], [0.2, 0, 0], [0.004, 0.011, 0.003]),
+          part(new THREE.ConeGeometry(1, 1, 5), C.back, [0.03, 0.06, -0.004], [-0.2, 0, 0], [0.004, 0.011, 0.003]),
+          part(sphere(8), C.fur, [-0.03, 0.032, 0], [0, 0, 0.7], [0.016, 0.006, 0.006]),
+          part(sphere(6), C.tip, [-0.042, 0.022, 0], [0, 0, 0.7], [0.005, 0.004, 0.004]),
+        ]),
+        m,
+      ),
+    );
+    legs = [[0.016, 0.006], [0.016, -0.006], [-0.016, 0.006], [-0.016, -0.006]].map(([x, z]) => {
+      const l = mesh(merge([part(cyl(0.003, 0.0026, 6), C.fur, [0, -0.0135, 0], [0, 0, 0], [1, 0.027, 1])]), m);
+      l.position.set(x!, 0.028, z!);
+      g.add(l);
+      return l;
+    });
+  }
+  const base = SIZE.dog * 1.15;
+  g.scale.setScalar(base);
+  g.userData.ref = asleep ? "coyote-asleep" : "coyote";
+  return { g, legs, base };
 }
 
 // CLAY, "Terracotta Hills" (docs/design/hex-jelly-prompt.md): the terraced, banded mesa with its cypresses and the martins'
@@ -2736,7 +2831,7 @@ function brickworks(L: Layout, ground: (x: number, z: number) => number, r: () =
     wood.push(part(new THREE.BoxGeometry(1, 1, 1), "#1a0e0a", [sh.x, fy + 0.002, sh.z], [0, -QAX, 0], [0.07, 0.004, 0.07]));
     for (const [du, dv, len, along] of [[0, 0.04, 0.09, true], [0, -0.04, 0.09, true], [0.04, 0, 0.09, false], [-0.04, 0, 0.09, false]] as [number, number, number, boolean][]) {
       const c = V(sh, du, dv, fy + 0.007);
-      wood.push(part(new THREE.BoxGeometry(1, 1, 1), "#8a5e38", [c.x, c.y, c.z], [0, -QAX + (along ? Math.PI / 2 : 0), 0], [0.012, 0.012, len]));
+      wood.push(part(new THREE.BoxGeometry(1, 1, 1), "#8a5e38", [c.x, c.y, c.z], [0, -QAX + (along ? 0 : Math.PI / 2), 0], [0.012, 0.012, len]));
     }
     // The headframe: two A-frames across the shaft, a crossbeam, braces.
     const H = 0.27;
@@ -2842,6 +2937,61 @@ function brickworks(L: Layout, ground: (x: number, z: number) => number, r: () =
       crates.push(part(new THREE.BoxGeometry(1, 1, 1), "#7a5434", [p.x, Y(p.x, p.z) + k / 2, p.z], [0, du * 20, 0], [k * 1.02, k * 0.2, k * 1.02]));
     }
     if (crates.length) g.add(mesh(merge(crates), cm));
+
+    // A plank ramp up the back wall from the floor to the rim; rails across the floor from the shaft to its foot with an ore
+    // cart that rolls between them.
+    const side = L.marks.side!.x;
+    const extra: THREE.BufferGeometry[] = [];
+    const rA = V(M.quarry!, side * 0.14, 0.12, 0);
+    rA.y = Y(rA.x, rA.z) + 0.004;
+    const rB = V(M.quarry!, side * 0.5, 0.2, 0);
+    rB.y = Y(rB.x, rB.z) + 0.006;
+    const dir = rB.clone().sub(rA);
+    const acr = new THREE.Vector3(-dir.z, 0, dir.x).normalize().multiplyScalar(0.022);
+    extra.push(beamGeo(rA.clone().add(acr), rB.clone().add(acr), 0.003, "#7a5434"), beamGeo(rA.clone().sub(acr), rB.clone().sub(acr), 0.003, "#7a5434"));
+    for (let k = 0; k <= 12; k++) {
+      const p = rA.clone().lerp(rB, k / 12).add(new THREE.Vector3(0, 0.003, 0));
+      extra.push(beamGeo(p.clone().add(acr.clone().multiplyScalar(1.15)), p.clone().sub(acr.clone().multiplyScalar(1.15)), 0.0035, k % 2 ? "#c49a62" : "#b58a55"));
+    }
+    for (const k of [0.33, 0.66]) {
+      const p = rA.clone().lerp(rB, k);
+      const foot = new THREE.Vector3(p.x, Y(p.x, p.z), p.z);
+      if (p.y - foot.y > 0.01) extra.push(beamGeo(foot, p, 0.0025, "#7a5434"));
+    }
+    const c0 = V(M.quarry!, -side * 0.12, 0.05, 0);
+    const c1 = V(M.quarry!, side * 0.1, 0.05, 0);
+    const railAcross = new THREE.Vector3(Math.cos(QAX), 0, Math.sin(QAX)).multiplyScalar(0.009);
+    for (const sgn of [1, -1]) {
+      const a = c0.clone().addScaledVector(railAcross, sgn);
+      const b = c1.clone().addScaledVector(railAcross, sgn);
+      a.y = Y(a.x, a.z) + 0.003;
+      b.y = Y(b.x, b.z) + 0.003;
+      extra.push(beamGeo(a, b, 0.0012, "#5a5a62"));
+    }
+    for (let k = 0; k <= 8; k++) {
+      const p = c0.clone().lerp(c1, k / 8);
+      p.y = Y(p.x, p.z) + 0.0015;
+      extra.push(part(new THREE.BoxGeometry(1, 1, 1), "#6a4a32", [p.x, p.y, p.z], [0, -QAX, 0], [0.026, 0.002, 0.005]));
+    }
+    g.add(mesh(merge(extra), cm));
+    const cart = new THREE.Group();
+    cart.add(
+      mesh(
+        merge([
+          part(new THREE.BoxGeometry(1, 1, 1), "#6a6a72", [0, 0.016, 0], [0, 0, 0], [0.034, 0.016, 0.024]),
+          part(blobGeo(420), "#c4562e", [0, 0.026, 0], [0, 0, 0], [0.015, 0.008, 0.011]),
+          ...[-0.011, 0.011].flatMap((x) => [-0.009, 0.009].map((z) => part(cyl(1, 1, 10), "#2a2a30", [x, 0.006, z], [Math.PI / 2, 0, 0], [0.006, 0.003, 0.006]))),
+        ]),
+        cm,
+      ),
+    );
+    g.add(cart);
+    life.push((t) => {
+      const u = 0.5 - 0.5 * Math.cos(t * 0.5);
+      const p = c0.clone().lerp(c1, u);
+      cart.position.set(p.x, Y(p.x, p.z), p.z);
+      cart.rotation.y = -Math.atan2(c1.z - c0.z, c1.x - c0.x);
+    });
   }
 
   // Two villagers carry clay in hods from the quarry's rim to the kiln and walk back for more.
@@ -3048,25 +3198,203 @@ function brickworks(L: Layout, ground: (x: number, z: number) => number, r: () =
     if (roofs.length) g.add(mesh(merge(roofs), cm));
   }
 
-  // The cypresses: tall dark flames on the mesa's ledges and at its foot.
+  // The pug mill, where the clay is mixed: a wooden tub with a post and a sweep arm, a donkey walking it round in a worn ring.
   {
-    const cy: THREE.BufferGeometry[] = [];
-    for (let k = 0, tries = 0; k < 5 && tries < 1200; tries++) {
-      const a = L.hillAt - L.marks.side!.x * 0.3 + (r() - 0.5) * 2.8;
+    const mp = M.mill!;
+    if (nearestCorner(mp.x, mp.z) > 0.25 && hexDist(mp.x, mp.z) < INR - 0.18) {
+      const y = Y(mp.x, mp.z);
+      const tub = mesh(
+        merge([
+          part(cyl(1, 0.9, 16), "#8a5e38", [0, 0.02, 0], [0, 0, 0], [0.032, 0.04, 0.032]),
+          part(cyl(1, 1, 16), "#4a4a4a", [0, 0.032, 0], [0, 0, 0], [0.0325, 0.003, 0.0325]),
+          part(cyl(1, 1, 16), "#4a4a4a", [0, 0.01, 0], [0, 0, 0], [0.031, 0.003, 0.031]),
+          part(blobGeo(430), "#c4562e", [0, 0.041, 0], [0, 0, 0], [0.026, 0.005, 0.026]),
+          part(cyl(1, 1, 8), "#7a5434", [0, 0.06, 0], [0, 0, 0], [0.005, 0.05, 0.005]),
+        ]),
+        cm,
+      );
+      tub.position.set(mp.x, y, mp.z);
+      g.add(tub);
+      const ring = new THREE.Mesh(new THREE.RingGeometry(0.09, 0.125, 40).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ color: "#c46a40", roughness: 1, transparent: true, opacity: 0.55, depthWrite: false }));
+      ring.position.set(mp.x, y + 0.0015, mp.z);
+      ring.receiveShadow = true;
+      g.add(ring);
+      const arm = new THREE.Group();
+      arm.position.set(mp.x, y + 0.075, mp.z);
+      arm.add(mesh(merge([part(cyl(1, 1, 6), "#8a5e38", [0.055, 0, 0], [0, 0, Math.PI / 2], [0.0035, 0.11, 0.0035])]), cm));
+      g.add(arm);
+      const donk = donkey(cm);
+      g.add(donk.g);
+      stands.push({ x: mp.x, z: mp.z, r: 0.15 });
+      life.push((t) => {
+        const sp = env.roll >= 0 ? 2 : 1;
+        const a = t * 0.45 * sp;
+        arm.rotation.y = -a;
+        const R2 = 0.107;
+        donk.g.position.set(mp.x + Math.cos(a) * R2, y, mp.z + Math.sin(a) * R2);
+        donk.g.rotation.y = -(a + Math.PI / 2);
+        donk.legs.forEach((l, i) => (l.rotation.z = 0.5 * Math.sin(t * 7 * sp + (i % 2 ? Math.PI : 0) + (i > 1 ? Math.PI / 2 : 0))));
+        donk.head.rotation.z = 0.08 * Math.sin(t * 3.5 * sp);
+      });
+    }
+  }
+
+  // Desert plants (Arizona): prickly pear clusters with pink fruit, blue-green agave rosettes.
+  {
+    const plants: THREE.BufferGeometry[] = [];
+    for (let k = 0, tries = 0; k < 9 && tries < 1500; tries++) {
+      const a = r() * Math.PI * 2;
       const d = 0.45 + r() * 0.42;
       const p = { x: Math.cos(a) * d, z: Math.sin(a) * d };
-      if (!ok(p.x, p.z, 0.04) || !clearOf(kp, p.x, p.z) || !clearOf(M.shaft!, p.x, p.z, 0.2)) continue;
+      if (!ok(p.x, p.z, 0.03) || !clearOf(kp, p.x, p.z) || !clearOf(M.shaft!, p.x, p.z, 0.2)) continue;
       const y = Y(p.x, p.z);
-      const hgt = 0.2 + r() * 0.1;
-      cy.push(part(cyl(0.6, 1, 6), "#5a3a26", [p.x, y + 0.012, p.z], [0, 0, 0], [0.006, 0.024, 0.006]));
-      for (let i = 0; i < 4; i++) {
-        const f = i / 4;
-        cy.push(part(blobGeo(340 + i + k * 4), ["#24502e", "#2f5f35", "#3a6b3c", "#4a7a44"][i]!, [p.x, y + 0.02 + hgt * (0.12 + f * 0.62), p.z], [0, i, 0], [0.032 * (1 - f * 0.55), hgt * 0.24, 0.032 * (1 - f * 0.55)]));
+      if (k % 2 === 0) {
+        // Prickly pear: paddles on paddles.
+        const pads: [number, number, number, number][] = [[0, 0.02, 0, 0], [0.012, 0.042, 0.004, 0.5], [-0.012, 0.04, -0.003, -0.5], [0.004, 0.06, 0, 0.2], [0.02, 0.022, -0.012, 0.9]];
+        const turn = r() * Math.PI;
+        for (const [px, py, pz, tilt] of pads) {
+          const [cx, cz] = [px * Math.cos(turn) - pz * Math.sin(turn), px * Math.sin(turn) + pz * Math.cos(turn)];
+          plants.push(part(sphere(10), "#6a9a4a", [p.x + cx, y + py, p.z + cz], [0, turn, tilt], [0.016, 0.02, 0.005]));
+          if (py > 0.035) plants.push(part(sphere(6), "#e0457a", [p.x + cx, y + py + 0.019, p.z + cz], [0, 0, 0], [0.0035, 0.004, 0.0035]));
+        }
+        stands.push({ x: p.x, z: p.z, r: 0.03 });
+      } else {
+        // Agave: a rosette of stiff blue-green leaves.
+        for (let i = 0; i < 11; i++) {
+          const b = (i / 11) * Math.PI * 2;
+          const up = i % 2 ? 0.5 : 0.9;
+          plants.push(part(new THREE.ConeGeometry(1, 1, 4), i % 3 ? "#6f9a8a" : "#86ae9c", [p.x + Math.cos(b) * 0.01, y + 0.014, p.z + Math.sin(b) * 0.01], [Math.sin(b) * up, 0, -Math.cos(b) * up], [0.005, 0.032, 0.003]));
+        }
+        stands.push({ x: p.x, z: p.z, r: 0.03 });
       }
-      stands.push({ x: p.x, z: p.z, r: 0.035 });
       k++;
     }
-    g.add(mesh(merge(cy), cm));
+    g.add(mesh(merge(plants), cm));
+  }
+
+  // The rattlesnake, coiled on a warm flat rock, head raised, tail rattling now and then.
+  {
+    for (let tries = 0; tries < 400; tries++) {
+      const a = r() * Math.PI * 2;
+      const d = 0.45 + r() * 0.35;
+      const p = { x: Math.cos(a) * d, z: Math.sin(a) * d };
+      if (!ok(p.x, p.z, 0.04)) continue;
+      const y = Y(p.x, p.z);
+      const snake = new THREE.Group();
+      const body: THREE.BufferGeometry[] = [part(new THREE.DodecahedronGeometry(1, 0), "#c9a27a", [0, 0.006, 0], [0, 0.4, 0], [0.04, 0.012, 0.034])];
+      const N = 46;
+      for (let i = 0; i < N; i++) {
+        const f = i / N;
+        const ang = f * Math.PI * 2 * 2.3;
+        const rad = 0.022 - f * 0.016;
+        const dark = i % 4 === 0;
+        body.push(part(sphere(8), dark ? "#6a4a2a" : "#b89a62", [Math.cos(ang) * rad, 0.016 + (1 - f) * 0.0, Math.sin(ang) * rad], [0, 0, 0], [0.0052 - f * 0.0016, 0.0042, 0.0052 - f * 0.0016]));
+      }
+      // The neck rising from the coil's middle, the head.
+      for (let i = 0; i < 6; i++) body.push(part(sphere(8), i % 3 ? "#b89a62" : "#6a4a2a", [0.002 + i * 0.002, 0.02 + i * 0.004, 0], [0, 0, 0], [0.004, 0.004, 0.004]));
+      body.push(part(sphere(8), "#8a6a3a", [0.016, 0.044, 0], [0, 0, -0.2], [0.008, 0.0045, 0.0055]));
+      body.push(part(sphere(6), "#1a1414", [0.019, 0.047, 0.004], [0, 0, 0], [0.0012, 0.0012, 0.0012]));
+      body.push(part(sphere(6), "#1a1414", [0.019, 0.047, -0.004], [0, 0, 0], [0.0012, 0.0012, 0.0012]));
+      snake.add(mesh(merge(body), cm));
+      const rattle = new THREE.Group();
+      rattle.position.set(0.022, 0.016, 0);
+      rattle.add(mesh(merge([0, 1, 2, 3].map((i) => part(sphere(6), "#e8d6a8", [0, 0.003 + i * 0.0035, 0], [0, 0, 0], [0.003 - i * 0.0004, 0.002, 0.003 - i * 0.0004]))), cm));
+      snake.add(rattle);
+      snake.scale.setScalar(SIZE.small * 1.2);
+      snake.position.set(p.x, y, p.z);
+      snake.rotation.y = -Math.atan2(EYE.z, EYE.x) + 1.4;
+      snake.userData.ref = "rattlesnake";
+      g.add(snake);
+      stands.push({ x: p.x, z: p.z, r: 0.05 });
+      life.push((t) => {
+        const shake = env.roll >= 0 || (t % 5) < 0.9 ? 1 : 0;
+        rattle.rotation.x = shake * 0.4 * Math.sin(t * 60);
+      });
+      break;
+    }
+  }
+
+  // Coyotes: one asleep, curled in the cottage's shade; one trotting a slow loop across the back.
+  {
+    for (let tries = 0; tries < 400; tries++) {
+      const a = Math.atan2(kp.z, kp.x) + (r() - 0.5) * 1.2;
+      const d = 0.5 + r() * 0.35;
+      const p = { x: Math.cos(a) * d, z: Math.sin(a) * d };
+      if (!ok(p.x, p.z, 0.03)) continue;
+      const c = coyote(cm, true);
+      c.g.position.set(p.x, Y(p.x, p.z), p.z);
+      c.g.rotation.y = r() * 6;
+      g.add(c.g);
+      stands.push({ x: p.x, z: p.z, r: 0.05 });
+      life.push((t) => (c.g.scale.y = c.base * (1 + 0.04 * Math.sin(t * 1.5))));
+      break;
+    }
+    const walker = coyote(cm, false);
+    g.add(walker.g);
+    const centre = at(L.hillAt - L.marks.side!.x * 1.25, 0.6);
+    life.push((t) => {
+      const a = t * 0.22;
+      let [x, z] = [centre.x + Math.cos(a) * 0.17, centre.z + Math.sin(a) * 0.11];
+      const k = Math.min(1, (INR - 0.14) / Math.max(1e-6, hexDist(x, z)));
+      [x, z] = [x * k, z * k];
+      const rr = Math.hypot(x, z);
+      if (rr < 0.42) [x, z] = [(x / rr) * 0.42, (z / rr) * 0.42];
+      walker.g.position.set(x, Y(x, z), z);
+      walker.g.rotation.y = -(a + Math.PI / 2);
+      walker.legs!.forEach((l, i) => (l.rotation.z = 0.55 * Math.sin(t * 8 + (i % 2 ? Math.PI : 0) + (i > 1 ? Math.PI / 2 : 0))));
+    });
+  }
+
+  // An old wagon wheel leaning against the kiln yard's wall.
+  {
+    for (let tries = 0; tries < 300; tries++) {
+      const a = Math.atan2(kp.z, kp.x) + (r() - 0.5) * 0.9;
+      const p = { x: Math.cos(a) * (0.42 + r() * 0.15), z: Math.sin(a) * (0.42 + r() * 0.15) };
+      if (!ok(p.x, p.z, 0.02)) continue;
+      const w = mesh(
+        merge([
+          part(new THREE.TorusGeometry(0.026, 0.003, 6, 20), "#7a5434", [0, 0, 0]),
+          part(new THREE.TorusGeometry(0.026, 0.0012, 4, 20), "#5a5a62", [0, 0, 0.002]),
+          part(cyl(1, 1, 8), "#6a4a32", [0, 0, 0], [Math.PI / 2, 0, 0], [0.006, 0.008, 0.006]),
+          ...[0, 1, 2, 3, 4, 5].map((k) => part(new THREE.BoxGeometry(1, 1, 1), "#8a6440", [0, 0, 0], [0, 0, (k * Math.PI) / 6], [0.05, 0.0025, 0.0025])),
+        ]),
+        cm,
+      );
+      w.position.set(p.x, Y(p.x, p.z) + 0.024, p.z);
+      w.rotation.set(0.35, -Math.atan2(EYE.z, EYE.x) + Math.PI / 2, 0, "YXZ");
+      g.add(w);
+      stands.push({ x: p.x, z: p.z, r: 0.03 });
+      break;
+    }
+  }
+
+  // Sun-cracked ground: dried mud plates on the flats and the quarry floor, their cracks thin dark slivers along the edges of a
+  // jittered cell pattern, in patches.
+  {
+    const CELL = 0.05;
+    const seeds: Pt[] = [];
+    for (let i = -26; i <= 26; i++)
+      for (let j = -26; j <= 26; j++) {
+        const x = (i + 0.5 + hash2(i, j, L.seed + 50) * 0.42) * CELL;
+        const z = (j + 0.5 + hash2(i, j, L.seed + 51) * 0.42) * CELL;
+        if (hexDist(x, z) < INR - 0.05) seeds.push({ x, z });
+      }
+    const cracks: Inst[] = [];
+    const DARK = new THREE.Color("#a8482a");
+    for (let i = 0; i < seeds.length; i++)
+      for (let j = i + 1; j < seeds.length; j++) {
+        const [a, b] = [seeds[i]!, seeds[j]!];
+        const d = Math.hypot(b.x - a.x, b.z - a.z);
+        if (d > CELL * 1.5) continue;
+        const m = { x: (a.x + b.x) / 2, z: (a.z + b.z) / 2 };
+        const h = ground(m.x, m.z);
+        const flat = Math.abs(h) < 0.02 || h < -Q_D + 0.03;
+        if (!flat || Math.hypot(m.x, m.z) < 0.37 || hexDist(m.x, m.z) > INR - 0.07 || noise(m.x * 3.2, m.z * 3.2, L.seed + 60) < 0.3) continue;
+        if (stands.some((q) => Math.hypot(q.x - m.x, q.z - m.z) < q.r + 0.005) || Math.hypot(m.x - pit.x, m.z - pit.z) < pit.r * 1.1) continue;
+        const ang = Math.atan2(b.z - a.z, b.x - a.x) + Math.PI / 2;
+        cracks.push({ m: mat(m.x, Y(m.x, m.z) + 0.0008, m.z, d * 0.62, 0.0012, 0.0024, -ang), c: DARK });
+      }
+    if (cracks.length) g.add(instanced(new THREE.BoxGeometry(1, 1, 1), cracks, blobMat()));
   }
 
   // Nest holes in the mesa's cliffs that face the eye, and the martins flitting in and out.
@@ -3119,7 +3447,7 @@ function brickworks(L: Layout, ground: (x: number, z: number) => number, r: () =
   {
     const dots: Inst[] = [];
     const tufts: Inst[] = [];
-    const SCRUB = ["#5a8f3a", "#76a848", "#4a7a34"].map((c) => new THREE.Color(c));
+    const SCRUB = ["#7d8f4a", "#93a35a", "#6a7a3e"].map((c) => new THREE.Color(c));
     for (let i = 0; i < 900; i++) {
       const a = r() * Math.PI * 2;
       const d = 0.37 + Math.sqrt(r()) * 0.56;
@@ -3129,7 +3457,7 @@ function brickworks(L: Layout, ground: (x: number, z: number) => number, r: () =
       if (i % 9 === 0) {
         const k = 0.02 + r() * 0.015;
         tufts.push({ m: mat(x, y + k * 0.5, z, k, k * 0.8, k, r() * 6), c: SCRUB[i % 3]! });
-      } else if (i % 5 === 0) dots.push({ m: mat(x, y + 0.006, z, 0.005, 0.004, 0.005), c: new THREE.Color(i % 2 ? "#e0312a" : "#f6efe0") });
+      } else if (i % 5 === 0) dots.push({ m: mat(x, y + 0.006, z, 0.005, 0.004, 0.005), c: new THREE.Color(i % 2 ? "#f2c230" : "#f6efe0") });
       else if (i % 2 === 0) dots.push({ m: mat(x, y + 0.004, z, 0.004, 0.009, 0.004, r() * 6, (r() - 0.5) * 0.5), c: SCRUB[i % 3]! });
     }
     g.add(instanced(blobGeo(360), tufts, blobMat()));
