@@ -182,13 +182,13 @@ runs the README "Run it" checks. A red PR is never merged.
 | Role | Who | Does |
 |---|---|---|
 | Builder | the session doing the work | Steps 1-4, pushes, opens the PR, and fixes CI until it is green. **Never merges its own PR.** |
-| Reviewer | the **next** session, which did not write the code | Before taking a new issue, it reviews every open PR: reads the diff against the issue's completion test, runs the "Run it" checks, and checks the framework rules (no to-do lists in files, issue comments present). If CI is green and nothing is wrong, it **merges** and says so in one PR comment. If something is wrong, it comments exactly what, and the PR stays open for a Builder. |
+| Reviewer | the **orchestrator**: the one session Jarrod names to review and merge | Reviews every open PR with a different model than its builder: reads the diff against the issue's completion test, checks CI and the framework rules (no to-do lists in files, issue comments present). If CI is green and nothing is wrong, it **merges**. If something is wrong, it comments exactly what, and the PR stays open for its Builder. **No other session merges.** |
 | Jarrod | the owner | Accepts results: moves In Review to Done. No code reading needed. |
 
-A new chat therefore starts: review and merge open PRs, then take the next open issue.
+A new Builder chat therefore starts: take the next open issue in a free lane ([LANES.md](LANES.md)).
 
 **End of a chat, or a finished task:** give Jarrod one line to paste into a new chat:
-`Continue Emberisle: review and merge open PRs, then take the next open issue per docs/FRAMEWORK.md.`
+`Work on Emberisle.` (AGENTS.md covers the rest.)
 
 **Ask Jarrod before:** deleting, overwriting, or bulk-moving files; pushing to `main`; and anything
 outward-facing (posting outside this repo, sharing links, or spending money).

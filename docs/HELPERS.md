@@ -50,6 +50,7 @@ If you run unattended (loop or stand-by mode):
    - no open PR mentions its number (drafts count);
    - no `claimed:` comment from anyone else;
    - its `Depends on` issues are closed.
+   - its lane is free (see [`LANES.md`](LANES.md)).
 
    Read the whole issue and every comment on it, fresh. Together they are the spec.
 3. **Claim** it right away. Add the label `status:in-progress` and comment:
