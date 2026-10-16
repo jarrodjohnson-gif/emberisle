@@ -549,7 +549,7 @@ try {
   await until(async () => (await names(b)).length, "Tide hears the soundboard tap");
   await sleep(300);
   assert.deepEqual((await heard(b)).map((x) => [x.file, x.volume]), [["robbed_fah.mp3", 0.4]], "the other seat hears fah once, at the meme volume 0.4 (#659)");
-  assert.deepEqual((await heard(a)).map((x) => x.file).filter((f) => f === "robbed_fah.mp3"), ["robbed_fah.mp3"], "the sender hears it once too");
+  assert.deepEqual((await heard(a)).filter((x) => x.file === "robbed_fah.mp3").map((x) => [x.file, x.volume]), [["robbed_fah.mp3", 0.4]], "the sender hears it once too, at 0.4");
   const chip = await b.getByTestId("chat-log").locator("li", { hasText: "Fah" }).first().textContent();
   assert.ok(chip.includes("Ember") && chip.includes("\u{1F50A} Fah"), `the chip reads "Ember \u{1F50A} Fah": ${chip}`);
   ok("soundboard: a tap plays on both seats and shows the chip \"Ember \u{1F50A} Fah\" in chat");
@@ -580,14 +580,15 @@ try {
     assert.deepEqual((await heard(b)).map((x) => [x.file, x.volume]), [[file, 0.4]], `${id} plays once on the other seat, at 0.4`);
   }
   // #659: every soundboard id plays at the meme volume 0.4 (below the music's 0.5). The rest of the board, by id, one tap each.
-  for (const id of ["sb_wololo", "bong", "plop", "pluck"]) {
+  // The raw played file, not its clip name: the board_* sounds reuse files that table clips own, which `heard` names by the first.
+  for (const [id, file] of [["sb_wololo", "sb_wololo.mp3"], ["bong", "bong_001"], ["plop", "plop"], ["pluck", "pluck_001"]]) {
     await sleep(3100);
     await clear(b);
     await a.evaluate((x) => window.__emberisle.getState().sendSound(x), id);
     await until(async () => (await names(b)).length, `${id} reaches Tide`);
     await sleep(300);
-    const got = await heard(b);
-    assert.deepEqual(got.map((x) => x.volume), [0.4], `${id} plays once at 0.4 (${JSON.stringify(got)})`);
+    const got = await b.evaluate(() => window.__plays);
+    assert.deepEqual(got.map((x) => [x.file, x.volume]), [[file, 0.4]], `${id} plays once at 0.4 (${JSON.stringify(got)})`);
   }
   ok("soundboard: every board sound (fah, wololo, airhorn, quit touchin, only wood, bong, plop, pluck) plays at 0.4");
   await b.evaluate(async () => {
