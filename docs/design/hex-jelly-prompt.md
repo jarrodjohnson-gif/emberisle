@@ -115,11 +115,14 @@ THE SIX WORLDS
    Roll: the cart races out heaped, the crystals flare, the goat hops, the eagle stoops. Night: the lantern and the
    mine mouth glow warm.
 
-6. WASTE — "The Wayfarer's Rest". Pale dunes with crisp slip faces and wind-ripple stripes, a rust-red rocky mesa at the
-   back. A tiny oasis: a palm pair over a round jelly pool. Two saguaro cacti (one flowering pink), a bleached dead tree, a
-   half-buried ox skull, scattered stones, tumbleweed that rolls across now and then, a thin dust devil that wanders and
-   fades. The wayfarer (the robber) stands here at person scale (0.17) under a hooded cloak with a lantern. Surprise: a
-   lizard basks on a rock and darts when the tumbleweed passes.
+6. WASTE — "The Wayfarer's Rest", a King Kong / Skull Island wasteland: desolate, sun-cracked ash and dun ground with faint
+   wind ripples, clusters of jagged dark basalt spires at the back. A giant beast skull lies half-buried on one flank (long
+   toothy snout, deep sockets, great curled horns, cracks; an ember glows in one socket at night), a vast ribcage arches out
+   of the ash on the other, small bones scattered between. A black tar pit bubbles at the front with a little skull sunk at
+   its edge. Dead twisted trees, dry grass, low mist banks drifting, a tumbleweed, vultures circling the skull. The
+   wayfarer (the robber) is a short, hunched, sneaky little man in a deep-green hooded poncho with a gold diamond band, a
+   big nose, scruffy beard, huge wary eyes, a rat on his shoulder and a little lantern; he tiptoes and peeks left and right.
+   The waste never produces, so it has no roll; he stands on its pad.
 
 THE TILE IN PLAY (owner 2026-10-16: "when the land wins a roll it can interact"; all five below)
 1. Roll payoff (visuals now, a soundscape later). When a tile's number is rolled, a squash-and-stretch ripple runs out
