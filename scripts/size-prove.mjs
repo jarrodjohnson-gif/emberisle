@@ -41,7 +41,9 @@ const BUDGETS = [
   // as hex-jelly. Measured: jelly-board 7.64 kB, hex-jelly 45.49 kB (together 53.1 kB, the #624 chunk plus the shore's
   // helpers export), harbor-jelly 10.01 kB; each +about 0.5-1 kB.
   { name: "jelly-board", gzipBytes: 8500 },
-  { name: "hex-jelly", gzipBytes: 46500 },
+  // 2026-10-16 (owner sign-off "yes looks good."): the ore's climber (hex-jelly.ts), after the scenes; 46.81 kB measured
+  // against 45.30 kB (+1.51 kB); 690 B headroom. The chunk loads after the island's first draw (the owner: load may grow while play stays snappy).
+  { name: "hex-jelly", gzipBytes: 47500 },
   { name: "harbor-jelly", gzipBytes: 11000 },
   { name: "online", gzipBytes: 8300 },
   // 2026-10-15 (#603): 6.33 kB measured with the win screen's winning action on top of #611's lobby selector; +170 B.

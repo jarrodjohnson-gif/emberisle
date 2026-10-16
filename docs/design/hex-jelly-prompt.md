@@ -112,6 +112,11 @@ THE SIX WORLDS
    meadow's edge, fed by snowmelt: a white fall down the second peak's face and a jelly stream winding round the meadow.
    Moss-green and purple heather patches in the sage meadow. A marmot pops up from a burrow by the boulders. A mountain
    goat on a ledge, an eagle circling the peaks. Surprise: a gold nugget glints in the scree.
+   The climber (the owner, 2026-10-16): as the match starts a little climber in red walks to an open patch of scree by the
+   tallest peak, where the eye sees him past the token, and gets his gear out (rope coil, red helmet). Then he climbs the
+   peak's visible flank a step at a time (about 2.5 minutes) and sits on the summit with a yellow flag for the rest of the
+   match. Now and then (40% a try, seeded by the island) he slips, tumbles to the scree and lies there a skeleton, his red
+   helmet beside him; about 25 s later the next one tries. Three skeletons at most; the fourth makes it.
    Roll: the cart races out heaped, the crystals flare, the goat hops, the eagle stoops. Night: the lantern and the
    mine mouth glow warm.
 
