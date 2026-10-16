@@ -31,7 +31,7 @@ const look = (page) =>
     const hole = isle.insets();
     // The view is the default for the canvas's shape (#597): overhead upright, the diorama on its side. Overhead, the frustum
     // is the fit; diorama, the lens is.
-    const view = defaultView(c.clientWidth, c.clientHeight);
+    const view = defaultView(c.clientWidth, c.clientHeight, true);
     const want = view === "overhead" ? fitOrtho(c.clientWidth, c.clientHeight, hole, OVERHEAD_LEAN) : fitDiorama(c.clientWidth, c.clientHeight, hole);
     const keys = Object.keys(want);
     const fresh = isle.view === view && isle.fit !== null && keys.every((k) => Math.abs(want[k] - isle.fit[k]) < 1e-6);

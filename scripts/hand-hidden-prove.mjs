@@ -1,7 +1,7 @@
 // #439: the hand bar is not on the table until the seat has held a good this game (or the phase is roll/main). At 1280x720 and
 // 390x844 (touch), with and without prefers-reduced-motion, on a hotseat table played through the real roll-off and setup:
 //  - roll-off and every setup step before the second outpost pays: 0 hand tiles, no hand-dock, and the HUD sits lower, so the
-//    hole the island is fitted to (`__isle.insets().bottom`) is bigger by about the hand's height;
+//    hole the HUD leaves (`__isle.liveInsets().bottom`) is bigger by about the hand's height, and the island, fitted to a declared hole (#625), does not move;
 //  - the second outpost paying brings the hand in (5 tiles) mounted at its full height in that same commit, rising over 220 ms
 //    with opacity and translateY only (read at the animation's midpoint: opacity in between, height already final, no layout
 //    property in the keyframes); under reduced motion it is a 1 ms step;
@@ -160,7 +160,8 @@ async function run(v, reduced) {
   const dockH = await page.getByTestId("hand-dock").evaluate((e) => e.getBoundingClientRect().height);
   assert.ok(bare - full >= dockH * 0.8 && bare - full <= dockH + 10, `${tag}: the hole shrinks by about the hand (${dockH}): ${bare} -> ${full}`);
   const isleFull = await island(page);
-  assert.ok(isleBare.bottom < isleFull.bottom, `${tag}: the hole's bottom inset is smaller without the hand (${isleBare.bottom} < ${isleFull.bottom})`);
+  // #625: the hand overlays the board and the map is fitted to a declared hole, so the hand arriving moves nothing.
+  assert.ok(isleBare.bottom === isleFull.bottom && Math.abs(isleBare.min - isleFull.min) <= 1 && Math.abs(isleBare.max - isleFull.max) <= 1, `${tag}: the hole and the island stay put when the hand arrives (${JSON.stringify(isleBare)} -> ${JSON.stringify(isleFull)})`);
   await stillFitted(page, tag, "hand arrived");
   await page.screenshot({ path: `test-results/hand-hidden-${v.tag}-${reduced ? "rm" : "motion"}-shown.png` });
 
@@ -201,7 +202,7 @@ async function run(v, reduced) {
   await page.waitForFunction(() => !document.querySelector('[data-testid="hand-dock"]'), null, { timeout: STEP_MS });
   assert.equal(await tiles(page), 0, `${tag}: a seat that never held a good has no hand`);
   const isleGone = await island(page);
-  assert.ok(isleGone.bottom < isleFull.bottom, `${tag}: the hole is bigger again without the hand (${isleGone.bottom} < ${isleFull.bottom})`);
+  assert.ok(isleGone.bottom === isleFull.bottom && Math.abs(isleGone.min - isleFull.min) <= 1 && Math.abs(isleGone.max - isleFull.max) <= 1, `${tag}: the hole and the island stay put when the hand leaves (${JSON.stringify(isleGone)} vs ${JSON.stringify(isleFull)})`);
   await stillFitted(page, tag, "hand left");
 
   // #481 item 6: the hand follows the state alone. The seat that held goods is on turn again in a fresh setup with nothing
@@ -237,7 +238,7 @@ async function run(v, reduced) {
     g.setState({ state: st });
   });
   await page.getByTestId("hand-dock").waitFor({ timeout: STEP_MS });
-  const calm = await island(page);
+  const calm = { ...(await island(page)), bottom: await page.evaluate(() => window.__isle.liveInsets().bottom) };
   await page.evaluate(() => {
     const g = window.__emberisle;
     const st = structuredClone(g.getState().state);
@@ -246,7 +247,7 @@ async function run(v, reduced) {
     g.setState({ state: st });
   });
   await page.getByTestId("resource-flash").waitFor({ timeout: STEP_MS });
-  const flashing = await page.evaluate(() => ({ bottom: window.__isle.insets().bottom, overlay: getComputedStyle(document.querySelector('[data-testid="resource-flash"]')).pointerEvents }));
+  const flashing = await page.evaluate(() => ({ bottom: window.__isle.liveInsets().bottom, overlay: getComputedStyle(document.querySelector('[data-testid="resource-flash"]')).pointerEvents }));
   assert.equal(flashing.overlay, "none", `${tag}: the flash overlay lets taps through`);
   assert.equal(flashing.bottom, calm.bottom, `${tag}: with the flash up the hand still measures as the hand (${flashing.bottom} vs ${calm.bottom})`);
   await stillFitted(page, tag, "hand flashing");
@@ -260,7 +261,7 @@ async function run(v, reduced) {
       t.append(dot);
     }
   });
-  const dotted = await page.evaluate(() => window.__isle.insets().bottom);
+  const dotted = await page.evaluate(() => window.__isle.liveInsets().bottom);
   assert.equal(dotted, calm.bottom, `${tag}: a pointer-transparent child in each tile leaves the hand measured as the hand (${dotted} vs ${calm.bottom})`);
   await page.evaluate(() => document.querySelectorAll('[data-testid="probe-dot"]').forEach((d) => d.remove()));
   assert.deepEqual(errors, [], `${tag}: console errors`);

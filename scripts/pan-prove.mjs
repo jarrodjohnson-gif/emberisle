@@ -57,7 +57,7 @@ async function start(w, h) {
   const ctx = await browser.newContext({ viewport: { width: w, height: h }, isMobile: true, hasTouch: true });
   await ctx.addInitScript(() => localStorage.setItem("emberisle-water", "simple"));
   const page = await ctx.newPage();
-  if (w >= 440 && w !== 844 && w !== 1000) await (await ctx.newCDPSession(page)).send("Emulation.setSafeAreaInsetsOverride", { insets: NOTCH(w, h) });
+  if ((w === 440 || w === 956)) await (await ctx.newCDPSession(page)).send("Emulation.setSafeAreaInsetsOverride", { insets: NOTCH(w, h) });
   page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
   page.on("pageerror", (e) => errors.push(String(e)));
   page.on("response", (r) => r.status() >= 400 && errors.push(`${r.status()} ${r.url()}`));
@@ -120,7 +120,7 @@ async function startFor(page, w, h, sx, sy) {
 
 let code = 0;
 try {
-  for (const [w, h, view] of [[430, 932, "overhead"], [440, 956, "overhead"], [360, 640, "overhead"], [844, 390, "overhead"], [390, 844, "overhead"], [956, 440, "diorama"]]) {
+  for (const [w, h, view] of [[430, 932, "overhead"], [440, 956, "overhead"], [360, 640, "overhead"], [844, 390, "overhead"], [390, 844, "overhead"], [956, 440, "overhead"], [1280, 720, "diorama"]]) {
     const tag = `${w}x${h}`;
     const { ctx, page, cdp } = await start(w, h);
     const s0 = await state(page);
@@ -267,7 +267,7 @@ try {
     await twoFingers(cdp, page, sq.x, sq.y, 160, 0);
     { const pm = await state(page); check(pm.dist > 0.5, `${tag}: panned before the turn`, { dist: pm.dist, sq }); }
     await page.setViewportSize({ width: h, height: w });
-    if (w >= 440 && w !== 844 && w !== 1000) await (await ctx.newCDPSession(page)).send("Emulation.setSafeAreaInsetsOverride", { insets: NOTCH(h, w) });
+    if ((w === 440 || w === 956)) await (await ctx.newCDPSession(page)).send("Emulation.setSafeAreaInsetsOverride", { insets: NOTCH(h, w) });
     await frames(page, 4);
     await settle(page);
     const turned = await state(page);

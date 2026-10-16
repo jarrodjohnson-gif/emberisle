@@ -146,6 +146,7 @@ export class IsleRenderer {
   view: "free" | PlayView = "free";
   private viewChoice: PlayView | null = null;
   // The diorama lens as last posed: focal length (px), fitted distance, and where its axis meets the canvas.
+  private fitUpright = false;
   private lens: DioramaFit = { focal: 1, dist: 1, cx: 0, cy: 0 };
   private tokens: THREE.Object3D[] = [];
   private pending: { kind: string; id: string } | null = null;
@@ -435,7 +436,7 @@ export class IsleRenderer {
 
   private playView(): PlayView {
     const c = this.renderer.domElement;
-    return this.viewChoice ?? defaultView(c.clientWidth || 1, c.clientHeight || 1);
+    return this.viewChoice ?? defaultView(c.clientWidth || 1, c.clientHeight || 1, readViewport().phone);
   }
 
   private play() {
@@ -457,11 +458,11 @@ export class IsleRenderer {
   // The preference flipped: draw the island as it stands now. The event comes a frame after `matches` changes, so tick reads that.
   private onCalm = () => this.wake();
 
-  private safe(): Insets {
+  private safe(withKeyboard = true): Insets {
     const cs = getComputedStyle(this.safeProbe);
     const viewport = window.visualViewport;
     // A focused phone field can bring a keyboard over a canvas whose CSS height has not changed.
-    const typing = this.coarse() && document.activeElement?.matches("input, textarea") && viewport && Math.abs(viewport.scale - 1) < 0.01;
+    const typing = withKeyboard && this.coarse() && document.activeElement?.matches("input, textarea") && viewport && Math.abs(viewport.scale - 1) < 0.01;
     const keyboard = typing ? Math.max(0, this.renderer.domElement.clientHeight - viewport.height - viewport.offsetTop) : 0;
     return {
       top: parseFloat(cs.paddingTop) || 0,
@@ -474,7 +475,8 @@ export class IsleRenderer {
   // The hole the HUD leaves for the island right now, measured from the chrome around the canvas. Proofs read it too.
   insets(): Insets {
     const c = this.renderer.domElement;
-    return playHole(c.clientWidth, c.clientHeight, readViewport().phone, this.safe());
+    // The keyboard is an overlay like the chat above it: only the notch counts.
+    return playHole(c.clientWidth, c.clientHeight, readViewport().phone, this.safe(false));
   }
 
   // What the chrome around the canvas leaves right now, overlays and all: for proofs, never for the fit.
@@ -726,12 +728,22 @@ export class IsleRenderer {
     const was = this.fit;
     if (was && FIT_KEYS.every((k) => Math.abs(this.fitPose(f)[k] - this.fitPose(was)[k]) < 1e-6)) return;
     this.fit = f;
+    const upright = h > w;
+    const carry = upright === this.fitUpright;
+    this.fitUpright = upright;
     if (!was) {
       this.applyPose(this.fitPose(f));
       this.orbit.update();
       return;
     }
+    // The pan survives any refit but a turn of the phone (a view toggle starts from home anyway): a Safari toolbar or a
+    // keyboard resizing the canvas keeps the player's offset from home.
     const to = this.fitPose(f);
+    if (carry) {
+      const from = this.fitPose(was);
+      to.tx += this.orbit.target.x - from.tx;
+      to.tz += this.orbit.target.z - from.tz;
+    }
     this.moveTo(to, FIT_KEYS, instant || this.renders <= this.shownAt);
   }
 

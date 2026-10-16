@@ -81,14 +81,14 @@ export function hudInsets(cssW: number, cssH: number, coarse: boolean, safe: Par
 // bars, toasts) overlays the board and never counts, so opening or closing one never moves the map. The footprint is the
 // largest of the roll, main and robber layouts, measured at the sizes below with the HUD at rest (`insets()` against the
 // live `liveInsets()` in rotate-prove and pan-prove keeps it honest). `safe` is added to the sides the HUD is inset from.
-// A phone upright: the top bar over a bottom tray, taller on a narrow phone (the build row wraps under 384 px).
+// A phone upright: the top bar over a bottom tray, taller on a narrow phone (the build row wraps up to 384 px).
 // A phone on its side: a 284 px column on the left. A desktop: the seat rail on the left, and, from RAIL_FROM to RAIL_FULL px
 // wide, the docked right rail (chat, offer, PlaceList: 312 px) and the offer's taller bottom stack (220 px) ramp in.
 const RAIL_FROM = 960;
 const RAIL_FULL = 1024;
 export function playHole(cssW: number, cssH: number, phone: boolean, safe: Partial<Insets> = {}): Insets {
   let i: Insets;
-  if (phone && cssH > cssW) i = { top: 68, right: 12, bottom: cssW < 384 ? 322 : 274, left: 12 };
+  if (phone && cssH > cssW) i = { top: 68, right: 12, bottom: cssW <= 384 ? 322 : 274, left: 12 };
   else if (phone) i = { top: 68, right: 12, bottom: 12, left: 284 };
   else {
     const t = Math.min(1, Math.max(0, (cssW - RAIL_FROM) / (RAIL_FULL - RAIL_FROM)));
@@ -160,8 +160,11 @@ const COAST_FILL = 0.94;
 // overhead otherwise. Upright, the width-bound island is small and a tilt would crowd its far corners; on a sideways phone
 // the tokens, held to 38 % of a hex, read under the 11 px numeral floor in the diorama (docs/design/tokens.md "Angle").
 export const DIORAMA_MIN_WIDTH = 900;
-export function defaultView(cssW: number, cssH: number): PlayView {
-  return cssH > cssW || cssW < DIORAMA_MIN_WIDTH ? "overhead" : "diorama";
+export const DIORAMA_MIN_HOLE = 420;
+export function defaultView(cssW: number, cssH: number, phone = false): PlayView {
+  // The diorama also needs a hole at least DIORAMA_MIN_HOLE tall (#625): in a shorter one its numerals fall under the 11 px floor.
+  const hole = playHole(cssW, cssH, phone);
+  return cssH > cssW || cssW < DIORAMA_MIN_WIDTH || cssH - hole.top - hole.bottom < DIORAMA_MIN_HOLE ? "overhead" : "diorama";
 }
 
 // The island's coast corners (19 hexes, |q|,|r|,|s| <= 2, pointy-top at HEX_SIZE 1.12): a corner shared by fewer than three

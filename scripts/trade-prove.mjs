@@ -420,6 +420,6 @@ try {
   await browser.close();
   await vite.close();
   host.kill();
-  await Promise.race([once(host, "exit"), new Promise((r) => setTimeout(r, 3000))]);
+  if (host.exitCode === null && host.signalCode === null) await Promise.race([once(host, "exit"), new Promise((r) => setTimeout(r, 3000).unref())]);
 }
 process.exit(code);

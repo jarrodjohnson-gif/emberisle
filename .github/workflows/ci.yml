@@ -155,6 +155,8 @@ jobs:
       - if: matrix.suite == 'flows'
         run: npm run pan-prove
       - if: matrix.suite == 'flows'
+        run: npm run hole-prove
+      - if: matrix.suite == 'flows'
         run: npm run banner-stable-prove
       - if: matrix.suite == 'flows'
         run: npm run howto-prove
