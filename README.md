@@ -276,9 +276,22 @@ Full rules: **[docs/FRAMEWORK.md](docs/FRAMEWORK.md)**. In short:
 | `server/chat.mjs` | Pure chat and reaction validation |
 | `server/hooks.mjs`, `server/register.mjs` | Node loader that lets the host import the `.ts` rules (used as `--import ./server/register.mjs`) |
 | `server/*-prove.mjs` | Proof scripts (see Tests) |
-| `public/audio/` | CC0 Kenney sounds, mapped in `server/cue.mjs` and played by `src/lib/sound.ts` |
+| `public/audio/` | CC0 Kenney sounds and owner-approved clips, mapped in `server/cue.mjs` and played by `src/lib/sound.ts` |
 | `public/manifest.webmanifest`, `public/icons/` | Add to Home Screen: the web app manifest and its icons, rendered from `icons/icon.svg` by `scripts/make-icons.mjs` (#468) |
 | `scripts/client-prove.mjs` | Headless browser test of the client (the other `scripts/*-prove.mjs` follow the same pattern) |
+
+**Owner-approved clips (not CC0)** in `public/audio/`, approved by the owner, Jarrod, 2026-10-16:
+
+- `robbed_fah.mp3`
+- `game_start.mp3`
+- `game_lose.mp3`
+- `match_point.mp3`
+- `end_music.mp3`
+- `sb_wololo.mp3`
+- `sb_win_reaction.mp3`
+- `sb_airhorn.mp3`
+- `sb_quit_touchin.mp3`
+- `sb_only_wood.mp3`
 
 ---
 
@@ -410,5 +423,5 @@ Every gameplay intent (place, roll, pass, buy, play, rob, discard, bank trade, t
 - Do not write a second rules engine (in Blueprints, the client, or anywhere else). Call `rules.ts` or the host.
 - Do not let a client decide the dice, the steal, or the winner.
 - Do not download the 3.6 GB art pack into a cloud session.
-- Do not rip sounds from commercial games. Use CC0 only.
+- Use CC0 or owner-approved sounds and art only.
 - Do not add a 5th seat to the 19-hex island.
