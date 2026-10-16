@@ -244,7 +244,7 @@ export function layoutOf(kind: Terrain, seed: number): Layout {
     // front.
     L.peaks.push({ ...at(hillAt + s * 1.15, 0.62), r: 0.11, h: 0.36 + r() * 0.05 });
     L.peaks.push({ ...at(hillAt + s * 1.75, 0.64), r: 0.08, h: 0.24 + r() * 0.04 });
-    L.pool = { ...at(hillAt + Math.PI + s * 0.5, 0.62), r: 0.11 };
+    L.pool = { ...at(hillAt + Math.PI + s * 0.5, 0.6), r: 0.15 };
     L.marks = { side: { x: s, z: 0 }, skull: at(Math.round(hillAt / (Math.PI / 3)) * (Math.PI / 3), INR - 0.38), ribs: at(hillAt - s * 1.45, 0.6), neck: at(hillAt - s * 0.75, 0.66) };
   }
   if (kind === "clay") {
@@ -911,6 +911,25 @@ function halo(hex: string, size: number) {
   }
   const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: haloTex, color: hex, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }));
   s.scale.setScalar(size);
+  s.userData.loose = true;
+  return s;
+}
+// A soft puff of fog or steam: a camera-facing sprite with a feathered edge, normally blended (not glowing like a halo).
+let puffTex: THREE.CanvasTexture | null = null;
+function puff(hex: string) {
+  if (!puffTex) {
+    const c = document.createElement("canvas");
+    c.width = c.height = 64;
+    const x = c.getContext("2d")!;
+    const gr = x.createRadialGradient(32, 32, 0, 32, 32, 32);
+    gr.addColorStop(0, "rgba(255,255,255,1)");
+    gr.addColorStop(0.5, "rgba(255,255,255,0.55)");
+    gr.addColorStop(1, "rgba(255,255,255,0)");
+    x.fillStyle = gr;
+    x.fillRect(0, 0, 64, 64);
+    puffTex = new THREE.CanvasTexture(c);
+  }
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: puffTex, color: hex, transparent: true, opacity: 0, depthWrite: false }));
   s.userData.loose = true;
   return s;
 }
@@ -2778,6 +2797,65 @@ function coyote(m: THREE.Material, asleep: boolean) {
   return { g, legs, base };
 }
 
+// A hyena: sloped back (high shoulders, low hips), a dark bristly mane, a big blunt head with round ears and a dark muzzle,
+// spotted dun fur, a short dark-tipped tail. The head is its own group so it can bob and cackle; the jaw drops open on a laugh.
+function hyena(m: THREE.Material) {
+  const g = new THREE.Group();
+  const C = { fur: "#b49a6a", dark: "#5a4636", mane: "#3a2e26", muzzle: "#2e2622", belly: "#d2c094" };
+  const body: THREE.BufferGeometry[] = [
+    part(sphere(18), C.fur, [0, 0.036, 0], [0, 0, 0.22], [0.026, 0.012, 0.011]),
+    part(sphere(16), C.fur, [0.014, 0.044, 0], [0, 0, 0.1], [0.014, 0.012, 0.011]),
+    part(sphere(14), C.belly, [0.002, 0.03, 0], [0, 0, 0.2], [0.018, 0.006, 0.008]),
+    part(sphere(12), C.fur, [-0.02, 0.031, 0], [0, 0, 0], [0.01, 0.009, 0.01]),
+    part(sphere(10), C.fur, [0.024, 0.05, 0], [0, 0, -0.6], [0.008, 0.008, 0.007]),
+    part(sphere(10), C.dark, [-0.03, 0.03, 0], [0, 0, 0.9], [0.009, 0.0035, 0.0035]),
+    part(sphere(6), C.mane, [-0.037, 0.024, 0], [0, 0, 0.9], [0.004, 0.003, 0.003]),
+  ];
+  // The mane: a ridge of bristles from the nape down the back.
+  for (let k = 0; k < 7; k++) body.push(part(new THREE.ConeGeometry(1, 1, 4), C.mane, [0.028 - k * 0.007, 0.058 - k * 0.0032, 0], [0, 0, 0.35], [0.0045, 0.012 - k * 0.001, 0.0035]));
+  // Spots.
+  for (let k = 0; k < 10; k++) {
+    const u = -0.018 + (k % 5) * 0.009;
+    const sg = k < 5 ? 1 : -1;
+    body.push(part(sphere(6), C.dark, [u, 0.036 + 0.003 * Math.sin(k * 2.3) + u * 0.22, sg * 0.0105], [0, 0, 0], [0.0028, 0.0024, 0.0012]));
+  }
+  g.add(mesh(merge(body), m));
+  const head = new THREE.Group();
+  head.position.set(0.03, 0.054, 0);
+  const jaw = mesh(merge([part(sphere(10), C.muzzle, [0.012, -0.006, 0], [0, 0, 0], [0.009, 0.0025, 0.0045])]), m);
+  head.add(
+    mesh(
+      merge([
+        part(sphere(16), C.fur, [0, 0, 0], [0, 0, -0.2], [0.011, 0.0095, 0.0085]),
+        part(sphere(12), C.muzzle, [0.012, -0.002, 0], [0, 0, -0.15], [0.008, 0.005, 0.0055]),
+        part(sphere(6), "#141010", [0.019, 0.0, 0], [0, 0, 0], [0.0022, 0.002, 0.0026]),
+        part(sphere(10), C.fur, [-0.002, 0.009, 0.006], [0.4, 0, 0], [0.0035, 0.005, 0.0045]),
+        part(sphere(10), C.fur, [-0.002, 0.009, -0.006], [-0.4, 0, 0], [0.0035, 0.005, 0.0045]),
+        part(sphere(8), C.dark, [-0.001, 0.0095, 0.0068], [0.4, 0, 0], [0.0018, 0.0032, 0.0028]),
+        part(sphere(8), C.dark, [-0.001, 0.0095, -0.0068], [-0.4, 0, 0], [0.0018, 0.0032, 0.0028]),
+        part(sphere(6), "#e8d84a", [0.006, 0.004, 0.006], [0, 0, 0], [0.0016, 0.0014, 0.0012]),
+        part(sphere(6), "#e8d84a", [0.006, 0.004, -0.006], [0, 0, 0], [0.0016, 0.0014, 0.0012]),
+        part(sphere(6), "#141010", [0.0072, 0.004, 0.0066], [0, 0, 0], [0.0008, 0.0009, 0.0006]),
+        part(sphere(6), "#141010", [0.0072, 0.004, -0.0066], [0, 0, 0], [0.0008, 0.0009, 0.0006]),
+      ]),
+      m,
+    ),
+    jaw,
+  );
+  g.add(head);
+  // Front legs long, hind legs short: the hyena's slope.
+  const legs = [[0.016, 0.006, 0.036], [0.016, -0.006, 0.036], [-0.018, 0.006, 0.026], [-0.018, -0.006, 0.026]].map(([x, z, h]) => {
+    const l = mesh(merge([part(cyl(0.0045, 0.003, 10), C.fur, [0, -h! / 2, 0], [0, 0, 0], [1, h!, 1]), part(sphere(6), C.dark, [0.001, -h! + 0.002, 0], [0, 0, 0], [0.0042, 0.0025, 0.0038])]), m);
+    l.position.set(x!, h!, z!);
+    g.add(l);
+    return l;
+  });
+  const base = SIZE.dog * 1.2;
+  g.scale.setScalar(base);
+  g.userData.ref = "hyena";
+  return { g, legs, head, jaw, base };
+}
+
 // CLAY, "Terracotta Hills" (docs/design/hex-jelly-prompt.md): the terraced, banded mesa with its cypresses and the martins'
 // nest holes; the stepped pit with its turquoise pool and the derrick hauling a bucket; the kiln with its glowing mouth, smoke
 // and the cat asleep on top; brick stacks, the drying rack, scrub and poppies.
@@ -4341,38 +4419,51 @@ function wastes(L: Layout, ground: (x: number, z: number) => number, r: () => nu
   const BONE = "#ece4d0";
   const BONE2 = "#d8ccb4";
 
-  // The basalt spires: clusters of jagged dark shards, leaning, the tallest at the back, grey-green lichen low down.
+  // Weathered rock stacks: piles of worn, rounded boulders balanced on each other, banded grey-buff, the tallest at the back,
+  // grey-green lichen low down, a few fallen stones at their feet.
   {
     const parts: THREE.BufferGeometry[] = [];
+    const BANDS = ["#8a8078", "#a39686", "#76706a", "#9a8c7a"];
     L.peaks.forEach((p, i) => {
-      const n = 3 + (i === 0 ? 2 : 0);
-      for (let k = 0; k < n; k++) {
-        const a = (k / n) * Math.PI * 2 + i;
-        const off = k === 0 ? 0 : p.r * 0.55;
-        const h = p.h * (k === 0 ? 1 : 0.45 + 0.3 * r());
-        const rad = p.r * (k === 0 ? 0.62 : 0.38);
-        const shard = new THREE.ConeGeometry(rad, h, 5, 3).toNonIndexed();
-        const pos = shard.attributes.position as THREE.BufferAttribute;
-        const col = new Float32Array(pos.count * 3);
-        const c = new THREE.Color();
-        for (let v = 0; v < pos.count; v++) {
-          const [x, y, z] = [pos.getX(v), pos.getY(v), pos.getZ(v)];
-          const f = (y + h / 2) / h;
-          const j = f > 0.02 && f < 0.98 ? 0.25 * rad * (1 - f) : 0;
-          pos.setXYZ(v, x + hash2(Math.round(x * 991), Math.round(y * 977), L.seed + k) * j, y, z + hash2(Math.round(z * 983), Math.round(y * 967), L.seed + k + 3) * j);
-          c.set("#3a383c").lerp(new THREE.Color("#5a5660"), smooth(0.2, 1, f)).lerp(new THREE.Color("#6a7a5a"), (1 - smooth(0, 0.25, f)) * 0.5);
-          c.toArray(col, v * 3);
+      for (let c = 0; c < (i === 0 ? 2 : 1); c++) {
+        const ca = i * 2.1 + c * 2.4;
+        const cx = p.x + (c ? Math.cos(ca) * p.r * 0.9 : 0);
+        const cz = p.z + (c ? Math.sin(ca) * p.r * 0.9 : 0);
+        const H = p.h * (c ? 0.5 : 1);
+        let y = Y(cx, cz) - 0.02;
+        let [ox, oz] = [0, 0];
+        const n = c ? 3 : 4 + (i === 0 ? 1 : 0);
+        for (let k = 0; k < n; k++) {
+          const f = k / n;
+          const rad = p.r * (c ? 0.55 : 0.78) * (1 - 0.35 * f) * (0.9 + 0.2 * r());
+          const h = (H / n) * (1.05 + 0.2 * r());
+          const rock = new THREE.DodecahedronGeometry(1, 1).toNonIndexed();
+          const pos = rock.attributes.position as THREE.BufferAttribute;
+          const col = new Float32Array(pos.count * 3);
+          const cc = new THREE.Color();
+          for (let v = 0; v < pos.count; v++) {
+            const [x, yy, z] = [pos.getX(v), pos.getY(v), pos.getZ(v)];
+            const j = 1 + 0.1 * hash2(Math.round(x * 97), Math.round(yy * 89 + z * 61), L.seed + k + i * 7);
+            pos.setXYZ(v, x * j, yy * j, z * j);
+            const wy = y + (yy * 0.5 + 0.5) * h;
+            cc.set(BANDS[Math.floor(wy * 60 + i) % BANDS.length]!).lerp(new THREE.Color("#6a7a5a"), (1 - smooth(0, 0.6, f + (yy * 0.5 + 0.5) / n)) * 0.55);
+            cc.toArray(col, v * 3);
+          }
+          rock.setAttribute("color", new THREE.BufferAttribute(col, 3));
+          rock.deleteAttribute("uv");
+          rock.deleteAttribute("normal");
+          rock.computeVertexNormals();
+          ox += (r() - 0.5) * rad * 0.3;
+          oz += (r() - 0.5) * rad * 0.3;
+          rock.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(cx + ox, y + h / 2, cz + oz), new THREE.Quaternion().setFromEuler(new THREE.Euler((r() - 0.5) * 0.3, r() * 6, (r() - 0.5) * 0.3)), new THREE.Vector3(rad, h / 2, rad * (0.85 + 0.2 * r()))));
+          parts.push(rock);
+          y += h * 0.82;
         }
-        shard.setAttribute("color", new THREE.BufferAttribute(col, 3));
-        shard.deleteAttribute("uv");
-        const lean = (r() - 0.5) * 0.25;
-        shard.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(p.x + Math.cos(a) * off, Y(p.x, p.z) + h / 2 - 0.03, p.z + Math.sin(a) * off), new THREE.Quaternion().setFromEuler(new THREE.Euler(lean, r() * 6, -lean)), new THREE.Vector3(1, 1, 1)));
-        parts.push(shard);
       }
     });
-    const spires = mesh(merge(parts), jellyfy(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.6, flatShading: true }), "jelly-spires"));
-    spires.userData.ref = "spires";
-    g.add(spires);
+    const stacks = mesh(merge(parts), jellyfy(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.75, flatShading: true }), "jelly-stacks"));
+    stacks.userData.ref = "spires";
+    g.add(stacks);
   }
 
   // The giant skull: a beast's cranium half sunk in the ash, its long snout and jaw full of teeth, deep eye sockets, a curled
@@ -4495,20 +4586,45 @@ function wastes(L: Layout, ground: (x: number, z: number) => number, r: () => nu
     g.add(cage);
   }
 
-  // The tar pit: a black glossy pool with a rim of dark ooze; bubbles swell and pop.
+  // The green pool (the elephant graveyard's dead zone): a sickly glowing green ooze in a crust of dark ash; fat bubbles swell
+  // and pop, and green steam hisses up from it and from two vents in the ash nearby. It glows brighter at night.
   if (L.pool) {
     const p = L.pool;
-    const tar = new THREE.Mesh(new THREE.CircleGeometry(p.r * 0.85, 40).rotateX(-Math.PI / 2), jellyfy(new THREE.MeshStandardMaterial({ color: "#16141a", roughness: 0.08, metalness: 0.2 }), "jelly-tar"));
-    tar.position.set(p.x, BLOCK_H + POOL_LEVEL, p.z);
-    tar.receiveShadow = true;
-    g.add(tar);
-    const bubbles = Array.from({ length: 6 }, (_, i) => {
-      const o = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), jellyfy(new THREE.MeshStandardMaterial({ color: "#2a2630", roughness: 0.05, metalness: 0.3 }), "jelly-tar-bubble"));
+    const ooze = jellyfy(new THREE.MeshStandardMaterial({ color: "#8ad84a", emissive: "#4aa82a", emissiveIntensity: 0.35, roughness: 0.15 }), "jelly-ooze");
+    const pool = new THREE.Mesh(new THREE.CircleGeometry(p.r * 0.85, 40).rotateX(-Math.PI / 2), ooze);
+    pool.position.set(p.x, BLOCK_H + POOL_LEVEL, p.z);
+    pool.receiveShadow = true;
+    g.add(pool);
+    const crust = new THREE.Mesh(new THREE.RingGeometry(p.r * 0.8, p.r * 0.98, 40).rotateX(-Math.PI / 2), jellyfy(new THREE.MeshStandardMaterial({ color: "#3a4a2a", roughness: 0.6 }), "jelly-ooze-crust"));
+    crust.position.set(p.x, BLOCK_H + POOL_LEVEL + 0.002, p.z);
+    g.add(crust);
+    const poolGlow = halo("#9aff5a", p.r * 3.2);
+    poolGlow.position.set(p.x, BLOCK_H + POOL_LEVEL + 0.03, p.z);
+    g.add(poolGlow);
+    const bubbleMat = jellyfy(new THREE.MeshStandardMaterial({ color: "#b4f06a", emissive: "#5ac03a", emissiveIntensity: 0.4, roughness: 0.05 }), "jelly-ooze-bubble");
+    const bubbles = Array.from({ length: 7 }, (_, i) => {
+      const o = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), bubbleMat);
       o.userData.loose = true;
       g.add(o);
       const a = r() * Math.PI * 2;
       const d = Math.sqrt(r()) * p.r * 0.6;
       return { o, x: p.x + Math.cos(a) * d, z: p.z + Math.sin(a) * d, ph: i * 0.7 };
+    });
+    // The vents: low cracked cones of crust a little way from the pool, away from the centre.
+    const vents: Pt[] = [{ x: p.x, z: p.z }];
+    for (let tries = 0; tries < 300 && vents.length < 3; tries++) {
+      const a = r() * Math.PI * 2;
+      const v = { x: p.x + Math.cos(a) * (p.r + 0.08 + r() * 0.08), z: p.z + Math.sin(a) * (p.r + 0.08 + r() * 0.08) };
+      if (!ok(v.x, v.z, 0.03) || vents.some((q) => Math.hypot(q.x - v.x, q.z - v.z) < 0.12)) continue;
+      vents.push(v);
+      g.add(mesh(merge([part(new THREE.ConeGeometry(0.03, 0.022, 8, 1, true), "#4a5038", [v.x, Y(v.x, v.z) + 0.008, v.z]), part(new THREE.CircleGeometry(0.008, 10).rotateX(-Math.PI / 2), "#a8f060", [v.x, Y(v.x, v.z) + 0.018, v.z])]), cm));
+      stands.push({ x: v.x, z: v.z, r: 0.05 });
+    }
+    const puffs = Array.from({ length: 18 }, (_, i) => {
+      const o = puff(i % 2 ? "#c8f0a0" : "#a8e47a");
+      g.add(o);
+      const v = vents[i % vents.length]!;
+      return { o, v, ph: (i / 18) * 3, src: i % vents.length };
     });
     life.push((t) => {
       for (const b of bubbles) {
@@ -4516,8 +4632,18 @@ function wastes(L: Layout, ground: (x: number, z: number) => number, r: () => nu
         const k = c < 0.8 ? smooth(0, 0.8, c) : 0;
         b.o.visible = k > 0.02;
         b.o.position.set(b.x, BLOCK_H + POOL_LEVEL, b.z);
-        b.o.scale.set(0.012 * k, 0.009 * k, 0.012 * k);
+        b.o.scale.set(0.014 * k, 0.011 * k, 0.014 * k);
       }
+      for (const q of puffs) {
+        const c = ((t * 0.33 + q.ph) % 1);
+        const y0 = q.src === 0 ? BLOCK_H + POOL_LEVEL : Y(q.v.x, q.v.z) + 0.02;
+        const drift = c * 0.05;
+        q.o.position.set(q.v.x + drift * 0.8 + 0.01 * Math.sin(t + q.ph * 5), y0 + c * 0.2, q.v.z + drift * 0.3);
+        q.o.scale.setScalar(0.04 + c * 0.1);
+        q.o.material.opacity = (0.55 + 0.2 * env.night) * smooth(0, 0.15, c) * (1 - smooth(0.4, 1, c));
+      }
+      ooze.emissiveIntensity = 0.3 + 0.5 * env.night + 0.06 * Math.sin(t * 1.7);
+      poolGlow.material.opacity = 0.12 + 0.55 * env.night + 0.04 * Math.sin(t * 1.7);
     });
     stands.push({ x: p.x, z: p.z, r: p.r * 1.2 });
     // A half-sunk smaller skull at the pit's edge.
@@ -4582,24 +4708,24 @@ function wastes(L: Layout, ground: (x: number, z: number) => number, r: () => nu
     g.add(instanced(new THREE.DodecahedronGeometry(1, 0), rocks, jellyfy(new THREE.MeshStandardMaterial({ roughness: 0.6, flatShading: true }), "jelly-rock")));
   }
 
-  // Low mist drifting over the ash in slow banks.
+  // Fog: soft low banks drifting over the ash, thick at the back and round the bones, some tinged green by the pool.
   {
-    const banks = Array.from({ length: 9 }, (_, i) => {
-      const o = new THREE.Mesh(blobGeo(860 + i), new THREE.MeshStandardMaterial({ color: "#e8e4dc", roughness: 1, transparent: true, opacity: 0.22, depthWrite: false }));
-      o.userData.loose = true;
+    const banks = Array.from({ length: 26 }, (_, i) => {
+      const o = puff(i % 4 ? "#ece8e0" : "#dcecc8");
       g.add(o);
-      const a = r() * Math.PI * 2;
-      return { o, a, d: 0.5 + r() * 0.3, ph: r() * 6 };
+      return { o, c: o.material.color.clone(), a: r() * Math.PI * 2, d: 0.38 + r() * 0.5, ph: r() * 6, h: r(), w: 0.22 + r() * 0.2 };
     });
     life.push((t) => {
       for (const b of banks) {
-        const a = b.a + t * 0.03;
+        const a = b.a + t * (0.02 + 0.015 * b.h);
         const x = Math.cos(a) * b.d;
         const z = Math.sin(a) * b.d;
-        b.o.visible = hexDist(x, z) < INR - 0.06;
-        b.o.position.set(x, Y(x, z) + 0.015, z);
-        b.o.scale.set(0.09, 0.012 + 0.004 * Math.sin(t * 0.5 + b.ph), 0.06);
-        (b.o.material as THREE.MeshStandardMaterial).opacity = 0.16 + 0.08 * Math.sin(t * 0.4 + b.ph);
+        const back = 0.5 - 0.5 * (x * EYE.x + z * EYE.z) / Math.max(0.01, Math.hypot(x, z));
+        b.o.visible = hexDist(x, z) < INR - 0.04;
+        b.o.position.set(x, Y(x, z) + 0.02 + 0.03 * b.h, z);
+        b.o.scale.set(b.w, b.w * 0.32, 1);
+        b.o.material.opacity = (0.25 + 0.25 * back) * (0.8 + 0.2 * Math.sin(t * 0.4 + b.ph)) * (1 - 0.45 * env.night);
+        b.o.material.color.copy(b.c).multiplyScalar(1 - 0.6 * env.night);
       }
     });
   }
@@ -4627,6 +4753,61 @@ function wastes(L: Layout, ground: (x: number, z: number) => number, r: () => nu
       weed.position.set(x, Y(x, z) + 0.026 + 0.02 * Math.abs(Math.sin(t * 5)), z);
       weed.rotation.set(t * 4 * dz, 0, -t * 4 * dx);
     });
+  }
+
+  // The hyenas: a pack of three skulking through the bones. Two slink in slow loops round the ribcage, heads low; the third
+  // stands by the skull and cackles, head thrown up, jaw clapping, shoulders shaking. All three stop and stare at the wayfarer
+  // now and then.
+  {
+    const rb = M.ribs!;
+    const loops = [0, 1].map((i) => {
+      const h = hyena(cm);
+      g.add(h.g);
+      return { h, i };
+    });
+    life.push((t) => {
+      for (const { h, i } of loops) {
+        const sp = 0.16 + 0.03 * i;
+        const a = t * sp * (i ? -1 : 1) + i * Math.PI;
+        let [x, z] = [rb.x + Math.cos(a) * (0.17 + 0.03 * i), rb.z + Math.sin(a) * (0.12 + 0.02 * i)];
+        const k = Math.min(1, (INR - 0.12) / Math.max(1e-6, hexDist(x, z)));
+        [x, z] = [x * k, z * k];
+        const rr = Math.hypot(x, z);
+        if (rr < 0.4) [x, z] = [(x / rr) * 0.4, (z / rr) * 0.4];
+        // Every so often one stops and stares at the wayfarer.
+        const stare = Math.sin(t * 0.23 + i * 2.1) > 0.85;
+        h.g.position.set(x, Y(x, z), z);
+        h.g.rotation.y = stare ? -Math.atan2(-z, -x) : -(a + (i ? -1 : 1) * (Math.PI / 2));
+        h.head.rotation.z = stare ? 0.1 : -0.35 + 0.05 * Math.sin(t * 3 + i);
+        h.jaw.rotation.z = 0;
+        h.legs.forEach((l, j) => (l.rotation.z = stare ? 0 : 0.5 * Math.sin(t * 7 + (j % 2 ? Math.PI : 0) + (j > 1 ? Math.PI / 2 : 0))));
+      }
+    });
+    const sk = M.skull!;
+    let laugher: Pt | null = null;
+    for (let tries = 0; tries < 400 && !laugher; tries++) {
+      const a = r() * Math.PI * 2;
+      const q = { x: sk.x * 0.72 + Math.cos(a) * 0.12, z: sk.z * 0.72 + Math.sin(a) * 0.12 };
+      if (ok(q.x, q.z, 0.04)) laugher = q;
+    }
+    laugher ??= spot(0.05, (x, z) => Math.hypot(x - sk.x, z - sk.z) < 0.5);
+    if (laugher) {
+      const h = hyena(cm);
+      h.g.position.set(laugher.x, Y(laugher.x, laugher.z), laugher.z);
+      const face = Math.atan2(EYE.z, EYE.x) + 0.9 * M.side!.x;
+      h.g.rotation.y = -face;
+      g.add(h.g);
+      stands.push({ x: laugher.x, z: laugher.z, r: 0.06 });
+      life.push((t) => {
+        // Bursts of cackling: a fit of quick head tosses with the jaw clapping, then a pause.
+        const fit = Math.sin(t * 0.7) > 0.1;
+        const c = fit ? Math.abs(Math.sin(t * 11)) : 0;
+        h.head.rotation.z = fit ? 0.35 + 0.15 * c : -0.1 + 0.05 * Math.sin(t * 1.3);
+        h.jaw.rotation.z = -0.5 * c;
+        h.g.scale.y = h.base * (1 - 0.04 * c);
+        h.g.rotation.z = 0.04 * c;
+      });
+    }
   }
 
   // Vultures circling over the skull.
