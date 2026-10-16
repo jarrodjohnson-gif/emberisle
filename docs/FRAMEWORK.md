@@ -148,12 +148,11 @@ anything whose `Depends on` is still open.
    to it (whoever claimed first keeps it) rather than both continuing.
 
 **Starting more than one session at once:** the checks above shrink the collision window but cannot close
-it — two sessions launched within the same few seconds can each pass steps 1-2 before either one's claim
-comment lands (this happened: three sessions all independently picked issue #81 and produced three
-overlapping PRs). Whoever starts more than one session at a time must hand each one a specific issue
-number and, when the work could plausibly touch the same code, its files too — never start more than one
-session at once with the generic "take the next open issue" line, since that line is exactly what let all
-three pick the same node.
+it. Two sessions launched within the same few seconds can each pass steps 1-2 before either one's claim
+comment lands. This happened: three sessions all picked issue #81 and produced three overlapping PRs.
+[LANES.md](LANES.md) narrows it further (one in-progress issue per lane), but it has the same race. So
+start sessions with the generic `Work on Emberisle.` line **at least a few minutes apart**. To start
+several at the same moment, hand each one a specific issue number in a different lane.
 
 **Pause** (out of limit, or blocked):
 ```
