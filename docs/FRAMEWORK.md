@@ -182,7 +182,8 @@ Move it to In Review (Jarrod accepts it, then it goes to Done and is closed). Th
   re-read a file you just edited.
 - **Run long checks in the background.** Browser proofs take minutes. Start them in the background or
   hand them to a subagent, and keep working. Run proofs one at a time, never in parallel: they share
-  ports.
+  ports. Before you push or open the PR, wait for every check to finish and read its result. A check
+  you haven't read the result of counts as failed.
 - **Pick the model to fit the work.** Use the issue's `model:` label if it has one. Otherwise use a
   smaller model for mechanical or search subagents, and the strongest one for UI, visual or tricky
   multi-file work.

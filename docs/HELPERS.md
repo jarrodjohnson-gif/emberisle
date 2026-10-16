@@ -39,7 +39,7 @@ prompt.
   and stop work on it.
 
 Work efficiently, as `docs/FRAMEWORK.md` section 7 says: delegate broad reading to subagents, read narrowly,
-and run long proofs in the background.
+and run long proofs in the background, one at a time, reading every result before you push.
 
 ## Never
 
