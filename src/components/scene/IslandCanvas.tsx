@@ -52,6 +52,7 @@ export default function IslandCanvas() {
       const actionChanged = nextAction !== action;
       action = nextAction;
       renderer.setPending(pp);
+      renderer.setOneTap(s.buildMode === "stronghold");
       if (pp && (actionChanged || ![...hi.vertices, ...hi.edges, ...hi.hexes].includes(pp.id))) {
         s.setPendingPlace(null);
         return;

@@ -781,9 +781,9 @@ try {
   await setHand({});
   await page.getByRole("button", { name: "Path", exact: true }).waitFor({ timeout: 5000 });
   const empty = await buildRow();
-  // #606: a build with no legal spot reads No spot before it reads Short.
+  // #606: a build with no legal spot reads No spot before it reads Need.
   console.log("build row, empty hand:", JSON.stringify(empty));
-  for (const [n, p] of Object.entries(price)) if (!empty[n].disabled || empty[n].native || empty[n].cursor !== "not-allowed" || empty[n].title !== p || !new RegExp(`^${p} · (Short|No spot)`).test(empty[n].desc)) throw new Error(`empty hand ${n}: ${JSON.stringify(empty[n])}`);
+  for (const [n, p] of Object.entries(price)) if (!empty[n].disabled || empty[n].native || empty[n].cursor !== "not-allowed" || empty[n].title !== p || !new RegExp(`^${p} · (Need|No spot)`).test(empty[n].desc)) throw new Error(`empty hand ${n}: ${JSON.stringify(empty[n])}`);
   // #302: an unaffordable button is still in the Tab order, reports aria-disabled and its price, and a click neither arms nor buys.
   await page.evaluate(() => document.activeElement?.blur());
   let tabbedTo = null;
@@ -794,12 +794,13 @@ try {
   const tabFocus = await page.evaluate(() => ({ aria: document.activeElement?.getAttribute("aria-disabled"), desc: document.activeElement?.getAttribute("aria-description") }));
   console.log("Tab to unaffordable Path:", JSON.stringify({ tabbedTo, ...tabFocus }));
   if (tabbedTo !== "Path" || tabFocus.aria !== "true" || !tabFocus.desc.startsWith(price.Path)) throw new Error(`Tab/aria-disabled: ${JSON.stringify({ tabbedTo, ...tabFocus })}`);
-  const cardsBefore = await page.evaluate(() => JSON.stringify([window.__emberisle.getState().state.deck.length, window.__emberisle.getState().error]));
+  const cardsBefore = await page.evaluate(() => window.__emberisle.getState().state.deck.length);
   for (const n of ["Path", "Outpost", "Stronghold", "Fortune"]) await page.getByRole("button", { name: n, exact: true }).click({ force: true });
   await page.keyboard.press("Enter");
-  const clickRes = await page.evaluate(() => ({ buildMode: window.__emberisle.getState().buildMode, cards: JSON.stringify([window.__emberisle.getState().state.deck.length, window.__emberisle.getState().error]) }));
+  const clickRes = await page.evaluate(() => ({ buildMode: window.__emberisle.getState().buildMode, cards: window.__emberisle.getState().state.deck.length, error: window.__emberisle.getState().error }));
   console.log("click unaffordable:", JSON.stringify({ ...clickRes, cardsBefore }));
-  if (clickRes.buildMode !== "none" || clickRes.cards !== cardsBefore) throw new Error(`unaffordable click acted: ${JSON.stringify(clickRes)}`);
+  // A tap the hand cannot pay for builds and buys nothing, and says what is missing.
+  if (clickRes.buildMode !== "none" || clickRes.cards !== cardsBefore || !/^Need \d+ more /.test(clickRes.error ?? "")) throw new Error(`unaffordable click acted: ${JSON.stringify(clickRes)}`);
   await setHand({ timber: 1, clay: 1 });
   const some = await buildRow();
   console.log("build row, 1 timber 1 clay:", JSON.stringify(some));

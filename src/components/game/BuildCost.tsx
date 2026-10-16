@@ -26,6 +26,12 @@ export function shortfall(hand: Record<Resource, number>, kind: Price): Partial<
   return short;
 }
 
+// "Need 1 more ore", "Need 3 more grain and 2 more ore": what a refused tap on a short build says.
+export function needLine(short: Partial<Record<Resource, number>>) {
+  const parts = RESOURCES.filter((r) => short[r]).map((r) => `${short[r]} more ${r}`);
+  return `Need ${parts.join(" and ")}`;
+}
+
 export function CostChips({ kind, hand, className }: { kind: Price; hand?: Record<Resource, number>; className?: string }) {
   const short = hand ? shortfall(hand, kind) : {};
   return (

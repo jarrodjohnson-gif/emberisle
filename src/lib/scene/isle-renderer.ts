@@ -205,6 +205,8 @@ export class IsleRenderer {
   private landStart = new Map<string, number>();
   private landings: { obj: THREE.Object3D; kind: PieceKind; start: number; restY: number }[] = [];
   private legalIds = new Set<string>();
+  // An armed Upgrade: only the player's own outposts are legal, so a touch tap on one raises it at once, with no Place chip.
+  private oneTap = false;
   private down = { x: 0, y: 0 };
   private stopped = false;
   private robberTarget = new THREE.Vector3();
@@ -509,6 +511,11 @@ export class IsleRenderer {
     this.shownAt = this.renders;
     this.refitDue = true;
     this.resize();
+  }
+
+  // While a stronghold is armed, a touch tap on a legal outpost builds at once (no Place chip).
+  setOneTap(on: boolean) {
+    this.oneTap = on;
   }
 
   // The mark a coarse pointer has selected, waiting for the Place chip. Pulses it and locks orbit meanwhile.
@@ -1028,7 +1035,7 @@ export class IsleRenderer {
       if (this.pending) this.onSelect(null);
       return;
     }
-    if (isSelectTap(coarse, this.downType, this.pending?.id ?? null, hit.id)) this.onSelect({ kind: hit.kind, id: hit.id });
+    if (!this.oneTap && isSelectTap(coarse, this.downType, this.pending?.id ?? null, hit.id)) this.onSelect({ kind: hit.kind, id: hit.id });
     else this.onPick(hit.kind, hit.id);
   };
 
