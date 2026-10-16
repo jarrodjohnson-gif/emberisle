@@ -513,12 +513,64 @@ function orderOk(g) {
   g.phase = "main";
   giveCards(g.players[0], { timber: 1, clay: 1, wool: 1, grain: 1 });
   const r = applyAction(g, first, { type: "buildOutpost", vertexId: lone.id });
-  ok("after setup, a new outpost must touch one of your paths", r.error === "Illegal outpost.", r.error);
+  ok("after setup, a new outpost must touch one of your paths", r.error === "Outpost must touch your path.", r.error);
   const island = g.edges.find((e) => !e.path && !legalRoads(g, first, false).includes(e.id));
   const p = applyAction(g, first, { type: "buildPath", edgeId: island.id });
   ok("a path must touch your own path or building", p.error === "Path must connect to you.", p.error);
 }
 ok("a path cannot continue past an opponent's building (check 8 above)", true);
+
+// #558: a refused outpost, stronghold or path names the rule it broke, in the owner's wording from the issue, and changes nothing.
+{
+  const nb = (v) => edgesAt(g0, v).map((e) => far(e, v));
+  const g0 = fresh();
+  const vA = g0.vertices.find((x) => edgesAt(g0, x.id).length === 3 && nb(x.id).some((n) => edgesAt(g0, n).length >= 2)).id;
+  const vN = nb(vA).find((n) => edgesAt(g0, n).length >= 2);
+  const e1 = edgesAt(g0, vA).find((e) => far(e, vA) === vN);
+  const e2 = edgesAt(g0, vN).find((e) => e.id !== e1.id);
+  const vM = far(e2, vN);
+  const near = new Set([vA, vN, vM, ...nb(vA), ...nb(vN), ...nb(vM)]);
+  const vB = g0.vertices.find((x) => !near.has(x.id)).id;
+  const vX = g0.vertices.find((x) => !near.has(x.id) && x.id !== vB && !nb(vB).includes(x.id)).id;
+  const build = () => {
+    const g = fresh();
+    g.vertices.find((x) => x.id === vA).building = { playerId: "p0", kind: "outpost" };
+    g.vertices.find((x) => x.id === vB).building = { playerId: "p1", kind: "outpost" };
+    own(g, [e1, e2], "p0");
+    giveCards(g.players[0], { timber: 5, clay: 5, wool: 5, grain: 5, ore: 5 });
+    return g;
+  };
+  const refuses = (what, g, action, want) => {
+    const before = JSON.stringify(g);
+    const r = applyAction(g, "p0", action);
+    ok(`${what} says "${want}" and changes nothing`, r.error === want && JSON.stringify(r.state) === before && JSON.stringify(g) === before, r.error ?? "allowed");
+  };
+  const main = build();
+  refuses("an outpost next to a building", main, { type: "buildOutpost", vertexId: vN }, "Too close — leave one corner between buildings.");
+  refuses("an outpost on a built corner", main, { type: "buildOutpost", vertexId: vA }, "That corner is taken.");
+  refuses("an outpost that touches no path of yours", main, { type: "buildOutpost", vertexId: vX }, "Outpost must touch your path.");
+  refuses("a stronghold on another seat's outpost", main, { type: "buildStronghold", vertexId: vB }, "Upgrade one of your own outposts.");
+  refuses("a stronghold on an empty corner", main, { type: "buildStronghold", vertexId: vX }, "Upgrade one of your own outposts.");
+  refuses("a path on a built edge", main, { type: "buildPath", edgeId: e1.id }, "That edge already has a path.");
+  const island = main.edges.find((e) => !e.path && !legalRoads(main, "p0", false).includes(e.id));
+  refuses("a disconnected path", main, { type: "buildPath", edgeId: island.id }, "Path must connect to you.");
+  const setupOutpost = build();
+  setupOutpost.phase = "setupSettle";
+  refuses("a setup outpost next to a building", setupOutpost, { type: "setupSettle", vertexId: vN }, "Too close — leave one corner between buildings.");
+  refuses("a setup outpost on a built corner", setupOutpost, { type: "setupSettle", vertexId: vA }, "That corner is taken.");
+  const setupPath = build();
+  setupPath.phase = "setupRoad";
+  setupPath.lastSetupVertex = vA;
+  refuses("a setup path on a built edge", setupPath, { type: "setupRoad", edgeId: e1.id }, "That edge already has a path.");
+  // The legal placements still go through.
+  let r = applyAction(build(), "p0", { type: "buildOutpost", vertexId: vM });
+  ok("an outpost two corners on, touching your path, is built", !r.error && r.state.vertices.find((x) => x.id === vM).building?.playerId === "p0", r.error);
+  r = applyAction(build(), "p0", { type: "buildStronghold", vertexId: vA });
+  ok("a stronghold on your own outpost is built", !r.error && r.state.vertices.find((x) => x.id === vA).building?.kind === "stronghold", r.error);
+  const ext = legalRoads(main, "p0", false).find((id) => id !== e1.id && id !== e2.id);
+  r = applyAction(build(), "p0", { type: "buildPath", edgeId: ext });
+  ok("a path joined to yours is built", !r.error && r.state.edges.find((x) => x.id === ext).path === "p0", r.error);
+}
 
 // A turn
 {

@@ -100,6 +100,10 @@ file:line, or a doc section this came from (for example docs/BUILD_BIBLE.md §6)
 Size: XS | S
 ```
 
+An issue may carry a `model:opus` or `model:sonnet` label when it needs a particular model: opus for
+UI, visual or tricky multi-file work, sonnet for well-specified mechanical steps. A Builder uses that
+model, or a subagent on it. If it can do neither, it says in the PR which model it used. The Reviewer uses a different model from the one that built the PR.
+
 Add `needs: jarrod` (his decision, account, or money) or `needs: gaming-pc` (Unreal, or the 3.6 GB art pack)
 on its own line when an AI cannot finish it. Those issues still get Research and Design done by any AI.
 
@@ -148,12 +152,11 @@ anything whose `Depends on` is still open.
    to it (whoever claimed first keeps it) rather than both continuing.
 
 **Starting more than one session at once:** the checks above shrink the collision window but cannot close
-it — two sessions launched within the same few seconds can each pass steps 1-2 before either one's claim
-comment lands (this happened: three sessions all independently picked issue #81 and produced three
-overlapping PRs). Whoever starts more than one session at a time must hand each one a specific issue
-number and, when the work could plausibly touch the same code, its files too — never start more than one
-session at once with the generic "take the next open issue" line, since that line is exactly what let all
-three pick the same node.
+it. Two sessions launched within the same few seconds can each pass steps 1-2 before either one's claim
+comment lands. This happened: three sessions all picked issue #81 and produced three overlapping PRs.
+[LANES.md](LANES.md) narrows it further (one in-progress issue per lane), but it has the same race. So
+start sessions with the generic `Work on Emberisle.` line **at least a few minutes apart**. To start
+several at the same moment, hand each one a specific issue number in a different lane.
 
 **Pause** (out of limit, or blocked):
 ```
@@ -182,13 +185,13 @@ runs the README "Run it" checks. A red PR is never merged.
 | Role | Who | Does |
 |---|---|---|
 | Builder | the session doing the work | Steps 1-4, pushes, opens the PR, and fixes CI until it is green. **Never merges its own PR.** |
-| Reviewer | the **next** session, which did not write the code | Before taking a new issue, it reviews every open PR: reads the diff against the issue's completion test, runs the "Run it" checks, and checks the framework rules (no to-do lists in files, issue comments present). If CI is green and nothing is wrong, it **merges** and says so in one PR comment. If something is wrong, it comments exactly what, and the PR stays open for a Builder. |
+| Reviewer | the **orchestrator**: the one session Jarrod names to review and merge | Reviews every open PR with a different model than its builder: reads the diff against the issue's completion test, checks CI and the framework rules (no to-do lists in files, issue comments present). If CI is green and nothing is wrong, it **merges**. If something is wrong, it comments exactly what, and the PR stays open for its Builder. **No other session merges.** |
 | Jarrod | the owner | Accepts results: moves In Review to Done. No code reading needed. |
 
-A new chat therefore starts: review and merge open PRs, then take the next open issue.
+A new Builder chat therefore starts: take the next open issue in a free lane ([LANES.md](LANES.md)).
 
 **End of a chat, or a finished task:** give Jarrod one line to paste into a new chat:
-`Continue Emberisle: review and merge open PRs, then take the next open issue per docs/FRAMEWORK.md.`
+`Work on Emberisle.` (AGENTS.md covers the rest.)
 
 **Ask Jarrod before:** deleting, overwriting, or bulk-moving files; pushing to `main`; and anything
 outward-facing (posting outside this repo, sharing links, or spending money).

@@ -43,7 +43,9 @@ check("2 rims against each other >= 7", rr >= 7, f(rr));
 check("3 every seat against a rim >= 3.0", Math.min(...seatBest) >= 3, `min ${f(Math.min(...seatBest))}`);
 check("4 table printed", true, "above");
 const len = HEX_SIZE * 0.9;
-check("5 footprint 0.54 < HEX_SIZE / 2", 0.54 < HEX_SIZE / 2, `${0.54} < ${f(HEX_SIZE / 2)}`);
+// The widest piece: the jelly keep's ring, r 0.24 at K 1.15 (pieces-jelly.ts); the slab keep was 0.54.
+const foot = 2 * 0.24 * 1.15;
+check("5 footprint < HEX_SIZE / 2", foot < HEX_SIZE / 2, `${f(foot)} < ${f(HEX_SIZE / 2)}`);
 check("5 plank len - 0.12 > 0.8", len - 0.12 > 0.8, f(len - 0.12));
 
 if (fails.length) {

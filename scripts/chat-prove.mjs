@@ -194,6 +194,39 @@ async function polish(t, state, selector = 'section[aria-label="Table chat"]', m
   console.log(`${Object.values(result.bad).some((failures) => failures.length) ? "FAIL" : "ok"} chat polish ${result.viewport} ${state}: ${result.controls} controls, ${result.texts} texts, minimum ${result.min}:1, glass over black rgb(${result.glass})`);
 }
 
+// The chat log as a person sees it: how many whole lines are on screen (not clipped by the card or covered by the sticky row),
+// whether the newest is one of them, and the text size.
+const logView = (t) => t.page.evaluate(() => {
+  const log = document.querySelector('[data-testid="chat-log"]');
+  const box = log.getBoundingClientRect();
+  const lines = [...log.querySelectorAll("li")];
+  const shown = (li) => {
+    const r = li.getBoundingClientRect();
+    if (r.top < box.top - 0.5 || r.bottom > box.bottom + 0.5 || r.top < 0 || r.bottom > innerHeight) return false;
+    const hit = document.elementFromPoint(r.left + Math.min(12, r.width / 2), r.top + r.height / 2);
+    return Boolean(hit && li.contains(hit));
+  };
+  const last = lines.at(-1);
+  return {
+    total: lines.length,
+    whole: lines.filter(shown).length,
+    newest: Boolean(last && shown(last)),
+    newestText: last?.textContent ?? "",
+    font: last ? parseFloat(getComputedStyle(last).fontSize) : 0,
+    size: `${innerWidth}x${innerHeight}`,
+  };
+});
+// The rect the map is fitted to: if opening the chat refit the map, these change.
+const hole = (t) => t.page.evaluate(() => {
+  const el = document.querySelector("canvas")?.parentElement;
+  return ["top", "right", "bottom", "left"].map((k) => el?.style.getPropertyValue(`--hole-${k}`)).join();
+});
+// The host allows a burst of five chat lines, then one a second, so lines are sent 700 ms apart.
+const SAY = async (t, text) => {
+  await t.page.evaluate((x) => window.__emberisle.getState().sendChat(x), text);
+  await new Promise((r) => setTimeout(r, 700));
+};
+
 async function quickReactions(a, b, c, phone) {
   const choices = [["😠", "angry"], ["😊", "happy"], ["👏", "clap"], ["😂", "laugh"], ["🔥", "fire"], ["🐑", "sheep"]];
   // Preserve incoming events beyond their two-second UI lifetime, including any forbidden host broadcast.
@@ -385,7 +418,8 @@ try {
   await phone.page.getByRole("button", { name: "Join" }).click();
   await phone.page.getByTestId("table-code").waitFor();
   r = await box(phone, '[data-testid="lobby-card"]');
-  check(r.height <= 0.55 * r.vh + 0.5 && Math.abs(r.width - (r.vw - 24)) < 1, `phone lobby card is ${r.width.toFixed(0)}x${r.height.toFixed(0)}, within 55vh and full width`);
+  // The lobby sheet used to stop at 55vh, which left the chat one line. It may now use the whole screen below the notch (see "chat is readable" below).
+  check(r.top >= 11 && r.height <= r.vh - 23 && Math.abs(r.width - (r.vw - 24)) < 1, `phone lobby card is ${r.width.toFixed(0)}x${r.height.toFixed(0)}, inside the ${r.vw}x${r.vh} screen and full width`);
   await shot(phone, "chat-phone-lobby.jpg");
   // Four seats, scrolled to the bottom, at 844 and 640 tall: the sticky actions row reaches the card's bottom edge, so no
   // scroll content (chat chips, input, seat rows) renders below it, and Leave lives inside it.
@@ -429,6 +463,25 @@ try {
   check(await startBtn.evaluate((el) => { const r = el.getBoundingClientRect(); const c = document.querySelector('[data-testid="lobby-card"]').getBoundingClientRect(); return r.top >= c.top && r.bottom <= c.bottom && r.bottom <= innerHeight; }), "phone lobby: Start is inside the card and the 390x844 viewport without scrolling");
   check(await inView(hp, '[data-testid="lobby-actions"]'), "phone lobby: the Ready/Start row is wholly on screen");
   await shot(hp, "chat-phone-lobby-host.jpg");
+  // Chat is readable in the phone lobby: at 390x844 and 440x956 at least four whole lines show, the newest is one of them, and the
+  // quick reactions (the emote tray) do not push the log out of the card.
+  for (const i of [1, 2, 3, 4, 5, 6, 7, 8]) await SAY(guests[0], `lobby line ${i}`);
+  await until(async () => (await logView(hp)).total >= 8, `Hana's lobby chat has all eight lines (${JSON.stringify(await logView(hp))})`);
+  for (const [w, h] of [[390, 844], [440, 956]]) {
+    await hp.page.setViewportSize({ width: w, height: h });
+    await until(async () => (await logView(hp)).whole >= 4, `${w}x${h} lobby: four whole chat lines are on screen`, 3000).catch(() => {});
+    const v = await logView(hp);
+    check(v.whole >= 4 && v.newest && v.newestText.includes("lobby line 8") && v.font >= 14, `phone lobby ${v.size}: ${v.whole} whole chat lines on screen, newest ("${v.newestText.trim()}") visible, ${v.font}px text`);
+    check(await inView(hp, '[data-testid="lobby-actions"]'), `phone lobby ${v.size}: Ready/Start stay on screen beside the chat`);
+    if (w === 440) await shot(hp, "chat-lobby-440x956.jpg");
+    await hp.page.getByRole("button", { name: "Emotes" }).click();
+    const tray = await logView(hp);
+    check(tray.whole >= 4 && tray.newest, `phone lobby ${v.size}: with the emote tray open, ${tray.whole} chat lines and the newest are still on screen`);
+    await hp.page.getByRole("button", { name: "Emotes" }).click();
+  }
+  await SAY(guests[0], "lobby line 9");
+  await until(async () => (await logView(hp)).newestText.includes("lobby line 9") && (await logView(hp)).newest, "a new lobby line scrolls into view");
+  check(true, "phone lobby: a line that arrives while the log is at the bottom is scrolled into view");
   // #449: held sideways, the lobby is a two-column card, so with four seats and everyone ready the status line, Ready, Start
   // and Leave are all on screen with no scrolling (the card's own scroller stays at 0).
   const fourth = await tab("Fay");
@@ -455,7 +508,7 @@ try {
         ready: !!btn("Not ready") && inside(btn("Not ready")),
         start: !!btn("Start") && inside(btn("Start")),
         leave: !!btn("Leave the table") && inside(btn("Leave the table")),
-        seats: [...card.querySelectorAll("li")].filter((li) => li.querySelector("span.rounded-full") && inside(li)).length,
+        seats: [...card.querySelectorAll("li")].filter((li) => !li.closest('[data-testid="chat-log"]') && li.querySelector("span.rounded-full") && inside(li)).length,
         scroll: scrollers.map((el) => el.scrollHeight - el.clientHeight),
         top: card.getBoundingClientRect().top,
       };
@@ -1132,6 +1185,40 @@ try {
     "bots: the menu shows four facts, four public score components and no seat actions",
   );
   await solo.context().close();
+
+  // Chat is readable on a phone in a game: an unread line shows without opening the dock, the open sheet shows at least four whole
+  // lines of 14 px or more with the newest in view, and the map is not refitted by opening or closing it.
+  await phone.page.setViewportSize({ width: 440, height: 956 });
+  if (await phone.page.getByTestId("chat-sheet").count()) await phone.page.getByRole("button", { name: "Minimize chat" }).click();
+  await phone.page.getByRole("button", { name: /^Open chat/ }).waitFor();
+  for (const i of [1, 2, 3, 4, 5, 6]) await SAY(a, `game line ${i}`);
+  await until(async () => (await phone.page.getByTestId("chat-unread").textContent().catch(() => "")) === "6", "Moss's badge counts six unread lines");
+  const peek = phone.page.getByTestId("chat-unread-preview");
+  await until(async () => (await peek.count()) === 1 && (await peek.textContent()).includes("game line 6"), "an unread line stays up as a preview", 15_000);
+  check((await peek.textContent()).includes("+5 more"), "phone game: the unread preview shows the newest line and how many more are waiting");
+  const holeBefore = await hole(phone);
+  await shot(phone, "chat-game-closed-440x956.jpg");
+  await peek.click();
+  await phone.page.getByTestId("chat-sheet").waitFor();
+  await new Promise((r) => setTimeout(r, 800));
+  check((await phone.page.getByTestId("chat-unread").count()) === 0, "phone game: opening the chat clears the unread badge");
+  for (const [w, h] of [[440, 956], [390, 844], [956, 440]]) {
+    await phone.page.setViewportSize({ width: w, height: h });
+    await new Promise((r) => setTimeout(r, 700));
+    if (!(await phone.page.getByTestId("chat-sheet").count())) await phone.page.getByRole("button", { name: /^Open chat/ }).click();
+    await phone.page.getByTestId("chat-sheet").waitFor();
+    await phone.page.getByRole("button", { name: "Chat", exact: true }).click();
+    const v = await logView(phone);
+    check(v.whole >= 4 && v.newest && v.newestText.includes("game line 6") && v.font >= 14, `phone game ${v.size} ${JSON.stringify(v)}: ${v.whole} whole chat lines on screen, newest ("${v.newestText.trim()}") visible, ${v.font}px text`);
+    if (w === 440) await shot(phone, "chat-game-440x956.jpg");
+    check((await phone.page.getByRole("button", { name: "Minimize chat" }).textContent()).trim() === "Close", `phone game ${v.size}: the sheet has a labelled Close`);
+  }
+  await phone.page.setViewportSize({ width: 440, height: 956 });
+  await new Promise((r) => setTimeout(r, 700));
+  check((await hole(phone)) === holeBefore, `phone game: the map's hole is the same with the chat open (${holeBefore})`);
+  await phone.page.getByRole("button", { name: "Minimize chat" }).click();
+  await new Promise((r) => setTimeout(r, 700));
+  check((await hole(phone)) === holeBefore, "phone game: and the same again after it is closed");
 
   // The 844x390 board reaction shares the top-menu edge. The menu and its Leave question stay above it.
   if (await phone.page.getByRole("button", { name: "Minimize chat" }).count()) {

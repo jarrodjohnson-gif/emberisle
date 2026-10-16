@@ -1,12 +1,62 @@
 // The table lobby: code, seats, chat and Ready/Start. Online-only, so it loads with the chat as one lazy chunk (#488).
 import { VictoryTargetSelect } from "@/components/game/VictoryTargetSelect";
+import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ChatBox, ReactionFloats } from "@/components/game/Chat";
 import { CopyFallback, useCopy } from "@/components/game/CopyText";
 import { SeatDot } from "@/components/game/SeatDot";
 import { useGame } from "@/lib/game/store";
+import type { Seat } from "@/lib/net/table";
 import { cn } from "@/lib/utils";
 import { useViewport } from "@/lib/viewport";
+
+// Your own name is a button; a tap opens an input. Enter or leaving the field saves (the host cleans it and answers with the
+// seat list), Escape puts it back. Empty is not sent: the old name stays.
+function OwnName({ seat, compact }: { seat: Seat; compact: boolean }) {
+  const rename = useGame((s) => s.renameSeat);
+  const [draft, setDraft] = useState<string | null>(null);
+  const done = useRef(false);
+  const finish = (save: boolean) => {
+    if (done.current) return;
+    done.current = true;
+    if (save && draft !== null && draft.trim() && draft.trim() !== seat.name) rename(draft);
+    setDraft(null);
+  };
+  if (draft === null) {
+    return (
+      <button
+        type="button"
+        data-testid="rename-seat"
+        aria-label={`Your name is ${seat.name}. Change it`}
+        onClick={() => {
+          done.current = false;
+          setDraft(seat.name);
+        }}
+        className={cn("min-w-0 cursor-pointer truncate text-left text-sm underline decoration-dotted underline-offset-4", compact ? "" : "-my-1 min-h-11")}
+      >
+        {seat.name}
+      </button>
+    );
+  }
+  return (
+    <input
+      data-testid="rename-input"
+      aria-label="Your name"
+      autoFocus
+      value={draft}
+      maxLength={16}
+      onChange={(e) => setDraft(e.target.value)}
+      onFocus={(e) => e.currentTarget.select()}
+      onBlur={() => finish(true)}
+      onKeyDown={(e) => {
+        e.stopPropagation();
+        if (e.key === "Enter") finish(true);
+        if (e.key === "Escape") finish(false);
+      }}
+      className={cn("min-w-0 flex-1 rounded-control border border-border bg-surface px-2 text-base text-fg", compact ? "h-7" : "-my-1 h-11")}
+    />
+  );
+}
 
 export function Lobby() {
   const rule = useGame((s) => s.tableWayfarerMode);
@@ -38,6 +88,8 @@ export function Lobby() {
       : readyCount < seats.length
         ? `${readyCount} of ${seats.length} ready`
         : "Everyone is ready";
+  const addBot = useGame((s) => s.addBot);
+  const removeBot = useGame((s) => s.removeBot);
   const { phone, portrait } = useViewport();
   const sheet = phone && portrait;
   const landscape = phone && !portrait;
@@ -48,7 +100,7 @@ export function Lobby() {
       className={cn(
         "absolute z-10 flex flex-col",
         sheet
-          ? "inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] max-h-[55vh]"
+          ? "inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] max-h-[calc(100dvh-max(0.75rem,env(safe-area-inset-top))-max(0.75rem,env(safe-area-inset-bottom))-0.75rem)]"
           : landscape
             ? "top-[max(0.75rem,env(safe-area-inset-top))] bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-[max(0.75rem,env(safe-area-inset-left))] w-[min(44rem,calc(100%-1.5rem))]"
             : "bottom-5 left-5 top-5 w-full max-w-sm sm:bottom-6 sm:left-10 sm:top-6",
@@ -80,25 +132,35 @@ export function Lobby() {
         <CopyFallback state={copied} label={copied?.what === "link" ? "Join link" : "Table code"} className="mt-2" />
         </div>
         <div className={cn(landscape ? "col-start-1 row-span-2 row-start-1 flex min-h-0 flex-col" : "contents")}>
-        <ul className={cn("flex flex-col gap-2", landscape ? "shrink-0" : "mt-5")}>
+        <ul className={cn("flex flex-col", sheet ? "gap-1.5" : "gap-2", landscape ? "shrink-0" : sheet ? "mt-3" : "mt-5")}>
           {[0, 1, 2, 3].map((i) => {
             const s = seats[i];
             return (
-              <li key={i} className={cn("relative flex items-center gap-3 rounded-[12px] border border-border bg-surface px-3", landscape ? "py-1" : "py-2")}>
-                <SeatDot color={s?.color ?? "transparent"} className="size-3 ring-1 ring-inset ring-black/25" />
-                <span className="flex-1 text-sm">
-                  {s ? s.name : "Empty"}
-                  {s?.host ? <span data-testid="host-tag" className="text-xs text-muted"> · host</span> : null}
+              <li key={i} className={cn("relative flex items-center gap-3 rounded-[12px] border border-border bg-surface px-3", sheet ? "min-h-11 py-0" : landscape ? "py-1" : "py-2")}>
+                <SeatDot color={s?.color ?? "transparent"} className="size-3 shrink-0 ring-1 ring-inset ring-black/25" />
+                <span className="flex min-w-0 flex-1 items-center text-sm">
+                  {s && s.id === seatId ? <OwnName seat={s} compact={landscape} /> : <span className="truncate">{s ? s.name : "Empty"}</span>}
+                  {s?.host ? <span data-testid="host-tag" className="shrink-0 whitespace-pre text-xs text-muted"> · host</span> : null}
                 </span>
-                {s ? <span className="text-xs text-muted">{s.away ? "reconnecting…" : s.ready ? "Ready" : "Waiting"}</span> : null}
+                {s ? <span className="shrink-0 text-xs text-muted">{s.bot ? "Bot" : s.away ? "reconnecting…" : s.ready ? "Ready" : "Waiting"}</span> : null}
+                {s?.bot && isHost ? (
+                  <Button size="sm" variant="outline" data-testid="remove-bot" aria-label={`Remove ${s.name}`} onClick={() => removeBot(s.id)}>
+                    Remove
+                  </Button>
+                ) : null}
+                {!s && isHost ? (
+                  <Button size="sm" variant="outline" data-testid="add-bot" onClick={addBot}>
+                    Add bot
+                  </Button>
+                ) : null}
                 {s ? <ReactionFloats by="seat" id={s.id} /> : null}
               </li>
             );
           })}
         </ul>
         {/* #417: the chat log is the one flexible piece (down to about 2 rows), so at 1280x720 Start and Leave stay inside the card. */}
-        <div className={cn("mt-2 flex flex-col rounded-[12px] border border-border bg-surface p-2", landscape ? "min-h-0 flex-1" : "min-h-32")}>
-          <ChatBox rows={6} />
+        <div className={cn("mt-2 flex flex-col rounded-[12px] border border-border bg-surface p-2", landscape ? "min-h-0 flex-1" : sheet ? "min-h-[13.5rem] shrink-0" : "min-h-32")}>
+          <ChatBox rows={6} minRows={sheet ? 4 : 0} />
         </div>
         </div>
         {/* #389: on a phone Ready/Start stay pinned to the bottom of the card; a fade above them says the rest scrolls. */}

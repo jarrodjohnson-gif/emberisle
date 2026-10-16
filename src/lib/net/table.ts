@@ -12,6 +12,8 @@ export interface Seat {
   url: string | null;
   // The host marks a seat whose socket is gone (#195); it is held for the player to rejoin.
   away?: boolean;
+  // A lobby bot the host seated (README: addBot). It is always ready and never away.
+  bot?: boolean;
 }
 
 // What a peek answers (G10): enough to dim taken swatches, no names or pictures.
@@ -48,6 +50,8 @@ export interface ChatLine {
   color: string;
   text: string;
   at: number;
+  // A soundboard line (README: sound): the clip id; `text` is its chip.
+  sound?: string;
 }
 
 export interface Reaction {
@@ -105,6 +109,11 @@ export interface TableClient {
   ready(value: boolean): void;
   start(): void;
   setVictoryTarget(value: VictoryTarget): void;
+  // Lobby: change your own seat's name; the host cleans it and answers with `seats`.
+  rename(name: string): void;
+  // Lobby, host only: seat a practice bot, or take the bot at seat `id` out.
+  addBot(): void;
+  removeBot(id: string): void;
   // A rematch at the same table (#266). Host only, once the game is over.
   again(): void;
   act(action: Action): boolean;
@@ -112,6 +121,7 @@ export interface TableClient {
   ask(give: Bag, want: Bag): void;
   answer(tradeId: string, yes: boolean): void;
   say(text: string): void;
+  sound(id: string): void;
   react(emote: string, to?: string): void;
   // The browser says the network or the tab is back: if a backoff timer is pending, dial now. Otherwise nothing.
   wake(): void;
@@ -353,6 +363,9 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
     ready: (value) => send({ type: "ready", value }),
     start: () => send({ type: "start" }),
     setVictoryTarget: (value) => send({ type: "setVictoryTarget", value }),
+    rename: (name) => send({ type: "rename", name }),
+    addBot: () => send({ type: "addBot" }),
+    removeBot: (id) => send({ type: "removeBot", id }),
     again: () => send({ type: "again" }),
     act: (action) => {
       const intent = toIntent(action);
@@ -365,6 +378,7 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
       act({ type: "tradeAnswer", tradeId, yes });
     },
     say: (text) => send({ type: "chat", text }),
+    sound: (id) => send({ type: "sound", id }),
     react: (emote, to) => send({ type: "react", emote, to }),
     drop: () => ws.close(),
     wake: () => {

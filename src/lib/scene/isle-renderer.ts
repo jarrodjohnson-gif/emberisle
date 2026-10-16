@@ -42,6 +42,7 @@ import type { JellyBoard, JellyStats } from "@/lib/scene/jelly-board";
 import type { Dock, Shore } from "@/lib/scene/harbor-jelly";
 import { OceanLife } from "@/lib/scene/ocean-life";
 import { makeBruno, type Bruno } from "@/lib/scene/bruno";
+import { makeJellyOutpost, makeJellyPath, makeJellyStronghold } from "@/lib/scene/pieces-jelly";
 import { CAUSTIC_GLSL, PAPER, SPLASH, addSplashRings, makeCrystalSea, makeFloorProps, makeSeaFloor, makeSplashes, makeSwell, makeWash, nearestCoast, type SeaUniforms, type WaterPath, type WaterStatus } from "@/lib/scene/crystal-water";
 import { Wobble } from "@/lib/scene/wobble";
 import { play } from "@/lib/sound";
@@ -67,6 +68,14 @@ const loadJelly = (): Promise<typeof import("@/lib/scene/jelly-board")> =>
     throw e;
   });
 const JELLY_RETRY_MS = 4000;
+// The jelly pieces (#638, pieces-jelly-prompt.md); ?pieces=slab keeps the slab pieces (for the classic look, #641).
+const JELLY_PIECES = (() => {
+  try {
+    return new URLSearchParams(location.search).get("pieces") !== "slab";
+  } catch {
+    return true;
+  }
+})();
 // How far beside a hex's token the wayfarer stands (robberSpot).
 const WAYFARER_ASIDE = 0.43;
 // The jelly shore is its own chunk (harbor-jelly), loaded once the hexes have swapped in.
@@ -1619,7 +1628,7 @@ export class IsleRenderer {
       const dx = b.x - a.x;
       const dz = b.z - a.z;
       const rot = Math.atan2(dx, dz);
-      const road = makePath(color, Math.hypot(dx, dz) * 0.9);
+      const road = (JELLY_PIECES ? makeJellyPath : makePath)(color, Math.hypot(dx, dz) * 0.9);
       road.position.set((a.x + b.x) / 2, edgeTop(tops, a, b), (a.z + b.z) / 2);
       road.rotation.y = rot;
       this.pieces.add(road);
@@ -1629,7 +1638,9 @@ export class IsleRenderer {
     for (const v of state.vertices) {
       if (!v.building) continue;
       const color = pmap.get(v.building.playerId)?.color ?? "#ccc";
-      const house = v.building.kind === "stronghold" ? makeStronghold(color) : makeOutpost(color);
+      const house = JELLY_PIECES
+        ? v.building.kind === "stronghold" ? makeJellyStronghold(color) : makeJellyOutpost(color)
+        : v.building.kind === "stronghold" ? makeStronghold(color) : makeOutpost(color);
       house.position.set(v.x, vertexTop(tops, v), v.z);
       this.pieces.add(house);
       land(house, `v:${v.id}`, v.building.kind, color);
