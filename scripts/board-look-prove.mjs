@@ -206,7 +206,7 @@ try {
         const ma = isle.coastMiter.get(a.id), mb = isle.coastMiter.get(b.id);
         const [cx, cz, mx, mz] = [(a.x + b.x) / 2, (a.z + b.z) / 2, (ma.mx + mb.mx) / 2, (ma.mz + mb.mz) / 2];
         const shore = at(cx + mx * 0.6, cz + mz * 0.6), deep = at(cx + mx * 3.5, cz + mz * 3.5);
-        if (inHole(shore) && inHole(deep) && document.elementFromPoint(deep.x, deep.y)?.tagName === "CANVAS") return { shore, deep };
+        if (inHole(shore) && deep.x > 8 && deep.y > 8 && deep.x < innerWidth - 8 && deep.y < innerHeight - 8 && document.elementFromPoint(deep.x, deep.y)?.tagName === "CANVAS") return { shore, deep };
       }
       return null;
     });
@@ -505,7 +505,7 @@ try {
       }));
       await drawn(page, 2);
       const t1 = await pose();
-      check(`${tag}: chat previews are not a rail: the right inset stays 12 and the camera stays put`, withChat.previews === 3 && withChat.previewW >= 200 && withChat.right === 12 && !t1.glide && t1.target.every((v, k) => Math.abs(v - t0.target[k]) < 1e-6), { ...withChat, target: brief(t1).target, before: brief(t0).target });
+      check(`${tag}: chat previews are not a rail: the right inset is the rail the wide layout always keeps (312) and the camera stays put`, withChat.previews === 3 && withChat.previewW >= 200 && withChat.right === 312 && !t1.glide && t1.target.every((v, k) => Math.abs(v - t0.target[k]) < 1e-6), { ...withChat, target: brief(t1).target, before: brief(t0).target });
     }
     if (!touch) {
       // The table menu's View: Overhead switches to the fitted 25° overhead view, which fits the same hole and orbits on a
@@ -592,11 +592,12 @@ try {
     await page.evaluate(() => document.querySelector('[data-testid="place-list"] button').focus());
     await settled();
     const list = await look('[data-testid="place-list"]');
-    check("1024x768: focusing the PlaceList refits the island clear of it, with no state change", list.seq === base.seq && list.right > base.right && list.fresh && list.rightmost < list.railLeft && list.covered.length === 0, { base, list });
+    // #625: the map is isolated from the HUD: the wide layout's hole keeps the right rail whether or not a panel is open, so the fit stays put and no corner is covered.
+    check("1024x768: focusing the PlaceList leaves the fit where it was and the island clear of it", list.seq === base.seq && list.pose === base.pose && list.fresh && list.rightmost < list.railLeft && list.covered.length === 0, { base, list });
     await page.evaluate(() => document.activeElement.blur());
     await settled();
     const blurred = await look(null);
-    check("1024x768: blurring the PlaceList refits it back", blurred.seq === base.seq && blurred.right === base.right && blurred.fresh && blurred.covered.length === 0, { base, blurred });
+    check("1024x768: blurring the PlaceList leaves the fit where it was", blurred.seq === base.seq && blurred.right === base.right && blurred.pose === base.pose && blurred.fresh && blurred.covered.length === 0, { base, blurred });
     // The chat dock shows online; the store is told so, then the dock is opened with no state change.
     await page.evaluate(() => window.__emberisle.setState({ mode: "online" }));
     await settled();
@@ -605,11 +606,11 @@ try {
     await page.waitForSelector('[aria-label="Table chat"]', { timeout: STEP_MS });
     await settled();
     const chat = await look('[aria-label="Table chat"]');
-    check("1024x768: opening the chat refits the island clear of the chat rail, with no state change", chat.seq === online.seq && chat.right > online.right && chat.fresh && chat.rightmost < chat.railLeft && chat.covered.length === 0, { online, chat });
+    check("1024x768: opening the chat leaves the fit where it was and the island clear of the chat rail", chat.seq === online.seq && chat.pose === online.pose && chat.fresh && chat.rightmost < chat.railLeft && chat.covered.length === 0, { online, chat });
     await page.evaluate(() => window.__emberisle.getState().setChatOpen(false));
     await settled();
     const closed = await look(null);
-    check("1024x768: closing the chat refits it back", closed.seq === online.seq && closed.right === online.right && closed.fresh && closed.covered.length === 0, { online, closed });
+    check("1024x768: closing the chat leaves the fit where it was", closed.pose === online.pose && closed.seq === online.seq && closed.right === online.right && closed.fresh && closed.covered.length === 0, { online, closed });
     // Opening the table menu or a seat's popover is not chrome the island makes room for: the hole and the fit stay as they were.
     await page.evaluate(() => window.__emberisle.getState().setChatOpen(false));
     await settled();

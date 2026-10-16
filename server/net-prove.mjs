@@ -2,6 +2,7 @@
 // #92: all three sit on one hex, then a wayfarer move and a knight each rob the second of two targets the host lists.
 // #111: no state pushed before the game ends carries the seed (it rebuilds the fortune deck) or rng (it predicts steals).
 import { spawn } from "node:child_process";
+import { once } from "node:events";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -207,5 +208,6 @@ if (leaks.length) fail("state pushed before the game ended carries seed or rng",
 console.log(`${all.reduce((n, x) => n + x.pushes, 0)} pushed states before the end, none carry seed or rng`);
 [a, b, c].forEach((p) => p.t.close());
 host.kill("SIGKILL");
+if (host.exitCode === null && host.signalCode === null) await Promise.race([once(host, "exit"), new Promise((r) => setTimeout(r, 3000).unref())]);
 console.log("net prove ok");
 process.exit(0);

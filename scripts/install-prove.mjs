@@ -14,6 +14,7 @@
 // Run: npm run build && npm run install-prove
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
+import { once } from "node:events";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -240,5 +241,6 @@ try {
   await browser.close();
   await vite.close();
   host.kill();
+  if (host.exitCode === null && host.signalCode === null) await Promise.race([once(host, "exit"), new Promise((r) => setTimeout(r, 3000).unref())]);
 }
 process.exit(code);

@@ -4,6 +4,7 @@
 // Flags (#310): --size 390x844 shoots one viewport, --coarse makes it a touch device (pointer: coarse, pixel ratio 3),
 // and --budget skips the shots and prints the frame-time matrix (pixel ratio x view x SSAO size) in the play screen.
 import { spawn } from "node:child_process";
+import { once } from "node:events";
 import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -337,4 +338,5 @@ try {
   await browser.close();
   await vite.close();
   host.kill();
+  if (host.exitCode === null && host.signalCode === null) await Promise.race([once(host, "exit"), new Promise((r) => setTimeout(r, 3000).unref())]);
 }
