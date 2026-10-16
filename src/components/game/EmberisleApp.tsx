@@ -9,7 +9,6 @@ import { useGame } from "@/lib/game/store";
 import { JOIN_CODE, LazyBoundary, preloadOnIdle, reloadOnStaleChunk } from "@/lib/lazy";
 import { play, setMuted, useMuted } from "@/lib/sound";
 import { useTurnTitle } from "@/lib/turn-title";
-import { hasPracticeWin } from "@/lib/game/practice-progress";
 import { PLAYER_COLORS, PLAYER_NAMES, type WayfarerMode } from "@/lib/game/types";
 import { cn } from "@/lib/utils";
 import { useViewport } from "@/lib/viewport";
@@ -101,7 +100,7 @@ function Title() {
   const setColor = useGame((s) => s.setColor);
   const choices = useGame((s) => s.wayfarerChoices);
   const chooseWayfarer = useGame((s) => s.setWayfarerChoice);
-  const rules = { ai: choices.ai ?? (hasPracticeWin() ? "on" : "gentle"), online: choices.online ?? "on", hotseat: choices.hotseat ?? "on" };
+  const rules = { ai: choices.ai ?? "on", online: choices.online ?? "on", hotseat: choices.hotseat ?? "on" };
   const startAi = useGame((s) => s.startAi);
   const startHotseat = useGame((s) => s.startHotseat);
   const setHowTo = useGame((s) => s.setHowTo);
@@ -222,10 +221,10 @@ function Title() {
               </summary>
               {([["ai", "Practice"], ["online", "Online"], ["hotseat", "Hotseat"]] as const).map(([context, label]) => <label key={context} className="flex min-h-11 items-center justify-between gap-2 text-sm">
                 {label}<select aria-label={`${label} wayfarer`} aria-describedby="wayfarer-help" value={rules[context]} onChange={e => chooseWayfarer(context, e.target.value as WayfarerMode)} className="h-11 min-w-32 rounded-control border bg-surface px-2 text-fg">
-                  <option value="on">On</option><option value="gentle">Gentle</option><option value="off">Off</option>
+                  <option value="on">On</option><option value="off">Off</option>
                 </select>
               </label>)}
-              <p id="wayfarer-help" className="py-2 text-xs text-muted">Gentle blocks, never takes. Off never moves or blocks. Sevens still discard. Off fortunes add to the army.</p>
+              <p id="wayfarer-help" className="py-2 text-xs text-muted">Off never moves or blocks. Sevens still discard. Off fortunes add to the army.</p>
             </details>
           </div>
           <div className="mt-4 flex flex-col gap-2">

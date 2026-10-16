@@ -99,7 +99,7 @@ export interface TradeOffer {
   want: Partial<Record<Resource, number>>;
 }
 
-export type WayfarerMode = "on" | "gentle" | "off";
+export type WayfarerMode = "on" | "off";
 export type VictoryTarget = 7 | 10;
 export type WinTrigger = "outpost" | "stronghold" | "longestPath" | "largestArmy" | "pointFortune" | "turnStart" | "points";
 

@@ -767,7 +767,7 @@ function seatColor(room, raw) {
 }
 
 function openTable(ws, msg) {
-  if (msg.wayfarerMode !== undefined && !["on", "gentle", "off"].includes(msg.wayfarerMode)) return send(ws, { type: "error", message: "Choose Wayfarer On, Gentle or Off." });
+  if (msg.wayfarerMode !== undefined && !["on", "off"].includes(msg.wayfarerMode)) return send(ws, { type: "error", message: "Choose Wayfarer On or Off." });
   if (rooms.size >= ROOM_MAX) return send(ws, { type: "error", message: "The host is full." });
   const now = Date.now();
   const mine = ws.ipKey ? ipBucket(ws.ipKey, now) : null;

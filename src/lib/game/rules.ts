@@ -146,7 +146,7 @@ export function wayfarerMode(state: Pick<GameState, "wayfarerMode">): import("./
 }
 
 export function stealTargets(state: GameState, hexId: string, pid: string): string[] {
-  if (wayfarerMode(state) !== "on") return [];
+  if (wayfarerMode(state) === "off") return [];
   const h = hex(state, hexId);
   if (!h) return [];
   const ids = new Set<string>();
@@ -391,7 +391,6 @@ function afterRobber(state: GameState) {
 
 function applyRobber(state: GameState, pid: string, hexId: string, stealFrom: string | null) {
   if (wayfarerMode(state) === "off") return "The wayfarer is off at this table.";
-  if (wayfarerMode(state) === "gentle" && stealFrom) return "Gentle wayfarers never take cards.";
   if (hexId === state.robberHex) return "The wayfarer must move.";
   const h = hex(state, hexId);
   if (!h) return "Unknown land.";

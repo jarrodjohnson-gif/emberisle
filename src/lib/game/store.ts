@@ -137,7 +137,6 @@ function withPaths(state: GameState, edgeIds: string[], pid: string): GameState 
   if (!edgeIds.length) return state;
   return { ...state, edges: state.edges.map((e) => (edgeIds.includes(e.id) ? { ...e, path: pid } : e)) };
 }
-import { hasPracticeWin, recordPracticeWin } from "./practice-progress";
 import { chooseBotAction, chooseTradeAsk, shouldAcceptTrade } from "./ai";
 import { PLAYER_COLORS, RESOURCES, type Action, type BuildMode, type GameState, type VictoryTarget, type WayfarerMode } from "./types";
 import { connectTable, hostUrl, type Bag, type ChatLine, type Legal, type Me, type Reaction, type Seat, type TableClient } from "@/lib/net/table";
@@ -456,7 +455,7 @@ export const useGame = create<GameStore>((set, get) => ({
   wayfarerChoices: {},
   tableWayfarerMode: "on",
   setWayfarerChoice: (context, mode) => {
-    if (get().screen === "title" && ["on", "gentle", "off"].includes(mode)) set({ wayfarerChoices: { ...get().wayfarerChoices, [context]: mode } });
+    if (get().screen === "title" && ["on", "off"].includes(mode)) set({ wayfarerChoices: { ...get().wayfarerChoices, [context]: mode } });
   },
   startAi: () => {
     // A table left dialing (a reload with a saved seat) must not pull a practice game back to the lobby.
@@ -468,9 +467,7 @@ export const useGame = create<GameStore>((set, get) => ({
     botAsked = "";
     botDeclined.clear();
     const name = get().name;
-    const { ai = hasPracticeWin() ? "on" : "gentle", ...rest } = get().wayfarerChoices;
-    const state = createGame({ humans: [{ name }], bots: 3, wayfarerMode: ai });
-    set({ wayfarerChoices: rest });
+    const state = createGame({ humans: [{ name }], bots: 3, wayfarerMode: get().wayfarerChoices.ai ?? "on" });
     set({
       screen: "play",
       mode: "ai",
@@ -499,9 +496,7 @@ export const useGame = create<GameStore>((set, get) => ({
     const humans = Array.from({ length: count }, (_, i) => ({
       name: i === 0 ? get().name : `Seat ${i + 1}`,
     }));
-    const { hotseat = "on", ...rest } = get().wayfarerChoices;
-    const state = createGame({ humans, bots: 0, wayfarerMode: hotseat });
-    set({ wayfarerChoices: rest });
+    const state = createGame({ humans, bots: 0, wayfarerMode: get().wayfarerChoices.hotseat ?? "on" });
     set({
       screen: "play",
       mode: "hotseat",
@@ -546,6 +541,7 @@ export const useGame = create<GameStore>((set, get) => ({
     get().net?.close();
     set({
       screen: "title",
+      wayfarerChoices: {},
       state: null,
       error: null,
       buildMode: "none",
@@ -598,7 +594,6 @@ export const useGame = create<GameStore>((set, get) => ({
       ? logBotAction(state, res.state, action, actor, state.players.find((p) => p.id === actor)?.name.replace(/ \(bot\)$/i, "") ?? actor)
       : res.state;
     set({ state: nextState, gameLog: appendLog(get().gameLog, newLog(state.log, nextState.log)), error: null, toast: null, buildMode: "none", roadPicks: [] });
-    if (mode === "ai" && state.phase !== "over" && nextState.phase === "over" && nextState.winner === localId && nextState.players.find(p => p.id === localId)?.kind === "human") recordPracticeWin();
     hear(state, nextState, localId, mode);
     // An offer lives only while its asker still has the turn in `main` and still holds the offered goods (as host.mjs play).
     const open = get().offer;
@@ -751,9 +746,7 @@ export const useGame = create<GameStore>((set, get) => ({
     return { vertices: [], edges: [], hexes: [] };
   },
   hostTable: () => {
-    const { online = "on", ...rest } = get().wayfarerChoices;
-    set({ wayfarerChoices: rest });
-    connect(set, get, (t, me) => t.open(me, { wayfarerMode: online }));
+    connect(set, get, (t, me) => t.open(me, { wayfarerMode: get().wayfarerChoices.online ?? "on" }));
   },
   joinTable: (code) => {
     // A color the peek showed taken at this table is sent as no color, so the host seats the first free one.

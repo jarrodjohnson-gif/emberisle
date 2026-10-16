@@ -20,10 +20,9 @@ export function fortuneBreakdown(p: PlayerState) {
 // One effect per creation rule, shared by the tray and contextual help.
 export const WAYFARER_EFFECT = {
   on: FORTUNES[0]!.effect,
-  gentle: "Move and block a hex. The wayfarer takes no cards.",
   off: "Muster: add 1 to your army. No target needed.",
 };
 export function wayfarerRules(mode: import("./types").WayfarerMode) {
   const discard = "On a seven, anyone with more than seven goods discards half.";
-  return `${discard} ${mode === "off" ? "No movement, blocked land or taking cards. Wayfarer fortunes add 1 to the army." : mode === "gentle" ? "Move and block a hex, without taking cards. Blocked land pays nothing." : "Move and block a hex; the wayfarer takes a card from an adjacent seat. Blocked land pays nothing."}`;
+  return `${discard} ${mode === "off" ? "No movement, blocked land or taking cards. Wayfarer fortunes add 1 to the army." : "Move and block a hex; the wayfarer takes a card from an adjacent seat. Blocked land pays nothing."}`;
 }

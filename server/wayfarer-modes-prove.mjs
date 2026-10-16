@@ -7,7 +7,7 @@ const make=mode=>createGame({seed:42,humans:[{name:'Ember'},{name:'Tide'},{name:
 const act=(s,p,a)=>{const r=applyAction(s,p,a);assert.equal(r.error,undefined,JSON.stringify(a));assert.equal(r.state.wayfarerMode,s.wayfarerMode);return r.state;};
 function roll(s,total){for(let rng=1;rng<100000;rng++){const t=structuredClone(s);t.rng=rng;t.phase='roll';const r=applyAction(t,t.current,{type:'roll'});if(!r.error&&r.state.dice.reduce((a,b)=>a+b)===total)return r.state;}throw Error('no roll');}
 assert.equal(wayfarerMode(make(undefined)),'on');const legacy=make();delete legacy.wayfarerMode;assert.equal(wayfarerMode(legacy),'on');
-for(const mode of ['on','gentle','off']){
+for(const mode of ['on','off']){
  let s=make(mode);s.current='p0';s.phase='roll';for(const p of s.players)p.resources={timber:0,clay:0,wool:0,grain:0,ore:0};
  assert.equal(s.hexes.filter(h=>h.blocked).length,mode==='off'?0:1);
  let seven=roll(s,7);assert.equal(seven.phase,mode==='off'?'main':'robber');
@@ -38,6 +38,23 @@ for(const mode of ['on','gentle','off']){
 }
 console.log('wayfarer-modes-prove: rules checks passed');
 
+// The title's choice sticks across games made without the menu (new game, play again) and resets only on returning to it.
+{
+ const {useGame}=await import('../src/lib/game/store.ts'),g=()=>useGame.getState();
+ assert.deepEqual(g().wayfarerChoices,{});
+ g().setWayfarerChoice('ai','off');g().setWayfarerChoice('hotseat','off');g().setWayfarerChoice('online','off');
+ g().startAi();assert.equal(g().state.wayfarerMode,'off');
+ g().startAi();assert.equal(g().state.wayfarerMode,'off','new practice game keeps Off');
+ g().startHotseat(3);assert.equal(g().state.wayfarerMode,'off');
+ useGame.setState({state:{...g().state,phase:'over',winner:'p0'}});g().playAgain();assert.equal(g().state.wayfarerMode,'off','hotseat play again keeps Off');
+ g().startHotseat(3);assert.equal(g().state.wayfarerMode,'off','new hotseat game keeps Off');
+ g().goTitle();assert.deepEqual(g().wayfarerChoices,{},'the menu resets the choice');
+ g().startAi();assert.equal(g().state.wayfarerMode,'on','default after the menu');
+ g().goTitle();g().setWayfarerChoice('ai','on');assert.equal(g().wayfarerChoices.ai,'on');
+ g().setWayfarerChoice('ai','gentle');assert.equal(g().wayfarerChoices.ai,'on','Gentle is not a mode');
+ console.log('ok sticky choice: Off survives new/play-again games, the title menu resets to On');
+}
+
 // Exercise the same branches through the authoritative host, with real action stamps and private seat views.
 {
  const {spawn}=await import('node:child_process'),{mkdtempSync,readFileSync,writeFileSync,rmSync}=await import('node:fs'),{tmpdir}=await import('node:os'),{default:path}=await import('node:path'),{default:WebSocket}=await import('ws');
@@ -48,12 +65,12 @@ console.log('wayfarer-modes-prove: rules checks passed');
  async function client(hello){const ws=new WebSocket(`ws://127.0.0.1:${port}`),inbox=[];let state;sockets.push(ws);ws.on('message',d=>{const m=JSON.parse(String(d));inbox.push(m);if(m.type==='state')state=m;});await new Promise(r=>ws.once('open',r));ws.send(JSON.stringify({type:'hello',...hello}));const next=async(type,test=()=>true)=>{for(let n=0;n<500;n++){const i=inbox.findIndex(m=>m.type===type&&test(m));if(i>=0)return inbox.splice(i,1)[0];await wait(10);}throw Error(`timeout ${type}: ${JSON.stringify(inbox.slice(-2))}`);};const welcome=await next('welcome');return{welcome,next,send:m=>ws.send(JSON.stringify({...state?.actionStamp,cid:crypto.randomUUID(),...m}))};}
  async function stop(){for(const ws of sockets)ws.terminate();if(host?.exitCode===null){host.kill('SIGKILL');await new Promise(r=>host.once('exit',r));}}
  try{
-  await start();for(const mode of ['on','gentle','off']){const p=[await client({name:'Ember',wayfarerMode:mode})],code=p[0].welcome.code;for(const name of ['Tide','Pine'])p.push(await client({code,name}));for(const a of p)a.send({type:'ready',value:true});await p[0].next('seats',m=>m.seats.length===3&&m.seats.every(s=>s.ready));p[0].send({type:'start'});await p[0].next('state');tables.push({code,mode,p});}
+  await start();for(const mode of ['on','off']){const p=[await client({name:'Ember',wayfarerMode:mode})],code=p[0].welcome.code;for(const name of ['Tide','Pine'])p.push(await client({code,name}));for(const a of p)a.send({type:'ready',value:true});await p[0].next('seats',m=>m.seats.length===3&&m.seats.every(s=>s.ready));p[0].send({type:'start'});await p[0].next('state');tables.push({code,mode,p});}
   await wait(150);await stop();
   for(const t of tables){const f=path.join(dir,`${t.code}.json`),s=JSON.parse(readFileSync(f)),g=s.game;g.current='p0';g.phase='roll';g.rollOff=null;g.seq++;g.log=[];for(const p of g.players){p.resources={timber:0,clay:0,wool:0,grain:0,ore:0};p.hidden.knight=3;p.boughtThisTurn.knight=0;}g.players[1].resources.timber=10;const h=g.hexes.find(h=>h.terrain!=='waste'),v=g.vertices.find(v=>v.hexes.includes(h.id));g.vertices.forEach(v=>v.building=null);v.building={playerId:'p1',kind:'outpost'};t.hex=h.id;s.savedAt=Date.now();writeFileSync(f,JSON.stringify(s));}
   await start();for(const t of tables){const old=t.p.map(p=>p.welcome);t.p=[];for(const w of old)t.p.push(await client({code:w.code,secret:w.secret}));const a=t.p[0],initial=await a.next('state');a.send({type:'roll'});const rolled=await a.next('state',m=>m.game.seq>initial.game.seq);assert.equal(rolled.game.dice.reduce((a,b)=>a+b),7);assert.equal(rolled.game.phase,'discard');assert.equal(rolled.game.discardNeeded.p1,5);t.p[1].send({type:'discard',cards:{timber:5}});const discarded=await a.next('state',m=>m.game.seq>rolled.game.seq);assert.equal(discarded.game.phase,t.mode==='off'?'main':'robber');assert.equal(discarded.game.wayfarerMode,t.mode);
    if(t.mode==='off'){assert.deepEqual(discarded.legal.wayfarer,[]);a.send({type:'rob',hexId:t.hex,stealFrom:null});assert.match((await a.next('error')).message,/not moving|off/);a.send({type:'play',card:'knight',hexId:t.hex,stealFrom:null});assert.match((await a.next('error')).message,/no land or target/);}
-   else{if(t.mode==='gentle'){assert.deepEqual(discarded.legal.steal,{});a.send({type:'rob',hexId:t.hex,stealFrom:'p1'});assert.match((await a.next('error')).message,/never take/);}a.send({type:'rob',hexId:t.hex,stealFrom:null});const moved=await a.next('state',m=>m.game.seq>discarded.game.seq);assert.equal(moved.game.phase,'main');assert.equal(moved.game.players.find(p=>p.id==='p0').resources.timber,t.mode==='on'?1:0);assert.equal(moved.game.hexes.find(h=>h.id===t.hex).blocked,true);}
+   else{a.send({type:'rob',hexId:t.hex,stealFrom:null});const moved=await a.next('state',m=>m.game.seq>discarded.game.seq);assert.equal(moved.game.phase,'main');assert.equal(moved.game.players.find(p=>p.id==='p0').resources.timber,t.mode==='on'?1:0);assert.equal(moved.game.hexes.find(h=>h.id===t.hex).blocked,true);}
    const before=await t.p[2].next('state',m=>m.game.phase==='main'),nextHex=before.game.hexes.find(h=>h.id!==before.game.robberHex).id;a.send({type:'play',card:'knight',hexId:t.mode==='off'?'':nextHex,stealFrom:null});const played=await a.next('state',m=>m.game.seq>before.game.seq);assert.equal(played.game.players.find(p=>p.id==='p0').knightsPlayed,1);assert.equal(played.game.phase,'main');if(t.mode==='off')assert.equal(played.game.hexes.some(h=>h.blocked),false);a.send({type:'setWayfarerMode',value:t.mode==='off'?'on':'off'});assert.match((await a.next('error')).message,/fixed when the table is created/);console.log(`ok hosted ${t.mode}: real seven/discard, public legal targets, refused theft/targets, fortune and immutable rule`);
   }
  }finally{await stop();rmSync(dir,{recursive:true,force:true});}
