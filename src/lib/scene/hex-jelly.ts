@@ -4427,29 +4427,50 @@ function wastes(L: Layout, ground: (x: number, z: number) => number, r: () => nu
     life.push((t) => (eyeGlow.material.opacity = env.night * (0.5 + 0.3 * Math.sin(t * 1.3))));
   }
 
-  // The ribcage: a long spine half buried, ribs arching up out of the ash in a tapering row.
+  // The ribcage: a spine half buried in the ash, and from each vertebra a pair of tapering curved ribs that sweep out, rise and
+  // curl back in over it like claws, their tips never meeting; longest in the middle, a couple snapped short, all a little
+  // uneven, swept back along the spine. Turned so the eye sees across it, not down its length.
   {
     const rb = M.ribs!;
-    const along = Math.atan2(rb.z, rb.x) + Math.PI / 2;
+    // The spine runs toward the eye, so each pair of ribs curls out left and right in silhouette.
+    const along = Math.atan2(EYE.z, EYE.x) + 0.35 * M.side!.x;
     const [ax, az] = [Math.cos(along), Math.sin(along)];
+    const [cx, cz] = [-az, ax];
     const parts: THREE.BufferGeometry[] = [];
-    const N = 7;
+    const N = 6;
     for (let i = 0; i < N; i++) {
-      const u = (i - (N - 1) / 2) * 0.055;
+      const u = (i - (N - 1) / 2) * 0.045;
       const x = rb.x + ax * u;
       const z = rb.z + az * u;
-      const y = Y(x, z);
-      parts.push(part(sphere(10), BONE2, [x, y + 0.008, z], [0, -along, 0], [0.022, 0.016, 0.018]));
-      const size = 0.2 * (1 - Math.abs(i - (N - 1) / 2) / N) + 0.08;
+      const y = Y(x, z) - 0.006;
+      parts.push(part(sphere(10), BONE2, [x, y + 0.006, z], [0, -along, 0], [0.02, 0.014, 0.017]));
+      const mid = 1 - Math.abs(i - (N - 1) / 2) / N;
+      const R = 0.1 + 0.1 * mid;
       for (const sg of [1, -1]) {
-        const rib = new THREE.TorusGeometry(size, 0.011, 7, 20, Math.PI * 0.7);
-        rib.rotateX(Math.PI / 2);
-        rib.rotateZ(Math.PI / 2);
-        rib.rotateY(sg > 0 ? 0 : Math.PI);
-        rib.rotateY(-along + Math.PI / 2);
-        parts.push(part(rib, i % 2 ? BONE : BONE2, [x, y + 0.004, z], [0, 0, 0], [1, 1, 1]));
+        const broken = hash2(i, sg, L.seed + 44) > 0.62;
+        const tmax = broken ? 0.9 + 0.5 * Math.abs(hash2(i, sg, L.seed + 45)) : 2.25 + 0.15 * hash2(i, sg, L.seed + 46);
+        const pts: THREE.Vector3[] = [];
+        for (let k = 0; k <= 14; k++) {
+          const t = (k / 14) * tmax;
+          const out = R * Math.sin(t) * 0.82;
+          const up = R * (1 - Math.cos(t)) * 1.05;
+          const back = -R * 0.22 * (t / 2.3) * (i < (N - 1) / 2 ? -1 : 1) * 0.6;
+          pts.push(new THREE.Vector3(x + cx * sg * (0.012 + out) + ax * back, y + up, z + cz * sg * (0.012 + out) + az * back));
+        }
+        const curve = new THREE.CatmullRomCurve3(pts);
+        const tube = new THREE.TubeGeometry(curve, 24, 1, 7, false);
+        // Taper: thick at the root, a point at the tip.
+        const pos = tube.attributes.position as THREE.BufferAttribute;
+        for (let v = 0; v < pos.count; v++) {
+          const seg = Math.floor(v / 8) / 24;
+          const c = curve.getPointAt(Math.min(1, seg));
+          const r = 0.014 * (1 - seg * 0.75) * (broken ? 1.1 : 1);
+          pos.setXYZ(v, c.x + (pos.getX(v) - c.x) * r, c.y + (pos.getY(v) - c.y) * r, c.z + (pos.getZ(v) - c.z) * r);
+        }
+        parts.push(part(tube, (i + (sg > 0 ? 0 : 1)) % 2 ? BONE : BONE2, [0, 0, 0]));
+        if (broken) parts.push(part(sphere(6), "#c8bca4", [pts[14]!.x, pts[14]!.y, pts[14]!.z], [0, 0, 0], [0.008, 0.006, 0.008]));
       }
-      stands.push({ x, z, r: 0.09 });
+      stands.push({ x, z, r: 0.11 });
     }
     // The spine: vertebrae, half buried, curling from the ribcage's end round the back to the skull's crown.
     const sk = M.skull!;
@@ -4467,7 +4488,10 @@ function wastes(L: Layout, ground: (x: number, z: number) => number, r: () => nu
       stands.push({ x: p.x, z: p.z, r: 0.03 });
     }
     const cage = mesh(merge(parts), cm);
-    cage.userData.ref = "ribcage";
+    const tag = new THREE.Object3D();
+    tag.position.set(rb.x, 0, rb.z);
+    tag.userData.ref = "ribcage";
+    g.add(tag);
     g.add(cage);
   }
 
