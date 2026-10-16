@@ -3673,7 +3673,9 @@ function mine(L: Layout, ground: (x: number, z: number) => number, r: () => numb
   life.push(() => {
     (glow.material as THREE.MeshBasicMaterial).opacity = env.robber ? 0 : env.night * 0.9;
     (lantern.material as THREE.MeshBasicMaterial).opacity = env.robber ? 0.2 : 0.5 + env.night * 0.5;
-    lh.material.opacity = env.robber ? 0 : env.night * 0.85;
+    const flash = env.roll >= 0 ? Math.sin(Math.min(1, env.roll * 2) * Math.PI) : 0;
+    lh.material.opacity = env.robber ? 0 : Math.max(env.night * 0.85, flash * 0.9);
+    (glow.material as THREE.MeshBasicMaterial).opacity = Math.max((glow.material as THREE.MeshBasicMaterial).opacity, flash * 0.6);
   });
 
   // The rails: out of the mouth, along the flank, over the gully on a trestle, to the tipple. Graded gently down.
@@ -3774,6 +3776,8 @@ function mine(L: Layout, ground: (x: number, z: number) => number, r: () => numb
       cart.rotation.set(0, -Math.atan2(q.z - p.z, q.x - p.x), Math.atan2(q.y - p.y, Math.hypot(q.x - p.x, q.z - p.z)), "YXZ");
       pivot.rotation.z = -1.0 * tip;
       load.visible = c < 0.5;
+      // On a roll it comes out heaped high.
+      load.scale.setScalar(env.roll >= 0 ? 1.7 : 1);
     });
   }
 
@@ -3812,8 +3816,57 @@ function mine(L: Layout, ground: (x: number, z: number) => number, r: () => numb
       const swing = ph < 0.7 ? -0.9 * ease(ph / 0.7) : -0.9 + 1.5 * ease((ph - 0.7) / 0.3);
       pick.rotation.z = swing;
       miner.top.rotation.z = -0.15 - swing * 0.4;
+      // On a roll he straightens and raises the pick high, twice.
+      if (env.roll >= 0) {
+        const up = Math.abs(Math.sin(env.roll * Math.PI * 2));
+        miner.top.rotation.z = 0.15;
+        pick.rotation.z = -2.2 * up;
+        miner.g.position.y = Y(mp.x, mp.z) + 0.012 * up;
+      } else miner.g.position.y = Y(mp.x, mp.z);
       const f = env.roll >= 0 ? Math.sin(env.roll * Math.PI) : 0;
       flare.material.opacity = env.robber ? 0 : 0.25 + 0.15 * Math.max(0, Math.sin(t * 1.7)) ** 6 + f * 0.7 + env.night * 0.3;
+    });
+  }
+
+  // On a roll: ore tumbles off the tipple's lip onto the heap, and a puff of snow blows off the tallest summit.
+  {
+    const lip = tpos.clone().addScaledVector(tdir, 0.03);
+    const falls = Array.from({ length: 6 }, (_, i) => {
+      const o = new THREE.Mesh(new THREE.DodecahedronGeometry(0.007 + (i % 3) * 0.002, 0), i === 2 ? new THREE.MeshStandardMaterial({ color: "#5aa8d8", flatShading: true }) : new THREE.MeshStandardMaterial({ color: "#4a4e56", flatShading: true }));
+      o.userData.loose = true;
+      o.visible = false;
+      g.add(o);
+      const a = (i / 6) * Math.PI * 2;
+      return { o, i, dx: Math.cos(a) * 0.025, dz: Math.sin(a) * 0.025 };
+    });
+    const top = L.peaks[0]!;
+    const summit = new THREE.Vector3(top.x, BLOCK_H + ground(top.x, top.z) + top.h - 0.06, top.z);
+    const snow = Array.from({ length: 10 }, (_, i) => {
+      const o = new THREE.Mesh(blobGeo(600 + i), new THREE.MeshStandardMaterial({ color: "#ffffff", roughness: 1, transparent: true, opacity: 0, depthWrite: false }));
+      o.userData.loose = true;
+      g.add(o);
+      return { o, a: (i / 10) * Math.PI * 2, k: 0.6 + (i % 3) * 0.25 };
+    });
+    life.push(() => {
+      for (const f of falls) {
+        const v = env.roll >= 0 ? env.roll * 2.2 - f.i * 0.12 - 0.6 : -1;
+        f.o.visible = v >= 0 && v <= 1;
+        if (!f.o.visible) continue;
+        const land = Y(heapAt.x + f.dx, heapAt.z + f.dz) + 0.035;
+        f.o.position.set(lip.x + (heapAt.x + f.dx - lip.x) * v, lip.y + (land - lip.y) * v + 0.04 * Math.sin(v * Math.PI), lip.z + (heapAt.z + f.dz - lip.z) * v);
+        f.o.rotation.set(v * 8, f.i, v * 5);
+      }
+      for (const p of snow) {
+        const v = env.roll >= 0 ? Math.min(1, env.roll * 1.4) : -1;
+        const m = p.o.material as THREE.MeshStandardMaterial;
+        if (v < 0) {
+          m.opacity = 0;
+          continue;
+        }
+        p.o.position.set(summit.x + Math.cos(p.a) * 0.08 * v * p.k + 0.1 * v, summit.y + 0.05 * v * p.k, summit.z + Math.sin(p.a) * 0.05 * v * p.k);
+        p.o.scale.setScalar(0.012 + 0.03 * v * p.k);
+        m.opacity = 0.8 * Math.sin(v * Math.PI);
+      }
     });
   }
 
@@ -4001,9 +4054,17 @@ function mine(L: Layout, ground: (x: number, z: number) => number, r: () => numb
       sh.lineTo(0, 0.034);
       sh.closePath();
       parts.push(part(new THREE.ExtrudeGeometry(sh, { depth: 0.086, bevelEnabled: false }).translate(0, 0, -0.043), "#5a4a40", [0, 0.055, 0]));
-      parts.push(part(new THREE.BoxGeometry(1, 1, 1), "#4a2e1c", [0.0365, 0.018, 0.008], [0, 0, 0], [0.002, 0.03, 0.014]));
+      parts.push(part(new THREE.BoxGeometry(1, 1, 1), "#1a1210", [0.0362, 0.018, 0.008], [0, 0, 0], [0.0015, 0.03, 0.014]));
       parts.push(part(new THREE.BoxGeometry(1, 1, 1), "#8a9098", [-0.02, 0.06, -0.022], [0, 0, 0], [0.014, 0.06, 0.014]));
       cab.add(mesh(merge(parts), cm));
+      // The door on its hinge (the opening's -z edge): it swings open on a roll, warm light spilling out.
+      const door = new THREE.Group();
+      door.position.set(0.0372, 0.018, 0.001);
+      door.add(mesh(merge([part(new THREE.BoxGeometry(1, 1, 1), "#6a4426", [0, 0, 0.007], [0, 0, 0], [0.002, 0.03, 0.014])]), cm));
+      cab.add(door);
+      const spill = new THREE.Mesh(new THREE.PlaneGeometry(0.014, 0.03).rotateY(Math.PI / 2), basic("#ffc46a", 0));
+      spill.position.set(0.0372, 0.018, 0.008);
+      cab.add(spill);
       const win = new THREE.Mesh(new THREE.PlaneGeometry(0.012, 0.012), basic("#ffc46a", 0));
       win.position.set(-0.012, 0.03, 0.0352);
       cab.add(win);
@@ -4024,6 +4085,9 @@ function mine(L: Layout, ground: (x: number, z: number) => number, r: () => numb
         return { o, ph: i / 5 };
       });
       life.push((t) => {
+        const open = env.roll >= 0 ? Math.sin(Math.min(1, env.roll * 1.3) * Math.PI) : 0;
+        door.rotation.y = -1.6 * ease(Math.min(1, open * 1.5));
+        (spill.material as THREE.MeshBasicMaterial).opacity = open * 0.9 + env.night * 0.3 * open;
         (win.material as THREE.MeshBasicMaterial).opacity = env.night;
         wh.material.opacity = env.night * 0.75;
         for (const pf of puffs) {
@@ -4100,6 +4164,8 @@ export type Tile = {
 };
 
 const ROLL_S = 2.4;
+const _squash = new THREE.Vector3();
+const _m4b = new THREE.Matrix4();
 export function buildTile(kind: Terrain, seed: number, rings = 64): Tile {
   const L = layoutOf(kind, seed);
   const ground = (x: number, z: number) => heightAt(L, x, z);
@@ -4132,6 +4198,34 @@ export function buildTile(kind: Terrain, seed: number, rings = 64): Tile {
   group.add(b.top, b.side);
   if (props) group.add(props.g);
   const life = props?.life ?? [];
+  // The roll ripple: every placed thing (a building, a creature, a figure: anything standing at its own spot, not the merged
+  // or instanced scatter) squashes and stretches in turn, the wave running out from the token. Each keeps its own scale.
+  const bouncers: { o: THREE.Object3D; base: THREE.Vector3; delay: number }[] = [];
+  props?.g.children.forEach((o) => {
+    if ((o as THREE.InstancedMesh).isInstancedMesh || o.userData.loose || (o as THREE.Sprite).isSprite) return;
+    const d = Math.hypot(o.position.x, o.position.z);
+    if (d < 0.3) return;
+    bouncers.push({ o, base: o.scale.clone(), delay: (d - 0.3) * 0.5 });
+  });
+  // The instanced scatter (trees, rocks, wheat, bricks) joins the ripple instance by instance, each scaled in its own frame.
+  const crowds: { m: THREE.InstancedMesh; base: THREE.Matrix4[]; delay: number[] }[] = [];
+  props?.g.children.forEach((o) => {
+    const m = o as THREE.InstancedMesh;
+    if (!m.isInstancedMesh) return;
+    const base: THREE.Matrix4[] = [];
+    const delay: number[] = [];
+    const p = new THREE.Vector3();
+    for (let i = 0; i < m.count; i++) {
+      const b = new THREE.Matrix4();
+      m.getMatrixAt(i, b);
+      p.setFromMatrixPosition(b);
+      base.push(b);
+      delay.push((Math.max(0.3, Math.hypot(p.x, p.z)) - 0.3) * 0.5);
+    }
+    crowds.push({ m, base, delay });
+  });
+  let crowdsMoved = false;
+  const _m4 = new THREE.Matrix4();
   let rollAt = -Infinity;
   let stoppedAt = 0;
   return {
@@ -4153,7 +4247,26 @@ export function buildTile(kind: Terrain, seed: number, rings = 64): Tile {
       group.scale.set(1 - 0.03 * k, 1 + 0.07 * k, 1 - 0.03 * k);
       tu.flash.value = env.roll >= 0 ? 0.6 * Math.sin(Math.min(1, env.roll * 3) * Math.PI) * (1 - env.roll) : 0;
       const at = env.robber ? stoppedAt : t;
+      for (const b of bouncers) b.o.scale.copy(b.base);
       life.forEach((f) => f(at));
+      if (env.roll >= 0)
+        for (const b of bouncers) {
+          const v = env.roll * 1.6 - b.delay;
+          if (v < 0 || v > 1) continue;
+          const q = Math.sin(v * Math.PI * 3) * (1 - v) ** 1.4;
+          b.o.scale.multiply(_squash.set(1 - 0.12 * q, 1 + 0.22 * q, 1 - 0.12 * q));
+        }
+      if (env.roll >= 0 || crowdsMoved) {
+        for (const c of crowds) {
+          for (let i = 0; i < c.base.length; i++) {
+            const v = env.roll >= 0 ? env.roll * 1.6 - c.delay[i]! : -1;
+            const q = v >= 0 && v <= 1 ? Math.sin(v * Math.PI * 3) * (1 - v) ** 1.4 : 0;
+            c.m.setMatrixAt(i, q ? _m4.copy(c.base[i]!).multiply(_m4b.makeScale(1 - 0.1 * q, 1 + 0.18 * q, 1 - 0.1 * q)) : c.base[i]!);
+          }
+          c.m.instanceMatrix.needsUpdate = true;
+        }
+        crowdsMoved = env.roll >= 0;
+      }
     },
   };
 }

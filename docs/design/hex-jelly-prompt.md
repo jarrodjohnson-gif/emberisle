@@ -120,11 +120,15 @@ THE SIX WORLDS
    lizard basks on a rock and darts when the tumbleweed passes.
 
 THE TILE IN PLAY (owner 2026-10-16: "when the land wins a roll it can interact"; all five below)
-1. Roll payoff. When a tile's number is rolled, the whole block gives a jelly wobble (a quick squash and stretch, two
+1. Roll payoff (visuals now, a soundscape later). When a tile's number is rolled, a squash-and-stretch ripple runs out
+   from the token through everything on the tile, every tree, rock, building, creature and figure bouncing in turn, while
+   the whole block gives a jelly wobble (a quick squash and stretch, two
    bounces over about 2.4 s) with a soft warm flash, and its story reacts for that beat: forest, both salmon leap high
    together and the doe lifts her head, ears up; pasture, the whole flock hops and the collie dashes a fast lap; grain, the
    windmill's sails spin up and the crows all take off as a gust rolls through the wheat; clay, the derrick hauls a full
-   bucket up and the kiln puffs; ore, the cart rolls out heaped and tips, the crystal flares; waste, the dust devil whirls
+   bucket up and the kiln puffs; ore, the cabin door swings open with light spilling out, the cart races out heaped high,
+   ore tumbles off the tipple onto the heap, the miner raises his pick, snow blows off the summit, the lantern and the
+   crystals flare, the goat hops, the eagle stoops; waste, the dust devil whirls
    up and the tumbleweed bounds across.
 2. Robber. While the wayfarer stands on a tile its life stops and its colours dull by about half toward grey: the bonfire
    goes out, the flock huddles together, the windmill and the wheat fall still, the derrick and the cart stop. It reads at a
