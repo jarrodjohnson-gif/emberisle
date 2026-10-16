@@ -1,8 +1,10 @@
 # Lobby turn-timer presets
 
 Design for [#548](https://github.com/jarrodjohnson-gif/emberisle/issues/548).
-**Proposal awaiting Jarrod's choice of presets and the three-seat default.**
-This note does not change the game or authorize implementation.
+**Owner decision, 2026-10-16:** Jarrod chose "Keep 120 seconds for both 3 and
+4 players; offer 60/120/180." This note records that decision and specifies
+the proposed implementation for review. It does not change the game or
+authorize implementation.
 
 ## Current behavior and reason for the option
 
@@ -22,9 +24,10 @@ The pacing research asks for official table options, but its shorter
 three-player default is explicitly an inference, not an owner decision
 ([complaints #6 and #40](../research/complaints-tabletop.md)). There is no
 measurement showing that fewer seats need less thinking time. Keep four-seat
-tables at 120 seconds; ask Jarrod before changing the three-seat default.
+tables at 120 seconds. Jarrod resolved the three-seat question by keeping
+the same 120-second default.
 
-## Proposed choices — owner decision pending
+## Presets and defaults — owner decision
 
 | Choice | Inactivity window | Total waited-on budget |
 | --- | --- | --- |
@@ -32,15 +35,15 @@ tables at 120 seconds; ask Jarrod before changing the three-seat default.
 | 2 minutes | 120 seconds | 12 minutes |
 | 3 minutes | 180 seconds | 18 minutes |
 
-Recommendation: **2 minutes for both three and four seats**, including tables
+Default: **2 minutes for both three and four seats**, including tables
 with practice bots. A shorter option is explicit opt-in. Adding/removing a
 seat or transferring host never silently changes the chosen value. There is
 no unlimited option or custom duration in this proposal. Practice and hotseat
 remain outside this online-lobby issue.
 
-Before acceptance, record Jarrod's answer here: approve these choices and the
-same default for both seat counts, choose a separate three-seat default, or
-defer presets. Until then, the current 120-second behavior remains in force.
+Jarrod approved these presets and defaults in the onboarding conversation on
+2026-10-16. The current 120-second runtime behavior remains in force until a
+separate implementation is reviewed and accepted.
 
 ## Proposed lobby control
 
@@ -125,7 +128,7 @@ as part of migration.
 ## Completion checks for a later implementation
 
 This issue's deliverable is the accepted design, not a new timer feature.
-After Jarrod's decision, check that the note has one exact preset list and
+Check that the note has one exact preset list and
 explicit defaults for both three and four seats, with 120 seconds still the
 four-seat default. Review the document against the current host behavior;
 run `git diff --check` and verify that only this note changed.
