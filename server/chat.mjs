@@ -7,6 +7,16 @@ const CONTROL = /(?!\u200D)[\p{Cc}\p{Cf}]/gu;
 const SPACES = / {2,}/g;
 const EMOTE_FILE = /^([a-z0-9-]+)\.(png|webp)$/;
 
+// The soundboard clips a seat may trigger (src/lib/sound.ts SOUNDBOARD). The client holds the files; the host only relays a known id.
+export const SOUNDBOARD = new Map([
+  ["robbed_fah", "Fah"],
+  ["sb_wololo", "Wololo"],
+  ["sb_win_reaction", "GG!"],
+  ["bong", "Bong"],
+  ["plop", "Plop"],
+  ["pluck", "Pluck"],
+]);
+
 export function cleanText(raw) {
   if (typeof raw !== "string") return null;
   const cleaned = raw.replace(CONTROL, "").replace(SPACES, " ").trim();

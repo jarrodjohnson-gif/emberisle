@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { createGame } from "./board";
 import { logBotAction } from "./ai";
-import { applyAction, legalCities, legalRoads, legalSettle, stealTargets } from "./rules";
+import { applyAction, legalCities, legalRoads, legalSettle, publicVP, stealTargets, victoryTarget } from "./rules";
 
 const BANNER_MS = 2500;
 let bannerTimer: ReturnType<typeof setTimeout> | null = null;
@@ -33,9 +33,10 @@ function rollOffLine(before: GameState | null, after: GameState) {
 // The table sounds a change of state makes, with their volume (#303, #609): the same diff serves practice, hotseat, and the
 // host's pushes, so a bot's placement knocks like yours. `mine` is whether this browser's seat took the action (a fortune
 // bought by someone else is a touch quieter).
-function soundsFor(before: GameState | null, after: GameState, mine: boolean): [SoundName, number][] {
+function soundsFor(before: GameState | null, after: GameState, mine: boolean, victim = false, lost = false): [SoundName, number][] {
   if (!before) return [];
-  if (after.winner && !before.winner) return [["win", 1]];
+  // The winner keeps the win sound; every other seat at the table gets the loss sting.
+  if (after.winner && !before.winner) return [lost ? ["game_lose", MUSIC_VOLUME] : ["win", 1]];
   const out: [SoundName, number][] = [];
   const built = (s: GameState, kind: "outpost" | "stronghold") => s.vertices.filter((v) => v.building?.kind === kind).length;
   const paths = (s: GameState) => s.edges.filter((e) => e.path).length;
@@ -48,8 +49,24 @@ function soundsFor(before: GameState | null, after: GameState, mine: boolean): [
   // A new game moves the wayfarer back to the desert: only a move within the same game is a sound. The host strips the seed
   // from pushed states, so the same game is "not over before, same island, the turn count never fell".
   const sameGame = before.phase !== "over" && after.turn >= before.turn && after.hexes.every((h, i) => h.terrain === before.hexes[i]?.terrain);
-  if (sameGame && after.robberHex !== before.robberHex) out.push(["wayfarer_move", 1]);
+  // The one set against (a piece on the new hex) hears robbed_fah in its place; everyone else keeps the usual cue.
+  // One point from the target, by public points only (a held point fortune is never counted, so it cannot leak). Once per player.
+  if (sameGame) for (const _ of matchPointers(before, after)) out.push(["match_point", MUSIC_VOLUME]);
+  if (sameGame && after.robberHex !== before.robberHex) out.push([victim ? "robbed_fah" : "wayfarer_move", 1]);
   return out;
+}
+
+// Players whose public points first reached (target - 1) between two states.
+function matchPointers(before: GameState, after: GameState) {
+  const line = victoryTarget(after) - 1;
+  return after.players.filter((p) => publicVP(after, p.id) >= line && publicVP(before, p.id) < line);
+}
+
+// The banner for a match point, or null.
+export function matchPointLine(before: GameState | null, after: GameState) {
+  if (!before || after.phase === "over" || before.phase === "over") return null;
+  const p = matchPointers(before, after)[0];
+  return p ? `${p.name} reached ${publicVP(after, p.id)} points — one to win` : null;
 }
 
 // Knocks waiting for their piece to land (#438). Leaving the table or starting a game drops them, so none plays late.
@@ -61,8 +78,11 @@ function clearKnocks() {
 
 // Play the sound for a state change, and the your-turn chime when the turn comes round to this browser's seat
 // (not in hotseat, where every seat is this browser).
-function hear(before: GameState | null, after: GameState, me: string, mode: GameStore["mode"]) {
-  for (const [sound, volume] of soundsFor(before, after, mode === "hotseat" || after.current === me)) {
+export function hear(before: GameState | null, after: GameState, me: string, mode: GameStore["mode"]) {
+  const lost = mode !== "hotseat" && me !== "" && !!after.winner && after.winner !== me;
+  const victim =
+    mode !== "hotseat" && !!before && before.current !== me && after.vertices.some((v) => v.building?.playerId === me && v.hexes.includes(after.robberHex));
+  for (const [sound, volume] of soundsFor(before, after, mode === "hotseat" || after.current === me, victim, lost)) {
     // A piece knocks when it lands, not when it is picked (#438); reduced motion has no fall, so it knocks at once.
     const land = sound in LAND_MS && !calmMotion() ? LAND_MS[sound as keyof typeof LAND_MS] : 0;
     if (land) {
@@ -73,6 +93,8 @@ function hear(before: GameState | null, after: GameState, me: string, mode: Game
       knocks.add(t);
     } else play(sound, volume);
   }
+  // A new game (the lobby's Start, a rematch): the sting plays once, for a seat; the first roll cuts it off.
+  if (mode === "online" && me && after.phase === "rollOff" && after.seq === 0 && (!before || before.phase === "over")) play("game_start", MUSIC_VOLUME);
   if (mode !== "hotseat" && before && after.current === me && before.current !== me && after.phase !== "over") yourTurn();
 }
 
@@ -141,7 +163,7 @@ import { chooseBotAction, chooseTradeAsk, shouldAcceptTrade } from "./ai";
 import { PLAYER_COLORS, RESOURCES, type Action, type BuildMode, type GameState, type VictoryTarget, type WayfarerMode } from "./types";
 import { connectTable, hostUrl, type Bag, type ChatLine, type Legal, type Me, type Reaction, type Seat, type TableClient } from "@/lib/net/table";
 import { PROTO } from "@/lib/net/proto";
-import { play, yourTurn, type SoundName } from "@/lib/sound";
+import { MUSIC_VOLUME, play, SOUNDBOARD, yourTurn, type SoundName } from "@/lib/sound";
 import { calmMotion, LAND_MS } from "@/lib/scene/landing";
 import type { WaterPath, WaterStatus } from "@/lib/scene/crystal-water";
 import type { PlayView } from "@/lib/scene/mobile-fit";
@@ -206,7 +228,9 @@ interface GameStore {
   toast: string | null;
   // One line everyone reads for a moment: the roll and who got what, or an award changing hands (#188).
   banner: string | null;
+  // While typing the name may be empty; commitName (host, join, play, blur) trims it and falls back to "Ember".
   setName: (n: string) => void;
+  commitName: () => string;
   setColor: (c: string) => void;
   setHowTo: (v: boolean, opener?: HTMLElement | null) => void;
   setCosts: (v: boolean, opener?: HTMLElement | null) => void;
@@ -267,6 +291,11 @@ interface GameStore {
   // Sit back down in the seat this browser held (localStorage), e.g. after a reload (#196).
   rejoinTable: () => boolean;
   setReady: (value: boolean) => void;
+  // Lobby: change this seat's name (the host validates and answers with `seats`) and remember it for the title.
+  renameSeat: (name: string) => void;
+  // Lobby, host only: seat a bot, or take the bot at seat `id` away.
+  addBot: () => void;
+  removeBot: (id: string) => void;
   startTable: () => void;
   // A rematch (#266): online the host asks for it; hotseat deals it here, the last winner first.
   playAgain: () => void;
@@ -281,6 +310,8 @@ interface GameStore {
   setChatOpen: (v: boolean) => void;
   setChatDraft: (v: string) => void;
   sendChat: (text: string) => void;
+  // A soundboard tap: the host checks the id and the pace, and every seat hears it (README: sound).
+  sendSound: (id: string) => void;
   sendReact: (emote: string, to?: string) => void;
   // The whole game log, for the dock (#305): the new lines of `state.log` after each local action, and the host's `log` messages online.
   gameLog: GameLogLine[];
@@ -376,9 +407,12 @@ function savedChatOpen() {
   }
 }
 
+// The host keeps 16 characters of a name (server/host.mjs seatName), so the title and the lobby stop there too.
+const NAME_MAX = 16;
+const NAME_KEY = "emberisle-name";
 function savedName() {
   if (typeof window === "undefined") return "Ember";
-  return localStorage.getItem("emberisle-name") || "Ember";
+  return localStorage.getItem(NAME_KEY) || "Ember";
 }
 
 // null (not a default swatch) until the player actively picks one, so a fresh tab sends no `color`
@@ -443,9 +477,15 @@ export const useGame = create<GameStore>((set, get) => ({
   chromeSeq: 0,
   menuFor: null,
   setName: (n) => {
-    const name = n.slice(0, 18) || "Ember";
-    if (typeof window !== "undefined") localStorage.setItem("emberisle-name", name);
+    const name = Array.from(n).slice(0, NAME_MAX).join("");
+    if (name.trim() && typeof window !== "undefined") localStorage.setItem(NAME_KEY, name.trim());
     set({ name });
+  },
+  commitName: () => {
+    const name = get().name.trim() || "Ember";
+    if (typeof window !== "undefined") localStorage.setItem(NAME_KEY, name);
+    set({ name });
+    return name;
   },
   setColor: (c) => {
     if (typeof window !== "undefined") localStorage.setItem("emberisle-color", c);
@@ -468,7 +508,7 @@ export const useGame = create<GameStore>((set, get) => ({
     clearOfferTimers();
     botAsked = "";
     botDeclined.clear();
-    const name = get().name;
+    const name = get().commitName();
     const state = createGame({ humans: [{ name }], bots: 3, wayfarerMode: get().wayfarerChoices.ai ?? "on" });
     set({
       screen: "play",
@@ -487,6 +527,7 @@ export const useGame = create<GameStore>((set, get) => ({
       declined: [],
       tradeOutcome: null,
     });
+    play("game_start", MUSIC_VOLUME);
   },
   startHotseat: (count) => {
     clearWake();
@@ -496,7 +537,7 @@ export const useGame = create<GameStore>((set, get) => ({
     botAsked = "";
     botDeclined.clear();
     const humans = Array.from({ length: count }, (_, i) => ({
-      name: i === 0 ? get().name : `Seat ${i + 1}`,
+      name: i === 0 ? get().commitName() : `Seat ${i + 1}`,
     }));
     const state = createGame({ humans, bots: 0, wayfarerMode: get().wayfarerChoices.hotseat ?? "on" });
     set({
@@ -611,7 +652,7 @@ export const useGame = create<GameStore>((set, get) => ({
     if (rollOff) {
       showBanner(set, rollOff);
     } else {
-      const swing = awardLine(state, nextState);
+      const swing = awardLine(state, nextState) ?? matchPointLine(state, nextState);
       if (swing) showBanner(set, swing);
     }
     return { ok: true, state: nextState };
@@ -752,9 +793,11 @@ export const useGame = create<GameStore>((set, get) => ({
     return { vertices: [], edges: [], hexes: [] };
   },
   hostTable: () => {
+    get().commitName();
     connect(set, get, (t, me) => t.open(me, { wayfarerMode: get().wayfarerChoices.online ?? "on" }));
   },
   joinTable: (code) => {
+    get().commitName();
     // A color the peek showed taken at this table is sent as no color, so the host seats the first free one.
     const { code: peeked, seats, color } = get();
     const free = color && !(peeked === code.toUpperCase() && seats.some((s) => s.color === color));
@@ -779,6 +822,20 @@ export const useGame = create<GameStore>((set, get) => ({
   },
   setReady: (value) => {
     if (!get().spectator) get().net?.ready(value);
+  },
+  renameSeat: (n) => {
+    if (get().spectator) return;
+    const name = Array.from(n.trim()).slice(0, NAME_MAX).join("");
+    if (!name) return;
+    set({ name });
+    if (typeof window !== "undefined") localStorage.setItem(NAME_KEY, name);
+    get().net?.rename(name);
+  },
+  addBot: () => {
+    if (!get().spectator) get().net?.addBot();
+  },
+  removeBot: (id) => {
+    if (!get().spectator) get().net?.removeBot(id);
   },
   startTable: () => {
     if (!get().spectator) get().net?.start();
@@ -842,6 +899,11 @@ export const useGame = create<GameStore>((set, get) => ({
     if (spectator || !net) return;
     net.say(text);
     play("chat_send");
+  },
+  sendSound: (id) => {
+    const { spectator, net } = get();
+    if (spectator || !net) return;
+    net.sound(id);
   },
   sendReact: (emote, to) => {
     if (!get().spectator) get().net?.react(emote, to);
@@ -1011,7 +1073,10 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       const counts = screen === "play" && !chatOpen && line.seat !== seatId;
       set({ chat: [...chat, { ...line, at: Date.now() }].slice(-50), unread: counts ? unread + 1 : unread });
       // Others' lines tick; the sender's echo does not, and nothing ticks under the hands of someone typing in the chat (#609).
-      if (line.seat !== seatId && document.activeElement?.id !== "chat-input") play("chat_recv");
+      // A soundboard line plays its clip for everyone, the sender too; it is not also a tick.
+      const board = SOUNDBOARD.find((b) => b.id === line.sound);
+      if (board) play(board.clip);
+      else if (line.seat !== seatId && document.activeElement?.id !== "chat-input") play("chat_recv");
     },
     react: (r) => {
       set({ reactions: [...get().reactions, r] });
@@ -1025,7 +1090,7 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       // A watcher's `you` is null: "" matches no player, so nothing is ever its turn and the your-turn chime never fires.
       const me = you ?? "";
       const rollOff = rollOffLine(get().state, game);
-      const swing = awardLine(get().state, game);
+      const swing = awardLine(get().state, game) ?? matchPointLine(get().state, game);
       hear(get().state, game, me, "online");
       // The deadline moves onto this clock by the skew the message shows, so a phone minutes off still counts true.
       // Every push carries the same window, and the skew wobbles by however long this tab took to get to the message:
@@ -1109,5 +1174,5 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       window.removeEventListener("visibilitychange", visible);
     };
   }
-  first(table, { name: get().name, color: get().color ?? undefined });
+  first(table, { name: get().name.trim() || "Ember", color: get().color ?? undefined });
 }

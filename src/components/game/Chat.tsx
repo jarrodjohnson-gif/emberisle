@@ -1,18 +1,21 @@
 // The table chat dock, the shared chat box, and floating reactions. Design: docs/design/chat.md.
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { MessageSquare, Minus, Smile, VolumeX } from "lucide-react";
+import { MessageSquare, Minus, Smile, Volume2, VolumeX } from "lucide-react";
 import { CopyFallback, useCopy } from "@/components/game/CopyText";
 import { EMOTES } from "@/components/game/emotes";
 import { QuickReactions, useMutedSeats } from "@/components/game/Reactions";
 import { useGame, type GameLogLine } from "@/lib/game/store";
 import type { ChatLine } from "@/lib/net/table";
 import { cn } from "@/lib/utils";
+import { SOUNDBOARD } from "@/lib/sound";
 import { useViewport } from "@/lib/viewport";
 
 export { ReactionFloats } from "@/components/game/Reactions";
 
 const PRESETS = ["gg", "nice roll", "your turn", "one sec", "ty"];
 const INPUT_ID = "chat-input";
+// A chat line is 14 px text at leading-snug (about 20 px) plus the 4 px gap between lines.
+const LINE_PX = 22;
 // The Open chat button sets this before the dock opens, and the dock focuses the input once it has (the two are separate components).
 const focusNext = { current: false };
 
@@ -38,7 +41,7 @@ function useMyName() {
 
 function Line({ line, me }: { line: ChatLine; me: string }) {
   return (
-    <li className="break-words text-xs leading-snug text-zinc-900">
+    <li className="break-words text-sm leading-snug text-zinc-900">
       <span className="mr-1 inline-block size-2 rounded-full align-baseline" style={{ background: line.color }} />
       <span className="mr-1 font-medium text-zinc-700">
         {line.name}
@@ -51,7 +54,7 @@ function Line({ line, me }: { line: ChatLine; me: string }) {
 // A game log line (#305): a muted system row, no speaker.
 function LogRow({ line }: { line: GameLogLine }) {
   return (
-    <li data-testid="log-row" className="break-words text-xs leading-snug text-zinc-700">
+    <li data-testid="log-row" className="break-words text-sm leading-snug text-zinc-700">
       {line.text}
     </li>
   );
@@ -61,7 +64,8 @@ const CHIP = "inline-flex h-11 min-w-11 shrink-0 cursor-pointer items-center jus
 
 // The log, the preset chips, the emote tray, and the input. `onEscape` is the dock's minimize.
 // `game` (the in-game dock, not the Lobby) lists the game log in with the chat, behind a Chat/All filter, with Copy log.
-export function ChatBox({ rows, game, onEscape, className }: { rows: number; game?: boolean; onEscape?: () => void; className?: string }) {
+// `minRows`: a phone sheet keeps the log at least that many lines tall, whatever else is squeezed (the page scrolls instead).
+export function ChatBox({ rows, minRows = 0, game, onEscape, className }: { rows: number; minRows?: number; game?: boolean; onEscape?: () => void; className?: string }) {
   const chat = useGame((s) => s.chat);
   const gameLog = useGame((s) => s.gameLog);
   const code = useGame((s) => s.code);
@@ -71,13 +75,19 @@ export function ChatBox({ rows, game, onEscape, className }: { rows: number; gam
   const setDraft = useGame((s) => s.setChatDraft);
   const sendChat = useGame((s) => s.sendChat);
   const sendReact = useGame((s) => s.sendReact);
+  const sendSound = useGame((s) => s.sendSound);
   const spectator = useGame((s) => s.spectator);
   const { muted } = useMutedSeats(code);
   const me = useMyName();
   const [tray, setTray] = useState(false);
+  const [board, setBoard] = useState(false);
+  // The host takes one soundboard tap per seat every 3 s; the buttons rest for the same time rather than draw a refusal.
+  const [resting, setResting] = useState(false);
   const { state: copied, copy } = useCopy<"log">();
   const log = useRef<HTMLUListElement>(null);
   const stuck = useRef(true);
+  // The log's height when last pinned; a scroll event at another height came from a resize, not from the reader.
+  const pinnedH = useRef(0);
   const withLog = game && filter === "all";
   const visibleChat = chat.filter((line) => !muted.has(line.seat));
 
@@ -85,6 +95,19 @@ export function ChatBox({ rows, game, onEscape, className }: { rows: number; gam
     const el = log.current;
     if (el && stuck.current) el.scrollTop = el.scrollHeight;
   }, [chat, gameLog, withLog]);
+
+  // A layout change (the sheet settling, the keyboard) resizes the log; the newest line stays in view unless the reader scrolled up.
+  useEffect(() => {
+    const el = log.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    pinnedH.current = el.clientHeight;
+    const observer = new ResizeObserver(() => {
+      pinnedH.current = el.clientHeight;
+      if (stuck.current) el.scrollTop = el.scrollHeight;
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   const send = () => {
     const text = draft.trim();
@@ -140,10 +163,11 @@ export function ChatBox({ rows, game, onEscape, className }: { rows: number; gam
         tabIndex={0}
         onScroll={(e) => {
           const el = e.currentTarget;
+          if (el.clientHeight !== pinnedH.current) return;
           stuck.current = el.scrollHeight - el.scrollTop - el.clientHeight < 8;
         }}
         className="flex min-h-0 flex-col gap-1 overflow-y-auto"
-        style={{ height: rows * 18, flex: "1 1 auto" }}
+        style={{ height: rows * LINE_PX, minHeight: minRows * LINE_PX, flex: "1 1 auto" }}
       >
         {lines.map((l) => l.node)}
       </ul>
@@ -184,12 +208,48 @@ export function ChatBox({ rows, game, onEscape, className }: { rows: number; gam
               ))}
             </div>
           ) : null}
+          {board ? (
+            <div className="flex flex-wrap gap-1" data-testid="soundboard">
+              {SOUNDBOARD.map(({ id, label }) => (
+                <button
+                  key={id}
+                  type="button"
+                  disabled={resting}
+                  aria-label={`Play sound ${label}`}
+                  onClick={() => {
+                    sendSound(id);
+                    setResting(true);
+                    window.setTimeout(() => setResting(false), 3000);
+                  }}
+                  className={cn(CHIP, "gap-1 disabled:opacity-50")}
+                >
+                  <Volume2 className="size-3" />
+                  {label}
+                </button>
+              ))}
+            </div>
+          ) : null}
           <div className="flex shrink-0 gap-1">
+            <button
+              type="button"
+              aria-label="Soundboard"
+              aria-expanded={board}
+              onClick={() => {
+                setBoard(!board);
+                setTray(false);
+              }}
+              className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-control bg-glass text-zinc-700 hover:text-zinc-900"
+            >
+              <Volume2 className="size-4" />
+            </button>
             <button
               type="button"
               aria-label="Emotes"
               aria-expanded={tray}
-              onClick={() => setTray(!tray)}
+              onClick={() => {
+                setTray(!tray);
+                setBoard(false);
+              }}
               className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-control bg-glass text-zinc-700 hover:text-zinc-900"
             >
               <Smile className="size-4" />
@@ -286,6 +346,9 @@ function MuteMenu({ above = false }: { above?: boolean }) {
 function Preview({ className }: { className?: string }) {
   const chat = useGame((s) => s.chat);
   const code = useGame((s) => s.code);
+  const seatId = useGame((s) => s.seatId);
+  const setOpen = useGame((s) => s.setChatOpen);
+  const unread = useUnmutedUnread();
   const { muted } = useMutedSeats(code);
   const seen = useRef<Map<number, number>>(new Map(chat.map((l) => [l.id, 0])));
   const [, tick] = useState(0);
@@ -304,12 +367,33 @@ function Preview({ className }: { className?: string }) {
     return at > 0 && now - at < 7000;
   }).slice(-3);
 
+  // The newest line from someone else stays up while it is unread, as a tap target that opens the chat.
+  const lastUnread = unread > 0 && live.length === 0 ? chat.filter((l) => !muted.has(l.seat) && l.seat !== seatId).at(-1) : undefined;
+
   return (
     <ul className={cn("pointer-events-none flex w-72 flex-col items-end gap-1", className)} data-testid="chat-preview">
+      {lastUnread ? (
+        <li className="max-w-full">
+          <button
+            type="button"
+            data-testid="chat-unread-preview"
+            onClick={() => {
+              focusNext.current = false;
+              setOpen(true);
+            }}
+            className="pointer-events-auto block max-w-full cursor-pointer break-words rounded-chip bg-glass px-2 py-1 text-left text-sm text-zinc-900 backdrop-blur-md"
+          >
+            <span className="mr-1 inline-block size-2 rounded-full" style={{ background: lastUnread.color }} />
+            <span className="mr-1 font-medium text-zinc-700">{lastUnread.name}</span>
+            {lastUnread.text}
+            {unread > 1 ? <span className="ml-1 text-xs text-zinc-700">+{unread - 1} more</span> : null}
+          </button>
+        </li>
+      ) : null}
       {live.map((l) => (
         <li
           key={l.id}
-          className="max-w-full break-words rounded-chip bg-glass px-2 py-0.5 text-xs text-zinc-900 backdrop-blur-md transition-opacity duration-1000"
+          className="max-w-full break-words rounded-chip bg-glass px-2 py-0.5 text-sm text-zinc-900 backdrop-blur-md transition-opacity duration-1000"
           style={{ opacity: now - (seen.current.get(l.id) ?? 0) < 6000 ? 1 : 0 }}
         >
           <span className="mr-1 inline-block size-2 rounded-full" style={{ background: l.color }} />
@@ -373,7 +457,7 @@ export function ChatControls() {
       {unread > 0 ? (
         <span
           data-testid="chat-unread"
-          className="absolute -right-1 -top-1 flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[11px] font-medium text-white"
+          className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-xs font-medium text-white"
         >
           {unread}
         </span>
@@ -470,9 +554,10 @@ export function ChatDock() {
       type="button"
       aria-label="Minimize chat"
       onClick={() => setOpen(false)}
-      className="flex size-11 cursor-pointer items-center justify-center rounded-control bg-glass text-zinc-700 hover:text-zinc-900"
+      className={cn("flex h-11 min-w-11 cursor-pointer items-center justify-center gap-1 rounded-control bg-glass text-zinc-700 hover:text-zinc-900", phone && open && "px-3 text-sm")}
     >
       <Minus className="size-4" />
+      {phone && open ? <span>Close</span> : null}
     </button>
   );
   // On a phone the open dock is a bottom sheet. The backdrop catches the tap that closes it, so that tap never reaches the board.

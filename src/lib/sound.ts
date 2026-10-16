@@ -25,7 +25,34 @@ const FILES = {
   chat_recv: "chat_recv.wav",
   // A tap on the sea (#616): a normal table clip, paced and burst-dropped like the rest.
   plop: "plop.wav",
+  // The player the wayfarer is set against hears this instead of wayfarer_move (the owner's clip).
+  robbed_fah: "robbed_fah.mp3",
+  // Music: a short sting when a game starts (cut off by the first roll), when a player is one point from winning, and for the
+  // seats that did not win. Played at MUSIC volume.
+  game_start: "game_start.mp3",
+  match_point: "match_point.mp3",
+  game_lose: "game_lose.mp3",
+  // The chat soundboard (server/chat.mjs SOUNDBOARD): a tap plays on every seat's page.
+  sb_wololo: "sb_wololo.mp3",
+  sb_win_reaction: "sb_win_reaction.mp3",
+  board_bong: "bong_001.wav",
+  board_plop: "plop.wav",
+  board_pluck: "pluck_001.wav",
 } as const;
+
+// The soundboard buttons in the chat, in order. `id` is what the host whitelists and relays; `clip` is what a page plays.
+export const SOUNDBOARD = [
+  { id: "robbed_fah", label: "Fah", clip: "robbed_fah" },
+  { id: "sb_wololo", label: "Wololo", clip: "sb_wololo" },
+  { id: "sb_win_reaction", label: "GG!", clip: "sb_win_reaction" },
+  { id: "bong", label: "Bong", clip: "board_bong" },
+  { id: "plop", label: "Plop", clip: "board_plop" },
+  { id: "pluck", label: "Pluck", clip: "board_pluck" },
+] as const satisfies readonly { id: string; label: string; clip: keyof typeof FILES }[];
+export type BoardSound = (typeof SOUNDBOARD)[number]["id"];
+
+// Music is quieter than the table's knocks and clicks.
+export const MUSIC_VOLUME = 0.5;
 
 export type SoundName = keyof typeof FILES;
 
@@ -101,6 +128,8 @@ function pump() {
 function start(name: SoundName, volume: number) {
   if (muted) return;
   try {
+    // The first roll cuts the game-start sting off.
+    if (name === "dice_land") clips.get("game_start")?.pause();
     let clip = clips.get(name);
     if (!clip) {
       clip = new Audio(`/audio/${FILES[name]}`);

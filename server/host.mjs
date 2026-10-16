@@ -11,7 +11,7 @@ import { createGame } from "../src/lib/game/board.ts";
 import { applyAction, bankShort, legalCities, legalRoads, legalSettle, playable, stealTargets, validBag } from "../src/lib/game/rules.ts";
 import { COST, PLAYER_COLORS, RESOURCES } from "../src/lib/game/types.ts";
 import { PROTO } from "../src/lib/net/proto.ts";
-import { allow, cleanText, loadEmotes, remember } from "./chat.mjs";
+import { allow, cleanText, loadEmotes, remember, SOUNDBOARD } from "./chat.mjs";
 import { cue } from "./cue.mjs";
 
 function hear(name) {
@@ -107,6 +107,8 @@ const ROOM_TTL = 24 * 60 * 60 * 1000;
 // Stamped on every saved room. Bump it whenever GameState, the seat record or the chat record changes
 // shape: load() drops files with any other stamp (including none), so a bump ends the saved rooms on the next restart.
 const ROOM_SHAPE = 2;
+// A seat's soundboard taps are at least this far apart (the host's word; the client greys the buttons for the same time).
+const SOUND_MS = Number(process.env.SOUND_MS ?? 3000);
 // The built client (npm run build). DIST lets a proof point the host at a small temp folder.
 const DIST = path.resolve(process.env.DIST ?? fileURLToPath(new URL("../dist/", import.meta.url)));
 const TYPES = {
@@ -166,7 +168,8 @@ function seatsOf(room) {
     avatarId: s.avatarId,
     ready: s.ready,
     host: s.id === room.host,
-    away: !s.ws,
+    away: !s.bot && !s.ws,
+    bot: Boolean(s.bot),
     url: s.avatarId ? `/avatars/${s.avatarId}.jpg` : null,
   }));
 }
@@ -209,7 +212,7 @@ function snapshot(room) {
     game: room.game,
     victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10,
     wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on",
-    seats: room.seats.map(({ id, name, color, ready, pid, secret, turnDeadline, turnStartedAt }) => ({ id, name, color, ready, pid, secret, turnDeadline: turnDeadline ?? null, turnStartedAt: turnStartedAt ?? null })),
+    seats: room.seats.map(({ id, name, color, ready, pid, secret, bot, turnDeadline, turnStartedAt }) => ({ id, name, color, ready, pid, secret, ...(bot ? { bot: true } : {}), turnDeadline: turnDeadline ?? null, turnStartedAt: turnStartedAt ?? null })),
     shape: ROOM_SHAPE,
     savedAt: Date.now(),
   });
@@ -326,8 +329,12 @@ function load() {
       continue;
     }
     // Every seat comes back held, and a held seat is not ready (#280).
-    if (!room.game) for (const seat of room.seats) seat.ready = false;
-    for (const seat of room.seats) hold(room, seat);
+    if (!room.game) for (const seat of room.seats) seat.ready = Boolean(seat.bot);
+    for (const seat of room.seats) if (!seat.bot) hold(room, seat);
+    if (!room.seats.some((s) => !s.bot)) {
+      rmSync(file, { force: true });
+      continue;
+    }
     rooms.set(room.code, room);
   }
   if (rooms.size) console.log(`restored ${rooms.size} room(s): ${[...rooms.keys()].join(" ")}`);
@@ -749,10 +756,10 @@ async function serveStatic(req, res) {
 const wss = new WebSocketServer({ server, maxPayload: 16 * 1024 });
 
 // A name is the join key for the away marker, chat mentions and the log, so it is cleaned and made unique.
-function seatName(room, raw, fallback) {
+function seatName(room, raw, fallback, except = null) {
   const base = typeof raw === "string" ? Array.from(raw.replace(/[\p{Cc}\p{Cf}]/gu, "").replace(/ {2,}/g, " ").trim()).slice(0, 16).join("").trimEnd() : "";
   const name = base || fallback;
-  const taken = (n) => room.seats.some((s) => s.name.toLowerCase() === n.toLowerCase());
+  const taken = (n) => room.seats.some((s) => s !== except && s.name.toLowerCase() === n.toLowerCase());
   if (!taken(name)) return name;
   for (let i = 2; ; i++) {
     const tag = ` ${i}`;
@@ -849,6 +856,7 @@ function startGame(ws, room) {
   room.seats.forEach((s, i) => {
     s.pid = game.players[i].id;
     game.players[i].color = s.color;
+    if (s.bot) game.players[i].kind = "bot";
   });
   room.game = game;
   room.botDeclined = {};
@@ -856,7 +864,55 @@ function startGame(ws, room) {
   for (const seat of room.seats) if (seat.ws) seat.ws.actionConnection = randomBytes(16).toString("hex");
   hear("ui_confirm");
   say(room, "Roll for first place.");
+  const seen = room.game.log;
+  runBots(room);
+  for (const line of newLog(seen, room.game.log)) say(room, line);
   pushState(room);
+}
+
+// Lobby only. The host seats a practice bot (the same one that plays a dropped seat in a game) in the next free seat; it is
+// ready, has no socket and no hold timers, and a secret nobody is ever told.
+function addBot(ws, room) {
+  if (ws.seat.id !== room.host) return send(ws, { type: "error", message: "Only the host can add a bot." });
+  if (room.game) return send(ws, { type: "error", message: "Game already started." });
+  if (room.seats.length >= 4) return send(ws, { type: "error", message: "Table full." });
+  const seat = {
+    id: `s${room.next++}`,
+    name: seatName(room, "Bot", "Bot"),
+    color: seatColor(room),
+    avatarId: null,
+    ready: true,
+    bot: true,
+    ws: null,
+    bucket: { tokens: 5, at: Date.now() },
+    act: { tokens: ACT_CAP, at: Date.now() },
+    secret: randomBytes(16).toString("hex"),
+  };
+  room.seats.push(seat);
+  say(room, `${seat.name} sat down.`);
+  publish(room);
+}
+
+function removeBot(ws, room, msg) {
+  if (ws.seat.id !== room.host) return send(ws, { type: "error", message: "Only the host can remove a bot." });
+  if (room.game) return send(ws, { type: "error", message: "Game already started." });
+  const seat = room.seats.find((s) => s.bot && s.id === msg.id);
+  if (!seat) return send(ws, { type: "error", message: "No such bot." });
+  room.seats = room.seats.filter((s) => s !== seat);
+  say(room, `${seat.name} left.`);
+  publish(room);
+}
+
+// Lobby only: the game copies the names when it starts. The same cleaning as hello; a name already taken at the table gets a number.
+function renameSeat(ws, room, msg) {
+  if (room.game) return send(ws, { type: "error", message: "Names are fixed once the game starts." });
+  const before = ws.seat.name;
+  const name = seatName(room, msg.name, "", ws.seat);
+  if (!name) return send(ws, { type: "error", message: "Pick a name." });
+  if (name === before) return publish(room);
+  ws.seat.name = name;
+  say(room, `${before} is now ${name}.`);
+  publish(room);
 }
 
 // `again` (#266, docs/design/rematch.md): a new island at the same table. The last winner places first and the rest
@@ -864,7 +920,7 @@ function startGame(ws, room) {
 function rematch(ws, room) {
   if (ws.seat.id !== room.host) return send(ws, { type: "error", message: "Only the host can start." });
   if (room.game?.phase !== "over") return send(ws, { type: "error", message: "Game is not over." });
-  const live = room.seats.filter((s) => s.ws && s.ws.readyState === s.ws.OPEN);
+  const live = room.seats.filter((s) => s.bot || (s.ws && s.ws.readyState === s.ws.OPEN));
   if (live.length < 3) return send(ws, { type: "error", message: "Need 3 or 4 at the table." });
   for (const seat of room.seats) {
     if (live.includes(seat)) continue;
@@ -886,11 +942,15 @@ function rematch(ws, room) {
   order.forEach((s, i) => {
     s.pid = game.players[i].id;
     game.players[i].color = s.color;
+    if (s.bot) game.players[i].kind = "bot";
   });
   room.game = game;
-  for (const seat of room.seats) seat.ws.actionConnection = randomBytes(16).toString("hex");
+  for (const seat of room.seats) if (seat.ws) seat.ws.actionConnection = randomBytes(16).toString("hex");
   hear("ui_confirm");
   say(room, winner ? `${winner.name} won last time and places first. The rest roll for their order.` : "Roll for first place.");
+  const seen = room.game.log;
+  runBots(room);
+  for (const line of newLog(seen, room.game.log)) say(room, line);
   publish(room);
   pushState(room);
 }
@@ -1060,6 +1120,18 @@ function respond(room, actor, yes) {
 function talk(ws, room, msg) {
   const seat = ws.seat;
   if (!allow(seat.bucket, Date.now())) return send(ws, { type: "error", message: "Slow down." });
+  if (msg.type === "sound") {
+    // One tap per seat every SOUND_MS, on top of the chat bucket, so a clip cannot be spammed at the table.
+    if (typeof msg.id !== "string" || !SOUNDBOARD.has(msg.id)) return send(ws, { type: "error", message: "Unknown sound." });
+    const now = Date.now();
+    if (now - (seat.soundAt ?? 0) < SOUND_MS) return send(ws, { type: "error", message: "Slow down." });
+    seat.soundAt = now;
+    const line = { id: room.chatSeq++, seat: seat.id, player: seat.pid ?? null, name: seat.name, color: seat.color, text: `🔊 ${SOUNDBOARD.get(msg.id)}`, sound: msg.id, at: now };
+    remember(room.chat, line, 30);
+    broadcast(room, { type: "chat", ...line });
+    save(room);
+    return;
+  }
   if (msg.type === "chat") {
     const text = cleanText(msg.text);
     if (text === null) return;
@@ -1183,7 +1255,7 @@ function handle(ws, raw) {
   }
   const room = ws.room;
   if (msg.wayfarerMode !== undefined || msg.type === "setWayfarerMode") return send(ws, { type: "error", message: "Wayfarer mode is fixed when the table is created." });
-  if (msg.type === "chat" || msg.type === "react") return talk(ws, room, msg);
+  if (msg.type === "chat" || msg.type === "react" || msg.type === "sound") return talk(ws, room, msg);
   if (!allow(ws.seat.act, Date.now(), ACT_CAP, ACT_RATE)) return send(ws, { type: "error", message: "Slow down." });
   if (msg.type === "setVictoryTarget") {
     if (ws.seat.id !== room.host) return send(ws, { type: "error", message: "Only the host can choose the target." });
@@ -1198,6 +1270,9 @@ function handle(ws, raw) {
     ws.seat.ready = value;
     return publish(room);
   }
+  if (msg.type === "rename") return renameSeat(ws, room, msg);
+  if (msg.type === "addBot") return addBot(ws, room);
+  if (msg.type === "removeBot") return removeBot(ws, room, msg);
   if (msg.type === "start") return room.game ? send(ws, { type: "error", message: "Game already started." }) : startGame(ws, room);
   if (msg.type === "again") return rematch(ws, room);
   if (!room.game) return send(ws, { type: "error", message: "not ready" });
@@ -1293,7 +1368,7 @@ function hold(room, seat) {
 
 // The host role goes to the first seat with a socket; with none, to the first held seat.
 function handOffHost(room) {
-  const next = room.seats.find((s) => s.ws) ?? room.seats[0];
+  const next = room.seats.find((s) => s.ws) ?? room.seats.find((s) => !s.bot);
   room.host = next.id;
   say(room, `${next.name} is now the host.`);
 }
@@ -1325,7 +1400,7 @@ function letGo(room, seat) {
   clearTimeout(seat.graceTimer);
   forgetAvatar(seat);
   room.seats = room.seats.filter((s) => s !== seat);
-  if (room.seats.length === 0) return dropRoom(room);
+  if (!room.seats.some((s) => !s.bot)) return dropRoom(room);
   if (!room.game) say(room, `${seat.name} left.`);
   if (room.host === seat.id) handOffHost(room);
   publish(room);
