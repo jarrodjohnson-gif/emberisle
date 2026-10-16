@@ -174,6 +174,18 @@ pr: #<n>
 ```
 Move it to In Review (Jarrod accepts it, then it goes to Done and is closed). Then set the next step to Todo.
 
+**Who decides what** (Jarrod's rule, 2026-10-16). It applies to every issue, including helpers' `Idea:`
+and `Bug:` issues:
+
+| Kind | Who decides | Then |
+|---|---|---|
+| Real bug (reproducible, and the game is wrong) | The orchestrator confirms it | Spec it and label `helper-ok`. Any builder may fix it. |
+| Minor UX: wording, spacing, hints, a missing cue, consistency with what's already decided | The orchestrator | Spec it and label `helper-ok`. |
+| Major UX: new screens or flows, layout changes, anything that changes how a turn feels | **Jarrod** | Ask him in one short message, then spec his answer. |
+| Major design: new features, rules, scoring, art style, pieces, sound identity | **Jarrod** | Same: ask him first. |
+
+Not a bug, or a no? Close it with a one-line reason.
+
 **Work efficiently** (tokens are the budget):
 - **Delegate broad reading.** Hand a search across many files, or a long log, to a subagent. Ask for the
   conclusion (file:line plus one line), not the dump. Read whole files yourself only when you will edit
