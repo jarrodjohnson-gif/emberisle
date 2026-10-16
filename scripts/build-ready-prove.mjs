@@ -209,7 +209,7 @@ try {
               assert.ok(m.visible && !m.hover, `${at}: the shortfall is on screen with no hover ${JSON.stringify(m)}`);
               assert.equal(m.opacity, 1, `${at}: the "−N" is at full strength`);
             }
-            for (const [res, n] of w.short) assert.match(r.description, new RegExp(`${n} ${res}`), `${at}: aria-description names the shortfall (${r.description})`);
+            for (const [res, n] of w.short) assert.match(r.description, new RegExp(`${n} more ${res}`), `${at}: aria-description names the shortfall (${r.description})`);
           } else {
             assert.equal(r.marks.length, 0, `${at}: no shortfall on a ready build`);
             assert.match(r.description, /Ready$/, `${at}: aria-description says Ready (${r.description})`);

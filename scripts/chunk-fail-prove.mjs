@@ -11,6 +11,7 @@
 // seat into the finished table, where the win screen loads from the fresh chunk.
 // Run npm run build first.
 import { spawn } from "node:child_process";
+import { once } from "node:events";
 import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -393,6 +394,8 @@ try {
 } finally {
   await browser.close();
   await new Promise((r) => server.httpServer.close(r));
+  host.kill();
+  if (host.exitCode === null && host.signalCode === null) await Promise.race([once(host, "exit"), new Promise((r) => setTimeout(r, 3000).unref())]);
 }
 if (fails.length) {
   console.log(`chunk-fail prove: ${fails.length} failed`);

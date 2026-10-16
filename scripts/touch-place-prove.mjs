@@ -86,7 +86,9 @@ for (const [w, h] of [
   for (const v of seen.values()) if (v.n < 3) coast.push(v);
   assert.equal(coast.length, 30, "30 coast corners");
   assert.equal(defaultView(1280, 720), "diorama", "desktop defaults to the diorama");
-  assert.equal(defaultView(900, 600), "diorama", "a landscape canvas 900 wide defaults to the diorama");
+  assert.equal(defaultView(900, 700), "diorama", "a landscape canvas 900 wide with a 420 px hole defaults to the diorama");
+  assert.equal(defaultView(960, 600), "overhead", "a hole under 420 px tall (960x600) defaults to overhead, so numerals stay 11 px");
+  assert.equal(defaultView(956, 440, true), "overhead", "a sideways Pro Max leaves a 360 px hole: overhead");
   assert.equal(defaultView(899, 600), "overhead", "a landscape canvas under 900 wide defaults to overhead");
   assert.equal(defaultView(844, 390), "overhead", "a sideways phone defaults to overhead");
   assert.equal(defaultView(390, 844), "overhead", "an upright phone defaults to overhead");

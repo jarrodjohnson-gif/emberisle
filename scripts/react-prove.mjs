@@ -2,6 +2,7 @@
 // The receiving tab checks the actual seat float; every visible phone reaction control is at least 44 px.
 // Reads VITE_PORT so it can run beside another local Vite process. Zero console errors.
 import { spawn } from "node:child_process";
+import { once } from "node:events";
 import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -145,4 +146,5 @@ try {
   await browser.close();
   await vite.close();
   host.kill();
+  if (host.exitCode === null && host.signalCode === null) await Promise.race([once(host, "exit"), new Promise((r) => setTimeout(r, 3000).unref())]);
 }

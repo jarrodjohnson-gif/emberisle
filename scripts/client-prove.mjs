@@ -639,17 +639,22 @@ try {
   await page.getByRole("textbox", { name: "Join code" }).fill("zzzz");
   await page.getByRole("textbox", { name: "Join code" }).press("Enter");
   await page.locator("[role=alert]").waitFor({ timeout: 5000 });
-  // No host is running here, so the join attempt's refused socket is the expected console error; drop only that one.
-  // The typed code also fires a peek 300 ms later (#271) that is refused the same way; let it land, then drop both.
+  // No host is running here, so the join attempt's refused socket is the expected console error; drop only those.
+  // The typed code also fires a peek 300 ms later (#271) that is refused the same way. A peek is skipped while the join
+  // socket is still open (slow runner) and retried by the field's 5 s poll, so allow for that poll, then clear the field
+  // (which stops the poll) and let any dial in flight finish before dropping the refusals: a late one would fail the run.
   const refusedNow = () => errors.filter((e) => e.includes("ws://127.0.0.1:8787"));
-  for (let i = 0; i < 100 && refusedNow().length < 2; i++) await page.waitForTimeout(50);
-  const refused = refusedNow();
-  if (refused.length < 2) throw new Error(`join form: expected the join and the peek to be refused, saw ${refused.length}`);
-  for (const e of refused) errors.splice(errors.indexOf(e), 1);
+  for (let i = 0; i < 200 && refusedNow().length < 2; i++) await page.waitForTimeout(50);
   const joinForm = await page.evaluate(() => {
     const input = document.querySelector("form[aria-label='Join code'] input");
     return { alert: document.querySelector("[role=alert]")?.textContent, value: input?.value, caps: input?.getAttribute("autocapitalize"), auto: input?.getAttribute("autocomplete") };
   });
+  await page.getByRole("textbox", { name: "Join code" }).fill("");
+  await page.waitForFunction(() => window.__emberisle.getState().net === null, null, { timeout: 5000 });
+  await page.waitForTimeout(200);
+  const refused = refusedNow();
+  if (refused.length < 2) throw new Error(`join form: expected the join and the peek to be refused, saw ${refused.length}`);
+  for (const e of refused) errors.splice(errors.indexOf(e), 1);
   console.log("join form:", JSON.stringify(joinForm));
   if (!joinForm.alert || joinForm.value !== "ZZZZ" || joinForm.caps !== "characters" || joinForm.auto !== "off") throw new Error(`join form: ${JSON.stringify(joinForm)}`);
 
@@ -781,9 +786,9 @@ try {
   await setHand({});
   await page.getByRole("button", { name: "Path", exact: true }).waitFor({ timeout: 5000 });
   const empty = await buildRow();
-  // #606: a build with no legal spot reads No spot before it reads Short.
+  // #606: a build with no legal spot reads No spot before it reads Need.
   console.log("build row, empty hand:", JSON.stringify(empty));
-  for (const [n, p] of Object.entries(price)) if (!empty[n].disabled || empty[n].native || empty[n].cursor !== "not-allowed" || empty[n].title !== p || !new RegExp(`^${p} · (Short|No spot)`).test(empty[n].desc)) throw new Error(`empty hand ${n}: ${JSON.stringify(empty[n])}`);
+  for (const [n, p] of Object.entries(price)) if (!empty[n].disabled || empty[n].native || empty[n].cursor !== "not-allowed" || empty[n].title !== p || !new RegExp(`^${p} · (Need|No spot)`).test(empty[n].desc)) throw new Error(`empty hand ${n}: ${JSON.stringify(empty[n])}`);
   // #302: an unaffordable button is still in the Tab order, reports aria-disabled and its price, and a click neither arms nor buys.
   await page.evaluate(() => document.activeElement?.blur());
   let tabbedTo = null;
@@ -794,12 +799,13 @@ try {
   const tabFocus = await page.evaluate(() => ({ aria: document.activeElement?.getAttribute("aria-disabled"), desc: document.activeElement?.getAttribute("aria-description") }));
   console.log("Tab to unaffordable Path:", JSON.stringify({ tabbedTo, ...tabFocus }));
   if (tabbedTo !== "Path" || tabFocus.aria !== "true" || !tabFocus.desc.startsWith(price.Path)) throw new Error(`Tab/aria-disabled: ${JSON.stringify({ tabbedTo, ...tabFocus })}`);
-  const cardsBefore = await page.evaluate(() => JSON.stringify([window.__emberisle.getState().state.deck.length, window.__emberisle.getState().error]));
+  const cardsBefore = await page.evaluate(() => window.__emberisle.getState().state.deck.length);
   for (const n of ["Path", "Outpost", "Stronghold", "Fortune"]) await page.getByRole("button", { name: n, exact: true }).click({ force: true });
   await page.keyboard.press("Enter");
-  const clickRes = await page.evaluate(() => ({ buildMode: window.__emberisle.getState().buildMode, cards: JSON.stringify([window.__emberisle.getState().state.deck.length, window.__emberisle.getState().error]) }));
+  const clickRes = await page.evaluate(() => ({ buildMode: window.__emberisle.getState().buildMode, cards: window.__emberisle.getState().state.deck.length, error: window.__emberisle.getState().error }));
   console.log("click unaffordable:", JSON.stringify({ ...clickRes, cardsBefore }));
-  if (clickRes.buildMode !== "none" || clickRes.cards !== cardsBefore) throw new Error(`unaffordable click acted: ${JSON.stringify(clickRes)}`);
+  // A tap the hand cannot pay for builds and buys nothing, and says what is missing.
+  if (clickRes.buildMode !== "none" || clickRes.cards !== cardsBefore || !/^Need \d+ more /.test(clickRes.error ?? "")) throw new Error(`unaffordable click acted: ${JSON.stringify(clickRes)}`);
   await setHand({ timber: 1, clay: 1 });
   const some = await buildRow();
   console.log("build row, 1 timber 1 clay:", JSON.stringify(some));
@@ -930,15 +936,16 @@ try {
     const downMs = Date.now() - downAt;
     console.log("live seat, host down: title card after", downMs, "ms");
     if (downMs > 4500) throw new Error(`host-down restore took ${downMs} ms to show the title`);
-    // The dead host's refused sockets are the expected console errors here; drop only those.
-    const downRefused = errors.filter((e) => e.includes("ws://127.0.0.1:9/"));
-    if (!downRefused.length) throw new Error("host-down restore: expected at least one refused socket");
-    for (const e of downRefused) errors.splice(errors.indexOf(e), 1);
     await page.evaluate(() => {
       localStorage.removeItem("emberisle-seat");
       localStorage.removeItem("emberisle-seat-live");
     });
+    // Leave the page first: the app keeps redialling the dead host on its backoff, and a refusal landing after the
+    // drop below would fail the run. The dead host's refused sockets are the expected console errors; drop only those.
     await page.goto(`http://127.0.0.1:${PORT}/?host=ws://127.0.0.1:${hostPort}`);
+    const downRefused = errors.filter((e) => e.includes("ws://127.0.0.1:9/"));
+    if (!downRefused.length) throw new Error("host-down restore: expected at least one refused socket");
+    for (const e of downRefused) errors.splice(errors.indexOf(e), 1);
 
     // #271 case 12: with the stale rejoin gone, a peek opens a connection of its own and stays quiet.
     await page.evaluate(() => window.__emberisle.getState().peekTable("ABCD"));

@@ -292,6 +292,10 @@ body {
 }
 .table-log[hidden] { display: none; }
 .action-utilities { flex-wrap: wrap; }
+/* #625: the main phase's action row wraps by rule, not by font metrics, so the fit can declare its height (TRAY_WRAP_MAX in
+   mobile-fit.ts is the 400 here): up to 400 px wide the end row takes a line of its own, above it the row never wraps. */
+@media (orientation: portrait) and (max-width: 400px) { .action-utilities > .tray-end { flex: 1 0 100%; } }
+@media (orientation: portrait) and (min-width: 401px) { .action-utilities { flex-wrap: nowrap; } .action-utilities > * { min-width: 0; } }
 @media (max-height: 480px) {
   .goods-card { flex-direction: column; gap: 0; padding: 12px 0 0; }
   .goods-card .goods-icon { width: 12px; height: 12px; }
