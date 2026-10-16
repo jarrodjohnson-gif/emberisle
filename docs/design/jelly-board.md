@@ -1,5 +1,7 @@
 # The jelly board (#599, #624)
 
+Building something new in this look? Start from the master prompt, [jelly-style-prompt.md](jelly-style-prompt.md).
+
 The island's hexes are the six Hex Jelly scenes (`hex-jelly-prompt.md`, built in `src/lib/scene/hex-jelly.ts`), drawn on the
 game board by `src/lib/scene/jelly-board.ts` and wired in `buildLand` in `isle-renderer.ts`. It replaces the sculpted
 terrain (`terrain.md`, `terrain.ts`), which the renderer no longer uses.
