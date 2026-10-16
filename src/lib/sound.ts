@@ -141,7 +141,7 @@ function start(name: SoundName, volume: number) {
     if (name === "dice_land") clips.get("game_start")?.pause();
     let clip = clips.get(name);
     if (!clip) {
-      clip = new Audio(`/audio/${FILES[name]}`);
+      clip = new Audio(`${import.meta.env.BASE_URL}audio/${FILES[name]}`);
       clips.set(name, clip);
     }
     clip.currentTime = 0;
