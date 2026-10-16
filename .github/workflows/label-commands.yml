@@ -1,0 +1,134 @@
+# Lets approved users set labels by commenting on an issue or PR.
+# Nobody needs write access: the workflow applies the label for them.
+#
+#   /todo  /backlog  /claim  /in-progress  /in-review
+#   /paused  /done  /failed  /canceled      -> swaps the status:* label
+#                                              (/done and /canceled: repo owner only)
+#   /changed   /unchanged                   -> adds / removes mark:changed
+#   /label <name>   /unlabel <name>         -> any existing status:, mark:, lane:, model: label
+#
+# Several commands can go in one comment, one per line.
+# The bot reacts 👍 when it applied the labels, 👎 when it refused.
+
+name: label-commands
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: label-commands-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  label:
+    if: contains(github.event.comment.body, '/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            // Who may use the commands. Add GitHub usernames here.
+            const ALLOWED_USERS = ['jarrodjohnson-gif', 'joshspicy2'];
+
+            const STATUS = {
+              '/todo': 'status:todo',
+              '/backlog': 'status:backlog',
+              '/claim': 'status:claimed',
+              '/claimed': 'status:claimed',
+              '/in-progress': 'status:in-progress',
+              '/in-review': 'status:in-review',
+              '/paused': 'status:paused',
+              '/done': 'status:done',
+              '/failed': 'status:failed',
+              '/canceled': 'status:canceled',
+            };
+            const PREFIXES = ['status:', 'mark:', 'lane:', 'model:'];
+            // Sign-off labels: only the repo owner can set or remove these.
+            const OWNER_ONLY = ['status:done', 'status:canceled'];
+
+            // The comment is read from the event payload as data.
+            // It is never interpolated into this script or a shell.
+            const { owner, repo } = context.repo;
+            const issue_number = context.payload.issue.number;
+            const comment_id = context.payload.comment.id;
+            const actor = context.payload.comment.user.login;
+            const isOwner = actor === owner;
+            const react = (content) =>
+              github.rest.reactions.createForIssueComment({ owner, repo, comment_id, content });
+
+            const lines = context.payload.comment.body
+              .split('\n').map(s => s.trim()).filter(s => s.startsWith('/'));
+            if (!lines.length) return;
+            const KNOWN = [...Object.keys(STATUS), '/changed', '/unchanged', '/label', '/unlabel'];
+            if (!lines.some(l => KNOWN.includes(l.split(/\s+/)[0].toLowerCase()))) return;
+
+            // Refuse everyone not on the list before doing anything else.
+            if (!ALLOWED_USERS.includes(actor)) {
+              core.notice(`${actor} is not in ALLOWED_USERS`);
+              await react('-1');
+              return;
+            }
+
+            const current = context.payload.issue.labels.map(l => l.name);
+            const want = new Set(current);
+            let matched = false;
+            const bad = [];
+
+            const setStatus = (label) => {
+              for (const l of [...want]) if (l.startsWith('status:')) want.delete(l);
+              want.add(label);
+            };
+
+            for (const line of lines) {
+              const [rawCmd, ...rest] = line.split(/\s+/);
+              const cmd = rawCmd.toLowerCase();
+              const arg = rest.join(' ').trim();
+
+              if (STATUS[cmd]) { setStatus(STATUS[cmd]); matched = true; }
+              else if (cmd === '/changed') { want.add('mark:changed'); matched = true; }
+              else if (cmd === '/unchanged') { want.delete('mark:changed'); matched = true; }
+              else if (cmd === '/label' || cmd === '/unlabel') {
+                matched = true;
+                if (!PREFIXES.some(p => arg.startsWith(p))) { bad.push(arg || '(blank)'); continue; }
+                try { await github.rest.issues.getLabel({ owner, repo, name: arg }); }
+                catch { bad.push(arg); continue; }
+                if (cmd === '/unlabel') want.delete(arg);
+                else if (arg.startsWith('status:')) setStatus(arg);
+                else want.add(arg);
+              }
+            }
+
+            if (!matched) return;
+
+            // Non-owners can't add or remove sign-off labels.
+            // If the change would add or remove one, the status label stays as it was.
+            if (!isOwner) {
+              const blocked = OWNER_ONLY.filter(l => want.has(l) !== current.includes(l));
+              if (blocked.length) {
+                bad.push(...blocked.map(l => `${l} (owner only)`));
+                for (const l of [...want]) if (l.startsWith('status:')) want.delete(l);
+                for (const l of current) if (l.startsWith('status:')) want.add(l);
+              }
+            }
+
+            for (const l of current) {
+              if (!want.has(l)) {
+                await github.rest.issues.removeLabel({ owner, repo, issue_number, name: l });
+              }
+            }
+            const toAdd = [...want].filter(l => !current.includes(l));
+            if (toAdd.length) {
+              await github.rest.issues.addLabels({ owner, repo, issue_number, labels: toAdd });
+            }
+
+            if (bad.length) {
+              core.warning(`Unknown or not allowed: ${bad.join(', ')}`);
+              await react('-1');
+            } else {
+              await react('+1');
+            }
