@@ -37,13 +37,14 @@ export function MyNumbers({ state, playerId }: { state: GameState; playerId: str
   const list = myNumbers(state, playerId);
   const rolls = state.rolls ?? 0;
   const sum = state.dice ? state.dice[0] + state.dice[1] : 0;
-  const [lit, setLit] = useState<number | null>(null);
+  // The lit number and the roll that lit it: the same number twice running remounts its chip, so the glow plays again.
+  const [lit, setLit] = useState<{ n: number; roll: number } | null>(null);
   const seen = useRef(rolls);
   useEffect(() => {
     if (rolls === seen.current) return;
     seen.current = rolls;
     if (!sum) return;
-    setLit(sum);
+    setLit({ n: sum, roll: rolls });
     const t = setTimeout(() => setLit(null), MY_NUMBER_GLOW_MS);
     return () => clearTimeout(t);
   }, [rolls, sum]);
@@ -52,12 +53,12 @@ export function MyNumbers({ state, playerId }: { state: GameState; playerId: str
     <ul data-testid="my-numbers" aria-label="Your numbers" className="my-numbers flex h-5 min-w-0 max-w-[62%] shrink-0 items-center gap-1 overflow-x-auto">
       {list.map(({ n, goods }) => (
         <li
-          key={n}
+          key={lit?.n === n ? `${n}-${lit.roll}` : n}
           data-n={n}
           data-goods={goods.join(",")}
-          data-lit={lit === n || undefined}
+          data-lit={lit?.n === n || undefined}
           aria-label={`${n}: ${goods.map((g) => RESOURCE_LABEL[g]).join(", ")}`}
-          className={cn("my-number flex h-5 shrink-0 items-center gap-0.5 rounded-full px-1.5 text-xs font-semibold tabular-nums", (n === 6 || n === 8) && "my-number-hot", lit === n && "my-number-lit")}
+          className={cn("my-number flex h-5 shrink-0 items-center gap-0.5 rounded-full px-1.5 text-xs font-semibold tabular-nums", (n === 6 || n === 8) && "my-number-hot", lit?.n === n && "my-number-lit")}
         >
           <span aria-hidden>{n}</span>
           {goods.map((g, i) => {
