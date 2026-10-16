@@ -3,7 +3,8 @@
 // loads it and scripts/hex-jelly.mjs screenshots it. Query: kind=<terrain> (default timber), seed=<n>, pip=<n> (0 for none),
 // t=<seconds> to freeze the tile's life at that moment (otherwise it runs live), props=0 for the bare ground, focus=pool|camp
 // to frame that corner of the story close up, ring=1 for six neighbours round it at board spacing (to see what the landform
-// hides), az=<degrees> to orbit the eye.
+// hides, with birds and cloud shadows crossing it), az=<degrees> to orbit the eye, roll=<t0> to start the roll payoff at t0,
+// robber=1 to stand the robber on the centre tile, night=1 for the night lighting.
 import * as THREE from "three";
 import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
@@ -24,22 +25,26 @@ const PAPER = 0xebe8e1;
 const POLAR = (52 * Math.PI) / 180;
 const AZ = (Number(q.get("az") ?? 20) * Math.PI) / 180;
 const ring = q.get("ring") === "1";
+const night = q.get("night") === "1" ? 1 : 0;
+const rollAt = q.get("roll");
+const robber = q.get("robber") === "1";
 const EYE = 18.8;
 
 const canvas = document.querySelector("canvas")!;
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.setPixelRatio(1);
 renderer.setSize(innerWidth, innerHeight, false);
-renderer.setClearColor(PAPER, 1);
+renderer.setClearColor(night ? 0x2a3142 : PAPER, 1);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.05;
+renderer.toneMappingExposure = night ? 0.95 : 1.05;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 
 const scene = new THREE.Scene();
-scene.add(new THREE.HemisphereLight(LIGHT.sky, LIGHT.ground, 0.9));
-const key = new THREE.DirectionalLight(LIGHT.keyColor, 2.6);
+// Night: a cool low moon and a dim blue sky in place of the warm key.
+scene.add(night ? new THREE.HemisphereLight(0x3e4f7a, 0x1c1c28, 0.5) : new THREE.HemisphereLight(LIGHT.sky, LIGHT.ground, 0.9));
+const key = new THREE.DirectionalLight(night ? 0x9fb4ff : LIGHT.keyColor, night ? 0.65 : 2.6);
 key.position.set(...LIGHT.key).normalize().multiplyScalar(8);
 key.castShadow = true;
 key.shadow.mapSize.set(2048, 2048);
@@ -47,9 +52,10 @@ key.shadow.radius = 3;
 key.shadow.bias = -0.0004;
 key.shadow.normalBias = 0.01;
 const reach = q.get("ring") === "1" ? 5 : 2;
+// (With the ring, clouds high above cast too, so the lamp's box is taller.)
 Object.assign(key.shadow.camera, { left: -reach, right: reach, top: reach, bottom: -reach, near: 1, far: 20 });
 scene.add(key);
-const back = new THREE.DirectionalLight(0xd6eef0, 0.45);
+const back = new THREE.DirectionalLight(night ? 0x8aa0d0 : 0xd6eef0, night ? 0.25 : 0.45);
 back.position.set(-LIGHT.key[0] * 5, 4, -LIGHT.key[2] * 5 - 3);
 scene.add(back);
 
@@ -87,6 +93,9 @@ if (pip) {
 }
 
 // Pose the tile's life before measuring it (smoke, embers and leaping fish start at the origin).
+for (const t of [tile, ...others]) t.env.night = night;
+if (rollAt !== null) tile.roll(Number(rollAt));
+if (robber) tile.robber(true, frozen !== null ? Number(frozen) : 0);
 tile.update(frozen !== null ? Number(frozen) : 0);
 others.forEach((o) => o.update(frozen !== null ? Number(frozen) : 0));
 // Fit: the eye on the diorama's line, the lens narrowed until the block and its props fill 92 % of the frame.
@@ -154,7 +163,69 @@ composer.addPass(new RenderPass(scene, camera));
 composer.addPass(new OutputPass());
 composer.addPass(tilt(1, 0));
 composer.addPass(tilt(0, 1));
+// Board-wide life over the ring: three small flocks of birds crossing, and cloud shadows (invisible clouds that only cast)
+// drifting over the tiles.
+const sky: ((t: number) => void)[] = [];
+if (ring) {
+  const birdMat = new THREE.MeshStandardMaterial({ color: night ? 0x2a2e3a : 0xfbfaf5, roughness: 0.5 });
+  for (let f = 0; f < 3; f++) {
+    const flock = Array.from({ length: 5 }, (_, i) => {
+      const b = new THREE.Group();
+      const body = new THREE.Mesh(new THREE.SphereGeometry(1, 8, 6), birdMat);
+      body.scale.set(0.02, 0.008, 0.008);
+      const wings = [1, -1].map((side) => {
+        const w = new THREE.Mesh(new THREE.SphereGeometry(1, 8, 4), birdMat);
+        w.scale.set(0.01, 0.002, 0.028);
+        w.position.z = 0.024 * side;
+        const pivot = new THREE.Group();
+        pivot.add(w);
+        b.add(pivot);
+        return pivot;
+      });
+      b.add(body);
+      b.castShadow = true;
+      body.castShadow = true;
+      scene.add(b);
+      return { b, wings, i };
+    });
+    sky.push((t) => {
+      const u = ((t * 0.05 + f * 0.37) % 1) * 2 - 1;
+      const a = f * 2.1 + 0.4;
+      const [dx, dz] = [Math.cos(a), Math.sin(a)];
+      for (const k of flock) {
+        // A V: each bird a little back and to one side of the one ahead.
+        const back = Math.ceil(k.i / 2) * 0.06;
+        const side = (k.i % 2 ? 1 : -1) * Math.ceil(k.i / 2) * 0.05;
+        const x = dx * u * 2.6 - dx * back - dz * side + Math.sin(f * 3) * 0.5;
+        const z = dz * u * 2.6 - dz * back + dx * side + Math.cos(f * 3) * 0.5;
+        k.b.position.set(x, 0.7 + f * 0.1 + 0.02 * Math.sin(t * 2 + k.i), z);
+        k.b.scale.setScalar(2.4);
+        k.b.rotation.y = -a;
+        k.wings.forEach((w, i) => (w.rotation.x = (i ? -1 : 1) * 0.6 * Math.sin(t * 9 + k.i)));
+      }
+    });
+  }
+  const cloudMat = new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false });
+  for (let c = 0; c < 3; c++) {
+    const cloud = new THREE.Group();
+    for (let i = 0; i < 4; i++) {
+      const p = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 8), cloudMat);
+      p.scale.set(0.6 + i * 0.12, 0.12, 0.45);
+      p.position.set(i * 0.4 - 0.6, 0, (i % 2) * 0.2);
+      p.castShadow = true;
+      cloud.add(p);
+    }
+    scene.add(cloud);
+    sky.push((t) => {
+      const u = ((t * 0.02 + c * 0.33) % 1) * 2 - 1;
+      // The shadow lands down the key's line from the cloud: aim the shadow across the ring's middle.
+      const [sx, sz] = [u * 2.2 + (c - 1) * 0.6, -0.9 + c * 0.9 - u * 0.4];
+      cloud.position.set(sx + (LIGHT.key[0] / LIGHT.key[1]) * 2.4, 2.4, sz + (LIGHT.key[2] / LIGHT.key[1]) * 2.4);
+    });
+  }
+}
 const draw = (t: number) => {
+  sky.forEach((f) => f(t));
   tile.update(t);
   others.forEach((o) => o.update(t));
   composer.render();

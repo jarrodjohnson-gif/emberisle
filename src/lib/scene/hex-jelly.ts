@@ -326,11 +326,24 @@ const RAMPED =
   THREE.ShaderChunk.lights_physical_pars_fragment.replace(DIFFUSE, DIFFUSE.replace("irradiance", "toonStep( dotNL ) * directLight.color"));
 const SKY = new THREE.Color(LIGHT.sky);
 const SHEEN = `\n\treflectedLight.indirectDiffuse += mix( material.diffuseColor, vec3( ${SKY.r.toFixed(3)}, ${SKY.g.toFixed(3)}, ${SKY.b.toFixed(3)} ), 0.55 ) * 0.35 * pow( 1.0 - saturate( dot( geometryNormal, geometryViewDir ) ), 2.5 );`;
+// The tile being built: its robber dulling and its roll flash, which every jelly material it makes shares (buildTile sets it).
+let TU = { dull: { value: 0 }, flash: { value: 0 } };
 function jellyfy(m: THREE.MeshStandardMaterial, key: string, extra?: (sh: THREE.WebGLProgramParametersWithUniforms) => void) {
+  const tu = TU;
   m.onBeforeCompile = (sh) => {
-    sh.fragmentShader = sh.fragmentShader
-      .replace("#include <lights_physical_pars_fragment>", RAMPED)
-      .replace("#include <lights_fragment_end>", "#include <lights_fragment_end>" + SHEEN);
+    sh.uniforms.uDull = tu.dull;
+    sh.uniforms.uFlash = tu.flash;
+    sh.fragmentShader =
+      "uniform float uDull;\nuniform float uFlash;\n" +
+      sh.fragmentShader
+        .replace("#include <lights_physical_pars_fragment>", RAMPED)
+        .replace("#include <lights_fragment_end>", "#include <lights_fragment_end>" + SHEEN)
+        .replace(
+          "#include <dithering_fragment>",
+          `#include <dithering_fragment>
+          gl_FragColor.rgb = mix( gl_FragColor.rgb, vec3( dot( gl_FragColor.rgb, vec3( 0.3, 0.55, 0.15 ) ) ) * 0.92, uDull * 0.6 );
+          gl_FragColor.rgb += uFlash * vec3( 0.22, 0.16, 0.05 );`,
+        );
     extra?.(sh);
   };
   m.customProgramCacheKey = () => key;
@@ -342,13 +355,23 @@ const blobMat = () => jellyfy(new THREE.MeshStandardMaterial({ roughness: 0.7, m
 // The strata on the cut side, drawn in the fragment shader from the side's local height and angle: a lip of the surface's own
 // colour, pale sand with white pebbles, a shell band, caramel soil with dark grit, chocolate rock with pale flecks; the
 // borders wave round the tile.
-function strataMat(lip: string) {
+// The five bands per kind (prompt "Strata per kind"): sand, shell, soil, rock, and the grit and flecks in them.
+const STRATA_KIND: Record<string, { sand: string; shell: string; soil: string; rock: string; grit: string; fleck: string }> = {
+  timber: { sand: "#ecdbb2", shell: "#f7f0e2", soil: "#bb7a42", rock: "#5f4234", grit: "#7a4a26", fleck: "#8a6a58" },
+  wool: { sand: "#efe0b8", shell: "#f8f2e4", soil: "#c4874c", rock: "#6a4a38", grit: "#8a5a32", fleck: "#9a7a66" },
+  grain: { sand: "#f0d48c", shell: "#faf2dc", soil: "#a8683a", rock: "#5a3a26", grit: "#7a4422", fleck: "#8a6a50" },
+  clay: { sand: "#f0c8a0", shell: "#f8ece0", soil: "#c4562e", rock: "#7a2e1e", grit: "#8a3418", fleck: "#b0604a" },
+  ore: { sand: "#d8d8d2", shell: "#f2f2ee", soil: "#7a7066", rock: "#4a4e56", grit: "#55504a", fleck: "#8a909a" },
+  waste: { sand: "#f2dca8", shell: "#faf0dc", soil: "#c9913e", rock: "#8a4a2a", grit: "#9a6a2a", fleck: "#b07a5a" },
+};
+function strataMat(lip: string, kind: Terrain) {
   const L = new THREE.Color(lip);
+  const K = STRATA_KIND[kind]!;
   const v = (c: string) => {
     const k = new THREE.Color(c);
     return `vec3(${k.r.toFixed(4)}, ${k.g.toFixed(4)}, ${k.b.toFixed(4)})`;
   };
-  return jellyfy(new THREE.MeshStandardMaterial({ roughness: 0.8, metalness: 0 }), `jelly-strata-${lip}`, (sh) => {
+  return jellyfy(new THREE.MeshStandardMaterial({ roughness: 0.8, metalness: 0 }), `jelly-strata-${kind}`, (sh) => {
     sh.vertexShader = "varying vec3 vLocal;\n" + sh.vertexShader.replace("#include <begin_vertex>", "#include <begin_vertex>\n\tvLocal = position;");
     sh.fragmentShader =
       `varying vec3 vLocal;
@@ -369,17 +392,17 @@ function strataMat(lip: string) {
         float ang = atan( vLocal.z, vLocal.x );
         vec2 uv = vec2( ang * 1.12, vLocal.y );
         float y = vLocal.y + 0.007 * sin( ang * 7.0 + 1.3 ) + 0.004 * sin( ang * 17.0 );
-        vec3 col = ${v("#5f4234")};
-        col = mix( col, ${v("#bb7a42")}, step( 0.07, y ) );
-        col = mix( col, ${v("#f7f0e2")}, step( 0.152, y ) );
-        col = mix( col, ${v("#ecdbb2")}, step( 0.166, y ) );
+        vec3 col = ${v(K.rock)};
+        col = mix( col, ${v(K.soil)}, step( 0.07, y ) );
+        col = mix( col, ${v(K.shell)}, step( 0.152, y ) );
+        col = mix( col, ${v(K.sand)}, step( 0.166, y ) );
         col = mix( col, vec3(${L.r.toFixed(4)}, ${L.g.toFixed(4)}, ${L.b.toFixed(4)}), step( 0.232, y ) );
         float sand = step( 0.166, y ) * ( 1.0 - step( 0.232, y ) );
         float soil = step( 0.07, y ) * ( 1.0 - step( 0.152, y ) );
         float rock = 1.0 - step( 0.07, y );
         col = mix( col, vec3( 1.0, 0.99, 0.96 ), sand * pebbles( uv, 0.016, 0.32 ) );
-        col = mix( col, ${v("#7a4a26")}, soil * pebbles( uv + 3.1, 0.014, 0.3 ) );
-        col = mix( col, ${v("#8a6a58")}, rock * pebbles( uv + 7.7, 0.02, 0.34 ) );
+        col = mix( col, ${v(K.grit)}, soil * pebbles( uv + 3.1, 0.014, 0.3 ) );
+        col = mix( col, ${v(K.fleck)}, rock * pebbles( uv + 7.7, 0.02, 0.34 ) );
         // A soft darkening toward the base, so the block sits on the paper.
         col *= 0.82 + 0.18 * smoothstep( 0.0, 0.08, vLocal.y );
         diffuseColor.rgb = col;`,
@@ -544,7 +567,7 @@ function block(L: Layout, rings: number, occlude: (x: number, z: number) => numb
       sideGeo.setIndex(si);
     }
   }
-  const side = new THREE.Mesh(sideGeo, strataMat(P.lip));
+  const side = new THREE.Mesh(sideGeo, strataMat(P.lip, L.kind));
   side.castShadow = true;
   side.receiveShadow = true;
   return { top, side, tris: index.length / 3 + si.length / 3 };
@@ -688,15 +711,40 @@ function waterMat(flow: boolean) {
   m.userData.time = { value: 0 };
   return m;
 }
+// A soft warm halo of light (a sprite with a radial falloff drawn once on a small canvas, added over what is behind it): the glow
+// round a fire, a lit window or a lantern at night. Its opacity follows the night.
+let haloTex: THREE.CanvasTexture | null = null;
+function halo(hex: string, size: number) {
+  if (!haloTex) {
+    const c = document.createElement("canvas");
+    c.width = c.height = 64;
+    const x = c.getContext("2d")!;
+    const gr = x.createRadialGradient(32, 32, 0, 32, 32, 32);
+    gr.addColorStop(0, "rgba(255,255,255,1)");
+    gr.addColorStop(0.35, "rgba(255,255,255,0.45)");
+    gr.addColorStop(1, "rgba(255,255,255,0)");
+    x.fillStyle = gr;
+    x.fillRect(0, 0, 64, 64);
+    haloTex = new THREE.CanvasTexture(c);
+  }
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: haloTex, color: hex, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }));
+  s.scale.setScalar(size);
+  s.userData.loose = true;
+  return s;
+}
 const basic = (hex: string, opacity = 1) => new THREE.MeshBasicMaterial({ color: hex, transparent: opacity < 1, opacity, toneMapped: false });
 
 type Life = (t: number) => void;
 type Built = { g: THREE.Group; stands: { x: number; z: number; r: number }[]; life: Life[] };
+// What the board tells a tile (prompt "THE TILE IN PLAY"): night (0 day to 1 night), whether the robber stands on it, and the
+// roll payoff's progress (0 to 1 while it plays, -1 otherwise). Every life loop reads it.
+export type Env = { night: number; robber: boolean; roll: number };
+const ease = (u: number) => u * u * (3 - 2 * u);
 
 // TIMBER, "The Salmon Run" (docs/design/hex-jelly-prompt.md): the wooded hill and its canopy, the spring, the stream and its
 // falls, the pool with leaping salmon, the doe and fawn drinking, the campsite and its bonfire, the axe stump and log stack,
 // the fairy ring, ferns and mossy boulders, and the owl's eyes in a pine.
-function forest(L: Layout, ground: (x: number, z: number) => number, r: () => number): Built {
+function forest(L: Layout, ground: (x: number, z: number) => number, r: () => number, env: Env): Built {
   const g = new THREE.Group();
   const life: Life[] = [];
   const stands: { x: number; z: number; r: number }[] = [];
@@ -903,6 +951,9 @@ function forest(L: Layout, ground: (x: number, z: number) => number, r: () => nu
   const warm = new THREE.PointLight(0xffa04a, 0.06, 0.3, 1);
   warm.position.set(fire.x, fy + 0.08, fire.z);
   g.add(warm);
+  const fireGlow = halo("#ff9a3a", 0.42);
+  fireGlow.position.set(fire.x, fy + 0.05, fire.z);
+  g.add(fireGlow);
   const embers = Array.from({ length: 14 }, (_, i) => {
     const o = new THREE.Mesh(new THREE.SphereGeometry(0.0025, 6, 4), basic(i % 3 ? "#ffb347" : "#ffe08a"));
     o.userData.loose = true;
@@ -916,12 +967,19 @@ function forest(L: Layout, ground: (x: number, z: number) => number, r: () => nu
     return { o, ph: i / 5 };
   });
   life.push((t) => {
+    // The robber puts the fire out; at night it burns brighter and lights the clearing.
+    for (const f of flames) f.o.visible = !env.robber;
+    for (const e of embers) e.o.visible = !env.robber;
+    warm.visible = !env.robber;
     for (const f of flames) {
-      const k = 1 + 0.22 * Math.sin(t * (9 + f.i * 2.3) + f.i * 1.7) + 0.1 * Math.sin(t * 21 + f.i * 2);
+      const k = (1 + env.night * 0.3) + 0.22 * Math.sin(t * (9 + f.i * 2.3) + f.i * 1.7) + 0.1 * Math.sin(t * 21 + f.i * 2);
       f.o.scale.set(f.s[0] * (1.05 - 0.05 * k), f.s[1] * k, f.s[2] * (1.05 - 0.05 * k));
       f.o.rotation.z = 0.08 * Math.sin(t * 7 + f.i);
     }
-    warm.intensity = 0.06 + 0.015 * Math.sin(t * 13) + 0.008 * Math.sin(t * 29);
+    warm.intensity = (0.06 + 0.015 * Math.sin(t * 13) + 0.008 * Math.sin(t * 29)) * (1 + env.night * 9);
+    warm.distance = 0.3 + env.night * 0.5;
+    fireGlow.visible = !env.robber;
+    fireGlow.material.opacity = env.night * (0.7 + 0.1 * Math.sin(t * 11));
     for (const e of embers) {
       const u = (t * 0.45 * e.sp + e.ph) % 1;
       e.o.position.set(fire.x + e.sx * u + 0.006 * Math.sin(t * 5 + e.ph * 20), fy + 0.04 + u * 0.2, fire.z + e.sz * u);
@@ -1060,12 +1118,12 @@ function forest(L: Layout, ground: (x: number, z: number) => number, r: () => nu
     stands.push({ x: L.deer.x, z: L.deer.z, r: 0.06 }, { x: fp.x, z: fp.z, r: 0.04 });
     life.push((t) => {
       const cyc = (t % 6) / 6;
-      const down = smooth(0.05, 0.2, cyc) * (1 - smooth(0.55, 0.7, cyc));
+      const down = env.roll >= 0 ? 0 : smooth(0.05, 0.2, cyc) * (1 - smooth(0.55, 0.7, cyc));
       doe.neck.rotation.z = -1.6 * down + 0.15 * (1 - down) * Math.sin(t * 0.8);
       doe.neck.rotation.y = (1 - down) * 0.35 * Math.sin(t * 0.9);
       fawn.neck.rotation.z = 0.12 * Math.sin(t * 1.3 + 1);
       fawn.neck.rotation.y = 0.4 * Math.sin(t * 0.6 + 2);
-      const flick = Math.max(0, Math.sin(t * 3.1)) ** 16;
+      const flick = env.roll >= 0 ? 1 : Math.max(0, Math.sin(t * 3.1)) ** 16;
       doe.ears.forEach((e, i) => (e.rotation.x = (i ? -1 : 1) * (0.6 + 0.5 * flick)));
       fawn.ears.forEach((e, i) => (e.rotation.x = (i ? -1 : 1) * (0.6 + 0.5 * Math.max(0, Math.sin(t * 2.3 + 1)) ** 16)));
     });
@@ -1093,13 +1151,15 @@ function forest(L: Layout, ground: (x: number, z: number) => number, r: () => nu
   const PERIOD = 3.2;
   const AIR = 0.7;
   life.push((t) => {
-    for (const L2 of leaps) {
-      const u = ((t + L2.ph) % PERIOD) / AIR;
+    for (const [i, L2] of leaps.entries()) {
+      // On a roll both leap high together, the second a beat behind.
+      const rolling = env.roll >= 0;
+      const u = rolling ? Math.min(1.5, Math.max(0, (env.roll - i * 0.12) / 0.55)) : ((t + L2.ph) % PERIOD) / AIR;
       const a = L2.a + Math.floor((t + L2.ph) / PERIOD) * 2.3;
       const [ax, az] = [pool.x + Math.cos(a) * pool.r * 0.35, pool.z + Math.sin(a) * pool.r * 0.35];
       const [bx, bz] = [pool.x - Math.cos(a) * pool.r * 0.1, pool.z - Math.sin(a) * pool.r * 0.1];
       if (u < 1) {
-        const h = 0.1 * 4 * u * (1 - u);
+        const h = (rolling ? 0.2 : 0.1) * 4 * u * (1 - u);
         L2.fish.visible = true;
         L2.fish.position.set(ax + (bx - ax) * u, wy - 0.008 + h, az + (bz - az) * u);
         L2.fish.rotation.set(0, Math.atan2(-(bz - az), bx - ax), Math.atan2(0.4 * (1 - 2 * u), 0.15) * 0.9 + 0.2 * Math.sin(t * 25));
@@ -1112,7 +1172,7 @@ function forest(L: Layout, ground: (x: number, z: number) => number, r: () => nu
         o.scale.setScalar(0.01 + k * 0.05);
         m.opacity = 0.8 * (1 - k);
       };
-      const tl = ((t + L2.ph) % PERIOD);
+      const tl = rolling ? env.roll * ROLL_S - i * 0.12 * ROLL_S : (t + L2.ph) % PERIOD;
       ripple(L2.ringA, ax, az, tl);
       ripple(L2.ringB, bx, bz, tl - AIR);
     }
@@ -1145,6 +1205,31 @@ function forest(L: Layout, ground: (x: number, z: number) => number, r: () => nu
     life.push((t) => {
       const b = (t % 3.7) < 0.14 ? 0.1 : 1;
       eyes.children.forEach((c, i) => i < 2 && c.scale.set(1, b, 1));
+    });
+  }
+
+  // Night: the tent glows from inside (a lit panel in its door), fireflies drift over the pool.
+  {
+    const glow = new THREE.Mesh(new THREE.PlaneGeometry(0.042, 0.05).translate(0, 0.025, 0), basic("#ffc46a", 0));
+    glow.position.set(0, 0.001, 0.08);
+    tent.add(glow);
+    const tentHalo = halo("#ffb860", 0.16);
+    tentHalo.position.set(0, 0.03, 0.09);
+    tent.add(tentHalo);
+    const flies = Array.from({ length: 12 }, (_, i) => {
+      const o = new THREE.Mesh(new THREE.SphereGeometry(0.0035, 6, 4), basic("#fff07a", 0));
+      o.userData.loose = true;
+      g.add(o);
+      return { o, ph: i * 0.83, rr: pool.r * (0.4 + (i % 4) * 0.25) };
+    });
+    life.push((t) => {
+      (glow.material as THREE.MeshBasicMaterial).opacity = env.night * 0.95;
+      tentHalo.material.opacity = env.night * 0.6;
+      for (const f of flies) {
+        const a = t * 0.3 + f.ph;
+        f.o.position.set(pool.x + Math.cos(a) * f.rr, wy + 0.03 + 0.02 * Math.sin(t * 1.3 + f.ph * 3), pool.z + Math.sin(a * 1.3) * f.rr);
+        (f.o.material as THREE.MeshBasicMaterial).opacity = env.night * (0.5 + 0.5 * Math.sin(t * 4 + f.ph * 5));
+      }
     });
   }
   return { g, stands, life };
@@ -1264,7 +1349,7 @@ function dog(m: THREE.Material) {
 // WOOL, "Shearing Day" (docs/design/hex-jelly-prompt.md): the ridge with its dry-stone wall, gate and oak; the flock grazing,
 // lying, a lamb hopping, another on a boulder; the collie trotting round them; the shepherd shearing a half-shorn ewe by the
 // fleece pile and wool sacks; the shepherd's hut with its stove smoke; the trough; clover and flowers.
-function pasture(L: Layout, ground: (x: number, z: number) => number, r: () => number): Built {
+function pasture(L: Layout, ground: (x: number, z: number) => number, r: () => number, env: Env): Built {
   const g = new THREE.Group();
   const life: Life[] = [];
   const stands: { x: number; z: number; r: number }[] = [];
@@ -1359,6 +1444,16 @@ function pasture(L: Layout, ground: (x: number, z: number) => number, r: () => n
     h.scale.setScalar(SIZE.hut);
     h.userData.ref = "hut";
     // Its door toward the clearing.
+    const win = new THREE.Mesh(new THREE.PlaneGeometry(0.022, 0.014), basic("#ffc46a", 0));
+    win.position.set(0, 0.055, 0.0347);
+    h.add(win);
+    const winHalo = halo("#ffb860", 0.09);
+    winHalo.position.set(0, 0.055, 0.04);
+    h.add(winHalo);
+    life.push(() => {
+      (win.material as THREE.MeshBasicMaterial).opacity = env.night;
+      winHalo.material.opacity = env.night * 0.7;
+    });
     place(h, M.hut!, faceTo(M.hut!, { x: 0, z: 0 }));
     stands.push({ x: M.hut!.x, z: M.hut!.z, r: 0.14 });
     const pipe = new THREE.Vector3(-0.03, 0.13, 0.01).multiplyScalar(SIZE.hut).applyEuler(h.rotation).add(h.position);
@@ -1413,7 +1508,7 @@ function pasture(L: Layout, ground: (x: number, z: number) => number, r: () => n
   g.add(mesh(merge(boulders.map((b, i) => part(blobGeo(70 + i), "#a9a79d", [b.x, Y(b.x, b.z) + b.k * 0.45, b.z], [0, i * 2, 0], [b.k * 1.1, b.k * 0.8, b.k]))), cm));
 
   // The flock: three grazing, one lying, a lamb that hops; the second lamb on the boulder.
-  const flock: { s: ReturnType<typeof sheep>; ph: number; graze: boolean; hop?: boolean; base: number }[] = [];
+  const flock: { s: ReturnType<typeof sheep>; ph: number; graze: boolean; hop?: boolean; base: number; home?: THREE.Vector3 }[] = [];
   const spots: Pt[] = [];
   for (let tries = 0; tries < 600 && spots.length < 7; tries++) {
     const p = { x: M.flock!.x + (r() - 0.5) * 0.42, z: M.flock!.z + (r() - 0.5) * 0.42 };
@@ -1436,13 +1531,26 @@ function pasture(L: Layout, ground: (x: number, z: number) => number, r: () => n
   }
   life.push((t) => {
     for (const f of flock) {
+      f.home ??= f.s.g.position.clone();
       const c = ((t + f.ph) % 5) / 5;
-      if (f.graze) f.s.head.rotation.z = -0.9 * smooth(0.1, 0.25, c) * (1 - smooth(0.7, 0.85, c));
+      if (f.graze && env.roll < 0) f.s.head.rotation.z = -0.9 * smooth(0.1, 0.25, c) * (1 - smooth(0.7, 0.85, c));
       else f.s.head.rotation.y = 0.4 * Math.sin(t * 0.7 + f.ph);
+      // The robber: the flock huddles toward its middle, heads up.
+      const huddle = env.robber ? 0.45 : 0;
+      f.s.g.position.x = f.home.x + (M.flock!.x - f.home.x) * huddle;
+      f.s.g.position.z = f.home.z + (M.flock!.z - f.home.z) * huddle;
+      if (env.robber) f.s.head.rotation.z = 0.2;
+      let y = f.base;
       if (f.hop) {
         const u = (t + f.ph) % 2.4;
-        f.s.g.position.y = f.base + (u < 0.35 ? 0.03 * Math.sin((u / 0.35) * Math.PI) : 0);
+        y += u < 0.35 ? 0.03 * Math.sin((u / 0.35) * Math.PI) : 0;
       }
+      // On a roll the whole flock hops, two bounces, staggered.
+      if (env.roll >= 0) {
+        const u = Math.min(1, Math.max(0, env.roll * 1.3 - f.ph * 0.04));
+        y = f.base + 0.04 * Math.abs(Math.sin(u * Math.PI * 2));
+      }
+      f.s.g.position.y = y;
     }
   });
 
@@ -1479,8 +1587,11 @@ function pasture(L: Layout, ground: (x: number, z: number) => number, r: () => n
     const d = dog(cm);
     g.add(d.g);
     const c = M.flock!;
+    let lap = 0;
     life.push((t) => {
-      const a = t * 0.35;
+      // On a roll the collie dashes a fast lap.
+      if (env.roll >= 0) lap = ease(env.roll) * Math.PI * 2;
+      const a = t * 0.35 + lap;
       let [x, z] = [c.x + Math.cos(a) * 0.27, c.z + Math.sin(a) * 0.2];
       // Never over the pad or past the rim.
       const k = Math.min(1, (INR - 0.2) / Math.max(1e-6, hexDist(x, z)));
@@ -1615,18 +1726,20 @@ function tuftGeo() {
 function swayMat(seed: number) {
   const m = jellyfy(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.7, metalness: 0 }), `jelly-sway-${seed}`, (sh) => {
     sh.uniforms.uTime = m.userData.time;
-    sh.vertexShader = "uniform float uTime;\n" + sh.vertexShader.replace(
+    sh.uniforms.uGust = m.userData.gust;
+    sh.vertexShader = "uniform float uTime;\nuniform float uGust;\n" + sh.vertexShader.replace(
       "#include <begin_vertex>",
       `#include <begin_vertex>
       #ifdef USE_INSTANCING
       vec3 root = instanceMatrix[3].xyz;
-      float gust = sin( uTime * 1.6 - root.x * 6.0 - root.z * 4.0 ) * 0.6 + sin( uTime * 2.9 - root.x * 13.0 ) * 0.25;
+      float gust = ( sin( uTime * 1.6 - root.x * 6.0 - root.z * 4.0 ) * 0.6 + sin( uTime * 2.9 - root.x * 13.0 ) * 0.25 ) * uGust;
       transformed.x += position.y * position.y * 9.0 * gust;
       transformed.z += position.y * position.y * 4.0 * gust;
       #endif`,
     );
   });
   m.userData.time = { value: 0 };
+  m.userData.gust = { value: 1 };
   return m;
 }
 
@@ -1683,7 +1796,7 @@ function crow(m: THREE.Material) {
 // GRAIN, "Harvest" (docs/design/hex-jelly-prompt.md): the field in four strips (standing wheat swaying in a wind wave, a
 // half-cut strip with stubble, stooks and the farmer scything, a ploughed strip the crows work), the windmill on the back rise
 // turning, three round bales, a red wheelbarrow of sheaves, the scarecrow, poppies and cornflowers, and a hare sitting up.
-function farm(L: Layout, ground: (x: number, z: number) => number, r: () => number): Built {
+function farm(L: Layout, ground: (x: number, z: number) => number, r: () => number, env: Env): Built {
   const g = new THREE.Group();
   const life: Life[] = [];
   const stands: { x: number; z: number; r: number }[] = [];
@@ -1740,7 +1853,14 @@ function farm(L: Layout, ground: (x: number, z: number) => number, r: () => numb
     mill.rotation.y = -face;
     g.add(mill);
     stands.push({ x: m.x, z: m.z, r: 0.12 });
-    life.push((t) => (sails.rotation.x = t * 0.9));
+    let spun = 0;
+    let cur = 0;
+    life.push((t) => {
+      // On a roll the sails spin up for a few extra turns.
+      if (env.roll >= 0) cur = ease(env.roll) * Math.PI * 6;
+      else if (cur) (spun += cur), (cur = 0);
+      sails.rotation.x = t * 0.9 + spun + cur;
+    });
   }
 
   // A gable roof along x: a triangular prism of `w` across, `h` high, `d` long.
@@ -1788,6 +1908,9 @@ function farm(L: Layout, ground: (x: number, z: number) => number, r: () => numb
         cm,
       ),
     );
+    const loft = new THREE.Mesh(new THREE.PlaneGeometry(0.016, 0.016).rotateY(Math.PI / 2), basic("#ffc46a", 0));
+    loft.position.set(0.0585, 0.102, 0);
+    barn.add(loft);
     set(barn, barnAt, SIZE.barn);
     barn.userData.ref = "barn";
     stands.push({ x: barnAt.x, z: barnAt.z, r: 0.18 });
@@ -1808,6 +1931,22 @@ function farm(L: Layout, ground: (x: number, z: number) => number, r: () => numb
         cm,
       ),
     );
+    const lights = [0.026, -0.026].map((z) => {
+      const w = new THREE.Mesh(new THREE.PlaneGeometry(0.012, 0.014).rotateY(Math.PI / 2), basic("#ffc46a", 0));
+      w.position.set(0.0372, 0.042, z);
+      house.add(w);
+      return w;
+    });
+    const halos = [...lights, loft].map((w) => {
+      const h = halo("#ffb860", 0.07);
+      h.position.copy(w.position).add(new THREE.Vector3(0.006, 0, 0));
+      w.parent!.add(h);
+      return h;
+    });
+    life.push(() => {
+      [...lights, loft].forEach((w) => ((w.material as THREE.MeshBasicMaterial).opacity = env.night));
+      halos.forEach((h) => (h.material.opacity = env.night * 0.75));
+    });
     set(house, houseAt, SIZE.house);
     house.userData.ref = "house";
     stands.push({ x: houseAt.x, z: houseAt.z, r: 0.14 });
@@ -2111,7 +2250,8 @@ function farm(L: Layout, ground: (x: number, z: number) => number, r: () => numb
     life.push((t) => {
       for (const k of crows) {
         const u = (t + k.ph) % 6;
-        const fly = u > 4.2 && u < 5.6 ? Math.sin(((u - 4.2) / 1.4) * Math.PI) : 0;
+        // On a roll they all take off at once.
+        const fly = env.roll >= 0 ? Math.sin(Math.min(1, env.roll * 1.2) * Math.PI) : u > 4.2 && u < 5.6 ? Math.sin(((u - 4.2) / 1.4) * Math.PI) : 0;
         const hop = Math.abs(Math.sin((t + k.ph) * 4)) * 0.006;
         const x = k.p.x + Math.sin((t + k.ph) * 0.4) * 0.03;
         const z = k.p.z + Math.cos((t + k.ph) * 0.3) * 0.03;
@@ -2175,7 +2315,11 @@ function farm(L: Layout, ground: (x: number, z: number) => number, r: () => numb
   const sway = swayMat(L.seed);
   g.add(instanced(tuftGeo(), tufts, sway));
   if (stubble.length) g.add(instanced(cyl(0.6, 1, 4), stubble, blobMat()));
-  life.push((t) => (sway.userData.time.value = t));
+  life.push((t) => {
+    sway.userData.time.value = t;
+    // A gust rolls through on a roll; the wheat falls still under the robber.
+    sway.userData.gust.value = env.robber ? 0 : 1 + (env.roll >= 0 ? 2.5 * Math.sin(env.roll * Math.PI) : 0);
+  });
 
   // Poppies and cornflowers along the tracks and the field's edge.
   {
@@ -2219,14 +2363,28 @@ function farmTint(L: Layout) {
 
 // --- the tile
 
-export type Tile = { group: THREE.Group; layout: Layout; ground: (x: number, z: number) => number; update: (t: number) => void };
+export type Tile = {
+  group: THREE.Group;
+  layout: Layout;
+  ground: (x: number, z: number) => number;
+  env: Env;
+  // Advance the tile's life to time t (seconds).
+  update: (t: number) => void;
+  // Start the roll payoff at time t0; place or lift the robber at time t; set night (0 to 1).
+  roll: (t0: number) => void;
+  robber: (on: boolean, t: number) => void;
+};
 
+const ROLL_S = 2.4;
 export function buildTile(kind: Terrain, seed: number, rings = 64): Tile {
   const L = layoutOf(kind, seed);
   const ground = (x: number, z: number) => heightAt(L, x, z);
   const group = new THREE.Group();
   const r = rng32(seed ^ 0x9e3779b9);
-  const props = kind === "timber" ? forest(L, ground, r) : kind === "wool" ? pasture(L, ground, r) : kind === "grain" ? farm(L, ground, r) : null;
+  const env: Env = { night: 0, robber: false, roll: -1 };
+  TU = { dull: { value: 0 }, flash: { value: 0 } };
+  const tu = TU;
+  const props = kind === "timber" ? forest(L, ground, r, env) : kind === "wool" ? pasture(L, ground, r, env) : kind === "grain" ? farm(L, ground, r, env) : null;
   const stands = props?.stands ?? [];
   // Canopy cover and contact: the ground darkens under each stand.
   const occlude = (x: number, z: number) => {
@@ -2241,5 +2399,28 @@ export function buildTile(kind: Terrain, seed: number, rings = 64): Tile {
   group.add(b.top, b.side);
   if (props) group.add(props.g);
   const life = props?.life ?? [];
-  return { group, layout: L, ground: (x, z) => BLOCK_H + ground(x, z), update: (t) => life.forEach((f) => f(t)) };
+  let rollAt = -Infinity;
+  let stoppedAt = 0;
+  return {
+    group,
+    layout: L,
+    env,
+    ground: (x, z) => BLOCK_H + ground(x, z),
+    roll: (t0) => (rollAt = t0),
+    robber: (on, t) => {
+      env.robber = on;
+      stoppedAt = t;
+      tu.dull.value = on ? 1 : 0;
+    },
+    update: (t) => {
+      const u = (t - rollAt) / ROLL_S;
+      env.roll = u >= 0 && u <= 1 && !env.robber ? u : -1;
+      // The jelly wobble: two damped bounces, squash and stretch, and a warm flash that fades.
+      const k = env.roll >= 0 ? Math.sin(env.roll * Math.PI * 4) * (1 - env.roll) ** 1.5 : 0;
+      group.scale.set(1 - 0.03 * k, 1 + 0.07 * k, 1 - 0.03 * k);
+      tu.flash.value = env.roll >= 0 ? 0.6 * Math.sin(Math.min(1, env.roll * 3) * Math.PI) * (1 - env.roll) : 0;
+      const at = env.robber ? stoppedAt : t;
+      life.forEach((f) => f(at));
+    },
+  };
 }

@@ -103,6 +103,25 @@ THE SIX WORLDS
    fades. The wayfarer (the robber) stands here at person scale (0.17) under a hooded cloak with a lantern. Surprise: a
    lizard basks on a rock and darts when the tumbleweed passes.
 
+THE TILE IN PLAY (owner 2026-10-16: "when the land wins a roll it can interact"; all five below)
+1. Roll payoff. When a tile's number is rolled, the whole block gives a jelly wobble (a quick squash and stretch, two
+   bounces over about 2.4 s) with a soft warm flash, and its story reacts for that beat: forest, both salmon leap high
+   together and the doe lifts her head, ears up; pasture, the whole flock hops and the collie dashes a fast lap; grain, the
+   windmill's sails spin up and the crows all take off as a gust rolls through the wheat; clay, the derrick hauls a full
+   bucket up and the kiln puffs; ore, the cart rolls out heaped and tips, the crystal flares; waste, the dust devil whirls
+   up and the tumbleweed bounds across.
+2. Robber. While the wayfarer stands on a tile its life stops and its colours dull by about half toward grey: the bonfire
+   goes out, the flock huddles together, the windmill and the wheat fall still, the derrick and the cart stop. It reads at a
+   glance which tile is blocked; lifting the robber brings it all back.
+3. Night. In the board's night mode the moon is cool and low and every lived-in thing glows warm: the campfire lights the
+   clearing and the tent glows from inside, the hut's window and stove, the farmhouse windows and the barn's loft, the
+   kiln's mouth, the mine's lantern and mouth, the wayfarer's lantern. Fireflies over the forest pool.
+4. Board-wide life. Over the whole island, not one tile: a few small flocks of birds cross from tile to tile, and soft
+   cloud shadows drift slowly over the board, so it reads as one world rather than nineteen dioramas.
+5. Strata per kind. The same five bands, tinted to the land: forest and pasture caramel soil over chocolate rock; grain a
+   golden sand and warm brown soil; clay terracotta soil over deep red rock; ore pale grey sand, grey-brown soil, slate rock;
+   waste deep sand, ochre soil, rust rock. The side of a tile hints at what it is.
+
 VARIATION (open, owner 2026-10-15: "we will want some variations so the whole map isn't repeated"; decide later)
 - Today every tile is seeded: which back edge the landform leans to, its relief, every scatter, and so where the stream, the
   pool and the camp fall. Seven forests in a ring already differ in layout but tell the same story.
