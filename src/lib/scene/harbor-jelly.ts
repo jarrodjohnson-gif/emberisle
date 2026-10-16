@@ -18,7 +18,7 @@ export type Shore = {
   floaters: THREE.Group[];
   // The waterline as a coast (one point per sample, its outward normal), for the crystal sea's lace and swash.
   waterline: { x: number; z: number; mx: number; mz: number }[];
-  update(t: number, eye: THREE.Vector3): void;
+  update(t: number): void;
   dispose(): void;
 };
 
@@ -214,7 +214,7 @@ function hullGeo(K: Kit, L: number, B: number, D: number, free: number, wood: st
 }
 
 // One ship, local frame: bow +z, y 0 at the water. Returns its group with the sail cloth named "sail" under a "swing" group
-// that turns about the mast to face the eye, and the mast's foot (for the swing).
+// on the mast (it sways a little in the wind).
 function ship(K: Kit, cm: THREE.Material, kind: HarborKind, mats: THREE.Material[], geos: THREE.BufferGeometry[], moor: { bow: V3; stern: V3 } | null) {
   const big = kind === "any";
   const L = big ? 0.56 : 0.46;
@@ -279,7 +279,7 @@ function ship(K: Kit, cm: THREE.Material, kind: HarborKind, mats: THREE.Material
   const hull = new THREE.Mesh(body, cm);
   hull.castShadow = true;
   g.add(hull);
-  // The mainsail: a gaff sail between the mast, the boom and the gaff, with belly; it swings on the mast to face the eye.
+  // The mainsail: a gaff sail between the mast, the boom and the gaff, with belly, set fore and aft.
   const swing = new THREE.Group();
   swing.position.set(0, 0, mastZ);
   swing.name = "swing";
@@ -292,7 +292,7 @@ function ship(K: Kit, cm: THREE.Material, kind: HarborKind, mats: THREE.Material
   sail.name = "sail";
   sail.position.y = deckY + 0.05;
   sail.castShadow = true;
-  // The boom and the gaff go with the sail (in the swing's frame the sail spreads along -x... see sailGeo).
+  // The boom and the gaff go with the sail (in the swing's frame the sail spreads aft, along -z: see sailGeo).
   // The spars ride in the sail's own mesh, mapped to the wood strip (one draw for the whole swinging rig).
   const wood = (g: THREE.BufferGeometry) => {
     g.deleteAttribute("color");
@@ -635,7 +635,7 @@ function build(coast: CoastPt[], docks: Dock[], seed: number): Shore {
   const glowParts: THREE.BufferGeometry[] = [];
   const plateParts: THREE.BufferGeometry[] = [];
   const floaters: THREE.Group[] = [];
-  const life: ((t: number, eye: THREE.Vector3) => void)[] = [];
+  const life: ((t: number) => void)[] = [];
   const box = new THREE.BoxGeometry(1, 1, 1);
   const DECK = 0.1;
   // One story per harbor, dealt round so each kind of moment appears.
@@ -818,12 +818,9 @@ function build(coast: CoastPt[], docks: Dock[], seed: number): Shore {
     holder.userData.vids = d.vids;
     holder.userData.kind = d.kind;
     floaters.push(holder);
+    // The boom swings a little on the mast as the wind shifts.
     const swing = s.g.getObjectByName("swing")!;
-    life.push((_t, eye) => {
-      // The sail swings on its mast to face the eye (within the ship), so the rate reads from every side.
-      // The cloth faces the swing's +x; turned by θ about y, +x points along (cos θ, -sin θ).
-      swing.rotation.y = Math.atan2(-(eye.z - holder.position.z), eye.x - holder.position.x) - holder.rotation.y;
-    });
+    life.push((t) => (swing.rotation.y = 0.12 * Math.sin(t * 0.35 + di * 1.7)));
 
     // The harbor's story.
     const story = stories[di % stories.length]!;
@@ -1021,7 +1018,7 @@ function build(coast: CoastPt[], docks: Dock[], seed: number): Shore {
   const _e = new THREE.Euler();
   const _p = new THREE.Vector3();
   const _s = new THREE.Vector3(1, 1, 1);
-  const update = (t: number, eye: THREE.Vector3) => {
+  const update = (t: number) => {
     if (crabMesh) {
       crabs.forEach((c, k) => {
         const cyc = (t * 0.35 + c.ph) % 4;
@@ -1044,9 +1041,9 @@ function build(coast: CoastPt[], docks: Dock[], seed: number): Shore {
       ray.scale.set(1 + 0.12 * Math.sin(t * 2.2), 1, 1);
     }
     if (glow) glow.emissiveIntensity = 0.95 + 0.12 * Math.sin(t * 3.1) * Math.sin(t * 1.7);
-    for (const f of life) f(t, eye);
+    for (const f of life) f(t);
   };
-  update(0, new THREE.Vector3(0, 10, 10));
+  update(0);
   for (const f of floaters) group.add(f);
 
   return {

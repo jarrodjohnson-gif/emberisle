@@ -1191,7 +1191,7 @@ export class IsleRenderer {
       this.oceanLife.step(0, false, this.oceanViewport);
       // The scenes hold still; a dulling or a glow still lands.
       this.jelly?.update(this.jellyT, false, true);
-      this.shore?.update(this.jellyT, this.cam().position);
+      this.shore?.update(this.jellyT);
       this.pulseMarks(0, true);
       this.draw();
       return;
@@ -1202,7 +1202,7 @@ export class IsleRenderer {
     this.foam.material.opacity = 0.32 + 0.23 * (0.5 + 0.5 * Math.sin(t * 0.8));
     this.jellyT = t;
     this.jelly?.update(t);
-    this.shore?.update(t, this.cam().position);
+    this.shore?.update(t);
     if (this.walk) {
       const w = this.walk;
       const u = Math.min(1, (t - w.start) / w.dur);

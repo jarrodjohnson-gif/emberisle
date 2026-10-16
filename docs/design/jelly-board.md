@@ -101,7 +101,7 @@ hexes have swapped in, on the full board only (the lite board keeps the plain be
 - **Harbors:** per dock a plank pier on braced piles with a T-head (bollards, ladder, lamp, lifebuoy, tyres), a dockhouse
   and the good on the deck, all merged into one mesh (lamps and windows a second), and the rate plates in one atlas draw
   (flat, so the overhead view reads them). The ship (a sloop, or a ketch at a 3:1 harbor) is moored alongside, 1.3x; its
-  mainsail and spars are one mesh that swings to face the eye. One story each: a fisherman, a gull, a cat, a rowboat, a hoist.
+  mainsail and spars are one mesh, set fore and aft and swaying a little; the sails carry no rate. One story each: a fisherman, a gull, a cat, a rowboat, a hoist.
 - **Floaters:** ships, rowboats and four buoys ride the swell as the plain boats did (`userData.rest`).
 - **Cost:** about +8 draws and +50k triangles in the colour pass over the plain beach and docks.
 
