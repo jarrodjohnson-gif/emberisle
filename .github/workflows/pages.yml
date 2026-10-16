@@ -1,8 +1,10 @@
 name: Pages
 
+# Publishes once a night (4:07 am Arizona time) and on demand from the Actions tab, not on every merge,
+# so it doesn't queue alongside PR CI on busy days.
 on:
-  push:
-    branches: [main]
+  schedule:
+    - cron: "7 11 * * *"
   workflow_dispatch:
 
 permissions:
