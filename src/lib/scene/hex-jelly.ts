@@ -2603,7 +2603,7 @@ function martin(m: THREE.Material) {
     g.add(w);
     return { w, side };
   });
-  g.scale.setScalar(SIZE.small * 0.6);
+  g.scale.setScalar(SIZE.small * 0.45);
   return { g, wings };
 }
 
@@ -2658,13 +2658,13 @@ function coyote(m: THREE.Material, asleep: boolean) {
     g.add(
       mesh(
         merge([
-          part(new THREE.TorusGeometry(0.016, 0.01, 8, 18, Math.PI * 1.55), C.fur, [0, 0.009, 0], [Math.PI / 2, 0, 0]),
-          part(new THREE.TorusGeometry(0.016, 0.006, 6, 14, Math.PI * 1.2), C.back, [0, 0.015, 0], [Math.PI / 2, 0, 0.3]),
-          part(sphere(), C.fur, [0.014, 0.01, 0.011], [0, -0.6, 0], [0.01, 0.007, 0.008]),
-          part(sphere(8), C.belly, [0.022, 0.008, 0.016], [0, -0.6, 0], [0.006, 0.004, 0.004]),
+          part(new THREE.TorusGeometry(0.016, 0.01, 14, 28, Math.PI * 1.55), C.fur, [0, 0.009, 0], [Math.PI / 2, 0, 0]),
+          part(new THREE.TorusGeometry(0.016, 0.006, 12, 24, Math.PI * 1.2), C.back, [0, 0.015, 0], [Math.PI / 2, 0, 0.3]),
+          part(sphere(18), C.fur, [0.014, 0.01, 0.011], [0, -0.6, 0], [0.01, 0.007, 0.008]),
+          part(sphere(14), C.belly, [0.022, 0.008, 0.016], [0, -0.6, 0], [0.006, 0.004, 0.004]),
           part(new THREE.ConeGeometry(1, 1, 5), C.back, [0.01, 0.019, 0.006], [0.3, 0, 0.2], [0.0035, 0.009, 0.0025]),
           part(new THREE.ConeGeometry(1, 1, 5), C.back, [0.016, 0.019, 0.004], [0.3, 0, -0.2], [0.0035, 0.009, 0.0025]),
-          part(sphere(8), C.fur, [-0.004, 0.008, 0.022], [0, 0.6, 0], [0.014, 0.006, 0.006]),
+          part(sphere(14), C.fur, [-0.004, 0.008, 0.022], [0, 0.6, 0], [0.014, 0.006, 0.006]),
           part(sphere(6), C.tip, [0.008, 0.008, 0.024], [0, 0, 0], [0.004, 0.004, 0.004]),
         ]),
         m,
@@ -2674,22 +2674,22 @@ function coyote(m: THREE.Material, asleep: boolean) {
     g.add(
       mesh(
         merge([
-          part(sphere(), C.fur, [0, 0.036, 0], [0, 0, 0.05], [0.026, 0.012, 0.01]),
-          part(sphere(), C.back, [0, 0.042, 0], [0, 0, 0.05], [0.022, 0.006, 0.008]),
-          part(sphere(), C.belly, [0.004, 0.031, 0], [0, 0, 0], [0.018, 0.006, 0.008]),
-          part(sphere(), C.fur, [0.032, 0.048, 0], [0, 0, 0], [0.009, 0.008, 0.007]),
+          part(sphere(18), C.fur, [0, 0.036, 0], [0, 0, 0.05], [0.026, 0.012, 0.01]),
+          part(sphere(18), C.back, [0, 0.042, 0], [0, 0, 0.05], [0.022, 0.006, 0.008]),
+          part(sphere(18), C.belly, [0.004, 0.031, 0], [0, 0, 0], [0.018, 0.006, 0.008]),
+          part(sphere(18), C.fur, [0.032, 0.048, 0], [0, 0, 0], [0.009, 0.008, 0.007]),
           part(new THREE.ConeGeometry(1, 1, 6), C.fur, [0.043, 0.045, 0], [0, 0, -Math.PI / 2], [0.004, 0.012, 0.004]),
           part(sphere(6), C.tip, [0.049, 0.045, 0], [0, 0, 0], [0.0018, 0.0018, 0.0018]),
           part(new THREE.ConeGeometry(1, 1, 5), C.back, [0.03, 0.06, 0.004], [0.2, 0, 0], [0.004, 0.011, 0.003]),
           part(new THREE.ConeGeometry(1, 1, 5), C.back, [0.03, 0.06, -0.004], [-0.2, 0, 0], [0.004, 0.011, 0.003]),
-          part(sphere(8), C.fur, [-0.03, 0.032, 0], [0, 0, 0.7], [0.016, 0.006, 0.006]),
+          part(sphere(14), C.fur, [-0.03, 0.032, 0], [0, 0, 0.7], [0.016, 0.006, 0.006]),
           part(sphere(6), C.tip, [-0.042, 0.022, 0], [0, 0, 0.7], [0.005, 0.004, 0.004]),
         ]),
         m,
       ),
     );
     legs = [[0.016, 0.006], [0.016, -0.006], [-0.016, 0.006], [-0.016, -0.006]].map(([x, z]) => {
-      const l = mesh(merge([part(cyl(0.003, 0.0026, 6), C.fur, [0, -0.0135, 0], [0, 0, 0], [1, 0.027, 1])]), m);
+      const l = mesh(merge([part(cyl(0.0034, 0.0024, 10), C.fur, [0, -0.0135, 0], [0, 0, 0], [1, 0.027, 1])]), m);
       l.position.set(x!, 0.028, z!);
       g.add(l);
       return l;
@@ -3214,9 +3214,9 @@ function brickworks(L: Layout, ground: (x: number, z: number) => number, r: () =
       // The hack's roof: a shallow plank cover on posts at each end.
       const ends = [-4.6, 4.6].map((i) => ({ x: rc.x + ax * i * 0.026, z: rc.z + az * i * 0.026 }));
       if (ends.every((e) => hexDist(e.x, e.z) < INR - 0.1 && Math.hypot(e.x, e.z) > 0.4)) {
-        const yr = Math.max(...ends.map((e) => Y(e.x, e.z))) + 0.078;
+        const yr = Math.max(...ends.map((e) => Y(e.x, e.z))) + 0.072;
         for (const e of ends) roofs.push(beamGeo(new THREE.Vector3(e.x, Y(e.x, e.z), e.z), new THREE.Vector3(e.x, yr, e.z), 0.003, "#7a5434"));
-        roofs.push(part(new THREE.BoxGeometry(1, 1, 1), "#9a7048", [rc.x, yr + 0.003, rc.z], [0, -a, 0.12 * row], [0.26, 0.004, 0.05]));
+        roofs.push(part(new THREE.BoxGeometry(1, 1, 1), "#9a7048", [rc.x, yr + 0.003, rc.z], [0, -a, 0], [0.26, 0.003, 0.02]));
       }
     }
     // Pallets of finished bricks by the kiln, stacked high.
@@ -3340,16 +3340,40 @@ function brickworks(L: Layout, ground: (x: number, z: number) => number, r: () =
       const y = Y(p.x, p.z);
       const snake = new THREE.Group();
       const body: THREE.BufferGeometry[] = [part(new THREE.DodecahedronGeometry(1, 0), "#c9a27a", [0, 0.006, 0], [0, 0.4, 0], [0.04, 0.012, 0.034])];
-      const N = 46;
-      for (let i = 0; i < N; i++) {
-        const f = i / N;
-        const ang = f * Math.PI * 2 * 2.3;
-        const rad = 0.022 - f * 0.016;
-        const dark = i % 4 === 0;
-        body.push(part(sphere(8), dark ? "#6a4a2a" : "#b89a62", [Math.cos(ang) * rad, 0.016 + (1 - f) * 0.0, Math.sin(ang) * rad], [0, 0, 0], [0.0052 - f * 0.0016, 0.0042, 0.0052 - f * 0.0016]));
+      // One smooth tube: two and a bit turns of coil tightening inward, then the neck rising from the middle; its colour
+      // bands (saddle-brown blotches on tan) follow the length.
+      const pts: THREE.Vector3[] = [];
+      for (let i = 0; i <= 60; i++) {
+        const f = i / 60;
+        const ang = f * Math.PI * 2 * 2.2;
+        const rad = 0.022 - f * 0.017;
+        pts.push(new THREE.Vector3(Math.cos(ang) * rad, 0.0155 + f * 0.003, Math.sin(ang) * rad));
       }
-      // The neck rising from the coil's middle, the head.
-      for (let i = 0; i < 6; i++) body.push(part(sphere(8), i % 3 ? "#b89a62" : "#6a4a2a", [0.002 + i * 0.002, 0.02 + i * 0.004, 0], [0, 0, 0], [0.004, 0.004, 0.004]));
+      for (let i = 1; i <= 8; i++) pts.push(new THREE.Vector3(0.002 + i * 0.0018, 0.019 + i * 0.0032, 0.0));
+      const curve = new THREE.CatmullRomCurve3(pts);
+      const tube = new THREE.TubeGeometry(curve, 160, 1, 10, false);
+      const tp = tube.attributes.position as THREE.BufferAttribute;
+      const tn = tube.attributes.normal as THREE.BufferAttribute;
+      const tcol = new Float32Array(tp.count * 3);
+      const TAN = new THREE.Color("#c4a46a");
+      const BLOT = new THREE.Color("#6a4a2a");
+      const BELLY = new THREE.Color("#e8d6a8");
+      const cc = new THREE.Color();
+      for (let i = 0; i < tp.count; i++) {
+        const seg = Math.floor(i / 11);
+        const u = seg / 160;
+        // The radius: thick in the coil, thinner to the tail's start, the neck a little slimmer.
+        const rr = 0.0052 * (1 - u * 0.35);
+        const c0 = curve.getPointAt(Math.min(1, u));
+        const nx = tn.getX(i), ny = tn.getY(i), nz = tn.getZ(i);
+        tp.setXYZ(i, c0.x + nx * rr, c0.y + ny * rr * 0.85, c0.z + nz * rr);
+        cc.copy(TAN).lerp(BLOT, Math.sin(u * 70) > 0.45 ? 0.85 : 0).lerp(BELLY, ny < -0.3 ? 0.7 : 0);
+        cc.toArray(tcol, i * 3);
+      }
+      tube.setAttribute("color", new THREE.BufferAttribute(tcol, 3));
+      tube.deleteAttribute("uv");
+      tube.computeVertexNormals();
+      body.push(tube.toNonIndexed());
       body.push(part(sphere(8), "#8a6a3a", [0.016, 0.044, 0], [0, 0, -0.2], [0.008, 0.0045, 0.0055]));
       body.push(part(sphere(6), "#1a1414", [0.019, 0.047, 0.004], [0, 0, 0], [0.0012, 0.0012, 0.0012]));
       body.push(part(sphere(6), "#1a1414", [0.019, 0.047, -0.004], [0, 0, 0], [0.0012, 0.0012, 0.0012]));
