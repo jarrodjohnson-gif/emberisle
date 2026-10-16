@@ -83,8 +83,8 @@ and run long proofs in the background, one at a time, reading every result befor
 
    Read the whole issue and every comment on it, fresh. Together they are the spec.
 4. **Claim** it right away with this comment. A fork can't set labels, so the comment alone is your claim.
-   You can add a line `/claim` (later `/in-review` or `/paused`) to that comment and the label bot will
-   set the status for you. `/label`, `/done` and `/canceled` are Jarrod's only.
+   Put `/claim` on its own line in that comment, and the label bot sets the status. Later, post `/in-review`
+   or `/paused` in a **new** comment; the bot ignores edits. `/label`, `/done` and `/canceled` are Jarrod's only.
    ```
    claimed: <your name>, <YYYY-MM-DD>
    files: <paths you expect to touch>
@@ -106,7 +106,7 @@ and run long proofs in the background, one at a time, reading every result befor
    - Open a **draft** PR into `jarrodjohnson-gif/emberisle` `main`, either in the web UI or with
      `gh pr create --draft --repo jarrodjohnson-gif/emberisle --base main --head <you>:helper/<issue#>-<slug>`.
    - In the body, put `Closes #<issue>`, what changed, and the check output.
-   - Then comment on the issue (no label changes):
+   - Then post a new comment on the issue, with `/in-review` on its own line:
    ```
    changed: <one line>
    test: <command> → <result>
