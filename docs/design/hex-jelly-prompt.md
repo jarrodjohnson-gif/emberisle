@@ -103,11 +103,15 @@ THE SIX WORLDS
    kiln. Roll: the bucket comes up full, kiln and chimney puff, the donkey and carriers hurry, the martins burst out.
    Night: the kiln mouth, the headframe lantern, the cottage window.
 
-5. ORE — "The Old Mine". Grey stony ground rising into a ridge at the back from which three faceted peaks grow (the tallest
-   0.6, snow-capped with a wisp of cloud caught on it), scree fans at their feet. A timber-framed mine mouth in the ridge
-   foot glows warm inside with a hanging lantern; rails run out of it to a cart that rolls out, tips its load of ore on
-   a heap and rolls back. A miner with a pick chips at a blue-veined crystal outcrop that sparkles. A small mountain goat
-   on a ledge. Surprise: a single gold nugget glints in the scree.
+5. ORE — "The Old Mine". A real mountain at the back: three craggy peaks on a ridge (the tallest 0.6 with a snow cap), grey
+   rock with scree on the steep faces, alpine-green meadow and dark pines on the lower slopes. At the ridge's foot, off to
+   one side so the token never hides it, a timber-framed adit: a dark mouth in the rock with posts, a lintel and braces,
+   a lantern hung at its head. Rails run out of it, cross a dry gully on a timber trestle and end on a tipple at the
+   flank, where an ore cart rolls out, tips its load onto a heap of dark ore flecked with blue, and rolls back. Beside the
+   mouth a blue crystal outcrop where a miner swings a pick. On the other front flank a cold blue tarn (jelly water) at the
+   meadow's edge. A mountain goat on a ledge, an eagle circling the peaks. Surprise: a gold nugget glints in the scree.
+   Roll: the cart races out heaped, the crystals flare, the goat hops, the eagle stoops. Night: the lantern and the
+   mine mouth glow warm.
 
 6. WASTE — "The Wayfarer's Rest". Pale dunes with crisp slip faces and wind-ripple stripes, a rust-red rocky mesa at the
    back. A tiny oasis: a palm pair over a round jelly pool. Two saguaro cacti (one flowering pink), a bleached dead tree, a

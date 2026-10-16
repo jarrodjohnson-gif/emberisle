@@ -124,6 +124,8 @@ export type Layout = {
   marks: Record<string, Pt>;
   // Grain: the field's four strips across the front, each a band of the field's `u` (along the back edge) and what grows there.
   strips: { u0: number; u1: number; crop: "wheat" | "cut" | "plough" }[];
+  // Ore: the peaks (r the base radius, h the height), the dry gully the trestle crosses.
+  peaks: Spot[];
 };
 
 // The size ladder (prompt "SCALE"): every figure and building is built at a base size and drawn SIZE[k] times larger, so all
@@ -159,7 +161,7 @@ const DEG = Math.PI / 180;
 export function layoutOf(kind: Terrain, seed: number): Layout {
   const r = rng32(seed);
   const hillAt = ((r() < 0.5 ? 240 : 300) + (r() - 0.5) * 12) * DEG;
-  const L: Layout = { kind, seed, hillAt, spots: [], stream: [], pool: null, camp: null, deer: null, ring: null, ridges: [], marks: {}, strips: [] };
+  const L: Layout = { kind, seed, hillAt, spots: [], stream: [], pool: null, camp: null, deer: null, ring: null, ridges: [], marks: {}, strips: [], peaks: [] };
   if (kind === "timber") {
     // The stream runs away from the hill's crest toward the front, on the side `s` (round toward the nearer front edge).
     const s = hillAt < 270 * DEG ? -1 : 1;
@@ -204,6 +206,26 @@ export function layoutOf(kind: Terrain, seed: number): Layout {
     const s = r() < 0.5 ? -1 : 1;
     L.pool = { ...at(hillAt - s * 62 * DEG, 0.6), r: 0.13 };
     L.marks = { mill: at(hillAt, 0.6), yard: at(hillAt + s * 74 * DEG, 0.6), side: { x: s, z: 0 } };
+  }
+  if (kind === "ore") {
+    // Three peaks on a ridge at the back, the tallest in the middle; the adit at the ridge's foot off to side s, the rails
+    // running out from it across a dry gully to the tipple on that flank; the tarn on the other front flank.
+    const s = r() < 0.5 ? -1 : 1;
+    // The peaks are faceted rock meshes (mine()); the ground only swells under them.
+    L.peaks.push({ ...at(hillAt, 0.52), r: 0.24, h: 0.64 + r() * 0.04 });
+    L.peaks.push({ ...at(hillAt - s * 0.62, 0.54), r: 0.19, h: 0.42 + r() * 0.05 });
+    L.peaks.push({ ...at(hillAt + s * 0.55, 0.56), r: 0.17, h: 0.34 + r() * 0.04 });
+    const a = at(hillAt - s * 0.62, 0.56);
+    const b = at(hillAt + s * 0.55, 0.58);
+    L.ridges.push({ a, b, w: 0.3, h: 0.12 });
+    L.marks = {
+      side: { x: s, z: 0 },
+      adit: at(hillAt + s * 0.95, 0.5),
+      tipple: at(hillAt + s * 1.72, 0.64),
+      gullyA: at(hillAt + s * 1.33, 0.36),
+      gullyB: at(hillAt + s * 1.33, 0.95),
+    };
+    L.pool = { ...at(hillAt + Math.PI + s * 0.55, 0.62), r: 0.15 };
   }
   if (kind === "clay") {
     // The open-cut quarry across the back, a trench slot running from its end toward one front flank, the kiln yard on the
@@ -278,6 +300,15 @@ export function heightAt(L: Layout, x: number, z: number) {
     const d2 = ((x - g.a.x - u * dx) ** 2 + (z - g.a.z - u * dz) ** 2) / (g.w * g.w);
     if (d2 < 1) raw += g.h * (1 - d2) * (1 - d2) * (1 - (2 * u - 1) ** 4 * 0.5);
   }
+  for (const p of L.peaks) {
+    // A peak: a cone with a concave flank, crags broken into it by ridged noise.
+    const d = Math.hypot(x - p.x, z - p.z) / p.r;
+    if (d < 1) {
+      const t = 1 - d;
+      const crag = 1 - Math.abs(noise((x - p.x) * 9, (z - p.z) * 9, L.seed + 70));
+      raw += p.h * 0.3 * t ** 1.2 * (0.86 + 0.24 * crag);
+    }
+  }
   const pad = smooth(PAD_R, PAD_R + 0.3, Math.hypot(x, z));
   if (L.strips.length) {
     // Furrows: a ridge every FURROW across each strip (deeper where it is ploughed), none on the tracks.
@@ -295,6 +326,15 @@ export function heightAt(L: Layout, x: number, z: number) {
   if (L.stream.length) {
     const d = streamDist(L, x, z) / STREAM_W;
     if (d < 1) h -= STREAM_D * (1 - d * d) * (1 - d * d) * cut;
+  }
+  if (L.kind === "ore") {
+    // The dry gully the trestle crosses, running out from the ridge's foot toward the rim.
+    const [a, b] = [L.marks.gullyA!, L.marks.gullyB!];
+    const [sx, sz] = [b.x - a.x, b.z - a.z];
+    const w = Math.min(1, Math.max(0, ((x - a.x) * sx + (z - a.z) * sz) / (sx * sx + sz * sz)));
+    const d = Math.hypot(x - a.x - w * sx, z - a.z - w * sz) / 0.075;
+    const keep = cut * (1 - smooth(INR - 0.2, INR - 0.08, hexDist(x, z)));
+    if (d < 1) h -= 0.09 * (1 - d * d) * (1 - d * d) * keep;
   }
   if (L.kind === "clay") {
     const Q = quarryAt(L, x, z);
@@ -377,6 +417,7 @@ const PAINTS: Partial<Record<Terrain, Paint>> = {
   timber: { low: C("#5fae47"), high: C("#8cc65a"), steep: C("#7d8a4a"), crease: C("#2f5a2e"), pad: C("#a9cf7c"), lip: "#6db64f" },
   grain: { low: C("#86c450"), high: C("#a8d468"), steep: C("#8db45a"), crease: C("#4a8a38"), pad: C("#e6e2ae"), lip: "#96cf5a" },
   clay: { low: C("#dc7a4a"), high: C("#eba56e"), steep: C("#b9542f"), crease: C("#8a3a22"), pad: C("#f2cfa4"), lip: "#dc7a4a" },
+  ore: { low: C("#a3ad84"), high: C("#9aa0a6"), steep: C("#7a8088"), crease: C("#4a5058"), pad: C("#d6dbc8"), lip: "#a3ad84" },
   wool: { low: C("#86cc52"), high: C("#b6e070"), steep: C("#93b85a"), crease: C("#4a8a38"), pad: C("#c6e49c"), lip: "#96d45c" },
 };
 
@@ -3534,6 +3575,516 @@ function clayTint(L: Layout) {
   };
 }
 
+// --- the mine
+
+// ORE, "The Old Mine" (docs/design/hex-jelly-prompt.md): the craggy peaks with their snow, scree and pines; the timber adit
+// with its lantern; rails out over the gully on a trestle to the tipple, the cart that rolls out and tips; the ore heap; the
+// crystal outcrop and the miner; the tarn; a goat on a ledge, an eagle circling, a gold nugget in the scree.
+function mine(L: Layout, ground: (x: number, z: number) => number, r: () => number, env: Env): Built {
+  const g = new THREE.Group();
+  const life: Life[] = [];
+  const stands: { x: number; z: number; r: number }[] = [];
+  const Y = (x: number, z: number) => BLOCK_H + ground(x, z);
+  const cm = critterMat();
+  const M = L.marks;
+  const side = M.side!.x;
+  const EYE = { x: Math.sin(20 * DEG), z: Math.cos(20 * DEG) };
+  const ok = (x: number, z: number, room: number) =>
+    Math.hypot(x, z) > 0.4 + room && nearestCorner(x, z) > 0.2 + room && hexDist(x, z) < INR - 0.14 - room && stands.every((q) => Math.hypot(q.x - x, q.z - z) > q.r + room);
+  const V3 = (p: Pt, dy = 0) => new THREE.Vector3(p.x, Y(p.x, p.z) + dy, p.z);
+
+  // The peaks: faceted cones of grey rock, their faces jittered into planes, banded paler toward the top; snow on the tallest.
+  {
+    const parts: THREE.BufferGeometry[] = [];
+    L.peaks.forEach((p, i) => {
+      const cone = new THREE.ConeGeometry(p.r, p.h, 7, 4).toNonIndexed();
+      const pos = cone.attributes.position as THREE.BufferAttribute;
+      const col = new Float32Array(pos.count * 3);
+      const c = new THREE.Color();
+      const LOW = new THREE.Color("#6e747c");
+      const MID = new THREE.Color("#8e949c");
+      const HI = new THREE.Color("#b4b8bc");
+      const SNOW = new THREE.Color("#f7f9fb");
+      for (let k = 0; k < pos.count; k++) {
+        let [x, y, z] = [pos.getX(k), pos.getY(k), pos.getZ(k)];
+        const f = (y + p.h / 2) / p.h;
+        if (f > 0.02 && f < 0.98) {
+          const j = 0.22 * (1 - f) * p.r;
+          x += hash2(Math.round(x * 997), Math.round(z * 991) + Math.round(y * 977), L.seed + i) * j;
+          z += hash2(Math.round(z * 983), Math.round(x * 971) + Math.round(y * 967), L.seed + i + 9) * j;
+          y += hash2(Math.round(y * 953), Math.round(x * 947), L.seed + i + 5) * p.h * 0.05;
+        }
+        pos.setXYZ(k, x, y, z);
+        c.copy(LOW).lerp(MID, smooth(0, 0.5, f)).lerp(HI, smooth(0.5, 0.9, f));
+        if (i === 0) c.lerp(SNOW, smooth(0.62, 0.7, f));
+        else if (i === 1) c.lerp(SNOW, smooth(0.82, 0.88, f) * 0.9);
+        c.toArray(col, k * 3);
+      }
+      cone.setAttribute("color", new THREE.BufferAttribute(col, 3));
+      cone.deleteAttribute("uv");
+      cone.computeVertexNormals();
+      cone.translate(p.x, BLOCK_H + ground(p.x, p.z) + p.h / 2 - 0.05, p.z);
+      parts.push(cone);
+      stands.push({ x: p.x, z: p.z, r: p.r * 0.9 });
+    });
+    const peaks = mesh(merge(parts), jellyfy(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.75, flatShading: true }), "jelly-peaks"));
+    peaks.userData.ref = "peaks";
+    g.add(peaks);
+  }
+
+  // The adit: a dark mouth set into the slope, framed by two posts, a lintel and braces, a little plank hood; the lantern.
+  const ad = M.adit!;
+  const face = Math.atan2(-ad.z, -ad.x);
+  const adit = new THREE.Group();
+  adit.add(
+    mesh(
+      merge([
+        part(new THREE.BoxGeometry(1, 1, 1), "#1a1412", [0.005, 0.03, 0], [0, 0, 0], [0.03, 0.06, 0.05]),
+        part(new THREE.BoxGeometry(1, 1, 1), "#8a5e38", [0.022, 0.03, 0.03], [0, 0, 0], [0.01, 0.07, 0.01]),
+        part(new THREE.BoxGeometry(1, 1, 1), "#8a5e38", [0.022, 0.03, -0.03], [0, 0, 0], [0.01, 0.07, 0.01]),
+        part(new THREE.BoxGeometry(1, 1, 1), "#7a5434", [0.022, 0.068, 0], [0, 0, 0], [0.012, 0.012, 0.08]),
+        part(new THREE.BoxGeometry(1, 1, 1), "#9a7048", [0.03, 0.078, 0], [0, 0, -0.25], [0.04, 0.004, 0.09]),
+        part(new THREE.BoxGeometry(1, 1, 1), "#7a5434", [0.024, 0.055, 0.02], [0.8, 0, 0], [0.006, 0.03, 0.005]),
+        part(new THREE.BoxGeometry(1, 1, 1), "#7a5434", [0.024, 0.055, -0.02], [-0.8, 0, 0], [0.006, 0.03, 0.005]),
+        // Rock heaped round the frame.
+        part(new THREE.DodecahedronGeometry(1, 0), "#7a8088", [0.0, 0.07, 0.05], [0, 0.3, 0], [0.03, 0.03, 0.025]),
+        part(new THREE.DodecahedronGeometry(1, 0), "#6a7078", [0.0, 0.07, -0.05], [0, 1, 0], [0.028, 0.032, 0.026]),
+        part(new THREE.DodecahedronGeometry(1, 0), "#8a9098", [-0.01, 0.1, 0], [0, 2, 0], [0.04, 0.025, 0.06]),
+      ]),
+      cm,
+    ),
+  );
+  adit.scale.setScalar(SIZE.house * 1.35);
+  // Sunk a little into the slope.
+  adit.position.set(ad.x, Y(ad.x, ad.z) - 0.02, ad.z);
+  adit.rotation.y = -face;
+  adit.userData.ref = "adit";
+  g.add(adit);
+  stands.push({ x: ad.x, z: ad.z, r: 0.1 });
+  const glow = new THREE.Mesh(new THREE.PlaneGeometry(0.044, 0.05).rotateY(Math.PI / 2), basic("#ffb04a", 0));
+  glow.position.set(0.021, 0.028, 0);
+  adit.add(glow);
+  const lantern = new THREE.Mesh(new THREE.SphereGeometry(0.005, 10, 8), basic("#ffd27a", 0.4));
+  lantern.position.set(0.036, 0.058, 0.0);
+  adit.add(lantern);
+  const lh = halo("#ffbf6a", 0.18);
+  lh.position.copy(new THREE.Vector3(0.04, 0.058, 0).multiplyScalar(SIZE.house * 1.35).applyEuler(adit.rotation).add(adit.position));
+  g.add(lh);
+  life.push(() => {
+    (glow.material as THREE.MeshBasicMaterial).opacity = env.robber ? 0 : 0.35 + env.night * 0.6;
+    (lantern.material as THREE.MeshBasicMaterial).opacity = env.robber ? 0.2 : 0.5 + env.night * 0.5;
+    lh.material.opacity = env.robber ? 0 : env.night * 0.85;
+  });
+
+  // The rails: out of the mouth, along the flank, over the gully on a trestle, to the tipple. Graded gently down.
+  const mouth = new THREE.Vector3(ad.x, 0, ad.z).addScaledVector(new THREE.Vector3(Math.cos(face), 0, Math.sin(face)), 0.07);
+  const tp = M.tipple!;
+  const mid = at(Math.atan2(mouth.z, mouth.x) + side * 0.35, 0.56);
+  const path: THREE.Vector3[] = [];
+  const pts = [mouth, new THREE.Vector3(mid.x, 0, mid.z), new THREE.Vector3(tp.x, 0, tp.z)];
+  const curve = new THREE.CatmullRomCurve3(pts);
+  const N = 60;
+  const y0 = Y(mouth.x, mouth.z) + 0.004;
+  const y1 = Y(tp.x, tp.z) + 0.1;
+  for (let i = 0; i <= N; i++) {
+    const p = curve.getPointAt(i / N);
+    p.y = Math.max(y0 + (y1 - y0) * (i / N), Y(p.x, p.z) + 0.004);
+    path.push(p);
+  }
+  const rail = new THREE.CatmullRomCurve3(path);
+  const wood: THREE.BufferGeometry[] = [];
+  const steel: THREE.BufferGeometry[] = [];
+  for (let i = 0; i < N; i++) {
+    const [a, b] = [path[i]!, path[i + 1]!];
+    const t = b.clone().sub(a).setY(0).normalize();
+    const n = new THREE.Vector3(-t.z, 0, t.x).multiplyScalar(0.01);
+    steel.push(beamGeo(a.clone().add(n).setY(a.y + 0.004), b.clone().add(n).setY(b.y + 0.004), 0.0013, "#5a5a62"));
+    steel.push(beamGeo(a.clone().sub(n).setY(a.y + 0.004), b.clone().sub(n).setY(b.y + 0.004), 0.0013, "#5a5a62"));
+    if (i % 2 === 0) wood.push(beamGeo(a.clone().addScaledVector(n, 1.6), a.clone().addScaledVector(n, -1.6), 0.0024, "#6a4a32"));
+    // The trestle: bents of two splayed legs and a cross brace wherever the rails stand clear of the ground.
+    const gy = Y(a.x, a.z);
+    if (a.y - gy > 0.012 && i % 3 === 0) {
+      for (const sg of [1, -1]) wood.push(beamGeo(a.clone().addScaledVector(n, sg * 1.2), new THREE.Vector3(a.x + n.x * sg * 2.2, gy - 0.004, a.z + n.z * sg * 2.2), 0.0026, "#8a5e38"));
+      wood.push(beamGeo(new THREE.Vector3(a.x + n.x * 1.9, gy + (a.y - gy) * 0.3, a.z + n.z * 1.9), new THREE.Vector3(a.x - n.x * 1.4, a.y - 0.004, a.z - n.z * 1.4), 0.0018, "#7a5434"));
+    }
+    stands.push({ x: a.x, z: a.z, r: 0.03 });
+  }
+  // The tipple: a plank deck on posts at the rails' end, the heap of ore below its lip.
+  const tdir = path[N]!.clone().sub(path[N - 3]!).setY(0).normalize();
+  const tpos = path[N]!;
+  const tgy = Y(tpos.x, tpos.z);
+  for (const [u, v] of [[-0.03, -0.025], [-0.03, 0.025], [0.02, -0.025], [0.02, 0.025]]) {
+    const n = new THREE.Vector3(-tdir.z, 0, tdir.x);
+    const p = tpos.clone().addScaledVector(tdir, u!).addScaledVector(n, v!);
+    wood.push(beamGeo(new THREE.Vector3(p.x, Y(p.x, p.z) - 0.004, p.z), new THREE.Vector3(p.x, tpos.y, p.z), 0.003, "#8a5e38"));
+  }
+  wood.push(part(new THREE.BoxGeometry(1, 1, 1), "#b58a55", [tpos.x - tdir.x * 0.005, tpos.y, tpos.z - tdir.z * 0.005], [0, -Math.atan2(tdir.z, tdir.x), 0], [0.065, 0.004, 0.06]));
+  g.add(mesh(merge(wood), cm));
+  g.add(mesh(merge(steel), cm));
+  stands.push({ x: tpos.x, z: tpos.z, r: 0.06 });
+  const heapAt = tpos.clone().addScaledVector(tdir, 0.07);
+  const heap: Inst[] = [];
+  const ORE = ["#4a4e56", "#5a5e66", "#3a3e46", "#6a6e76"].map((c) => new THREE.Color(c));
+  for (let i = 0; i < 40; i++) {
+    const a = r() * Math.PI * 2;
+    const d = Math.sqrt(r()) * 0.06;
+    const x = heapAt.x + Math.cos(a) * d;
+    const z = heapAt.z + Math.sin(a) * d;
+    const k = 0.008 + r() * 0.01;
+    const up = (1 - d / 0.06) * 0.05;
+    heap.push({ m: mat(x, Y(x, z) + up + k * 0.3, z, k, k * 0.8, k, r() * 6), c: i % 6 === 0 ? new THREE.Color("#5aa8d8") : ORE[i % 4]! });
+  }
+  g.add(instanced(new THREE.DodecahedronGeometry(1, 0), heap, jellyfy(new THREE.MeshStandardMaterial({ roughness: 0.6, flatShading: true }), "jelly-rock")));
+  stands.push({ x: heapAt.x, z: heapAt.z, r: 0.06 });
+
+  // The cart: rolls out heaped, tips at the tipple, rights itself and rolls back empty.
+  {
+    const cart = new THREE.Group();
+    const body = new THREE.Group();
+    body.add(
+      mesh(
+        merge([
+          part(new THREE.BoxGeometry(1, 1, 1), "#6a6a72", [0, 0.014, 0], [0, 0, 0], [0.03, 0.016, 0.022]),
+          part(new THREE.BoxGeometry(1, 1, 1), "#8a8a92", [0, 0.022, 0], [0, 0, 0], [0.032, 0.002, 0.024]),
+          ...[-0.01, 0.01].flatMap((x) => [-0.009, 0.009].map((z) => part(cyl(1, 1, 10), "#2a2a30", [x, 0.005, z], [Math.PI / 2, 0, 0], [0.0055, 0.003, 0.0055]))),
+        ]),
+        cm,
+      ),
+    );
+    const load = mesh(merge([part(new THREE.DodecahedronGeometry(1, 0), "#4a4e56", [0, 0.025, 0], [0, 0, 0], [0.013, 0.008, 0.01]), part(new THREE.DodecahedronGeometry(1, 0), "#5aa8d8", [0.006, 0.03, 0.003], [0, 1, 0], [0.004, 0.004, 0.004])]), cm);
+    body.add(load);
+    body.position.x = 0.015;
+    const pivot = new THREE.Group();
+    pivot.position.x = -0.015;
+    pivot.add(body);
+    cart.add(pivot);
+    cart.scale.setScalar(SIZE.wagon);
+    g.add(cart);
+    life.push((t) => {
+      const sp = env.roll >= 0 ? 2.4 : 1;
+      const c = ((t * sp) % 10) / 10;
+      let u: number;
+      let tip = 0;
+      if (c < 0.4) u = ease(c / 0.4);
+      else if (c < 0.6) (u = 1), (tip = Math.sin(((c - 0.4) / 0.2) * Math.PI));
+      else u = 1 - ease((c - 0.6) / 0.4);
+      const p = rail.getPointAt(Math.min(1, Math.max(0, u)) * 0.98);
+      const q = rail.getPointAt(Math.min(1, u * 0.98 + 0.01));
+      cart.position.copy(p);
+      cart.rotation.set(0, -Math.atan2(q.z - p.z, q.x - p.x), Math.atan2(q.y - p.y, Math.hypot(q.x - p.x, q.z - p.z)), "YXZ");
+      pivot.rotation.z = -1.0 * tip;
+      load.visible = c < 0.5;
+    });
+  }
+
+  // The crystal outcrop beside the mouth, and the miner at it with his pick; the crystals flare on a roll.
+  {
+    const cAng = Math.atan2(ad.z, ad.x) - side * 0.32;
+    const cp = { x: Math.cos(cAng) * 0.5, z: Math.sin(cAng) * 0.5 };
+    const cy = Y(cp.x, cp.z);
+    const xs: THREE.BufferGeometry[] = [part(new THREE.DodecahedronGeometry(1, 0), "#7a8088", [cp.x, cy + 0.01, cp.z], [0, 0.4, 0], [0.04, 0.025, 0.035])];
+    for (let i = 0; i < 7; i++) {
+      const a = (i / 7) * Math.PI * 2;
+      const tilt = 0.35 + (i % 3) * 0.15;
+      const h = 0.03 + (i % 3) * 0.012;
+      xs.push(part(new THREE.CylinderGeometry(0.5, 1, 1, 6), i % 2 ? "#5ab8e8" : "#8ad8f8", [cp.x + Math.cos(a) * 0.012, cy + 0.022 + h * 0.4, cp.z + Math.sin(a) * 0.012], [Math.sin(a) * tilt, 0, -Math.cos(a) * tilt], [0.006, h, 0.006]));
+    }
+    xs.push(part(new THREE.CylinderGeometry(0.5, 1, 1, 6), "#a8e8ff", [cp.x, cy + 0.045, cp.z], [0, 0, 0], [0.008, 0.05, 0.008]));
+    const crystals = mesh(merge(xs), jellyfy(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.15, metalness: 0, flatShading: true, emissive: "#2a7ab0", emissiveIntensity: 0.25 }), "jelly-crystal"));
+    crystals.userData.ref = "crystals";
+    g.add(crystals);
+    const flare = halo("#8ad8ff", 0.2);
+    flare.position.set(cp.x, cy + 0.05, cp.z);
+    g.add(flare);
+    stands.push({ x: cp.x, z: cp.z, r: 0.06 });
+    const mp = { x: cp.x + Math.cos(cAng + Math.PI / 2) * 0.07 - Math.cos(cAng) * 0.03, z: cp.z + Math.sin(cAng + Math.PI / 2) * 0.07 - Math.sin(cAng) * 0.03 };
+    const miner = person(cm, "#5a6a8a", 0.15, "#d8a830");
+    miner.g.position.set(mp.x, Y(mp.x, mp.z), mp.z);
+    miner.g.rotation.y = -Math.atan2(cp.z - mp.z, cp.x - mp.x);
+    const pick = new THREE.Group();
+    pick.add(mesh(merge([part(cyl(0.0016, 0.0016, 6), "#b08a5a", [0.02, 0.045, 0], [0, 0, -0.9], [1, 0.05, 1]), part(new THREE.BoxGeometry(1, 1, 1), "#8a9098", [0.036, 0.062, 0], [0, 0, 0.6], [0.003, 0.024, 0.003])]), cm));
+    pick.position.y = 0.03;
+    miner.top.add(pick);
+    g.add(miner.g);
+    stands.push({ x: mp.x, z: mp.z, r: 0.04 });
+    life.push((t) => {
+      const ph = (t * 1.1) % 1;
+      const swing = ph < 0.7 ? -0.9 * ease(ph / 0.7) : -0.9 + 1.5 * ease((ph - 0.7) / 0.3);
+      pick.rotation.z = swing;
+      miner.top.rotation.z = -0.15 - swing * 0.4;
+      const f = env.roll >= 0 ? Math.sin(env.roll * Math.PI) : 0;
+      flare.material.opacity = env.robber ? 0 : 0.25 + 0.15 * Math.max(0, Math.sin(t * 1.7)) ** 6 + f * 0.7 + env.night * 0.3;
+    });
+  }
+
+  // The tarn: a cold blue jelly pool at the meadow's edge, a few boulders on its shore.
+  if (L.pool) {
+    const p = L.pool;
+    const disc = new THREE.Mesh(new THREE.CircleGeometry(p.r * 0.8, 40).rotateX(-Math.PI / 2), waterMat(false));
+    disc.position.set(p.x, BLOCK_H + POOL_LEVEL, p.z);
+    disc.renderOrder = 1;
+    g.add(disc);
+    stands.push({ x: p.x, z: p.z, r: p.r + 0.02 });
+    const stones: THREE.BufferGeometry[] = [];
+    for (let i = 0; i < 4; i++) {
+      const a = (i / 4) * Math.PI * 2 + 0.5;
+      const k = 0.014 + (i % 2) * 0.008;
+      const x = p.x + Math.cos(a) * p.r * 0.95;
+      const z = p.z + Math.sin(a) * p.r * 0.95;
+      stones.push(part(new THREE.DodecahedronGeometry(1, 0), "#8a9098", [x, Y(x, z) + k * 0.3, z], [0, a, 0], [k * 1.2, k * 0.8, k]));
+    }
+    g.add(mesh(merge(stones), cm));
+    life.push((t) => ((disc.material as THREE.MeshStandardMaterial).userData.time.value = t));
+  }
+
+  // Crags: faceted boulders on the peaks' steep faces and scree fans at their feet.
+  {
+    const rocks: Inst[] = [];
+    const GREY = ["#8a9098", "#7a8088", "#9aa0a8", "#6a7078"].map((c) => new THREE.Color(c));
+    const e = 0.01;
+    for (let i = 0; i < 1500 && rocks.length < 90; i++) {
+      const a = r() * Math.PI * 2;
+      const d = 0.4 + Math.sqrt(r()) * 0.52;
+      const [x, z] = [Math.cos(a) * d, Math.sin(a) * d];
+      if (hexDist(x, z) > INR - 0.08 || stands.some((q) => Math.hypot(q.x - x, q.z - z) < q.r)) continue;
+      const h = ground(x, z);
+      const sl = Math.hypot(ground(x + e, z) - ground(x - e, z), ground(x, z + e) - ground(x, z - e)) / (2 * e);
+      if (h < 0.02 || sl < 0.25) continue;
+      const k = 0.01 + r() * (h > 0.2 ? 0.03 : 0.015);
+      rocks.push({ m: mat(x, Y(x, z) + k * 0.2, z, k * 1.3, k, k * 1.1, r() * 6, (r() - 0.5) * 0.6), c: GREY[i % 4]! });
+    }
+    g.add(instanced(new THREE.DodecahedronGeometry(1, 0), rocks, jellyfy(new THREE.MeshStandardMaterial({ roughness: 0.8, flatShading: true }), "jelly-rock")));
+  }
+
+  // Alpine pines on the lower slopes and the meadow's back edge.
+  {
+    const blobs: Inst[] = [];
+    const trunks: Inst[] = [];
+    const PINE = ["#1f5a34", "#2f7340", "#3a8545", "#4a8d4c"].map((c) => new THREE.Color(c));
+    for (let tries = 0, n = 0; tries < 3000 && n < 30; tries++) {
+      const a = L.hillAt + (r() - 0.5) * (n < 22 ? 3.6 : 6.2);
+      const d = 0.42 + r() * 0.48;
+      const [x, z] = [Math.cos(a) * d, Math.sin(a) * d];
+      const h = ground(x, z);
+      if (h < -0.01 || h > 0.24 || !ok(x, z, 0.03)) continue;
+      // Not between the eye and the adit or the outcrop.
+      const [dx, dz] = [x - ad.x, z - ad.z];
+      const along = dx * EYE.x + dz * EYE.z;
+      if (along > 0 && along < 0.4 && Math.abs(dx * EYE.z - dz * EYE.x) < 0.14) continue;
+      const s = 0.05 + r() * 0.03;
+      const y0 = Y(x, z);
+      trunks.push({ m: mat(x, y0 + s * 0.4, z, s * 0.2, s * 0.8, s * 0.2), c: new THREE.Color("#6e4128") });
+      for (let k = 0; k < 4; k++) blobs.push({ m: mat(x, y0 + s * 0.8 + k * s * 0.6, z, s * (1.1 - k * 0.22), s * 0.5, s * (1.1 - k * 0.22), r() * 6), c: PINE[k]! });
+      stands.push({ x, z, r: s * 0.8 });
+      n++;
+    }
+    g.add(instanced(blobGeo(L.seed % 97), blobs, blobMat()));
+    g.add(instanced(cyl(0.8, 1), trunks, blobMat()));
+  }
+
+  // The goat on a ledge, facing the eye, nibbling; it hops on a roll.
+  {
+    let spot: Pt | null = null;
+    for (let i = 0; i < 2000 && !spot; i++) {
+      const a = L.hillAt + (r() - 0.5) * 1.8;
+      const d = 0.4 + r() * 0.35;
+      const [x, z] = [Math.cos(a) * d, Math.sin(a) * d];
+      const h = ground(x, z);
+      const e = 0.012;
+      const sl = Math.hypot(ground(x + e, z) - ground(x - e, z), ground(x, z + e) - ground(x, z - e)) / (2 * e);
+      if (h > 0.16 && h < 0.34 && sl < 0.9 && stands.every((q) => Math.hypot(q.x - x, q.z - z) > q.r + 0.03)) spot = { x, z };
+    }
+    if (spot) {
+      const goat = new THREE.Group();
+      goat.add(
+        mesh(
+          merge([
+            part(sphere(14), "#f4efe6", [0, 0.032, 0], [0, 0, 0], [0.022, 0.013, 0.011]),
+            part(sphere(12), "#f4efe6", [0.022, 0.045, 0], [0, 0, -0.3], [0.009, 0.008, 0.007]),
+            part(sphere(8), "#e8e0d2", [0.03, 0.036, 0], [0, 0, 0], [0.003, 0.006, 0.003]),
+            part(new THREE.TorusGeometry(0.008, 0.0016, 4, 10, Math.PI), "#3a3430", [0.016, 0.054, 0.004], [0, 0, 0.5]),
+            part(new THREE.TorusGeometry(0.008, 0.0016, 4, 10, Math.PI), "#3a3430", [0.016, 0.054, -0.004], [0, 0, 0.5]),
+            part(sphere(6), "#1a1414", [0.028, 0.048, 0.004], [0, 0, 0], [0.0013, 0.0013, 0.0013]),
+            part(sphere(6), "#1a1414", [0.028, 0.048, -0.004], [0, 0, 0], [0.0013, 0.0013, 0.0013]),
+            ...[[0.012, 0.006], [0.012, -0.006], [-0.012, 0.006], [-0.012, -0.006]].map(([x, z]) => part(cyl(0.0028, 0.0024, 6), "#e8e0d2", [x!, 0.012, z!], [0, 0, 0], [1, 0.024, 1])),
+          ]),
+          cm,
+        ),
+      );
+      goat.scale.setScalar(SIZE.sheep);
+      goat.userData.ref = "goat";
+      const gy = Y(spot.x, spot.z);
+      goat.position.set(spot.x, gy, spot.z);
+      goat.rotation.y = -Math.atan2(EYE.z, EYE.x) + Math.PI / 2;
+      g.add(goat);
+      stands.push({ x: spot.x, z: spot.z, r: 0.04 });
+      life.push((t) => {
+        goat.position.y = gy + (env.roll >= 0 ? 0.05 * Math.abs(Math.sin(env.roll * Math.PI * 2)) : 0);
+        goat.rotation.z = env.roll >= 0 ? 0 : -0.15 * Math.max(0, Math.sin(t * 0.8)) ** 4;
+      });
+    }
+  }
+
+  // The eagle circling the peaks; it stoops low on a roll.
+  {
+    const eagle = new THREE.Group();
+    eagle.add(
+      mesh(
+        merge([
+          part(sphere(12), "#4a3428", [0, 0, 0], [0, 0, 0], [0.022, 0.008, 0.008]),
+          part(sphere(10), "#f4efe6", [0.022, 0.003, 0], [0, 0, 0], [0.008, 0.007, 0.007]),
+          part(new THREE.ConeGeometry(1, 1, 6), "#f2c230", [0.031, 0.001, 0], [0, 0, -Math.PI / 2 - 0.3], [0.0025, 0.008, 0.0025]),
+          part(new THREE.BoxGeometry(1, 1, 1), "#f4efe6", [-0.026, 0.001, 0], [0, 0, 0], [0.014, 0.002, 0.014]),
+        ]),
+        cm,
+      ),
+    );
+    const wings = [1, -1].map((sg) => {
+      const w = new THREE.Group();
+      w.add(mesh(merge([part(sphere(10), "#3a2a20", [0, 0, 0.03 * sg], [0, 0, 0], [0.016, 0.002, 0.034]), part(sphere(8), "#2a1e18", [-0.006, 0, 0.06 * sg], [0, 0, 0], [0.01, 0.0018, 0.012])]), cm));
+      eagle.add(w);
+      return { w, sg };
+    });
+    eagle.scale.setScalar(SIZE.small * 0.8);
+    eagle.userData.loose = true;
+    g.add(eagle);
+    const c = at(L.hillAt, 0.45);
+    life.push((t) => {
+      const a = t * 0.35;
+      const stoop = env.roll >= 0 ? Math.sin(env.roll * Math.PI) : 0;
+      eagle.position.set(c.x + Math.cos(a) * 0.32, BLOCK_H + 0.78 - stoop * 0.35, c.z + Math.sin(a) * 0.22);
+      eagle.rotation.set(0, -(a + Math.PI / 2), 0, "YXZ");
+      eagle.rotation.x = -0.35;
+      wings.forEach(({ w, sg }) => (w.rotation.x = -sg * (0.12 + 0.05 * Math.sin(t * 1.5))));
+    });
+  }
+
+  // The gold nugget, glinting in the scree now and then.
+  {
+    for (let i = 0; i < 600; i++) {
+      const a = L.hillAt + (r() - 0.5) * 2.4;
+      const d = 0.42 + r() * 0.3;
+      const [x, z] = [Math.cos(a) * d, Math.sin(a) * d];
+      const h = ground(x, z);
+      if (h < 0.03 || h > 0.12 || !ok(x, z, 0.01)) continue;
+      const nug = new THREE.Mesh(new THREE.DodecahedronGeometry(0.006, 0), new THREE.MeshStandardMaterial({ color: "#ffcf3a", roughness: 0.25, metalness: 0.6, emissive: "#a87a10", emissiveIntensity: 0.3 }));
+      nug.position.set(x, Y(x, z) + 0.004, z);
+      g.add(nug);
+      const glint = halo("#fff2a8", 0.06);
+      glint.position.set(x, Y(x, z) + 0.01, z);
+      g.add(glint);
+      life.push((t) => (glint.material.opacity = Math.max(0, Math.sin(t * 1.3)) ** 24));
+      break;
+    }
+  }
+
+  // The miners' log cabin by the tarn: log walls, a shingle roof, a stone chimney with smoke, a lit window at night.
+  if (L.pool) {
+    const p = L.pool;
+    for (let tries = 0; tries < 300; tries++) {
+      const a = Math.atan2(p.z, p.x) + (r() - 0.5) * 1.4;
+      const d = 0.55 + (r() - 0.5) * 0.2;
+      const cp = { x: Math.cos(a) * d, z: Math.sin(a) * d };
+      if (!ok(cp.x, cp.z, 0.08) || Math.hypot(cp.x - p.x, cp.z - p.z) < p.r + 0.1) continue;
+      const cab = new THREE.Group();
+      const parts: THREE.BufferGeometry[] = [];
+      for (let k = 0; k < 6; k++) {
+        const y = 0.006 + k * 0.0085;
+        parts.push(part(cyl(1, 1, 8), k % 2 ? "#8a5a36" : "#7a4e2e", [0, y, 0.03], [0, 0, Math.PI / 2], [0.0045, 0.074, 0.0045]));
+        parts.push(part(cyl(1, 1, 8), k % 2 ? "#7a4e2e" : "#8a5a36", [0, y, -0.03], [0, 0, Math.PI / 2], [0.0045, 0.074, 0.0045]));
+        parts.push(part(cyl(1, 1, 8), k % 2 ? "#8a5a36" : "#7a4e2e", [0.034, y + 0.004, 0], [Math.PI / 2, 0, 0], [0.0045, 0.068, 0.0045]));
+        parts.push(part(cyl(1, 1, 8), k % 2 ? "#7a4e2e" : "#8a5a36", [-0.034, y + 0.004, 0], [Math.PI / 2, 0, 0], [0.0045, 0.068, 0.0045]));
+      }
+      const sh = new THREE.Shape();
+      sh.moveTo(-0.046, 0);
+      sh.lineTo(0.046, 0);
+      sh.lineTo(0, 0.034);
+      sh.closePath();
+      parts.push(part(new THREE.ExtrudeGeometry(sh, { depth: 0.086, bevelEnabled: false }).translate(0, 0, -0.043), "#5a4a40", [0, 0.055, 0]));
+      parts.push(part(new THREE.BoxGeometry(1, 1, 1), "#4a2e1c", [0.0365, 0.018, 0.008], [0, 0, 0], [0.002, 0.03, 0.014]));
+      parts.push(part(new THREE.BoxGeometry(1, 1, 1), "#8a9098", [-0.02, 0.06, -0.022], [0, 0, 0], [0.014, 0.06, 0.014]));
+      cab.add(mesh(merge(parts), cm));
+      const win = new THREE.Mesh(new THREE.PlaneGeometry(0.012, 0.012), basic("#ffc46a", 0));
+      win.position.set(-0.012, 0.03, 0.0352);
+      cab.add(win);
+      const wh = halo("#ffb860", 0.07);
+      wh.position.set(-0.012, 0.03, 0.04);
+      cab.add(wh);
+      cab.scale.setScalar(SIZE.house);
+      cab.position.set(cp.x, Y(cp.x, cp.z), cp.z);
+      cab.rotation.y = -Math.atan2(EYE.z, EYE.x) + Math.PI / 2 + (r() - 0.5) * 0.6;
+      cab.userData.ref = "cabin";
+      g.add(cab);
+      stands.push({ x: cp.x, z: cp.z, r: 0.12 });
+      const top = new THREE.Vector3(-0.02, 0.095, -0.022).multiplyScalar(SIZE.house).applyEuler(cab.rotation).add(cab.position);
+      const puffs = Array.from({ length: 5 }, (_, i) => {
+        const o = new THREE.Mesh(blobGeo(500 + i), new THREE.MeshStandardMaterial({ color: "#e9e6e0", roughness: 1, transparent: true, opacity: 0.4, depthWrite: false }));
+        o.userData.loose = true;
+        g.add(o);
+        return { o, ph: i / 5 };
+      });
+      life.push((t) => {
+        (win.material as THREE.MeshBasicMaterial).opacity = env.night;
+        wh.material.opacity = env.night * 0.75;
+        for (const pf of puffs) {
+          const u = (t * 0.1 + pf.ph) % 1;
+          pf.o.visible = !env.robber;
+          pf.o.position.set(top.x + u * 0.05, top.y + u * 0.16, top.z - u * 0.03);
+          pf.o.scale.setScalar(0.008 + u * 0.02);
+          (pf.o.material as THREE.MeshStandardMaterial).opacity = 0.3 * Math.sin(Math.PI * u);
+        }
+      });
+      break;
+    }
+  }
+
+  // A boulder field over the meadow: faceted rocks, mostly small, a few big ones with lichen.
+  {
+    const rocks: Inst[] = [];
+    const GREY = ["#8a9098", "#9aa0a8", "#7a8088"].map((c) => new THREE.Color(c));
+    for (let i = 0; i < 1200 && rocks.length < 45; i++) {
+      const a = r() * Math.PI * 2;
+      const d = 0.4 + Math.sqrt(r()) * 0.52;
+      const [x, z] = [Math.cos(a) * d, Math.sin(a) * d];
+      const h = ground(x, z);
+      if (h > 0.05 || hexDist(x, z) > INR - 0.1 || nearestCorner(x, z) < 0.2 || noise(x * 3, z * 3, L.seed + 90) < 0.05 || stands.some((q) => Math.hypot(q.x - x, q.z - z) < q.r + 0.01)) continue;
+      const big = rocks.length % 9 === 0;
+      const k = big ? 0.025 + r() * 0.012 : 0.006 + r() * 0.01;
+      rocks.push({ m: mat(x, Y(x, z) + k * 0.25, z, k * 1.3, k * 0.85, k, r() * 6, (r() - 0.5) * 0.5), c: GREY[i % 3]! });
+      if (big) stands.push({ x, z, r: k });
+    }
+    g.add(instanced(new THREE.DodecahedronGeometry(1, 0), rocks, jellyfy(new THREE.MeshStandardMaterial({ roughness: 0.8, flatShading: true }), "jelly-rock")));
+  }
+
+  // Alpine flowers and grass tufts in the meadow.
+  {
+    const dots: Inst[] = [];
+    for (let i = 0; i < 700; i++) {
+      const a = r() * Math.PI * 2;
+      const d = 0.37 + Math.sqrt(r()) * 0.56;
+      const [x, z] = [Math.cos(a) * d, Math.sin(a) * d];
+      const h = ground(x, z);
+      if (hexDist(x, z) > INR - 0.08 || h > 0.06 || h < -0.02 || stands.some((q) => Math.hypot(q.x - x, q.z - z) < q.r)) continue;
+      if (i % 4 === 0) dots.push({ m: mat(x, Y(x, z) + 0.005, z, 0.004, 0.003, 0.004), c: new THREE.Color(["#f6f1ff", "#c88ae8", "#ffe14d"][i % 3]!) });
+      else dots.push({ m: mat(x, Y(x, z) + 0.005, z, 0.004, 0.01, 0.004, r() * 6, (r() - 0.5) * 0.4), c: new THREE.Color(i % 2 ? "#5a9e3c" : "#79b84a") });
+    }
+    g.add(instanced(new THREE.ConeGeometry(1, 1, 4), dots, blobMat()));
+  }
+  return { g, stands, life };
+}
+
+// Ore's ground paint: alpine green low down, grey rock up the slopes (the base paint), scree paler on the steep, snow on the
+// tallest peak's crown, the gully's floor stony.
+function oreTint(L: Layout) {
+  const SNOW = new THREE.Color("#f6f8fa");
+  const STONE = new THREE.Color("#a8aaa8");
+  return (x: number, z: number, y: number, c: THREE.Color) => {
+    if (y > 0.36) c.lerp(SNOW, smooth(0.36, 0.44, y + 0.02 * noise(x * 20, z * 20, L.seed + 80)));
+    else if (y > 0.06) c.lerp(STONE, smooth(0.06, 0.16, y) * 0.5);
+    if (y < -0.02) c.lerp(STONE, 0.6);
+  };
+}
+
 // --- the tile
 
 export type Tile = {
@@ -3557,7 +4108,7 @@ export function buildTile(kind: Terrain, seed: number, rings = 64): Tile {
   const env: Env = { night: 0, robber: false, roll: -1 };
   TU = { dull: { value: 0 }, flash: { value: 0 } };
   const tu = TU;
-  const props = kind === "timber" ? forest(L, ground, r, env) : kind === "wool" ? pasture(L, ground, r, env) : kind === "grain" ? farm(L, ground, r, env) : kind === "clay" ? brickworks(L, ground, r, env) : null;
+  const props = kind === "timber" ? forest(L, ground, r, env) : kind === "wool" ? pasture(L, ground, r, env) : kind === "grain" ? farm(L, ground, r, env) : kind === "clay" ? brickworks(L, ground, r, env) : kind === "ore" ? mine(L, ground, r, env) : null;
   const stands = props?.stands ?? [];
   // Canopy cover and contact: the ground darkens under each stand.
   const occlude = (x: number, z: number) => {
@@ -3577,7 +4128,7 @@ export function buildTile(kind: Terrain, seed: number, rings = 64): Tile {
           return flat * patch * smooth(0.36, 0.44, Math.hypot(x, z)) * (1 - occlude(x, z));
         }
       : undefined;
-  const b = block(L, rings, occlude, kind === "grain" ? farmTint(L) : kind === "clay" ? clayTint(L) : undefined, crackAt);
+  const b = block(L, rings, occlude, kind === "grain" ? farmTint(L) : kind === "clay" ? clayTint(L) : kind === "ore" ? oreTint(L) : undefined, crackAt);
   group.add(b.top, b.side);
   if (props) group.add(props.g);
   const life = props?.life ?? [];
