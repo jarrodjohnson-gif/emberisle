@@ -25,7 +25,9 @@ const BUDGETS = [
   // 2026-10-15 (#599): +5.6 kB for the sculpted tiles and code-built props (terrain.ts; 188.80 kB measured), less the photo-texture path.
   // 2026-10-15 (#618): 190.76 kB measured with the sculpted terrain on top of the diorama and the waves; +750 B headroom.
   // 2026-10-15 (#618 + #616): 195.39 kB measured with the sculpted terrain and the touch splash both on main; +600 B.
-  { name: "IslandCanvas", gzipBytes: 196000 },
+  // 2026-10-16 (owner: "bruno robber is not showing"): the Bruno wayfarer (bruno.ts) replaces the cone piece; he is on the
+  // first frame, so he is in this chunk. 196.79 kB measured, +200 B.
+  { name: "IslandCanvas", gzipBytes: 197000 },
   // 2026-10-16 (#624): the Hex Jelly scenes on the board (hex-jelly.ts and the batcher jelly-board.ts), loaded after the
   // island's first draw; 50.95 kB measured, +2 kB. The sculpted terrain left IslandCanvas with them (192.87 kB).
   // 2026-10-16 (#631): the jelly shore (harbor-jelly.ts) is its own chunk, so the scenes it shares with the batcher split out

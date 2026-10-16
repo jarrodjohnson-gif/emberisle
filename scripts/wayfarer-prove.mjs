@@ -1,4 +1,4 @@
-// #237: the wayfarer stands on the token, hops (not slides), and the target hexes wear a band. Checks from docs/design/wayfarer.md.
+// #237: the wayfarer stands beside the token (#633: on the waste, its centre), hops (not slides), and the target hexes wear a band. Checks from docs/design/wayfarer.md.
 import { existsSync } from "node:fs";
 import { chromium } from "playwright";
 import { createServer } from "vite";
@@ -56,21 +56,29 @@ try {
   await page.evaluate(async () => {
     window.__topOf = (await import("/src/lib/scene/isle-renderer.ts")).topOf;
     window.__worldOfHex = (await import("/src/lib/game/board.ts")).worldOfHex;
-    // In the diorama view (#597) a token tilts toward the camera and is lifted onto its near edge; he stands on its face.
-    window.__lift = (id) => window.__isle.land.children.find((o) => o.userData?.token != null && o.userData.hex === id)?.userData.lift ?? 0;
+    // Where he stands (#633): the waste's centre (no token there); on a numbered hex beside the token, 0.43 to its left as the
+    // camera looks (azimuth DIORAMA_AZIMUTH), on the scene's ground there (the flat cap until the scenes are in).
+    const az = (await import("/src/lib/scene/mobile-fit.ts")).DIORAMA_AZIMUTH;
+    window.__spot = (h) => {
+      const w = window.__worldOfHex(h);
+      if (h.pip === null) return { x: w.x, y: window.__topOf(h.terrain), z: w.z };
+      const [dx, dz] = [-Math.cos(az) * 0.43, Math.sin(az) * 0.43];
+      const g = window.__isle.jellyBoard?.groundAt(h.id, dx, dz);
+      return { x: w.x + dx, y: Number.isFinite(g) ? g : window.__topOf(h.terrain), z: w.z + dz };
+    };
   });
   await page.waitForTimeout(1500);
 
-  // 1. On the token (the first board puts him on the wastes, which have no token, so the cap).
+  // 1. On his spot (the first board puts him on the wastes, which have no token, so the centre of the cap).
   const on = await probe(() => {
     const isle = window.__isle;
     const st = window.__emberisle.getState().state;
     const h = st.hexes.find((x) => x.id === st.robberHex);
-    const w = window.__worldOfHex(h);
+    const w = window.__spot(h);
     const p = isle.wayfarer.position;
-    return { dy: p.y - (window.__topOf(h.terrain) + (h.pip === null ? 0 : 0.07 + window.__lift(h.id))), dx: p.x - w.x, dz: p.z - w.z, walking: !!isle.walk };
+    return { dy: p.y - w.y, dx: p.x - w.x, dz: p.z - w.z, walking: !!isle.walk };
   });
-  check("1 on the token", !on.walking && Math.abs(on.dy) <= 0.001 && Math.abs(on.dx) <= 0.001 && Math.abs(on.dz) <= 0.001, on);
+  check("1 on his spot", !on.walking && Math.abs(on.dy) <= 0.001 && Math.abs(on.dx) <= 0.001 && Math.abs(on.dz) <= 0.001, on);
 
   // 2. Hops, not a slide: move the robber to a hex two hexes away in a straight line.
   const hop = await probe(async () => {
@@ -83,7 +91,7 @@ try {
       const w = window.__worldOfHex(x);
       return Math.abs(Math.hypot(w.x - fw.x, w.z - fw.z) - 2 * 1.12 * Math.sqrt(3)) < 0.05;
     });
-    const face = window.__topOf(to.terrain) + (to.pip === null ? 0 : 0.07 + window.__lift(to.id));
+    const face = window.__spot(to).y;
     // Software GL renders ~7 frames a second, too few to see a 300 ms hop. Run the renderer's own tick on a virtual clock in 50 ms steps.
     let vt = isle.clock.getElapsed();
     isle.clock.getElapsed = () => vt;
@@ -95,7 +103,7 @@ try {
     // Each sample's height over the straight line from where he stood to the new face: the walk eases height and ground
     // together, so the fraction of the ground covered is the fraction of the rise (the two faces can differ by a token's lift).
     const stood = isle.wayfarer.position.clone();
-    const tw = window.__worldOfHex(to);
+    const tw = window.__spot(to);
     const ys = [];
     for (let ms = 0; ms < 700; ms += 50) {
       vt += 0.05;
@@ -111,12 +119,12 @@ try {
       isle.tick();
     }
     delete isle.clock.getElapsed;
-    const w = window.__worldOfHex(to);
+    const w = window.__spot(to);
     const p = isle.wayfarer.position;
     return { rises, max: Math.max(...ys), samples: ys.length, dy: p.y - face, dx: p.x - w.x, dz: p.z - w.z };
   });
   check("2 two hops in 700 ms", hop.rises >= 2, { rises: hop.rises, max: +hop.max.toFixed(3), samples: hop.samples });
-  check("2 lands on the new token", Math.abs(hop.dy) <= 0.001 && Math.abs(hop.dx) <= 0.001 && Math.abs(hop.dz) <= 0.001, hop);
+  check("2 lands on his new spot (beside the token)", Math.abs(hop.dy) <= 0.001 && Math.abs(hop.dx) <= 0.001 && Math.abs(hop.dz) <= 0.001, hop);
 
   // 3 and 4. Rings on every legal hex, above the cap.
   const rings = await probe(async () => {

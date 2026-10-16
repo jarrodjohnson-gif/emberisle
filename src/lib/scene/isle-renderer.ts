@@ -41,6 +41,7 @@ import { BLOCK_H } from "@/lib/scene/jelly-dims";
 import type { JellyBoard, JellyStats } from "@/lib/scene/jelly-board";
 import type { Dock, Shore } from "@/lib/scene/harbor-jelly";
 import { OceanLife } from "@/lib/scene/ocean-life";
+import { makeBruno, type Bruno } from "@/lib/scene/bruno";
 import { CAUSTIC_GLSL, PAPER, SPLASH, addSplashRings, makeCrystalSea, makeFloorProps, makeSeaFloor, makeSplashes, makeSwell, makeWash, nearestCoast, type SeaUniforms, type WaterPath, type WaterStatus } from "@/lib/scene/crystal-water";
 import { Wobble } from "@/lib/scene/wobble";
 import { play } from "@/lib/sound";
@@ -66,6 +67,8 @@ const loadJelly = (): Promise<typeof import("@/lib/scene/jelly-board")> =>
     throw e;
   });
 const JELLY_RETRY_MS = 4000;
+// How far beside a hex's token the wayfarer stands (robberSpot).
+const WAYFARER_ASIDE = 0.43;
 // The jelly shore is its own chunk (harbor-jelly), loaded once the hexes have swapped in.
 const loadShore = () => import("@/lib/scene/harbor-jelly");
 let shoreFailed = false;
@@ -192,6 +195,8 @@ export class IsleRenderer {
   private ssao!: SSAOPass;
   private renderPass!: RenderPass;
   private wayfarer: THREE.Group;
+  // The wayfarer's figure (bruno.ts): his idle peeking and his scurry.
+  private bruno: Bruno;
   private oceanLife = new OceanLife();
   // Touch the sea (crystal-water.md): the live splashes, the tiles giving under a tap, and where a drag on the water last stirred.
   private splash = makeSplashes();
@@ -404,8 +409,9 @@ export class IsleRenderer {
     this.foam.position.y = 0.028;
     this.scene.add(this.foam);
 
-    this.wayfarer = makeWayfarer();
-    this.lantern = this.wayfarer.userData.lantern as THREE.MeshStandardMaterial;
+    this.bruno = makeBruno();
+    this.wayfarer = this.bruno.g;
+    this.lantern = this.bruno.lantern;
     this.living.add(this.wayfarer);
     this.scene.add(this.land, this.living, this.pieces, this.marks);
 
@@ -607,15 +613,24 @@ export class IsleRenderer {
     this.jelly?.robber(state.robberHex ?? null);
     const rh = state.hexes.find((h) => h.id === state.robberHex);
     if (rh) {
-      const w = worldOfHex(rh);
-      // The wastes have no token, so his feet are on the cap there.
-      this.robberTarget.set(w.x, topOf(rh.terrain) + (rh.pip === null ? 0 : 0.07 + this.liftOf(rh.id)), w.z);
+      this.robberSpot(rh);
       if (!this.wayfarer.userData.placed || landChanged) {
         this.walk = null;
         this.wayfarer.position.copy(this.robberTarget);
         this.wayfarer.userData.placed = true;
       } else if (!this.walk) this.startWalk();
     }
+  }
+
+  // Where the wayfarer stands on a hex: on the waste (no token) its centre; on a hex with a number, beside the token, to its
+  // left as the camera looks (0.43 out, past the token's 0.26 and his base), on the scene's own ground there, so the numeral
+  // and its pips stay in sight (tokens-prove checks his figure as an occluder).
+  private robberSpot(rh: HexCell) {
+    const w = worldOfHex(rh);
+    if (rh.pip === null) return this.robberTarget.set(w.x, topOf(rh.terrain), w.z);
+    const [dx, dz] = [-Math.cos(DIORAMA_AZIMUTH) * WAYFARER_ASIDE, Math.sin(DIORAMA_AZIMUTH) * WAYFARER_ASIDE];
+    const g = this.jelly?.groundAt(rh.id, dx, dz);
+    return this.robberTarget.set(w.x + dx, g !== undefined && Number.isFinite(g) ? g : topOf(rh.terrain), w.z + dz);
   }
 
   // One 0.3-high hop per hex of distance, 300 ms each, 900 ms at most.
@@ -699,6 +714,7 @@ export class IsleRenderer {
     this.renderer.domElement.removeEventListener("pointercancel", this.onCancel);
     this.safeProbe.remove();
     this.oceanLife.dispose();
+    this.bruno.dispose();
     this.under?.dispose();
     this.renderer.dispose();
   }
@@ -901,15 +917,6 @@ export class IsleRenderer {
       t.rotation.set(diorama ? TOKEN_TILT : 0, az, 0, "YXZ");
       t.position.y = (t.userData.restY as number) + lift;
       t.userData.lift = lift;
-    }
-    const st = this.lastState;
-    const rh = st?.hexes.find((h) => h.id === st.robberHex);
-    if (rh && rh.pip !== null) {
-      const y = topOf(rh.terrain) + 0.07 + this.liftOf(rh.id);
-      if (Math.abs(this.robberTarget.y - y) > 1e-6) {
-        this.robberTarget.y = y;
-        if (!this.walk) this.wayfarer.position.y = y;
-      }
     }
   }
 
@@ -1217,6 +1224,7 @@ export class IsleRenderer {
       }
     }
     this.lantern.emissiveIntensity = 1.6 + 0.3 * Math.sin(t * 2.2);
+    this.bruno.update(t, !!this.walk);
     this.pulseMarks(t, false);
     for (const b of this.boats) {
       if (!swell) {
@@ -1454,6 +1462,12 @@ export class IsleRenderer {
           if (!alive()) return jelly.dispose();
           this.jelly = jelly;
           jelly.robber(this.lastState?.robberHex ?? null);
+          // The scenes' ground beside the token can stand off the flat cap: he steps onto it.
+          const rh = this.lastState?.hexes.find((h) => h.id === this.lastState?.robberHex);
+          if (rh) {
+            this.robberSpot(rh);
+            if (!this.walk) this.wayfarer.position.copy(this.robberTarget);
+          }
           jelly.update(this.jellyT, true, true);
           if (this.slabs) {
             this.land.remove(this.slabs);
@@ -2114,27 +2128,6 @@ function makePath(seat: string, len: number) {
     slab(0.16, 0.04, len - 0.12, seat, 0.06),
     tint(new THREE.CylinderGeometry(0.12, 0.12, 0.045, 12).toNonIndexed().translate(0, 0.0825, 0), seat),
   ]);
-}
-
-function makeWayfarer() {
-  const g = new THREE.Group();
-  const charcoal = new THREE.MeshStandardMaterial({ color: 0x2b2420, roughness: 0.75 });
-  const part = (geo: THREE.BufferGeometry, mat: THREE.Material, x: number, y: number, z: number) => {
-    const m = new THREE.Mesh(geo, mat);
-    m.position.set(x, y, z);
-    g.add(m);
-    return m;
-  };
-  part(new THREE.ConeGeometry(0.15, 0.46, 10), charcoal, 0, 0.23, 0).castShadow = true;
-  part(new THREE.SphereGeometry(0.1, 12, 10), charcoal, 0, 0.5, 0);
-  part(new THREE.SphereGeometry(0.07, 10, 8), new THREE.MeshStandardMaterial({ color: 0xfff6e8, roughness: 0.5 }), 0, 0.49, 0.045);
-  const eye = new THREE.MeshStandardMaterial({ color: 0x111111 });
-  for (const sx of [-0.024, 0.024]) part(new THREE.SphereGeometry(0.011, 8, 8), eye, sx, 0.5, 0.105);
-  part(new THREE.CylinderGeometry(0.012, 0.012, 0.64, 6), new THREE.MeshStandardMaterial({ color: 0x4a3220 }), 0.17, 0.32, 0.04);
-  const lantern = new THREE.MeshStandardMaterial({ color: 0xffb347, emissive: 0xff9a2e, emissiveIntensity: 1.6, roughness: 0.3 });
-  part(new THREE.SphereGeometry(0.05, 10, 8), lantern, 0.17, 0.56, 0.04);
-  g.userData.lantern = lantern;
-  return g;
 }
 
 function hullShape() {

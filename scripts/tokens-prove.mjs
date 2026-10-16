@@ -220,6 +220,42 @@ try {
     check(`7 diorama discs their own size, at most 30 % of a hex across (${width}x${height})`, t.every((k) => k.scale === 1 && k.share <= 0.3), `largest ${(big.share * 100).toFixed(1)} % (the ${big.n}, ${big.scale.toFixed(3)}x)`);
     check(`7 diorama discs never overlap on screen (${width}x${height})`, m.overlaps.length === 0, m.overlaps.join(" "));
     check(`7 no numeral behind the scenery (${width}x${height})`, t.every((k) => k.hidden === 0), t.filter((k) => k.hidden).map((k) => `the ${k.n}: ${k.hidden} of 5 points`).join(", ") || "0 of 90 points");
+    // 8 (#633): the wayfarer, standing on each numbered hex in turn, hides none of its numeral's five points, in the diorama
+    // and in the overhead view (he stands beside the token).
+    for (const view of ["diorama", "overhead"]) {
+      const w = await p.evaluate((view) => {
+        const isle = window.__isle;
+        isle.setView(view);
+        const st = structuredClone(isle.lastState);
+        const V = isle.persp.position.constructor;
+        const cam = view === "diorama" ? isle.persp : isle.ortho;
+        const hidden = [];
+        for (const h of st.hexes.filter((x) => x.pip != null)) {
+          st.robberHex = h.id;
+          st.seq += 1;
+          isle.setBoard(st, isle.lastHi, false);
+          isle.walk = null;
+          isle.wayfarer.position.copy(isle.robberTarget);
+          isle.wayfarer.updateMatrixWorld(true);
+          cam.updateMatrixWorld();
+          const g = isle.land.children.find((o) => o.userData?.hex === h.id && o.userData?.token != null);
+          g.updateMatrixWorld(true);
+          const label = g.children[1];
+          const rc = new isle.raycaster.constructor();
+          const n = [[128, 93], [128, 50], [128, 136], [88, 93], [168, 93]].filter(([cx, cy]) => {
+            const v = label.localToWorld(new V((cx / 128 - 1) * 0.245, (1 - cy / 128) * 0.245, 0));
+            const ndc = v.clone().project(cam);
+            rc.setFromCamera({ x: ndc.x, y: ndc.y }, cam);
+            const far = rc.ray.origin.distanceTo(v) - 0.005;
+            return rc.intersectObject(isle.wayfarer, true).some((x) => x.distance < far);
+          }).length;
+          if (n) hidden.push(`the ${h.pip}: ${n} of 5`);
+        }
+        isle.setView("diorama");
+        return hidden;
+      }, view);
+      check(`8 the wayfarer hides no numeral (${view}, ${width}x${height})`, w.length === 0, w.join(", ") || "18 hexes clear");
+    }
     await ctx.close();
   }
 } finally {

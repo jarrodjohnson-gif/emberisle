@@ -161,9 +161,10 @@ try {
       st.seq += 1;
       const r0 = isle.renders;
       g.setState({ state: st });
-      const target = worldOfHex(near);
+      // He goes to his spot on the hex (beside its token, #633): the renderer's own target for it.
+      const target = isle.robberTarget;
       const p = isle.wayfarer.position;
-      return { walk: !!isle.walk, atTarget: Math.hypot(p.x - target.x, p.z - target.z) < 0.01, r0 };
+      return { walk: !!isle.walk, atTarget: Math.hypot(p.x - target.x, p.z - target.z) < 0.01 && Math.hypot(target.x - worldOfHex(near).x, target.z - worldOfHex(near).z) < 0.5, r0 };
     });
   const landed = () =>
     page.evaluate(() => {

@@ -29,6 +29,12 @@ mark at least 12 px across at 1280×720 that differs from every cap in both ligh
 
 ## The figure
 
+> **Since #633 (2026-10-16):** the wayfarer is Bruno (`src/lib/scene/bruno.ts`, the owner's "sneaky lil b… like Bruno"): a
+> hooded, poncho'd sneak with a rat on his shoulder and a lantern, on a dark gold-rimmed base, about 0.55 tall. He no longer
+> covers the token: on a numbered hex he stands **beside** it, 0.43 to its left as the camera looks (`robberSpot` in
+> isle-renderer.ts), on the scene's ground there, so the robbed number stays readable in both views (tokens-prove check 8
+> ray-tests his figure). On the waste (no token) he stands at the centre. The rest of this section is the earlier piece.
+
 He stands **on the number token**, centred on the hex, feet on the token's face. The token is a cream disc
 (`#f4ead6`, r 0.3 today, r 0.34 after #134), so he always has a light halo under him on every terrain,
 including timber and ore, without any extra outline mesh. It is also the rule made visible: the number he
