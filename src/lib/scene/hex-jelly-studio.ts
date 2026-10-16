@@ -1,7 +1,7 @@
 // The Hex Jelly studio (docs/design/hex-jelly-prompt.md): one tile built to the prompt, large, at the diorama's angle (38 degrees
 // up, 20 round from the south), under the prompt's light, on the paper, with a subtle tilt-shift. Dev only: scripts/hex-jelly.html
 // loads it and scripts/hex-jelly.mjs screenshots it. Query: kind=<terrain> (default timber), seed=<n>, pip=<n> (0 for none),
-// t=<seconds> to freeze the tile's life at that moment (otherwise it runs live), props=0 for the bare ground, focus=pool|camp
+// t=<seconds> to freeze the tile's life at that moment (otherwise it runs live), props=0 for the bare ground, focus=pool|camp|cut
 // to frame that corner of the story close up, ring=1 for six neighbours round it at board spacing (to see what the landform
 // hides, with birds and cloud shadows crossing it), az=<degrees> to orbit the eye, roll=<t0> to start the roll payoff at t0,
 // robber=1 to stand the robber on the centre tile, night=1 for the night lighting.
@@ -12,7 +12,7 @@ import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 import type { Terrain } from "@/lib/game/types";
 import { LIGHT } from "@/lib/scene/palette";
-import { BLOCK_H, CORNER_R, buildTile } from "@/lib/scene/hex-jelly";
+import { BLOCK_H, CORNER_R, SIZE, buildTile, gull } from "@/lib/scene/hex-jelly";
 import { TOKEN_LIFT, TOKEN_TILT, numberToken } from "@/lib/scene/isle-renderer";
 
 const q = new URLSearchParams(location.search);
@@ -113,7 +113,8 @@ const box = new THREE.Box3();
 }));
 for (let i = 0; i < 8; i++) pts.push(new THREE.Vector3(i & 1 ? box.max.x : box.min.x, i & 2 ? box.max.y : box.min.y, i & 4 ? box.max.z : box.min.z));
 // A close-up frames a disc round the story's spot instead of the whole tile.
-const spot = focus === "pool" ? tile.layout.pool : focus === "camp" ? tile.layout.camp && { x: Math.cos(tile.layout.camp.a) * 0.58, z: Math.sin(tile.layout.camp.a) * 0.58 } : null;
+const campAt = (da: number, d: number) => tile.layout.camp && { x: Math.cos(tile.layout.camp.a + da) * d, z: Math.sin(tile.layout.camp.a + da) * d };
+const spot = focus === "pool" ? tile.layout.pool : focus === "camp" ? campAt(0, 0.58) : focus === "cut" ? campAt(-0.62, 0.6) : null;
 if (spot) {
   pts.length = 0;
   for (let i = 0; i < 12; i++) {
@@ -167,41 +168,32 @@ composer.addPass(tilt(0, 1));
 // drifting over the tiles.
 const sky: ((t: number) => void)[] = [];
 if (ring) {
-  const birdMat = new THREE.MeshStandardMaterial({ color: night ? 0x2a2e3a : 0xfbfaf5, roughness: 0.5 });
+  // Seagulls in loose twos and threes, each on its own wide gliding loop over the ring, banking into the turn, flapping now
+  // and then.
+  const gullMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.5 });
   for (let f = 0; f < 3; f++) {
-    const flock = Array.from({ length: 5 }, (_, i) => {
-      const b = new THREE.Group();
-      const body = new THREE.Mesh(new THREE.SphereGeometry(1, 8, 6), birdMat);
-      body.scale.set(0.02, 0.008, 0.008);
-      const wings = [1, -1].map((side) => {
-        const w = new THREE.Mesh(new THREE.SphereGeometry(1, 8, 4), birdMat);
-        w.scale.set(0.01, 0.002, 0.028);
-        w.position.z = 0.024 * side;
-        const pivot = new THREE.Group();
-        pivot.add(w);
-        b.add(pivot);
-        return pivot;
-      });
-      b.add(body);
-      b.castShadow = true;
-      body.castShadow = true;
-      scene.add(b);
-      return { b, wings, i };
+    const n = 2 + (f % 2);
+    const birds = Array.from({ length: n }, (_, i) => {
+      const b = gull(gullMat);
+      b.g.scale.setScalar(SIZE.small * 1.6);
+      scene.add(b.g);
+      return { ...b, i };
     });
+    const c = { x: Math.cos(f * 2.1) * 1.2, z: Math.sin(f * 2.1) * 1.0 };
+    const R = 1.1 + f * 0.35;
     sky.push((t) => {
-      const u = ((t * 0.05 + f * 0.37) % 1) * 2 - 1;
-      const a = f * 2.1 + 0.4;
-      const [dx, dz] = [Math.cos(a), Math.sin(a)];
-      for (const k of flock) {
-        // A V: each bird a little back and to one side of the one ahead.
-        const back = Math.ceil(k.i / 2) * 0.06;
-        const side = (k.i % 2 ? 1 : -1) * Math.ceil(k.i / 2) * 0.05;
-        const x = dx * u * 2.6 - dx * back - dz * side + Math.sin(f * 3) * 0.5;
-        const z = dz * u * 2.6 - dz * back + dx * side + Math.cos(f * 3) * 0.5;
-        k.b.position.set(x, 0.7 + f * 0.1 + 0.02 * Math.sin(t * 2 + k.i), z);
-        k.b.scale.setScalar(2.4);
-        k.b.rotation.y = -a;
-        k.wings.forEach((w, i) => (w.rotation.x = (i ? -1 : 1) * 0.6 * Math.sin(t * 9 + k.i)));
+      for (const k of birds) {
+        const w = (0.22 - f * 0.03) * (f % 2 ? -1 : 1);
+        const a = t * w + k.i * 0.35 + f;
+        const r = R + k.i * 0.12;
+        k.g.position.set(c.x + Math.cos(a) * r, 0.75 + f * 0.12 + 0.03 * Math.sin(t * 0.7 + k.i), c.z + Math.sin(a) * r);
+        // Heading along the loop, banked in toward its centre.
+        k.g.rotation.set(0, 0, 0);
+        k.g.rotation.order = "YXZ";
+        k.g.rotation.y = -(a + (w > 0 ? Math.PI / 2 : -Math.PI / 2));
+        k.g.rotation.x = (w > 0 ? 1 : -1) * 0.35;
+        const cyc = (t + k.i * 1.3 + f * 2) % 5;
+        k.pose(t, cyc < 0.9 ? Math.sin((cyc / 0.9) * Math.PI) : 0);
       }
     });
   }

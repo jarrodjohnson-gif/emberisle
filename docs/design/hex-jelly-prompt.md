@@ -12,6 +12,10 @@ something is always moving, someone is always busy, and there is one small surpr
 Three.js: no models, no textures, no external requests. The look is the Material Studies series: a chunky cut-cake block of
 candy-coloured land, glossy soft-lit forms, translucent jelly water, a tilt-shift miniature on warm washi paper.
 
+THE GAME (owner 2026-10-16): Age of Empires meets Catan. Every resource tile is a working site, and its villagers are
+always visibly gathering it: the woodcutter fells timber, the shepherd shears wool, the farmer scythes grain, the brickmaker
+digs clay, the miner picks ore. The waste is the one tile nobody works; the wayfarer haunts it. A roll is the harvest coming in.
+
 THE STAGE
 - Washi-paper background (#ebe8e1) with the faintest fibre grain; a soft floor shadow under the tile that fades out with
   distance. Camera 3/4: 38° above the horizon, 20° round from the south, lens narrow (about 10°) so it reads as a model
@@ -63,8 +67,8 @@ THE SIX WORLDS
    fawn: the doe lowers her head to drink and lifts it to look around, ears flicking; the fawn stays close. On the other
    side of the clearing, a campsite: an orange canvas A-frame tent, two sitting logs, a ring of stones round a bonfire
    whose flame blobs (yellow core, orange, red tips) flicker and whose embers drift up and fade; a thin curl of smoke; a
-   warm point light from the fire on the ground nearby. A felled stump with an axe in it and a small stack of split
-   logs. Red-capped toadstools in a fairy ring under the trees, ferns at the stream, a mossy boulder or two. Surprise: an
+   warm point light from the fire on the ground nearby. The woodcutter at work at the forest's edge: a villager in a red
+   shirt swinging an axe into a tree, chips flying, beside a stump with an axe in it and a stack of split logs. Red-capped toadstools in a fairy ring under the trees, ferns at the stream, a mossy boulder or two. Surprise: an
    owl's two yellow eyes blink in the dark of one pine.
 
 2. WOOL — "Shearing Day". Bright rolling green: a long grassy ridge along one back side with a dry-stone wall running its
@@ -116,7 +120,8 @@ THE TILE IN PLAY (owner 2026-10-16: "when the land wins a roll it can interact";
 3. Night. In the board's night mode the moon is cool and low and every lived-in thing glows warm: the campfire lights the
    clearing and the tent glows from inside, the hut's window and stove, the farmhouse windows and the barn's loft, the
    kiln's mouth, the mine's lantern and mouth, the wayfarer's lantern. Fireflies over the forest pool.
-4. Board-wide life. Over the whole island, not one tile: a few small flocks of birds cross from tile to tile, and soft
+4. Board-wide life. Over the whole island, not one tile: seagulls (white heads and bodies, grey wings with black tips,
+   yellow bills) wheel in loose twos and threes on wide gliding loops, banking and now and then flapping, and soft
    cloud shadows drift slowly over the board, so it reads as one world rather than nineteen dioramas.
 5. Strata per kind. The same five bands, tinted to the land: forest and pasture caramel soil over chocolate rock; grain a
    golden sand and warm brown soil; clay terracotta soil over deep red rock; ore pale grey sand, grey-brown soil, slate rock;

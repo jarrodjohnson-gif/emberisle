@@ -755,6 +755,14 @@ function forest(L: Layout, ground: (x: number, z: number) => number, r: () => nu
   // The camp: the fire toward the clearing, the tent behind it, the logs either side.
   const fire = at(camp.a, 0.5);
   const tentAt = at(camp.a + 0.12, 0.7);
+  // The woodcutter's spot, on the far side of the camp from the tent, and the tree he is felling just beyond him.
+  const cutAt = at(camp.a - 0.55, 0.52);
+  // Whether (x, z) is clear of the eye's sightline to p (nothing tall in front of it).
+  const inViewOf = (p: Pt, x: number, z: number) => {
+    const [dx, dz] = [x - p.x, z - p.z];
+    const along = dx * Math.sin(20 * DEG) + dz * Math.cos(20 * DEG);
+    return !(along > 0 && along < 0.4 && Math.abs(dx * Math.cos(20 * DEG) - dz * Math.sin(20 * DEG)) < 0.14);
+  };
   // Keep-outs for the trees: water, camp, deer, the ring's middle.
   const clear = (x: number, z: number, room: number) =>
     streamDist(L, x, z) > 0.06 + room &&
@@ -762,7 +770,9 @@ function forest(L: Layout, ground: (x: number, z: number) => number, r: () => nu
     Math.hypot(x - fire.x, z - fire.z) > 0.16 + room &&
     Math.hypot(x - tentAt.x, z - tentAt.z) > 0.1 + room &&
     (!L.deer || Math.hypot(x - L.deer.x, z - L.deer.z) > 0.1 + room) &&
-    Math.hypot(x - L.ring!.x, z - L.ring!.z) > 0.06 + room;
+    Math.hypot(x - L.ring!.x, z - L.ring!.z) > 0.06 + room &&
+    Math.hypot(x - cutAt.x, z - cutAt.z) > 0.17 + room &&
+    inViewOf(cutAt, x, z);
   // Nothing tall stands between the eye and a story spot (the pool, the deer, the fire, the tent).
   const EYE = { x: Math.sin(20 * DEG), z: Math.cos(20 * DEG) };
   const spots = [pool, fire, tentAt, ...(L.deer ? [L.deer] : [])];
@@ -886,6 +896,50 @@ function forest(L: Layout, ground: (x: number, z: number) => number, r: () => nu
   axe.position.set(axeAt.x, Y(axeAt.x, axeAt.z) + 0.04, axeAt.z);
   axe.rotation.set(0, camp.a, 0.55);
   g.add(axe);
+
+  // The woodcutter: a villager in a red shirt swinging an axe into a tree, chips flying; on a roll he chops double time.
+  {
+    const toEye = Math.atan2(Math.cos(20 * DEG), Math.sin(20 * DEG));
+    // The tree stands beside him, side-on to the eye, so the swing reads.
+    const side = { x: Math.cos(toEye + Math.PI / 2), z: Math.sin(toEye + Math.PI / 2) };
+    const treeAt = { x: cutAt.x + side.x * 0.07, z: cutAt.z + side.z * 0.07 };
+    const ty = Y(treeAt.x, treeAt.z);
+    const tree: THREE.BufferGeometry[] = [part(cyl(0.75, 1, 10), "#6e4128", [treeAt.x, ty + 0.05, treeAt.z], [0, 0, 0], [0.016, 0.1, 0.016])];
+    tree.push(part(cyl(1, 1, 10), "#e2ae74", [treeAt.x - side.x * 0.011, ty + 0.025, treeAt.z - side.z * 0.011], [0, -Math.atan2(side.z, side.x), Math.PI / 2], [0.009, 0.01, 0.009]));
+    // A pine: four flattened tiers, so its crown sits above the woodcutter's head.
+    for (let k = 0; k < 4; k++) tree.push(part(blobGeo(260 + k), ["#1f5a34", "#2f7340", "#3a8545", "#4a8d4c"][k]!, [treeAt.x, ty + 0.14 + k * 0.04, treeAt.z], [0, k, 0], [0.06 - k * 0.011, 0.028, 0.06 - k * 0.011]));
+    g.add(mesh(merge(tree), cm));
+    const man = person(cm, "#c4402f", 0.1, "#6a4a32");
+    man.g.position.set(cutAt.x, Y(cutAt.x, cutAt.z), cutAt.z);
+    man.g.rotation.y = -Math.atan2(treeAt.z - cutAt.z, treeAt.x - cutAt.x);
+    const axeH = new THREE.Group();
+    axeH.add(mesh(merge([part(cyl(0.0018, 0.0018, 6), "#b08a5a", [0.02, 0.045, 0], [0, 0, -0.9], [1, 0.05, 1]), part(new THREE.BoxGeometry(1, 1, 1), "#aab2b8", [0.038, 0.06, 0], [0, 0, -0.9], [0.012, 0.008, 0.003])]), cm));
+    axeH.position.set(0, 0.03, 0);
+    man.top.add(axeH);
+    g.add(man.g);
+    const chips = Array.from({ length: 5 }, (_, i) => {
+      const o = new THREE.Mesh(new THREE.BoxGeometry(0.006, 0.002, 0.004), basic("#efc890"));
+      o.userData.loose = true;
+      g.add(o);
+      return { o, i };
+    });
+    stands.push({ x: cutAt.x, z: cutAt.z, r: 0.05 }, { x: treeAt.x, z: treeAt.z, r: 0.06 });
+    life.push((t) => {
+      const speed = env.roll >= 0 ? 2.2 : 1;
+      const ph = (t * 1.3 * speed) % 1;
+      // Wind up slowly, strike fast.
+      const swing = ph < 0.7 ? -0.9 * ease(ph / 0.7) : -0.9 + 1.5 * ease((ph - 0.7) / 0.3);
+      man.top.rotation.z = -0.1 - swing * 0.6;
+      axeH.rotation.z = swing;
+      for (const c of chips) {
+        const u = (ph - 0.95 + 1) % 1;
+        const k = u * 4 + c.i * 0.07;
+        c.o.visible = k < 1 && !env.robber;
+        c.o.position.set(treeAt.x - side.x * 0.015 + (c.i - 2) * 0.006 * k, ty + 0.03 + 0.05 * k - 0.07 * k * k, treeAt.z - side.z * 0.015 - 0.02 * k);
+        c.o.rotation.set(k * 9, c.i, k * 7);
+      }
+    });
+  }
 
   // The tent: an orange canvas A-frame, its door to the fire, a ridge pole showing at each end.
   const tri = new THREE.Shape();
@@ -1791,6 +1845,56 @@ function crow(m: THREE.Material) {
   g.scale.setScalar(SIZE.small);
   g.userData.ref = "crow";
   return { g, wings };
+}
+
+// A seagull gliding along +x (prompt "Board-wide life"): a white body and head, a yellow bill with its red spot, a grey tail
+// band, and long grey wings in two joints with black tips, so it can glide with a slight lift and now and then flap.
+export function gull(m: THREE.Material) {
+  const g = new THREE.Group();
+  g.add(
+    mesh(
+      merge([
+        part(sphere(), "#fbfaf6", [0, 0, 0], [0, 0, 0], [0.024, 0.009, 0.009]),
+        part(sphere(), "#fbfaf6", [0.022, 0.004, 0], [0, 0, 0], [0.008, 0.007, 0.007]),
+        part(new THREE.ConeGeometry(1, 1, 6), "#f2c230", [0.033, 0.002, 0], [0, 0, -Math.PI / 2 - 0.15], [0.0025, 0.01, 0.0025]),
+        part(sphere(6), "#d8392b", [0.034, 0.0, 0], [0, 0, 0], [0.0015, 0.0015, 0.0015]),
+        part(sphere(6), "#1a1414", [0.026, 0.006, 0.005], [0, 0, 0], [0.0012, 0.0012, 0.0012]),
+        part(sphere(6), "#1a1414", [0.026, 0.006, -0.005], [0, 0, 0], [0.0012, 0.0012, 0.0012]),
+        part(new THREE.BoxGeometry(1, 1, 1), "#fbfaf6", [-0.026, 0.002, 0], [0, 0, 0], [0.014, 0.002, 0.012]),
+        part(new THREE.BoxGeometry(1, 1, 1), "#9aa3ab", [-0.032, 0.0025, 0], [0, 0, 0], [0.004, 0.0022, 0.0125]),
+      ]),
+      m,
+    ),
+  );
+  const wings = [1, -1].map((side) => {
+    const inner = new THREE.Group();
+    inner.position.set(0.003, 0.004, 0.006 * side);
+    inner.add(mesh(merge([part(sphere(8), "#a9b2ba", [0, 0, 0.018 * side], [0, 0, 0], [0.011, 0.0018, 0.02])]), m));
+    const outer = new THREE.Group();
+    outer.position.set(0, 0, 0.036 * side);
+    outer.add(
+      mesh(
+        merge([
+          part(sphere(8), "#a9b2ba", [-0.004, 0, 0.014 * side], [0, 0.35 * side, 0], [0.008, 0.0016, 0.017]),
+          part(sphere(8), "#1d1c20", [-0.008, 0, 0.027 * side], [0, 0.35 * side, 0], [0.005, 0.0015, 0.008]),
+        ]),
+        m,
+      ),
+    );
+    inner.add(outer);
+    g.add(inner);
+    return { inner, outer, side };
+  });
+  g.traverse((o) => ((o as THREE.Mesh).isMesh && ((o.castShadow = true), (o.receiveShadow = false))));
+  // Glide with the wings lifted a little; `flap` (0 to 1) beats them.
+  const pose = (t: number, flap: number) => {
+    for (const w of wings) {
+      const beat = flap * Math.sin(t * 14);
+      w.inner.rotation.x = -w.side * (0.15 + 0.7 * beat);
+      w.outer.rotation.x = -w.side * (0.1 + 0.5 * beat);
+    }
+  };
+  return { g, pose };
 }
 
 // GRAIN, "Harvest" (docs/design/hex-jelly-prompt.md): the field in four strips (standing wheat swaying in a wind wave, a
