@@ -174,6 +174,35 @@ pr: #<n>
 ```
 Move it to In Review (Jarrod accepts it, then it goes to Done and is closed). Then set the next step to Todo.
 
+**Who decides what** (Jarrod's rule, 2026-10-16). It applies to every issue, including helpers' `Idea:`
+and `Bug:` issues:
+
+| Kind | Who decides | Then |
+|---|---|---|
+| Real bug (reproducible, and the game is wrong) | The orchestrator confirms it | Spec it and label `helper-ok`. Any builder may fix it. |
+| Minor UX: wording, spacing, hints, a missing cue, consistency with what's already decided | The orchestrator | Spec it and label `helper-ok`. |
+| Major UX: new screens or flows, layout changes, anything that changes how a turn feels | **Jarrod** | Ask him in one short message, then spec his answer. |
+| Major design: new features, rules, scoring, art style, pieces, sound identity | **Jarrod** | Same: ask him first. |
+
+Not a bug, or a no? Close it with a one-line reason.
+
+**Work efficiently** (tokens are the budget):
+- **Delegate broad reading.** Hand a search across many files, or a long log, to a subagent. Ask for the
+  conclusion (file:line plus one line), not the dump. Read whole files yourself only when you will edit
+  them.
+- **Read narrowly.** `grep` first, then read the lines you need (`sed -n`, or an offset and limit). Don't
+  re-read a file you just edited.
+- **Run long checks in the background.** Browser proofs take minutes. Start them in the background or
+  hand them to a subagent, and keep working. Run proofs one at a time, never in parallel: they share
+  ports. Before you push or open the PR, wait for every check to finish and read its result. A check
+  you haven't read the result of counts as failed.
+- **Pick the model to fit the work.** Use the issue's `model:` label if it has one. Otherwise use a
+  smaller model for mechanical or search subagents, and the strongest one for UI, visual or tricky
+  multi-file work.
+- **Independent steps go out together.** Send unrelated tool calls in one batch, and launch independent
+  subagents at the same time.
+- **Keep messages short.** Report results, not narration. Put the proof output in the PR, not in chat.
+
 **Found something along the way?** A real new step becomes a new issue under the right milestone
 (a sub-issue if it belongs to a node). An idea goes in [IDEAS.md](IDEAS.md), not in the tracker.
 

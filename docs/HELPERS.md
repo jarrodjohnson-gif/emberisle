@@ -17,6 +17,16 @@ always the next `helper-ok` issue.
   tool can't switch models, use a subagent on that model when you can. Otherwise, say in the PR which
   model you used.
 
+## Ideas and suggested changes
+
+You or your human may have ideas, such as a new feature, a change to how something looks or plays, or
+a bug you noticed. **Don't build them.** Open a GitHub issue on `jarrodjohnson-gif/emberisle`:
+- Title: `Idea: <short name>`. For a bug, use `Bug: <short name>`.
+- Body: what and why, plus a screenshot if it helps.
+
+The orchestrator reads new issues, turns the good ones into exact specs (Jarrod decides the design
+calls), and labels them `helper-ok` when they're ready. Then you can build them like any other issue.
+
 ## Keep going on your own
 
 Nobody will tell you "next issue". After each PR, go straight back to step 2. In Claude Code, the
@@ -37,6 +47,9 @@ prompt.
 - If `helper-ok` is removed from an issue, drop that issue.
 - After 3 pushes in a row that are still red on the same PR, post a `paused:` comment on the issue
   and stop work on it.
+
+Work efficiently, as `docs/FRAMEWORK.md` section 7 says: delegate broad reading to subagents, read narrowly,
+and run long proofs in the background, one at a time, reading every result before you push.
 
 ## Never
 
@@ -70,7 +83,8 @@ prompt.
 
    Read the whole issue and every comment on it, fresh. Together they are the spec.
 4. **Claim** it right away with this comment. A fork can't set labels, so the comment alone is your claim.
-   The orchestrator syncs the labels.
+   Put `/claim` on its own line in that comment, and the label bot sets the status. Later, post `/in-review`
+   or `/paused` in a **new** comment; the bot ignores edits. `/label`, `/done` and `/canceled` are Jarrod's only.
    ```
    claimed: <your name>, <YYYY-MM-DD>
    files: <paths you expect to touch>
@@ -92,7 +106,7 @@ prompt.
    - Open a **draft** PR into `jarrodjohnson-gif/emberisle` `main`, either in the web UI or with
      `gh pr create --draft --repo jarrodjohnson-gif/emberisle --base main --head <you>:helper/<issue#>-<slug>`.
    - In the body, put `Closes #<issue>`, what changed, and the check output.
-   - Then comment on the issue (no label changes):
+   - Then post a new comment on the issue, with `/in-review` on its own line:
    ```
    changed: <one line>
    test: <command> → <result>
@@ -101,7 +115,7 @@ prompt.
 9. **Follow up:** if CI is red, fix it on the same branch. Answer each review comment, either with a
    fix or with a reply saying why not. Then go back to step 2.
 
-**Pause** (out of time or blocked): comment on the issue:
+**Pause** (out of time or blocked): post a new comment on the issue, with `/paused` on its own line:
 ```
 paused: <your name>, <YYYY-MM-DD>
 done so far: <one line>
