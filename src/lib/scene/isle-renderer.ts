@@ -29,12 +29,14 @@ import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { SSAOPass } from "three/addons/postprocessing/SSAOPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
-import { hexHeight, worldOfHex } from "@/lib/game/board";
+import { worldOfHex } from "@/lib/game/board";
 import { HEX_SIZE, SQRT3, hexCorners, hexesInRadius, vertexId } from "@/lib/game/hex";
 import { LAND_MS } from "@/lib/scene/landing";
-import { mulberry32, hashStr } from "@/lib/utils";
+import { hashStr } from "@/lib/utils";
+import { chunkUrl } from "@/lib/lazy";
 import { PAINT, RIM } from "@/lib/scene/palette";
-import { PropKit, decorate, sculptHex, tileMaterial, type FarmWork, type OreWork, type Sheep } from "@/lib/scene/terrain";
+import { BLOCK_H } from "@/lib/scene/jelly-dims";
+import type { JellyBoard, JellyStats } from "@/lib/scene/jelly-board";
 import { OceanLife } from "@/lib/scene/ocean-life";
 import { CAUSTIC_GLSL, PAPER, SPLASH, addSplashRings, makeCrystalSea, makeFloorProps, makeSeaFloor, makeSplashes, makeSwell, makeWash, nearestCoast, type SeaUniforms, type WaterPath, type WaterStatus } from "@/lib/scene/crystal-water";
 import { Wobble } from "@/lib/scene/wobble";
@@ -42,20 +44,38 @@ import { play } from "@/lib/sound";
 import { payingHexes } from "@/lib/game/rules";
 import { type GameState, type HarborKind, type HexCell, type Terrain, type Vertex } from "@/lib/game/types";
 
-const SLAB = 0.26;
 const TILE_Y = 0.04;
 
-// The y of a hex's top surface: the sculpted top is exactly here at the centre (the token) and on the rim (the pieces).
-export function topOf(terrain: Terrain) {
-  return TILE_Y + SLAB + hexHeight(terrain) * 0.35;
+// The y of a hex's top surface: the jelly block's flat pad (the token) and its rim (the pieces) are exactly here, the same on
+// every kind (docs/design/hex-jelly-prompt.md "THE BLOCK").
+export function topOf(_terrain: Terrain) {
+  return TILE_Y + BLOCK_H;
 }
-type TerrainStats = { tiles: number; props: number; drawCalls: number; tileTriangles: number; propTriangles: number; triangles: number };
+
+// The Hex Jelly scenes load as their own chunk; the board shows plain slabs until every scene is built, then the island swaps
+// in whole (the owner, 2026-10-16: wait for it, no pop-in). A failed load leaves the slabs (the board still plays) and tries
+// again a few seconds on (five times at most), under a fresh query: the browser remembers a module that failed for the life of the page (lazy.ts).
+let jellyFailed: string | undefined;
+let jellyRetries = 0;
+const loadJelly = (): Promise<typeof import("@/lib/scene/jelly-board")> =>
+  (jellyFailed ? import(/* @vite-ignore */ `${jellyFailed}?retry=${++jellyRetries}`) : import("@/lib/scene/jelly-board")).catch((e: unknown) => {
+    jellyFailed = chunkUrl(e) ?? jellyFailed;
+    throw e;
+  });
+const JELLY_RETRY_MS = 4000;
+type TerrainStats = { ready: boolean } & JellyStats;
+// The stand-in slab and the unseen pick block: a hex prism the jelly block's size (corners at 30 + 60k degrees, as the
+// board's pointy-top hexes), standing on its base.
+const SLAB_GEO = new THREE.CylinderGeometry(HEX_SIZE * 0.98, HEX_SIZE * 0.98, BLOCK_H, 6).translate(0, BLOCK_H / 2, 0);
+const PICK_MAT = new THREE.MeshBasicMaterial({ visible: false });
+PICK_MAT.userData.shared = true;
+const _slab = new THREE.Matrix4();
+const _slabColor = new THREE.Color();
 type Highlights = { vertices: string[]; edges: string[]; hexes: string[] };
-// The paying-hex flash (docs/design/dice.md): the cap glows in over --duration-base, then fades linearly out by 600 ms.
+// The paying-hex flash (docs/design/dice.md): the hex glows in over --duration-base, then fades linearly out by 600 ms.
 const FLASH_IN_S = 0.22;
 const FLASH_S = 0.6;
 const FLASH_PEAK = 0.35;
-const FLASH_WARM = new THREE.Color(0xffa94d);
 // The pulse token (polish.md "Motion"): legal corners and paths breathe once per 1.2 s.
 const LEGAL_PULSE_S = 1.2;
 
@@ -97,25 +117,15 @@ const _q = new THREE.Vector3();
 const _n = new THREE.Vector3();
 const _sea = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 
-// Number tokens in the diorama view (docs/design/tokens.md "Angle"): each turns to face the camera's azimuth and pitches
-// TOKEN_TILT toward it, resting on its near edge, and grows until its numeral is TOKEN_NUMERAL_PX tall on screen, but never
-// past 1.25x nor past 38% of a hex's width (the disc is 0.68 across, a hex SQRT3 * HEX_SIZE, so that cap is the one that
-// binds, at 1.08x), and shrinks while its disc would overlap another's on screen. Zoomed in, it is its own size again.
-// TOKEN_GLYPH is the numeral's height on the face, world units.
-const TOKEN_TILT = (22 * Math.PI) / 180;
-const TOKEN_NUMERAL_PX = 12;
-const TOKEN_MAX_SCALE = Math.min(1.25, (0.38 * SQRT3 * HEX_SIZE) / 0.68);
-const TOKEN_GLYPH = 0.31;
-// A tree standing between a token and the diorama camera (in front of it within TREE_SHADE_DEPTH, within TREE_SHADE_SIDE of
-// the line of sight) can hide the foot of the numeral at this angle: it is scaled down just enough that its top clears the
-// line from the eye to the glyph's lowest row (TOKEN_GLYPH_FOOT below the face's centre, plus TREE_SHADE_MARGIN), never
-// below TREE_SHADE_MIN. Trees in the zone that already clear it stay full size.
-const TREE_SHADE_DEPTH = 1.7;
-const TREE_SHADE_SIDE = 0.55;
-const TREE_SHADE_MARGIN = 0.05;
-const TREE_SHADE_MIN = 0.3;
-const TOKEN_GLYPH_FOOT = 0.13;
-const _box = new THREE.Box3();
+// Number tokens (docs/design/tokens.md): one size in every view and at every zoom (#599, the owner: "consistent across the
+// full game"), a cream disc TOKEN_R across its radius and TOKEN_H thick with a face TOKEN_FACE in radius. In the diorama view
+// each turns to face the camera's azimuth and pitches TOKEN_TILT toward it, resting on its near edge.
+export const TOKEN_TILT = (22 * Math.PI) / 180;
+export const TOKEN_R = 0.26;
+export const TOKEN_H = 0.05;
+export const TOKEN_FACE = 0.245;
+// How far a tilted token is lifted so its near edge stays where the flat disc's underside was.
+export const TOKEN_LIFT = TOKEN_R * Math.sin(TOKEN_TILT) + (TOKEN_H / 2) * Math.cos(TOKEN_TILT) - TOKEN_H / 2;
 
 export class IsleRenderer {
   private renderer: THREE.WebGLRenderer;
@@ -130,8 +140,6 @@ export class IsleRenderer {
   // The diorama lens as last posed: focal length (px), fitted distance, and where its axis meets the canvas.
   private lens: DioramaFit = { focal: 1, dist: 1, cx: 0, cy: 0 };
   private tokens: THREE.Object3D[] = [];
-  // The camera azimuth (and the island) the trees were last shaded for, so an idle frame does not redo it.
-  private shadedFor = "";
   private pending: { kind: string; id: string } | null = null;
   private downType = "mouse";
   private gesture = new TouchGesture();
@@ -162,19 +170,21 @@ export class IsleRenderer {
   private ssao!: SSAOPass;
   private renderPass!: RenderPass;
   private wayfarer: THREE.Group;
-  private sheep: Sheep[] = [];
-  private oreWork: OreWork[] = [];
-  private farmWork: FarmWork[] = [];
   private oceanLife = new OceanLife();
   // Touch the sea (crystal-water.md): the live splashes, the tiles giving under a tap, and where a drag on the water last stirred.
   private splash = makeSplashes();
   private wobble = new Wobble();
   private trail: { x: number; z: number; t: number } | null = null;
-  private ambientTime = 0;
   private boats: THREE.Group[] = [];
-  private trees: THREE.Object3D[] = [];
-  private kit: PropKit | null = null;
+  // The island's Hex Jelly scenes, batched (jelly-board.ts), once built; until then `slabs` stand in.
+  private jelly: JellyBoard | null = null;
+  // Whether the GPU is software, and whether the board is lite (the ground only).
+  software = false;
+  lite = false;
+  private slabs: THREE.InstancedMesh | null = null;
   private landGen = 0;
+  // The scenes' clock as last advanced (they hold at it under reduced motion).
+  private jellyT = 0;
   private lastLand: string | null = null;
   private lastSeq = -1;
   private lastState: GameState | null = null;
@@ -191,9 +201,10 @@ export class IsleRenderer {
   private robberTarget = new THREE.Vector3();
   private walk: { from: THREE.Vector3; to: THREE.Vector3; start: number; hops: number; dur: number } | null = null;
   private lantern: THREE.MeshStandardMaterial;
-  // Each land hex's cap material by hex id, and the flashes under way (age in seconds, advanced by the frame's dt).
-  caps = new Map<string, THREE.MeshStandardMaterial>();
-  private flashes: { mat: THREE.MeshStandardMaterial; age: number }[] = [];
+  // Each land hex's glow by hex id (its level read as `emissiveIntensity`, as when it was the cap's), and the flashes under
+  // way (age in seconds, advanced by the frame's dt). The jelly board warms each hex by its level.
+  caps = new Map<string, { emissiveIntensity: number }>();
+  private flashes: { mat: { emissiveIntensity: number }; id: string; age: number }[] = [];
   private clock = new THREE.Timer();
   private water = makeWater();
   // The crystal sea, or the simple shader when the GPU cannot render to a float target, the one-time probe finds it slow, or
@@ -255,6 +266,28 @@ export class IsleRenderer {
     // GPU); `applyWater` keeps 1.5 on a phone for the simple sea (2.25x the pixels of 1, against 4x at 2).
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, this.coarse() ? 1.5 : 2));
     this.renderer.setClearColor(PAPER, 1);
+    // A software GPU (SwiftShader, llvmpipe: CI, and machines with no GPU) builds the lite board (jelly-board.ts): there the
+    // drawing shares the CPU with the page, and the full scenes' build and frames starve it. `emberisle-jelly` in storage
+    // ("full" or "lite") overrides either way; the proofs of the scenes themselves ask for full.
+    {
+      const gl = this.renderer.getContext();
+      const dbg = gl.getExtension("WEBGL_debug_renderer_info");
+      this.software = /swiftshader|llvmpipe|softpipe|software/i.test(String(gl.getParameter(dbg ? dbg.UNMASKED_RENDERER_WEBGL : gl.RENDERER)));
+      let saved: string | null = null;
+      try {
+        saved = localStorage.getItem("emberisle-jelly");
+      } catch {
+        // Storage blocked: the default.
+      }
+      this.lite = saved === "full" ? false : saved === "lite" ? true : this.software;
+      // One line the owner can read off a phone's console: which board, and why.
+      console.info(`Emberisle board: ${this.lite ? "lite (the jelly ground)" : "full Hex Jelly scenes"}${saved ? ` (emberisle-jelly=${saved})` : this.software ? " (software GPU)" : ""}`);
+    }
+    // A lost context takes its fences with it: drop ours, or ambient frames would wait on it for good.
+    canvas.addEventListener("webglcontextlost", this.onContextLost);
+    // `?fps` on the page's address: a small overlay of the frame's cost (frame interval, the draw's CPU time, the GPU's lag
+    // behind it by fence), draw calls and triangles, for reading numbers off a phone.
+    if (new URLSearchParams(location.search).has("fps")) this.fps = makeFps(this.renderer);
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -468,14 +501,16 @@ export class IsleRenderer {
     }
   }
 
-  // Glow the caps of the hexes that paid. Each rises to the warm tint of its resource colour and fades back, once.
+  // Glow the hexes that paid: each warms and fades back, once, while its scene does the roll payoff's jelly squash and
+  // ripple (not under reduced motion).
   flashHexes(ids: string[]) {
     for (const id of ids) {
       const mat = this.caps.get(id);
       if (!mat) continue;
       this.flashes = this.flashes.filter((f) => f.mat !== mat);
-      this.flashes.push({ mat, age: 0 });
+      this.flashes.push({ mat, id, age: 0 });
     }
+    if (!this.calm()) this.jelly?.roll(ids);
   }
 
   // The caps' emissive for each flash at its age. Reduced motion steps to the peak and back with no ramp.
@@ -486,6 +521,7 @@ export class IsleRenderer {
       const a = f.age;
       const level = a >= FLASH_S ? 0 : calm ? 1 : a < FLASH_IN_S ? 1 - (1 - a / FLASH_IN_S) ** 3 : 1 - (a - FLASH_IN_S) / (FLASH_S - FLASH_IN_S);
       f.mat.emissiveIntensity = FLASH_PEAK * level;
+      this.jelly?.glow(f.id, f.mat.emissiveIntensity);
     }
     this.flashes = this.flashes.filter((f) => f.age < FLASH_S);
   }
@@ -518,6 +554,7 @@ export class IsleRenderer {
     }
     this.buildMarks(state, highlights, interactive);
     if (rolled) this.flashHexes(payingHexes(state));
+    this.jelly?.robber(state.robberHex ?? null);
     const rh = state.hexes.find((h) => h.id === state.robberHex);
     if (rh) {
       const w = worldOfHex(rh);
@@ -589,6 +626,11 @@ export class IsleRenderer {
 
   dispose() {
     this.stopped = true;
+    this.renderer.domElement.removeEventListener("webglcontextlost", this.onContextLost);
+    this.dropFence();
+    this.fps?.el.remove();
+    this.jelly?.dispose();
+    this.jelly = null;
     this.renderer.setAnimationLoop(null);
     this.controls.dispose();
     this.orbit.dispose();
@@ -782,68 +824,16 @@ export class IsleRenderer {
     return (this.tokens.find((t) => t.userData.hex === hexId)?.userData.lift as number | undefined) ?? 0;
   }
 
-  // Tokens face the diorama camera (TOKEN_TILT toward it, turned to its azimuth) and grow toward a TOKEN_NUMERAL_PX numeral
-  // within TOKEN_MAX_SCALE, then shrink where two discs would overlap on screen; in the other views they lie flat at their
-  // own size. The wayfarer keeps standing on his.
+  // Tokens face the diorama camera (TOKEN_TILT toward it, turned to its azimuth); in the other views they lie flat. Always
+  // their own size. The wayfarer keeps standing on his.
   private poseTokens() {
     const diorama = this.view === "diorama";
     const az = diorama ? this.orbit.getAzimuthalAngle() : 0;
-    // The face's normal once tilted and turned.
-    _n.set(Math.sin(TOKEN_TILT) * Math.sin(az), Math.cos(TOKEN_TILT), Math.sin(TOKEN_TILT) * Math.cos(az));
-    const cam = this.persp.position;
-    // Each disc on screen: its centre, and its half-width and half-height at scale 1 (the tilt foreshortens the height).
-    const discs = this.tokens.map((t) => {
-      if (!diorama) return { s: 1, x: 0, y: 0, rx: 0, ry: 0 };
-      const d = _p.copy(t.position).sub(cam);
-      const along = d.dot(this.persp.getWorldDirection(_q));
-      const facing = Math.max(0.2, -d.normalize().dot(_n));
-      const s = Math.min(TOKEN_MAX_SCALE, Math.max(1, (TOKEN_NUMERAL_PX * along) / (this.lens.focal * TOKEN_GLYPH * facing)));
-      const at = this.screenAt(t.position.x, t.position.y, t.position.z);
-      const rx = (0.34 * this.lens.focal) / along;
-      return { s, x: at.x, y: at.y, rx, ry: rx * facing };
-    });
-    if (diorama) for (let i = 0; i < discs.length; i++) {
-      for (let j = i + 1; j < discs.length; j++) {
-        const [a, b] = [discs[i]!, discs[j]!];
-        const k = Math.hypot((a.x - b.x) / (a.rx * a.s + b.rx * b.s), (a.y - b.y) / (a.ry * a.s + b.ry * b.s));
-        if (k < 1) [a.s, b.s] = [a.s * k, b.s * k];
-      }
-    }
-    this.tokens.forEach((t, i) => {
-      const s = discs[i]!.s;
-      // The near edge of the 0.34 x 0.06 disc stays where the flat disc's underside was.
-      const lift = diorama ? s * (0.34 * Math.sin(TOKEN_TILT) + 0.03 * Math.cos(TOKEN_TILT)) - 0.03 : 0;
+    const lift = diorama ? TOKEN_LIFT : 0;
+    for (const t of this.tokens) {
       t.rotation.set(diorama ? TOKEN_TILT : 0, az, 0, "YXZ");
-      t.scale.setScalar(s);
       t.position.y = (t.userData.restY as number) + lift;
       t.userData.lift = lift;
-    });
-    const key = diorama ? `${cam.x.toFixed(2)},${cam.y.toFixed(2)},${cam.z.toFixed(2)}|${this.lastLand}` : "";
-    if (key !== this.shadedFor) {
-      this.shadedFor = key;
-      const [sx, sz] = [Math.sin(az), Math.cos(az)];
-      for (const tree of this.trees) {
-        // The tree's own height, measured once at full size.
-        const base = tree.userData.base as THREE.Vector3;
-        if (tree.userData.height === undefined) {
-          tree.scale.copy(base);
-          tree.updateMatrixWorld(true);
-          tree.userData.height = _box.setFromObject(tree).max.y - tree.position.y;
-        }
-        let k = 1;
-        if (diorama) {
-          for (const t of this.tokens) {
-            const [dx, dz] = [tree.position.x - t.position.x, tree.position.z - t.position.z];
-            const along = dx * sx + dz * sz;
-            if (along <= 0 || along >= TREE_SHADE_DEPTH || Math.abs(dx * sz - dz * sx) >= TREE_SHADE_SIDE) continue;
-            // The sight line's height over the tree's foot where it passes the tree.
-            const rise = (cam.y - t.position.y) / Math.hypot(cam.x - t.position.x, cam.z - t.position.z);
-            const clear = t.position.y - TOKEN_GLYPH_FOOT * t.scale.x - tree.position.y + along * rise - TREE_SHADE_MARGIN;
-            k = Math.min(k, Math.max(TREE_SHADE_MIN, clear / (tree.userData.height as number)));
-          }
-        }
-        tree.scale.copy(base).multiplyScalar(k);
-      }
     }
     const st = this.lastState;
     const rh = st?.hexes.find((h) => h.id === st.robberHex);
@@ -1000,13 +990,13 @@ export class IsleRenderer {
     this.busyUntil = Math.max(this.busyUntil, performance.now() + SPLASH.life * 1000);
   }
 
-  /** The tapped tile, its token and its props give a little; never under reduced motion or while a piece is landing. */
+  /** The tapped tile and its scene give a little jelly wobble, and its token with them; never under reduced motion or while a
+   *  piece is landing. */
   wobbleHex(id: string) {
     if (this.calm() || this.landings.length) return;
-    const parts = [...this.land.children, ...this.living.children].filter((o) => (o.userData.land && o.userData.id === id) || o.userData.hex === id);
-    const tile = parts.find((o) => o.userData.kind === "hex");
-    if (tile && this.kit) parts.push(this.kit.anchor(id, tile.position.x, tile.position.y, tile.position.z));
+    const parts = this.land.children.filter((o) => o.userData.hex === id);
     this.wobble.start(id, parts, TILE_Y, performance.now());
+    this.jelly?.tap(id);
     this.wake();
   }
 
@@ -1044,9 +1034,14 @@ export class IsleRenderer {
       this.walk = null;
       this.startWalk();
     }
-    const busy = now < this.busyUntil || this.flashes.length > 0;
+    const busy = now < this.busyUntil || this.flashes.length > 0 || !!this.jelly?.busy();
     const gap = calm ? (busy ? 0 : Infinity) : this.titleMode ? 1000 / 30 : this.walk || pulsing || busy ? 0 : 1000 / 12;
     if (now - this.lastFrame < gap - 2) return;
+    // Backpressure on ambient frames (the title's turn, the idle sea): while the GPU is still on the last one, wait for it
+    // rather than queue another. A GPU that keeps up has always finished; a software one (CI, no GPU) would otherwise block
+    // the page in its GL calls, frame after frame, and starve input and every other tab. A frame a change or an interaction
+    // asked for (busy), and every frame under reduced motion, goes at once.
+    if (!busy && !calm && this.gpuBehind()) return;
     this.lastFrame = now;
     this.clock.update();
     const t = this.clock.getElapsed();
@@ -1066,16 +1061,18 @@ export class IsleRenderer {
     this.splash.step(t);
     if (calm) {
       this.oceanLife.step(0, false, this.oceanViewport);
+      // The scenes hold still; a dulling or a glow still lands.
+      this.jelly?.update(this.jellyT, false, true);
       this.pulseMarks(0, true);
       this.draw();
       return;
     }
     this.water.uniforms.uTime!.value = t;
-    this.ambientTime += dt;
     const swell = this.waterPath === "crystal" ? this.crystal?.swell : undefined;
     this.oceanLife.step(dt, true, this.oceanViewport, swell ? (x, z) => swell(x, z, t).y : undefined);
     this.foam.material.opacity = 0.32 + 0.23 * (0.5 + 0.5 * Math.sin(t * 0.8));
-    for (const tr of this.trees) if (tr.userData.prop === "tree") tr.rotation.z = Math.sin(t * 1.05 + tr.position.x * 2) * 0.028;
+    this.jellyT = t;
+    this.jelly?.update(t);
     if (this.walk) {
       const w = this.walk;
       const u = Math.min(1, (t - w.start) / w.dur);
@@ -1091,46 +1088,6 @@ export class IsleRenderer {
     }
     this.lantern.emissiveIntensity = 1.6 + 0.3 * Math.sin(t * 2.2);
     this.pulseMarks(t, false);
-    for (const s of this.sheep) {
-      s.wait -= dt;
-      if (s.wait <= 0) {
-        // A step of at most 0.3 rad around the ring keeps the straight walk to the target off the token.
-        const a = Math.atan2(s.tz - s.oz, s.tx - s.ox) + (Math.random() - 0.5) * 0.6;
-        const r = 0.54 + Math.random() * 0.2;
-        s.tx = s.ox + Math.cos(a) * r;
-        s.tz = s.oz + Math.sin(a) * r;
-        s.wait = 1.8 + Math.random() * 2.8;
-        s.graze = Math.random() > 0.4 ? 1.1 : 0;
-      }
-      s.g.position.x += (s.tx - s.g.position.x) * (1 - Math.exp(-dt * 1.6));
-      s.g.position.z += (s.tz - s.g.position.z) * (1 - Math.exp(-dt * 1.6));
-      s.g.position.y = s.ground(s.g.position.x, s.g.position.z) + 0.1;
-      const heading = Math.atan2(s.tx - s.g.position.x, s.tz - s.g.position.z);
-      const turn = Math.atan2(Math.sin(heading - s.g.rotation.y), Math.cos(heading - s.g.rotation.y));
-      s.g.rotation.y += turn * (1 - Math.exp(-dt * 3));
-      s.g.rotation.x = s.graze > 0 ? 0.32 : 0;
-      if (s.graze > 0) s.graze -= dt;
-    }
-    for (const work of this.oreWork) {
-      const phase = this.ambientTime + work.phase;
-      const roll = 0.05 * Math.sin(phase * Math.PI / 3);
-      work.cart.position.x = work.x + work.dx * roll;
-      work.cart.position.z = work.z + work.dz * roll;
-      work.cart.rotation.z = 0.035 * Math.sin(phase * 2.4);
-      work.cart.rotation.x = 0.018 * Math.sin(phase * 1.6);
-      work.arm.rotation.z = 0.22 * Math.sin(phase * Math.PI / 2);
-    }
-    for (const work of this.farmWork) {
-      const phase = this.ambientTime + work.phase;
-      const cycle = phase % 18;
-      const walking = cycle > 10 && cycle < 16;
-      const step = walking ? Math.sin((cycle - 10) * Math.PI / 6) * 0.10 : 0;
-      const [bx, bz] = [work.x + Math.cos(work.angle) * step, work.z + Math.sin(work.angle) * step];
-      work.body.position.set(bx, work.ground(bx, bz) + (walking ? Math.abs(Math.sin(phase * 6)) * 0.006 : 0), bz);
-      work.body.rotation.y = Math.PI / 2 - work.angle + (walking && cycle > 13 ? Math.PI : 0);
-      work.arm.position.set(work.body.position.x, work.body.position.y + 0.13, work.body.position.z);
-      work.arm.rotation.set(0, work.body.rotation.y, cycle < 8 ? -0.15 + Math.sin(phase * 2.2) * 0.28 : 0);
-    }
     for (const b of this.boats) {
       if (!swell) {
         b.position.y = 0.06 + Math.sin(t * 1.6 + b.position.x) * 0.04;
@@ -1240,14 +1197,16 @@ export class IsleRenderer {
   private draw() {
     const t0 = performance.now();
     this.poseTokens();
-    this.kit?.sync();
     this.fadeSea();
     const crystal = this.waterPath === "crystal" ? this.crystal : null;
     if (crystal) this.drawUnder(crystal);
     // The under pass already drew this frame's shadow map.
     this.renderer.shadowMap.autoUpdate = !crystal;
     try {
+      this.fps?.begin(t0);
       this.composer.render();
+      this.fenceFrame();
+      this.fps?.end(this.jelly?.stats() ?? null, this.lite);
     } finally {
       this.renderer.shadowMap.autoUpdate = true;
     }
@@ -1272,6 +1231,33 @@ export class IsleRenderer {
     this.applyWater();
   }
 
+  // The fence the last frame left, and whether the GPU is still behind it.
+  private fence: WebGLSync | null = null;
+  private fps: Fps | null = null;
+  private dropFence() {
+    const gl = this.renderer.getContext();
+    if (this.fence && gl instanceof WebGL2RenderingContext && !gl.isContextLost()) gl.deleteSync(this.fence);
+    this.fence = null;
+  }
+  private onContextLost = () => {
+    this.fence = null;
+  };
+  private fenceFrame() {
+    const gl = this.renderer.getContext();
+    if (!(gl instanceof WebGL2RenderingContext) || this.fence) return;
+    this.fence = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0);
+    gl.flush();
+  }
+  private gpuBehind() {
+    const gl = this.renderer.getContext();
+    if (!this.fence || !(gl instanceof WebGL2RenderingContext)) return false;
+    if (gl.getSyncParameter(this.fence, gl.SYNC_STATUS) !== gl.SIGNALED) return true;
+    gl.deleteSync(this.fence);
+    this.fence = null;
+    this.fps?.gpu(performance.now());
+    return false;
+  }
+
   // Compute the visible water once when choosing a visit, not on every animal frame.
   private oceanViewport = () => {
     const canvas = this.renderer.domElement;
@@ -1288,58 +1274,98 @@ export class IsleRenderer {
     };
   };
 
-  // The sculpted tiles and their props (#599, docs/design/terrain.md): draw calls and triangles in the main pass, read by
-  // board-look-prove through `window.__terrain`.
+  // The jelly board (#599, jelly-board.ts): its draw calls and triangles in the main pass, read by board-look-prove through
+  // `window.__terrain`; before it is built, the stand-in slabs.
   terrainStats(): TerrainStats {
-    const tris = (m: THREE.Mesh) => {
-      const g = m.geometry;
-      const n = (g.index ? g.index.count : g.attributes.position!.count) / 3;
-      return (m as THREE.InstancedMesh).isInstancedMesh ? n * (m as THREE.InstancedMesh).count : n;
-    };
-    const tiles = this.land.children.filter((o) => o.userData.land).map((g) => g.getObjectByName("cap") as THREE.Mesh);
-    const props = this.living.children.filter((o): o is THREE.Mesh => (o as THREE.Mesh).isMesh && o.visible && o.userData.terrainProps !== undefined);
-    const tileTris = tiles.reduce((a, m) => a + tris(m), 0);
-    const propTris = props.reduce((a, m) => a + tris(m), 0);
-    return { tiles: tiles.length, props: props.length, drawCalls: tiles.length + props.length, tileTriangles: tileTris, propTriangles: propTris, triangles: tileTris + propTris };
+    if (this.jelly) return { ready: true, ...this.jelly.stats() };
+    const n = this.slabs?.count ?? 0;
+    return { ready: false, lite: this.lite, drawCalls: n ? 1 : 0, triangles: n * 24, kinds: 0, batches: 0, bakes: 0, sprites: 0 };
+  }
+
+  // Ready once the island's scenes are built and showing (the proofs wait on it).
+  get landReady() {
+    return this.jelly !== null;
+  }
+
+  // The jelly board, for the proofs (its ground and clearance).
+  get jellyBoard() {
+    return this.jelly;
+  }
+
+  private growScenes(gen: number, key: string, hexes: { id: string; terrain: Terrain; x: number; z: number; y: number }[], tries = 0) {
+    const alive = () => gen === this.landGen && !this.stopped;
+    // Not until the board's first frame is on screen: the chunk's parse and the first kind's build would otherwise hold it.
+    if (this.renders === 0) {
+      requestAnimationFrame(() => alive() && this.growScenes(gen, key, hexes, tries));
+      return;
+    }
+    performance.mark("props-start");
+    loadJelly()
+      .then(({ JellyBoard }) => (alive() ? JellyBoard.create(hexes, (kind) => hashStr(`${key}|${kind}`), () => new Promise<boolean>((r) => setTimeout(() => r(alive()), 0)), this.lite) : null))
+      // Its shaders compile before it swaps in (in parallel where the browser can, KHR_parallel_shader_compile), not in the
+      // first frame that draws it. Compiled in place, into the composer's own target, so the programs are the frame's.
+      .then(async (jelly) => {
+        // Without parallel compile it would only move the same stall earlier (and three warns), so there it is skipped.
+        if (!jelly || !alive() || !this.renderer.extensions.has("KHR_parallel_shader_compile")) return jelly;
+        jelly.update(this.jellyT, true, true);
+        this.living.add(jelly.group);
+        const was = this.renderer.getRenderTarget();
+        this.renderer.setRenderTarget(this.composer.readBuffer);
+        const done = this.renderer.compileAsync(this.scene, this.cam());
+        this.renderer.setRenderTarget(was);
+        this.living.remove(jelly.group);
+        await done;
+        return jelly;
+      })
+      .then(
+        (jelly) => {
+          if (!jelly) return;
+          if (!alive()) return jelly.dispose();
+          this.jelly = jelly;
+          jelly.robber(this.lastState?.robberHex ?? null);
+          jelly.update(this.jellyT, true, true);
+          if (this.slabs) {
+            this.land.remove(this.slabs);
+            this.slabs.dispose();
+            (this.slabs.material as THREE.Material).dispose();
+            this.slabs = null;
+          }
+          this.living.add(jelly.group);
+          (window as unknown as { __terrain: TerrainStats }).__terrain = this.terrainStats();
+          this.wake();
+          performance.mark("props-end");
+        },
+        () => tries < 5 && setTimeout(() => alive() && this.growScenes(gen, key, hexes, tries + 1), JELLY_RETRY_MS),
+      );
   }
 
   private buildLand(state: GameState) {
+    this.jelly?.dispose();
+    this.jelly = null;
+    this.slabs = null;
     disposeGroup(this.land);
     disposeGroup(this.living);
-    this.sheep = [];
-    this.oreWork = [];
-    this.farmWork = [];
     this.boats = [];
-    this.trees = [];
     this.living.add(this.wayfarer);
     this.pickables = [];
     this.tokens = [];
     this.caps.clear();
     this.flashes = [];
     this.oceanLife.reset(landKey(state));
-    const kit = (this.kit = new PropKit(this.living));
-    const props: (() => void)[] = [];
-    const life = { sheep: this.sheep, oreWork: this.oreWork, farmWork: this.farmWork, tall: this.trees };
 
-    for (const h of state.hexes) {
+    // Each hex: an unseen block to pick it by, a stand-in slab in its terrain's paint, and its token.
+    const slabs = (this.slabs = new THREE.InstancedMesh(SLAB_GEO, new THREE.MeshStandardMaterial({ roughness: 0.85 }), state.hexes.length));
+    slabs.castShadow = slabs.receiveShadow = true;
+    state.hexes.forEach((h, i) => {
       const { x, z } = worldOfHex(h);
-      const rng = mulberry32(hashStr(h.id + h.terrain));
-      const sculpt = sculptHex(h, HEX_SIZE * 0.995, topOf(h.terrain) - TILE_Y, TILE_Y, rng);
-      const tile = makeHexTile(sculpt.geo);
-      tile.position.set(x, TILE_Y, z);
-      tile.userData = { kind: "hex", id: h.id, land: true };
-      tile.traverse((o) => {
-        o.userData = tile.userData;
-        o.castShadow = true;
-        o.receiveShadow = true;
-      });
-      this.land.add(tile);
-      this.pickables.push(tile);
-      const cap = tile.getObjectByName("cap") as THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>;
-      cap.material.emissive.copy(new THREE.Color(PAINT[h.terrain][0]).lerp(FLASH_WARM, 0.6));
-      cap.material.emissiveIntensity = 0;
-      this.caps.set(h.id, cap.material);
-      props.push(() => decorate(kit, life, h, x, z, sculpt, rng));
+      const pick = new THREE.Mesh(SLAB_GEO, PICK_MAT);
+      pick.position.set(x, TILE_Y, z);
+      pick.userData = { kind: "hex", id: h.id, land: true };
+      this.land.add(pick);
+      this.pickables.push(pick);
+      slabs.setMatrixAt(i, _slab.makeTranslation(x, TILE_Y, z));
+      slabs.setColorAt(i, _slabColor.set(PAINT[h.terrain][0]));
+      this.caps.set(h.id, { emissiveIntensity: 0 });
       if (h.pip != null) {
         const tok = numberToken(h.pip);
         tok.userData.token = h.pip;
@@ -1350,22 +1376,13 @@ export class IsleRenderer {
         this.land.add(tok);
         this.tokens.push(tok);
       }
-    }
-    // The props (the heavier half of the build) draw a frame after the tiles, so the board and its pieces are not held for them
-    // (#543 restore budget). Two frames on: the next one also runs the first draw, and a frame is not shown until all of its
-    // callbacks are done. A rebuild before then drops them with the old land.
+    });
+    this.land.add(slabs);
+
+    // The scenes: loaded and built a kind per task after the first draw (#543 restore budget), so no one task holds the page;
+    // then the island swaps in whole. A rebuild or a dispose before then drops them.
     const gen = ++this.landGen;
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      if (gen !== this.landGen || this.stopped) return;
-      performance.mark("props-start");
-      props.forEach((f) => f());
-      kit.finish();
-      // The tall props are new: the shade pass cached on this pose ran without them.
-      this.shadedFor = "";
-      (window as unknown as { __terrain: TerrainStats }).__terrain = this.terrainStats();
-      this.wake();
-      performance.mark("props-end");
-    }));
+    this.growScenes(gen, landKey(state), state.hexes.map((h) => ({ id: h.id, terrain: h.terrain, ...worldOfHex(h), y: TILE_Y })));
 
     // A dock spans a coastal edge, so both its corners carry the harbor; the deal spaces docks at least three edges apart, so two
     // neighbouring harbor corners on the coast loop of one kind are always one dock. One pier and one boat per dock.
@@ -1768,15 +1785,6 @@ function hexShape(size: number) {
   return s;
 }
 
-// One mesh per hex (its own material, for the paying-hex flash), named "cap" as the flat cap before it was.
-function makeHexTile(geo: THREE.BufferGeometry) {
-  const g = new THREE.Group();
-  const cap = new THREE.Mesh(geo, tileMaterial());
-  cap.name = "cap";
-  g.add(cap);
-  return g;
-}
-
 function hexRing(outer: number, inner: number) {
   const s = hexShape(outer);
   s.holes.push(hexShape(inner));
@@ -1785,13 +1793,12 @@ function hexRing(outer: number, inner: number) {
   return geo;
 }
 
-function numberToken(n: number) {
+export function numberToken(n: number) {
   const g = new THREE.Group();
   const hot = n === 6 || n === 8;
-  const disc = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.34, 0.34, 0.06, 32),
-    new THREE.MeshStandardMaterial({ color: hot ? 0xb3261e : 0x1c1916, roughness: 0.6 }),
-  );
+  // A cream face on a thin disc whose edge (a ring round the face, and its side) is caramel-dark, or red for 6 and 8: the
+  // edge is the contrast on the light caps, the face on the dark ones (docs/design/tokens.md).
+  const disc = new THREE.Mesh(new THREE.CylinderGeometry(TOKEN_R, TOKEN_R, TOKEN_H, 40), new THREE.MeshStandardMaterial({ color: hot ? 0xb3261e : 0x6b3f22, roughness: 0.6 }));
   disc.castShadow = true;
   g.add(disc);
   const c = document.createElement("canvas");
@@ -1819,20 +1826,20 @@ function numberToken(n: number) {
     ctx.strokeText(String(n), 128, 104);
   }
   ctx.setTransform(1, 0, 0, 1, 0, 0);
-  // Pips r 12 at a 28 px pitch under the numeral (#597: from r 10 at 26, so they stay 2 px on the diorama token).
+  // Pips r 14 at a 32 px pitch under the numeral (#599: from r 12 at 28, so they stay 2 px on the smaller token).
   const pips = 6 - Math.abs(n - 7);
-  const span = (pips - 1) * 28;
+  const span = (pips - 1) * 32;
   for (let i = 0; i < pips; i++) {
     ctx.beginPath();
-    ctx.arc(128 - span / 2 + i * 28, 196, 12, 0, Math.PI * 2);
+    ctx.arc(128 - span / 2 + i * 32, 196, 14, 0, Math.PI * 2);
     ctx.fill();
   }
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.anisotropy = 8;
-  const label = new THREE.Mesh(new THREE.CircleGeometry(0.29, 32), new THREE.MeshBasicMaterial({ map: tex }));
+  const label = new THREE.Mesh(new THREE.CircleGeometry(TOKEN_FACE, 40), new THREE.MeshBasicMaterial({ map: tex }));
   label.rotation.x = -Math.PI / 2;
-  label.position.y = 0.031;
+  label.position.y = TOKEN_H / 2 + 0.001;
   g.add(label);
   return g;
 }
@@ -2004,3 +2011,50 @@ function makeBoat(kind: HarborKind) {
 }
 
 
+
+// The `?fps` overlay: per half second, the mean interval between drawn frames, the draw's CPU time, how far the GPU finished
+// behind the draw (by its fence, read at the next animation frame), the draw calls and triangles of one frame, and the board.
+type Fps = ReturnType<typeof makeFps>;
+function makeFps(renderer: THREE.WebGLRenderer) {
+  const el = document.createElement("div");
+  el.style.cssText =
+    "position:fixed;right:6px;top:calc(env(safe-area-inset-top) + 64px);z-index:9999;pointer-events:none;font:11px/1.35 ui-monospace,monospace;color:#fff;background:rgba(0,0,0,.6);padding:4px 6px;border-radius:4px;white-space:pre";
+  document.body.appendChild(el);
+  renderer.info.autoReset = false;
+  let last = 0;
+  let start = 0;
+  let sentAt = 0;
+  const acc = { n: 0, gap: 0, cpu: 0, cpuN: 0, gpu: 0, gpuN: 0, shown: 0 };
+  return {
+    el,
+    begin(t0: number) {
+      renderer.info.reset();
+      start = t0;
+      if (last) {
+        acc.gap += t0 - last;
+        acc.n++;
+      }
+      last = t0;
+    },
+    end(stats: JellyStats | null, lite: boolean) {
+      const now = performance.now();
+      acc.cpu += now - start;
+      acc.cpuN++;
+      sentAt = now;
+      if (now - acc.shown < 500 || !acc.n) return;
+      const r = renderer.info.render;
+      el.textContent =
+        `frame ${(acc.gap / acc.n).toFixed(1)} ms (${(1000 / (acc.gap / acc.n)).toFixed(0)} fps)\n` +
+        `cpu ${(acc.cpu / acc.cpuN).toFixed(1)} ms  gpu ~${acc.gpuN ? (acc.gpu / acc.gpuN).toFixed(1) : "-"} ms\n` +
+        `draws ${r.calls}  tris ${(r.triangles / 1000).toFixed(0)}k\n` +
+        `board ${lite ? "lite" : "full"}${stats ? `  scenes ${stats.drawCalls} draws ${(stats.triangles / 1000).toFixed(0)}k` : "  (building)"}  dpr ${renderer.getPixelRatio()}`;
+      Object.assign(acc, { n: 0, gap: 0, cpu: 0, cpuN: 0, gpu: 0, gpuN: 0, shown: now });
+    },
+    gpu(now: number) {
+      if (!sentAt) return;
+      acc.gpu += now - sentAt;
+      acc.gpuN++;
+      sentAt = 0;
+    },
+  };
+}
