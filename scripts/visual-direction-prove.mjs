@@ -138,10 +138,12 @@ try {
       await page.getByTestId('gain-float').first().waitFor();
       const cues=await page.evaluate(()=>[...document.querySelectorAll('[data-testid="gain-float"], [data-testid="resource-flash"]')].map(e=>({animation:getComputedStyle(e).animationName, opacity:getComputedStyle(e).opacity})));
       assert.ok(cues.every(c=>c.animation==='none'&&c.opacity==='1'), 'reduced motion retains fully static readable gain information');
-      const a=await page.evaluate(()=>window.__isle.oreWork.map(w=>[w.cart.position.z,w.arm.rotation.z]));
+      // The island's scenes (jelly-board.ts) hold their clock still: carts, miners, creatures.
+      await page.waitForFunction(()=>window.__isle.landReady,null,{timeout:120_000});
+      const a=await page.evaluate(()=>window.__isle.jellyT);
       await page.waitForTimeout(1700);
-      const b=await page.evaluate(()=>window.__isle.oreWork.map(w=>[w.cart.position.z,w.arm.rotation.z]));
-      assert.deepEqual(b,a,'reduced motion freezes wagons and miners');
+      const b=await page.evaluate(()=>window.__isle.jellyT);
+      assert.equal(b,a,'reduced motion freezes the island scenes (wagons, miners, creatures)');
       assert.ok(await page.getByTestId('gain-float').first().isVisible(),'gain still visible after 1700ms');
       await page.waitForFunction(() => !document.querySelector('[data-testid="gain-float"]'));
     }

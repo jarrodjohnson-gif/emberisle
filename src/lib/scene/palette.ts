@@ -1,5 +1,10 @@
 import type { Terrain } from "@/lib/game/types";
 
+// The light rig (#599, docs/design/terrain.md "Colour and light"): a warm key 55 degrees up from the viewer's front left (so
+// shadows fall back and to the right across the paper, as in the jelly-diorama references), a pale aqua sky fill and a warm
+// sand ground bounce. KEY is the direction toward the lamp (not normalised); the tiles' baked tints and the sea's glints use it too.
+export const LIGHT = { key: [-0.82, 1.43, 0.57] as const, keyColor: "#ffe2b8", sky: "#dff6f4", ground: "#c9b58f" };
+
 // The sculpted tiles' tops (#599, docs/design/terrain.md): saturated but soft, a lit cartoon diorama rather than a photo.
 // [base, shade]: hollows, furrows and the tile's lip lean to the shade, crests to the base.
 export const PAINT: Record<Terrain, [string, string]> = {

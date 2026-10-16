@@ -1,13 +1,16 @@
-// #239 Debug: number tokens are rimmed and legible, and nothing is placed or wanders within 0.39 of a hex centre.
+// #239 Debug: number tokens are rimmed and legible, and nothing is placed or wanders within 0.31 of a hex centre.
 // The six checks in docs/design/tokens.md, and (#597) a seventh: in the diorama view (the default on a landscape canvas at least 900 px wide)
-// every token faces the camera, stays within 1.25x and 38 % of a hex's width, overlaps no other on screen and is not hidden
-// by a tree, and its numeral is at least 11 px tall and its pips 2 px across, at 1280x720 and 960x600.
+// every token faces the camera at its own size (#599), at most 30 % of a hex's width, overlaps no other on screen and is not hidden
+// by the scenery, and its numeral is at least 11 px tall and its pips 2 px across, at 1280x720 and 960x600.
 import { existsSync } from "node:fs";
 import { chromium } from "playwright";
 import { createServer } from "vite";
 
 const PORT = Number(process.env.VITE_PORT) || 8093;
-const CLEAR = 0.39;
+// docs/design/tokens.md "Clear space": the 0.26 token and 0.05 of ground.
+// 2026-10-16 (#624): 0.39 -> 0.31. The ring was the 0.34 token plus 0.05 and stayed 0.39 when the token shrank to 0.26
+// (#599); the Hex Jelly scenes are built round a 0.33 flat pad. Owner-approved look; orchestrator OK.
+const CLEAR = 0.31;
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();
 
@@ -28,18 +31,13 @@ const contrast = (a, b) => {
   return (hi + 0.05) / (lo + 0.05);
 };
 
-// Read in the page: every placed prop against the CLEAR rule, and every token.
+// Read in the page: how near each kind's scene comes to its hex's centre (jelly-board.ts clearance), and every token.
 const readScene = (demoBoard) => {
   const iso = window.__isle;
-  return import("/src/lib/game/board.ts").then((board) => {
-    const { worldOfHex, hexHeight } = board;
+  return Promise.all([import("/src/lib/game/board.ts"), import("/src/lib/scene/isle-renderer.ts")]).then(([board, { topOf }]) => {
+    const { worldOfHex } = board;
     const hexes = (demoBoard ? board.demoBoard() : window.__emberisle.getState().state).hexes;
-    const at = new Map(hexes.map((h) => [h.id, { ...worldOfHex(h), terrain: h.terrain }]));
-    const props = iso.living.children.filter((o) => o.userData?.prop);
-    const margins = props.map((o) => {
-      const c = at.get(o.userData.hex);
-      return { prop: o.userData.prop, margin: Math.hypot(o.position.x - c.x, o.position.z - c.z) - o.userData.reach };
-    });
+    const margins = Object.entries(iso.jellyBoard.clearance(0.6)).map(([prop, c]) => ({ prop: `${prop} (${c.what})`, margin: c.min }));
     const tokens = iso.land.children
       .filter((o) => o.userData?.token != null)
       .map((g) => {
@@ -62,12 +60,12 @@ const readScene = (demoBoard) => {
           rim: disc.material.color.getHexString(),
           rTop: disc.geometry.parameters.radiusTop,
           rLabel: label.geometry.parameters.radius,
-          // TILE_Y + SLAB + height * 0.35 = topOf; a tilted token (the diorama view) is lifted onto its near edge by `lift`.
-          dy: g.position.y - g.userData.lift - (0.04 + 0.26 + hexHeight(hex.terrain) * 0.35),
+          // A tilted token (the diorama view) is lifted onto its near edge by `lift`.
+          dy: g.position.y - g.userData.lift - topOf(hex.terrain),
           runs,
         };
       });
-    return { margins, tokens, sheep: props.filter((o) => o.userData.prop === "sheep").length };
+    return { margins, tokens };
   });
 };
 
@@ -77,86 +75,84 @@ const browser = await chromium.launch({
 });
 try {
   const page = await browser.newPage({ viewport: { width: 800, height: 500 } });
+  // The full Hex Jelly scenes, where software GL would build the lite board (jelly-board.md).
+  await page.addInitScript(() => localStorage.setItem("emberisle-jelly", "full"));
   page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
   page.on("pageerror", (e) => errors.push(String(e)));
   await page.goto(`http://127.0.0.1:${PORT}/`);
-  await page.waitForFunction(() => window.__isle && window.__isle.living.children.length > 20 && window.__isle.land.children.length > 30);
+  await page.waitForFunction(() => window.__isle?.landReady && window.__isle.land.children.length > 30, null, { timeout: 120_000 });
 
   const demo = await page.evaluate(readScene, true);
   await page.getByRole("button", { name: "Play", exact: true }).click();
-  await page.waitForFunction(() => window.__emberisle.getState().screen === "play" && window.__emberisle.getState().state);
+  await page.waitForFunction(() => window.__emberisle.getState().screen === "play" && window.__emberisle.getState().state && window.__isle.landReady, null, { timeout: 120_000 });
   await page.waitForTimeout(500);
   const practice = await page.evaluate(readScene, false);
 
   // 1. Clear space on placement, both boards.
   for (const [name, s] of [["title demo", demo], ["practice", practice]]) {
     const worst = Math.min(...s.margins.map((m) => m.margin));
-    check(`1 placement clear (${name})`, s.margins.length > 0 && worst >= CLEAR - 1e-9, `${s.margins.length} props, nearest point ${worst.toFixed(3)}`);
+    check(`1 placement clear (${name})`, s.margins.length === 6 && worst >= CLEAR - 1e-9, `${s.margins.length} kinds, nearest point ${worst.toFixed(3)}, ${s.margins.find((m) => m.margin === worst)?.prop}`);
   }
 
-  // 2. Clear space while wandering: every sheep, every 100 ms for 10 s.
-  const wander = await page.evaluate(() => {
-    const iso = window.__isle;
-    return import("/src/lib/game/board.ts").then(async ({ worldOfHex }) => {
-      const at = new Map(window.__emberisle.getState().state.hexes.map((h) => [h.id, worldOfHex(h)]));
-      let worst = Infinity;
-      let samples = 0;
-      for (let i = 0; i < 100; i++) {
-        for (const o of iso.living.children) {
-          if (o.userData?.prop !== "sheep") continue;
-          const c = at.get(o.userData.hex);
-          worst = Math.min(worst, Math.hypot(o.position.x - c.x, o.position.z - c.z) - o.userData.reach);
-          samples++;
-        }
-        await new Promise((r) => setTimeout(r, 100));
+  // 2. Clear space while wandering: everything on every kind's scene as it lives, every 100 ms for 10 s.
+  const wander = await page.evaluate(async () => {
+    const jelly = window.__isle.jellyBoard;
+    let worst = Infinity;
+    let what = "";
+    let samples = 0;
+    for (let i = 0; i < 100; i++) {
+      for (const [kind, c] of Object.entries(jelly.clearance(0.6))) {
+        if (c.min < worst) [worst, what] = [c.min, `${kind} (${c.what})`];
+        samples++;
       }
-      return { worst, samples };
-    });
+      await new Promise((r) => setTimeout(r, 100));
+    }
+    return { worst, what, samples };
   });
-  check("2 wander clear", wander.samples > 0 && wander.worst >= CLEAR - 1e-9, `${wander.samples} samples, nearest point ${wander.worst.toFixed(3)}`);
+  check("2 wander clear", wander.samples > 0 && wander.worst >= CLEAR - 1e-9, `${wander.samples} samples, nearest point ${wander.worst.toFixed(3)}, ${wander.what}`);
 
   // 3. Token geometry, 4. rim rule, 6. pips, on both boards.
   for (const [name, s] of [["title demo", demo], ["practice", practice]]) {
     const t = s.tokens;
-    check(`3 token geometry (${name})`, t.length === 18 && t.every((k) => k.rTop === 0.34 && k.rLabel === 0.29 && Math.abs(k.dy - 0.04) < 1e-9), `${t.length} tokens`);
-    check(`4 rim rule (${name})`, t.every((k) => k.rim === (k.n === 6 || k.n === 8 ? "b3261e" : "1c1916")));
+    check(`3 token geometry (${name})`, t.length === 18 && t.every((k) => k.rTop === 0.26 && k.rLabel === 0.245 && Math.abs(k.dy - 0.04) < 1e-9), `${t.length} tokens`);
+    check(`4 rim rule (${name})`, t.every((k) => k.rim === (k.n === 6 || k.n === 8 ? "b3261e" : "6b3f22")));
     const fives = t.filter((k) => k.n === 5);
     check(
       `6 pips on canvas (${name})`,
-      fives.length > 0 && fives.every((k) => k.runs.length === 4 && k.runs.every((r) => r >= 23 && r <= 25)),
+      fives.length > 0 && fives.every((k) => k.runs.length === 4 && k.runs.every((r) => r >= 27 && r <= 29)),
       fives.map((k) => k.runs.join("/")).join(" "),
     );
   }
 
   // 7. The diorama view (#597), the default on a landscape canvas at least 900 px wide: each token turned to the camera's azimuth and tilted
   // toward it; the numeral's height and a pip's width measured on screen, from the label's own canvas (the glyph's dark
-  // rows, a pip's 20 px) through the camera; each disc at most 1.25x and at most 38 % of a hex's width on screen, no two
-  // discs overlapping on screen (their rims' 24 points, projected), and no numeral behind a tree (a ray from the eye to
-  // five points across the glyph meets no tree first).
+  // rows, a pip's 28 px) through the camera; each disc its own size and at most 30 % of a hex's width on screen, no two
+  // discs overlapping on screen (their rims' 24 points, projected), and no numeral behind the scenery (a segment from the
+  // eye to five points across the glyph meets nothing opaque in the jelly scenes, jelly-board.ts occludes).
   // Where the diorama is the default: 1280x720, and 960x600, near the narrowest canvas that gets it (900 wide).
   for (const [width, height, phone] of [[1280, 720, false], [960, 600, false]]) {
     const ctx = await browser.newContext({ viewport: { width, height }, isMobile: phone, hasTouch: phone });
+    await ctx.addInitScript(() => localStorage.setItem("emberisle-jelly", "full"));
     const p = await ctx.newPage();
     p.on("console", (m) => m.type() === "error" && errors.push(m.text()));
     p.on("pageerror", (e) => errors.push(String(e)));
     await p.goto(`http://127.0.0.1:${PORT}/`);
     await p.getByRole("button", { name: "Play", exact: true }).click();
-    await p.waitForFunction(() => window.__emberisle.getState().screen === "play" && window.__isle?.lastState && window.__isle.fit && !window.__isle.refitDue && !window.__isle.glide);
+    await p.waitForFunction(() => window.__emberisle.getState().screen === "play" && window.__isle?.lastState && window.__isle.landReady && window.__isle.fit && !window.__isle.refitDue && !window.__isle.glide, null, { timeout: 120_000 });
     await p.waitForFunction((r) => window.__isle.renders > r + 2, await p.evaluate(() => window.__isle.renders));
     const m = await p.evaluate(() => {
       const isle = window.__isle;
       const az = isle.orbit.getAzimuthalAngle();
       const at = (label, cx, cy) => {
-        const v = label.localToWorld(new label.position.constructor((cx / 128 - 1) * 0.29, (1 - cy / 128) * 0.29, 0));
+        const v = label.localToWorld(new label.position.constructor((cx / 128 - 1) * 0.245, (1 - cy / 128) * 0.245, 0));
         return isle.screenAt(v.x, v.y, v.z);
       };
       const len = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
       const V = isle.persp.position.constructor;
-      const ray = new isle.raycaster.constructor();
       const right = new V().setFromMatrixColumn(isle.persp.matrixWorld, 0);
       // A disc's rim on screen, and whether a point is inside a convex polygon (either winding).
       const rim = (g) => Array.from({ length: 24 }, (_, i) => {
-        const v = g.localToWorld(new V(0.34 * Math.cos((i * Math.PI) / 12), 0.03, 0.34 * Math.sin((i * Math.PI) / 12)));
+        const v = g.localToWorld(new V(0.26 * Math.cos((i * Math.PI) / 12), 0.025, 0.26 * Math.sin((i * Math.PI) / 12)));
         return isle.screenAt(v.x, v.y, v.z);
       });
       const inside = (pt, poly) => {
@@ -191,18 +187,17 @@ try {
             }
           const n = g.userData.token;
           const pips = 6 - Math.abs(n - 7);
-          const px = 128 - ((pips - 1) * 28) / 2;
+          const px = 128 - ((pips - 1) * 32) / 2;
           // The hex's width across the screen at the token, against the disc's widest span on screen.
           const hexPx = len(isle.screenAt(g.position.x - right.x * 0.97, g.position.y, g.position.z - right.z * 0.97), isle.screenAt(g.position.x + right.x * 0.97, g.position.y, g.position.z + right.z * 0.97));
           const xs = rims[gi].map((q) => q.x);
           const discPx = Math.max(...xs) - Math.min(...xs);
-          // Five points across the glyph; one is hidden when a tree is nearer the eye along the ray to it.
+          // Five points across the glyph; one is hidden when the scenery (a hill, a tree, a building) is nearer the eye along the
+          // ray to it.
           const top = rows[0], bottom = rows[rows.length - 1] + 1, mid = (top + bottom) / 2;
           const hidden = [[128, mid], [128, top + 4], [128, bottom - 4], [88, mid], [168, mid]].filter(([cx, cy]) => {
-            const v = label.localToWorld(new V((cx / 128 - 1) * 0.29, (1 - cy / 128) * 0.29, 0));
-            const d = v.distanceTo(isle.persp.position);
-            ray.set(isle.persp.position, v.clone().sub(isle.persp.position).normalize());
-            return ray.intersectObjects(isle.trees, true).some((h) => h.distance < d - 0.01);
+            const v = label.localToWorld(new V((cx / 128 - 1) * 0.245, (1 - cy / 128) * 0.245, 0));
+            return isle.jellyBoard.occludes(isle.persp.position, v);
           }).length;
           return {
             n,
@@ -211,7 +206,7 @@ try {
             hidden,
             facing: Math.abs(g.rotation.y - az) < 1e-6 && g.rotation.x > 0.3,
             numeral: len(at(label, 128, rows[0]), at(label, 128, rows[rows.length - 1] + 1)),
-            pip: Math.min(len(at(label, px - 12, 196), at(label, px + 12, 196)), len(at(label, px, 184), at(label, px, 208))),
+            pip: Math.min(len(at(label, px - 14, 196), at(label, px + 14, 196)), len(at(label, px, 182), at(label, px, 210))),
           };
         }),
       };
@@ -222,9 +217,9 @@ try {
     check(`7 diorama numerals at least 11 px tall (${width}x${height})`, t.every((k) => k.numeral >= 11), `smallest ${low("numeral").numeral.toFixed(1)} px (the ${low("numeral").n})`);
     check(`7 diorama pips at least 2 px across (${width}x${height})`, t.every((k) => k.pip >= 2), `smallest ${low("pip").pip.toFixed(2)} px (the ${low("pip").n})`);
     const big = t.reduce((a, b) => (b.share > a.share ? b : a));
-    check(`7 diorama discs at most 1.25x and 38 % of a hex across (${width}x${height})`, t.every((k) => k.scale <= 1.25 + 1e-9 && k.share <= 0.38 + 0.005), `largest ${(big.share * 100).toFixed(1)} % (the ${big.n}, ${big.scale.toFixed(3)}x)`);
+    check(`7 diorama discs their own size, at most 30 % of a hex across (${width}x${height})`, t.every((k) => k.scale === 1 && k.share <= 0.3), `largest ${(big.share * 100).toFixed(1)} % (the ${big.n}, ${big.scale.toFixed(3)}x)`);
     check(`7 diorama discs never overlap on screen (${width}x${height})`, m.overlaps.length === 0, m.overlaps.join(" "));
-    check(`7 no numeral behind a tree (${width}x${height})`, t.every((k) => k.hidden === 0), t.filter((k) => k.hidden).map((k) => `the ${k.n}: ${k.hidden} of 5 points`).join(", ") || "0 of 90 points");
+    check(`7 no numeral behind the scenery (${width}x${height})`, t.every((k) => k.hidden === 0), t.filter((k) => k.hidden).map((k) => `the ${k.n}: ${k.hidden} of 5 points`).join(", ") || "0 of 90 points");
     await ctx.close();
   }
 } finally {
@@ -235,7 +230,7 @@ try {
 // 5. Contrast, from the hex values.
 const caps = { timber: "#2f6b3a", clay: "#b5522a", wool: "#8fbf5a", grain: "#e0b13a", ore: "#6e7580", waste: "#c4a574" };
 for (const [k, cap] of Object.entries(caps)) {
-  const best = Math.max(contrast("#f4ead6", cap), contrast("#1c1916", cap));
+  const best = Math.max(contrast("#f4ead6", cap), contrast("#6b3f22", cap));
   check(`5 contrast on ${k}`, best >= 3.0, best.toFixed(2));
 }
 check("5 red on cream", contrast("#b3261e", "#f4ead6") >= 4.5, contrast("#b3261e", "#f4ead6").toFixed(2));
