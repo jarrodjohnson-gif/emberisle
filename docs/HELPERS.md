@@ -14,6 +14,17 @@ always the next `helper-ok` issue.
 - One issue per pull request.
 - No eligible issue left? Stop and report that. Don't pick anything else.
 
+## Running in a loop
+
+If you run unattended (loop or stand-by mode):
+- Have at most **2 open PRs** at a time. While you're at that limit, only fix CI and answer
+  reviews on them; don't start a new issue.
+- With nothing to do, stay quiet: no comments, no PRs, no empty commits. Check for new
+  `helper-ok` issues at most every 30 minutes.
+- If an owner or reviewer closes your PR, or removes `helper-ok` from an issue, drop that issue for
+  good. Never reopen a PR or redo the same work.
+- After 3 failed attempts to get the same PR green, post a `paused:` comment on the issue and stop work on it.
+
 ## Never
 
 - Make a design decision. That covers any feature, visual, colour, layout, sound, rule, wording or
