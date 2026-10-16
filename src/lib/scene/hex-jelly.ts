@@ -9,9 +9,9 @@ import { LIGHT } from "@/lib/scene/palette";
 
 const SQ3 = Math.sqrt(3);
 // The block: corner radius, height of the pad (the top's level under the token), corner and top-edge rounding.
-export const CORNER_R = 1.12;
+import { BLOCK_H, CORNER_R } from "@/lib/scene/jelly-dims";
+export { BLOCK_H, CORNER_R };
 const INR = (CORNER_R * SQ3) / 2;
-export const BLOCK_H = 0.3;
 const ROUND_C = 0.12;
 const ROUND_E = 0.05;
 const RIM_ROWS = 5;
@@ -773,15 +773,22 @@ function block(L: Layout, rings: number, occlude: (x: number, z: number) => numb
 // --- props: lumpy blobs and trunks
 
 // A lumpy unit blob: an icosphere pushed in and out by smooth noise, merged so its normals are smooth.
-// Cached per seed: the same seed always makes the same blob, and building one is a mergeVertices pass.
+// The detail level. The studio builds every tile at full detail; the board (jelly-board.ts) builds the same scenes with lighter
+// blobs, spheres and wheat, where a hex is a fifth of the screen.
+let BOARD = false;
+export function setBoardDetail(on: boolean) {
+  BOARD = on;
+}
+
+// Cached per seed and detail: the same seed always makes the same blob, and building one is a mergeVertices pass.
 const blobCache = new Map<number, THREE.BufferGeometry>();
-let blobBase: THREE.BufferGeometry | null = null;
+const blobBase: (THREE.BufferGeometry | null)[] = [null, null];
 function blobGeo(seed: number) {
-  const hit = blobCache.get(seed);
+  const key = seed * 2 + (BOARD ? 1 : 0);
+  const hit = blobCache.get(key);
   if (hit) return hit;
-  blobBase ??= mergeVertices(new THREE.IcosahedronGeometry(1, 2), 1e-4);
-  const g = blobBase.clone();
-  blobCache.set(seed, g);
+  const g = (blobBase[BOARD ? 1 : 0] ??= mergeVertices(new THREE.IcosahedronGeometry(1, BOARD ? 0 : 2), 1e-4)).clone();
+  blobCache.set(key, g);
   const p = g.attributes.position as THREE.BufferAttribute;
   const v = new THREE.Vector3();
   for (let i = 0; i < p.count; i++) {
@@ -836,7 +843,11 @@ const merge = (parts: THREE.BufferGeometry[]) => {
 };
 const sphereCache = new Map<number, THREE.SphereGeometry>();
 // Shared per segment count: callers only pass it to part(), which copies it.
+let dot: THREE.BufferGeometry | null = null;
 const sphere = (n = 12) => {
+  // On the board the small spheres (berries, flowers, pebbles, eyes) are twenty-sided: a few pixels across, they read round.
+  if (BOARD && n <= 8) return (dot ??= new THREE.IcosahedronGeometry(1, 0));
+  if (BOARD) n = Math.max(6, Math.round(n * 0.6));
   let g = sphereCache.get(n);
   if (!g) sphereCache.set(n, (g = new THREE.SphereGeometry(1, n, Math.max(6, n * 0.7))));
   return g;
@@ -970,7 +981,8 @@ type Life = (t: number) => void;
 type Built = { g: THREE.Group; stands: { x: number; z: number; r: number }[]; life: Life[] };
 // What the board tells a tile (prompt "THE TILE IN PLAY"): night (0 day to 1 night), whether the robber stands on it, and the
 // roll payoff's progress (0 to 1 while it plays, -1 otherwise). Every life loop reads it.
-export type Env = { night: number; robber: boolean; roll: number };
+// `board`: built for the game board, where the wayfarer is the game's own piece, not part of the waste's scene.
+export type Env = { night: number; robber: boolean; roll: number; board?: boolean };
 const ease = (u: number) => u * u * (3 - 2 * u);
 
 // TIMBER, "The Salmon Run" (docs/design/hex-jelly-prompt.md): the wooded hill and its canopy, the spring, the stream and its
@@ -1999,13 +2011,14 @@ function pasture(L: Layout, ground: (x: number, z: number) => number, r: () => n
 // A wheat tuft: four stalks leaning out a little, each with a plump ear; the material sways it in a travelling wind wave.
 function tuftGeo() {
   const parts: THREE.BufferGeometry[] = [];
-  for (let i = 0; i < 4; i++) {
-    const a = (i / 4) * Math.PI * 2 + 0.4;
+  const stalks = BOARD ? 2 : 4;
+  for (let i = 0; i < stalks; i++) {
+    const a = (i / stalks) * Math.PI * 2 + 0.4;
     const lean = 0.12 + (i % 2) * 0.1;
     const [x, z] = [Math.cos(a) * 0.004, Math.sin(a) * 0.004];
     const h = 0.052 + (i % 3) * 0.006;
     parts.push(part(cyl(0.0012, 0.0016, 3), "#c99a3a", [x, h / 2, z], [Math.sin(a) * lean, 0, -Math.cos(a) * lean], [1, h, 1]));
-    parts.push(part(new THREE.SphereGeometry(1, 5, 4), "#f2c95a", [x + Math.cos(a) * h * lean, h + 0.006, z + Math.sin(a) * h * lean], [Math.sin(a) * lean, 0, -Math.cos(a) * lean], [0.0042, 0.011, 0.0042]));
+    parts.push(part(BOARD ? new THREE.OctahedronGeometry(1, 0) : new THREE.SphereGeometry(1, 5, 4), "#f2c95a", [x + Math.cos(a) * h * lean, h + 0.006, z + Math.sin(a) * h * lean], [Math.sin(a) * lean, 0, -Math.cos(a) * lean], [0.0042, 0.011, 0.0042]));
   }
   return merge(parts);
 }
@@ -2016,8 +2029,12 @@ function swayMat(seed: number) {
     sh.vertexShader = "uniform float uTime;\nuniform float uGust;\n" + sh.vertexShader.replace(
       "#include <begin_vertex>",
       `#include <begin_vertex>
+      #if defined( USE_INSTANCING ) || defined( USE_BATCHING )
       #ifdef USE_INSTANCING
       vec3 root = instanceMatrix[3].xyz;
+      #else
+      vec3 root = batchingMatrix[3].xyz;
+      #endif
       float gust = ( sin( uTime * 1.6 - root.x * 6.0 - root.z * 4.0 ) * 0.6 + sin( uTime * 2.9 - root.x * 13.0 ) * 0.25 ) * uGust;
       transformed.x += position.y * position.y * 9.0 * gust;
       transformed.z += position.y * position.y * 4.0 * gust;
@@ -2632,7 +2649,7 @@ function farm(L: Layout, ground: (x: number, z: number) => number, r: () => numb
     if (s.crop === "plough") return;
     for (let u = s.u0 + FURROW * 0.5; u < s.u1 - FURROW * 0.3; u += FURROW / 2) {
       const onRidge = Math.round((u - s.u0) / (FURROW / 2)) % 2 === 0;
-      for (let v = -0.98; v < 0.25; v += 0.024) {
+      for (let v = -0.98; v < 0.25; v += BOARD ? 0.036 : 0.024) {
         const w = { u: u + (r() - 0.5) * 0.008, v: v + (r() - 0.5) * 0.012 };
         const p = xz(w.u, w.v);
         const f = fieldAt(L, p.x, p.z);
@@ -2644,7 +2661,8 @@ function farm(L: Layout, ground: (x: number, z: number) => number, r: () => numb
         }
         if (!onRidge && r() < 0.5) continue;
         const k = 1 + (r() - 0.5) * 0.3;
-        tufts.push({ m: mat(p.x, Y(p.x, p.z) - 0.002, p.z, k * 1.15, k * (1.1 + r() * 0.2), k * 1.15, r() * 6), c: GOLD[Math.floor(r() * 3)]! });
+        const kb = BOARD ? 1.3 : 1;
+        tufts.push({ m: mat(p.x, Y(p.x, p.z) - 0.002, p.z, k * 1.15 * kb, k * (1.1 + r() * 0.2), k * 1.15 * kb, r() * 6), c: GOLD[Math.floor(r() * 3)]! });
       }
     }
   });
@@ -4468,7 +4486,7 @@ function wastes(L: Layout, ground: (x: number, z: number) => number, r: () => nu
           const f = k / n;
           const rad = p.r * (c ? 0.55 : 0.78) * (1 - 0.35 * f) * (0.9 + 0.2 * r());
           const h = (H / n) * (1.05 + 0.2 * r());
-          const rock = new THREE.DodecahedronGeometry(1, 1).toNonIndexed();
+          const rock = new THREE.DodecahedronGeometry(1, 1);
           const pos = rock.attributes.position as THREE.BufferAttribute;
           const col = new Float32Array(pos.count * 3);
           const cc = new THREE.Color();
@@ -4864,8 +4882,8 @@ function wastes(L: Layout, ground: (x: number, z: number) => number, r: () => nu
 
   // The wayfarer: a short, hunched, sneaky little man in a hooded poncho (deep green, a gold diamond pattern), a scruffy beard
   // under the hood, big wary eyes, sandals, and a rat on his shoulder. He tiptoes on the spot and peeks left and right; at night
-  // his lantern glows.
-  {
+  // his lantern glows. Not on the game board, where the wayfarer is the game's own piece.
+  if (!env.board) {
     const w = new THREE.Group();
     const poncho = new THREE.LatheGeometry([[0, 0.03], [0.028, 0.03], [0.026, 0.045], [0.02, 0.065], [0.012, 0.075], [0, 0.078]].map(([x, y]) => new THREE.Vector2(x!, y!)), 18);
     const body: THREE.BufferGeometry[] = [
@@ -4991,12 +5009,12 @@ export type Tile = {
 const ROLL_S = 2.4;
 const _squash = new THREE.Vector3();
 const _m4b = new THREE.Matrix4();
-export function buildTile(kind: Terrain, seed: number, rings = 64): Tile {
+export function buildTile(kind: Terrain, seed: number, rings = 64, board = false): Tile {
   const L = layoutOf(kind, seed);
   const ground = (x: number, z: number) => heightAt(L, x, z);
   const group = new THREE.Group();
   const r = rng32(seed ^ 0x9e3779b9);
-  const env: Env = { night: 0, robber: false, roll: -1 };
+  const env: Env = { night: 0, robber: false, roll: -1, board };
   TU = { dull: { value: 0 }, flash: { value: 0 } };
   const tu = TU;
   const props = kind === "timber" ? forest(L, ground, r, env) : kind === "wool" ? pasture(L, ground, r, env) : kind === "grain" ? farm(L, ground, r, env) : kind === "clay" ? brickworks(L, ground, r, env) : kind === "ore" ? mine(L, ground, r, env) : kind === "waste" ? wastes(L, ground, r, env) : null;

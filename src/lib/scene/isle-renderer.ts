@@ -29,12 +29,13 @@ import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { SSAOPass } from "three/addons/postprocessing/SSAOPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
-import { hexHeight, worldOfHex } from "@/lib/game/board";
+import { worldOfHex } from "@/lib/game/board";
 import { HEX_SIZE, SQRT3, hexCorners, hexesInRadius, vertexId } from "@/lib/game/hex";
 import { LAND_MS } from "@/lib/scene/landing";
-import { mulberry32, hashStr } from "@/lib/utils";
+import { hashStr } from "@/lib/utils";
 import { PAINT, RIM } from "@/lib/scene/palette";
-import { PropKit, decorate, sculptHex, tileMaterial, type FarmWork, type OreWork, type Sheep } from "@/lib/scene/terrain";
+import { BLOCK_H } from "@/lib/scene/jelly-dims";
+import type { JellyBoard, JellyStats } from "@/lib/scene/jelly-board";
 import { OceanLife } from "@/lib/scene/ocean-life";
 import { CAUSTIC_GLSL, PAPER, SPLASH, addSplashRings, makeCrystalSea, makeFloorProps, makeSeaFloor, makeSplashes, makeSwell, makeWash, nearestCoast, type SeaUniforms, type WaterPath, type WaterStatus } from "@/lib/scene/crystal-water";
 import { Wobble } from "@/lib/scene/wobble";
@@ -42,20 +43,30 @@ import { play } from "@/lib/sound";
 import { payingHexes } from "@/lib/game/rules";
 import { type GameState, type HarborKind, type HexCell, type Terrain, type Vertex } from "@/lib/game/types";
 
-const SLAB = 0.26;
 const TILE_Y = 0.04;
 
-// The y of a hex's top surface: the sculpted top is exactly here at the centre (the token) and on the rim (the pieces).
-export function topOf(terrain: Terrain) {
-  return TILE_Y + SLAB + hexHeight(terrain) * 0.35;
+// The y of a hex's top surface: the jelly block's flat pad (the token) and its rim (the pieces) are exactly here, the same on
+// every kind (docs/design/hex-jelly-prompt.md "THE BLOCK").
+export function topOf(_terrain: Terrain) {
+  return TILE_Y + BLOCK_H;
 }
-type TerrainStats = { tiles: number; props: number; drawCalls: number; tileTriangles: number; propTriangles: number; triangles: number };
+
+// The Hex Jelly scenes load as their own chunk, asked for as soon as the renderer exists; the board shows plain slabs until
+// every scene is built, then the island swaps in whole (the owner, 2026-10-16: wait for it, no pop-in).
+const loadJelly = () => import("@/lib/scene/jelly-board");
+type TerrainStats = { ready: boolean } & JellyStats;
+// The stand-in slab and the unseen pick block: a hex prism the jelly block's size (corners at 30 + 60k degrees, as the
+// board's pointy-top hexes), standing on its base.
+const SLAB_GEO = new THREE.CylinderGeometry(HEX_SIZE * 0.98, HEX_SIZE * 0.98, BLOCK_H, 6).translate(0, BLOCK_H / 2, 0);
+const PICK_MAT = new THREE.MeshBasicMaterial({ visible: false });
+PICK_MAT.userData.shared = true;
+const _slab = new THREE.Matrix4();
+const _slabColor = new THREE.Color();
 type Highlights = { vertices: string[]; edges: string[]; hexes: string[] };
-// The paying-hex flash (docs/design/dice.md): the cap glows in over --duration-base, then fades linearly out by 600 ms.
+// The paying-hex flash (docs/design/dice.md): the hex glows in over --duration-base, then fades linearly out by 600 ms.
 const FLASH_IN_S = 0.22;
 const FLASH_S = 0.6;
 const FLASH_PEAK = 0.35;
-const FLASH_WARM = new THREE.Color(0xffa94d);
 // The pulse token (polish.md "Motion"): legal corners and paths breathe once per 1.2 s.
 const LEGAL_PULSE_S = 1.2;
 
@@ -106,16 +117,6 @@ export const TOKEN_H = 0.05;
 export const TOKEN_FACE = 0.245;
 // How far a tilted token is lifted so its near edge stays where the flat disc's underside was.
 export const TOKEN_LIFT = TOKEN_R * Math.sin(TOKEN_TILT) + (TOKEN_H / 2) * Math.cos(TOKEN_TILT) - TOKEN_H / 2;
-// A tree standing between a token and the diorama camera (in front of it within TREE_SHADE_DEPTH, within TREE_SHADE_SIDE of
-// the line of sight) can hide the foot of the numeral at this angle: it is scaled down just enough that its top clears the
-// line from the eye to the glyph's lowest row (TOKEN_GLYPH_FOOT below the face's centre, plus TREE_SHADE_MARGIN), never
-// below TREE_SHADE_MIN. Trees in the zone that already clear it stay full size.
-const TREE_SHADE_DEPTH = 1.7;
-const TREE_SHADE_SIDE = 0.55;
-const TREE_SHADE_MARGIN = 0.05;
-const TREE_SHADE_MIN = 0.3;
-const TOKEN_GLYPH_FOOT = 0.13 * (TOKEN_FACE / 0.29);
-const _box = new THREE.Box3();
 
 export class IsleRenderer {
   private renderer: THREE.WebGLRenderer;
@@ -130,8 +131,6 @@ export class IsleRenderer {
   // The diorama lens as last posed: focal length (px), fitted distance, and where its axis meets the canvas.
   private lens: DioramaFit = { focal: 1, dist: 1, cx: 0, cy: 0 };
   private tokens: THREE.Object3D[] = [];
-  // The camera azimuth (and the island) the trees were last shaded for, so an idle frame does not redo it.
-  private shadedFor = "";
   private pending: { kind: string; id: string } | null = null;
   private downType = "mouse";
   private gesture = new TouchGesture();
@@ -162,19 +161,18 @@ export class IsleRenderer {
   private ssao!: SSAOPass;
   private renderPass!: RenderPass;
   private wayfarer: THREE.Group;
-  private sheep: Sheep[] = [];
-  private oreWork: OreWork[] = [];
-  private farmWork: FarmWork[] = [];
   private oceanLife = new OceanLife();
   // Touch the sea (crystal-water.md): the live splashes, the tiles giving under a tap, and where a drag on the water last stirred.
   private splash = makeSplashes();
   private wobble = new Wobble();
   private trail: { x: number; z: number; t: number } | null = null;
-  private ambientTime = 0;
   private boats: THREE.Group[] = [];
-  private trees: THREE.Object3D[] = [];
-  private kit: PropKit | null = null;
+  // The island's Hex Jelly scenes, batched (jelly-board.ts), once built; until then `slabs` stand in.
+  private jelly: JellyBoard | null = null;
+  private slabs: THREE.InstancedMesh | null = null;
   private landGen = 0;
+  // The scenes' clock as last advanced (they hold at it under reduced motion).
+  private jellyT = 0;
   private lastLand: string | null = null;
   private lastSeq = -1;
   private lastState: GameState | null = null;
@@ -191,9 +189,10 @@ export class IsleRenderer {
   private robberTarget = new THREE.Vector3();
   private walk: { from: THREE.Vector3; to: THREE.Vector3; start: number; hops: number; dur: number } | null = null;
   private lantern: THREE.MeshStandardMaterial;
-  // Each land hex's cap material by hex id, and the flashes under way (age in seconds, advanced by the frame's dt).
-  caps = new Map<string, THREE.MeshStandardMaterial>();
-  private flashes: { mat: THREE.MeshStandardMaterial; age: number }[] = [];
+  // Each land hex's glow by hex id (its level read as `emissiveIntensity`, as when it was the cap's), and the flashes under
+  // way (age in seconds, advanced by the frame's dt). The jelly board warms each hex by its level.
+  caps = new Map<string, { emissiveIntensity: number }>();
+  private flashes: { mat: { emissiveIntensity: number }; id: string; age: number }[] = [];
   private clock = new THREE.Timer();
   private water = makeWater();
   // The crystal sea, or the simple shader when the GPU cannot render to a float target, the one-time probe finds it slow, or
@@ -468,14 +467,16 @@ export class IsleRenderer {
     }
   }
 
-  // Glow the caps of the hexes that paid. Each rises to the warm tint of its resource colour and fades back, once.
+  // Glow the hexes that paid: each warms and fades back, once, while its scene does the roll payoff's jelly squash and
+  // ripple (not under reduced motion).
   flashHexes(ids: string[]) {
     for (const id of ids) {
       const mat = this.caps.get(id);
       if (!mat) continue;
       this.flashes = this.flashes.filter((f) => f.mat !== mat);
-      this.flashes.push({ mat, age: 0 });
+      this.flashes.push({ mat, id, age: 0 });
     }
+    if (!this.calm()) this.jelly?.roll(ids);
   }
 
   // The caps' emissive for each flash at its age. Reduced motion steps to the peak and back with no ramp.
@@ -486,6 +487,7 @@ export class IsleRenderer {
       const a = f.age;
       const level = a >= FLASH_S ? 0 : calm ? 1 : a < FLASH_IN_S ? 1 - (1 - a / FLASH_IN_S) ** 3 : 1 - (a - FLASH_IN_S) / (FLASH_S - FLASH_IN_S);
       f.mat.emissiveIntensity = FLASH_PEAK * level;
+      this.jelly?.glow(f.id, f.mat.emissiveIntensity);
     }
     this.flashes = this.flashes.filter((f) => f.age < FLASH_S);
   }
@@ -518,6 +520,7 @@ export class IsleRenderer {
     }
     this.buildMarks(state, highlights, interactive);
     if (rolled) this.flashHexes(payingHexes(state));
+    this.jelly?.robber(state.robberHex ?? null);
     const rh = state.hexes.find((h) => h.id === state.robberHex);
     if (rh) {
       const w = worldOfHex(rh);
@@ -589,6 +592,8 @@ export class IsleRenderer {
 
   dispose() {
     this.stopped = true;
+    this.jelly?.dispose();
+    this.jelly = null;
     this.renderer.setAnimationLoop(null);
     this.controls.dispose();
     this.orbit.dispose();
@@ -787,39 +792,11 @@ export class IsleRenderer {
   private poseTokens() {
     const diorama = this.view === "diorama";
     const az = diorama ? this.orbit.getAzimuthalAngle() : 0;
-    const cam = this.persp.position;
     const lift = diorama ? TOKEN_LIFT : 0;
     for (const t of this.tokens) {
       t.rotation.set(diorama ? TOKEN_TILT : 0, az, 0, "YXZ");
       t.position.y = (t.userData.restY as number) + lift;
       t.userData.lift = lift;
-    }
-    const key = diorama ? `${cam.x.toFixed(2)},${cam.y.toFixed(2)},${cam.z.toFixed(2)}|${this.lastLand}` : "";
-    if (key !== this.shadedFor) {
-      this.shadedFor = key;
-      const [sx, sz] = [Math.sin(az), Math.cos(az)];
-      for (const tree of this.trees) {
-        // The tree's own height, measured once at full size.
-        const base = tree.userData.base as THREE.Vector3;
-        if (tree.userData.height === undefined) {
-          tree.scale.copy(base);
-          tree.updateMatrixWorld(true);
-          tree.userData.height = _box.setFromObject(tree).max.y - tree.position.y;
-        }
-        let k = 1;
-        if (diorama) {
-          for (const t of this.tokens) {
-            const [dx, dz] = [tree.position.x - t.position.x, tree.position.z - t.position.z];
-            const along = dx * sx + dz * sz;
-            if (along <= 0 || along >= TREE_SHADE_DEPTH || Math.abs(dx * sz - dz * sx) >= TREE_SHADE_SIDE) continue;
-            // The sight line's height over the tree's foot where it passes the tree.
-            const rise = (cam.y - t.position.y) / Math.hypot(cam.x - t.position.x, cam.z - t.position.z);
-            const clear = t.position.y - TOKEN_GLYPH_FOOT * t.scale.x - tree.position.y + along * rise - TREE_SHADE_MARGIN;
-            k = Math.min(k, Math.max(TREE_SHADE_MIN, clear / (tree.userData.height as number)));
-          }
-        }
-        tree.scale.copy(base).multiplyScalar(k);
-      }
     }
     const st = this.lastState;
     const rh = st?.hexes.find((h) => h.id === st.robberHex);
@@ -976,13 +953,13 @@ export class IsleRenderer {
     this.busyUntil = Math.max(this.busyUntil, performance.now() + SPLASH.life * 1000);
   }
 
-  /** The tapped tile, its token and its props give a little; never under reduced motion or while a piece is landing. */
+  /** The tapped tile and its scene give a little jelly wobble, and its token with them; never under reduced motion or while a
+   *  piece is landing. */
   wobbleHex(id: string) {
     if (this.calm() || this.landings.length) return;
-    const parts = [...this.land.children, ...this.living.children].filter((o) => (o.userData.land && o.userData.id === id) || o.userData.hex === id);
-    const tile = parts.find((o) => o.userData.kind === "hex");
-    if (tile && this.kit) parts.push(this.kit.anchor(id, tile.position.x, tile.position.y, tile.position.z));
+    const parts = this.land.children.filter((o) => o.userData.hex === id);
     this.wobble.start(id, parts, TILE_Y, performance.now());
+    this.jelly?.tap(id);
     this.wake();
   }
 
@@ -1020,7 +997,7 @@ export class IsleRenderer {
       this.walk = null;
       this.startWalk();
     }
-    const busy = now < this.busyUntil || this.flashes.length > 0;
+    const busy = now < this.busyUntil || this.flashes.length > 0 || !!this.jelly?.busy();
     const gap = calm ? (busy ? 0 : Infinity) : this.titleMode ? 1000 / 30 : this.walk || pulsing || busy ? 0 : 1000 / 12;
     if (now - this.lastFrame < gap - 2) return;
     this.lastFrame = now;
@@ -1042,16 +1019,18 @@ export class IsleRenderer {
     this.splash.step(t);
     if (calm) {
       this.oceanLife.step(0, false, this.oceanViewport);
+      // The scenes hold still; a dulling or a glow still lands.
+      this.jelly?.update(this.jellyT, false, true);
       this.pulseMarks(0, true);
       this.draw();
       return;
     }
     this.water.uniforms.uTime!.value = t;
-    this.ambientTime += dt;
     const swell = this.waterPath === "crystal" ? this.crystal?.swell : undefined;
     this.oceanLife.step(dt, true, this.oceanViewport, swell ? (x, z) => swell(x, z, t).y : undefined);
     this.foam.material.opacity = 0.32 + 0.23 * (0.5 + 0.5 * Math.sin(t * 0.8));
-    for (const tr of this.trees) if (tr.userData.prop === "tree") tr.rotation.z = Math.sin(t * 1.05 + tr.position.x * 2) * 0.028;
+    this.jellyT = t;
+    this.jelly?.update(t);
     if (this.walk) {
       const w = this.walk;
       const u = Math.min(1, (t - w.start) / w.dur);
@@ -1067,46 +1046,6 @@ export class IsleRenderer {
     }
     this.lantern.emissiveIntensity = 1.6 + 0.3 * Math.sin(t * 2.2);
     this.pulseMarks(t, false);
-    for (const s of this.sheep) {
-      s.wait -= dt;
-      if (s.wait <= 0) {
-        // A step of at most 0.3 rad around the ring keeps the straight walk to the target off the token.
-        const a = Math.atan2(s.tz - s.oz, s.tx - s.ox) + (Math.random() - 0.5) * 0.6;
-        const r = 0.54 + Math.random() * 0.2;
-        s.tx = s.ox + Math.cos(a) * r;
-        s.tz = s.oz + Math.sin(a) * r;
-        s.wait = 1.8 + Math.random() * 2.8;
-        s.graze = Math.random() > 0.4 ? 1.1 : 0;
-      }
-      s.g.position.x += (s.tx - s.g.position.x) * (1 - Math.exp(-dt * 1.6));
-      s.g.position.z += (s.tz - s.g.position.z) * (1 - Math.exp(-dt * 1.6));
-      s.g.position.y = s.ground(s.g.position.x, s.g.position.z) + 0.1;
-      const heading = Math.atan2(s.tx - s.g.position.x, s.tz - s.g.position.z);
-      const turn = Math.atan2(Math.sin(heading - s.g.rotation.y), Math.cos(heading - s.g.rotation.y));
-      s.g.rotation.y += turn * (1 - Math.exp(-dt * 3));
-      s.g.rotation.x = s.graze > 0 ? 0.32 : 0;
-      if (s.graze > 0) s.graze -= dt;
-    }
-    for (const work of this.oreWork) {
-      const phase = this.ambientTime + work.phase;
-      const roll = 0.05 * Math.sin(phase * Math.PI / 3);
-      work.cart.position.x = work.x + work.dx * roll;
-      work.cart.position.z = work.z + work.dz * roll;
-      work.cart.rotation.z = 0.035 * Math.sin(phase * 2.4);
-      work.cart.rotation.x = 0.018 * Math.sin(phase * 1.6);
-      work.arm.rotation.z = 0.22 * Math.sin(phase * Math.PI / 2);
-    }
-    for (const work of this.farmWork) {
-      const phase = this.ambientTime + work.phase;
-      const cycle = phase % 18;
-      const walking = cycle > 10 && cycle < 16;
-      const step = walking ? Math.sin((cycle - 10) * Math.PI / 6) * 0.10 : 0;
-      const [bx, bz] = [work.x + Math.cos(work.angle) * step, work.z + Math.sin(work.angle) * step];
-      work.body.position.set(bx, work.ground(bx, bz) + (walking ? Math.abs(Math.sin(phase * 6)) * 0.006 : 0), bz);
-      work.body.rotation.y = Math.PI / 2 - work.angle + (walking && cycle > 13 ? Math.PI : 0);
-      work.arm.position.set(work.body.position.x, work.body.position.y + 0.13, work.body.position.z);
-      work.arm.rotation.set(0, work.body.rotation.y, cycle < 8 ? -0.15 + Math.sin(phase * 2.2) * 0.28 : 0);
-    }
     for (const b of this.boats) {
       if (!swell) {
         b.position.y = 0.06 + Math.sin(t * 1.6 + b.position.x) * 0.04;
@@ -1216,7 +1155,6 @@ export class IsleRenderer {
   private draw() {
     const t0 = performance.now();
     this.poseTokens();
-    this.kit?.sync();
     this.fadeSea();
     const crystal = this.waterPath === "crystal" ? this.crystal : null;
     if (crystal) this.drawUnder(crystal);
@@ -1264,58 +1202,51 @@ export class IsleRenderer {
     };
   };
 
-  // The sculpted tiles and their props (#599, docs/design/terrain.md): draw calls and triangles in the main pass, read by
-  // board-look-prove through `window.__terrain`.
+  // The jelly board (#599, jelly-board.ts): its draw calls and triangles in the main pass, read by board-look-prove through
+  // `window.__terrain`; before it is built, the stand-in slabs.
   terrainStats(): TerrainStats {
-    const tris = (m: THREE.Mesh) => {
-      const g = m.geometry;
-      const n = (g.index ? g.index.count : g.attributes.position!.count) / 3;
-      return (m as THREE.InstancedMesh).isInstancedMesh ? n * (m as THREE.InstancedMesh).count : n;
-    };
-    const tiles = this.land.children.filter((o) => o.userData.land).map((g) => g.getObjectByName("cap") as THREE.Mesh);
-    const props = this.living.children.filter((o): o is THREE.Mesh => (o as THREE.Mesh).isMesh && o.visible && o.userData.terrainProps !== undefined);
-    const tileTris = tiles.reduce((a, m) => a + tris(m), 0);
-    const propTris = props.reduce((a, m) => a + tris(m), 0);
-    return { tiles: tiles.length, props: props.length, drawCalls: tiles.length + props.length, tileTriangles: tileTris, propTriangles: propTris, triangles: tileTris + propTris };
+    if (this.jelly) return { ready: true, ...this.jelly.stats() };
+    const n = this.slabs?.count ?? 0;
+    return { ready: false, drawCalls: n ? 1 : 0, triangles: n * 24, kinds: 0, batches: 0, sprites: 0 };
+  }
+
+  // Ready once the island's scenes are built and showing (the proofs wait on it).
+  get landReady() {
+    return this.jelly !== null;
+  }
+
+  // The jelly board, for the proofs (its ground and clearance).
+  get jellyBoard() {
+    return this.jelly;
   }
 
   private buildLand(state: GameState) {
+    this.jelly?.dispose();
+    this.jelly = null;
+    this.slabs = null;
     disposeGroup(this.land);
     disposeGroup(this.living);
-    this.sheep = [];
-    this.oreWork = [];
-    this.farmWork = [];
     this.boats = [];
-    this.trees = [];
     this.living.add(this.wayfarer);
     this.pickables = [];
     this.tokens = [];
     this.caps.clear();
     this.flashes = [];
     this.oceanLife.reset(landKey(state));
-    const kit = (this.kit = new PropKit(this.living));
-    const props: (() => void)[] = [];
-    const life = { sheep: this.sheep, oreWork: this.oreWork, farmWork: this.farmWork, tall: this.trees };
 
-    for (const h of state.hexes) {
+    // Each hex: an unseen block to pick it by, a stand-in slab in its terrain's paint, and its token.
+    const slabs = (this.slabs = new THREE.InstancedMesh(SLAB_GEO, new THREE.MeshStandardMaterial({ roughness: 0.85 }), state.hexes.length));
+    slabs.castShadow = slabs.receiveShadow = true;
+    state.hexes.forEach((h, i) => {
       const { x, z } = worldOfHex(h);
-      const rng = mulberry32(hashStr(h.id + h.terrain));
-      const sculpt = sculptHex(h, HEX_SIZE * 0.995, topOf(h.terrain) - TILE_Y, TILE_Y, rng);
-      const tile = makeHexTile(sculpt.geo);
-      tile.position.set(x, TILE_Y, z);
-      tile.userData = { kind: "hex", id: h.id, land: true };
-      tile.traverse((o) => {
-        o.userData = tile.userData;
-        o.castShadow = true;
-        o.receiveShadow = true;
-      });
-      this.land.add(tile);
-      this.pickables.push(tile);
-      const cap = tile.getObjectByName("cap") as THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>;
-      cap.material.emissive.copy(new THREE.Color(PAINT[h.terrain][0]).lerp(FLASH_WARM, 0.6));
-      cap.material.emissiveIntensity = 0;
-      this.caps.set(h.id, cap.material);
-      props.push(() => decorate(kit, life, h, x, z, sculpt, rng));
+      const pick = new THREE.Mesh(SLAB_GEO, PICK_MAT);
+      pick.position.set(x, TILE_Y, z);
+      pick.userData = { kind: "hex", id: h.id, land: true };
+      this.land.add(pick);
+      this.pickables.push(pick);
+      slabs.setMatrixAt(i, _slab.makeTranslation(x, TILE_Y, z));
+      slabs.setColorAt(i, _slabColor.set(PAINT[h.terrain][0]));
+      this.caps.set(h.id, { emissiveIntensity: 0 });
       if (h.pip != null) {
         const tok = numberToken(h.pip);
         tok.userData.token = h.pip;
@@ -1326,22 +1257,38 @@ export class IsleRenderer {
         this.land.add(tok);
         this.tokens.push(tok);
       }
-    }
-    // The props (the heavier half of the build) draw a frame after the tiles, so the board and its pieces are not held for them
-    // (#543 restore budget). Two frames on: the next one also runs the first draw, and a frame is not shown until all of its
-    // callbacks are done. A rebuild before then drops them with the old land.
+    });
+    this.land.add(slabs);
+
+    // The scenes: loaded and built a kind per task after the first draw (#543 restore budget), so no one task holds the page;
+    // then the island swaps in whole. A rebuild or a dispose before then drops them.
     const gen = ++this.landGen;
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      if (gen !== this.landGen || this.stopped) return;
-      performance.mark("props-start");
-      props.forEach((f) => f());
-      kit.finish();
-      // The tall props are new: the shade pass cached on this pose ran without them.
-      this.shadedFor = "";
-      (window as unknown as { __terrain: TerrainStats }).__terrain = this.terrainStats();
-      this.wake();
-      performance.mark("props-end");
-    }));
+    const alive = () => gen === this.landGen && !this.stopped;
+    const key = landKey(state);
+    const jellyHexes = state.hexes.map((h) => ({ id: h.id, terrain: h.terrain, ...worldOfHex(h), y: TILE_Y }));
+    void loadJelly()
+      .then(({ JellyBoard }) => {
+        if (!alive()) return null;
+        performance.mark("props-start");
+        return JellyBoard.create(jellyHexes, (kind) => hashStr(`${key}|${kind}`), () => new Promise<boolean>((r) => setTimeout(() => r(alive()), 0)));
+      })
+      .then((jelly) => {
+        if (!jelly) return;
+        if (!alive()) return jelly.dispose();
+        this.jelly = jelly;
+        jelly.robber(this.lastState?.robberHex ?? null);
+        jelly.update(this.jellyT, true, true);
+        if (this.slabs) {
+          this.land.remove(this.slabs);
+          this.slabs.dispose();
+          (this.slabs.material as THREE.Material).dispose();
+          this.slabs = null;
+        }
+        this.living.add(jelly.group);
+        (window as unknown as { __terrain: TerrainStats }).__terrain = this.terrainStats();
+        this.wake();
+        performance.mark("props-end");
+      });
 
     // A dock spans a coastal edge, so both its corners carry the harbor; the deal spaces docks at least three edges apart, so two
     // neighbouring harbor corners on the coast loop of one kind are always one dock. One pier and one boat per dock.
@@ -1742,15 +1689,6 @@ function hexShape(size: number) {
   }
   s.closePath();
   return s;
-}
-
-// One mesh per hex (its own material, for the paying-hex flash), named "cap" as the flat cap before it was.
-function makeHexTile(geo: THREE.BufferGeometry) {
-  const g = new THREE.Group();
-  const cap = new THREE.Mesh(geo, tileMaterial());
-  cap.name = "cap";
-  g.add(cap);
-  return g;
 }
 
 function hexRing(outer: number, inner: number) {
