@@ -12,9 +12,9 @@ something is always moving, someone is always busy, and there is one small surpr
 Three.js: no models, no textures, no external requests. The look is the Material Studies series: a chunky cut-cake block of
 candy-coloured land, glossy soft-lit forms, translucent jelly water, a tilt-shift miniature on warm washi paper.
 
-THE GAME (owner 2026-10-16): Age of Empires meets Catan. Every resource tile is a working site, and its villagers are
-always visibly gathering it: the woodcutter fells timber, the shepherd shears wool, the farmer scythes grain, the brickmaker
-digs clay, the miner picks ore. The waste is the one tile nobody works; the wayfarer haunts it. A roll is the harvest coming in.
+THE GAME (owner 2026-10-16): Age of Empires meets Catan in spirit, but the tiles are scenes, not a work simulation. Each one
+is alive and beautiful first: water moving, animals, smoke, wind. A person appears only where they add charm (the shepherd,
+the farmer, the woodcutter); no tile needs a worker, and none is a busy village. A roll is the land's moment to show off.
 
 THE STAGE
 - Washi-paper background (#ebe8e1) with the faintest fibre grain; a soft floor shadow under the tile that fades out with
