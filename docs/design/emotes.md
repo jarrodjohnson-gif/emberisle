@@ -1,7 +1,7 @@
 # Emoji and emote wrap-up (issue #654)
 
 This note closes out the reaction work from #117, #118 and #119. #467 shipped the quick reactions.
-It audits the union of `main` (1cd9a19) and PR #635 (`hud/lobby-names-chat`, 7b955f1, about to merge).
+It audits, as of `main` 1cd9a19, the union of `main` and PR #635 (`hud/lobby-names-chat`, 7b955f1). #635 is open and unmerged, so the clip list must be re-checked once it lands.
 Anything marked **[#635]** exists only on that branch. Sizes are read from the Tailwind classes; they were not
 measured in a browser. Tailwind `size-11` is 44 px, `size-8` is 32 px and `size-12` is 48 px. `text-xs` is 12 px,
 `text-sm` is 14 px, `text-2xl` is 24 px and `text-4xl` is 36 px.
@@ -44,8 +44,8 @@ Watchers can't send any of the three.
 ### Problems found
 
 1. **Missing art.** There is one image emote, so the "Image reactions" row, the chat tray and the player menu each show a single button. #120 ("Add Jarrod's emoji images") is still open.
-2. **The one emote is someone else's character.** `ben-10` is named after Cartoon Network's Ben 10. This is the same risk README's "Do not" list guards against for sounds.
-3. **Soundboard clips break the README rule** **[#635]**. README says: "Do not rip sounds from commercial games. Use CC0 only." `sb_wololo` is Age of Empires' Wololo. The airhorn and "Quit touchin' me" are meme clips with no recorded source. The README table says `public/audio/` holds "CC0 Kenney sounds", which is no longer true.
+2. **The one emote may be someone else's character.** `ben-10` is named after a commercial character. Jarrod accepts the risk (Decision 6), and it stays (Decision 2).
+3. **Soundboard clips and README's CC0 rule** **[#635]**. README says: "Do not rip sounds from commercial games. Use CC0 only." `sb_wololo` comes from a commercial game, and some other clips have no recorded source. Under Decision 6, owner-approved clips may ship. README's rule and its "CC0 Kenney sounds" row for `public/audio/` should be reworded to say that.
 4. **Duplicated pickers.** Image emotes appear in three places: the quick picker, the chat tray and the player menu. Emoji appear in only one of them. The chat tray is a weaker copy of the quick picker, which sits right beside the Open chat button.
 5. **The lobby can't send emoji.** The quick-react button hides outside `screen === "play"`, so in the lobby the chat tray, with images only, is all there is.
 6. **Aimed reactions are image-only.** The player menu has no emoji row, although the host accepts `to` with any allow-listed emote.
@@ -58,69 +58,104 @@ Watchers can't send any of the three.
     - the ×N count badge and the "→ Tide" target tag use `text-caption`;
     - image emotes are 32 px in pickers next to 24 px emoji glyphs. That is fine, but a 128 px source shown at 32 px needs bold, simple art.
 
-## 2. Proposed final set
+## 2. Final set (follows Jarrod's Decisions, 2026-10-16)
 
-**One picker and one sound channel.** The quick-react button is the only emote picker for unaimed reactions. The
-player menu is the aimed version of the same set. The soundboard is the only thing that makes a sound. Emotes stay
-silent except for the local click.
+This section follows the Decisions at the end of this note. Where an earlier draft said otherwise, the Decisions win.
 
-### Emoji (8, keys 1–8, a 4×2 grid, about 210 px wide)
+**One tray holds every reaction.** The quick-react button is the single place to send emoji, stickers and soundboard
+clips. It works in the game and in the lobby. Emoji and stickers stay silent apart from the local click. Soundboard
+clips are the only reactions that play a sound for the table (Decision 3).
 
-| Keep | Add | Cut |
-|---|---|---|
-| 😂 laugh, 👏 clap / nice, 🔥 hot streak, 😠 angry, 🐑 sheep (the table joke) | 😱 robbed / long-road steal, 🤝 good trade, 😭 bad roll | 😊 happy (👏 covers it) |
+### Emoji: unchanged (Decision 1)
 
-The one list should live in a shared module that `talk()` imports, instead of a second copy.
+- Keep today's six (😠 😊 👏 😂 🔥 🐑, keys 1–6) until Jarrod sends his list.
+- When the list comes, it replaces `QUICK_REACTIONS`. The host's copy in `talk()` should import the same list rather
+  than keep a second copy.
+- The audit's gaps (robbed, good trade, long-road steal) are input for Jarrod's pick, not a change to make now.
 
-### Image emotes (Jarrod's art)
+### Stickers: a drop-a-PNG pipeline (Decision 2)
 
-- Cut `ben-10`.
-- Add up to 6 of Jarrod's own, as 128×128 transparent WebP in `src/assets/emotes/`, `kebab-case` names. Suggested
-  themes, one for each missing moment: `robbed`, `good-trade`, `road-stolen`, `gg`, `thinking`, `wood-for-sheep`.
-  Nothing else needs code: the folder is read by both the client and the host.
+- **`ben-10` stays.**
+- Jarrod supplies the art. Dropping a file into `src/assets/emotes/` adds a sticker. The folder already works this way:
+  the client's `import.meta.glob` and the host's `loadEmotes` both read it. The work left is to make the pipeline
+  safe and phone-sized.
+- **File format:**
+  - PNG with transparency is the main format.
+  - WebP is accepted as well. The build already handles it: Vite serves `ben-10.webp` as a plain asset URL, and both
+    the glob and `loadEmotes` match `.png` and `.webp`.
+  - The name must be lowercase `a-z`, `0-9` and `-`, and the file name is the sticker id.
+- **Size limits:**
+  - 128×128 px source, square. The largest allowed is 256×256.
+  - At most **50 KB** per file.
+  - At most **24 stickers**, which fills 4 rows of 6 in the tray.
+  - These caps belong in a check in `chat-prove`, or a small `sticker-prove`, so a bad drop fails CI rather than
+    the page.
+  - Vite inlines files under 4 KB into the JS chunk (the default `assetsInlineLimit`). This only matters if
+    `size-prove`'s budget gets tight.
+- **Display:** 32 px inside the tray, as today. 48 px when floating over a seat. On a 440 px wide phone, 6 per row
+  is about 300 px, which fits. Art must stay readable at 32 px.
 
-### Soundboard [#635]
+### Soundboard: no cuts (Decision 6) [#635]
 
-- Keep: Fah, GG!, Only wood?, and any clip whose source is CC0 or Jarrod's own recording.
-- Cut: `bong`, `plop`, `pluck` (board cues), and `sb_wololo` (commercial game). Cut the airhorn and "Quit touchin' me"
-  unless their source can be written down as CC0 or self-made.
-- Record each clip's source in `docs/design/sound.md`, and fix README's "CC0 Kenney sounds" row.
+- All 9 clips on #635 stay, because Jarrod approves them and accepts the risk:
+  - Fah;
+  - Wololo;
+  - GG!;
+  - Airhorn;
+  - Quit touchin' me;
+  - Only wood?;
+  - Bong;
+  - Plop;
+  - Pluck.
+- The host's limits are unchanged:
+  - the chat bucket;
+  - `SOUND_MS`, 3 s.
+- Change the soundboard chips from 12 px to 14 px (`text-sm`) to match the chat lines, which #635 already moved to 14 px.
 
-### Where things live
+### Where things live (Decision 4)
 
 | Surface | Final |
 |---|---|
-| Top row, beside Open chat | Quick-react button, during play **and in the lobby** |
-| Chat box | Presets, input, soundboard toggle. **Remove the Smile emote tray** |
-| Player menu | The same emoji + image set, aimed with `to` |
-| Win screen | Keep the button, but label it "GG! 🔊" so it reads as a sound |
+| Quick-react button, top row beside Open chat | **The one tray.** Row 1 holds the emoji (keys 1–6). Next come the stickers, which scroll. Last is the soundboard row, whose buttons rest for 3 s. It shows during play and in the lobby, for seated players only |
+| Chat box | Presets and the input. **Remove the Smile emote tray and the separate soundboard toggle** |
+| Player menu | It stays as the aimed version (`to`), with the same emoji and stickers. Sounds can't be aimed |
+| Win screen | "React" becomes **"GG! 🔊"** (Decision 5). It still plays `sb_win_reaction` |
 
 ### Pacing and spam
 
-The host limits are enough as they are: the shared 5-burst/1-per-second bucket, plus `SOUND_MS` 3 s for sounds.
-The client changes are:
+- Keep the host limits as they are: a burst of 5, refilled at 1 per second and shared with chat, plus `SOUND_MS`.
+- In the one tray:
+  - Emoji and sticker buttons dim for the 1 s cooldown they have today.
+  - Soundboard buttons dim for 3 s.
+  - The player menu gets the same 1 s cooldown, which it does not have today.
+- Repeats coalesce into a ×N badge, as today.
+- Optional host follow-up: keep soundboard lines out of the 30 stored chat lines, so taps don't push real chat out of a late joiner's history.
 
-- every picker dims for the 1 s cooldown, including the player menu, which today has none;
-- coalescing (×N) stays;
-- soundboard lines should not count toward the 30 stored lines, or should be dropped from the history sent in `welcome`. That host choice belongs to the implementation issue.
+### Follow-up work (not filed yet; one S implementation issue, after #635 merges)
 
-### Follow-up work (not filed yet; one S implementation issue)
+1. **Merge the trays.** Move the soundboard row into `QuickReactions`, remove the chat's Smile tray and soundboard
+   toggle, and mount the button in the lobby.
+2. **Player menu.** Add the emoji row and the 1 s cooldown.
+3. **Sticker checks.** Add the size, weight and count checks in a prove script. Keep PNG and WebP.
+4. **Labels and text size.** Relabel the win button "GG! 🔊", and move the soundboard chips to 14 px.
+5. **Shared emoji list.** Have the host import the client's list, ready for Jarrod's pick.
 
-1. Shared emoji list.
-2. Eight emoji.
-3. Quick-react button in the lobby.
-4. Remove the chat emote tray.
-5. Emoji row in the player menu.
-6. Cooldown in the player menu.
-7. Soundboard cuts and label.
-8. 14 px soundboard chips.
-9. Keep soundboard lines out of the history.
+Jarrod's emoji list and his sticker art (#120) are his to supply.
 
-Art drop (#120) is Jarrod's.
+## 3. Questions for Jarrod: answered
 
-## 3. Questions for Jarrod
+Jarrod answered these on 2026-10-16. His answers are in **Decisions** below, and section 2 follows them. The recommendations are kept as asked.
 
-Each has a recommended answer first.
+| Q | Answer |
+|---|---|
+| 1 | No. `ben-10` stays, and Jarrod will send PNG stickers (Decision 2) |
+| 2 | No change for now. Jarrod picks the emoji (Decision 1) |
+| 3 | Yes, as recommended: emotes stay silent (Decision 3) |
+| 4 | One tray for all reactions, the soundboard included, in game and lobby (Decision 4) |
+| 5 | No cuts. The owner-approved clips stay (Decision 6) |
+| 6 | Yes, "GG! 🔊" (Decision 5) |
+
+The questions as asked:
 
 1. **Image emotes: drop `ben-10` and send about 6 of your own 128×128 WebP (robbed, good trade, road stolen, gg, thinking, wood-for-sheep)?** Recommended: yes, drop it and send your own.
 2. **Emoji set: swap 😊 for 🤝 and add 😱 and 😭, for 8 total (keys 1–8)?** Recommended: yes.
