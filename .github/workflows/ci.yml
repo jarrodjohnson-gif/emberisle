@@ -1,8 +1,9 @@
 name: CI
 
 # The README "Run it" checks, on every pull request and every push to main.
-# build, server and browser-a run on separate runners; browser-b has two suites after build's dist/.
-# `checks` is the required merge check: it requires every job, including both browser-b suites.
+# build, server and browser-a run on separate runners; browser-b has three suites (flows-a, flows-b, presentation) after build's dist/;
+# flows is split in two so each half stays near 14 minutes (the whole was ~28).
+# `checks` is the required merge check: it requires every job, including every browser-b suite.
 on:
   pull_request:
   push:
@@ -95,7 +96,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        suite: [flows, presentation]
+        suite: [flows-a, flows-b, presentation]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -116,59 +117,61 @@ jobs:
         with:
           name: dist
           path: dist/
-      - if: matrix.suite == 'flows'
+      - if: matrix.suite == 'flows-a'
         run: npm run hand-cards-prove
-      - if: matrix.suite == 'flows'
+      - if: matrix.suite == 'flows-a'
         run: npm run served-prove
-      - if: matrix.suite == 'flows'
+      - if: matrix.suite == 'flows-a'
         run: npm run chunk-fail-prove
-      - if: matrix.suite == 'flows'
+      - if: matrix.suite == 'flows-a'
         run: npm run restore-prove
-      - if: matrix.suite == 'flows'
+      - if: matrix.suite == 'flows-a'
         run: npm run night-prove
-      - if: matrix.suite == 'flows'
+      - if: matrix.suite == 'flows-a'
         run: npm run chat-prove
-      - if: matrix.suite == 'flows'
+      - if: matrix.suite == 'flows-a'
         run: npm run react-prove
-      - if: matrix.suite == 'flows'
+      - if: matrix.suite == 'flows-a'
         run: npm run wayfarer-prove
-      - if: matrix.suite == 'flows'
+      - if: matrix.suite == 'flows-a'
         run: npm run sounds-prove
-      - if: matrix.suite == 'flows'
+      - if: matrix.suite == 'flows-a'
         run: npm run tokens-prove
-      - if: matrix.suite == 'flows'
+      - if: matrix.suite == 'flows-a'
         run: npm run pieces-prove
-      - if: matrix.suite == 'flows'
+      - if: matrix.suite == 'flows-a'
         run: npm run pieces-land-prove
-      - if: matrix.suite == 'flows'
+      - if: matrix.suite == 'flows-a'
         run: npm run idle-prove
-      - if: matrix.suite == 'flows'
+      - if: matrix.suite == 'flows-a'
         run: npm run contrast-prove
-      - if: matrix.suite == 'flows'
+      - if: matrix.suite == 'flows-a'
         run: npm run keyboard-place-prove
-      - if: matrix.suite == 'flows'
+      - if: matrix.suite == 'flows-a'
+        run: npm run upgrade-prove
+      - if: matrix.suite == 'flows-a'
         run: npm run flash-prove
-      - if: matrix.suite == 'flows'
+      - if: matrix.suite == 'flows-a'
         run: npm run reflow-prove
-      - if: matrix.suite == 'flows'
+      - if: matrix.suite == 'flows-a'
         run: npm run rotate-prove
-      - if: matrix.suite == 'flows'
+      - if: matrix.suite == 'flows-b'
         run: npm run pan-prove
-      - if: matrix.suite == 'flows'
+      - if: matrix.suite == 'flows-b'
         run: npm run hole-prove
-      - if: matrix.suite == 'flows'
+      - if: matrix.suite == 'flows-b'
         run: npm run banner-stable-prove
-      - if: matrix.suite == 'flows'
+      - if: matrix.suite == 'flows-b'
         run: npm run howto-prove
-      - if: matrix.suite == 'flows'
+      - if: matrix.suite == 'flows-b'
         run: npm run title-prove
-      - if: matrix.suite == 'flows'
+      - if: matrix.suite == 'flows-b'
         run: npm run wayfarer-setup-prove
-      - if: matrix.suite == 'flows'
+      - if: matrix.suite == 'flows-b'
         run: npm run victory-target-prove
-      - if: matrix.suite == 'flows'
+      - if: matrix.suite == 'flows-b'
         run: npm run watch-ui-prove
-      - if: matrix.suite == 'flows'
+      - if: matrix.suite == 'flows-b'
         run: npm run tabs-prove-4
       - if: matrix.suite == 'presentation'
         run: npm run visual-direction-prove
