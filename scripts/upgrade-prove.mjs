@@ -75,7 +75,7 @@ try {
         return st.vertices.filter((x) => x.building?.playerId === "p0").map((x) => ({ id: x.id, kind: x.building.kind }));
       });
     const upgrade = page.getByTestId("build-stronghold");
-    // Where a corner sits once the camera has stopped (arming a build re-measures the hole and the view glides to it).
+    // Where a corner sits once the camera has stopped (wait for the frame to settle before reading it).
     const settled = async (id) => {
       const frames = await page.evaluate(() => window.__isle.renders);
       let last = null;
@@ -109,7 +109,7 @@ try {
     assert.equal(await page.getByTestId("place-chip").count(), 0, `${tag}: no Place chip left`);
     console.log(`${tag}: one ${v.touch ? "touch tap" : "click"} upgrades a starter outpost`);
 
-    // 2. The other outpost too, via the keyboard-free second round: goods for another.
+    // 2. The other outpost too, with a second touch tap, after goods for another.
     if (v.touch) {
       await page.evaluate(() => {
         const g = window.__emberisle;

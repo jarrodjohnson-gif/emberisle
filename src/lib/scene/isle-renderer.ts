@@ -513,11 +513,12 @@ export class IsleRenderer {
     this.resize();
   }
 
-  // The mark a coarse pointer has selected, waiting for the Place chip. Pulses it and locks orbit meanwhile.
+  // While a stronghold is armed, a touch tap on a legal outpost builds at once (no Place chip).
   setOneTap(on: boolean) {
     this.oneTap = on;
   }
 
+  // The mark a coarse pointer has selected, waiting for the Place chip. Pulses it and locks orbit meanwhile.
   setPending(p: { kind: string; id: string } | null) {
     if (p?.id !== this.pending?.id) this.wake();
     this.pending = p;
