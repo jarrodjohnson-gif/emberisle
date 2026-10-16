@@ -14,7 +14,8 @@ minutes apart therefore spread across the lanes on their own, with nobody assign
 
 ## Picking an issue
 
-1. List the open issues with `status:in-progress` and the open PRs. Each lane label on them is
+1. List the open issues with `status:in-progress` or a `claimed:` comment that has no later `paused:`,
+   plus the open PRs. Each lane label on them is
    **busy**.
 2. Take the next open `status:todo` issue whose lane labels are all free. Use the order in
    `docs/FRAMEWORK.md` section 7: earliest milestone, lowest step, `Depends on` closed. An issue with

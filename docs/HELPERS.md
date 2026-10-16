@@ -69,7 +69,8 @@ prompt.
    - its lane is free (see [`LANES.md`](LANES.md)).
 
    Read the whole issue and every comment on it, fresh. Together they are the spec.
-4. **Claim** it right away. Add the label `status:in-progress` and comment:
+4. **Claim** it right away with this comment. A fork can't set labels, so the comment alone is your claim.
+   The orchestrator syncs the labels.
    ```
    claimed: <your name>, <YYYY-MM-DD>
    files: <paths you expect to touch>
@@ -91,7 +92,7 @@ prompt.
    - Open a **draft** PR into `jarrodjohnson-gif/emberisle` `main`, either in the web UI or with
      `gh pr create --draft --repo jarrodjohnson-gif/emberisle --base main --head <you>:helper/<issue#>-<slug>`.
    - In the body, put `Closes #<issue>`, what changed, and the check output.
-   - Then comment on the issue, and swap its label to `status:in-review`:
+   - Then comment on the issue (no label changes):
    ```
    changed: <one line>
    test: <command> → <result>
@@ -100,7 +101,7 @@ prompt.
 9. **Follow up:** if CI is red, fix it on the same branch. Answer each review comment, either with a
    fix or with a reply saying why not. Then go back to step 2.
 
-**Pause** (out of time or blocked): leave the issue `status:in-progress` and comment:
+**Pause** (out of time or blocked): comment on the issue:
 ```
 paused: <your name>, <YYYY-MM-DD>
 done so far: <one line>
