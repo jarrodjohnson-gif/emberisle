@@ -55,39 +55,23 @@ jobs:
           key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
       - run: npx playwright install --with-deps chromium
       - name: Run browser-a proofs 5x
-        id: soak
         run: |
           set -euo pipefail
           PROOFS=(client-prove dpr-prove hotseat-prove tabs-prove countdown-prove trade-prove practice-trade-prove hud-safe-area-prove rotate-overlays-prove fortune-count-prove fortune-tray-prove)
           mkdir -p soak-results
           : > soak-results/failures.txt
           : > soak-results/counts.txt
-          declare -A FAILS
           for run in 1 2 3 4 5; do
             for proof in "${PROOFS[@]}"; do
               if ! npm run "$proof" > /tmp/proof.log 2>&1; then
-                FAILS["$proof"]=$(( ${FAILS["$proof"]:-0} + 1 ))
-                echo "RUN $run $proof FAILED:" >> soak-results/failures.txt
-                head -n 20 /tmp/proof.log >> soak-results/failures.txt
-                echo "---" >> soak-results/failures.txt
+                # Save each failure immediately, retaining partial evidence on a timeout.
+                printf '%s\n' "$proof" >> soak-results/counts.txt
+                printf 'RUN %s %s FAILED:\n' "$run" "$proof" >> soak-results/failures.txt
+                tail -n 40 /tmp/proof.log >> soak-results/failures.txt
+                printf '\n---\n' >> soak-results/failures.txt
               fi
             done
           done
-          for proof in "${!FAILS[@]}"; do
-            printf "%s: failed %s/5\n" "$proof" "${FAILS[$proof]}" >> soak-results/counts.txt
-          done
-          if [ ${#FAILS[@]} -eq 0 ]; then
-            echo "no_failures=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "no_failures=false" >> "$GITHUB_OUTPUT"
-            SUMMARY=""
-            for proof in "${!FAILS[@]}"; do
-              SUMMARY+="$proof: failed ${FAILS[$proof]}/5"$'\n'
-            done
-            echo "summary<<EOF" >> "$GITHUB_OUTPUT"
-            echo "$SUMMARY" >> "$GITHUB_OUTPUT"
-            echo "EOF" >> "$GITHUB_OUTPUT"
-          fi
       - name: Upload browser-a soak results
         if: always()
         uses: actions/upload-artifact@v4
@@ -97,6 +81,14 @@ jobs:
             soak-results/
             test-results/
           if-no-files-found: ignore
+
+      - name: Flag failing proofs
+        if: always()
+        run: |
+          if [ -s soak-results/counts.txt ]; then
+            echo "::error::Soak detected failing proofs; see artifacts and report."
+            exit 1
+          fi
 
   browser-b-soak:
     needs: build
@@ -127,12 +119,12 @@ jobs:
           name: dist
           path: dist/
       - name: Run browser-b proofs 5x
-        id: soak
+        env:
+          SUITE: ${{ matrix.suite }}
         run: |
           set -euo pipefail
-          if [ "${{ matrix.suite }}" = "flows-a" ]; then
-            PROOFS=(hand-cards-prove served-prove chunk-fail-prove restore-prove night-prove chat-prove react-prove wayfarer-prove sounds-prove tokens-prove pieces-prove pieces-land-prove idle-prove contrast-prove keyboard-place-prove upgrade-prove flash-prove reflow-prove rotate-prove)
-          elif [ "${{ matrix.suite }}" = "flows-b" ]; then
+          PROOFS=(hand-cards-prove served-prove chunk-fail-prove restore-prove night-prove chat-prove react-prove wayfarer-prove sounds-prove tokens-prove pieces-prove pieces-land-prove idle-prove contrast-prove keyboard-place-prove upgrade-prove flash-prove reflow-prove rotate-prove)
+          elif [ "$SUITE" = "flows-b" ]; then
             PROOFS=(pan-prove hole-prove banner-stable-prove howto-prove title-prove wayfarer-setup-prove victory-target-prove watch-ui-prove tabs-prove-4)
           else
             PROOFS=(visual-direction-prove jelly-ocean-prove waves-prove splash-prove polish-tokens-prove roll-moment-prove goods-log-prove turn-gain-prove win-action-prove turn-copy-prove table-menu-prove build-ready-prove board-look-prove seat-rail-prove public-score-prove hand-hidden-prove install-prove)
@@ -140,32 +132,17 @@ jobs:
           mkdir -p soak-results
           : > soak-results/failures.txt
           : > soak-results/counts.txt
-          declare -A FAILS
           for run in 1 2 3 4 5; do
             for proof in "${PROOFS[@]}"; do
               if ! npm run "$proof" > /tmp/proof.log 2>&1; then
-                FAILS["$proof"]=$(( ${FAILS["$proof"]:-0} + 1 ))
-                echo "RUN $run $proof FAILED:" >> soak-results/failures.txt
-                head -n 20 /tmp/proof.log >> soak-results/failures.txt
-                echo "---" >> soak-results/failures.txt
+                # Save each failure immediately, retaining partial evidence on a timeout.
+                printf '%s\n' "$proof" >> soak-results/counts.txt
+                printf 'RUN %s %s FAILED:\n' "$run" "$proof" >> soak-results/failures.txt
+                tail -n 40 /tmp/proof.log >> soak-results/failures.txt
+                printf '\n---\n' >> soak-results/failures.txt
               fi
             done
           done
-          for proof in "${!FAILS[@]}"; do
-            printf "%s: failed %s/5\n" "$proof" "${FAILS[$proof]}" >> soak-results/counts.txt
-          done
-          if [ ${#FAILS[@]} -eq 0 ]; then
-            echo "no_failures=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "no_failures=false" >> "$GITHUB_OUTPUT"
-            SUMMARY=""
-            for proof in "${!FAILS[@]}"; do
-              SUMMARY+="$proof: failed ${FAILS[$proof]}/5"$'\n'
-            done
-            echo "summary<<EOF" >> "$GITHUB_OUTPUT"
-            echo "$SUMMARY" >> "$GITHUB_OUTPUT"
-            echo "EOF" >> "$GITHUB_OUTPUT"
-          fi
       - name: Upload browser-b soak results
         if: always()
         uses: actions/upload-artifact@v4
@@ -175,6 +152,14 @@ jobs:
             soak-results/
             test-results/
           if-no-files-found: ignore
+
+      - name: Flag failing proofs
+        if: always()
+        run: |
+          if [ -s soak-results/counts.txt ]; then
+            echo "::error::Soak detected failing proofs; see artifacts and report."
+            exit 1
+          fi
 
   report:
     needs: [browser-a-soak, browser-b-soak]
