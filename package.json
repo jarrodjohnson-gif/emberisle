@@ -78,7 +78,8 @@
     "takeover-prove": "node --import ./server/register.mjs server/takeover-prove.mjs",
     "jelly-ocean-prove": "node scripts/jelly-ocean-prove.mjs",
     "waves-prove": "node --import ./server/register.mjs scripts/waves-prove.mjs",
-    "splash-prove": "node scripts/splash-prove.mjs"
+    "splash-prove": "node scripts/splash-prove.mjs",
+    "pages-prove": "node scripts/pages-prove.mjs"
   },
   "dependencies": {
     "clsx": "^2.1.1",

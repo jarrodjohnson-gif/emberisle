@@ -2,6 +2,8 @@
 
 A private island settler game for Jarrod and friends. One person hosts a table on their PC, and the others join with a four-character code. It is 3 or 4 players, first to 10 points, on one island of 19 hexes. The full rules are in [Rule set](#rule-set) below.
 
+**Play in the browser: <https://jarrodjohnson-gif.github.io/emberisle/>** (GitHub Pages, published from `main` by `.github/workflows/pages.yml`). The old Netlify site is frozen until 2026-10-26 and is no longer updated.
+
 **The task list is the [GitHub issues and milestones](https://github.com/jarrodjohnson-gif/emberisle/milestones), not this repo.** This file says what the game is and how the code works. How work is organized, and how any AI picks up the next step, is in **[docs/FRAMEWORK.md](docs/FRAMEWORK.md)** (the Fractal Build).
 
 ---
