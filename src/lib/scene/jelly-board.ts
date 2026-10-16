@@ -788,10 +788,11 @@ export class JellyBoard {
   update(t: number, all = false, snap = false) {
     const dt = Math.max(0, t - this.t);
     this.t = t;
-    // The board's age: a story that starts with the match (the ore's climber) counts from the first frame drawn.
-    this.t0 ??= t;
+    // The board's age: a story that starts with the match (the ore's climber) counts from the first live frame. Not from
+    // create()'s update(0, true) or a snap (the swap, reduced motion): those would pin the start to the renderer's clock.
+    if (!all && !snap) this.t0 ??= t;
     for (const k of this.kinds) {
-      k.tile.env.age = t - this.t0;
+      k.tile.env.age = this.t0 === undefined ? 0 : t - this.t0;
       k.tile.update(t);
       k.tile.group.updateMatrixWorld(true);
       // The hex level: its squash (the roll's jelly wobble, a tap's smaller one) and its colour (flash, dulling).

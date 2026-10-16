@@ -4396,7 +4396,7 @@ function mine(L: Layout, ground: (x: number, z: number) => number, r: () => numb
       while (k > 0 && age < tries[k]!.at) k--;
       const q = tries[k]!;
       const a = age - q.at;
-      const fallsDone = tries.slice(0, k).length;
+      const fallsDone = k;
       let x = start.x, y = Y(start.x, start.z), z = start.z;
       let yaw = look, lean = 0, roll = 0, sit = false;
       let shown = true;
