@@ -8,6 +8,8 @@ import { createServer } from "vite";
 
 const PORT = Number(process.env.VITE_PORT) || 8093;
 // docs/design/tokens.md "Clear space": the 0.26 token and 0.05 of ground.
+// 2026-10-16 (#624): 0.39 -> 0.31. The ring was the 0.34 token plus 0.05 and stayed 0.39 when the token shrank to 0.26
+// (#599); the Hex Jelly scenes are built round a 0.33 flat pad. Owner-approved look; orchestrator OK.
 const CLEAR = 0.31;
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();

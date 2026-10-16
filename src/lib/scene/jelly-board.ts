@@ -369,6 +369,18 @@ export class JellyBoard {
   static async create(hexes: JellyHex[], seedOf: (kind: Terrain) => number, pause: () => Promise<boolean>, lite = false) {
     const b = new JellyBoard();
     b.lite = lite;
+    try {
+      return await b.build(hexes, seedOf, pause);
+    } catch (e) {
+      // A build that throws leaves nothing behind.
+      b.dispose();
+      throw e;
+    }
+  }
+
+  private async build(hexes: JellyHex[], seedOf: (kind: Terrain) => number, pause: () => Promise<boolean>): Promise<JellyBoard | null> {
+    const b = this;
+    const lite = this.lite;
     // A breath after the chunk itself loads and runs.
     if (!(await pause())) return null;
     for (const kind of [...new Set(hexes.map((h) => h.terrain))]) {

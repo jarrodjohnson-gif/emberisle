@@ -788,6 +788,8 @@ try {
           const a = i * 2.399963, r = Math.sqrt((i + 0.5) / 400);
           const [x, z] = [Math.cos(a) * r * INR, Math.sin(a) * r * INR];
           const y = jelly.groundAt(h.id, x, z);
+          // 2026-10-16 (#624): the pad is 0.3 round the centre (was 0.4 on the sculpted tiles): the jelly pad is 0.33, and
+          // the 0.26 token sits on it (tokens.md).
           if (Math.hypot(x, z) < 0.3) k.pad = Math.max(k.pad, Math.abs(y - top));
           lo = Math.min(lo, y);
           hi = Math.max(hi, y);
@@ -807,16 +809,21 @@ try {
         const n = (o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3;
         rest += o.isInstancedMesh ? n * o.count : n;
       });
-      return { kinds, stats: window.__terrain, rest, clearance: jelly.clearance(0.6) };
+      // The side strata: each kind's block side has its strata program (jelly-strata-<kind>) among the bakes.
+      const strata = [...new Set(jelly.bakes.map((m) => m.material.customProgramCacheKey()).filter((k) => k.startsWith("jelly-strata-")).map((k) => k.split("|")[0].slice(13)))].sort();
+      return { kinds, stats: window.__terrain, rest, clearance: jelly.clearance(0.6), strata };
     });
     const kinds = Object.keys(t.kinds).sort();
     check("terrain: all six kinds are on the board, the full scenes", kinds.join() === "clay,grain,ore,timber,waste,wool" && t.stats.kinds === 6 && !t.stats.lite, { kinds, lite: t.stats.lite });
     for (const k of kinds) {
       const s = t.kinds[k];
-      check(`terrain ${k}: flat at topOf on the pad and at the corners and edges; a landform elsewhere (spread over 0.02)`, s.pad < 1e-4 && s.rim < 1e-4 && s.spread > 0.02, s);
+      // A landform: more than 0.02 of spread, and under 0.8 (the tallest peak stands well within the block's own scale).
+      check(`terrain ${k}: flat at topOf on the pad and at the corners and edges; a landform elsewhere (spread 0.02 to 0.8)`, s.pad < 1e-4 && s.rim < 1e-4 && s.spread > 0.02 && s.spread < 0.8, s);
     }
     // 2026-10-16 (#624): from 40 calls and 220k triangles for the sculpted terrain. The owner set no limit on the hexes'
     // detail; the orchestrator agreed up to 80 calls and 600k triangles. 51 calls and about 330k measured; 60 holds it close.
+    check("terrain: every kind's block side shows its strata", t.strata.join() === kinds.join(), t.strata);
+    // "No two tiles alike" is gone: one scene per kind, shared by its hexes, is the owner's choice (2026-10-16).
     check("terrain: the scenes draw in at most 60 calls", t.stats.drawCalls <= 60, t.stats);
     check("terrain: the scenes hold at most 600k triangles, the whole island at most 620k", t.stats.triangles <= 600000 && t.stats.triangles + t.rest <= 620000, { scenes: t.stats.triangles, rest: t.rest });
     const near = Object.entries(t.clearance).sort((a, b) => a[1].min - b[1].min);

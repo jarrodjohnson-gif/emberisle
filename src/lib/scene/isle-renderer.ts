@@ -280,7 +280,14 @@ export class IsleRenderer {
         // Storage blocked: the default.
       }
       this.lite = saved === "full" ? false : saved === "lite" ? true : this.software;
+      // One line the owner can read off a phone's console: which board, and why.
+      console.info(`Emberisle board: ${this.lite ? "lite (the jelly ground)" : "full Hex Jelly scenes"}${saved ? ` (emberisle-jelly=${saved})` : this.software ? " (software GPU)" : ""}`);
     }
+    // A lost context takes its fences with it: drop ours, or ambient frames would wait on it for good.
+    canvas.addEventListener("webglcontextlost", this.onContextLost);
+    // `?fps` on the page's address: a small overlay of the frame's cost (frame interval, the draw's CPU time, the GPU's lag
+    // behind it by fence), draw calls and triangles, for reading numbers off a phone.
+    if (new URLSearchParams(location.search).has("fps")) this.fps = makeFps(this.renderer);
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -619,6 +626,9 @@ export class IsleRenderer {
 
   dispose() {
     this.stopped = true;
+    this.renderer.domElement.removeEventListener("webglcontextlost", this.onContextLost);
+    this.dropFence();
+    this.fps?.el.remove();
     this.jelly?.dispose();
     this.jelly = null;
     this.renderer.setAnimationLoop(null);
@@ -1193,8 +1203,10 @@ export class IsleRenderer {
     // The under pass already drew this frame's shadow map.
     this.renderer.shadowMap.autoUpdate = !crystal;
     try {
+      this.fps?.begin(t0);
       this.composer.render();
       this.fenceFrame();
+      this.fps?.end(this.jelly?.stats() ?? null, this.lite);
     } finally {
       this.renderer.shadowMap.autoUpdate = true;
     }
@@ -1221,6 +1233,15 @@ export class IsleRenderer {
 
   // The fence the last frame left, and whether the GPU is still behind it.
   private fence: WebGLSync | null = null;
+  private fps: Fps | null = null;
+  private dropFence() {
+    const gl = this.renderer.getContext();
+    if (this.fence && gl instanceof WebGL2RenderingContext && !gl.isContextLost()) gl.deleteSync(this.fence);
+    this.fence = null;
+  }
+  private onContextLost = () => {
+    this.fence = null;
+  };
   private fenceFrame() {
     const gl = this.renderer.getContext();
     if (!(gl instanceof WebGL2RenderingContext) || this.fence) return;
@@ -1233,6 +1254,7 @@ export class IsleRenderer {
     if (gl.getSyncParameter(this.fence, gl.SYNC_STATUS) !== gl.SIGNALED) return true;
     gl.deleteSync(this.fence);
     this.fence = null;
+    this.fps?.gpu(performance.now());
     return false;
   }
 
@@ -1283,7 +1305,8 @@ export class IsleRenderer {
       // Its shaders compile before it swaps in (in parallel where the browser can, KHR_parallel_shader_compile), not in the
       // first frame that draws it. Compiled in place, into the composer's own target, so the programs are the frame's.
       .then(async (jelly) => {
-        if (!jelly || !alive()) return jelly;
+        // Without parallel compile it would only move the same stall earlier (and three warns), so there it is skipped.
+        if (!jelly || !alive() || !this.renderer.extensions.has("KHR_parallel_shader_compile")) return jelly;
         jelly.update(this.jellyT, true, true);
         this.living.add(jelly.group);
         const was = this.renderer.getRenderTarget();
@@ -1988,3 +2011,50 @@ function makeBoat(kind: HarborKind) {
 }
 
 
+
+// The `?fps` overlay: per half second, the mean interval between drawn frames, the draw's CPU time, how far the GPU finished
+// behind the draw (by its fence, read at the next animation frame), the draw calls and triangles of one frame, and the board.
+type Fps = ReturnType<typeof makeFps>;
+function makeFps(renderer: THREE.WebGLRenderer) {
+  const el = document.createElement("div");
+  el.style.cssText =
+    "position:fixed;right:6px;top:calc(env(safe-area-inset-top) + 64px);z-index:9999;pointer-events:none;font:11px/1.35 ui-monospace,monospace;color:#fff;background:rgba(0,0,0,.6);padding:4px 6px;border-radius:4px;white-space:pre";
+  document.body.appendChild(el);
+  renderer.info.autoReset = false;
+  let last = 0;
+  let start = 0;
+  let sentAt = 0;
+  const acc = { n: 0, gap: 0, cpu: 0, cpuN: 0, gpu: 0, gpuN: 0, shown: 0 };
+  return {
+    el,
+    begin(t0: number) {
+      renderer.info.reset();
+      start = t0;
+      if (last) {
+        acc.gap += t0 - last;
+        acc.n++;
+      }
+      last = t0;
+    },
+    end(stats: JellyStats | null, lite: boolean) {
+      const now = performance.now();
+      acc.cpu += now - start;
+      acc.cpuN++;
+      sentAt = now;
+      if (now - acc.shown < 500 || !acc.n) return;
+      const r = renderer.info.render;
+      el.textContent =
+        `frame ${(acc.gap / acc.n).toFixed(1)} ms (${(1000 / (acc.gap / acc.n)).toFixed(0)} fps)\n` +
+        `cpu ${(acc.cpu / acc.cpuN).toFixed(1)} ms  gpu ~${acc.gpuN ? (acc.gpu / acc.gpuN).toFixed(1) : "-"} ms\n` +
+        `draws ${r.calls}  tris ${(r.triangles / 1000).toFixed(0)}k\n` +
+        `board ${lite ? "lite" : "full"}${stats ? `  scenes ${stats.drawCalls} draws ${(stats.triangles / 1000).toFixed(0)}k` : "  (building)"}  dpr ${renderer.getPixelRatio()}`;
+      Object.assign(acc, { n: 0, gap: 0, cpu: 0, cpuN: 0, gpu: 0, gpuN: 0, shown: now });
+    },
+    gpu(now: number) {
+      if (!sentAt) return;
+      acc.gpu += now - sentAt;
+      acc.gpuN++;
+      sentAt = 0;
+    },
+  };
+}
