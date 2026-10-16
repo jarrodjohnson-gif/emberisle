@@ -21,22 +21,31 @@ jobs:
         with:
           fetch-depth: 0
       - id: check
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
         run: |
           set -euo pipefail
-          if [ "${{ github.event_name }}" != "pull_request" ]; then
+          if [ "$EVENT_NAME" != "pull_request" ]; then
             echo "docs_only=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          BASE=$(git merge-base "origin/${{ github.base_ref }}" HEAD || true)
+          BASE=$(git merge-base "origin/$BASE_REF" HEAD || true)
           if [ -z "$BASE" ]; then
             echo "docs_only=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          mapfile -t CHANGED < <(git diff --name-only "$BASE" HEAD)
+          LIST=$(git diff --no-renames --name-only "$BASE" HEAD)
+          if [ -z "$LIST" ]; then
+            echo "docs_only=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          mapfile -t CHANGED <<< "$LIST"
           DOCS_ONLY=true
           for file in "${CHANGED[@]}"; do
-            # docs/**, **/*.md (no build-read exceptions currently known), .github/ISSUE_TEMPLATE/**, LICENSE
+            # README.md is consumed by fortune-tray-prove; other markdown, docs, issue templates, and LICENSE are docs-only.
             case "$file" in
+              README.md) DOCS_ONLY=false; break;;
               docs/*|.github/ISSUE_TEMPLATE/*|LICENSE|*.md)
                 ;;
               *)
@@ -295,7 +304,7 @@ jobs:
 
   # always() so a failed or cancelled job above fails this check instead of skipping it (a skipped required check passes).
   checks:
-    needs: [build, server, browser-a, browser-b]
+    needs: [changes, build, server, browser-a, browser-b]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
