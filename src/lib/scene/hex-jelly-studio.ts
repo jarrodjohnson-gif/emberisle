@@ -1,7 +1,7 @@
 // The Hex Jelly studio (docs/design/hex-jelly-prompt.md): one tile built to the prompt, large, at the diorama's angle (38 degrees
 // up, 20 round from the south), under the prompt's light, on the paper, with a subtle tilt-shift. Dev only: scripts/hex-jelly.html
 // loads it and scripts/hex-jelly.mjs screenshots it. Query: kind=<terrain> (default timber), seed=<n>, pip=<n> (0 for none),
-// t=<seconds> to freeze the tile's life at that moment (otherwise it runs live), props=0 for the bare ground, focus=pool|camp|cut|quarry
+// t=<seconds> to freeze the tile's life at that moment (otherwise it runs live), props=0 for the bare ground, focus=pool|camp|cut|quarry|ref:<name>
 // to frame that corner of the story close up, ring=1 for six neighbours round it at board spacing (to see what the landform
 // hides, with birds and cloud shadows crossing it), az=<degrees> to orbit the eye, roll=<t0> to start the roll payoff at t0,
 // robber=1 to stand the robber on the centre tile, night=1 for the night lighting.
@@ -113,13 +113,27 @@ const box = new THREE.Box3();
 }));
 for (let i = 0; i < 8; i++) pts.push(new THREE.Vector3(i & 1 ? box.max.x : box.min.x, i & 2 ? box.max.y : box.min.y, i & 4 ? box.max.z : box.min.z));
 // A close-up frames a disc round the story's spot instead of the whole tile.
+// The world spot of the first object tagged userData.ref = name (a creature, a building), for a close-up.
+function refAt(name: string) {
+  let found: { x: number; z: number } | null = null;
+  tile.group.updateMatrixWorld(true);
+  tile.group.traverse((o) => {
+    if (!found && o.userData.ref === name) {
+      const v = new THREE.Vector3();
+      o.getWorldPosition(v);
+      found = { x: v.x, z: v.z };
+    }
+  });
+  return found;
+}
 const campAt = (da: number, d: number) => tile.layout.camp && { x: Math.cos(tile.layout.camp.a + da) * d, z: Math.sin(tile.layout.camp.a + da) * d };
-const spot = focus === "pool" ? tile.layout.pool : focus === "camp" ? campAt(0, 0.58) : focus === "cut" ? campAt(-0.62, 0.6) : focus === "quarry" ? tile.layout.marks.quarry ?? null : null;
+const spot = focus === "pool" ? tile.layout.pool : focus === "camp" ? campAt(0, 0.58) : focus === "cut" ? campAt(-0.62, 0.6) : focus === "quarry" ? tile.layout.marks.quarry ?? null : focus?.startsWith("ref:") ? refAt(focus.slice(4)) : null;
 if (spot) {
+  const fr = focus?.startsWith("ref:") ? 0.12 : 0.24;
   pts.length = 0;
   for (let i = 0; i < 12; i++) {
     const a = (i / 12) * Math.PI * 2;
-    for (const y of [BLOCK_H - 0.02, BLOCK_H + 0.14]) pts.push(new THREE.Vector3(spot.x + Math.cos(a) * 0.24, y, spot.z + Math.sin(a) * 0.24));
+    for (const y of [BLOCK_H - 0.02, BLOCK_H + 0.14]) pts.push(new THREE.Vector3(spot.x + Math.cos(a) * fr, y, spot.z + Math.sin(a) * fr));
   }
 }
 const look = new THREE.Vector3(0, BLOCK_H, 0);

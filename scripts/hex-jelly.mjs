@@ -46,14 +46,14 @@ try {
     for (const seed of seeds)
     for (const view of views) {
       const errors = [];
-      const page = await browser.newPage({ viewport: { width: 1024, height: 768 } });
+      const page = await browser.newPage({ viewport: args.includes("--hd") ? { width: 2048, height: 1536 } : { width: 1024, height: 768 } });
       page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
       page.on("pageerror", (e) => errors.push(String(e)));
       await page.goto(`http://127.0.0.1:${PORT}/scripts/hex-jelly.html?kind=${kind}&seed=${seed}&t=${T}${view ? `&focus=${view}` : ""}${extra}`);
       await page.waitForFunction(() => window.__jelly?.ready, null, { timeout: 120_000 }).catch((e) => {
         throw new Error(errors.join(" | ") || e.message);
       });
-      const file = `test-results/jelly-${kind}-${seed}${view ? `-${view}` : ""}${tag}.png`;
+      const file = `test-results/jelly-${kind}-${seed}${view ? `-${view.replace(":", "-")}` : ""}${tag}${args.includes("--hd") ? "-hd" : ""}.png`;
       await page.screenshot({ path: file });
       console.log(`wrote ${file}`, JSON.stringify(await page.evaluate(() => window.__jelly.info)));
       if (errors.length) (failed = true), console.log("console errors:", errors.join(" | "));

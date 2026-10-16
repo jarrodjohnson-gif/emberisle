@@ -3200,8 +3200,15 @@ function brickworks(L: Layout, ground: (x: number, z: number) => number, r: () =
 
   // The pug mill, where the clay is mixed: a wooden tub with a post and a sweep arm, a donkey walking it round in a worn ring.
   {
-    const mp = M.mill!;
-    if (nearestCorner(mp.x, mp.z) > 0.25 && hexDist(mp.x, mp.z) < INR - 0.18) {
+    let mp: Pt | null = null;
+    for (let tries = 0; tries < 400 && !mp; tries++) {
+      const a = Math.atan2(M.mill!.z, M.mill!.x) + (r() - 0.5) * (0.4 + tries * 0.02);
+      const d = 0.55 + (r() - 0.5) * 0.12;
+      const p = { x: Math.cos(a) * d, z: Math.sin(a) * d };
+      // The mill and its ring want flat ground well clear of the quarry, the corners and the token.
+      if (ok(p.x, p.z, 0.09) && Array.from({ length: 12 }, (_, k) => [Math.cos(k * 0.52) * 0.12, Math.sin(k * 0.52) * 0.12]).every(([dx, dz]) => Math.abs(ground(p.x + dx!, p.z + dz!)) < 0.03)) mp = p;
+    }
+    if (mp) {
       const y = Y(mp.x, mp.z);
       const tub = mesh(
         merge([
@@ -3238,6 +3245,15 @@ function brickworks(L: Layout, ground: (x: number, z: number) => number, r: () =
       });
     }
   }
+
+  // The trotting coyote's loop: reserve it first, so nothing is planted on its path.
+  let lope: Pt | null = null;
+  for (let tries = 0; tries < 400 && !lope; tries++) {
+    const a = L.hillAt - L.marks.side!.x * (1.0 + r() * 0.6);
+    const p = { x: Math.cos(a) * 0.62, z: Math.sin(a) * 0.62 };
+    if (Array.from({ length: 16 }, (_, k) => ({ x: p.x + Math.cos(k * 0.39) * 0.15, z: p.z + Math.sin(k * 0.39) * 0.1 })).every((q) => ok(q.x, q.z, 0.0) || Math.hypot(q.x, q.z) < 0.5)) lope = p;
+  }
+  if (lope) for (let k = 0; k < 16; k++) stands.push({ x: lope.x + Math.cos(k * 0.39) * 0.15, z: lope.z + Math.sin(k * 0.39) * 0.1, r: 0.04 });
 
   // Desert plants (Arizona): prickly pear clusters with pink fruit, blue-green agave rosettes.
   {
@@ -3330,11 +3346,11 @@ function brickworks(L: Layout, ground: (x: number, z: number) => number, r: () =
       break;
     }
     const walker = coyote(cm, false);
-    g.add(walker.g);
-    const centre = at(L.hillAt - L.marks.side!.x * 1.25, 0.6);
+    if (lope) g.add(walker.g);
+    const centre = lope ?? { x: 0, z: 0 };
     life.push((t) => {
       const a = t * 0.22;
-      let [x, z] = [centre.x + Math.cos(a) * 0.17, centre.z + Math.sin(a) * 0.11];
+      let [x, z] = [centre.x + Math.cos(a) * 0.15, centre.z + Math.sin(a) * 0.1];
       const k = Math.min(1, (INR - 0.14) / Math.max(1e-6, hexDist(x, z)));
       [x, z] = [x * k, z * k];
       const rr = Math.hypot(x, z);
@@ -3368,34 +3384,35 @@ function brickworks(L: Layout, ground: (x: number, z: number) => number, r: () =
     }
   }
 
-  // Sun-cracked ground: dried mud plates on the flats and the quarry floor, their cracks thin dark slivers along the edges of a
-  // jittered cell pattern, in patches.
+  // Sun-cracked ground: dried-mud plates in patches. The cracks are a connected network: the edges of a jittered lattice of
+  // corners (each joined to its right and lower neighbours, and now and then across a diagonal), drawn as thin dark slivers.
   {
-    const CELL = 0.05;
-    const seeds: Pt[] = [];
-    for (let i = -26; i <= 26; i++)
-      for (let j = -26; j <= 26; j++) {
-        const x = (i + 0.5 + hash2(i, j, L.seed + 50) * 0.42) * CELL;
-        const z = (j + 0.5 + hash2(i, j, L.seed + 51) * 0.42) * CELL;
-        if (hexDist(x, z) < INR - 0.05) seeds.push({ x, z });
-      }
+    const CELL = 0.036;
+    const N = 30;
+    const corner = (i: number, j: number) => ({ x: (i + hash2(i, j, L.seed + 50) * 0.38) * CELL, z: (j + 0.5 * (i & 1) + hash2(i, j, L.seed + 51) * 0.38) * CELL });
     const cracks: Inst[] = [];
-    const DARK = new THREE.Color("#a8482a");
-    for (let i = 0; i < seeds.length; i++)
-      for (let j = i + 1; j < seeds.length; j++) {
-        const [a, b] = [seeds[i]!, seeds[j]!];
-        const d = Math.hypot(b.x - a.x, b.z - a.z);
-        if (d > CELL * 1.5) continue;
-        const m = { x: (a.x + b.x) / 2, z: (a.z + b.z) / 2 };
-        const h = ground(m.x, m.z);
-        const flat = Math.abs(h) < 0.02 || h < -Q_D + 0.03;
-        if (!flat || Math.hypot(m.x, m.z) < 0.37 || hexDist(m.x, m.z) > INR - 0.07 || noise(m.x * 3.2, m.z * 3.2, L.seed + 60) < 0.3) continue;
-        if (stands.some((q) => Math.hypot(q.x - m.x, q.z - m.z) < q.r + 0.005) || Math.hypot(m.x - pit.x, m.z - pit.z) < pit.r * 1.1) continue;
-        const ang = Math.atan2(b.z - a.z, b.x - a.x) + Math.PI / 2;
-        cracks.push({ m: mat(m.x, Y(m.x, m.z) + 0.0008, m.z, d * 0.62, 0.0012, 0.0024, -ang), c: DARK });
+    const DARK = new THREE.Color("#c4643c");
+    const keepAt = (m: Pt) => {
+      const h = ground(m.x, m.z);
+      const flat = Math.abs(h) < 0.02 || h < -Q_D + 0.03;
+      return flat && Math.hypot(m.x, m.z) > 0.37 && hexDist(m.x, m.z) < INR - 0.07 && noise(m.x * 3.2, m.z * 3.2, L.seed + 60) > 0.22 && !stands.some((q) => Math.hypot(q.x - m.x, q.z - m.z) < q.r + 0.004) && Math.hypot(m.x - pit.x, m.z - pit.z) > pit.r * 1.1;
+    };
+    for (let i = -N; i <= N; i++)
+      for (let j = -N; j <= N; j++) {
+        const a = corner(i, j);
+        const links = [corner(i + 1, j), corner(i, j + 1)];
+        if (hash2(i, j, L.seed + 52) > 0.4) links.push(corner(i + 1, j + (i & 1 ? 1 : -1)));
+        for (const b of links) {
+          const m = { x: (a.x + b.x) / 2, z: (a.z + b.z) / 2 };
+          if (!keepAt(m)) continue;
+          const d = Math.hypot(b.x - a.x, b.z - a.z);
+          const ang = Math.atan2(b.z - a.z, b.x - a.x);
+          cracks.push({ m: mat(m.x, Y(m.x, m.z) + 0.0006, m.z, d * 1.02, 0.0008, 0.0016, -ang), c: DARK });
+        }
       }
     if (cracks.length) g.add(instanced(new THREE.BoxGeometry(1, 1, 1), cracks, blobMat()));
   }
+
 
   // Nest holes in the mesa's cliffs that face the eye, and the martins flitting in and out.
   {
