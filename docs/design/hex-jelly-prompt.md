@@ -89,11 +89,14 @@ THE SIX WORLDS
    with reeds and bulrushes, two ducks paddling round. Round hay bales and round trees in the meadow, a red wheelbarrow of
    sheaves, a scarecrow in a straw hat, poppies and cornflowers on the margins. Surprise: a hare sits up between two rows.
 
-4. CLAY — "The Brickworks". Burnt-orange ground with a deep stepped quarry pit (three ledges, 0.18 deep) cut toward one back
-   side, a pool of muddy jelly water in its floor. A stout plank derrick over the pit lifts a bucket of clay up and down on
-   its rope, a pennant fluttering on top. Fresh orange spoil heaps beside it, a worker with a spade digging, a beehive-dome
-   kiln with a glowing mouth and a curl of smoke, neat stacks of fired red bricks and a row of grey unfired ones drying on
-   a rack, a wheelbarrow of clay. Surprise: a hand-print in one brick.
+4. CLAY — "Terracotta Hills". Warm terracotta ground rising at the back into a terraced mesa, its stepped cliffs banded
+   cream, apricot and rust like a canyon wall, with tall dark Tuscan cypresses standing on its ledges and at its foot. Sand
+   martins dart in and out of nest holes in the clay cliff. Toward one front flank a stepped quarry pit (three ledges, 0.13
+   deep) holds a turquoise jelly pool in its floor, the brightest note on the tile. A stout plank derrick leans over the pit
+   lowering a bucket on its rope and hauling it up full, a red pennant fluttering on top. On the flat: a beehive-dome kiln
+   with a glowing mouth and a curl of smoke, neat stacks of fired red bricks, a rack of pale unfired ones drying, green scrub
+   and poppies against the orange. Roll: the bucket comes up full, the kiln breathes a big puff of sparks, the martins burst
+   out. Night: the kiln mouth glows hot and a lantern hangs on the derrick. Surprise: a cat asleep on the warm kiln.
 
 5. ORE — "The Old Mine". Grey stony ground rising into a ridge at the back from which three faceted peaks grow (the tallest
    0.6, snow-capped with a wisp of cloud caught on it), scree fans at their feet. A timber-framed mine mouth in the ridge

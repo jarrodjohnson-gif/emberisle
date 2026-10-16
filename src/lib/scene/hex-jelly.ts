@@ -205,6 +205,12 @@ export function layoutOf(kind: Terrain, seed: number): Layout {
     L.pool = { ...at(hillAt - s * 62 * DEG, 0.6), r: 0.13 };
     L.marks = { mill: at(hillAt, 0.6), yard: at(hillAt + s * 74 * DEG, 0.6), side: { x: s, z: 0 } };
   }
+  if (kind === "clay") {
+    // The terraced mesa at the back; the quarry pit on one front flank, the kiln yard on the other.
+    const s = r() < 0.5 ? -1 : 1;
+    L.marks = { mesa: at(hillAt, 0.6), kiln: at(hillAt + Math.PI - s * 0.95, 0.6), side: { x: s, z: 0 } };
+    L.pool = { ...at(hillAt + Math.PI + s * 0.92, 0.6), r: 0.22 };
+  }
   if (kind === "wool") {
     // The ridge runs along the back edge, tangent to it; the wall along its crest; the oak on it toward one end.
     const s = r() < 0.5 ? -1 : 1;
@@ -272,12 +278,35 @@ export function heightAt(L: Layout, x: number, z: number) {
     const d = streamDist(L, x, z) / STREAM_W;
     if (d < 1) h -= STREAM_D * (1 - d * d) * (1 - d * d) * cut;
   }
+  if (L.kind === "clay") {
+    // The mesa: a flat-topped swell cut into terraces MESA_STEP high, each with a soft riser.
+    const m = L.marks.mesa!;
+    const b = bump(x, z, { x: m.x, z: m.z, r: MESA_R, h: 1 });
+    const k = (Math.min(1, b * 1.7) * MESA_H) / MESA_STEP;
+    const f = k - Math.floor(k);
+    h += (Math.floor(k) + smooth(0.78, 1, f)) * MESA_STEP * pad * corner * edge;
+    // The quarry pit: three ledges down to the pool's floor.
+    const p = L.pool!;
+    const q = Math.hypot(x - p.x, z - p.z) / p.r;
+    if (q < 1) {
+      const step = 1 - 0.36 * smooth(0.4, 0.47, q) - 0.32 * smooth(0.64, 0.71, q) - 0.32 * smooth(0.87, 0.95, q);
+      h = h * smooth(0.87, 1, q) - PIT_D * step * cut;
+    }
+    return h;
+  }
   if (L.pool) {
     const q = Math.hypot(x - L.pool.x, z - L.pool.z) / L.pool.r;
     if (q < 1) h = Math.min(h, -POOL_D * (1 - q * q) * (1 - q * q) * cut + h * q * q);
   }
   return h;
 }
+// Clay's mesa and pit.
+const MESA_R = 0.56;
+const MESA_H = 0.38;
+const MESA_STEP = 0.09;
+const PIT_D = 0.13;
+// The pit's water stands just over its floor.
+const PIT_WATER = -PIT_D + 0.025;
 // Grain's field frame at a point: `u` along the back edge, `v` toward the back rise; which strip it is in (or -1 on a track,
 // on the rise or on the pad), and how far inside that strip's edges it is.
 export function fieldAt(L: Layout, x: number, z: number) {
@@ -299,7 +328,8 @@ const FURROW = 0.05;
 function wetAt(L: Layout, x: number, z: number) {
   let w = 0;
   if (L.stream.length) w = 1 - smooth(STREAM_W * 0.35, STREAM_W * 0.8, streamDist(L, x, z));
-  if (L.pool) w = Math.max(w, 1 - smooth(L.pool.r * 0.55, L.pool.r * 0.82, Math.hypot(x - L.pool.x, z - L.pool.z)));
+  if (L.pool && L.kind === "clay") w = Math.max(w, 1 - smooth(L.pool.r * 0.36, L.pool.r * 0.46, Math.hypot(x - L.pool.x, z - L.pool.z)));
+  else if (L.pool) w = Math.max(w, 1 - smooth(L.pool.r * 0.55, L.pool.r * 0.82, Math.hypot(x - L.pool.x, z - L.pool.z)));
   return w;
 }
 
@@ -314,6 +344,7 @@ type Paint = { low: THREE.Color; high: THREE.Color; steep: THREE.Color; crease: 
 const PAINTS: Partial<Record<Terrain, Paint>> = {
   timber: { low: C("#5fae47"), high: C("#8cc65a"), steep: C("#7d8a4a"), crease: C("#2f5a2e"), pad: C("#a9cf7c"), lip: "#6db64f" },
   grain: { low: C("#86c450"), high: C("#a8d468"), steep: C("#8db45a"), crease: C("#4a8a38"), pad: C("#e6e2ae"), lip: "#96cf5a" },
+  clay: { low: C("#dc7a4a"), high: C("#eba56e"), steep: C("#b9542f"), crease: C("#8a3a22"), pad: C("#f2cfa4"), lip: "#dc7a4a" },
   wool: { low: C("#86cc52"), high: C("#b6e070"), steep: C("#93b85a"), crease: C("#4a8a38"), pad: C("#c6e49c"), lip: "#96d45c" },
 };
 
@@ -2465,6 +2496,430 @@ function farmTint(L: Layout) {
   };
 }
 
+// --- the brickworks
+
+// A beam of radius r from a to b, coloured: a cylinder turned onto the segment.
+function beamGeo(a: THREE.Vector3, b: THREE.Vector3, r: number, hex: string) {
+  const d = b.clone().sub(a);
+  const g = part(cyl(r, r, 6), hex, [0, 0, 0], [0, 0, 0], [1, d.length(), 1]);
+  g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.clone().normalize()));
+  g.translate((a.x + b.x) / 2, (a.y + b.y) / 2, (a.z + b.z) / 2);
+  return g;
+}
+
+// A sand martin facing +x: dark blue-brown back, white belly, forked tail, wings to beat.
+function martin(m: THREE.Material) {
+  const g = new THREE.Group();
+  g.add(
+    mesh(
+      merge([
+        part(sphere(), "#3a3a4e", [0, 0, 0], [0, 0, 0], [0.011, 0.005, 0.005]),
+        part(sphere(), "#f4efe6", [0.002, -0.002, 0], [0, 0, 0], [0.008, 0.0035, 0.0042]),
+        part(sphere(6), "#3a3a4e", [0.01, 0.002, 0], [0, 0, 0], [0.0045, 0.004, 0.004]),
+        part(new THREE.ConeGeometry(1, 1, 4), "#2a2a3a", [-0.014, 0, 0.002], [0, 0, Math.PI / 2], [0.002, 0.01, 0.0015]),
+        part(new THREE.ConeGeometry(1, 1, 4), "#2a2a3a", [-0.014, 0, -0.002], [0, 0, Math.PI / 2], [0.002, 0.01, 0.0015]),
+      ]),
+      m,
+    ),
+  );
+  const wings = [1, -1].map((side) => {
+    const w = new THREE.Group();
+    w.add(mesh(merge([part(sphere(6), "#34344a", [0, 0, 0.012 * side], [0, 0.4 * side, 0], [0.006, 0.0012, 0.013])]), m));
+    w.position.z = 0.003 * side;
+    g.add(w);
+    return { w, side };
+  });
+  g.scale.setScalar(SIZE.small * 0.85);
+  return { g, wings };
+}
+
+// CLAY, "Terracotta Hills" (docs/design/hex-jelly-prompt.md): the terraced, banded mesa with its cypresses and the martins'
+// nest holes; the stepped pit with its turquoise pool and the derrick hauling a bucket; the kiln with its glowing mouth, smoke
+// and the cat asleep on top; brick stacks, the drying rack, scrub and poppies.
+function brickworks(L: Layout, ground: (x: number, z: number) => number, r: () => number, env: Env): Built {
+  const g = new THREE.Group();
+  const life: Life[] = [];
+  const stands: { x: number; z: number; r: number }[] = [];
+  const Y = (x: number, z: number) => BLOCK_H + ground(x, z);
+  const cm = critterMat();
+  const M = L.marks;
+  const pit = L.pool!;
+  const EYE = { x: Math.sin(20 * DEG), z: Math.cos(20 * DEG) };
+  const out = (p: Pt) => Math.atan2(p.z, p.x);
+  const ok = (x: number, z: number, room: number) =>
+    Math.hypot(x, z) > 0.4 + room && nearestCorner(x, z) > 0.2 + room && hexDist(x, z) < INR - 0.14 - room && stands.every((q) => Math.hypot(q.x - x, q.z - z) > q.r + room);
+  const clearOf = (p: Pt, x: number, z: number, w = 0.14) => {
+    const [dx, dz] = [x - p.x, z - p.z];
+    const along = dx * EYE.x + dz * EYE.z;
+    return !(along > 0 && along < 0.4 && Math.abs(dx * EYE.z - dz * EYE.x) < w);
+  };
+
+  // The pit's water.
+  const pool = new THREE.Mesh(new THREE.CircleGeometry(pit.r * 0.47, 40).rotateX(-Math.PI / 2), waterMat(false));
+  pool.position.set(pit.x, BLOCK_H + PIT_WATER, pit.z);
+  pool.renderOrder = 1;
+  g.add(pool);
+  stands.push({ x: pit.x, z: pit.z, r: pit.r + 0.02 });
+  life.push((t) => ((pool.material as THREE.MeshStandardMaterial).userData.time.value = t));
+
+  // The kiln: a beehive dome of brick, banded, a dark arched mouth with the fire glowing in it, a short flue; smoke, sparks.
+  const kp = M.kiln!;
+  const ky = Y(kp.x, kp.z);
+  const kiln = new THREE.Group();
+  const dome = new THREE.SphereGeometry(1, 20, 12, 0, Math.PI * 2, 0, Math.PI / 2);
+  kiln.add(
+    mesh(
+      merge([
+        part(cyl(1, 1, 20), "#a8492a", [0, 0.012, 0], [0, 0, 0], [0.07, 0.024, 0.07]),
+        part(dome, "#c25a33", [0, 0.022, 0], [0, 0, 0], [0.066, 0.085, 0.066]),
+        ...[0.04, 0.065, 0.085].map((y, i) => part(cyl(1, 1, 20), "#a8492a", [0, y, 0], [0, 0, 0], [0.066 * Math.cos(Math.asin((y - 0.022) / 0.085)) + 0.001, 0.003, 0.066 * Math.cos(Math.asin((y - 0.022) / 0.085)) + 0.001 + i * 0])),
+        part(cyl(0.7, 1, 10), "#8a3a22", [0, 0.11, 0], [0, 0, 0], [0.014, 0.02, 0.014]),
+        part(cyl(1, 1, 16, ), "#3a1c12", [0.058, 0.03, 0], [0, 0, Math.PI / 2], [0.022, 0.016, 0.022]),
+      ]),
+      cm,
+    ),
+  );
+  const mouth = new THREE.Mesh(new THREE.CircleGeometry(0.018, 16).rotateY(Math.PI / 2), basic("#ff8a2a"));
+  mouth.position.set(0.0665, 0.03, 0);
+  kiln.add(mouth);
+  const mouthHalo = halo("#ff8a3a", 0.12);
+  mouthHalo.position.set(0.08, 0.03, 0);
+  kiln.add(mouthHalo);
+  // The cat, curled asleep on the warm dome: an orange ring of body, a tucked head, a tail wrapped round, breathing.
+  const cat = mesh(
+    merge([
+      part(new THREE.TorusGeometry(0.012, 0.007, 8, 16, Math.PI * 1.6), "#e0913e", [0, 0, 0], [Math.PI / 2, 0, 0]),
+      part(sphere(), "#e0913e", [0.011, 0.002, 0.006], [0, 0, 0], [0.008, 0.007, 0.0075]),
+      part(new THREE.ConeGeometry(1, 1, 4), "#c8742c", [0.013, 0.009, 0.01], [0, 0, 0.3], [0.0028, 0.005, 0.0022]),
+      part(new THREE.ConeGeometry(1, 1, 4), "#c8742c", [0.009, 0.009, 0.013], [0.3, 0, 0], [0.0028, 0.005, 0.0022]),
+      part(new THREE.TorusGeometry(0.014, 0.0028, 6, 12, Math.PI * 0.8), "#c8742c", [0, -0.002, 0], [Math.PI / 2, 0, 2.4]),
+      part(sphere(6), "#f4ead8", [0.004, 0.004, 0.003], [0, 0, 0], [0.006, 0.004, 0.005]),
+    ]),
+    cm,
+  );
+  cat.position.set(-0.012, 0.104, 0.012);
+  cat.rotation.z = -0.25;
+  kiln.add(cat);
+  kiln.scale.setScalar(SIZE.house);
+  kiln.position.set(kp.x, ky, kp.z);
+  // Mouth toward the eye and the clearing.
+  kiln.rotation.y = -Math.atan2((EYE.z * 0.6 - kp.z * 0.4), (EYE.x * 0.6 - kp.x * 0.4));
+  kiln.userData.ref = "kiln";
+  g.add(kiln);
+  stands.push({ x: kp.x, z: kp.z, r: 0.16 });
+  const flue = new THREE.Vector3(0, 0.125, 0).multiplyScalar(SIZE.house).add(kiln.position);
+  const smokes = Array.from({ length: 5 }, (_, i) => {
+    const o = new THREE.Mesh(blobGeo(300 + i), new THREE.MeshStandardMaterial({ color: "#ebe4da", roughness: 1, transparent: true, opacity: 0.4, depthWrite: false }));
+    o.userData.loose = true;
+    g.add(o);
+    return { o, ph: i / 5 };
+  });
+  const sparks = Array.from({ length: 12 }, (_, i) => {
+    const o = new THREE.Mesh(new THREE.SphereGeometry(0.003, 6, 4), basic(i % 2 ? "#ffb347" : "#ffe08a"));
+    o.userData.loose = true;
+    g.add(o);
+    return { o, a: (i / 12) * Math.PI * 2, sp: 0.7 + r() * 0.6 };
+  });
+  life.push((t) => {
+    const puff = env.roll >= 0 ? Math.sin(env.roll * Math.PI) : 0;
+    for (const sm of smokes) {
+      const u = (t * 0.1 + sm.ph) % 1;
+      sm.o.visible = !env.robber;
+      sm.o.position.set(flue.x + u * 0.05, flue.y + u * (0.2 + puff * 0.15), flue.z - u * 0.03);
+      sm.o.scale.setScalar((0.009 + u * 0.024) * (1 + puff * 1.4));
+      (sm.o.material as THREE.MeshStandardMaterial).opacity = (0.3 + puff * 0.3) * Math.sin(Math.PI * u);
+    }
+    for (const sp of sparks) {
+      const u = env.roll >= 0 ? Math.min(1, env.roll * 1.6 * sp.sp) : -1;
+      sp.o.visible = u >= 0 && u < 1;
+      if (u >= 0) sp.o.position.set(flue.x + Math.cos(sp.a) * 0.04 * u, flue.y + 0.02 + 0.16 * u - 0.1 * u * u, flue.z + Math.sin(sp.a) * 0.04 * u);
+    }
+    const hot = env.robber ? 0.15 : 0.75 + 0.25 * Math.sin(t * 3) * Math.sin(t * 7.3) + puff * 0.5;
+    (mouth.material as THREE.MeshBasicMaterial).color.setRGB(1, 0.45 + 0.15 * hot, 0.12);
+    mouth.visible = !env.robber;
+    mouthHalo.material.opacity = env.robber ? 0 : 0.25 * hot + env.night * 0.7;
+    cat.scale.y = 1 + 0.05 * Math.sin(t * 1.6);
+  });
+
+  // Brick stacks beside the kiln (fired red, each brick its own instance) and a rack of pale unfired bricks drying.
+  {
+    const bricks: Inst[] = [];
+    const RED = ["#b8452e", "#a83c28", "#c4553a", "#9a3424"].map((c) => new THREE.Color(c));
+    const along = { x: -Math.sin(out(kp)), z: Math.cos(out(kp)) };
+    for (const [k, rows] of [[1, 5], [-1, 4]] as [number, number][]) {
+      const c = { x: kp.x + along.x * 0.2 * k + (-kp.x) * 0.15, z: kp.z + along.z * 0.2 * k + (-kp.z) * 0.15 };
+      if (!ok(c.x, c.z, 0.04)) continue;
+      const y0 = Y(c.x, c.z);
+      const a = Math.atan2(along.z, along.x);
+      for (let row = 0; row < rows; row++)
+        for (let i = 0; i < 3; i++)
+          for (let j = 0; j < 2; j++) {
+            const turn = row % 2 ? Math.PI / 2 : 0;
+            const [u, v] = row % 2 ? [(j - 0.5) * 0.024, (i - 1) * 0.016] : [(i - 1) * 0.016, (j - 0.5) * 0.024];
+            const x = c.x + Math.cos(a) * u - Math.sin(a) * v;
+            const z = c.z + Math.sin(a) * u + Math.cos(a) * v;
+            bricks.push({ m: mat(x, y0 + 0.006 + row * 0.0125, z, 0.015, 0.011, 0.023, -(a + turn)), c: RED[Math.floor(r() * 4)]! });
+          }
+      stands.push({ x: c.x, z: c.z, r: 0.05 });
+    }
+    // The drying rack: a plank on two trestles, a row of pale bricks on it and one under it with a hand-print.
+    const rk = { x: kp.x + along.x * -0.02 + -kp.x * 0.27, z: kp.z + along.z * -0.02 + -kp.z * 0.27 };
+    if (ok(rk.x, rk.z, 0.03)) {
+      const y0 = Y(rk.x, rk.z);
+      const a = Math.atan2(along.z, along.x);
+      const P = (u: number, y: number, v = 0) => new THREE.Vector3(rk.x + Math.cos(a) * u - Math.sin(a) * v, y0 + y, rk.z + Math.sin(a) * u + Math.cos(a) * v);
+      const rack: THREE.BufferGeometry[] = [];
+      for (const u of [-0.05, 0.05]) for (const v of [-0.01, 0.01]) rack.push(beamGeo(P(u, 0, v), P(u, 0.03, 0), 0.0022, "#7a5434"));
+      const plank = part(new THREE.BoxGeometry(1, 1, 1), "#a87c4f", [rk.x, y0 + 0.032, rk.z], [0, -a, 0], [0.13, 0.004, 0.03]);
+      rack.push(plank);
+      g.add(mesh(merge(rack), cm));
+      for (let i = 0; i < 6; i++) {
+        const p = P(-0.05 + i * 0.02, 0.0405);
+        bricks.push({ m: mat(p.x, p.y, p.z, 0.015, 0.011, 0.023, -a), c: new THREE.Color(i % 2 ? "#e2cdb0" : "#d8c2a2") });
+      }
+      stands.push({ x: rk.x, z: rk.z, r: 0.07 });
+    }
+    g.add(instanced(new THREE.BoxGeometry(1, 1, 1), bricks, blobMat()));
+  }
+
+  // The derrick: three leaning legs from outside the pit's back rim to an apex over the pit, a pulley, a rope down to a bucket
+  // that sinks to the pool and comes up full; a red pennant flutters on top, a lantern hangs at night.
+  {
+    const back = Math.atan2(M.mesa!.z - pit.z, M.mesa!.x - pit.x);
+    const top = new THREE.Vector3(pit.x + Math.cos(back) * pit.r * 0.25, 0, pit.z + Math.sin(back) * pit.r * 0.25);
+    top.y = BLOCK_H + 0.3;
+    const legs: THREE.BufferGeometry[] = [];
+    for (const da of [0, 1.2, -1.2]) {
+      const f = { x: pit.x + Math.cos(back + da) * (pit.r + 0.03), z: pit.z + Math.sin(back + da) * (pit.r + 0.03) };
+      const foot = new THREE.Vector3(f.x, Y(f.x, f.z), f.z);
+      legs.push(beamGeo(foot, top.clone().add(new THREE.Vector3(0, 0.01, 0)), 0.0055, "#8a5e38"));
+      legs.push(beamGeo(foot.clone().lerp(top, 0.35), foot.clone().lerp(top, 0.35).lerp(top.clone().setY(foot.y + (top.y - foot.y) * 0.35), 0.5), 0.003, "#7a5434"));
+      stands.push({ x: f.x, z: f.z, r: 0.02 });
+    }
+    legs.push(part(cyl(1, 1, 12), "#5a4a40", [top.x, top.y - 0.005, top.z], [Math.PI / 2, back, 0], [0.012, 0.006, 0.012]));
+    legs.push(beamGeo(top, top.clone().add(new THREE.Vector3(0, 0.06, 0)), 0.0025, "#7a5434"));
+    g.add(mesh(merge(legs), cm));
+    const flag = new THREE.Mesh(new THREE.PlaneGeometry(0.05, 0.026, 6, 1).translate(0.025, 0, 0), new THREE.MeshStandardMaterial({ color: "#d83a2c", side: THREE.DoubleSide, roughness: 0.7 }));
+    flag.position.copy(top).add(new THREE.Vector3(0, 0.048, 0));
+    flag.castShadow = true;
+    g.add(flag);
+    const fbase = (flag.geometry.attributes.position.array as Float32Array).slice();
+    const rope = new THREE.Mesh(cyl(1, 1, 5).translate(0, -0.5, 0), new THREE.MeshStandardMaterial({ color: "#d9c79a", roughness: 0.9 }));
+    rope.position.copy(top).add(new THREE.Vector3(0, -0.012, 0));
+    rope.scale.set(0.0018, 0.1, 0.0018);
+    g.add(rope);
+    const bucket = new THREE.Group();
+    bucket.add(
+      mesh(
+        merge([
+          part(cyl(1, 0.8, 12), "#8a5e38", [0, 0, 0], [0, 0, 0], [0.016, 0.022, 0.016]),
+          part(cyl(1, 1, 12), "#4a4a4a", [0, 0.006, 0], [0, 0, 0], [0.0165, 0.003, 0.0165]),
+          part(new THREE.TorusGeometry(0.014, 0.0012, 4, 12, Math.PI), "#4a4a4a", [0, 0.011, 0], [0, 0, 0]),
+        ]),
+        cm,
+      ),
+    );
+    const load = mesh(merge([part(blobGeo(330), "#c4562e", [0, 0.012, 0], [0, 0, 0], [0.014, 0.008, 0.014])]), cm);
+    bucket.add(load);
+    g.add(bucket);
+    const lantern = new THREE.Mesh(new THREE.SphereGeometry(0.008, 10, 8), basic("#ffd27a", 0));
+    lantern.position.copy(top).add(new THREE.Vector3(0.02, -0.03, 0));
+    g.add(lantern);
+    const lanternHalo = halo("#ffbf6a", 0.12);
+    lanternHalo.position.copy(lantern.position);
+    g.add(lanternHalo);
+    const low = BLOCK_H + PIT_WATER + 0.008;
+    const high = top.y - 0.05;
+    let held = high;
+    life.push((t) => {
+      // Down 3 s, a pause to fill, up 3 s; on a roll it rises full in one go.
+      const c = (t % 8) / 8;
+      let y = c < 0.38 ? high + (low - high) * ease(c / 0.38) : c < 0.5 ? low : c < 0.88 ? low + (high - low) * ease((c - 0.5) / 0.38) : high;
+      let full = c >= 0.45 && c < 0.95;
+      if (env.roll >= 0) (y = low + (high - low) * ease(Math.min(1, env.roll * 1.4))), (full = true);
+      if (env.robber) y = held;
+      else held = y;
+      bucket.position.set(top.x, y, top.z);
+      load.visible = full;
+      rope.scale.y = top.y - 0.012 - y - 0.011;
+      const pos = flag.geometry.attributes.position as THREE.BufferAttribute;
+      for (let i = 0; i < pos.count; i++) {
+        const x0 = fbase[i * 3]!;
+        pos.setZ(i, (env.robber ? 0.2 : 1) * 0.006 * Math.sin(t * 7 - x0 * 90) * (x0 / 0.05));
+      }
+      pos.needsUpdate = true;
+      flag.rotation.y = -back - 1.2;
+      (lantern.material as THREE.MeshBasicMaterial).opacity = env.night;
+      lanternHalo.material.opacity = env.night * 0.8;
+    });
+  }
+
+  // The potter's cottage beside the kiln: cream walls, a terracotta tiled roof, green shutters, a bench; and a row of
+  // amphorae drying in the sun.
+  {
+    const along = { x: -Math.sin(out(kp)), z: Math.cos(out(kp)) };
+    const side = L.marks.side!.x;
+    const cp = { x: kp.x + along.x * 0.27 * side + kp.x * 0.05, z: kp.z + along.z * 0.27 * side + kp.z * 0.05 };
+    if (ok(cp.x, cp.z, 0.06)) {
+      const house = new THREE.Group();
+      const sh = new THREE.Shape();
+      sh.moveTo(-0.045, 0);
+      sh.lineTo(0.045, 0);
+      sh.lineTo(0, 0.026);
+      sh.closePath();
+      const roof = new THREE.ExtrudeGeometry(sh, { depth: 0.074, bevelEnabled: false }).translate(0, 0, -0.037).rotateY(Math.PI / 2);
+      const parts = [
+        part(new THREE.BoxGeometry(1, 1, 1), "#f3e7cf", [0, 0.025, 0], [0, 0, 0], [0.064, 0.05, 0.08]),
+        part(roof, "#c4553a", [0, 0.05, 0], [0, 0, 0], [1.1, 1, 1.1]),
+        part(new THREE.BoxGeometry(1, 1, 1), "#6a4a32", [0.0325, 0.016, 0.012], [0, 0, 0], [0.002, 0.03, 0.014]),
+        part(new THREE.BoxGeometry(1, 1, 1), "#4f8a5a", [0.0325, 0.032, -0.018], [0, 0, 0], [0.002, 0.014, 0.016]),
+        part(new THREE.BoxGeometry(1, 1, 1), "#8a6440", [0.045, 0.008, -0.018], [0, 0, 0], [0.01, 0.003, 0.024]),
+      ];
+      // Roof tile ridges.
+      for (let i = -3; i <= 3; i++) parts.push(part(cyl(1, 1, 6), "#a8462e", [0, 0.06, i * 0.011], [0, 0, Math.PI / 2], [0.003, 0.098, 0.003]));
+      house.add(mesh(merge(parts), cm));
+      house.scale.setScalar(SIZE.house);
+      house.position.set(cp.x, Y(cp.x, cp.z), cp.z);
+      house.rotation.y = -Math.atan2(-cp.z + EYE.z * 0.4, -cp.x + EYE.x * 0.4);
+      house.userData.ref = "cottage";
+      const win = new THREE.Mesh(new THREE.PlaneGeometry(0.012, 0.012).rotateY(Math.PI / 2), basic("#ffc46a", 0));
+      win.position.set(0.0332, 0.032, -0.018);
+      house.add(win);
+      const wh = halo("#ffb860", 0.07);
+      wh.position.set(0.04, 0.032, -0.018);
+      house.add(wh);
+      life.push(() => {
+        (win.material as THREE.MeshBasicMaterial).opacity = env.night;
+        wh.material.opacity = env.night * 0.75;
+      });
+      g.add(house);
+      stands.push({ x: cp.x, z: cp.z, r: 0.14 });
+    }
+    // Amphorae: a lathe pot with two handles, terracotta and cream, standing in a row toward the clearing.
+    const pot = (hex: string) => {
+      const pts = [[0, 0], [0.008, 0], [0.013, 0.01], [0.015, 0.022], [0.011, 0.034], [0.005, 0.04], [0.005, 0.046], [0.007, 0.048]].map(([x, y]) => new THREE.Vector2(x, y));
+      return merge([
+        part(new THREE.LatheGeometry(pts, 12), hex, [0, 0, 0]),
+        part(new THREE.TorusGeometry(0.006, 0.0015, 4, 8, Math.PI), hex, [0.008, 0.038, 0], [0, 0, -1.2]),
+        part(new THREE.TorusGeometry(0.006, 0.0015, 4, 8, Math.PI), hex, [-0.008, 0.038, 0], [0, Math.PI, -1.2]),
+      ]);
+    };
+    const row = { x: kp.x - kp.x * 0.32 - along.x * 0.14 * side, z: kp.z - kp.z * 0.32 - along.z * 0.14 * side };
+    const pots: THREE.BufferGeometry[] = [];
+    for (let i = 0; i < 4; i++) {
+      const p = { x: row.x + along.x * (i - 1.5) * 0.04, z: row.z + along.z * (i - 1.5) * 0.04 };
+      if (!ok(p.x, p.z, 0.015)) continue;
+      const g2 = pot(i % 2 ? "#e9d3ae" : "#c96a3e");
+      g2.scale(SIZE.person, SIZE.person, SIZE.person);
+      g2.translate(p.x, Y(p.x, p.z), p.z);
+      pots.push(g2);
+      stands.push({ x: p.x, z: p.z, r: 0.02 });
+    }
+    if (pots.length) g.add(mesh(merge(pots), cm));
+  }
+
+  // The cypresses: tall dark flames on the mesa's ledges and at its foot.
+  {
+    const cy: THREE.BufferGeometry[] = [];
+    for (let k = 0, tries = 0; k < 11 && tries < 1200; tries++) {
+      const a = L.hillAt + (r() - 0.5) * (k < 6 ? 2.4 : 5);
+      const d = 0.42 + r() * 0.42;
+      const p = { x: Math.cos(a) * d, z: Math.sin(a) * d };
+      if (!ok(p.x, p.z, 0.04) || !clearOf(kp, p.x, p.z) || !clearOf(pit, p.x, p.z, 0.2)) continue;
+      const y = Y(p.x, p.z);
+      const hgt = 0.2 + r() * 0.1;
+      cy.push(part(cyl(0.6, 1, 6), "#5a3a26", [p.x, y + 0.012, p.z], [0, 0, 0], [0.006, 0.024, 0.006]));
+      for (let i = 0; i < 4; i++) {
+        const f = i / 4;
+        cy.push(part(blobGeo(340 + i + k * 4), ["#24502e", "#2f5f35", "#3a6b3c", "#4a7a44"][i]!, [p.x, y + 0.02 + hgt * (0.12 + f * 0.62), p.z], [0, i, 0], [0.032 * (1 - f * 0.55), hgt * 0.24, 0.032 * (1 - f * 0.55)]));
+      }
+      stands.push({ x: p.x, z: p.z, r: 0.035 });
+      k++;
+    }
+    g.add(mesh(merge(cy), cm));
+  }
+
+  // Nest holes in the mesa's cliffs that face the eye, and the martins flitting in and out.
+  {
+    const holes: Inst[] = [];
+    const nests: THREE.Vector3[] = [];
+    const m = L.marks.mesa!;
+    const e = 0.01;
+    for (let i = 0; i < 600 && holes.length < 12; i++) {
+      const a = r() * Math.PI * 2;
+      const d = r() * MESA_R;
+      const [x, z] = [m.x + Math.cos(a) * d, m.z + Math.sin(a) * d];
+      if (hexDist(x, z) > INR - 0.16) continue;
+      const gx = (ground(x + e, z) - ground(x - e, z)) / (2 * e);
+      const gz = (ground(x, z + e) - ground(x, z - e)) / (2 * e);
+      const toward = -(gx * EYE.x + gz * EYE.z);
+      if (toward < 1.4 || ground(x, z) < 0.05) continue;
+      if (nests.some((q) => Math.hypot(q.x - x, q.z - z) < 0.035)) continue;
+      const n = new THREE.Vector3(-gx, 1, -gz).normalize();
+      const at = new THREE.Vector3(x, Y(x, z), z).addScaledVector(n, 0.002);
+      nests.push(at);
+      const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), n);
+      holes.push({ m: new THREE.Matrix4().compose(at, q, new THREE.Vector3(0.007, 0.002, 0.005)), c: new THREE.Color("#3a1a10") });
+    }
+    if (holes.length) g.add(instanced(sphere(10), holes, blobMat()));
+    const birds = Array.from({ length: Math.min(5, nests.length) }, (_, i) => {
+      const b = martin(cm);
+      g.add(b.g);
+      return { ...b, home: nests[i]!, ph: i * 1.37 };
+    });
+    life.push((t) => {
+      for (const b of birds) {
+        b.g.visible = !env.robber;
+        // A darting loop out from its hole and back; on a roll they all burst out wide.
+        const burst = env.roll >= 0 ? Math.sin(env.roll * Math.PI) : 0;
+        const u = (t * 0.4 + b.ph) % 1;
+        const out2 = Math.sin(u * Math.PI);
+        const a = u * Math.PI * 2 + b.ph;
+        const R2 = (0.06 + 0.12 * burst) * out2;
+        const x = b.home.x + EYE.x * R2 * 1.2 + Math.cos(a) * R2;
+        const z = b.home.z + EYE.z * R2 * 1.2 + Math.sin(a) * R2;
+        b.g.position.set(x, b.home.y + 0.03 * out2 + 0.04 * burst * Math.sin(a * 2), z);
+        b.g.rotation.y = -(a + Math.PI / 2);
+        b.wings.forEach((w) => (w.w.rotation.x = -w.side * (0.2 + 0.8 * Math.sin(t * 30 + b.ph))));
+      }
+    });
+  }
+
+  // Green scrub, grass tufts and poppies against the orange.
+  {
+    const dots: Inst[] = [];
+    const tufts: Inst[] = [];
+    const SCRUB = ["#5a8f3a", "#76a848", "#4a7a34"].map((c) => new THREE.Color(c));
+    for (let i = 0; i < 900; i++) {
+      const a = r() * Math.PI * 2;
+      const d = 0.37 + Math.sqrt(r()) * 0.56;
+      const [x, z] = [Math.cos(a) * d, Math.sin(a) * d];
+      if (hexDist(x, z) > INR - 0.08 || ground(x, z) < -0.005 || stands.some((q) => Math.hypot(q.x - x, q.z - z) < q.r + 0.01)) continue;
+      const y = Y(x, z);
+      if (i % 9 === 0) {
+        const k = 0.02 + r() * 0.015;
+        tufts.push({ m: mat(x, y + k * 0.5, z, k, k * 0.8, k, r() * 6), c: SCRUB[i % 3]! });
+      } else if (i % 5 === 0) dots.push({ m: mat(x, y + 0.006, z, 0.005, 0.004, 0.005), c: new THREE.Color(i % 2 ? "#e0312a" : "#f6efe0") });
+      else if (i % 2 === 0) dots.push({ m: mat(x, y + 0.004, z, 0.004, 0.009, 0.004, r() * 6, (r() - 0.5) * 0.5), c: SCRUB[i % 3]! });
+    }
+    g.add(instanced(blobGeo(360), tufts, blobMat()));
+    g.add(instanced(sphere(6), dots, blobMat()));
+  }
+  return { g, stands, life };
+}
+
+// Clay's ground paint: the mesa's terraces banded cream, apricot and rust like a canyon wall; the pit's walls darker and wet.
+function clayTint(L: Layout) {
+  const BANDS = ["#e89a63", "#f3d4a8", "#c9603a", "#eaa877", "#f6dcb4"].map((c) => new THREE.Color(c));
+  const WET = new THREE.Color("#a5482a");
+  return (x: number, z: number, y: number, c: THREE.Color) => {
+    if (y > 0.02) {
+      const k = Math.floor(y / MESA_STEP + 0.15);
+      c.lerp(BANDS[k % BANDS.length]!, 0.75);
+    } else if (y < -0.01) c.lerp(WET, Math.min(0.7, -y * 8));
+  };
+}
+
 // --- the tile
 
 export type Tile = {
@@ -2488,7 +2943,7 @@ export function buildTile(kind: Terrain, seed: number, rings = 64): Tile {
   const env: Env = { night: 0, robber: false, roll: -1 };
   TU = { dull: { value: 0 }, flash: { value: 0 } };
   const tu = TU;
-  const props = kind === "timber" ? forest(L, ground, r, env) : kind === "wool" ? pasture(L, ground, r, env) : kind === "grain" ? farm(L, ground, r, env) : null;
+  const props = kind === "timber" ? forest(L, ground, r, env) : kind === "wool" ? pasture(L, ground, r, env) : kind === "grain" ? farm(L, ground, r, env) : kind === "clay" ? brickworks(L, ground, r, env) : null;
   const stands = props?.stands ?? [];
   // Canopy cover and contact: the ground darkens under each stand.
   const occlude = (x: number, z: number) => {
@@ -2499,7 +2954,7 @@ export function buildTile(kind: Terrain, seed: number, rings = 64): Tile {
     }
     return o;
   };
-  const b = block(L, rings, occlude, kind === "grain" ? farmTint(L) : undefined);
+  const b = block(L, rings, occlude, kind === "grain" ? farmTint(L) : kind === "clay" ? clayTint(L) : undefined);
   group.add(b.top, b.side);
   if (props) group.add(props.g);
   const life = props?.life ?? [];
