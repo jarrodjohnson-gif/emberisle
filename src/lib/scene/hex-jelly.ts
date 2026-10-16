@@ -212,9 +212,17 @@ export function layoutOf(kind: Terrain, seed: number): Layout {
     // running out from it across a dry gully to the tipple on that flank; the tarn on the other front flank.
     const s = r() < 0.5 ? -1 : 1;
     // The peaks are faceted rock meshes (mine()); the ground only swells under them.
-    L.peaks.push({ ...at(hillAt, 0.56), r: 0.24, h: 0.64 + r() * 0.04 });
-    L.peaks.push({ ...at(hillAt - s * 0.62, 0.54), r: 0.19, h: 0.42 + r() * 0.05 });
-    L.peaks.push({ ...at(hillAt + s * 0.55, 0.56), r: 0.17, h: 0.34 + r() * 0.04 });
+    L.peaks.push({ ...at(hillAt, 0.56), r: 0.24, h: 0.74 + r() * 0.04 });
+    L.peaks.push({ ...at(hillAt - s * 0.62, 0.54), r: 0.19, h: 0.5 + r() * 0.05 });
+    L.peaks.push({ ...at(hillAt + s * 0.55, 0.56), r: 0.17, h: 0.42 + r() * 0.04 });
+    // The massif (the owner, 2026-10-16: "more mountains on the hex so it's easier to see that it's ore"): two shoulders
+    // behind and between the three, and one on the open flank past the snowmelt, each kept inside the edge band (where paths
+    // stand) and off the corners.
+    const fit = (p: Pt, r0: number) => Math.min(r0, INR - EDGE_BAND - hexDist(p.x, p.z), nearestCorner(p.x, p.z) - CORNER_DISC - 0.06);
+    for (const [da, d, r0, h] of [[-0.3, 0.64, 0.16, 0.52], [0.28, 0.64, 0.15, 0.46], [-1.15, 0.66, 0.13, 0.3]] as const) {
+      const p = at(hillAt + s * da, d);
+      L.peaks.push({ ...p, r: fit(p, r0), h: h + r() * 0.05 });
+    }
     const a = at(hillAt - s * 0.62, 0.56);
     const b = at(hillAt + s * 0.55, 0.58);
     L.ridges.push({ a, b, w: 0.3, h: 0.12 });
@@ -233,6 +241,19 @@ export function layoutOf(kind: Terrain, seed: number): Layout {
     const fa = Math.atan2(foot.z, foot.x);
     L.stream = [foot, at(fa - s * 0.25, 0.48), at(hillAt - s * 1.75, 0.58), at(hillAt - s * 2.25, 0.62), { x: L.pool.x, z: L.pool.z }];
     L.marks.fall = foot;
+    // Crags round the rest of the rim, wherever the mine, the tarn and the snowmelt leave room, low at the front (the
+    // token's side), so the whole hex reads as rock from overhead.
+    const clear = (p: Pt, rr: number) =>
+      Math.hypot(p.x - L.pool!.x, p.z - L.pool!.z) > L.pool!.r + rr + 0.06 &&
+      L.stream.every((q) => Math.hypot(p.x - q.x, p.z - q.z) > rr + 0.08) &&
+      ["adit", "tipple", "gullyA", "gullyB"].every((k) => Math.hypot(p.x - L.marks[k]!.x, p.z - L.marks[k]!.z) > rr + 0.14) &&
+      L.peaks.every((q) => Math.hypot(p.x - q.x, p.z - q.z) > (q.r + rr) * 0.75);
+    for (let k = 0; k < 24; k++) {
+      const p = at(hillAt + (k / 24) * Math.PI * 2, 0.6 + 0.04 * Math.sin(k * 2.3));
+      const rr = fit(p, 0.12 + r() * 0.03);
+      if (rr < 0.07 || !clear(p, rr)) continue;
+      L.peaks.push({ ...p, r: rr, h: (p.z > 0 ? 0.16 : 0.26) + r() * 0.06 });
+    }
   }
   if (kind === "waste") {
     // Two red-rock buttes at the back (a tall narrow one, a wide low one beside it), dunes across the front, the oasis on one
@@ -341,7 +362,7 @@ export function heightAt(L: Layout, x: number, z: number) {
     if (d < 1) {
       const t = 1 - d;
       const crag = 1 - Math.abs(noise((x - p.x) * 9, (z - p.z) * 9, L.seed + 70));
-      raw += p.h * 0.3 * t ** 1.2 * (0.86 + 0.24 * crag);
+      raw += p.h * (L.kind === "ore" ? 0.4 : 0.3) * t ** 1.2 * (0.86 + 0.24 * crag);
     }
   }
   const pad = smooth(PAD_R, PAD_R + 0.3, Math.hypot(x, z));
@@ -455,7 +476,7 @@ const PAINTS: Partial<Record<Terrain, Paint>> = {
   grain: { low: C("#d9b04a"), high: C("#e8c662"), steep: C("#c49a44"), crease: C("#8c6a2c"), pad: C("#f1e2a6"), lip: "#ddb650" },
   clay: { low: C("#dc7a4a"), high: C("#eba56e"), steep: C("#b9542f"), crease: C("#8a3a22"), pad: C("#f2cfa4"), lip: "#dc7a4a" },
   waste: { low: C("#c8b48e"), high: C("#9a8e7c"), steep: C("#6a6460"), crease: C("#5a5048"), pad: C("#dcccaa"), lip: "#c8b48e" },
-  ore: { low: C("#a3ad84"), high: C("#9aa0a6"), steep: C("#7a8088"), crease: C("#4a5058"), pad: C("#d6dbc8"), lip: "#a3ad84" },
+  ore: { low: C("#a2a49e"), high: C("#93989e"), steep: C("#727880"), crease: C("#444a52"), pad: C("#d8dad4"), lip: "#a2a49e" },
   wool: { low: C("#c2e28a"), high: C("#d6eea6"), steep: C("#abc97c"), crease: C("#74a052"), pad: C("#e6f3c8"), lip: "#c8e690" },
 };
 
@@ -3778,8 +3799,8 @@ function mine(L: Layout, ground: (x: number, z: number) => number, r: () => numb
       const pos = cone.attributes.position as THREE.BufferAttribute;
       const col = new Float32Array(pos.count * 3);
       const c = new THREE.Color();
-      const LOW = new THREE.Color("#6e747c");
-      const MID = new THREE.Color("#8e949c");
+      const LOW = new THREE.Color("#5a6068");
+      const MID = new THREE.Color("#7c828a");
       const HI = new THREE.Color("#b4b8bc");
       const SNOW = new THREE.Color("#f7f9fb");
       for (let k = 0; k < pos.count; k++) {
@@ -3795,6 +3816,7 @@ function mine(L: Layout, ground: (x: number, z: number) => number, r: () => numb
         c.copy(LOW).lerp(MID, smooth(0, 0.5, f)).lerp(HI, smooth(0.5, 0.9, f));
         if (i === 0) c.lerp(SNOW, smooth(0.62, 0.7, f));
         else if (i === 1) c.lerp(SNOW, smooth(0.82, 0.88, f) * 0.9);
+        else if (i === 3 || i === 4) c.lerp(SNOW, smooth(0.8, 0.88, f) * 0.85);
         c.toArray(col, k * 3);
       }
       cone.setAttribute("color", new THREE.BufferAttribute(col, 3));
@@ -4164,8 +4186,9 @@ function mine(L: Layout, ground: (x: number, z: number) => number, r: () => numb
     const blobs: Inst[] = [];
     const trunks: Inst[] = [];
     const PINE = ["#1f5a34", "#2f7340", "#3a8545", "#4a8d4c"].map((c) => new THREE.Color(c));
-    for (let tries = 0, n = 0; tries < 3000 && n < 30; tries++) {
-      const a = L.hillAt + (r() - 0.5) * (n < 22 ? 3.6 : 6.2);
+    // Fewer than the forest's, so the hex reads as rock (the owner, 2026-10-16).
+    for (let tries = 0, n = 0; tries < 3000 && n < 6; tries++) {
+      const a = L.hillAt + (r() - 0.5) * (n < 4 ? 3.6 : 6.2);
       const d = 0.42 + r() * 0.48;
       const [x, z] = [Math.cos(a) * d, Math.sin(a) * d];
       const h = ground(x, z);
@@ -4444,11 +4467,13 @@ function oreTint(L: Layout) {
     if (y > 0.36) c.lerp(SNOW, smooth(0.36, 0.44, y + 0.02 * noise(x * 20, z * 20, L.seed + 80)));
     else if (y > 0.06) c.lerp(STONE, smooth(0.06, 0.16, y) * 0.5);
     if (y < -0.02) c.lerp(STONE, 0.6);
+    // A stony meadow: grey washed through the green, so ore never reads as pasture.
+    if (y <= 0.06) c.lerp(STONE, 0.45 + 0.15 * noise(x * 6, z * 6, L.seed + 86));
     // Patches of moss green and purple heather in the meadow.
     if (y < 0.06 && y > -0.01) {
       const n = noise(x * 4.5, z * 4.5, L.seed + 85);
-      if (n > 0.25) c.lerp(MOSS, smooth(0.25, 0.45, n) * 0.7);
-      else if (n < -0.35) c.lerp(HEATHER, smooth(-0.35, -0.55, n) * 0.6);
+      if (n > 0.35) c.lerp(MOSS, smooth(0.35, 0.55, n) * 0.3);
+      else if (n < -0.35) c.lerp(HEATHER, smooth(-0.4, -0.6, n) * 0.3);
     }
   };
 }
