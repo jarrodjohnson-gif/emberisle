@@ -451,12 +451,12 @@ const WETROCK = new THREE.Color("#6f8a72");
 const C = (h: string) => new THREE.Color(h);
 type Paint = { low: THREE.Color; high: THREE.Color; steep: THREE.Color; crease: THREE.Color; pad: THREE.Color; lip: string };
 const PAINTS: Partial<Record<Terrain, Paint>> = {
-  timber: { low: C("#5fae47"), high: C("#8cc65a"), steep: C("#7d8a4a"), crease: C("#2f5a2e"), pad: C("#a9cf7c"), lip: "#6db64f" },
-  grain: { low: C("#86c450"), high: C("#a8d468"), steep: C("#8db45a"), crease: C("#4a8a38"), pad: C("#e6e2ae"), lip: "#96cf5a" },
+  timber: { low: C("#2c6b55"), high: C("#3d8064"), steep: C("#4f6b4c"), crease: C("#183f33"), pad: C("#7aa688"), lip: "#33735c" },
+  grain: { low: C("#d9b04a"), high: C("#e8c662"), steep: C("#c49a44"), crease: C("#8c6a2c"), pad: C("#f1e2a6"), lip: "#ddb650" },
   clay: { low: C("#dc7a4a"), high: C("#eba56e"), steep: C("#b9542f"), crease: C("#8a3a22"), pad: C("#f2cfa4"), lip: "#dc7a4a" },
   waste: { low: C("#c8b48e"), high: C("#9a8e7c"), steep: C("#6a6460"), crease: C("#5a5048"), pad: C("#dcccaa"), lip: "#c8b48e" },
   ore: { low: C("#a3ad84"), high: C("#9aa0a6"), steep: C("#7a8088"), crease: C("#4a5058"), pad: C("#d6dbc8"), lip: "#a3ad84" },
-  wool: { low: C("#86cc52"), high: C("#b6e070"), steep: C("#93b85a"), crease: C("#4a8a38"), pad: C("#c6e49c"), lip: "#96d45c" },
+  wool: { low: C("#c2e28a"), high: C("#d6eea6"), steep: C("#abc97c"), crease: C("#74a052"), pad: C("#e6f3c8"), lip: "#c8e690" },
 };
 
 // --- materials
@@ -1077,9 +1077,9 @@ function forest(L: Layout, ground: (x: number, z: number) => number, r: () => nu
     for (let i = 0; i < 3; i++) blobs.push({ x: x + (r() - 0.5) * 0.05, y: y0 + 0.022 + r() * 0.02, z: z + (r() - 0.5) * 0.05, s: 0.03 + r() * 0.014, kind: "bush" });
     k++;
   }
-  const LEAF = [new THREE.Color("#2f7a34"), new THREE.Color("#4f9a3c"), new THREE.Color("#7cbb4a")];
-  const PINE = [new THREE.Color("#1f5a34"), new THREE.Color("#2f7340"), new THREE.Color("#4a8d4c")];
-  const BUSH = [new THREE.Color("#3f8a3a"), new THREE.Color("#5fa544"), new THREE.Color("#8cc65a")];
+  const LEAF = [new THREE.Color("#1d5c48"), new THREE.Color("#2c7258"), new THREE.Color("#4a906a")];
+  const PINE = [new THREE.Color("#13463c"), new THREE.Color("#1f5c4c"), new THREE.Color("#36765e")];
+  const BUSH = [new THREE.Color("#2a6c52"), new THREE.Color("#3e8462"), new THREE.Color("#62a27a")];
   const ymin = Math.min(...blobs.map((b) => b.y));
   const ymax = Math.max(...blobs.map((b) => b.y));
   const leaves: Inst[] = blobs.map((b, i) => {
@@ -1820,6 +1820,8 @@ function pasture(L: Layout, ground: (x: number, z: number) => number, r: () => n
   spots.forEach((p, i) => {
     const kind = i === 3 ? { lying: true } : i === 4 || i === 6 ? { lamb: true } : {};
     const sh = sheep(cm, kind);
+    // Bigger on the board, so the flock reads at a glance.
+    if (BOARD) sh.g.scale.setScalar(1.5);
     // Mostly side-on to the eye, so their silhouettes read.
     const face = Math.atan2(EYE.x, -EYE.z) + (r() < 0.5 ? 0 : Math.PI) + (r() - 0.5) * 0.9;
     place(sh.g, p, face);
