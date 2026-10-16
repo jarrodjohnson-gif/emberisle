@@ -643,7 +643,11 @@ function build(coast: CoastPt[], docks: Dock[], seed: number): Shore {
   const box = new THREE.BoxGeometry(1, 1, 1);
   const DECK = 0.1;
   // One story per harbor, dealt round so each kind of moment appears.
-  const stories = ["fisher", "gull", "cat", "rowboat", "hoist", "fisher", "gull", "rowboat", "cat"].sort(() => r() - 0.5);
+  const stories = ["fisher", "gull", "cat", "rowboat", "hoist", "fisher", "gull", "rowboat", "cat"];
+  for (let i = stories.length - 1; i > 0; i--) {
+    const j = Math.floor(r() * (i + 1));
+    [stories[i], stories[j]] = [stories[j]!, stories[i]!];
+  }
   docks.forEach((d, di) => {
     const yaw = Math.atan2(d.mx, d.mz);
     const frame = new THREE.Matrix4().compose(new THREE.Vector3(d.cx, 0, d.cz), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, yaw, 0)), new THREE.Vector3(1, 1, 1));
@@ -662,7 +666,7 @@ function build(coast: CoastPt[], docks: Dock[], seed: number): Shore {
         if (Math.abs(across) < best && out > 0) [best, wv] = [Math.abs(across), out];
       });
     }
-    const v0 = 0.08;
+    const v0 = 0.1;
     const v1 = wv + 0.5;
     const len = v1 - v0;
     const W = 0.2;
@@ -729,7 +733,8 @@ function build(coast: CoastPt[], docks: Dock[], seed: number): Shore {
     // The dockhouse at the pier's root, on the side away from the ship, on low piles: plank walls, a pitched roof, a door, a
     // lit window, the sign in the good's colour.
     const hx = -shipSide * 0.2;
-    const hv = 0.12;
+    // Clear of a path on the dock's edge (it reaches about 0.08 out).
+    const hv = 0.15;
     const wall = WALLS[(di + Math.floor(r() * 6)) % WALLS.length]!;
     const roof = ROOFS[di % ROOFS.length]!;
     const hy = SURFACE + 0.075;
