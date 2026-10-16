@@ -12,3 +12,5 @@
 [`docs/HELPERS.md`](docs/HELPERS.md). It wins over everything else here.
 
 Game rules and setup: [`README.md`](README.md).
+
+Need a decision? Post the question on the issue with options and your recommendation, add `/paused` on its own line, and move to the next eligible issue; never wait for an answer in chat. The orchestrator answers minor decisions and Jarrod answers major ones on the issue. This overrides the framework's chat-first direction for decision questions.
