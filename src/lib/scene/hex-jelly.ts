@@ -413,6 +413,43 @@ function jellyfy(m: THREE.MeshStandardMaterial, key: string, extra?: (sh: THREE.
   return m;
 }
 const topMat = () => jellyfy(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85, metalness: 0 }), "jelly-top");
+// The top with sun-cracked mud where its aCrack attribute says (0 none, 1 full): a Voronoi pattern in the fragment shader,
+// each plate a touch paler toward its middle (dried and curled), the seams between them thin and dark, softly edged.
+const crackedTopMat = () =>
+  jellyfy(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85, metalness: 0 }), "jelly-top-cracked", (sh) => {
+    sh.vertexShader = "attribute float aCrack;\nvarying float vCrack;\nvarying vec2 vXZ;\n" + sh.vertexShader.replace("#include <begin_vertex>", "#include <begin_vertex>\n\tvCrack = aCrack;\n\tvXZ = position.xz;");
+    sh.fragmentShader =
+      `varying float vCrack;
+      varying vec2 vXZ;
+      vec2 h22( vec2 p ) { p = vec2( dot( p, vec2( 127.1, 311.7 ) ), dot( p, vec2( 269.5, 183.3 ) ) ); return fract( sin( p ) * 43758.5453 ); }
+      // Distance to the nearest Voronoi edge (F2 - F1 along the bisector) and to the nearest site.
+      vec2 cells( vec2 p ) {
+        vec2 n = floor( p ), f = fract( p ), mr = vec2( 0.0 ), mg = vec2( 0.0 );
+        float md = 8.0;
+        for ( int j = -1; j <= 1; j++ ) for ( int i = -1; i <= 1; i++ ) {
+          vec2 g = vec2( float( i ), float( j ) ), r = g + h22( n + g ) * 0.85 - f;
+          float d = dot( r, r );
+          if ( d < md ) { md = d; mr = r; mg = g; }
+        }
+        float e = 8.0;
+        for ( int j = -2; j <= 2; j++ ) for ( int i = -2; i <= 2; i++ ) {
+          vec2 g = mg + vec2( float( i ), float( j ) ), r = g + h22( n + g ) * 0.85 - f;
+          if ( dot( mr - r, mr - r ) > 0.00001 ) e = min( e, dot( 0.5 * ( mr + r ), normalize( r - mr ) ) );
+        }
+        return vec2( e, sqrt( md ) );
+      }
+      ` +
+      sh.fragmentShader.replace(
+        "#include <color_fragment>",
+        `#include <color_fragment>
+        if ( vCrack > 0.01 ) {
+          vec2 c = cells( vXZ * 26.0 );
+          float seam = 1.0 - smoothstep( 0.035, 0.075, c.x );
+          diffuseColor.rgb *= 1.0 + 0.08 * vCrack * ( 1.0 - smoothstep( 0.0, 0.55, c.y ) );
+          diffuseColor.rgb = mix( diffuseColor.rgb, diffuseColor.rgb * vec3( 0.55, 0.42, 0.36 ), seam * vCrack );
+        }`,
+      );
+  });
 const blobMat = () => jellyfy(new THREE.MeshStandardMaterial({ roughness: 0.7, metalness: 0 }), "jelly-blob");
 
 // The strata on the cut side, drawn in the fragment shader from the side's local height and angle: a lip of the surface's own
@@ -478,7 +515,7 @@ function strataMat(lip: string, kind: Terrain) {
 
 // The block with its top, rim and strata: a hex lattice of `rings` rings warped onto the rounded outline, a rim that rolls
 // over ROUND_E, the side straight down to the base. `occlude` darkens the ground under a prop (canopy cover, contact).
-function block(L: Layout, rings: number, occlude: (x: number, z: number) => number, tint?: (x: number, z: number, y: number, c: THREE.Color) => void) {
+function block(L: Layout, rings: number, occlude: (x: number, z: number) => number, tint?: (x: number, z: number, y: number, c: THREE.Color) => void, crackAt?: (x: number, z: number, y: number) => number) {
   const P = PAINTS[L.kind]!;
   const inrTop = INR - ROUND_E;
   const rcTop = ROUND_C - ROUND_E;
@@ -596,7 +633,12 @@ function block(L: Layout, rings: number, occlude: (x: number, z: number) => numb
     c.toArray(col, v * 3);
   }
   geo.setAttribute("color", new THREE.BufferAttribute(col, 3));
-  const top = new THREE.Mesh(geo, topMat());
+  if (crackAt) {
+    const cr = new Float32Array(total);
+    for (let v = 0; v < total; v++) cr[v] = v < n ? crackAt(pos[v * 3]!, pos[v * 3 + 2]!, pos[v * 3 + 1]! - BLOCK_H) : 0;
+    geo.setAttribute("aCrack", new THREE.BufferAttribute(cr, 1));
+  }
+  const top = new THREE.Mesh(geo, crackAt ? crackedTopMat() : topMat());
   top.receiveShadow = true;
   top.castShadow = true;
 
@@ -3384,34 +3426,6 @@ function brickworks(L: Layout, ground: (x: number, z: number) => number, r: () =
     }
   }
 
-  // Sun-cracked ground: dried-mud plates in patches. The cracks are a connected network: the edges of a jittered lattice of
-  // corners (each joined to its right and lower neighbours, and now and then across a diagonal), drawn as thin dark slivers.
-  {
-    const CELL = 0.036;
-    const N = 30;
-    const corner = (i: number, j: number) => ({ x: (i + hash2(i, j, L.seed + 50) * 0.38) * CELL, z: (j + 0.5 * (i & 1) + hash2(i, j, L.seed + 51) * 0.38) * CELL });
-    const cracks: Inst[] = [];
-    const DARK = new THREE.Color("#c4643c");
-    const keepAt = (m: Pt) => {
-      const h = ground(m.x, m.z);
-      const flat = Math.abs(h) < 0.02 || h < -Q_D + 0.03;
-      return flat && Math.hypot(m.x, m.z) > 0.37 && hexDist(m.x, m.z) < INR - 0.07 && noise(m.x * 3.2, m.z * 3.2, L.seed + 60) > 0.22 && !stands.some((q) => Math.hypot(q.x - m.x, q.z - m.z) < q.r + 0.004) && Math.hypot(m.x - pit.x, m.z - pit.z) > pit.r * 1.1;
-    };
-    for (let i = -N; i <= N; i++)
-      for (let j = -N; j <= N; j++) {
-        const a = corner(i, j);
-        const links = [corner(i + 1, j), corner(i, j + 1)];
-        if (hash2(i, j, L.seed + 52) > 0.4) links.push(corner(i + 1, j + (i & 1 ? 1 : -1)));
-        for (const b of links) {
-          const m = { x: (a.x + b.x) / 2, z: (a.z + b.z) / 2 };
-          if (!keepAt(m)) continue;
-          const d = Math.hypot(b.x - a.x, b.z - a.z);
-          const ang = Math.atan2(b.z - a.z, b.x - a.x);
-          cracks.push({ m: mat(m.x, Y(m.x, m.z) + 0.0006, m.z, d * 1.02, 0.0008, 0.0016, -ang), c: DARK });
-        }
-      }
-    if (cracks.length) g.add(instanced(new THREE.BoxGeometry(1, 1, 1), cracks, blobMat()));
-  }
 
 
   // Nest holes in the mesa's cliffs that face the eye, and the martins flitting in and out.
@@ -3530,7 +3544,16 @@ export function buildTile(kind: Terrain, seed: number, rings = 64): Tile {
     }
     return o;
   };
-  const b = block(L, rings, occlude, kind === "grain" ? farmTint(L) : kind === "clay" ? clayTint(L) : undefined);
+  // Brick's sun-cracked mud: in patches on the flats and over the quarry floor, never on the pad or under things.
+  const crackAt =
+    kind === "clay"
+      ? (x: number, z: number, y: number) => {
+          const flat = Math.abs(y) < 0.02 || y < -Q_D + 0.03 ? 1 : 0;
+          const patch = smooth(0.0, 0.35, noise(x * 3.2, z * 3.2, L.seed + 60));
+          return flat * patch * smooth(0.36, 0.44, Math.hypot(x, z)) * (1 - occlude(x, z));
+        }
+      : undefined;
+  const b = block(L, rings, occlude, kind === "grain" ? farmTint(L) : kind === "clay" ? clayTint(L) : undefined, crackAt);
   group.add(b.top, b.side);
   if (props) group.add(props.g);
   const life = props?.life ?? [];
