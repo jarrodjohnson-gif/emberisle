@@ -226,6 +226,13 @@ export function layoutOf(kind: Terrain, seed: number): Layout {
       gullyB: at(hillAt + s * 1.33, 0.95),
     };
     L.pool = { ...at(hillAt + Math.PI + s * 0.55, 0.62), r: 0.15 };
+    // Snowmelt: off the second peak's face, down its foot and round the meadow to the tarn.
+    const p1 = L.peaks[1]!;
+    const toC = Math.atan2(-p1.z, -p1.x);
+    const foot = { x: p1.x + Math.cos(toC) * p1.r * 0.85, z: p1.z + Math.sin(toC) * p1.r * 0.85 };
+    const fa = Math.atan2(foot.z, foot.x);
+    L.stream = [foot, at(fa - s * 0.25, 0.48), at(hillAt - s * 1.75, 0.58), at(hillAt - s * 2.25, 0.62), { x: L.pool.x, z: L.pool.z }];
+    L.marks.fall = foot;
   }
   if (kind === "clay") {
     // The open-cut quarry across the back, a trench slot running from its end toward one front flank, the kiln yard on the
@@ -3632,6 +3639,73 @@ function mine(L: Layout, ground: (x: number, z: number) => number, r: () => numb
     g.add(peaks);
   }
 
+  // The snowmelt: a white fall down the second peak's face, then a jelly stream winding round the meadow into the tarn.
+  {
+    const p1 = L.peaks[1]!;
+    const foot = M.fall!;
+    const base = BLOCK_H + ground(p1.x, p1.z) - 0.05;
+    const dx = (foot.x - p1.x) / Math.hypot(foot.x - p1.x, foot.z - p1.z);
+    const dz = (foot.z - p1.z) / Math.hypot(foot.x - p1.x, foot.z - p1.z);
+    const fallPts: THREE.Vector3[] = [];
+    for (let k = 0; k <= 10; k++) {
+      const f = 0.62 * (1 - k / 10);
+      const rr = p1.r * (1 - f) + 0.004;
+      fallPts.push(new THREE.Vector3(p1.x + dx * rr, base + p1.h * f, p1.z + dz * rr));
+    }
+    const fallGeo = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(fallPts), 30, 0.008, 6, false);
+    fallGeo.scale(1, 1, 1);
+    const fall = new THREE.Mesh(fallGeo, waterMat(true));
+    fall.renderOrder = 1;
+    g.add(fall);
+    // The stream's ribbon, as in the forest.
+    const run: Pt[] = [];
+    for (let i = 0; i + 1 < L.stream.length; i++) {
+      const [a, b] = [L.stream[i]!, L.stream[i + 1]!];
+      const n = Math.ceil(Math.hypot(b.x - a.x, b.z - a.z) / 0.012);
+      for (let k = 0; k < n; k++) run.push({ x: a.x + ((b.x - a.x) * k) / n, z: a.z + ((b.z - a.z) * k) / n });
+    }
+    const pool = L.pool!;
+    const end = run.findIndex((p) => Math.hypot(p.x - pool.x, p.z - pool.z) < pool.r * 0.7);
+    const r2 = run.slice(0, end > 0 ? end + 1 : run.length);
+    for (let pass = 0; pass < 3; pass++)
+      for (let i = 1; i + 1 < r2.length; i++) r2[i] = { x: (r2[i - 1]!.x + r2[i]!.x * 2 + r2[i + 1]!.x) / 4, z: (r2[i - 1]!.z + r2[i]!.z * 2 + r2[i + 1]!.z) / 4 };
+    const pos: number[] = [];
+    const uv: number[] = [];
+    const idx: number[] = [];
+    let along = 0;
+    r2.forEach((p, i) => {
+      const q = r2[Math.min(r2.length - 1, i + 1)]!;
+      const o = r2[Math.max(0, i - 1)]!;
+      const [tx, tz] = [q.x - o.x, q.z - o.z];
+      const tl = Math.hypot(tx, tz) || 1;
+      const [nx, nz] = [-tz / tl, tx / tl];
+      const w = 0.02 + 0.004 * Math.sin(i * 0.7);
+      const y = Math.max(Y(p.x, p.z) + STREAM_D * 0.55, BLOCK_H + POOL_LEVEL);
+      if (i) along += Math.hypot(p.x - r2[i - 1]!.x, p.z - r2[i - 1]!.z);
+      pos.push(p.x + nx * w, y, p.z + nz * w, p.x - nx * w, y, p.z - nz * w);
+      uv.push(0, along, 1, along);
+      if (i) idx.push((i - 1) * 2, i * 2, (i - 1) * 2 + 1, (i - 1) * 2 + 1, i * 2, i * 2 + 1);
+      stands.push({ x: p.x, z: p.z, r: 0.035 });
+    });
+    const rib = new THREE.BufferGeometry();
+    rib.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+    rib.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2));
+    rib.setIndex(idx);
+    rib.computeVertexNormals();
+    const wm = waterMat(true);
+    const ribbon = new THREE.Mesh(rib, wm);
+    ribbon.renderOrder = 1;
+    g.add(ribbon);
+    // Foam where the fall lands.
+    const foam: THREE.BufferGeometry[] = [];
+    for (let k = 0; k < 5; k++) foam.push(part(blobGeo(700 + k), "#f4fbf8", [foot.x + (r() - 0.5) * 0.03, Y(foot.x, foot.z) + 0.004, foot.z + (r() - 0.5) * 0.03], [0, r() * 6, 0], [0.012, 0.005, 0.012]));
+    g.add(mesh(merge(foam), cm));
+    life.push((t) => {
+      wm.userData.time.value = t;
+      (fall.material as THREE.MeshStandardMaterial).userData.time.value = t;
+    });
+  }
+
   // The adit: a dark mouth set into the slope, framed by two posts, a lintel and braces, a little plank hood; the lantern.
   const ad = M.adit!;
   const face = Math.atan2(-ad.z, -ad.x);
@@ -3643,7 +3717,10 @@ function mine(L: Layout, ground: (x: number, z: number) => number, r: () => numb
         part(new THREE.BoxGeometry(1, 1, 1), "#8a5e38", [0.022, 0.03, 0.03], [0, 0, 0], [0.01, 0.07, 0.01]),
         part(new THREE.BoxGeometry(1, 1, 1), "#8a5e38", [0.022, 0.03, -0.03], [0, 0, 0], [0.01, 0.07, 0.01]),
         part(new THREE.BoxGeometry(1, 1, 1), "#7a5434", [0.022, 0.068, 0], [0, 0, 0], [0.012, 0.012, 0.08]),
-        part(new THREE.BoxGeometry(1, 1, 1), "#9a7048", [0.03, 0.078, 0], [0, 0, -0.25], [0.04, 0.004, 0.09]),
+        // A little gabled roof over the mouth, its ridge running out from the rock.
+        part(new THREE.BoxGeometry(1, 1, 1), "#8a5a36", [0.03, 0.084, 0.022], [0.55, 0, 0], [0.05, 0.004, 0.05]),
+        part(new THREE.BoxGeometry(1, 1, 1), "#9a6a42", [0.03, 0.084, -0.022], [-0.55, 0, 0], [0.05, 0.004, 0.05]),
+        part(new THREE.BoxGeometry(1, 1, 1), "#6a4426", [0.03, 0.098, 0], [0, 0, 0], [0.052, 0.005, 0.006]),
         part(new THREE.BoxGeometry(1, 1, 1), "#7a5434", [0.024, 0.055, 0.02], [0.8, 0, 0], [0.006, 0.03, 0.005]),
         part(new THREE.BoxGeometry(1, 1, 1), "#7a5434", [0.024, 0.055, -0.02], [-0.8, 0, 0], [0.006, 0.03, 0.005]),
         // Rock heaped round the frame.
@@ -3706,8 +3783,9 @@ function mine(L: Layout, ground: (x: number, z: number) => number, r: () => numb
     // The trestle: bents of two splayed legs and a cross brace wherever the rails stand clear of the ground.
     const gy = Y(a.x, a.z);
     if (a.y - gy > 0.012 && i % 3 === 0) {
-      for (const sg of [1, -1]) wood.push(beamGeo(a.clone().addScaledVector(n, sg * 1.2), new THREE.Vector3(a.x + n.x * sg * 2.2, gy - 0.004, a.z + n.z * sg * 2.2), 0.0026, "#8a5e38"));
-      wood.push(beamGeo(new THREE.Vector3(a.x + n.x * 1.9, gy + (a.y - gy) * 0.3, a.z + n.z * 1.9), new THREE.Vector3(a.x - n.x * 1.4, a.y - 0.004, a.z - n.z * 1.4), 0.0018, "#7a5434"));
+      for (const sg of [1, -1]) wood.push(beamGeo(a.clone().addScaledVector(n, sg * 1.2), new THREE.Vector3(a.x + n.x * sg * 2.2, gy - 0.004, a.z + n.z * sg * 2.2), 0.0042, "#8a5e38"));
+      wood.push(beamGeo(new THREE.Vector3(a.x + n.x * 1.9, gy + (a.y - gy) * 0.3, a.z + n.z * 1.9), new THREE.Vector3(a.x - n.x * 1.4, a.y - 0.004, a.z - n.z * 1.4), 0.003, "#7a5434"));
+      wood.push(beamGeo(new THREE.Vector3(a.x + n.x * 2.0, gy + (a.y - gy) * 0.55, a.z + n.z * 2.0), new THREE.Vector3(a.x - n.x * 2.0, gy + (a.y - gy) * 0.55, a.z - n.z * 2.0), 0.0028, "#7a5434"));
     }
     stands.push({ x: a.x, z: a.z, r: 0.03 });
   }
@@ -3715,12 +3793,14 @@ function mine(L: Layout, ground: (x: number, z: number) => number, r: () => numb
   const tdir = path[N]!.clone().sub(path[N - 3]!).setY(0).normalize();
   const tpos = path[N]!;
   const tgy = Y(tpos.x, tpos.z);
-  for (const [u, v] of [[-0.03, -0.025], [-0.03, 0.025], [0.02, -0.025], [0.02, 0.025]]) {
+  for (const [u, v] of [[-0.035, -0.032], [-0.035, 0.032], [0.03, -0.032], [0.03, 0.032]]) {
     const n = new THREE.Vector3(-tdir.z, 0, tdir.x);
     const p = tpos.clone().addScaledVector(tdir, u!).addScaledVector(n, v!);
-    wood.push(beamGeo(new THREE.Vector3(p.x, Y(p.x, p.z) - 0.004, p.z), new THREE.Vector3(p.x, tpos.y, p.z), 0.003, "#8a5e38"));
+    wood.push(beamGeo(new THREE.Vector3(p.x, Y(p.x, p.z) - 0.004, p.z), new THREE.Vector3(p.x, tpos.y, p.z), 0.0045, "#8a5e38"));
   }
-  wood.push(part(new THREE.BoxGeometry(1, 1, 1), "#b58a55", [tpos.x - tdir.x * 0.005, tpos.y, tpos.z - tdir.z * 0.005], [0, -Math.atan2(tdir.z, tdir.x), 0], [0.065, 0.004, 0.06]));
+  wood.push(part(new THREE.BoxGeometry(1, 1, 1), "#b58a55", [tpos.x - tdir.x * 0.005, tpos.y, tpos.z - tdir.z * 0.005], [0, -Math.atan2(tdir.z, tdir.x), 0], [0.08, 0.006, 0.075]));
+  // The tipple's chute: a sloped plank trough off the deck's lip toward the heap.
+  wood.push(beamGeo(tpos.clone().addScaledVector(tdir, 0.03), tpos.clone().addScaledVector(tdir, 0.07).setY(tgy + 0.03), 0.008, "#9a7048"));
   g.add(mesh(merge(wood), cm));
   g.add(mesh(merge(steel), cm));
   stands.push({ x: tpos.x, z: tpos.z, r: 0.06 });
@@ -4120,6 +4200,52 @@ function mine(L: Layout, ground: (x: number, z: number) => number, r: () => numb
     g.add(instanced(new THREE.DodecahedronGeometry(1, 0), rocks, jellyfy(new THREE.MeshStandardMaterial({ roughness: 0.8, flatShading: true }), "jelly-rock")));
   }
 
+  // A marmot by a burrow among the boulders: it pops up, looks about, and ducks down again; up on its hind legs on a roll.
+  {
+    for (let tries = 0; tries < 600; tries++) {
+      const a = r() * Math.PI * 2;
+      const d = 0.45 + r() * 0.38;
+      const [x, z] = [Math.cos(a) * d, Math.sin(a) * d];
+      if (!ok(x, z, 0.03) || ground(x, z) > 0.04) continue;
+      const y = Y(x, z);
+      const hole = new THREE.Mesh(new THREE.CircleGeometry(0.014, 16).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: "#2a2420" }));
+      hole.position.set(x, y + 0.001, z);
+      g.add(hole);
+      const mound = mesh(merge([part(blobGeo(720), "#9a8a70", [x + 0.018, y + 0.003, z], [0, 0, 0], [0.016, 0.006, 0.014])]), cm);
+      g.add(mound);
+      const m = new THREE.Group();
+      m.add(
+        mesh(
+          merge([
+            part(sphere(14), "#9a6a40", [0, 0.016, 0], [0, 0, 0], [0.009, 0.016, 0.009]),
+            part(sphere(12), "#d8b88a", [0.004, 0.014, 0], [0, 0, 0], [0.006, 0.012, 0.007]),
+            part(sphere(12), "#8a5e38", [0.002, 0.034, 0], [0, 0, 0], [0.007, 0.006, 0.0065]),
+            part(sphere(8), "#e8d6b8", [0.008, 0.032, 0], [0, 0, 0], [0.003, 0.003, 0.004]),
+            part(sphere(6), "#1a1414", [0.007, 0.036, 0.003], [0, 0, 0], [0.001, 0.001, 0.001]),
+            part(sphere(6), "#1a1414", [0.007, 0.036, -0.003], [0, 0, 0], [0.001, 0.001, 0.001]),
+            part(sphere(6), "#6a4426", [0.0, 0.04, 0.004], [0, 0, 0], [0.002, 0.002, 0.0015]),
+            part(sphere(6), "#6a4426", [0.0, 0.04, -0.004], [0, 0, 0], [0.002, 0.002, 0.0015]),
+          ]),
+          cm,
+        ),
+      );
+      m.scale.setScalar(SIZE.small * 1.3);
+      m.position.set(x, y, z);
+      m.rotation.y = -Math.atan2(EYE.z, EYE.x);
+      m.userData.ref = "marmot";
+      g.add(m);
+      stands.push({ x, z, r: 0.04 });
+      life.push((t) => {
+        const c = (t % 6) / 6;
+        const up = env.roll >= 0 ? 1.25 : smooth(0.1, 0.2, c) * (1 - smooth(0.75, 0.85, c));
+        m.position.y = y - 0.06 + 0.06 * up;
+        m.rotation.y = -Math.atan2(EYE.z, EYE.x) + 0.6 * Math.sin(t * 1.3);
+        m.visible = up > 0.02;
+      });
+      break;
+    }
+  }
+
   // Alpine flowers and grass tufts in the meadow.
   {
     const dots: Inst[] = [];
@@ -4129,7 +4255,7 @@ function mine(L: Layout, ground: (x: number, z: number) => number, r: () => numb
       const [x, z] = [Math.cos(a) * d, Math.sin(a) * d];
       const h = ground(x, z);
       if (hexDist(x, z) > INR - 0.08 || h > 0.06 || h < -0.02 || stands.some((q) => Math.hypot(q.x - x, q.z - z) < q.r)) continue;
-      if (i % 4 === 0) dots.push({ m: mat(x, Y(x, z) + 0.005, z, 0.004, 0.003, 0.004), c: new THREE.Color(["#f6f1ff", "#c88ae8", "#ffe14d"][i % 3]!) });
+      if (i % 3 === 0) dots.push({ m: mat(x, Y(x, z) + 0.005, z, 0.0045, 0.0035, 0.0045), c: new THREE.Color(["#f6f1ff", "#b46ad8", "#ffd23a", "#9a5ac8"][i % 4]!) });
       else dots.push({ m: mat(x, Y(x, z) + 0.005, z, 0.004, 0.01, 0.004, r() * 6, (r() - 0.5) * 0.4), c: new THREE.Color(i % 2 ? "#5a9e3c" : "#79b84a") });
     }
     g.add(instanced(new THREE.ConeGeometry(1, 1, 4), dots, blobMat()));
@@ -4142,10 +4268,18 @@ function mine(L: Layout, ground: (x: number, z: number) => number, r: () => numb
 function oreTint(L: Layout) {
   const SNOW = new THREE.Color("#f6f8fa");
   const STONE = new THREE.Color("#a8aaa8");
+  const MOSS = new THREE.Color("#7fae4f");
+  const HEATHER = new THREE.Color("#b088b8");
   return (x: number, z: number, y: number, c: THREE.Color) => {
     if (y > 0.36) c.lerp(SNOW, smooth(0.36, 0.44, y + 0.02 * noise(x * 20, z * 20, L.seed + 80)));
     else if (y > 0.06) c.lerp(STONE, smooth(0.06, 0.16, y) * 0.5);
     if (y < -0.02) c.lerp(STONE, 0.6);
+    // Patches of moss green and purple heather in the meadow.
+    if (y < 0.06 && y > -0.01) {
+      const n = noise(x * 4.5, z * 4.5, L.seed + 85);
+      if (n > 0.25) c.lerp(MOSS, smooth(0.25, 0.45, n) * 0.7);
+      else if (n < -0.35) c.lerp(HEATHER, smooth(-0.35, -0.55, n) * 0.6);
+    }
   };
 }
 

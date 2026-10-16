@@ -109,7 +109,9 @@ THE SIX WORLDS
    a lantern hung at its head. Rails run out of it, cross a dry gully on a timber trestle and end on a tipple at the
    flank, where an ore cart rolls out, tips its load onto a heap of dark ore flecked with blue, and rolls back. Beside the
    mouth a blue crystal outcrop where a miner swings a pick. On the other front flank a cold blue tarn (jelly water) at the
-   meadow's edge. A mountain goat on a ledge, an eagle circling the peaks. Surprise: a gold nugget glints in the scree.
+   meadow's edge, fed by snowmelt: a white fall down the second peak's face and a jelly stream winding round the meadow.
+   Moss-green and purple heather patches in the sage meadow. A marmot pops up from a burrow by the boulders. A mountain
+   goat on a ledge, an eagle circling the peaks. Surprise: a gold nugget glints in the scree.
    Roll: the cart races out heaped, the crystals flare, the goat hops, the eagle stoops. Night: the lantern and the
    mine mouth glow warm.
 
