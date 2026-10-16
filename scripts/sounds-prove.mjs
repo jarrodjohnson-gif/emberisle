@@ -53,6 +53,10 @@ async function tab(name, url) {
   await page.addInitScript((n) => localStorage.setItem("emberisle-name", n), name);
   await page.addInitScript(() => {
     window.__plays = [];
+    window.__pauses = [];
+    HTMLMediaElement.prototype.pause = function () {
+      window.__pauses.push(new URL(this.src).pathname.replace("/audio/", ""));
+    };
     HTMLMediaElement.prototype.play = function () {
       window.__plays.push({ file: new URL(this.src).pathname.replace("/audio/", "").replace(".wav", ""), volume: this.volume, t: performance.now() });
       return Promise.resolve();
@@ -349,24 +353,85 @@ try {
   await probe(({ hear }, g) => { g.phase = "rollOff"; g.seq = 0; const later = { ...g, seq: 3 }; hear(g, later, "p0", "online"); });
   assert.deepEqual(await heardNow(), [], "later states of the same game do not play it again");
   ok("game_start: online once on a new game's first state, not for a watcher, not again");
+  // A bot may already have rolled first (seq > 0) before the first state reaches a seat: still a new game, still once. The same
+  // game's state arriving again after a reconnect does not replay it; a rematch's new island does.
+  const sigProbe = (tag, seq) => p3.evaluate(async ({ tag, seq }) => {
+    const { hear } = await import("/src/lib/game/store.ts");
+    const g = structuredClone(window.__emberisle.getState().state);
+    g.phase = "rollOff"; g.seq = seq; g.hexes[0].pip = 90 + tag;
+    hear(null, g, "p0", "online");
+    hear(null, g, "p0", "online");
+    await new Promise((r) => setTimeout(r, 300));
+    const rematch = { ...structuredClone(g), phase: "setupSettle", seq: 1 };
+    rematch.hexes[0].pip = 80 + tag;
+    hear({ ...g, phase: "over" }, rematch, "p0", "online");
+  }, { tag, seq });
+  await sigProbe(1, 2);
+  assert.deepEqual(await heardNow(), ["game_start.mp3", "game_start.mp3"], "bot-first (seq 2): once for the game, not again on a repeat; once more for a rematch's new island");
+  ok("game_start: keyed on the new game, so a bot rolling first still plays it once, and a repeat state does not");
+
   // Losing: every seat but the winner; the winner keeps the win sound.
   const over = (me, mode = "online") => probe(({ hear }, g, a) => { const after = { ...g, phase: "over", winner: "p1" }; hear({ ...g, phase: "main" }, after, a.me, a.mode); }, { me, mode });
+  // Leaving the end screen (a rematch's first state, the menu) from the table's point of view: the over state is replaced.
+  const leave = () => probe(({ hear }, g) => hear({ ...g, phase: "over", winner: "p1" }, { ...g, phase: "main" }, "p0", "online"));
   await over("p0");
   assert.deepEqual(await heardNow(), ["game_lose.mp3"], "a seat that did not win hears game_lose once");
+  await leave();
   await over("p2");
   assert.deepEqual(await heardNow(), ["game_lose.mp3"], "so does every other losing seat");
+  await leave();
   await over("p1");
   assert.deepEqual(await heardNow(), ["win"], "the winner keeps the win sound");
+  await leave();
   await over("p0", "hotseat");
   assert.deepEqual(await heardNow(), ["win"], "hotseat has no losing seat");
   await mute(p3, true);
   await over("p0");
   assert.deepEqual(await heardNow(), [], "muted: silent");
   await mute(p3, false);
+  await leave();
   ok("game_lose: every seat but the winner, once; the winner keeps win; hotseat and mute unchanged");
+  // End music: once per game end, ~1.5 s after the sting, on every seat; cancelled by leaving the end screen; silent when muted.
+  await sleep(300);
+  await clear(p3);
+  await over("p0");
+  await sleep(2000);
+  assert.deepEqual((await heard(p3)).map((x) => [x.file, x.volume]), [["game_lose.mp3", 0.5], ["end_music.mp3", 0.5]], "the loser hears the sting, then the end music once");
+  const gap = (await heard(p3)).map((x) => x.t);
+  assert.ok(gap[1] - gap[0] >= 1400 && gap[1] - gap[0] < 2000, `the music starts ${Math.round(gap[1] - gap[0])} ms after the sting`);
+  await p3.evaluate(() => (window.__pauses = []));
+  await leave();
+  assert.ok((await p3.evaluate(() => window.__pauses)).includes("end_music.mp3"), "a rematch / leaving the end screen stops the music");
+  await clear(p3);
+  await over("p1");
+  await sleep(2000);
+  assert.deepEqual(await names(p3), ["win", "end_music.mp3"], "the winner's seat gets the music too, after the win sound");
+  await leave();
+  await clear(p3);
+  await over("p0");
+  await leave();
+  await sleep(2000);
+  assert.deepEqual(await names(p3), ["game_lose.mp3"], "leaving before it starts cancels it: no music");
+  await clear(p3);
+  await mute(p3, true);
+  await over("p0");
+  await sleep(2000);
+  await mute(p3, false);
+  assert.deepEqual(await names(p3), [], "muted: no sting, no music");
+  await clear(p3);
+  await over("p0", "hotseat");
+  await sleep(2000);
+  assert.deepEqual(await names(p3), ["win"], "hotseat: no end music");
+  await clear(p3);
+  await probe(({ hear }, g) => hear(null, { ...g, phase: "over", winner: "p1" }, "p0", "online"));
+  await sleep(2000);
+  assert.deepEqual(await names(p3), [], "a reload or reconnect into an already-over game plays nothing");
+  await clear(p3);
+  ok("end_music: once per game end after the sting, for losers and winner; stops on leave/rematch; muted, hotseat and reload into over are silent");
   // Match point: public points only, once per player, with the banner line.
   const mp = (hidden) =>
-    probe(({ hear, matchPointLine }, g, hidden) => {
+    probe(({ hear, takeMatchPointLine }, g, hidden) => {
+      g.hexes[1].pip = 70 + (hidden ? 1 : 0); // a board of its own, so each case is its own game
       for (const v of g.vertices) v.building = null;
       for (const p of g.players) p.hidden.vp = 0;
       g.victoryTarget = 10;
@@ -378,7 +443,7 @@ try {
       if (hidden) g.players.find((p) => p.id === "p1").hidden.vp = 3;
       else give(5);
       hear(before, g, "p0", "online");
-      return matchPointLine(before, g);
+      return takeMatchPointLine();
     }, hidden);
   const line = await mp(false);
   // The synthetic outpost also knocks; only the sting is under test.
@@ -386,6 +451,27 @@ try {
   assert.match(line, /^.+ reached 9 points \u2014 one to win$/);
   assert.equal(await mp(true), null, "hidden fortune points are not counted: no banner");
   assert.deepEqual(await heardNow(), [], "and no sound: hidden points cannot leak");
+  // Losing and regaining Longest Path (or Largest Army) is not a second match point in the same game.
+  const regain = await p3.evaluate(async () => {
+    const { hear, takeMatchPointLine } = await import("/src/lib/game/store.ts");
+    const g = structuredClone(window.__emberisle.getState().state);
+    g.hexes[2].pip = 60;
+    g.victoryTarget = 10;
+    for (const v of g.vertices) v.building = null;
+    g.vertices.slice(0, 7).forEach((v) => (v.building = { playerId: "p1", kind: "outpost" }));
+    g.longestRoad = null;
+    g.largestArmy = null;
+    const at = (road) => ({ ...structuredClone(g), longestRoad: road });
+    const lines = [];
+    const step = (a, b) => { hear(a, b, "p0", "online"); lines.push(takeMatchPointLine()); };
+    step(g, at("p1")); // 7 -> 9: first time
+    step(at("p1"), at(null)); // down to 7
+    step(at(null), at("p1")); // back to 9: the same game
+    return lines;
+  });
+  assert.match(regain[0], /reached 9 points/);
+  assert.deepEqual(regain.slice(1), [null, null], "regaining the points in the same game says nothing");
+  assert.deepEqual((await heardNow()).filter((f) => f === "match_point.mp3"), ["match_point.mp3"], "and plays the sting only once");
   ok(`match_point: once per player at target-1 public points (banner "${line}"); hidden points play nothing`);
   await p3.close();
 
@@ -467,6 +553,39 @@ try {
   assert.ok((await b.getByTestId("chat-log").locator("li", { hasText: "plop" }).count()) >= 1, "but still sees the chip");
   await mute(b, false);
   ok("soundboard: a muted listener sees the chip and hears nothing");
+  // The in-game clips reach the other seat once each; a repeat of a long clip restarts it (one element per clip), never stacks.
+  for (const [id, file] of [["sb_airhorn", "sb_airhorn.mp3"], ["sb_quit_touchin", "sb_quit_touchin.mp3"], ["sb_only_wood", "sb_only_wood.mp3"]]) {
+    await sleep(3100);
+    await clear(b);
+    await a.evaluate((x) => window.__emberisle.getState().sendSound(x), id);
+    await until(async () => (await names(b)).length, `${id} reaches Tide`);
+    await sleep(300);
+    assert.deepEqual((await heard(b)).map((x) => x.file), [file], `${id} plays once on the other seat`);
+  }
+  await b.evaluate(async () => {
+    const { play } = await import("/src/lib/sound.ts");
+    play("sb_airhorn");
+    await new Promise((r) => setTimeout(r, 400));
+    play("sb_airhorn");
+    return (await import("/src/lib/sound.ts")).SOUNDBOARD.map((x) => x.label);
+  }).then((labels) => assert.ok(["Airhorn", "Quit touchin' me", "Only wood?"].every((l) => labels.includes(l)), "button labels"));
+  ok("soundboard: Airhorn, Quit touchin' me and Only wood? each play once on the other seat, labelled; a repeat reuses the clip's element");
+  await sleep(3100);
+  // Muting a seat (the chat's Mute menu) silences that seat's soundboard taps for this listener only.
+  await sleep(3000);
+  await b.evaluate(async () => {
+    const st = window.__emberisle.getState();
+    const { mutedByCode } = await import("/src/lib/muted-seats.ts");
+    mutedByCode.set(st.code, [st.seats.find((x) => x.name !== "Tide").id]);
+  });
+  await clear(b);
+  await a.evaluate(() => window.__emberisle.getState().sendSound("sb_wololo"));
+  await until(() => b.evaluate(() => window.__emberisle.getState().chat.some((l) => l.sound === "sb_wololo")), "the wololo line arrives");
+  await sleep(400);
+  assert.deepEqual(await names(b), [], "a muted seat's soundboard tap is silent for the listener who muted it");
+  await b.evaluate(async () => (await import("/src/lib/muted-seats.ts")).mutedByCode.set(window.__emberisle.getState().code, []));
+  ok("soundboard: a tap from a muted seat is silent for the listener who muted it");
+
 
   // The win screen's React button sends the same soundboard path: the table hears GG! and sees its chip.
   await sleep(3200);

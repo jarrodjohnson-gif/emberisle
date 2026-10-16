@@ -66,11 +66,13 @@ async function sit(port, names) {
   const [first, ...rest] = names.map((n) => client(port, n));
   await first.open;
   first.send({ type: "hello", name: first.name });
-  const { code } = await first.next("welcome");
+  const welcome = await first.next("welcome");
+  const code = welcome.code;
+  first.secret = welcome.secret;
   for (const c of rest) {
     await c.open;
     c.send({ type: "hello", code, name: c.name });
-    await c.next("welcome");
+    c.secret = (await c.next("welcome")).secret;
   }
   await settle();
   return { code, clients: [first, ...rest] };
@@ -81,7 +83,7 @@ async function errorOf(c, msg) {
   return (await c.next("error")).message;
 }
 
-const port = await boot();
+const port = await boot({ RENAME_MS: "0" });
 {
   const { code, clients: [ember, tide] } = await sit(port, ["Ember", "Tide"]);
   const mine = (c) => c.seats.find((s) => s.name !== undefined && s.id === (c === ember ? "s0" : "s1"));
@@ -159,6 +161,21 @@ const port = await boot();
   await settle();
   assert.ok(roomFile(code).chat.some((l) => l.sound === "robbed_fah"), "the sound line is in the room's chat");
 
+  // The end music is not a soundboard clip; the in-game clips are.
+  await settle(3100);
+  assert.equal(await errorOf(ember, { type: "sound", id: "end_music" }), "Unknown sound.");
+  assert.equal(await errorOf(ember, { type: "sound", id: "sb_charlie_kirk" }), "Unknown sound.");
+  tide.drain();
+  ember.send({ type: "sound", id: "sb_quit_touchin" });
+  assert.equal((await tide.next("chat")).text, "\u{1F50A} Quit touchin' me");
+  await settle(3100);
+  tide.drain();
+  for (const id of ["sb_airhorn", "sb_only_wood"]) {
+    ember.send({ type: "sound", id });
+    assert.equal((await tide.next("chat")).sound, id);
+    await settle(3100);
+  }
+
   // Start with 2 humans + 1 bot: needs only the humans ready.
   assert.equal(await errorOf(ember, { type: "start" }), "Not everyone is ready.");
   ember.send({ type: "ready", value: true });
@@ -198,6 +215,76 @@ const slowPort = await boot({ ACT_CAP: "5", ACT_RATE: "0.001" });
   for (let i = 0; i < 12; i++) a.send({ type: "rename", name: `Ada ${i}` });
   await settle(300);
   assert.ok(a.inbox.some((m) => m.type === "error" && m.message === "Slow down."), "rename is rate-limited with the other seat messages");
+}
+
+// Rename has its own pace: a second accepted rename inside RENAME_MS is "Slow down.", whatever the action bucket says.
+host.kill("SIGKILL");
+await new Promise((r) => host.once("exit", r));
+const paced = await boot({ RENAME_MS: "700" });
+{
+  const { clients: [a] } = await sit(paced, ["Ada", "Bo"]);
+  a.drain();
+  a.send({ type: "rename", name: "Ada 1" });
+  a.send({ type: "rename", name: "Ada 2" });
+  assert.equal((await a.next("error")).message, "Slow down.");
+  await settle(800);
+  a.drain();
+  a.send({ type: "rename", name: "Ada 3" });
+  await settle();
+  assert.equal(a.seats[0].name, "Ada 3", "after the pause a rename is accepted");
+}
+
+// A restart mid-game: the lobby bot is not a recovery seat, so after the humans rejoin it still plays like any bot.
+host.kill("SIGKILL");
+await new Promise((r) => host.once("exit", r));
+rmSync(ROOMS_DIR, { recursive: true, force: true });
+const gamePort = await boot({ GRACE_MS: "60000", HOLD_MS: "60000" });
+let gameCode, secrets;
+{
+  const { code, clients: [a, b] } = await sit(gamePort, ["Ann", "Ben"]);
+  gameCode = code;
+  secrets = [a.secret, b.secret];
+  a.send({ type: "addBot" });
+  a.send({ type: "ready", value: true });
+  b.send({ type: "ready", value: true });
+  await settle();
+  a.send({ type: "start" });
+  await a.next("state");
+  await settle(300);
+}
+host.kill("SIGKILL");
+await new Promise((r) => host.once("exit", r));
+assert.equal(roomFile(gameCode).seats.filter((s) => s.bot).length, 1, "the bot seat is on disk");
+const restarted = await boot({ GRACE_MS: "60000", HOLD_MS: "60000" });
+{
+  const humans = secrets.map((secret, i) => {
+    const c = client(restarted, `h${i}`);
+    c.secret = secret;
+    return c;
+  });
+  for (const c of humans) {
+    await c.open;
+    c.send({ type: "hello", code: gameCode, secret: c.secret });
+    await c.next("welcome");
+  }
+  await settle(300);
+  assert.deepEqual(roomFile(gameCode).recoveryPids, [], "no seat is in recovery: the bot is a normal bot, not a held human");
+  // Play the people's moves from their legal lists until the bot has built: a recovery bot only rolls and declines.
+  const botPid = () => humans[0].state.game.players.find((p) => p.kind === "bot").id;
+  let built = false;
+  for (let i = 0; i < 80 && !built; i++) {
+    for (const c of humans) {
+      const l = c.state?.legal;
+      if (!l) continue;
+      if (l.actions.includes("roll")) c.send({ type: "roll" });
+      else if (l.outpost.length) c.send({ type: "place", kind: "outpost", id: l.outpost[0] });
+      else if (l.path.length) c.send({ type: "place", kind: "path", id: l.path[0] });
+    }
+    await settle(120);
+    built = humans[0].state.game.vertices.some((v) => v.building?.playerId === botPid());
+  }
+  assert.ok(built, "after the restart the lobby bot places its setup outpost like a normal bot");
+  assert.deepEqual(roomFile(gameCode).recoveryPids, [], "still no recovery seats once the bot has played");
 }
 
 // A room restored from disk keeps the bot, the renamed seat and the bot's readiness.

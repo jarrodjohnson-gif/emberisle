@@ -109,6 +109,8 @@ const ROOM_TTL = 24 * 60 * 60 * 1000;
 const ROOM_SHAPE = 2;
 // A seat's soundboard taps are at least this far apart (the host's word; the client greys the buttons for the same time).
 const SOUND_MS = Number(process.env.SOUND_MS ?? 3000);
+// A seat's accepted renames are at least this far apart, on top of the ordinary action limit.
+const RENAME_MS = Number(process.env.RENAME_MS ?? 2000);
 // The built client (npm run build). DIST lets a proof point the host at a small temp folder.
 const DIST = path.resolve(process.env.DIST ?? fileURLToPath(new URL("../dist/", import.meta.url)));
 const TYPES = {
@@ -303,7 +305,8 @@ function load() {
     // A file that parses but does not rebuild (a null seat, say) is skipped like one that does not parse.
     let room;
     try {
-      const seatPids = new Set(saved.seats.map((seat) => seat?.pid).filter((pid) => typeof pid === "string"));
+      // A lobby bot seat is a full practice bot, not a held human seat, so it is never a recovery pid.
+      const seatPids = new Set(saved.seats.filter((seat) => !seat?.bot).map((seat) => seat?.pid).filter((pid) => typeof pid === "string"));
       const legacyRecovery = (saved.game?.players ?? []).filter((p) => p.kind === "bot" && seatPids.has(p.id)).map((p) => p.id);
       room = {
         ...saved,
@@ -906,11 +909,14 @@ function removeBot(ws, room, msg) {
 // Lobby only: the game copies the names when it starts. The same cleaning as hello; a name already taken at the table gets a number.
 function renameSeat(ws, room, msg) {
   if (room.game) return send(ws, { type: "error", message: "Names are fixed once the game starts." });
+  const now = Date.now();
+  if (now - (ws.seat.renamedAt ?? 0) < RENAME_MS) return send(ws, { type: "error", message: "Slow down." });
   const before = ws.seat.name;
   const name = seatName(room, msg.name, "", ws.seat);
   if (!name) return send(ws, { type: "error", message: "Pick a name." });
   if (name === before) return publish(room);
   ws.seat.name = name;
+  ws.seat.renamedAt = now;
   say(room, `${before} is now ${name}.`);
   publish(room);
 }

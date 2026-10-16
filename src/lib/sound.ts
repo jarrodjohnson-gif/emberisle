@@ -35,6 +35,11 @@ const FILES = {
   // The chat soundboard (server/chat.mjs SOUNDBOARD): a tap plays on every seat's page.
   sb_wololo: "sb_wololo.mp3",
   sb_win_reaction: "sb_win_reaction.mp3",
+  sb_airhorn: "sb_airhorn.mp3",
+  sb_quit_touchin: "sb_quit_touchin.mp3",
+  sb_only_wood: "sb_only_wood.mp3",
+  // End-of-game music: starts a moment after the win or loss sting, stops when the end screen is left or a new game starts.
+  end_music: "end_music.mp3",
   board_bong: "bong_001.wav",
   board_plop: "plop.wav",
   board_pluck: "pluck_001.wav",
@@ -45,6 +50,9 @@ export const SOUNDBOARD = [
   { id: "robbed_fah", label: "Fah", clip: "robbed_fah" },
   { id: "sb_wololo", label: "Wololo", clip: "sb_wololo" },
   { id: "sb_win_reaction", label: "GG!", clip: "sb_win_reaction" },
+  { id: "sb_airhorn", label: "Airhorn", clip: "sb_airhorn" },
+  { id: "sb_quit_touchin", label: "Quit touchin' me", clip: "sb_quit_touchin" },
+  { id: "sb_only_wood", label: "Only wood?", clip: "sb_only_wood" },
   { id: "bong", label: "Bong", clip: "board_bong" },
   { id: "plop", label: "Plop", clip: "board_plop" },
   { id: "pluck", label: "Pluck", clip: "board_pluck" },
@@ -84,6 +92,7 @@ export function isMuted() {
 
 export function setMuted(v: boolean) {
   muted = v;
+  if (v) stop("end_music");
   try {
     if (v) localStorage.setItem(MUTED_KEY, "1");
     else localStorage.removeItem(MUTED_KEY);
@@ -150,6 +159,14 @@ export function play(name: SoundName, volume = 1) {
   asked.set(name, now);
   queue.push([name, volume]);
   if (!pacing) pump();
+}
+
+// Stop a clip that is playing (the end music, when its screen is left or the sound is muted).
+export function stop(name: SoundName) {
+  const clip = clips.get(name);
+  if (!clip) return;
+  clip.pause();
+  clip.currentTime = 0;
 }
 
 // The your-turn chime, with a short buzz on phones that have a motor.

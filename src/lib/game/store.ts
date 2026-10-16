@@ -51,22 +51,65 @@ function soundsFor(before: GameState | null, after: GameState, mine: boolean, vi
   const sameGame = before.phase !== "over" && after.turn >= before.turn && after.hexes.every((h, i) => h.terrain === before.hexes[i]?.terrain);
   // The one set against (a piece on the new hex) hears robbed_fah in its place; everyone else keeps the usual cue.
   // One point from the target, by public points only (a held point fortune is never counted, so it cannot leak). Once per player.
-  if (sameGame) for (const _ of matchPointers(before, after)) out.push(["match_point", MUSIC_VOLUME]);
   if (sameGame && after.robberHex !== before.robberHex) out.push([victim ? "robbed_fah" : "wayfarer_move", 1]);
   return out;
 }
 
-// Players whose public points first reached (target - 1) between two states.
-function matchPointers(before: GameState, after: GameState) {
+// A board's identity for "this game": the host strips the seed, and a new island lays its hexes differently.
+const gameSig = (g: GameState) => g.hexes.map((h) => `${h.terrain}${h.pip ?? ""}`).join();
+
+// Match point (target - 1 public points) fires once per player per game: losing and regaining Longest Path or Largest Army
+// does not repeat it. `claimed` is the sig of the game it counts for and the players already announced.
+const claimed: { sig: string; pids: string[] } = { sig: "", pids: [] };
+let matchLine: string | null = null;
+
+// The players whose public points first reach target - 1 in this change, claimed for this game. Public points only, so a
+// held point fortune can neither trigger it nor leak through it.
+function claimMatchPoints(before: GameState, after: GameState) {
+  if (before.phase === "over" || after.phase === "over") return [];
+  const sig = gameSig(after);
+  if (claimed.sig !== sig) Object.assign(claimed, { sig, pids: [] });
   const line = victoryTarget(after) - 1;
-  return after.players.filter((p) => publicVP(after, p.id) >= line && publicVP(before, p.id) < line);
+  const out = after.players.filter((p) => !claimed.pids.includes(p.id) && publicVP(after, p.id) >= line && publicVP(before, p.id) < line);
+  claimed.pids.push(...out.map((p) => p.id));
+  return out;
 }
 
-// The banner for a match point, or null.
-export function matchPointLine(before: GameState | null, after: GameState) {
-  if (!before || after.phase === "over" || before.phase === "over") return null;
-  const p = matchPointers(before, after)[0];
-  return p ? `${p.name} reached ${publicVP(after, p.id)} points — one to win` : null;
+// The banner for the match point the last `hear` claimed (once), or null.
+export function takeMatchPointLine() {
+  const line = matchLine;
+  matchLine = null;
+  return line;
+}
+
+// End music: queued a moment after the win/lose sting at game over, once per game end. Leaving the end screen (the menu, a
+// rematch, a new game) cancels it. Only a live change into "over" starts it, so a reload into a finished game stays quiet.
+const END_MUSIC_DELAY_MS = 1500;
+let endMusic: ReturnType<typeof setTimeout> | null = null;
+function stopEndMusic() {
+  if (endMusic) clearTimeout(endMusic);
+  endMusic = null;
+  stop("end_music");
+}
+
+// The board the start sting last played for, kept for the tab session so a reload mid-setup does not replay it.
+const START_KEY = "emberisle-start-sig";
+let startSig = "";
+function startedSig() {
+  if (startSig) return startSig;
+  try {
+    return (startSig = sessionStorage.getItem(START_KEY) ?? "");
+  } catch {
+    return "";
+  }
+}
+function rememberStart(sig: string) {
+  startSig = sig;
+  try {
+    sessionStorage.setItem(START_KEY, sig);
+  } catch {
+    // storage can be blocked; the sting still plays once for this page
+  }
 }
 
 // Knocks waiting for their piece to land (#438). Leaving the table or starting a game drops them, so none plays late.
@@ -94,7 +137,25 @@ export function hear(before: GameState | null, after: GameState, me: string, mod
     } else play(sound, volume);
   }
   // A new game (the lobby's Start, a rematch): the sting plays once, for a seat; the first roll cuts it off.
-  if (mode === "online" && me && after.phase === "rollOff" && after.seq === 0 && (!before || before.phase === "over")) play("game_start", MUSIC_VOLUME);
+  // Keyed on the board: a bot may already have rolled first (seq > 0), and a reconnect into setup must not replay it.
+  if (mode === "online" && me && (!before || before.phase === "over") && (after.phase === "rollOff" || after.phase === "setupSettle") && startedSig() !== gameSig(after)) {
+    rememberStart(gameSig(after));
+    play("game_start", MUSIC_VOLUME);
+  }
+  if (before?.phase === "over" && after.phase !== "over") stopEndMusic();
+  if (mode !== "hotseat" && me && before && before.phase !== "over" && after.phase === "over" && after.winner) {
+    stopEndMusic();
+    endMusic = setTimeout(() => {
+      endMusic = null;
+      play("end_music", MUSIC_VOLUME);
+    }, END_MUSIC_DELAY_MS);
+  }
+  matchLine = null;
+  if (before && before.phase !== "over" && after.turn >= before.turn && after.hexes.every((h, i) => h.terrain === before.hexes[i]?.terrain)) {
+    const reached = claimMatchPoints(before, after);
+    for (const _ of reached) play("match_point", MUSIC_VOLUME);
+    if (reached[0]) matchLine = `${reached[0].name} reached ${publicVP(after, reached[0].id)} points — one to win`;
+  }
   if (mode !== "hotseat" && before && after.current === me && before.current !== me && after.phase !== "over") yourTurn();
 }
 
@@ -163,7 +224,8 @@ import { chooseBotAction, chooseTradeAsk, shouldAcceptTrade } from "./ai";
 import { PLAYER_COLORS, RESOURCES, type Action, type BuildMode, type GameState, type VictoryTarget, type WayfarerMode } from "./types";
 import { connectTable, hostUrl, type Bag, type ChatLine, type Legal, type Me, type Reaction, type Seat, type TableClient } from "@/lib/net/table";
 import { PROTO } from "@/lib/net/proto";
-import { MUSIC_VOLUME, play, SOUNDBOARD, yourTurn, type SoundName } from "@/lib/sound";
+import { readMutedSeats } from "@/lib/muted-seats";
+import { MUSIC_VOLUME, play, SOUNDBOARD, stop, yourTurn, type SoundName } from "@/lib/sound";
 import { calmMotion, LAND_MS } from "@/lib/scene/landing";
 import type { WaterPath, WaterStatus } from "@/lib/scene/crystal-water";
 import type { PlayView } from "@/lib/scene/mobile-fit";
@@ -500,6 +562,7 @@ export const useGame = create<GameStore>((set, get) => ({
     if (get().screen === "title" && ["on", "off"].includes(mode)) set({ wayfarerChoices: { ...get().wayfarerChoices, [context]: mode } });
   },
   startAi: () => {
+    stopEndMusic();
     // A table left dialing (a reload with a saved seat) must not pull a practice game back to the lobby.
     clearWake();
     clearKnocks();
@@ -530,6 +593,7 @@ export const useGame = create<GameStore>((set, get) => ({
     play("game_start", MUSIC_VOLUME);
   },
   startHotseat: (count) => {
+    stopEndMusic();
     clearWake();
     clearKnocks();
     get().net?.close();
@@ -574,6 +638,7 @@ export const useGame = create<GameStore>((set, get) => ({
       synced: get().resync ? get().synced + 1 : get().synced,
     }),
   goTitle: () => {
+    stopEndMusic();
     // Leaving on purpose frees the seat; only a drop keeps it. A watcher never held one, and the saved seat may be another table's.
     if (!get().spectator) rememberSeat(null);
     clearWake();
@@ -652,7 +717,7 @@ export const useGame = create<GameStore>((set, get) => ({
     if (rollOff) {
       showBanner(set, rollOff);
     } else {
-      const swing = awardLine(state, nextState) ?? matchPointLine(state, nextState);
+      const swing = awardLine(state, nextState) ?? takeMatchPointLine();
       if (swing) showBanner(set, swing);
     }
     return { ok: true, state: nextState };
@@ -1075,8 +1140,10 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       // Others' lines tick; the sender's echo does not, and nothing ticks under the hands of someone typing in the chat (#609).
       // A soundboard line plays its clip for everyone, the sender too; it is not also a tick.
       const board = SOUNDBOARD.find((b) => b.id === line.sound);
-      if (board) play(board.clip);
-      else if (line.seat !== seatId && document.activeElement?.id !== "chat-input") play("chat_recv");
+      // A muted seat's soundboard taps are as silent here as its chat line is hidden.
+      if (board) {
+        if (!readMutedSeats(get().code).includes(line.seat)) play(board.clip);
+      } else if (line.seat !== seatId && document.activeElement?.id !== "chat-input") play("chat_recv");
     },
     react: (r) => {
       set({ reactions: [...get().reactions, r] });
@@ -1090,7 +1157,7 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       // A watcher's `you` is null: "" matches no player, so nothing is ever its turn and the your-turn chime never fires.
       const me = you ?? "";
       const rollOff = rollOffLine(get().state, game);
-      const swing = awardLine(get().state, game) ?? matchPointLine(get().state, game);
+      const swing = awardLine(get().state, game) ?? takeMatchPointLine();
       hear(get().state, game, me, "online");
       // The deadline moves onto this clock by the skew the message shows, so a phone minutes off still counts true.
       // Every push carries the same window, and the skew wobbles by however long this tab took to get to the message:

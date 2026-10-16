@@ -16,7 +16,7 @@ const ROOMS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-rooms-"));
 process.on("exit", () => rmSync(ROOMS_DIR, { recursive: true, force: true }));
 const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL("../server/", import.meta.url),
-  env: { ...process.env, PORT: "0", ROOMS_DIR },
+  env: { ...process.env, PORT: "0", ROOMS_DIR, RENAME_MS: "0" },
 });
 process.on("exit", () => host.kill());
 for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
@@ -110,7 +110,8 @@ try {
   check((await input.inputValue()).length <= 16, "lobby: the input stops at the title's length");
   await input.press("Enter");
   await until(async () => (await seatNames(hana)).includes("Gus the Great of"), "the host sees the new name");
-  check((await seatNames(gus)).includes("Gus the Great of"), "lobby: the new name is on the renamer's own seat list");
+  await until(async () => (await seatNames(gus)).includes("Gus the Great of"), "the renamer's own seat list");
+  check(true, "lobby: the new name is on the renamer's own seat list");
   check((await remembered(gus)) === "Gus the Great of", "lobby: the rename is also the name the title remembers");
   check((await gus.page.getByTestId("rename-input").count()) === 0, "lobby: Enter closes the input");
 
@@ -147,7 +148,8 @@ try {
   await until(async () => !(await seatNames(gus)).includes("Bot"), "removing a bot empties its seat for everyone");
   await hana.page.getByTestId("add-bot").first().click();
   await until(async () => (await seatNames(gus)).includes("Bot"), "the bot is back");
-  check((await hana.page.getByTestId("lobby-status").textContent()).includes("ready"), "lobby: a bot counts toward the three: the status asks for readiness, not for players");
+  await until(async () => (await hana.page.getByTestId("lobby-status").textContent()).includes("ready"), "the status counts the bot");
+  check(true, "lobby: a bot counts toward the three: the status asks for readiness, not for players");
 
   await hana.page.getByRole("button", { name: "Ready", exact: true }).click();
   await gus.page.getByRole("button", { name: "Ready", exact: true }).click();

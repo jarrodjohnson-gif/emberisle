@@ -209,7 +209,7 @@ export function ChatBox({ rows, minRows = 0, game, onEscape, className }: { rows
             </div>
           ) : null}
           {board ? (
-            <div className="flex flex-wrap gap-1" data-testid="soundboard">
+            <div className="chat-presets flex shrink-0 gap-1 overflow-x-auto" data-testid="soundboard">
               {SOUNDBOARD.map(({ id, label }) => (
                 <button
                   key={id}
