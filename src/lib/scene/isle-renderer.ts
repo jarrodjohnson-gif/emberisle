@@ -37,6 +37,7 @@ import { chunkUrl } from "@/lib/lazy";
 import { PAINT, RIM } from "@/lib/scene/palette";
 import { BLOCK_H } from "@/lib/scene/jelly-dims";
 import type { JellyBoard, JellyStats } from "@/lib/scene/jelly-board";
+import type { Dock, Shore } from "@/lib/scene/harbor-jelly";
 import { OceanLife } from "@/lib/scene/ocean-life";
 import { CAUSTIC_GLSL, PAPER, SPLASH, addSplashRings, makeCrystalSea, makeFloorProps, makeSeaFloor, makeSplashes, makeSwell, makeWash, nearestCoast, type SeaUniforms, type WaterPath, type WaterStatus } from "@/lib/scene/crystal-water";
 import { Wobble } from "@/lib/scene/wobble";
@@ -63,6 +64,14 @@ const loadJelly = (): Promise<typeof import("@/lib/scene/jelly-board")> =>
     throw e;
   });
 const JELLY_RETRY_MS = 4000;
+// The jelly shore (docs/design/harbor-jelly-prompt.md), in design: on with ?harbor or emberisle-harbor = "jelly" in storage.
+const HARBOR_JELLY = (() => {
+  try {
+    return new URLSearchParams(location.search).has("harbor") || localStorage.getItem("emberisle-harbor") === "jelly";
+  } catch {
+    return false;
+  }
+})();
 type TerrainStats = { ready: boolean } & JellyStats;
 // The stand-in slab and the unseen pick block: a hex prism the jelly block's size (corners at 30 + 60k degrees, as the
 // board's pointy-top hexes), standing on its base.
@@ -176,6 +185,11 @@ export class IsleRenderer {
   private wobble = new Wobble();
   private trail: { x: number; z: number; t: number } | null = null;
   private boats: THREE.Group[] = [];
+  // Each dock as buildLand found it, its plain pier, and the jelly shore once it swaps in.
+  private docks: Dock[] = [];
+  private piers: THREE.Mesh[] = [];
+  private shore: Shore | null = null;
+  private beach!: THREE.Mesh;
   // The island's Hex Jelly scenes, batched (jelly-board.ts), once built; until then `slabs` stand in.
   private jelly: JellyBoard | null = null;
   // Whether the GPU is software, and whether the board is lite (the ground only).
@@ -357,10 +371,10 @@ export class IsleRenderer {
     this.crystalOk = this.renderer.capabilities.isWebGL2 && (ext.has("EXT_color_buffer_float") || ext.has("EXT_color_buffer_half_float"));
     for (const c of coast) this.coastMiter.set(c.id, { mx: c.mx, mz: c.mz });
     this.coastOrder = coast.map((c) => c.id);
-    const beach = new THREE.Mesh(
+    const beach = (this.beach = new THREE.Mesh(
       coastStrip(coast, -0.04, 0.22),
       new THREE.MeshStandardMaterial({ color: 0xe8d7b0, roughness: 1, metalness: 0 }),
-    );
+    ));
     beach.position.y = 0.015;
     beach.receiveShadow = true;
     this.scene.add(beach);
@@ -1073,6 +1087,7 @@ export class IsleRenderer {
     this.foam.material.opacity = 0.32 + 0.23 * (0.5 + 0.5 * Math.sin(t * 0.8));
     this.jellyT = t;
     this.jelly?.update(t);
+    this.shore?.update(t, this.cam().position);
     if (this.walk) {
       const w = this.walk;
       const u = Math.min(1, (t - w.start) / w.dur);
@@ -1331,6 +1346,7 @@ export class IsleRenderer {
             this.slabs = null;
           }
           this.living.add(jelly.group);
+          if (HARBOR_JELLY && !this.lite) void loadJelly().then(({ buildShore }) => alive() && this.swapShore(buildShore(this.coast, this.docks, hashStr(`${key}|shore`))));
           (window as unknown as { __terrain: TerrainStats }).__terrain = this.terrainStats();
           this.wake();
           performance.mark("props-end");
@@ -1345,7 +1361,12 @@ export class IsleRenderer {
     this.slabs = null;
     disposeGroup(this.land);
     disposeGroup(this.living);
+    this.shore?.dispose();
+    this.shore = null;
+    this.beach.visible = true;
     this.boats = [];
+    this.docks = [];
+    this.piers = [];
     this.living.add(this.wayfarer);
     this.pickables = [];
     this.tokens = [];
@@ -1408,6 +1429,8 @@ export class IsleRenderer {
       pier.lookAt(cx + mx, 0.1, cz + mz);
       pier.castShadow = true;
       this.land.add(pier);
+      this.piers.push(pier);
+      this.docks.push({ cx, cz, mx, mz, kind: va.harbor, vids: [va.id, vb.id] });
 
       const boat = makeBoat(va.harbor);
       boat.position.set(cx + mx * (jettyStart + jettyLen + 0.16), 0.08, cz + mz * (jettyStart + jettyLen + 0.16));
@@ -1469,6 +1492,13 @@ export class IsleRenderer {
       land(house, `v:${v.id}`, v.building.kind, color);
     }
 
+    this.paintSails(state);
+  }
+
+  // A claimed dock's sail wears the claiming seat's colour.
+  private paintSails(state: GameState) {
+    const vmap = new Map(state.vertices.map((v) => [v.id, v]));
+    const pmap = new Map(state.players.map((p) => [p.id, p]));
     for (const b of this.boats) {
       const corners = (b.userData.vids as string[]).map((id) => vmap.get(id));
       const claimed = (corners.find((v) => v?.building) ?? null)?.building?.playerId;
@@ -1477,6 +1507,26 @@ export class IsleRenderer {
         sail.material.color.set(claimed ? pmap.get(claimed)?.color ?? "#eee" : "#f4efe4");
       }
     }
+  }
+
+  // The jelly shore swaps in for the plain beach, piers and boats; its boats take their places on the swell.
+  private swapShore(shore: Shore) {
+    for (const p of this.piers) p.visible = false;
+    for (const b of this.boats) this.living.remove(b);
+    this.boats = shore.boats;
+    shore.boats.forEach((b, i) => {
+      const d = this.docks[i]!;
+      // Moored alongside the pier, bow to the shore.
+      const [tx, tz] = [d.mz, -d.mx];
+      b.position.set(d.cx + d.mx * 0.53 + tx * 0.2, 0.07, d.cz + d.mz * 0.53 + tz * 0.2);
+      // Yaw alone (no lookAt): the tick writes pitch and roll over x and z, so a lookAt's flipped Euler would not survive it.
+      b.rotation.set(0, Math.atan2(-d.mx, -d.mz), 0);
+    });
+    this.beach.visible = false;
+    this.shore = shore;
+    this.living.add(shore.group);
+    if (this.lastState) this.paintSails(this.lastState);
+    this.wake();
   }
 
   // Pose every landing piece for this moment; a finished one is left exactly at rest. Reduced motion skips to rest.

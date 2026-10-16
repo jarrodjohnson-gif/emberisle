@@ -5134,3 +5134,10 @@ export function* tileSteps(kind: Terrain, seed: number, rings = 64, board = fals
     },
   };
 }
+
+// --- for the shore (harbor-jelly.ts): the same crafting helpers and materials, under uniforms of its own (no tile's dulling
+// or roll flash reaches the beach).
+export function shoreKit() {
+  TU = { dull: { value: 0 }, flash: { value: 0 } };
+  return { part, merge, sphere, cyl, blobGeo, mat, instanced, mesh, critterMat, topMat, gull };
+}

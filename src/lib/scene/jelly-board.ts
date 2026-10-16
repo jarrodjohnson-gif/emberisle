@@ -1018,3 +1018,4 @@ export class JellyBoard {
     this.byHex.clear();
   }
 }
+export { buildShore } from "@/lib/scene/harbor-jelly";
