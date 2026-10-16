@@ -2898,14 +2898,17 @@ function brickworks(L: Layout, ground: (x: number, z: number) => number, r: () =
       sh.closePath();
       const roof = new THREE.ExtrudeGeometry(sh, { depth: 0.074, bevelEnabled: false }).translate(0, 0, -0.037).rotateY(Math.PI / 2);
       const parts = [
-        part(new THREE.BoxGeometry(1, 1, 1), "#f3e7cf", [0, 0.025, 0], [0, 0, 0], [0.064, 0.05, 0.08]),
-        part(roof, "#c4553a", [0, 0.05, 0], [0, 0, 0], [1.1, 1, 1.1]),
+        part(new THREE.BoxGeometry(1, 1, 1), "#b8513a", [0, 0.025, 0], [0, 0, 0], [0.064, 0.05, 0.08]),
+        // Mortar courses round the brick walls.
+        ...[0.008, 0.016, 0.024, 0.032, 0.04].map((y) => part(new THREE.BoxGeometry(1, 1, 1), "#e8d2b8", [0, y, 0], [0, 0, 0], [0.0645, 0.0012, 0.0805])),
+        part(new THREE.BoxGeometry(1, 1, 1), "#f3e7cf", [0, 0.002, 0], [0, 0, 0], [0.068, 0.004, 0.084]),
+        part(roof, "#5a5058", [0, 0.05, 0], [0, 0, 0], [1.1, 1, 1.1]),
         part(new THREE.BoxGeometry(1, 1, 1), "#6a4a32", [0.0325, 0.016, 0.012], [0, 0, 0], [0.002, 0.03, 0.014]),
         part(new THREE.BoxGeometry(1, 1, 1), "#4f8a5a", [0.0325, 0.032, -0.018], [0, 0, 0], [0.002, 0.014, 0.016]),
         part(new THREE.BoxGeometry(1, 1, 1), "#8a6440", [0.045, 0.008, -0.018], [0, 0, 0], [0.01, 0.003, 0.024]),
       ];
       // Roof tile ridges.
-      for (let i = -3; i <= 3; i++) parts.push(part(cyl(1, 1, 6), "#a8462e", [0, 0.06, i * 0.011], [0, 0, Math.PI / 2], [0.003, 0.098, 0.003]));
+      for (let i = -3; i <= 3; i++) parts.push(part(cyl(1, 1, 6), "#4a424a", [0, 0.06, i * 0.011], [0, 0, Math.PI / 2], [0.003, 0.098, 0.003]));
       house.add(mesh(merge(parts), cm));
       house.scale.setScalar(SIZE.house);
       house.position.set(cp.x, Y(cp.x, cp.z), cp.z);
@@ -2947,10 +2950,108 @@ function brickworks(L: Layout, ground: (x: number, z: number) => number, r: () =
     if (pots.length) g.add(mesh(merge(pots), cm));
   }
 
+  // The brickworks chimney: a tall square brick stack beside the kiln, tapering, banded near the top, smoke drifting off it.
+  {
+    const along = { x: -Math.sin(out(kp)), z: Math.cos(out(kp)) };
+    const side = L.marks.side!.x;
+    const cp = { x: kp.x - along.x * 0.2 * side + kp.x * 0.08, z: kp.z - along.z * 0.2 * side + kp.z * 0.08 };
+    if (Math.hypot(cp.x, cp.z) > 0.45 && nearestCorner(cp.x, cp.z) > 0.22 && hexDist(cp.x, cp.z) < INR - 0.16) {
+      const y = Y(cp.x, cp.z);
+      const H = 0.44;
+      const parts: THREE.BufferGeometry[] = [part(new THREE.BoxGeometry(1, 1, 1), "#9a3f2a", [cp.x, y + 0.012, cp.z], [0, 0, 0], [0.07, 0.024, 0.07])];
+      const stack = new THREE.CylinderGeometry(0.019, 0.028, H, 4, 1).rotateY(Math.PI / 4);
+      parts.push(part(stack, "#b4492f", [cp.x, y + 0.024 + H / 2, cp.z]));
+      for (let i = 1; i < 12; i++) {
+        const f = i / 12;
+        const w = (0.028 - 0.009 * f) * Math.SQRT2 + 0.0005;
+        parts.push(part(new THREE.CylinderGeometry(w / Math.SQRT2, w / Math.SQRT2, 0.0015, 4).rotateY(Math.PI / 4), "#e2c7a8", [cp.x, y + 0.024 + H * f, cp.z]));
+      }
+      parts.push(part(new THREE.CylinderGeometry(0.026, 0.024, 0.024, 4).rotateY(Math.PI / 4), "#8a3424", [cp.x, y + 0.024 + H - 0.01, cp.z]));
+      parts.push(part(new THREE.CylinderGeometry(0.017, 0.017, 0.004, 4).rotateY(Math.PI / 4), "#1a0e0a", [cp.x, y + 0.024 + H + 0.003, cp.z]));
+      const ch = mesh(merge(parts), cm);
+      ch.userData.ref = "chimney";
+      g.add(ch);
+      stands.push({ x: cp.x, z: cp.z, r: 0.06 });
+      const top = new THREE.Vector3(cp.x, y + 0.03 + H, cp.z);
+      const puffs = Array.from({ length: 6 }, (_, i) => {
+        const o = new THREE.Mesh(blobGeo(400 + i), new THREE.MeshStandardMaterial({ color: "#e9e3da", roughness: 1, transparent: true, opacity: 0.4, depthWrite: false }));
+        o.userData.loose = true;
+        g.add(o);
+        return { o, ph: i / 6 };
+      });
+      life.push((t) => {
+        const big = env.roll >= 0 ? Math.sin(env.roll * Math.PI) : 0;
+        for (const p of puffs) {
+          const u = (t * 0.09 + p.ph) % 1;
+          p.o.visible = !env.robber;
+          p.o.position.set(top.x + u * 0.12, top.y + u * 0.18, top.z - u * 0.05);
+          p.o.scale.setScalar((0.012 + u * 0.03) * (1 + big));
+          (p.o.material as THREE.MeshStandardMaterial).opacity = (0.35 + big * 0.25) * Math.sin(Math.PI * u);
+        }
+      });
+    }
+  }
+
+  // The drying yard: long rows ("hacks") of green bricks stacked in open lattice courses, each under a little plank roof on
+  // posts, on the back flank across from the kiln; a few pallets of finished red bricks stacked high by the kiln.
+  {
+    const side = L.marks.side!.x;
+    const centre = at(L.hillAt - side * 0.45, 0.6);
+    const a = Math.atan2(centre.z, centre.x) + Math.PI / 2;
+    const [ax, az] = [Math.cos(a), Math.sin(a)];
+    const [rx, rz] = [Math.cos(a - Math.PI / 2), Math.sin(a - Math.PI / 2)];
+    const bricks: Inst[] = [];
+    const roofs: THREE.BufferGeometry[] = [];
+    const GREEN = ["#d9b48a", "#cfa67c", "#e2bf98"].map((c) => new THREE.Color(c));
+    for (let row = -1; row <= 1; row++) {
+      const rc = { x: centre.x + rx * row * 0.075, z: centre.z + rz * row * 0.075 };
+      for (let i = -4; i <= 4; i++) {
+        const p = { x: rc.x + ax * i * 0.026, z: rc.z + az * i * 0.026 };
+        if (Math.hypot(p.x, p.z) < 0.42 || nearestCorner(p.x, p.z) < 0.2 || hexDist(p.x, p.z) > INR - 0.12) continue;
+        const y0 = Y(p.x, p.z);
+        // Six courses, each turned a quarter from the last, bricks set apart so air can pass.
+        for (let c = 0; c < 6; c++) {
+          const turn = c % 2 ? Math.PI / 2 : 0;
+          for (const o of [-0.007, 0.007]) {
+            const [ox, oz] = c % 2 ? [ax * o, az * o] : [rx * o, rz * o];
+            bricks.push({ m: mat(p.x + ox, y0 + 0.005 + c * 0.0105, p.z + oz, 0.022, 0.0095, 0.009, -(a + turn)), c: GREEN[(((i + c + row) % 3) + 3) % 3]! });
+          }
+        }
+        stands.push({ x: p.x, z: p.z, r: 0.016 });
+      }
+      // The hack's roof: a shallow plank cover on posts at each end.
+      const ends = [-4.6, 4.6].map((i) => ({ x: rc.x + ax * i * 0.026, z: rc.z + az * i * 0.026 }));
+      if (ends.every((e) => hexDist(e.x, e.z) < INR - 0.1 && Math.hypot(e.x, e.z) > 0.4)) {
+        const yr = Math.max(...ends.map((e) => Y(e.x, e.z))) + 0.078;
+        for (const e of ends) roofs.push(beamGeo(new THREE.Vector3(e.x, Y(e.x, e.z), e.z), new THREE.Vector3(e.x, yr, e.z), 0.003, "#7a5434"));
+        roofs.push(part(new THREE.BoxGeometry(1, 1, 1), "#9a7048", [rc.x, yr + 0.003, rc.z], [0, -a, 0.12 * row], [0.26, 0.004, 0.05]));
+      }
+    }
+    // Pallets of finished bricks by the kiln, stacked high.
+    const RED = ["#b8452e", "#a83c28", "#c4553a"].map((c) => new THREE.Color(c));
+    const along = { x: -Math.sin(out(kp)), z: Math.cos(out(kp)) };
+    for (const k of [0.32, 0.4]) {
+      const c = { x: kp.x * 0.72 + along.x * k * side, z: kp.z * 0.72 + along.z * k * side };
+      if (Math.hypot(c.x, c.z) < 0.42 || hexDist(c.x, c.z) > INR - 0.12 || stands.some((q) => Math.hypot(q.x - c.x, q.z - c.z) < q.r + 0.02)) continue;
+      const y0 = Y(c.x, c.z);
+      const pa = Math.atan2(along.z, along.x);
+      roofs.push(part(new THREE.BoxGeometry(1, 1, 1), "#a87c4f", [c.x, y0 + 0.004, c.z], [0, -pa, 0], [0.06, 0.008, 0.05]));
+      for (let row = 0; row < 7; row++)
+        for (let i = -1; i <= 1; i++)
+          for (let j = -1; j <= 1; j++) {
+            const [u, v] = [i * 0.019, j * 0.015];
+            bricks.push({ m: mat(c.x + Math.cos(pa) * u - Math.sin(pa) * v, y0 + 0.013 + row * 0.0105, c.z + Math.sin(pa) * u + Math.cos(pa) * v, 0.018, 0.0095, 0.014, -pa), c: RED[(i + j + row + 3) % 3]! });
+          }
+      stands.push({ x: c.x, z: c.z, r: 0.04 });
+    }
+    g.add(instanced(new THREE.BoxGeometry(1, 1, 1), bricks, blobMat()));
+    if (roofs.length) g.add(mesh(merge(roofs), cm));
+  }
+
   // The cypresses: tall dark flames on the mesa's ledges and at its foot.
   {
     const cy: THREE.BufferGeometry[] = [];
-    for (let k = 0, tries = 0; k < 8 && tries < 1200; tries++) {
+    for (let k = 0, tries = 0; k < 5 && tries < 1200; tries++) {
       const a = L.hillAt - L.marks.side!.x * 0.3 + (r() - 0.5) * 2.8;
       const d = 0.45 + r() * 0.42;
       const p = { x: Math.cos(a) * d, z: Math.sin(a) * d };

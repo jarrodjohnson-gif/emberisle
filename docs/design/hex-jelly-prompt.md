@@ -89,14 +89,15 @@ THE SIX WORLDS
    with reeds and bulrushes, two ducks paddling round. Round hay bales and round trees in the meadow, a red wheelbarrow of
    sheaves, a scarecrow in a straw hat, poppies and cornflowers on the margins. Surprise: a hare sits up between two rows.
 
-4. CLAY — "Terracotta Quarry". Warm terracotta ground. On a front flank, where the eye looks down into it, a big irregular
+4. BRICK (the clay tile) — "The Brickworks". Bricks are the hero; the clay quarry is where they come from. Warm terracotta ground. On a front flank, where the eye looks down into it, a big irregular
    open-cut dug into the earth: rough walls banded cream, apricot and rust by the layers it cut through, a bench halfway
    down, a damp floor with a turquoise jelly puddle in its low corner, and a narrow trench slot running off one end. Faceted
    rocks pile along its rim, rubble and crates lie on its floor. A timber headframe stands over a square shaft mouth, its
    wheel turning as a bucket of clay rises out of the shaft and sinks back; a plank scaffold deck against the back wall with
    a ladder, another ladder up over the rim. Sand martins dart from nest holes in the quarry wall. At the back, the tall
-   things: a beehive kiln with a glowing mouth and a curl of smoke (a cat asleep on top, the surprise), a potter's cottage
-   with a terracotta tiled roof, brick stacks, amphorae, Tuscan cypresses; green scrub and poppies against the orange. Two
+   things: a beehive kiln with a glowing mouth and a curl of smoke (a cat asleep on top, the surprise), a tall square brick
+   chimney trailing smoke, a drying yard of long hacks (green bricks stacked in open lattice courses under little plank
+   roofs), pallets of finished red bricks stacked high, a red-brick cottage with a slate roof, amphorae, a few cypresses; green scrub and poppies against the orange. Two
    villagers carry hods of clay from the quarry's rim to the kiln and walk back. Roll: the bucket comes up full, the kiln
    puffs sparks, the martins burst out, the carriers hurry. Night: the kiln mouth, the headframe lantern, the cottage window.
 
