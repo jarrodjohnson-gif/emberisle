@@ -1,20 +1,23 @@
 import { useEffect, useRef, useState } from "react";
+import { VictoryTargetSelect } from "@/components/game/VictoryTargetSelect";
 import { Button } from "@/components/ui/button";
 import { SeatDot } from "@/components/game/SeatDot";
-import { totalVP } from "@/lib/game/rules";
+import { totalVP, victoryTarget } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
 import { useViewport } from "@/lib/viewport";
 import { useFocusTrap } from "@/lib/focus-trap";
 
 // Build bible 4.7: the island stays visible. "Look around" hides the panel and leaves a small chip.
 export function WinScreen() {
-  const winnerId = useGame((s) => s.state?.winner);
+  const winnerId = useGame((s) => s.state?.phase === "over" ? s.state.winner : null);
   return winnerId ? <Panel key={winnerId} /> : null;
 }
 
 function Panel() {
   const { phone, portrait } = useViewport();
   const state = useGame((s) => s.state)!;
+  const target = useGame((s) => s.tableVictoryTarget);
+  const setTarget = useGame((s) => s.setVictoryTarget);
   const goTitle = useGame((s) => s.goTitle);
   const playAgain = useGame((s) => s.playAgain);
   const mode = useGame((s) => s.mode);
@@ -94,6 +97,16 @@ function Panel() {
     winning.army ? "2 largest army" : null,
     winning.hiddenVp ? `${winning.hiddenVp} hidden` : null,
   ].filter(Boolean);
+  const reason = state.winReason;
+  const action = {
+    outpost: "Built an outpost",
+    stronghold: "Upgraded to a stronghold",
+    longestPath: "Took longest path (+2)",
+    largestArmy: "Took largest army (+2)",
+    pointFortune: "Drew a point fortune (+1)",
+    turnStart: "Started their turn with winning points",
+    points: "Reached the winning score",
+  }[reason?.trigger ?? "points"];
   const head = "px-1 py-2 text-right text-[11px] sm:px-2 font-medium uppercase tracking-wide text-zinc-600";
   const cell = "px-1 py-2 sm:px-2 text-right tabular-nums";
   return (
@@ -113,6 +126,9 @@ function Panel() {
           </p>
         </div>
         <p className="win-total-hero mt-3" data-testid="win-points">{winning.total}<span className="ml-2 text-body font-medium tracking-normal">points</span></p>
+        <p data-testid="win-action" className="mt-2 text-sm text-muted">
+          {action} · {reason?.points ?? winning.total} points, target {reason?.target ?? victoryTarget(state)}.
+        </p>
         <div className="win-equation" data-testid="win-reason">{contribution.map((part, i) => <span key={part}>{i > 0 ? "+ " : ""}{part}</span>)}</div>
         <div className="mt-4 min-h-0 overflow-auto">
           <table className="w-full min-w-[560px] border-collapse text-sm">
@@ -162,7 +178,8 @@ function Panel() {
             Waiting for {hostName} to start another.
           </p>
         ) : null}
-        <div className="mt-5 flex flex-wrap gap-2">
+        <div className="mt-5 flex flex-wrap items-center gap-2">
+          {mode === "online" ? <VictoryTargetSelect label="Next game" value={target} onChange={isHost && !spectator ? setTarget : undefined} /> : null}
           <Button variant="secondary" className="min-w-fit flex-1 whitespace-nowrap" data-testid="win-look" onClick={() => setHidden(true)}>
             Look around
           </Button>

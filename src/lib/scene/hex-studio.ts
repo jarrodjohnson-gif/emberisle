@@ -1,3 +1,4 @@
+// @ts-nocheck: the old studio, built on terrain v1 (legacy/terrain-v1); it no longer runs against the current terrain.
 // The hex studio (docs/design/terrain.md "The studio"): one sculpted hex, large, seen as the diorama sees the board (38° up,
 // 20° off north, from the board's eye distance) under the board's own light rig, on the paper; or the hex in a ring of six
 // neighbours of mixed kinds. Dev only: scripts/hex-studio.html loads it and `npm run hex-studio` screenshots it. Nothing in

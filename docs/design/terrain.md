@@ -10,7 +10,7 @@ Proof: `npm run board-look-prove` (the "terrain" checks) with `tokens-prove`, `j
 
 | Part | Recipe |
 |---|---|
-| Top | A triangular lattice, 20 rings (2,400 triangles), over the hex inset by the rim. Each vertex is lifted by the terrain's relief (below) times two masks: zero within 0.40 of the centre (the token, smoothly up to full by 0.56), and zero toward the rim (bumps fade out by 0.78 of the inradius, dips by 0.93), so the top is **exactly `topOf`** under the token and on the rim where corners and paths stand. `topOf` is unchanged, so tokens, pieces (`hexTops`, `restY`), the wayfarer and the target rings sit where they did. Normals from the height function (soft); colour from the height (hollows lean to the shade, crests to the base and a lighter tint). |
+| Top | A triangular lattice, 12 rings (864 triangles), over the hex inset by the rim. Each vertex is lifted by the terrain's relief (below) times two masks: zero within 0.40 of the centre (the token, smoothly up to full by 0.56), and zero toward the rim (bumps fade out by 0.78 of the inradius, dips by 0.93), so the top is **exactly `topOf`** under the token and on the rim where corners and paths stand. `topOf` is unchanged, so tokens, pieces (`hexTops`, `restY`), the wayfarer and the target rings sit where they did. Normals from the height function (soft); colour from the height (hollows lean to the shade, crests to the base and a lighter tint). |
 | Rim | A quarter round, 0.06 out and 0.045 down, three segments, painted from the top's colour into the lip. |
 | Side | Five bands with wavy borders (seeded noise along the perimeter): the terrain's lip, sand `#ecdbb2`, a thin shell band `#f7f0e2`, caramel soil `#bb7a42`, chocolate rock `#5f4234`; flat per face, 0.04 below the base so no seam shows through the crystal sea. |
 | Variation | `mulberry32(hashStr(id + terrain))`: a rotation in 60° steps (which corner holds the feature, which flat holds the fence, the plots' row directions), the noise seed and the relief strength (0.8-1.2), then every prop's spot. No two tiles of a kind are alike (the proof compares their heights). |
@@ -30,7 +30,8 @@ Proof: `npm run board-look-prove` (the "terrain" checks) with `tokens-prove`, `j
 Nothing comes within 0.42 of a hex centre (the token's 0.34 plus its 0.05 of ground, and a little more; `tokens.md`), and
 nothing reaches past 0.95 of the inradius. The #604 rule (a prop between a token and the diorama eye shrinks until the
 numeral clears it, never below 0.3) now covers the ore peaks and the clay derricks as well as the pines: they are in
-`trees`, and each keeps its own base scale (`userData.base`); only pines sway.
+`trees`, and each keeps its own base scale (`userData.base`); only pines sway. The props arrive a frame after the tiles,
+so their arrival clears the shade pass's cached pose and the rule runs again with them in `trees`.
 
 ## How the props stay cheap
 
@@ -39,6 +40,8 @@ Every prop kind that moves or is shrunk per object (pines, peaks, derricks, shee
 (`prop`, `hex`, `reach`) and the real geometry, so a proof's raycast or bounding box measures what is drawn; `PropKit.sync`
 copies the proxies' matrices into the instances on every drawn frame. Everything that stands still is merged into one mesh per
 terrain (grain's per hex, as its `field`), each listing its `footprints`. All props share one material.
+A tile tap's wobble (`wobble.ts`) scales the proxies and the grain field with the tile; for the merged statics it scales
+`PropKit.anchor(hex)`, and `sync` rescales that hex's run of vertices about the tile's origin from a rest copy.
 
 ## Numbers (standard 19-hex board, measured by `board-look-prove`, `window.__terrain`)
 
@@ -57,8 +60,8 @@ of 40 synchronous draws, three interleaved runs against the camera branch): simp
 crystal sea 316-447 ms before, 391-679 ms after (noisy). Renderer calls per frame (every pass) fell from about 490 to 245
 (simple) and 790 to 420 (crystal); frame triangles rose from about 66k to 260k (simple). Software GL is vertex bound, so it
 pays for the triangles; an iPhone 15 Pro's GPU is bound by calls and fill long before 260k triangles. The knob, if a real-GPU
-measurement (#464) says otherwise, is `RINGS` in `terrain.ts` (16 rings is 52k triangles of tiles instead of 82k; grain's
-rows stay exact at any ring count).
+measurement (#464) says otherwise, is `RINGS` in `terrain.ts` (now 12 rings, 864 triangles per tile top; grain's rows stay exact at any
+ring count).
 
 ## What a real asset kit would replace
 

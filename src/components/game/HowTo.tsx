@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { victoryTarget } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
 import { play } from "@/lib/sound";
 import { useViewport } from "@/lib/viewport";
@@ -8,6 +9,7 @@ import { useViewport } from "@/lib/viewport";
 // A modal dialog: focus goes to Close on open and back to whatever opened it on close; Escape closes it (see useEscapeDisarm for the order).
 export function HowTo({ onClose }: { onClose: () => void }) {
   const phone = useViewport().phone;
+  const target = useGame(s => s.state ? victoryTarget(s.state) : s.screen === "lobby" ? s.tableVictoryTarget : 10);
   const closeRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const onCloseRef = useRef(onClose);
@@ -54,7 +56,7 @@ export function HowTo({ onClose }: { onClose: () => void }) {
           </Button>
         </div>
         <div className="mt-4 space-y-3 text-sm leading-relaxed text-zinc-600">
-          <p>Settle a wild hex island. Ten points wins.</p>
+          <p>Win at {target} points.</p>
           <p>Each turn: roll. Matching numbers pay goods from tiles you touch. A seven sends the wayfarer — blocked land pays nothing, and anyone with more than seven goods discards half.</p>
           <p>Build paths (timber + clay), outposts (timber, clay, wool, grain), strongholds (three grain, two ore). Fortunes cost wool, grain, ore.</p>
           <p>Outposts score 1, strongholds 2. Longest path of five and largest army of three wayfarer cards score 2 more. Docks cut bank trade to 3:1 or 2:1.</p>

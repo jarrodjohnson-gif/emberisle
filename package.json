@@ -16,10 +16,12 @@
     "tabs-prove-4": "node scripts/tabs-prove.mjs --seats 4",
     "wayfarer-prove": "node scripts/wayfarer-prove.mjs",
     "trade-prove": "node scripts/trade-prove.mjs",
+    "sounds-prove": "node scripts/sounds-prove.mjs",
     "practice-trade-prove": "node --import ./server/register.mjs scripts/practice-trade-prove.mjs",
     "pieces-prove": "node --import ./server/register.mjs scripts/pieces-prove.mjs",
     "pieces-land-prove": "node scripts/pieces-land-prove.mjs",
     "watch-ui-prove": "node --import ./server/register.mjs scripts/watch-ui-prove.mjs",
+    "win-action-prove": "node --import ./server/register.mjs scripts/win-action-prove.mjs",
     "tokens-prove": "node scripts/tokens-prove.mjs",
     "idle-prove": "node scripts/idle-prove.mjs",
     "keyboard-place-prove": "node scripts/keyboard-place-prove.mjs",
@@ -65,12 +67,14 @@
     "cap-prove": "node --import ./server/register.mjs server/cap-prove.mjs",
     "restart-prove": "node --import ./server/register.mjs server/restart-prove.mjs",
     "preseat-prove": "node --import ./server/register.mjs server/preseat-prove.mjs",
+    "victory-target-prove": "node --import ./server/register.mjs scripts/victory-target-prove.mjs",
     "visual-direction-prove": "node scripts/visual-direction-prove.mjs",
     "turn-copy-prove": "node scripts/turn-copy-prove.mjs",
     "turn-gain-prove": "node scripts/turn-gain-prove.mjs",
     "takeover-prove": "node --import ./server/register.mjs server/takeover-prove.mjs",
     "jelly-ocean-prove": "node scripts/jelly-ocean-prove.mjs",
-    "waves-prove": "node --import ./server/register.mjs scripts/waves-prove.mjs"
+    "waves-prove": "node --import ./server/register.mjs scripts/waves-prove.mjs",
+    "splash-prove": "node scripts/splash-prove.mjs"
   },
   "dependencies": {
     "clsx": "^2.1.1",
