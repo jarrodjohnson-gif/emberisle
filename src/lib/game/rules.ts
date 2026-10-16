@@ -142,7 +142,8 @@ export function legalCities(state: GameState, pid: string): string[] {
 }
 
 export function wayfarerMode(state: Pick<GameState, "wayfarerMode">): import("./types").WayfarerMode {
-  return state.wayfarerMode ?? "on";
+  // Anything but "off" plays On, so a table saved under the dropped Gentle mode stays playable.
+  return state.wayfarerMode === "off" ? "off" : "on";
 }
 
 export function stealTargets(state: GameState, hexId: string, pid: string): string[] {
