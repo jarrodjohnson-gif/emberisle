@@ -3671,7 +3671,7 @@ function mine(L: Layout, ground: (x: number, z: number) => number, r: () => numb
   lh.position.copy(new THREE.Vector3(0.04, 0.058, 0).multiplyScalar(SIZE.house * 1.35).applyEuler(adit.rotation).add(adit.position));
   g.add(lh);
   life.push(() => {
-    (glow.material as THREE.MeshBasicMaterial).opacity = env.robber ? 0 : 0.35 + env.night * 0.6;
+    (glow.material as THREE.MeshBasicMaterial).opacity = env.robber ? 0 : env.night * 0.9;
     (lantern.material as THREE.MeshBasicMaterial).opacity = env.robber ? 0.2 : 0.5 + env.night * 0.5;
     lh.material.opacity = env.robber ? 0 : env.night * 0.85;
   });
