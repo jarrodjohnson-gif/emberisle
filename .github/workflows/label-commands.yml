@@ -6,6 +6,7 @@
 #                                              (/done and /canceled: repo owner only)
 #   /changed   /unchanged                   -> adds / removes mark:changed
 #   /label <name>   /unlabel <name>         -> any existing status:, mark:, lane:, model: label
+#                                              (repo owner only; helpers use the status commands)
 #
 # Several commands can go in one comment, one per line.
 # The bot reacts 👍 when it applied the labels, 👎 when it refused.
@@ -94,12 +95,16 @@ jobs:
               else if (cmd === '/unchanged') { want.delete('mark:changed'); matched = true; }
               else if (cmd === '/label' || cmd === '/unlabel') {
                 matched = true;
-                if (!PREFIXES.some(p => arg.startsWith(p))) { bad.push(arg || '(blank)'); continue; }
-                try { await github.rest.issues.getLabel({ owner, repo, name: arg }); }
-                catch { bad.push(arg); continue; }
-                if (cmd === '/unlabel') want.delete(arg);
-                else if (arg.startsWith('status:')) setStatus(arg);
-                else want.add(arg);
+                // Free-form labels are the owner's; helpers only get the fixed status commands above.
+                if (!isOwner) { bad.push(`${cmd} (owner only)`); continue; }
+                // Use the label's canonical name from GitHub, so a case variant can't slip past the checks below.
+                let name;
+                try { name = (await github.rest.issues.getLabel({ owner, repo, name: arg })).data.name; }
+                catch { bad.push(arg || '(blank)'); continue; }
+                if (!PREFIXES.some(p => name.startsWith(p))) { bad.push(name); continue; }
+                if (cmd === '/unlabel') want.delete(name);
+                else if (name.startsWith('status:')) setStatus(name);
+                else want.add(name);
               }
             }
 
