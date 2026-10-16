@@ -68,9 +68,11 @@ const drawn = (page, n) =>
     });
   }, n);
 
-async function open(width, height, touch, water = "simple", view = null) {
+async function open(width, height, touch, water = "simple", view = null, jelly = null) {
   const ctx = await browser.newContext({ viewport: { width, height }, ...(touch ? { isMobile: true, hasTouch: true } : {}) });
   await ctx.addInitScript((w) => localStorage.setItem("emberisle-water", w), water);
+  // The full Hex Jelly scenes, where software GL would build the lite board (jelly-board.md).
+  if (jelly) await ctx.addInitScript((j) => localStorage.setItem("emberisle-jelly", j), jelly);
   if (view) await ctx.addInitScript((v) => localStorage.setItem("emberisle-view", v), view);
   const page = await ctx.newPage();
   page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
@@ -765,7 +767,7 @@ try {
   // centre (docs/design/tokens.md: the 0.26 token and 0.05 of ground). Then test-results/terrain-1280.png and, overhead on a
   // 390x844 phone, terrain-390.png.
   {
-    const page = await open(1280, 720, false, "crystal");
+    const page = await open(1280, 720, false, "crystal", null, "full");
     await page.getByRole("button", { name: "Four seats, one table" }).click();
     await page.waitForFunction(() => window.__emberisle?.water?.path === "crystal" && window.__isle.lastState && window.__isle.landReady && !window.__isle.refitDue && !window.__isle.glide, null, { timeout: STEP_MS });
     await drawn(page, 3);
@@ -808,7 +810,7 @@ try {
       return { kinds, stats: window.__terrain, rest, clearance: jelly.clearance(0.6) };
     });
     const kinds = Object.keys(t.kinds).sort();
-    check("terrain: all six kinds are on the board", kinds.join() === "clay,grain,ore,timber,waste,wool" && t.stats.kinds === 6, kinds);
+    check("terrain: all six kinds are on the board, the full scenes", kinds.join() === "clay,grain,ore,timber,waste,wool" && t.stats.kinds === 6 && !t.stats.lite, { kinds, lite: t.stats.lite });
     for (const k of kinds) {
       const s = t.kinds[k];
       check(`terrain ${k}: flat at topOf on the pad and at the corners and edges; a landform elsewhere (spread over 0.02)`, s.pad < 1e-4 && s.rim < 1e-4 && s.spread > 0.02, s);
@@ -821,7 +823,7 @@ try {
     check("terrain: nothing standing on a hex comes within 0.31 of its centre", near.length === 6 && near[0][1].min >= 0.31, Object.fromEntries(near.map(([k, v]) => [k, `${v.min.toFixed(3)} (${v.what})`])));
     await page.screenshot({ path: "test-results/terrain-1280.png" });
     await page.context().close();
-    const phone = await open(390, 844, true, "crystal");
+    const phone = await open(390, 844, true, "crystal", null, "full");
     await phone.getByRole("button", { name: "Four seats, one table" }).click();
     await phone.waitForFunction(() => window.__emberisle?.water?.path === "crystal" && window.__isle.lastState && window.__isle.landReady && !window.__isle.refitDue && !window.__isle.glide, null, { timeout: STEP_MS });
     await drawn(phone, 3);

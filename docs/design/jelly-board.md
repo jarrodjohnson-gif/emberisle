@@ -34,10 +34,26 @@ Geometry is indexed with creased normals (50°). Only things over 0.03 in radius
 
 Measured on the 19-hex island:
 - 51 draws and about 330k triangles;
-- a frame on SwiftShader at 1280x720 is about 385 ms, against 185 ms for main's sculpted board;
+- a frame on SwiftShader at 1280x720 is about 385–430 ms, against 185 ms for main's sculpted board;
 - the update is about 1 ms a frame.
 
 A `BatchedMesh` draws each instance on its own under software GL, so static scatter must stay baked.
+
+## Lite: software GPUs
+
+On a software GPU (SwiftShader or llvmpipe, read from `WEBGL_debug_renderer_info`: CI, and machines with no GPU), drawing
+shares the CPU cores with the page. There the full scenes starved everything: every tab spent 2–3 s of CPU building them,
+and frames cost more than twice main's. chat-prove, with five tabs open, reached its reaction step at +175 s against +28 s
+on main.
+
+So a software GPU builds the lite board: the jelly ground only (the block, its landform and strata; `buildTile(...,
+groundOnly)`). It costs about 0.7 s to build and about 187 ms a frame, level with main.
+
+`emberisle-jelly` in storage ("full" or "lite") overrides either way. board-look's terrain checks, tokens-prove and
+jelly-ocean ask for full, so CI still checks the real scenes.
+
+Every frame leaves a fence, and the loop does not queue another while the GPU is still behind it. A GPU that keeps up has
+always finished; a slow one no longer blocks the page in its GL calls.
 
 ## Load
 
@@ -48,8 +64,9 @@ They are built a kind per task (the longest is about 180 ms on a desktop), and t
 scene is ready, plain slabs in the terrain's paint stand in, and then the island swaps in whole (the owner: wait for it, no
 pop-in).
 
-A failed load keeps the slabs and tries again, up to five times, under a fresh query. The restore budget holds (median about
-1.5 s), since the scenes are off the first frame.
+A failed load keeps the slabs and tries again, up to five times, under a fresh query. The restore budget holds, since the
+scenes are off the first frame. restore-prove now allows a median under 3 s and a maximum under 3.5 s (the owner: load may
+grow while play stays snappy); measured locally, the median is about 1.5 s.
 
 ## In play
 

@@ -26,7 +26,7 @@ const TAP_S = 0.9;
 const DULL = new THREE.Color(0.46, 0.48, 0.58);
 
 export type JellyHex = { id: string; terrain: Terrain; x: number; z: number; y: number };
-export type JellyStats = { drawCalls: number; triangles: number; kinds: number; batches: number; bakes: number; sprites: number };
+export type JellyStats = { lite: boolean; drawCalls: number; triangles: number; kinds: number; batches: number; bakes: number; sprites: number };
 
 type Batch = {
   mesh: THREE.BatchedMesh;
@@ -237,6 +237,15 @@ function prepare(geo: THREE.BufferGeometry, attrs: string[], rgba: boolean, read
   return g;
 }
 
+// The board's one plain jelly material: a middle roughness for all, and smooth shading (the creased normals keep the facets
+// of rocks and peaks).
+function sharePlain(m: THREE.MeshStandardMaterial) {
+  m.roughness = 0.7;
+  m.metalness = 0;
+  m.flatShading = false;
+  m.vertexColors = true;
+}
+
 // A copy of a scene material that compiles the same (clone() copies neither onBeforeCompile nor its cache key).
 function copyMaterial<M extends THREE.Material>(src: M): M {
   const c = src.clone() as M;
@@ -339,6 +348,8 @@ export class JellyBoard {
   private kinds: Kind[] = [];
   private batches = new Map<string, Batch>();
   private bakes: THREE.Mesh[] = [];
+  // Lite (a software GPU, where drawing shares the CPU with the page): the ground, its landforms and strata, nothing on it.
+  private lite = false;
   private hexU: HexU = {
     uHexA: { value: Array.from({ length: MAX_HEX }, () => new THREE.Vector4(0, 0, -1, 0)) },
     uHexT: { value: Array.from({ length: MAX_HEX }, () => new THREE.Vector3(1, 1, 1)) },
@@ -355,13 +366,14 @@ export class JellyBoard {
   // Build the scenes for these hexes, one per kind from its seed, and batch them; deterministic for the same hexes and seeds.
   // `pause` runs between kinds (a scene takes about a tenth of a second to build), so no one task holds the page for long; it
   // answers false when the board is no longer wanted, and the build stops there.
-  static async create(hexes: JellyHex[], seedOf: (kind: Terrain) => number, pause: () => Promise<boolean>) {
+  static async create(hexes: JellyHex[], seedOf: (kind: Terrain) => number, pause: () => Promise<boolean>, lite = false) {
     const b = new JellyBoard();
+    b.lite = lite;
     for (const kind of [...new Set(hexes.map((h) => h.terrain))]) {
       let tile: Tile;
       setBoardDetail(true);
       try {
-        tile = buildTile(kind, seedOf(kind), RINGS, true);
+        tile = buildTile(kind, seedOf(kind), RINGS, true, lite);
       } finally {
         setBoardDetail(false);
       }
@@ -369,7 +381,23 @@ export class JellyBoard {
         .filter((h) => h.terrain === kind)
         .map((h): Hx => ({ id: h.id, T: new THREE.Matrix4().makeTranslation(h.x, h.y, h.z), rollAt: -Infinity, tapAt: -Infinity, dull: 0, dullTo: 0, M: new THREE.Matrix4(), fx: new THREE.Color(1, 1, 1), roll: -1, dirty: true, wasActive: false, glow: 0, glowWas: 0, slot: 0 }));
       b.kinds.push({ kind, tile, hexes: hx, leaves: [], sprites: [] });
-      tile.group.traverse((o) => (o as THREE.Mesh).isMesh && indexed((o as THREE.Mesh).geometry));
+      if (!(await pause())) {
+        b.dispose();
+        return null;
+      }
+      // Index its geometry in slices of about 40 ms.
+      const meshes: THREE.Mesh[] = [];
+      tile.group.traverse((o) => (o as THREE.Mesh).isMesh && meshes.push(o as THREE.Mesh));
+      let since = performance.now();
+      for (const m of meshes) {
+        indexed(m.geometry);
+        if (performance.now() - since < 40) continue;
+        if (!(await pause())) {
+          b.dispose();
+          return null;
+        }
+        since = performance.now();
+      }
       if (!(await pause())) {
         b.dispose();
         return null;
@@ -391,7 +419,7 @@ export class JellyBoard {
   }
 
   private async batch(pause: () => Promise<boolean>) {
-    type Plan = { k: Kind; o: THREE.Mesh; moves: boolean; alpha: boolean; key: string; own: boolean; attrs: string[]; rgba: boolean; cast: boolean };
+    type Plan = { k: Kind; o: THREE.Mesh; moves: boolean; alpha: boolean; key: string; own: boolean; attrs: string[]; rgba: boolean; cast: boolean; plain: boolean };
     const plans: Plan[] = [];
     const spritePlans: { k: Kind; o: THREE.Sprite }[] = [];
     for (const k of this.kinds) {
@@ -427,8 +455,18 @@ export class JellyBoard {
         const attrs = [geo.getAttribute("aCrack") ? "aCrack" : "", mat.customProgramCacheKey().startsWith("jelly-water") ? "uv" : ""].filter(Boolean);
         // Only what is big enough to show a shadow at the board's scale casts one (a pebble's or a wheat stalk's is a pixel).
         const cast = o.castShadow && sizeOf(o) > SHADOW_MIN;
-        const key = `${materialKey(mat, own, alpha)}|${attrs.join(",")}|${alpha ? "rgba" : "rgb"}|${o.renderOrder}|${cast}|${o.receiveShadow}`;
-        plans.push({ k, o, moves, alpha, key, own, attrs, rgba: alpha, cast });
+        // Each draw is most of what a frame costs on a software GPU, so the board shares them hard: every opaque thing on the
+        // plain jelly program (ground, creatures, blobs, rocks, peaks) is one material, whatever its roughness or shading, and
+        // shadows and draw order split only what is see-through. A water's own clock moves with the others', so waters share
+        // by program too.
+        const em = (mat as THREE.MeshStandardMaterial).emissive;
+        const glows = !!em && em.getHex() !== 0 && (mat as THREE.MeshStandardMaterial).emissiveIntensity > 0;
+        const plain = !!mat.userData.jellyPlain && !own && !alpha && !mat.transparent && !glows && mat.type === "MeshStandardMaterial";
+        const flowing = own && !differs((x) => x.mat);
+        const key = plain
+          ? `plain|${attrs.join(",")}|${cast}`
+          : `${materialKey(mat, own && !flowing, alpha)}|${attrs.join(",")}|${alpha ? "rgba" : "rgb"}|${mat.transparent ? `${o.renderOrder}|${cast}` : ""}`;
+        plans.push({ k, o, moves, alpha, key, own, attrs, rgba: alpha, cast, plain });
       });
       for (const o of sprites) spritePlans.push({ k, o });
     }
@@ -473,7 +511,11 @@ export class JellyBoard {
 
     // The static: baked, per material, into one mesh over every hex.
     const bakes = new Map<string, { plans: Plan[]; leaves: Omit<Leaf, "batch" | "ids">[] }>();
-    for (const p of plans.filter(isStatic)) {
+    // The ground last, within a bake and across them: the things on it draw first, so the depth test drops the ground they
+    // cover before it is shaded (on a software GPU a frame is mostly its shading).
+    const ground = (p: Plan) => p.o === p.k.tile.group.children[0] || p.o === p.k.tile.group.children[1];
+    const statics = plans.filter(isStatic).sort((a, b) => Number(ground(a)) - Number(ground(b)));
+    for (const p of statics) {
       const e = bakes.get(p.key) ?? { plans: [], leaves: [] };
       e.plans.push(p);
       e.leaves.push(leafOf(p));
@@ -483,6 +525,8 @@ export class JellyBoard {
     let since = performance.now();
     for (const e of bakes.values()) {
       const mesh = this.bake(e.plans, e.leaves);
+      // A bake of ground alone (the cracked tops, the strata) draws after the others.
+      if (e.plans.every(ground) && !(mesh.material as THREE.Material).transparent) mesh.renderOrder = 1;
       this.group.add(mesh);
       e.plans.forEach((p, i) => p.k.leaves.push({ ...e.leaves[i]!, baked: true, batch: null, ids: new Int32Array(0) }));
       if (performance.now() - since > 40) {
@@ -514,6 +558,10 @@ export class JellyBoard {
         // The batch draws with the first source's own material: its program and uniforms are the scene's. Colour comes per
         // instance (white here) unless it is the material's own batch; opacity per instance where it changes.
         let mat: THREE.Material = src;
+        if (p.plain) {
+          mat = copyMaterial(src);
+          sharePlain(mat as THREE.MeshStandardMaterial);
+        }
         if (p.rgba) {
           // Opacity comes per instance: a copy of the material at full opacity, reading the RGBA colour.
           mat = copyMaterial(src);
@@ -524,8 +572,8 @@ export class JellyBoard {
         mesh.frustumCulled = false;
         mesh.perObjectFrustumCulled = false;
         mesh.sortObjects = mat.transparent;
-        mesh.castShadow = p.cast;
-        mesh.receiveShadow = p.o.receiveShadow;
+        mesh.castShadow = moving.some((q) => q.key === p.key && q.cast);
+        mesh.receiveShadow = moving.some((q) => q.key === p.key && q.o.receiveShadow);
         mesh.renderOrder = p.o.renderOrder;
         b = { mesh, geos: new Map(), tris: new Map(), rgba: p.rgba };
         this.batches.set(p.key, b);
@@ -571,12 +619,12 @@ export class JellyBoard {
 
   // Bake static sources (one material's) into one mesh over every hex of their kind: each corner in world space, with its
   // colour, its hex's slot and the pivot and delay its thing squashes by in a roll.
-  private bake(plans: { k: Kind; o: THREE.Mesh; own: boolean; attrs: string[]; cast: boolean }[], leaves: Omit<Leaf, "batch" | "ids">[]) {
+  private bake(plans: { k: Kind; o: THREE.Mesh; own: boolean; attrs: string[]; cast: boolean; plain: boolean }[], leaves: Omit<Leaf, "batch" | "ids">[]) {
     const p0 = plans[0]!;
     const src = p0.o.material as THREE.MeshStandardMaterial;
-    const reads = !!(src as THREE.Material & { vertexColors: boolean }).vertexColors;
     const mat = p0.own ? src : copyMaterial(src);
     if (!p0.own) mat.color?.setRGB(1, 1, 1);
+    if (p0.plain) sharePlain(mat);
     (mat as THREE.Material & { vertexColors: boolean }).vertexColors = true;
     hexPatch(mat, this.hexU);
     let nv = 0;
@@ -607,6 +655,8 @@ export class JellyBoard {
       g.boundingSphere ?? g.computeBoundingSphere();
       const pos = g.getAttribute("position") as THREE.BufferAttribute;
       const nor = g.getAttribute("normal") as THREE.BufferAttribute;
+      // Each source's own material says whether its vertex colours count (the shared draw reads them for everyone).
+      const reads = !!(p.o.material as THREE.Material & { vertexColors: boolean }).vertexColors;
       const col = reads ? (g.getAttribute("color") as THREE.BufferAttribute | undefined) : undefined;
       const idx = g.index!;
       const ex = X.map((x) => g.getAttribute(x.a) as THREE.BufferAttribute | undefined);
@@ -661,8 +711,8 @@ export class JellyBoard {
     geo.setDrawRange(0, i0);
     const mesh = new THREE.Mesh(geo, mat);
     mesh.frustumCulled = false;
-    mesh.castShadow = p0.cast;
-    mesh.receiveShadow = p0.o.receiveShadow;
+    mesh.castShadow = plans.some((p) => p.cast);
+    mesh.receiveShadow = plans.some((p) => p.o.receiveShadow);
     mesh.renderOrder = p0.o.renderOrder;
     mesh.userData.tris = i0 / 3;
     this.bakes.push(mesh);
@@ -905,7 +955,7 @@ export class JellyBoard {
     }
     for (const m of this.bakes) triangles += m.userData.tris as number;
     for (const sb of this.sprites) triangles += 2 * sb.count;
-    return { drawCalls: this.batches.size + this.bakes.length + this.sprites.length, triangles: Math.round(triangles), kinds: this.kinds.length, batches: this.batches.size, bakes: this.bakes.length, sprites: this.sprites.length };
+    return { lite: this.lite, drawCalls: this.batches.size + this.bakes.length + this.sprites.length, triangles: Math.round(triangles), kinds: this.kinds.length, batches: this.batches.size, bakes: this.bakes.length, sprites: this.sprites.length };
   }
 
   dispose() {

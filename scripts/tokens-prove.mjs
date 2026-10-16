@@ -73,6 +73,8 @@ const browser = await chromium.launch({
 });
 try {
   const page = await browser.newPage({ viewport: { width: 800, height: 500 } });
+  // The full Hex Jelly scenes, where software GL would build the lite board (jelly-board.md).
+  await page.addInitScript(() => localStorage.setItem("emberisle-jelly", "full"));
   page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
   page.on("pageerror", (e) => errors.push(String(e)));
   await page.goto(`http://127.0.0.1:${PORT}/`);
@@ -128,6 +130,7 @@ try {
   // Where the diorama is the default: 1280x720, and 960x600, near the narrowest canvas that gets it (900 wide).
   for (const [width, height, phone] of [[1280, 720, false], [960, 600, false]]) {
     const ctx = await browser.newContext({ viewport: { width, height }, isMobile: phone, hasTouch: phone });
+    await ctx.addInitScript(() => localStorage.setItem("emberisle-jelly", "full"));
     const p = await ctx.newPage();
     p.on("console", (m) => m.type() === "error" && errors.push(m.text()));
     p.on("pageerror", (e) => errors.push(String(e)));

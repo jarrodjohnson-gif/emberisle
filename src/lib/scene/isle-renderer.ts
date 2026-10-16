@@ -178,6 +178,9 @@ export class IsleRenderer {
   private boats: THREE.Group[] = [];
   // The island's Hex Jelly scenes, batched (jelly-board.ts), once built; until then `slabs` stand in.
   private jelly: JellyBoard | null = null;
+  // Whether the GPU is software, and whether the board is lite (the ground only).
+  software = false;
+  lite = false;
   private slabs: THREE.InstancedMesh | null = null;
   private landGen = 0;
   // The scenes' clock as last advanced (they hold at it under reduced motion).
@@ -263,6 +266,21 @@ export class IsleRenderer {
     // GPU); `applyWater` keeps 1.5 on a phone for the simple sea (2.25x the pixels of 1, against 4x at 2).
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, this.coarse() ? 1.5 : 2));
     this.renderer.setClearColor(PAPER, 1);
+    // A software GPU (SwiftShader, llvmpipe: CI, and machines with no GPU) builds the lite board (jelly-board.ts): there the
+    // drawing shares the CPU with the page, and the full scenes' build and frames starve it. `emberisle-jelly` in storage
+    // ("full" or "lite") overrides either way; the proofs of the scenes themselves ask for full.
+    {
+      const gl = this.renderer.getContext();
+      const dbg = gl.getExtension("WEBGL_debug_renderer_info");
+      this.software = /swiftshader|llvmpipe|softpipe|software/i.test(String(gl.getParameter(dbg ? dbg.UNMASKED_RENDERER_WEBGL : gl.RENDERER)));
+      let saved: string | null = null;
+      try {
+        saved = localStorage.getItem("emberisle-jelly");
+      } catch {
+        // Storage blocked: the default.
+      }
+      this.lite = saved === "full" ? false : saved === "lite" ? true : this.software;
+    }
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -1009,6 +1027,10 @@ export class IsleRenderer {
     const busy = now < this.busyUntil || this.flashes.length > 0 || !!this.jelly?.busy();
     const gap = calm ? (busy ? 0 : Infinity) : this.titleMode ? 1000 / 30 : this.walk || pulsing || busy ? 0 : 1000 / 12;
     if (now - this.lastFrame < gap - 2) return;
+    // Backpressure: while the GPU is still on the last frame, wait for it rather than queue another. A GPU that keeps up
+    // has always finished; a software one (CI, no GPU) would otherwise block the page in its GL calls, frame after frame,
+    // and starve input and every other tab.
+    if (this.gpuBehind()) return;
     this.lastFrame = now;
     this.clock.update();
     const t = this.clock.getElapsed();
@@ -1171,6 +1193,7 @@ export class IsleRenderer {
     this.renderer.shadowMap.autoUpdate = !crystal;
     try {
       this.composer.render();
+      this.fenceFrame();
     } finally {
       this.renderer.shadowMap.autoUpdate = true;
     }
@@ -1195,6 +1218,23 @@ export class IsleRenderer {
     this.applyWater();
   }
 
+  // The fence the last frame left, and whether the GPU is still behind it.
+  private fence: WebGLSync | null = null;
+  private fenceFrame() {
+    const gl = this.renderer.getContext();
+    if (!(gl instanceof WebGL2RenderingContext) || this.fence) return;
+    this.fence = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0);
+    gl.flush();
+  }
+  private gpuBehind() {
+    const gl = this.renderer.getContext();
+    if (!this.fence || !(gl instanceof WebGL2RenderingContext)) return false;
+    if (gl.getSyncParameter(this.fence, gl.SYNC_STATUS) !== gl.SIGNALED) return true;
+    gl.deleteSync(this.fence);
+    this.fence = null;
+    return false;
+  }
+
   // Compute the visible water once when choosing a visit, not on every animal frame.
   private oceanViewport = () => {
     const canvas = this.renderer.domElement;
@@ -1216,7 +1256,7 @@ export class IsleRenderer {
   terrainStats(): TerrainStats {
     if (this.jelly) return { ready: true, ...this.jelly.stats() };
     const n = this.slabs?.count ?? 0;
-    return { ready: false, drawCalls: n ? 1 : 0, triangles: n * 24, kinds: 0, batches: 0, bakes: 0, sprites: 0 };
+    return { ready: false, lite: this.lite, drawCalls: n ? 1 : 0, triangles: n * 24, kinds: 0, batches: 0, bakes: 0, sprites: 0 };
   }
 
   // Ready once the island's scenes are built and showing (the proofs wait on it).
@@ -1233,7 +1273,7 @@ export class IsleRenderer {
     const alive = () => gen === this.landGen && !this.stopped;
     performance.mark("props-start");
     loadJelly()
-      .then(({ JellyBoard }) => (alive() ? JellyBoard.create(hexes, (kind) => hashStr(`${key}|${kind}`), () => new Promise<boolean>((r) => setTimeout(() => r(alive()), 0))) : null))
+      .then(({ JellyBoard }) => (alive() ? JellyBoard.create(hexes, (kind) => hashStr(`${key}|${kind}`), () => new Promise<boolean>((r) => setTimeout(() => r(alive()), 0)), this.lite) : null))
       .then(
         (jelly) => {
           if (!jelly) return;

@@ -16,6 +16,8 @@ try {
     const context = await browser.newContext({ viewport: { width, height }, hasTouch: phone, isMobile: phone });
     // The crystal sea (crystal-water.md), whatever the probe would pick on software GL: the visitors ride its waves.
     await context.addInitScript(() => localStorage.setItem("emberisle-water", "crystal"));
+    // The full Hex Jelly scenes, where software GL would build the lite board (jelly-board.md).
+    await context.addInitScript(() => localStorage.setItem("emberisle-jelly", "full"));
     const page = await context.newPage();
     page.on("pageerror", e => errors.push(e.message));
     page.on("console", m => m.type() === "error" && errors.push(m.text()));

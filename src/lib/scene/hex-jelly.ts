@@ -489,6 +489,8 @@ function jellyfy(m: THREE.MeshStandardMaterial, key: string, extra?: (sh: THREE.
     extra?.(sh);
   };
   m.customProgramCacheKey = () => key;
+  // The plain jelly program (no extra patch): the board draws all of these as one material (jelly-board.ts).
+  if (!extra) m.userData.jellyPlain = true;
   return m;
 }
 const topMat = () => jellyfy(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85, metalness: 0 }), "jelly-top");
@@ -2382,8 +2384,11 @@ function farm(L: Layout, ground: (x: number, z: number) => number, r: () => numb
     });
     life.push((t) => {
       for (const k of hens) {
-        const x = k.p.x + Math.sin(t * 0.5 + k.ph) * 0.025;
-        const z = k.p.z + Math.cos(t * 0.4 + k.ph) * 0.02;
+        let x = k.p.x + Math.sin(t * 0.5 + k.ph) * 0.025;
+        let z = k.p.z + Math.cos(t * 0.4 + k.ph) * 0.02;
+        // Never onto the token's ground (docs/design/tokens.md "Clear space": 0.31, plus the hen's own reach).
+        const rr = Math.hypot(x, z);
+        if (rr < 0.36) [x, z] = [(x / rr) * 0.36, (z / rr) * 0.36];
         k.h.position.set(x, Y(x, z), z);
         k.h.rotation.y = -(t * 0.5 + k.ph);
         k.body.rotation.z = -0.5 * Math.max(0, Math.sin(t * 5 + k.ph * 3)) ** 6;
@@ -5013,7 +5018,8 @@ export type Tile = {
 const ROLL_S = 2.4;
 const _squash = new THREE.Vector3();
 const _m4b = new THREE.Matrix4();
-export function buildTile(kind: Terrain, seed: number, rings = 64, board = false): Tile {
+// `groundOnly`: the block, its landform and strata, and nothing on it (the lite board on a software GPU, jelly-board.ts).
+export function buildTile(kind: Terrain, seed: number, rings = 64, board = false, groundOnly = false): Tile {
   const L = layoutOf(kind, seed);
   const ground = (x: number, z: number) => heightAt(L, x, z);
   const group = new THREE.Group();
@@ -5021,7 +5027,7 @@ export function buildTile(kind: Terrain, seed: number, rings = 64, board = false
   const env: Env = { night: 0, robber: false, roll: -1, board };
   TU = { dull: { value: 0 }, flash: { value: 0 } };
   const tu = TU;
-  const props = kind === "timber" ? forest(L, ground, r, env) : kind === "wool" ? pasture(L, ground, r, env) : kind === "grain" ? farm(L, ground, r, env) : kind === "clay" ? brickworks(L, ground, r, env) : kind === "ore" ? mine(L, ground, r, env) : kind === "waste" ? wastes(L, ground, r, env) : null;
+  const props = groundOnly ? null : kind === "timber" ? forest(L, ground, r, env) : kind === "wool" ? pasture(L, ground, r, env) : kind === "grain" ? farm(L, ground, r, env) : kind === "clay" ? brickworks(L, ground, r, env) : kind === "ore" ? mine(L, ground, r, env) : kind === "waste" ? wastes(L, ground, r, env) : null;
   const stands = props?.stands ?? [];
   // Canopy cover and contact: the ground darkens under each stand.
   const occlude = (x: number, z: number) => {
