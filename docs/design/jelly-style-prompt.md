@@ -121,3 +121,136 @@ QUALITY BAR
 - Set beside the board's existing hexes, harbor and pieces, it reads as the same series: dense, chunky, glossy, soft-lit,
   alive, with one surprise. It works on an iPhone (Safari) at 60 fps, with no console errors.
 - It reads at a glance from the phone overhead, and it rewards a close look in the diorama.
+
+## Reference prompts: the owner's series (verbatim)
+
+The owner's own jelly-diorama prompts, given on 2026-10-16 as the model for what a jelly prompt is: one named piece, a
+concrete scene told thing by thing, its physics, its life, its interactions, its UI, and a quality bar with headless tests.
+Write a new thing's prompt like these (see the template after them), then fold in THE GAME FIRST rules above when it goes
+on the board.
+
+### Castle Jelly
+
+Build a single-file WebGPU "material study" page called "Castle Jelly", in the style of my jelly diorama series (Pirate
+Jelly / Island Jelly): a square block of wobbly jelly lake on a table in a paper studio, cut faces showing candy strata,
+italic serif masthead "Castle / Jelly.", glass control panel on the right, "How to play" line at the bottom-left, UI in
+English, mobile bottom-sheet layout.
+
+The diorama: a fairy-tale castle on a cliff. The back-left of the block is a plateau whose front is a sheer wall of
+candy-striped rock (layer-cake strata that match the block's cut faces, a talus under the lake), meshed from an SDF with
+surface nets, mossy where it faces up. On the lawn: a cream castle with round towers, glossy pink/lilac/blue cone roofs,
+gold finials, fluttering pennants, crenellated walls, a great hall, arched windows (dark glass by day, lamplight at night),
+a gatehouse with a drawbridge, a brazier by the gate, gummy pines, flowering bushes, reeds. A river wells up from a spring,
+runs past the gate under the drawbridge and pours off the lip as a waterfall that arcs down into the jelly lake — and keeps
+going inside the jelly: a fraying plume, bubbles driven down then rising, bright threads of current streaming along the
+lake floor. The falls pound the surface (shallow-water waves, foam, spray, mist). A little royal galleon (blue hull, white
+sails, crown standard) sails laps of the lake.
+
+Interactions: Fireworks (rockets off the towers, coloured bursts that light the castle and the lake; automatic at night),
+Lower/Raise bridge, Royal salute (ship fires, splash), Wishing coins (into the pool under the falls); tap a tower / the
+gate / the brazier / the ship, drag the water to make waves, tip the block, throw coins and balls, bend the pines.
+Sliders: Firmness, Waterfall (flow), Wave damping, Time of day (noon → sunset → night with stars). Flavours: Glacier, Rose,
+Lilac. Shadows, caustics, refraction through the jelly, fixed-step physics.
+
+### Iceberg Jelly
+
+Build "Iceberg Jelly" — the next piece in my "Material Studies" series of jelly dioramas: a single self-contained HTML file
+using WebGPU (WGSL), no external libraries, English UI.
+
+THE SCENE
+A square block of jelly (5.2 × 5.2 units) standing on a pale, cool-grey paper studio backdrop with a soft floor shadow.
+Inside it, a polar bay:
+- At the back left, a glacier flows down a valley between jagged mountains and ends in an ice cliff standing in deep water.
+  The cliff has vertical runnels and blue bands. The glacier surface has chevron crevasses along its margins, transverse
+  crevasses and seracs near the front, and grey lateral moraines. Its tongue is flanked by moraine banks, so only its front
+  stands in the water.
+- Mountains: a peaky left range and a spur on the right of the glacier, with a snowy ridge along the back. Dark volcanic
+  rock with orange lichen, and snow in ragged patches on flatter and higher ground (not everywhere).
+- At the back right, a low peninsula with an Adélie penguin rookery: an organic, irregular patch of round pebbles stained
+  pink with krill, with pebble-ring nests. Behind it, a small research station (red and yellow huts on stilts, fuel drums,
+  a radio mast with guy wires, a flag, a turning anemometer, a snowmobile) and a timber quay.
+- A ragged skerry of two low rocks off to the front right, where Weddell seals haul out.
+- The sea floor is grey gravel with shells, sponges, sea stars and swaying anemones, visible through the clear jelly front
+  face.
+- The cut faces of the block show candy-coloured strata, dark basalt columns under the land, and layered blue glacier ice
+  with a dirty basal layer under the glacier.
+
+PHYSICS
+- Shallow-water simulation on a ~168² grid for the bay: waves, wakes, foam, refraction, caustics on the floor, light shafts,
+  and absorption that depends on the flavour.
+- Every piece of ice is a rigid body: tabular, dome, pinnacle and wedge bergs, growlers, pancake floes, and glacier slabs.
+  Each is a star-shaped faceted mesh (superellipsoid plus lobes plus two octaves of noise), a lattice of mass points for
+  buoyancy and drag, and contact spheres for ground, walls, each other and the ship. Settle stable poses at load so nothing
+  capsizes at the start.
+- Calving: three slabs stand along the cliff. About once a minute (or on demand) one breaks off with a crack, a puff of ice
+  dust, a splash, spray and a wave, then capsizes until it finds a stable way up. The glacier slowly pushes a new slab out.
+  Old slabs melt away.
+- The displaced water is handed back to the waves without feedback: wakes only when a piece moves fast, splashes when it
+  plunges in. Slow drift makes no waves.
+- The jelly block itself wobbles, shears and squashes, and can be tipped by dragging its side.
+
+LIFE
+- An icebreaker, "Polaris" (red hull with a spoon bow, white superstructure, yellow funnel with smoke, a turning radar, a
+  helideck), lies at the quay. Now and then (or on demand) she casts off, shoulders round the bay through the pack, pushing
+  floes and bergs aside, and comes back alongside. A status line shows Alongside / Casting off / Under way / Breaking ice /
+  Coming alongside, with a countdown or progress.
+- 22 Adélie penguins: blue-black backs, white shirt fronts, white eye rings, pink feet. They stand on nests and look about,
+  have the odd ecstatic display, waddle or toboggan to the beach, dive in, "fly" underwater with beating flippers, porpoise,
+  leap out onto floes and bergs, and slide off when a floe tips. They chase silverfish and thrown fish.
+- 3 Weddell seals (spotted grey) haul out on the skerry and floes, lift their heads, and go for swims.
+- An orca (proper eye patch and grey saddle) patrols deep water, surfaces to blow and dives. Penguins keep clear of it.
+- Schools of silverfish; gentle snowfall.
+
+UI (same layout as the rest of the series)
+Masthead "Material Studies / Iceberg Jelly." with a one-line description. A "WebGPU · Live" status pill. A glass control
+panel on the right that turns into a bottom sheet on mobile:
+- Buttons: Calve (shows "Wait…" while no slab is ready), Cast off / Full ahead, Throw fish, Horn (Space).
+- A water-energy meter; tallies for Calved, Capsized, Fed; the ship status line.
+- Flavours: Glacier mint, Blue raspberry, Blackberry. Each changes the water's absorption, its tint and the strata.
+- Sliders: Firmness, Wave damping, Snowfall.
+- Reset, Pause, Sound on/off, View.
+- A "How to play" footer.
+Interaction: pick up and throw floes and bergs; drag across the water to make waves; drag the ground or the side of the
+block to tip it; drag empty space or right-drag to orbit; scroll or pinch to zoom.
+
+Web Audio sounds: calving crack and rumble, splashes, a capsizing groan, ice knocking on the hull, a deep two-reed ship's
+horn, penguin plops, and wind that rises with the snowfall.
+
+Show a fallback screen when WebGPU is unavailable. Respect prefers-reduced-motion. No network requests.
+
+QUALITY BAR
+Low-poly faceted ice with chalky snowy tops, glassy blue underwater parts, blue bands, sparkles and translucency. Soft
+shadows. Cool polar light. Performance around 60 fps on a laptop. Test headlessly: no NaNs over long soaks, a calm start,
+calving plus capsize, a full ship round trip, feeding, picking up ice, the mobile sheet, and no console errors.
+Deliver the HTML file and publish it as an artifact.
+
+## Template: write a new jelly prompt like the owner's
+
+```
+Build "<Name> Jelly" — <one line: what it is, where it lives (a hex, the shore, a piece, a standalone study)>.
+
+THE SCENE
+<The setting, back to front, thing by thing: the landform and its rock and strata, the hero (a castle, a glacier, a
+ mine), every prop by material and colour (glossy cone roofs, gummy pines, candy-striped rock), the water and what lives
+ in it, what shows through the cut faces.>
+
+PHYSICS / MOTION
+<What moves and how: water (waves, foam, falls, caustics), bodies (buoyancy, capsizing, settling stable at load), the
+ jelly wobble, and the big events (calving, a waterfall pounding the surface) with their timing.>
+
+LIFE
+<Each creature or person by look and behaviour loop: idle, an occasional display, how they react to the player and to
+ each other. One small surprise. A ship or vehicle with a named status cycle if there is one.>
+
+INTERACTIONS AND UI
+<Buttons, taps, drags, sliders, flavours. On the board: none of the studio UI. The board's own moments are the roll payoff,
+ the robber, night and taps, per hex-jelly-prompt.md.>
+
+GAME RULES (on the board)
+<THE GAME FIRST above: the pads, the corners, the edges, back-of-hex placement, an instant read of the resource, and
+ nothing hiding a token.>
+
+QUALITY BAR
+<The look in one breath (faceted, chalky, glassy, soft-lit, chunky), the frame rate, and the headless checks that prove
+ it: no NaNs over a soak, a calm start, each big event once, no console errors, plus the board proofs.>
+```
