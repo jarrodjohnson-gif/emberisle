@@ -123,6 +123,19 @@ export function legalSettle(state: GameState, pid: string, setup: boolean): stri
     .map((v) => v.id);
 }
 
+const EDGE_TAKEN = "That edge already has a path.";
+
+// Why a corner is not a legal outpost spot, in the table's decided wording (#558); null when it is legal. A corner that is not on
+// the board has no reason in that wording and keeps the old "Illegal outpost.".
+export function settleError(state: GameState, pid: string, vid: string, setup: boolean): string | null {
+  const v = vertex(state, vid);
+  if (!v) return "Illegal outpost.";
+  if (v.building) return "That corner is taken.";
+  if (!distanceOk(state, vid)) return "Too close — leave one corner between buildings.";
+  if (!setup && !state.edges.some((e) => e.path === pid && (e.va === vid || e.vb === vid))) return "Outpost must touch your path.";
+  return null;
+}
+
 export function legalRoads(state: GameState, pid: string, setup: boolean): string[] {
   return state.edges
     .filter((e) => {
@@ -505,7 +518,7 @@ function applyActionInternal(prev: GameState, actor: string, action: Action): { 
     case "setupSettle": {
       if (state.phase !== "setupSettle") return { state: prev, error: "Not placing outposts." };
       if (!legalSettle(state, actor, true).includes(action.vertexId)) {
-        return { state: prev, error: "Illegal outpost." };
+        return { state: prev, error: settleError(state, actor, action.vertexId, true) ?? "Illegal outpost." };
       }
       const v = vertex(state, action.vertexId)!;
       v.building = { playerId: actor, kind: "outpost" };
@@ -520,7 +533,7 @@ function applyActionInternal(prev: GameState, actor: string, action: Action): { 
     case "setupRoad": {
       if (state.phase !== "setupRoad") return { state: prev, error: "Not placing paths." };
       if (!legalRoads(state, actor, true).includes(action.edgeId)) {
-        return { state: prev, error: "Illegal path." };
+        return { state: prev, error: edge(state, action.edgeId)?.path ? EDGE_TAKEN : "Illegal path." };
       }
       const e = edge(state, action.edgeId)!;
       e.path = actor;
@@ -588,7 +601,7 @@ function applyActionInternal(prev: GameState, actor: string, action: Action): { 
       if (me.pathsLeft <= 0) return { state: prev, error: "No paths left." };
       if (!hasCost(me, COST.path)) return { state: prev, error: "Need timber and clay." };
       if (!legalRoads(state, actor, false).includes(action.edgeId)) {
-        return { state: prev, error: "Path must connect to you." };
+        return { state: prev, error: edge(state, action.edgeId)?.path ? EDGE_TAKEN : "Path must connect to you." };
       }
       pay(state, me, COST.path);
       edge(state, action.edgeId)!.path = actor;
@@ -603,7 +616,7 @@ function applyActionInternal(prev: GameState, actor: string, action: Action): { 
       if (me.outpostsLeft <= 0) return { state: prev, error: "No outposts left." };
       if (!hasCost(me, COST.outpost)) return { state: prev, error: "Need timber, clay, wool, grain." };
       if (!legalSettle(state, actor, false).includes(action.vertexId)) {
-        return { state: prev, error: "Illegal outpost." };
+        return { state: prev, error: settleError(state, actor, action.vertexId, false) ?? "Illegal outpost." };
       }
       pay(state, me, COST.outpost);
       vertex(state, action.vertexId)!.building = { playerId: actor, kind: "outpost" };
@@ -618,7 +631,7 @@ function applyActionInternal(prev: GameState, actor: string, action: Action): { 
       if (me.strongholdsLeft <= 0) return { state: prev, error: "No strongholds left." };
       if (!hasCost(me, COST.stronghold)) return { state: prev, error: "Need three grain and two ore." };
       if (!legalCities(state, actor).includes(action.vertexId)) {
-        return { state: prev, error: "Upgrade an outpost." };
+        return { state: prev, error: "Upgrade one of your own outposts." };
       }
       pay(state, me, COST.stronghold);
       vertex(state, action.vertexId)!.building = { playerId: actor, kind: "stronghold" };
