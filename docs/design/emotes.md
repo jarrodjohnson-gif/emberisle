@@ -128,3 +128,14 @@ Each has a recommended answer first.
 4. **Where does the tray live: only the one quick-react button by Open chat, also in the lobby, with the chat's emote tray removed?** Recommended: yes.
 5. **Soundboard: cut Bong, Plop, Pluck and Wololo, and keep the airhorn and "Quit touchin' me" only if you can name a CC0 or self-made source?** Recommended: yes.
 6. **Win screen: relabel "React" as "GG! 🔊"?** Recommended: yes.
+
+## Decisions (Jarrod, 2026-10-16)
+
+These answer section 3 and override any recommendation above that disagrees.
+
+1. **Emoji set:** **Jarrod picks the emoji.** No change until he sends his list.
+2. **Image emotes:** Jarrod wants **custom PNG stickers**. Build a simple pipeline: drop a PNG in a folder and it becomes a sticker, sized for phones. He'll supply the art. Keep `ben-10` for now.
+3. **Emotes and sound:** emotes stay silent. The soundboard is the only thing that plays sounds.
+4. **One place for reactions:** all reactions (emoji, stickers, soundboard) sit in one quick-react tray, in-game and in the lobby. The separate emote tray inside chat goes.
+5. **Win screen:** "React" becomes **"GG! 🔊"**.
+6. **Licensing:** owner-approved art and clips may ship publicly; Jarrod accepts the risk.
