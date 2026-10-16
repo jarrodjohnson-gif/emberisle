@@ -490,24 +490,28 @@ try {
     assert.equal(tinted, 0, `${v.tag}: no emerald / rose fill`);
 
     // A gain and a loss each pulse the ring once. Counted from the DOM, so a re-render cannot hide a second one.
+    // The ring unmounts when its flash ends (soon on a slow runner), so its computed style is captured at mount.
     await page.evaluate(() => {
       window.__rings = [];
+      window.__ringStyles = [];
       new MutationObserver((ms) => {
-        for (const m of ms) for (const n of m.addedNodes) if (n.nodeType === 1 && n.dataset?.testid === "hand-ring") window.__rings.push(n.parentElement.dataset.testid);
+        for (const m of ms) for (const n of m.addedNodes) if (n.nodeType === 1 && n.dataset?.testid === "hand-ring") {
+          window.__rings.push(n.parentElement.dataset.testid);
+          const cs = getComputedStyle(n);
+          window.__ringStyles.push({ anim: cs.animationName, duration: cs.animationDuration });
+        }
       }).observe(document.body, { childList: true, subtree: true });
     });
     await setHand(page, { timber: 5 });
-    await page.locator('[data-testid="hand-ring"]').waitFor({ timeout: STEP_MS });
+    await page.waitForFunction(() => window.__rings.length === 1, null, { timeout: STEP_MS });
     await page.evaluate(() => { const g = window.__emberisle; g.setState({ state: structuredClone(g.getState().state) }); });
     await page.waitForTimeout(300);
     const ring = await page.evaluate(() => {
-      const el = document.querySelector('[data-testid="hand-ring"]');
       const kf = [...document.styleSheets].flatMap((s) => [...s.cssRules]).find((r) => r.name === "resource-ring");
-      return { anim: getComputedStyle(el).animationName, rings: window.__rings.slice(), n: document.querySelectorAll('[data-testid="hand-ring"]').length, kf: kf?.cssText ?? "" };
+      return { styles: window.__ringStyles.slice(), rings: window.__rings.slice(), kf: kf?.cssText ?? "" };
     });
-    assert.equal(ring.anim, "resource-ring", `${v.tag}: ring animation`);
-    assert.deepEqual(ring.rings, ["resource-timber"], `${v.tag}: one gain, one ring on timber: ${JSON.stringify(ring.rings)}`);
-    assert.equal(ring.n, 1, `${v.tag}: one ring on the page`);
+    assert.deepEqual(ring.rings, ["resource-timber"], `${v.tag}: one gain, one ring on timber, none after a cloned setState: ${JSON.stringify(ring.rings)}`);
+    assert.equal(ring.styles[0]?.anim, "resource-ring", `${v.tag}: ring animation`);
     assert.match(ring.kf, /rgb\(255, 255, 255\) 0px 0px 0px 2px/, `${v.tag}: 2 px ring`);
     await page.screenshot({ path: `test-results/hand-cards-${v.tag}.png` });
     await page.waitForTimeout(1500);
@@ -529,9 +533,15 @@ try {
 
   // Reduced motion on the short touch viewport keeps the ring as a 1 ms step and the delta as a readable 1200 ms fade.
   const rm = await open(VIEWS[2], true);
+  await rm.page.evaluate(() => {
+    window.__ringDurations = [];
+    new MutationObserver((ms) => {
+      for (const m of ms) for (const n of m.addedNodes) if (n.nodeType === 1 && n.dataset?.testid === "hand-ring") window.__ringDurations.push(getComputedStyle(n).animationDuration);
+    }).observe(document.body, { childList: true, subtree: true });
+  });
   await setHand(rm.page, { timber: 2 });
-  await rm.page.locator('[data-testid="hand-ring"]').waitFor({ timeout: STEP_MS });
-  const dur = await rm.page.evaluate(() => getComputedStyle(document.querySelector('[data-testid="hand-ring"]')).animationDuration);
+  await rm.page.waitForFunction(() => window.__ringDurations.length > 0, null, { timeout: STEP_MS });
+  const dur = await rm.page.evaluate(() => window.__ringDurations[0]);
   assert.equal(dur, "0s", "reduced motion: ring duration");
   await proveReducedMotion(rm.page, "reduced-short");
   assert.deepEqual(rm.errors, [], "reduced motion: console errors");
