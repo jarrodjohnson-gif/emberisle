@@ -61,6 +61,8 @@ export type BoardSound = (typeof SOUNDBOARD)[number]["id"];
 
 // Music is quieter than the table's knocks and clicks.
 export const MUSIC_VOLUME = 0.5;
+// The soundboard and the meme clips (robbed_fah) sit below the music (docs/design/sound.md, decisions).
+export const MEME_VOLUME = 0.4;
 
 export type SoundName = keyof typeof FILES;
 

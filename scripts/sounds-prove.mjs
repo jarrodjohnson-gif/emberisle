@@ -5,7 +5,9 @@
 //   setup moves is the same clips as the state diff says, in order, 150 ms apart; mute silences every one;
 // - practice ask-the-table: the asker hears the close once (trade_yes in full, or trade_no), never trade_offer;
 // - online chat: the sender hears chat_send once, the other seat chat_recv once, nothing while that seat types in the
-//   chat input, nothing when muted.
+//   chat input, nothing when muted;
+// - #659 volumes: every soundboard sound, the win screen's GG! and robbed_fah play at exactly 0.4 (MEME_VOLUME), the core
+//   clips stay at 1 (dice_land) and the music clips at 0.5 (game_lose).
 // Online trade_offer / trade_yes volumes are asserted in trade-prove. Zero console errors. Run: npm run sounds-prove
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
@@ -217,6 +219,7 @@ try {
   await p.evaluate(() => window.__emberisle.getState().dispatch({ type: "roll" }));
   await sleep(300);
   assert.deepEqual(await names(p), ["dice_land"], "my roll plays dice_land once");
+  assert.equal((await heard(p))[0].volume, 1, "dice_land stays at full volume (#659: only the meme clips drop to 0.4)");
   ok("practice: my roll -> dice_land once");
   await p.evaluate(() => {
     const g = window.__emberisle;
@@ -310,7 +313,7 @@ try {
   await clear(p2);
   await robbed("p0", "p1");
   await sleep(300);
-  assert.deepEqual((await heard(p2)).map((x) => x.file), ["robbed_fah.mp3"], "the victim hears robbed_fah once and not wayfarer_move");
+  assert.deepEqual((await heard(p2)).map((x) => [x.file, x.volume]), [["robbed_fah.mp3", 0.4]], "the victim hears robbed_fah once, at 0.4, and not wayfarer_move (#659)");
   ok("wayfarer: the player with a piece on the target hex hears robbed_fah once, not wayfarer_move");
   await clear(p2);
   await robbed("p0", "p1", false);
@@ -545,8 +548,8 @@ try {
   await a.getByRole("button", { name: "Play sound Fah" }).click();
   await until(async () => (await names(b)).length, "Tide hears the soundboard tap");
   await sleep(300);
-  assert.deepEqual((await heard(b)).map((x) => x.file), ["robbed_fah.mp3"], "the other seat hears fah once");
-  assert.deepEqual((await heard(a)).map((x) => x.file).filter((f) => f === "robbed_fah.mp3"), ["robbed_fah.mp3"], "the sender hears it once too");
+  assert.deepEqual((await heard(b)).map((x) => [x.file, x.volume]), [["robbed_fah.mp3", 0.4]], "the other seat hears fah once, at the meme volume 0.4 (#659)");
+  assert.deepEqual((await heard(a)).filter((x) => x.file === "robbed_fah.mp3").map((x) => [x.file, x.volume]), [["robbed_fah.mp3", 0.4]], "the sender hears it once too, at 0.4");
   const chip = await b.getByTestId("chat-log").locator("li", { hasText: "Fah" }).first().textContent();
   assert.ok(chip.includes("Ember") && chip.includes("\u{1F50A} Fah"), `the chip reads "Ember \u{1F50A} Fah": ${chip}`);
   ok("soundboard: a tap plays on both seats and shows the chip \"Ember \u{1F50A} Fah\" in chat");
@@ -574,8 +577,20 @@ try {
     await a.evaluate((x) => window.__emberisle.getState().sendSound(x), id);
     await until(async () => (await names(b)).length, `${id} reaches Tide`);
     await sleep(300);
-    assert.deepEqual((await heard(b)).map((x) => x.file), [file], `${id} plays once on the other seat`);
+    assert.deepEqual((await heard(b)).map((x) => [x.file, x.volume]), [[file, 0.4]], `${id} plays once on the other seat, at 0.4`);
   }
+  // #659: every soundboard id plays at the meme volume 0.4 (below the music's 0.5). The rest of the board, by id, one tap each.
+  // The raw played file, not its clip name: the board_* sounds reuse files that table clips own, which `heard` names by the first.
+  for (const [id, file] of [["sb_wololo", "sb_wololo.mp3"], ["bong", "bong_001"], ["plop", "plop"], ["pluck", "pluck_001"]]) {
+    await sleep(3100);
+    await clear(b);
+    await a.evaluate((x) => window.__emberisle.getState().sendSound(x), id);
+    await until(async () => (await names(b)).length, `${id} reaches Tide`);
+    await sleep(300);
+    const got = await b.evaluate(() => window.__plays);
+    assert.deepEqual(got.map((x) => [x.file, x.volume]), [[file, 0.4]], `${id} plays once at 0.4 (${JSON.stringify(got)})`);
+  }
+  ok("soundboard: every board sound (fah, wololo, airhorn, quit touchin, only wood, bong, plop, pluck) plays at 0.4");
   await b.evaluate(async () => {
     const { play } = await import("/src/lib/sound.ts");
     play("sb_airhorn");
@@ -614,7 +629,7 @@ try {
   await a.getByTestId("win-react").click();
   await until(async () => (await names(b)).length, "Tide hears the win reaction");
   await sleep(300);
-  assert.deepEqual((await heard(b)).map((x) => x.file), ["sb_win_reaction.mp3"], "the other seat hears sb_win_reaction once");
+  assert.deepEqual((await heard(b)).map((x) => [x.file, x.volume]), [["sb_win_reaction.mp3", 0.4]], "the other seat hears sb_win_reaction once, at 0.4");
   assert.ok((await b.getByTestId("chat-log").locator("li", { hasText: "GG!" }).count()) >= 1, "with the chip \"GG!\"");
   assert.ok(await a.getByTestId("win-react").isDisabled(), "React rests for 3 s");
   ok("win screen: React plays sb_win_reaction on the other seat once, with a chip, and rests");
