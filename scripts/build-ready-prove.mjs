@@ -12,6 +12,11 @@
 //   at most main's (MAIN_STACK, measured on e61d665 with the same hand) plus 2 px, so the island's hole is no smaller;
 // - a build that just became ready pulses once (class build-ready); one with no spot or none left never does, however the
 //   hand changes; under reduced motion the pulse has no animation;
+// - #535: a press on a build short of goods hangs "Need 1 clay" / "Need 1 grain, 2 ore" above it, up within 300 ms and gone
+//   by 2 s, arming nothing and sending no move; the build stays aria-disabled and focusable, and with the goods it arms;
+//   the chip is the only message on screen (the HUD error line stays empty; the alert region and the error cue still get
+//   "Need 1 more clay"), it sits inside the HUD stack on every tile (Fortune hangs it from the right), and a change of hand
+//   takes it down at once;
 // - with Path armed, one Escape on the open Costs card closes the card and leaves Path armed;
 // - the Costs card opens from the Table menu: one row per build with the COST chips and the price as text for a screen
 //   reader, the POINTS lines, the win line; focus
@@ -283,6 +288,91 @@ try {
       assert.deepEqual(rich.classes, ["path", "stronghold", "card"], `${tag}: the ready builds pulse, No spot does not`);
       // The pulse clears on its own (reduced motion has no animationend to clear it).
       await page.waitForFunction(() => !document.querySelector('[data-testid="build-path"]').classList.contains("build-ready"));
+
+      // #535 (A-1): a tap on a build the hand cannot pay for hangs "Need ..." above it for 1.6 s, worded from COST and the hand.
+      // It is up within 300 ms of the pointer going down, gone by 2 s, and arms nothing and sends nothing; the button stays
+      // aria-disabled and focusable; once the goods come (no reload) the same tap arms the build and shows no hint.
+      // Review: the chip is the only line on screen. The error cue and the screen reader still get the full sentence ("Need 1
+      // more clay"), so the HUD's error line stays empty and the alert region says it.
+      const hintFor = (hand, k) => `Need ${RESOURCES.filter((r) => (COST[k][r] ?? 0) > hand[r]).map((r) => `${COST[k][r] - hand[r]} ${r}`).join(", ")}`;
+      const saidFor = (hand, k) => `Need ${RESOURCES.filter((r) => (COST[k][r] ?? 0) > hand[r]).map((r) => `${COST[k][r] - hand[r]} more ${r}`).join(" and ")}`;
+      const tapHint = async (k) => {
+        await page.evaluate((k) => {
+          const b = document.querySelector(`[data-testid="build-${k}"]`);
+          window.__hintWatch?.disconnect();
+          window.__hintProbe = { down: 0, shown: 0, gone: 0, text: "", seq: window.__emberisle.getState().state.seq, errSeq: window.__emberisle.getState().errorSeq };
+          b.addEventListener("pointerdown", () => (window.__hintProbe.down = performance.now()), { once: true, capture: true });
+          const look = () => {
+            const el = document.querySelector(`[data-testid="build-hint-${k}"]`);
+            const p = window.__hintProbe;
+            if (el && !p.shown) {
+              p.shown = performance.now();
+              p.text = el.textContent.trim();
+              // Read the moment the chip appears: where it sits, what else is on screen, and what the alert region holds.
+              const r = el.getBoundingClientRect();
+              const s = el.closest("[data-hud-stack]").getBoundingClientRect();
+              p.rect = { left: r.left, right: r.right, top: r.top, bottom: r.bottom, stackLeft: s.left, stackRight: s.right, innerWidth, innerHeight };
+              const said = document.querySelector('[data-testid="announce-error"]').textContent.trim();
+              p.said = said;
+              p.errSeqNow = window.__emberisle.getState().errorSeq;
+              p.stateError = window.__emberisle.getState().error;
+              p.visibleLines = [...document.querySelectorAll("span")].filter((x) => x.textContent.trim() === said && !x.closest('[data-testid="announce-error"]')).length;
+            }
+            if (!el && p.shown && !p.gone) p.gone = performance.now();
+          };
+          window.__hintWatch = new MutationObserver(look);
+          window.__hintWatch.observe(document.body, { childList: true, subtree: true, characterData: true });
+        }, k);
+        const b = page.getByTestId(`build-${k}`);
+        if (v.touch) await b.tap({ force: true });
+        else await b.click({ force: true });
+      };
+      for (const [name, hand, k] of [
+        ["one good", { ...NONE, timber: 1 }, "path"],
+        ["two goods", { ...NONE, wool: 1, grain: 1, ore: 1 }, "stronghold"],
+        // The last tile hangs its chip from the right edge (the first, Path, from the left).
+        ["last tile", { ...NONE, timber: 1 }, "card"],
+      ]) {
+        await craft({ hand, pathsLeft: 5, deckLeft: 5 });
+        await page.waitForFunction((k) => document.querySelector(`[data-testid="build-${k}"]`)?.dataset.build === "short", k);
+        await tapHint(k);
+        await page.waitForFunction(() => window.__hintProbe.gone, null, { timeout: 4_000 });
+        const probe = await page.evaluate(() => ({ ...window.__hintProbe, mode: window.__emberisle.getState().buildMode, seqNow: window.__emberisle.getState().state.seq, pending: window.__emberisle.getState().pendingPlace }));
+        const at = `${tag} · ${name} · ${k}`;
+        assert.equal(probe.text, hintFor(hand, k), `${at}: the hint names the missing goods from COST`);
+        assert.ok(probe.shown - probe.down <= 300, `${at}: the hint is up ${Math.round(probe.shown - probe.down)} ms after the press, within 300`);
+        assert.ok(probe.gone - probe.down <= 2000 && probe.gone - probe.shown >= 1400, `${at}: shown ${Math.round(probe.gone - probe.shown)} ms, gone ${Math.round(probe.gone - probe.down)} ms after the press`);
+        const { rect } = probe;
+        assert.ok(rect.left >= rect.stackLeft - 0.5 && rect.right <= rect.stackRight + 0.5 && rect.top >= 0 && rect.left >= 0 && rect.right <= rect.innerWidth && rect.bottom <= rect.innerHeight, `${at}: the chip is on screen and inside the HUD stack ${JSON.stringify(rect)}`);
+        assert.equal(probe.said, saidFor(hand, k), `${at}: the screen reader gets the full sentence`);
+        assert.equal(probe.errSeqNow, probe.errSeq + 1, `${at}: the error cue fired once (errorSeq)`);
+        assert.equal(probe.stateError, null, `${at}: no error line is set for the HUD`);
+        assert.equal(probe.visibleLines, 0, `${at}: the chip is the only message on screen, no HUD error line`);
+        assert.equal(probe.mode, "none", `${at}: nothing is armed`);
+        assert.equal(probe.pending, null, `${at}: no placement is pending`);
+        assert.equal(probe.seqNow, probe.seq, `${at}: no move was sent`);
+        const btn = await page.getByTestId(`build-${k}`).evaluate((el) => ({ aria: el.getAttribute("aria-disabled"), tab: el.tabIndex, disabled: el.disabled }));
+        assert.deepEqual(btn, { aria: "true", tab: 0, disabled: false }, `${at}: still aria-disabled and focusable`);
+      }
+      // Review: the chip names what was missing for this hand. When the hand changes under it (a trade, a steal) it comes down
+      // with the change, not 1.6 s later; with the clay in hand Path reads Ready and no chip hangs over it.
+      await craft({ hand: { ...NONE, timber: 1 }, pathsLeft: 5, deckLeft: 5 });
+      await page.waitForFunction(() => document.querySelector('[data-testid="build-path"]').dataset.build === "short");
+      await tapHint("path");
+      await page.waitForFunction(() => window.__hintProbe.shown, null, { timeout: 4_000 });
+      await craft({ hand: { ...NONE, timber: 1, clay: 1 }, pathsLeft: 5, deckLeft: 5 });
+      await page.waitForFunction(() => window.__hintProbe.gone, null, { timeout: 4_000 });
+      const stale = await page.evaluate(() => ({ lived: window.__hintProbe.gone - window.__hintProbe.shown, ready: document.querySelector('[data-testid="build-path"]').dataset.build, chip: document.querySelectorAll('[data-testid="build-hint-path"]').length }));
+      assert.ok(stale.lived < 1400, `${tag}: the chip lived ${Math.round(stale.lived)} ms after the clay came, it should go with the hand (not at the 1.6 s timer)`);
+      assert.deepEqual({ ready: stale.ready, chip: stale.chip }, { ready: "ready", chip: 0 }, `${tag}: Path reads Ready with no chip over it`);
+      // The goods come with no reload: the same tap now arms Path and shows no hint.
+      await craft({ hand: { ...NONE, timber: 1, clay: 1 }, pathsLeft: 5, deckLeft: 5 });
+      await page.waitForFunction(() => document.querySelector('[data-testid="build-path"]').dataset.build === "ready");
+      if (v.touch) await page.getByTestId("build-path").tap({ force: true });
+      else await page.getByTestId("build-path").click({ force: true });
+      assert.equal(await page.evaluate(() => window.__emberisle.getState().buildMode), "path", `${tag}: with the clay in hand the tap arms Path`);
+      assert.equal(await page.getByTestId("build-hint-path").count(), 0, `${tag}: a ready build shows no hint`);
+      await page.evaluate(() => window.__emberisle.getState().setBuildMode("none"));
 
       // The Costs card from the Table menu, with Path armed underneath: one Escape closes the card alone.
       await page.evaluate(() => window.__emberisle.getState().setBuildMode("path"));

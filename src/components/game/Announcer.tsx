@@ -20,7 +20,9 @@ export function Announcer() {
   });
   const event = useGame((s) => s.chatOpen ? "" : (s.gameLog.at(-1)?.text ?? ""));
   const error = useGame((s) => s.error);
+  const announcement = useGame((s) => s.announcement);
   const errorSeq = useGame((s) => s.errorSeq);
+  const alert = error ?? announcement;
   // A live region that mounts with its text already in it is often not read, so the first turn is filled in after mount.
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -34,7 +36,7 @@ export function Announcer() {
       <p data-testid="announce-trade" aria-live="polite" aria-atomic="true">{mounted ? trade : ""}</p>
       {/* Keyed by errorSeq: a repeat of the same error replaces the text node, so it is read again. */}
       <p data-testid="announce-error" role="alert">
-        {error ? <span key={errorSeq}>{error}</span> : null}
+        {alert ? <span key={errorSeq}>{alert}</span> : null}
       </p>
     </div>
   );

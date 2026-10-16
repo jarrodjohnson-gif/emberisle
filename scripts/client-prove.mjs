@@ -802,10 +802,24 @@ try {
   const cardsBefore = await page.evaluate(() => window.__emberisle.getState().state.deck.length);
   for (const n of ["Path", "Outpost", "Stronghold", "Fortune"]) await page.getByRole("button", { name: n, exact: true }).click({ force: true });
   await page.keyboard.press("Enter");
-  const clickRes = await page.evaluate(() => ({ buildMode: window.__emberisle.getState().buildMode, cards: window.__emberisle.getState().state.deck.length, error: window.__emberisle.getState().error }));
+  const clickRes = await page.evaluate(() => ({ buildMode: window.__emberisle.getState().buildMode, cards: window.__emberisle.getState().state.deck.length, error: window.__emberisle.getState().error, said: window.__emberisle.getState().announcement }));
   console.log("click unaffordable:", JSON.stringify({ ...clickRes, cardsBefore }));
-  // A tap the hand cannot pay for builds and buys nothing, and says what is missing.
-  if (clickRes.buildMode !== "none" || clickRes.cards !== cardsBefore || !/^Need \d+ more /.test(clickRes.error ?? "")) throw new Error(`unaffordable click acted: ${JSON.stringify(clickRes)}`);
+  // A tap the hand cannot pay for builds and buys nothing, and says what is missing: to the screen reader and the error cue, with no HUD error line (#535: the chip over the build is the one message on screen).
+  if (clickRes.buildMode !== "none" || clickRes.cards !== cardsBefore || clickRes.error !== null || !/^Need \d+ more /.test(clickRes.said ?? "")) throw new Error(`unaffordable click acted: ${JSON.stringify(clickRes)}`);
+  // #535 review: the quiet message is not left behind when `error` moves on. A quiet "x", then a refused move (error "y"), then
+  // the error cleared: the alert region reads x, y, and then nothing, never x again.
+  {
+    const alertText = () => page.evaluate(() => document.querySelector('[data-testid="announce-error"]').textContent.trim());
+    await page.evaluate(() => window.__emberisle.getState().refuseQuietly("x"));
+    await page.waitForFunction(() => document.querySelector('[data-testid="announce-error"]').textContent.trim() === "x", null, { timeout: 5000 });
+    const refused = await page.evaluate(() => window.__emberisle.getState().dispatch({ type: "roll" }).error);
+    await page.waitForFunction((y) => document.querySelector('[data-testid="announce-error"]').textContent.trim() === y, refused, { timeout: 5000 });
+    const mid = await page.evaluate(() => ({ announcement: window.__emberisle.getState().announcement }));
+    await page.evaluate(() => window.__emberisle.setState({ error: null }));
+    await page.waitForFunction(() => document.querySelector('[data-testid="announce-error"]').textContent.trim() !== "x", null, { timeout: 5000 });
+    console.log("quiet message, then a refused move:", JSON.stringify({ refused, mid, after: await alertText() }));
+    if (!refused || mid.announcement !== null) throw new Error(`a refused move left the quiet message in the store: ${JSON.stringify({ refused, mid })}`);
+  }
   await setHand({ timber: 1, clay: 1 });
   const some = await buildRow();
   console.log("build row, 1 timber 1 clay:", JSON.stringify(some));

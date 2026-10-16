@@ -272,6 +272,8 @@ interface GameStore {
   error: string | null;
   // Bumped on every refused move, so the same error twice is announced twice (#380).
   errorSeq: number;
+  // Said to a screen reader (and sounded) without a line on screen: a short build's tap is answered by its chip (#535).
+  announcement: string | null;
   buildMode: BuildMode;
   // Edges picked so far for a path fortune (buildMode "roadCard"); sent together as one playRoad.
   roadPicks: string[];
@@ -309,8 +311,10 @@ interface GameStore {
   pendingPlace: { kind: "hex" | "vertex" | "edge"; id: string } | null;
   setPendingPlace: (p: { kind: "hex" | "vertex" | "edge"; id: string } | null) => void;
   confirmPlace: () => void;
-  // A tap the hand cannot pay for says why, the way a refused move does (the status line, the screen reader, the error cue).
+  // A refused action says why (the status line, the screen reader, the error cue).
   refuse: (message: string) => void;
+  // The same cue and announcement as `refuse`, with no line on the HUD: the caller shows the message itself.
+  refuseQuietly: (message: string) => void;
   highlights: () => { vertices: string[]; edges: string[]; hexes: string[] };
   // Set when a robber/knight hex has 2+ steal targets and needs the player to pick one.
   pendingSteal: { hexId: string; kind: "moveRobber" | "playKnight"; targets: string[] } | null;
@@ -490,6 +494,7 @@ export const useGame = create<GameStore>((set, get) => ({
   host: true,
   state: null,
   error: null,
+  announcement: null,
   errorSeq: 0,
   buildMode: "none",
   roadPicks: [],
@@ -575,6 +580,7 @@ export const useGame = create<GameStore>((set, get) => ({
       state,
       gameLog: stamp(state.log),
       error: null,
+      announcement: null,
       toast: null,
       buildMode: "none",
       net: null,
@@ -606,6 +612,7 @@ export const useGame = create<GameStore>((set, get) => ({
       state,
       gameLog: stamp(state.log),
       error: null,
+      announcement: null,
       toast: null,
       buildMode: "none",
       net: null,
@@ -627,6 +634,7 @@ export const useGame = create<GameStore>((set, get) => ({
       host,
       table: table ?? get().table,
       error: null,
+      announcement: null,
       pendingSteal: null,
       resync: false,
       synced: get().resync ? get().synced + 1 : get().synced,
@@ -646,6 +654,7 @@ export const useGame = create<GameStore>((set, get) => ({
       wayfarerChoices: {},
       state: null,
       error: null,
+      announcement: null,
       buildMode: "none",
       net: null,
       peeking: false,
@@ -688,14 +697,14 @@ export const useGame = create<GameStore>((set, get) => ({
     const actor = asId ?? (mode === "hotseat" ? state.current : localId);
     const res = applyAction(state, actor, action);
     if (res.error) {
-      set({ error: res.error, toast: res.error, errorSeq: get().errorSeq + 1 });
+      set({ announcement: null, error: res.error, toast: res.error, errorSeq: get().errorSeq + 1 });
       play("ui_error");
       return { ok: false, error: res.error };
     }
     const nextState = automated
       ? logBotAction(state, res.state, action, actor, state.players.find((p) => p.id === actor)?.name.replace(/ \(bot\)$/i, "") ?? actor)
       : res.state;
-    set({ state: nextState, gameLog: appendLog(get().gameLog, newLog(state.log, nextState.log)), error: null, toast: null, buildMode: "none", roadPicks: [] });
+    set({ state: nextState, gameLog: appendLog(get().gameLog, newLog(state.log, nextState.log)), error: null, announcement: null, toast: null, buildMode: "none", roadPicks: [] });
     hear(state, nextState, localId, mode);
     // An offer lives only while its asker still has the turn in `main` and still holds the offered goods (as host.mjs play).
     const open = get().offer;
@@ -764,7 +773,12 @@ export const useGame = create<GameStore>((set, get) => ({
   pendingPlace: null,
   setPendingPlace: (p) => set({ pendingPlace: p }),
   refuse: (message) => {
-    set({ error: message, toast: message, errorSeq: get().errorSeq + 1 });
+    set({ announcement: null, error: message, toast: message, errorSeq: get().errorSeq + 1 });
+    play("ui_error");
+  },
+  // `error` also draws the HUD's line, so the message goes to `announcement` and an earlier line is cleared: the newest word wins.
+  refuseQuietly: (message) => {
+    set({ error: null, announcement: message, errorSeq: get().errorSeq + 1 });
     play("ui_error");
   },
   confirmPlace: () => {
@@ -912,6 +926,7 @@ export const useGame = create<GameStore>((set, get) => ({
       localId: "p0",
       gameLog: appendLog(get().gameLog, next.log),
       error: null,
+      announcement: null,
       toast: null,
       buildMode: "none",
       roadPicks: [],
@@ -985,7 +1000,7 @@ export const useGame = create<GameStore>((set, get) => ({
             ? "Offer something."
             : null;
     if (error) {
-      set({ error, toast: error, errorSeq: get().errorSeq + 1 });
+      set({ announcement: null, error, toast: error, errorSeq: get().errorSeq + 1 });
       play("ui_error");
       return;
     }
@@ -997,7 +1012,7 @@ export const useGame = create<GameStore>((set, get) => ({
     if (mode === "online") return net?.answer(offer.tradeId, yes);
     const error = respond(set, get, localId, yes);
     if (error) {
-      set({ error, toast: error, errorSeq: get().errorSeq + 1 });
+      set({ announcement: null, error, toast: error, errorSeq: get().errorSeq + 1 });
       play("ui_error");
     }
   },
@@ -1104,7 +1119,7 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       const history = (chat ?? []).slice(-50).map((l) => ({ ...l, at: known.get(l.id) ?? now }));
       if (spectator) {
         // No lobby for a watcher: the host's first `state`, which follows at once, moves it to the board.
-        set({ code, spectator: true, seatId: "", isHost: false, mode: "online", error: outdated, toast: outdated, chat: history, reactions: [], unread: 0 });
+        set({ announcement: null, code, spectator: true, seatId: "", isHost: false, mode: "online", error: outdated, toast: outdated, chat: history, reactions: [], unread: 0 });
         return;
       }
       // A reload at a table that was in play (#543) waits on the loading screen for the state that follows at once, not the
@@ -1122,10 +1137,10 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
           liveCode = "";
           set({ restoring: false, screen: "lobby" });
         }, 1500);
-      set({ code, spectator: false, seatId: you ?? "", isHost: host ?? false, screen: restoring ? "title" : inGame ? "play" : "lobby", mode: "online", error: outdated, toast: outdated, chat: history, reactions: [], unread: 0 });
+      set({ announcement: null, code, spectator: false, seatId: you ?? "", isHost: host ?? false, screen: restoring ? "title" : inGame ? "play" : "lobby", mode: "online", error: outdated, toast: outdated, chat: history, reactions: [], unread: 0 });
     },
     // The window may have closed while we were away; the next state brings it back rather than a chip stuck at 0:00.
-    reconnecting: (attempt) => set({ error: `Reconnecting… (try ${attempt})`, toast: "Reconnecting…", turnTimer: null }),
+    reconnecting: (attempt) => set({ announcement: null, error: `Reconnecting… (try ${attempt})`, toast: "Reconnecting…", turnTimer: null }),
     chat: (line) => {
       const { chat, chatOpen, unread, seatId, screen } = get();
       // The lobby box is always open, so only lines that arrive during the game can be unread.
@@ -1166,7 +1181,7 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       if (get().state?.phase === "over" && game.phase !== "over") set({ buildMode: "none", roadPicks: [], pendingPlace: null, tradeOpen: false });
       get().loadState(game, me, get().isHost, get().code);
       if (!get().spectator) rememberLive(get().code);
-      if (outdated) set({ error: outdated, toast: outdated });
+      if (outdated) set({ announcement: null, error: outdated, toast: outdated });
       if (rollOff) showBanner(set, rollOff);
       else if (swing) showBanner(set, swing);
     },
@@ -1185,7 +1200,7 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
     },
     error: (message) => {
       if (!pending && kind !== "peek") {
-        set({ error: message, toast: message, errorSeq: get().errorSeq + 1 });
+        set({ announcement: null, error: message, toast: message, errorSeq: get().errorSeq + 1 });
         play("ui_error");
       }
       // A refused join leaves an unseated socket the host never closes; drop it so the next peek can open its own.
@@ -1204,14 +1219,14 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       if (keepSeat) {
         stopEndMusic();
 
-        set({ restoring: false, error: "Your seat is open in another tab", toast: "Your seat is open in another tab", screen: "title", net: null, peeking: false, seats: [], code: "", state: null });
+        set({ announcement: null, restoring: false, error: "Your seat is open in another tab", toast: "Your seat is open in another tab", screen: "title", net: null, peeking: false, seats: [], code: "", state: null });
         return;
       }
       if (kind === "watch") {
         // A watcher holds nothing worth saving, and the seat secret in localStorage may belong to another table.
         stopEndMusic();
 
-        set({ error: "Lost the table", toast: "Lost the table", screen: "title", net: null, peeking: false, seats: [], code: "", state: null, spectator: false, watching: 0 });
+        set({ announcement: null, error: "Lost the table", toast: "Lost the table", screen: "title", net: null, peeking: false, seats: [], code: "", state: null, spectator: false, watching: 0 });
         return;
       }
       rememberSeat(null);
@@ -1219,19 +1234,19 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
         const gone = get().restoring ? "Seat is gone." : null;
         stopEndMusic();
 
-        set({ restoring: false, error: gone, toast: gone, screen: "title", net: null, peeking: false, seats: [], code: "", state: null });
+        set({ announcement: null, restoring: false, error: gone, toast: gone, screen: "title", net: null, peeking: false, seats: [], code: "", state: null });
         return;
       }
       stopEndMusic();
 
-      set({ error: "Lost the table", toast: "Lost the table", screen: "title", net: null, peeking: false, seats: [], code: "", state: null });
+      set({ announcement: null, error: "Lost the table", toast: "Lost the table", screen: "title", net: null, peeking: false, seats: [], code: "", state: null });
     },
   });
   // A host that cannot be dialled never welcomes, so the splash would wait out the whole backoff: after 3 s the Title shows
   // with "Reconnecting…" while the retries go on.
   if (kind === "quiet" && get().restoring) setTimeout(() => get().restoring && get().net === table && set({ restoring: false }), 3000);
   // A peek is not the player's action, so it leaves a join error ("Lost the table") on the Title card.
-  set(kind === "peek" ? { net: table, peeking: true, mode: "online" } : { net: table, peeking: false, mode: "online", error: null });
+  set(kind === "peek" ? { net: table, peeking: true, mode: "online" } : { net: table, peeking: false, mode: "online", error: null, announcement: null });
   if (kind !== "peek") {
     const online = () => table.wake();
     const visible = () => {

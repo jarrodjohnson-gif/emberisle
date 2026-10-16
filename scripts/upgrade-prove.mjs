@@ -4,8 +4,9 @@
 //   a starter outpost raises the stronghold (no Place chip to confirm), and the corner under the tap is the outpost, not
 //   covered by the HUD; a path still selects on the first tap and places on the Place chip; online (the host's legal list
 //   and a stubbed socket) one tap sends buildStronghold;
-// - a hand short of ore keeps the Upgrade button pressable: a tap says "Need 1 more ore" (in the status line and
-//   the button's description) and arms nothing; short of everything it says "Need 3 more grain and 2 more ore";
+// - a hand short of ore keeps the Upgrade button pressable: a tap says "Need 1 more ore" (to the screen reader and in
+//   the button's description; #535: the chip over the button is the one line on screen, so the HUD error line stays
+//   empty) and arms nothing; short of everything it says "Need 3 more grain and 2 more ore";
 // - at 1280x720 a mouse click on an armed outpost still upgrades it in one click;
 // Zero console errors. Run: npm run upgrade-prove (VITE_PORT, default 8520).
 import assert from "node:assert/strict";
@@ -177,17 +178,19 @@ try {
       console.log(`${tag}: online, one tap sends buildStronghold to the host`);
     }
 
-    // 4. Short of ore: Upgrade says so, on the button and as the toast, and arms nothing.
+    // 4. Short of ore: Upgrade says so, on the button and to the screen reader (no HUD error line, #535), and arms nothing.
     await load({ grain: 3, ore: 1 });
     assert.match(await upgrade.getAttribute("aria-description"), /Need 1 more ore/, `${tag}: description`);
     await press(upgrade);
-    await page.waitForFunction(() => /Need 1 more ore/.test(window.__emberisle.getState().error ?? ""), null, { timeout: 5000 });
+    await page.waitForFunction(() => /Need 1 more ore/.test(window.__emberisle.getState().announcement ?? ""), null, { timeout: 5000 });
     assert.equal(await page.evaluate(() => window.__emberisle.getState().buildMode), "none", `${tag}: a short Upgrade arms nothing`);
     await load({});
     assert.match(await upgrade.getAttribute("aria-description"), /Need 3 more grain and 2 more ore/, `${tag}: short of everything`);
     await press(upgrade);
-    await page.waitForFunction(() => /Need 3 more grain and 2 more ore/.test(window.__emberisle.getState().error ?? ""), null, { timeout: 5000 });
-    await page.getByText("Need 3 more grain and 2 more ore", { exact: true }).first().waitFor();
+    await page.waitForFunction(() => /Need 3 more grain and 2 more ore/.test(window.__emberisle.getState().announcement ?? ""), null, { timeout: 5000 });
+    assert.equal((await page.getByTestId("announce-error").textContent()).trim(), "Need 3 more grain and 2 more ore", `${tag}: the alert region says it`);
+    assert.equal(await page.evaluate(() => window.__emberisle.getState().error), null, `${tag}: no HUD error line is set`);
+    assert.equal(await page.locator("span.text-orange-700", { hasText: "Need 3 more grain" }).count(), 0, `${tag}: no error line on screen`);
     console.log(`${tag}: a short hand says "Need 1 more ore" / "Need 3 more grain and 2 more ore"`);
     await page.screenshot({ path: `test-results/upgrade-${tag}.png` });
     await ctx.close();
