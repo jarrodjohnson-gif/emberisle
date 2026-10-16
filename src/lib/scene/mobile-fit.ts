@@ -84,7 +84,7 @@ export function hudInsets(cssW: number, cssH: number, coarse: boolean, safe: Par
 // A phone upright: the top bar over a bottom tray, taller on a narrow phone (the build row wraps under 384 px).
 // A phone on its side: a 284 px column on the left. A desktop: the seat rail on the left, and, from RAIL_FROM to RAIL_FULL px
 // wide, the docked right rail (chat, offer, PlaceList: 312 px) and the offer's taller bottom stack (220 px) ramp in.
-const RAIL_FROM = 900;
+const RAIL_FROM = 960;
 const RAIL_FULL = 1024;
 export function playHole(cssW: number, cssH: number, phone: boolean, safe: Partial<Insets> = {}): Insets {
   let i: Insets;

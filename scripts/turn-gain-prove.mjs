@@ -280,7 +280,9 @@ const layout = (page) =>
     const cs = getComputedStyle(probe);
     const safe = { left: parseFloat(cs.paddingLeft), top: parseFloat(cs.paddingTop), right: innerWidth - parseFloat(cs.paddingRight), bottom: innerHeight - parseFloat(cs.paddingBottom) };
     probe.remove();
-    const i = window.__isle.insets();
+    // The hole the map is fitted to, as the HUD's moments read it (#625): not the live one a tray or panel may be changing.
+    const sh = document.querySelector("canvas").parentElement.style;
+    const i = Object.fromEntries(["top", "right", "bottom", "left"].map((k) => [k, parseFloat(sh.getPropertyValue(`--hole-${k}`))]));
     const hole = { left: i.left, top: i.top, right: innerWidth - i.right, bottom: innerHeight - i.bottom };
     const hud = [];
     const sel = 'button, a, input, select, [role="button"], [data-testid="turn-banner"], [data-testid="banner"], [data-testid="hand-dock"], [data-testid="log-line"], [data-testid="dice-row"], [data-testid="turn-countdown"]';

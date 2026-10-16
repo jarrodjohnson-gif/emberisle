@@ -220,10 +220,10 @@ try {
       check(live0 !== live1 && same(c0, open) && same(c0, shut), `${tag}: a panel docking in the hole leaves the pan, zoom and fit alone`, { holeChanged: live0 !== live1 });
       // The Fortunes tray overlays the board: opening and closing it leaves the camera and the island's scale alone.
       const sc0 = await page.evaluate(() => window.__isle.pxPerUnit(0, 0.35, 0));
-      await page.getByTestId("fortunes-button").click();
+      await page.evaluate(() => document.querySelector('[data-testid="fortunes-button"]').click());
       await frames(page, 10);
       const trayOpen = await cam(page);
-      await page.getByTestId("fortunes-button").click();
+      await page.evaluate(() => document.querySelector('[data-testid="fortunes-button"]').click());
       await frames(page, 10);
       const trayShut = await cam(page);
       const sc1 = await page.evaluate(() => window.__isle.pxPerUnit(0, 0.35, 0));

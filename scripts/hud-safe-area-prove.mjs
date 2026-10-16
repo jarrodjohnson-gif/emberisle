@@ -18,6 +18,7 @@
 // (#475 left it true; #477 moved Quick reactions and Open chat into the top row, so they pass).
 // Run: npm run hud-safe-area-prove. Port from VITE_PORT, default 8475. Screenshots to test-results/hud-safe-*.png.
 import { spawn } from "node:child_process";
+import { once } from "node:events";
 import { existsSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -435,5 +436,6 @@ try {
   await browser.close();
   await vite.close();
   host.kill();
+  await Promise.race([once(host, "exit"), new Promise((r) => setTimeout(r, 3000))]);
 }
 process.exit(code);

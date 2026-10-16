@@ -9,6 +9,7 @@
 // Online trade_offer / trade_yes volumes are asserted in trade-prove. Zero console errors. Run: npm run sounds-prove
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
+import { once } from "node:events";
 import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -328,4 +329,5 @@ try {
 await browser.close();
 await vite.close();
 host.kill();
+await Promise.race([once(host, "exit"), new Promise((r) => setTimeout(r, 3000))]);
 process.exit(code);

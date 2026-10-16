@@ -110,12 +110,11 @@ try {
       }
       metrics.push({ width, height, reduced, phase, ...geometry });
     }
-    const before = await page.evaluate(() => window.__isle.insets());
     await page.getByRole("button", { name: "No", exact: true }).click();
     await page.getByTestId("trade-toast").waitFor({ state: "detached" });
     await settle(page);
-    if (width >= height) assert.ok((await page.evaluate(() => window.__isle.insets())).left <= before.left);
-    else assert.ok((await page.evaluate(() => window.__isle.insets())).bottom < before.bottom, `${width}: declining returns board space`);
+    // #625: an offer overlays the board and declining it hands nothing back: the fit stays where it was.
+    assert.equal(await page.evaluate(() => JSON.stringify(window.__isle.fit)), mainFit, `${width}: declining leaves the fit where it was`);
     // All text-bearing surfaces are opaque; calculate the exact AA token pairs used by cards, offers and sheets.
     const ratios = await page.evaluate(() => {
       const css = getComputedStyle(document.documentElement);

@@ -4,6 +4,7 @@
 // or repeat the line. The count runs down, the host moves on (#344) and the chip re-arms; when the turn passes the
 // chip names the next seat. One tab asks for reduced motion and gets no entry fade. Every wait is DOM-based.
 import { spawn } from "node:child_process";
+import { once } from "node:events";
 import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -251,5 +252,6 @@ try {
   await browser.close();
   await vite.close();
   host.kill();
+  await Promise.race([once(host, "exit"), new Promise((r) => setTimeout(r, 3000))]);
   process.exit(code);
 }

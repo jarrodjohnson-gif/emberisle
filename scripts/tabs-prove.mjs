@@ -6,6 +6,7 @@
 // #116: `--served` skips Vite. The host serves the built dist/ itself and the tabs open it with no ?host=,
 // so they must find the socket at the address the page came from (the tunnel case). Run npm run build first.
 import { spawn } from "node:child_process";
+import { once } from "node:events";
 import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -556,5 +557,6 @@ try {
   await browser.close();
   await vite?.close();
   host.kill();
+  await Promise.race([once(host, "exit"), new Promise((r) => setTimeout(r, 3000))]);
 }
 process.exit(code);
