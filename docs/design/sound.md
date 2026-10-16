@@ -133,3 +133,14 @@ Each question gives my recommendation first.
    choice is to keep the pluck.
 6. **Which of the new cues are wanted: timer warning, join/leave, emote received, payout tick?** Recommended: *all four, each
    quiet and only for the seats it concerns*. The other choice is to pick some of them.
+
+## Decisions (Jarrod, 2026-10-16)
+
+These answer section 4 and override any recommendation above that disagrees.
+
+1. **Vibe:** core sounds are dry and woody, like a board game. Meme clips live on the soundboard only.
+2. **Music:** no in-game loop. An optional, very quiet sea-and-wind ambience is allowed, **off by default**.
+3. **Meme volume:** soundboard and meme clips play at **0.4**, below music.
+4. **Win sound:** the winner gets a real win sting. **Jarrod will pick the song or clip**; until then the current sound stays.
+5. **New cues:** only two: a **"your turn"** cue for the seat whose turn starts, and a **turn-timer countdown** tick for the last seconds of your turn. No join/leave, emote-received or payout cues.
+6. **Licensing:** Jarrod keeps the soundboard and meme clips (Wololo, the Charlie Kirk song, the airhorn, etc.) public and accepts the risk, since this is a free game for friends. The README's "CC0 only" line becomes "CC0 or owner-approved".
