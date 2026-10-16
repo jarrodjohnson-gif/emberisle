@@ -17,6 +17,16 @@ always the next `helper-ok` issue.
   tool can't switch models, use a subagent on that model when you can. Otherwise, say in the PR which
   model you used.
 
+## Ideas and suggested changes
+
+You or your human may have ideas, such as a new feature, a change to how something looks or plays, or
+a bug you noticed. **Don't build them.** Open a GitHub issue on `jarrodjohnson-gif/emberisle`:
+- Title: `Idea: <short name>`. For a bug, use `Bug: <short name>`.
+- Body: what and why, plus a screenshot if it helps.
+
+The orchestrator reads new issues, turns the good ones into exact specs (Jarrod decides the design
+calls), and labels them `helper-ok` when they're ready. Then you can build them like any other issue.
+
 ## Keep going on your own
 
 Nobody will tell you "next issue". After each PR, go straight back to step 2. In Claude Code, the
