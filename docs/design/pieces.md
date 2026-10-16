@@ -277,3 +277,18 @@ docs/design/pieces.md
 
 Size: S
 ```
+
+## The jelly pieces (#638)
+
+Since 2026-10-16 the pieces are drawn in the jelly look (`src/lib/scene/pieces-jelly.ts`, to
+[pieces-jelly-prompt.md](pieces-jelly-prompt.md); the owner picked the outpost from three options). They keep this
+doc's rules: the dark ring and cream band under every piece, the seat colour on top, and a silhouette per kind.
+
+- **Path:** a rounded causeway in the seat colour on cream kerbs over a dark rim, 0.35 wide.
+- **Outpost:** today's house shape, all in the seat colour, under a steep roof a shade deeper, with a door, a lit window
+  and a chimney.
+- **Stronghold:** a round watchtower keep, tapering, with pillowy crenels, a side turret and a banner.
+
+They are one merged, vertex-coloured mesh each, sharing one glossy material, built 1.15x the slabs. The widest ring (the
+keep's) is 0.552 across, under the 0.56 above (pieces-prove 5). `?pieces=slab` keeps the slab pieces, for the classic look
+(#641).

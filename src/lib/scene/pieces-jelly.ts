@@ -1,8 +1,8 @@
 // The players' pieces in the jelly look (#638; the owner, 2026-10-16: "distinct and easy to see where you have built").
 // Glossy, rounded, and each its own shape so a piece reads by silhouette as well as by colour:
 // - a path: a rounded causeway in the seat's colour on cream kerbs;
-// - an outpost: a hut on a mound (docs/design/pieces-jelly-prompt.md), half sunk in a knoll of the seat's colour under a
-//   big round roof of it (what the overhead view sees), a round door, a lit window and a chimney with a puff;
+// - an outpost: today's house shape made jelly, all in the seat's colour under a steep, deeper roof
+//   (docs/design/pieces-jelly-prompt.md);
 // - a stronghold: a watchtower keep, taller, tapering, pillowy crenels, a banner flying.
 // Every piece keeps the dark-and-cream base ring that makes it pop on any terrain. Same signatures as the slabs they
 // replace (origin at the piece's foot; a path runs along +z, `len` long).
@@ -31,7 +31,6 @@ const rbox = (w: number, h: number, d: number, r: number, hex: string | THREE.Co
   col(new RoundedBoxGeometry(w, h, d, 3, Math.min(r, h / 2, w / 2, d / 2)).translate(x, y + h / 2, z), hex);
 // A disc (a short cylinder) whose bottom is at y.
 const disc = (r: number, h: number, hex: string | THREE.Color, y = 0, seg = 28) => col(new THREE.CylinderGeometry(r, r * 1.03, h, seg).translate(0, y + h / 2, 0), hex);
-const box = (w: number, h: number, d: number, hex: string | THREE.Color, y: number, x = 0, z = 0) => col(new THREE.BoxGeometry(w, h, d).translate(x, y + h / 2, z), hex);
 
 function mesh(parts: THREE.BufferGeometry[], k = K) {
   const m = new THREE.Mesh(mergeGeometries(parts).scale(k, k, k), JELLY_PIECE_MAT);
@@ -42,33 +41,9 @@ function mesh(parts: THREE.BufferGeometry[], k = K) {
 // Walls in the seat's own colour, a touch lighter; roofs and tops a touch deeper, so the seat dominates in both views.
 const pale = (seat: string) => new THREE.Color(seat).lerp(new THREE.Color(RIM.light), 0.18);
 const deep = (seat: string) => new THREE.Color(seat).multiplyScalar(0.82);
-// A little bigger than the slabs they replace, so a build reads from the whole-board camera.
+// A little bigger than the slabs they replace, so a build reads from the whole-board camera. The widest ring (the keep's,
+// 0.24) is then 0.552 across, under HEX_SIZE / 2 (pieces-prove 5).
 const K = 1.15;
-
-function outpostHut(seat: string) {
-  const parts = [disc(0.235, 0.035, RIM.dark), disc(0.2, 0.03, RIM.light, 0.035)];
-  const y0 = 0.065;
-  const d = deep(seat);
-  // The knoll: a soft mound of the seat's colour the hut sits half sunk in.
-  parts.push(col(new THREE.SphereGeometry(0.17, 28, 10, 0, Math.PI * 2, 0, Math.PI / 2).scale(1, 0.35, 1).translate(0, y0, 0), seat));
-  // The round walls, pale; a round door and one round lit window facing the camera (+z).
-  parts.push(col(new THREE.CylinderGeometry(0.098, 0.106, 0.14, 24).translate(0, y0 + 0.07, 0), pale(seat)));
-  const round = (r: number, hex: string, x: number, y: number) =>
-    col(new THREE.CylinderGeometry(r, r, 0.012, 16).rotateX(Math.PI / 2).translate(x, y, Math.sqrt(0.1 * 0.1 - x * x) + 0.002), hex);
-  parts.push(round(0.032, DOOR, -0.028, y0 + 0.068));
-  parts.push(round(0.02, WARM, 0.048, y0 + 0.095));
-  // The roof: a big pillowy overhanging dome in the seat's colour, a deeper roll at its rim.
-  const ry = y0 + 0.13;
-  const prof = [[0.001, -0.004], [0.14, -0.004], [0.148, 0.01], [0.13, 0.03], [0.095, 0.062], [0.058, 0.096], [0.024, 0.12], [0, 0.126]].map(([x, y]) => new THREE.Vector2(x, y));
-  parts.push(col(new THREE.LatheGeometry(prof, 28).translate(0, ry, 0), seat));
-  parts.push(col(new THREE.TorusGeometry(0.14, 0.016, 8, 28).rotateX(Math.PI / 2).translate(0, ry + 0.008, 0), d));
-  // A round chimney through the roof, a puff on top.
-  parts.push(col(new THREE.CylinderGeometry(0.022, 0.024, 0.08, 12).translate(0.06, ry + 0.085, -0.035), pale(seat)));
-  parts.push(col(new THREE.TorusGeometry(0.023, 0.007, 6, 12).rotateX(Math.PI / 2).translate(0.06, ry + 0.125, -0.035), d));
-  parts.push(col(new THREE.SphereGeometry(0.024, 12, 8).translate(0.064, ry + 0.15, -0.035), RIM.light));
-  parts.push(col(new THREE.SphereGeometry(0.016, 10, 6).translate(0.082, ry + 0.175, -0.04), RIM.light));
-  return mesh(parts);
-}
 
 // A triangular prism (a gable roof) w wide, h tall, d deep, its eaves at y, bevelled soft.
 function gable(w: number, h: number, d: number, hex: string | THREE.Color, y: number, bev = 0.014, x = 0, z = 0) {
@@ -82,8 +57,9 @@ function gable(w: number, h: number, d: number, hex: string | THREE.Color, y: nu
 }
 const front = (w: number, h: number, hex: string, x: number, y: number, z: number) => rbox(w, h, 0.012, Math.min(w, h) * 0.3, hex, y, x, z);
 
-// A: today's house shape, jelly: a chunky block all in the seat's colour under a steep, deeper gable roof.
-function outpostClassic(seat: string) {
+// The owner's pick (2026-10-16, "A"): today's house shape, jelly: a chunky block all in the seat's colour under a steep,
+// deeper gable roof, a door, a lit window and a chimney.
+export function makeJellyOutpost(seat: string) {
   const parts = [disc(0.235, 0.035, RIM.dark), disc(0.2, 0.03, RIM.light, 0.035)];
   const y0 = 0.065;
   parts.push(rbox(0.24, 0.14, 0.2, 0.03, seat, y0));
@@ -94,45 +70,8 @@ function outpostClassic(seat: string) {
   return mesh(parts);
 }
 
-// B: an A-frame cabin: one big steep roof of the seat's colour down to the ground, a pale gable end with a door and window.
-function outpostAFrame(seat: string) {
-  const parts = [disc(0.235, 0.035, RIM.dark), disc(0.2, 0.03, RIM.light, 0.035)];
-  const y0 = 0.065;
-  parts.push(gable(0.3, 0.27, 0.24, seat, y0, 0.018));
-  const s = new THREE.Shape();
-  s.moveTo(-0.11, 0);
-  s.lineTo(0.11, 0);
-  s.lineTo(0, 0.2);
-  s.closePath();
-  parts.push(col(new THREE.ExtrudeGeometry(s, { depth: 0.012, bevelEnabled: false }).translate(0, y0 + 0.01, 0.125), pale(seat).lerp(new THREE.Color(RIM.light), 0.5)));
-  parts.push(front(0.05, 0.08, DOOR, 0, y0 + 0.01, 0.14));
-  parts.push(col(new THREE.CylinderGeometry(0.02, 0.02, 0.012, 16).rotateX(Math.PI / 2).translate(0, y0 + 0.135, 0.142), WARM));
-  parts.push(rbox(0.29, 0.03, 0.27, 0.012, deep(seat), y0 + 0.24, 0, 0, ));
-  parts.pop();
-  parts.push(rbox(0.04, 0.08, 0.04, 0.01, RIM.light, y0 + 0.17, 0.06, -0.05));
-  return mesh(parts);
-}
-
-// C: a little tower-house: a square two-storey block of the seat's colour under a pointed hip roof.
-function outpostTower(seat: string) {
-  const parts = [disc(0.235, 0.035, RIM.dark), disc(0.2, 0.03, RIM.light, 0.035)];
-  const y0 = 0.065;
-  parts.push(rbox(0.2, 0.17, 0.2, 0.03, seat, y0));
-  parts.push(rbox(0.23, 0.025, 0.23, 0.012, deep(seat), y0 + 0.165));
-  parts.push(col(new THREE.ConeGeometry(0.17, 0.13, 4).rotateY(Math.PI / 4).translate(0, y0 + 0.19 + 0.065, 0), deep(seat)));
-  parts.push(front(0.05, 0.08, DOOR, -0.035, y0, 0.102));
-  parts.push(front(0.04, 0.04, WARM, 0.045, y0 + 0.09, 0.102));
-  return mesh(parts);
-}
-
-const OUTPOST_TRY: Record<string, (seat: string) => THREE.Mesh> = { hut: outpostHut, a: outpostClassic, b: outpostAFrame, c: outpostTower };
-const OUTPOST_V = (() => { try { return new URLSearchParams(location.search).get("outpost") ?? "a"; } catch { return "a"; } })();
-export function makeJellyOutpost(seat: string) {
-  return (OUTPOST_TRY[OUTPOST_V] ?? outpostClassic)(seat);
-}
-
 export function makeJellyStronghold(seat: string) {
-  const parts = [disc(0.275, 0.04, RIM.dark), disc(0.24, 0.035, RIM.light, 0.04)];
+  const parts = [disc(0.24, 0.04, RIM.dark), disc(0.205, 0.035, RIM.light, 0.04)];
   const y0 = 0.075;
   const p = pale(seat);
   const d = deep(seat);
@@ -146,9 +85,9 @@ export function makeJellyStronghold(seat: string) {
     parts.push(col(new RoundedBoxGeometry(0.062, 0.056, 0.052, 3, 0.024).rotateY(-a).translate(Math.cos(a) * 0.125, y0 + 0.295 + 0.028, Math.sin(a) * 0.125), seat));
   }
   // A side turret, the door and arrow-slit windows facing the camera.
-  parts.push(col(new THREE.CylinderGeometry(0.058, 0.066, 0.2, 16).translate(0.155, y0 + 0.1, -0.06), p));
-  parts.push(col(new THREE.TorusGeometry(0.062, 0.01, 6, 16).rotateX(Math.PI / 2).translate(0.155, y0 + 0.2, -0.06), d));
-  parts.push(col(new THREE.ConeGeometry(0.078, 0.095, 16).translate(0.155, y0 + 0.247, -0.06), d));
+  parts.push(col(new THREE.CylinderGeometry(0.058, 0.066, 0.2, 16).translate(0.135, y0 + 0.1, -0.07), p));
+  parts.push(col(new THREE.TorusGeometry(0.062, 0.01, 6, 16).rotateX(Math.PI / 2).translate(0.135, y0 + 0.2, -0.07), d));
+  parts.push(col(new THREE.ConeGeometry(0.078, 0.095, 16).translate(0.135, y0 + 0.247, -0.07), d));
   parts.push(rbox(0.06, 0.09, 0.012, 0.006, DOOR, y0, 0, 0.165));
   for (const x of [-0.07, 0.07]) parts.push(rbox(0.02, 0.05, 0.012, 0.006, WARM, y0 + 0.13, x, 0.142));
   // The banner on its pole.

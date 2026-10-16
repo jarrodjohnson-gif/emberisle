@@ -68,12 +68,12 @@ const loadJelly = (): Promise<typeof import("@/lib/scene/jelly-board")> =>
     throw e;
   });
 const JELLY_RETRY_MS = 4000;
-// The jelly pieces (#638), in design: on with ?pieces=jelly.
+// The jelly pieces (#638, pieces-jelly-prompt.md); ?pieces=slab keeps the slab pieces (for the classic look, #641).
 const JELLY_PIECES = (() => {
   try {
-    return new URLSearchParams(location.search).get("pieces") === "jelly";
+    return new URLSearchParams(location.search).get("pieces") !== "slab";
   } catch {
-    return false;
+    return true;
   }
 })();
 // How far beside a hex's token the wayfarer stands (robberSpot).

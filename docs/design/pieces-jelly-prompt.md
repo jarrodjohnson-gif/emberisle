@@ -23,13 +23,13 @@ THE PATH
 - A causeway along the edge: a rounded bar in the seat colour, pillowy like a jelly sweet, on cream kerbs over a dark rim,
   its ends rounded. Wide enough to read as a line of colour round the hexes.
 
-THE OUTPOST (redo)
-- Not a house on a plate. A **little hut-on-a-mound**: a squat, round-shouldered cottage half sunk in a soft knoll of
-  the seat colour, so the whole piece reads as one blob of colour from above.
-- A big, round, overhanging thatch-like roof (a rounded cone or a pillowy dome, not a sharp prism) in the seat colour, a
-  deeper shade at its rim; a single round chimney with a puff; a round door and one round lit window facing the camera.
-- About as wide as tall (about 0.32 across, 0.32 tall to the puff, before the 1.15 board scale), soft everywhere, no sharp
-  edges; still clearly lower and rounder than the keep.
+THE OUTPOST
+- Today's house shape, made jelly (the owner's pick, 2026-10-16, after a round hut and then an A-frame and a tower-house
+  were tried and turned down): a chunky block **all in the seat's colour** under a steep gable roof a shade deeper, the
+  eaves overhanging; soft bevels everywhere, glossy.
+- A dark door and a warm lit window facing the camera, a cream chimney.
+- About 0.27 across and 0.3 tall (before the 1.15 board scale): lower and squarer than the keep, a pitched roof against
+  its round crenellated top.
 
 THE STRONGHOLD (keep, refine)
 - The owner liked it: a **watchtower keep**. A round tower of the seat colour, taller than an outpost (about 0.42 with
