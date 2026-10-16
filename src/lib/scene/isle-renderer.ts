@@ -23,6 +23,7 @@ import {
   type PlayView,
   type Rect,
 } from "@/lib/scene/mobile-fit";
+import { readViewport } from "../viewport";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
@@ -90,7 +91,9 @@ const PAN_RADIUS = 5;
 const PAN_VIEW = 0.6;
 // Pixels a pinch's midpoint may drift before it also pans.
 const PAN_DEAD = 8;
-const GATE_EVENTS = ["pointerdown", "pointermove", "pointerup", "pointercancel"] as const;
+const OFFER_BOTTOM = 220;
+const RAIL_MIN_WIDTH = 1024;
+const GATE_EVENTS = ["pointerdown", "pointermove", "pointerup", "pointercancel", "lostpointercapture"] as const;
 const GLIDE_MS = 280;
 // Frames after a resize that measure the hole again: the HUD settles into its new layout a frame or two after the event.
 const RELAYOUT_FRAMES = 4;
@@ -155,11 +158,13 @@ export class IsleRenderer {
   // HUD housekeeping alone (a timed notice leaving, the Place chip): the camera moves with the game, and an idle board idles.
   private refitDue = false;
   private relayout = 0;
-  // The hole the camera is fitted to: measured when the viewport changes (a resize or a turn), when a view is entered and when
-  // the first state or a new island arrives, then kept. A panel opening or a phase bar growing never refits the map (#625).
+  // The hole the camera is fitted to (#625): measured afresh when the viewport changes or a view is entered, then only ever
+  // grown, side by side, to the largest the HUD's own layouts leave (the main phase's tray is taller than the roll-off's). A
+  // panel that overlays the board (`panelOpen`: the chat, the trade sheet, an offer) never counts, and a wide layout's insets()
+  // already keeps its docked rail. So opening or closing one never moves the map.
   private baseHole: Insets | null = null;
   private rebaseFrames = 0;
-  private baseOpen = true;
+  panelOpen = false;
   private sizeW = 0;
   private sizeH = 0;
   private raycaster = new THREE.Raycaster();
@@ -363,8 +368,10 @@ export class IsleRenderer {
     canvas.addEventListener("pointercancel", this.onCancel);
     // Capture phase on the shell, so the pinch gate sees a move before the orbit controls do.
     for (const t of GATE_EVENTS) canvas.parentElement?.addEventListener(t, this.gate, true);
-    const pan = (this.orbit as unknown as { _pan: (x: number, y: number) => void })._pan.bind(this.orbit);
-    (this.orbit as unknown as { _pan: (x: number, y: number) => void })._pan = (x, y) => this.panOpen && pan(x, y);
+    // OrbitControls' private pan step; the gate holds a pinch's midpoint still. If a three.js upgrade drops it, pinch just pans a little.
+    const oc = this.orbit as unknown as { _pan?: (x: number, y: number) => void };
+    const pan = oc._pan?.bind(this.orbit);
+    if (pan) oc._pan = (x, y) => this.panOpen && pan(x, y);
     window.addEventListener("resize", this.resize);
     // A phone's bars sliding in or out move the visual viewport without always firing a window resize.
     window.visualViewport?.addEventListener("resize", this.onViewport);
@@ -443,7 +450,16 @@ export class IsleRenderer {
   insets(): Insets {
     const c = this.renderer.domElement;
     const shell = c.parentElement;
-    return chromeInsets(c.clientWidth, c.clientHeight, shell ? solidRects(shell, c) : [], this.safe());
+    const i = chromeInsets(c.clientWidth, c.clientHeight, shell ? solidRects(shell, c) : [], this.safe());
+    // On a wide layout the chat, the offer and the PlaceList dock in the right rail: the hole keeps room for it open or not, so
+    // opening one never moves the map and never covers a corner. On a phone a sheet slides over the board and counts for nothing.
+    // Below RAIL_MIN_WIDTH a desktop window is too small to give a third of its width away: the board keeps the live hole there.
+    if (!readViewport().phone && c.clientWidth >= RAIL_MIN_WIDTH) {
+      i.right = Math.max(i.right, hudInsets(c.clientWidth, c.clientHeight, false, this.safe()).right);
+      // A trade offer joins the bottom stack, 39 px taller than the main phase's bar (visual-direction-prove).
+      i.bottom = Math.max(i.bottom, OFFER_BOTTOM + (this.safe().bottom ?? 0));
+    }
+    return i;
   }
 
   // Overhead is one orthographic camera fitted to the HUD hole and diorama one perspective camera fitted to it, sharing one
@@ -467,7 +483,6 @@ export class IsleRenderer {
     this.fit = null;
     this.glide = null;
     this.baseHole = null;
-    this.baseOpen = true;
     this.shownAt = this.renders;
     this.refitDue = true;
     this.resize();
@@ -524,8 +539,6 @@ export class IsleRenderer {
     const marks = `${interactive}|${highlights.vertices}|${highlights.edges}|${highlights.hexes}`;
     if (landChanged || this.lastSeq !== state.seq || marks !== this.lastMarks) this.wake();
     // A new state or an armed build (the marks change with the phase bar) re-measures the hole on the next frame.
-    if (landChanged || this.baseOpen) this.baseHole = null;
-    if (this.play()) this.baseOpen = false;
     if (landChanged || this.lastSeq !== state.seq || marks !== this.lastMarks) this.refitDue = true;
     this.lastMarks = marks;
     if (landChanged) {
@@ -677,12 +690,12 @@ export class IsleRenderer {
     this.refitDue = false;
     if (!this.play()) return;
     const c = this.renderer.domElement;
-    const hole = this.insets();
-    // The hole's edges on the shell, so the HUD can centre a moment on the island (TurnMoment, GainFloats).
-    for (const k of ["top", "right", "bottom", "left"] as const) c.parentElement?.style.setProperty(`--hole-${k}`, `${hole[k]}px`);
+    const live = this.insets();
+    const base = (this.baseHole ??= live);
+    if (!this.panelOpen) for (const k of ["top", "right", "bottom", "left"] as const) base[k] = Math.max(base[k], live[k]);
+    // The hole's edges on the shell, so the HUD can centre a moment on the island (TurnMoment, GainFloats): the one the map is fitted to.
+    for (const k of ["top", "right", "bottom", "left"] as const) c.parentElement?.style.setProperty(`--hole-${k}`, `${base[k]}px`);
     const [w, h] = [c.clientWidth || 1, c.clientHeight || 1];
-    // Published live for the HUD's own moments; the camera fits the base hole, so HUD changes never move the map.
-    const base = (this.baseHole ??= hole);
     const f = this.view === "diorama" ? fitDiorama(w, h, base) : fitOrtho(w, h, base, OVERHEAD_LEAN);
     const was = this.fit;
     if (was && FIT_KEYS.every((k) => Math.abs(this.fitPose(f)[k] - this.fitPose(was)[k]) < 1e-6)) return;
@@ -944,27 +957,28 @@ export class IsleRenderer {
     this.goHome();
   };
 
-  // Two fingers pan and pinch together; a pinch whose midpoint drifts under PAN_DEAD px while the fingers change distance
-  // does not pan. Open once the midpoint has moved that far, or while the distance holds still.
+  // Two fingers pan and pinch together; a pinch pans only once its midpoint has moved PAN_DEAD px from where the second finger landed.
   private fingers = new Map<number, { x: number; y: number }>();
   private panOpen = true;
-  private pinchStart: { mx: number; my: number; d: number } | null = null;
+  private pinchStart: { mx: number; my: number } | null = null;
   private gate = (e: PointerEvent) => {
     const f = this.fingers;
     if (e.type === "pointermove") {
       if (!f.has(e.pointerId)) return;
       f.set(e.pointerId, { x: e.clientX, y: e.clientY });
     } else {
-      if (e.type === "pointerdown") f.set(e.pointerId, { x: e.clientX, y: e.clientY });
-      else f.delete(e.pointerId);
+      if (e.type === "pointerdown") {
+        if (e.target !== this.renderer.domElement) return;
+        f.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      } else f.delete(e.pointerId);
       this.pinchStart = null;
       this.panOpen = f.size < 2;
     }
     if (f.size !== 2 || this.panOpen) return;
     const [a, b] = [...f.values()];
-    const cur = { mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2, d: Math.hypot(a.x - b.x, a.y - b.y) };
+    const cur = { mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2 };
     const st = (this.pinchStart ??= cur);
-    this.panOpen = Math.hypot(cur.mx - st.mx, cur.my - st.my) >= PAN_DEAD || Math.abs(cur.d - st.d) < PAN_DEAD;
+    this.panOpen = Math.hypot(cur.mx - st.mx, cur.my - st.my) >= PAN_DEAD;
   };
 
   private onDown = (e: PointerEvent) => {

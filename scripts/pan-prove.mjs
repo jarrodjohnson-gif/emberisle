@@ -52,10 +52,12 @@ const hud = (page) => page.evaluate(() => [...document.querySelectorAll("button,
 const same = (a, b) => a.tx === b.tx && a.tz === b.tz && a.zoom === b.zoom && a.fit === b.fit && Math.abs(a.dist - b.dist) < 1e-9;
 const onCanvas = (page, x, y) => page.evaluate(([x, y]) => document.elementFromPoint(x, y) === document.querySelector("canvas"), [x, y]);
 
+const NOTCH = (w, h) => (h > w ? { top: 62, bottom: 34, left: 0, right: 0 } : { top: 0, bottom: 21, left: 62, right: 62 });
 async function start(w, h) {
   const ctx = await browser.newContext({ viewport: { width: w, height: h }, isMobile: true, hasTouch: true });
   await ctx.addInitScript(() => localStorage.setItem("emberisle-water", "simple"));
   const page = await ctx.newPage();
+  if (w >= 440 && w !== 844 && w !== 1000) await (await ctx.newCDPSession(page)).send("Emulation.setSafeAreaInsetsOverride", { insets: NOTCH(w, h) });
   page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
   page.on("pageerror", (e) => errors.push(String(e)));
   page.on("response", (r) => r.status() >= 400 && errors.push(`${r.status()} ${r.url()}`));
@@ -106,9 +108,11 @@ async function startFor(page, w, h, sx, sy) {
   const hole = await page.evaluate(() => window.__isle.insets());
   const [cx, cy] = [hole.left + (w - hole.left - hole.right) / 2, hole.top + (h - hole.top - hole.bottom) / 2];
   const [gx, gy] = sx !== 0 && sy === 0 ? [0, 120] : [120, 0];
+  // Inside the hole, so a finger never lands on the thin canvas strips between chips.
+  const [x0, x1, y0, y1] = [hole.left + 8, w - hole.right - 8 - gx, hole.top + 8, h - hole.bottom - 8 - gy];
   for (let t = 0; t < 40; t++) {
-    const x = sx > 0 ? 8 + t * 8 : sx < 0 ? w - 8 - gx - t * 8 : cx - 60;
-    const y = sy > 0 ? 8 + t * 8 : sy < 0 ? h - 8 - gy - t * 8 : cy - 60;
+    const x = sx > 0 ? x0 + t * 8 : sx < 0 ? x1 - t * 8 : cx - 60;
+    const y = sy > 0 ? y0 + t * 8 : sy < 0 ? y1 - t * 8 : cy - 60;
     if ((await onCanvas(page, x, y)) && (await onCanvas(page, x + gx, y + gy))) return { x, y };
   }
   return null;
@@ -116,7 +120,7 @@ async function startFor(page, w, h, sx, sy) {
 
 let code = 0;
 try {
-  for (const [w, h, view] of [[430, 932, "overhead"], [360, 640, "overhead"], [844, 390, "overhead"], [390, 844, "overhead"], [1000, 420, "diorama"]]) {
+  for (const [w, h, view] of [[430, 932, "overhead"], [440, 956, "overhead"], [360, 640, "overhead"], [844, 390, "overhead"], [390, 844, "overhead"], [956, 440, "diorama"]]) {
     const tag = `${w}x${h}`;
     const { ctx, page, cdp } = await start(w, h);
     const s0 = await state(page);
@@ -128,7 +132,7 @@ try {
       const vy = await page.evaluate(() => { const i = window.__isle, c = document.querySelector("canvas"), hl = i.insets(); return hl.top + (c.clientHeight - hl.top - hl.bottom) / 2; });
       check(Math.abs(s0.cy - vy) <= 0.02 * h, `${tag}: ... and in the hole's height`, { cy: s0.cy, holeY: vy });
     }
-    if (w === 430 || w === 360) { await ctx.close(); continue; }
+    if (w === 430 || w === 360 || w === 440) { await ctx.close(); continue; }
 
     // Two fingers dragged right by 120 px.
     const st = await startFor(page, w, h, 1, 0);
@@ -143,8 +147,12 @@ try {
     const s2 = await state(page);
     check(Math.abs(s2.tx - s1.tx) < 1e-6 && Math.abs(s2.tz - s1.tz) < 1e-6, `${tag}: an unchanged refit leaves the pan alone`, {});
 
-    // The clamp: each direction, dragged until it stops growing, ends at exactly the limit, and the island stays in the hole.
+    // The clamp: from Home, each direction dragged until it stops growing ends at exactly the limit, the island has moved the way
+    // the fingers went, and it stays in the hole.
     for (const [sx, sy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      await page.evaluate(() => window.__isle.goHome());
+      await settle(page);
+      const h0 = await state(page);
       const b = await startFor(page, w, h, sx, sy);
       let s, r;
       for (r = 0; r < 3; r++) {
@@ -152,7 +160,8 @@ try {
         s = await state(page);
         if (Math.abs(s.dist - s.max) < 1e-6) break;
       }
-      check(Math.abs(s.dist - s.max) < 1e-3 && s.inHole, `${tag}: drag (${sx},${sy}) stops at the limit and the island stays in the hole`, { dist: s.dist, max: s.max, cx: s.cx, cy: s.cy, inHole: s.inHole, zoom: s.zoom, t: [s.tx, s.tz], r });
+      const moved = (s.cx - h0.cx) * sx + (s.cy - h0.cy) * sy;
+      check(Math.abs(s.dist - s.max) < 1e-3 && s.inHole && moved > 5, `${tag}: drag (${sx},${sy}) from Home carries the island that way, stops at the limit, stays in the hole`, { dist: s.dist, max: s.max, moved, inHole: s.inHole });
     }
 
     // Pinch, then pan: the limit does not shrink with zoom, a pinch does not pan, and a pan after it still works.
@@ -162,6 +171,17 @@ try {
     await pinch(cdp, page, w / 2, h / 2, 30, 90);
     const p1 = await state(page);
     check(p1.zoom !== p0.zoom && p1.dist < 0.35, `${tag}: a pinch zooms and (inside the dead zone) does not pan`, { z0: p0.zoom, z1: p1.zoom, dist: p1.dist });
+    // An off-centre pinch (one finger still, the other 14 px away: the midpoint drifts 7 px) does not pan.
+    await page.evaluate(() => window.__isle.goHome());
+    await settle(page);
+    const q0 = await state(page);
+    await touch(cdp, "touchStart", [{ x: w / 2 - 60, y: h / 2, id: 1 }, { x: w / 2 + 60, y: h / 2, id: 2 }]);
+    for (let k = 1; k <= 7; k++) { await touch(cdp, "touchMove", [{ x: w / 2 - 60, y: h / 2, id: 1 }, { x: w / 2 + 60 + 2 * k, y: h / 2, id: 2 }]); await frames(page, 1); }
+    await touch(cdp, "touchEnd", []);
+    await frames(page, 2);
+    const q1 = await state(page);
+    check(Math.hypot(q1.tx - q0.tx, q1.tz - q0.tz) < 1e-6, `${tag}: an off-centre pinch (7 px of midpoint drift) does not pan`, { dx: q1.tx - q0.tx, dz: q1.tz - q0.tz });
+    await pinch(cdp, page, w / 2, h / 2, 30, 90);
     const bz = await startFor(page, w, h, 1, 0);
     for (let r = 0; r < 3; r++) await twoFingers(cdp, page, bz.x, bz.y, Math.min(w - 160, 200), 0);
     const p2 = await state(page);
@@ -182,17 +202,22 @@ try {
       const sp = await startFor(page, w, h, 1, 0);
       await twoFingers(cdp, page, sp.x, sp.y, 100, 0);
       const c0 = await cam(page);
-      for (const key of ["chatOpen", "tradeOpen"]) {
-        const live0 = await page.evaluate(() => JSON.stringify(window.__isle.insets()));
-        await page.evaluate((k) => window.__emberisle.setState({ [k]: true }), key);
-        await frames(page, 12);
-        const open = await cam(page);
-        const live1 = await page.evaluate(() => JSON.stringify(window.__isle.insets()));
-        await page.evaluate((k) => window.__emberisle.setState({ [k]: false }), key);
-        await frames(page, 12);
-        const shut = await cam(page);
-        check(same(c0, open) && same(c0, shut), `${tag}: ${key} open and closed leaves the pan, zoom and fit alone`, { holeChanged: live0 !== live1 });
-      }
+      // A band of chrome docked along the bottom (the hole really changes) with a panel flagged open: the map does not move.
+      const live0 = await page.evaluate(() => JSON.stringify(window.__isle.insets()));
+      await page.evaluate(() => {
+        const d = document.createElement("div");
+        d.id = "fake-dock";
+        d.style.cssText = "position:absolute;left:0;right:0;bottom:0;height:150px;pointer-events:auto;background:#fff8";
+        document.querySelector("canvas").parentElement.appendChild(d);
+        window.__emberisle.setState({ offer: { tradeId: "audit", from: "p1", fromName: "Mira", give: { wool: 2 }, want: { ore: 1 }, until: Date.now() + 60000 }, declined: [] });
+      });
+      await frames(page, 12);
+      const open = await cam(page);
+      const live1 = await page.evaluate(() => JSON.stringify(window.__isle.insets()));
+      await page.evaluate(() => { document.getElementById("fake-dock").remove(); window.__emberisle.setState({ offer: null }); });
+      await frames(page, 12);
+      const shut = await cam(page);
+      check(live0 !== live1 && same(c0, open) && same(c0, shut), `${tag}: a panel docking in the hole leaves the pan, zoom and fit alone`, { holeChanged: live0 !== live1 });
       const h0 = await hud(page);
       await pinch(cdp, page, w / 2, h / 2, 30, 90);
       await twoFingers(cdp, page, sp.x, sp.y, -60, 0);
@@ -232,6 +257,7 @@ try {
     await twoFingers(cdp, page, sq.x, sq.y, 160, 0);
     { const pm = await state(page); check(pm.dist > 0.5, `${tag}: panned before the turn`, { dist: pm.dist, sq }); }
     await page.setViewportSize({ width: h, height: w });
+    if (w >= 440 && w !== 844 && w !== 1000) await (await ctx.newCDPSession(page)).send("Emulation.setSafeAreaInsetsOverride", { insets: NOTCH(h, w) });
     await frames(page, 4);
     await settle(page);
     const turned = await state(page);

@@ -50,6 +50,8 @@ try {
       }).filter(r => r.w < 43.9 || r.h < 43.9));
       assert.deepEqual(bad, [], `${width}: all interactive targets ≥44px`);
     };
+    let mainFit = "";
+    let mainHole = null;
     for (const phase of ["main", "offer"]) {
       if (phase === "offer") await page.evaluate(() => window.__emberisle.setState({ offer: { tradeId: "audit", from: "p1", fromName: "Mira", give: { wool: 2 }, want: { ore: 1 }, until: Date.now() + 60000 }, declined: [] }));
       await settle(page);
@@ -62,10 +64,19 @@ try {
         });
         assert.deepEqual(dice, { clipped: false, dice: 2, sum: "8", inside: true }, `${width}: two dice and the sum show in your own main phase`);
       }
-      const geometry = await page.evaluate(() => {
+      // The main phase's HUD can still be growing as its chunks land (the base hole grows with it, once); take the fit once it holds still.
+      let fitNow = "";
+      for (let k = 0; k < 12; k++) {
+        const f = await page.evaluate(async () => { await new Promise(r => setTimeout(r, 400)); return JSON.stringify(window.__isle.fit); });
+        if (f === fitNow) break;
+        fitNow = f;
+      }
+      // On a phone the offer slides over the board and the camera does not move (#625): its corners are held to the hole the main phase left.
+      const holeFor = phone && phase === "offer" ? mainHole : null;
+      const geometry = await page.evaluate((holeFor) => {
         const r = window.__isle;
         const i = r.insets();
-        const hole = { left: i.left, top: i.top, right: innerWidth - i.right, bottom: innerHeight - i.bottom };
+        const hole = holeFor ?? { left: i.left, top: i.top, right: innerWidth - i.right, bottom: innerHeight - i.bottom };
         // Px per world unit at the island's centre (the diorama view, #597, is the default; a far corner is smaller).
         const scale = r.pxPerUnit(0, 0.35, 0);
         // Every corner, and a dock's pier and boat 0.7 out along the coast at the waterline, inside the hole.
@@ -81,9 +92,11 @@ try {
         const stack = document.querySelector('[data-hud-stack]').getBoundingClientRect();
         const b = offer?.getBoundingClientRect();
         return { scale, hole, out, covered, clippedCosts, offer: b ? { top: b.top, bottom: b.bottom, left: b.left, right: b.right, insideStack: b.top >= stack.top && b.bottom <= stack.bottom + 0.5, modal: offer.getAttribute('aria-modal') } : null };
-      });
+      }, holeFor);
+      if (phase === "main") { mainFit = fitNow; mainHole = geometry.hole; }
+      else assert.equal(fitNow, mainFit, `${width}: the offer opening leaves the fit where it was`);
       assert.deepEqual(geometry.out, [], `${width} ${phase}: all corners and dock clearance inside board hole`);
-      assert.deepEqual(geometry.covered, [], `${width} ${phase}: no corner under the HUD`);
+      if (!holeFor) assert.deepEqual(geometry.covered, [], `${width} ${phase}: no corner under the HUD`);
       assert.deepEqual(geometry.clippedCosts, [], `${width} ${phase}: all build prices fit`);
       if (baseline[width]) {
         const [w, h] = baseline[width][phase];

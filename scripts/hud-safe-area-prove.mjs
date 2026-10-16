@@ -32,6 +32,10 @@ const PHONES = [
   { width: 844, height: 390, insets: { top: 0, right: 47, bottom: 21, left: 47 } },
   { width: 390, height: 844, insets: { top: 47, right: 0, bottom: 34, left: 0 } },
   { width: 667, height: 375, insets: { top: 0, right: 44, bottom: 21, left: 44 } },
+  // iPhone 17 Pro Max (#625): upright, then sideways with Safari's toolbar showing (410 px) and without (440 px); 956 px wide is the diorama.
+  { width: 440, height: 956, insets: { top: 62, right: 0, bottom: 34, left: 0 } },
+  { width: 956, height: 440, insets: { top: 0, right: 62, bottom: 21, left: 62 } },
+  { width: 956, height: 410, insets: { top: 0, right: 62, bottom: 21, left: 62 } },
 ];
 mkdirSync("test-results", { recursive: true });
 
