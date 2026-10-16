@@ -172,7 +172,7 @@ export function Hud() {
   const wasReady = useRef(readyKey);
   const [pulse, setPulse] = useState<Price[]>([]);
   // #535: a tap on a build the hand cannot pay for hangs "Need 1 clay" above that build for 1.6 s; the next tap restarts it.
-  const [hint, setHint] = useState<{ kind: Price; text: string; n: number } | null>(null);
+  const [hint, setHint] = useState<{ kind: Price } | null>(null);
   useEffect(() => {
     if (!hint) return;
     const t = setTimeout(() => setHint(null), HINT_MS);
@@ -418,7 +418,7 @@ export function Hud() {
                         // aria-disabled keeps the button focusable, so the click itself must refuse (but may still disarm).
                         // A tap the hand cannot pay for says what is missing (a spot waiting, goods short) instead of doing nothing.
                         if (!spectator && !why && missing && buildMode !== arm) {
-                          setHint((h) => ({ kind, text: hintLine(short), n: (h?.n ?? 0) + 1 }));
+                          setHint({ kind });
                           // The chip is the one line on screen; the error cue and the screen reader still get the full sentence.
                           return void refuseQuietly(needLine(short));
                         }
@@ -444,7 +444,7 @@ export function Hud() {
                             at === 0 ? "left-0" : at === 3 ? "right-0" : "left-1/2 -translate-x-1/2",
                           )}
                         >
-                          {hint.text}
+                          {hintLine(short)}
                         </span>
                       ) : null}
                     </Button>

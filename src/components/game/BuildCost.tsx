@@ -26,16 +26,14 @@ export function shortfall(hand: Record<Resource, number>, kind: Price): Partial<
   return short;
 }
 
+const need = (short: Partial<Record<Resource, number>>, more: string, sep: string) =>
+  `Need ${RESOURCES.filter((r) => short[r]).map((r) => `${short[r]} ${more}${r}`).join(sep)}`;
+
 // "Need 1 more ore", "Need 3 more grain and 2 more ore": what a refused tap on a short build says.
-export function needLine(short: Partial<Record<Resource, number>>) {
-  const parts = RESOURCES.filter((r) => short[r]).map((r) => `${short[r]} more ${r}`);
-  return `Need ${parts.join(" and ")}`;
-}
+export const needLine = (short: Partial<Record<Resource, number>>) => need(short, "more ", " and ");
 
 // "Need 1 clay", "Need 1 clay, 1 wool": the chip a tap on a short build shows above it (#535).
-export function hintLine(short: Partial<Record<Resource, number>>) {
-  return `Need ${RESOURCES.filter((r) => short[r]).map((r) => `${short[r]} ${r}`).join(", ")}`;
-}
+export const hintLine = (short: Partial<Record<Resource, number>>) => need(short, "", ", ");
 
 export function CostChips({ kind, hand, className }: { kind: Price; hand?: Record<Resource, number>; className?: string }) {
   const short = hand ? shortfall(hand, kind) : {};
