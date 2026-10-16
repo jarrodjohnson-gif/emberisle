@@ -187,7 +187,7 @@ try {
   {
     const page = await open(1280, 720, false, "crystal", "overhead");
     await page.getByRole("button", { name: "Four seats, one table" }).click();
-    await page.waitForFunction(() => window.__emberisle?.water?.path === "crystal" && window.__isle.lastState && !window.__isle.refitDue && !window.__isle.glide, null, { timeout: STEP_MS });
+    await page.waitForFunction(() => window.__emberisle?.water?.path === "crystal" && window.__isle.lastState && window.__emberisle.getState().state && !window.__isle.refitDue && !window.__isle.glide, null, { timeout: STEP_MS });
     await page.waitForFunction((n) => window.__isle.renders > n, (await page.evaluate(() => window.__isle.renders)) + 2, { timeout: STEP_MS });
     const spots = await page.evaluate(() => {
       const isle = window.__isle;
@@ -769,7 +769,7 @@ try {
   {
     const page = await open(1280, 720, false, "crystal", null, "full");
     await page.getByRole("button", { name: "Four seats, one table" }).click();
-    await page.waitForFunction(() => window.__emberisle?.water?.path === "crystal" && window.__isle.lastState && window.__isle.landReady && !window.__isle.refitDue && !window.__isle.glide, null, { timeout: STEP_MS });
+    await page.waitForFunction(() => window.__emberisle?.water?.path === "crystal" && window.__isle.lastState && window.__emberisle.getState().state && window.__isle.landReady && !window.__isle.refitDue && !window.__isle.glide, null, { timeout: STEP_MS });
     await drawn(page, 3);
     const t = await page.evaluate(async () => {
       const isle = window.__isle;
@@ -825,7 +825,7 @@ try {
     await page.context().close();
     const phone = await open(390, 844, true, "crystal", null, "full");
     await phone.getByRole("button", { name: "Four seats, one table" }).click();
-    await phone.waitForFunction(() => window.__emberisle?.water?.path === "crystal" && window.__isle.lastState && window.__isle.landReady && !window.__isle.refitDue && !window.__isle.glide, null, { timeout: STEP_MS });
+    await phone.waitForFunction(() => window.__emberisle?.water?.path === "crystal" && window.__isle.lastState && window.__emberisle.getState().state && window.__isle.landReady && !window.__isle.refitDue && !window.__isle.glide, null, { timeout: STEP_MS });
     await drawn(phone, 3);
     check("terrain: the 390x844 phone is overhead", (await phone.evaluate(() => window.__isle.view)) === "overhead");
     await phone.screenshot({ path: "test-results/terrain-390.png" });

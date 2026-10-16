@@ -1027,10 +1027,11 @@ export class IsleRenderer {
     const busy = now < this.busyUntil || this.flashes.length > 0 || !!this.jelly?.busy();
     const gap = calm ? (busy ? 0 : Infinity) : this.titleMode ? 1000 / 30 : this.walk || pulsing || busy ? 0 : 1000 / 12;
     if (now - this.lastFrame < gap - 2) return;
-    // Backpressure: while the GPU is still on the last frame, wait for it rather than queue another. A GPU that keeps up
-    // has always finished; a software one (CI, no GPU) would otherwise block the page in its GL calls, frame after frame,
-    // and starve input and every other tab.
-    if (this.gpuBehind()) return;
+    // Backpressure on ambient frames (the title's turn, the idle sea): while the GPU is still on the last one, wait for it
+    // rather than queue another. A GPU that keeps up has always finished; a software one (CI, no GPU) would otherwise block
+    // the page in its GL calls, frame after frame, and starve input and every other tab. A frame a change or an interaction
+    // asked for (busy), and every frame under reduced motion, goes at once.
+    if (!busy && !calm && this.gpuBehind()) return;
     this.lastFrame = now;
     this.clock.update();
     const t = this.clock.getElapsed();
