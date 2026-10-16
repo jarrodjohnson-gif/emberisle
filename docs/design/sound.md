@@ -114,8 +114,10 @@ clip fits, Jarrod's own clip comes first.
 
 ### Handing over clips
 
-Jarrod sends an mp3, or drops it into `public/audio/`, named `<slot>_<short-name>.mp3`: for example `sb_mynewclip.mp3` for the
-soundboard, or `win_<name>.mp3` for the win sting. Keep each clip to about 15 s and 300 kB at most.
+Jarrod uploads the mp3 in his chat with the orchestrator, or zips it and attaches it to #653, or pastes a link. He
+names it `<slot>_<short-name>.mp3`, e.g. `sb_mynewclip.mp3` for the soundboard or `win_<name>.mp3` for the win
+sting. A Builder commits it to `public/audio/` with the source recorded as "Jarrod" and wires it. Keep each clip
+to about 15 s and 300 kB at most.
 
 | Slot prefix | Where it plays | Today's clip |
 |---|---|---|
