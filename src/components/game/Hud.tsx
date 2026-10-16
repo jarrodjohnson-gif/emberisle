@@ -23,7 +23,7 @@ import { PlaceChip } from "@/components/game/PlaceChip";
 import { SheetsFailed } from "@/components/game/SheetsFailed";
 import { TrayFailed } from "@/components/game/TrayFailed";
 import { TradeButton } from "@/components/game/TradeButton";
-import { CostChips, needLine, priceLabel, shortfall, type Price } from "@/components/game/BuildCost";
+import { CostChips, hintLine, needLine, priceLabel, shortfall, type Price } from "@/components/game/BuildCost";
 import { useEscapeDisarm } from "@/components/game/escape-disarm";
 import { COST, RESOURCES, type BuildMode, type GameState, type PlayerState } from "@/lib/game/types";
 import { legalCities, legalRoads, legalSettle, totalVP } from "@/lib/game/rules";
@@ -34,6 +34,7 @@ import { useMoreBelow } from "@/lib/scroll-fade";
 import { cn } from "@/lib/utils";
 
 const PRICES = Object.keys(COST) as Price[];
+const HINT_MS = 1600;
 
 // Whether a build can happen now and, if not, why: the supply (or the deck), then a legal spot; a spot with a hand that cannot pay is missing goods (#606).
 function buildStatus(state: GameState, me: PlayerState, kind: Price) {
@@ -170,6 +171,13 @@ export function Hud() {
   const readyKey = rowShown ? `${me!.id}|${PRICES.map((k) => (buildStatus(state, me!, k).ready ? 1 : 0)).join("")}|${RESOURCES.map((r) => me!.resources[r]).join(",")}` : "";
   const wasReady = useRef(readyKey);
   const [pulse, setPulse] = useState<Price[]>([]);
+  // #535: a tap on a build the hand cannot pay for hangs "Need 1 clay" above that build for 1.6 s; the next tap restarts it.
+  const [hint, setHint] = useState<{ kind: Price; text: string; n: number } | null>(null);
+  useEffect(() => {
+    if (!hint) return;
+    const t = setTimeout(() => setHint(null), HINT_MS);
+    return () => clearTimeout(t);
+  }, [hint]);
   useEffect(() => {
     const [wasId, was = ""] = wasReady.current.split("|");
     const [id, now = ""] = readyKey.split("|");
@@ -383,7 +391,7 @@ export function Hud() {
                     ["stronghold", "stronghold", Landmark, "Stronghold"],
                     ["card", null, ScrollText, "Fortune"],
                   ] as const
-                ).map(([kind, arm, Icon, label]) => {
+                ).map(([kind, arm, Icon, label], at) => {
                   const { short, missing, why, ready } = buildStatus(state, me, kind);
                   const blocked = !ready || spectator;
                   const status = why ?? (ready ? "Ready" : needLine(short));
@@ -407,7 +415,10 @@ export function Hud() {
                       onClick={() => {
                         // aria-disabled keeps the button focusable, so the click itself must refuse (but may still disarm).
                         // A tap the hand cannot pay for says what is missing (a spot waiting, goods short) instead of doing nothing.
-                        if (!spectator && !why && missing && buildMode !== arm) return void refuse(needLine(short));
+                        if (!spectator && !why && missing && buildMode !== arm) {
+                          setHint((h) => ({ kind, text: hintLine(short), n: (h?.n ?? 0) + 1 }));
+                          return void refuse(needLine(short));
+                        }
                         if (!arm) return void (blocked || dispatch({ type: "buyCard" }));
                         if (blocked && buildMode !== arm) return;
                         setBuildMode(buildMode === arm ? "none" : arm);
@@ -419,6 +430,20 @@ export function Hud() {
                       {/* The chips and the reason are aria-hidden: the name stays the piece, the description says the rest. Missing
                           goods ring what the hand lacks and say how many short. */}
                       {why ? <span aria-hidden className="text-caption text-muted">{why}</span> : <CostChips kind={kind} hand={missing ? me.resources : undefined} />}
+                      {/* The ends of the row hang the chip inward, so it stays on a phone's screen. Last child: the tile's own
+                          styles address its first span. */}
+                      {hint?.kind === kind ? (
+                        <span
+                          aria-hidden
+                          data-testid={`build-hint-${kind}`}
+                          className={cn(
+                            "pointer-events-none absolute bottom-full z-20 mb-1 whitespace-nowrap rounded-[12px] border border-white/50 bg-glass px-2 py-1 text-xs font-medium text-zinc-900 backdrop-blur-md",
+                            at === 0 ? "left-0" : at === 3 ? "right-0" : "left-1/2 -translate-x-1/2",
+                          )}
+                        >
+                          {hint.text}
+                        </span>
+                      ) : null}
                     </Button>
                   );
                 })}

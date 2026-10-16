@@ -32,6 +32,11 @@ export function needLine(short: Partial<Record<Resource, number>>) {
   return `Need ${parts.join(" and ")}`;
 }
 
+// "Need 1 clay", "Need 1 clay, 1 wool": the chip a tap on a short build shows above it (#535).
+export function hintLine(short: Partial<Record<Resource, number>>) {
+  return `Need ${RESOURCES.filter((r) => short[r]).map((r) => `${short[r]} ${r}`).join(", ")}`;
+}
+
 export function CostChips({ kind, hand, className }: { kind: Price; hand?: Record<Resource, number>; className?: string }) {
   const short = hand ? shortfall(hand, kind) : {};
   return (
