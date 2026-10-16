@@ -31,7 +31,7 @@ const look = (page) =>
     const hole = isle.insets();
     // The view is the default for the canvas's shape (#597): overhead upright, the diorama on its side. Overhead, the frustum
     // is the fit; diorama, the lens is.
-    const view = defaultView(c.clientWidth, c.clientHeight);
+    const view = defaultView(c.clientWidth, c.clientHeight, true);
     const want = view === "overhead" ? fitOrtho(c.clientWidth, c.clientHeight, hole, OVERHEAD_LEAN) : fitDiorama(c.clientWidth, c.clientHeight, hole);
     const keys = Object.keys(want);
     const fresh = isle.view === view && isle.fit !== null && keys.every((k) => Math.abs(want[k] - isle.fit[k]) < 1e-6);
@@ -68,9 +68,12 @@ const box = async (page) => {
 };
 const near = (a, b) => ["w", "h"].every((k) => Math.abs(a[k] / b[k] - 1) <= 0.1) && ["x", "y"].every((k) => Math.abs(a[k] - b[k]) <= 0.1 * Math.max(b.w, b.h));
 const round = (r) => Object.fromEntries(Object.entries(r).map(([k, v]) => [k, Math.round(v)]));
-async function start(w, h) {
+// iPhone notch insets, set over CDP (env() is not otherwise emulated): top and bottom upright, the sides and a home bar when turned.
+const NOTCH = (w, h) => (h > w ? { top: 47, bottom: 34, left: 0, right: 0 } : { top: 0, bottom: 21, left: 59, right: 59 });
+async function start(w, h, notch = false) {
   const ctx = await browser.newContext({ viewport: { width: w, height: h }, isMobile: true, hasTouch: true });
   const page = await ctx.newPage();
+  if (notch) await (await ctx.newCDPSession(page)).send("Emulation.setSafeAreaInsetsOverride", { insets: NOTCH(w, h) });
   page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
   page.on("pageerror", (e) => errors.push(String(e)));
   page.on("response", (r) => r.status() >= 400 && errors.push(`${r.status()} ${r.url()}`));
@@ -90,14 +93,15 @@ async function start(w, h) {
 
 let code = 0;
 try {
-  for (const [a, b] of [[[390, 844], [844, 390]], [[360, 640], [640, 360]], [[360, 640], [844, 390]]]) {
+  // Landscape phones (#625): iPhone, Android and Plus sizes, with the notch on some, upright to sideways and back.
+  for (const [a, b, notch] of [[[390, 844], [844, 390]], [[360, 640], [640, 360]], [[360, 640], [844, 390]], [[430, 932], [932, 430], true], [[360, 740], [740, 360]], [[414, 896], [896, 414], true], [[375, 667], [667, 375]]]) {
     const fresh = {};
     for (const [w, h] of [a, b]) {
-      const f = await start(w, h);
+      const f = await start(w, h, notch);
       fresh[`${w}x${h}`] = await box(f.page);
       await f.ctx.close();
     }
-    const { ctx, page } = await start(a[0], a[1]);
+    const { ctx, page } = await start(a[0], a[1], notch);
     const settle = async () => {
       await page.waitForFunction(() => !window.__isle.refitDue && !window.__isle.glide, null, { timeout: STEP_MS });
       await frames(page, 2);
@@ -108,6 +112,7 @@ try {
     for (const [w, h] of [b, a, b]) {
       const tag = `${a.join("x")} -> ${w}x${h}`;
       await page.setViewportSize({ width: w, height: h });
+      if (notch) await (await ctx.newCDPSession(page)).send("Emulation.setSafeAreaInsetsOverride", { insets: NOTCH(w, h) });
       await frames(page, 3);
       const soon = await look(page);
       check(soon.size === `${w}x${h}` && soon.fresh, `${tag}: within 3 frames the fit is the one the new hole asks for`, soon);

@@ -10,6 +10,7 @@
 // wire protocol (G2) shows "Reload to update". Zero console errors.
 // Run with: node --import ./server/register.mjs scripts/watch-ui-prove.mjs
 import { spawn } from "node:child_process";
+import { once } from "node:events";
 import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -515,5 +516,6 @@ try {
   await browser.close();
   await vite.close();
   host.kill();
+  if (host.exitCode === null && host.signalCode === null) await Promise.race([once(host, "exit"), new Promise((r) => setTimeout(r, 3000).unref())]);
 }
 process.exit(code);

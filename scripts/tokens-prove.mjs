@@ -1,7 +1,7 @@
 // #239 Debug: number tokens are rimmed and legible, and nothing is placed or wanders within 0.31 of a hex centre.
 // The six checks in docs/design/tokens.md, and (#597) a seventh: in the diorama view (the default on a landscape canvas at least 900 px wide)
 // every token faces the camera at its own size (#599), at most 30 % of a hex's width, overlaps no other on screen and is not hidden
-// by the scenery, and its numeral is at least 11 px tall and its pips 2 px across, at 1280x720 and 960x600.
+// by the scenery, and its numeral is at least 11 px tall and its pips 2 px across, at 1280x720 and 960x680.
 import { existsSync } from "node:fs";
 import { chromium } from "playwright";
 import { createServer } from "vite";
@@ -129,8 +129,8 @@ try {
   // rows, a pip's 28 px) through the camera; each disc its own size and at most 30 % of a hex's width on screen, no two
   // discs overlapping on screen (their rims' 24 points, projected), and no numeral behind the scenery (a segment from the
   // eye to five points across the glyph meets nothing opaque in the jelly scenes, jelly-board.ts occludes).
-  // Where the diorama is the default: 1280x720, and 960x600, near the narrowest canvas that gets it (900 wide).
-  for (const [width, height, phone] of [[1280, 720, false], [960, 600, false]]) {
+  // Where the diorama is the default: 1280x720, and 960x680 (#625: the diorama needs a 420 px hole, so 960x600 now defaults to overhead; 680 is the shortest 960 px canvas that keeps the diorama), near the narrowest canvas that gets it (900 wide).
+  for (const [width, height, phone] of [[1280, 720, false], [960, 680, false]]) {
     const ctx = await browser.newContext({ viewport: { width, height }, isMobile: phone, hasTouch: phone });
     await ctx.addInitScript(() => localStorage.setItem("emberisle-jelly", "full"));
     const p = await ctx.newPage();

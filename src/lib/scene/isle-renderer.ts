@@ -13,6 +13,7 @@ import {
   fitOrtho,
   freeMaxDistance,
   hudInsets,
+  playHole,
   isSelectTap,
   pickBest,
   pickReach,
@@ -23,6 +24,7 @@ import {
   type PlayView,
   type Rect,
 } from "@/lib/scene/mobile-fit";
+import { readViewport } from "../viewport";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
@@ -105,6 +107,12 @@ const FIT_KEYS: (keyof Pose)[] = ["left", "right", "top", "bottom", "tx", "tz", 
 const NO_FIT = { left: 0, right: 0, top: 0, bottom: 0, tx: 0, tz: 0, focal: 0, dist: 0, cx: 0, cy: 0 };
 const EYE_KEYS: (keyof Pose)[] = ["polar", "azimuth", "zoom"];
 const ORBIT_RADIUS = 18;
+// How far a pan may carry the look-at point from home, about the island's own radius: its centre stays on screen.
+const PAN_RADIUS = 5;
+const PAN_VIEW = 0.6;
+// Pixels a pinch's midpoint may drift before it also pans.
+const PAN_DEAD = 8;
+const GATE_EVENTS = ["pointerdown", "pointermove", "pointerup", "pointercancel", "lostpointercapture"] as const;
 const GLIDE_MS = 280;
 // Frames after a resize that measure the hole again: the HUD settles into its new layout a frame or two after the event.
 const RELAYOUT_FRAMES = 4;
@@ -138,6 +146,7 @@ export class IsleRenderer {
   view: "free" | PlayView = "free";
   private viewChoice: PlayView | null = null;
   // The diorama lens as last posed: focal length (px), fitted distance, and where its axis meets the canvas.
+  private fitUpright = false;
   private lens: DioramaFit = { focal: 1, dist: 1, cx: 0, cy: 0 };
   private tokens: THREE.Object3D[] = [];
   private pending: { kind: string; id: string } | null = null;
@@ -312,7 +321,8 @@ export class IsleRenderer {
     this.orbit.enabled = false;
     // No damping: the board stops where the pointer stops, and nothing drifts after a glide home.
     this.orbit.enableDamping = false;
-    this.orbit.enablePan = false;
+    // Two fingers (or the right button) pan along the ground; the target stays at cap level and within PAN_RADIUS of home.
+    this.orbit.screenSpacePanning = false;
     this.orbit.minZoom = 0.8;
     this.orbit.maxZoom = 2.4;
     this.orbit.minPolarAngle = 0.12;
@@ -382,6 +392,12 @@ export class IsleRenderer {
     canvas.addEventListener("pointerup", this.onUp);
     canvas.addEventListener("pointermove", this.onMove);
     canvas.addEventListener("pointercancel", this.onCancel);
+    // Capture phase on the shell, so the pinch gate sees a move before the orbit controls do.
+    for (const t of GATE_EVENTS) canvas.parentElement?.addEventListener(t, this.gate, true);
+    // OrbitControls' private pan step; the gate holds a pinch's midpoint still. If a three.js upgrade drops it, pinch just pans a little.
+    const oc = this.orbit as unknown as { _pan?: (x: number, y: number) => void };
+    const pan = oc._pan?.bind(this.orbit);
+    if (pan) oc._pan = (x, y) => this.panOpen && pan(x, y);
     window.addEventListener("resize", this.resize);
     // A phone's bars sliding in or out move the visual viewport without always firing a window resize.
     window.visualViewport?.addEventListener("resize", this.onViewport);
@@ -420,7 +436,7 @@ export class IsleRenderer {
 
   private playView(): PlayView {
     const c = this.renderer.domElement;
-    return this.viewChoice ?? defaultView(c.clientWidth || 1, c.clientHeight || 1);
+    return this.viewChoice ?? defaultView(c.clientWidth || 1, c.clientHeight || 1, readViewport().phone);
   }
 
   private play() {
@@ -442,11 +458,11 @@ export class IsleRenderer {
   // The preference flipped: draw the island as it stands now. The event comes a frame after `matches` changes, so tick reads that.
   private onCalm = () => this.wake();
 
-  private safe(): Insets {
+  private safe(withKeyboard = true): Insets {
     const cs = getComputedStyle(this.safeProbe);
     const viewport = window.visualViewport;
     // A focused phone field can bring a keyboard over a canvas whose CSS height has not changed.
-    const typing = this.coarse() && document.activeElement?.matches("input, textarea") && viewport && Math.abs(viewport.scale - 1) < 0.01;
+    const typing = withKeyboard && this.coarse() && document.activeElement?.matches("input, textarea") && viewport && Math.abs(viewport.scale - 1) < 0.01;
     const keyboard = typing ? Math.max(0, this.renderer.domElement.clientHeight - viewport.height - viewport.offsetTop) : 0;
     return {
       top: parseFloat(cs.paddingTop) || 0,
@@ -458,6 +474,13 @@ export class IsleRenderer {
 
   // The hole the HUD leaves for the island right now, measured from the chrome around the canvas. Proofs read it too.
   insets(): Insets {
+    const c = this.renderer.domElement;
+    // The keyboard is an overlay like the chat above it: only the notch counts.
+    return playHole(c.clientWidth, c.clientHeight, readViewport().phone, this.safe(false));
+  }
+
+  // What the chrome around the canvas leaves right now, overlays and all: for proofs, never for the fit.
+  liveInsets(): Insets {
     const c = this.renderer.domElement;
     const shell = c.parentElement;
     return chromeInsets(c.clientWidth, c.clientHeight, shell ? solidRects(shell, c) : [], this.safe());
@@ -640,6 +663,7 @@ export class IsleRenderer {
     window.removeEventListener("keydown", this.onKey);
     this.renderer.domElement.parentElement?.removeEventListener("focusin", this.remeasure);
     this.renderer.domElement.parentElement?.removeEventListener("focusout", this.remeasure);
+    for (const t of GATE_EVENTS) this.renderer.domElement.parentElement?.removeEventListener(t, this.gate, true);
     this.renderer.domElement.removeEventListener("pointerdown", this.onDown);
     this.renderer.domElement.removeEventListener("pointerup", this.onUp);
     this.renderer.domElement.removeEventListener("pointermove", this.onMove);
@@ -696,20 +720,31 @@ export class IsleRenderer {
     this.refitDue = false;
     if (!this.play()) return;
     const c = this.renderer.domElement;
-    const hole = this.insets();
-    // The hole's edges on the shell, so the HUD can centre a moment on the island (TurnMoment, GainFloats).
-    for (const k of ["top", "right", "bottom", "left"] as const) c.parentElement?.style.setProperty(`--hole-${k}`, `${hole[k]}px`);
+    const base = this.insets();
+    // The hole's edges on the shell, so the HUD can centre a moment on the island (TurnMoment, GainFloats): the one the map is fitted to.
+    for (const k of ["top", "right", "bottom", "left"] as const) c.parentElement?.style.setProperty(`--hole-${k}`, `${base[k]}px`);
     const [w, h] = [c.clientWidth || 1, c.clientHeight || 1];
-    const f = this.view === "diorama" ? fitDiorama(w, h, hole) : fitOrtho(w, h, hole, OVERHEAD_LEAN);
+    const f = this.view === "diorama" ? fitDiorama(w, h, base) : fitOrtho(w, h, base, OVERHEAD_LEAN);
     const was = this.fit;
     if (was && FIT_KEYS.every((k) => Math.abs(this.fitPose(f)[k] - this.fitPose(was)[k]) < 1e-6)) return;
     this.fit = f;
+    const upright = h > w;
+    const carry = upright === this.fitUpright;
+    this.fitUpright = upright;
     if (!was) {
       this.applyPose(this.fitPose(f));
       this.orbit.update();
       return;
     }
-    this.moveTo(this.fitPose(f), FIT_KEYS, instant || this.renders <= this.shownAt);
+    // The pan survives any refit but a turn of the phone (a view toggle starts from home anyway): a Safari toolbar or a
+    // keyboard resizing the canvas keeps the player's offset from home.
+    const to = this.fitPose(f);
+    if (carry) {
+      const from = this.fitPose(was);
+      to.tx += this.orbit.target.x - from.tx;
+      to.tz += this.orbit.target.z - from.tz;
+    }
+    this.moveTo(to, FIT_KEYS, instant || this.renders <= this.shownAt);
   }
 
   private fitPose(f: OrthoFit | DioramaFit): Pose {
@@ -722,7 +757,7 @@ export class IsleRenderer {
     const cam = this.view === "diorama" ? this.persp : this.ortho;
     _sph.setFromVector3(_eye.copy(cam.position).sub(this.orbit.target));
     const eye = { polar: _sph.phi, azimuth: _sph.theta };
-    if (this.view === "diorama") return { ...NO_FIT, ...this.lens, ...eye, zoom: this.lens.dist / _sph.radius };
+    if (this.view === "diorama") return { ...NO_FIT, ...this.lens, tx: this.orbit.target.x, tz: this.orbit.target.z, ...eye, zoom: this.lens.dist / _sph.radius };
     const o = this.ortho;
     return { ...NO_FIT, left: o.left, right: o.right, top: o.top, bottom: o.bottom, tx: this.orbit.target.x, tz: this.orbit.target.z, ...eye, zoom: o.zoom };
   }
@@ -742,7 +777,9 @@ export class IsleRenderer {
       this.lens = { focal: p.focal, dist: p.dist, cx: p.cx, cy: p.cy };
       this.orbit.minDistance = p.dist / this.orbit.maxZoom;
       this.orbit.maxDistance = p.dist / this.orbit.minZoom;
-      this.orbit.target.set(0, CAP_LEVEL, 0);
+      this.orbit.target.set(p.tx, CAP_LEVEL, p.tz);
+      // The lens frame is wider than the canvas, so a pan step in pixels is scaled to match the finger.
+      this.orbit.panSpeed = h / fullH;
       c.up.set(0, 1, 0);
       c.position.setFromSphericalCoords(p.dist / p.zoom, p.polar, p.azimuth).add(this.orbit.target);
       c.lookAt(this.orbit.target);
@@ -756,6 +793,7 @@ export class IsleRenderer {
     o.bottom = p.bottom;
     o.zoom = p.zoom;
     this.orbit.target.set(p.tx, CAP_LEVEL, p.tz);
+    this.orbit.panSpeed = 1;
     o.up.set(0, 1, 0);
     o.position.setFromSphericalCoords(ORBIT_RADIUS, p.polar, p.azimuth).add(this.orbit.target);
     o.lookAt(this.orbit.target);
@@ -846,6 +884,34 @@ export class IsleRenderer {
     }
   }
 
+  // How far a pan may carry the look-at point from home: about the island's radius, and no more than PAN_VIEW of the shorter
+  // half of what the canvas shows at the fitted zoom, so a short landscape canvas cannot carry the island off its edge. It
+  // does not shrink as the player zooms in: that is when they want to reach the edge tiles.
+  panLimit(): number {
+    const f = this.fit;
+    if (!f) return 0;
+    const half = "focal" in f ? (f.dist * Math.min(this.sizeW, this.sizeH)) / 2 / f.focal : Math.min(f.right - f.left, f.top - f.bottom) / 2;
+    return Math.min(PAN_RADIUS, PAN_VIEW * half);
+  }
+
+  // The eye moves with the target, so the view does not lag a frame.
+  private clampPan() {
+    if (!this.fit) return;
+    const home = this.fitPose(this.fit);
+    const t = this.orbit.target;
+    const cam = this.orbit.object;
+    const max = this.panLimit();
+    const dx = t.x - home.tx;
+    const dz = t.z - home.tz;
+    const d = Math.hypot(dx, dz);
+    if (d <= max) return;
+    const k = max / d - 1;
+    t.x += dx * k;
+    t.z += dz * k;
+    cam.position.x += dx * k;
+    cam.position.z += dz * k;
+  }
+
   // Back to the fitted view, zoom 1, over the hole's centre.
   goHome() {
     if (!this.play() || !this.fit) return;
@@ -859,6 +925,13 @@ export class IsleRenderer {
     if (!this.glide.keys.length) this.glide = null;
   }
 
+  // Two fingers mid-glide take the look-at point and the zoom; the fit's frustum and lens keep gliding.
+  private fingersTakeFit() {
+    if (!this.glide) return;
+    this.glide.keys = this.glide.keys.filter((k) => k !== "tx" && k !== "tz" && k !== "zoom");
+    if (!this.glide.keys.length) this.glide = null;
+  }
+
   // Home snaps the view unless the key means something where it landed: a text field, a dialog, a scrolling region (the
   // chat log, the bottom stack), a modifier chord, or a handler that already took it.
   private onKey = (e: KeyboardEvent) => {
@@ -869,6 +942,30 @@ export class IsleRenderer {
     if (t?.closest("[role=dialog], [role=alertdialog]") || inScroller(t)) return;
     e.preventDefault();
     this.goHome();
+  };
+
+  // Two fingers pan and pinch together; a pinch pans only once its midpoint has moved PAN_DEAD px from where the second finger landed.
+  private fingers = new Map<number, { x: number; y: number }>();
+  private panOpen = true;
+  private pinchStart: { mx: number; my: number } | null = null;
+  private gate = (e: PointerEvent) => {
+    const f = this.fingers;
+    if (e.type === "pointermove") {
+      if (!f.has(e.pointerId)) return;
+      f.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    } else {
+      if (e.type === "pointerdown") {
+        if (e.target !== this.renderer.domElement) return;
+        f.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      } else f.delete(e.pointerId);
+      this.pinchStart = null;
+      this.panOpen = f.size < 2;
+    }
+    if (f.size !== 2 || this.panOpen) return;
+    const [a, b] = [...f.values()];
+    const cur = { mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2 };
+    const st = (this.pinchStart ??= cur);
+    this.panOpen = Math.hypot(cur.mx - st.mx, cur.my - st.my) >= PAN_DEAD;
   };
 
   private onDown = (e: PointerEvent) => {
@@ -888,6 +985,7 @@ export class IsleRenderer {
     this.gesture.move(e.pointerId, e.clientX, e.clientY);
     this.lastPointer = performance.now();
     this.wake();
+    if (this.gesture.pointers.size === 2) this.fingersTakeFit();
     if (this.dragged || this.gesture.pointers.size !== 1) return;
     if (Math.hypot(e.clientX - this.down.x, e.clientY - this.down.y) > tapSlop(this.downType, this.coarse())) {
       this.dragged = true;
@@ -1051,6 +1149,7 @@ export class IsleRenderer {
     this.controls.autoRotate = this.titleMode && !calm;
     if (this.play()) {
       this.orbit.update();
+      this.clampPan();
       this.stepGlide(now);
     } else {
       this.controls.enableDamping = !calm;
