@@ -138,7 +138,7 @@ function withPaths(state: GameState, edgeIds: string[], pid: string): GameState 
   return { ...state, edges: state.edges.map((e) => (edgeIds.includes(e.id) ? { ...e, path: pid } : e)) };
 }
 import { chooseBotAction, chooseTradeAsk, shouldAcceptTrade } from "./ai";
-import { PLAYER_COLORS, RESOURCES, type Action, type BuildMode, type GameState, type VictoryTarget } from "./types";
+import { PLAYER_COLORS, RESOURCES, type Action, type BuildMode, type GameState, type VictoryTarget, type WayfarerMode } from "./types";
 import { connectTable, hostUrl, type Bag, type ChatLine, type Legal, type Me, type Reaction, type Seat, type TableClient } from "@/lib/net/table";
 import { PROTO } from "@/lib/net/proto";
 import { play, yourTurn, type SoundName } from "@/lib/sound";
@@ -211,6 +211,9 @@ interface GameStore {
   setHowTo: (v: boolean, opener?: HTMLElement | null) => void;
   setCosts: (v: boolean, opener?: HTMLElement | null) => void;
   setBuildMode: (m: BuildMode) => void;
+  wayfarerChoices: Partial<Record<"ai" | "online" | "hotseat", WayfarerMode>>;
+  setWayfarerChoice: (context: "ai" | "online" | "hotseat", mode: WayfarerMode) => void;
+  tableWayfarerMode: WayfarerMode;
   startAi: () => void;
   startHotseat: (count: number) => void;
   loadState: (s: GameState, localId: string, host: boolean, table?: string) => void;
@@ -449,6 +452,11 @@ export const useGame = create<GameStore>((set, get) => ({
   setHowTo: (v, opener) => set({ howTo: v, howToOpener: v ? (opener ?? null) : null }),
   setCosts: (v, opener) => set({ costs: v, costsOpener: v ? (opener ?? null) : null }),
   setBuildMode: (m) => set({ buildMode: m, roadPicks: [] }),
+  wayfarerChoices: {},
+  tableWayfarerMode: "on",
+  setWayfarerChoice: (context, mode) => {
+    if (get().screen === "title" && ["on", "off"].includes(mode)) set({ wayfarerChoices: { ...get().wayfarerChoices, [context]: mode } });
+  },
   startAi: () => {
     // A table left dialing (a reload with a saved seat) must not pull a practice game back to the lobby.
     clearWake();
@@ -459,7 +467,7 @@ export const useGame = create<GameStore>((set, get) => ({
     botAsked = "";
     botDeclined.clear();
     const name = get().name;
-    const state = createGame({ humans: [{ name }], bots: 3 });
+    const state = createGame({ humans: [{ name }], bots: 3, wayfarerMode: get().wayfarerChoices.ai ?? "on" });
     set({
       screen: "play",
       mode: "ai",
@@ -488,7 +496,7 @@ export const useGame = create<GameStore>((set, get) => ({
     const humans = Array.from({ length: count }, (_, i) => ({
       name: i === 0 ? get().name : `Seat ${i + 1}`,
     }));
-    const state = createGame({ humans, bots: 0 });
+    const state = createGame({ humans, bots: 0, wayfarerMode: get().wayfarerChoices.hotseat ?? "on" });
     set({
       screen: "play",
       mode: "hotseat",
@@ -533,6 +541,7 @@ export const useGame = create<GameStore>((set, get) => ({
     get().net?.close();
     set({
       screen: "title",
+      wayfarerChoices: {},
       state: null,
       error: null,
       buildMode: "none",
@@ -736,7 +745,9 @@ export const useGame = create<GameStore>((set, get) => ({
     if (buildMode === "path") return { vertices: [], edges: legalRoads(state, actor, false), hexes: [] };
     return { vertices: [], edges: [], hexes: [] };
   },
-  hostTable: () => connect(set, get, (t, me) => t.open(me)),
+  hostTable: () => {
+    connect(set, get, (t, me) => t.open(me, { wayfarerMode: get().wayfarerChoices.online ?? "on" }));
+  },
   joinTable: (code) => {
     // A color the peek showed taken at this table is sent as no color, so the host seats the first free one.
     const { code: peeked, seats, color } = get();
@@ -773,7 +784,7 @@ export const useGame = create<GameStore>((set, get) => ({
     if (mode !== "hotseat" || state?.phase !== "over") return;
     const winner = state.players.find((p) => p.id === state.winner)!;
     const ordered = [winner, ...state.players.filter((p) => p !== winner)];
-    const next = createGame({ humans: ordered.map((p) => ({ name: p.name })), bots: 0, winnerFirst: true });
+    const next = createGame({ humans: ordered.map((p) => ({ name: p.name })), bots: 0, winnerFirst: true, wayfarerMode: state.wayfarerMode ?? "on" });
     set({
       state: next,
       localId: "p0",
@@ -949,12 +960,12 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
   let welcomed = false;
   let outdated: string | null = null;
   const table = connectTable(hostUrl(window.location), {
-    welcome: ({ proto, code, you, host, chat, secret, spectator, victoryTarget }) => {
+    welcome: ({ proto, code, you, host, chat, secret, spectator, victoryTarget, wayfarerMode }) => {
       pending = false;
       welcomed = true;
       // G2: a host on a newer wire protocol than this page says so where errors go, and keeps saying it after every state.
       outdated = (proto ?? 0) > PROTO ? "This page is out of date. Reload to update." : null;
-      set({ resync: true, tableVictoryTarget: victoryTarget === 7 ? 7 : 10 });
+      set({ resync: true, tableVictoryTarget: victoryTarget === 7 ? 7 : 10, tableWayfarerMode: wayfarerMode ?? "on" });
       if (secret) rememberSeat({ code, secret });
       // A page-load rejoin has no state yet, so it passes through the lobby until the host's state push moves it to play.
       // A mid-game reconnect already holds the game: stay on the board so the HUD keeps its local state.
@@ -1001,7 +1012,7 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       setTimeout(() => set({ reactions: get().reactions.filter((x) => x !== r) }), 2000);
     },
     // A peek answers id/color/ready only (G10); the lobby is not shown until the full broadcast after sitting replaces it.
-    seats: ({ code, seats, watching, victoryTarget }) => set({ code, seats: seats as Seat[], watching: watching ?? 0, tableVictoryTarget: victoryTarget === 7 ? 7 : 10 }),
+    seats: ({ code, seats, watching, victoryTarget, wayfarerMode }) => set({ code, seats: seats as Seat[], watching: watching ?? 0, tableVictoryTarget: victoryTarget === 7 ? 7 : 10, tableWayfarerMode: wayfarerMode ?? "on" }),
     // Dice and gain floats present the roll; its words live only in the persistent log.
     rolled: () => {},
     state: ({ you, game, legal, turnDeadline, turnPlayer, serverNow }) => {

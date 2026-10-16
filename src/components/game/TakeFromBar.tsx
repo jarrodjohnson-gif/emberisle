@@ -35,6 +35,8 @@ export function TakeFromBar() {
     // #557: the phone's chat sheet (z-30, min(48vh, 320px) tall) would hide this choice, so while it is open the bar rides just above it.
     <div
       ref={bar}
+      role="group"
+      aria-label="The wayfarer takes a card"
       className={cn(
         "flex flex-wrap items-center gap-2 rounded-[16px] border border-accent/40 bg-surface p-2",
         phone && aboveChat && "pointer-events-auto fixed left-safe right-safe bottom-[calc(var(--chat-sheet-height)+var(--keyboard-inset,0px)+var(--active-offer-height,0px)+0.5rem)] z-40",

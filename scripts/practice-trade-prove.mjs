@@ -55,13 +55,15 @@ try {
   await page.getByRole("button", { name: "Play", exact: true }).click();
   await page.waitForFunction(() => window.__emberisle?.getState().state);
   // Each step starts a fresh practice game (as the Title's button does) and swaps in the hand-built state.
-  const load = (g) =>
-    page.evaluate((g) => {
-      const s = window.__emberisle.getState();
-      s.goTitle();
-      s.startAi();
+  const load = async (g) => {
+    await page.evaluate(() => window.__emberisle.getState().goTitle());
+    // Let the title mount between games, as a person's taps do. Equal fixture seq values must still wake the next bot.
+    await page.getByRole("button", { name: "Play", exact: true }).waitFor({ timeout: STEP_MS });
+    await page.evaluate((g) => {
+      window.__emberisle.getState().startAi();
       window.__emberisle.setState({ state: g });
     }, g);
+  };
   const toast = page.getByTestId("trade-toast");
   // Every hand at the moment the open offer closes. Once it has, the bot's turn plays on (a build, a fortune, the next
   // seat's roll) and moves goods for its own reasons, so the trade is judged on this snapshot, not on a later read.

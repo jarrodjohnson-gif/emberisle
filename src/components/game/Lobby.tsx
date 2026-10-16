@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { useViewport } from "@/lib/viewport";
 
 export function Lobby() {
+  const rule = useGame((s) => s.tableWayfarerMode);
   const code = useGame((s) => s.code);
   const seats = useGame((s) => s.seats);
   // The welcome flag goes stale when the host leaves; the live seat list is the truth (#249).
@@ -62,7 +63,7 @@ export function Lobby() {
         )}
       >
         <div className={cn(landscape && "col-start-2 row-start-1")}>
-        <p className="text-caption font-semibold text-sea-ink">Table code</p>
+        <p className="text-caption font-semibold text-sea-ink">Table code · Wayfarer <span className="capitalize">{rule}</span></p>
         <div className="mt-1 flex items-center gap-3">
           <p data-testid="table-code" className={cn("font-display tracking-[0.2em]", landscape ? "text-5xl" : "text-6xl")}>
             {code}
