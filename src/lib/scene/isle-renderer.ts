@@ -41,6 +41,7 @@ import { BLOCK_H } from "@/lib/scene/jelly-dims";
 import type { JellyBoard, JellyStats } from "@/lib/scene/jelly-board";
 import type { Dock, Shore } from "@/lib/scene/harbor-jelly";
 import { OceanLife } from "@/lib/scene/ocean-life";
+import { makeBruno, type Bruno } from "@/lib/scene/bruno";
 import { CAUSTIC_GLSL, PAPER, SPLASH, addSplashRings, makeCrystalSea, makeFloorProps, makeSeaFloor, makeSplashes, makeSwell, makeWash, nearestCoast, type SeaUniforms, type WaterPath, type WaterStatus } from "@/lib/scene/crystal-water";
 import { Wobble } from "@/lib/scene/wobble";
 import { play } from "@/lib/sound";
@@ -192,6 +193,8 @@ export class IsleRenderer {
   private ssao!: SSAOPass;
   private renderPass!: RenderPass;
   private wayfarer: THREE.Group;
+  // The wayfarer's figure (bruno.ts): his idle peeking and his scurry.
+  private bruno: Bruno;
   private oceanLife = new OceanLife();
   // Touch the sea (crystal-water.md): the live splashes, the tiles giving under a tap, and where a drag on the water last stirred.
   private splash = makeSplashes();
@@ -404,8 +407,9 @@ export class IsleRenderer {
     this.foam.position.y = 0.028;
     this.scene.add(this.foam);
 
-    this.wayfarer = makeWayfarer();
-    this.lantern = this.wayfarer.userData.lantern as THREE.MeshStandardMaterial;
+    this.bruno = makeBruno();
+    this.wayfarer = this.bruno.g;
+    this.lantern = this.bruno.lantern;
     this.living.add(this.wayfarer);
     this.scene.add(this.land, this.living, this.pieces, this.marks);
 
@@ -699,6 +703,7 @@ export class IsleRenderer {
     this.renderer.domElement.removeEventListener("pointercancel", this.onCancel);
     this.safeProbe.remove();
     this.oceanLife.dispose();
+    this.bruno.dispose();
     this.under?.dispose();
     this.renderer.dispose();
   }
@@ -1217,6 +1222,7 @@ export class IsleRenderer {
       }
     }
     this.lantern.emissiveIntensity = 1.6 + 0.3 * Math.sin(t * 2.2);
+    this.bruno.update(t, !!this.walk);
     this.pulseMarks(t, false);
     for (const b of this.boats) {
       if (!swell) {
@@ -2114,27 +2120,6 @@ function makePath(seat: string, len: number) {
     slab(0.16, 0.04, len - 0.12, seat, 0.06),
     tint(new THREE.CylinderGeometry(0.12, 0.12, 0.045, 12).toNonIndexed().translate(0, 0.0825, 0), seat),
   ]);
-}
-
-function makeWayfarer() {
-  const g = new THREE.Group();
-  const charcoal = new THREE.MeshStandardMaterial({ color: 0x2b2420, roughness: 0.75 });
-  const part = (geo: THREE.BufferGeometry, mat: THREE.Material, x: number, y: number, z: number) => {
-    const m = new THREE.Mesh(geo, mat);
-    m.position.set(x, y, z);
-    g.add(m);
-    return m;
-  };
-  part(new THREE.ConeGeometry(0.15, 0.46, 10), charcoal, 0, 0.23, 0).castShadow = true;
-  part(new THREE.SphereGeometry(0.1, 12, 10), charcoal, 0, 0.5, 0);
-  part(new THREE.SphereGeometry(0.07, 10, 8), new THREE.MeshStandardMaterial({ color: 0xfff6e8, roughness: 0.5 }), 0, 0.49, 0.045);
-  const eye = new THREE.MeshStandardMaterial({ color: 0x111111 });
-  for (const sx of [-0.024, 0.024]) part(new THREE.SphereGeometry(0.011, 8, 8), eye, sx, 0.5, 0.105);
-  part(new THREE.CylinderGeometry(0.012, 0.012, 0.64, 6), new THREE.MeshStandardMaterial({ color: 0x4a3220 }), 0.17, 0.32, 0.04);
-  const lantern = new THREE.MeshStandardMaterial({ color: 0xffb347, emissive: 0xff9a2e, emissiveIntensity: 1.6, roughness: 0.3 });
-  part(new THREE.SphereGeometry(0.05, 10, 8), lantern, 0.17, 0.56, 0.04);
-  g.userData.lantern = lantern;
-  return g;
 }
 
 function hullShape() {
