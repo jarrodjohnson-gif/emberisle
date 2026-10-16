@@ -1,0 +1,213 @@
+name: Soak
+
+# Nightly 5x soak of the full browser proof lists on main, to catch flakes.
+# Also runnable via workflow_dispatch.
+on:
+  schedule:
+    - cron: '17 9 * * *'  # 09:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            server/package-lock.json
+      - run: npm ci
+      - run: npm ci --prefix server
+      - run: npm run typecheck
+      - run: npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          retention-days: 1
+
+  browser-a-soak:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            server/package-lock.json
+      - run: npm ci
+      - run: npm ci --prefix server
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      - run: npx playwright install --with-deps chromium
+      - name: Run browser-a proofs 5x
+        id: soak
+        run: |
+          set -euo pipefail
+          PROOFS=(client-prove dpr-prove hotseat-prove tabs-prove countdown-prove trade-prove practice-trade-prove hud-safe-area-prove rotate-overlays-prove fortune-count-prove fortune-tray-prove)
+          declare -A FAILS
+          for run in 1 2 3 4 5; do
+            for proof in "${PROOFS[@]}"; do
+              if ! npm run "$proof" > /tmp/proof.log 2>&1; then
+                FAILS["$proof"]=$(( ${FAILS["$proof"]:-0} + 1 ))
+                echo "RUN $run $proof FAILED:" >> /tmp/failures.txt
+                head -n 20 /tmp/proof.log >> /tmp/failures.txt
+                echo "---" >> /tmp/failures.txt
+              fi
+            done
+          done
+          if [ ${#FAILS[@]} -eq 0 ]; then
+            echo "no_failures=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "no_failures=false" >> "$GITHUB_OUTPUT"
+            SUMMARY=""
+            for proof in "${!FAILS[@]}"; do
+              SUMMARY+="$proof: failed ${FAILS[$proof]}/5"$'\n'
+            done
+            echo "summary<<EOF" >> "$GITHUB_OUTPUT"
+            echo "$SUMMARY" >> "$GITHUB_OUTPUT"
+            echo "EOF" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Report flakes
+        if: steps.soak.outputs.no_failures == 'false'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const date = new Date().toISOString().slice(0,10);
+            const title = `Soak: flaky proofs ${date}`;
+            const summary = `${{ steps.soak.outputs.summary }}`;
+            const body = `Nightly soak (browser-a) on main found flakes:\n\n${summary}\n\nDetails in workflow logs.`;
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: ['test', 'status:todo', 'lane:net'],
+              per_page: 20
+            });
+            const existing = issues.find(i => i.title === title);
+            if (existing) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existing.number,
+                body: body
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: title,
+                body: body,
+                labels: ['test', 'status:todo', 'lane:net']
+              });
+            }
+
+  browser-b-soak:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [flows-a, flows-b, presentation]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            server/package-lock.json
+      - run: npm ci
+      - run: npm ci --prefix server
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      - run: npx playwright install --with-deps chromium
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - name: Run browser-b proofs 5x
+        id: soak
+        run: |
+          set -euo pipefail
+          if [ "${{ matrix.suite }}" = "flows-a" ]; then
+            PROOFS=(hand-cards-prove served-prove chunk-fail-prove restore-prove night-prove chat-prove react-prove wayfarer-prove sounds-prove tokens-prove pieces-prove pieces-land-prove idle-prove contrast-prove keyboard-place-prove upgrade-prove flash-prove reflow-prove rotate-prove)
+          elif [ "${{ matrix.suite }}" = "flows-b" ]; then
+            PROOFS=(pan-prove hole-prove banner-stable-prove howto-prove title-prove wayfarer-setup-prove victory-target-prove watch-ui-prove tabs-prove-4)
+          else
+            PROOFS=(visual-direction-prove jelly-ocean-prove waves-prove splash-prove polish-tokens-prove roll-moment-prove goods-log-prove turn-gain-prove win-action-prove turn-copy-prove table-menu-prove build-ready-prove board-look-prove seat-rail-prove public-score-prove hand-hidden-prove install-prove)
+          fi
+          declare -A FAILS
+          for run in 1 2 3 4 5; do
+            for proof in "${PROOFS[@]}"; do
+              if ! npm run "$proof" > /tmp/proof.log 2>&1; then
+                FAILS["$proof"]=$(( ${FAILS["$proof"]:-0} + 1 ))
+                echo "RUN $run $proof FAILED:" >> /tmp/failures.txt
+                head -n 20 /tmp/proof.log >> /tmp/failures.txt
+                echo "---" >> /tmp/failures.txt
+              fi
+            done
+          done
+          if [ ${#FAILS[@]} -eq 0 ]; then
+            echo "no_failures=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "no_failures=false" >> "$GITHUB_OUTPUT"
+            SUMMARY=""
+            for proof in "${!FAILS[@]}"; do
+              SUMMARY+="$proof: failed ${FAILS[$proof]}/5"$'\n'
+            done
+            echo "summary<<EOF" >> "$GITHUB_OUTPUT"
+            echo "$SUMMARY" >> "$GITHUB_OUTPUT"
+            echo "EOF" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Report flakes
+        if: steps.soak.outputs.no_failures == 'false'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const date = new Date().toISOString().slice(0,10);
+            const title = `Soak: flaky proofs ${date}`;
+            const summary = `${{ steps.soak.outputs.summary }}`;
+            const body = `Nightly soak (browser-b ${{ matrix.suite }}) on main found flakes:\n\n${summary}\n\nDetails in workflow logs.`;
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: ['test', 'status:todo', 'lane:net'],
+              per_page: 20
+            });
+            const existing = issues.find(i => i.title === title);
+            if (existing) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existing.number,
+                body: body
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: title,
+                body: body,
+                labels: ['test', 'status:todo', 'lane:net']
+              });
+            }
