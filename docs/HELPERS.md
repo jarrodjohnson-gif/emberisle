@@ -42,8 +42,11 @@ prompt.
   - Merged: done, move on.
   - Closed: drop that issue for good. Never reopen it or redo the work.
 - Have at most **2 open PRs** at a time. While you're at that limit, only work on those two.
-- With nothing to do, stay quiet: no comments, no PRs, no empty commits. Check again in about
-  30 minutes.
+- With nothing to do, stay quiet: no comments, no PRs, no empty commits.
+- **Timing** (the only place these numbers live; other docs point here):
+  - while you have an open PR, check again every **10 minutes**;
+  - as soon as a PR of yours merges, start the next round right away;
+  - idle with nothing eligible, check every **30 minutes**.
 - If `helper-ok` is removed from an issue, drop that issue.
 - After 3 pushes in a row that are still red on the same PR, post a `paused:` comment on the issue
   and stop work on it.
@@ -54,8 +57,9 @@ and run long proofs in the background, one at a time, reading every result befor
 ## Never
 
 - Make a design decision. That covers any feature, visual, colour, layout, sound, rule, wording or
-  balance change beyond the issue text. If something is unclear or needs a choice, ask on the issue,
-  post a `paused:` comment (below), and move on to the next `helper-ok` issue. Never build around the gap.
+  balance change beyond the issue text. If something is unclear or needs a choice, ask on the issue
+  in a comment starting `Question:` (options plus your recommendation), post a `paused:` comment (below), and
+  move on to the next `helper-ok` issue. Never build around the gap.
 - Merge, approve, review, push to `main`, `git push upstream`, or push to anyone else's branch.
 - Delete files. If an issue needs a file deleted, stop and ask on the issue.
 - Edit `.github/workflows/`, `package.json`, lockfiles, `tsconfig*`, `vite.config*`, or add or upgrade a
