@@ -96,6 +96,7 @@ function stripLink() {
 function Title() {
   const name = useGame((s) => s.name);
   const setName = useGame((s) => s.setName);
+  const commitName = useGame((s) => s.commitName);
   const color = useGame((s) => s.color);
   const setColor = useGame((s) => s.setColor);
   const choices = useGame((s) => s.wayfarerChoices);
@@ -191,6 +192,7 @@ function Title() {
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
+              onBlur={commitName}
               placeholder="Your name"
               aria-label="Your name"
               className="mt-5 h-11 w-full rounded-[12px] border border-border bg-surface px-3 text-base text-fg"

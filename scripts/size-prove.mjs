@@ -7,6 +7,8 @@
 // How to play, trade panel and win screen (sheets) out of the index. sheets is its 2026-10-05 size with the #423 fortune
 // tray (5.21 kB) plus 10%, then its 2026-10-05 size with the Costs card (5.71 kB, build-ready-prove) plus 10%; online is set at
 // 8000 for #500's mute menu and sender-aware unread count (7.27 kB) plus 10%.
+// hud/lobby-names-chat raises index to 119900 (the lobby/music sound table, match point, end music and the name commit, +0.45 kB) and online
+// to 8300 (lobby rename and bots, the soundboard, the unread preview, +0.08 kB over 8000).
 // moments (the turn moment and the gain lines, Jarrod's playtest) is its 2026-10-05 size (2.37 kB) plus 10%.
 import { readdirSync, readFileSync } from "node:fs";
 import { gzipSync } from "node:zlib";
@@ -17,7 +19,7 @@ const BUDGETS = [
   // 2026-10-15: 116.91 kB measured on main after the four HUD merges (#601 #602 #605 #607) landed on the camera; +600 B.
   // 2026-10-15 (#603): 117.50 kB measured with the win reason on top of the sounds (#613) and the victory target (#611); +500 B.
   // 2026-10-15 (#612): 118.15 kB measured on main + wayfarer modes (creation controls, practice progress, mode rules); +600 B.
-  { name: "index", gzipBytes: 118750 },
+  { name: "index", gzipBytes: 119900 },
   // 2026-10-14 (#597): +1100 B for the diorama camera, its fit and the token pose on top of the lazy sea (182.92 kB measured).
   // 2026-10-15: 185.01 kB measured on main once the diorama (#604, +1.1 kB) and the natural waves (#614, +1.0 kB) both
   // landed; each fit its own raise alone.
@@ -39,7 +41,7 @@ const BUDGETS = [
   { name: "jelly-board", gzipBytes: 8500 },
   { name: "hex-jelly", gzipBytes: 46500 },
   { name: "harbor-jelly", gzipBytes: 11000 },
-  { name: "online", gzipBytes: 8000 },
+  { name: "online", gzipBytes: 8300 },
   // 2026-10-15 (#603): 6.33 kB measured with the win screen's winning action on top of #611's lobby selector; +170 B.
   // 2026-10-15 (#612): 6.37 kB measured with wayfarer modes on top of #603; the #603 ceiling holds, no raise.
   { name: "sheets", gzipBytes: 6500 },

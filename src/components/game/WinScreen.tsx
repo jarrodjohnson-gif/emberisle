@@ -20,6 +20,8 @@ function Panel() {
   const setTarget = useGame((s) => s.setVictoryTarget);
   const goTitle = useGame((s) => s.goTitle);
   const playAgain = useGame((s) => s.playAgain);
+  const sendSound = useGame((s) => s.sendSound);
+  const [resting, setResting] = useState(false);
   const mode = useGame((s) => s.mode);
   const spectator = useGame((s) => s.spectator);
   // The lobby's host test (EmberisleApp), so a handed-off host gets the button.
@@ -180,6 +182,21 @@ function Panel() {
         ) : null}
         <div className="mt-5 flex flex-wrap items-center gap-2">
           {mode === "online" ? <VictoryTargetSelect label="Next game" value={target} onChange={isHost && !spectator ? setTarget : undefined} /> : null}
+          {mode === "online" && !spectator ? (
+            <Button
+              variant="secondary"
+              className="min-w-fit flex-1 whitespace-nowrap"
+              data-testid="win-react"
+              disabled={resting}
+              onClick={() => {
+                sendSound("sb_win_reaction");
+                setResting(true);
+                window.setTimeout(() => setResting(false), 3000);
+              }}
+            >
+              React
+            </Button>
+          ) : null}
           <Button variant="secondary" className="min-w-fit flex-1 whitespace-nowrap" data-testid="win-look" onClick={() => setHidden(true)}>
             Look around
           </Button>

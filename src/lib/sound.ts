@@ -25,7 +25,42 @@ const FILES = {
   chat_recv: "chat_recv.wav",
   // A tap on the sea (#616): a normal table clip, paced and burst-dropped like the rest.
   plop: "plop.wav",
+  // The player the wayfarer is set against hears this instead of wayfarer_move (the owner's clip).
+  robbed_fah: "robbed_fah.mp3",
+  // Music: a short sting when a game starts (cut off by the first roll), when a player is one point from winning, and for the
+  // seats that did not win. Played at MUSIC volume.
+  game_start: "game_start.mp3",
+  match_point: "match_point.mp3",
+  game_lose: "game_lose.mp3",
+  // The chat soundboard (server/chat.mjs SOUNDBOARD): a tap plays on every seat's page.
+  sb_wololo: "sb_wololo.mp3",
+  sb_win_reaction: "sb_win_reaction.mp3",
+  sb_airhorn: "sb_airhorn.mp3",
+  sb_quit_touchin: "sb_quit_touchin.mp3",
+  sb_only_wood: "sb_only_wood.mp3",
+  // End-of-game music: starts a moment after the win or loss sting, stops when the end screen is left or a new game starts.
+  end_music: "end_music.mp3",
+  board_bong: "bong_001.wav",
+  board_plop: "plop.wav",
+  board_pluck: "pluck_001.wav",
 } as const;
+
+// The soundboard buttons in the chat, in order. `id` is what the host whitelists and relays; `clip` is what a page plays.
+export const SOUNDBOARD = [
+  { id: "robbed_fah", label: "Fah", clip: "robbed_fah" },
+  { id: "sb_wololo", label: "Wololo", clip: "sb_wololo" },
+  { id: "sb_win_reaction", label: "GG!", clip: "sb_win_reaction" },
+  { id: "sb_airhorn", label: "Airhorn", clip: "sb_airhorn" },
+  { id: "sb_quit_touchin", label: "Quit touchin' me", clip: "sb_quit_touchin" },
+  { id: "sb_only_wood", label: "Only wood?", clip: "sb_only_wood" },
+  { id: "bong", label: "Bong", clip: "board_bong" },
+  { id: "plop", label: "Plop", clip: "board_plop" },
+  { id: "pluck", label: "Pluck", clip: "board_pluck" },
+] as const satisfies readonly { id: string; label: string; clip: keyof typeof FILES }[];
+export type BoardSound = (typeof SOUNDBOARD)[number]["id"];
+
+// Music is quieter than the table's knocks and clicks.
+export const MUSIC_VOLUME = 0.5;
 
 export type SoundName = keyof typeof FILES;
 
@@ -57,6 +92,7 @@ export function isMuted() {
 
 export function setMuted(v: boolean) {
   muted = v;
+  if (v) stop("end_music");
   try {
     if (v) localStorage.setItem(MUTED_KEY, "1");
     else localStorage.removeItem(MUTED_KEY);
@@ -101,6 +137,8 @@ function pump() {
 function start(name: SoundName, volume: number) {
   if (muted) return;
   try {
+    // The first roll cuts the game-start sting off.
+    if (name === "dice_land") clips.get("game_start")?.pause();
     let clip = clips.get(name);
     if (!clip) {
       clip = new Audio(`/audio/${FILES[name]}`);
@@ -121,6 +159,30 @@ export function play(name: SoundName, volume = 1) {
   asked.set(name, now);
   queue.push([name, volume]);
   if (!pacing) pump();
+}
+
+// Start a clip after `ms`; stop(name) cancels it before then. One pending start per clip.
+const later = new Map<SoundName, ReturnType<typeof setTimeout>>();
+export function playLater(name: SoundName, volume: number, ms: number) {
+  const old = later.get(name);
+  if (old) clearTimeout(old);
+  later.set(name, setTimeout(() => {
+    later.delete(name);
+    play(name, volume);
+  }, ms));
+}
+
+// Stop a clip that is playing (the end music, when its screen is left or the sound is muted).
+export function stop(name: SoundName) {
+  // A clip still waiting (its delay, or its place in the pacing queue) is cancelled too, so muting or leaving never lets it start late.
+  const wait = later.get(name);
+  if (wait) clearTimeout(wait);
+  later.delete(name);
+  for (let i = queue.length - 1; i >= 0; i--) if (queue[i]![0] === name) queue.splice(i, 1);
+  const clip = clips.get(name);
+  if (!clip) return;
+  clip.pause();
+  clip.currentTime = 0;
 }
 
 // The your-turn chime, with a short buzz on phones that have a motor.

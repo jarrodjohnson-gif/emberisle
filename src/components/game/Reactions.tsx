@@ -5,27 +5,13 @@ import { EMOTES, QUICK_REACTIONS } from "@/components/game/emotes";
 import { useGame } from "@/lib/game/store";
 import type { Reaction } from "@/lib/net/table";
 import { play } from "@/lib/sound";
+import { MUTE_KEY, mutedByCode, readMutedSeats } from "@/lib/muted-seats";
 import { cn } from "@/lib/utils";
 
 const COOLDOWN = 1000;
-const MUTE_KEY = "emberisle-chat-muted-";
 const MUTE_EVENT = "emberisle:chat-mutes-changed";
-const mutedByCode = new Map<string, string[]>();
 const CONTROL =
   "flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-control bg-glass text-zinc-700 transition-transform duration-75 active:scale-[0.97] disabled:cursor-default disabled:opacity-50";
-
-function readMutedSeats(code: string) {
-  if (!code) return [];
-  if (mutedByCode.has(code)) return mutedByCode.get(code)!;
-  try {
-    const value = JSON.parse(localStorage.getItem(`${MUTE_KEY}${code}`) ?? "[]");
-    const seats = Array.isArray(value) ? value.filter((seat): seat is string => typeof seat === "string") : [];
-    mutedByCode.set(code, seats);
-    return seats;
-  } catch {
-    return [];
-  }
-}
 
 // Muting is a browser preference, scoped to one table code; no message reaches the host.
 export function useMutedSeats(code: string) {

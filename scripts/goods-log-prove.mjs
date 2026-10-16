@@ -79,7 +79,7 @@ try {
   await page.getByTestId('log-row').last().waitFor();
   const rows=await page.getByTestId('log-row').allTextContents();
   assert.deepEqual(rows.slice(-result.history.length),result.history);
-  const style=await page.getByTestId('log-row').last().evaluate(el=>getComputedStyle(el).fontSize);assert.equal(style,'12px');
+  const style=await page.getByTestId('log-row').last().evaluate(el=>getComputedStyle(el).fontSize);assert.equal(style,'14px');
   const latest=await page.getByTestId('log-line').textContent();assert.equal(latest,result.history.at(-1));
   await page.screenshot({path:`test-results/goods-log-${width}${reduced?'-reduced':''}.png`});
   console.log(`ok ${width}x${height}${reduced?' reduced':''}: ten ordered events, one line each; all four public fortunes; private theft/discard/bought-kind protected; 200 rows; latest HUD line`);

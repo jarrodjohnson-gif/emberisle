@@ -39,7 +39,9 @@ const browser = await chromium.launch({
 });
 
 // File -> clip name, read from the table in sound.ts; two clips can share a file (trade_yes and nothing else here does).
-const CLIP = new Map([...readFileSync(new URL("../src/lib/sound.ts", import.meta.url), "utf8").matchAll(/^\s+(\w+): "([\w.]+\.wav)",$/gm)].map((m) => [m[2].replace(".wav", ""), m[1]]));
+// The first name for a file wins: the soundboard's board_* entries reuse files the table clips already own.
+const CLIP = new Map();
+for (const m of readFileSync(new URL("../src/lib/sound.ts", import.meta.url), "utf8").matchAll(/^\s+(\w+): "([\w.]+\.wav)",$/gm)) if (!CLIP.has(m[2].replace(".wav", ""))) CLIP.set(m[2].replace(".wav", ""), m[1]);
 const errors = [];
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const ok = (what) => console.log(`ok ${what}`);
@@ -51,6 +53,18 @@ async function tab(name, url) {
   await page.addInitScript((n) => localStorage.setItem("emberisle-name", n), name);
   await page.addInitScript(() => {
     window.__plays = [];
+    window.__pauses = [];
+    window.__sockets = [];
+    const RealSocket = window.WebSocket;
+    window.WebSocket = class extends RealSocket {
+      constructor(...args) {
+        super(...args);
+        window.__sockets.push(this);
+      }
+    };
+    HTMLMediaElement.prototype.pause = function () {
+      window.__pauses.push(new URL(this.src).pathname.replace("/audio/", ""));
+    };
     HTMLMediaElement.prototype.play = function () {
       window.__plays.push({ file: new URL(this.src).pathname.replace("/audio/", "").replace(".wav", ""), volume: this.volume, t: performance.now() });
       return Promise.resolve();
@@ -274,6 +288,207 @@ try {
   ok(`practice: my ask closed with ${got[0].file} once (volume ${got[0].volume}), no trade_offer for my own ask`);
   await p.close();
 
+  // ---- The wayfarer's victim hears robbed_fah (public/audio/robbed_fah.mp3) in place of wayfarer_move, once; nobody else does.
+  const robbed = (me, mover, onHex = true) =>
+    p2.evaluate(
+      async ({ me, mover, onHex }) => {
+        const { hear } = await import("/src/lib/game/store.ts");
+        const before = structuredClone(window.__emberisle.getState().state);
+        before.current = mover;
+        before.phase = "robber";
+        const mine = before.vertices.filter((v) => v.building?.playerId === "p0");
+        const target = before.hexes.find((h) => h.id !== before.robberHex && mine.some((v) => v.hexes.includes(h.id)) === onHex);
+        const after = { ...before, robberHex: target.id, phase: "main" };
+        hear(before, after, me, "online");
+      },
+      { me, mover, onHex },
+    );
+  const p2 = await tab("Ember", `http://127.0.0.1:${PORT}/`);
+  await p2.evaluate(() => window.__emberisle.getState().startAi());
+  // Setup has placed nothing yet: give p0 one outpost to be robbed through.
+  await p2.evaluate(() => { window.__emberisle.getState().state.vertices[0].building = { playerId: "p0", kind: "outpost" }; });
+  await clear(p2);
+  await robbed("p0", "p1");
+  await sleep(300);
+  assert.deepEqual((await heard(p2)).map((x) => x.file), ["robbed_fah.mp3"], "the victim hears robbed_fah once and not wayfarer_move");
+  ok("wayfarer: the player with a piece on the target hex hears robbed_fah once, not wayfarer_move");
+  await clear(p2);
+  await robbed("p0", "p1", false);
+  await sleep(300);
+  assert.deepEqual(await names(p2), ["wayfarer_move"], "a hex with none of my pieces keeps the usual cue");
+  await clear(p2);
+  await robbed("p0", "p0");
+  await sleep(300);
+  assert.deepEqual(await names(p2), ["wayfarer_move"], "the mover is not the victim of their own move");
+  await clear(p2);
+  await mute(p2, true);
+  await robbed("p0", "p1");
+  await sleep(300);
+  assert.deepEqual(await names(p2), [], "muted: robbed_fah is silent");
+  await mute(p2, false);
+  ok("wayfarer: elsewhere or by me, the usual wayfarer_move; muted, nothing");
+  await p2.close();
+
+  // ---- The owner's music stings (game_start, match_point, game_lose): the right seats, once each, muted = silent.
+  const p3 = await tab("Ember", `http://127.0.0.1:${PORT}/`);
+  await clear(p3);
+  await p3.evaluate(() => window.__emberisle.getState().startAi());
+  await sleep(500);
+  assert.deepEqual((await heard(p3)).map((x) => [x.file, x.volume]), [["game_start.mp3", 0.5]], "practice: a new game plays game_start once, at music volume");
+  ok("game_start: practice plays it once at music volume");
+  const probe = (fn, arg) =>
+    p3.evaluate(
+      async ({ src, arg }) => {
+        const store = await import("/src/lib/game/store.ts");
+        const base = structuredClone(window.__emberisle.getState().state);
+        const run = new Function("store", "base", "arg", `return (${src})(store, base, arg)`);
+        return run(store, base, arg);
+      },
+      { src: fn.toString(), arg },
+    );
+  const heardNow = async () => {
+    await sleep(350);
+    const got = (await heard(p3)).map((x) => x.file);
+    await clear(p3);
+    return got;
+  };
+  await clear(p3);
+  // Online: the first state of a fresh island plays it for a seat, once; a state later in the game or a watcher's does not.
+  await probe(({ hear }, g) => { g.seq = 0; g.phase = "rollOff"; hear(null, g, "p0", "online"); });
+  assert.deepEqual(await heardNow(), ["game_start.mp3"], "online: the first state of a new game plays game_start once");
+  await probe(({ hear }, g) => { g.seq = 0; g.phase = "rollOff"; hear(null, g, "", "online"); });
+  assert.deepEqual(await heardNow(), [], "a watcher (no seat) does not");
+  await probe(({ hear }, g) => { g.phase = "rollOff"; g.seq = 0; const later = { ...g, seq: 3 }; hear(g, later, "p0", "online"); });
+  assert.deepEqual(await heardNow(), [], "later states of the same game do not play it again");
+  ok("game_start: online once on a new game's first state, not for a watcher, not again");
+  // A bot may already have rolled first (seq > 0) before the first state reaches a seat: still a new game, still once. The same
+  // game's state arriving again after a reconnect does not replay it; a rematch's new island does.
+  const sigProbe = (tag, seq) => p3.evaluate(async ({ tag, seq }) => {
+    const { hear } = await import("/src/lib/game/store.ts");
+    const g = structuredClone(window.__emberisle.getState().state);
+    g.phase = "rollOff"; g.seq = seq; g.hexes[0].pip = 90 + tag;
+    hear(null, g, "p0", "online");
+    hear(null, g, "p0", "online");
+    await new Promise((r) => setTimeout(r, 300));
+    const rematch = { ...structuredClone(g), phase: "setupSettle", seq: 1 };
+    rematch.hexes[0].pip = 80 + tag;
+    hear({ ...g, phase: "over" }, rematch, "p0", "online");
+  }, { tag, seq });
+  await sigProbe(1, 2);
+  assert.deepEqual(await heardNow(), ["game_start.mp3", "game_start.mp3"], "bot-first (seq 2): once for the game, not again on a repeat; once more for a rematch's new island");
+  ok("game_start: keyed on the new game, so a bot rolling first still plays it once, and a repeat state does not");
+
+  // Losing: every seat but the winner; the winner keeps the win sound.
+  const over = (me, mode = "online") => probe(({ hear }, g, a) => { const after = { ...g, phase: "over", winner: "p1" }; hear({ ...g, phase: "main" }, after, a.me, a.mode); }, { me, mode });
+  // Leaving the end screen (a rematch's first state, the menu) from the table's point of view: the over state is replaced.
+  const leave = () => probe(({ hear }, g) => hear({ ...g, phase: "over", winner: "p1" }, { ...g, phase: "main" }, "p0", "online"));
+  await over("p0");
+  assert.deepEqual(await heardNow(), ["game_lose.mp3"], "a seat that did not win hears game_lose once");
+  await leave();
+  await over("p2");
+  assert.deepEqual(await heardNow(), ["game_lose.mp3"], "so does every other losing seat");
+  await leave();
+  await over("p1");
+  assert.deepEqual(await heardNow(), ["win"], "the winner keeps the win sound");
+  await leave();
+  await over("p0", "hotseat");
+  assert.deepEqual(await heardNow(), ["win"], "hotseat has no losing seat");
+  await mute(p3, true);
+  await over("p0");
+  assert.deepEqual(await heardNow(), [], "muted: silent");
+  await mute(p3, false);
+  await leave();
+  ok("game_lose: every seat but the winner, once; the winner keeps win; hotseat and mute unchanged");
+  // End music: once per game end, ~1.5 s after the sting, on every seat; cancelled by leaving the end screen; silent when muted.
+  await sleep(300);
+  await clear(p3);
+  await over("p0");
+  await sleep(2000);
+  assert.deepEqual((await heard(p3)).map((x) => [x.file, x.volume]), [["game_lose.mp3", 0.5], ["end_music.mp3", 0.5]], "the loser hears the sting, then the end music once");
+  const gap = (await heard(p3)).map((x) => x.t);
+  assert.ok(gap[1] - gap[0] >= 1400 && gap[1] - gap[0] < 2000, `the music starts ${Math.round(gap[1] - gap[0])} ms after the sting`);
+  await p3.evaluate(() => (window.__pauses = []));
+  await leave();
+  assert.ok((await p3.evaluate(() => window.__pauses)).includes("end_music.mp3"), "a rematch / leaving the end screen stops the music");
+  await clear(p3);
+  await over("p1");
+  await sleep(2000);
+  assert.deepEqual(await names(p3), ["win", "end_music.mp3"], "the winner's seat gets the music too, after the win sound");
+  await leave();
+  await clear(p3);
+  await over("p0");
+  await leave();
+  await sleep(2000);
+  assert.deepEqual(await names(p3), ["game_lose.mp3"], "leaving before it starts cancels it: no music");
+  await clear(p3);
+  await over("p0");
+  await mute(p3, true);
+  await mute(p3, false);
+  await sleep(2000);
+  assert.deepEqual(await names(p3), ["game_lose.mp3"], "muting inside the 1.5 s delay cancels the queued music; unmuting does not revive it");
+  await clear(p3);
+  await mute(p3, true);
+  await over("p0");
+  await sleep(2000);
+  await mute(p3, false);
+  assert.deepEqual(await names(p3), [], "muted: no sting, no music");
+  await clear(p3);
+  await over("p0", "hotseat");
+  await sleep(2000);
+  assert.deepEqual(await names(p3), ["win"], "hotseat: no end music");
+  await clear(p3);
+  await probe(({ hear }, g) => hear(null, { ...g, phase: "over", winner: "p1" }, "p0", "online"));
+  await sleep(2000);
+  assert.deepEqual(await names(p3), [], "a reload or reconnect into an already-over game plays nothing");
+  await clear(p3);
+  ok("end_music: once per game end after the sting, for losers and winner; stops on leave/rematch; muted, hotseat and reload into over are silent");
+  // Match point: public points only, once per player, with the banner line.
+  const mp = (hidden) =>
+    probe(({ hear, takeMatchPointLine }, g, hidden) => {
+      g.hexes[1].pip = 70 + (hidden ? 1 : 0); // a board of its own, so each case is its own game
+      for (const v of g.vertices) v.building = null;
+      for (const p of g.players) p.hidden.vp = 0;
+      g.victoryTarget = 10;
+      g.longestRoad = "p1";
+      g.largestArmy = "p1";
+      const give = (n) => g.vertices.slice(0, n).forEach((v) => (v.building = { playerId: "p1", kind: "outpost" }));
+      give(4);
+      const before = structuredClone(g);
+      if (hidden) g.players.find((p) => p.id === "p1").hidden.vp = 3;
+      else give(5);
+      hear(before, g, "p0", "online");
+      return takeMatchPointLine();
+    }, hidden);
+  const line = await mp(false);
+  // The synthetic outpost also knocks; only the sting is under test.
+  assert.deepEqual((await heardNow()).filter((f) => f === "match_point.mp3"), ["match_point.mp3"], "a player reaching 9 of 10 public points plays match_point once");
+  assert.match(line, /^.+ reached 9 points \u2014 one to win$/);
+  assert.equal(await mp(true), null, "hidden fortune points are not counted: no banner");
+  assert.deepEqual(await heardNow(), [], "and no sound: hidden points cannot leak");
+  // Losing and regaining Longest Path (or Largest Army) is not a second match point in the same game.
+  const regain = await p3.evaluate(async () => {
+    const { hear, takeMatchPointLine } = await import("/src/lib/game/store.ts");
+    const g = structuredClone(window.__emberisle.getState().state);
+    g.hexes[2].pip = 60;
+    g.victoryTarget = 10;
+    for (const v of g.vertices) v.building = null;
+    g.vertices.slice(0, 7).forEach((v) => (v.building = { playerId: "p1", kind: "outpost" }));
+    g.longestRoad = null;
+    g.largestArmy = null;
+    const at = (road) => ({ ...structuredClone(g), longestRoad: road });
+    const lines = [];
+    const step = (a, b) => { hear(a, b, "p0", "online"); lines.push(takeMatchPointLine()); };
+    step(g, at("p1")); // 7 -> 9: first time
+    step(at("p1"), at(null)); // down to 7
+    step(at(null), at("p1")); // back to 9: the same game
+    return lines;
+  });
+  assert.match(regain[0], /reached 9 points/);
+  assert.deepEqual(regain.slice(1), [null, null], "regaining the points in the same game says nothing");
+  assert.deepEqual((await heardNow()).filter((f) => f === "match_point.mp3"), ["match_point.mp3"], "and plays the sting only once");
+  ok(`match_point: once per player at target-1 public points (banner "${line}"); hidden points play nothing`);
+  await p3.close();
+
   // ---- Online chat between two seats.
   const url = `http://127.0.0.1:${PORT}/?host=ws://127.0.0.1:${hostPort}`;
   const a = await tab("Ember", url);
@@ -319,6 +534,115 @@ try {
   await until(async () => (await names(b)).length, "unmuted chat_recv");
   assert.deepEqual(await names(b), ["chat_recv"]);
   ok("chat: unmuted, chat_recv plays again");
+
+  // ---- The soundboard: a tap plays on every seat's page and shows a chip; the host paces it; mute is each listener's own.
+  await sleep(3200);
+  await a.evaluate(() => window.__emberisle.getState().setChatOpen(true));
+  await b.evaluate(() => window.__emberisle.getState().setChatOpen(true));
+  await clear(a);
+  await clear(b);
+  await a.getByRole("button", { name: "Soundboard" }).first().click();
+  await a.getByRole("button", { name: "Play sound Fah" }).click();
+  await until(async () => (await names(b)).length, "Tide hears the soundboard tap");
+  await sleep(300);
+  assert.deepEqual((await heard(b)).map((x) => x.file), ["robbed_fah.mp3"], "the other seat hears fah once");
+  assert.deepEqual((await heard(a)).map((x) => x.file).filter((f) => f === "robbed_fah.mp3"), ["robbed_fah.mp3"], "the sender hears it once too");
+  const chip = await b.getByTestId("chat-log").locator("li", { hasText: "Fah" }).first().textContent();
+  assert.ok(chip.includes("Ember") && chip.includes("\u{1F50A} Fah"), `the chip reads "Ember \u{1F50A} Fah": ${chip}`);
+  ok("soundboard: a tap plays on both seats and shows the chip \"Ember \u{1F50A} Fah\" in chat");
+  assert.ok(await a.getByRole("button", { name: "Play sound Bong" }).isDisabled(), "the sender's buttons rest for 3 s");
+  // Past the buttons: spam straight at the host is refused and nobody hears a second clip.
+  await clear(b);
+  await a.evaluate(() => { for (let i = 0; i < 4; i++) window.__emberisle.getState().sendSound("bong"); });
+  await sleep(600);
+  assert.deepEqual(await names(b), [], "spam inside 3 s plays nothing on the other seat");
+  ok("soundboard: four more taps inside 3 s are refused by the host, nothing plays");
+  await sleep(3000);
+  await mute(b, true);
+  await clear(b);
+  await a.evaluate(() => window.__emberisle.getState().sendSound("plop"));
+  await until(() => b.evaluate(() => window.__emberisle.getState().chat.some((l) => l.sound === "plop")), "the plop line arrives");
+  await sleep(400);
+  assert.deepEqual(await names(b), [], "a muted listener hears nothing");
+  assert.ok((await b.getByTestId("chat-log").locator("li", { hasText: "plop" }).count()) >= 1, "but still sees the chip");
+  await mute(b, false);
+  ok("soundboard: a muted listener sees the chip and hears nothing");
+  // The in-game clips reach the other seat once each; a repeat of a long clip restarts it (one element per clip), never stacks.
+  for (const [id, file] of [["sb_airhorn", "sb_airhorn.mp3"], ["sb_quit_touchin", "sb_quit_touchin.mp3"], ["sb_only_wood", "sb_only_wood.mp3"]]) {
+    await sleep(3100);
+    await clear(b);
+    await a.evaluate((x) => window.__emberisle.getState().sendSound(x), id);
+    await until(async () => (await names(b)).length, `${id} reaches Tide`);
+    await sleep(300);
+    assert.deepEqual((await heard(b)).map((x) => x.file), [file], `${id} plays once on the other seat`);
+  }
+  await b.evaluate(async () => {
+    const { play } = await import("/src/lib/sound.ts");
+    play("sb_airhorn");
+    await new Promise((r) => setTimeout(r, 400));
+    play("sb_airhorn");
+    return (await import("/src/lib/sound.ts")).SOUNDBOARD.map((x) => x.label);
+  }).then((labels) => assert.ok(["Airhorn", "Quit touchin' me", "Only wood?"].every((l) => labels.includes(l)), "button labels"));
+  ok("soundboard: Airhorn, Quit touchin' me and Only wood? each play once on the other seat, labelled; a repeat reuses the clip's element");
+  await sleep(3100);
+  // Muting a seat (the chat's Mute menu) silences that seat's soundboard taps for this listener only.
+  await sleep(3000);
+  await b.evaluate(async () => {
+    const st = window.__emberisle.getState();
+    const { mutedByCode } = await import("/src/lib/muted-seats.ts");
+    mutedByCode.set(st.code, [st.seats.find((x) => x.name !== "Tide").id]);
+  });
+  await clear(b);
+  await a.evaluate(() => window.__emberisle.getState().sendSound("sb_wololo"));
+  await until(() => b.evaluate(() => window.__emberisle.getState().chat.some((l) => l.sound === "sb_wololo")), "the wololo line arrives");
+  await sleep(400);
+  assert.deepEqual(await names(b), [], "a muted seat's soundboard tap is silent for the listener who muted it");
+  await b.evaluate(async () => (await import("/src/lib/muted-seats.ts")).mutedByCode.set(window.__emberisle.getState().code, []));
+  ok("soundboard: a tap from a muted seat is silent for the listener who muted it");
+
+
+  // The win screen's React button sends the same soundboard path: the table hears GG! and sees its chip.
+  await sleep(3200);
+  await a.evaluate(async () => {
+    const { createGame } = await import("/src/lib/game/board.ts");
+    const g = createGame({ humans: [{ name: "Ember" }], bots: 2 });
+    g.phase = "over";
+    g.winner = "p0";
+    window.__emberisle.setState({ screen: "play", mode: "online", state: g, localId: "p0" });
+  });
+  await clear(b);
+  await a.getByTestId("win-react").click();
+  await until(async () => (await names(b)).length, "Tide hears the win reaction");
+  await sleep(300);
+  assert.deepEqual((await heard(b)).map((x) => x.file), ["sb_win_reaction.mp3"], "the other seat hears sb_win_reaction once");
+  assert.ok((await b.getByTestId("chat-log").locator("li", { hasText: "GG!" }).count()) >= 1, "with the chip \"GG!\"");
+  assert.ok(await a.getByTestId("win-react").isDisabled(), "React rests for 3 s");
+  ok("win screen: React plays sb_win_reaction on the other seat once, with a chip, and rests");
+
+  // Online, the match-point banner shows on the same state that crosses target - 1 (the banner is read after the sound claims it).
+  const banner = await a.evaluate(async () => {
+    const base = structuredClone(window.__emberisle.getState().state);
+    base.phase = "main";
+    base.winner = null;
+    base.victoryTarget = 10;
+    base.hexes[3].pip = 55;
+    for (const v of base.vertices) v.building = null;
+    base.vertices.slice(0, 4).forEach((v) => (v.building = { playerId: "p1", kind: "outpost" }));
+    base.longestRoad = "p1";
+    base.largestArmy = "p1";
+    const legal = { outpost: [], path: [], stronghold: [], wayfarer: [], steal: {}, discard: 0, actions: [] };
+    const push = (game) => window.__sockets.at(-1).onmessage({ data: JSON.stringify({ type: "state", you: "p0", game, legal }) });
+    push(base);
+    const before = window.__emberisle.getState().banner;
+    const next = structuredClone(base);
+    next.seq += 1;
+    next.vertices[4].building = { playerId: "p1", kind: "outpost" };
+    push(next);
+    return { before, after: window.__emberisle.getState().banner };
+  });
+  assert.equal(banner.before, null, "no banner before the crossing");
+  assert.match(banner.after, /reached 9 points \u2014 one to win$/, "online: the banner is up on the very state that crosses target - 1");
+  ok(`match_point online: banner "${banner.after}" on the same state`);
 
   assert.deepEqual(errors, [], `console errors: ${errors.join(" | ")}`);
   console.log("PASS sounds-prove");
