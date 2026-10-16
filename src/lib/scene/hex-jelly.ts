@@ -678,6 +678,21 @@ function block(L: Layout, rings: number, occlude: (x: number, z: number) => numb
   const col = new Float32Array(total * 3);
   const c = new THREE.Color();
   const DIRS = 8;
+  // The heights on a coarse square grid over the hex, sampled bilinearly by the AO rays (48 rays a vertex would otherwise
+  // each run the full height function).
+  const G = 40;
+  const G0 = -CORNER_R;
+  const GS = (2 * CORNER_R) / G;
+  const grid2 = new Float32Array((G + 1) * (G + 1));
+  for (let gi = 0; gi <= G; gi++) for (let gj = 0; gj <= G; gj++) grid2[gi * (G + 1) + gj] = heightAt(L, G0 + gi * GS, G0 + gj * GS);
+  const hAt = (x: number, z: number) => {
+    const fx = Math.min(G - 1e-6, Math.max(0, (x - G0) / GS));
+    const fz = Math.min(G - 1e-6, Math.max(0, (z - G0) / GS));
+    const [i, j] = [Math.floor(fx), Math.floor(fz)];
+    const [u, w] = [fx - i, fz - j];
+    const k = i * (G + 1) + j;
+    return (grid2[k]! * (1 - w) + grid2[k + 1]! * w) * (1 - u) + (grid2[k + G + 1]! * (1 - w) + grid2[k + G + 2]! * w) * u;
+  };
   for (let v = 0; v < total; v++) {
     const [x, y, z] = [pos[v * 3]!, pos[v * 3 + 1]! - BLOCK_H, pos[v * 3 + 2]!];
     const ny = nor.getY(v);
@@ -690,8 +705,8 @@ function block(L: Layout, rings: number, occlude: (x: number, z: number) => numb
         for (const r of [0.03, 0.07, 0.12, 0.2, 0.3, 0.42]) {
           const hx = x + Math.cos(a) * r;
           const hz = z + Math.sin(a) * r;
-          if (sdRound(hx, hz, inrTop, rcTop) > 0) break;
-          best = Math.max(best, (heightAt(L, hx, hz) - y) / r);
+          if (hexDist(hx, hz) > inrTop) break;
+          best = Math.max(best, (hAt(hx, hz) - y) / r);
         }
         occ += best / Math.hypot(1, best);
       }
@@ -758,8 +773,15 @@ function block(L: Layout, rings: number, occlude: (x: number, z: number) => numb
 // --- props: lumpy blobs and trunks
 
 // A lumpy unit blob: an icosphere pushed in and out by smooth noise, merged so its normals are smooth.
+// Cached per seed: the same seed always makes the same blob, and building one is a mergeVertices pass.
+const blobCache = new Map<number, THREE.BufferGeometry>();
+let blobBase: THREE.BufferGeometry | null = null;
 function blobGeo(seed: number) {
-  const g = mergeVertices(new THREE.IcosahedronGeometry(1, 2), 1e-4);
+  const hit = blobCache.get(seed);
+  if (hit) return hit;
+  blobBase ??= mergeVertices(new THREE.IcosahedronGeometry(1, 2), 1e-4);
+  const g = blobBase.clone();
+  blobCache.set(seed, g);
   const p = g.attributes.position as THREE.BufferAttribute;
   const v = new THREE.Vector3();
   for (let i = 0; i < p.count; i++) {
@@ -793,8 +815,11 @@ function instanced(geo: THREE.BufferGeometry, list: Inst[], material: THREE.Mate
 
 const critterMat = () => jellyfy(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.6, metalness: 0 }), "jelly-critter");
 // A part: a geometry, coloured, placed by position, rotation (XYZ) and scale; non-indexed so any mix merges.
+const flatCache = new WeakMap<THREE.BufferGeometry, THREE.BufferGeometry>();
 function part(g: THREE.BufferGeometry, hex: string, p: [number, number, number], r: [number, number, number] = [0, 0, 0], k: [number, number, number] = [1, 1, 1]) {
-  const geo = (g.index ? g.toNonIndexed() : g.clone()).applyMatrix4(
+  let flat = g.index ? flatCache.get(g) : g;
+  if (!flat) flatCache.set(g, (flat = g.toNonIndexed()));
+  const geo = flat.clone().applyMatrix4(
     new THREE.Matrix4().compose(new THREE.Vector3(...p), new THREE.Quaternion().setFromEuler(new THREE.Euler(...r)), new THREE.Vector3(...k)),
   );
   geo.deleteAttribute("uv");
@@ -809,7 +834,13 @@ const merge = (parts: THREE.BufferGeometry[]) => {
   g.computeVertexNormals();
   return g;
 };
-const sphere = (n = 12) => new THREE.SphereGeometry(1, n, Math.max(6, n * 0.7));
+const sphereCache = new Map<number, THREE.SphereGeometry>();
+// Shared per segment count: callers only pass it to part(), which copies it.
+const sphere = (n = 12) => {
+  let g = sphereCache.get(n);
+  if (!g) sphereCache.set(n, (g = new THREE.SphereGeometry(1, n, Math.max(6, n * 0.7))));
+  return g;
+};
 const cyl = (rt: number, rb: number, n = 10) => new THREE.CylinderGeometry(rt, rb, 1, n);
 const mesh = (g: THREE.BufferGeometry, m: THREE.Material) => {
   const o = new THREE.Mesh(g, m);
