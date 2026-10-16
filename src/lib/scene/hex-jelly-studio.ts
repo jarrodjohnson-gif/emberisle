@@ -18,7 +18,7 @@ import { TOKEN_LIFT, TOKEN_TILT, numberToken } from "@/lib/scene/isle-renderer";
 const q = new URLSearchParams(location.search);
 const kind = (q.get("kind") ?? "timber") as Terrain;
 const seed = Number(q.get("seed") ?? 7);
-const pip = Number(q.get("pip") ?? 10);
+const pip = Number(q.get("pip") ?? (q.get("kind") === "waste" ? 0 : 10));
 const frozen = q.get("t");
 const focus = q.get("focus");
 const PAPER = 0xebe8e1;
