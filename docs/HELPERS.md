@@ -42,8 +42,11 @@ prompt.
   - Merged: done, move on.
   - Closed: drop that issue for good. Never reopen it or redo the work.
 - Have at most **2 open PRs** at a time. While you're at that limit, only work on those two.
-- With nothing to do, stay quiet: no comments, no PRs, no empty commits. Check again in about
-  30 minutes.
+- With nothing to do, stay quiet: no comments, no PRs, no empty commits.
+- **Timing** (the only place these numbers live; other docs point here):
+  - while you have an open PR, check again every **10 minutes**;
+  - as soon as a PR of yours merges, start the next round right away;
+  - idle with nothing eligible, check every **30 minutes**.
 - If `helper-ok` is removed from an issue, drop that issue.
 - After 3 pushes in a row that are still red on the same PR, post a `paused:` comment on the issue
   and stop work on it.
