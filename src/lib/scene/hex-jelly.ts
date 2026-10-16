@@ -3704,8 +3704,11 @@ function brickworks(L: Layout, ground: (x: number, z: number) => number, r: () =
         const out2 = Math.sin(u * Math.PI);
         const a = u * Math.PI * 2 + b.ph;
         const R2 = (0.06 + 0.12 * burst) * out2;
-        const x = b.home.x + EYE.x * R2 * 1.2 + Math.cos(a) * R2;
-        const z = b.home.z + EYE.z * R2 * 1.2 + Math.sin(a) * R2;
+        let x = b.home.x + EYE.x * R2 * 1.2 + Math.cos(a) * R2;
+        let z = b.home.z + EYE.z * R2 * 1.2 + Math.sin(a) * R2;
+        // Never across the token's clear ring (0.31, tokens.md): a dart toward the eye from a hole by the pad turns aside.
+        const rr = Math.hypot(x, z);
+        if (rr < 0.36) [x, z] = [(x / (rr || 1)) * 0.36, (z / (rr || 1)) * 0.36];
         b.g.position.set(x, b.home.y + 0.03 * out2 + 0.04 * burst * Math.sin(a * 2), z);
         b.g.rotation.y = -(a + Math.PI / 2);
         b.wings.forEach((w) => (w.w.rotation.x = -w.side * (0.2 + 0.8 * Math.sin(t * 30 + b.ph))));

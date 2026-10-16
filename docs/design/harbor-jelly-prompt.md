@@ -28,8 +28,8 @@ Jelly tiles it surrounds (`hex-jelly-prompt.md`: same light, toon ramp, Fresnel 
 THE GAME (what must stay true)
 - A dock spans one coastal edge; both its corners carry the harbor. Nine docks: four 3:1 (any good) and five 2:1 (one each of
   timber, clay, wool, grain, ore). The deal spaces them at least three edges apart, so each harbor has its own stretch.
-- Rate and good read from the board camera on a phone, at a glance: the ship's mainsail carries "2:1" or "3:1" large, a 2:1
-  sail is banded in its good's colour (the hex palette), its flag is the good's colour, and the goods on the pier are the good
+- Rate and good read from the board camera on a phone, at a glance: a plate flat on the pier's T-head carries "2:1" or "3:1"
+  in the good's colour (the sails carry no rate: owner 2026-10-16, "remove the 3/1 trades from sails"), a 2:1 sail is banded in its good's colour (the hex palette), its flag is the good's colour, and the goods on the pier are the good
   itself. A claimed harbor (an outpost or stronghold of a seat on either corner) flies that seat's colour on its sail.
 - Nothing on the shore or a pier rises within 0.14 of a coastal corner (pieces stand there); nothing on the beach stands
   taller than 0.05. Piers and ships stand off the coast, outside the hexes' footprint.
@@ -73,10 +73,10 @@ THE HARBORS (one per dock, all built from the same kit, laid out per dock so no 
 - The ship: moored alongside the T-head, its bow to the shore, about 0.5 long:
   - 2:1 harbors: a cog or sloop with a planked wooden hull (strakes visible as fine ridges, a darker wale, a painted band in
     the good's colour, a red-brown bottom showing just under the water), a deck with hatch and a small aft cabin with a
-    window, one mast with a boom and gaff, a mainsail with real belly (cream canvas, the rate printed large, the good's colour
+    window, one mast with a boom and gaff, a mainsail with real belly (plain cream canvas, the good's colour
     band at its foot, seams as faint lines), a jib on the forestay, shrouds and stays as thin dark lines, a flag at the
     masthead in the good's colour.
-  - 3:1 harbors: a larger two-masted ketch (white hull, navy band), the same rig doubled, mainsail carries "3:1".
+  - 3:1 harbors: a larger two-masted ketch (white hull, navy band), the same rig, a second mast with its sail furled.
   - Mooring lines from bow and stern to the bollards. It rocks on the swell and rides it (as today), with a soft wake line
     along its waterline.
 - Life at each harbor, one small story each, seeded: a fisherman sits on the pier end with a rod (a bob in the water); a gull
