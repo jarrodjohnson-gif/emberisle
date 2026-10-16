@@ -83,7 +83,8 @@ and run long proofs in the background, one at a time, reading every result befor
 
    Read the whole issue and every comment on it, fresh. Together they are the spec.
 4. **Claim** it right away with this comment. A fork can't set labels, so the comment alone is your claim.
-   The orchestrator syncs the labels.
+   You can add a line `/claim` (later `/in-review` or `/paused`) to that comment and the label bot will
+   set the status for you. `/label`, `/done` and `/canceled` are Jarrod's only.
    ```
    claimed: <your name>, <YYYY-MM-DD>
    files: <paths you expect to touch>
