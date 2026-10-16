@@ -140,7 +140,7 @@ export interface GameState {
   playedCard: boolean;
   // Dice rolls so far (not the roll-off) and what the latest one paid, per hex; a missing field in an old save reads as none.
   rolls?: number;
-  lastProduction?: { hex: string; player: string; res: Resource; n: number }[];
+  lastProduction?: { hex: string; player: string; res: Resource; n: number; vertex?: string }[];
   hostId: string;
 }
 

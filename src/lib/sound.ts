@@ -18,6 +18,7 @@ const FILES = {
   win: "pluck_001.wav",
   // Reused as the your-turn chime.
   chip_gain: "click_005.wav",
+  gain_tick: "click_002.wav",
   // Synthesised by scripts/make-sounds.mjs (docs/design/sound.md).
   wayfarer_move: "wayfarer_move.wav",
   trade_offer: "trade_offer.wav",
@@ -156,6 +157,9 @@ function start(name: SoundName, volume: number) {
 
 export function play(name: SoundName, volume = 1) {
   if (!unlocked || muted || typeof Audio === "undefined") return;
+  // Paying pieces are already staggered by the renderer at 90 ms, capped at eight per roll. The general 150 ms
+  // burst filter would silently lose every other tick; play these directly at their visual onset.
+  if (name === "gain_tick") { start(name, volume); return; }
   const now = Date.now();
   if ((!UI.has(name) && now - (asked.get(name) ?? -GAP_MS) < GAP_MS) || queue.length >= MAX_QUEUE) return;
   asked.set(name, now);
@@ -191,4 +195,12 @@ export function stop(name: SoundName) {
 export function yourTurn() {
   play("chip_gain");
   if (unlocked && !muted) navigator.vibrate?.(30);
+}
+
+// One soft tick and guarded phone kick per paying piece. The renderer owns timing and the per-roll cap.
+export function gainTick() {
+  play("gain_tick", 0.35);
+  if (unlocked && !muted) {
+    try { navigator.vibrate?.(8); } catch { /* embedded pages may forbid vibration */ }
+  }
 }

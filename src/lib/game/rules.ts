@@ -332,7 +332,7 @@ function rollOffRoll(state: GameState, me: PlayerState) {
 function produce(state: GameState, total: number) {
   const demand: Partial<Record<Resource, number>> = {};
   const owed: Partial<Record<Resource, Set<string>>> = {};
-  const grants: { p: PlayerState; res: Resource; n: number; pip: number; hex: string }[] = [];
+  const grants: { p: PlayerState; res: Resource; n: number; pip: number; hex: string; vertex: string }[] = [];
   for (const h of state.hexes) {
     if (h.pip !== total || (wayfarerMode(state) !== "off" && h.blocked) || h.terrain === "waste") continue;
     const res = h.terrain as Resource;
@@ -343,7 +343,7 @@ function produce(state: GameState, total: number) {
       const n = v.building.kind === "stronghold" ? 2 : 1;
       demand[res] = (demand[res] ?? 0) + n;
       (owed[res] ??= new Set()).add(p.id);
-      grants.push({ p, res, n, pip: h.pip!, hex: h.id });
+      grants.push({ p, res, n, pip: h.pip!, hex: h.id, vertex: v.id });
     }
   }
   // A short bank pays nobody, unless only one player is owed: they take what is left (README "A turn").
@@ -357,7 +357,7 @@ function produce(state: GameState, total: number) {
     const got = give(state, grant.p, grant.res, grant.n);
     if (got) {
       log(state, `${grant.p.name} gathers ${got} ${grant.res} from the ${grant.pip}.`);
-      (state.lastProduction ??= []).push({ hex: grant.hex, player: grant.p.id, res: grant.res, n: got });
+      (state.lastProduction ??= []).push({ hex: grant.hex, player: grant.p.id, res: grant.res, n: got, vertex: grant.vertex });
     }
   }
 }
