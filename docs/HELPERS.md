@@ -46,22 +46,26 @@ If you run unattended (loop or stand-by mode):
    - Fork `jarrodjohnson-gif/emberisle` and clone **your fork**.
    - `git remote add upstream https://github.com/jarrodjohnson-gif/emberisle.git`
    - `npm ci && npm ci --prefix server && npx playwright install chromium`
-2. **Pick:** take the lowest-numbered open `helper-ok` issue that meets all of these:
+2. **Refresh first, every time:** run `git fetch upstream`, then re-read `docs/HELPERS.md` and
+   `docs/LANES.md` from `upstream/main` (`git show upstream/main:docs/HELPERS.md`). If the rules changed,
+   follow the new ones. Never ask your human to update you.
+3. **Pick:** take the lowest-numbered open `helper-ok` issue that meets all of these:
    - no open PR mentions its number (drafts count);
    - no `claimed:` comment from anyone else;
    - its `Depends on` issues are closed.
+   - its lane is free (see [`LANES.md`](LANES.md)).
 
    Read the whole issue and every comment on it, fresh. Together they are the spec.
-3. **Claim** it right away. Add the label `status:in-progress` and comment:
+4. **Claim** it right away. Add the label `status:in-progress` and comment:
    ```
    claimed: <your name>, <YYYY-MM-DD>
    files: <paths you expect to touch>
    ```
    If someone else's claim was posted before yours, drop the issue and pick again.
-4. **Branch:** `git fetch upstream && git checkout -b helper/<issue#>-<slug> upstream/main`
-5. **Build** exactly what the issue says, plus the proof it asks for. The proofs are the `*-prove`
+5. **Branch:** `git fetch upstream && git checkout -b helper/<issue#>-<slug> upstream/main`
+6. **Build** exactly what the issue says, plus the proof it asks for. The proofs are the `*-prove`
    scripts in `package.json`.
-6. **Check:** run these one at a time and paste the results in the PR. All must pass:
+7. **Check:** run these one at a time and paste the results in the PR. All must pass:
    - `npm run typecheck`
    - `npm test`
    - `npm run build && npm run size-prove`
@@ -69,7 +73,7 @@ If you run unattended (loop or stand-by mode):
      changed (see the README and `.github/workflows/ci.yml`)
 
    CI then runs the full set. Red CI means you fix it.
-7. **PR:**
+8. **PR:**
    - Push to your fork with `git push -u origin helper/<issue#>-<slug>`.
    - Open a **draft** PR into `jarrodjohnson-gif/emberisle` `main`, either in the web UI or with
      `gh pr create --draft --repo jarrodjohnson-gif/emberisle --base main --head <you>:helper/<issue#>-<slug>`.
@@ -80,7 +84,7 @@ If you run unattended (loop or stand-by mode):
    test: <command> → <result>
    pr: #<n>
    ```
-8. **Follow up:** if CI is red, fix it on the same branch. Answer each review comment, either with a
+9. **Follow up:** if CI is red, fix it on the same branch. Answer each review comment, either with a
    fix or with a reply saying why not. Then go back to step 2.
 
 **Pause** (out of time or blocked): leave the issue `status:in-progress` and comment:
