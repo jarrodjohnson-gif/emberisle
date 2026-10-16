@@ -1,4 +1,4 @@
-// Two-finger pan (hud/two-finger-pan). On a phone in landscape (844x390, the diorama) and upright (390x844, the overhead),
+// Two-finger pan and the map/HUD isolation (hud/two-finger-pan, #625). On a phone in landscape (844x390, the diorama) and upright (390x844, the overhead),
 // two fingers dragged together move the look-at point and the board follows; the island's centre stays on screen; a drag
 // past the clamp stops at PAN_RADIUS from home; one finger still orbits and does not pan; a tap after a pan still picks
 // what is under the finger (screenOf lands on the mark); turning the phone refits home. Real touch through CDP
@@ -31,17 +31,30 @@ const state = (page) =>
     const i = window.__isle;
     const c = document.querySelector("canvas");
     const t = i.orbit.target;
-    const home = i.fit && "focal" in i.fit ? { x: 0, z: 0 } : { x: i.fit.x, z: i.fit.z };
+    if (!i.fit) return { nofit: true };
+    const home = "focal" in i.fit ? { x: 0, z: 0 } : { x: i.fit.x, z: i.fit.z };
+    const hole = i.insets();
     let sx = 0, sy = 0, n = 0;
     for (const v of window.__emberisle.getState().state.vertices) {
       const p = i.screenOf(v.id);
       sx += p.x; sy += p.y; n++;
     }
-    return { tx: t.x, tz: t.z, ty: t.y, home, dist: Math.hypot(t.x - home.x, t.z - home.z), cx: sx / n, cy: sy / n, w: c.clientWidth, h: c.clientHeight, azimuth: i.orbit.getAzimuthalAngle(), view: i.view };
+    const [cx, cy] = [sx / n, sy / n];
+    return {
+      tx: t.x, tz: t.z, ty: t.y, dist: Math.hypot(t.x - home.x, t.z - home.z), max: i.panLimit(), zoom: i.view === "diorama" ? i.persp.position.distanceTo(t) : i.ortho.zoom,
+      cx, cy, inHole: cx > hole.left && cx < c.clientWidth - hole.right && cy > hole.top && cy < c.clientHeight - hole.bottom,
+      w: c.clientWidth, h: c.clientHeight, azimuth: i.orbit.getAzimuthalAngle(), view: i.view,
+      offX: cx - c.clientWidth / 2,
+    };
   });
+const cam = (page) => page.evaluate(() => { const i = window.__isle; return { tx: i.orbit.target.x, tz: i.orbit.target.z, zoom: i.ortho.zoom, fit: JSON.stringify(i.fit), dist: i.persp.position.distanceTo(i.orbit.target) }; });
+const hud = (page) => page.evaluate(() => [...document.querySelectorAll("button, [role=status], [data-testid]")].filter((e) => e.tagName !== "CANVAS" && !e.closest("[role=dialog]")).slice(0, 40).map((e) => { const r = e.getBoundingClientRect(); return [Math.round(r.x), Math.round(r.y), Math.round(r.width), Math.round(r.height)].join(","); }).join("|"));
+const same = (a, b) => a.tx === b.tx && a.tz === b.tz && a.zoom === b.zoom && a.fit === b.fit && Math.abs(a.dist - b.dist) < 1e-9;
+const onCanvas = (page, x, y) => page.evaluate(([x, y]) => document.elementFromPoint(x, y) === document.querySelector("canvas"), [x, y]);
 
 async function start(w, h) {
   const ctx = await browser.newContext({ viewport: { width: w, height: h }, isMobile: true, hasTouch: true });
+  await ctx.addInitScript(() => localStorage.setItem("emberisle-water", "simple"));
   const page = await ctx.newPage();
   page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
   page.on("pageerror", (e) => errors.push(String(e)));
@@ -61,114 +74,168 @@ async function start(w, h) {
   return { ctx, page, cdp };
 }
 
+const touch = (cdp, type, pts) => cdp.send("Input.dispatchTouchEvent", { type, touchPoints: pts });
 // Fingers 1 and 2 start (x, y) and (x + gap, y) and move together by (dx, dy) in steps, then lift.
-async function twoFingers(cdp, page, x, y, dx, dy, steps = 12, gap = 70) {
-  const pts = (k) => [{ x: x + (dx * k) / steps, y: y + (dy * k) / steps, id: 1 }, { x: x + gap + (dx * k) / steps, y: y + (dy * k) / steps, id: 2 }];
-  await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: pts(0) });
+async function twoFingers(cdp, page, x, y, dx, dy, steps = Math.max(4, Math.ceil(Math.hypot(dx, dy) / 40)), gap = 120) {
+  // The fingers sit side by side across the drag, so one pointer moving a moment before the other never changes their distance.
+  const [gx, gy] = dx !== 0 && dy === 0 ? [0, gap] : [gap, 0];
+  const pts = (k) => [{ x: x + (dx * k) / steps, y: y + (dy * k) / steps, id: 1 }, { x: x + gx + (dx * k) / steps, y: y + gy + (dy * k) / steps, id: 2 }];
+  await touch(cdp, "touchStart", pts(0));
   for (let k = 1; k <= steps; k++) {
-    await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: pts(k) });
+    await touch(cdp, "touchMove", pts(k));
     await frames(page, 1);
   }
-  await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
-  await frames(page, 3);
+  await touch(cdp, "touchEnd", []);
+  await frames(page, 2);
 }
-async function oneFinger(cdp, page, x, y, dx, dy, steps = 10) {
-  await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x, y, id: 1 }] });
-  for (let k = 1; k <= steps; k++) {
-    await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: x + (dx * k) / steps, y: y + (dy * k) / steps, id: 1 }] });
-    await frames(page, 1);
+async function pinch(cdp, page, cx, cy, from, to, steps = 8) {
+  const pts = (k) => { const r = from + ((to - from) * k) / steps; return [{ x: cx - r, y: cy, id: 1 }, { x: cx + r, y: cy, id: 2 }]; };
+  await touch(cdp, "touchStart", pts(0));
+  for (let k = 1; k <= steps; k++) { await touch(cdp, "touchMove", pts(k)); await frames(page, 1); }
+  await touch(cdp, "touchEnd", []);
+  await frames(page, 2);
+}
+async function oneFinger(cdp, page, x, y, dx, dy, steps = 6) {
+  await touch(cdp, "touchStart", [{ x, y, id: 1 }]);
+  for (let k = 1; k <= steps; k++) { await touch(cdp, "touchMove", [{ x: x + (dx * k) / steps, y: y + (dy * k) / steps, id: 1 }]); await frames(page, 1); }
+  await touch(cdp, "touchEnd", []);
+  await frames(page, 2);
+}
+// A start for a two-finger drag in direction (sx, sy): the canvas point nearest the opposite edge where both fingers land on the canvas.
+async function startFor(page, w, h, sx, sy) {
+  const hole = await page.evaluate(() => window.__isle.insets());
+  const [cx, cy] = [hole.left + (w - hole.left - hole.right) / 2, hole.top + (h - hole.top - hole.bottom) / 2];
+  const [gx, gy] = sx !== 0 && sy === 0 ? [0, 120] : [120, 0];
+  for (let t = 0; t < 40; t++) {
+    const x = sx > 0 ? 8 + t * 8 : sx < 0 ? w - 8 - gx - t * 8 : cx - 60;
+    const y = sy > 0 ? 8 + t * 8 : sy < 0 ? h - 8 - gy - t * 8 : cy - 60;
+    if ((await onCanvas(page, x, y)) && (await onCanvas(page, x + gx, y + gy))) return { x, y };
   }
-  await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
-  await frames(page, 3);
+  return null;
 }
 
 let code = 0;
 try {
-  for (const [w, h, view] of [[844, 390, "overhead"], [390, 844, "overhead"], [1000, 420, "diorama"]]) {
+  for (const [w, h, view] of [[430, 932, "overhead"], [360, 640, "overhead"], [844, 390, "overhead"], [390, 844, "overhead"], [1000, 420, "diorama"]]) {
     const tag = `${w}x${h}`;
     const { ctx, page, cdp } = await start(w, h);
     const s0 = await state(page);
-    check(s0.view === view && s0.dist < 1e-3, `${tag}: starts home in the ${view}`, s0);
+    check(!s0.nofit && s0.view === view && s0.dist < 1e-3, `${tag}: starts home in the ${view}`, s0);
+    if (h > w) check(Math.abs(s0.offX) <= 0.02 * w, `${tag}: portrait, the island is centred across the screen (within 2 % of the width)`, { offX: s0.offX });
+    const hole0 = await page.evaluate(() => { const i = window.__isle, c = document.querySelector("canvas"), hl = i.insets(); return { x: s0x(), }; function s0x() { return hl.left + (c.clientWidth - hl.left - hl.right) / 2; } });
+    if (h > w) check(Math.abs(s0.cx - hole0.x) <= 0.02 * w, `${tag}: ... and in the hole's width`, { cx: s0.cx, holeX: hole0.x });
+    if (h > w) {
+      const vy = await page.evaluate(() => { const i = window.__isle, c = document.querySelector("canvas"), hl = i.insets(); return hl.top + (c.clientHeight - hl.top - hl.bottom) / 2; });
+      check(Math.abs(s0.cy - vy) <= 0.02 * h, `${tag}: ... and in the hole's height`, { cy: s0.cy, holeY: vy });
+    }
+    if (w === 430 || w === 360) { await ctx.close(); continue; }
 
-    // Two fingers dragged right and down by 120 px.
-    await twoFingers(cdp, page, w / 2 - 35, h / 2, 120, 0);
+    // Two fingers dragged right by 120 px.
+    const st = await startFor(page, w, h, 1, 0);
+    await twoFingers(cdp, page, st.x, st.y, 120, 0);
     const s1 = await state(page);
     check(s1.dist > 0.5 && Math.abs(s1.ty - s0.ty) < 1e-6, `${tag}: two-finger drag moves the target along the ground`, { dist: s1.dist, ty: s1.ty });
-    check(s1.cx > s0.cx + 20, `${tag}: the island follows the fingers (right)`, { from: s0.cx, to: s1.cx });
     const ratio = (s1.cx - s0.cx) / 120;
-    check(ratio > 0.4 && ratio < 1.6, `${tag}: the island tracks the fingers about 1:1`, { ratio });
+    check(ratio > 0.4 && ratio < 1.6, `${tag}: the island follows the fingers about 1:1`, { ratio });
     check(Math.abs(s1.azimuth - s0.azimuth) < 1e-3, `${tag}: a pan does not orbit`, { a0: s0.azimuth, a1: s1.azimuth });
-
-    // A frame or two of ordinary refit must not undo it.
     await page.evaluate(() => window.__isle.remeasure());
     await frames(page, 6);
     const s2 = await state(page);
-    check(Math.abs(s2.tx - s1.tx) < 1e-6 && Math.abs(s2.tz - s1.tz) < 1e-6, `${tag}: an unchanged refit leaves the pan alone`, { s1: [s1.tx, s1.tz], s2: [s2.tx, s2.tz] });
+    check(Math.abs(s2.tx - s1.tx) < 1e-6 && Math.abs(s2.tz - s1.tz) < 1e-6, `${tag}: an unchanged refit leaves the pan alone`, {});
 
-    // Tap picking after a pan: the mark under a vertex's screen position is that vertex's.
-    const picked = await page.evaluate(() => {
-      const i = window.__isle;
-      const c = document.querySelector("canvas");
-      const v = window.__emberisle.getState().state.vertices.find((v) => i.legalIds?.has(v.id)) ?? window.__emberisle.getState().state.vertices[0];
-      const p = i.screenOf(v.id);
-      return { id: v.id, x: p.x, y: p.y, inside: p.x > 0 && p.x < c.clientWidth && p.y > 0 && p.y < c.clientHeight };
-    });
-    check(picked.inside, `${tag}: a panned vertex is on screen to tap`, picked);
-
-    // Far past the clamp, both ways.
-    for (const [dx, dy] of [[w, 0], [-w, 0], [0, h], [0, -h]]) {
-      for (let r = 0; r < 4; r++) await twoFingers(cdp, page, dx < 0 ? w * 0.85 - 70 : dx > 0 ? w * 0.15 : w / 2 - 35, dy < 0 ? h * 0.7 : dy > 0 ? h * 0.3 : h / 2, dx * 0.7, dy * 0.7);
-      const s = await state(page);
-      const onScreen = s.cx > 0 && s.cx < s.w && s.cy > 0 && s.cy < s.h;
-      check(s.dist <= 5 + 1e-3 && onScreen, `${tag}: drag (${Math.sign(dx)},${Math.sign(dy)}) x4 holds the clamp and the island stays on screen`, { dist: s.dist, cx: s.cx, cy: s.cy });
+    // The clamp: each direction, dragged until it stops growing, ends at exactly the limit, and the island stays in the hole.
+    for (const [sx, sy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const b = await startFor(page, w, h, sx, sy);
+      let s, r;
+      for (r = 0; r < 3; r++) {
+        await twoFingers(cdp, page, b.x, b.y, sx * Math.min(w - 160, 200), sy * Math.min(h - 160, 200));
+        s = await state(page);
+        if (Math.abs(s.dist - s.max) < 1e-6) break;
+      }
+      check(Math.abs(s.dist - s.max) < 1e-3 && s.inHole, `${tag}: drag (${sx},${sy}) stops at the limit and the island stays in the hole`, { dist: s.dist, max: s.max, cx: s.cx, cy: s.cy, inHole: s.inHole, zoom: s.zoom, t: [s.tx, s.tz], r });
     }
-    const sm = await state(page);
-    check(sm.dist > 1, `${tag}: the clamp is reached, not just never moved`, { dist: sm.dist });
 
-    // One finger: orbits (or does nothing to the target), never pans.
+    // Pinch, then pan: the limit does not shrink with zoom, a pinch does not pan, and a pan after it still works.
+    await page.evaluate(() => window.__isle.goHome());
+    await settle(page);
+    const p0 = await state(page);
+    await pinch(cdp, page, w / 2, h / 2, 30, 90);
+    const p1 = await state(page);
+    check(p1.zoom !== p0.zoom && p1.dist < 0.35, `${tag}: a pinch zooms and (inside the dead zone) does not pan`, { z0: p0.zoom, z1: p1.zoom, dist: p1.dist });
+    const bz = await startFor(page, w, h, 1, 0);
+    for (let r = 0; r < 3; r++) await twoFingers(cdp, page, bz.x, bz.y, Math.min(w - 160, 200), 0);
+    const p2 = await state(page);
+    check(Math.abs(p2.dist - p2.max) < 1e-3 && p2.max === p1.max, `${tag}: zoomed in, a pan still reaches the same limit`, { dist: p2.dist, max: p2.max, max1: p1.max });
+
+    // One finger never pans.
     const before = await state(page);
     await oneFinger(cdp, page, w / 2, h / 2, 90, 0);
     const after = await state(page);
-    check(Math.abs(after.tx - before.tx) < 1e-6 && Math.abs(after.tz - before.tz) < 1e-6, `${tag}: one finger leaves the target alone`, { before: [before.tx, before.tz], after: [after.tx, after.tz] });
+    check(Math.abs(after.tx - before.tx) < 1e-6 && Math.abs(after.tz - before.tz) < 1e-6, `${tag}: one finger leaves the target alone`, {});
 
-    // Home key snaps back.
     await page.evaluate(() => window.__isle.goHome());
     await settle(page);
-    const home = await state(page);
-    check(home.dist < 1e-3, `${tag}: Home glides back to the fit`, home);
+    check((await state(page)).dist < 1e-3, `${tag}: Home glides back to the fit`, {});
 
-    // Pan again, then turn the phone: the refit returns home.
-    await twoFingers(cdp, page, w / 2 - 35, h / 2, 100, 40);
-    const moved = await state(page);
-    check(moved.dist > 0.5, `${tag}: panned again before the turn`, { dist: moved.dist });
+    // HUD isolation: a panel opening and closing never moves the map, and the map never moves the HUD.
+    {
+      const sp = await startFor(page, w, h, 1, 0);
+      await twoFingers(cdp, page, sp.x, sp.y, 100, 0);
+      const c0 = await cam(page);
+      for (const key of ["chatOpen", "tradeOpen"]) {
+        const live0 = await page.evaluate(() => JSON.stringify(window.__isle.insets()));
+        await page.evaluate((k) => window.__emberisle.setState({ [k]: true }), key);
+        await frames(page, 12);
+        const open = await cam(page);
+        const live1 = await page.evaluate(() => JSON.stringify(window.__isle.insets()));
+        await page.evaluate((k) => window.__emberisle.setState({ [k]: false }), key);
+        await frames(page, 12);
+        const shut = await cam(page);
+        check(same(c0, open) && same(c0, shut), `${tag}: ${key} open and closed leaves the pan, zoom and fit alone`, { holeChanged: live0 !== live1 });
+      }
+      const h0 = await hud(page);
+      await pinch(cdp, page, w / 2, h / 2, 30, 90);
+      await twoFingers(cdp, page, sp.x, sp.y, -60, 0);
+      await oneFinger(cdp, page, w / 2, h / 2, 60, 0);
+      check((await hud(page)) === h0, `${tag}: pinch, pan and orbit leave every HUD box where it was`, {});
+    }
+
+    // A real tap on a legal vertex after a pan places (selects) it: the picking ray follows the camera.
+    {
+      await page.evaluate(() => window.__isle.goHome());
+      await settle(page);
+      const sp = await startFor(page, w, h, -1, 0);
+      await twoFingers(cdp, page, sp.x, sp.y, -50, 0);
+      const v = await page.evaluate(() => {
+        const i = window.__isle, c = document.querySelector("canvas"), hl = i.insets();
+        for (const id of i.legalIds) {
+          const p = i.screenOf(id);
+          const r = c.getBoundingClientRect();
+          if (p && p.x > hl.left + 12 && p.x < c.clientWidth - hl.right - 12 && p.y > hl.top + 12 && p.y < c.clientHeight - hl.bottom - 12 && document.elementFromPoint(r.left + p.x, r.top + p.y) === c) return { id, x: r.left + p.x, y: r.top + p.y };
+        }
+        return null;
+      });
+      check(v !== null, `${tag}: a legal corner is on the canvas after the pan`, v);
+      if (v) {
+        await touch(cdp, "touchStart", [{ x: v.x, y: v.y, id: 1 }]);
+        await touch(cdp, "touchEnd", []);
+        await frames(page, 3);
+        const pend = await page.evaluate(() => window.__emberisle.getState().pendingPlace?.id ?? null);
+        check(pend === v.id, `${tag}: tapping it after a pan selects that very corner`, { want: v.id, got: pend });
+      }
+    }
+
+    // Turn the phone: the refit returns home.
+    await page.evaluate(() => window.__isle.goHome());
+    await settle(page);
+    const sq = await startFor(page, w, h, 1, 0);
+    await twoFingers(cdp, page, sq.x, sq.y, 160, 0);
+    { const pm = await state(page); check(pm.dist > 0.5, `${tag}: panned before the turn`, { dist: pm.dist, sq }); }
     await page.setViewportSize({ width: h, height: w });
     await frames(page, 4);
     await settle(page);
     const turned = await state(page);
     check(turned.dist < 1e-3, `${tag} -> ${h}x${w}: rotation refit returns home`, turned);
-    await ctx.close();
-  }
-
-  // Tap-to-place after a pan: panned, the tap on a legal vertex's screen position selects it.
-  {
-    const { ctx, page, cdp } = await start(844, 390);
-    await twoFingers(cdp, page, 300, 195, 100, 30);
-    const hit = await page.evaluate(() => {
-      const i = window.__isle;
-      const id = [...i.legalIds][0];
-      const p = i.screenOf(id);
-      return { id, x: p.x, y: p.y, ok: p.x > 0 && p.y > 0 && p.x < innerWidth && p.y < innerHeight };
-    });
-    if (hit.id && hit.ok) {
-      const rect = await page.evaluate(() => { const r = document.querySelector("canvas").getBoundingClientRect(); return { l: r.left, t: r.top }; });
-      const picks = await page.evaluate(() => { window.__picks = []; const o = window.__isle; return typeof o.hitsAt === "function"; });
-      const at = { x: rect.l + hit.x, y: rect.t + hit.y };
-      const best = await page.evaluate(({ x, y }) => {
-        const i = window.__isle;
-        return i.hitsAt({ clientX: x, clientY: y }, true).map((h) => h.id);
-      }, at);
-      check(best.includes(hit.id), "844x390: after a pan the picking ray at a vertex's screen position hits that vertex", { want: hit.id, got: best.slice(0, 4), picks });
-    } else check(false, "844x390: a legal vertex was on screen after the pan", hit);
     await ctx.close();
   }
 
