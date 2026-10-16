@@ -239,11 +239,13 @@ export function layoutOf(kind: Terrain, seed: number): Layout {
     // front flank. The wayfarer stands on the pad: the waste has no number.
     const s = r() < 0.5 ? -1 : 1;
     // Basalt spires at the back, the giant skull on one flank, the ribcage on the other, the tar pit at the front.
-    L.peaks.push({ ...at(hillAt, 0.6), r: 0.16, h: 0.5 + r() * 0.06 });
-    L.peaks.push({ ...at(hillAt - s * 0.6, 0.62), r: 0.12, h: 0.32 + r() * 0.05 });
-    L.peaks.push({ ...at(hillAt + s * 0.55, 0.64), r: 0.1, h: 0.26 + r() * 0.04 });
-    L.pool = { ...at(hillAt + Math.PI - s * 0.5, 0.62), r: 0.11 };
-    L.marks = { side: { x: s, z: 0 }, skull: at(hillAt + s * 1.5, 0.56), ribs: at(hillAt - s * 1.45, 0.6) };
+    // The carcass of a colossal beast sprawls round the back: its skull across the back edge like a monument behind the
+    // token, its spine curling round one flank into a huge ribcage. Basalt spires stand on the other flank, the tar pit at the
+    // front.
+    L.peaks.push({ ...at(hillAt + s * 1.15, 0.62), r: 0.11, h: 0.36 + r() * 0.05 });
+    L.peaks.push({ ...at(hillAt + s * 1.75, 0.64), r: 0.08, h: 0.24 + r() * 0.04 });
+    L.pool = { ...at(hillAt + Math.PI + s * 0.5, 0.62), r: 0.11 };
+    L.marks = { side: { x: s, z: 0 }, skull: at(Math.round(hillAt / (Math.PI / 3)) * (Math.PI / 3), INR - 0.38), ribs: at(hillAt - s * 1.45, 0.6), neck: at(hillAt - s * 0.75, 0.66) };
   }
   if (kind === "clay") {
     // The open-cut quarry across the back, a trench slot running from its end toward one front flank, the kiln yard on the
@@ -4406,17 +4408,21 @@ function wastes(L: Layout, ground: (x: number, z: number) => number, r: () => nu
     // Cracks.
     for (let i = 0; i < 5; i++) parts.push(part(new THREE.BoxGeometry(1, 1, 1), "#8a7e6a", [-0.01 + i * 0.012, 0.105 - i * 0.004, 0.01 * Math.sin(i * 2)], [0.3 * i, 0, 0.6], [0.016, 0.0015, 0.0015]));
     skull.add(mesh(merge(parts), cm));
-    skull.scale.setScalar(2.5);
-    // Sunk into the ash, tilted, the snout pointing round the hex so its profile faces the eye.
-    skull.position.set(sk.x, Y(sk.x, sk.z) - 0.035, sk.z);
-    const facing = Math.atan2(EYE.z, EYE.x) + Math.PI / 2 * M.side!.x;
-    skull.rotation.set(0.12, -facing, -0.08, "YXZ");
+    const SK = 3.0;
+    skull.scale.setScalar(SK);
+    skull.children[0]!.position.x = -0.05;
+    // Lying along the back edge, snout toward side s, sunk to the cheeks, tilted a little toward the eye.
+    // Square to the back edge it lies along (the flats face 60 k degrees), nudged back from the snout's end so it stays on.
+    const tangent = Math.round(Math.atan2(sk.z, sk.x) / (Math.PI / 3)) * (Math.PI / 3) + (Math.PI / 2) * M.side!.x;
+    skull.position.set(sk.x - Math.cos(tangent) * 0.1, Y(sk.x, sk.z) - 0.07, sk.z - Math.sin(tangent) * 0.1);
+    skull.rotation.set(0, -tangent, -0.1, "YXZ");
+    skull.rotateOnAxis(new THREE.Vector3(1, 0, 0), -0.18 * M.side!.x);
     skull.userData.ref = "skull";
     g.add(skull);
-    stands.push({ x: sk.x, z: sk.z, r: 0.26 });
+    for (const u of [-0.3, -0.1, 0.1, 0.3]) stands.push({ x: sk.x + Math.cos(tangent) * u, z: sk.z + Math.sin(tangent) * u, r: 0.16 });
     // A glow deep in one eye socket at night.
-    const eyeGlow = halo("#ff8a3a", 0.12);
-    eyeGlow.position.copy(new THREE.Vector3(0.05, 0.07, 0.034).multiplyScalar(2.5).applyEuler(skull.rotation).add(skull.position));
+    const eyeGlow = halo("#ff8a3a", 0.2);
+    eyeGlow.position.copy(new THREE.Vector3(0.0, 0.07, 0.034).multiplyScalar(3.0).applyEuler(skull.rotation).add(skull.position));
     g.add(eyeGlow);
     life.push((t) => (eyeGlow.material.opacity = env.night * (0.5 + 0.3 * Math.sin(t * 1.3))));
   }
@@ -4429,14 +4435,14 @@ function wastes(L: Layout, ground: (x: number, z: number) => number, r: () => nu
     const parts: THREE.BufferGeometry[] = [];
     const N = 7;
     for (let i = 0; i < N; i++) {
-      const u = (i - (N - 1) / 2) * 0.05;
+      const u = (i - (N - 1) / 2) * 0.055;
       const x = rb.x + ax * u;
       const z = rb.z + az * u;
       const y = Y(x, z);
       parts.push(part(sphere(10), BONE2, [x, y + 0.008, z], [0, -along, 0], [0.022, 0.016, 0.018]));
-      const size = 0.15 * (1 - Math.abs(i - (N - 1) / 2) / N) + 0.06;
+      const size = 0.2 * (1 - Math.abs(i - (N - 1) / 2) / N) + 0.08;
       for (const sg of [1, -1]) {
-        const rib = new THREE.TorusGeometry(size, 0.008, 6, 18, Math.PI * 0.7);
+        const rib = new THREE.TorusGeometry(size, 0.011, 7, 20, Math.PI * 0.7);
         rib.rotateX(Math.PI / 2);
         rib.rotateZ(Math.PI / 2);
         rib.rotateY(sg > 0 ? 0 : Math.PI);
@@ -4444,6 +4450,21 @@ function wastes(L: Layout, ground: (x: number, z: number) => number, r: () => nu
         parts.push(part(rib, i % 2 ? BONE : BONE2, [x, y + 0.004, z], [0, 0, 0], [1, 1, 1]));
       }
       stands.push({ x, z, r: 0.09 });
+    }
+    // The spine: vertebrae, half buried, curling from the ribcage's end round the back to the skull's crown.
+    const sk = M.skull!;
+    const neck = M.neck!;
+    const endA = { x: rb.x + ax * 0.2 * (M.side!.x > 0 ? 1 : -1), z: rb.z + az * 0.2 * (M.side!.x > 0 ? 1 : -1) };
+    const curve = new THREE.CatmullRomCurve3([new THREE.Vector3(endA.x, 0, endA.z), new THREE.Vector3(neck.x, 0, neck.z), new THREE.Vector3(sk.x + (neck.x - sk.x) * 0.45, 0, sk.z + (neck.z - sk.z) * 0.45)]);
+    const n = Math.round(curve.getLength() / 0.034);
+    for (let i = 0; i <= n; i++) {
+      const p = curve.getPointAt(i / n);
+      if (hexDist(p.x, p.z) > INR - 0.12) continue;
+      const y = Y(p.x, p.z);
+      const k = 0.016 - (i / n) * 0.004;
+      parts.push(part(sphere(10), i % 2 ? BONE : BONE2, [p.x, y + 0.002, p.z], [0, 0, 0], [k * 1.2, k * 0.8, k]));
+      parts.push(part(new THREE.ConeGeometry(1, 1, 5), BONE2, [p.x, y + k * 0.9, p.z], [0, 0, 0], [k * 0.35, k * 1.4, k * 0.3]));
+      stands.push({ x: p.x, z: p.z, r: 0.03 });
     }
     const cage = mesh(merge(parts), cm);
     cage.userData.ref = "ribcage";
@@ -4599,7 +4620,7 @@ function wastes(L: Layout, ground: (x: number, z: number) => number, r: () => nu
     life.push((t) => {
       for (const k of birds) {
         const a = t * 0.22 + (k.i * Math.PI * 2) / 3;
-        k.b.position.set(sk.x * 0.7 + Math.cos(a) * 0.22, BLOCK_H + 0.55 + k.i * 0.05, sk.z * 0.7 + Math.sin(a) * 0.16);
+        k.b.position.set(sk.x * 0.6 + Math.cos(a) * 0.26, BLOCK_H + 0.72 + k.i * 0.05, sk.z * 0.6 + Math.sin(a) * 0.18);
         k.b.rotation.set(0.3, -(a + Math.PI / 2), 0, "YXZ");
       }
     });

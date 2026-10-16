@@ -116,9 +116,10 @@ THE SIX WORLDS
    mine mouth glow warm.
 
 6. WASTE — "The Wayfarer's Rest", a King Kong / Skull Island wasteland: desolate, sun-cracked ash and dun ground with faint
-   wind ripples, clusters of jagged dark basalt spires at the back. A giant beast skull lies half-buried on one flank (long
-   toothy snout, deep sockets, great curled horns, cracks; an ember glows in one socket at night), a vast ribcage arches out
-   of the ash on the other, small bones scattered between. A black tar pit bubbles at the front with a little skull sunk at
+   wind ripples, clusters of jagged dark basalt spires at the back. The carcass of a colossal beast is the tile's hero: its
+   skull lies sunk to the cheeks along the back edge like a monument behind the wayfarer (long toothy snout, deep sockets,
+   great curled horns, cracks; an ember glows in one socket at night), its spine curls round one flank into a vast ribcage
+   arching out of the ash, small bones scattered between. Basalt spires stand on the other flank. A black tar pit bubbles at the front with a little skull sunk at
    its edge. Dead twisted trees, dry grass, low mist banks drifting, a tumbleweed, vultures circling the skull. The
    wayfarer (the robber) is a short, hunched, sneaky little man in a deep-green hooded poncho with a gold diamond band, a
    big nose, scruffy beard, huge wary eyes, a rat on his shoulder and a little lantern; he tiptoes and peeks left and right.
