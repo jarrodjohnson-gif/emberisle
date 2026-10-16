@@ -27,7 +27,8 @@ prompt.
   and CI results on your PR, and a merge or close. So at each round, check your open PRs before
   picking new work:
   - CI red: fix it.
-  - Review comments: fix them, or reply saying why not.
+  - Review comments: fix them, or reply saying why not. Answer each comment once. Skip any thread
+    whose last comment is yours.
   - Merged: done, move on.
   - Closed: drop that issue for good. Never reopen it or redo the work.
 - Have at most **2 open PRs** at a time. While you're at that limit, only work on those two.

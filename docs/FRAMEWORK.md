@@ -102,7 +102,7 @@ Size: XS | S
 
 An issue may carry a `model:opus` or `model:sonnet` label when it needs a particular model: opus for
 UI, visual or tricky multi-file work, sonnet for well-specified mechanical steps. A Builder uses that
-model, or a subagent on it. The Reviewer uses a different model from the one that built the PR.
+model, or a subagent on it. If it can do neither, it says in the PR which model it used. The Reviewer uses a different model from the one that built the PR.
 
 Add `needs: jarrod` (his decision, account, or money) or `needs: gaming-pc` (Unreal, or the 3.6 GB art pack)
 on its own line when an AI cannot finish it. Those issues still get Research and Design done by any AI.
