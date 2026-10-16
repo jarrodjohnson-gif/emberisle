@@ -85,6 +85,9 @@ const FIT_KEYS: (keyof Pose)[] = ["left", "right", "top", "bottom", "tx", "tz", 
 const NO_FIT = { left: 0, right: 0, top: 0, bottom: 0, tx: 0, tz: 0, focal: 0, dist: 0, cx: 0, cy: 0 };
 const EYE_KEYS: (keyof Pose)[] = ["polar", "azimuth", "zoom"];
 const ORBIT_RADIUS = 18;
+// How far a pan may carry the look-at point from home, about the island's own radius: its centre stays on screen.
+const PAN_RADIUS = 5;
+const PAN_VIEW = 0.6;
 const GLIDE_MS = 280;
 // Frames after a resize that measure the hole again: the HUD settles into its new layout a frame or two after the event.
 const RELAYOUT_FRAMES = 4;
@@ -279,7 +282,8 @@ export class IsleRenderer {
     this.orbit.enabled = false;
     // No damping: the board stops where the pointer stops, and nothing drifts after a glide home.
     this.orbit.enableDamping = false;
-    this.orbit.enablePan = false;
+    // Two fingers (or the right button) pan along the ground; the target stays at cap level and within PAN_RADIUS of home.
+    this.orbit.screenSpacePanning = false;
     this.orbit.minZoom = 0.8;
     this.orbit.maxZoom = 2.4;
     this.orbit.minPolarAngle = 0.12;
@@ -680,7 +684,7 @@ export class IsleRenderer {
     const cam = this.view === "diorama" ? this.persp : this.ortho;
     _sph.setFromVector3(_eye.copy(cam.position).sub(this.orbit.target));
     const eye = { polar: _sph.phi, azimuth: _sph.theta };
-    if (this.view === "diorama") return { ...NO_FIT, ...this.lens, ...eye, zoom: this.lens.dist / _sph.radius };
+    if (this.view === "diorama") return { ...NO_FIT, ...this.lens, tx: this.orbit.target.x, tz: this.orbit.target.z, ...eye, zoom: this.lens.dist / _sph.radius };
     const o = this.ortho;
     return { ...NO_FIT, left: o.left, right: o.right, top: o.top, bottom: o.bottom, tx: this.orbit.target.x, tz: this.orbit.target.z, ...eye, zoom: o.zoom };
   }
@@ -700,7 +704,9 @@ export class IsleRenderer {
       this.lens = { focal: p.focal, dist: p.dist, cx: p.cx, cy: p.cy };
       this.orbit.minDistance = p.dist / this.orbit.maxZoom;
       this.orbit.maxDistance = p.dist / this.orbit.minZoom;
-      this.orbit.target.set(0, CAP_LEVEL, 0);
+      this.orbit.target.set(p.tx, CAP_LEVEL, p.tz);
+      // The lens frame is wider than the canvas, so a pan step in pixels is scaled to match the finger.
+      this.orbit.panSpeed = h / fullH;
       c.up.set(0, 1, 0);
       c.position.setFromSphericalCoords(p.dist / p.zoom, p.polar, p.azimuth).add(this.orbit.target);
       c.lookAt(this.orbit.target);
@@ -854,6 +860,32 @@ export class IsleRenderer {
         if (!this.walk) this.wayfarer.position.y = y;
       }
     }
+  }
+
+  // Keep the look-at point within PAN_RADIUS of home, and within PAN_VIEW of the shorter half of what the canvas shows at the
+  // target, so a short landscape canvas cannot carry the island off its edge. The eye moves with the target, so the view does
+  // not lag a frame.
+  private clampPan() {
+    if (!this.fit) return;
+    const home = this.fitPose(this.fit);
+    const t = this.orbit.target;
+    const cam = this.orbit.object;
+    let half: number;
+    if (this.view === "diorama") half = (cam.position.distanceTo(t) * Math.min(this.sizeW, this.sizeH)) / 2 / this.lens.focal;
+    else {
+      const o = this.ortho;
+      half = Math.min(o.right - o.left, o.top - o.bottom) / 2 / o.zoom;
+    }
+    const max = Math.min(PAN_RADIUS, PAN_VIEW * half);
+    const dx = t.x - home.tx;
+    const dz = t.z - home.tz;
+    const d = Math.hypot(dx, dz);
+    if (d <= max) return;
+    const k = max / d - 1;
+    t.x += dx * k;
+    t.z += dz * k;
+    cam.position.x += dx * k;
+    cam.position.z += dz * k;
   }
 
   // Back to the fitted view, zoom 1, over the hole's centre.
@@ -1056,6 +1088,7 @@ export class IsleRenderer {
     this.controls.autoRotate = this.titleMode && !calm;
     if (this.play()) {
       this.orbit.update();
+      this.clampPan();
       this.stepGlide(now);
     } else {
       this.controls.enableDamping = !calm;
