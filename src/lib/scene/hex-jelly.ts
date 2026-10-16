@@ -5020,6 +5020,14 @@ const _squash = new THREE.Vector3();
 const _m4b = new THREE.Matrix4();
 // `groundOnly`: the block, its landform and strata, and nothing on it (the lite board on a software GPU, jelly-board.ts).
 export function buildTile(kind: Terrain, seed: number, rings = 64, board = false, groundOnly = false): Tile {
+  const it = tileSteps(kind, seed, rings, board, groundOnly);
+  let step = it.next();
+  while (!step.done) step = it.next();
+  return step.value;
+}
+
+// The same, in steps: it yields between the props and the block, so a caller can let the page breathe (jelly-board.ts).
+export function* tileSteps(kind: Terrain, seed: number, rings = 64, board = false, groundOnly = false): Generator<void, Tile, void> {
   const L = layoutOf(kind, seed);
   const ground = (x: number, z: number) => heightAt(L, x, z);
   const group = new THREE.Group();
@@ -5029,6 +5037,9 @@ export function buildTile(kind: Terrain, seed: number, rings = 64, board = false
   const tu = TU;
   const props = groundOnly ? null : kind === "timber" ? forest(L, ground, r, env) : kind === "wool" ? pasture(L, ground, r, env) : kind === "grain" ? farm(L, ground, r, env) : kind === "clay" ? brickworks(L, ground, r, env) : kind === "ore" ? mine(L, ground, r, env) : kind === "waste" ? wastes(L, ground, r, env) : null;
   const stands = props?.stands ?? [];
+  yield;
+  // Another tile may have been built meanwhile; the block's materials take this one's uniforms.
+  TU = tu;
   // Canopy cover and contact: the ground darkens under each stand.
   const occlude = (x: number, z: number) => {
     let o = 0;

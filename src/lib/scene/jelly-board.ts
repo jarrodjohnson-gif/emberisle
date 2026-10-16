@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { type Terrain } from "@/lib/game/types";
-import { buildTile, setBoardDetail, type Tile } from "@/lib/scene/hex-jelly";
+import { setBoardDetail, tileSteps, type Tile } from "@/lib/scene/hex-jelly";
 import { BLOCK_H } from "@/lib/scene/jelly-dims";
 
 // The jelly board (#599, docs/design/hex-jelly-prompt.md): the six Hex Jelly scenes on the game board.
@@ -369,13 +369,28 @@ export class JellyBoard {
   static async create(hexes: JellyHex[], seedOf: (kind: Terrain) => number, pause: () => Promise<boolean>, lite = false) {
     const b = new JellyBoard();
     b.lite = lite;
+    // A breath after the chunk itself loads and runs.
+    if (!(await pause())) return null;
     for (const kind of [...new Set(hexes.map((h) => h.terrain))]) {
-      let tile: Tile;
-      setBoardDetail(true);
-      try {
-        tile = buildTile(kind, seedOf(kind), RINGS, true, lite);
-      } finally {
-        setBoardDetail(false);
+      // Built in its steps (the props, then the block), with a breath between; the board detail holds only while a step runs.
+      const steps = tileSteps(kind, seedOf(kind), RINGS, true, lite);
+      let tile: Tile | undefined;
+      for (;;) {
+        setBoardDetail(true);
+        let step: IteratorResult<void, Tile>;
+        try {
+          step = steps.next();
+        } finally {
+          setBoardDetail(false);
+        }
+        if (step.done) {
+          tile = step.value;
+          break;
+        }
+        if (!(await pause())) {
+          b.dispose();
+          return null;
+        }
       }
       const hx = hexes
         .filter((h) => h.terrain === kind)
@@ -521,18 +536,22 @@ export class JellyBoard {
       e.leaves.push(leafOf(p));
       bakes.set(p.key, e);
     }
-    // A pause after every few bakes: a bake is a pass over every corner it holds.
+    // A bake is a pass over every corner it holds: it pauses every 40 ms or so, between its sources.
     let since = performance.now();
+    const breathe = async () => {
+      if (performance.now() - since < 40) return true;
+      const ok = await pause();
+      since = performance.now();
+      return ok;
+    };
     for (const e of bakes.values()) {
-      const mesh = this.bake(e.plans, e.leaves);
+      const mesh = await this.bake(e.plans, e.leaves, breathe);
+      if (!mesh) return false;
       // A bake of ground alone (the cracked tops, the strata) draws after the others.
       if (e.plans.every(ground) && !(mesh.material as THREE.Material).transparent) mesh.renderOrder = 1;
       this.group.add(mesh);
       e.plans.forEach((p, i) => p.k.leaves.push({ ...e.leaves[i]!, baked: true, batch: null, ids: new Int32Array(0) }));
-      if (performance.now() - since > 40) {
-        if (!(await pause())) return false;
-        since = performance.now();
-      }
+      if (!(await breathe())) return false;
     }
 
     // The moving: a BatchedMesh per material, sized, then filled.
@@ -619,7 +638,7 @@ export class JellyBoard {
 
   // Bake static sources (one material's) into one mesh over every hex of their kind: each corner in world space, with its
   // colour, its hex's slot and the pivot and delay its thing squashes by in a roll.
-  private bake(plans: { k: Kind; o: THREE.Mesh; own: boolean; attrs: string[]; cast: boolean; plain: boolean }[], leaves: Omit<Leaf, "batch" | "ids">[]) {
+  private async bake(plans: { k: Kind; o: THREE.Mesh; own: boolean; attrs: string[]; cast: boolean; plain: boolean }[], leaves: Omit<Leaf, "batch" | "ids">[], breathe: () => Promise<boolean>) {
     const p0 = plans[0]!;
     const src = p0.o.material as THREE.MeshStandardMaterial;
     const mat = p0.own ? src : copyMaterial(src);
@@ -648,7 +667,9 @@ export class JellyBoard {
     const NM = new THREE.Matrix3();
     const v = new THREE.Vector3();
     const piv = new THREE.Vector3();
-    plans.forEach((p, li) => {
+    for (let li = 0; li < plans.length; li++) {
+      if (!(await breathe())) return null;
+      const p = plans[li]!;
       const L = leaves[li]!;
       const g = indexed(p.o.geometry);
       if (!g.getAttribute("normal")) g.computeVertexNormals();
@@ -698,7 +719,7 @@ export class JellyBoard {
           v0 += pos.count;
           i0 += idx.count;
         }
-    });
+    }
     const geo = new THREE.BufferGeometry();
     geo.setAttribute("position", new THREE.BufferAttribute(P, 3));
     geo.setAttribute("normal", new THREE.BufferAttribute(N, 3));

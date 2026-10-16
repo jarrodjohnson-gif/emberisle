@@ -1272,9 +1272,28 @@ export class IsleRenderer {
 
   private growScenes(gen: number, key: string, hexes: { id: string; terrain: Terrain; x: number; z: number; y: number }[], tries = 0) {
     const alive = () => gen === this.landGen && !this.stopped;
+    // Not until the board's first frame is on screen: the chunk's parse and the first kind's build would otherwise hold it.
+    if (this.renders === 0) {
+      requestAnimationFrame(() => alive() && this.growScenes(gen, key, hexes, tries));
+      return;
+    }
     performance.mark("props-start");
     loadJelly()
       .then(({ JellyBoard }) => (alive() ? JellyBoard.create(hexes, (kind) => hashStr(`${key}|${kind}`), () => new Promise<boolean>((r) => setTimeout(() => r(alive()), 0)), this.lite) : null))
+      // Its shaders compile before it swaps in (in parallel where the browser can, KHR_parallel_shader_compile), not in the
+      // first frame that draws it. Compiled in place, into the composer's own target, so the programs are the frame's.
+      .then(async (jelly) => {
+        if (!jelly || !alive()) return jelly;
+        jelly.update(this.jellyT, true, true);
+        this.living.add(jelly.group);
+        const was = this.renderer.getRenderTarget();
+        this.renderer.setRenderTarget(this.composer.readBuffer);
+        const done = this.renderer.compileAsync(this.scene, this.cam());
+        this.renderer.setRenderTarget(was);
+        this.living.remove(jelly.group);
+        await done;
+        return jelly;
+      })
       .then(
         (jelly) => {
           if (!jelly) return;

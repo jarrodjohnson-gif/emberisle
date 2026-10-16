@@ -60,9 +60,18 @@ always finished; a slow one no longer blocks the page in its GL calls.
 The scenes are their own chunk, `jelly-board` (about 51 kB gzip, with its own budget in `size-prove`), loaded after the
 island's first draw.
 
-They are built a kind per task (the longest is about 180 ms on a desktop), and the bake yields between groups. Until every
-scene is ready, plain slabs in the terrain's paint stand in, and then the island swaps in whole (the owner: wait for it, no
-pop-in).
+Loading waits for the board's first frame. The build then runs in steps, each followed by a pause:
+- a pause once the chunk has run;
+- each kind's props, then its block (`tileSteps`, a generator; the studio's `buildTile` runs it straight through);
+- its geometry's indexing, in slices of about 40 ms;
+- the bake, which pauses between sources every 40 ms or so.
+
+Before the swap, the scenes' shaders compile in place, into the composer's own target, so the first frame that draws them
+compiles nothing (`compileAsync`; in parallel where the browser has KHR_parallel_shader_compile; on SwiftShader it is one
+task of about 350 ms).
+
+Until every scene is ready, plain slabs in the terrain's paint stand in, and then the island swaps in whole (the owner:
+wait for it, no pop-in).
 
 A failed load keeps the slabs and tries again, up to five times, under a fresh query. The restore budget holds, since the
 scenes are off the first frame. restore-prove now allows a median under 3 s and a maximum under 3.5 s (the owner: load may
