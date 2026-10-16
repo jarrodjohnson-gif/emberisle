@@ -13,6 +13,7 @@ import {
   fitOrtho,
   freeMaxDistance,
   hudInsets,
+  playHole,
   isSelectTap,
   pickBest,
   pickReach,
@@ -91,8 +92,6 @@ const PAN_RADIUS = 5;
 const PAN_VIEW = 0.6;
 // Pixels a pinch's midpoint may drift before it also pans.
 const PAN_DEAD = 8;
-const OFFER_BOTTOM = 220;
-const RAIL_MIN_WIDTH = 1024;
 const GATE_EVENTS = ["pointerdown", "pointermove", "pointerup", "pointercancel", "lostpointercapture"] as const;
 const GLIDE_MS = 280;
 // Frames after a resize that measure the hole again: the HUD settles into its new layout a frame or two after the event.
@@ -158,13 +157,6 @@ export class IsleRenderer {
   // HUD housekeeping alone (a timed notice leaving, the Place chip): the camera moves with the game, and an idle board idles.
   private refitDue = false;
   private relayout = 0;
-  // The hole the camera is fitted to (#625): measured afresh when the viewport changes or a view is entered, then only ever
-  // grown, side by side, to the largest the HUD's own layouts leave (the main phase's tray is taller than the roll-off's). A
-  // panel that overlays the board (`panelOpen`: the chat, the trade sheet, an offer) never counts, and a wide layout's insets()
-  // already keeps its docked rail. So opening or closing one never moves the map.
-  private baseHole: Insets | null = null;
-  private rebaseFrames = 0;
-  panelOpen = false;
   private sizeW = 0;
   private sizeH = 0;
   private raycaster = new THREE.Raycaster();
@@ -449,17 +441,14 @@ export class IsleRenderer {
   // The hole the HUD leaves for the island right now, measured from the chrome around the canvas. Proofs read it too.
   insets(): Insets {
     const c = this.renderer.domElement;
+    return playHole(c.clientWidth, c.clientHeight, readViewport().phone, this.safe());
+  }
+
+  // What the chrome around the canvas leaves right now, overlays and all: for proofs, never for the fit.
+  liveInsets(): Insets {
+    const c = this.renderer.domElement;
     const shell = c.parentElement;
-    const i = chromeInsets(c.clientWidth, c.clientHeight, shell ? solidRects(shell, c) : [], this.safe());
-    // On a wide layout the chat, the offer and the PlaceList dock in the right rail: the hole keeps room for it open or not, so
-    // opening one never moves the map and never covers a corner. On a phone a sheet slides over the board and counts for nothing.
-    // Below RAIL_MIN_WIDTH a desktop window is too small to give a third of its width away: the board keeps the live hole there.
-    if (!readViewport().phone && c.clientWidth >= RAIL_MIN_WIDTH) {
-      i.right = Math.max(i.right, hudInsets(c.clientWidth, c.clientHeight, false, this.safe()).right);
-      // A trade offer joins the bottom stack, 39 px taller than the main phase's bar (visual-direction-prove).
-      i.bottom = Math.max(i.bottom, OFFER_BOTTOM + (this.safe().bottom ?? 0));
-    }
-    return i;
+    return chromeInsets(c.clientWidth, c.clientHeight, shell ? solidRects(shell, c) : [], this.safe());
   }
 
   // Overhead is one orthographic camera fitted to the HUD hole and diorama one perspective camera fitted to it, sharing one
@@ -482,7 +471,6 @@ export class IsleRenderer {
     // Each entry to the table starts from home.
     this.fit = null;
     this.glide = null;
-    this.baseHole = null;
     this.shownAt = this.renders;
     this.refitDue = true;
     this.resize();
@@ -670,8 +658,6 @@ export class IsleRenderer {
     const ratio = this.renderer.getPixelRatio();
     this.under?.setSize(Math.round(w * ratio), Math.round(h * ratio));
     this.ssao?.setSize(w, h);
-    this.baseHole = null;
-    this.rebaseFrames = RELAYOUT_FRAMES;
     this.refit(true);
     // The HUD re-lays out for the new size after this event (a rotation swaps its columns and rails), so the hole just
     // measured is the old one: measure again on each of the next frames.
@@ -690,9 +676,7 @@ export class IsleRenderer {
     this.refitDue = false;
     if (!this.play()) return;
     const c = this.renderer.domElement;
-    const live = this.insets();
-    const base = (this.baseHole ??= live);
-    if (!this.panelOpen) for (const k of ["top", "right", "bottom", "left"] as const) base[k] = Math.max(base[k], live[k]);
+    const base = this.insets();
     // The hole's edges on the shell, so the HUD can centre a moment on the island (TurnMoment, GainFloats): the one the map is fitted to.
     for (const k of ["top", "right", "bottom", "left"] as const) c.parentElement?.style.setProperty(`--hole-${k}`, `${base[k]}px`);
     const [w, h] = [c.clientWidth || 1, c.clientHeight || 1];
@@ -705,7 +689,8 @@ export class IsleRenderer {
       this.orbit.update();
       return;
     }
-    this.moveTo(this.fitPose(f), FIT_KEYS, instant || this.renders <= this.shownAt);
+    const to = this.fitPose(f);
+    this.moveTo(to, FIT_KEYS, instant || this.renders <= this.shownAt);
   }
 
   private fitPose(f: OrthoFit | DioramaFit): Pose {
@@ -1136,10 +1121,6 @@ export class IsleRenderer {
       this.wake();
     }
     this.stepLandings(now, calm);
-    if (this.rebaseFrames > 0) {
-      this.rebaseFrames--;
-      this.baseHole = null;
-    }
     if (this.relayout > 0) {
       this.relayout--;
       this.refitDue = true;

@@ -203,7 +203,7 @@ try {
       await twoFingers(cdp, page, sp.x, sp.y, 100, 0);
       const c0 = await cam(page);
       // A band of chrome docked along the bottom (the hole really changes) with a panel flagged open: the map does not move.
-      const live0 = await page.evaluate(() => JSON.stringify(window.__isle.insets()));
+      const live0 = await page.evaluate(() => JSON.stringify(window.__isle.liveInsets()));
       await page.evaluate(() => {
         const d = document.createElement("div");
         d.id = "fake-dock";
@@ -213,11 +213,21 @@ try {
       });
       await frames(page, 12);
       const open = await cam(page);
-      const live1 = await page.evaluate(() => JSON.stringify(window.__isle.insets()));
+      const live1 = await page.evaluate(() => JSON.stringify(window.__isle.liveInsets()));
       await page.evaluate(() => { document.getElementById("fake-dock").remove(); window.__emberisle.setState({ offer: null }); });
       await frames(page, 12);
       const shut = await cam(page);
       check(live0 !== live1 && same(c0, open) && same(c0, shut), `${tag}: a panel docking in the hole leaves the pan, zoom and fit alone`, { holeChanged: live0 !== live1 });
+      // The Fortunes tray overlays the board: opening and closing it leaves the camera and the island's scale alone.
+      const sc0 = await page.evaluate(() => window.__isle.pxPerUnit(0, 0.35, 0));
+      await page.getByTestId("fortunes-button").click();
+      await frames(page, 10);
+      const trayOpen = await cam(page);
+      await page.getByTestId("fortunes-button").click();
+      await frames(page, 10);
+      const trayShut = await cam(page);
+      const sc1 = await page.evaluate(() => window.__isle.pxPerUnit(0, 0.35, 0));
+      check(same(c0, trayOpen) && same(c0, trayShut) && Math.abs(sc0 - sc1) < 1e-6, `${tag}: opening and closing the Fortunes tray leaves the camera and scale alone`, { sc0, sc1 });
       const h0 = await hud(page);
       await pinch(cdp, page, w / 2, h / 2, 30, 90);
       await twoFingers(cdp, page, sp.x, sp.y, -60, 0);
@@ -262,6 +272,49 @@ try {
     await settle(page);
     const turned = await state(page);
     check(turned.dist < 1e-3, `${tag} -> ${h}x${w}: rotation refit returns home`, turned);
+    await ctx.close();
+  }
+
+  // Desktop windows: the PlaceList focus and the offer overlay the board; resizing with one open fits like a fresh load.
+  for (const [w, h] of [[900, 700], [1024, 768]]) {
+    const ctx = await browser.newContext({ viewport: { width: w, height: h } });
+    await ctx.addInitScript(() => localStorage.setItem("emberisle-water", "simple"));
+    const page = await ctx.newPage();
+    page.on("pageerror", (e) => errors.push(String(e)));
+    await page.goto(`http://127.0.0.1:${PORT}/`);
+    await page.waitForFunction(() => window.__isle?.renders > 0, null, { timeout: STEP_MS });
+    await page.getByRole("button", { name: "Four seats, one table" }).click();
+    await page.waitForFunction(() => window.__emberisle?.getState().state && window.__isle.lastState, null, { timeout: STEP_MS });
+    await page.evaluate(() => { const g = window.__emberisle; while (g.getState().state.phase === "rollOff") g.getState().dispatch({ type: "roll" }); });
+    await page.waitForFunction(() => !document.querySelector('[data-testid="banner"]'), null, { timeout: STEP_MS });
+    await settle(page);
+    const scale = () => page.evaluate(() => window.__isle.pxPerUnit(0, 0.35, 0));
+    const c0 = await cam(page);
+    const s0 = await scale();
+    await page.evaluate(() => document.querySelector('[data-testid="place-list"] button')?.focus());
+    await frames(page, 10);
+    const offerOpen = await page.evaluate(() => window.__emberisle.setState({ offer: { tradeId: "audit", from: "p1", fromName: "Mira", give: { wool: 2 }, want: { ore: 1 }, until: Date.now() + 60000 }, declined: [] }));
+    await frames(page, 10);
+    check(same(c0, await cam(page)) && Math.abs(s0 - (await scale())) < 1e-6, `${w}x${h}: PlaceList focus and an offer leave the camera and scale alone`, { s0 });
+    await page.evaluate(() => { document.activeElement?.blur(); window.__emberisle.setState({ offer: null }); });
+    await frames(page, 10);
+    check(same(c0, await cam(page)) && Math.abs(s0 - (await scale())) < 1e-6, `${w}x${h}: ...and still do once closed`, {});
+    // Resize with a panel open: the fit is the one a fresh load at that size gets.
+    await page.evaluate(() => document.querySelector('[data-testid="place-list"] button')?.focus());
+    await page.setViewportSize({ width: w + 40, height: h + 30 });
+    await frames(page, 4);
+    await settle(page);
+    const resized = await cam(page);
+    const fresh = await browser.newContext({ viewport: { width: w + 40, height: h + 30 } });
+    await fresh.addInitScript(() => localStorage.setItem("emberisle-water", "simple"));
+    const fp = await fresh.newPage();
+    await fp.goto(`http://127.0.0.1:${PORT}/`);
+    await fp.waitForFunction(() => window.__isle?.renders > 0, null, { timeout: STEP_MS });
+    await fp.getByRole("button", { name: "Four seats, one table" }).click();
+    await fp.waitForFunction(() => window.__emberisle?.getState().state && window.__isle.lastState, null, { timeout: STEP_MS });
+    await settle(fp);
+    check(resized.fit === (await cam(fp)).fit, `${w}x${h} -> ${w + 40}x${h + 30}: resizing with the PlaceList focused fits like a fresh load`, {});
+    await fresh.close();
     await ctx.close();
   }
 
