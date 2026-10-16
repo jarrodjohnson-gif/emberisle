@@ -1,7 +1,7 @@
 // #625: the declared hole (`playHole`, what the island is fitted to) covers the HUD's persistent footprint. On a phone, at rest and in
 // each in-play phase (roll, main, robber, setup), every side of the live hole (`__isle.liveInsets()`, what the chrome around the canvas
 // leaves right now) is no bigger than the declared one (`__isle.insets()`), across a width sweep: upright 320-440 px (every pixel
-// from 376 to 392, around the 384 px break where the build row stops wrapping), sideways 667-956 px. A side where the live hole is
+// from 375 to 410, around TRAY_WRAP_MAX, where the main phase's action row stops taking two lines by rule), sideways 667-956 px. A side where the live hole is
 // bigger is a place the HUD covers a corner. Run: npm run hole-prove
 import { existsSync } from "node:fs";
 import { chromium } from "playwright";
@@ -21,6 +21,12 @@ const frames = (page, n) => page.evaluate(async (n) => { for (let i = 0; i < n; 
 const PHASES = ["roll", "main", "robber", "setupSettle", "setupRoad"];
 let code = 0;
 try {
+  // The CSS that forces and forbids the wrap must break at the same width the fit declares.
+  const { TRAY_WRAP_MAX } = await (await vite.ssrLoadModule("/src/lib/scene/mobile-fit.ts"));
+  const { readFileSync } = await import("node:fs");
+  const css = readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
+  if (!css.includes(`(max-width: ${TRAY_WRAP_MAX}px) { .action-utilities > .tray-end`) || !css.includes(`(min-width: ${TRAY_WRAP_MAX + 1}px) { .action-utilities { flex-wrap: nowrap`)) throw new Error(`styles.css does not break the action row at TRAY_WRAP_MAX (${TRAY_WRAP_MAX})`);
+  console.log(`ok   styles.css breaks the action row at ${TRAY_WRAP_MAX} px, as the fit declares`);
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
   await ctx.addInitScript(() => localStorage.setItem("emberisle-water", "simple"));
   const page = await ctx.newPage();
@@ -34,7 +40,8 @@ try {
   await page.waitForFunction(() => !document.querySelector('[data-testid="banner"]'), null, { timeout: STEP_MS });
 
   const sizes = [];
-  for (let w = 320; w <= 440; w += w >= 376 && w < 392 ? 1 : 10) sizes.push([w, 800]);
+  for (let w = 320; w <= 440; w += w >= 375 && w <= 410 ? 1 : 10) sizes.push([w, 800]);
+  sizes.push([440, 800]);
   for (const w of [667, 740, 800, 844, 896, 932, 956]) sizes.push([w, 390]);
   sizes.push([956, 440], [956, 410]);
   let checked = 0;
