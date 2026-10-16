@@ -56,17 +56,20 @@ const browser = await chromium.launch({
 });
 mkdirSync("test-results", { recursive: true });
 
-// Waits until the island has drawn n more frames (the scene has settled after a change).
-const drawn = (page, n) =>
-  page.evaluate(async (n) => {
+// Waits until the island has drawn n more frames (the scene has settled after a change). The full Hex Jelly scenes on
+// software GL take seconds a frame on CI (#624), so their sections give it 30 s.
+const drawn = (page, n, ms = 8000) =>
+  page.evaluate(async ([n, ms]) => {
     const isle = window.__isle;
     const r0 = isle.renders;
     const t0 = performance.now();
+    // The long waits ask for the frames, as a state change would (the short ones must not wake an idle loop).
+    if (ms > 8000) isle.wake?.();
     await new Promise((res, rej) => {
-      const poll = () => (isle.renders >= r0 + n ? res() : performance.now() - t0 > 8000 ? rej(new Error(`drawn: ${n} frame(s) never came`)) : requestAnimationFrame(poll));
+      const poll = () => (isle.renders >= r0 + n ? res() : performance.now() - t0 > ms ? rej(new Error(`drawn: ${n} frame(s) never came`)) : requestAnimationFrame(poll));
       poll();
     });
-  }, n);
+  }, [n, ms]);
 
 async function open(width, height, touch, water = "simple", view = null, jelly = null) {
   const ctx = await browser.newContext({ viewport: { width, height }, ...(touch ? { isMobile: true, hasTouch: true } : {}) });
@@ -770,7 +773,7 @@ try {
     const page = await open(1280, 720, false, "crystal", null, "full");
     await page.getByRole("button", { name: "Four seats, one table" }).click();
     await page.waitForFunction(() => window.__emberisle?.water?.path === "crystal" && window.__isle.lastState && window.__emberisle.getState().state && window.__isle.landReady && !window.__isle.refitDue && !window.__isle.glide, null, { timeout: STEP_MS });
-    await drawn(page, 3);
+    await drawn(page, 3, 30_000);
     const t = await page.evaluate(async () => {
       const isle = window.__isle;
       const jelly = isle.jellyBoard;
@@ -833,7 +836,7 @@ try {
     const phone = await open(390, 844, true, "crystal", null, "full");
     await phone.getByRole("button", { name: "Four seats, one table" }).click();
     await phone.waitForFunction(() => window.__emberisle?.water?.path === "crystal" && window.__isle.lastState && window.__emberisle.getState().state && window.__isle.landReady && !window.__isle.refitDue && !window.__isle.glide, null, { timeout: STEP_MS });
-    await drawn(phone, 3);
+    await drawn(phone, 3, 30_000);
     check("terrain: the 390x844 phone is overhead", (await phone.evaluate(() => window.__isle.view)) === "overhead");
     await phone.screenshot({ path: "test-results/terrain-390.png" });
     await phone.context().close();
