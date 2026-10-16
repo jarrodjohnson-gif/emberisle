@@ -115,7 +115,7 @@ and run long proofs in the background, one at a time, reading every result befor
 9. **Follow up:** if CI is red, fix it on the same branch. Answer each review comment, either with a
    fix or with a reply saying why not. Then go back to step 2.
 
-**Pause** (out of time or blocked): comment on the issue:
+**Pause** (out of time or blocked): post a new comment on the issue, with `/paused` on its own line:
 ```
 paused: <your name>, <YYYY-MM-DD>
 done so far: <one line>
