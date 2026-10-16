@@ -2,7 +2,6 @@ import * as THREE from "three";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { hashStr, mulberry32 } from "@/lib/utils";
 import { part } from "@/lib/scene/ocean-life";
-import { LIGHT } from "@/lib/scene/palette";
 
 // Crystal water (docs/design/crystal-water.md): a transmissive, Gerstner-displaced sea over a visible floor, on the open ocean.
 
@@ -365,7 +364,7 @@ export function makeCrystalSea(coast: Coast, shared: SeaUniforms) {
       uShallow: { value: lin(0.7, 3.4, 3.2) },
       uDeep: { value: lin(0.04, 0.5, 0.5) },
       uSky: { value: lin(0.9, 1.15, 1.15) },
-      uSunDir: { value: new THREE.Vector3(...LIGHT.key).normalize() },
+      uSunDir: { value: new THREE.Vector3(8, 16, 6).normalize() },
       uPaper: { value: PAPER },
     },
     vertexShader: /* glsl */ `
