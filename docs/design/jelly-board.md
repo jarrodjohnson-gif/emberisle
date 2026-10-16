@@ -88,6 +88,23 @@ grow while play stays snappy); measured locally, the median is about 1.5 s.
 - **Reduced motion:** the scenes hold still. A dulling or a glow still lands.
 - **Picking:** an unseen hex prism per hex.
 
+## The shore (Harbor Jelly)
+
+`src/lib/scene/harbor-jelly.ts`, to `harbor-jelly-prompt.md` (owner sign-off 2026-10-16), in the same chunk, built once the
+hexes have swapped in, on the full board only (the lite board keeps the plain beach and docks; `?harbor=0` or
+`emberisle-harbor` = "plain" turns it off).
+- **Apron:** a sand strip from under the slabs to a waterline 0.24-0.62 out, the coast's zigzag smoothed into bays and
+  points; dry, damp and wet sand, then a shelf sloping to the crystal sea's floor. The crystal sea's lace and swash are
+  rebuilt on the new waterline (`makeWash` on the shore's waterline).
+- **Scatter:** dune grass, rock groups, driftwood, shells, starfish, the wrack line; sea grass, coral heads by the harbors,
+  an amphora; one merged mesh, wet-banded below the waterline. Crabs instanced; a ray round the island.
+- **Harbors:** per dock a plank pier on braced piles with a T-head (bollards, ladder, lamp, lifebuoy, tyres), a dockhouse
+  and the good on the deck, all merged into one mesh (lamps and windows a second), and the rate plates in one atlas draw
+  (flat, so the overhead view reads them). The ship (a sloop, or a ketch at a 3:1 harbor) is moored alongside, 1.3x; its
+  mainsail and spars are one mesh that swings to face the eye. One story each: a fisherman, a gull, a cat, a rowboat, a hoist.
+- **Floaters:** ships, rowboats and four buoys ride the swell as the plain boats did (`userData.rest`).
+- **Cost:** about +8 draws and +50k triangles in the colour pass over the plain beach and docks.
+
 ## Proofs
 
 - **board-look:** all six kinds are there; flat pad and rim; landforms; at most 60 draws and 600k triangles (the island

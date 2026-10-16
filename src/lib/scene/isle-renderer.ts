@@ -66,12 +66,13 @@ const loadJelly = (): Promise<typeof import("@/lib/scene/jelly-board")> =>
     throw e;
   });
 const JELLY_RETRY_MS = 4000;
-// The jelly shore (docs/design/harbor-jelly-prompt.md), in design: on with ?harbor or emberisle-harbor = "jelly" in storage.
+// The jelly shore (docs/design/harbor-jelly-prompt.md; the owner signed it off 2026-10-16) on every full board; ?harbor=0 or
+// emberisle-harbor = "plain" in storage keeps the plain beach and docks.
 const HARBOR_JELLY = (() => {
   try {
-    return new URLSearchParams(location.search).has("harbor") || localStorage.getItem("emberisle-harbor") === "jelly";
+    return new URLSearchParams(location.search).get("harbor") !== "0" && localStorage.getItem("emberisle-harbor") !== "plain";
   } catch {
-    return false;
+    return true;
   }
 })();
 type TerrainStats = { ready: boolean } & JellyStats;
