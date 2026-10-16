@@ -28,7 +28,12 @@ const BUDGETS = [
   { name: "IslandCanvas", gzipBytes: 196000 },
   // 2026-10-16 (#624): the Hex Jelly scenes on the board (hex-jelly.ts and the batcher jelly-board.ts), loaded after the
   // island's first draw; 50.95 kB measured, +2 kB. The sculpted terrain left IslandCanvas with them (192.87 kB).
-  { name: "jelly-board", gzipBytes: 53000 },
+  // 2026-10-16 (#631): the jelly shore (harbor-jelly.ts) is its own chunk, so the scenes it shares with the batcher split out
+  // as hex-jelly. Measured: jelly-board 7.64 kB, hex-jelly 45.49 kB (together 53.1 kB, the #624 chunk plus the shore's
+  // helpers export), harbor-jelly 10.01 kB; each +about 0.5-1 kB.
+  { name: "jelly-board", gzipBytes: 8500 },
+  { name: "hex-jelly", gzipBytes: 46500 },
+  { name: "harbor-jelly", gzipBytes: 11000 },
   { name: "online", gzipBytes: 8000 },
   // 2026-10-15 (#603): 6.33 kB measured with the win screen's winning action on top of #611's lobby selector; +170 B.
   // 2026-10-15 (#612): 6.37 kB measured with wayfarer modes on top of #603; the #603 ceiling holds, no raise.

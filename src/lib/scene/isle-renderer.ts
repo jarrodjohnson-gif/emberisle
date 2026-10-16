@@ -39,6 +39,7 @@ import { chunkUrl } from "@/lib/lazy";
 import { PAINT, RIM } from "@/lib/scene/palette";
 import { BLOCK_H } from "@/lib/scene/jelly-dims";
 import type { JellyBoard, JellyStats } from "@/lib/scene/jelly-board";
+import type { Dock, Shore } from "@/lib/scene/harbor-jelly";
 import { OceanLife } from "@/lib/scene/ocean-life";
 import { CAUSTIC_GLSL, PAPER, SPLASH, addSplashRings, makeCrystalSea, makeFloorProps, makeSeaFloor, makeSplashes, makeSwell, makeWash, nearestCoast, type SeaUniforms, type WaterPath, type WaterStatus } from "@/lib/scene/crystal-water";
 import { Wobble } from "@/lib/scene/wobble";
@@ -65,6 +66,18 @@ const loadJelly = (): Promise<typeof import("@/lib/scene/jelly-board")> =>
     throw e;
   });
 const JELLY_RETRY_MS = 4000;
+// The jelly shore is its own chunk (harbor-jelly), loaded once the hexes have swapped in.
+const loadShore = () => import("@/lib/scene/harbor-jelly");
+let shoreFailed = false;
+// The jelly shore (docs/design/harbor-jelly-prompt.md; the owner signed it off 2026-10-16) on every full board; ?harbor=0 or
+// emberisle-harbor = "plain" in storage keeps the plain beach and docks.
+const HARBOR_JELLY = (() => {
+  try {
+    return new URLSearchParams(location.search).get("harbor") !== "0" && localStorage.getItem("emberisle-harbor") !== "plain";
+  } catch {
+    return true;
+  }
+})();
 type TerrainStats = { ready: boolean } & JellyStats;
 // The stand-in slab and the unseen pick block: a hex prism the jelly block's size (corners at 30 + 60k degrees, as the
 // board's pointy-top hexes), standing on its base.
@@ -185,6 +198,13 @@ export class IsleRenderer {
   private wobble = new Wobble();
   private trail: { x: number; z: number; t: number } | null = null;
   private boats: THREE.Group[] = [];
+  // Each dock as buildLand found it, its plain pier, and the jelly shore once it swaps in.
+  private docks: Dock[] = [];
+  private piers: THREE.Mesh[] = [];
+  private shore: Shore | null = null;
+  private beach!: THREE.Mesh;
+  // The crystal sea's own lace, kept while a shore's moved one stands in for it.
+  private baseWash: THREE.Mesh | null = null;
   // The island's Hex Jelly scenes, batched (jelly-board.ts), once built; until then `slabs` stand in.
   private jelly: JellyBoard | null = null;
   // Whether the GPU is software, and whether the board is lite (the ground only).
@@ -369,10 +389,10 @@ export class IsleRenderer {
     this.crystalOk = this.renderer.capabilities.isWebGL2 && (ext.has("EXT_color_buffer_float") || ext.has("EXT_color_buffer_half_float"));
     for (const c of coast) this.coastMiter.set(c.id, { mx: c.mx, mz: c.mz });
     this.coastOrder = coast.map((c) => c.id);
-    const beach = new THREE.Mesh(
+    const beach = (this.beach = new THREE.Mesh(
       coastStrip(coast, -0.04, 0.22),
       new THREE.MeshStandardMaterial({ color: 0xe8d7b0, roughness: 1, metalness: 0 }),
-    );
+    ));
     beach.position.y = 0.015;
     beach.receiveShadow = true;
     this.scene.add(beach);
@@ -661,6 +681,8 @@ export class IsleRenderer {
     this.fps?.el.remove();
     this.jelly?.dispose();
     this.jelly = null;
+    this.shore?.dispose();
+    this.shore = null;
     this.renderer.setAnimationLoop(null);
     this.controls.dispose();
     this.orbit.dispose();
@@ -1169,6 +1191,7 @@ export class IsleRenderer {
       this.oceanLife.step(0, false, this.oceanViewport);
       // The scenes hold still; a dulling or a glow still lands.
       this.jelly?.update(this.jellyT, false, true);
+      this.shore?.update(this.jellyT, this.cam().position);
       this.pulseMarks(0, true);
       this.draw();
       return;
@@ -1179,6 +1202,7 @@ export class IsleRenderer {
     this.foam.material.opacity = 0.32 + 0.23 * (0.5 + 0.5 * Math.sin(t * 0.8));
     this.jellyT = t;
     this.jelly?.update(t);
+    this.shore?.update(t, this.cam().position);
     if (this.walk) {
       const w = this.walk;
       const u = Math.min(1, (t - w.start) / w.dur);
@@ -1282,6 +1306,7 @@ export class IsleRenderer {
       group.add(sea, wash, makeSeaFloor(this.coast, this.sea), makeFloorProps(this.coast));
       this.scene.add(group);
       this.crystal = { group, sea, wash, swell: makeSwell(this.coast, this.splash) };
+      this.baseWash = wash;
     }
     if (this.crystal) this.crystal.group.visible = path === "crystal";
     // The crystal sea's edge strip draws its own thin lace.
@@ -1437,6 +1462,14 @@ export class IsleRenderer {
             this.slabs = null;
           }
           this.living.add(jelly.group);
+          // A shore that fails to load or build leaves the plain beach and docks (said once a page).
+          if (HARBOR_JELLY && !this.lite)
+            loadShore()
+              .then(({ buildShore }) => alive() && this.swapShore(buildShore(this.coast, this.docks, hashStr(`${key}|shore`))))
+              .catch((e: unknown) => {
+                if (!shoreFailed) console.warn("The jelly shore did not load; the plain beach stays.", e);
+                shoreFailed = true;
+              });
           (window as unknown as { __terrain: TerrainStats }).__terrain = this.terrainStats();
           this.wake();
           performance.mark("props-end");
@@ -1451,7 +1484,18 @@ export class IsleRenderer {
     this.slabs = null;
     disposeGroup(this.land);
     disposeGroup(this.living);
+    this.shore?.dispose();
+    this.shore = null;
+    this.beach.visible = true;
+    if (this.crystal && this.baseWash && this.crystal.wash !== this.baseWash) {
+      this.crystal.group.remove(this.crystal.wash);
+      dropMesh(this.crystal.wash);
+      this.crystal.group.add(this.baseWash);
+      this.crystal.wash = this.baseWash;
+    }
     this.boats = [];
+    this.docks = [];
+    this.piers = [];
     this.living.add(this.wayfarer);
     this.pickables = [];
     this.tokens = [];
@@ -1514,6 +1558,8 @@ export class IsleRenderer {
       pier.lookAt(cx + mx, 0.1, cz + mz);
       pier.castShadow = true;
       this.land.add(pier);
+      this.piers.push(pier);
+      this.docks.push({ cx, cz, mx, mz, kind: va.harbor, vids: [va.id, vb.id] });
 
       const boat = makeBoat(va.harbor);
       boat.position.set(cx + mx * (jettyStart + jettyLen + 0.16), 0.08, cz + mz * (jettyStart + jettyLen + 0.16));
@@ -1575,14 +1621,52 @@ export class IsleRenderer {
       land(house, `v:${v.id}`, v.building.kind, color);
     }
 
+    this.paintSails(state);
+  }
+
+  // A claimed dock's sail wears the claiming seat's colour.
+  private paintSails(state: GameState) {
+    const vmap = new Map(state.vertices.map((v) => [v.id, v]));
+    const pmap = new Map(state.players.map((p) => [p.id, p]));
     for (const b of this.boats) {
-      const corners = (b.userData.vids as string[]).map((id) => vmap.get(id));
+      const corners = ((b.userData.vids as string[] | undefined) ?? []).map((id) => vmap.get(id));
       const claimed = (corners.find((v) => v?.building) ?? null)?.building?.playerId;
       const sail = b.getObjectByName("sail") as THREE.Mesh | undefined;
       if (sail && sail.material instanceof THREE.MeshStandardMaterial) {
         sail.material.color.set(claimed ? pmap.get(claimed)?.color ?? "#eee" : "#f4efe4");
       }
     }
+  }
+
+  // The jelly shore swaps in for the plain beach, piers and boats; its boats take their places on the swell.
+  private swapShore(shore: Shore) {
+    for (const p of this.piers) p.visible = false;
+    for (const b of this.boats) {
+      this.living.remove(b);
+      disposeGroup(b);
+    }
+    // The ships, the rowboats and the buoys ride the swell as the plain boats did. Yaw alone (no lookAt): the tick writes
+    // pitch and roll over x and z, so a lookAt's flipped Euler would not survive it.
+    this.boats = shore.floaters;
+    for (const b of shore.floaters) {
+      const rest = b.userData.rest as { x: number; z: number; yaw: number };
+      b.position.set(rest.x, 0.07, rest.z);
+      b.rotation.set(0, rest.yaw, 0);
+    }
+    this.beach.visible = false;
+    // The crystal sea's lace and swash move out to the apron's waterline.
+    if (this.crystal) {
+      const wash = makeWash(shore.waterline, this.sea);
+      wash.visible = this.crystal.wash.visible;
+      this.crystal.group.remove(this.crystal.wash);
+      if (this.crystal.wash !== this.baseWash) dropMesh(this.crystal.wash);
+      this.crystal.group.add(wash);
+      this.crystal.wash = wash;
+    }
+    this.shore = shore;
+    this.living.add(shore.group);
+    if (this.lastState) this.paintSails(this.lastState);
+    this.wake();
   }
 
   // Pose every landing piece for this moment; a finished one is left exactly at rest. Reduced motion skips to rest.
@@ -1720,6 +1804,12 @@ function inScroller(el: HTMLElement | null): boolean {
     if ((o === "auto" || o === "scroll") && n.scrollHeight > n.clientHeight) return true;
   }
   return false;
+}
+
+// A mesh's own geometry and material (the crystal sea's moved wash).
+function dropMesh(m: THREE.Mesh) {
+  m.geometry.dispose();
+  (m.material as THREE.Material).dispose();
 }
 
 function disposeGroup(g: THREE.Group) {
