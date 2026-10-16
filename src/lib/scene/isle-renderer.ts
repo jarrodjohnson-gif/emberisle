@@ -190,6 +190,8 @@ export class IsleRenderer {
   private piers: THREE.Mesh[] = [];
   private shore: Shore | null = null;
   private beach!: THREE.Mesh;
+  // The crystal sea's own lace, kept while a shore's moved one stands in for it.
+  private baseWash: THREE.Mesh | null = null;
   // The island's Hex Jelly scenes, batched (jelly-board.ts), once built; until then `slabs` stand in.
   private jelly: JellyBoard | null = null;
   // Whether the GPU is software, and whether the board is lite (the ground only).
@@ -1191,6 +1193,7 @@ export class IsleRenderer {
       group.add(sea, wash, makeSeaFloor(this.coast, this.sea), makeFloorProps(this.coast));
       this.scene.add(group);
       this.crystal = { group, sea, wash, swell: makeSwell(this.coast, this.splash) };
+      this.baseWash = wash;
     }
     if (this.crystal) this.crystal.group.visible = path === "crystal";
     // The crystal sea's edge strip draws its own thin lace.
@@ -1364,6 +1367,12 @@ export class IsleRenderer {
     this.shore?.dispose();
     this.shore = null;
     this.beach.visible = true;
+    if (this.crystal && this.baseWash && this.crystal.wash !== this.baseWash) {
+      this.crystal.group.remove(this.crystal.wash);
+      this.crystal.wash.geometry.dispose();
+      this.crystal.group.add(this.baseWash);
+      this.crystal.wash = this.baseWash;
+    }
     this.boats = [];
     this.docks = [];
     this.piers = [];
@@ -1500,7 +1509,7 @@ export class IsleRenderer {
     const vmap = new Map(state.vertices.map((v) => [v.id, v]));
     const pmap = new Map(state.players.map((p) => [p.id, p]));
     for (const b of this.boats) {
-      const corners = (b.userData.vids as string[]).map((id) => vmap.get(id));
+      const corners = ((b.userData.vids as string[] | undefined) ?? []).map((id) => vmap.get(id));
       const claimed = (corners.find((v) => v?.building) ?? null)?.building?.playerId;
       const sail = b.getObjectByName("sail") as THREE.Mesh | undefined;
       if (sail && sail.material instanceof THREE.MeshStandardMaterial) {
@@ -1513,16 +1522,24 @@ export class IsleRenderer {
   private swapShore(shore: Shore) {
     for (const p of this.piers) p.visible = false;
     for (const b of this.boats) this.living.remove(b);
-    this.boats = shore.boats;
-    shore.boats.forEach((b, i) => {
-      const d = this.docks[i]!;
-      // Moored alongside the pier, bow to the shore.
-      const [tx, tz] = [d.mz, -d.mx];
-      b.position.set(d.cx + d.mx * 0.53 + tx * 0.2, 0.07, d.cz + d.mz * 0.53 + tz * 0.2);
-      // Yaw alone (no lookAt): the tick writes pitch and roll over x and z, so a lookAt's flipped Euler would not survive it.
-      b.rotation.set(0, Math.atan2(-d.mx, -d.mz), 0);
-    });
+    // The ships, the rowboats and the buoys ride the swell as the plain boats did. Yaw alone (no lookAt): the tick writes
+    // pitch and roll over x and z, so a lookAt's flipped Euler would not survive it.
+    this.boats = shore.floaters;
+    for (const b of shore.floaters) {
+      const rest = b.userData.rest as { x: number; z: number; yaw: number };
+      b.position.set(rest.x, 0.07, rest.z);
+      b.rotation.set(0, rest.yaw, 0);
+    }
     this.beach.visible = false;
+    // The crystal sea's lace and swash move out to the apron's waterline.
+    if (this.crystal) {
+      const wash = makeWash(shore.waterline, this.sea);
+      wash.visible = this.crystal.wash.visible;
+      this.crystal.group.remove(this.crystal.wash);
+      if (this.crystal.wash !== this.baseWash) this.crystal.wash.geometry.dispose();
+      this.crystal.group.add(wash);
+      this.crystal.wash = wash;
+    }
     this.shore = shore;
     this.living.add(shore.group);
     if (this.lastState) this.paintSails(this.lastState);
