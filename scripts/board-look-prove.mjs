@@ -813,6 +813,8 @@ try {
       const s = t.kinds[k];
       check(`terrain ${k}: flat at topOf on the pad and at the corners and edges; a landform elsewhere (spread over 0.02)`, s.pad < 1e-4 && s.rim < 1e-4 && s.spread > 0.02, s);
     }
+    // 2026-10-16 (#624): from 40 calls and 220k triangles for the sculpted terrain. The owner set no limit on the hexes'
+    // detail; the orchestrator agreed up to 80 calls and 600k triangles. 51 calls and about 330k measured; 60 holds it close.
     check("terrain: the scenes draw in at most 60 calls", t.stats.drawCalls <= 60, t.stats);
     check("terrain: the scenes hold at most 600k triangles, the whole island at most 620k", t.stats.triangles <= 600000 && t.stats.triangles + t.rest <= 620000, { scenes: t.stats.triangles, rest: t.rest });
     const near = Object.entries(t.clearance).sort((a, b) => a[1].min - b[1].min);

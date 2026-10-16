@@ -1,7 +1,7 @@
 // #543 (P-1): a reload restores the table in under two seconds. A real host serves the built dist/; three seats sit down
 // (two are plain sockets), the game starts, and the seated browser at 390x844 reloads under a 4x CPU slowdown and a
 // 1.6 Mbps / 150 ms network (the "Fast 3G"-like profile). From navigationStart, the board (island canvas drawn) and the
-// player's own hand must be on screen within 2000 ms, and the page must paint something branded before any table content.
+// player's own hand must be on screen within 3000 ms (#624), and the page must paint something branded before any table content.
 // Each run prints where the time went. Run npm run build first.
 import { spawn } from "node:child_process";
 import { existsSync, mkdtempSync, rmSync } from "node:fs";
@@ -12,8 +12,11 @@ import { chromium } from "playwright";
 
 // The issue's rule: 5 reloads, none over HARD (no retry), the median inside BUDGET; one run in the BUDGET..HARD band may be re-measured once.
 const RUNS = Number(process.env.RESTORE_RUNS) || 5;
-const BUDGET = Number(process.env.RESTORE_BUDGET_MS) || 2000;
-const HARD = Number(process.env.RESTORE_HARD_MS) || 2500;
+// 2026-10-16 (#624): 3000 / 3500 from 2000 / 2500. The owner: "Load time can increase, not a big deal, as long as the game
+// is still snappy and has no lag." The Hex Jelly scenes load after the first draw; CI runners have measured 3.7 s medians
+// on commits that changed nothing the page loads, so the old bound failed on the runner, not the change.
+const BUDGET = Number(process.env.RESTORE_BUDGET_MS) || 3000;
+const HARD = Number(process.env.RESTORE_HARD_MS) || 3500;
 const DIST = fileURLToPath(new URL("../dist/", import.meta.url));
 if (!existsSync(`${DIST}index.html`)) {
   console.log("FAIL no dist/index.html: run npm run build first");
