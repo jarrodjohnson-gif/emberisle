@@ -86,6 +86,8 @@ grow while play stays snappy); measured locally, the median is about 1.5 s.
 - **Tap:** a tapped hex gives a small jelly wobble, and its token wobbles with it.
 - **Wayfarer:** the hex he stands on darkens and cools.
 - **Reduced motion:** the scenes hold still. A dulling or a glow still lands.
+- **Board age:** `env.age` is seconds since the board's first frame, so a story can start with the match (the ore's
+  climber). In the studio, and while the batcher samples motion, a story uses `t` instead.
 - **Picking:** an unseen hex prism per hex.
 
 ## The shore (Harbor Jelly)
