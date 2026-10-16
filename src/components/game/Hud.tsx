@@ -18,6 +18,7 @@ import { TurnCountdown } from "@/components/game/TurnCountdown";
 import { Dice, RollMoment } from "@/components/game/Dice";
 import { TableMenu } from "@/components/game/TableMenu";
 import { HandDock } from "@/components/game/Hand";
+import { MyNumbers } from "@/components/game/MyNumbers";
 import { TakeFromBar } from "@/components/game/TakeFromBar";
 import { PlaceChip } from "@/components/game/PlaceChip";
 import { SheetsFailed } from "@/components/game/SheetsFailed";
@@ -475,13 +476,17 @@ export function Hud() {
               <div className="flex flex-wrap items-center gap-2">{fortunes}{dice}</div>
             ) : diceInBar ? null : dice}
 
-            <p
-              hidden={tradeVisible}
-              data-testid="log-line"
-              className="table-log block h-5 shrink-0 overflow-hidden rounded-control px-3 text-xs leading-5"
-            >
-              {gameLog.at(-1)?.text}
-            </p>
+            {/* #643: the seat's numbers share the log line's row, so the tray keeps its height (the declared hole holds). */}
+            <div className={cn(tradeVisible ? "hidden" : "flex", "h-5 shrink-0 items-center gap-1")}>
+              {spectator ? null : <MyNumbers state={state} playerId={me.id} />}
+              <p
+                hidden={tradeVisible}
+                data-testid="log-line"
+                className="table-log block h-5 min-w-0 flex-1 overflow-hidden truncate rounded-control px-3 text-xs leading-5"
+              >
+                {gameLog.at(-1)?.text}
+              </p>
+            </div>
             {pinEnd ? endRow : null}
             <TradeToast />
           </div>
