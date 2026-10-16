@@ -21,7 +21,7 @@ try {
     page.on("console", m => m.type() === "error" && errors.push(m.text()));
     await page.goto(`http://127.0.0.1:${port}`);
     await page.getByRole("button", { name: "Four seats, one table", exact: true }).click();
-    await page.waitForFunction(() => window.__isle?.lastState);
+    await page.waitForFunction(() => window.__isle?.lastState && window.__isle.landReady, null, { timeout: 120_000 });
     await page.evaluate(() => {
       const g = window.__emberisle, state = structuredClone(g.getState().state);
       state.phase = "main"; state.current = state.players[0].id; state.dice = [3,5]; state.seq++;
@@ -74,18 +74,14 @@ try {
       const frozen = JSON.stringify(life.snapshot());
       life.step(60,false,() => view);
       const disabledUnchanged = frozen === JSON.stringify(life.snapshot());
-      const fieldMargins = r.living.children.filter(o => o.userData.field).map(o => {
-        const a = o.geometry.attributes.position;
-        let min = Infinity;
-        for (let i=0;i<a.count;i++) min=Math.min(min,Math.hypot(a.getX(i),a.getZ(i)));
-        return min;
-      });
+      // The island's scenes (jelly-board.ts): how near each kind's things come to its token.
+      const clear = Object.values(r.jellyBoard.clearance(0.6)).map(c => c.min);
       const pickable = new Set(r.pickables.flatMap(o => { const nodes=[];o.traverse(n=>nodes.push(n));return nodes; }));
       let visitorPickables=0;
       life.group.traverse(o => { if(pickable.has(o))visitorPickables++; });
       const props = r.scene.getObjectByName("floor-props");
       const floorTris = props.geometry.index ? props.geometry.index.count / 3 : props.geometry.attributes.position.count / 3;
-      return {floorTris, water: window.__emberisle.water, seq, stateUnchanged:before===JSON.stringify(state),routes,observed:[...observed],minRadius,maxMeshes,waitAfterVisit,disabledUnchanged,fieldMargins,farms:r.farmWork.length,ore:r.oreWork.length,visitorPickables};
+      return {floorTris, water: window.__emberisle.water, seq, stateUnchanged:before===JSON.stringify(state),routes,observed:[...observed],minRadius,maxMeshes,waitAfterVisit,disabledUnchanged,clear,visitorPickables};
     });
     assert.equal(geometry.water?.path, "crystal", `${width}: the crystal sea is on`);
     assert.ok(geometry.floorTris > 0 && geometry.floorTris < 2000, `${width}: sea-floor props under 2k triangles (${geometry.floorTris})`);
@@ -96,7 +92,7 @@ try {
     assert.ok(geometry.disabledUnchanged, `${width}: disabled scheduler does not advance`);
     assert.ok(geometry.observed.length > 0, `${width}: suitable water exists for visits on this viewport`);
     assert.equal(geometry.visitorPickables,0,`${width}: wildlife cannot intercept board picks`);
-    assert.ok(geometry.farms>0&&geometry.ore>0&&geometry.fieldMargins.every(m=>m>=0.4),`${width}: farmers/carts exist and crops clear tokens`);
+    assert.ok(geometry.clear.length===6&&geometry.clear.every(m=>m>=0.31),`${width}: the six kinds' scenes are built and clear the tokens (${geometry.clear.map(m=>m.toFixed(3))})`);
     if(!phone) assert.deepEqual(geometry.observed.sort(),["dolphin","turtle","whale"],"all three species arrive through the random scheduler");
 
     // Freeze an actual visible visit and all workers, including when the preference flips during motion.
@@ -110,12 +106,12 @@ try {
     await page.waitForFunction(()=>window.__isle.wasCalm);
     const snapshot=()=>page.evaluate(()=>{
       const r=window.__isle;
-      return JSON.stringify({life:r.oceanLife.snapshot(),time:r.ambientTime,water:r.water.uniforms.uTime.value,props:r.living.children.filter(o=>o.userData.prop).map(o=>[o.position.toArray(),o.rotation.toArray()])});
+      return JSON.stringify({life:r.oceanLife.snapshot(),scenes:r.jellyT,water:r.water.uniforms.uTime.value});
     });
     const frozen=await snapshot();
     assert.equal(await page.evaluate(()=>window.__isle.motion.value),0,`${width}: reduced motion lays the waves and the breakers flat`);
     await page.waitForTimeout(1250);
-    assert.equal(await snapshot(),frozen,`${width}: reduced motion freezes ocean, sheep, farmers and miners`);
+    assert.equal(await snapshot(),frozen,`${width}: reduced motion freezes the ocean and the island's scenes`);
     await page.emulateMedia({reducedMotion:"no-preference"});
     await page.waitForFunction(()=>!window.__isle.wasCalm);
     await page.evaluate(()=>{
@@ -127,7 +123,7 @@ try {
     assert.equal(await snapshot(),hidden,`${width}: a hidden page freezes ambient activity`);
     await page.evaluate(()=>{delete document.hidden;document.dispatchEvent(new Event("visibilitychange"));});
     await page.screenshot({path:`test-results/jelly/${width}-living-ocean.png`});
-    console.log(`${width}×${height}: game state preserved, clear water lanes, ≤4 animal meshes, random visits, workers, hidden/reduced pause`,JSON.stringify(geometry.routes));
+    console.log(`${width}×${height}: game state preserved, clear water lanes, ≤4 animal meshes, random visits, island scenes, hidden/reduced pause`,JSON.stringify(geometry.routes));
     await context.close();
   }
   assert.deepEqual(errors,[],"zero browser/GL errors");

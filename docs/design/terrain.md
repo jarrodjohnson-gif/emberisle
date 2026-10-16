@@ -1,5 +1,8 @@
 # Sculpted terrain (epic #599)
 
+> Superseded on the board by the Hex Jelly scenes (#624, `jelly-board.md`): the renderer no longer uses `terrain.ts`. Kept
+> for the record.
+
 The six terrains are sculpted, polished cartoon tiles built in code from three.js geometry, in the manner of the Atoll Jelly
 diorama: a bevelled slab with candy strata on its side, a gently sculpted top, chunky props, flat vertex colour. No photo or
 painted textures (the old `TEX_FILE` / `paintedTexture` path is gone). Code: `src/lib/scene/terrain.ts` (`sculptHex`,

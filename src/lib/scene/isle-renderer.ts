@@ -33,6 +33,7 @@ import { worldOfHex } from "@/lib/game/board";
 import { HEX_SIZE, SQRT3, hexCorners, hexesInRadius, vertexId } from "@/lib/game/hex";
 import { LAND_MS } from "@/lib/scene/landing";
 import { hashStr } from "@/lib/utils";
+import { chunkUrl } from "@/lib/lazy";
 import { PAINT, RIM } from "@/lib/scene/palette";
 import { BLOCK_H } from "@/lib/scene/jelly-dims";
 import type { JellyBoard, JellyStats } from "@/lib/scene/jelly-board";
@@ -51,9 +52,17 @@ export function topOf(_terrain: Terrain) {
   return TILE_Y + BLOCK_H;
 }
 
-// The Hex Jelly scenes load as their own chunk, asked for as soon as the renderer exists; the board shows plain slabs until
-// every scene is built, then the island swaps in whole (the owner, 2026-10-16: wait for it, no pop-in).
-const loadJelly = () => import("@/lib/scene/jelly-board");
+// The Hex Jelly scenes load as their own chunk; the board shows plain slabs until every scene is built, then the island swaps
+// in whole (the owner, 2026-10-16: wait for it, no pop-in). A failed load leaves the slabs (the board still plays) and tries
+// again a few seconds on (five times at most), under a fresh query: the browser remembers a module that failed for the life of the page (lazy.ts).
+let jellyFailed: string | undefined;
+let jellyRetries = 0;
+const loadJelly = (): Promise<typeof import("@/lib/scene/jelly-board")> =>
+  (jellyFailed ? import(/* @vite-ignore */ `${jellyFailed}?retry=${++jellyRetries}`) : import("@/lib/scene/jelly-board")).catch((e: unknown) => {
+    jellyFailed = chunkUrl(e) ?? jellyFailed;
+    throw e;
+  });
+const JELLY_RETRY_MS = 4000;
 type TerrainStats = { ready: boolean } & JellyStats;
 // The stand-in slab and the unseen pick block: a hex prism the jelly block's size (corners at 30 + 60k degrees, as the
 // board's pointy-top hexes), standing on its base.
@@ -1220,6 +1229,33 @@ export class IsleRenderer {
     return this.jelly;
   }
 
+  private growScenes(gen: number, key: string, hexes: { id: string; terrain: Terrain; x: number; z: number; y: number }[], tries = 0) {
+    const alive = () => gen === this.landGen && !this.stopped;
+    performance.mark("props-start");
+    loadJelly()
+      .then(({ JellyBoard }) => (alive() ? JellyBoard.create(hexes, (kind) => hashStr(`${key}|${kind}`), () => new Promise<boolean>((r) => setTimeout(() => r(alive()), 0))) : null))
+      .then(
+        (jelly) => {
+          if (!jelly) return;
+          if (!alive()) return jelly.dispose();
+          this.jelly = jelly;
+          jelly.robber(this.lastState?.robberHex ?? null);
+          jelly.update(this.jellyT, true, true);
+          if (this.slabs) {
+            this.land.remove(this.slabs);
+            this.slabs.dispose();
+            (this.slabs.material as THREE.Material).dispose();
+            this.slabs = null;
+          }
+          this.living.add(jelly.group);
+          (window as unknown as { __terrain: TerrainStats }).__terrain = this.terrainStats();
+          this.wake();
+          performance.mark("props-end");
+        },
+        () => tries < 5 && setTimeout(() => alive() && this.growScenes(gen, key, hexes, tries + 1), JELLY_RETRY_MS),
+      );
+  }
+
   private buildLand(state: GameState) {
     this.jelly?.dispose();
     this.jelly = null;
@@ -1263,32 +1299,7 @@ export class IsleRenderer {
     // The scenes: loaded and built a kind per task after the first draw (#543 restore budget), so no one task holds the page;
     // then the island swaps in whole. A rebuild or a dispose before then drops them.
     const gen = ++this.landGen;
-    const alive = () => gen === this.landGen && !this.stopped;
-    const key = landKey(state);
-    const jellyHexes = state.hexes.map((h) => ({ id: h.id, terrain: h.terrain, ...worldOfHex(h), y: TILE_Y }));
-    void loadJelly()
-      .then(({ JellyBoard }) => {
-        if (!alive()) return null;
-        performance.mark("props-start");
-        return JellyBoard.create(jellyHexes, (kind) => hashStr(`${key}|${kind}`), () => new Promise<boolean>((r) => setTimeout(() => r(alive()), 0)));
-      })
-      .then((jelly) => {
-        if (!jelly) return;
-        if (!alive()) return jelly.dispose();
-        this.jelly = jelly;
-        jelly.robber(this.lastState?.robberHex ?? null);
-        jelly.update(this.jellyT, true, true);
-        if (this.slabs) {
-          this.land.remove(this.slabs);
-          this.slabs.dispose();
-          (this.slabs.material as THREE.Material).dispose();
-          this.slabs = null;
-        }
-        this.living.add(jelly.group);
-        (window as unknown as { __terrain: TerrainStats }).__terrain = this.terrainStats();
-        this.wake();
-        performance.mark("props-end");
-      });
+    this.growScenes(gen, landKey(state), state.hexes.map((h) => ({ id: h.id, terrain: h.terrain, ...worldOfHex(h), y: TILE_Y })));
 
     // A dock spans a coastal edge, so both its corners carry the harbor; the deal spaces docks at least three edges apart, so two
     // neighbouring harbor corners on the coast loop of one kind are always one dock. One pier and one boat per dock.
