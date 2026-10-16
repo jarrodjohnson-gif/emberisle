@@ -48,7 +48,8 @@ const goodOf = (k: HarborKind) => (k === "any" ? "#2f4f7a" : GOOD[k]);
 const WALLS = ["#b5452f", "#e2b64e", "#f4efe2", "#a9c6dc", "#a8d8bf", "#eab0b4"];
 const ROOFS = ["#4a4248", "#7a3a2c", "#5a5f66", "#3f4a52"];
 
-// --- the sail's face: cream canvas, the rate large and heavy, a 2:1 sail's foot banded in its good's colour.
+// --- the sail's face: plain cream canvas, a 2:1 sail's foot banded in its good's colour. The rate is on the pier's plate, not
+// the sail (owner 2026-10-16).
 const sails = new Map<HarborKind, THREE.CanvasTexture>();
 function sailMap(kind: HarborKind) {
   let tex = sails.get(kind);
@@ -70,11 +71,6 @@ function sailMap(kind: HarborKind) {
   // The spars' wood: a strip at the right edge, which the boom and gaff map to (they share the sail's draw).
   x.fillStyle = "#6a4a30";
   x.fillRect(124, 0, 4, 128);
-  x.fillStyle = "#1c1915";
-  x.font = "900 52px system-ui, sans-serif";
-  x.textAlign = "center";
-  x.textBaseline = "middle";
-  x.fillText(kind === "any" ? "3:1" : "2:1", 64, kind === "any" ? 60 : 50);
   tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.anisotropy = 4;
