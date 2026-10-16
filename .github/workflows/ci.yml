@@ -147,6 +147,8 @@ jobs:
       - if: matrix.suite == 'flows'
         run: npm run keyboard-place-prove
       - if: matrix.suite == 'flows'
+        run: npm run upgrade-prove
+      - if: matrix.suite == 'flows'
         run: npm run flash-prove
       - if: matrix.suite == 'flows'
         run: npm run reflow-prove

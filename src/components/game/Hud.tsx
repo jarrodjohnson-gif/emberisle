@@ -23,7 +23,7 @@ import { PlaceChip } from "@/components/game/PlaceChip";
 import { SheetsFailed } from "@/components/game/SheetsFailed";
 import { TrayFailed } from "@/components/game/TrayFailed";
 import { TradeButton } from "@/components/game/TradeButton";
-import { CostChips, priceLabel, shortfall, type Price } from "@/components/game/BuildCost";
+import { CostChips, needLine, priceLabel, shortfall, type Price } from "@/components/game/BuildCost";
 import { useEscapeDisarm } from "@/components/game/escape-disarm";
 import { COST, RESOURCES, type BuildMode, type GameState, type PlayerState } from "@/lib/game/types";
 import { legalCities, legalRoads, legalSettle, totalVP } from "@/lib/game/rules";
@@ -137,6 +137,7 @@ export function Hud() {
   const chatOpen = useGame((s) => s.chatOpen);
   const tradeOpen = useGame((s) => s.tradeOpen);
   const dispatch = useGame((s) => s.dispatch);
+  const refuse = useGame((s) => s.refuse);
   const setBuildMode = useGame((s) => s.setBuildMode);
   const setHowTo = useGame((s) => s.setHowTo);
   const menuFor = useGame((s) => s.menuFor);
@@ -385,7 +386,7 @@ export function Hud() {
                 ).map(([kind, arm, Icon, label]) => {
                   const { short, missing, why, ready } = buildStatus(state, me, kind);
                   const blocked = !ready || spectator;
-                  const status = why ?? (ready ? "Ready" : `Short ${Object.entries(short).map(([r, n]) => `${n} ${r}`).join(", ")}`);
+                  const status = why ?? (ready ? "Ready" : needLine(short));
                   return (
                     <Button
                       key={kind}
@@ -405,6 +406,8 @@ export function Hud() {
                       aria-description={`${priceLabel(kind)} · ${status}`}
                       onClick={() => {
                         // aria-disabled keeps the button focusable, so the click itself must refuse (but may still disarm).
+                        // A tap the hand cannot pay for says what is missing (a spot waiting, goods short) instead of doing nothing.
+                        if (!spectator && !why && missing && buildMode !== arm) return void refuse(needLine(short));
                         if (!arm) return void (blocked || dispatch({ type: "buyCard" }));
                         if (blocked && buildMode !== arm) return;
                         setBuildMode(buildMode === arm ? "none" : arm);

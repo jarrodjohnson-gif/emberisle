@@ -229,6 +229,8 @@ interface GameStore {
   pendingPlace: { kind: "hex" | "vertex" | "edge"; id: string } | null;
   setPendingPlace: (p: { kind: "hex" | "vertex" | "edge"; id: string } | null) => void;
   confirmPlace: () => void;
+  // A tap the hand cannot pay for says why, the way a refused move does (the status line, the screen reader, the error cue).
+  refuse: (message: string) => void;
   highlights: () => { vertices: string[]; edges: string[]; hexes: string[] };
   // Set when a robber/knight hex has 2+ steal targets and needs the player to pick one.
   pendingSteal: { hexId: string; kind: "moveRobber" | "playKnight"; targets: string[] } | null;
@@ -661,6 +663,10 @@ export const useGame = create<GameStore>((set, get) => ({
   },
   pendingPlace: null,
   setPendingPlace: (p) => set({ pendingPlace: p }),
+  refuse: (message) => {
+    set({ error: message, toast: message, errorSeq: get().errorSeq + 1 });
+    play("ui_error");
+  },
   confirmPlace: () => {
     const { pendingPlace: p, pickHex, pickVertex, pickEdge } = get();
     if (!p) return;
