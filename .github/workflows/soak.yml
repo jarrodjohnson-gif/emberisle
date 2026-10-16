@@ -1,0 +1,275 @@
+name: Soak
+
+# Nightly 5x soak of the full browser proof lists on main, to catch flakes.
+# Also runnable via workflow_dispatch.
+on:
+  schedule:
+    - cron: '17 9 * * *'  # 09:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            server/package-lock.json
+      - run: npm ci
+      - run: npm ci --prefix server
+      - run: npm run typecheck
+      - run: npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          retention-days: 1
+
+  browser-a-soak:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            server/package-lock.json
+      - run: npm ci
+      - run: npm ci --prefix server
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      - run: npx playwright install --with-deps chromium
+      - name: Run browser-a proofs 5x
+        run: |
+          set -euo pipefail
+          PROOFS=(client-prove dpr-prove hotseat-prove tabs-prove countdown-prove trade-prove practice-trade-prove hud-safe-area-prove rotate-overlays-prove fortune-count-prove fortune-tray-prove)
+          mkdir -p soak-results
+          : > soak-results/failures.txt
+          : > soak-results/counts.txt
+          for run in 1 2 3 4 5; do
+            for proof in "${PROOFS[@]}"; do
+              if ! npm run "$proof" > /tmp/proof.log 2>&1; then
+                # Save each failure immediately, retaining partial evidence on a timeout.
+                printf '%s\n' "$proof" >> soak-results/counts.txt
+                printf 'RUN %s %s FAILED:\n' "$run" "$proof" >> soak-results/failures.txt
+                tail -n 40 /tmp/proof.log >> soak-results/failures.txt
+                printf '\n---\n' >> soak-results/failures.txt
+              fi
+            done
+          done
+      - name: Upload browser-a soak results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: soak-browser-a
+          path: |
+            soak-results/
+            test-results/
+          if-no-files-found: ignore
+
+      - name: Flag failing proofs
+        if: always()
+        run: |
+          if [ -s soak-results/counts.txt ]; then
+            echo "::error::Soak detected failing proofs; see artifacts and report."
+            exit 1
+          fi
+
+  browser-b-soak:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [flows-a, flows-b, presentation]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            server/package-lock.json
+      - run: npm ci
+      - run: npm ci --prefix server
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      - run: npx playwright install --with-deps chromium
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - name: Run browser-b proofs 5x
+        env:
+          SUITE: ${{ matrix.suite }}
+        run: |
+          set -euo pipefail
+          if [ "$SUITE" = "flows-a" ]; then
+            PROOFS=(hand-cards-prove served-prove chunk-fail-prove restore-prove night-prove chat-prove react-prove wayfarer-prove sounds-prove tokens-prove pieces-prove pieces-land-prove idle-prove contrast-prove keyboard-place-prove upgrade-prove flash-prove reflow-prove rotate-prove)
+          elif [ "$SUITE" = "flows-b" ]; then
+            PROOFS=(pan-prove hole-prove banner-stable-prove howto-prove title-prove wayfarer-setup-prove victory-target-prove watch-ui-prove tabs-prove-4)
+          else
+            PROOFS=(visual-direction-prove jelly-ocean-prove waves-prove splash-prove polish-tokens-prove roll-moment-prove goods-log-prove turn-gain-prove win-action-prove turn-copy-prove table-menu-prove build-ready-prove board-look-prove seat-rail-prove public-score-prove hand-hidden-prove install-prove)
+          fi
+          mkdir -p soak-results
+          : > soak-results/failures.txt
+          : > soak-results/counts.txt
+          for run in 1 2 3 4 5; do
+            for proof in "${PROOFS[@]}"; do
+              if ! npm run "$proof" > /tmp/proof.log 2>&1; then
+                # Save each failure immediately, retaining partial evidence on a timeout.
+                printf '%s\n' "$proof" >> soak-results/counts.txt
+                printf 'RUN %s %s FAILED:\n' "$run" "$proof" >> soak-results/failures.txt
+                tail -n 40 /tmp/proof.log >> soak-results/failures.txt
+                printf '\n---\n' >> soak-results/failures.txt
+              fi
+            done
+          done
+      - name: Upload browser-b soak results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: soak-browser-b-${{ matrix.suite }}
+          path: |
+            soak-results/
+            test-results/
+          if-no-files-found: ignore
+
+      - name: Flag failing proofs
+        if: always()
+        run: |
+          if [ -s soak-results/counts.txt ]; then
+            echo "::error::Soak detected failing proofs; see artifacts and report."
+            exit 1
+          fi
+
+  report:
+    needs: [build, browser-a-soak, browser-b-soak]
+    if: always()
+    concurrency:
+      group: soak-report
+      cancel-in-progress: false
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Download soak artifacts
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          pattern: soak-*
+          path: soak-artifacts
+      - name: Publish consolidated flake report
+        if: always()
+        uses: actions/github-script@v7
+        env:
+          SOAK_ARTIFACT_DIR: soak-artifacts
+          BUILD_RESULT: ${{ needs.build.result }}
+          A_RESULT: ${{ needs.browser-a-soak.result }}
+          B_RESULT: ${{ needs.browser-b-soak.result }}
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            const root = process.env.SOAK_ARTIFACT_DIR;
+            const date = new Date().toISOString().slice(0, 10);
+            const title = 'Soak: flaky proofs ' + date;
+            const warnings = [];
+            for (const [job, status] of [
+              ['build', process.env.BUILD_RESULT],
+              ['browser-a-soak', process.env.A_RESULT],
+              ['browser-b-soak', process.env.B_RESULT]
+            ]) {
+              if (status !== 'success') warnings.push(job + ': ' + status);
+            }
+
+            const reports = [];
+            const artifactNames = fs.existsSync(root)
+              ? fs.readdirSync(root).sort() : [];
+            if (!artifactNames.length) warnings.push('No soak artifacts available');
+            for (const job of artifactNames) {
+              const artifact = path.join(root, job);
+              if (!fs.statSync(artifact).isDirectory()) continue;
+              const nested = path.join(artifact, 'soak-results');
+              const dir = fs.existsSync(nested) ? nested : artifact;
+              const counts = path.join(dir, 'counts.txt');
+              if (!fs.existsSync(counts)) continue;
+              const proofNames = fs.readFileSync(counts, 'utf8')
+                .split(/\r?\n/).filter(Boolean);
+              if (!proofNames.length) continue;
+              const tally = new Map();
+              for (const proof of proofNames) {
+                tally.set(proof, (tally.get(proof) || 0) + 1);
+              }
+              const summary = [...tally.entries()]
+                .map(([proof, count]) => proof + ': failed ' + count + '/5')
+                .join('\n');
+              const failures = path.join(dir, 'failures.txt');
+              const snippets = fs.existsSync(failures)
+                ? fs.readFileSync(failures, 'utf8').trim() : '';
+              reports.push({ job, summary, snippets });
+            }
+
+            if (!reports.length && !warnings.length) {
+              core.info('No recorded proof failures; all soak jobs succeeded.');
+              return;
+            }
+            // Share one snippet budget among all failed suites.
+            const perSection = Math.floor(50000 / Math.max(1, reports.length));
+            const fence = String.fromCharCode(96).repeat(3);
+            const sections = reports.map(({ job, summary, snippets }) => {
+              return '### ' + job + '\n\n' + summary +
+                '\n\n<details><summary>Failure excerpts (run, proof, last 40 lines)</summary>' +
+                '\n\n' + fence + 'text\n' + snippets.slice(0, perSection) +
+                '\n' + fence + '\n</details>';
+            });
+            if (warnings.length) {
+              sections.unshift('### Incomplete or failed jobs\n\n' +
+                warnings.map(w => '- ' + w).join('\n') +
+                '\n\nReview the workflow logs and uploaded artifacts.');
+            }
+            let body = 'Nightly 5x soak on main detected failures. ' +
+              '[Workflow run](' + context.serverUrl + '/' + context.repo.owner +
+              '/' + context.repo.repo + '/actions/runs/' + context.runId + ').' +
+              '\n\n' + sections.join('\n\n');
+            // Keep issue/comment bodies under GitHub's 65,536-character limit.
+            // Capping by UTF-8 bytes also handles multi-byte log output.
+            if (Buffer.byteLength(body, 'utf8') > 63000) {
+              body = Buffer.from(body, 'utf8').subarray(0, 62000)
+                .toString('utf8').replace(/\uFFFD$/, '') +
+                '\n\n[Report truncated. Full logs are in the run artifacts.]';
+            }
+
+            const issues = await github.paginate(github.rest.issues.listForRepo, {
+              ...context.repo, state: 'open', per_page: 100
+            });
+            const existing = issues.find(issue =>
+              !issue.pull_request && issue.title === title);
+            if (existing) {
+              await github.rest.issues.createComment({
+                ...context.repo, issue_number: existing.number, body
+              });
+            } else {
+              await github.rest.issues.create({
+                ...context.repo, title, body,
+                labels: ['test', 'status:todo', 'lane:net']
+              });
+            }
