@@ -45,7 +45,7 @@ const deep = (seat: string) => new THREE.Color(seat).multiplyScalar(0.82);
 // A little bigger than the slabs they replace, so a build reads from the whole-board camera.
 const K = 1.15;
 
-export function makeJellyOutpost(seat: string) {
+function outpostHut(seat: string) {
   const parts = [disc(0.235, 0.035, RIM.dark), disc(0.2, 0.03, RIM.light, 0.035)];
   const y0 = 0.065;
   const d = deep(seat);
@@ -68,6 +68,67 @@ export function makeJellyOutpost(seat: string) {
   parts.push(col(new THREE.SphereGeometry(0.024, 12, 8).translate(0.064, ry + 0.15, -0.035), RIM.light));
   parts.push(col(new THREE.SphereGeometry(0.016, 10, 6).translate(0.082, ry + 0.175, -0.04), RIM.light));
   return mesh(parts);
+}
+
+// A triangular prism (a gable roof) w wide, h tall, d deep, its eaves at y, bevelled soft.
+function gable(w: number, h: number, d: number, hex: string | THREE.Color, y: number, bev = 0.014, x = 0, z = 0) {
+  const s = new THREE.Shape();
+  s.moveTo(-w / 2, 0);
+  s.lineTo(w / 2, 0);
+  s.lineTo(0, h);
+  s.closePath();
+  const g = new THREE.ExtrudeGeometry(s, { depth: d, bevelEnabled: true, bevelThickness: bev, bevelSize: bev, bevelSegments: 3, curveSegments: 1 });
+  return col(g.translate(x, y, z - d / 2), hex);
+}
+const front = (w: number, h: number, hex: string, x: number, y: number, z: number) => rbox(w, h, 0.012, Math.min(w, h) * 0.3, hex, y, x, z);
+
+// A: today's house shape, jelly: a chunky block all in the seat's colour under a steep, deeper gable roof.
+function outpostClassic(seat: string) {
+  const parts = [disc(0.235, 0.035, RIM.dark), disc(0.2, 0.03, RIM.light, 0.035)];
+  const y0 = 0.065;
+  parts.push(rbox(0.24, 0.14, 0.2, 0.03, seat, y0));
+  parts.push(gable(0.27, 0.14, 0.22, deep(seat), y0 + 0.135));
+  parts.push(front(0.05, 0.08, DOOR, -0.05, y0, 0.102));
+  parts.push(front(0.045, 0.045, WARM, 0.055, y0 + 0.055, 0.102));
+  parts.push(rbox(0.045, 0.1, 0.045, 0.012, RIM.light, y0 + 0.17, 0.075, -0.04));
+  return mesh(parts);
+}
+
+// B: an A-frame cabin: one big steep roof of the seat's colour down to the ground, a pale gable end with a door and window.
+function outpostAFrame(seat: string) {
+  const parts = [disc(0.235, 0.035, RIM.dark), disc(0.2, 0.03, RIM.light, 0.035)];
+  const y0 = 0.065;
+  parts.push(gable(0.3, 0.27, 0.24, seat, y0, 0.018));
+  const s = new THREE.Shape();
+  s.moveTo(-0.11, 0);
+  s.lineTo(0.11, 0);
+  s.lineTo(0, 0.2);
+  s.closePath();
+  parts.push(col(new THREE.ExtrudeGeometry(s, { depth: 0.012, bevelEnabled: false }).translate(0, y0 + 0.01, 0.125), pale(seat).lerp(new THREE.Color(RIM.light), 0.5)));
+  parts.push(front(0.05, 0.08, DOOR, 0, y0 + 0.01, 0.14));
+  parts.push(col(new THREE.CylinderGeometry(0.02, 0.02, 0.012, 16).rotateX(Math.PI / 2).translate(0, y0 + 0.135, 0.142), WARM));
+  parts.push(rbox(0.29, 0.03, 0.27, 0.012, deep(seat), y0 + 0.24, 0, 0, ));
+  parts.pop();
+  parts.push(rbox(0.04, 0.08, 0.04, 0.01, RIM.light, y0 + 0.17, 0.06, -0.05));
+  return mesh(parts);
+}
+
+// C: a little tower-house: a square two-storey block of the seat's colour under a pointed hip roof.
+function outpostTower(seat: string) {
+  const parts = [disc(0.235, 0.035, RIM.dark), disc(0.2, 0.03, RIM.light, 0.035)];
+  const y0 = 0.065;
+  parts.push(rbox(0.2, 0.17, 0.2, 0.03, seat, y0));
+  parts.push(rbox(0.23, 0.025, 0.23, 0.012, deep(seat), y0 + 0.165));
+  parts.push(col(new THREE.ConeGeometry(0.17, 0.13, 4).rotateY(Math.PI / 4).translate(0, y0 + 0.19 + 0.065, 0), deep(seat)));
+  parts.push(front(0.05, 0.08, DOOR, -0.035, y0, 0.102));
+  parts.push(front(0.04, 0.04, WARM, 0.045, y0 + 0.09, 0.102));
+  return mesh(parts);
+}
+
+const OUTPOST_TRY: Record<string, (seat: string) => THREE.Mesh> = { hut: outpostHut, a: outpostClassic, b: outpostAFrame, c: outpostTower };
+const OUTPOST_V = (() => { try { return new URLSearchParams(location.search).get("outpost") ?? "a"; } catch { return "a"; } })();
+export function makeJellyOutpost(seat: string) {
+  return (OUTPOST_TRY[OUTPOST_V] ?? outpostClassic)(seat);
 }
 
 export function makeJellyStronghold(seat: string) {
