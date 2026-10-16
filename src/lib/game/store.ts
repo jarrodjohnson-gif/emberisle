@@ -51,7 +51,7 @@ function soundsFor(before: GameState | null, after: GameState, mine: boolean, vi
   const sameGame = before.phase !== "over" && after.turn >= before.turn && after.hexes.every((h, i) => h.terrain === before.hexes[i]?.terrain);
   // The one set against (a piece on the new hex) hears robbed_fah in its place; everyone else keeps the usual cue.
   // One point from the target, by public points only (a held point fortune is never counted, so it cannot leak). Once per player.
-  if (sameGame && after.robberHex !== before.robberHex) out.push([victim ? "robbed_fah" : "wayfarer_move", 1]);
+  if (sameGame && after.robberHex !== before.robberHex) out.push(victim ? ["robbed_fah", MEME_VOLUME] : ["wayfarer_move", 1]);
   return out;
 }
 
@@ -219,7 +219,7 @@ import { PLAYER_COLORS, RESOURCES, type Action, type BuildMode, type GameState, 
 import { connectTable, hostUrl, type Bag, type ChatLine, type Legal, type Me, type Reaction, type Seat, type TableClient } from "@/lib/net/table";
 import { PROTO } from "@/lib/net/proto";
 import { readMutedSeats } from "@/lib/muted-seats";
-import { MUSIC_VOLUME, play, playLater, SOUNDBOARD, stop, yourTurn, type SoundName } from "@/lib/sound";
+import { MEME_VOLUME, MUSIC_VOLUME, play, playLater, SOUNDBOARD, stop, yourTurn, type SoundName } from "@/lib/sound";
 import { calmMotion, LAND_MS } from "@/lib/scene/landing";
 import type { WaterPath, WaterStatus } from "@/lib/scene/crystal-water";
 import type { PlayView } from "@/lib/scene/mobile-fit";
@@ -1136,7 +1136,7 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       const board = SOUNDBOARD.find((b) => b.id === line.sound);
       // A muted seat's soundboard taps are as silent here as its chat line is hidden.
       if (board) {
-        if (!readMutedSeats(get().code).includes(line.seat)) play(board.clip);
+        if (!readMutedSeats(get().code).includes(line.seat)) play(board.clip, MEME_VOLUME);
       } else if (line.seat !== seatId && document.activeElement?.id !== "chat-input") play("chat_recv");
     },
     react: (r) => {
