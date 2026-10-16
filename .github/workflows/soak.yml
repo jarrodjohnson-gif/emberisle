@@ -123,7 +123,8 @@ jobs:
           SUITE: ${{ matrix.suite }}
         run: |
           set -euo pipefail
-          PROOFS=(hand-cards-prove served-prove chunk-fail-prove restore-prove night-prove chat-prove react-prove wayfarer-prove sounds-prove tokens-prove pieces-prove pieces-land-prove idle-prove contrast-prove keyboard-place-prove upgrade-prove flash-prove reflow-prove rotate-prove)
+          if [ "$SUITE" = "flows-a" ]; then
+            PROOFS=(hand-cards-prove served-prove chunk-fail-prove restore-prove night-prove chat-prove react-prove wayfarer-prove sounds-prove tokens-prove pieces-prove pieces-land-prove idle-prove contrast-prove keyboard-place-prove upgrade-prove flash-prove reflow-prove rotate-prove)
           elif [ "$SUITE" = "flows-b" ]; then
             PROOFS=(pan-prove hole-prove banner-stable-prove howto-prove title-prove wayfarer-setup-prove victory-target-prove watch-ui-prove tabs-prove-4)
           else
