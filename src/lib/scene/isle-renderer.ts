@@ -34,6 +34,7 @@ import { HEX_SIZE, SQRT3, hexCorners, hexesInRadius, vertexId } from "@/lib/game
 import { LAND_MS } from "@/lib/scene/landing";
 import { mulberry32, hashStr } from "@/lib/utils";
 import { PAINT, RIM } from "@/lib/scene/palette";
+import { PropKit, decorate, sculptHex, tileMaterial, type FarmWork, type OreWork, type Sheep } from "@/lib/scene/terrain";
 import { OceanLife } from "@/lib/scene/ocean-life";
 import { CAUSTIC_GLSL, PAPER, SPLASH, addSplashRings, makeCrystalSea, makeFloorProps, makeSeaFloor, makeSplashes, makeSwell, makeWash, nearestCoast, type SeaUniforms, type WaterPath, type WaterStatus } from "@/lib/scene/crystal-water";
 import { Wobble } from "@/lib/scene/wobble";
@@ -44,40 +45,11 @@ import { type GameState, type HarborKind, type HexCell, type Terrain, type Verte
 const SLAB = 0.26;
 const TILE_Y = 0.04;
 
-// The y of a hex's top surface: where makeHexTile puts its cap. Everything that sits on a hex sits here.
+// The y of a hex's top surface: the sculpted top is exactly here at the centre (the token) and on the rim (the pieces).
 export function topOf(terrain: Terrain) {
   return TILE_Y + SLAB + hexHeight(terrain) * 0.35;
 }
-const STONE = 0xe8ebe7;
-
-const SIDE: Record<Terrain, number> = {
-  timber: 0x173d35,
-  wool: 0x617744,
-  grain: 0x8c722d,
-  clay: 0x74372b,
-  ore: 0x414d5b,
-  waste: 0x827963,
-};
-
-const TEX_FILE: Record<Terrain, string> = {
-  timber: "forest.jpg",
-  wool: "pasture.jpg",
-  grain: "fields.jpg",
-  clay: "hills.jpg",
-  ore: "mountains.jpg",
-  waste: "desert.jpg",
-};
-
-// Drop photo textures into src/assets/textures/ to use them. Missing ones are painted, with no request.
-const PHOTOS = import.meta.glob("../../assets/textures/*.jpg", { eager: true, import: "default", query: "?url" }) as Record<
-  string,
-  string
->;
-
-function photoUrl(kind: Terrain): string | undefined {
-  return PHOTOS[`../../assets/textures/${TEX_FILE[kind]}`];
-}
-
+type TerrainStats = { tiles: number; props: number; drawCalls: number; tileTriangles: number; propTriangles: number; triangles: number };
 type Highlights = { vertices: string[]; edges: string[]; hexes: string[] };
 // The paying-hex flash (docs/design/dice.md): the cap glows in over --duration-base, then fades linearly out by 600 ms.
 const FLASH_IN_S = 0.22;
@@ -86,9 +58,6 @@ const FLASH_PEAK = 0.35;
 const FLASH_WARM = new THREE.Color(0xffa94d);
 // The pulse token (polish.md "Motion"): legal corners and paths breathe once per 1.2 s.
 const LEGAL_PULSE_S = 1.2;
-type OreWork = { cart: THREE.Mesh; arm: THREE.Mesh; z: number; phase: number };
-type FarmWork = { body: THREE.Mesh; arm: THREE.Mesh; x: number; z: number; y: number; phase: number; angle: number };
-type Sheep = { g: THREE.Object3D; ox: number; oz: number; tx: number; tz: number; wait: number; graze: number };
 
 // The two views in play (docs/design/camera-light.md). Overhead: a frustum and a look-at point from the fit to the HUD hole,
 // and the eye on an orbit around that point, ORBIT_RADIUS out. Diorama (the default, #597): a perspective eye on an orbit
@@ -204,8 +173,8 @@ export class IsleRenderer {
   private ambientTime = 0;
   private boats: THREE.Group[] = [];
   private trees: THREE.Object3D[] = [];
-  private wheat: THREE.Object3D[] = [];
-  private textures: Partial<Record<Terrain, THREE.Texture>> = {};
+  private kit: PropKit | null = null;
+  private landGen = 0;
   private lastLand: string | null = null;
   private lastSeq = -1;
   private lastState: GameState | null = null;
@@ -388,7 +357,6 @@ export class IsleRenderer {
     canvas.parentElement?.addEventListener("focusin", this.remeasure);
     canvas.parentElement?.addEventListener("focusout", this.remeasure);
     this.resize();
-    this.loadTextures();
     this.clock.connect(document);
     this.composer = new EffectComposer(this.renderer);
     this.renderPass = new RenderPass(this.scene, this.camera);
@@ -640,29 +608,6 @@ export class IsleRenderer {
     this.renderer.dispose();
   }
 
-  private loadTextures() {
-    const loader = new THREE.TextureLoader();
-    const kinds = Object.keys(TEX_FILE) as Terrain[];
-    let left = kinds.length;
-    const done = (k: Terrain, tex: THREE.Texture) => {
-      tex.colorSpace = THREE.SRGBColorSpace;
-      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-      tex.anisotropy = 8;
-      this.textures[k] = tex;
-      left -= 1;
-      if (left === 0 && this.lastState) {
-        this.lastLand = null;
-        this.setBoard(this.lastState, this.lastHi, this.lastInteractive);
-      }
-    };
-    for (const k of kinds) {
-      // The photo textures lived only in the old sandbox. A missing file gets a painted one.
-      const url = photoUrl(k);
-      if (url) loader.load(url, (tex) => done(k, tex), undefined, () => done(k, paintedTexture(k)));
-      else done(k, paintedTexture(k));
-    }
-  }
-
   private wake = () => {
     this.busyUntil = performance.now() + 1000;
   };
@@ -879,8 +824,9 @@ export class IsleRenderer {
       const [sx, sz] = [Math.sin(az), Math.cos(az)];
       for (const tree of this.trees) {
         // The tree's own height, measured once at full size.
+        const base = tree.userData.base as THREE.Vector3;
         if (tree.userData.height === undefined) {
-          tree.scale.setScalar(1);
+          tree.scale.copy(base);
           tree.updateMatrixWorld(true);
           tree.userData.height = _box.setFromObject(tree).max.y - tree.position.y;
         }
@@ -896,7 +842,7 @@ export class IsleRenderer {
             k = Math.min(k, Math.max(TREE_SHADE_MIN, clear / (tree.userData.height as number)));
           }
         }
-        tree.scale.setScalar(k);
+        tree.scale.copy(base).multiplyScalar(k);
       }
     }
     const st = this.lastState;
@@ -1058,6 +1004,8 @@ export class IsleRenderer {
   wobbleHex(id: string) {
     if (this.calm() || this.landings.length) return;
     const parts = [...this.land.children, ...this.living.children].filter((o) => (o.userData.land && o.userData.id === id) || o.userData.hex === id);
+    const tile = parts.find((o) => o.userData.kind === "hex");
+    if (tile && this.kit) parts.push(this.kit.anchor(id, tile.position.x, tile.position.y, tile.position.z));
     this.wobble.start(id, parts, TILE_Y, performance.now());
     this.wake();
   }
@@ -1127,7 +1075,7 @@ export class IsleRenderer {
     const swell = this.waterPath === "crystal" ? this.crystal?.swell : undefined;
     this.oceanLife.step(dt, true, this.oceanViewport, swell ? (x, z) => swell(x, z, t).y : undefined);
     this.foam.material.opacity = 0.32 + 0.23 * (0.5 + 0.5 * Math.sin(t * 0.8));
-    for (const tr of this.trees) tr.rotation.z = Math.sin(t * 1.05 + tr.position.x * 2) * 0.028;
+    for (const tr of this.trees) if (tr.userData.prop === "tree") tr.rotation.z = Math.sin(t * 1.05 + tr.position.x * 2) * 0.028;
     if (this.walk) {
       const w = this.walk;
       const u = Math.min(1, (t - w.start) / w.dur);
@@ -1156,6 +1104,7 @@ export class IsleRenderer {
       }
       s.g.position.x += (s.tx - s.g.position.x) * (1 - Math.exp(-dt * 1.6));
       s.g.position.z += (s.tz - s.g.position.z) * (1 - Math.exp(-dt * 1.6));
+      s.g.position.y = s.ground(s.g.position.x, s.g.position.z) + 0.1;
       const heading = Math.atan2(s.tx - s.g.position.x, s.tz - s.g.position.z);
       const turn = Math.atan2(Math.sin(heading - s.g.rotation.y), Math.cos(heading - s.g.rotation.y));
       s.g.rotation.y += turn * (1 - Math.exp(-dt * 3));
@@ -1164,7 +1113,9 @@ export class IsleRenderer {
     }
     for (const work of this.oreWork) {
       const phase = this.ambientTime + work.phase;
-      work.cart.position.z = work.z + 0.05 * Math.sin(phase * Math.PI / 3);
+      const roll = 0.05 * Math.sin(phase * Math.PI / 3);
+      work.cart.position.x = work.x + work.dx * roll;
+      work.cart.position.z = work.z + work.dz * roll;
       work.cart.rotation.z = 0.035 * Math.sin(phase * 2.4);
       work.cart.rotation.x = 0.018 * Math.sin(phase * 1.6);
       work.arm.rotation.z = 0.22 * Math.sin(phase * Math.PI / 2);
@@ -1174,7 +1125,8 @@ export class IsleRenderer {
       const cycle = phase % 18;
       const walking = cycle > 10 && cycle < 16;
       const step = walking ? Math.sin((cycle - 10) * Math.PI / 6) * 0.10 : 0;
-      work.body.position.set(work.x + Math.cos(work.angle) * step, work.y + (walking ? Math.abs(Math.sin(phase * 6)) * 0.006 : 0), work.z + Math.sin(work.angle) * step);
+      const [bx, bz] = [work.x + Math.cos(work.angle) * step, work.z + Math.sin(work.angle) * step];
+      work.body.position.set(bx, work.ground(bx, bz) + (walking ? Math.abs(Math.sin(phase * 6)) * 0.006 : 0), bz);
       work.body.rotation.y = Math.PI / 2 - work.angle + (walking && cycle > 13 ? Math.PI : 0);
       work.arm.position.set(work.body.position.x, work.body.position.y + 0.13, work.body.position.z);
       work.arm.rotation.set(0, work.body.rotation.y, cycle < 8 ? -0.15 + Math.sin(phase * 2.2) * 0.28 : 0);
@@ -1288,6 +1240,7 @@ export class IsleRenderer {
   private draw() {
     const t0 = performance.now();
     this.poseTokens();
+    this.kit?.sync();
     this.fadeSea();
     const crystal = this.waterPath === "crystal" ? this.crystal : null;
     if (crystal) this.drawUnder(crystal);
@@ -1335,6 +1288,21 @@ export class IsleRenderer {
     };
   };
 
+  // The sculpted tiles and their props (#599, docs/design/terrain.md): draw calls and triangles in the main pass, read by
+  // board-look-prove through `window.__terrain`.
+  terrainStats(): TerrainStats {
+    const tris = (m: THREE.Mesh) => {
+      const g = m.geometry;
+      const n = (g.index ? g.index.count : g.attributes.position!.count) / 3;
+      return (m as THREE.InstancedMesh).isInstancedMesh ? n * (m as THREE.InstancedMesh).count : n;
+    };
+    const tiles = this.land.children.filter((o) => o.userData.land).map((g) => g.getObjectByName("cap") as THREE.Mesh);
+    const props = this.living.children.filter((o): o is THREE.Mesh => (o as THREE.Mesh).isMesh && o.visible && o.userData.terrainProps !== undefined);
+    const tileTris = tiles.reduce((a, m) => a + tris(m), 0);
+    const propTris = props.reduce((a, m) => a + tris(m), 0);
+    return { tiles: tiles.length, props: props.length, drawCalls: tiles.length + props.length, tileTriangles: tileTris, propTriangles: propTris, triangles: tileTris + propTris };
+  }
+
   private buildLand(state: GameState) {
     disposeGroup(this.land);
     disposeGroup(this.living);
@@ -1343,18 +1311,21 @@ export class IsleRenderer {
     this.farmWork = [];
     this.boats = [];
     this.trees = [];
-    this.wheat = [];
     this.living.add(this.wayfarer);
     this.pickables = [];
     this.tokens = [];
     this.caps.clear();
     this.flashes = [];
     this.oceanLife.reset(landKey(state));
+    const kit = (this.kit = new PropKit(this.living));
+    const props: (() => void)[] = [];
+    const life = { sheep: this.sheep, oreWork: this.oreWork, farmWork: this.farmWork, tall: this.trees };
 
     for (const h of state.hexes) {
       const { x, z } = worldOfHex(h);
-      const height = hexHeight(h.terrain);
-      const tile = makeHexTile(HEX_SIZE * 0.995, height, this.textures[h.terrain], SIDE[h.terrain]);
+      const rng = mulberry32(hashStr(h.id + h.terrain));
+      const sculpt = sculptHex(h, HEX_SIZE * 0.995, topOf(h.terrain) - TILE_Y, TILE_Y, rng);
+      const tile = makeHexTile(sculpt.geo);
       tile.position.set(x, TILE_Y, z);
       tile.userData = { kind: "hex", id: h.id, land: true };
       tile.traverse((o) => {
@@ -1368,7 +1339,7 @@ export class IsleRenderer {
       cap.material.emissive.copy(new THREE.Color(PAINT[h.terrain][0]).lerp(FLASH_WARM, 0.6));
       cap.material.emissiveIntensity = 0;
       this.caps.set(h.id, cap.material);
-      decorate(this.living, this.trees, this.wheat, this.sheep, this.oreWork, this.farmWork, h, x, z, topOf(h.terrain));
+      props.push(() => decorate(kit, life, h, x, z, sculpt, rng));
       if (h.pip != null) {
         const tok = numberToken(h.pip);
         tok.userData.token = h.pip;
@@ -1380,6 +1351,21 @@ export class IsleRenderer {
         this.tokens.push(tok);
       }
     }
+    // The props (the heavier half of the build) draw a frame after the tiles, so the board and its pieces are not held for them
+    // (#543 restore budget). Two frames on: the next one also runs the first draw, and a frame is not shown until all of its
+    // callbacks are done. A rebuild before then drops them with the old land.
+    const gen = ++this.landGen;
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      if (gen !== this.landGen || this.stopped) return;
+      performance.mark("props-start");
+      props.forEach((f) => f());
+      kit.finish();
+      // The tall props are new: the shade pass cached on this pose ran without them.
+      this.shadedFor = "";
+      (window as unknown as { __terrain: TerrainStats }).__terrain = this.terrainStats();
+      this.wake();
+      performance.mark("props-end");
+    }));
 
     // A dock spans a coastal edge, so both its corners carry the harbor; the deal spaces docks at least three edges apart, so two
     // neighbouring harbor corners on the coast loop of one kind are always one dock. One pier and one boat per dock.
@@ -1617,6 +1603,7 @@ function disposeGroup(g: THREE.Group) {
   while (g.children.length) {
     const c = g.children.pop()!;
     c.traverse((o) => {
+      if ((o as THREE.InstancedMesh).isInstancedMesh) (o as THREE.InstancedMesh).dispose();
       const m = o as THREE.Mesh;
       m.geometry?.dispose?.();
       const mat = m.material;
@@ -1781,31 +1768,11 @@ function hexShape(size: number) {
   return s;
 }
 
-function makeHexTile(size: number, height: number, tex: THREE.Texture | undefined, _side: number) {
+// One mesh per hex (its own material, for the paying-hex flash), named "cap" as the flat cap before it was.
+function makeHexTile(geo: THREE.BufferGeometry) {
   const g = new THREE.Group();
-  const slabH = SLAB + height * 0.35;
-  const wallGeo = new THREE.ExtrudeGeometry(hexShape(size), { depth: slabH, steps: 4, bevelEnabled: false });
-  wallGeo.rotateX(-Math.PI / 2);
-  // Four geological bands on the hex island itself. The ocean has no box or cutaway perimeter.
-  const strata = [0xb68a56, 0xd0b080, 0xe5d6b5, 0xf4e9d2].map(c => new THREE.Color(c));
-  const pos = wallGeo.attributes.position;
-  const colours = new Float32Array(pos.count * 3);
-  for (let i = 0; i < pos.count; i += 3) {
-    const y = (pos.getY(i) + pos.getY(i + 1) + pos.getY(i + 2)) / 3;
-    const c = strata[Math.min(3, Math.max(0, Math.floor(y / slabH * 4)))]!;
-    for (let j = 0; j < 3; j++) c.toArray(colours, (i + j) * 3);
-  }
-  wallGeo.setAttribute("color", new THREE.BufferAttribute(colours, 3));
-  const wall = new THREE.Mesh(
-    wallGeo,
-    new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.86, metalness: 0 }),
-  );
-  wall.castShadow = true;
-  wall.receiveShadow = true;
-  g.add(wall);
-  const cap = hexCap(size * 0.992, tex, STONE);
+  const cap = new THREE.Mesh(geo, tileMaterial());
   cap.name = "cap";
-  cap.position.y = slabH + 0.002;
   g.add(cap);
   return g;
 }
@@ -1816,25 +1783,6 @@ function hexRing(outer: number, inner: number) {
   const geo = new THREE.ShapeGeometry(s);
   geo.rotateX(-Math.PI / 2);
   return geo;
-}
-
-function hexCap(size: number, tex: THREE.Texture | undefined, color: number) {
-  const geo = new THREE.ShapeGeometry(hexShape(size));
-  geo.rotateX(-Math.PI / 2);
-  const uv = geo.attributes.uv;
-  const pos = geo.attributes.position;
-  for (let i = 0; i < pos.count; i++) {
-    uv.setXY(i, (pos.getX(i) / size + 1) / 2, (pos.getZ(i) / size + 1) / 2);
-  }
-  uv.needsUpdate = true;
-  return new THREE.Mesh(
-    geo,
-    new THREE.MeshStandardMaterial({
-      map: tex ?? null,
-      color: tex ? 0xffffff : color,
-      roughness: 0.92,
-    }),
-  );
 }
 
 function numberToken(n: number) {
@@ -1887,165 +1835,6 @@ function numberToken(n: number) {
   label.position.y = 0.031;
   g.add(label);
   return g;
-}
-
-function decorate(
-  living: THREE.Group,
-  trees: THREE.Object3D[],
-  _wheat: THREE.Object3D[],
-  sheep: Sheep[],
-  oreWork: OreWork[],
-  farmWork: FarmWork[],
-  h: HexCell,
-  x: number,
-  z: number,
-  top: number,
-) {
-  const rng = mulberry32(hashStr(h.id + h.terrain));
-  const place = (minR: number, maxR: number) => {
-    const a = rng() * Math.PI * 2;
-    const rad = minR + Math.sqrt(rng()) * (maxR - minR);
-    return { px: x + Math.cos(a) * rad, pz: z + Math.sin(a) * rad };
-  };
-  if (h.terrain === "timber") {
-    const n = 16 + Math.floor(rng() * 5);
-    for (let i = 0; i < n; i++) {
-      const { px, pz } = place(0.7, 0.86);
-      const pine = rng() > 0.42;
-      const ts = pine ? 0.85 + rng() * 0.45 : 0.8 + rng() * 0.4;
-      const tree = pine ? makePine(ts) : makeDeciduous(ts);
-      tree.userData = { prop: "tree", hex: h.id, reach: pine ? 0.22 * ts : 0.1 * ts + 0.13 * ts * 1.05 };
-      tree.position.set(px, top, pz);
-      tree.rotation.y = rng() * Math.PI * 2;
-      living.add(tree);
-      trees.push(tree);
-    }
-  }
-  if (h.terrain === "wool") {
-    const n = 4 + Math.floor(rng() * 2);
-    for (let i = 0; i < n; i++) {
-      const { px, pz } = place(0.54, 0.74);
-      const s = makeSheep();
-      s.userData = { prop: "sheep", hex: h.id, reach: 0.115 };
-      s.position.set(px, top + 0.1, pz);
-      living.add(s);
-      sheep.push({ g: s, ox: x, oz: z, tx: px, tz: pz, wait: rng() * 2, graze: 0 });
-    }
-  }
-  if (h.terrain === "grain") {
-    // One merged field, with a real clear hole around the number token.
-    const stalks: THREE.BufferGeometry[] = [];
-    for (let row = -4; row <= 4; row++) for (let col = -4; col <= 4; col++) {
-      const px = col * 0.18 + (rng() - 0.5) * 0.025;
-      const pz = row * 0.18 + (rng() - 0.5) * 0.025;
-      const radius = Math.hypot(px, pz);
-      if (radius < 0.49 || radius > 0.82) continue;
-      const height = 0.12 + rng() * 0.05;
-      stalks.push(placed(new THREE.CylinderGeometry(0.008, 0.008, height, 3), 0xb38d35, px, height / 2, pz));
-      stalks.push(placed(new THREE.ConeGeometry(0.026, 0.07, 4), 0xf3d884, px, height + 0.025, pz));
-    }
-    const field = figure(stalks, PIECE_MAT, true);
-    field.name = "grain-field";
-    field.userData = { hex: h.id, field: true };
-    field.position.set(x, top, z);
-    living.add(field);
-    const work = makeFarmer();
-    const angle = rng() * Math.PI * 2;
-    const px = x + Math.cos(angle) * 0.65, pz = z + Math.sin(angle) * 0.65;
-    work.body.position.set(px, top, pz);
-    work.arm.position.set(px, top + 0.13, pz);
-    for (const [obj, prop] of [[work.body, "farmer"], [work.arm, "harvesting"]] as const) {
-      obj.userData = { prop, hex: h.id, reach: 0.14 };
-      living.add(obj);
-    }
-    farmWork.push({ ...work, x: px, z: pz, y: top, phase: rng() * 18, angle: angle + Math.PI / 2 });
-  }
-  if (h.terrain === "clay") {
-    for (let i = 0; i < 3; i++) {
-      const { px, pz } = place(0.65, 0.80);
-      const r = 0.12 + rng() * 0.065;
-      const mound = figure([placed(new THREE.IcosahedronGeometry(r, 0), i % 2 ? 0xc8794a : 0xa84c36, 0, 0, 0, rng(), 1, 0.65, 1)], PIECE_MAT, true);
-      mound.userData = { prop: "clay-mound", hex: h.id, reach: r };
-      mound.position.set(px, top + r * 0.2, pz);
-      living.add(mound);
-    }
-  }
-  if (h.terrain === "ore") {
-    const work = makeOreWork();
-    work.cart.position.set(x - 0.50, top, z + 0.42);
-    work.miner.position.set(x + 0.48, top, z - 0.40);
-    work.arm.position.set(x + 0.48, top + 0.14, z - 0.40);
-    for (const [obj, prop] of [[work.cart, "wagon"], [work.miner, "miner"], [work.arm, "pickaxe"]] as const) {
-      obj.userData = { prop, hex: h.id, reach: 0.17 };
-      living.add(obj);
-    }
-    oreWork.push({ cart: work.cart, arm: work.arm, z: work.cart.position.z, phase: rng() * Math.PI * 2 });
-    for (let i = 0; i < 3; i++) {
-      const { px, pz } = place(0.64, 0.8);
-      const rockR = 0.12 + rng() * 0.12;
-      const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(rockR, 0), ROCK_MAT);
-      rock.position.set(px, top + 0.04, pz);
-      rock.rotation.set(rng(), rng(), rng());
-      rock.castShadow = true;
-      rock.userData = { prop: "rock", hex: h.id, reach: rockR };
-      living.add(rock);
-    }
-  }
-}
-
-// One figure is one mesh: its parts are placed (position, y rotation, scale), tinted per vertex and merged,
-// on a material shared by every tree (or sheep or rock), which disposeGroup leaves alone.
-const TREE_MAT = new THREE.MeshLambertMaterial({ vertexColors: true });
-const SHEEP_MAT = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95 });
-const ROCK_MAT = new THREE.MeshStandardMaterial({ color: 0x6a737c, roughness: 0.95, flatShading: true });
-for (const m of [TREE_MAT, SHEEP_MAT, ROCK_MAT]) m.userData.shared = true;
-
-const AXIS_Y = new THREE.Vector3(0, 1, 0);
-function placed(geo: THREE.BufferGeometry, hex: number, x: number, y: number, z: number, rotY = 0, sx = 1, sy = sx, sz = sx) {
-  const g = geo.index ? geo.toNonIndexed() : geo; // mergeGeometries refuses to mix indexed and not
-  if (g !== geo) geo.dispose();
-  g.applyMatrix4(
-    new THREE.Matrix4().compose(
-      new THREE.Vector3(x, y, z),
-      new THREE.Quaternion().setFromAxisAngle(AXIS_Y, rotY),
-      new THREE.Vector3(sx, sy, sz),
-    ),
-  );
-  const c = new THREE.Color(hex);
-  const a = new Float32Array(g.attributes.position.count * 3);
-  for (let i = 0; i < a.length; i += 3) c.toArray(a, i);
-  g.setAttribute("color", new THREE.BufferAttribute(a, 3));
-  return g;
-}
-
-function figure(parts: THREE.BufferGeometry[], mat: THREE.Material, shadow: boolean) {
-  const geo = mergeGeometries(parts);
-  parts.forEach((p) => p.dispose());
-  const m = new THREE.Mesh(geo, mat);
-  m.castShadow = shadow;
-  return m;
-}
-
-function makePine(s: number) {
-  const parts = [placed(new THREE.CylinderGeometry(0.025 * s, 0.04 * s, 0.22 * s, 6), 0x4a3220, 0, 0.1 * s, 0)];
-  const shades = [0x163d28, 0x1f5a38, 0x2a6e44, 0x1a4a30];
-  for (let i = 0; i < 4; i++) {
-    const r = (0.22 - i * 0.035) * s;
-    parts.push(placed(new THREE.ConeGeometry(r, 0.28 * s, 8), shades[i % shades.length]!, 0, (0.22 + i * 0.14) * s, 0, i * 0.4, 0.92 + (i % 2) * 0.12, 1, 1));
-  }
-  return figure(parts, TREE_MAT, true);
-}
-
-function makeDeciduous(s: number) {
-  const parts = [placed(new THREE.CylinderGeometry(0.028 * s, 0.04 * s, 0.24 * s, 6), 0x4a3220, 0, 0.12 * s, 0)];
-  const shades = [0x2f7a43, 0x3d8f52, 0x246638, 0x4a9a5c];
-  for (let i = 0; i < 6; i++) {
-    const a = (i / 6) * Math.PI * 2;
-    parts.push(
-      placed(new THREE.IcosahedronGeometry(0.13 * s, 0), shades[i % shades.length]!, Math.cos(a) * 0.1 * s, (0.3 + (i % 3) * 0.08) * s, Math.sin(a) * 0.1 * s, 0, 0.75 + (i % 3) * 0.15),
-    );
-  }
-  return figure(parts, TREE_MAT, true);
 }
 
 const PIECE_MAT = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.55 });
@@ -2145,38 +1934,6 @@ function makeWayfarer() {
   return g;
 }
 
-function makeSheep() {
-  const parts = [
-    placed(new THREE.SphereGeometry(0.085, 10, 8), 0xf7f3ea, 0, 0, 0, 0, 1.35, 0.9, 1),
-    placed(new THREE.SphereGeometry(0.04, 8, 8), 0x2a2a2a, 0, 0.03, 0.1),
-  ];
-  for (const [lx, lz] of [[-0.05, 0.05], [0.05, 0.05], [-0.05, -0.05], [0.05, -0.05]] as const) {
-    parts.push(placed(new THREE.CylinderGeometry(0.012, 0.012, 0.06, 5), 0x2a2a2a, lx, -0.07, lz));
-  }
-  return figure(parts, SHEEP_MAT, false);
-}
-
-function paintedTexture(kind: Terrain): THREE.Texture {
-  const size = 256;
-  const canvas = document.createElement("canvas");
-  canvas.width = canvas.height = size;
-  const ctx = canvas.getContext("2d")!;
-  const [base, dark] = PAINT[kind];
-  ctx.fillStyle = base;
-  ctx.fillRect(0, 0, size, size);
-  const rand = mulberry32(hashStr(kind));
-  ctx.fillStyle = dark;
-  for (let i = 0; i < 280; i++) {
-    const r = 1 + rand() * 3;
-    ctx.globalAlpha = 0.08 + rand() * 0.12;
-    ctx.beginPath();
-    ctx.arc(rand() * size, rand() * size, r, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  ctx.globalAlpha = 1;
-  return new THREE.CanvasTexture(canvas);
-}
-
 function hullShape() {
   const s = new THREE.Shape();
   s.moveTo(0, -0.24); // stern, flat
@@ -2247,53 +2004,3 @@ function makeBoat(kind: HarborKind) {
 }
 
 
-// Three draw calls per ore hex. Fixed parts are merged, so wheels/load do not add separate meshes.
-function makeOreWork() {
-  const cartParts = [
-    placed(new THREE.BoxGeometry(0.22, 0.04, 0.18), 0x493f33, 0, 0.07, 0),
-    placed(new THREE.BoxGeometry(0.025, 0.09, 0.20), 0x796b53, -0.11, 0.10, 0),
-    placed(new THREE.BoxGeometry(0.025, 0.09, 0.20), 0x796b53, 0.11, 0.10, 0),
-    placed(new THREE.BoxGeometry(0.22, 0.09, 0.025), 0x796b53, 0, 0.10, -0.09),
-    placed(new THREE.BoxGeometry(0.22, 0.09, 0.025), 0x796b53, 0, 0.10, 0.09),
-  ];
-  for (const x of [-0.13, 0.13]) for (const z of [-0.065, 0.065]) {
-    cartParts.push(placed(new THREE.CylinderGeometry(0.043, 0.043, 0.024, 8).rotateZ(Math.PI / 2), 0x253131, x, 0.045, z));
-  }
-  for (const [x, z] of [[-0.06, -0.03], [0.04, 0.04], [0.03, -0.04]]) {
-    cartParts.push(placed(new THREE.DodecahedronGeometry(0.055, 0), 0x8796a5, x, 0.14, z));
-  }
-  const cart = figure(cartParts, PIECE_MAT, true);
-  const miner = figure([
-    placed(new THREE.BoxGeometry(0.065, 0.085, 0.06), 0x283c47, 0, 0.10, 0),
-    placed(new THREE.IcosahedronGeometry(0.044, 0), 0xc8ad87, 0, 0.174, 0),
-    placed(new THREE.CylinderGeometry(0.05, 0.05, 0.025, 8), 0xd1b14d, 0, 0.20, 0),
-    placed(new THREE.BoxGeometry(0.025, 0.07, 0.025), 0x202a2b, -0.02, 0.035, 0),
-    placed(new THREE.BoxGeometry(0.025, 0.07, 0.025), 0x202a2b, 0.02, 0.035, 0),
-  ], PIECE_MAT, true);
-  const arm = figure([
-    placed(new THREE.BoxGeometry(0.025, 0.025, 0.09), 0xc8ad87, 0.035, 0, 0.035),
-    placed(new THREE.BoxGeometry(0.015, 0.12, 0.015), 0x796b53, 0.06, 0.045, 0.07),
-    placed(new THREE.BoxGeometry(0.10, 0.025, 0.025), 0xa8b6bf, 0.06, 0.10, 0.07),
-  ], PIECE_MAT, false);
-  return { cart, miner, arm };
-}
-
-// Hat, clothes, legs and loaded grain basket share a mesh; only the harvesting arm moves separately.
-function makeFarmer() {
-  const body = figure([
-    placed(new THREE.BoxGeometry(0.07, 0.09, 0.06), 0x4b7c67, 0, 0.10, 0),
-    placed(new THREE.IcosahedronGeometry(0.038, 0), 0xc49972, 0, 0.18, 0),
-    placed(new THREE.CylinderGeometry(0.057, 0.057, 0.018, 8), 0xb58d44, 0, 0.215, 0),
-    placed(new THREE.CylinderGeometry(0.036, 0.046, 0.04, 8), 0xd1b469, 0, 0.235, 0),
-    placed(new THREE.BoxGeometry(0.024, 0.07, 0.026), 0x334c42, -0.021, 0.035, 0),
-    placed(new THREE.BoxGeometry(0.024, 0.07, 0.026), 0x334c42, 0.021, 0.035, 0),
-    placed(new THREE.CylinderGeometry(0.038, 0.026, 0.06, 7), 0x9c7745, -0.06, 0.09, 0.02),
-    placed(new THREE.ConeGeometry(0.025, 0.035, 5), 0xe4c86c, -0.06, 0.13, 0.02),
-  ], PIECE_MAT, true);
-  const arm = figure([
-    placed(new THREE.BoxGeometry(0.024, 0.024, 0.085), 0xc49972, 0.045, 0, 0.04),
-    placed(new THREE.BoxGeometry(0.013, 0.013, 0.11), 0x7c6847, 0.06, -0.012, 0.07),
-    placed(new THREE.TorusGeometry(0.034, 0.009, 3, 7, Math.PI), 0xb0b9af, 0.06, -0.01, 0.13),
-  ], PIECE_MAT, false);
-  return { body, arm };
-}
