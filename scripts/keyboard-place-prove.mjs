@@ -1,6 +1,8 @@
 // #376 (WCAG 2.1.1): a keyboard alone places every setup piece in hotseat, then a path, an outpost, a stronghold and the
 // wayfarer through the PlaceList beside the HUD. Each list holds exactly the targets the island glows; zero console errors.
 // #419: an armed Path, Outpost or Stronghold turns the turn banner into what to pick and "Esc cancels"; Escape restores it.
+// #558: a tap on a spot the armed build cannot use shows the rule it broke on the HUD's error line (rules.ts settleError and the
+// built-edge line; "Path must connect to you." stays for a disconnected path) and leaves the state untouched.
 import { existsSync, mkdirSync } from "node:fs";
 import { chromium } from "playwright";
 import { createServer } from "vite";
@@ -221,6 +223,49 @@ try {
   await page.keyboard.press("Escape");
   await page.getByRole("group", { name: "Lay a path" }).waitFor({ state: "detached", timeout: STEP_MS });
   console.log(`Escape: banner "${await bannerIs("Build, trade, or end your turn")}"`);
+  // #558: a tap on a spot the armed build cannot use says which rule it broke, on the HUD's error line, and changes nothing.
+  // The ids are picked from the state the table holds: a corner next to our outpost, one of an opponent's, a built edge, and an
+  // edge that joins nothing of ours.
+  {
+    await fill();
+    const bad = await page.evaluate(() => {
+      const st = window.__emberisle.getState().state;
+      const nbrs = (v) => st.edges.filter((e) => e.va === v || e.vb === v).map((e) => (e.va === v ? e.vb : e.va));
+      const built = (v) => st.vertices.find((x) => x.id === v).building;
+      const mine = st.vertices.find((v) => v.building?.playerId === st.current && v.building.kind === "outpost").id;
+      const theirs = st.vertices.find((v) => v.building && v.building.playerId !== st.current).id;
+      const g = window.__emberisle.getState();
+      g.setBuildMode("path");
+      const joins = new Set(g.highlights().edges);
+      g.setBuildMode("none");
+      return {
+        close: nbrs(mine).find((n) => !built(n)),
+        theirs,
+        edgeTaken: st.edges.find((e) => e.path === st.current).id,
+        edgeApart: st.edges.find((e) => !e.path && !joins.has(e.id)).id,
+      };
+    });
+    const tryPick = async (mode, pick, id, want, label) => {
+      await fill();
+      const before = await page.evaluate(([mode, pick, id]) => {
+        const g = window.__emberisle.getState();
+        g.setBuildMode(mode);
+        return JSON.stringify(g.state);
+      }, [mode, pick, id]);
+      await page.evaluate(([pick, id]) => window.__emberisle.getState()[pick](id), [pick, id]);
+      const line = page.locator("span.text-orange-700", { hasText: want });
+      await line.waitFor({ state: "visible", timeout: STEP_MS });
+      const got = await page.evaluate(() => ({ state: JSON.stringify(window.__emberisle.getState().state), error: window.__emberisle.getState().error }));
+      console.log(`armed ${mode}, tap ${label}: "${got.error}"`);
+      if (got.error !== want || got.state !== before) throw new Error(`${label}: error "${got.error}", state changed ${got.state !== before}`);
+    };
+    await tryPick("outpost", "pickVertex", bad.close, "Too close — leave one corner between buildings.", "a corner beside our outpost");
+    await tryPick("outpost", "pickVertex", bad.theirs, "That corner is taken.", "a built corner");
+    await tryPick("stronghold", "pickVertex", bad.theirs, "Upgrade one of your own outposts.", "another seat's outpost");
+    await tryPick("path", "pickEdge", bad.edgeTaken, "That edge already has a path.", "a built edge");
+    await tryPick("path", "pickEdge", bad.edgeApart, "Path must connect to you.", "an edge joining nothing of ours");
+    await fill();
+  }
   // Two paths out from an outpost, so a corner two steps away is free for an outpost.
   for (let i = 0; i < 2; i++) {
     await fill();
