@@ -54,6 +54,14 @@ async function tab(name, url) {
   await page.addInitScript(() => {
     window.__plays = [];
     window.__pauses = [];
+    window.__sockets = [];
+    const RealSocket = window.WebSocket;
+    window.WebSocket = class extends RealSocket {
+      constructor(...args) {
+        super(...args);
+        window.__sockets.push(this);
+      }
+    };
     HTMLMediaElement.prototype.pause = function () {
       window.__pauses.push(new URL(this.src).pathname.replace("/audio/", ""));
     };
@@ -413,6 +421,12 @@ try {
   await sleep(2000);
   assert.deepEqual(await names(p3), ["game_lose.mp3"], "leaving before it starts cancels it: no music");
   await clear(p3);
+  await over("p0");
+  await mute(p3, true);
+  await mute(p3, false);
+  await sleep(2000);
+  assert.deepEqual(await names(p3), ["game_lose.mp3"], "muting inside the 1.5 s delay cancels the queued music; unmuting does not revive it");
+  await clear(p3);
   await mute(p3, true);
   await over("p0");
   await sleep(2000);
@@ -604,6 +618,31 @@ try {
   assert.ok((await b.getByTestId("chat-log").locator("li", { hasText: "GG!" }).count()) >= 1, "with the chip \"GG!\"");
   assert.ok(await a.getByTestId("win-react").isDisabled(), "React rests for 3 s");
   ok("win screen: React plays sb_win_reaction on the other seat once, with a chip, and rests");
+
+  // Online, the match-point banner shows on the same state that crosses target - 1 (the banner is read after the sound claims it).
+  const banner = await a.evaluate(async () => {
+    const base = structuredClone(window.__emberisle.getState().state);
+    base.phase = "main";
+    base.winner = null;
+    base.victoryTarget = 10;
+    base.hexes[3].pip = 55;
+    for (const v of base.vertices) v.building = null;
+    base.vertices.slice(0, 4).forEach((v) => (v.building = { playerId: "p1", kind: "outpost" }));
+    base.longestRoad = "p1";
+    base.largestArmy = "p1";
+    const legal = { outpost: [], path: [], stronghold: [], wayfarer: [], steal: {}, discard: 0, actions: [] };
+    const push = (game) => window.__sockets.at(-1).onmessage({ data: JSON.stringify({ type: "state", you: "p0", game, legal }) });
+    push(base);
+    const before = window.__emberisle.getState().banner;
+    const next = structuredClone(base);
+    next.seq += 1;
+    next.vertices[4].building = { playerId: "p1", kind: "outpost" };
+    push(next);
+    return { before, after: window.__emberisle.getState().banner };
+  });
+  assert.equal(banner.before, null, "no banner before the crossing");
+  assert.match(banner.after, /reached 9 points \u2014 one to win$/, "online: the banner is up on the very state that crosses target - 1");
+  ok(`match_point online: banner "${banner.after}" on the same state`);
 
   assert.deepEqual(errors, [], `console errors: ${errors.join(" | ")}`);
   console.log("PASS sounds-prove");

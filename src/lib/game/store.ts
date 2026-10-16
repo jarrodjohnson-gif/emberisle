@@ -85,10 +85,7 @@ export function takeMatchPointLine() {
 // End music: queued a moment after the win/lose sting at game over, once per game end. Leaving the end screen (the menu, a
 // rematch, a new game) cancels it. Only a live change into "over" starts it, so a reload into a finished game stays quiet.
 const END_MUSIC_DELAY_MS = 1500;
-let endMusic: ReturnType<typeof setTimeout> | null = null;
 function stopEndMusic() {
-  if (endMusic) clearTimeout(endMusic);
-  endMusic = null;
   stop("end_music");
 }
 
@@ -145,10 +142,7 @@ export function hear(before: GameState | null, after: GameState, me: string, mod
   if (before?.phase === "over" && after.phase !== "over") stopEndMusic();
   if (mode !== "hotseat" && me && before && before.phase !== "over" && after.phase === "over" && after.winner) {
     stopEndMusic();
-    endMusic = setTimeout(() => {
-      endMusic = null;
-      play("end_music", MUSIC_VOLUME);
-    }, END_MUSIC_DELAY_MS);
+    playLater("end_music", MUSIC_VOLUME, END_MUSIC_DELAY_MS);
   }
   matchLine = null;
   if (before && before.phase !== "over" && after.turn >= before.turn && after.hexes.every((h, i) => h.terrain === before.hexes[i]?.terrain)) {
@@ -225,7 +219,7 @@ import { PLAYER_COLORS, RESOURCES, type Action, type BuildMode, type GameState, 
 import { connectTable, hostUrl, type Bag, type ChatLine, type Legal, type Me, type Reaction, type Seat, type TableClient } from "@/lib/net/table";
 import { PROTO } from "@/lib/net/proto";
 import { readMutedSeats } from "@/lib/muted-seats";
-import { MUSIC_VOLUME, play, SOUNDBOARD, stop, yourTurn, type SoundName } from "@/lib/sound";
+import { MUSIC_VOLUME, play, playLater, SOUNDBOARD, stop, yourTurn, type SoundName } from "@/lib/sound";
 import { calmMotion, LAND_MS } from "@/lib/scene/landing";
 import type { WaterPath, WaterStatus } from "@/lib/scene/crystal-water";
 import type { PlayView } from "@/lib/scene/mobile-fit";
@@ -1157,8 +1151,9 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       // A watcher's `you` is null: "" matches no player, so nothing is ever its turn and the your-turn chime never fires.
       const me = you ?? "";
       const rollOff = rollOffLine(get().state, game);
-      const swing = awardLine(get().state, game) ?? takeMatchPointLine();
+      // hear first: it is what claims a match point, and the banner line is read off that claim on this same state.
       hear(get().state, game, me, "online");
+      const swing = awardLine(get().state, game) ?? takeMatchPointLine();
       // The deadline moves onto this clock by the skew the message shows, so a phone minutes off still counts true.
       // Every push carries the same window, and the skew wobbles by however long this tab took to get to the message:
       // the timer we hold stays while the host's deadline is the same, so the chip neither remounts nor announces twice.
@@ -1207,20 +1202,28 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
         return;
       }
       if (keepSeat) {
+        stopEndMusic();
+
         set({ restoring: false, error: "Your seat is open in another tab", toast: "Your seat is open in another tab", screen: "title", net: null, peeking: false, seats: [], code: "", state: null });
         return;
       }
       if (kind === "watch") {
         // A watcher holds nothing worth saving, and the seat secret in localStorage may belong to another table.
+        stopEndMusic();
+
         set({ error: "Lost the table", toast: "Lost the table", screen: "title", net: null, peeking: false, seats: [], code: "", state: null, spectator: false, watching: 0 });
         return;
       }
       rememberSeat(null);
       if (pending) {
         const gone = get().restoring ? "Seat is gone." : null;
+        stopEndMusic();
+
         set({ restoring: false, error: gone, toast: gone, screen: "title", net: null, peeking: false, seats: [], code: "", state: null });
         return;
       }
+      stopEndMusic();
+
       set({ error: "Lost the table", toast: "Lost the table", screen: "title", net: null, peeking: false, seats: [], code: "", state: null });
     },
   });

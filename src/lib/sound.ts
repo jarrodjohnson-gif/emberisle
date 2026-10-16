@@ -161,8 +161,24 @@ export function play(name: SoundName, volume = 1) {
   if (!pacing) pump();
 }
 
+// Start a clip after `ms`; stop(name) cancels it before then. One pending start per clip.
+const later = new Map<SoundName, ReturnType<typeof setTimeout>>();
+export function playLater(name: SoundName, volume: number, ms: number) {
+  const old = later.get(name);
+  if (old) clearTimeout(old);
+  later.set(name, setTimeout(() => {
+    later.delete(name);
+    play(name, volume);
+  }, ms));
+}
+
 // Stop a clip that is playing (the end music, when its screen is left or the sound is muted).
 export function stop(name: SoundName) {
+  // A clip still waiting (its delay, or its place in the pacing queue) is cancelled too, so muting or leaving never lets it start late.
+  const wait = later.get(name);
+  if (wait) clearTimeout(wait);
+  later.delete(name);
+  for (let i = queue.length - 1; i >= 0; i--) if (queue[i]![0] === name) queue.splice(i, 1);
   const clip = clips.get(name);
   if (!clip) return;
   clip.pause();

@@ -28,6 +28,13 @@ const rooms = new Map();
 const avatars = new Map(); // avatarId -> { body }
 const AVATAR_BYTES = 256 * 1024;
 // An env limit, or its default when the variable is unset or not a number.
+// A pace in ms from the environment: a finite number >= 0, else the default.
+function envMs(name, fallback) {
+  const raw = process.env[name];
+  const n = raw === undefined || raw.trim() === "" ? NaN : Number(raw);
+  return Number.isFinite(n) && n >= 0 ? n : fallback;
+}
+
 function envNum(name, fallback) {
   const n = Number(process.env[name]);
   return Number.isFinite(n) ? n : fallback;
@@ -108,9 +115,9 @@ const ROOM_TTL = 24 * 60 * 60 * 1000;
 // shape: load() drops files with any other stamp (including none), so a bump ends the saved rooms on the next restart.
 const ROOM_SHAPE = 2;
 // A seat's soundboard taps are at least this far apart (the host's word; the client greys the buttons for the same time).
-const SOUND_MS = Number(process.env.SOUND_MS ?? 3000);
+const SOUND_MS = envMs("SOUND_MS", 3000);
 // A seat's accepted renames are at least this far apart, on top of the ordinary action limit.
-const RENAME_MS = Number(process.env.RENAME_MS ?? 2000);
+const RENAME_MS = envMs("RENAME_MS", 2000);
 // The built client (npm run build). DIST lets a proof point the host at a small temp folder.
 const DIST = path.resolve(process.env.DIST ?? fileURLToPath(new URL("../dist/", import.meta.url)));
 const TYPES = {
