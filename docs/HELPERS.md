@@ -38,6 +38,9 @@ prompt.
 - After 3 pushes in a row that are still red on the same PR, post a `paused:` comment on the issue
   and stop work on it.
 
+Work efficiently, as `docs/FRAMEWORK.md` section 7 says: delegate broad reading to subagents, read narrowly,
+and run long proofs in the background.
+
 ## Never
 
 - Make a design decision. That covers any feature, visual, colour, layout, sound, rule, wording or
