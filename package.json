@@ -14,6 +14,8 @@
     "tabs-prove": "node scripts/tabs-prove.mjs",
     "countdown-prove": "node scripts/countdown-prove.mjs",
     "tabs-prove-4": "node scripts/tabs-prove.mjs --seats 4",
+    "wayfarer-modes-prove": "node --import ./server/register.mjs server/wayfarer-modes-prove.mjs",
+    "wayfarer-setup-prove": "node --import ./server/register.mjs scripts/wayfarer-setup-prove.mjs",
     "wayfarer-prove": "node scripts/wayfarer-prove.mjs",
     "trade-prove": "node scripts/trade-prove.mjs",
     "sounds-prove": "node scripts/sounds-prove.mjs",

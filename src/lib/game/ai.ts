@@ -1,5 +1,5 @@
 import { COST, RESOURCES, type Action, type GameState, type PlayerState, type Resource, type TradeOffer } from "./types";
-import { harborRate, legalCities, legalRoads, legalSettle, playable, publicVP, stealTargets } from "./rules";
+import { harborRate, legalCities, legalRoads, legalSettle, playable, publicVP, stealTargets, wayfarerMode } from "./rules";
 
 function cards(p: { resources: Record<Resource, number> }) {
   return RESOURCES.reduce((n, r) => n + p.resources[r], 0);
@@ -237,6 +237,7 @@ export function chooseBotAction(state: GameState, pid: string): Action | null {
 
   // A held knight is 2 points once three are out (#233: bots that never play them stall a game).
   if (!state.playedCard && playable(me, "knight") > 0) {
+    if (wayfarerMode(state) === "off") return { type: "playKnight", hexId: "", stealFrom: null };
     const m = bestRobberHex(state, pid);
     return { type: "playKnight", hexId: m.hexId, stealFrom: m.stealFrom };
   }

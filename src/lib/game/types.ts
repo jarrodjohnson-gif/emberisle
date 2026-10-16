@@ -99,10 +99,13 @@ export interface TradeOffer {
   want: Partial<Record<Resource, number>>;
 }
 
+export type WayfarerMode = "on" | "off";
 export type VictoryTarget = 7 | 10;
 export type WinTrigger = "outpost" | "stronghold" | "longestPath" | "largestArmy" | "pointFortune" | "turnStart" | "points";
 
 export interface GameState {
+  // Legacy saves use classic On. Fixed when the table is created.
+  wayfarerMode?: WayfarerMode;
   seed: number;
   rng: number;
   seq: number;

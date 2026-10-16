@@ -40,11 +40,13 @@ try {
     await dialog.getByRole("button", { name: "Close" }).click();
     await dialog.waitFor({ state: "detached" });
     // #442: the table's entry point is a row of the table menu; the menu is gone once the dialog is up.
-    await page.evaluate(() => { const g = window.__emberisle; g.getState().startHotseat(4); g.setState({ state: { ...g.getState().state, victoryTarget: 7 } }); });
+    await page.evaluate(() => { const g=window.__emberisle; g.getState().setWayfarerChoice("hotseat", "off"); g.getState().startHotseat(4); g.setState({ state: { ...g.getState().state, victoryTarget: 7 } }); });
     await page.getByRole("button", { name: "Table menu" }).click();
     await page.getByRole("dialog", { name: "Table menu" }).getByRole("button", { name: "How to play" }).click();
     await dialog.waitFor();
     assert.match(await dialog.innerText(), /Win at 7 points/, `${c.name}: selected target in table help`);
+    assert.match(await dialog.innerText(), /No movement, blocked land or taking cards/, `${c.name}: fixed Off rule in table help`);
+    assert.match(await dialog.innerText(), /Wayfarer fortunes add 1 to the army/, `${c.name}: useful Off fortunes in help`);
     assert.equal(await page.getByTestId("table-menu").count(), 0, `${c.name}: the table menu closes behind the dialog`);
     const got = await page.evaluate(() => {
       const dialog = document.querySelector('[role="dialog"][aria-labelledby="howto-title"]');
