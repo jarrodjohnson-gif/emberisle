@@ -126,8 +126,11 @@ under 2 px, which is why the default there is overhead.
 
 ## Clear space
 
-**Nothing is placed, and nothing wanders, within 0.39 of a hex centre**: the token's 0.34 plus 0.05 of ground (since
-#599 the token is 0.26; the clear ring stays at 0.39).
+**Nothing is placed, and nothing wanders, within 0.31 of a hex centre**: the token's 0.26 plus 0.05 of ground. (It was
+0.39 for the 0.34 token, and stayed there through the sculpted tiles; the Hex Jelly scenes, #624, are built round a flat
+0.33 pad, and fliers well over the hex, gulls and vultures, do not count.) jelly-board.ts `clearance()` measures every
+corner of every thing on each kind's scene; board-look-prove and tokens-prove check it, tokens-prove over 10 s of wandering.
+The table below is the sculpted tiles' (terrain.ts), kept for the record.
 Measured at a prop's nearest point, not its position, so each kind's minimum radius is the clear radius plus
 that kind's reach:
 

@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { type Terrain } from "@/lib/game/types";
 import { buildTile, setBoardDetail, type Tile } from "@/lib/scene/hex-jelly";
+import { BLOCK_H } from "@/lib/scene/jelly-dims";
 
 // The jelly board (#599, docs/design/hex-jelly-prompt.md): the six Hex Jelly scenes on the game board.
 //
@@ -15,16 +16,17 @@ import { buildTile, setBoardDetail, type Tile } from "@/lib/scene/hex-jelly";
 // - the wayfarer's dulling.
 // The sprites (glows, fog and steam puffs) are camera-facing quads in two instanced draws, one added, one blended.
 
-// The board's lattice: a hex fills about a fifth of the screen, where 18 rings are as smooth as the studio's 64.
-const RINGS = 18;
+// The board's lattice: a hex fills about a fifth of the screen, where 12 rings are as smooth as the studio's 64.
+const RINGS = 12;
 // Times the scenes are sampled at to find what moves: anything whose matrix, visibility, instances or material changes.
 const SAMPLES = [0.37, 1.91, 3.53, 5.2];
 const ROLL_S = 2.4;
 const TAP_S = 0.9;
-const DULL = new THREE.Color(0.62, 0.62, 0.66);
+// The wayfarer's shade on his hex: darker and cooler, as if a cloud stood over it.
+const DULL = new THREE.Color(0.46, 0.48, 0.58);
 
 export type JellyHex = { id: string; terrain: Terrain; x: number; z: number; y: number };
-export type JellyStats = { drawCalls: number; triangles: number; kinds: number; batches: number; sprites: number };
+export type JellyStats = { drawCalls: number; triangles: number; kinds: number; batches: number; bakes: number; sprites: number };
 
 type Batch = {
   mesh: THREE.BatchedMesh;
@@ -50,6 +52,8 @@ type Hx = {
   // The paying-hex glow, set by the game (0 to about 0.35), and what it was last frame.
   glow: number;
   glowWas: number;
+  // Its slot in the per-hex uniforms the baked meshes read.
+  slot: number;
 };
 type Leaf = {
   o: THREE.Mesh;
@@ -59,8 +63,9 @@ type Leaf = {
   // The placed thing it belongs to (the ripple squashes it in turn) and that thing's delay, or the crowd's per instance.
   top: THREE.Object3D | null;
   delay: Float32Array | null;
-  batch: Batch;
-  // Instance ids, hex-major: ids[h * n + j].
+  // Baked into a static mesh (drawn by the per-hex uniforms), or drawn as batch instances: ids[h * n + j].
+  baked: boolean;
+  batch: Batch | null;
   ids: Int32Array;
   base: THREE.Color[];
 };
@@ -88,6 +93,23 @@ function visibleIn(o: THREE.Object3D, root: THREE.Object3D) {
   return true;
 }
 
+// The radius (world units) a mesh's things reach: its geometry's bounding sphere at its own scale, or its largest instance's.
+const SHADOW_MIN = 0.03;
+// Instances smaller than this (radius, world units) are left off the board: under two pixels at its zoom.
+const SPECK = 0.006;
+function sizeOf(o: THREE.Mesh) {
+  const g = o.geometry;
+  g.boundingSphere ?? g.computeBoundingSphere();
+  let k = o.matrixWorld.getMaxScaleOnAxis();
+  const im = o as THREE.InstancedMesh;
+  if (im.isInstancedMesh) {
+    let m = 0;
+    for (let j = 0; j < im.count; j++) m = Math.max(m, im.getMatrixAt(j, _m).getMaxScaleOnAxis());
+    k *= m;
+  }
+  return g.boundingSphere!.radius * k;
+}
+
 // What a material's batch is keyed by: its program and every setting the batch shares. Colour is per instance, and so is
 // opacity where it changes over time. A material whose own uniforms or emissive change (the water's flow, a fire's glow) is
 // its own batch and keeps its colour, so the scene's life still drives it.
@@ -100,6 +122,93 @@ function materialKey(m: THREE.Material, own: boolean, alpha: boolean) {
   return parts.join("|");
 }
 const ownUniforms = (m: THREE.Material) => Object.values(m.userData).some((v) => v && typeof v === "object" && "value" in v);
+
+// A non-indexed geometry (the merged parts, flat-shaded triangle by triangle) indexed for the board: each corner's normal is
+// the mean of its neighbours' faces within CREASE of its own (so spheres turn smooth and boxes keep their edges), and corners
+// that then match exactly (position, normal, colour, uv, aCrack) are shared. A batch draws every corner through a few texture
+// reads, so this is most of a frame on a software GPU.
+const CREASE = Math.cos((50 * Math.PI) / 180);
+const INDEXED = new WeakMap<THREE.BufferGeometry, THREE.BufferGeometry>();
+function indexed(geo: THREE.BufferGeometry) {
+  if (geo.index) return geo;
+  const hit = INDEXED.get(geo);
+  if (hit) return hit;
+  const pos = geo.getAttribute("position") as THREE.BufferAttribute;
+  const n = pos.count;
+  const faces = n / 3;
+  const fn = new Float32Array(faces * 3);
+  const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3();
+  for (let f = 0; f < faces; f++) {
+    a.fromBufferAttribute(pos, f * 3);
+    b.fromBufferAttribute(pos, f * 3 + 1);
+    c.fromBufferAttribute(pos, f * 3 + 2);
+    c.sub(b).cross(a.sub(b)).normalize();
+    fn[f * 3] = c.x;
+    fn[f * 3 + 1] = c.y;
+    fn[f * 3 + 2] = c.z;
+  }
+  const q = (v: number) => Math.round(v * 2e5);
+  const at = new Map<string, number[]>();
+  const keys: string[] = new Array(n);
+  for (let i = 0; i < n; i++) {
+    const k = `${q(pos.getX(i))},${q(pos.getY(i))},${q(pos.getZ(i))}`;
+    keys[i] = k;
+    let l = at.get(k);
+    if (!l) at.set(k, (l = []));
+    l.push(i);
+  }
+  const nor = new Float32Array(n * 3);
+  for (let i = 0; i < n; i++) {
+    const f = Math.floor(i / 3);
+    const [fx, fy, fz] = [fn[f * 3]!, fn[f * 3 + 1]!, fn[f * 3 + 2]!];
+    let [x, y, z] = [0, 0, 0];
+    for (const j of at.get(keys[i]!)!) {
+      const g = Math.floor(j / 3);
+      const [gx, gy, gz] = [fn[g * 3]!, fn[g * 3 + 1]!, fn[g * 3 + 2]!];
+      if (gx * fx + gy * fy + gz * fz < CREASE) continue;
+      x += gx;
+      y += gy;
+      z += gz;
+    }
+    const l = Math.hypot(x, y, z) || 1;
+    nor[i * 3] = x / l;
+    nor[i * 3 + 1] = y / l;
+    nor[i * 3 + 2] = z / l;
+  }
+  // Share the corners that now match.
+  const names = Object.keys(geo.attributes).filter((k) => k !== "normal");
+  const attrs = names.map((k) => geo.getAttribute(k) as THREE.BufferAttribute);
+  const seen = new Map<string, number>();
+  const remap: number[] = [];
+  const index: number[] = [];
+  const qn = (v: number) => Math.round(v * 1e3);
+  for (let i = 0; i < n; i++) {
+    let k = `${keys[i]}|${qn(nor[i * 3]!)},${qn(nor[i * 3 + 1]!)},${qn(nor[i * 3 + 2]!)}`;
+    for (const at of attrs) if (at !== pos) for (let c = 0; c < at.itemSize; c++) k += `,${qn(at.getComponent(i, c))}`;
+    let v = seen.get(k);
+    if (v === undefined) {
+      v = remap.length;
+      seen.set(k, v);
+      remap.push(i);
+    }
+    index.push(v);
+  }
+  const out = new THREE.BufferGeometry();
+  names.forEach((name, j) => {
+    const src = attrs[j]!;
+    const arr = new Float32Array(remap.length * src.itemSize);
+    remap.forEach((i, r) => {
+      for (let c = 0; c < src.itemSize; c++) arr[r * src.itemSize + c] = src.getComponent(i, c);
+    });
+    out.setAttribute(name, new THREE.BufferAttribute(arr, src.itemSize));
+  });
+  const na = new Float32Array(remap.length * 3);
+  remap.forEach((i, r) => na.set(nor.subarray(i * 3, i * 3 + 3), r * 3));
+  out.setAttribute("normal", new THREE.BufferAttribute(na, 3));
+  out.setIndex(remap.length > 65535 ? new THREE.Uint32BufferAttribute(index, 1) : new THREE.Uint16BufferAttribute(index, 1));
+  INDEXED.set(geo, out);
+  return out;
+}
 
 // A source geometry made ready for a batch: the batch's attributes exactly (position, normal, colour as RGB or RGBA,
 // and uv or aCrack where its material reads them).
@@ -126,6 +235,52 @@ function prepare(geo: THREE.BufferGeometry, attrs: string[], rgba: boolean, read
   }
   if (geo.index) g.setIndex(geo.index);
   return g;
+}
+
+// A copy of a scene material that compiles the same (clone() copies neither onBeforeCompile nor its cache key).
+function copyMaterial<M extends THREE.Material>(src: M): M {
+  const c = src.clone() as M;
+  c.onBeforeCompile = src.onBeforeCompile;
+  c.customProgramCacheKey = src.customProgramCacheKey;
+  return c;
+}
+
+// The per-hex values every baked mesh reads, by the hex's slot: its centre (x, z), its roll's phase (-1 when not rolling) and
+// its squash; its tint (the glow and the dulling); the hexes' base height.
+const MAX_HEX = 64;
+type HexU = { uHexA: { value: THREE.Vector4[] }; uHexT: { value: THREE.Vector3[] }; uBaseY: { value: number } };
+
+// Teach a material the baked mesh's per-hex moments, in the vertex shader: the roll's ripple squashes each thing about its
+// pivot (aPivot.xyz) after its delay (aPivot.w; below 0, never), the hex squashes about its centre, and its tint multiplies
+// the colour.
+function hexPatch(m: THREE.Material, u: HexU) {
+  const before = m.onBeforeCompile;
+  const key = m.customProgramCacheKey();
+  m.onBeforeCompile = (sh, r) => {
+    before.call(m, sh, r);
+    sh.uniforms.uHexA = u.uHexA;
+    sh.uniforms.uHexT = u.uHexT;
+    sh.uniforms.uBaseY = u.uBaseY;
+    sh.vertexShader =
+      `attribute float aHex;\nattribute vec4 aPivot;\nuniform vec4 uHexA[ ${MAX_HEX} ];\nuniform vec3 uHexT[ ${MAX_HEX} ];\nuniform float uBaseY;\nvarying vec3 vHexTint;\n` +
+      sh.vertexShader.replace(
+        "#include <begin_vertex>",
+        /* glsl */ `#include <begin_vertex>
+        vec4 hA = uHexA[ int( aHex + 0.5 ) ];
+        if ( hA.z >= 0.0 && aPivot.w >= 0.0 ) {
+          float rv = hA.z * 1.6 - aPivot.w;
+          if ( rv > 0.0 && rv < 1.0 ) {
+            float rq = sin( rv * 9.424778 ) * pow( 1.0 - rv, 1.4 );
+            transformed = aPivot.xyz + ( transformed - aPivot.xyz ) * vec3( 1.0 - 0.12 * rq, 1.0 + 0.22 * rq, 1.0 - 0.12 * rq );
+          }
+        }
+        vec3 hC = vec3( hA.x, uBaseY, hA.y );
+        transformed = hC + ( transformed - hC ) * vec3( 1.0 - 0.03 * hA.w, 1.0 + 0.07 * hA.w, 1.0 - 0.03 * hA.w );
+        vHexTint = uHexT[ int( aHex + 0.5 ) ];`,
+      );
+    sh.fragmentShader = "varying vec3 vHexTint;\n" + sh.fragmentShader.replace("#include <color_fragment>", "#include <color_fragment>\n\tdiffuseColor.rgb *= vHexTint;");
+  };
+  m.customProgramCacheKey = () => `${key}|hex`;
 }
 
 // The camera-facing quads: each instance's matrix places and sizes it (the sprite's world matrix), its colour and alpha are
@@ -183,6 +338,12 @@ export class JellyBoard {
   readonly group = new THREE.Group();
   private kinds: Kind[] = [];
   private batches = new Map<string, Batch>();
+  private bakes: THREE.Mesh[] = [];
+  private hexU: HexU = {
+    uHexA: { value: Array.from({ length: MAX_HEX }, () => new THREE.Vector4(0, 0, -1, 0)) },
+    uHexT: { value: Array.from({ length: MAX_HEX }, () => new THREE.Vector3(1, 1, 1)) },
+    uBaseY: { value: 0 },
+  };
   private sprites: SpriteBatch[] = [];
   private byHex = new Map<string, { k: Kind; h: Hx }>();
   private t = 0;
@@ -206,21 +367,31 @@ export class JellyBoard {
       }
       const hx = hexes
         .filter((h) => h.terrain === kind)
-        .map((h): Hx => ({ id: h.id, T: new THREE.Matrix4().makeTranslation(h.x, h.y, h.z), rollAt: -Infinity, tapAt: -Infinity, dull: 0, dullTo: 0, M: new THREE.Matrix4(), fx: new THREE.Color(1, 1, 1), roll: -1, dirty: true, wasActive: false, glow: 0, glowWas: 0 }));
+        .map((h): Hx => ({ id: h.id, T: new THREE.Matrix4().makeTranslation(h.x, h.y, h.z), rollAt: -Infinity, tapAt: -Infinity, dull: 0, dullTo: 0, M: new THREE.Matrix4(), fx: new THREE.Color(1, 1, 1), roll: -1, dirty: true, wasActive: false, glow: 0, glowWas: 0, slot: 0 }));
       b.kinds.push({ kind, tile, hexes: hx, leaves: [], sprites: [] });
+      tile.group.traverse((o) => (o as THREE.Mesh).isMesh && indexed((o as THREE.Mesh).geometry));
       if (!(await pause())) {
         b.dispose();
         return null;
       }
     }
-    for (const k of b.kinds) for (const h of k.hexes) b.byHex.set(h.id, { k, h });
-    b.batch();
+    for (const k of b.kinds)
+      for (const h of k.hexes) {
+        h.slot = b.byHex.size;
+        b.byHex.set(h.id, { k, h });
+        b.hexU.uHexA.value[h.slot]?.set(h.T.elements[12]!, h.T.elements[14]!, -1, 0);
+      }
+    b.hexU.uBaseY.value = hexes[0]?.y ?? 0;
+    if (!(await b.batch(pause))) {
+      b.dispose();
+      return null;
+    }
     b.update(0, true);
     return b;
   }
 
-  private batch() {
-    type Plan = { k: Kind; o: THREE.Mesh; moves: boolean; alpha: boolean; key: string; own: boolean; attrs: string[]; rgba: boolean };
+  private async batch(pause: () => Promise<boolean>) {
+    type Plan = { k: Kind; o: THREE.Mesh; moves: boolean; alpha: boolean; key: string; own: boolean; attrs: string[]; rgba: boolean; cast: boolean };
     const plans: Plan[] = [];
     const spritePlans: { k: Kind; o: THREE.Sprite }[] = [];
     for (const k of this.kinds) {
@@ -252,74 +423,34 @@ export class JellyBoard {
         const own = differs((x) => x.mat) || ownUniforms(mat);
         // Never drawn: hidden at every sample and not moving.
         if (!moves && !s[0]!.v) return;
-        const geo = o.geometry;
+        const geo = indexed(o.geometry);
         const attrs = [geo.getAttribute("aCrack") ? "aCrack" : "", mat.customProgramCacheKey().startsWith("jelly-water") ? "uv" : ""].filter(Boolean);
-        const key = `${materialKey(mat, own, alpha)}|${attrs.join(",")}|${geo.index ? "i" : "n"}|${alpha ? "rgba" : "rgb"}|${o.renderOrder}|${o.castShadow}|${o.receiveShadow}`;
-        plans.push({ k, o, moves, alpha, key, own, attrs, rgba: alpha });
+        // Only what is big enough to show a shadow at the board's scale casts one (a pebble's or a wheat stalk's is a pixel).
+        const cast = o.castShadow && sizeOf(o) > SHADOW_MIN;
+        const key = `${materialKey(mat, own, alpha)}|${attrs.join(",")}|${alpha ? "rgba" : "rgb"}|${o.renderOrder}|${cast}|${o.receiveShadow}`;
+        plans.push({ k, o, moves, alpha, key, own, attrs, rgba: alpha, cast });
       });
       for (const o of sprites) spritePlans.push({ k, o });
     }
 
-    // Size each batch, then fill it.
-    const sizes = new Map<string, { inst: number; verts: number; idx: number; geos: Set<THREE.BufferGeometry> }>();
-    for (const p of plans) {
-      const z = sizes.get(p.key) ?? { inst: 0, verts: 0, idx: 0, geos: new Set() };
-      const n = (p.o as THREE.InstancedMesh).isInstancedMesh ? (p.o as THREE.InstancedMesh).count : 1;
-      z.inst += n * p.k.hexes.length;
-      if (!z.geos.has(p.o.geometry)) {
-        z.geos.add(p.o.geometry);
-        z.verts += p.o.geometry.getAttribute("position").count;
-        z.idx += p.o.geometry.index?.count ?? 0;
-      }
-      sizes.set(p.key, z);
-    }
-    for (const p of plans) {
-      let b = this.batches.get(p.key);
-      if (!b) {
-        const z = sizes.get(p.key)!;
-        const src = p.o.material as THREE.MeshStandardMaterial;
-        // The batch draws with the first source's own material: its program and uniforms are the scene's. Colour comes per
-        // instance (white here) unless it is the material's own batch; opacity per instance where it changes.
-        let mat: THREE.Material = src;
-        if (p.rgba) {
-          // Opacity comes per instance: a copy of the material at full opacity, reading the RGBA colour.
-          const c = src.clone();
-          c.onBeforeCompile = src.onBeforeCompile;
-          c.customProgramCacheKey = src.customProgramCacheKey;
-          c.opacity = 1;
-          c.vertexColors = true;
-          mat = c;
-        }
-        const mesh = new THREE.BatchedMesh(z.inst, z.verts, Math.max(z.idx, 1), mat);
-        mesh.frustumCulled = false;
-        mesh.perObjectFrustumCulled = false;
-        mesh.sortObjects = mat.transparent;
-        mesh.castShadow = p.o.castShadow;
-        mesh.receiveShadow = p.o.receiveShadow;
-        mesh.renderOrder = p.o.renderOrder;
-        b = { mesh, geos: new Map(), tris: new Map(), rgba: p.rgba };
-        this.batches.set(p.key, b);
-        this.group.add(mesh);
-      }
-      let gid = b.geos.get(p.o.geometry);
-      if (gid === undefined) {
-        const g = prepare(p.o.geometry, p.attrs, p.rgba, (p.o.material as THREE.Material & { vertexColors: boolean }).vertexColors);
-        gid = b.mesh.addGeometry(g);
-        b.geos.set(p.o.geometry, gid);
-        b.tris.set(gid, (g.index ? g.index.count : g.getAttribute("position").count) / 3);
-      }
+    // Static or moving. A material whose own uniforms or emissive change serves only one kind of user: if any of its users
+    // moves, all of them go to the batches.
+    const movingOwn = new Set(plans.filter((p) => p.own && (p.moves || p.alpha)).map((p) => p.o.material));
+    const fits = this.byHex.size <= MAX_HEX;
+    const isStatic = (p: Plan) => fits && !p.moves && !p.alpha && !movingOwn.has(p.o.material);
+
+    // Per source: its base colour per instance (the material's colour unless its own, times the instance's colour), the
+    // placed thing it belongs to and the ripple's delay (the studio's own rule: a placed thing by its distance from the
+    // centre, a crowd instance by its own).
+    const leafOf = (p: Plan): Omit<Leaf, "batch" | "ids"> => {
       const im = p.o as THREE.InstancedMesh;
       const n = im.isInstancedMesh ? im.count : 1;
-      const ids = new Int32Array(n * p.k.hexes.length);
-      for (let i = 0; i < ids.length; i++) ids[i] = b.mesh.addInstance(gid);
-      // The base colour per source instance: the material's colour (unless its own batch), times the instance's colour.
       const mc = p.own ? new THREE.Color(1, 1, 1) : ((p.o.material as THREE.MeshStandardMaterial).color?.clone() ?? new THREE.Color(1, 1, 1));
       const base = Array.from({ length: n }, (_, j) => {
         const c = mc.clone();
         if (im.isInstancedMesh && im.instanceColor) c.multiply(im.getColorAt(j, _c));
         return c;
       });
-      // The placed thing it belongs to: the scene group's child it sits under (the studio's own ripple rule).
       const props = p.k.tile.group.children.find((c) => c.type === "Group");
       let top: THREE.Object3D | null = null;
       for (let q: THREE.Object3D | null = p.o; q && q.parent; q = q.parent) if (q.parent === props) top = q;
@@ -337,9 +468,82 @@ export class JellyBoard {
         if (top.userData.loose || d < 0.3) top = null;
         else delay = Float32Array.of((d - 0.3) * 0.5);
       }
-      p.k.leaves.push({ o: p.o, n, moves: p.moves, alpha: p.alpha, top, delay, batch: b, ids, base });
+      return { o: p.o, n, moves: p.moves, alpha: p.alpha, top, delay, base, baked: false };
+    };
+
+    // The static: baked, per material, into one mesh over every hex.
+    const bakes = new Map<string, { plans: Plan[]; leaves: Omit<Leaf, "batch" | "ids">[] }>();
+    for (const p of plans.filter(isStatic)) {
+      const e = bakes.get(p.key) ?? { plans: [], leaves: [] };
+      e.plans.push(p);
+      e.leaves.push(leafOf(p));
+      bakes.set(p.key, e);
     }
-    // Shared materials go white once every source's colour is read; the batch colours each instance.
+    // A pause after every few bakes: a bake is a pass over every corner it holds.
+    let since = performance.now();
+    for (const e of bakes.values()) {
+      const mesh = this.bake(e.plans, e.leaves);
+      this.group.add(mesh);
+      e.plans.forEach((p, i) => p.k.leaves.push({ ...e.leaves[i]!, baked: true, batch: null, ids: new Int32Array(0) }));
+      if (performance.now() - since > 40) {
+        if (!(await pause())) return false;
+        since = performance.now();
+      }
+    }
+
+    // The moving: a BatchedMesh per material, sized, then filled.
+    const moving = plans.filter((p) => !isStatic(p));
+    const sizes = new Map<string, { inst: number; verts: number; idx: number; geos: Set<THREE.BufferGeometry> }>();
+    for (const p of moving) {
+      const z = sizes.get(p.key) ?? { inst: 0, verts: 0, idx: 0, geos: new Set() };
+      const n = (p.o as THREE.InstancedMesh).isInstancedMesh ? (p.o as THREE.InstancedMesh).count : 1;
+      z.inst += n * p.k.hexes.length;
+      const geo = indexed(p.o.geometry);
+      if (!z.geos.has(geo)) {
+        z.geos.add(geo);
+        z.verts += geo.getAttribute("position").count;
+        z.idx += geo.index!.count;
+      }
+      sizes.set(p.key, z);
+    }
+    for (const p of moving) {
+      let b = this.batches.get(p.key);
+      if (!b) {
+        const z = sizes.get(p.key)!;
+        const src = p.o.material as THREE.MeshStandardMaterial;
+        // The batch draws with the first source's own material: its program and uniforms are the scene's. Colour comes per
+        // instance (white here) unless it is the material's own batch; opacity per instance where it changes.
+        let mat: THREE.Material = src;
+        if (p.rgba) {
+          // Opacity comes per instance: a copy of the material at full opacity, reading the RGBA colour.
+          mat = copyMaterial(src);
+          mat.opacity = 1;
+          (mat as THREE.MeshStandardMaterial).vertexColors = true;
+        }
+        const mesh = new THREE.BatchedMesh(z.inst, z.verts, Math.max(z.idx, 1), mat);
+        mesh.frustumCulled = false;
+        mesh.perObjectFrustumCulled = false;
+        mesh.sortObjects = mat.transparent;
+        mesh.castShadow = p.cast;
+        mesh.receiveShadow = p.o.receiveShadow;
+        mesh.renderOrder = p.o.renderOrder;
+        b = { mesh, geos: new Map(), tris: new Map(), rgba: p.rgba };
+        this.batches.set(p.key, b);
+        this.group.add(mesh);
+      }
+      let gid = b.geos.get(p.o.geometry);
+      if (gid === undefined) {
+        const g = prepare(indexed(p.o.geometry), p.attrs, p.rgba, (p.o.material as THREE.Material & { vertexColors: boolean }).vertexColors);
+        gid = b.mesh.addGeometry(g);
+        b.geos.set(p.o.geometry, gid);
+        b.tris.set(gid, g.index!.count / 3);
+      }
+      const L = leafOf(p);
+      const ids = new Int32Array(L.n * p.k.hexes.length);
+      for (let i = 0; i < ids.length; i++) ids[i] = b.mesh.addInstance(gid);
+      p.k.leaves.push({ ...L, batch: b, ids });
+    }
+    // Shared materials go white once every source's colour is read; the batches colour each instance, the bakes each corner.
     for (const p of plans) if (!p.own) (p.o.material as THREE.MeshStandardMaterial).color?.setRGB(1, 1, 1);
 
     // The sprites: one draw for the added glows, one for the blended puffs.
@@ -362,6 +566,107 @@ export class JellyBoard {
       this.sprites.push(sb);
       this.group.add(sb.mesh);
     }
+    return true;
+  }
+
+  // Bake static sources (one material's) into one mesh over every hex of their kind: each corner in world space, with its
+  // colour, its hex's slot and the pivot and delay its thing squashes by in a roll.
+  private bake(plans: { k: Kind; o: THREE.Mesh; own: boolean; attrs: string[]; cast: boolean }[], leaves: Omit<Leaf, "batch" | "ids">[]) {
+    const p0 = plans[0]!;
+    const src = p0.o.material as THREE.MeshStandardMaterial;
+    const reads = !!(src as THREE.Material & { vertexColors: boolean }).vertexColors;
+    const mat = p0.own ? src : copyMaterial(src);
+    if (!p0.own) mat.color?.setRGB(1, 1, 1);
+    (mat as THREE.Material & { vertexColors: boolean }).vertexColors = true;
+    hexPatch(mat, this.hexU);
+    let nv = 0;
+    let ni = 0;
+    plans.forEach((p, i) => {
+      const g = indexed(p.o.geometry);
+      const c = leaves[i]!.n * p.k.hexes.length;
+      nv += g.getAttribute("position").count * c;
+      ni += g.index!.count * c;
+    });
+    const P = new Float32Array(nv * 3);
+    const N = new Float32Array(nv * 3);
+    const C = new Float32Array(nv * 3);
+    const H = new Float32Array(nv);
+    const V = new Float32Array(nv * 4);
+    const X = p0.attrs.map((a) => ({ a, k: a === "uv" ? 2 : 1, arr: new Float32Array(nv * (a === "uv" ? 2 : 1)) }));
+    const I = nv > 65535 ? new Uint32Array(ni) : new Uint16Array(ni);
+    let v0 = 0;
+    let i0 = 0;
+    const W = new THREE.Matrix4();
+    const NM = new THREE.Matrix3();
+    const v = new THREE.Vector3();
+    const piv = new THREE.Vector3();
+    plans.forEach((p, li) => {
+      const L = leaves[li]!;
+      const g = indexed(p.o.geometry);
+      if (!g.getAttribute("normal")) g.computeVertexNormals();
+      g.boundingSphere ?? g.computeBoundingSphere();
+      const pos = g.getAttribute("position") as THREE.BufferAttribute;
+      const nor = g.getAttribute("normal") as THREE.BufferAttribute;
+      const col = reads ? (g.getAttribute("color") as THREE.BufferAttribute | undefined) : undefined;
+      const idx = g.index!;
+      const ex = X.map((x) => g.getAttribute(x.a) as THREE.BufferAttribute | undefined);
+      const im = p.o as THREE.InstancedMesh;
+      for (const h of p.k.hexes)
+        for (let j = 0; j < L.n; j++) {
+          W.copy(h.T).multiply(p.o.matrixWorld);
+          if (im.isInstancedMesh) {
+            W.multiply(im.getMatrixAt(j, _m2));
+            if (g.boundingSphere!.radius * W.getMaxScaleOnAxis() < SPECK) continue;
+          }
+          NM.getNormalMatrix(W);
+          let delay = -1;
+          if (im.isInstancedMesh && L.delay) {
+            delay = L.delay[j]!;
+            piv.setFromMatrixPosition(W);
+          } else if (L.top && L.delay) {
+            delay = L.delay[0]!;
+            piv.setFromMatrixPosition(_m.copy(h.T).multiply(L.top.matrixWorld));
+          }
+          const base = L.base[j]!;
+          for (let k = 0; k < pos.count; k++) {
+            const o = v0 + k;
+            v.fromBufferAttribute(pos, k).applyMatrix4(W).toArray(P, o * 3);
+            v.fromBufferAttribute(nor, k).applyMatrix3(NM).normalize().toArray(N, o * 3);
+            C[o * 3] = base.r * (col ? col.getX(k) : 1);
+            C[o * 3 + 1] = base.g * (col ? col.getY(k) : 1);
+            C[o * 3 + 2] = base.b * (col ? col.getZ(k) : 1);
+            H[o] = h.slot;
+            V[o * 4] = piv.x;
+            V[o * 4 + 1] = piv.y;
+            V[o * 4 + 2] = piv.z;
+            V[o * 4 + 3] = delay;
+            X.forEach((x, xi) => {
+              for (let c = 0; c < x.k; c++) x.arr[o * x.k + c] = ex[xi]?.getComponent(k, c) ?? 0;
+            });
+          }
+          for (let k = 0; k < idx.count; k++) I[i0 + k] = idx.getX(k) + v0;
+          v0 += pos.count;
+          i0 += idx.count;
+        }
+    });
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute("position", new THREE.BufferAttribute(P, 3));
+    geo.setAttribute("normal", new THREE.BufferAttribute(N, 3));
+    geo.setAttribute("color", new THREE.BufferAttribute(C, 3));
+    geo.setAttribute("aHex", new THREE.BufferAttribute(H, 1));
+    geo.setAttribute("aPivot", new THREE.BufferAttribute(V, 4));
+    for (const x of X) geo.setAttribute(x.a, new THREE.BufferAttribute(x.arr, x.k));
+    geo.setIndex(new THREE.BufferAttribute(I, 1));
+    // The specks left off leave the tail of the buffers unused.
+    geo.setDrawRange(0, i0);
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.frustumCulled = false;
+    mesh.castShadow = p0.cast;
+    mesh.receiveShadow = p0.o.receiveShadow;
+    mesh.renderOrder = p0.o.renderOrder;
+    mesh.userData.tris = i0 / 3;
+    this.bakes.push(mesh);
+    return mesh;
   }
 
   // The paying-hex glow on a hex this frame (the game times it: docs/design/dice.md).
@@ -424,6 +729,12 @@ export class JellyBoard {
         h.fx.r *= 1 + h.glow * 1.7;
         h.fx.g *= 1 + h.glow * 1.25;
         h.fx.b *= 1 + h.glow * 0.35;
+        const a = this.hexU.uHexA.value[h.slot];
+        if (a) {
+          a.z = h.roll;
+          a.w = kk;
+          this.hexU.uHexT.value[h.slot]!.set(h.fx.r, h.fx.g, h.fx.b);
+        }
       }
       for (const L of k.leaves) this.writeLeaf(k, L, all);
       for (const sp of k.sprites) this.writeSprite(k, sp);
@@ -435,6 +746,7 @@ export class JellyBoard {
   }
 
   private writeLeaf(k: Kind, L: Leaf, all: boolean) {
+    if (!L.batch) return;
     const root = k.tile.group;
     const mesh = L.batch.mesh;
     const im = L.o as THREE.InstancedMesh;
@@ -508,38 +820,80 @@ export class JellyBoard {
     return e ? e.h.T.elements[13]! + e.k.tile.ground(dx, dz) : NaN;
   }
 
-  // For the proofs: per kind, how near to the hex's centre (horizontally) anything on it comes now, by its bounding sphere,
-  // and what that is. The block itself, water, fog and glows are not things standing on the hex.
-  clearance() {
-    const out: Record<string, { min: number; what: string }> = {};
+  // For the proofs: per kind, how near to the hex's centre (horizontally) any corner of anything on it comes now, and what
+  // that is. The block itself, water, fog and glows are not things standing on the hex.
+  clearance(under = Infinity) {
+    const out: Record<string, { min: number; what: string; all: Record<string, number> }> = {};
     const sph = new THREE.Sphere();
+    const v = new THREE.Vector3();
     for (const k of this.kinds) {
       let min = Infinity;
       let what = "";
+      const all: Record<string, number> = {};
       const [top, side] = k.tile.group.children;
       for (const L of k.leaves) {
         const mat = L.o.material as THREE.Material;
         if (L.o === top || L.o === side || mat.transparent || !visibleIn(L.o, k.tile.group)) continue;
+        let ref = "";
+        for (let q: THREE.Object3D | null = L.o; q && !ref; q = q.parent) ref = (q.userData.ref as string) ?? "";
+        ref ||= `${mat.customProgramCacheKey()}#${k.leaves.indexOf(L)}`;
         const g = L.o.geometry;
         g.boundingSphere ?? g.computeBoundingSphere();
+        const pos = g.getAttribute("position") as THREE.BufferAttribute;
         const im = L.o as THREE.InstancedMesh;
         for (let j = 0; j < L.n; j++) {
-          sph.copy(g.boundingSphere!);
           _m.copy(L.o.matrixWorld);
           if (im.isInstancedMesh) _m.multiply(im.getMatrixAt(j, _m2));
-          sph.applyMatrix4(_m);
-          const d = Math.hypot(sph.center.x, sph.center.z) - sph.radius;
-          if (d < min) {
-            min = d;
-            let ref = "";
-            for (let q: THREE.Object3D | null = L.o; q && !ref; q = q.parent) ref = (q.userData.ref as string) ?? "";
-            what = ref || mat.customProgramCacheKey();
+          sph.copy(g.boundingSphere!).applyMatrix4(_m);
+          if (Math.hypot(sph.center.x, sph.center.z) - sph.radius >= Math.max(min, under)) continue;
+          for (let i = 0; i < pos.count; i++) {
+            v.fromBufferAttribute(pos, i).applyMatrix4(_m);
+            // Fliers well over the hex (gulls, vultures) are not standing on it.
+            if (v.y > BLOCK_H + 0.45) continue;
+            const d = Math.hypot(v.x, v.z);
+            if (d < under) all[ref] = Math.min(all[ref] ?? Infinity, +d.toFixed(3));
+            if (d < min) {
+              min = d;
+              what = ref;
+            }
           }
         }
       }
-      out[k.kind] = { min, what };
+      out[k.kind] = { min, what, all };
     }
     return out;
+  }
+
+  // For the proofs: whether anything opaque in the scenes (landforms, buildings, trees, creatures) lies on the segment from a
+  // to b, short of b by 0.01.
+  occludes(a: THREE.Vector3, b: THREE.Vector3) {
+    const dir = b.clone().sub(a);
+    const len = dir.length() - 0.01;
+    dir.normalize();
+    const ray = new THREE.Ray(a, dir);
+    const [lo, hi] = [a.clone().min(b), a.clone().max(b)];
+    const t0 = new THREE.Vector3(), t1 = new THREE.Vector3(), t2 = new THREE.Vector3(), hit = new THREE.Vector3();
+    for (const m of this.bakes) {
+      if ((m.material as THREE.Material).transparent) continue;
+      const pos = m.geometry.getAttribute("position") as THREE.BufferAttribute;
+      const idx = m.geometry.index!;
+      const end = m.geometry.drawRange.count === Infinity ? idx.count : Math.min(idx.count, m.geometry.drawRange.count);
+      for (let i = 0; i < end; i += 3) {
+        t0.fromBufferAttribute(pos, idx.getX(i));
+        t1.fromBufferAttribute(pos, idx.getX(i + 1));
+        t2.fromBufferAttribute(pos, idx.getX(i + 2));
+        if (Math.max(t0.x, t1.x, t2.x) < lo.x || Math.min(t0.x, t1.x, t2.x) > hi.x) continue;
+        if (Math.max(t0.z, t1.z, t2.z) < lo.z || Math.min(t0.z, t1.z, t2.z) > hi.z) continue;
+        if (Math.max(t0.y, t1.y, t2.y) < lo.y || Math.min(t0.y, t1.y, t2.y) > hi.y) continue;
+        if (ray.intersectTriangle(t0, t1, t2, false, hit) && hit.distanceTo(a) < len) return true;
+      }
+    }
+    const caster = new THREE.Raycaster(a, dir, 0, len);
+    for (const b of this.batches.values()) {
+      if ((b.mesh.material as THREE.Material).transparent) continue;
+      if (caster.intersectObject(b.mesh, false).length) return true;
+    }
+    return false;
   }
 
   stats(): JellyStats {
@@ -549,8 +903,9 @@ export class JellyBoard {
       for (const k of this.kinds) for (const L of k.leaves) if (L.batch === b) counts.set(b.geos.get(L.o.geometry)!, (counts.get(b.geos.get(L.o.geometry)!) ?? 0) + L.ids.length);
       for (const [gid, n] of counts) triangles += b.tris.get(gid)! * n;
     }
+    for (const m of this.bakes) triangles += m.userData.tris as number;
     for (const sb of this.sprites) triangles += 2 * sb.count;
-    return { drawCalls: this.batches.size + this.sprites.length, triangles: Math.round(triangles), kinds: this.kinds.length, batches: this.batches.size, sprites: this.sprites.length };
+    return { drawCalls: this.batches.size + this.bakes.length + this.sprites.length, triangles: Math.round(triangles), kinds: this.kinds.length, batches: this.batches.size, bakes: this.bakes.length, sprites: this.sprites.length };
   }
 
   dispose() {
@@ -558,6 +913,11 @@ export class JellyBoard {
       b.mesh.dispose();
       (b.mesh.material as THREE.Material).dispose();
     }
+    for (const m of this.bakes) {
+      m.geometry.dispose();
+      (m.material as THREE.Material).dispose();
+    }
+    this.bakes = [];
     for (const sb of this.sprites) {
       sb.mesh.geometry.dispose();
       (sb.mesh.material as THREE.Material).dispose();

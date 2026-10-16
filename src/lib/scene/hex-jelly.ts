@@ -212,7 +212,7 @@ export function layoutOf(kind: Terrain, seed: number): Layout {
     // running out from it across a dry gully to the tipple on that flank; the tarn on the other front flank.
     const s = r() < 0.5 ? -1 : 1;
     // The peaks are faceted rock meshes (mine()); the ground only swells under them.
-    L.peaks.push({ ...at(hillAt, 0.52), r: 0.24, h: 0.64 + r() * 0.04 });
+    L.peaks.push({ ...at(hillAt, 0.56), r: 0.24, h: 0.64 + r() * 0.04 });
     L.peaks.push({ ...at(hillAt - s * 0.62, 0.54), r: 0.19, h: 0.42 + r() * 0.05 });
     L.peaks.push({ ...at(hillAt + s * 0.55, 0.56), r: 0.17, h: 0.34 + r() * 0.04 });
     const a = at(hillAt - s * 0.62, 0.56);
@@ -368,7 +368,8 @@ export function heightAt(L: Layout, x: number, z: number) {
     const [sx, sz] = [b.x - a.x, b.z - a.z];
     const w = Math.min(1, Math.max(0, ((x - a.x) * sx + (z - a.z) * sz) / (sx * sx + sz * sz)));
     const d = Math.hypot(x - a.x - w * sx, z - a.z - w * sz) / 0.075;
-    const keep = cut * (1 - smooth(INR - 0.2, INR - 0.08, hexDist(x, z)));
+    // Gone by 0.12 from the edge, where the pieces' band begins.
+    const keep = cut * (1 - smooth(INR - 0.24, INR - 0.12, hexDist(x, z)));
     if (d < 1) h -= 0.09 * (1 - d * d) * (1 - d * d) * keep;
   }
   if (L.kind === "clay") {
@@ -377,8 +378,9 @@ export function heightAt(L: Layout, x: number, z: number) {
     const back = smooth(-0.12, 0.2, Q.v);
     const lip = smooth(0.88, 1.0, Q.d) * (1 - smooth(1.0, 1.55, Q.d)) * (0.06 + 0.1 * back);
     h += (lip + 0.035 * Math.max(0, noise(x * 11, z * 11, L.seed + 13)) * smooth(0.95, 1.05, Q.d) * (1 - smooth(1.05, 1.4, Q.d))) * pad * corner * edge;
-    // The cut: the floor, a bench halfway up, the walls; and the trench. Both fade out before the block's own side.
-    const keep = cut * (1 - smooth(INR - 0.26, INR - 0.08, hexDist(x, z))) * smooth(CORNER_DISC + 0.02, CORNER_DISC + 0.16, nearestCorner(x, z));
+    // The cut: the floor, a bench halfway up, the walls; and the trench. Both fade out by 0.12 from the edge, where the
+    // pieces' band begins.
+    const keep = cut * (1 - smooth(INR - 0.3, INR - 0.12, hexDist(x, z))) * smooth(CORNER_DISC + 0.02, CORNER_DISC + 0.16, nearestCorner(x, z));
     if (Q.d < 1) {
       const step = 1 - 0.45 * smooth(0.55, 0.63, Q.d) - 0.55 * smooth(0.88, 0.97, Q.d);
       h = h * smooth(0.88, 1, Q.d) - Q_D * step * keep + 0.008 * noise(x * 14, z * 14, L.seed + 3) * keep;
@@ -847,12 +849,12 @@ let dot: THREE.BufferGeometry | null = null;
 const sphere = (n = 12) => {
   // On the board the small spheres (berries, flowers, pebbles, eyes) are twenty-sided: a few pixels across, they read round.
   if (BOARD && n <= 8) return (dot ??= new THREE.IcosahedronGeometry(1, 0));
-  if (BOARD) n = Math.max(6, Math.round(n * 0.6));
+  if (BOARD) n = Math.max(5, Math.round(n * 0.45));
   let g = sphereCache.get(n);
   if (!g) sphereCache.set(n, (g = new THREE.SphereGeometry(1, n, Math.max(6, n * 0.7))));
   return g;
 };
-const cyl = (rt: number, rb: number, n = 10) => new THREE.CylinderGeometry(rt, rb, 1, n);
+const cyl = (rt: number, rb: number, n = 10) => new THREE.CylinderGeometry(rt, rb, 1, BOARD ? Math.max(3, Math.round(n * 0.5)) : n);
 const mesh = (g: THREE.BufferGeometry, m: THREE.Material) => {
   const o = new THREE.Mesh(g, m);
   o.castShadow = o.receiveShadow = true;
@@ -2010,15 +2012,17 @@ function pasture(L: Layout, ground: (x: number, z: number) => number, r: () => n
 
 // A wheat tuft: four stalks leaning out a little, each with a plump ear; the material sways it in a travelling wind wave.
 function tuftGeo() {
+  // On the board a tuft is one gold spindle: a stalk and its head read as one stroke a few pixels tall.
+  if (BOARD) return merge([part(new THREE.OctahedronGeometry(1, 0), "#e2b84e", [0, 0.032, 0], [0, 0.4, 0], [0.006, 0.032, 0.006])]);
   const parts: THREE.BufferGeometry[] = [];
-  const stalks = BOARD ? 2 : 4;
+  const stalks = 4;
   for (let i = 0; i < stalks; i++) {
     const a = (i / stalks) * Math.PI * 2 + 0.4;
     const lean = 0.12 + (i % 2) * 0.1;
     const [x, z] = [Math.cos(a) * 0.004, Math.sin(a) * 0.004];
     const h = 0.052 + (i % 3) * 0.006;
     parts.push(part(cyl(0.0012, 0.0016, 3), "#c99a3a", [x, h / 2, z], [Math.sin(a) * lean, 0, -Math.cos(a) * lean], [1, h, 1]));
-    parts.push(part(BOARD ? new THREE.OctahedronGeometry(1, 0) : new THREE.SphereGeometry(1, 5, 4), "#f2c95a", [x + Math.cos(a) * h * lean, h + 0.006, z + Math.sin(a) * h * lean], [Math.sin(a) * lean, 0, -Math.cos(a) * lean], [0.0042, 0.011, 0.0042]));
+    parts.push(part(new THREE.SphereGeometry(1, 5, 4), "#f2c95a", [x + Math.cos(a) * h * lean, h + 0.006, z + Math.sin(a) * h * lean], [Math.sin(a) * lean, 0, -Math.cos(a) * lean], [0.0042, 0.011, 0.0042]));
   }
   return merge(parts);
 }

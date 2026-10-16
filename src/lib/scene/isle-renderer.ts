@@ -1207,7 +1207,7 @@ export class IsleRenderer {
   terrainStats(): TerrainStats {
     if (this.jelly) return { ready: true, ...this.jelly.stats() };
     const n = this.slabs?.count ?? 0;
-    return { ready: false, drawCalls: n ? 1 : 0, triangles: n * 24, kinds: 0, batches: 0, sprites: 0 };
+    return { ready: false, drawCalls: n ? 1 : 0, triangles: n * 24, kinds: 0, batches: 0, bakes: 0, sprites: 0 };
   }
 
   // Ready once the island's scenes are built and showing (the proofs wait on it).

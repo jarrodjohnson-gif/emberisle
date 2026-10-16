@@ -71,4 +71,4 @@ if (frozen) {
   // Step up to T so dulling settles.
   for (let k = 10; k >= 0; k--) draw(T - k * 0.1);
 } else renderer.setAnimationLoop((ms) => draw(ms / 1000));
-(window as unknown as { __jb: unknown }).__jb = { ready: true, buildMs, longest, frameMs: () => frameMs, stats: board.stats(), info: () => ({ ...renderer.info.render }), board };
+(window as unknown as { __jb: unknown }).__jb = { redraw: () => renderer.render(scene, camera), ready: true, buildMs, longest, frameMs: () => frameMs, stats: board.stats(), info: () => ({ ...renderer.info.render }), board };
