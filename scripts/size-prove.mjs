@@ -49,7 +49,9 @@ const BUDGETS = [
   // 2026-10-15 (#603): 6.33 kB measured with the win screen's winning action on top of #611's lobby selector; +170 B.
   // 2026-10-15 (#612): 6.37 kB measured with wayfarer modes on top of #603; the #603 ceiling holds, no raise.
   { name: "sheets", gzipBytes: 6500 },
-  { name: "moments", gzipBytes: 2610 },
+  // 2026-10-16 (#643): the "My numbers" strip rides in moments, off the first load (the index measured 120.64 kB with it there,
+  // over its 120.15 kB budget); 3.00 kB measured against 2.42 kB on main, +300 B headroom.
+  { name: "moments", gzipBytes: 3300 },
   // 2026-10-14 (#611): the lobby and win screen share their target selector; rolldown coalesces the shared Minus icon here too.
   // 0.65 kB at introduction, with a 0.75 kB ceiling; replaces the former minus-only chunk.
   { name: "VictoryTargetSelect", gzipBytes: 750 },

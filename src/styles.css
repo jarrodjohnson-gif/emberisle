@@ -336,3 +336,16 @@ input, select, textarea { border-color: var(--control-line); }
   [data-choice-open='true'] .chat-presets, [data-choice-open='true'] .chat-filters { display: none; }
 }
 .hud-stack [data-testid="dice-row"] { background: var(--table); color: var(--table-muted); border-radius: var(--radius-control); }
+
+/* #643: the "My numbers" strip in the log line's row; a chip lights when its number is rolled. */
+.my-numbers { scrollbar-width: none; mask-image: linear-gradient(to right, #000 calc(100% - 10px), transparent); -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 10px), transparent); padding-right: 8px; }
+.my-numbers::-webkit-scrollbar { display: none; }
+.my-number { background: var(--table); color: var(--color-fg, #1c1916); }
+.my-number-hot { color: #b3261e; }
+.my-number-lit { background: var(--color-accent); color: #fff; animation: my-number-glow 1200ms ease-out both; }
+@keyframes my-number-glow {
+  0% { box-shadow: 0 0 0 0 rgb(36 109 114 / 0.6); transform: scale(1); }
+  25% { box-shadow: 0 0 0 4px rgb(36 109 114 / 0.35); transform: scale(1.12); }
+  100% { box-shadow: 0 0 0 0 rgb(36 109 114 / 0); transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) { .my-number-lit { animation: none; } }

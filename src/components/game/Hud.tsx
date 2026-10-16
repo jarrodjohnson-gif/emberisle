@@ -7,7 +7,7 @@ import {
   ScrollText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ChatControls, ChatDock, ChromeLanded, CostCard, FortuneTray, GainFloats, HowTo, sheets, TradePanel, TurnMoment, WinScreen } from "@/components/game/chunks";
+import { ChatControls, ChatDock, ChromeLanded, CostCard, FortuneTray, GainFloats, HowTo, MyNumbers, sheets, TradePanel, TurnMoment, WinScreen } from "@/components/game/chunks";
 import { TradeToast } from "@/components/game/TradeToast";
 import { WinFailed } from "@/components/game/WinFailed";
 import { Announcer } from "@/components/game/Announcer";
@@ -475,13 +475,23 @@ export function Hud() {
               <div className="flex flex-wrap items-center gap-2">{fortunes}{dice}</div>
             ) : diceInBar ? null : dice}
 
-            <p
-              hidden={tradeVisible}
-              data-testid="log-line"
-              className="table-log block h-5 shrink-0 overflow-hidden rounded-control px-3 text-xs leading-5"
-            >
-              {gameLog.at(-1)?.text}
-            </p>
+            {/* #643: the seat's numbers share the log line's row, so the tray keeps its height (the declared hole holds). They
+                ride in the moments chunk (off the first load: there are none before the first outpost); if it cannot load,
+                the row is the log line alone. */}
+            <div className={cn(tradeVisible ? "hidden" : "flex", "h-5 shrink-0 items-center gap-1")}>
+              {spectator ? null : (
+                <LazyBoundary failed={null}>
+                  <MyNumbers state={state} playerId={me.id} />
+                </LazyBoundary>
+              )}
+              <p
+                hidden={tradeVisible}
+                data-testid="log-line"
+                className="table-log block h-5 min-w-0 flex-1 overflow-hidden truncate rounded-control px-3 text-xs leading-5"
+              >
+                {gameLog.at(-1)?.text}
+              </p>
+            </div>
             {pinEnd ? endRow : null}
             <TradeToast />
           </div>
