@@ -194,6 +194,8 @@ interface GameStore {
   error: string | null;
   // Bumped on every refused move, so the same error twice is announced twice (#380).
   errorSeq: number;
+  // Said to a screen reader (and sounded) without a line on screen: a short build's tap is answered by its chip (#535).
+  announcement: string | null;
   buildMode: BuildMode;
   // Edges picked so far for a path fortune (buildMode "roadCard"); sent together as one playRoad.
   roadPicks: string[];
@@ -231,6 +233,8 @@ interface GameStore {
   confirmPlace: () => void;
   // A tap the hand cannot pay for says why, the way a refused move does (the status line, the screen reader, the error cue).
   refuse: (message: string) => void;
+  // The same cue and announcement as `refuse`, with no line on the HUD: the caller shows the message itself.
+  refuseQuietly: (message: string) => void;
   highlights: () => { vertices: string[]; edges: string[]; hexes: string[] };
   // Set when a robber/knight hex has 2+ steal targets and needs the player to pick one.
   pendingSteal: { hexId: string; kind: "moveRobber" | "playKnight"; targets: string[] } | null;
@@ -400,6 +404,7 @@ export const useGame = create<GameStore>((set, get) => ({
   host: true,
   state: null,
   error: null,
+  announcement: null,
   errorSeq: 0,
   buildMode: "none",
   roadPicks: [],
@@ -478,6 +483,7 @@ export const useGame = create<GameStore>((set, get) => ({
       state,
       gameLog: stamp(state.log),
       error: null,
+      announcement: null,
       toast: null,
       buildMode: "none",
       net: null,
@@ -507,6 +513,7 @@ export const useGame = create<GameStore>((set, get) => ({
       state,
       gameLog: stamp(state.log),
       error: null,
+      announcement: null,
       toast: null,
       buildMode: "none",
       net: null,
@@ -528,6 +535,7 @@ export const useGame = create<GameStore>((set, get) => ({
       host,
       table: table ?? get().table,
       error: null,
+      announcement: null,
       pendingSteal: null,
       resync: false,
       synced: get().resync ? get().synced + 1 : get().synced,
@@ -546,6 +554,7 @@ export const useGame = create<GameStore>((set, get) => ({
       wayfarerChoices: {},
       state: null,
       error: null,
+      announcement: null,
       buildMode: "none",
       net: null,
       peeking: false,
@@ -595,7 +604,7 @@ export const useGame = create<GameStore>((set, get) => ({
     const nextState = automated
       ? logBotAction(state, res.state, action, actor, state.players.find((p) => p.id === actor)?.name.replace(/ \(bot\)$/i, "") ?? actor)
       : res.state;
-    set({ state: nextState, gameLog: appendLog(get().gameLog, newLog(state.log, nextState.log)), error: null, toast: null, buildMode: "none", roadPicks: [] });
+    set({ state: nextState, gameLog: appendLog(get().gameLog, newLog(state.log, nextState.log)), error: null, announcement: null, toast: null, buildMode: "none", roadPicks: [] });
     hear(state, nextState, localId, mode);
     // An offer lives only while its asker still has the turn in `main` and still holds the offered goods (as host.mjs play).
     const open = get().offer;
@@ -665,6 +674,11 @@ export const useGame = create<GameStore>((set, get) => ({
   setPendingPlace: (p) => set({ pendingPlace: p }),
   refuse: (message) => {
     set({ error: message, toast: message, errorSeq: get().errorSeq + 1 });
+    play("ui_error");
+  },
+  // `error` also draws the HUD's line, so the message goes to `announcement` and an earlier line is cleared: the newest word wins.
+  refuseQuietly: (message) => {
+    set({ error: null, announcement: message, errorSeq: get().errorSeq + 1 });
     play("ui_error");
   },
   confirmPlace: () => {
@@ -796,6 +810,7 @@ export const useGame = create<GameStore>((set, get) => ({
       localId: "p0",
       gameLog: appendLog(get().gameLog, next.log),
       error: null,
+      announcement: null,
       toast: null,
       buildMode: "none",
       roadPicks: [],

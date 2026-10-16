@@ -138,7 +138,7 @@ export function Hud() {
   const chatOpen = useGame((s) => s.chatOpen);
   const tradeOpen = useGame((s) => s.tradeOpen);
   const dispatch = useGame((s) => s.dispatch);
-  const refuse = useGame((s) => s.refuse);
+  const refuseQuietly = useGame((s) => s.refuseQuietly);
   const setBuildMode = useGame((s) => s.setBuildMode);
   const setHowTo = useGame((s) => s.setHowTo);
   const menuFor = useGame((s) => s.menuFor);
@@ -179,6 +179,8 @@ export function Hud() {
     return () => clearTimeout(t);
   }, [hint]);
   useEffect(() => {
+    // The chip names what was missing for the hand it was tapped with: a new hand or seat takes it down.
+    setHint(null);
     const [wasId, was = ""] = wasReady.current.split("|");
     const [id, now = ""] = readyKey.split("|");
     wasReady.current = readyKey;
@@ -417,7 +419,8 @@ export function Hud() {
                         // A tap the hand cannot pay for says what is missing (a spot waiting, goods short) instead of doing nothing.
                         if (!spectator && !why && missing && buildMode !== arm) {
                           setHint((h) => ({ kind, text: hintLine(short), n: (h?.n ?? 0) + 1 }));
-                          return void refuse(needLine(short));
+                          // The chip is the one line on screen; the error cue and the screen reader still get the full sentence.
+                          return void refuseQuietly(needLine(short));
                         }
                         if (!arm) return void (blocked || dispatch({ type: "buyCard" }));
                         if (blocked && buildMode !== arm) return;

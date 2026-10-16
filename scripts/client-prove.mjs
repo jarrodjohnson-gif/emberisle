@@ -802,10 +802,10 @@ try {
   const cardsBefore = await page.evaluate(() => window.__emberisle.getState().state.deck.length);
   for (const n of ["Path", "Outpost", "Stronghold", "Fortune"]) await page.getByRole("button", { name: n, exact: true }).click({ force: true });
   await page.keyboard.press("Enter");
-  const clickRes = await page.evaluate(() => ({ buildMode: window.__emberisle.getState().buildMode, cards: window.__emberisle.getState().state.deck.length, error: window.__emberisle.getState().error }));
+  const clickRes = await page.evaluate(() => ({ buildMode: window.__emberisle.getState().buildMode, cards: window.__emberisle.getState().state.deck.length, error: window.__emberisle.getState().error, said: window.__emberisle.getState().announcement }));
   console.log("click unaffordable:", JSON.stringify({ ...clickRes, cardsBefore }));
-  // A tap the hand cannot pay for builds and buys nothing, and says what is missing.
-  if (clickRes.buildMode !== "none" || clickRes.cards !== cardsBefore || !/^Need \d+ more /.test(clickRes.error ?? "")) throw new Error(`unaffordable click acted: ${JSON.stringify(clickRes)}`);
+  // A tap the hand cannot pay for builds and buys nothing, and says what is missing: to the screen reader and the error cue, with no HUD error line (#535: the chip over the build is the one message on screen).
+  if (clickRes.buildMode !== "none" || clickRes.cards !== cardsBefore || clickRes.error !== null || !/^Need \d+ more /.test(clickRes.said ?? "")) throw new Error(`unaffordable click acted: ${JSON.stringify(clickRes)}`);
   await setHand({ timber: 1, clay: 1 });
   const some = await buildRow();
   console.log("build row, 1 timber 1 clay:", JSON.stringify(some));
