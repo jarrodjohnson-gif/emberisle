@@ -21,7 +21,10 @@ const BUDGETS = [
   // 2026-10-15: 185.01 kB measured on main once the diorama (#604, +1.1 kB) and the natural waves (#614, +1.0 kB) both
   // landed; each fit its own raise alone.
   // 2026-10-15 (#616): 189.76 kB measured with the touch splash (+4.7 kB: splash field, droplets, fish, wobble) on top.
-  { name: "IslandCanvas", gzipBytes: 191500 },
+  // 2026-10-15 (#599): +5.6 kB for the sculpted tiles and code-built props (terrain.ts; 188.80 kB measured), less the photo-texture path.
+  // 2026-10-15 (#618): 190.76 kB measured with the sculpted terrain on top of the diorama and the waves; +750 B headroom.
+  // 2026-10-15 (#618 + #616): 195.39 kB measured with the sculpted terrain and the touch splash both on main; +600 B.
+  { name: "IslandCanvas", gzipBytes: 196000 },
   { name: "online", gzipBytes: 8000 },
   // 2026-10-15 (#603): 6.33 kB measured with the win screen's winning action on top of #611's lobby selector; +170 B.
   { name: "sheets", gzipBytes: 6500 },

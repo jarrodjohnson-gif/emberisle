@@ -26,6 +26,9 @@
 //   least 18 px apart (the tilt foreshortens a step along the line of sight; 18 px keeps a tap dead on a corner outside its
 //   neighbour's 14 px touch reach), and a path and an outpost on the far (north) coast measure at least the touch slop;
 //   with Path armed and an edge picked by touch, the Place chip is in view and covers neither the hand nor the turn banner.
+// - #599 (docs/design/terrain.md): every terrain kind has a sculpted top, flat at topOf under the token and on the rim, side
+//   strata, no two tiles alike; terrain and props in at most 40 draw calls, the island under 220k triangles, no prop vertex
+//   within 0.37 of a token's centre; saves test-results/terrain-1280.png (diorama) and terrain-390.png (overhead).
 // Zero console errors. Saves test-results/board-look-{title,play}-<size>.png. Port from VITE_PORT, default 8112.
 import { existsSync, mkdirSync } from "node:fs";
 import { chromium } from "playwright";
@@ -753,6 +756,101 @@ try {
     }
 
     await page.context().close();
+  }
+  // #599, docs/design/terrain.md: the sculpted tiles. On the play board (diorama 1280x720, crystal sea): every terrain kind has
+  // a sculpted top (a height spread over 0.01 and under 0.2 world units) that is exactly at topOf under the token (within
+  // 0.4 of the centre) and on the rim where the pieces stand; its side shows the sand, shell, soil and rock strata; no two tiles
+  // of a kind are the same; terrain and props draw in at most 40 calls (window.__terrain) and the whole island (land, props,
+  // tokens, docks, pieces) holds at most 220k triangles; no vertex of any prop comes within 0.37 of a token's centre (the
+  // 0.34 disc at its 1.08x diorama scale). Then test-results/terrain-1280.png and, overhead on a 390x844 phone, terrain-390.png.
+  {
+    const page = await open(1280, 720, false, "crystal");
+    await page.getByRole("button", { name: "Four seats, one table" }).click();
+    await page.waitForFunction(() => window.__emberisle?.water?.path === "crystal" && window.__isle.lastState && !window.__isle.refitDue && !window.__isle.glide, null, { timeout: STEP_MS });
+    await drawn(page, 3);
+    const t = await page.evaluate(async () => {
+      const isle = window.__isle;
+      const { topOf } = await import("/src/lib/scene/isle-renderer.ts");
+      const { STRATA } = await import("/src/lib/scene/palette.ts");
+      const { worldOfHex } = await import("/src/lib/game/board.ts");
+      const st = isle.lastState;
+      const toS = (v) => Math.round(255 * (v <= 0.0031308 ? v * 12.92 : 1.055 * v ** (1 / 2.4) - 0.055));
+      const hexOf = (r, g, b) => "#" + [r, g, b].map((v) => toS(v).toString(16).padStart(2, "0")).join("");
+      const tiles = isle.land.children.filter((o) => o.userData.land);
+      const kinds = {};
+      for (const tile of tiles) {
+        const h = st.hexes.find((x) => x.id === tile.userData.id);
+        const cap = tile.getObjectByName("cap");
+        const g = cap.geometry;
+        const [p, c, glow] = [g.attributes.position, g.attributes.color, g.attributes.aGlow];
+        const top = topOf(h.terrain) - tile.position.y;
+        let lo = Infinity, hi = -Infinity, plateau = 0, rim = 0;
+        const side = new Set();
+        let sig = 0;
+        for (let i = 0; i < p.count; i++) {
+          const [x, y, z] = [p.getX(i), p.getY(i), p.getZ(i)];
+          if (glow.getX(i) === 0) { side.add(hexOf(c.getX(i), c.getY(i), c.getZ(i))); continue; }
+          const d = Math.max(Math.abs(x), Math.abs(0.5 * x + 0.866 * z), Math.abs(0.5 * x - 0.866 * z));
+          if (d > 0.9) { if (d < 0.92) rim = Math.max(rim, Math.abs(y - top)); continue; }
+          lo = Math.min(lo, y); hi = Math.max(hi, y);
+          if (Math.hypot(x, z) < 0.4) plateau = Math.max(plateau, Math.abs(y - top));
+          sig += y * ((i % 97) + 1);
+        }
+        const k = (kinds[h.terrain] ??= { tiles: 0, spread: [], plateau: 0, rim: 0, strata: true, sigs: [] });
+        k.tiles++;
+        k.spread.push(+(hi - lo).toFixed(3));
+        k.plateau = Math.max(k.plateau, plateau);
+        k.rim = Math.max(k.rim, rim);
+        k.strata &&= [STRATA.sand, STRATA.shell, STRATA.soil, STRATA.rock].every((s) => side.has(s));
+        k.sigs.push(sig.toFixed(4));
+      }
+      for (const k of Object.values(kinds)) k.distinct = new Set(k.sigs).size === k.sigs.length;
+      // Triangles of everything on the island, instanced meshes counted per instance.
+      let island = 0;
+      for (const grp of [isle.land, isle.living, isle.pieces]) grp.traverseVisible((o) => {
+        if (!o.isMesh) return;
+        const n = (o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3;
+        island += o.isInstancedMesh ? n * o.count : n;
+      });
+      // Every prop vertex against every token's centre.
+      const tokens = st.hexes.filter((h) => h.pip !== null).map(worldOfHex);
+      let nearest = Infinity;
+      const v = new isle.ortho.position.constructor();
+      const scan = (geo, matrix) => {
+        const pos = geo.attributes.position;
+        for (let i = 0; i < pos.count; i++) {
+          v.fromBufferAttribute(pos, i).applyMatrix4(matrix);
+          for (const w of tokens) nearest = Math.min(nearest, Math.hypot(v.x - w.x, v.z - w.z));
+        }
+      };
+      isle.living.updateMatrixWorld(true);
+      for (const o of isle.living.children) {
+        if (o.userData.prop && o.isMesh) scan(o.geometry, o.matrixWorld);
+        else if (o.userData.terrainProps && !o.isInstancedMesh) scan(o.geometry, o.matrixWorld);
+      }
+      const footprints = isle.living.children.flatMap((o) => o.userData.footprints ?? []);
+      const proxies = isle.living.children.filter((o) => o.userData.prop);
+      return { kinds, stats: window.__terrain, island, nearest: +nearest.toFixed(3), footprints: footprints.length, proxies: proxies.length };
+    });
+    const kinds = Object.keys(t.kinds).sort();
+    check("terrain: all six kinds are on the board", kinds.join() === "clay,grain,ore,timber,waste,wool", kinds);
+    for (const k of kinds) {
+      const s = t.kinds[k];
+      check(`terrain ${k}: a sculpted top (height spread over 0.01, under 0.2), flat at topOf under the token and on the rim`, s.spread.every((x) => x > 0.01 && x < 0.2) && s.plateau < 1e-4 && s.rim < 1e-4, { spread: s.spread, plateau: s.plateau, rim: s.rim });
+      check(`terrain ${k}: side strata (sand, shell, soil, rock) on every tile; no two tiles alike`, s.strata && s.distinct, { tiles: s.tiles, distinct: s.distinct });
+    }
+    check("terrain: tiles and props draw in at most 40 calls", t.stats.drawCalls <= 40, t.stats);
+    check("terrain: the island holds at most 220k triangles", t.island <= 220000, { island: t.island, terrain: t.stats.triangles });
+    check("terrain: no prop vertex within 0.37 of a token's centre", t.nearest >= 0.37 && t.proxies > 0 && t.footprints > 0, { nearest: t.nearest, proxies: t.proxies, footprints: t.footprints });
+    await page.screenshot({ path: "test-results/terrain-1280.png" });
+    await page.context().close();
+    const phone = await open(390, 844, true, "crystal");
+    await phone.getByRole("button", { name: "Four seats, one table" }).click();
+    await phone.waitForFunction(() => window.__emberisle?.water?.path === "crystal" && window.__isle.lastState && !window.__isle.refitDue && !window.__isle.glide, null, { timeout: STEP_MS });
+    await drawn(phone, 3);
+    check("terrain: the 390x844 phone is overhead", (await phone.evaluate(() => window.__isle.view)) === "overhead");
+    await phone.screenshot({ path: "test-results/terrain-390.png" });
+    await phone.context().close();
   }
   check("no console errors", errors.length === 0, errors);
 } catch (e) {

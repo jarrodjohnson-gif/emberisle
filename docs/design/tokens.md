@@ -102,7 +102,8 @@ flat disc would foreshorten to 0.62. There each token (`poseTokens` in `isle-ren
   just enough that its top clears the line from the eye to the numeral's foot (0.13 × `s` below the face's centre, plus
   0.05), never below 0.3; a tree in that zone that already clears it stays full size. A fixed 0.7 left part of a numeral
   hidden on 4 of 12 deals at 1280x720 once the numeral grew to 192 px; this rule hides none in 12 deals and leaves 50 of 74
-  trees full size on the sample board (the smallest at 0.45). Re-shaded when the camera moves.
+  trees full size on the sample board (the smallest at 0.45). Re-shaded when the camera moves. Since #599 the same rule covers the ore peaks and
+  the clay derricks (`docs/design/terrain.md`).
 
 For the diorama the face changed too (it is the same face in every view): the numeral is `bold 192px` at (128, 104), about
 1.2x the 158 px glyph it was and 0.31 world units tall, a two-digit one condensed to 176 canvas px so it stays inside the
