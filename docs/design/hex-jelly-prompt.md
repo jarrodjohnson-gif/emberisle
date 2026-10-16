@@ -89,14 +89,16 @@ THE SIX WORLDS
    with reeds and bulrushes, two ducks paddling round. Round hay bales and round trees in the meadow, a red wheelbarrow of
    sheaves, a scarecrow in a straw hat, poppies and cornflowers on the margins. Surprise: a hare sits up between two rows.
 
-4. CLAY — "Terracotta Hills". Warm terracotta ground rising at the back into a terraced mesa, its stepped cliffs banded
-   cream, apricot and rust like a canyon wall, with tall dark Tuscan cypresses standing on its ledges and at its foot. Sand
-   martins dart in and out of nest holes in the clay cliff. Toward one front flank a stepped quarry pit (three ledges, 0.13
-   deep) holds a turquoise jelly pool in its floor, the brightest note on the tile. A stout plank derrick leans over the pit
-   lowering a bucket on its rope and hauling it up full, a red pennant fluttering on top. On the flat: a beehive-dome kiln
-   with a glowing mouth and a curl of smoke, neat stacks of fired red bricks, a rack of pale unfired ones drying, green scrub
-   and poppies against the orange. Roll: the bucket comes up full, the kiln breathes a big puff of sparks, the martins burst
-   out. Night: the kiln mouth glows hot and a lantern hangs on the derrick. Surprise: a cat asleep on the warm kiln.
+4. CLAY — "Terracotta Quarry". Warm terracotta ground. On a front flank, where the eye looks down into it, a big irregular
+   open-cut dug into the earth: rough walls banded cream, apricot and rust by the layers it cut through, a bench halfway
+   down, a damp floor with a turquoise jelly puddle in its low corner, and a narrow trench slot running off one end. Faceted
+   rocks pile along its rim, rubble and crates lie on its floor. A timber headframe stands over a square shaft mouth, its
+   wheel turning as a bucket of clay rises out of the shaft and sinks back; a plank scaffold deck against the back wall with
+   a ladder, another ladder up over the rim. Sand martins dart from nest holes in the quarry wall. At the back, the tall
+   things: a beehive kiln with a glowing mouth and a curl of smoke (a cat asleep on top, the surprise), a potter's cottage
+   with a terracotta tiled roof, brick stacks, amphorae, Tuscan cypresses; green scrub and poppies against the orange. Two
+   villagers carry hods of clay from the quarry's rim to the kiln and walk back. Roll: the bucket comes up full, the kiln
+   puffs sparks, the martins burst out, the carriers hurry. Night: the kiln mouth, the headframe lantern, the cottage window.
 
 5. ORE — "The Old Mine". Grey stony ground rising into a ridge at the back from which three faceted peaks grow (the tallest
    0.6, snow-capped with a wisp of cloud caught on it), scree fans at their feet. A timber-framed mine mouth in the ridge

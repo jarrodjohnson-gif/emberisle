@@ -206,10 +206,27 @@ export function layoutOf(kind: Terrain, seed: number): Layout {
     L.marks = { mill: at(hillAt, 0.6), yard: at(hillAt + s * 74 * DEG, 0.6), side: { x: s, z: 0 } };
   }
   if (kind === "clay") {
-    // The terraced mesa at the back; the quarry pit on one front flank, the kiln yard on the other.
+    // The open-cut quarry across the back, a trench slot running from its end toward one front flank, the kiln yard on the
+    // other; a muddy pool of jelly water in the quarry floor's low corner.
     const s = r() < 0.5 ? -1 : 1;
-    L.marks = { mesa: at(hillAt, 0.6), kiln: at(hillAt + Math.PI - s * 0.95, 0.6), side: { x: s, z: 0 } };
-    L.pool = { ...at(hillAt + Math.PI + s * 0.92, 0.6), r: 0.22 };
+    // The quarry sits on a front flank, where the eye looks down into it; tall things (kiln, cottage, cypresses) stand at
+    // the back.
+    const qAng = hillAt + Math.PI - s * 0.5;
+    const qc = at(qAng, 0.6);
+    const [tx, tz] = [-Math.sin(qAng), Math.cos(qAng)];
+    const [hx, hz] = [Math.cos(qAng), Math.sin(qAng)];
+    const q = (u: number, v: number) => ({ x: qc.x + tx * u + hx * v, z: qc.z + tz * u + hz * v });
+    L.marks = {
+      quarry: qc,
+      qaxis: { x: qAng, z: 0 },
+      side: { x: s, z: 0 },
+      kiln: at(hillAt + s * 0.55, 0.6),
+      trA: q(s * 0.36, -0.03),
+      trB: at(qAng + s * 0.82, 0.62),
+      shaft: q(-s * 0.15, -0.02),
+      deck: q(s * 0.02, 0.09),
+    };
+    L.pool = { ...q(s * 0.17, -0.04), r: 0.075 };
   }
   if (kind === "wool") {
     // The ridge runs along the back edge, tangent to it; the wall along its crest; the oak on it toward one end.
@@ -279,19 +296,18 @@ export function heightAt(L: Layout, x: number, z: number) {
     if (d < 1) h -= STREAM_D * (1 - d * d) * (1 - d * d) * cut;
   }
   if (L.kind === "clay") {
-    // The mesa: a flat-topped swell cut into terraces MESA_STEP high, each with a soft riser.
-    const m = L.marks.mesa!;
-    const b = bump(x, z, { x: m.x, z: m.z, r: MESA_R, h: 1 });
-    const k = (Math.min(1, b * 1.7) * MESA_H) / MESA_STEP;
-    const f = k - Math.floor(k);
-    h += (Math.floor(k) + smooth(0.78, 1, f)) * MESA_STEP * pad * corner * edge;
-    // The quarry pit: three ledges down to the pool's floor.
-    const p = L.pool!;
-    const q = Math.hypot(x - p.x, z - p.z) / p.r;
-    if (q < 1) {
-      const step = 1 - 0.36 * smooth(0.4, 0.47, q) - 0.32 * smooth(0.64, 0.71, q) - 0.32 * smooth(0.87, 0.95, q);
-      h = h * smooth(0.87, 1, q) - PIT_D * step * cut;
+    const Q = quarryAt(L, x, z);
+    // The quarry's rim: a rocky lip, highest at the back, broken by noise; it rises, so it keeps the game's masks.
+    const back = smooth(-0.12, 0.2, Q.v);
+    const lip = smooth(0.88, 1.0, Q.d) * (1 - smooth(1.0, 1.55, Q.d)) * (0.06 + 0.1 * back);
+    h += (lip + 0.035 * Math.max(0, noise(x * 11, z * 11, L.seed + 13)) * smooth(0.95, 1.05, Q.d) * (1 - smooth(1.05, 1.4, Q.d))) * pad * corner * edge;
+    // The cut: the floor, a bench halfway up, the walls; and the trench. Both fade out before the block's own side.
+    const keep = cut * (1 - smooth(INR - 0.26, INR - 0.08, hexDist(x, z))) * smooth(CORNER_DISC + 0.02, CORNER_DISC + 0.16, nearestCorner(x, z));
+    if (Q.d < 1) {
+      const step = 1 - 0.45 * smooth(0.55, 0.63, Q.d) - 0.55 * smooth(0.88, 0.97, Q.d);
+      h = h * smooth(0.88, 1, Q.d) - Q_D * step * keep + 0.008 * noise(x * 14, z * 14, L.seed + 3) * keep;
     }
+    if (Q.trench < 1) h = Math.min(h, -0.14 * (1 - smooth(0.6, 1, Q.trench)) * keep);
     return h;
   }
   if (L.pool) {
@@ -300,13 +316,28 @@ export function heightAt(L: Layout, x: number, z: number) {
   }
   return h;
 }
-// Clay's mesa and pit.
-const MESA_R = 0.56;
-const MESA_H = 0.38;
-const MESA_STEP = 0.09;
-const PIT_D = 0.13;
-// The pit's water stands just over its floor.
-const PIT_WATER = -PIT_D + 0.025;
+// Clay's open-cut quarry: half-length along the back edge, half-width toward the token, depth. `quarryAt` gives a point's
+// place in it: `d` < 1 inside (its edge broken by noise), `v` toward the back, `trench` < 1 inside the trench slot.
+const QA = 0.5;
+const QB = 0.29;
+const Q_D = 0.17;
+const PIT_WATER = -Q_D + 0.02;
+const MESA_STEP = 0.06;
+function quarryAt(L: Layout, x: number, z: number) {
+  const qc = L.marks.quarry!;
+  const ax = L.marks.qaxis!.x;
+  const [tx, tz] = [-Math.sin(ax), Math.cos(ax)];
+  const [hx, hz] = [Math.cos(ax), Math.sin(ax)];
+  const [dx, dz] = [x - qc.x, z - qc.z];
+  const u = dx * tx + dz * tz;
+  const v = dx * hx + dz * hz;
+  const d = Math.hypot(u / QA, v / QB) * (1 + 0.13 * noise(Math.atan2(v, u) * 2.2, 0.5, L.seed + 21));
+  const [a, b] = [L.marks.trA!, L.marks.trB!];
+  const [sx, sz] = [b.x - a.x, b.z - a.z];
+  const w = Math.min(1, Math.max(0, ((x - a.x) * sx + (z - a.z) * sz) / (sx * sx + sz * sz)));
+  const trench = Math.hypot(x - a.x - w * sx, z - a.z - w * sz) / (0.045 * (1 - 0.4 * w));
+  return { d, u, v, trench };
+}
 // Grain's field frame at a point: `u` along the back edge, `v` toward the back rise; which strip it is in (or -1 on a track,
 // on the rise or on the pad), and how far inside that strip's edges it is.
 export function fieldAt(L: Layout, x: number, z: number) {
@@ -328,7 +359,7 @@ const FURROW = 0.05;
 function wetAt(L: Layout, x: number, z: number) {
   let w = 0;
   if (L.stream.length) w = 1 - smooth(STREAM_W * 0.35, STREAM_W * 0.8, streamDist(L, x, z));
-  if (L.pool && L.kind === "clay") w = Math.max(w, 1 - smooth(L.pool.r * 0.36, L.pool.r * 0.46, Math.hypot(x - L.pool.x, z - L.pool.z)));
+  if (L.pool && L.kind === "clay") w = Math.max(w, 1 - smooth(L.pool.r * 0.75, L.pool.r * 1.05, Math.hypot(x - L.pool.x, z - L.pool.z)));
   else if (L.pool) w = Math.max(w, 1 - smooth(L.pool.r * 0.55, L.pool.r * 0.82, Math.hypot(x - L.pool.x, z - L.pool.z)));
   return w;
 }
@@ -2543,11 +2574,17 @@ function brickworks(L: Layout, ground: (x: number, z: number) => number, r: () =
   const Y = (x: number, z: number) => BLOCK_H + ground(x, z);
   const cm = critterMat();
   const M = L.marks;
+  const QAX = M.qaxis!.x;
   const pit = L.pool!;
   const EYE = { x: Math.sin(20 * DEG), z: Math.cos(20 * DEG) };
   const out = (p: Pt) => Math.atan2(p.z, p.x);
+  // The whole quarry and trench keep other things out.
+  const inQuarry = (x: number, z: number, room = 0) => {
+    const Q = quarryAt(L, x, z);
+    return Q.d < 1.12 + room * 4 || Q.trench < 1.6 + room * 20;
+  };
   const ok = (x: number, z: number, room: number) =>
-    Math.hypot(x, z) > 0.4 + room && nearestCorner(x, z) > 0.2 + room && hexDist(x, z) < INR - 0.14 - room && stands.every((q) => Math.hypot(q.x - x, q.z - z) > q.r + room);
+    Math.hypot(x, z) > 0.4 + room && nearestCorner(x, z) > 0.2 + room && hexDist(x, z) < INR - 0.14 - room && stands.every((q) => Math.hypot(q.x - x, q.z - z) > q.r + room) && !inQuarry(x, z, room);
   const clearOf = (p: Pt, x: number, z: number, w = 0.14) => {
     const [dx, dz] = [x - p.x, z - p.z];
     const along = dx * EYE.x + dz * EYE.z;
@@ -2555,11 +2592,14 @@ function brickworks(L: Layout, ground: (x: number, z: number) => number, r: () =
   };
 
   // The pit's water.
-  const pool = new THREE.Mesh(new THREE.CircleGeometry(pit.r * 0.47, 40).rotateX(-Math.PI / 2), waterMat(false));
+  const pool = new THREE.Mesh(new THREE.CircleGeometry(pit.r, 32).rotateX(-Math.PI / 2), waterMat(false));
+  pool.scale.set(1.4, 1, 0.8);
+  pool.rotation.y = -QAX;
   pool.position.set(pit.x, BLOCK_H + PIT_WATER, pit.z);
   pool.renderOrder = 1;
   g.add(pool);
-  stands.push({ x: pit.x, z: pit.z, r: pit.r + 0.02 });
+  // The whole quarry and trench keep other things out.
+
   life.push((t) => ((pool.material as THREE.MeshStandardMaterial).userData.time.value = t));
 
   // The kiln: a beehive dome of brick, banded, a dark arched mouth with the fire glowing in it, a short flue; smoke, sparks.
@@ -2682,75 +2722,164 @@ function brickworks(L: Layout, ground: (x: number, z: number) => number, r: () =
     g.add(instanced(new THREE.BoxGeometry(1, 1, 1), bricks, blobMat()));
   }
 
-  // The derrick: three leaning legs from outside the pit's back rim to an apex over the pit, a pulley, a rope down to a bucket
-  // that sinks to the pool and comes up full; a red pennant flutters on top, a lantern hangs at night.
+  // In the quarry: the headframe over the shaft (two timber A-frames, a crossbeam, a wheel that turns, a rope and a bucket
+  // that rises out of the shaft and sinks back), its lantern; a scaffold deck against the back wall with ladders; rubble,
+  // crates and barrows on the floor; rough rocks along the rim.
   {
-    const back = Math.atan2(M.mesa!.z - pit.z, M.mesa!.x - pit.x);
-    const top = new THREE.Vector3(pit.x + Math.cos(back) * pit.r * 0.25, 0, pit.z + Math.sin(back) * pit.r * 0.25);
-    top.y = BLOCK_H + 0.3;
-    const legs: THREE.BufferGeometry[] = [];
-    for (const da of [0, 1.2, -1.2]) {
-      const f = { x: pit.x + Math.cos(back + da) * (pit.r + 0.03), z: pit.z + Math.sin(back + da) * (pit.r + 0.03) };
-      const foot = new THREE.Vector3(f.x, Y(f.x, f.z), f.z);
-      legs.push(beamGeo(foot, top.clone().add(new THREE.Vector3(0, 0.01, 0)), 0.0055, "#8a5e38"));
-      legs.push(beamGeo(foot.clone().lerp(top, 0.35), foot.clone().lerp(top, 0.35).lerp(top.clone().setY(foot.y + (top.y - foot.y) * 0.35), 0.5), 0.003, "#7a5434"));
-      stands.push({ x: f.x, z: f.z, r: 0.02 });
+    const [tx, tz] = [-Math.sin(QAX), Math.cos(QAX)];
+    const [hx, hz] = [Math.cos(QAX), Math.sin(QAX)];
+    const V = (p: Pt, du: number, dv: number, y: number) => new THREE.Vector3(p.x + tx * du + hx * dv, y, p.z + tz * du + hz * dv);
+    const sh = M.shaft!;
+    const fy = Y(sh.x, sh.z);
+    const wood: THREE.BufferGeometry[] = [];
+    // The shaft: a dark square mouth with a timber collar.
+    wood.push(part(new THREE.BoxGeometry(1, 1, 1), "#1a0e0a", [sh.x, fy + 0.002, sh.z], [0, -QAX, 0], [0.07, 0.004, 0.07]));
+    for (const [du, dv, len, along] of [[0, 0.04, 0.09, true], [0, -0.04, 0.09, true], [0.04, 0, 0.09, false], [-0.04, 0, 0.09, false]] as [number, number, number, boolean][]) {
+      const c = V(sh, du, dv, fy + 0.007);
+      wood.push(part(new THREE.BoxGeometry(1, 1, 1), "#8a5e38", [c.x, c.y, c.z], [0, -QAX + (along ? Math.PI / 2 : 0), 0], [0.012, 0.012, len]));
     }
-    legs.push(part(cyl(1, 1, 12), "#5a4a40", [top.x, top.y - 0.005, top.z], [Math.PI / 2, back, 0], [0.012, 0.006, 0.012]));
-    legs.push(beamGeo(top, top.clone().add(new THREE.Vector3(0, 0.06, 0)), 0.0025, "#7a5434"));
-    g.add(mesh(merge(legs), cm));
-    const flag = new THREE.Mesh(new THREE.PlaneGeometry(0.05, 0.026, 6, 1).translate(0.025, 0, 0), new THREE.MeshStandardMaterial({ color: "#d83a2c", side: THREE.DoubleSide, roughness: 0.7 }));
-    flag.position.copy(top).add(new THREE.Vector3(0, 0.048, 0));
-    flag.castShadow = true;
-    g.add(flag);
-    const fbase = (flag.geometry.attributes.position.array as Float32Array).slice();
+    // The headframe: two A-frames across the shaft, a crossbeam, braces.
+    const H = 0.27;
+    const topY = fy + H;
+    for (const du of [-0.045, 0.045]) {
+      const apex = V(sh, du, 0, topY);
+      for (const dv of [-0.06, 0.06]) wood.push(beamGeo(V(sh, du, dv, fy), apex, 0.005, "#8a5e38"));
+      wood.push(beamGeo(V(sh, du, -0.04, fy + H * 0.33), V(sh, du, 0.04, fy + H * 0.33), 0.0035, "#7a5434"));
+    }
+    wood.push(beamGeo(V(sh, -0.055, 0, topY), V(sh, 0.055, 0, topY), 0.006, "#7a5434"));
+    // The scaffold deck against the back wall: four posts, a plank deck, a rail, a ladder from the floor.
+    const dk = M.deck!;
+    const dy = Y(dk.x, dk.z);
+    const deckY = dy + 0.085;
+    for (const du of [-0.06, 0.06]) for (const dv of [-0.03, 0.03]) wood.push(beamGeo(V(dk, du, dv, Y(V(dk, du, dv, 0).x, V(dk, du, dv, 0).z)), V(dk, du, dv, deckY + 0.03), 0.0045, "#8a5e38"));
+    for (let i = 0; i < 6; i++) {
+      const c = V(dk, -0.055 + i * 0.022, 0, deckY);
+      wood.push(part(new THREE.BoxGeometry(1, 1, 1), i % 2 ? "#c49a62" : "#b58a55", [c.x, c.y, c.z], [0, -QAX, 0], [0.075, 0.004, 0.019]));
+    }
+    wood.push(beamGeo(V(dk, -0.065, -0.032, deckY + 0.03), V(dk, 0.065, -0.032, deckY + 0.03), 0.0025, "#7a5434"));
+    const ladder = (foot: THREE.Vector3, top: THREE.Vector3) => {
+      const side = new THREE.Vector3(tx, 0, tz).multiplyScalar(0.011);
+      wood.push(beamGeo(foot.clone().add(side), top.clone().add(side), 0.0022, "#a07848"));
+      wood.push(beamGeo(foot.clone().sub(side), top.clone().sub(side), 0.0022, "#a07848"));
+      for (let k = 1; k < 7; k++) {
+        const p = foot.clone().lerp(top, k / 7);
+        wood.push(beamGeo(p.clone().add(side), p.clone().sub(side), 0.0016, "#a07848"));
+      }
+    };
+    ladder(V(dk, 0.03, -0.075, dy), V(dk, 0.03, -0.035, deckY + 0.004));
+    // A second ladder from the bench up over the rim, at the quarry's other end.
+    const rimA = V(M.quarry!, -(L.marks.side!.x) * 0.33, -0.12, 0);
+    rimA.y = Y(rimA.x, rimA.z);
+    const rimB = V(M.quarry!, -(L.marks.side!.x) * 0.33, -0.2, 0);
+    rimB.y = Y(rimB.x, rimB.z) + 0.01;
+    ladder(rimA, rimB);
+    g.add(mesh(merge(wood), cm));
+    stands.push({ x: sh.x, z: sh.z, r: 0.08 }, { x: dk.x, z: dk.z, r: 0.08 });
+
+    // The wheel, the rope and the bucket; the lantern on the crossbeam.
+    const wheel = new THREE.Group();
+    wheel.add(mesh(merge([part(new THREE.TorusGeometry(0.026, 0.004, 6, 18), "#6a4a32", [0, 0, 0]), ...[0, 1, 2, 3].map((k) => part(new THREE.BoxGeometry(1, 1, 1), "#6a4a32", [0, 0, 0], [0, 0, (k * Math.PI) / 4], [0.05, 0.003, 0.003]))]), cm));
+    wheel.position.copy(V(sh, 0, 0, topY + 0.004));
+    wheel.rotation.y = -QAX + Math.PI / 2;
+    g.add(wheel);
     const rope = new THREE.Mesh(cyl(1, 1, 5).translate(0, -0.5, 0), new THREE.MeshStandardMaterial({ color: "#d9c79a", roughness: 0.9 }));
-    rope.position.copy(top).add(new THREE.Vector3(0, -0.012, 0));
-    rope.scale.set(0.0018, 0.1, 0.0018);
+    const ropeTop = V(sh, 0, 0.026, topY);
+    rope.position.copy(ropeTop);
+    rope.scale.set(0.0016, 0.1, 0.0016);
     g.add(rope);
     const bucket = new THREE.Group();
-    bucket.add(
-      mesh(
-        merge([
-          part(cyl(1, 0.8, 12), "#8a5e38", [0, 0, 0], [0, 0, 0], [0.016, 0.022, 0.016]),
-          part(cyl(1, 1, 12), "#4a4a4a", [0, 0.006, 0], [0, 0, 0], [0.0165, 0.003, 0.0165]),
-          part(new THREE.TorusGeometry(0.014, 0.0012, 4, 12, Math.PI), "#4a4a4a", [0, 0.011, 0], [0, 0, 0]),
-        ]),
-        cm,
-      ),
-    );
-    const load = mesh(merge([part(blobGeo(330), "#c4562e", [0, 0.012, 0], [0, 0, 0], [0.014, 0.008, 0.014])]), cm);
+    bucket.add(mesh(merge([part(cyl(1, 0.8, 12), "#8a5e38", [0, 0, 0], [0, 0, 0], [0.014, 0.02, 0.014]), part(cyl(1, 1, 12), "#4a4a4a", [0, 0.006, 0], [0, 0, 0], [0.0145, 0.003, 0.0145])]), cm));
+    const load = mesh(merge([part(blobGeo(330), "#c4562e", [0, 0.011, 0], [0, 0, 0], [0.012, 0.007, 0.012])]), cm);
     bucket.add(load);
     g.add(bucket);
-    const lantern = new THREE.Mesh(new THREE.SphereGeometry(0.008, 10, 8), basic("#ffd27a", 0));
-    lantern.position.copy(top).add(new THREE.Vector3(0.02, -0.03, 0));
+    const lantern = new THREE.Mesh(new THREE.SphereGeometry(0.007, 10, 8), basic("#ffd27a", 0));
+    lantern.position.copy(V(sh, 0.05, -0.01, topY - 0.025));
     g.add(lantern);
-    const lanternHalo = halo("#ffbf6a", 0.12);
+    const lanternHalo = halo("#ffbf6a", 0.14);
     lanternHalo.position.copy(lantern.position);
     g.add(lanternHalo);
-    const low = BLOCK_H + PIT_WATER + 0.008;
-    const high = top.y - 0.05;
-    let held = high;
+    const low = fy - 0.03;
+    const high = topY - 0.05;
+    let spin = 0;
+    let last = 0;
     life.push((t) => {
-      // Down 3 s, a pause to fill, up 3 s; on a roll it rises full in one go.
-      const c = (t % 8) / 8;
-      let y = c < 0.38 ? high + (low - high) * ease(c / 0.38) : c < 0.5 ? low : c < 0.88 ? low + (high - low) * ease((c - 0.5) / 0.38) : high;
-      let full = c >= 0.45 && c < 0.95;
-      if (env.roll >= 0) (y = low + (high - low) * ease(Math.min(1, env.roll * 1.4))), (full = true);
-      if (env.robber) y = held;
-      else held = y;
-      bucket.position.set(top.x, y, top.z);
+      const c = (t % 7) / 7;
+      let y = c < 0.4 ? low + (high - low) * ease(c / 0.4) : c < 0.55 ? high : c < 0.95 ? high + (low - high) * ease((c - 0.55) / 0.4) : low;
+      let full = c < 0.55;
+      if (env.roll >= 0) (y = low + (high - low) * ease(Math.min(1, env.roll * 1.6))), (full = true);
+      spin += (y - last) * 40;
+      last = y;
+      wheel.rotation.z = spin;
+      bucket.position.set(ropeTop.x, y, ropeTop.z);
+      bucket.visible = y > fy - 0.012;
       load.visible = full;
-      rope.scale.y = top.y - 0.012 - y - 0.011;
-      const pos = flag.geometry.attributes.position as THREE.BufferAttribute;
-      for (let i = 0; i < pos.count; i++) {
-        const x0 = fbase[i * 3]!;
-        pos.setZ(i, (env.robber ? 0.2 : 1) * 0.006 * Math.sin(t * 7 - x0 * 90) * (x0 / 0.05));
-      }
-      pos.needsUpdate = true;
-      flag.rotation.y = -back - 1.2;
+      rope.scale.y = Math.max(0.001, ropeTop.y - y - 0.01);
       (lantern.material as THREE.MeshBasicMaterial).opacity = env.night;
-      lanternHalo.material.opacity = env.night * 0.8;
+      lanternHalo.material.opacity = env.night * 0.85;
+    });
+
+    // Rubble, crates and a barrow on the quarry floor; rough rocks along the rim, biggest at the back.
+    const rocks: Inst[] = [];
+    const ROCK = ["#b4552f", "#9a4426", "#c86a3e", "#8a3a22"].map((c) => new THREE.Color(c));
+    for (let i = 0; i < 900 && rocks.length < 70; i++) {
+      const a = r() * Math.PI * 2;
+      const rim = i % 3 !== 0;
+      const dd = rim ? 1.0 + r() * 0.16 : 0.15 + r() * 0.7;
+      const p = V(M.quarry!, Math.cos(a) * QA * dd, Math.sin(a) * QB * dd, 0);
+      const Qp = quarryAt(L, p.x, p.z);
+      if (rim && (Qp.d < 0.95 || Qp.v < -0.08)) continue;
+      if (!rim && (Qp.d > 0.9 || Math.hypot(p.x - pit.x, p.z - pit.z) < pit.r * 1.3 || stands.some((q) => Math.hypot(q.x - p.x, q.z - p.z) < q.r))) continue;
+      if (hexDist(p.x, p.z) > INR - 0.07 || Math.hypot(p.x, p.z) < 0.4) continue;
+      const k = rim ? 0.022 + r() * 0.03 * (0.5 + smooth(-0.1, 0.25, Qp.v)) : 0.008 + r() * 0.01;
+      rocks.push({ m: mat(p.x, Y(p.x, p.z) + k * 0.25, p.z, k * 1.2, k * 0.8, k, r() * 6, (r() - 0.5) * 0.4), c: ROCK[Math.floor(r() * 4)]! });
+    }
+    g.add(instanced(new THREE.DodecahedronGeometry(1, 0), rocks, jellyfy(new THREE.MeshStandardMaterial({ roughness: 0.8, flatShading: true }), "jelly-rock")));
+    const crates: THREE.BufferGeometry[] = [];
+    for (const [du, dv, k] of [[0.08, -0.08, 0.018], [0.1, -0.06, 0.014], [-0.24, 0.02, 0.016]] as [number, number, number][]) {
+      const p = V(M.quarry!, du * L.marks.side!.x, dv, 0);
+      if (Math.hypot(p.x - pit.x, p.z - pit.z) < pit.r * 1.2) continue;
+      crates.push(part(new THREE.BoxGeometry(1, 1, 1), "#9a7048", [p.x, Y(p.x, p.z) + k / 2, p.z], [0, du * 20, 0], [k, k, k]));
+      crates.push(part(new THREE.BoxGeometry(1, 1, 1), "#7a5434", [p.x, Y(p.x, p.z) + k / 2, p.z], [0, du * 20, 0], [k * 1.02, k * 0.2, k * 1.02]));
+    }
+    if (crates.length) g.add(mesh(merge(crates), cm));
+  }
+
+  // Two villagers carry clay in hods from the quarry's rim to the kiln and walk back for more.
+  {
+    const side = L.marks.side!.x;
+    const [tx, tz] = [-Math.sin(QAX), Math.cos(QAX)];
+    const qa = { x: M.quarry!.x - tx * side * 0.45 - Math.cos(QAX) * 0.12, z: M.quarry!.z - tz * side * 0.45 - Math.sin(QAX) * 0.12 };
+    const kb = { x: kp.x * 0.78, z: kp.z * 0.78 };
+    // Bend the walk outward round the token's pad.
+    const midA = Math.atan2((qa.z + kb.z) / 2, (qa.x + kb.x) / 2);
+    const mid = { x: Math.cos(midA) * 0.62, z: Math.sin(midA) * 0.62 };
+    const at2 = (u: number) => {
+      const a = (1 - u) * (1 - u);
+      const b = 2 * u * (1 - u);
+      const c = u * u;
+      return { x: qa.x * a + mid.x * b + kb.x * c, z: qa.z * a + mid.z * b + kb.z * c };
+    };
+    const walkers = [0, 1].map((i) => {
+      const p = person(cm, i ? "#5a7fb0" : "#c48a3a", 0.08, i ? "#e8c56a" : "#6a4a32");
+      const hod = mesh(merge([part(new THREE.BoxGeometry(1, 1, 1), "#9a7048", [0, 0, 0], [0, 0, 0], [0.016, 0.012, 0.022]), part(blobGeo(390 + i), "#c4562e", [0, 0.008, 0], [0, 0, 0], [0.012, 0.006, 0.016])]), cm);
+      hod.position.set(-0.004, 0.06, 0.012);
+      p.top.add(hod);
+      g.add(p.g);
+      return { p, hod, ph: i * 0.5 };
+    });
+    life.push((t) => {
+      const speed = env.roll >= 0 ? 2.2 : 1;
+      for (const w of walkers) {
+        const c = ((t * 0.07 * speed + w.ph) % 1) * 2;
+        const going = c < 1;
+        const u = going ? c : 2 - c;
+        const p = at2(u);
+        const q = at2(Math.min(1, Math.max(0, u + (going ? 0.01 : -0.01))));
+        w.p.g.position.set(p.x, Y(p.x, p.z) + Math.abs(Math.sin(t * 9 * speed + w.ph * 3)) * 0.004, p.z);
+        w.p.g.rotation.y = -Math.atan2(q.z - p.z, q.x - p.x);
+        w.hod.visible = going;
+        w.p.top.rotation.x = 0.05 * Math.sin(t * 9 * speed);
+      }
     });
   }
 
@@ -2821,11 +2950,11 @@ function brickworks(L: Layout, ground: (x: number, z: number) => number, r: () =
   // The cypresses: tall dark flames on the mesa's ledges and at its foot.
   {
     const cy: THREE.BufferGeometry[] = [];
-    for (let k = 0, tries = 0; k < 11 && tries < 1200; tries++) {
-      const a = L.hillAt + (r() - 0.5) * (k < 6 ? 2.4 : 5);
-      const d = 0.42 + r() * 0.42;
+    for (let k = 0, tries = 0; k < 8 && tries < 1200; tries++) {
+      const a = L.hillAt - L.marks.side!.x * 0.3 + (r() - 0.5) * 2.8;
+      const d = 0.45 + r() * 0.42;
       const p = { x: Math.cos(a) * d, z: Math.sin(a) * d };
-      if (!ok(p.x, p.z, 0.04) || !clearOf(kp, p.x, p.z) || !clearOf(pit, p.x, p.z, 0.2)) continue;
+      if (!ok(p.x, p.z, 0.04) || !clearOf(kp, p.x, p.z) || !clearOf(M.shaft!, p.x, p.z, 0.2)) continue;
       const y = Y(p.x, p.z);
       const hgt = 0.2 + r() * 0.1;
       cy.push(part(cyl(0.6, 1, 6), "#5a3a26", [p.x, y + 0.012, p.z], [0, 0, 0], [0.006, 0.024, 0.006]));
@@ -2843,17 +2972,17 @@ function brickworks(L: Layout, ground: (x: number, z: number) => number, r: () =
   {
     const holes: Inst[] = [];
     const nests: THREE.Vector3[] = [];
-    const m = L.marks.mesa!;
+    const m = L.marks.quarry!;
     const e = 0.01;
-    for (let i = 0; i < 600 && holes.length < 12; i++) {
+    for (let i = 0; i < 900 && holes.length < 12; i++) {
       const a = r() * Math.PI * 2;
-      const d = r() * MESA_R;
+      const d = r() * QA;
       const [x, z] = [m.x + Math.cos(a) * d, m.z + Math.sin(a) * d];
       if (hexDist(x, z) > INR - 0.16) continue;
       const gx = (ground(x + e, z) - ground(x - e, z)) / (2 * e);
       const gz = (ground(x, z + e) - ground(x, z - e)) / (2 * e);
       const toward = -(gx * EYE.x + gz * EYE.z);
-      if (toward < 1.4 || ground(x, z) < 0.05) continue;
+      if (toward < 1.4 || ground(x, z) > -0.02) continue;
       if (nests.some((q) => Math.hypot(q.x - x, q.z - z) < 0.035)) continue;
       const n = new THREE.Vector3(-gx, 1, -gz).normalize();
       const at = new THREE.Vector3(x, Y(x, z), z).addScaledVector(n, 0.002);
@@ -2913,10 +3042,11 @@ function clayTint(L: Layout) {
   const BANDS = ["#e89a63", "#f3d4a8", "#c9603a", "#eaa877", "#f6dcb4"].map((c) => new THREE.Color(c));
   const WET = new THREE.Color("#a5482a");
   return (x: number, z: number, y: number, c: THREE.Color) => {
-    if (y > 0.02) {
-      const k = Math.floor(y / MESA_STEP + 0.15);
-      c.lerp(BANDS[k % BANDS.length]!, 0.75);
-    } else if (y < -0.01) c.lerp(WET, Math.min(0.7, -y * 8));
+    // The quarry's walls show the layers it cut through, banded by depth; its floor is darker and damp.
+    if (y < -0.012) {
+      const k = Math.floor(-y / MESA_STEP * 1.6);
+      c.lerp(BANDS[k % BANDS.length]!, 0.7).lerp(WET, Math.min(0.45, -y * 2.5));
+    } else if (y > 0.03) c.lerp(new THREE.Color("#b4552f"), Math.min(0.6, (y - 0.03) * 6));
   };
 }
 

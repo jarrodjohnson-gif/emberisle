@@ -1,7 +1,7 @@
 // The Hex Jelly studio (docs/design/hex-jelly-prompt.md): one tile built to the prompt, large, at the diorama's angle (38 degrees
 // up, 20 round from the south), under the prompt's light, on the paper, with a subtle tilt-shift. Dev only: scripts/hex-jelly.html
 // loads it and scripts/hex-jelly.mjs screenshots it. Query: kind=<terrain> (default timber), seed=<n>, pip=<n> (0 for none),
-// t=<seconds> to freeze the tile's life at that moment (otherwise it runs live), props=0 for the bare ground, focus=pool|camp|cut
+// t=<seconds> to freeze the tile's life at that moment (otherwise it runs live), props=0 for the bare ground, focus=pool|camp|cut|quarry
 // to frame that corner of the story close up, ring=1 for six neighbours round it at board spacing (to see what the landform
 // hides, with birds and cloud shadows crossing it), az=<degrees> to orbit the eye, roll=<t0> to start the roll payoff at t0,
 // robber=1 to stand the robber on the centre tile, night=1 for the night lighting.
@@ -114,7 +114,7 @@ const box = new THREE.Box3();
 for (let i = 0; i < 8; i++) pts.push(new THREE.Vector3(i & 1 ? box.max.x : box.min.x, i & 2 ? box.max.y : box.min.y, i & 4 ? box.max.z : box.min.z));
 // A close-up frames a disc round the story's spot instead of the whole tile.
 const campAt = (da: number, d: number) => tile.layout.camp && { x: Math.cos(tile.layout.camp.a + da) * d, z: Math.sin(tile.layout.camp.a + da) * d };
-const spot = focus === "pool" ? tile.layout.pool : focus === "camp" ? campAt(0, 0.58) : focus === "cut" ? campAt(-0.62, 0.6) : null;
+const spot = focus === "pool" ? tile.layout.pool : focus === "camp" ? campAt(0, 0.58) : focus === "cut" ? campAt(-0.62, 0.6) : focus === "quarry" ? tile.layout.marks.quarry ?? null : null;
 if (spot) {
   pts.length = 0;
   for (let i = 0; i < 12; i++) {
