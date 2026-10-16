@@ -45,7 +45,7 @@ import { makeBruno, type Bruno } from "@/lib/scene/bruno";
 import { makeJellyOutpost, makeJellyPath, makeJellyStronghold } from "@/lib/scene/pieces-jelly";
 import { CAUSTIC_GLSL, PAPER, SPLASH, addSplashRings, makeCrystalSea, makeFloorProps, makeSeaFloor, makeSplashes, makeSwell, makeWash, nearestCoast, type SeaUniforms, type WaterPath, type WaterStatus } from "@/lib/scene/crystal-water";
 import { Wobble } from "@/lib/scene/wobble";
-import { play } from "@/lib/sound";
+import { gainTick, play } from "@/lib/sound";
 import { payingHexes } from "@/lib/game/rules";
 import { type GameState, type HarborKind, type HexCell, type Terrain, type Vertex } from "@/lib/game/types";
 
@@ -249,6 +249,7 @@ export class IsleRenderer {
   // Each land hex's glow by hex id (its level read as `emissiveIntensity`, as when it was the cap's), and the flashes under
   // way (age in seconds, advanced by the frame's dt). The jelly board warms each hex by its level.
   caps = new Map<string, { emissiveIntensity: number }>();
+  private payingPieces: { key: string; age: number; delay: number; sounded: boolean }[] = [];
   private flashes: { mat: { emissiveIntensity: number }; id: string; age: number }[] = [];
   private clock = new THREE.Timer();
   private water = makeWater();
@@ -461,6 +462,7 @@ export class IsleRenderer {
   setTitleMode(v: boolean) {
     if (v !== this.titleMode) this.wake();
     this.titleMode = v;
+    if (v) this.clearPayers();
     this.ssao.enabled = !v && !this.play();
     this.setView(v ? "free" : this.playView());
   }
@@ -591,6 +593,51 @@ export class IsleRenderer {
     this.flashes = this.flashes.filter((f) => f.age < FLASH_S);
   }
 
+  // Canonical grants identify the actual paying corner, including coalesced builds before/after the roll.
+  // Older saved grants have no vertex identity: keep those silent rather than guessing a neighbour.
+  private pulsePayers(state: GameState) {
+    const paid = new Set((state.lastProduction ?? []).map((g) => g.vertex));
+    const ordered = state.players.flatMap((p) => state.vertices.filter((v) => paid.has(v.id) && v.building?.playerId === p.id));
+    this.payingPieces = ordered.map((v, i) => ({ key: `v:${v.id}`, age: 0, delay: i * 0.09, sounded: false }));
+  }
+
+  private clearPayers() {
+    for (const p of this.payingPieces) { p.age = Infinity; p.sounded = true; }
+    this.stepPayers(0, true);
+  }
+
+  private stepPayers(dt: number, calm: boolean) {
+    const duration = calm ? 1.2 : 0.28;
+    for (const p of this.payingPieces) {
+      p.age += dt;
+      const age = p.age - p.delay;
+      const obj = this.pieces.children.find((o) => o.userData.key === p.key);
+      if (!obj || age < 0) continue;
+      if (!p.sounded) {
+        p.sounded = true;
+        if (p.delay < 0.72) gainTick();
+      }
+      const active = age < duration;
+      obj.scale.setScalar(calm || !active ? 1 : 1 + 0.12 * snapBezier(age < 0.14 ? age / 0.14 : (0.28 - age) / 0.14));
+      // Jelly pieces share their base material. Clone before warming one so its non-paying neighbours stay untouched.
+      obj.traverse((child) => {
+        const mesh = child as THREE.Mesh;
+        if (!(mesh.material instanceof THREE.MeshStandardMaterial)) return;
+        if (calm && active && !mesh.userData.payerMaterial) {
+          mesh.material = mesh.material.clone();
+          mesh.material.userData.shared = false;
+          mesh.userData.payerMaterial = true;
+        }
+        if (mesh.userData.payerMaterial) {
+          const mat = mesh.material as THREE.MeshStandardMaterial;
+          mat.emissive.set(0xffd27a);
+          mat.emissiveIntensity = calm && active ? 0.35 : 0;
+        }
+      });
+    }
+    this.payingPieces = this.payingPieces.filter((p) => p.age - p.delay < duration);
+  }
+
   setBoard(state: GameState, highlights: Highlights, interactive: boolean) {
     // Only a roll seen live flashes: the same island and exactly one more dice roll than last time. Landing on a state that
     // already has rolls (a spectator, a rejoin, the title's island carried into a game) does not; several actions in one push
@@ -618,7 +665,11 @@ export class IsleRenderer {
       this.lastSeq = state.seq;
     }
     this.buildMarks(state, highlights, interactive);
-    if (rolled) this.flashHexes(payingHexes(state));
+    if (landChanged) this.payingPieces = [];
+    if (rolled) {
+      this.flashHexes(payingHexes(state));
+      this.pulsePayers(state);
+    }
     this.jelly?.robber(state.robberHex ?? null);
     const rh = state.hexes.find((h) => h.id === state.robberHex);
     if (rh) {
@@ -699,6 +750,7 @@ export class IsleRenderer {
   }
 
   dispose() {
+    this.clearPayers();
     this.stopped = true;
     this.renderer.domElement.removeEventListener("webglcontextlost", this.onContextLost);
     this.dropFence();
@@ -1177,7 +1229,7 @@ export class IsleRenderer {
       this.walk = null;
       this.startWalk();
     }
-    const busy = now < this.busyUntil || this.flashes.length > 0 || !!this.jelly?.busy();
+    const busy = now < this.busyUntil || this.flashes.length > 0 || this.payingPieces.length > 0 || !!this.jelly?.busy();
     const gap = calm ? (busy ? 0 : Infinity) : this.titleMode ? 1000 / 30 : this.walk || pulsing || busy ? 0 : 1000 / 12;
     if (now - this.lastFrame < gap - 2) return;
     // Backpressure on ambient frames (the title's turn, the idle sea): while the GPU is still on the last one, wait for it
@@ -1191,6 +1243,7 @@ export class IsleRenderer {
     // An idle frame is 83 ms apart; a smaller cap would slow the sheep while idle.
     const dt = Math.min(this.clock.getDelta(), 0.1);
     this.stepFlashes(dt, calm);
+    this.stepPayers(dt, calm);
     this.controls.autoRotate = this.titleMode && !calm;
     if (this.play()) {
       this.orbit.update();
@@ -2257,4 +2310,17 @@ function makeFps(renderer: THREE.WebGLRenderer) {
       sentAt = 0;
     },
   };
+}
+
+// CSS --ease-snap is cubic-bezier(0.2, 0.8, 0.2, 1). Invert its x coordinate before evaluating y.
+function snapBezier(u: number) {
+  let lo = 0, hi = 1;
+  for (let i = 0; i < 16; i++) {
+    const t = (lo + hi) / 2;
+    const x = 0.6 * (1 - t) * t + t ** 3;
+    if (x < u) lo = t;
+    else hi = t;
+  }
+  const t = (lo + hi) / 2;
+  return 2.4 * (1 - t) ** 2 * t + 3 * (1 - t) * t * t + t ** 3;
 }
