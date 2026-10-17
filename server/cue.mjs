@@ -23,6 +23,7 @@ const map = {
   chat_send: "chat_send.wav",
   chat_recv: "chat_recv.wav",
   plop: "plop.wav",
+  your_turn: "your_turn.wav",
 };
 
 export function cue(name) {

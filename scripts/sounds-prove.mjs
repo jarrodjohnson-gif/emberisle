@@ -7,7 +7,9 @@
 // - online chat: the sender hears chat_send once, the other seat chat_recv once, nothing while that seat types in the
 //   chat input, nothing when muted;
 // - #659 volumes: every soundboard sound, the win screen's GG! and robbed_fah play at exactly 0.4 (MEME_VOLUME), the core
-//   clips stay at 1 (dice_land) and the music clips at 0.5 (game_lose).
+//   clips stay at 1 (dice_land) and the music clips at 0.5 (game_lose);
+// - #660 your_turn: plays once at volume 1 for the acting seat on turn pass or mid-turn rejoin; silent for other seats,
+//   repeat pushes, when muted, in hotseat, for watchers or after game over.
 // Online trade_offer / trade_yes volumes are asserted in trade-prove. Zero console errors. Run: npm run sounds-prove
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
@@ -664,6 +666,83 @@ try {
   assert.equal(banner.before, null, "no banner before the crossing");
   assert.match(banner.after, /reached 9 points \u2014 one to win$/, "online: the banner is up on the very state that crosses target - 1");
   ok(`match_point online: banner "${banner.after}" on the same state`);
+
+  // ---- #660 your_turn cue: acting seat hears it once, other seats silent, rejoin mid-turn hears once, repeat push silent, muted silent, hotseat silent.
+  const turnBase = structuredClone(await a.evaluate(() => window.__emberisle.getState().state));
+  turnBase.phase = "main";
+  turnBase.winner = null;
+  const p1Turn = { ...turnBase, current: "p1", seq: turnBase.seq + 1 };
+  const p0Turn = { ...turnBase, current: "p0", seq: turnBase.seq + 2 };
+
+  // Sync both tabs to p1's turn
+  await a.evaluate((g) => window.__sockets.at(-1).onmessage({ data: JSON.stringify({ type: "state", you: "p0", game: g }) }), p1Turn);
+  await b.evaluate((g) => window.__sockets.at(-1).onmessage({ data: JSON.stringify({ type: "state", you: "p1", game: g }) }), p1Turn);
+  await sleep(400);
+  await clear(a);
+  await clear(b);
+
+  // (1) Turn passes to local seat p0: a hears your_turn once at volume 1; (2) b hears nothing
+  await a.evaluate((g) => window.__sockets.at(-1).onmessage({ data: JSON.stringify({ type: "state", you: "p0", game: g }) }), p0Turn);
+  await b.evaluate((g) => window.__sockets.at(-1).onmessage({ data: JSON.stringify({ type: "state", you: "p1", game: g }) }), p0Turn);
+  await sleep(200);
+  assert.deepEqual(await names(a), ["your_turn"], "your_turn plays exactly once when the turn passes to the local seat");
+  assert.equal((await heard(a))[0].volume, 1, "your_turn plays at volume 1");
+  assert.deepEqual(await names(b), [], "it does not play for the other seats");
+  ok("your_turn: plays once for acting seat, silent for others");
+
+  // (4) Pushing the same state twice plays it once
+  await clear(a);
+  await a.evaluate((g) => window.__sockets.at(-1).onmessage({ data: JSON.stringify({ type: "state", you: "p0", game: g }) }), p0Turn);
+  await sleep(200);
+  assert.deepEqual(await names(a), [], "pushing the same state twice plays it once");
+  ok("your_turn: repeat push of the same turn plays nothing");
+
+  // (3) A tab that drops and rejoins during its own turn hears it exactly once; rejoin during another's turn hears nothing
+  await clear(a);
+  await a.evaluate((g) => {
+    const ws = window.__sockets.at(-1);
+    const code = window.__emberisle.getState().code;
+    ws.onmessage({ data: JSON.stringify({ type: "welcome", code, you: "p0", host: true }) });
+    ws.onmessage({ data: JSON.stringify({ type: "state", you: "p0", game: g }) });
+  }, p0Turn);
+  await sleep(200);
+  assert.deepEqual(await names(a), ["your_turn"], "rejoin during own turn hears your_turn exactly once");
+  await clear(a);
+  await a.evaluate((g) => {
+    const ws = window.__sockets.at(-1);
+    const code = window.__emberisle.getState().code;
+    ws.onmessage({ data: JSON.stringify({ type: "welcome", code, you: "p0", host: true }) });
+    ws.onmessage({ data: JSON.stringify({ type: "state", you: "p0", game: g }) });
+  }, p1Turn);
+  await sleep(200);
+  assert.deepEqual(await names(a), [], "rejoin during someone else's turn hears nothing");
+  ok("your_turn: rejoin during own turn plays once, rejoin during another seat's turn is silent");
+
+  // (5) With sound muted it does not play
+  await mute(a, true);
+  await clear(a);
+  const p0TurnAgain = { ...turnBase, current: "p0", seq: turnBase.seq + 3 };
+  await a.evaluate((g) => window.__sockets.at(-1).onmessage({ data: JSON.stringify({ type: "state", you: "p0", game: g }) }), p0TurnAgain);
+  await sleep(200);
+  assert.deepEqual(await names(a), [], "with sound muted your_turn does not play");
+  await mute(a, false);
+  ok("your_turn: muted is silent");
+
+  // (6) Hotseat plays none (also watchers and game over)
+  await a.evaluate(async () => {
+    const { hear } = await import("/src/lib/game/store.ts");
+    const base = structuredClone(window.__emberisle.getState().state);
+    const before = { ...base, current: "p1", phase: "main" };
+    const after = { ...base, current: "p0", phase: "main", seq: base.seq + 1 };
+    const over = { ...base, current: "p0", phase: "over", seq: base.seq + 2 };
+    window.__plays = [];
+    hear(before, after, "p0", "hotseat");
+    hear(null, after, "p0", "hotseat", { reconnect: true });
+    hear(before, over, "p0", "online");
+    hear(before, after, "", "online");
+  });
+  assert.deepEqual(await names(a), [], "hotseat, game over and watchers play none");
+  ok("your_turn: hotseat plays none");
 
   assert.deepEqual(errors, [], `console errors: ${errors.join(" | ")}`);
   console.log("PASS sounds-prove");
