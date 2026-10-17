@@ -65,12 +65,15 @@ try {
     }, g);
   };
   const toast = page.getByTestId("trade-toast");
+  // Retain the opening before a bot can accept between animation-frame polls on a software-rendered island.
   // Every hand at the moment the open offer closes. Once it has, the bot's turn plays on (a build, a fortune, the next
   // seat's roll) and moves goods for its own reasons, so the trade is judged on this snapshot, not on a later read.
   const watchClose = () =>
     page.evaluate(() => {
       window.__closed = null;
+      window.__openedOffer = window.__emberisle.getState().offer;
       const stop = window.__emberisle.subscribe((now, prev) => {
+        if (now.offer && now.offer.tradeId !== prev.offer?.tradeId) window.__openedOffer = now.offer;
         if (prev.offer && !now.offer) {
           window.__closed = Object.fromEntries(now.state.players.map((p) => [p.id, { ...p.resources }]));
           stop();
@@ -90,7 +93,7 @@ try {
   await panel.getByRole("button", { name: "More wool to want" }).click();
   await watchClose();
   await panel.getByRole("button", { name: "Ask the table" }).click();
-  await page.waitForFunction(() => window.__emberisle.getState().offer?.from === "p0", null, { timeout: STEP_MS });
+  await page.waitForFunction(() => window.__openedOffer?.from === "p0", null, { timeout: STEP_MS });
   await page.getByTestId("trade-outcome").getByText(`${bot} takes it.`).waitFor({ timeout: STEP_MS });
   const h1 = await closedHands();
   console.log(`person asks: "${bot} takes it."; Ember ${JSON.stringify(h1.p0)}, ${bot} ${JSON.stringify(h1.p2)}`);
@@ -132,7 +135,7 @@ try {
   if (errors.length) throw new Error(`console errors: ${errors.join(" | ")}`);
   console.log("practice trade ui prove ok");
 } catch (e) {
-  console.log("FAIL", e.message);
+  console.log("FAIL", e.stack ?? e.message);
   code = 1;
 } finally {
   await browser.close();
