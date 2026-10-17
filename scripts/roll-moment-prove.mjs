@@ -275,7 +275,8 @@ async function practice(viewport, touch) {
   let page;
   // The board is random and the person's setup takes the first legal corners, which can sit on the waste hex and leave one
   // producing hex (about 1 game in 60). The fixture below needs two, so deal another game rather than bend the fixture.
-  for (let deal = 0; ; deal++) {
+  let ok = false;
+  for (let deal = 0; deal < 10 && !ok; deal++) {
     page = await open(viewport, { touch });
     await page.getByRole("button", { name: "Play", exact: true }).click();
     await playUntil(page, myRoll);
@@ -285,10 +286,10 @@ async function practice(viewport, touch) {
       const owned = new Set(st.vertices.filter((v) => v.building?.playerId === localId).flatMap((v) => v.hexes));
       return st.hexes.filter((h) => owned.has(h.id) && h.pip != null && h.terrain !== "waste").length;
     });
-    if (producing >= 2) break;
-    if (deal === 9) throw new Error("ten practice games in a row left the person fewer than two producing hexes");
-    await page.close();
+    ok = producing >= 2;
+    if (!ok) await page.close();
   }
+  if (!ok) throw new Error("ten practice games in a row left the person fewer than two producing hexes");
   // The roll-off and setup roll no pair of dice, so nothing has shown unless a bot has already rolled.
   const early = await page.evaluate(() => ({ rolls: window.__emberisle.getState().state.rolls ?? 0, moments: window.__moments.length }));
   check(early.moments === early.rolls, `${tag}: through the roll-off and setup, one moment per bot roll and no other (${early.moments} for ${early.rolls})`);
