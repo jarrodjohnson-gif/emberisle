@@ -192,7 +192,7 @@ export function stop(name: SoundName) {
 
 // The your-turn chime, with a short buzz on phones that have a motor.
 export function yourTurn() {
-  play("your_turn", 1);
+  play("your_turn");
   if (unlocked && !muted) navigator.vibrate?.(30);
 }
 

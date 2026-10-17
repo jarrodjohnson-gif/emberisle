@@ -737,7 +737,7 @@ try {
     const over = { ...base, current: "p0", phase: "over", seq: base.seq + 2 };
     window.__plays = [];
     hear(before, after, "p0", "hotseat");
-    hear(null, after, "p0", "hotseat", { reconnect: true });
+    hear(null, after, "p0", "hotseat", true);
     hear(before, over, "p0", "online");
     hear(before, after, "", "online");
   });
