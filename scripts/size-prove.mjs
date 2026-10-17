@@ -22,7 +22,9 @@ const BUDGETS = [
   // 2026-10-16 (#535): main measures 119.78 kB (budget 119.90). The missing-goods chip (tap state, timer, glass chip) and the quiet
   // screen-reader announcement (store field, refuseQuietly, Announcer) add 0.25 kB: 120.03 kB measured, +250 B headroom over main's.
   // 2026-10-17 (#660): 120.16 kB measured on Linux CI with the dry woody your_turn cue and mid-turn rejoin tracking while preserving chip_gain mapping; +240 B headroom.
-  { name: "index", gzipBytes: 120400 },
+  // 2026-10-17 (#661): main measures 120.16 kB (budget 120.40). The turn-timer cues (timed from the deadline, the knock when the
+  // window runs out) add 0.27 kB: 120.43 kB measured on Windows, +150 B headroom over it.
+  { name: "index", gzipBytes: 120580 },
   // 2026-10-14 (#597): +1100 B for the diorama camera, its fit and the token pose on top of the lazy sea (182.92 kB measured).
   // 2026-10-15: 185.01 kB measured on main once the diorama (#604, +1.1 kB) and the natural waves (#614, +1.0 kB) both
   // landed; each fit its own raise alone.

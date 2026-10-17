@@ -3,6 +3,8 @@
 // hears one polite line. A second state push inside the window (a seat drops and rejoins) must not remount the chip
 // or repeat the line. The count runs down, the host moves on (#344) and the chip re-arms; when the turn passes the
 // chip names the next seat. One tab asks for reduced motion and gets no entry fade. Every wait is DOM-based.
+// #661: the seat the host waits on hears a tick as the count reaches 5, 4, 3, 2 and 1 and a knock at 0, and nobody else does;
+// a turn it ends with 8 s left plays nothing, and a muted tab plays nothing.
 import { spawn } from "node:child_process";
 import { once } from "node:events";
 import { existsSync, mkdtempSync, rmSync } from "node:fs";
@@ -58,6 +60,14 @@ async function tab(name, opts = {}) {
   page.on("pageerror", (e) => errors.push(`${name}: ${e}`));
   page.on("response", (r) => r.status() >= 400 && errors.push(`${name}: ${r.status()} ${r.url()}`));
   await page.addInitScript((n) => localStorage.setItem("emberisle-name", n), name);
+  // #661: record every clip the page plays instead of playing it. The table clicks below are the gesture that unlocks sound.
+  await page.addInitScript(() => {
+    window.__plays = [];
+    HTMLMediaElement.prototype.play = function () {
+      window.__plays.push({ file: new URL(this.src).pathname.replace("/audio/", ""), volume: this.volume, t: performance.now() });
+      return Promise.resolve();
+    };
+  });
   await page.goto(`http://127.0.0.1:${PORT}/?host=ws://127.0.0.1:${hostPort}`);
   return { name, page };
 }
@@ -233,15 +243,52 @@ try {
   }
   console.log(`countdown ran ${startSecs}s → ${low.chip.seconds}s; host placed for ${first}: seq ${seq0} → ${vs[0].seq}, phase ${vs[0].phase}, chip back at ${vs[0].chip.text}; live region writes: ${w(vs).map((v) => v.liveChanges).join("/")}`);
 
-  // The first seat lays its own path and the turn passes: the chip names the second seat everywhere.
+  // #661: that whole window ran out on the first seat, so its own tab heard the last 5 s: a tick as the count reached each of
+  // 5, 4, 3, 2 and 1 (volume 0.5), then the knock at 0 (0.8), a second apart. The other two tabs heard none of it.
+  const timerPlays = (t) => t.page.evaluate(() => window.__plays.filter((p) => /^timer_/.test(p.file)));
+  const owner = await timerPlays(firstTab);
+  const names = owner.map((p) => p.file.replace(".wav", ""));
+  if (names.join() !== "timer_tick,timer_tick,timer_tick,timer_tick,timer_tick,timer_final") throw new Error(`the waited-on seat heard ${names.join(", ")}`);
+  if (!owner.slice(0, 5).every((p) => p.volume === 0.5) || owner[5].volume !== 0.8) throw new Error(`cue volumes ${owner.map((p) => p.volume)}`);
+  const gaps = owner.slice(1).map((p, i) => p.t - owner[i].t);
+  if (!gaps.every((g) => g > 700 && g < 1300)) throw new Error(`the cues are not a second apart: ${gaps.map(Math.round)}`);
+  for (const t of tabs.filter((t) => t !== firstTab)) {
+    const heard = await timerPlays(t);
+    if (heard.length) throw new Error(`${t.name} is not waited on but heard ${heard.map((p) => p.file)}`);
+  }
+  console.log(`last 5 s on ${firstTab.name}: ${names.join(", ")} (gaps ${gaps.map(Math.round).join("/")} ms); the other tabs heard nothing`);
+
+  // The first seat lays its own path with 8 s left, well before the last 5: nothing plays. Then the turn passes: the chip
+  // names the second seat everywhere. The second seat's tab is muted for its whole window, so it stays silent too.
   const second = vs[0].players[1].id;
+  const secondTab = tabs[vs.findIndex((v) => v.you === second)];
+  await secondTab.page.evaluate(async () => (await import("/src/lib/sound.ts")).setMuted(true));
+  await firstTab.page.evaluate(() => (window.__plays = []));
+  await until(async () => {
+    const v = await view(firstTab);
+    return v?.chip?.player === first && v.chip.seconds <= 8 ? v : null;
+  }, "the first seat's window has 8 s left", TURN);
   await act(firstTab, "pickEdge", vs[tabs.indexOf(firstTab)].legal.path[0]);
   vs = await until(async () => {
     const vs = await views(tabs);
     return vs.every((v) => v && v.current === second && v.phase === "setupSettle") ? vs : null;
   }, "the turn passes to the second seat");
+  await new Promise((r) => setTimeout(r, 6000));
+  const early = await timerPlays(firstTab);
+  if (early.length) throw new Error(`ending the turn with 8 s left still played ${early.map((p) => p.file)}`);
+  console.log("ended the turn with 8 s left: nothing played");
   vs = await chipsName(tabs, second, "second seat");
   console.log(`turn passed to ${second}: chips read ${vs.map((v) => `"${v.chip.text}"`).join(", ")}`);
+
+  // #661: the second seat's window runs out with its tab muted. The host moves on, and not one cue played anywhere: the
+  // muted tab is the one waited on, and the other tabs never hear it.
+  const seq2 = vs[0].seq;
+  await until(async () => (await view(a))?.seq > seq2, "the second seat's window runs out", TURN + 10_000);
+  for (const t of tabs) {
+    const heard = await timerPlays(t);
+    if (heard.length) throw new Error(`${t.name} heard ${heard.map((p) => p.file)} in a window that ran out on a muted tab`);
+  }
+  console.log(`${secondTab.name}'s window ran out on a muted tab: no tab played a cue`);
 
   if (errors.length) throw new Error(`console errors:\n${errors.join("\n")}`);
   console.log("PASS countdown-prove");
