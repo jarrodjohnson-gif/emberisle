@@ -1,18 +1,13 @@
-import { useEffect, useLayoutEffect, useRef, useState, type ComponentType, type SVGProps } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { ClaySymbol, GrainSymbol, OreSymbol, TimberSymbol, WoolSymbol } from "@/components/game/ResourceSymbols";
+import { RESOURCE_ICON } from "@/components/game/ResourceSymbols";
 import { RESOURCES, RESOURCE_LABEL, type Phase, type PlayerState, type Resource } from "@/lib/game/types";
 import { cn } from "@/lib/utils";
 import { useGame } from "@/lib/game/store";
+import { heldRates } from "@/lib/game/rules";
 import "./hand-motion.css";
 
-export const RESOURCE_ICON: Record<Resource, ComponentType<SVGProps<SVGSVGElement>>> = {
-  timber: TimberSymbol,
-  clay: ClaySymbol,
-  wool: WoolSymbol,
-  grain: GrainSymbol,
-  ore: OreSymbol,
-};
+export { RESOURCE_ICON } from "@/components/game/ResourceSymbols";
 
 // Each card is the terrain cap's colour (docs/design/polish.md, #436); full class names so Tailwind can see them.
 export const RESOURCE_PAINT: Record<Resource, string> = {
@@ -141,7 +136,10 @@ function ResourceCard({ resource, count, flash, showRates }: { resource: Resourc
         role="button"
         tabIndex={0}
         aria-label={`${RESOURCE_LABEL[resource]}: ${count}. Show trade rates`}
-        onClick={(e) => { if (e.detail === 0) showRates(resource, e.currentTarget); }}
+        onClick={(e) => {
+          // Assistive activation synthesizes a click; pointer taps keep the long-press gesture.
+          if (e.detail === 0) showRates(resource, e.currentTarget);
+        }}
         onContextMenu={(e) => {
           e.preventDefault();
           cancelHold();
@@ -212,12 +210,12 @@ function ResourceHand({ me, flashes }: { me: PlayerState; flashes: ReturnType<ty
   const state = useGame((s) => s.state);
   const buildMode = useGame((s) => s.buildMode);
   const [hint, setHint] = useState<{ resource: Resource; owner: string; top: number } | null>(null);
-  const owned = state?.vertices.filter((v) => v.building?.playerId === me.id).map((v) => v.harbor) ?? [];
-  const rates = hint ? [
-    "Bank 4:1",
-    ...(owned.includes("any") ? ["Dock 3:1"] : []),
-    ...(owned.includes(hint.resource) ? [`${RESOURCE_LABEL[hint.resource]} dock 2:1`] : []),
-  ].join(" · ") : "";
+  const rates = hint && state ? heldRates(state, me.id, hint.resource).map((rate) =>
+    rate === 4 ? "Bank 4:1" : rate === 3 ? "Dock 3:1" : `${RESOURCE_LABEL[hint.resource]} dock 2:1`,
+  ).join(" · ") : "";
+  const showRates = useCallback((resource: Resource, card: HTMLElement) => {
+    if (useGame.getState().buildMode === "none") setHint({ resource, owner: me.id, top: card.getBoundingClientRect().top });
+  }, [me.id]);
   useEffect(() => setHint(null), [me.id, buildMode]);
   useEffect(() => {
     if (!hint) return;
@@ -236,19 +234,17 @@ function ResourceHand({ me, flashes }: { me: PlayerState; flashes: ReturnType<ty
   }, [hint]);
   return (
     <>
-    <div className="goods-tray flex shrink-0 gap-1 overflow-x-auto rounded-chip p-2 short:p-1">
-      {RESOURCES.map((r) => (
-        <ResourceCard key={r} resource={r} count={me.resources[r]} flash={flashes[r]} showRates={(resource, card) => {
-          if (useGame.getState().buildMode === "none") setHint({ resource, owner: me.id, top: card.getBoundingClientRect().top });
-        }} />
-      ))}
-    </div>
-    {hint && hint.owner === me.id && buildMode === "none" ? createPortal(<div
-      data-testid="hand-rates"
-      role="status"
-      className="pointer-events-none fixed left-3 right-3 z-50 mx-auto w-fit max-w-[calc(100%_-_24px)] rounded-control border border-line bg-surface px-3 py-2 text-[16px] font-semibold text-fg shadow-lg"
-      style={{ bottom: Math.max(12, innerHeight - hint.top + 8) }}
-    >{rates}</div>, document.body) : null}
+      <div className="goods-tray flex shrink-0 gap-1 overflow-x-auto rounded-chip p-2 short:p-1">
+        {RESOURCES.map((r) => (
+          <ResourceCard key={r} resource={r} count={me.resources[r]} flash={flashes[r]} showRates={showRates} />
+        ))}
+      </div>
+      {hint && hint.owner === me.id && buildMode === "none" ? createPortal(<div
+        data-testid="hand-rates"
+        role="status"
+        className="pointer-events-none fixed left-3 right-3 z-50 mx-auto w-fit max-w-[calc(100%_-_24px)] rounded-control border border-line bg-surface px-3 py-2 text-[16px] font-semibold text-fg shadow-lg"
+        style={{ bottom: Math.max(12, innerHeight - hint.top + 8) }}
+      >{rates}</div>, document.body) : null}
     </>
   );
 }

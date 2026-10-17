@@ -160,6 +160,8 @@ export const TOKEN_FACE = 0.245;
 // How far a tilted token is lifted so its near edge stays where the flat disc's underside was.
 export const TOKEN_LIFT = TOKEN_R * Math.sin(TOKEN_TILT) + (TOKEN_H / 2) * Math.cos(TOKEN_TILT) - TOKEN_H / 2;
 
+type DockPosition = { id: string; kind: HarborKind; x: number; y: number };
+
 export class IsleRenderer {
   private renderer: THREE.WebGLRenderer;
   private scene = new THREE.Scene();
@@ -261,8 +263,10 @@ export class IsleRenderer {
   onWater: (w: WaterStatus) => void = () => {};
   // The play view now shown, for the table menu's View row.
   onView: (v: PlayView) => void = () => {};
-  onDocks: (docks: { id: string; kind: HarborKind; x: number; y: number }[]) => void = () => {};
-  private dockPositions = "";
+  onDocks: (docks: DockPosition[]) => void = () => {};
+  onDock: (id: string) => boolean = () => false;
+  private dockPositions: DockPosition[] = [];
+  private docksDirty = true;
   private choice: WaterPath | null = null;
   private waterSet = false;
   private probed: { path: WaterPath; ms: number } | null = null;
@@ -355,7 +359,7 @@ export class IsleRenderer {
     this.controls.autoRotateSpeed = 0.28;
     this.calmMq?.addEventListener("change", this.onCalm);
     this.controls.addEventListener("start", this.wake);
-    this.controls.addEventListener("change", this.wake);
+    this.controls.addEventListener("change", this.onCameraChange);
     this.orbit = new OrbitControls(this.ortho, canvas);
     this.orbit.enabled = false;
     // No damping: the board stops where the pointer stops, and nothing drifts after a glide home.
@@ -367,7 +371,7 @@ export class IsleRenderer {
     this.orbit.minPolarAngle = 0.12;
     this.orbit.maxPolarAngle = 1.15;
     this.orbit.addEventListener("start", this.wake);
-    this.orbit.addEventListener("change", this.wake);
+    this.orbit.addEventListener("change", this.onCameraChange);
 
     this.scene.fog = new THREE.Fog(PAPER, 26, 52);
     // A lit board on a table (polish.md "The board look target", #135): one warm key lamp carries the light, so the
@@ -462,7 +466,7 @@ export class IsleRenderer {
   // Off the table (title and lobby) the island is a backdrop under a card: the slow orbit, no SSAO, 30 frames a second.
   // In play it is the board fitted to the HUD hole, which the player may orbit and zoom and snap home again.
   setTitleMode(v: boolean) {
-    if (v !== this.titleMode) this.wake();
+    if (v !== this.titleMode) this.onCameraChange();
     this.titleMode = v;
     if (v) this.clearPayers();
     this.ssao.enabled = !v && !this.play();
@@ -786,8 +790,14 @@ export class IsleRenderer {
     this.busyUntil = performance.now() + 1000;
   };
 
+  private onCameraChange = () => {
+    this.docksDirty = true;
+    this.wake();
+  };
+
   // The visual viewport also moves with the keyboard and a pinch, which leave the canvas as it is: only the hole is measured then.
   private onViewport = () => {
+    this.docksDirty = true;
     const c = this.renderer.domElement;
     if ((c.clientWidth || 1) !== this.sizeW || (c.clientHeight || 1) !== this.sizeH) return this.resize();
     this.remeasure();
@@ -795,7 +805,7 @@ export class IsleRenderer {
   };
 
   private resize = () => {
-    this.wake();
+    this.onCameraChange();
     const c = this.renderer.domElement;
     const w = (this.sizeW = c.clientWidth || 1);
     const h = (this.sizeH = c.clientHeight || 1);
@@ -873,6 +883,7 @@ export class IsleRenderer {
   // Overhead: leaned toward the player (+Z is screen-down), looking at cap level over the hole's centre. Diorama: looking at
   // cap level over the island's centre, the lens axis meeting the canvas at (cx, cy), so the island sits in the hole.
   private applyPose(p: Pose) {
+    this.docksDirty = true;
     if (this.view === "diorama") {
       const c = this.persp;
       const [w, h] = [this.sizeW || 1, this.sizeH || 1];
@@ -1004,6 +1015,7 @@ export class IsleRenderer {
     const dz = t.z - home.tz;
     const d = Math.hypot(dx, dz);
     if (d <= max) return;
+    this.docksDirty = true;
     const k = max / d - 1;
     t.x += dx * k;
     t.z += dz * k;
@@ -1106,6 +1118,23 @@ export class IsleRenderer {
     if (this.gesture.up(e.pointerId) || this.dragged) return;
     const coarse = this.coarse();
     if (Math.hypot(e.clientX - this.down.x, e.clientY - this.down.y) > tapSlop(this.downType, coarse)) return;
+    if (e.button === 0) {
+      let nearest: DockPosition | undefined;
+      let distance = Infinity;
+      for (const dock of this.dockPositions) {
+        const dx = e.clientX - dock.x;
+        const dy = e.clientY - dock.y;
+        const d = dx * dx + dy * dy;
+        if (Math.abs(dx) <= 22 && Math.abs(dy) <= 22 && d < distance) {
+          nearest = dock;
+          distance = d;
+        }
+      }
+      if (nearest && this.onDock(nearest.id)) {
+        this.lastTap.t = 0;
+        return;
+      }
+    }
     const hit = pickBest(this.hitsAt(e, coarse || this.downType === "touch"));
     const legal = hit !== undefined && this.legalIds.has(hit.id);
     // Two taps on empty board (nothing legal under either) within DOUBLE_TAP_MS and DOUBLE_TAP_PX snap the view home.
@@ -1393,6 +1422,30 @@ export class IsleRenderer {
     this.onWater({ path, source: this.choice ? "saved" : "probe", ms: this.probed?.ms ?? null });
   }
 
+  // Dock targets follow camera and canvas changes; ambient frames leave their cached positions alone.
+  private updateDockPositions() {
+    if (this.titleMode || !this.docksDirty) return;
+    this.docksDirty = false;
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    const camera = this.cam();
+    const docks = this.docks.map((d) => {
+      const p = _p.set(d.cx + d.mx * 0.62, 0.12, d.cz + d.mz * 0.62).project(camera);
+      return {
+        id: d.vids.join(":"),
+        kind: d.kind,
+        x: rect.left + ((p.x + 1) / 2) * rect.width,
+        y: rect.top + ((1 - p.y) / 2) * rect.height,
+      };
+    });
+    if (docks.length !== this.dockPositions.length || docks.some((d, i) => {
+      const previous = this.dockPositions[i]!;
+      return d.id !== previous.id || d.kind !== previous.kind || Math.round(d.x) !== Math.round(previous.x) || Math.round(d.y) !== Math.round(previous.y);
+    })) {
+      this.dockPositions = docks;
+      this.onDocks(docks);
+    }
+  }
+
   // The one-time GPU check, on a built and warm scene of a settled client (a second after setSettled and after the last
   // pointer on the canvas), each frame made to finish by a 1-pixel read. First up to 10 simple frames after 5 warm ones: over 11 ms on average (the crystal sea draws the scene twice), the sea
   // stays simple and the crystal one is never drawn. Otherwise up to 10 crystal frames after 3 warm ones: over 22 ms, back to
@@ -1414,18 +1467,7 @@ export class IsleRenderer {
       this.renderer.shadowMap.autoUpdate = true;
     }
     this.renders += 1;
-    if (!this.titleMode) {
-      const docks = this.docks.map((d) => ({
-        id: d.vids.join(":"),
-        kind: d.kind,
-        ...this.screenAt(d.cx + d.mx * 0.62, 0.12, d.cz + d.mz * 0.62),
-      }));
-      const positions = JSON.stringify(docks.map((d) => [d.id, d.kind, Math.round(d.x), Math.round(d.y)]));
-      if (positions !== this.dockPositions) {
-        this.dockPositions = positions;
-        this.onDocks(docks);
-      }
-    } else this.dockPositions = "";
+    this.updateDockPositions();
     const p = this.probe;
     const warm = p?.stage === "simple" ? 5 : 3;
     const budget = p?.stage === "simple" ? 11 : 22;
@@ -1569,6 +1611,7 @@ export class IsleRenderer {
   }
 
   private buildLand(state: GameState) {
+    this.docksDirty = true;
     this.jelly?.dispose();
     this.jelly = null;
     this.slabs = null;

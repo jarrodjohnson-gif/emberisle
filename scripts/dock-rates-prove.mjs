@@ -72,10 +72,19 @@ async function targets(page, tag) {
   return boxes;
 }
 
+async function tapDock(page, kind) {
+  const box = await page.locator(`[data-testid="dock-rate-target"][data-kind="${kind}"]`).first().boundingBox();
+  assert.ok(box, `${kind}: projected dock target exists`);
+  const x = box.x + box.width / 2;
+  const y = box.y + box.height / 2;
+  if (await page.evaluate(() => navigator.maxTouchPoints > 0)) await page.touchscreen.tap(x, y);
+  else await page.mouse.click(x, y);
+}
+
 async function inspectDock(page, kind, tag) {
   const button = page.locator(`[data-testid="dock-rate-target"][data-kind="${kind}"]`).first();
   await button.scrollIntoViewIfNeeded();
-  // Measure from the actual click event to the matching rendered label, excluding Playwright's actionability wait.
+  // Native input reaches the canvas; keyboard and assistive activation use the transparent dock buttons.
   await page.evaluate((kind) => {
     window.__dockLatency = null;
     window.__dockStarted = null;
@@ -92,11 +101,11 @@ async function inspectDock(page, kind, tag) {
     };
     window.__dockObserver = new MutationObserver(check);
     window.__dockObserver.observe(document.body, { subtree: true, childList: true, characterData: true, attributes: true });
-    document.addEventListener("click", (event) => {
-      if (event.target.closest('[data-testid="dock-rate-target"]')?.dataset.kind === kind) window.__dockStarted = performance.now();
+    document.addEventListener("pointerup", (event) => {
+      if (event.target instanceof HTMLCanvasElement) window.__dockStarted = performance.now();
     }, { capture: true, once: true });
   }, kind);
-  await button.click();
+  await tapDock(page, kind);
   await page.waitForFunction(() => window.__dockLatency !== null, null, { timeout: STEP_MS });
   const result = await page.getByTestId("dock-rate-label").evaluate((el) => {
     const label = el.cloneNode(true);
@@ -121,6 +130,42 @@ async function expectRates(page, expected, tag) {
   assert.equal(hint.font, "16px", `${tag}: rate hint uses 16px text`);
   assert.equal(hint.portal, true, `${tag}: hint escapes the clipped hand through a portal`);
   assert.equal(hint.inside, true, `${tag}: rate hint fits the viewport`);
+}
+
+async function proveDockPan(page, touch, tag) {
+  const beforeGame = await stateSnapshot(page);
+  const origin = await page.getByTestId("dock-rate-target").evaluateAll((nodes) => nodes.map((node) => {
+    const r = node.getBoundingClientRect();
+    return { x: r.x + 22, y: r.y + 22 };
+  }).filter((p) => document.elementFromPoint(p.x, p.y) instanceof HTMLCanvasElement)
+    .sort((a, b) => Math.hypot(a.x - innerWidth / 2, a.y - innerHeight / 2) - Math.hypot(b.x - innerWidth / 2, b.y - innerHeight / 2))[0]);
+  assert.ok(origin, `${tag}: dock pointer input reaches the canvas`);
+  const camera = () => page.evaluate(() => window.__isle.orbit.target.toArray());
+  const before = await camera();
+  const dx = origin.x < 150 ? 35 : -35;
+  if (touch) {
+    const cdp = await page.context().newCDPSession(page);
+    const offset = origin.x < 150 ? 50 : -50;
+    const points = (step) => [{ id: 1, x: origin.x + dx * step / 6, y: origin.y }, { id: 2, x: origin.x + offset + dx * step / 6, y: origin.y }];
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: points(0) });
+    for (let step = 1; step <= 6; step++) {
+      await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: points(step) });
+      await page.waitForTimeout(30);
+    }
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+    await cdp.detach();
+  } else {
+    await page.mouse.move(origin.x, origin.y);
+    await page.mouse.down({ button: "right" });
+    await page.mouse.move(origin.x + dx, origin.y, { steps: 6 });
+    await page.mouse.up({ button: "right" });
+  }
+  await page.waitForFunction((before) => window.__isle.orbit.target.toArray().some((v, i) => Math.abs(v - before[i]) > 0.001), before, { timeout: STEP_MS });
+  assert.notDeepEqual(await camera(), before, `${tag}: a pan starting on a dock moves the camera`);
+  assert.equal(await page.getByTestId("dock-rate-label").count(), 0, `${tag}: a dock drag does not inspect`);
+  assert.equal(await stateSnapshot(page), beforeGame, `${tag}: a dock drag preserves the game`);
+  await page.evaluate(() => window.__isle.goHome());
+  await page.waitForFunction(() => !window.__isle.glide && !window.__isle.refitDue, null, { timeout: STEP_MS });
 }
 
 async function proveHand(page, touch, tag) {
@@ -272,12 +317,18 @@ try {
     const before = await stateSnapshot(page);
     const latencies = [await inspectDock(page, "any", view.tag), await inspectDock(page, "timber", view.tag)];
     assert.equal(await stateSnapshot(page), before, `${view.tag}: coast inspection preserves seq, resources, bank, and every game field`);
+    await proveDockPan(page, view.touch, view.tag);
+    const accessible = page.locator('[data-testid="dock-rate-target"][data-kind="timber"]');
+    await accessible.focus();
+    await page.keyboard.press("Enter");
+    await page.getByTestId("dock-rate-label").waitFor();
+    await page.keyboard.press("Escape");
     await proveHand(page, view.touch, view.tag);
     await proveHintLifecycle(page, view.tag);
     await provePlacement(page, view.tag);
 
     await fixture(page, { generic: true, timber: true });
-    await page.locator('[data-testid="dock-rate-target"][data-kind="timber"]').click();
+    await tapDock(page, "timber");
     await page.getByTestId("dock-rate-label").waitFor();
     await page.getByTestId("resource-timber").focus();
     await page.keyboard.press("Enter");

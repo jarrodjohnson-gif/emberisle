@@ -4,7 +4,7 @@ import { IsleRenderer } from "@/lib/scene/isle-renderer";
 import { useGame } from "@/lib/game/store";
 import { demoBoard } from "@/lib/game/board";
 import { RESOURCE_LABEL, type GameState, type HarborKind } from "@/lib/game/types";
-import { RESOURCE_ICON } from "@/components/game/Hand";
+import { RESOURCE_ICON } from "@/components/game/ResourceSymbols";
 
 // One dealt island for the life of the page, shown behind the title and the lobby. It is never in the store.
 let demo: GameState | null = null;
@@ -53,6 +53,12 @@ export default function IslandCanvas() {
       (sel) => useGame.getState().setPendingPlace(sel),
     );
     renderer.onDocks = setDocks;
+    renderer.onDock = (id) => {
+      const s = useGame.getState();
+      if (s.screen !== "play" || s.buildMode !== "none" || !s.state || !["roll", "main", "over"].includes(s.state.phase)) return false;
+      setSelected((selected) => selected === id ? null : id);
+      return true;
+    };
     (window as unknown as { __isle: IsleRenderer }).__isle = renderer;
     // Reported from inside sync (and later by the probe), so the store update waits for sync to finish.
     renderer.onWater = (water) => queueMicrotask(() => useGame.setState({ water }));
@@ -114,7 +120,7 @@ export default function IslandCanvas() {
         aria-label={d.kind === "any" ? "Inspect 3:1 any goods dock" : `Inspect 2:1 ${RESOURCE_LABEL[d.kind].toLowerCase()} dock`}
         aria-expanded={selected === d.id}
         onClick={() => setSelected((s) => s === d.id ? null : d.id)}
-        className="pointer-events-auto absolute size-11 rounded-full border border-transparent bg-transparent focus-visible:border-fg focus-visible:outline-none"
+        className="pointer-events-none absolute size-11 rounded-full border border-transparent bg-transparent focus-visible:border-fg focus-visible:outline-none"
         style={{ left: d.x - 22, top: d.y - 22 }}
       />)}
       {dock ? createPortal(<div

@@ -21,7 +21,8 @@ const BUDGETS = [
   // 2026-10-15 (#612): 118.15 kB measured on main + wayfarer modes (creation controls, practice progress, mode rules); +600 B.
   // 2026-10-16 (#535): main measures 119.78 kB (budget 119.90). The missing-goods chip (tap state, timer, glass chip) and the quiet
   // screen-reader announcement (store field, refuseQuietly, Announcer) add 0.25 kB: 120.03 kB measured, +250 B headroom over main's.
-  { name: "index", gzipBytes: 120150 },
+  // 2026-10-16 (#538): shared held-rate rules and accessible hand hints measure 120.86 kB on Node 22; +241 B headroom.
+  { name: "index", gzipBytes: 121100 },
   // 2026-10-14 (#597): +1100 B for the diorama camera, its fit and the token pose on top of the lazy sea (182.92 kB measured).
   // 2026-10-15: 185.01 kB measured on main once the diorama (#604, +1.1 kB) and the natural waves (#614, +1.0 kB) both
   // landed; each fit its own raise alone.
@@ -34,7 +35,8 @@ const BUDGETS = [
   // 2026-10-16 (#638, owner sign-off "A"): the jelly pieces (pieces-jelly.ts) replace the slabs; pieces are on the first
   // frame, so they are in this chunk (the slab builders stay, for ?pieces=slab and the classic look #641). 198.96 kB
   // measured against 196.82 kB on main; +540 B headroom.
-  { name: "IslandCanvas", gzipBytes: 199500 },
+  // 2026-10-16 (#538): cached dock projections and canvas-native inspection measure 200.55 kB on Node 22; +252 B headroom.
+  { name: "IslandCanvas", gzipBytes: 200800 },
   // 2026-10-16 (#624): the Hex Jelly scenes on the board (hex-jelly.ts and the batcher jelly-board.ts), loaded after the
   // island's first draw; 50.95 kB measured, +2 kB. The sculpted terrain left IslandCanvas with them (192.87 kB).
   // 2026-10-16 (#631): the jelly shore (harbor-jelly.ts) is its own chunk, so the scenes it shares with the batcher split out
