@@ -1,4 +1,4 @@
-// #543 (P-1): a reload restores the table in under two seconds. A real host serves the built dist/; three seats sit down
+// #543 (P-1): a reload restores the table in about three seconds (median, #624). A real host serves the built dist/; three seats sit down
 // (two are plain sockets), the game starts, and the seated browser at 390x844 reloads under a 4x CPU slowdown and a
 // 1.6 Mbps / 150 ms network (the "Fast 3G"-like profile). From navigationStart, the board (island canvas drawn) and the
 // player's own hand must be on screen with the median of five reloads inside 3000 ms (#624; no run over the 6000 ms outlier
@@ -11,9 +11,10 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
 
-// The rule (#673): 5 reloads, the median inside BUDGET; HARD is only an outlier cap, twice BUDGET, so one run that a busy
-// runner stretched (4114 ms against a 2516 ms median on a docs-only PR) does not fail the proof, while a real slowdown moves
-// the median and still does. Every run's time is printed.
+// The rule (#673): 5 reloads, with the median inside BUDGET.
+// HARD is only an outlier cap, twice BUDGET.
+// A busy runner can stretch one run (4114 ms against a 2516 ms median on a docs-only PR). That run no longer fails the proof.
+// A real slowdown moves the median, and the proof still fails. Every run's time is printed.
 const RUNS = Number(process.env.RESTORE_RUNS) || 5;
 // 2026-10-16 (#624): 3000 / 3500 from 2000 / 2500. The owner: "Load time can increase, not a big deal, as long as the game
 // is still snappy and has no lag." The Hex Jelly scenes load after the first draw; CI runners have measured 3.7 s medians
