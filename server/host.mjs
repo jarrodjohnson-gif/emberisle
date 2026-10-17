@@ -1235,11 +1235,8 @@ wss.on("connection", (ws, req) => {
 });
 
 function handle(ws, raw) {
-  // A watcher sends nothing after its hello. Above the parse and the seatless branch, so it can never sit down or rejoin.
-  if (ws.watch) {
-    if (!allow(ws.bucket, Date.now())) return;
-    return send(ws, { type: "error", message: "Watching only." });
-  }
+  // Watchers retain their pre-parse budget, including malformed frames and health probes.
+  if (ws.watch && !allow(ws.bucket, Date.now())) return;
   let msg;
   try {
     msg = JSON.parse(String(raw));
@@ -1247,6 +1244,18 @@ function handle(ws, raw) {
     return send(ws, { type: "error", message: "not ready" });
   }
   if (!msg || typeof msg !== "object") return send(ws, { type: "error", message: "not ready" });
+  // Health has no room/state access, action bucket, publish, save, or game timer side effects.
+  // Unauthenticated probes consume the same budget as hello/peek, and never earn a reply.
+  if (msg.type === "healthPing") {
+    if (!ws.room && !ws.watch) { allow(ws.bucket, Date.now()); return; }
+    if (typeof msg.nonce !== "string" || !/^[a-f0-9]{32}$/.test(msg.nonce)) return;
+    const now = performance.now();
+    // Two arrivals may bunch when network delay changes; sustained replies stay at one per 30 seconds.
+    ws.healthBucket ??= { tokens: 2, at: now };
+    if (!allow(ws.healthBucket, now, 2, 1 / 30)) return;
+    return send(ws, { type: "healthPong", nonce: msg.nonce });
+  }
+  if (ws.watch) return send(ws, { type: "error", message: "Watching only." });
   if (!ws.room) {
     // A socket with no seat has no seat.bucket; this one throttles the pre-seat frames (docs/design/color-peek.md).
     const ok = allow(ws.bucket, Date.now());

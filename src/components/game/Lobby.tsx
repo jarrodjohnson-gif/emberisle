@@ -1,3 +1,4 @@
+import { ConnectionStatus } from "@/components/game/ConnectionStatus";
 // The table lobby: code, seats, chat and Ready/Start. Online-only, so it loads with the chat as one lazy chunk (#488).
 import { VictoryTargetSelect } from "@/components/game/VictoryTargetSelect";
 import { useRef, useState } from "react";
@@ -129,6 +130,7 @@ export function Lobby() {
             </Button>
           </div>
         </div>
+        <ConnectionStatus />
         <CopyFallback state={copied} label={copied?.what === "link" ? "Join link" : "Table code"} className="mt-2" />
         </div>
         <div className={cn(landscape ? "col-start-1 row-span-2 row-start-1 flex min-h-0 flex-col" : "contents")}>

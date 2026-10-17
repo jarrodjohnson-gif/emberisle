@@ -323,6 +323,7 @@ interface GameStore {
   net: TableClient | null;
   // True when `net` is the pre-join peek connection (docs/design/color-peek.md), not a seated or rejoining one.
   peeking: boolean;
+  connectionHealth: import("@/lib/net/table").ConnectionHealth;
   code: string;
   isHost: boolean;
   tableVictoryTarget: VictoryTarget;
@@ -506,6 +507,7 @@ export const useGame = create<GameStore>((set, get) => ({
   banner: null,
   net: null,
   peeking: false,
+  connectionHealth: { status: "Offline", rtt: null },
   code: "",
   isHost: false,
   tableVictoryTarget: 10,
@@ -1099,9 +1101,15 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
   clearWake();
   get().net?.close();
   let pending = kind === "quiet";
+  let recovery = kind === "quiet";
+  set({ connectionHealth: { status: "Reconnecting", rtt: null } });
   let welcomed = false;
   let outdated: string | null = null;
   const table = connectTable(hostUrl(window.location), {
+    health: (connectionHealth) => {
+      if (recovery && (get().restoring || get().state !== null) && connectionHealth.status === "Reachable") return;
+      set({ connectionHealth });
+    },
     welcome: ({ proto, code, you, host, chat, secret, spectator, victoryTarget, wayfarerMode }) => {
       pending = false;
       welcomed = true;
@@ -1125,6 +1133,8 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       // A reload at a table that was in play (#543) waits on the loading screen for the state that follows at once, not the
       // lobby; if none comes (the table was reset meanwhile), the lobby is where the seat belongs.
       const restoring = get().restoring;
+      // A recovered lobby has no full game state to recover. Its later Start is a new game.
+      if (!inGame && !restoring) recovery = false;
       if (restoring)
         setTimeout(() => {
           if (!get().restoring || get().net !== table) return;
@@ -1135,12 +1145,16 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
             // storage can be blocked
           }
           liveCode = "";
+          recovery = false;
           set({ restoring: false, screen: "lobby" });
         }, 1500);
       set({ announcement: null, code, spectator: false, seatId: you ?? "", isHost: host ?? false, screen: restoring ? "title" : inGame ? "play" : "lobby", mode: "online", error: outdated, toast: outdated, chat: history, reactions: [], unread: 0 });
     },
     // The window may have closed while we were away; the next state brings it back rather than a chip stuck at 0:00.
-    reconnecting: (attempt) => set({ announcement: null, error: `Reconnecting… (try ${attempt})`, toast: "Reconnecting…", turnTimer: null }),
+    reconnecting: (attempt) => {
+      recovery = true;
+      set({ announcement: null, error: `Reconnecting… (try ${attempt})`, toast: "Reconnecting…", turnTimer: null });
+    },
     chat: (line) => {
       const { chat, chatOpen, unread, seatId, screen } = get();
       // The lobby box is always open, so only lines that arrive during the game can be unread.
@@ -1180,6 +1194,10 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       // A rematch's new game (#266): drop any half-made move or open panel left over from the win.
       if (get().state?.phase === "over" && game.phase !== "over") set({ buildMode: "none", roadPicks: [], pendingPlace: null, tradeOpen: false });
       get().loadState(game, me, get().isHost, get().code);
+      if (recovery && !get().spectator) {
+        recovery = false;
+        set({ announcement: "Back at the table", toast: "Back at the table", connectionHealth: { status: "Reachable", rtt: get().connectionHealth.rtt } });
+      }
       if (!get().spectator) rememberLive(get().code);
       if (outdated) set({ announcement: null, error: outdated, toast: outdated });
       if (rollOff) showBanner(set, rollOff);
