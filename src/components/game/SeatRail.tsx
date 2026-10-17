@@ -5,6 +5,7 @@
 // `seat-turn`: its dot pulses softly (bible §4.3) and the card brightens over 200 ms (§8), with an ink ring on the dot and
 // aria-current so the turn never rests on colour or motion alone (#312); the dot is a SeatDot.
 // Your fortunes by kind and a dropped seat's state are facts in the player menu, one tap away.
+import type { CSSProperties } from "react";
 import { ScrollText } from "lucide-react";
 import { ReactionFloats } from "@/components/game/chunks";
 import { LazyBoundary } from "@/lib/lazy";
@@ -109,6 +110,8 @@ function SeatCard({ p, actor, short, className }: { p: PlayerState; actor: strin
     <div
       data-testid={`${strip ? "seat" : "rail"}-${p.id}`}
       className={cn("seat-card relative transition-colors duration-200", className, p.id === current && "seat-turn")}
+      data-current-turn={p.id === current ? "true" : undefined}
+      style={p.id === current ? ({ "--seat-color": p.color } as CSSProperties) : undefined}
     >
       <button
         type="button"

@@ -199,12 +199,19 @@ body {
 }
 .seat-card { background: var(--table); color: var(--table-ink); box-shadow: inset 0 0 0 1px var(--table-line); }
 .seat-card [class*='text-zinc-700'] { color: var(--table-muted); }
-.seat-card.seat-turn { background: var(--paper); color: var(--ink); box-shadow: inset 0 -2px 0 var(--accent), inset 0 0 0 1px var(--table-line); }
+.seat-card.seat-turn { background: var(--paper); color: var(--ink); box-shadow: 0 0 0 3px var(--seat-color, var(--accent)), 0 0 0 11px color-mix(in srgb, var(--seat-color, var(--accent)) 20%, transparent), inset 0 -2px 0 var(--accent); }
 .seat-card.seat-turn [class*='text-zinc-700'] { color: var(--muted); }
 .seat-card button:hover { background: var(--table-raised); color: var(--table-ink); }
 .seat-card.seat-turn button:hover { background: var(--ground); color: var(--ink); }
 .seat-card button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 .seat-turn .seat-dot { animation: none; outline: 2px solid var(--ink); outline-offset: 2px; }
+/* Phone strip: acting seat rises 2px under motion. */
+@media (max-width: 767px) {
+  .seat-card.seat-turn { transform: translateY(-2px); transition: transform 150ms var(--ease-out, ease-out); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .seat-card.seat-turn { transform: none; transition: none; }
+}
 .seat-card [data-testid='seat-vp'] { font-weight: 750; }
 .hud-header > div > div > button[aria-label='Table menu'] { background: var(--table); color: var(--table-ink); border: 1px solid var(--table-line); }
 .hud-stack { scrollbar-width: thin; scrollbar-color: var(--table-line) var(--table); }
