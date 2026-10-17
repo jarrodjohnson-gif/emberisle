@@ -677,7 +677,7 @@ try {
   // Sync both tabs to p1's turn
   await a.evaluate((g) => window.__sockets.at(-1).onmessage({ data: JSON.stringify({ type: "state", you: "p0", game: g }) }), p1Turn);
   await b.evaluate((g) => window.__sockets.at(-1).onmessage({ data: JSON.stringify({ type: "state", you: "p1", game: g }) }), p1Turn);
-  await sleep(400);
+  await sleep(1500); // let any pending piece knock settle
   await clear(a);
   await clear(b);
 
