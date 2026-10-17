@@ -65,12 +65,13 @@ try {
     }, g);
   };
   const toast = page.getByTestId("trade-toast");
-  // Retain the opening before a bot can accept between animation-frame polls on a software-rendered island.
   // Every hand at the moment the open offer closes. Once it has, the bot's turn plays on (a build, a fortune, the next
   // seat's roll) and moves goods for its own reasons, so the trade is judged on this snapshot, not on a later read.
   const watchClose = () =>
     page.evaluate(() => {
       window.__closed = null;
+      // Retain the opening before a bot can accept between animation-frame polls on a software-rendered island.
+      // Scenarios 2 and 3 reset __openedOffer here but never read it; the resets keep each scenario clean.
       window.__openedOffer = window.__emberisle.getState().offer;
       const stop = window.__emberisle.subscribe((now, prev) => {
         if (now.offer && now.offer.tradeId !== prev.offer?.tradeId) window.__openedOffer = now.offer;
