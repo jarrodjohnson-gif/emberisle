@@ -75,7 +75,166 @@ jobs:
               return;
             }
 
-            const current = context.payload.issue.labels.map(l => l.name);
+            // Reconstruct ownership from trusted comments, never from reaction approval or run order.
+            const allComments = await github.paginate(github.rest.issues.listComments,
+              { owner, repo, issue_number, per_page: 100 });
+            const liveIssue = (await github.rest.issues.get({ owner, repo, issue_number })).data;
+            const timeline = await github.paginate(github.rest.issues.listEventsForTimeline,
+              { owner, repo, issue_number, per_page: 100 });
+            const commandLines = body => (body || '').split('\n').map(s => s.trim()).filter(s => s.startsWith('/'));
+            const agentLine = (body, kind) => {
+              // The date is the delimiter: agent names themselves can contain commas.
+              const match = (body || '').match(new RegExp(`^${kind}:\\s*(.+),\\s*\\d{4}-\\d{2}-\\d{2}\\s*$`, 'im'));
+              return match && match[1].trim();
+            };
+            const trusted = c => ALLOWED_USERS.includes(c.user?.login);
+            const ordered = allComments.filter(trusted).sort((a, b) =>
+              Date.parse(a.created_at) - Date.parse(b.created_at) || a.id - b.id);
+            const prCache = new Map();
+            const linkedPR = async number => {
+              if (!prCache.has(number)) {
+                try {
+                  const pr = (await github.rest.pulls.get({ owner, repo, pull_number: number })).data;
+                  // An explicit pr: line and a reciprocal issue reference bind the reservation.
+                  // Another PR's closure must never release this issue's claimant.
+                  const localReference = new RegExp(`(^|[^A-Za-z0-9_])#${issue_number}(?![0-9])`);
+                  const fullReference = new RegExp(`https://github\\.com/${owner}/${repo}/issues/${issue_number}(?![0-9])`, 'i');
+                  if (localReference.test(pr.body || '') || fullReference.test(pr.body || '')) {
+                    const history = await github.paginate(github.rest.issues.listEventsForTimeline,
+                      { owner, repo, issue_number: number, per_page: 100 });
+                    // Reopening a PR must not erase its earlier release event.
+                    pr.claimClosedAt = [...new Set([
+                      ...history.filter(e => e.event === 'closed' || e.event === 'merged').map(e => e.created_at),
+                      ...(pr.closed_at ? [pr.closed_at] : []),
+                    ])];
+                    prCache.set(number, pr);
+                  } else prCache.set(number, null);
+                } catch (error) {
+                  if (error.status !== 404) throw error;
+                  prCache.set(number, null);
+                }
+              }
+              return prCache.get(number);
+            };
+            const events = ordered.map(c => ({ at: c.created_at, id: c.id, comment: c }));
+            for (const event of timeline) {
+              if (event.event === 'closed' || event.event === 'reopened') {
+                events.push({ at: event.created_at, id: event.id, event: event.event });
+              }
+            }
+            // PR closure events enter the replay at closure time, even if their workflow ran later.
+            // Associate them when the pr: comment is encountered, rather than releasing from current state.
+            for (const c of ordered) {
+              for (const match of (c.body || '').matchAll(/^pr:\s*#(\d+)\s*$/gim)) {
+                const pr = await linkedPR(Number(match[1]));
+                if (pr && pr.user?.login === c.user.login) {
+                  for (const closedAt of pr.claimClosedAt) {
+                    if (Date.parse(closedAt) >= Date.parse(c.created_at)) {
+                      events.push({ at: closedAt, id: Number.MAX_SAFE_INTEGER,
+                        event: 'pr-closed', number: pr.number });
+                    }
+                  }
+                }
+              }
+            }
+            events.sort((a, b) => Date.parse(a.at) - Date.parse(b.at) || a.id - b.id);
+            let active = null;
+            let replayStatus;
+            let issueClosed = false;
+            const accepted = new Set();
+            const refusals = new Map();
+            const applyReplayStatus = (label, actorLogin) => {
+              // Preserve owner-only addition AND removal of sign-off labels during replay.
+              if (actorLogin !== owner && (OWNER_ONLY.includes(label) || OWNER_ONLY.includes(replayStatus))) return;
+              replayStatus = label;
+            };
+            for (const item of events) {
+              if (item.event) {
+                if (item.event === 'closed') { active = null; issueClosed = true; }
+                if (item.event === 'reopened') issueClosed = false;
+                if (item.event === 'pr-closed' && active?.prs.has(item.number)) active = null;
+                continue;
+              }
+              const c = item.comment;
+              const cLines = commandLines(c.body);
+              const name = agentLine(c.body, 'claimed');
+              const pauseName = agentLine(c.body, 'paused');
+              const isClaim = cLines.some(l => ['/claim', '/claimed'].includes(l.split(/\s+/)[0].toLowerCase()));
+              let deniedClaim = false;
+              if (isClaim) {
+                if (active) {
+                  refusals.set(c.id, active.comment);
+                  deniedClaim = true;
+                } else if (name && !issueClosed) {
+                  active = { name, comment: c, prs: new Set() };
+                  accepted.add(c.id);
+                } else {
+                  // Identity is required to distinguish agents sharing one account.
+                  refusals.set(c.id, null);
+                  deniedClaim = true;
+                }
+              }
+              // A historical plain paused: line also releases only its own agent.
+              const foreignAgent = active && ((name && name !== active.name) || (pauseName && pauseName !== active.name));
+              const hadActive = !!active;
+              const ownPause = pauseName && active?.name === pauseName;
+              if (ownPause) active = null;
+              for (const line of cLines) {
+                const [raw, ...args] = line.split(/\s+/);
+                const cmd = raw.toLowerCase();
+                if (STATUS[cmd]) {
+                  if (deniedClaim || foreignAgent) continue;
+                  if (cmd === '/paused' && hadActive && !ownPause) continue;
+                  applyReplayStatus(STATUS[cmd], c.user.login);
+                } else if (!deniedClaim && !foreignAgent && c.user.login === owner && (cmd === '/label' || cmd === '/unlabel')) {
+                  // Canonicalize status labels just as the normal command path does.
+                  const arg = args.join(' ').trim();
+                  if (!arg.toLowerCase().startsWith('status:')) continue;
+                  let canonical;
+                  try { canonical = (await github.rest.issues.getLabel({ owner, repo, name: arg })).data.name; }
+                  catch (error) { if (error.status === 404) continue; throw error; }
+                  if (!canonical.startsWith('status:')) continue;
+                  if (cmd === '/label') replayStatus = canonical;
+                  else if (replayStatus === canonical) replayStatus = null;
+                }
+              }
+              if (active && c.user.login === active.comment.user.login && !deniedClaim && (!name || name === active.name) && (!pauseName || pauseName === active.name)) {
+                for (const match of (c.body || '').matchAll(/^pr:\s*#(\d+)\s*$/gim)) {
+                  const pr = await linkedPR(Number(match[1]));
+                  if (pr && pr.user?.login === c.user.login) active.prs.add(pr.number);
+                }
+              }
+            }
+            const isBot = user => user?.login === 'github-actions[bot]' && user?.type === 'Bot';
+            const reconcileReaction = async (id, content) => {
+              const reactions = await github.paginate(github.rest.reactions.listForIssueComment,
+                { owner, repo, comment_id: id, per_page: 100 });
+              const opposite = content === '+1' ? '-1' : '+1';
+              for (const reaction of reactions) {
+                if (isBot(reaction.user) && reaction.content === opposite) {
+                  await github.rest.reactions.deleteForIssueComment({ owner, repo, comment_id: id, reaction_id: reaction.id });
+                }
+              }
+              if (!reactions.some(r => isBot(r.user) && r.content === content)) {
+                await github.rest.reactions.createForIssueComment({ owner, repo, comment_id: id, content });
+              }
+            };
+            // Repair all claim reactions, including a cancelled winner run or stale loser approval.
+            for (const id of accepted) await reconcileReaction(id, '+1');
+            for (const id of refusals.keys()) await reconcileReaction(id, '-1');
+            const refused = refusals.has(comment_id);
+            if (refused) {
+              const winner = refusals.get(comment_id);
+              const marker = `<!-- claim-refusal:${comment_id} -->`;
+              if (!allComments.some(c => isBot(c.user) && (c.body || '').includes(marker))) {
+                const message = winner
+                  ? `Already claimed by ${agentLine(winner.body, 'claimed')} at ${winner.created_at}. Pick another issue.`
+                  : 'A claim needs a claimed: <agent name>, <YYYY-MM-DD> line on an open issue.';
+                await github.rest.issues.createComment({ owner, repo, issue_number, body: `${message}\n\n${marker}` });
+              }
+            }
+
+            const current = liveIssue.labels.map(l => l.name);
             const want = new Set(current);
             let matched = false;
             const bad = [];
@@ -110,8 +269,19 @@ jobs:
 
             if (!matched) return;
 
-            // Non-owners can't add or remove sign-off labels.
-            // If the change would add or remove one, the status label stays as it was.
+            // Report a refused sign-off operation even if replay already preserved its label.
+            if (!isOwner) {
+              const blocked = OWNER_ONLY.filter(l => want.has(l) !== current.includes(l));
+              bad.push(...blocked.map(l => `${l} (owner only)`));
+            }
+            // Reconcile chronological status even when this run handles an older comment.
+            if (replayStatus !== undefined) {
+              for (const l of [...want]) if (l.startsWith('status:')) want.delete(l);
+              if (replayStatus) want.add(replayStatus);
+            }
+            if (refused) bad.push('claim refused');
+
+            // Keep the original live-label sign-off boundary, including labels set outside this bot.
             if (!isOwner) {
               const blocked = OWNER_ONLY.filter(l => want.has(l) !== current.includes(l));
               if (blocked.length) {
@@ -133,7 +303,7 @@ jobs:
 
             if (bad.length) {
               core.warning(`Unknown or not allowed: ${bad.join(', ')}`);
-              await react('-1');
+              await reconcileReaction(comment_id, '-1');
             } else {
-              await react('+1');
+              if (!refused) await reconcileReaction(comment_id, '+1');
             }

@@ -16,7 +16,7 @@ const FILES = {
   ui_back: "back_001.wav",
   ui_error: "error_001.wav",
   win: "pluck_001.wav",
-  // Reused as the your-turn chime.
+  your_turn: "your_turn.wav",
   chip_gain: "click_005.wav",
   gain_tick: "click_002.wav",
   // Synthesised by scripts/make-sounds.mjs (docs/design/sound.md).
@@ -193,7 +193,7 @@ export function stop(name: SoundName) {
 
 // The your-turn chime, with a short buzz on phones that have a motor.
 export function yourTurn() {
-  play("chip_gain");
+  play("your_turn");
   if (unlocked && !muted) navigator.vibrate?.(30);
 }
 

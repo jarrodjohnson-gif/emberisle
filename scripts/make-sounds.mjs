@@ -46,6 +46,8 @@ const CLIPS = {
   chat_recv: { ms: 140, voices: [tone(700, 0, 0.022, 1), tone(1400, 0, 0.012, 0.3)] },
   // #616: a soft water plop for a tap on the sea, a rising bloop over a short dark splash.
   plop: { ms: 150, voices: [slide(260, 620, 0.03, 0, 0.045, 1), hiss(0.004, 0.03, 0.12, 0.35)] },
+  // #660: dry wood-block knocks 70 ms apart for the acting seat's turn start.
+  your_turn: { ms: 150, voices: [tone(640, 0, 0.04, 1), hiss(0, 0.005, 0.15, 0.5), tone(480, 0.07, 0.04, 1), hiss(0.07, 0.005, 0.15, 0.5)] },
 };
 
 for (const [name, { ms, voices }] of Object.entries(CLIPS)) {
