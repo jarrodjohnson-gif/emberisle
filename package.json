@@ -59,6 +59,7 @@
     "hand-cards-prove": "node scripts/hand-cards-prove.mjs",
     "hand-hidden-prove": "node scripts/hand-hidden-prove.mjs",
     "install-prove": "node scripts/install-prove.mjs",
+    "first-game-coach-prove": "node scripts/first-game-coach-prove.mjs",
     "hud-safe-area-prove": "node scripts/hud-safe-area-prove.mjs",
     "rotate-overlays-prove": "node scripts/rotate-overlays-prove.mjs",
     "make-icons": "node scripts/make-icons.mjs",

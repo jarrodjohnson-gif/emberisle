@@ -25,6 +25,7 @@ export const moments = chunk(() => import("@/components/game/moments"));
 export const TurnMoment = moments.pick((m) => m.TurnMoment);
 export const GainFloats = moments.pick((m) => m.GainFloats);
 export const MyNumbers = moments.pick((m) => m.MyNumbers);
+export const FirstGameCoach = moments.pick((m) => m.FirstGameCoach);
 
 // A sibling of the lazy dock or panel inside its Suspense boundary: its effect runs on the commit that lands them, which is
 // a commit later than the chatOpen or tradeOpen flip when the chunk was still loading, so the island measures the hole again.

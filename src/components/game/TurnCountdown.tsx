@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useGame } from "@/lib/game/store";
+import { play } from "@/lib/sound";
 import { cn } from "@/lib/utils";
 
 // The chip shows only in the last SHOW_MS of the host's window and turns to the accent in the last URGENT_MS (#345).
@@ -29,6 +30,34 @@ export function TurnCountdown() {
     const id = setInterval(tick, 250);
     return () => clearInterval(id);
   }, [at]);
+
+  // #661: only the seat the timer waits on hears it, online. A tick as the count reaches each of 5..1 and a knock at 0, once per
+  // value. The cues are timed from the deadline itself, not from the 250 ms read-out above: the host moves the turn on at the
+  // deadline, and a read-out could miss the 0. A new `at` (or the turn ending early) clears them. A page that arrives inside
+  // the last 5 s ticks for the value it lands on, then goes on from there; it never replays the earlier ones.
+  const spectator = useGame((s) => s.spectator);
+  const mine = mode === "online" && !spectator && timer?.player === localId;
+  useEffect(() => {
+    if (!mine || at === null) return;
+    const left = at - Date.now();
+    if (left <= 0) return;
+    // The value the count is on now. A page that lands inside the last 5 s ticks for it, then carries on from there.
+    const now = Math.ceil(left / 1000);
+    if (now <= 5) play("timer_tick", 0.5);
+    let knocked = false;
+    const knock = () => {
+      knocked = true;
+      play("timer_final", 0.8);
+    };
+    const ids = [setTimeout(knock, left)];
+    for (let k = Math.min(now, 6) - 1; k >= 1; k--) ids.push(setTimeout(() => play("timer_tick", 0.5), left - k * 1000));
+    return () => {
+      ids.forEach(clearTimeout);
+      // The host moves the turn on at the deadline, so the next window can arrive a moment before this knock fires. A turn
+      // that ends with time to spare plays nothing.
+      if (!knocked && at - Date.now() < 400) knock();
+    };
+  }, [mine, at]);
 
   const left = secs === null ? null : secs * 1000;
   const urgent = left !== null && left <= URGENT_MS;
