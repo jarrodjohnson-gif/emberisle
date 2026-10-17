@@ -87,8 +87,29 @@ try {
     await page.waitForTimeout(100);
   }
   await step(2, /You gain goods when your numbers roll/);
-  await page.getByRole("button", { name: "Roll", exact: true }).click();
+  // Keep this first roll non-seven: the later contextual case must still be the first seven.
+  // rollDie consumes one Uint32 draw per die. Restore crypto immediately after those two draws.
+  await page.evaluate(() => {
+    const original = crypto.getRandomValues;
+    const fixture = window.__coachDiceFixture = { draws: 0, restored: false };
+    window.__restoreCoachDice = () => { crypto.getRandomValues = original; fixture.restored = true; };
+    crypto.getRandomValues = function (values) {
+      if (values instanceof Uint32Array && values.length === 1 && fixture.draws < 2) {
+        values[0] = [1, 2][fixture.draws++];
+        if (fixture.draws === 2) window.__restoreCoachDice();
+        return values;
+      }
+      return original.call(this, values);
+    };
+  });
+  try {
+    await page.getByRole("button", { name: "Roll", exact: true }).click();
+  } finally {
+    await page.evaluate(() => window.__restoreCoachDice());
+  }
   await page.waitForFunction(() => window.__emberisle.getState().state.phase !== "roll");
+  const firstRoll = await page.evaluate(() => ({ ...window.__coachDiceFixture, dice: window.__emberisle.getState().state.dice }));
+  assert.deepEqual(firstRoll, { draws: 2, restored: true, dice: [2, 3] }, "the real Roll click consumes both fixture draws and restores crypto");
   // Record the real post-setup board, then supply an explicit, balanced main-phase hand fixture.
   // Find a currently legal path which opens a currently legal outpost. No production rules are replaced.
   const plan = await page.evaluate(async () => {
