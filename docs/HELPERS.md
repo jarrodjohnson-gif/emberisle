@@ -79,21 +79,37 @@ and run long proofs in the background, one at a time, reading every result befor
 2. **Refresh first, every time:** handle your open PRs (above). Then run `git fetch upstream` and re-read `docs/HELPERS.md` and
    `docs/LANES.md` from `upstream/main` (`git show upstream/main:docs/HELPERS.md`). If the rules changed,
    follow the new ones. Never ask your human to update you.
-3. **Pick:** take the lowest-numbered open `helper-ok` issue that meets all of these:
+3. **Pick:** keep going while eligible work exists. Take the lowest-numbered open `helper-ok` issue
+   that meets all of these (while respecting the open-PR limit above):
+   - it is `status:todo` and has a lane label;
    - no open PR mentions its number (drafts count);
-   - no `claimed:` comment from anyone else;
-   - its `Depends on` issues are closed.
-   - its lane is free (see [`LANES.md`](LANES.md)).
+   - no active claim: ignore claims released by that agent's later pause (including historical `paused:` comments) or a merged/closed PR;
+   - every `Depends on` issue is closed;
+   - its planned files do not overlap another active claim's files or open PR changes, across any lane.
 
-   Read the whole issue and every comment on it, fresh. Together they are the spec.
-4. **Claim** it right away with this comment. A fork can't set labels, so the comment alone is your claim.
+   Lanes sort work; several issues in the same lane can proceed with different files. Read the whole
+   issue and every comment fresh; together they are the spec. Re-read immediately before claiming,
+   including after any user wait, thinking break or check-in. If it has been claimed, pick another.
+4. **Claim** it right away with this comment, before research or design. A fork can't set labels, so the comment alone is your claim.
    Put `/claim` on its own line in that comment, and the label bot sets the status. Later, post `/in-review`
    or `/paused` in a **new** comment; the bot ignores edits. `/label`, `/done` and `/canceled` are Jarrod's only.
    ```
-   claimed: <your name>, <YYYY-MM-DD>
+   /claim
+   claimed: <agent name>, <YYYY-MM-DD>
    files: <paths you expect to touch>
    ```
-   If someone else's claim was posted before yours, drop the issue and pick again.
+   Your agent name is required even when several agents use the same GitHub account. Immediately
+   re-read all comments after posting: first active claim wins. If another agent's active claim has
+   an earlier timestamp (or earlier timeline position for a tie), post a new comment:
+   ```
+   /paused
+   paused: <your agent name>, <YYYY-MM-DD>
+   lost the claim to <winning agent name>
+   ```
+   Then pick another eligible issue without a fixed wait. This releases only your claim, never the
+   winner's. Otherwise your files remain reserved until your PR merges or closes, or you post
+   `/paused`. Before adding files, recheck ownership and update `files:`; pause and pick again if
+   they overlap an active claim. Follow [`LANES.md`](LANES.md) for the shared claim flow.
 5. **Branch:** `git fetch upstream && git checkout -b helper/<issue#>-<slug> upstream/main`
 6. **Build** exactly what the issue says, plus the proof it asks for. The proofs are the `*-prove`
    scripts in `package.json`.
@@ -121,7 +137,7 @@ and run long proofs in the background, one at a time, reading every result befor
 
 **Pause** (out of time or blocked): post a new comment on the issue, with `/paused` on its own line:
 ```
-paused: <your name>, <YYYY-MM-DD>
+paused: <your agent name>, <YYYY-MM-DD>
 done so far: <one line>
 left: <exactly what is unfinished, and the next command to run>
 ```
