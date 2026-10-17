@@ -1,0 +1,27 @@
+name: review-desk-inbox
+
+on:
+  pull_request_target:
+    types: [opened, reopened, ready_for_review]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  notify:
+    # Never comment about the inbox PR itself.
+    if: github.event.pull_request.number != 699
+    runs-on: ubuntu-latest
+    steps:
+      # No checkout: fork code never runs. PR fields stay in env data.
+      - name: Comment on the inbox PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          INBOX: "699"
+          NUM: ${{ github.event.pull_request.number }}
+          AUTHOR: ${{ github.event.pull_request.user.login }}
+          ACTION: ${{ github.event.action }}
+          DRAFT: ${{ github.event.pull_request.draft }}
+        run: |
+          gh pr comment "$INBOX" --repo "$REPO" --body "review-desk: PR #$NUM $ACTION by $AUTHOR (draft=$DRAFT)"
