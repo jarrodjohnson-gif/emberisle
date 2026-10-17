@@ -24,7 +24,8 @@ const BUDGETS = [
   // 2026-10-17 (#660): 120.16 kB measured on Linux CI with the dry woody your_turn cue and mid-turn rejoin tracking while preserving chip_gain mapping; +240 B headroom.
   // 2026-10-17 (#661): main measures 120.16 kB (budget 120.40). The turn-timer cues (timed from the deadline, the knock when the
   // window runs out) add 0.27 kB: 120.43 kB measured on Windows, +150 B headroom over it.
-  { name: "index", gzipBytes: 120580 },
+  // 2026-10-17 (#540): lazy coaching adds 85 B versus current main (120431 B); 120516 B measured, +234 B headroom.
+  { name: "index", gzipBytes: 120750 },
   // 2026-10-14 (#597): +1100 B for the diorama camera, its fit and the token pose on top of the lazy sea (182.92 kB measured).
   // 2026-10-15: 185.01 kB measured on main once the diorama (#604, +1.1 kB) and the natural waves (#614, +1.0 kB) both
   // landed; each fit its own raise alone.
@@ -54,7 +55,8 @@ const BUDGETS = [
   { name: "sheets", gzipBytes: 6500 },
   // 2026-10-16 (#643): the "My numbers" strip rides in moments, off the first load (the index measured 120.64 kB with it there,
   // over its 120.15 kB budget); 3.00 kB measured against 2.42 kB on main, +300 B headroom.
-  { name: "moments", gzipBytes: 3300 },
+  // 2026-10-17 (#540): first-game coaching moves off the critical path into moments; 4244 B measured versus 3017 B on current main; +256 B headroom.
+  { name: "moments", gzipBytes: 4500 },
   // 2026-10-14 (#611): the lobby and win screen share their target selector; rolldown coalesces the shared Minus icon here too.
   // 0.65 kB at introduction, with a 0.75 kB ceiling; replaces the former minus-only chunk.
   { name: "VictoryTargetSelect", gzipBytes: 750 },
