@@ -674,17 +674,22 @@ try {
   const p1Turn = { ...turnBase, current: "p1", seq: turnBase.seq + 1 };
   const p0Turn = { ...turnBase, current: "p0", seq: turnBase.seq + 2 };
 
+  // Let the banner test's outpost knock land and drain
+  await until(async () => (await names(a)).includes("outpost_place"), "the match-point outpost lands");
+  await a.evaluate(() => new Promise((r) => setTimeout(r, 300)));
+
   // Sync both tabs to p1's turn
   await a.evaluate((g) => window.__sockets.at(-1).onmessage({ data: JSON.stringify({ type: "state", you: "p0", game: g }) }), p1Turn);
   await b.evaluate((g) => window.__sockets.at(-1).onmessage({ data: JSON.stringify({ type: "state", you: "p1", game: g }) }), p1Turn);
-  await sleep(1500); // let any pending piece knock settle
+  await a.evaluate(() => new Promise((r) => setTimeout(r, 200)));
   await clear(a);
   await clear(b);
 
   // (1) Turn passes to local seat p0: a hears your_turn once at volume 1; (2) b hears nothing
   await a.evaluate((g) => window.__sockets.at(-1).onmessage({ data: JSON.stringify({ type: "state", you: "p0", game: g }) }), p0Turn);
   await b.evaluate((g) => window.__sockets.at(-1).onmessage({ data: JSON.stringify({ type: "state", you: "p1", game: g }) }), p0Turn);
-  await sleep(200);
+  await until(async () => (await names(a)).length, "acting seat hears your_turn");
+  await sleep(100);
   assert.deepEqual(await names(a), ["your_turn"], "your_turn plays exactly once when the turn passes to the local seat");
   assert.equal((await heard(a))[0].volume, 1, "your_turn plays at volume 1");
   assert.deepEqual(await names(b), [], "it does not play for the other seats");
@@ -705,7 +710,7 @@ try {
     ws.onmessage({ data: JSON.stringify({ type: "welcome", code, you: "p0", host: true }) });
     ws.onmessage({ data: JSON.stringify({ type: "state", you: "p0", game: g }) });
   }, p0Turn);
-  await sleep(200);
+  await until(async () => (await names(a)).length, "rejoin during own turn hears your_turn");
   assert.deepEqual(await names(a), ["your_turn"], "rejoin during own turn hears your_turn exactly once");
   await clear(a);
   await a.evaluate((g) => {
