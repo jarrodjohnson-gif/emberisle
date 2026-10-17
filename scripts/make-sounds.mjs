@@ -48,6 +48,9 @@ const CLIPS = {
   plop: { ms: 150, voices: [slide(260, 620, 0.03, 0, 0.045, 1), hiss(0.004, 0.03, 0.12, 0.35)] },
   // #660: dry wood-block knocks 70 ms apart for the acting seat's turn start.
   your_turn: { ms: 150, voices: [tone(640, 0, 0.04, 1), hiss(0, 0.005, 0.15, 0.5), tone(480, 0.07, 0.04, 1), hiss(0.07, 0.005, 0.15, 0.5)] },
+  // #661: the last seconds of your turn. A quiet 1.2 kHz sine tick (played at 0.5), then a lower 700 Hz wood knock (0.8).
+  timer_tick: { ms: 30, voices: [tone(1200, 0, 0.012, 1)] },
+  timer_final: { ms: 90, voices: [tone(700, 0, 0.03, 1), hiss(0, 0.006, 0.15, 0.5)] },
 };
 
 for (const [name, { ms, voices }] of Object.entries(CLIPS)) {
