@@ -66,14 +66,14 @@ function recorders() {
   let current = null;
   let subscribed = false;
   let said = "";
-  // Visible elements that show the sum as a bare number, or spell a roll out ("4+5"), outside the hand, seats and header.
+  // Visible roll numbers outside the hand, seats, owned-number strip and header.
   window.__sumShown = (sum) => {
     const out = [];
     for (const el of document.querySelectorAll("body *")) {
       if (el.children.length) continue;
       const t = (el.textContent ?? "").trim();
       if (t !== String(sum) && !/\b\d\+\d\b/.test(t)) continue;
-      if (el.closest('header, aside, [data-testid^="resource-"], [data-testid^="seat-"], [data-testid^="trade-"], [data-testid="turn-countdown"]')) continue;
+      if (el.closest('header, aside, [data-testid^="resource-"], [data-testid^="seat-"], [data-testid^="trade-"], [data-testid="turn-countdown"], [data-testid="my-numbers"]')) continue;
       const r = el.getBoundingClientRect();
       if (r.width <= 1 || r.height <= 1 || !el.checkVisibility({ visibilityProperty: true, opacityProperty: true })) continue;
       out.push(el.dataset.testid ?? el.parentElement?.dataset.testid ?? el.tagName);
@@ -280,7 +280,36 @@ async function practice(viewport, touch) {
   const early = await page.evaluate(() => ({ rolls: window.__emberisle.getState().state.rolls ?? 0, moments: window.__moments.length }));
   check(early.moments === early.rolls, `${tag}: through the roll-off and setup, one moment per bot roll and no other (${early.moments} for ${early.rolls})`);
   const mine = early.rolls + 1;
-  await settleChecks(page, `${tag} your roll`, await clickRoll(page));
+  // #702: guarantee the roll matches an owned number; leave every display assertion unchanged.
+  await page.evaluate((sum) => {
+    const g = window.__emberisle;
+    const st = structuredClone(g.getState().state);
+    const me = g.getState().localId;
+    const owned = new Set(st.vertices.filter(v => v.building?.playerId === me).flatMap(v => v.hexes));
+    const hexes = st.hexes.filter(h => owned.has(h.id) && h.pip != null && h.terrain !== "waste");
+    if (hexes.length < 2) throw new Error("overlap fixture needs two owned producing hexes");
+    hexes[0].pip = 6;
+    hexes[1].pip = 8;
+    g.setState({ state: st });
+    // Only the next two single-word draws (the clicked roll) are fixed. Restore normal RNG immediately.
+    const original = crypto.getRandomValues;
+    let left = 2;
+    crypto.getRandomValues = function (values) {
+      if (values instanceof Uint32Array && values.length === 1) {
+        values[0] = sum / 2 - 1;
+        if (--left === 0) crypto.getRandomValues = original;
+        return values;
+      }
+      return original.call(this, values);
+    };
+  }, touch ? 8 : 6);
+  await frames(page);
+  const ownedNumbers = await page.getByTestId("my-numbers").locator("[data-n]").evaluateAll(els => els.map(el => Number(el.dataset.n)));
+  if (!ownedNumbers.includes(6) || !ownedNumbers.includes(8)) throw new Error("overlap fixture did not render owned 6 and 8");
+  const roll = await clickRoll(page);
+  if (roll.dice[0] + roll.dice[1] !== (touch ? 8 : 6)) throw new Error("overlap fixture did not force the clicked roll");
+  console.log(`${tag}: guaranteed owned 6/8 overlap, rolled ${roll.dice.join("+")}`);
+  await settleChecks(page, `${tag} your roll`, roll);
 
   // Every bot rolls once more: one moment and one line read out for every roll of the game, the person's and the bots'.
   await page.evaluate((n) => (window.__until = n), mine + 3);
