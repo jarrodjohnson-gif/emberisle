@@ -1,7 +1,7 @@
 // Real browser + real host. Only the browser clock advances; the host's flood limiter keeps real time.
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -27,6 +27,8 @@ if (process.argv.includes("--host-fixture")) {
 } else {
   const { chromium } = await import("playwright");
   const { createServer } = await import("vite");
+  const resultsDir = fileURLToPath(new URL("../test-results/", import.meta.url));
+  mkdirSync(resultsDir, { recursive: true });
   const dir = mkdtempSync(path.join(tmpdir(), "emberisle-health-"));
   const host = spawn(process.execPath, [fileURLToPath(import.meta.url), "--host-fixture"], {
     cwd: fileURLToPath(new URL("../", import.meta.url)),
@@ -181,7 +183,7 @@ if (process.argv.includes("--host-fixture")) {
         scores: scores.length === 4 && scores.every(r => r.width > 0 && r.left >= 0 && r.right <= innerWidth && r.bottom <= menu.bottom) };
     });
     assert.deepEqual(fits, { clear: true, status: true, menu: true, scores: true }, "390px four-seat header fits with RTT visible");
-    await page.screenshot({ path: "/tmp/553-health-phone.png" });
+    await page.screenshot({ path: path.join(resultsDir, "connection-health-phone.png") });
     for (const width of [700, 900]) {
       await page.setViewportSize({ width, height: 1100 });
       assert.ok(await page.evaluate(() => {
@@ -280,6 +282,8 @@ if (process.argv.includes("--host-fixture")) {
     }));
     await layout.getByTestId("lobby-card").waitFor();
     await layout.evaluate(() => document.fonts.ready);
+    // Stress wider font metrics without changing line height; the caption must yield width to the health text.
+    await layout.getByTestId("lobby-caption").evaluate(el => { el.style.letterSpacing = "0.25em"; });
     for (const [width, height] of [[320, 568], [390, 844], [667, 375], [844, 390]]) {
       await layout.setViewportSize({ width, height });
       await layout.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
@@ -298,13 +302,20 @@ if (process.argv.includes("--host-fixture")) {
             controls: controls.map(el => ({ inside: inside(el), width: el.getBoundingClientRect().width, height: el.getBoundingClientRect().height })),
           };
         });
-        assert.ok(geometry.status, `${width}x${height} ${status}: status stays inside the lobby`);
-        if (width > height) {
-          assert.ok(geometry.x <= 1, `${width}x${height} ${status}: no horizontal lobby scrolling`);
-          assert.ok(geometry.y.every(n => n <= 1), `${width}x${height} ${status}: no vertical lobby scrolling`);
-          assert.equal(geometry.controls.length, 3);
-          assert.ok(geometry.controls.every(c => c.inside && c.width >= 44 && c.height >= 44), "Ready, Start and Leave stay visible with 44px targets");
+        try {
+          assert.ok(geometry.status, `${width}x${height} ${status}: status stays inside the lobby`);
+          if (width > height) {
+            assert.ok(geometry.x <= 1, `${width}x${height} ${status}: no horizontal lobby scrolling`);
+            assert.ok(geometry.y.every(n => n <= 1), `${width}x${height} ${status}: no vertical lobby scrolling`);
+            assert.equal(geometry.controls.length, 3);
+            assert.ok(geometry.controls.every(c => c.inside && c.width >= 44 && c.height >= 44), "Ready, Start and Leave stay visible with 44px targets");
+          }
+        } catch (error) {
+          console.error("lobby geometry", { width, height, status, ...geometry });
+          await layout.screenshot({ path: path.join(resultsDir, `connection-health-lobby-${width}x${height}-${status}-failed.png`) });
+          throw error;
         }
+        if (width === 667 && status === "Reachable") await layout.screenshot({ path: path.join(resultsDir, "connection-health-lobby-667x375.png") });
       }
     }
     await layout.close();

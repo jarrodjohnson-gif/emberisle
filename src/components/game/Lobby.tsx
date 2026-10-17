@@ -116,9 +116,9 @@ export function Lobby() {
         )}
       >
         <div className={cn(landscape && "col-start-2 row-start-1")}>
-        <div className="flex flex-wrap items-center justify-between gap-x-2">
-          <p className="text-caption font-semibold text-sea-ink">Table code · Wayfarer <span className="capitalize">{rule}</span></p>
-          <ConnectionStatus className="shrink-0 px-0" />
+        <div className="flex min-w-0 items-center justify-between gap-x-2">
+          <p data-testid="lobby-caption" className="min-w-0 truncate text-caption font-semibold text-sea-ink">Table code · Wayfarer <span className="capitalize">{rule}</span></p>
+          <ConnectionStatus className="shrink-0 whitespace-nowrap px-0" />
         </div>
         <div className="mt-1 flex items-center gap-3">
           <p data-testid="table-code" className={cn("font-display tracking-[0.2em]", landscape ? "text-5xl" : "text-6xl")}>
