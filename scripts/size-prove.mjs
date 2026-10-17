@@ -23,7 +23,8 @@ const BUDGETS = [
   // screen-reader announcement (store field, refuseQuietly, Announcer) add 0.25 kB: 120.03 kB measured, +250 B headroom over main's.
   // 2026-10-16 (#540): first-game coaching adds 1113 B (121.24 kB measured); allow 256 B headroom.
   // 2026-10-16 (#552): table render recovery adds 612 B (121.86 kB measured); allow 294 B headroom.
-  { name: "index", gzipBytes: 122150 },
+  // 2026-10-16 (#553): connection health adds 608 B (122.46 kB measured); allow 286 B headroom.
+  { name: "index", gzipBytes: 122750 },
   // 2026-10-14 (#597): +1100 B for the diorama camera, its fit and the token pose on top of the lazy sea (182.92 kB measured).
   // 2026-10-15: 185.01 kB measured on main once the diorama (#604, +1.1 kB) and the natural waves (#614, +1.0 kB) both
   // landed; each fit its own raise alone.
