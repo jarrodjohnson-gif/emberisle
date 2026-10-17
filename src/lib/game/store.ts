@@ -118,7 +118,7 @@ function clearKnocks() {
 
 // Play the sound for a state change, and the your-turn chime when the turn comes round to this browser's seat
 // (not in hotseat, where every seat is this browser).
-export function hear(before: GameState | null, after: GameState, me: string, mode: GameStore["mode"]) {
+export function hear(before: GameState | null, after: GameState, me: string, mode: GameStore["mode"], reconnect?: boolean) {
   const lost = mode !== "hotseat" && me !== "" && !!after.winner && after.winner !== me;
   const victim =
     mode !== "hotseat" && !!before && before.current !== me && after.vertices.some((v) => v.building?.playerId === me && v.hexes.includes(after.robberHex));
@@ -150,7 +150,7 @@ export function hear(before: GameState | null, after: GameState, me: string, mod
     for (const _ of reached) play("match_point", MUSIC_VOLUME);
     if (reached[0]) matchLine = `${reached[0].name} reached ${publicVP(after, reached[0].id)} points — one to win`;
   }
-  if (mode !== "hotseat" && before && after.current === me && before.current !== me && after.phase !== "over") yourTurn();
+  if (mode !== "hotseat" && after.current === me && after.phase !== "over" && (reconnect || (before && before.current !== me))) yourTurn();
 }
 
 // The game log the dock shows (#305): a line of `state.log` or a host `log` message, stamped when this browser saw it.
@@ -1101,10 +1101,12 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
   let pending = kind === "quiet";
   let welcomed = false;
   let outdated: string | null = null;
+  let firstState = false;
   const table = connectTable(hostUrl(window.location), {
     welcome: ({ proto, code, you, host, chat, secret, spectator, victoryTarget, wayfarerMode }) => {
       pending = false;
       welcomed = true;
+      firstState = true;
       // G2: a host on a newer wire protocol than this page says so where errors go, and keeps saying it after every state.
       outdated = (proto ?? 0) > PROTO ? "This page is out of date. Reload to update." : null;
       set({ resync: true, tableVictoryTarget: victoryTarget === 7 ? 7 : 10, tableWayfarerMode: wayfarerMode ?? "on" });
@@ -1140,7 +1142,7 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       set({ announcement: null, code, spectator: false, seatId: you ?? "", isHost: host ?? false, screen: restoring ? "title" : inGame ? "play" : "lobby", mode: "online", error: outdated, toast: outdated, chat: history, reactions: [], unread: 0 });
     },
     // The window may have closed while we were away; the next state brings it back rather than a chip stuck at 0:00.
-    reconnecting: (attempt) => set({ announcement: null, error: `Reconnecting… (try ${attempt})`, toast: "Reconnecting…", turnTimer: null }),
+    reconnecting: (attempt) => (firstState = true, set({ announcement: null, error: `Reconnecting… (try ${attempt})`, toast: "Reconnecting…", turnTimer: null })),
     chat: (line) => {
       const { chat, chatOpen, unread, seatId, screen } = get();
       // The lobby box is always open, so only lines that arrive during the game can be unread.
@@ -1167,7 +1169,8 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       const me = you ?? "";
       const rollOff = rollOffLine(get().state, game);
       // hear first: it is what claims a match point, and the banner line is read off that claim on this same state.
-      hear(get().state, game, me, "online");
+      hear(get().state, game, me, "online", firstState);
+      firstState = false;
       const swing = awardLine(get().state, game) ?? takeMatchPointLine();
       // The deadline moves onto this clock by the skew the message shows, so a phone minutes off still counts true.
       // Every push carries the same window, and the skew wobbles by however long this tab took to get to the message:
