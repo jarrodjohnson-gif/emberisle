@@ -1,3 +1,5 @@
+import { useViewport } from "@/lib/viewport";
+import { ConnectionStatus } from "@/components/game/ConnectionStatus";
 // #442: the table's one top-right control. A 44 px quiet "…" button opens a small sheet holding what the top chrome used
 // to spread out: the turn number and watcher count, How to play, Costs, the sound toggle, the table code (online) and Leave table.
 // A watcher's own "Watching" chip stays in the header beside the button (docs/design/spectator.md), not in here.
@@ -14,6 +16,7 @@ const ROW = "h-11 w-full justify-start px-3 text-body";
 const ICON = "size-4 shrink-0 text-muted";
 
 export function TableMenu() {
+  const { phone, portrait } = useViewport();
   const state = useGame((s) => s.state)!;
   const mode = useGame((s) => s.mode);
   const code = useGame((s) => s.code);
@@ -96,6 +99,7 @@ export function TableMenu() {
 
   return (
     <div className="relative">
+      <div className={`pointer-events-none absolute right-0 top-full whitespace-nowrap rounded bg-surface/90 ${phone && portrait ? "mt-14" : "mt-1"}`}><ConnectionStatus /></div>
       <Button
         ref={trigger}
         variant="ghost"

@@ -1,3 +1,4 @@
+import { ConnectionStatus } from "@/components/game/ConnectionStatus";
 // The table lobby: code, seats, chat and Ready/Start. Online-only, so it loads with the chat as one lazy chunk (#488).
 import { VictoryTargetSelect } from "@/components/game/VictoryTargetSelect";
 import { useRef, useState } from "react";
@@ -115,7 +116,10 @@ export function Lobby() {
         )}
       >
         <div className={cn(landscape && "col-start-2 row-start-1")}>
-        <p className="text-caption font-semibold text-sea-ink">Table code · Wayfarer <span className="capitalize">{rule}</span></p>
+        <div className="flex min-w-0 items-center justify-between gap-x-2">
+          <p data-testid="lobby-caption" className="min-w-0 truncate text-caption font-semibold text-sea-ink">Table code · Wayfarer <span className="capitalize">{rule}</span></p>
+          <ConnectionStatus className="shrink-0 whitespace-nowrap px-0" />
+        </div>
         <div className="mt-1 flex items-center gap-3">
           <p data-testid="table-code" className={cn("font-display tracking-[0.2em]", landscape ? "text-5xl" : "text-6xl")}>
             {code}

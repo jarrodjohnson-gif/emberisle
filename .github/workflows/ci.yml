@@ -162,6 +162,8 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run render-recovery-prove
       - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run connection-health-prove
+      - if: needs.changes.outputs.docs_only != 'true'
         run: npm run rotate-overlays-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run fortune-count-prove
