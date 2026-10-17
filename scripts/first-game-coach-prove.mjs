@@ -65,10 +65,35 @@ try {
     await page.waitForTimeout(100);
   }
   await step(1, /Tap a glowing corner, then Place/);
+  for (const viewport of [{ width: 844, height: 390 }, { width: 390, height: 844 }]) {
+    await page.setViewportSize(viewport);
+    await page.waitForTimeout(500);
+    const headerControls = await page.evaluate(() => [...document.querySelectorAll('header [data-menu-trigger], header [aria-label="Table menu"], [data-coach-skip-slot] button')].map((el) => {
+      const r = el.getBoundingClientRect(); return { name: el.textContent.trim(), x: r.x, y: r.y, w: r.width, h: r.height };
+    }));
+    assert.equal(headerControls.length, 6, "four seats, Skip and menu stay available");
+    for (const a of headerControls) {
+      assert.ok(a.w >= 44 && a.h >= 44 && a.x >= 0 && a.x + a.w <= viewport.width, `${viewport.width}: ${a.name} remains a visible 44px target`);
+      for (const b of headerControls) if (a !== b) assert.ok(a.x + a.w <= b.x + 0.5 || b.x + b.w <= a.x + 0.5 || a.y + a.h <= b.y || b.y + b.h <= a.y, "header targets do not overlap");
+    }
+    const holeUnchanged = await page.evaluate(() => {
+      const el = document.querySelector('[data-testid="first-game-coach"]');
+      const before = JSON.stringify(window.__isle.liveInsets()); el.style.display = "none";
+      const after = JSON.stringify(window.__isle.liveInsets()); el.style.display = "";
+      return before === after;
+    });
+    assert.ok(holeUnchanged, "pointer-transparent coach text leaves board insets unchanged");
+  }
+  // Start from the adjacent menu control, independent of focus left by the roll-off or viewport change.
+  await page.getByRole("button", { name: "Table menu", exact: true }).focus();
+  await page.keyboard.press("Shift+Tab");
+  assert.ok(await page.getByRole("button", { name: "Skip tips" }).evaluate((el) => el === document.activeElement), "keyboard Shift+Tab reaches Skip from the menu");
+  await page.keyboard.press("Tab");
+  assert.ok(await page.getByRole("button", { name: "Table menu", exact: true }).evaluate((el) => el === document.activeElement), "keyboard Tab continues from Skip to the menu");
   mkdirSync("test-results", { recursive: true });
   await page.screenshot({ path: "test-results/first-game-coach-setup-390.png" });
   const firstCorner = await page.evaluate(() => {
-    const rect = document.querySelector('[data-testid="first-game-coach"] button').getBoundingClientRect();
+    const rect = document.querySelector('[data-coach-skip-slot] button').getBoundingClientRect();
     const distance = (id) => { const p = window.__isle.screenOf(id); return Math.hypot(p.x - (rect.x + rect.width / 2), p.y - (rect.y + rect.height / 2)); };
     return window.__emberisle.getState().highlights().vertices.toSorted((a, b) => distance(a) - distance(b))[0];
   });

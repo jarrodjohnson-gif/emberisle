@@ -16,7 +16,10 @@ const FILES = {
   ui_back: "back_001.wav",
   ui_error: "error_001.wav",
   win: "pluck_001.wav",
-  // Reused as the your-turn chime.
+  your_turn: "your_turn.wav",
+  // The last 5 s of your turn online (#661): a tick for each of 5..1, a knock at 0.
+  timer_tick: "timer_tick.wav",
+  timer_final: "timer_final.wav",
   chip_gain: "click_005.wav",
   gain_tick: "click_002.wav",
   // Synthesised by scripts/make-sounds.mjs (docs/design/sound.md).
@@ -193,7 +196,7 @@ export function stop(name: SoundName) {
 
 // The your-turn chime, with a short buzz on phones that have a motor.
 export function yourTurn() {
-  play("chip_gain");
+  play("your_turn");
   if (unlocked && !muted) navigator.vibrate?.(30);
 }
 
