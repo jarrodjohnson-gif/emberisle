@@ -1241,9 +1241,9 @@ function handle(ws, raw) {
   try {
     msg = JSON.parse(String(raw));
   } catch {
-    return send(ws, { type: "error", message: "not ready" });
+    return send(ws, { type: "error", message: ws.watch ? "Watching only." : "not ready" });
   }
-  if (!msg || typeof msg !== "object") return send(ws, { type: "error", message: "not ready" });
+  if (!msg || typeof msg !== "object") return send(ws, { type: "error", message: ws.watch ? "Watching only." : "not ready" });
   // Health has no room/state access, action bucket, publish, save, or game timer side effects.
   // Unauthenticated probes consume the same budget as hello/peek, and never earn a reply.
   if (msg.type === "healthPing") {
