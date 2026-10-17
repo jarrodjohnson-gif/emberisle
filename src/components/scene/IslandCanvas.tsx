@@ -120,7 +120,7 @@ export default function IslandCanvas() {
         aria-label={d.kind === "any" ? "Inspect 3:1 any goods dock" : `Inspect 2:1 ${RESOURCE_LABEL[d.kind].toLowerCase()} dock`}
         aria-expanded={selected === d.id}
         onClick={() => setSelected((s) => s === d.id ? null : d.id)}
-        className="pointer-events-none absolute size-11 rounded-full border border-transparent bg-transparent focus-visible:border-fg focus-visible:outline-none"
+        className="pointer-events-none absolute size-11 rounded-full border border-transparent bg-transparent opacity-0 focus-visible:border-fg focus-visible:opacity-100 focus-visible:outline-none"
         style={{ left: d.x - 22, top: d.y - 22 }}
       />)}
       {dock ? createPortal(<div

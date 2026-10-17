@@ -319,11 +319,15 @@ try {
     assert.equal(await stateSnapshot(page), before, `${view.tag}: coast inspection preserves seq, resources, bank, and every game field`);
     await proveDockPan(page, view.touch, view.tag);
     const accessible = page.locator('[data-testid="dock-rate-target"][data-kind="timber"]');
+    assert.equal(await accessible.evaluate((el) => getComputedStyle(el).opacity), "0", `${view.tag}: unfocused dock target is visually hidden`);
+    await page.keyboard.press("Tab");
     await accessible.focus();
+    assert.equal(await accessible.evaluate((el) => el.matches(":focus-visible") && getComputedStyle(el).opacity === "1" && getComputedStyle(el).borderColor !== "rgba(0, 0, 0, 0)"), true, `${view.tag}: keyboard focus shows the dock outline`);
     await page.keyboard.press("Enter");
     await page.getByTestId("dock-rate-label").waitFor();
     await page.keyboard.press("Escape");
     await proveHand(page, view.touch, view.tag);
+    assert.equal(await accessible.evaluate((el) => getComputedStyle(el).opacity), "0", `${view.tag}: dock outline hides after focus leaves`);
     await proveHintLifecycle(page, view.tag);
     await provePlacement(page, view.tag);
 
