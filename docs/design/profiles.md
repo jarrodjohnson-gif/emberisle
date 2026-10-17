@@ -18,8 +18,9 @@ The newer direction replaces pre-built profiles and invite-based authentication 
 Invites, scheduled games, videos and Easter eggs remain in #466's Backlog scope.
 Future invitations may select an existing profile; they must not create a second identity system.
 
-The only unresolved product decisions are counting eligible modes, additional statistics, and editing historical results.
-Recommendations appear below. They are not approvals.
+Jarrod delegated counting and statistics choices, and rejected editing past results, on 2026-10-17.
+The [recorded decisions](https://github.com/jarrodjohnson-gif/emberisle/issues/678#issuecomment-6236996969) settle those policies below.
+Technical defaults remain subject to design review before implementation.
 
 ## Source constraints
 
@@ -128,7 +129,8 @@ An expired profile session cannot strand an active seat. A profile credential ca
 Watchers cannot attach a profile to a seat, create an arrival cue, or earn a result.
 
 Public seats expose only an optional opaque profile ID, display name, curated icon and approved media keys.
-Public profile cards expose display name, icon, catchphrase and the selected statistics. Keep login names out of directory responses.
+Public profile cards expose display name, icon, catchphrase, games, wins, losses, win rate and current streak.
+Keep login names out of directory responses.
 `tableProfileCard` cannot select an arbitrary room or profile. Reject requests after the socket leaves that table.
 The host resolves the selected profile through that room's roster, including its frozen game participants after a seat expires.
 Private fields include PIN verifiers, device digests, failure counters, colour preferences and administrative state.
@@ -149,6 +151,8 @@ The same deployment owns rooms and profiles; do not add a cloud database or thir
 | Participant row | Game player ID; optional profile UUID; starting display name and colour; human/bot classification; final points; outcome. |
 | Result index | Unique `gameId` receipts and each profile's ordered result references, committed with aggregate statistics. |
 
+Derive `winRate` as `100 × wins / gamesPlayed`; do not persist a separately editable percentage.
+Return `null` for zero games. Otherwise display one decimal place and a percent sign, alongside games played.
 Keep per-game history on the host. Return 20 rows per page and cap all response sizes.
 History stores final scores only; it contains no hands, deck order, seed, RNG or seat secrets.
 `lastPlayed` means the latest counted completion time. Duration is end time minus persisted start time, including host downtime.
@@ -160,6 +164,8 @@ Use the rules engine's terminal winner and final `totalVP` values.
 
 Create a fresh random UUID for every started game and rematch. A table code, board seed or `gameSig` is not unique enough.
 Persist the UUID, start time and frozen player-to-profile roster in host-private room metadata before the first game publication.
+Freeze each starting seat's human/bot classification, the counting-policy version and the game's eligibility at the same boundary.
+Guests count as humans for eligibility. Later disconnection, bot takeover or profile deletion never changes that eligibility.
 Keep that roster after seats disconnect or expire. Never reconstruct it from current seat order or renamed players.
 Do not add credentials to `GameState` or `PlayerState`.
 
@@ -196,9 +202,10 @@ Keep retrying with bounded backoff. Preserve pending outcomes across shutdown an
 Fail closed on unknown store versions or unreadable profile stores. Never replace them with an empty leaderboard.
 Guests can still play; profile login and counting remain unavailable until the host repairs storage.
 
-### Which results count — recommendation pending Jarrod
+### Which results count
 
-Count completed online games only. Practice and hotseat preserve today's unrecorded behavior.
+Count completed online games that started with at least two human seats. Guest humans count toward that threshold.
+Exclude practice, hotseat, one-human online bot games and unfinished games from profile history and aggregate statistics.
 Freeze authenticated human participants at game start. Guests and originally bot seats receive no profile result.
 Reconnects and temporary bot assistance retain the original profile attribution; leaving does not erase a completed loss.
 An originally human seat still counts if the bot finishes for it. Mark assistance in history, without awarding a bot a profile.
@@ -206,7 +213,8 @@ Reject duplicate profile bindings within a game. A guest cannot attach a profile
 Abandoned rooms and unfinished games count nothing. Record all starting authenticated participants when an eligible game finishes.
 When a bot or guest wins, profiled participants record a loss. Never award that winner a fabricated profile win.
 Derive games played as wins plus losses, and reset the current streak on each counted loss.
-Recommend no path/army totals yet. Existing in-game awards and final points keep their current meaning.
+Track games, wins, losses, derived win rate, current streak and last played, plus the specified final-score history.
+Exclude career path/army totals. Existing in-game awards and final points keep their current meaning.
 
 Legacy rooms lack a reliable game UUID and roster. Keep them playable but label their results “Not tracked.”
 Enable counting for their next rematch after persisting the new metadata.
@@ -223,11 +231,12 @@ Use one primary action per surface, 44 px targets, visible labels, keyboard focu
 | Signed out | Profile offers Sign in and Create profile. Keep “Continue as guest” visible; do not add a mandatory welcome flow. |
 | Create/edit profile | One form for the fields above, with a PIN subflow. PIN is masked with an accessible show control. |
 | Lobby own card | Open the persistent profile editor. Distinguish it from the existing per-table name edit. Return focus to the invoking control. |
-| Other lobby card | Read-only profile card: icon, name, catchphrase, games, wins and streak. Guest cards say “Guest.” |
-| Wins | Authenticated friend-group list, sorted by wins, then games played, then stable profile UUID. Equal win totals share rank. |
+| Other lobby card | Read-only profile card: icon, name, catchphrase, games, wins, losses, win rate and current streak. Guest cards say “Guest.” |
+| Wins | Show games, wins, losses, win rate and current streak. Sort by wins descending, games ascending, then UUID. Equal wins share rank. |
 | Profile history | Completed games, date, seats, winner, final points and duration. Show current names in cards and starting names in history. |
-| Win screen | Add “N profile wins” beside the profile identity. Keep points in the existing score column; show guest/bot “Not tracked.” |
+| Win screen | Add “N profile wins” beside the profile identity. Keep points in the existing score column. Guest/bot rows say “Not tracked.” |
 
+An excluded game leaves lifetime totals unchanged and says “This game isn't tracked.” Never imply it earned a profile win.
 The profile sheet overlays the existing title or lobby; it adds no permanent board chrome.
 At 440×956, 956×440 and 1280×720, keep Save and Close reachable when the keyboard opens.
 Scroll the form within its sheet. Opening it must not change the measured board hole or readiness state.
@@ -294,6 +303,7 @@ Verify the actual iPhone audio path, not only an audio stub, before release.
 
 Propose a local command requiring filesystem access to the profile directory; do not add a remotely served admin page.
 The in-game Host role cannot administer profiles. Player PINs and device credentials grant no admin capability.
+Do not provide historical result edits or statistic resets. Totals and win rate remain derived from authoritative counted results.
 PIN reset generates a temporary PIN shown only in the local terminal, revokes devices, and requires change at next login.
 Never log PIN input or include it in command-line arguments, committed fixtures or issue comments.
 Profile deletion requires Jarrod's explicit confirmation and a preview of affected records and assets.
@@ -319,7 +329,7 @@ This is a scope map for later tracker issues, not authorization to start them. D
 | Lane | Proposed child scope | Dependency boundary |
 |---|---|---|
 | `lane:net` | Host profile store, hashing, device sessions, text CRUD and local admin command; focused protocol proof. | Additive capability; preserve guests and seat recovery. |
-| `lane:net` | Durable game UUID/roster, terminal outcome journal, atomic result receipt and aggregate transaction; crash/restart proof. | Host store above; resolve counting policy first. |
+| `lane:net` | Durable game UUID/roster, terminal outcome journal, atomic result receipt and aggregate transaction; crash/restart proof. | Host store above; enforce the settled counting policy. |
 | `lane:hud` + `lane:net` | Title/lobby profile form, cards and remembered-host flow; keyboard, blocked-storage and two-device proof. | Authenticated API; coordinate current #553 and #562 file reservations. |
 | `lane:hud` | Wins list, own history and final win counter; phone/desktop and stale-response proof. | Durable results and approved visibility rules. |
 | `lane:net` + `lane:hud` | Curated manifest, bindings, arrival/outcome scheduling and cancellation; audio proof. | #669 mixer, host profiles and authoritative game IDs. |
@@ -340,26 +350,27 @@ Split any M-sized implementation through research before building. Do not reserv
 | Crash boundaries | Before final-state durability, no fabricated result. After it, journal repair and replay yield one result with correct totals. |
 | Room lifecycle | Immediate rematch, seat expiry, room deletion and expired-room cleanup preserve attribution and pending outcomes. |
 | Concurrent rooms | Two games finishing together preserve both receipts, correct wins/losses and ordered streaks. |
-| Modes and bots | Approved counting policy holds; guests and original bots get no profile; unfinished games never count. |
+| Modes and bots | One-human bot games are excluded. One authenticated human plus one guest human is eligible; only the authenticated profile earns statistics. |
+| Assistance and exclusions | Temporary bot assistance retains attribution. Practice, hotseat and unfinished games never affect history, wins or win rate. |
+| Statistics | Two wins from three counted games show 66.7%. Zero games show no percentage. Excluded games leave totals unchanged. |
 | Legacy and corruption | Legacy rooms stay playable without fabricated history; unknown schemas and corrupt stores cannot silently reset records. |
 | UI | Phone portrait/landscape and desktop preserve guest entry, typed codes, readiness, board hole, focus and 44 px controls. |
 | Media | Custom winner clip plays once; win preempts soundboard and game start cancels intro; fallback/end music never overlap. |
 | Cancellation | Muting Music and ambience stops it immediately; Skip, hide, Leave and rematch prevent every queued restart. |
+| Administration | No historical-edit or statistic-reset action exists. PIN reset works; deletion anonymizes identity without changing other players' results. |
 | Deletion | Profile details disappear, other results remain correct, old receipts cannot restore the profile or reassign its media. |
 
 Extend existing `finish-prove`, `persist-prove`, `save-prove`, `rejoin-prove`, `proto-prove` and `takeover-prove` coverage where applicable.
 Run `sounds-prove`, `hud-safe-area-prove`, typecheck and build for the corresponding runtime changes.
 These are future completion tests. This design does not claim those features or proofs exist today.
 
-## Questions still requiring Jarrod
+## Resolved product decisions, 2026-10-17
 
-1. **Which games count?** Recommend online games only, including temporary bot assistance for an originally authenticated human seat.
-   Alternative: also count practice or hotseat. That needs a separate trusted attribution design for local players.
-2. **Which statistics?** Recommend games, wins, losses and current streak, plus the required per-game final score history.
-   Alternative: include career path/army totals. Define those counters before filing implementation.
-3. **Can an admin edit results or reset statistics?** Recommend deferring this.
-   Keep the approved PIN reset and profile deletion.
-   Alternative: add explicit result corrections with an audit record; a raw counter reset would disagree with retained history.
+1. **Counting:** completed online games starting with at least two humans, including guests. Only starting authenticated profiles receive records.
+   Original bots receive no profile. Temporary bot assistance preserves human attribution; solo bot games, practice and hotseat are excluded.
+2. **Statistics:** games, wins, losses, win rate, current streak and last played, plus per-game final-score history.
+   Derive win rate from counted results. Keep sample size visible and show no percentage before the first counted game.
+3. **Administration:** no editing past results and no raw statistic resets. Keep PIN reset and privacy-preserving profile deletion.
 
-Login plus PIN, self-service text editing, curated media, no uploads and no seed import are already decided.
-Do not reopen them through the older questions in the issue body.
+These decisions supersede the earlier Question: comments on #678.
+Login plus PIN, self-service text editing, curated media, no uploads and no seed import remain settled.
