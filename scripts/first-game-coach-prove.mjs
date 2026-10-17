@@ -21,6 +21,18 @@ try {
   await page.goto(`http://127.0.0.1:${port}/`);
   await page.waitForFunction(() => window.__emberisle);
   await page.getByRole("button", { name: "Play", exact: true }).click();
+  await page.getByTestId("seat-strip").waitFor();
+  const rollOffStrip = await page.evaluate(() => {
+    const slot = document.querySelector("[data-coach-skip-slot]");
+    const names = [...document.querySelectorAll('[data-testid="seat-strip"] [data-testid="seat-name"]')]
+      .filter((el) => el.getClientRects().length && getComputedStyle(el).position !== "absolute");
+    return {
+      phase: window.__emberisle.getState().state.phase,
+      slotWidth: slot.getBoundingClientRect().width,
+      cut: names.filter((el) => el.scrollWidth > el.clientWidth || el.parentElement.scrollWidth > el.parentElement.clientWidth).map((el) => el.textContent),
+    };
+  });
+  assert.deepEqual(rollOffStrip, { phase: "rollOff", slotWidth: 0, cut: [] }, "inactive Skip leaves roll-off seat names their full width");
   const coach = page.getByTestId("first-game-coach");
   const clearBanner = () => page.evaluate(() => window.__emberisle.setState({ banner: null }));
   const step = async (n, text) => {

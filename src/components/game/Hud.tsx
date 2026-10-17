@@ -294,7 +294,7 @@ export function Hud() {
               <ChatControls />
             </LazyBoundary>
           ) : null}
-          <span data-coach-skip-slot className="shrink-0" />
+          <span data-coach-skip-slot className="shrink-0 empty:hidden" />
           <TableMenu />
         </div>
         {phone ? <HiddenPointHint /> : null}
