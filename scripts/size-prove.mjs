@@ -21,8 +21,8 @@ const BUDGETS = [
   // 2026-10-15 (#612): 118.15 kB measured on main + wayfarer modes (creation controls, practice progress, mode rules); +600 B.
   // 2026-10-16 (#535): main measures 119.78 kB (budget 119.90). The missing-goods chip (tap state, timer, glass chip) and the quiet
   // screen-reader announcement (store field, refuseQuietly, Announcer) add 0.25 kB: 120.03 kB measured, +250 B headroom over main's.
-  // 2026-10-16 (#540): first-game coaching adds 1113 B (121.24 kB measured); allow 256 B headroom.
-  { name: "index", gzipBytes: 121500 },
+  // 2026-10-17 (#540): coaching now rides in moments. Index measures 120227 B; reduce the former 121500 B ceiling.
+  { name: "index", gzipBytes: 120500 },
   // 2026-10-14 (#597): +1100 B for the diorama camera, its fit and the token pose on top of the lazy sea (182.92 kB measured).
   // 2026-10-15: 185.01 kB measured on main once the diorama (#604, +1.1 kB) and the natural waves (#614, +1.0 kB) both
   // landed; each fit its own raise alone.
@@ -52,7 +52,8 @@ const BUDGETS = [
   { name: "sheets", gzipBytes: 6500 },
   // 2026-10-16 (#643): the "My numbers" strip rides in moments, off the first load (the index measured 120.64 kB with it there,
   // over its 120.15 kB budget); 3.00 kB measured against 2.42 kB on main, +300 B headroom.
-  { name: "moments", gzipBytes: 3300 },
+  // 2026-10-17 (#540): first-game coaching moves off the critical path into moments; 4245 B measured, +255 B headroom.
+  { name: "moments", gzipBytes: 4500 },
   // 2026-10-14 (#611): the lobby and win screen share their target selector; rolldown coalesces the shared Minus icon here too.
   // 0.65 kB at introduction, with a 0.75 kB ceiling; replaces the former minus-only chunk.
   { name: "VictoryTargetSelect", gzipBytes: 750 },

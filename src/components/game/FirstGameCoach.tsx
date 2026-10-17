@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useGame } from "@/lib/game/store";
 import { legalRoads, legalSettle } from "@/lib/game/rules";
 import { COST, RESOURCES, type GameState } from "@/lib/game/types";
@@ -35,6 +36,8 @@ export function FirstGameCoach({ className, hidden }: { className?: string; hidd
   const pendingSteal = useGame((s) => s.pendingSteal);
   const [progress, setProgress] = useState<Saved>(read);
   const skipped = useRef(false);
+  const [skipSlot, setSkipSlot] = useState<Element | null>(null);
+  useEffect(() => { setSkipSlot(document.querySelector("[data-coach-skip-slot]")); }, []);
   useEffect(() => {
     let previous: GameState | null = null;
     let saved = read();
@@ -99,10 +102,12 @@ export function FirstGameCoach({ className, hidden }: { className?: string; hidd
   if (!text || hidden) return null;
   return (
     <div data-testid="first-game-coach" data-step={step} data-steps="3" className={cn("pointer-events-none rounded-control border border-accent/40 bg-surface px-3 py-1 text-sm text-fg", className)}>
-      <div className="flex items-center gap-2">
-        <p role="status" className="min-w-0 flex-1"><span className="text-xs text-muted">Tip {step} of 3 · </span>{text}</p>
-        <button type="button" className="pointer-events-auto min-h-11 shrink-0 px-1 text-xs text-muted underline" onClick={() => { skipped.current = true; save("done"); setProgress("done"); }}>Skip tips</button>
-      </div>
+      <p role="status"><span className="text-xs text-muted">Tip {step} of 3 · </span>{text}</p>
+      {/* Only pointer-transparent text floats over the island. Skip shares the header's existing reserved footprint. */}
+      {skipSlot ? createPortal(
+        <button type="button" className="pointer-events-auto min-h-11 shrink-0 px-1 text-xs text-muted underline" onClick={() => { skipped.current = true; save("done"); setProgress("done"); }}>Skip tips</button>,
+        skipSlot,
+      ) : null}
     </div>
   );
 }
