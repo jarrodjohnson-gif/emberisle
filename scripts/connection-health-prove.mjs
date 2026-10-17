@@ -269,6 +269,46 @@ if (process.argv.includes("--host-fixture")) {
     await until(() => lobby.evaluate(() => !!window.__emberisle.getState().state), "recovered lobby starts new game");
     assert.equal(await lobby.evaluate(() => window.__lobbyNotices), 0, "lobby-only recovery cannot announce Back on later Start");
     await lobby.close();
+    // Four ready seats maximize the lobby footer. Status shares the caption's row on short landscapes.
+    const layout = await browser.newPage({ viewport: { width: 667, height: 375 }, isMobile: true, hasTouch: true });
+    layout.on("pageerror", e => errors.push(String(e)));
+    await layout.goto("http://127.0.0.1:8113/");
+    await layout.waitForFunction(() => window.__emberisle);
+    await layout.evaluate(() => window.__emberisle.setState({
+      screen: "lobby", mode: "online", code: "WWWW", seatId: "s0", isHost: true, error: null,
+      seats: ["Hana", "Ash", "Tide", "Fay"].map((name, i) => ({ id: `s${i}`, name, color: ["#bb4444", "#448855", "#4455bb", "#aa7711"][i], ready: true, bot: false, away: false })),
+    }));
+    await layout.getByTestId("lobby-card").waitFor();
+    await layout.evaluate(() => document.fonts.ready);
+    for (const [width, height] of [[320, 568], [390, 844], [667, 375], [844, 390]]) {
+      await layout.setViewportSize({ width, height });
+      await layout.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+      for (const status of ["Reachable", "Reconnecting", "Offline"]) {
+        await layout.evaluate(status => window.__emberisle.setState({ connectionHealth: { status, rtt: status === "Reachable" ? 2999 : null } }), status);
+        await until(() => layout.getByTestId("connection-status").textContent().then(text => text.startsWith(status)), "lobby health text");
+        const geometry = await layout.evaluate(() => {
+          const card = document.querySelector('[data-testid="lobby-card"]');
+          const cover = card.querySelector(".lobby-cover");
+          const inside = el => { const r = el.getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight && r.left >= 0 && r.right <= innerWidth; };
+          const controls = [...card.querySelectorAll("button")].filter(b => ["Not ready", "Start", "Leave the table"].includes(b.textContent.trim()));
+          return {
+            status: inside(card.querySelector('[data-testid="connection-status"]')),
+            x: cover.scrollWidth - cover.clientWidth,
+            y: [...card.querySelectorAll("*")].filter(el => getComputedStyle(el).overflowY === "auto" && el.dataset.testid !== "chat-log").map(el => el.scrollHeight - el.clientHeight),
+            controls: controls.map(el => ({ inside: inside(el), width: el.getBoundingClientRect().width, height: el.getBoundingClientRect().height })),
+          };
+        });
+        assert.ok(geometry.status, `${width}x${height} ${status}: status stays inside the lobby`);
+        if (width > height) {
+          assert.ok(geometry.x <= 1, `${width}x${height} ${status}: no horizontal lobby scrolling`);
+          assert.ok(geometry.y.every(n => n <= 1), `${width}x${height} ${status}: no vertical lobby scrolling`);
+          assert.equal(geometry.controls.length, 3);
+          assert.ok(geometry.controls.every(c => c.inside && c.width >= 44 && c.height >= 44), "Ready, Start and Leave stay visible with 44px targets");
+        }
+      }
+    }
+    await layout.close();
+    console.log("ok lobby: four ready seats and every health state fit 320/390/667/844px layouts; no landscape scrolling");
     assert.deepEqual(errors, []);
     console.log("ok host: malformed/oversized/prehello probes refused; peek/hello bucket retained; seated flood bounded to two pongs; game/timers/disk unchanged");
     console.log("connection health prove ok");
