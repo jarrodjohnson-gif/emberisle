@@ -160,6 +160,8 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run first-game-coach-prove
       - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run render-recovery-prove
+      - if: needs.changes.outputs.docs_only != 'true'
         run: npm run rotate-overlays-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run fortune-count-prove

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { HowTo, Lobby, online, sheets } from "@/components/game/chunks";
 import { Hud } from "@/components/game/Hud";
 import { PlaceList } from "@/components/game/PlaceList";
+import { TableRecoveryBoundary } from "@/components/game/TableRecoveryBoundary";
 import { SeatDot } from "@/components/game/SeatDot";
 import { useGame } from "@/lib/game/store";
 import { JOIN_CODE, LazyBoundary, preloadOnIdle, reloadOnStaleChunk } from "@/lib/lazy";
@@ -56,18 +57,20 @@ export function EmberisleApp() {
 
   return (
     <div data-game-shell className="relative h-dvh w-full overflow-hidden bg-studio">
-      <ClientCanvas />
-      {/* #488: the lobby (with chat) is online-only, so it is a lazy chunk; Host and Join prefetch it on hover or focus. */}
-      {screen === "title" ? restoring ? <Restoring /> : <Title /> : screen === "lobby" ? (
-        <LazyBoundary failed={<LobbyFailed />}>
-          <Lobby />
-        </LazyBoundary>
-      ) : (
-        <>
-          <Hud />
-          <PlaceList />
-        </>
-      )}
+      <TableRecoveryBoundary>
+        <ClientCanvas />
+        {/* #488: the lobby (with chat) is online-only, so it is a lazy chunk; Host and Join prefetch it on hover or focus. */}
+        {screen === "title" ? restoring ? <Restoring /> : <Title /> : screen === "lobby" ? (
+          <LazyBoundary failed={<LobbyFailed />}>
+            <Lobby />
+          </LazyBoundary>
+        ) : (
+          <>
+            <Hud />
+            <PlaceList />
+          </>
+        )}
+      </TableRecoveryBoundary>
     </div>
   );
 }
