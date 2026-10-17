@@ -20,6 +20,7 @@ import { TableMenu } from "@/components/game/TableMenu";
 import { HandDock } from "@/components/game/Hand";
 import { TakeFromBar } from "@/components/game/TakeFromBar";
 import { PlaceChip } from "@/components/game/PlaceChip";
+import { FirstGameCoach } from "@/components/game/FirstGameCoach";
 import { SheetsFailed } from "@/components/game/SheetsFailed";
 import { TrayFailed } from "@/components/game/TrayFailed";
 import { TradeButton } from "@/components/game/TradeButton";
@@ -351,6 +352,10 @@ export function Hud() {
               {banner}
             </p>
           ) : null}
+          <FirstGameCoach
+            hidden={!!banner && !(tradeOutcome && banner.endsWith("'s trade"))}
+            className={cn("absolute inset-x-0", column ? "left-full top-0 ml-3 w-max max-w-[calc(100vw-21.5rem-max(0.75rem,env(safe-area-inset-left))-max(0.75rem,env(safe-area-inset-right)))]" : "bottom-full mb-2")}
+          />
           <div
             ref={stackRef}
             data-hud-stack

@@ -21,7 +21,8 @@ const BUDGETS = [
   // 2026-10-15 (#612): 118.15 kB measured on main + wayfarer modes (creation controls, practice progress, mode rules); +600 B.
   // 2026-10-16 (#535): main measures 119.78 kB (budget 119.90). The missing-goods chip (tap state, timer, glass chip) and the quiet
   // screen-reader announcement (store field, refuseQuietly, Announcer) add 0.25 kB: 120.03 kB measured, +250 B headroom over main's.
-  { name: "index", gzipBytes: 120150 },
+  // 2026-10-16 (#540): first-game coaching adds 1113 B (121.24 kB measured); allow 256 B headroom.
+  { name: "index", gzipBytes: 121500 },
   // 2026-10-14 (#597): +1100 B for the diorama camera, its fit and the token pose on top of the lazy sea (182.92 kB measured).
   // 2026-10-15: 185.01 kB measured on main once the diorama (#604, +1.1 kB) and the natural waves (#614, +1.0 kB) both
   // landed; each fit its own raise alone.
