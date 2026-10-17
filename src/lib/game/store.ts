@@ -702,7 +702,14 @@ export const useGame = create<GameStore>((set, get) => ({
       return { ok: false, error: res.error };
     }
     const nextState = automated
-      ? logBotAction(state, res.state, action, actor, state.players.find((p) => p.id === actor)?.name.replace(/ \(bot\)$/i, "") ?? actor)
+      ? logBotAction(
+          state,
+          res.state,
+          action,
+          actor,
+          state.players.find((p) => p.id === actor)?.name.replace(/ \(bot\)$/i, "") ?? actor,
+          mode === "ai" || (mode as string) === "practice" ? "Practice bot" : "Bot",
+        )
       : res.state;
     set({ state: nextState, gameLog: appendLog(get().gameLog, newLog(state.log, nextState.log)), error: null, announcement: null, toast: null, buildMode: "none", roadPicks: [] });
     hear(state, nextState, localId, mode);

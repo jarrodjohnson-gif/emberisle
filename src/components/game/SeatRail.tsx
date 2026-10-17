@@ -46,6 +46,8 @@ function Count({ testid, n, unit, className }: { testid: string; n: number; unit
 // a cell under 200 px so the name keeps its room. A dropped seat's marker shows at every width (the word only where it fits).
 function SeatLine({ p, actor, short }: { p: PlayerState; actor: string; short?: string }) {
   const state = useGame((s) => s.state)!;
+  const mode = useGame((s) => s.mode);
+  const practiceBot = (mode === "ai" || (mode as string) === "practice") && p.kind === "bot";
   const away = seatAway(useGame((s) => s.seats), p);
   const strip = short !== undefined;
   const hidden = p.id === actor && p.hidden.vp > 0 ? p.hidden.vp : 0;
@@ -62,6 +64,17 @@ function SeatLine({ p, actor, short }: { p: PlayerState; actor: string; short?: 
       {strip ? (
         <span data-testid="seat-name" aria-hidden="true" className="hidden min-w-0 flex-auto truncate text-xs font-medium @max-[128px]:block">
           {short}
+        </span>
+      ) : null}
+      {practiceBot ? (
+        <span
+          data-testid="seat-practice"
+          className={cn(
+            "seat-practice shrink-0 rounded font-medium text-zinc-700 bg-black/5",
+            strip ? "px-1 text-[9px] leading-tight @max-[100px]:px-0.5" : "px-1.5 py-0.5 text-caption"
+          )}
+        >
+          Practice
         </span>
       ) : null}
       {away ? (

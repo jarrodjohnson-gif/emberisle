@@ -87,6 +87,57 @@ try {
     throw new Error(`roll-off: ${JSON.stringify({ rollOff, faces, placesFirst })}`);
   }
 
+  // #562: Practice-bot seat labels at 390x844 and 1280x720.
+  // Each bot seat carries "Practice", labels remain visible as turns change, and no human or online seat receives the label.
+  const assertPracticeLabels = async (tag, isPractice) => {
+    const isMobile = (page.viewportSize()?.width ?? 800) < 768;
+    const prefix = isMobile ? "seat" : "rail";
+    if (isMobile) {
+      await page.getByTestId("seat-strip").waitFor({ state: "visible", timeout: 5000 });
+    } else {
+      await page.locator('[data-testid^="rail-"]').first().waitFor({ state: "visible", timeout: 5000 });
+    }
+    const seats = await page.evaluate((prefix) => {
+      const g = window.__emberisle.getState();
+      const st = g.state;
+      if (!st) return [];
+      return st.players.map((p) => {
+        const el = document.querySelector(`[data-testid="${prefix}-${p.id}"]`);
+        const badge = el?.querySelector('[data-testid="seat-practice"]');
+        return {
+          id: p.id,
+          name: p.name,
+          kind: p.kind,
+          text: el?.textContent ?? "",
+          hasBadge: !!badge,
+          badgeText: badge?.textContent?.trim() ?? "",
+          visible: badge ? badge.checkVisibility() : false,
+        };
+      });
+    }, prefix);
+    for (const s of seats) {
+      if (isPractice && s.kind === "bot") {
+        if (!s.hasBadge || s.badgeText !== "Practice" || !s.visible || !s.text.includes("Practice")) {
+          throw new Error(`${tag}: bot seat ${s.id} (${s.name}) missing visible Practice badge: ${JSON.stringify(s)}`);
+        }
+      } else {
+        if (s.hasBadge || s.text.includes("Practice")) {
+          throw new Error(`${tag}: seat ${s.id} (${s.name}, kind=${s.kind}) must not have Practice badge: ${JSON.stringify(s)}`);
+        }
+      }
+    }
+    return seats;
+  };
+
+  // #562: assert practice bot labels at both 1280x720 and 390x844 viewports
+  await page.setViewportSize({ width: 1280, height: 720 });
+  const desktopSetup = await assertPracticeLabels("practice 1280x720 setup", true);
+  console.log("practice bot labels 1280x720:", desktopSetup.map((s) => `${s.id}:${s.hasBadge}`).join(" "));
+  await page.setViewportSize({ width: 390, height: 844 });
+  const mobileSetup = await assertPracticeLabels("practice 390x844 setup", true);
+  console.log("practice bot labels 390x844:", mobileSetup.map((s) => `${s.id}:${s.hasBadge}`).join(" "));
+  await page.setViewportSize({ width: 800, height: 500 });
+
   // Place the human's outposts and paths through the same store the canvas clicks use.
   const phase = await page.evaluate(async () => {
     const g = window.__emberisle;
@@ -106,6 +157,13 @@ try {
     return "stuck in " + g.getState().state.phase;
   });
   console.log("after setup:", phase);
+  // #562: assert practice bot labels remain visible as turns change through setup at 390x844 and 1280x720
+  await page.setViewportSize({ width: 390, height: 844 });
+  await assertPracticeLabels("practice 390x844 after setup", true);
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await assertPracticeLabels("practice 1280x720 after setup", true);
+  await page.setViewportSize({ width: 800, height: 500 });
+
   // #380: the human's own turn (it waits on a placement in setup) is read as "Your turn.", a bot's by name.
   const turns = await page.evaluate(() => window.__turns);
   console.log(`turn announcements: ${JSON.stringify(turns)}`);
@@ -138,6 +196,19 @@ try {
   // #534: goods narration lives in the persistent log, without a second banner.
   const bannerText = await page.getByTestId("banner").textContent({ timeout: 2000 }).catch(() => null);
   console.log("roll banner:", JSON.stringify(bannerText));
+
+  // #562: verify practice bot action log lines say "Practice bot"
+  const botLogs = await page.evaluate(() => {
+    const log = window.__emberisle.getState().state.log;
+    return {
+      practiceBot: log.filter((l) => l.startsWith("Practice bot ")),
+      legacyBot: log.filter((l) => l.startsWith("Bot ")),
+    };
+  });
+  console.log("practice bot action log lines count:", botLogs.practiceBot.length);
+  if (!botLogs.practiceBot.length || botLogs.legacyBot.length) {
+    throw new Error(`expected Practice bot log lines, got: ${JSON.stringify(botLogs)}`);
+  }
 
   // #189: a hex with two bots on it must ask "Take from whom?" offline too, and the pick moves one card.
   const steal = await page.evaluate(async () => {
@@ -281,12 +352,15 @@ try {
     g.setState({ mode: "online", net: { act: (a) => (acts.push(a), true), close: () => {} }, state: { ...s, phase: "main", current: bot.id, seq: s.seq + 1 } });
     await new Promise((r) => setTimeout(r, 1500));
     const botActs = acts.length;
+    // #562: assert online seats never carry the Practice badge
+    const onlinePracticeBadges = document.querySelectorAll('[data-testid="seat-practice"]').length;
     g.setState({ lobbyLog: "Pine left.", pendingPlace: { kind: "edge", id: "x" }, seatId: "s1", isHost: true, roadPicks: ["e"], toast: "old" });
     g.getState().goTitle();
     const t = g.getState();
-    return { botActs, log: t.lobbyLog, place: t.pendingPlace, seat: t.seatId, host: t.isHost, picks: t.roadPicks.length, toast: t.toast, screen: t.screen };
+    return { botActs, onlinePracticeBadges, log: t.lobbyLog, place: t.pendingPlace, seat: t.seatId, host: t.isHost, picks: t.roadPicks.length, toast: t.toast, screen: t.screen };
   });
   console.log("online bots + leave:", JSON.stringify(online));
+  if (online.onlinePracticeBadges !== 0) throw new Error(`online seats carried Practice badge: ${online.onlinePracticeBadges}`);
 
   // #218: a knight can be played before the roll from the HUD; the phase stays roll and Roll still works.
   await page.getByRole("button", { name: "Play", exact: true }).click();
