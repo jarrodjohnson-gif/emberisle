@@ -1,17 +1,13 @@
-import { useEffect, useLayoutEffect, useRef, useState, type ComponentType, type SVGProps } from "react";
-import { ClaySymbol, GrainSymbol, OreSymbol, TimberSymbol, WoolSymbol } from "@/components/game/ResourceSymbols";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { RESOURCE_ICON } from "@/components/game/ResourceSymbols";
 import { RESOURCES, RESOURCE_LABEL, type Phase, type PlayerState, type Resource } from "@/lib/game/types";
 import { cn } from "@/lib/utils";
 import { useGame } from "@/lib/game/store";
+import { heldRates } from "@/lib/game/rules";
 import "./hand-motion.css";
 
-export const RESOURCE_ICON: Record<Resource, ComponentType<SVGProps<SVGSVGElement>>> = {
-  timber: TimberSymbol,
-  clay: ClaySymbol,
-  wool: WoolSymbol,
-  grain: GrainSymbol,
-  ore: OreSymbol,
-};
+export { RESOURCE_ICON } from "@/components/game/ResourceSymbols";
 
 // Each card is the terrain cap's colour (docs/design/polish.md, #436); full class names so Tailwind can see them.
 export const RESOURCE_PAINT: Record<Resource, string> = {
@@ -94,8 +90,17 @@ function useResourceFlashes(me: PlayerState) {
   return visibleFlashes;
 }
 
-function ResourceCard({ resource, count, flash }: { resource: Resource; count: number; flash?: ResourceFlash }) {
+function ResourceCard({ resource, count, flash, showRates }: { resource: Resource; count: number; flash?: ResourceFlash; showRates: (resource: Resource, card: HTMLElement) => void }) {
   const card = useRef<HTMLDivElement>(null);
+  const hold = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const start = useRef({ x: 0, y: 0 });
+  const buildMode = useGame((s) => s.buildMode);
+  const cancelHold = () => {
+    if (hold.current) clearTimeout(hold.current);
+    hold.current = null;
+  };
+  useEffect(() => cancelHold, []);
+  useEffect(cancelHold, [buildMode]);
   const Icon = RESOURCE_ICON[resource];
   const label = flash ? (flash.delta > 0 ? `+${flash.delta}` : String(flash.delta)) : null;
   // Restart on the event ID, even for two gains in the same millisecond. The card itself stays mounted,
@@ -128,8 +133,39 @@ function ResourceCard({ resource, count, flash }: { resource: Resource; count: n
         ref={card}
         data-testid={`resource-${resource}`}
         title={RESOURCE_LABEL[resource]}
+        role="button"
+        tabIndex={0}
+        aria-label={`${RESOURCE_LABEL[resource]}: ${count}. Show trade rates`}
+        onClick={(e) => {
+          // Assistive activation synthesizes a click; pointer taps keep the long-press gesture.
+          if (e.detail === 0) showRates(resource, e.currentTarget);
+        }}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          cancelHold();
+          showRates(resource, e.currentTarget);
+        }}
+        onKeyDown={(e) => {
+          if (e.key !== "Enter" && e.key !== " ") return;
+          e.preventDefault();
+          e.stopPropagation();
+          showRates(resource, e.currentTarget);
+        }}
+        onPointerDown={(e) => {
+          if (e.button !== 0) return;
+          cancelHold();
+          start.current = { x: e.clientX, y: e.clientY };
+          const target = e.currentTarget;
+          hold.current = setTimeout(() => showRates(resource, target), 500);
+        }}
+        onPointerMove={(e) => {
+          if (Math.hypot(e.clientX - start.current.x, e.clientY - start.current.y) > 8) cancelHold();
+        }}
+        onPointerUp={cancelHold}
+        onPointerCancel={cancelHold}
+        onPointerLeave={cancelHold}
         className={cn(
-          "goods-card relative flex h-[62px] flex-col items-center justify-center rounded-control bg-surface text-fg",
+          "goods-card relative flex h-[62px] flex-col items-center justify-center rounded-control bg-surface text-fg focus-visible:outline focus-visible:outline-2 focus-visible:outline-fg",
           "short:h-11 short:flex-row short:gap-2",
           count === 0 && "goods-empty",
         )}
@@ -171,12 +207,45 @@ function ResourceCard({ resource, count, flash }: { resource: Resource; count: n
 }
 
 function ResourceHand({ me, flashes }: { me: PlayerState; flashes: ReturnType<typeof useResourceFlashes> }) {
+  const state = useGame((s) => s.state);
+  const buildMode = useGame((s) => s.buildMode);
+  const [hint, setHint] = useState<{ resource: Resource; owner: string; top: number } | null>(null);
+  const rates = hint && state ? heldRates(state, me.id, hint.resource).map((rate) =>
+    rate === 4 ? "Bank 4:1" : rate === 3 ? "Dock 3:1" : `${RESOURCE_LABEL[hint.resource]} dock 2:1`,
+  ).join(" · ") : "";
+  const showRates = useCallback((resource: Resource, card: HTMLElement) => {
+    if (useGame.getState().buildMode === "none") setHint({ resource, owner: me.id, top: card.getBoundingClientRect().top });
+  }, [me.id]);
+  useEffect(() => setHint(null), [me.id, buildMode]);
+  useEffect(() => {
+    if (!hint) return;
+    const dismiss = (e: PointerEvent) => {
+      if (!(e.target instanceof Element) || !e.target.closest('[data-testid="hand-rates"]')) setHint(null);
+    };
+    const escape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setHint(null);
+    };
+    document.addEventListener("pointerdown", dismiss);
+    document.addEventListener("keydown", escape);
+    return () => {
+      document.removeEventListener("pointerdown", dismiss);
+      document.removeEventListener("keydown", escape);
+    };
+  }, [hint]);
   return (
-    <div className="goods-tray flex shrink-0 gap-1 overflow-x-auto rounded-chip p-2 short:p-1">
-      {RESOURCES.map((r) => (
-        <ResourceCard key={r} resource={r} count={me.resources[r]} flash={flashes[r]} />
-      ))}
-    </div>
+    <>
+      <div className="goods-tray flex shrink-0 gap-1 overflow-x-auto rounded-chip p-2 short:p-1">
+        {RESOURCES.map((r) => (
+          <ResourceCard key={r} resource={r} count={me.resources[r]} flash={flashes[r]} showRates={showRates} />
+        ))}
+      </div>
+      {hint && hint.owner === me.id && buildMode === "none" ? createPortal(<div
+        data-testid="hand-rates"
+        role="status"
+        className="pointer-events-none fixed left-3 right-3 z-50 mx-auto w-fit max-w-[calc(100%_-_24px)] rounded-control border border-line bg-surface px-3 py-2 text-[16px] font-semibold text-fg shadow-lg"
+        style={{ bottom: Math.max(12, innerHeight - hint.top + 8) }}
+      >{rates}</div>, document.body) : null}
+    </>
   );
 }
 
