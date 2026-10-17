@@ -105,7 +105,7 @@ export function FirstGameCoach({ className, hidden }: { className?: string; hidd
       <p role="status"><span className="text-xs text-muted">Tip {step} of 3 · </span>{text}</p>
       {/* Only pointer-transparent text floats over the island. Skip shares the header's existing reserved footprint. */}
       {skipSlot ? createPortal(
-        <button type="button" className="pointer-events-auto min-h-11 shrink-0 px-1 text-xs text-muted underline" onClick={() => { skipped.current = true; save("done"); setProgress("done"); }}>Skip tips</button>,
+        <button type="button" className="pointer-events-auto min-h-11 w-11 shrink-0 text-xs text-muted underline" onClick={() => { skipped.current = true; save("done"); setProgress("done"); }}>Skip tips</button>,
         skipSlot,
       ) : null}
     </div>

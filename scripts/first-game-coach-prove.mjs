@@ -65,7 +65,7 @@ try {
     await page.waitForTimeout(100);
   }
   await step(1, /Tap a glowing corner, then Place/);
-  for (const viewport of [{ width: 844, height: 390 }, { width: 390, height: 844 }]) {
+  for (const viewport of [{ width: 320, height: 568 }, { width: 360, height: 640 }, { width: 844, height: 390 }, { width: 390, height: 844 }]) {
     await page.setViewportSize(viewport);
     await page.waitForTimeout(500);
     const headerControls = await page.evaluate(() => [...document.querySelectorAll('header [data-menu-trigger], header [aria-label="Table menu"], [data-coach-skip-slot] button')].map((el) => {
