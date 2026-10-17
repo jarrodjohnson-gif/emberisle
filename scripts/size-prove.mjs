@@ -26,7 +26,7 @@ const BUDGETS = [
   // window runs out) add 0.27 kB: 120.43 kB measured on Windows, +150 B headroom over it.
   // 2026-10-17 (#540): lazy coaching adds 85 B versus current main (120431 B); 120516 B measured, +234 B headroom.
   // 2026-10-17 (#552): render recovery adds 655 B over the lazy coach; 121171 B measured, +279 B headroom.
-  // 2026-10-17 (#553): connection health adds 537 B over render recovery; 121708 B measured, +292 B headroom.
+  // 2026-10-17 (#553): connection health adds 563 B over render recovery; 121737 B measured, +263 B headroom.
   { name: "index", gzipBytes: 122000 },
   // 2026-10-14 (#597): +1100 B for the diorama camera, its fit and the token pose on top of the lazy sea (182.92 kB measured).
   // 2026-10-15: 185.01 kB measured on main once the diorama (#604, +1.1 kB) and the natural waves (#614, +1.0 kB) both
