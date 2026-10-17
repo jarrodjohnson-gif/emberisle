@@ -22,3 +22,5 @@
 [`docs/HELPERS.md`](docs/HELPERS.md). It wins over everything else here.
 
 Game rules and setup: [`README.md`](README.md).
+
+Writing rules for docs, issue comments, PR bodies and review findings: [Writing](docs/FRAMEWORK.md#writing).

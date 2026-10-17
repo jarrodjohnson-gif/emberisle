@@ -144,3 +144,5 @@ left: <exactly what is unfinished, and the next command to run>
 
 A different model reviews every helper PR. Merges happen only after that review, with green CI and the
 owner's OK.
+
+Writing rules for docs, issue comments, PR bodies and review findings: [Writing](FRAMEWORK.md#writing).

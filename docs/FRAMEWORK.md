@@ -246,3 +246,13 @@ Ideas live in [IDEAS.md](IDEAS.md), never straight in the tracker. When Jarrod d
 
 If bugs live in an outside log, do not copy each one. Make one pointer issue per milestone:
 `Eng: <topic> — Log IMP-06, 13, 14`, listing the item ids and saying the details live in the log.
+
+## Writing
+
+Use these rules for docs, issue comments, PR bodies and review findings.
+
+1. Write one instruction per sentence. Keep sentences to 20 words or fewer.
+2. Use active voice. Write "Run the proof", not "The proof should be run".
+3. Leave out filler: no greetings, recaps, or "I hope this helps".
+4. Use one word for one thing. Pick a term and keep it.
+5. Use lists for steps and findings. Use paragraphs only for reasons.
