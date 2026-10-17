@@ -17,6 +17,7 @@ const FILES = {
   ui_error: "error_001.wav",
   win: "pluck_001.wav",
   your_turn: "your_turn.wav",
+  chip_gain: "click_005.wav",
   gain_tick: "click_002.wav",
   // Synthesised by scripts/make-sounds.mjs (docs/design/sound.md).
   wayfarer_move: "wayfarer_move.wav",

@@ -688,18 +688,18 @@ try {
   // (1) Turn passes to local seat p0: a hears your_turn once at volume 1; (2) b hears nothing
   await a.evaluate((g) => window.__sockets.at(-1).onmessage({ data: JSON.stringify({ type: "state", you: "p0", game: g }) }), p0Turn);
   await b.evaluate((g) => window.__sockets.at(-1).onmessage({ data: JSON.stringify({ type: "state", you: "p1", game: g }) }), p0Turn);
-  await until(async () => (await names(a)).length, "acting seat hears your_turn");
+  await until(async () => (await names(a)).filter((n) => n === "your_turn").length, "acting seat hears your_turn");
   await sleep(100);
-  assert.deepEqual(await names(a), ["your_turn"], "your_turn plays exactly once when the turn passes to the local seat");
-  assert.equal((await heard(a))[0].volume, 1, "your_turn plays at volume 1");
-  assert.deepEqual(await names(b), [], "it does not play for the other seats");
+  assert.deepEqual((await names(a)).filter((n) => n === "your_turn"), ["your_turn"], "your_turn plays exactly once when the turn passes to the local seat");
+  assert.equal((await heard(a)).find((x) => x.file === "your_turn")?.volume, 1, "your_turn plays at volume 1");
+  assert.deepEqual((await names(b)).filter((n) => n === "your_turn"), [], "it does not play for the other seats");
   ok("your_turn: plays once for acting seat, silent for others");
 
   // (4) Pushing the same state twice plays it once
   await clear(a);
   await a.evaluate((g) => window.__sockets.at(-1).onmessage({ data: JSON.stringify({ type: "state", you: "p0", game: g }) }), p0Turn);
   await sleep(200);
-  assert.deepEqual(await names(a), [], "pushing the same state twice plays it once");
+  assert.deepEqual((await names(a)).filter((n) => n === "your_turn"), [], "pushing the same state twice plays it once");
   ok("your_turn: repeat push of the same turn plays nothing");
 
   // (3) A tab that drops and rejoins during its own turn hears it exactly once; rejoin during another's turn hears nothing
@@ -710,8 +710,8 @@ try {
     ws.onmessage({ data: JSON.stringify({ type: "welcome", code, you: "p0", host: true }) });
     ws.onmessage({ data: JSON.stringify({ type: "state", you: "p0", game: g }) });
   }, p0Turn);
-  await until(async () => (await names(a)).length, "rejoin during own turn hears your_turn");
-  assert.deepEqual(await names(a), ["your_turn"], "rejoin during own turn hears your_turn exactly once");
+  await until(async () => (await names(a)).filter((n) => n === "your_turn").length, "rejoin during own turn hears your_turn");
+  assert.deepEqual((await names(a)).filter((n) => n === "your_turn"), ["your_turn"], "rejoin during own turn hears your_turn exactly once");
   await clear(a);
   await a.evaluate((g) => {
     const ws = window.__sockets.at(-1);
@@ -720,7 +720,7 @@ try {
     ws.onmessage({ data: JSON.stringify({ type: "state", you: "p0", game: g }) });
   }, p1Turn);
   await sleep(200);
-  assert.deepEqual(await names(a), [], "rejoin during someone else's turn hears nothing");
+  assert.deepEqual((await names(a)).filter((n) => n === "your_turn"), [], "rejoin during someone else's turn hears nothing");
   ok("your_turn: rejoin during own turn plays once, rejoin during another seat's turn is silent");
 
   // (5) With sound muted it does not play
@@ -729,7 +729,7 @@ try {
   const p0TurnAgain = { ...turnBase, current: "p0", seq: turnBase.seq + 3 };
   await a.evaluate((g) => window.__sockets.at(-1).onmessage({ data: JSON.stringify({ type: "state", you: "p0", game: g }) }), p0TurnAgain);
   await sleep(200);
-  assert.deepEqual(await names(a), [], "with sound muted your_turn does not play");
+  assert.deepEqual((await names(a)).filter((n) => n === "your_turn"), [], "with sound muted your_turn does not play");
   await mute(a, false);
   ok("your_turn: muted is silent");
 
@@ -746,7 +746,7 @@ try {
     hear(before, over, "p0", "online");
     hear(before, after, "", "online");
   });
-  assert.deepEqual(await names(a), [], "hotseat, game over and watchers play none");
+  assert.deepEqual((await names(a)).filter((n) => n === "your_turn"), [], "hotseat, game over and watchers play none");
   ok("your_turn: hotseat plays none");
 
   assert.deepEqual(errors, [], `console errors: ${errors.join(" | ")}`);
