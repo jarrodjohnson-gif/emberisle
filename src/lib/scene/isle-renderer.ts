@@ -261,6 +261,8 @@ export class IsleRenderer {
   onWater: (w: WaterStatus) => void = () => {};
   // The play view now shown, for the table menu's View row.
   onView: (v: PlayView) => void = () => {};
+  onDocks: (docks: { id: string; kind: HarborKind; x: number; y: number }[]) => void = () => {};
+  private dockPositions = "";
   private choice: WaterPath | null = null;
   private waterSet = false;
   private probed: { path: WaterPath; ms: number } | null = null;
@@ -1412,6 +1414,18 @@ export class IsleRenderer {
       this.renderer.shadowMap.autoUpdate = true;
     }
     this.renders += 1;
+    if (!this.titleMode) {
+      const docks = this.docks.map((d) => ({
+        id: d.vids.join(":"),
+        kind: d.kind,
+        ...this.screenAt(d.cx + d.mx * 0.62, 0.12, d.cz + d.mz * 0.62),
+      }));
+      const positions = JSON.stringify(docks.map((d) => [d.id, d.kind, Math.round(d.x), Math.round(d.y)]));
+      if (positions !== this.dockPositions) {
+        this.dockPositions = positions;
+        this.onDocks(docks);
+      }
+    } else this.dockPositions = "";
     const p = this.probe;
     const warm = p?.stage === "simple" ? 5 : 3;
     const budget = p?.stage === "simple" ? 11 : 22;
@@ -1861,7 +1875,7 @@ function solidRects(shell: Element, canvas: Element): Rect[] {
   const join = (a: Rect | null, b: Rect | null): Rect | null =>
     !a ? b : !b ? a : { left: Math.min(a.left, b.left), top: Math.min(a.top, b.top), right: Math.max(a.right, b.right), bottom: Math.max(a.bottom, b.bottom) };
   const box = (el: Element): { r: Rect | null; porous: boolean } => {
-    if (el === canvas) return { r: null, porous: false };
+    if (el === canvas || el.hasAttribute("data-board-overlay")) return { r: null, porous: false };
     const cs = getComputedStyle(el);
     if (cs.display === "none" || cs.visibility === "hidden") return { r: null, porous: false };
     const kids = [...el.children].map(box);
