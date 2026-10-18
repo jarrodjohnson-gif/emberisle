@@ -221,9 +221,9 @@ try {
     assert.equal(await page.getByTestId("plenty-picks").textContent(), "Wood ×2");
     assert.equal(await page.getByTestId("plenty-chip-timber").getAttribute("aria-label"), "Wood, picked 2");
     await page.getByTestId("plenty-chip-ore").click();
-    assert.equal(await page.getByTestId("plenty-picks").textContent(), "Wood and ore");
+    assert.equal(await page.getByTestId("plenty-picks").textContent(), "Wood and stone");
     await page.getByTestId("plenty-chip-wool").click();
-    assert.equal(await page.getByTestId("plenty-picks").textContent(), "Ore and sheep");
+    assert.equal(await page.getByTestId("plenty-picks").textContent(), "Stone and sheep");
     const before = await me();
     await page.getByTestId("fortune-play-plenty").click();
     await closed();
@@ -238,7 +238,7 @@ try {
     assert.equal(await page.locator('[data-testid^="monopoly-chip-"]').count(), 5, `${v.tag}: five monopoly chips`);
     assert.equal(await page.getByTestId("fortune-play-monopoly").getAttribute("aria-disabled"), "true", `${v.tag}: Monopoly waits for a pick`);
     await page.getByTestId("monopoly-chip-ore").click();
-    assert.equal(await page.getByTestId("monopoly-pick").textContent(), "Every other seat's ore");
+    assert.equal(await page.getByTestId("monopoly-pick").textContent(), "Every other seat's stone");
     assert.deepEqual(await page.locator('[role="radio"]').evaluateAll((els) => els.map((b) => b.getAttribute("aria-checked"))), ["false", "false", "false", "false", "true"], `${v.tag}: monopoly chips are radios`);
     await page.getByTestId("fortune-play-monopoly").click();
     await closed();
@@ -277,7 +277,7 @@ try {
     await open();
     const ore = page.getByTestId("plenty-chip-ore");
     assert.equal(await ore.getAttribute("aria-disabled"), "true");
-    assert.equal(await ore.getAttribute("aria-description"), "The bank has no ore.");
+    assert.equal(await ore.getAttribute("aria-description"), "The bank has no stone.");
     await ore.click({ force: true });
     assert.equal(await page.getByTestId("plenty-picks").textContent(), "Tap two goods", `${v.tag}: the empty ore cannot be picked`);
     await page.getByTestId("plenty-chip-timber").click();

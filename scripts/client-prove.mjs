@@ -255,7 +255,7 @@ try {
   await page.getByRole("button", { name: "Trade", exact: true }).click();
   await page.getByTestId("trade-panel").waitFor();
   const askPractice = await page.getByRole("button", { name: "Ask the table" }).count();
-  await page.getByRole("button", { name: "More ore to give" }).click();
+  await page.getByRole("button", { name: "More stone to give" }).click();
   await page.getByRole("button", { name: "More sheep to want" }).click();
   const rateButton = page.getByRole("button", { name: /^(Bank 4|Dock 3|Dock 2):1$/ });
   const rateLabel = await rateButton.textContent();
@@ -781,7 +781,7 @@ try {
         }),
       ),
     );
-  const price = { Path: "Path · 1 wood, 1 brick", Outpost: "Outpost · 1 wood, 1 brick, 1 sheep, 1 wheat", Stronghold: "Stronghold · 3 wheat, 2 ore", Fortune: "Fortune · 1 sheep, 1 wheat, 1 ore" };
+  const price = { Path: "Path · 1 wood, 1 brick", Outpost: "Outpost · 1 wood, 1 brick, 1 sheep, 1 wheat", Stronghold: "Stronghold · 3 wheat, 2 stone", Fortune: "Fortune · 1 sheep, 1 wheat, 1 stone" };
   const storeNow = () => page.evaluate(() => ({ buildMode: window.__emberisle.getState().buildMode, tradeOpen: window.__emberisle.getState().tradeOpen, howTo: window.__emberisle.getState().howTo }));
   await setHand({});
   await page.getByRole("button", { name: "Path", exact: true }).waitFor({ timeout: 5000 });

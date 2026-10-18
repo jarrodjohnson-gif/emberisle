@@ -20,7 +20,7 @@ export const RESOURCE_LABEL: Record<Resource, string> = {
   clay: "Brick",
   wool: "Sheep",
   grain: "Wheat",
-  ore: "Ore",
+  ore: "Stone",
 };
 
 export const TERRAIN_LABEL: Record<Terrain, string> = {

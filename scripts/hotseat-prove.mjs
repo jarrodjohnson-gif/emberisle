@@ -166,8 +166,8 @@ try {
   await form.getByLabel("Wood").fill("3");
   const part = await countState();
   if (part.text !== "3 of 4" || !part.disabled) throw new Error(`3 picked: ${JSON.stringify(part)}`);
-  await form.getByLabel("Ore").fill("5"); // holds 1: clamped
-  const clamped = await form.getByLabel("Ore").inputValue();
+  await form.getByLabel("Stone").fill("5"); // holds 1: clamped
+  const clamped = await form.getByLabel("Stone").inputValue();
   const over = await countState();
   if (clamped !== "1" || over.text !== "4 of 4" || over.disabled) throw new Error(`clamp/exact: ${clamped} ${JSON.stringify(over)}`);
   await form.getByLabel("Wood").fill("4"); // holds 3: clamped, total still 4
@@ -178,7 +178,7 @@ try {
   if (short.text !== "3 of 4" || !short.disabled) throw new Error(`short again: ${JSON.stringify(short)}`);
   console.log("discard count:", JSON.stringify({ start, part, clamped, over, short }));
   await form.getByLabel("Wood").fill("0");
-  await form.getByLabel("Ore").fill("0");
+  await form.getByLabel("Stone").fill("0");
   await form.locator('input[name="timber"]').fill("3");
   await form.locator('input[name="clay"]').fill("1");
   await form.getByRole("button", { name: "Discard" }).click();
@@ -269,7 +269,7 @@ try {
   const greyed = await page.locator('[data-testid^="plenty-chip-"]').evaluateAll((els) => els.map((b) => ({
     r: b.dataset.testid.slice("plenty-chip-".length), disabled: b.getAttribute("aria-disabled"), why: b.getAttribute("aria-description") })));
   console.log("plenty with no ore in the bank:", JSON.stringify(greyed));
-  if (greyed.length !== 5 || greyed.some((g) => g.r === "ore" ? g.disabled !== "true" || g.why !== "The bank has no ore." : g.disabled || g.why)) {
+  if (greyed.length !== 5 || greyed.some((g) => g.r === "ore" ? g.disabled !== "true" || g.why !== "The bank has no stone." : g.disabled || g.why)) {
     throw new Error(`ore not greyed out: ${JSON.stringify(greyed)}`);
   }
   await page.getByTestId("plenty-chip-ore").focus();

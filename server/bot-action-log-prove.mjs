@@ -65,7 +65,7 @@ function balance(game) {
   assert.equal(state.state.log.filter((line) => line === rollLine).length, 1);
   assert.deepEqual(bankShort(state.state), ["ore"]);
   const i = state.state.log.indexOf(rollLine);
-  assert.match(state.state.log[i], /the bank is short of ore;/);
+  assert.match(state.state.log[i], /the bank is short of stone;/);
   console.log("practice roll: canonical goods event retains the bank shortage");
 }
 
@@ -157,7 +157,7 @@ for (const [game, expectsLeader] of [[leaderFixture, true], [neutralFixture, fal
   assert.equal(lines.length, 1);
   assert(lines[0].includes(`${victim.name} loses 1 good`));
   assert.equal(lines[0].includes("public leader"), expectsLeader);
-  assert(!lines[0].match(/\b(timber|clay|wool|grain|wood|brick|sheep|wheat|ore)\b/i));
+  assert(!lines[0].match(/\b(timber|clay|wool|grain|wood|brick|sheep|wheat|ore|stone)\b/i));
   assert(!lines[0].match(/\b(point|VP|fortune card)\b/i));
   assert(!state.state.log.some((entry) => entry.includes("steals a card from") || entry.includes("sends the wayfarer")));
   assert.equal(state.gameLog.filter((entry) => entry.text === lines[0]).length, 1);

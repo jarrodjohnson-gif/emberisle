@@ -43,7 +43,7 @@ const VIEWS = [
 ];
 const GREEN = "rgb(16, 86, 42)";
 const RED = "rgb(138, 34, 25)";
-const RESOURCE_LABEL = { timber: "Wood", clay: "Brick", wool: "Sheep", grain: "Wheat", ore: "Ore" };
+const RESOURCE_LABEL = { timber: "Wood", clay: "Brick", wool: "Sheep", grain: "Wheat", ore: "Stone" };
 mkdirSync("test-results", { recursive: true });
 
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
@@ -472,7 +472,7 @@ async function practice(view) {
     const gave = await page.evaluate((o) => -window.__own.slice(o).find((x) => x.r === "ore").d, o1);
     const shades = [await contrast(page, "gain-float", 0), await contrast(page, "gain-float", 1)];
     await page.evaluate(() => window.__release());
-    check(traded && trade.length === 2 && trade.some((l) => l.text === `−${gave} Ore` && l.color === RED) && trade.some((l) => l.text === "+1 Wheat" && l.color === GREEN), `${tag}: a bank trade shows −${gave} Ore in red and +1 Wheat in green`, trade);
+    check(traded && trade.length === 2 && trade.some((l) => l.text === `−${gave} Stone` && l.color === RED) && trade.some((l) => l.text === "+1 Wheat" && l.color === GREEN), `${tag}: a bank trade shows −${gave} Stone in red and +1 Wheat in green`, trade);
     placement(`${tag} trade`, "gain and loss lines", tradeBoxes, tradeLay, tradeShift);
     for (const c of shades) check(c.min >= 3, `${tag}: ${c.color === RED ? "loss" : "gain"} text ≥ 3:1 against the pixels behind it`, { color: c.color, min: c.min.toFixed(2), pixels: c.pixels });
     await page.waitForFunction(() => !document.querySelector('[data-testid="gain-floats"]'), null, { timeout: STEP_MS });

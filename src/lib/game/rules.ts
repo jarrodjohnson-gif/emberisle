@@ -367,6 +367,7 @@ const LABEL_TO_RESOURCE: Record<string, Resource> = {
   brick: "clay",
   sheep: "wool",
   wheat: "grain",
+  stone: "ore",
   ore: "ore",
   timber: "timber",
   clay: "clay",
@@ -641,7 +642,7 @@ function applyActionInternal(prev: GameState, actor: string, action: Action): { 
     case "buildStronghold": {
       if (state.phase !== "main") return { state: prev, error: "Cannot build now." };
       if (me.strongholdsLeft <= 0) return { state: prev, error: "No strongholds left." };
-      if (!hasCost(me, COST.stronghold)) return { state: prev, error: "Need three wheat and two ore." };
+      if (!hasCost(me, COST.stronghold)) return { state: prev, error: "Need three wheat and two stone." };
       if (!legalCities(state, actor).includes(action.vertexId)) {
         return { state: prev, error: "Upgrade one of your own outposts." };
       }
@@ -655,7 +656,7 @@ function applyActionInternal(prev: GameState, actor: string, action: Action): { 
     }
     case "buyCard": {
       if (state.phase !== "main") return { state: prev, error: "Cannot buy now." };
-      if (!hasCost(me, COST.card)) return { state: prev, error: "Need sheep, wheat, ore." };
+      if (!hasCost(me, COST.card)) return { state: prev, error: "Need sheep, wheat, stone." };
       const card = state.deck.shift();
       if (!card) return { state: prev, error: "The fortune deck is empty." };
       pay(state, me, COST.card);

@@ -318,7 +318,7 @@ ok("there is no 7 token", true);
   const r = applyAction(g, "p0", { type: "buildStronghold", vertexId: mine.id });
   const q = r.state?.players[0];
   ok(
-    "stronghold costs 2 ore, 3 wheat, on an outpost you own",
+    "stronghold costs 2 stone, 3 wheat, on an outpost you own",
     short.error && onTheirs.error && !r.error && hand(q) === 0 && q.strongholdsLeft === 3 && q.outpostsLeft === 6,
     short.error ?? onTheirs.error ?? r.error,
   );
@@ -332,7 +332,7 @@ ok("there is no 7 token", true);
   const short = applyAction(g, "p0", { type: "buyCard" });
   giveCards(g.players[0], { wool: 1, grain: 1, ore: 1 });
   const r = applyAction(g, "p0", { type: "buyCard" });
-  ok("fortune costs sheep, wheat, ore", short.error && !r.error && hand(r.state.players[0]) === 0 && r.state.deck.length === 24, short.error ?? r.error);
+  ok("fortune costs sheep, wheat, stone", short.error && !r.error && hand(r.state.players[0]) === 0 && r.state.deck.length === 24, short.error ?? r.error);
 }
 ok("a fortune bought this turn cannot be played this turn (check 6 above)", true);
 ok("a knight may be played before the roll (check 7 above)", true);
@@ -753,7 +753,7 @@ const total = (g, r) => g.bank[r] + g.players.reduce((n, p) => n + p.resources[r
   g.bank.grain = 1;
   const kept = (r) => r.state.players[0].hidden.plenty === 1 && !r.state.playedCard && hand(r.state.players[0]) === 0 && r.state.bank.grain === 1;
   const empty = applyAction(g, "p0", { type: "playPlenty", resources: ["grain", "ore"] });
-  effect("plenty naming a card the bank has none of is refused, card stays in hand", empty.error === "The bank has no ore." && kept(empty), { error: empty.error, bank: empty.state.bank });
+  effect("plenty naming a card the bank has none of is refused, card stays in hand", empty.error === "The bank has no stone." && kept(empty), { error: empty.error, bank: empty.state.bank });
   const twice = applyAction(g, "p0", { type: "playPlenty", resources: ["grain", "grain"] });
   effect("plenty naming grain twice with one grain in the bank is refused", twice.error === "The bank has only 1 wheat." && kept(twice), { error: twice.error, bank: twice.state.bank });
   const r = applyAction(g, "p0", { type: "playPlenty", resources: ["grain", "wool"] });
@@ -775,7 +775,7 @@ const total = (g, r) => g.bank[r] + g.players.reduce((n, p) => n + p.resources[r
     b.resources.ore === 0 && c.resources.ore === 0 && a.resources.ore === 8 && a.resources.wool === 2 && b.resources.grain === 2 && c.resources.timber === 1 && a.hidden.monopoly === 0,
     s.players.map((p) => p.resources),
   );
-  effect("monopoly logs the total", s.log[s.log.length - 1] === "A plays Monopoly — A gains 7 ore; B loses 3 ore; C loses 4 ore.", s.log.slice(-2));
+  effect("monopoly logs the total", s.log[s.log.length - 1] === "A plays Monopoly — A gains 7 stone; B loses 3 stone; C loses 4 stone.", s.log.slice(-2));
   effect("monopoly keeps 19 of each resource across hands and bank", RESOURCES.every((x) => total(s, x) === 19), s.bank);
 }
 {

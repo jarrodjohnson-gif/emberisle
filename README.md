@@ -39,8 +39,8 @@ Each hex is forest, hills, pasture, fields, mountains, or the wastes. A token fr
 |---|---|---|
 | Path | 1 wood, 1 brick | 15 |
 | Outpost | 1 wood, 1 brick, 1 sheep, 1 wheat | 5 |
-| Stronghold | 2 ore, 3 wheat, on an outpost you own | 4 |
-| Fortune | 1 sheep, 1 wheat, 1 ore | a shared deck of 25 |
+| Stronghold | 2 stone, 3 wheat, on an outpost you own | 4 |
+| Fortune | 1 sheep, 1 wheat, 1 stone | a shared deck of 25 |
 
 The deck is 14 knights, 2 path-building, 2 plenty, 2 monopoly, and 5 hidden points. A fortune bought this turn cannot be played this turn. A knight may be played before the roll. A plenty takes two cards from the bank, and can name only cards the bank still has.
 
@@ -70,7 +70,7 @@ Anyone with more than 7 cards discards half, rounded down. Then the roller moves
 
 There are 9 docks, on the coast, spaced around the island. You do not get one for sitting down.
 
-- 5 are 2-for-1, one for each resource: wood, brick, sheep, wheat, ore.
+- 5 are 2-for-1, one for each resource: wood, brick, sheep, wheat, stone.
 - 4 are 3-for-1, and those take any resource.
 
 You get a dock's rate only when a building of yours sits on one of that dock's two corners. Otherwise the bank is 4 of one resource for 1 of another. A specific dock beats a 3-for-1, and a 3-for-1 beats the bank. The bank pays only if it still has the card.
@@ -85,7 +85,7 @@ The bank starts with 19 of each resource.
 
 <a id="names"></a>
 
-Say wood, brick, sheep, wheat, ore, outpost, stronghold, path, fortune, and wayfarer. The window title is Emberisle.
+Say wood, brick, sheep, wheat, stone, outpost, stronghold, path, fortune, and wayfarer. The window title is Emberisle.
 
 ---
 
