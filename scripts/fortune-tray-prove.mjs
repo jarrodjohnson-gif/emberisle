@@ -16,7 +16,7 @@
 // - under reduced motion the tray's entry animation collapses to 1 ms;
 // - a seat change (hotseat) closes an open tray even when the next seat holds fortunes, and a phase change within the turn
 //   (a roll with the tray up, through robber to main) closes it and it does not come back;
-// - your last fortune played takes the Fortunes button with the tray, and focus falls to End turn;
+// - your last fortune played takes the Fortunes button with the tray, and focus falls to Trade;
 // - a second pick of a good the bank has only one of is refused and says so, while a tap with two picked still replaces the
 //   oldest; Monopoly's chips are radios and Plenty's caption is a live region.
 // - (#511) on a sideways phone with notch insets (844x390, 667x375) and the tray open and settled, a point just inside each
@@ -317,7 +317,7 @@ try {
     assert.deepEqual(dry, { why: "The bank is empty", play: "true", chips: 0 }, `${v.tag}: ${JSON.stringify(dry)}`);
     console.log(`${v.tag}: empty ore greyed, emptied timber dropped, empty bank refused`);
 
-    // The My fortunes button leaves with the last held fortune (#776); focus falls to End turn.
+    // The My fortunes button leaves with the last held fortune (#776); focus falls to Trade.
     await page.keyboard.press("Escape");
     await closed();
     await craft({ plenty: 1 });
@@ -327,7 +327,7 @@ try {
     await page.getByTestId("fortune-play-plenty").click();
     await closed();
     assert.equal(await button.count(), 0, `${v.tag}: no My fortunes button with no held fortunes`);
-    assert.equal(await page.evaluate(() => document.activeElement?.textContent?.trim()), "End turn", `${v.tag}: focus falls to End turn`);
+    assert.equal(await page.evaluate(() => document.activeElement?.textContent?.trim()), "Trade", `${v.tag}: focus falls to Trade`);
     await craft({ plenty: 1 }, {}, { timber: 0, clay: 0, wool: 0, grain: 0, ore: 0 });
     await open();
 

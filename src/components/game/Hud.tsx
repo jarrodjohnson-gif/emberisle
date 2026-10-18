@@ -167,10 +167,10 @@ export function Hud() {
   const heldNow = state && me && !spectator ? Object.values(me.hidden).reduce((n, c) => n + c, 0) : 0;
   const fortuneArmed = buildMode === "knight" || buildMode === "roadCard";
   const showFortunes = heldNow > 0 || fortuneArmed;
-  const endTurnButton = useRef<HTMLButtonElement>(null);
   const hadFortunes = useRef(showFortunes);
   useEffect(() => {
-    if (hadFortunes.current && !showFortunes && document.activeElement === document.body) endTurnButton.current?.focus();
+    // Trade in the main phase, Roll in the roll phase: neither ends the turn on a stray Enter.
+    if (hadFortunes.current && !showFortunes && document.activeElement === document.body) document.querySelector<HTMLElement>("[data-after-fortune]")?.focus();
     hadFortunes.current = showFortunes;
   }, [showFortunes]);
   // A build that just became ready (a roll, a trade) pulses its button once; a change of seat is not that, and a build with
@@ -277,8 +277,8 @@ export function Hud() {
   const endRow = (
     <div className={cn("flex *:self-center", column ? "end-footer sticky z-10 justify-between gap-1 rounded-control bg-surface p-1" : "tray-end ml-auto gap-2")}>
       {/* The 260 px column has room for End turn and the dice only with the faces shrunk (they are not targets); Trade and My fortunes share the row above. */}
-      {column ? <div className="[&>div]:gap-1 [&_[data-testid=die]]:size-6 [&_[data-testid=die]]:p-0.5 [&_[data-pip]]:size-1">{dice}</div> : dice}
-      <Button ref={endTurnButton} size="sm" variant={endPrimary ? "primary" : "secondary"} className={phone ? "h-11" : undefined} onClick={() => dispatch({ type: "endTurn" })}>
+      {column ? <>{fortunes ? null : <TradeButton />}<div className="[&>div]:gap-1 [&_[data-testid=die]]:size-6 [&_[data-testid=die]]:p-0.5 [&_[data-pip]]:size-1">{dice}</div></> : dice}
+      <Button size="sm" variant={endPrimary ? "primary" : "secondary"} className={phone ? "h-11" : undefined} onClick={() => dispatch({ type: "endTurn" })}>
         End turn
       </Button>
     </div>
@@ -469,11 +469,11 @@ export function Hud() {
                   );
                 })}
                 </div>
-                <div className="action-utilities flex items-center gap-1">
+                {!column || fortunes ? <div data-fortunes={fortunes ? "" : undefined} className="action-utilities flex items-center gap-1">
                   <TradeButton />
                   {fortunes}
                   {column ? null : endRow}
-                </div>
+                </div> : null}
               </div>
             ) : null}
 
@@ -482,7 +482,7 @@ export function Hud() {
                 <div className="flex flex-wrap gap-2 *:self-center">
                   {dice}
                   {fortunes}
-                  <Button size="lg" className="flex-1" onClick={() => dispatch({ type: "roll" })}>
+                  <Button size="lg" className="flex-1" data-after-fortune onClick={() => dispatch({ type: "roll" })}>
                     <Dices className="size-5" /> Roll
                   </Button>
                 </div>
@@ -509,6 +509,8 @@ export function Hud() {
               >
                 {gameLog.at(-1)?.text}
               </p>
+              {/* #776: the shared draw deck is public to every seat and watcher, so its count sits here, off the build row. */}
+              <span data-testid="deck-count" data-deck-left={deckLeft} title={`${deckLeft} fortunes left in the deck`} className="shrink-0 px-2 text-xs leading-5 tabular-nums">Deck {deckLeft}</span>
             </div>
             {pinEnd ? endRow : null}
             <TradeToast />

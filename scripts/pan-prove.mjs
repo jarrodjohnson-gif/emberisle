@@ -226,9 +226,6 @@ try {
       await page.evaluate(() => document.querySelector('[data-testid="fortunes-button"]').click());
       await frames(page, 10);
       const trayOpen = await cam(page);
-      // #776: the button shows only while a fortune is held, so the seat holds one.
-      await page.evaluate(() => { const g = window.__emberisle; const st = structuredClone(g.getState().state); for (const p of st.players) p.hidden.plenty = 1; st.seq += 1; g.setState({ state: st }); });
-      await page.getByTestId("fortunes-button").waitFor();
       await page.evaluate(() => document.querySelector('[data-testid="fortunes-button"]').click());
       await frames(page, 10);
       const trayShut = await cam(page);
