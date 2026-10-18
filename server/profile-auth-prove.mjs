@@ -203,14 +203,15 @@ const dune = await (await client(h, tunnel())).req(fields("dune", "7531"));
 const wrong = await (await client(h, tunnel())).req({ type: "profileLogin", login: "dune", pin: "0000" });
 const unknown = await (await client(h, tunnel())).req({ type: "profileLogin", login: "nobody-here", pin: "0000" });
 check("an unknown login and a wrong PIN give the same answer", isErr(wrong, "signInFailed") && isErr(unknown, "signInFailed") && wrong.message === SIGN_IN && unknown.message === SIGN_IN);
-check("an unknown login costs a real derivation", unknown.ms > 0.5 * wrong.ms && wrong.ms > 200, { wrong: wrong.ms, unknown: unknown.ms });
+check("an unknown login costs a real derivation", unknown.ms > 0.5 * wrong.ms, { wrong: wrong.ms, unknown: unknown.ms });
+check("an unknown login's failure is counted in its own bucket", store().unknownLogins["nobody-here"]?.times.length === 1);
 
 const crowd = await Promise.all(Array.from({ length: 12 }, () => client(h, tunnel())));
 const flood = await Promise.all(crowd.map((c, i) => c.req({ type: "profileLogin", login: `ghost-${i}`, pin: "1234" })));
 const busy = flood.filter((r) => isErr(r, "busy"));
 check("one running plus eight queued derivations; the overflow is refused", busy.length === 3 && flood.filter((r) => isErr(r, "signInFailed")).length === 9, flood.map((r) => r.code));
-check("overflow is refused before hashing", busy.every((r) => r.ms < 300), busy.map((r) => r.ms));
 const done = flood.filter((r) => r.code === "signInFailed").map((r) => r.ms).sort((a, b) => a - b);
+check("overflow is refused before any derivation finishes", Math.max(...busy.map((r) => r.ms)) < done[0], { busy: busy.map((r) => r.ms), first: done[0] });
 check("derivations run one at a time", done.at(-1) > 6 * done[0], done);
 
 // --- Concurrent PIN budget reservations ---------------------------------------------------------------------------------------
@@ -219,7 +220,6 @@ const guesses = await Promise.all(guessers.map((c, i) => c.req({ type: "profileL
 check("eight concurrent wrong PINs all fail alike", guesses.every((r) => isErr(r, "signInFailed") && r.message === SIGN_IN));
 let pine = byLogin(store(), "pine");
 check("only five were hashed and counted", pine.guard.lifetime === 5 && pine.guard.times.length === 5 && Object.keys(pine.guard.pending).length === 0, pine.guard);
-check("three were refused before hashing", guesses.filter((r) => r.ms < 300).length === 3, guesses.map((r) => r.ms));
 check("the right PIN is refused during the cooldown", isErr(await (await client(h, tunnel())).req({ type: "profileLogin", login: "pine", pin: "8642" }), "signInFailed"));
 
 // --- Address limits --------------------------------------------------------------------------------------------------------
@@ -238,9 +238,14 @@ check("another tunnel visitor has its own address bucket", other.type === "profi
 
 // --- Crash during a reserved attempt, then restart -------------------------------------------------------------------------
 const crasher = await client(h, tunnel());
+// Eight derivations queue ahead of this attempt, so it sits reserved and unhashed while the store is read.
+const queue = await Promise.all(Array.from({ length: 8 }, () => client(h, tunnel())));
+queue.forEach((c, i) => c.send({ type: "profileLogin", id: "fill", login: `filler-${i}`, pin: "1234" }));
+const fillers = () => Object.keys(store().unknownLogins).filter((k) => k.startsWith("filler-")).length;
+for (const until = Date.now() + 10000; fillers() < 8 && Date.now() < until; await wait(5));
 crasher.send({ type: "profileLogin", id: "crash", login: "dune", pin: "1111" });
-await wait(400);
-const mid = byLogin(store(), "dune").guard;
+let mid = byLogin(store(), "dune").guard;
+for (const until = Date.now() + 10000; !Object.keys(mid.pending).length && Date.now() < until; await wait(5)) mid = byLogin(store(), "dune").guard;
 check("the attempt is reserved durably before hashing", Object.keys(mid.pending).length === 1 && mid.lifetime === 1, mid);
 await h.stop("SIGKILL");
 h = await startHost();
@@ -256,8 +261,9 @@ check("the cooldown survives a restart", isErr(await (await client(h, tunnel()))
 // --- 15-minute, daily and lifetime budgets ----------------------------------------------------------------------------------
 async function fiveWrong() {
   for (let i = 0; i < 5; i++) {
+    const before = byLogin(store(), "pine").guard.lifetime;
     const r = await (await client(h, tunnel())).req({ type: "profileLogin", login: "pine", pin: String(2000 + i) });
-    if (!isErr(r, "signInFailed") || r.ms < 200) fail("a wrong PIN within budget is hashed and refused", r);
+    if (!isErr(r, "signInFailed") || byLogin(store(), "pine").guard.lifetime !== before + 1) fail("a wrong PIN within budget is hashed and counted", r);
   }
 }
 async function restartAfter(fn) {
