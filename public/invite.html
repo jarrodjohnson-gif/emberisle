@@ -1,0 +1,588 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="You're invited to game night on Emberisle.">
+<style>html,body{margin:0}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
+<title>Lanterns to Emberisle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=Alegreya+Sans:wght@400;500;700&display=swap">
+<style>
+/* Layout: one full-bleed WebGL voyage behind a single bottom-anchored line of story text. */
+:root {
+  color-scheme: dark;
+  --night: #08111b;
+  --fog: #1b2a37;
+  --mist: #8ea2b3;
+  --parchment: #f4e8cc;
+  --parchment-soft: #c9c2b0;
+  --lantern: #f3b45c;
+  --lantern-deep: #c97b2c;
+  --ink: #1d1a14;
+  --ember: #e0663a;
+  --scrim: rgb(6 12 20 / 0.78);
+  --scrim-clear: rgb(6 12 20 / 0);
+  --line: rgb(244 232 204 / 0.42);
+  --field: rgb(10 20 30 / 0.62);
+  --error: #ffb4a0;
+  --timber: #2f6a4f; --timber-side: #173d35;
+  --clay: #b8533d; --clay-side: #74372b;
+  --wool: #b2ce80; --wool-side: #617744;
+  --grain: #e3c462; --grain-side: #8c722d;
+  --ore: #63748a; --ore-side: #414d5b;
+  --waste: #dfc99a; --waste-side: #827963;
+  --sand: #e6cf9c; --sand-side: #a98c58;
+  --shallows: #65d8cb;
+  --sea: #0f3646;
+  --token: #f6ecd2; --token-ink: #2b2a24; --token-hot: #a8321f;
+  --font-display: 'IM Fell English', 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+  --font-body: 'Alegreya Sans', 'Gill Sans', 'Trebuchet MS', system-ui, sans-serif;
+  --step-0: 1rem; --step-1: 1.2rem; --step-2: 1.6rem; --step-3: clamp(1.9rem, 7vw, 2.8rem); --step-4: clamp(2.8rem, 13vw, 5.4rem);
+}
+html, body { height: 100%; margin: 0; overflow: hidden; }
+body {
+  background: radial-gradient(120% 70% at 50% 75%, var(--fog), var(--night) 70%) var(--night);
+  color: var(--parchment);
+  font-family: var(--font-body);
+  font-size: var(--step-0);
+  -webkit-tap-highlight-color: transparent;
+}
+#scene { position: fixed; inset: 0; width: 100%; height: 100%; display: block; z-index: 0; }
+.scrim { position: fixed; inset: auto 0 0 0; height: 62%; z-index: 1; pointer-events: none;
+  background: linear-gradient(to top, var(--scrim), var(--scrim-clear)); transition: opacity 1.2s ease; }
+.veil { position: fixed; inset: 0; z-index: 5; background: var(--night); opacity: 0; pointer-events: none; transition: opacity .45s ease; }
+.veil.on { opacity: 1; }
+
+.stage { position: fixed; inset: 0; z-index: 2; display: grid; grid-template: minmax(0, 1fr) / minmax(0, 1fr); align-items: end; justify-items: center;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: calc(env(safe-area-inset-top, 0px) + 64px) calc(env(safe-area-inset-bottom, 0px) + clamp(28px, 7vh, 64px));
+  pointer-events: none; }
+.panel { grid-area: 1 / 1; box-sizing: border-box; width: 100%; max-width: 32rem; display: flex; flex-direction: column; gap: 14px; text-align: center;
+  opacity: 0; visibility: hidden; transform: translateY(14px);
+  transition: opacity .7s ease, transform .9s cubic-bezier(.2,.7,.2,1), visibility 0s linear .9s;
+  text-shadow: 0 1px 14px rgb(0 0 0 / .65); }
+.panel.on { opacity: 1; visibility: visible; transform: none; pointer-events: auto; transition: opacity .9s ease, transform 1.1s cubic-bezier(.2,.7,.2,1), visibility 0s; }
+
+.eyebrow { margin: 0; font-family: var(--font-body); font-weight: 500; font-size: .82rem; letter-spacing: .18em; text-transform: uppercase; color: var(--lantern); }
+h1, h2 { margin: 0; font-family: var(--font-display); font-weight: 400; line-height: 1.04; text-wrap: balance; color: var(--parchment); }
+h1 { font-size: var(--step-4); letter-spacing: -.01em; }
+h2 { font-size: var(--step-3); }
+h2 em, h1 em { font-style: italic; color: var(--lantern); }
+.lede { margin: 0 auto; max-width: 26rem; font-size: var(--step-1); line-height: 1.45; color: var(--parchment-soft); text-wrap: pretty; }
+
+/* Stage 1: the whole sky is the button */
+.hello-btn { position: fixed; inset: 0; z-index: 2; border: 0; margin: 0; background: transparent; color: inherit; font: inherit; cursor: pointer;
+  display: flex; flex-direction: column; justify-content: flex-end; align-items: center;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 64px calc(env(safe-area-inset-bottom, 0px) + clamp(56px, 13vh, 120px)); }
+.hello-btn:focus-visible .tap { outline: 3px solid var(--lantern); outline-offset: 6px; }
+.hello-btn .panel { pointer-events: none; }
+.tap { display: inline-flex; align-items: center; justify-content: center; gap: 12px; min-height: 44px; padding: 0 18px; margin: 6px auto 0; border-radius: 999px;
+  font-family: var(--font-display); font-style: italic; font-size: var(--step-1); color: var(--parchment); }
+.flame { width: 10px; height: 10px; border-radius: 50%; background: var(--lantern); box-shadow: 0 0 10px 3px var(--lantern), 0 0 28px 8px var(--lantern-deep); animation: flicker 2.6s ease-in-out infinite; }
+@keyframes flicker { 0%,100% { opacity: 1; transform: scale(1); } 40% { opacity: .7; transform: scale(.85); } 60% { opacity: .95; transform: scale(1.08); } }
+
+.actions { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-top: 6px; }
+.btn { min-height: 48px; min-width: 44px; padding: 0 24px; border-radius: 999px; font: 700 1.05rem/1 var(--font-body); letter-spacing: .02em; cursor: pointer;
+  border: 1.5px solid var(--line); background: transparent; color: var(--parchment); transition: background .2s, transform .15s, border-color .2s; }
+.btn:hover { border-color: var(--parchment); }
+.btn:active { transform: scale(.97); }
+a.btn { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
+.btn.primary { background: var(--lantern); border-color: var(--lantern); color: var(--ink); box-shadow: 0 0 24px rgb(243 180 92 / .35); }
+.btn.primary:hover { background: var(--parchment); border-color: var(--parchment); }
+.btn:focus-visible, .linkish:focus-visible, input:focus-visible { outline: 3px solid var(--lantern); outline-offset: 3px; }
+
+/* Stage 3 form */
+form { display: flex; flex-direction: column; gap: 14px; text-align: left; text-shadow: none; }
+.field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+label { font-family: var(--font-display); font-size: var(--step-2); line-height: 1.15; color: var(--parchment); text-shadow: 0 1px 12px rgb(0 0 0 / .7); }
+label.small { font-family: var(--font-body); font-size: .95rem; font-weight: 500; letter-spacing: .02em; color: var(--parchment-soft); }
+label .opt { color: var(--mist); font-weight: 400; }
+input { box-sizing: border-box; width: 100%; min-height: 52px; padding: 0 16px; border-radius: 10px; border: 1.5px solid var(--line); background: var(--field);
+  color: var(--parchment); font: 500 1.15rem var(--font-body); }
+input::placeholder { color: var(--mist); opacity: .7; }
+.note { margin: 0; font-size: .95rem; line-height: 1.4; color: var(--parchment-soft); text-shadow: 0 1px 10px rgb(0 0 0 / .7); }
+.note .proto { color: var(--mist); }
+.error { margin: 0; min-height: 1.3em; font-size: .95rem; color: var(--error); }
+form .actions { justify-content: flex-start; }
+
+/* Stage 4 */
+.count { margin: 0; font-family: var(--font-body); font-size: var(--step-1); color: var(--parchment-soft); }
+.count strong { display: block; margin-top: 2px; font-family: var(--font-display); font-weight: 400; font-size: var(--step-3); color: var(--lantern); font-variant-numeric: tabular-nums; letter-spacing: .01em; }
+.when { margin: 0; font-size: .9rem; color: var(--mist); letter-spacing: .04em; }
+.status { margin: 0; min-height: 1.3em; font-size: .95rem; color: var(--parchment-soft); }
+
+.linkish { position: fixed; z-index: 4; top: calc(env(safe-area-inset-top, 0px) + 10px); right: max(10px, env(safe-area-inset-right, 0px));
+  min-height: 44px; padding: 0 14px; border: 0; background: transparent; color: var(--parchment-soft); font: 500 .95rem var(--font-body);
+  text-decoration: underline; text-underline-offset: 4px; text-decoration-color: var(--line); cursor: pointer; border-radius: 8px;
+  transition: opacity .5s ease; }
+.linkish:hover { color: var(--parchment); }
+.linkish.gone { opacity: 0; visibility: hidden; }
+.brand { position: fixed; z-index: 3; top: calc(env(safe-area-inset-top, 0px) + 20px); left: max(18px, env(safe-area-inset-left, 0px));
+  margin: 0; font-family: var(--font-display); font-style: italic; font-size: 1.05rem; color: var(--parchment-soft); letter-spacing: .02em; pointer-events: none; }
+
+@media (min-width: 900px) and (min-aspect-ratio: 6/5) {
+  .stage { align-items: center; justify-items: start; padding-left: max(6vw, env(safe-area-inset-left, 0px)); }
+  .stage .panel { text-align: left; max-width: 27rem; }
+  .stage .lede { margin: 0; }
+  .stage .actions { justify-content: flex-start; }
+  .scrim { inset: 0 auto 0 0; width: 55%; height: 100%; background: linear-gradient(to right, var(--scrim), var(--scrim-clear)); }
+}
+@media (min-width: 900px) {
+  .hello-btn { padding-block-end: 18vh; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .panel, .panel.on { transform: none; transition: opacity .5s ease, visibility 0s; }
+  .flame { animation: none; }
+}
+</style>
+
+<canvas id="scene" aria-hidden="true"></canvas>
+<div class="scrim" id="scrim"></div>
+<p class="brand">Emberisle</p>
+<button type="button" class="linkish" id="skip">Skip to map</button>
+
+<button type="button" class="hello-btn" id="begin" aria-describedby="hello-hint">
+  <span class="panel on" id="p-hello">
+    <span class="eyebrow">A lantern for you</span>
+    <h1>Hello, <em>traveler.</em></h1>
+    <span class="tap" id="hello-hint"><span class="flame" aria-hidden="true"></span>Tap to follow the lanterns</span>
+  </span>
+</button>
+
+<main class="stage">
+  <section class="panel" id="p-ask" aria-labelledby="ask-title">
+    <p class="eyebrow">Tonight &middot; 7:00 PM Eastern</p>
+    <h2 id="ask-title">Would you like to join the journey tonight at <em>7 PM</em>?</h2>
+    <p class="lede">An island, four friends and a table of hexes. Bring your best trades.</p>
+    <div class="actions">
+      <button type="button" class="btn primary" id="yes">Yes, I&rsquo;ll come</button>
+      <button type="button" class="btn" id="no">Not tonight</button>
+    </div>
+  </section>
+  <section class="panel" id="p-reveal" aria-labelledby="reveal-title">
+    <p class="eyebrow">Emberisle &middot; tonight</p>
+    <h2 id="reveal-title">See you at the table, <em>traveler</em></h2>
+    <p class="count" aria-live="off"><span id="count-label">Table opens in</span><strong id="count">&nbsp;</strong></p>
+    <p class="when" id="when">7:00 PM Eastern</p>
+    <div class="actions">
+      <a class="btn primary" id="join" href="/">Join table</a>
+      <button type="button" class="btn" id="replay">Replay</button>
+    </div>
+    <p class="status" id="join-status" role="status"></p>
+  </section>
+
+  <section class="panel" id="p-decline" aria-labelledby="decline-title">
+    <p class="eyebrow">Another night</p>
+    <h2 id="decline-title">The lanterns will stay lit for you.</h2>
+    <p class="lede">No harm done. If the evening opens up, the boat waits until 7 PM Eastern.</p>
+    <div class="actions">
+      <button type="button" class="btn primary" id="change">Change my mind</button>
+    </div>
+  </section>
+</main>
+<div class="veil" id="veil"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function () {
+  'use strict';
+  var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var $ = function (id) { return document.getElementById(id); };
+  var css = getComputedStyle(document.documentElement);
+  var tok = function (n) { return css.getPropertyValue('--' + n).trim(); };
+
+  /* ---------- state + UI ---------- */
+  var stage = 'hello';
+  var panels = { hello: 'p-hello', ask: 'p-ask', reveal: 'p-reveal', decline: 'p-decline' };
+  var panelTimer = 0;
+  function show(key, delay) {
+    clearTimeout(panelTimer);
+    Object.keys(panels).forEach(function (k) { if (k !== key) $(panels[k]).classList.remove('on'); });
+    $('begin').style.pointerEvents = key === 'hello' ? '' : 'none';
+    $('begin').tabIndex = key === 'hello' ? 0 : -1;
+    $('begin').setAttribute('aria-hidden', key === 'hello' ? 'false' : 'true');
+    panelTimer = setTimeout(function () {
+      $(panels[key]).classList.add('on');
+      var focusEl = { ask: 'yes', reveal: 'join', decline: 'change' }[key];
+      if (focusEl) setTimeout(function () { try { $(focusEl).focus({ preventScroll: true }); } catch (e) {} }, 350);
+    }, reduce ? 260 : delay || 0);
+    $('skip').classList.toggle('gone', key === 'reveal');
+  }
+
+  /* ---------- countdown ---------- */
+  // Game night is 7:00 PM in New York (EDT/EST), shown to each guest in their own time too.
+  function target() {
+    var now = new Date(), p = {};
+    new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' })
+      .formatToParts(now).forEach(function (x) { p[x.type] = x.value; });
+    var offset = Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute, +p.second) - now.getTime();
+    return new Date(Date.UTC(+p.year, +p.month - 1, +p.day, 19, 0, 0) - offset);
+  }
+  function tick() {
+    var now = new Date(), t = target();
+    var ms = t - now;
+    if (ms <= 0) { $('count-label').textContent = ''; $('count').textContent = 'The table is open'; return; }
+    var s = Math.floor(ms / 1000), h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60); s = s % 60;
+    $('count-label').textContent = 'Table opens in';
+    $('count').textContent = h + 'h ' + String(m).padStart(2, '0') + 'm ' + String(s).padStart(2, '0') + 's';
+  }
+  try {
+    var local = target().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
+    $('when').textContent = '7:00 PM Eastern · ' + local + ' your time';
+  } catch (e) {}
+  tick(); setInterval(tick, 1000);
+
+  /* ---------- three.js scene ---------- */
+  var has3d = typeof THREE !== 'undefined';
+  var S = { px: 0, py: 4.2, pz: 62, tx: 0, ty: 0.2, tz: 50, fog: 0.055, mist: 1, day: 0, shift: 0 };
+  var KEYS = Object.keys(S);
+  var shots = {
+    hello:   { px: 0, py: 4.2, pz: 62, tx: 0, ty: 0.2, tz: 50, fog: 0.055, mist: 1, day: 0, shift: 0 },
+    ask:     { px: 0.6, py: 2.6, pz: 37, tx: 0, ty: 2.4, tz: 0, fog: 0.032, mist: 0.8, day: 0.05, shift: 0 },
+    name:    { px: -0.4, py: 3.0, pz: 31, tx: 0, ty: 2.6, tz: 0, fog: 0.028, mist: 0.72, day: 0.1, shift: 0.1 },
+    decline: { px: 0, py: 3.8, pz: 54, tx: 0, ty: 1.6, tz: 0, fog: 0.05, mist: 1, day: 0, shift: 0 },
+    through: { px: 0.3, py: 6.5, pz: 13, tx: 0, ty: 0, tz: -1, fog: 0.012, mist: 0.15, day: 0.65, shift: 0.05 }
+  };
+  function restShot(pull) {
+    var w = innerWidth, h = innerHeight, aspect = w / h, vfov = 42 * Math.PI / 180;
+    var portrait = aspect < 0.9;
+    var wide = isWide();
+    var halfW = portrait ? 6.9 : 6.6, halfH = portrait ? 7.4 : 7.8;
+    var hh = Math.atan(Math.tan(vfov / 2) * aspect);
+    var D = Math.max(halfW / (Math.tan(hh) * (wide ? 0.58 : 1)), halfH / Math.tan(vfov / 2)) * (pull || 1);
+    var el = (portrait ? 56 : 50) * Math.PI / 180;
+    return { px: 0, py: D * Math.sin(el), pz: D * Math.cos(el) + 0.6, tx: 0, ty: 0, tz: 0.6, fog: 0.0025, mist: 0, day: 1, shift: portrait ? 0.15 : (wide ? 0 : 0.12) };
+  }
+
+  function isWide() { return innerWidth >= 900 && innerWidth / innerHeight >= 1.2; }
+  var tw = null, queue = [];
+  var easeInOut = function (k) { return k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2; };
+  var easeOut = function (k) { return 1 - Math.pow(1 - k, 3); };
+  function run(steps) { queue = steps.slice(); nextTween(); }
+  function nextTween() {
+    var s = queue.shift();
+    if (!s) { tw = null; return; }
+    var to = typeof s.to === 'function' ? s.to() : s.to;
+    if (!s.dur) { KEYS.forEach(function (k) { S[k] = to[k]; }); if (s.done) s.done(); return nextTween(); }
+    var from = {}; KEYS.forEach(function (k) { from[k] = S[k]; });
+    tw = { from: from, to: to, dur: s.dur, ease: s.ease || easeInOut, t0: performance.now(), done: s.done };
+  }
+  function stepTween(now) {
+    if (!tw) return;
+    var k = Math.min(1, (now - tw.t0) / tw.dur), e = tw.ease(k);
+    KEYS.forEach(function (key) { S[key] = tw.from[key] + (tw.to[key] - tw.from[key]) * e; });
+    if (k >= 1) { var d = tw.done; tw = null; if (d) d(); nextTween(); }
+  }
+
+  /* move: animated camera flight, or a veil crossfade under reduced motion */
+  function move(steps) {
+    if (!reduce) return run(steps);
+    var last = steps[steps.length - 1];
+    $('veil').classList.add('on');
+    setTimeout(function () { run([{ to: last.to, dur: 0, done: last.done }]); $('veil').classList.remove('on'); }, 460);
+  }
+
+  var renderer, scene, camera, fogSprites = [], lanterns = [], sea, seaBase, stars, moon, hemi, moonLight, warm, emberGlow, tokenMats = [], clock0 = performance.now();
+
+  function canvasTex(size, draw) {
+    var c = document.createElement('canvas'); c.width = c.height = size;
+    draw(c.getContext('2d'), size);
+    var t = new THREE.CanvasTexture(c); t.anisotropy = 4; return t;
+  }
+  function glowTex() {
+    return canvasTex(128, function (g, n) {
+      var r = g.createRadialGradient(n / 2, n / 2, 0, n / 2, n / 2, n / 2);
+      r.addColorStop(0, 'rgba(255,255,255,1)'); r.addColorStop(.25, 'rgba(255,255,255,.5)'); r.addColorStop(1, 'rgba(255,255,255,0)');
+      g.fillStyle = r; g.fillRect(0, 0, n, n);
+    });
+  }
+  function cloudTex(seed) {
+    return canvasTex(256, function (g, n) {
+      var rnd = mulberry(seed);
+      for (var i = 0; i < 22; i++) {
+        var x = n * (.25 + rnd() * .5), y = n * (.3 + rnd() * .4), rr = n * (.12 + rnd() * .2);
+        var r = g.createRadialGradient(x, y, 0, x, y, rr);
+        r.addColorStop(0, 'rgba(255,255,255,.22)'); r.addColorStop(1, 'rgba(255,255,255,0)');
+        g.fillStyle = r; g.beginPath(); g.arc(x, y, rr, 0, 7); g.fill();
+      }
+    });
+  }
+  function mulberry(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; var t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+  function tokenTex(n) {
+    function draw(g, s) {
+      g.clearRect(0, 0, s, s);
+      g.fillStyle = tok('token'); g.beginPath(); g.arc(s / 2, s / 2, s / 2 - 2, 0, 7); g.fill();
+      g.strokeStyle = 'rgba(80,60,30,.35)'; g.lineWidth = s * .03; g.beginPath(); g.arc(s / 2, s / 2, s / 2 - s * .06, 0, 7); g.stroke();
+      var hot = n === 6 || n === 8;
+      g.fillStyle = hot ? tok('token-hot') : tok('token-ink');
+      g.font = '700 ' + Math.round(s * .56) + 'px "Alegreya Sans", "Trebuchet MS", sans-serif';
+      g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(String(n), s / 2, s * .45);
+      var pips = 6 - Math.abs(7 - n), gap = s * .07;
+      for (var i = 0; i < pips; i++) { g.beginPath(); g.arc(s / 2 + (i - (pips - 1) / 2) * gap, s * .76, s * .022, 0, 7); g.fill(); }
+    }
+    var c = document.createElement('canvas'); c.width = c.height = 128; draw(c.getContext('2d'), 128);
+    var t = new THREE.CanvasTexture(c); t.anisotropy = 4;
+    tokenMats.push(function () { draw(c.getContext('2d'), 128); t.needsUpdate = true; });
+    return t;
+  }
+
+  function build() {
+    var canvas = $('scene');
+    renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, powerPreference: 'high-performance' });
+    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+    renderer.setSize(innerWidth, innerHeight, false);
+    scene = new THREE.Scene();
+    var fogCol = new THREE.Color(tok('fog'));
+    scene.background = fogCol.clone();
+    scene.fog = new THREE.FogExp2(fogCol.clone(), S.fog);
+    camera = new THREE.PerspectiveCamera(42, innerWidth / innerHeight, 0.1, 600);
+
+    hemi = new THREE.HemisphereLight(0x5a7c9c, 0x0a1018, 0.45); scene.add(hemi);
+    moonLight = new THREE.DirectionalLight(0xbfd0ff, 0.5); moonLight.position.set(-20, 30, 10); scene.add(moonLight);
+    warm = new THREE.PointLight(0xffa954, 1.4, 16, 2); scene.add(warm);
+
+    // sea
+    var g = new THREE.PlaneGeometry(320, 320, 110, 110);
+    seaBase = g.attributes.position.array.slice();
+    sea = new THREE.Mesh(g, new THREE.MeshPhongMaterial({ color: tok('sea'), specular: 0x3a5a70, shininess: 40, flatShading: true }));
+    sea.rotation.x = -Math.PI / 2; sea.position.set(0, -0.15, 20); scene.add(sea);
+
+    // shallows glow
+    var shallowTex = canvasTex(256, function (gg, n) {
+      var r = gg.createRadialGradient(n / 2, n / 2, n * .2, n / 2, n / 2, n / 2);
+      r.addColorStop(0, 'rgba(101,216,203,.95)'); r.addColorStop(.55, 'rgba(101,216,203,.55)'); r.addColorStop(1, 'rgba(21,142,154,0)');
+      gg.fillStyle = r; gg.fillRect(0, 0, n, n);
+    });
+    var shallow = new THREE.Mesh(new THREE.PlaneGeometry(19, 19), new THREE.MeshLambertMaterial({ map: shallowTex, transparent: true, depthWrite: false }));
+    shallow.rotation.x = -Math.PI / 2; shallow.position.y = 0.02; scene.add(shallow);
+
+    buildIsland();
+    buildLanterns();
+
+    // stars + moon
+    var sp = [], rnd = mulberry(7);
+    for (var i = 0; i < 700; i++) { var th = rnd() * Math.PI * 2, ph = rnd() * 0.45 * Math.PI; sp.push(Math.cos(th) * Math.cos(ph) * 250, Math.sin(ph) * 250 + 4, Math.sin(th) * Math.cos(ph) * 250); }
+    var sg = new THREE.BufferGeometry(); sg.setAttribute('position', new THREE.Float32BufferAttribute(sp, 3));
+    stars = new THREE.Points(sg, new THREE.PointsMaterial({ color: 0xf4e8cc, size: 1.6, sizeAttenuation: false, fog: false, transparent: true, opacity: .5, depthWrite: false }));
+    scene.add(stars);
+    var gt = glowTex();
+    moon = new THREE.Sprite(new THREE.SpriteMaterial({ map: gt, color: 0xdfe8ff, fog: false, transparent: true, opacity: .5, depthWrite: false }));
+    moon.position.set(-60, 70, -200); moon.scale.set(40, 40, 1); scene.add(moon);
+
+    // fog layers
+    for (var j = 0; j < 34; j++) {
+      var m = new THREE.SpriteMaterial({ map: cloudTex(j + 3), color: tok('mist'), transparent: true, opacity: 0, depthWrite: false });
+      var spr = new THREE.Sprite(m);
+      var sc = 16 + rnd() * 22; spr.scale.set(sc * 1.6, sc, 1);
+      spr.position.set(-30 + rnd() * 60, 0.8 + rnd() * 5, -6 + rnd() * 66);
+      spr.userData = { base: .1 + rnd() * .16, speed: (.25 + rnd() * .5) * (rnd() < .5 ? -1 : 1), phase: rnd() * 6 };
+      fogSprites.push(spr); scene.add(spr);
+    }
+    onResize();
+    addEventListener('resize', onResize);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { tokenMats.forEach(function (f) { f(); }); });
+    requestAnimationFrame(frame);
+  }
+
+  function hexMat(top, side) {
+    return [new THREE.MeshLambertMaterial({ color: side }), new THREE.MeshLambertMaterial({ color: top }), new THREE.MeshLambertMaterial({ color: side })];
+  }
+  function buildIsland() {
+    var island = new THREE.Group(); scene.add(island);
+    var R = 1, sq = Math.sqrt(3);
+    // sand rim: big flat-sided hex under the board
+    var rim = new THREE.Mesh(new THREE.CylinderGeometry(5.35, 5.6, 0.42, 6), hexMat(tok('sand'), tok('sand-side')));
+    rim.rotation.y = Math.PI / 6; rim.position.y = 0.06; island.add(rim);
+    var lip = new THREE.Mesh(new THREE.CylinderGeometry(6.1, 6.6, 0.16, 6), hexMat(tok('sand'), tok('sand-side')));
+    lip.rotation.y = Math.PI / 6; lip.position.y = -0.04; island.add(lip);
+
+    var layout = [
+      ['grain', 'ore', 'grain'],
+      ['ore', 'wool', 'wool', 'grain'],
+      ['timber', 'ore', 'grain', 'wool', 'clay'],
+      ['timber', 'clay', 'wool', 'waste'],
+      ['timber', 'clay', 'timber']
+    ];
+    var nums = [[6, 3, 4], [10, 5, 12, 11], [8, 5, 3, 11, 8], [9, 9, 2, 0], [10, 6, 4]];
+    var cols = {}; ['timber', 'clay', 'wool', 'grain', 'ore', 'waste'].forEach(function (k) { cols[k] = hexMat(tok(k), tok(k + '-side')); });
+    var hexGeo = new THREE.CylinderGeometry(R * 0.955, R * 0.97, 0.32, 6);
+    var discGeo = new THREE.CylinderGeometry(0.37, 0.37, 0.05, 28);
+    var discMat = new THREE.MeshLambertMaterial({ color: tok('token') });
+    var faceGeo = new THREE.CircleGeometry(0.37, 28);
+    var rnd = mulberry(11);
+    layout.forEach(function (row, ri) {
+      var r = ri - 2;
+      row.forEach(function (kind, ci) {
+        var qStart = Math.max(-2, -2 - r), q = qStart + ci;
+        var x = sq * R * (q + r / 2), z = 1.5 * R * r;
+        var hex = new THREE.Mesh(hexGeo, cols[kind]); hex.position.set(x, 0.43, z); island.add(hex);
+        var top = 0.59;
+        decorate(island, kind, x, top, z, rnd);
+        var n = nums[ri][ci];
+        if (n) {
+          var d = new THREE.Mesh(discGeo, discMat); d.position.set(x, top + 0.03, z + 0.12); island.add(d);
+          var f = new THREE.Mesh(faceGeo, new THREE.MeshLambertMaterial({ map: tokenTex(n), transparent: true }));
+          f.rotation.x = -Math.PI / 2; f.position.set(x, top + 0.058, z + 0.12); island.add(f);
+        }
+      });
+    });
+    // Ember peak behind the board: gives the island a silhouette in the fog
+    var cg = new THREE.ConeGeometry(4.6, 6.4, 9, 3);
+    var p = cg.attributes.position, rr = mulberry(5);
+    for (var i = 0; i < p.count; i++) { if (p.getY(i) < 3.1 && p.getY(i) > -3.1) { p.setX(i, p.getX(i) * (0.9 + rr() * .2)); p.setZ(i, p.getZ(i) * (0.9 + rr() * .2)); } }
+    cg.computeVertexNormals();
+    var peak = new THREE.Mesh(cg, new THREE.MeshPhongMaterial({ color: 0x3b4048, flatShading: true, shininess: 4, specular: 0x111111 }));
+    peak.position.set(-2, 3.1, -21); island.add(peak);
+    var foot = new THREE.Mesh(new THREE.CylinderGeometry(5.2, 5.8, 0.3, 9), new THREE.MeshLambertMaterial({ color: tok('sand') }));
+    foot.position.set(-2, 0, -21); island.add(foot);
+    emberGlow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex(), color: tok('ember'), transparent: true, opacity: .9, depthWrite: false, blending: THREE.AdditiveBlending }));
+    emberGlow.position.set(-2, 6.4, -21); emberGlow.scale.set(5, 5, 1); island.add(emberGlow);
+    var ember = new THREE.PointLight(0xff6a35, 1.0, 6, 2); ember.position.set(-2, 7, -20); island.add(ember);
+  }
+  function decorate(group, kind, x, y, z, rnd) {
+    var spots = [[-0.45, -0.3], [0.42, -0.35], [-0.05, -0.62], [0.5, 0.25], [-0.52, 0.28]];
+    if (kind === 'timber') {
+      var tm = new THREE.MeshPhongMaterial({ color: 0x1f4a36, flatShading: true, shininess: 4, specular: 0x111111 });
+      spots.slice(0, 4).forEach(function (s) { var c = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.5, 6), tm); c.position.set(x + s[0], y + 0.25, z + s[1]); group.add(c); });
+    } else if (kind === 'ore') {
+      var om = new THREE.MeshPhongMaterial({ color: 0x8a97a8, flatShading: true, shininess: 4, specular: 0x111111 });
+      spots.slice(0, 3).forEach(function (s, i) { var c = new THREE.Mesh(new THREE.ConeGeometry(0.22 + i * .04, 0.42 + i * .1, 5), om); c.position.set(x + s[0], y + 0.2, z + s[1]); group.add(c); });
+    } else if (kind === 'wool') {
+      var wm = new THREE.MeshLambertMaterial({ color: 0xf5f1e6 });
+      spots.slice(0, 3).forEach(function (s) { var c = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 6), wm); c.scale.set(1.3, 0.9, 1); c.position.set(x + s[0], y + 0.08, z + s[1]); group.add(c); });
+    } else if (kind === 'clay') {
+      var bm = new THREE.MeshLambertMaterial({ color: 0x8e3a28 });
+      [[-0.45, -0.3], [0.4, -0.38]].forEach(function (s) { var c = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.12, 0.16), bm); c.position.set(x + s[0], y + 0.06, z + s[1]); c.rotation.y = rnd(); group.add(c); });
+    } else if (kind === 'grain') {
+      var gm = new THREE.MeshLambertMaterial({ color: 0xb8952f });
+      spots.slice(0, 3).forEach(function (s) { var c = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.05, 0.24, 5), gm); c.position.set(x + s[0], y + 0.12, z + s[1]); group.add(c); });
+    } else if (kind === 'waste') {
+      var dm = new THREE.MeshPhongMaterial({ color: 0xc7ad78, flatShading: true, shininess: 4, specular: 0x111111 });
+      var c = new THREE.Mesh(new THREE.ConeGeometry(0.42, 0.22, 7), dm); c.position.set(x - 0.1, y + 0.1, z - 0.15); group.add(c);
+    }
+  }
+  function buildLanterns() {
+    var gt = glowTex();
+    var body = new THREE.MeshBasicMaterial({ color: 0xffc77a });
+    var wood = new THREE.MeshLambertMaterial({ color: 0x3a2618 });
+    for (var i = 0; i < 8; i++) {
+      var z = 53 - i * 5, x = Math.sin(i * 0.9) * 2.6 + (i === 0 ? 1.2 : 0);
+      var g = new THREE.Group();
+      var raft = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.1, 0.7), wood); g.add(raft);
+      var b = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.32, 0.22), body); b.position.y = 0.24; g.add(b);
+      var cap = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.14, 4), wood); cap.position.y = 0.47; cap.rotation.y = Math.PI / 4; g.add(cap);
+      var glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: gt, color: 0xffa954, fog: false, transparent: true, opacity: .85, depthWrite: false, blending: THREE.AdditiveBlending }));
+      glow.position.y = 0.26; glow.scale.set(2.4, 2.4, 1); g.add(glow);
+      var ref = new THREE.Sprite(new THREE.SpriteMaterial({ map: gt, color: 0xff9a3c, fog: false, transparent: true, opacity: .35, depthWrite: false, blending: THREE.AdditiveBlending }));
+      ref.position.y = -0.05; ref.scale.set(1.2, 3.2, 1); g.add(ref);
+      g.position.set(x, 0, z); g.userData = { x: x, z: z, ph: i * 1.7, glow: glow, ref: ref };
+      lanterns.push(g); scene.add(g);
+    }
+  }
+
+  function wave(x, y, t) {
+    return Math.sin(x * 0.18 + t * 0.9) * 0.22 + Math.sin(y * 0.23 - t * 0.7) * 0.18 + Math.sin((x + y) * 0.5 + t * 1.6) * 0.06;
+  }
+  var tmp = new THREE.Color(), cA, cB;
+  function frame(now) {
+    requestAnimationFrame(frame);
+    stepTween(now);
+    var t = (now - clock0) / 1000, slow = reduce ? 0.15 : 1;
+    // sea
+    var a = sea.geometry.attributes.position.array;
+    for (var i = 0; i < a.length; i += 3) {
+      var x = seaBase[i], y = seaBase[i + 1];
+      var wx = x, wz = -y + 20, dist = Math.sqrt(wx * wx + wz * wz);
+      var damp = Math.min(1, Math.max(0, (dist - 8) / 9));
+      a[i + 2] = wave(x, y, t * slow) * damp;
+    }
+    sea.geometry.attributes.position.needsUpdate = true;
+    // lanterns bob
+    lanterns.forEach(function (g) { var u = g.userData; g.visible = S.day < 0.85; g.position.y = Math.sin(t * 1.3 * slow + u.ph) * 0.12; g.rotation.z = Math.sin(t * slow + u.ph) * 0.06; g.position.x = u.x + Math.sin(t * .2 * slow + u.ph) * .3;
+      var fd = camera.position.distanceTo(g.position) * S.fog * 0.55, vis = Math.exp(-fd * fd);
+      u.glow.material.opacity = .9 * vis; u.ref.material.opacity = .38 * vis; });
+    warm.position.set(lanterns[0].position.x, 1.2, lanterns[0].position.z);
+    warm.intensity = 1.4 * (1 - S.day) + 0.2 * Math.sin(t * 7) * (1 - S.day);
+    // fog layers
+    fogSprites.forEach(function (s) {
+      var u = s.userData;
+      s.position.x += u.speed * 0.016 * slow;
+      if (s.position.x > 34) s.position.x = -34; if (s.position.x < -34) s.position.x = 34;
+      var dz = s.position.z - camera.position.z;
+      var near = Math.min(1, Math.max(0, (-dz - 1.5) / 6)); // fade sprites the camera is passing through
+      s.material.opacity = u.base * S.mist * near * (0.85 + 0.15 * Math.sin(t * .3 + u.phase));
+    });
+    // light & fog colour
+    cA = cA || new THREE.Color(tok('fog')); cB = cB || new THREE.Color(0x163845);
+    tmp.copy(cA).lerp(cB, S.day);
+    scene.fog.color.copy(tmp); scene.background.copy(tmp);
+    scene.fog.density = S.fog;
+    hemi.intensity = 0.45 + S.day * 0.12; hemi.color.setHex(0x5a7c9c).lerp(new THREE.Color(0xc9d3dc), S.day);
+    hemi.groundColor.setHex(0x0a1018).lerp(new THREE.Color(0x26302e), S.day);
+    moonLight.intensity = 0.5 + S.day * 0.2;
+    stars.material.opacity = 0.4 + 0.3 * (1 - S.mist);
+    emberGlow.material.opacity = 0.75 + 0.2 * Math.sin(t * 2.1);
+    // camera with a breathing sway
+    var sway = reduce ? 0 : 1;
+    camera.position.set(S.px + Math.sin(t * .35) * .25 * sway, S.py + Math.sin(t * .5) * .12 * sway, S.pz);
+    camera.lookAt(S.tx, S.ty, S.tz);
+    var w = innerWidth, h = innerHeight;
+    camera.setViewOffset(w, h, isWide() ? -w * 0.2 * S.day : 0, h * S.shift, w, h);
+    renderer.render(scene, camera);
+  }
+  function onResize() {
+    renderer.setSize(innerWidth, innerHeight, false);
+    camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
+    if (stage === 'reveal' && !tw) { var r = restShot(); KEYS.forEach(function (k) { S[k] = r[k]; }); }
+  }
+
+  if (has3d) { try { build(); } catch (e) { has3d = false; console.warn('3D scene unavailable', e); } }
+
+  /* ---------- flow: named beats, one easing and one duration per camera move ----------
+     Hook      rest on the sea, "Hello, traveler."     (holds until tap)
+     Question  zoom in + tilt up to the island   2800ms easeInOut, text at 1500ms
+     Name      small lean closer                 1600ms easeInOut, form at 900ms
+     Reveal    push through the fog              2400ms easeInOut
+     Settle    land on the diorama               1200ms easeOut, end card at 2600ms
+     Decline   drift back out into the fog       2200ms easeInOut, text at 1100ms */
+  var BEATS = {
+    question: { dur: 2800, ease: easeInOut, text: 1500 },
+    name:     { dur: 1600, ease: easeInOut, text: 900 },
+    reveal:   { dur: 2400, ease: easeInOut },
+    settle:   { dur: 1200, ease: easeOut, text: 2600 },
+    decline:  { dur: 2200, ease: easeInOut, text: 1100 },
+    replay:   { dur: 2600, ease: easeInOut, text: 1700 }
+  };
+  function goAsk() { stage = 'ask'; show('ask', BEATS.question.text); move([{ to: shots.ask, dur: BEATS.question.dur, ease: BEATS.question.ease }]); }
+  function goDecline() { stage = 'decline'; show('decline', BEATS.decline.text); move([{ to: shots.decline, dur: BEATS.decline.dur, ease: BEATS.decline.ease }]); }
+  function goReveal() {
+    stage = 'reveal';
+    $('join-status').textContent = '';
+    $('scrim').style.opacity = '0.85';
+    show('reveal', BEATS.settle.text);
+    move([
+      { to: shots.through, dur: BEATS.reveal.dur, ease: BEATS.reveal.ease },
+      { to: function () { return restShot(1); }, dur: BEATS.settle.dur, ease: BEATS.settle.ease }
+    ]);
+  }
+  function replay() {
+    stage = 'hello'; $('scrim').style.opacity = '';
+    if (reduce) { show('hello'); move([{ to: shots.hello }]); }
+    else { show('hello', BEATS.replay.text); run([{ to: shots.hello, dur: BEATS.replay.dur, ease: BEATS.replay.ease }]); }
+    setTimeout(function () { try { $('begin').focus({ preventScroll: true }); } catch (e) {} }, 1800);
+  }
+
+  $('begin').addEventListener('click', function () { if (stage === 'hello') goAsk(); });
+  $('yes').addEventListener('click', goReveal);
+  $('no').addEventListener('click', goDecline);
+  $('change').addEventListener('click', goAsk);
+  $('skip').addEventListener('click', goReveal);
+  $('replay').addEventListener('click', replay);
+})();
+</script>
+
+</html>
