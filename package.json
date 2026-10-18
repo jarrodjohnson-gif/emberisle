@@ -19,6 +19,7 @@
     "wayfarer-prove": "node scripts/wayfarer-prove.mjs",
     "trade-prove": "node scripts/trade-prove.mjs",
     "sounds-prove": "node scripts/sounds-prove.mjs",
+    "music-prove": "node scripts/music-prove.mjs",
     "practice-trade-prove": "node --import ./server/register.mjs scripts/practice-trade-prove.mjs",
     "pieces-prove": "node --import ./server/register.mjs scripts/pieces-prove.mjs",
     "pieces-land-prove": "node scripts/pieces-land-prove.mjs",
