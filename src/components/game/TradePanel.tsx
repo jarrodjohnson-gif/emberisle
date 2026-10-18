@@ -8,21 +8,35 @@ import { useGame } from "@/lib/game/store";
 import { RESOURCES, RESOURCE_LABEL, type Resource } from "@/lib/game/types";
 import { play } from "@/lib/sound";
 import { bagText } from "@/lib/game/trade";
+import { ClaySymbol, GrainSymbol, OreSymbol, TimberSymbol, WoolSymbol } from "./ResourceSymbols";
+import "./trade-panel.css";
+
+const ICON = { timber: TimberSymbol, clay: ClaySymbol, wool: WoolSymbol, grain: GrainSymbol, ore: OreSymbol };
 
 const ZERO: Record<Resource, number> = { timber: 0, clay: 0, wool: 0, grain: 0, ore: 0 };
 const kinds = (bag: Record<Resource, number>) => RESOURCES.filter((r) => bag[r] > 0);
 
-// 44 px targets, so the steppers work under a thumb (docs/design/mobile-hud.md).
-function Stepper({ label, value, canMore, onChange }: { label: string; value: number; canMore: boolean; onChange: (n: number) => void }) {
+// Each resource keeps its name, owned count, and 44 px controls together.
+function Stepper({ resource, value, owned, side, canMore, onChange }: {
+  resource: Resource; value: number; owned: number; side: "give" | "want";
+  canMore: boolean; onChange: (n: number) => void;
+}) {
+  const Icon = ICON[resource];
   return (
-    <div className="flex items-center gap-1">
-      <Button variant="secondary" className="size-11 p-0" aria-label={`Fewer ${label}`} disabled={value === 0} onClick={() => onChange(value - 1)}>
-        <Minus className="size-4" />
-      </Button>
-      <span className="w-6 text-center tabular-nums text-sm font-medium">{value}</span>
-      <Button variant="secondary" className="size-11 p-0" aria-label={`More ${label}`} disabled={!canMore} onClick={() => onChange(value + 1)}>
-        <Plus className="size-4" />
-      </Button>
+    <div className="trade-resource" data-selected={value > 0 || undefined} data-testid={`trade-${side}-${resource}`}>
+      <Icon aria-hidden="true" className="size-5" />
+      <span className="trade-resource-name">{RESOURCE_LABEL[resource]}</span>
+      <span className="trade-owned" data-testid="trade-owned">Have {owned}</span>
+      <div className="trade-stepper">
+        <Button variant="ghost" size="icon" aria-label={`Fewer ${resource} to ${side}`} disabled={value === 0} onClick={() => onChange(value - 1)}>
+          <Minus className="size-4" />
+        </Button>
+        <output aria-label={`${resource} to ${side}`} className="trade-quantity">{value}</output>
+        <Button variant="ghost" size="icon" aria-label={`More ${resource} to ${side}`} disabled={!canMore} onClick={() => onChange(value + 1)}>
+          <Plus className="size-4" />
+        </Button>
+      </div>
+      {value > 0 ? <span key={value} aria-hidden="true" className={`trade-selection-motion trade-selection-${side}`} data-testid="trade-selection-motion">{value}</span> : null}
     </div>
   );
 }
@@ -36,7 +50,7 @@ export function TradePanel() {
   const dispatch = useGame((s) => s.dispatch);
   const askTable = useGame((s) => s.askTable);
   const opener = useGame((s) => s.tradeOpener);
-  const [give, setGive] = useState(ZERO);
+  const [draftGive, setGive] = useState(ZERO);
   const [want, setWant] = useState(ZERO);
   const panel = useRef<HTMLElement>(null);
 
@@ -44,6 +58,18 @@ export function TradePanel() {
   const me = state?.players.find((p) => p.id === actor);
   const mine = Boolean(state && me && state.phase === "main" && state.current === actor);
   const shown = open && mine;
+
+  // Clamp both the rendered offer and its draft when a live hand loses goods.
+  const give = { ...draftGive };
+  for (const r of RESOURCES) give[r] = Math.min(give[r], me?.resources[r] ?? 0);
+  useEffect(() => {
+    if (!me) return;
+    setGive((old) => {
+      const next = { ...old };
+      for (const r of RESOURCES) next[r] = Math.min(next[r], me.resources[r]);
+      return RESOURCES.some((r) => next[r] !== old[r]) ? next : old;
+    });
+  }, [me?.resources]);
 
   // #378: a modal dialog. Focus lands on Close (the first focusable), Tab cycles inside, and focus goes back to the opener on close.
   useFocusTrap(panel, shown, undefined, opener);
@@ -72,7 +98,7 @@ export function TradePanel() {
 
   const giving = kinds(give);
   const wanting = kinds(want);
-  const asking = giving.length + wanting.length > 0;
+  const asking = giving.length > 0 && wanting.length > 0;
 
   // The bank and the docks take one kind for one other kind, at the best rate a building of yours earns.
   const g = giving.length === 1 ? giving[0]! : null;
@@ -80,16 +106,16 @@ export function TradePanel() {
   const rate = g ? harborRate(state, me.id, g) : null;
   const bankLabel = rate === null ? "Bank" : rate === 4 ? "Bank 4:1" : `Dock ${rate}:1`;
   const bankWhy = !g || !w
-    ? "Pick one kind to give and one to want."
+    ? "Choose one kind on each side for a bank or dock exchange."
     : me.resources[g] < rate!
       ? `Need ${rate} ${g} for the ${rate === 4 ? "bank" : "dock"}.`
       : state.bank[w] <= 0
         ? `The bank has no ${w}.`
         : null;
-  const bankHint = bankWhy ?? `${rate} ${g} for 1 ${w}`;
+  const bankHint = bankWhy ?? `You give ${rate} ${g}. You get 1 ${w}.`;
 
   const bank = () => {
-    if (!g || !w) return;
+    if (!g || !w || bankWhy) return;
     if (dispatch({ type: "bankTrade", give: g, want: w }).ok) setTradeOpen(false);
   };
 
@@ -101,53 +127,53 @@ export function TradePanel() {
         aria-modal="true"
         aria-labelledby="trade-title"
         data-testid="trade-panel"
-        className="max-h-[85dvh] w-full max-w-md overflow-y-auto rounded-[28px] border border-white/50 bg-surface p-4 sm:p-5"
+        className="trade-composer"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-start justify-between gap-3">
-          <h2 id="trade-title" className="font-display text-2xl">
-            Trade
-          </h2>
+        <header className="trade-composer-header">
+          <h2 id="trade-title" className="font-display text-2xl">Trade</h2>
           <Button variant="ghost" size="icon" onClick={() => setTradeOpen(false)} aria-label="Close" back>
             <X className="size-4" />
           </Button>
+        </header>
+
+        <div className="trade-composer-scroll">
+          <p className="trade-instructions">Choose goods below. You can mix goods when trading with players.</p>
+          {(["give", "want"] as const).map((side) => {
+            const bag = side === "give" ? give : want;
+            return (
+              <section key={side} className="trade-half" data-testid={`trade-${side}-row`} aria-labelledby={`trade-${side}-title`}>
+                <h3 id={`trade-${side}-title`}>{side === "give" ? "You give" : "You get"}</h3>
+                <div className="trade-resource-grid">
+                  {RESOURCES.map((r) => (
+                    <Stepper key={r} resource={r} side={side} owned={me.resources[r]} value={bag[r]}
+                      canMore={side === "give" ? give[r] < me.resources[r] && want[r] === 0 : want[r] < 19 && give[r] === 0}
+                      onChange={(n) => side === "give" ? setGive({ ...give, [r]: n }) : setWant({ ...want, [r]: n })}
+                    />
+                  ))}
+                </div>
+              </section>
+            );
+          })}
         </div>
 
-        <div className="mt-3 grid grid-cols-[1fr_auto_auto] items-center gap-x-2 gap-y-1">
-          <span />
-          <span className="text-center text-xs uppercase tracking-wide text-zinc-600">I give</span>
-          <span className="text-center text-xs uppercase tracking-wide text-zinc-600">I want</span>
-          {RESOURCES.map((r) => (
-            <div key={r} className="contents">
-              <span className="text-sm">
-                {RESOURCE_LABEL[r]}
-                <span className="ml-1 tabular-nums text-xs text-zinc-600">×{me.resources[r]}</span>
-              </span>
-              <Stepper
-                label={`${r} to give`}
-                value={give[r]}
-                canMore={give[r] < me.resources[r] && want[r] === 0}
-                onChange={(n) => setGive({ ...give, [r]: n })}
-              />
-              <Stepper label={`${r} to want`} value={want[r]} canMore={want[r] < 19 && give[r] === 0} onChange={(n) => setWant({ ...want, [r]: n })} />
-            </div>
-          ))}
-        </div>
-
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          {/* Practice asks its bots (#363). Hotseat deals no bots, and its people share the one screen. */}
+        <footer className="trade-composer-footer">
           {mode !== "hotseat" ? (
-            <Button className="h-11 flex-1" disabled={!asking} onClick={() => askTable(give, want)}>
-              Ask the table
-            </Button>
+            <div className="trade-route">
+              <h3>With players</h3>
+              <p className="trade-exact-preview" data-testid="trade-player-preview" aria-live="polite">
+                <span>You give: {bagText(give) || "choose goods"}</span>
+                <span>You get: {bagText(want) || "choose goods"}</span>
+              </p>
+              <Button className="h-11 w-full" disabled={!asking} onClick={() => askTable(give, want)}>Ask the table</Button>
+            </div>
           ) : null}
-          <Button variant="secondary" className="h-11 flex-1" disabled={bankWhy !== null} onClick={bank}>
-            {bankLabel}
-          </Button>
-        </div>
-        <p className="mt-2 text-xs text-zinc-600" data-testid="trade-hint">
-          {bankHint}
-        </p>
+          <div className="trade-route">
+            <h3>Bank &amp; docks · one exchange</h3>
+            <p className="trade-exact-preview" data-testid="trade-hint">{bankHint}</p>
+            <Button variant="secondary" className="h-11 w-full" disabled={bankWhy !== null} onClick={bank}>{bankLabel}</Button>
+          </div>
+        </footer>
       </section>
     </div>
   );
