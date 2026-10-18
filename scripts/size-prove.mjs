@@ -60,7 +60,8 @@ const BUDGETS = [
   // 2026-10-16 (#643): the "My numbers" strip rides in moments, off the first load (the index measured 120.64 kB with it there,
   // over its 120.15 kB budget); 3.00 kB measured against 2.42 kB on main, +300 B headroom.
   // 2026-10-17 (#540): first-game coaching moves off the critical path into moments; 4244 B measured versus 3017 B on current main; +256 B headroom.
-  { name: "moments", gzipBytes: 4500 },
+  // 2026-10-18 (#546): opening pip hints ride with the coach in moments (off the index); 4.95 kB measured, +150 B headroom.
+  { name: "moments", gzipBytes: 5100 },
   // 2026-10-14 (#611): the lobby and win screen share their target selector; rolldown coalesces the shared Minus icon here too.
   // 0.65 kB at introduction, with a 0.75 kB ceiling; replaces the former minus-only chunk.
   { name: "VictoryTargetSelect", gzipBytes: 750 },
