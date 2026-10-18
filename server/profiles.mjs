@@ -62,6 +62,9 @@ export function ownerView(p) {
   };
 }
 
+// Logins are player-chosen keys ("constructor" is a valid one), so every map lookup reads own properties only.
+const has = (o, k) => Object.hasOwn(o, k);
+const own = (o, k) => (Object.hasOwn(o, k) ? o[k] : undefined);
 const plain = (v) => v !== null && typeof v === "object" && !Array.isArray(v) && Object.getPrototypeOf(v) === Object.prototype;
 const isTime = (v) => Number.isSafeInteger(v) && v >= 0;
 const isStr = (v, max) => typeof v === "string" && Array.from(v).length <= max;
@@ -78,20 +81,20 @@ export function validDoc(doc, colors) {
   for (const k of ["profiles", "logins", "reservedLogins", "tombstones", "devices", "unknownLogins"]) if (!plain(doc[k])) return false;
   for (const [id, p] of Object.entries(doc.profiles)) {
     if (!UUID.test(id) || !plain(p) || p.id !== id) return false;
-    if (!isStr(p.displayName, 16) || !p.displayName || doc.logins[p.login] !== id || !LOGIN.test(p.login)) return false;
+    if (!isStr(p.displayName, 16) || !p.displayName || own(doc.logins, p.login) !== id || !LOGIN.test(p.login)) return false;
     if (!colors.includes(p.color) || !colors.includes(p.backupColor) || p.color === p.backupColor) return false;
     if (!isStr(p.catchphrase, 80) || !(p.winSongId === null || isStr(p.winSongId, 64)) || !(p.mediaKey === null || isStr(p.mediaKey, 64))) return false;
     if (!isTime(p.createdAt) || !isTime(p.updatedAt) || !validGuard(p.guard)) return false;
     const v = p.pin;
     if (!plain(v) || v.alg !== "scrypt" || !Number.isSafeInteger(v.N) || !Number.isSafeInteger(v.r) || !Number.isSafeInteger(v.p) || !isStr(v.salt, 64) || !isStr(v.hash, 64)) return false;
   }
-  for (const [login, id] of Object.entries(doc.logins)) if (!LOGIN.test(login) || doc.profiles[id]?.login !== login) return false;
-  for (const [login, id] of Object.entries(doc.reservedLogins)) if (!LOGIN.test(login) || !UUID.test(id) || login in doc.logins) return false;
-  for (const [id, at] of Object.entries(doc.tombstones)) if (!UUID.test(id) || !isTime(at) || id in doc.profiles) return false;
+  for (const [login, id] of Object.entries(doc.logins)) if (!LOGIN.test(login) || own(doc.profiles, id)?.login !== login) return false;
+  for (const [login, id] of Object.entries(doc.reservedLogins)) if (!LOGIN.test(login) || !UUID.test(id) || has(doc.logins, login)) return false;
+  for (const [id, at] of Object.entries(doc.tombstones)) if (!UUID.test(id) || !isTime(at) || has(doc.profiles, id)) return false;
   for (const [d, dev] of Object.entries(doc.devices)) {
-    if (!/^[0-9a-f]{64}$/.test(d) || !plain(dev) || !(dev.profileId in doc.profiles) || !isTime(dev.createdAt) || !isTime(dev.expiresAt)) return false;
+    if (!/^[0-9a-f]{64}$/.test(d) || !plain(dev) || !has(doc.profiles, dev.profileId) || !isTime(dev.createdAt) || !isTime(dev.expiresAt)) return false;
   }
-  for (const [login, g] of Object.entries(doc.unknownLogins)) if (!LOGIN.test(login) || login in doc.logins || !validGuard(g)) return false;
+  for (const [login, g] of Object.entries(doc.unknownLogins)) if (!LOGIN.test(login) || has(doc.logins, login) || !validGuard(g)) return false;
   return true;
 }
 
@@ -292,13 +295,13 @@ export function openProfiles(dir, { colors, clock = Date.now } = {}) {
     if (backupColor !== null && (!colors.includes(backupColor) || backupColor === color)) throw new ProfileError("invalid");
     backupColor ??= colors.find((c) => c !== color);
     // The login is held from here, so a second creation racing this one is refused now, not after both have hashed.
-    if (creating.has(login) || login in doc.logins || login in doc.reservedLogins) throw new ProfileError("loginTaken");
+    if (creating.has(login) || has(doc.logins, login) || has(doc.reservedLogins, login)) throw new ProfileError("loginTaken");
     if (!claim()) throw new ProfileError("busy");
     creating.add(login);
     try {
       const pin = await verifier(f.pin);
       return await mutate((d, now) => {
-        if (login in d.logins || login in d.reservedLogins) throw new ProfileError("loginTaken");
+        if (has(d.logins, login) || has(d.reservedLogins, login)) throw new ProfileError("loginTaken");
         const id = randomUUID();
         delete d.unknownLogins[login];
         d.profiles[id] = { id, displayName, login, color, backupColor, catchphrase, winSongId: null, mediaKey: null, createdAt: now, updatedAt: now, pin, guard: newGuard() };
@@ -320,13 +323,14 @@ export function openProfiles(dir, { colors, clock = Date.now } = {}) {
     try {
       held = await mutate((d, now) => {
         prune(d, now);
-        const id = d.logins[name] ?? null;
+        const id = own(d.logins, name) ?? null;
         let g;
         if (id) g = d.profiles[id].guard;
         else {
           const keys = Object.keys(d.unknownLogins);
-          if (!(name in d.unknownLogins) && keys.length >= UNKNOWN_MAX) delete d.unknownLogins[keys[0]];
-          g = d.unknownLogins[name] ??= newGuard();
+          if (!has(d.unknownLogins, name) && keys.length >= UNKNOWN_MAX) delete d.unknownLogins[keys[0]];
+          if (!has(d.unknownLogins, name)) d.unknownLogins[name] = newGuard();
+          g = d.unknownLogins[name];
         }
         if (refused(g, now, Boolean(id))) return null;
         const rid = randomUUID();
@@ -355,7 +359,7 @@ export function openProfiles(dir, { colors, clock = Date.now } = {}) {
     // The failure is committed before it is answered, so a refusal is never lost to a mutation that threw.
     const out = await mutate((d, now) => {
       const p = held.id ? d.profiles[held.id] : null;
-      const g = p ? p.guard : d.unknownLogins[name];
+      const g = p ? p.guard : own(d.unknownLogins, name);
       if (g) {
         const at = g.pending[held.rid];
         delete g.pending[held.rid];
@@ -373,8 +377,8 @@ export function openProfiles(dir, { colors, clock = Date.now } = {}) {
   // The device credential's profile, or null. Never touches PIN budgets.
   function validate(token) {
     if (!doc || typeof token !== "string" || !TOKEN.test(token)) return null;
-    const dev = doc.devices[digest(token)];
-    if (!dev || dev.expiresAt <= clock() || !(dev.profileId in doc.profiles)) return null;
+    const dev = own(doc.devices, digest(token));
+    if (!dev || dev.expiresAt <= clock() || !has(doc.profiles, dev.profileId)) return null;
     return dev.profileId;
   }
 
@@ -406,8 +410,8 @@ export function openProfiles(dir, { colors, clock = Date.now } = {}) {
     logout,
     // For the next profile children (#763, #764): credential checks, private reads and serialized durable writes.
     validate,
-    profile: (id) => (doc && id in doc.profiles ? structuredClone(doc.profiles[id]) : null),
-    pinLocked: (id) => Boolean(doc?.profiles[id] && doc.profiles[id].guard.lifetime >= LIFETIME_FAILS),
+    profile: (id) => (doc && typeof id === "string" && has(doc.profiles, id) ? structuredClone(doc.profiles[id]) : null),
+    pinLocked: (id) => Boolean(doc && typeof id === "string" && has(doc.profiles, id) && doc.profiles[id].guard.lifetime >= LIFETIME_FAILS),
     mutate,
     claimHash: claim,
     verifier,

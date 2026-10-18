@@ -186,6 +186,13 @@ check("profileLogout answers", (await em2.req({ type: "profileLogout", credentia
 check("the logged-out credential no longer resumes", isErr(await em2.req({ type: "profileResume", credential: cred2 }), "signedOut"));
 check("the other device's credential still resumes", (await em2.req({ type: "profileResume", credential: cred1 })).type === "profileSession");
 check("Signed out reads plainly", (await em2.req({ type: "profileResume", credential: "A".repeat(43) })).message === "Signed out on this device. Sign in again.");
+// Object.prototype names are valid logins: they must read as unknown, then work as ordinary profiles once created.
+for (const name of ["constructor", "Constructor", "tostring", "hasownproperty"]) {
+  check(`login "${name}" before creation is an ordinary unknown login`, isErr(await (await client(h, tunnel())).req({ type: "profileLogin", login: name, pin: "1234" }), "signInFailed"));
+}
+check("a profile named constructor can be created", (await (await client(h, tunnel())).req(fields("constructor", "2580"))).type === "profileSession");
+check("and signs in as Constructor", (await (await client(h, tunnel())).req({ type: "profileLogin", login: "Constructor", pin: "2580" })).profile?.login === "constructor");
+check("the host is still serving after those names", (await (await client(h, tunnel())).req({ type: "profileResume", credential: cred1 })).type === "profileSession");
 
 // Logout never touches a seat: the guest seat drops and comes back with its secret.
 guest.b.ws.terminate();
