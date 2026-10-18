@@ -218,12 +218,12 @@ try {
     assert.equal(await page.getByTestId("fortune-play-plenty").getAttribute("aria-disabled"), "true", `${v.tag}: Plenty waits for two picks`);
     await page.getByTestId("plenty-chip-timber").click();
     await page.getByTestId("plenty-chip-timber").click();
-    assert.equal(await page.getByTestId("plenty-picks").textContent(), "Timber ×2");
-    assert.equal(await page.getByTestId("plenty-chip-timber").getAttribute("aria-label"), "Timber, picked 2");
+    assert.equal(await page.getByTestId("plenty-picks").textContent(), "Wood ×2");
+    assert.equal(await page.getByTestId("plenty-chip-timber").getAttribute("aria-label"), "Wood, picked 2");
     await page.getByTestId("plenty-chip-ore").click();
-    assert.equal(await page.getByTestId("plenty-picks").textContent(), "Timber and ore");
+    assert.equal(await page.getByTestId("plenty-picks").textContent(), "Wood and ore");
     await page.getByTestId("plenty-chip-wool").click();
-    assert.equal(await page.getByTestId("plenty-picks").textContent(), "Ore and wool");
+    assert.equal(await page.getByTestId("plenty-picks").textContent(), "Ore and sheep");
     const before = await me();
     await page.getByTestId("fortune-play-plenty").click();
     await closed();
@@ -282,18 +282,18 @@ try {
     assert.equal(await page.getByTestId("plenty-picks").textContent(), "Tap two goods", `${v.tag}: the empty ore cannot be picked`);
     await page.getByTestId("plenty-chip-timber").click();
     await page.getByTestId("plenty-chip-clay").click();
-    assert.equal(await page.getByTestId("plenty-picks").textContent(), "Timber and clay");
+    assert.equal(await page.getByTestId("plenty-picks").textContent(), "Wood and brick");
     assert.equal(await page.getByTestId("plenty-picks").getAttribute("aria-live"), "polite");
     // One timber in the bank and one picked: a second timber is short, said so, but with two picked a tap replaces the oldest
     // (that timber), so the chip stays live.
     await store(() => { const g = window.__emberisle; const st = structuredClone(g.getState().state); st.bank.timber = 1; st.seq += 1; g.setState({ state: st }); });
     await page.waitForFunction(() => document.querySelector('[data-testid="plenty-chip-timber"]')?.getAttribute("aria-disabled") === null, null, { timeout: STEP_MS });
     await page.getByTestId("plenty-chip-timber").click();
-    assert.equal(await page.getByTestId("plenty-picks").textContent(), "Clay and timber", `${v.tag}: with two picked, a tap replaces the oldest`);
+    assert.equal(await page.getByTestId("plenty-picks").textContent(), "Brick and wood", `${v.tag}: with two picked, a tap replaces the oldest`);
     const only = await page.getByTestId("plenty-chip-timber").evaluate((b) => [b.getAttribute("aria-disabled"), b.getAttribute("aria-description")]);
-    assert.deepEqual(only, ["true", "The bank has only 1 timber."], `${v.tag}: a second timber the bank lacks: ${JSON.stringify(only)}`);
+    assert.deepEqual(only, ["true", "The bank has only 1 wood."], `${v.tag}: a second timber the bank lacks: ${JSON.stringify(only)}`);
     await page.getByTestId("plenty-chip-clay").click();
-    assert.equal(await page.getByTestId("plenty-picks").textContent(), "Timber and clay");
+    assert.equal(await page.getByTestId("plenty-picks").textContent(), "Wood and brick");
     await store(() => {
       const g = window.__emberisle;
       const st = structuredClone(g.getState().state);
@@ -301,7 +301,7 @@ try {
       st.seq += 1;
       g.setState({ state: st });
     });
-    await page.waitForFunction(() => document.querySelector('[data-testid="plenty-picks"]')?.textContent === "Clay", null, { timeout: STEP_MS });
+    await page.waitForFunction(() => document.querySelector('[data-testid="plenty-picks"]')?.textContent === "Brick", null, { timeout: STEP_MS });
     assert.equal(await page.getByTestId("fortune-play-plenty").getAttribute("aria-disabled"), "true", `${v.tag}: one pick left, Play waits`);
     await page.getByTestId("plenty-chip-clay").click();
     await page.getByTestId("fortune-play-plenty").click();

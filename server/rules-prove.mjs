@@ -261,7 +261,7 @@ for (const seed of [1, 2, 3, 4, 5]) {
   console.log(`20000 deals: ${empty} land hexes without a token, ${red} adjacent red tokens`);
   if (empty || red) fail("deal", { empty, red });
 }
-ok("forest, clay hills, pasture, fields, mountains, or the wastes", true);
+ok("forest, hills, pasture, fields, mountains, or the wastes", true);
 ok("a token from 2 to 12 on every hex except the wastes", true);
 ok("there is no 7 token", true);
 {
@@ -288,7 +288,7 @@ ok("there is no 7 token", true);
   const short = applyAction(g, "p0", { type: "buildPath", edgeId: b.id });
   giveCards(p, { timber: 1, clay: 1 });
   const r = applyAction(g, "p0", { type: "buildPath", edgeId: b.id });
-  ok("path costs 1 timber, 1 clay", short.error && !r.error && hand(r.state.players[0]) === 0 && r.state.bank.timber === 20 && r.state.bank.clay === 20, short.error ?? r.error);
+  ok("path costs 1 wood, 1 brick", short.error && !r.error && hand(r.state.players[0]) === 0 && r.state.bank.timber === 20 && r.state.bank.clay === 20, short.error ?? r.error);
   p.pathsLeft = 0;
   ok("no path past the stock", applyAction(g, "p0", { type: "buildPath", edgeId: b.id }).error === "No paths left.");
 }
@@ -302,7 +302,7 @@ ok("there is no 7 token", true);
   const short = applyAction(g, "p0", { type: "buildOutpost", vertexId: spot });
   giveCards(p, { timber: 1, clay: 1, wool: 1, grain: 1 });
   const r = applyAction(g, "p0", { type: "buildOutpost", vertexId: spot });
-  ok("outpost costs timber, clay, wool, grain", short.error && !r.error && hand(r.state.players[0]) === 0 && r.state.players[0].outpostsLeft === 4, short.error ?? r.error);
+  ok("outpost costs wood, brick, sheep, wheat", short.error && !r.error && hand(r.state.players[0]) === 0 && r.state.players[0].outpostsLeft === 4, short.error ?? r.error);
   p.outpostsLeft = 0;
   ok("no outpost past the stock", applyAction(g, "p0", { type: "buildOutpost", vertexId: spot }).error === "No outposts left.");
 }
@@ -318,7 +318,7 @@ ok("there is no 7 token", true);
   const r = applyAction(g, "p0", { type: "buildStronghold", vertexId: mine.id });
   const q = r.state?.players[0];
   ok(
-    "stronghold costs 2 ore, 3 grain, on an outpost you own",
+    "stronghold costs 2 ore, 3 wheat, on an outpost you own",
     short.error && onTheirs.error && !r.error && hand(q) === 0 && q.strongholdsLeft === 3 && q.outpostsLeft === 6,
     short.error ?? onTheirs.error ?? r.error,
   );
@@ -332,7 +332,7 @@ ok("there is no 7 token", true);
   const short = applyAction(g, "p0", { type: "buyCard" });
   giveCards(g.players[0], { wool: 1, grain: 1, ore: 1 });
   const r = applyAction(g, "p0", { type: "buyCard" });
-  ok("fortune costs wool, grain, ore", short.error && !r.error && hand(r.state.players[0]) === 0 && r.state.deck.length === 24, short.error ?? r.error);
+  ok("fortune costs sheep, wheat, ore", short.error && !r.error && hand(r.state.players[0]) === 0 && r.state.deck.length === 24, short.error ?? r.error);
 }
 ok("a fortune bought this turn cannot be played this turn (check 6 above)", true);
 ok("a knight may be played before the roll (check 7 above)", true);
@@ -755,7 +755,7 @@ const total = (g, r) => g.bank[r] + g.players.reduce((n, p) => n + p.resources[r
   const empty = applyAction(g, "p0", { type: "playPlenty", resources: ["grain", "ore"] });
   effect("plenty naming a card the bank has none of is refused, card stays in hand", empty.error === "The bank has no ore." && kept(empty), { error: empty.error, bank: empty.state.bank });
   const twice = applyAction(g, "p0", { type: "playPlenty", resources: ["grain", "grain"] });
-  effect("plenty naming grain twice with one grain in the bank is refused", twice.error === "The bank has only 1 grain." && kept(twice), { error: twice.error, bank: twice.state.bank });
+  effect("plenty naming grain twice with one grain in the bank is refused", twice.error === "The bank has only 1 wheat." && kept(twice), { error: twice.error, bank: twice.state.bank });
   const r = applyAction(g, "p0", { type: "playPlenty", resources: ["grain", "wool"] });
   effect("plenty naming cards the bank holds still pays them", !r.error && r.state.players[0].resources.grain === 1 && r.state.players[0].resources.wool === 1 && r.state.bank.grain === 0, r.error);
 }

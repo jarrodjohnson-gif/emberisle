@@ -11,7 +11,7 @@ import { createServer } from "vite";
 import { chooseBotAction, chooseTradeAsk, shouldAcceptTrade } from "../src/lib/game/ai.ts";
 import { createGame } from "../src/lib/game/board.ts";
 import { applyAction } from "../src/lib/game/rules.ts";
-import { RESOURCES } from "../src/lib/game/types.ts";
+import { RESOURCES, RESOURCE_LABEL } from "../src/lib/game/types.ts";
 
 // CI renders the island with software GL, where one frame can take seconds; a step gets this long to show.
 const STEP_MS = 15_000;
@@ -90,8 +90,8 @@ try {
   await load(gA);
   await page.getByRole("button", { name: "Trade", exact: true }).click({ timeout: STEP_MS });
   const panel = page.getByTestId("trade-panel");
-  await panel.getByRole("button", { name: "More grain to give" }).click();
-  await panel.getByRole("button", { name: "More wool to want" }).click();
+  await panel.getByRole("button", { name: "More wheat to give" }).click();
+  await panel.getByRole("button", { name: "More sheep to want" }).click();
   await watchClose();
   await panel.getByRole("button", { name: "Ask the table" }).click();
   await page.waitForFunction(() => window.__openedOffer?.from === "p0", null, { timeout: STEP_MS });
@@ -107,7 +107,7 @@ try {
   await watchClose();
   const line = await dialog.locator("p").first().textContent();
   const buttons = await dialog.getByRole("button").allTextContents();
-  const want = `${bot} offers 1 ${Object.keys(askC.give)[0]} for 1 ${Object.keys(askC.want)[0]}`;
+  const want = `${bot} offers 1 ${RESOURCE_LABEL[Object.keys(askC.give)[0]].toLowerCase()} for 1 ${RESOURCE_LABEL[Object.keys(askC.want)[0]].toLowerCase()}`;
   console.log(`bot asks: "${line}" [${buttons.join(" / ")}]`);
   if (line !== want || buttons.join(",") !== "Yes,No") throw new Error(`the bot's ask reads ${JSON.stringify({ line, buttons })}, wanted "${want}" + Yes/No`);
   const waiting = await page.evaluate(() => {

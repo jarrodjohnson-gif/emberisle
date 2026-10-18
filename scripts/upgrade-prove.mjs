@@ -187,13 +187,13 @@ try {
     await page.waitForFunction(() => /Need 1 more ore/.test(window.__emberisle.getState().announcement ?? ""), null, { timeout: STEP_MS });
     assert.equal(await page.evaluate(() => window.__emberisle.getState().buildMode), "none", `${tag}: a short Upgrade arms nothing`);
     await load({});
-    assert.match(await upgrade.getAttribute("aria-description"), /Need 3 more grain and 2 more ore/, `${tag}: short of everything`);
+    assert.match(await upgrade.getAttribute("aria-description"), /Need 3 more wheat and 2 more ore/, `${tag}: short of everything`);
     await press(upgrade);
-    await page.waitForFunction(() => /Need 3 more grain and 2 more ore/.test(window.__emberisle.getState().announcement ?? ""), null, { timeout: STEP_MS });
-    assert.equal((await page.getByTestId("announce-error").textContent()).trim(), "Need 3 more grain and 2 more ore", `${tag}: the alert region says it`);
+    await page.waitForFunction(() => /Need 3 more wheat and 2 more ore/.test(window.__emberisle.getState().announcement ?? ""), null, { timeout: STEP_MS });
+    assert.equal((await page.getByTestId("announce-error").textContent()).trim(), "Need 3 more wheat and 2 more ore", `${tag}: the alert region says it`);
     assert.equal(await page.evaluate(() => window.__emberisle.getState().error), null, `${tag}: no HUD error line is set`);
-    assert.equal(await page.locator("span.text-orange-700", { hasText: "Need 3 more grain" }).count(), 0, `${tag}: no error line on screen`);
-    console.log(`${tag}: a short hand says "Need 1 more ore" / "Need 3 more grain and 2 more ore"`);
+    assert.equal(await page.locator("span.text-orange-700", { hasText: "Need 3 more wheat" }).count(), 0, `${tag}: no error line on screen`);
+    console.log(`${tag}: a short hand says "Need 1 more ore" / "Need 3 more wheat and 2 more ore"`);
     await page.screenshot({ path: `test-results/upgrade-${tag}.png` });
     await ctx.close();
   }

@@ -43,6 +43,7 @@ const VIEWS = [
 ];
 const GREEN = "rgb(16, 86, 42)";
 const RED = "rgb(138, 34, 25)";
+const RESOURCE_LABEL = { timber: "Wood", clay: "Brick", wool: "Sheep", grain: "Wheat", ore: "Ore" };
 mkdirSync("test-results", { recursive: true });
 
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
@@ -431,7 +432,7 @@ async function practice(view) {
     const got = roll.lines.map((l) => `${l.r}+${l.d}`).sort();
     console.log(`${tag}: rolled ${pip}; own ${JSON.stringify(want)}; lines ${JSON.stringify(roll.lines.map((l) => l.text))}`);
     check(got.length > 0 && got.join() === want.join(), `${tag}: one line per good the roll paid, right good and amount`, { want, got });
-    check(roll.lines.every((l) => l.text === `+${l.d} ${l.r[0].toUpperCase()}${l.r.slice(1)}` && l.color === GREEN), `${tag}: lines read "+N Good" in the gain green`, roll.lines.map((l) => [l.text, l.color]));
+    check(roll.lines.every((l) => l.text === `+${l.d} ${RESOURCE_LABEL[l.r]}` && l.color === GREEN), `${tag}: lines read "+N Good" in the gain green`, roll.lines.map((l) => [l.text, l.color]));
     check(roll.lines.every((l) => !l.rollUp), `${tag}: no line mounts while the roll moment holds the centre`);
     const spans = roll.lines.map(readable);
     check(spans.every((s) => s >= 1200), `${tag}: each line readable for at least 1.2 s`, spans.map((s) => s.toFixed(0)));
@@ -471,7 +472,7 @@ async function practice(view) {
     const gave = await page.evaluate((o) => -window.__own.slice(o).find((x) => x.r === "ore").d, o1);
     const shades = [await contrast(page, "gain-float", 0), await contrast(page, "gain-float", 1)];
     await page.evaluate(() => window.__release());
-    check(traded && trade.length === 2 && trade.some((l) => l.text === `−${gave} Ore` && l.color === RED) && trade.some((l) => l.text === "+1 Grain" && l.color === GREEN), `${tag}: a bank trade shows −${gave} Ore in red and +1 Grain in green`, trade);
+    check(traded && trade.length === 2 && trade.some((l) => l.text === `−${gave} Ore` && l.color === RED) && trade.some((l) => l.text === "+1 Wheat" && l.color === GREEN), `${tag}: a bank trade shows −${gave} Ore in red and +1 Wheat in green`, trade);
     placement(`${tag} trade`, "gain and loss lines", tradeBoxes, tradeLay, tradeShift);
     for (const c of shades) check(c.min >= 3, `${tag}: ${c.color === RED ? "loss" : "gain"} text ≥ 3:1 against the pixels behind it`, { color: c.color, min: c.min.toFixed(2), pixels: c.pixels });
     await page.waitForFunction(() => !document.querySelector('[data-testid="gain-floats"]'), null, { timeout: STEP_MS });
@@ -713,8 +714,8 @@ async function reconnect() {
 
     // Live changes after the rejoin still show.
     push(at(23, 3, "roll", "p0", 5));
-    await page.waitForFunction(() => [...document.querySelectorAll('[data-testid="gain-float"]')].some((e) => e.textContent === "+1 Timber"), null, { timeout: STEP_MS });
-    check(true, `${tag} reconnect: a live gain after the rejoin shows "+1 Timber"`);
+    await page.waitForFunction(() => [...document.querySelectorAll('[data-testid="gain-float"]')].some((e) => e.textContent === "+1 Wood"), null, { timeout: STEP_MS });
+    check(true, `${tag} reconnect: a live gain after the rejoin shows "+1 Wood"`);
     push(at(24, 3, "main", "p0", 5));
     push(at(25, 3, "main", "p1", 5));
     push(at(26, 4, "roll", "p0", 5));

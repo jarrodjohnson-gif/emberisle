@@ -68,11 +68,11 @@ try {
   assert.deepEqual(result.events.map(e=>e.kind),['roll','buildPath','bankTrade','respondTrade','discard','playKnight','playRoad','playPlenty','playMonopoly','buyCard']);
   for(const event of result.events)assert.match(event.line,/^[A-Z][a-z]+ (gains|spends|steals|discards|trades|plays)/);
   assert.match(result.events[0].line,/— Ember's roll[;.]/);
-  assert.match(result.events[1].line,/spends 1 timber, 1 clay — path/);
-  assert.match(result.events[3].line,/gains 1 clay;.*loses 1 timber;.*gains 1 timber;.*loses 1 clay — table trade/);
+  assert.match(result.events[1].line,/spends 1 wood, 1 brick — path/);
+  assert.match(result.events[3].line,/gains 1 brick;.*loses 1 wood;.*gains 1 wood;.*loses 1 brick — table trade/);
   for(const [index,kind] of [[5,'Wayfarer'],[6,'Path'],[7,'Plenty'],[8,'Monopoly']])assert.ok(result.events[index].line.includes(`plays ${kind}`));
   assert.match(result.events[5].line,/gains 1 good;.*loses 1 good/);
-  assert.doesNotMatch(result.events[5].line,/timber|clay|wool|grain|ore|\bVP\b/);
+  assert.doesNotMatch(result.events[5].line,/timber|clay|wool|grain|wood|brick|sheep|wheat|ore|\bVP\b/);
   assert.equal(result.events[4].line,'Ember discards 2 goods.');
   assert.doesNotMatch(result.events[9].line,/\bvp\b|point fortune/i);
   await page.getByRole('button',{name:'Open chat',exact:true}).click();

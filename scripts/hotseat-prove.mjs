@@ -163,21 +163,21 @@ try {
   const countState = async () => ({ text: (await count.textContent()).trim(), disabled: await submit.isDisabled() });
   const start = await countState();
   if (start.text !== "0 of 4" || !start.disabled) throw new Error(`empty bar: ${JSON.stringify(start)}`);
-  await form.getByLabel("Timber").fill("3");
+  await form.getByLabel("Wood").fill("3");
   const part = await countState();
   if (part.text !== "3 of 4" || !part.disabled) throw new Error(`3 picked: ${JSON.stringify(part)}`);
   await form.getByLabel("Ore").fill("5"); // holds 1: clamped
   const clamped = await form.getByLabel("Ore").inputValue();
   const over = await countState();
   if (clamped !== "1" || over.text !== "4 of 4" || over.disabled) throw new Error(`clamp/exact: ${clamped} ${JSON.stringify(over)}`);
-  await form.getByLabel("Timber").fill("4"); // holds 3: clamped, total still 4
-  const tooMany = await form.getByLabel("Timber").inputValue();
+  await form.getByLabel("Wood").fill("4"); // holds 3: clamped, total still 4
+  const tooMany = await form.getByLabel("Wood").inputValue();
   if (tooMany !== "3") throw new Error(`timber not clamped: ${tooMany}`);
-  await form.getByLabel("Timber").fill("2");
+  await form.getByLabel("Wood").fill("2");
   const short = await countState();
   if (short.text !== "3 of 4" || !short.disabled) throw new Error(`short again: ${JSON.stringify(short)}`);
   console.log("discard count:", JSON.stringify({ start, part, clamped, over, short }));
-  await form.getByLabel("Timber").fill("0");
+  await form.getByLabel("Wood").fill("0");
   await form.getByLabel("Ore").fill("0");
   await form.locator('input[name="timber"]').fill("3");
   await form.locator('input[name="clay"]').fill("1");
@@ -278,7 +278,7 @@ try {
   if ((await picks()) !== "Tap two goods") throw new Error(`ore was picked from an empty bank: ${await picks()}`);
   await page.getByTestId("plenty-chip-grain").click();
   await page.getByTestId("plenty-chip-grain").click();
-  if ((await picks()) !== "Grain ×2") throw new Error(`two grain picks read ${await picks()}`);
+  if ((await picks()) !== "Wheat ×2") throw new Error(`two grain picks read ${await picks()}`);
   await page.getByTestId("fortune-play-plenty").click();
   await page.waitForFunction(() => window.__emberisle.getState().state.playedCard, null, { timeout: STEP_MS });
   await tray.waitFor({ state: "detached", timeout: STEP_MS });
@@ -303,7 +303,7 @@ try {
   await openTray();
   await page.getByTestId("plenty-chip-timber").click();
   await page.getByTestId("plenty-chip-timber").click();
-  if ((await picks()) !== "Timber ×2") throw new Error(`two timber picks read ${await picks()}`);
+  if ((await picks()) !== "Wood ×2") throw new Error(`two timber picks read ${await picks()}`);
   await plentyAgain({ timber: 0 });
   await page.waitForFunction(() => document.querySelector('[data-testid="plenty-picks"]')?.textContent === "Tap two goods", null, { timeout: STEP_MS })
     .catch(async () => { throw new Error(`picks did not leave the emptied timber: ${await picks()}`); });

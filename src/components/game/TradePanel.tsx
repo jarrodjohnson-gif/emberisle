@@ -82,11 +82,11 @@ export function TradePanel() {
   const bankWhy = !g || !w
     ? "Pick one kind to give and one to want."
     : me.resources[g] < rate!
-      ? `Need ${rate} ${g} for the ${rate === 4 ? "bank" : "dock"}.`
+      ? `Need ${rate} ${RESOURCE_LABEL[g].toLowerCase()} for the ${rate === 4 ? "bank" : "dock"}.`
       : state.bank[w] <= 0
-        ? `The bank has no ${w}.`
+        ? `The bank has no ${RESOURCE_LABEL[w].toLowerCase()}.`
         : null;
-  const bankHint = bankWhy ?? `${rate} ${g} for 1 ${w}`;
+  const bankHint = bankWhy ?? `${rate} ${RESOURCE_LABEL[g!].toLowerCase()} for 1 ${RESOURCE_LABEL[w!].toLowerCase()}`;
 
   const bank = () => {
     if (!g || !w) return;
@@ -124,12 +124,12 @@ export function TradePanel() {
                 <span className="ml-1 tabular-nums text-xs text-zinc-600">×{me.resources[r]}</span>
               </span>
               <Stepper
-                label={`${r} to give`}
+                label={`${RESOURCE_LABEL[r].toLowerCase()} to give`}
                 value={give[r]}
                 canMore={give[r] < me.resources[r] && want[r] === 0}
                 onChange={(n) => setGive({ ...give, [r]: n })}
               />
-              <Stepper label={`${r} to want`} value={want[r]} canMore={want[r] < 19 && give[r] === 0} onChange={(n) => setWant({ ...want, [r]: n })} />
+              <Stepper label={`${RESOURCE_LABEL[r].toLowerCase()} to want`} value={want[r]} canMore={want[r] < 19 && give[r] === 0} onChange={(n) => setWant({ ...want, [r]: n })} />
             </div>
           ))}
         </div>

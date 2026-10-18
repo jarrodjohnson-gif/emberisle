@@ -4,16 +4,16 @@
 // hand, a good the hand is short of dims and carries the shortfall, so a touch screen sees what is missing without a hover;
 // the build tile passes the hand whenever it reads missing goods (#606), ringing each lacking good in #b23a2e.
 import { RESOURCE_ICON, RESOURCE_PAINT } from "@/components/game/Hand";
-import { COST, RESOURCES, type Resource } from "@/lib/game/types";
+import { COST, RESOURCES, RESOURCE_LABEL, type Resource } from "@/lib/game/types";
 import { cn } from "@/lib/utils";
 
 export type Price = keyof typeof COST;
 
 export const PRICE_NAME: Record<Price, string> = { path: "Path", outpost: "Outpost", stronghold: "Stronghold", card: "Fortune" };
 
-// "Path · 1 timber, 1 clay": the read-out behind the chips.
+// "Path · 1 wood, 1 brick": the read-out behind the chips.
 export function priceLabel(kind: Price) {
-  return `${PRICE_NAME[kind]} · ${RESOURCES.filter((r) => COST[kind][r]).map((r) => `${COST[kind][r]} ${r}`).join(", ")}`;
+  return `${PRICE_NAME[kind]} · ${RESOURCES.filter((r) => COST[kind][r]).map((r) => `${COST[kind][r]} ${RESOURCE_LABEL[r].toLowerCase()}`).join(", ")}`;
 }
 
 // The goods a hand is short of for a build, each with how many; empty when it can pay.
@@ -27,12 +27,12 @@ export function shortfall(hand: Record<Resource, number>, kind: Price): Partial<
 }
 
 const need = (short: Partial<Record<Resource, number>>, more: string, sep: string) =>
-  `Need ${RESOURCES.filter((r) => short[r]).map((r) => `${short[r]} ${more}${r}`).join(sep)}`;
+  `Need ${RESOURCES.filter((r) => short[r]).map((r) => `${short[r]} ${more}${RESOURCE_LABEL[r].toLowerCase()}`).join(sep)}`;
 
-// "Need 1 more ore", "Need 3 more grain and 2 more ore": what a refused tap on a short build says.
+// "Need 1 more ore", "Need 3 more wheat and 2 more ore": what a refused tap on a short build says.
 export const needLine = (short: Partial<Record<Resource, number>>) => need(short, "more ", " and ");
 
-// "Need 1 clay", "Need 1 clay, 1 wool": the chip a tap on a short build shows above it (#535).
+// "Need 1 brick", "Need 1 brick, 1 sheep": the chip a tap on a short build shows above it (#535).
 export const hintLine = (short: Partial<Record<Resource, number>>) => need(short, "", ", ");
 
 export function CostChips({ kind, hand, className }: { kind: Price; hand?: Record<Resource, number>; className?: string }) {

@@ -16,16 +16,16 @@ export type Phase =
 export type PlayerKind = "human" | "bot";
 
 export const RESOURCE_LABEL: Record<Resource, string> = {
-  timber: "Timber",
-  clay: "Clay",
-  wool: "Wool",
-  grain: "Grain",
+  timber: "Wood",
+  clay: "Brick",
+  wool: "Sheep",
+  grain: "Wheat",
   ore: "Ore",
 };
 
 export const TERRAIN_LABEL: Record<Terrain, string> = {
   timber: "Forest",
-  clay: "Clay hills",
+  clay: "Hills",
   wool: "Pasture",
   grain: "Fields",
   ore: "Mountains",

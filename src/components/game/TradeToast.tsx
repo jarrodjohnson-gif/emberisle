@@ -1,4 +1,4 @@
-// The ask-the-table toast (docs/BUILD_BIBLE.md 4.4): "Ember offers 2 wool for 1 ore", Yes / No, and the 20 s left.
+// The ask-the-table toast (docs/BUILD_BIBLE.md 4.4): "Ember offers 2 sheep for 1 ore", Yes / No, and the 20 s left.
 // The asker sees the same offer with who has declined, then the outcome for a moment.
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -10,7 +10,7 @@ import { useGame } from "@/lib/game/store";
 import { RESOURCES } from "@/lib/game/types";
 import type { Bag } from "@/lib/net/table";
 
-// "Ember offers 2 wool for 1 ore"; the asker reads "You offer 2 wool for 1 ore".
+// "Ember offers 2 sheep for 1 ore"; the asker reads "You offer 2 sheep for 1 ore".
 export function offerLine(name: string | null, give: Bag, want: Bag) {
   const g = bagText(give);
   const w = bagText(want);
