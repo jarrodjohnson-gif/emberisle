@@ -56,6 +56,7 @@
     "roll-moment-prove": "node scripts/roll-moment-prove.mjs",
     "table-menu-prove": "node scripts/table-menu-prove.mjs",
     "hand-cards-prove": "node scripts/hand-cards-prove.mjs",
+    "hand-offer-prove": "node scripts/hand-offer-prove.mjs",
     "hand-hidden-prove": "node scripts/hand-hidden-prove.mjs",
     "install-prove": "node scripts/install-prove.mjs",
     "first-game-coach-prove": "node scripts/first-game-coach-prove.mjs",

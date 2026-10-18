@@ -212,6 +212,8 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
         run: npm run hand-cards-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
+        run: npm run hand-offer-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
         run: npm run served-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
         run: npm run chunk-fail-prove
