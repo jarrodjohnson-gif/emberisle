@@ -5,6 +5,8 @@ Use a short subdomain such as `play` on a domain you own.
 Your domain must use Cloudflare DNS before these steps work.
 The hosting computer, Emberisle host, and tunnel must remain running for friends to connect.
 This setup provides a stable address, not an always-on hosting service.
+Set `EMBERISLE_TUNNEL_DIR` to select another folder; relative values resolve from the current working directory.
+The parent folder must already exist; setup creates only the selected directory.
 
 ## Set up once on the hosting computer
 
@@ -86,7 +88,7 @@ Malformed JSON, missing credentials, changed ingress, and a mismatched `PORT` st
 For another origin port, choose that port during setup; the game host and tunnel must agree.
 To replace a setup, keep a backup by renaming `.emberisle-tunnel/`, then rerun setup.
 Do not commit that directory or the `.cloudflared` credentials.
-An optional `EMBERISLE_TUNNEL_DIR` selects an absolute configuration directory outside the checkout.
+An optional `EMBERISLE_TUNNEL_DIR` selects a configuration directory; relative paths resolve from the current working directory.
 
 Installing a tunnel as a system service is optional and does not keep Emberisle itself running.
 Follow Cloudflare's platform instructions if you want the tunnel to start at login or boot.
