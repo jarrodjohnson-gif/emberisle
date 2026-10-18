@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { HowTo, Lobby, online, sheets } from "@/components/game/chunks";
 import { Hud } from "@/components/game/Hud";
 import { PlaceList } from "@/components/game/PlaceList";
+import { SetupPipHints } from "@/components/game/SetupPipHints";
 import { TableRecoveryBoundary } from "@/components/game/TableRecoveryBoundary";
 import { SeatDot } from "@/components/game/SeatDot";
 import { useGame } from "@/lib/game/store";
@@ -68,6 +69,7 @@ export function EmberisleApp() {
           <>
             <Hud />
             <PlaceList />
+            <SetupPipHints />
           </>
         )}
       </TableRecoveryBoundary>
