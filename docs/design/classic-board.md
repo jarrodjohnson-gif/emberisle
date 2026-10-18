@@ -26,7 +26,7 @@ Line references below describe that commit, not a future implementation.
 | `src/lib/game/store.ts:163`, `:955` | Water/View preferences already use guarded device storage and page-local state. |
 | `src/components/scene/IslandCanvas.tsx:31` | The scene bridge transfers presentation preferences independently from canonical game state. |
 | `scripts/tokens-prove.mjs:40`, `:200` | Existing token checks depend directly on Jelly clearance and occlusion helpers. |
-| `tsconfig.json:16` | Only current `src` and Vite configuration enter the TypeScript compilation scope. |
+| `tsconfig.json:15` | Only current `src` and Vite configuration enter the TypeScript compilation scope. |
 
 No existing design specifies a Classic selector or builder lifecycle.
 [terrain.md](terrain.md) records the archived appearance; it does not define this setting.
