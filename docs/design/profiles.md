@@ -2,13 +2,15 @@
 
 Design only. Reviewed source: `1bfb425`, 2026-10-17. Proposed defaults need review before implementation.
 The final owner comments on [#678](https://github.com/jarrodjohnson-gif/emberisle/issues/678) supersede its original questions.
+Security follow-up source: `82594c7`, 2026-10-18; [review findings B1, B2, S1 and S2](https://github.com/jarrodjohnson-gif/emberisle/issues/678#issuecomment-6250414893).
 
 ## Owner decisions and scope
 
 Friends create profiles themselves, from the title or lobby. They edit text fields in the game.
 Use a login name and four-digit PIN, with a remembered device credential.
 Jarrod supplies icons, intro sounds, win music and optional lose sounds through the orchestrator.
-Commit converted media against the friend's login. There is no player upload endpoint or seed import.
+Use opaque media slugs and bind assets through the local admin command. Never publish login-based filenames.
+There is no player upload endpoint or seed import.
 Jarrod can reset a PIN or delete a profile through a local host command.
 Stickers remain shared and curated under #663.
 
@@ -55,7 +57,8 @@ An unauthenticated matching name remains a guest. There is no name-based account
 
 Create profile requires display name, login, PIN and favourite colour. Backup colour and catchphrase are optional.
 Reject login collisions atomically; two simultaneous creations cannot claim the same login.
-Require the current PIN for login or PIN changes. Ordinary text and colour edits require the remembered credential.
+Require the current PIN for login or ordinary PIN changes. The locked-PIN recovery exception below requires a valid device credential.
+Ordinary text and colour edits require the remembered credential.
 Reserve previous login names until Jarrod releases them locally. Never transfer history or curated media to a new claimant.
 PIN changes revoke all remembered credentials, then issue a replacement to the changing device.
 
@@ -82,12 +85,32 @@ These parameters follow [OWASP's scrypt guidance](https://cheatsheetseries.owasp
 Node documents salt length, asynchronous work and memory limits in [its crypto reference](https://nodejs.org/docs/latest-v22.x/api/crypto.html#cryptoscryptpassword-salt-keylen-options-callback).
 
 Apply limits before hashing: five failures per normalized login per 15 minutes, then a 15-minute cooldown.
+Also allow at most ten failed PIN attempts per rolling 24 hours and 30 across the credential's lifetime.
+The tenth daily failure blocks PIN login until that rolling window permits another attempt.
+The thirtieth lifetime failure hard-locks PIN login. Time, successful login and reconnects never clear the lifetime counter.
+Persist every counter and lock across restarts. Login renames preserve them through the stable profile UUID.
+Reserve attempt capacity atomically before hashing, including queued attempts, so concurrent requests cannot exceed any budget.
+Persist reservations before hashing; recover interrupted attempts conservatively as failures.
+Count wrong PINs against every applicable window; successful verification releases its reservation without replenishing prior failures.
+Thirty distinct guesses against a uniformly chosen PIN succeed with probability `30 / 10,000 = 0.3%`.
+User-chosen PINs are not uniform; common choices can be guessed more often.
+A valid remembered-device `profileResume` bypasses PIN cooldowns and locks; separate connection and request limits still apply.
+Resume does not clear counters. That authenticated device may change the PIN without knowing the locked PIN.
+This recovery change revokes other devices and starts a fresh credential lifetime with zero failure counters.
+Jarrod's local PIN reset also clears all failure windows and locks while revoking devices.
+Ordinary PIN changes still require the current PIN. Neither login success nor device resume alone resets failure budgets.
+Attackers can exhaust PIN login budgets; remembered-device access remains usable, and Jarrod can recover other locked-out friends locally.
 Also cap authentication requests at 20 per source address per minute, and creations at three per address per hour.
-Persist login failure windows across restart. Bound unknown-login buckets and use a dummy verifier for unknown names.
+Bound unknown-login buckets and use a dummy verifier for unknown names.
 Use the same login error: “Couldn't sign in. Check your login and PIN, or try again later.”
 Creation may say “Choose another login”; login names are identifiers, not secrets.
 These limits are proposed local defaults, informed by [OWASP authentication guidance](https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html#login-throttling).
-Trust forwarding headers only from an explicitly configured reverse proxy.
+Reuse the existing #581 `ipKey` rule (`server/host.mjs:69–72`, applied at `:1211`), without introducing proxy configuration.
+Use the socket address for direct peers; ignore their `cf-connecting-ip`, `X-Forwarded-For` and `X-Forwarded-Proto` headers.
+Trust `cf-connecting-ip` only from `127.0.0.1` or `::1`, after stripping the IPv4-mapped `::ffff:` prefix.
+Preserve existing normalization: IPv4-mapped addresses share IPv4 buckets; IPv6 addresses share their /64 bucket.
+Loopback without `cf-connecting-ip` has no address bucket, matching local development today.
+Per-login budgets and bounded hash work still apply there; distinct tunnel clients receive distinct normalized address buckets.
 
 Issue a random 32-byte opaque device credential. Store its SHA-256 digest, profile ID, creation time and expiry on the host.
 Propose a 90-day absolute expiry and at most five remembered devices per profile.
@@ -97,8 +120,23 @@ Do not rotate on every reconnect, which could invalidate another tab. Revoke on 
 Store remembered credentials separately from `emberisle-seat`, scoped to the normalized selected WebSocket host endpoint.
 The page origin alone is insufficient because `?host=` can select another host.
 Display that host before sending credentials. Never copy a credential automatically when the endpoint changes.
-Send PINs and device credentials only inside encrypted connection messages, never URLs, logs, chat or broadcast frames.
-Allow plaintext transport only for explicit loopback development. Existing remote guest play can remain available without profile login.
+Send PINs and device credentials only through the approved transport paths below, never URLs, logs, chat or broadcast frames.
+The client checks the selected WebSocket endpoint before sending a PIN or device credential, including `profileResume`.
+Production profile authentication requires browser-side `wss://`; the host also verifies the ingress path before accepting credentials.
+
+| Connection | Profile authentication policy |
+|---|---|
+| Direct TLS | Allow `wss://` when the host observes an encrypted socket. |
+| Cloudflare tunnel | Allow browser HTTPS/WSS with plaintext `ws://` confined to cloudflared's loopback hop. Require the trusted ingress checks below. |
+| Direct same-Wi-Fi `ws://` | Disable profile creation, login, resume and authenticated requests. Keep existing guest play and seat recovery. Use HTTPS/WSS for profiles. |
+| Explicit loopback development | Allow plaintext only in an explicit development mode, with both browser page and WebSocket endpoint on loopback. |
+
+Tunnel ingress must overwrite `X-Forwarded-Proto` with the verified external scheme and enforce HTTPS/WSS at its public edge.
+Accept that HTTPS indication only from the loopback peer trusted under #581, with a nonempty `cf-connecting-ip` header.
+Do not infer encryption from loopback, `cf-connecting-ip`, the browser's Origin, or a client's claimed scheme alone.
+A missing HTTPS indication or a direct peer's spoofed headers must fail profile authentication, preserving guest access.
+Never downgrade a profile connection to plaintext or send credentials merely to discover whether the host accepts them.
+The development exception does not authorize credentials from a LAN browser, even when a proxy reaches the host through loopback.
 Restrict browser origins at the profile connection boundary; authorize configured development origins explicitly.
 Blocked storage means “Not remembered on this device.” It never blocks joining or destroys a saved seat.
 
@@ -113,7 +151,7 @@ Apply existing message-size limits and separate authentication/query limits. Clo
 |---|---|
 | `profileCreate` / `profileLogin` | Bounded fields above. Return a private `profileSession` with the profile projection and device credential. |
 | `profileResume` | Validate the device credential; return the owner's projection without issuing another credential. |
-| `profileEdit` / `profileChangePin` | Require that profile's valid credential; login and PIN changes also require the current PIN. |
+| `profileEdit` / `profileChangePin` | Require that profile's valid credential; login and ordinary PIN changes also require the current PIN. Locked-PIN recovery uses the authenticated device exception above. |
 | `profileGet` / `profileHistory` | Derive the owner from a valid credential. Ignore caller-supplied profile IDs; return only that owner's details and history. |
 | `profileWins` | Require a valid profile credential. Return bounded group aggregates, never another player's detailed history. |
 | `tableProfileCard` | Authorize through the current seat/watcher socket and its current room roster. Return only a visible participant's public card. |
@@ -252,15 +290,19 @@ Leaderboard responses include aggregates only; other players' detailed history r
 ## Curated media and playback
 
 Use the handover process in [sound.md](sound.md#handing-over-clips), including provenance and converted-file size limits.
-Jarrod supplies media with the friend's current login name. The orchestrator adds only approved local assets.
-Propose `src/assets/profiles/manifest.ts`, keyed by a canonical media slug, with explicit icon and audio imports.
-Use `public/audio/intro_<profile>.mp3`, `win_<profile>.mp3` and `lose_<profile>.mp3`; `<profile>` is that curated slug.
-Use a local icon such as `public/profiles/<profile>.webp`. Never derive an unchecked filesystem path from a login.
-The manifest is public; login slugs used as media keys must not be described as private identifiers.
+Jarrod supplies media and the friend's current login privately. The orchestrator adds only approved local assets.
+Generate an opaque `mediaSlug`, such as `m_` followed by 32 random hexadecimal characters, independently of every login.
+Propose `src/assets/profiles/manifest.ts`, keyed by that slug, with explicit icon and audio imports.
+Use `public/audio/intro_<mediaSlug>.mp3`, `win_<mediaSlug>.mp3`, `lose_<mediaSlug>.mp3` and `public/profiles/<mediaSlug>.webp`.
+Never derive a media slug, filename or committed manifest field from a login name.
+The manifest and assets remain public. Keep the login-to-profile-to-media mapping only in the private host store.
 
-Bind a matching manifest entry to the authenticated profile on creation or the next successful login.
+Only Jarrod's local admin command binds an approved manifest key to an existing stable profile UUID.
+Preview the selected profile and assets, and verify the intended friend privately before binding.
+Creation and login never auto-bind media, even when a login or display name resembles an asset key.
+A stranger claiming a friend's login receives no curated media; resolving a squatted login requires Jarrod's local intervention.
 Store the bound key privately. Login renames preserve that binding and reserve the previous login against reuse.
-When Jarrod adds media under a renamed login, a local admin command updates the existing profile's binding.
+Adding or replacing assets requires an explicit local admin binding update, never another name match.
 Neither name similarity nor a client-supplied asset key can rebind another person's media.
 Missing icons use initials. Missing or invalid media uses the fallback below, without blocking any game action.
 
@@ -271,7 +313,7 @@ No uploads, seed imports, arbitrary URLs, streaming embeds or runtime media conv
 | Event | Playback contract |
 |---|---|
 | First successful lobby arrival | Play that profile's intro once per room to seated listeners who enabled intros. Rejoin, edits and rematch never replay it. |
-| Completed game with custom winner clip | Play the winner's `win_<profile>` for every present listener, including watchers, through Music and ambience. |
+| Completed game with custom winner clip | Play the winner's `win_<mediaSlug>` for every present listener, including watchers, through Music and ambience. |
 | Winner without custom media | Preserve today's default `win` for the winner and `game_lose` for others, once per completed game. |
 | Optional personal lose clip | Play locally only when no custom winner clip takes priority. Never stack it over the shared winner clip. |
 | End music | Schedule after the selected outcome clip finishes. Replace the existing fixed 1.5-second schedule. |
@@ -342,7 +384,10 @@ Split any M-sized implementation through research before building. Do not reserv
 |---|---|
 | Creation race | One canonical login and profile UUID survive; no duplicate profile or plaintext PIN reaches disk. |
 | Edit and rename | UUID, history and media binding persist; old login cannot authenticate or claim another profile. |
-| Guessing and reset | Limits survive restart; bounded hash work; generic login errors; PIN reset revokes all remembered credentials. |
+| PIN guessing | Enforce five failures per 15 minutes, ten per rolling 24 hours and 30 per credential lifetime, including concurrent attempts. Restart, rename and successful login cannot replenish failures. |
+| Locked-PIN recovery | At 30 failures, PIN login stays locked across time and restart. A valid device still resumes and may change the PIN; local reset also recovers access. Both reset counters and revoke prior devices. |
+| Source address | Direct spoofed headers cannot change address buckets. Loopback tunnel headers select separate normalized client buckets; bare loopback retains login and hash limits. |
+| Secure transport | HTTPS/WSS tunnel login works across its trusted plaintext loopback hop. Missing HTTPS proof and direct LAN plaintext refuse every credential request; guest play survives. Explicit loopback development still works. |
 | Shared device and host change | Logout revokes only its profile session; saved seat survives; credentials never cross selected host endpoints. |
 | Rejoin | Valid seat secret restores its original profile binding even after profile-session expiry. A profile token alone cannot recover it. |
 | Private projections | Credentials and login fields appear in no game state, spectator state, log, leaderboard or other-profile response. |
@@ -355,6 +400,7 @@ Split any M-sized implementation through research before building. Do not reserv
 | Statistics | Two wins from three counted games show 66.7%. Zero games show no percentage. Excluded games leave totals unchanged. |
 | Legacy and corruption | Legacy rooms stay playable without fabricated history; unknown schemas and corrupt stores cannot silently reset records. |
 | UI | Phone portrait/landscape and desktop preserve guest entry, typed codes, readiness, board hole, focus and 44 px controls. |
+| Media ownership | Public filenames and manifest contain no login mapping. Squatted logins, creation, login and client asset keys cannot bind media. Only the local admin can bind it to the verified profile UUID. |
 | Media | Custom winner clip plays once; win preempts soundboard and game start cancels intro; fallback/end music never overlap. |
 | Cancellation | Muting Music and ambience stops it immediately; Skip, hide, Leave and rematch prevent every queued restart. |
 | Administration | No historical-edit or statistic-reset action exists. PIN reset works; deletion anonymizes identity without changing other players' results. |
