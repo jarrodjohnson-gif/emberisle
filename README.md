@@ -339,7 +339,7 @@ Full rules: **[docs/FRAMEWORK.md](docs/FRAMEWORK.md)**. In short:
 - `sb_airhorn.mp3`
 - `sb_quit_touchin.mp3`
 - `sb_only_wood.mp3`
-- `sb_plump_sheep.mp3`, `sb_nice_sheep.mp3`, `sb_sheep_please.mp3`, `sb_grain_please.mp3`, `sb_brick_please.mp3` (Jarrod, 2026-10-18)
+- `sheep_for_wood.mp3` (plays instead of the offer chime on an offer giving wool for timber), `sb_plump_sheep.mp3`, `sb_nice_sheep.mp3`, `sb_sheep_please.mp3`, `sb_grain_please.mp3`, `sb_brick_please.mp3` (Jarrod, 2026-10-18)
 
 ---
 

@@ -25,6 +25,7 @@ const FILES = {
   // Synthesised by scripts/make-sounds.mjs (docs/design/sound.md).
   wayfarer_move: "wayfarer_move.wav",
   trade_offer: "trade_offer.wav",
+  sheep_for_wood: "sheep_for_wood.mp3",
   chat_send: "chat_send.wav",
   chat_recv: "chat_recv.wav",
   // A tap on the sea (#616): a normal table clip, paced and burst-dropped like the rest.
