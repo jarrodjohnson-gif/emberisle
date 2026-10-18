@@ -259,7 +259,7 @@ body {
 @media (max-width: 767px), (pointer: coarse) {
   .hud-actions { flex-direction: column; align-items: stretch; }
   .build-grid { flex: none; }
-  .action-utilities { justify-content: space-between; }
+  .action-utilities { justify-content: flex-start; }
   .trade-dock { grid-template-columns: minmax(0, 1fr); }
   .trade-summary { min-height: 32px; }
   .trade-answers { width: 100%; }

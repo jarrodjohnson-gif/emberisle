@@ -52,7 +52,13 @@ try{
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));await page.goto(`http://127.0.0.1:${port}`);await page.waitForFunction(()=>window.__emberisle);
   const load=(view,i)=>page.evaluate(({view,i})=>{const store=window.__emberisle;store.setState({spectator:i===4,menuFor:null,chatOpen:false,code:'FDAB',seatId:`s${i}`});store.getState().loadState(view.game,view.you??'',i===0,'FDAB');},{view,i});
   for(let i=0;i<5;i++){
-   await load(history[0][i],i);const opener=page.getByTestId('fortunes-button');await opener.waitFor();assert.equal(await opener.getAttribute('data-deck-left'),'25');
+   await load(history[0][i],i);const opener=page.getByTestId('fortunes-button');
+   // #776: My fortunes shows only with a held fortune; an empty hand reads the deck on the Fortune buy tile instead.
+   if(i!==1){await page.waitForTimeout(300);assert.equal(await opener.count(),0);const tile=page.getByTestId('deck-left');
+    for(let bought=0;bought<=25;bought++){await load(history[bought][i],i);if(await tile.count())assert.equal(await tile.textContent(),`${25-bought} left`);}
+    await load(restarted[i],i);if(await tile.count())assert.equal(await tile.textContent(),'0 left');
+    continue;}
+   await opener.waitFor();assert.equal(await opener.getAttribute('data-deck-left'),'25');
    const b=await opener.boundingBox();assert.ok(b.width>=44&&b.height>=44&&b.x>=0&&b.y>=0&&b.x+b.width<=width&&b.y+b.height<=height);
    await opener.click();await page.getByTestId('fortune-deck-count').waitFor();
    if(i===0||i===2||i===3)await page.getByText('None held',{exact:true}).waitFor();

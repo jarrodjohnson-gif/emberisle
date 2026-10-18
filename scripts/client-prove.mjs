@@ -800,7 +800,7 @@ try {
   console.log("Tab to unaffordable Path:", JSON.stringify({ tabbedTo, ...tabFocus }));
   if (tabbedTo !== "Path" || tabFocus.aria !== "true" || !tabFocus.desc.startsWith(price.Path)) throw new Error(`Tab/aria-disabled: ${JSON.stringify({ tabbedTo, ...tabFocus })}`);
   const cardsBefore = await page.evaluate(() => window.__emberisle.getState().state.deck.length);
-  for (const n of ["Path", "Outpost", "Stronghold", "Fortune"]) await page.getByRole("button", { name: n, exact: true }).click({ force: true });
+  for (const n of ["Path", "Outpost", "Stronghold", "Fortune"]) await page.getByRole("button", n === "Fortune" ? { name: /^Fortune, \d+ left in deck$/ } : { name: n, exact: true }).click({ force: true });
   await page.keyboard.press("Enter");
   const clickRes = await page.evaluate(() => ({ buildMode: window.__emberisle.getState().buildMode, cards: window.__emberisle.getState().state.deck.length, error: window.__emberisle.getState().error, said: window.__emberisle.getState().announcement }));
   console.log("click unaffordable:", JSON.stringify({ ...clickRes, cardsBefore }));

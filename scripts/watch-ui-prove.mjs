@@ -339,10 +339,9 @@ try {
   if (wv.placeList !== 0) throw new Error("the watcher has a PlaceList (#376) of targets");
   const pressable = wv.buttons.filter((t) => GAME_CONTROLS.includes(t));
   if (pressable.length) throw new Error(`the watcher can press ${JSON.stringify(pressable)}`);
-  await w1.page.getByTestId("fortunes-button").click();
-  await w1.page.getByTestId("fortune-deck-count").waitFor();
-  if (await w1.page.locator('[data-testid^="fortune-row-"]').count()) throw new Error("watcher deck tray exposes held fortune kinds");
-  if (await w1.page.getByTestId("fortune-tray").getByRole("button").count() !== 1) throw new Error("watcher deck tray exposes play actions");
+  // #776: My fortunes shows only to a seat that holds a fortune, so a watcher has no tray at all.
+  if (await w1.page.getByTestId("fortunes-button").count()) throw new Error("watcher has a My fortunes button");
+  if (await w1.page.getByTestId("fortune-tray").count()) throw new Error("watcher has a fortune tray");
   await w1.page.keyboard.press("Escape");
   if (!wv.buttons.includes("Leave table")) throw new Error(`the watcher has no Leave table button: ${JSON.stringify(wv.buttons)}`);
   if (!wv.turnBanner || wv.turnBanner.startsWith("Your")) throw new Error(`the watcher's turn line: "${wv.turnBanner}"`);
