@@ -22,6 +22,16 @@
       @media (min-width: 640px) { #splash h1 { font-size: 4rem; line-height: 1; } }
       #splash p { margin: 0; font: 0.875rem/1.25rem ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; color: #58645e; }
     </style>
+    <!-- Game night: a first visit goes through the invite (public/invite.html) and marks the device, so one link does both.
+         Anyone who has a saved seat, and automated browsers (the proofs), go straight in. Blocked storage also goes straight in. -->
+    <script>
+      try {
+        if (!navigator.webdriver && !localStorage.getItem("emberisle-invited") && !localStorage.getItem("emberisle-seat")) {
+          localStorage.setItem("emberisle-invited", "1");
+          location.replace("./invite.html" + location.search);
+        }
+      } catch (e) {}
+    </script>
     <script>
       try {
         var seat = JSON.parse(localStorage.getItem("emberisle-seat"));

@@ -582,6 +582,8 @@ form .actions { justify-content: flex-start; }
   $('change').addEventListener('click', goAsk);
   $('skip').addEventListener('click', goReveal);
   $('replay').addEventListener('click', replay);
+  // Keep a join link's ?code= so Join table lands on the same table.
+  $('join').href = './' + location.search;
 })();
 </script>
 
