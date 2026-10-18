@@ -7,7 +7,7 @@ import { createServer } from "vite";
 import { createGame } from "../src/lib/game/board.ts";
 import { chooseBotAction } from "../src/lib/game/ai.ts";
 import { applyAction } from "../src/lib/game/rules.ts";
-import { RESOURCES } from "../src/lib/game/types.ts";
+import { RESOURCES, RESOURCE_LABEL } from "../src/lib/game/types.ts";
 
 const PORT = 8099;
 let base = createGame({ humans: [{ name: "Ember" }], bots: 3, seed: 11 });
@@ -36,8 +36,8 @@ const page = await browser.newPage({ viewport: { width: 440, height: 956 } });
 page.on("pageerror", (e) => errors.push(String(e)));
 page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
 const panel = page.getByTestId("trade-panel");
-const more = (r, side) => panel.getByRole("button", { name: `More ${r} to ${side}`, exact: true });
-const fewer = (r, side) => panel.getByRole("button", { name: `Fewer ${r} to ${side}`, exact: true });
+const more = (r, side) => panel.getByRole("button", { name: `More ${RESOURCE_LABEL[r]} to ${side}`, exact: true });
+const fewer = (r, side) => panel.getByRole("button", { name: `Fewer ${RESOURCE_LABEL[r]} to ${side}`, exact: true });
 const ask = () => panel.getByRole("button", { name: "Ask the table" });
 const bank = () => panel.getByRole("button", { name: /^(Bank 4|Dock [23]):1$/ });
 const change = (fn, arg) => page.evaluate(([f, a]) => {
@@ -83,7 +83,7 @@ try {
     await more("wool", "want").click();
     await more("ore", "want").click();
     const preview = panel.getByTestId("trade-player-preview");
-    assert.match(await preview.textContent(), /You give: 2 timber.*You get: 1 wool, 1 ore/);
+    assert.match(await preview.textContent(), /You give: 2 wood.*You get: 1 sheep, 1 stone/);
     assert(await more("timber", "want").isDisabled(), "same kind cannot be sent both ways");
     assert(await bank().isDisabled(), "bank must reject mixed kinds");
     assert.equal(await panel.getByTestId("trade-give-timber").getByTestId("trade-owned").textContent(), "Have 6");
@@ -103,7 +103,7 @@ try {
     await panel.locator(".trade-composer-scroll").evaluate((el) => { el.scrollTop = 0; });
     await page.screenshot({ path: `test-results/trade-map-${width}x${height}.png` });
     await change('g.players[0].resources.timber = 1');
-    await textHas(preview, "You give: 1 timber");
+    await textHas(preview, "You give: 1 wood");
     assert(await more("timber", "give").isDisabled(), "live hand must cap give");
     await change('g.players[0].resources.timber = 0');
     await textHas(preview, "You give: choose goods");
@@ -148,7 +148,7 @@ try {
     await more("ore", "give").click();
     await more("wool", "want").click();
     await more("wool", "want").click();
-    assert.equal(await panel.getByTestId("trade-hint").textContent(), `You give ${rate} ore. You get 1 wool.`);
+    assert.equal(await panel.getByTestId("trade-hint").textContent(), `You give ${rate} stone. You get 1 sheep.`);
     await bank().click();
     const actual = await settled();
     assert.equal(actual.hands[0].ore, 6 - rate);
@@ -164,10 +164,10 @@ try {
   await more("wool", "want").click();
   await change('g.bank.wool = 0');
   assert(await bank().isDisabled());
-  await textHas(panel.getByTestId("trade-hint"), "no wool");
+  await textHas(panel.getByTestId("trade-hint"), "no sheep");
   await change('g.bank.wool = 1; g.players[0].resources.ore = 3');
   assert(await bank().isDisabled());
-  await textHas(panel.getByTestId("trade-hint"), "Need 4 ore");
+  await textHas(panel.getByTestId("trade-hint"), "Need 4 stone");
   console.log("bank: exhausted stock and unaffordable rates refuse");
 
   // Long mixed offers must fit the frozen desktop board hole and leave chat usable after rotation.
@@ -260,8 +260,8 @@ try {
   assert(await page.evaluate(() => performance.now() - window.__declineAt < 1000), "bot cross took over 1 second to render");
   await page.screenshot({ path: "test-results/trade-map-responses.png" });
   await page.evaluate(() => window.__emberisle.setState({ localId: "p1" }));
-  await textHas(page.getByTestId("trade-receipt"), "You give: 1 wool, 1 ore");
-  await textHas(page.getByTestId("trade-receipt"), "You get: 1 timber, 1 clay");
+  await textHas(page.getByTestId("trade-receipt"), "You give: 1 sheep, 1 stone");
+  await textHas(page.getByTestId("trade-receipt"), "You get: 1 wood, 1 brick");
   await change('g.players[1].resources.ore = 0');
   await page.waitForFunction(() => document.querySelector(".trade-yes")?.getAttribute("aria-disabled") === "true");
   await toast.getByRole("button", { name: "Yes", exact: true }).focus();

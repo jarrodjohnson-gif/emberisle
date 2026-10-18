@@ -1,4 +1,4 @@
-// The ask-the-table toast (docs/BUILD_BIBLE.md 4.4): "Ember offers 2 wool for 1 ore", Yes / No, and the 20 s left.
+// The ask-the-table toast (docs/BUILD_BIBLE.md 4.4): "Ember offers 2 sheep for 1 ore", Yes / No, and the 20 s left.
 // The asker sees the same offer with who has declined, then the outcome for a moment.
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -8,11 +8,11 @@ import { Button } from "@/components/ui/button";
 import { SeatDot } from "@/components/game/SeatDot";
 import { bagText } from "@/lib/game/trade";
 import { useGame } from "@/lib/game/store";
-import { RESOURCES } from "@/lib/game/types";
+import { RESOURCES, RESOURCE_LABEL } from "@/lib/game/types";
 import type { Bag } from "@/lib/net/table";
 import "./trade-panel.css";
 
-// "Ember offers 2 wool for 1 ore"; the asker reads "You offer 2 wool for 1 ore".
+// "Ember offers 2 sheep for 1 ore"; the asker reads "You offer 2 sheep for 1 ore".
 export function offerLine(name: string | null, give: Bag, want: Bag) {
   const g = bagText(give);
   const w = bagText(want);
@@ -97,7 +97,7 @@ export function TradeToast() {
     const asker = offer.from === localId;
     const short = me ? RESOURCES.filter((r) => (offer.want[r] ?? 0) > me.resources[r]) : [];
     answering = !asker && !spectator;
-    why = me && short.length ? `Need ${short.map((r) => `${offer.want[r]! - me.resources[r]} more ${r}`).join(", ")}` : null;
+    why = me && short.length ? `Need ${short.map((r) => `${offer.want[r]! - me.resources[r]} more ${RESOURCE_LABEL[r].toLowerCase()}`).join(", ")}` : null;
     body = (
       <>
         <div className="trade-summary flex min-w-0 items-center justify-between gap-2">

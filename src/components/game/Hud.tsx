@@ -171,7 +171,7 @@ export function Hud() {
   const readyKey = rowShown ? `${me!.id}|${PRICES.map((k) => (buildStatus(state, me!, k).ready ? 1 : 0)).join("")}|${RESOURCES.map((r) => me!.resources[r]).join(",")}` : "";
   const wasReady = useRef(readyKey);
   const [pulse, setPulse] = useState<Price[]>([]);
-  // #535: a tap on a build the hand cannot pay for hangs "Need 1 clay" above that build for 1.6 s; the next tap restarts it.
+  // #535: a tap on a build the hand cannot pay for hangs "Need 1 brick" above that build for 1.6 s; the next tap restarts it.
   const [hint, setHint] = useState<{ kind: Price } | null>(null);
   useEffect(() => {
     if (!hint) return;

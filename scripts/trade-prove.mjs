@@ -14,6 +14,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { chromium } from "playwright";
 import { createServer } from "vite";
+import { RESOURCE_LABEL } from "../src/lib/game/types.ts";
 
 const PORT = Number(process.env.VITE_PORT) || 8097;
 const RES = ["timber", "clay", "wool", "grain", "ore"];
@@ -249,8 +250,8 @@ try {
   const ask = async (g, w, n = 1) => {
     await tradeButton.click();
     await A.page.getByTestId("trade-panel").waitFor();
-    await A.page.getByRole("button", { name: `More ${g} to give` }).click();
-    for (let m = 0; m < n; m++) await A.page.getByRole("button", { name: `More ${w} to want` }).click();
+    await A.page.getByRole("button", { name: `More ${RESOURCE_LABEL[g]} to give` }).click();
+    for (let m = 0; m < n; m++) await A.page.getByRole("button", { name: `More ${RESOURCE_LABEL[w]} to want` }).click();
     await A.page.getByRole("button", { name: "Ask the table" }).click();
     return until(async () => {
       const vs = await views(tabs);
@@ -267,14 +268,14 @@ try {
   if (await A.page.getByTestId("trade-panel").isVisible()) throw new Error("the panel stayed open after the ask");
   const afterAsk = await focusIs(A);
   if (afterAsk.label !== "Trade") throw new Error(`#378: the ask closed the panel but focus went to "${afterAsk.label}", not the Trade button`);
-  const line = `${A.name} offers 1 ${give} for 1 ${want}`;
+  const line = `${A.name} offers 1 ${RESOURCE_LABEL[give].toLowerCase()} for 1 ${RESOURCE_LABEL[want].toLowerCase()}`;
   for (const t of [B, C]) {
     const v = vs[tabs.indexOf(t)];
     if (!v.toast.includes(line)) throw new Error(`${t.name} toast: "${v.toast}"`);
     const secs = Number((await t.page.getByTestId("trade-countdown").textContent()).replace(/\D/g, ""));
     if (secs < 1 || secs > 20) throw new Error(`${t.name} toast has no countdown: "${v.toast}"`);
   }
-  if (!vs[i].toast.includes(`You offer 1 ${give} for 1 ${want}`) || !vs[i].toast.includes("Waiting")) throw new Error(`asker toast: "${vs[i].toast}"`);
+  if (!vs[i].toast.includes(`You offer 1 ${RESOURCE_LABEL[give].toLowerCase()} for 1 ${RESOURCE_LABEL[want].toLowerCase()}`) || !vs[i].toast.includes("Waiting")) throw new Error(`asker toast: "${vs[i].toast}"`);
   const tradeId = vs[0].offer.tradeId;
   console.log(`toast on ${B.name} and ${C.name}: "${line}"; asker sees "Waiting…"`);
 
@@ -311,7 +312,7 @@ try {
       return false;
     }
     if (got.ariaDisabled !== "true") throw new Error(`${where}: Yes is not aria-disabled though it cannot pay`);
-    if (got.describedBy !== `Need ${short} more ${r}`) throw new Error(`${where}: Yes is not described by "Need ${short} more ${r}"`);
+    if (got.describedBy !== `Need ${short} more ${RESOURCE_LABEL[r].toLowerCase()}`) throw new Error(`${where}: Yes is not described by "Need ${short} more ${RESOURCE_LABEL[r].toLowerCase()}"`);
     return true;
   };
   for (const t of [B, C]) await answerable(t, vs[tabs.indexOf(t)], line, want, 1);
@@ -370,11 +371,11 @@ try {
   const again = await ask(want, give, n2);
   const tradeId2 = again[0].offer.tradeId;
   if (tradeId2 === tradeId) throw new Error("second ask reused the tradeId");
-  const line2 = `${A.name} offers 1 ${want} for ${n2} ${give}`;
+  const line2 = `${A.name} offers 1 ${RESOURCE_LABEL[want].toLowerCase()} for ${n2} ${RESOURCE_LABEL[give].toLowerCase()}`;
   for (const t of [B, C]) {
-    if (!(await answerable(t, again[tabs.indexOf(t)], line2, give, n2))) throw new Error(`${t.name} can pay ${n2} ${give}`);
+    if (!(await answerable(t, again[tabs.indexOf(t)], line2, give, n2))) throw new Error(`${t.name} can pay ${n2} ${RESOURCE_LABEL[give].toLowerCase()}`);
   }
-  console.log(`#366: "${line2}": Yes on ${B.name} and ${C.name} is aria-disabled, focusable, described by "Need … more ${give}"`);
+  console.log(`#366: "${line2}": Yes on ${B.name} and ${C.name} is aria-disabled, focusable, described by "Need … more ${RESOURCE_LABEL[give].toLowerCase()}"`);
   // Enter on B's aria-disabled Yes sends nothing; Escape inside C's toast answers No.
   await spyAnswers(B);
   // Every text B's polite line takes, from ~20 s left until the toast closes (a MutationObserver misses no 1 s window).

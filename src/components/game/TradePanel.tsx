@@ -28,11 +28,11 @@ function Stepper({ resource, value, owned, side, canMore, onChange }: {
       <span className="trade-resource-name">{RESOURCE_LABEL[resource]}</span>
       <span className="trade-owned" data-testid="trade-owned">Have {owned}</span>
       <div className="trade-stepper">
-        <Button variant="ghost" size="icon" aria-label={`Fewer ${resource} to ${side}`} disabled={value === 0} onClick={() => onChange(value - 1)}>
+        <Button variant="ghost" size="icon" aria-label={`Fewer ${RESOURCE_LABEL[resource]} to ${side}`} disabled={value === 0} onClick={() => onChange(value - 1)}>
           <Minus className="size-4" />
         </Button>
-        <output aria-label={`${resource} to ${side}`} className="trade-quantity">{value}</output>
-        <Button variant="ghost" size="icon" aria-label={`More ${resource} to ${side}`} disabled={!canMore} onClick={() => onChange(value + 1)}>
+        <output aria-label={`${RESOURCE_LABEL[resource]} to ${side}`} className="trade-quantity">{value}</output>
+        <Button variant="ghost" size="icon" aria-label={`More ${RESOURCE_LABEL[resource]} to ${side}`} disabled={!canMore} onClick={() => onChange(value + 1)}>
           <Plus className="size-4" />
         </Button>
       </div>
@@ -108,11 +108,11 @@ export function TradePanel() {
   const bankWhy = !g || !w
     ? "Choose one kind on each side for a bank or dock exchange."
     : me.resources[g] < rate!
-      ? `Need ${rate} ${g} for the ${rate === 4 ? "bank" : "dock"}.`
+      ? `Need ${rate} ${RESOURCE_LABEL[g].toLowerCase()} for the ${rate === 4 ? "bank" : "dock"}.`
       : state.bank[w] <= 0
-        ? `The bank has no ${w}.`
+        ? `The bank has no ${RESOURCE_LABEL[w].toLowerCase()}.`
         : null;
-  const bankHint = bankWhy ?? `You give ${rate} ${g}. You get 1 ${w}.`;
+  const bankHint = bankWhy ?? `You give ${rate} ${RESOURCE_LABEL[g!].toLowerCase()}. You get 1 ${RESOURCE_LABEL[w!].toLowerCase()}.`;
 
   const bank = () => {
     if (!g || !w || bankWhy) return;

@@ -139,8 +139,8 @@ async function proveResourceMotion(page, tag) {
   // The first change goes through the actual trade panel and the store's rules dispatcher.
   await page.getByRole("button", { name: "Trade", exact: true }).click();
   await page.getByTestId("trade-panel").waitFor();
-  for (let i = 0; i < 4; i++) await page.getByRole("button", { name: "More ore to give" }).click();
-  await page.getByRole("button", { name: "More wool to want" }).click();
+  for (let i = 0; i < 4; i++) await page.getByRole("button", { name: "More stone to give" }).click();
+  await page.getByRole("button", { name: "More sheep to want" }).click();
   await page.getByRole("button", { name: /^(Bank 4|Dock 3|Dock 2):1$/ }).click();
   await page.waitForFunction(() => document.querySelector('[data-testid="resource-wool"] [data-testid="hand-count"]')?.textContent.trim() === "2", null, { timeout: STEP_MS });
   await sampleCardMotion(page, { wool: { count: "2", flash: "+1", y: -3 }, ore: { count: "4", flash: "-4", y: 2 } }, tag);
@@ -482,8 +482,8 @@ try {
       assert.ok(c.sizes.filter((s) => s.px === parseFloat(c.size)).length === 1, `${v.tag} ${r}: only the count is 28 px`);
       assert.equal(c.opacity, "1", `${v.tag} ${r}: opacity`);
       assert.ok(c.icon && c.iconOpacity === "1", `${v.tag} ${r}: icon at 70 % (${c.iconOpacity})`);
-      assert.deepEqual(c.visibleText, v.tag === "short" ? [String(want[r])] : [String(want[r]), {timber:"Timber",clay:"Clay",wool:"Wool",grain:"Grain",ore:"Ore"}[r]], `${v.tag} ${r}: only the count is visible text`);
-      assert.equal(c.title, { timber: "Timber", clay: "Clay", wool: "Wool", grain: "Grain", ore: "Ore" }[r], `${v.tag} ${r}: title`);
+      assert.deepEqual(c.visibleText, v.tag === "short" ? [String(want[r])] : [String(want[r]), {timber:"Wood",clay:"Brick",wool:"Sheep",grain:"Wheat",ore:"Stone"}[r]], `${v.tag} ${r}: only the count is visible text`);
+      assert.equal(c.title, { timber: "Wood", clay: "Brick", wool: "Sheep", grain: "Wheat", ore: "Stone" }[r], `${v.tag} ${r}: title`);
       assert.match(c.name, new RegExp(`${c.title}`, "i"), `${v.tag} ${r}: accessible name kept for screen readers`);
     }
     const tinted = await page.evaluate(() => [...document.querySelectorAll('[data-testid^="resource-"]')].filter((e) => /emerald|rose/.test(e.className)).length);
