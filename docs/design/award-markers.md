@@ -26,9 +26,9 @@ Neither case needs a new player choice or owner decision.
 | --- | --- |
 | Canonical holder IDs | [types.ts](../../src/lib/game/types.ts#L126): `longestRoad` and `largestArmy` |
 | Existing trail semantics | [rules.ts](../../src/lib/game/rules.ts#L179): `roadLength` |
-| Thresholds and retained ties | [rules.ts](../../src/lib/game/rules.ts#L207): `updateLongest` and `updateArmy` |
-| Public topology and buildings | [types.ts](../../src/lib/game/types.ts#L58): `Vertex` and `Edge` |
-| State delivery and piece rebuild | [isle-renderer.ts](../../src/lib/scene/isle-renderer.ts#L640): `setBoard` |
+| Thresholds and retained ties | [rules.ts](../../src/lib/game/rules.ts#L211): `updateLongest` and `updateArmy` |
+| Public topology and buildings | [types.ts](../../src/lib/game/types.ts#L60): `Vertex` and `Edge` |
+| State delivery and piece rebuild | [isle-renderer.ts](../../src/lib/scene/isle-renderer.ts#L641): `setBoard` |
 | Recreated pieces and stable landing keys | [isle-renderer.ts](../../src/lib/scene/isle-renderer.ts#L1651): `buildPieces` |
 | Terrain-relative piece heights | [isle-renderer.ts](../../src/lib/scene/isle-renderer.ts#L1832): `hexTops`, `vertexTop`, `edgeTop` |
 | Legal targets and picking objects | [isle-renderer.ts](../../src/lib/scene/isle-renderer.ts#L1757): `buildMarks` |
