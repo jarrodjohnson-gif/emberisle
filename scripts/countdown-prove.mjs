@@ -246,6 +246,9 @@ try {
   // #661: that whole window ran out on the first seat, so its own tab heard the last 5 s: a tick as the count reached each of
   // 5, 4, 3, 2 and 1 (volume 0.5), then the knock at 0 (0.8), a second apart. The other two tabs heard none of it.
   const timerPlays = (t) => t.page.evaluate(() => window.__plays.filter((p) => /^timer_/.test(p.file)));
+  // The knock is logged where the host hands the turn on, which can trail the last tick by 2.7 s on a busy runner and so land
+  // after the view above has already moved on. Give it up to 5 s to arrive; if it never does, the checks below report that.
+  await firstTab.page.waitForFunction(() => window.__plays.some((p) => p.file === "timer_final.wav"), null, { timeout: 5000 }).catch(() => {});
   const owner = await timerPlays(firstTab);
   const names = owner.map((p) => p.file.replace(".wav", ""));
   if (names.join() !== "timer_tick,timer_tick,timer_tick,timer_tick,timer_tick,timer_final") throw new Error(`the waited-on seat heard ${names.join(", ")}`);
