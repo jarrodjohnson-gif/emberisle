@@ -1,0 +1,17 @@
+{
+  "name": "emberisle-779-local-spike",
+  "main": "worker.ts",
+  "compatibility_date": "2026-10-12",
+  "workers_dev": false,
+  "preview_urls": false,
+  "assets": {
+    "directory": "../../dist",
+    "binding": "ASSETS",
+    "run_worker_first": true
+  },
+  "vars": { "LOCAL_SPIKE": "true" },
+  "durable_objects": {
+    "bindings": [{ "name": "TABLES", "class_name": "TableSpike" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["TableSpike"] }]
+}

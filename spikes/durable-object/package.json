@@ -1,0 +1,12 @@
+{
+  "name": "emberisle-779-local-spike",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --local --ip 127.0.0.1 --port 8799 --persist-to .local-state",
+    "prove": "node prove.mjs"
+  },
+  "devDependencies": {
+    "wrangler": "4.151.1"
+  }
+}

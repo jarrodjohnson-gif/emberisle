@@ -1,0 +1,6 @@
+node_modules/
+.wrangler/
+.local-state/
+proof-state-*/
+proof-results/
+*.log
