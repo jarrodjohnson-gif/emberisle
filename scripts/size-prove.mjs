@@ -56,7 +56,8 @@ const BUDGETS = [
   // 2026-10-15 (#603): 6.33 kB measured with the win screen's winning action on top of #611's lobby selector; +170 B.
   // 2026-10-15 (#612): 6.37 kB measured with wayfarer modes on top of #603; the #603 ceiling holds, no raise.
   // 2026-10-17 (#536): the exact trade composer and live hand validation measure 6.85 kB; +250 B headroom.
-  { name: "sheets", gzipBytes: 7100 },
+  // 2026-10-18 (#749): the How to play setup diagrams and the scrollable rules region measure 8497 B; +253 B headroom. The chunk loads only when a dialog opens.
+  { name: "sheets", gzipBytes: 8750 },
   // 2026-10-16 (#643): the "My numbers" strip rides in moments, off the first load (the index measured 120.64 kB with it there,
   // over its 120.15 kB budget); 3.00 kB measured against 2.42 kB on main, +300 B headroom.
   // 2026-10-17 (#540): first-game coaching moves off the critical path into moments; 4244 B measured versus 3017 B on current main; +256 B headroom.

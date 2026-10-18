@@ -876,7 +876,9 @@ try {
     const at = await page.evaluate(() => document.activeElement?.getAttribute("aria-label"));
     await page.keyboard.press("Tab");
     const afterTab = await page.evaluate(() => document.activeElement?.getAttribute("aria-label"));
-    if (afterTab !== "Close") throw new Error(`how to play ${label}: Tab left the dialog: ${afterTab}`);
+    // The "Rules and setup" region is focusable so the keyboard can scroll it (#749); Tab may stop there before Close.
+    const inside = await page.evaluate(() => !!document.activeElement?.closest('[role="dialog"]'));
+    if (!inside || (afterTab !== "Close" && afterTab !== "Rules and setup")) throw new Error(`how to play ${label}: Tab left the dialog: ${afterTab}`);
     await page.keyboard.press("Escape");
     await dlg.waitFor({ state: "detached", timeout: 3000 });
     const back = await page.evaluate(() => document.activeElement?.getAttribute("aria-label") ?? document.activeElement?.textContent?.trim());
