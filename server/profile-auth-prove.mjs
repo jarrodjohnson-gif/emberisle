@@ -219,7 +219,10 @@ const busy = flood.filter((r) => isErr(r, "busy"));
 check("one running plus eight queued derivations; the overflow is refused", busy.length === 3 && flood.filter((r) => isErr(r, "signInFailed")).length === 9, flood.map((r) => r.code));
 const done = flood.filter((r) => r.code === "signInFailed").map((r) => r.ms).sort((a, b) => a - b);
 check("overflow is refused before any derivation finishes", Math.max(...busy.map((r) => r.ms)) < done[0], { busy: busy.map((r) => r.ms), first: done[0] });
-check("derivations run one at a time", done.at(-1) > 6 * done[0], done);
+// One at a time means one finish per derivation, evenly spaced; parallel work would land several finishes together.
+const gaps = done.slice(1).map((t, i) => t - done[i]);
+const median = [...gaps].sort((x, y) => x - y)[gaps.length >> 1];
+check("derivations run one at a time", Math.min(...gaps) >= 0.25 * median, { done, gaps });
 
 // --- Concurrent PIN budget reservations ---------------------------------------------------------------------------------------
 const guessers = await Promise.all(Array.from({ length: 8 }, () => client(h, tunnel())));

@@ -257,13 +257,19 @@ export function openProfiles(dir, { colors, clock = Date.now } = {}) {
     running = true;
     const job = waiting.shift();
     const { N, r, p } = job.params;
-    scrypt(job.pin, job.salt, KEY_LEN, { N, r, p, maxmem: SCRYPT.maxmem }, (err, key) => {
+    const finish = (err, key) => {
       running = false;
       load--;
       if (err) job.reject(err);
       else job.resolve(key);
       pump();
-    });
+    };
+    // Bad stored parameters make scrypt throw at once rather than call back; the queue must still move on.
+    try {
+      scrypt(job.pin, job.salt, KEY_LEN, { N, r, p, maxmem: SCRYPT.maxmem }, finish);
+    } catch (e) {
+      finish(e);
+    }
   }
   // An unknown login is checked against this, so it costs the same work as a real one.
   const dummy = { alg: "scrypt", N: SCRYPT.N, r: SCRYPT.r, p: SCRYPT.p, salt: randomBytes(SALT_LEN).toString("base64"), hash: randomBytes(KEY_LEN).toString("base64") };
