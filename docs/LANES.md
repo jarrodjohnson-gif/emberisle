@@ -53,6 +53,25 @@ not overlap. Claims reserve files, including while a PR waits for review.
 
 An issue with no lane label isn't ready. Skip it; the orchestrator labels it.
 
+## Tier and priority
+
+When told "next", pick the eligible issue with the highest priority (`prio:p0`, then `prio:p1`, then
+`prio:p2`). Within a priority, take your own tier first. Picking work from a lower tier is fine;
+picking from a higher tier is not. An issue with no `tier:` label is open to any tier.
+Tiers follow each vendor's own model documentation.
+
+| Label | Kind of work | Models |
+|---|---|---|
+| `tier:1-deep` | Hours-long research and architecture carried through to a finished document | Claude Fable 5.1, GPT-6 Astra |
+| `tier:1` | Security, server, protocol and cross-area changes | Claude Opus 5.5, GPT-6.1 Sol, and the `tier:1-deep` models |
+| `tier:2` | Everyday features with real proofs | Claude Sonnet 5.5, Gemini 3.8 Flash (thinking HIGH), Grok 4.7, and every `tier:1` model |
+| `tier:3` | Small single-purpose fixes, docs and screenshot QA | Claude Haiku 5.5, GPT-6 Luna, and every model above |
+
+A `model:` label, where present, is the reviewer's earlier pick. When it conflicts with `tier:`, the
+`tier:` label wins. Grok's usage limits are low, so give it one `tier:2` or `tier:3` issue at a time.
+`model:gemini-ok` issues are kept for Gemini. Other models skip them.
+A different model family from the builder reviews every PR.
+
 Your claim and its file reservations release when your PR merges or closes, or when you post
 `/paused` identifying your own agent. Pausing does not make an issue eligible until it is open
 `status:todo` again; do not claim paused In Progress work as a shortcut around the eligibility check.
