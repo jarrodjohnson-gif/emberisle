@@ -1043,8 +1043,10 @@ function endOffer(set: Set, get: Get, taker: string | null) {
 }
 
 // Jarrod's "sheep for wood" clip replaces the offer chime when an offer gives wool and asks for timber.
-function offerSound(give: Bag, want: Bag) {
-  return (give.wool ?? 0) > 0 && (want.timber ?? 0) > 0 ? "sheep_for_wood" : "trade_offer";
+// Everyone hears that clip, the asker too; the plain chime stays for the other seats only.
+function offerChime(from: string, me: string, give: Bag, want: Bag) {
+  if ((give.wool ?? 0) > 0 && (want.timber ?? 0) > 0) play("sheep_for_wood");
+  else if (from !== me) play("trade_offer");
 }
 
 // Practice's table offer for `from`, closing any earlier one (host.mjs openOffer). Every other bot answers it after a delay.
@@ -1054,7 +1056,7 @@ function openOffer(set: Set, get: Get, from: string, give: Bag, want: Bag) {
   const tradeId = `t${state.seq}-${++offerSeq}`;
   const fromName = state.players.find((p) => p.id === from)?.name ?? "Someone";
   set({ offer: { tradeId, from, fromName, give, want, until: Date.now() + OFFER_MS }, declined: [], tradeOutcome: null, tradeTaker: null });
-  if (from !== get().localId) play(offerSound(give, want));
+  offerChime(from, get().localId, give, want);
   offerTimers.push(setTimeout(() => endOffer(set, get, null), OFFER_MS));
   for (const p of state.players) {
     if (p.kind !== "bot" || p.id === from) continue;
@@ -1198,7 +1200,7 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
     tradeOffer: ({ tradeId, from, give, want, seconds }) => {
       const fromName = get().state?.players.find((p) => p.id === from)?.name ?? "Someone";
       set({ offer: { tradeId, from, fromName, give, want, until: Date.now() + seconds * 1000 }, declined: [], tradeOutcome: null, tradeTaker: null });
-      if (from !== get().localId) play(offerSound(give, want));
+      offerChime(from, get().localId, give, want);
     },
     tradeDeclined: ({ tradeId, by }) => {
       const { offer, declined } = get();
