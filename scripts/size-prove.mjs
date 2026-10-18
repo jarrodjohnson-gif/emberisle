@@ -26,7 +26,9 @@ const BUDGETS = [
   // window runs out) add 0.27 kB: 120.43 kB measured on Windows, +150 B headroom over it.
   // 2026-10-17 (#540): lazy coaching adds 85 B versus current main (120431 B); 120516 B measured, +234 B headroom.
   // 2026-10-17 (#552): render recovery adds 655 B over the lazy coach; 121171 B measured, +279 B headroom.
-  { name: "index", gzipBytes: 121450 },
+  // 2026-10-17 (#536): live trade response icons and taker identity measure 121.00 kB; +250 B headroom.
+  // 2026-10-18 (#552 + #536): recovery on current main measures 121713 B; +287 B headroom after merging both features.
+  { name: "index", gzipBytes: 122000 },
   // 2026-10-14 (#597): +1100 B for the diorama camera, its fit and the token pose on top of the lazy sea (182.92 kB measured).
   // 2026-10-15: 185.01 kB measured on main once the diorama (#604, +1.1 kB) and the natural waves (#614, +1.0 kB) both
   // landed; each fit its own raise alone.
@@ -53,7 +55,8 @@ const BUDGETS = [
   { name: "online", gzipBytes: 8300 },
   // 2026-10-15 (#603): 6.33 kB measured with the win screen's winning action on top of #611's lobby selector; +170 B.
   // 2026-10-15 (#612): 6.37 kB measured with wayfarer modes on top of #603; the #603 ceiling holds, no raise.
-  { name: "sheets", gzipBytes: 6500 },
+  // 2026-10-17 (#536): the exact trade composer and live hand validation measure 6.85 kB; +250 B headroom.
+  { name: "sheets", gzipBytes: 7100 },
   // 2026-10-16 (#643): the "My numbers" strip rides in moments, off the first load (the index measured 120.64 kB with it there,
   // over its 120.15 kB budget); 3.00 kB measured against 2.42 kB on main, +300 B headroom.
   // 2026-10-17 (#540): first-game coaching moves off the critical path into moments; 4244 B measured versus 3017 B on current main; +256 B headroom.

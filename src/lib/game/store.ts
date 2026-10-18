@@ -393,6 +393,7 @@ interface GameStore {
   offer: OpenOffer | null;
   declined: string[];
   tradeOutcome: string | null;
+  tradeTaker: string | null;
   tradeOpen: boolean;
   // Who opened the panel, so focus can go back there on close (Safari does not focus buttons on click, #302).
   tradeOpener: HTMLElement | null;
@@ -532,7 +533,7 @@ export const useGame = create<GameStore>((set, get) => ({
   playView: "diorama",
   offer: null,
   declined: [],
-  tradeOutcome: null,
+  tradeOutcome: null, tradeTaker: null,
   tradeOpen: false,
   tradeOpener: null,
   chromeSeq: 0,
@@ -588,7 +589,7 @@ export const useGame = create<GameStore>((set, get) => ({
       spectator: false,
       offer: null,
       declined: [],
-      tradeOutcome: null,
+      tradeOutcome: null, tradeTaker: null,
     });
     play("game_start", MUSIC_VOLUME);
   },
@@ -620,7 +621,7 @@ export const useGame = create<GameStore>((set, get) => ({
       spectator: false,
       offer: null,
       declined: [],
-      tradeOutcome: null,
+      tradeOutcome: null, tradeTaker: null,
     });
   },
   restoring: typeof window !== "undefined" && inPlayAtSavedSeat(),
@@ -679,7 +680,7 @@ export const useGame = create<GameStore>((set, get) => ({
       toast: null,
       offer: null,
       declined: [],
-      tradeOutcome: null,
+      tradeOutcome: null, tradeTaker: null,
       tradeOpen: false,
       tradeOpener: null,
     });
@@ -1037,8 +1038,8 @@ function endOffer(set: Set, get: Get, taker: string | null) {
   else if (me === offer.from) play("trade_no");
   // Every receiver gets the resolved offer as one brief log line, with no response controls.
   if (outcomeTimer) clearTimeout(outcomeTimer);
-  set({ tradeOutcome: taker ? `${takerName} takes it.` : "Nobody took it." });
-  outcomeTimer = setTimeout(() => set({ tradeOutcome: null }), BANNER_MS);
+  set({ tradeTaker: taker, tradeOutcome: taker ? `${takerName} takes it.` : "Nobody took it." });
+  outcomeTimer = setTimeout(() => set({ tradeOutcome: null, tradeTaker: null }), BANNER_MS);
 }
 
 // Practice's table offer for `from`, closing any earlier one (host.mjs openOffer). Every other bot answers it after a delay.
@@ -1047,7 +1048,7 @@ function openOffer(set: Set, get: Get, from: string, give: Bag, want: Bag) {
   const state = get().state!;
   const tradeId = `t${state.seq}-${++offerSeq}`;
   const fromName = state.players.find((p) => p.id === from)?.name ?? "Someone";
-  set({ offer: { tradeId, from, fromName, give, want, until: Date.now() + OFFER_MS }, declined: [], tradeOutcome: null });
+  set({ offer: { tradeId, from, fromName, give, want, until: Date.now() + OFFER_MS }, declined: [], tradeOutcome: null, tradeTaker: null });
   if (from !== get().localId) play("trade_offer");
   offerTimers.push(setTimeout(() => endOffer(set, get, null), OFFER_MS));
   for (const p of state.players) {
@@ -1191,7 +1192,7 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
     log: (text) => set({ lobbyLog: text, gameLog: appendLog(get().gameLog, [text]) }),
     tradeOffer: ({ tradeId, from, give, want, seconds }) => {
       const fromName = get().state?.players.find((p) => p.id === from)?.name ?? "Someone";
-      set({ offer: { tradeId, from, fromName, give, want, until: Date.now() + seconds * 1000 }, declined: [], tradeOutcome: null });
+      set({ offer: { tradeId, from, fromName, give, want, until: Date.now() + seconds * 1000 }, declined: [], tradeOutcome: null, tradeTaker: null });
       if (from !== get().localId) play("trade_offer");
     },
     tradeDeclined: ({ tradeId, by }) => {

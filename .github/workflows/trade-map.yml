@@ -1,0 +1,37 @@
+name: Trade UI
+on:
+  pull_request:
+    paths:
+      - 'src/components/game/TradePanel.tsx'
+      - 'src/components/game/TradeToast.tsx'
+      - 'src/components/game/trade-panel.css'
+      - 'src/lib/game/**'
+      - 'scripts/trade-map.test.mjs'
+      - '.github/workflows/trade-map.yml'
+jobs:
+  trade-map:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            server/package-lock.json
+      - run: npm ci
+      - run: npm ci --prefix server
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      - run: npx playwright install --with-deps chromium
+      - run: node --import ./server/register.mjs scripts/trade-map.test.mjs
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trade-map-screenshots
+          path: test-results/trade-map-*.png
+          if-no-files-found: ignore
