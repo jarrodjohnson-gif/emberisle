@@ -20,7 +20,7 @@ reviews and merges. Builders build: Codex (ChatGPT), Grok, Claude chats, and Jos
 - Firm preferences so far:
   - the HUD never moves the map;
   - the copyrighted meme clips are fine, his risk;
-  - player-facing goods are Wood, Sheep, Brick, Ore, Wheat (#657);
+  - player-facing goods are Wood, Sheep, Brick, Stone, Wheat (#657);
   - the friends' media (icons, sounds, stickers) is curated by him; players never upload;
   - the turn timer has Off / 1 / 2 / 3 min presets (#548).
 - **Budget:** Claude usage is limited weekly. Use Sonnet for reviews, Opus only for security or infra
