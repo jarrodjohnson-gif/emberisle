@@ -26,7 +26,7 @@
          Anyone who has a saved seat, a watch link, and automated browsers (the proofs), go straight in. Blocked storage also goes straight in. -->
     <script>
       try {
-        if (!navigator.webdriver && !localStorage.getItem("emberisle-invited") && !localStorage.getItem("emberisle-seat") && !/[?&]watch=/.test(location.search)) {
+        if (!navigator.webdriver && !localStorage.getItem("emberisle-invited") && !localStorage.getItem("emberisle-seat") && !/[?&](watch|play)=/.test(location.search)) {
           localStorage.setItem("emberisle-invited", "1");
           location.replace("./invite.html" + location.search);
         }
