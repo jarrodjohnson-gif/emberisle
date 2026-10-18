@@ -164,3 +164,7 @@ These answer section 4 and override any recommendation above that disagrees.
 4. **Win sound:** the winner gets a real win sting. **Jarrod will pick the song or clip**; until then the current sound stays.
 5. **New cues:** only two: a **"your turn"** cue for the seat whose turn starts, and a **turn-timer countdown** tick for the last seconds of your turn. No join/leave, emote-received or payout cues.
 6. **Licensing:** Jarrod keeps the soundboard and meme clips (Wololo, the Charlie Kirk song, the airhorn, etc.) public and accepts the risk, since this is a free game for friends. The README's "CC0 only" line becomes "CC0 or owner-approved".
+
+## Invite music
+
+`public/audio/old_tower_inn_loop.mp3`: "Medieval: The Old Tower Inn" (loop version) by RandomMind, CC0, from <https://opengameart.org/content/medieval-the-old-tower-inn>. Converted to 128 kbps MP3. Jarrod chose it on 2026-10-18. It plays on the game-night invite (`public/invite.html`) after the first tap, with a Music on/off toggle.

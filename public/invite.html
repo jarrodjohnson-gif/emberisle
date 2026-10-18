@@ -578,37 +578,18 @@ form .actions { justify-content: flex-start; }
   }
 
 
-  /* ---------- music: a soft generated lantern-night pad, started by the first tap ---------- */
-  var ac = null, master = null, musicOn = false, musicTimer = 0;
-  var CHORDS = [[57, 60, 64], [53, 57, 60], [48, 52, 55], [55, 59, 62]];   // Am F C G
-  var PENT = [69, 72, 74, 76, 79, 81];
-  function hz(n) { return 440 * Math.pow(2, (n - 69) / 12); }
-  function voice(n, t, dur, type, gain) {
-    var o = ac.createOscillator(), g = ac.createGain();
-    o.type = type; o.frequency.value = hz(n);
-    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(gain, t + Math.min(1.6, dur / 3)); g.gain.linearRampToValueAtTime(0, t + dur);
-    o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + 0.05);
-  }
-  var bar = 0;
-  function schedule() {
-    var t = ac.currentTime + 0.05, ch = CHORDS[bar % CHORDS.length];
-    ch.forEach(function (n) { voice(n, t, 4.6, 'triangle', 0.05); voice(n - 12, t, 4.6, 'sine', 0.04); });
-    for (var i = 0; i < 3; i++) if (Math.random() < 0.6) voice(PENT[(Math.random() * PENT.length) | 0], t + 0.6 + i * 1.3 + Math.random() * 0.4, 1.4, 'sine', 0.035);
-    bar++;
-  }
+  /* ---------- music: "The Old Tower Inn" (RandomMind, CC0, opengameart.org), looped after the first tap ---------- */
+  var track = null, musicOn = false;
   function startMusic() {
     try {
-      if (!ac) {
-        ac = new (window.AudioContext || window.webkitAudioContext)();
-        var lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 1800;
-        master = ac.createGain(); master.gain.value = 0.9; master.connect(lp); lp.connect(ac.destination);
-      }
-      ac.resume(); musicOn = true; schedule(); clearInterval(musicTimer); musicTimer = setInterval(schedule, 4000);
+      if (!track) { track = new Audio('./audio/old_tower_inn_loop.mp3'); track.loop = true; track.volume = 0.45; }
+      var p = track.play(); musicOn = true;
+      if (p && p.catch) p.catch(function () { musicOn = false; $('music').textContent = 'Music: off'; $('music').setAttribute('aria-pressed', 'false'); });
     } catch (e) { musicOn = false; }
     $('music').textContent = musicOn ? 'Music: on' : 'Music: off'; $('music').setAttribute('aria-pressed', String(musicOn));
   }
   function stopMusic() {
-    musicOn = false; clearInterval(musicTimer); try { ac && ac.suspend(); } catch (e) {}
+    musicOn = false; try { track && track.pause(); } catch (e) {}
     $('music').textContent = 'Music: off'; $('music').setAttribute('aria-pressed', 'false');
   }
   var musicMuted = false;
