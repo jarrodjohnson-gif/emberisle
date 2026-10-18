@@ -14,8 +14,8 @@ const owner = 'jarrodjohnson-gif';
 const helper = 'joshspicy2';
 const bot = { login: 'github-actions[bot]', type: 'Bot' };
 const minute = n => `2026-10-16T12:${String(n).padStart(2, '0')}:00Z`;
-const comment = (id, body, login = owner, at = minute(id)) =>
-  ({ id, body, user: { login, type: 'User' }, created_at: at });
+const comment = (id, body, login = owner, at = minute(id), updatedAt = at) =>
+  ({ id, body, user: { login, type: 'User' }, created_at: at, updated_at: updatedAt });
 const claim = (id, name, login = owner, at) =>
   comment(id, `/claim\nclaimed: ${name}, 2026-10-16`, login, at);
 const pause = (id, name, slash = true) =>
@@ -47,7 +47,8 @@ function fixture(comments, options = {}) {
       removeLabel: async ({ name }) => { state.labels = state.labels.filter(l => l !== name); },
       addLabels: async ({ labels }) => { state.labels = [...new Set([...state.labels, ...labels])]; },
       createComment: async ({ body }) => {
-        state.comments.push({ id: 5000 + state.comments.length, body, user: bot, created_at: minute(59) });
+        const at = minute(59);
+        state.comments.push({ id: 5000 + state.comments.length, body, user: bot, created_at: at, updated_at: at });
       },
     },
     pulls: { get: async ({ pull_number }) => {
@@ -279,5 +280,68 @@ await prove('comment bodies containing executable text remain inert data', async
   await s.run(2);
   winner(s, 1, [2]);
   assert.ok(s.replies(2)[0].body.includes(name));
+});
+await prove('edited comments cannot become claims', async () => {
+  const edited = comment(1, `/claim\nclaimed: A, 2026-10-16`, owner, minute(1), minute(2));
+  const s = fixture([edited, claim(2, 'B')]);
+  await s.run(2);
+  winner(s, 2);
+  assert.equal(s.has(1, '+1'), false);
+  assert.equal(s.has(1, '-1'), false);
+  assert.deepEqual(s.labels, ['status:claimed']);
+});
+await prove('commands inside code fences are ignored', async () => {
+  const fenced = comment(1, ['```', '/claim', 'claimed: A, 2026-10-16', '```', 'still open'].join('\n'));
+  const s = fixture([fenced, claim(2, 'B')]);
+  await s.run(2);
+  winner(s, 2);
+  assert.equal(s.has(1, '+1'), false);
+  const mixed = fixture([comment(1, ['Note:', '```', '/claim', 'claimed: A, 2026-10-16', '```',
+    '/claim', 'claimed: B, 2026-10-16'].join('\n'))]);
+  await mixed.run(1);
+  winner(mixed, 1);
+  assert.deepEqual(mixed.labels, ['status:claimed']);
+});
+await prove('owner /todo and /unclaim release the active claim', async () => {
+  for (const release of ['/todo', '/unclaim']) {
+    const s = fixture([claim(1, 'A'), comment(2, release), claim(3, 'B')]);
+    await s.run(3);
+    winner(s, 1);
+    winner(s, 3);
+    assert.deepEqual(s.labels, ['status:claimed']);
+  }
+  const helperTodo = fixture([claim(1, 'A'), comment(2, '/todo', helper), claim(3, 'B')]);
+  await helperTodo.run(3);
+  winner(helperTodo, 1, [3]);
+  const helperUnclaim = fixture([claim(1, 'A'), comment(2, '/unclaim', helper)]);
+  await helperUnclaim.run(2);
+  assert.ok(helperUnclaim.has(2, '-1'));
+  assert.ok(helperUnclaim.labels.includes('status:claimed'));
+});
+await prove('same-agent re-claim is a no-op approval', async () => {
+  const s = fixture([claim(1, 'A'), claim(2, 'A')]);
+  await s.run(2);
+  winner(s, 1);
+  winner(s, 2);
+  assert.equal(s.replies(2).length, 0);
+  assert.deepEqual(s.labels, ['status:claimed']);
+  const other = fixture([claim(1, 'A'), claim(2, 'B')]);
+  await other.run(2);
+  winner(other, 1, [2]);
+});
+await prove('non-status commands preserve a hand-set status label', async () => {
+  const s = fixture([claim(1, 'A'), comment(2, '/changed')], { labels: ['status:todo'] });
+  await s.run(2);
+  assert.deepEqual(s.labels.sort(), ['mark:changed', 'status:todo']);
+  assert.ok(s.has(2, '+1'));
+  const statusRun = fixture([claim(1, 'A'), comment(2, '/in-progress')]);
+  await statusRun.run(2);
+  assert.deepEqual(statusRun.labels, ['status:in-progress']);
+});
+await prove('label-commands-prove is registered for CI', async () => {
+  const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+  assert.equal(pkg.scripts['label-commands-prove'], 'node scripts/label-commands-prove.mjs');
+  const ci = readFileSync(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
+  assert.match(ci, /npm run label-commands-prove/);
 });
 console.log(`PASS ${checks} workflow proof groups`);
