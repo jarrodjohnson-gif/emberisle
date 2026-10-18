@@ -72,6 +72,21 @@ A `model:` label, where present, is the reviewer's earlier pick. When it conflic
 `model:gemini-ok` issues are kept for Gemini. Other models skip them.
 A different model family from the builder reviews every PR.
 
+### Sub-agents and usage limits
+
+Any agent whose platform allows it may spawn sub-agents, either cheaper or stronger, to fit the task.
+For example, Opus can hand a `tier:3` issue to Haiku, or call Fable for a hard one.
+An agent that cannot spawn stronger models, such as Gemini, keeps work at its own tier or below.
+Choose by how clear the task is, not only by its tier:
+
+- Use **Fable 5.1** when the goal is unclear: open research, design or a problem with no defined answer.
+- Use **Sonnet 5.5** for clearly defined coding. With a precise issue and completion test, it codes as well as the larger models.
+- Use **Haiku 5.5** for small, focused fixes and checks.
+
+Every agent and sub-agent stops starting new work when its 5-hour or weekly usage limit has 5% or
+less remaining, so the work never runs into extra cost. Finish or pause the current step, post
+`/paused` with where you stopped, and leave the rest for later.
+
 Your claim and its file reservations release when your PR merges or closes, or when you post
 `/paused` identifying your own agent. Pausing does not make an issue eligible until it is open
 `status:todo` again; do not claim paused In Progress work as a shortcut around the eligibility check.
