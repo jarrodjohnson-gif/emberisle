@@ -104,10 +104,14 @@ Paid Workers requires a separate account subscription, with a $5/month minimum.
 A website's Cloudflare Free or Pro plan does not determine its Workers subscription.
 [Account pricing](https://developers.cloudflare.com/workers/platform/pricing/#fine-print), updated 2026-10-02.
 
-Worker ingress's 10 ms CPU ceiling and DO handler limits are distinct.
-The DO documentation lists 30 seconds default CPU/invocation, configurable up to five minutes.
-These are execution ceilings, not safe workload targets or free-duration allocations.
+The Free-plan DO CPU ceiling is unclear across the published documentation.
+The DO FAQ applies Workers' per-invocation limits; Workers Free specifies 10 ms.
+The DO table also lists 30 seconds, configurable to five minutes, without a clear Free-plan distinction.
+Plan for **10 ms per handler** until Cloudflare confirms otherwise.
+Do not rely on the larger figures as Free-plan entitlement.
+Measure deployed CPU per HTTP, WebSocket, alarm, and bot handler before accepting the port.
 [DO CPU limits](https://developers.cloudflare.com/durable-objects/platform/limits/#can-i-increase-durable-objects-cpu-limit), updated 2026-06-01.
+[Workers CPU limits](https://developers.cloudflare.com/workers/platform/limits/#cpu-time), checked 2026-10-18.
 
 ## Four-seat, two-hour planning model
 
@@ -174,7 +178,8 @@ For example, one continuously active two-hour registry adds another 921.6 GB-s.
 Fourteen table-nights plus that registry exceed the daily allowance.
 
 As a whole-game planning illustration, reserve two additional authorities throughout one family session.
-That allocates 2,764.8 GB-s, or 21.268% of daily duration, before unrelated traffic.
+The table plus two authorities allocate 3 × 921.6 = 2,764.8 GB-s, before unrelated traffic.
+That consumes 21.268% of daily duration.
 Two such sessions fit within the proposed half-budget reserve; seven is only the table-only calculation.
 This assumes one shared registry and one shared profile/invitation authority, not separate continuously active objects per profile.
 Allowing 400 extra API requests and object calls raises request totals to 817 Worker requests and 743 DO equivalents.
@@ -223,7 +228,7 @@ The Node host is not a portable library: importing it starts HTTP, WebSockets, f
 
 Engine sources: [rules](https://github.com/jarrodjohnson-gif/emberisle/blob/ea9be1d/src/lib/game/rules.ts#L3),
 [board](https://github.com/jarrodjohnson-gif/emberisle/blob/ea9be1d/src/lib/game/board.ts#L66),
-and [host projections](https://github.com/jarrodjohnson-gif/emberisle/blob/ea9be1d/server/host.mjs#L358).
+and [host projections](https://github.com/jarrodjohnson-gif/emberisle/blob/ea9be1d/server/host.mjs#L396).
 Adapters: [host imports](https://github.com/jarrodjohnson-gif/emberisle/blob/ea9be1d/server/host.mjs#L1),
 [save schema](https://github.com/jarrodjohnson-gif/emberisle/blob/ea9be1d/server/host.mjs#L205),
 and [client connection](https://github.com/jarrodjohnson-gif/emberisle/blob/ea9be1d/src/lib/net/table.ts#L180).
@@ -262,7 +267,8 @@ Do not retain the Node loopback exemption in cloud admission code.
 Use a shared authority for account-wide and per-IP admission budgets across rooms.
 Persist appropriate bucket state so hibernation cannot reset abuse limits.
 
-Sources: [IP trust and admission](https://github.com/jarrodjohnson-gif/emberisle/blob/ea9be1d/server/host.mjs#L43),
+Sources: [IP trust](https://github.com/jarrodjohnson-gif/emberisle/blob/ea9be1d/server/host.mjs#L66),
+[admission caps](https://github.com/jarrodjohnson-gif/emberisle/blob/ea9be1d/server/host.mjs#L43),
 [socket IP assignment](https://github.com/jarrodjohnson-gif/emberisle/blob/ea9be1d/server/host.mjs#L1210),
 [avatar authorization](https://github.com/jarrodjohnson-gif/emberisle/blob/ea9be1d/server/host.mjs#L622),
 and [narrow peeks](https://github.com/jarrodjohnson-gif/emberisle/blob/ea9be1d/server/host.mjs#L1300).
@@ -348,8 +354,8 @@ Source: [Oracle payment authorizations](https://docs.oracle.com/en-us/iaas/Conte
 - Record its commit, Node version, service ownership, environment settings, save path, tunnel UUID, and restore process.
 - Record absolute paths privately; keep save contents and credentials outside Git.
 - Confirm the source commit's save schema matches the destination.
-- Existing room loading expires saves after 24 hours; finish migration within that window.
-- Rehearse using a disposable room before scheduling downtime.
+- Existing room loading deletes saves older than 24 hours; finish migration within that window.
+- Rehearse from a fresh disposable-room backup; an older backup cannot prove recovery and may lose its extracted saves.
 
 ### 2. Prepare Ubuntu and Node
 
@@ -365,13 +371,15 @@ If free capacity is unavailable, try another availability domain or wait; do not
 
 Use a fresh VM and verified SSH host key.
 Run these commands only after approval for machine configuration.
+Save each shell block as a Bash script and run it separately; avoid changing interactive shell options.
+Use `bash /approved/path/script.sh`, except where a root script explicitly requires `sudo bash`.
 Choose the current approved Node 22 patch from the [official archive](https://nodejs.org/en/download/archive/v22.23.3).
 
 ```sh
-set -eu
+set -euo pipefail
 test "$(uname -m)" = aarch64
 sudo apt-get update
-sudo apt-get install -y ca-certificates curl xz-utils git ufw gnupg rsync
+sudo apt-get install -y ca-certificates curl xz-utils git gnupg rsync
 NODE_VERSION=v22.23.3
 NODE_FILE="node-${NODE_VERSION}-linux-arm64.tar.xz"
 mkdir -p "$HOME/emberisle-install"
@@ -399,7 +407,10 @@ Keep the checkout separate from persistent data.
 These commands assume the named paths do not exist.
 
 ```sh
+set -euo pipefail
+export PATH="/opt/node-v22.23.3-linux-arm64/bin:$PATH"
 read -r -p 'Reviewed full commit SHA: ' RELEASE_COMMIT
+[[ "$RELEASE_COMMIT" =~ ^[0-9a-fA-F]{40}$ ]] || exit 1
 test ! -e /opt/emberisle
 sudo useradd --system --create-home --home-dir /var/lib/emberisle --shell /usr/sbin/nologin emberisle
 sudo install -d -o emberisle -g emberisle -m 0755 /opt/emberisle
@@ -411,7 +422,7 @@ sudo -u emberisle git checkout --detach "$RELEASE_COMMIT"
 sudo -u emberisle env PATH="$PATH" npm ci
 sudo -u emberisle env PATH="$PATH" npm --prefix server ci
 sudo -u emberisle env PATH="$PATH" npm run build
-git rev-parse HEAD
+sudo -u emberisle git -C /opt/emberisle/app rev-parse HEAD
 ```
 
 Record the printed commit beside the backup metadata.
@@ -465,22 +476,23 @@ WantedBy=multi-user.target
 The source trusts `CF-Connecting-IP` only for loopback peers.
 Restrict local accounts because local processes can impersonate that trust boundary.
 
-Keep an existing SSH session open during firewall changes.
-Confirm OCI console recovery access before enabling UFW.
-Approve the exact administrator CIDR first.
+Keep the Oracle image's default iptables rules, including its boot-volume protections.
+**Do not enable or install UFW** on Oracle Ubuntu images; it can prevent booting.
+Source: [Oracle Compute best practices](https://docs.oracle.com/en-us/iaas/Content/Compute/References/bestpracticescompute.htm), checked 2026-10-18.
+Verify the existing rules without modifying them:
 
 ```sh
-read -r -p 'Approved administrator CIDR: ' ADMIN_CIDR
-sudo ufw allow from "$ADMIN_CIDR" to any port 22 proto tcp
-sudo ufw default deny incoming
-sudo ufw default allow outgoing
-sudo ufw deny 8787/tcp
-sudo ufw enable
-sudo ufw status verbose
+set -euo pipefail
+sudo iptables -S INPUT
+sudo ip6tables -S INPUT
 ```
 
-Ensure `/etc/default/ufw` enables IPv6 filtering.
-Restrict OCI security-list/NSG ingress similarly; never allow public 8787, including IPv6.
+Require SSH-only new inbound TCP access; stop if either ruleset exposes application ports.
+Preserve image-provided established-connection, loopback, ICMP, and iSCSI rules.
+Approve the administrator CIDR and limit TCP 22 to that CIDR in OCI security lists or NSGs.
+Check every applicable security list and NSG; another broad allow rule can defeat that restriction.
+Never allow public 8787 or rehearsal port 8788, including IPv6.
+Keep an existing SSH session open and confirm OCI console recovery access before changing network rules.
 Test a second SSH session before closing the first.
 Allow required outbound DNS, HTTPS, and cloudflared TCP/UDP 7844.
 Cloudflared requires no public inbound application ports.
@@ -498,11 +510,11 @@ Use an SSH destination with an already verified host key.
 These commands copy one credential into a fresh private staging directory.
 
 ```sh
-set -eu
+set -euo pipefail
 read -r -p 'Approved staging tunnel UUID: ' TUNNEL_UUID
 read -r -p 'Verified OCI SSH destination, ubuntu@host: ' OCI_SSH
-[[ "$TUNNEL_UUID" =~ ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$ ]]
-[[ "$OCI_SSH" =~ ^[A-Za-z0-9][A-Za-z0-9_.@:-]*$ ]]
+[[ "$TUNNEL_UUID" =~ ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$ ]] || exit 1
+[[ "$OCI_SSH" =~ ^[A-Za-z0-9][A-Za-z0-9_.@:-]*$ ]] || exit 1
 TUNNEL_CREDENTIAL="$HOME/.cloudflared/${TUNNEL_UUID}.json"
 test -f "$TUNNEL_CREDENTIAL"
 chmod 0600 "$TUNNEL_CREDENTIAL"
@@ -514,9 +526,9 @@ Run the following installation commands on OCI after approval for the exact dest
 The existence check prevents replacing an existing tunnel credential.
 
 ```sh
-set -eu
+set -euo pipefail
 read -r -p 'Approved staging tunnel UUID: ' TUNNEL_UUID
-[[ "$TUNNEL_UUID" =~ ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$ ]]
+[[ "$TUNNEL_UUID" =~ ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$ ]] || exit 1
 sudo install -d -o root -g root -m 0700 /etc/cloudflared
 sudo test ! -e "/etc/cloudflared/${TUNNEL_UUID}.json"
 sudo install -o root -g root -m 0600 "$HOME/emberisle-tunnel-${TUNNEL_UUID}/${TUNNEL_UUID}.json" "/etc/cloudflared/${TUNNEL_UUID}.json"
@@ -524,11 +536,28 @@ sudo stat -c '%a %U:%G %n' "/etc/cloudflared/${TUNNEL_UUID}.json"
 ```
 
 Require `600 root:root` in the metadata output.
-Retain the private staging copy until the owner approves its specific deletion.
+After owner approval, delete only `$HOME/emberisle-tunnel-<approved UUID>/<approved UUID>.json` from the OCI login account.
+Never delete the management machine's original credential or `cert.pem`.
+Run this OCI login-account script only after the metadata check passes:
+
+```sh
+set -euo pipefail
+read -r -p 'Verified staging tunnel UUID: ' TUNNEL_UUID
+[[ "$TUNNEL_UUID" =~ ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$ ]] || exit 1
+STAGING_COPY="$HOME/emberisle-tunnel-${TUNNEL_UUID}/${TUNNEL_UUID}.json"
+printf 'Delete only this staging copy: %s\n' "$STAGING_COPY"
+read -r -p 'Owner approval: type DELETE to remove that exact copy: ' DELETE_APPROVAL
+test "$DELETE_APPROVAL" = DELETE
+test -f "$STAGING_COPY"
+rm -- "$STAGING_COPY"
+```
 
 After approving the new DNS record, run this on the management machine:
 
 ```sh
+set -euo pipefail
+read -r -p 'Approved staging tunnel UUID: ' TUNNEL_UUID
+[[ "$TUNNEL_UUID" =~ ^[0-9a-fA-F-]{36}$ ]] || exit 1
 read -r -p 'Approved staging hostname: ' STAGING_HOSTNAME
 cloudflared tunnel route dns "$TUNNEL_UUID" "$STAGING_HOSTNAME"
 ```
@@ -548,12 +577,13 @@ ingress:
 ```
 
 ```sh
+set -euo pipefail
 sudo chmod 0600 /etc/emberisle/host.env /etc/cloudflared/config.yml
 sudo cloudflared --config /etc/cloudflared/config.yml tunnel ingress validate
 sudo cloudflared --config /etc/cloudflared/config.yml service install
 sudo systemctl daemon-reload
 sudo systemctl enable --now emberisle cloudflared
-curl --fail http://127.0.0.1:8787/ >/dev/null
+curl --fail --retry 10 --retry-connrefused --retry-delay 1 http://127.0.0.1:8787/ >/dev/null
 sudo systemctl status emberisle cloudflared --no-pager
 sudo journalctl -u emberisle -n 30 --no-pager
 ```
@@ -567,13 +597,13 @@ Source: [Cloudflared Linux service](https://developers.cloudflare.com/tunnel/fea
 ### 5. Back up and rehearse restoration
 
 Take consistent application backups after stopping the writer.
-Run the following commands from a root shell after approved interruption.
+Save the following root script; run `sudo bash /approved/path/backup.sh` after approving interruption.
 GPG prompts privately; never put passphrases in commands or environment variables.
 
 ```sh
-sudo bash
 set -euo pipefail
 umask 077
+export GPG_TTY="$(tty)"
 STAMP=$(date -u +%Y%m%dT%H%M%SZ)
 ARCHIVE="/var/backups/emberisle/rooms-${STAMP}.tar.gpg"
 systemctl stop emberisle
@@ -582,7 +612,6 @@ tar -C /var/lib/emberisle -cf - rooms | gpg --symmetric --cipher-algo AES256 --o
 (cd /var/backups/emberisle && sha256sum "$(basename "$ARCHIVE")") > "${ARCHIVE}.sha256"
 systemctl start emberisle
 trap - EXIT
-exit
 ```
 
 Copy the encrypted archive and checksum to an approved independent backup destination using SSH.
@@ -590,33 +619,35 @@ Verify the checksum there; keep the passphrase separately in the owner's passwor
 Repeat daily and before deployments; record successful copies and rehearse restoration monthly.
 Do not delete retained backups automatically without an approved retention policy.
 
-Restore privately into a fresh directory first:
+Restore privately into a fresh directory first.
+Save this root script and run `sudo bash /approved/path/restore.sh`:
 
 ```sh
-sudo bash
 set -euo pipefail
 umask 077
+export GPG_TTY="$(tty)"
 read -r -p 'Absolute encrypted archive path: ' ARCHIVE
 (cd "$(dirname "$ARCHIVE")" && sha256sum --check "$(basename "$ARCHIVE").sha256")
 RESTORE_DIR=$(mktemp -d /var/lib/emberisle/restore.XXXXXX)
 gpg --decrypt "$ARCHIVE" | tar -xf - -C "$RESTORE_DIR"
 /opt/node-v22.23.3-linux-arm64/bin/node -e 'const fs=require("node:fs"),p=require("node:path"),d=process.argv[1]; for(const n of fs.readdirSync(d)) if(n.endsWith(".json")) JSON.parse(fs.readFileSync(p.join(d,n),"utf8"))' "$RESTORE_DIR/rooms"
 printf '%s\n' "$RESTORE_DIR"
-exit
 ```
 
 Stop on any failed decryption, extraction, or JSON validation.
 Test restored copies on an isolated service and staging tunnel:
 
 ```sh
+set -euo pipefail
 read -r -p 'Validated restore directory: ' RESTORE_DIR
+test -d "$RESTORE_DIR/rooms"
 sudo chown -R emberisle:emberisle "$RESTORE_DIR"
 sudo systemd-run --unit=emberisle-restore --property=User=emberisle --property=Group=emberisle --property=UMask=0077 --property=WorkingDirectory=/opt/emberisle/app/server --setenv=PORT=8788 --setenv="ROOMS_DIR=$RESTORE_DIR/rooms" --setenv=DIST=/opt/emberisle/app/dist /opt/node-v22.23.3-linux-arm64/bin/node --import ./register.mjs host.mjs
-curl --fail http://127.0.0.1:8788/ >/dev/null
+curl --fail --retry 10 --retry-connrefused --retry-delay 1 http://127.0.0.1:8788/ >/dev/null
 ```
 
 Temporarily point the staging tunnel origin at `127.0.0.1:8788` and restart cloudflared.
-Default-deny ingress must also protect test port 8788.
+Verify the image iptables rules and OCI network rules also block public access to test port 8788.
 Verify room recovery, player rejoin, and save updates; JSON syntax alone does not prove recovery.
 Stop the rehearsal using `sudo systemctl stop emberisle-restore`.
 Return the staging origin to port 8787 and restart cloudflared.
@@ -629,6 +660,74 @@ Source: [Oracle boot restore](https://docs.oracle.com/en-us/iaas/Content/Block/T
 
 ### 6. Cut over and roll back
 
+#### Stop and back up the old host
+
+For foreground launchers, press Ctrl-C in the old cloudflared terminal first, then in the old `npm run night` terminal.
+Wait for both shell prompts and confirm the child host exited; `night` must not restart it during migration.
+For an existing Linux service installation, use its recorded service names instead:
+
+```sh
+set -euo pipefail
+read -r -p 'Recorded old cloudflared unit: ' OLD_TUNNEL_UNIT
+read -r -p 'Recorded old host unit: ' OLD_HOST_UNIT
+test -n "$OLD_TUNNEL_UNIT"
+test -n "$OLD_HOST_UNIT"
+sudo systemctl stop "$OLD_TUNNEL_UNIT"
+sudo systemctl stop "$OLD_HOST_UNIT"
+for unit in "$OLD_TUNNEL_UNIT" "$OLD_HOST_UNIT"; do
+  STATE=$(sudo systemctl show "$unit" --property=ActiveState --value)
+  case "$STATE" in inactive|failed) ;; *) printf 'Still running: %s\n' "$unit" >&2; exit 1 ;; esac
+done
+```
+
+Run this Bash script on the stopped source host with `tar`, GPG, and a checksum utility available.
+On Windows, use an approved Bash environment with access to the actual save directory; avoid PowerShell binary pipelines.
+The shared archive format requires the source directory's basename to be `rooms`.
+If it differs, resolve the archive layout with the review desk before migrating.
+Choose an existing private backup directory outside the game checkout.
+
+```sh
+set -euo pipefail
+umask 077
+export GPG_TTY="$(tty)"
+read -r -p 'Absolute stopped source rooms directory: ' OLD_ROOMS
+read -r -p 'Approved private backup directory: ' OLD_BACKUPS
+[[ "$OLD_ROOMS" = /* && "$OLD_BACKUPS" = /* ]] || exit 1
+test -d "$OLD_ROOMS"
+test -d "$OLD_BACKUPS"
+test "$(basename "$OLD_ROOMS")" = rooms
+ARCHIVE="$OLD_BACKUPS/rooms-cutover-$(date -u +%Y%m%dT%H%M%SZ).tar.gpg"
+test ! -e "$ARCHIVE"
+tar -C "$(dirname "$OLD_ROOMS")" -cf - rooms | gpg --symmetric --cipher-algo AES256 --output "$ARCHIVE"
+if command -v sha256sum >/dev/null; then
+  (cd "$OLD_BACKUPS" && sha256sum "$(basename "$ARCHIVE")") > "${ARCHIVE}.sha256"
+else
+  (cd "$OLD_BACKUPS" && shasum -a 256 "$(basename "$ARCHIVE")") > "${ARCHIVE}.sha256"
+fi
+printf '%s\n' "$ARCHIVE" "${ARCHIVE}.sha256"
+```
+
+Transfer those two files from that machine using a fresh private OCI directory:
+
+```sh
+set -euo pipefail
+read -r -p 'Printed encrypted archive path: ' ARCHIVE
+read -r -p 'Verified OCI SSH destination, ubuntu@host: ' OCI_SSH
+[[ "$OCI_SSH" =~ ^[A-Za-z0-9][A-Za-z0-9_.@:-]*$ ]] || exit 1
+test -f "$ARCHIVE"
+test -f "${ARCHIVE}.sha256"
+REMOTE_BACKUPS=$(ssh -o StrictHostKeyChecking=yes "$OCI_SSH" 'umask 077; mktemp -d "$HOME/emberisle-migration.XXXXXX"')
+scp -o StrictHostKeyChecking=yes "$ARCHIVE" "${ARCHIVE}.sha256" "${OCI_SSH}:${REMOTE_BACKUPS}/"
+printf 'OCI backup directory: %s\n' "$REMOTE_BACKUPS"
+```
+
+Do not restart either old process after this backup.
+On OCI, stop `emberisle` and any rehearsal service before running the earlier restore script on this fresh archive.
+Use the printed OCI directory when entering the archive path.
+The restore script verifies its checksum before decrypting.
+
+#### Install the recovered production saves
+
 1. Approve downtime and routing changes; record current production routing and both service-control commands.
 2. Verify staging joins, WebSockets, restart recovery, reboot startup, offsite backups, and restore rehearsal.
 3. From another machine, confirm direct public IPv4 and IPv6 connections to port 8787 fail.
@@ -639,7 +738,7 @@ Source: [Oracle boot restore](https://docs.oracle.com/en-us/iaas/Content/Block/T
 8. Preserve the staging rooms directory; rename the validated production rooms directory into its place.
 9. Set owner `emberisle:emberisle`, directory mode `0700`, and file mode `0600` on restored saves.
 10. Start OCI; verify saves load without errors before changing production hostname routing.
-11. Route production to the OCI tunnel; verify two clients join and recover after reconnecting.
+11. Apply the production ingress and DNS procedure below; verify two clients join and recover after reconnecting.
 12. Keep the old host and old tunnel stopped; never run two writers for the same production rooms.
 
 Test public-origin bypass for `/`, `/avatars`, `/avatars/<test-id>.jpg`, and any deployed profile-media routes.
@@ -652,11 +751,15 @@ Do not infer loopback binding from cloudflared's origin URL; the host listens on
 Use this directory-swap pattern only after approving its exact paths.
 Run it while the application and rehearsal services are stopped.
 Set `RESTORE_DIR` to the newly validated production restore directory.
+Save this root script and run `sudo bash /approved/path/swap.sh`:
 
 ```sh
-sudo bash
 set -euo pipefail
 umask 077
+for unit in emberisle emberisle-restore; do
+  STATE=$(systemctl show "$unit" --property=ActiveState --value)
+  case "$STATE" in inactive|failed) ;; *) printf 'Stop %s first: %s\n' "$unit" "$STATE" >&2; exit 1 ;; esac
+done
 read -r -p 'Validated production restore directory: ' RESTORE_DIR
 STAMP=$(date -u +%Y%m%dT%H%M%SZ)
 PREVIOUS="/var/lib/emberisle/rooms-before-${STAMP}"
@@ -672,13 +775,68 @@ find /var/lib/emberisle/rooms -type d -exec chmod 0700 {} +
 find /var/lib/emberisle/rooms -type f -exec chmod 0600 {} +
 systemctl start emberisle
 journalctl -u emberisle -n 30 --no-pager
-exit
 ```
 
+#### Route the production hostname
+
+Before editing, record the existing production DNS record's type, value, proxy setting, and TTL privately.
+Record the old tunnel UUID and its configuration so rollback can restore the original hostname route.
+Get approval for replacing `/etc/cloudflared/config.yml` and changing that exact production DNS record.
+On OCI, preserve a timestamped copy of the current configuration, then edit it with `sudoedit`.
+Keep the staging hostname and add the approved production hostname before the final catch-all rule:
+
+```yaml
+tunnel: STAGING_TUNNEL_UUID
+credentials-file: /etc/cloudflared/STAGING_TUNNEL_UUID.json
+ingress:
+  - hostname: staging.example.com
+    service: http://127.0.0.1:8787
+  - hostname: play.example.com
+    service: http://127.0.0.1:8787
+  - service: http_status:404
+```
+
+Use the actual approved OCI tunnel UUID and hostnames; the existing staging tunnel becomes the production connector.
+After approval, run on OCI:
+
+```sh
+set -euo pipefail
+BACKUP="/etc/cloudflared/config-before-production-$(date -u +%Y%m%dT%H%M%SZ).yml"
+sudo test ! -e "$BACKUP"
+sudo cp --preserve=mode,ownership /etc/cloudflared/config.yml "$BACKUP"
+sudoedit /etc/cloudflared/config.yml
+sudo cloudflared --config /etc/cloudflared/config.yml tunnel ingress validate
+read -r -p 'Approved production hostname: ' PRODUCTION_HOSTNAME
+sudo cloudflared --config /etc/cloudflared/config.yml tunnel ingress rule "https://$PRODUCTION_HOSTNAME/"
+sudo systemctl restart cloudflared
+sudo systemctl is-active --quiet emberisle cloudflared
+```
+
+Require the production hostname to match its explicit ingress rule, rather than the catch-all.
+Then run this separate script on the management machine holding `cert.pem`:
+
+```sh
+set -euo pipefail
+read -r -p 'Approved OCI tunnel UUID: ' OCI_TUNNEL_UUID
+read -r -p 'Approved production hostname: ' PRODUCTION_HOSTNAME
+[[ "$OCI_TUNNEL_UUID" =~ ^[0-9a-fA-F-]{36}$ ]] || exit 1
+test -n "$PRODUCTION_HOSTNAME"
+cloudflared tunnel route dns --overwrite-dns "$OCI_TUNNEL_UUID" "$PRODUCTION_HOSTNAME"
+curl --fail --retry 10 --retry-all-errors --retry-delay 2 "https://$PRODUCTION_HOSTNAME/"
+```
+
+This DNS command deliberately replaces the existing record; execute it only after approving the exact hostname.
+Source: [Cloudflare tunnel DNS](https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/do-more-with-tunnels/local-management/tunnel-useful-commands/), checked 2026-10-18.
+Verify two production browsers join, reconnect, and save successfully before ending maintenance.
+
 For rollback, stop OCI admissions and its host first.
-Back up OCI's latest saves; restore them privately onto the stopped old host using the same validation sequence.
+On OCI, run `sudo systemctl stop cloudflared emberisle` and confirm both units are inactive.
+Use the stopped-source archive procedure for OCI's latest saves; keep both services stopped throughout rollback.
+Restore that archive privately onto the stopped old host using the same validation sequence.
 Preserve previous directories and log every approved move.
 Start the old host; restore recorded hostname routing; verify joins and save updates.
+For an old named tunnel, rerun the approved DNS command with the recorded old UUID and production hostname.
+For other recorded DNS types, restore the exact previous record through the Cloudflare dashboard instead.
 Keep OCI stopped after rollback.
 Never resume stale old saves after OCI accepted gameplay.
 If saves cannot transfer safely, keep admissions closed and resolve recovery before reopening.
@@ -698,7 +856,8 @@ That illustrates insufficient allowance for guaranteed continuous allocation; it
 ## Recommendation and work order
 
 **Port directly to Cloudflare Workers Free with SQLite Durable Objects; keep the current PC host until production acceptance passes.**
-The local proof resolves runtime feasibility, and the conservative table-night model fits the published free allowances.
+The proof establishes local runtime feasibility; the table-night model fits published daily allowances.
+Deployed per-handler CPU remains a separate acceptance gate, conservatively budgeted at 10 ms on Free.
 Oracle adds signup friction and idle-reclamation risk without advancing the intended serverless architecture.
 Retain its runbook as a fallback if the deployed Cloudflare acceptance gate fails.
 Do not move twice merely to advertise an earlier cloud address.
