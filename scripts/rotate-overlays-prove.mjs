@@ -214,7 +214,7 @@ async function prove(p, label, kind) {
   const tag = `${p.tag} ${label}`;
   const chat = page.getByTestId("chat-sheet");
   await chat.waitFor();
-  await page.waitForFunction(() => document.querySelector('[data-testid="chat-sheet"]').getAnimations().every((a) => a.playState === "finished"), null, { timeout: STEP_MS });
+  await page.waitForFunction(() => document.querySelector('[data-testid="chat-sheet"]')?.getAnimations().every((a) => a.playState === "finished"), null, { timeout: STEP_MS });
   const m = await page.evaluate(measure, { insets: p.insets, kind });
   const names = Object.keys(m.overlays);
   check(`${tag}: ${names.join(" + ")} overlays are present`, names.every((k) => m.overlays[k]));

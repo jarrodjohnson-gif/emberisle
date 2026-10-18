@@ -6,7 +6,8 @@ import { registerHooks } from "node:module";
 import { performance } from "node:perf_hooks";
 
 const started = performance.now();
-const samples = 600_000;
+const samples = Number(process.env.DICE_SAMPLES) || 600_000;
+if (!Number.isInteger(samples) || samples < 36_000) throw new Error(`DICE_SAMPLES must be a whole number of at least 36000, got ${process.env.DICE_SAMPLES}`);
 const rulesURL = new URL("../src/lib/game/rules.ts", import.meta.url).href;
 // Expose the private function in memory only. Keep its implementation and the
 // normal applyAction module intact; no extracted/reimplemented RNG or disk edits.
@@ -91,7 +92,7 @@ class Correlation {
 const chiSquare = (observed, expected) => observed.reduce((sum, count, i) => sum + (count - expected[i]) ** 2 / expected[i], 0);
 // Laurent-Massart's chi-square bound: P(X >= df + 2sqrt(df*t) + 2t) <= exp(-t).
 // With t=ln(10^12), each asymptotic chi-square tail is <= 10^-12.
-// Expected cells exceed 16k. These are conservative diagnostics, not exact p-values.
+// Each pair cell expects samples/36 draws (16.7k at the default). These are conservative diagnostics, not exact p-values.
 const chiLimit = (df) => df + 2 * Math.sqrt(df * Math.log(1e12)) + 2 * Math.log(1e12);
 const uniform = (n, bins) => Array(bins).fill(n / bins);
 
@@ -163,4 +164,4 @@ for (let i = 0; i < samples; i++) {
 report("roll action", actions, true);
 assert.deepEqual(fixture, baseline, "sampling must not mutate its valid input fixture");
 console.log(`PASS dice proof: ${samples} direct draws + ${samples} full roll actions; ${((performance.now() - started) / 1000).toFixed(2)}s`);
-console.log("Scope: sampled frequencies and linear lag-1 dependence; not a proof of randomness or a live WebSocket/browser test.");
+console.log("Scope: sampled frequencies and linear lag-1 dependence; catches gross bias (about 3% on one face at the default size), not fine bias; not a proof of randomness or a live WebSocket/browser test.");
