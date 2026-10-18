@@ -185,11 +185,28 @@ npm run preseat-prove        # opening a table is metered host-wide (OPEN_CAP) a
 npm run proto-prove          # wire protocol version against real host: welcome carries proto, unknown or newer version refused before opening or taking a seat
 npm run public-score-prove   # four real host seat views + watcher: live public components, constant hidden-point reminder, own-private totals, no opponent disclosures
 npm run react-prove          # phone tap sends board reaction to every seat within 300 ms without opening chat or moving board; reaction controls at least 44 px
+npm run render-recovery-prove # table recovery boundary intercepts render error after online join; Rejoin restores seat and persisted game
 npm run restart-prove        # a waited-on seat's window survives a host restart, and its total-turn budget survives a drop and rejoin
 npm run restore-prove        # reload restores table in about three seconds median under 4x CPU slowdown and Fast 3G; board and hand on screen inside 3000 ms
 npm run roll-moment-prove    # each roll shown once, big and centred, then dice settle into HUD; 220 ms flight to resting row, practice at 1280x720 and 390x844
 npm run rotate-overlays-prove # simultaneous phone overlays through rotation: chat sheet, trade toast and prompt inside safe area with no overlap at 3 and 4 seats
 npm run rotate-prove         # rotating phone or resizing window refits island to HUD hole within 3 frames; camera glides to fit and corners stay inside hole
+npm run save-prove           # room saves are coalesced and asynchronous against real host; valid JSON at every instant, flush on SIGTERM/SIGINT
+npm run seat-rail-prove      # each seat is one line with the points as the number; box ≤ 44 px tall, points largest text, responsive strip and rail
+npm run size-prove           # built JS chunks stay inside a gzip size budget (run after npm run build)
+npm run sounds-prove         # table sounds (docs/design/sound.md): 150 ms spacing burst rule, volumes, practice placements and turns, online chat and mute
+npm run stale-prove          # raw wire replays against the real host, independent of the client's queue-clearing behavior
+npm run tokens-prove         # number tokens are rimmed and legible, and nothing is placed or wanders within 0.31 of a hex centre
+npm run touch-place-prove    # phone camera fit and touch picking from docs/design/mobile-camera-touch.md, checked on pure math in src/lib/scene/mobile-fit.ts (no browser)
+npm run turn-copy-prove      # action-first setup, roll, builds, discard and wayfarer; 15 px, at most two lines; waiting ownership preserved
+npm run turn-gain-prove      # practice at 4 sizes: "Your turn" notice when turn passes to person, floating "+N Good" gain lines after roll
+npm run upgrade-prove        # one touch tap or click upgrades a starter outpost to a stronghold with no Place chip; status line shortfall on short hand
+npm run victory-target-prove # real lobby controls and hosted rules: default 10, public 7/10 selection, host-only updates, restart persistence, target win condition
+npm run visual-direction-prove # geometry, AA colour pairs, offer placement/refit, touch targets and truly static reduced motion
+npm run wayfarer-modes-prove # creation defaults, seven/discard completion, blocking/theft, useful fortunes and bot termination in every mode
+npm run wayfarer-prove       # wayfarer stands beside token (on waste, centre), hops (not slides), and target hexes wear a band (docs/design/wayfarer.md)
+npm run wayfarer-setup-prove # wayfarer mode at table setup through real lobby controls and hosted rules: default On, On/Off choice, persistence, rematch
+npm run win-action-prove     # real hosted winning actions -> private pre-win views -> saved/restarted rooms -> browser win screens and reload
 ```
 
 CI splits `browser-b` into `flows` and `presentation`; the required `checks` gate requires both. CI runs `npm ci` in the root and in `server/`, then these checks in this order, and installs Chromium with `npx playwright install --with-deps chromium`. `client-prove` uses the Chromium that ships with cloud sessions (`/opt/pw-browsers/chromium`). On your own PC, run `npx playwright install chromium` once first. It saves a screenshot to `test-results/client-prove.png`.
