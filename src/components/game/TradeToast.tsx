@@ -2,6 +2,7 @@
 // The asker sees the same offer with who has declined, then the outcome for a moment.
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { Check, Hourglass, X } from "lucide-react";
 import { useViewport } from "@/lib/viewport";
 import { Button } from "@/components/ui/button";
 import { SeatDot } from "@/components/game/SeatDot";
@@ -9,6 +10,7 @@ import { bagText } from "@/lib/game/trade";
 import { useGame } from "@/lib/game/store";
 import { RESOURCES } from "@/lib/game/types";
 import type { Bag } from "@/lib/net/table";
+import "./trade-panel.css";
 
 // "Ember offers 2 wool for 1 ore"; the asker reads "You offer 2 wool for 1 ore".
 export function offerLine(name: string | null, give: Bag, want: Bag) {
@@ -32,6 +34,7 @@ export function TradeToast() {
   const offer = useGame((s) => s.offer);
   const declined = useGame((s) => s.declined);
   const outcome = useGame((s) => s.tradeOutcome);
+  const takerId = useGame((s) => s.tradeTaker);
   const players = useGame((s) => s.state?.players);
   const localId = useGame((s) => s.localId);
   // A watcher (docs/design/spectator.md) reads the offer and the clock, with no Yes or No.
@@ -75,7 +78,14 @@ export function TradeToast() {
   let answering = false;
   let why: string | null = null;
   if (!offer) {
-    return <p className="trade-result table-log rounded-control px-3 py-1 text-caption" data-testid="trade-outcome">{outcome}</p>;
+    const taker = players?.find((p) => p.id === takerId);
+    const ResultIcon = takerId ? Check : X;
+    return (
+      <p className="trade-result table-log flex items-center gap-1 rounded-control px-3 py-1 text-caption" role="status" data-testid="trade-outcome" data-taker={takerId ?? undefined}>
+        {taker ? <SeatDot color={taker.color} className="size-2.5" /> : null}
+        <ResultIcon aria-hidden="true" className="size-3.5" />{outcome}
+      </p>
+    );
   } else {
     if (declined.includes(localId)) return null;
     const left = Math.max(0, Math.ceil((offer.until - now) / 1000));
@@ -105,8 +115,27 @@ export function TradeToast() {
           <p role="status" className="trade-wait text-xs">
             {declined.length ? declinedLine(declined.map(name)) : "Waiting…"}
           </p>
-        ) : !answering ? null : (
+        ) : null}
+        <ul className="trade-responses" aria-label="Player responses">
+          {players?.filter((p) => p.id !== offer.from).map((p) => {
+            const refused = declined.includes(p.id);
+            const Icon = refused ? X : Hourglass;
+            const response = refused ? "declined" : "waiting";
+            return (
+              <li key={p.id} className="trade-response" data-testid={`trade-response-${p.id}`} data-response={response} aria-label={`${p.name}: ${response}`}>
+                <SeatDot color={p.color} className="size-2.5" />
+                <span className="trade-response-name">{p.name}</span>
+                <Icon aria-hidden="true" className="size-3.5" />
+              </li>
+            );
+          })}
+        </ul>
+        {answering ? (
           <>
+            <p className="trade-receipt" data-testid="trade-receipt">
+              <span><strong>You give:</strong> {bagText(offer.want) || "nothing"}</span>
+              <span><strong>You get:</strong> {bagText(offer.give) || "nothing"}</span>
+            </p>
             <div className="trade-answers flex items-center gap-1">
               {/* aria-disabled, not disabled, so Tab still reaches Yes and reads the reason (#285); the click refuses instead. */}
               <Button
@@ -129,7 +158,7 @@ export function TradeToast() {
               </p>
             ) : null}
           </>
-        )}
+        ) : null}
       </>
     );
   }
