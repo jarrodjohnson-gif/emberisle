@@ -175,6 +175,21 @@ npm run howto-prove          # title's How to play is a dialog over the whole sc
 npm run hud-safe-area-prove  # in-game HUD keeps every control and island hole out of the notch and home bar on 3 phones held upright and sideways
 npm run idle-prove           # with nothing moving the board renders at about 12 fps; a drag or a state push brings back full rate
 npm run keyboard-place-prove # keyboard alone places setup pieces, path, outpost, stronghold and wayfarer through PlaceList; escape restores turn banner
+npm run lobby-prove          # lobby names and bots in real tabs through server/host.mjs (the host-side rules are in server/lobby-prove.mjs)
+npm run my-numbers-prove     # at 440x956 and 956x440, on a hotseat table with the seat's outposts and a stronghold placed, the strip lists numbers on hexes touching buildings, lights on roll, never moves map
+npm run pages-prove          # GitHub Pages serves the build under /emberisle/: build with that base, serve dist only under that prefix, title screen loads with no console errors
+npm run pan-prove            # two-finger pan and map/HUD isolation on landscape and upright phone, look-at point moves within PAN_RADIUS, single finger orbits
+npm run pieces-land-prove    # pieces land in practice at 640x400: outpost drops 0.2 and settles, knock plays on land; path grows to 1; stronghold swaps in larger and settles
+npm run pieces-prove         # pieces read in every seat colour: the five checks in docs/design/pieces.md; no browser
+npm run preseat-prove        # opening a table is metered host-wide (OPEN_CAP) against real host; burst of fresh sockets refused past cap while joining and peeking stay open
+npm run proto-prove          # wire protocol version against real host: welcome carries proto, unknown or newer version refused before opening or taking a seat
+npm run public-score-prove   # four real host seat views + watcher: live public components, constant hidden-point reminder, own-private totals, no opponent disclosures
+npm run react-prove          # phone tap sends board reaction to every seat within 300 ms without opening chat or moving board; reaction controls at least 44 px
+npm run restart-prove        # a waited-on seat's window survives a host restart, and its total-turn budget survives a drop and rejoin
+npm run restore-prove        # reload restores table in about three seconds median under 4x CPU slowdown and Fast 3G; board and hand on screen inside 3000 ms
+npm run roll-moment-prove    # each roll shown once, big and centred, then dice settle into HUD; 220 ms flight to resting row, practice at 1280x720 and 390x844
+npm run rotate-overlays-prove # simultaneous phone overlays through rotation: chat sheet, trade toast and prompt inside safe area with no overlap at 3 and 4 seats
+npm run rotate-prove         # rotating phone or resizing window refits island to HUD hole within 3 frames; camera glides to fit and corners stay inside hole
 ```
 
 CI splits `browser-b` into `flows` and `presentation`; the required `checks` gate requires both. CI runs `npm ci` in the root and in `server/`, then these checks in this order, and installs Chromium with `npx playwright install --with-deps chromium`. `client-prove` uses the Chromium that ships with cloud sessions (`/opt/pw-browsers/chromium`). On your own PC, run `npx playwright install chromium` once first. It saves a screenshot to `test-results/client-prove.png`.
