@@ -598,6 +598,13 @@ form .actions { justify-content: flex-start; }
     if (musicOn) { stopMusic(); musicMuted = true; } else { startMusic(); musicMuted = false; }
     try { localStorage.setItem('emberisle-invite-music', musicMuted ? 'off' : 'on'); } catch (e) {}
   });
+  /* ---------- tap the island: a sheep answers (Jarrod's Plump Sheep clip) ---------- */
+  var baa = null, baaAt = 0;
+  $('scene').addEventListener('pointerdown', function () {
+    if (stage === 'hello' || Date.now() - baaAt < 900) return;
+    baaAt = Date.now();
+    try { if (!baa) baa = new Audio('./audio/sb_plump_sheep.mp3'); baa.currentTime = 0; baa.volume = 0.8; baa.play().catch(function () {}); } catch (e) {}
+  });
   $('begin').addEventListener('click', function () { if (!musicMuted && !musicOn) startMusic(); if (stage === 'hello') goAsk(); });
   $('yes').addEventListener('click', goReveal);
   $('no').addEventListener('click', goDecline);
