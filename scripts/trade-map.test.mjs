@@ -170,6 +170,69 @@ try {
   await textHas(panel.getByTestId("trade-hint"), "Need 4 ore");
   console.log("bank: exhausted stock and unaffordable rates refuse");
 
+  // Long mixed offers must fit the frozen desktop board hole and leave chat usable after rotation.
+  const long = structuredClone(base);
+  for (const p of long.players) {
+    p.name = `Alexanderthe${p.id}`;
+    p.resources = Object.fromEntries(RESOURCES.map((r) => [r, 0]));
+  }
+  Object.assign(long.players[0].resources, { timber: 8, clay: 8, grain: 8 });
+  Object.assign(long.players[1].resources, { wool: 8 });
+  for (const r of RESOURCES) long.bank[r] = 19 - long.players.reduce((n, p) => n + p.resources[r], 0);
+  const longOffer = { tradeId: "long", from: "p0", fromName: long.players[0].name,
+    give: { timber: 6, clay: 6, grain: 6 }, want: { wool: 6, ore: 6 }, until: Date.now() + 60_000 };
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await load(long);
+  await page.evaluate((offer) => window.__emberisle.setState({ localId: "p1", offer }), longOffer);
+  await page.getByTestId("trade-toast").waitFor();
+  const desktop = await page.locator(".hud-stack").evaluate((el) => ({ top: el.getBoundingClientRect().top,
+    hole: innerHeight - parseFloat(getComputedStyle(el).getPropertyValue("--hole-bottom")) }));
+  assert(desktop.top >= desktop.hole - 0.5, `long offer covered desktop board: ${JSON.stringify(desktop)}`);
+  await page.screenshot({ path: "test-results/trade-map-long-desktop.png" });
+  const phone = await browser.newPage({ viewport: { width: 320, height: 568 }, hasTouch: true, isMobile: true });
+  phone.on("pageerror", (e) => errors.push(String(e)));
+  phone.on("console", (m) => m.type() === "error" && errors.push(m.text()));
+  await phone.addInitScript(() => {
+    window.__tradeErrors = [];
+    window.addEventListener("error", (e) => window.__tradeErrors.push(e.message));
+  });
+  await phone.goto(`http://127.0.0.1:${PORT}/`);
+  await phone.getByRole("button", { name: "Play", exact: true }).waitFor();
+  await phone.evaluate(async ([g, offer]) => {
+    const { online } = await import("/src/components/game/chunks.ts");
+    await online.prefetch();
+    window.__emberisle.getState().startAi();
+    window.__emberisle.setState({ state: g, localId: "p1", mode: "online", offer, chatOpen: false });
+  }, [long, longOffer]);
+  await phone.getByRole("button", { name: "Open chat", exact: true }).click();
+  await phone.getByTestId("chat-sheet").waitFor();
+  await phone.setViewportSize({ width: 568, height: 320 });
+  // The chat has a delayed usability guard. Verify it stays open after the new layout settles.
+  await phone.waitForTimeout(800);
+  assert(await phone.getByTestId("chat-sheet").isVisible(), "long offer minimized chat after rotation");
+  const joint = await phone.evaluate(() => {
+    const offer = document.querySelector('[data-testid="trade-toast"]').getBoundingClientRect();
+    const chat = document.querySelector('[data-testid="chat-sheet"]').getBoundingClientRect();
+    const details = document.querySelector(".trade-details");
+    const detailsBox = details.getBoundingClientRect();
+    const receipt = document.querySelector('[data-testid="trade-receipt"]').getBoundingClientRect();
+    const buttons = [...document.querySelectorAll(".trade-answers button")].map((b) => {
+      const r = b.getBoundingClientRect();
+      return { w: r.width, h: r.height, tappable: b.contains(document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2)) };
+    });
+    return { top: offer.top, bottom: offer.bottom, chatTop: chat.top, chatHeight: chat.height,
+      scrollable: details.scrollHeight > details.clientHeight,
+      receiptVisible: receipt.top >= detailsBox.top && receipt.bottom <= detailsBox.bottom + 0.5, buttons };
+  });
+  assert(joint.top >= 68 && joint.bottom <= joint.chatTop - 7.5 && joint.chatHeight >= 128, JSON.stringify(joint));
+  assert(joint.scrollable, "long details should scroll within the available space");
+  assert(joint.receiptVisible, "show the full payment and receipt before acceptance");
+  assert(joint.buttons.every((b) => b.w >= 44 && b.h >= 44 && b.tappable), "rotated trade controls must remain tappable");
+  await phone.screenshot({ path: "test-results/trade-map-long-chat-landscape.png" });
+  errors.push(...await phone.evaluate(() => window.__tradeErrors));
+  await phone.close();
+  console.log("long mixed offers: desktop board stays clear; rotated phone chat stays open with scrollable details and tappable 44px answers");
+
   // Use the actual practice store, rules, and bot answer timer.
   // Two human recipients keep the offer open after the bot declines.
   const mixed = structuredClone(base);

@@ -51,6 +51,7 @@ export function TradeToast() {
     const stack = el.closest<HTMLElement>("[data-hud-stack]");
     const root = document.documentElement;
     let lastHeight = -1;
+    let frame = 0;
     const measure = () => {
       const h = el.getBoundingClientRect().height;
       stack?.style.setProperty("--trade-height", `${h + 4}px`);
@@ -58,9 +59,13 @@ export function TradeToast() {
       if (h !== lastHeight) { lastHeight = h; useGame.getState().chromeLanded(); }
     };
     measure();
-    const observer = new ResizeObserver(measure);
+    // Size writes can resize chat in turn. Leave the observer's delivery before writing them.
+    const observer = new ResizeObserver(() => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(measure);
+    });
     observer.observe(el);
-    return () => { observer.disconnect(); stack?.style.removeProperty("--trade-height"); root.style.removeProperty("--active-offer-height"); };
+    return () => { observer.disconnect(); cancelAnimationFrame(frame); stack?.style.removeProperty("--trade-height"); root.style.removeProperty("--active-offer-height"); };
   }, [shown, aboveChat]);
 
   useEffect(() => {
@@ -96,7 +101,7 @@ export function TradeToast() {
     body = (
       <>
         <div className="trade-summary flex min-w-0 items-center justify-between gap-2">
-          <p id={lineId} className="text-sm font-medium leading-5">
+          <p id={lineId} className="text-sm font-medium leading-5" title={offerLine(asker ? null : offer.fromName, offer.give, offer.want)}>
             {/* #312: another seat's offer leads with that seat's dot. */}
             {!asker ? <SeatDot color={players?.find((p) => p.id === offer.from)?.color ?? "transparent"} className="mr-1.5 size-3 align-[-1px]" /> : null}
             {offerLine(asker ? null : offer.fromName, offer.give, offer.want)}
@@ -112,30 +117,35 @@ export function TradeToast() {
           </p>
         ) : null}
         {asker ? (
-          <p role="status" className="trade-wait text-xs">
+          <p role="status" className="trade-wait sr-only">
             {declined.length ? declinedLine(declined.map(name)) : "Waiting…"}
           </p>
         ) : null}
-        <ul className="trade-responses" aria-label="Player responses">
-          {players?.filter((p) => p.id !== offer.from).map((p) => {
-            const refused = declined.includes(p.id);
-            const Icon = refused ? X : Hourglass;
-            const response = refused ? "declined" : "waiting";
-            return (
-              <li key={p.id} className="trade-response" data-testid={`trade-response-${p.id}`} data-response={response} aria-label={`${p.name}: ${response}`}>
-                <SeatDot color={p.color} className="size-2.5" />
-                <span className="trade-response-name">{p.name}</span>
-                <Icon aria-hidden="true" className="size-3.5" />
-              </li>
-            );
-          })}
-        </ul>
-        {answering ? (
-          <>
+        <div className="trade-details" tabIndex={0} role="group" aria-label="Trade amounts and player responses">
+          {answering ? (
             <p className="trade-receipt" data-testid="trade-receipt">
               <span><strong>You give:</strong> {bagText(offer.want) || "nothing"}</span>
               <span><strong>You get:</strong> {bagText(offer.give) || "nothing"}</span>
             </p>
+          ) : null}
+          {why ? <p id={whyId} className="trade-short text-xs">{why}</p> : null}
+          <ul className="trade-responses" aria-label="Player responses">
+            {players?.filter((p) => p.id !== offer.from).map((p) => {
+              const refused = declined.includes(p.id);
+              const Icon = refused ? X : Hourglass;
+              const response = refused ? "declined" : "waiting";
+              return (
+                <li key={p.id} className="trade-response" data-testid={`trade-response-${p.id}`} data-response={response} aria-label={`${p.name}: ${response}`}>
+                  <SeatDot color={p.color} className="size-2.5" />
+                  <span className="trade-response-name">{p.name}</span>
+                  <Icon aria-hidden="true" className="size-3.5" />
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+        {answering ? (
+          <>
             <div className="trade-answers flex items-center gap-1">
               {/* aria-disabled, not disabled, so Tab still reaches Yes and reads the reason (#285); the click refuses instead. */}
               <Button
@@ -152,11 +162,6 @@ export function TradeToast() {
                 No
               </Button>
             </div>
-            {why ? (
-              <p id={whyId} className="trade-short text-xs">
-                {why}
-              </p>
-            ) : null}
           </>
         ) : null}
       </>

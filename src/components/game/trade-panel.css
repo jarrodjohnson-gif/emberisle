@@ -24,10 +24,30 @@
 .trade-selection-want { animation: trade-get-chip 220ms var(--ease-out) both; }
 @keyframes trade-give-chip { from { transform: translateY(0); opacity: 1; } to { transform: translateY(-12px); opacity: 0; } }
 @keyframes trade-get-chip { from { transform: translateY(0); opacity: 1; } to { transform: translateY(12px); opacity: 0; } }
-.trade-responses { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; }
+.trade-details { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; }
+.trade-details:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.trade-responses { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; line-height: 16px; }
 .trade-response { display: inline-flex; min-width: 0; align-items: center; gap: 4px; }
 .trade-response-name { max-width: 9em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.trade-receipt { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 13px; }
+.trade-receipt { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 12px; line-height: 16px; }
+@media (min-width: 768px) and (pointer: fine) {
+  /* Keep the offer within the desktop HUD's reserved space beside its 44 px actions. */
+  .hud-stack:has(> .trade-dock) { max-height: calc(var(--hole-bottom, 220px) - max(12px, env(safe-area-inset-bottom))); }
+  .trade-dock .trade-summary { grid-column: 1; grid-row: 1; }
+  .trade-dock .trade-details { grid-column: 1; grid-row: 2; }
+  .trade-dock .trade-answers { grid-column: 2; grid-row: 1 / span 2; }
+}
+@media (max-height: 480px) and (pointer: coarse) {
+  .trade-dock.trade-above-chat { grid-template-columns: minmax(0, 1fr) auto; }
+  .trade-above-chat .trade-summary { grid-column: 1; grid-row: 1; }
+  .trade-above-chat .trade-summary p { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .trade-above-chat .trade-details {
+    grid-column: 1; grid-row: 2; overflow-y: auto; overscroll-behavior: contain;
+    /* Chat needs 128 px. Leave 2 px extra to avoid closing it on fractional layout values. */
+    max-height: max(16px, calc(100dvh - max(12px, env(safe-area-inset-top)) - 68px - var(--active-prompt-height, 0px) - var(--keyboard-inset, 0px) - 130px - 8px - 47px));
+  }
+  .trade-above-chat .trade-answers { grid-column: 2; grid-row: 1 / span 2; }
+}
 @media (max-width: 539px) {
   /* Two 44 px controls fit beneath each resource without narrow hit targets. */
   .trade-stepper { grid-template-columns: 1fr; }
