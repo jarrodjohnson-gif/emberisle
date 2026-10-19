@@ -1056,12 +1056,19 @@ function offerChime(from: string, fromName: string, me: string, give: Bag, want:
 }
 
 // Jarrod's undertaker's bell when "The Lucke Diggler" (any spelling: Lucke, Lucky, Luckie; spaces and case ignored)
-// takes a seat at the table. Every seat hears it; on your own first seat list only your own seat counts as new.
+// arrives: a new seat with that name, or a seat renamed to it in the lobby. Every seat hears it; on your own first seat
+// list only your own seat counts as new.
 const DIGGLER = /luck(e|y|ie)?digg?ler/;
+const isDiggler = (name: string) => DIGGLER.test(name.toLowerCase().replace(/[^a-z]/g, ""));
 function diggerBell(before: Seat[], after: Seat[], me: string) {
-  const had = new Set(before.map((s) => s.id));
-  const fresh = after.filter((s) => !had.has(s.id) && (before.length > 0 || s.id === me));
-  if (fresh.some((s) => DIGGLER.test(s.name.toLowerCase().replace(/[^a-z]/g, "")))) play("lucke_diggler");
+  const was = new Map(before.map((s) => [s.id, s.name]));
+  const arrived = after.some((s) => {
+    if (!isDiggler(s.name)) return false;
+    const old = was.get(s.id);
+    if (old === undefined) return before.length > 0 || s.id === me;
+    return !isDiggler(old);
+  });
+  if (arrived) play("lucke_diggler");
 }
 
 // Practice's table offer for `from`, closing any earlier one (host.mjs openOffer). Every other bot answers it after a delay.

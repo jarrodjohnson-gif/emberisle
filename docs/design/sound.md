@@ -175,4 +175,4 @@ These answer section 4 and override any recommendation above that disagrees.
 
 `public/audio/daking_wood.mp3`: Jarrod's own clip (2026-10-19). It plays instead of the offer chime when the player named "daking" (any case) offers 1 or 2 timber to the table. Everyone hears it. An offer of 3 or more timber plays "three wood" instead, even from daking; daking's clip beats the sheep and stone wood-trade clips. Leading silence trimmed, 128 kbps mono MP3.
 
-`public/audio/lucke_diggler.mp3`: Jarrod's pick, "undertaker's bell" (2026-10-19). It plays when a player named "The Lucke Diggler" takes a seat. Any spelling counts (Lucke, Lucky or Luckie; spaces, punctuation and case ignored). Every seat hears it; a rejoin of the same seat does not ring it again.
+`public/audio/lucke_diggler.mp3`: Jarrod's pick, "undertaker's bell" (2026-10-19). It plays when a player named "The Lucke Diggler" takes a seat, or when a seated player renames to it in the lobby. Any spelling counts (Lucke, Lucky or Luckie; spaces, punctuation and case ignored). Every seat hears it; a rejoin of the same seat does not ring it again.
