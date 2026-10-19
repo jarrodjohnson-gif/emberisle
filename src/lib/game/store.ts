@@ -1042,10 +1042,12 @@ function endOffer(set: Set, get: Get, taker: string | null) {
   outcomeTimer = setTimeout(() => set({ tradeOutcome: null, tradeTaker: null }), BANNER_MS);
 }
 
-// Jarrod's "sheep for wood" clip replaces the offer chime when an offer gives wool and asks for timber.
-// Everyone hears that clip, the asker too; the plain chime stays for the other seats only.
+// Jarrod's "sheep for wood" and "stone for wood" clips replace the offer chime when an offer gives wool or ore and
+// asks for timber. Everyone hears those clips, the asker too; the plain chime stays for the other seats only.
 function offerChime(from: string, me: string, give: Bag, want: Bag) {
-  if ((give.wool ?? 0) > 0 && (want.timber ?? 0) > 0) play("sheep_for_wood");
+  const forWood = (want.timber ?? 0) > 0;
+  if (forWood && (give.wool ?? 0) > 0) play("sheep_for_wood");
+  else if (forWood && (give.ore ?? 0) > 0) play("stone_for_wood");
   else if (from !== me) play("trade_offer");
 }
 
