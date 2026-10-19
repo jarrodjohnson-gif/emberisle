@@ -1,5 +1,7 @@
 # Lanes
 
+Take the top line in **Next up (auto)** that your tier allows. Helpers: only `helper-ok` lines.
+
 Several AIs can work on Emberisle at once. Lanes sort work by code area; **they do not lock an
 entire area**. Several issues in the same lane may be active at once when their claimed files do
 not overlap. Claims reserve files, including while a PR waits for review.
