@@ -7,6 +7,7 @@
     "build": "vite build",
     "preview": "vite preview --port 8080",
     "typecheck": "tsc --noEmit",
+    "dock-piles-prove": "node scripts/dock-piles-prove.mjs",
     "host": "npm --prefix server run host",
     "test": "npm --prefix server test",
     "client-prove": "node scripts/client-prove.mjs",
