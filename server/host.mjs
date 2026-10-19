@@ -15,7 +15,7 @@ import { allow, cleanText, loadEmotes, remember, SOUNDBOARD } from "./chat.mjs";
 import { cue } from "./cue.mjs";
 import { PROFILE_TYPES, profileGate, profileHandler } from "./profile-protocol.mjs";
 import { openProfiles } from "./profiles.mjs";
-import { getOpenTables, registerOpenTable, unregisterOpenTable } from "./open-table.mjs";
+import { getOpenTables, maybeReleaseOpenSlot, registerOpenTable, unregisterOpenTable } from "./open-table.mjs";
 
 function hear(name) {
   try {
@@ -81,6 +81,11 @@ function ipBucket(key, now) {
   return b;
 }
 const opens = { tokens: OPEN_CAP, at: Date.now() };
+// Per-address throttle for GET /tables (same allow() shape as peek/list: burst then refill).
+// Slightly above the WS peek burst so two title tabs can poll without 429 noise in the console.
+const httpListBuckets = new Map();
+const TABLES_CAP = 10;
+const TABLES_RATE = 2;
 // Watchers per room (docs/design/spectator.md). A watcher has no seat and is never saved; 0 turns watching off.
 const SPECTATOR_MAX = envNum("SPECTATOR_MAX", 8);
 // A watcher coming or going is logged to the table at most this often per room, so a watch-and-close loop cannot
@@ -716,6 +721,22 @@ function route(req, res) {
     return;
   }
   if (req.method === "GET" && url.pathname === "/tables") {
+    // Same allow() throttle shape as the WS peek/list bucket (#833 review).
+    const key = ipKey(req.socket.remoteAddress, req.headers["cf-connecting-ip"]) ?? "loopback";
+    const now = Date.now();
+    let bucket = httpListBuckets.get(key);
+    if (!bucket) httpListBuckets.set(key, (bucket = { tokens: TABLES_CAP, at: now }));
+    if (httpListBuckets.size > 1024) for (const [k, b] of httpListBuckets) if (now - b.at > 60_000) httpListBuckets.delete(k);
+    if (!allow(bucket, now, TABLES_CAP, TABLES_RATE)) {
+      res.writeHead(429, {
+        "content-type": "application/json",
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "retry-after": "1",
+      });
+      res.end("[]");
+      return;
+    }
     const body = JSON.stringify(getOpenTables());
     res.writeHead(200, {
       "content-type": "application/json",
@@ -1052,7 +1073,10 @@ function botsOn(room, offer) {
   const phase = room.game.phase;
   runBots(room);
   for (const line of newLog(seen, room.game.log)) say(room, line);
-  if (room.game.phase === "over" && phase !== "over") hear("win");
+  if (room.game.phase === "over" && phase !== "over") {
+    hear("win");
+    maybeReleaseOpenSlot(room);
+  }
   pushState(room);
   return true;
 }
@@ -1247,7 +1271,10 @@ function play(ws, room, msg, automated = false) {
   runBots(room);
   for (const line of newLog(before.log, room.game.log)) say(room, line);
   if (withdrawn) say(room, withdrawn);
-  if (room.game.phase === "over" && before.phase !== "over") hear("win");
+  if (room.game.phase === "over" && before.phase !== "over") {
+    hear("win");
+    maybeReleaseOpenSlot(room);
+  }
   pushState(room);
 }
 
@@ -1427,6 +1454,8 @@ function hold(room, seat) {
   disarmTurn(seat);
   if (room.game && seat.pid) seat.graceTimer = setTimeout(() => takeOver(room, seat), GRACE_MS);
   seat.holdTimer = setTimeout(() => letGo(room, seat), room.game ? HOLD_MS : LOBBY_HOLD_MS);
+  // Free the open-list slot when nobody is connected so a finished or abandoned table cannot block a new open host.
+  maybeReleaseOpenSlot(room);
 }
 
 // The host role goes to the first seat with a socket; with none, to the first held seat.

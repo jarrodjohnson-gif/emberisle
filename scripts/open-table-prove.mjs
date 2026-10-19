@@ -67,8 +67,8 @@ const until = async (fn, what, ms = 8000) => {
 
 const baseUrl = `http://127.0.0.1:${PORT}/?host=ws://127.0.0.1:${hostPort}`;
 
-async function openTab(name) {
-  const ctx = await browser.newContext({ viewport: { width: 1280, height: 720 } });
+async function openTab(name, viewport = { width: 1280, height: 720 }) {
+  const ctx = await browser.newContext({ viewport });
   const page = await ctx.newPage();
   page.on("console", (m) => m.type() === "error" && errors.push(`${name}: ${m.text()}`));
   page.on("pageerror", (e) => errors.push(`${name}: ${e}`));
@@ -80,7 +80,7 @@ async function openTab(name) {
   });
   await page.goto(baseUrl);
   await page.getByTestId("title-card").waitFor();
-  return { name, page };
+  return { name, page, ctx };
 }
 
 // --- Tab A: Jarrod hosts an Open table ---
@@ -105,15 +105,36 @@ await A.page.getByRole("button", { name: "Host a table" }).click();
 await until(() => A.page.getByTestId("lobby-card").isVisible().catch(() => false), "Jarrod's lobby card", 10000);
 check(true, "Jarrod sees the lobby after hosting an Open table");
 
+// 390×844 first (alone on the title) so the row/Join clip check does not share the /tables poll with another tab.
+const phone = await openTab("Phone", { width: 390, height: 844 });
+await until(
+  () => phone.page.getByTestId("open-table-entry").isVisible().catch(() => false),
+  "open-table-entry on 390x844 title",
+  12000,
+);
+const phoneClip = await phone.page.evaluate(() => {
+  const card = document.querySelector('[data-testid="title-card"]');
+  const entry = document.querySelector('[data-testid="open-table-entry"]');
+  const join = document.querySelector('[data-testid="open-table-join"]');
+  if (!card || !entry || !join) return { ok: false, why: "missing nodes" };
+  const c = card.getBoundingClientRect();
+  const fullyIn = (el) => {
+    const r = el.getBoundingClientRect();
+    return r.top >= c.top - 0.5 && r.left >= c.left - 0.5 && r.bottom <= c.bottom + 0.5 && r.right <= c.right + 0.5
+      && r.top >= -0.5 && r.left >= -0.5 && r.bottom <= innerHeight + 0.5 && r.right <= innerWidth + 0.5;
+  };
+  return { ok: fullyIn(entry) && fullyIn(join), entry: entry.getBoundingClientRect(), join: join.getBoundingClientRect(), card: c };
+});
+check(phoneClip.ok, `390x844 open-table row and Join fully visible (got ${JSON.stringify(phoneClip)})`);
+await phone.ctx.close();
+
 // --- Tab B: Joshua visits the title ---
 const B = await openTab("Joshua");
-// Wait for the open-table entry to appear (the title polls every 5 s; give it up to 12 s).
 await until(
   () => B.page.getByTestId("open-table-entry").isVisible().catch(() => false),
   "open-table-entry visible on Joshua's title",
   12000,
 );
-
 const entryText = await B.page.getByTestId("open-table-entry").innerText();
 check(entryText.includes("Jarrod's table"), `open table entry shows Jarrod's table (got "${entryText}")`);
 
@@ -124,9 +145,14 @@ check(true, "Joshua joined the open table without typing a code");
 
 // --- Private table: never in the list ---
 // Tab C hosts a private table while the open one is running.
-const C = await openTab("Private-host");
+const C = await openTab("Sidecar");
+await C.page.locator("details.seat-settings summary").click();
+await C.page.locator('input[placeholder="Your name"]').fill("Sidecar");
+await C.page.locator('input[placeholder="Your name"]').press("Escape");
 await C.page.getByRole("button", { name: "Host a table" }).click();
-await until(() => C.page.getByTestId("lobby-card").isVisible().catch(() => false), "Private-host's lobby card", 10000);
+await until(() => C.page.getByTestId("lobby-card").isVisible().catch(() => false), "Sidecar's lobby card", 10000);
+const privateCode = await C.page.evaluate(() => window.__emberisle.getState().code);
+check(typeof privateCode === "string" && privateCode.length === 4, `private host got a code (got ${privateCode})`);
 
 // A fresh Tab D should see only one open table (Jarrod's), not the private one.
 const D = await openTab("Observer");
@@ -139,7 +165,8 @@ const entries = await D.page.getByTestId("open-table-entry").count();
 check(entries === 1, `observer sees exactly 1 open table, got ${entries}`);
 const entryOnD = await D.page.getByTestId("open-table-entry").innerText();
 check(entryOnD.includes("Jarrod"), `open entry is Jarrod's, got "${entryOnD}"`);
-check(!entryOnD.includes("Private"), `private table name not exposed, got "${entryOnD}"`);
+check(!entryOnD.includes("Sidecar"), `private host name Sidecar not exposed, got "${entryOnD}"`);
+check(!entryOnD.includes(privateCode), `private code ${privateCode} not exposed, got "${entryOnD}"`);
 
 // Confirm there are no console errors.
 check(errors.length === 0, `no console errors (found: ${errors.join(", ")})`);

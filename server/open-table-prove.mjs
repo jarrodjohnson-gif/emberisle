@@ -158,6 +158,7 @@ let openCode;
 
 // 5. A private table hosted alongside the open one never appears in the list.
 {
+  await settle(5500); // refill GET /tables tokens so a 429 [] is not mistaken for "no open table"
   const priv2 = client(port, "Secret-host");
   await priv2.open;
   priv2.send({ type: "hello", name: "Secret-host" });
@@ -165,28 +166,72 @@ let openCode;
   await settle(100);
 
   const res = await fetch(`${baseUrl}/tables`);
+  assert.equal(res.status, 200, "GET /tables ok after refill");
   const tables = await res.json();
   assert.equal(tables.length, 1, "only the open table appears");
   assert.equal(tables[0].code, openCode, "the open table's code is listed, not the private one's");
   priv2.ws.terminate();
 }
 
-// 6. When the open table's host drops and the room closes, the list empties.
+// 6. Host handoff updates the listed name; bots count toward seated.
 {
-  // Find the open host's socket and close it forcibly.
-  // To do this properly, terminate the socket by killing its WS object. The host socket is in sockets[].
-  const openHost = sockets.find((c) => c.name === "Jarrod");
-  openHost?.ws.terminate();
-  // Also terminate Joshua whose seat is still on this table (held briefly in the lobby).
-  const joshuaSocket = sockets.find((c) => c.name === "Joshua");
-  joshuaSocket?.ws.terminate();
-  // Wait for both hold timers to fire (LOBBY_HOLD_MS = 300 ms) then the room to drop.
-  await settle(800);
+  // Re-host after the earlier open table is still held by Jarrod+Joshua sockets from steps 3–4.
+  // Close those first so the slot frees (no connected seats).
+  sockets.find((c) => c.name === "Jarrod")?.ws.terminate();
+  sockets.find((c) => c.name === "Joshua")?.ws.terminate();
+  await settle(200);
+  assert.deepEqual(await (await fetch(`${baseUrl}/tables`)).json(), [], "slot frees when nobody is connected");
 
-  const res = await fetch(`${baseUrl}/tables`);
-  const tables = await res.json();
-  assert.deepEqual(tables, [], "list empties when the open table is dropped");
+  const hostA = client(port, "Ada");
+  await hostA.open;
+  hostA.send({ type: "hello", name: "Ada", visibility: "open" });
+  const welcomeA = await hostA.next("welcome");
+  const codeA = welcomeA.code;
+  const guest = client(port, "Bea");
+  await guest.open;
+  guest.send({ type: "hello", code: codeA, name: "Bea" });
+  await guest.next("welcome");
+  // Host adds a bot: seated must be 3 (Ada, Bea, Bot), not 2.
+  hostA.send({ type: "addBot" });
+  await settle(150);
+  let tables = await (await fetch(`${baseUrl}/tables`)).json();
+  assert.equal(tables[0].seated, 3, "bots count toward seated");
+  assert.equal(tables[0].name, "Ada's table");
+  // Ada leaves: Bea becomes host; listed name follows the host seat.
+  hostA.ws.terminate();
+  await settle(200);
+  tables = await (await fetch(`${baseUrl}/tables`)).json();
+  assert.equal(tables[0]?.name, "Bea's table", "listed name follows host handoff");
+  guest.ws.terminate();
+  await settle(200);
 }
 
-console.log("open-table-prove ok: list empty, private never listed, open listed, join via code, parallel private hidden, cleanup on drop");
+// 7. GET /tables is rate-limited (429 after the burst).
+{
+  await settle(6000); // refill the shared bucket
+  const statuses = [];
+  for (let i = 0; i < 16; i++) {
+    statuses.push((await fetch(`${baseUrl}/tables`)).status);
+  }
+  assert.ok(statuses.includes(429), `GET /tables is rate-limited (statuses ${statuses.join(",")})`);
+  await settle(1200); // refill
+  assert.equal((await fetch(`${baseUrl}/tables`)).status, 200, "GET /tables recovers after throttle");
+}
+
+// 8. When the open table's seats drop and the room closes, the list stays empty and a new open host can claim the slot.
+{
+  await settle(5500); // refill after the rate-limit burst
+  const again = client(port, "Clara");
+  await again.open;
+  again.send({ type: "hello", name: "Clara", visibility: "open" });
+  await again.next("welcome");
+  const listed = await fetch(`${baseUrl}/tables`);
+  assert.equal(listed.status, 200, "GET /tables ok when listing Clara");
+  assert.equal((await listed.json())[0]?.name, "Clara's table");
+  again.ws.terminate();
+  await settle(800); // LOBBY_HOLD_MS = 300; wait for drop
+  assert.deepEqual(await (await fetch(`${baseUrl}/tables`)).json(), [], "list empties when the open table is dropped");
+}
+
+console.log("open-table-prove ok: list empty, private never listed, open listed, join via code, parallel private hidden, handoff, bots count, rate limit, cleanup on drop");
 process.exit(0);

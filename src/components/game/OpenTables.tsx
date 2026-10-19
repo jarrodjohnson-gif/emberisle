@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 function statusLabel(status: OpenTableEntry["status"], seated: number, total: number) {
   if (status === "playing") return `${seated}/${total} · in game`;
   if (status === "over") return `${seated}/${total} · game over`;
+  if (seated >= total) return `${seated}/${total} full`;
   return `${seated}/${total} seated`;
 }
 
@@ -58,30 +59,39 @@ export function OpenTables() {
   if (!openTables.length) return null;
 
   return (
-    <div className="mt-3 border-t border-border pt-3">
+    <div data-testid="open-tables" className="mt-2 border-t border-border pt-2">
       <p className="mb-1 text-xs font-medium text-muted">Open table</p>
       <ul className="flex flex-col gap-1">
-        {openTables.map((t) => (
-          <li
-            key={t.code}
-            data-testid="open-table-entry"
-            className="flex items-center justify-between gap-2 rounded-[10px] border border-border bg-surface px-3 py-2"
-          >
-            <div className="min-w-0">
-              <p className="truncate text-sm font-medium">{t.name}</p>
-              <p className="text-xs text-muted">{statusLabel(t.status, t.seated, t.total)}</p>
-            </div>
-            {t.status === "lobby" ? (
-              <Button size="sm" variant="primary" data-testid="open-table-join" onClick={() => joinTable(t.code)}>
-                Join
-              </Button>
-            ) : (
-              <Button size="sm" variant="secondary" data-testid="open-table-watch" onClick={() => watchTable(t.code)}>
-                Watch
-              </Button>
-            )}
-          </li>
-        ))}
+        {openTables.map((t) => {
+          const full = t.seated >= t.total;
+          return (
+            <li
+              key={t.code}
+              data-testid="open-table-entry"
+              className="flex items-center justify-between gap-2 rounded-[10px] border border-border bg-surface px-2.5 py-1.5"
+            >
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium leading-tight">{t.name}</p>
+                <p className="text-xs leading-tight text-muted">{statusLabel(t.status, t.seated, t.total)}</p>
+              </div>
+              {t.status === "lobby" ? (
+                full ? (
+                  <span data-testid="open-table-full" className="shrink-0 px-2 text-xs text-muted">
+                    Full
+                  </span>
+                ) : (
+                  <Button size="sm" variant="primary" data-testid="open-table-join" className="h-9 min-w-0 px-3" onClick={() => joinTable(t.code)}>
+                    Join
+                  </Button>
+                )
+              ) : (
+                <Button size="sm" variant="ghost" data-testid="open-table-watch" className="h-9 min-w-0 px-3" onClick={() => watchTable(t.code)}>
+                  Watch
+                </Button>
+              )}
+            </li>
+          );
+        })}
       </ul>
     </div>
   );
