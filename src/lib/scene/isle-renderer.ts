@@ -689,18 +689,17 @@ export class IsleRenderer {
     }
   }
 
-  // #826: dull the jelly hex and dim its number token (no-op on waste / missing hex).
-  private shadeRobber(rh: HexCell | undefined) {
+  // #826: dull jelly hex + dim its token (waste / missing → clear).
+  private shadeRobber(rh?: HexCell) {
     const id = rh && rh.terrain !== "waste" ? rh.id : null;
     this.jelly?.robber(id);
     for (const t of this.tokens) {
-      const on = id === t.userData.hex;
-      for (const c of t.children) {
-        const m = (c as THREE.Mesh).material as THREE.MeshBasicMaterial | undefined;
+      const k = id === t.userData.hex ? 0.55 : 1;
+      for (const c of t.children as THREE.Mesh[]) {
+        const m = c.material as THREE.MeshBasicMaterial;
         if (!m?.color) continue;
-        if (!m.userData.rest) m.userData.rest = m.color.clone();
-        m.color.copy(m.userData.rest as THREE.Color);
-        if (on) m.color.multiplyScalar(0.55);
+        m.userData.rest ??= m.color.clone();
+        m.color.copy(m.userData.rest as THREE.Color).multiplyScalar(k);
       }
     }
   }
