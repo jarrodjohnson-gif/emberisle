@@ -102,6 +102,8 @@ const TURN_MS = Number(process.env.TURN_MS ?? 120 * 1000);
 const TURN_TOTAL_MS = Number(process.env.TURN_TOTAL_MS ?? 6 * TURN_MS);
 // A bot seat answers a table ask after BOT_ANSWER_MS to twice that, so its Yes or No lands like a person's (#363).
 const BOT_ANSWER_MS = Number(process.env.BOT_ANSWER_MS ?? 1000);
+// People first (#850): a bot's Yes waits this long, or until every person asked has said No. A bot's No does not wait.
+const PEOPLE_FIRST_MS = Number(process.env.PEOPLE_FIRST_MS ?? 8000);
 // Every socket is pinged this often; one that has not answered the last ping is cut, so a phone that
 // locked or changed Wi-Fi frees its seat for the rejoin instead of holding it half-open (#202, #113).
 const PING_MS = Number(process.env.PING_MS ?? 30 * 1000);
@@ -1051,6 +1053,9 @@ function openOffer(room, from, give, want) {
     botsOn(room, offer);
   }, 20000);
   broadcast(room, { type: "tradeOffer", tradeId, from, give, want, seconds: 20 });
+  offer.peopleUntil = Date.now() + PEOPLE_FIRST_MS;
+  offer.heldYes = [];
+  offer.botTimers.push(setTimeout(() => releaseHeld(room, offer), PEOPLE_FIRST_MS));
   for (const p of room.game.players) {
     if (p.kind !== "bot" || p.id === from) continue;
     offer.botTimers.push(setTimeout(() => botAnswer(room, offer, p.id), BOT_ANSWER_MS + randomInt(BOT_ANSWER_MS + 1)));
@@ -1061,7 +1066,22 @@ function openOffer(room, from, give, want) {
 function botAnswer(room, offer, pid) {
   if (room.offer !== offer || room.game.players.find((p) => p.id === pid)?.kind !== "bot") return;
   const recovery = (room.recoveryPids ?? []).includes(pid);
-  respond(room, pid, recovery ? false : shouldAcceptTrade(room.game, pid, offer));
+  const yes = !recovery && shouldAcceptTrade(room.game, pid, offer);
+  if (yes && peopleWaiting(room, offer)) return void offer.heldYes.push(pid);
+  respond(room, pid, yes);
+}
+
+function peopleWaiting(room, offer) {
+  if (Date.now() >= offer.peopleUntil) return false;
+  return room.game.players.some((p) => p.kind !== "bot" && p.id !== offer.from && !offer.declined.has(p.id));
+}
+
+// Held Yeses go in the order the bots gave them, so the first bot to say Yes still takes it.
+function releaseHeld(room, offer) {
+  for (const pid of offer.heldYes.splice(0)) {
+    if (room.offer !== offer) return;
+    if (room.game.players.find((p) => p.id === pid)?.kind === "bot") respond(room, pid, true);
+  }
 }
 
 function ask(ws, room, msg) {
@@ -1113,7 +1133,7 @@ function respond(room, actor, yes) {
       closeOffer(room);
       broadcast(room, { type: "tradeClosed", tradeId: offer.tradeId });
       botsOn(room, offer);
-    }
+    } else if (!peopleWaiting(room, offer)) releaseHeld(room, offer);
     return;
   }
   const offered = applyAction(room.game, offer.from, { type: "offerTrade", to: actor, give: offer.give, want: offer.want });

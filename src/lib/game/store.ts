@@ -246,7 +246,12 @@ let outcomeTimer: ReturnType<typeof setTimeout> | null = null;
 // after the ask, and an offer nobody takes closes after OFFER_MS. The timers belong to the open offer.
 const BOT_ANSWER_MS = 1000;
 const OFFER_MS = 20000;
+// People first (#850), as host.mjs: a bot's Yes waits this long, or until every person asked has said No.
+const PEOPLE_FIRST_MS = 8000;
 let offerTimers: ReturnType<typeof setTimeout>[] = [];
+let peopleUntil = 0;
+// Bots that said Yes inside the people-first window, in the order they said it.
+let heldYes: string[] = [];
 let offerSeq = 0;
 // `${turn}:${bot}` of the last bot turn that had its one chance to ask the table.
 let botAsked = "";
@@ -255,6 +260,7 @@ let botDeclined = new Map<string, { give: Bag; want: Bag }>();
 function clearOfferTimers() {
   for (const t of offerTimers) clearTimeout(t);
   offerTimers = [];
+  heldYes = [];
 }
 
 export type Screen = "title" | "lobby" | "play";
@@ -1054,9 +1060,28 @@ function openOffer(set: Set, get: Get, from: string, give: Bag, want: Bag) {
   for (const p of state.players) {
     if (p.kind !== "bot" || p.id === from) continue;
     const answer = () => {
-      if (get().offer?.tradeId === tradeId) respond(set, get, p.id, shouldAcceptTrade(get().state!, p.id, { from, give, want }));
+      if (get().offer?.tradeId !== tradeId) return;
+      const yes = shouldAcceptTrade(get().state!, p.id, { from, give, want });
+      if (yes && peopleWaiting(get)) heldYes.push(p.id);
+      else respond(set, get, p.id, yes);
     };
     offerTimers.push(setTimeout(answer, BOT_ANSWER_MS + Math.floor(Math.random() * (BOT_ANSWER_MS + 1))));
+  }
+  peopleUntil = Date.now() + PEOPLE_FIRST_MS;
+  offerTimers.push(setTimeout(() => releaseHeld(set, get), PEOPLE_FIRST_MS));
+}
+
+function peopleWaiting(get: Get) {
+  const { offer, state, declined } = get();
+  if (!offer || !state || Date.now() >= peopleUntil) return false;
+  return state.players.some((p) => p.kind !== "bot" && p.id !== offer.from && !declined.includes(p.id));
+}
+
+// The first bot to say Yes still takes it (host.mjs releaseHeld).
+function releaseHeld(set: Set, get: Get) {
+  for (const id of heldYes.splice(0)) {
+    if (!get().offer) return;
+    respond(set, get, id, true);
   }
 }
 
@@ -1074,7 +1099,7 @@ function respond(set: Set, get: Get, actor: string, yes: boolean): string | null
         botDeclined.set(offer.from, { give: offer.give, want: offer.want });
       }
       endOffer(set, get, null);
-    }
+    } else if (!peopleWaiting(get)) releaseHeld(set, get);
     return null;
   }
   const offered = applyAction(state, offer.from, { type: "offerTrade", to: actor, give: offer.give, want: offer.want });
