@@ -20,7 +20,7 @@ The review desk adds a line whenever Jarrod decides something.
 | 2026-10-19 | Fog of war: option A, neighbour veil. Stays `prio:p2`. | [#842](https://github.com/jarrodjohnson-gif/emberisle/issues/842#issuecomment-6257818228) |
 | 2026-10-19 | Expansions: option 1, Beacon docks and New fortunes. Lobby toggles, off by default. Stays `prio:p2`. | [#843](https://github.com/jarrodjohnson-gif/emberisle/issues/843#issuecomment-6257818532) |
 | 2026-10-19 | Size budgets check each PR's growth against main, not one shared total. | [#868](https://github.com/jarrodjohnson-gif/emberisle/issues/868) |
-| 2026-10-19 | Gemini takes only clear, tightly scoped `model:gemini-ok` work: text, docs and scripts with hard command checks. Never UI, layout or visual work. | Jarrod, in chat; [`docs/LANES.md`](LANES.md) |
+| 2026-10-19 | Gemini takes only clearly defined work with hard checks: small coding, docs, scripts, or a defined visual fix with a pixel proof. Never open design or new-look work (new component looks, animation, layout needing taste). | Jarrod, in chat; [`docs/LANES.md`](LANES.md) |
 | 2026-10-19 | People get first dibs on table trades. Bots wait 8 s before a Yes. Bots keep their normal game speed. Counter-offers come later. | [#850](https://github.com/jarrodjohnson-gif/emberisle/issues/850) |
 | 2026-10-19 | Open tables: anyone with the link can join, alongside code tables. | [#833](https://github.com/jarrodjohnson-gif/emberisle/issues/833) |
 | 2026-10-19 | Josh (joshspicy2) has Write access. Main takes changes only through PRs with green CI; no force pushes, no deletion. | Repo settings |

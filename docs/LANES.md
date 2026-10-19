@@ -83,7 +83,7 @@ to any tier. Helpers don't use this list: they follow the queue in [`HELPERS.md`
 An issue's `model:` label, where present, names the model to build with (`docs/FRAMEWORK.md`). The
 `tier:` label says which other models may also take it.
 
-**Gemini takes only `model:gemini-ok` issues.** These are clear, tightly scoped work with hard command checks: text, docs and scripts. Gemini never takes UI, layout or visual work (`ux`, `lane:hud`), whatever the issue's tier.
+**Gemini takes only clearly defined work** with hard checks: small coding tasks, docs, scripts, and a defined visual fix such as "make X fit at this viewport" with a pixel proof. Gemini never takes open design or new-look work: a new component look, animation or layout that needs taste. Those go to Claude or Cursor. `model:gemini-ok` marks issues kept for Gemini.
 Grok's usage limits are low, so give it one `tier:2` or `tier:3` issue at a time.
 
 ### Sub-agents and usage limits
