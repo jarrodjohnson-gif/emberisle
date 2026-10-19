@@ -1,12 +1,11 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import { Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { HowTo, Lobby, online, SetupPipHints, sheets } from "@/components/game/chunks";
+import { HowTo, Lobby, online, openTables, OpenTables, SetupPipHints, sheets } from "@/components/game/chunks";
 import { Hud } from "@/components/game/Hud";
 import { PlaceList } from "@/components/game/PlaceList";
 import { TableRecoveryBoundary } from "@/components/game/TableRecoveryBoundary";
 import { SeatDot } from "@/components/game/SeatDot";
-import { OpenTables } from "@/components/game/OpenTables";
 import { useGame } from "@/lib/game/store";
 import { JOIN_CODE, LazyBoundary, preloadOnIdle, reloadOnStaleChunk } from "@/lib/lazy";
 import { play, setMusicWanted, setMuted, useMuted } from "@/lib/sound";
@@ -123,7 +122,6 @@ function Title() {
   const hostTable = useGame((s) => s.hostTable);
   const joinTable = useGame((s) => s.joinTable);
   const watchTable = useGame((s) => s.watchTable);
-  const listOpenTables = useGame((s) => s.listOpenTables);
   // A ?watch= link makes Watch the primary button for this visit (docs/design/spectator.md).
   const [watchLink, setWatchLink] = useState(false);
   const peekTable = useGame((s) => s.peekTable);
@@ -167,14 +165,11 @@ function Title() {
   }, []);
 
   // #488: How to play is a lazy chunk; idle time on the title fetches it, and so does a pointer or focus on its button.
-  useEffect(() => preloadOnIdle(sheets.prefetch), []);
-
-  // Poll for open tables every 5 s while on the title screen (#833).
+  // #833: the open-table list is another lazy chunk; idle fetch so a plain visit sees Join without hovering Host.
   useEffect(() => {
-    listOpenTables();
-    const id = setInterval(listOpenTables, 5000);
-    return () => clearInterval(id);
-  }, [listOpenTables]);
+    preloadOnIdle(sheets.prefetch);
+    preloadOnIdle(openTables.prefetch);
+  }, []);
 
   // One primary per screen (docs/design/polish.md): Play, or Watch on a watch link. Watch only shows once there is a code.
   const showWatch = watchLink || join.length === 4;
@@ -259,7 +254,17 @@ function Title() {
               <p className="text-xs text-muted">3 bots, no network</p>
             </div>
             {/* #488: a pointer or focus on Host or Join fetches the online chunk (lobby and chat) before either is pressed. */}
-            <div className="flex flex-wrap gap-2" onPointerEnter={online.prefetch} onFocus={online.prefetch}>
+            <div
+              className="flex flex-wrap gap-2"
+              onPointerEnter={() => {
+                online.prefetch();
+                openTables.prefetch();
+              }}
+              onFocus={() => {
+                online.prefetch();
+                openTables.prefetch();
+              }}
+            >
               <div className="flex grow gap-1">
                 <Button
                   size="lg"
@@ -330,7 +335,11 @@ function Title() {
                 {error}
               </p>
             ) : null}
-            <OpenTables />
+            <LazyBoundary failed={null}>
+              <Suspense fallback={null}>
+                <OpenTables />
+              </Suspense>
+            </LazyBoundary>
             <div className="flex flex-wrap items-center justify-center">
               <Button variant="ghost" className="px-3" title="Pass one device around" onClick={() => startHotseat(4)}>
                 Four seats, one table

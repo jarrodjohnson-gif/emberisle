@@ -216,7 +216,7 @@ function withPaths(state: GameState, edgeIds: string[], pid: string): GameState 
 }
 import { chooseBotAction, chooseTradeAsk, shouldAcceptTrade } from "./ai";
 import { PLAYER_COLORS, RESOURCES, type Action, type BuildMode, type GameState, type VictoryTarget, type WayfarerMode } from "./types";
-import { connectTable, hostUrl, tablesUrl, type Bag, type ChatLine, type Legal, type Me, type OpenTableEntry, type Reaction, type Seat, type TableClient } from "@/lib/net/table";
+import { connectTable, hostUrl, type Bag, type ChatLine, type Legal, type Me, type Reaction, type Seat, type TableClient } from "@/lib/net/table";
 import { PROTO } from "@/lib/net/proto";
 import { readMutedSeats } from "@/lib/muted-seats";
 import { MEME_VOLUME, MUSIC_VOLUME, play, playLater, SOUNDBOARD, stop, yourTurn, type SoundName } from "@/lib/sound";
@@ -343,10 +343,6 @@ interface GameStore {
   // spent on the way, so the largest one seen is the closest. The final-countdown cues are timed from it, not from `at`.
   clockSkew: number;
   lobbyLog: string;
-  // Open tables listed by the server; updated by listOpenTables().
-  openTables: OpenTableEntry[];
-  // Fetch the server's open-table list (GET /tables) and update openTables.
-  listOpenTables: () => void;
   hostTable: (visibility?: "open" | "private") => void;
   joinTable: (code: string) => void;
   // Ask which colors a lobby already holds, on a connection of its own, before the player joins.
@@ -525,7 +521,6 @@ export const useGame = create<GameStore>((set, get) => ({
   isHost: false,
   tableVictoryTarget: 10,
   seats: [],
-  openTables: [],
   legal: null,
   turnTimer: null,
   clockSkew: 0,
@@ -881,13 +876,6 @@ export const useGame = create<GameStore>((set, get) => ({
     if (buildMode === "stronghold") return { vertices: legalCities(state, actor), edges: [], hexes: [] };
     if (buildMode === "path") return { vertices: [], edges: legalRoads(state, actor, false), hexes: [] };
     return { vertices: [], edges: [], hexes: [] };
-  },
-  listOpenTables: () => {
-    const url = tablesUrl(hostUrl(window.location));
-    fetch(url)
-      .then((r) => r.ok ? r.json() : [])
-      .then((tables) => set({ openTables: tables as OpenTableEntry[] }))
-      .catch(() => {});
   },
   hostTable: (visibility = "private") => {
     get().commitName();

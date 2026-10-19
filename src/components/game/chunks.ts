@@ -14,6 +14,10 @@ export const ChatControls = online.pick((m) => m.ChatControls);
 export const ChatDock = online.pick((m) => m.ChatDock);
 export const ReactionFloats = online.pick((m) => m.ReactionFloats);
 
+// #833: open-table list on the title; separate so Host/Join stay in the index budget.
+export const openTables = chunk(() => import("@/components/game/OpenTables"));
+export const OpenTables = openTables.pick((m) => m.OpenTables);
+
 export const sheets = chunk(() => import("@/components/game/sheets"));
 export const CostCard = sheets.pick((m) => m.CostCard);
 export const FortuneTray = sheets.pick((m) => m.FortuneTray);
