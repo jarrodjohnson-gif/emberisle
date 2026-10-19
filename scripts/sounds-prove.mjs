@@ -291,7 +291,8 @@ try {
   await sleep(400);
   await clear(p);
   await p.evaluate(() => window.__emberisle.getState().askTable({ timber: 1 }, { ore: 1 }));
-  await until(async () => (await names(p)).some((n) => n === "trade_yes" || n === "trade_no"), "the ask to close", 30_000);
+  // Every bot saying No plays Jarrod's corn clip instead of trade_no (sound.md).
+  await until(async () => (await names(p)).some((n) => n === "trade_yes" || n === "trade_no" || n === "corn_no.mp3"), "the ask to close", 30_000);
   await sleep(600);
   got = await heard(p);
   assert.equal(got.length, 1, `one close, got ${JSON.stringify(got.map((x) => x.file))}`);

@@ -1027,14 +1027,17 @@ type Get = () => GameStore;
 
 // The open offer is over, taken by `taker` or by nobody: the toast goes, and the asker reads the outcome for a moment.
 function endOffer(set: Set, get: Get, taker: string | null) {
-  const { offer, state } = get();
+  const { offer, state, declined } = get();
   if (!offer) return;
   clearOfferTimers();
   const takerName = state?.players.find((p) => p.id === taker)?.name ?? "Someone";
+  // Every other seat said No (not a timeout, not a refused Yes): the whole table hears Jarrod's corn clip.
+  const allNo = !taker && !!state && state.players.every((p) => p.id === offer.from || declined.includes(p.id));
   set({ offer: null, declined: [] });
   // Both parties hear a deal in full and the rest of the table softer; only the asker hears a No (#609).
   const me = get().localId;
   if (taker) play("trade_yes", me === taker || me === offer.from ? 1 : 0.5);
+  else if (allNo) play("corn_no");
   else if (me === offer.from) play("trade_no");
   // Every receiver gets the resolved offer as one brief log line, with no response controls.
   if (outcomeTimer) clearTimeout(outcomeTimer);
@@ -1060,7 +1063,7 @@ function offerChime(from: string, fromName: string, me: string, give: Bag, want:
 // for a new seat with such a name, or a seat renamed to one in the lobby. Every seat hears it; on your own first seat list
 // only your own seat counts as new.
 const DIGGLER = /luck(e|y|ie)?digg?ler|pickle|isa+c/;
-const isDiggler = (name: string) => DIGGLER.test(name.toLowerCase().replace(/[^a-z]/g, ""));
+const isDiggler = (name: string | undefined) => DIGGLER.test((name ?? "").toLowerCase().replace(/[^a-z]/g, ""));
 function diggerBell(before: Seat[], after: Seat[], me: string) {
   const was = new Map(before.map((s) => [s.id, s.name]));
   const arrived = after.some((s) => {
