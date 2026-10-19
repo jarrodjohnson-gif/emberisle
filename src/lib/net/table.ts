@@ -95,8 +95,17 @@ export interface Me {
   avatarId?: string;
 }
 
+// An open table entry from the server's /tables list (never includes private table codes).
+export interface OpenTableEntry {
+  code: string;
+  name: string;
+  seated: number;
+  total: number;
+  status: "lobby" | "playing" | "over";
+}
+
 export interface TableClient {
-  open(me: Me, options?: { wayfarerMode: WayfarerMode }): void;
+  open(me: Me, options?: { wayfarerMode?: WayfarerMode; visibility?: "open" | "private" }): void;
   join(code: string, me: Me): void;
   // Watch a started table, read-only: hello {code, watch:true} (docs/design/spectator.md). No seat, no secret, so no redial.
   watch(code: string): void;
@@ -173,6 +182,11 @@ export function toIntent(action: Action): Record<string, unknown> | null {
     default:
       return null;
   }
+}
+
+// Derive the HTTP base URL from the WebSocket URL (for fetching /tables).
+export function tablesUrl(wsUrl: string): string {
+  return wsUrl.replace(/^wss:/, "https:").replace(/^ws:/, "http:") + "/tables";
 }
 
 // ?host=wss://play.example.com wins (the browser's host.txt). In `npm run dev` the page is on Vite (8080)

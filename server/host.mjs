@@ -15,6 +15,7 @@ import { allow, cleanText, loadEmotes, remember, SOUNDBOARD } from "./chat.mjs";
 import { cue } from "./cue.mjs";
 import { PROFILE_TYPES, profileGate, profileHandler } from "./profile-protocol.mjs";
 import { openProfiles } from "./profiles.mjs";
+import { getOpenTables, registerOpenTable, unregisterOpenTable } from "./open-table.mjs";
 
 function hear(name) {
   try {
@@ -712,6 +713,16 @@ function route(req, res) {
     res.end(avatars.get(got[1]).body);
     return;
   }
+  if (req.method === "GET" && url.pathname === "/tables") {
+    const body = JSON.stringify(getOpenTables());
+    res.writeHead(200, {
+      "content-type": "application/json",
+      "access-control-allow-origin": "*",
+      "cache-control": "no-cache",
+    });
+    res.end(body);
+    return;
+  }
   if (req.method === "GET" || req.method === "HEAD") {
     serveStatic(req, res);
     return;
@@ -802,7 +813,8 @@ function openTable(ws, msg) {
     if (mine) mine.tokens += 1;
     return send(ws, { type: "error", message: "Too many new tables right now. Try again in a minute." });
   }
-  const room = { victoryTarget: 10, wayfarerMode: msg.wayfarerMode ?? "on", code: code(), seats: [], game: null, host: null, next: 0, offer: null, offerTimer: null, botDeclined: {}, chat: [], chatSeq: 0, watchers: new Set() };
+  const visibility = msg.visibility === "open" ? "open" : "private";
+  const room = { victoryTarget: 10, wayfarerMode: msg.wayfarerMode ?? "on", visibility, code: code(), seats: [], game: null, host: null, next: 0, offer: null, offerTimer: null, botDeclined: {}, chat: [], chatSeq: 0, watchers: new Set() };
   rooms.set(room.code, room);
   const seat = {
     id: `s${room.next++}`,
@@ -818,6 +830,7 @@ function openTable(ws, msg) {
   };
   room.seats.push(seat);
   room.host = seat.id;
+  if (visibility === "open") registerOpenTable(room);
   ws.room = room;
   ws.seat = seat;
   send(ws, { type: "welcome", proto: PROTO, code: room.code, you: seat.id, host: true, chat: room.chat, secret: seat.secret, ...HOLD_INFO, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on" });
@@ -1262,6 +1275,7 @@ function handle(ws, raw) {
   if (!ws.room) {
     // A socket with no seat has no seat.bucket; this one throttles the pre-seat frames (docs/design/color-peek.md).
     const ok = allow(ws.bucket, Date.now());
+    if (msg.type === "list") return ok ? send(ws, { type: "openTables", tables: getOpenTables() }) : undefined;
     if (msg.type === "peek") return ok ? peek(ws, msg) : undefined;
     if (!ok && (msg.type === "create" || msg.type === "join" || msg.type === "hello")) return send(ws, { type: "error", message: "Slow down." });
     // G2: a hello on a protocol newer than this host, or on a version that is not a whole number, is refused before it opens,
@@ -1365,6 +1379,7 @@ function resendOffer(ws, room, seat, offer) {
 }
 
 function dropRoom(room) {
+  unregisterOpenTable(room);
   closeOffer(room);
   for (const seat of room.seats) {
     clearTimeout(seat.graceTimer);
