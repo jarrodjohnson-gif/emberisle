@@ -105,7 +105,7 @@ function balance(game) {
   assert.equal(action.give, "timber");
   const beforeWanted = bot.resources[action.want];
   const state = hostPractice(game);
-  const line = `${bot.name} gains 1 ${RESOURCE_LABEL[action.want].toLowerCase()}; ${bot.name} loses 4 wood — bank trade.`;
+  const line = `${bot.name} traded 4 wood to the bank for 1 ${RESOURCE_LABEL[action.want].toLowerCase()}.`;
   assert.equal(state.state.log.filter((entry) => entry === line).length, 1);
   assert.equal(state.gameLog.filter((entry) => entry.text === line).length, 1);
   assert.equal(state.state.players.find((p) => p.id === "p0").resources.timber, 1);
