@@ -4,11 +4,11 @@
 // Opens with focus on the first row; Escape, a pointerdown outside or focus leaving closes it, and Escape puts the focus
 // back on the button. Leaving an online seat asks first (the seat goes to a bot for good); Stay, Escape or 5 s cancels.
 import { useEffect, useRef, useState } from "react";
-import { BookOpen, Box, Copy, Ellipsis, Eye, Hammer, LogOut, Volume2, VolumeX, Waves } from "lucide-react";
+import { BookOpen, Box, Copy, Ellipsis, Eye, Hammer, LogOut, Smartphone, Volume2, VolumeX, Waves } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CopyFallback, useCopy } from "@/components/game/CopyText";
 import { useGame } from "@/lib/game/store";
-import { play, setMuted, useMuted } from "@/lib/sound";
+import { hapticsAvailable, play, setHaptics, setMuted, useHaptics, useMuted } from "@/lib/sound";
 
 const ROW = "h-11 w-full justify-start px-3 text-body";
 const ICON = "size-4 shrink-0 text-muted";
@@ -27,6 +27,8 @@ export function TableMenu() {
   const view = useGame((s) => s.playView);
   const setViewChoice = useGame((s) => s.setViewChoice);
   const muted = useMuted();
+  const haptics = useHaptics();
+  const showHaptics = hapticsAvailable();
   const { state: copied, copy, reset } = useCopy<"code">();
   const [open, setOpen] = useState(false);
   const [asking, setAsking] = useState(false);
@@ -176,6 +178,23 @@ export function TableMenu() {
                 {muted ? <VolumeX className={ICON} /> : <Volume2 className={ICON} />}
                 Table sounds {muted ? "off" : "on"}
               </Button>
+              {/* #542: phones only in effect (coarse pointer). The row stays when vibrate exists so the choice is clear. */}
+              {showHaptics ? (
+                <Button
+                  variant="ghost"
+                  className={ROW}
+                  data-testid="haptics-toggle"
+                  aria-pressed={haptics}
+                  silent
+                  onClick={() => {
+                    setHaptics(!haptics);
+                    play("ui_click");
+                  }}
+                >
+                  <Smartphone className={ICON} />
+                  Haptics {haptics ? "on" : "off"}
+                </Button>
+              ) : null}
               {/* The sea's look; the choice is remembered and overrides the GPU probe (docs/design/crystal-water.md). */}
               <div role="group" aria-label="Water" data-testid="water-toggle" className="flex h-11 items-center gap-2 px-3 text-body">
                 <Waves className={ICON} /> Water

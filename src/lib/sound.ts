@@ -78,10 +78,14 @@ export const MEME_VOLUME = 0.4;
 export type SoundName = keyof typeof FILES;
 
 const MUTED_KEY = "emberisle-muted";
+// #542: phone haptics (coarse pointer only). Default on where vibrate exists; desktop ignores the toggle.
+const HAPTICS_KEY = "emberisle-haptics";
 const clips = new Map<SoundName, HTMLAudioElement>();
 let unlocked = false;
 let muted = savedMuted();
+let hapticsOn = savedHaptics();
 const listeners = new Set<() => void>();
+const hapticListeners = new Set<() => void>();
 
 function savedMuted() {
   try {
@@ -89,6 +93,31 @@ function savedMuted() {
   } catch {
     return false;
   }
+}
+
+function vibrateSupported() {
+  return typeof navigator !== "undefined" && typeof navigator.vibrate === "function";
+}
+
+function coarsePointer() {
+  try {
+    return typeof matchMedia === "function" && matchMedia("(pointer: coarse)").matches;
+  } catch {
+    return false;
+  }
+}
+
+function savedHaptics() {
+  // Default on where the page can buzz; off (and ignored) on desktop / unsupported.
+  if (!vibrateSupported()) return false;
+  try {
+    const v = localStorage.getItem(HAPTICS_KEY);
+    if (v === "0") return false;
+    if (v === "1") return true;
+  } catch {
+    // storage blocked: stay on for this page when vibrate exists
+  }
+  return true;
 }
 
 if (typeof window !== "undefined") {
@@ -125,6 +154,57 @@ function subscribe(l: () => void) {
 export function useMuted() {
   return useSyncExternalStore(subscribe, isMuted, () => false);
 }
+
+export function hapticsAvailable() {
+  return vibrateSupported();
+}
+
+export function isHapticsOn() {
+  return hapticsOn;
+}
+
+export function setHaptics(v: boolean) {
+  hapticsOn = v;
+  try {
+    if (v) localStorage.setItem(HAPTICS_KEY, "1");
+    else localStorage.setItem(HAPTICS_KEY, "0");
+  } catch {
+    // storage can be blocked; the toggle still holds for this page
+  }
+  for (const l of hapticListeners) l();
+}
+
+function subscribeHaptics(l: () => void) {
+  hapticListeners.add(l);
+  return () => {
+    hapticListeners.delete(l);
+  };
+}
+
+export function useHaptics() {
+  return useSyncExternalStore(subscribeHaptics, isHapticsOn, () => false);
+}
+
+// Guarded phone buzz (#542). No-op on desktop, when off, before unlock, or where vibrate is missing.
+// Reduced motion does not suppress this: it is not visual motion.
+export function haptic(ms: number) {
+  if (!unlocked || !hapticsOn || !coarsePointer() || !vibrateSupported()) return;
+  try {
+    navigator.vibrate?.(ms);
+  } catch {
+    // embedded pages may forbid vibration
+  }
+}
+
+// Durations from the issue: land / pay / turn / fortune / trade offer / win.
+export const HAPTIC_MS = {
+  land: 10,
+  pay: 8,
+  yourTurn: 15,
+  fortune: 10,
+  tradeOffer: 10,
+  win: 20,
+} as const;
 
 // A clip never starts twice within GAP_MS of its last request (a burst is one sound), and clips start at least GAP_MS apart
 // in the order asked, so a bot round of five moves is five separate sounds. A backlog past MAX_QUEUE is dropped, not played late.
@@ -201,18 +281,16 @@ export function stop(name: SoundName) {
   clip.currentTime = 0;
 }
 
-// The your-turn chime, with a short buzz on phones that have a motor.
+// The your-turn chime, with a short buzz on phones that have a motor (#542: 15 ms, was 30).
 export function yourTurn() {
   play("your_turn");
-  if (unlocked && !muted) navigator.vibrate?.(30);
+  haptic(HAPTIC_MS.yourTurn);
 }
 
 // One soft tick and guarded phone kick per paying piece. The renderer owns timing and the per-roll cap.
 export function gainTick() {
   play("gain_tick", 0.35);
-  if (unlocked && !muted) {
-    try { navigator.vibrate?.(8); } catch { /* embedded pages may forbid vibration */ }
-  }
+  haptic(HAPTIC_MS.pay);
 }
 
 // #667: a tap on a hex that places nothing plays that terrain's clip, quietly, at most once per TOUCH_GAP_MS. Only a sheep
