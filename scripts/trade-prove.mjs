@@ -2,7 +2,7 @@
 // Tab 1 asks the table through the panel; tab 3 says No (the offer stays open), tab 2 says Yes, and every tab's state
 // shows the goods moved. A second ask gets a No and then runs out its 20 s: the goods stay put and the toast closes
 // everywhere. Zero console errors.
-// #366 / #537: every non-asker's toast is a region named by the offer (or compact demand) that does not take focus.
+// #366 / #537: every non-asker's toast is a named region for the offer (or compact demand) that does not take focus.
 // A seat that can pay sees Yes/No; a seat that cannot (#537) sees only "X is looking for …" with Dismiss — no Accept.
 // Escape answers No / Dismiss; the countdown is hidden from screen readers but a polite line says "5 seconds left".
 // #378: the asker's panel is a modal dialog named "Trade": focus moves in on open, 14 Tabs and 3 Shift+Tabs never leave
