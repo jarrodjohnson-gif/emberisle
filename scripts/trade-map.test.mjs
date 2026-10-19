@@ -208,7 +208,7 @@ try {
   await phone.getByTestId("chat-sheet").waitFor();
   await phone.setViewportSize({ width: 568, height: 320 });
   // The chat has a delayed usability guard. Verify it stays open after the new layout settles.
-  await phone.waitForTimeout(800);
+  await phone.waitForTimeout(1200);
   assert(await phone.getByTestId("chat-sheet").isVisible(), "long offer minimized chat after rotation");
   const joint = await phone.evaluate(() => {
     const offer = document.querySelector('[data-testid="trade-toast"]').getBoundingClientRect();
