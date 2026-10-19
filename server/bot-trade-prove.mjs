@@ -170,7 +170,7 @@ function rejoin(code, seat) {
     for (;;) {
       const i = c.inbox.findIndex((m) => m.type === type);
       if (i >= 0) return c.inbox.splice(i, 1)[0];
-      if (Date.now() > until) fail(`${c.name} waited ${ms} ms for ${type}`, c.seen.map((m) => (m.type === "log" ? m.text : m.type)));
+      if (Date.now() > until) fail(`${c.name} waited ${ms} ms for ${type}`, c.seen.map((m) => (m.type === "log" ? m.text : m.type === "error" ? `error: ${m.message}` : m.type)));
       await new Promise((res) => {
         c.waiters.push(res);
         setTimeout(res, until - Date.now() + 1);
@@ -187,6 +187,21 @@ function rejoin(code, seat) {
   ws.on("open", () => c.send(seat ? { type: "hello", code, secret: seat.secret } : { type: "hello", code, watch: true }));
   return c;
 }
+// Every seat is back, and each client holds a state: a stamped ask sent before its first state is refused. The wait
+// leaves the inbox alone, so a later `next("state")` still sees that first state.
+async function seated(cs, ms = 5000) {
+  await Promise.all(cs.map((c) => c.until("seats", (m) => m.seats.every((s) => !s.away))));
+  await Promise.all(cs.map(async (c) => {
+    const until = Date.now() + ms;
+    while (!c.state) {
+      if (Date.now() > until) fail(`${c.name} waited ${ms} ms for its first state`, c.seen.map((m) => m.type));
+      await new Promise((res) => {
+        c.waiters.push(res);
+        setTimeout(res, until - Date.now() + 1);
+      });
+    }
+  }));
+}
 const hand = (c) => c.state.game.players.find((p) => p.id === c.pid).resources;
 // A bot answer must come after its delay, never at once, and well inside the offer.
 function delayed(offer, msg, what) {
@@ -200,7 +215,7 @@ const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
 const C = rejoin("BTCC", seatsC.find((s) => s.pid === "p0"));
 const CT = rejoin("BTCC", seatsC.find((s) => s.pid === "p1"));
 const roomC = (async () => {
-  await Promise.all([C, CT].map((c) => c.until("seats", (m) => m.seats.every((s) => !s.away))));
+  await seated([C, CT]);
   const offer = await C.next("tradeOffer");
   if (offer.from !== "p2") fail("C: the ask is not the bot's", offer);
   const closed = await C.next("tradeClosed", OFFER_MS + 5000);
@@ -218,7 +233,7 @@ const roomC = (async () => {
 const seatH = (pid) => seatsH.find((s) => s.pid === pid);
 const roomH = (async () => {
   const [EH, TH, PH] = ["p0", "p1", "p2"].map((pid) => rejoin("BTHH", seatH(pid)));
-  await Promise.all([EH, TH, PH].map((c) => c.until("seats", (m) => m.seats.every((s) => !s.away))));
+  await seated([EH, TH, PH]);
   EH.send({ type: "tradeAsk", give: { wool: 1 }, want: { timber: 1 } });
   const [first] = await Promise.all([EH, TH, PH].map((c) => c.next("tradeOffer")));
   PH.send({ type: "tradeAnswer", tradeId: first.tradeId, yes: false });
@@ -273,7 +288,7 @@ const roomH = (async () => {
 const tableOf = (code, seats) => ["p0", "p1"].map((pid) => rejoin(code, seats.find((s) => s.pid === pid)));
 const roomI = (async () => {
   const [EI, TI] = tableOf("BTII", seatsI);
-  await Promise.all([EI, TI].map((c) => c.until("seats", (m) => m.seats.every((s) => !s.away))));
+  await seated([EI, TI]);
   EI.send({ type: "tradeAsk", give: helps.give, want: helps.want });
   const [o] = await Promise.all([EI, TI].map((c) => c.next("tradeOffer")));
   await sleep(5000);
@@ -285,7 +300,7 @@ const roomI = (async () => {
 })();
 const roomJ = (async () => {
   const [EJ, TJ] = tableOf("BTJJ", seatsJ);
-  await Promise.all([EJ, TJ].map((c) => c.until("seats", (m) => m.seats.every((s) => !s.away))));
+  await seated([EJ, TJ]);
   EJ.send({ type: "tradeAsk", give: helps.give, want: helps.want });
   const [o] = await Promise.all([EJ, TJ].map((c) => c.next("tradeOffer")));
   // Past the bot's latest answer, so its Yes is held when Tide says No.
@@ -302,7 +317,7 @@ const roomJ = (async () => {
 
 // A. A person asks the table with a bot seated.
 const [EA, TA] = ["p0", "p1"].map((pid) => rejoin("BTAA", seatsA.find((s) => s.pid === pid)));
-await Promise.all([EA, TA].map((c) => c.until("seats", (m) => m.seats.every((s) => !s.away))));
+await seated([EA, TA]);
 const ask = async (give, want) => {
   EA.send({ type: "tradeAsk", give, want });
   const [o] = await Promise.all([EA, TA].map((c) => c.next("tradeOffer")));
@@ -386,7 +401,7 @@ console.log("D: the offer open at Ember's win closed at every seat; after the re
 // E. A person declines the bot's ask. Once the bot reaches another turn, the same ask remains closed.
 const E = rejoin("BTEE", seatsE.find((s) => s.pid === "p0"));
 const ET = rejoin("BTEE", seatsE.find((s) => s.pid === "p1"));
-await Promise.all([E, ET].map((c) => c.until("seats", (m) => m.seats.every((s) => !s.away))));
+await seated([E, ET]);
 offer = await E.next("tradeOffer");
 if (offer.from !== "p2" || JSON.stringify({ give: offer.give, want: offer.want }) !== JSON.stringify(askE)) fail("E: the first bot ask", offer);
 await Promise.all([E, ET].map((c) => c.until("state", (m) => m.game.current === "p2" && m.game.phase === "main")));
@@ -414,7 +429,7 @@ console.log("E: the person declined the bot's offer; its unchanged proposal stay
 // F: a fixture with the same stored decline and one more spare wool stays closed through the real host path.
 const F = rejoin("BTFF", seatsF.find((s) => s.pid === "p0"));
 const FT = rejoin("BTFF", seatsF.find((s) => s.pid === "p1"));
-await Promise.all([F, FT].map((c) => c.until("seats", (m) => m.seats.every((s) => !s.away))));
+await seated([F, FT]);
 await F.until("state", (m) => m.game.current === "p0" && m.game.phase === "roll");
 if (F.seen.some((m) => m.type === "tradeOffer" && m.from === "p2")) fail("F: same ask reopened after a hand-only change", F.seen.filter((m) => m.type === "tradeOffer"));
 console.log("F: the host kept the same ask closed after the bot gained wool");
@@ -425,7 +440,7 @@ console.log("F: the host kept the same ask closed after the bot gained wool");
 const G = rejoin("BTGG", seatsG.find((s) => s.pid === "p0"));
 await G.until("state", () => true);
 const GT = rejoin("BTGG", seatsG.find((s) => s.pid === "p1"));
-await Promise.all([G, GT].map((c) => c.until("seats", (m) => m.seats.every((s) => !s.away))));
+await seated([G, GT]);
 const offerG = await G.next("tradeOffer");
 if (offerG.from !== "p2" || JSON.stringify({ give: offerG.give, want: offerG.want }) !== JSON.stringify(askG)) fail("G: changed useful proposal did not open", offerG);
 console.log("G: a different useful proposal opened through the host");
