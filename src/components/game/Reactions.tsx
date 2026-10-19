@@ -213,33 +213,29 @@ function ReactionFloat({
       if (timing.current?.reaction !== reaction)
         timing.current = { reaction, started: performance.now() };
       const element = float.current;
-      const host = element?.parentElement;
-      if (!element || !host) return;
-      // Stay pinned to the seat card (#841). Only nudge to keep the badge inside the viewport
-      // safe edge — never stretch across the card or drift toward the board centre.
-      element.style.transform = "translate(0, 0)";
-      const seat = host.closest(".seat-card")?.getBoundingClientRect();
-      const box = element.getBoundingClientRect();
-      const pad = 8;
-      let dx = 0;
-      let dy = 0;
-      if (box.left < pad) dx = pad - box.left;
-      else if (box.right > innerWidth - pad) dx = innerWidth - pad - box.right;
-      if (box.top < pad) dy = pad - box.top;
-      // Keep the nudge within one seat-card width of the anchor so a clamp cannot send it mid-board.
-      if (seat) {
-        const maxShift = Math.max(24, seat.width);
-        dx = Math.max(-maxShift, Math.min(maxShift, dx));
-        dy = Math.max(-maxShift, Math.min(maxShift, dy));
-      }
-      const rise = preference.matches ? 0 : Math.min(12, Math.max(0, box.top + dy - pad));
-      element.style.transform = `translate(${dx}px, ${dy}px)`;
+      if (!element) return;
+      // Clamp with left/top so the rise animation (translateY only) cannot undo the nudge.
+      // Include the count badge and target label, which extend outside the emoji box.
+      element.style.left = "0px";
+      element.style.top = "0px";
+      const boxes = [element, ...element.querySelectorAll("img, span")].map(
+        (node) => node.getBoundingClientRect(),
+      );
+      const left = Math.min(...boxes.map((box) => box.left));
+      const right = Math.max(...boxes.map((box) => box.right));
+      const top = Math.min(...boxes.map((box) => box.top));
+      const bottom = Math.max(...boxes.map((box) => box.bottom));
+      const dx = Math.max(8 - left, Math.min(0, innerWidth - 8 - right));
+      const dy = Math.max(8 - top, Math.min(0, innerHeight - 8 - bottom));
+      element.style.left = `${dx}px`;
+      element.style.top = `${dy}px`;
+      const rise = preference.matches ? 0 : Math.min(12, Math.max(0, top + dy - 8));
       if (preference.matches) return;
       animation = element.animate(
         [
-          { opacity: 1, transform: `translate(${dx}px, ${dy}px)` },
-          { opacity: 1, offset: 0.75, transform: `translate(${dx}px, ${dy - rise * 0.75}px)` },
-          { opacity: 0, transform: `translate(${dx}px, ${dy - rise}px)` },
+          { opacity: 1, transform: "translateY(0)" },
+          { opacity: 1, offset: 0.75, transform: `translateY(${-rise * 0.75}px)` },
+          { opacity: 0, transform: `translateY(${-rise}px)` },
         ],
         { duration: 2000, fill: "forwards" },
       );
@@ -267,7 +263,7 @@ function ReactionFloat({
         align === "center" ? "left-1/2 -translate-x-1/2" : "left-3",
       )}
     >
-      <div ref={float} className="relative flex flex-col items-center will-change-transform">
+      <div ref={float} className="relative flex flex-col items-center">
         {emoji ? (
           <span
             role="img"
