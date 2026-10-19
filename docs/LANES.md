@@ -81,7 +81,16 @@ to any tier. Helpers don't use this list: they follow the queue in [`HELPERS.md`
 | `tier:3` | Small single-purpose fixes, docs and screenshot QA | Claude Haiku 5.5, GPT-6 Luna, and every model above |
 
 An issue's `model:` label, where present, names the model to build with (`docs/FRAMEWORK.md`). The
-`tier:` label says which other models may also take it. `model:gemini-ok` issues are kept for Gemini.
+`tier:` label says which other models may also take it.
+
+**Gemini takes clearly defined work with hard checks.** It is good at:
+
+- UI audits: check that a card or panel works and chat overlaps nothing. Screenshot set viewports and flag anything odd.
+- Minor design fixes, such as "make X fit at this viewport", with a pixel proof.
+- Small defined coding, docs and scripts.
+
+Gemini never builds a new look, animation or layout that needs taste. Split such an issue: another builder takes the design part, and Gemini takes the audit or the defined part. `model:gemini-ok` marks issues kept for Gemini.
+
 Grok's usage limits are low, so give it one `tier:2` or `tier:3` issue at a time.
 
 ### Sub-agents and usage limits
