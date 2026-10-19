@@ -1,4 +1,4 @@
-// #820: an open trade offer raises the hand cards it changes. What this seat gives rises with a red edge and "−N";
+// #820: an open trade offer raises the hand cards it changes. What this seat gives rises with a red edge and "-N";
 // what it gets rises with a green edge and "+N". Both clear when the offer closes or this seat answers it. Under
 // reduced motion the edge and label stay and nothing lifts.
 import assert from "node:assert/strict";
@@ -86,17 +86,61 @@ try {
 
     // Another seat offers 1 clay for 1 timber: this seat gives timber and gets clay.
     await setOffer({ give: { clay: 1 }, want: { timber: 1 } });
-    check(await settled({ timber: 1, clay: 1 }), { timber: ["give", "−1"], clay: ["get", "+1"] }, `${tag} received`);
+    check(await settled({ timber: 1, clay: 1 }), { timber: ["give", "-1"], clay: ["get", "+1"] }, `${tag} received`);
     // This seat answers: it clears at once.
     await setOffer({ give: { clay: 1 }, want: { timber: 1 } }, true);
     check(await settled({}), {}, `${tag} answered`);
     // This seat's own offer reads from its own side: it gives `give` and gets `want`.
     await setOffer({ mine: true, give: { grain: 2 }, want: { ore: 1 } });
-    check(await settled({ grain: 1, ore: 1 }), { grain: ["give", "−2"], ore: ["get", "+1"] }, `${tag} own`);
+    check(await settled({ grain: 1, ore: 1 }), { grain: ["give", "-2"], ore: ["get", "+1"] }, `${tag} own`);
     // The offer ends.
     await setOffer(null);
     check(await settled({}), {}, `${tag} closed`);
     console.log(`${tag}: received, answered, own and closed offers raise and clear the right cards`);
+    await ctx.close();
+  }
+  // The compact hand (844x390) has one label slot per card: while a gain/loss flash holds a card, its offer label
+  // steps aside so the two never print over each other. The edge stays, and the label returns when the flash ends.
+  {
+    const ctx = await browser.newContext({ viewport: { width: 844, height: 390 } });
+    const page = await ctx.newPage();
+    page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
+    page.on("pageerror", (e) => errors.push(String(e)));
+    await page.goto(`http://127.0.0.1:${PORT}/`);
+    await page.getByRole("button", { name: "Play", exact: true }).click();
+    await page.waitForFunction(() => window.__emberisle?.getState().state, null, { timeout: STEP_MS });
+    const setHand = (resources) =>
+      page.evaluate((resources) => {
+        const s = window.__emberisle.getState();
+        window.__emberisle.setState({ state: { ...s.state, players: s.state.players.map((p) => (p.id === s.localId ? { ...p, resources } : p)) } });
+      }, resources);
+    await setHand({ timber: 1, clay: 1, wool: 1, grain: 2, ore: 1 });
+    await page.waitForFunction(() => !document.querySelector('[data-testid="resource-flash"]'), null, { timeout: STEP_MS });
+    await page.evaluate(() => {
+      const s = window.__emberisle.getState();
+      const from = s.state.players.find((p) => p.id !== s.localId).id;
+      window.__emberisle.setState({ offer: { tradeId: "t820", from, fromName: "Bot", give: { clay: 1 }, want: { timber: 1 }, until: Date.now() + 60000 }, declined: [] });
+    });
+    // Timber gives a good away: a -1 flash lands on the card that already shows the offer's -1.
+    await setHand({ timber: 0, clay: 1, wool: 1, grain: 2, ore: 1 });
+    await page.getByTestId("resource-flash").waitFor({ timeout: STEP_MS });
+    const boxes = await page.evaluate(() => {
+      const visible = (el) => (el && el.getClientRects().length ? el.getBoundingClientRect() : null);
+      const pick = (r) => {
+        const slot = document.querySelector(`[data-testid="offer-slot-${r}"]`);
+        const rect = (el) => { const b = visible(el); return b && [b.left, b.top, b.right, b.bottom]; };
+        return { offer: rect(slot.querySelector('[data-testid="offer-delta"]')), flash: rect(slot.querySelector('[data-testid="resource-flash"]')), edge: slot.dataset.offer };
+      };
+      return { timber: pick("timber"), clay: pick("clay") };
+    });
+    assert.ok(boxes.timber.flash, "short: the flash shows on timber");
+    assert.equal(boxes.timber.offer, null, "short: the offer label steps aside for the flash");
+    assert.equal(boxes.timber.edge, "give", "short: timber keeps its offer edge");
+    assert.ok(boxes.clay.offer && !boxes.clay.flash, "short: clay, with no flash, keeps its offer label");
+    await page.waitForFunction(() => !document.querySelector('[data-testid="resource-flash"]'), null, { timeout: STEP_MS });
+    const back = await page.evaluate(() => document.querySelector('[data-testid="offer-slot-timber"] [data-testid="offer-delta"]')?.getClientRects().length);
+    assert.ok(back, "short: the offer label returns once the flash ends");
+    console.log("short 844x390: a flash and an offer on one card never overlap, and the offer label returns");
     await ctx.close();
   }
   if (errors.length) throw new Error(`console errors: ${errors.join(" | ")}`);

@@ -173,12 +173,15 @@ function ResourceCard({ resource, count, flash, offer }: { resource: Resource; c
       {offer ? (
         <span
           data-testid="offer-delta"
+          aria-hidden
           className={cn(
             "hand-offer-delta pointer-events-none absolute left-0.5 top-0.5 rounded-control bg-surface px-1 text-caption font-semibold tabular-nums short:left-auto short:right-1 short:top-0 short:leading-3",
             offer > 0 ? "text-gain" : "text-loss",
+            // The compact card has room for one label: the edge and lift still show while a gain/loss flash holds it.
+            flash && "short:hidden",
           )}
         >
-          {offer > 0 ? `+${offer}` : `−${-offer}`}
+          {offer > 0 ? `+${offer}` : String(offer)}
         </span>
       ) : null}
       {flash ? (
