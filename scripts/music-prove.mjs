@@ -121,15 +121,14 @@ try {
   ok("the Music toggle stops and resumes it, and is stored");
 
   // ---- The Table menu's row drives the same switch.
-  await page.getByRole("button", { name: "Table menu" }).first().click().catch(() => {});
+  await page.getByRole("button", { name: "Table menu" }).first().click();
   const row = page.getByTestId("music-toggle");
-  if (await row.count()) {
-    await row.click();
-    assert.equal(await playing(), false, "the menu row switches it off");
-    await row.click();
-    await until(playing, "the menu row switches it on");
-    ok("the Table menu's Music row switches it off and on");
-  } else console.log("note: Table menu not opened in this layout; toggle covered through the module");
+  await row.waitFor({ timeout: 5000 });
+  await row.click();
+  assert.equal(await playing(), false, "the menu row switches it off");
+  await row.click();
+  await until(playing, "the menu row switches it on");
+  ok("the Table menu's Music row switches it off and on");
 
   // ---- The lobby counts, the win screen stops it, a rematch resumes it, the title stops it.
   await set({ screen: "lobby" });
@@ -147,6 +146,10 @@ try {
   await until(async () => (await track()).paused, "stopped on the title");
   assert.equal((await track()).t, 0, "rewound on leaving");
   ok("it stops when you leave to the title");
+  await page.evaluate(() => window.__emberisle.getState().startAi());
+  await until(playing, "a new game from the title plays it again");
+  assert.equal(await page.evaluate((f) => window.__audios.filter((x) => x.src.endsWith(f)).length, TRACK), 1, "one track element after a title and game round trip");
+  ok("a title and game round trip reuses the one track element");
 
   assert.deepEqual(errors, [], "no console errors");
   ok("zero console errors");
