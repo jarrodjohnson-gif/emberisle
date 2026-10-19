@@ -109,7 +109,12 @@ async function synced(tabs, seq, what, ms) {
 
 // #609: the clips this tab started since `forget`, as "file@volume", without the UI clicks.
 const forget = (tabs) => Promise.all(tabs.map((t) => t.page.evaluate(() => (window.__heard = []))));
-const trades = (t) => t.page.evaluate(() => window.__heard.filter((h) => /^(trade_offer|confirmation_001|error_002)/.test(h)));
+const trades = (t) => t.page.evaluate(() => window.__heard.filter((h) => /^(trade_offer|sheep_for_wood|stone_for_wood|confirmation_001|error_002)/.test(h)));
+// The offer chime for an ask that gives g and wants w: wool or ore for timber has its own clip, which every seat hears,
+// the asker included (#812); any other ask ticks trade_offer on the other seats only.
+const woodClip = (g, w) => (w === "timber" && g === "wool" ? "sheep_for_wood.mp3@1" : w === "timber" && g === "ore" ? "stone_for_wood.mp3@1" : null);
+const heardOffer = (g, w) => [woodClip(g, w) ?? "trade_offer.wav@1"];
+const askerOffer = (g, w) => (woodClip(g, w) ? [woodClip(g, w)] : []);
 const act = (t, fn, arg) => t.page.evaluate(([f, a]) => window.__emberisle.getState()[f](...[].concat(a)), [fn, arg]);
 const total = (hand) => RES.reduce((n, r) => n + hand[r], 0);
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
@@ -262,8 +267,8 @@ try {
   vs = await ask(give, want);
   await until(async () => (await trades(B)).length && (await trades(C)).length, "the offer sound");
   // #609: the offer's arrival ticks on the other seats, not on the asker.
-  for (const t of [B, C]) if (!same(await trades(t), ["trade_offer.wav@1"])) throw new Error(`${t.name} heard ${JSON.stringify(await trades(t))} for the offer`);
-  if ((await trades(A)).length) throw new Error(`the asker heard ${JSON.stringify(await trades(A))} for its own offer`);
+  for (const t of [B, C]) if (!same(await trades(t), heardOffer(give, want))) throw new Error(`${t.name} heard ${JSON.stringify(await trades(t))} for the offer`);
+  if (!same(await trades(A), askerOffer(give, want))) throw new Error(`the asker heard ${JSON.stringify(await trades(A))} for its own offer`);
   console.log("#609: trade_offer plays on both other seats, not on the asker");
   if (await A.page.getByTestId("trade-panel").isVisible()) throw new Error("the panel stayed open after the ask");
   const afterAsk = await focusIs(A);
@@ -400,8 +405,8 @@ try {
   }, "the offer times out and every toast closes", 30_000);
   // #609: nobody took it, so only the asker hears the No.
   await sleep(500);
-  if (!same(await trades(A), ["error_002.wav@1"])) throw new Error(`the asker heard ${JSON.stringify(await trades(A))} for the expiry`);
-  for (const t of [B, C]) if (!same(await trades(t), ["trade_offer.wav@1"])) throw new Error(`${t.name} heard ${JSON.stringify(await trades(t))} for the expiry`);
+  if (!same(await trades(A), [...askerOffer(want, give), "error_002.wav@1"])) throw new Error(`the asker heard ${JSON.stringify(await trades(A))} for the expiry`);
+  for (const t of [B, C]) if (!same(await trades(t), heardOffer(want, give))) throw new Error(`${t.name} heard ${JSON.stringify(await trades(t))} for the expiry`);
   console.log("#609: trade_no plays for the asker only");
   // The polite line stays silent while the clock ticks and says "5 seconds left" once, at 5 s.
   const heard = [...new Set((await B.page.evaluate(() => window.__said)).filter(Boolean))];

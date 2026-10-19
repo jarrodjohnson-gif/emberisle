@@ -28,8 +28,11 @@ const BUDGETS = [
   // 2026-10-17 (#552): render recovery adds 655 B over the lazy coach; 121171 B measured, +279 B headroom.
   // 2026-10-17 (#536): live trade response icons and taker identity measure 121.00 kB; +250 B headroom.
   // 2026-10-18 (#552 + #536): recovery on current main measures 121713 B; +287 B headroom after merging both features.
+  // 2026-10-18 (#812): nine game-night emotes add their names and URLs (files stay out of the chunk via ?no-inline);
+  // 122.08 kB measured, +250 B headroom.
   // 2026-10-18 (#667): board touch sounds (terrain-to-clip table, 400 ms gap, armed flag) measure 122.04 kB; +260 B headroom.
-  { name: "index", gzipBytes: 122300 },
+  // 2026-10-19: #812 and #667 together measure 122.43 kB; +250 B headroom.
+  { name: "index", gzipBytes: 122680 },
   // 2026-10-14 (#597): +1100 B for the diorama camera, its fit and the token pose on top of the lazy sea (182.92 kB measured).
   // 2026-10-15: 185.01 kB measured on main once the diorama (#604, +1.1 kB) and the natural waves (#614, +1.0 kB) both
   // landed; each fit its own raise alone.
