@@ -37,6 +37,7 @@ import { LAND_MS } from "@/lib/scene/landing";
 import { hashStr } from "@/lib/utils";
 import { chunkUrl } from "@/lib/lazy";
 import { PAINT, RIM } from "@/lib/scene/palette";
+import { legalMarkStyle } from "@/lib/scene/legal-mark-style";
 import { BLOCK_H } from "@/lib/scene/jelly-dims";
 import type { JellyBoard, JellyStats } from "@/lib/scene/jelly-board";
 import type { Dock, Shore } from "@/lib/scene/harbor-jelly";
@@ -1834,9 +1835,12 @@ export class IsleRenderer {
     const vmap = new Map(state.vertices.map((v) => [v.id, v]));
     const tops = hexTops(state);
     // Marks show only for the seat to act, so that seat's colour is the one every mark wears.
-    const seat = new THREE.Color(state.players.find((p) => p.id === state.current)?.color ?? "#fff6e8");
+    const seatHex = state.players.find((p) => p.id === state.current)?.color ?? "#fff6e8";
+    const markStyle = legalMarkStyle(seatHex);
+    const seat = new THREE.Color(markStyle.color);
     // The glow leans toward cream so a dark seat (Pine) still reads on forest at the pulse trough; the hue stays the seat's.
-    const glow = seat.clone().lerp(new THREE.Color(0xfff6e8), 0.35);
+    // Pale seats (#590, ivory) skip the lean and get a dark outline so markers hold 3:1 on grain and waste.
+    const glow = seat.clone().lerp(new THREE.Color(0xfff6e8), markStyle.creamLean);
 
     for (const v of state.vertices) {
       if (!vset.has(v.id)) continue;
@@ -1848,6 +1852,16 @@ export class IsleRenderer {
       m.position.set(v.x, vertexTop(tops, v) + 0.03, v.z);
       m.userData = { kind: "vertex", id: v.id, baseGlow: 0.8 };
       this.marks.add(m);
+      if (markStyle.outline) {
+        const outline = new THREE.Mesh(
+          new THREE.TorusGeometry(0.13, 0.045, 8, 24),
+          new THREE.MeshBasicMaterial({ color: markStyle.outlineColor }),
+        );
+        outline.rotation.x = Math.PI / 2;
+        outline.position.set(v.x, m.position.y - 0.012, v.z);
+        outline.userData = { kind: "vertex-outline" };
+        this.marks.add(outline);
+      }
       const pick = new THREE.Mesh(new THREE.SphereGeometry(PICK_VERTEX_RADIUS, 8, 6), new THREE.MeshBasicMaterial());
       pick.visible = false;
       pick.position.copy(m.position);
@@ -1859,14 +1873,25 @@ export class IsleRenderer {
       if (!eset.has(e.id)) continue;
       const a = vmap.get(e.va)!;
       const b = vmap.get(e.vb)!;
+      const pathLen = Math.hypot(b.x - a.x, b.z - a.z) * 0.72;
       const m = new THREE.Mesh(
-        new THREE.BoxGeometry(0.16, 0.07, Math.hypot(b.x - a.x, b.z - a.z) * 0.72),
+        new THREE.BoxGeometry(0.16, 0.07, pathLen),
         new THREE.MeshStandardMaterial({ color: seat, emissive: glow, emissiveIntensity: 0.45 }),
       );
       m.position.set((a.x + b.x) / 2, edgeTop(tops, a, b) + 0.035, (a.z + b.z) / 2);
       m.rotation.y = Math.atan2(b.x - a.x, b.z - a.z);
       m.userData = { kind: "edge", id: e.id, baseGlow: 0.45 };
       this.marks.add(m);
+      if (markStyle.outline) {
+        const outline = new THREE.Mesh(
+          new THREE.BoxGeometry(0.2, 0.04, pathLen + 0.04),
+          new THREE.MeshBasicMaterial({ color: markStyle.outlineColor }),
+        );
+        outline.position.set(m.position.x, m.position.y - 0.02, m.position.z);
+        outline.rotation.y = m.rotation.y;
+        outline.userData = { kind: "edge-outline" };
+        this.marks.add(outline);
+      }
       const len = Math.hypot(b.x - a.x, b.z - a.z) * PICK_EDGE.lengthScale;
       const pick = new THREE.Mesh(new THREE.BoxGeometry(PICK_EDGE.w, PICK_EDGE.h, len), new THREE.MeshBasicMaterial());
       pick.visible = false;
