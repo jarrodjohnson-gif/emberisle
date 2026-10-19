@@ -1,14 +1,14 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import { Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { HowTo, Lobby, online, sheets } from "@/components/game/chunks";
+import { HowTo, Lobby, online, SetupPipHints, sheets } from "@/components/game/chunks";
 import { Hud } from "@/components/game/Hud";
 import { PlaceList } from "@/components/game/PlaceList";
 import { TableRecoveryBoundary } from "@/components/game/TableRecoveryBoundary";
 import { SeatDot } from "@/components/game/SeatDot";
 import { useGame } from "@/lib/game/store";
 import { JOIN_CODE, LazyBoundary, preloadOnIdle, reloadOnStaleChunk } from "@/lib/lazy";
-import { play, setMuted, useMuted } from "@/lib/sound";
+import { play, setMusicWanted, setMuted, useMuted } from "@/lib/sound";
 import { useTurnTitle } from "@/lib/turn-title";
 import { PLAYER_COLORS, PLAYER_NAMES, type WayfarerMode } from "@/lib/game/types";
 import { cn } from "@/lib/utils";
@@ -35,6 +35,11 @@ export function EmberisleApp() {
   // A bot's turn waits while its own ask is open (#363); the offer's close wakes it again.
   const offerOpen = useGame((s) => s.offer !== null);
   useTurnTitle();
+  // #814: background music from the lobby through play; the title and the end screen (where end_music plays) are quiet.
+  const over = useGame((s) => s.state?.phase === "over");
+  useEffect(() => {
+    setMusicWanted(screen !== "title" && !(screen === "play" && over));
+  }, [screen, over]);
 
   useEffect(() => {
     (window as unknown as { __emberisle: typeof useGame }).__emberisle = useGame;
@@ -68,6 +73,9 @@ export function EmberisleApp() {
           <>
             <Hud />
             <PlaceList />
+            <LazyBoundary failed={null}>
+              <SetupPipHints />
+            </LazyBoundary>
           </>
         )}
       </TableRecoveryBoundary>

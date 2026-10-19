@@ -7,11 +7,19 @@ name: CI
 # Docs-only PRs (see changes job) skip the heavy steps but still report success so required checks stay green.
 on:
   pull_request:
+    # Drafts skip the suites; marking a PR ready starts its run.
+    types: [opened, synchronize, reopened, ready_for_review]
   push:
     branches: [main]
 
+# A new push to a PR cancels that PR's older run, so stale commits stop holding runners. Runs on main are never cancelled.
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   changes:
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
@@ -59,7 +67,7 @@ jobs:
   build:
     needs: changes
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - if: needs.changes.outputs.docs_only != 'true'
         uses: actions/checkout@v4
@@ -85,8 +93,24 @@ jobs:
           name: dist
           path: dist/
           retention-days: 1
-      - if: needs.changes.outputs.docs_only != 'true'
+      # #868: on a pull request, build the base commit the PR merges onto (main's tip) in a second worktree, so size-prove can
+      # budget this PR's growth per chunk instead of one shared total. Pushes to main check the ceilings only.
+      - if: needs.changes.outputs.docs_only != 'true' && github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          git fetch --depth=1 origin "$BASE_SHA"
+          git worktree add "$RUNNER_TEMP/base" "$BASE_SHA"
+          cd "$RUNNER_TEMP/base"
+          npm ci
+          npm run build
+      - if: needs.changes.outputs.docs_only != 'true' && github.event_name == 'pull_request'
+        run: node scripts/size-prove.mjs --base "$RUNNER_TEMP/base"
+      - if: needs.changes.outputs.docs_only != 'true' && github.event_name != 'pull_request'
         run: npm run size-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run size-delta-prove
 
   server:
     needs: changes
@@ -112,7 +136,11 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm test
       - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run next-up-prove
+      - if: needs.changes.outputs.docs_only != 'true'
         run: npm run touch-place-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run flake-rerun-prove
 
   browser-a:
     needs: changes
@@ -212,6 +240,8 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
         run: npm run hand-cards-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
+        run: npm run hand-offer-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
         run: npm run served-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
         run: npm run chunk-fail-prove
@@ -227,6 +257,8 @@ jobs:
         run: npm run wayfarer-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
         run: npm run sounds-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
+        run: npm run music-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
         run: npm run tokens-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
@@ -315,6 +347,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
+      - if: github.event_name == 'pull_request' && github.event.pull_request.draft
+        run: |
+          echo "Draft PR: CI runs when it is marked ready for review."
+          exit 1
       - run: |
           echo 'build=${{ needs.build.result }} server=${{ needs.server.result }} browser-a=${{ needs.browser-a.result }} browser-b=${{ needs.browser-b.result }}'
           test '${{ needs.build.result }}' = success
