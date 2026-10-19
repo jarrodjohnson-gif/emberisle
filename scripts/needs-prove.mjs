@@ -33,6 +33,15 @@ try{
   const context=await browser.newContext({viewport:phone?{width:390,height:844}:{width:1280,height:720},hasTouch:phone,isMobile:phone});
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
   await page.addInitScript(({pid,code})=>{localStorage.setItem('emberisle-seat',JSON.stringify({code,secret:`fixture-${pid}`}));localStorage.setItem('emberisle-seat-live',code);localStorage.setItem('emberisle-chat-open','0');for(const method of ['drawElements','drawArrays','drawElementsInstanced','drawArraysInstanced'])WebGL2RenderingContext.prototype[method]=()=>{};},{pid,code});
+  if(pid==='p0')await page.addInitScript(()=>{
+   const descriptor=Object.getOwnPropertyDescriptor(WebSocket.prototype,'onmessage');
+   Object.defineProperty(WebSocket.prototype,'onmessage',{...descriptor,set(callback){
+    descriptor.set.call(this,event=>{
+     const later=JSON.parse(event.data).type==='seats';
+     if(later)setTimeout(()=>callback.call(this,event),250);else callback.call(this,event);
+    });
+   }});
+  });
   await page.goto(`http://127.0.0.1:${port}/?host=ws://127.0.0.1:${hostPort}`);
   await page.waitForFunction(pid=>window.__emberisle?.getState().state&&window.__emberisle.getState().localId===pid,pid);
   await page.waitForFunction(()=>window.__isle?.insets);return page;
@@ -58,7 +67,7 @@ try{
  await a.getByRole('button',{name:'Close',exact:true}).click();
  await a.reload();await a.waitForFunction(()=>window.__emberisle?.getState().state);
  await a.getByTestId('seat-p0').getByTestId('seat-needs').waitFor();
- console.log('ok Need picker: five 44px controls, maximum two, clear, public chip within 1s, hidden hand preserved, rejoin and unchanged hole');
+ console.log('ok Need picker with 250ms host echoes: rapid selections compose; five 44px controls, maximum two, clear, public chip within 1s, hidden hand preserved, rejoin and unchanged hole');
  await a.evaluate(()=>window.__emberisle.getState().setTradeOpen(true));
  await a.getByRole('button',{name:'More Wood to give',exact:true}).click();await a.getByRole('button',{name:'More Stone to want',exact:true}).click();
  await a.getByRole('button',{name:'Ask the table',exact:true}).click();

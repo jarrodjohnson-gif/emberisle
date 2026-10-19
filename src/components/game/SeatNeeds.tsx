@@ -1,4 +1,4 @@
-import { useLayoutEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import { ClaySymbol, GrainSymbol, OreSymbol, TimberSymbol, WoolSymbol } from '@/components/game/ResourceSymbols';
@@ -14,7 +14,17 @@ function useNeeds() {
     : Object.fromEntries(Object.entries(local).map(([id, need]) => [id, need?.kinds ?? []]));
 }
 export function NeedPicker({ player }: { player: string }) {
-  const [open, setOpen] = useState(false), needs = useNeeds()[player] ?? [];
+  const [open, setOpen] = useState(false), actual = useNeeds()[player] ?? [];
+  const [draft, setDraft] = useState<typeof actual | null>(null);
+  const error = useGame(state => state.errorSeq);
+  const needs = draft ?? actual;
+  // Rapid taps compose locally while host echoes are in flight; only the host controls public chips.
+  useEffect(() => {
+    if (draft && JSON.stringify(draft) === JSON.stringify(actual)) setDraft(null);
+  }, [actual, draft]);
+  useEffect(() => setDraft(null), [error]);
+  useEffect(() => { const timer = setTimeout(() => setDraft(null), 3000); return () => clearTimeout(timer); }, [draft]);
+  const choose = (kinds: typeof actual) => { setDraft(kinds); setPlayerNeeds(player, kinds); };
   return <div className="mb-2">
     <Button variant="secondary" className="h-11" aria-expanded={open} aria-controls="need-picker" onClick={() => setOpen(value => !value)}>Need</Button>
     {open ? <fieldset id="need-picker" className="mt-2 rounded-control border p-2">
@@ -24,12 +34,12 @@ export function NeedPicker({ player }: { player: string }) {
           const Icon = ICON[resource], selected = needs.includes(resource);
           return <Button key={resource} variant={selected ? 'default' : 'secondary'} className="h-auto min-h-11 min-w-11 flex-col px-0.5 py-1 text-xs"
             aria-label={`Need ${RESOURCE_LABEL[resource]}`} aria-pressed={selected} disabled={!selected && needs.length === 2}
-            onClick={() => setPlayerNeeds(player, selected ? needs.filter(kind => kind !== resource) : [...needs, resource])}>
+            onClick={() => choose(selected ? needs.filter(kind => kind !== resource) : [...needs, resource])}>
             <Icon width={18} height={18} aria-hidden="true" />{RESOURCE_LABEL[resource]}
           </Button>;
         })}
       </div>
-      <Button variant="ghost" className="mt-1 h-11" disabled={!needs.length} onClick={() => setPlayerNeeds(player, [])}>Clear needs</Button>
+      <Button variant="ghost" className="mt-1 h-11" disabled={!needs.length} onClick={() => choose([])}>Clear needs</Button>
     </fieldset> : null}
   </div>;
 }
