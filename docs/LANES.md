@@ -22,7 +22,10 @@ not overlap. Claims reserve files, including while a PR waits for review.
    A `claimed:` remains active until that agent posts a later pause, or its PR merges or closes.
    Historical same-agent `paused:` comments also release claims; new pauses must include `/paused`.
    Ignore released historical claims. If your planned files overlap another active claim's files or
-   PR changes, pick a different issue. A shared lane alone is not a conflict.
+   PR changes, pick a different issue. A shared lane alone is not a conflict. Neither are the shared
+   registration files `package.json`, `.github/workflows/ci.yml` and `scripts/size-prove.mjs`: almost
+   every PR adds a line there, and the second PR to merge fixes the small conflict. Editing a different
+   function in a busy file is fine too, if you name the overlapping PR in your claim and keep your hunks small.
 3. **Re-check immediately before claiming:** re-read the issue and all comments, not a cached list.
    Do this again after any user wait, thinking break or check-in. Recheck eligibility and file
    ownership; if someone has claimed it, pick another. Post the claim before research or design:
