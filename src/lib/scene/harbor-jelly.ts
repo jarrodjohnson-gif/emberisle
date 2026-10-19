@@ -5,7 +5,8 @@
 // Built once per island after the hexes swap in (isle-renderer growScenes). The renderer bobs the ships and buoys on the
 // swell (`floaters`, placed by their userData.rest) and paints a claimed harbor's sail.
 import * as THREE from "three";
-import type { HarborKind } from "@/lib/game/types";
+import { RESOURCE_LABEL, type HarborKind } from "@/lib/game/types";
+import { DIORAMA_AZIMUTH } from "@/lib/scene/mobile-fit";
 import { PAINT } from "@/lib/scene/palette";
 import { rng32, setBoardDetail, shoreKit } from "@/lib/scene/hex-jelly";
 
@@ -78,32 +79,72 @@ function sailMap(kind: HarborKind) {
   return tex;
 }
 
-// The rate plates painted on the T-heads, read from above: one atlas, a row per kind (the good's colour, the rate in cream).
+// The dock badges, one atlas with a row per kind (#846): a light plate with a dark outline, the rate big, and for a 2:1 dock its
+// good as a large icon in the good's colour plus its short name; a 3:1 dock reads "3:1 any". The icons are the shapes of
+// src/components/game/ResourceSymbols.tsx (a 24 unit box): [path, filled, stroked]. A dark halo goes under each so a pale good
+// (wheat, sheep) still reads on the light plate, and the sheep's body is filled here where the HUD's is a line drawing.
+const ICONS: Record<Exclude<HarborKind, "any">, [string, boolean, boolean][]> = {
+  timber: [["m9 2-4 6h2l-4 6h3l-3 5h12l-3-5h3l-4-6h2L9 2Z", true, false], ["M9 18v4m9-17-3 5h2l-3 5h8l-3-5h2l-3-5Z", true, true], ["M18 15v5", false, true]],
+  clay: [["M7.7 3h8.6a.7.7 0 0 1 .7.7v4.6a.7.7 0 0 1-.7.7H7.7a.7.7 0 0 1-.7-.7V3.7a.7.7 0 0 1 .7-.7ZM1.7 11h8.6a.7.7 0 0 1 .7.7v5.6a.7.7 0 0 1-.7.7H1.7a.7.7 0 0 1-.7-.7v-5.6a.7.7 0 0 1 .7-.7ZM13.7 11h8.6a.7.7 0 0 1 .7.7v5.6a.7.7 0 0 1-.7.7h-8.6a.7.7 0 0 1-.7-.7v-5.6a.7.7 0 0 1 .7-.7Z", true, false]],
+  wool: [["M7 5c-1-3 4-4 5-1 2-3 6-1 5 2 4-1 6 4 2 6 3 3 0 7-3 5 0 4-5 5-6 1-3 3-7 0-5-3-4 0-5-5-1-6-2-2 0-5 3-4Z", true, true], ["m8 17-1 4m9-4 1 4", false, true]],
+  grain: [["M7 22 17 2", false, true], ["M13 7c-3 0-5-3-4-5 3 0 5 3 4 5Zm2 3c0-3 3-5 6-5 0 3-3 5-6 5Zm-5 2c-3 0-5-3-4-5 3 0 5 3 4 5Zm2 3c0-3 3-5 6-5 0 3-3 5-6 5Zm-5 2c-3 0-5-3-4-5 3 0 5 3 4 5Zm2 3c0-3 3-5 6-5 0 3-3 5-6 5Z", true, false]],
+  ore: [["m2 20 7-14 7 14H2Zm11 0-3-6 5-12 8 18H13Z", true, false]],
+};
+// The atlas rows are BADGE_W x BADGE_H texels; the sign in world units is BADGE_SIZE wide, stands BADGE_LIFT over the deck
+// and leans BADGE_LEAN back from flat toward the camera.
+const BADGE_W = 512;
+const BADGE_H = 416;
+const BADGE_SIZE = 1.3;
+const BADGE_LIFT = 0.55;
+const BADGE_LEAN = (40 * Math.PI) / 180;
+const INK = "#2a2118";
 const PLATE_KINDS: HarborKind[] = ["any", "timber", "clay", "wool", "grain", "ore"];
 let plates: THREE.CanvasTexture | null = null;
 function plateAtlas() {
   if (plates) return plates;
   const c = document.createElement("canvas");
-  c.width = 256;
-  c.height = 128 * PLATE_KINDS.length;
+  c.width = BADGE_W;
+  c.height = BADGE_H * PLATE_KINDS.length;
   const x = c.getContext("2d")!;
   PLATE_KINDS.forEach((k, i) => {
-    const y = i * 128;
-    x.fillStyle = "#a87448";
-    x.fillRect(0, y, 256, 128);
-    x.fillStyle = "#f4ead6";
+    const y = i * BADGE_H;
+    x.fillStyle = INK;
     x.beginPath();
-    x.roundRect(4, y + 4, 248, 120, 40);
+    x.roundRect(0, y, BADGE_W, BADGE_H, 56);
     x.fill();
-    x.fillStyle = goodOf(k);
+    x.fillStyle = "#fbf6ea";
     x.beginPath();
-    x.roundRect(12, y + 12, 232, 104, 32);
+    x.roundRect(16, y + 16, BADGE_W - 32, BADGE_H - 32, 40);
     x.fill();
-    x.fillStyle = k === "wool" || k === "grain" ? "#263d3c" : "#fbf6ea";
-    x.font = "900 76px system-ui, sans-serif";
     x.textAlign = "center";
-    x.textBaseline = "middle";
-    x.fillText(k === "any" ? "3:1" : "2:1", 128, y + 68);
+    x.textBaseline = "alphabetic";
+    if (k === "any") {
+      x.fillStyle = INK;
+      x.font = "900 200px system-ui, sans-serif";
+      x.fillText("3:1", BADGE_W / 2, y + 225);
+      x.fillStyle = goodOf(k);
+      x.font = "900 130px system-ui, sans-serif";
+      x.fillText("any", BADGE_W / 2, y + 365);
+      return;
+    }
+    x.save();
+    x.translate(24, y + 36);
+    x.scale(9.6, 9.6);
+    x.lineCap = x.lineJoin = "round";
+    for (const [pass, w] of [["halo", 1.7 + 2.2], ["fill", 1.7]] as const)
+      for (const [d, filled, stroked] of ICONS[k]) {
+        const path = new Path2D(d);
+        x.fillStyle = x.strokeStyle = pass === "halo" ? INK : GOOD[k];
+        x.lineWidth = w;
+        if (filled) x.fill(path);
+        if (stroked || pass === "halo") x.stroke(path);
+      }
+    x.restore();
+    x.fillStyle = INK;
+    x.font = "900 132px system-ui, sans-serif";
+    x.fillText("2:1", 386, y + 190);
+    x.font = "800 100px system-ui, sans-serif";
+    x.fillText(RESOURCE_LABEL[k], BADGE_W / 2, y + 362);
   });
   plates = new THREE.CanvasTexture(c);
   plates.colorSpace = THREE.SRGBColorSpace;
@@ -677,14 +718,17 @@ function build(coast: CoastPt[], docks: Dock[], seed: number): Shore {
     const tv = v1 + 0.06;
     for (let k = 0; k < 7; k++) P(K.part(box, k % 2 ? "#a46e42" : "#b07a4c", [0, DECK, tv - 0.07 + k * 0.025], [0, 0, 0], [0.44, 0.016, 0.022]));
     for (const x of [-W / 2, W / 2]) P(K.part(box, "#7a5236", [x, DECK - 0.014, v0 + len / 2], [0, 0, 0], [0.014, 0.018, len]));
-    // The rate plate, flat on the T-head, its text upright on screen whichever side of the island (the camera looks north).
+    // The dock badge (#846): a sign on two posts at the T-head, leaned back toward the camera (which looks north) so it reads
+    // from the diorama and the overhead view alike, turned to the diorama camera's azimuth, its text upright on screen whichever
+    // side of the island. It stands 1.3 wide because a number token is 28 px at 1280x720 and the good's icon should match it.
     {
-      const pl = new THREE.PlaneGeometry(0.36, 0.165);
+      const pl = new THREE.PlaneGeometry(BADGE_SIZE, (BADGE_SIZE * BADGE_H) / BADGE_W);
       const row = PLATE_KINDS.indexOf(d.kind);
       const uv = pl.attributes.uv as THREE.BufferAttribute;
       for (let i = 0; i < uv.count; i++) uv.setY(i, 1 - (row + 1 - uv.getY(i)) / PLATE_KINDS.length);
-      const at = world(0, DECK + 0.0085, tv);
-      plateParts.push(pl.rotateX(-Math.PI / 2).translate(at.x, at.y, at.z));
+      const at = world(0, DECK + BADGE_LIFT, tv);
+      plateParts.push(pl.rotateX(-Math.PI / 2 + BADGE_LEAN).rotateY(DIORAMA_AZIMUTH).translate(at.x, at.y, at.z));
+      for (const px of [-0.2, 0.2]) pierParts.push(K.part(box, "#7a5236", [at.x + px * Math.cos(DIORAMA_AZIMUTH), at.y / 2, at.z - px * Math.sin(DIORAMA_AZIMUTH)], [0, DIORAMA_AZIMUTH, 0], [0.02, at.y, 0.02]));
     }
     P(K.part(box, "#7a5236", [0, DECK - 0.014, tv + 0.08], [0, 0, 0], [0.45, 0.018, 0.014]));
     P(K.part(box, "#7a5236", [0, DECK - 0.014, tv - 0.082], [0, 0, 0], [0.45, 0.018, 0.014]));
@@ -929,10 +973,9 @@ function build(coast: CoastPt[], docks: Dock[], seed: number): Shore {
   if (plateParts.length) {
     const g = K.merge(plateParts);
     geos.push(g);
-    const pm = new THREE.MeshStandardMaterial({ map: plateAtlas(), emissive: 0x6a645a, emissiveMap: plateAtlas(), roughness: 0.7, polygonOffset: true, polygonOffsetFactor: -2 });
+    const pm = new THREE.MeshStandardMaterial({ map: plateAtlas(), emissive: 0x6a645a, emissiveMap: plateAtlas(), roughness: 0.7, side: THREE.DoubleSide });
     mats.push(pm);
     const me = new THREE.Mesh(g, pm);
-    me.receiveShadow = true;
     me.name = "plates";
     group.add(me);
   }

@@ -294,6 +294,8 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation'
         run: npm run board-look-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation'
+        run: npm run dock-badge-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation'
         run: npm run seat-rail-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation'
         run: npm run public-score-prove
