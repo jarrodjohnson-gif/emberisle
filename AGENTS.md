@@ -1,5 +1,15 @@
 # Agents
 
+## Map
+
+- Rules: [`docs/FRAMEWORK.md`](docs/FRAMEWORK.md)
+- Picking work: [`docs/LANES.md`](docs/LANES.md)
+- Helpers: [`docs/HELPERS.md`](docs/HELPERS.md)
+- Owner decisions: [`docs/DECISIONS.md`](docs/DECISIONS.md) (read before you design or build)
+- Feature designs: [`docs/design/`](docs/design/)
+- Game rules: [`README.md`](README.md)
+- Agent hub: issue [#854](https://github.com/jarrodjohnson-gif/emberisle/issues/854). Helper queue: issue [#851](https://github.com/jarrodjohnson-gif/emberisle/issues/851).
+
 **Told to "work on Emberisle", or something like it?** Then:
 
 1. You are a **Builder**. Follow [`docs/FRAMEWORK.md`](docs/FRAMEWORK.md) section 7, and pick an issue
