@@ -1,0 +1,26 @@
+[
+  {
+    "number": 201,
+    "title": "Draft work",
+    "body": "/claim\nclaimed: helper-x, 2026-10-18\nfiles: z\n\nCloses #104",
+    "author": {
+      "login": "someone"
+    }
+  },
+  {
+    "number": 203,
+    "title": "Fix #1160 and #1010",
+    "body": "Unrelated: &#108; is an entity, see other/repo#109",
+    "author": {
+      "login": "someone"
+    }
+  },
+  {
+    "number": 204,
+    "title": "zeta work",
+    "body": "No issue reference here.",
+    "author": {
+      "login": "someone"
+    }
+  }
+]

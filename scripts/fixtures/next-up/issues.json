@@ -1,0 +1,548 @@
+[
+  {
+    "id": "I_101",
+    "number": 101,
+    "title": "Top free p0 issue",
+    "body": "## Deliverable\nA thing.\n\n## Expected files\n`server/a.mjs`, `server/b.mjs`\n\n## Depends on\nnone\n",
+    "milestone": null,
+    "labels": {
+      "nodes": [
+        {
+          "name": "status:todo"
+        },
+        {
+          "name": "lane:net"
+        },
+        {
+          "name": "prio:p0"
+        },
+        {
+          "name": "tier:1"
+        },
+        {
+          "name": "model:opus"
+        }
+      ]
+    },
+    "comments": {
+      "pageInfo": {
+        "hasNextPage": false,
+        "endCursor": null
+      },
+      "nodes": [
+        {
+          "databaseId": 1,
+          "createdAt": "2026-10-18T10:01:00Z",
+          "body": "> claimed: quoted-agent, 2026-10-18\nquoting is not claiming",
+          "author": {
+            "login": "jarrodjohnson-gif"
+          }
+        },
+        {
+          "databaseId": 2,
+          "createdAt": "2026-10-18T10:02:00Z",
+          "body": "/claim\nclaimed: <agent name>, <YYYY-MM-DD>\nthe template is not a claim",
+          "author": {
+            "login": "jarrodjohnson-gif"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "I_102",
+    "number": 102,
+    "title": "Claimed p0, claim on the second comment page",
+    "body": "",
+    "milestone": null,
+    "labels": {
+      "nodes": [
+        {
+          "name": "status:todo"
+        },
+        {
+          "name": "lane:net"
+        },
+        {
+          "name": "prio:p0"
+        },
+        {
+          "name": "tier:1"
+        }
+      ]
+    },
+    "comments": {
+      "pageInfo": {
+        "hasNextPage": true,
+        "endCursor": "CURSOR_102"
+      },
+      "nodes": [
+        {
+          "databaseId": 3,
+          "createdAt": "2026-10-18T10:03:00Z",
+          "body": "Context only.",
+          "author": {
+            "login": "jarrodjohnson-gif"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "I_103",
+    "number": 103,
+    "title": "Claim released by a pause",
+    "body": "",
+    "milestone": null,
+    "labels": {
+      "nodes": [
+        {
+          "name": "status:todo"
+        },
+        {
+          "name": "lane:hud"
+        },
+        {
+          "name": "prio:p1"
+        },
+        {
+          "name": "tier:2"
+        }
+      ]
+    },
+    "comments": {
+      "pageInfo": {
+        "hasNextPage": false,
+        "endCursor": null
+      },
+      "nodes": [
+        {
+          "databaseId": 4,
+          "createdAt": "2026-10-18T10:05:00Z",
+          "body": "/claim\nclaimed: beta-agent, 2026-10-18\nfiles: src/x.ts",
+          "author": {
+            "login": "jarrodjohnson-gif"
+          }
+        },
+        {
+          "databaseId": 5,
+          "createdAt": "2026-10-18T10:06:00Z",
+          "body": "paused: Beta-Agent, 2026-10-18\ndone so far: nothing",
+          "author": {
+            "login": "jarrodjohnson-gif"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "I_104",
+    "number": 104,
+    "title": "Open draft PR mentions it",
+    "body": "",
+    "milestone": null,
+    "labels": {
+      "nodes": [
+        {
+          "name": "status:todo"
+        },
+        {
+          "name": "lane:hud"
+        },
+        {
+          "name": "prio:p1"
+        }
+      ]
+    },
+    "comments": {
+      "pageInfo": {
+        "hasNextPage": false,
+        "endCursor": null
+      },
+      "nodes": []
+    }
+  },
+  {
+    "id": "I_105",
+    "number": 105,
+    "title": "Open dependency",
+    "body": "## Depends on\n#150, #151\n",
+    "milestone": null,
+    "labels": {
+      "nodes": [
+        {
+          "name": "status:todo"
+        },
+        {
+          "name": "lane:rules"
+        },
+        {
+          "name": "prio:p0"
+        }
+      ]
+    },
+    "comments": {
+      "pageInfo": {
+        "hasNextPage": false,
+        "endCursor": null
+      },
+      "nodes": []
+    }
+  },
+  {
+    "id": "I_106",
+    "number": 106,
+    "title": "Loser pauses, winner keeps the claim",
+    "body": "",
+    "milestone": null,
+    "labels": {
+      "nodes": [
+        {
+          "name": "status:todo"
+        },
+        {
+          "name": "lane:board"
+        },
+        {
+          "name": "prio:p2"
+        }
+      ]
+    },
+    "comments": {
+      "pageInfo": {
+        "hasNextPage": false,
+        "endCursor": null
+      },
+      "nodes": [
+        {
+          "databaseId": 6,
+          "createdAt": "2026-10-18T10:07:00Z",
+          "body": "/claim\nclaimed: gamma-agent, 2026-10-18\nfiles: a",
+          "author": {
+            "login": "jarrodjohnson-gif"
+          }
+        },
+        {
+          "databaseId": 7,
+          "createdAt": "2026-10-18T10:08:00Z",
+          "body": "/claim\nclaimed: delta-agent, 2026-10-18\nfiles: a",
+          "author": {
+            "login": "review-desk-account"
+          }
+        },
+        {
+          "databaseId": 8,
+          "createdAt": "2026-10-18T10:09:00Z",
+          "body": "/paused\npaused: delta-agent, 2026-10-18\nlost the claim to gamma-agent",
+          "author": {
+            "login": "review-desk-account"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "I_107",
+    "number": 107,
+    "title": "Closed dependency",
+    "body": "Depends on: [#151](https://github.com/jarrodjohnson-gif/emberisle/issues/151)\n",
+    "milestone": null,
+    "labels": {
+      "nodes": [
+        {
+          "name": "status:todo"
+        },
+        {
+          "name": "lane:rules"
+        },
+        {
+          "name": "prio:p2"
+        }
+      ]
+    },
+    "comments": {
+      "pageInfo": {
+        "hasNextPage": false,
+        "endCursor": null
+      },
+      "nodes": []
+    }
+  },
+  {
+    "id": "I_108",
+    "number": 108,
+    "title": "Fix a | b <!-- hidden --> pipe",
+    "body": "**Files:** `src/a|b.ts`\n",
+    "milestone": null,
+    "labels": {
+      "nodes": [
+        {
+          "name": "status:todo"
+        },
+        {
+          "name": "lane:hud"
+        },
+        {
+          "name": "prio:p2"
+        },
+        {
+          "name": "helper-ok"
+        },
+        {
+          "name": "model:sonnet"
+        }
+      ]
+    },
+    "comments": {
+      "pageInfo": {
+        "hasNextPage": false,
+        "endCursor": null
+      },
+      "nodes": []
+    }
+  },
+  {
+    "id": "I_109",
+    "number": 109,
+    "title": "No prio, milestone 5",
+    "body": "",
+    "milestone": {
+      "title": "5. Island"
+    },
+    "labels": {
+      "nodes": [
+        {
+          "name": "status:todo"
+        },
+        {
+          "name": "lane:hud"
+        }
+      ]
+    },
+    "comments": {
+      "pageInfo": {
+        "hasNextPage": false,
+        "endCursor": null
+      },
+      "nodes": []
+    }
+  },
+  {
+    "id": "I_110",
+    "number": 110,
+    "title": "No prio, milestone 11",
+    "body": "",
+    "milestone": {
+      "title": "11. Trade"
+    },
+    "labels": {
+      "nodes": [
+        {
+          "name": "status:todo"
+        },
+        {
+          "name": "lane:hud"
+        }
+      ]
+    },
+    "comments": {
+      "pageInfo": {
+        "hasNextPage": false,
+        "endCursor": null
+      },
+      "nodes": []
+    }
+  },
+  {
+    "id": "I_111",
+    "number": 111,
+    "title": "No prio, no milestone",
+    "body": "",
+    "milestone": null,
+    "labels": {
+      "nodes": [
+        {
+          "name": "status:todo"
+        },
+        {
+          "name": "lane:hud"
+        }
+      ]
+    },
+    "comments": {
+      "pageInfo": {
+        "hasNextPage": false,
+        "endCursor": null
+      },
+      "nodes": []
+    }
+  },
+  {
+    "id": "I_112",
+    "number": 112,
+    "title": "p1 in milestone 5 beats p1 with none",
+    "body": "",
+    "milestone": {
+      "title": "5. Island"
+    },
+    "labels": {
+      "nodes": [
+        {
+          "name": "status:todo"
+        },
+        {
+          "name": "lane:net"
+        },
+        {
+          "name": "prio:p1"
+        }
+      ]
+    },
+    "comments": {
+      "pageInfo": {
+        "hasNextPage": false,
+        "endCursor": null
+      },
+      "nodes": []
+    }
+  },
+  {
+    "id": "I_113",
+    "number": 113,
+    "title": "In progress by label only",
+    "body": "",
+    "milestone": null,
+    "labels": {
+      "nodes": [
+        {
+          "name": "status:in-progress"
+        },
+        {
+          "name": "lane:net"
+        },
+        {
+          "name": "prio:p0"
+        }
+      ]
+    },
+    "comments": {
+      "pageInfo": {
+        "hasNextPage": false,
+        "endCursor": null
+      },
+      "nodes": []
+    }
+  },
+  {
+    "id": "I_114",
+    "number": 114,
+    "title": "Todo without a lane",
+    "body": "",
+    "milestone": null,
+    "labels": {
+      "nodes": [
+        {
+          "name": "status:todo"
+        },
+        {
+          "name": "prio:p0"
+        }
+      ]
+    },
+    "comments": {
+      "pageInfo": {
+        "hasNextPage": false,
+        "endCursor": null
+      },
+      "nodes": []
+    }
+  },
+  {
+    "id": "I_115",
+    "number": 115,
+    "title": "Claim released when its PR closed",
+    "body": "",
+    "milestone": null,
+    "labels": {
+      "nodes": [
+        {
+          "name": "status:todo"
+        },
+        {
+          "name": "lane:net"
+        },
+        {
+          "name": "prio:p2"
+        }
+      ]
+    },
+    "comments": {
+      "pageInfo": {
+        "hasNextPage": false,
+        "endCursor": null
+      },
+      "nodes": [
+        {
+          "databaseId": 9,
+          "createdAt": "2026-10-18T10:10:00Z",
+          "body": "/claim\nclaimed: epsilon-agent, 2026-10-18\nfiles: x",
+          "author": {
+            "login": "jarrodjohnson-gif"
+          }
+        },
+        {
+          "databaseId": 10,
+          "createdAt": "2026-10-18T10:11:00Z",
+          "body": "changed: x\npr: #202",
+          "author": {
+            "login": "jarrodjohnson-gif"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "I_116",
+    "number": 116,
+    "title": "Claim with its PR still open",
+    "body": "",
+    "milestone": null,
+    "labels": {
+      "nodes": [
+        {
+          "name": "status:todo"
+        },
+        {
+          "name": "lane:net"
+        },
+        {
+          "name": "prio:p2"
+        }
+      ]
+    },
+    "comments": {
+      "pageInfo": {
+        "hasNextPage": false,
+        "endCursor": null
+      },
+      "nodes": [
+        {
+          "databaseId": 11,
+          "createdAt": "2026-10-18T10:12:00Z",
+          "body": "/claim\nclaimed: zeta-agent, 2026-10-18\nfiles: y",
+          "author": {
+            "login": "jarrodjohnson-gif"
+          }
+        },
+        {
+          "databaseId": 12,
+          "createdAt": "2026-10-18T10:13:00Z",
+          "body": "pr: #204",
+          "author": {
+            "login": "jarrodjohnson-gif"
+          }
+        }
+      ]
+    }
+  }
+]

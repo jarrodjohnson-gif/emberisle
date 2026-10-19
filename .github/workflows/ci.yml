@@ -113,6 +113,8 @@ jobs:
         run: npm test
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run touch-place-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run next-up-prove
 
   browser-a:
     needs: changes

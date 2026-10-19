@@ -1,0 +1,46 @@
+# Keeps the "Next up (auto)" issue (label next-up) current: eligible status:todo work in priority
+# order, then what is taken. scripts/next-up.mjs does the work; it only ever writes that issue's body
+# (and creates the issue and its label once, if missing).
+#
+# pull_request_target, not pull_request, so fork PRs also refresh the list. It is safe here: the job
+# checks out the default branch, never the PR's code, and PR text is only read as data by the script.
+
+name: next-up
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+  issues:
+    types: [opened, edited, closed, reopened, labeled, unlabeled, milestoned, demilestoned]
+  issue_comment:
+    types: [created, edited, deleted]
+  pull_request_target:
+    types: [opened, edited, closed, reopened]
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+
+# One run at a time; a burst of events collapses into one pending run, which reads the newest state.
+concurrency:
+  group: next-up
+  cancel-in-progress: false
+
+jobs:
+  next-up:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/next-up.mjs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
