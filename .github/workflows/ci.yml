@@ -1,8 +1,10 @@
 name: CI
 
 # The README "Run it" checks, on every pull request and every push to main.
-# build, server and browser-a run on separate runners; browser-b has three suites (flows-a, flows-b, presentation) after build's dist/;
-# flows is split in two so each half stays near 14 minutes (the whole was ~28).
+# build, server and browser-a run on separate runners; browser-b has four suites (flows-a, flows-b, presentation, presentation-2) after build's dist/;
+# flows is split in two so each half stays near 14 minutes (the whole was ~28); presentation is split the same way
+# (presentation and presentation-2, ~16 minutes each; the whole hit the 30-minute timeout). The "presentation" name
+# is kept because the ruleset requires it.
 # browser-a is split three ways (a1, a2, a3) by measured step time, about 8-12 minutes each (the whole was ~29);
 # the browser-a job itself only reports whether all three passed, because the ruleset requires that name.
 # `checks` is the required merge check: it requires every job, including every browser-a and browser-b suite.
@@ -230,7 +232,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        suite: [flows-a, flows-b, presentation]
+        suite: [flows-a, flows-b, presentation, presentation-2]
     steps:
       - if: needs.changes.outputs.docs_only != 'true'
         uses: actions/checkout@v4
@@ -336,27 +338,27 @@ jobs:
         run: npm run goods-log-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation'
         run: npm run turn-gain-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation'
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-2'
         run: npm run win-action-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation'
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-2'
         run: npm run lobby-overflow-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation'
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-2'
         run: npm run turn-copy-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation'
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-2'
         run: npm run table-menu-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation'
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-2'
         run: npm run build-ready-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation'
         run: npm run board-look-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation'
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-2'
         run: npm run dock-piles-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation'
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-2'
         run: npm run seat-rail-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation'
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-2'
         run: npm run public-score-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation'
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-2'
         run: npm run hand-hidden-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation'
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-2'
         run: npm run install-prove
       - if: always()
         uses: actions/upload-artifact@v4
