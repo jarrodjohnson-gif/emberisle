@@ -133,9 +133,10 @@ try {
         const g=window.__emberisle, st=structuredClone(g.getState().state);
         st.players[0].resources.wool++; st.seq++; g.setState({state:st});
       });
-      // Several goods may float at once (the crafted hand's own floats can still be up), so any one float satisfies the wait.
-      await page.getByTestId('gain-float').first().waitFor();
-      const cues=await page.evaluate(()=>[...document.querySelectorAll('[data-testid="gain-float"], [data-testid="resource-flash"]')].map(e=>({animation:getComputedStyle(e).animationName, opacity:getComputedStyle(e).opacity})));
+      // #773: Gains show on the hand cards (resource-flash); island gain floats are removed.
+      await page.getByTestId('resource-flash').first().waitFor();
+      assert.equal(await page.locator('[data-testid="gain-float"]').count(), 0, 'no island gain floats');
+      const cues=await page.evaluate(()=>[...document.querySelectorAll('[data-testid="resource-flash"]')].map(e=>({animation:getComputedStyle(e).animationName, opacity:getComputedStyle(e).opacity})));
       assert.ok(cues.every(c=>c.animation==='none'&&c.opacity==='1'), 'reduced motion retains fully static readable gain information');
       // The island's scenes (jelly-board.ts) hold their clock still: carts, miners, creatures.
       await page.waitForFunction(()=>window.__isle.landReady,null,{timeout:120_000});
@@ -143,8 +144,8 @@ try {
       await page.waitForTimeout(1700);
       const b=await page.evaluate(()=>window.__isle.jellyT);
       assert.equal(b,a,'reduced motion freezes the island scenes (wagons, miners, creatures)');
-      assert.ok(await page.getByTestId('gain-float').first().isVisible(),'gain still visible after 1700ms');
-      await page.waitForFunction(() => !document.querySelector('[data-testid="gain-float"]'));
+      assert.ok(await page.getByTestId('resource-flash').first().isVisible(),'gain still visible after 1700ms');
+      await page.waitForFunction(() => !document.querySelector('[data-testid="resource-flash"]'));
     }
     if (phone && !reduced) {
       await page.evaluate(async () => {

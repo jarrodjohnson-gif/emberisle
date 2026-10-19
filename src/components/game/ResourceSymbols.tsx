@@ -13,7 +13,14 @@ export function ClaySymbol(props: Props) {
 }
 
 export function WoolSymbol(props: Props) {
-  return <svg {...frame} {...props}><path d="M7 5c-1-3 4-4 5-1 2-3 6-1 5 2 4-1 6 4 2 6 3 3 0 7-3 5 0 4-5 5-6 1-3 3-7 0-5-3-4 0-5-5-1-6-2-2 0-5 3-4Z"/><path d="m8 17-1 4m9-4 1 4"/></svg>;
+  return (
+    <svg {...frame} {...props}>
+      <path d="M8.5 6.5c-1.8 0-3.2 1.2-3.5 2.8C3.6 9.8 3 11 3 12.5c0 2 1.6 3.5 3.5 3.5h10c1.7 0 3-1.2 3.4-2.8.6-.6 1.1-1.5 1.1-2.5 0-1.8-1.4-3.2-3.2-3.2-.3 0-.7.1-1 .2C16 6.6 14.7 6 13 6c-1 0-1.9.3-2.6.9-.5-.3-1.2-.4-1.9-.4Z" />
+      <path d="M14.2 9c0-.8.7-1.5 1.6-1.5.7 0 1.4.5 1.7 1.2.6.2 1 .7 1 1.4 0 1-.7 1.8-1.7 1.8h-1.2c-.8 0-1.4-.6-1.4-1.4V9Z" fill="currentColor" stroke="none" />
+      <path d="M14.2 9.3c-.8.2-1.3.7-1.3 1.3" />
+      <path d="M7 16v4m7-4v4" />
+    </svg>
+  );
 }
 
 export function GrainSymbol(props: Props) {

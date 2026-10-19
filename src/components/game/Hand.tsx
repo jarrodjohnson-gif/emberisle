@@ -18,11 +18,35 @@ export const RESOURCE_PAINT: Record<Resource, string> = {
   ore: "bg-ore text-ore-on",
 };
 
+// Approved Goods Card design (#772 / #773, docs/DECISIONS.md):
+// Pale face at rest (#fff7e5), empty face (#f1ecdf).
+// Soft outline and badge in good's color. Full color fill on gain (#acc6a4, #e5b39c, etc.).
+// Count and name in high-contrast ink #27271f.
+export const GOODS_EDGE: Record<Resource, string> = {
+  timber: "#315c38",
+  clay: "#89422f",
+  wool: "#59613a",
+  grain: "#765817",
+  ore: "#47566b",
+};
+
+export const GOODS_GAIN_FILL: Record<Resource, string> = {
+  timber: "#acc6a4",
+  clay: "#e5b39c",
+  wool: "#d3d9b3",
+  grain: "#efd38a",
+  ore: "#bdc9d5",
+};
+
+export const GOODS_REST_FILL = "#fff7e5";
+export const GOODS_EMPTY_FILL = "#f1ecdf";
+export const GOODS_INK = "#27271f";
+
 const FLASH_MS = 2200;
-const SETTLE_MS = 280;
+const LIFT_DURATION_MS = 1850;
 type ResourceFlash = { delta: number; id: number };
 
-// The hand's counts are diffed on every state, so a gain flashes +N green and a loss -N red whether it
+// The hand's counts are diffed on every state, so a gain flashes +N and a loss -N whether it
 // came from a roll, a trade, a build, a discard, or a steal, hotseat and online alike (#170). Only this
 // hand is read: online, the other players arrive as a `goods` count with no `resources`. A change of
 // seat (hotseat) or a reconnect's first synced state resets the baseline instead of flashing.
@@ -114,30 +138,44 @@ function ResourceCard({ resource, count, flash, offer, showRates, buildMode, own
   useEffect(() => cancelHold, [buildMode, owner]);
   const Icon = RESOURCE_ICON[resource];
   const label = flash ? (flash.delta > 0 ? `+${flash.delta}` : String(flash.delta)) : null;
-  // Restart on the event ID, even for two gains in the same millisecond. The card itself stays mounted,
-  // preserving its footprint and future focus/long-press state; only the decorative cues are keyed.
+  const isGained = Boolean(flash && flash.delta > 0);
+
+  // #773: Gain lifts ~20px with +N badge above card; loss dips slightly with -N badge. Movement is transform-only.
+  // Holds about 1.5s, settles within 2s. Reduced motion: no transform.
   useLayoutEffect(() => {
     if (!flash || !card.current) return;
     const preference = matchMedia("(prefers-reduced-motion: reduce)");
-    const animation = preference.matches
-      ? null
-      : card.current.animate(
-          [
+    if (preference.matches) return;
+
+    const keyframes =
+      flash.delta > 0
+        ? [
             { transform: "translateY(0)", offset: 0, easing: "cubic-bezier(0.22, 1, 0.36, 1)" },
-            { transform: `translateY(${flash.delta > 0 ? -3 : 2}px)`, offset: 0.25, easing: "cubic-bezier(0.22, 1, 0.36, 1)" },
+            { transform: "translateY(-20px)", offset: 0.1, easing: "cubic-bezier(0.22, 1, 0.36, 1)" },
+            { transform: "translateY(-20px)", offset: 0.8, easing: "cubic-bezier(0.22, 1, 0.36, 1)" },
             { transform: "translateY(0)", offset: 1 },
-          ],
-          { duration: SETTLE_MS },
-        );
+          ]
+        : [
+            { transform: "translateY(0)", offset: 0, easing: "cubic-bezier(0.22, 1, 0.36, 1)" },
+            { transform: "translateY(3px)", offset: 0.15, easing: "cubic-bezier(0.22, 1, 0.36, 1)" },
+            { transform: "translateY(3px)", offset: 0.75, easing: "cubic-bezier(0.22, 1, 0.36, 1)" },
+            { transform: "translateY(0)", offset: 1 },
+          ];
+
+    const animation = card.current.animate(keyframes, { duration: LIFT_DURATION_MS });
     const stopMovement = () => {
-      if (preference.matches) animation?.cancel();
+      if (preference.matches) animation.cancel();
     };
     preference.addEventListener("change", stopMovement);
     return () => {
-      animation?.cancel();
+      animation.cancel();
       preference.removeEventListener("change", stopMovement);
     };
   }, [flash?.id]);
+
+  const cardBg = isGained ? GOODS_GAIN_FILL[resource] : count === 0 ? GOODS_EMPTY_FILL : GOODS_REST_FILL;
+  const cardBorderColor = isGained || count > 0 ? GOODS_EDGE[resource] : `${GOODS_EDGE[resource]}55`;
+
   return (
     <div
       data-testid={`offer-slot-${resource}`}
@@ -181,26 +219,63 @@ function ResourceCard({ resource, count, flash, offer, showRates, buildMode, own
         onPointerCancel={cancelHold}
         onPointerLeave={cancelHold}
         className={cn(
-          "goods-card relative flex h-[62px] flex-col items-center justify-center rounded-control bg-surface text-fg focus-visible:outline focus-visible:outline-2 focus-visible:outline-fg",
+          "goods-card relative flex h-[62px] flex-col items-center justify-center rounded-control focus-visible:outline focus-visible:outline-2 focus-visible:outline-fg",
           "short:h-11 short:flex-row short:gap-2",
           count === 0 && "goods-empty",
         )}
+        style={{
+          backgroundColor: cardBg,
+          borderColor: cardBorderColor,
+          borderWidth: "1.5px",
+          borderStyle: count === 0 && !isGained ? "dashed" : "solid",
+          color: GOODS_INK,
+          boxShadow: "var(--shadow-control)",
+          transition: isGained ? "none" : "background-color 300ms ease-out, border-color 300ms ease-out",
+        }}
       >
         <div className="goods-value flex items-center justify-center gap-1.5">
-          <Icon className="goods-icon size-5" style={{ color: `var(--${resource === "wool" || resource === "grain" ? `${resource}-side` : resource})` }} aria-hidden />
-          <span data-testid="hand-count" className="text-number font-bold tabular-nums short:leading-7">
+          <Icon
+            className="goods-icon size-5"
+            style={{ color: count === 0 && !isGained ? "var(--muted, #8c887b)" : GOODS_EDGE[resource] }}
+            aria-hidden
+          />
+          <span
+            data-testid="hand-count"
+            className="text-number font-bold tabular-nums short:leading-7"
+            style={{ color: GOODS_INK }}
+          >
             {count}
           </span>
         </div>
-        <span className="goods-label text-[11px] font-semibold leading-[14px] short:hidden">{RESOURCE_LABEL[resource]}</span>
+        <span
+          className="goods-label text-[11px] font-semibold leading-[14px] short:hidden"
+          style={{ color: GOODS_INK }}
+        >
+          {RESOURCE_LABEL[resource]}
+        </span>
         {flash ? (
           <span
-            key={`ring-${flash.id}`}
-            data-testid="hand-ring"
-            aria-hidden
-            className="pointer-events-none absolute inset-[2px] rounded-chip"
-            style={{ animation: `resource-ring ${FLASH_MS}ms ease-out forwards` }}
-          />
+            key={flash.id}
+            data-testid="resource-flash"
+            data-resource={resource}
+            data-delta={label}
+            className={cn(
+              "hand-resource-flash pointer-events-none absolute left-1/2 -translate-x-1/2 z-20 flex items-center justify-center rounded-md px-1.5 py-0.5 text-xs font-bold tabular-nums shadow-sm",
+              flash.delta > 0 ? "goods-gain-badge" : "goods-loss-badge",
+            )}
+            style={{
+              bottom: "calc(100% + 2px)",
+              left: "50%",
+              transform: "translateX(-50%)",
+              backgroundColor: GOODS_REST_FILL,
+              borderColor: flash.delta > 0 ? GOODS_EDGE[resource] : "var(--loss, #c84c32)",
+              color: flash.delta > 0 ? GOODS_EDGE[resource] : "var(--loss, #c84c32)",
+              borderWidth: "1.5px",
+              borderStyle: "solid",
+            }}
+          >
+            {label}
+          </span>
         ) : null}
       </div>
       {offer ? (
@@ -217,21 +292,6 @@ function ResourceCard({ resource, count, flash, offer, showRates, buildMode, own
           {offer > 0 ? `+${offer}` : String(offer)}
         </span>
       ) : null}
-      {flash ? (
-        <span
-          key={flash.id}
-          data-testid="resource-flash"
-          data-resource={resource}
-          data-delta={label}
-          className={cn(
-            "hand-resource-flash pointer-events-none absolute right-0.5 top-0.5 rounded-control bg-surface px-1 text-caption font-semibold tabular-nums short:left-1 short:right-auto short:top-0 short:text-caption short:leading-3",
-            flash.delta > 0 ? "text-gain" : "text-loss",
-          )}
-          style={{ animation: `resource-flash ${FLASH_MS}ms ease-out forwards` }}
-        >
-          {label}
-        </span>
-      ) : null}
     </div>
   );
 }
@@ -246,7 +306,7 @@ function ResourceHand({ me, flashes }: { me: PlayerState; flashes: ReturnType<ty
   useEffect(() => setHint(null), [buildMode, me.id]);
   return (
     <>
-      <div className="goods-tray flex shrink-0 gap-1 overflow-x-auto rounded-chip p-2 short:p-1">
+      <div className="goods-tray flex shrink-0 gap-1 overflow-visible rounded-chip p-2 short:p-1">
         {RESOURCES.map((r) => (
           <ResourceCard key={r} resource={r} count={me.resources[r]} flash={flashes[r]} offer={offer[r]} showRates={showRates} buildMode={buildMode} owner={me.id} />
         ))}

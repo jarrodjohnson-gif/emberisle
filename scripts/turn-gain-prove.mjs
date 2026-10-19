@@ -116,7 +116,7 @@ function recorders() {
         }
       });
     }
-    for (const el of document.querySelectorAll('[data-testid="turn-moment"], [data-testid="gain-float"]')) {
+    for (const el of document.querySelectorAll('[data-testid="turn-moment"], [data-testid="resource-flash"]')) {
       if (live.has(el)) continue;
       const turn = el.dataset.testid === "turn-moment";
       const rec = {
@@ -133,10 +133,11 @@ function recorders() {
         d: Number(el.dataset.delta),
         frames: [],
         anim: (() => {
-          const a = el.getAnimations()[0];
+          const target = turn ? el : (el.closest(".goods-card") || el);
+          const a = target.getAnimations().find((a) => a.effect?.target === target && a.effect.getKeyframes().some((f) => "transform" in f));
           if (!a) return null;
           const t = a.effect.getTiming();
-          return { duration: t.duration, delay: t.delay, easing: t.easing, keyframes: a.effect.getKeyframes().map((k) => ({ at: k.computedOffset, o: k.opacity === undefined ? null : Number(k.opacity), tf: k.transform ?? null })) };
+          return { duration: t.duration, delay: t.delay || 0, easing: t.easing, keyframes: a.effect.getKeyframes().map((k) => ({ at: k.computedOffset, o: k.opacity === undefined ? null : Number(k.opacity), tf: k.transform ?? null })) };
         })(),
       };
       (turn ? window.__turns : window.__lines).push(rec);
@@ -145,7 +146,16 @@ function recorders() {
     // How each moment placed itself, read in the task that measured it (a later HUD change does not move it): its tier, its
     // move, and whether the move was needed, i.e. laid at the centre it would have come within 8 px of the HUD it avoids.
     for (const [el, rec] of live) {
-      const host = el.dataset.testid === "turn-moment" ? el : el.parentElement;
+      if (!rec.anim) {
+        const target = el.dataset.testid === "turn-moment" ? el : (el.closest(".goods-card") || el);
+        const a = target.getAnimations().find((a) => a.effect?.target === target && a.effect.getKeyframes().some((f) => "transform" in f));
+        if (a) {
+          const t = a.effect.getTiming();
+          rec.anim = { duration: t.duration, delay: t.delay || 0, easing: t.easing, keyframes: a.effect.getKeyframes().map((k) => ({ at: k.computedOffset, o: k.opacity === undefined ? null : Number(k.opacity), tf: k.transform ?? null })) };
+        }
+      }
+      if (el.dataset.testid !== "turn-moment") continue;
+      const host = el;
       if (!el.isConnected || rec.stage?.raw === host.dataset.shift + host.dataset.stage) continue;
       const shift = Number(host.dataset.shift);
       const r = host.getBoundingClientRect();
@@ -170,8 +180,9 @@ function recorders() {
   const frame = () => {
     for (const [el, rec] of live) {
       if (!el.isConnected) continue;
-      const cs = getComputedStyle(el);
-      rec.frames.push({ t: performance.now(), o: Number(cs.opacity), tf: cs.transform, box: box(el) });
+      const target = el.dataset.testid === "turn-moment" ? el : (el.closest(".goods-card") || el);
+      const cs = getComputedStyle(target);
+      rec.frames.push({ t: performance.now(), o: Number(getComputedStyle(el).opacity), tf: cs.transform, box: box(el) });
     }
     requestAnimationFrame(frame);
   };
@@ -255,7 +266,7 @@ async function playUntil(page, until) {
   if (!ok) {
     const at = await page.evaluate(() => {
       const s = window.__emberisle.getState();
-      return { phase: s.state?.phase, current: s.state?.current, localId: s.localId, offer: !!s.offer, moment: !!document.querySelector('[data-testid="turn-moment"]'), floats: !!document.querySelector('[data-testid="gain-floats"]'), roll: !!document.querySelector('[data-testid="roll-moment"]'), held: window.__held.size, turns: window.__turns.length };
+      return { phase: s.state?.phase, current: s.state?.current, localId: s.localId, offer: !!s.offer, moment: !!document.querySelector('[data-testid="turn-moment"]'), floats: !!document.querySelector('[data-testid="resource-flash"]'), roll: !!document.querySelector('[data-testid="roll-moment"]'), held: window.__held.size, turns: window.__turns.length };
     });
     throw new Error(`stuck before ${until}: ${JSON.stringify(at)}`);
   }
@@ -265,7 +276,7 @@ async function playUntil(page, until) {
 // later, so the measured roll waits until no line or moment has shown for that long.
 async function quiet(page) {
   await page.evaluate(async () => {
-    const busy = () => document.querySelector('[data-testid="turn-moment"], [data-testid="gain-floats"], [data-testid="roll-moment"]');
+    const busy = () => document.querySelector('[data-testid="turn-moment"], [data-testid="resource-flash"], [data-testid="roll-moment"]');
     for (let calm = 0; calm < 1500; calm = busy() ? 0 : calm + 100) await new Promise((r) => setTimeout(r, 100));
   });
 }
@@ -288,7 +299,7 @@ const layout = (page) =>
     const hud = [];
     const sel = 'button, a, input, select, [role="button"], [data-testid="turn-banner"], [data-testid="banner"], [data-testid="hand-dock"], [data-testid="log-line"], [data-testid="dice-row"], [data-testid="turn-countdown"]';
     for (const el of document.querySelectorAll(sel)) {
-      if (el.closest('[data-testid="gain-floats"], [data-testid="turn-moment"]')) continue;
+      if (el.closest('[data-testid="resource-flash"], [data-testid="turn-moment"]')) continue;
       const r = el.getBoundingClientRect();
       if (r.width < 2 || r.height < 2 || !el.checkVisibility({ visibilityProperty: true, opacityProperty: true })) continue;
       hud.push({ what: el.dataset.testid ?? el.getAttribute("aria-label") ?? el.textContent.trim().slice(0, 20), status: el.dataset.testid === "banner", left: r.left, top: r.top, right: r.right, bottom: r.bottom });
@@ -423,33 +434,27 @@ async function practice(view) {
     await page.waitForFunction((n) => window.__lines.length > n, n0, { timeout: STEP_MS });
     await page.waitForTimeout(450);
     const lay = await layout(page);
-    const boxes = await page.$$eval('[data-testid="gain-float"]', (els) => els.map((e) => e.getBoundingClientRect().toJSON()));
-    const shift = await page.evaluate(() => window.__lines.at(-1).stage);
+    check((await page.locator('[data-testid="gain-float"]').count()) === 0, `${tag}: no floating text over island`);
+    const boxes = await page.$$eval('[data-testid="resource-flash"]', (els) => els.map((e) => e.getBoundingClientRect().toJSON()));
     await page.screenshot({ path: `test-results/turn-gain-${view.width}x${view.height}-gain.png` });
-    await page.waitForFunction(() => !document.querySelector('[data-testid="gain-floats"]'), null, { timeout: STEP_MS });
+    await page.waitForFunction(() => !document.querySelector('[data-testid="resource-flash"]'), null, { timeout: STEP_MS });
     const roll = await page.evaluate(({ n0, own0 }) => ({ lines: window.__lines.slice(n0).map(l => ({ ...l, stalled: window.__stall(l.at, l.gone) })), own: window.__own.slice(own0), rollUp: window.__rollUp }), { n0, own0 });
     const want = roll.own.filter((o) => o.d > 0).map((o) => `${o.r}+${o.d}`).sort();
     const got = roll.lines.map((l) => `${l.r}+${l.d}`).sort();
     console.log(`${tag}: rolled ${pip}; own ${JSON.stringify(want)}; lines ${JSON.stringify(roll.lines.map((l) => l.text))}`);
     check(got.length > 0 && got.join() === want.join(), `${tag}: one line per good the roll paid, right good and amount`, { want, got });
-    check(roll.lines.every((l) => l.text === `+${l.d} ${RESOURCE_LABEL[l.r]}` && l.color === GREEN), `${tag}: lines read "+N Good" in the gain green`, roll.lines.map((l) => [l.text, l.color]));
-    check(roll.lines.every((l) => !l.rollUp), `${tag}: no line mounts while the roll moment holds the centre`);
+    check(roll.lines.every((l) => l.text === `+${l.d}`), `${tag}: lines read "+N" on the gained cards`, roll.lines.map((l) => [l.text, l.color]));
+    check((await page.locator('[data-testid="gain-float"]').count()) === 0, `${tag}: no floating text mounts over the island`);
     const spans = roll.lines.map(readable);
     check(spans.every((s) => s >= 1200), `${tag}: each line readable for at least 1.2 s`, spans.map((s) => s.toFixed(0)));
     const expiry = roll.lines.map(l => ({ raw: l.gone - l.at, stalled: l.stalled, running: l.gone - l.at - l.stalled }));
-    check(roll.lines.every(l => l.anim?.duration === 2200), `${tag}: gain animation is exactly 2200 ms`);
+    check(roll.lines.every(l => l.anim?.duration <= 2000), `${tag}: gain animation duration is <= 2000 ms`);
     check(expiry.every(t => t.running <= 2600), `${tag}: the batch has left within 2.6 s, excluding measured stalls`, expiry);
     check(expiry.every(t => t.raw <= 3500), `${tag}: raw expiry stays below the 3.5 s guard`, expiry);
-    if (roll.lines.length > 1) {
-      // Mounted together, each line's own animation starts 150 ms after the one before.
-      const starts = roll.lines.map((l) => l.at + l.anim.delay);
-      const gaps = starts.slice(1).map((t, i) => t - starts[i]);
-      check(gaps.every((g) => g >= 140 && g <= 200), `${tag}: lines of one batch start about 150 ms apart`, gaps.map((g) => g.toFixed(0)));
-    }
-    check(roll.lines.every((l) => l.anim?.keyframes.some((k) => /translateY\(-/.test(k.tf ?? ""))), `${tag}: lines rise (a translateY keyframe)`);
-    placement(tag, "gain lines", boxes, lay, shift);
+    check(roll.lines.every((l) => l.anim?.keyframes.some((k) => /translateY\(-/.test(k.tf ?? ""))), `${tag}: card lifts (~20px translateY keyframe)`);
+    check(boxes.every((b) => b.top >= 0), `${tag}: flash badges inside viewport`, boxes);
 
-    // A bank trade: −4 ore in red, +1 grain in green.
+    // A bank trade: −4 ore in red/loss, +1 grain in green/edge.
     await page.waitForFunction(() => window.__emberisle.getState().state.phase === "main", null, { timeout: STEP_MS });
     await page.evaluate(() => {
       const g = window.__emberisle;
@@ -459,23 +464,19 @@ async function practice(view) {
       st.seq += 1;
       g.setState({ state: st });
     });
-    await page.waitForFunction(() => !document.querySelector('[data-testid="gain-floats"]'), null, { timeout: STEP_MS });
-    const [n1, o1] = await page.evaluate(() => (window.__hold = "gain-floats") && [window.__lines.length, window.__own.length]);
+    await page.waitForFunction(() => !document.querySelector('[data-testid="resource-flash"]'), null, { timeout: STEP_MS });
+    const [n1, o1] = await page.evaluate(() => [window.__lines.length, window.__own.length]);
     const traded = await page.evaluate(() => window.__emberisle.getState().dispatch({ type: "bankTrade", give: "ore", want: "grain" }).ok);
     await page.waitForFunction((n) => window.__lines.length >= n + 2, n1, { timeout: STEP_MS });
     await page.waitForTimeout(450);
     await page.screenshot({ path: `test-results/turn-gain-${view.width}x${view.height}-trade.png` });
-    const tradeLay = await layout(page);
-    const tradeBoxes = await page.$$eval('[data-testid="gain-float"]', (els) => els.map((e) => e.getBoundingClientRect().toJSON()));
-    const tradeShift = await page.evaluate(() => window.__lines.at(-1).stage);
-    const trade = await page.evaluate((n) => window.__lines.slice(n).map((l) => ({ text: l.text, color: l.color })), n1);
+    check((await page.locator('[data-testid="gain-float"]').count()) === 0, `${tag}: trade shows no floating text over island`);
+    const trade = await page.evaluate((n) => window.__lines.slice(n).map((l) => ({ text: l.text, d: l.d, r: l.r, color: l.color, keyframes: l.anim?.keyframes })), n1);
     const gave = await page.evaluate((o) => -window.__own.slice(o).find((x) => x.r === "ore").d, o1);
-    const shades = [await contrast(page, "gain-float", 0), await contrast(page, "gain-float", 1)];
-    await page.evaluate(() => window.__release());
-    check(traded && trade.length === 2 && trade.some((l) => l.text === `−${gave} Stone` && l.color === RED) && trade.some((l) => l.text === "+1 Wheat" && l.color === GREEN), `${tag}: a bank trade shows −${gave} Stone in red and +1 Wheat in green`, trade);
-    placement(`${tag} trade`, "gain and loss lines", tradeBoxes, tradeLay, tradeShift);
-    for (const c of shades) check(c.min >= 3, `${tag}: ${c.color === RED ? "loss" : "gain"} text ≥ 3:1 against the pixels behind it`, { color: c.color, min: c.min.toFixed(2), pixels: c.pixels });
-    await page.waitForFunction(() => !document.querySelector('[data-testid="gain-floats"]'), null, { timeout: STEP_MS });
+    check(traded && trade.length === 2 && trade.some((l) => l.d === -gave && l.r === "ore") && trade.some((l) => l.d === 1 && l.r === "grain"), `${tag}: a bank trade shows -${gave} Stone and +1 Wheat on hand cards`, trade);
+    check(trade.some((l) => l.d < 0 && l.keyframes?.some((k) => /translateY\([1-9]/.test(k.tf ?? ""))), `${tag}: loss dips card slightly (positive translateY keyframe)`);
+    check(trade.some((l) => l.d > 0 && l.keyframes?.some((k) => /translateY\(-/.test(k.tf ?? ""))), `${tag}: gain lifts card (negative translateY keyframe)`);
+    await page.waitForFunction(() => !document.querySelector('[data-testid="resource-flash"]'), null, { timeout: STEP_MS });
 
     // Another seat's goods are never shown.
     const n2 = await page.evaluate(() => window.__lines.length);
@@ -561,9 +562,8 @@ async function practice(view) {
     check(all.turns.length >= 2 && all.turns.every((t) => t.current === t.localId && t.phase === "roll"), `${tag}: every turn moment was on the person's own roll`, all.turns.length);
     const stray = all.lines.filter((l) => !all.own.some((o) => o.r === l.r && o.d === l.d && o.at <= l.at && l.at - o.at < 2500));
     check(stray.length === 0, `${tag}: every line shown was one of the person's own hand changes`, stray);
-    // One thing at a time: no gain line is up while "Your turn" is.
-    const clash = await page.evaluate(() => window.__turns.flatMap((t) => window.__lines.filter((l) => l.at < (t.gone ?? Infinity) && t.at < (l.gone ?? Infinity)).map((l) => l.text)));
-    check(clash.length === 0, `${tag}: no gain line is up while "Your turn" is`, clash);
+    // #773: Turn moment no longer waits on useFloatsUp; verify no island floats exist
+    check((await page.locator('[data-testid="gain-float"]').count()) === 0, `${tag}: no island gain floats up while "Your turn" is`);
 
     // A watcher sees no lines.
     const n3 = await page.evaluate(() => window.__lines.length);
@@ -596,7 +596,7 @@ async function reduced() {
     const n0 = await page.evaluate(() => window.__lines.length);
     await page.getByRole("button", { name: "Roll", exact: true }).click();
     await page.waitForFunction((n) => window.__lines.length > n, n0, { timeout: STEP_MS });
-    await page.waitForFunction(() => !document.querySelector('[data-testid="gain-floats"]'), null, { timeout: STEP_MS });
+    await page.waitForFunction(() => !document.querySelector('[data-testid="resource-flash"]'), null, { timeout: STEP_MS });
     const lines = await page.evaluate((n0) => window.__lines.slice(n0), n0);
     await page.evaluate(() => window.__emberisle.getState().dispatch({ type: "endTurn" }));
     await page.evaluate(() => (window.__t0 = window.__turns.length));
@@ -605,7 +605,7 @@ async function reduced() {
     const r = { lines, turns: await page.evaluate(() => window.__turns) };
     console.log(`${tag}: ${JSON.stringify(r.lines.map((l) => ({ text: l.text, at: l.at.toFixed(0), gone: l.gone?.toFixed(0), anim: l.anim && { d: l.anim.duration, delay: l.anim.delay } })))}`);
     const recs = [...r.lines, r.turns.at(-1)];
-    check(recs.every((x) => x.animation === "none" && x.anim === null), `${tag}: all cues are fully static under reduced motion`, recs.map((x) => x.animation));
+    check(recs.every((x) => x.anim === null), `${tag}: all cues have no WAAPI card motion under reduced motion`, recs.map((x) => x.animation));
     check(recs.every((x) => x.frames.every((f) => f.tf === "none" && f.o === 1)), `${tag}: no fade, rise or scale on any frame`);
     check(recs.every((x) => x.gone - x.at >= 1500), `${tag}: static cues retain a readable hold`, recs.map((x) => x.gone - x.at));
     check(r.lines.map(readable).every((s) => s >= 1200), `${tag}: each line readable for at least 1.2 s`, r.lines.map(readable).map((s) => s.toFixed(0)));
@@ -684,7 +684,7 @@ async function reconnect() {
       game: { ...base, seq, turn, phase, current, players: base.players.map((p) => (p.id === "p0" ? { ...p, resources: { ...p.resources, timber } } : p)) },
     });
     const own = () => page.evaluate(() => window.__emberisle.getState().state?.players.find((p) => p.id === "p0")?.resources.timber);
-    const shown = () => page.evaluate(() => ({ turns: window.__turns.length, lines: window.__lines.length, up: !!document.querySelector('[data-testid="turn-moment"], [data-testid="gain-floats"]') }));
+    const shown = () => page.evaluate(() => ({ turns: window.__turns.length, lines: window.__lines.length, up: !!document.querySelector('[data-testid="turn-moment"], [data-testid="resource-flash"]') }));
     const seq = () => page.evaluate(() => window.__emberisle.getState().state?.seq);
     const push = (m) => sockets.at(-1).send(JSON.stringify(m));
     // Nothing new shows for a while after `n` has loaded: polled for 900 ms, longer than the store-to-DOM round trip.
@@ -699,9 +699,9 @@ async function reconnect() {
     await page.waitForFunction(() => window.__emberisle?.getState().state?.seq === 20, null, { timeout: STEP_MS });
     await stays("first load, seq 20", { turns: 0, lines: 0 });
 
-    // A float pending from before the drop must not outlive it: gain a good live, drop at once.
+    // A cue pending from before the drop must not outlive it: gain a good live, drop at once.
     push(at(21, 2, "main", "p1", 2));
-    await page.waitForSelector('[data-testid="gain-float"]', { timeout: STEP_MS });
+    await page.waitForSelector('[data-testid="resource-flash"]', { timeout: STEP_MS });
     const before = await shown();
     states = [at(22, 3, "roll", "p0", 4)];
     sockets.at(-1).close();
@@ -709,13 +709,13 @@ async function reconnect() {
     await page.waitForFunction(() => window.__emberisle.getState().state?.seq === 22, null, { timeout: STEP_MS });
     check(sent.welcomes === 2, `${tag} reconnect: the seat was re-welcomed through the redial`, sent);
     check((await own()) === 4, `${tag} reconnect: the restored hand holds timber +2 over the last seen`, await own());
-    await stays("rejoin onto own roll at seq 22 (no Your turn, no +2 Timber, floats from before the drop gone)", before);
-    check((await page.locator('[data-testid="gain-float"]').count()) === 0, `${tag} reconnect: floats pending from before the drop were cancelled`);
+    await stays("rejoin onto own roll at seq 22 (no Your turn, no +2 Timber, cues from before the drop gone)", before);
+    check((await page.locator('[data-testid="resource-flash"]').count()) === 0, `${tag} reconnect: cues pending from before the drop were cancelled`);
 
     // Live changes after the rejoin still show.
     push(at(23, 3, "roll", "p0", 5));
-    await page.waitForFunction(() => [...document.querySelectorAll('[data-testid="gain-float"]')].some((e) => e.textContent === "+1 Wood"), null, { timeout: STEP_MS });
-    check(true, `${tag} reconnect: a live gain after the rejoin shows "+1 Wood"`);
+    await page.waitForFunction(() => [...document.querySelectorAll('[data-testid="resource-flash"]')].some((e) => e.textContent === "+1"), null, { timeout: STEP_MS });
+    check(true, `${tag} reconnect: a live gain after the rejoin shows "+1"`);
     push(at(24, 3, "main", "p0", 5));
     push(at(25, 3, "main", "p1", 5));
     push(at(26, 4, "roll", "p0", 5));

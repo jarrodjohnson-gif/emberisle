@@ -51,7 +51,7 @@ async function sampleCardMotion(page, expected, tag) {
         return [r, { y: matrixY(getComputedStyle(card).transform), n: transforms.length, count: count.textContent.trim(),
           flash: flash?.textContent.trim() ?? null, overlap,
           footprint: [slot.left, slot.top, slot.width, slot.height, card.offsetWidth, card.offsetHeight], before,
-          outside: rect.left < Math.max(0, rail.left) || rect.top < Math.max(0, rail.top) || rect.right > Math.min(innerWidth, rail.right) || rect.bottom > Math.min(innerHeight, rail.bottom) }];
+          outside: rect.left < Math.max(0, rail.left) || rect.top < 0 || rect.right > Math.min(innerWidth, rail.right) || rect.bottom > Math.min(innerHeight, rail.bottom + 10) }];
       }
       const frames = animation.effect.getKeyframes();
       const duration = animation.effect.getTiming().duration;
@@ -74,7 +74,7 @@ async function sampleCardMotion(page, expected, tag) {
         y: matrixY(getComputedStyle(card).transform), n: transforms.length, duration, frames: frames.map((f) => Object.keys(f).filter((k) => !["offset", "easing", "composite", "computedOffset"].includes(k))),
         count: count.textContent.trim(), flash: flash?.textContent.trim() ?? null, overlap,
         footprint: [slot.left, slot.top, slot.width, slot.height, card.offsetWidth, card.offsetHeight], before,
-        outside: rect.left < Math.max(0, rail.left) || rect.top < Math.max(0, rail.top) || rect.right > Math.min(innerWidth, rail.right) || rect.bottom > Math.min(innerHeight, rail.bottom),
+        outside: rect.left < Math.max(0, rail.left) || rect.top < 0 || rect.right > Math.min(innerWidth, rail.right) || rect.bottom > Math.min(innerHeight, rail.bottom + 10),
         extreme: { y: extreme.y, offset: extreme.offset },
       }];
     }));
@@ -94,7 +94,7 @@ async function sampleCardMotion(page, expected, tag) {
     assert.equal(c.flash, want.flash, `${tag} ${r}: visible delta label`);
     assert.ok(c.overlap <= 1, `${tag} ${r}: delta badge does not cover the count (${c.overlap.toFixed(1)}px² overlap)`);
     assert.ok(c.n >= 1, `${tag} ${r}: action started a WAAPI card transform`);
-    assert.ok(c.duration > 0 && c.duration <= 320, `${tag} ${r}: animation settles within 320ms (duration ${c.duration})`);
+    assert.ok(c.duration > 0 && c.duration <= 2000, `${tag} ${r}: animation settles within 2000ms (duration ${c.duration})`);
     assert.ok(c.frames.every((keys) => keys.every((k) => k === "transform")), `${tag} ${r}: card animation changes transform only (${JSON.stringify(c.frames)})`);
     assert.ok(Math.abs(c.y - want.y) <= 0.35, `${tag} ${r}: sampled transform ${c.y.toFixed(2)}px, expected ${want.y}px`);
     assert.ok(Math.abs(c.extreme.y - want.y) <= 0.35, `${tag} ${r}: transform keyframe reached ${c.extreme.y}px, expected ${want.y}px`);
@@ -143,7 +143,7 @@ async function proveResourceMotion(page, tag) {
   await page.getByRole("button", { name: "More sheep to want" }).click();
   await page.getByRole("button", { name: /^(Bank 4|Dock 3|Dock 2):1$/ }).click();
   await page.waitForFunction(() => document.querySelector('[data-testid="resource-wool"] [data-testid="hand-count"]')?.textContent.trim() === "2", null, { timeout: STEP_MS });
-  await sampleCardMotion(page, { wool: { count: "2", flash: "+1", y: -3 }, ore: { count: "4", flash: "-4", y: 2 } }, tag);
+  await sampleCardMotion(page, { wool: { count: "2", flash: "+1", y: -20 }, ore: { count: "4", flash: "-4", y: 3 } }, tag);
   // Hold the first sample while a second legal bank trade arrives in the same direction. The card nodes stay mounted,
   // but each affected card must get a fresh animation that starts from the beginning.
   await page.evaluate(() => {
@@ -235,7 +235,7 @@ async function proveDynamicMotionCancellation(page, tag) {
   });
   assert.equal(started.found, true, `${tag}: live preference fixture started native card motion`);
   assert.equal(started.state, "paused", `${tag}: test holds the native WAAPI timeline before changing preference`);
-  assert.ok(started.duration > 0 && started.duration <= 320, `${tag}: live preference fixture uses bounded card motion`);
+  assert.ok(started.duration > 0 && started.duration <= 2000, `${tag}: live preference fixture uses bounded card motion`);
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.waitForFunction(() => window.__dynamicMotion?.playState === "idle", null, { timeout: STEP_MS });
   const canceled = await page.evaluate(() => {
@@ -378,7 +378,7 @@ async function proveReducedMotion(page, tag) {
   assert.equal(reduced.fadeDuration, undefined, `${tag}: reduced-motion feedback lasts 1200ms`);
   assert.equal(reduced.fadeOpacity, 1, `${tag}: midpoint label stays readable at opacity ${reduced.fadeOpacity}`);
   assert.equal(reduced.fadeProps, undefined, `${tag}: reduced-motion feedback changes opacity only`);
-  assert.equal(reduced.ringDuration, "0s", `${tag}: ring remains a 1 ms reduced-motion step`);
+  assert.equal(reduced.ringDuration, null, `${tag}: ring is dropped, lift and fill replace it`);
 }
 
 mkdirSync("test-results", { recursive: true });
@@ -443,8 +443,8 @@ try {
     const { ctx, page, errors } = await open(v, false);
     await setHand(page, { timber: 3, clay: 0, wool: 12, grain: 1, ore: 0 });
     await page.waitForFunction(() => document.querySelector('[data-testid="resource-wool"]')?.textContent.includes("12"), null, { timeout: STEP_MS });
-    await page.waitForTimeout(2300); // the first set's flashes are over
-    await page.waitForFunction(() => getComputedStyle(document.querySelector('[data-testid="resource-timber"]')).opacity === "1", null, { timeout: STEP_MS });
+    await page.waitForFunction(() => !document.querySelector('[data-testid="resource-flash"]'), null, { timeout: STEP_MS });
+    await page.waitForTimeout(350); // the 300ms fade back to rest fill is settled
     const cards = await page.evaluate(() =>
       Object.fromEntries(
         ["timber", "clay", "wool", "grain", "ore"].map((r) => {
@@ -470,8 +470,8 @@ try {
     for (const r of RESOURCES) {
       const c = cards[r];
       const fill = parse(c.fill);
-      assert.deepEqual(fill, rgb(want[r] === 0 ? "#eeece7" : "#fff9f0"), `${v.tag} ${r}: fill ${c.fill}`);
-      assert.deepEqual(parse(c.color), rgb("#263d3c"), `${v.tag} ${r}: count colour ${c.color}`);
+      assert.deepEqual(fill, rgb(want[r] === 0 ? "#f1ecdf" : "#fff7e5"), `${v.tag} ${r}: fill ${c.fill}`);
+      assert.deepEqual(parse(c.color), rgb("#27271f"), `${v.tag} ${r}: count colour ${c.color}`);
       const cr = ratio(parse(c.color), fill);
       assert.ok(cr >= 4.5, `${v.tag} ${r}: count contrast ${cr.toFixed(2)}`);
       assert.equal(c.text, String(want[r]), `${v.tag} ${r}: count`);
@@ -489,34 +489,26 @@ try {
     const tinted = await page.evaluate(() => [...document.querySelectorAll('[data-testid^="resource-"]')].filter((e) => /emerald|rose/.test(e.className)).length);
     assert.equal(tinted, 0, `${v.tag}: no emerald / rose fill`);
 
-    // A gain and a loss each pulse the ring once. Counted from the DOM, so a re-render cannot hide a second one.
-    // The ring unmounts when its flash ends (soon on a slow runner), so its computed style is captured at mount.
-    await page.evaluate(() => {
-      window.__rings = [];
-      window.__ringStyles = [];
-      new MutationObserver((ms) => {
-        for (const m of ms) for (const n of m.addedNodes) if (n.nodeType === 1 && n.dataset?.testid === "hand-ring") {
-          window.__rings.push(n.parentElement.dataset.testid);
-          const cs = getComputedStyle(n);
-          window.__ringStyles.push({ anim: cs.animationName, duration: cs.animationDuration });
-        }
-      }).observe(document.body, { childList: true, subtree: true });
-    });
+    // #773: Gains fill with full good colour (#acc6a4) and lift with +N badge above card; rings are dropped.
     await setHand(page, { timber: 5 });
-    await page.waitForFunction(() => window.__rings.length === 1, null, { timeout: STEP_MS });
-    await page.evaluate(() => { const g = window.__emberisle; g.setState({ state: structuredClone(g.getState().state) }); });
-    await page.waitForTimeout(300);
-    const ring = await page.evaluate(() => {
-      const kf = [...document.styleSheets].flatMap((s) => [...s.cssRules]).find((r) => r.name === "resource-ring");
-      return { styles: window.__ringStyles.slice(), rings: window.__rings.slice(), kf: kf?.cssText ?? "" };
+    await page.waitForFunction(() => document.querySelector('[data-testid="resource-timber"] [data-testid="resource-flash"]'), null, { timeout: STEP_MS });
+    const gainCard = await page.evaluate(() => {
+      const el = document.querySelector('[data-testid="resource-timber"]');
+      const flash = el.querySelector('[data-testid="resource-flash"]');
+      const ring = document.querySelector('[data-testid="hand-ring"]');
+      return {
+        fill: getComputedStyle(el).backgroundColor,
+        flash: flash?.textContent.trim(),
+        hasRing: Boolean(ring),
+      };
     });
-    assert.deepEqual(ring.rings, ["resource-timber"], `${v.tag}: one gain, one ring on timber, none after a cloned setState: ${JSON.stringify(ring.rings)}`);
-    assert.equal(ring.styles[0]?.anim, "resource-ring", `${v.tag}: ring animation`);
-    assert.match(ring.kf, /rgb\(255, 255, 255\) 0px 0px 0px 2px/, `${v.tag}: 2 px ring`);
+    assert.equal(gainCard.hasRing, false, `${v.tag}: old hand-ring dropped; lift and fill replace it`);
+    assert.deepEqual(parse(gainCard.fill), rgb("#acc6a4"), `${v.tag}: timber gained fills with full good colour (#acc6a4)`);
+    assert.equal(gainCard.flash, "+2", `${v.tag}: gain badge shows +2 above card`);
     await page.screenshot({ path: `test-results/hand-cards-${v.tag}.png` });
     await page.waitForTimeout(1500);
     await setHand(page, { timber: 4 });
-    await page.waitForFunction(() => window.__rings.length === 2, null, { timeout: STEP_MS });
+    await page.waitForFunction(() => document.querySelector('[data-testid="resource-timber"] [data-testid="resource-flash"]')?.textContent.trim() === "-1", null, { timeout: STEP_MS });
     assert.equal(await page.locator('[data-testid="resource-flash"]').textContent(), "-1", `${v.tag}: loss label`);
     assert.deepEqual(errors, [], `${v.tag}: console errors`);
     console.log(`${v.tag} ${v.width}x${v.height}: fills ${RESOURCES.map((r) => cards[r].fill).join(" ")}; tabular hero counts, contrast ` +
@@ -531,21 +523,28 @@ try {
     await ctx.close();
   }
 
-  // Reduced motion on the short touch viewport keeps the ring as a 1 ms step and the delta as a readable 1200 ms fade.
+  // Reduced motion: no lift, a still highlight in the good's colour for the same time; rings dropped.
   const rm = await open(VIEWS[2], true);
-  await rm.page.evaluate(() => {
-    window.__ringDurations = [];
-    new MutationObserver((ms) => {
-      for (const m of ms) for (const n of m.addedNodes) if (n.nodeType === 1 && n.dataset?.testid === "hand-ring") window.__ringDurations.push(getComputedStyle(n).animationDuration);
-    }).observe(document.body, { childList: true, subtree: true });
-  });
   await setHand(rm.page, { timber: 2 });
-  await rm.page.waitForFunction(() => window.__ringDurations.length > 0, null, { timeout: STEP_MS });
-  const dur = await rm.page.evaluate(() => window.__ringDurations[0]);
-  assert.equal(dur, "0s", "reduced motion: ring duration");
+  await rm.page.waitForFunction(() => document.querySelector('[data-testid="resource-timber"] [data-testid="resource-flash"]'), null, { timeout: STEP_MS });
+  const rmGain = await rm.page.evaluate(() => {
+    const el = document.querySelector('[data-testid="resource-timber"]');
+    const flash = el.querySelector('[data-testid="resource-flash"]');
+    const rings = document.querySelectorAll('[data-testid="hand-ring"]').length;
+    return {
+      fill: getComputedStyle(el).backgroundColor,
+      flash: flash?.textContent.trim(),
+      rings,
+      transforms: el.getAnimations().filter((a) => a.effect?.target === el && a.effect.getKeyframes().some((f) => "transform" in f)).length,
+    };
+  });
+  assert.equal(rmGain.rings, 0, "reduced motion: no rings");
+  assert.equal(rmGain.transforms, 0, "reduced motion: zero card transforms on gain");
+  assert.deepEqual(parse(rmGain.fill), rgb("#acc6a4"), "reduced motion: still colour fill highlight on gain");
+  assert.equal(rmGain.flash, "+2", "reduced motion: visible delta badge");
   await proveReducedMotion(rm.page, "reduced-short");
   assert.deepEqual(rm.errors, [], "reduced motion: console errors");
-  console.log(`reduced short touch: ring runs ${dur}; card motion removed; +N/-N remain fully static`);
+  console.log("reduced short touch: card motion removed, still color highlight shown; +N/-N remain fully static");
   await rm.ctx.close();
   console.log("hand-cards-prove: ok");
 } catch (e) {
