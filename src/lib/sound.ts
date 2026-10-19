@@ -47,6 +47,13 @@ const FILES = {
   board_bong: "bong_001.wav",
   board_plop: "plop.wav",
   board_pluck: "pluck_001.wav",
+  // #667: a tap on a hex that places nothing. Pasture is the owner's own sheep clip; the rest are synthesised (make-sounds.mjs).
+  tap_pasture: "sb_plump_sheep.mp3",
+  tap_forest: "tap_forest.wav",
+  tap_hills: "tap_hills.wav",
+  tap_fields: "tap_fields.wav",
+  tap_mountains: "tap_mountains.wav",
+  tap_waste: "tap_waste.wav",
 } as const;
 
 // The soundboard buttons in the chat, in order. `id` is what the host whitelists and relays; `clip` is what a page plays.
@@ -298,4 +305,26 @@ function syncMusic() {
   } catch {
     // a blocked or unsupported file stays quiet
   }
+}
+
+// #667: a tap on a hex that places nothing plays that terrain's clip, quietly, at most once per TOUCH_GAP_MS. Only a sheep
+// hex (Pasture, "wool") baas. The renderer calls this for a plain tap only: never for a drag, a pinch or an armed placement.
+const TOUCH_GAP_MS = 400;
+export const TOUCH_VOLUME = 0.3;
+const TOUCH_CLIP: Record<string, SoundName> = {
+  wool: "tap_pasture",
+  timber: "tap_forest",
+  clay: "tap_hills",
+  grain: "tap_fields",
+  ore: "tap_mountains",
+  waste: "tap_waste",
+};
+let touchedAt = -TOUCH_GAP_MS;
+export function touchHex(terrain: string) {
+  const clip = TOUCH_CLIP[terrain];
+  if (!clip || !unlocked || muted) return;
+  const now = Date.now();
+  if (now - touchedAt < TOUCH_GAP_MS) return;
+  touchedAt = now;
+  play(clip, TOUCH_VOLUME);
 }

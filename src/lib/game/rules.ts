@@ -501,8 +501,16 @@ export function applyAction(prev: GameState, actor: string, action: Action): { s
     case "playRoad": line = `${me.name} plays Path — places ${prev.players.find((p) => p.id === actor)!.pathsLeft - me.pathsLeft} ${prev.players.find((p) => p.id === actor)!.pathsLeft - me.pathsLeft === 1 ? "path" : "paths"}.`; break;
     case "playPlenty": line = `${me.name} plays Plenty — ${delta}.`; break;
     case "playMonopoly": line = `${me.name} plays Monopoly — ${delta || `gains 0 ${RESOURCE_LABEL[action.resource].toLowerCase()}`}.`; break;
-    case "bankTrade": line = `${delta} — bank trade.`; break;
-    case "respondTrade": if (action.accept) line = `${delta} — table trade.`; break;
+    case "bankTrade": {
+      const rate = harborRate(prev, actor, action.give);
+      line = `${me.name} traded ${rate} ${RESOURCE_LABEL[action.give].toLowerCase()} to ${rate < 4 ? "a dock" : "the bank"} for 1 ${RESOURCE_LABEL[action.want].toLowerCase()}.`;
+      break;
+    }
+    case "respondTrade": {
+      const t = prev.trade;
+      if (action.accept && t) line = `${prev.players.find((p) => p.id === t.from)!.name} traded ${goods(t.give) || "nothing"} to ${me.name} for ${goods(t.want) || "nothing"}.`;
+      break;
+    }
   }
   if (!line) return result;
   // Awards and victory remain separate public events; setup's transition also stays in order.
