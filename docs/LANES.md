@@ -12,6 +12,8 @@ not overlap. Claims reserve files, including while a PR waits for review.
 | `lane:rules` | `src/lib/game/**` (`rules.ts`, `store.ts`, `ai.ts`, `types.ts`) |
 | `lane:docs` | `docs/**` only: research and design notes |
 
+[**Next up (auto)**](https://github.com/jarrodjohnson-gif/emberisle/issues?q=is%3Aopen+label%3Anext-up) lists eligible work in priority order, refreshed by a bot. Take the top line your tier allows, and still do the checks below.
+
 ## Picking an issue
 
 1. **Find eligible work:** an open `status:todo` issue with a lane label, every `Depends on` issue

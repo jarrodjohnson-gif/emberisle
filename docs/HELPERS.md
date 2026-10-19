@@ -12,6 +12,7 @@ always the next `helper-ok` issue.
 
 - Only open issues labelled **`helper-ok`**. Their behaviour and their proof are already decided.
 - One issue per pull request.
+- [**Next up (auto)**](https://github.com/jarrodjohnson-gif/emberisle/issues?q=is%3Aopen+label%3Anext-up) lists eligible work in priority order. Take only its `helper-ok` lines, and still do the checks in step 3.
 - No eligible issue left? Wait (see below). Don't pick anything else.
 - **Model:** if an issue has a `model:opus` or `model:sonnet` label, build it with that model. If your
   tool can't switch models, use a subagent on that model when you can. Otherwise, say in the PR which
