@@ -958,9 +958,12 @@ try {
     });
     // Leave the page first: the app keeps redialling the dead host on its backoff, and a refusal landing after the
     // drop below would fail the run. The dead host's refused sockets are the expected console errors; drop only those.
+    // Port 9 is Chromium-unsafe, so open-table GET /tables (#833) may also log ERR_UNSAFE_PORT once before it stops.
     await page.goto(`http://127.0.0.1:${PORT}/?host=ws://127.0.0.1:${hostPort}`);
-    const downRefused = errors.filter((e) => e.includes("ws://127.0.0.1:9/"));
-    if (!downRefused.length) throw new Error("host-down restore: expected at least one refused socket");
+    const downRefused = errors.filter((e) => e.includes("ws://127.0.0.1:9/") || e.includes("ERR_UNSAFE_PORT"));
+    if (!downRefused.some((e) => e.includes("ws://127.0.0.1:9/"))) {
+      throw new Error("host-down restore: expected at least one refused socket");
+    }
     for (const e of downRefused) errors.splice(errors.indexOf(e), 1);
 
     // #271 case 12: with the stale rejoin gone, a peek opens a connection of its own and stays quiet.

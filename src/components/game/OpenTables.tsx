@@ -11,11 +11,12 @@ function statusLabel(status: OpenTableEntry["status"], seated: number, total: nu
   return `${seated}/${total} seated`;
 }
 
-function fetchOpenTables(): Promise<OpenTableEntry[]> {
+// Resolves tables on a reachable host; null when the dial failed (console already logged the refusal).
+function fetchOpenTables(): Promise<OpenTableEntry[] | null> {
   const url = tablesUrl(hostUrl(window.location));
   return fetch(url)
     .then((r) => (r.ok ? r.json() : []))
-    .catch(() => []);
+    .catch(() => null);
 }
 
 // Poll only when a rules host is expected. Vite without ?host= and the GitHub Pages site have no /tables,
@@ -35,16 +36,22 @@ export function OpenTables() {
   useEffect(() => {
     if (!hostExpected()) return;
     let alive = true;
+    let timer: ReturnType<typeof setTimeout> | undefined;
     const refresh = () => {
       void fetchOpenTables().then((tables) => {
-        if (alive) setOpenTables(tables);
+        if (!alive) return;
+        if (tables === null) {
+          setOpenTables([]);
+          return; // stop: a down host would spam ERR_CONNECTION_REFUSED / ERR_UNSAFE_PORT
+        }
+        setOpenTables(tables);
+        timer = setTimeout(refresh, 5000);
       });
     };
     refresh();
-    const id = setInterval(refresh, 5000);
     return () => {
       alive = false;
-      clearInterval(id);
+      if (timer !== undefined) clearTimeout(timer);
     };
   }, []);
 
