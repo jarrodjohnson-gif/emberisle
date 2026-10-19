@@ -504,7 +504,7 @@ function jellyfy(m: THREE.MeshStandardMaterial, key: string, extra?: (sh: THREE.
         .replace(
           "#include <dithering_fragment>",
           `#include <dithering_fragment>
-          gl_FragColor.rgb = mix( gl_FragColor.rgb, vec3( dot( gl_FragColor.rgb, vec3( 0.3, 0.55, 0.15 ) ) ) * 0.92, uDull * 0.6 );
+          gl_FragColor.rgb = mix( gl_FragColor.rgb, vec3( dot( gl_FragColor.rgb, vec3( 0.3, 0.55, 0.15 ) ) ) * 0.72, uDull * 0.85 );
           gl_FragColor.rgb += uFlash * vec3( 0.22, 0.16, 0.05 );`,
         );
     extra?.(sh);

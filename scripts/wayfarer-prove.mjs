@@ -151,6 +151,92 @@ try {
   check("3 a ring on every legal hex, none on the wayfarer's", rings.legal > 0 && rings.rings === rings.legal && !rings.hasOwn, { legal: rings.legal, rings: rings.rings, hasOwn: rings.hasOwn });
   check("4 every ring 0.012 above its cap", rings.offsets.length > 0 && rings.offsets.every((o) => Math.abs(o - 0.012) <= 0.0005), rings.offsets.map((o) => +o.toFixed(4)));
 
+  // #826: the wayfarer's land hex greys (tint + token veil); the wastes stay clear; moving clears the old hex.
+  await page.waitForFunction(() => window.__isle?.jellyBoard, null, { timeout: 60_000 });
+  const grey = await probe(async () => {
+    const g = window.__emberisle;
+    const jelly = window.__isle.jellyBoard;
+    const snap = (id) => {
+      jelly.robber(id);
+      jelly.update(0, true, true);
+    };
+    const st0 = structuredClone(g.getState().state);
+    const waste = st0.hexes.find((h) => h.terrain === "waste");
+    const land = st0.hexes.find((h) => h.terrain !== "waste" && h.pip != null);
+    const other = st0.hexes.find((h) => h.terrain !== "waste" && h.pip != null && h.id !== land.id);
+    st0.robberHex = waste.id;
+    for (const h of st0.hexes) h.blocked = h.id === waste.id;
+    st0.seq += 1;
+    g.setState({ state: st0, pendingSteal: null, error: null });
+    snap(waste.id);
+    const onWaste = {
+      wasteDull: jelly.hexDull(waste.id),
+      wasteVeil: jelly.veilOpacity(waste.id),
+      landDull: jelly.hexDull(land.id),
+      landVeil: jelly.veilOpacity(land.id),
+    };
+    const st1 = structuredClone(g.getState().state);
+    st1.robberHex = land.id;
+    for (const h of st1.hexes) h.blocked = h.id === land.id;
+    st1.seq += 1;
+    g.setState({ state: st1, pendingSteal: null, error: null });
+    snap(land.id);
+    const onLand = {
+      landDull: jelly.hexDull(land.id),
+      landVeil: jelly.veilOpacity(land.id),
+      wasteDull: jelly.hexDull(waste.id),
+      otherDull: jelly.hexDull(other.id),
+      otherVeil: jelly.veilOpacity(other.id),
+      tint: jelly.hexTint(land.id),
+    };
+    const st2 = structuredClone(g.getState().state);
+    st2.robberHex = other.id;
+    for (const h of st2.hexes) h.blocked = h.id === other.id;
+    st2.seq += 1;
+    g.setState({ state: st2, pendingSteal: null, error: null });
+    snap(other.id);
+    const moved = {
+      oldDull: jelly.hexDull(land.id),
+      oldVeil: jelly.veilOpacity(land.id),
+      newDull: jelly.hexDull(other.id),
+      newVeil: jelly.veilOpacity(other.id),
+    };
+    return { onWaste, onLand, moved, land: land.id, other: other.id, waste: waste.id };
+  });
+  check(
+    "826 waste stays clear while wayfarer sits there",
+    grey.onWaste.wasteDull < 0.01 && grey.onWaste.wasteVeil < 0.01 && grey.onWaste.landDull < 0.01,
+    grey.onWaste,
+  );
+  check(
+    "826 land hex dulls and veils its token",
+    grey.onLand.landDull > 0.99 && grey.onLand.landVeil > 0.7 && grey.onLand.otherDull < 0.01 && grey.onLand.otherVeil < 0.01,
+    grey.onLand,
+  );
+  check(
+    "826 land tint is cooler than white",
+    grey.onLand.tint[0] < 0.55 && grey.onLand.tint[1] < 0.55 && grey.onLand.tint[2] < 0.6,
+    grey.onLand.tint,
+  );
+  check(
+    "826 moving clears the old hex and greys the new",
+    grey.moved.oldDull < 0.01 && grey.moved.oldVeil < 0.01 && grey.moved.newDull > 0.99 && grey.moved.newVeil > 0.7,
+    grey.moved,
+  );
+
+  // Same dull state at a phone landscape size (visual drive is size-independent; re-check after a resize).
+  await page.setViewportSize({ width: 844, height: 390 });
+  await page.waitForTimeout(300);
+  const phone = await probe(() => {
+    const jelly = window.__isle.jellyBoard;
+    const st = window.__emberisle.getState().state;
+    const id = st.robberHex;
+    jelly.robber(id);
+    jelly.update(0, true, true);
+    return { dull: jelly.hexDull(id), veil: jelly.veilOpacity(id), terrain: st.hexes.find((h) => h.id === id).terrain };
+  });
+  check("826 phone landscape still greys the wayfarer's land hex", phone.terrain !== "waste" && phone.dull > 0.99 && phone.veil > 0.7, phone);
+
   check("no console errors", errors.length === 0, errors);
 } finally {
   await browser.close();

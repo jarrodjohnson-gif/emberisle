@@ -22,8 +22,11 @@ const RINGS = 12;
 const SAMPLES = [0.37, 1.91, 3.53, 5.2];
 const ROLL_S = 2.4;
 const TAP_S = 0.9;
-// The wayfarer's shade on his hex: darker and cooler, as if a cloud stood over it.
-const DULL = new THREE.Color(0.46, 0.48, 0.58);
+// The wayfarer's shade on his hex (#826): darker, cooler grey so the blocked land reads at a glance.
+const DULL = new THREE.Color(0.40, 0.41, 0.48);
+// Covers the number token's cream face while the hex is dull (TOKEN_FACE = 0.245 in isle-renderer).
+const VEIL_R = 0.245;
+const VEIL_OPACITY = 0.78;
 
 export type JellyHex = { id: string; terrain: Terrain; x: number; z: number; y: number };
 export type JellyStats = { lite: boolean; drawCalls: number; triangles: number; kinds: number; batches: number; bakes: number; sprites: number };
@@ -357,6 +360,9 @@ export class JellyBoard {
   };
   private sprites: SpriteBatch[] = [];
   private byHex = new Map<string, { k: Kind; h: Hx }>();
+  // Grey disc over each land hex's number token while the wayfarer stands there (#826). Shared geometry.
+  private veils = new Map<string, THREE.Mesh>();
+  private veilGeo: THREE.CircleGeometry | null = null;
   private t = 0;
   private t0: number | undefined;
 
@@ -442,8 +448,32 @@ export class JellyBoard {
       b.dispose();
       return null;
     }
+    b.buildVeils();
     b.update(0, true);
     return b;
+  }
+
+  // One grey disc per land hex, parked on the token face; opacity follows dull. The wastes stay clear (#826).
+  private buildVeils() {
+    this.veilGeo = new THREE.CircleGeometry(VEIL_R, 40);
+    for (const { k, h } of this.byHex.values()) {
+      if (k.kind === "waste") continue;
+      const mat = new THREE.MeshBasicMaterial({
+        color: 0x5c616e,
+        transparent: true,
+        opacity: 0,
+        depthWrite: false,
+        toneMapped: false,
+      });
+      const veil = new THREE.Mesh(this.veilGeo, mat);
+      veil.rotation.x = -Math.PI / 2;
+      // Token centre is BLOCK_H + 0.04 above the jelly hex; the cream label sits TOKEN_H/2 above that.
+      veil.position.set(h.T.elements[12]!, h.T.elements[13]! + BLOCK_H + 0.04 + 0.025 + 0.004, h.T.elements[14]!);
+      veil.renderOrder = 10;
+      veil.name = `robber-veil-${h.id}`;
+      this.group.add(veil);
+      this.veils.set(h.id, veil);
+    }
   }
 
   private async batch(pause: () => Promise<boolean>) {
@@ -772,9 +802,30 @@ export class JellyBoard {
     if (e) e.h.tapAt = this.t;
   }
 
-  // The wayfarer stands on this hex (or none): it dulls, the others clear.
+  // The wayfarer stands on this hex (or none): land dulls and its token veil rises; the wastes stay plain (#826).
   robber(id: string | null) {
-    for (const { h } of this.byHex.values()) h.dullTo = h.id === id ? 1 : 0;
+    for (const { k, h } of this.byHex.values()) {
+      h.dullTo = id !== null && h.id === id && k.kind !== "waste" ? 1 : 0;
+    }
+  }
+
+  // For proofs (#826): how grey a hex is (0 clear, 1 full dull).
+  hexDull(id: string) {
+    return this.byHex.get(id)?.h.dull ?? 0;
+  }
+
+  // For proofs (#826): token veil opacity on a land hex (0 on the wastes or when clear).
+  veilOpacity(id: string) {
+    const v = this.veils.get(id);
+    return v ? (v.material as THREE.MeshBasicMaterial).opacity : 0;
+  }
+
+  // For proofs (#826): the per-hex colour multiply after dull/glow (1,1,1 when clear).
+  hexTint(id: string): [number, number, number] {
+    const e = this.byHex.get(id);
+    if (!e) return [1, 1, 1];
+    const t = this.hexU.uHexT.value[e.h.slot];
+    return t ? [t.x, t.y, t.z] : [1, 1, 1];
   }
 
   // Something is still playing out (a roll, a tap, a dulling): the loop should draw at full rate.
@@ -817,6 +868,8 @@ export class JellyBoard {
         h.fx.r *= 1 + h.glow * 1.7;
         h.fx.g *= 1 + h.glow * 1.25;
         h.fx.b *= 1 + h.glow * 0.35;
+        const veil = this.veils.get(h.id);
+        if (veil) (veil.material as THREE.MeshBasicMaterial).opacity = h.dull * VEIL_OPACITY;
         const a = this.hexU.uHexA.value[h.slot];
         if (a) {
           a.z = h.roll;
@@ -1011,6 +1064,10 @@ export class JellyBoard {
       (sb.mesh.material as THREE.Material).dispose();
       sb.mesh.dispose();
     }
+    for (const v of this.veils.values()) (v.material as THREE.Material).dispose();
+    this.veils.clear();
+    this.veilGeo?.dispose();
+    this.veilGeo = null;
     for (const k of this.kinds)
       k.tile.group.traverse((o) => {
         const m = o as THREE.Mesh;
