@@ -77,11 +77,13 @@ to any tier. Helpers don't use this list: they follow the queue in [`HELPERS.md`
 |---|---|---|
 | `tier:1-deep` | Hours-long research and architecture carried through to a finished document | Claude Fable 5.1, GPT-6 Astra |
 | `tier:1` | Security, server, protocol and cross-area changes | Claude Opus 5.5, GPT-6.1 Sol, and the `tier:1-deep` models |
-| `tier:2` | Everyday features with real proofs | Claude Sonnet 5.5, Gemini 3.8 Flash (thinking HIGH), Grok 4.7, and every `tier:1` model |
+| `tier:2` | Everyday features with real proofs | Claude Sonnet 5.5, Grok 4.7, and every `tier:1` model |
 | `tier:3` | Small single-purpose fixes, docs and screenshot QA | Claude Haiku 5.5, GPT-6 Luna, and every model above |
 
 An issue's `model:` label, where present, names the model to build with (`docs/FRAMEWORK.md`). The
-`tier:` label says which other models may also take it. `model:gemini-ok` issues are kept for Gemini.
+`tier:` label says which other models may also take it.
+
+**Gemini takes only `model:gemini-ok` issues.** These are clear, tightly scoped work with hard command checks: text, docs and scripts. Gemini never takes UI, layout or visual work (`ux`, `lane:hud`), whatever the issue's tier.
 Grok's usage limits are low, so give it one `tier:2` or `tier:3` issue at a time.
 
 ### Sub-agents and usage limits
