@@ -27,6 +27,7 @@ const FILES = {
   trade_offer: "trade_offer.wav",
   sheep_for_wood: "sheep_for_wood.mp3",
   stone_for_wood: "stone_for_wood.mp3",
+  three_wood: "three_wood.mp3",
   chat_send: "chat_send.wav",
   chat_recv: "chat_recv.wav",
   // A tap on the sea (#616): a normal table clip, paced and burst-dropped like the rest.
