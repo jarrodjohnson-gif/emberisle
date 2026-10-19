@@ -1058,7 +1058,7 @@ function offerChime(from: string, fromName: string, me: string, give: Bag, want:
   else if (from !== me) play("trade_offer");
 }
 
-// Jarrod's undertaker's bell when Isaac arrives under any of his names: "The Lucke Diggler" (Lucke, Lucky, Luckie), any
+// Isaac's intro music when Isaac arrives under any of his names: "The Lucke Diggler" (Lucke, Lucky, Luckie), any
 // name with "pickle" in it, or any name with "Isaac" (Isac, Isaaac…); spaces, punctuation and case are ignored. It rings
 // for a new seat with such a name, or a seat renamed to one in the lobby. Every seat hears it; on your own first seat list
 // only your own seat counts as new.
