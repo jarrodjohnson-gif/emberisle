@@ -7,6 +7,8 @@ name: CI
 # Docs-only PRs (see changes job) skip the heavy steps but still report success so required checks stay green.
 on:
   pull_request:
+    # Drafts skip the suites; marking a PR ready starts its run.
+    types: [opened, synchronize, reopened, ready_for_review]
   push:
     branches: [main]
 
@@ -17,6 +19,7 @@ concurrency:
 
 jobs:
   changes:
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
@@ -322,6 +325,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
+      - if: github.event_name == 'pull_request' && github.event.pull_request.draft
+        run: |
+          echo "Draft PR: CI runs when it is marked ready for review."
+          exit 1
       - run: |
           echo 'build=${{ needs.build.result }} server=${{ needs.server.result }} browser-a=${{ needs.browser-a.result }} browser-b=${{ needs.browser-b.result }}'
           test '${{ needs.build.result }}' = success
