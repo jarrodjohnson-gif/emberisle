@@ -1,5 +1,15 @@
 # Agents
 
+## Map
+
+- Rules: [`docs/FRAMEWORK.md`](docs/FRAMEWORK.md)
+- Picking work: [`docs/LANES.md`](docs/LANES.md)
+- Helpers: [`docs/HELPERS.md`](docs/HELPERS.md)
+- Owner decisions: [`docs/DECISIONS.md`](docs/DECISIONS.md) (read before you design or build)
+- Feature designs: [`docs/design/`](docs/design/)
+- Game rules: [`README.md`](README.md)
+- Agent hub: issue [#854](https://github.com/jarrodjohnson-gif/emberisle/issues/854). Helper queue: issue [#851](https://github.com/jarrodjohnson-gif/emberisle/issues/851).
+
 ## Rules for every agent (Claude, ChatGPT/Codex, Cursor, Gemini, Grok, helpers)
 
 These are short on purpose. Follow all of them, every round.
