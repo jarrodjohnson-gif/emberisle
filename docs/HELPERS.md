@@ -1,5 +1,7 @@
 # Helper builders
 
+Take the top line in **Next up (auto)** that your tier allows. Helpers: only `helper-ok` lines.
+
 These rules apply to anyone, or any AI, who was told they are a **helper** on Emberisle, such as a
 friend and their agent working from a fork. Helpers only build. The owner (Jarrod) and his
 orchestrator make every design decision and every merge.

@@ -1,5 +1,7 @@
 # Agents
 
+0. Take the top line in **Next up (auto)** that your tier allows. Helpers: only `helper-ok` lines.
+
 **Told to "work on Emberisle", or something like it?** Then:
 
 1. You are a **Builder**. Follow [`docs/FRAMEWORK.md`](docs/FRAMEWORK.md) section 7, and pick an issue
