@@ -15,6 +15,8 @@ import { gzipSync } from "node:zlib";
 
 const DIR = "dist/assets";
 const BUDGETS = [
+  // #827: online seat cues load lazily; this ceiling covers the new chunk only.
+  { name: "SeatPublicGains", gzipBytes: 1800 },
   // 2026-10-14 (#598): +600 B for the Water toggle, its store state and the probe; the old ceiling was 300 B away.
   // 2026-10-15: 116.91 kB measured on main after the four HUD merges (#601 #602 #605 #607) landed on the camera; +600 B.
   // 2026-10-15 (#603): 117.50 kB measured with the win reason on top of the sounds (#613) and the victory target (#611); +500 B.
