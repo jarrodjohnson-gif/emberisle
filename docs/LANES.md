@@ -77,13 +77,18 @@ to any tier. Helpers don't use this list: they follow the queue in [`HELPERS.md`
 |---|---|---|
 | `tier:1-deep` | Hours-long research and architecture carried through to a finished document | Claude Fable 5.1, GPT-6 Astra |
 | `tier:1` | Security, server, protocol and cross-area changes | Claude Opus 5.5, GPT-6.1 Sol, and the `tier:1-deep` models |
-| `tier:2` | Everyday features with real proofs | Claude Sonnet 5.5, Grok 4.7, and every `tier:1` model |
+| `tier:2` | Everyday features with real proofs | Claude Sonnet 5.5, Gemini 3.8 Flash (thinking HIGH), Grok 4.7, and every `tier:1` model |
 | `tier:3` | Small single-purpose fixes, docs and screenshot QA | Claude Haiku 5.5, GPT-6 Luna, and every model above |
 
 An issue's `model:` label, where present, names the model to build with (`docs/FRAMEWORK.md`). The
 `tier:` label says which other models may also take it.
 
-**Gemini takes only clearly defined work** with hard checks: small coding tasks, docs, scripts, and a defined visual fix such as "make X fit at this viewport" with a pixel proof. Gemini never takes open design or new-look work: a new component look, animation or layout that needs taste. Those go to Claude or Cursor. `model:gemini-ok` marks issues kept for Gemini.
+**Gemini works best on clearly defined tasks with hard checks.** Examples: small coding, docs, scripts, or "make X fit at this viewport" with a pixel proof. `model:gemini-ok` marks issues kept for Gemini.
+
+Gemini may take design work, such as a new look, animation or layout. Before Jarrod sees it, the review desk:
+
+- has a different model cross-check the build, and
+- puts Gemini's screenshots next to an independent mock of the same decision.
 Grok's usage limits are low, so give it one `tier:2` or `tier:3` issue at a time.
 
 ### Sub-agents and usage limits
