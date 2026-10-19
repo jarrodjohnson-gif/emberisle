@@ -4,12 +4,28 @@
   100% { opacity: 0; }
 }
 
+.goods-card {
+  box-shadow: var(--shadow-control);
+  color: #27271f;
+  border-width: 1.5px;
+  border-style: solid;
+}
+.goods-card.goods-empty:not(.goods-gained) {
+  border-style: dashed;
+}
+.goods-card.goods-transitioning {
+  transition: background-color 300ms ease-out, border-color 300ms ease-out;
+}
+
 .hand-resource-card-slot .hand-resource-flash {
   top: auto !important;
   bottom: calc(100% + 2px) !important;
   left: 50% !important;
   right: auto !important;
   transform: translateX(-50%) !important;
+  background-color: #fff7e5;
+  border-width: 1.5px;
+  border-style: solid;
   animation: hand-resource-flash-fade 2200ms ease-out forwards;
 }
 

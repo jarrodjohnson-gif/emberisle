@@ -147,20 +147,14 @@ function ResourceCard({ resource, count, flash, offer, showRates, buildMode, own
     const preference = matchMedia("(prefers-reduced-motion: reduce)");
     if (preference.matches) return;
 
-    const keyframes =
-      flash.delta > 0
-        ? [
-            { transform: "translateY(0)", offset: 0, easing: "cubic-bezier(0.22, 1, 0.36, 1)" },
-            { transform: "translateY(-20px)", offset: 0.1, easing: "cubic-bezier(0.22, 1, 0.36, 1)" },
-            { transform: "translateY(-20px)", offset: 0.8, easing: "cubic-bezier(0.22, 1, 0.36, 1)" },
-            { transform: "translateY(0)", offset: 1 },
-          ]
-        : [
-            { transform: "translateY(0)", offset: 0, easing: "cubic-bezier(0.22, 1, 0.36, 1)" },
-            { transform: "translateY(3px)", offset: 0.15, easing: "cubic-bezier(0.22, 1, 0.36, 1)" },
-            { transform: "translateY(3px)", offset: 0.75, easing: "cubic-bezier(0.22, 1, 0.36, 1)" },
-            { transform: "translateY(0)", offset: 1 },
-          ];
+    const y = flash.delta > 0 ? -20 : 3;
+    const isGain = flash.delta > 0;
+    const keyframes = [
+      { transform: "translateY(0)", offset: 0, easing: "cubic-bezier(0.22, 1, 0.36, 1)" },
+      { transform: `translateY(${y}px)`, offset: isGain ? 0.1 : 0.15, easing: "cubic-bezier(0.22, 1, 0.36, 1)" },
+      { transform: `translateY(${y}px)`, offset: isGain ? 0.8 : 0.75, easing: "cubic-bezier(0.22, 1, 0.36, 1)" },
+      { transform: "translateY(0)", offset: 1 },
+    ];
 
     const animation = card.current.animate(keyframes, { duration: LIFT_DURATION_MS });
     const stopMovement = () => {
@@ -222,15 +216,11 @@ function ResourceCard({ resource, count, flash, offer, showRates, buildMode, own
           "goods-card relative flex h-[62px] flex-col items-center justify-center rounded-control focus-visible:outline focus-visible:outline-2 focus-visible:outline-fg",
           "short:h-11 short:flex-row short:gap-2",
           count === 0 && "goods-empty",
+          isGained ? "goods-gained" : "goods-transitioning",
         )}
         style={{
           backgroundColor: cardBg,
           borderColor: cardBorderColor,
-          borderWidth: "1.5px",
-          borderStyle: count === 0 && !isGained ? "dashed" : "solid",
-          color: GOODS_INK,
-          boxShadow: "var(--shadow-control)",
-          transition: isGained ? "none" : "background-color 300ms ease-out, border-color 300ms ease-out",
         }}
       >
         <div className="goods-value flex items-center justify-center gap-1.5">
@@ -264,14 +254,8 @@ function ResourceCard({ resource, count, flash, offer, showRates, buildMode, own
               flash.delta > 0 ? "goods-gain-badge" : "goods-loss-badge",
             )}
             style={{
-              bottom: "calc(100% + 2px)",
-              left: "50%",
-              transform: "translateX(-50%)",
-              backgroundColor: GOODS_REST_FILL,
               borderColor: flash.delta > 0 ? GOODS_EDGE[resource] : "var(--loss, #c84c32)",
               color: flash.delta > 0 ? GOODS_EDGE[resource] : "var(--loss, #c84c32)",
-              borderWidth: "1.5px",
-              borderStyle: "solid",
             }}
           >
             {label}
