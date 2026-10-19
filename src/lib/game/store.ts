@@ -1055,10 +1055,11 @@ function offerChime(from: string, fromName: string, me: string, give: Bag, want:
   else if (from !== me) play("trade_offer");
 }
 
-// Jarrod's undertaker's bell when "The Lucke Diggler" (any spelling: Lucke, Lucky, Luckie; spaces and case ignored)
-// arrives: a new seat with that name, or a seat renamed to it in the lobby. Every seat hears it; on your own first seat
-// list only your own seat counts as new.
-const DIGGLER = /luck(e|y|ie)?digg?ler/;
+// Jarrod's undertaker's bell when Isaac arrives under any of his names: "The Lucke Diggler" (Lucke, Lucky, Luckie), any
+// name with "pickle" in it, or any name with "Isaac" (Isac, Isaaac…); spaces, punctuation and case are ignored. It rings
+// for a new seat with such a name, or a seat renamed to one in the lobby. Every seat hears it; on your own first seat list
+// only your own seat counts as new.
+const DIGGLER = /luck(e|y|ie)?digg?ler|pickle|isa+c/;
 const isDiggler = (name: string) => DIGGLER.test(name.toLowerCase().replace(/[^a-z]/g, ""));
 function diggerBell(before: Seat[], after: Seat[], me: string) {
   const was = new Map(before.map((s) => [s.id, s.name]));
