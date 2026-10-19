@@ -270,15 +270,18 @@ try {
   const afterAsk = await focusIs(A);
   if (afterAsk.label !== "Trade") throw new Error(`#378: the ask closed the panel but focus went to "${afterAsk.label}", not the Trade button`);
   const line = `${A.name} offers 1 ${RESOURCE_LABEL[give].toLowerCase()} for 1 ${RESOURCE_LABEL[want].toLowerCase()}`;
+  const demand1 = `${A.name} is looking for 1 ${RESOURCE_LABEL[want].toLowerCase()}`;
   for (const t of [B, C]) {
     const v = vs[tabs.indexOf(t)];
-    if (!v.toast.includes(line)) throw new Error(`${t.name} toast: "${v.toast}"`);
+    // #537: a seat short of the ask sees compact demand, not the full "offers" line.
+    const expect = (v.mine[want] ?? 0) < 1 ? demand1 : line;
+    if (!v.toast.includes(expect)) throw new Error(`${t.name} toast: "${v.toast}"`);
     const secs = Number((await t.page.getByTestId("trade-countdown").textContent()).replace(/\D/g, ""));
     if (secs < 1 || secs > 20) throw new Error(`${t.name} toast has no countdown: "${v.toast}"`);
   }
   if (!vs[i].toast.includes(`You offer 1 ${RESOURCE_LABEL[give].toLowerCase()} for 1 ${RESOURCE_LABEL[want].toLowerCase()}`) || !vs[i].toast.includes("Waiting")) throw new Error(`asker toast: "${vs[i].toast}"`);
   const tradeId = vs[0].offer.tradeId;
-  console.log(`toast on ${B.name} and ${C.name}: "${line}"; asker sees "Waiting…"`);
+  console.log(`toast on ${B.name} and ${C.name}: full or compact per hand; asker sees "Waiting…"`);
 
   // #366 / #537: the offer is a region that leaves focus alone. A seat that can pay gets Yes/No; a short seat gets
   // the compact demand (#537) with Dismiss only.
@@ -322,11 +325,13 @@ try {
     role: el.getAttribute("role"),
   }));
   if (askerView.live || askerView.hidden !== null || askerView.role !== "region") throw new Error(`asker's toast changed: ${JSON.stringify(askerView)}`);
-  console.log(`#366: ${B.name} and ${C.name} see a region named "${line}", focus untouched, countdown aria-hidden`);
+  console.log(`#366 / #537: ${B.name} and ${C.name} see a named offer region (full or compact), focus untouched`);
 
-  // 2. C says No: everyone sees it, C's toast goes, the offer stays open for B.
+  // 2. C declines (No, or Dismiss when short of the ask): everyone sees it, C's toast goes, the offer stays open for B.
   const before = vs;
-  await C.page.getByRole("button", { name: "No", exact: true }).click();
+  const cToast = C.page.getByTestId("trade-toast");
+  if ((await cToast.getAttribute("data-compact")) === "true") await cToast.getByTestId("trade-dismiss").click();
+  else await cToast.getByRole("button", { name: "No", exact: true }).click();
   vs = await until(async () => {
     const vs = await views(tabs);
     return vs.every((v) => v.declined.includes(before[k].you)) ? vs : null;
