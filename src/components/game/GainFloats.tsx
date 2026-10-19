@@ -28,6 +28,7 @@ let next = 0;
 
 export function GainFloats({ me, rolls }: { me: PlayerState; rolls: number }) {
   const [lines, setLines] = useState<Line[]>([]);
+  const phase = useGame((s) => s.state?.phase);
   const synced = useGame((s) => s.synced);
   const prev = useRef<{ me: PlayerState; rolls: number; synced: number } | null>(null);
   // What a roll's goods are waiting on (a timer and the moment's store), dropped on a hand-over or unmount.
@@ -40,6 +41,13 @@ export function GainFloats({ me, rolls }: { me: PlayerState; rolls: number }) {
     waits.current.clear();
     busy();
   };
+
+  useEffect(() => {
+    if (phase === "over") {
+      dropWaits();
+      setLines([]);
+    }
+  }, [phase]);
 
   useEffect(() => {
     const was = prev.current;
@@ -117,7 +125,7 @@ export function GainFloats({ me, rolls }: { me: PlayerState; rolls: number }) {
     [],
   );
 
-  if (!lines.length) return null;
+  if (phase === "over" || !lines.length) return null;
   return (
     <div
       aria-hidden="true"
