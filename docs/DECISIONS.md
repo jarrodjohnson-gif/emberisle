@@ -6,6 +6,7 @@ The review desk adds a line whenever Jarrod decides something.
 
 | Date | Decision | Where |
 |---|---|---|
+| 2026-10-19 | Docks show their good with a bigger goods pile on the pier (wood pile, rocks…), not a big sign. | [#846](https://github.com/jarrodjohnson-gif/emberisle/issues/846) |
 | 2026-10-19 | Trade dialog: option A, Table and Bank tabs. | [#831](https://github.com/jarrodjohnson-gif/emberisle/issues/831#issuecomment-6257817880) |
 | 2026-10-19 | Fog of war: option A, neighbour veil. Stays `prio:p2`. | [#842](https://github.com/jarrodjohnson-gif/emberisle/issues/842#issuecomment-6257818228) |
 | 2026-10-19 | Expansions: option 1, Beacon docks and New fortunes. Lobby toggles, off by default. Stays `prio:p2`. | [#843](https://github.com/jarrodjohnson-gif/emberisle/issues/843#issuecomment-6257818532) |
