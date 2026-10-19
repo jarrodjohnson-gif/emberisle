@@ -76,7 +76,67 @@ try {
     if (s.phase === "rollOff" && s.mine) await page.getByRole("button", { name: "Roll", exact: true }).click();
     await page.waitForTimeout(100);
   }
-  await step(1, /Tap a glowing corner, then Place/);
+  await step(1, /Place both opening outposts.*compare its pips/i);
+  assert.equal(await coach.getAttribute("data-setup-lesson"), "pips");
+  // Live pip hint on a legal corner: hover lists exactly adjacent producing pips; illegal ids never appear.
+  {
+    const sample = await page.evaluate(() => {
+      const g = window.__emberisle.getState();
+      const legal = new Set(g.highlights().vertices);
+      const state = g.state;
+      const byId = new Map(state.hexes.map((h) => [h.id, h]));
+      const weight = (h) => (h.pip ? 6 - Math.abs(7 - h.pip) : -1);
+      const pipsOf = (vid) => {
+        const v = state.vertices.find((x) => x.id === vid);
+        return v.hexes.map((id) => byId.get(id)).filter((h) => h && h.terrain !== "waste" && h.pip != null)
+          .sort((a, b) => weight(b) - weight(a)).map((h) => h.pip);
+      };
+      const id = [...legal][0];
+      const spot = window.__isle.screenOf(id);
+      return { id, spot, pips: pipsOf(id), illegal: state.vertices.find((v) => !legal.has(v.id))?.id ?? null };
+    });
+    await page.mouse.move(sample.spot.x, sample.spot.y);
+    const hint = page.getByTestId("setup-pip-hint");
+    await hint.waitFor();
+    assert.equal(await hint.getAttribute("data-vertex"), sample.id);
+    assert.equal((await hint.innerText()).replace(/\s+/g, " ").trim(), `Pips · ${sample.pips.join(" · ")}`);
+    // Leave every legal mark (36 px hover radius) before asserting no hint.
+    await page.evaluate(() => {
+      const legal = window.__emberisle.getState().highlights().vertices;
+      const spots = legal.map((id) => window.__isle.screenOf(id)).filter(Boolean);
+      let x = 8, y = 8;
+      for (let n = 0; n < 40; n++) {
+        const far = spots.every((p) => Math.hypot(p.x - x, p.y - y) > 48);
+        if (far) { window.__pipHintAway = { x, y }; return; }
+        x = 20 + (n * 37) % 350; y = 80 + (n * 53) % 700;
+      }
+      window.__pipHintAway = { x: 8, y: 8 };
+    });
+    const away = await page.evaluate(() => window.__pipHintAway);
+    await page.mouse.move(away.x, away.y);
+    await page.waitForTimeout(100);
+    assert.equal(await hint.count(), 0, "pip hints clear when the pointer leaves legal corners");
+    // An illegal corner under the pointer must not invent a hint either.
+    if (sample.illegal) {
+      const cleared = await page.evaluate((id) => {
+        const p = window.__isle.screenOf(id);
+        if (!p) return true;
+        const legal = window.__emberisle.getState().highlights().vertices;
+        const nearLegal = legal.some((lid) => {
+          const q = window.__isle.screenOf(lid);
+          return q && Math.hypot(q.x - p.x, q.y - p.y) < 48;
+        });
+        return nearLegal ? "skip" : { x: p.x, y: p.y };
+      }, sample.illegal);
+      if (cleared !== "skip" && cleared !== true) {
+        await page.mouse.move(cleared.x, cleared.y);
+        await page.waitForTimeout(100);
+        assert.equal(await hint.count(), 0, "illegal corners never show a pip hint");
+      }
+    }
+    await page.mouse.move(sample.spot.x, sample.spot.y);
+    await hint.waitFor();
+  }
   for (const viewport of [{ width: 320, height: 568 }, { width: 360, height: 640 }, { width: 844, height: 390 }, { width: 390, height: 844 }]) {
     await page.setViewportSize(viewport);
     await page.waitForTimeout(500);
@@ -111,7 +171,9 @@ try {
   });
   await tapMark(firstCorner);
   await page.waitForFunction(() => window.__emberisle.getState().state.phase === "setupRoad");
-  assert.equal(await coach.count(), 0, "setup tip advances on actual outpost placement");
+  await step(1, /second outpost.*Compare pips/i);
+  assert.equal(await coach.getAttribute("data-steps"), "3", "setup lesson stays inside tip 1; no fourth coach step");
+  // Finish the human's second outpost (and bots) until the first roll; tip 1 ends only after both outposts.
   for (let i = 0; i < 600; i++) {
     const phase = await page.evaluate(() => {
       const g = window.__emberisle.getState();
@@ -123,7 +185,12 @@ try {
     if (phase === "ready") break;
     await page.waitForTimeout(100);
   }
+  assert.equal(await page.evaluate(() => {
+    const g = window.__emberisle.getState();
+    return g.state.vertices.filter((v) => v.building?.playerId === g.localId).length;
+  }), 2, "both opening outposts are placed before the setup tip leaves");
   await step(2, /You gain goods when your numbers roll/);
+  assert.equal(await page.getByTestId("setup-pip-hint").count(), 0, "pip hints end with opening placement");
   // Keep this first roll non-seven: the later contextual case must still be the first seven.
   // rollDie consumes one Uint32 draw per die. Restore crypto immediately after those two draws.
   await page.evaluate(() => {

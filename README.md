@@ -194,6 +194,7 @@ npm run rotate-prove         # rotating phone or resizing window refits island t
 npm run save-prove           # room saves are coalesced and asynchronous against real host; valid JSON at every instant, flush on SIGTERM/SIGINT
 npm run seat-rail-prove      # each seat is one line with the points as the number; box ≤ 44 px tall, points largest text, responsive strip and rail
 npm run size-prove           # built JS chunks stay inside a gzip size budget (run after npm run build)
+npm run music-prove          # gameplay background music (docs/design/sound.md): silent before the first gesture, loops, ducks under stings, mute, win screen and title stop it
 npm run sounds-prove         # table sounds (docs/design/sound.md): 150 ms spacing burst rule, volumes, practice placements and turns, online chat and mute
 npm run stale-prove          # raw wire replays against the real host, independent of the client's queue-clearing behavior
 npm run tokens-prove         # number tokens are rimmed and legible, and nothing is placed or wanders within 0.31 of a hex centre
@@ -389,6 +390,7 @@ Every gameplay intent (place, roll, pass, buy, play, rob, discard, bank trade, t
 |---|---|
 | `node --import ./server/register.mjs server/prove.mjs` | Short bank pays nobody, dice histogram, setup goods, illegal placement rejected |
 | `node --import ./server/register.mjs server/trade-prove.mjs` | Bank 4:1, discards, steals |
+| `npm run music-prove` | Browser: the background track is not fetched or played before the first interaction, then plays at 0.25 and loops, ducks to 30% under `game_start` and returns, stops on mute and resumes, follows mute for a watcher, obeys the Table menu's Music row, stops at the win screen and on the title (`scripts/music-prove.mjs`) |
 | `npm run sounds-prove` | Browser: every table sound plays its clip once, a bot round is spaced, mute and a focused chat silence them (`scripts/sounds-prove.mjs`) |
 | `node server/sound-prove.mjs` | The host finds the wavs in `public/audio/` through `server/cue.mjs`, and a missing sound is null, not a crash |
 | `node --import ./server/register.mjs server/table-prove.mjs` | 3 sockets: codes, color taken, peek before sitting, ready, start, setup glow and neighbor rule, 20 rolls match the host, and the table's error strings (full, host-only start, 3 or 4, already started, not your turn) |

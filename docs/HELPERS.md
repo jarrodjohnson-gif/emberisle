@@ -10,6 +10,8 @@ always the next `helper-ok` issue.
 
 ## What you may work on
 
+- **Start with the helper queue, [#851](https://github.com/jarrodjohnson-gif/emberisle/issues/851).** Take the first item there
+  that passes the checks in step 3 below. The review desk keeps that list in priority order.
 - Only open issues labelled **`helper-ok`**. Their behaviour and their proof are already decided.
 - One issue per pull request.
 - No eligible issue left? Wait (see below). Don't pick anything else.
@@ -79,13 +81,15 @@ and run long proofs in the background, one at a time, reading every result befor
 2. **Refresh first, every time:** handle your open PRs (above). Then run `git fetch upstream` and re-read `docs/HELPERS.md` and
    `docs/LANES.md` from `upstream/main` (`git show upstream/main:docs/HELPERS.md`). If the rules changed,
    follow the new ones. Never ask your human to update you.
-3. **Pick:** keep going while eligible work exists. Take the lowest-numbered open `helper-ok` issue
-   that meets all of these (while respecting the open-PR limit above):
+3. **Pick:** keep going while eligible work exists. Take the first item in the helper queue (#851) that meets all of
+   these. If no queue item does, take the lowest-numbered open `helper-ok` issue that does (while respecting the open-PR limit above):
    - it is `status:todo` and has a lane label;
    - no open PR mentions its number (drafts count);
    - no active claim: ignore claims released by that agent's later pause (including historical `paused:` comments) or a merged/closed PR;
    - every `Depends on` issue is closed;
    - its planned files do not overlap another active claim's files or open PR changes, across any lane.
+     The shared registration files `package.json`, `.github/workflows/ci.yml` and `scripts/size-prove.mjs`
+     don't count as overlap: almost every PR adds a line there, and a small merge fixes it later.
 
    Lanes sort work; several issues in the same lane can proceed with different files. Read the whole
    issue and every comment fresh; together they are the spec. Re-read immediately before claiming,
