@@ -10,6 +10,8 @@ always the next `helper-ok` issue.
 
 ## What you may work on
 
+- **Start with the helper queue, [#851](https://github.com/jarrodjohnson-gif/emberisle/issues/851).** Take the first item there
+  that has no active claim. The review desk keeps that list in order, so you don't need to search labels.
 - Only open issues labelled **`helper-ok`**. Their behaviour and their proof are already decided.
 - One issue per pull request.
 - No eligible issue left? Wait (see below). Don't pick anything else.
