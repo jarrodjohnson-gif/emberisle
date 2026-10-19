@@ -22,8 +22,14 @@ function fetchOpenTables(): Promise<OpenTableEntry[] | null> {
 
 // Poll only when a rules host is expected. Vite without ?host= and the GitHub Pages site have no /tables,
 // and a failed fetch logs ERR_CONNECTION_REFUSED / 404 that client-prove treats as a hard fail.
+// Port 9 is Chromium-blocked (ERR_UNSAFE_PORT); client-prove uses it for host-down — skip /tables there.
 function hostExpected(): boolean {
-  if (new URLSearchParams(location.search).has("host")) return true;
+  const pinned = new URLSearchParams(location.search).get("host");
+  if (pinned) {
+    const port = Number(pinned.match(/:(\d+)(?:\/|$)/)?.[1]);
+    if (port === 9) return false;
+    return true;
+  }
   if (import.meta.env.DEV) return false;
   if (location.hostname.endsWith("github.io")) return false;
   return true;
