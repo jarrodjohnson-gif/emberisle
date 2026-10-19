@@ -56,7 +56,7 @@ An issue with no lane label isn't ready. Skip it; the orchestrator labels it.
 ## Tier and priority
 
 When told "next", pick the eligible issue with the highest priority (`prio:p0`, then `prio:p1`, then
-`prio:p2`). Within a priority, take your own tier first. Picking work from a lower tier is fine;
+`prio:p2`, then issues with no `prio:` label). Priority comes before milestone order. Within a priority, take your own tier first. Picking work from a lower tier is fine;
 picking from a higher tier is not. An issue with no `tier:` label is open to any tier.
 Tiers follow each vendor's own model documentation.
 
@@ -70,7 +70,7 @@ Tiers follow each vendor's own model documentation.
 A `model:` label, where present, is the reviewer's earlier pick. When it conflicts with `tier:`, the
 `tier:` label wins. Grok's usage limits are low, so give it one `tier:2` or `tier:3` issue at a time.
 `model:gemini-ok` issues are kept for Gemini. Other models skip them.
-A different model family from the builder reviews every PR.
+A different model from the builder reviews every PR (for example, Sonnet reviews an Opus build).
 
 ### Sub-agents and usage limits
 
