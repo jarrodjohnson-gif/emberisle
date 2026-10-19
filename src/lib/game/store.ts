@@ -1047,9 +1047,9 @@ function endOffer(set: Set, get: Get, taker: string | null) {
 // chime stays for the other seats only.
 function offerChime(from: string, fromName: string, me: string, give: Bag, want: Bag) {
   const forWood = (want.timber ?? 0) > 0;
-  // Jarrod's clip for the player named "daking" offering any wood; it beats the other clips.
-  if ((give.timber ?? 0) > 0 && fromName.trim().toLowerCase() === "daking") play("daking_wood");
-  else if ((give.timber ?? 0) >= 3) play("three_wood");
+  // 3 or more wood always plays "three wood"; below that, the player named "daking" offering wood plays their own clip.
+  if ((give.timber ?? 0) >= 3) play("three_wood");
+  else if ((give.timber ?? 0) > 0 && fromName.trim().toLowerCase() === "daking") play("daking_wood");
   else if (forWood && (give.wool ?? 0) > 0) play("sheep_for_wood");
   else if (forWood && (give.ore ?? 0) > 0) play("stone_for_wood");
   else if (from !== me) play("trade_offer");

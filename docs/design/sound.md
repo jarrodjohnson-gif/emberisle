@@ -173,4 +173,4 @@ These answer section 4 and override any recommendation above that disagrees.
 
 `public/audio/three_wood.mp3`: Jarrod's own clip (2026-10-19). It plays instead of the offer chime when a table offer gives 3 or more timber. Everyone hears it, the asker too. Leading silence trimmed, 128 kbps mono MP3.
 
-`public/audio/daking_wood.mp3`: Jarrod's own clip (2026-10-19). It plays instead of the offer chime when the player named "daking" (any case) offers any timber to the table. Everyone hears it. It beats the "three wood" and wood-trade clips. Leading silence trimmed, 128 kbps mono MP3.
+`public/audio/daking_wood.mp3`: Jarrod's own clip (2026-10-19). It plays instead of the offer chime when the player named "daking" (any case) offers 1 or 2 timber to the table. Everyone hears it. An offer of 3 or more timber plays "three wood" instead, even from daking; daking's clip beats the sheep and stone wood-trade clips. Leading silence trimmed, 128 kbps mono MP3.
