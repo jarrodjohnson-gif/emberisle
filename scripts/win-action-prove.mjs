@@ -79,7 +79,7 @@ try{
  for(const ws of sockets)ws.terminate();host.kill('SIGKILL');await new Promise(r=>host.once('exit',r));await start();
  await vite.listen();browser=await chromium.launch({args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});mkdirSync('test-results',{recursive:true});
  const errors=[];
- for(const [width,height,reduced] of [[390,844,false],[1280,720,false],[844,390,true]]){
+ for(const [width,height,reduced] of [[390,844,false],[1280,720,false],[844,390,true],[956,440,false]]){
   for(const f of fixtures){
    const context=await browser.newContext({viewport:{width,height},reducedMotion:reduced?'reduce':'no-preference'});
    await context.addInitScript(({code})=>{localStorage.setItem('emberisle-seat',JSON.stringify({code,secret:`${code}-p0`}));localStorage.setItem('emberisle-seat-live',code);},f);
@@ -90,6 +90,8 @@ try{
    assert.equal(await page.getByTestId('win-action').textContent(),expected);
    await page.reload();await page.getByTestId('win-action').waitFor();assert.equal(await page.getByTestId('win-action').textContent(),expected);
    const box=await page.getByTestId('win-action').boundingBox();assert.ok(box.x>=0&&box.y>=0&&box.x+box.width<=width&&box.y+box.height<=height);
+   const rows=await page.getByTestId('win-row').all();assert.equal(rows.length,4);
+   for(const r of rows){const b=await r.boundingBox();assert.ok(b&&b.y>=0&&b.y+b.height<=height,`row must fit within viewport height ${height}`);}
    await page.screenshot({path:`test-results/win-action-${f.trigger}-${f.target}-${f.earned}-${width}.png`});await context.close();
   }
   console.log(`ok ${width}x${height}${reduced?' reduced':''}: five winning triggers, seven-/ten-point targets and overshoot, persisted restart and browser reload`);

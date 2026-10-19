@@ -109,8 +109,8 @@ function Panel() {
     turnStart: "Started their turn with winning points",
     points: "Reached the winning score",
   }[reason?.trigger ?? "points"];
-  const head = "px-1 py-2 text-right text-[11px] sm:px-2 font-medium uppercase tracking-wide text-zinc-600";
-  const cell = "px-1 py-2 sm:px-2 text-right tabular-nums";
+  const head = "px-1 py-2 short:py-1 text-right text-[11px] sm:px-2 font-medium uppercase tracking-wide text-zinc-600";
+  const cell = "px-1 py-2 short:py-1 sm:px-2 text-right tabular-nums";
   return (
     <div
       ref={dialog}
@@ -120,19 +120,19 @@ function Panel() {
       data-testid="win-screen"
       className="absolute inset-0 z-40 flex items-center justify-center bg-bg/60 p-safe backdrop-blur-sm"
     >
-      <div className="flex max-h-full w-full max-w-2xl flex-col rounded-sheet border border-white/50 bg-surface p-5 text-center sm:p-6">
+      <div className="flex max-h-full w-full max-w-2xl flex-col rounded-sheet border border-white/50 bg-surface p-5 text-center sm:p-6 short:py-3 short:px-4">
         <div className="flex items-center justify-center gap-2.5">
           <SeatDot color={winner.color} className="size-4" />
-          <p id="win-headline" data-testid="win-headline" className="font-display text-3xl text-fg">
+          <p id="win-headline" data-testid="win-headline" className="font-display text-3xl short:text-xl text-fg">
             {winner.name} wins
           </p>
         </div>
-        <p className="win-total-hero mt-3" data-testid="win-points">{winning.total}<span className="ml-2 text-body font-medium tracking-normal">points</span></p>
-        <p data-testid="win-action" className="mt-2 text-sm text-muted">
+        <p className="win-total-hero mt-3 short:mt-1" data-testid="win-points">{winning.total}<span className="ml-2 text-body font-medium tracking-normal">points</span></p>
+        <p data-testid="win-action" className="mt-2 short:mt-1 text-sm short:text-xs text-muted">
           {action} · {reason?.points ?? winning.total} points, target {reason?.target ?? victoryTarget(state)}.
         </p>
         <div className="win-equation" data-testid="win-reason">{contribution.map((part, i) => <span key={part}>{i > 0 ? "+ " : ""}{part}</span>)}</div>
-        <div className="mt-4 min-h-0 overflow-auto">
+        <div className="mt-4 short:mt-2 min-h-0 overflow-auto">
           <table className="w-full min-w-[560px] border-collapse text-sm">
             <thead>
               <tr>
@@ -158,7 +158,7 @@ function Panel() {
             <tbody>
               {rows.map((r) => (
                 <tr key={r.p.id} data-testid="win-row" data-player={r.p.id} className="border-t border-border">
-                  <td className="px-1 py-2 text-left font-medium sm:px-2">
+                  <td className="px-1 py-2 short:py-1 text-left font-medium sm:px-2">
                     <SeatDot color={r.p.color} className="mr-1.5 size-3 align-[-2px]" />
                     {r.p.name}
                   </td>
@@ -180,7 +180,7 @@ function Panel() {
             Waiting for {hostName} to start another.
           </p>
         ) : null}
-        <div className="mt-5 flex flex-wrap items-center gap-2">
+        <div className="mt-5 short:mt-3 flex flex-wrap items-center gap-2">
           {mode === "online" ? <VictoryTargetSelect label="Next game" value={target} onChange={isHost && !spectator ? setTarget : undefined} /> : null}
           {mode === "online" && !spectator ? (
             <Button
