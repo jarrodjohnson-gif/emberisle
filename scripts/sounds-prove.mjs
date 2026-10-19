@@ -80,7 +80,8 @@ async function tab(name, url) {
   return page;
 }
 const clear = (page) => page.evaluate(() => (window.__plays = []));
-const heard = async (page) => (await page.evaluate(() => window.__plays)).map((p) => ({ ...p, file: CLIP.get(p.file) ?? p.file }));
+// The background track (#814) is music-prove's; it is not a table sound.
+const heard = async (page) => (await page.evaluate(() => window.__plays)).filter((p) => p.file !== "old_tower_inn_loop.mp3").map((p) => ({ ...p, file: CLIP.get(p.file) ?? p.file }));
 const names = async (page) => (await heard(page)).map((p) => p.file);
 const store = (page, fn, arg) => page.evaluate(fn, arg);
 const mute = (page, v) => page.evaluate(async (v) => (await import("/src/lib/sound.ts")).setMuted(v), v);
