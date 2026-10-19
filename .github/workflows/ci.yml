@@ -112,6 +112,8 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm test
       - if: needs.changes.outputs.docs_only != 'true'
+        run: npm --prefix server run needs-prove
+      - if: needs.changes.outputs.docs_only != 'true'
         run: npm run touch-place-prove
 
   browser-a:
@@ -153,6 +155,8 @@ jobs:
         run: npm run countdown-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run trade-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run needs-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run practice-trade-prove
       - if: needs.changes.outputs.docs_only != 'true'

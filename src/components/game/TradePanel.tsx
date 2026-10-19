@@ -10,6 +10,7 @@ import { play } from "@/lib/sound";
 import { bagText } from "@/lib/game/trade";
 import { ClaySymbol, GrainSymbol, OreSymbol, TimberSymbol, WoolSymbol } from "./ResourceSymbols";
 import "./trade-panel.css";
+import { NeedPicker } from "./SeatNeeds";
 
 const ICON = { timber: TimberSymbol, clay: ClaySymbol, wool: WoolSymbol, grain: GrainSymbol, ore: OreSymbol };
 
@@ -138,6 +139,7 @@ export function TradePanel() {
         </header>
 
         <div className="trade-composer-scroll">
+          <NeedPicker player={me.id} />
           <p className="trade-instructions">Choose goods below. You can mix goods when trading with players.</p>
           {(["give", "want"] as const).map((side) => {
             const bag = side === "give" ? give : want;

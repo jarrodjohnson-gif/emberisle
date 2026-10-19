@@ -7,13 +7,16 @@
 // Your fortunes by kind and a dropped seat's state are facts in the player menu, one tap away.
 import { ScrollText } from "lucide-react";
 import { ReactionFloats } from "@/components/game/chunks";
-import { LazyBoundary } from "@/lib/lazy";
+import { chunk, LazyBoundary } from "@/lib/lazy";
 import { PlayerMenu, seatAway } from "@/components/game/PlayerMenu";
 import { SeatDot } from "@/components/game/SeatDot";
 import type { GameState, PlayerState } from "@/lib/game/types";
 import { cards, hiddenCount, publicVP } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
 import { cn } from "@/lib/utils";
+
+const needs = chunk(() => import("@/components/game/SeatNeeds"));
+const SeatNeeds = needs.pick(module => module.SeatNeeds);
 
 // Same reminder for every viewer and hand; its presence never signals a held point card.
 export function HiddenPointHint() {
@@ -145,6 +148,7 @@ export function SeatRail({ actor }: { actor: string }) {
           {menuFor === p.id ? <PlayerMenu player={p} /> : null}
         </div>
       ))}
+      <LazyBoundary failed={null}><SeatNeeds scope="rail" /></LazyBoundary>
       <HiddenPointHint />
     </aside>
   );
@@ -172,6 +176,7 @@ export function SeatStrip({ actor, className }: { actor: string; className: stri
       {players.map((p, i) => (
         <SeatCard key={p.id} p={p} actor={actor} short={short[i]} className="@container h-11 min-w-0 flex-1 rounded-control" />
       ))}
+      <LazyBoundary failed={null}><SeatNeeds scope="seat" /></LazyBoundary>
     </div>
   );
 }

@@ -1,0 +1,95 @@
+// #646: two real clients choose needs, receive chips and settle an actual table trade.
+import assert from 'node:assert/strict';
+import { spawn } from 'node:child_process';
+import { once } from 'node:events';
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { chromium } from 'playwright';
+import { createServer } from 'vite';
+import { createGame } from '../src/lib/game/board.ts';
+
+const directory=mkdtempSync(path.join(tmpdir(),'emberisle-needs-ui-')),code='NEED';
+let game=createGame({humans:[{name:'Jarrod'},{name:'Joshua'},{name:'Dune'}],bots:0,seed:14,wayfarerMode:'off'});
+game.phase='main';game.rollOff=null;game.current='p0';game.log=[];
+for(const vertex of game.vertices)vertex.building=null;
+for(const player of game.players)for(const resource of ['timber','clay','wool','grain','ore'])player.resources[resource]=0;
+game.players[0].resources.timber=4;game.players[1].resources.ore=2;
+game.bank={timber:15,clay:19,wool:19,grain:19,ore:17};
+const seats=game.players.map((p,i)=>({id:`s${i}`,name:p.name,color:p.color,ready:true,pid:p.id,secret:`fixture-${p.id}`}));
+writeFileSync(path.join(directory,`${code}.json`),JSON.stringify({code,host:'s0',next:3,chat:[],chatSeq:0,game,seats,shape:2,savedAt:Date.now(),wayfarerMode:'off'}));
+const host=spawn(process.execPath,['--import','./register.mjs','host.mjs'],{cwd:new URL('../server/',import.meta.url),env:{...process.env,PORT:'0',ROOMS_DIR:directory,PROFILES_DIR:path.join(directory,'profiles'),TURN_MS:'600000',GRACE_MS:'600000',HOLD_MS:'600000'},stdio:['ignore','pipe','pipe']});
+let stderr='';host.stderr.on('data',data=>stderr+=data);
+process.on('exit',()=>{host.kill();rmSync(directory,{recursive:true,force:true});});
+for(const signal of ['SIGINT','SIGTERM'])process.on(signal,()=>process.exit(130));
+let browser,vite;
+try{
+ const hostPort=await new Promise((resolve,reject)=>{const timeout=setTimeout(()=>reject(Error(`host startup timeout: ${stderr}`)),10000);host.once('error',reject);host.once('exit',c=>{clearTimeout(timeout);reject(Error(`host exit ${c}: ${stderr}`));});host.stdout.on('data',data=>{const m=String(data).match(/listening (\d+)/);if(m){clearTimeout(timeout);resolve(Number(m[1]));}});});
+ const port=Number(process.env.VITE_PORT)||18746;
+ vite=await createServer({server:{host:'127.0.0.1',port,strictPort:true},logLevel:'error'});await vite.listen();
+ browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||(existsSync('/opt/pw-browsers/chromium')?'/opt/pw-browsers/chromium':undefined)});
+ const errors=[];
+ async function tab(pid,phone){
+  const context=await browser.newContext({viewport:phone?{width:390,height:844}:{width:1280,height:720},hasTouch:phone,isMobile:phone});
+  const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
+  await page.addInitScript(({pid,code})=>{localStorage.setItem('emberisle-seat',JSON.stringify({code,secret:`fixture-${pid}`}));localStorage.setItem('emberisle-seat-live',code);localStorage.setItem('emberisle-chat-open','0');for(const method of ['drawElements','drawArrays','drawElementsInstanced','drawArraysInstanced'])WebGL2RenderingContext.prototype[method]=()=>{};},{pid,code});
+  await page.goto(`http://127.0.0.1:${port}/?host=ws://127.0.0.1:${hostPort}`);
+  await page.waitForFunction(pid=>window.__emberisle?.getState().state&&window.__emberisle.getState().localId===pid,pid);
+  await page.waitForFunction(()=>window.__isle?.insets);return page;
+ }
+ const a=await tab('p0',true),b=await tab('p1',false);
+ const before=await a.evaluate(()=>window.__isle.insets());
+ await a.evaluate(()=>window.__emberisle.getState().setTradeOpen(true));
+ await a.getByRole('button',{name:'Need',exact:true}).click();
+ assert.equal(await a.getByRole('button',{name:/^Need (Wood|Brick|Sheep|Wheat|Stone)$/}).count(),5);
+ const started=Date.now();await a.getByRole('button',{name:'Need Stone',exact:true}).click();
+ const chip=b.getByTestId('rail-p0').getByTestId('seat-needs');await chip.waitFor({timeout:1000});
+ assert.equal(await chip.getAttribute('aria-label'),'Jarrod needs Stone');assert(Date.now()-started<1000);
+ await a.getByRole('button',{name:'Need Wheat',exact:true}).click();
+ await b.waitForFunction(()=>document.querySelector('[data-testid="rail-p0"] [data-testid="seat-needs"]')?.getAttribute('aria-label')==='Jarrod needs Stone and Wheat');
+ assert(await a.getByRole('button',{name:'Need Wood',exact:true}).isDisabled());
+ const dimensions=await a.getByRole('button',{name:/^Need (Wood|Brick|Sheep|Wheat|Stone)$/}).evaluateAll(buttons=>buttons.map(button=>{const box=button.getBoundingClientRect();return {w:box.width,h:box.height};}));
+ assert(dimensions.every(d=>d.w>=44&&d.h>=44));
+ assert.deepEqual(await a.evaluate(()=>window.__isle.insets()),before);
+ assert.equal(await b.evaluate(()=>window.__emberisle.getState().state.players.find(p=>p.id==='p0').resources),undefined);
+ await a.getByRole('button',{name:'Clear needs',exact:true}).click();await chip.waitFor({state:'detached'});
+ await a.getByRole('button',{name:'Need Stone',exact:true}).click();await chip.waitFor();
+ mkdirSync('test-results',{recursive:true});await a.screenshot({path:'test-results/needs-picker-phone.png'});
+ await a.getByRole('button',{name:'Close',exact:true}).click();
+ await a.reload();await a.waitForFunction(()=>window.__emberisle?.getState().state);
+ await a.getByTestId('seat-p0').getByTestId('seat-needs').waitFor();
+ console.log('ok Need picker: five 44px controls, maximum two, clear, public chip within 1s, hidden hand preserved, rejoin and unchanged hole');
+ await a.evaluate(()=>window.__emberisle.getState().setTradeOpen(true));
+ await a.getByRole('button',{name:'More Wood to give',exact:true}).click();await a.getByRole('button',{name:'More Stone to want',exact:true}).click();
+ await a.getByRole('button',{name:'Ask the table',exact:true}).click();
+ await b.getByRole('button',{name:'Yes',exact:true}).click();await chip.waitFor({state:'detached'});
+ await b.waitForFunction(()=>window.__emberisle.getState().state.players.find(p=>p.id==='p1').resources.ore===1);
+ console.log('ok real table trade: received requested Stone clears the public need on the other client');
+ // Isolated hotseat session exercises the same picker and the lazy local-state lifecycle.
+ await a.evaluate(async()=>{
+  const {createGame}=await import('/src/lib/game/board.ts');
+  const {setPlayerNeeds,useLocalNeeds}=await import('/src/components/game/need-state.ts');
+  const g=window.__emberisle;
+  let s=createGame({humans:[{name:'Local A'},{name:'Local B'},{name:'Local C'}],bots:0,seed:14,wayfarerMode:'off'});
+  s.phase='main';s.rollOff=null;s.current='p0';s.log=[];
+  for(const vertex of s.vertices)vertex.building=null;
+  for(const p of s.players)for(const r of ['timber','clay','wool','grain','ore'])p.resources[r]=0;
+  s.players[0].resources.timber=4;s.bank={timber:15,clay:19,wool:19,grain:19,ore:19};
+  g.setState({mode:'hotseat',state:s,localId:'p0',tradeOpen:false,spectator:false});
+  setPlayerNeeds('p0',['ore']);if(!useLocalNeeds.getState().p0)throw Error('local need missing');
+  const traded=g.getState().dispatch({type:'bankTrade',give:'timber',want:'ore'});if(!traded.ok)throw Error(traded.error);
+  if(useLocalNeeds.getState().p0)throw Error('local matching trade did not clear');
+  setPlayerNeeds('p0',['grain']);
+  const act=action=>{const result=g.getState().dispatch(action);if(!result.ok)throw Error(result.error);};
+  act({type:'endTurn'});if(useLocalNeeds.getState().p0?.turnsLeft!==1)throw Error('first own turn did not age');
+  for(let i=0;i<2;i++){act({type:'roll'});act({type:'endTurn'});}
+  if(useLocalNeeds.getState().p0?.turnsLeft!==1)throw Error('other turns aged the need');
+  act({type:'roll'});act({type:'endTurn'});if(useLocalNeeds.getState().p0)throw Error('second own turn did not clear');
+ });
+ console.log('ok hotseat/practice shared local path: matching bank trade clears; only two own completed turns expire a need');
+ assert.deepEqual(errors,[]);console.log('needs browser prove ok');
+}finally{
+ await browser?.close();await vite?.close();
+ if(host.exitCode===null&&host.signalCode===null){const stopped=once(host,'exit');host.kill();await stopped;}
+ rmSync(directory,{recursive:true,force:true});
+}
