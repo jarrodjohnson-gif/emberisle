@@ -39,3 +39,8 @@ The checkout is pinned to `587951aa81db45982a8e79e51c4378afaa2986e3`. The origin
 Current-main review used baseline `00ba9a505d0ab9794cef0ef29ddeba050b5c4a6a`. It found one new candidate at 1280×720. A lobby with three bots initially covers the chat composer and Send control with its sticky footer. Scrolling `.lobby-cover` down 74 pixels reveals both controls and makes them hit-testable. Before and after evidence and measurements live in `current-main-repro/`. Duplicate searches found no matching issue. This does not claim permanent inaccessibility. Existing landscape trade and win concerns match closed #811 and #809. Coarse-pointer 844×390 title and lobby controls fit without scrolling.
 
 At 390×844, the win image includes a transient `−7 wheat` loss float over the score. The winner and score remain visible. The 844×390 win-row clipping matches closed issue #809. The evidence identifies captured states and viewport sizes. It does not establish that every screen is free of visual defects. Reviewers should inspect full-size images before deciding. Check proposed bugs against current `main`, as issue #804 requires.
+
+## Filed issue
+
+- [#895: desktop lobby chat overlap](https://github.com/jarrodjohnson-gif/emberisle/issues/895).
+- No duplicate issues were filed for closed #718, #809, or #811.
