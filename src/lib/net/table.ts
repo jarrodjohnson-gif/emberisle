@@ -87,6 +87,8 @@ export interface TableEvents {
   reconnecting(attempt: number): void;
   // `keepSeat`: the seat is still ours but open in another tab, so the saved secret stays.
   closed(keepSeat?: boolean): void;
+  // Open tables on this host (#833); never includes private codes. Seatless `list` replies only.
+  openTables(tables: OpenTableEntry[]): void;
 }
 
 export interface Me {
@@ -95,7 +97,7 @@ export interface Me {
   avatarId?: string;
 }
 
-// An open table entry from the server's /tables list (never includes private table codes).
+// An open table entry from the server's openTables list (never includes private table codes).
 export interface OpenTableEntry {
   code: string;
   name: string;
@@ -111,6 +113,8 @@ export interface TableClient {
   watch(code: string): void;
   // Ask which seats a lobby holds before sitting down (docs/design/color-peek.md). Answered as `seats`.
   peek(code: string): void;
+  // Ask for the open-table list on a seatless socket (#833). Answered as `openTables`.
+  list(): void;
   // Sit back down in a held seat (#196): hello {code, secret} from an earlier welcome.
   rejoin(code: string, secret: string): void;
   // Close the socket the way a lost network would (not on purpose), so the client dials again. For proofs.
@@ -182,11 +186,6 @@ export function toIntent(action: Action): Record<string, unknown> | null {
     default:
       return null;
   }
-}
-
-// Derive the HTTP base URL from the WebSocket URL (for fetching /tables).
-export function tablesUrl(wsUrl: string): string {
-  return wsUrl.replace(/^wss:/, "https:").replace(/^ws:/, "http:") + "/tables";
 }
 
 // ?host=wss://play.example.com wins (the browser's host.txt). In `npm run dev` the page is on Vite (8080)
@@ -339,6 +338,11 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
       case "tradeClosed":
         on.tradeClosed?.(msg as never);
         break;
+      case "openTables": {
+        const tables = Array.isArray(msg.tables) ? (msg.tables as OpenTableEntry[]) : [];
+        on.openTables?.(tables);
+        break;
+      }
       case "error": {
         const message = String(msg.message);
         if (rejoining) taken = message === "Seat is taken.";
@@ -367,6 +371,7 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
     join: (code, me) => send({ type: "hello", proto: PROTO, code: code.toUpperCase(), ...me }),
     watch: (code) => send({ type: "hello", proto: PROTO, code: code.toUpperCase(), watch: true }),
     peek: (code) => send({ type: "peek", code: code.toUpperCase() }),
+    list: () => send({ type: "list" }),
     rejoin: (code, secret) => {
       stamp = null;
       seat = { code: code.toUpperCase(), secret };

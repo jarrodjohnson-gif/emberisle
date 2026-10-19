@@ -958,11 +958,9 @@ try {
     });
     // Leave the page first: the app keeps redialling the dead host on its backoff, and a refusal landing after the
     // drop below would fail the run. The dead host's refused sockets are the expected console errors; drop only those.
-    // Port 9 is Chromium-unsafe: OpenTables skips /tables there, but any leftover ERR_UNSAFE_PORT from this section
-    // has no URL in the console text — strip bare matches only while clearing the host-down refusals.
     await page.goto(`http://127.0.0.1:${PORT}/?host=ws://127.0.0.1:${hostPort}`);
-    const downRefused = errors.filter((e) => e.includes("ws://127.0.0.1:9/") || e.includes("ERR_UNSAFE_PORT"));
-    if (!downRefused.some((e) => e.includes("ws://127.0.0.1:9/"))) {
+    const downRefused = errors.filter((e) => e.includes("ws://127.0.0.1:9/"));
+    if (!downRefused.length) {
       throw new Error("host-down restore: expected at least one refused socket");
     }
     for (const e of downRefused) errors.splice(errors.indexOf(e), 1);
