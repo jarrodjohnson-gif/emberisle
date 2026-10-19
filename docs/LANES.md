@@ -85,7 +85,7 @@ An issue's `model:` label, where present, names the model to build with (`docs/F
 
 **Gemini takes clearly defined work with hard checks.** It is good at:
 
-- UI audits: check that a card or panel works, chat overlaps nothing, and nothing looks odd, at set viewports with screenshots.
+- UI audits: check that a card or panel works and chat overlaps nothing. Screenshot set viewports and flag anything odd.
 - Minor design fixes, such as "make X fit at this viewport", with a pixel proof.
 - Small defined coding, docs and scripts.
 
