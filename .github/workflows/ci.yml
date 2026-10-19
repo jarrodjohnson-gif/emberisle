@@ -172,6 +172,8 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run client-prove
       - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run dock-rates-prove
+      - if: needs.changes.outputs.docs_only != 'true'
         run: npm run dpr-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run hotseat-prove

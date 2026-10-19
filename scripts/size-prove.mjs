@@ -30,10 +30,14 @@ const CEILINGS = [
   { name: "sheets", gzipBytes: 7800 },
   { name: "moments", gzipBytes: 5700 },
   { name: "VictoryTargetSelect", gzipBytes: 1000 },
+  // #538: coast inspection UI loads separately; measured 1030 B.
+  { name: "DockInspection", gzipBytes: 1200 },
+  { name: "HandRates", gzipBytes: 800 },
 ];
 
 // Growth allowance against the base, in gzip bytes. index is fixed at 400 B; the others take 0.33% of the base size, at least 200 B.
-const ALLOWANCE = { index: 400 };
+// 2026-10-19 (#538): +454 B approved by the review desk; lower to 400 at the next pass.
+const ALLOWANCE = { index: 500 };
 const ALLOWANCE_RATE = 0.0033;
 const ALLOWANCE_MIN = 200;
 const allowanceFor = (name, baseBytes) => ALLOWANCE[name] ?? Math.max(ALLOWANCE_MIN, Math.round(baseBytes * ALLOWANCE_RATE));

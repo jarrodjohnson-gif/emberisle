@@ -1,17 +1,13 @@
-import { useEffect, useLayoutEffect, useRef, useState, type ComponentType, type SVGProps } from "react";
-import { ClaySymbol, GrainSymbol, OreSymbol, TimberSymbol, WoolSymbol } from "@/components/game/ResourceSymbols";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { RESOURCE_ICON } from "@/components/game/ResourceSymbols";
 import { RESOURCES, RESOURCE_LABEL, type Phase, type PlayerState, type Resource } from "@/lib/game/types";
 import { cn } from "@/lib/utils";
 import { useGame } from "@/lib/game/store";
+import { chunk, LazyBoundary } from "@/lib/lazy";
+const HandRates = chunk(() => import("./HandRates")).pick((m) => m.default);
 import "./hand-motion.css";
 
-export const RESOURCE_ICON: Record<Resource, ComponentType<SVGProps<SVGSVGElement>>> = {
-  timber: TimberSymbol,
-  clay: ClaySymbol,
-  wool: WoolSymbol,
-  grain: GrainSymbol,
-  ore: OreSymbol,
-};
+export { RESOURCE_ICON } from "@/components/game/ResourceSymbols";
 
 // Each card is the terrain cap's colour (docs/design/polish.md, #436); full class names so Tailwind can see them.
 export const RESOURCE_PAINT: Record<Resource, string> = {
@@ -109,8 +105,13 @@ function useOfferDeltas(me: PlayerState) {
   return deltas;
 }
 
-function ResourceCard({ resource, count, flash, offer }: { resource: Resource; count: number; flash?: ResourceFlash; offer?: number }) {
+function ResourceCard({ resource, count, flash, offer, showRates, buildMode, owner }: { resource: Resource; count: number; flash?: ResourceFlash; offer?: number; buildMode: string; owner: string; showRates: (resource: Resource, card: HTMLElement) => void }) {
   const card = useRef<HTMLDivElement>(null);
+  const hold = useRef<{ timer?: ReturnType<typeof setTimeout>; x: number; y: number }>({ x: 0, y: 0 });
+  const cancelHold = () => {
+    clearTimeout(hold.current.timer);
+  };
+  useEffect(() => cancelHold, [buildMode, owner]);
   const Icon = RESOURCE_ICON[resource];
   const label = flash ? (flash.delta > 0 ? `+${flash.delta}` : String(flash.delta)) : null;
   // Restart on the event ID, even for two gains in the same millisecond. The card itself stays mounted,
@@ -147,8 +148,40 @@ function ResourceCard({ resource, count, flash, offer }: { resource: Resource; c
         ref={card}
         data-testid={`resource-${resource}`}
         title={RESOURCE_LABEL[resource]}
+        role="button"
+        tabIndex={0}
+        aria-label={`${RESOURCE_LABEL[resource]}: ${count}. Show trade rates`}
+        onClick={(e) => {
+          // Assistive activation synthesizes a click; pointer taps keep the long-press gesture.
+          if (e.detail === 0) showRates(resource, e.currentTarget);
+        }}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          cancelHold();
+          showRates(resource, e.currentTarget);
+        }}
+        onKeyDown={(e) => {
+          if (e.key !== "Enter" && e.key !== " ") return;
+          e.preventDefault();
+          e.stopPropagation();
+          showRates(resource, e.currentTarget);
+        }}
+        onPointerDown={(e) => {
+          if (e.button !== 0) return;
+          cancelHold();
+          hold.current.x = e.clientX;
+          hold.current.y = e.clientY;
+          const target = e.currentTarget;
+          hold.current.timer = setTimeout(() => showRates(resource, target), 500);
+        }}
+        onPointerMove={(e) => {
+          if (Math.hypot(e.clientX - hold.current.x, e.clientY - hold.current.y) > 8) cancelHold();
+        }}
+        onPointerUp={cancelHold}
+        onPointerCancel={cancelHold}
+        onPointerLeave={cancelHold}
         className={cn(
-          "goods-card relative flex h-[62px] flex-col items-center justify-center rounded-control bg-surface text-fg",
+          "goods-card relative flex h-[62px] flex-col items-center justify-center rounded-control bg-surface text-fg focus-visible:outline focus-visible:outline-2 focus-visible:outline-fg",
           "short:h-11 short:flex-row short:gap-2",
           count === 0 && "goods-empty",
         )}
@@ -205,12 +238,23 @@ function ResourceCard({ resource, count, flash, offer }: { resource: Resource; c
 
 function ResourceHand({ me, flashes }: { me: PlayerState; flashes: ReturnType<typeof useResourceFlashes> }) {
   const offer = useOfferDeltas(me);
+  const buildMode = useGame((s) => s.buildMode);
+  const [hint, setHint] = useState<{ resource: Resource; top: number; key: number; owner: string } | null>(null);
+  const showRates = (resource: Resource, card: HTMLElement) => {
+    if (useGame.getState().buildMode === "none") setHint({ resource, owner: me.id, key: performance.now(), top: card.getBoundingClientRect().top });
+  };
+  useEffect(() => setHint(null), [buildMode, me.id]);
   return (
-    <div className="goods-tray flex shrink-0 gap-1 overflow-x-auto rounded-chip p-2 short:p-1">
-      {RESOURCES.map((r) => (
-        <ResourceCard key={r} resource={r} count={me.resources[r]} flash={flashes[r]} offer={offer[r]} />
-      ))}
-    </div>
+    <>
+      <div className="goods-tray flex shrink-0 gap-1 overflow-x-auto rounded-chip p-2 short:p-1">
+        {RESOURCES.map((r) => (
+          <ResourceCard key={r} resource={r} count={me.resources[r]} flash={flashes[r]} offer={offer[r]} showRates={showRates} buildMode={buildMode} owner={me.id} />
+        ))}
+      </div>
+      {hint && hint.owner === me.id && buildMode === "none" ? <LazyBoundary key={hint.key} failed={null}>
+        <HandRates owner={me.id} hint={hint} onClose={() => setHint(null)} />
+      </LazyBoundary> : null}
+    </>
   );
 }
 

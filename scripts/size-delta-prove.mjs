@@ -19,13 +19,13 @@ const check = (label, args, code, ...mustContain) => {
   } else console.log(`ok   ${label}`);
 };
 
-check("+300 B on index passes", ["--sizes", fx("pass.json"), "--base-sizes", fx("base.json")], 0, "ok   index growth: base 122000 B, PR 122300 B, +300 B, allowance 400 B");
+check("+300 B on index passes", ["--sizes", fx("pass.json"), "--base-sizes", fx("base.json")], 0, "ok   index growth: base 122000 B, PR 122300 B, +300 B, allowance 500 B");
 check("a second +300 B on top of it passes", ["--sizes", fx("pass.json"), "--base-sizes", fx("pass.json")], 0, "+0 B");
 check(
   "+600 B on index fails and names chunk, base, PR, allowance",
   ["--sizes", fx("fail.json"), "--base-sizes", fx("base.json")],
   1,
-  "FAIL index growth: base 122000 B, PR 122600 B, +600 B, allowance 400 B (200 B over)",
+  "FAIL index growth: base 122000 B, PR 122600 B, +600 B, allowance 500 B (100 B over)",
 );
 check("a new chunk is held to its ceiling only", ["--sizes", fx("new-chunk.json"), "--base-sizes", fx("base-old.json")], 0, "new  VictoryTargetSelect", "not in the base");
 check("a removed chunk passes and is reported", ["--sizes", fx("base.json"), "--base-sizes", fx("base-with-legacy.json")], 0, "gone legacy");
