@@ -1,11 +1,12 @@
 // #442: the table's top chrome is one menu button. In hotseat at 1280x720, 390x844 (touch) and 844x390 (touch):
 // - no visible element on the table says "Emberisle", and the only button in the top 64 px (the seat strip aside, on a
 //   sideways phone) is the 44 px "Table menu" button, top-right;
-// - it opens a sheet with the turn number, How to play, Table sounds, Water (Crystal / Simple), View (Diorama / Overhead,
-//   #597) and Leave table, focus moving
-//   to the first row; at 1280x720 Water flips the sea's path both ways and the choice survives a reload (crystal-water.md);
-// - How to play opens its dialog and closing that puts the focus back on the menu button; the sound toggle flips and keeps
-//   the sheet open; Escape closes the sheet and refocuses the button; Enter on the button opens it; a tap outside closes it;
+// - it opens a sheet with the turn number, How to play, Table sounds, Haptics (#542, when vibrate exists), Water
+//   (Crystal / Simple), View (Diorama / Overhead, #597) and Leave table, focus moving to the first row; at 1280x720 Water
+//   flips the sea's path both ways and the choice survives a reload (crystal-water.md);
+// - How to play opens its dialog and closing that puts the focus back on the menu button; the sound and haptics toggles
+//   flip and keep the sheet open; Escape closes the sheet and refocuses the button; Enter on the button opens it; a tap
+//   outside closes it;
 // - online (a faked socket): the sheet shows the watcher count and "Copy table code" (copied where the clipboard works, the
 //   select-and-copy field where it does not, as on CI; both are run), Leave table asks first (Stay, Escape
 //   and the 5 s auto-cancel return to the rows with the focus on Leave table), then leaves; hotseat Leave table goes
@@ -70,11 +71,23 @@ try {
     assert.ok(b.w >= 44 && b.h >= 44, `${v.tag}: the menu button is ${b.w}x${b.h}, under 44 px`);
     assert.ok(b.right < 32 && b.top < 32, `${v.tag}: the menu button sits top-right (${JSON.stringify(b)})`);
 
-    // Open: the rows, the turn line, and the focus on the first row.
+    // Open: the rows, the turn line, and the focus on the first row. Chromium exposes vibrate, so Haptics is present (#542).
     await trigger.click();
     await menu.waitFor();
+    const hasVibrate = await page.evaluate(() => typeof navigator.vibrate === "function");
     const rows = await menu.getByRole("button").allTextContents();
-    assert.deepEqual(rows.map((t) => t.trim()), ["How to play", "Costs", "Table sounds on", "Crystal", "Simple", "Diorama", "Overhead", "Leave table"], `${v.tag}: menu rows`);
+    const expected = [
+      "How to play",
+      "Costs",
+      "Table sounds on",
+      ...(hasVibrate ? ["Haptics on"] : []),
+      "Crystal",
+      "Simple",
+      "Diorama",
+      "Overhead",
+      "Leave table",
+    ];
+    assert.deepEqual(rows.map((t) => t.trim()), expected, `${v.tag}: menu rows`);
     assert.match(await menu.textContent(), /Turn 1/, `${v.tag}: the turn number moved into the menu`);
     assert.equal(await page.evaluate(() => document.activeElement?.textContent.trim()), "How to play", `${v.tag}: focus moves to the first row`);
     assert.equal(await trigger.getAttribute("aria-expanded"), "true", `${v.tag}: aria-expanded while open`);
@@ -103,6 +116,16 @@ try {
     await menu.getByRole("button", { name: "Table sounds off" }).click();
     await menu.getByRole("button", { name: "Table sounds on" }).waitFor();
     assert.equal(await page.evaluate(() => localStorage.getItem("emberisle-muted")), null, `${v.tag}: unmuting clears it`);
+
+    // Haptics (#542): flip off/on; the sheet stays open; the choice is remembered.
+    if (hasVibrate) {
+      await menu.getByTestId("haptics-toggle").click();
+      await menu.getByRole("button", { name: "Haptics off" }).waitFor();
+      assert.equal(await page.evaluate(() => localStorage.getItem("emberisle-haptics")), "0", `${v.tag}: haptics off is remembered`);
+      await menu.getByTestId("haptics-toggle").click();
+      await menu.getByRole("button", { name: "Haptics on" }).waitFor();
+      assert.equal(await page.evaluate(() => localStorage.getItem("emberisle-haptics")), "1", `${v.tag}: haptics on is remembered`);
+    }
 
     // Escape closes and refocuses the button; Enter on the button opens; a pointer outside closes.
     await page.keyboard.press("Escape");
