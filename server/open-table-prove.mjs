@@ -127,6 +127,17 @@ let openCode;
   assert.equal(reply.tables.length, 1, "WS list sees the open table");
   assert.equal(reply.tables[0].code, openCode);
   lister.ws.terminate();
+
+  // At most one open table per host: a second open create is refused.
+  const rival = client(port, "Rival");
+  await rival.open;
+  rival.send({ type: "hello", name: "Rival", visibility: "open" });
+  const err = await rival.next("error");
+  assert.match(err.message, /already listed/i, "second open table is refused");
+  const still = await (await fetch(`${baseUrl}/tables`)).json();
+  assert.equal(still.length, 1, "list still has only Jarrod's table");
+  assert.equal(still[0].code, openCode);
+  rival.ws.terminate();
 }
 
 // 4. A second player can join the open table using the listed code (no prior knowledge of the code).

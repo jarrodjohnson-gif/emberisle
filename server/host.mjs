@@ -830,7 +830,10 @@ function openTable(ws, msg) {
   };
   room.seats.push(seat);
   room.host = seat.id;
-  if (visibility === "open") registerOpenTable(room);
+  if (visibility === "open" && !registerOpenTable(room)) {
+    rooms.delete(room.code);
+    return send(ws, { type: "error", message: "An open table is already listed." });
+  }
   ws.room = room;
   ws.seat = seat;
   send(ws, { type: "welcome", proto: PROTO, code: room.code, you: seat.id, host: true, chat: room.chat, secret: seat.secret, ...HOLD_INFO, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on" });

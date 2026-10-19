@@ -4,8 +4,11 @@
 
 let openRoom = null;
 
+/** @returns {boolean} false when another open table already holds the single slot. */
 export function registerOpenTable(room) {
+  if (openRoom && openRoom !== room) return false;
   openRoom = room;
+  return true;
 }
 
 export function unregisterOpenTable(room) {
