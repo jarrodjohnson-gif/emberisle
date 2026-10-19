@@ -111,13 +111,21 @@ export function Lobby() {
       <div
         className={cn(
           "lobby-cover flex min-h-0 flex-1 flex-col overflow-y-auto rounded-[20px] border border-white/50 bg-surface p-5 backdrop-blur-md sm:p-6",
-          landscape && "grid grid-cols-2 grid-rows-[auto_1fr] gap-x-5 p-4 sm:p-4",
+          landscape && "grid grid-cols-2 grid-rows-[auto_1fr] gap-x-5 px-4 py-3 sm:px-4 sm:py-3",
         )}
       >
         <div className={cn(landscape && "col-start-2 row-start-1")}>
         <p className="text-caption font-semibold text-sea-ink">Table code · Wayfarer <span className="capitalize">{rule}</span></p>
         <div className="mt-1 flex items-center gap-3">
-          <p data-testid="table-code" className={cn("font-display tracking-[0.2em]", landscape ? "text-5xl" : "text-6xl")}>
+          <p
+            data-testid="table-code"
+            className={cn(
+              "font-display",
+              landscape
+                ? "text-4xl tracking-[0.15em]"
+                : "text-4xl tracking-[0.15em] sm:text-6xl sm:tracking-[0.2em]",
+            )}
+          >
             {code}
           </p>
           <div className="flex flex-col gap-1">
@@ -181,7 +189,7 @@ export function Lobby() {
             <VictoryTargetSelect value={target} onChange={isHost ? setTarget : undefined} />
           </div>
           <Button
-            size="lg"
+            size={landscape ? "default" : "lg"}
             variant="outline"
             onClick={() => {
               setReady(!ready);
@@ -190,7 +198,7 @@ export function Lobby() {
             {ready ? "Not ready" : "Ready"}
           </Button>
           {canStart ? (
-            <Button size="lg" variant="sea" onClick={startTable}>
+            <Button size={landscape ? "default" : "lg"} variant="sea" onClick={startTable}>
               Start
             </Button>
           ) : null}
