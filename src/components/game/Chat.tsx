@@ -509,25 +509,19 @@ export function ChatDock() {
     const el = sheet.current;
     if (!phone || !open || !el) return;
     let settled: ReturnType<typeof setTimeout>;
-    let lastWindowResize = 0;
-    const onWindowResize = () => {
-      lastWindowResize = Date.now();
-      clearTimeout(settled);
-    };
-    window.addEventListener("resize", onWindowResize);
     const fit = () => {
       clearTimeout(settled);
       // Rotation and keyboard resize land in several frames. Only a stable, unusable height minimizes chat.
       settled = setTimeout(() => {
         if (!el.isConnected) return;
-        if (Date.now() - lastWindowResize < 1000) return;
         if (el.getBoundingClientRect().height < 128) setOpen(false);
       }, 1000);
     };
+    window.addEventListener("resize", fit);
     const observer = new ResizeObserver(fit);
     observer.observe(el);
     return () => {
-      window.removeEventListener("resize", onWindowResize);
+      window.removeEventListener("resize", fit);
       observer.disconnect();
       clearTimeout(settled);
     };

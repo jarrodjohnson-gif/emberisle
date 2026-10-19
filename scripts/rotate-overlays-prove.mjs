@@ -269,8 +269,9 @@ async function openChat(p) {
   await opener.click();
   const opened = await sheet.waitFor({ state: "visible", timeout: 2000 }).then(() => true, () => false);
   if (!opened) {
+    console.log(`${p.tag}: openChat retry after 2s without chat-sheet`);
     if (await opener.isVisible()) {
-      await opener.click({ force: true });
+      await opener.click();
     }
     await sheet.waitFor({ state: "visible", timeout: STEP_MS });
   }
