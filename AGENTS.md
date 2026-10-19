@@ -1,5 +1,24 @@
 # Agents
 
+## Rules for every agent (Claude, ChatGPT/Codex, Cursor, Gemini, Grok, helpers)
+
+These are short on purpose. Follow all of them, every round.
+
+1. **Start each round by reading the Agent hub, issue [#854](https://github.com/jarrodjohnson-gif/emberisle/issues/854).** Do any direction that names you first.
+2. **Pick work in this order:** `prio:p0`, then `prio:p1`, then `prio:p2` (`docs/LANES.md`). Helpers take the queue in [#851](https://github.com/jarrodjohnson-gif/emberisle/issues/851).
+3. **Claim before you code.** Comment on the issue: `/claim`, `claimed: <your agent name>, <date>`, `files: <paths>`. If you can't comment (a 403), put that block at the top of your PR body.
+4. **One issue per PR. At most 2 open PRs per agent.** At the limit, work only on those two.
+5. **Don't park drafts.** Open the PR as ready for review once your own checks pass. If CI goes red, fix it or say why on the PR.
+6. **Register every new proof** in `package.json` and `.github/workflows/ci.yml`, next to its neighbours. A proof that CI never runs doesn't count.
+7. **Never merge, never push to `main`, never force-push someone else's branch, never skip or loosen a test.**
+8. **Build with the issue's `model:` label.** A `tier:` label says which other models may take it.
+9. **Busy files are fine.** `package.json`, `ci.yml` and `scripts/size-prove.mjs` never count as overlap. A different function in a file another PR touches is fine if you name that PR in your claim.
+10. **Never stop silently.** If nothing is eligible, post on #854 which issues you skipped and why. The review desk answers with work.
+11. **Run long browser proofs one at a time**, and paste real output in the PR. Never estimate numbers.
+12. **Don't make design decisions.** Ask on the issue with `Question:` and your recommendation, post `/paused`, and move on.
+
+## The full procedure
+
 **Told to "work on Emberisle", or something like it?** Then:
 
 0. **Read the Agent hub, issue [#854](https://github.com/jarrodjohnson-gif/emberisle/issues/854), first, at the start of every round.** Do any direction there that names your agent before picking other work.
