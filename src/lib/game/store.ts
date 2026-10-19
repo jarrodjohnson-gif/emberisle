@@ -1136,7 +1136,8 @@ function respond(set: Set, get: Get, actor: string, yes: boolean): string | null
 type ConnectKind = "normal" | "quiet" | "peek" | "watch";
 function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, kind: ConnectKind = "normal") {
   clearWake();
-  get().net?.close();
+  // Not a leave: a rejoin after a crash dials the same seat, which the host must still be holding.
+  get().net?.close(false);
   let pending = kind === "quiet";
   let welcomed = false;
   let outdated: string | null = null;
