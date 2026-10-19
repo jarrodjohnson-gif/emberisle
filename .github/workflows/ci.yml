@@ -95,11 +95,13 @@ jobs:
           retention-days: 1
       # #868: on a pull request, build the base commit the PR merges onto (main's tip) in a second worktree, so size-prove can
       # budget this PR's growth per chunk instead of one shared total. Pushes to main check the ceilings only.
+      # The base is the checked-out merge commit's first parent: pull_request.base.sha can be an older main, which would
+      # charge this PR with everything main gained since.
       - if: needs.changes.outputs.docs_only != 'true' && github.event_name == 'pull_request'
-        env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
           set -euo pipefail
+          BASE_SHA=$(git cat-file -p HEAD | awk '/^parent /{print $2; exit}')
+          echo "size base: $BASE_SHA (first parent of $(git rev-parse HEAD))"
           git fetch --depth=1 origin "$BASE_SHA"
           git worktree add "$RUNNER_TEMP/base" "$BASE_SHA"
           cd "$RUNNER_TEMP/base"
