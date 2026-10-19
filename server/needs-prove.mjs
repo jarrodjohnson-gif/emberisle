@@ -57,11 +57,12 @@ const ownNeeds=(message,c)=>message.seats.find(s=>s.id===c.seat)?.needs;
 async function need(c,kinds){c.send({type:'need',kinds});return c.next('seats',m=>JSON.stringify(ownNeeds(m,c))===JSON.stringify(kinds));}
 try{
  let port=await start(),a=await connect(port,'p0'),b=await connect(port,'p1'),c=await connect(port,'p2');
- const baseline=structuredClone(a.state);
+ const stableState=state=>[state.game.seq,state.actionStamp,state.turnDeadline];
+ const baseline=structuredClone(stableState(a.state));
  const publicMessage=await need(a,['grain']);
  assert.equal(publicMessage.seats.find(s=>s.id===a.seat).player,'p0');
  assert(!JSON.stringify(publicMessage).includes('turnsLeft'),'only chosen kinds, no private bookkeeping');
- assert.deepEqual(a.state,baseline,'need updates do not change game seq, action stamp or turn deadline');
+ assert.deepEqual(stableState(a.state),baseline,'need updates do not change game seq, action stamp or turn deadline');
  for(const kinds of [['bad'],['ore','ore'],['ore','grain','timber'],null]){a.send({type:'need',kinds});assert.match((await a.next('error')).message,/two different/);}
  console.log('ok real need frames: public seat projection, malformed/duplicate/oversized rejection; game and clocks unchanged');
  await a.act({type:'pass'});
@@ -79,11 +80,12 @@ try{
  console.log('ok restart/rejoin keeps one remaining own turn; second own turn clears; watchers cannot change needs');
  // B now rolls and exchanges four Wood for Stone.
  await b.next('state',m=>m.game.current==='p1'&&m.game.phase==='roll');await b.act({type:'roll'});
- await need(b,['ore']);await b.act({type:'tradeBank',give:'timber',take:'ore'});
+ await need(b,['ore']);a.inbox=[];b.inbox=[];await b.act({type:'tradeBank',give:'timber',take:'ore'});
  await b.next('seats',m=>JSON.stringify(ownNeeds(m,b))==='[]');
  await need(a,['ore']);await need(b,['grain']);
  b.send({...b.state.actionStamp,cid:randomUUID(),type:'tradeAsk',give:{ore:1},want:{grain:1}});
  const offer=await a.next('tradeOffer');
+ a.inbox=[];b.inbox=[];
  await a.act({type:'tradeAnswer',tradeId:offer.tradeId,yes:true});
  await a.next('seats',m=>JSON.stringify(ownNeeds(m,a))==='[]'&&m.seats.find(s=>s.id===b.seat).needs.length===0);
  console.log('ok bank and player trades clear only needs satisfied by received goods, for both participants');
