@@ -65,7 +65,7 @@ and run long proofs in the background, one at a time, reading every result befor
 - Edit `.github/workflows/`, `package.json`, lockfiles, `tsconfig*`, `vite.config*`, or add or upgrade a
   dependency, unless the issue says to. Never commit lockfile changes the issue didn't ask for.
 - Edit `docs/HELPERS.md`, `docs/FRAMEWORK.md`, `docs/IDEAS.md`, `AGENTS.md` or `CLAUDE.md`.
-- Skip, disable or loosen a test or proof, or raise a size budget without saying why in the PR.
+- Skip, disable or loosen a test or proof, or raise a size ceiling or growth allowance without saying why in the PR.
 - Commit `node_modules`, `dist` or `*.tsbuildinfo`. Stage files by path, never with `git add .`.
 - Add to-do lists to files, or post about the work anywhere outside this GitHub repo.
 

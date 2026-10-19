@@ -39,6 +39,7 @@
     "dpr-prove": "node scripts/dpr-prove.mjs",
     "served-prove": "node scripts/tabs-prove.mjs --served",
     "size-prove": "node scripts/size-prove.mjs",
+    "size-delta-prove": "node scripts/size-delta-prove.mjs",
     "chunk-fail-prove": "node --import ./server/register.mjs scripts/chunk-fail-prove.mjs",
     "restore-prove": "node scripts/restore-prove.mjs",
     "night": "node scripts/night.mjs",

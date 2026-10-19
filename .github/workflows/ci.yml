@@ -59,7 +59,7 @@ jobs:
   build:
     needs: changes
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - if: needs.changes.outputs.docs_only != 'true'
         uses: actions/checkout@v4
@@ -85,8 +85,24 @@ jobs:
           name: dist
           path: dist/
           retention-days: 1
-      - if: needs.changes.outputs.docs_only != 'true'
+      # #868: on a pull request, build the base commit the PR merges onto (main's tip) in a second worktree, so size-prove can
+      # budget this PR's growth per chunk instead of one shared total. Pushes to main check the ceilings only.
+      - if: needs.changes.outputs.docs_only != 'true' && github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          git fetch --depth=1 origin "$BASE_SHA"
+          git worktree add "$RUNNER_TEMP/base" "$BASE_SHA"
+          cd "$RUNNER_TEMP/base"
+          npm ci
+          npm run build
+      - if: needs.changes.outputs.docs_only != 'true' && github.event_name == 'pull_request'
+        run: node scripts/size-prove.mjs --base "$RUNNER_TEMP/base"
+      - if: needs.changes.outputs.docs_only != 'true' && github.event_name != 'pull_request'
         run: npm run size-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run size-delta-prove
 
   server:
     needs: changes
