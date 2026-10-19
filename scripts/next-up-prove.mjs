@@ -5,7 +5,14 @@ const fixture = JSON.parse(readFileSync(new URL('./fixtures/next-up/queue.json',
 let checks = 0;
 function check(name, fn) { fn(); checks++; console.log(`ok ${name}`); }
 const queue = buildQueue(fixture.issues, fixture.prs, fixture.comments, fixture.dependencyStates);
-check('priority, milestone and issue-number order', () => assert.deepEqual(queue.ready.map(i => i.number), [6,5,11,2,7,8]));
+check('priority, milestone and issue-number order', () => assert.deepEqual(queue.ready.map(i => i.number), [6,5,17,18,11,16,2,7,8]));
+check('priority precedes milestone even when P0 has no milestone', () => {
+ const order=queue.ready.map(issue=>issue.number);assert(order.indexOf(11)<order.indexOf(16));
+});
+check('equal priority and milestone use issue number, not API input order', () => {
+ const order=queue.ready.map(issue=>issue.number);assert(order.indexOf(17)<order.indexOf(18));
+ assert(fixture.issues.findIndex(issue=>issue.number===18)<fixture.issues.findIndex(issue=>issue.number===17));
+});
 check('claims, same-agent pauses, draft PRs and different-agent pauses', () => assert.deepEqual(queue.taken.map(r => [r.issue.number,r.claims,r.prs.map(p=>p.number)]), [[1,['Alpha'],[]],[3,[],[30]],[12,['Alpha'],[]]]));
 check('open and unknown dependencies block; closed dependency is eligible', () => assert.deepEqual(queue.blocked.map(r=>r.issue.number), [4,13]));
 check('dependencies do not include source references', () => assert.deepEqual(dependencies(fixture.issues[3].body), [99]));
@@ -46,7 +53,7 @@ const success=await simulate();
 check('API updates exactly one issue body and no other resource',()=>{
  assert.ifError(success.error);const writes=success.calls.filter(c=>c.method!=='GET');
  assert.equal(writes.length,1);assert.equal(writes[0].path,'/issues/200');assert.deepEqual(Object.keys(JSON.parse(writes[0].body)),['body']);
- assert.equal(success.result.ready,6);
+ assert.equal(success.result.ready,9);
 });
 for(const [name,options] of [['missing target',{targets:[]}],['duplicate target',{targets:[target,{...target,number:201}]}],['wrong target title',{targets:[{...target,title:'Other'}]}],['failed API read',{badRead:true}],['issue cap reached',{fullIssues:true}]]) {
  const run=await simulate(options);
