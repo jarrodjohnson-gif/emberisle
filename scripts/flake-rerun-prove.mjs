@@ -89,6 +89,11 @@ check("a cancelled or timed-out job is not a flake", timedOut, false);
 
 check("a failed job with no log is not a flake", { ...allFlaky, logs: {} }, false);
 
+// Every failed step in a job must be a flake, not just one of them.
+const twoSteps = run([["browser-a", "countdown-prove", `${failures["countdown-prove"]}\n${at}FAIL trade-prove`]]);
+twoSteps.jobs[2].steps.splice(2, 0, { name: "Run npm run trade-prove", conclusion: "failure" });
+check("one job, two failed steps, only one a known flake", twoSteps, false);
+
 // The workflow never runs PR code: it checks out the default branch only, and has no head ref anywhere.
 assert.match(workflow, /ref: \$\{\{ github\.event\.repository\.default_branch \}\}/);
 assert.equal(/head_(branch|repository)|pull_request\.head|refs\/pull/.test(workflow), false);
