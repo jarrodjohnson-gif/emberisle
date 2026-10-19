@@ -240,6 +240,8 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
         run: npm run keyboard-place-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
+        run: npm run placement-glow-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
         run: npm run upgrade-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
         run: npm run flash-prove

@@ -41,7 +41,8 @@ const BUDGETS = [
   // 2026-10-16 (#638, owner sign-off "A"): the jelly pieces (pieces-jelly.ts) replace the slabs; pieces are on the first
   // frame, so they are in this chunk (the slab builders stay, for ?pieces=slab and the classic look #641). 198.96 kB
   // measured against 196.82 kB on main; +540 B headroom.
-  { name: "IslandCanvas", gzipBytes: 199500 },
+  // 2026-10-19 (#830): the legal-corner ring gains an outline and a disc; 199.50 kB measured, budget +500 B.
+  { name: "IslandCanvas", gzipBytes: 200000 },
   // 2026-10-16 (#624): the Hex Jelly scenes on the board (hex-jelly.ts and the batcher jelly-board.ts), loaded after the
   // island's first draw; 50.95 kB measured, +2 kB. The sculpted terrain left IslandCanvas with them (192.87 kB).
   // 2026-10-16 (#631): the jelly shore (harbor-jelly.ts) is its own chunk, so the scenes it shares with the batcher split out
