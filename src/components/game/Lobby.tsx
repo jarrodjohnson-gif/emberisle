@@ -153,7 +153,7 @@ export function Lobby() {
                     Add bot
                   </Button>
                 ) : null}
-                {s ? <ReactionFloats by="seat" id={s.id} /> : null}
+                {s ? <ReactionFloats by="seat" id={s.id} align="start" /> : null}
               </li>
             );
           })}

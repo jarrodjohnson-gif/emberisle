@@ -191,10 +191,13 @@ function ReactionFloat({
   reaction,
   count,
   target,
+  align = "center",
 }: {
   reaction: Reaction;
   count: number;
   target?: string;
+  // Seat cards centre the badge; wide lobby rows pin it by the seat dot (#841).
+  align?: "center" | "start";
 }) {
   const float = useRef<HTMLDivElement>(null);
   const timing = useRef<{ reaction: Reaction; started: number } | null>(null);
@@ -210,31 +213,33 @@ function ReactionFloat({
       if (timing.current?.reaction !== reaction)
         timing.current = { reaction, started: performance.now() };
       const element = float.current;
-      if (!element) return;
-      element.style.left = "0px";
-      element.style.top = "0px";
-      // Include the count badge and target label, which can extend outside the image's box.
-      const boxes = [element, ...element.querySelectorAll("img, span")].map(
-        (node) => node.getBoundingClientRect(),
-      );
-      const left = Math.min(...boxes.map((box) => box.left));
-      const right = Math.max(...boxes.map((box) => box.right));
-      const top = Math.min(...boxes.map((box) => box.top));
-      const bottom = Math.max(...boxes.map((box) => box.bottom));
-      const dx = Math.max(8 - left, Math.min(0, innerWidth - 8 - right));
-      const dy = Math.max(8 - top, Math.min(0, innerHeight - 8 - bottom));
-      element.style.left = `${dx}px`;
-      element.style.top = `${dy}px`;
-      const rise = Math.min(12, Math.max(0, top + dy - 8));
+      const host = element?.parentElement;
+      if (!element || !host) return;
+      // Stay pinned to the seat card (#841). Only nudge to keep the badge inside the viewport
+      // safe edge — never stretch across the card or drift toward the board centre.
+      element.style.transform = "translate(0, 0)";
+      const seat = host.closest(".seat-card")?.getBoundingClientRect();
+      const box = element.getBoundingClientRect();
+      const pad = 8;
+      let dx = 0;
+      let dy = 0;
+      if (box.left < pad) dx = pad - box.left;
+      else if (box.right > innerWidth - pad) dx = innerWidth - pad - box.right;
+      if (box.top < pad) dy = pad - box.top;
+      // Keep the nudge within one seat-card width of the anchor so a clamp cannot send it mid-board.
+      if (seat) {
+        const maxShift = Math.max(24, seat.width);
+        dx = Math.max(-maxShift, Math.min(maxShift, dx));
+        dy = Math.max(-maxShift, Math.min(maxShift, dy));
+      }
+      const rise = preference.matches ? 0 : Math.min(12, Math.max(0, box.top + dy - pad));
+      element.style.transform = `translate(${dx}px, ${dy}px)`;
       if (preference.matches) return;
-      const start = { transform: "translateY(0)" };
-      const middle = { transform: `translateY(${-rise * 0.75}px)` };
-      const end = { transform: `translateY(${-rise}px)` };
-      animation = float.current?.animate(
+      animation = element.animate(
         [
-          { opacity: 1, ...start },
-          { opacity: 1, offset: 0.75, ...middle },
-          { opacity: 0, ...end },
+          { opacity: 1, transform: `translate(${dx}px, ${dy}px)` },
+          { opacity: 1, offset: 0.75, transform: `translate(${dx}px, ${dy - rise * 0.75}px)` },
+          { opacity: 0, transform: `translate(${dx}px, ${dy - rise}px)` },
         ],
         { duration: 2000, fill: "forwards" },
       );
@@ -249,15 +254,20 @@ function ReactionFloat({
       preference.removeEventListener("change", animate);
       window.removeEventListener("resize", animate);
     };
-  }, [reaction, count, target]);
+  }, [reaction, count, target, align]);
   if (!emoji && !image) return null;
   return (
+    // Compact badge (#841). !right-auto beats styles.css `.seat-card [data-testid=reaction]{right:24px}`,
+    // which stretched the float across the card on desktop.
     <div
       data-testid="reaction"
       data-emote={reaction.emote}
-      className="pointer-events-none absolute inset-x-0 top-0 z-30 flex justify-center"
+      className={cn(
+        "pointer-events-none absolute top-0 z-30 w-max !right-auto",
+        align === "center" ? "left-1/2 -translate-x-1/2" : "left-3",
+      )}
     >
-      <div ref={float} className="relative flex flex-col items-center">
+      <div ref={float} className="relative flex flex-col items-center will-change-transform">
         {emoji ? (
           <span
             role="img"
@@ -290,9 +300,11 @@ function ReactionFloat({
 export function ReactionFloats({
   by,
   id,
+  align = "center",
 }: {
   by: "player" | "seat";
   id: string;
+  align?: "center" | "start";
 }) {
   const reactions = useGame((s) => s.reactions);
   const seats = useGame((s) => s.seats);
@@ -328,6 +340,7 @@ export function ReactionFloats({
             reaction={reaction}
             count={count}
             target={target}
+            align={align}
           />
         );
       })}

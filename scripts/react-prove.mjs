@@ -136,6 +136,45 @@ try {
   check(JSON.stringify(after) === JSON.stringify(before), "opening the picker and sending a reaction leaves the board bounds and camera insets unchanged");
   check(await sender.page.evaluate(() => window.__emberisle.getState().chatOpen === false), "sending a board reaction leaves chat closed");
   await receiver.page.evaluate(() => window.__unsubscribeReactionProof());
+
+  // #841: on desktop, every reaction sits on the sender's seat card — not the board centre or the header controls.
+  for (const [width, height] of [
+    [1280, 720],
+    [1920, 1080],
+  ]) {
+    await receiver.page.setViewportSize({ width, height });
+    await receiver.page.waitForTimeout(200);
+    await sender.page.getByRole("button", { name: "Quick reactions", exact: true }).tap();
+    await sender.page.getByRole("group", { name: "Choose a reaction" }).getByRole("button", { name: "React happy", exact: true }).tap();
+    const placed = await receiver.page.waitForFunction(() => {
+      const reaction = document.querySelector('[data-testid="reaction"]');
+      const card = reaction?.closest('[data-testid^="rail-"]');
+      if (!reaction || !card) return null;
+      const rr = reaction.getBoundingClientRect();
+      const cr = card.getBoundingClientRect();
+      const header = document.querySelector(".hud-header")?.getBoundingClientRect();
+      const mid = { x: innerWidth / 2, y: innerHeight / 2 };
+      const cx = rr.x + rr.width / 2;
+      const cy = rr.y + rr.height / 2;
+      return {
+        onCard: Math.abs(cx - (cr.x + cr.width / 2)) <= cr.width / 2 + 8 && cy >= cr.y - 8 && cy <= cr.y + cr.height + 40,
+        nearBoardCenter: Math.hypot(cx - mid.x, cy - mid.y) < 140,
+        overlapsHeaderControls:
+          !!header &&
+          rr.bottom > header.top &&
+          rr.top < header.bottom &&
+          rr.left < header.right - 80 &&
+          rr.right > header.right - 200,
+        width: rr.width,
+      };
+    }, null, { timeout: 3000 });
+    const spot = await placed.jsonValue();
+    check(spot?.onCard && !spot.nearBoardCenter, `#841 ${width}x${height}: reaction stays on the sender seat (onCard=${spot?.onCard}, nearCenter=${spot?.nearBoardCenter})`);
+    check(spot && spot.width <= 96, `#841 ${width}x${height}: reaction badge stays compact (${spot?.width}px), not stretched across the card`);
+    check(!spot?.overlapsHeaderControls, `#841 ${width}x${height}: reaction does not cover the top-right controls`);
+    await receiver.page.waitForTimeout(2100);
+  }
+
   check(errors.length === 0, `zero console errors${errors.length ? `\n${errors.join("\n")}` : ""}`);
   console.log("react prove ok");
 } catch (error) {
