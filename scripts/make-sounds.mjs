@@ -51,6 +51,13 @@ const CLIPS = {
   // #661: the last seconds of your turn. A quiet 1.2 kHz sine tick (played at 0.5), then a lower 700 Hz wood knock (0.8).
   timer_tick: { ms: 30, voices: [tone(1200, 0, 0.012, 1)] },
   timer_final: { ms: 90, voices: [tone(700, 0, 0.03, 1), hiss(0, 0.006, 0.15, 0.5)] },
+  // #667: board touch sounds, played at 0.3 for a tap on a hex that places nothing. Pasture is the owner's own clip, so it has no entry here.
+  // Forest: a short wooden creak. Hills: a dry stone clack. Fields: a bright wheat rustle. Mountains: four pebble ticks. Waste: a dark gust.
+  tap_forest: { ms: 180, voices: [slide(420, 260, 0.06, 0, 0.07, 1), hiss(0, 0.04, 0.2, 0.3)] },
+  tap_hills: { ms: 90, voices: [tone(1500, 0, 0.008, 1), tone(900, 0, 0.015, 0.7), hiss(0, 0.006, 0.6, 0.6)] },
+  tap_fields: { ms: 200, voices: [hiss(0, 0.08, 0.7, 1), hiss(0.06, 0.07, 0.8, 0.8)] },
+  tap_mountains: { ms: 200, voices: [tone(2200, 0, 0.006, 1), tone(1700, 0.05, 0.006, 0.8), tone(2600, 0.09, 0.005, 0.7), tone(1400, 0.14, 0.008, 0.9), hiss(0, 0.2, 0.5, 0.05)] },
+  tap_waste: { ms: 300, voices: [hiss(0, 0.12, 0.12, 1), hiss(0.08, 0.1, 0.1, 0.8)] },
 };
 
 for (const [name, { ms, voices }] of Object.entries(CLIPS)) {

@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import { Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { HowTo, Lobby, online, sheets } from "@/components/game/chunks";
+import { HowTo, Lobby, online, SetupPipHints, sheets } from "@/components/game/chunks";
 import { Hud } from "@/components/game/Hud";
 import { PlaceList } from "@/components/game/PlaceList";
 import { TableRecoveryBoundary } from "@/components/game/TableRecoveryBoundary";
@@ -68,6 +68,9 @@ export function EmberisleApp() {
           <>
             <Hud />
             <PlaceList />
+            <LazyBoundary failed={null}>
+              <SetupPipHints />
+            </LazyBoundary>
           </>
         )}
       </TableRecoveryBoundary>

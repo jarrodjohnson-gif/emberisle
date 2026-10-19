@@ -28,7 +28,8 @@ const BUDGETS = [
   // 2026-10-17 (#552): render recovery adds 655 B over the lazy coach; 121171 B measured, +279 B headroom.
   // 2026-10-17 (#536): live trade response icons and taker identity measure 121.00 kB; +250 B headroom.
   // 2026-10-18 (#552 + #536): recovery on current main measures 121713 B; +287 B headroom after merging both features.
-  { name: "index", gzipBytes: 122000 },
+  // 2026-10-18 (#667): board touch sounds (terrain-to-clip table, 400 ms gap, armed flag) measure 122.04 kB; +260 B headroom.
+  { name: "index", gzipBytes: 122300 },
   // 2026-10-14 (#597): +1100 B for the diorama camera, its fit and the token pose on top of the lazy sea (182.92 kB measured).
   // 2026-10-15: 185.01 kB measured on main once the diorama (#604, +1.1 kB) and the natural waves (#614, +1.0 kB) both
   // landed; each fit its own raise alone.
@@ -60,7 +61,8 @@ const BUDGETS = [
   // 2026-10-16 (#643): the "My numbers" strip rides in moments, off the first load (the index measured 120.64 kB with it there,
   // over its 120.15 kB budget); 3.00 kB measured against 2.42 kB on main, +300 B headroom.
   // 2026-10-17 (#540): first-game coaching moves off the critical path into moments; 4244 B measured versus 3017 B on current main; +256 B headroom.
-  { name: "moments", gzipBytes: 4500 },
+  // 2026-10-18 (#546): opening pip hints ride with the coach in moments (off the index); 4.95 kB measured, +150 B headroom.
+  { name: "moments", gzipBytes: 5100 },
   // 2026-10-14 (#611): the lobby and win screen share their target selector; rolldown coalesces the shared Minus icon here too.
   // 0.65 kB at introduction, with a 0.75 kB ceiling; replaces the former minus-only chunk.
   { name: "VictoryTargetSelect", gzipBytes: 750 },

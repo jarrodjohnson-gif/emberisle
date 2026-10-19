@@ -45,7 +45,7 @@ import { makeBruno, type Bruno } from "@/lib/scene/bruno";
 import { makeJellyOutpost, makeJellyPath, makeJellyStronghold } from "@/lib/scene/pieces-jelly";
 import { CAUSTIC_GLSL, PAPER, SPLASH, addSplashRings, makeCrystalSea, makeFloorProps, makeSeaFloor, makeSplashes, makeSwell, makeWash, nearestCoast, type SeaUniforms, type WaterPath, type WaterStatus } from "@/lib/scene/crystal-water";
 import { Wobble } from "@/lib/scene/wobble";
-import { gainTick, play } from "@/lib/sound";
+import { gainTick, play, touchHex } from "@/lib/sound";
 import { payingHexes } from "@/lib/game/rules";
 import { type GameState, type HarborKind, type HexCell, type Terrain, type Vertex } from "@/lib/game/types";
 
@@ -241,6 +241,8 @@ export class IsleRenderer {
   private legalIds = new Set<string>();
   // An armed Upgrade: only the player's own outposts are legal, so a touch tap on one raises it at once, with no Place chip.
   private oneTap = false;
+  // A build is armed (#667): a tap on a hex is aimed at a placement, so it makes no touch sound.
+  private armed = false;
   private down = { x: 0, y: 0 };
   private stopped = false;
   private robberTarget = new THREE.Vector3();
@@ -553,6 +555,10 @@ export class IsleRenderer {
   // While a stronghold is armed, a touch tap on a legal outpost builds at once (no Place chip).
   setOneTap(on: boolean) {
     this.oneTap = on;
+  }
+
+  setArmed(on: boolean) {
+    this.armed = on;
   }
 
   // The mark a coarse pointer has selected, waiting for the Place chip. Pulses it and locks orbit meanwhile.
@@ -1133,6 +1139,11 @@ export class IsleRenderer {
       return;
     }
     this.lastTap = { t: now, x: e.clientX, y: e.clientY, empty: !legal };
+    // #667: a plain tap on a hex that places nothing (no drag or pinch got here; nothing armed, nothing legal to place) sounds its terrain.
+    if (hit?.kind === "hex" && !this.armed && !this.pending && this.legalIds.size === 0 && !this.titleMode) {
+      const terrain = this.lastState?.hexes.find((h) => h.id === hit.id)?.terrain;
+      if (terrain) touchHex(terrain);
+    }
     const touch = coarse || this.downType === "touch";
     if (!touch) {
       if (hit) this.onPick(hit.kind, hit.id);
