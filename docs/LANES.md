@@ -15,8 +15,8 @@ not overlap. Claims reserve files, including while a PR waits for review.
 ## Picking an issue
 
 1. **Find eligible work:** an open `status:todo` issue with a lane label, every `Depends on` issue
-   closed, no active claim, and no open PR for it (drafts count). Use `docs/FRAMEWORK.md` section 7's
-   order: earliest milestone, lowest step. Helpers additionally require `helper-ok` and must respect
+   closed, no active claim, and no open PR for it (drafts count). Order: priority first (see
+   [Tier and priority](#tier-and-priority)), then `docs/FRAMEWORK.md` section 7's earliest milestone, lowest step. Helpers additionally require `helper-ok` and must respect
    their open-PR limit in [`HELPERS.md`](HELPERS.md).
 2. **Check files across all lanes:** read active claims and their open PRs, including work In Review.
    A `claimed:` remains active until that agent posts a later pause, or its PR merges or closes.
@@ -53,12 +53,20 @@ not overlap. Claims reserve files, including while a PR waits for review.
 
 An issue with no lane label isn't ready. Skip it; the orchestrator labels it.
 
+Your claim and its file reservations release when your PR merges or closes, or when you post
+`/paused` identifying your own agent. Pausing does not make an issue eligible until it is open
+`status:todo` again; do not claim paused In Progress work as a shortcut around the eligibility check.
+
 ## Tier and priority
 
-When told "next", pick the eligible issue with the highest priority (`prio:p0`, then `prio:p1`, then
-`prio:p2`, then issues with no `prio:` label). Priority comes before milestone order. Within a priority, take your own tier first. Picking work from a lower tier is fine;
-picking from a higher tier is not. An issue with no `tier:` label is open to any tier.
-Tiers follow each vendor's own model documentation.
+When told "next", pick in this order:
+
+1. Highest priority first: `prio:p0`, then `prio:p1`, then `prio:p2`, then no `prio:` label.
+2. Within a priority, the earliest milestone and lowest step (`docs/FRAMEWORK.md` section 7).
+3. If several still tie, prefer your own tier.
+
+You may take work at your own tier or below, never above it. An issue with no `tier:` label is open
+to any tier. Helpers don't use this list: they follow the queue in [`HELPERS.md`](HELPERS.md).
 
 | Label | Kind of work | Models |
 |---|---|---|
@@ -67,26 +75,19 @@ Tiers follow each vendor's own model documentation.
 | `tier:2` | Everyday features with real proofs | Claude Sonnet 5.5, Gemini 3.8 Flash (thinking HIGH), Grok 4.7, and every `tier:1` model |
 | `tier:3` | Small single-purpose fixes, docs and screenshot QA | Claude Haiku 5.5, GPT-6 Luna, and every model above |
 
-A `model:` label, where present, is the reviewer's earlier pick. When it conflicts with `tier:`, the
-`tier:` label wins. Grok's usage limits are low, so give it one `tier:2` or `tier:3` issue at a time.
-`model:gemini-ok` issues are kept for Gemini. Other models skip them.
-A different model from the builder reviews every PR (for example, Sonnet reviews an Opus build).
+An issue's `model:` label, where present, names the model to build with (`docs/FRAMEWORK.md`). The
+`tier:` label says which other models may also take it. `model:gemini-ok` issues are kept for Gemini.
+Grok's usage limits are low, so give it one `tier:2` or `tier:3` issue at a time.
 
 ### Sub-agents and usage limits
 
-Any agent whose platform allows it may spawn sub-agents, either cheaper or stronger, to fit the task.
-For example, Opus can hand a `tier:3` issue to Haiku, or call Fable for a hard one.
-An agent that cannot spawn stronger models, such as Gemini, keeps work at its own tier or below.
-Choose by how clear the task is, not only by its tier:
+An agent may spawn cheaper or stronger sub-agents if its platform allows it. For example, Opus can
+hand a `tier:3` issue to Haiku. An agent that can't spawn stronger models, such as Gemini, stays at
+its own tier or below. Pick the sub-agent by how clear the task is:
 
-- Use **Fable 5.1** when the goal is unclear: open research, design or a problem with no defined answer.
-- Use **Sonnet 5.5** for clearly defined coding. With a precise issue and completion test, it codes as well as the larger models.
-- Use **Haiku 5.5** for small, focused fixes and checks.
+- **Fable 5.1** when the goal is unclear: open research, design, or a problem with no set answer.
+- **Sonnet 5.5** for clearly defined coding. With a precise issue and completion test, it codes as well as the larger models.
+- **Haiku 5.5** for small, focused fixes and checks.
 
-Every agent and sub-agent stops starting new work when its 5-hour or weekly usage limit has 5% or
-less remaining, so the work never runs into extra cost. Finish or pause the current step, post
-`/paused` with where you stopped, and leave the rest for later.
-
-Your claim and its file reservations release when your PR merges or closes, or when you post
-`/paused` identifying your own agent. Pausing does not make an issue eligible until it is open
-`status:todo` again; do not claim paused In Progress work as a shortcut around the eligibility check.
+Stop starting new work when your 5-hour or weekly usage limit has 5% or less left. Finish or pause
+the current step, post `/paused` saying where you stopped, and leave the rest.
