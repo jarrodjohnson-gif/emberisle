@@ -31,6 +31,7 @@ const FILES = {
   daking_wood: "daking_wood.mp3",
   lucke_diggler: "lucke_diggler.mp3",
   corn_no: "corn_no.mp3",
+  isaac_win: "isaac_win.mp3",
   chat_send: "chat_send.wav",
   chat_recv: "chat_recv.wav",
   // A tap on the sea (#616): a normal table clip, paced and burst-dropped like the rest.

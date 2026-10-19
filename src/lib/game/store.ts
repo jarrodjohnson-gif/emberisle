@@ -36,7 +36,8 @@ function rollOffLine(before: GameState | null, after: GameState) {
 function soundsFor(before: GameState | null, after: GameState, mine: boolean, victim = false, lost = false): [SoundName, number][] {
   if (!before) return [];
   // The winner keeps the win sound; every other seat at the table gets the loss sting.
-  if (after.winner && !before.winner) return [lost ? ["game_lose", MUSIC_VOLUME] : ["win", 1]];
+  // Isaac's own win music (Lucke Diggler, pickle or Isaac names) replaces the win and loss stings for the whole table.
+  if (after.winner && !before.winner) return isaacWon(after) ? [["isaac_win", ISAAC_WIN_VOLUME]] : [lost ? ["game_lose", MUSIC_VOLUME] : ["win", 1]];
   const out: [SoundName, number][] = [];
   const built = (s: GameState, kind: "outpost" | "stronghold") => s.vertices.filter((v) => v.building?.kind === kind).length;
   const paths = (s: GameState) => s.edges.filter((e) => e.path).length;
@@ -87,7 +88,10 @@ export function takeMatchPointLine() {
 const END_MUSIC_DELAY_MS = 1500;
 function stopEndMusic() {
   stop("end_music");
+  stop("isaac_win");
 }
+const ISAAC_WIN_VOLUME = 0.8;
+const isaacWon = (s: GameState) => isDiggler(s.players.find((p) => p.id === s.winner)?.name);
 
 // The board the start sting last played for, kept for the tab session so a reload mid-setup does not replay it.
 const START_KEY = "emberisle-start-sig";
@@ -140,7 +144,8 @@ export function hear(before: GameState | null, after: GameState, me: string, mod
     play("game_start", MUSIC_VOLUME);
   }
   if (before?.phase === "over" && after.phase !== "over") stopEndMusic();
-  if (mode !== "hotseat" && me && before && before.phase !== "over" && after.phase === "over" && after.winner) {
+  // Isaac's win music is the end music when he wins, so the regular end music stays off.
+  if (mode !== "hotseat" && me && before && before.phase !== "over" && after.phase === "over" && after.winner && !isaacWon(after)) {
     stopEndMusic();
     playLater("end_music", MUSIC_VOLUME, END_MUSIC_DELAY_MS);
   }
@@ -1058,7 +1063,7 @@ function offerChime(from: string, fromName: string, me: string, give: Bag, want:
   else if (from !== me) play("trade_offer");
 }
 
-// Isaac's intro music when Isaac arrives under any of his names: "The Lucke Diggler" (Lucke, Lucky, Luckie), any
+// Jarrod's undertaker's bell when Isaac arrives under any of his names: "The Lucke Diggler" (Lucke, Lucky, Luckie), any
 // name with "pickle" in it, or any name with "Isaac" (Isac, Isaaac…); spaces, punctuation and case are ignored. It rings
 // for a new seat with such a name, or a seat renamed to one in the lobby. Every seat hears it; on your own first seat list
 // only your own seat counts as new.
