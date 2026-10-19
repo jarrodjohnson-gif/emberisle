@@ -92,7 +92,7 @@ const RAIL_FULL = 1024;
 export function playHole(cssW: number, cssH: number, phone: boolean, safe: Partial<Insets> = {}): Insets {
   let i: Insets;
   if (phone && cssH > cssW) i = { top: 68, right: 12, bottom: (cssW <= TRAY_WRAP_MAX ? 322 : 274) + 4, left: 12 };
-  else if (phone) i = { top: 68, right: 12, bottom: 12, left: 284 };
+  else if (phone) i = { top: 68, right: 76, bottom: 12, left: 284 };
   else {
     const t = Math.min(1, Math.max(0, (cssW - RAIL_FROM) / (RAIL_FULL - RAIL_FROM)));
     i = { top: 68, right: 12 + 300 * t, bottom: 180 + 40 * t, left: 216 };

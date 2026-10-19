@@ -451,7 +451,7 @@ async function practice(view) {
     check(roll.lines.every(l => l.anim?.duration <= 2000), `${tag}: gain animation duration is <= 2000 ms`);
     check(expiry.every(t => t.running <= 2600), `${tag}: the batch has left within 2.6 s, excluding measured stalls`, expiry);
     check(expiry.every(t => t.raw <= 3500), `${tag}: raw expiry stays below the 3.5 s guard`, expiry);
-    check(roll.lines.every((l) => l.anim?.keyframes.some((k) => /translateY\(-/.test(k.tf ?? ""))), `${tag}: card lifts (~20px translateY keyframe)`);
+    check(roll.lines.every((l) => l.anim?.keyframes.some((k) => /translate[XY]\(-/.test(k.tf ?? ""))), `${tag}: card lifts (~20px translateY/translateX keyframe)`);
     check(boxes.every((b) => b.top >= 0), `${tag}: flash badges inside viewport`, boxes);
 
     // A bank trade: −4 ore in red/loss, +1 grain in green/edge.
@@ -474,8 +474,8 @@ async function practice(view) {
     const trade = await page.evaluate((n) => window.__lines.slice(n).map((l) => ({ text: l.text, d: l.d, r: l.r, color: l.color, keyframes: l.anim?.keyframes })), n1);
     const gave = await page.evaluate((o) => -window.__own.slice(o).find((x) => x.r === "ore").d, o1);
     check(traded && trade.length === 2 && trade.some((l) => l.d === -gave && l.r === "ore") && trade.some((l) => l.d === 1 && l.r === "grain"), `${tag}: a bank trade shows -${gave} Stone and +1 Wheat on hand cards`, trade);
-    check(trade.some((l) => l.d < 0 && l.keyframes?.some((k) => /translateY\([1-9]/.test(k.tf ?? ""))), `${tag}: loss dips card slightly (positive translateY keyframe)`);
-    check(trade.some((l) => l.d > 0 && l.keyframes?.some((k) => /translateY\(-/.test(k.tf ?? ""))), `${tag}: gain lifts card (negative translateY keyframe)`);
+    check(trade.some((l) => l.d < 0 && l.keyframes?.some((k) => /translate[XY]\([1-9]/.test(k.tf ?? ""))), `${tag}: loss dips card slightly (positive translateY/translateX keyframe)`);
+    check(trade.some((l) => l.d > 0 && l.keyframes?.some((k) => /translate[XY]\(-/.test(k.tf ?? ""))), `${tag}: gain lifts card (negative translateY/translateX keyframe)`);
     await page.waitForFunction(() => !document.querySelector('[data-testid="resource-flash"]'), null, { timeout: STEP_MS });
 
     // Another seat's goods are never shown.

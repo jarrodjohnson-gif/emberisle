@@ -48,3 +48,21 @@
   .hand-resource-card-slot { transition: none; }
   .hand-resource-card-slot[data-offer] { transform: none; }
 }
+
+/* #774: Side rail positioning for flash badge beside card and slot offer motion */
+.hud-goods-rail .hand-resource-card-slot .hand-resource-flash {
+  top: 50% !important;
+  bottom: auto !important;
+  left: auto !important;
+  right: calc(100% + 4px) !important;
+  transform: translateY(-50%) !important;
+}
+.hud-goods-rail .hand-resource-card-slot[data-offer] {
+  transform: translateX(-3px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .hud-goods-rail .hand-resource-card-slot[data-offer] {
+    transform: none;
+  }
+}
+

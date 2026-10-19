@@ -31,7 +31,10 @@ const parse = (c) => c.match(/[\d.]+/g).slice(0, 3).map(Number);
 // card that never received an animation when its count changed.
 async function sampleCardMotion(page, expected, tag) {
   const result = await page.evaluate((expected) => {
-    const matrixY = (value) => new DOMMatrixReadOnly(value === "none" ? undefined : value).m42;
+    const matrixShift = (value) => {
+      const m = new DOMMatrixReadOnly(value === "none" ? undefined : value);
+      return Math.abs(m.m41) > Math.abs(m.m42) ? m.m41 : m.m42;
+    };
     const cards = Object.fromEntries(["timber", "clay", "wool", "grain", "ore"].map((r) => {
       const card = document.querySelector(`[data-testid="resource-${r}"]`);
       const transforms = card.getAnimations().filter((a) =>
@@ -48,17 +51,21 @@ async function sampleCardMotion(page, expected, tag) {
         const rect = card.getBoundingClientRect();
         const slot = card.parentElement.getBoundingClientRect();
         const rail = card.parentElement.parentElement.getBoundingClientRect();
-        return [r, { y: matrixY(getComputedStyle(card).transform), n: transforms.length, count: count.textContent.trim(),
+        return [r, { y: matrixShift(getComputedStyle(card).transform), n: transforms.length, count: count.textContent.trim(),
           flash: flash?.textContent.trim() ?? null, overlap,
           footprint: [slot.left, slot.top, slot.width, slot.height, card.offsetWidth, card.offsetHeight], before,
-          outside: rect.left < Math.max(0, rail.left) || rect.top < 0 || rect.right > Math.min(innerWidth, rail.right) || rect.bottom > Math.min(innerHeight, rail.bottom + 10) }];
+          outside: rect.left < 0 || rect.top < 0 || rect.right > innerWidth || rect.bottom > Math.min(innerHeight, rail.bottom + 10) }];
       }
       const frames = animation.effect.getKeyframes();
       const duration = animation.effect.getTiming().duration;
-      const positioned = frames.map((f, i) => ({
-        offset: f.computedOffset ?? f.offset ?? (frames.length === 1 ? 1 : i / (frames.length - 1)),
-        y: new DOMMatrixReadOnly(f.transform).m42,
-      }));
+      const positioned = frames.map((f, i) => {
+        const m = new DOMMatrixReadOnly(f.transform);
+        const shift = Math.abs(m.m41) > Math.abs(m.m42) ? m.m41 : m.m42;
+        return {
+          offset: f.computedOffset ?? f.offset ?? (frames.length === 1 ? 1 : i / (frames.length - 1)),
+          y: shift,
+        };
+      });
       const extreme = positioned.reduce((best, f) => Math.abs(f.y) > Math.abs(best.y) ? f : best, positioned[0]);
       animation.pause();
       animation.currentTime = duration * extreme.offset;
@@ -71,10 +78,10 @@ async function sampleCardMotion(page, expected, tag) {
       const slot = card.parentElement.getBoundingClientRect();
       const rail = card.parentElement.parentElement.getBoundingClientRect();
       return [r, {
-        y: matrixY(getComputedStyle(card).transform), n: transforms.length, duration, frames: frames.map((f) => Object.keys(f).filter((k) => !["offset", "easing", "composite", "computedOffset"].includes(k))),
+        y: matrixShift(getComputedStyle(card).transform), n: transforms.length, duration, frames: frames.map((f) => Object.keys(f).filter((k) => !["offset", "easing", "composite", "computedOffset"].includes(k))),
         count: count.textContent.trim(), flash: flash?.textContent.trim() ?? null, overlap,
         footprint: [slot.left, slot.top, slot.width, slot.height, card.offsetWidth, card.offsetHeight], before,
-        outside: rect.left < Math.max(0, rail.left) || rect.top < 0 || rect.right > Math.min(innerWidth, rail.right) || rect.bottom > Math.min(innerHeight, rail.bottom + 10),
+        outside: rect.left < 0 || rect.top < 0 || rect.right > innerWidth || rect.bottom > Math.min(innerHeight, rail.bottom + 10),
         extreme: { y: extreme.y, offset: extreme.offset },
       }];
     }));
@@ -194,7 +201,9 @@ async function proveResourceMotion(page, tag) {
       const anim = card.getAnimations().find((a) => a.effect?.target === card && a.effect.getKeyframes().some((f) => "transform" in f));
       if (anim) {
         const last = anim.effect.getKeyframes().at(-1);
-        if (Math.abs(new DOMMatrixReadOnly(last.transform).m42) > 0.1) throw new Error(`${r}: final movement keyframe does not return to rest`);
+        const m = new DOMMatrixReadOnly(last.transform);
+        const shift = Math.abs(m.m41) > Math.abs(m.m42) ? m.m41 : m.m42;
+        if (Math.abs(shift) > 0.1) throw new Error(`${r}: final movement keyframe does not return to rest`);
         // play() at the end rewinds the native animation; finish the controlled timeline instead.
         anim.finish();
       }
@@ -203,7 +212,9 @@ async function proveResourceMotion(page, tag) {
   const settled = await page.evaluate(() => ["wool", "ore"].map((r) => {
     const c = document.querySelector(`[data-testid="resource-${r}"]`);
     const transform = getComputedStyle(c).transform;
-    return [r, transform === "none" ? 0 : new DOMMatrixReadOnly(transform).m42, getComputedStyle(c).opacity];
+    const m = new DOMMatrixReadOnly(transform === "none" ? undefined : transform);
+    const shift = Math.abs(m.m41) > Math.abs(m.m42) ? m.m41 : m.m42;
+    return [r, shift, getComputedStyle(c).opacity];
   }));
   for (const [r, y] of settled) assert.ok(Math.abs(y) <= 0.1, `${tag} ${r}: bounded animation returns to zero at its endpoint (y=${y})`);
   // Opacity uses its own CSS transition and can start on a later compositor frame on software GL.
@@ -241,8 +252,10 @@ async function proveDynamicMotionCancellation(page, tag) {
   const canceled = await page.evaluate(() => {
     const card = document.querySelector('[data-testid="resource-wool"]');
     const transform = getComputedStyle(card).transform;
+    const m = new DOMMatrixReadOnly(transform === "none" ? undefined : transform);
+    const shift = Math.abs(m.m41) > Math.abs(m.m42) ? m.m41 : m.m42;
     const active = card.getAnimations().filter((a) => a.effect?.target === card && a.effect.getKeyframes().some((f) => "transform" in f));
-    return { state: window.__dynamicMotion.playState, y: transform === "none" ? 0 : new DOMMatrixReadOnly(transform).m42, active: active.length };
+    return { state: window.__dynamicMotion.playState, y: shift, active: active.length };
   });
   assert.equal(canceled.state, "idle", `${tag}: live reduced-motion change cancels in-flight WAAPI animation`);
   assert.equal(canceled.active, 0, `${tag}: canceled card has no active transform animation`);
@@ -486,7 +499,7 @@ try {
       assert.ok(c.sizes.filter((s) => s.px === parseFloat(c.size)).length === 1, `${v.tag} ${r}: only the count is 28 px`);
       assert.equal(c.opacity, "1", `${v.tag} ${r}: opacity`);
       assert.ok(c.icon && c.iconOpacity === "1", `${v.tag} ${r}: icon at 70 % (${c.iconOpacity})`);
-      assert.deepEqual(c.visibleText, v.tag === "short" ? [String(want[r])] : [String(want[r]), {timber:"Wood",clay:"Brick",wool:"Sheep",grain:"Wheat",ore:"Stone"}[r]], `${v.tag} ${r}: only the count is visible text`);
+      assert.deepEqual(c.visibleText, [String(want[r]), {timber:"Wood",clay:"Brick",wool:"Sheep",grain:"Wheat",ore:"Stone"}[r]], `${v.tag} ${r}: count and name are visible text`);
       assert.equal(c.title, { timber: "Wood", clay: "Brick", wool: "Sheep", grain: "Wheat", ore: "Stone" }[r], `${v.tag} ${r}: title`);
       assert.match(c.name, new RegExp(`${c.title}`, "i"), `${v.tag} ${r}: accessible name kept for screen readers`);
     }
