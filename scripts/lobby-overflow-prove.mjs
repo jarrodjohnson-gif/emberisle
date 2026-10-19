@@ -14,6 +14,7 @@ mkdirSync(OUT_DIR, { recursive: true });
 
 const VIEWPORTS = [
   { name: "320x568 portrait", width: 320, height: 568, shot: "lobby-overflow-320x568.png" },
+  { name: "390x844 portrait", width: 390, height: 844, shot: "lobby-overflow-390x844.png" },
   { name: "640x360 landscape", width: 640, height: 360, shot: "lobby-overflow-640x360.png" },
   { name: "667x375 landscape", width: 667, height: 375, shot: "lobby-overflow-667x375.png" },
   { name: "844x390 landscape", width: 844, height: 390, shot: "lobby-overflow-844x390.png" },
@@ -105,12 +106,24 @@ try {
       };
     });
 
+    if (data.copyButtons.length > 0) {
+      assert.ok(
+        data.codeRect.right <= data.copyButtons[0].rect.x,
+        `${vp.name}: code right (${data.codeRect.right}) must clear copy button left (${data.copyButtons[0].rect.x})`,
+      );
+    }
+
     if (vp.width === 320 && vp.height === 568) {
       assert.equal(data.cover.hOverflow, 0, `320x568 portrait: horizontal overflow must be 0 px, got ${data.cover.hOverflow}`);
       assert.ok(data.codeRect.right <= data.cover.rect.right, `320x568: code right (${data.codeRect.right}) must stay within card right (${data.cover.rect.right})`);
       for (const btn of data.copyButtons) {
         assert.ok(btn.rect.right <= data.cover.rect.right, `320x568: copy button ${btn.text} right (${btn.rect.right}) must stay within card right (${data.cover.rect.right})`);
       }
+    }
+
+    if (vp.width === 390 && vp.height === 844) {
+      assert.equal(data.cover.hOverflow, 0, `390x844 portrait: horizontal overflow must be 0 px, got ${data.cover.hOverflow}`);
+      assert.ok(data.codeRect.right <= data.cover.rect.right, `390x844: code right (${data.codeRect.right}) must stay within card right (${data.cover.rect.right})`);
     }
 
     if (vp.width === 640 && vp.height === 360) {

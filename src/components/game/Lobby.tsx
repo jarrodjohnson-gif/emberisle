@@ -120,8 +120,10 @@ export function Lobby() {
           <p
             data-testid="table-code"
             className={cn(
-              "font-display tracking-[0.15em] sm:tracking-[0.2em]",
-              landscape ? "text-4xl sm:text-5xl" : "text-4xl sm:text-6xl",
+              "font-display",
+              landscape
+                ? "text-4xl tracking-[0.15em]"
+                : "text-4xl tracking-[0.15em] sm:text-6xl sm:tracking-[0.2em]",
             )}
           >
             {code}
