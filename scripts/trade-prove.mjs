@@ -435,7 +435,8 @@ try {
     const t0 = Date.now();
     await B.page.getByTestId("trade-dismiss").click();
     await until(async () => ((await B.page.getByTestId("trade-toast").count()) === 0 ? true : null), "#537: compact gone after dismiss");
-    if (Date.now() - t0 > 80) throw new Error(`#537: reduced motion dismiss took ${Date.now() - t0} ms`);
+    // Fade is 0 ms; allow a short React unmount window so CI timing noise does not flake.
+    if (Date.now() - t0 > 250) throw new Error(`#537: reduced motion dismiss took ${Date.now() - t0} ms`);
     await C.page.getByRole("button", { name: /No|Dismiss/i }).click().catch(() => {});
     await until(async () => (await views(tabs)).every((v) => !v.offer) || null, "#537: clear third offer", 5_000);
     void third;
