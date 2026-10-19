@@ -1,6 +1,10 @@
-# Independent review
+# Capture correction and verification
 
-Reviewer: GPT-6.1 Sol, 2026-10-19.
+Capture correction and verification: GPT-6.1 Sol, 2026-10-19.
+
+GPT-6.1 Sol produced the corrected phone captures and verified their artifacts.
+GPT-6 Luna separately inspected the completed contact sheet.
+The Claude review desk must still review this PR before merging.
 
 - Capture baseline: `587951aa81db45982a8e79e51c4378afaa2986e3`.
 - Current-main reproduction baseline: `00ba9a505d0ab9794cef0ef29ddeba050b5c4a6a`.
