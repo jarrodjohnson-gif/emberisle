@@ -36,8 +36,7 @@ const CEILINGS = [
 ];
 
 // Growth allowance against the base, in gzip bytes. index is fixed at 400 B; the others take 0.33% of the base size, at least 200 B.
-// 2026-10-19 (#846, PR #874): harbor-jelly +369 B for the 2.5x dock piles, approved by Jarrod and the review desk; back to the 200 B default at the next pass.
-const ALLOWANCE = { index: 400, "harbor-jelly": 400 };
+const ALLOWANCE = { index: 400 };
 const ALLOWANCE_RATE = 0.0033;
 const ALLOWANCE_MIN = 200;
 const allowanceFor = (name, baseBytes) => ALLOWANCE[name] ?? Math.max(ALLOWANCE_MIN, Math.round(baseBytes * ALLOWANCE_RATE));
