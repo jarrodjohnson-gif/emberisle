@@ -337,7 +337,11 @@ interface GameStore {
   legal: Legal | null;
   // The host's turn timer (#344): when it fires on this tab's clock, whose seat it is, and the host's own value
   // (`deadline`) that tells one window from the next. Null when none is armed.
-  turnTimer: { at: number; player: string; deadline: number } | null;
+  // `host` is the host's clock on the push that opened this window (0 when the push carried none).
+  turnTimer: { at: number; player: string; deadline: number; host: number } | null;
+  // The host clock minus this one, as best this tab has measured it (0 before any push). A push shows the skew less the time it
+  // spent on the way, so the largest one seen is the closest. The final-countdown cues are timed from it, not from `at`.
+  clockSkew: number;
   lobbyLog: string;
   hostTable: () => void;
   joinTable: (code: string) => void;
@@ -519,6 +523,7 @@ export const useGame = create<GameStore>((set, get) => ({
   seats: [],
   legal: null,
   turnTimer: null,
+  clockSkew: 0,
   lobbyLog: "",
   spectator: false,
   synced: 0,
@@ -1196,16 +1201,18 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       const rollOff = rollOffLine(get().state, game);
       // hear first: it is what claims a match point, and the banner line is read off that claim on this same state.
       hear(get().state, game, me, "online", firstState);
-      firstState = false;
       const swing = awardLine(get().state, game) ?? takeMatchPointLine();
       // The deadline moves onto this clock by the skew the message shows, so a phone minutes off still counts true.
       // Every push carries the same window, and the skew wobbles by however long this tab took to get to the message:
       // the timer we hold stays while the host's deadline is the same, so the chip neither remounts nor announces twice.
       const skew = typeof serverNow === "number" ? serverNow - Date.now() : 0;
       const prev = get().turnTimer;
-      const turnTimer = !turnDeadline || !turnPlayer ? null : prev?.deadline === turnDeadline && prev.player === turnPlayer ? prev : { at: turnDeadline - skew, player: turnPlayer, deadline: turnDeadline };
+      // A new connection starts the estimate over: a rejoin may reach a different host clock.
+      const clockSkew = firstState ? skew : Math.max(skew, get().clockSkew);
+      firstState = false;
+      const turnTimer = !turnDeadline || !turnPlayer ? null : prev?.deadline === turnDeadline && prev.player === turnPlayer ? prev : { at: turnDeadline - skew, player: turnPlayer, deadline: turnDeadline, host: serverNow as number };
       // The first state after a join or a page-load rejoin seeds the log with what the engine kept, the way practice does.
-      set({ legal, turnTimer, gameLog: get().state ? get().gameLog : appendLog(get().gameLog, game.log) });
+      set({ legal, turnTimer, clockSkew, gameLog: get().state ? get().gameLog : appendLog(get().gameLog, game.log) });
       // A rematch's new game (#266): drop any half-made move or open panel left over from the win.
       if (get().state?.phase === "over" && game.phase !== "over") set({ buildMode: "none", roadPicks: [], pendingPlace: null, tradeOpen: false });
       get().loadState(game, me, get().isHost, get().code);
