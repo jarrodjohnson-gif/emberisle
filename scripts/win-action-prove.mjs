@@ -79,22 +79,35 @@ try{
  for(const ws of sockets)ws.terminate();host.kill('SIGKILL');await new Promise(r=>host.once('exit',r));await start();
  await vite.listen();browser=await chromium.launch({args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});mkdirSync('test-results',{recursive:true});
  const errors=[];
- for(const [width,height,reduced] of [[390,844,false],[1280,720,false],[844,390,true],[956,440,false]]){
+ for(const [width,height,reduced,insets] of [[390,844,false],[1280,720,false],[844,390,true],[956,440,false],[667,375,false,{top:0,right:44,bottom:21,left:44}]]){
   for(const f of fixtures){
-   const context=await browser.newContext({viewport:{width,height},reducedMotion:reduced?'reduce':'no-preference'});
+   const context=await browser.newContext({viewport:{width,height},reducedMotion:reduced?'reduce':'no-preference',hasTouch:!!insets,isMobile:!!insets});
    await context.addInitScript(({code})=>{localStorage.setItem('emberisle-seat',JSON.stringify({code,secret:`${code}-p0`}));localStorage.setItem('emberisle-seat-live',code);},f);
    const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
+   if(insets)await (await context.newCDPSession(page)).send('Emulation.setSafeAreaInsetsOverride',{insets});
    await page.goto(`http://127.0.0.1:${port}/?host=${encodeURIComponent(`ws://127.0.0.1:${hostPort}`)}`);
    await page.getByTestId('win-action').waitFor();
    const expected=`${f.text}${f.trigger==='longestPath'||f.trigger==='largestArmy'?' (+2)':f.trigger==='pointFortune'?' (+1)':''} · ${f.earned} points, target ${f.target}.`;
    assert.equal(await page.getByTestId('win-action').textContent(),expected);
    await page.reload();await page.getByTestId('win-action').waitFor();assert.equal(await page.getByTestId('win-action').textContent(),expected);
+   if(insets)await (await context.newCDPSession(page)).send('Emulation.setSafeAreaInsetsOverride',{insets});
    const box=await page.getByTestId('win-action').boundingBox();assert.ok(box.x>=0&&box.y>=0&&box.x+box.width<=width&&box.y+box.height<=height);
+   const wrap=page.getByTestId('win-table-wrap');
+   const wrapBox=await wrap.boundingBox();
+   const dims=await wrap.evaluate(el=>({scrollHeight:el.scrollHeight,clientHeight:el.clientHeight,scrollWidth:el.scrollWidth,clientWidth:el.clientWidth}));
+   if(height<=480){
+    assert.ok(dims.scrollHeight<=dims.clientHeight,`table must not scroll vertically: scrollHeight ${dims.scrollHeight} <= clientHeight ${dims.clientHeight}`);
+    assert.ok(dims.scrollWidth<=dims.clientWidth,`table must not scroll horizontally: scrollWidth ${dims.scrollWidth} <= clientWidth ${dims.clientWidth}`);
+   }
    const rows=await page.getByTestId('win-row').all();assert.equal(rows.length,4);
-   for(const r of rows){const b=await r.boundingBox();assert.ok(b&&b.y>=0&&b.y+b.height<=height,`row must fit within viewport height ${height}`);}
-   await page.screenshot({path:`test-results/win-action-${f.trigger}-${f.target}-${f.earned}-${width}.png`});await context.close();
+   for(const r of rows){
+    const b=await r.boundingBox();
+    if(height<=480)assert.ok(b&&b.y>=wrapBox.y&&b.y+b.height<=wrapBox.y+wrapBox.height+1,`row must fit within table wrap`);
+    assert.ok(b&&b.y>=0&&b.y+b.height<=height,`row must fit within viewport height ${height}`);
+   }
+   await page.screenshot({path:`test-results/win-action-${f.trigger}-${f.target}-${f.earned}-${width}${insets?'-insets':''}.png`});await context.close();
   }
-  console.log(`ok ${width}x${height}${reduced?' reduced':''}: five winning triggers, seven-/ten-point targets and overshoot, persisted restart and browser reload`);
+  console.log(`ok ${width}x${height}${reduced?' reduced':''}${insets?' insets':''}: five winning triggers, seven-/ten-point targets and overshoot, persisted restart and browser reload`);
  }
  assert.deepEqual(errors,[]);console.log('win-action-prove: all passed; all seat/watcher views omit trigger before the win');
 }finally{await browser?.close();await vite.close();for(const ws of sockets)ws.terminate();host?.kill('SIGKILL');rmSync(dir,{recursive:true,force:true});}
