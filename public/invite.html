@@ -488,7 +488,7 @@ form .actions { justify-content: flex-start; }
   function wave(x, y, t) {
     return Math.sin(x * 0.18 + t * 0.9) * 0.22 + Math.sin(y * 0.23 - t * 0.7) * 0.18 + Math.sin((x + y) * 0.5 + t * 1.6) * 0.06;
   }
-  var tmp = new THREE.Color(), cA, cB;
+  var tmp = has3d ? new THREE.Color() : null, cA, cB;
   function frame(now) {
     requestAnimationFrame(frame);
     stepTween(now);
