@@ -12,6 +12,7 @@
     "test": "npm --prefix server test",
     "client-prove": "node scripts/client-prove.mjs",
     "dock-rates-prove": "node scripts/dock-rates-prove.mjs",
+    "owned-docks-prove": "node scripts/owned-docks-prove.mjs",
     "hotseat-prove": "node scripts/hotseat-prove.mjs",
     "tabs-prove": "node scripts/tabs-prove.mjs",
     "countdown-prove": "node scripts/countdown-prove.mjs",

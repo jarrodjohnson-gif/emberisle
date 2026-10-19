@@ -33,6 +33,8 @@ const CEILINGS = [
   // #538: coast inspection UI loads separately; measured 1030 B.
   { name: "DockInspection", gzipBytes: 1200 },
   { name: "HandRates", gzipBytes: 800 },
+  // #560: owned-building rate labels load separately (0.55 kB gzip measured).
+  { name: "OwnedDockLabels", gzipBytes: 700 },
 ];
 
 // Growth allowance against the base, in gzip bytes. index is fixed at 400 B; the others take 0.33% of the base size, at least 200 B.

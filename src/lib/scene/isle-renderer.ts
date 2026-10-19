@@ -160,6 +160,8 @@ export const TOKEN_FACE = 0.245;
 // How far a tilted token is lifted so its near edge stays where the flat disc's underside was.
 export const TOKEN_LIFT = TOKEN_R * Math.sin(TOKEN_TILT) + (TOKEN_H / 2) * Math.cos(TOKEN_TILT) - TOKEN_H / 2;
 
+export type OwnedDockPosition = { id: string; owner: string; kind: HarborKind; x: number; y: number };
+
 type DockPosition = { id: string; kind: HarborKind; x: number; y: number };
 
 export class IsleRenderer {
@@ -269,6 +271,9 @@ export class IsleRenderer {
   onDock: (id: string) => boolean = () => false;
   private dockPositions: DockPosition[] = [];
   private docksDirty = true;
+  onOwnedDocks: (docks: readonly OwnedDockPosition[]) => void = () => {};
+  private ownedDockPositions: OwnedDockPosition[] = [];
+  private ownedDocksDirty = true;
   private choice: WaterPath | null = null;
   private waterSet = false;
   private probed: { path: WaterPath; ms: number } | null = null;
@@ -656,6 +661,7 @@ export class IsleRenderer {
     // (online bots) still flash when one roll is among them.
     const prev = this.lastState;
     const rolled = prev && landKey(prev) === landKey(state) && (state.rolls ?? 0) === (prev.rolls ?? 0) + 1;
+    if (prev !== state) this.ownedDocksDirty = true;
     this.lastState = state;
     this.lastHi = highlights;
     this.lastInteractive = interactive;
@@ -798,12 +804,14 @@ export class IsleRenderer {
 
   private onCameraChange = () => {
     this.docksDirty = true;
+    this.ownedDocksDirty = true;
     this.wake();
   };
 
   // The visual viewport also moves with the keyboard and a pinch, which leave the canvas as it is: only the hole is measured then.
   private onViewport = () => {
     this.docksDirty = true;
+    this.ownedDocksDirty = true;
     const c = this.renderer.domElement;
     if ((c.clientWidth || 1) !== this.sizeW || (c.clientHeight || 1) !== this.sizeH) return this.resize();
     this.remeasure();
@@ -890,6 +898,7 @@ export class IsleRenderer {
   // cap level over the island's centre, the lens axis meeting the canvas at (cx, cy), so the island sits in the hole.
   private applyPose(p: Pose) {
     this.docksDirty = true;
+    this.ownedDocksDirty = true;
     if (this.view === "diorama") {
       const c = this.persp;
       const [w, h] = [this.sizeW || 1, this.sizeH || 1];
@@ -1022,6 +1031,7 @@ export class IsleRenderer {
     const d = Math.hypot(dx, dz);
     if (d <= max) return;
     this.docksDirty = true;
+    this.ownedDocksDirty = true;
     const k = max / d - 1;
     t.x += dx * k;
     t.z += dz * k;
@@ -1457,6 +1467,27 @@ export class IsleRenderer {
     }
   }
 
+  // Project the controlling buildings independently of land geometry and placement marks (#560).
+  private updateOwnedDockPositions() {
+    if (this.titleMode || !this.ownedDocksDirty || !this.lastState) return;
+    this.ownedDocksDirty = false;
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    const tops = hexTops(this.lastState);
+    const docks = this.lastState.vertices.flatMap((v) => {
+      if (!v.harbor || !v.building) return [];
+      const p = _p.set(v.x, vertexTop(tops, v), v.z).project(this.cam());
+      return [{ id: v.id, owner: v.building.playerId, kind: v.harbor,
+        x: rect.left + (p.x + 1) * rect.width / 2,
+        y: rect.top + (1 - p.y) * rect.height / 2 }];
+    });
+    if (docks.length === this.ownedDockPositions.length && docks.every((d, i) => {
+      const previous = this.ownedDockPositions[i]!;
+      return d.id === previous.id && d.owner === previous.owner && d.kind === previous.kind && Math.round(d.x) === Math.round(previous.x) && Math.round(d.y) === Math.round(previous.y);
+    })) return;
+    this.ownedDockPositions = docks;
+    this.onOwnedDocks(docks);
+  }
+
   // The one-time GPU check, on a built and warm scene of a settled client (a second after setSettled and after the last
   // pointer on the canvas), each frame made to finish by a 1-pixel read. First up to 10 simple frames after 5 warm ones: over 11 ms on average (the crystal sea draws the scene twice), the sea
   // stays simple and the crystal one is never drawn. Otherwise up to 10 crystal frames after 3 warm ones: over 22 ms, back to
@@ -1479,6 +1510,7 @@ export class IsleRenderer {
     }
     this.renders += 1;
     this.updateDockPositions();
+    this.updateOwnedDockPositions();
     const p = this.probe;
     const warm = p?.stage === "simple" ? 5 : 3;
     const budget = p?.stage === "simple" ? 11 : 22;
