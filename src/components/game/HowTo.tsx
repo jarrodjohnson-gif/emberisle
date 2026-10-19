@@ -60,7 +60,7 @@ export function HowTo({ onClose }: { onClose: () => void }) {
         <div className="mt-4 space-y-3 text-sm leading-relaxed text-zinc-600">
           <p>Win at {target} points.</p>
           <p>Each turn: roll. Matching numbers pay goods from tiles you touch. {wayfarerRules(mode)}</p>
-          <p>Build paths (timber + clay), outposts (timber, clay, wool, grain), strongholds (three grain, two ore). Fortunes cost wool, grain, ore.</p>
+          <p>Build paths (wood + brick), outposts (wood, brick, sheep, wheat), strongholds (three wheat, two stone). Fortunes cost sheep, wheat, stone.</p>
           <p>Outposts score 1, strongholds 2. Longest path of five and largest army of three wayfarer cards score 2 more. Docks cut bank trade to 3:1 or 2:1.</p>
           <p>Drag to orbit the isle. Tap glowing corners and paths to build.</p>
         </div>

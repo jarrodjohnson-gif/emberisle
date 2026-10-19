@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { RESOURCE_ICON } from "@/components/game/ResourceSymbols";
 import { RESOURCES, RESOURCE_LABEL, type Phase, type PlayerState, type Resource } from "@/lib/game/types";
 import { cn } from "@/lib/utils";
 import { useGame } from "@/lib/game/store";
-import { heldRates } from "@/lib/game/rules";
+import { chunk, LazyBoundary } from "@/lib/lazy";
+const HandRates = chunk(() => import("./HandRates")).pick((m) => m.default);
 import "./hand-motion.css";
 
 export { RESOURCE_ICON } from "@/components/game/ResourceSymbols";
@@ -90,17 +90,28 @@ function useResourceFlashes(me: PlayerState) {
   return visibleFlashes;
 }
 
-function ResourceCard({ resource, count, flash, showRates }: { resource: Resource; count: number; flash?: ResourceFlash; showRates: (resource: Resource, card: HTMLElement) => void }) {
+// While an offer is open for this seat, the goods it would move: negative for what the seat gives, positive for what it
+// gets (#820). The asker gives `give`; everyone else gives `want`. Answering it, or its closing, clears the lot.
+function useOfferDeltas(me: PlayerState) {
+  const offer = useGame((s) => s.offer);
+  const answered = useGame((s) => s.declined.includes(me.id));
+  const deltas: Partial<Record<Resource, number>> = {};
+  if (!offer || answered) return deltas;
+  const [gives, gets] = offer.from === me.id ? [offer.give, offer.want] : [offer.want, offer.give];
+  for (const r of RESOURCES) {
+    if (gives[r]) deltas[r] = -gives[r]!;
+    else if (gets[r]) deltas[r] = gets[r];
+  }
+  return deltas;
+}
+
+function ResourceCard({ resource, count, flash, offer, showRates, buildMode }: { resource: Resource; count: number; flash?: ResourceFlash; offer?: number; buildMode: string; showRates: (resource: Resource, card: HTMLElement) => void }) {
   const card = useRef<HTMLDivElement>(null);
-  const hold = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const start = useRef({ x: 0, y: 0 });
-  const buildMode = useGame((s) => s.buildMode);
+  const hold = useRef<{ timer?: ReturnType<typeof setTimeout>; x: number; y: number }>({ x: 0, y: 0 });
   const cancelHold = () => {
-    if (hold.current) clearTimeout(hold.current);
-    hold.current = null;
+    clearTimeout(hold.current.timer);
   };
-  useEffect(() => cancelHold, []);
-  useEffect(cancelHold, [buildMode]);
+  useEffect(() => cancelHold, [buildMode]);
   const Icon = RESOURCE_ICON[resource];
   const label = flash ? (flash.delta > 0 ? `+${flash.delta}` : String(flash.delta)) : null;
   // Restart on the event ID, even for two gains in the same millisecond. The card itself stays mounted,
@@ -128,7 +139,11 @@ function ResourceCard({ resource, count, flash, showRates }: { resource: Resourc
     };
   }, [flash?.id]);
   return (
-    <div className="hand-resource-card-slot relative min-w-0 flex-1">
+    <div
+      data-testid={`offer-slot-${resource}`}
+      data-offer={offer ? (offer < 0 ? "give" : "get") : undefined}
+      className="hand-resource-card-slot relative min-w-0 flex-1"
+    >
       <div
         ref={card}
         data-testid={`resource-${resource}`}
@@ -154,12 +169,13 @@ function ResourceCard({ resource, count, flash, showRates }: { resource: Resourc
         onPointerDown={(e) => {
           if (e.button !== 0) return;
           cancelHold();
-          start.current = { x: e.clientX, y: e.clientY };
+          hold.current.x = e.clientX;
+          hold.current.y = e.clientY;
           const target = e.currentTarget;
-          hold.current = setTimeout(() => showRates(resource, target), 500);
+          hold.current.timer = setTimeout(() => showRates(resource, target), 500);
         }}
         onPointerMove={(e) => {
-          if (Math.hypot(e.clientX - start.current.x, e.clientY - start.current.y) > 8) cancelHold();
+          if (Math.hypot(e.clientX - hold.current.x, e.clientY - hold.current.y) > 8) cancelHold();
         }}
         onPointerUp={cancelHold}
         onPointerCancel={cancelHold}
@@ -187,6 +203,20 @@ function ResourceCard({ resource, count, flash, showRates }: { resource: Resourc
           />
         ) : null}
       </div>
+      {offer ? (
+        <span
+          data-testid="offer-delta"
+          aria-hidden
+          className={cn(
+            "hand-offer-delta pointer-events-none absolute left-0.5 top-0.5 rounded-control bg-surface px-1 text-caption font-semibold tabular-nums short:left-auto short:right-1 short:top-0 short:leading-3",
+            offer > 0 ? "text-gain" : "text-loss",
+            // The compact card has room for one label: the edge and lift still show while a gain/loss flash holds it.
+            flash && "short:hidden",
+          )}
+        >
+          {offer > 0 ? `+${offer}` : String(offer)}
+        </span>
+      ) : null}
       {flash ? (
         <span
           key={flash.id}
@@ -207,44 +237,23 @@ function ResourceCard({ resource, count, flash, showRates }: { resource: Resourc
 }
 
 function ResourceHand({ me, flashes }: { me: PlayerState; flashes: ReturnType<typeof useResourceFlashes> }) {
-  const state = useGame((s) => s.state);
+  const offer = useOfferDeltas(me);
   const buildMode = useGame((s) => s.buildMode);
-  const [hint, setHint] = useState<{ resource: Resource; owner: string; top: number } | null>(null);
-  const rates = hint && state ? heldRates(state, me.id, hint.resource).map((rate) =>
-    rate === 4 ? "Bank 4:1" : rate === 3 ? "Dock 3:1" : `${RESOURCE_LABEL[hint.resource]} dock 2:1`,
-  ).join(" · ") : "";
-  const showRates = useCallback((resource: Resource, card: HTMLElement) => {
-    if (useGame.getState().buildMode === "none") setHint({ resource, owner: me.id, top: card.getBoundingClientRect().top });
-  }, [me.id]);
-  useEffect(() => setHint(null), [me.id, buildMode]);
-  useEffect(() => {
-    if (!hint) return;
-    const dismiss = (e: PointerEvent) => {
-      if (!(e.target instanceof Element) || !e.target.closest('[data-testid="hand-rates"]')) setHint(null);
-    };
-    const escape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setHint(null);
-    };
-    document.addEventListener("pointerdown", dismiss);
-    document.addEventListener("keydown", escape);
-    return () => {
-      document.removeEventListener("pointerdown", dismiss);
-      document.removeEventListener("keydown", escape);
-    };
-  }, [hint]);
+  const [hint, setHint] = useState<{ resource: Resource; top: number; key: number } | null>(null);
+  const showRates = (resource: Resource, card: HTMLElement) => {
+    if (useGame.getState().buildMode === "none") setHint({ resource, key: performance.now(), top: card.getBoundingClientRect().top });
+  };
+  useEffect(() => setHint(null), [buildMode]);
   return (
     <>
       <div className="goods-tray flex shrink-0 gap-1 overflow-x-auto rounded-chip p-2 short:p-1">
         {RESOURCES.map((r) => (
-          <ResourceCard key={r} resource={r} count={me.resources[r]} flash={flashes[r]} showRates={showRates} />
+          <ResourceCard key={r} resource={r} count={me.resources[r]} flash={flashes[r]} offer={offer[r]} showRates={showRates} buildMode={buildMode} />
         ))}
       </div>
-      {hint && hint.owner === me.id && buildMode === "none" ? createPortal(<div
-        data-testid="hand-rates"
-        role="status"
-        className="pointer-events-none fixed left-3 right-3 z-50 mx-auto w-fit max-w-[calc(100%_-_24px)] rounded-control border border-line bg-surface px-3 py-2 text-[16px] font-semibold text-fg shadow-lg"
-        style={{ bottom: Math.max(12, innerHeight - hint.top + 8) }}
-      >{rates}</div>, document.body) : null}
+      {hint && buildMode === "none" ? <LazyBoundary key={hint.key} failed={null}>
+        <HandRates owner={me.id} hint={hint} onClose={() => setHint(null)} />
+      </LazyBoundary> : null}
     </>
   );
 }
@@ -287,7 +296,7 @@ export function HandDock({ me, phase }: { me: PlayerState; phase: Phase }) {
         if (e.target === e.currentTarget) setRising(false);
       }}
     >
-      <ResourceHand me={me} flashes={flashes} />
+      <ResourceHand key={me.id} me={me} flashes={flashes} />
     </div>
   );
 }

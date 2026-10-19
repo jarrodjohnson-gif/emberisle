@@ -2,3 +2,5 @@ node_modules
 dist/
 test-results/
 server/rooms/
+.emberisle-tunnel/
+server/profiles/

@@ -1,5 +1,5 @@
 // Goods this seat gains or loses, said once in the middle of the island (Jarrod's playtest: "it should appear in middle of
-// screen and fade away like green text and number"). One glass line per good, "+2 Timber" in green or "−1 Ore" in red, each
+// screen and fade away like green text and number"). One glass line per good, "+2 Wood" in green or "−1 Ore" in red, each
 // rising a little and fading over FLOAT_MS, 150 ms apart; reduced motion keeps fully static lines for the same duration. The hand's own +N flash
 // (Hand.tsx) stays; this is the line you can read. Only this seat's hand is read, as the hand does: online the other seats
 // arrive as a count, and a watcher has no hand, so no other seat's goods are ever shown. Spending on a build or a fortune is
@@ -28,6 +28,7 @@ let next = 0;
 
 export function GainFloats({ me, rolls }: { me: PlayerState; rolls: number }) {
   const [lines, setLines] = useState<Line[]>([]);
+  const phase = useGame((s) => s.state?.phase);
   const synced = useGame((s) => s.synced);
   const prev = useRef<{ me: PlayerState; rolls: number; synced: number } | null>(null);
   // What a roll's goods are waiting on (a timer and the moment's store), dropped on a hand-over or unmount.
@@ -40,6 +41,13 @@ export function GainFloats({ me, rolls }: { me: PlayerState; rolls: number }) {
     waits.current.clear();
     busy();
   };
+
+  useEffect(() => {
+    if (phase === "over") {
+      dropWaits();
+      setLines([]);
+    }
+  }, [phase]);
 
   useEffect(() => {
     const was = prev.current;
@@ -117,7 +125,7 @@ export function GainFloats({ me, rolls }: { me: PlayerState; rolls: number }) {
     [],
   );
 
-  if (!lines.length) return null;
+  if (phase === "over" || !lines.length) return null;
   return (
     <div
       aria-hidden="true"

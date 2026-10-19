@@ -89,7 +89,7 @@ async function inspectDock(page, kind, tag) {
     window.__dockLatency = null;
     window.__dockStarted = null;
     window.__dockObserver?.disconnect();
-    const wanted = kind === "any" ? "3:1 any goods" : `2:1 ${kind}`;
+    const wanted = kind === "any" ? "3:1 any goods" : `2:1 ${{ timber: "wood", clay: "brick", wool: "sheep", grain: "wheat", ore: "stone" }[kind]}`;
     const check = () => {
       const el = document.querySelector('[data-testid="dock-rate-label"]');
       const label = el?.cloneNode(true);
@@ -114,7 +114,7 @@ async function inspectDock(page, kind, tag) {
   });
   assert.equal(result.role, "status", `${tag}: dock label is announced politely`);
   assert.equal(result.icon, true, `${tag}: dock label includes an icon`);
-  assert.equal(text(result.value), kind === "any" ? "3:1 any goods" : `2:1 ${kind}`, `${tag}: exact dock rate and good`);
+  assert.equal(text(result.value), kind === "any" ? "3:1 any goods" : `2:1 ${{ timber: "wood", clay: "brick", wool: "sheep", grain: "wheat", ore: "stone" }[kind]}`, `${tag}: exact dock rate and good`);
   assert.ok(result.latency < 300, `${tag}: dock label appears within 300ms (${result.latency.toFixed(1)}ms)`);
   await page.keyboard.press("Escape");
   return result.latency;
@@ -190,9 +190,9 @@ async function proveHand(page, touch, tag) {
   await fixture(page, { generic: true, timber: false });
   await expectRates(page, "Bank 4:1 · Dock 3:1", `${tag} live generic ownership`);
   await fixture(page, { generic: true, timber: true });
-  await expectRates(page, "Bank 4:1 · Dock 3:1 · Timber dock 2:1", `${tag} live specific ownership`);
+  await expectRates(page, "Bank 4:1 · Dock 3:1 · Wood dock 2:1", `${tag} live specific ownership`);
   await fixture(page, { generic: false, timber: true });
-  await expectRates(page, "Bank 4:1 · Timber dock 2:1", `${tag} lost generic dock`);
+  await expectRates(page, "Bank 4:1 · Wood dock 2:1", `${tag} lost generic dock`);
   await fixture(page, { generic: false, timber: false });
   await expectRates(page, "Bank 4:1", `${tag} lost all docks`);
   // An actual pointer press outside the portal must dismiss it without needing a second action.
@@ -336,7 +336,7 @@ try {
     await page.getByTestId("dock-rate-label").waitFor();
     await page.getByTestId("resource-timber").focus();
     await page.keyboard.press("Enter");
-    await expectRates(page, "Bank 4:1 · Dock 3:1 · Timber dock 2:1", `${view.tag} screenshot`);
+    await expectRates(page, "Bank 4:1 · Dock 3:1 · Wood dock 2:1", `${view.tag} screenshot`);
     await page.screenshot({ path: fileURLToPath(new URL(`../../dock-rates-${view.tag}.png`, import.meta.url)) });
     await page.keyboard.press("Escape");
 
