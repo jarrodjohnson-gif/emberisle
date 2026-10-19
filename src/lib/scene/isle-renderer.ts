@@ -98,8 +98,6 @@ const PICK_MAT = new THREE.MeshBasicMaterial({ visible: false });
 PICK_MAT.userData.shared = true;
 const _slab = new THREE.Matrix4();
 const _slabColor = new THREE.Color();
-// #826: multiply a token's rest colour by this while the wayfarer stands on its hex.
-const _tokenDull = new THREE.Color(0.55, 0.55, 0.58);
 type Highlights = { vertices: string[]; edges: string[]; hexes: string[] };
 // The paying-hex flash (docs/design/dice.md): the hex glows in over --duration-base, then fades linearly out by 600 ms.
 const FLASH_IN_S = 0.22;
@@ -672,11 +670,9 @@ export class IsleRenderer {
       this.flashHexes(payingHexes(state));
       this.pulsePayers(state);
     }
-    // #826: grey the blocked hex (and its number token). Skip the Wastes — already plain, no token.
+    // #826: grey the blocked hex and its token; skip the Wastes.
     const rh = state.hexes.find((h) => h.id === state.robberHex);
-    const dullId = rh && rh.terrain !== "waste" ? rh.id : null;
-    this.jelly?.robber(dullId);
-    this.dimRobberToken(dullId);
+    this.shadeRobber(rh);
     if (rh) {
       this.robberSpot(rh);
       if (!this.wayfarer.userData.placed || landChanged) {
@@ -687,24 +683,19 @@ export class IsleRenderer {
     }
   }
 
-  // #826: dim the number token on the wayfarer's hex; restore the rest. Wastes have no token.
-  private dimRobberToken(hexId: string | null) {
-    const grey = _tokenDull;
+  // #826: dull the jelly hex and dim its number token (no-op on waste / missing hex).
+  private shadeRobber(rh: HexCell | undefined) {
+    const id = rh && rh.terrain !== "waste" ? rh.id : null;
+    this.jelly?.robber(id);
     for (const t of this.tokens) {
-      const on = !!hexId && t.userData.hex === hexId;
-      t.traverse((obj) => {
-        const mesh = obj as THREE.Mesh;
-        if (!mesh.isMesh) return;
-        const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-        for (const raw of mats) {
-          if (!raw || !("color" in raw)) continue;
-          const mat = raw as THREE.MeshStandardMaterial;
-          if (!mat.userData.restColor) mat.userData.restColor = mat.color.clone();
-          const rest = mat.userData.restColor as THREE.Color;
-          if (on) mat.color.copy(rest).multiply(grey);
-          else mat.color.copy(rest);
-        }
-      });
+      const on = id === t.userData.hex;
+      for (const c of t.children) {
+        const m = (c as THREE.Mesh).material as THREE.MeshBasicMaterial | undefined;
+        if (!m?.color) continue;
+        if (!m.userData.rest) m.userData.rest = m.color.clone();
+        m.color.copy(m.userData.rest as THREE.Color);
+        if (on) m.color.multiplyScalar(0.55);
+      }
     }
   }
 
@@ -1549,11 +1540,8 @@ export class IsleRenderer {
           if (!jelly) return;
           if (!alive()) return jelly.dispose();
           this.jelly = jelly;
-          // #826: same waste skip as setState — the Wastes stay plain.
           const rh = this.lastState?.hexes.find((h) => h.id === this.lastState?.robberHex);
-          const dullId = rh && rh.terrain !== "waste" ? rh.id : null;
-          jelly.robber(dullId);
-          this.dimRobberToken(dullId);
+          this.shadeRobber(rh);
           // The scenes' ground beside the token can stand off the flat cap: he steps onto it.
           if (rh) {
             this.robberSpot(rh);

@@ -90,7 +90,7 @@ try {
       return {
         disc: disc?.material.color.getHexString() ?? null,
         label: label?.material.color.getHexString() ?? null,
-        restDisc: disc?.material.userData.restColor?.getHexString?.() ?? null,
+        restDisc: disc?.material.userData.rest?.getHexString?.() ?? null,
       };
     };
     const place = (hexId) => {

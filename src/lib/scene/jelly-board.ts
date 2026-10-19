@@ -22,8 +22,7 @@ const RINGS = 12;
 const SAMPLES = [0.37, 1.91, 3.53, 5.2];
 const ROLL_S = 2.4;
 const TAP_S = 0.9;
-// The wayfarer's shade on his hex (#826): desaturated and dim, so the blocked tile is obvious.
-// Cool grey (not terrain-tinted) so grain and pasture still read as greyed-out, not just darker.
+// #826: cool grey shade on the wayfarer's hex (skip waste in robber()).
 const DULL = new THREE.Color(0.38, 0.38, 0.42);
 
 export type JellyHex = { id: string; terrain: Terrain; x: number; z: number; y: number };
@@ -773,21 +772,16 @@ export class JellyBoard {
     if (e) e.h.tapAt = this.t;
   }
 
-  // The wayfarer stands on this hex (or none): it dulls, the others clear.
-  // The Wastes stay plain (#826): they are already grey and never produce.
+  // The wayfarer stands on this hex (or none): it dulls; waste stays plain (#826).
   robber(id: string | null) {
-    for (const { k, h } of this.byHex.values()) {
-      h.dullTo = id && h.id === id && k.kind !== "waste" ? 1 : 0;
-    }
+    for (const { k, h } of this.byHex.values()) h.dullTo = id && h.id === id && k.kind !== "waste" ? 1 : 0;
   }
 
-  // How far a hex is aimed toward the wayfarer shade (0 or 1). Proofs read this after a move.
-  dullTarget(id: string): number {
+  // Proofs: target / settled dull (0..1).
+  dullTarget(id: string) {
     return this.byHex.get(id)?.h.dullTo ?? 0;
   }
-
-  // Settled dull amount this frame (0..1). Under reduced motion it matches dullTarget at once.
-  dullOf(id: string): number {
+  dullOf(id: string) {
     return this.byHex.get(id)?.h.dull ?? 0;
   }
 
