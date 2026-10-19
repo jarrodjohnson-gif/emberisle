@@ -1,0 +1,24 @@
+{
+  "flakes": [
+    {
+      "id": "countdown-prove",
+      "pattern": "Error: the waited-on seat heard timer_tick",
+      "issue": 775
+    },
+    {
+      "id": "rotate-overlays-prove",
+      "pattern": "waiting for getByTestId\\('chat-sheet'\\) to be visible",
+      "issue": 861
+    },
+    {
+      "id": "hotseat-prove",
+      "pattern": "Error: Leave played \\[\"/audio/click_001\\.wav\",\"/audio/click_001\\.wav\"\\], not click_001\\.wav once",
+      "issue": 860
+    },
+    {
+      "id": "turn-gain-prove",
+      "pattern": "FAIL .*: no gain line is up while \"Your turn\" is",
+      "issue": 860
+    }
+  ]
+}

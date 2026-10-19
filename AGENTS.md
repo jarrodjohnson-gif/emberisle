@@ -1,5 +1,15 @@
 # Agents
 
+## Map
+
+- Rules: [`docs/FRAMEWORK.md`](docs/FRAMEWORK.md)
+- Picking work: [`docs/LANES.md`](docs/LANES.md)
+- Helpers: [`docs/HELPERS.md`](docs/HELPERS.md)
+- Owner decisions: [`docs/DECISIONS.md`](docs/DECISIONS.md) (read before you design or build)
+- Feature designs: [`docs/design/`](docs/design/)
+- Game rules: [`README.md`](README.md)
+- Agent hub: issue [#854](https://github.com/jarrodjohnson-gif/emberisle/issues/854). Helper queue: issue [#851](https://github.com/jarrodjohnson-gif/emberisle/issues/851).
+
 ## Rules for every agent (Claude, ChatGPT/Codex, Cursor, Gemini, Grok, helpers)
 
 These are short on purpose. Follow all of them, every round.
@@ -24,6 +34,7 @@ These are short on purpose. Follow all of them, every round.
 0. **Read the Agent hub, issue [#854](https://github.com/jarrodjohnson-gif/emberisle/issues/854), first, at the start of every round.** Do any direction there that names your agent before picking other work.
 1. You are a **Builder**. Follow [`docs/FRAMEWORK.md`](docs/FRAMEWORK.md) section 7, and pick an issue
    using [`docs/LANES.md`](docs/LANES.md).
+   Take the top line in **Next up (auto)** that your tier allows. Helpers: only `helper-ok` lines.
 2. Never merge. Only the orchestrator session that Jarrod names merges PRs, after a review by a
    different model.
 3. If Jarrod named a specific issue, do that one instead, still checking its prerequisites, claims and files.

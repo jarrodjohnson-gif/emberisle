@@ -229,6 +229,13 @@ try {
   // a fresh window for the same seat, and the live region on Ember and Tide was written exactly once in the old one.
   vs = await liveSays(tabs, first, "first window", TURN);
   console.log(`live line on every tab: ${vs.map((v) => `"${v.liveTexts.join(" | ")}"`).join(", ")}`);
+  // #775: a state resend to the waited-on seat inside the last 5 s must not add a tick or lose the knock. The dropper rejoins once
+  // more with 4 s or less to go, so the host pushes state to the owner again; the exact cue list checked below still has to hold.
+  await until(async () => {
+    const v = await view(firstTab);
+    return v?.chip?.player === first && v.chip.seconds <= 4 && v.chip.seconds >= 2 ? v : null;
+  }, `${firstTab.name}'s window is in its last 4 s`, TURN);
+  await dropper.page.evaluate(() => window.__emberisle.getState().net.drop());
   const startSecs = vs[0].chip.seconds;
   const low = await until(async () => {
     const v = await view(a);

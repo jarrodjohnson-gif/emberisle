@@ -28,12 +28,13 @@ const BUDGETS = [
   // 2026-10-17 (#552): render recovery adds 655 B over the lazy coach; 121171 B measured, +279 B headroom.
   // 2026-10-17 (#536): live trade response icons and taker identity measure 121.00 kB; +250 B headroom.
   // 2026-10-18 (#552 + #536): recovery on current main measures 121713 B; +287 B headroom after merging both features.
-  // 2026-10-18 (#820): the trade-offer lift, edge and +N/-N label on the hand cards measure 122.04 kB; +260 B headroom.
+  // 2026-10-18 (#775): the final-countdown knock fix (best clock skew, once-per-deadline knock and ticks) adds about 0.1 kB; 122.03 kB measured, +70 B headroom.
   // 2026-10-18 (#667): board touch sounds (terrain-to-clip table, 400 ms gap, armed flag) measure 122.04 kB; +260 B headroom.
   // 2026-10-18 (#814): the background music (start/stop, duck, Music row) measures 122.26 kB; the mp3 is a lazy audio file, not JS; +340 B headroom.
   // 2026-10-19 (#814 + #667): music and board touch sounds together measure 122.49 kB; +310 B headroom.
-  // 2026-10-19 (#820 + #814 + #667): trade card highlight with music and board touch sounds measures 122.70 kB; +300 B headroom.
-  { name: "index", gzipBytes: 123000 },
+  // 2026-10-19 (#775 + #814 + #667): countdown knock with music and board touch sounds measures 122.69 kB; +300 B headroom.
+  // 2026-10-19 (#820 on main with #775, #814, #667): 122.86 kB measured; +440 B headroom.
+  { name: "index", gzipBytes: 123300 },
   // 2026-10-14 (#597): +1100 B for the diorama camera, its fit and the token pose on top of the lazy sea (182.92 kB measured).
   // 2026-10-15: 185.01 kB measured on main once the diorama (#604, +1.1 kB) and the natural waves (#614, +1.0 kB) both
   // landed; each fit its own raise alone.
