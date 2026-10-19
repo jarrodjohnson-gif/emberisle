@@ -74,7 +74,7 @@ function Panel() {
         ref={chip}
         data-testid="win-chip"
         style={{ top: `calc(max(12px, env(safe-area-inset-top)) + ${phone && portrait && mode === "online" ? 96 : 48}px)` }}
-        className="absolute left-1/2 z-20 flex -translate-x-1/2 items-center gap-1 rounded-[20px] border border-white/50 bg-white/60 p-1 backdrop-blur-md"
+        className="absolute left-1/2 z-40 flex -translate-x-1/2 items-center gap-1 rounded-[20px] border border-white/50 bg-white/60 p-1 backdrop-blur-md"
       >
         <Button size="sm" variant="secondary" className="whitespace-nowrap" data-testid="win-show" onClick={() => setHidden(false)}>
           Show scores
@@ -118,7 +118,7 @@ function Panel() {
       aria-modal="true"
       aria-labelledby="win-headline"
       data-testid="win-screen"
-      className="absolute inset-0 z-20 flex items-center justify-center bg-bg/60 p-safe backdrop-blur-sm"
+      className="absolute inset-0 z-40 flex items-center justify-center bg-bg/60 p-safe backdrop-blur-sm"
     >
       <div className="flex max-h-full w-full max-w-2xl flex-col rounded-sheet border border-white/50 bg-surface p-5 text-center sm:p-6">
         <div className="flex items-center justify-center gap-2.5">
