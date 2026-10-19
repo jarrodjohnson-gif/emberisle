@@ -444,7 +444,11 @@ try {
     await setHand(page, { timber: 3, clay: 0, wool: 12, grain: 1, ore: 0 });
     await page.waitForFunction(() => document.querySelector('[data-testid="resource-wool"]')?.textContent.includes("12"), null, { timeout: STEP_MS });
     await page.waitForFunction(() => !document.querySelector('[data-testid="resource-flash"]'), null, { timeout: STEP_MS });
-    await page.waitForTimeout(350); // the 300ms fade back to rest fill is settled
+    // Wait for the 300ms transition back to the rest fill to completely settle under any CPU load.
+    await page.waitForFunction(() => {
+      const el = document.querySelector('[data-testid="resource-grain"]');
+      return el && getComputedStyle(el).backgroundColor === "rgb(255, 247, 229)";
+    }, null, { timeout: STEP_MS });
     const cards = await page.evaluate(() =>
       Object.fromEntries(
         ["timber", "clay", "wool", "grain", "ore"].map((r) => {
