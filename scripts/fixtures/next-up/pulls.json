@@ -5,7 +5,9 @@
     "body": "/claim\nclaimed: helper-x, 2026-10-18\nfiles: z\n\nCloses #104",
     "author": {
       "login": "someone"
-    }
+    },
+    "state": "OPEN",
+    "createdAt": "2026-10-18T09:00:00Z"
   },
   {
     "number": 203,
@@ -13,12 +15,46 @@
     "body": "Unrelated: &#108; is an entity, see other/repo#109",
     "author": {
       "login": "someone"
-    }
+    },
+    "state": "OPEN",
+    "createdAt": "2026-10-18T09:00:00Z"
   },
   {
     "number": 204,
     "title": "zeta work",
     "body": "No issue reference here.",
+    "author": {
+      "login": "someone"
+    },
+    "state": "OPEN",
+    "createdAt": "2026-10-18T09:00:00Z"
+  },
+  {
+    "number": 205,
+    "title": "kappa attempt",
+    "body": "Closes #118",
+    "state": "CLOSED",
+    "createdAt": "2026-10-18T12:00:00Z",
+    "author": {
+      "login": "kappa-login"
+    }
+  },
+  {
+    "number": 206,
+    "title": "lambda work",
+    "body": "/claim\nclaimed: lambda-agent, 2026-10-18\nfiles: a\n\nCloses #119",
+    "state": "MERGED",
+    "createdAt": "2026-10-18T12:00:00Z",
+    "author": {
+      "login": "other-login"
+    }
+  },
+  {
+    "number": 207,
+    "title": "Refs #120",
+    "body": "Related only.",
+    "state": "CLOSED",
+    "createdAt": "2026-10-18T12:00:00Z",
     "author": {
       "login": "someone"
     }

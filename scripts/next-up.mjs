@@ -35,7 +35,7 @@ export function activeClaims(comments) {
       const key = agent.toLowerCase();
       named.push(key);
       if (kind.toLowerCase() === 'paused') active.delete(key);
-      else if (!active.has(key)) active.set(key, { agent, login: c.login, prs: new Set() });
+      else if (!active.has(key)) active.set(key, { agent, key, login: c.login, at: c.createdAt, prs: new Set() });
     }
     for (const [, n] of body.matchAll(PR_LINE)) {
       const keys = named.length ? named : [...active.keys()].filter(k => active.get(k).login === c.login);
@@ -104,19 +104,32 @@ const milestoneRank = issue => {
 export const compareIssues = (a, b) => prioRank(a) - prioRank(b) || milestoneRank(a) - milestoneRank(b)
   || (a.milestone || '').localeCompare(b.milestone || '') || a.number - b.number;
 
-// issues: open issues carrying a status label, with all comments. prs: open PRs (drafts included).
-// states: Map number -> 'OPEN' | 'CLOSED' | 'MERGED' for other referenced numbers; missing counts as closed.
+// A claim's PRs: its `pr: #N` lines if any. Otherwise every PR mentioning the issue whose body claims
+// for the same agent, or that the claim's account opened after the claim.
+function claimPrs(claim, mentioning) {
+  if (claim.prs.size) return [...claim.prs];
+  return mentioning.filter(p => claimantsIn(p.body).some(a => a.toLowerCase() === claim.key)
+    || (p.login === claim.login && Date.parse(p.createdAt) >= Date.parse(claim.at))).map(p => p.number);
+}
+
+// issues: open issues carrying a status label, with all comments. prs: open PRs (drafts included) and
+// recently closed or merged ones, each with its state. states: Map number -> 'OPEN' | 'CLOSED' | 'MERGED'
+// for other referenced numbers; missing counts as closed.
 export function plan({ issues, prs, states, owner, repo }) {
   const openIssues = new Set(issues.map(i => i.number));
-  const openPrs = new Set(prs.map(p => p.number));
+  const openPrs = new Set(prs.filter(p => p.state === 'OPEN').map(p => p.number));
   const isOpen = n => openIssues.has(n) || openPrs.has(n) || states.get(n) === 'OPEN';
   const eligible = [];
   const taken = [];
   for (const issue of issues) {
     if (!issue.labels.some(l => l.startsWith('lane:'))) continue;
-    const claims = activeClaims(issue.comments)
-      .filter(c => !c.prs.size || [...c.prs].some(isOpen));
-    const prList = prs.filter(p => mentions(p, issue.number, owner, repo));
+    const mentioning = prs.filter(p => mentions(p, issue.number, owner, repo));
+    // A claim releases once its PRs exist and all have merged or closed (docs/LANES.md).
+    const claims = activeClaims(issue.comments).filter(c => {
+      const bound = claimPrs(c, mentioning);
+      return !bound.length || bound.some(isOpen);
+    });
+    const prList = mentioning.filter(p => openPrs.has(p.number));
     const labels = issue.labels.filter(l => TAKEN_LABELS.includes(l));
     if (claims.length || prList.length || labels.length) {
       const why = [...(claims.length ? ['claim'] : []), ...(prList.length ? ['open PR'] : []), ...labels];
@@ -206,15 +219,19 @@ const ISSUES = `query($owner: String!, $name: String!, $labels: [String!], $afte
   }
 }`;
 const MORE_COMMENTS = `query($id: ID!, $after: String) { node(id: $id) { ... on Issue { comments(first: 100, after: $after) { ${COMMENTS} } } } }`;
+// Open PRs, plus the most recently updated closed or merged ones, which release claims.
+const PR_FIELDS = 'pageInfo { hasNextPage } nodes { number title body state createdAt author { login } }';
 const PRS = `query($owner: String!, $name: String!) {
   repository(owner: $owner, name: $name) {
-    pullRequests(first: 100, states: OPEN, orderBy: { field: CREATED_AT, direction: DESC }) { nodes { number title body author { login } } }
+    open: pullRequests(first: 100, states: OPEN, orderBy: { field: CREATED_AT, direction: DESC }) { ${PR_FIELDS} }
+    done: pullRequests(first: 100, states: [CLOSED, MERGED], orderBy: { field: UPDATED_AT, direction: DESC }) { ${PR_FIELDS} }
   }
 }`;
 
 const comment = c => ({ id: c.databaseId, createdAt: c.createdAt, login: c.author?.login ?? '', body: c.body });
 
-export async function load({ graphql, owner, repo }) {
+// warn: called when a read cap cuts a list short, so the run's log says the table may be incomplete.
+export async function load({ graphql, owner, repo, warn }) {
   const issues = [];
   let after = null;
   for (let page = 0; page < MAX_ISSUE_PAGES; page++) {
@@ -227,14 +244,18 @@ export async function load({ graphql, owner, repo }) {
         comments.push(...next.nodes.map(comment));
         more = next.pageInfo;
       }
+      if (more.hasNextPage) warn(`#${n.number}: only the first ${MAX_COMMENT_PAGES * 100} comments were read`);
       issues.push({ number: n.number, title: n.title, body: n.body, milestone: n.milestone?.title ?? null,
         labels: n.labels.nodes.map(l => l.name), comments });
     }
     if (!conn.pageInfo.hasNextPage) break;
+    if (page === MAX_ISSUE_PAGES - 1) warn(`only the first ${MAX_ISSUE_PAGES * 100} issues were read`);
     after = conn.pageInfo.endCursor;
   }
-  const prs = (await graphql(PRS, { owner, name: repo })).repository.pullRequests.nodes
-    .map(p => ({ number: p.number, title: p.title, body: p.body, login: p.author?.login ?? '' }));
+  const { open, done } = (await graphql(PRS, { owner, name: repo })).repository;
+  if (open.pageInfo.hasNextPage) warn('only the newest 100 open PRs were read');
+  const prs = [...open.nodes, ...done.nodes].map(p => ({ number: p.number, title: p.title, body: p.body,
+    state: p.state, createdAt: p.createdAt, login: p.author?.login ?? '' }));
   const known = new Set([...issues.map(i => i.number), ...prs.map(p => p.number)]);
   const refs = [...neededRefs(issues, owner, repo)].filter(n => !known.has(n));
   const states = new Map();
@@ -248,10 +269,11 @@ export async function load({ graphql, owner, repo }) {
   return { issues, prs, states };
 }
 
-export async function run({ fetchImpl = fetch, token, repository, dryRun = false, now = new Date(), log = console.log }) {
+export async function run({ fetchImpl = fetch, token, repository, dryRun = false, now = new Date(), log = console.log,
+  warn = message => console.warn(`::warning::next-up: ${message}`) }) {
   const [owner, repo] = repository.split('/');
   const { request, graphql } = client(fetchImpl, token);
-  const body = render(plan({ ...(await load({ graphql, owner, repo })), owner, repo }), now);
+  const body = render(plan({ ...(await load({ graphql, owner, repo, warn })), owner, repo }), now);
   if (dryRun) { log(body); return { body }; }
   const pinned = (await request('GET', `/repos/${owner}/${repo}/issues?labels=${LABEL}&state=open&per_page=10`))
     .filter(i => !i.pull_request).sort((a, b) => a.number - b.number)[0];

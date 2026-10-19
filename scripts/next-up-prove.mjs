@@ -15,7 +15,7 @@ const states = json('states.json');
 const repository = 'jarrodjohnson-gif/emberisle';
 const now = new Date('2026-10-19T12:34:56Z');
 
-function fakeGitHub({ pinned = [], labelExists = true, dropLabel = false } = {}) {
+function fakeGitHub({ pinned = [], labelExists = true, dropLabel = false, capped = false } = {}) {
   const calls = [];
   const reply = (status, data) => ({ ok: status < 300, status, json: async () => data });
   const fetchImpl = async (url, init) => {
@@ -31,14 +31,18 @@ function fakeGitHub({ pinned = [], labelExists = true, dropLabel = false } = {})
         const first = !variables.after;
         const nodes = first ? issues.slice(0, 8) : issues.slice(8);
         return reply(200, { data: { repository: { issues: {
-          pageInfo: { hasNextPage: first, endCursor: first ? 'ISSUES_2' : null }, nodes } } } });
+          pageInfo: { hasNextPage: first || capped, endCursor: first ? 'ISSUES_2' : 'ISSUES_3' }, nodes } } } });
       }
       if (query.includes('node(id: $id)')) {
         const page = moreComments[`${variables.id}:${variables.after}`];
         assert.ok(page, `unexpected comment page ${variables.id}:${variables.after}`);
         return reply(200, { data: { node: { comments: page } } });
       }
-      if (query.includes('pullRequests(first: 100')) return reply(200, { data: { repository: { pullRequests: { nodes: pulls } } } });
+      if (query.includes('open: pullRequests(first: 100')) {
+        const conn = (nodes, hasNextPage) => ({ pageInfo: { hasNextPage }, nodes });
+        return reply(200, { data: { repository: {
+          open: conn(pulls.filter(p => p.state === 'OPEN'), capped), done: conn(pulls.filter(p => p.state !== 'OPEN'), true) } } });
+      }
       if (query.includes('issueOrPullRequest')) {
         const repo = {};
         const errors = [];
@@ -65,7 +69,9 @@ function fakeGitHub({ pinned = [], labelExists = true, dropLabel = false } = {})
 }
 
 const quiet = () => {};
-const go = (gh, extra = {}) => run({ fetchImpl: gh.fetchImpl, token: 'test-token', repository, now, log: quiet, ...extra });
+const warnings = [];
+const go = (gh, extra = {}) => run({ fetchImpl: gh.fetchImpl, token: 'test-token', repository, now, log: quiet,
+  warn: message => warnings.push(message), ...extra });
 
 // Dry run: reads only, writes nothing.
 const dry = fakeGitHub();
@@ -89,7 +95,7 @@ const taken = new Map(section('Taken').map(r => [num(r), r]));
 assert.ok(body.startsWith('Updated 2026-10-19 12:34 UTC'), 'timestamp first');
 
 // Priority, then milestone (by its number, none last), then issue number.
-assert.deepEqual(eligible, [101, 112, 103, 107, 108, 115, 109, 110, 111]);
+assert.deepEqual(eligible, [101, 112, 103, 107, 108, 115, 118, 119, 109, 110, 111]);
 assert.equal(eligible[0], 101, 'top line is the highest-priority free issue');
 
 // A claimed issue, with the claim on the second comment page and a comma in the agent name.
@@ -112,6 +118,15 @@ assert.ok(!body.includes('#114'));
 // A claim whose bound PR merged is released; one whose PR is still open is not.
 assert.ok(eligible.includes(115));
 assert.match(taken.get(116), /\| claim \| zeta-agent \| - \|$/);
+// No pr: line: a PR the claim's account opened after the claim, closed unmerged, releases it.
+assert.ok(eligible.includes(118) && !taken.has(118));
+// No pr: line: a merged PR whose body claims for the same agent releases it, whoever posted either.
+assert.ok(eligible.includes(119) && !taken.has(119));
+// A closed PR that only mentions the issue, from another account, releases nothing.
+assert.match(taken.get(120), /\| claim \| mu-agent \| - \|$/);
+// Two agents claim from one account; the loser's pause leaves the winner's claim.
+assert.match(taken.get(117), /\| claim \| eta-agent \| - \|$/);
+assert.deepEqual(warnings, [], 'no cap was hit');
 // Quoted and placeholder claim lines are not claims.
 assert.deepEqual(activeClaims([
   { id: 1, createdAt: '2026-10-18T10:00:00Z', login: 'a', body: '> claimed: q, 2026-10-18' },
@@ -142,6 +157,10 @@ assert.deepEqual(fresh.writes(), [
 
 // If the label didn't stick, fail loudly rather than create a duplicate every run.
 await assert.rejects(go(fakeGitHub({ dropLabel: true })), /without the next-up label/);
+
+// Hitting the issue or open-PR cap logs a warning.
+await go(fakeGitHub({ capped: true }), { dryRun: true, log: quiet });
+assert.deepEqual(warnings, ['only the first 200 issues were read', 'only the newest 100 open PRs were read']);
 
 // The workflow keeps its least-privilege shape.
 const workflow = readFileSync(new URL('../.github/workflows/next-up.yml', import.meta.url), 'utf8');

@@ -544,5 +544,165 @@
         }
       ]
     }
+  },
+  {
+    "id": "I_117",
+    "number": 117,
+    "title": "Two agents on one account, one pauses",
+    "body": "",
+    "milestone": null,
+    "labels": {
+      "nodes": [
+        {
+          "name": "status:todo"
+        },
+        {
+          "name": "lane:net"
+        },
+        {
+          "name": "prio:p2"
+        }
+      ]
+    },
+    "comments": {
+      "pageInfo": {
+        "hasNextPage": false,
+        "endCursor": null
+      },
+      "nodes": [
+        {
+          "databaseId": 100,
+          "createdAt": "2026-10-18T11:01:00Z",
+          "body": "/claim\nclaimed: eta-agent, 2026-10-18\nfiles: a",
+          "author": {
+            "login": "shared-account"
+          }
+        },
+        {
+          "databaseId": 101,
+          "createdAt": "2026-10-18T11:02:00Z",
+          "body": "/claim\nclaimed: theta-agent, 2026-10-18\nfiles: a",
+          "author": {
+            "login": "shared-account"
+          }
+        },
+        {
+          "databaseId": 102,
+          "createdAt": "2026-10-18T11:03:00Z",
+          "body": "/paused\npaused: theta-agent, 2026-10-18\nlost the claim to eta-agent",
+          "author": {
+            "login": "shared-account"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "I_118",
+    "number": 118,
+    "title": "Claim released when its PR closed unmerged, no pr line",
+    "body": "",
+    "milestone": null,
+    "labels": {
+      "nodes": [
+        {
+          "name": "status:todo"
+        },
+        {
+          "name": "lane:net"
+        },
+        {
+          "name": "prio:p2"
+        }
+      ]
+    },
+    "comments": {
+      "pageInfo": {
+        "hasNextPage": false,
+        "endCursor": null
+      },
+      "nodes": [
+        {
+          "databaseId": 103,
+          "createdAt": "2026-10-18T11:04:00Z",
+          "body": "/claim\nclaimed: kappa-agent, 2026-10-18\nfiles: a",
+          "author": {
+            "login": "kappa-login"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "I_119",
+    "number": 119,
+    "title": "Claim released when the PR naming the agent merged",
+    "body": "",
+    "milestone": null,
+    "labels": {
+      "nodes": [
+        {
+          "name": "status:todo"
+        },
+        {
+          "name": "lane:net"
+        },
+        {
+          "name": "prio:p2"
+        }
+      ]
+    },
+    "comments": {
+      "pageInfo": {
+        "hasNextPage": false,
+        "endCursor": null
+      },
+      "nodes": [
+        {
+          "databaseId": 104,
+          "createdAt": "2026-10-18T11:05:00Z",
+          "body": "/claim\nclaimed: lambda-agent, 2026-10-18\nfiles: a",
+          "author": {
+            "login": "review-desk-account"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "I_120",
+    "number": 120,
+    "title": "Closed PR by someone else does not release the claim",
+    "body": "",
+    "milestone": null,
+    "labels": {
+      "nodes": [
+        {
+          "name": "status:todo"
+        },
+        {
+          "name": "lane:net"
+        },
+        {
+          "name": "prio:p2"
+        }
+      ]
+    },
+    "comments": {
+      "pageInfo": {
+        "hasNextPage": false,
+        "endCursor": null
+      },
+      "nodes": [
+        {
+          "databaseId": 105,
+          "createdAt": "2026-10-18T11:06:00Z",
+          "body": "/claim\nclaimed: mu-agent, 2026-10-18\nfiles: a",
+          "author": {
+            "login": "mu-login"
+          }
+        }
+      ]
+    }
   }
 ]
