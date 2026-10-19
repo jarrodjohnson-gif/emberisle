@@ -172,3 +172,5 @@ These answer section 4 and override any recommendation above that disagrees.
 `public/audio/tap_pasture.mp3`: "Sheep Baa", CC0, from <https://opengameart.org/content/sheep-baa>. Leading silence trimmed, loudness normalised, 96 kbps mono MP3. Jarrod asked on 2026-10-19 for a real baa on a Pasture tap instead of a voice clip.
 
 `public/audio/three_wood.mp3`: Jarrod's own clip (2026-10-19). It plays instead of the offer chime when a table offer gives 3 or more timber. Everyone hears it, the asker too. Leading silence trimmed, 128 kbps mono MP3.
+
+`public/audio/daking_wood.mp3`: Jarrod's own clip (2026-10-19). It plays instead of the offer chime when the player named "daking" (any case) offers any timber to the table. Everyone hears it. It beats the "three wood" and wood-trade clips. Leading silence trimmed, 128 kbps mono MP3.

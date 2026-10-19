@@ -1045,9 +1045,11 @@ function endOffer(set: Set, get: Get, taker: string | null) {
 // Jarrod's clips replace the offer chime: "three wood" when an offer gives 3 or more timber, "sheep for wood" and
 // "stone for wood" when it gives wool or ore and asks for timber. Everyone hears those clips, the asker too; the plain
 // chime stays for the other seats only.
-function offerChime(from: string, me: string, give: Bag, want: Bag) {
+function offerChime(from: string, fromName: string, me: string, give: Bag, want: Bag) {
   const forWood = (want.timber ?? 0) > 0;
-  if ((give.timber ?? 0) >= 3) play("three_wood");
+  // Jarrod's clip for the player named "daking" offering any wood; it beats the other clips.
+  if ((give.timber ?? 0) > 0 && fromName.trim().toLowerCase() === "daking") play("daking_wood");
+  else if ((give.timber ?? 0) >= 3) play("three_wood");
   else if (forWood && (give.wool ?? 0) > 0) play("sheep_for_wood");
   else if (forWood && (give.ore ?? 0) > 0) play("stone_for_wood");
   else if (from !== me) play("trade_offer");
@@ -1060,7 +1062,7 @@ function openOffer(set: Set, get: Get, from: string, give: Bag, want: Bag) {
   const tradeId = `t${state.seq}-${++offerSeq}`;
   const fromName = state.players.find((p) => p.id === from)?.name ?? "Someone";
   set({ offer: { tradeId, from, fromName, give, want, until: Date.now() + OFFER_MS }, declined: [], tradeOutcome: null, tradeTaker: null });
-  offerChime(from, get().localId, give, want);
+  offerChime(from, fromName, get().localId, give, want);
   offerTimers.push(setTimeout(() => endOffer(set, get, null), OFFER_MS));
   for (const p of state.players) {
     if (p.kind !== "bot" || p.id === from) continue;
@@ -1204,7 +1206,7 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
     tradeOffer: ({ tradeId, from, give, want, seconds }) => {
       const fromName = get().state?.players.find((p) => p.id === from)?.name ?? "Someone";
       set({ offer: { tradeId, from, fromName, give, want, until: Date.now() + seconds * 1000 }, declined: [], tradeOutcome: null, tradeTaker: null });
-      offerChime(from, get().localId, give, want);
+      offerChime(from, fromName, get().localId, give, want);
     },
     tradeDeclined: ({ tradeId, by }) => {
       const { offer, declined } = get();

@@ -109,7 +109,7 @@ async function synced(tabs, seq, what, ms) {
 
 // #609: the clips this tab started since `forget`, as "file@volume", without the UI clicks.
 const forget = (tabs) => Promise.all(tabs.map((t) => t.page.evaluate(() => (window.__heard = []))));
-const trades = (t) => t.page.evaluate(() => window.__heard.filter((h) => /^(trade_offer|sheep_for_wood|stone_for_wood|three_wood|confirmation_001|error_002)/.test(h)));
+const trades = (t) => t.page.evaluate(() => window.__heard.filter((h) => /^(trade_offer|sheep_for_wood|stone_for_wood|three_wood|daking_wood|confirmation_001|error_002)/.test(h)));
 // The offer chime for an ask that gives g and wants w: wool or ore for timber has its own clip, which every seat hears,
 // the asker included (#812); any other ask ticks trade_offer on the other seats only.
 // The prove's asks give one card (n = 1), so "three wood" (3 or more timber given) never fires here; sounds-prove and the
