@@ -88,6 +88,8 @@ and run long proofs in the background, one at a time, reading every result befor
    - no active claim: ignore claims released by that agent's later pause (including historical `paused:` comments) or a merged/closed PR;
    - every `Depends on` issue is closed;
    - its planned files do not overlap another active claim's files or open PR changes, across any lane.
+     The shared registration files `package.json`, `.github/workflows/ci.yml` and `scripts/size-prove.mjs`
+     don't count as overlap: almost every PR adds a line there, and a small merge fixes it later.
 
    Lanes sort work; several issues in the same lane can proceed with different files. Read the whole
    issue and every comment fresh; together they are the spec. Re-read immediately before claiming,
