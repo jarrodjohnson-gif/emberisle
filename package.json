@@ -20,6 +20,7 @@
     "wayfarer-setup-prove": "node --import ./server/register.mjs scripts/wayfarer-setup-prove.mjs",
     "wayfarer-prove": "node scripts/wayfarer-prove.mjs",
     "trade-prove": "node scripts/trade-prove.mjs",
+    "trade-tabs-prove": "node --import ./server/register.mjs scripts/trade-tabs-prove.mjs",
     "sounds-prove": "node scripts/sounds-prove.mjs",
     "music-prove": "node scripts/music-prove.mjs",
     "practice-trade-prove": "node --import ./server/register.mjs scripts/practice-trade-prove.mjs",

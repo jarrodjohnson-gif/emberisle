@@ -1,6 +1,6 @@
 // Goods this seat gains or loses, said once in the middle of the island (Jarrod's playtest: "it should appear in middle of
-// screen and fade away like green text and number"). One glass line per good, "+2 Wood" in green or "−1 Ore" in red, each
-// rising a little and fading over FLOAT_MS, 150 ms apart; reduced motion keeps fully static lines for the same duration. The hand's own +N flash
+// screen and fade away like green text and number"). One glass line per good, "+2 Wood" in green or "−1 Ore" in red.
+// Gains rise and losses fall while fading over FLOAT_MS, 150 ms apart; reduced motion keeps fully static lines for the same duration. The hand's own +N flash
 // (Hand.tsx) stays; this is the line you can read. Only this seat's hand is read, as the hand does: online the other seats
 // arrive as a count, and a watcher has no hand, so no other seat's goods are ever shown. Spending on a build or a fortune is
 // not a loss: the piece landing says it. A roll's goods wait for the roll moment to leave the centre (#440).
@@ -142,7 +142,7 @@ export function GainFloats({ me, rolls }: { me: PlayerState; rolls: number }) {
               data-testid="gain-float"
               data-resource={r}
               data-delta={n}
-              className={`flex items-center gap-2 rounded-chip gain-stamp bg-surface py-1 pl-1 pr-3 text-title tabular-nums backdrop-blur-md motion-safe:animate-[gain-float_2200ms_linear_both] ${n > 0 ? "text-gain" : "text-loss"}`}
+              className={`flex items-center gap-2 rounded-chip gain-stamp bg-surface py-1 pl-1 pr-3 text-title tabular-nums backdrop-blur-md ${n > 0 ? "text-gain motion-safe:animate-[gain-float_2200ms_linear_both]" : "text-loss motion-safe:animate-[loss-float_2200ms_linear_both]"}`}
               style={{ animationDelay: `${delay}ms` }}
             >
               <span className={`grid size-7 place-items-center rounded-full ring-1 ring-inset ring-black/10 ${RESOURCE_PAINT[r]}`}>

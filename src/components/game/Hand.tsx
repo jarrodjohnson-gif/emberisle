@@ -227,7 +227,7 @@ function ResourceCard({ resource, count, flash, offer, showRates, buildMode, own
             "hand-resource-flash pointer-events-none absolute right-0.5 top-0.5 rounded-control bg-surface px-1 text-caption font-semibold tabular-nums short:left-1 short:right-auto short:top-0 short:text-caption short:leading-3",
             flash.delta > 0 ? "text-gain" : "text-loss",
           )}
-          style={{ animation: `resource-flash ${FLASH_MS}ms ease-out forwards` }}
+          style={{ animation: `${flash.delta > 0 ? "resource-flash" : "resource-flash-loss"} ${FLASH_MS}ms ease-out forwards` }}
         >
           {label}
         </span>
