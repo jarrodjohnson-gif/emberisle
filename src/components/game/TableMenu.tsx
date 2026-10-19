@@ -212,6 +212,10 @@ export function TableMenu() {
           {/* Outside the question's branch: the field focuses itself when it mounts, and must not take the focus back from
               Leave table each time the question folds into the rows (CI has no clipboard, so the field is the common case). */}
           <CopyFallback state={copied} label="Table code" className="px-3" />
+          {/* #834: which commit this is, so a player can tell whether they are on the latest build. */}
+          <p data-testid="build-version" className="px-3 pt-1 text-caption text-muted">
+            Build {__BUILD_SHA__} · {new Date(__BUILD_TIME__).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}
+          </p>
         </div>
       ) : null}
     </div>
