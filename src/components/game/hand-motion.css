@@ -19,3 +19,16 @@
     animation: none !important;
   }
 }
+
+/* #820: an open offer lifts the cards it changes and edges them, red for what this seat gives and green for what it gets.
+   The -N / +N label carries the same meaning, so colour is not the only cue. The slot moves; the card keeps its own
+   gain/loss animation. Transform only, so nothing reflows. The tray's padding (8px, 4px when short) leaves room to rise. */
+.hand-resource-card-slot { transition: transform var(--duration-base) var(--ease-out); }
+.hand-resource-card-slot[data-offer] { transform: translateY(-3px); }
+.hand-resource-card-slot[data-offer="give"] > .goods-card { box-shadow: inset 0 0 0 2px var(--loss), var(--shadow-control); }
+.hand-resource-card-slot[data-offer="get"] > .goods-card { box-shadow: inset 0 0 0 2px var(--gain), var(--shadow-control); }
+
+@media (prefers-reduced-motion: reduce) {
+  .hand-resource-card-slot { transition: none; }
+  .hand-resource-card-slot[data-offer] { transform: none; }
+}
