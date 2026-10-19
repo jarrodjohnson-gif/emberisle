@@ -83,12 +83,13 @@ to any tier. Helpers don't use this list: they follow the queue in [`HELPERS.md`
 An issue's `model:` label, where present, names the model to build with (`docs/FRAMEWORK.md`). The
 `tier:` label says which other models may also take it.
 
-**Gemini works best on clearly defined tasks with hard checks.** Examples: small coding, docs, scripts, or "make X fit at this viewport" with a pixel proof. `model:gemini-ok` marks issues kept for Gemini.
+**Gemini takes clearly defined work with hard checks.** It is good at:
 
-Gemini may take design work, such as a new look, animation or layout. Before Jarrod sees it, the review desk:
+- UI audits: check that a card or panel works, chat overlaps nothing, and nothing looks odd, at set viewports with screenshots.
+- Minor design fixes, such as "make X fit at this viewport", with a pixel proof.
+- Small defined coding, docs and scripts.
 
-- has a different model cross-check the build, and
-- puts Gemini's screenshots next to an independent mock of the same decision.
+Gemini never builds a new look, animation or layout that needs taste. Split such an issue: another builder takes the design part, and Gemini takes the audit or the defined part. `model:gemini-ok` marks issues kept for Gemini.
 Grok's usage limits are low, so give it one `tier:2` or `tier:3` issue at a time.
 
 ### Sub-agents and usage limits
