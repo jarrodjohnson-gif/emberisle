@@ -30,6 +30,9 @@ const CEILINGS = [
   { name: "sheets", gzipBytes: 7800 },
   { name: "moments", gzipBytes: 5700 },
   { name: "VictoryTargetSelect", gzipBytes: 1000 },
+  // #538: coast inspection UI loads separately; measured 1030 B.
+  { name: "DockInspection", gzipBytes: 1200 },
+  { name: "HandRates", gzipBytes: 800 },
 ];
 
 // Growth allowance against the base, in gzip bytes. index is fixed at 400 B; the others take 0.33% of the base size, at least 200 B.
