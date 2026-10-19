@@ -3,7 +3,8 @@ name: CI
 # The README "Run it" checks, on every pull request and every push to main.
 # build, server and browser-a run on separate runners; browser-b has three suites (flows-a, flows-b, presentation) after build's dist/;
 # flows is split in two so each half stays near 14 minutes (the whole was ~28).
-# browser-a is split three ways (a1, a2, a3) by measured step time, about 8-10 minutes each (the whole was ~29).
+# browser-a is split three ways (a1, a2, a3) by measured step time, about 8-12 minutes each (the whole was ~29);
+# the browser-a job itself only reports whether all three passed, because the ruleset requires that name.
 # `checks` is the required merge check: it requires every job, including every browser-a and browser-b suite.
 # Docs-only PRs (see changes job) skip the heavy steps but still report success so required checks stay green.
 on:
@@ -145,7 +146,8 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run flake-rerun-prove
 
-  browser-a:
+  browser-a-suites:
+    name: browser-a (${{ matrix.suite }})
     needs: changes
     runs-on: ubuntu-latest
     # The browser jobs run about 19-20 minutes on a busy runner; 20 cancelled them mid-proof.
@@ -211,6 +213,15 @@ jobs:
           name: client-prove-screenshot-${{ matrix.suite }}
           path: test-results/
           if-no-files-found: ignore
+
+  # The ruleset requires a check named exactly "browser-a"; it passes only when all three suites pass.
+  browser-a:
+    needs: browser-a-suites
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - run: test '${{ needs.browser-a-suites.result }}' = success
 
   browser-b:
     needs: [changes, build]
