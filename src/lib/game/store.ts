@@ -1055,6 +1055,15 @@ function offerChime(from: string, fromName: string, me: string, give: Bag, want:
   else if (from !== me) play("trade_offer");
 }
 
+// Jarrod's undertaker's bell when "The Lucke Diggler" (any spelling: Lucke, Lucky, Luckie; spaces and case ignored)
+// takes a seat at the table. Every seat hears it; on your own first seat list only your own seat counts as new.
+const DIGGLER = /luck(e|y|ie)?digg?ler/;
+function diggerBell(before: Seat[], after: Seat[], me: string) {
+  const had = new Set(before.map((s) => s.id));
+  const fresh = after.filter((s) => !had.has(s.id) && (before.length > 0 || s.id === me));
+  if (fresh.some((s) => DIGGLER.test(s.name.toLowerCase().replace(/[^a-z]/g, "")))) play("lucke_diggler");
+}
+
 // Practice's table offer for `from`, closing any earlier one (host.mjs openOffer). Every other bot answers it after a delay.
 function openOffer(set: Set, get: Get, from: string, give: Bag, want: Bag) {
   endOffer(set, get, null);
@@ -1175,7 +1184,10 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       setTimeout(() => set({ reactions: get().reactions.filter((x) => x !== r) }), 2000);
     },
     // A peek answers id/color/ready only (G10); the lobby is not shown until the full broadcast after sitting replaces it.
-    seats: ({ code, seats, watching, victoryTarget, wayfarerMode }) => set({ code, seats: seats as Seat[], watching: watching ?? 0, tableVictoryTarget: victoryTarget === 7 ? 7 : 10, tableWayfarerMode: wayfarerMode ?? "on" }),
+    seats: ({ code, seats, watching, victoryTarget, wayfarerMode }) => {
+      diggerBell(get().seats, seats as Seat[], get().localId);
+      set({ code, seats: seats as Seat[], watching: watching ?? 0, tableVictoryTarget: victoryTarget === 7 ? 7 : 10, tableWayfarerMode: wayfarerMode ?? "on" });
+    },
     // Dice and gain floats present the roll; its words live only in the persistent log.
     rolled: () => {},
     state: ({ you, game, legal, turnDeadline, turnPlayer, serverNow }) => {
