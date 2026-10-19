@@ -1279,6 +1279,7 @@ function handle(ws, raw) {
     return send(ws, { type: "error", message: "not ready" });
   }
   const room = ws.room;
+  if (msg.type === "leave") return leaveOnPurpose(ws, room);
   if (msg.wayfarerMode !== undefined || msg.type === "setWayfarerMode") return send(ws, { type: "error", message: "Wayfarer mode is fixed when the table is created." });
   if (msg.type === "chat" || msg.type === "react" || msg.type === "sound") return talk(ws, room, msg);
   if (!allow(ws.seat.act, Date.now(), ACT_CAP, ACT_RATE)) return send(ws, { type: "error", message: "Slow down." });
@@ -1429,6 +1430,16 @@ function letGo(room, seat) {
   if (!room.game) say(room, `${seat.name} left.`);
   if (room.host === seat.id) handOffHost(room);
   publish(room);
+}
+
+// The Leave button in the lobby: the seat goes now, so it never blocks Start. A dropped socket is held instead
+// (leave), so a locked phone keeps its seat. In a game, Leave is a drop like any other: the bot takes over after the grace.
+function leaveOnPurpose(ws, room) {
+  if (room.game) return;
+  const seat = ws.seat;
+  ws.room = ws.seat = null;
+  seat.ws = null;
+  letGo(room, seat);
 }
 
 function leave(ws) {

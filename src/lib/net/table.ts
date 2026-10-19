@@ -391,6 +391,8 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
       closedByUs = true;
       if (timer) clearTimeout(timer);
       timer = null;
+      // On purpose, so the host frees a lobby seat now instead of holding it for a return.
+      if (ws.readyState === 1) ws.send(JSON.stringify({ type: "leave" }));
       ws.close();
     },
   };
