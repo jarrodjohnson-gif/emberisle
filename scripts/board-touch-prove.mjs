@@ -1,6 +1,6 @@
 // #667: board touch sounds. At 440x956 (touch, a practice game), a plain tap on a hex that places nothing plays that
-// terrain's clip once, at 0.3; only a Pasture hex plays the sheep (sb_plump_sheep.mp3).
-//  - each terrain on the board plays its own clip, once, and only Pasture plays sb_plump_sheep;
+// terrain's clip once, at 0.3; only a Pasture hex plays the sheep baa (tap_pasture.mp3).
+//  - each terrain on the board plays its own clip, once, and only Pasture plays tap_pasture (the baa);
 //  - rapid taps are one sound per 400 ms;
 //  - a one-finger drag that starts on a Pasture hex, a two-finger pan and a pinch play nothing;
 //  - during setup (legal marks showing) and with a build armed, a tap on a Pasture hex plays nothing;
@@ -22,7 +22,7 @@ const browser = await chromium.launch({
 const errors = [];
 const ok = (what) => console.log(`ok ${what}`);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-const CLIP = { wool: "sb_plump_sheep.mp3", timber: "tap_forest.wav", clay: "tap_hills.wav", grain: "tap_fields.wav", ore: "tap_mountains.wav", waste: "tap_waste.wav" };
+const CLIP = { wool: "tap_pasture.mp3", timber: "tap_forest.wav", clay: "tap_hills.wav", grain: "tap_fields.wav", ore: "tap_mountains.wav", waste: "tap_waste.wav" };
 
 const ctx = await browser.newContext({ viewport: { width: 440, height: 956 }, isMobile: true, hasTouch: true });
 await ctx.addInitScript(() => {
@@ -72,7 +72,7 @@ async function drag(pts0, dx, dy, steps = 8) {
   await touch("touchEnd", []);
   await frames(2);
 }
-const sheep = async () => (await plays()).filter((f) => f === "sb_plump_sheep.mp3").length;
+const sheep = async () => (await plays()).filter((f) => f === "tap_pasture.mp3").length;
 
 await page.goto(`http://127.0.0.1:${PORT}/`);
 await until(() => window.__isle?.renders > 0);
@@ -143,7 +143,7 @@ const span = await page.evaluate((pts) => {
 }, rapid);
 assert.ok(span < 350, `the four taps took ${Math.round(span)} ms, inside the 400 ms gap`);
 await sleep(300);
-assert.deepEqual(await plays(), ["sb_plump_sheep.mp3"], "four taps inside 400 ms are one sound, the first");
+assert.deepEqual(await plays(), ["tap_pasture.mp3"], "four taps inside 400 ms are one sound, the first");
 await sleep(500);
 await settle();
 await tapHex("wool");

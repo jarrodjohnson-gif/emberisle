@@ -54,8 +54,9 @@ const FILES = {
   board_bong: "bong_001.wav",
   board_plop: "plop.wav",
   board_pluck: "pluck_001.wav",
-  // #667: a tap on a hex that places nothing. Pasture is the owner's own sheep clip; the rest are synthesised (make-sounds.mjs).
-  tap_pasture: "sb_plump_sheep.mp3",
+  // #667: a tap on a hex that places nothing. Pasture is a real baa ("Sheep Baa", CC0, OpenGameArt); the rest are synthesised
+  // (make-sounds.mjs).
+  tap_pasture: "tap_pasture.mp3",
   tap_forest: "tap_forest.wav",
   tap_hills: "tap_hills.wav",
   tap_fields: "tap_fields.wav",

@@ -168,3 +168,5 @@ These answer section 4 and override any recommendation above that disagrees.
 ## Invite music
 
 `public/audio/old_tower_inn_loop.mp3`: "Medieval: The Old Tower Inn" (loop version) by RandomMind, CC0, from <https://opengameart.org/content/medieval-the-old-tower-inn>. Converted to 128 kbps MP3. Jarrod chose it on 2026-10-18. It plays on the game-night invite (`public/invite.html`) after the first tap, with a Music on/off toggle.
+
+`public/audio/tap_pasture.mp3`: "Sheep Baa", CC0, from <https://opengameart.org/content/sheep-baa>. Leading silence trimmed, loudness normalised, 96 kbps mono MP3. Jarrod asked on 2026-10-19 for a real baa on a Pasture tap instead of a voice clip.
