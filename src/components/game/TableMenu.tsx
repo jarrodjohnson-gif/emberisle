@@ -8,7 +8,7 @@ import { BookOpen, Box, Copy, Ellipsis, Eye, Hammer, LogOut, Volume2, VolumeX, W
 import { Button } from "@/components/ui/button";
 import { CopyFallback, useCopy } from "@/components/game/CopyText";
 import { useGame } from "@/lib/game/store";
-import { play, setMuted, useMuted } from "@/lib/sound";
+import { play, setMusicOn, setMuted, useMuted, useMusicOn } from "@/lib/sound";
 
 const ROW = "h-11 w-full justify-start px-3 text-body";
 const ICON = "size-4 shrink-0 text-muted";
@@ -27,6 +27,7 @@ export function TableMenu() {
   const view = useGame((s) => s.playView);
   const setViewChoice = useGame((s) => s.setViewChoice);
   const muted = useMuted();
+  const music = useMusicOn();
   const { state: copied, copy, reset } = useCopy<"code">();
   const [open, setOpen] = useState(false);
   const [asking, setAsking] = useState(false);
@@ -175,6 +176,11 @@ export function TableMenu() {
               <Button variant="ghost" className={ROW} data-testid="sound-toggle" aria-pressed={!muted} silent onClick={() => { setMuted(!muted); if (muted) play("ui_click"); }}>
                 {muted ? <VolumeX className={ICON} /> : <Volume2 className={ICON} />}
                 Table sounds {muted ? "off" : "on"}
+              </Button>
+              {/* #814: a stopgap until the Sound menu (#669) takes over the music. */}
+              <Button variant="ghost" className={ROW} data-testid="music-toggle" aria-pressed={music} silent onClick={() => setMusicOn(!music)}>
+                {music ? <Volume2 className={ICON} /> : <VolumeX className={ICON} />}
+                Music {music ? "on" : "off"}
               </Button>
               {/* The sea's look; the choice is remembered and overrides the GPU probe (docs/design/crystal-water.md). */}
               <div role="group" aria-label="Water" data-testid="water-toggle" className="flex h-11 items-center gap-2 px-3 text-body">

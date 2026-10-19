@@ -57,7 +57,7 @@ Every issue says its size in the body:
 - **Small limit left?** Take one `XS` or `S` step. If you run out mid-step, leave the pause
   comment (section 7). The next AI resumes from it. Half-done work is fine if the comment says exactly where it stopped.
 - **No limit (Cursor, a long session)?** Loop: finish a step, set the next one to Todo, take it, and repeat,
-  top to bottom through the earliest milestone. Stop only when nothing is Todo, or everything left is
+  highest priority first, then top to bottom through the earliest milestone. Stop only when nothing is Todo, or everything left is
   `needs: jarrod` or `needs: gaming-pc`.
 
 ## 4. How it maps onto GitHub
@@ -130,8 +130,8 @@ Jarrod's board automation, or the next agent with `gh`, syncs the field from the
 **"What's next?" with no project named:** list Jarrod's projects as numbered options (In Progress
 first, then on hold), each with its next open issue, and ask which one. Do not start until he picks.
 
-**Next open issue** = the first eligible open `status:todo` issue in the **earliest milestone**,
-lowest step first (1 → 4). It must have a lane label, every `Depends on` closed, no active claim or
+**Next open issue** = the first eligible open `status:todo` issue with the **highest `prio:` label**
+(`docs/LANES.md`, "Tier and priority"), then in the **earliest milestone**, lowest step first (1 → 4). It must have a lane label, every `Depends on` closed, no active claim or
 open PR, and no file conflict with another active claim. Continue your own existing work first;
 do not adopt someone else's In Progress claim or treat a pause alone as Todo eligibility.
 
