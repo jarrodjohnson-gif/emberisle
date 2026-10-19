@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useGame } from "@/lib/game/store";
 import { play } from "@/lib/sound";
 import { cn } from "@/lib/utils";
@@ -37,27 +37,45 @@ export function TurnCountdown() {
   // the last 5 s ticks for the value it lands on, then goes on from there; it never replays the earlier ones.
   const spectator = useGame((s) => s.spectator);
   const mine = mode === "online" && !spectator && timer?.player === localId;
+  // The window the HUD holds now, read by the cleanup below after the render that replaced the old one.
+  // The deadline whose knock has played. A resend of the same window brings a new `at` (the skew wobbles), but never a second knock.
+  const knockedFor = useRef<number | null>(null);
+  // The deadline and the lowest count already ticked for it. A re-arm (the clock estimate improved) clears the pending timers, so
+  // a count counts as heard only once it has played, never because it was armed.
+  const ticked = useRef<[number, number]>([0, 6]);
+  const deadline = timer?.deadline ?? null;
+  // The cues run off the best clock estimate, which a late push cannot spoil; the chip keeps its own `at` so it never remounts.
+  const skew = useGame((s) => s.clockSkew);
+  const cueAt = (deadline ?? 0) - skew;
   useEffect(() => {
-    if (!mine || at === null) return;
-    const left = at - Date.now();
-    if (left <= 0) return;
-    // The value the count is on now. A page that lands inside the last 5 s ticks for it, then carries on from there.
-    const now = Math.ceil(left / 1000);
-    if (now <= 5) play("timer_tick", 0.5);
-    let knocked = false;
-    const knock = () => {
-      knocked = true;
-      play("timer_final", 0.8);
+    if (!mine || deadline === null) return;
+    const tick = (n: number) => {
+      const t = ticked.current[0] === deadline ? ticked.current : (ticked.current = [deadline, 6]);
+      if (n < t[1]) play("timer_tick", 0.5), (t[1] = n);
     };
+    const knock = () => {
+      if (knockedFor.current !== deadline) play("timer_final", 0.8);
+      knockedFor.current = deadline;
+    };
+    const left = cueAt - Date.now();
+    if (left <= 0) return void (left > -1000 && knock());
+    if (knockedFor.current === deadline) return;
+    // The value the count is on now. A page that lands inside the last 5 s ticks for it, then carries on from there. A re-arm for
+    // the same deadline only plays a count that has not played yet.
+    const now = Math.ceil(left / 1000);
+    if (now <= 5) tick(now);
     const ids = [setTimeout(knock, left)];
-    for (let k = Math.min(now, 6) - 1; k >= 1; k--) ids.push(setTimeout(() => play("timer_tick", 0.5), left - k * 1000));
+    for (let k = Math.min(now, 6) - 1; k >= 1; k--) ids.push(setTimeout(() => tick(k), left - k * 1000));
     return () => {
       ids.forEach(clearTimeout);
-      // The host moves the turn on at the deadline, so the next window can arrive a moment before this knock fires. A turn
-      // that ends with time to spare plays nothing.
-      if (!knocked && at - Date.now() < 400) knock();
+      // The host moves the turn on at the deadline, so the next window can arrive before this knock fires, a long way before
+      // it when this tab's clock estimate ran late. The window that replaced this one says on the host's own clock whether the
+      // deadline had passed when it was sent; that, or being within 400 ms of it here, plays the knock. A turn that ends with
+      // time to spare plays nothing, and a deadline that moved later is a new window, not this one's knock.
+      const next = useGame.getState().turnTimer;
+      if (cueAt - Date.now() < 400 || (next && next.deadline !== deadline && next.host >= deadline - 400)) knock();
     };
-  }, [mine, at]);
+  }, [mine, cueAt, deadline]);
 
   const left = secs === null ? null : secs * 1000;
   const urgent = left !== null && left <= URGENT_MS;

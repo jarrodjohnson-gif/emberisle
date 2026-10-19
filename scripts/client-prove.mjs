@@ -23,6 +23,8 @@ try {
   await page.addInitScript(() => {
     window.__plays = [];
     HTMLMediaElement.prototype.play = function () {
+      // #814: the background music is music-prove's, not a table sound.
+      if (this.src.endsWith("/old_tower_inn_loop.mp3")) return Promise.resolve();
       window.__plays.push(new URL(this.src).pathname);
       return Promise.resolve();
     };
