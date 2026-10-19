@@ -105,13 +105,13 @@ function useOfferDeltas(me: PlayerState) {
   return deltas;
 }
 
-function ResourceCard({ resource, count, flash, offer, showRates, buildMode }: { resource: Resource; count: number; flash?: ResourceFlash; offer?: number; buildMode: string; showRates: (resource: Resource, card: HTMLElement) => void }) {
+function ResourceCard({ resource, count, flash, offer, showRates, buildMode, owner }: { resource: Resource; count: number; flash?: ResourceFlash; offer?: number; buildMode: string; owner: string; showRates: (resource: Resource, card: HTMLElement) => void }) {
   const card = useRef<HTMLDivElement>(null);
   const hold = useRef<{ timer?: ReturnType<typeof setTimeout>; x: number; y: number }>({ x: 0, y: 0 });
   const cancelHold = () => {
     clearTimeout(hold.current.timer);
   };
-  useEffect(() => cancelHold, [buildMode]);
+  useEffect(() => cancelHold, [buildMode, owner]);
   const Icon = RESOURCE_ICON[resource];
   const label = flash ? (flash.delta > 0 ? `+${flash.delta}` : String(flash.delta)) : null;
   // Restart on the event ID, even for two gains in the same millisecond. The card itself stays mounted,
@@ -239,19 +239,19 @@ function ResourceCard({ resource, count, flash, offer, showRates, buildMode }: {
 function ResourceHand({ me, flashes }: { me: PlayerState; flashes: ReturnType<typeof useResourceFlashes> }) {
   const offer = useOfferDeltas(me);
   const buildMode = useGame((s) => s.buildMode);
-  const [hint, setHint] = useState<{ resource: Resource; top: number; key: number } | null>(null);
+  const [hint, setHint] = useState<{ resource: Resource; top: number; key: number; owner: string } | null>(null);
   const showRates = (resource: Resource, card: HTMLElement) => {
-    if (useGame.getState().buildMode === "none") setHint({ resource, key: performance.now(), top: card.getBoundingClientRect().top });
+    if (useGame.getState().buildMode === "none") setHint({ resource, owner: me.id, key: performance.now(), top: card.getBoundingClientRect().top });
   };
-  useEffect(() => setHint(null), [buildMode]);
+  useEffect(() => setHint(null), [buildMode, me.id]);
   return (
     <>
       <div className="goods-tray flex shrink-0 gap-1 overflow-x-auto rounded-chip p-2 short:p-1">
         {RESOURCES.map((r) => (
-          <ResourceCard key={r} resource={r} count={me.resources[r]} flash={flashes[r]} offer={offer[r]} showRates={showRates} buildMode={buildMode} />
+          <ResourceCard key={r} resource={r} count={me.resources[r]} flash={flashes[r]} offer={offer[r]} showRates={showRates} buildMode={buildMode} owner={me.id} />
         ))}
       </div>
-      {hint && buildMode === "none" ? <LazyBoundary key={hint.key} failed={null}>
+      {hint && hint.owner === me.id && buildMode === "none" ? <LazyBoundary key={hint.key} failed={null}>
         <HandRates owner={me.id} hint={hint} onClose={() => setHint(null)} />
       </LazyBoundary> : null}
     </>
@@ -296,7 +296,7 @@ export function HandDock({ me, phase }: { me: PlayerState; phase: Phase }) {
         if (e.target === e.currentTarget) setRising(false);
       }}
     >
-      <ResourceHand key={me.id} me={me} flashes={flashes} />
+      <ResourceHand me={me} flashes={flashes} />
     </div>
   );
 }
