@@ -139,8 +139,10 @@ async function proveResourceMotion(page, tag) {
   // The first change goes through the actual trade panel and the store's rules dispatcher.
   await page.getByRole("button", { name: "Trade", exact: true }).click();
   await page.getByTestId("trade-panel").waitFor();
-  for (let i = 0; i < 4; i++) await page.getByRole("button", { name: "More stone to give" }).click();
-  await page.getByRole("button", { name: "More sheep to want" }).click();
+  const bankTab = page.getByRole("tab", { name: "Bank & docks", exact: true });
+  if (await bankTab.count()) await bankTab.click();
+  await page.getByTestId("bank-give-ore").click();
+  await page.getByTestId("bank-want-wool").click();
   await page.getByRole("button", { name: /^(Bank 4|Dock 3|Dock 2):1$/ }).click();
   await page.waitForFunction(() => document.querySelector('[data-testid="resource-wool"] [data-testid="hand-count"]')?.textContent.trim() === "2", null, { timeout: STEP_MS });
   await sampleCardMotion(page, { wool: { count: "2", flash: "+1", y: -3 }, ore: { count: "4", flash: "-4", y: 2 } }, tag);

@@ -1,6 +1,6 @@
-// The trade panel (docs/BUILD_BIBLE.md 4.4): "I give" and "I want" steppers, Ask the table, and the one bank or dock rate you hold.
+// #831: each trade route keeps its own draft, exact quote, and action.
 import { useEffect, useRef, useState } from "react";
-import { Minus, Plus, X } from "lucide-react";
+import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useFocusTrap } from "@/lib/focus-trap";
 import { harborRate } from "@/lib/game/rules";
@@ -8,38 +8,14 @@ import { useGame } from "@/lib/game/store";
 import { RESOURCES, RESOURCE_LABEL, type Resource } from "@/lib/game/types";
 import { play } from "@/lib/sound";
 import { bagText } from "@/lib/game/trade";
-import { ClaySymbol, GrainSymbol, OreSymbol, TimberSymbol, WoolSymbol } from "./ResourceSymbols";
+import { chunk, LazyBoundary } from "@/lib/lazy";
 import "./trade-panel.css";
 
-const ICON = { timber: TimberSymbol, clay: ClaySymbol, wool: WoolSymbol, grain: GrainSymbol, ore: OreSymbol };
+const picker = chunk(() => import("./BankTradePicker"));
+const BankTradePicker = picker.pick((m) => m.BankTradePicker);
+const Stepper = picker.pick((m) => m.TradeResource);
 
 const ZERO: Record<Resource, number> = { timber: 0, clay: 0, wool: 0, grain: 0, ore: 0 };
-const kinds = (bag: Record<Resource, number>) => RESOURCES.filter((r) => bag[r] > 0);
-
-// Each resource keeps its name, owned count, and 44 px controls together.
-function Stepper({ resource, value, owned, side, canMore, onChange }: {
-  resource: Resource; value: number; owned: number; side: "give" | "want";
-  canMore: boolean; onChange: (n: number) => void;
-}) {
-  const Icon = ICON[resource];
-  return (
-    <div className="trade-resource" data-selected={value > 0 || undefined} data-testid={`trade-${side}-${resource}`}>
-      <Icon aria-hidden="true" className="size-5" />
-      <span className="trade-resource-name">{RESOURCE_LABEL[resource]}</span>
-      <span className="trade-owned" data-testid="trade-owned">Have {owned}</span>
-      <div className="trade-stepper">
-        <Button variant="ghost" size="icon" aria-label={`Fewer ${RESOURCE_LABEL[resource]} to ${side}`} disabled={value === 0} onClick={() => onChange(value - 1)}>
-          <Minus className="size-4" />
-        </Button>
-        <output aria-label={`${RESOURCE_LABEL[resource]} to ${side}`} className="trade-quantity">{value}</output>
-        <Button variant="ghost" size="icon" aria-label={`More ${RESOURCE_LABEL[resource]} to ${side}`} disabled={!canMore} onClick={() => onChange(value + 1)}>
-          <Plus className="size-4" />
-        </Button>
-      </div>
-      {value > 0 ? <span key={value} aria-hidden="true" className={`trade-selection-motion trade-selection-${side}`} data-testid="trade-selection-motion">{value}</span> : null}
-    </div>
-  );
-}
 
 export function TradePanel() {
   const open = useGame((s) => s.tradeOpen);
@@ -52,6 +28,9 @@ export function TradePanel() {
   const opener = useGame((s) => s.tradeOpener);
   const [draftGive, setGive] = useState(ZERO);
   const [want, setWant] = useState(ZERO);
+  const [route, setRoute] = useState<"table" | "bank">("table");
+  const [bankGive, setBankGive] = useState<Resource | null>(null);
+  const [bankWant, setBankWant] = useState<Resource | null>(null);
   const panel = useRef<HTMLElement>(null);
 
   const actor = mode === "hotseat" ? state?.current : localId;
@@ -82,6 +61,9 @@ export function TradePanel() {
     if (open) return;
     setGive(ZERO);
     setWant(ZERO);
+    setBankGive(null);
+    setBankWant(null);
+    setRoute("table");
   }, [open]);
   useEffect(() => {
     if (!open) return;
@@ -96,16 +78,14 @@ export function TradePanel() {
 
   if (!shown || !state || !me) return null;
 
-  const giving = kinds(give);
-  const wanting = kinds(want);
-  const asking = giving.length > 0 && wanting.length > 0;
+  const asking = RESOURCES.some((r) => give[r] > 0) && RESOURCES.some((r) => want[r] > 0);
 
   // The bank and the docks take one kind for one other kind, at the best rate a building of yours earns.
-  const g = giving.length === 1 ? giving[0]! : null;
-  const w = wanting.length === 1 ? wanting[0]! : null;
+  const g = bankGive;
+  const w = bankWant;
   const rate = g ? harborRate(state, me.id, g) : null;
   const bankLabel = rate === null ? "Bank" : rate === 4 ? "Bank 4:1" : `Dock ${rate}:1`;
-  const bankWhy = !g || !w
+  const bankWhy = !g || !w || g === w
     ? "Choose one kind on each side for a bank or dock exchange."
     : me.resources[g] < rate!
       ? `Need ${rate} ${RESOURCE_LABEL[g].toLowerCase()} for the ${rate === 4 ? "bank" : "dock"}.`
@@ -118,6 +98,7 @@ export function TradePanel() {
     if (!g || !w || bankWhy) return;
     if (dispatch({ type: "bankTrade", give: g, want: w }).ok) setTradeOpen(false);
   };
+  const bankRoute = mode === "hotseat" || route === "bank";
 
   return (
     <div className="absolute inset-0 z-30 flex items-end justify-center bg-white/45 p-safe sm:items-center" onClick={() => setTradeOpen(false)}>
@@ -137,8 +118,21 @@ export function TradePanel() {
           </Button>
         </header>
 
-        <div className="trade-composer-scroll">
-          <p className="trade-instructions">Choose goods below. You can mix goods when trading with players.</p>
+        {mode !== "hotseat" ? <div className="trade-tabs" role="tablist" aria-label="Trade route">
+          {(["table", "bank"] as const).map((tab, index) => <button key={tab} id={`trade-tab-${tab}`} role="tab" aria-selected={route === tab} aria-controls={`trade-route-${tab}`} tabIndex={route === tab ? 0 : -1}
+            onClick={() => setRoute(tab)} onKeyDown={(e) => {
+              if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key)) return;
+              e.preventDefault();
+              const next = e.key === "Home" ? "table" : e.key === "End" ? "bank" : index === 0 ? "bank" : "table";
+              setRoute(next);
+              document.getElementById(`trade-tab-${next}`)?.focus();
+            }}>{tab === "table" ? "Table" : "Bank & docks"}</button>)}
+        </div> : null}
+
+        <div className="trade-composer-scroll" id={`trade-route-${bankRoute ? "bank" : "table"}`} role={mode === "hotseat" ? undefined : "tabpanel"} aria-labelledby={mode === "hotseat" ? undefined : `trade-tab-${route}`} tabIndex={0}>
+          <LazyBoundary failed={<p role="alert">Trade choices could not load. Close and reopen to retry.</p>}>
+          {bankRoute ? <BankTradePicker state={state} player={me} give={g} want={w} onGive={setBankGive} onWant={setBankWant} /> : <>
+          <p className="trade-instructions">Tap a good to add it. Mix goods to make an offer to the table.</p>
           {(["give", "want"] as const).map((side) => {
             const bag = side === "give" ? give : want;
             return (
@@ -154,25 +148,25 @@ export function TradePanel() {
                 </div>
               </section>
             );
-          })}
+          })}</>}
+          </LazyBoundary>
         </div>
 
         <footer className="trade-composer-footer">
-          {mode !== "hotseat" ? (
+          {!bankRoute ? (
             <div className="trade-route">
-              <h3>With players</h3>
+              <h3>Table offer</h3>
               <p className="trade-exact-preview" data-testid="trade-player-preview" aria-live="polite">
                 <span>You give: {bagText(give) || "choose goods"}</span>
                 <span>You get: {bagText(want) || "choose goods"}</span>
               </p>
               <Button className="h-11 w-full" disabled={!asking} onClick={() => askTable(give, want)}>Ask the table</Button>
             </div>
-          ) : null}
-          <div className="trade-route">
+          ) : <div className="trade-route">
             <h3>Bank &amp; docks · one exchange</h3>
-            <p className="trade-exact-preview" data-testid="trade-hint">{bankHint}</p>
+            <p className="trade-exact-preview" data-testid="trade-hint" aria-live="polite">{bankHint}</p>
             <Button variant="secondary" className="h-11 w-full" disabled={bankWhy !== null} onClick={bank}>{bankLabel}</Button>
-          </div>
+          </div>}
         </footer>
       </section>
     </div>

@@ -273,16 +273,26 @@ body {
   *, *::before, *::after { animation: none !important; transition: none !important; }
   .build-ready { transform: none; }
 }
-/* Cue opacity holds until the exit, rather than fading before it can be read. */
+/* Cue opacity holds until the exit; gains rise and losses fall. */
 @keyframes resource-flash {
   0%, 80% { opacity: 1; transform: none; }
   100% { opacity: 0; transform: translateY(-4px); }
+}
+@keyframes resource-flash-loss {
+  0%, 80% { opacity: 1; transform: none; }
+  100% { opacity: 0; transform: translateY(4px); }
 }
 @keyframes gain-float {
   0% { opacity: 0; transform: translateY(6px); }
   10% { opacity: 1; transform: none; }
   80% { opacity: 1; transform: none; }
   100% { opacity: 0; transform: translateY(-8px); }
+}
+@keyframes loss-float {
+  0% { opacity: 0; transform: translateY(-6px); }
+  10% { opacity: 1; transform: none; }
+  80% { opacity: 1; transform: none; }
+  100% { opacity: 0; transform: translateY(8px); }
 }
 @media (min-width: 768px) and (pointer: fine) {
   .goods-card { height: 52px; padding-top: 0; }

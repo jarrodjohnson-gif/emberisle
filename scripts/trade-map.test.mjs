@@ -85,7 +85,18 @@ try {
     const preview = panel.getByTestId("trade-player-preview");
     assert.match(await preview.textContent(), /You give: 2 wood.*You get: 1 sheep, 1 stone/);
     assert(await more("timber", "want").isDisabled(), "same kind cannot be sent both ways");
-    assert(await bank().isDisabled(), "bank must reject mixed kinds");
+    assert.equal(await bank().count(), 0, "Table must not expose a bank action for mixed quantities");
+    await panel.getByRole("tab", { name: "Bank & docks", exact: true }).click();
+    await panel.getByTestId("bank-give-ore").click();
+    await panel.getByTestId("bank-give-timber").click();
+    await panel.getByTestId("bank-want-grain").click();
+    await panel.getByTestId("bank-want-wool").click();
+    assert.equal(await panel.getByRole("radio", { checked: true }).count(), 2, "Bank must select exactly one give and one get kind");
+    assert.equal(await panel.getByTestId("bank-give-timber").getAttribute("aria-checked"), "true");
+    assert.equal(await panel.getByTestId("bank-want-wool").getAttribute("aria-checked"), "true");
+    assert.equal(await panel.getByTestId("trade-hint").textContent(), "You give 4 wood. You get 1 sheep.");
+    await panel.getByRole("tab", { name: "Table", exact: true }).click();
+    assert.match(await preview.textContent(), /You give: 2 wood.*You get: 1 sheep, 1 stone/, "Bank kind selection must preserve Table quantities");
     assert.equal(await panel.getByTestId("trade-give-timber").getByTestId("trade-owned").textContent(), "Have 6");
     const layout = await panel.evaluate((el) => {
       const box = (s) => el.querySelector(s).getBoundingClientRect().toJSON();
@@ -129,14 +140,14 @@ try {
       return { y: el.getBoundingClientRect().y - start, duration: a.effect.getTiming().duration };
     });
     assert.equal(delta.duration, 220);
-    assert(Math.abs(delta.y - (side === "give" ? -12 : 12)) <= 1, `${side} motion: ${JSON.stringify(delta)}`);
+    assert(Math.abs(delta.y - (side === "give" ? 12 : -12)) <= 1, `${side} motion: ${JSON.stringify(delta)}`);
   }
   await page.emulateMedia({ reducedMotion: "reduce" });
   await more("timber", "give").click();
   assert.equal(await panel.getByTestId("trade-give-timber").getByRole("status").textContent(), "2");
   assert.equal(await panel.getByTestId("trade-give-timber").getByTestId("trade-selection-motion").evaluate((el) => el.getAnimations().length), 0);
   await page.emulateMedia({ reducedMotion: "no-preference" });
-  console.log("motion: give -12px / get +12px in 220ms; reduced motion shows selected count instantly");
+  console.log("motion: give +12px / get -12px in 220ms; reduced motion shows selected count instantly");
 
   for (const rate of [4, 3, 2]) {
     const g = structuredClone(base);
@@ -148,6 +159,10 @@ try {
     await more("ore", "give").click();
     await more("wool", "want").click();
     await more("wool", "want").click();
+    assert.equal(await bank().count(), 0, "Table quantities must not expose a bank exchange");
+    await panel.getByRole("tab", { name: "Bank & docks", exact: true }).click();
+    await panel.getByTestId("bank-give-ore").click();
+    await panel.getByTestId("bank-want-wool").click();
     assert.equal(await panel.getByTestId("trade-hint").textContent(), `You give ${rate} stone. You get 1 sheep.`);
     await bank().click();
     const actual = await settled();
@@ -160,8 +175,9 @@ try {
   }
   await load();
   await open();
-  await more("ore", "give").click();
-  await more("wool", "want").click();
+  await panel.getByRole("tab", { name: "Bank & docks", exact: true }).click();
+  await panel.getByTestId("bank-give-ore").click();
+  await panel.getByTestId("bank-want-wool").click();
   await change('g.bank.wool = 0');
   assert(await bank().isDisabled());
   await textHas(panel.getByTestId("trade-hint"), "no sheep");
