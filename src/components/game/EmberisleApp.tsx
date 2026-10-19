@@ -265,18 +265,21 @@ function Title() {
                 openTables.prefetch();
               }}
             >
-              <div className="flex grow gap-1">
+              {/* Split Host + Open/Private: share the row with Join via flex-1 basis-0 so max-w-sm
+                  (title-prove 1280x500) does not wrap. Ghost only — never a fourth filled button (#444). */}
+              <div className="flex min-w-0 flex-1 basis-0 overflow-hidden rounded-control border border-control-line">
                 <Button
                   size="lg"
                   variant="secondary"
-                  className="grow"
+                  className="min-w-0 flex-1 truncate rounded-none border-0"
                   onClick={() => hostTable(openMode)}
                 >
                   Host a table
                 </Button>
                 <Button
                   size="sm"
-                  variant={openMode === "open" ? "primary" : "secondary"}
+                  variant="ghost"
+                  className="w-[4.75rem] shrink-0 rounded-none border-0 border-l border-control-line px-1"
                   aria-pressed={openMode === "open"}
                   title={openMode === "open" ? "Open table (anyone can join)" : "Private table (code required)"}
                   aria-label={openMode === "open" ? "Open table" : "Private table"}
@@ -288,7 +291,7 @@ function Title() {
               </div>
               <form
                 aria-label="Join code"
-                className="flex min-w-[11rem] flex-1 gap-2"
+                className="flex min-w-[11rem] flex-1 basis-0 gap-2"
                 onSubmit={(e) => {
                   e.preventDefault();
                   if (join.length !== 4) return;
