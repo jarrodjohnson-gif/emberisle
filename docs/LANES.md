@@ -90,6 +90,7 @@ An issue's `model:` label, where present, names the model to build with (`docs/F
 - Small defined coding, docs and scripts.
 
 Gemini never builds a new look, animation or layout that needs taste. Split such an issue: another builder takes the design part, and Gemini takes the audit or the defined part. `model:gemini-ok` marks issues kept for Gemini.
+
 Grok's usage limits are low, so give it one `tier:2` or `tier:3` issue at a time.
 
 ### Sub-agents and usage limits
