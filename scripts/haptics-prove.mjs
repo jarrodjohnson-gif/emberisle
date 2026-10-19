@@ -156,7 +156,8 @@ async function opponentLandProof(page) {
   console.log("land: opponent outpost stayed quiet");
 }
 
-// Rig a roll that pays 3 pieces; assert three 8 ms buzzes.
+// Rig a roll that pays exactly 3 pieces; assert three 8 ms buzzes.
+// Clear every building and every other pip first so practice leftovers cannot add ticks.
 async function payProof(page) {
   await toPractice(page);
   await page.evaluate(() => window.__emberisle.setState({ runBots: () => {} }));
@@ -165,12 +166,27 @@ async function payProof(page) {
     const rules = await import("/src/lib/game/rules.ts");
     const st = structuredClone(g.getState().state);
     const me = g.getState().localId;
-    const land = st.hexes.filter((h) => h.pip && h.terrain !== "waste" && h.id !== st.robberHex);
-    land.slice(0, 3).forEach((h, i) => {
+    for (const v of st.vertices) v.building = undefined;
+    for (const h of st.hexes) {
+      if (h.terrain === "waste") continue;
+      h.pip = 2;
+    }
+    // Pick three hexes that do not share a corner, so each outpost earns exactly one grant on a 6.
+    const land = st.hexes.filter((h) => h.terrain !== "waste" && h.id !== st.robberHex);
+    const picked = [];
+    for (const h of land) {
+      if (picked.length >= 3) break;
+      const shares = picked.some((p) => st.vertices.some((v) => v.hexes.includes(h.id) && v.hexes.includes(p.id)));
+      if (!shares) picked.push(h);
+    }
+    picked.forEach((h, i) => {
       h.pip = 6;
       h.terrain = ["wool", "ore", "grain"][i];
     });
-    const corners = land.slice(0, 3).map((h) => st.vertices.find((v) => v.hexes.includes(h.id) && !v.building)).filter(Boolean);
+    const corners = picked.map((h) =>
+      st.vertices.find((v) => v.hexes.includes(h.id) && v.hexes.filter((id) => picked.some((p) => p.id === id)).length === 1 && !v.building),
+    );
+    if (corners.some((c) => !c) || picked.length < 3) throw new Error(`pay setup: need 3 isolated hexes, got ${picked.length}`);
     corners.forEach((v) => {
       v.building = { playerId: me, kind: "outpost" };
     });
@@ -180,22 +196,25 @@ async function payProof(page) {
     st.bank = { timber: 19, clay: 19, wool: 19, grain: 19, ore: 19 };
     st.seq += 1;
     g.setState({ state: st });
+    // flash-prove: queue values are face-1, so [5,5] → dice 6+6? No — [2,2] → 3+3 = 6.
     window.__queue = [2, 2];
     const real = crypto.getRandomValues.bind(crypto);
     crypto.getRandomValues = (buf) => (window.__queue.length ? ((buf[0] = window.__queue.shift()), buf) : real(buf));
-    window.__buzz = [];
     const isle = window.__isle;
     const before = g.getState().state;
     const paid = rules.applyAction(before, me, { type: "roll" }).state;
+    // Drop any auto pulse from setBoard before we count ticks ourselves.
     g.setState({ state: paid });
+    isle.clearPayers?.();
+    window.__buzz = [];
     const { hear } = await import("/src/lib/game/store.ts");
     hear(before, paid, me, "ai");
-    isle.clearPayers?.();
     isle.pulsePayers(paid);
     for (let i = 0; i < 200 && isle.payingPieces?.length; i++) isle.stepPayers(0.01, false);
-    return window.__buzz.filter((ms) => ms === 8).length;
+    return { n: window.__buzz.filter((ms) => ms === 8).length, grants: (paid.lastProduction ?? []).length, buzz: window.__buzz.slice() };
   });
-  assert.equal(n, 3, `pay ticks: expected 3 buzzes of 8, got ${n}`);
+  assert.equal(n.grants, 3, `pay setup: expected 3 grants, got ${n.grants}`);
+  assert.equal(n.n, 3, `pay ticks: expected 3 buzzes of 8, got ${n.n} (${JSON.stringify(n.buzz)})`);
   console.log("pay: three pieces buzzed 8 each");
 }
 
