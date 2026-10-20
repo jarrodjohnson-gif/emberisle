@@ -396,7 +396,6 @@ export function ChatDock() {
       last = inset;
       setKeyboardInset(inset);
       document.documentElement.style.setProperty("--keyboard-inset", `${inset}px`);
-      document.documentElement.style.setProperty("--chat-bubble-band", inset > 0 ? "0px" : "40px");
       useGame.getState().chromeLanded();
     };
     update();
@@ -406,7 +405,6 @@ export function ChatDock() {
       viewport.removeEventListener("resize", update);
       viewport.removeEventListener("scroll", update);
       document.documentElement.style.removeProperty("--keyboard-inset");
-      document.documentElement.style.removeProperty("--chat-bubble-band");
       setKeyboardInset(0);
     };
   }, [phone, open]);
@@ -432,6 +430,18 @@ export function ChatDock() {
       clearTimeout(settled);
     };
   }, [phone, open, setOpen]);
+
+  // #899: the sheet normally leaves a 40 px band for the seat bubbles under the strip (styles.css --chat-sheet-height). While
+  // the keyboard is up, or an offer or a steal prompt shares the screen, it gives that band back so the input and the choice
+  // both still fit (and the usability guard above never minimizes the chat on a short phone).
+  const tight = phone && open && (keyboardInset > 0 || choiceOpen);
+  useEffect(() => {
+    if (!tight) return;
+    document.documentElement.style.setProperty("--chat-bubble-band", "0px");
+    return () => {
+      document.documentElement.style.removeProperty("--chat-bubble-band");
+    };
+  }, [tight]);
 
   // A remembered open dock must not cover the hand bar when Play starts on a phone. The stored value stays for desktop.
   useEffect(() => {

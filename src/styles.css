@@ -189,7 +189,7 @@ body {
   --duration-gain: 2200ms;
   --duration-turn: 1800ms;
   /* #899: the phone sheet ends under the island, clear of the seat strip (68 px) and the 40 px band of seat bubbles under it.
-     While the keyboard is up the band is 0 (Chat.tsx): the sheet rises over the bubbles so the input stays above the keys. */
+     While the keyboard is up or an offer or steal prompt is showing, the band is 0 (Chat.tsx), so the input and the choice fit. */
   --chat-sheet-height: min(420px, calc(100dvh - max(12px, env(safe-area-inset-top)) - 68px - var(--chat-bubble-band, 40px) - var(--active-offer-height, 0px) - var(--active-prompt-height, 0px) - var(--keyboard-inset, 0px)));
 }
 .seat-card { background: var(--table); color: var(--table-ink); box-shadow: inset 0 0 0 1px var(--table-line); }
