@@ -104,7 +104,7 @@ An issue may carry a `model:opus` or `model:sonnet` label when it needs a partic
 UI, visual or tricky multi-file work, sonnet for well-specified mechanical steps. A Builder uses that
 model, or a subagent on it. If it can do neither, it says in the PR which model it used. The Reviewer uses a different model from the one that built the PR.
 
-A design or `ux` issue that a Builder works from a mock is ready only when the mock covers 390x844, 844x390 and 1280x720. It must give pixel sizes for type, controls and footprints at each size. A mock for one size leaves the Builder guessing at the others (#909).
+A mock-based design or `ux` issue is ready only when its mock covers 390x844, 844x390 and 1280x720. The mock gives pixel sizes for type, controls and footprints at each size. A mock for one size leaves the Builder guessing at the others (#909).
 
 Add `needs: jarrod` (his decision, account, or money) or `needs: gaming-pc` (Unreal, or the 3.6 GB art pack)
 on its own line when an AI cannot finish it. Those issues still get Research done by any AI. Design follows "Big design work" in `docs/LANES.md`.
@@ -230,7 +230,7 @@ before the allowance is raised. Locally, `node scripts/size-prove.mjs --base <bu
 | Role | Who | Does |
 |---|---|---|
 | Builder | the session doing the work | Steps 1-4, pushes, opens the PR, and fixes CI until it is green. **Never merges its own PR.** |
-| Reviewer | the **orchestrator**: the one session Jarrod names to review and merge | Reviews every open PR with a different model than its builder: reads the diff against the issue's completion test, checks CI and the framework rules (no to-do lists in files, issue comments present), following [REVIEWING.md](REVIEWING.md). If CI is green and nothing is wrong, it **merges**. If something is wrong, it comments exactly what, and the PR stays open for its Builder. **No other session merges.** |
+| Reviewer | the **orchestrator**: the one session Jarrod names to review and merge | Reviews every open PR with a different model than its builder: reads the diff against the issue's completion test, checks CI and the framework rules (no to-do lists in files, issue comments present). Its review subagents follow [REVIEWING.md](REVIEWING.md). If CI is green and nothing is wrong, it **merges**. If something is wrong, it comments exactly what, and the PR stays open for its Builder. **No other session merges.** |
 | Jarrod | the owner | Accepts results: moves In Review to Done. No code reading needed. |
 
 A new Builder chat therefore starts: take the next eligible issue with no file conflict
