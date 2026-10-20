@@ -30,9 +30,11 @@ jobs:
           gh pr comment "$INBOX" --repo "$REPO" --body "review-desk: PR #$NUM $ACTION by $AUTHOR (draft=$DRAFT)"
 
   relay:
-    # Every comment on the hub, and any comment that opens with "Question:". The inbox's own comments are skipped.
+    # Every comment on the hub, and any comment that opens with "Question:". The inbox's own comments, and the desk's
+    # own posts (marked <!-- review-desk -->), are skipped.
     if: >-
       github.event_name == 'issue_comment' && github.event.issue.number != 699 &&
+      !contains(github.event.comment.body, '<!-- review-desk -->') &&
       (github.event.issue.number == 854 || startsWith(github.event.comment.body, 'Question:'))
     runs-on: ubuntu-latest
     steps:
