@@ -27,6 +27,8 @@ const CEILINGS = [
   { name: "hex-jelly", gzipBytes: 50000 },
   { name: "harbor-jelly", gzipBytes: 11500 },
   { name: "online", gzipBytes: 9000 },
+  // #899: Chat C's Sounds & stickers tab and seat bubbles load as their own chunk, prefetched by online; measured 2.3 kB.
+  { name: "Reactions", gzipBytes: 3300 },
   { name: "sheets", gzipBytes: 7800 },
   { name: "moments", gzipBytes: 5700 },
   { name: "VictoryTargetSelect", gzipBytes: 1000 },

@@ -1,18 +1,17 @@
-// The table chat dock, the shared chat box, and floating reactions. Design: docs/design/chat.md.
+// The table chat dock and the shared chat box. Design: docs/design/chat.md, and Chat C (#899, docs/design/chat-c/README.md):
+// one chat button opens one panel with two tabs, Chat (the log, the six emoji, the composer) and Sounds & stickers.
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { MessageSquare, Minus, Smile, Volume2, VolumeX } from "lucide-react";
+import { MessageSquare, Minus, Volume2, VolumeX } from "lucide-react";
 import { CopyFallback, useCopy } from "@/components/game/CopyText";
-import { EMOTES } from "@/components/game/emotes";
-import { QuickReactions, useMutedSeats } from "@/components/game/Reactions";
+import { EmojiRow, Emote, setTab, SoundsTab, useMutedSeats, useTalk, type ChatTab, type ReactLine } from "@/components/game/talk";
 import { useGame, type GameLogLine } from "@/lib/game/store";
 import type { ChatLine } from "@/lib/net/table";
+import { LazyBoundary } from "@/lib/lazy";
 import { cn } from "@/lib/utils";
-import { SOUNDBOARD } from "@/lib/sound";
 import { useViewport } from "@/lib/viewport";
 
-export { ReactionFloats } from "@/components/game/Reactions";
+export { SeatBubbles } from "@/components/game/talk";
 
-const PRESETS = ["gg", "nice roll", "your turn", "one sec", "ty"];
 const INPUT_ID = "chat-input";
 // A chat line is 14 px text at leading-snug (about 20 px) plus the 4 px gap between lines.
 const LINE_PX = 22;
@@ -40,6 +39,17 @@ function useMyName() {
 }
 
 function Line({ line, me }: { line: ChatLine; me: string }) {
+  // A soundboard tap is a light line: the speaker mark and the chip's label, not the "🔊" text the host sends.
+  if (line.sound) {
+    return (
+      <li data-testid="sound-line" className="flex items-center break-words text-sm leading-snug text-zinc-700">
+        <span className="mr-1 inline-block size-2 shrink-0 rounded-full" style={{ background: line.color }} />
+        <span className="mr-1 font-medium">{line.name}</span>
+        <Volume2 aria-hidden="true" className="mr-0.5 size-3.5 shrink-0" />
+        {line.text.replace(/^🔊\s*/, "")}
+      </li>
+    );
+  }
   return (
     <li className="break-words text-sm leading-snug text-zinc-900">
       <span className="mr-1 inline-block size-2 rounded-full align-baseline" style={{ background: line.color }} />
@@ -48,6 +58,55 @@ function Line({ line, me }: { line: ChatLine; me: string }) {
       </span>
       {me ? <Mention text={line.text} name={me} /> : line.text}
     </li>
+  );
+}
+
+// An emote or sticker as a light log line; repeats in a row from the same seat read "×n", as the seat bubble does.
+function ReactRow({ line, count }: { line: ReactLine; count: number }) {
+  return (
+    <li data-testid="react-line" data-emote={line.emote} className="flex items-center text-sm leading-snug text-zinc-700">
+      <span className="mr-1 inline-block size-2 shrink-0 rounded-full" style={{ background: line.color }} />
+      <span className="mr-1 font-medium">{line.name}</span>
+      <Emote emote={line.emote} className="inline-flex size-5 shrink-0 items-center justify-center text-base leading-none" />
+      {count > 1 ? <span className="ml-1 text-caption font-semibold tabular-nums">×{count}</span> : null}
+    </li>
+  );
+}
+
+const TABS: [ChatTab, string, typeof MessageSquare][] = [
+  ["chat", "Chat", MessageSquare],
+  ["sounds", "Sounds & stickers", Volume2],
+];
+
+// The panel's two tabs (at most two, README), then the dock's own actions (Mute, Minimize) at the right.
+function Tabs({ actions, testid, dense }: { actions?: ReactNode; testid?: string; dense?: boolean }) {
+  const tab = useTalk((s) => s.tab);
+  return (
+    <div data-testid={testid} className="flex shrink-0 items-center gap-1">
+      <div role="tablist" aria-label="Chat panel" className="flex min-w-0 flex-1 gap-1">
+        {TABS.map(([id, label, Icon]) => (
+          <button
+            key={id}
+            type="button"
+            role="tab"
+            id={`chat-tab-${id}`}
+            aria-selected={tab === id}
+            aria-controls="chat-tabpanel"
+            onClick={() => setTab(id)}
+            className={cn(
+              dense ? "h-8" : "h-11",
+              "flex min-w-0 cursor-pointer items-center gap-1 rounded-control bg-glass px-1.5 text-sm text-zinc-700 hover:text-zinc-900",
+              id === "chat" && "shrink-0",
+              tab === id && "font-semibold text-zinc-900 underline underline-offset-4",
+            )}
+          >
+            <Icon aria-hidden="true" className="size-4 shrink-0" />
+            <span className="truncate">{label}</span>
+          </button>
+        ))}
+      </div>
+      {actions}
+    </div>
   );
 }
 
@@ -62,10 +121,11 @@ function LogRow({ line }: { line: GameLogLine }) {
 
 const CHIP = "inline-flex h-11 min-w-11 shrink-0 cursor-pointer items-center justify-center rounded-control bg-glass px-2 text-xs text-zinc-700 hover:text-zinc-900";
 
-// The log, the preset chips, the emote tray, and the input. `onEscape` is the dock's minimize.
+// The panel: the two tabs, then the Chat tab (the log, the six emoji and the input) or the Sounds & stickers tab.
+// `onEscape` is the dock's minimize; `actions` are the dock's Mute and Minimize, in the tab row.
 // `game` (the in-game dock, not the Lobby) lists the game log in with the chat, behind a Chat/All filter, with Copy log.
-// `minRows`: a phone sheet keeps the log at least that many lines tall, whatever else is squeezed (the page scrolls instead).
-export function ChatBox({ rows, minRows = 0, game, onEscape, className }: { rows: number; minRows?: number; game?: boolean; onEscape?: () => void; className?: string }) {
+// `minRows`: the log keeps at least that many lines, whatever else is squeezed (the page scrolls instead).
+export function ChatBox({ rows, minRows = 0, game, dense, onEscape, actions, headerTestId, className }: { rows: number; minRows?: number; game?: boolean; dense?: boolean; onEscape?: () => void; actions?: ReactNode; headerTestId?: string; className?: string }) {
   const chat = useGame((s) => s.chat);
   const gameLog = useGame((s) => s.gameLog);
   const code = useGame((s) => s.code);
@@ -74,15 +134,12 @@ export function ChatBox({ rows, minRows = 0, game, onEscape, className }: { rows
   const draft = useGame((s) => s.chatDraft);
   const setDraft = useGame((s) => s.setChatDraft);
   const sendChat = useGame((s) => s.sendChat);
-  const sendReact = useGame((s) => s.sendReact);
-  const sendSound = useGame((s) => s.sendSound);
   const spectator = useGame((s) => s.spectator);
+  const reactLog = useTalk((s) => s.reactLog);
+  // A watcher sends nothing, so it has the log alone: no tabs (docs/design/spectator.md).
+  const tab = useTalk((s) => (spectator ? "chat" : s.tab));
   const { muted } = useMutedSeats(code);
   const me = useMyName();
-  const [tray, setTray] = useState(false);
-  const [board, setBoard] = useState(false);
-  // The host takes one soundboard tap per seat every 3 s; the buttons rest for the same time rather than draw a refusal.
-  const [resting, setResting] = useState(false);
   const { state: copied, copy } = useCopy<"log">();
   const log = useRef<HTMLUListElement>(null);
   const stuck = useRef(true);
@@ -94,7 +151,7 @@ export function ChatBox({ rows, minRows = 0, game, onEscape, className }: { rows
   useEffect(() => {
     const el = log.current;
     if (el && stuck.current) el.scrollTop = el.scrollHeight;
-  }, [chat, gameLog, withLog]);
+  }, [chat, gameLog, reactLog, withLog, tab]);
 
   // A layout change (the sheet settling, the keyboard) resizes the log; the newest line stays in view unless the reader scrolled up.
   useEffect(() => {
@@ -107,7 +164,7 @@ export function ChatBox({ rows, minRows = 0, game, onEscape, className }: { rows
     });
     observer.observe(el);
     return () => observer.disconnect();
-  }, []);
+  }, [tab]);
 
   const send = () => {
     const text = draft.trim();
@@ -118,167 +175,117 @@ export function ChatBox({ rows, minRows = 0, game, onEscape, className }: { rows
 
   const copyLog = () => copy("log", gameLog.map((l) => l.text).join("\n"));
 
-  // Chat and game lines in the order this browser saw them (both `at` stamps are its own clock, store.ts). The sort is
-  // stable, so each kind keeps its own order when stamps tie.
-  const lines: { at: number; node: ReactNode }[] = visibleChat.map((line) => ({ at: line.at, node: <Line key={`c${line.id}`} line={line} me={me} /> }));
-  if (withLog) {
-    for (const [i, line] of gameLog.entries()) lines.push({ at: line.at, node: <LogRow key={`g${i}`} line={line} /> });
-    lines.sort((x, y) => x.at - y.at);
+  // Chat, reaction and game lines in the order this browser saw them (every `at` stamp is its own clock, store.ts). The
+  // sort is stable, so each kind keeps its own order when stamps tie. Reactions in a row from one seat fold into one "×n" line.
+  type Row = { at: number; node: ReactNode } | { at: number; react: ReactLine; count: number };
+  const lines: Row[] = visibleChat.map((line) => ({ at: line.at, node: <Line key={`c${line.id}`} line={line} me={me} /> }));
+  for (const line of reactLog) if (!muted.has(line.seat)) lines.push({ at: line.at, react: line, count: 1 });
+  if (withLog) for (const [i, line] of gameLog.entries()) lines.push({ at: line.at, node: <LogRow key={`g${i}`} line={line} /> });
+  lines.sort((x, y) => x.at - y.at);
+  const rowsShown: Row[] = [];
+  for (const row of lines) {
+    const prev = rowsShown.at(-1);
+    if ("react" in row && prev && "react" in prev && prev.react.seat === row.react.seat && prev.react.emote === row.react.emote) prev.count++;
+    else rowsShown.push(row);
   }
 
   return (
     <div className={cn("flex min-h-0 flex-col gap-2", className)}>
-      {game ? (
-        <div className="chat-filters flex shrink-0 items-center gap-1">
-          <div role="group" aria-label="Show" className="flex gap-1">
-            {(["chat", "all"] as const).map((f) => (
-              <button
-                key={f}
-                type="button"
-                aria-pressed={filter === f}
-                onClick={() => setFilter(f)}
-                className={cn(CHIP, filter === f && "font-semibold underline underline-offset-2")}
-              >
-                {f === "chat" ? "Chat" : "All"}
-              </button>
-            ))}
-          </div>
-          <button type="button" onClick={copyLog} className={cn(CHIP, "ml-auto")}>
-            {copied?.ok ? "Copied" : "Copy log"}
-          </button>
-        </div>
-      ) : null}
-      {game ? (
-        <CopyFallback
-          state={copied}
-          label="Game log"
-          className="shrink-0 text-zinc-700 [&_textarea]:rounded-control [&_textarea]:border-0 [&_textarea]:bg-glass"
-        />
-      ) : null}
-      <ul
-        ref={log}
-        data-testid="chat-log"
-        role="log"
-        aria-label="Chat"
-        tabIndex={0}
-        onScroll={(e) => {
-          const el = e.currentTarget;
-          if (el.clientHeight !== pinnedH.current) return;
-          stuck.current = el.scrollHeight - el.scrollTop - el.clientHeight < 8;
-        }}
-        className="flex min-h-0 flex-col gap-1 overflow-y-auto"
-        style={{ height: rows * LINE_PX, minHeight: minRows * LINE_PX, flex: "1 1 auto" }}
-      >
-        {lines.map((l) => l.node)}
-      </ul>
       {spectator ? (
-        // Read-only (docs/design/spectator.md): the log and the filter stay; the chips, tray and input are this one line.
-        <p data-testid="chat-readonly" className="shrink-0 text-xs text-zinc-700">
-          Watching — chat is read-only
-        </p>
+        <div data-testid={headerTestId} className="flex shrink-0 items-center justify-between">
+          <h2 className="text-sm font-medium">Table chat</h2>
+          {actions}
+        </div>
       ) : (
-        <>
-          <div className="chat-presets flex shrink-0 gap-1 overflow-x-auto">
-            {PRESETS.map((p) => (
-              <button
-                key={p}
-                type="button"
-                onClick={() => sendChat(p)}
-                className={CHIP}
-              >
-                {p}
+        <Tabs actions={actions} testid={headerTestId} dense={dense} />
+      )}
+      {tab === "sounds" ? (
+        <div id="chat-tabpanel" role="tabpanel" aria-labelledby="chat-tab-sounds" className="flex min-h-0 flex-1 flex-col">
+          <LazyBoundary failed={null}>
+            <SoundsTab dense={dense} />
+          </LazyBoundary>
+        </div>
+      ) : (
+        <div id="chat-tabpanel" role={spectator ? undefined : "tabpanel"} aria-labelledby={spectator ? undefined : "chat-tab-chat"} className="flex min-h-0 flex-1 flex-col gap-2">
+          {game ? (
+            <div className="chat-filters flex shrink-0 items-center gap-1">
+              <div role="group" aria-label="Show" className="flex gap-1">
+                {(["chat", "all"] as const).map((f) => (
+                  <button
+                    key={f}
+                    type="button"
+                    aria-pressed={filter === f}
+                    onClick={() => setFilter(f)}
+                    className={cn(CHIP, filter === f && "font-semibold underline underline-offset-2")}
+                  >
+                    {f === "chat" ? "Chat" : "All"}
+                  </button>
+                ))}
+              </div>
+              <button type="button" onClick={copyLog} className={cn(CHIP, "ml-auto")}>
+                {copied?.ok ? "Copied" : "Copy log"}
               </button>
-            ))}
-          </div>
-          {tray ? (
-            <div className="grid grid-cols-6 gap-1" data-testid="emote-tray">
-              {Object.entries(EMOTES).map(([id, url]) => (
-                <button
-                  key={id}
-                  type="button"
-                  aria-label={`React ${id}`}
-                  onClick={() => {
-                    sendReact(id);
-                    setTray(false);
-                  }}
-                  className="grid size-11 cursor-pointer place-items-center rounded-control bg-glass p-1"
-                >
-                  <img src={url} alt="" className="size-8 object-contain" />
-                </button>
-              ))}
             </div>
           ) : null}
-          {board ? (
-            <div className="chat-presets flex shrink-0 gap-1 overflow-x-auto" data-testid="soundboard">
-              {SOUNDBOARD.map(({ id, label }) => (
-                <button
-                  key={id}
-                  type="button"
-                  disabled={resting}
-                  aria-label={`Play sound ${label}`}
-                  onClick={() => {
-                    sendSound(id);
-                    setResting(true);
-                    window.setTimeout(() => setResting(false), 3000);
-                  }}
-                  className={cn(CHIP, "gap-1 disabled:opacity-50")}
-                >
-                  <Volume2 className="size-3" />
-                  {label}
-                </button>
-              ))}
-            </div>
-          ) : null}
-          <div className="flex shrink-0 gap-1">
-            <button
-              type="button"
-              aria-label="Soundboard"
-              aria-expanded={board}
-              onClick={() => {
-                setBoard(!board);
-                setTray(false);
-              }}
-              className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-control bg-glass text-zinc-700 hover:text-zinc-900"
-            >
-              <Volume2 className="size-4" />
-            </button>
-            <button
-              type="button"
-              aria-label="Emotes"
-              aria-expanded={tray}
-              onClick={() => {
-                setTray(!tray);
-                setBoard(false);
-              }}
-              className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-control bg-glass text-zinc-700 hover:text-zinc-900"
-            >
-              <Smile className="size-4" />
-            </button>
-            <input
-              id={INPUT_ID}
-              value={draft}
-              maxLength={200}
-              placeholder="Say something…"
-              onChange={(e) => setDraft(e.target.value)}
-              onKeyDown={(e) => {
-                e.stopPropagation();
-                if (e.key === "Enter") send();
-                if (e.key === "Escape") {
-                  e.currentTarget.blur();
-                  onEscape?.();
-                }
-              }}
-              className="h-11 min-w-0 flex-1 rounded-control bg-glass px-2 text-sm text-zinc-900 placeholder:text-zinc-700"
+          {game ? (
+            <CopyFallback
+              state={copied}
+              label="Game log"
+              className="shrink-0 text-zinc-700 [&_textarea]:rounded-control [&_textarea]:border-0 [&_textarea]:bg-glass"
             />
-            <button
-              type="button"
-              onClick={send}
-              className="h-11 min-w-11 cursor-pointer rounded-control bg-fg px-3 text-sm font-medium text-bg hover:bg-fg/90"
-            >
-              Send
-            </button>
-          </div>
-        </>
+          ) : null}
+          <ul
+            ref={log}
+            data-testid="chat-log"
+            role="log"
+            aria-label="Chat"
+            tabIndex={0}
+            onScroll={(e) => {
+              const el = e.currentTarget;
+              if (el.clientHeight !== pinnedH.current) return;
+              stuck.current = el.scrollHeight - el.scrollTop - el.clientHeight < 8;
+            }}
+            className="flex min-h-0 flex-col gap-1 overflow-y-auto"
+            style={{ height: rows * LINE_PX, minHeight: minRows * LINE_PX, flex: "1 1 auto" }}
+          >
+            {rowsShown.map((row) => ("react" in row ? <ReactRow key={`r${row.react.id}`} line={row.react} count={row.count} /> : row.node))}
+          </ul>
+          {spectator ? (
+            // Read-only (docs/design/spectator.md): the log and the filter stay; the emoji and input are this one line.
+            <p data-testid="chat-readonly" className="shrink-0 text-xs text-zinc-700">
+              Watching — chat is read-only
+            </p>
+          ) : (
+            <>
+              <EmojiRow keys={game} dense={dense} />
+              <div className="flex shrink-0 gap-1">
+                <input
+                  id={INPUT_ID}
+                  value={draft}
+                  maxLength={200}
+                  placeholder="Say something…"
+                  onChange={(e) => setDraft(e.target.value)}
+                  onKeyDown={(e) => {
+                    e.stopPropagation();
+                    if (e.key === "Enter") send();
+                    if (e.key === "Escape") {
+                      e.currentTarget.blur();
+                      onEscape?.();
+                    }
+                  }}
+                  className="h-11 min-w-0 flex-1 rounded-control bg-glass px-2 text-sm text-zinc-900 placeholder:text-zinc-700"
+                />
+                <button
+                  type="button"
+                  onClick={send}
+                  className="h-11 min-w-11 cursor-pointer rounded-control bg-fg px-3 text-sm font-medium text-bg hover:bg-fg/90"
+                >
+                  Send
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       )}
     </div>
   );
@@ -305,10 +312,10 @@ function MuteMenu({ above = false }: { above?: boolean }) {
         aria-controls="chat-mute-panel"
         title="Mute players"
         onClick={() => setOpen((value) => !value)}
-        className="flex h-11 min-w-11 shrink-0 cursor-pointer items-center gap-1 rounded-control bg-glass px-2 text-xs text-zinc-700 hover:text-zinc-900"
+        className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-control bg-glass text-zinc-700 hover:text-zinc-900"
       >
+        {/* Icon only, so the two tabs fit beside it; its name and title say what it does. */}
         <VolumeX className="size-4" />
-        <span>Mute</span>
       </button>
       {open ? (
         <div
@@ -465,12 +472,8 @@ export function ChatControls() {
     </button>
   );
 
-  return (
-    <>
-      {open ? null : openButton}
-      <QuickReactions />
-    </>
-  );
+  // Chat C: this is the one button. The emoji, the sounds and the stickers are inside the panel it opens.
+  return open ? null : openButton;
 }
 
 export function ChatDock() {
@@ -580,22 +583,27 @@ export function ChatDock() {
           className="fixed inset-x-0 bottom-0 z-30 flex flex-col gap-2 rounded-t-sheet bg-glass px-safe pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur-md"
           style={{ height: "var(--chat-sheet-height)", bottom: "var(--keyboard-inset, 0px)" }}
         >
-          <div data-testid="chat-sheet-header" className="flex shrink-0 items-center justify-between">
-            <h2 className="text-sm font-medium">Table chat</h2>
-            <div className="flex items-center gap-1">
-              <MuteMenu above={phone} />
-              {minimize}
-            </div>
-          </div>
-          <ChatBox className="flex-1" rows={4} game onEscape={() => setOpen(false)} />
+          <ChatBox
+            className="flex-1"
+            rows={4}
+            game
+            onEscape={() => setOpen(false)}
+            headerTestId="chat-sheet-header"
+            actions={
+              <div className="flex shrink-0 items-center gap-1">
+                <MuteMenu above={phone} />
+                {minimize}
+              </div>
+            }
+          />
         </section>
       </>
     );
   }
 
-  // Closed, the controls live in the top row (ChatControls); only the newest lines show here. Phone portrait puts them under the
-  // seat strip, so they cover neither the strip nor the top row. Open, the panel sits at the top right (desktop) or above the hand
-  // bar (sideways phone). Pointer events pass through the lines to the board.
+  // Closed, the button lives in the top row (ChatControls); only the newest lines show here. Phone portrait puts it under the
+  // seat strip, so it covers neither the strip nor the top row. Open, the panel sits at the top right, clear of the seat rail
+  // at the left. Pointer events pass through the lines to the board.
   if (!open) {
     return (
       <Preview
@@ -608,17 +616,20 @@ export function ChatDock() {
     <div className={cn("absolute right-safe z-20", phone ? "bottom-[184px]" : "top-16")}>
       <section
         aria-label="Table chat"
-        className="flex w-72 flex-col gap-2 rounded-chip bg-glass p-3 backdrop-blur-md"
+        className="flex w-[22rem] max-w-[calc(100vw-1.5rem)] flex-col gap-2 rounded-chip bg-glass p-3 backdrop-blur-md"
         style={{ maxHeight: "min(360px, 50vh)" }}
       >
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-medium">Table chat</h2>
-          <div className="flex items-center gap-1">
-            <MuteMenu />
-            {minimize}
-          </div>
-        </div>
-        <ChatBox rows={6} game onEscape={() => setOpen(false)} />
+        <ChatBox
+          rows={6}
+          game
+          onEscape={() => setOpen(false)}
+          actions={
+            <div className="flex shrink-0 items-center gap-1">
+              <MuteMenu />
+              {minimize}
+            </div>
+          }
+        />
       </section>
     </div>
   );

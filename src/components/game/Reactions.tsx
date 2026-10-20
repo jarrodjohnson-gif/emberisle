@@ -1,245 +1,109 @@
-// Board reactions share the chat transport and the sender's existing seat anchors.
+// #899: the lazy half of Chat C, its own chunk so the online chunk stays in budget: the Sounds & stickers tab and the
+// seat bubbles. The online chunk prefetches it as it loads (talk.tsx), so it is in memory long before a bubble is due.
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Smile } from "lucide-react";
+import { Volume2 } from "lucide-react";
 import { EMOTES, QUICK_REACTIONS } from "@/components/game/emotes";
+import { CONTROL, Emote, LIFE, reactArrived, sendBoard, sendReaction, useMutedSeats, useTalk } from "@/components/game/talk";
 import { useGame } from "@/lib/game/store";
-import type { Reaction } from "@/lib/net/table";
-import { play } from "@/lib/sound";
-import { MUTE_KEY, mutedByCode, readMutedSeats } from "@/lib/muted-seats";
+import type { ChatLine, Reaction } from "@/lib/net/table";
+import { play, SOUNDBOARD } from "@/lib/sound";
 import { cn } from "@/lib/utils";
 
-const COOLDOWN = 1000;
-const MUTE_EVENT = "emberisle:chat-mutes-changed";
-const CONTROL =
-  "flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-control bg-glass text-zinc-700 transition-transform duration-75 active:scale-[0.97] disabled:cursor-default disabled:opacity-50";
-
-// Muting is a browser preference, scoped to one table code; no message reaches the host.
-export function useMutedSeats(code: string) {
-  const [seats, setSeats] = useState<string[]>(() => readMutedSeats(code));
-
-  useEffect(() => {
-    const syncLocal = () => setSeats(readMutedSeats(code));
-    const syncStorage = (event: StorageEvent) => {
-      if (event.key !== null && event.key !== `${MUTE_KEY}${code}`) return;
-      mutedByCode.delete(code);
-      setSeats(readMutedSeats(code));
-    };
-    window.addEventListener(MUTE_EVENT, syncLocal);
-    window.addEventListener("storage", syncStorage);
-    return () => {
-      window.removeEventListener(MUTE_EVENT, syncLocal);
-      window.removeEventListener("storage", syncStorage);
-    };
-  }, [code]);
-
-  useEffect(() => setSeats(readMutedSeats(code)), [code]);
-
-  const toggle = (seat: string) => {
-    if (!code || !seat) return;
-    const next = new Set(readMutedSeats(code));
-    if (next.has(seat)) next.delete(seat);
-    else next.add(seat);
-    const value = [...next];
-    mutedByCode.set(code, value);
-    try {
-      localStorage.setItem(`${MUTE_KEY}${code}`, JSON.stringify(value));
-    } catch {
-      // The in-memory preference still applies and syncs to this tab's chat and reaction views.
-    }
-    setSeats(value);
-    window.dispatchEvent(new Event(MUTE_EVENT));
-  };
-
-  return { muted: new Set(seats), toggle };
-}
-
-// Beside the Table menu in Hud's top row, so the picker anchors to that header: its right edge is the safe edge, below the row.
-export function QuickReactions() {
-  const mode = useGame((s) => s.mode);
-  const screen = useGame((s) => s.screen);
-  const spectator = useGame((s) => s.spectator);
-  const chatOpen = useGame((s) => s.chatOpen);
-  const sendReact = useGame((s) => s.sendReact);
-  const [open, setOpen] = useState(false);
-  const [cooling, setCooling] = useState(false);
-  const nextSend = useRef(0);
-  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const root = useRef<HTMLDivElement>(null);
-  const trigger = useRef<HTMLButtonElement>(null);
-  const available = mode === "online" && screen === "play" && !spectator;
-
-  useEffect(() => () => clearTimeout(timer.current), []);
-  useEffect(() => {
-    if (!available) setOpen(false);
-  }, [available]);
-  useEffect(() => {
-    setOpen(false);
-  }, [chatOpen]);
-
-  const send = (emote: string) => {
-    if (!available || Date.now() < nextSend.current) return;
-    nextSend.current = Date.now() + COOLDOWN;
-    setCooling(true);
-    timer.current = setTimeout(() => setCooling(false), COOLDOWN);
-    sendReact(emote);
-    setOpen(false);
-    trigger.current?.focus();
-  };
-
-  useEffect(() => {
-    if (!open || !available) return;
-    const onDown = (event: PointerEvent) => {
-      if (!root.current?.contains(event.target as Node)) setOpen(false);
-    };
-    const onKey = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement | null;
-      if (
-        target?.closest(
-          "input, textarea, select, [contenteditable]:not([contenteditable=false])",
-        )
-      )
-        return;
-      if (event.key === "Escape") {
-        event.preventDefault();
-        setOpen(false);
-        trigger.current?.focus();
-      } else if (
-        !event.repeat &&
-        !event.altKey &&
-        !event.ctrlKey &&
-        !event.metaKey &&
-        /^[1-6]$/.test(event.key)
-      ) {
-        event.preventDefault();
-        send(QUICK_REACTIONS[Number(event.key) - 1].emoji);
-      }
-    };
-    document.addEventListener("pointerdown", onDown);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("pointerdown", onDown);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open, available, sendReact]);
-
-  if (!available) return null;
+// Tab 2: all nine sound chips in a wrapping grid (14 px labels, no sideways scroll), then the stickers.
+export function SoundsTab({ dense }: { dense?: boolean }) {
+  const resting = useTalk((s) => s.resting);
+  const cooling = useTalk((s) => s.cooling);
+  const stickers = Object.entries(EMOTES);
   return (
-    <div ref={root} data-testid="quick-reactions" className="pointer-events-auto">
-      <button
-        ref={trigger}
-        type="button"
-        aria-label="Quick reactions"
-        aria-expanded={open}
-        aria-controls="quick-reaction-picker"
-        className={cn(CONTROL, "backdrop-blur-md", cooling && "opacity-50")}
-        onPointerDown={() => play("ui_click")}
-        onClick={() => setOpen(!open)}
-      >
-        <Smile className="size-5" />
-      </button>
-      {open ? (
-        <div
-          id="quick-reaction-picker"
-          role="group"
-          aria-label="Choose a reaction"
-          className="absolute right-safe top-full z-[25] flex w-max max-w-[calc(100vw-24px)] flex-col gap-2 rounded-chip bg-glass p-2 backdrop-blur-md"
-        >
-          <div className="grid grid-cols-6 gap-1">
-            {QUICK_REACTIONS.map(({ emoji, label }, index) => (
+    <div data-testid="sounds-tab" className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto">
+      <p className="flex items-baseline justify-between text-caption text-zinc-700">
+        <span>Sounds · everyone hears</span>
+        <span>one every 3 s</span>
+      </p>
+      <div role="group" aria-label="Sounds" data-testid="soundboard" className="flex flex-wrap gap-1">
+        {SOUNDBOARD.map(({ id, label }) => (
+          <button
+            key={id}
+            type="button"
+            disabled={resting}
+            aria-label={`Play sound ${label}`}
+            onClick={() => sendBoard(id)}
+            className={cn("inline-flex shrink-0 cursor-pointer items-center gap-1 rounded-control bg-glass px-2 text-sm text-zinc-700 hover:text-zinc-900 disabled:cursor-default disabled:opacity-50", dense ? "h-8" : "h-11")}
+          >
+            <Volume2 aria-hidden="true" className="size-4" />
+            {label}
+          </button>
+        ))}
+      </div>
+      {stickers.length ? (
+        <>
+          <p className="mt-1 text-caption text-zinc-700">Stickers · silent</p>
+          <div role="group" aria-label="Stickers" data-testid="stickers" className="flex flex-wrap gap-1">
+            {stickers.map(([id, url]) => (
               <button
-                key={emoji}
+                key={id}
                 type="button"
-                aria-label={`React ${label}`}
-                aria-keyshortcuts={String(index + 1)}
+                aria-label={`React ${id}`}
                 disabled={cooling}
-                className={cn(CONTROL, "text-2xl")}
+                className={cn(CONTROL, dense && "size-8")}
                 onPointerDown={() => play("ui_click")}
-                onClick={() => send(emoji)}
+                onClick={() => sendReaction(id)}
               >
-                <span aria-hidden="true">{emoji}</span>
+                <img src={url} alt="" className={cn("object-contain", dense ? "size-6" : "size-8")} />
               </button>
             ))}
           </div>
-          {Object.keys(EMOTES).length ? (
-            <div
-              role="group"
-              className="grid max-h-32 grid-cols-6 gap-1 overflow-y-auto"
-              aria-label="Image reactions"
-            >
-              {Object.entries(EMOTES).map(([id, url]) => (
-                <button
-                  key={id}
-                  type="button"
-                  aria-label={`React ${id}`}
-                  disabled={cooling}
-                  className={CONTROL}
-                  onPointerDown={() => play("ui_click")}
-                  onClick={() => send(id)}
-                >
-                  <img src={url} alt="" className="size-8 object-contain" />
-                </button>
-              ))}
-            </div>
-          ) : null}
-        </div>
+        </>
       ) : null}
     </div>
   );
 }
 
-function ReactionFloat({
-  reaction,
-  count,
-  target,
-}: {
-  reaction: Reaction;
-  count: number;
-  target?: string;
-}) {
-  const float = useRef<HTMLDivElement>(null);
-  const timing = useRef<{ reaction: Reaction; started: number } | null>(null);
-  const emoji = QUICK_REACTIONS.find((item) => item.emoji === reaction.emote);
-  const image = Object.hasOwn(EMOTES, reaction.emote)
-    ? EMOTES[reaction.emote]
-    : undefined;
+type Bubble =
+  | { kind: "react"; key: string; at: number; reaction: Reaction; count: number; target?: string }
+  | { kind: "sound" | "chat"; key: string; at: number; line: ChatLine };
+
+// Where the bubble hangs. Rail: to the right of the desktop card, over the sea. Strip: under the phone cell, below the hidden
+// points hint. Lobby: in the row, between the name and the status, so it can never sit on the name (#847).
+export type BubbleAt = "rail" | "strip" | "lobby";
+const PLACE: Record<BubbleAt, string> = {
+  rail: "absolute left-full top-1/2 z-30 ml-2 -translate-y-1/2",
+  strip: "absolute left-1/2 top-full z-30 mt-4 -translate-x-1/2",
+  lobby: "relative",
+};
+const TAIL: Record<BubbleAt, string> = {
+  rail: "-left-1 top-1/2 -translate-y-1/2",
+  strip: "-top-1 left-1/2 -translate-x-1/2",
+  lobby: "hidden",
+};
+
+function SeatBubble({ bubble, at }: { bubble: Bubble; at: BubbleAt }) {
+  const inner = useRef<HTMLDivElement>(null);
+  const life = LIFE[bubble.kind];
   useLayoutEffect(() => {
     const preference = matchMedia("(prefers-reduced-motion: reduce)");
     let animation: Animation | undefined;
     const animate = () => {
       animation?.cancel();
-      if (timing.current?.reaction !== reaction)
-        timing.current = { reaction, started: performance.now() };
-      const element = float.current;
+      const element = inner.current;
       if (!element) return;
+      // Keep the whole bubble 8 px inside the viewport: a phone's end cell would otherwise push it off the edge.
       element.style.left = "0px";
-      element.style.top = "0px";
-      // Include the count badge and target label, which can extend outside the image's box.
-      const boxes = [element, ...element.querySelectorAll("img, span")].map(
-        (node) => node.getBoundingClientRect(),
-      );
-      const left = Math.min(...boxes.map((box) => box.left));
-      const right = Math.max(...boxes.map((box) => box.right));
-      const top = Math.min(...boxes.map((box) => box.top));
-      const bottom = Math.max(...boxes.map((box) => box.bottom));
-      const dx = Math.max(8 - left, Math.min(0, innerWidth - 8 - right));
-      const dy = Math.max(8 - top, Math.min(0, innerHeight - 8 - bottom));
-      element.style.left = `${dx}px`;
-      element.style.top = `${dy}px`;
-      const rise = Math.min(12, Math.max(0, top + dy - 8));
+      const box = element.getBoundingClientRect();
+      element.style.left = `${Math.max(8 - box.left, Math.min(0, innerWidth - 8 - box.right))}px`;
+      // Reduced motion: the bubble appears and goes with no movement and no fade.
       if (preference.matches) return;
-      const start = { transform: "translateY(0)" };
-      const middle = { transform: `translateY(${-rise * 0.75}px)` };
-      const end = { transform: `translateY(${-rise}px)` };
-      animation = float.current?.animate(
+      animation = element.animate(
         [
-          { opacity: 1, ...start },
-          { opacity: 1, offset: 0.75, ...middle },
-          { opacity: 0, ...end },
+          { opacity: 0 },
+          { opacity: 1, offset: 0.08 },
+          { opacity: 1, offset: 0.8 },
+          { opacity: 0 },
         ],
-        { duration: 2000, fill: "forwards" },
+        { duration: life, fill: "forwards" },
       );
-      if (animation)
-        animation.currentTime = performance.now() - timing.current.started;
+      // A repeat restarts the clock: the bubble lives from the newest arrival in its group.
+      animation.currentTime = Math.max(0, Date.now() - bubble.at);
     };
     animate();
     preference.addEventListener("change", animate);
@@ -249,88 +113,94 @@ function ReactionFloat({
       preference.removeEventListener("change", animate);
       window.removeEventListener("resize", animate);
     };
-  }, [reaction, count, target]);
-  if (!emoji && !image) return null;
+  }, [bubble.key, bubble.at, at, life]);
+  const testid = bubble.kind === "react" ? "reaction" : bubble.kind === "sound" ? "sound-bubble" : "chat-bubble";
+  const big = at === "rail";
   return (
     <div
-      data-testid="reaction"
-      data-emote={reaction.emote}
-      className="pointer-events-none absolute inset-x-0 top-0 z-30 flex justify-center"
+      data-testid={testid}
+      data-seat-bubble={bubble.kind}
+      data-emote={bubble.kind === "react" ? bubble.reaction.emote : undefined}
+      data-sound={bubble.kind === "sound" ? bubble.line.sound : undefined}
+      className={cn("seat-bubble pointer-events-none", PLACE[at])}
     >
-      <div ref={float} className="relative flex flex-col items-center">
-        {emoji ? (
-          <span
-            role="img"
-            aria-label={emoji.label}
-            className="flex size-12 items-center justify-center rounded-chip bg-glass text-4xl backdrop-blur-md"
-          >
-            {emoji.emoji}
+      <div
+        ref={inner}
+        className="relative flex w-max max-w-48 items-center gap-1 rounded-chip bg-glass px-2 py-1 text-sm text-zinc-900 shadow-[var(--shadow-control)] backdrop-blur-md"
+      >
+        <span aria-hidden="true" className={cn("absolute size-2 rotate-45 bg-inherit", TAIL[at])} />
+        {bubble.kind === "react" ? (
+          <>
+            <Emote emote={bubble.reaction.emote} className={cn("flex items-center justify-center", big ? "size-12 text-4xl" : "size-8 text-2xl")} />
+            {bubble.count > 1 ? (
+              <span data-testid="reaction-count" className="text-caption font-semibold tabular-nums text-zinc-700">
+                ×{bubble.count}
+              </span>
+            ) : null}
+            {bubble.target ? <span className="max-w-28 break-words text-caption font-medium text-zinc-700">→ {bubble.target}</span> : null}
+          </>
+        ) : bubble.kind === "sound" ? (
+          <span className="flex flex-col">
+            <span className="flex items-center gap-1 font-medium">
+              <Volume2 aria-hidden="true" className="size-4 text-zinc-700" />
+              {bubble.line.text.replace(/^🔊\s*/, "")}
+            </span>
+            <span className="mt-0.5 h-0.5 w-full rounded-full bg-zinc-700/30" />
           </span>
         ) : (
-          <img src={image} alt="" className="size-12 object-contain" />
+          <span className="line-clamp-2 break-words">{bubble.line.text}</span>
         )}
-        {count > 1 ? (
-          <span
-            data-testid="reaction-count"
-            className="absolute -right-3 -top-1 rounded-full bg-glass px-1 text-caption font-semibold tabular-nums text-zinc-700"
-          >
-            ×{count}
-          </span>
-        ) : null}
-        {target ? (
-          <span className="max-w-28 break-words rounded-chip bg-glass px-1 text-center text-caption font-medium text-zinc-700 backdrop-blur-md">
-            → {target}
-          </span>
-        ) : null}
       </div>
     </div>
   );
 }
 
-export function ReactionFloats({
-  by,
-  id,
-}: {
-  by: "player" | "seat";
-  id: string;
-}) {
+// The newest live bubble for one seat: a reaction (repeats coalesce as ×n), a sound, or, while this viewer's chat panel is
+// closed in a game, a chat line from another seat. A muted seat shows none.
+export function SeatBubbles({ by, id, at }: { by: "player" | "seat"; id: string; at: BubbleAt }) {
   const reactions = useGame((s) => s.reactions);
+  const chat = useGame((s) => s.chat);
   const seats = useGame((s) => s.seats);
   const code = useGame((s) => s.code);
-  const { muted } = useMutedSeats(code);
+  const me = useGame((s) => s.seatId);
+  const chatClosed = useGame((s) => s.screen === "play" && !s.chatOpen);
   const players = useGame((s) => s.state?.players);
+  const arrived = useTalk((s) => s.arrived);
+  const { muted } = useMutedSeats(code);
+  const [, tick] = useState(0);
+  const now = Date.now();
+  const mine = (x: { seat: string; player: string | null }) => (by === "player" ? x.player : x.seat) === id && !muted.has(x.seat);
+
   const grouped = new Map<string, { reaction: Reaction; count: number }>();
   for (const reaction of reactions) {
-    if ((by === "player" ? reaction.player : reaction.seat) !== id) continue;
-    if (muted.has(reaction.seat)) continue;
-    if (
-      !QUICK_REACTIONS.some((item) => item.emoji === reaction.emote) &&
-      !Object.hasOwn(EMOTES, reaction.emote)
-    )
-      continue;
+    if (!mine(reaction)) continue;
+    if (!QUICK_REACTIONS.some((item) => item.emoji === reaction.emote) && !Object.hasOwn(EMOTES, reaction.emote)) continue;
     const key = JSON.stringify([reaction.emote, reaction.to]);
     const previous = grouped.get(key);
     grouped.delete(key);
     grouped.set(key, { reaction, count: (previous?.count ?? 0) + 1 });
   }
-  return (
-    <>
-      {[...grouped.entries()].slice(-1).map(([key, { reaction, count }]) => {
-        const target = reaction.to
-          ? (
-              seats.find((seat) => seat.id === reaction.to) ??
-              players?.find((player) => player.id === reaction.to)
-            )?.name
-          : undefined;
-        return (
-          <ReactionFloat
-            key={key}
-            reaction={reaction}
-            count={count}
-            target={target}
-          />
-        );
-      })}
-    </>
-  );
+  const bubbles: Bubble[] = [...grouped].map(([key, { reaction, count }]) => {
+    const to = reaction.to ? (seats.find((seat) => seat.id === reaction.to) ?? players?.find((player) => player.id === reaction.to))?.name : undefined;
+    return { kind: "react", key: `r${key}`, at: reactArrived.get(reaction) ?? 0, reaction, count, target: to };
+  });
+  const live: Bubble[] = [];
+  for (const line of chat) {
+    const t = arrived.get(line.id);
+    if (t === undefined || !mine(line)) continue;
+    const kind = line.sound ? "sound" : "chat";
+    if (kind === "chat" && (!chatClosed || line.seat === me)) continue;
+    if (now - t < LIFE[kind]) live.push({ kind, key: `l${line.id}`, at: t, line });
+  }
+  const newest = [...bubbles, ...live].reduce<Bubble | undefined>((best, b) => (!best || b.at >= best.at ? b : best), undefined);
+
+  // Re-render when the newest line bubble runs out (reactions leave the store on their own).
+  useEffect(() => {
+    if (!live.length) return;
+    const left = Math.max(...live.map((b) => LIFE[b.kind] - (Date.now() - b.at)));
+    const timer = setTimeout(() => tick((n) => n + 1), Math.max(16, left + 16));
+    return () => clearTimeout(timer);
+  });
+
+  return newest ? <SeatBubble key={newest.key} bubble={newest} at={at} /> : null;
 }
