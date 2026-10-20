@@ -6,6 +6,7 @@ The review desk adds a line whenever Jarrod decides something.
 
 | Date | Decision | Where |
 |---|---|---|
+| 2026-10-20 | Goods cards use V1 Column ([`design/goods-cards-v1`](design/goods-cards-v1/README.md)). | [#773](https://github.com/jarrodjohnson-gif/emberisle/issues/773) |
 | 2026-10-20 | Win table on portrait phones uses short column names (Out, Str, Path, Army, Hid). | [PR #878](https://github.com/jarrodjohnson-gif/emberisle/pull/878) |
 | 2026-10-20 | Pale-seat legal markers use the teal glow (mock 2). | [PR #879](https://github.com/jarrodjohnson-gif/emberisle/pull/879) |
 | 2026-10-20 | Emote badge returns in game only, not in the lobby. It waits for the chat audit, which may place emotes elsewhere. | [PR #847](https://github.com/jarrodjohnson-gif/emberisle/pull/847) |
