@@ -20,6 +20,7 @@ const VIEWS = [
   { tag: "440x956", width: 440, height: 956 },
   { tag: "956x440", width: 956, height: 440 },
   { tag: "1280x720", width: 1280, height: 720, mouse: true }, // the desktop rail, with goods and fortunes beside the tallies
+  { tag: "390x844", width: 390, height: 844 },
 ];
 
 mkdirSync("test-results", { recursive: true });
@@ -94,6 +95,7 @@ try {
     const army = muster(m2, a, 3);
     const armyTie = muster(army, b, 1);
     const armyMoves = muster(armyTie, b, 1);
+    const both = muster(seven, c, 3); // c holds the path (7) and, with three knights and nobody else's, the army too
     steps = [
       { name: "path 4 (below the minimum)", st: four, path: null, army: null },
       { name: "path 5 leads", st: five, path: b, army: null },
@@ -103,6 +105,7 @@ try {
       { name: "army 3 against 2", st: army, path: c, army: a },
       { name: "army 3 ties army 3", st: armyTie, path: c, army: a },
       { name: "army 4 passes army 3", st: armyMoves, path: c, army: b },
+      { name: "one seat holds both", st: both, path: c, army: c },
     ];
   }
   assert.ok(steps, "the rules built every scenario on some island");
@@ -204,7 +207,7 @@ try {
     };
 
     let prev = null;
-    const shotAt = "army 3 against 2";
+    const shotAt = "one seat holds both";
     for (const step of steps) {
       await show(step.st);
       const seats = await check(step);
