@@ -57,7 +57,7 @@ function Tally({ testid, Icon, n, name, held }: { testid: string; Icon: LucideIc
       aria-label={`${name[+held]}, ${n}`}
       className={cn("flex shrink-0 items-center gap-0.5 rounded-full px-0.5", held ? "bg-amber-300 font-semibold text-zinc-900 ring-1 ring-amber-600 build-ready" : "text-zinc-700")}
     >
-      <Icon aria-hidden="true" className="size-3 shrink-0" />
+      <Icon aria-hidden="true" className="size-3" />
       {n}
     </span>
   );
