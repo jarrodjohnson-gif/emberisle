@@ -1,6 +1,6 @@
 # Chat C: one chat button, two tabs (the owner's pick)
 
-Jarrod picked direction C on 2026-10-20, with one change. Fable's audit is in `audit.md`. The mocks are the `mock-C-*.jpg` files and `c-board.jpg`.
+Jarrod picked direction C on 2026-10-20, with one change. Fable's audit is in `audit.md`. Its other screenshots and the A, A2 and B mocks were not committed. The mocks are the `mock-C-*.jpg` files and `c-board.jpg`.
 
 ## The design
 
@@ -11,7 +11,7 @@ Jarrod picked direction C on 2026-10-20, with one change. Fable's audit is in `a
   - the composer and Send
 - **Tab 2, Sounds & stickers:** all 9 sound chips in a grid, with 14 px labels. Below them, the stickers.
 - **At most two tabs.** The panel remembers the last tab.
-- **Seat bubbles.** An emote, sticker or sound shows as a bubble hung off the sender's seat card, never on top of the name.
+- **Seat bubbles.** An emote, sticker or sound shows as a bubble beside the sender's seat card. It never covers the name.
   - Desktop: right of the rail card.
   - Phone: under the strip cell.
   - Lobby: mid-row.

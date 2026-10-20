@@ -100,7 +100,7 @@ A. Jarrod liked the in-game badge on the seat; A keeps that feeling and fixes th
 - Everything else is A: seat bubbles, the bottom sheet on the phone, the smile in the lobby composer, the #895 fix.
 - Trade-off: the first sound costs one tap more (smile, Sounds, chip). The tray is about half the height, so the phone sheet is 150 px on React and the lobby tray covers one seat row instead of four.
 
-### C. One chat button, two tabs (`mock-C-desktop.png`, `mock-C-desktop-sounds.png`, `mock-C-phone.png`, `mock-C-lobby.png`, `mock-C-lobby-sounds.png`, `c-board.png`)
+### C. One chat button, two tabs (`mock-C-desktop.jpg`, `mock-C-desktop-sounds.jpg`, `mock-C-phone.jpg`, `mock-C-lobby.jpg`, `mock-C-lobby-sounds.jpg`, `c-board.jpg`)
 
 - Jarrod's plan: one entry, the chat button. The smile button and the speaker toggle go.
 - Tab 1 "Chat" (default): log, a row of the 6 basic emoji just above the composer (1 tap), composer. Reactions and sounds also land in the log.
