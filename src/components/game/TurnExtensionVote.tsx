@@ -42,5 +42,6 @@ export function TurnExtensionVote() {
     {result.outcome === "passed" ? `${name(result.target)} gets 60 seconds more.` : result.outcome === "failed" ? "More time vote did not pass." : "More time vote cancelled."}
   </p>;
   if (!extension.target || !extension.key || extension.used || !game.players.some((p) => p.id !== extension.target && p.kind === "human")) return null;
-  return <button data-testid="turn-extension-ask" className={`${button} min-w-0 flex-1 truncate`} title={`Give ${name(extension.target)} more time`} onClick={() => net.requestTurnExtension(extension.target!, extension.key!)}>Give {name(extension.target)} more time</button>;
+  const label = extension.target === localId ? "Ask for more time" : `Give ${name(extension.target)} more time`;
+  return <button data-testid="turn-extension-ask" className={`${button} min-w-0 flex-1 truncate`} title={label} onClick={() => net.requestTurnExtension(extension.target!, extension.key!)}>{label}</button>;
 }

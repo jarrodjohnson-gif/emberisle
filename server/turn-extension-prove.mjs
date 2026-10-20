@@ -47,7 +47,7 @@ function fixture(code, count = 4, bot = false, phase = "main") {
   const seats = game.players.map((p, i) => ({ id: `s${i}`, name: p.name, color: p.color, ready: true, pid: p.id, secret: `${code}-${p.id}`, ...(bot === true && p.id === "p3" ? { bot: true } : {}) }));
   writeFileSync(path.join(dir, `${code}.json`), JSON.stringify({ code, host: "s0", next: count, chat: [], chatSeq: 0, game, seats, shape: 2, savedAt: Date.now() }));
 }
-for (const code of ["EVAA", "EVAC", "EVAD", "EVAF", "EVAG", "EVAH", "EVAK"]) fixture(code);
+for (const code of ["EVAA", "EVAC", "EVAD", "EVAF", "EVAG", "EVAH", "EVAK", "EVAN"]) fixture(code);
 fixture("EVAB", 3);
 fixture("EVAE", 3);
 fixture("EVAJ", 4, true);
@@ -167,7 +167,9 @@ try {
     await rejected(a, { type: "turnExtensionAsk", target, key }, { turn: -1 });
     await rejected(watcher, { type: "turnExtensionAsk", target, key });
     const before = a.state.turnDeadline;
+    const askStates = b.states.length;
     const vote = await ask(b);
+    assert.equal(b.states.length - askStates, 1, "an ask publishes one full state");
     assert.deepEqual(vote.voters.slice().sort(), ["p1", "p2", "p3"]);
     assert.deepEqual(vote.yes, ["p1"], "an eligible requester automatically votes yes");
     assert.equal(a.state.turnDeadline, before, "opening the vote does not pause or extend the clock");
@@ -175,8 +177,10 @@ try {
     await rejected(a, { type: "turnExtensionAnswer", voteId: vote.id, yes: true });
     await rejected(c, { type: "turnExtensionAnswer", voteId: `${vote.id}-old`, yes: true });
     await rejected(c, { type: "turnExtensionAnswer", voteId: vote.id, yes: "yes" });
+    const answerStates = a.states.length;
     await answer(c, vote.id, true);
-    await result(a, "passed");
+    await Promise.all([a, d].map((client) => result(client, "passed")));
+    assert.equal(a.states.length - answerStates, 1, "a deciding answer publishes one full state");
     assert.equal(a.state.turnDeadline, before + 60_000, "a majority adds exactly the default 60-second extension");
     await rejected(d, { type: "turnExtensionAnswer", voteId: vote.id, yes: true });
     await rejected(b, { type: "turnExtensionAsk", target, key });
@@ -190,7 +194,7 @@ try {
     const before = a.state.turnDeadline;
     const vote = await ask(b);
     await answer(c, vote.id, false);
-    await result(a, "failed");
+    await Promise.all([a, b].map((client) => result(client, "failed")));
     assert.equal(a.state.turnDeadline, before, "a tie grants no time");
     assert.equal(extension(a).used, true, "a failed request consumes this turn's attempt");
     await rejected(b, { type: "turnExtensionAsk", target: "p0", key: extension(b).key });
@@ -205,12 +209,13 @@ try {
     const [a, b, c, d] = await table("EVAC");
     const before = a.state.turnDeadline;
     const vote = await ask(a);
+    assert.deepEqual(vote.voters.slice().sort(), ["p1", "p2", "p3"], "the timed requester is excluded from the electorate");
     assert.deepEqual(vote.yes, [], "the timed requester cannot vote for themselves");
     await answer(b, vote.id, false);
     await until(() => extension(a).vote?.no.includes("p1"), "first reply");
     await rejected(b, { type: "turnExtensionAnswer", voteId: vote.id, yes: true });
     await answer(c, vote.id, true);
-    await result(a, "failed");
+    await Promise.all([a, d].map((client) => result(client, "failed")));
     assert(Date.now() >= vote.until - 20, "an unanswered vote closes at its host deadline");
     assert.equal(a.state.turnDeadline, before, "a timed-out minority grants no time");
     await rejected(d, { type: "turnExtensionAnswer", voteId: vote.id, yes: true });
@@ -319,11 +324,9 @@ try {
     await result(a, "passed");
     await wait(100);
     const seq = a.state.game.seq;
-    const beforeAction = a.state.turnDeadline;
     a.send({ type: "tradeBank", give: "timber", take: "grain" });
     await until(() => a.state.game.seq > seq, "accepted action after extension");
-    assert(a.state.turnDeadline > beforeAction, "an action restarts the idle window with its extension intact");
-    assert(a.state.turnDeadline > Date.now() + TURN + EXTRA - 300, "the restarted window retains the approved extra time");
+    assert(a.state.turnDeadline <= Date.now() + TURN && a.state.turnDeadline > Date.now() + TURN - 300, "a later action gets the normal idle window without the approved extra time");
     assert(a.state.turnDeadline <= cap, "the extended total cap still bounds the window");
     const savedDeadline = a.state.turnDeadline;
     await until(() => {
@@ -360,10 +363,47 @@ try {
     console.log(`restart and cap: approved extra time and used attempt survived kill -9; ${sent} actions; passed ${late} ms from extended cap`);
     await closeAll(restored);
   }
+  {
+    await stop();
+    const extra = 90_000;
+    await start(extra);
+    let [a, b, c, d] = await table("EVAN");
+    const before = a.state.turnDeadline;
+    const vote = await ask(b);
+    await answer(c, vote.id, true);
+    await Promise.all([a, b, c, d].map((client) => result(client, "passed")));
+    assert.equal(a.state.turnDeadline, before + extra, "a configured extension above 60 seconds is granted exactly once");
+    const key = extension(a).key;
+    await rejected(d, { type: "turnExtensionAsk", target: "p0", key });
+    assert.equal(extension(d).key, key, "reading the budget cannot reset its token after a larger grant");
+    const seq = a.state.game.seq;
+    a.send({ type: "tradeBank", give: "timber", take: "grain" });
+    await until(() => a.state.game.seq > seq, "normal action after larger extension");
+    assert(a.state.turnDeadline <= Date.now() + TURN, "a configured larger extension does not enlarge later windows");
+    assert(extension(a).used, "a larger grant remains consumed after a new window");
+    const savedDeadline = a.state.turnDeadline;
+    await until(() => {
+      try {
+        const saved = JSON.parse(readFileSync(path.join(dir, "EVAN.json"), "utf8")).seats.find((s) => s.pid === "p0");
+        return saved.turnDeadline === savedDeadline && saved.extension.used && saved.extension.extra === extra;
+      } catch { return false; }
+    }, "larger budget saved");
+    await stop();
+    await start(extra);
+    const restored = [];
+    for (let i = 0; i < 4; i++) restored.push(await client("EVAN", `p${i}`));
+    [a, b, c, d] = restored;
+    assert.equal(a.state.turnDeadline, savedDeadline, "a larger budget preserves the saved window after restart");
+    assert.equal(extension(a).key, key);
+    assert.equal(extension(a).used, true, "a larger budget stays consumed after restart");
+    await rejected(b, { type: "turnExtensionAsk", target: "p0", key });
+    console.log("configured extension: +90000ms once; later windows remain normal; token and used request survive reads, action and kill -9");
+    await closeAll([a, b, c, d]);
+  }
   assert(!stderr.includes("message failed:"), `host message handler threw: ${stderr}`);
   for (const c of clients) for (const msg of c.messages) {
     assertPublic(msg);
-    assert(!JSON.stringify(msg).includes("11:7:p0:play"), "raw socket frame exposed the private seeded turn identity");
+    assert(!JSON.stringify(msg).includes("7:p0:play"), "raw socket frame exposed the private turn identity");
   }
   console.log("privacy: every raw seated and watcher frame hides seed/rng and uses only opaque public vote identities");
   console.log("PASS turn-extension-prove");

@@ -101,6 +101,7 @@ const HOLD_INFO = { holdMs: HOLD_MS, lobbyHoldMs: LOBBY_HOLD_MS };
 // seat and the seat stays human (#344, Jarrod's call on #324). A dropped seat follows GRACE_MS instead, never this.
 const TURN_MS = Number(process.env.TURN_MS ?? 120 * 1000);
 const TURN_TOTAL_MS = Number(process.env.TURN_TOTAL_MS ?? 6 * TURN_MS);
+const TURN_EXTENSION_MS = envMs("TURN_EXTENSION_MS", 60_000);
 // A bot seat answers a table ask after BOT_ANSWER_MS to twice that, so its Yes or No lands like a person's (#363).
 const BOT_ANSWER_MS = Number(process.env.BOT_ANSWER_MS ?? 1000);
 // People first (#850): a bot's Yes waits this long, or until every person asked has said No. A bot's No does not wait.
@@ -496,7 +497,7 @@ function disarmTurn(seat) {
 const RESUME_MIN_MS = Math.min(5000, TURN_MS / 10);
 function armTurns(room) {
   for (const seat of room.seats) {
-    const bonus = extensionBudget(seat, room.game).extra;
+    const bonus = extensionBudget(seat, room.game, TURN_EXTENSION_MS).extra;
     const human = room.game?.players.find((p) => p.id === seat.pid)?.kind === "human";
     const waited = human && waitedOn(room.game, seat.pid);
     if (!waited) {
@@ -512,7 +513,7 @@ function armTurns(room) {
       // A window that ran out while the host was down is spent on a 0 ms timer, not inline, so the other seats in this
       // loop are still armed and turnOut's own move does not re-enter armTurns mid-loop.
       const spent = resume !== null && resume - now < RESUME_MIN_MS;
-      const ms = spent ? 0 : resume !== null ? resume - now : Math.max(0, Math.min(TURN_MS + bonus, seat.turnStartedAt + TURN_TOTAL_MS + bonus - now));
+      const ms = spent ? 0 : resume !== null ? resume - now : Math.max(0, Math.min(TURN_MS, seat.turnStartedAt + TURN_TOTAL_MS + bonus - now));
       seat.turnDeadline = now + ms;
       seat.turnTimer = setTimeout(() => turnOut(room, seat), ms);
     }
@@ -553,7 +554,7 @@ function turnOut(room, seat) {
 // Timer votes share the existing host clock and never dispatch a gameplay action.
 function extensions(room) {
   return room.extensions ??= turnExtensions(room, {
-    extensionMs: envMs("TURN_EXTENSION_MS", 60_000),
+    extensionMs: TURN_EXTENSION_MS,
     voteMs: envMs("TURN_VOTE_MS", 15_000),
     changed: () => {
       broadcast(room, { type: "turnExtension", ...extensions(room).state() });
@@ -1348,7 +1349,7 @@ function handle(ws, raw) {
   if (msg.type === "turnExtensionAsk" || msg.type === "turnExtensionAnswer") {
     const error = msg.type === "turnExtensionAsk" ? extensions(room).ask(ws.seat, msg) : extensions(room).answer(ws.seat, msg);
     if (error) return send(ws, { type: "error", message: error });
-    return pushState(room);
+    return; // The extension changed callback publishes the updated state.
   }
   if (msg.type === "tradeAsk") return ask(ws, room, msg);
   if (msg.type === "tradeAnswer") return answer(ws, room, msg);

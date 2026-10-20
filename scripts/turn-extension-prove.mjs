@@ -69,6 +69,8 @@ try {
   const [a, b] = tabs;
   const initial = await view(a);
   assert.equal(initial.extension.target, "p0");
+  assert.equal(await a.getByTestId("turn-extension-ask").textContent(), "Ask for more time");
+  assert.equal(await b.getByTestId("turn-extension-ask").textContent(), "Give Ember more time");
   await a.getByTestId("turn-extension-ask").click();
   await Promise.all(tabs.map((p) => p.getByTestId("turn-extension-vote").waitFor()));
   assert.equal(await a.getByRole("button", { name: "Yes, more time" }).count(), 0, "target cannot vote");
@@ -108,6 +110,8 @@ try {
   // The desktop voter has two 44px controls, unlike the timed player's desktop row.
   await (await b.context().newCDPSession(b)).send("Emulation.setSafeAreaInsetsOverride", { insets: { top: 0, right: 0, bottom: 0, left: 0 } });
   await b.setViewportSize({ width: 1280, height: 720 });
+  // The viewport event reaches React after setViewportSize resolves. Wait for its desktop HUD first.
+  await b.waitForFunction(() => innerWidth === 1280 && !document.querySelector('[data-testid="turn-banner"]') && !document.querySelector(".hud-utilities"));
   await b.waitForFunction(() => window.__isle?.lastState && !window.__isle.refitDue && !window.__isle.glide);
   const desktopVoter = await b.evaluate(() => {
     const hole = window.__isle.insets();
@@ -128,7 +132,9 @@ try {
   await a.evaluate(() => window.__emberisle.getState().net.act({ type: "bankTrade", give: "timber", want: "grain" }));
   await until(async () => (await view(a)).seq > initial.seq, "accepted bank trade");
   const rearmed = await view(a);
-  assert(rearmed.deadline >= initial.deadline + 60000, "accepted action retains bonus");
+  const actionNow = await a.evaluate(() => Date.now() + window.__emberisle.getState().clockSkew);
+  assert(rearmed.deadline <= actionNow + 25000 && rearmed.deadline > actionNow + 24000, "later actions get the normal 25-second window");
+  assert(rearmed.extension.used, "the approved request remains spent after the action");
   await b.reload();
   await b.getByTestId("turn-extension-result").waitFor();
   assert.equal((await view(b)).deadline, rearmed.deadline, "reload retains host deadline");
@@ -164,7 +170,7 @@ try {
   await b.getByTestId("turn-extension-result").filter({ hasText: "More time vote did not pass." }).waitFor();
   assert.equal(await b.getByTestId("turn-extension-ask").count(), 0, "failed vote consumes request");
   assert.deepEqual(errors, []);
-  console.log("PASS turn-extension-prove: two tabs, 1280x720 and 390x844; connected electorate, target excluded, 44px unobscured vote controls, phone safe area and board fit, desktop voter fit; exact +60000ms, action/reload retention, once per turn, next-turn requester auto-yes, cancelled-vote recovery and No result; zero page errors");
+  console.log("PASS turn-extension-prove: two tabs, 1280x720 and 390x844; connected electorate, target excluded, 44px unobscured vote controls, phone safe area and board fit, desktop voter fit; exact +60000ms, normal later action window/reload retention, once per turn, next-turn requester auto-yes, cancelled-vote recovery and No result; zero page errors");
 } finally {
   await browser?.close();
   await vite?.close();

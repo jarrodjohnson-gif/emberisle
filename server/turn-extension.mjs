@@ -4,13 +4,13 @@ import { randomUUID } from "node:crypto";
 export function extensionKey(game) {
   if (!game || game.phase === "over") return null;
   const stage = game.phase === "rollOff" ? "rollOff" : game.phase.startsWith("setup") ? `setup:${game.setupIndex}` : "play";
-  return `${game.seed}:${game.turn}:${game.current}:${stage}`;
+  return `${game.turn}:${game.current}:${stage}`;
 }
 
-export function extensionBudget(seat, game) {
+export function extensionBudget(seat, game, extensionMs = 60_000) {
   const key = extensionKey(game);
   const e = seat.extension;
-  if (e?.key !== key || typeof e.token !== "string" || e.token.length > 64 || typeof e.used !== "boolean" || !Number.isSafeInteger(e.extra) || e.extra < 0 || e.extra > 60_000 || (!e.used && e.extra !== 0)) {
+  if (e?.key !== key || typeof e.token !== "string" || e.token.length > 64 || typeof e.used !== "boolean" || !Number.isSafeInteger(e.extra) || e.extra < 0 || e.extra > extensionMs || (!e.used && e.extra !== 0)) {
     seat.extension = { key, token: randomUUID(), used: false, extra: 0 };
   }
   return seat.extension;
@@ -32,7 +32,7 @@ export function turnExtensions(room, { changed, extend, extensionMs = 60_000, vo
     result = { id: old.id, target: old.target, key: old.key, outcome };
     if (outcome === "passed") {
       const seat = room.seats.find((s) => s.pid === old.target);
-      extensionBudget(seat, room.game).extra = extensionMs;
+      extensionBudget(seat, room.game, extensionMs).extra = extensionMs;
       extend(seat, extensionMs);
     }
     changed();
@@ -59,7 +59,7 @@ export function turnExtensions(room, { changed, extend, extensionMs = 60_000, vo
     sync,
     state() {
       const seat = targetSeat();
-      const budget = seat && extensionBudget(seat, room.game);
+      const budget = seat && extensionBudget(seat, room.game, extensionMs);
       const publicVote = vote && { id: vote.id, target: vote.target, until: vote.until, voters: [...vote.voters], yes: [...vote.yes], no: [...vote.no] };
       const publicResult = result && result.key === extensionKey(room.game) && (!seat || result.target === seat.pid) ? { id: result.id, target: result.target, outcome: result.outcome } : null;
       return { target: seat?.pid ?? null, key: budget?.token ?? null, used: budget?.used ?? false, vote: publicVote, result: publicResult };
@@ -67,8 +67,8 @@ export function turnExtensions(room, { changed, extend, extensionMs = 60_000, vo
     ask(seat, msg) {
       sync();
       const target = targetSeat();
-      if (!connectedHuman(seat) || !target || !connectedHuman(target) || target.turnDeadline <= Date.now() || msg.target !== target.pid || msg.key !== extensionBudget(target, room.game).token) return "That timer has changed.";
-      const budget = extensionBudget(target, room.game);
+      if (!connectedHuman(seat) || !target || !connectedHuman(target) || target.turnDeadline <= Date.now() || msg.target !== target.pid || msg.key !== extensionBudget(target, room.game, extensionMs).token) return "That timer has changed.";
+      const budget = extensionBudget(target, room.game, extensionMs);
       if (vote || budget.used) return "More time was already requested this turn.";
       const voters = room.seats.filter((s) => s.pid !== target.pid && connectedHuman(s)).map((s) => s.pid);
       if (!voters.length) return "No other connected players can vote.";
@@ -77,7 +77,7 @@ export function turnExtensions(room, { changed, extend, extensionMs = 60_000, vo
       vote = { id: randomUUID(), key: budget.key, target: target.pid, until: Date.now() + voteMs, voters, yes: voters.includes(seat.pid) ? [seat.pid] : [], no: [] };
       timer = setTimeout(() => { sync(); if (vote) finish("failed"); }, voteMs);
       decide();
-      changed();
+      if (vote) changed();
       return null;
     },
     answer(seat, msg) {
@@ -85,7 +85,7 @@ export function turnExtensions(room, { changed, extend, extensionMs = 60_000, vo
       if (!vote || msg.voteId !== vote.id || typeof msg.yes !== "boolean" || !connectedHuman(seat) || !vote.voters.includes(seat.pid) || vote.yes.includes(seat.pid) || vote.no.includes(seat.pid) || Date.now() >= vote.until) return "That vote is closed or already answered.";
       (msg.yes ? vote.yes : vote.no).push(seat.pid);
       decide();
-      changed();
+      if (vote) changed();
       return null;
     },
     close() { clearTimeout(timer); vote = null; },
