@@ -3,3 +3,4 @@ export { GainFloats } from "@/components/game/GainFloats";
 export { TurnMoment } from "@/components/game/TurnMoment";
 export { MyNumbers } from "@/components/game/MyNumbers";
 export { FirstGameCoach } from "@/components/game/FirstGameCoach";
+export { SetupPipHints } from "@/components/game/SetupPipHints";

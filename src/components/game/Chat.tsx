@@ -513,12 +513,18 @@ export function ChatDock() {
       clearTimeout(settled);
       // Rotation and keyboard resize land in several frames. Only a stable, unusable height minimizes chat.
       settled = setTimeout(() => {
-        if (el.isConnected && el.getBoundingClientRect().height < 128) setOpen(false);
-      }, 500);
+        if (!el.isConnected) return;
+        if (el.getBoundingClientRect().height < 128) setOpen(false);
+      }, 1000);
     };
+    window.addEventListener("resize", fit);
     const observer = new ResizeObserver(fit);
     observer.observe(el);
-    return () => { observer.disconnect(); clearTimeout(settled); };
+    return () => {
+      window.removeEventListener("resize", fit);
+      observer.disconnect();
+      clearTimeout(settled);
+    };
   }, [phone, open, setOpen]);
 
   // A remembered open dock must not cover the hand bar when Play starts on a phone. The stored value stays for desktop.

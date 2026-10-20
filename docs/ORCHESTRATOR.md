@@ -20,7 +20,7 @@ reviews and merges. Builders build: Codex (ChatGPT), Grok, Claude chats, and Jos
 - Firm preferences so far:
   - the HUD never moves the map;
   - the copyrighted meme clips are fine, his risk;
-  - player-facing goods are Wood, Sheep, Brick, Ore, Wheat (#657);
+  - player-facing goods are Wood, Sheep, Brick, Stone, Wheat (#657);
   - the friends' media (icons, sounds, stickers) is curated by him; players never upload;
   - the turn timer has Off / 1 / 2 / 3 min presets (#548).
 - **Budget:** Claude usage is limited weekly. Use Sonnet for reviews, Opus only for security or infra
@@ -31,8 +31,8 @@ reviews and merges. Builders build: Codex (ChatGPT), Grok, Claude chats, and Jos
 - Review each PR with a model different from its builder. In budget mode, Sonnet is fine for everything
   except security and infra.
 - Check the issue's completion test, its lane, and the framework rules.
-- Merge only when the review is clean, all 7 required checks are green (browser-a, browser-b
-  ×3, server, build, checks), there's no conflict, and it's not a draft. Squash with the full head SHA.
+- Merge only when the review is clean, all 9 checks are green (browser-a
+  ×3, browser-b ×3, server, build, checks), there's no conflict, and it's not a draft. Squash with the full head SHA.
 - After a merge, label the closed issues `status:in-review`. If a PR didn't auto-close its issue, close
   it yourself.
 - Review comments on the PR are how builders hear back. Codex and Grok don't watch PRs, so tell Jarrod

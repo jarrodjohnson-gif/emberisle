@@ -13,6 +13,8 @@ import { COST, PLAYER_COLORS, RESOURCES } from "../src/lib/game/types.ts";
 import { PROTO } from "../src/lib/net/proto.ts";
 import { allow, cleanText, loadEmotes, remember, SOUNDBOARD } from "./chat.mjs";
 import { cue } from "./cue.mjs";
+import { PROFILE_TYPES, profileGate, profileHandler } from "./profile-protocol.mjs";
+import { openProfiles } from "./profiles.mjs";
 
 function hear(name) {
   try {
@@ -100,6 +102,8 @@ const TURN_MS = Number(process.env.TURN_MS ?? 120 * 1000);
 const TURN_TOTAL_MS = Number(process.env.TURN_TOTAL_MS ?? 6 * TURN_MS);
 // A bot seat answers a table ask after BOT_ANSWER_MS to twice that, so its Yes or No lands like a person's (#363).
 const BOT_ANSWER_MS = Number(process.env.BOT_ANSWER_MS ?? 1000);
+// People first (#850): a bot's Yes waits this long, or until every person asked has said No. A bot's No does not wait.
+const PEOPLE_FIRST_MS = Number(process.env.PEOPLE_FIRST_MS ?? 8000);
 // Every socket is pinged this often; one that has not answered the last ping is cut, so a phone that
 // locked or changed Wi-Fi frees its seat for the rejoin instead of holding it half-open (#202, #113).
 const PING_MS = Number(process.env.PING_MS ?? 30 * 1000);
@@ -118,6 +122,10 @@ const ROOM_SHAPE = 2;
 const SOUND_MS = envMs("SOUND_MS", 3000);
 // A seat's accepted renames are at least this far apart, on top of the ordinary action limit.
 const RENAME_MS = envMs("RENAME_MS", 2000);
+// Profiles (#762) live beside the rooms, in a private store only this host writes. PROFILES_DEV=1 lets a loopback page sign in
+// over plain ws:// for local development; every other plaintext link stays guest-only (docs/design/profiles.md).
+const PROFILES = path.resolve(process.env.PROFILES_DIR ?? fileURLToPath(new URL("./profiles/", import.meta.url)));
+const PROFILES_DEV = process.env.PROFILES_DEV === "1";
 // The built client (npm run build). DIST lets a proof point the host at a small temp folder.
 const DIST = path.resolve(process.env.DIST ?? fileURLToPath(new URL("../dist/", import.meta.url)));
 const TYPES = {
@@ -764,6 +772,8 @@ async function serveStatic(req, res) {
 }
 
 const wss = new WebSocketServer({ server, maxPayload: 16 * 1024 });
+const profiles = openProfiles(PROFILES, { colors: PLAYER_COLORS });
+const onProfile = profileHandler(profiles, send);
 
 // A name is the join key for the away marker, chat mentions and the log, so it is cleaned and made unique.
 function seatName(room, raw, fallback, except = null) {
@@ -1043,6 +1053,9 @@ function openOffer(room, from, give, want) {
     botsOn(room, offer);
   }, 20000);
   broadcast(room, { type: "tradeOffer", tradeId, from, give, want, seconds: 20 });
+  offer.peopleUntil = Date.now() + PEOPLE_FIRST_MS;
+  offer.heldYes = [];
+  offer.botTimers.push(setTimeout(() => releaseHeld(room, offer), PEOPLE_FIRST_MS));
   for (const p of room.game.players) {
     if (p.kind !== "bot" || p.id === from) continue;
     offer.botTimers.push(setTimeout(() => botAnswer(room, offer, p.id), BOT_ANSWER_MS + randomInt(BOT_ANSWER_MS + 1)));
@@ -1053,7 +1066,22 @@ function openOffer(room, from, give, want) {
 function botAnswer(room, offer, pid) {
   if (room.offer !== offer || room.game.players.find((p) => p.id === pid)?.kind !== "bot") return;
   const recovery = (room.recoveryPids ?? []).includes(pid);
-  respond(room, pid, recovery ? false : shouldAcceptTrade(room.game, pid, offer));
+  const yes = !recovery && shouldAcceptTrade(room.game, pid, offer);
+  if (yes && peopleWaiting(room, offer)) return void offer.heldYes.push(pid);
+  respond(room, pid, yes);
+}
+
+function peopleWaiting(room, offer) {
+  if (Date.now() >= offer.peopleUntil) return false;
+  return room.game.players.some((p) => p.kind !== "bot" && p.id !== offer.from && !offer.declined.has(p.id));
+}
+
+// Held Yeses go in the order the bots gave them, so the first bot to say Yes still takes it.
+function releaseHeld(room, offer) {
+  for (const pid of offer.heldYes.splice(0)) {
+    if (room.offer !== offer) return;
+    if (room.game.players.find((p) => p.id === pid)?.kind === "bot") respond(room, pid, true);
+  }
 }
 
 function ask(ws, room, msg) {
@@ -1105,7 +1133,7 @@ function respond(room, actor, yes) {
       closeOffer(room);
       broadcast(room, { type: "tradeClosed", tradeId: offer.tradeId });
       botsOn(room, offer);
-    }
+    } else if (!peopleWaiting(room, offer)) releaseHeld(room, offer);
     return;
   }
   const offered = applyAction(room.game, offer.from, { type: "offerTrade", to: actor, give: offer.give, want: offer.want });
@@ -1209,6 +1237,7 @@ function play(ws, room, msg, automated = false) {
 
 wss.on("connection", (ws, req) => {
   ws.ipKey = ipKey(req.socket.remoteAddress, req.headers["cf-connecting-ip"]);
+  ws.profileGate = profileGate(req, PROFILES_DEV);
   // An over-limit frame (maxPayload) raises 'error' on this one socket; with no listener here,
   // Node's default behavior is to throw and take down the whole host. One bad frame must only
   // close that socket (ws already sends close code 1009) and never the other tables.
@@ -1247,6 +1276,9 @@ function handle(ws, raw) {
     return send(ws, { type: "error", message: "not ready" });
   }
   if (!msg || typeof msg !== "object") return send(ws, { type: "error", message: "not ready" });
+  // Profile frames have their own connection and limits (#762); a profile connection never opens, joins or watches a table.
+  if (PROFILE_TYPES.has(msg.type)) return onProfile(ws, msg);
+  if (ws.profileSocket) return send(ws, { type: "error", message: "not ready" });
   if (!ws.room) {
     // A socket with no seat has no seat.bucket; this one throttles the pre-seat frames (docs/design/color-peek.md).
     const ok = allow(ws.bucket, Date.now());

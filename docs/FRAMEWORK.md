@@ -57,7 +57,7 @@ Every issue says its size in the body:
 - **Small limit left?** Take one `XS` or `S` step. If you run out mid-step, leave the pause
   comment (section 7). The next AI resumes from it. Half-done work is fine if the comment says exactly where it stopped.
 - **No limit (Cursor, a long session)?** Loop: finish a step, set the next one to Todo, take it, and repeat,
-  top to bottom through the earliest milestone. Stop only when nothing is Todo, or everything left is
+  highest priority first, then top to bottom through the earliest milestone. Stop only when nothing is Todo, or everything left is
   `needs: jarrod` or `needs: gaming-pc`.
 
 ## 4. How it maps onto GitHub
@@ -105,7 +105,7 @@ UI, visual or tricky multi-file work, sonnet for well-specified mechanical steps
 model, or a subagent on it. If it can do neither, it says in the PR which model it used. The Reviewer uses a different model from the one that built the PR.
 
 Add `needs: jarrod` (his decision, account, or money) or `needs: gaming-pc` (Unreal, or the 3.6 GB art pack)
-on its own line when an AI cannot finish it. Those issues still get Research and Design done by any AI.
+on its own line when an AI cannot finish it. Those issues still get Research done by any AI. Design follows "Big design work" in `docs/LANES.md`.
 
 ## 6. Statuses
 
@@ -130,8 +130,8 @@ Jarrod's board automation, or the next agent with `gh`, syncs the field from the
 **"What's next?" with no project named:** list Jarrod's projects as numbered options (In Progress
 first, then on hold), each with its next open issue, and ask which one. Do not start until he picks.
 
-**Next open issue** = the first eligible open `status:todo` issue in the **earliest milestone**,
-lowest step first (1 → 4). It must have a lane label, every `Depends on` closed, no active claim or
+**Next open issue** = the first eligible open `status:todo` issue with the **highest `prio:` label**
+(`docs/LANES.md`, "Tier and priority"), then in the **earliest milestone**, lowest step first (1 → 4). It must have a lane label, every `Depends on` closed, no active claim or
 open PR, and no file conflict with another active claim. Continue your own existing work first;
 do not adopt someone else's In Progress claim or treat a pause alone as Todo eligibility.
 
@@ -217,6 +217,11 @@ Not a bug, or a no? Close it with a one-line reason.
 
 **Every change goes through a pull request.** Push to a branch, open a PR, and CI (`.github/workflows/ci.yml`)
 runs the README "Run it" checks. A red PR is never merged.
+
+**Bundle size.** Do not edit `scripts/size-prove.mjs` for normal growth. In CI, `size-prove` builds the PR's base and fails a chunk
+only when it grows by more than its allowance (index 400 B gzip; others 0.33%, at least 200 B), or passes its absolute ceiling.
+If your change must grow a chunk past its allowance, say why in the PR body, with the measured numbers. The reviewer must OK it
+before the allowance is raised. Locally, `node scripts/size-prove.mjs --base <built base checkout>` runs the growth check.
 
 **Two roles: Builder and Reviewer.**
 
