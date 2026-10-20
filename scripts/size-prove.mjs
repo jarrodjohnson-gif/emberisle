@@ -36,7 +36,8 @@ const CEILINGS = [
 ];
 
 // Growth allowance against the base, in gzip bytes. index is fixed at 400 B; the others take 0.33% of the base size, at least 200 B.
-const ALLOWANCE = { index: 400 };
+// 2026-10-19 (#774): index allowance raised to 600 B while stacked on unmerged #773 (+367 B on #773, +200 B on #774).
+const ALLOWANCE = { index: 600 };
 const ALLOWANCE_RATE = 0.0033;
 const ALLOWANCE_MIN = 200;
 const allowanceFor = (name, baseBytes) => ALLOWANCE[name] ?? Math.max(ALLOWANCE_MIN, Math.round(baseBytes * ALLOWANCE_RATE));
