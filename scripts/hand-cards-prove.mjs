@@ -38,6 +38,12 @@ const PAINT = {
 };
 // The cue's whole life: FLASH_MS (2200) held, then a 300 ms fade (Hand.tsx CUE_MS).
 const CUE_MS = 2500;
+// Each layout's fixed card: upright and short as today; the wide, fine-pointer layout at 1.3x the upright mock.
+const SIZE = {
+  desk: { box: [88, 80], symbol: 22, count: 30, name: 12 },
+  port: { box: [66.8, 62], symbol: 18, count: 24, name: 10 },
+  short: { box: [47.2, 44], symbol: 14, count: 24, name: 0 },
+};
 // A gain lifts by the tray's --goods-lift: 6 px upright, 4 px short and where the hand heads a wide screen's stack.
 const LIFT = { desk: -4, port: -6, short: -4 };
 
@@ -521,15 +527,15 @@ try {
       const cr = ratio(parse(c.color), fill);
       assert.ok(cr >= 4.5, `${v.tag} ${r}: count contrast ${cr.toFixed(2)}`);
       assert.equal(c.text, String(want[r]), `${v.tag} ${r}: count`);
-      assert.equal(c.size, "24px", `${v.tag} ${r}: count size`);
+      assert.equal(c.size, `${SIZE[v.tag].count}px`, `${v.tag} ${r}: count size`);
       assert.equal(c.weight, "700", `${v.tag} ${r}: count weight`);
       assert.match(c.tabular, /tabular-nums/, `${v.tag} ${r}: tabular`);
-      assert.ok(c.sizes.every((s) => s.px <= 24), `${v.tag} ${r}: count is the largest text ${JSON.stringify(c.sizes)}`);
-      assert.ok(c.sizes.filter((s) => s.px === parseFloat(c.size)).length === 1, `${v.tag} ${r}: only the count is 24 px`);
+      assert.ok(c.sizes.every((s) => s.px <= SIZE[v.tag].count), `${v.tag} ${r}: count is the largest text ${JSON.stringify(c.sizes)}`);
+      assert.ok(c.sizes.filter((s) => s.px === parseFloat(c.size)).length === 1, `${v.tag} ${r}: only the count is ${c.size}`);
       // V1: an 18 px symbol (14 px in the short card), a 24 px count, and a 10 px tracked uppercase name.
-      assert.deepEqual(c.symbol, v.tag === "short" ? [14, 14] : [18, 18], `${v.tag} ${r}: symbol size`);
-      if (v.tag !== "short") assert.deepEqual(c.label, { size: "10px", weight: "700", spacing: "0.8px", transform: "uppercase" }, `${v.tag} ${r}: tracked name`);
-      assert.deepEqual(c.box, v.tag === "port" ? [66.8, 62] : v.tag === "short" ? [47.2, 44] : [137.6, 52], `${v.tag} ${r}: card footprint is today's`);
+      assert.deepEqual(c.symbol, [SIZE[v.tag].symbol, SIZE[v.tag].symbol], `${v.tag} ${r}: symbol size`);
+      if (SIZE[v.tag].name) assert.deepEqual(c.label, { size: `${SIZE[v.tag].name}px`, weight: "700", spacing: `${+(SIZE[v.tag].name * 0.08).toFixed(2)}px`, transform: "uppercase" }, `${v.tag} ${r}: tracked name`);
+      assert.deepEqual(c.box, SIZE[v.tag].box, `${v.tag} ${r}: card footprint is its layout's fixed size`);
       assert.equal(c.opacity, "1", `${v.tag} ${r}: opacity`);
       assert.ok(c.icon && c.iconOpacity === "1", `${v.tag} ${r}: icon at 70 % (${c.iconOpacity})`);
       assert.deepEqual(c.visibleText, v.tag === "short" ? [String(want[r])] : [String(want[r]), {timber:"Wood",clay:"Brick",wool:"Sheep",grain:"Wheat",ore:"Stone"}[r]], `${v.tag} ${r}: only the count is visible text`);
@@ -575,7 +581,7 @@ try {
         cues: window.__cues.slice(), fill: lc.backgroundColor, opacity: lc.opacity,
         count: getComputedStyle(lit.querySelector(".goods-count")).color, litText: lit.textContent,
         symbol: getComputedStyle(lit.querySelector("svg")).color,
-        tab: { text: tab.textContent, bg: getComputedStyle(tab).backgroundColor, color: getComputedStyle(tab).color, off: t.left + t.width / 2 - (c.left + c.width / 2), above: c.top - t.top, into: t.bottom - c.top, opacity: getComputedStyle(tab).opacity },
+        tab: { font: [getComputedStyle(tab).fontSize, getComputedStyle(tab).fontWeight], h: t.height, text: tab.textContent, bg: getComputedStyle(tab).backgroundColor, color: getComputedStyle(tab).color, off: t.left + t.width / 2 - (c.left + c.width / 2), above: c.top - t.top, into: t.bottom - c.top, opacity: getComputedStyle(tab).opacity },
         tabOnTop: hit === tab || tab.contains(hit), lift: c.top - card.parentElement.getBoundingClientRect().top,
         hit: hit && `${hit.tagName}.${String(hit.className).slice(0, 60)} ${hit.dataset?.testid ?? ""}`,
         tabBox: [t.top, t.bottom, t.left, t.right], stackTop: card.closest("[data-hud-stack]")?.getBoundingClientRect().top,
@@ -596,7 +602,9 @@ try {
     assert.deepEqual(parse(gain.tab.color), rgb("#ffffff"), `${v.tag}: gain tab text is white`);
     assert.ok(ratio(parse(gain.tab.color), parse(gain.tab.bg)) >= 4.5, `${v.tag}: gain tab ≥ 4.5:1`);
     assert.ok(Math.abs(gain.tab.off) <= 0.5, `${v.tag}: the tab is centred on its card (off by ${gain.tab.off.toFixed(3)} px)`);
-    assert.ok(Math.abs(gain.tab.above - 10) <= 0.5 && Math.abs(gain.tab.into - 4) <= 0.5, `${v.tag}: the tab grows out of the card's top edge (${gain.tab.above} px above, ${gain.tab.into} px into it)`);
+    assert.deepEqual(gain.tab.font, ["14px", "700"], `${v.tag}: the +N tab is 14 px bold`);
+    assert.ok(Math.abs(gain.tab.h - 22) <= 0.5, `${v.tag}: the +N tab is 22 px tall (${gain.tab.h})`);
+    assert.ok(Math.abs(gain.tab.above - 18) <= 0.5 && Math.abs(gain.tab.into - 4) <= 0.5, `${v.tag}: the tab grows out of the card's top edge (${gain.tab.above} px above, ${gain.tab.into} px into it)`);
     assert.ok(Math.abs(gain.lift - LIFT[v.tag]) <= 0.35, `${v.tag}: the gained card is lifted ${LIFT[v.tag]} px while the fill holds (${gain.lift})`);
     assert.equal(gain.tabOnTop, true, `${v.tag}: nothing covers or clips the tab (${JSON.stringify([gain.hit, gain.tabBox, gain.stackTop, gain.tray])})`);
     const lit = await centring(page, `${v.tag} gain`, { lit: true });
@@ -610,7 +618,7 @@ try {
       const tab = card.querySelector('[data-testid="resource-flash"]');
       const t = tab.getBoundingClientRect();
       const c = card.getBoundingClientRect();
-      return { cues: window.__cues.slice(2), lit: !!card.querySelector('[data-testid="goods-lit"]'), text: tab.textContent, bg: getComputedStyle(tab).backgroundColor, color: getComputedStyle(tab).color, edge: getComputedStyle(tab).boxShadow, off: t.left + t.width / 2 - (c.left + c.width / 2) };
+      return { cues: window.__cues.slice(2), lit: !!card.querySelector('[data-testid="goods-lit"]'), font: [getComputedStyle(tab).fontSize, getComputedStyle(tab).fontWeight], h: t.height, above: c.top - t.top, text: tab.textContent, bg: getComputedStyle(tab).backgroundColor, color: getComputedStyle(tab).color, edge: getComputedStyle(tab).boxShadow, off: t.left + t.width / 2 - (c.left + c.width / 2) };
     });
     assert.deepEqual(loss.cues.map((q) => [q.what, q.on]), [["goods-lost", "resource-timber"], ["resource-flash", "resource-timber"]], `${v.tag}: one loss, one red ring and one tab on timber`);
     assert.equal(loss.lit, false, `${v.tag}: a loss does not fill the card`);
@@ -620,12 +628,14 @@ try {
     assert.match(loss.edge, /rgb\(138, 34, 25\) 0px 0px 0px 1px inset/, `${v.tag}: loss tab has a 1 px red edge`);
     assert.ok(ratio(parse(loss.color), parse(loss.bg)) >= 4.5, `${v.tag}: loss tab ≥ 4.5:1`);
     assert.ok(Math.abs(loss.off) <= 0.5, `${v.tag}: the loss tab is centred on its card`);
+    assert.deepEqual(loss.font, ["14px", "700"], `${v.tag}: the −N tab is 14 px bold`);
+    assert.ok(Math.abs(loss.h - 22) <= 0.5 && Math.abs(loss.above - 19) <= 0.5, `${v.tag}: the −N tab is 22 px tall and grows out of the top edge (${loss.h}, ${loss.above})`);
     assert.ok(!gain.cues.concat(loss.cues).some((q) => q.what === "hand-ring"), `${v.tag}: no ring is drawn`);
     assert.equal(await page.locator('[data-testid="hand-ring"]').count(), 0, `${v.tag}: no ring on the page`);
     assert.deepEqual(errors, [], `${v.tag}: console errors`);
-    console.log(`${v.tag} ${v.width}x${v.height}: fills ${RESOURCES.map((r) => cards[r].fill).join(" ")}; tabular 24 px counts, contrast ` +
+    console.log(`${v.tag} ${v.width}x${v.height}: ${SIZE[v.tag].box.join("x")} cards, ${SIZE[v.tag].symbol} px symbols, ${SIZE[v.tag].count} px tabular counts; fills ${RESOURCES.map((r) => cards[r].fill).join(" ")}; contrast ` +
       RESOURCES.map((r) => ratio(parse(cards[r].color), parse(cards[r].fill)).toFixed(1)).join(" ") + `; symbol, count and name centred within ${still.worst.toFixed(3)} px at rest, ${lit.worst.toFixed(3)} px lit; ` +
-      `gain fill ${gain.fill}, count ${ratio(parse(gain.count), parse(gain.fill)).toFixed(2)}:1, +2 tab ${ratio(parse(gain.tab.color), parse(gain.tab.bg)).toFixed(2)}:1, −1 tab ${ratio(parse(loss.color), parse(loss.bg)).toFixed(2)}:1; 1 cue per change; 0 console errors`);
+      `gain fill ${gain.fill}, count ${ratio(parse(gain.count), parse(gain.fill)).toFixed(2)}:1, +2 tab ${gain.tab.font.join(" ")} ${gain.tab.h} px tall ${ratio(parse(gain.tab.color), parse(gain.tab.bg)).toFixed(2)}:1, −1 tab ${ratio(parse(loss.color), parse(loss.bg)).toFixed(2)}:1; 1 cue per change; 0 console errors`);
     await page.waitForFunction(() => !document.querySelector('[data-testid="resource-flash"]'), null, { timeout: STEP_MS });
     await proveResourceMotion(page, v.tag);
     if (v.tag === "desk") {

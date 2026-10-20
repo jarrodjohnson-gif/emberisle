@@ -1,6 +1,7 @@
 /* #773: the goods card, V1 Column (docs/design/goods-cards-v1). One axis: the symbol, the count and the name stack on the
    card's centre line. Each good sets its colour (--c), its side colour (--deep), the text on a full fill (--on) and the
-   symbol at rest (--sym). The footprint is today's: 62 px tall, 52 px with a fine pointer on a wide screen, 44 px short. */
+   symbol at rest (--sym). The footprint is fixed per layout: 62 px tall upright, 44 px short, and 88x80 on a wide screen
+   with a fine pointer (the non-phone layout, src/lib/viewport.ts), where the mock is scaled 1.3x so it reads at desk distance. */
 .goods-timber { --c: var(--timber); --deep: var(--timber-side); --on: var(--timber-on); --sym: var(--timber); }
 .goods-clay { --c: var(--clay); --deep: var(--clay-side); --on: var(--clay-on); --sym: var(--clay); }
 .goods-wool { --c: var(--wool); --deep: var(--wool-side); --on: var(--wool-on); --sym: var(--wool-side); }
@@ -8,10 +9,11 @@
 .goods-ore { --c: var(--ore); --deep: var(--ore-side); --on: var(--ore-on); --sym: var(--ore); }
 
 /* How far a gain lifts the card (Hand.tsx reads it): it stays inside the tray's padding, 8 px, or 4 px when short. Where the
-   hand is the first row of the HUD stack (a wide screen), the stack scrolls and would clip the tab, so the tray takes 14 px
-   of its 16 px padding at the top. Same height, so the map never refits. */
+   hand is the first row of the HUD stack (a wide screen), the stack scrolls and would clip the 18 px the tab stands above the
+   card, so the tray keeps 22 px at the top for the tab and the 4 px lift. The padding is fixed, so the box is the same size
+   before, during and after a cue, and the map never refits for one. */
 .goods-tray { --goods-lift: 6px; }
-.hud-stack > [data-testid="hand-dock"]:first-child > .goods-tray { --goods-lift: 4px; padding-top: 14px; padding-bottom: 2px; }
+.hud-stack > [data-testid="hand-dock"]:first-child > .goods-tray { --goods-lift: 4px; padding-top: 22px; padding-bottom: 4px; }
 .goods-card, .goods-lit { display: flex; flex-direction: column; align-items: center; padding-top: 4px; }
 .goods-card {
   --fleece: var(--paper);
@@ -26,15 +28,20 @@
 .goods-empty > .goods-icon { color: color-mix(in srgb, var(--sym) 55%, var(--ground)); }
 
 @media (min-width: 768px) and (pointer: fine) {
-  .goods-card { height: 52px; }
-  .goods-card, .goods-lit { padding-top: 2px; }
-  .goods-count { margin-top: 0; line-height: 20px; }
-  .goods-label { margin-top: 0; }
+  /* 1.3x the upright card: 88x80, a 22 px symbol, a 30 px count and a 12 px name. The row centres under the board. */
+  .goods-tray { justify-content: center; }
+  .hand-resource-card-slot { flex: 0 0 88px; }
+  .goods-card { height: 80px; }
+  .goods-card, .goods-lit { padding-top: 5px; }
+  .goods-icon { width: 22px; height: 22px; }
+  .goods-count { font-size: 30px; line-height: 30px; }
+  .goods-label { margin-top: 2px; font-size: 12px; line-height: 15px; }
 }
 @media (max-height: 480px) {
-  /* Short: no room for the name (the card's title and label still carry it), so the symbol and count centre in 44 px. */
+  /* Short: no room for the name (the card's title and label still carry it). The symbol and count sit 4 px down, so the
+     tab's 4 px overlap of the top edge stays clear of the symbol. */
   .goods-tray { --goods-lift: 4px; }
-  .goods-card, .goods-lit { justify-content: center; padding-top: 0; }
+  .goods-card, .goods-lit { justify-content: flex-start; padding-top: 4px; }
   .goods-icon { width: 14px; height: 14px; }
   .goods-label { display: none; }
 }
@@ -59,12 +66,13 @@
 .goods-lit > .goods-label { color: var(--on); opacity: 0.9; }
 .goods-lost { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--loss) 55%, var(--paper)); }
 .goods-tab {
-  left: 0; right: 0; top: -10px; z-index: 1; width: max-content; min-width: 28px; height: 14px; margin: 0 auto; padding: 0 6px;
-  border-radius: 5px 5px 0 0; text-align: center; white-space: nowrap;
-  font: 700 11.5px/14px var(--font-numeral); font-variant-numeric: tabular-nums;
+  /* 22 px tall with 14 px bold text at every size: 18 px above the card's edge, 4 px over it. */
+  left: 0; right: 0; top: -18px; z-index: 1; width: max-content; min-width: 34px; height: 22px; margin: 0 auto; padding: 0 8px;
+  border-radius: 6px 6px 0 0; text-align: center; white-space: nowrap;
+  font: 700 14px/22px var(--font-numeral); font-variant-numeric: tabular-nums;
 }
 .goods-tab[data-sign="+"] { background: var(--deep); color: #fff; }
-.goods-tab[data-sign="-"] { top: -11px; background: var(--paper); color: var(--loss); box-shadow: inset 0 0 0 1px var(--loss); }
+.goods-tab[data-sign="-"] { top: -19px; background: var(--paper); color: var(--loss); box-shadow: inset 0 0 0 1px var(--loss); }
 
 /* #820: an open offer lifts the cards it changes and edges them, red for what this seat gives and green for what it gets.
    The -N / +N label carries the same meaning, so colour is not the only cue. The slot moves; the card keeps its own
