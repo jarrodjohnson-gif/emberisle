@@ -26,7 +26,7 @@ import { TradeButton } from "@/components/game/TradeButton";
 import { CostChips, hintLine, needLine, priceLabel, shortfall, type Price } from "@/components/game/BuildCost";
 import { useEscapeDisarm } from "@/components/game/escape-disarm";
 import { COST, RESOURCES, type BuildMode, type GameState, type PlayerState } from "@/lib/game/types";
-import { legalCities, legalRoads, legalSettle, totalVP } from "@/lib/game/rules";
+import { legalCities, legalRoads, legalSettle, playable, totalVP } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
 import { LazyBoundary, preloadOnIdle } from "@/lib/lazy";
 import { useViewport } from "@/lib/viewport";
@@ -35,6 +35,7 @@ import { cn } from "@/lib/utils";
 
 const PRICES = Object.keys(COST) as Price[];
 const HINT_MS = 1600;
+const FORTUNE_CUE_KINDS = ["knight", "road", "plenty", "monopoly"] as const;
 
 // Whether a build can happen now and, if not, why: the supply (or the deck), then a legal spot; a spot with a hand that cannot pay is missing goods (#606).
 function buildStatus(state: GameState, me: PlayerState, kind: Price) {
@@ -42,7 +43,8 @@ function buildStatus(state: GameState, me: PlayerState, kind: Price) {
   const missing = Object.values(short).reduce((a, b) => a + b, 0);
   const left = { path: me.pathsLeft, outpost: me.outpostsLeft, stronghold: me.strongholdsLeft, card: state.deckLeft ?? state.deck.length }[kind];
   const spot = () =>
-    kind === "path" ? legalRoads(state, me.id, false).length > 0 : kind === "outpost" ? legalSettle(state, me.id, false).length > 0 : kind === "stronghold" ? legalCities(state, me.id).length > 0 : true;
+    kind === "path" ? legalRoads(state, me.id, false).length > 0 : kind === "outpost" ? legalSettle(state, me.id, false).length > 0 : kind === "stronghold" ? legalCities(state, me.id).length > 0 :
+      (state.deckLeft ?? state.deck.length) > 0;
   const why = left <= 0 ? "None left" : spot() ? null : "No spot";
   return { short, missing, why, ready: !why && !missing };
 }
@@ -109,7 +111,6 @@ function armedCopy(mode: BuildMode, roadPicks: number): [string, string] | null 
   }
 }
 
-
 // A build that cannot happen now uses aria-disabled, not disabled, so Tab still reaches it and the price is read out. It
 // goes muted ink, not translucent, so the chips and the reason on it stay readable.
 const NOT_NOW = "aria-disabled:cursor-not-allowed aria-disabled:text-muted aria-disabled:active:scale-100";
@@ -163,8 +164,34 @@ export function Hud() {
   useEffect(() => setFortunesOpen(false), [turnKey]);
   const actor = mode === "hotseat" ? (state?.current ?? "") : localId;
   const me = state ? (state.players.find((p) => p.id === actor) ?? state.players[0]!) : null;
+
+  // #829: a playable fortune is one still held, not one bought this turn. The cue should only show on your turn and only once.
+  const fortuneCueCount = me
+    ? FORTUNE_CUE_KINDS.reduce((total, kind) => total + Math.max(0, playable(me, kind)), 0)
+    : 0;
+  const showFortuneCue = !!state && state.current === actor && fortuneCueCount > 0;
+  const [fortuneCuePulse, setFortuneCuePulse] = useState(false);
+  const lastTurnSeat = useRef<string | null>(null);
+  useEffect(() => {
+    if (!state || !me) return;
+    if (state.current !== actor) {
+      lastTurnSeat.current = state.current;
+      return;
+    }
+    if (lastTurnSeat.current === actor) return;
+    lastTurnSeat.current = actor;
+    if (fortuneCueCount <= 0) {
+      setFortuneCuePulse(false);
+      return;
+    }
+    setFortuneCuePulse(true);
+    const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const t = setTimeout(() => setFortuneCuePulse(false), reduced ? 0 : 1200);
+    return () => clearTimeout(t);
+  }, [actor, fortuneCueCount, me, state]);
+
   // A build that just became ready (a roll, a trade) pulses its button once; a change of seat is not that, and a build with
-  // no spot or none left never is. The key is empty on another seat's turn (buildStatus does not look at the phase, so it is the same from a roll to main), and the hand's counts are in it, so any
+  // no spot or none left never is. The key is empty on another seat's turn (buildStatus does not look at the phase, so it is the same from a roll to main), and the hand's counts are in it, so an
   // other change (a steal, the row leaving) clears a pulse instead of leaving one to fire later. A watcher's `me` is seat 0 of
   // the opponent view, which has no `resources` online (docs/design/spectator.md), so it is checked first.
   const rowShown = !!state && !!me?.resources && state.current === actor;
@@ -214,7 +241,11 @@ export function Hud() {
       data-testid="fortunes-button"
       data-deck-left={deckLeft}
       aria-label={`Fortunes, ${deckLeft} left in deck`}
-      className="h-11 min-w-11 flex-col gap-0 px-2 text-xs leading-4 tabular-nums"
+      className={cn(
+        "relative h-11 min-w-11 flex-col gap-0 px-2 text-xs leading-4 tabular-nums",
+        showFortuneCue && "fortune-button-cue",
+        fortuneCuePulse && "fortune-cue-pulse",
+      )}
       aria-pressed={fortunesOpen || fortuneArmed}
       aria-expanded={fortunesOpen}
       variant={fortunesOpen || fortuneArmed ? "primary" : "secondary"}
@@ -224,6 +255,15 @@ export function Hud() {
       }}
     >
       <span>Fortunes</span>{" "}<span>{deckLeft} left</span>
+      {showFortuneCue ? (
+        <span
+          aria-live="polite"
+          data-testid="fortune-count-badge"
+          className="fortune-badge pointer-events-none absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full border border-white/80 bg-accent px-1 text-[10px] font-bold leading-none text-accent-foreground shadow-sm"
+        >
+          {fortuneCueCount}
+        </span>
+      ) : null}
     </Button>
   );
   // Hotseat has no "you": every seat is named. The turn banner sits out once the isle has a ruler (the pill says who).
@@ -281,7 +321,7 @@ export function Hud() {
           sheet rises over the z-20 chat dock (it reaches the header on a sideways phone). Online, Open chat and Quick reactions
           sit in this row too, left of the menu, so they never move with the turn and never reach the board. A watcher's badge stays out here,
           a chip and not a button, so a watcher always sees why it has no controls (docs/design/spectator.md). */}
-      <header className={cn("hud-header pointer-events-none absolute inset-x-0 top-0 z-20 px-safe pt-[max(0.75rem,env(safe-area-inset-top))] has-[#table-menu]:z-30 has-[#quick-reaction-picker]:z-[25]", phone ? "pb-0" : "pb-3")}>
+      <header className={cn("hud-header pointer-events-none absolute inset-x-0 top-0 z-20 px-safe pt-[max(0.75rem,env(safe-area-inset-top))] has-[#table-menu]:z-30 has-[#quick-reaction-picker]:z-[20] has-[#chat-dock]:z-[20] has-[.sheet-open]:z-[30]" )}>
         <div className="pointer-events-auto flex items-center justify-end gap-1">
           {phone ? <SeatStrip actor={actor} className="min-w-0 max-w-[48rem] flex-1" /> : <div className="mr-auto">{instruction}</div>}
           {spectator && !(phone && portrait) ? (
@@ -344,7 +384,7 @@ export function Hud() {
               role="status"
               data-testid="banner"
               className={cn(
-                "pointer-events-none absolute inset-x-0 animate-[turn-fade_200ms_ease-out] rounded-[16px] border border-accent/40 bg-surface px-3 py-2 text-center text-sm font-medium text-zinc-900",
+                "pointer-events-none absolute inset-x-0 animate-[turn-fade_200ms_ease-out] rounded-[16px] border border-accent/40 bg-surface px-3 py-2 text-center text-sm font-medium text-zinc-900 backdrop-blur-md",
                 // #422: beside the column, over the top of the hole, as it floats over the board above the stack elsewhere.
                 column ? "left-full top-0 ml-3 w-max max-w-[calc(100vw-21.5rem-max(0.75rem,env(safe-area-inset-left))-max(0.75rem,env(safe-area-inset-right)))]" : "bottom-full mb-2",
               )}
