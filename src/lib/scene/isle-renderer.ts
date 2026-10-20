@@ -195,6 +195,7 @@ export class IsleRenderer {
   private relayout = 0;
   private sizeW = 0;
   private sizeH = 0;
+  private keyboardShrunk = false;
   private raycaster = new THREE.Raycaster();
   private pointer = new THREE.Vector2();
   private land = new THREE.Group();
@@ -813,10 +814,25 @@ export class IsleRenderer {
   private resize = () => {
     this.onCameraChange();
     const c = this.renderer.domElement;
+    const prevW = this.sizeW;
+    const prevH = this.sizeH;
     const w = (this.sizeW = c.clientWidth || 1);
     const h = (this.sizeH = c.clientHeight || 1);
+    // On browsers where the on-screen keyboard shrinks the layout viewport, keep the previous fit and skip both refit
+    // and default-view re-evaluation so typing never moves the map (#627).
+    const keyboardShrink =
+      this.coarse() &&
+      Boolean(document.activeElement?.matches("input, textarea")) &&
+      prevW > 0 &&
+      w === prevW &&
+      h < prevH;
+    if (keyboardShrink) {
+      this.keyboardShrunk = true;
+    } else if (h >= prevH) {
+      this.keyboardShrunk = false;
+    }
     // A phone turned upright or on its side changes the default view (setView resizes again, in the new view).
-    if (this.play() && this.view !== this.playView()) return this.setView(this.playView());
+    if (!this.keyboardShrunk && this.play() && this.view !== this.playView()) return this.setView(this.playView());
     this.camera.aspect = w / h;
     // Dolly limit: OrbitControls.update() clamps the current distance to the new max on the next frame.
     this.controls.maxDistance = freeMaxDistance(h, hudInsets(w, h, this.coarse(), this.safe()), this.coarse());
@@ -826,10 +842,10 @@ export class IsleRenderer {
     const ratio = this.renderer.getPixelRatio();
     this.under?.setSize(Math.round(w * ratio), Math.round(h * ratio));
     this.ssao?.setSize(w, h);
-    this.refit(true);
+    if (!this.keyboardShrunk) this.refit(true);
     // The HUD re-lays out for the new size after this event (a rotation swaps its columns and rails), so the hole just
     // measured is the old one: measure again on each of the next frames.
-    this.relayout = RELAYOUT_FRAMES;
+    if (!this.keyboardShrunk) this.relayout = RELAYOUT_FRAMES;
   };
 
   // The player changed the chrome without the game moving (opened the chat or a sheet, focused the PlaceList): measure the
@@ -842,7 +858,7 @@ export class IsleRenderer {
   // (the phase bar grew with the state) glides the frustum and the look-at point and keeps the eye the player set.
   private refit(instant: boolean) {
     this.refitDue = false;
-    if (!this.play()) return;
+    if (!this.play() || this.keyboardShrunk) return;
     const c = this.renderer.domElement;
     const base = this.insets();
     // The hole's edges on the shell, so the HUD can centre a moment on the island (TurnMoment, GainFloats): the one the map is fitted to.
@@ -860,8 +876,8 @@ export class IsleRenderer {
       this.orbit.update();
       return;
     }
-    // The pan survives any refit but a turn of the phone (a view toggle starts from home anyway): a Safari toolbar or a
-    // keyboard resizing the canvas keeps the player's offset from home.
+    // The pan survives any refit but a turn of the phone (a view toggle starts from home anyway): a Safari toolbar
+    // resizing the canvas keeps the player's offset from home (an on-screen keyboard skips refit).
     const to = this.fitPose(f);
     if (carry) {
       const from = this.fitPose(was);
