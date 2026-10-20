@@ -93,7 +93,9 @@
     "jelly-ocean-prove": "node scripts/jelly-ocean-prove.mjs",
     "waves-prove": "node --import ./server/register.mjs scripts/waves-prove.mjs",
     "splash-prove": "node scripts/splash-prove.mjs",
-    "pages-prove": "node scripts/pages-prove.mjs"
+    "pages-prove": "node scripts/pages-prove.mjs",
+    "turn-extension-prove": "node --import ./server/register.mjs scripts/turn-extension-prove.mjs",
+    "turn-extension-server-prove": "node --import ./server/register.mjs server/turn-extension-prove.mjs"
   },
   "dependencies": {
     "clsx": "^2.1.1",

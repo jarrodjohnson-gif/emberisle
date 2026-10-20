@@ -3,6 +3,10 @@ import { useGame } from "@/lib/game/store";
 import { play } from "@/lib/sound";
 import { cn } from "@/lib/utils";
 
+import { chunk, LazyBoundary } from "@/lib/lazy";
+const TurnExtensionVote = chunk(() => import("./TurnExtensionVote")).pick((m) => m.TurnExtensionVote);
+const extensionVote = <LazyBoundary failed={null}><TurnExtensionVote /></LazyBoundary>;
+
 // The chip shows only in the last SHOW_MS of the host's window and turns to the accent in the last URGENT_MS (#345).
 const SHOW_MS = 30_000;
 const URGENT_MS = 10_000;
@@ -83,9 +87,12 @@ export function TurnCountdown() {
     if (urgent && who && secs && !said) setSaid(`${secs} seconds left for ${who === "You" ? "you" : who}`);
   }, [urgent, who, secs, said]);
 
-  if (mode !== "online" || !state || state.phase === "over" || left === null || left > SHOW_MS || !who) return null;
+  if (mode !== "online" || !state || state.phase === "over") return null;
+  if (left === null || left > SHOW_MS || !who) return <div className="-mb-2 flex items-center gap-1">{extensionVote}</div>;
   return (
     <>
+      {/* The hand has 8px top padding; share that space so 44px vote controls fit the existing HUD hole. */}
+      <div className="-mb-2 flex items-center gap-1">
       <p
         key={at}
         data-testid="turn-countdown"
@@ -93,12 +100,14 @@ export function TurnCountdown() {
         data-seconds={secs}
         style={{ borderLeftColor: urgent ? undefined : player!.color }}
         className={cn(
-          "animate-[turn-fade_200ms_ease-out] rounded-[16px] border bg-glass px-3 py-2 text-sm font-medium tabular-nums text-zinc-900 backdrop-blur-md",
+          "shrink-0 animate-[turn-fade_200ms_ease-out] rounded-[16px] border bg-glass px-3 py-2 text-sm font-medium tabular-nums text-zinc-900 backdrop-blur-md",
           urgent ? "border-accent bg-linear-to-r from-accent/20 to-accent/20" : "border-white/50 border-l-4",
         )}
       >
         {who}: {clock(secs!)}
       </p>
+      {extensionVote}
+      </div>
       <p aria-live="polite" className="sr-only" data-testid="turn-countdown-live">
         {said}
       </p>
