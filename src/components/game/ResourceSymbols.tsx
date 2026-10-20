@@ -12,8 +12,11 @@ export function ClaySymbol(props: Props) {
   return <svg {...frame} {...props}><rect x="7" y="3" width="10" height="6" rx=".7" fill="currentColor" stroke="none"/><rect x="1" y="11" width="10" height="7" rx=".7" fill="currentColor" stroke="none"/><rect x="13" y="11" width="10" height="7" rx=".7" fill="currentColor" stroke="none"/></svg>;
 }
 
+// #773 (docs/design/goods-cards-v1): a fleece cloud in the card's paper (--fleece; unfilled where none is set), a solid head
+// with an ear, two legs and a pin of an eye.
 export function WoolSymbol(props: Props) {
-  return <svg {...frame} {...props}><path d="M7 5c-1-3 4-4 5-1 2-3 6-1 5 2 4-1 6 4 2 6 3 3 0 7-3 5 0 4-5 5-6 1-3 3-7 0-5-3-4 0-5-5-1-6-2-2 0-5 3-4Z"/><path d="m8 17-1 4m9-4 1 4"/></svg>;
+  const fleece = { fill: "var(--fleece, none)" };
+  return <svg {...frame} {...props}><path d="M8.6 17.6v3.6M14.4 17.6v3.6" strokeWidth="2"/><path d="M6 17.6C3.1 17.6 2.3 13.9 4.5 12.7 3.4 10.4 5.9 8.2 8 9.3 8.6 6.5 12.5 6.2 13.5 8.6 15.9 7.4 18.8 9.5 17.9 12 20.3 13.2 19.6 16.9 16.9 17.6Z" style={fleece} strokeWidth="1.6"/><ellipse cx="18.9" cy="12.4" rx="3.3" ry="2.35" transform="rotate(-12 18.9 12.4)" fill="currentColor" stroke="none"/><path d="M16.1 10.8c-.4-1.3.3-2.2 1.6-2.2.4 1 0 2-1.6 2.2Z" fill="currentColor" stroke="none"/><circle cx="20.1" cy="11.8" r=".65" style={fleece} stroke="none"/></svg>;
 }
 
 export function GrainSymbol(props: Props) {

@@ -5,6 +5,7 @@
 - Rules: [`docs/FRAMEWORK.md`](docs/FRAMEWORK.md)
 - Picking work: [`docs/LANES.md`](docs/LANES.md)
 - Helpers: [`docs/HELPERS.md`](docs/HELPERS.md)
+- Review desk: [`docs/DESK.md`](docs/DESK.md), with live state in issue [#916](https://github.com/jarrodjohnson-gif/emberisle/issues/916)
 - Owner decisions: [`docs/DECISIONS.md`](docs/DECISIONS.md) (read before you design or build)
 - Feature designs: [`docs/design/`](docs/design/)
 - Game rules: [`README.md`](README.md)
@@ -52,7 +53,7 @@ These are short on purpose. Follow all of them, every round.
 6. **Still nothing eligible?** Post one line on #854 saying so and which issues you skipped and why. The
    review desk replies with work. Don't stop silently.
 
-**Told you are a helper**, for example a friend's AI working from a fork? Read #854, then take work
+**Told you are a helper**, for example a friend's AI working from a fork? (Josh's agent is a full builder, not a helper, even from his fork: see `docs/LANES.md`.) Read #854, then take work
 from the helper queue, issue [#851](https://github.com/jarrodjohnson-gif/emberisle/issues/851), and follow
 [`docs/HELPERS.md`](docs/HELPERS.md). It wins over everything else here.
 

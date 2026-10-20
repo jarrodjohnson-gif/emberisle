@@ -18,11 +18,15 @@ export const RESOURCE_PAINT: Record<Resource, string> = {
   ore: "bg-ore text-ore-on",
 };
 
+// A gain or loss cue holds for FLASH_MS, then fades over FADE_MS (#773, docs/design/goods-cards-v1). The CSS keyframes in
+// hand-motion.css run for the same CUE_MS.
 const FLASH_MS = 2200;
-const SETTLE_MS = 280;
+const FADE_MS = 300;
+const CUE_MS = FLASH_MS + FADE_MS;
+const EASE_OUT = "cubic-bezier(0.22, 1, 0.36, 1)";
 type ResourceFlash = { delta: number; id: number };
 
-// The hand's counts are diffed on every state, so a gain flashes +N green and a loss -N red whether it
+// The hand's counts are diffed on every state, so a gain fills its card with +N and a loss rings it with −N whether it
 // came from a roll, a trade, a build, a discard, or a steal, hotseat and online alike (#170). Only this
 // hand is read: online, the other players arrive as a `goods` count with no `resources`. A change of
 // seat (hotseat) or a reconnect's first synced state resets the baseline instead of flashing.
@@ -76,7 +80,7 @@ function useResourceFlashes(me: PlayerState) {
             delete next[r];
             return next;
           });
-        }, FLASH_MS),
+        }, CUE_MS),
       };
     }
   }, [visibleFlashes]);
@@ -105,6 +109,22 @@ function useOfferDeltas(me: PlayerState) {
   return deltas;
 }
 
+// The card's face: the symbol, the count and the name on one axis. The lit copy a gain lays over it has no test IDs.
+function Face({ resource, count, lit }: { resource: Resource; count: number; lit?: boolean }) {
+  const Icon = RESOURCE_ICON[resource];
+  return (
+    <>
+      <Icon className="goods-icon" aria-hidden />
+      <span data-testid={lit ? undefined : "hand-count"} className="goods-count">
+        {count}
+      </span>
+      <span data-testid={lit ? undefined : "hand-name"} className="goods-label">
+        {RESOURCE_LABEL[resource]}
+      </span>
+    </>
+  );
+}
+
 function ResourceCard({ resource, count, flash, offer, showRates, buildMode, owner }: { resource: Resource; count: number; flash?: ResourceFlash; offer?: number; buildMode: string; owner: string; showRates: (resource: Resource, card: HTMLElement) => void }) {
   const card = useRef<HTMLDivElement>(null);
   const hold = useRef<{ timer?: ReturnType<typeof setTimeout>; x: number; y: number }>({ x: 0, y: 0 });
@@ -112,22 +132,28 @@ function ResourceCard({ resource, count, flash, offer, showRates, buildMode, own
     clearTimeout(hold.current.timer);
   };
   useEffect(() => cancelHold, [buildMode, owner]);
-  const Icon = RESOURCE_ICON[resource];
-  const label = flash ? (flash.delta > 0 ? `+${flash.delta}` : String(flash.delta)) : null;
+  const gain = !!flash && flash.delta > 0;
+  const label = flash ? (gain ? `+${flash.delta}` : String(flash.delta)) : null;
   // Restart on the event ID, even for two gains in the same millisecond. The card itself stays mounted,
   // preserving its footprint and future focus/long-press state; only the decorative cues are keyed.
+  // A gain lifts the card by the tray's --goods-lift (hand-motion.css: 6 px, less where the tray has less room) and a
+  // loss dips it 2 px, for as long as the fill holds; both settle as it fades.
   useLayoutEffect(() => {
     if (!flash || !card.current) return;
     const preference = matchMedia("(prefers-reduced-motion: reduce)");
+    // 0 is a real value (a short wide window has no room to lift); only a missing property falls back to 6 px.
+    const lift = parseFloat(getComputedStyle(card.current).getPropertyValue("--goods-lift"));
+    const y = flash.delta > 0 ? -(Number.isNaN(lift) ? 6 : lift) : 2;
     const animation = preference.matches
       ? null
       : card.current.animate(
           [
-            { transform: "translateY(0)", offset: 0, easing: "cubic-bezier(0.22, 1, 0.36, 1)" },
-            { transform: `translateY(${flash.delta > 0 ? -3 : 2}px)`, offset: 0.25, easing: "cubic-bezier(0.22, 1, 0.36, 1)" },
+            { transform: "translateY(0)", offset: 0, easing: EASE_OUT },
+            { transform: `translateY(${y}px)`, offset: 120 / CUE_MS },
+            { transform: `translateY(${y}px)`, offset: FLASH_MS / CUE_MS, easing: EASE_OUT },
             { transform: "translateY(0)", offset: 1 },
           ],
-          { duration: SETTLE_MS },
+          { duration: CUE_MS },
         );
     const stopMovement = () => {
       if (preference.matches) animation?.cancel();
@@ -181,26 +207,24 @@ function ResourceCard({ resource, count, flash, offer, showRates, buildMode, own
         onPointerCancel={cancelHold}
         onPointerLeave={cancelHold}
         className={cn(
-          "goods-card relative flex h-[62px] flex-col items-center justify-center rounded-control bg-surface text-fg focus-visible:outline focus-visible:outline-2 focus-visible:outline-fg",
-          "short:h-11 short:flex-row short:gap-2",
+          `goods-card goods-${resource} relative h-[62px] rounded-control focus-visible:outline focus-visible:outline-2 focus-visible:outline-fg short:h-11`,
           count === 0 && "goods-empty",
         )}
       >
-        <div className="goods-value flex items-center justify-center gap-1.5">
-          <Icon className="goods-icon size-5" style={{ color: `var(--${resource === "wool" || resource === "grain" ? `${resource}-side` : resource})` }} aria-hidden />
-          <span data-testid="hand-count" className="text-number font-bold tabular-nums short:leading-7">
-            {count}
-          </span>
-        </div>
-        <span className="goods-label text-[11px] font-semibold leading-[14px] short:hidden">{RESOURCE_LABEL[resource]}</span>
+        <Face resource={resource} count={count} />
         {flash ? (
-          <span
-            key={`ring-${flash.id}`}
-            data-testid="hand-ring"
-            aria-hidden
-            className="pointer-events-none absolute inset-[2px] rounded-chip"
-            style={{ animation: `resource-ring ${FLASH_MS}ms ease-out forwards` }}
-          />
+          gain ? (
+            <span key={`lit-${flash.id}`} data-testid="goods-lit" aria-hidden className="goods-lit">
+              <Face resource={resource} count={count} lit />
+            </span>
+          ) : (
+            <span key={`lost-${flash.id}`} data-testid="goods-lost" aria-hidden className="goods-lost" />
+          )
+        ) : null}
+        {flash ? (
+          <span key={flash.id} data-testid="resource-flash" data-resource={resource} data-delta={label} data-sign={gain ? "+" : "-"} aria-hidden className="goods-tab">
+            {gain ? label : `−${-flash.delta}`}
+          </span>
         ) : null}
       </div>
       {offer ? (
@@ -217,21 +241,6 @@ function ResourceCard({ resource, count, flash, offer, showRates, buildMode, own
           {offer > 0 ? `+${offer}` : String(offer)}
         </span>
       ) : null}
-      {flash ? (
-        <span
-          key={flash.id}
-          data-testid="resource-flash"
-          data-resource={resource}
-          data-delta={label}
-          className={cn(
-            "hand-resource-flash pointer-events-none absolute right-0.5 top-0.5 rounded-control bg-surface px-1 text-caption font-semibold tabular-nums short:left-1 short:right-auto short:top-0 short:text-caption short:leading-3",
-            flash.delta > 0 ? "text-gain" : "text-loss",
-          )}
-          style={{ animation: `resource-flash ${FLASH_MS}ms ease-out forwards` }}
-        >
-          {label}
-        </span>
-      ) : null}
     </div>
   );
 }
@@ -246,7 +255,8 @@ function ResourceHand({ me, flashes }: { me: PlayerState; flashes: ReturnType<ty
   useEffect(() => setHint(null), [buildMode, me.id]);
   return (
     <>
-      <div className="goods-tray flex shrink-0 gap-1 overflow-x-auto rounded-chip p-2 short:p-1">
+      {/* Not a scroller: the five cards always fit, and a scroller would clip the +N tab and the lift at its edge. */}
+      <div className="goods-tray flex shrink-0 gap-1 rounded-chip p-2 short:p-1">
         {RESOURCES.map((r) => (
           <ResourceCard key={r} resource={r} count={me.resources[r]} flash={flashes[r]} offer={offer[r]} showRates={showRates} buildMode={buildMode} owner={me.id} />
         ))}

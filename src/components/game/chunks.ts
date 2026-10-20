@@ -23,7 +23,6 @@ export const WinScreen = sheets.pick((m) => m.WinScreen);
 
 export const moments = chunk(() => import("@/components/game/moments"));
 export const TurnMoment = moments.pick((m) => m.TurnMoment);
-export const GainFloats = moments.pick((m) => m.GainFloats);
 export const MyNumbers = moments.pick((m) => m.MyNumbers);
 export const FirstGameCoach = moments.pick((m) => m.FirstGameCoach);
 export const SetupPipHints = moments.pick((m) => m.SetupPipHints);
