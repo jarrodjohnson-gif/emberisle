@@ -1,4 +1,5 @@
-import type { SVGProps } from "react";
+import type { ComponentType, SVGProps } from "react";
+import type { Resource } from "@/lib/game/types";
 
 type Props = SVGProps<SVGSVGElement>;
 const frame = { viewBox: "0 0 24 24", width: 24, height: 24, fill: "none", stroke: "currentColor", strokeWidth: 1.7, strokeLinecap: "round", strokeLinejoin: "round" } as const;
@@ -22,3 +23,11 @@ export function GrainSymbol(props: Props) {
 export function OreSymbol(props: Props) {
   return <svg {...frame} {...props}><path d="m2 20 7-14 7 14H2Zm11 0-3-6 5-12 8 18H13Z" fill="currentColor" stroke="none"/></svg>;
 }
+
+export const RESOURCE_ICON: Record<Resource, ComponentType<Props>> = {
+  timber: TimberSymbol,
+  clay: ClaySymbol,
+  wool: WoolSymbol,
+  grain: GrainSymbol,
+  ore: OreSymbol,
+};
