@@ -39,6 +39,40 @@ const view = (page) => page.evaluate(() => {
   const s = window.__emberisle.getState();
   return { deadline: s.turnTimer?.deadline, serverNow: s.turnTimer?.host, extension: s.net?.getTurnExtension(), current: s.state?.current, seq: s.state?.seq };
 });
+async function boardFit(page, label) {
+  await page.waitForFunction(() => window.__isle?.lastState && !window.__isle.refitDue && !window.__isle.glide, null, { timeout: 30000 });
+  const fit = await page.evaluate(() => {
+    const isle = window.__isle;
+    const hole = isle.insets();
+    const live = isle.liveInsets();
+    const overflow = ["top", "right", "bottom", "left"].filter((k) => live[k] > hole[k] + 0.5);
+    const corners = window.__emberisle.getState().state.vertices.filter((v) => {
+      const p = isle.screenOf(v.id);
+      return Math.min(p.x - hole.left, innerWidth - hole.right - p.x, p.y - hole.top, innerHeight - hole.bottom - p.y) < -0.5;
+    }).map((v) => v.id);
+    return { overflow, corners, hole, live };
+  });
+  console.log(`fit ${label}: ${JSON.stringify(fit)}`);
+  assert.deepEqual({ overflow: fit.overflow, corners: fit.corners }, { overflow: [], corners: [] }, "vote keeps the declared board hole and island fit");
+  return fit;
+}
+async function phoneRow(page, label) {
+  const geometry = await page.evaluate(() => {
+    const root = document.querySelector('[data-testid="turn-extension-ask"], [data-testid="turn-extension-vote"]');
+    const r = root.getBoundingClientRect();
+    const row = root.parentElement.getBoundingClientRect();
+    const hand = document.querySelector('[data-testid="hand-dock"]').getBoundingClientRect();
+    const buttons = (root.matches("button") ? [root] : [...root.querySelectorAll("button")]).map((button) => {
+      const b = button.getBoundingClientRect();
+      return { width: b.width, height: b.height, hit: button.contains(document.elementFromPoint(b.x + b.width / 2, b.y + b.height / 2)) };
+    });
+    return { left: r.left, right: r.right, top: r.top, bottom: r.bottom, width: innerWidth, height: innerHeight, gap: hand.top - row.bottom, buttons };
+  });
+  assert(geometry.left >= 0 && geometry.right <= geometry.width && geometry.top >= 47 && geometry.bottom <= geometry.height - 34, `${label}: ${JSON.stringify(geometry)}`);
+  assert(geometry.gap >= 4, `${label} preserves the phone stack's 4px gap: ${JSON.stringify(geometry)}`);
+  for (const button of geometry.buttons) assert(button.width >= 44 && button.height >= 44 && button.hit, `${label}: ${JSON.stringify(geometry)}`);
+  console.log(`phone ${label}: ${JSON.stringify(geometry)}`);
+}
 async function desktopHeader(page, label) {
   await page.waitForFunction(() => document.querySelector('header [data-testid="turn-countdown"]') && window.__isle?.lastState && !window.__isle.refitDue && !window.__isle.glide);
   const geometry = await page.evaluate(() => {
@@ -117,6 +151,9 @@ try {
   await headerWithChat(a, "timed player, vote hidden");
   mkdirSync("test-results", { recursive: true });
   await a.screenshot({ path: "test-results/turn-extension-desktop-vote-hidden.png" });
+  await boardFit(b, "phone ballot hidden");
+  await phoneRow(b, "ballot hidden");
+  await b.screenshot({ path: "test-results/turn-extension-phone-hidden.png" });
   await a.getByTestId("turn-extension-ask").click();
   await Promise.all(tabs.map((p) => p.getByTestId("turn-extension-vote").waitFor()));
   assert.equal(await a.getByRole("button", { name: "Yes, more time" }).count(), 0, "target cannot vote");
@@ -125,20 +162,8 @@ try {
   const pending = await view(b);
   assert.deepEqual(pending.extension.vote.voters, ["p1"], "away seat excluded");
   for (const [i, page] of tabs.entries()) {
-    await page.waitForFunction(() => window.__isle?.lastState && !window.__isle.refitDue && !window.__isle.glide, null, { timeout: 30000 });
-    const fit = await page.evaluate(() => {
-      const isle = window.__isle;
-      const hole = isle.insets();
-      const live = isle.liveInsets();
-      const overflow = ["top", "right", "bottom", "left"].filter((k) => live[k] > hole[k] + 0.5);
-      const corners = window.__emberisle.getState().state.vertices.filter((v) => {
-        const p = isle.screenOf(v.id);
-        return Math.min(p.x - hole.left, innerWidth - hole.right - p.x, p.y - hole.top, innerHeight - hole.bottom - p.y) < -0.5;
-      }).map((v) => v.id);
-      return { overflow, corners, hole, live };
-    });
-    console.log(`fit ${i}: ${JSON.stringify(fit)}`);
-    assert.deepEqual({ overflow: fit.overflow, corners: fit.corners }, { overflow: [], corners: [] }, "vote keeps the declared board hole and island fit");
+    await boardFit(page, i);
+    if (i === 1) await phoneRow(page, "ballot shown");
     const geometry = await page.getByTestId("turn-extension-vote").evaluate((el) => {
       const r = el.getBoundingClientRect();
       const buttons = [...el.querySelectorAll("button")].map((b) => {
@@ -218,7 +243,7 @@ try {
   await b.getByTestId("turn-extension-result").filter({ hasText: "More time vote did not pass." }).waitFor();
   assert.equal(await b.getByTestId("turn-extension-ask").count(), 0, "failed vote consumes request");
   assert.deepEqual(errors, []);
-  console.log("PASS turn-extension-prove: two tabs, 1280x720 and 390x844; connected electorate, target excluded, 44px unobscured vote controls, phone safe area and board fit, desktop voter fit; one countdown owner, full desktop instruction and unobscured header with chat open/closed, timed-player fit with vote shown/hidden; exact +60000ms, normal later action window/reload retention, once per turn, next-turn requester auto-yes, cancelled-vote recovery and No result; zero page errors");
+  console.log("PASS turn-extension-prove: two tabs, 1280x720 and 390x844; connected electorate, target excluded, 44px unobscured vote controls, phone safe area, 4px row gap and board fit with ballot hidden/shown, desktop voter fit; one countdown owner, full desktop instruction and unobscured header with chat open/closed, timed-player fit with vote shown/hidden; exact +60000ms, normal later action window/reload retention, once per turn, next-turn requester auto-yes, cancelled-vote recovery and No result; zero page errors");
 } finally {
   await browser?.close();
   await vite?.close();

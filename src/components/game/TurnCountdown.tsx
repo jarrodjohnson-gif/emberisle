@@ -93,7 +93,7 @@ export function TurnCountdown({ header }: { header?: HTMLElement | null }) {
   // Keep one cue owner mounted while its DOM moves between the desktop header and the phone stack.
   const content = (
     <>
-      <div className={cn("flex items-center gap-1", !header && "-mb-2")}>
+      <div className="flex items-center gap-1">
       {visible ? <p
         key={at}
         data-testid="turn-countdown"
