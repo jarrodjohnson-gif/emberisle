@@ -28,7 +28,7 @@ export function TurnExtensionVote() {
   const seconds = vote ? Math.max(0, Math.ceil((vote.until - skew - now) / 1000)) : 0;
   const button = "min-h-11 min-w-11 rounded-lg border border-white/60 bg-white/70 px-3 py-2 text-sm font-medium text-zinc-900 hover:bg-white focus-visible:outline-2 focus-visible:outline-accent disabled:opacity-50";
   if (vote) return (
-    <section data-testid="turn-extension-vote" aria-label="More time vote" className="flex min-w-0 flex-1 items-center gap-1 rounded-[16px] border border-white/50 bg-glass px-2 text-xs text-zinc-900 backdrop-blur-md">
+    <section data-testid="turn-extension-vote" aria-label="More time vote" className="flex min-w-0 flex-1 items-center gap-1 rounded-[16px] bg-glass px-2 text-xs text-zinc-900 backdrop-blur-md">
       <p role="status" className="min-w-0 flex-1 truncate" title={`Give ${name(vote.target)} 60 seconds more?`}>{name(vote.target)} +60s?</p>
       <span className="shrink-0 tabular-nums">{seconds}s</span>
       {canVote ? <>

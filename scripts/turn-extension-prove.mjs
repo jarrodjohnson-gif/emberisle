@@ -105,6 +105,18 @@ try {
   mkdirSync("test-results", { recursive: true });
   await b.screenshot({ path: "test-results/turn-extension-phone.png" });
   await a.screenshot({ path: "test-results/turn-extension-desktop.png" });
+  // The desktop voter has two 44px controls, unlike the timed player's desktop row.
+  await (await b.context().newCDPSession(b)).send("Emulation.setSafeAreaInsetsOverride", { insets: { top: 0, right: 0, bottom: 0, left: 0 } });
+  await b.setViewportSize({ width: 1280, height: 720 });
+  await b.waitForFunction(() => window.__isle?.lastState && !window.__isle.refitDue && !window.__isle.glide);
+  const desktopVoter = await b.evaluate(() => {
+    const hole = window.__isle.insets();
+    const live = window.__isle.liveInsets();
+    return { overflow: ["top", "right", "bottom", "left"].filter((k) => live[k] > hole[k] + 0.5), bottom: live.bottom, declared: hole.bottom };
+  });
+  assert.deepEqual(desktopVoter.overflow, [], `desktop voter fits: ${JSON.stringify(desktopVoter)}`);
+  console.log(`desktop voter: ${JSON.stringify(desktopVoter)}`);
+  await b.screenshot({ path: "test-results/turn-extension-desktop-voter.png" });
   await b.getByRole("button", { name: "Yes, more time" }).click();
   for (const page of tabs) {
     await page.getByTestId("turn-extension-result").filter({ hasText: "Ember gets 60 seconds more." }).waitFor();
@@ -152,7 +164,7 @@ try {
   await b.getByTestId("turn-extension-result").filter({ hasText: "More time vote did not pass." }).waitFor();
   assert.equal(await b.getByTestId("turn-extension-ask").count(), 0, "failed vote consumes request");
   assert.deepEqual(errors, []);
-  console.log("PASS turn-extension-prove: two tabs, 1280x720 and 390x844; connected electorate, target excluded, 44px unobscured vote controls, phone safe area and board fit; exact +60000ms, action/reload retention, once per turn, next-turn requester auto-yes, cancelled-vote recovery and No result; zero page errors");
+  console.log("PASS turn-extension-prove: two tabs, 1280x720 and 390x844; connected electorate, target excluded, 44px unobscured vote controls, phone safe area and board fit, desktop voter fit; exact +60000ms, action/reload retention, once per turn, next-turn requester auto-yes, cancelled-vote recovery and No result; zero page errors");
 } finally {
   await browser?.close();
   await vite?.close();
