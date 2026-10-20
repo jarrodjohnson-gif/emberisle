@@ -1,6 +1,6 @@
 # Running the review desk
 
-The review desk reviews and merges every PR, answers agents on the hub, and turns Jarrod's calls into issues. Jarrod names one session as the desk. Any Claude Code cloud session can take over from this file, because the desk's state lives on GitHub, not in a chat.
+The review desk reviews and merges every PR, answers agents on the hub, and turns Jarrod's calls into issues. It is the "orchestrator" and "Reviewer" that AGENTS.md and FRAMEWORK.md name. Jarrod names one session as the desk. Any Claude Code cloud session can take over from this file. The desk's state lives on GitHub, not in a chat.
 
 ## Start a desk session
 
@@ -22,7 +22,7 @@ Jarrod pastes: `Run the Emberisle review desk. Read docs/DESK.md.`
 
 ## Who reviews
 
-A different model from the builder. Sonnet by default. Opus for server, protocol, CI or security work, and whenever Sonnet built it. Haiku for docs-only changes.
+A different model from the builder. Sonnet by default, and never the builder's own model. Opus for server, protocol, CI or security work, and whenever Sonnet built it. Haiku for docs-only changes.
 
 ## When to merge
 
