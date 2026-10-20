@@ -234,7 +234,7 @@ async function pinned(p, moment, name, mustScroll) {
   check(`${tag} ${moment}: Tab through ${seen.length} column controls, none hidden behind the pinned row`, seen.length > 3 && bad.length === 0, bad.length ? bad : undefined);
   check(`${tag} ${moment}: the "more below" cue sits above the pinned row`, seen.every((f) => f.cueClear));
   // The fortune tray (#423) rises from the column's bottom edge over the pinned row: it covers the bar cleanly, inside the viewport.
-  await page.getByRole("button", { name: /^My fortunes/ }).click();
+  await page.getByRole("button", { name: /^(Play fortune|Fortunes)/ }).click();
   const tray = await page.getByRole("dialog").first().waitFor({ timeout: STEP_MS }).then(() =>
     page.waitForFunction(() => {
       const d = document.querySelector("#fortune-title")?.closest('[role="dialog"]');
@@ -259,7 +259,7 @@ async function pinned(p, moment, name, mustScroll) {
   await page.locator("#fortune-title").waitFor({ state: "detached", timeout: STEP_MS });
   check(
     `${tag} ${moment}: Escape closes the tray and focus returns to Fortunes`,
-    await page.evaluate(() => /^My fortunes/.test(document.activeElement?.textContent ?? "")),
+    await page.evaluate(() => /^(Play fortune|Fortunes)/.test(document.activeElement?.textContent ?? "")),
   );
 }
 

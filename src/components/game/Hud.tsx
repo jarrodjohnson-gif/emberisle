@@ -101,9 +101,9 @@ function armedCopy(mode: BuildMode, roadPicks: number): [string, string] | null 
       return ["Build a stronghold", "Stronghold"];
     // #423: both fortunes are armed from the tray, and the My fortunes button stays pressed until the pick is made or cancelled.
     case "knight":
-      return ["Move the wayfarer", "My fortunes"];
+      return ["Move the wayfarer", "Play fortune"];
     case "roadCard":
-      return [roadPicks ? "Place one more path" : "Place two paths", "My fortunes"];
+      return [roadPicks ? "Place one more path" : "Place two paths", "Play fortune"];
     default:
       return null;
   }
@@ -222,20 +222,21 @@ export function Hud() {
         : (state.discardNeeded[actor] ?? 0) > 0
           ? actor
           : null;
-  // #776: "My fortunes · N" opens the tray of held cards. It shows only while a fortune is held or armed, so a fresh hand has no
+  // #776: "Play fortune · N" or "Fortunes · N" opens the tray of held cards. It shows only while a fortune is held or armed, so a fresh hand has no
   // such button; the deck count lives on the Fortune buy tile.
   const deckLeft = state.deckLeft ?? state.deck.length;
   // #829: on my own turn, the fortunes I can play now (points are never played; ones bought this turn wait). The glow ring is keyed
   // on the turn, so it runs once when the turn starts and no later state change restarts it.
   const playableNow = mine && !spectator && !state.playedCard ? (["knight", "road", "plenty", "monopoly"] as const).reduce((n, k) => n + Math.max(0, playable(me, k)), 0) : 0;
+  // Owner decision (#829, provisional): the label itself says a fortune can be played now.
+  const fortunesLabel = playableNow > 0 ? "Play fortune" : "Fortunes";
   const fortunes = showFortunes ? (
     <Button
       ref={fortunesButton}
       size="sm"
       data-testid="fortunes-button"
       data-deck-left={deckLeft}
-      data-playable={playableNow > 0 ? playableNow : undefined}
-      aria-label={`My fortunes, ${heldNow} held${playableNow > 0 ? `, ${playableNow} playable` : ""}`}
+      aria-label={`${fortunesLabel}, ${heldNow} held`}
       className="relative h-11 min-w-11 px-3 text-sm tabular-nums"
       aria-pressed={fortunesOpen || fortuneArmed}
       aria-expanded={fortunesOpen}
@@ -246,7 +247,7 @@ export function Hud() {
       }}
     >
       {playableNow > 0 && <span key={cueKey} ref={cueRing} onAnimationStart={() => (glowed.current = cueKey)} aria-hidden="true" data-testid="fortune-cue-glow" className="fortune-cue-glow" />}
-      My fortunes · {heldNow}
+      {fortunesLabel} · {heldNow}
     </Button>
   ) : null;
   // Hotseat has no "you": every seat is named. The turn banner sits out once the isle has a ruler (the pill says who).
