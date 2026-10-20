@@ -1,4 +1,4 @@
-// #645: every seat shows two public tallies, "🛤 n" (its longest continuous path) and "⚔ n" (wayfarers it has played), and the
+// #645: every seat shows two public tallies, a Route icon and n (its longest continuous path) and a Swords icon and n (wayfarers it has played), and the
 // seat that holds Longest Path (5+) or Largest Army (3+) wears a gold badge on that tally with an accessible name ("Longest
 // path, 7"). At 440x956 and 956x440 (the phone seat strip) and 1280x720 (the desktop rail), on states the real rules produce
 // (rules.ts applyAction, loaded through vite, then pushed into the page, as the other proofs do):
@@ -149,7 +149,7 @@ try {
             const tally = (id) => {
               const el = card.querySelector(`[data-testid="${id}"]`);
               const cs = getComputedStyle(el);
-              return { text: el.lastChild.textContent, glyph: el.firstElementChild.textContent, label: el.getAttribute("aria-label"), role: el.getAttribute("role"), badge: /^(Longest path|Largest army),/.test(el.getAttribute("aria-label")), box: box(el), anim: cs.animationName, bg: px(cs.backgroundColor), shown: el.getClientRects().length > 0 && cs.visibility === "visible" };
+              return { text: el.lastChild.textContent, icon: el.firstElementChild?.tagName.toLowerCase(), label: el.getAttribute("aria-label"), role: el.getAttribute("role"), badge: /^(Longest path|Largest army),/.test(el.getAttribute("aria-label")), box: box(el), anim: cs.animationName, bg: px(cs.backgroundColor), shown: el.getClientRects().length > 0 && cs.visibility === "visible" };
             };
             return { id: card.dataset.testid.replace(`${sel}-`, ""), card: box(card), vp: box(card.querySelector('[data-testid="seat-vp"]')), path: tally("tally-path"), army: tally("tally-army") };
           }),
@@ -172,6 +172,8 @@ try {
         assert.equal(s.path.label, `${pathHeld ? "Longest path" : "Path length"}, ${s.path.text}`, `${tag}: path name ${s.path.label}`);
         assert.equal(s.army.label, `${armyHeld ? "Largest army" : "Wayfarers played"}, ${s.army.text}`, `${tag}: army name ${s.army.label}`);
         assert.ok(s.path.role === "img" && s.army.role === "img", `${tag}: tallies have a role`);
+        // Each tally draws a lucide SVG icon, not an emoji glyph that looks different on every device (#859).
+        assert.ok(s.path.icon === "svg" && s.army.icon === "svg", `${tag}: tallies draw SVG icons (${s.path.icon}, ${s.army.icon})`);
         // Both tallies are drawn inside the card, left of the points, and gold only on a badge.
         for (const [kind, t] of [["path", s.path], ["army", s.army]]) {
           assert.ok(t.shown && t.box.w > 0 && t.box.h > 0, `${tag}: ${kind} tally is shown`);
@@ -181,7 +183,7 @@ try {
           assert.equal(a === 255 && r > 200 && g > 150 && b < 120, t.badge, `${tag}: ${kind} is gold [${t.bg}] exactly when it is the badge`);
           if (!t.badge) assert.equal(a, 0, `${tag}: ${kind} has no fill without the badge`);
         }
-        assert.ok(s.path.box.r <= s.army.box.l + 0.5, `${tag}: the tallies do not overlap`);
+        assert.ok(s.army.box.l - s.path.box.r >= 2, `${tag}: the tallies keep a gap (${(s.army.box.l - s.path.box.r).toFixed(1)} px)`);
         assert.ok(s.card.h <= 44, `${tag}: card is ${s.card.h} px tall`);
         // Fixed size: the card is the same box whatever it holds.
         const key = `${sel}-${s.id}`;

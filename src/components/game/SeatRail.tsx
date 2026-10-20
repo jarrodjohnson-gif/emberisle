@@ -4,11 +4,11 @@
 // non-zero, the roll-off die only while the roll-off is live, and the points at text-title. The seat on turn carries
 // `seat-turn`: its dot pulses softly (bible §4.3) and the card brightens over 200 ms (§8), with an ink ring on the dot and
 // aria-current so the turn never rests on colour or motion alone (#312); the dot is a SeatDot.
-// #645: under that line, on a line of its own, two public tallies at every width: "🛤 n" (longest continuous path) and "⚔ n"
+// #645: under that line, on a line of its own, two public tallies at every width: a Route icon and n (longest continuous path) and a Swords icon and n
 // (wayfarers played); the Longest Path / Largest Army holder wears a gold badge on its tally (see Tally).
 // Your fortunes by kind and a dropped seat's state are facts in the player menu, one tap away.
 import { useMemo } from "react";
-import { ScrollText } from "lucide-react";
+import { Route, ScrollText, Swords, type LucideIcon } from "lucide-react";
 import { ReactionFloats } from "@/components/game/chunks";
 import { LazyBoundary } from "@/lib/lazy";
 import { PlayerMenu, seatAway } from "@/components/game/PlayerMenu";
@@ -45,11 +45,12 @@ function Count({ testid, n, unit, className }: { testid: string; n: number; unit
   );
 }
 
-// #645: a public tally, "🛤 n" (longest continuous path) or "⚔ n" (wayfarers played), always drawn, at every width. The
+// #645: a public tally, Route and n (longest continuous path) or Swords and n (wayfarers played), always drawn, at every width. The
 // holder of the award (state.longestRoad / state.largestArmy, which already carry the 5 and 3 minimums and the tie rule)
 // wears a gold badge: its accessible name is the award, e.g. "Longest path, 7". The badge pulses once when it lands on a
 // seat (the existing `build-ready` keyframes; none under reduced motion); the log line is rules.ts's own.
-function Tally({ testid, glyph, n, name, held }: { testid: string; glyph: string; n: number; name: [string, string]; held: boolean }) {
+// Lucide icons, not emoji: an emoji glyph looks different on every device (Jarrod, #859).
+function Tally({ testid, Icon, n, name, held }: { testid: string; Icon: LucideIcon; n: number; name: [string, string]; held: boolean }) {
   return (
     <span
       data-testid={testid}
@@ -57,7 +58,7 @@ function Tally({ testid, glyph, n, name, held }: { testid: string; glyph: string
       aria-label={`${name[+held]}, ${n}`}
       className={cn("flex shrink-0 items-center gap-0.5 rounded-full px-0.5", held ? "bg-amber-300 font-semibold text-zinc-900 ring-1 ring-amber-600 build-ready" : "text-zinc-700")}
     >
-      <span aria-hidden="true">{glyph}</span>
+      <Icon aria-hidden="true" className="size-3" />
       {n}
     </span>
   );
@@ -117,9 +118,9 @@ function SeatLine({ p, actor, short }: { p: PlayerState; actor: string; short?: 
         </span>
       </span>
       {/* Its own line, so the cell's width is the tallies' room: a 77 px phone cell holds both with two-digit counts. */}
-      <span className="flex w-full items-center text-caption">
-        <Tally testid="tally-path" glyph="🛤" n={path} name={["Path length", "Longest path"]} held={state.longestRoad === p.id} />
-        <Tally testid="tally-army" glyph="⚔" n={p.knightsPlayed} name={["Wayfarers played", "Largest army"]} held={state.largestArmy === p.id} />
+      <span className="flex w-full items-center gap-1 text-caption">
+        <Tally testid="tally-path" Icon={Route} n={path} name={["Path length", "Longest path"]} held={state.longestRoad === p.id} />
+        <Tally testid="tally-army" Icon={Swords} n={p.knightsPlayed} name={["Wayfarers played", "Largest army"]} held={state.largestArmy === p.id} />
       </span>
     </>
   );
