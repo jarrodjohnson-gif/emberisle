@@ -14,8 +14,8 @@ Jarrod picked V1 on 2026-10-20 for #773. It follows the #772 decision.
 - Layout: one vertical axis. An 18 px symbol, a 24 px tabular count, and a 10 px tracked uppercase name.
 - Centring: the count, symbol and name sit within 0.01 px of the card centre. Keep it exact.
 - Rest: a paper face with a 1 px edge in the good's colour.
-- Gain: the card fills with the full good colour, gets a 1 px dark ring and a soft shadow, and lifts. The +N is a tab growing out of the card's top edge, in the good's side colour.
-- Gain timing: the fill holds for about 2.2 s (FLASH_MS), then fades over 300 ms.
+- Gain: the card fills with the full good colour and gets a 1 px dark ring and a soft shadow. It lifts. The +N is a tab growing out of the card's top edge, in the good's side colour.
+- Gain timing: the fill holds for about 2.2 s, then fades over 300 ms. The game's `FLASH_MS` is 1200 ms today, so the build raises it.
 - Loss: the card dips. The −N is a hollow red tab.
 - Pictures: the current symbols for Wood, Brick, Wheat and Stone. Sheep is the new two-tone illustration in `cards.js`.
 - Reduced motion: no lift or dip. The card shows a still fill for the same time.
