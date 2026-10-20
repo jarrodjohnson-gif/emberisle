@@ -111,7 +111,7 @@ try {
   await (await b.context().newCDPSession(b)).send("Emulation.setSafeAreaInsetsOverride", { insets: { top: 0, right: 0, bottom: 0, left: 0 } });
   await b.setViewportSize({ width: 1280, height: 720 });
   // The viewport event reaches React after setViewportSize resolves. Wait for its desktop HUD first.
-  await b.waitForFunction(() => innerWidth === 1280 && !document.querySelector('[data-testid="turn-banner"]') && !document.querySelector(".hud-utilities"));
+  await b.waitForFunction(() => innerWidth === 1280 && document.querySelector('header [data-testid="turn-banner"]') && !document.querySelector('[data-hud-stack] [data-testid="turn-banner"]') && !document.querySelector(".hud-utilities"));
   await b.waitForFunction(() => window.__isle?.lastState && !window.__isle.refitDue && !window.__isle.glide);
   const desktopVoter = await b.evaluate(() => {
     const hole = window.__isle.insets();
