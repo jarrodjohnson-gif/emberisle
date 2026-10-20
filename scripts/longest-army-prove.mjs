@@ -132,6 +132,9 @@ try {
     const show = async (st) => {
       await page.evaluate((st) => window.__emberisle.setState({ state: st, localId: st.current, banner: null, error: null }), st);
       await settle();
+      // The badge pulse scales the tally (build-ready, 320 ms). Measure the tallies at rest, not mid-pulse.
+      await page.evaluate(() => Promise.all(document.getAnimations().filter((a) => a.effect?.target?.closest?.('[data-testid^="tally-"]')).map((a) => a.finished.catch(() => {}))));
+      await settle();
     };
     // Every seat's card, tallies and points, read from the page.
     const read = () =>
