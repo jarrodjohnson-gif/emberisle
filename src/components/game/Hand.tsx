@@ -250,7 +250,7 @@ function ResourceCard({ resource, count, flash, offer, showRates, buildMode, own
             data-resource={resource}
             data-delta={label}
             className={cn(
-              "hand-resource-flash pointer-events-none absolute left-1/2 -translate-x-1/2 z-20 flex items-center justify-center rounded-md px-1.5 py-0.5 text-xs font-bold tabular-nums shadow-sm",
+              "hand-resource-flash pointer-events-none absolute z-20 flex items-center justify-center rounded-md px-1.5 py-0.5 text-xs font-bold tabular-nums shadow-sm",
               flash.delta > 0 ? "goods-gain-badge" : "goods-loss-badge",
             )}
             style={{

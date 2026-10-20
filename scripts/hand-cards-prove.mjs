@@ -51,7 +51,7 @@ async function sampleCardMotion(page, expected, tag) {
         return [r, { y: matrixY(getComputedStyle(card).transform), n: transforms.length, count: count.textContent.trim(),
           flash: flash?.textContent.trim() ?? null, overlap,
           footprint: [slot.left, slot.top, slot.width, slot.height, card.offsetWidth, card.offsetHeight], before,
-          outside: rect.left < Math.max(0, rail.left) || rect.top < 0 || rect.right > Math.min(innerWidth, rail.right) || rect.bottom > Math.min(innerHeight, rail.bottom + 10) }];
+          outside: rect.left < Math.max(0, rail.left) || rect.top < 0 || rect.right > Math.min(innerWidth, rail.right) || rect.bottom > Math.min(innerHeight, rail.bottom + 4) }];
       }
       const frames = animation.effect.getKeyframes();
       const duration = animation.effect.getTiming().duration;
@@ -74,7 +74,7 @@ async function sampleCardMotion(page, expected, tag) {
         y: matrixY(getComputedStyle(card).transform), n: transforms.length, duration, frames: frames.map((f) => Object.keys(f).filter((k) => !["offset", "easing", "composite", "computedOffset"].includes(k))),
         count: count.textContent.trim(), flash: flash?.textContent.trim() ?? null, overlap,
         footprint: [slot.left, slot.top, slot.width, slot.height, card.offsetWidth, card.offsetHeight], before,
-        outside: rect.left < Math.max(0, rail.left) || rect.top < 0 || rect.right > Math.min(innerWidth, rail.right) || rect.bottom > Math.min(innerHeight, rail.bottom + 10),
+        outside: rect.left < Math.max(0, rail.left) || rect.top < 0 || rect.right > Math.min(innerWidth, rail.right) || rect.bottom > Math.min(innerHeight, rail.bottom + 4),
         extreme: { y: extreme.y, offset: extreme.offset },
       }];
     }));
@@ -516,7 +516,7 @@ try {
     assert.equal(await page.locator('[data-testid="resource-flash"]').textContent(), "-1", `${v.tag}: loss label`);
     assert.deepEqual(errors, [], `${v.tag}: console errors`);
     console.log(`${v.tag} ${v.width}x${v.height}: fills ${RESOURCES.map((r) => cards[r].fill).join(" ")}; tabular hero counts, contrast ` +
-      RESOURCES.map((r) => ratio(parse(cards[r].color), parse(cards[r].fill)).toFixed(1)).join(" ") + "; zero cards stay opaque; 1 ring per change; 0 console errors");
+      RESOURCES.map((r) => ratio(parse(cards[r].color), parse(cards[r].fill)).toFixed(1)).join(" ") + "; zero cards stay opaque; 0 console errors");
     await page.waitForFunction(() => !document.querySelector('[data-testid="resource-flash"]'), null, { timeout: STEP_MS });
     await proveResourceMotion(page, v.tag);
     if (v.tag === "desk") {
