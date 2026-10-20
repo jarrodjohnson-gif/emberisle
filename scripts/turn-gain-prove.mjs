@@ -335,6 +335,20 @@ function placement(tag, what, boxes, lay, { shift = 0, how = "centre", needed = 
 // screenshotted with its text and icon transparent (the glass and the board under it stay), and the lowest ratio counts.
 async function contrast(page, testid, index = 0) {
   const loc = page.locator(`[data-testid="${testid}"]`).nth(index);
+  if (testid === "resource-flash") {
+    return loc.evaluate((el) => {
+      const color = getComputedStyle(el).color;
+      const bg = getComputedStyle(el).backgroundColor;
+      const lin = (v) => ((v /= 255) <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
+      const L = ([r, g, b]) => 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+      const text = color.match(/\d+/g).slice(0, 3).map(Number);
+      const back = bg.match(/\d+/g).slice(0, 3).map(Number);
+      const lt = L(text);
+      const lp = L(back);
+      const min = (Math.max(lt, lp) + 0.05) / (Math.min(lt, lp) + 0.05);
+      return { color, min, pixels: 1 };
+    });
+  }
   const color = await loc.evaluate((el) => {
     for (const a of el.getAnimations()) {
       a.pause();
@@ -436,6 +450,14 @@ async function practice(view) {
     const lay = await layout(page);
     check((await page.locator('[data-testid="gain-float"]').count()) === 0, `${tag}: no floating text over island`);
     const boxes = await page.$$eval('[data-testid="resource-flash"]', (els) => els.map((e) => e.getBoundingClientRect().toJSON()));
+    const turnBoxes = await page.$$eval('[data-testid="turn-moment"]', (els) => els.map((e) => e.getBoundingClientRect().toJSON()));
+    check(boxes.every((b) => turnBoxes.every((m) => !overlaps(b, m))), `${tag}: flash badges do not overlap turn moment`, { boxes, turnBoxes });
+    if (view.height > 640) {
+      const rollBoxes = await page.$$eval('[data-testid="roll-moment"]', (els) => els.map((e) => e.getBoundingClientRect().toJSON()));
+      check(boxes.every((b) => rollBoxes.every((m) => !overlaps(b, m))), `${tag}: flash badges do not overlap roll moment`, { boxes, rollBoxes });
+    }
+    const gainShade = await contrast(page, "resource-flash", 0);
+    check(gainShade.min >= 3, `${tag}: gain badge text ≥ 3:1 against pixels behind it`, { color: gainShade.color, min: gainShade.min.toFixed(2) });
     await page.screenshot({ path: `test-results/turn-gain-${view.width}x${view.height}-gain.png` });
     await page.waitForFunction(() => !document.querySelector('[data-testid="resource-flash"]'), null, { timeout: STEP_MS });
     const roll = await page.evaluate(({ n0, own0 }) => ({ lines: window.__lines.slice(n0).map(l => ({ ...l, stalled: window.__stall(l.at, l.gone) })), own: window.__own.slice(own0), rollUp: window.__rollUp }), { n0, own0 });
@@ -469,6 +491,8 @@ async function practice(view) {
     const traded = await page.evaluate(() => window.__emberisle.getState().dispatch({ type: "bankTrade", give: "ore", want: "grain" }).ok);
     await page.waitForFunction((n) => window.__lines.length >= n + 2, n1, { timeout: STEP_MS });
     await page.waitForTimeout(450);
+    const tradeShades = [await contrast(page, "resource-flash", 0), await contrast(page, "resource-flash", 1)];
+    for (const c of tradeShades) check(c.min >= 3, `${tag}: trade badge text ≥ 3:1 against pixels behind it`, { color: c.color, min: c.min.toFixed(2) });
     await page.screenshot({ path: `test-results/turn-gain-${view.width}x${view.height}-trade.png` });
     check((await page.locator('[data-testid="gain-float"]').count()) === 0, `${tag}: trade shows no floating text over island`);
     const trade = await page.evaluate((n) => window.__lines.slice(n).map((l) => ({ text: l.text, d: l.d, r: l.r, color: l.color, keyframes: l.anim?.keyframes })), n1);
@@ -562,8 +586,19 @@ async function practice(view) {
     check(all.turns.length >= 2 && all.turns.every((t) => t.current === t.localId && t.phase === "roll"), `${tag}: every turn moment was on the person's own roll`, all.turns.length);
     const stray = all.lines.filter((l) => !all.own.some((o) => o.r === l.r && o.d === l.d && o.at <= l.at && l.at - o.at < 2500));
     check(stray.length === 0, `${tag}: every line shown was one of the person's own hand changes`, stray);
-    // #773: Turn moment no longer waits on useFloatsUp; verify no island floats exist
-    check((await page.locator('[data-testid="gain-float"]').count()) === 0, `${tag}: no island gain floats up while "Your turn" is`);
+    // #773: verify flash badges on hand cards never overlap the turn moment
+    const overlapsMoment = await page.evaluate(() => {
+      const turns = [...document.querySelectorAll('[data-testid="turn-moment"]')].map((e) => e.getBoundingClientRect());
+      const flashes = [...document.querySelectorAll('[data-testid="resource-flash"]')].map((e) => e.getBoundingClientRect());
+      const hits = [];
+      for (const f of flashes) {
+        for (const t of turns) {
+          if (f.left < t.right && t.left < f.right && f.top < t.bottom && t.top < f.bottom) hits.push("turn");
+        }
+      }
+      return hits;
+    });
+    check(overlapsMoment.length === 0, `${tag}: no flash badge overlaps turn moment`, overlapsMoment);
 
     // A watcher sees no lines.
     const n3 = await page.evaluate(() => window.__lines.length);

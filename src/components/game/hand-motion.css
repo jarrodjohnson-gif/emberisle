@@ -18,11 +18,11 @@
 }
 
 .hand-resource-card-slot .hand-resource-flash {
-  top: auto !important;
-  bottom: calc(100% + 2px) !important;
-  left: 50% !important;
-  right: auto !important;
-  transform: translateX(-50%) !important;
+  top: auto;
+  bottom: calc(100% + 2px);
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
   background-color: #fff7e5;
   border-width: 1.5px;
   border-style: solid;

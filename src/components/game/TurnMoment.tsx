@@ -7,7 +7,6 @@
 import { useEffect, useState } from "react";
 import { SeatDot } from "@/components/game/SeatDot";
 import { useMomentUp } from "@/components/game/Dice";
-import { useFloatsUp } from "@/components/game/GainFloats";
 import { useStage } from "@/components/game/stage";
 import { useGame } from "@/lib/game/store";
 
@@ -20,7 +19,6 @@ export function TurnMoment() {
   const localId = useGame((s) => s.localId);
   const spectator = useGame((s) => s.spectator);
   const rolling = useMomentUp((s) => s.up);
-  const floating = useFloatsUp((s) => s.up);
   const synced = useGame((s) => s.synced);
   const actor = mode === "hotseat" ? state?.current : localId;
   const key = state && !spectator && state.phase === "roll" && state.current === actor ? `${state.seed}|${state.turn}|${state.current}` : null;
@@ -43,7 +41,7 @@ export function TurnMoment() {
     // The turn moved on, or the seat rolled, before the centre was free: the moment is no longer news.
     if (due && due !== key) setDue(null);
     if (up && up !== key) setUp(null);
-    if (due && !rolling && !floating && !up) {
+    if (due && !rolling && !up) {
       setUp(due);
       setDue(null);
     }

@@ -96,7 +96,6 @@ body {
 }
 .build-ready { animation: build-ready 320ms var(--ease-snap); }
 
-/* A good gained or lost rises about 20 px and fades over 1.8 s, readable for well over 1.2 s (GainFloats.tsx). */
 /* The turn moment comes in over --duration-base with --ease-out, holds, and leaves over about 0.7x of that (TurnMoment.tsx). */
 @keyframes turn-moment {
   0% { opacity: 0; transform: scale(0.96); animation-timing-function: var(--ease-snap); }
@@ -281,12 +280,6 @@ body {
 @keyframes resource-flash {
   0%, 80% { opacity: 1; transform: none; }
   100% { opacity: 0; transform: translateY(-4px); }
-}
-@keyframes gain-float {
-  0% { opacity: 0; transform: translateY(6px); }
-  10% { opacity: 1; transform: none; }
-  80% { opacity: 1; transform: none; }
-  100% { opacity: 0; transform: translateY(-8px); }
 }
 @media (min-width: 768px) and (pointer: fine) {
   .goods-card { height: 52px; padding-top: 0; }
