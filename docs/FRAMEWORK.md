@@ -105,7 +105,7 @@ UI, visual or tricky multi-file work, sonnet for well-specified mechanical steps
 model, or a subagent on it. If it can do neither, it says in the PR which model it used. The Reviewer uses a different model from the one that built the PR.
 
 Add `needs: jarrod` (his decision, account, or money) or `needs: gaming-pc` (Unreal, or the 3.6 GB art pack)
-on its own line when an AI cannot finish it. Those issues still get Research done by any AI. Design follows the Design rule in `docs/LANES.md`.
+on its own line when an AI cannot finish it. Those issues still get Research done by any AI. Design follows "Big design work" in `docs/LANES.md`.
 
 ## 6. Statuses
 
