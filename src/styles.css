@@ -353,3 +353,14 @@ input, select, textarea { border-color: var(--control-line); }
   100% { box-shadow: 0 0 0 0 rgb(36 109 114 / 0); transform: scale(1); }
 }
 @media (prefers-reduced-motion: reduce) { .my-number-lit { animation: none; } }
+
+/* #829: the My fortunes cue. A count badge while a fortune can be played, and one soft glow when the turn starts (the ring is
+   keyed on the turn in Hud.tsx). Under reduced motion the ring is a still outline instead. */
+[data-testid="fortunes-button"][data-playable]::after { content: attr(data-playable); margin-left: 6px; display: inline-flex; min-width: 20px; height: 20px; align-items: center; justify-content: center; border-radius: 999px; padding: 0 6px; font-size: 12px; font-weight: 700; background: var(--color-accent); color: #fff; }
+.fortune-cue-glow { position: absolute; inset: 0; border-radius: inherit; pointer-events: none; animation: fortune-cue-glow 1600ms ease-out 1 both; }
+@keyframes fortune-cue-glow {
+  0% { box-shadow: 0 0 0 0 rgb(36 109 114 / 0.6); }
+  40% { box-shadow: 0 0 0 6px rgb(36 109 114 / 0.35); }
+  100% { box-shadow: 0 0 0 0 rgb(36 109 114 / 0); }
+}
+@media (prefers-reduced-motion: reduce) { .fortune-cue-glow { animation: none; box-shadow: 0 0 0 2px var(--color-accent); } }

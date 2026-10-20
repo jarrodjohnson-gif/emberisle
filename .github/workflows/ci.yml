@@ -209,6 +209,8 @@ jobs:
         run: npm run fortune-count-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
         run: npm run fortune-tray-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
+        run: npm run fortune-cue-prove
       - if: always()
         uses: actions/upload-artifact@v4
         with:

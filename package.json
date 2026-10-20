@@ -77,6 +77,7 @@
     "longest-army-prove": "node scripts/longest-army-prove.mjs",
     "public-score-prove": "node --import ./server/register.mjs scripts/public-score-prove.mjs",
     "fortune-tray-prove": "node scripts/fortune-tray-prove.mjs",
+    "fortune-cue-prove": "node scripts/fortune-cue-prove.mjs",
     "fortune-count-prove": "node --import ./server/register.mjs scripts/fortune-count-prove.mjs",
     "save-prove": "node --import ./server/register.mjs server/save-prove.mjs",
     "build-ready-prove": "node --import ./server/register.mjs scripts/build-ready-prove.mjs",

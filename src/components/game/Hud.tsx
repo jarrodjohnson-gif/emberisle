@@ -26,7 +26,7 @@ import { TradeButton } from "@/components/game/TradeButton";
 import { CostChips, hintLine, needLine, priceLabel, shortfall, type Price } from "@/components/game/BuildCost";
 import { useEscapeDisarm } from "@/components/game/escape-disarm";
 import { COST, RESOURCES, type BuildMode, type GameState, type PlayerState } from "@/lib/game/types";
-import { legalCities, legalRoads, legalSettle, totalVP } from "@/lib/game/rules";
+import { legalCities, legalRoads, legalSettle, playable, totalVP } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
 import { LazyBoundary, preloadOnIdle } from "@/lib/lazy";
 import { useViewport } from "@/lib/viewport";
@@ -217,14 +217,18 @@ export function Hud() {
   // #776: "My fortunes · N" opens the tray of held cards. It shows only while a fortune is held or armed, so a fresh hand has no
   // such button; the deck count lives on the Fortune buy tile.
   const deckLeft = state.deckLeft ?? state.deck.length;
+  // #829: on my own turn, the fortunes I can play now (points are never played; ones bought this turn wait). The glow ring is keyed
+  // on the turn, so it runs once when the turn starts and no later state change restarts it.
+  const playableNow = mine && !spectator ? (["knight", "road", "plenty", "monopoly"] as const).reduce((n, k) => n + Math.max(0, playable(me, k)), 0) : 0;
   const fortunes = showFortunes ? (
     <Button
       ref={fortunesButton}
       size="sm"
       data-testid="fortunes-button"
       data-deck-left={deckLeft}
-      aria-label={`My fortunes, ${heldNow} held`}
-      className="h-11 min-w-11 px-3 text-sm tabular-nums"
+      data-playable={playableNow > 0 ? playableNow : undefined}
+      aria-label={`My fortunes, ${heldNow} held${playableNow > 0 ? `, ${playableNow} playable` : ""}`}
+      className="relative h-11 min-w-11 px-3 text-sm tabular-nums"
       aria-pressed={fortunesOpen || fortuneArmed}
       aria-expanded={fortunesOpen}
       variant={fortunesOpen || fortuneArmed ? "primary" : "secondary"}
@@ -233,6 +237,7 @@ export function Hud() {
         setFortunesOpen((o) => !o);
       }}
     >
+      {playableNow > 0 && <span key={`${state.turn}|${state.current}`} aria-hidden="true" data-testid="fortune-cue-glow" className="fortune-cue-glow" />}
       My fortunes · {heldNow}
     </Button>
   ) : null;
