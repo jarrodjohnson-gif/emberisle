@@ -458,6 +458,30 @@ async function open(v, reducedMotion) {
       }
       return animation;
     };
+    // A slow runner (software GL under CI load) can take longer than a cue's 2500 ms between finding a cue and reading it,
+    // and the cue is gone by then. While __holdCues is set, the hand's 2500 ms end-of-cue timer waits for __releaseCues(),
+    // so a measured cue stays on the page until the proof has read it. clearTimeout still cancels a held timer.
+    const later = window.setTimeout.bind(window);
+    const clear = window.clearTimeout.bind(window);
+    const held = new Map();
+    window.setTimeout = function (fn, ms, ...args) {
+      if (window.__holdCues && ms === 2500 && typeof fn === "function") {
+        const id = later(() => {}, 2_147_000_000);
+        held.set(id, () => fn(...args));
+        return id;
+      }
+      return later(fn, ms, ...args);
+    };
+    window.clearTimeout = function (id) {
+      held.delete(id);
+      return clear(id);
+    };
+    window.__releaseCues = () => {
+      window.__holdCues = false;
+      const due = [...held.entries()];
+      held.clear();
+      for (const [id, fn] of due) { clear(id); fn(); }
+    };
   });
   const errors = [];
   page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
@@ -559,6 +583,7 @@ try {
         }
       }).observe(document.body, { childList: true, subtree: true });
     });
+    await page.evaluate(() => (window.__holdCues = true));
     await setHand(page, { timber: 5 });
     await page.waitForFunction(() => window.__cues.length === 2, null, { timeout: STEP_MS });
     await page.evaluate(() => { const g = window.__emberisle; g.setState({ state: structuredClone(g.getState().state) }); });
@@ -610,7 +635,9 @@ try {
     const lit = await centring(page, `${v.tag} gain`, { lit: true });
     await page.screenshot({ path: `test-results/hand-cards-${v.tag}.png` });
     await page.evaluate(() => { for (const an of document.querySelector('[data-testid="resource-timber"]').getAnimations({ subtree: true })) an.play(); });
+    await page.evaluate(() => window.__releaseCues());
     await page.waitForFunction(() => !document.querySelector('[data-testid="resource-flash"]'), null, { timeout: STEP_MS });
+    await page.evaluate(() => (window.__holdCues = true));
     await setHand(page, { timber: 4 });
     await page.waitForFunction(() => window.__cues.length === 4, null, { timeout: STEP_MS });
     const loss = await page.evaluate(() => {
@@ -618,6 +645,7 @@ try {
       const tab = card.querySelector('[data-testid="resource-flash"]');
       const t = tab.getBoundingClientRect();
       const c = card.getBoundingClientRect();
+      window.__releaseCues();
       return { cues: window.__cues.slice(2), lit: !!card.querySelector('[data-testid="goods-lit"]'), font: [getComputedStyle(tab).fontSize, getComputedStyle(tab).fontWeight], h: t.height, above: c.top - t.top, text: tab.textContent, bg: getComputedStyle(tab).backgroundColor, color: getComputedStyle(tab).color, edge: getComputedStyle(tab).boxShadow, off: t.left + t.width / 2 - (c.left + c.width / 2) };
     });
     assert.deepEqual(loss.cues.map((q) => [q.what, q.on]), [["goods-lost", "resource-timber"], ["resource-flash", "resource-timber"]], `${v.tag}: one loss, one red ring and one tab on timber`);
@@ -679,6 +707,7 @@ try {
     for (const c of rest) assert.deepEqual([c.w, c.h, c.tray], [139.2, 52, 60], `deskshort ${c.r}: card is main's 139.2x52 in a 60 px tray (${JSON.stringify(c)})`);
     const during = [];
     for (const hand of [{ timber: 5 }, { wool: 1 }]) {
+      await ds.page.evaluate(() => (window.__holdCues = true));
       await setHand(ds.page, hand);
       await ds.page.waitForSelector('[data-testid="resource-flash"]', { timeout: STEP_MS });
       // Hold every cue and the card's own motion at 1200 ms, inside the hold, and read the boxes and the tab there.
@@ -694,7 +723,7 @@ try {
       assert.equal(tab.top, true, `deskshort ${JSON.stringify(hand)}: nothing clips or covers the tab`);
       assert.ok(tab.font === "14px" && Math.abs(tab.h - 22) <= 0.5, `deskshort ${JSON.stringify(hand)}: the tab is 14 px text, 22 px tall (${JSON.stringify(tab)})`);
       during.push(await box());
-      await ds.page.evaluate(() => { for (const a of document.querySelector(".goods-tray").getAnimations({ subtree: true })) a.play(); });
+      await ds.page.evaluate(() => { for (const a of document.querySelector(".goods-tray").getAnimations({ subtree: true })) a.play(); window.__releaseCues(); });
       await ds.page.waitForFunction(() => !document.querySelector('[data-testid="resource-flash"]'), null, { timeout: STEP_MS });
     }
     const after = await box();
