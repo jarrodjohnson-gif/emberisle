@@ -662,6 +662,47 @@ try {
   assert.deepEqual(rm.errors, [], "reduced motion: console errors");
   console.log(`reduced short touch: fill and tab run ${dur.join(", ")}; card motion removed; the highlight and +N/−N stand still`);
   await rm.ctx.close();
+  // A wide, short window with a fine pointer (1000x450): the non-phone layout in the short range keeps main's card and tray
+  // (139.2x52 in a 60 px tray), and the box stays that size before, during and after a gain and a loss. The tab hangs from
+  // the tray's top edge there, so the scrolling HUD stack does not clip it.
+  {
+    const ds = await open({ tag: "deskshort", width: 1000, height: 450 }, false);
+    const box = () => ds.page.evaluate(() => ["timber", "clay", "wool", "grain", "ore"].map((r) => {
+      const card = document.querySelector(`[data-testid="resource-${r}"]`);
+      const t = card.closest(".goods-tray").getBoundingClientRect();
+      return { r, w: Math.round(card.getBoundingClientRect().width * 10) / 10, h: card.offsetHeight, tray: Math.round(t.height * 10) / 10 };
+    }));
+    await setHand(ds.page, { timber: 3, clay: 0, wool: 2, grain: 1, ore: 0 });
+    await ds.page.waitForFunction(() => document.querySelector('[data-testid="resource-wool"]')?.textContent.includes("2"), null, { timeout: STEP_MS });
+    await ds.page.waitForFunction(() => !document.querySelector('[data-testid="resource-flash"], [data-testid="goods-lit"], [data-testid="goods-lost"]'), null, { timeout: STEP_MS });
+    const rest = await box();
+    for (const c of rest) assert.deepEqual([c.w, c.h, c.tray], [139.2, 52, 60], `deskshort ${c.r}: card is main's 139.2x52 in a 60 px tray (${JSON.stringify(c)})`);
+    const during = [];
+    for (const hand of [{ timber: 5 }, { wool: 1 }]) {
+      await setHand(ds.page, hand);
+      await ds.page.waitForSelector('[data-testid="resource-flash"]', { timeout: STEP_MS });
+      // Hold every cue and the card's own motion at 1200 ms, inside the hold, and read the boxes and the tab there.
+      const tab = await ds.page.evaluate(() => {
+        for (const a of document.querySelector(".goods-tray").getAnimations({ subtree: true })) { a.pause(); a.currentTime = 1200; }
+        const t = document.querySelector('[data-testid="resource-flash"]');
+        const r = t.getBoundingClientRect();
+        t.style.pointerEvents = "auto";
+        const hit = document.elementFromPoint(r.left + r.width / 2, r.top + 1);
+        t.style.pointerEvents = "";
+        return { top: hit === t || t.contains(hit), font: getComputedStyle(t).fontSize, h: r.height };
+      });
+      assert.equal(tab.top, true, `deskshort ${JSON.stringify(hand)}: nothing clips or covers the tab`);
+      assert.ok(tab.font === "14px" && Math.abs(tab.h - 22) <= 0.5, `deskshort ${JSON.stringify(hand)}: the tab is 14 px text, 22 px tall (${JSON.stringify(tab)})`);
+      during.push(await box());
+      await ds.page.evaluate(() => { for (const a of document.querySelector(".goods-tray").getAnimations({ subtree: true })) a.play(); });
+      await ds.page.waitForFunction(() => !document.querySelector('[data-testid="resource-flash"]'), null, { timeout: STEP_MS });
+    }
+    const after = await box();
+    for (const b of [...during, after]) assert.deepEqual(b, rest, `deskshort: the card and tray boxes are fixed during and after a cue (${JSON.stringify(b)})`);
+    assert.deepEqual(ds.errors, [], "deskshort: console errors");
+    console.log(`deskshort 1000x450 fine pointer: cards ${rest[0].w}x${rest[0].h} in a ${rest[0].tray} px tray, unchanged through a gain and a loss; tab unclipped`);
+    await ds.ctx.close();
+  }
   console.log("hand-cards-prove: ok");
 } catch (e) {
   console.error(e);

@@ -136,12 +136,14 @@ function ResourceCard({ resource, count, flash, offer, showRates, buildMode, own
   const label = flash ? (gain ? `+${flash.delta}` : String(flash.delta)) : null;
   // Restart on the event ID, even for two gains in the same millisecond. The card itself stays mounted,
   // preserving its footprint and future focus/long-press state; only the decorative cues are keyed.
-  // A gain lifts the card by the tray's --goods-lift (hand-motion.css: 6 px, or 4 px where the tray has less room) and a
+  // A gain lifts the card by the tray's --goods-lift (hand-motion.css: 6 px, less where the tray has less room) and a
   // loss dips it 2 px, for as long as the fill holds; both settle as it fades.
   useLayoutEffect(() => {
     if (!flash || !card.current) return;
     const preference = matchMedia("(prefers-reduced-motion: reduce)");
-    const y = flash.delta > 0 ? -(parseFloat(getComputedStyle(card.current).getPropertyValue("--goods-lift")) || 6) : 2;
+    // 0 is a real value (a short wide window has no room to lift); only a missing property falls back to 6 px.
+    const lift = parseFloat(getComputedStyle(card.current).getPropertyValue("--goods-lift"));
+    const y = flash.delta > 0 ? -(Number.isNaN(lift) ? 6 : lift) : 2;
     const animation = preference.matches
       ? null
       : card.current.animate(

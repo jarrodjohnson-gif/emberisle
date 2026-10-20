@@ -8,12 +8,8 @@
 .goods-grain { --c: var(--grain); --deep: var(--grain-side); --on: var(--grain-on); --sym: var(--grain-side); }
 .goods-ore { --c: var(--ore); --deep: var(--ore-side); --on: var(--ore-on); --sym: var(--ore); }
 
-/* How far a gain lifts the card (Hand.tsx reads it): it stays inside the tray's padding, 8 px, or 4 px when short. Where the
-   hand is the first row of the HUD stack (a wide screen), the stack scrolls and would clip the 18 px the tab stands above the
-   card, so the tray keeps 22 px at the top for the tab and the 4 px lift. The padding is fixed, so the box is the same size
-   before, during and after a cue, and the map never refits for one. */
+/* How far a gain lifts the card (Hand.tsx reads it): it stays inside the tray's padding, 8 px, or 4 px when short. */
 .goods-tray { --goods-lift: 6px; }
-.hud-stack > [data-testid="hand-dock"]:first-child > .goods-tray { --goods-lift: 4px; padding-top: 22px; padding-bottom: 4px; }
 .goods-card, .goods-lit { display: flex; flex-direction: column; align-items: center; padding-top: 4px; }
 .goods-card {
   --fleece: var(--paper);
@@ -27,8 +23,12 @@
 .goods-empty { background: var(--ground); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 22%, var(--ground)), var(--shadow-control); }
 .goods-empty > .goods-icon { color: color-mix(in srgb, var(--sym) 55%, var(--ground)); }
 
-@media (min-width: 768px) and (pointer: fine) {
-  /* 1.3x the upright card: 88x80, a 22 px symbol, a 30 px count and a 12 px name. The row centres under the board. */
+@media (min-width: 768px) and (pointer: fine) and (min-height: 481px) {
+  /* 1.3x the upright card: 88x80, a 22 px symbol, a 30 px count and a 12 px name. The row centres under the board. The hand
+     is the first row of the HUD stack here, which scrolls and would clip the 18 px the tab stands above the card, so the
+     tray keeps 22 px at the top for the tab and the 4 px lift. The padding is fixed, so the box is the same size before,
+     during and after a cue, and the map never refits for one. */
+  .hud-stack > [data-testid="hand-dock"]:first-child > .goods-tray { --goods-lift: 4px; padding-top: 22px; padding-bottom: 4px; }
   .goods-tray { justify-content: center; }
   .hand-resource-card-slot { flex: 0 0 88px; }
   .goods-card { height: 80px; }
@@ -44,6 +44,16 @@
   .goods-card, .goods-lit { justify-content: flex-start; padding-top: 4px; }
   .goods-icon { width: 14px; height: 14px; }
   .goods-label { display: none; }
+}
+@media (min-width: 768px) and (pointer: fine) and (max-height: 480px) {
+  /* A wide, short window with a fine pointer keeps main's 52 px card and 4 px tray padding, so its footprint does not move.
+     The hand heads the scrolling HUD stack with only 4 px above it, so the card does not lift there, and the tab hangs from
+     the tray's top edge over the card's top, where it covers the symbol while the cue lasts. The count stays clear below. */
+  .goods-card { height: 52px; }
+  .goods-card, .goods-lit { padding-top: 8px; }
+  .hud-stack > [data-testid="hand-dock"]:first-child > .goods-tray { --goods-lift: 0px; }
+  .hud-stack > [data-testid="hand-dock"]:first-child .goods-tab[data-sign="+"] { top: -4px; }
+  .hud-stack > [data-testid="hand-dock"]:first-child .goods-tab[data-sign="-"] { top: -4px; }
 }
 
 /* The cue: a gain fills the card with its colour (a copy of the face on top, so only opacity changes), a loss rings it in
