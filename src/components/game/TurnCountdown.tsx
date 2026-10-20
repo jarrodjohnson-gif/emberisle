@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useGame } from "@/lib/game/store";
 import { play } from "@/lib/sound";
 import { cn } from "@/lib/utils";
@@ -15,7 +16,7 @@ const clock = (secs: number) => `${Math.floor(secs / 60)}:${String(secs % 60).pa
 
 // The host's turn timer (#344) counted down for the seat it waits on. Online only: practice and hotseat have no timer.
 // The number ticks silently; screen readers hear one polite line when the window reaches its last ten seconds.
-export function TurnCountdown() {
+export function TurnCountdown({ header }: { header?: HTMLElement | null }) {
   const timer = useGame((s) => s.turnTimer);
   const state = useGame((s) => s.state);
   const mode = useGame((s) => s.mode);
@@ -88,12 +89,12 @@ export function TurnCountdown() {
   }, [urgent, who, secs, said]);
 
   if (mode !== "online" || !state || state.phase === "over") return null;
-  if (left === null || left > SHOW_MS || !who) return <div className="-mb-2 flex items-center gap-1">{extensionVote}</div>;
-  return (
+  const visible = left !== null && left <= SHOW_MS && who;
+  // Keep one cue owner mounted while its DOM moves between the desktop header and the phone stack.
+  const content = (
     <>
-      {/* The hand has 8px top padding; share that space so 44px vote controls fit the existing HUD hole. */}
-      <div className="-mb-2 flex items-center gap-1">
-      <p
+      <div className={cn("flex items-center gap-1", !header && "-mb-2")}>
+      {visible ? <p
         key={at}
         data-testid="turn-countdown"
         data-player={player!.id}
@@ -105,12 +106,13 @@ export function TurnCountdown() {
         )}
       >
         {who}: {clock(secs!)}
-      </p>
+      </p> : null}
       {extensionVote}
       </div>
-      <p aria-live="polite" className="sr-only" data-testid="turn-countdown-live">
+      {visible ? <p aria-live="polite" className="sr-only" data-testid="turn-countdown-live">
         {said}
-      </p>
+      </p> : null}
     </>
   );
+  return header ? createPortal(content, header) : content;
 }

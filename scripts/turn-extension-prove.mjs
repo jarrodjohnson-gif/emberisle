@@ -39,6 +39,49 @@ const view = (page) => page.evaluate(() => {
   const s = window.__emberisle.getState();
   return { deadline: s.turnTimer?.deadline, serverNow: s.turnTimer?.host, extension: s.net?.getTurnExtension(), current: s.state?.current, seq: s.state?.seq };
 });
+async function desktopHeader(page, label) {
+  await page.waitForFunction(() => document.querySelector('header [data-testid="turn-countdown"]') && window.__isle?.lastState && !window.__isle.refitDue && !window.__isle.glide);
+  const geometry = await page.evaluate(() => {
+    const issues = [];
+    const instruction = document.querySelector('header [data-testid="turn-banner"]');
+    const text = document.createRange();
+    text.selectNodeContents(instruction);
+    const box = instruction.getBoundingClientRect();
+    const ink = text.getBoundingClientRect();
+    if (getComputedStyle(instruction).textOverflow === "ellipsis" || instruction.scrollWidth > instruction.clientWidth || ink.left < box.left || ink.right > box.right || ink.top < box.top || ink.bottom > box.bottom) issues.push("instruction clipped");
+    const nodes = [instruction, ...document.querySelectorAll('[data-testid="turn-countdown"], [data-testid="turn-extension-ask"], [data-testid="turn-extension-vote"]')];
+    const overlaps = (a, b) => Math.min(a.right, b.right) - Math.max(a.left, b.left) > 0.5 && Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 0.5;
+    const blockers = [...document.querySelectorAll('[data-testid^="rail-"], section[aria-label="Table chat"]')].map((el) => el.getBoundingClientRect());
+    for (const [i, el] of nodes.entries()) {
+      const r = el.getBoundingClientRect();
+      const name = el.getAttribute("data-testid");
+      if (!el.closest("header")) issues.push(`${name} left header`);
+      if (r.left < 0 || r.top < 0 || r.right > innerWidth || r.bottom > innerHeight) issues.push(`${name} outside viewport`);
+      if (nodes.slice(i + 1).some((other) => overlaps(r, other.getBoundingClientRect()))) issues.push(`${name} overlaps another header item`);
+      if (blockers.some((other) => overlaps(r, other))) issues.push(`${name} overlaps seats or chat`);
+    }
+    for (const el of document.querySelectorAll('[data-testid="turn-countdown"], [data-testid="turn-extension-vote"] button, [data-testid="turn-extension-ask"]')) {
+      const r = el.getBoundingClientRect();
+      for (const [x, y] of [[r.left + 10, r.top + 10], [r.right - 10, r.top + 10], [r.left + 10, r.bottom - 10], [r.right - 10, r.bottom - 10], [r.x + r.width / 2, r.y + r.height / 2]]) {
+        if (!el.contains(document.elementFromPoint(x, y))) issues.push(`${el.getAttribute("data-testid") ?? el.textContent} covered`);
+      }
+    }
+    const bottom = window.__isle.liveInsets().bottom;
+    if (bottom > 220) issues.push(`bottom ${bottom} exceeds 220`);
+    if (document.querySelectorAll('[data-testid="turn-countdown"]').length !== 1 || document.querySelectorAll('[data-testid="turn-countdown-live"]').length !== 1) issues.push("duplicate countdown owner");
+    return { issues, bottom, instruction: instruction.textContent };
+  });
+  assert.deepEqual(geometry.issues, [], `${label}: ${JSON.stringify(geometry)}`);
+  console.log(`header ${label}: ${JSON.stringify(geometry)}`);
+}
+async function headerWithChat(page, label) {
+  await desktopHeader(page, `${label}, chat closed`);
+  await page.getByRole("button", { name: /^Open chat/ }).click();
+  await page.locator('section[aria-label="Table chat"]').waitFor();
+  await desktopHeader(page, `${label}, chat open`);
+  await page.getByRole("button", { name: "Minimize chat" }).click();
+  await page.locator('section[aria-label="Table chat"]').waitFor({ state: "hidden" });
+}
 try {
   host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], { cwd: new URL("../server/", import.meta.url), env: { ...process.env, PORT: "0", ROOMS_DIR: dir, TURN_MS: "25000", GRACE_MS: "120000", HOLD_MS: "180000", ACT_CAP: "1000", ACT_RATE: "1000" } });
   host.stderr.on("data", (d) => { hostErrors += d; });
@@ -71,9 +114,14 @@ try {
   assert.equal(initial.extension.target, "p0");
   assert.equal(await a.getByTestId("turn-extension-ask").textContent(), "Ask for more time");
   assert.equal(await b.getByTestId("turn-extension-ask").textContent(), "Give Ember more time");
+  await headerWithChat(a, "timed player, vote hidden");
+  mkdirSync("test-results", { recursive: true });
+  await a.screenshot({ path: "test-results/turn-extension-desktop-vote-hidden.png" });
   await a.getByTestId("turn-extension-ask").click();
   await Promise.all(tabs.map((p) => p.getByTestId("turn-extension-vote").waitFor()));
   assert.equal(await a.getByRole("button", { name: "Yes, more time" }).count(), 0, "target cannot vote");
+  await headerWithChat(a, "timed player, vote shown");
+  await a.screenshot({ path: "test-results/turn-extension-desktop-vote.png" });
   const pending = await view(b);
   assert.deepEqual(pending.extension.vote.voters, ["p1"], "away seat excluded");
   for (const [i, page] of tabs.entries()) {
@@ -113,6 +161,7 @@ try {
   // The viewport event reaches React after setViewportSize resolves. Wait for its desktop HUD first.
   await b.waitForFunction(() => innerWidth === 1280 && document.querySelector('header [data-testid="turn-banner"]') && !document.querySelector('[data-hud-stack] [data-testid="turn-banner"]') && !document.querySelector(".hud-utilities"));
   await b.waitForFunction(() => window.__isle?.lastState && !window.__isle.refitDue && !window.__isle.glide);
+  await headerWithChat(b, "desktop voter");
   const desktopVoter = await b.evaluate(() => {
     const hole = window.__isle.insets();
     const live = window.__isle.liveInsets();
@@ -169,7 +218,7 @@ try {
   await b.getByTestId("turn-extension-result").filter({ hasText: "More time vote did not pass." }).waitFor();
   assert.equal(await b.getByTestId("turn-extension-ask").count(), 0, "failed vote consumes request");
   assert.deepEqual(errors, []);
-  console.log("PASS turn-extension-prove: two tabs, 1280x720 and 390x844; connected electorate, target excluded, 44px unobscured vote controls, phone safe area and board fit, desktop voter fit; exact +60000ms, normal later action window/reload retention, once per turn, next-turn requester auto-yes, cancelled-vote recovery and No result; zero page errors");
+  console.log("PASS turn-extension-prove: two tabs, 1280x720 and 390x844; connected electorate, target excluded, 44px unobscured vote controls, phone safe area and board fit, desktop voter fit; one countdown owner, full desktop instruction and unobscured header with chat open/closed, timed-player fit with vote shown/hidden; exact +60000ms, normal later action window/reload retention, once per turn, next-turn requester auto-yes, cancelled-vote recovery and No result; zero page errors");
 } finally {
   await browser?.close();
   await vite?.close();
