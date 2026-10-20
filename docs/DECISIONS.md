@@ -20,6 +20,10 @@ The review desk adds a line whenever Jarrod decides something.
 | 2026-10-19 | Fog of war: option A, neighbour veil. Stays `prio:p2`. | [#842](https://github.com/jarrodjohnson-gif/emberisle/issues/842#issuecomment-6257818228) |
 | 2026-10-19 | Expansions: option 1, Beacon docks and New fortunes. Lobby toggles, off by default. Stays `prio:p2`. | [#843](https://github.com/jarrodjohnson-gif/emberisle/issues/843#issuecomment-6257818532) |
 | 2026-10-19 | Size budgets check each PR's growth against main, not one shared total. | [#868](https://github.com/jarrodjohnson-gif/emberisle/issues/868) |
+| 2026-10-20 | Win table on portrait phones uses short column names (Out, Str, Path, Army, Hid). | [PR #878](https://github.com/jarrodjohnson-gif/emberisle/pull/878) |
+| 2026-10-20 | Pale-seat legal markers use the teal glow (mock 2). | [PR #879](https://github.com/jarrodjohnson-gif/emberisle/pull/879) |
+| 2026-10-20 | Emote badge returns in game only, not in the lobby. It waits for the chat audit, which may place emotes elsewhere. | [PR #847](https://github.com/jarrodjohnson-gif/emberisle/pull/847) |
+| 2026-10-20 | Goods cards: rebuild #773 from a new mock. Gemini's #888 and the first mock both looked generic. Numbers must be centred. | [PR #888](https://github.com/jarrodjohnson-gif/emberisle/pull/888) |
 | 2026-10-19 | Gemini takes defined work: UI audits, minor design fixes, small coding, docs. It never builds a new look. Split such an issue. | Jarrod, in chat; [`docs/LANES.md`](LANES.md) |
 | 2026-10-19 | People get first dibs on table trades. Bots wait 8 s before a Yes. Bots keep their normal game speed. Counter-offers come later. | [#850](https://github.com/jarrodjohnson-gif/emberisle/issues/850) |
 | 2026-10-19 | Open tables: anyone with the link can join, alongside code tables. | [#833](https://github.com/jarrodjohnson-gif/emberisle/issues/833) |
