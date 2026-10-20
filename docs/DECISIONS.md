@@ -6,6 +6,10 @@ The review desk adds a line whenever Jarrod decides something.
 
 | Date | Decision | Where |
 |---|---|---|
+| 2026-10-20 | Win table on portrait phones uses short column names (Out, Str, Path, Army, Hid). | [PR #878](https://github.com/jarrodjohnson-gif/emberisle/pull/878) |
+| 2026-10-20 | Pale-seat legal markers use the teal glow (mock 2). | [PR #879](https://github.com/jarrodjohnson-gif/emberisle/pull/879) |
+| 2026-10-20 | Emote badge returns in game only, not in the lobby. It waits for the chat audit, which may place emotes elsewhere. | [PR #847](https://github.com/jarrodjohnson-gif/emberisle/pull/847) |
+| 2026-10-20 | Goods cards: rebuild #773 from a new mock. Gemini's #888 and the first mock both looked generic. Numbers must be centred. | [PR #888](https://github.com/jarrodjohnson-gif/emberisle/pull/888) |
 | 2026-10-19 | Dock goods piles at 2.5x, as merged in #874. Approved from screenshots. | [PR #874](https://github.com/jarrodjohnson-gif/emberisle/pull/874) |
 | 2026-10-19 | Owned dock rates: no text labels on the board, because they take too much screen. Use a small marker on the building instead. | [PR #881](https://github.com/jarrodjohnson-gif/emberisle/pull/881) |
 | 2026-10-19 | Emote badge pinned to the seat (#847) rejected: in the lobby it covers the name. Emotes stay as they were. | [PR #847](https://github.com/jarrodjohnson-gif/emberisle/pull/847) |
