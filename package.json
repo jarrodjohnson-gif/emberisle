@@ -74,6 +74,7 @@
     "make-icons": "node scripts/make-icons.mjs",
     "board-look-prove": "node scripts/board-look-prove.mjs",
     "seat-rail-prove": "node scripts/seat-rail-prove.mjs",
+    "longest-army-prove": "node scripts/longest-army-prove.mjs",
     "public-score-prove": "node --import ./server/register.mjs scripts/public-score-prove.mjs",
     "fortune-tray-prove": "node scripts/fortune-tray-prove.mjs",
     "fortune-count-prove": "node --import ./server/register.mjs scripts/fortune-count-prove.mjs",
