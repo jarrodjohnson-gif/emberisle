@@ -37,7 +37,7 @@ const until = async (check, label, ms = 15000) => {
 };
 const view = (page) => page.evaluate(() => {
   const s = window.__emberisle.getState();
-  return { deadline: s.turnTimer?.deadline, extension: s.net?.getTurnExtension(), current: s.state?.current, seq: s.state?.seq };
+  return { deadline: s.turnTimer?.deadline, serverNow: s.turnTimer?.host, extension: s.net?.getTurnExtension(), current: s.state?.current, seq: s.state?.seq };
 });
 try {
   host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], { cwd: new URL("../server/", import.meta.url), env: { ...process.env, PORT: "0", ROOMS_DIR: dir, TURN_MS: "25000", GRACE_MS: "120000", HOLD_MS: "180000", ACT_CAP: "1000", ACT_RATE: "1000" } });
@@ -132,8 +132,7 @@ try {
   await a.evaluate(() => window.__emberisle.getState().net.act({ type: "bankTrade", give: "timber", want: "grain" }));
   await until(async () => (await view(a)).seq > initial.seq, "accepted bank trade");
   const rearmed = await view(a);
-  const actionNow = await a.evaluate(() => Date.now() + window.__emberisle.getState().clockSkew);
-  assert(rearmed.deadline <= actionNow + 25000 && rearmed.deadline > actionNow + 24000, "later actions get the normal 25-second window");
+  assert(rearmed.deadline <= rearmed.serverNow + 25000 && rearmed.deadline > rearmed.serverNow + 24000, `later actions get the normal 25-second window: ${JSON.stringify(rearmed)}`);
   assert(rearmed.extension.used, "the approved request remains spent after the action");
   await b.reload();
   await b.getByTestId("turn-extension-result").waitFor();
