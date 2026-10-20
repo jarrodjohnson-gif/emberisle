@@ -251,7 +251,7 @@ body {
 @media (max-width: 767px), (pointer: coarse) {
   .hud-actions { flex-direction: column; align-items: stretch; }
   .build-grid { flex: none; }
-  .action-utilities { justify-content: space-between; }
+  .action-utilities { justify-content: flex-start; }
   .trade-dock { grid-template-columns: minmax(0, 1fr); }
   .trade-summary { min-height: 32px; }
   .trade-answers { width: 100%; }
@@ -271,8 +271,8 @@ body {
 .table-log[hidden] { display: none; }
 .action-utilities { flex-wrap: wrap; }
 /* #625: the main phase's action row wraps by rule, not by font metrics, so the fit can declare its height (TRAY_WRAP_MAX in
-   mobile-fit.ts is the 400 here): up to 400 px wide the end row takes a line of its own, above it the row never wraps. */
-@media (orientation: portrait) and (max-width: 400px) { .action-utilities > .tray-end { flex: 1 0 100%; } }
+   mobile-fit.ts is the 400 here): up to 400 px wide the end row takes a line of its own while My fortunes is held (#776), and shares Trade's line otherwise; above 400 the row never wraps. */
+@media (orientation: portrait) and (max-width: 400px) { .action-utilities > .tray-end { flex: 1 0 100%; } .action-utilities:not([data-fortunes]) > .tray-end { flex: 0 1 auto; } }
 @media (orientation: portrait) and (min-width: 401px) { .action-utilities { flex-wrap: nowrap; } .action-utilities > * { min-width: 0; } }
 @media (max-height: 480px) {
   .build-tile > span:first-child { font-size: 10.5px; letter-spacing: -0.2px; }
