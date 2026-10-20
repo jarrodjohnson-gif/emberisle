@@ -1,24 +1,70 @@
-/* Keep the hand delta readable when the painted card has dimmed to zero. Its sibling overlay does
-   not inherit the card's opacity. Card movement uses WAAPI and never changes this slot's dimensions. */
-@keyframes hand-resource-flash-fade {
-  0%, 65% { opacity: 1; }
+/* #773: the goods card, V1 Column (docs/design/goods-cards-v1). One axis: the symbol, the count and the name stack on the
+   card's centre line. Each good sets its colour (--c), its side colour (--deep), the text on a full fill (--on) and the
+   symbol at rest (--sym). The footprint is today's: 62 px tall, 52 px with a fine pointer on a wide screen, 44 px short. */
+.goods-timber { --c: var(--timber); --deep: var(--timber-side); --on: var(--timber-on); --sym: var(--timber); }
+.goods-clay { --c: var(--clay); --deep: var(--clay-side); --on: var(--clay-on); --sym: var(--clay); }
+.goods-wool { --c: var(--wool); --deep: var(--wool-side); --on: var(--wool-on); --sym: var(--wool-side); }
+.goods-grain { --c: var(--grain); --deep: var(--grain-side); --on: var(--grain-on); --sym: var(--grain-side); }
+.goods-ore { --c: var(--ore); --deep: var(--ore-side); --on: var(--ore-on); --sym: var(--ore); }
+
+/* How far a gain lifts the card (Hand.tsx reads it): it stays inside the tray's padding, 8 px, or 4 px when short. Where the
+   hand is the first row of the HUD stack (a wide screen), the stack scrolls and would clip the tab, so the tray takes 14 px
+   of its 16 px padding at the top. Same height, so the map never refits. */
+.goods-tray { --goods-lift: 6px; }
+.hud-stack > [data-testid="hand-dock"]:first-child > .goods-tray { --goods-lift: 4px; padding-top: 14px; padding-bottom: 2px; }
+.goods-card, .goods-lit { display: flex; flex-direction: column; align-items: center; padding-top: 4px; }
+.goods-card {
+  --fleece: var(--paper);
+  background: var(--paper); color: var(--ink);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 42%, var(--paper)), var(--shadow-control);
+}
+.goods-icon { display: block; flex: none; width: 18px; height: 18px; color: var(--sym); }
+/* The trailing letter-spacing is paid back as padding, so each box is as wide as its ink and centres exactly. */
+.goods-count { display: block; margin-top: 1px; padding-right: 0.02em; font: 700 24px/24px var(--font-numeral); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.goods-label { display: block; margin-top: 1px; padding-left: 0.08em; font: 700 10px/12px var(--font-ui); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.goods-empty { background: var(--ground); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 22%, var(--ground)), var(--shadow-control); }
+.goods-empty > .goods-icon { color: color-mix(in srgb, var(--sym) 55%, var(--ground)); }
+
+@media (min-width: 768px) and (pointer: fine) {
+  .goods-card { height: 52px; }
+  .goods-card, .goods-lit { padding-top: 2px; }
+  .goods-count { margin-top: 0; line-height: 20px; }
+  .goods-label { margin-top: 0; }
+}
+@media (max-height: 480px) {
+  /* Short: no room for the name (the card's title and label still carry it), so the symbol and count centre in 44 px. */
+  .goods-tray { --goods-lift: 4px; }
+  .goods-card, .goods-lit { justify-content: center; padding-top: 0; }
+  .goods-icon { width: 14px; height: 14px; }
+  .goods-label { display: none; }
+}
+
+/* The cue: a gain fills the card with its colour (a copy of the face on top, so only opacity changes), a loss rings it in
+   red, and a tab carries +N or −N out of the top edge. Each holds 2200 ms (FLASH_MS) and fades over 300 ms. The card's lift
+   or dip is WAAPI (Hand.tsx). Under reduced motion every animation is off (styles.css), so the cue stands still. */
+@keyframes goods-cue {
+  0% { opacity: 0; }
+  4.8%, 88% { opacity: 1; }
   100% { opacity: 0; }
 }
-
-@media (max-height: 480px) {
-  /* The compact card reserves its upper left for the delta and its lower row for icon/count.
-     Fade in place so the label stays inside the existing 4px hand padding throughout its lifetime. */
-  .hand-resource-card-slot > .hand-resource-flash {
-    animation-name: hand-resource-flash-fade !important;
-  }
+.goods-lit, .goods-lost, .goods-tab { position: absolute; pointer-events: none; animation: goods-cue 2500ms var(--ease-out) both; }
+.goods-lit, .goods-lost { inset: 0; border-radius: inherit; }
+.goods-lit {
+  justify-content: inherit;
+  --fleece: color-mix(in srgb, #fff 88%, var(--c));
+  background: var(--c); color: var(--on);
+  box-shadow: inset 0 0 0 1px var(--deep), 0 6px 12px rgb(24 51 45 / 0.22);
 }
-
-@media (prefers-reduced-motion: reduce) {
-  /* Outrank the global [style*="resource-flash"] 1ms override for this hand's numeric cue only. */
-  .hand-resource-card-slot > .hand-resource-flash[style*="resource-flash"] {
-    animation: none !important;
-  }
+.goods-lit > .goods-icon { color: var(--on); }
+.goods-lit > .goods-label { color: var(--on); opacity: 0.9; }
+.goods-lost { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--loss) 55%, var(--paper)); }
+.goods-tab {
+  left: 0; right: 0; top: -10px; z-index: 1; width: max-content; min-width: 28px; height: 14px; margin: 0 auto; padding: 0 6px;
+  border-radius: 5px 5px 0 0; text-align: center; white-space: nowrap;
+  font: 700 11.5px/14px var(--font-numeral); font-variant-numeric: tabular-nums;
 }
+.goods-tab[data-sign="+"] { background: var(--deep); color: #fff; }
+.goods-tab[data-sign="-"] { top: -11px; background: var(--paper); color: var(--loss); box-shadow: inset 0 0 0 1px var(--loss); }
 
 /* #820: an open offer lifts the cards it changes and edges them, red for what this seat gives and green for what it gets.
    The -N / +N label carries the same meaning, so colour is not the only cue. The slot moves; the card keeps its own

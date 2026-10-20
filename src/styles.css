@@ -77,12 +77,6 @@ body {
   to { transform: scale(1); }
 }
 
-/* #436: the hand card's gain/loss cue is a 2 px white ring that pulses once; the fill carries the resource. */
-@keyframes resource-ring {
-  0% { box-shadow: 0 0 0 2px rgba(255, 255, 255, 1); opacity: 1; }
-  100% { box-shadow: 0 0 0 2px rgba(255, 255, 255, 0); opacity: 0; }
-}
-
 /* #439: the hand rises in over --duration-base. Opacity and translateY only: the layout is already final when it mounts. */
 @keyframes hand-in {
   from { opacity: 0; transform: translateY(8px); }
@@ -96,7 +90,6 @@ body {
 }
 .build-ready { animation: build-ready 320ms var(--ease-snap); }
 
-/* A good gained or lost rises about 20 px and fades over 1.8 s, readable for well over 1.2 s (GainFloats.tsx). */
 /* The turn moment comes in over --duration-base with --ease-out, holds, and leaves over about 0.7x of that (TurnMoment.tsx). */
 @keyframes turn-moment {
   0% { opacity: 0; transform: scale(0.96); animation-timing-function: var(--ease-snap); }
@@ -213,10 +206,6 @@ body {
 .turn-instruction-own { color: var(--table-ink); }
 .turn-instruction-own::before { content: ''; display: inline-block; width: 6px; height: 6px; background: var(--accent); border-radius: 50%; margin-right: 8px; vertical-align: 2px; }
 .goods-tray { background: transparent; }
-.goods-card { box-shadow: var(--shadow-control); padding-top: 12px; }
-.goods-value [data-testid='hand-count'] { line-height: 28px; }
-.goods-empty { background: var(--ground); }
-.goods-empty .goods-icon { color: var(--muted) !important; }
 .hud-actions { display: flex; align-items: center; gap: 4px; padding: 4px; background: var(--table); border-radius: var(--radius-control); }
 .build-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; flex: 1; min-width: 0; }
 .build-tile { width: 100%; background: var(--table-raised); color: var(--table-ink); border-color: var(--table-line); }
@@ -244,7 +233,6 @@ body {
 .trade-short { color: var(--accent); }
 .trade-dock button:focus-visible { outline-color: var(--ink); }
 .turn-stamp { box-shadow: var(--shadow-control); font-weight: 750; letter-spacing: -0.8px; border-bottom: 3px solid var(--table); }
-.gain-stamp { box-shadow: var(--shadow-control); }
 .title-cover { box-shadow: var(--shadow-sheet); }
 .title-wordmark { font-weight: 800; font-size: 64px; line-height: 64px; letter-spacing: -2px; }
 .seat-settings { margin-top: 16px; border-top: 1px solid var(--line); padding-top: 4px; }
@@ -277,21 +265,7 @@ body {
   *, *::before, *::after { animation: none !important; transition: none !important; }
   .build-ready { transform: none; }
 }
-/* Cue opacity holds until the exit, rather than fading before it can be read. */
-@keyframes resource-flash {
-  0%, 80% { opacity: 1; transform: none; }
-  100% { opacity: 0; transform: translateY(-4px); }
-}
-@keyframes gain-float {
-  0% { opacity: 0; transform: translateY(6px); }
-  10% { opacity: 1; transform: none; }
-  80% { opacity: 1; transform: none; }
-  100% { opacity: 0; transform: translateY(-8px); }
-}
 @media (min-width: 768px) and (pointer: fine) {
-  .goods-card { height: 52px; padding-top: 0; }
-  .goods-card .goods-icon { position: static; width: 18px; height: 18px; }
-  .goods-card [data-testid='hand-count'] { font-size: 24px; line-height: 28px; }
   .trade-dock { padding: 6px 8px; }
 }
 .table-log[hidden] { display: none; }
@@ -301,9 +275,6 @@ body {
 @media (orientation: portrait) and (max-width: 400px) { .action-utilities > .tray-end { flex: 1 0 100%; } }
 @media (orientation: portrait) and (min-width: 401px) { .action-utilities { flex-wrap: nowrap; } .action-utilities > * { min-width: 0; } }
 @media (max-height: 480px) {
-  .goods-card { flex-direction: column; gap: 0; padding: 12px 0 0; }
-  .goods-card .goods-icon { width: 12px; height: 12px; }
-  .goods-card [data-testid='hand-count'] { font-size: 24px; line-height: 28px; }
   .build-tile > span:first-child { font-size: 10.5px; letter-spacing: -0.2px; }
 }
 @media (max-height: 480px) {
@@ -317,10 +288,6 @@ body {
 .hud-header button:focus-visible, .hud-utilities button:focus-visible { outline-color: var(--ink); }
 .hud-stack > .trade-dock { position: sticky; bottom: 0; z-index: 12; }
 .hud-stack { scroll-padding-bottom: calc(var(--trade-height, 0px) + 52px); }
-.hand-resource-flash { top: 0; right: 0; font-size: 11px; line-height: 12px; padding-left: 3px; padding-right: 3px; }
-@media (max-height: 480px) {
-  .hand-resource-flash { font-size: 10px; line-height: 10px; }
-}
 input, select, textarea { border-color: var(--control-line); }
 @media (pointer: coarse) {
   input, select, textarea { font-size: 16px !important; }
