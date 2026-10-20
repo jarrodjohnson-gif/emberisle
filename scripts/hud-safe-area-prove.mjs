@@ -15,7 +15,7 @@
 // the topmost element at its centre, with no scrolling needed; Tab never lands a control behind the pinned row, the "more
 // below" cue meets the row, and the open fortune tray covers the row inside the safe area.
 // The chat dock and sheet are Chat.tsx: their controls are measured and listed, and fail the run unless CHAT_PENDING is true
-// (#475 left it true; #477 moved Quick reactions and Open chat into the top row, so they pass).
+// (#475 left it true; #477 moved the chat buttons into the top row, so they pass; #899 left Open chat as the one button).
 // Run: npm run hud-safe-area-prove. Port from VITE_PORT, default 8475. Screenshots to test-results/hud-safe-*.png.
 import { spawn } from "node:child_process";
 import { once } from "node:events";

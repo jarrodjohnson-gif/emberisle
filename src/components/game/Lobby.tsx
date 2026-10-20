@@ -33,7 +33,7 @@ function OwnName({ seat, compact }: { seat: Seat; compact: boolean }) {
           done.current = false;
           setDraft(seat.name);
         }}
-        className={cn("min-w-0 cursor-pointer truncate text-left text-sm underline decoration-dotted underline-offset-4", compact ? "" : "-my-1 min-h-11")}
+        className={cn("min-w-0 cursor-pointer truncate text-left text-sm underline decoration-dotted underline-offset-4", compact ? "" : "-my-1 min-h-11 min-w-11")}
       >
         {seat.name}
       </button>
@@ -116,7 +116,7 @@ export function Lobby() {
       <div
         className={cn(
           "lobby-cover flex min-h-0 flex-1 flex-col overflow-y-auto rounded-[20px] border border-white/50 bg-surface p-5 backdrop-blur-md sm:p-6",
-          landscape && "grid grid-cols-2 grid-rows-[auto_1fr] gap-x-5 px-4 py-3 sm:px-4 sm:py-3",
+          landscape && "grid grid-cols-[minmax(0,3fr)_minmax(max-content,2fr)] grid-rows-[auto_1fr] gap-x-5 px-4 py-3 sm:px-4 sm:py-3",
         )}
       >
         <div className={cn(landscape && "col-start-2 row-start-1")}>
@@ -145,14 +145,16 @@ export function Lobby() {
         <CopyFallback state={copied} label={copied?.what === "link" ? "Join link" : "Table code"} className="mt-2" />
         </div>
         <div className={cn(landscape ? "col-start-1 row-span-2 row-start-1 flex min-h-0 flex-col" : "contents")}>
-        <ul className={cn("flex flex-col", sheet ? "gap-1.5" : "gap-2", landscape ? "shrink-0" : sheet ? "mt-3" : "mt-4 shrink-0")}>
+        {/* #899: held sideways the seats are a 2x2 grid in the wider left column, so the chat under them has the height for the
+            Sounds & stickers tab (nine 44 px chips and the presets). */}
+        <ul className={cn(landscape ? "grid grid-cols-2" : "flex flex-col", sheet ? "gap-1.5" : "gap-2", landscape ? "shrink-0 gap-1.5" : sheet ? "mt-3" : "mt-4 shrink-0")}>
           {[0, 1, 2, 3].map((i) => {
             const s = seats[i];
             return (
-              <li key={i} data-testid={s ? `lobby-seat-${s.id}` : undefined} className={cn("relative flex items-center gap-3 rounded-[12px] border border-border bg-surface px-3", sheet ? "min-h-11 py-0" : landscape ? "py-1" : "min-h-10 py-0")}>
+              <li key={i} data-testid={s ? `lobby-seat-${s.id}` : undefined} className={cn("relative flex items-center gap-3 rounded-[12px] border border-border bg-surface px-3", sheet ? "min-h-11 py-0" : landscape ? "min-w-0 gap-2 py-1" : "min-h-10 py-0")}>
                 <SeatDot color={s?.color ?? "transparent"} className="size-3 shrink-0 ring-1 ring-inset ring-black/25" />
-                <span data-testid="lobby-name" className="flex min-w-0 items-center text-sm">
-                  {s && s.id === seatId ? <OwnName seat={s} compact={!sheet} /> : <span className="truncate">{s ? s.name : "Empty"}</span>}
+                <span data-testid="lobby-name" className="flex min-w-0 items-center overflow-hidden text-sm">
+                  {s && s.id === seatId ? <OwnName seat={s} compact={desk} /> : <span className="truncate">{s ? s.name : "Empty"}</span>}
                   {s?.host ? <span data-testid="host-tag" className="shrink-0 whitespace-pre text-xs text-muted"> · host</span> : null}
                 </span>
                 {/* #899: the seat's bubble hangs mid-row, in the room between the name and the status, so it never covers the name. */}

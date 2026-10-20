@@ -115,7 +115,9 @@ useGame.subscribe((s, p) => {
   // The store's chat handler appends one line to the old array; a welcome replaces the array with the history.
   const last = s.chat.at(-1);
   if (s.chat !== p.chat && last && last !== p.chat.at(-1) && s.chat.at(-2) === p.chat.at(-1)) {
-    const arrived = new Map(useTalk.getState().arrived);
+    // Only ids still in the chat (the store keeps the last 50), so the map never outgrows it.
+    const ids = new Set(s.chat.map((line) => line.id));
+    const arrived = new Map([...useTalk.getState().arrived].filter(([id]) => ids.has(id)));
     arrived.set(last.id, Date.now());
     useTalk.setState({ arrived });
   }

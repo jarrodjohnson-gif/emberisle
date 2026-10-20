@@ -9,7 +9,8 @@ import type { ChatLine, Reaction } from "@/lib/net/table";
 import { play, SOUNDBOARD } from "@/lib/sound";
 import { cn } from "@/lib/utils";
 
-// Tab 2: all nine sound chips in a wrapping grid (14 px labels, no sideways scroll), then the stickers.
+// Tab 2: all nine sound chips in a wrapping grid (14 px labels, no sideways scroll), the text presets, then the stickers.
+const PRESETS = ["gg", "nice roll", "your turn", "one sec", "ty"];
 export function SoundsTab({ dense }: { dense?: boolean }) {
   const resting = useTalk((s) => s.resting);
   const cooling = useTalk((s) => s.cooling);
@@ -32,6 +33,19 @@ export function SoundsTab({ dense }: { dense?: boolean }) {
           >
             <Volume2 aria-hidden="true" className="size-4" />
             {label}
+          </button>
+        ))}
+      </div>
+      {/* Owner decision (#918): the text presets stay, as one row under the sounds. A tap sends the line as a chat message. */}
+      <div role="group" aria-label="Quick lines" data-testid="presets" className="mt-1 flex flex-wrap gap-1">
+        {PRESETS.map((line) => (
+          <button
+            key={line}
+            type="button"
+            onClick={() => useGame.getState().sendChat(line)}
+            className={cn("inline-flex min-w-11 shrink-0 cursor-pointer items-center justify-center rounded-control bg-glass px-2 text-sm text-zinc-700 hover:text-zinc-900", dense ? "h-8" : "h-11")}
+          >
+            {line}
           </button>
         ))}
       </div>
@@ -60,7 +74,7 @@ export function SoundsTab({ dense }: { dense?: boolean }) {
 }
 
 type Bubble =
-  | { kind: "react"; key: string; at: number; reaction: Reaction; count: number; target?: string }
+  | { kind: "react"; key: string; at: number; reaction: Reaction; count: number }
   | { kind: "sound" | "chat"; key: string; at: number; line: ChatLine };
 
 // Where the bubble hangs. Rail: to the right of the desktop card, over the sea. Strip: under the phone cell, below the hidden
@@ -137,7 +151,6 @@ function SeatBubble({ bubble, at }: { bubble: Bubble; at: BubbleAt }) {
                 ×{bubble.count}
               </span>
             ) : null}
-            {bubble.target ? <span className="max-w-28 break-words text-caption font-medium text-zinc-700">→ {bubble.target}</span> : null}
           </>
         ) : bubble.kind === "sound" ? (
           <span className="flex flex-col">
@@ -160,11 +173,9 @@ function SeatBubble({ bubble, at }: { bubble: Bubble; at: BubbleAt }) {
 export function SeatBubbles({ by, id, at }: { by: "player" | "seat"; id: string; at: BubbleAt }) {
   const reactions = useGame((s) => s.reactions);
   const chat = useGame((s) => s.chat);
-  const seats = useGame((s) => s.seats);
   const code = useGame((s) => s.code);
   const me = useGame((s) => s.seatId);
   const chatClosed = useGame((s) => s.screen === "play" && !s.chatOpen);
-  const players = useGame((s) => s.state?.players);
   const arrived = useTalk((s) => s.arrived);
   const { muted } = useMutedSeats(code);
   const [, tick] = useState(0);
@@ -175,15 +186,12 @@ export function SeatBubbles({ by, id, at }: { by: "player" | "seat"; id: string;
   for (const reaction of reactions) {
     if (!mine(reaction)) continue;
     if (!QUICK_REACTIONS.some((item) => item.emoji === reaction.emote) && !Object.hasOwn(EMOTES, reaction.emote)) continue;
-    const key = JSON.stringify([reaction.emote, reaction.to]);
+    const key = reaction.emote;
     const previous = grouped.get(key);
     grouped.delete(key);
     grouped.set(key, { reaction, count: (previous?.count ?? 0) + 1 });
   }
-  const bubbles: Bubble[] = [...grouped].map(([key, { reaction, count }]) => {
-    const to = reaction.to ? (seats.find((seat) => seat.id === reaction.to) ?? players?.find((player) => player.id === reaction.to))?.name : undefined;
-    return { kind: "react", key: `r${key}`, at: reactArrived.get(reaction) ?? 0, reaction, count, target: to };
-  });
+  const bubbles: Bubble[] = [...grouped].map(([key, { reaction, count }]) => ({ kind: "react", key: `r${key}`, at: reactArrived.get(reaction) ?? 0, reaction, count }));
   const live: Bubble[] = [];
   for (const line of chat) {
     const t = arrived.get(line.id);
