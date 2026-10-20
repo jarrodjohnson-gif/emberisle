@@ -6,7 +6,7 @@ The review desk adds a line whenever Jarrod decides something.
 
 | Date | Decision | Where |
 |---|---|---|
-| 2026-10-20 | Design work needs Opus 5.5 or stronger. Lesser models build only to an approved mock. | Jarrod, in chat; [`docs/LANES.md`](LANES.md) |
+| 2026-10-20 | Big design work needs Opus 5.5 or stronger. Any model may do small, defined design, like an icon swap. | Jarrod, in chat; [`docs/LANES.md`](LANES.md) |
 | 2026-10-20 | Seat tallies use the lucide Route and Swords icons, not emoji. | [PR #859](https://github.com/jarrodjohnson-gif/emberisle/pull/859) |
 | 2026-10-20 | Chat is one button with two tabs: Chat with 6 emoji, then Sounds & stickers. Reactions and closed-chat messages bubble at the seat ([`design/chat-c`](design/chat-c/README.md)). | Vote page |
 | 2026-10-20 | Goods cards use V1 Column ([`design/goods-cards-v1`](design/goods-cards-v1/README.md)). | [#773](https://github.com/jarrodjohnson-gif/emberisle/issues/773) |
