@@ -41,13 +41,13 @@ try {
       await page.waitForFunction(() => window.__emberisle.getState().state);
 
       // Set the current seat's fortunes; `newTurn` moves the turn counter on (enough to remount the cue).
-      const craft = ({ hidden, bought = {}, newTurn = false, ore = 2 }) =>
-        page.evaluate(({ hidden, bought, newTurn, ore }) => {
+      const craft = ({ hidden, bought = {}, newTurn = false, ore = 2, phase = "main", playedCard = false }) =>
+        page.evaluate(({ hidden, bought, newTurn, ore, phase, playedCard }) => {
           const g = window.__emberisle;
           const st = structuredClone(g.getState().state);
           const me = st.players.find((p) => p.id === st.current);
-          st.phase = "main";
-          st.playedCard = false;
+          st.phase = phase;
+          st.playedCard = playedCard;
           st.dice = [3, 4];
           if (newTurn) st.turn += 1;
           me.resources = { timber: 2, clay: 2, wool: 2, grain: 2, ore };
@@ -55,7 +55,7 @@ try {
           me.boughtThisTurn = { knight: 0, road: 0, plenty: 0, monopoly: 0, vp: 0, ...bought };
           st.seq += 1;
           g.setState({ state: st, buildMode: "none", roadPicks: [], pendingSteal: null, pendingPlace: null, error: null });
-        }, { hidden, bought, newTurn, ore });
+        }, { hidden, bought, newTurn, ore, phase, playedCard });
       const button = page.getByTestId("fortunes-button");
       const glow = page.getByTestId("fortune-cue-glow");
       const badge = () => button.evaluate((el) => ({ attr: el.dataset.playable ?? null, content: getComputedStyle(el, "::after").content }));
@@ -92,6 +92,15 @@ try {
         const after = await marked();
         assert.equal(after.cue, 1, `${tag}: the ring was replaced by a state change`);
         assert.deepEqual(after.starts, before, `${tag}: the animation restarted on a state change`);
+        // A phase change in the same turn (roll to main, a 7's robber and back) remounts the button; the glow must not replay.
+        for (const phase of ["roll", "main", "robber", "discard", "main"]) {
+          await craft({ hidden: { knight: 1, vp: 1 }, phase });
+          await page.waitForTimeout(150);
+          if (await button.count()) {
+            const now = await glow.evaluate((el) => el.getAnimations().map((a) => a.startTime));
+            assert.ok(now.every((t) => before.includes(t)), `${tag}: the glow replayed on ${phase}: ${JSON.stringify(now)} vs ${JSON.stringify(before)}`);
+          }
+        }
       }
 
       // Bought this turn: no badge, no glow, and the bought one is not counted.
@@ -101,6 +110,11 @@ try {
       assert.equal(b.attr, null, `${tag}: no badge for a fortune bought this turn`);
       assert.equal(await glow.count(), 0, `${tag}: no glow for a fortune bought this turn`);
       assert.doesNotMatch(await button.getAttribute("aria-label"), /playable/);
+      // A fortune already played this turn: nothing more can be played, so no badge and no ring.
+      await craft({ hidden: { knight: 1, plenty: 1 }, playedCard: true });
+      await button.waitFor({ timeout: STEP_MS });
+      assert.equal((await badge()).attr, null, `${tag}: no badge once a fortune was played this turn`);
+      assert.equal(await glow.count(), 0, `${tag}: no ring once a fortune was played this turn`);
       await craft({ hidden: { knight: 2, vp: 1 }, bought: { knight: 1, vp: 1 } });
       assert.equal((await badge()).attr, "1", `${tag}: only the fortune held since before counts`);
 

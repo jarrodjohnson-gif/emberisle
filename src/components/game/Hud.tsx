@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Dices,
   Home,
@@ -161,6 +161,14 @@ export function Hud() {
   const fortunesButton = useRef<HTMLButtonElement>(null);
   const turnKey = state ? `${state.turn}|${state.current}|${state.phase}` : "";
   useEffect(() => setFortunesOpen(false), [turnKey]);
+  // #829: the cue glows once per turn. The button is rendered in more than one place (roll, main, robber), so a phase change
+  // remounts it; a ring that mounts for a turn whose glow already started is marked done and does not animate again.
+  const cueKey = state ? `${state.turn}|${state.current}` : "";
+  const glowed = useRef("");
+  const cueRing = useCallback((el: HTMLSpanElement | null) => {
+    if (!el) return;
+    if (glowed.current === cueKey) el.dataset.done = "1";
+  }, [cueKey]);
   const actor = mode === "hotseat" ? (state?.current ?? "") : localId;
   const me = state ? (state.players.find((p) => p.id === actor) ?? state.players[0]!) : null;
   // #776: My fortunes leaves with the last held fortune; when that drops focus to the page, End turn takes it.
@@ -219,7 +227,7 @@ export function Hud() {
   const deckLeft = state.deckLeft ?? state.deck.length;
   // #829: on my own turn, the fortunes I can play now (points are never played; ones bought this turn wait). The glow ring is keyed
   // on the turn, so it runs once when the turn starts and no later state change restarts it.
-  const playableNow = mine && !spectator ? (["knight", "road", "plenty", "monopoly"] as const).reduce((n, k) => n + Math.max(0, playable(me, k)), 0) : 0;
+  const playableNow = mine && !spectator && !state.playedCard ? (["knight", "road", "plenty", "monopoly"] as const).reduce((n, k) => n + Math.max(0, playable(me, k)), 0) : 0;
   const fortunes = showFortunes ? (
     <Button
       ref={fortunesButton}
@@ -237,7 +245,7 @@ export function Hud() {
         setFortunesOpen((o) => !o);
       }}
     >
-      {playableNow > 0 && <span key={`${state.turn}|${state.current}`} aria-hidden="true" data-testid="fortune-cue-glow" className="fortune-cue-glow" />}
+      {playableNow > 0 && <span key={cueKey} ref={cueRing} onAnimationStart={() => (glowed.current = cueKey)} aria-hidden="true" data-testid="fortune-cue-glow" className="fortune-cue-glow" />}
       My fortunes · {heldNow}
     </Button>
   ) : null;
