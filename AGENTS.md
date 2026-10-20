@@ -5,6 +5,7 @@
 - Rules: [`docs/FRAMEWORK.md`](docs/FRAMEWORK.md)
 - Picking work: [`docs/LANES.md`](docs/LANES.md)
 - Helpers: [`docs/HELPERS.md`](docs/HELPERS.md)
+- Review desk: [`docs/DESK.md`](docs/DESK.md), with live state in issue [#916](https://github.com/jarrodjohnson-gif/emberisle/issues/916)
 - Owner decisions: [`docs/DECISIONS.md`](docs/DECISIONS.md) (read before you design or build)
 - Feature designs: [`docs/design/`](docs/design/)
 - Game rules: [`README.md`](README.md)

@@ -6,6 +6,8 @@ The review desk adds a line whenever Jarrod decides something.
 
 | Date | Decision | Where |
 |---|---|---|
+| 2026-10-20 | Cursor and Josh's agent are full builders, with Opus available. Josh's agent follows AGENTS.md, not HELPERS.md. | Jarrod, in chat; [`docs/LANES.md`](LANES.md) |
+| 2026-10-20 | The desk's state lives in the Desk state issue (#916), and any session can take over from `docs/DESK.md`. | Jarrod, in chat; [`docs/DESK.md`](DESK.md) |
 | 2026-10-20 | Timer vote (#832): +60 s, and the cap rises too. Connected humans other than the timed player vote, and the requester counts as yes. One request per turn. | [#832](https://github.com/jarrodjohnson-gif/emberisle/issues/832) |
 | 2026-10-20 | Astra starts the HUD design pass (#903) now, on seats, build bar and menus. The hand and chat wait for #773 and #899. No cream in its directions. | [#903](https://github.com/jarrodjohnson-gif/emberisle/issues/903) |
 | 2026-10-20 | Big design work needs Opus 5.5 or stronger. Any model may do small, defined design, like an icon swap. | Jarrod, in chat; [`docs/LANES.md`](LANES.md) |
