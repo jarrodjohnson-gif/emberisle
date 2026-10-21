@@ -304,7 +304,7 @@ await prove('commands inside code fences are ignored', async () => {
 });
 await prove('owner /todo and /unclaim release the active claim', async () => {
   for (const release of ['/todo', '/unclaim']) {
-    const s = fixture([claim(1, 'A'), comment(2, release), claim(3, 'B')]);
+    const s = fixture([claim(1, 'A'), comment(2, `${release}\nreleased: A, 2026-10-16`), claim(3, 'B')]);
     await s.run(3);
     winner(s, 1);
     winner(s, 3);
@@ -317,6 +317,43 @@ await prove('owner /todo and /unclaim release the active claim', async () => {
   await helperUnclaim.run(2);
   assert.ok(helperUnclaim.has(2, '-1'));
   assert.ok(helperUnclaim.labels.includes('status:claimed'));
+});
+await prove('shared owner account cannot release a claim without its explicit target', async () => {
+  for (const command of ['/todo', '/unclaim']) {
+    for (const metadata of ['', '\nreleased: B, 2026-10-16',
+      '\n/claim\nclaimed: B, 2026-10-16\nreleased: A, 2026-10-16',
+      '\nclaimed: B, 2026-10-16\nreleased: A, 2026-10-16']) {
+      const s = fixture([claim(1, 'A'), comment(2, command + metadata), claim(3, 'C')]);
+      await s.run(2);
+      assert.deepEqual(s.labels, ['status:claimed']);
+      await s.run(3);
+      winner(s, 1, [3]);
+    }
+  }
+});
+await prove('fenced identities, pauses, releases and PR links never reserve or release', async () => {
+  for (const fence of ['```', '~~~', '````']) {
+    const block = lines => [fence, ...lines, fence].join('\n');
+    const mixed = fixture([comment(1, block(['claimed: A, 2026-10-16']) +
+      '\n/claim\nclaimed: B, 2026-10-16'), claim(2, 'B'), claim(3, 'C')]);
+    await mixed.run(3);
+    winner(mixed, 1, [3]);
+    winner(mixed, 2); // Proves B, rather than the fenced A, owns the claim.
+    for (const payload of [block(['paused: A, 2026-10-16']),
+      '/unclaim\n' + block(['released: A, 2026-10-16']),
+      '/in-review\n' + block(['pr: #700'])]) {
+      const s = fixture([claim(1, 'A'), comment(2, payload), claim(5, 'C')], {
+        prs: { 700: { number: 700, body: 'Refs #694', user: { login: owner }, closed_at: minute(4) } },
+      });
+      await s.run(5);
+      winner(s, 1, [5]);
+      assert.equal(s.calls.length, 0);
+    }
+  }
+  const nested = fixture([comment(1, '````\n```\n/claim\nclaimed: A, 2026-10-16\n```\n````'), claim(2, 'B')]);
+  await nested.run(2);
+  winner(nested, 2);
+  assert.equal(nested.has(1, '+1'), false);
 });
 await prove('same-agent re-claim is a no-op approval', async () => {
   const s = fixture([claim(1, 'A'), claim(2, 'A')]);

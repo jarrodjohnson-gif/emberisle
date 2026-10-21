@@ -4,7 +4,8 @@
 #   /todo  /backlog  /claim  /in-progress  /in-review
 #   /paused  /done  /failed  /canceled      -> swaps the status:* label
 #                                              (/done and /canceled: repo owner only)
-#   /unclaim                                -> owner only: release the active claim, status:todo
+#   /unclaim                                -> owner only: release the named claim, status:todo
+#   released: <active agent name>, YYYY-MM-DD -> required with /todo or /unclaim to release a claim
 #   /changed   /unchanged                   -> adds / removes mark:changed
 #   /label <name>   /unlabel <name>         -> any existing status:, mark:, lane:, model: label
 #                                              (repo owner only; helpers use the status commands)
@@ -64,17 +65,24 @@ jobs:
             const react = (content) =>
               github.rest.reactions.createForIssueComment({ owner, repo, comment_id, content });
 
-            // Skip command lines inside fenced code blocks (#703).
-            const commandLines = body => {
+            // Strip fenced examples before reading commands or reservation metadata.
+            const visibleBody = body => {
               const out = [];
-              let fenced = false;
+              let fence = null;
               for (const raw of (body || '').split('\n')) {
-                const s = raw.trim();
-                if (s.startsWith('```')) { fenced = !fenced; continue; }
-                if (!fenced && s.startsWith('/')) out.push(s);
+                const marker = raw.match(/^\s{0,3}(`{3,}|~{3,})(.*)$/);
+                if (fence) {
+                  if (marker && marker[1][0] === fence.char &&
+                      marker[1].length >= fence.length && !marker[2].trim()) fence = null;
+                  continue;
+                }
+                if (marker) { fence = { char: marker[1][0], length: marker[1].length }; continue; }
+                out.push(raw);
               }
-              return out;
+              return out.join('\n');
             };
+            const commandLines = body => visibleBody(body).split('\n')
+              .map(line => line.trim()).filter(line => line.startsWith('/'));
             const editedComment = c =>
               !!(c.updated_at && c.created_at && c.updated_at !== c.created_at);
 
@@ -98,7 +106,7 @@ jobs:
               { owner, repo, issue_number, per_page: 100 });
             const agentLine = (body, kind) => {
               // The date is the delimiter: agent names themselves can contain commas.
-              const match = (body || '').match(new RegExp(`^${kind}:\\s*(.+),\\s*\\d{4}-\\d{2}-\\d{2}\\s*$`, 'im'));
+              const match = visibleBody(body).match(new RegExp(`^${kind}:\\s*(.+),\\s*\\d{4}-\\d{2}-\\d{2}\\s*$`, 'im'));
               return match && match[1].trim();
             };
             const trusted = c => ALLOWED_USERS.includes(c.user?.login);
@@ -139,7 +147,7 @@ jobs:
             // PR closure events enter the replay at closure time, even if their workflow ran later.
             // Associate them when the pr: comment is encountered, rather than releasing from current state.
             for (const c of ordered) {
-              for (const match of (c.body || '').matchAll(/^pr:\s*#(\d+)\s*$/gim)) {
+              for (const match of visibleBody(c.body).matchAll(/^pr:\s*#(\d+)\s*$/gim)) {
                 const pr = await linkedPR(Number(match[1]));
                 if (pr && pr.user?.login === c.user.login) {
                   for (const closedAt of pr.claimClosedAt) {
@@ -199,21 +207,24 @@ jobs:
               const foreignAgent = active && ((name && name !== active.name) || (pauseName && pauseName !== active.name));
               const hadActive = !!active;
               const ownPause = pauseName && active?.name === pauseName;
-              if (ownPause) active = null;
-              // Owner /todo or /unclaim releases a stuck claim (#703).
-              const ownerRelease = c.user.login === owner &&
+              if (ownPause && !deniedClaim && !foreignAgent) active = null;
+              // Shared owner login is not an agent identity. Require an explicit target.
+              const releaseName = agentLine(c.body, 'released');
+              const ownerRelease = !deniedClaim && !foreignAgent && c.user.login === owner &&
+                (!active || releaseName === active.name) &&
                 cLines.some(l => ['/todo', '/unclaim'].includes(l.split(/\s+/)[0].toLowerCase()));
               if (ownerRelease) active = null;
               for (const line of cLines) {
                 const [raw, ...args] = line.split(/\s+/);
                 const cmd = raw.toLowerCase();
                 if (cmd === '/unclaim') {
-                  if (c.user.login !== owner) continue;
+                  if (!ownerRelease) continue;
                   applyReplayStatus('status:todo', c.user.login);
                   continue;
                 }
                 if (STATUS[cmd]) {
                   if (deniedClaim || foreignAgent) continue;
+                  if (cmd === '/todo' && hadActive && !ownerRelease) continue;
                   if (cmd === '/paused' && hadActive && !ownPause) continue;
                   applyReplayStatus(STATUS[cmd], c.user.login);
                 } else if (!deniedClaim && !foreignAgent && c.user.login === owner && (cmd === '/label' || cmd === '/unlabel')) {
@@ -229,7 +240,7 @@ jobs:
                 }
               }
               if (active && c.user.login === active.comment.user.login && !deniedClaim && (!name || name === active.name) && (!pauseName || pauseName === active.name)) {
-                for (const match of (c.body || '').matchAll(/^pr:\s*#(\d+)\s*$/gim)) {
+                for (const match of visibleBody(c.body).matchAll(/^pr:\s*#(\d+)\s*$/gim)) {
                   const pr = await linkedPR(Number(match[1]));
                   if (pr && pr.user?.login === c.user.login) active.prs.add(pr.number);
                 }
