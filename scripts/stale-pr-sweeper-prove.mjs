@@ -174,6 +174,35 @@ const lateDuplicate = fake([pr(1, { labels: [{ name: 'stale' }] })], [marker(6)]
 await run(lateDuplicate, { event: { ...reopenEvent, pull_request: { ...reopenEvent.pull_request, updated_at: new Date(now - 6 * DAY).toISOString() } } });
 assert.equal(lateDuplicate.writes().length, 0);
 ok('A4: a recent event retry completes label cleanup without erasing a later cycle warning');
+const newHead = fake([pr(1, { head: { sha: newer }, labels: [{ name: 'stale' }] })], [marker(30)]);
+await run(newHead);
+assert(!newHead.pulls[0].labels.some(label => label.name === 'stale'));
+assert.equal(activity(newHead.comments).sha, newer);
+assert.equal(newHead.pulls[0].state, 'open');
+await run(newHead, { event: { action: 'synchronize', pull_request: { number: 1, head: { sha: newer }, updated_at: new Date(now - DAY).toISOString() } } });
+await run(newHead, { now: now + 4 * DAY });
+assert(!newHead.pulls[0].labels.some(label => label.name === 'stale'));
+assert.equal(newHead.pulls[0].state, 'open');
+await run(newHead, { now: now + 5 * DAY });
+assert(newHead.pulls[0].labels.some(label => label.name === 'stale'));
+assert(newHead.writes().some(c => c.method === 'POST' && c.body?.labels?.includes('stale')));
+assert.equal(newHead.pulls[0].state, 'open');
+await run(newHead, { now: now + 10 * DAY }); assert.equal(newHead.pulls[0].state, 'closed');
+ok('A3/A4: a new head observed before its event clears the old warning and earns a new day-five warning');
+for (const source of ['event', 'initialize']) {
+  for (const change of ['head', 'marker']) {
+    const racing = fake([pr(1, { labels: [{ name: 'stale' }] })], source === 'event' ? [marker(20)] : []);
+    racing.api.onRead = (n, pulls, comments) => {
+      if (n !== 3) return; // Marker is written, but cleanup has not read current head/marker yet.
+      if (change === 'head') pulls[0].head.sha = newer;
+      else comments[0] = marker(1);
+    };
+    await run(racing, source === 'event' ? { event: reopenEvent } : {});
+    assert(!racing.writes().some(c => c.method === 'DELETE'));
+    assert(racing.pulls[0].labels.some(label => label.name === 'stale'));
+  }
+}
+ok('cleanup rechecks both head and marker after its write, for events and initialization');
 const urls = [];
 const api = githubApi('fake-token', async (url, opts) => {
   urls.push({ url, opts });
@@ -189,6 +218,7 @@ for (const f of [changed, recentComment, already, closingRace, repeat]) {
 }
 const workflow = await readFile('.github/workflows/stale-pr-sweeper.yml', 'utf8');
 assert.match(workflow, /if: vars\.STALE_PR_SWEEPER == 'on'/);
+assert(workflow.includes("if: vars.STALE_PR_SWEEPER == 'on' && !inputs.permission_probe"));
 assert.match(workflow, /ref: \$\{\{ github\.event\.repository\.default_branch \}\}/);
 assert.match(workflow, /persist-credentials: false/);
 assert(!workflow.includes('contents: write')); assert(!workflow.includes('github.event.pull_request.head'));

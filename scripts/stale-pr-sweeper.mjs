@@ -55,6 +55,13 @@ export async function sweep({ api, enabled, repo, now = Date.now(), event = null
     if (dryRun) log(`#${pr.number}: would remove stale`);
     else await api('DELETE', `${base}/issues/${pr.number}/labels/stale`);
   };
+  const cleanupStale = async (number, sha, observedAt) => {
+    const fresh = await getPr(number);
+    if (protectedPr(fresh) || fresh.head.sha !== sha) return;
+    const marker = activity(await comments(number));
+    if (!dryRun && (marker?.observedAt !== observedAt || marker?.sha !== sha)) return;
+    await removeStale(fresh);
+  };
   if (event) {
     if (!['opened', 'synchronize', 'reopened'].includes(event.action)) throw new Error('Unsupported event');
     const incoming = event.pull_request;
@@ -71,11 +78,7 @@ export async function sweep({ api, enabled, repo, now = Date.now(), event = null
     if (!old || Date.parse(old.observedAt) !== timestamp) {
       await writeMarker(pr.number, fresh.head.sha, new Date(timestamp).toISOString(), old);
     }
-    const beforeRemoval = await getPr(pr.number);
-    if (protectedPr(beforeRemoval) || beforeRemoval.head.sha !== incoming.head.sha) return;
-    const latestMarker = activity(await comments(pr.number));
-    if (!dryRun && latestMarker?.observedAt !== new Date(timestamp).toISOString()) return;
-    await removeStale(beforeRemoval);
+    await cleanupStale(pr.number, incoming.head.sha, new Date(timestamp).toISOString());
     log(`#${pr.number}: recorded ${event.action} activity`);
     return;
   }
@@ -98,6 +101,7 @@ export async function sweep({ api, enabled, repo, now = Date.now(), event = null
     pr = fresh; old = current;
     if (action === 'initialize') {
       await writeMarker(pr.number, pr.head.sha, new Date(now).toISOString(), old);
+      await cleanupStale(pr.number, pr.head.sha, new Date(now).toISOString());
       log(`#${pr.number}: ${dryRun ? 'would start' : 'started'} observation grace period`);
     } else if (dryRun) {
       log(`#${pr.number}: would ${action}`);
