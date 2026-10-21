@@ -6,6 +6,8 @@ The review desk adds a line whenever Jarrod decides something.
 
 | Date | Decision | Where |
 |---|---|---|
+| 2026-10-21 | The leftover GitHub App is removed: it is off the `main` ruleset's bypass list (only Repository admin remains, checked live), and Jarrod deleted the app, its secrets and its key. | Jarrod, in chat |
+| 2026-10-21 | Rejected from the S-tier review: rebalancing the browser shards and skipping the Playwright install. The log data did not support either. | Jarrod, in chat; [`docs/research/s-tier-setup-review-2026-10-21.md`](research/s-tier-setup-review-2026-10-21.md) |
 | 2026-10-21 | (Superseded: auto-merge was dropped later on 2026-10-21.) Auto-merge phase 1 was docs only (narrows the 2026-10-20 "docs and test-only" call). Test-only waits for loosen-prove (#924). | Jarrod approved Fable's design ("proceed with Fable recs"); [#923](https://github.com/jarrodjohnson-gif/emberisle/issues/923) |
 | 2026-10-20 | The fortunes button reads "Play fortune · N" when one can be played, else "Fortunes · N" (provisional; Astra's HUD pass may revisit). | [#829](https://github.com/jarrodjohnson-gif/emberisle/issues/829) |
 | 2026-10-21 | Josh's agent is a regular builder, not a helper. It may use any Claude model from Opus 5.5 to Haiku 5.5, and follows AGENTS.md, not HELPERS.md. | Jarrod, in chat; [`docs/LANES.md`](LANES.md) |
