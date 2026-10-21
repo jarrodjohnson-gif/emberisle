@@ -93,8 +93,8 @@ BUILDING IT (performance and the code's rules)
 - Software GPUs (CI, no-GPU machines) get the lite board (the ground only), so nothing about the game may depend on the
   scenery.
 - Chunk weight: first-frame code (pieces, the renderer) lives in IslandCanvas, and the scenes live in the lazy `hex-jelly`
-  chunk. Measure with `npm run build && node scripts/size-prove.mjs` **before pushing**. A raise goes in the same PR, dated,
-  with the measured number against main and one line of reason. The owner accepts slow loads (up to about 30 s) if play
+  chunk. Measure with `npm run build && node scripts/size-prove.mjs` **before pushing**. Normal growth needs no edit (CI budgets each chunk's growth against main);
+  growth past a chunk's allowance needs the measured number against main and a reason in the PR body, and the reviewer's OK. The owner accepts slow loads (up to about 30 s) if play
   stays snappy, but every kilobyte must be justified.
 - Each piece of work stays in its lane's files (`docs/LANES.md`). The board lane is `src/lib/scene/**`.
 

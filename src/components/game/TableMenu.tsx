@@ -1,14 +1,14 @@
 // #442: the table's one top-right control. A 44 px quiet "…" button opens a small sheet holding what the top chrome used
-// to spread out: the turn number and watcher count, How to play, Costs, the sound toggle, the table code (online) and Leave table.
+// to spread out: the turn number and watcher count, How to play, Costs, the sound toggle, the table code (online), Copy log (#899, online) and Leave table.
 // A watcher's own "Watching" chip stays in the header beside the button (docs/design/spectator.md), not in here.
 // Opens with focus on the first row; Escape, a pointerdown outside or focus leaving closes it, and Escape puts the focus
 // back on the button. Leaving an online seat asks first (the seat goes to a bot for good); Stay, Escape or 5 s cancels.
 import { useEffect, useRef, useState } from "react";
-import { BookOpen, Box, Copy, Ellipsis, Eye, Hammer, LogOut, Smartphone, Volume2, VolumeX, Waves } from "lucide-react";
+import { BookOpen, Box, Copy, Ellipsis, Eye, Hammer, LogOut, Smartphone, ScrollText, Volume2, VolumeX, Waves } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CopyFallback, useCopy } from "@/components/game/CopyText";
 import { useGame } from "@/lib/game/store";
-import { hapticsAvailable, play, setHaptics, setMuted, useHaptics, useMuted } from "@/lib/sound";
+import { hapticsAvailable, setHaptics, useHaptics, play, setMusicOn, setMuted, useMuted, useMusicOn } from "@/lib/sound";
 
 const ROW = "h-11 w-full justify-start px-3 text-body";
 const ICON = "size-4 shrink-0 text-muted";
@@ -29,7 +29,9 @@ export function TableMenu() {
   const muted = useMuted();
   const haptics = useHaptics();
   const showHaptics = hapticsAvailable();
-  const { state: copied, copy, reset } = useCopy<"code">();
+  const music = useMusicOn();
+  const { state: copied, copy, reset } = useCopy<"code" | "log">();
+  const gameLog = useGame((s) => s.gameLog);
   const [open, setOpen] = useState(false);
   const [asking, setAsking] = useState(false);
   const trigger = useRef<HTMLButtonElement>(null);
@@ -178,6 +180,11 @@ export function TableMenu() {
                 {muted ? <VolumeX className={ICON} /> : <Volume2 className={ICON} />}
                 Table sounds {muted ? "off" : "on"}
               </Button>
+              {/* #814: a stopgap until the Sound menu (#669) takes over the music. */}
+              <Button variant="ghost" className={ROW} data-testid="music-toggle" aria-pressed={music} silent onClick={() => setMusicOn(!music)}>
+                {music ? <Volume2 className={ICON} /> : <VolumeX className={ICON} />}
+                Music {music ? "on" : "off"}
+              </Button>
               {/* #542: phones only in effect (coarse pointer). The row stays when vibrate exists so the choice is clear. */}
               {showHaptics ? (
                 <Button
@@ -220,7 +227,13 @@ export function TableMenu() {
               </div>
               {mode === "online" && code ? (
                 <Button variant="ghost" className={ROW} onClick={() => copy("code", code)}>
-                  <Copy className={ICON} /> {copied?.ok ? "Copied" : `Copy table code ${code}`}
+                  <Copy className={ICON} /> {copied?.ok && copied.what === "code" ? "Copied" : `Copy table code ${code}`}
+                </Button>
+              ) : null}
+              {/* #899: the whole game log on the clipboard (or in a field to copy by hand), moved here from the online chat dock. */}
+              {mode === "online" ? (
+                <Button variant="ghost" className={ROW} onClick={() => copy("log", gameLog.map((l) => l.text).join("\n"))}>
+                  <ScrollText className={ICON} /> {copied?.ok && copied.what === "log" ? "Copied" : "Copy log"}
                 </Button>
               ) : null}
               <Button ref={leaveRef} variant="ghost" className={ROW} onClick={confirm ? () => setAsking(true) : goTitle}>
@@ -230,7 +243,7 @@ export function TableMenu() {
           )}
           {/* Outside the question's branch: the field focuses itself when it mounts, and must not take the focus back from
               Leave table each time the question folds into the rows (CI has no clipboard, so the field is the common case). */}
-          <CopyFallback state={copied} label="Table code" className="px-3" />
+          <CopyFallback state={copied} label={copied?.what === "log" ? "Game log" : "Table code"} className="px-3" />
         </div>
       ) : null}
     </div>

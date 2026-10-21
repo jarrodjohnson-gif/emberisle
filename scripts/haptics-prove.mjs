@@ -29,6 +29,7 @@ async function openPage({ coarse = true, reducedMotion = false } = {}) {
   page.on("pageerror", (e) => errors.push(String(e)));
   await page.addInitScript((coarse) => {
     window.__buzz = [];
+    window.__buzzTimes = [];
     const realMatch = window.matchMedia.bind(window);
     window.matchMedia = (q) =>
       q === "(pointer: coarse)"
@@ -49,6 +50,7 @@ async function openPage({ coarse = true, reducedMotion = false } = {}) {
       configurable: true,
       value: (ms) => {
         window.__buzz.push(ms);
+        window.__buzzTimes.push(performance.now());
         return true;
       },
     });
@@ -95,6 +97,7 @@ async function toMySetup(page) {
 async function clearBuzz(page) {
   await page.evaluate(() => {
     window.__buzz = [];
+    window.__buzzTimes = [];
   });
 }
 
@@ -118,6 +121,7 @@ async function landProof(page) {
     const id = g.highlights().vertices[0];
     if (!id) throw new Error("no legal outpost");
     window.__buzz = [];
+    window.__buzzTimes = [];
     window.__t0 = performance.now();
     g.pickVertex(id);
   });
@@ -125,7 +129,7 @@ async function landProof(page) {
   await buzzWithin(page, 400, 10, "own outpost land");
   const when = await page.evaluate(() => {
     const i = window.__buzz.indexOf(10);
-    return i < 0 ? null : performance.now() - window.__t0;
+    return i < 0 ? null : window.__buzzTimes[i] - window.__t0;
   });
   assert.ok(when != null && when <= 380, `land buzz at ${when} ms from pick (want ≤ 380)`);
   console.log(`land: own outpost buzzed 10 at ${Math.round(when)} ms from pick`);
@@ -147,6 +151,7 @@ async function opponentLandProof(page) {
     after.current = bot.id;
     after.seq += 1;
     window.__buzz = [];
+    window.__buzzTimes = [];
     // This browser watches the bot's seat; hear must not schedule a land buzz.
     hear(before, after, g.getState().localId, "ai");
   });
@@ -154,6 +159,25 @@ async function opponentLandProof(page) {
   const buzzed = await page.evaluate(() => window.__buzz.filter((ms) => ms === 10));
   assert.deepEqual(buzzed, [], `opponent land must not vibrate, got ${JSON.stringify(buzzed)}`);
   console.log("land: opponent outpost stayed quiet");
+  for (const own of [false, true]) {
+    await page.evaluate(async (own) => {
+      const g = window.__emberisle.getState();
+      const { hear } = await import("/src/lib/game/store.ts");
+      const before = structuredClone(g.state), after = structuredClone(before);
+      const bot = after.players.find(p => p.kind === "bot");
+      const edge = after.edges.find(e => !e.path);
+      edge.path = { playerId: own ? g.localId : bot.id };
+      before.current = own ? g.localId : bot.id;
+      after.current = own ? bot.id : g.localId;
+      after.seq++;
+      window.__buzz = []; window.__buzzTimes = [];
+      hear(before, after, g.localId, "ai");
+    }, own);
+    await page.waitForTimeout(400);
+    const got = await page.evaluate(() => window.__buzz.filter(ms => ms === 10));
+    assert.deepEqual(got, own ? [10] : [], "closing path ownership follows the piece rather than the next turn");
+  }
+  console.log("land: own closing path buzzes; opponent path handing over the turn stays quiet");
 }
 
 // Rig a roll that pays exactly 3 pieces; assert three 8 ms buzzes.
@@ -207,6 +231,7 @@ async function payProof(page) {
     g.setState({ state: paid });
     isle.clearPayers?.();
     window.__buzz = [];
+    window.__buzzTimes = [];
     const { hear } = await import("/src/lib/game/store.ts");
     hear(before, paid, me, "ai");
     isle.pulsePayers(paid);
@@ -271,6 +296,49 @@ async function reducedStillBuzzes(page) {
   console.log("reduced motion: your-turn still buzzed 15");
 }
 
+async function eventGuardsProof(page) {
+  await toPractice(page);
+  const check = await page.evaluate(async () => {
+    const g = window.__emberisle.getState();
+    const { hear } = await import("/src/lib/game/store.ts");
+    const sound = await import("/src/lib/sound.ts");
+    const before = structuredClone(g.state), after = structuredClone(before);
+    before.playedCard = false; after.playedCard = true;
+    before.current = g.localId; after.current = after.players.find(p => p.id !== g.localId).id;
+    window.__buzz = []; window.__buzzTimes = [];
+    hear(before, after, g.localId, "ai");
+    const fortune = [...window.__buzz];
+    window.__buzz = []; window.__buzzTimes = [];
+    hear(before, after, "", "online");
+    const watchedFortune = [...window.__buzz];
+    const won = structuredClone(before); won.phase = "over"; won.winner = g.localId;
+    window.__buzz = []; window.__buzzTimes = [];
+    hear(before, won, "", "online");
+    const watchedWin = [...window.__buzz];
+    window.__buzz = []; window.__buzzTimes = [];
+    hear(before, won, g.localId, "online");
+    const win = [...window.__buzz];
+    sound.setMuted(true);
+    window.__buzz = []; window.__buzzTimes = [];
+    sound.yourTurn(); sound.haptic(sound.HAPTIC_MS.tradeOffer);
+    const muted = [...window.__buzz];
+    sound.setMuted(false);
+    const vibrate = navigator.vibrate;
+    Object.defineProperty(navigator, "vibrate", { configurable: true, value: undefined });
+    const unsupported = sound.hapticsAvailable();
+    sound.haptic(10); sound.yourTurn();
+    Object.defineProperty(navigator, "vibrate", { configurable: true, value: vibrate });
+    return {fortune, watchedFortune, watchedWin, win, muted, unsupported};
+  });
+  assert.deepEqual(check.fortune, [10], "own fortune uses the acting seat before the turn advances");
+  assert.deepEqual(check.watchedFortune, [], "watching a fortune stays quiet");
+  assert.deepEqual(check.watchedWin, [], "watching a win stays quiet");
+  assert.deepEqual(check.win, [20], "the winner receives the banner buzz");
+  assert.deepEqual(check.muted, [], "table mute preserves the previous haptic mute behavior");
+  assert.equal(check.unsupported, false, "missing navigator.vibrate is safely unsupported");
+  console.log("events: own fortune and win buzz; watcher, mute and missing-vibrate guards pass");
+}
+
 let code = 0;
 try {
   {
@@ -301,6 +369,11 @@ try {
   {
     const page = await openPage({ coarse: true, reducedMotion: true });
     await reducedStillBuzzes(page);
+    await page.close();
+  }
+  {
+    const page = await openPage({ coarse: true });
+    await eventGuardsProof(page);
     await page.close();
   }
   if (errors.length) throw new Error(errors.join("\n"));

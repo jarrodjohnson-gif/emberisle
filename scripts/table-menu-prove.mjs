@@ -80,6 +80,7 @@ try {
       "How to play",
       "Costs",
       "Table sounds on",
+      "Music on",
       ...(hasVibrate ? ["Haptics on"] : []),
       "Crystal",
       "Simple",

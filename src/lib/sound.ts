@@ -123,6 +123,7 @@ function savedHaptics() {
 if (typeof window !== "undefined") {
   const unlock = () => {
     unlocked = true;
+    syncMusic();
   };
   window.addEventListener("pointerdown", unlock, { once: true, capture: true, passive: true });
   window.addEventListener("keydown", unlock, { once: true, capture: true, passive: true });
@@ -135,6 +136,7 @@ export function isMuted() {
 export function setMuted(v: boolean) {
   muted = v;
   if (v) stop("end_music");
+  syncMusic();
   try {
     if (v) localStorage.setItem(MUTED_KEY, "1");
     else localStorage.removeItem(MUTED_KEY);
@@ -188,7 +190,7 @@ export function useHaptics() {
 // Guarded phone buzz (#542). No-op on desktop, when off, before unlock, or where vibrate is missing.
 // Reduced motion does not suppress this: it is not visual motion.
 export function haptic(ms: number) {
-  if (!unlocked || !hapticsOn || !coarsePointer() || !vibrateSupported()) return;
+  if (muted || !unlocked || !hapticsOn || !coarsePointer() || !vibrateSupported()) return;
   try {
     navigator.vibrate?.(ms);
   } catch {
@@ -236,6 +238,7 @@ function start(name: SoundName, volume: number) {
     if (!clip) {
       clip = new Audio(`${import.meta.env.BASE_URL}audio/${FILES[name]}`);
       clips.set(name, clip);
+      if (DUCKERS.has(name)) for (const e of ["play", "pause", "ended"]) clip.addEventListener(e, duckMusic);
     }
     clip.currentTime = 0;
     clip.volume = volume;
@@ -291,6 +294,95 @@ export function yourTurn() {
 export function gainTick() {
   play("gain_tick", 0.35);
   haptic(HAPTIC_MS.pay);
+}
+
+// Background music (#814): "Medieval: The Old Tower Inn" (docs/design/sound.md). The file is fetched on the first start, after
+// the first gesture, never before, and is not part of any JS chunk. It plays while the table wants it (the lobby and play, not
+// the title or the end screen), unless muted or switched off; it dips under the stings.
+const MUSIC_FILE = "old_tower_inn_loop.mp3";
+export const BG_VOLUME = 0.25;
+const BG_DUCK = 0.3;
+const DUCKERS: ReadonlySet<SoundName> = new Set<SoundName>(["game_start", "match_point", "game_lose", "end_music"]);
+const MUSIC_KEY = "emberisle-music";
+let bg: HTMLAudioElement | null = null;
+let bgWanted = false;
+let bgOn = savedMusicOn();
+let bgRetry = false;
+
+function savedMusicOn() {
+  try {
+    return localStorage.getItem(MUSIC_KEY) !== "0";
+  } catch {
+    return true;
+  }
+}
+
+export function isMusicOn() {
+  return bgOn;
+}
+
+export function useMusicOn() {
+  return useSyncExternalStore(subscribe, isMusicOn, () => true);
+}
+
+export function setMusicOn(v: boolean) {
+  bgOn = v;
+  try {
+    if (v) localStorage.removeItem(MUSIC_KEY);
+    else localStorage.setItem(MUSIC_KEY, "0");
+  } catch {
+    // storage can be blocked; the toggle still holds for this page
+  }
+  syncMusic();
+  for (const l of listeners) l();
+}
+
+// The screen says whether the table wants music now; the other conditions are checked here.
+export function setMusicWanted(v: boolean) {
+  bgWanted = v;
+  syncMusic();
+}
+
+// Quieter while any of the stings plays; back to full when the last one ends or is cut off.
+function duckMusic() {
+  if (!bg) return;
+  let ducked = false;
+  for (const n of DUCKERS) {
+    const c = clips.get(n);
+    if (c && !c.paused && !c.ended) ducked = true;
+  }
+  bg.volume = ducked ? BG_VOLUME * BG_DUCK : BG_VOLUME;
+}
+
+function syncMusic() {
+  if (typeof Audio === "undefined") return;
+  if (!(bgWanted && bgOn && unlocked && !muted)) {
+    if (bg) {
+      bg.pause();
+      if (!bgWanted) bg.currentTime = 0;
+    }
+    return;
+  }
+  try {
+    if (!bg) {
+      bg = new Audio(`${import.meta.env.BASE_URL}audio/${MUSIC_FILE}`);
+      bg.loop = true;
+    }
+    duckMusic();
+    bg.play()?.catch(() => {
+      // refused: try once more on the next press or key
+      if (bgRetry) return;
+      bgRetry = true;
+      const again = () => {
+        bgRetry = false;
+        syncMusic();
+      };
+      window.addEventListener("pointerup", again, { once: true, passive: true });
+      window.addEventListener("keydown", again, { once: true, passive: true });
+    });
+  } catch {
+    // a blocked or unsupported file stays quiet
+  }
 }
 
 // #667: a tap on a hex that places nothing plays that terrain's clip, quietly, at most once per TOUCH_GAP_MS. Only a sheep
