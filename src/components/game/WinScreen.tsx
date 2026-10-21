@@ -133,24 +133,29 @@ function Panel() {
         </p>
         <div className="win-equation" data-testid="win-reason">{contribution.map((part, i) => <span key={part}>{i > 0 ? "+ " : ""}{part}</span>)}</div>
         <div data-testid="win-table-wrap" className="mt-4 short:mt-1.5 min-h-0 overflow-auto">
-          <table className="w-full min-w-[560px] short:min-w-0 border-collapse text-sm">
+          <table className="w-full min-w-0 border-collapse text-sm">
             <thead>
               <tr>
                 <th className={`${head} text-left whitespace-nowrap`}>Player</th>
                 <th className={head} title="Outposts">
-                  Outposts
+                  <span className="sm:hidden">Out</span>
+                  <span className="hidden sm:inline">Outposts</span>
                 </th>
                 <th className={head} title="Strongholds">
-                  Strongholds
+                  <span className="sm:hidden">Str</span>
+                  <span className="hidden sm:inline">Strongholds</span>
                 </th>
                 <th className={head} title="Longest path">
-                  Longest path
+                  <span className="sm:hidden">Path</span>
+                  <span className="hidden sm:inline">Longest path</span>
                 </th>
                 <th className={head} title="Largest army">
-                  Largest army
+                  <span className="sm:hidden">Army</span>
+                  <span className="hidden sm:inline">Largest army</span>
                 </th>
                 <th className={head} title="Hidden">
-                  Hidden
+                  <span className="sm:hidden">Hid</span>
+                  <span className="hidden sm:inline">Hidden</span>
                 </th>
                 <th className={head}>Total</th>
               </tr>

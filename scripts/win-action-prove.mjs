@@ -79,7 +79,7 @@ try{
  for(const ws of sockets)ws.terminate();host.kill('SIGKILL');await new Promise(r=>host.once('exit',r));await start();
  await vite.listen();browser=await chromium.launch({args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});mkdirSync('test-results',{recursive:true});
  const errors=[];
- for(const [width,height,reduced,insets] of [[390,844,false],[1280,720,false],[844,390,true],[956,440,false],[667,375,false,{top:0,right:44,bottom:21,left:44}]]){
+ for(const [width,height,reduced,insets] of [[390,844,false],[440,956,false],[1280,720,false],[844,390,true],[956,440,false],[667,375,false,{top:0,right:44,bottom:21,left:44}]]){
   for(const f of fixtures){
    const context=await browser.newContext({viewport:{width,height},reducedMotion:reduced?'reduce':'no-preference',hasTouch:!!insets,isMobile:!!insets});
    await context.addInitScript(({code})=>{localStorage.setItem('emberisle-seat',JSON.stringify({code,secret:`${code}-p0`}));localStorage.setItem('emberisle-seat-live',code);},f);
@@ -95,15 +95,17 @@ try{
    const wrap=page.getByTestId('win-table-wrap');
    const wrapBox=await wrap.boundingBox();
    const dims=await wrap.evaluate(el=>({scrollHeight:el.scrollHeight,clientHeight:el.clientHeight,scrollWidth:el.scrollWidth,clientWidth:el.clientWidth}));
+   assert.ok(dims.scrollWidth<=dims.clientWidth+1,`table must not scroll horizontally: scrollWidth ${dims.scrollWidth} <= clientWidth ${dims.clientWidth}`);
    if(height<=480){
     assert.ok(dims.scrollHeight<=dims.clientHeight,`table must not scroll vertically: scrollHeight ${dims.scrollHeight} <= clientHeight ${dims.clientHeight}`);
-    assert.ok(dims.scrollWidth<=dims.clientWidth,`table must not scroll horizontally: scrollWidth ${dims.scrollWidth} <= clientWidth ${dims.clientWidth}`);
    }
    const rows=await page.getByTestId('win-row').all();assert.equal(rows.length,4);
    for(const r of rows){
     const b=await r.boundingBox();
     if(height<=480)assert.ok(b&&b.y>=wrapBox.y&&b.y+b.height<=wrapBox.y+wrapBox.height+1,`row must fit within table wrap`);
     assert.ok(b&&b.y>=0&&b.y+b.height<=height,`row must fit within viewport height ${height}`);
+    const total=await r.locator('[data-testid="win-total"]').boundingBox();
+    assert.ok(total&&total.x>=wrapBox.x&&total.x+total.width<=wrapBox.x+wrapBox.width+1,`total column must fit within table wrap: total right ${total?.x+total?.width} <= wrap right ${wrapBox.x+wrapBox.width}`);
    }
    await page.screenshot({path:`test-results/win-action-${f.trigger}-${f.target}-${f.earned}-${width}${insets?'-insets':''}.png`});await context.close();
   }
