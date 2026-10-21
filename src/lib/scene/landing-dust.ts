@@ -4,6 +4,7 @@ const DUST_N = 8;
 const DUST_LIFE = 0.35;
 const DUST_SPEED = 0.22;
 const DUST_RISE = 0.1;
+const MAX_GRAINS = 48;
 
 interface Grain {
   mesh: THREE.Mesh;
@@ -28,7 +29,10 @@ export class LandingDust {
 
   emit(x: number, y: number, z: number) {
     this.puffs++;
-    for (let i = 0; i < DUST_N; i++) {
+    const room = MAX_GRAINS - this.grains.length;
+    if (room <= 0) return;
+    const n = Math.min(DUST_N, room);
+    for (let i = 0; i < n; i++) {
       const a = (i / DUST_N) * Math.PI * 2 + (Math.random() - 0.5) * 0.5;
       const sp = DUST_SPEED * (0.6 + Math.random() * 0.8);
       const mat = proto.clone();
