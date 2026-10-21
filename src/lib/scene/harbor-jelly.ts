@@ -819,42 +819,16 @@ function build(coast: CoastPt[], docks: Dock[], seed: number): Shore {
       min: goodsBounds.min.toArray(), max: goodsBounds.max.toArray(), frame: frame.toArray(),
       deck: { width: W, from: v0, to: v1 }, scale: S });
 
-    // #640: boardwalks from the pier root to each corner, with colored landings showing harbor access.
-    const invFrame = frame.clone().invert();
-    const harborColor = goodOf(d.kind);
     for (const corner of d.corners) {
-      const cl = new THREE.Vector3(corner.x, 0, corner.z).applyMatrix4(invFrame);
-      const bx0 = Math.sign(cl.x) * (W / 2 + 0.02);
-      const bz0 = v0 - 0.01;
-      const bx1 = cl.x;
-      const bz1 = cl.z;
-      const by0 = SURFACE + 0.06;
-      const by1 = SURFACE + 0.042;
-      const walkAngle = Math.atan2(bx1 - bx0, bz1 - bz0);
-      const steps = 10;
-      for (let k = 0; k < steps; k++) {
-        const u = (k + 0.5) / steps;
-        const px = bx0 + (bx1 - bx0) * u;
-        const pz = bz0 + (bz1 - bz0) * u;
-        const py = by0 + (by1 - by0) * u;
-        P(K.part(box, k % 3 === 0 ? "#c99a6a" : k % 2 ? "#a46e42" : "#b07a4c", [px, py, pz], [0, walkAngle, 0], [0.05, 0.008, 0.038]));
+      const cl = new THREE.Vector3(corner.x, 0, corner.z).applyMatrix4(inverse);
+      const x0 = Math.sign(cl.x) * (W / 2 + 0.02), z0 = v0 - 0.01;
+      const dx = cl.x - x0, dz = cl.z - z0;
+      const a = Math.atan2(dx, dz);
+      for (let k = 0; k < 4; k++) {
+        const u = (k + 0.5) / 4;
+        P(K.part(box, "#a46e42", [x0 + dx * u, DECK + 0.24 * u, z0 + dz * u], [0, a, 0], [0.05, 0.008, 0.038]));
       }
-      const side = Math.sign(cl.x);
-      const postUs = [0.15, 0.45, 0.75];
-      const postPts: V3[] = [];
-      for (const pu of postUs) {
-        const px = bx0 + (bx1 - bx0) * pu;
-        const pz = bz0 + (bz1 - bz0) * pu;
-        const py = by0 + (by1 - by0) * pu;
-        const ox = px + side * 0.03;
-        P(K.part(K.cyl(1, 1, 6), "#6a4a30", [ox, py + 0.03, pz], [0, 0, 0], [0.005, 0.06, 0.005]));
-        P(K.part(K.sphere(6), "#5a3a24", [ox, py + 0.062, pz], [0, 0, 0], [0.006, 0.004, 0.006]));
-        postPts.push([ox, py + 0.055, pz]);
-      }
-      for (let k = 0; k < postPts.length - 1; k++)
-        P(beam(K, postPts[k]!, postPts[k + 1]!, 0.002, "#d8c08a"));
-      P(K.part(K.cyl(1, 1, 12), harborColor, [bx1, by1, bz1], [0, 0, 0], [0.055, 0.01, 0.055]));
-      P(K.part(K.cyl(1, 1, 12), "#f4ead6", [bx1, by1 + 0.005, bz1], [0, 0, 0], [0.045, 0.006, 0.045]));
+      P(K.part(K.cyl(1, 1, 8), goodOf(d.kind), [cl.x, 0.34, cl.z], [0, 0, 0], [0.06, 0.012, 0.06]));
     }
 
     // The ship, moored alongside the T-head's ship side, bow to the shore.
