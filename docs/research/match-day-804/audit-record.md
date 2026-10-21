@@ -1,5 +1,22 @@
 # Match-day audit evidence
 
+## Baseline status
+
+These 56 captures are a pre-fix baseline. They are not a check of current `main`. Every image was taken on `587951aa81db45982a8e79e51c4378afaa2986e3` (2026-10-18). When the review desk read this PR, `main` was 29 commits ahead (`00ba9a505d0ab9794cef0ef29ddeba050b5c4a6a`). When `main` was merged into this branch (`ea327a3`, 2026-10-21), it was 67 commits ahead.
+
+Fixes landed after the baseline: #718 (`e378820`), #809 (`bd21ecc`), #811 (`833a463`), and the win-screen table fit in merged PR #878 (`c8df182`, for #808). Because of that, these images cannot show those problems fixed, and they cannot show them still present on `main`. Closed #895 (the lobby chat overlap below) was closed by merged PR #918. This record did not re-check it.
+
+Candidates the review desk listed from the baseline images. None has been checked on current `main`, and none has been filed:
+
+| Baseline image | What the baseline image shows | Related change on `main` |
+|---|---|---|
+| `390x844-win-screen.jpg` | The score table clips on the right. Army, Hidden and Total are off-screen. | PR #878 (merged, for #808) |
+| `844x390-trade-panel.jpg` | Only "You give" shows, cut mid-card. | #811 (`833a463`) |
+| `844x390-win-screen.jpg` | Only the winner's row shows. | #809 (`bd21ecc`) |
+| 390 and 440 phone images with seat names | Seat names truncate to three letters ("Tid", "Dun"), and the last status line is cut off. | None found |
+
+Recapturing on current `main` is not part of this PR. The review desk asked for at least the trade and win screens at 844×390 and 390×844. That recapture is waiting on the review desk and owner. Until it runs, read every "matches closed #…" line below as "matches the pre-fix baseline", not as a statement about current behaviour.
+
 ## Capture provenance
 
 The retained 14 desktop screenshots use baseline `587951aa81db45982a8e79e51c4378afaa2986e3` and host `http://127.0.0.1:8788/`. They came from separate historical passes. `capture-report.txt` directly records only the 10 practice states. Online title, lobby, join-by-link, and watcher images predate that report. `capture.mjs` documents their UI sequence, but no separate online run report was preserved. The practice report's counts and page-error result apply only to its practice pass.
@@ -36,7 +53,7 @@ The checkout is pinned to `587951aa81db45982a8e79e51c4378afaa2986e3`. The origin
 
 `capture-manifest.json` records source, baseline, capture mode, dimensions, byte count, and SHA-256 per image. `contact-sheet.jpg` shows all 56 final captures. `touch-capture-report.txt` records the corrected run. `touch-capture.log` and `touch-capture-monitor.log` preserve its output. `resumed-validation.log` holds actual output from setup checks. Only trailing whitespace was removed from that log.
 
-Current-main review used baseline `00ba9a505d0ab9794cef0ef29ddeba050b5c4a6a`. It found one new candidate at 1280×720. A lobby with three bots initially covers the chat composer and Send control with its sticky footer. Scrolling `.lobby-cover` down 74 pixels reveals both controls and makes them hit-testable. Before and after evidence and measurements live in `current-main-repro/`. Duplicate searches found no matching issue. This does not claim permanent inaccessibility. Existing landscape trade and win concerns match closed #811 and #809. Coarse-pointer 844×390 title and lobby controls fit without scrolling.
+Current-main review used baseline `00ba9a505d0ab9794cef0ef29ddeba050b5c4a6a`. It found one new candidate at 1280×720. A lobby with three bots initially covers the chat composer and Send control with its sticky footer. Scrolling `.lobby-cover` down 74 pixels reveals both controls and makes them hit-testable. Before and after evidence and measurements live in `current-main-repro/`. Duplicate searches found no matching issue. This does not claim permanent inaccessibility. The baseline landscape trade and win images match the problems later fixed under closed #811 and #809. They are pre-fix evidence (see Baseline status). Coarse-pointer 844×390 title and lobby controls fit without scrolling.
 
 At 390×844, the win image includes a transient `−7 wheat` loss float over the score. The winner and score remain visible. The 844×390 win-row clipping matches closed issue #809. The evidence identifies captured states and viewport sizes. It does not establish that every screen is free of visual defects. Reviewers should inspect full-size images before deciding. Check proposed bugs against current `main`, as issue #804 requires.
 
