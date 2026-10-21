@@ -10,6 +10,22 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import WebSocket from "ws";
+import { getOpenTables, maybeReleaseOpenSlot, registerOpenTable, unregisterOpenTable } from "./open-table.mjs";
+
+// A connected finished table must release its slot; an unrelated drop cannot remove its successor.
+{
+  const finished = { code: "OVER", host: "s0", seats: [{ id: "s0", name: "Winner", ws: {} }], game: { phase: "play" } };
+  assert.equal(registerOpenTable(finished), true);
+  assert.equal(getOpenTables()[0].status, "playing");
+  finished.game.phase = "over";
+  maybeReleaseOpenSlot(finished);
+  assert.deepEqual(getOpenTables(), [], "game over releases the slot even with a connected host");
+  const next = { ...finished, code: "NEXT", game: null };
+  assert.equal(registerOpenTable(next), true, "a new open host can claim the finished table's slot");
+  unregisterOpenTable(finished);
+  assert.equal(getOpenTables()[0].code, "NEXT", "dropping the old room preserves the new listing");
+  unregisterOpenTable(next);
+}
 
 const ROOMS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-open-table-"));
 let host;
@@ -60,7 +76,7 @@ function client(port, name) {
 
 const settle = (ms = 150) => new Promise((r) => setTimeout(r, ms));
 
-const port = await boot({ LOBBY_HOLD_MS: "300" });
+const port = await boot({ LOBBY_HOLD_MS: "1000" });
 const baseUrl = `http://127.0.0.1:${port}`;
 
 // 1. No open tables yet: GET /tables returns [].
@@ -224,12 +240,21 @@ let openCode;
   const again = client(port, "Clara");
   await again.open;
   again.send({ type: "hello", name: "Clara", visibility: "open" });
-  await again.next("welcome");
+  const saved = await again.next("welcome");
   const listed = await fetch(`${baseUrl}/tables`);
   assert.equal(listed.status, 200, "GET /tables ok when listing Clara");
   assert.equal((await listed.json())[0]?.name, "Clara's table");
   again.ws.terminate();
-  await settle(800); // LOBBY_HOLD_MS = 300; wait for drop
+  await settle(100);
+  const returning = client(port, "Clara-returning");
+  await returning.open;
+  returning.send({ type: "hello", code: saved.code, secret: saved.secret });
+  await returning.next("welcome");
+  const restored = await fetch(`${baseUrl}/tables`);
+  assert.equal(restored.status, 200);
+  assert.equal((await restored.json())[0]?.code, saved.code, "a held open seat restores its listing after reconnect");
+  returning.ws.terminate();
+  await settle(1200); // Wait for the held seat to expire.
   assert.deepEqual(await (await fetch(`${baseUrl}/tables`)).json(), [], "list empties when the open table is dropped");
 }
 

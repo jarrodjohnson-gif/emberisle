@@ -96,8 +96,7 @@ const modeToggle = A.page.getByTestId("open-mode-toggle");
 await until(() => modeToggle.isVisible(), "open-mode-toggle visible");
 await modeToggle.click();
 // Confirm the toggle shows "Open".
-const modeLabel = await modeToggle.innerText();
-check(modeLabel.trim() === "Open", `open-mode-toggle says Open (got "${modeLabel.trim()}")`);
+check(await modeToggle.getAttribute("aria-pressed") === "true", "open-mode-toggle selects Open");
 
 // Click "Host a table".
 await A.page.getByRole("button", { name: "Host a table" }).click();

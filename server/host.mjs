@@ -1425,6 +1425,8 @@ function rejoin(ws, msg) {
   seat.graceTimer = seat.holdTimer = null;
   seat.ws = ws;
   seat.gone = null;
+  // Restore discovery after a reload, without displacing a newer open table.
+  if (room.visibility === "open" && room.game?.phase !== "over") registerOpenTable(room);
   ws.room = room;
   ws.seat = seat;
   send(ws, { type: "welcome", proto: PROTO, code: room.code, you: seat.id, host: seat.id === room.host, chat: room.chat, secret: seat.secret, ...HOLD_INFO, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on" });

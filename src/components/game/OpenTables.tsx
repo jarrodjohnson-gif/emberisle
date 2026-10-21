@@ -80,7 +80,7 @@ export function OpenTables() {
                     Full
                   </span>
                 ) : (
-                  <Button size="sm" variant="primary" data-testid="open-table-join" className="h-9 min-w-0 px-3" onClick={() => joinTable(t.code)}>
+                  <Button size="sm" variant="secondary" data-testid="open-table-join" className="h-9 min-w-0 px-3" onClick={() => joinTable(t.code)}>
                     Join
                   </Button>
                 )

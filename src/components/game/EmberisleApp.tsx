@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from "react";
-import { Volume2, VolumeX } from "lucide-react";
+import { Globe, LockKeyhole, Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { HowTo, Lobby, online, openTables, OpenTables, SetupPipHints, sheets } from "@/components/game/chunks";
 import { Hud } from "@/components/game/Hud";
@@ -271,7 +271,7 @@ function Title() {
                 <Button
                   size="lg"
                   variant="secondary"
-                  className="min-w-0 flex-1 truncate rounded-none border-0"
+                  className="min-w-0 flex-1 rounded-none border-0 px-3"
                   onClick={() => hostTable(openMode)}
                 >
                   Host a table
@@ -279,14 +279,14 @@ function Title() {
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="w-[4.75rem] shrink-0 rounded-none border-0 border-l border-control-line px-1"
+                  className="w-11 shrink-0 rounded-none border-0 border-l border-control-line px-0"
                   aria-pressed={openMode === "open"}
                   title={openMode === "open" ? "Open table (anyone can join)" : "Private table (code required)"}
                   aria-label={openMode === "open" ? "Open table" : "Private table"}
                   data-testid="open-mode-toggle"
                   onClick={() => setOpenMode((m) => (m === "open" ? "private" : "open"))}
                 >
-                  {openMode === "open" ? "Open" : "Private"}
+                  {openMode === "open" ? <Globe size={16} aria-hidden="true" /> : <LockKeyhole size={16} aria-hidden="true" />}
                 </Button>
               </div>
               <form
