@@ -34,6 +34,7 @@ import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { worldOfHex } from "@/lib/game/board";
 import { HEX_SIZE, SQRT3, hexCorners, hexesInRadius, vertexId } from "@/lib/game/hex";
 import { LAND_MS } from "@/lib/scene/landing";
+import { LandingDust } from "@/lib/scene/landing-dust";
 import { hashStr } from "@/lib/utils";
 import { chunkUrl } from "@/lib/lazy";
 import { PAINT, RIM } from "@/lib/scene/palette";
@@ -239,7 +240,8 @@ export class IsleRenderer {
   // placed (performance.now()), so a rebuild mid-fall carries the fall over to the new mesh instead of restarting it.
   private placed = new Map<string, PieceKind>();
   private landStart = new Map<string, number>();
-  private landings: { obj: THREE.Object3D; kind: PieceKind; start: number; restY: number }[] = [];
+  private landings: { obj: THREE.Object3D; kind: PieceKind; start: number; restY: number; dusted?: boolean }[] = [];
+  private dust = new LandingDust();
   private legalIds = new Set<string>();
   // An armed Upgrade: only the player's own outposts are legal, so a touch tap on one raises it at once, with no Place chip.
   private oneTap = false;
@@ -431,7 +433,7 @@ export class IsleRenderer {
     this.wayfarer = this.bruno.g;
     this.lantern = this.bruno.lantern;
     this.living.add(this.wayfarer);
-    this.scene.add(this.land, this.living, this.pieces, this.marks);
+    this.scene.add(this.land, this.living, this.pieces, this.marks, this.dust.group);
 
     canvas.style.touchAction = "none";
     canvas.addEventListener("pointerdown", this.onDown);
@@ -786,6 +788,7 @@ export class IsleRenderer {
     this.renderer.domElement.removeEventListener("pointermove", this.onMove);
     this.renderer.domElement.removeEventListener("pointercancel", this.onCancel);
     this.safeProbe.remove();
+    this.dust.dispose();
     this.oceanLife.dispose();
     this.bruno.dispose();
     this.under?.dispose();
@@ -1271,7 +1274,7 @@ export class IsleRenderer {
       this.walk = null;
       this.startWalk();
     }
-    const busy = now < this.busyUntil || this.flashes.length > 0 || this.payingPieces.length > 0 || !!this.jelly?.busy();
+    const busy = now < this.busyUntil || this.flashes.length > 0 || this.payingPieces.length > 0 || !!this.jelly?.busy() || this.dust.active;
     const gap = calm ? (busy ? 0 : Infinity) : this.titleMode ? 1000 / 30 : this.walk || pulsing || busy ? 0 : 1000 / 12;
     if (now - this.lastFrame < gap - 2) return;
     // Backpressure on ambient frames (the title's turn, the idle sea): while the GPU is still on the last one, wait for it
@@ -1286,6 +1289,7 @@ export class IsleRenderer {
     const dt = Math.min(this.clock.getDelta(), 0.1);
     this.stepFlashes(dt, calm);
     this.stepPayers(dt, calm);
+    this.dust.step(dt);
     this.controls.autoRotate = this.titleMode && !calm;
     if (this.play()) {
       this.orbit.update();
@@ -1645,6 +1649,7 @@ export class IsleRenderer {
     this.tokens = [];
     this.caps.clear();
     this.flashes = [];
+    this.dust.clear();
     this.oceanLife.reset(landKey(state));
 
     // Each hex: an unseen block to pick it by, a stand-in slab in its terrain's paint, and its token.
@@ -1816,9 +1821,18 @@ export class IsleRenderer {
   }
 
   // Pose every landing piece for this moment; a finished one is left exactly at rest. Reduced motion skips to rest.
+  // Dust fires once per landing at LAND_MS, aligned with the placement sound.
   private stepLandings(now: number, calm: boolean) {
     if (!this.landings.length) return;
     for (const l of this.landings) poseLanding(l, calm ? Infinity : now);
+    if (!calm) {
+      for (const l of this.landings) {
+        if (!l.dusted && now - l.start >= LAND_MS[LAND_SOUND[l.kind]]) {
+          l.dusted = true;
+          this.dust.emit(l.obj.position.x, l.restY, l.obj.position.z);
+        }
+      }
+    }
     this.landings = this.landings.filter((l) => !calm && now - l.start < LAND_MS[LAND_SOUND[l.kind]]);
     for (const [key, start] of this.landStart) if (calm || now - start >= LAND_MAX) this.landStart.delete(key);
   }
@@ -2241,16 +2255,35 @@ const LAND_MAX = Math.max(...Object.values(LAND_MS));
 const easeOut = (u: number) => 1 - (1 - u) ** 5;
 const easeSnap = (u: number) => 1 + 2.70158 * (u - 1) ** 3 + 1.70158 * (u - 1) ** 2;
 
-// A path grows from 0.2 along its edge; an outpost drops 0.2 and settles; a stronghold swaps in at 1.05 and settles.
+// Drop heights: path 0.04, outpost 0.2, stronghold 0.15. Squash overlay in the last 35% of the animation:
+// a damped sine compresses Y and expands XZ, settling to [1,1,1] at u=1 (LAND_MS).
+const SQUASH_START = 0.65;
+const jellyBounce = (su: number) => Math.exp(-5 * su) * Math.sin(su * Math.PI * 3);
+
 function poseLanding(l: { obj: THREE.Object3D; kind: PieceKind; start: number; restY: number }, now: number) {
   const u = Math.min(1, Math.max(0, (now - l.start) / LAND_MS[LAND_SOUND[l.kind]]));
   const { obj } = l;
   if (u >= 1) {
     obj.position.y = l.restY;
     obj.scale.set(1, 1, 1);
-  } else if (l.kind === "path") obj.scale.set(1, 1, 0.2 + 0.8 * easeOut(u));
-  else if (l.kind === "outpost") obj.position.y = l.restY + 0.2 * (1 - easeSnap(u));
-  else obj.scale.setScalar(1.05 - 0.05 * easeSnap(u));
+    return;
+  }
+  const j = u > SQUASH_START ? jellyBounce((u - SQUASH_START) / (1 - SQUASH_START)) : 0;
+  const sqY = 1 - 0.22 * j;
+  const sqXZ = 1 + 0.11 * j;
+
+  if (l.kind === "path") {
+    const gu = Math.min(u / SQUASH_START, 1);
+    obj.scale.set(sqXZ, sqY, (0.2 + 0.8 * easeOut(gu)) * sqXZ);
+    obj.position.y = l.restY + 0.04 * (1 - easeOut(gu));
+  } else if (l.kind === "outpost") {
+    obj.position.y = l.restY + 0.2 * (1 - easeSnap(u));
+    obj.scale.set(sqXZ, sqY, sqXZ);
+  } else {
+    const s = 1.05 - 0.05 * easeSnap(u);
+    obj.position.y = l.restY + 0.15 * (1 - easeSnap(u));
+    obj.scale.set(s * sqXZ, s * sqY, s * sqXZ);
+  }
 }
 
 function makePath(seat: string, len: number) {
