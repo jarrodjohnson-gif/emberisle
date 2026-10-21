@@ -7,6 +7,7 @@ The review desk adds a line whenever Jarrod decides something.
 | Date | Decision | Where |
 |---|---|---|
 | 2026-10-21 | Auto-merge phase 1 is docs only (narrows the 2026-10-20 "docs and test-only" call). Test-only waits for loosen-prove (#924). | Jarrod approved Fable's design ("proceed with Fable recs"); [#923](https://github.com/jarrodjohnson-gif/emberisle/issues/923) |
+| 2026-10-20 | The fortunes button reads "Play fortune · N" when one can be played, else "Fortunes · N" (provisional; Astra's HUD pass may revisit). | [#829](https://github.com/jarrodjohnson-gif/emberisle/issues/829) |
 | 2026-10-21 | The review desk watches only the inbox (#699) and the PRs it is about to merge, to save tokens. Its main loop runs on Sonnet, with Opus subagents for the reviews that need Opus. | Jarrod, in chat; [`docs/DESK.md`](DESK.md) |
 | 2026-10-21 | New look-and-feel work goes to Astra as a mock or spec before anyone builds it. This is part of Astra's #903 vision review. Bug fixes, server work, proofs and docs carry on as normal. | Vote page; [#854](https://github.com/jarrodjohnson-gif/emberisle/issues/854) |
 | 2026-10-20 | Use Fable or Astra only for a whole-project vision pass or a requested taste review of a page. Opus does all other design. Cheaper models build from approved specs. | Jarrod, in chat |

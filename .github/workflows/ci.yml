@@ -7,7 +7,8 @@ name: CI
 # is kept because the ruleset requires it.
 # browser-a is split three ways (a1, a2, a3) by measured step time, about 8-12 minutes each (the whole was ~29);
 # the browser-a job itself only reports whether all three passed, because the ruleset requires that name.
-# `checks` is the required merge check: it requires every job, including every browser-a and browser-b suite.
+# `checks` is the required merge check: it requires every job, including every browser-a and browser-b suite,
+# except the advisory `loosen` job.
 # Docs-only PRs (see changes job) skip the heavy steps but still report success so required checks stay green.
 on:
   pull_request:
@@ -122,7 +123,8 @@ jobs:
   server:
     needs: changes
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # dice-prove's sampling took 99 s on CI (#926, a349dbf); the whole job took under 6 minutes.
+    timeout-minutes: 15
     steps:
       - if: needs.changes.outputs.docs_only != 'true'
         uses: actions/checkout@v4
@@ -138,6 +140,9 @@ jobs:
         run: npm ci
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm ci --prefix server
+      # Before the suites, so it still reports when a test fails.
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run registered-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run wayfarer-modes-prove
       - if: needs.changes.outputs.docs_only != 'true'
@@ -149,9 +154,40 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run touch-place-prove
       - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run stale-pr-sweeper-prove
+      - if: needs.changes.outputs.docs_only != 'true'
         run: npm run flake-rerun-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run auto-merge-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run label-commands-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run dice-prove
+
+  # #924: advisory, so it is not in `checks.needs`. The desk reads it for REVIEWING.md item 4.
+  # It diffs this PR's proofs against the commit it merges onto (the merge commit's first parent, as in build), using the
+  # base's copy of loosen-prove so a PR cannot weaken the check that judges it.
+  loosen:
+    if: github.event_name == 'pull_request' && !github.event.pull_request.draft
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: |
+          set -euo pipefail
+          BASE_SHA=$(git cat-file -p HEAD | awk '/^parent /{print $2; exit}')
+          git fetch --depth=1 origin "$BASE_SHA"
+          if git cat-file -e "$BASE_SHA:scripts/loosen-prove.mjs" 2>/dev/null; then
+            echo "Running the base's loosen-prove from $BASE_SHA."
+            git show "$BASE_SHA:scripts/loosen-prove.mjs" > "$RUNNER_TEMP/loosen-prove.mjs"
+            node "$RUNNER_TEMP/loosen-prove.mjs" --base "$BASE_SHA"
+          else
+            echo "The base $BASE_SHA has no scripts/loosen-prove.mjs yet, so this runs the PR's copy."
+            node scripts/loosen-prove.mjs --base "$BASE_SHA"
+          fi
 
   browser-a-suites:
     name: browser-a (${{ matrix.suite }})
@@ -199,6 +235,8 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
         run: npm run countdown-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
+        run: npm run turn-extension-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
         run: npm run trade-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a2'
         run: npm run practice-trade-prove
@@ -214,6 +252,15 @@ jobs:
         run: npm run fortune-count-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
         run: npm run fortune-tray-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
+        run: npm run fortune-cue-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
+        run: npm run lobby-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
+        run: npm run my-numbers-prove
+      # pages-prove rebuilds dist/ under /emberisle/; browser-a has no later dist/ reader.
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
+        run: npm run pages-prove
       - if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -287,6 +334,8 @@ jobs:
         run: npm run sounds-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
         run: npm run music-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
+        run: npm run ore-tokens-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
         run: npm run tokens-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'

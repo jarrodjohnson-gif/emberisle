@@ -315,3 +315,14 @@ input, select, textarea { border-color: var(--control-line); }
   100% { box-shadow: 0 0 0 0 rgb(36 109 114 / 0); transform: scale(1); }
 }
 @media (prefers-reduced-motion: reduce) { .my-number-lit { animation: none; } }
+
+/* #829: the fortunes button cue: one soft glow when the turn starts (the ring is
+   keyed on the turn in Hud.tsx). Under reduced motion the ring is a still outline instead. */
+.fortune-cue-glow { position: absolute; inset: 0; border-radius: inherit; pointer-events: none; animation: fortune-cue-glow 1600ms ease-out 1 both; }
+@keyframes fortune-cue-glow {
+  0% { box-shadow: 0 0 0 0 rgb(36 109 114 / 0.6); }
+  40% { box-shadow: 0 0 0 6px rgb(36 109 114 / 0.35); }
+  100% { box-shadow: 0 0 0 0 rgb(36 109 114 / 0); }
+}
+.fortune-cue-glow[data-done] { animation: none; }
+@media (prefers-reduced-motion: reduce) { .fortune-cue-glow { animation: none; box-shadow: 0 0 0 2px var(--color-accent); } }
