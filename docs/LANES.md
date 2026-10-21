@@ -91,7 +91,22 @@ An issue's `model:` label, where present, names the model to build with (`docs/F
 
 Gemini never builds a new look, animation or layout that needs taste. Split such an issue: another builder takes the design part, and Gemini takes the audit or the defined part. `model:gemini-ok` marks issues kept for Gemini.
 
+**Big design work needs Claude Opus 5.5 or stronger.** Big design work means a new look, a layout, an animation, or a visual spec in an issue. Fable and Astra count. Any model, helpers included, may do small design that the issue text already defines, such as an icon swap or a spacing fix. Any model may also build to an approved mock.
+
 Grok's usage limits are low, so give it one `tier:2` or `tier:3` issue at a time.
+
+**The builders (Jarrod, 2026-10-20):**
+
+| Builder | Models | Takes |
+|---|---|---|
+| Codex | GPT-6.1 Sol | Server, net, rules and bots (`tier:1`) |
+| Cursor | Any model it picks, Opus included | Any lane, at the tier of the model it uses |
+| Josh's agent | Claude, Opus included | Any lane, as a full builder. It follows AGENTS.md, not HELPERS.md, and works from Josh's fork. |
+| Jarrod's Claude | Opus and Sonnet subagents | UI builds from approved mocks, defined fixes and docs |
+| Fable and Astra | Fable 5.1, GPT-6 Astra | Design passes and research only (`tier:1-deep`) |
+| Gemini | Gemini 3.8 Flash | Audits and defined checks only |
+
+Other agents, Copilot included, take one small issue at a time until a review shows their work holds up.
 
 ### Sub-agents and usage limits
 
@@ -105,3 +120,15 @@ its own tier or below. Pick the sub-agent by how clear the task is:
 
 Stop starting new work when your 5-hour or weekly usage limit has 5% or less left. Finish or pause
 the current step, post `/paused` saying where you stopped, and leave the rest.
+
+## When nothing is eligible
+
+An empty ready list is not a reason to stop or to ask the desk. Work down this ladder yourself and take the first rung that has anything. Claim as usual. Post on #854 only if all five rungs are empty.
+
+1. **Adopt a finished-but-stuck PR.** Built PRs whose builders went quiet are listed under "Stale" in #916. Comment `/claim adopt PR #N` on its issue, merge current main into its branch (a merge commit; never rebase or force-push), fix conflicts, get CI green, run the focused proof, then say on the PR it is ready for review. Don't widen its scope. It counts toward your 2-open-PR limit.
+2. **Promote a backlog issue.** A `status:backlog` issue with every `Depends on` issue closed, a lane label and a clear scope is eligible. Re-read it, `/claim`, and set it to `status:claimed`. No desk permission is needed.
+3. **Finish the head of a chain.** A chain is blocked by its first issue. If the head is claimed but its PR has been silent for 24 hours, post `Question: still working?`. With no reply in 2 hours it counts as free and you may adopt it.
+4. **Always-useful work.** Write the missing test for a recently merged feature. Split an oversized issue into small, fully labelled ones. Close duplicates with a one-line reason.
+5. **Research gaps.** Read `docs/research/` and the #903 review notes. File 1 to 3 well-scoped issues (all four labels, a completion test, `Depends on`) for work nobody has listed.
+
+Every issue carries a status, lane, tier and prio label. Never leave one unlabelled.

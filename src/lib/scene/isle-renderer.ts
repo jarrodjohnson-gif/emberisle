@@ -861,7 +861,7 @@ export class IsleRenderer {
     if (!this.play() || this.keyboardShrunk) return;
     const c = this.renderer.domElement;
     const base = this.insets();
-    // The hole's edges on the shell, so the HUD can centre a moment on the island (TurnMoment, GainFloats): the one the map is fitted to.
+    // The hole's edges on the shell, so the HUD can centre a moment on the island (TurnMoment): the one the map is fitted to.
     for (const k of ["top", "right", "bottom", "left"] as const) c.parentElement?.style.setProperty(`--hole-${k}`, `${base[k]}px`);
     const [w, h] = [c.clientWidth || 1, c.clientHeight || 1];
     const f = this.view === "diorama" ? fitDiorama(w, h, base) : fitOrtho(w, h, base, OVERHEAD_LEAN);

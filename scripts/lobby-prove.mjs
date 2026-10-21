@@ -55,7 +55,7 @@ async function tab(name) {
   await page.getByTestId("title-card").waitFor();
   return { name, page };
 }
-const seatNames = (t) => t.page.locator('[data-testid="lobby-card"] ul > li').evaluateAll((lis) => lis.map((li) => li.querySelector("span.flex-1")?.textContent?.replace(/ · host$/, "").trim()).filter((n) => n !== "Empty"));
+const seatNames = (t) => t.page.locator('[data-testid="lobby-card"] ul > li').evaluateAll((lis) => lis.map((li) => li.querySelector('[data-testid="lobby-name"]')?.textContent?.replace(/ · host$/, "").trim()).filter((n) => n !== "Empty"));
 const until = async (fn, what, ms = 8000) => {
   const end = Date.now() + ms;
   let last;
