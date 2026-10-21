@@ -47,6 +47,7 @@
     "touch-place-prove": "node scripts/touch-place-prove.mjs",
     "stale-pr-sweeper-prove": "node scripts/stale-pr-sweeper-prove.mjs",
     "flake-rerun-prove": "node scripts/flake-rerun-prove.mjs",
+    "auto-merge-prove": "node scripts/auto-merge-prove.mjs",
     "registered-prove": "node scripts/registered-prove.mjs",
     "loosen-prove": "node scripts/loosen-prove.mjs",
     "label-commands-prove": "node scripts/label-commands-prove.mjs",
