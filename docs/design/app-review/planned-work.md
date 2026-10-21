@@ -117,7 +117,7 @@ Status and tier come from labels. Player-visible text is a one-line summary of t
 | **Mini-games** | | | | | |
 | [#928](https://github.com/jarrodjohnson-gif/emberisle/issues/928) | Spike: play a Flash game in a lobby box with Ruffle (Sandwich Stacker) | in-review | 2 | Spike: self-hosted Flash game in a lobby box (Ruffle). | - |
 | [#929](https://github.com/jarrodjohnson-gif/emberisle/issues/929) | Design: lobby mini-games shelf (solo Flash games, plus native multiplayer like tic-tac-toe and trivia) | todo | 2 | Lobby mini-games shelf: solo Flash, trivia, tic-tac-toe (design). | - |
-| [#937](https://github.com/jarrodjohnson-gif/emberisle/issues/937) | Lobby box: play Sandwich Stacker while you wait (plain prototype, held Left/Right buttons) | todo | 2 | Lobby box: Sandwich Stacker prototype, held Left/Right buttons. | #928, PR #935 |
+| [#937](https://github.com/jarrodjohnson-gif/emberisle/issues/937) | Lobby box: play Sandwich Stacker while you wait (plain prototype, held Left/Right buttons) | todo | 2 | Lobby box: Sandwich Stacker prototype, held Left/Right buttons. | #928, PR #935 (merged) |
 | **Accessibility and performance** | | | | | |
 | [#310](https://github.com/jarrodjohnson-gif/emberisle/issues/310) | Research the phone frame time: SSAO, pixel ratio and the idle loop | in-review | 1-deep | Phone frame-time research (SSAO, pixel ratio, idle loop). | - |
 | [#312](https://github.com/jarrodjohnson-gif/emberisle/issues/312) | Design a colour-blind-safe way to tell the four seats apart | in-review | 1-deep | Colour-blind-safe way to tell four seats apart (design). | #238 |
