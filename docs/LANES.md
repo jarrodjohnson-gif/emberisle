@@ -120,7 +120,7 @@ Until two of its PRs have merged, a provisional model takes no second issue. Eac
 |---|---|---|
 | Codex | GPT-6.1 Sol | Server, net, rules and bots (`tier:1`) |
 | Cursor | Any model it picks, Opus included | Any lane, at the tier of the model it uses |
-| Josh's agent | Claude, Opus included | Any lane, as a full builder. It follows AGENTS.md, not HELPERS.md, and works from Josh's fork. |
+| Josh's agent | Claude Opus 5.5, Sonnet 5.5 and Haiku 5.5, free to use any of them | Any lane, as a full builder. It follows AGENTS.md, not HELPERS.md, and works from Josh's fork. |
 | Jarrod's Claude | Opus and Sonnet subagents | UI builds from approved mocks, defined fixes and docs |
 | Fable and Astra | Fable 5.1, GPT-6 Astra | Design passes and research only (`tier:1-deep`) |
 | Gemini | Gemini 3.8 Flash | Audits and defined checks only |
