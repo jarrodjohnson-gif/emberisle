@@ -20,10 +20,11 @@ on:
   issue_comment:
     types: [created]
 
+# The built-in token only reads. The merge and the label use the app token in the app-token step.
 permissions:
-  contents: write
-  pull-requests: write
-  issues: write
+  contents: read
+  pull-requests: read
+  issues: read
   checks: read
 
 concurrency:
