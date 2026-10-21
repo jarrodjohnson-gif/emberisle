@@ -19,6 +19,11 @@ function fake(pulls = [pr()], initial = []) {
   const api = async (method, path, body) => {
     calls.push({ method, path, body });
     const n = Number(path.match(/\/pulls\/(\d+)$/)?.[1]);
+    if (method === 'GET' && path.endsWith('/labels/stale')) {
+      if (api.labelError) { const error = new Error('label error'); error.status = api.labelError; throw error; }
+      if (api.labelMissing) { const error = new Error('label absent'); error.status = 404; throw error; }
+      return { name: 'stale' };
+    }
     if (method === 'GET') {
       reads++;
       if (api.onRead) api.onRead(reads, pulls, comments);
@@ -26,6 +31,10 @@ function fake(pulls = [pr()], initial = []) {
     }
     if (method === 'POST' && path.endsWith('/comments')) comments.push({ id: comments.length + 100, user: bot, body: body.body });
     if (method === 'PATCH' && path.includes('/issues/comments/')) comments.find(c => c.id === Number(path.split('/').at(-1))).body = body.body;
+    if (method === 'POST' && path.endsWith('/labels') && !path.includes('/issues/')) {
+      if (api.creationRace) { api.labelMissing = false; const error = new Error('already exists'); error.status = 422; throw error; }
+      api.labelMissing = false; return {};
+    }
     if (method === 'POST' && path.endsWith('/labels')) pulls.find(p => path.includes(`/issues/${p.number}/`)).labels.push({ name: 'stale' });
     if (method === 'PATCH' && n) pulls.find(p => p.number === n).state = body.state;
     return {};
@@ -59,6 +68,19 @@ for (const initial of [[], [marker(50, { user: { login: 'attacker', type: 'User'
   assert.equal(f.writes()[0].method, 'POST'); assert.equal(activity(f.comments).observedAt, new Date(now).toISOString());
 }
 ok('missing, forged and malformed markers receive a conservative observation grace');
+const absentLabel = fake([pr()], [marker(6)]); absentLabel.api.labelMissing = true;
+await run(absentLabel);
+assert(absentLabel.writes().some(c => c.path.endsWith('/labels') && c.body?.name === 'stale'));
+assert(absentLabel.writes().some(c => c.body?.labels?.includes('stale')));
+const dryMissing = fake([pr()], [marker(6)]); dryMissing.api.labelMissing = true;
+await run(dryMissing, { dryRun: true }); assert.equal(dryMissing.writes().length, 0);
+const labelRace = fake([pr()], [marker(6)]); labelRace.api.labelMissing = true; labelRace.api.creationRace = true;
+await run(labelRace); assert(labelRace.pulls[0].labels.some(l => l.name === 'stale'));
+for (const status of [403, 500]) {
+  const fail = fake([pr()], [marker(6)]); fail.api.labelError = status;
+  await assert.rejects(() => run(fail), /label error/); assert.equal(fail.writes().length, 0);
+}
+ok('missing label creation is gated, handles creation races, and fails closed on 403/5xx');
 const changed = fake([pr(1, { head: { sha: newer } })], [marker(50)]); await run(changed);
 assert.equal(changed.writes().length, 1); assert.equal(activity(changed.comments).sha, newer);
 assert.equal(activity(changed.comments).observedAt, new Date(now).toISOString());

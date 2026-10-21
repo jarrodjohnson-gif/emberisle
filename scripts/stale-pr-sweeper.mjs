@@ -83,6 +83,19 @@ export async function sweep({ api, enabled, repo, now = Date.now(), event = null
     } else if (dryRun) {
       log(`#${pr.number}: would ${action}`);
     } else if (action === 'label') {
+      try { await api('GET', `${base}/labels/stale`); }
+      catch (error) {
+        if (error.status !== 404) throw error;
+        try {
+          await api('POST', `${base}/labels`, { name: 'stale', color: 'ededed', description: 'No PR push observed for five days.' });
+        } catch (creationError) {
+          if (creationError.status !== 422) throw creationError;
+          await api('GET', `${base}/labels/stale`); // Another writer may have created it.
+        }
+      }
+      const beforeLabel = await getPr(pr.number);
+      const beforeMarker = activity(await comments(pr.number));
+      if (beforeLabel.head.sha !== pr.head.sha || decision(beforeLabel, beforeMarker, now) !== 'label') continue;
       await api('POST', `${base}/issues/${pr.number}/labels`, { labels: ['stale'] });
       log(`#${pr.number}: labelled stale`);
     } else {
@@ -107,7 +120,11 @@ export function githubApi(token, fetcher = fetch) {
         'X-GitHub-Api-Version': '2022-11-28', ...(body ? { 'Content-Type': 'application/json' } : {}) },
       ...(body ? { body: JSON.stringify(body) } : {}),
     });
-    if (!response.ok) throw new Error(`GitHub ${method} ${path}: HTTP ${response.status}`);
+    if (!response.ok) {
+      const error = new Error(`GitHub ${method} ${path}: HTTP ${response.status}`);
+      error.status = response.status;
+      throw error;
+    }
     return response.json();
   };
   request.list = async path => {
