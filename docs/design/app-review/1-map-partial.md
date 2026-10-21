@@ -53,9 +53,6 @@ Other arrows are source-derived; online rematch and spectator transitions still 
 - **source**: leaving uses `goTitle` (`src/lib/game/store.ts:641`). Exact cleared and retained fields require inspection.
 - **untested**: browser Back, refresh, closed tab, network loss, host migration, hotseat private-state handoff, and rematch retention.
 
-## Remaining checkpoint work
+## Status at the pause
 
-Complete all six scope journeys in the running app, including online host/join/watch/reconnect and real end-state transitions.
-Inventory all overlays and failure states; attach source lines and distinguish fixture-assisted rendering from actual end-to-end play.
-Record dead ends and state retention without recommendations. Check phone portrait and landscape.
-Keep at most 12 JPG screenshots, each under 300 KB. This partial map does not satisfy checkpoint 1 acceptance.
+This partial map was superseded by `1-map.md`, whose coverage gaps list what is still open. When it paused, it had not yet walked all six scope journeys (including online host, join, watch and reconnect, and real end states), inventoried overlays and failure states, recorded dead ends and state retention, or checked phone portrait and landscape. It did not meet checkpoint 1 acceptance, which allows at most 12 JPG screenshots, each under 300 KB.

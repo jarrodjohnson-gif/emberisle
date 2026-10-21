@@ -3,7 +3,7 @@
 GPT-6 Astra (medium), 2026-10-21. **Review draft with explicit coverage gaps.**
 Baseline: `8a9e75d7dd6709192dc8c6fa681cf9725c3e4e95`.
 This maps the saved baseline, not later main changes. No recommendations or runtime changes.
-The original partial map is kept unchanged as `1-map-partial.md`.
+The earlier partial map is `1-map-partial.md`. Only its closing to-do list was reworded as a status note.
 
 ## Evidence and method
 
