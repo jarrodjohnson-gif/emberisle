@@ -13,6 +13,9 @@ import { COST, PLAYER_COLORS, RESOURCES } from "../src/lib/game/types.ts";
 import { PROTO } from "../src/lib/net/proto.ts";
 import { allow, cleanText, loadEmotes, remember, SOUNDBOARD } from "./chat.mjs";
 import { cue } from "./cue.mjs";
+import { PROFILE_TYPES, profileGate, profileHandler } from "./profile-protocol.mjs";
+import { openProfiles } from "./profiles.mjs";
+import { extensionBudget, turnExtensions } from "./turn-extension.mjs";
 
 function hear(name) {
   try {
@@ -98,8 +101,11 @@ const HOLD_INFO = { holdMs: HOLD_MS, lobbyHoldMs: LOBBY_HOLD_MS };
 // seat and the seat stays human (#344, Jarrod's call on #324). A dropped seat follows GRACE_MS instead, never this.
 const TURN_MS = Number(process.env.TURN_MS ?? 120 * 1000);
 const TURN_TOTAL_MS = Number(process.env.TURN_TOTAL_MS ?? 6 * TURN_MS);
+const TURN_EXTENSION_MS = envMs("TURN_EXTENSION_MS", 60_000);
 // A bot seat answers a table ask after BOT_ANSWER_MS to twice that, so its Yes or No lands like a person's (#363).
 const BOT_ANSWER_MS = Number(process.env.BOT_ANSWER_MS ?? 1000);
+// People first (#850): a bot's Yes waits this long, or until every person asked has said No. A bot's No does not wait.
+const PEOPLE_FIRST_MS = Number(process.env.PEOPLE_FIRST_MS ?? 8000);
 // Every socket is pinged this often; one that has not answered the last ping is cut, so a phone that
 // locked or changed Wi-Fi frees its seat for the rejoin instead of holding it half-open (#202, #113).
 const PING_MS = Number(process.env.PING_MS ?? 30 * 1000);
@@ -118,6 +124,10 @@ const ROOM_SHAPE = 2;
 const SOUND_MS = envMs("SOUND_MS", 3000);
 // A seat's accepted renames are at least this far apart, on top of the ordinary action limit.
 const RENAME_MS = envMs("RENAME_MS", 2000);
+// Profiles (#762) live beside the rooms, in a private store only this host writes. PROFILES_DEV=1 lets a loopback page sign in
+// over plain ws:// for local development; every other plaintext link stays guest-only (docs/design/profiles.md).
+const PROFILES = path.resolve(process.env.PROFILES_DIR ?? fileURLToPath(new URL("./profiles/", import.meta.url)));
+const PROFILES_DEV = process.env.PROFILES_DEV === "1";
 // The built client (npm run build). DIST lets a proof point the host at a small temp folder.
 const DIST = path.resolve(process.env.DIST ?? fileURLToPath(new URL("../dist/", import.meta.url)));
 const TYPES = {
@@ -188,6 +198,7 @@ function seatsMsg(room) {
 }
 
 function publish(room) {
+  if (room.game) extensions(room).sync();
   broadcast(room, seatsMsg(room));
   save(room);
 }
@@ -221,7 +232,7 @@ function snapshot(room) {
     game: room.game,
     victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10,
     wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on",
-    seats: room.seats.map(({ id, name, color, ready, pid, secret, bot, turnDeadline, turnStartedAt }) => ({ id, name, color, ready, pid, secret, ...(bot ? { bot: true } : {}), turnDeadline: turnDeadline ?? null, turnStartedAt: turnStartedAt ?? null })),
+    seats: room.seats.map(({ id, name, color, ready, pid, secret, bot, turnDeadline, turnStartedAt, extension }) => ({ id, name, color, ready, pid, secret, ...(bot ? { bot: true } : {}), turnDeadline: turnDeadline ?? null, turnStartedAt: turnStartedAt ?? null, extension })),
     shape: ROOM_SHAPE,
     savedAt: Date.now(),
   });
@@ -486,6 +497,7 @@ function disarmTurn(seat) {
 const RESUME_MIN_MS = Math.min(5000, TURN_MS / 10);
 function armTurns(room) {
   for (const seat of room.seats) {
+    const bonus = extensionBudget(seat, room.game, TURN_EXTENSION_MS).extra;
     const human = room.game?.players.find((p) => p.id === seat.pid)?.kind === "human";
     const waited = human && waitedOn(room.game, seat.pid);
     if (!waited) {
@@ -501,7 +513,7 @@ function armTurns(room) {
       // A window that ran out while the host was down is spent on a 0 ms timer, not inline, so the other seats in this
       // loop are still armed and turnOut's own move does not re-enter armTurns mid-loop.
       const spent = resume !== null && resume - now < RESUME_MIN_MS;
-      const ms = spent ? 0 : resume !== null ? resume - now : Math.max(0, Math.min(TURN_MS, seat.turnStartedAt + TURN_TOTAL_MS - now));
+      const ms = spent ? 0 : resume !== null ? resume - now : Math.max(0, Math.min(TURN_MS, seat.turnStartedAt + TURN_TOTAL_MS + bonus - now));
       seat.turnDeadline = now + ms;
       seat.turnTimer = setTimeout(() => turnOut(room, seat), ms);
     }
@@ -539,6 +551,24 @@ function turnOut(room, seat) {
   play(seat.ws, room, intent, true);
 }
 
+// Timer votes share the existing host clock and never dispatch a gameplay action.
+function extensions(room) {
+  return room.extensions ??= turnExtensions(room, {
+    extensionMs: TURN_EXTENSION_MS,
+    voteMs: envMs("TURN_VOTE_MS", 15_000),
+    changed: () => {
+      broadcast(room, { type: "turnExtension", ...extensions(room).state() });
+      save(room);
+      queueMicrotask(() => { if (rooms.has(room.code) && room.game) pushState(room); });
+    },
+    extend: (seat, ms) => {
+      clearTimeout(seat.turnTimer);
+      seat.turnDeadline += ms;
+      seat.turnTimer = setTimeout(() => turnOut(room, seat), Math.max(0, seat.turnDeadline - Date.now()));
+    },
+  });
+}
+
 // The soonest armed window at the table, or null.
 function deadlineOf(room) {
   return room.seats.reduce((d, s) => (s.turnDeadline && (!d || s.turnDeadline < d) ? s.turnDeadline : d), null);
@@ -546,6 +576,7 @@ function deadlineOf(room) {
 
 function pushState(room) {
   armTurns(room);
+  extensions(room).sync();
   // The soonest armed window, and whose it is, so every HUD can count it down (#345). `serverNow` lets a client
   // whose clock is off still land on the host's moment.
   const soonest = room.seats.reduce((d, s) => (s.turnDeadline && (!d || s.turnDeadline < d.turnDeadline) ? s : d), null);
@@ -559,13 +590,14 @@ function pushState(room) {
       game: viewFor(room.game, seat.pid),
       legal: legalFor(room.game, seat.pid),
       actionStamp: actionStamp(room, seat.ws),
+      turnExtension: extensions(room).state(),
       turnDeadline,
       turnPlayer: soonest?.pid ?? null,
       serverNow: Date.now(),
     });
   }
   if (!room.watchers.size) return;
-  const raw = JSON.stringify({ type: "state", you: null, game: watchView(room.game), legal: legalFor(room.game, null), turnDeadline, turnPlayer: soonest?.pid ?? null, serverNow: Date.now() });
+  const raw = JSON.stringify({ type: "state", you: null, game: watchView(room.game), legal: legalFor(room.game, null), turnExtension: extensions(room).state(), turnDeadline, turnPlayer: soonest?.pid ?? null, serverNow: Date.now() });
   for (const ws of room.watchers) if (ws.readyState === ws.OPEN) ws.send(raw);
 }
 
@@ -581,7 +613,7 @@ function freshAction(ws, room, msg) {
   const seen = (ws.seat.actionCids ??= []);
   // Discards and offer replies from other seats can race with progress in the same turn.
   // Their rules still validate the outstanding discard/offer; connection and cid prevent replays.
-  const parallel = ws.seat.pid !== room.game.current && ["discard", "tradeAnswer"].includes(msg.type);
+  const parallel = ws.seat.pid !== room.game.current && ["discard", "tradeAnswer", "turnExtensionAsk", "turnExtensionAnswer"].includes(msg.type);
   if (
     ws.seat.ws !== ws ||
     typeof msg.cid !== "string" || msg.cid.length === 0 || msg.cid.length > 64 ||
@@ -596,7 +628,7 @@ function freshAction(ws, room, msg) {
     send(ws, {
       type: "state", you: ws.seat.pid, game: viewFor(room.game, ws.seat.pid),
       legal: legalFor(room.game, ws.seat.pid), actionStamp: stamp,
-      turnDeadline: soonest?.turnDeadline ?? null, turnPlayer: soonest?.pid ?? null, serverNow: Date.now(),
+      turnExtension: extensions(room).state(), turnDeadline: soonest?.turnDeadline ?? null, turnPlayer: soonest?.pid ?? null, serverNow: Date.now(),
     });
     return false;
   }
@@ -764,6 +796,8 @@ async function serveStatic(req, res) {
 }
 
 const wss = new WebSocketServer({ server, maxPayload: 16 * 1024 });
+const profiles = openProfiles(PROFILES, { colors: PLAYER_COLORS });
+const onProfile = profileHandler(profiles, send);
 
 // A name is the join key for the away marker, chat mentions and the log, so it is cleaned and made unique.
 function seatName(room, raw, fallback, except = null) {
@@ -854,7 +888,7 @@ function watch(ws, msg) {
   send(ws, { type: "welcome", proto: PROTO, code: room.code, spectator: true, chat: room.chat, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on" });
   watchersChanged(room, "Someone is watching.");
   const soonest = room.seats.reduce((d, s) => (s.turnDeadline && (!d || s.turnDeadline < d.turnDeadline) ? s : d), null);
-  send(ws, { type: "state", you: null, game: watchView(room.game), legal: legalFor(room.game, null), turnDeadline: deadlineOf(room), turnPlayer: soonest?.pid ?? null, serverNow: Date.now() });
+  send(ws, { type: "state", you: null, game: watchView(room.game), legal: legalFor(room.game, null), turnExtension: extensions(room).state(), turnDeadline: deadlineOf(room), turnPlayer: soonest?.pid ?? null, serverNow: Date.now() });
 }
 
 function startGame(ws, room) {
@@ -1043,6 +1077,9 @@ function openOffer(room, from, give, want) {
     botsOn(room, offer);
   }, 20000);
   broadcast(room, { type: "tradeOffer", tradeId, from, give, want, seconds: 20 });
+  offer.peopleUntil = Date.now() + PEOPLE_FIRST_MS;
+  offer.heldYes = [];
+  offer.botTimers.push(setTimeout(() => releaseHeld(room, offer), PEOPLE_FIRST_MS));
   for (const p of room.game.players) {
     if (p.kind !== "bot" || p.id === from) continue;
     offer.botTimers.push(setTimeout(() => botAnswer(room, offer, p.id), BOT_ANSWER_MS + randomInt(BOT_ANSWER_MS + 1)));
@@ -1053,7 +1090,22 @@ function openOffer(room, from, give, want) {
 function botAnswer(room, offer, pid) {
   if (room.offer !== offer || room.game.players.find((p) => p.id === pid)?.kind !== "bot") return;
   const recovery = (room.recoveryPids ?? []).includes(pid);
-  respond(room, pid, recovery ? false : shouldAcceptTrade(room.game, pid, offer));
+  const yes = !recovery && shouldAcceptTrade(room.game, pid, offer);
+  if (yes && peopleWaiting(room, offer)) return void offer.heldYes.push(pid);
+  respond(room, pid, yes);
+}
+
+function peopleWaiting(room, offer) {
+  if (Date.now() >= offer.peopleUntil) return false;
+  return room.game.players.some((p) => p.kind !== "bot" && p.id !== offer.from && !offer.declined.has(p.id));
+}
+
+// Held Yeses go in the order the bots gave them, so the first bot to say Yes still takes it.
+function releaseHeld(room, offer) {
+  for (const pid of offer.heldYes.splice(0)) {
+    if (room.offer !== offer) return;
+    if (room.game.players.find((p) => p.id === pid)?.kind === "bot") respond(room, pid, true);
+  }
 }
 
 function ask(ws, room, msg) {
@@ -1105,7 +1157,7 @@ function respond(room, actor, yes) {
       closeOffer(room);
       broadcast(room, { type: "tradeClosed", tradeId: offer.tradeId });
       botsOn(room, offer);
-    }
+    } else if (!peopleWaiting(room, offer)) releaseHeld(room, offer);
     return;
   }
   const offered = applyAction(room.game, offer.from, { type: "offerTrade", to: actor, give: offer.give, want: offer.want });
@@ -1209,6 +1261,7 @@ function play(ws, room, msg, automated = false) {
 
 wss.on("connection", (ws, req) => {
   ws.ipKey = ipKey(req.socket.remoteAddress, req.headers["cf-connecting-ip"]);
+  ws.profileGate = profileGate(req, PROFILES_DEV);
   // An over-limit frame (maxPayload) raises 'error' on this one socket; with no listener here,
   // Node's default behavior is to throw and take down the whole host. One bad frame must only
   // close that socket (ws already sends close code 1009) and never the other tables.
@@ -1247,6 +1300,9 @@ function handle(ws, raw) {
     return send(ws, { type: "error", message: "not ready" });
   }
   if (!msg || typeof msg !== "object") return send(ws, { type: "error", message: "not ready" });
+  // Profile frames have their own connection and limits (#762); a profile connection never opens, joins or watches a table.
+  if (PROFILE_TYPES.has(msg.type)) return onProfile(ws, msg);
+  if (ws.profileSocket) return send(ws, { type: "error", message: "not ready" });
   if (!ws.room) {
     // A socket with no seat has no seat.bucket; this one throttles the pre-seat frames (docs/design/color-peek.md).
     const ok = allow(ws.bucket, Date.now());
@@ -1290,6 +1346,11 @@ function handle(ws, raw) {
   if (msg.type === "again") return rematch(ws, room);
   if (!room.game) return send(ws, { type: "error", message: "not ready" });
   if (!freshAction(ws, room, msg)) return;
+  if (msg.type === "turnExtensionAsk" || msg.type === "turnExtensionAnswer") {
+    const error = msg.type === "turnExtensionAsk" ? extensions(room).ask(ws.seat, msg) : extensions(room).answer(ws.seat, msg);
+    if (error) return send(ws, { type: "error", message: error });
+    return; // The extension changed callback publishes the updated state.
+  }
   if (msg.type === "tradeAsk") return ask(ws, room, msg);
   if (msg.type === "tradeAnswer") return answer(ws, room, msg);
   return play(ws, room, msg);
@@ -1353,6 +1414,7 @@ function resendOffer(ws, room, seat, offer) {
 }
 
 function dropRoom(room) {
+  room.extensions?.close();
   closeOffer(room);
   for (const seat of room.seats) {
     clearTimeout(seat.graceTimer);
@@ -1375,6 +1437,7 @@ function hold(room, seat) {
   seat.gone = Date.now();
   // A dropped seat is the grace timer's business, never the turn timer's (#344).
   disarmTurn(seat);
+  if (room.game) extensions(room).sync();
   if (room.game && seat.pid) seat.graceTimer = setTimeout(() => takeOver(room, seat), GRACE_MS);
   seat.holdTimer = setTimeout(() => letGo(room, seat), room.game ? HOLD_MS : LOBBY_HOLD_MS);
 }

@@ -1,0 +1,47 @@
+/* Shared stage: the real 390x844 practice screen as backdrop, the instruction line and the hand rail at the
+   measured positions from src/components/game/Hand.tsx + Hud.tsx (tray 12,682 366x78; cards 66.8x62; gap 4). */
+:root {
+  --paper: #fff9f0; --ground: #eeece7; --ink: #263d3c; --muted: #555e58; --line: #cbcfc6; --accent: #246d72;
+  --timber: #2f6a4f; --timber-on: #ffffff; --timber-side: #173d35;
+  --clay: #b8533d; --clay-on: #ffffff; --clay-side: #74372b;
+  --wool: #b2ce80; --wool-on: #263d3c; --wool-side: #617744;
+  --grain: #e3c462; --grain-on: #263d3c; --grain-side: #8c722d;
+  --ore: #63748a; --ore-on: #ffffff; --ore-side: #414d5b;
+  --gain: #10562a; --loss: #8a2219;
+  --font-ui: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-numeral: ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
+  --radius-control: 8px;
+  --shadow-control: 0 1px 0 rgb(24 51 45 / 0.12);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  width: 390px; height: 844px; position: relative; overflow: hidden;
+  background: #a9d9d6 url("real-bg.png") 0 0 / 390px 844px no-repeat;
+  font-family: var(--font-ui); color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+}
+.instruction {
+  position: absolute; left: 12px; top: 646px; width: 366px; height: 32px;
+  background: var(--paper); color: var(--ink); border-radius: var(--radius-control);
+  padding: 6px 12px; font-size: 15px; line-height: 20px; font-weight: 500; white-space: nowrap;
+}
+.instruction::before { content: ""; display: inline-block; width: 6px; height: 6px; background: var(--accent); border-radius: 50%; margin-right: 8px; vertical-align: 2px; }
+.tray { position: absolute; left: 12px; top: 682px; width: 366px; height: 78px; display: flex; gap: 4px; padding: 8px; }
+.slot { position: relative; flex: 1 1 0; min-width: 0; }
+.card { position: relative; height: 62px; border-radius: var(--radius-control); }
+
+/* Resource palettes. `--c` is the good's colour, `--deep` the terrain side (the dark version used by the +N tab),
+   `--on` the text colour on a full fill, `--sym` the symbol colour at rest (today's choice: side colour for the pale goods). */
+.timber { --c: var(--timber); --deep: var(--timber-side); --on: var(--timber-on); --sym: var(--timber); }
+.clay   { --c: var(--clay);   --deep: var(--clay-side);   --on: var(--clay-on);   --sym: var(--clay); }
+.wool   { --c: var(--wool);   --deep: var(--wool-side);   --on: var(--wool-on);   --sym: var(--wool-side); }
+.grain  { --c: var(--grain);  --deep: var(--grain-side);  --on: var(--grain-on);  --sym: var(--grain-side); }
+.ore    { --c: var(--ore);    --deep: var(--ore-side);    --on: var(--ore-on);    --sym: var(--ore); }
+
+/* Zoom stage: one card at 3x for inspection. */
+body.zoom { background: #a9d9d6; width: 390px; height: 300px; }
+body.zoom .instruction { display: none; }
+body.zoom .tray { left: 0; top: 0; width: auto; height: auto; padding: 20px 40px; gap: 40px; transform-origin: 0 0; transform: scale(3); }
+body.zoom .slot { flex: 0 0 66.8px; }
