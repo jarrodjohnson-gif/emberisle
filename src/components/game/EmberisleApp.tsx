@@ -241,7 +241,7 @@ function Title() {
               <p id="wayfarer-help" className="py-2 text-xs text-muted">Off never moves or blocks. Sevens still discard. Off fortunes add to the army.</p>
             </details>
           </div>
-          <div className="mt-4 flex flex-col gap-2">
+          <div className="mt-2 flex flex-col gap-1">
             <div className="flex flex-col items-center gap-1">
               <Button size="lg" variant={watchLink ? "secondary" : "primary"} className="w-full" onClick={startAi}>
                 Play
@@ -250,7 +250,7 @@ function Title() {
               <p className="text-xs text-muted">3 bots, no network</p>
             </div>
             {/* #488: a pointer or focus on Host or Join fetches the online chunk (lobby and chat) before either is pressed. */}
-            <div className="flex flex-wrap gap-2" onPointerEnter={online.prefetch} onFocus={online.prefetch}>
+            <div className="flex flex-wrap gap-x-2" onPointerEnter={online.prefetch} onFocus={online.prefetch}>
               {/* Split Host + Open/Private: share the row with Join via flex-1 basis-0 so max-w-sm
                   (title-prove 1280x500) does not wrap. Ghost only — never a fourth filled button (#444). */}
               <div className="flex min-w-0 flex-1 basis-0 overflow-hidden rounded-control border border-control-line">
