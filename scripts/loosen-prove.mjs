@@ -9,9 +9,10 @@
 // base already lists that exact path, so the owner lists it in an earlier PR. A rename away from *-prove.mjs still fails,
 // listed or not, and a listed proof that is edited rather than deleted is compared like any other.
 // The list is owner-only: any change to it fails unless the PR's author and the account that started the run are both
-// the repo owner, read from GitHub's event payload as label-commands.yml does for its owner-only labels. CI runs the
-// base's copy of this file and reads the list from the base, so a PR can change neither the rule nor the list that judges it.
-// Outside Actions there is no payload, so a local run fails any change to the list.
+// the repo owner, read from GitHub's event payload as label-commands.yml does for its owner-only labels. The one
+// exception is creating it with no entries where the base has none: an empty list lets no proof go. CI runs the base's
+// copy of this file and reads the list from the base, so a PR can change neither the rule nor the list that judges it.
+// Outside Actions there is no payload, so a local run fails any owner-only change to the list.
 // Also proves the check itself on inline fixtures.
 // Run: npm run loosen-prove [-- --base <commit>]   (default base: git merge-base origin/main HEAD)
 import assert from "node:assert/strict";
@@ -83,6 +84,24 @@ export function changeReasons([status, from, to = from], retired, show) {
 export function byOwner(event) {
   const owner = event?.repository?.owner?.login;
   return typeof owner === "string" && owner !== "" && event?.pull_request?.user?.login === owner && event?.sender?.login === owner;
+}
+
+// The reasons a change to the retirement list fails (empty when it passes). status: its `git diff --no-renames` status.
+// headText: the list at HEAD (null when deleted). owner: byOwner of the run. Only the owner may change the list, except
+// that anyone may create it with no entries where the base has none, because an empty list lets no proof go.
+export function listReasons(status, headText, owner, who = "") {
+  const reasons = [];
+  let head = null;
+  if (status !== "D") {
+    try {
+      head = retiredProofs(headText);
+    } catch (e) {
+      reasons.push(`not a valid list: ${e.message}`);
+    }
+  }
+  if (!owner && !(status === "A" && head?.size === 0))
+    reasons.push(`owner-only file${who && `, changed ${who}`}; only the repo owner may change it (anyone may create it empty where the base has none)`);
+  return reasons;
 }
 
 // Self-test on inline fixtures: [label, before, after, a reason that must appear, or null when it must pass].
@@ -169,6 +188,24 @@ for (const [label, payload, want] of [
   assert.equal(byOwner(payload), want, label);
   console.log(`ok   self-test: ${label}`);
 }
+// [label, diff status, the list at HEAD, byOwner, a reason that must appear or null].
+const seed = `{ "about": "seed", "entries": [] }`;
+for (const [label, status, headText, owner, want] of [
+  ["a non-owner creating the empty seed where the base has none passes", "A", seed, false, null],
+  ["a non-owner creating a seed with one entry fails", "A", entry({}), false, "owner-only file"],
+  ["a non-owner creating a malformed seed fails", "A", `{ "about": "seed" }`, false, "not a valid list"],
+  ["a non-owner adding an entry to the list fails", "M", entry({}), false, "owner-only file"],
+  ["a non-owner emptying the list fails", "M", seed, false, "owner-only file"],
+  ["a non-owner deleting the list fails", "D", null, false, "owner-only file"],
+  ["the owner adding an entry passes", "M", entry({}), true, null],
+  ["the owner creating a seed with one entry passes", "A", entry({}), true, null],
+  ["the owner breaking the list fails", "M", entry({ issue: 0 }), true, "not a valid list: entry 0 has no valid issue"],
+]) {
+  const got = listReasons(status, headText, owner);
+  if (want === null) assert.deepEqual(got, [], label);
+  else assert.ok(got.some((r) => r.startsWith(want)), `${label}: got ${JSON.stringify(got)}`);
+  console.log(`ok   self-test: ${label}`);
+}
 
 const git = (...args) => execFileSync("git", args, { encoding: "utf8", maxBuffer: 64 << 20 });
 const flag = process.argv.indexOf("--base");
@@ -207,22 +244,15 @@ for (const [status, from, to = from] of changes) {
   if (reasons.length) failed++;
 }
 
-// Any change to the list itself is owner-only, and the changed list must still parse.
+// Any change to the list itself is owner-only (but for creating it empty), and the changed list must still parse.
 let payload = null;
 try {
   payload = JSON.parse(readFileSync(process.env.GITHUB_EVENT_PATH, "utf8"));
 } catch {}
+const who = `in a PR by ${payload?.pull_request?.user?.login ?? "(no event payload)"} in a run started by ${payload?.sender?.login ?? "(no event payload)"}`;
 for (const [status] of git("diff", "--name-status", "--no-renames", base, "HEAD", "--", RETIRED).split("\n").filter(Boolean).map((l) => l.split("\t"))) {
-  const reasons = byOwner(payload) ? [] : [
-    `owner-only file, changed in a PR by ${payload?.pull_request?.user?.login ?? "(no event payload)"} in a run started by ${payload?.sender?.login ?? "(no event payload)"}; only the repo owner may change it`,
-  ];
-  if (status !== "D") {
-    try {
-      retiredProofs(git("show", `HEAD:${RETIRED}`));
-    } catch (e) {
-      reasons.push(`not a valid list: ${e.message}`);
-    }
-  }
+  const reasons = listReasons(status, status === "D" ? null : git("show", `HEAD:${RETIRED}`), byOwner(payload), who);
+  if (!reasons.length) console.log(`${RETIRED}: ${status === "A" && !byOwner(payload) ? "created with no entries, which lets no proof go" : "changed by the repo owner"}`);
   for (const r of reasons) console.log(`FAIL ${RETIRED}: ${r}`);
   if (reasons.length) failed++;
 }

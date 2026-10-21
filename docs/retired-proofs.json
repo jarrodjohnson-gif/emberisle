@@ -1,5 +1,5 @@
 {
-  "about": "Proofs retired on purpose because their feature was removed (#947). scripts/loosen-prove.mjs lets a PR delete a scripts/ or server/ *-prove.mjs only when that exact path is already listed here on main, before the deleting PR. Only the repo owner may change this file: loosen-prove fails any change to it unless the PR's author and the account that started the run are both the owner. A rename away from *-prove.mjs still fails, and a listed proof that is edited rather than deleted is still checked for loosening.",
+  "about": "Proofs retired on purpose because their feature was removed (#947). scripts/loosen-prove.mjs lets a PR delete a scripts/ or server/ *-prove.mjs only when that exact path is already listed here on main, before the deleting PR. Only the repo owner may change this file: loosen-prove fails any change to it unless the PR's author and the account that started the run are both the owner (the one exception: anyone may create it with no entries where main has none, since an empty list lets no proof go). A rename away from *-prove.mjs still fails, and a listed proof that is edited rather than deleted is still checked for loosening.",
   "schema": "Each entry: { \"file\": \"scripts/name-prove.mjs\", \"date\": \"YYYY-MM-DD\", \"issue\": 123, \"reason\": \"why the feature and its proof are gone\" }",
   "entries": []
 }
