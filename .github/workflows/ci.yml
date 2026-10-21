@@ -121,7 +121,8 @@ jobs:
   server:
     needs: changes
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # dice-prove adds about 90 s of sampling to the ~4-minute server suite.
+    timeout-minutes: 15
     steps:
       - if: needs.changes.outputs.docs_only != 'true'
         uses: actions/checkout@v4
@@ -149,6 +150,19 @@ jobs:
         run: npm run touch-place-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run flake-rerun-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run registered-prove
+      # #924: diff this PR's proofs against the commit it merges onto (the merge commit's first parent, as in build).
+      - if: needs.changes.outputs.docs_only != 'true' && github.event_name == 'pull_request'
+        run: |
+          set -euo pipefail
+          BASE_SHA=$(git cat-file -p HEAD | awk '/^parent /{print $2; exit}')
+          git fetch --depth=1 origin "$BASE_SHA"
+          npm run loosen-prove -- --base "$BASE_SHA"
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run label-commands-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run dice-prove
 
   browser-a-suites:
     name: browser-a (${{ matrix.suite }})
@@ -211,6 +225,13 @@ jobs:
         run: npm run fortune-count-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
         run: npm run fortune-tray-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
+        run: npm run lobby-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
+        run: npm run my-numbers-prove
+      # pages-prove rebuilds dist/ under /emberisle/; browser-a has no later dist/ reader.
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
+        run: npm run pages-prove
       - if: always()
         uses: actions/upload-artifact@v4
         with:
