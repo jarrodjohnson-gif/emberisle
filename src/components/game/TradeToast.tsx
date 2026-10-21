@@ -1,7 +1,7 @@
 // The ask-the-table toast (docs/BUILD_BIBLE.md 4.4): "Ember offers 2 sheep for 1 ore", Yes / No, and the 20 s left.
 // The asker sees the same offer with who has declined, then the outcome for a moment.
 // #537: a seat that cannot pay sees a compact demand ("Ember is looking for 2 ore") with Dismiss only — no Accept.
-import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { Check, Hourglass, X } from "lucide-react";
 import { useViewport } from "@/lib/viewport";
@@ -50,7 +50,9 @@ export function TradeToast() {
   const lineId = useId();
   const dock = useRef<HTMLElement>(null);
   const hadOffer = useRef(false);
-  const shown = !!offer && !declined.includes(localId);
+  // The last offer body, so the dismiss fade shows the card going away instead of an empty one.
+  const lastBody = useRef<ReactNode>(null);
+  const shown =!!offer && !declined.includes(localId);
 
   useEffect(() => {
     if (shown) {
@@ -195,6 +197,7 @@ export function TradeToast() {
     return null;
   }
 
+  if (body) lastBody.current = body;
   if (!body && !leaving) return null;
 
   const card = (
@@ -203,6 +206,8 @@ export function TradeToast() {
       data-testid="trade-toast"
       data-compact={compact || undefined}
       data-leaving={leaving || undefined}
+      aria-hidden={leaving || undefined}
+      inert={leaving || undefined}
       data-fade-ms={fadeMs}
       className={`trade-dock pointer-events-auto shrink-0 rounded-chip p-2${aboveChat ? " trade-above-chat" : ""}${leaving ? " opacity-0" : " opacity-100"}`}
       style={{ transition: leaving ? `opacity ${fadeMs}ms linear` : undefined }}
@@ -211,7 +216,7 @@ export function TradeToast() {
       aria-labelledby={offer ? lineId : undefined}
       onKeyDown={(e) => { if (answering && e.key === "Escape") answerTrade(false); }}
     >
-      {body}
+      {body ?? lastBody.current}
     </section>
   );
   const shell = document.querySelector("[data-game-shell]");

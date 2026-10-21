@@ -5,6 +5,10 @@
 // #366 / #537: every non-asker's toast is a named region for the offer (or compact demand) that does not take focus.
 // A seat that can pay sees Yes/No; a seat that cannot (#537) sees only "X is looking for …" with Dismiss — no Accept.
 // Escape answers No / Dismiss; the countdown is hidden from screen readers but a polite line says "5 seconds left".
+// Step 4 keeps the normal timeout lifecycle: a second ask nobody takes runs out its 20 s (C answers with Escape, the asker
+// alone hears the No, hands unchanged). Steps 5 and 6 are #537: B has none of the goods asked for and sees the compact demand,
+// C can pay and sees the normal offer; changing B's hand flips its toast without a new offer; Dismiss from B and No from C
+// close the offer on all three tabs within 500 ms, at normal motion and again under reduced motion (no skip path).
 // #378: the asker's panel is a modal dialog named "Trade": focus moves in on open, 14 Tabs and 3 Shift+Tabs never leave
 // it, and Escape (or the ask itself) puts focus back on the Trade button.
 import { spawn } from "node:child_process";
@@ -14,11 +18,10 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { chromium } from "playwright";
 import { createServer } from "vite";
+import { RESOURCE_LABEL } from "../src/lib/game/types.ts";
 
 const PORT = Number(process.env.VITE_PORT) || 8097;
 const RES = ["timber", "clay", "wool", "grain", "ore"];
-// Mirror src/lib/game/types.ts RESOURCE_LABEL (avoid importing .ts from this plain node script).
-const RESOURCE_LABEL = { timber: "Wood", clay: "Brick", wool: "Sheep", grain: "Wheat", ore: "Stone" };
 
 // Rooms go to a temp folder, dropped on exit, so the real host never restores this proof's tables (#207).
 const ROOMS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-rooms-"));
@@ -369,14 +372,69 @@ try {
   await until(async () => (await views(tabs)).every((v) => v.toast === null) || null, "toasts gone after the yes");
   console.log(`${B.name} took it: 1 ${give} -> ${B.name}, 1 ${want} -> ${A.name}, hands and goods counts agree on all 3 tabs`);
 
-  // 4. Ask again, the other way round (the asker now holds the card it got); C says No; nobody else answers, so the
-  // host's 20 s run out. Nothing moves, every toast closes.
+  // 4. #366: the timeout lifecycle, with #537's compact seats. Ask again, the other way round (the asker now holds the card
+  // it got), for one more than either other tab holds, so both are short and see compact demand: Dismiss, no Yes. C
+  // answers with Escape; nobody else does, so the host's 20 s run out. Nothing moves, every toast closes.
   if (vs[0].phase !== "main" || vs[0].current !== vs[i].you) throw new Error("the asker lost the turn");
-  // #537: A offers 1 of the card it just won for 2 of another good. B's local hand has 0 of that good
-  // (compact); C's local hand has 2 (full Yes/No). Affordance is client-side.
+  const n2 = Math.max(vs[j].mine[give], vs[k].mine[give]) + 1;
+  await forget(tabs);
+  const again = await ask(want, give, n2);
+  const tradeId2 = again[0].offer.tradeId;
+  if (tradeId2 === tradeId) throw new Error("second ask reused the tradeId");
+  const line2 = `${A.name} offers 1 ${RESOURCE_LABEL[want].toLowerCase()} for ${n2} ${RESOURCE_LABEL[give].toLowerCase()}`;
+  for (const t of [B, C]) {
+    if (!(await answerable(t, again[tabs.indexOf(t)], line2, give, n2))) throw new Error(`${t.name} can pay ${n2} ${RESOURCE_LABEL[give].toLowerCase()}`);
+  }
+  // #537: a short seat has nothing to accept with, and the host would refuse it anyway.
+  for (const t of [B, C]) {
+    const accepts = await t.page.getByTestId("trade-toast").getByRole("button", { name: /^(yes|accept)/i }).count();
+    if (accepts) throw new Error(`${t.name} is short of ${n2} ${RESOURCE_LABEL[give].toLowerCase()} but its toast has an Accept`);
+  }
+  console.log(`#537: "${A.name} is looking for ${n2} ${RESOURCE_LABEL[give].toLowerCase()}" is compact on ${B.name} and ${C.name}: Dismiss, no Yes`);
+  // B sends nothing from here to the timeout; its polite line is watched for every text it takes, from ~20 s left until
+  // the toast closes (a MutationObserver misses no 1 s window).
+  await spyAnswers(B);
+  await B.page.evaluate(() => {
+    const live = document.querySelector('[data-testid="trade-countdown-live"]');
+    window.__said = [live.textContent];
+    new MutationObserver(() => window.__said.push(live.textContent)).observe(live, { childList: true, characterData: true, subtree: true });
+  });
+  // Escape inside C's compact toast answers: the same decline as Dismiss.
+  await C.page.getByTestId("trade-dismiss").focus();
+  await C.page.keyboard.press("Escape");
+  await until(async () => (await views(tabs)).every((v) => v.declined.includes(again[k].you)) || null, "second decline (Escape)");
+  console.log(`#366: Escape in ${C.name}'s compact toast answered No; ${B.name} has no Accept and answers nothing`);
+  const left = Number((await A.page.getByTestId("trade-countdown").textContent()).replace(/\D/g, ""));
+  if (left < 15 || left > 20) throw new Error(`countdown reads ${left} s right after the ask`);
+  vs = await until(async () => {
+    const vs = await views(tabs);
+    return vs.every((v) => !v.offer && v.toast === null) ? vs : null;
+  }, "the offer times out and every toast closes", 30_000);
+  const bSent = await B.page.evaluate(() => window.__answers);
+  if (bSent.length) throw new Error(`${B.name} answered ${JSON.stringify(bSent)} on the offer it let run out`);
+  // #609: nobody took it, so only the asker hears the No.
+  await sleep(500);
+  if (!same(await trades(A), ["error_002.wav@1"])) throw new Error(`the asker heard ${JSON.stringify(await trades(A))} for the expiry`);
+  for (const t of [B, C]) if (!same(await trades(t), ["trade_offer.wav@1"])) throw new Error(`${t.name} heard ${JSON.stringify(await trades(t))} for the expiry`);
+  console.log("#609: trade_no plays for the asker only");
+  // The polite line stays silent while the clock ticks and says "5 seconds left" once, at 5 s.
+  const heard = [...new Set((await B.page.evaluate(() => window.__said)).filter(Boolean))];
+  if (!same(heard, ["5 seconds left"])) throw new Error(`${B.name}'s polite countdown line said ${JSON.stringify(heard)}`);
+  console.log(`#366: ${B.name}'s polite line said only "5 seconds left"`);
+  if (vs[0].seq !== again[0].seq) throw new Error("the timeout changed the game");
+  for (const n of [0, 1, 2]) if (!same(vs[n].mine, again[n].mine)) throw new Error(`${tabs[n].name}'s hand changed on a timeout`);
+  console.log(`second offer ran out after ${left} s left on the clock: hands unchanged, toast closed on all 3 tabs`);
+
+  // 5. #537: A asks for 2 of a good (and offers 1 of the card it holds). B has none, so B sees the compact demand with
+  // Dismiss and no Accept; C can pay and sees the normal offer. Affordance follows the seat's own hand, so changing a hand
+  // updates its toast without another offer. Declining from B's compact signal and C's normal offer closes the offer on
+  // A, B and C within 500 ms, not at the 20 s timeout.
   const offerRes = want;
   const need = want === "ore" ? "timber" : "ore";
   const needLabel = RESOURCE_LABEL[need].toLowerCase();
+  const demand = `${A.name} is looking for 2 ${needLabel}`;
+  const line3 = `${A.name} offers 1 ${RESOURCE_LABEL[offerRes].toLowerCase()} for 2 ${needLabel}`;
+  // Sets this tab's own count of `need`, the way a state from the host would: the toast reads it from the store.
   const setLocal = (t, count) =>
     t.page.evaluate(({ res, n }) => {
       const store = window.__emberisle;
@@ -386,71 +444,114 @@ try {
       me.goods = Object.values(me.resources).reduce((sum, x) => sum + x, 0);
       store.setState({ state });
     }, { res: need, n: count });
-  await forget(tabs);
-  // A still holds `want` from the deal above — offer that for 2 of `need`.
-  if ((vs[i].mine[offerRes] ?? 0) < 1) throw new Error(`#537: asker lacks ${offerRes} to open the demand ask`);
-  const again = await ask(offerRes, need, 2);
-  const tradeId2 = again[0].offer.tradeId;
-  if (tradeId2 === tradeId) throw new Error("second ask reused the tradeId");
-  // Affordance is client-side: pin B short and C able after the offer lands (tradeOffer does not rewrite hands).
-  await setLocal(B, 0);
-  await setLocal(C, 2);
-  await until(async () => ((await B.page.getByTestId("trade-toast").getAttribute("data-compact")) === "true" ? true : null), "#537: B compact after hand pin");
-  await until(async () => ((await C.page.getByTestId("trade-toast").getAttribute("data-compact")) === null ? true : null), "#537: C full after hand pin");
-  const demand = `${A.name} is looking for 2 ${needLabel}`;
-  const line2 = `${A.name} offers 1 ${RESOURCE_LABEL[offerRes].toLowerCase()} for 2 ${needLabel}`;
-  const afterPin = await views(tabs);
-  if (!(await answerable(B, afterPin[tabs.indexOf(B)], line2, need, 2))) throw new Error(`${B.name} should be short of ${needLabel}`);
-  if (await answerable(C, afterPin[tabs.indexOf(C)], line2, need, 2)) throw new Error(`${C.name} should be able to pay 2 ${needLabel}`);
-  console.log(`#537: ${B.name} sees compact "${demand}"; ${C.name} sees full offer "${line2}"`);
-
-  // Change B's hand locally so the compact flips to the full offer without a new ask.
-  await setLocal(B, 2);
-  await until(async () => {
-    const el = B.page.getByTestId("trade-toast");
-    const compact = await el.getAttribute("data-compact");
-    const hasYes = await el.getByRole("button", { name: "Yes", exact: true }).count();
-    return compact === null && hasYes === 1 ? true : null;
-  }, `#537: B's toast upgrades when ${needLabel} arrives`);
-  console.log(`#537: giving ${B.name} 2 ${needLabel} flips compact → full Yes/No without a new offer`);
-
-  // Put B short again, then both decline: offer must close on every tab within 500 ms (not the 20 s timeout).
-  await setLocal(B, 0);
-  await until(async () => ((await B.page.getByTestId("trade-toast").getAttribute("data-compact")) === "true" ? true : null), "#537: B compact again");
-  await B.page.getByTestId("trade-dismiss").click();
-  await until(async () => (await views(tabs)).every((v) => v.declined.includes(again[j].you)) || null, "#537: B dismiss decline");
-  const closedAt = Date.now();
-  await C.page.getByRole("button", { name: "No", exact: true }).click();
-  vs = await until(async () => {
-    const next = await views(tabs);
-    return next.every((v) => !v.offer) ? next : null;
-  }, "#537: fully declined offer closes", 2_000);
-  const closedMs = Date.now() - closedAt;
-  if (closedMs > 500) throw new Error(`#537: fully declined offer took ${closedMs} ms (> 500)`);
-  console.log(`#537: both declined → offer gone in ${closedMs} ms`);
-
-  // Reduced motion: dismiss fade is 0 ms.
-  for (const t of tabs) await t.page.emulateMedia({ reducedMotion: "reduce" });
-  if (vs[0].phase === "main" && vs[0].current === vs[i].you && (vs[i].mine[offerRes] ?? 0) >= 1) {
+  // The toast's data-compact, read without waiting for a toast to exist.
+  const compactOf = (t) => t.page.evaluate(() => document.querySelector('[data-testid="trade-toast"]')?.getAttribute("data-compact") ?? null);
+  const fadeOf = (t) => t.page.evaluate(() => document.querySelector('[data-testid="trade-toast"]')?.getAttribute("data-fade-ms") ?? null);
+  // The last decline closes the offer on every tab within 500 ms. Each page stamps (Date.now, one clock) when its store
+  // dropped the offer and its toast left the DOM, so the number reads the app, not this script's polling.
+  const watchClear = (t) =>
+    t.page.evaluate(() => {
+      if (!window.__watchClear) {
+        const store = window.__emberisle;
+        window.__watchClear = () => {
+          const clear = !store.getState().offer && !document.querySelector('[data-testid="trade-toast"]');
+          if (!clear) window.__clearedAt = null;
+          else window.__clearedAt ??= Date.now();
+        };
+        store.subscribe(window.__watchClear);
+        new MutationObserver(window.__watchClear).observe(document.body, { childList: true, subtree: true });
+      }
+      window.__clearedAt = null;
+      window.__watchClear();
+    });
+  const clearedAt = (t) => t.page.evaluate(() => window.__clearedAt ?? null);
+  const lastDecline = async (click, what) => {
+    await Promise.all(tabs.map(watchClear));
+    const t0 = Date.now();
+    await click();
+    const at = await until(async () => {
+      const all = await Promise.all(tabs.map(clearedAt));
+      return all.every((x) => x !== null) ? all : null;
+    }, `#537 (${what}): the fully declined offer closes on every tab, not at the timeout`, 5_000);
+    const ms = Math.max(...at) - t0;
+    if (ms > 500) throw new Error(`#537 (${what}): the fully declined offer took ${ms} ms to close on every tab (> 500)`);
+    const closed = await views(tabs);
+    if (closed.some((v) => v.offer)) throw new Error(`#537 (${what}): a tab still holds the offer`);
+    return ms;
+  };
+  // A holds the card it is offering, and still has the turn, so it can ask again.
+  const canAskAgain = (what) => {
+    if (vs[0].phase !== "main" || vs[0].current !== vs[i].you || (vs[i].mine[offerRes] ?? 0) < 1) {
+      throw new Error(`#537 (${what}): the asker cannot ask again (phase ${vs[0].phase}, holds ${vs[i].mine[offerRes]} ${offerRes})`);
+    }
+  };
+  // B short, C able, then the ask: B must see the compact demand and C the normal offer within 2 s of it.
+  const askShortAndAble = async (what) => {
+    await forget(tabs);
     await setLocal(B, 0);
     await setLocal(C, 2);
-    await forget(tabs);
-    const third = await ask(offerRes, need, 2);
-    await until(async () => ((await B.page.getByTestId("trade-toast").getAttribute("data-compact")) === "true" ? true : null), "#537: compact under reduced motion");
-    const fadeBefore = await B.page.getByTestId("trade-toast").getAttribute("data-fade-ms");
-    if (fadeBefore !== "0") throw new Error(`#537: reduced motion toast data-fade-ms was ${fadeBefore}, want 0`);
-    const t0 = Date.now();
-    await B.page.getByTestId("trade-dismiss").click();
-    await until(async () => ((await B.page.getByTestId("trade-toast").count()) === 0 ? true : null), "#537: compact gone after dismiss");
-    // Fade is 0 ms; allow a short React unmount window so CI timing noise does not flake.
-    if (Date.now() - t0 > 250) throw new Error(`#537: reduced motion dismiss took ${Date.now() - t0} ms`);
-    await C.page.getByRole("button", { name: /No|Dismiss/i }).click().catch(() => {});
-    await until(async () => (await views(tabs)).every((v) => !v.offer) || null, "#537: clear third offer", 5_000);
-    void third;
-    console.log("#537: reduced motion dismisses immediately (fade 0)");
-  } else {
-    console.log("#537: skipped reduced-motion fade check (asker cannot ask again)");
+    const got = await ask(offerRes, need, 2);
+    await until(async () => ((await compactOf(B)) === "true" && (await compactOf(C)) === null ? true : null), `#537 (${what}): B sees the compact demand and C the normal offer`, 2_000);
+    return got;
+  };
+
+  canAskAgain("normal motion");
+  const third = await askShortAndAble("normal motion");
+  const tradeId3 = third[0].offer.tradeId;
+  if (tradeId3 === tradeId2) throw new Error("third ask reused the tradeId");
+  const afterPin = await views(tabs);
+  if (!(await answerable(B, afterPin[tabs.indexOf(B)], line3, need, 2))) throw new Error(`${B.name} should be short of ${needLabel}`);
+  if (await answerable(C, afterPin[tabs.indexOf(C)], line3, need, 2)) throw new Error(`${C.name} should be able to pay 2 ${needLabel}`);
+  if ((await fadeOf(B)) !== "150") throw new Error(`#537: the dismiss fade is ${await fadeOf(B)} ms, want 150`);
+  console.log(`#537: ${B.name} sees compact "${demand}"; ${C.name} sees full offer "${line3}"`);
+
+  // Change B's hand: the compact signal flips to the normal Yes/No with no new offer, and back.
+  await setLocal(B, 2);
+  await until(async () => {
+    const yes = await B.page.getByTestId("trade-toast").getByRole("button", { name: "Yes", exact: true }).count();
+    return (await compactOf(B)) === null && yes === 1 ? true : null;
+  }, `#537: B's toast upgrades when ${needLabel} arrives`);
+  if ((await view(B)).offer?.tradeId !== tradeId3) throw new Error("#537: the upgrade needed another offer");
+  console.log(`#537: giving ${B.name} 2 ${needLabel} flips compact to full Yes/No without a new offer`);
+  await setLocal(B, 0);
+  await until(async () => ((await compactOf(B)) === "true" ? true : null), "#537: B compact again");
+
+  // B dismisses from the compact signal (Enter on the focused Dismiss sends a No): the offer stays open for C.
+  await spyAnswers(B);
+  await B.page.getByTestId("trade-dismiss").focus();
+  await B.page.keyboard.press("Enter");
+  const dismissSent = await B.page.evaluate(() => window.__answers);
+  if (!same(dismissSent, [[tradeId3, false]])) throw new Error(`#537: ${B.name}'s Enter on Dismiss sent ${JSON.stringify(dismissSent)}`);
+  vs = await until(async () => {
+    const next = await views(tabs);
+    return next.every((v) => v.declined.includes(third[j].you)) ? next : null;
+  }, "#537: B's dismiss reaches every tab");
+  if (vs.some((v) => !v.offer || v.offer.tradeId !== tradeId3)) throw new Error("#537: the offer closed on B's dismiss alone");
+  if (!(await C.page.getByTestId("trade-toast").count())) throw new Error(`#537: ${C.name}'s offer went when only ${B.name} declined`);
+  // C declines from the normal offer: A, B and C close it within 500 ms.
+  const normalMs = await lastDecline(() => C.page.getByTestId("trade-toast").getByRole("button", { name: "No", exact: true }).click(), "normal motion");
+  console.log(`#537: both declined, the offer is gone on all 3 tabs in ${normalMs} ms`);
+
+  // 6. #537 again under reduced motion: the dismiss does not fade (0 ms) and the fully declined offer is gone at once. The
+  // asker can always ask again here; if it cannot, this fails rather than skips.
+  for (const t of tabs) await t.page.emulateMedia({ reducedMotion: "reduce" });
+  vs = await views(tabs);
+  canAskAgain("reduced motion");
+  const fourth = await askShortAndAble("reduced motion");
+  const tradeId4 = fourth[0].offer.tradeId;
+  if (tradeId4 === tradeId3) throw new Error("fourth ask reused the tradeId");
+  for (const t of [B, C]) {
+    const fade = await fadeOf(t);
+    if (fade !== "0") throw new Error(`#537: reduced motion left ${t.name}'s toast with data-fade-ms ${fade}, want 0`);
   }
+  const t0 = Date.now();
+  await B.page.getByTestId("trade-dismiss").click();
+  await until(async () => ((await B.page.getByTestId("trade-toast").count()) === 0 ? true : null), "#537: B's compact signal is gone after Dismiss", 2_000);
+  // The fade is 0 ms; the allowance covers a React unmount and the click's round trip on a slow runner.
+  if (Date.now() - t0 > 250) throw new Error(`#537: reduced motion dismiss took ${Date.now() - t0} ms`);
+  await until(async () => (await views(tabs)).every((v) => v.declined.includes(fourth[j].you)) || null, "#537: B's dismiss reaches every tab under reduced motion");
+  const calmMs = await lastDecline(() => C.page.getByTestId("trade-toast").getByRole("button", { name: "No", exact: true }).click(), "reduced motion");
+  console.log(`#537: reduced motion: dismiss at once, both declined, the offer is gone on all 3 tabs in ${calmMs} ms`);
 
   if (errors.length) throw new Error(`console errors:\n${errors.join("\n")}`);
   console.log("trade prove ok");
