@@ -1,6 +1,6 @@
 # Running Emberisle builders on AWS Bedrock models (draft)
 
-For Jarrod's Bedrock credits. Models: Grok 4.7, GLM 5.3, GLM 4.7, GLM 4.7 Flash. Draft, not yet reviewed by the desk.
+For Jarrod's Bedrock credits. Models: Grok 4.7, GLM 5.3, GLM 4.7, GLM 4.7 Flash. Draft.
 
 ## Who does what
 
@@ -9,8 +9,9 @@ For Jarrod's Bedrock credits. Models: Grok 4.7, GLM 5.3, GLM 4.7, GLM 4.7 Flash.
 | Builder | Grok 4.7 | `tier:2` and `tier:3` (already listed in LANES.md). One issue at a time. |
 | Cross-reviewer of Grok's PRs | GLM 5.3 | review only |
 | Reviewer of GLM's PRs | Grok 4.7 | review only |
-| Docs-only builds | GLM 4.7 Flash | `tier:3` docs (needs a LANES.md row) |
-| Layout/CSS builds | GLM 4.7 | `tier:3` (needs a LANES.md row) |
+| Docs-only builds | GLM 4.7 Flash | `tier:3` docs |
+| Layout/CSS builds | GLM 4.7 | `tier:3` |
+| Builder (provisional) | GLM 5.3, Kimi 3 | `tier:2`, one issue at a time until two clean merges |
 
 Not on Bedrock, stays on Claude: the desk (Sonnet) and every `tier:1` review of server, protocol, CI or
 security work (Opus). A reviewer is never the builder's own model (`docs/DESK.md`).
@@ -53,9 +54,6 @@ For a long unattended run: `/loop Read AGENTS.md and follow it.` (or the harness
 - Let CI run the 20-minute browser proofs. The agent runs only the proof for its own change, one at a time.
 - Watch the Bedrock cost dashboard daily for the first week.
 
-## Repo changes needed before this works smoothly
+## Repo rules
 
-1. `docs/LANES.md`: add GLM 5.3 (reviewer) and GLM 4.7 / 4.7 Flash (`tier:3`) rows. Jarrod decides this;
-   record it in `docs/DECISIONS.md`.
-2. `docs/REVIEWING.md`: say that GLM 5.3 may review Grok's PRs and Grok may review GLM's.
-3. Merging stays with the desk. Bedrock agents never merge.
+The tier rows are in `docs/LANES.md` and the decision is in `docs/DECISIONS.md`. Bedrock agents never merge. Reviewers follow `docs/REVIEWING.md` (a different model from the builder).

@@ -77,8 +77,8 @@ to any tier. Helpers don't use this list: they follow the queue in [`HELPERS.md`
 |---|---|---|
 | `tier:1-deep` | Hours-long research and architecture carried through to a finished document | Claude Fable 5.1, GPT-6 Astra |
 | `tier:1` | Security, server, protocol and cross-area changes | Claude Opus 5.5, GPT-6.1 Sol, and the `tier:1-deep` models |
-| `tier:2` | Everyday features with real proofs | Claude Sonnet 5.5, Gemini 3.8 Flash (thinking HIGH), Grok 4.7, and every `tier:1` model |
-| `tier:3` | Small single-purpose fixes, docs and screenshot QA | Claude Haiku 5.5, GPT-6 Luna, and every model above |
+| `tier:2` | Everyday features with real proofs | Claude Sonnet 5.5, Gemini 3.8 Flash (thinking HIGH), Grok 4.7, GLM 5.3 and Kimi 3 (the last two provisional, see below), and every `tier:1` model |
+| `tier:3` | Small single-purpose fixes, docs and screenshot QA | Claude Haiku 5.5, GPT-6 Luna, GLM 4.7 (layout fixes), GLM 4.7 Flash (docs only), and every model above |
 
 An issue's `model:` label, where present, names the model to build with (`docs/FRAMEWORK.md`). The
 `tier:` label says which other models may also take it.
@@ -94,6 +94,8 @@ Gemini never builds a new look, animation or layout that needs taste. Split such
 **Big design work needs Claude Opus 5.5 or stronger.** Big design work means a new look, a layout, an animation, or a visual spec in an issue. Fable and Astra count. Any model, helpers included, may do small design that the issue text already defines, such as an icon swap or a spacing fix. Any model may also build to an approved mock.
 
 Grok's usage limits are low, so give it one `tier:2` or `tier:3` issue at a time.
+
+**Bedrock models (Jarrod, 2026-10-21):** GLM 5.3 and Kimi 3 are provisional `tier:2`. Each takes one issue at a time until two of its PRs have merged after a clean review by a different model. Then it is simply `tier:2`. GLM 4.7 and GLM 4.7 Flash are `tier:3` only. None of them takes `tier:1` work, design that needs taste, or a review of a `tier:1` PR. Setup: [`setup-bedrock-agents.md`](setup-bedrock-agents.md).
 
 **The builders (Jarrod, 2026-10-20):**
 
