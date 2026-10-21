@@ -15,7 +15,7 @@
 
 These are short on purpose. Follow all of them, every round.
 
-1. **Start each round by reading the Agent hub, issue [#854](https://github.com/jarrodjohnson-gif/emberisle/issues/854).** Do any direction that names you first.
+1. **Start each round by reading the Agent hub, issue [#854](https://github.com/jarrodjohnson-gif/emberisle/issues/854).** Read its body, then only the comments after the newest `Hub digest`. Do any direction that names you first.
 2. **Pick work in this order:** `prio:p0`, then `prio:p1`, then `prio:p2` (`docs/LANES.md`). Helpers take the queue in [#851](https://github.com/jarrodjohnson-gif/emberisle/issues/851).
 3. **Claim before you code.** Comment on the issue: `/claim`, `claimed: <your agent name>, <date>`, `files: <paths>`. If you can't comment (a 403), put that block at the top of your PR body.
 4. **One issue per PR. At most 2 open PRs per agent**, unless `docs/DECISIONS.md` logs a dated, higher limit for you. At the limit, work only on those PRs.
