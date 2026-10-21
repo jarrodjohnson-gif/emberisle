@@ -1234,9 +1234,7 @@ function play(ws, room, msg, automated = false) {
     const paid = gains(before, room.game);
     const short = bankShort(room.game);
     broadcast(room, { type: "rolled", dice: [a, b], sum: a + b, gains: paid, short });
-    const parts = paid.map((g) => `${g.name} +${g.amount} ${g.resource}`);
-    if (short.length) parts.push(`bank short of ${short.join(" and ")}`);
-    if (!automated) say(room, [String(a + b), ...parts].join(" · "));
+    // No summary line here (#687): the log loop below says the roll's own lines, "<name> rolled <sum>!" then the goods line.
   }
   // An offer lives only while its asker still has the turn in `main` and still holds the offered goods. Checked before
   // the bots play, so a bot never sees the stale offer of a seat that just passed.

@@ -114,9 +114,9 @@ const ROLL_LINE = /^(.+) rolled (1[0-2]|[2-9])!$/;
 
 // A game log line (#305): a muted system row, no speaker. A roll line (#687) has its sum in the number tokens' red on 6 and 8,
 // and your own roll in green with the name bold, so it does not rest on colour alone. Only the online table lists the log (the dock),
-// and a watcher has no seat, so no roll is its own.
-function LogRow({ line }: { line: GameLogLine }) {
-  const mine = useGame((s) => (s.spectator ? "" : (s.state?.players.find((p) => p.id === s.localId)?.name ?? "")));
+// and a watcher has no seat, so no roll is its own. `mine` is this seat's player name ("" for a watcher), worked out once by the
+// list that renders the rows, so no row subscribes to the store.
+function LogRow({ line, mine }: { line: GameLogLine; mine: string }) {
   const roll = ROLL_LINE.exec(line.text);
   if (roll) {
     const own = mine !== "" && roll[1] === mine;
@@ -147,6 +147,8 @@ export function ChatBox({ rows, minRows = 0, game, dense, narrow, onEscape, acti
   const setDraft = useGame((s) => s.setChatDraft);
   const sendChat = useGame((s) => s.sendChat);
   const spectator = useGame((s) => s.spectator);
+  // The local player's name at the table, for the roll rows' own-roll test (a watcher has none).
+  const mine = useGame((s) => (s.spectator ? "" : (s.state?.players.find((p) => p.id === s.localId)?.name ?? "")));
   const reactLog = useTalk((s) => s.reactLog);
   // A watcher sends nothing, so it has the log alone: no tabs (docs/design/spectator.md).
   const tab = useTalk((s) => (spectator ? "chat" : s.tab));
@@ -189,7 +191,7 @@ export function ChatBox({ rows, minRows = 0, game, dense, narrow, onEscape, acti
   type Row = { at: number; node: ReactNode } | { at: number; react: ReactLine; count: number };
   const lines: Row[] = visibleChat.map((line) => ({ at: line.at, node: <Line key={`c${line.id}`} line={line} me={me} /> }));
   for (const line of reactLog) if (!muted.has(line.seat)) lines.push({ at: line.at, react: line, count: 1 });
-  if (withLog) for (const [i, line] of gameLog.entries()) lines.push({ at: line.at, node: <LogRow key={`g${i}`} line={line} /> });
+  if (withLog) for (const [i, line] of gameLog.entries()) lines.push({ at: line.at, node: <LogRow key={`g${i}`} line={line} mine={mine} /> });
   lines.sort((x, y) => x.at - y.at);
   const rowsShown: Row[] = [];
   for (const row of lines) {
