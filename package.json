@@ -67,6 +67,7 @@
     "hole-prove": "node scripts/hole-prove.mjs",
     "my-numbers-prove": "node scripts/my-numbers-prove.mjs",
     "pan-prove": "node scripts/pan-prove.mjs",
+    "keyboard-fit-prove": "node scripts/keyboard-fit-prove.mjs",
     "board-touch-prove": "node scripts/board-touch-prove.mjs",
     "banner-stable-prove": "node scripts/banner-stable-prove.mjs",
     "polish-tokens-prove": "node scripts/polish-tokens-prove.mjs",
