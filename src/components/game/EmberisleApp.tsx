@@ -265,7 +265,7 @@ function Title() {
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="w-11 shrink-0 rounded-none border-0 border-l border-control-line px-0"
+                  className="w-11 rounded-none border-0 border-l border-control-line px-0"
                   aria-pressed={openMode === "open"}
                   title={openMode === "open" ? "Anyone can join" : "Code needed"}
                   aria-label={openMode === "open" ? "Open to anyone" : "Private, code needed"}
