@@ -125,6 +125,8 @@ Until two of its PRs have merged, a provisional model takes no second issue. Eac
 | Fable and Astra | Fable 5.1, GPT-6 Astra | Design passes and research only (`tier:1-deep`) |
 | Gemini | Gemini 3.8 Flash | Audits and defined checks only |
 
+Every builder names the model that wrote each PR in the PR body, and says so again if a later push used a different model. The reviewer differs from every model named.
+
 Other agents, Copilot included, take one small issue at a time until a review shows their work holds up.
 
 ### Sub-agents and usage limits
@@ -144,7 +146,7 @@ the current step, post `/paused` saying where you stopped, and leave the rest.
 
 An empty ready list is not a reason to stop or to ask the desk. Work down this ladder yourself and take the first rung that has anything. Claim as usual. Post on #854 only if all five rungs are empty.
 
-1. **Adopt a finished-but-stuck PR.** Built PRs whose builders went quiet are listed under "Stale" in #916. Comment `/claim adopt PR #N` on its issue, merge current main into its branch (a merge commit; never rebase or force-push), fix conflicts, get CI green, run the focused proof, then say on the PR it is ready for review. Don't widen its scope. It counts toward your 2-open-PR limit.
+1. **Adopt a finished-but-stuck PR.** Built PRs whose builders went quiet are listed under "Stale" in #916. Comment `/claim adopt PR #N` on its issue, merge current main into its branch (a merge commit; never rebase or force-push), fix conflicts, get CI green, run the focused proof, then say on the PR it is ready for review. Don't widen its scope. It counts toward your open-PR limit (AGENTS.md rule 4).
 2. **Promote a backlog issue.** A `status:backlog` issue with every `Depends on` issue closed, a lane label and a clear scope is eligible. Re-read it, `/claim`, and set it to `status:claimed`. No desk permission is needed.
 3. **Finish the head of a chain.** A chain is blocked by its first issue. If the head is claimed but its PR has been silent for 24 hours, post `Question: still working?`. With no reply in 2 hours it counts as free and you may adopt it.
 4. **Always-useful work.** Write the missing test for a recently merged feature. Split an oversized issue into small, fully labelled ones. Close duplicates with a one-line reason.
