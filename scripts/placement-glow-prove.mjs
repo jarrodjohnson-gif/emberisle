@@ -1,10 +1,14 @@
 // #830: placing a home or stronghold, the legal corners glow. In the browser, at 1280x720 and 390x844 (touch):
 // - armed (the setup home, then an armed Stronghold) every legal corner wears a ring at least 0.36 across in world units,
 //   a dark outline and a cream disc, and the ring + outline show on screen with a light/dark contrast of at least 3:1 on every
-//   terrain a legal corner sits on (median over that terrain's corners, read back from the drawn frame; unarmed pixels are also logged);
+//   terrain a legal corner sits on (median over that terrain's corners, read back from the drawn frame) and beat the same
+//   corners unarmed by a margin;
+// - the marks are seen: a pixel diff of the drawn frame with the marks shown and hidden changes at least MIN_CHANGED of the
+//   pixels around every legal corner, for the setup home and for each legal home under an armed Stronghold (where the piece's
+//   own base disc once hid the ring);
 // - nothing armed (main phase, no build chosen) the island holds no marks at all;
-// - under reduced motion the ring holds a static glow (emissive intensity does not move over a full pulse).
-// Saves test-results/placement-glow-{1280x720,390x844}.png. Port from VITE_PORT, default 8130.
+// - under reduced motion the ring holds a static glow (emissive intensity does not move over a full pulse, frames drawn between).
+// Saves test-results/placement-glow-{1280x720,390x844}.png and placement-glow-stronghold-{1280x720,390x844}.png. Port from VITE_PORT, default 8130.
 import { existsSync, mkdirSync } from "node:fs";
 import { chromium } from "playwright";
 import { createServer } from "vite";
@@ -64,6 +68,37 @@ const ratioAt = (page, pts, radius) =>
       });
     },
     [pts, radius],
+  );
+
+// The share of pixels around each point that differ from the patch stored under `key` (store: true saves the patches of the last
+// drawn frame; otherwise the last drawn frame is compared with them). A pixel differs when a channel moves by more than DELTA.
+const DELTA = 24;
+const MIN_CHANGED = 0.08; // measured: 0.155 or more at every setup corner, 0.25 or more at the Stronghold homes; a buried ring changes 0.
+const patches = (page, key, store, pts, radius) =>
+  page.evaluate(
+    ([key, store, pts, radius, delta]) => {
+      const c = window.__frame;
+      const k = c.width / window.innerWidth;
+      const ctx = c.getContext("2d");
+      const read = (p) => {
+        const r = Math.round(radius * k);
+        const x = Math.max(0, Math.round(p.x * k) - r);
+        const y = Math.max(0, Math.round(p.y * k) - r);
+        return ctx.getImageData(x, y, Math.max(1, Math.min(2 * r, c.width - x)), Math.max(1, Math.min(2 * r, c.height - y))).data;
+      };
+      if (store) {
+        window[key] = pts.map(read);
+        return [];
+      }
+      return pts.map((p, i) => {
+        const a = window[key][i];
+        const b = read(p);
+        let n = 0;
+        for (let j = 0; j < b.length; j += 4) if (Math.max(Math.abs(a[j] - b[j]), Math.abs(a[j + 1] - b[j + 1]), Math.abs(a[j + 2] - b[j + 2])) > delta) n++;
+        return n / (b.length / 4);
+      });
+    },
+    [key, store, pts, radius, DELTA],
   );
 
 const median = (a) => [...a].sort((x, y) => x - y)[Math.floor(a.length / 2)];
@@ -140,22 +175,26 @@ for (const [w, h, touch] of [
   const onScreen = legal.map((_, i) => pts[i] && pts[i].x > 8 && pts[i].x < w - 8 && pts[i].y > 8 && pts[i].y < h - 8);
   const terrains = await terrainOf(legal);
   // The ring's reach on screen: 0.2 world units along x, a little over.
-  const r = await page.evaluate((id) => {
-    const i = window.__isle;
-    const v = i.lastState.vertices.find((x) => x.id === id);
-    const a = i.screenAt(v.x, 0.3, v.z);
-    const b = i.screenAt(v.x + 0.2, 0.3, v.z);
-    return Math.max(4, Math.hypot(a.x - b.x, a.y - b.y) * 1.3);
-  }, legal[0]);
+  const reachOf = (id) =>
+    page.evaluate((id) => {
+      const i = window.__isle;
+      const v = i.lastState.vertices.find((x) => x.id === id);
+      const a = i.screenAt(v.x, 0.3, v.z);
+      const b = i.screenAt(v.x + 0.2, 0.3, v.z);
+      return Math.max(4, Math.hypot(a.x - b.x, a.y - b.y) * 1.3);
+    }, id);
+  const r = await reachOf(legal[0]);
   await drawn(page, 2);
   const at = pts.map((p) => p ?? { x: 0, y: 0 });
   const armed = await ratioAt(page, at, r);
+  await patches(page, "__shown", true, at, r);
   await page.screenshot({ path: `test-results/placement-glow-${tag}.png` });
   await page.evaluate(() => {
     window.__isle.marks.visible = false;
   });
   await drawn(page, 2);
   const bare = await ratioAt(page, at, r);
+  const changed = await patches(page, "__shown", false, at, r);
   await page.evaluate(() => {
     window.__isle.marks.visible = true;
   });
@@ -168,18 +207,24 @@ for (const [w, h, touch] of [
     by.get(t).bare.push(bare[i]);
   });
   check(`${tag}: legal corners sit on screen`, onScreen.filter(Boolean).length >= legal.length * 0.9, { onScreen: onScreen.filter(Boolean).length, legal: legal.length });
+  // Some terrains already read 4.5-4.9 unarmed, so 3:1 alone cannot fail there: the ring must also beat the bare corners by 1.5x.
   for (const [t, v] of by) {
     const a = median(v.armed);
-    check(`${tag}: ${t} corners read at 3:1 or better`, a >= 3, { median: +a.toFixed(2), unarmed: +median(v.bare).toFixed(2), n: v.armed.length });
+    const u = median(v.bare);
+    check(`${tag}: ${t} corners read at 3:1 or better, and 1.5x the unarmed read`, a >= 3 && a >= u * 1.5, { median: +a.toFixed(2), unarmed: +u.toFixed(2), n: v.armed.length });
   }
+  const seen = changed.filter((_, i) => onScreen[i]);
+  check(`${tag}: every legal corner is seen (marks shown vs hidden)`, seen.length > 0 && Math.min(...seen) >= MIN_CHANGED, { corners: seen.length, least: +Math.min(...seen).toFixed(3), median: +median(seen).toFixed(3) });
 
-  // Reduced motion: a static glow.
+  // Reduced motion: a static glow. A frame is drawn before each read, since reduced motion draws none on its own.
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.waitForFunction(() => window.matchMedia("(prefers-reduced-motion: reduce)").matches, null, { timeout: STEP_MS });
   await page.waitForTimeout(1500);
   const glowAt = () => page.evaluate(() => window.__isle.marks.children.filter((m) => m.userData.baseGlow !== undefined).map((m) => m.material.emissiveIntensity));
+  await drawn(page, 1);
   const g1 = await glowAt();
   await page.waitForTimeout(700);
+  await drawn(page, 1);
   const g2 = await glowAt();
   check(`${tag}: reduced motion holds a static glow`, g1.length > 0 && g1.every((x, i) => x === g2[i] && x === 1), { first: g1[0], later: g2[0] });
   await page.emulateMedia({ reducedMotion: "no-preference" });
@@ -200,7 +245,7 @@ for (const [w, h, touch] of [
         if (steal) g.getState().chooseSteal(steal.targets[0]);
       } else break;
     }
-    g.setState({ buildMode: null });
+    g.setState({ buildMode: "none" });
   });
   const phase = await page.evaluate(() => window.__emberisle.getState().state.phase);
   await settled();
@@ -213,7 +258,23 @@ for (const [w, h, touch] of [
   const own = await legalNow();
   const sh = await marksInfo();
   check(`${tag}: armed Stronghold rings exactly the legal homes`, own.length > 0 && sh.rings === own.length && sh.outlines === own.length, { legal: own.length, ...sh });
-  await page.evaluate(() => window.__emberisle.setState({ buildMode: null }));
+  // The ring must show over the home's own base disc: a pixel diff with the marks shown and hidden, at each legal home.
+  const homeAt = await page.evaluate((ids) => ids.map((id) => window.__isle.screenOf(id)), own);
+  const homeOn = homeAt.map((p) => p && p.x > 8 && p.x < w - 8 && p.y > 8 && p.y < h - 8);
+  const hp = homeAt.map((p) => p ?? { x: 0, y: 0 });
+  const hr = await reachOf(own[0]);
+  await patches(page, "__homeShown", true, hp, hr);
+  await page.screenshot({ path: `test-results/placement-glow-stronghold-${tag}.png` });
+  await page.evaluate(() => {
+    window.__isle.marks.visible = false;
+  });
+  await drawn(page, 2);
+  const homeChanged = await patches(page, "__homeShown", false, hp, hr);
+  await page.evaluate(() => {
+    window.__isle.marks.visible = true;
+  });
+  check(`${tag}: armed Stronghold rings are seen over every legal home`, homeOn.every(Boolean) && homeChanged.length > 0 && Math.min(...homeChanged) >= MIN_CHANGED, { homes: own.length, onScreen: homeOn.filter(Boolean).length, least: +Math.min(...homeChanged).toFixed(3), changed: homeChanged.map((x) => +x.toFixed(3)) });
+  await page.evaluate(() => window.__emberisle.setState({ buildMode: "none" }));
   await settled();
   await drawn(page, 2);
   check(`${tag}: disarming clears the marks`, (await marksInfo()).total === 0);

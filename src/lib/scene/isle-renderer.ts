@@ -107,6 +107,10 @@ const FLASH_PEAK = 0.35;
 const LEGAL_PULSE_S = 1.2;
 // The legal-corner ring (#830): wide enough to see from the default view, outlined dark so it holds on every terrain.
 const VERTEX_RING = { radius: 0.2, tube: 0.04, outline: 0.025, outlineColor: 0x1c120a } as const;
+// A corner that already holds a home (a Stronghold upgrade) has the piece's base disc under the ring: radius 0.27 and 0.075
+// high for the outpost, 0.086 for the keep (pieces-jelly.ts: (0.04 + 0.035) * 1.15). The ring (outer radius 0.265 with its
+// outline, 0.53 across, under HEX_SIZE / 2) cannot widen past it, so on those corners the mark lifts to rest on the base.
+const PIECE_BASE_TOP = 0.09;
 
 // The two views in play (docs/design/camera-light.md). Overhead: a frustum and a look-at point from the fit to the HUD hole,
 // and the eye on an orbit around that point, ORBIT_RADIUS out. Diorama (the default, #597): a perspective eye on an orbit
@@ -1838,16 +1842,19 @@ export class IsleRenderer {
     // Marks show only for the seat to act, so that seat's colour is the one every mark wears.
     const seat = new THREE.Color(state.players.find((p) => p.id === state.current)?.color ?? "#fff6e8");
     // The glow leans toward cream so a dark seat (Pine) still reads on forest at the pulse trough; the hue stays the seat's.
-    const glow = seat.clone().lerp(new THREE.Color(0xfff6e8), 0.5);
+    const glow = seat.clone().lerp(new THREE.Color(0xfff6e8), 0.35);
+    // The corner rings lean further to cream (#830); the path bars keep the glow above.
+    const ringGlow = seat.clone().lerp(new THREE.Color(0xfff6e8), 0.5);
 
     for (const v of state.vertices) {
       if (!vset.has(v.id)) continue;
       const m = new THREE.Mesh(
         new THREE.TorusGeometry(VERTEX_RING.radius, VERTEX_RING.tube, 8, 32),
-        new THREE.MeshStandardMaterial({ color: seat, emissive: glow, emissiveIntensity: 1 }),
+        new THREE.MeshStandardMaterial({ color: seat, emissive: ringGlow, emissiveIntensity: 1 }),
       );
       m.rotation.x = Math.PI / 2;
-      m.position.set(v.x, vertexTop(tops, v) + 0.03, v.z);
+      // A built corner lifts the ring to rest on the base (its tube's underside at the base top); the outline and disc follow it.
+      m.position.set(v.x, vertexTop(tops, v) + (v.building ? PIECE_BASE_TOP + VERTEX_RING.tube : 0.03), v.z);
       m.userData = { kind: "vertex", id: v.id, baseGlow: 1 };
       this.marks.add(m);
       // A dark outline under the ring and a soft cream disc inside it: the ring reads on pale sand and on dark forest alike (#830).
