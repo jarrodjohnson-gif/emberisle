@@ -8,7 +8,6 @@ For Jarrod's Bedrock credits. Models: Kimi K3, GLM 5.3, Grok 4.7. Draft.
 |---|---|---|
 | Builder (provisional) | Kimi K3, GLM 5.3 | `tier:2`, one issue at a time until two clean merges. K3 is slow, so give it defined work. |
 | Builder | Grok 4.7 | `tier:2` and `tier:3`. One issue at a time. |
-| Cross-review | K3 reviews GLM, GLM reviews K3, either reviews Grok | review only |
 
 Not on Bedrock, stays on Claude: the desk (Sonnet) and every `tier:1` review of server, protocol, CI or
 security work (Opus). A reviewer is never the builder's own model (`docs/DESK.md`).
@@ -47,12 +46,12 @@ For a long unattended run: `/loop Read AGENTS.md and follow it.` (or the harness
 
 ## Picking work
 
-Every issue has a `tier:` label, and you take the top eligible issue at or below your tier (Kimi K3, GLM 5.3 and Grok 4.7 are `tier:2`). A `model:` label (`model:kimi`, `model:glm`, `model:grok`), if present, pins the issue to that model: take it only if it names you. Abilities and limits to self-check against: `docs/LANES.md`, "Abilities within a tier".
+Every issue has a `tier:` label, and you take the top eligible issue at or below your tier (Kimi K3, GLM 5.3 and Grok 4.7 are `tier:2`). A `model:` label (`model:kimi`, `model:glm`, `model:grok`), if present, pins the issue to that model: take it only if it names you, and see `docs/LANES.md` for the resume and 48-hour expiry rules. Abilities and limits to self-check against: `docs/LANES.md`, "Abilities within a tier".
 
 ## Spend control
 
 - One small issue per PR. Keep prompt caching on.
-- Let CI run the 20-minute browser proofs. The agent runs only the proof for its own change, one at a time.
+- Let CI run the slow browser proofs. The agent runs only the proof for its own change, one at a time.
 - Watch the Bedrock cost dashboard daily for the first week.
 
 ## Repo rules

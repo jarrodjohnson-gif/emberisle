@@ -80,7 +80,15 @@ to any tier. Helpers don't use this list: they follow the queue in [`HELPERS.md`
 | `tier:2` | Everyday features with real proofs | Claude Sonnet 5.5, Gemini 3.8 Flash (thinking HIGH), Grok 4.7, GLM 5.3 and Kimi K3 (the last two provisional, see below), and every `tier:1` model |
 | `tier:3` | Small single-purpose fixes, docs and screenshot QA | Claude Haiku 5.5, GPT-6 Luna, and every model above |
 
-**Tier and model labels.** Every issue carries a `tier:` label. Any model at that tier or below may take it, and no one assigns builders. A `model:` label is optional and narrows the tier: while it is present, only that model (or a subagent on it) may claim the issue. It never widens the tier. The desk or any builder may add one for two reasons only: to match an issue to a model that excels in that area, or to keep an issue for the agent that already started it. An agent that posts `/paused` on work it means to finish adds `model:<its model>` and `resume: <agent name>` in the pause, and nobody else claims the issue. A `model:` label expires after 48 hours with no claim or PR activity: the first builder to notice removes it, says so in a one-line comment, and the issue is open to its tier again. A pin with no `/claim` or `resume:` reason is removable by anyone, and it is never a way to pre-assign work. `model:gemini-ok` is a hint that Gemini may take the issue, not a pin. Label names are short and have no version number: `model:fable`, `model:opus`, `model:sonnet`, `model:haiku`, `model:sol`, `model:astra`, `model:luna`, `model:gemini`, `model:grok`, `model:kimi`, `model:glm`. Versions live in the tier table.
+**Tier and model labels.** Every issue carries a `tier:` label. Any model at that tier or below may take it. Nobody assigns builders.
+
+A `model:` label is optional. It narrows the tier: only that model, or a subagent on it, may claim the issue. It never widens the tier.
+
+- **Why a pin exists:** to keep an issue for the model that already started it, or for a model that is known to do well on that kind of work. A pin is not a work assignment. Builders still claim with `/claim`.
+- **Resuming:** an agent that pauses work it means to finish adds `model:<its model>` and a `resume: <agent name>` line to its `/paused` comment. Nobody else claims the issue.
+- **Expiry:** a pin lapses after 48 hours with no claim or PR activity. The first builder to notice removes it and says so in one line. The issue is then open to its tier again. Anyone may remove a pin that has no `/claim` or `resume:` behind it.
+- **Names:** short, with no version number: `model:fable`, `model:opus`, `model:sonnet`, `model:haiku`, `model:sol`, `model:astra`, `model:luna`, `model:gemini`, `model:grok`, `model:kimi`, `model:glm`. Only `model:opus`, `model:sonnet` and `model:gemini-ok` exist today. The first builder or desk to need another creates it. Versions live in the tier table.
+- **`model:gemini-ok`** marks issues kept for Gemini. It is a hint, not a pin: other models at the tier may still claim them.
 
 **Gemini takes clearly defined work with hard checks.** It is good at:
 
@@ -96,15 +104,15 @@ Grok's usage limits are low, so give it one `tier:2` or `tier:3` issue at a time
 
 **Bedrock models (Jarrod, 2026-10-21):** GLM 5.3 and Kimi K3 are provisional `tier:2`. Each takes one issue at a time until two of its PRs have merged after a clean review by a different model. Then it is simply `tier:2`. Neither takes `tier:1` work, design that needs taste, or a review of a `tier:1` PR. gpt-oss is not used. Setup: [`setup-bedrock-agents.md`](setup-bedrock-agents.md).
 
-**Abilities within a tier.** Nobody assigns these builders to issues, and the desk adds no new tier labels for them. A `model:` pin is optional (see Tier and model labels). Every issue carries a `tier:` label. Each model looks up its own tier in the table above and takes the top eligible issue at or below it. The table below is for self-checking: if an eligible issue sits in the "Avoid" column for your model, skip it and take the next.
+**Abilities within a tier.** Nobody assigns these builders to issues, and the desk adds no new tier labels for them. A `model:` pin is optional (see Tier and model labels). Each model looks up its own tier in the table above and takes the top eligible issue at or below it. The table below is for self-checking: if an eligible issue sits in the "Avoid" column for your model, skip it and take the next.
 
 | Model | Good at | Avoid |
 |---|---|---|
-| Kimi K3 | Well-defined features with hard proofs, long unattended runs, multi-file changes | Anything urgent (it is slow, about 44 minutes a ticket on one benchmark) |
+| Kimi K3 | Well-defined features with hard proofs, long unattended runs, multi-file changes | Quick turnarounds: it is slow, about 44 minutes a ticket on one private benchmark ([Superconductor](https://www.superconductor.com/blog/kimi-k3-benchmark)). That never lets it skip a `prio:p0` issue. |
 | GLM 5.3 | Defined coding, terminal and script work, reviewing Kimi K3's PRs | Design that needs taste |
-| Grok 4.7 | Everyday `tier:2` features and fixes | Long queues (low usage limits: one issue at a time) |
+| Grok 4.7 | Everyday `tier:2` features and fixes | More than one issue at once (low usage limits) |
 
-Before a provisional model takes a second issue, check that its first PR is green on CI and has had a clean review by a different model. Each posts `<agent name>: started #N` and `<agent name>: PR #M for #N` on #854, like every builder. Say your model name in the PR body.
+Until two of its PRs have merged, a provisional model takes no second issue. Each posts `<agent name>: started #N` and `<agent name>: PR #M for #N` on #854, like every builder. Say your model name in the PR body.
 
 **The builders (Jarrod, 2026-10-20):**
 

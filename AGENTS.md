@@ -22,7 +22,7 @@ These are short on purpose. Follow all of them, every round.
 5. **Don't park drafts.** Open the PR as ready for review once your own checks pass. If CI goes red, fix it or say why on the PR.
 6. **Register every new proof** in `package.json` and `.github/workflows/ci.yml`, next to its neighbours. A proof that CI never runs doesn't count.
 7. **Never merge, never push to `main`, never force-push someone else's branch, never skip or loosen a test.**
-8. **Build with the issue's `model:` label.** A `tier:` label says which other models may take it.
+8. **Build with the issue's `model:` label, if it has one, and skip the issue if you can't run that model.** A `tier:` label says which models may take it.
 9. **Busy files are fine.** `package.json`, `ci.yml` and `scripts/size-prove.mjs` never count as overlap. A different function in a file another PR touches is fine if you name that PR in your claim.
 10. **Never stop, and never ask the desk for work.** If the lineup and the ready list are empty, work down the fallback ladder in [`docs/LANES.md`](docs/LANES.md#when-nothing-is-eligible) yourself. Post on #854 only when every rung is empty.
 11. **Run long browser proofs one at a time**, and paste real output in the PR. Never estimate numbers.
