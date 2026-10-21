@@ -202,11 +202,13 @@ body {
    the non-colour cue. */
 .seat-card.seat-turn::before, .turn-chip[data-turn-ring='true']::before, .trade-dock[data-turn-ring='true']::before {
   content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
-  box-shadow: inset 0 0 0 3px var(--seat-color, var(--accent)), inset 0 0 0 4px var(--ink), inset 0 0 0 11px color-mix(in srgb, var(--seat-color, var(--accent)) 20%, transparent);
+  box-shadow: inset 0 0 0 3px var(--seat-color, var(--accent)), inset 0 0 0 4px var(--ink), inset 0 0 0 var(--ring-band, 11px) color-mix(in srgb, var(--seat-color, var(--accent)) 20%, transparent);
 }
 /* A win row's name chip: padding and the matching negative margin, so the row is the same size with and without the ring. */
 .turn-chip { position: relative; display: inline-block; border-radius: 6px; padding: 2px 8px; margin: -2px -8px; }
 :where(.trade-dock[data-turn-ring='true']) { position: relative; }
+/* The offer card's text sits 8 px in (p-2) and its countdown and shortfall are accent text, 4.4:1 on the tint: its band stops at the padding. */
+.trade-dock[data-turn-ring='true'] { --ring-band: 8px; }
 .turn-mark { position: absolute; top: 0; left: 50%; width: 10px; height: 5px; transform: translateX(-50%); background: var(--ink); clip-path: polygon(0 0, 100% 0, 50% 100%); pointer-events: none; }
 .seat-card.seat-turn [class*='text-zinc-700'] { color: var(--muted); }
 .seat-card button:hover { background: var(--table-raised); color: var(--table-ink); }
