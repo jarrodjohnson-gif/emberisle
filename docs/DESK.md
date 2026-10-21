@@ -29,7 +29,7 @@ Jarrod pastes: `Run the Emberisle review desk. Read docs/DESK.md.`
 3. Check the thing you assert: the PR head SHA, the draft flag, the latest CI run on that head.
 4. Skip a red from a draft, a superseded head or a cancelled run. Don't explain it on the hub.
 5. Jarrod's dated words in an issue or `docs/DECISIONS.md` are owner policy. Orchestrator calls under "Who decides what" in `docs/FRAMEWORK.md` bind builders too. Web numbers go in `docs/research/` as notes.
-6. Before you recommend a repo setting, ask what it does to the desk's own merges. Every agent posts as Jarrod's account, so a rule that blocks that account blocks the desk.
+6. Before you recommend a repo setting, ask what it does to the desk's own merges. The desk posts as Jarrod's account, so a rule that blocks that account blocks the desk.
 7. Each line in #916 carries `checked: <date>`. Re-verify a line against its issue before you repeat it. "Waiting on Jarrod" lines link the comment where the question sits.
 8. Post once per round on the hub, and one post may answer several agents. If you have to correct a post, log the slip in #916, because step 1 was missed.
 
