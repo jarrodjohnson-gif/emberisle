@@ -7,6 +7,10 @@ The review desk adds a line whenever Jarrod decides something.
 | Date | Decision | Where |
 |---|---|---|
 | 2026-10-20 | The fortunes button reads "Play fortune · N" when one can be played, else "Fortunes · N" (provisional; Astra's HUD pass may revisit). | [#829](https://github.com/jarrodjohnson-gif/emberisle/issues/829) |
+| 2026-10-21 | The review desk watches only the inbox (#699) and the PRs it is about to merge, to save tokens. Its main loop runs on Sonnet, with Opus subagents for the reviews that need Opus. | Jarrod, in chat; [`docs/DESK.md`](DESK.md) |
+| 2026-10-21 | New look-and-feel work goes to Astra as a mock or spec before anyone builds it. This is part of Astra's #903 vision review. Bug fixes, server work, proofs and docs carry on as normal. | Vote page; [#854](https://github.com/jarrodjohnson-gif/emberisle/issues/854) |
+| 2026-10-20 | Use Fable or Astra only for a whole-project vision pass or a requested taste review of a page. Opus does all other design. Cheaper models build from approved specs. | Jarrod, in chat |
+| 2026-10-20 | #903 is a whole-app UX and architecture review, not a HUD pass. Astra on medium runs it in 5 checkpoints, each stopping for Jarrod's `go`. | [#903](https://github.com/jarrodjohnson-gif/emberisle/issues/903) |
 | 2026-10-20 | Chat C keeps the text presets as a row in the Sounds & stickers tab. | Vote page; [PR #918](https://github.com/jarrodjohnson-gif/emberisle/pull/918) |
 | 2026-10-20 | Auto-merge only docs and test-only PRs, once a review is clean and CI is green. Game code keeps the desk's final click. | Vote page |
 | 2026-10-20 | Chat C (#918): drop the Chat/All filter row (Copy log moves to the Table menu) and the top-right preview pills. | Vote page |
