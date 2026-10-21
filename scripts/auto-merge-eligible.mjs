@@ -18,7 +18,7 @@ const EXCLUDE_NAME = ["AGENTS.md", "CLAUDE.md", "CODEOWNERS", ".gitignore"];
 const EXCLUDE_SUFFIX = [".mjs", ".ts"];
 // Only added and modified files qualify: no removed, renamed, copied or mode-changed ("changed") files.
 const STATUSES = ["added", "modified"];
-// The desk posts as the owner account. Builders, collaborators included, never sign off their own PRs, so only the owner's marker counts.
+// The desk posts as the owner account. Only the owner's marker counts: builders on other accounts cannot sign off. Builders on the owner account are bound by docs/DESK.md, which the script cannot enforce.
 const TRUSTED = ["OWNER"];
 // GitHub Actions' app id, the integration the ruleset requires for `checks`.
 const ACTIONS_APP_ID = 15368;
@@ -70,6 +70,8 @@ export function decide({ pr, headAfter, files, checkRuns, comments, defaultBranc
 
   const marked = (comments ?? [])
     .filter((c) => TRUSTED.includes(c.author_association))
+    // An edited comment keeps its author, so anyone with write access could rewrite an old marker. Only an untouched comment counts.
+    .filter((c) => c.created_at && c.updated_at === c.created_at)
     .some((c) => [...String(c.body ?? "").matchAll(MARKER)].some((m) => m[1] === sha));
   if (!marked) return no(`no desk clean marker for ${sha}`);
 

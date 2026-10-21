@@ -14,6 +14,7 @@ const ACTIONS = { id: 15368, slug: "github-actions" };
 
 const file = (filename, status = "modified", lines = 10) => ({ filename, status, additions: lines, deletions: 0 });
 // A clean, eligible docs PR; each case changes one thing.
+const T0 = "2026-10-21T18:00:00Z";
 function pr(over = {}) {
   const files = over.files ?? [file("docs/research/waves.md"), file("docs/design/new-mock.png", "added", 0)];
   return {
@@ -21,7 +22,7 @@ function pr(over = {}) {
     headAfter: over.headAfter ?? SHA,
     files,
     checkRuns: over.checkRuns ?? [{ name: "checks", app: ACTIONS, head_sha: SHA, status: "completed", conclusion: "success" }],
-    comments: over.comments ?? [{ author_association: "OWNER", body: `Review clean.\n<!-- review-desk: clean ${SHA} -->` }],
+    comments: (over.comments ?? [{ author_association: "OWNER", body: `Review clean.\n<!-- review-desk: clean ${SHA} -->` }]).map((c) => ({ created_at: T0, updated_at: T0, ...c })),
     defaultBranch: "main",
   };
 }
@@ -60,6 +61,8 @@ const CASES = [
   ["marker with the head SHA from a past contributor", pr({ comments: [{ author_association: "CONTRIBUTOR", body: `<!-- review-desk: clean ${SHA} -->` }] }), false],
   ["marker with the head SHA from a collaborator", pr({ comments: [{ author_association: "COLLABORATOR", body: `<!-- review-desk: clean ${SHA} -->` }] }), false],
   ["marker with the head SHA from a member", pr({ comments: [{ author_association: "MEMBER", body: `<!-- review-desk: clean ${SHA} -->` }] }), false],
+  ["marker comment edited after posting", pr({ comments: [{ author_association: "OWNER", updated_at: "2026-10-21T18:05:00Z", body: `<!-- review-desk: clean ${SHA} -->` }] }), false],
+  ["marker comment with no timestamps", pr({ comments: [{ author_association: "OWNER", created_at: undefined, updated_at: undefined, body: `<!-- review-desk: clean ${SHA} -->` }] }), false],
   ["marker with a short SHA", pr({ comments: [{ author_association: "OWNER", body: `<!-- review-desk: clean ${SHA.slice(0, 7)} -->` }] }), false],
   ["no marker", pr({ comments: [{ author_association: "OWNER", body: "Looks fine." }] }), false],
   ["a stale marker and a fresh one", pr({ comments: [
@@ -106,6 +109,7 @@ const MUTANTS = [
   ["size limit off by one", "if (lines >= MAX_CHANGED_LINES)", "if (lines > MAX_CHANGED_LINES)"],
   ["marker SHA not compared", "m[1] === sha", "SHA.test(m[1])"],
   ["marker author not checked", ".filter((c) => TRUSTED.includes(c.author_association))", ""],
+  ["edited marker accepted", ".filter((c) => c.created_at && c.updated_at === c.created_at)", ""],
   ["head re-read ignored", "if (headAfter !== sha)", "if (false)"],
   ["checks run SHA not compared", "r.head_sha !== sha || ", ""],
   ["checks app not checked", " && r.app?.id === ACTIONS_APP_ID", ""],
