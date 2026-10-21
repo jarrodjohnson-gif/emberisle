@@ -1,5 +1,3 @@
-import { useViewport } from "@/lib/viewport";
-import { ConnectionStatus } from "@/components/game/ConnectionStatus";
 // #442: the table's one top-right control. A 44 px quiet "…" button opens a small sheet holding what the top chrome used
 // to spread out: the turn number and watcher count, How to play, Costs, the sound toggle, the table code (online), Copy log (#899, online) and Leave table.
 // A watcher's own "Watching" chip stays in the header beside the button (docs/design/spectator.md), not in here.
@@ -8,9 +6,11 @@ import { ConnectionStatus } from "@/components/game/ConnectionStatus";
 import { useEffect, useRef, useState } from "react";
 import { BookOpen, Box, Copy, Ellipsis, Eye, Hammer, LogOut, ScrollText, Volume2, VolumeX, Waves } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ConnectionStatus } from "@/components/game/ConnectionStatus";
 import { CopyFallback, useCopy } from "@/components/game/CopyText";
 import { useGame } from "@/lib/game/store";
 import { play, setMusicOn, setMuted, useMuted, useMusicOn } from "@/lib/sound";
+import { useViewport } from "@/lib/viewport";
 
 const ROW = "h-11 w-full justify-start px-3 text-body";
 const ICON = "size-4 shrink-0 text-muted";

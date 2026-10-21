@@ -1,5 +1,5 @@
-import { ConnectionStatus } from "@/components/game/ConnectionStatus";
 // The table lobby: code, seats, chat and Ready/Start. Online-only, so it loads with the chat as one lazy chunk (#488).
+import { ConnectionStatus } from "@/components/game/ConnectionStatus";
 import { VictoryTargetSelect } from "@/components/game/VictoryTargetSelect";
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";

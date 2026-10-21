@@ -248,6 +248,7 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
     authenticated = false;
   };
   const probeHealth = () => {
+    if (healthTimer) clearTimeout(healthTimer);
     healthTimer = null;
     if (!authenticated || closedByUs || ws.readyState !== 1 || probe) return;
     const wait = 30_000 - (performance.now() - lastProbe);

@@ -6,6 +6,13 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+// The fixture's registerHooks load hook is rejected by Node 22 before 22.23 (ERR_INVALID_RETURN_PROPERTY_VALUE on a CJS module with no source).
+// CI runs a newer 22; fail here with the reason instead of deep inside the host fixture.
+const [nodeMajor, nodeMinor] = process.versions.node.split(".").map(Number);
+if (nodeMajor === 22 && nodeMinor < 23) {
+  throw Error(`connection-health-prove needs Node 22.23 or newer (or 24+); this is ${process.versions.node}, whose registerHooks rejects the fixture hook.`);
+}
+
 if (process.argv.includes("--host-fixture")) {
   // Test-only observation of timer identity: no production exports, endpoint, or environment switch.
   const { registerHooks } = await import("node:module");
