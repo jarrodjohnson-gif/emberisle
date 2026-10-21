@@ -1703,7 +1703,7 @@ export class IsleRenderer {
       pier.castShadow = true;
       this.land.add(pier);
       this.piers.push(pier);
-      this.docks.push({ cx, cz, mx, mz, kind: va.harbor, vids: [va.id, vb.id] });
+      this.docks.push({ cx, cz, mx, mz, kind: va.harbor, vids: [va.id, vb.id], corners: [{ x: va.x, z: va.z }, { x: vb.x, z: vb.z }] });
 
       const boat = makeBoat(va.harbor);
       boat.position.set(cx + mx * (jettyStart + jettyLen + 0.16), 0.08, cz + mz * (jettyStart + jettyLen + 0.16));

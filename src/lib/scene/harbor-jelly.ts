@@ -10,8 +10,8 @@ import { PAINT } from "@/lib/scene/palette";
 import { rng32, setBoardDetail, shoreKit } from "@/lib/scene/hex-jelly";
 
 export type CoastPt = { id: string; x: number; z: number; mx: number; mz: number };
-// A dock: the middle of its coastal edge, the outward miter there, its good and its two corners.
-export type Dock = { cx: number; cz: number; mx: number; mz: number; kind: HarborKind; vids: string[] };
+// A dock: the middle of its coastal edge, the outward miter there, its good, its two corners and their world positions.
+export type Dock = { cx: number; cz: number; mx: number; mz: number; kind: HarborKind; vids: string[]; corners: [{ x: number; z: number }, { x: number; z: number }] };
 export type Shore = {
   group: THREE.Group;
   // Everything the swell carries (ships first, one per dock in order, then the buoys): rest = { x, z, yaw }.
@@ -679,7 +679,7 @@ function build(coast: CoastPt[], docks: Dock[], seed: number): Shore {
     for (const x of [-W / 2, W / 2]) P(K.part(box, "#7a5236", [x, DECK - 0.014, v0 + len / 2], [0, 0, 0], [0.014, 0.018, len]));
     // The rate plate, flat on the T-head, its text upright on screen whichever side of the island (the camera looks north).
     {
-      const pl = new THREE.PlaneGeometry(0.36, 0.165);
+      const pl = new THREE.PlaneGeometry(0.42, 0.19);
       const row = PLATE_KINDS.indexOf(d.kind);
       const uv = pl.attributes.uv as THREE.BufferAttribute;
       for (let i = 0; i < uv.count; i++) uv.setY(i, 1 - (row + 1 - uv.getY(i)) / PLATE_KINDS.length);
@@ -818,6 +818,44 @@ function build(coast: CoastPt[], docks: Dock[], seed: number): Shore {
       count: goodsParts.reduce((count, part) => count + part.attributes.position.count, 0),
       min: goodsBounds.min.toArray(), max: goodsBounds.max.toArray(), frame: frame.toArray(),
       deck: { width: W, from: v0, to: v1 }, scale: S });
+
+    // #640: boardwalks from the pier root to each corner, with colored landings showing harbor access.
+    const invFrame = frame.clone().invert();
+    const harborColor = goodOf(d.kind);
+    for (const corner of d.corners) {
+      const cl = new THREE.Vector3(corner.x, 0, corner.z).applyMatrix4(invFrame);
+      const bx0 = Math.sign(cl.x) * (W / 2 + 0.02);
+      const bz0 = v0 - 0.01;
+      const bx1 = cl.x;
+      const bz1 = cl.z;
+      const by0 = SURFACE + 0.06;
+      const by1 = SURFACE + 0.042;
+      const walkAngle = Math.atan2(bx1 - bx0, bz1 - bz0);
+      const steps = 10;
+      for (let k = 0; k < steps; k++) {
+        const u = (k + 0.5) / steps;
+        const px = bx0 + (bx1 - bx0) * u;
+        const pz = bz0 + (bz1 - bz0) * u;
+        const py = by0 + (by1 - by0) * u;
+        P(K.part(box, k % 3 === 0 ? "#c99a6a" : k % 2 ? "#a46e42" : "#b07a4c", [px, py, pz], [0, walkAngle, 0], [0.05, 0.008, 0.038]));
+      }
+      const side = Math.sign(cl.x);
+      const postUs = [0.15, 0.45, 0.75];
+      const postPts: V3[] = [];
+      for (const pu of postUs) {
+        const px = bx0 + (bx1 - bx0) * pu;
+        const pz = bz0 + (bz1 - bz0) * pu;
+        const py = by0 + (by1 - by0) * pu;
+        const ox = px + side * 0.03;
+        P(K.part(K.cyl(1, 1, 6), "#6a4a30", [ox, py + 0.03, pz], [0, 0, 0], [0.005, 0.06, 0.005]));
+        P(K.part(K.sphere(6), "#5a3a24", [ox, py + 0.062, pz], [0, 0, 0], [0.006, 0.004, 0.006]));
+        postPts.push([ox, py + 0.055, pz]);
+      }
+      for (let k = 0; k < postPts.length - 1; k++)
+        P(beam(K, postPts[k]!, postPts[k + 1]!, 0.002, "#d8c08a"));
+      P(K.part(K.cyl(1, 1, 12), harborColor, [bx1, by1, bz1], [0, 0, 0], [0.055, 0.01, 0.055]));
+      P(K.part(K.cyl(1, 1, 12), "#f4ead6", [bx1, by1 + 0.005, bz1], [0, 0, 0], [0.045, 0.006, 0.045]));
+    }
 
     // The ship, moored alongside the T-head's ship side, bow to the shore.
     const sv = tv - 0.04;
