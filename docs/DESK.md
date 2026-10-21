@@ -8,7 +8,7 @@ Jarrod pastes: `Run the Emberisle review desk. Read docs/DESK.md.`
 
 1. Read the **Desk state** issue, [#916](https://github.com/jarrodjohnson-gif/emberisle/issues/916). It lists what is waiting on Jarrod, every open PR, the builds in flight and the queue.
 2. Read the hub, [#854](https://github.com/jarrodjohnson-gif/emberisle/issues/854), from the newest comment back to the last desk post.
-3. Subscribe to the inbox PR #699 and to every open PR (`subscribe_pr_activity`).
+3. Subscribe to the inbox PR #699 only. The inbox relays every new PR, PR comment and hub post. Subscribe to a PR directly only while you wait on its CI to merge it, since the inbox doesn't relay CI, and unsubscribe once it merges.
 4. Pick up anything waiting: an unreviewed PR, a red PR you own, or a question on the hub.
 
 ## Keep it cheap
@@ -16,7 +16,9 @@ Jarrod pastes: `Run the Emberisle review desk. Read docs/DESK.md.`
 - **Start fresh** when the chat gets long. Update #916 first, then start a new session with the line above. Starting fresh is cheaper than a huge context on every wake-up.
 - **Edit #916, don't comment on it.** Update it at the end of every round.
 - **Mark your own hub posts** with `<!-- review-desk -->`, so the inbox doesn't wake you for them.
-- **Ignore echoes:** subscription notices, your own reviews coming back, and merge confirmations.
+- **Ignore echoes:** subscription notices, your own reviews coming back, merge confirmations, and red `browser-a` or `checks` results from a CI run that a newer push cancelled.
+- **Run the desk on Sonnet.** Give reviews their model per subagent (see "Who reviews"), so Opus runs only when a review needs it.
+- **Check small fix pushes yourself** by reading the diff. Use a fresh reviewer for a first review or a large push.
 - **Delegate reviews** to a fresh subagent with [REVIEWING.md](REVIEWING.md). Reviewers rely on CI and don't rerun the full suite.
 - **Don't write `@codex`** unless you mean to start a Codex task. A mention starts one.
 
