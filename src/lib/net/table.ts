@@ -67,6 +67,14 @@ export interface Reaction {
 // An ask-the-table offer (README "Messages between client and host"). Bags are resource counts, empty when absent.
 export type Bag = Partial<Record<Resource, number>>;
 
+export interface TurnExtensionState {
+  target: string | null;
+  key: string | null;
+  used: boolean;
+  vote: { id: string; target: string; until: number; voters: string[]; yes: string[]; no: string[] } | null;
+  result: { id: string; target: string; outcome: "passed" | "failed" | "cancelled" } | null;
+}
+
 export interface TableEvents {
   // A watcher's welcome (docs/design/spectator.md) has `spectator: true` and no `you`, `host` or `secret`. `proto` is the
   // host's wire protocol (G2): newer than PROTO means this page is out of date.
@@ -123,6 +131,10 @@ export interface TableClient {
   ask(give: Bag, want: Bag): void;
   answer(tradeId: string, yes: boolean): void;
   need(kinds: Resource[]): void;
+  requestTurnExtension(target: string, key: string): boolean;
+  answerTurnExtension(voteId: string, yes: boolean): boolean;
+  getTurnExtension(): TurnExtensionState | null;
+  subscribeTurnExtension(listener: () => void): () => void;
   say(text: string): void;
   sound(id: string): void;
   react(emote: string, to?: string): void;
@@ -217,6 +229,12 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
   let taken = false;
   let timer: ReturnType<typeof setTimeout> | null = null;
   let stamp: ActionStamp | null = null;
+  let extension: TurnExtensionState | null = null;
+  const extensionListeners = new Set<() => void>();
+  const setExtension = (value: TurnExtensionState | null) => {
+    extension = value;
+    extensionListeners.forEach((listener) => listener());
+  };
 
   const send = (msg: Record<string, unknown>) => {
     const raw = JSON.stringify(msg);
@@ -258,6 +276,7 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
       // A socket a later dial replaced closing late is not a drop of the live one.
       if (sock !== ws) return;
       stamp = null;
+      setExtension(null);
       if (closedByUs) return;
       if (!seat) {
         on.closed?.();
@@ -302,7 +321,11 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
       case "seats":
         on.seats?.(msg as never);
         break;
+      case "turnExtension":
+        setExtension(msg as unknown as TurnExtensionState);
+        break;
       case "state":
+        setExtension((msg.turnExtension as TurnExtensionState) ?? null);
         stamp = (msg as { actionStamp?: ActionStamp }).actionStamp ?? null;
         inGame = true;
         on.state?.(msg as never);
@@ -381,6 +404,13 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
       act({ type: "tradeAnswer", tradeId, yes });
     },
     need: (kinds) => send({ type: "need", kinds }),
+    requestTurnExtension: (target, key) => act({ type: "turnExtensionAsk", target, key }),
+    answerTurnExtension: (voteId, yes) => act({ type: "turnExtensionAnswer", voteId, yes }),
+    getTurnExtension: () => extension,
+    subscribeTurnExtension: (listener) => {
+      extensionListeners.add(listener);
+      return () => { extensionListeners.delete(listener); };
+    },
     say: (text) => send({ type: "chat", text }),
     sound: (id) => send({ type: "sound", id }),
     react: (emote, to) => send({ type: "react", emote, to }),
@@ -392,6 +422,7 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
     },
     close: () => {
       stamp = null;
+      setExtension(null);
       closedByUs = true;
       if (timer) clearTimeout(timer);
       timer = null;

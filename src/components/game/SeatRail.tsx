@@ -4,14 +4,17 @@
 // non-zero, the roll-off die only while the roll-off is live, and the points at text-title. The seat on turn carries
 // `seat-turn`: its dot pulses softly (bible §4.3) and the card brightens over 200 ms (§8), with an ink ring on the dot and
 // aria-current so the turn never rests on colour or motion alone (#312); the dot is a SeatDot.
+// #645: under that line, on a line of its own, two public tallies at every width: "🛤 n" (longest continuous path) and "⚔ n"
+// (wayfarers played); the Longest Path / Largest Army holder wears a gold badge on its tally (see Tally).
 // Your fortunes by kind and a dropped seat's state are facts in the player menu, one tap away.
-import { ScrollText } from "lucide-react";
-import { ReactionFloats } from "@/components/game/chunks";
+import { useMemo } from "react";
+import { type LucideIcon, Route, ScrollText, Swords } from "lucide-react";
+import { SeatBubbles } from "@/components/game/chunks";
 import { chunk, LazyBoundary } from "@/lib/lazy";
 import { PlayerMenu, seatAway } from "@/components/game/PlayerMenu";
 import { SeatDot } from "@/components/game/SeatDot";
 import type { GameState, PlayerState } from "@/lib/game/types";
-import { cards, hiddenCount, publicVP } from "@/lib/game/rules";
+import { cards, hiddenCount, publicVP, roadLength } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
 import { cn } from "@/lib/utils";
 
@@ -45,6 +48,24 @@ function Count({ testid, n, unit, className }: { testid: string; n: number; unit
   );
 }
 
+// #645: a public tally, a Route icon and n (longest continuous path) or a Swords icon and n (wayfarers played), always drawn, at every width. The
+// holder of the award (state.longestRoad / state.largestArmy, which already carry the 5 and 3 minimums and the tie rule)
+// wears a gold badge: its accessible name is the award, e.g. "Longest path, 7". The badge pulses once when it lands on a
+// seat (the existing `build-ready` keyframes; none under reduced motion); the log line is rules.ts's own.
+function Tally({ testid, Icon, n, name, held }: { testid: string; Icon: LucideIcon; n: number; name: [string, string]; held: boolean }) {
+  return (
+    <span
+      data-testid={testid}
+      role="img"
+      aria-label={`${name[+held]}, ${n}`}
+      className={cn("flex shrink-0 items-center gap-0.5 rounded-full px-0.5", held ? "bg-amber-300 font-semibold text-zinc-900 ring-1 ring-amber-600 build-ready" : "text-zinc-700")}
+    >
+      <Icon aria-hidden="true" className="size-3" />
+      {n}
+    </span>
+  );
+}
+
 // `short` is the strip's under-100 px form (#420); its presence makes this a strip line, which also hides the counts in
 // a cell under 200 px so the name keeps its room. A dropped seat's marker shows at every width (the word only where it fits).
 function SeatLine({ p, actor, short }: { p: PlayerState; actor: string; short?: string }) {
@@ -55,51 +76,59 @@ function SeatLine({ p, actor, short }: { p: PlayerState; actor: string; short?: 
   const goods = cards(p);
   const fortunes = p.fortunes ?? hiddenCount(p);
   const narrow = strip ? "@max-[200px]:hidden" : undefined;
+  const path = useMemo(() => roadLength(state, p.id), [state, p.id]);
   return (
     <>
-      {/* Under 100 px a cell holds "Emb" and the points with 4 px gaps; the dot gives back its two extra pixels there (#420). */}
-      <SeatDot color={p.color} className={cn("seat-dot size-3", strip && "@max-[100px]:size-2.5")} />
-      <span data-testid="seat-name" className={cn("min-w-0 flex-auto truncate text-sm font-medium", strip && "@max-[128px]:sr-only")}>
-        {p.name}
-      </span>
-      {strip ? (
-        <span data-testid="seat-name" aria-hidden="true" className="hidden min-w-0 flex-auto truncate text-xs font-medium @max-[128px]:block">
-          {short}
+      <span className={cn("flex w-full items-center", strip ? "gap-1.5 @max-[100px]:gap-1 @max-[100px]:has-[.seat-away]:gap-0.5 @max-[72px]:has-[.seat-away]:gap-0" : "gap-1.5")}>
+        {/* Under 100 px a cell holds "Emb" and the points with 4 px gaps; the dot gives back its two extra pixels there (#420). */}
+        <SeatDot color={p.color} className={cn("seat-dot size-3", strip && "@max-[100px]:size-2.5")} />
+        <span data-testid="seat-name" className={cn("min-w-0 flex-auto truncate text-sm font-medium", strip && "@max-[128px]:sr-only")}>
+          {p.name}
         </span>
-      ) : null}
-      {away ? (
-        <span data-testid="seat-away" className={cn("seat-away flex min-w-4 shrink-[9] items-center gap-0.5 text-caption text-zinc-700", strip && "@max-[100px]:min-w-3")}>
-          {/* A struck ring: the seat's circle with a line through it, in CSS so it costs no icon. */}
-          <span className="relative size-2.5 shrink-0 rounded-full border-[1.5px] border-current after:absolute after:-inset-x-0.5 after:top-1/2 after:h-[1.5px] after:-rotate-45 after:bg-current" />
-          <span aria-hidden="true" className={cn("truncate", narrow)}>
-            Away
-          </span>
-          <span className="sr-only">reconnecting</span>
-        </span>
-      ) : (
-        <>
-          {goods > 0 ? <Count testid="seat-goods" n={goods} unit="good" className={narrow} /> : null}
-          {fortunes > 0 ? <Count testid="seat-fortunes" n={fortunes} unit="fortune" className={narrow} /> : null}
-        </>
-      )}
-      <RollOffDie state={state} id={p.id} className={strip ? "size-5 rounded-[4px] text-xs" : "size-6 text-sm"} />
-      <span
-        data-testid="seat-vp"
-        className={cn("shrink-0 text-title tabular-nums", strip && state.phase === "rollOff" && "@max-[100px]:hidden")}
-      >
-        {publicVP(state, p.id)}
-        <span className="sr-only"> points{hidden ? `, plus ${hidden} hidden` : ""}</span>
-        {hidden ? (
-          <span aria-hidden="true" className={cn("text-caption text-zinc-700", strip && "sr-only")}>
-            +{hidden}
+        {strip ? (
+          <span data-testid="seat-name" aria-hidden="true" className="hidden min-w-0 flex-auto truncate text-xs font-medium @max-[128px]:block">
+            {short}
           </span>
         ) : null}
+        {away ? (
+          <span data-testid="seat-away" className={cn("seat-away flex min-w-4 shrink-[9] items-center gap-0.5 text-caption text-zinc-700", strip && "@max-[100px]:min-w-3")}>
+            {/* A struck ring: the seat's circle with a line through it, in CSS so it costs no icon. */}
+            <span className="relative size-2.5 shrink-0 rounded-full border-[1.5px] border-current after:absolute after:-inset-x-0.5 after:top-1/2 after:h-[1.5px] after:-rotate-45 after:bg-current" />
+            <span aria-hidden="true" className={cn("truncate", narrow)}>
+              Away
+            </span>
+            <span className="sr-only">reconnecting</span>
+          </span>
+        ) : (
+          <>
+            {goods > 0 ? <Count testid="seat-goods" n={goods} unit="good" className={narrow} /> : null}
+            {fortunes > 0 ? <Count testid="seat-fortunes" n={fortunes} unit="fortune" className={narrow} /> : null}
+          </>
+        )}
+        <RollOffDie state={state} id={p.id} className={strip ? "size-5 rounded-[4px] text-xs" : "size-6 text-sm"} />
+        <span
+          data-testid="seat-vp"
+          className={cn("shrink-0 text-title tabular-nums", strip && state.phase === "rollOff" && "@max-[100px]:hidden")}
+        >
+          {publicVP(state, p.id)}
+          <span className="sr-only"> points{hidden ? `, plus ${hidden} hidden` : ""}</span>
+          {hidden ? (
+            <span aria-hidden="true" className={cn("text-caption text-zinc-700", strip && "sr-only")}>
+              +{hidden}
+            </span>
+          ) : null}
+        </span>
+      </span>
+      {/* Its own line, so the cell's width is the tallies' room: a 77 px phone cell holds both with two-digit counts. */}
+      <span className="flex w-full items-center gap-1 text-caption">
+        <Tally testid="tally-path" Icon={Route} n={path} name={["Path length", "Longest path"]} held={state.longestRoad === p.id} />
+        <Tally testid="tally-army" Icon={Swords} n={p.knightsPlayed} name={["Wayfarers played", "Largest army"]} held={state.largestArmy === p.id} />
       </span>
     </>
   );
 }
 
-// One seat's card: the menu's trigger (docs/design/chat.md "The player action menu") with its reactions over it. The rail
+// One seat's card: the menu's trigger (docs/design/chat.md "The player action menu") with its seat bubble beside it (#899). The rail
 // gives it `rail-<id>` and chip corners, the strip `seat-<id>`, control corners and a short name.
 function SeatCard({ p, actor, short, className }: { p: PlayerState; actor: string; short?: string; className: string }) {
   const current = useGame((s) => s.state!.current);
@@ -121,15 +150,15 @@ function SeatCard({ p, actor, short, className }: { p: PlayerState; actor: strin
         aria-current={p.id === current || undefined}
         onClick={() => openMenu(menuFor === p.id ? null : p.id)}
         className={cn(
-          "flex h-11 w-full cursor-pointer items-center rounded-[inherit] text-left hover:bg-white/40",
-          strip ? "gap-1.5 px-2 @max-[100px]:gap-1 @max-[100px]:px-1.5 @max-[100px]:has-[.seat-away]:gap-0.5 @max-[72px]:px-1 @max-[72px]:has-[.seat-away]:gap-0" : "gap-1.5 px-2.5",
+          "flex h-11 w-full cursor-pointer flex-col justify-center rounded-[inherit] text-left hover:bg-white/40",
+          strip ? "px-2 @max-[100px]:px-1.5 @max-[72px]:px-1" : "px-2.5",
         )}
       >
         <SeatLine p={p} actor={actor} short={short} />
       </button>
       {online ? (
         <LazyBoundary failed={null}>
-          <ReactionFloats by="player" id={p.id} />
+          <SeatBubbles by="player" id={p.id} at={strip ? "strip" : "rail"} />
         </LazyBoundary>
       ) : null}
     </div>
