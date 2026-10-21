@@ -139,8 +139,17 @@ try {
     await menu.waitFor();
     assert.equal(await page.evaluate(() => document.activeElement?.textContent.trim()), "How to play", `${v.tag}: Enter opens with the focus on the first row`);
     const canvas = page.locator("canvas").first();
-    if (v.touch) await canvas.tap({ position: { x: v.width / 2, y: v.height / 2 } });
-    else await canvas.click({ position: { x: v.width / 2, y: v.height / 2 } });
+    const outside = await canvas.evaluate(el => {
+      const r = el.getBoundingClientRect();
+      for (const x of [r.width / 2, 8, r.width - 8]) {
+        for (const y of [r.height / 2, r.height / 3, r.height * 2 / 3]) {
+          if (document.elementFromPoint(r.left + x, r.top + y) === el) return {x, y};
+        }
+      }
+      throw new Error("no exposed board point outside the menu");
+    });
+    if (v.touch) await canvas.tap({ position: outside });
+    else await canvas.click({ position: outside });
     await menu.waitFor({ state: "detached" });
 
     // Online: the watcher count and the table code live in the sheet; Leave asks first.
