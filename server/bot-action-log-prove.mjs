@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { createGame } from "../src/lib/game/board.ts";
 import { chooseBotAction, logBotAction } from "../src/lib/game/ai.ts";
 import { applyAction, bankShort, legalRoads, publicVP, stealTargets } from "../src/lib/game/rules.ts";
-import { RESOURCES } from "../src/lib/game/types.ts";
+import { RESOURCES, RESOURCE_LABEL } from "../src/lib/game/types.ts";
 import { useGame } from "../src/lib/game/store.ts";
 
 function setup(seed) {
@@ -65,7 +65,7 @@ function balance(game) {
   assert.equal(state.state.log.filter((line) => line === rollLine).length, 1);
   assert.deepEqual(bankShort(state.state), ["ore"]);
   const i = state.state.log.indexOf(rollLine);
-  assert.match(state.state.log[i], /the bank is short of ore;/);
+  assert.match(state.state.log[i], /the bank is short of stone;/);
   console.log("practice roll: canonical goods event retains the bank shortage");
 }
 
@@ -81,7 +81,7 @@ function balance(game) {
   assert.equal(chooseBotAction(game, "p0").type, "buildPath");
   const beforePaths = bot.pathsLeft;
   const state = hostPractice(game);
-  const line = `${bot.name} spends 1 timber, 1 clay — path.`;
+  const line = `${bot.name} spends 1 wood, 1 brick — path.`;
   assert.equal(state.state.log.filter((entry) => entry === line).length, 1);
   assert.equal(state.gameLog.filter((entry) => entry.text === line).length, 1);
   assert.equal(state.state.players.find((p) => p.id === "p0").pathsLeft, beforePaths - 1);
@@ -105,12 +105,12 @@ function balance(game) {
   assert.equal(action.give, "timber");
   const beforeWanted = bot.resources[action.want];
   const state = hostPractice(game);
-  const line = `${bot.name} gains 1 ${action.want}; ${bot.name} loses 4 timber — bank trade.`;
+  const line = `${bot.name} traded 4 wood to the bank for 1 ${RESOURCE_LABEL[action.want].toLowerCase()}.`;
   assert.equal(state.state.log.filter((entry) => entry === line).length, 1);
   assert.equal(state.gameLog.filter((entry) => entry.text === line).length, 1);
   assert.equal(state.state.players.find((p) => p.id === "p0").resources.timber, 1);
   assert.equal(state.state.players.find((p) => p.id === "p0").resources[action.want], beforeWanted + 1);
-  assert(!state.state.log.some((entry) => entry.includes(` trades 4 timber for ${action.want}.`)));
+  assert(!state.state.log.some((entry) => entry.includes(` trades 4 wood for ${RESOURCE_LABEL[action.want].toLowerCase()}.`)));
   console.log("practice bank trade: action log keeps the public give and receive amounts");
 }
 
@@ -157,7 +157,7 @@ for (const [game, expectsLeader] of [[leaderFixture, true], [neutralFixture, fal
   assert.equal(lines.length, 1);
   assert(lines[0].includes(`${victim.name} loses 1 good`));
   assert.equal(lines[0].includes("public leader"), expectsLeader);
-  assert(!lines[0].match(/\b(timber|clay|wool|grain|ore)\b/i));
+  assert(!lines[0].match(/\b(timber|clay|wool|grain|wood|brick|sheep|wheat|ore|stone)\b/i));
   assert(!lines[0].match(/\b(point|VP|fortune card)\b/i));
   assert(!state.state.log.some((entry) => entry.includes("steals a card from") || entry.includes("sends the wayfarer")));
   assert.equal(state.gameLog.filter((entry) => entry.text === lines[0]).length, 1);
@@ -199,7 +199,7 @@ console.log("practice Wayfarer: public leader rationale matches the selected vic
   assert.ifError(next.error);
   const logged = logBotAction(game, next.state, action, "p0", "Ember");
   assert(logged.log.at(-1).includes("loses 1 good"));
-  assert(!logged.log.at(-1).includes("timber"));
+  assert(!logged.log.at(-1).includes("timber") && !logged.log.at(-1).includes("wood"));
   console.log("implicit victim: a null selected id is named only when the rules actually steal from the sole target");
 }
 {
