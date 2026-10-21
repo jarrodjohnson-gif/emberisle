@@ -90,6 +90,8 @@ export interface PlayerState {
   pathsLeft: number;
   outpostsLeft: number;
   strongholdsLeft: number;
+  // Goods lost to successful wayfarer steals (#550). Private during play, revealed at game end.
+  stealsLost?: number;
 }
 
 export interface TradeOffer {

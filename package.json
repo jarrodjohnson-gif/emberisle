@@ -95,6 +95,7 @@
     "proto-prove": "node --import ./server/register.mjs server/proto-prove.mjs",
     "cap-prove": "node --import ./server/register.mjs server/cap-prove.mjs",
     "restart-prove": "node --import ./server/register.mjs server/restart-prove.mjs",
+    "steal-loss-prove": "node --import ./server/register.mjs server/steal-loss-prove.mjs",
     "preseat-prove": "node --import ./server/register.mjs server/preseat-prove.mjs",
     "victory-target-prove": "node --import ./server/register.mjs scripts/victory-target-prove.mjs",
     "visual-direction-prove": "node scripts/visual-direction-prove.mjs",

@@ -405,7 +405,13 @@ export function legalFor(game, you) {
 
 // Hidden fortunes and the deck order stay on the host until the game ends.
 export function viewFor(game, you) {
-  if (game.phase === "over") return { ...game, deckLeft: game.deck.length };
+  if (game.phase === "over") {
+    return {
+      ...game,
+      deckLeft: game.deck.length,
+      players: game.players.map((p) => ({ ...p, stealsLost: p.stealsLost ?? 0 })),
+    };
+  }
   return closedView(game, you);
 }
 
@@ -413,28 +419,34 @@ export function viewFor(game, you) {
 function watchView(game) {
   if (game.phase !== "over") return closedView(game, null);
   const { seed, rng, ...open } = game;
-  return { ...open, deckLeft: game.deck.length };
+  return {
+    ...open,
+    deckLeft: game.deck.length,
+    players: game.players.map((p) => ({ ...p, stealsLost: p.stealsLost ?? 0 })),
+  };
 }
 
 function closedView(game, you) {
   // The seed rebuilds the whole fortune deck, and rng predicts which card a steal takes (#111).
   // Other players' hands go out as a count only, like cards held face down (#186).
+  // Goods lost to steals (#550) stay private on the host until the game ends.
   const { seed, rng, winReason, ...open } = game;
   return {
     ...open,
     deck: [],
     deckLeft: game.deck.length,
-    players: game.players.map((p) =>
-      p.id === you
-        ? p
+    players: game.players.map((p) => {
+      const { stealsLost, ...sanitized } = p;
+      return p.id === you
+        ? sanitized
         : {
-            ...withoutHand(p),
+            ...withoutHand(sanitized),
             goods: RESOURCES.reduce((n, r) => n + p.resources[r], 0),
             hidden: { knight: 0, road: 0, plenty: 0, monopoly: 0, vp: 0 },
             boughtThisTurn: { knight: 0, road: 0, plenty: 0, monopoly: 0, vp: 0 },
             fortunes: Object.values(p.hidden).reduce((a, b) => a + b, 0),
-          },
-    ),
+          };
+    }),
   };
 }
 

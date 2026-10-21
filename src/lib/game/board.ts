@@ -50,6 +50,7 @@ function makePlayer(i: number, name: string, kind: PlayerKind): PlayerState {
     pathsLeft: 15,
     outpostsLeft: 5,
     strongholdsLeft: 4,
+    stealsLost: 0,
   };
 }
 
