@@ -1,17 +1,14 @@
 # Running Emberisle builders on AWS Bedrock models (draft)
 
-For Jarrod's Bedrock credits. Models: Grok 4.7, GLM 5.3, GLM 4.7, GLM 4.7 Flash. Draft.
+For Jarrod's Bedrock credits. Models: Kimi K3, GLM 5.3, Grok 4.7. Draft.
 
 ## Who does what
 
 | Role | Model | Tier it may take (`docs/LANES.md`) |
 |---|---|---|
-| Builder | Grok 4.7 | `tier:2` and `tier:3` (already listed in LANES.md). One issue at a time. |
-| Cross-reviewer of Grok's PRs | GLM 5.3 | review only |
-| Reviewer of GLM's PRs | Grok 4.7 | review only |
-| Docs-only builds | GLM 4.7 Flash | `tier:3` docs |
-| Layout/CSS builds | GLM 4.7 | `tier:3` |
-| Builder (provisional) | GLM 5.3, Kimi 3 | `tier:2`, one issue at a time until two clean merges |
+| Builder (provisional) | Kimi K3, GLM 5.3 | `tier:2`, one issue at a time until two clean merges. K3 is slow, so give it defined work. |
+| Builder | Grok 4.7 | `tier:2` and `tier:3`. One issue at a time. |
+| Cross-review | K3 reviews GLM, GLM reviews K3, either reviews Grok | review only |
 
 Not on Bedrock, stays on Claude: the desk (Sonnet) and every `tier:1` review of server, protocol, CI or
 security work (Opus). A reviewer is never the builder's own model (`docs/DESK.md`).
@@ -24,8 +21,8 @@ security work (Opus). A reviewer is never the builder's own model (`docs/DESK.md
 2. `aws configure set region us-east-2 --profile <profile>`
 3. `aws login --region us-east-2 --profile <profile>` (browser sign-in)
 4. `aws sts get-caller-identity --profile <profile>` should print your account.
-5. In the Bedrock console (us-east-2) open Model catalog and confirm access to `zai.glm-5.3`,
-   `xai.grok-4.7`, `zai.glm-4.7`, `zai.glm-4.7-flash`. Models marked "Cross-region inference" may need an
+5. In the Bedrock console (us-east-2) open Model catalog and confirm access to Kimi K3, `zai.glm-5.3`
+   and `xai.grok-4.7`. Models marked "Cross-region inference" may need an
    inference-profile ID (for example a `us.` prefix). Copy the exact ID from the console.
 6. Optional, for AWS tooling: `aws configure agent-toolkit --yes --region us-east-1 --profile <profile>`.
    The toolkit only exists in us-east-1. Do not append its rules to this repo's `CLAUDE.md`.

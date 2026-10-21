@@ -7,7 +7,7 @@ The review desk adds a line whenever Jarrod decides something.
 | Date | Decision | Where |
 |---|---|---|
 | 2026-10-20 | The fortunes button reads "Play fortune · N" when one can be played, else "Fortunes · N" (provisional; Astra's HUD pass may revisit). | [#829](https://github.com/jarrodjohnson-gif/emberisle/issues/829) |
-| 2026-10-21 | Bedrock models may build: GLM 5.3 and Kimi 3 as provisional `tier:2` (one issue at a time until two clean merges), GLM 4.7 and GLM 4.7 Flash as `tier:3`. Grok 4.7 stays `tier:2`. Jarrod left the ranking to the desk; no benchmark was run, so promotion rests on merged, clean PRs. | Jarrod, in chat; [`docs/LANES.md`](LANES.md) |
+| 2026-10-21 | Bedrock models may build: GLM 5.3 and Kimi K3 as provisional `tier:2` (one issue at a time until two clean merges). Grok 4.7 stays `tier:2`. gpt-oss, GLM 4.7 and GLM 4.7 Flash are not used. Ranked from published benchmarks (mostly vendor-reported), so promotion rests on merged, clean PRs. | Jarrod, in chat; [`docs/LANES.md`](LANES.md) |
 | 2026-10-21 | The review desk watches only the inbox (#699) and the PRs it is about to merge, to save tokens. Its main loop runs on Sonnet, with Opus subagents for the reviews that need Opus. | Jarrod, in chat; [`docs/DESK.md`](DESK.md) |
 | 2026-10-21 | New look-and-feel work goes to Astra as a mock or spec before anyone builds it. This is part of Astra's #903 vision review. Bug fixes, server work, proofs and docs carry on as normal. | Vote page; [#854](https://github.com/jarrodjohnson-gif/emberisle/issues/854) |
 | 2026-10-20 | Use Fable or Astra only for a whole-project vision pass or a requested taste review of a page. Opus does all other design. Cheaper models build from approved specs. | Jarrod, in chat |
