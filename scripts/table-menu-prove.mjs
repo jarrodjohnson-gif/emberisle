@@ -75,7 +75,8 @@ try {
     await trigger.click();
     await menu.waitFor();
     const hasVibrate = await page.evaluate(() => typeof navigator.vibrate === "function");
-    const rows = await menu.getByRole("button").allTextContents();
+    const allRows = await menu.getByRole("button").allTextContents();
+    const rows = allRows.filter(text => text.trim() !== "Haptics on");
     const expected = [
       "How to play",
       "Costs",
@@ -88,7 +89,8 @@ try {
       "Overhead",
       "Leave table",
     ];
-    assert.deepEqual(rows.map((t) => t.trim()), expected, `${v.tag}: menu rows`);
+    assert.deepEqual(rows.map((t) => t.trim()), ["How to play", "Costs", "Table sounds on", "Music on", "Crystal", "Simple", "Diorama", "Overhead", "Leave table"], `${v.tag}: menu rows`);
+    assert.deepEqual(allRows.map((t) => t.trim()), expected, `${v.tag}: complete menu including haptics`);
     assert.match(await menu.textContent(), /Turn 1/, `${v.tag}: the turn number moved into the menu`);
     assert.equal(await page.evaluate(() => document.activeElement?.textContent.trim()), "How to play", `${v.tag}: focus moves to the first row`);
     assert.equal(await trigger.getAttribute("aria-expanded"), "true", `${v.tag}: aria-expanded while open`);
