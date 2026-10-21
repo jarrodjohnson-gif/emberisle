@@ -120,3 +120,15 @@ its own tier or below. Pick the sub-agent by how clear the task is:
 
 Stop starting new work when your 5-hour or weekly usage limit has 5% or less left. Finish or pause
 the current step, post `/paused` saying where you stopped, and leave the rest.
+
+## When nothing is eligible
+
+An empty ready list is not a reason to stop or to ask the desk. Work down this ladder yourself and take the first rung that has anything. Claim as usual. Post on #854 only if all five rungs are empty.
+
+1. **Adopt a finished-but-stuck PR.** Built PRs whose builders went quiet are listed under "Stale" in #916. Comment `/claim adopt PR #N` on its issue, merge current main into its branch (a merge commit; never rebase or force-push), fix conflicts, get CI green, run the focused proof, then say on the PR it is ready for review. Don't widen its scope. It counts toward your 2-open-PR limit.
+2. **Promote a backlog issue.** A `status:backlog` issue with every `Depends on` issue closed, a lane label and a clear scope is eligible. Re-read it, `/claim`, and set it to `status:claimed`. No desk permission is needed.
+3. **Finish the head of a chain.** A chain is blocked by its first issue. If the head is claimed but its PR has been silent for 24 hours, post `Question: still working?`. With no reply in 2 hours it counts as free and you may adopt it.
+4. **Always-useful work.** Write the missing test for a recently merged feature. Split an oversized issue into small, fully labelled ones. Close duplicates with a one-line reason.
+5. **Research gaps.** Read `docs/research/` and the #903 review notes. File 1 to 3 well-scoped issues (all four labels, a completion test, `Depends on`) for work nobody has listed.
+
+Every issue carries a status, lane, tier and prio label. Never leave one unlabelled.

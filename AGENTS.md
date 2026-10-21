@@ -24,7 +24,7 @@ These are short on purpose. Follow all of them, every round.
 7. **Never merge, never push to `main`, never force-push someone else's branch, never skip or loosen a test.**
 8. **Build with the issue's `model:` label.** A `tier:` label says which other models may take it.
 9. **Busy files are fine.** `package.json`, `ci.yml` and `scripts/size-prove.mjs` never count as overlap. A different function in a file another PR touches is fine if you name that PR in your claim.
-10. **Never stop silently.** If nothing is eligible, post on #854 which issues you skipped and why. The review desk answers with work.
+10. **Never stop, and never ask the desk for work.** If the lineup and the ready list are empty, work down the fallback ladder in [`docs/LANES.md`](docs/LANES.md#when-nothing-is-eligible) yourself. Post on #854 only when every rung is empty.
 11. **Run long browser proofs one at a time**, and paste real output in the PR. Never estimate numbers.
 12. **Don't make design decisions.** Ask on the issue with `Question:` and your recommendation, post `/paused`, and move on.
 
@@ -50,8 +50,7 @@ These are short on purpose. Follow all of them, every round.
    `package.json`, `.github/workflows/ci.yml` and `scripts/size-prove.mjs` never count as file overlap.
    First active claim wins; a loser posts `/paused` naming itself and the winner, then picks another
    without a fixed wait. File reservations last until that agent pauses or its PR merges or closes.
-6. **Still nothing eligible?** Post one line on #854 saying so and which issues you skipped and why. The
-   review desk replies with work. Don't stop silently.
+6. **Still nothing eligible?** Work down the fallback ladder in [`docs/LANES.md`](docs/LANES.md#when-nothing-is-eligible). Post one line on #854 only if every rung is empty, naming the issues you skipped and why.
 
 **Told you are a helper**, for example a friend's AI working from a fork? (Josh's agent is a full builder, not a helper, even from his fork: see `docs/LANES.md`.) Read #854, then take work
 from the helper queue, issue [#851](https://github.com/jarrodjohnson-gif/emberisle/issues/851), and follow
