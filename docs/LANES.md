@@ -80,8 +80,7 @@ to any tier. Helpers don't use this list: they follow the queue in [`HELPERS.md`
 | `tier:2` | Everyday features with real proofs | Claude Sonnet 5.5, Gemini 3.8 Flash (thinking HIGH), Grok 4.7, GLM 5.3 and Kimi K3 (the last two provisional, see below), and every `tier:1` model |
 | `tier:3` | Small single-purpose fixes, docs and screenshot QA | Claude Haiku 5.5, GPT-6 Luna, and every model above |
 
-An issue's `model:` label, where present, names the model to build with (`docs/FRAMEWORK.md`). The
-`tier:` label says which other models may also take it.
+**Tier and model labels.** Every issue carries a `tier:` label. Any model at that tier or below may take it, and no one assigns builders. A `model:` label is optional and narrows the tier: while it is present, only that model (or a subagent on it) may claim the issue. It never widens the tier. The desk or any builder may add one for two reasons only: to match an issue to a model that excels in that area, or to keep an issue for the agent that already started it. An agent that posts `/paused` on work it means to finish adds `model:<its model>` and `resume: <agent name>` in the pause, and nobody else claims the issue. A `model:` label expires after 48 hours with no claim or PR activity: the first builder to notice removes it, says so in a one-line comment, and the issue is open to its tier again. A pin with no `/claim` or `resume:` reason is removable by anyone, and it is never a way to pre-assign work. `model:gemini-ok` is a hint that Gemini may take the issue, not a pin. Label names are short and have no version number: `model:fable`, `model:opus`, `model:sonnet`, `model:haiku`, `model:sol`, `model:astra`, `model:luna`, `model:gemini`, `model:grok`, `model:kimi`, `model:glm`. Versions live in the tier table.
 
 **Gemini takes clearly defined work with hard checks.** It is good at:
 
@@ -97,7 +96,7 @@ Grok's usage limits are low, so give it one `tier:2` or `tier:3` issue at a time
 
 **Bedrock models (Jarrod, 2026-10-21):** GLM 5.3 and Kimi K3 are provisional `tier:2`. Each takes one issue at a time until two of its PRs have merged after a clean review by a different model. Then it is simply `tier:2`. Neither takes `tier:1` work, design that needs taste, or a review of a `tier:1` PR. gpt-oss is not used. Setup: [`setup-bedrock-agents.md`](setup-bedrock-agents.md).
 
-**Abilities within a tier.** Nobody assigns these builders to issues, and the desk adds no new labels for them. Every issue carries a `tier:` label. Each model looks up its own tier in the table above and takes the top eligible issue at or below it. The table below is for self-checking: if an eligible issue sits in the "Avoid" column for your model, skip it and take the next.
+**Abilities within a tier.** Nobody assigns these builders to issues, and the desk adds no new tier labels for them. A `model:` pin is optional (see Tier and model labels). Every issue carries a `tier:` label. Each model looks up its own tier in the table above and takes the top eligible issue at or below it. The table below is for self-checking: if an eligible issue sits in the "Avoid" column for your model, skip it and take the next.
 
 | Model | Good at | Avoid |
 |---|---|---|

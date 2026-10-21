@@ -101,8 +101,8 @@ Size: XS | S
 ```
 
 An issue may carry a `model:opus` or `model:sonnet` label when it needs a particular model: opus for
-UI, visual or tricky multi-file work, sonnet for well-specified mechanical steps. A Builder uses that
-model, or a subagent on it. If it can do neither, it says in the PR which model it used. The Reviewer uses a different model from the one that built the PR.
+UI, visual or tricky multi-file work, sonnet for well-specified mechanical steps. A `model:` label pins the issue to that model, so a Builder on another model skips it (`docs/LANES.md`, "Tier and model labels"). A Builder uses that
+model, or a subagent on it. The Reviewer uses a different model from the one that built the PR.
 
 A mock-based design or `ux` issue is ready only when its mock covers 390x844, 844x390 and 1280x720. The mock gives pixel sizes for type, controls and footprints at each size. A mock for one size leaves the Builder guessing at the others (#909).
 
@@ -207,7 +207,7 @@ Not a bug, or a no? Close it with a one-line reason.
   hand them to a subagent, and keep working. Run proofs one at a time, never in parallel: they share
   ports. Before you push or open the PR, wait for every check to finish and read its result. A check
   you haven't read the result of counts as failed.
-- **Pick the model to fit the work.** Use the issue's `model:` label if it has one. Otherwise use a
+- **Pick the model to fit the work.** Use the issue's `model:` label if it has one, and skip the issue if you cannot run that model. Otherwise use a
   smaller model for mechanical or search subagents, and the strongest one for UI, visual or tricky
   multi-file work.
 - **Independent steps go out together.** Send unrelated tool calls in one batch, and launch independent
