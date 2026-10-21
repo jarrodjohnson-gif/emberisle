@@ -159,7 +159,6 @@ export interface GameLogLine {
   text: string;
 }
 const GAME_LOG_MAX = 200;
-const LOG_FILTER_KEY = "emberisle-log-filter";
 const WATER_KEY = "emberisle-water";
 const VIEW_KEY = "emberisle-view";
 
@@ -198,14 +197,6 @@ function savedView(): PlayView | null {
     return v === "diorama" || v === "overhead" ? v : null;
   } catch {
     return null;
-  }
-}
-
-function savedLogFilter(): "all" | "chat" {
-  try {
-    return localStorage.getItem(LOG_FILTER_KEY) === "chat" ? "chat" : "all";
-  } catch {
-    return "all";
   }
 }
 
@@ -385,9 +376,6 @@ interface GameStore {
   sendReact: (emote: string, to?: string) => void;
   // The whole game log, for the dock (#305): the new lines of `state.log` after each local action, and the host's `log` messages online.
   gameLog: GameLogLine[];
-  // Which rows the dock lists: the chat alone, or the chat and the game log together. Remembered like `chatOpen`.
-  logFilter: "all" | "chat";
-  setLogFilter: (v: "all" | "chat") => void;
   // The sea (docs/design/crystal-water.md): the player's saved Water choice (null lets the GPU probe decide), and what the
   // renderer actually shows.
   waterChoice: WaterPath | null;
@@ -537,7 +525,6 @@ export const useGame = create<GameStore>((set, get) => ({
   unread: 0,
   chatDraft: "",
   gameLog: [],
-  logFilter: savedLogFilter(),
   waterChoice: savedWater(),
   water: null,
   viewChoice: savedView(),
@@ -956,14 +943,6 @@ export const useGame = create<GameStore>((set, get) => ({
     set(v ? { chatOpen: true, unread: 0 } : { chatOpen: false });
   },
   setChatDraft: (v) => set({ chatDraft: v }),
-  setLogFilter: (v) => {
-    try {
-      localStorage.setItem(LOG_FILTER_KEY, v);
-    } catch {
-      // storage can be blocked; the filter still holds for this page
-    }
-    set({ logFilter: v });
-  },
   setWaterChoice: (v) => {
     try {
       localStorage.setItem(WATER_KEY, v);

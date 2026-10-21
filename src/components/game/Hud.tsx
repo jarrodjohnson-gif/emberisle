@@ -288,10 +288,10 @@ export function Hud() {
     <>
 
       {/* #442: one control up top. The turn number, watcher count, How to play, sound and Leave live in the menu, whose open
-          sheet rises over the z-20 chat dock (it reaches the header on a sideways phone). Online, Open chat and Quick reactions
-          sit in this row too, left of the menu, so they never move with the turn and never reach the board. A watcher's badge stays out here,
+          sheet rises over the z-20 chat dock (it reaches the header on a sideways phone). Online, Open chat (#899: the one chat button)
+          sits in this row too, left of the menu, so it never moves with the turn and never reaches the board. A watcher's badge stays out here,
           a chip and not a button, so a watcher always sees why it has no controls (docs/design/spectator.md). */}
-      <header className={cn("hud-header pointer-events-none absolute inset-x-0 top-0 z-20 px-safe pt-[max(0.75rem,env(safe-area-inset-top))] has-[#table-menu]:z-30 has-[#quick-reaction-picker]:z-[25]", phone ? "pb-0" : "pb-3")}>
+      <header className={cn("hud-header pointer-events-none absolute inset-x-0 top-0 z-20 px-safe pt-[max(0.75rem,env(safe-area-inset-top))] has-[#table-menu]:z-30", phone ? "pb-0" : "pb-3")}>
         <div className="pointer-events-auto flex items-center justify-end gap-1">
           {phone ? <SeatStrip actor={actor} className="min-w-0 max-w-[48rem] flex-1" /> : <div className="mr-auto">{instruction}</div>}
           {spectator && !(phone && portrait) ? (

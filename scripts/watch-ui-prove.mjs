@@ -360,7 +360,7 @@ try {
   await w1.page.getByTestId("chat-readonly").waitFor();
   const dock = await w1.page.evaluate(() => {
     const sec = document.querySelector('section[aria-label="Table chat"]');
-    return { inputs: sec.querySelectorAll("input").length, emotes: sec.querySelectorAll('[aria-label="Emotes"]').length, buttons: [...sec.querySelectorAll("button")].map((b) => b.textContent.trim() || b.getAttribute("aria-label")) };
+    return { inputs: sec.querySelectorAll("input").length, emotes: sec.querySelectorAll('[aria-label="Emotes"], [aria-label^="React "], [aria-label^="Play sound "], [role="tab"]').length, buttons: [...sec.querySelectorAll("button")].map((b) => b.textContent.trim() || b.getAttribute("aria-label")) };
   });
   if (dock.inputs !== 0 || dock.emotes !== 0 || dock.buttons.some((t) => t === "Send" || t === "gg")) throw new Error(`the watcher's dock can talk: ${JSON.stringify(dock)}`);
   await a.page.getByRole("button", { name: /Open chat/ }).click();

@@ -2,11 +2,12 @@
 import { VictoryTargetSelect } from "@/components/game/VictoryTargetSelect";
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ChatBox, ReactionFloats } from "@/components/game/Chat";
+import { ChatBox, SeatBubbles } from "@/components/game/Chat";
 import { CopyFallback, useCopy } from "@/components/game/CopyText";
 import { SeatDot } from "@/components/game/SeatDot";
 import { useGame } from "@/lib/game/store";
 import type { Seat } from "@/lib/net/table";
+import { LazyBoundary } from "@/lib/lazy";
 import { cn } from "@/lib/utils";
 import { useViewport } from "@/lib/viewport";
 
@@ -32,7 +33,7 @@ function OwnName({ seat, compact }: { seat: Seat; compact: boolean }) {
           done.current = false;
           setDraft(seat.name);
         }}
-        className={cn("min-w-0 cursor-pointer truncate text-left text-sm underline decoration-dotted underline-offset-4", compact ? "" : "-my-1 min-h-11")}
+        className={cn("min-w-0 cursor-pointer truncate text-left text-sm underline decoration-dotted underline-offset-4", compact ? "" : "-my-1 min-h-11 min-w-11")}
       >
         {seat.name}
       </button>
@@ -93,6 +94,10 @@ export function Lobby() {
   const { phone, portrait } = useViewport();
   const sheet = phone && portrait;
   const landscape = phone && !portrait;
+  // #895: a fine pointer at 1280x720 must fit the code, four seats, the chat (tabs, a log line, the emoji, the input) and
+  // Ready/Start/Leave in 672 px. As the Chat C lobby mock does, its secondary controls are 32 px there; touch keeps 44 px.
+  const desk = !phone;
+  const small = desk ? "h-8" : undefined;
 
   return (
     <div
@@ -111,7 +116,7 @@ export function Lobby() {
       <div
         className={cn(
           "lobby-cover flex min-h-0 flex-1 flex-col overflow-y-auto rounded-[20px] border border-white/50 bg-surface p-5 backdrop-blur-md sm:p-6",
-          landscape && "grid grid-cols-2 grid-rows-[auto_1fr] gap-x-5 px-4 py-3 sm:px-4 sm:py-3",
+          landscape && "grid grid-cols-[minmax(0,3fr)_minmax(max-content,2fr)] grid-rows-[auto_1fr] gap-x-5 px-4 py-3 sm:px-4 sm:py-3",
         )}
       >
         <div className={cn(landscape && "col-start-2 row-start-1")}>
@@ -129,10 +134,10 @@ export function Lobby() {
             {code}
           </p>
           <div className="flex flex-col gap-1">
-            <Button size="sm" variant="outline" onClick={() => copy("code", code)}>
+            <Button size="sm" variant="outline" className={small} onClick={() => copy("code", code)}>
               {copied?.ok && copied.what === "code" ? "Copied" : "Copy"}
             </Button>
-            <Button size="sm" variant="outline" onClick={copyLink}>
+            <Button size="sm" variant="outline" className={small} onClick={copyLink}>
               {copied?.ok && copied.what === "link" ? "Copied" : "Copy link"}
             </Button>
           </div>
@@ -140,35 +145,39 @@ export function Lobby() {
         <CopyFallback state={copied} label={copied?.what === "link" ? "Join link" : "Table code"} className="mt-2" />
         </div>
         <div className={cn(landscape ? "col-start-1 row-span-2 row-start-1 flex min-h-0 flex-col" : "contents")}>
-        <ul className={cn("flex flex-col", sheet ? "gap-1.5" : "gap-2", landscape ? "shrink-0" : sheet ? "mt-3" : "mt-5")}>
+        {/* #899: held sideways the seats are a 2x2 grid in the wider left column, so the chat under them has the height for the
+            Sounds & stickers tab (nine 44 px chips and the presets). */}
+        <ul className={cn(landscape ? "grid grid-cols-2" : "flex flex-col", sheet ? "gap-1.5" : "gap-2", landscape ? "shrink-0 gap-1.5" : sheet ? "mt-3" : "mt-4 shrink-0")}>
           {[0, 1, 2, 3].map((i) => {
             const s = seats[i];
             return (
-              <li key={i} className={cn("relative flex items-center gap-3 rounded-[12px] border border-border bg-surface px-3", sheet ? "min-h-11 py-0" : landscape ? "py-1" : "py-2")}>
+              <li key={i} data-testid={s ? `lobby-seat-${s.id}` : undefined} className={cn("relative flex items-center gap-3 rounded-[12px] border border-border bg-surface px-3", sheet ? "min-h-11 py-0" : landscape ? "min-w-0 gap-2 py-1" : "min-h-10 py-0")}>
                 <SeatDot color={s?.color ?? "transparent"} className="size-3 shrink-0 ring-1 ring-inset ring-black/25" />
-                <span className="flex min-w-0 flex-1 items-center text-sm">
-                  {s && s.id === seatId ? <OwnName seat={s} compact={landscape} /> : <span className="truncate">{s ? s.name : "Empty"}</span>}
+                <span data-testid="lobby-name" className="flex min-w-0 items-center overflow-hidden text-sm">
+                  {s && s.id === seatId ? <OwnName seat={s} compact={desk} /> : <span className="truncate">{s ? s.name : "Empty"}</span>}
                   {s?.host ? <span data-testid="host-tag" className="shrink-0 whitespace-pre text-xs text-muted"> · host</span> : null}
                 </span>
+                {/* #899: the seat's bubble hangs mid-row, in the room between the name and the status, so it never covers the name. */}
+                <span className="flex min-w-0 flex-1 justify-center">{s ? <LazyBoundary failed={null}><SeatBubbles by="seat" id={s.id} at="lobby" /></LazyBoundary> : null}</span>
                 {s ? <span className="shrink-0 text-xs text-muted">{s.bot ? "Bot" : s.away ? "reconnecting…" : s.ready ? "Ready" : "Waiting"}</span> : null}
                 {s?.bot && isHost ? (
-                  <Button size="sm" variant="outline" data-testid="remove-bot" aria-label={`Remove ${s.name}`} onClick={() => removeBot(s.id)}>
+                  <Button size="sm" variant="outline" className={small} data-testid="remove-bot" aria-label={`Remove ${s.name}`} onClick={() => removeBot(s.id)}>
                     Remove
                   </Button>
                 ) : null}
                 {!s && isHost ? (
-                  <Button size="sm" variant="outline" data-testid="add-bot" onClick={addBot}>
+                  <Button size="sm" variant="outline" className={small} data-testid="add-bot" onClick={addBot}>
                     Add bot
                   </Button>
                 ) : null}
-                {s ? <ReactionFloats by="seat" id={s.id} /> : null}
               </li>
             );
           })}
         </ul>
-        {/* #417: the chat log is the one flexible piece (down to about 2 rows), so at 1280x720 Start and Leave stay inside the card. */}
-        <div className={cn("mt-2 flex flex-col rounded-[12px] border border-border bg-surface p-2", landscape ? "min-h-0 flex-1" : sheet ? "min-h-[13.5rem] shrink-0" : "min-h-32")}>
-          <ChatBox rows={6} minRows={sheet ? 4 : 0} />
+        {/* #417, #895: the chat sits below the seats and its log is the one flexible piece (down to one line), so at 1280x720 the
+            tabs, the emoji, the input and Send stay above the Ready footer, and Start and Leave stay inside the card. */}
+        <div data-testid="lobby-chat" className={cn("mt-2 flex flex-col rounded-[12px] border border-border bg-surface p-2", landscape ? "min-h-0 flex-1" : sheet ? "min-h-[16.5rem] shrink-0" : "min-h-0 flex-1")}>
+          <ChatBox className="flex-1" rows={6} minRows={sheet ? 4 : landscape ? 0 : 1} dense={desk} />
         </div>
         </div>
         {/* #389: on a phone Ready/Start stay pinned to the bottom of the card; a fade above them says the rest scrolls. */}
@@ -188,21 +197,24 @@ export function Lobby() {
             </p>
             <VictoryTargetSelect value={target} onChange={isHost ? setTarget : undefined} />
           </div>
-          <Button
-            size={landscape ? "default" : "lg"}
-            variant="outline"
-            onClick={() => {
-              setReady(!ready);
-            }}
-          >
-            {ready ? "Not ready" : "Ready"}
-          </Button>
-          {canStart ? (
-            <Button size={landscape ? "default" : "lg"} variant="sea" onClick={startTable}>
-              Start
+          {/* #895: on a desktop, Start joins Ready's row, so the host's chat input stays above the footer when Start appears. */}
+          <div className={cn("flex gap-2", desk ? "[&>*]:flex-1" : "flex-col", landscape && "gap-1")}>
+            <Button
+              size={landscape ? "default" : "lg"}
+              variant="outline"
+              onClick={() => {
+                setReady(!ready);
+              }}
+            >
+              {ready ? "Not ready" : "Ready"}
             </Button>
-          ) : null}
-          <Button variant="ghost" onClick={goTitle}>
+            {canStart ? (
+              <Button size={landscape ? "default" : "lg"} variant="sea" onClick={startTable}>
+                Start
+              </Button>
+            ) : null}
+          </div>
+          <Button variant="ghost" className={small} onClick={goTitle}>
             Leave the table
           </Button>
         </div>
