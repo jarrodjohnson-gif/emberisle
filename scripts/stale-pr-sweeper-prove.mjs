@@ -184,7 +184,7 @@ const broken = githubApi('fake-token', async () => ({ ok: false, status: 403 }))
 await assert.rejects(() => broken('GET', '/repos/owner/repo/pulls'), /HTTP 403/);
 ok('REST adapter paginates and fails closed on API errors, entirely offline');
 for (const f of [changed, recentComment, already, closingRace, repeat]) {
-  assert(!f.calls.some(c => c.path.includes('/git/refs') || (c.method === 'DELETE' && !c.path.endsWith('/labels/stale'))));
+  assert(!f.calls.some(c => c.method === 'DELETE' || c.path.includes('/git/refs')));
 }
 const workflow = await readFile('.github/workflows/stale-pr-sweeper.yml', 'utf8');
 assert.match(workflow, /if: vars\.STALE_PR_SWEEPER == 'on'/);
