@@ -960,9 +960,7 @@ try {
     // drop below would fail the run. The dead host's refused sockets are the expected console errors; drop only those.
     await page.goto(`http://127.0.0.1:${PORT}/?host=ws://127.0.0.1:${hostPort}`);
     const downRefused = errors.filter((e) => e.includes("ws://127.0.0.1:9/"));
-    if (!downRefused.length) {
-      throw new Error("host-down restore: expected at least one refused socket");
-    }
+    if (!downRefused.length) throw new Error("host-down restore: expected at least one refused socket");
     for (const e of downRefused) errors.splice(errors.indexOf(e), 1);
 
     // #271 case 12: with the stale rejoin gone, a peek opens a connection of its own and stays quiet.
