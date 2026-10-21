@@ -1054,10 +1054,8 @@ function openOffer(set: Set, get: Get, from: string, give: Bag, want: Bag) {
   const tradeId = `t${state.seq}-${++offerSeq}`;
   const fromName = state.players.find((p) => p.id === from)?.name ?? "Someone";
   set({ offer: { tradeId, from, fromName, give, want, until: Date.now() + OFFER_MS }, declined: [], tradeOutcome: null, tradeTaker: null });
-  if (from !== get().localId) {
-    play("trade_offer");
-    if (!get().spectator) haptic(HAPTIC_MS.tradeOffer);
-  }
+  if (from !== get().localId) play("trade_offer");
+  if (from !== get().localId && !get().spectator) haptic(HAPTIC_MS.tradeOffer);
   offerTimers.push(setTimeout(() => endOffer(set, get, null), OFFER_MS));
   for (const p of state.players) {
     if (p.kind !== "bot" || p.id === from) continue;
@@ -1222,10 +1220,8 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
     tradeOffer: ({ tradeId, from, give, want, seconds }) => {
       const fromName = get().state?.players.find((p) => p.id === from)?.name ?? "Someone";
       set({ offer: { tradeId, from, fromName, give, want, until: Date.now() + seconds * 1000 }, declined: [], tradeOutcome: null, tradeTaker: null });
-      if (from !== get().localId) {
-        play("trade_offer");
-        if (!get().spectator) haptic(HAPTIC_MS.tradeOffer);
-      }
+      if (from !== get().localId) play("trade_offer");
+      if (from !== get().localId && !get().spectator) haptic(HAPTIC_MS.tradeOffer);
     },
     tradeDeclined: ({ tradeId, by }) => {
       const { offer, declined } = get();
