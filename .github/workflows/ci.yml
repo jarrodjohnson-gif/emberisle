@@ -121,7 +121,7 @@ jobs:
   server:
     needs: changes
     runs-on: ubuntu-latest
-    # dice-prove adds about 90 s of sampling to the ~4-minute server suite.
+    # dice-prove's sampling took 141 s on CI (#926); the whole job then took about 7 minutes.
     timeout-minutes: 15
     steps:
       - if: needs.changes.outputs.docs_only != 'true'
