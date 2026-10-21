@@ -7,7 +7,8 @@
 // crypto.getRandomValues, as dice-prove and flash-prove do. Three kinds of seat are shown:
 // - a human in practice (a real click on Roll, dice forced in the page): the line the rules wrote, one per roll;
 // - a bot in practice (the app's own bot driver rolls, dice forced in the page): the same line;
-// - an online table: a scripted socket stands in for the host and pushes the real states and the log lines the host says, through
+// - an online table: a scripted socket stands in for the host and pushes the real states and the log lines the host says (for a
+//   roll, the roll line then the goods line and nothing else; server/roll-lines-prove.mjs holds the real host to that), through
 //   the store's real welcome, state and log handlers (mode online, p1 is `you`; seats: two people and a bot), for every sum
 //   2 to 12 by the three seats, read from the open chat box (text, line ink, name weight, the sum's ink, ratio on paper).
 // Also: one roll is one roll line (the old "rolls a+b = n." is gone), the roll-off line is unchanged, bankShort still finds the
@@ -283,13 +284,23 @@ try {
       const online = await page.evaluate(() => ({ mode: window.__emberisle.getState().mode, local: window.__emberisle.getState().localId }));
       check(online.mode === "online" && online.local === "p1", `${tag} online: this tab is seat p1 over the store's online handlers (${online.mode}, ${online.local})`);
 
-      // The host says every new log line, then pushes the state.
+      // The host says every new log line, then pushes the state (server/host.mjs play(); nothing is said ahead of them since the
+      // "<sum> · <name> +n <good>" summary was dropped, and server/roll-lines-prove.mjs holds the real host to this). A roll is exactly
+      // two lines: "<name> rolled <sum>!", then that seat's goods line in the rules' own wording ("Ember gains 1 wool - Jarrod's roll.",
+      // "Nobody gains goods - Ember's roll."). `heard` is every line pushed, in order, for the chat box to be held to.
+      const heard = [];
+      const escape = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       const rollAs = async (pid, sum, { clear = false } = {}) => {
         const [a, b] = diceFor(sum);
         const before = st;
         st = roll(before, pid, a, b);
         if (clear) st.vertices.forEach((v) => (v.building = null));
         const fresh = st.log.slice(before.log.length);
+        const roller = st.players.find((p) => p.id === pid).name;
+        assert.equal(fresh.length, 2, `the host says a ${sum} as two lines: ${JSON.stringify(fresh)}`);
+        assert.equal(fresh[0], `${roller} rolled ${sum}!`);
+        assert.match(fresh[1], new RegExp(`^(Nobody gains goods|.+ gains .+) — ${escape(roller)}'s roll(; the bank is short of [a-z ]+; nobody gains it)?\\.$`), "the goods line");
+        heard.push(...fresh);
         await send([...fresh.map((text) => ({ type: "log", text })), { type: "state", you: "p1", game: st, legal: null }]);
         return fresh;
       };
@@ -328,6 +339,19 @@ try {
       expectRow(`${tag} online shot`, tail[1], normalRow, { name: "Ember", sum: 4, own: true });
       expectRow(`${tag} online shot`, tail[2], normalRow, { name: "Jarrod", sum: 6, own: false });
       expectRow(`${tag} online shot`, tail[3], normalRow, { name: "Ember", sum: 8, own: true });
+
+      // The count (#687): the open chat log shows each online roll as one roll row and one goods row, in the host's order, and
+      // no third row (the old "<sum> · <name> +n <good>" summary came ahead of them and said the sum twice).
+      const shown = (await page.evaluate(readRows)).map((r) => r.text);
+      const rolls = heard.length / 2;
+      const isRoll = (t) => /^.+ rolled \d+!$/.test(t);
+      const isGoods = (t) => / — .+'s roll[;.]$/.test(t);
+      const firstRoll = shown.findIndex(isRoll);
+      check(rolls === plan.length + 4, `${tag} online: ${rolls} rolls were made (${plan.length} sums, then four more)`);
+      check(shown.filter(isRoll).length === rolls, `${tag} online: exactly one roll row per roll (${shown.filter(isRoll).length} for ${rolls})`, shown.filter(isRoll));
+      check(shown.filter(isGoods).length === rolls, `${tag} online: exactly one goods row per roll (${shown.filter(isGoods).length} for ${rolls})`, shown.filter(isGoods));
+      check(!shown.some((t) => /^\d+ · /.test(t)), `${tag} online: no "<sum> · ..." summary row`, shown.filter((t) => /^\d+ · /.test(t)));
+      check(firstRoll >= 0 && JSON.stringify(shown.slice(firstRoll)) === JSON.stringify(heard), `${tag} online: from the first roll on, the rows are the host's lines in order, two per roll and no third`, { shown: shown.slice(Math.max(0, firstRoll)), heard });
 
       // The screen-reader log region and the HUD's last-line chip read the new line when the chat is closed (the Announcer).
       await page.evaluate(() => window.__emberisle.getState().setChatOpen(false));
