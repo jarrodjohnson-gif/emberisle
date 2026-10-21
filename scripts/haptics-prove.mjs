@@ -30,6 +30,12 @@ async function openPage({ coarse = true, reducedMotion = false } = {}) {
   await page.addInitScript((coarse) => {
     window.__buzz = [];
     window.__buzzTimes = [];
+    window.__knocks = [];
+    const realPlay = HTMLMediaElement.prototype.play;
+    HTMLMediaElement.prototype.play = function () {
+      if (this.src.endsWith("/drop_003.wav")) window.__knocks.push(performance.now());
+      return realPlay.call(this);
+    };
     const realMatch = window.matchMedia.bind(window);
     window.matchMedia = (q) =>
       q === "(pointer: coarse)"
@@ -102,13 +108,19 @@ async function clearBuzz(page) {
 }
 
 async function buzzWithin(page, ms, want, label) {
+  const started = await page.evaluate(() => performance.now());
   const deadline = Date.now() + ms;
+  const sample = () => page.evaluate(({want, limit}) => ({
+    got: window.__buzz.slice(),
+    timely: window.__buzz.some((n, i) => n === want && window.__buzzTimes[i] <= limit),
+  }), {want, limit: started + ms});
   while (Date.now() < deadline) {
-    const got = await page.evaluate(() => window.__buzz.slice());
-    if (got.some((n) => n === want)) return got;
+    const {got, timely} = await sample();
+    if (timely) return got;
     await page.waitForTimeout(20);
   }
-  const got = await page.evaluate(() => window.__buzz.slice());
+  const {got, timely} = await sample();
+  if (timely) return got;
   throw new Error(`${label}: expected vibrate ${want} within ${ms} ms, got ${JSON.stringify(got)}`);
 }
 
@@ -122,17 +134,18 @@ async function landProof(page) {
     if (!id) throw new Error("no legal outpost");
     window.__buzz = [];
     window.__buzzTimes = [];
+    window.__knocks = [];
     window.__t0 = performance.now();
     g.pickVertex(id);
   });
-  // Knock + haptic fire together at LAND_MS.outpost_place (280). Allow slack after that frame.
-  await buzzWithin(page, 400, 10, "own outpost land");
+  // Observe both callbacks directly; slow drawing or polling cannot inflate their actual interval.
+  await page.waitForFunction(() => window.__buzz.includes(10) && window.__knocks.length, null, { timeout: STEP_MS });
   const when = await page.evaluate(() => {
     const i = window.__buzz.indexOf(10);
-    return i < 0 ? null : window.__buzzTimes[i] - window.__t0;
+    return i < 0 ? null : Math.abs(window.__buzzTimes[i] - window.__knocks[0]);
   });
-  assert.ok(when != null && when <= 380, `land buzz at ${when} ms from pick (want ≤ 380)`);
-  console.log(`land: own outpost buzzed 10 at ${Math.round(when)} ms from pick`);
+  assert.ok(when != null && when <= 100, `land buzz follows the recorded knock within 100 ms (got ${when})`);
+  console.log(`land: own outpost buzzed 10 within ${Math.round(when)} ms of the recorded knock`);
 }
 
 // Opponent (bot) placement must not buzz.
@@ -166,7 +179,7 @@ async function opponentLandProof(page) {
       const before = structuredClone(g.state), after = structuredClone(before);
       const bot = after.players.find(p => p.kind === "bot");
       const edge = after.edges.find(e => !e.path);
-      edge.path = { playerId: own ? g.localId : bot.id };
+      edge.path = own ? g.localId : bot.id;
       before.current = own ? g.localId : bot.id;
       after.current = own ? bot.id : g.localId;
       after.seq++;
@@ -339,6 +352,47 @@ async function eventGuardsProof(page) {
   console.log("events: own fortune and win buzz; watcher, mute and missing-vibrate guards pass");
 }
 
+async function tradeFramesProof(page) {
+  await toPractice(page);
+  const got = await page.evaluate(async () => {
+    const { PROTO } = await import("/src/lib/net/proto.ts");
+    const store = window.__emberisle;
+    const NativeSocket = window.WebSocket;
+    let socket;
+    window.WebSocket = class {
+      static OPEN = 1;
+      readyState = 1;
+      constructor() { socket = this; setTimeout(() => this.onopen?.({}), 0); }
+      send() {}
+      close() { this.readyState = 3; this.onclose?.({}); }
+    };
+    try {
+      store.getState().joinTable("HAPT");
+      await new Promise(resolve => setTimeout(resolve, 0));
+      const frame = msg => socket.onmessage({data: JSON.stringify(msg)});
+      frame({type:"welcome", proto:PROTO, code:"HAPT", you:"s0", secret:"haptic-test-seat", host:false, chat:[]});
+      const offer = {type:"tradeOffer", tradeId:"t1", from:"other", give:{timber:1}, want:{ore:1}, seconds:20};
+      window.__buzz = []; window.__buzzTimes = [];
+      frame(offer);
+      const seated = [...window.__buzz];
+      store.setState({spectator:true, localId:""});
+      window.__buzz = []; window.__buzzTimes = [];
+      frame({...offer, tradeId:"t2"});
+      const watcher = [...window.__buzz];
+      store.setState({spectator:false, localId:"other"});
+      window.__buzz = []; window.__buzzTimes = [];
+      frame({...offer, tradeId:"t3"});
+      const own = [...window.__buzz];
+      store.getState().net.close();
+      return {seated, watcher, own};
+    } finally { window.WebSocket = NativeSocket; }
+  });
+  assert.deepEqual(got.seated, [10], "a received offer buzzes the seated recipient");
+  assert.deepEqual(got.watcher, [], "watchers receive no trade-offer haptic");
+  assert.deepEqual(got.own, [], "the offer sender receives no trade-offer haptic");
+  console.log("trade: received frames buzz only seated recipients, never watchers or the sender");
+}
+
 let code = 0;
 try {
   {
@@ -374,6 +428,11 @@ try {
   {
     const page = await openPage({ coarse: true });
     await eventGuardsProof(page);
+    await page.close();
+  }
+  {
+    const page = await openPage({ coarse: true });
+    await tradeFramesProof(page);
     await page.close();
   }
   if (errors.length) throw new Error(errors.join("\n"));

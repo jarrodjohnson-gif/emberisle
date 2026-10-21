@@ -125,7 +125,7 @@ export function hear(before: GameState | null, after: GameState, me: string, mod
   // #542: buzz only for this seat's own actions (hotseat is every seat on this page). Never for a piece you only watch.
   const mine = mode === "hotseat" || (!!me && after.current === me);
   const ownsPiece = mode === "hotseat" || (!!me && !!before && (
-    after.edges.some((e, i) => e.path?.playerId === me && !before.edges[i]?.path) ||
+    after.edges.some((e, i) => e.path === me && !before.edges[i]?.path) ||
     after.vertices.some((v, i) => v.building?.playerId === me && v.building.kind !== before.vertices[i]?.building?.kind)
   ));
   for (const [sound, volume] of soundsFor(before, after, mine, victim, lost)) {

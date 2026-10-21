@@ -85,7 +85,6 @@ let unlocked = false;
 let muted = savedMuted();
 let hapticsOn = savedHaptics();
 const listeners = new Set<() => void>();
-const hapticListeners = new Set<() => void>();
 
 function savedMuted() {
   try {
@@ -96,28 +95,23 @@ function savedMuted() {
 }
 
 function vibrateSupported() {
-  return typeof navigator !== "undefined" && typeof navigator.vibrate === "function";
+  return typeof globalThis.navigator?.vibrate === "function";
 }
 
 function coarsePointer() {
   try {
-    return typeof matchMedia === "function" && matchMedia("(pointer: coarse)").matches;
+    return matchMedia("(pointer: coarse)").matches;
   } catch {
     return false;
   }
 }
 
 function savedHaptics() {
-  // Default on where the page can buzz; off (and ignored) on desktop / unsupported.
-  if (!vibrateSupported()) return false;
   try {
-    const v = localStorage.getItem(HAPTICS_KEY);
-    if (v === "0") return false;
-    if (v === "1") return true;
+    return vibrateSupported() && localStorage.getItem(HAPTICS_KEY) !== "0";
   } catch {
-    // storage blocked: stay on for this page when vibrate exists
+    return vibrateSupported();
   }
-  return true;
 }
 
 if (typeof window !== "undefined") {
@@ -157,9 +151,7 @@ export function useMuted() {
   return useSyncExternalStore(subscribe, isMuted, () => false);
 }
 
-export function hapticsAvailable() {
-  return vibrateSupported();
-}
+export const hapticsAvailable = vibrateSupported;
 
 export function isHapticsOn() {
   return hapticsOn;
@@ -168,23 +160,15 @@ export function isHapticsOn() {
 export function setHaptics(v: boolean) {
   hapticsOn = v;
   try {
-    if (v) localStorage.setItem(HAPTICS_KEY, "1");
-    else localStorage.setItem(HAPTICS_KEY, "0");
+    localStorage.setItem(HAPTICS_KEY, v ? "1" : "0");
   } catch {
     // storage can be blocked; the toggle still holds for this page
   }
-  for (const l of hapticListeners) l();
-}
-
-function subscribeHaptics(l: () => void) {
-  hapticListeners.add(l);
-  return () => {
-    hapticListeners.delete(l);
-  };
+  for (const l of listeners) l();
 }
 
 export function useHaptics() {
-  return useSyncExternalStore(subscribeHaptics, isHapticsOn, () => false);
+  return useSyncExternalStore(subscribe, isHapticsOn, () => false);
 }
 
 // Guarded phone buzz (#542). No-op on desktop, when off, before unlock, or where vibrate is missing.
