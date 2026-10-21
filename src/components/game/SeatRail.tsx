@@ -9,7 +9,7 @@
 // Your fortunes by kind and a dropped seat's state are facts in the player menu, one tap away.
 import { useMemo } from "react";
 import { type LucideIcon, Route, ScrollText, Swords } from "lucide-react";
-import { ReactionFloats } from "@/components/game/chunks";
+import { SeatBubbles } from "@/components/game/chunks";
 import { LazyBoundary } from "@/lib/lazy";
 import { PlayerMenu, seatAway } from "@/components/game/PlayerMenu";
 import { SeatDot } from "@/components/game/SeatDot";
@@ -125,7 +125,7 @@ function SeatLine({ p, actor, short }: { p: PlayerState; actor: string; short?: 
   );
 }
 
-// One seat's card: the menu's trigger (docs/design/chat.md "The player action menu") with its reactions over it. The rail
+// One seat's card: the menu's trigger (docs/design/chat.md "The player action menu") with its seat bubble beside it (#899). The rail
 // gives it `rail-<id>` and chip corners, the strip `seat-<id>`, control corners and a short name.
 function SeatCard({ p, actor, short, className }: { p: PlayerState; actor: string; short?: string; className: string }) {
   const current = useGame((s) => s.state!.current);
@@ -155,7 +155,7 @@ function SeatCard({ p, actor, short, className }: { p: PlayerState; actor: strin
       </button>
       {online ? (
         <LazyBoundary failed={null}>
-          <ReactionFloats by="player" id={p.id} />
+          <SeatBubbles by="player" id={p.id} at={strip ? "strip" : "rail"} />
         </LazyBoundary>
       ) : null}
     </div>

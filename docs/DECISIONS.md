@@ -6,6 +6,7 @@ The review desk adds a line whenever Jarrod decides something.
 
 | Date | Decision | Where |
 |---|---|---|
+| 2026-10-20 | Chat C keeps the text presets as a row in the Sounds & stickers tab. | Vote page; [PR #918](https://github.com/jarrodjohnson-gif/emberisle/pull/918) |
 | 2026-10-20 | Auto-merge only docs and test-only PRs, once a review is clean and CI is green. Game code keeps the desk's final click. | Vote page |
 | 2026-10-20 | Chat C (#918): drop the Chat/All filter row (Copy log moves to the Table menu) and the top-right preview pills. | Vote page |
 | 2026-10-20 | Cursor and Josh's agent are full builders, with Opus available. Josh's agent follows AGENTS.md, not HELPERS.md. | Jarrod, in chat; [`docs/LANES.md`](LANES.md) |
