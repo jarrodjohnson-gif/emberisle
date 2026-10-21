@@ -109,8 +109,25 @@ function Tabs({ actions, testid, dense, narrow }: { actions?: ReactNode; testid?
   );
 }
 
-// A game log line (#305): a muted system row, no speaker.
+// The main-phase roll line rules.ts writes: "<name> rolled <sum>!", sums 2 to 12 (the roll-off's "rolls a N." is another line).
+const ROLL_LINE = /^(.+) rolled (1[0-2]|[2-9])!$/;
+
+// A game log line (#305): a muted system row, no speaker. A roll line (#687) has its sum in the number tokens' red on 6 and 8,
+// and your own roll in green with the name bold, so it does not rest on colour alone. Only the online table lists the log (the dock),
+// and a watcher has no seat, so no roll is its own.
 function LogRow({ line }: { line: GameLogLine }) {
+  const mine = useGame((s) => (s.spectator ? "" : (s.state?.players.find((p) => p.id === s.localId)?.name ?? "")));
+  const roll = ROLL_LINE.exec(line.text);
+  if (roll) {
+    const own = mine !== "" && roll[1] === mine;
+    const sum = Number(roll[2]);
+    return (
+      <li data-testid="log-row" data-roll={sum} data-own={own ? "true" : undefined} className={cn("break-words text-sm leading-snug", own ? "text-gain" : "text-zinc-700")}>
+        <span data-testid="log-roll-name" className={own ? "font-bold" : undefined}>{roll[1]}</span> rolled{" "}
+        <span data-testid="log-roll-sum" className={sum === 6 || sum === 8 ? "text-danger" : undefined}>{sum}</span>!
+      </li>
+    );
+  }
   return (
     <li data-testid="log-row" className="break-words text-sm leading-snug text-zinc-700">
       {line.text}
