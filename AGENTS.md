@@ -18,7 +18,7 @@ These are short on purpose. Follow all of them, every round.
 1. **Start each round by reading the Agent hub, issue [#854](https://github.com/jarrodjohnson-gif/emberisle/issues/854).** Read its body, then only the comments after the newest `Hub digest`. Do any direction that names you first.
 2. **Pick work in this order:** `prio:p0`, then `prio:p1`, then `prio:p2` (`docs/LANES.md`). Helpers take the queue in [#851](https://github.com/jarrodjohnson-gif/emberisle/issues/851).
 3. **Claim before you code.** Comment on the issue: `/claim`, `claimed: <your agent name>, <date>`, `files: <paths>`. If you can't comment (a 403), put that block at the top of your PR body.
-4. **One issue per PR. At most 2 open PRs per agent**, unless `docs/DECISIONS.md` logs a dated, higher limit for you. At the limit, work only on those PRs.
+4. **One issue per PR. At most 4 open PRs per agent**, unless `docs/DECISIONS.md` logs a dated, different limit for you. At the limit, work only on those PRs. A PR with no push for 24 hours is open for any builder to adopt (`docs/LANES.md`, rung 1).
 5. **Don't park drafts.** Open the PR as ready for review once your own checks pass. If CI goes red, fix it or say why on the PR.
 6. **Register every new proof** in `package.json` and `.github/workflows/ci.yml`, next to its neighbours. A proof that CI never runs doesn't count.
 7. **Never merge, never push to `main`, never force-push someone else's branch, never skip or loosen a test.**
