@@ -51,17 +51,19 @@ const check = (label, input, want) => {
 };
 
 const allFlaky = run([
-  ["browser-a", "countdown-prove", failures["countdown-prove"]],
+  ["browser-a (a3)", "countdown-prove", failures["countdown-prove"]],
   ["browser-b (presentation)", "turn-gain-prove", failures["turn-gain-prove"]],
+  // The browser-a aggregate fails with its suites; like checks, it is not a flake of its own and is skipped.
+  ["browser-a", "test", `${at}Process completed with exit code 1.`],
 ]);
 const got = check("every failed job is a known flake", allFlaky, true);
 assert.deepEqual(got.jobs, [
-  { name: "browser-a", flakes: ["countdown-prove"] },
+  { name: "browser-a (a3)", flakes: ["countdown-prove"] },
   { name: "browser-b (presentation)", flakes: ["turn-gain-prove"] },
 ]);
 
 check("one failed job is not a known flake", run([
-  ["browser-a", "countdown-prove", failures["countdown-prove"]],
+  ["browser-a (a3)", "countdown-prove", failures["countdown-prove"]],
   ["server", "test", `${at}AssertionError: expected 3, got 4`],
 ]), false);
 
@@ -75,7 +77,7 @@ check("only the aggregate checks job failed", {
 
 // The signature is in the log, but a different step failed: not that flake.
 check("signature in the log, another step failed", run([
-  ["browser-a", "trade-prove", `${failures["countdown-prove"]}\n${at}FAIL trade-prove`],
+  ["browser-a (a3)", "trade-prove", `${failures["countdown-prove"]}\n${at}FAIL trade-prove`],
 ]), false);
 
 // A suffix proof name is not the flaky proof.
@@ -83,14 +85,14 @@ check("step name must be the proof exactly", run([
   ["browser-b (flows-b)", "rotate-overlays-prove-4", failures["rotate-overlays-prove"]],
 ]), false);
 
-const timedOut = run([["browser-a", "countdown-prove", failures["countdown-prove"]]]);
+const timedOut = run([["browser-a (a3)", "countdown-prove", failures["countdown-prove"]]]);
 timedOut.jobs[2].conclusion = "cancelled";
 check("a cancelled or timed-out job is not a flake", timedOut, false);
 
 check("a failed job with no log is not a flake", { ...allFlaky, logs: {} }, false);
 
 // Every failed step in a job must be a flake, not just one of them.
-const twoSteps = run([["browser-a", "countdown-prove", `${failures["countdown-prove"]}\n${at}FAIL trade-prove`]]);
+const twoSteps = run([["browser-a (a3)", "countdown-prove", `${failures["countdown-prove"]}\n${at}FAIL trade-prove`]]);
 twoSteps.jobs[2].steps.splice(2, 0, { name: "Run npm run trade-prove", conclusion: "failure" });
 check("one job, two failed steps, only one a known flake", twoSteps, false);
 

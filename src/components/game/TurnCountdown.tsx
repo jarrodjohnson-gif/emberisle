@@ -1,7 +1,12 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useGame } from "@/lib/game/store";
 import { play } from "@/lib/sound";
 import { cn } from "@/lib/utils";
+
+import { chunk, LazyBoundary } from "@/lib/lazy";
+const TurnExtensionVote = chunk(() => import("./TurnExtensionVote")).pick((m) => m.TurnExtensionVote);
+const extensionVote = <LazyBoundary failed={null}><TurnExtensionVote /></LazyBoundary>;
 
 // The chip shows only in the last SHOW_MS of the host's window and turns to the accent in the last URGENT_MS (#345).
 const SHOW_MS = 30_000;
@@ -11,7 +16,7 @@ const clock = (secs: number) => `${Math.floor(secs / 60)}:${String(secs % 60).pa
 
 // The host's turn timer (#344) counted down for the seat it waits on. Online only: practice and hotseat have no timer.
 // The number ticks silently; screen readers hear one polite line when the window reaches its last ten seconds.
-export function TurnCountdown() {
+export function TurnCountdown({ header }: { header?: HTMLElement | null }) {
   const timer = useGame((s) => s.turnTimer);
   const state = useGame((s) => s.state);
   const mode = useGame((s) => s.mode);
@@ -83,25 +88,31 @@ export function TurnCountdown() {
     if (urgent && who && secs && !said) setSaid(`${secs} seconds left for ${who === "You" ? "you" : who}`);
   }, [urgent, who, secs, said]);
 
-  if (mode !== "online" || !state || state.phase === "over" || left === null || left > SHOW_MS || !who) return null;
-  return (
+  if (mode !== "online" || !state || state.phase === "over") return null;
+  const visible = left !== null && left <= SHOW_MS && who;
+  // Keep one cue owner mounted while its DOM moves between the desktop header and the phone stack.
+  const content = (
     <>
-      <p
+      <div className="flex items-center gap-1">
+      {visible ? <p
         key={at}
         data-testid="turn-countdown"
         data-player={player!.id}
         data-seconds={secs}
         style={{ borderLeftColor: urgent ? undefined : player!.color }}
         className={cn(
-          "animate-[turn-fade_200ms_ease-out] rounded-[16px] border bg-glass px-3 py-2 text-sm font-medium tabular-nums text-zinc-900 backdrop-blur-md",
+          "shrink-0 animate-[turn-fade_200ms_ease-out] rounded-[16px] border bg-glass px-3 py-2 text-sm font-medium tabular-nums text-zinc-900 backdrop-blur-md",
           urgent ? "border-accent bg-linear-to-r from-accent/20 to-accent/20" : "border-white/50 border-l-4",
         )}
       >
         {who}: {clock(secs!)}
-      </p>
-      <p aria-live="polite" className="sr-only" data-testid="turn-countdown-live">
+      </p> : null}
+      {extensionVote}
+      </div>
+      {visible ? <p aria-live="polite" className="sr-only" data-testid="turn-countdown-live">
         {said}
-      </p>
+      </p> : null}
     </>
   );
+  return header ? createPortal(content, header) : content;
 }

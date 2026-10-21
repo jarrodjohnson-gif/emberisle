@@ -6,11 +6,41 @@ The review desk adds a line whenever Jarrod decides something.
 
 | Date | Decision | Where |
 |---|---|---|
+| 2026-10-20 | The fortunes button reads "Play fortune · N" when one can be played, else "Fortunes · N" (provisional; Astra's HUD pass may revisit). | [#829](https://github.com/jarrodjohnson-gif/emberisle/issues/829) |
+| 2026-10-21 | The review desk watches only the inbox (#699) and the PRs it is about to merge, to save tokens. Its main loop runs on Sonnet, with Opus subagents for the reviews that need Opus. | Jarrod, in chat; [`docs/DESK.md`](DESK.md) |
+| 2026-10-21 | New look-and-feel work goes to Astra as a mock or spec before anyone builds it. This is part of Astra's #903 vision review. Bug fixes, server work, proofs and docs carry on as normal. | Vote page; [#854](https://github.com/jarrodjohnson-gif/emberisle/issues/854) |
+| 2026-10-20 | Use Fable or Astra only for a whole-project vision pass or a requested taste review of a page. Opus does all other design. Cheaper models build from approved specs. | Jarrod, in chat |
+| 2026-10-20 | #903 is a whole-app UX and architecture review, not a HUD pass. Astra on medium runs it in 5 checkpoints, each stopping for Jarrod's `go`. | [#903](https://github.com/jarrodjohnson-gif/emberisle/issues/903) |
+| 2026-10-20 | Chat C keeps the text presets as a row in the Sounds & stickers tab. | Vote page; [PR #918](https://github.com/jarrodjohnson-gif/emberisle/pull/918) |
+| 2026-10-20 | Auto-merge only docs and test-only PRs, once a review is clean and CI is green. Game code keeps the desk's final click. | Vote page |
+| 2026-10-20 | Chat C (#918): drop the Chat/All filter row (Copy log moves to the Table menu) and the top-right preview pills. | Vote page |
+| 2026-10-20 | Cursor and Josh's agent are full builders, with Opus available. Josh's agent follows AGENTS.md, not HELPERS.md. | Jarrod, in chat; [`docs/LANES.md`](LANES.md) |
+| 2026-10-20 | The desk's state lives in the Desk state issue (#916), and any session can take over from `docs/DESK.md`. | Jarrod, in chat; [`docs/DESK.md`](DESK.md) |
+| 2026-10-20 | Timer vote (#832): +60 s, and the cap rises too. Connected humans other than the timed player vote, and the requester counts as yes. One request per turn. | [#832](https://github.com/jarrodjohnson-gif/emberisle/issues/832) |
+| 2026-10-20 | Astra starts the HUD design pass (#903) now, on seats, build bar and menus. The hand and chat wait for #773 and #899. No cream in its directions. | [#903](https://github.com/jarrodjohnson-gif/emberisle/issues/903) |
+| 2026-10-20 | Big design work needs Opus 5.5 or stronger. Any model may do small, defined design, like an icon swap. | Jarrod, in chat; [`docs/LANES.md`](LANES.md) |
+| 2026-10-20 | Seat tallies use the lucide Route and Swords icons, not emoji. | [PR #859](https://github.com/jarrodjohnson-gif/emberisle/pull/859) |
+| 2026-10-20 | Chat is one button with two tabs: Chat with 6 emoji, then Sounds & stickers. Reactions and closed-chat messages bubble at the seat ([`design/chat-c`](design/chat-c/README.md)). | Vote page |
+| 2026-10-20 | Goods cards use V1 Column ([`design/goods-cards-v1`](design/goods-cards-v1/README.md)). | [#773](https://github.com/jarrodjohnson-gif/emberisle/issues/773) |
+| 2026-10-20 | Win table on portrait phones uses short column names (Out, Str, Path, Army, Hid). | [PR #878](https://github.com/jarrodjohnson-gif/emberisle/pull/878) |
+| 2026-10-20 | Pale-seat legal markers use the teal glow (mock 2). | [PR #879](https://github.com/jarrodjohnson-gif/emberisle/pull/879) |
+| 2026-10-20 | Emote badge returns in game only, not in the lobby. It waits for the chat audit, which may place emotes elsewhere. | [PR #847](https://github.com/jarrodjohnson-gif/emberisle/pull/847) |
+| 2026-10-20 | Goods cards: rebuild #773 from a new mock. Gemini's #888 and the first mock both looked generic. Numbers must be centred. | [PR #888](https://github.com/jarrodjohnson-gif/emberisle/pull/888) |
+| 2026-10-19 | Dock goods piles at 2.5x, as merged in #874. Approved from screenshots. | [PR #874](https://github.com/jarrodjohnson-gif/emberisle/pull/874) |
+| 2026-10-19 | Owned dock rates: no text labels on the board, because they take too much screen. Use a small marker on the building instead. | [PR #881](https://github.com/jarrodjohnson-gif/emberisle/pull/881) |
+| 2026-10-19 | Emote badge pinned to the seat (#847) rejected: in the lobby it covers the name. Emotes stay as they were. | [PR #847](https://github.com/jarrodjohnson-gif/emberisle/pull/847) |
+| 2026-10-19 | Pale-seat legal markers: thin dark edge by default. A coloured glow is still being compared. | [PR #879](https://github.com/jarrodjohnson-gif/emberisle/pull/879) |
+| 2026-10-19 | Robber hex: stronger grey. | [PR #838](https://github.com/jarrodjohnson-gif/emberisle/pull/838) |
+| 2026-10-19 | Leave in the lobby frees the seat at once. A dropped connection still holds it for 90 s. No kick button. | [PR #812](https://github.com/jarrodjohnson-gif/emberisle/pull/812) |
+| 2026-10-19 | Trade sounds: 3+ wood offered plays the 3-wood clip for anyone. Daking's own clip plays only when he offers 1-2 wood. All players saying No plays the corn clip. | [PR #812](https://github.com/jarrodjohnson-gif/emberisle/pull/812) |
+| 2026-10-19 | Isaac (any "Lucke Diggler", "pickle" or "Isaac" name): the undertaker's bell plays when he joins, and his own win music plays when he wins. | [PR #812](https://github.com/jarrodjohnson-gif/emberisle/pull/812) |
+| 2026-10-19 | CI: old runs cancel when a new commit lands. Drafts skip CI. browser-a runs as three parallel parts. | [PR #872](https://github.com/jarrodjohnson-gif/emberisle/pull/872), [PR #880](https://github.com/jarrodjohnson-gif/emberisle/pull/880) |
 | 2026-10-19 | Docks show their good with a bigger goods pile on the pier (wood pile, rocks…), not a big sign. | [#846](https://github.com/jarrodjohnson-gif/emberisle/issues/846) |
 | 2026-10-19 | Trade dialog: option A, Table and Bank tabs. | [#831](https://github.com/jarrodjohnson-gif/emberisle/issues/831#issuecomment-6257817880) |
 | 2026-10-19 | Fog of war: option A, neighbour veil. Stays `prio:p2`. | [#842](https://github.com/jarrodjohnson-gif/emberisle/issues/842#issuecomment-6257818228) |
 | 2026-10-19 | Expansions: option 1, Beacon docks and New fortunes. Lobby toggles, off by default. Stays `prio:p2`. | [#843](https://github.com/jarrodjohnson-gif/emberisle/issues/843#issuecomment-6257818532) |
 | 2026-10-19 | Size budgets check each PR's growth against main, not one shared total. | [#868](https://github.com/jarrodjohnson-gif/emberisle/issues/868) |
+| 2026-10-19 | Gemini takes defined work: UI audits, minor design fixes, small coding, docs. It never builds a new look. Split such an issue. | Jarrod, in chat; [`docs/LANES.md`](LANES.md) |
 | 2026-10-19 | People get first dibs on table trades. Bots wait 8 s before a Yes. Bots keep their normal game speed. Counter-offers come later. | [#850](https://github.com/jarrodjohnson-gif/emberisle/issues/850) |
 | 2026-10-19 | Open tables: anyone with the link can join, alongside code tables. | [#833](https://github.com/jarrodjohnson-gif/emberisle/issues/833) |
 | 2026-10-19 | Josh (joshspicy2) has Write access. Main takes changes only through PRs with green CI; no force pushes, no deletion. | Repo settings |

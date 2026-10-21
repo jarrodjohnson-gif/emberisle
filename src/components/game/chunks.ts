@@ -12,7 +12,7 @@ export const online = chunk(() => import("@/components/game/online"));
 export const Lobby = online.pick((m) => m.Lobby);
 export const ChatControls = online.pick((m) => m.ChatControls);
 export const ChatDock = online.pick((m) => m.ChatDock);
-export const ReactionFloats = online.pick((m) => m.ReactionFloats);
+export const SeatBubbles = online.pick((m) => m.SeatBubbles);
 
 // #833: open-table list on the title; separate so Host/Join stay in the index budget.
 export const openTables = chunk(() => import("@/components/game/OpenTables"));
@@ -27,7 +27,6 @@ export const WinScreen = sheets.pick((m) => m.WinScreen);
 
 export const moments = chunk(() => import("@/components/game/moments"));
 export const TurnMoment = moments.pick((m) => m.TurnMoment);
-export const GainFloats = moments.pick((m) => m.GainFloats);
 export const MyNumbers = moments.pick((m) => m.MyNumbers);
 export const FirstGameCoach = moments.pick((m) => m.FirstGameCoach);
 export const SetupPipHints = moments.pick((m) => m.SetupPipHints);

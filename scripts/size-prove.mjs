@@ -27,6 +27,8 @@ const CEILINGS = [
   { name: "hex-jelly", gzipBytes: 50000 },
   { name: "harbor-jelly", gzipBytes: 11500 },
   { name: "online", gzipBytes: 9000 },
+  // #899: Chat C's Sounds & stickers tab and seat bubbles load as their own chunk, prefetched by online; measured 2.20 kB.
+  { name: "Reactions", gzipBytes: 2600 },
   { name: "sheets", gzipBytes: 7800 },
   { name: "moments", gzipBytes: 5700 },
   { name: "VictoryTargetSelect", gzipBytes: 1000 },
@@ -35,6 +37,8 @@ const CEILINGS = [
   { name: "HandRates", gzipBytes: 800 },
   // #833: title open-table list; measured ~1.1 kB after extract from index.
   { name: "OpenTables", gzipBytes: 2000 },
+  // #832: the online-only timer ballot loads separately (2026-10-20; measured 1.20 kB).
+  { name: "TurnExtensionVote", gzipBytes: 1400 },
 ];
 
 // Growth allowance against the base, in gzip bytes. index is fixed at 400 B; the others take 0.33% of the base size, at least 200 B.
