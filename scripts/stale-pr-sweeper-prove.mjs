@@ -100,6 +100,7 @@ for (const action of ['opened', 'synchronize', 'reopened']) {
   assert.equal(activity(f.comments).observedAt, new Date(now).toISOString());
   assert(!f.pulls[0].labels.some(label => label.name === 'stale'));
   assert(f.writes().some(call => call.method === 'DELETE' && call.path.endsWith('/labels/stale')));
+  assert(!f.calls.some(call => call.path.includes('/git/refs') || (call.method === 'DELETE' && !call.path.endsWith('/labels/stale'))));
   await run(f); assert.equal(f.pulls[0].state, 'open');
 }
 ok('push events refresh activity, even when pushing an old or identical commit SHA');
