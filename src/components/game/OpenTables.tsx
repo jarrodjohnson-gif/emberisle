@@ -13,11 +13,13 @@ function statusLabel(status: OpenTableEntry["status"], seated: number, total: nu
   return `${seated}/${total} seated`;
 }
 
-// Dial only when a rules host is expected. Vite without ?host= and the GitHub Pages site have no host,
-// and a failed WebSocket would log console errors that client-prove treats as a hard fail.
+// Dial only when a rules host is expected. Vite without ?host= and the GitHub Pages build have no host,
+// and a failed WebSocket would log console errors that pages-prove / client-prove treat as a hard fail.
 function hostExpected(): boolean {
   if (new URLSearchParams(location.search).has("host")) return true;
   if (import.meta.env.DEV) return false;
+  // Pages deploys (`--base=/emberisle/`) are static — including pages-prove on 127.0.0.1.
+  if (import.meta.env.BASE_URL === "/emberisle/") return false;
   if (location.hostname.endsWith("github.io")) return false;
   return true;
 }
