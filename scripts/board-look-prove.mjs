@@ -482,30 +482,35 @@ try {
       await page.waitForFunction(() => !window.__isle.refitDue && !window.__isle.glide, null, { timeout: STEP_MS });
       await drawn(page, 2);
 
-      // Chat previews beside the dock button let taps through; they are not a rail and never move the camera. The dock
-      // shows online only, so the store is told so (which re-fits once: the HUD and the marks change with the mode) and the
-      // baseline is taken after that settles; then three long lines arrive.
+      // #899: with the chat closed, new lines show as a bubble beside the sender's rail card (the preview pills are gone). The
+      // bubble lets taps through; it is not a rail and never moves the camera. The dock shows online only, so the store is told
+      // so (which re-fits once: the HUD and the marks change with the mode) and the baseline is taken after that settles; then
+      // three long lines arrive, one at a time as the host sends them.
       const step = (name, p) => p.catch((e) => { throw new Error(`${name}: ${e.message}`); });
       const settled = () => step("fit settles", page.waitForFunction(() => !window.__isle.refitDue && !window.__isle.glide, null, { timeout: STEP_MS }));
       await page.evaluate(() => window.__emberisle.setState({ mode: "online" }));
-      await step("chat dock mounts", page.waitForSelector('[data-testid="chat-preview"]', { state: "attached", timeout: STEP_MS }));
+      await step("chat button mounts", page.waitForSelector('button[aria-label^="Open chat"]', { state: "attached", timeout: STEP_MS }));
       await settled();
       await drawn(page, 2);
       const t0 = await pose();
       await page.evaluate(() => {
-        const text = "A long line of table talk that runs to about ninety-five characters so the preview is as wide as it gets.";
-        const at = Date.now();
-        window.__emberisle.setState({ chat: [1, 2, 3].map((i) => ({ id: 9000 + i, seat: "s1", player: "p1", name: "Tide", color: "#2d6ee8", text, at })) });
+        const text = "A long line of table talk that runs to about ninety-five characters so the bubble is as wide as it gets.";
+        for (const i of [1, 2, 3]) {
+          const s = window.__emberisle.getState();
+          window.__emberisle.setState({ chat: [...s.chat, { id: 9000 + i, seat: "s1", player: "p1", name: "Tide", color: "#2d6ee8", text, at: Date.now() }] });
+        }
       });
-      await step("three previews show", page.waitForFunction(() => document.querySelectorAll('[data-testid="chat-preview"] li').length === 3, null, { timeout: STEP_MS }));
+      await step("the bubble shows", page.waitForSelector('[data-testid="rail-p1"] [data-testid="chat-bubble"]', { timeout: STEP_MS }));
       const withChat = await page.evaluate(() => ({
-        previews: document.querySelectorAll('[data-testid="chat-preview"] li').length,
-        previewW: Math.round(document.querySelector('[data-testid="chat-preview"]').getBoundingClientRect().width),
+        previews: document.querySelectorAll('[data-testid="chat-preview"]').length,
+        bubbles: document.querySelectorAll('[data-testid="chat-bubble"]').length,
+        bubbleW: Math.round(document.querySelector('[data-testid="chat-bubble"] > div').getBoundingClientRect().width),
+        passes: getComputedStyle(document.querySelector('[data-testid="chat-bubble"]')).pointerEvents === "none",
         right: window.__isle.insets().right,
       }));
       await drawn(page, 2);
       const t1 = await pose();
-      check(`${tag}: chat previews are not a rail: the right inset is the rail the wide layout always keeps (312) and the camera stays put`, withChat.previews === 3 && withChat.previewW >= 200 && withChat.right === 312 && !t1.glide && t1.target.every((v, k) => Math.abs(v - t0.target[k]) < 1e-6), { ...withChat, target: brief(t1).target, before: brief(t0).target });
+      check(`${tag}: closed-chat lines are one seat bubble, not a rail: no preview pills, taps pass through, the right inset is the rail the wide layout always keeps (312) and the camera stays put`, withChat.previews === 0 && withChat.bubbles === 1 && withChat.bubbleW >= 120 && withChat.passes && withChat.right === 312 && !t1.glide && t1.target.every((v, k) => Math.abs(v - t0.target[k]) < 1e-6), { ...withChat, target: brief(t1).target, before: brief(t0).target });
     }
     if (!touch) {
       // The table menu's View: Overhead switches to the fitted 25° overhead view, which fits the same hole and orbits on a

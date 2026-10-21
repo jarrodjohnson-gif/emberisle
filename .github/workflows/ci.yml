@@ -140,6 +140,8 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run wayfarer-modes-prove
       - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run bot-harbor-prove
+      - if: needs.changes.outputs.docs_only != 'true'
         run: npm test
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run next-up-prove
