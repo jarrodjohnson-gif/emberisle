@@ -41,7 +41,7 @@ A different model from the builder. Sonnet by default, and never the builder's o
 
 Squash, with the full 40-character head SHA, only when all of these hold:
 - the review is clean, and its findings are fixed;
-- CI is green on that head;
+- CI is green on that head: `checks` shows **success**, not skipped or grey. A draft skips it, and a skipped required check counts as passing, so never merge on a skipped `checks`;
 - there is no conflict and the PR isn't a draft;
 - Jarrod has seen the screenshots of any visual change.
 
