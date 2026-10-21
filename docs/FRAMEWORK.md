@@ -230,8 +230,15 @@ before the allowance is raised. Locally, `node scripts/size-prove.mjs --base <bu
 | Role | Who | Does |
 |---|---|---|
 | Builder | the session doing the work | Steps 1-4, pushes, opens the PR, and fixes CI until it is green. **Never merges its own PR.** |
-| Reviewer | the **orchestrator**: the one session Jarrod names to review and merge | Reviews every open PR with a different model than its builder: reads the diff against the issue's completion test, checks CI and the framework rules (no to-do lists in files, issue comments present). Its review subagents follow [REVIEWING.md](REVIEWING.md). If CI is green and nothing is wrong, it **merges**. If something is wrong, it comments exactly what, and the PR stays open for its Builder. **No other session merges.** |
+| Reviewer | the **orchestrator**: the one session Jarrod names to review and merge | Reviews every open PR with a different model than its builder: reads the diff against the issue's completion test, checks CI and the framework rules (no to-do lists in files, issue comments present). Its review subagents follow [REVIEWING.md](REVIEWING.md). If CI is green and nothing is wrong, it **merges**. If something is wrong, it comments exactly what, and the PR stays open for its Builder. **No other session merges**, except the auto-merge Action below. |
 | Jarrod | the owner | Accepts results: moves In Review to Done. No code reading needed. |
+
+**The one exception: the auto-merge Action** (`.github/workflows/auto-merge.yml`, #923). It squash-merges a docs-only PR without the desk's click. It needs three things on the exact head SHA:
+- every changed file is an allowed doc (rules in `scripts/auto-merge-eligible.mjs`);
+- `checks` is green;
+- the desk posted `<!-- review-desk: clean <40-char head SHA> -->`.
+
+Governance docs, code, workflows and package files never qualify. It is off unless the repo variable `AUTO_MERGE` is `on`.
 
 A new Builder chat therefore starts: take the next eligible issue with no file conflict
 ([LANES.md](LANES.md)).
