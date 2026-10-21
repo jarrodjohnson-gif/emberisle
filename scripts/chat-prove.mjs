@@ -1,12 +1,15 @@
-// #160: three headless tabs at 1280x720 chat through server/host.mjs. Lobby chat and presets, a floating reaction,
+// #899 (Chat C): one chat button, a panel with two tabs (Chat with the six emoji, Sounds & stickers with nine chips and the
+// sticker), seat bubbles beside the card and never on the name (lobby, rail and strip), closed-chat line bubbles, the #895
+// lobby hit test at 1280x720, a phone sheet that leaves the strip and its bubbles clear, and reduced motion.
+// #160: three headless tabs at 1280x720 chat through server/host.mjs. Lobby chat, a floating reaction,
 // the unread badge and the remembered open/minimized state, a minimized dock that covers no board target, the player action
-// menu in the rail and under the phone seat strip (#161), the game log in the dock with its Chat/All filter and Copy log (#305),
+// menu in the rail and under the phone seat strip (#161), the game log in the dock and Copy log in the Table menu (#305, #899),
 // the lobby status line as seats join and ready up (#418), Start and Leave inside the 1280x720 lobby card (#417),
 // #460: computed glass surfaces, 12 px controls, one primary and >= 4.5:1 text contrast over black, on desktop and phone,
-// including emotes, previews, copy fallback and read-only chat. Zero console errors.
+// including the emoji, the sound chips, copy fallback and read-only chat. Zero console errors.
 // #467: board reactions, all six emoji, image delivery, keyboard/cooldown, coalescing, reduced motion and host rejection.
-// #477: Quick reactions and Open chat sit in the top row beside the Table menu: at 390x844, 360x640 and 844x390 with notch insets, on
-// an own Roll turn and another seat's turn, they are whole, in the safe area, clear of the menu and status, 12 px from every board target.
+// #477, #899: Open chat (the one chat button) sits in the top row beside the Table menu: at 390x844, 360x640 and 844x390 with notch insets, on
+// an own Roll turn and another seat's turn, it is whole, in the safe area, clear of the menu and status, 12 px from every board target.
 // Design: docs/design/chat.md "Test plan". Screenshots go to test-results/.
 import { spawn } from "node:child_process";
 import { once } from "node:events";
@@ -227,6 +230,31 @@ const SAY = async (t, text) => {
   await new Promise((r) => setTimeout(r, 700));
 };
 
+// #899 (Chat C): the one chat button opens the panel, whose Chat tab has the six emoji right above the input.
+const openChat = async (t) => {
+  if (!(await store(t, () => window.__emberisle.getState().chatOpen))) await t.page.getByRole("button", { name: /^Open chat/ }).click();
+  await t.page.getByTestId("emoji-row").waitFor();
+  await t.page.waitForFunction(() => !document.querySelector('[data-testid="emoji-row"] button')?.disabled);
+};
+const closeChat = async (t) => {
+  if (await store(t, () => window.__emberisle.getState().chatOpen)) await t.page.getByRole("button", { name: "Minimize chat" }).click();
+  await t.page.getByRole("button", { name: /^Open chat/ }).waitFor();
+};
+const showTab = async (t, name) => {
+  await t.page.getByRole("tab", { name, exact: true }).click();
+  await t.page.getByRole("tab", { name, exact: true, selected: true }).waitFor();
+};
+// A bubble (its visible box, the inner element) must not cross the name it belongs to, at any width.
+const clearOfName = (t, anchor) =>
+  t.page.getByTestId(anchor).evaluate((card) => {
+    const bubble = card.querySelector("[data-seat-bubble] > div");
+    const names = [...card.querySelectorAll('[data-testid="seat-name"], [data-testid="lobby-name"]')].filter((el) => el.getClientRects().length && !el.closest(".sr-only") && el.getBoundingClientRect().width > 1);
+    if (!bubble || !names.length) return { ok: false, why: `bubble ${!!bubble}, names ${names.length}` };
+    const b = bubble.getBoundingClientRect();
+    const hit = names.find((el) => { const n = el.getBoundingClientRect(); return b.right > n.left && b.left < n.right && b.bottom > n.top && b.top < n.bottom; });
+    return { ok: !hit, why: hit ? `bubble ${JSON.stringify(b)} crosses name ${JSON.stringify(hit.getBoundingClientRect())}` : "" };
+  });
+
 async function quickReactions(a, b, c, phone) {
   const choices = [["😠", "angry"], ["😊", "happy"], ["👏", "clap"], ["😂", "laugh"], ["🔥", "fire"], ["🐑", "sheep"]];
   // Preserve incoming events beyond their two-second UI lifetime, including any forbidden host broadcast.
@@ -243,78 +271,93 @@ async function quickReactions(a, b, c, phone) {
     await b.page.waitForFunction(({ seat, emote, before }) => window.__reactionProofReceived.slice(before).some((r) => r.seat === seat && r.emote === emote), { seat, emote, before });
     check(true, `quick reactions: ${emote} from ${t.name} reaches another seat through the host`);
   };
-  const openPicker = async (t) => {
-    await t.page.getByRole("button", { name: "Quick reactions", exact: true }).click();
-    await t.page.getByRole("group", { name: "Choose a reaction" }).waitFor();
-    await t.page.waitForFunction(() => !document.querySelector('#quick-reaction-picker button')?.disabled);
-  };
   await a.page.evaluate(() => window.__emberisle.getState().setBuildMode("path"));
-  await openPicker(a);
+  await openChat(a);
+  await a.page.getByPlaceholder("Say something…").focus();
   await a.page.keyboard.press("Escape");
-  await a.page.getByRole("group", { name: "Choose a reaction" }).waitFor({ state: "detached" });
-  check(await store(a, () => window.__emberisle.getState().buildMode === "path"), "quick reactions: first Escape closes the picker and keeps Path armed");
+  await a.page.getByRole("button", { name: /^Open chat/ }).waitFor();
+  check(await store(a, () => window.__emberisle.getState().buildMode === "path"), "chat panel: first Escape (from the input) minimizes chat and keeps Path armed");
   await a.page.keyboard.press("Escape");
-  check(await store(a, () => window.__emberisle.getState().buildMode === "none"), "quick reactions: second Escape disarms Path");
+  check(await store(a, () => window.__emberisle.getState().buildMode === "none"), "chat panel: second Escape disarms Path");
   for (const t of [a, phone]) {
-    await t.page.getByRole("button", { name: "Quick reactions", exact: true }).waitFor();
-    check(await store(t, () => !window.__emberisle.getState().chatOpen), `quick reactions: ${t.name} starts with chat closed`);
+    check(await t.page.getByRole("button", { name: "Quick reactions" }).count() === 0, `chat panel: ${t.name} has no separate quick-reaction button`);
+    check(await store(t, () => !window.__emberisle.getState().chatOpen), `chat panel: ${t.name} starts with chat closed`);
     if (t === phone) {
-      check(await t.page.getByRole("button", { name: "Quick reactions", exact: true }).evaluate((button) => {
+      check(await t.page.getByRole("button", { name: /^Open chat/ }).evaluate((button) => {
         const hint = document.querySelector('[data-testid="landscape-hint"]');
         if (!hint) return true;
         const a = button.getBoundingClientRect();
         const b = hint.getBoundingClientRect();
         return a.right <= b.left || a.left >= b.right || a.bottom <= b.top || a.top >= b.bottom;
-      }), "quick reactions: phone trigger leaves the rotate hint unobscured");
+      }), "chat panel: phone Open chat leaves the rotate hint unobscured");
     }
-    await openPicker(t);
-    for (const [, label] of choices) await t.page.getByRole("button", { name: `React ${label}`, exact: true }).waitFor();
-    await polish(t, "quick picker", '#quick-reaction-picker', 7);
-    const fits = await t.page.getByTestId("quick-reactions").evaluate((root) => [...root.querySelectorAll("button")].every((button) => {
-      const r = button.getBoundingClientRect();
-      return r.width >= 44 && r.height >= 44 && r.left >= 0 && r.top >= 0 && r.right <= innerWidth && r.bottom <= innerHeight;
-    }));
-    check(fits, `quick reactions: ${t.name} picker and 44 px controls fit the viewport`);
+    await openChat(t);
+    check(await t.page.getByRole("tab", { name: "Chat", exact: true, selected: true }).count() === 1, `chat panel: ${t.name} opens on the Chat tab`);
+    for (const [, label] of choices) await t.page.getByTestId("emoji-row").getByRole("button", { name: `React ${label}`, exact: true }).waitFor();
+    check(await t.page.locator('section[aria-label="Table chat"] button[aria-label="Soundboard"], section[aria-label="Table chat"] button[aria-label="Emotes"]').count() === 0, `chat panel: ${t.name} has no speaker or smile toggle in the chat box`);
+    await polish(t, "chat tab", 'section[aria-label="Table chat"]', 12);
+    const fits = await t.page.getByTestId("emoji-row").evaluate((root) => {
+      const input = document.getElementById("chat-input").getBoundingClientRect();
+      const buttons = [...root.querySelectorAll("button")];
+      return buttons.length === 6 && buttons.every((button) => {
+        const r = button.getBoundingClientRect();
+        return r.width >= 44 && r.height >= 44 && r.left >= 0 && r.top >= 0 && r.right <= innerWidth && r.bottom <= innerHeight && r.bottom <= input.top && input.top - r.bottom <= 12;
+      });
+    });
+    check(fits, `chat panel: ${t.name} has the six 44 px emoji in the viewport, right above the input`);
     await shot(t, t === phone ? "reactions-phone.jpg" : "reactions-desktop.jpg");
-    await t.page.keyboard.press("Escape");
+    await closeChat(t);
   }
-  for (const [index, [emoji]] of choices.entries()) {
-    await openPicker(a);
+  // Tab 1 sends each of the six emoji in one tap, and the panel stays open; a sent emoji rests the row for the cooldown.
+  await openChat(a);
+  for (const [index, [emoji, label]] of choices.entries()) {
+    await a.page.waitForFunction(() => !document.querySelector('[data-testid="emoji-row"] button')?.disabled);
     const before = await receivedCount();
-    await a.page.keyboard.press(String(index + 1));
+    await a.page.getByTestId("emoji-row").getByRole("button", { name: `React ${label}`, exact: true }).click();
     await delivered(a, emoji, before);
-    check(await a.page.getByRole("group", { name: "Choose a reaction" }).count() === 0 && await store(a, () => !window.__emberisle.getState().chatOpen), `quick reactions: key ${index + 1} sends and closes the picker without opening chat`);
-    if (index === 0) {
-      await a.page.getByRole("button", { name: "Quick reactions", exact: true }).click();
-      check(await a.page.getByRole("button", { name: "React angry", exact: true }).isDisabled(), "quick reactions: choices dim and disable during cooldown");
-      await a.page.keyboard.press("Escape");
-    }
+    check(await store(a, () => window.__emberisle.getState().chatOpen), `chat panel: one tap on ${label} sends it and keeps the panel open`);
+    if (index === 0) check(await a.page.getByRole("button", { name: "React happy", exact: true }).isDisabled(), "chat panel: the emoji dim and disable during the cooldown");
   }
-  await openPicker(a);
+  // In the game dock keys 1-6 send them too while the focus is outside the input.
+  await a.page.waitForFunction(() => !document.querySelector('[data-testid="emoji-row"] button')?.disabled);
+  await a.page.getByTestId("chat-log").focus();
   let before = await receivedCount();
-  await a.page.getByRole("button", { name: "React ben-10", exact: true }).click();
-  await delivered(a, "ben-10", before);
-  await b.page.locator('[data-testid="reaction"][data-emote="ben-10"] img').waitFor();
-  check(true, "quick reactions: an asset image also sends from the board");
-
-  await openPicker(phone);
-  before = await receivedCount();
-  await phone.page.getByRole("button", { name: "React sheep", exact: true }).click();
-  await delivered(phone, "🐑", before);
-  check(await store(phone, () => !window.__emberisle.getState().chatOpen), "quick reactions: phone tap sends without opening chat");
-
-  // Use the real chat input: keyboard navigation can focus it while the reaction picker remains open.
-  await a.page.getByRole("button", { name: "Open chat" }).click();
-  await openPicker(a);
+  await a.page.keyboard.press("5");
+  await delivered(a, "🔥", before);
+  check(true, "chat panel: key 5 sends fire while the panel is open");
+  // Each emote also writes a light line in the sender's log, folded "×n" when repeated.
+  await a.page.getByTestId("chat-log").locator('[data-testid="react-line"][data-emote="🔥"]').last().waitFor();
+  check(true, "chat panel: an emote writes a light line in the log");
+  // Use the real chat input: typing a digit there is text, not a reaction.
+  await a.page.waitForFunction(() => !document.querySelector('[data-testid="emoji-row"] button')?.disabled);
   const input = a.page.getByPlaceholder("Say something…");
+  before = await receivedCount();
   await input.focus();
   await input.press("1");
-  check(await input.inputValue() === "1" && await a.page.getByRole("group", { name: "Choose a reaction" }).count() === 1, "quick reactions: typing 1 in chat does not send or close the picker");
+  await new Promise((r) => setTimeout(r, 400));
+  check(await input.inputValue() === "1" && (await receivedCount()) === before, "chat panel: typing 1 in chat types it and sends no reaction");
   await input.fill("");
   await input.press("Escape");
-  await a.page.getByRole("button", { name: "Open chat" }).waitFor();
-  await a.page.getByRole("group", { name: "Choose a reaction" }).waitFor({ state: "detached" });
-  check(await a.page.getByRole("group", { name: "Choose a reaction" }).count() === 0, "quick reactions: Escape from the chat input minimizes chat and closes its picker");
+  await a.page.getByRole("button", { name: /^Open chat/ }).waitFor();
+  check(true, "chat panel: Escape from the chat input minimizes chat");
+
+  // Tab 2: the sticker sends from Sounds & stickers, and the receiving seat shows it.
+  await openChat(a);
+  await showTab(a, "Sounds & stickers");
+  before = await receivedCount();
+  await a.page.getByTestId("stickers").getByRole("button", { name: "React ben-10", exact: true }).click();
+  await delivered(a, "ben-10", before);
+  await b.page.locator('[data-testid="reaction"][data-emote="ben-10"] img').waitFor();
+  check(true, "chat panel: the sticker sends from the Sounds & stickers tab");
+  await showTab(a, "Chat");
+  await closeChat(a);
+
+  await openChat(phone);
+  before = await receivedCount();
+  await phone.page.getByTestId("emoji-row").getByRole("button", { name: "React sheep", exact: true }).tap();
+  await delivered(phone, "🐑", before);
+  check(await store(phone, () => window.__emberisle.getState().chatOpen), "chat panel: a phone tap sends from the open sheet and keeps it open");
+  await closeChat(phone);
 
   // This bypasses the picker allowlist. The valid chat marker on the same ordered socket proves the host processed all three bad frames.
   const invalid = ["not-an-emote", "🙃", "https://example.invalid/reaction.png"];
@@ -353,6 +396,15 @@ async function quickReactions(a, b, c, phone) {
       return true;
     });
     check(fits, `quick reactions: ${t.name} float, badge and target fit at every sampled animation frame`);
+    // #899: the bubble hangs off the card (right of the rail card, under the strip cell) and never crosses the seat's name.
+    const name = await clearOfName(t, anchor);
+    check(name.ok, `seat bubble: at ${t.name}'s ${anchor.split("-")[0]} the bubble box and the name box don't intersect ${name.why}`);
+    const place = await t.page.getByTestId(anchor).evaluate((card) => {
+      const c = card.getBoundingClientRect();
+      const b = card.querySelector("[data-seat-bubble] > div").getBoundingClientRect();
+      return { right: b.left >= c.right, under: b.top >= c.bottom };
+    });
+    check(anchor.startsWith("rail") ? place.right : place.under, `seat bubble: at ${t.name} it sits ${anchor.startsWith("rail") ? "right of the rail card" : "under the strip cell"}`);
   }
   await phone.page.emulateMedia({ reducedMotion: "reduce" });
   await phone.page.evaluate(() => window.__emberisle.getState().sendReact("👏"));
@@ -364,8 +416,8 @@ async function quickReactions(a, b, c, phone) {
   check(fadeOnly, "quick reactions: reduced motion stays fully static");
   await phone.page.emulateMedia({ reducedMotion: "no-preference" });
   for (const t of [a, b, c, phone]) {
-    await t.page.getByRole("button", { name: "Open chat" }).click();
-    await t.page.getByRole("button", { name: "Minimize chat" }).click();
+    await openChat(t);
+    await closeChat(t);
     await t.page.waitForFunction(() => document.querySelectorAll('[data-testid="reaction"]').length === 0, null, { timeout: 6000 });
   }
   await b.page.evaluate(() => window.__reactionProofUnsubscribe());
@@ -474,10 +526,17 @@ try {
     check(v.whole >= 4 && v.newest && v.newestText.includes("lobby line 8") && v.font >= 14, `phone lobby ${v.size}: ${v.whole} whole chat lines on screen, newest ("${v.newestText.trim()}") visible, ${v.font}px text`);
     check(await inView(hp, '[data-testid="lobby-actions"]'), `phone lobby ${v.size}: Ready/Start stay on screen beside the chat`);
     if (w === 440) await shot(hp, "chat-lobby-440x956.jpg");
-    await hp.page.getByRole("button", { name: "Emotes" }).click();
-    const tray = await logView(hp);
-    check(tray.whole >= 4 && tray.newest, `phone lobby ${v.size}: with the emote tray open, ${tray.whole} chat lines and the newest are still on screen`);
-    await hp.page.getByRole("button", { name: "Emotes" }).click();
+    // #899: the lobby box has the same two tabs. Sounds & stickers shows all nine chips with no sideways scroll, inside the box.
+    await hp.page.getByRole("tab", { name: "Sounds & stickers", exact: true }).click();
+    const board = await hp.page.getByTestId("soundboard").evaluate((el) => {
+      const box = document.querySelector('[data-testid="lobby-chat"]').getBoundingClientRect();
+      const chips = [...el.querySelectorAll("button")].map((b) => b.getBoundingClientRect());
+      return { n: chips.length, wide: el.scrollWidth > el.clientWidth + 0.5, inside: chips.every((r) => r.left >= box.left && r.right <= box.right), font: parseFloat(getComputedStyle(el.querySelector("button")).fontSize) };
+    });
+    check(board.n === 9 && !board.wide && board.inside && board.font >= 14, `phone lobby ${v.size}: the Sounds & stickers tab shows all 9 chips at ${board.font}px with no sideways scroll`);
+    await hp.page.getByRole("tab", { name: "Chat", exact: true }).click();
+    const back = await logView(hp);
+    check(back.whole >= 4 && back.newest, `phone lobby ${v.size}: back on the Chat tab, ${back.whole} chat lines and the newest are on screen`);
   }
   await SAY(guests[0], "lobby line 9");
   await until(async () => (await logView(hp)).newestText.includes("lobby line 9") && (await logView(hp)).newest, "a new lobby line scrolls into view");
@@ -516,6 +575,20 @@ try {
     check(m.status && m.ready && m.start && m.leave, `phone landscape ${w}x${h}, 4 seats all ready: status, Ready, Start and Leave are on screen without scrolling`);
     check(m.seats === 4, `phone landscape ${w}x${h}: all four seat rows are on screen`);
     check(m.scroll.every((n) => n <= 1), `phone landscape ${w}x${h}: nothing in the card scrolls (${m.scroll})`);
+    // #899 (UI audit): your own name stays a 44 px touch target sideways.
+    const rename = await hp.page.getByTestId("rename-seat").boundingBox();
+    check(rename.width >= 44 - 0.5 && rename.height >= 44 - 0.5, `phone landscape ${w}x${h}: the rename button is ${rename.width.toFixed(1)}x${rename.height.toFixed(1)}, at least 44x44`);
+    // #899 (UI audit): the Sounds & stickers tab gets real height sideways: every sound chip and the preset row show without
+    // scrolling, or the scroll box is at least 1.5 chip rows (66 px) tall. Chips stay 44 px on touch.
+    await hp.page.getByRole("tab", { name: "Sounds & stickers", exact: true }).click();
+    const land = await hp.page.getByTestId("sounds-tab").evaluate((box) => {
+      const b = box.getBoundingClientRect();
+      const chips = [...box.querySelectorAll('[data-testid="soundboard"] button, [data-testid="presets"] button')].map((el) => el.getBoundingClientRect());
+      const whole = chips.every((r) => r.top >= b.top - 0.5 && r.bottom <= b.bottom + 0.5 && r.left >= b.left - 0.5 && r.right <= b.right + 0.5);
+      return { n: chips.length, whole, height: Math.round(box.clientHeight), scroll: box.scrollHeight, small: chips.filter((r) => r.height < 43.5).length, wide: box.scrollWidth > box.clientWidth + 0.5 };
+    });
+    check(land.n === 14 && land.small === 0 && !land.wide && (land.whole || land.height >= 66), `phone landscape ${w}x${h}: Sounds & stickers shows the 9 chips and 5 presets at 44 px, ${land.whole ? "all without scrolling" : `in a ${land.height} px scroll box (scrollHeight ${land.scroll})`}`);
+    await hp.page.getByRole("tab", { name: "Chat", exact: true }).click();
   }
   await fourth.page.context().close();
   for (const t of [hp, ...guests]) await t.page.context().close();
@@ -524,7 +597,7 @@ try {
   }
   await statusIs(a, "0 of 4 ready");
 
-  // 1. Lobby: typed line with Enter, then a preset click, on every tab.
+  // 1. Lobby: a typed line with Enter, then a one-tap emoji and a sound (#899), on every tab.
   await a.page.getByPlaceholder("Say something…").fill("hello");
   await a.page.getByPlaceholder("Say something…").press("Enter");
   for (const t of tabs) {
@@ -532,12 +605,52 @@ try {
     const line = await t.page.getByTestId("chat-log").locator("li", { hasText: "hello" }).textContent();
     check(line.includes("Ember"), `lobby: ${t.name} shows "hello" from Ember`);
   }
-  await b.page.getByRole("button", { name: "gg", exact: true }).click();
+  // #899: the lobby has the six emoji too. One tap from Tide shows a bubble mid-row on Tide's seat, clear of the name, and a
+  // light line in every log; a sound from Pine's Sounds & stickers tab shows its own bubble and line.
+  const tideSeat = await store(b, () => window.__emberisle.getState().seatId);
+  const pineSeat = await store(c, () => window.__emberisle.getState().seatId);
+  await b.page.getByTestId("emoji-row").getByRole("button", { name: "React happy", exact: true }).click();
   for (const t of tabs) {
-    await t.page.getByTestId("chat-log").locator("li", { hasText: "gg" }).waitFor({ timeout: 5000 });
+    await t.page.getByTestId(`lobby-seat-${tideSeat}`).locator('[data-testid="reaction"][data-emote="😊"]').waitFor({ timeout: 5000 });
+    const name = await clearOfName(t, `lobby-seat-${tideSeat}`);
+    check(name.ok, `lobby: ${t.name} shows Tide's 😊 bubble mid-row, and the bubble box and the name box don't intersect ${name.why}`);
+    await t.page.getByTestId("chat-log").locator('[data-testid="react-line"][data-emote="😊"]', { hasText: "Tide" }).waitFor({ timeout: 5000 });
   }
-  check(true, 'lobby: preset "gg" from Tide shows on all 3 tabs');
+  check(true, "lobby: Tide's one-tap emoji is a light line in all 3 logs");
+  await c.page.getByRole("tab", { name: "Sounds & stickers", exact: true }).click();
+  await c.page.getByRole("button", { name: "Play sound Wololo", exact: true }).click();
+  for (const t of tabs) {
+    await t.page.getByTestId(`lobby-seat-${pineSeat}`).locator('[data-testid="sound-bubble"][data-sound="sb_wololo"]').waitFor({ timeout: 5000 });
+    const name = await clearOfName(t, `lobby-seat-${pineSeat}`);
+    check(name.ok, `lobby: ${t.name} shows Pine's Wololo bubble, clear of the name ${name.why}`);
+  }
+  await c.page.getByRole("tab", { name: "Chat", exact: true }).click();
+  for (const t of tabs) await t.page.getByTestId("chat-log").getByTestId("sound-line").filter({ hasText: "Wololo" }).waitFor({ timeout: 5000 });
+  check(true, "lobby: Pine's sound is a bubble and a light line on all 3 tabs");
   check((await a.page.getByPlaceholder("Say something…").inputValue()) === "", "lobby: input cleared after Enter");
+  // #895: at 1280x720 the lobby input, Send and both tabs are reachable: a hit test at each centre finds the control itself,
+  // not the Ready footer over it. Run as a guest and as the host once Start has joined the footer.
+  const lobbyReach = async (t, when) => {
+    const m = await t.page.evaluate(() => {
+      const scroller = document.querySelector('[data-testid="lobby-card"] > div');
+      const box = document.querySelector('[data-testid="lobby-chat"]');
+      const find = (q) => box.querySelector(q);
+      const send = [...box.querySelectorAll("button")].find((b) => b.textContent.trim() === "Send");
+      const controls = { input: find("#chat-input"), Send: send, "Chat tab": find("#chat-tab-chat"), "Sounds & stickers tab": find("#chat-tab-sounds") };
+      const out = {};
+      for (const [k, el] of Object.entries(controls)) {
+        if (!el) { out[k] = "missing"; continue; }
+        const r = el.getBoundingClientRect();
+        const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+        out[k] = hit === el || el.contains(hit) ? "ok" : `covered by ${hit?.closest("[data-testid]")?.getAttribute("data-testid") ?? hit?.tagName}`;
+      }
+      return { out, scrollTop: scroller.scrollTop, vw: innerWidth, vh: innerHeight };
+    });
+    const bad = Object.entries(m.out).filter(([, v]) => v !== "ok");
+    check(m.vw === 1280 && m.vh === 720 && m.scrollTop === 0 && bad.length === 0, `desktop lobby 1280x720 ${when}: a hit test reaches the input, Send and both tabs, none under the footer ${JSON.stringify(m.out)}`);
+  };
+  for (const t of [a, b]) await lobbyReach(t, `(${t === a ? "host" : "guest"}, before Ready)`);
+  await shot(a, "chat-lobby-desktop.jpg");
 
   for (const [i, t] of [...tabs, phone].entries()) {
     await t.page.getByRole("button", { name: "Ready", exact: true }).click();
@@ -557,6 +670,17 @@ try {
     const r = await insideCard(name);
     check(r.ok, `desktop lobby at 1280x720: ${name} is inside the card (bottom ${r.bottom} <= card ${r.card}) without scrolling`);
   }
+  await lobbyReach(a, "(host, everyone ready, Start showing)");
+  await a.page.getByRole("tab", { name: "Sounds & stickers", exact: true }).click();
+  const lobbyBoard = await a.page.getByTestId("soundboard").evaluate((el) => {
+    const box = document.querySelector('[data-testid="lobby-chat"]').getBoundingClientRect();
+    const reach = (b) => { const r = b.getBoundingClientRect(); const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); return hit === b || b.contains(hit); };
+    const chips = [...el.querySelectorAll("button")];
+    return { n: chips.length, wide: el.scrollWidth > el.clientWidth + 0.5, inside: chips.every((b) => { const r = b.getBoundingClientRect(); return r.left >= box.left && r.right <= box.right; }), reached: chips.filter(reach).length, tabs: ["#chat-tab-chat", "#chat-tab-sounds"].every((q) => reach(document.querySelector(q))) };
+  });
+  check(lobbyBoard.n === 9 && !lobbyBoard.wide && lobbyBoard.inside && lobbyBoard.tabs, `desktop lobby 1280x720 (host, Sounds & stickers tab): all 9 chips with no sideways scroll, both tabs reachable; ${lobbyBoard.reached} of 9 chips in view without scrolling the tab`);
+  await shot(a, "chat-lobby-desktop-sounds.jpg");
+  await a.page.getByRole("tab", { name: "Chat", exact: true }).click();
   await a.page.getByRole("button", { name: "Start" }).click();
   for (const t of tabs) await t.page.getByRole("button", { name: "Open chat" }).waitFor();
   check(true, "game: every tab shows the minimized dock, and the lobby lines did not count as unread");
@@ -585,14 +709,17 @@ try {
   check(true, "mute: unmuting Pine restores the earlier chat line");
 
   await a.page.getByRole("button", { name: "Mute player Pine", exact: true }).click();
-  await c.page.getByRole("button", { name: "Quick reactions", exact: true }).click();
-  await c.page.getByRole("button", { name: "React fire", exact: true }).click();
+  await openChat(c);
+  await c.page.getByTestId("emoji-row").getByRole("button", { name: "React fire", exact: true }).click();
+  await closeChat(c);
   await a.page.waitForFunction(({ seat, emote }) => window.__emberisle.getState().reactions.some((r) => r.seat === seat && r.emote === emote), { seat: mutedSeat, emote: "🔥" });
   const mutedFloat = a.page.locator(`[data-testid="rail-${mutedPlayer}"] [data-testid="reaction"][data-emote="🔥"]`);
-  check((await mutedFloat.count()) === 0, "mute: Pine's reaction is hidden only in Ember's view");
+  const mutedReactLine = a.page.getByTestId("chat-log").locator('[data-testid="react-line"][data-emote="🔥"]').filter({ hasText: "Pine" });
+  check((await mutedFloat.count()) === 0 && (await mutedReactLine.count()) === 0, "mute: Pine's reaction bubble and its log line are hidden only in Ember's view");
   await a.page.getByRole("button", { name: "Unmute player Pine", exact: true }).click();
   await mutedFloat.waitFor({ timeout: 1500 });
-  check(true, "mute: unmuting Pine restores the active reaction");
+  await mutedReactLine.first().waitFor({ timeout: 1500 });
+  check(true, "mute: unmuting Pine restores the active reaction and its log line");
 
   await a.page.getByRole("button", { name: "Mute player Pine", exact: true }).click();
   await a.page.getByRole("button", { name: "Minimize chat" }).click();
@@ -659,12 +786,25 @@ try {
     return null;
   }, "someone has legal corners");
   const other = tabs.find((t) => t !== cur);
+  // #899 (owner change): the third tab keeps its chat open, so it must see the line only in its log, never as a bubble.
+  const third = tabs.find((t) => t !== cur && t !== other);
+  await openChat(third);
+  const otherId = await store(other, () => window.__emberisle.getState().localId);
   await other.page.getByRole("button", { name: "Open chat" }).click();
   await other.page.getByPlaceholder("Say something…").fill("preview line");
   await other.page.getByPlaceholder("Say something…").press("Enter");
-  await cur.page.getByTestId("chat-preview").getByText("preview line").waitFor({ timeout: 5000 });
+  // #899 (owner decision): no preview pills; the line shows only as the seat bubble, and the chat button counts it.
+  // With chat closed, the line shows as a bubble at the sender's rail card, clear of the name, and fades like a sticker.
+  const closedBubble = cur.page.getByTestId(`rail-${otherId}`).getByTestId("chat-bubble");
+  await closedBubble.filter({ hasText: "preview line" }).waitFor({ timeout: 5000 });
+  const bubbleName = await clearOfName(cur, `rail-${otherId}`);
+  check(bubbleName.ok, `closed chat: ${cur.name} sees ${other.name}'s line as a bubble at the seat; bubble box and name box don't intersect ${bubbleName.why}`);
+  check(await closedBubble.evaluate((el) => el.firstElementChild.getAnimations().some((a) => Number(a.effect.getKeyframes().at(-1).opacity) === 0)), "closed chat: the bubble fades out (its animation ends at opacity 0)");
+  await third.page.getByTestId("chat-log").locator("li", { hasText: "preview line" }).waitFor({ timeout: 5000 });
+  check((await third.page.getByTestId("chat-bubble").count()) === 0, `open chat: ${third.name}, chat open, shows the line in the log and no bubble`);
+  await closeChat(third);
   await polish(cur, "minimized", '[aria-label^="Open chat"]');
-  await polish(cur, "preview", '[data-testid="chat-preview"] li', 0);
+  check((await cur.page.getByTestId("chat-preview").count()) === 0 && (await cur.page.getByTestId("chat-unread-preview").count()) === 0 && (await cur.page.getByTestId("chat-unread").count()) === 1, "closed chat (owner decision): no preview pills under the top-right icons, only the unread badge on the chat button");
   const hits = await cur.page.evaluate(() => {
     const s = window.__emberisle.getState();
     const ids = [...s.legal.outpost, ...s.legal.path, ...s.legal.wayfarer, ...s.state.hexes.map((h) => h.id)];
@@ -682,19 +822,38 @@ try {
   check(hits.checked > 20, `minimized dock: ${hits.checked} legal corners, edges, and hexes are on screen`);
   check(hits.chat.length === 0, `minimized dock: no target is covered by chat (${hits.canvas} reach the canvas, the rest sit under the HUD)`);
   await shot(cur, "chat-minimized.jpg");
+  await closedBubble.waitFor({ state: "detached", timeout: 6000 });
+  check(true, "closed chat: the line's bubble is gone after its lifetime");
+  // Owner decision (#918): the text presets are a row in the Sounds & stickers tab. One tap on "gg" sends it as a chat line:
+  // every tab's log shows it, and a closed chat shows it as a bubble at the sender's seat.
+  await showTab(other, "Sounds & stickers");
+  await other.page.getByTestId("presets").getByRole("button", { name: "gg", exact: true }).click();
+  await cur.page.getByTestId(`rail-${otherId}`).getByTestId("chat-bubble").filter({ hasText: "gg" }).waitFor({ timeout: 5000 });
+  check(true, `presets: ${other.name}'s "gg" shows as a closed-chat bubble on ${cur.name}`);
+  await showTab(other, "Chat");
+  for (const t of tabs) {
+    const wasOpen = await store(t, () => window.__emberisle.getState().chatOpen);
+    if (!wasOpen) await openChat(t);
+    await t.page.getByTestId("chat-log").locator("li", { hasText: /gg$/ }).filter({ hasText: other.name }).last().waitFor({ timeout: 5000 });
+    if (!wasOpen) await closeChat(t);
+  }
+  check(true, `presets: ${other.name}'s "gg" is a chat line in all 3 logs`);
+  await cur.page.getByTestId("chat-bubble").waitFor({ state: "detached", timeout: 6000 });
 
-  // 2. A reaction floats over the sender's rail card on the other tabs, and is gone after 3 s.
-  await c.page.getByRole("button", { name: "Open chat" }).click();
-  await c.page.getByRole("button", { name: "Emotes" }).click();
+  // 2. A sticker from the Sounds & stickers tab shows beside the sender's rail card on the other tabs, and is gone after its lifetime.
+  await openChat(c);
+  await showTab(c, "Sounds & stickers");
   await c.page.getByRole("button", { name: "React ben-10" }).click();
   for (const t of [a, b]) {
     const float = t.page.locator("aside [data-testid=reaction][data-emote=ben-10]");
     await float.waitFor({ timeout: 5000 });
     const owner = await float.locator("xpath=ancestor::div[contains(@class,'relative')][1]").textContent();
-    check(owner.includes("Pine"), `reaction: ${t.name} shows ben-10 over Pine's card`);
+    check(owner.includes("Pine"), `reaction: ${t.name} shows ben-10 beside Pine's card`);
     const box = await float.locator("img").boundingBox();
     check(Math.round(box.width) === 48, `reaction: ${t.name} image is 48 px wide`);
   }
+  await showTab(c, "Chat");
+  await closeChat(c);
   for (const t of tabs) {
     await t.page.locator("[data-testid=reaction]").waitFor({ state: "detached", timeout: 6000 });
     check((await t.page.locator("[data-testid=reaction]").count()) === 0, `reaction: gone after its lifetime on ${t.name}`);
@@ -730,15 +889,10 @@ try {
   check(geo.inRail && geo.under && geo.pushed, "menu: sits in the rail column under the card and pushes the cards below it down");
   check((await menu.getByRole("button", { name: /Offer a trade/ }).count()) === 0, "menu: no Offer a trade row outside your main phase");
   await shot(a, "menu-open.jpg");
-  await menu.getByRole("button", { name: "React ben-10" }).click();
+  // #899: the menu's lone sticker is gone; reactions come only from the chat panel.
+  check((await menu.getByTestId("menu-emotes").count()) === 0 && (await menu.getByRole("button", { name: /^React / }).count()) === 0, "menu: no sticker or reaction buttons; reactions come only from the chat panel");
+  await card.click();
   await menu.waitFor({ state: "detached" });
-  for (const t of [b, c]) {
-    const float = t.page.locator("aside [data-testid=reaction][data-emote=ben-10]");
-    await float.waitFor({ timeout: 5000 });
-    const owner = await float.locator("xpath=ancestor::div[contains(@class,'relative')][1]").textContent();
-    check(owner.includes("Ember") && (await float.textContent()).includes("→ Tide"), `menu: ${t.name} shows Ember's ben-10 tagged → Tide`);
-    await polish(t, "reaction target", '[data-testid="reaction"] span', 0);
-  }
   await card.click();
   await menu.waitFor();
   await a.page.keyboard.press("Escape");
@@ -773,8 +927,18 @@ try {
   await a.page.getByRole("button", { name: "Open chat" }).click();
   await a.page.getByRole("button", { name: "Minimize chat" }).click();
   check((await stored(a)) === "0", 'minimize: localStorage["emberisle-chat-open"] is "0"');
+  // Reduced motion: a closed-chat bubble appears and goes with no animation and no transform, then leaves.
+  await openChat(c);
+  await a.page.emulateMedia({ reducedMotion: "reduce" });
   await c.page.getByPlaceholder("Say something…").fill("ping");
   await c.page.getByPlaceholder("Say something…").press("Enter");
+  const cId = await store(c, () => window.__emberisle.getState().localId);
+  const still = a.page.getByTestId(`rail-${cId}`).locator('[data-testid="chat-bubble"] > div');
+  await still.waitFor({ timeout: 5000 });
+  check(await still.evaluate((el) => el.getAnimations().length === 0 && getComputedStyle(el).opacity === "1" && getComputedStyle(el).transform === "none"), "reduced motion: the closed-chat bubble is fully static");
+  await still.waitFor({ state: "detached", timeout: 6000 });
+  check(true, "reduced motion: the closed-chat bubble goes after its lifetime, with no movement");
+  await a.page.emulateMedia({ reducedMotion: "no-preference" });
   await a.page.getByTestId("chat-unread").waitFor({ timeout: 5000 });
   check((await a.page.getByTestId("chat-unread").textContent()) === "1", "unread: tab 1's badge shows 1");
   // #377: the badge is part of the button's name.
@@ -841,10 +1005,32 @@ try {
   });
   check(lay.sheetBottom - lay.inputBottom <= 24, `phone: the input row ends ${(lay.sheetBottom - lay.inputBottom).toFixed(0)} px above the sheet bottom, no dead space`);
   check(lay.logTop >= lay.headBottom && lay.atEnd, "phone: the log starts below the header and shows the newest line");
-  await phone.page.getByRole("button", { name: "Emotes", exact: true }).click();
-  await phone.page.getByTestId("emote-tray").waitFor();
-  await polish(phone, "open with emotes", undefined, 13);
-  await phone.page.getByRole("button", { name: "Emotes", exact: true }).click();
+  await polish(phone, "open on the Chat tab", undefined, 12);
+  // #899: the sheet ends below the seat strip and the bubbles under it, on both tabs. Tide reacts, so a live bubble is measured.
+  const sheetClear = async (tab) => {
+    await b.page.evaluate(() => window.__emberisle.getState().sendReact("👏"));
+    const bubble = phone.page.getByTestId(`seat-${await store(b, () => window.__emberisle.getState().localId)}`).locator('[data-testid="reaction"][data-emote="👏"] > div');
+    await bubble.waitFor({ timeout: 5000 });
+    const m = await bubble.evaluate((el) => {
+      const sheet = document.querySelector('[data-testid="chat-sheet"]').getBoundingClientRect();
+      const strip = document.querySelector('[data-testid="seat-strip"]').getBoundingClientRect();
+      const b = el.getBoundingClientRect();
+      return { sheet: Math.round(sheet.top), strip: Math.round(strip.bottom), bubble: Math.round(b.bottom) };
+    });
+    check(m.sheet >= m.strip && m.sheet >= m.bubble, `phone ${tab} tab: the sheet (top ${m.sheet}) leaves the seat strip (bottom ${m.strip}) and the seat bubble (bottom ${m.bubble}) clear`);
+  };
+  await sheetClear("Chat");
+  await showTab(phone, "Sounds & stickers");
+  await polish(phone, "open on the Sounds & stickers tab", undefined, 13);
+  const phoneBoard = await phone.page.getByTestId("soundboard").evaluate((el) => {
+    const sheet = document.querySelector('[data-testid="chat-sheet"]').getBoundingClientRect();
+    const chips = [...el.querySelectorAll("button")].map((b) => b.getBoundingClientRect());
+    return { n: chips.length, wide: el.scrollWidth > el.clientWidth + 0.5, inside: chips.every((r) => r.left >= sheet.left && r.right <= sheet.right && r.bottom <= sheet.bottom), font: parseFloat(getComputedStyle(el.querySelector("button")).fontSize) };
+  });
+  check(phoneBoard.n === 9 && !phoneBoard.wide && phoneBoard.inside && phoneBoard.font >= 14, `phone: Sounds & stickers shows all 9 chips at ${phoneBoard.font}px, inside the sheet, with no sideways scroll`);
+  await sheetClear("Sounds & stickers");
+  await shot(phone, "chat-phone-sounds.jpg");
+  await showTab(phone, "Chat");
   await shot(phone, "chat-phone-open.jpg");
   const before = await phone.page.evaluate(() => {
     const s = window.__emberisle.getState();
@@ -957,9 +1143,9 @@ try {
   for (const line of historyLines) await b.page.getByTestId("chat-log").locator("li", { hasText: line }).waitFor();
   check(true, "chat history: Tide reloads mid-game in the same seat and sees earlier chat lines");
 
-  // #477: Quick reactions and Open chat sit in the top row beside the Table menu, a place that depends on neither the turn nor the
+  // #477, #899: Open chat, the one chat button, sits in the top row beside the Table menu, a place that depends on neither the turn nor the
   // HUD stack. At each phone size, with the notch insets emulated over CDP as hud-safe-area-prove does, on your own Roll turn and
-  // another seat's turn: both buttons are 44 px, whole and inside the safe area, clear of the Table menu, the seat strip and the
+  // another seat's turn: it is 44 px, whole and inside the safe area, clear of the Table menu, the seat strip and the
   // status line, at least 12 px from every on-screen vertex, edge and hex, and at the same y on both turns. The board is read
   // with the camera settled (no glide, no refit due) and the projection unchanged between two reads.
   const DOCK_SIZES = [
@@ -980,10 +1166,10 @@ try {
         const r = el.getBoundingClientRect();
         return { left: r.left, top: r.top, right: r.right, bottom: r.bottom };
       };
-      const qr = rect(document.querySelector('button[aria-label="Quick reactions"]'));
+      const extra = document.querySelectorAll('button[aria-label="Quick reactions"], button[aria-label="Soundboard"], button[aria-label="Emotes"]').length;
       const chat = rect(document.querySelector('button[aria-label^="Open chat"]'));
       const menu = rect(document.querySelector('button[aria-label="Table menu"]'));
-      if (!qr || !chat || !menu) return null;
+      if (!chat || !menu) return null;
       const status = ["seat-strip", "banner", "turn-banner", "watching-badge"].flatMap((id) => {
         const r = rect(document.querySelector(`[data-testid="${id}"]`));
         return r ? [{ id, ...r }] : [];
@@ -998,7 +1184,7 @@ try {
         const p = i.screenOf(id);
         return p && p.x >= 0 && p.y >= 0 && p.x <= innerWidth && p.y <= innerHeight ? [{ id, x: Math.round(p.x * 10) / 10, y: Math.round(p.y * 10) / 10 }] : [];
       });
-      return { vw: innerWidth, vh: innerHeight, env, qr, chat, menu, status, targets };
+      return { vw: innerWidth, vh: innerHeight, env, extra, chat, menu, status, targets };
     });
   const dockLayout = async (t) => {
     let last = "";
@@ -1029,7 +1215,8 @@ try {
       if (m.vw !== size.width || m.vh !== size.height || m.env.some((v, i) => v !== want[i])) bad(`the viewport or inset emulation did not take (${m.vw}x${m.vh}, env ${m.env})`);
       const safe = { left: size.insets.left, top: size.insets.top, right: size.width - size.insets.right, bottom: size.height - size.insets.bottom };
       const hit = (a, b) => a.right > b.left && a.left < b.right && a.bottom > b.top && a.top < b.bottom;
-      for (const [name, r] of [["Quick reactions", m.qr], ["Open chat", m.chat]]) {
+      if (m.extra) bad(`${m.extra} separate reaction, soundboard or smile buttons are showing; Open chat is the one button`);
+      for (const [name, r] of [["Open chat", m.chat]]) {
         if (r.right - r.left < 44 - 0.5 || r.bottom - r.top < 44 - 0.5) bad(`${name} is ${(r.right - r.left).toFixed(0)}x${(r.bottom - r.top).toFixed(0)}, under 44 px`);
         if (r.left < safe.left || r.top < safe.top || r.right > safe.right || r.bottom > safe.bottom) bad(`${name} is not fully inside the safe area ${JSON.stringify(r)}`);
         if (hit(r, m.menu)) bad(`${name} overlaps the Table menu ${JSON.stringify(r)} vs ${JSON.stringify(m.menu)}`);
@@ -1037,32 +1224,31 @@ try {
         const near = m.targets.filter((p) => p.x > r.left - SLOP && p.x < r.right + SLOP && p.y > r.top - SLOP && p.y < r.bottom + SLOP);
         if (near.length) bad(`${near.length} board targets within ${SLOP} px of ${name} ${JSON.stringify(r)}: ${JSON.stringify(near.slice(0, 4))}`);
       }
-      if (hit(m.qr, m.chat)) bad("Quick reactions overlaps Open chat");
       const key = `${size.width}x${size.height}`;
-      const mine = Math.round(m.qr.top * 10) / 10;
+      const mine = { top: Math.round(m.chat.top * 10) / 10, left: Math.round(m.chat.left * 10) / 10 };
       const other = dockTop.get(key);
       if (other !== undefined) {
-        if (Math.abs(other.qr - mine) > 0.5 || Math.abs(other.chat - m.chat.top) > 0.5) bad(`the buttons moved between turns: y ${other.qr}/${other.chat} before, ${mine}/${m.chat.top} now`);
-      } else dockTop.set(key, { qr: mine, chat: m.chat.top });
-      console.log(`dock ${tag}: ${m.targets.length} targets, Quick reactions x ${m.qr.left.toFixed(0)}-${m.qr.right.toFixed(0)}, Open chat x ${m.chat.left.toFixed(0)}-${m.chat.right.toFixed(0)}, y ${m.qr.top.toFixed(0)}-${m.qr.bottom.toFixed(0)}, Table menu x ${m.menu.left.toFixed(0)}-${m.menu.right.toFixed(0)}`);
-      // The picker opens below the row, whole and inside the safe area, and Escape closes it, with the chat still closed.
-      await t.page.getByRole("button", { name: "Quick reactions", exact: true }).click();
-      const picker = await t.page.locator("#quick-reaction-picker").evaluate((el) => {
+        if (Math.abs(other.top - mine.top) > 0.5 || Math.abs(other.left - mine.left) > 0.5) bad(`the button moved between turns: ${JSON.stringify(other)} before, ${JSON.stringify(mine)} now`);
+      } else dockTop.set(key, mine);
+      console.log(`dock ${tag}: ${m.targets.length} targets, Open chat x ${m.chat.left.toFixed(0)}-${m.chat.right.toFixed(0)}, y ${m.chat.top.toFixed(0)}-${m.chat.bottom.toFixed(0)}, Table menu x ${m.menu.left.toFixed(0)}-${m.menu.right.toFixed(0)}`);
+      // #899: Open chat is the one button; the panel it opens has the emoji, whole and inside the safe area, below the button.
+      await t.page.getByRole("button", { name: /^Open chat/ }).click();
+      await t.page.getByTestId("emoji-row").waitFor();
+      const row = await t.page.getByTestId("emoji-row").evaluate((el) => {
         const r = el.getBoundingClientRect();
         return { left: r.left, top: r.top, right: r.right, bottom: r.bottom };
       });
-      if (picker.left < safe.left || picker.right > safe.right || picker.top < m.qr.bottom || picker.bottom > safe.bottom) bad(`the reaction picker is not inside the safe area, below the buttons ${JSON.stringify(picker)}`);
-      await t.page.keyboard.press("Escape");
-      await t.page.locator("#quick-reaction-picker").waitFor({ state: "detached" });
-      if (await store(t, () => window.__emberisle.getState().chatOpen)) bad("opening the reaction picker opened the chat");
+      if (row.left < safe.left || row.right > safe.right || row.top < m.chat.bottom || row.bottom > safe.bottom) bad(`the panel's emoji row is not inside the safe area, below the button ${JSON.stringify(row)}`);
+      await t.page.getByRole("button", { name: "Minimize chat" }).click();
+      await t.page.getByRole("button", { name: /^Open chat/ }).waitFor();
       if (checkBanner && size.width === 390) {
         await t.page.evaluate(() => window.__emberisle.setState({ banner: "Ember's roll · Ember +2 timber · Ember +1 grain · Pine +2 timber · Pine +1 grain · Tide +2 timber · Tide +1 grain · Moss +2 timber · Moss +1 grain · bank short of timber and grain" }));
         await t.page.getByTestId("banner").waitFor();
         const shown = await dockLayout(t);
         const banner = shown.status.find((x) => x.id === "banner");
         if (!banner || banner.bottom - banner.top < 90) bad("a multi-seat roll status did not wrap to four lines");
-        if (banner && [shown.qr, shown.chat].some((r) => hit(r, banner))) bad("a button overlaps the visible status banner");
-        if (Math.abs(shown.qr.top - m.qr.top) > 0.5 || Math.abs(shown.chat.top - m.chat.top) > 0.5 || Math.abs(shown.qr.left - m.qr.left) > 0.5) bad("showing the status banner moved the buttons");
+        if (banner && hit(shown.chat, banner)) bad("Open chat overlaps the visible status banner");
+        if (Math.abs(shown.chat.top - m.chat.top) > 0.5 || Math.abs(shown.chat.left - m.chat.left) > 0.5) bad("showing the status banner moved the button");
         await t.page.evaluate(() => window.__emberisle.setState({ banner: null }));
         await t.page.waitForFunction(() => !document.querySelector('[data-testid="banner"]'));
       }
@@ -1092,57 +1278,79 @@ try {
   await b.page.getByPlaceholder("Say something…").fill("@Ember polish");
   await b.page.getByPlaceholder("Say something…").press("Enter");
   await a.page.getByTestId("chat-log").locator("mark").getByText("@Ember", { exact: true }).waitFor();
-  await a.page.getByRole("button", { name: "Emotes", exact: true }).click();
-  await a.page.getByTestId("emote-tray").waitFor();
-  await polish(a, "open with emotes and mention", undefined, 13);
-  await a.page.getByRole("button", { name: "Emotes", exact: true }).click();
-  const logKey = () => a.page.evaluate(() => localStorage.getItem("emberisle-log-filter"));
-  await a.page.getByRole("button", { name: "Chat", exact: true }).click();
-  await until(async () => ((await rowsOf(a)).length === 0 ? true : null), "the Chat chip hides the game rows");
-  check((await a.page.getByTestId("chat-log").locator("li", { hasText: "hello" }).count()) === 1 && (await logKey()) === "chat", 'game log: the Chat chip keeps the chat lines and stores "chat"');
-  await polish(a, "Chat filter selected", undefined, 12);
-  await a.page.getByRole("button", { name: "All", exact: true }).click();
+  await a.page.getByTestId("emoji-row").waitFor();
+  await polish(a, "open with the emoji and a mention", undefined, 12);
+  await showTab(a, "Sounds & stickers");
+  await polish(a, "Sounds & stickers tab", undefined, 13);
+  const deskBoard = await a.page.getByTestId("soundboard").evaluate((el) => {
+    const panel = document.querySelector('section[aria-label="Table chat"]').getBoundingClientRect();
+    const rail = document.querySelector("aside").getBoundingClientRect();
+    const chips = [...el.querySelectorAll("button")].map((b) => b.getBoundingClientRect());
+    return { n: chips.length, wide: el.scrollWidth > el.clientWidth + 0.5, inside: chips.every((r) => r.left >= panel.left && r.right <= panel.right && r.bottom <= panel.bottom), font: parseFloat(getComputedStyle(el.querySelector("button")).fontSize), clearOfRail: panel.left >= rail.right + 100 };
+  });
+  check(deskBoard.n === 9 && !deskBoard.wide && deskBoard.inside && deskBoard.font >= 14 && deskBoard.clearOfRail, `desktop: Sounds & stickers shows all 9 chips at ${deskBoard.font}px with no sideways scroll, in a panel clear of the seat rail`);
+  await shot(a, "chat-desktop-sounds.jpg");
+  await showTab(a, "Chat");
+  // The panel remembers the last tab: a page reload in the same browser starts on it.
+  check((await a.page.evaluate(() => localStorage.getItem("emberisle-chat-tab"))) === "chat", 'tabs: the panel remembers the last tab ("chat")');
+  // #899 (owner decision): the Chat tab has no Chat / All / Copy log row. It always lists the game rows with the chat, and
+  // Copy log is a plain row in the Table menu.
   const shown = await until(async () => {
     const r = await rowsOf(a);
     return r.length >= 3 ? r : null;
-  }, "the All chip shows the game rows again");
-  check((await logKey()) === "all", 'game log: the All chip stores "all"');
+  }, "the Chat tab lists the game rows");
+  const dockRow = await a.page.evaluate(() => {
+    const sec = document.querySelector('section[aria-label="Table chat"]');
+    return { filters: sec.querySelectorAll(".chat-filters, [aria-pressed]").length, buttons: [...sec.querySelectorAll("button:not([role=tab])")].map((b) => b.textContent.trim()).filter((t) => ["Chat", "All", "Copy log", "Copied"].includes(t)) };
+  });
+  check(dockRow.filters === 0 && dockRow.buttons.length === 0 && (await a.page.getByTestId("chat-log").locator("li", { hasText: "hello" }).count()) === 1, `game log: no Chat / All / Copy log row in the dock (${JSON.stringify(dockRow)}); the log keeps the chat lines and ${shown.length} game rows`);
+  await polish(a, "Chat tab without the filter row", undefined, 12);
+  const menuCopyLog = async (t) => {
+    await t.page.getByRole("button", { name: "Table menu", exact: true }).click();
+    await t.page.getByRole("dialog", { name: "Table menu" }).getByRole("button", { name: "Copy log", exact: true }).click();
+  };
   await a.page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
-  await a.page.getByRole("button", { name: "Copy log" }).click();
-  await a.page.getByRole("button", { name: "Copied" }).waitFor({ timeout: 5000 });
+  await menuCopyLog(a);
+  await a.page.getByRole("dialog", { name: "Table menu" }).getByRole("button", { name: "Copied", exact: true }).waitFor({ timeout: 5000 });
   const copied = await a.page.evaluate(() => navigator.clipboard.readText());
   const wanted = await store(a, () => window.__emberisle.getState().gameLog.map((l) => l.text).join("\n"));
-  check(copied === wanted && copied.split("\n").length === shown.length, `game log: ${shown.length} rows, copy ok`);
+  check(copied === wanted && copied.split("\n").length === shown.length, `game log: Copy log in the Table menu copies all ${shown.length} rows`);
   await shot(a, "chat-game-log.jpg");
+  await a.page.keyboard.press("Escape");
+  await a.page.getByRole("dialog", { name: "Table menu" }).waitFor({ state: "detached" });
   // #343: with no clipboard (a LAN address over plain http) Copy log shows the log in a read-only field, focused and selected.
   await a.page.evaluate(() => Object.defineProperty(navigator, "clipboard", { value: undefined, configurable: true }));
-  await a.page.getByRole("button", { name: "Copy log" }).click();
+  await menuCopyLog(a);
   const fallback = await a.page
     .waitForFunction(
       () => {
         const el = document.querySelector('[data-testid="copy-fallback"]');
         if (!el || document.activeElement !== el) return null;
-        return { value: el.value, readOnly: el.readOnly, selected: el.selectionStart === 0 && el.selectionEnd === el.value.length, live: document.querySelector('[data-testid="copy-status"]')?.textContent };
+        return { value: el.value, readOnly: el.readOnly, selected: el.selectionStart === 0 && el.selectionEnd === el.value.length, live: document.querySelector('[data-testid="copy-status"]')?.textContent, inMenu: !!el.closest('[role="dialog"]') };
       },
       null,
       { timeout: 5000 },
     )
     .then((h) => h.jsonValue());
-  check(fallback.value === wanted && fallback.readOnly && fallback.selected && fallback.live === "Select and copy", "game log: without a clipboard, Copy log shows the log in a focused, selected read-only field and says so");
-  await polish(a, "copy fallback", undefined, 13);
+  check(fallback.value === wanted && fallback.readOnly && fallback.selected && fallback.live === "Select and copy" && fallback.inMenu, "game log: without a clipboard, the Table menu's Copy log shows the log in a focused, selected read-only field and says so");
+  await a.page.keyboard.press("Escape");
+  await a.page.getByRole("dialog", { name: "Table menu" }).waitFor({ state: "detached" });
   await phone.page.evaluate(() => Object.defineProperty(navigator, "clipboard", { value: undefined, configurable: true }));
-  await phone.page.getByRole("button", { name: "Copy log" }).click();
+  if (await store(phone, () => window.__emberisle.getState().chatOpen)) await phone.page.getByRole("button", { name: "Minimize chat" }).click();
+  await menuCopyLog(phone);
   await phone.page.getByTestId("copy-fallback").waitFor();
-  await polish(phone, "copy fallback", undefined, 13);
+  check((await phone.page.getByTestId("copy-fallback").inputValue()) === (await store(phone, () => window.__emberisle.getState().gameLog.map((l) => l.text).join("\n"))), "game log: on the phone the Table menu's Copy log shows the whole log");
+  await phone.page.keyboard.press("Escape");
+  await phone.page.getByRole("dialog", { name: "Table menu" }).waitFor({ state: "detached" });
 
-  // A real watcher exposes the muted read-only note, as well as the filters and copy fallback, at both sizes.
+  // A real watcher exposes the muted read-only note, and Copy log from the Table menu, at both sizes.
   for (const isPhone of [false, true]) {
     const reader = await tab("Reader", isPhone);
     await reader.page.getByPlaceholder(/code/i).fill(tableCode);
     await reader.page.getByRole("button", { name: "Watch", exact: true }).click();
     await reader.page.getByRole("button", { name: "Open chat" }).click();
     await reader.page.getByTestId("chat-readonly").waitFor();
-    check(await reader.page.getByTestId("quick-reactions").count() === 0, `quick reactions: ${isPhone ? "phone" : "desktop"} watcher has no sender control`);
+    check(await reader.page.getByTestId("emoji-row").count() === 0 && await reader.page.getByRole("tab").count() === 0 && await reader.page.getByRole("button", { name: /^(React |Play sound |Quick reactions)/ }).count() === 0, `chat panel: ${isPhone ? "phone" : "desktop"} watcher has no emoji, tabs, sounds or stickers`);
     const refused = await reader.page.evaluate((code) => new Promise((resolve, reject) => {
       const socket = new WebSocket(new URLSearchParams(location.search).get("host"));
       const frames = [];
@@ -1161,11 +1369,14 @@ try {
       };
     }), tableCode);
     check(refused, "quick reactions: host rejects an allowlisted emoji forged by a watcher");
-    await polish(reader, "read-only", undefined, 4);
+    // Mute and Minimize are the watcher's only controls in the dock (#899: the filter row is gone).
+    await polish(reader, "read-only", undefined, 2);
+    check((await reader.page.locator('section[aria-label="Table chat"] [aria-pressed]').count()) === 0 && (await reader.page.getByTestId("chat-log").getByTestId("log-row").count()) > 0, `watcher ${isPhone ? "phone" : "desktop"}: no filter row, and the log lists the game rows`);
     await reader.page.evaluate(() => Object.defineProperty(navigator, "clipboard", { value: undefined, configurable: true }));
-    await reader.page.getByRole("button", { name: "Copy log" }).click();
+    if (await store(reader, () => window.__emberisle.getState().chatOpen)) await reader.page.getByRole("button", { name: "Minimize chat" }).click();
+    await menuCopyLog(reader);
     await reader.page.getByTestId("copy-fallback").waitFor();
-    await polish(reader, "read-only copy fallback", undefined, 5);
+    check(await reader.page.getByTestId("copy-fallback").evaluate((el) => el.readOnly && el.value.length > 0), `watcher ${isPhone ? "phone" : "desktop"}: the Table menu's Copy log shows the log to copy`);
     await reader.page.context().close();
   }
 
@@ -1193,12 +1404,13 @@ try {
   await phone.page.getByRole("button", { name: /^Open chat/ }).waitFor();
   for (const i of [1, 2, 3, 4, 5, 6]) await SAY(a, `game line ${i}`);
   await until(async () => (await phone.page.getByTestId("chat-unread").textContent().catch(() => "")) === "6", "Moss's badge counts six unread lines");
-  const peek = phone.page.getByTestId("chat-unread-preview");
-  await until(async () => (await peek.count()) === 1 && (await peek.textContent()).includes("game line 6"), "an unread line stays up as a preview", 15_000);
-  check((await peek.textContent()).includes("+5 more"), "phone game: the unread preview shows the newest line and how many more are waiting");
+  // #899 (owner decision): with the sheet closed the newest line is a bubble under Ember's strip cell, not a preview pill.
+  const aPlayer = await store(a, () => window.__emberisle.getState().localId);
+  await phone.page.getByTestId(`seat-${aPlayer}`).getByTestId("chat-bubble").filter({ hasText: "game line 6" }).waitFor({ timeout: 5000 });
+  check((await phone.page.getByTestId("chat-preview").count()) === 0 && (await phone.page.getByTestId("chat-unread-preview").count()) === 0, "phone game: the newest unread line bubbles at the sender's strip cell; no preview pill shows");
   const holeBefore = await hole(phone);
   await shot(phone, "chat-game-closed-440x956.jpg");
-  await peek.click();
+  await phone.page.getByRole("button", { name: "Open chat, 6 unread", exact: true }).click();
   await phone.page.getByTestId("chat-sheet").waitFor();
   await new Promise((r) => setTimeout(r, 800));
   check((await phone.page.getByTestId("chat-unread").count()) === 0, "phone game: opening the chat clears the unread badge");
@@ -1207,10 +1419,15 @@ try {
     await new Promise((r) => setTimeout(r, 700));
     if (!(await phone.page.getByTestId("chat-sheet").count())) await phone.page.getByRole("button", { name: /^Open chat/ }).click();
     await phone.page.getByTestId("chat-sheet").waitFor();
-    await phone.page.getByRole("button", { name: "Chat", exact: true }).click();
     const v = await logView(phone);
     check(v.whole >= 4 && v.newest && v.newestText.includes("game line 6") && v.font >= 14, `phone game ${v.size} ${JSON.stringify(v)}: ${v.whole} whole chat lines on screen, newest ("${v.newestText.trim()}") visible, ${v.font}px text`);
     if (w === 440) await shot(phone, "chat-game-440x956.jpg");
+    // #899: at every size and on both tabs the sheet starts below the seat strip and the 56 px bubble band under it (16 px gap, 40 px bubble).
+    for (const tab of ["Sounds & stickers", "Chat"]) {
+      await showTab(phone, tab);
+      const g = await phone.page.evaluate(() => ({ sheet: document.querySelector('[data-testid="chat-sheet"]').getBoundingClientRect().top, strip: document.querySelector('[data-testid="seat-strip"]').getBoundingClientRect().bottom }));
+      check(g.sheet >= g.strip + 56, `phone game ${w}x${h} ${tab} tab: the sheet (top ${Math.round(g.sheet)}) leaves the seat strip (bottom ${Math.round(g.strip)}) and its bubble band clear`);
+    }
     check((await phone.page.getByRole("button", { name: "Minimize chat" }).textContent()).trim() === "Close", `phone game ${v.size}: the sheet has a labelled Close`);
   }
   await phone.page.setViewportSize({ width: 440, height: 956 });
@@ -1225,7 +1442,7 @@ try {
     await phone.page.getByRole("button", { name: "Minimize chat" }).click();
   }
   await phone.page.setViewportSize({ width: 844, height: 390 });
-  await phone.page.getByRole("button", { name: "Quick reactions", exact: true }).waitFor();
+  await phone.page.getByRole("button", { name: /^Open chat/ }).waitFor();
   await phone.page.getByRole("button", { name: "Table menu", exact: true }).tap();
   const tableMenu = phone.page.getByRole("dialog", { name: "Table menu" });
   await tableMenu.waitFor();
@@ -1238,7 +1455,7 @@ try {
     const target = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
     return target === button || button.contains(target);
   });
-  check(onTop, "landscape phone: the Table menu Leave action is topmost above Quick reactions at 844x390");
+  check(onTop, "landscape phone: the Table menu Leave action is topmost above Open chat at 844x390");
   await leave.tap();
   await phone.page.waitForFunction(() => window.__emberisle.getState().screen === "title");
 

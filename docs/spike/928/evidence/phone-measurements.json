@@ -1,0 +1,160 @@
+{
+  "before": {
+    "resources": [],
+    "scrollX": 0,
+    "scrollY": 0
+  },
+  "metrics": {
+    "loadMs": 689.3999999999069,
+    "metadata": {
+      "width": 580,
+      "height": 320,
+      "frameRate": 24,
+      "numFrames": 79,
+      "swfVersion": 6,
+      "backgroundColor": "#FFFFFF",
+      "isActionScript3": false,
+      "uncompressedLength": 236799
+    },
+    "raf": {
+      "frames": 301,
+      "seconds": 5,
+      "p50": 16.69999999999891,
+      "p95": 16.799999999999272,
+      "max": 16.80000000000109
+    },
+    "scroll": {
+      "x": 0,
+      "y": 0,
+      "width": 390
+    },
+    "stage": {
+      "x": 12,
+      "y": 189.875,
+      "width": 366,
+      "height": 201.921875,
+      "top": 189.875,
+      "right": 378,
+      "bottom": 391.796875,
+      "left": 12
+    },
+    "touchPoints": 1,
+    "volume": 0,
+    "events": [
+      {
+        "code": "ArrowLeft",
+        "down": true,
+        "t": 4991.899999999907
+      },
+      {
+        "code": "ArrowLeft",
+        "down": false,
+        "t": 5860.899999999907
+      },
+      {
+        "code": "ArrowRight",
+        "down": true,
+        "t": 6004.5
+      },
+      {
+        "code": "ArrowRight",
+        "down": false,
+        "t": 6871.5
+      }
+    ],
+    "resources": [
+      {
+        "name": "http://127.0.0.1:8098/runtime/ruffle.js",
+        "bytes": 465885,
+        "duration": 6.2000000001862645
+      },
+      {
+        "name": "http://127.0.0.1:8098/runtime/core.ruffle.16d61072ac7fdc4d5013.js",
+        "bytes": 108322,
+        "duration": 6.5
+      },
+      {
+        "name": "http://127.0.0.1:8098/runtime/172de42e6619eac8f371.wasm",
+        "bytes": 14302754,
+        "duration": 110
+      },
+      {
+        "name": "http://127.0.0.1:8098/sandwichStacker.swf",
+        "bytes": 183738,
+        "duration": 36.90000000037253
+      },
+      {
+        "name": "http://127.0.0.1:8098/favicon.ico",
+        "bytes": 9,
+        "duration": 3.599999999627471
+      }
+    ]
+  },
+  "unloaded": {
+    "loaded": false,
+    "players": 0,
+    "open": false
+  },
+  "reopened": {
+    "loaded": true,
+    "players": 1
+  },
+  "logs": [
+    {
+      "type": "log",
+      "text": "%cINFO%c web/src/lib.rs:1416%c Ruffle WASM module has been initialized color: whitesmoke; background: #444 color: gray; font-style: italic color: inherit"
+    },
+    {
+      "type": "log",
+      "text": "Running on a mobile device; defaulting to low quality"
+    },
+    {
+      "type": "log",
+      "text": "%cNew Ruffle instance created (Version: 0.7.1 | WebAssembly extensions: ON | Used renderer: webgl) background: #37528C; color: #FFAD33"
+    },
+    {
+      "type": "log",
+      "text": "Loading SWF file ./sandwichStacker.swf"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "type": "log",
+      "text": "Ruffle instance destroyed."
+    },
+    {
+      "type": "log",
+      "text": "Running on a mobile device; defaulting to low quality"
+    },
+    {
+      "type": "log",
+      "text": "%cNew Ruffle instance created (Version: 0.7.1 | WebAssembly extensions: ON | Used renderer: webgl) background: #37528C; color: #FFAD33"
+    },
+    {
+      "type": "log",
+      "text": "Loading SWF file ./sandwichStacker.swf"
+    },
+    {
+      "type": "log",
+      "text": "Ruffle instance destroyed."
+    },
+    {
+      "type": "log",
+      "text": "Running on a mobile device; defaulting to low quality"
+    },
+    {
+      "type": "log",
+      "text": "%cNew Ruffle instance created (Version: 0.7.1 | WebAssembly extensions: ON | Used renderer: webgl) background: #37528C; color: #FFAD33"
+    },
+    {
+      "type": "log",
+      "text": "Loading SWF file ./sandwichStacker.swf"
+    },
+    {
+      "type": "log",
+      "text": "Ruffle instance destroyed."
+    }
+  ]
+}
