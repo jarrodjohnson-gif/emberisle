@@ -18,8 +18,8 @@ const EXCLUDE_NAME = ["AGENTS.md", "CLAUDE.md", "CODEOWNERS", ".gitignore"];
 const EXCLUDE_SUFFIX = [".mjs", ".ts"];
 // Only added and modified files qualify: no removed, renamed, copied or mode-changed ("changed") files.
 const STATUSES = ["added", "modified"];
-// The desk's own write-access accounts. Anyone can comment on a public PR, so other authors' markers are ignored.
-const TRUSTED = ["OWNER", "MEMBER", "COLLABORATOR"];
+// The desk posts as the owner account. Builders, collaborators included, never sign off their own PRs, so only the owner's marker counts.
+const TRUSTED = ["OWNER"];
 // GitHub Actions' app id, the integration the ruleset requires for `checks`.
 const ACTIONS_APP_ID = 15368;
 const SHA = /^[0-9a-f]{40}$/;
