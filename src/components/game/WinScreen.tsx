@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { type CSSProperties, useEffect, useRef, useState } from "react";
 import { VictoryTargetSelect } from "@/components/game/VictoryTargetSelect";
 import { Button } from "@/components/ui/button";
-import { SeatDot } from "@/components/game/SeatDot";
+import { SeatDot, TurnMark } from "@/components/game/SeatDot";
 import { totalVP, victoryTarget } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
 import { useViewport } from "@/lib/viewport";
@@ -164,8 +164,16 @@ function Panel() {
               {rows.map((r) => (
                 <tr key={r.p.id} data-testid="win-row" data-player={r.p.id} className="border-t border-border">
                   <td className="px-1 py-2 short:py-0.5 short:px-1 text-left font-medium sm:px-2 whitespace-nowrap short:text-xs">
-                    <SeatDot color={r.p.color} className="mr-1.5 size-3 align-[-2px]" />
-                    {r.p.name}
+                    {/* #531: the row of the seat whose turn it was wears the turn ring and mark (not a second [data-current-turn]: the rail or strip behind this sheet has the one). */}
+                    <span
+                      className="turn-chip"
+                      data-turn-ring={r.p.id === state.current ? "true" : undefined}
+                      style={r.p.id === state.current ? ({ "--seat-color": r.p.color } as CSSProperties) : undefined}
+                    >
+                      <SeatDot color={r.p.color} className="mr-1.5 size-3 align-[-2px]" />
+                      {r.p.name}
+                      {r.p.id === state.current ? <TurnMark /> : null}
+                    </span>
                   </td>
                   <td className={cell}>{r.outposts}</td>
                   <td className={cell}>{r.strongholds}</td>

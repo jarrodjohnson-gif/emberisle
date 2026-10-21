@@ -1,11 +1,11 @@
 // The ask-the-table toast (docs/BUILD_BIBLE.md 4.4): "Ember offers 2 sheep for 1 ore", Yes / No, and the 20 s left.
 // The asker sees the same offer with who has declined, then the outcome for a moment.
-import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import { type CSSProperties, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Check, Hourglass, X } from "lucide-react";
 import { useViewport } from "@/lib/viewport";
 import { Button } from "@/components/ui/button";
-import { SeatDot } from "@/components/game/SeatDot";
+import { SeatDot, TurnMark } from "@/components/game/SeatDot";
 import { bagText } from "@/lib/game/trade";
 import { useGame } from "@/lib/game/store";
 import { RESOURCES, RESOURCE_LABEL } from "@/lib/game/types";
@@ -36,6 +36,7 @@ export function TradeToast() {
   const outcome = useGame((s) => s.tradeOutcome);
   const takerId = useGame((s) => s.tradeTaker);
   const players = useGame((s) => s.state?.players);
+  const turnId = useGame((s) => s.state?.current);
   const localId = useGame((s) => s.localId);
   // A watcher (docs/design/spectator.md) reads the offer and the clock, with no Yes or No.
   const spectator = useGame((s) => s.spectator);
@@ -168,11 +169,17 @@ export function TradeToast() {
     );
   }
 
+  // #531: an offer from the seat on turn (the only seat that can offer) wears that seat's turn ring and mark. The offer is the toast's
+  // one seat chip; the response rows list the other seats, none of which is on turn. Not a second [data-current-turn]: the rail or
+  // strip has the one.
+  const onTurn = !!offer && offer.from === turnId;
   const card = (
     <section
       ref={dock}
       data-testid="trade-toast"
       className={`trade-dock pointer-events-auto shrink-0 rounded-chip p-2${aboveChat ? " trade-above-chat" : ""}`}
+      data-turn-ring={onTurn ? "true" : undefined}
+      style={onTurn ? ({ "--seat-color": players?.find((p) => p.id === offer?.from)?.color } as CSSProperties) : undefined}
       role="region"
       aria-label="Trade offer"
       aria-labelledby={lineId}
@@ -181,6 +188,7 @@ export function TradeToast() {
         if (answering && e.key === "Escape") answerTrade(false);
       }}
     >
+      {onTurn ? <TurnMark /> : null}
       {body}
     </section>
   );
