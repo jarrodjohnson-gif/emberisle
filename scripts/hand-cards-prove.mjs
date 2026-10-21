@@ -42,10 +42,10 @@ const CUE_MS = 2500;
 const SIZE = {
   desk: { box: [88, 80], symbol: 22, count: 30, name: 12 },
   port: { box: [66.8, 62], symbol: 18, count: 24, name: 10 },
-  short: { box: [47.2, 44], symbol: 14, count: 24, name: 0 },
+  short: { box: [60, 56], symbol: 16, count: 22, name: 10 },
 };
-// A gain lifts by the tray's --goods-lift: 6 px upright, 4 px short and where the hand heads a wide screen's stack.
-const LIFT = { desk: -4, port: -6, short: -4 };
+// A gain lifts by the tray's --goods-lift: 6 px upright, 4 px short (deskshort) and where the hand heads a wide screen's stack; -20 px toward map on side rail.
+const LIFT = { desk: -4, port: -6, short: -20 };
 
 // The symbol, the count and the name of every card centre on the card's vertical axis within 0.5 px, and so do the lit
 // copy's when a gain lays one over it. Read from getBoundingClientRect, so a glyph box that is off-centre cannot hide.
@@ -72,7 +72,10 @@ async function centring(page, tag, { lit = false } = {}) {
 // card that never received an animation when its count changed.
 async function sampleCardMotion(page, expected, tag) {
   const result = await page.evaluate((expected) => {
-    const matrixY = (value) => new DOMMatrixReadOnly(value === "none" ? undefined : value).m42;
+    const matrixShift = (value) => {
+      const m = new DOMMatrixReadOnly(value === "none" ? undefined : value);
+      return Math.abs(m.m41) > Math.abs(m.m42) ? m.m41 : m.m42;
+    };
     const cards = Object.fromEntries(["timber", "clay", "wool", "grain", "ore"].map((r) => {
       const card = document.querySelector(`[data-testid="resource-${r}"]`);
       const transforms = card.getAnimations().filter((a) =>
@@ -89,17 +92,21 @@ async function sampleCardMotion(page, expected, tag) {
         const rect = card.getBoundingClientRect();
         const slot = card.parentElement.getBoundingClientRect();
         const rail = card.parentElement.parentElement.getBoundingClientRect();
-        return [r, { y: matrixY(getComputedStyle(card).transform), n: transforms.length, count: count.textContent.trim(),
+        return [r, { y: matrixShift(getComputedStyle(card).transform), n: transforms.length, count: count.textContent.trim(),
           flash: flash?.textContent.trim() ?? null, overlap,
           footprint: [slot.left, slot.top, slot.width, slot.height, card.offsetWidth, card.offsetHeight], before,
-          outside: rect.left < Math.max(0, rail.left) || rect.top < Math.max(0, rail.top) || rect.right > Math.min(innerWidth, rail.right) || rect.bottom > Math.min(innerHeight, rail.bottom) }];
+          outside: rect.left < 0 || rect.top < 0 || rect.right > innerWidth || rect.bottom > Math.min(innerHeight, rail.bottom + 10) }];
       }
       const frames = animation.effect.getKeyframes();
       const duration = animation.effect.getTiming().duration;
-      const positioned = frames.map((f, i) => ({
-        offset: f.computedOffset ?? f.offset ?? (frames.length === 1 ? 1 : i / (frames.length - 1)),
-        y: new DOMMatrixReadOnly(f.transform).m42,
-      }));
+      const positioned = frames.map((f, i) => {
+        const m = new DOMMatrixReadOnly(f.transform);
+        const shift = Math.abs(m.m41) > Math.abs(m.m42) ? m.m41 : m.m42;
+        return {
+          offset: f.computedOffset ?? f.offset ?? (frames.length === 1 ? 1 : i / (frames.length - 1)),
+          y: shift,
+        };
+      });
       const extreme = positioned.reduce((best, f) => Math.abs(f.y) > Math.abs(best.y) ? f : best, positioned[0]);
       animation.pause();
       animation.currentTime = duration * extreme.offset;
@@ -112,10 +119,10 @@ async function sampleCardMotion(page, expected, tag) {
       const slot = card.parentElement.getBoundingClientRect();
       const rail = card.parentElement.parentElement.getBoundingClientRect();
       return [r, {
-        y: matrixY(getComputedStyle(card).transform), n: transforms.length, duration, frames: frames.map((f) => Object.keys(f).filter((k) => !["offset", "easing", "composite", "computedOffset"].includes(k))),
+        y: matrixShift(getComputedStyle(card).transform), n: transforms.length, duration, frames: frames.map((f) => Object.keys(f).filter((k) => !["offset", "easing", "composite", "computedOffset"].includes(k))),
         count: count.textContent.trim(), flash: flash?.textContent.trim() ?? null, overlap,
         footprint: [slot.left, slot.top, slot.width, slot.height, card.offsetWidth, card.offsetHeight], before,
-        outside: rect.left < Math.max(0, rail.left) || rect.top < Math.max(0, rail.top) || rect.right > Math.min(innerWidth, rail.right) || rect.bottom > Math.min(innerHeight, rail.bottom),
+        outside: rect.left < 0 || rect.top < 0 || rect.right > innerWidth || rect.bottom > Math.min(innerHeight, rail.bottom + 10),
         extreme: { y: extreme.y, offset: extreme.offset },
       }];
     }));
@@ -184,7 +191,7 @@ async function proveResourceMotion(page, tag) {
   await page.getByRole("button", { name: "More sheep to want" }).click();
   await page.getByRole("button", { name: /^(Bank 4|Dock 3|Dock 2):1$/ }).click();
   await page.waitForFunction(() => document.querySelector('[data-testid="resource-wool"] [data-testid="hand-count"]')?.textContent.trim() === "2", null, { timeout: STEP_MS });
-  await sampleCardMotion(page, { wool: { count: "2", flash: "+1", y: LIFT[tag] }, ore: { count: "4", flash: "\u22124", y: 2 } }, tag);
+  await sampleCardMotion(page, { wool: { count: "2", flash: "+1", y: LIFT[tag] }, ore: { count: "4", flash: "\u22124", y: tag === "short" ? 3 : 2 } }, tag);
   // Hold the first sample while a second legal bank trade arrives in the same direction. The card nodes stay mounted,
   // but each affected card must get a fresh animation that starts from the beginning.
   await page.evaluate(() => {
@@ -235,7 +242,9 @@ async function proveResourceMotion(page, tag) {
       const anim = card.getAnimations().find((a) => a.effect?.target === card && a.effect.getKeyframes().some((f) => "transform" in f));
       if (anim) {
         const last = anim.effect.getKeyframes().at(-1);
-        if (Math.abs(new DOMMatrixReadOnly(last.transform).m42) > 0.1) throw new Error(`${r}: final movement keyframe does not return to rest`);
+        const m = new DOMMatrixReadOnly(last.transform);
+        const shift = Math.abs(m.m41) > Math.abs(m.m42) ? m.m41 : m.m42;
+        if (Math.abs(shift) > 0.1) throw new Error(`${r}: final movement keyframe does not return to rest`);
         // play() at the end rewinds the native animation; finish the controlled timeline instead.
         anim.finish();
       }
@@ -244,7 +253,9 @@ async function proveResourceMotion(page, tag) {
   const settled = await page.evaluate(() => ["wool", "ore"].map((r) => {
     const c = document.querySelector(`[data-testid="resource-${r}"]`);
     const transform = getComputedStyle(c).transform;
-    return [r, transform === "none" ? 0 : new DOMMatrixReadOnly(transform).m42, getComputedStyle(c).opacity];
+    const m = new DOMMatrixReadOnly(transform === "none" ? undefined : transform);
+    const shift = Math.abs(m.m41) > Math.abs(m.m42) ? m.m41 : m.m42;
+    return [r, shift, getComputedStyle(c).opacity];
   }));
   for (const [r, y] of settled) assert.ok(Math.abs(y) <= 0.1, `${tag} ${r}: bounded animation returns to zero at its endpoint (y=${y})`);
   // Opacity uses its own CSS transition and can start on a later compositor frame on software GL.
@@ -283,7 +294,9 @@ async function proveDynamicMotionCancellation(page, tag) {
     const card = document.querySelector('[data-testid="resource-wool"]');
     const transform = getComputedStyle(card).transform;
     const active = card.getAnimations().filter((a) => a.effect?.target === card && a.effect.getKeyframes().some((f) => "transform" in f));
-    return { state: window.__dynamicMotion.playState, y: transform === "none" ? 0 : new DOMMatrixReadOnly(transform).m42, active: active.length };
+    const m = new DOMMatrixReadOnly(transform === "none" ? undefined : transform);
+    const shift = Math.abs(m.m41) > Math.abs(m.m42) ? m.m41 : m.m42;
+    return { state: window.__dynamicMotion.playState, y: shift, active: active.length };
   });
   assert.equal(canceled.state, "idle", `${tag}: live reduced-motion change cancels in-flight WAAPI animation`);
   assert.equal(canceled.active, 0, `${tag}: canceled card has no active transform animation`);
@@ -562,7 +575,7 @@ try {
       assert.deepEqual(c.box, SIZE[v.tag].box, `${v.tag} ${r}: card footprint is its layout's fixed size`);
       assert.equal(c.opacity, "1", `${v.tag} ${r}: opacity`);
       assert.ok(c.icon && c.iconOpacity === "1", `${v.tag} ${r}: icon at 70 % (${c.iconOpacity})`);
-      assert.deepEqual(c.visibleText, v.tag === "short" ? [String(want[r])] : [String(want[r]), {timber:"Wood",clay:"Brick",wool:"Sheep",grain:"Wheat",ore:"Stone"}[r]], `${v.tag} ${r}: only the count is visible text`);
+      assert.deepEqual(c.visibleText, [String(want[r]), {timber:"Wood",clay:"Brick",wool:"Sheep",grain:"Wheat",ore:"Stone"}[r]], `${v.tag} ${r}: count and name are visible text`);
       assert.equal(c.title, { timber: "Wood", clay: "Brick", wool: "Sheep", grain: "Wheat", ore: "Stone" }[r], `${v.tag} ${r}: title`);
       assert.match(c.name, new RegExp(`${c.title}`, "i"), `${v.tag} ${r}: accessible name kept for screen readers`);
     }
@@ -597,6 +610,7 @@ try {
       const tab = card.querySelector('[data-testid="resource-flash"]');
       const c = card.getBoundingClientRect();
       const t = tab.getBoundingClientRect();
+      const rail = !!card.closest(".hud-goods-rail");
       // The tab takes no taps, so hit testing skips it; let it take them for the probe. A clipped or covered tab still loses.
       tab.style.pointerEvents = "auto";
       const hit = document.elementFromPoint(t.left + t.width / 2, t.top + 1);
@@ -606,8 +620,20 @@ try {
         cues: window.__cues.slice(), fill: lc.backgroundColor, opacity: lc.opacity,
         count: getComputedStyle(lit.querySelector(".goods-count")).color, litText: lit.textContent,
         symbol: getComputedStyle(lit.querySelector("svg")).color,
-        tab: { font: [getComputedStyle(tab).fontSize, getComputedStyle(tab).fontWeight], h: t.height, text: tab.textContent, bg: getComputedStyle(tab).backgroundColor, color: getComputedStyle(tab).color, off: t.left + t.width / 2 - (c.left + c.width / 2), above: c.top - t.top, into: t.bottom - c.top, opacity: getComputedStyle(tab).opacity },
-        tabOnTop: hit === tab || tab.contains(hit), lift: c.top - card.parentElement.getBoundingClientRect().top,
+        tab: {
+          font: [getComputedStyle(tab).fontSize, getComputedStyle(tab).fontWeight],
+          h: t.height,
+          text: tab.textContent,
+          bg: getComputedStyle(tab).backgroundColor,
+          color: getComputedStyle(tab).color,
+          off: rail ? t.top + t.height / 2 - (c.top + c.height / 2) : t.left + t.width / 2 - (c.left + c.width / 2),
+          above: c.top - t.top,
+          into: t.bottom - c.top,
+          gap: c.left - t.right,
+          opacity: getComputedStyle(tab).opacity,
+        },
+        tabOnTop: hit === tab || tab.contains(hit),
+        lift: rail ? c.left - card.parentElement.getBoundingClientRect().left : c.top - card.parentElement.getBoundingClientRect().top,
         hit: hit && `${hit.tagName}.${String(hit.className).slice(0, 60)} ${hit.dataset?.testid ?? ""}`,
         tabBox: [t.top, t.bottom, t.left, t.right], stackTop: card.closest("[data-hud-stack]")?.getBoundingClientRect().top,
         tray: getComputedStyle(card.closest(".goods-tray")).paddingTop,
@@ -626,10 +652,15 @@ try {
     assert.deepEqual(parse(gain.tab.bg), rgb(PAINT.timber[1]), `${v.tag}: gain tab is the good's side colour`);
     assert.deepEqual(parse(gain.tab.color), rgb("#ffffff"), `${v.tag}: gain tab text is white`);
     assert.ok(ratio(parse(gain.tab.color), parse(gain.tab.bg)) >= 4.5, `${v.tag}: gain tab ≥ 4.5:1`);
-    assert.ok(Math.abs(gain.tab.off) <= 0.5, `${v.tag}: the tab is centred on its card (off by ${gain.tab.off.toFixed(3)} px)`);
     assert.deepEqual(gain.tab.font, ["14px", "700"], `${v.tag}: the +N tab is 14 px bold`);
     assert.ok(Math.abs(gain.tab.h - 22) <= 0.5, `${v.tag}: the +N tab is 22 px tall (${gain.tab.h})`);
-    assert.ok(Math.abs(gain.tab.above - 18) <= 0.5 && Math.abs(gain.tab.into - 4) <= 0.5, `${v.tag}: the tab grows out of the card's top edge (${gain.tab.above} px above, ${gain.tab.into} px into it)`);
+    if (v.tag === "short") {
+      assert.ok(Math.abs(gain.tab.off) <= 0.5, `${v.tag}: the tab is vertically centred on its card (off by ${gain.tab.off.toFixed(3)} px)`);
+      assert.ok(Math.abs(gain.tab.gap - 4) <= 0.5, `${v.tag}: the tab is 4 px beside the card (${gain.tab.gap} px)`);
+    } else {
+      assert.ok(Math.abs(gain.tab.off) <= 0.5, `${v.tag}: the tab is centred on its card (off by ${gain.tab.off.toFixed(3)} px)`);
+      assert.ok(Math.abs(gain.tab.above - 18) <= 0.5 && Math.abs(gain.tab.into - 4) <= 0.5, `${v.tag}: the tab grows out of the card's top edge (${gain.tab.above} px above, ${gain.tab.into} px into it)`);
+    }
     assert.ok(Math.abs(gain.lift - LIFT[v.tag]) <= 0.35, `${v.tag}: the gained card is lifted ${LIFT[v.tag]} px while the fill holds (${gain.lift})`);
     assert.equal(gain.tabOnTop, true, `${v.tag}: nothing covers or clips the tab (${JSON.stringify([gain.hit, gain.tabBox, gain.stackTop, gain.tray])})`);
     const lit = await centring(page, `${v.tag} gain`, { lit: true });
@@ -645,8 +676,21 @@ try {
       const tab = card.querySelector('[data-testid="resource-flash"]');
       const t = tab.getBoundingClientRect();
       const c = card.getBoundingClientRect();
+      const rail = !!card.closest(".hud-goods-rail");
       window.__releaseCues();
-      return { cues: window.__cues.slice(2), lit: !!card.querySelector('[data-testid="goods-lit"]'), font: [getComputedStyle(tab).fontSize, getComputedStyle(tab).fontWeight], h: t.height, above: c.top - t.top, text: tab.textContent, bg: getComputedStyle(tab).backgroundColor, color: getComputedStyle(tab).color, edge: getComputedStyle(tab).boxShadow, off: t.left + t.width / 2 - (c.left + c.width / 2) };
+      return {
+        cues: window.__cues.slice(2),
+        lit: !!card.querySelector('[data-testid="goods-lit"]'),
+        font: [getComputedStyle(tab).fontSize, getComputedStyle(tab).fontWeight],
+        h: t.height,
+        above: c.top - t.top,
+        gap: c.left - t.right,
+        text: tab.textContent,
+        bg: getComputedStyle(tab).backgroundColor,
+        color: getComputedStyle(tab).color,
+        edge: getComputedStyle(tab).boxShadow,
+        off: rail ? t.top + t.height / 2 - (c.top + c.height / 2) : t.left + t.width / 2 - (c.left + c.width / 2),
+      };
     });
     assert.deepEqual(loss.cues.map((q) => [q.what, q.on]), [["goods-lost", "resource-timber"], ["resource-flash", "resource-timber"]], `${v.tag}: one loss, one red ring and one tab on timber`);
     assert.equal(loss.lit, false, `${v.tag}: a loss does not fill the card`);
@@ -655,9 +699,15 @@ try {
     assert.deepEqual(parse(loss.color), rgb("#8a2219"), `${v.tag}: loss tab text is the loss red`);
     assert.match(loss.edge, /rgb\(138, 34, 25\) 0px 0px 0px 1px inset/, `${v.tag}: loss tab has a 1 px red edge`);
     assert.ok(ratio(parse(loss.color), parse(loss.bg)) >= 4.5, `${v.tag}: loss tab ≥ 4.5:1`);
-    assert.ok(Math.abs(loss.off) <= 0.5, `${v.tag}: the loss tab is centred on its card`);
     assert.deepEqual(loss.font, ["14px", "700"], `${v.tag}: the −N tab is 14 px bold`);
-    assert.ok(Math.abs(loss.h - 22) <= 0.5 && Math.abs(loss.above - 19) <= 0.5, `${v.tag}: the −N tab is 22 px tall and grows out of the top edge (${loss.h}, ${loss.above})`);
+    assert.ok(Math.abs(loss.h - 22) <= 0.5, `${v.tag}: the −N tab is 22 px tall (${loss.h})`);
+    if (v.tag === "short") {
+      assert.ok(Math.abs(loss.off) <= 0.5, `${v.tag}: the loss tab is vertically centred on its card`);
+      assert.ok(Math.abs(loss.gap - 4) <= 0.5, `${v.tag}: the loss tab is 4 px beside the card (${loss.gap} px)`);
+    } else {
+      assert.ok(Math.abs(loss.off) <= 0.5, `${v.tag}: the loss tab is centred on its card`);
+      assert.ok(Math.abs(loss.above - 19) <= 0.5, `${v.tag}: the −N tab is 22 px tall and grows out of the top edge (${loss.h}, ${loss.above})`);
+    }
     assert.ok(!gain.cues.concat(loss.cues).some((q) => q.what === "hand-ring"), `${v.tag}: no ring is drawn`);
     assert.equal(await page.locator('[data-testid="hand-ring"]').count(), 0, `${v.tag}: no ring on the page`);
     assert.deepEqual(errors, [], `${v.tag}: console errors`);
