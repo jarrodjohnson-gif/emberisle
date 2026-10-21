@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Dices,
   Home,
@@ -26,7 +26,7 @@ import { TradeButton } from "@/components/game/TradeButton";
 import { CostChips, hintLine, needLine, priceLabel, shortfall, type Price } from "@/components/game/BuildCost";
 import { useEscapeDisarm } from "@/components/game/escape-disarm";
 import { COST, RESOURCES, type BuildMode, type GameState, type PlayerState } from "@/lib/game/types";
-import { legalCities, legalRoads, legalSettle, totalVP } from "@/lib/game/rules";
+import { legalCities, legalRoads, legalSettle, playable, totalVP } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
 import { LazyBoundary, preloadOnIdle } from "@/lib/lazy";
 import { useViewport } from "@/lib/viewport";
@@ -101,9 +101,9 @@ function armedCopy(mode: BuildMode, roadPicks: number): [string, string] | null 
       return ["Build a stronghold", "Stronghold"];
     // #423: both fortunes are armed from the tray, and the My fortunes button stays pressed until the pick is made or cancelled.
     case "knight":
-      return ["Move the wayfarer", "My fortunes"];
+      return ["Move the wayfarer", "Play fortune"];
     case "roadCard":
-      return [roadPicks ? "Place one more path" : "Place two paths", "My fortunes"];
+      return [roadPicks ? "Place one more path" : "Place two paths", "Play fortune"];
     default:
       return null;
   }
@@ -162,6 +162,14 @@ export function Hud() {
   const fortunesButton = useRef<HTMLButtonElement>(null);
   const turnKey = state ? `${state.turn}|${state.current}|${state.phase}` : "";
   useEffect(() => setFortunesOpen(false), [turnKey]);
+  // #829: the cue glows once per turn. The button is rendered in more than one place (roll, main, robber), so a phase change
+  // remounts it; a ring that mounts for a turn whose glow already started is marked done and does not animate again.
+  const cueKey = state ? `${state.turn}|${state.current}` : "";
+  const glowed = useRef("");
+  const cueRing = useCallback((el: HTMLSpanElement | null) => {
+    if (!el) return;
+    if (glowed.current === cueKey) el.dataset.done = "1";
+  }, [cueKey]);
   const actor = mode === "hotseat" ? (state?.current ?? "") : localId;
   const me = state ? (state.players.find((p) => p.id === actor) ?? state.players[0]!) : null;
   // #776: My fortunes leaves with the last held fortune; when that drops focus to the page, End turn takes it.
@@ -215,17 +223,22 @@ export function Hud() {
         : (state.discardNeeded[actor] ?? 0) > 0
           ? actor
           : null;
-  // #776: "My fortunes · N" opens the tray of held cards. It shows only while a fortune is held or armed, so a fresh hand has no
+  // #776: "Play fortune · N" or "Fortunes · N" opens the tray of held cards. It shows only while a fortune is held or armed, so a fresh hand has no
   // such button; the deck count lives on the Fortune buy tile.
   const deckLeft = state.deckLeft ?? state.deck.length;
+  // #829: on my own turn, the fortunes I can play now (points are never played; ones bought this turn wait). The glow ring is keyed
+  // on the turn, so it runs once when the turn starts and no later state change restarts it.
+  const playableNow = mine && !spectator && !state.playedCard ? (["knight", "road", "plenty", "monopoly"] as const).reduce((n, k) => n + Math.max(0, playable(me, k)), 0) : 0;
+  // Owner decision (#829, provisional): the label itself says a fortune can be played now.
+  const fortunesLabel = playableNow > 0 ? "Play fortune" : "Fortunes";
   const fortunes = showFortunes ? (
     <Button
       ref={fortunesButton}
       size="sm"
       data-testid="fortunes-button"
       data-deck-left={deckLeft}
-      aria-label={`My fortunes, ${heldNow} held`}
-      className="h-11 min-w-11 px-3 text-sm tabular-nums"
+      aria-label={`${fortunesLabel}, ${heldNow} held`}
+      className="relative h-11 min-w-11 px-3 text-sm tabular-nums"
       aria-pressed={fortunesOpen || fortuneArmed}
       aria-expanded={fortunesOpen}
       variant={fortunesOpen || fortuneArmed ? "primary" : "secondary"}
@@ -234,7 +247,8 @@ export function Hud() {
         setFortunesOpen((o) => !o);
       }}
     >
-      My fortunes · {heldNow}
+      {playableNow > 0 && <span key={cueKey} ref={cueRing} onAnimationStart={() => (glowed.current = cueKey)} aria-hidden="true" data-testid="fortune-cue-glow" className="fortune-cue-glow" />}
+      {fortunesLabel} · {heldNow}
     </Button>
   ) : null;
   // Hotseat has no "you": every seat is named. The turn banner sits out once the isle has a ruler (the pill says who).

@@ -101,12 +101,12 @@ try {
       const bar = document.querySelector('[data-testid="fortunes-button"]').parentElement;
       return {
         deck: window.__emberisle.getState().state.deckLeft ?? window.__emberisle.getState().state.deck.length,
-        fortunes: [...document.querySelectorAll("button")].filter((b) => /^My fortunes/.test(b.textContent.trim())).map((b) => b.textContent.trim()),
+        fortunes: [...document.querySelectorAll("button")].filter((b) => /^(Play fortune|Fortunes)/.test(b.textContent.trim())).map((b) => b.textContent.trim()),
         selects: document.querySelectorAll("select").length,
         stale: [...bar.querySelectorAll("button")].map((b) => b.textContent.trim()).filter((t) => /knight|Wayfarer card|Path fortune|Plenty|Monopoly/.test(t)),
       };
     });
-    assert.deepEqual(row.fortunes, ["My fortunes · 6"], `${v.tag}: one My fortunes button with the number held, got ${JSON.stringify(row.fortunes)}`);
+    assert.deepEqual(row.fortunes, ["Play fortune · 6"], `${v.tag}: one fortunes button with the number held, got ${JSON.stringify(row.fortunes)}`);
     // #776: the deck count sits on the Fortune buy tile and in its label.
     assert.equal(await page.getByTestId("deck-left").textContent(), `${row.deck} left`, `${v.tag}: the buy tile shows the deck count`);
     assert.equal(await page.getByTestId("build-card").getAttribute("aria-label"), `Fortune, ${row.deck} left in deck`, `${v.tag}: the buy tile's label says how many are left`);
@@ -173,7 +173,7 @@ try {
     assert.equal(await store(() => window.__emberisle.getState().buildMode), "knight", `${v.tag}: wayfarer armed`);
     assert.equal(await button.getAttribute("aria-pressed"), "true", `${v.tag}: Fortunes pressed while armed`);
     const banner = await page.getByTestId("turn-banner").textContent();
-    assert.match(banner, /Move the wayfarer · (tap My fortunes again to cancel|Esc cancels)/, `${v.tag}: banner "${banner}"`);
+    assert.match(banner, /Move the wayfarer · (tap Play fortune again to cancel|Esc cancels)/, `${v.tag}: banner "${banner}"`);
     await button.click();
     await page.waitForFunction(() => window.__emberisle.getState().buildMode === "none", null, { timeout: STEP_MS });
     await open();
