@@ -85,8 +85,9 @@ async function turn(p, width, height) {
   const insets = NOTCH[width > height ? "landscape" : "portrait"];
   p.insets = insets;
   p.tag = p.tag.replace(/@.*/, "") + `@${width}x${height}`;
-  await p.page.setViewportSize({ width, height });
+  // Set insets before viewport resize so target orientation insets apply immediately, avoiding intermediate notch crush
   await p.cdp.send("Emulation.setSafeAreaInsetsOverride", { insets });
+  await p.page.setViewportSize({ width, height });
   const want = [insets.top, insets.right, insets.bottom, insets.left];
   await until(
     p.page,
@@ -103,6 +104,16 @@ async function turn(p, width, height) {
   );
   // Layout follows the resize event on the next frame; two frames let React commit the portrait/landscape swap.
   await p.page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+  // Ensure post-rotation chrome and offer measurements have settled so transient intermediate heights do not linger.
+  await p.page.waitForFunction(() => {
+    const toast = document.querySelector('[data-testid="trade-toast"]');
+    if (toast) {
+      const h = toast.getBoundingClientRect().height;
+      const rootH = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--active-offer-height") || "0");
+      if (rootH > 0 && Math.abs(rootH - (h + 8)) > 1) return false;
+    }
+    return true;
+  }, null, { timeout: STEP_MS });
 }
 
 async function table(seats, width, height) {
@@ -184,8 +195,8 @@ function measure({ insets, kind }) {
   const overlays = { chat, [kind === "trade" ? "toast" : "prompt"]: kind === "trade" ? toast : prompt };
   const controls = [];
   // The chat sheet's Minimize is a 24 px header control by design (chat-prove and hud-safe-area-prove pin the header's row and its
-  // fit in the landscape safe area), so it is held to its own size plus the safe-area and tappable checks; the sheet's filter
-  // chips, presets and emote picker are #460's compact controls and are not checked here.
+  // fit in the landscape safe area), so it is held to its own size plus the safe-area and tappable checks; the sheet's
+  // tabs, emoji and sound chips are #460's glass controls and are not checked here (#899 removed the filter chips and presets).
   if (chat) controls.push({ ...box(chat.querySelector('button[aria-label="Minimize chat"]')), min: 44 });
   if (kind === "trade") for (const n of [/^Yes$/, /^No$/]) controls.push(box(find(n, toast)));
   else for (const b of prompt.querySelectorAll("button")) controls.push(box(b));
@@ -237,6 +248,35 @@ async function prove(p, label, kind) {
   await page.screenshot({ path: `test-results/rotate-overlays-${p.tag.replace(/[^a-z0-9]+/gi, "-")}-${kind}-${label.replace(/[^a-z0-9]+/gi, "-")}.png` });
 }
 
+// Robust opener wait: ensures opener is attached, visible, enabled, stable, and retries once if not opened in 2s.
+async function openChat(p) {
+  const { page } = p;
+  const opener = page.getByRole("button", { name: /^Open chat/ });
+  const sheet = page.getByTestId("chat-sheet");
+  await opener.waitFor({ state: "visible", timeout: STEP_MS });
+  await page.waitForFunction(
+    () => {
+      const btn = document.querySelector('button[aria-label^="Open chat"]');
+      if (!btn) return false;
+      const b = btn.getBoundingClientRect();
+      const style = getComputedStyle(btn);
+      return b.width >= 40 && b.height >= 40 && style.visibility !== "hidden" && style.display !== "none" && !btn.disabled;
+    },
+    null,
+    { timeout: STEP_MS },
+  );
+  await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+  await opener.click();
+  const opened = await sheet.waitFor({ state: "visible", timeout: 2000 }).then(() => true, () => false);
+  if (!opened) {
+    console.log(`${p.tag}: openChat retry after 2s without chat-sheet`);
+    if (await opener.isVisible()) {
+      await opener.click();
+    }
+    await sheet.waitFor({ state: "visible", timeout: STEP_MS });
+  }
+}
+
 async function run(seats, size, from) {
   const first = from === "portrait" ? size : { width: size.height, height: size.width };
   const second = { width: first.height, height: first.width };
@@ -245,7 +285,7 @@ async function run(seats, size, from) {
   const { page } = p;
   for (const kind of ["trade", "steal"]) {
     await fixture(p, kind);
-    await page.getByRole("button", { name: /^Open chat/ }).click();
+    await openChat(p);
     await prove(p, "open", kind);
     await turn(p, second.width, second.height);
     await prove(p, "rotated", kind);

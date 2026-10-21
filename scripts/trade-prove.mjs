@@ -56,6 +56,8 @@ async function tab(name) {
     window.__heard = [];
     const play = HTMLMediaElement.prototype.play;
     HTMLMediaElement.prototype.play = function () {
+      // #814: the background music is music-prove's, not a table sound.
+      if (this.src.endsWith("/old_tower_inn_loop.mp3")) return play.call(this);
       window.__plays.push(new URL(this.src).pathname);
       window.__heard.push(`${new URL(this.src).pathname.replace("/audio/", "")}@${this.volume}`);
       return play.call(this);
