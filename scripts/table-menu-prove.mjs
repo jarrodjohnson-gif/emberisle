@@ -228,7 +228,7 @@ try {
       assert.ok(kept.path === "simple" && kept.source === "saved", `${v.tag}: the Water choice survives a reload: ${JSON.stringify(kept)}`);
       console.log(`${v.tag}: Water flips the sea crystal <-> simple in place and keeps the choice across a reload`);
     }
-    console.log(`${v.tag}: one ${b.w}x${b.h} menu button top-right, no wordmark; rows ${rows.length}; How to play, sounds, code (${copied}), Leave (asks online, one press in hotseat) all work; Escape and Close refocus the button`);
+    console.log(`${v.tag}: one ${b.w}x${b.h} menu button top-right, no wordmark; rows ${allRows.length}; How to play, sounds, code (${copied}), Leave (asks online, one press in hotseat) all work; Escape and Close refocus the button`);
     await ctx.close();
   }
   assert.deepEqual(errors, [], "console errors");
