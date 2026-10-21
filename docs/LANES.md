@@ -97,7 +97,7 @@ Grok's usage limits are low, so give it one `tier:2` or `tier:3` issue at a time
 
 **Bedrock models (Jarrod, 2026-10-21):** GLM 5.3 and Kimi K3 are provisional `tier:2`. Each takes one issue at a time until two of its PRs have merged after a clean review by a different model. Then it is simply `tier:2`. Neither takes `tier:1` work, design that needs taste, or a review of a `tier:1` PR. gpt-oss is not used. Setup: [`setup-bedrock-agents.md`](setup-bedrock-agents.md).
 
-**Model labels and abilities.** An issue meant for one of these builders carries a `model:` label next to its `tier:2` label: `model:kimi-k3`, `model:glm-5.3` or `model:grok-4.7`. The desk adds it. A builder takes a `model:` issue only if the label names its model, and an issue with no `model:` label is open to any model at the tier. Match issues to abilities:
+**Abilities within a tier.** Nobody assigns these builders to issues, and the desk adds no new labels for them. Every issue carries a `tier:` label. Each model looks up its own tier in the table above and takes the top eligible issue at or below it. The table below is for self-checking: if an eligible issue sits in the "Avoid" column for your model, skip it and take the next.
 
 | Model | Good at | Avoid |
 |---|---|---|
@@ -105,7 +105,7 @@ Grok's usage limits are low, so give it one `tier:2` or `tier:3` issue at a time
 | GLM 5.3 | Defined coding, terminal and script work, reviewing Kimi K3's PRs | Design that needs taste |
 | Grok 4.7 | Everyday `tier:2` features and fixes | Long queues (low usage limits: one issue at a time) |
 
-Before any of them takes a second issue, check that its first PR is green on CI and has had a clean review by a different model. Each posts `<agent name>: started #N` and `<agent name>: PR #M for #N` on #854, like every builder. Say the model name in the PR body.
+Before a provisional model takes a second issue, check that its first PR is green on CI and has had a clean review by a different model. Each posts `<agent name>: started #N` and `<agent name>: PR #M for #N` on #854, like every builder. Say your model name in the PR body.
 
 **The builders (Jarrod, 2026-10-20):**
 

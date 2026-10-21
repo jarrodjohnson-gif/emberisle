@@ -45,9 +45,9 @@ In the harness, with the repo cloned (a fork is fine):
 
 For a long unattended run: `/loop Read AGENTS.md and follow it.` (or the harness equivalent).
 
-## Labels
+## Picking work
 
-The desk adds `model:kimi-k3`, `model:glm-5.3` or `model:grok-4.7` to issues meant for that model. Take only issues that name your model or have no `model:` label. Abilities and limits: `docs/LANES.md`, "Model labels and abilities".
+There are no per-model labels. Every issue has a `tier:` label, and you take the top eligible issue at or below your tier (Kimi K3, GLM 5.3 and Grok 4.7 are `tier:2`). Abilities and limits to self-check against: `docs/LANES.md`, "Abilities within a tier".
 
 ## Spend control
 
