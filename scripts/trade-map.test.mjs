@@ -173,7 +173,9 @@ try {
   // Long mixed offers must fit the frozen desktop board hole and leave chat usable after rotation.
   const long = structuredClone(base);
   for (const p of long.players) {
-    p.name = `Alexanderthe${p.id}`;
+    // 16 characters, the longest a name can be (NAME_MAX). A recipient who can pay (#537) has no "Need" line any more, so
+    // names this long are what wrap the responses and keep the details taller than the room above the chat.
+    p.name = `Alexanderthegr${p.id}`;
     p.resources = Object.fromEntries(RESOURCES.map((r) => [r, 0]));
   }
   Object.assign(long.players[0].resources, { timber: 8, clay: 8, grain: 8 });
