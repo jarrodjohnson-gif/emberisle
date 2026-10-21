@@ -35,6 +35,8 @@ const CEILINGS = [
   // #538: coast inspection UI loads separately; measured 1030 B.
   { name: "DockInspection", gzipBytes: 1200 },
   { name: "HandRates", gzipBytes: 800 },
+  // #832: the online-only timer ballot loads separately (2026-10-20; measured 1.20 kB).
+  { name: "TurnExtensionVote", gzipBytes: 1400 },
 ];
 
 // Growth allowance against the base, in gzip bytes. index is fixed at 400 B; the others take 0.33% of the base size, at least 200 B.

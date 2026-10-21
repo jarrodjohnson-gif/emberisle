@@ -151,6 +151,7 @@ export function Hud() {
   // #492: the sheets chunk is asked for again on each open and at the win (the boundary's key). When the ask made at the
   // win fails, the win screen cannot show and the winner line gets the way out; a failure under an earlier key is not it.
   const sheetsKey = `${tradeOpen}|${howTo}|${costs}|${state?.winner ?? ""}`;
+  const [timerHeader, setTimerHeader] = useState<HTMLDivElement | null>(null);
   const [sheetsLost, setSheetsLost] = useState<string | null>(null);
   useEscapeDisarm();
   const [stackRef, moreBelow] = useMoreBelow();
@@ -307,7 +308,8 @@ export function Hud() {
           a chip and not a button, so a watcher always sees why it has no controls (docs/design/spectator.md). */}
       <header className={cn("hud-header pointer-events-none absolute inset-x-0 top-0 z-20 px-safe pt-[max(0.75rem,env(safe-area-inset-top))] has-[#table-menu]:z-30", phone ? "pb-0" : "pb-3")}>
         <div className="pointer-events-auto flex items-center justify-end gap-1">
-          {phone ? <SeatStrip actor={actor} className="min-w-0 max-w-[48rem] flex-1" /> : <div className="mr-auto">{instruction}</div>}
+          {phone ? <SeatStrip actor={actor} className="min-w-0 max-w-[48rem] flex-1" /> : <div className="mr-auto shrink-0">{instruction}</div>}
+          {phone ? null : <div ref={setTimerHeader} className="mx-2 min-w-0 flex-1 empty:hidden" />}
           {spectator && !(phone && portrait) ? (
             <span data-testid="watching-badge" className="flex h-11 items-center rounded-chip bg-glass px-3 text-caption text-fg backdrop-blur-md">
               Watching
@@ -397,7 +399,7 @@ export function Hud() {
                 pointer-events-none: a porous child would make the stack's chrome only its parts, and the column no rail. */}
             <PlaceChip column />
             {phone ? instruction : null}
-            <TurnCountdown />
+            <TurnCountdown header={phone ? null : timerHeader} />
             {winner || error ? (
               <p className="rounded-[16px] border border-white/50 bg-glass px-3 py-2 text-sm text-zinc-900 backdrop-blur-md">
                 {winner ? <span id="hud-winner">{`${winner.name} wins with ${totalVP(state, winner.id)} points.`}</span> : null}
