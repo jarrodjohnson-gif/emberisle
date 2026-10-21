@@ -6,7 +6,7 @@
 // 5. Once the open table's host drops, the room closes and the list empties.
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import WebSocket from "ws";
@@ -256,6 +256,70 @@ let openCode;
   returning.ws.terminate();
   await settle(1200); // Wait for the held seat to expire.
   assert.deepEqual(await (await fetch(`${baseUrl}/tables`)).json(), [], "list empties when the open table is dropped");
+}
+
+// 9. Restart preserves open visibility; private and legacy snapshots remain unlisted.
+{
+  const stop = async (signal) => {
+    const exited = new Promise((resolve) => host.once("exit", resolve));
+    host.kill(signal);
+    await exited;
+  };
+  await stop("SIGTERM");
+  let restartPort = await boot({ SAVE_MS: "20", LOBBY_HOLD_MS: "10000" });
+  const credentials = [];
+  for (const [name, visibility] of [["Restart-open", "open"], ["Restart-private", "private"], ["Restart-legacy", "private"], ["Restart-invalid", "private"]]) {
+    const c = client(restartPort, name);
+    await c.open;
+    c.send({ type: "hello", name, visibility });
+    const saved = await c.next("welcome");
+    credentials.push({ name, visibility, ...saved });
+  }
+  // Observe actual persisted snapshots before the crash; no fixed save-delay assumption.
+  const deadline = Date.now() + 3000;
+  for (const c of credentials) {
+    let saved;
+    while (Date.now() < deadline) {
+      try { saved = JSON.parse(readFileSync(path.join(ROOMS_DIR, `${c.code}.json`), "utf8")); } catch {}
+      if (saved?.visibility === c.visibility) break;
+      await settle(20);
+    }
+    assert.equal(saved?.visibility, c.visibility, `${c.name} visibility is persisted before crash`);
+  }
+  await stop("SIGKILL");
+  // Exercise old snapshots and invalid visibility values without turning either into a public table.
+  for (const c of credentials.slice(2)) {
+    const file = path.join(ROOMS_DIR, `${c.code}.json`);
+    const saved = JSON.parse(readFileSync(file, "utf8"));
+    if (c.name === "Restart-legacy") delete saved.visibility;
+    else saved.visibility = "OPEN";
+    writeFileSync(file, JSON.stringify(saved));
+  }
+  restartPort = await boot({ SAVE_MS: "20", LOBBY_HOLD_MS: "10000" });
+  const lister = client(restartPort, "restart-observer");
+  await lister.open;
+  lister.send({ type: "list" });
+  assert.deepEqual((await lister.next("openTables")).tables, [], "restored held seats stay unlisted until a player returns");
+  // Rejoin private seats first: they must not take the single open slot.
+  for (const c of [...credentials.slice(1), credentials[0]]) {
+    const returning = client(restartPort, `${c.name}-returning`);
+    await returning.open;
+    returning.send({ type: "hello", code: c.code, secret: c.secret });
+    const welcome = await returning.next("welcome");
+    assert.equal(welcome.code, c.code, `${c.name} recovers the same table after restart`);
+    // Use a fresh observer for each check, preserving pre-seat request limits.
+    const observer = client(restartPort, `${c.name}-observer`);
+    await observer.open;
+    observer.send({ type: "list" });
+    const tables = (await observer.next("openTables")).tables;
+    if (c.visibility === "open") {
+      assert.equal(tables.length, 1, "the open table reappears after restart and authenticated rejoin");
+      assert.equal(tables[0].code, c.code);
+      assert.equal(tables[0].name, "Restart-open's table");
+    } else assert.deepEqual(tables, [], `${c.name} remains private after restart and authenticated rejoin`);
+    observer.ws.terminate();
+  }
+  console.log("restart: open visibility persists through kill -9 and rejoin; private, missing and invalid visibility stay hidden");
 }
 
 console.log("open-table-prove ok: list empty, private never listed, open listed, join via code, parallel private hidden, handoff, bots count, rate limit, cleanup on drop");

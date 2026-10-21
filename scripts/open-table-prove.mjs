@@ -104,7 +104,7 @@ await A.page.getByRole("button", { name: "Host a table" }).click();
 await until(() => A.page.getByTestId("lobby-card").isVisible().catch(() => false), "Jarrod's lobby card", 10000);
 check(true, "Jarrod sees the lobby after hosting an Open table");
 
-// 390×844 first (alone on the title) so the row/Join clip check does not share the /tables poll with another tab.
+// Check the discovery row and Join control on a portrait title before opening another observer.
 const phone = await openTab("Phone", { width: 390, height: 844 });
 await until(
   () => phone.page.getByTestId("open-table-entry").isVisible().catch(() => false),

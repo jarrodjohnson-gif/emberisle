@@ -229,6 +229,7 @@ function save(room) {
 function snapshot(room) {
   return JSON.stringify({
     code: room.code,
+    visibility: room.visibility ?? "private",
     host: room.host,
     next: room.next,
     botDeclined: room.botDeclined ?? {},
@@ -337,6 +338,7 @@ function load() {
         offer: null,
         offerTimer: null,
         botDeclined: saved.botDeclined ?? {},
+        visibility: saved.visibility === "open" ? "open" : "private",
         wayfarerMode: saved.wayfarerMode === "off" ? "off" : "on",
         // Legacy hosted snapshots had no practice-bot seats, so a bot linked to a held seat means takeover.
         recoveryPids: [...new Set([...(Array.isArray(saved.recoveryPids) ? saved.recoveryPids : []), ...legacyRecovery])].slice(-4),
