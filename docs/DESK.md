@@ -22,6 +22,17 @@ Jarrod pastes: `Run the Emberisle review desk. Read docs/DESK.md.`
 - **Delegate reviews** to a fresh subagent with [REVIEWING.md](REVIEWING.md). Reviewers rely on CI and don't rerun the full suite.
 - **Don't write `@codex`** unless you mean to start a Codex task. A mention starts one.
 
+## Before you post a direction, skip, drop or assignment
+
+1. Open the issue itself and read its newest comments and labels. #916, old hub posts and PR titles are hints, never facts.
+2. Quote the comment or label you rely on, with its date, in your post.
+3. Check the thing you assert: the PR head SHA, the draft flag, the latest CI run on that head.
+4. Skip a red from a draft, a superseded head or a cancelled run. Don't explain it on the hub.
+5. Only Jarrod's dated words in an issue or `docs/DECISIONS.md` are policy. Web numbers go in `docs/research/` as notes.
+6. Before you recommend a repo setting, test it against how agents post (one shared account).
+7. Each line in #916 carries `checked: <date>`. Re-verify a line against its issue before you repeat it. "Waiting on Jarrod" lines link the comment where the question sits.
+8. One hub post per round. A correction post means step 1 was skipped, so log the slip in #916.
+
 ## Who reviews
 
 A different model from the builder. Sonnet by default, and never the builder's own model. Opus for server, protocol, CI or security work, and whenever Sonnet built it. Haiku for docs-only changes. A builder with several open PRs lists them in priority order on #854. The desk reviews in that order, one at a time.
