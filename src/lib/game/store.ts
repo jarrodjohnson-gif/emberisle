@@ -118,7 +118,7 @@ function clearKnocks() {
 
 // Play the sound for a state change, and the your-turn chime when the turn comes round to this browser's seat
 // (not in hotseat, where every seat is this browser).
-export function hear(before: GameState | null, after: GameState, me: string, mode: GameStore["mode"]) {
+export function hear(before: GameState | null, after: GameState, me: string, mode: GameStore["mode"], reconnect?: boolean) {
   const lost = mode !== "hotseat" && me !== "" && !!after.winner && after.winner !== me;
   const victim =
     mode !== "hotseat" && !!before && before.current !== me && after.vertices.some((v) => v.building?.playerId === me && v.hexes.includes(after.robberHex));
@@ -150,7 +150,7 @@ export function hear(before: GameState | null, after: GameState, me: string, mod
     for (const _ of reached) play("match_point", MUSIC_VOLUME);
     if (reached[0]) matchLine = `${reached[0].name} reached ${publicVP(after, reached[0].id)} points — one to win`;
   }
-  if (mode !== "hotseat" && before && after.current === me && before.current !== me && after.phase !== "over") yourTurn();
+  if (mode !== "hotseat" && after.current === me && after.phase !== "over" && (reconnect || (before && before.current !== me))) yourTurn();
 }
 
 // The game log the dock shows (#305): a line of `state.log` or a host `log` message, stamped when this browser saw it.
@@ -159,7 +159,6 @@ export interface GameLogLine {
   text: string;
 }
 const GAME_LOG_MAX = 200;
-const LOG_FILTER_KEY = "emberisle-log-filter";
 const WATER_KEY = "emberisle-water";
 const VIEW_KEY = "emberisle-view";
 
@@ -201,14 +200,6 @@ function savedView(): PlayView | null {
   }
 }
 
-function savedLogFilter(): "all" | "chat" {
-  try {
-    return localStorage.getItem(LOG_FILTER_KEY) === "chat" ? "chat" : "all";
-  } catch {
-    return "all";
-  }
-}
-
 // The board as it would be with these paths laid, so the second pick of a path fortune can glow (#184).
 function withPaths(state: GameState, edgeIds: string[], pid: string): GameState {
   if (!edgeIds.length) return state;
@@ -246,7 +237,12 @@ let outcomeTimer: ReturnType<typeof setTimeout> | null = null;
 // after the ask, and an offer nobody takes closes after OFFER_MS. The timers belong to the open offer.
 const BOT_ANSWER_MS = 1000;
 const OFFER_MS = 20000;
+// People first (#850), as host.mjs: a bot's Yes waits this long, or until every person asked has said No.
+const PEOPLE_FIRST_MS = 8000;
 let offerTimers: ReturnType<typeof setTimeout>[] = [];
+let peopleUntil = 0;
+// Bots that said Yes inside the people-first window, in the order they said it.
+let heldYes: string[] = [];
 let offerSeq = 0;
 // `${turn}:${bot}` of the last bot turn that had its one chance to ask the table.
 let botAsked = "";
@@ -255,6 +251,7 @@ let botDeclined = new Map<string, { give: Bag; want: Bag }>();
 function clearOfferTimers() {
   for (const t of offerTimers) clearTimeout(t);
   offerTimers = [];
+  heldYes = [];
 }
 
 export type Screen = "title" | "lobby" | "play";
@@ -331,7 +328,11 @@ interface GameStore {
   legal: Legal | null;
   // The host's turn timer (#344): when it fires on this tab's clock, whose seat it is, and the host's own value
   // (`deadline`) that tells one window from the next. Null when none is armed.
-  turnTimer: { at: number; player: string; deadline: number } | null;
+  // `host` is the host's clock on the push that opened this window (0 when the push carried none).
+  turnTimer: { at: number; player: string; deadline: number; host: number } | null;
+  // The host clock minus this one, as best this tab has measured it (0 before any push). A push shows the skew less the time it
+  // spent on the way, so the largest one seen is the closest. The final-countdown cues are timed from it, not from `at`.
+  clockSkew: number;
   lobbyLog: string;
   hostTable: () => void;
   joinTable: (code: string) => void;
@@ -375,9 +376,6 @@ interface GameStore {
   sendReact: (emote: string, to?: string) => void;
   // The whole game log, for the dock (#305): the new lines of `state.log` after each local action, and the host's `log` messages online.
   gameLog: GameLogLine[];
-  // Which rows the dock lists: the chat alone, or the chat and the game log together. Remembered like `chatOpen`.
-  logFilter: "all" | "chat";
-  setLogFilter: (v: "all" | "chat") => void;
   // The sea (docs/design/crystal-water.md): the player's saved Water choice (null lets the GPU probe decide), and what the
   // renderer actually shows.
   waterChoice: WaterPath | null;
@@ -393,6 +391,7 @@ interface GameStore {
   offer: OpenOffer | null;
   declined: string[];
   tradeOutcome: string | null;
+  tradeTaker: string | null;
   tradeOpen: boolean;
   // Who opened the panel, so focus can go back there on close (Safari does not focus buttons on click, #302).
   tradeOpener: HTMLElement | null;
@@ -512,6 +511,7 @@ export const useGame = create<GameStore>((set, get) => ({
   seats: [],
   legal: null,
   turnTimer: null,
+  clockSkew: 0,
   lobbyLog: "",
   spectator: false,
   synced: 0,
@@ -525,14 +525,13 @@ export const useGame = create<GameStore>((set, get) => ({
   unread: 0,
   chatDraft: "",
   gameLog: [],
-  logFilter: savedLogFilter(),
   waterChoice: savedWater(),
   water: null,
   viewChoice: savedView(),
   playView: "diorama",
   offer: null,
   declined: [],
-  tradeOutcome: null,
+  tradeOutcome: null, tradeTaker: null,
   tradeOpen: false,
   tradeOpener: null,
   chromeSeq: 0,
@@ -588,7 +587,7 @@ export const useGame = create<GameStore>((set, get) => ({
       spectator: false,
       offer: null,
       declined: [],
-      tradeOutcome: null,
+      tradeOutcome: null, tradeTaker: null,
     });
     play("game_start", MUSIC_VOLUME);
   },
@@ -620,7 +619,7 @@ export const useGame = create<GameStore>((set, get) => ({
       spectator: false,
       offer: null,
       declined: [],
-      tradeOutcome: null,
+      tradeOutcome: null, tradeTaker: null,
     });
   },
   restoring: typeof window !== "undefined" && inPlayAtSavedSeat(),
@@ -679,7 +678,7 @@ export const useGame = create<GameStore>((set, get) => ({
       toast: null,
       offer: null,
       declined: [],
-      tradeOutcome: null,
+      tradeOutcome: null, tradeTaker: null,
       tradeOpen: false,
       tradeOpener: null,
     });
@@ -944,14 +943,6 @@ export const useGame = create<GameStore>((set, get) => ({
     set(v ? { chatOpen: true, unread: 0 } : { chatOpen: false });
   },
   setChatDraft: (v) => set({ chatDraft: v }),
-  setLogFilter: (v) => {
-    try {
-      localStorage.setItem(LOG_FILTER_KEY, v);
-    } catch {
-      // storage can be blocked; the filter still holds for this page
-    }
-    set({ logFilter: v });
-  },
   setWaterChoice: (v) => {
     try {
       localStorage.setItem(WATER_KEY, v);
@@ -1037,8 +1028,8 @@ function endOffer(set: Set, get: Get, taker: string | null) {
   else if (me === offer.from) play("trade_no");
   // Every receiver gets the resolved offer as one brief log line, with no response controls.
   if (outcomeTimer) clearTimeout(outcomeTimer);
-  set({ tradeOutcome: taker ? `${takerName} takes it.` : "Nobody took it." });
-  outcomeTimer = setTimeout(() => set({ tradeOutcome: null }), BANNER_MS);
+  set({ tradeTaker: taker, tradeOutcome: taker ? `${takerName} takes it.` : "Nobody took it." });
+  outcomeTimer = setTimeout(() => set({ tradeOutcome: null, tradeTaker: null }), BANNER_MS);
 }
 
 // Practice's table offer for `from`, closing any earlier one (host.mjs openOffer). Every other bot answers it after a delay.
@@ -1047,15 +1038,34 @@ function openOffer(set: Set, get: Get, from: string, give: Bag, want: Bag) {
   const state = get().state!;
   const tradeId = `t${state.seq}-${++offerSeq}`;
   const fromName = state.players.find((p) => p.id === from)?.name ?? "Someone";
-  set({ offer: { tradeId, from, fromName, give, want, until: Date.now() + OFFER_MS }, declined: [], tradeOutcome: null });
+  set({ offer: { tradeId, from, fromName, give, want, until: Date.now() + OFFER_MS }, declined: [], tradeOutcome: null, tradeTaker: null });
   if (from !== get().localId) play("trade_offer");
   offerTimers.push(setTimeout(() => endOffer(set, get, null), OFFER_MS));
   for (const p of state.players) {
     if (p.kind !== "bot" || p.id === from) continue;
     const answer = () => {
-      if (get().offer?.tradeId === tradeId) respond(set, get, p.id, shouldAcceptTrade(get().state!, p.id, { from, give, want }));
+      if (get().offer?.tradeId !== tradeId) return;
+      const yes = shouldAcceptTrade(get().state!, p.id, { from, give, want });
+      if (yes && peopleWaiting(get)) heldYes.push(p.id);
+      else respond(set, get, p.id, yes);
     };
     offerTimers.push(setTimeout(answer, BOT_ANSWER_MS + Math.floor(Math.random() * (BOT_ANSWER_MS + 1))));
+  }
+  peopleUntil = Date.now() + PEOPLE_FIRST_MS;
+  offerTimers.push(setTimeout(() => releaseHeld(set, get), PEOPLE_FIRST_MS));
+}
+
+function peopleWaiting(get: Get) {
+  const { offer, state, declined } = get();
+  if (!offer || !state || Date.now() >= peopleUntil) return false;
+  return state.players.some((p) => p.kind !== "bot" && p.id !== offer.from && !declined.includes(p.id));
+}
+
+// The first bot to say Yes still takes it (host.mjs releaseHeld).
+function releaseHeld(set: Set, get: Get) {
+  for (const id of heldYes.splice(0)) {
+    if (!get().offer) return;
+    respond(set, get, id, true);
   }
 }
 
@@ -1073,7 +1083,7 @@ function respond(set: Set, get: Get, actor: string, yes: boolean): string | null
         botDeclined.set(offer.from, { give: offer.give, want: offer.want });
       }
       endOffer(set, get, null);
-    }
+    } else if (!peopleWaiting(get)) releaseHeld(set, get);
     return null;
   }
   const offered = applyAction(state, offer.from, { type: "offerTrade", to: actor, give: offer.give, want: offer.want });
@@ -1101,10 +1111,12 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
   let pending = kind === "quiet";
   let welcomed = false;
   let outdated: string | null = null;
+  let firstState = false;
   const table = connectTable(hostUrl(window.location), {
     welcome: ({ proto, code, you, host, chat, secret, spectator, victoryTarget, wayfarerMode }) => {
       pending = false;
       welcomed = true;
+      firstState = true;
       // G2: a host on a newer wire protocol than this page says so where errors go, and keeps saying it after every state.
       outdated = (proto ?? 0) > PROTO ? "This page is out of date. Reload to update." : null;
       set({ resync: true, tableVictoryTarget: victoryTarget === 7 ? 7 : 10, tableWayfarerMode: wayfarerMode ?? "on" });
@@ -1140,7 +1152,7 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       set({ announcement: null, code, spectator: false, seatId: you ?? "", isHost: host ?? false, screen: restoring ? "title" : inGame ? "play" : "lobby", mode: "online", error: outdated, toast: outdated, chat: history, reactions: [], unread: 0 });
     },
     // The window may have closed while we were away; the next state brings it back rather than a chip stuck at 0:00.
-    reconnecting: (attempt) => set({ announcement: null, error: `Reconnecting… (try ${attempt})`, toast: "Reconnecting…", turnTimer: null }),
+    reconnecting: (attempt) => (firstState = true, set({ announcement: null, error: `Reconnecting… (try ${attempt})`, toast: "Reconnecting…", turnTimer: null })),
     chat: (line) => {
       const { chat, chatOpen, unread, seatId, screen } = get();
       // The lobby box is always open, so only lines that arrive during the game can be unread.
@@ -1167,16 +1179,19 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       const me = you ?? "";
       const rollOff = rollOffLine(get().state, game);
       // hear first: it is what claims a match point, and the banner line is read off that claim on this same state.
-      hear(get().state, game, me, "online");
+      hear(get().state, game, me, "online", firstState);
       const swing = awardLine(get().state, game) ?? takeMatchPointLine();
       // The deadline moves onto this clock by the skew the message shows, so a phone minutes off still counts true.
       // Every push carries the same window, and the skew wobbles by however long this tab took to get to the message:
       // the timer we hold stays while the host's deadline is the same, so the chip neither remounts nor announces twice.
       const skew = typeof serverNow === "number" ? serverNow - Date.now() : 0;
       const prev = get().turnTimer;
-      const turnTimer = !turnDeadline || !turnPlayer ? null : prev?.deadline === turnDeadline && prev.player === turnPlayer ? prev : { at: turnDeadline - skew, player: turnPlayer, deadline: turnDeadline };
+      // A new connection starts the estimate over: a rejoin may reach a different host clock.
+      const clockSkew = firstState ? skew : Math.max(skew, get().clockSkew);
+      firstState = false;
+      const turnTimer = !turnDeadline || !turnPlayer ? null : prev?.deadline === turnDeadline && prev.player === turnPlayer ? prev : { at: turnDeadline - skew, player: turnPlayer, deadline: turnDeadline, host: serverNow as number };
       // The first state after a join or a page-load rejoin seeds the log with what the engine kept, the way practice does.
-      set({ legal, turnTimer, gameLog: get().state ? get().gameLog : appendLog(get().gameLog, game.log) });
+      set({ legal, turnTimer, clockSkew, gameLog: get().state ? get().gameLog : appendLog(get().gameLog, game.log) });
       // A rematch's new game (#266): drop any half-made move or open panel left over from the win.
       if (get().state?.phase === "over" && game.phase !== "over") set({ buildMode: "none", roadPicks: [], pendingPlace: null, tradeOpen: false });
       get().loadState(game, me, get().isHost, get().code);
@@ -1188,7 +1203,7 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
     log: (text) => set({ lobbyLog: text, gameLog: appendLog(get().gameLog, [text]) }),
     tradeOffer: ({ tradeId, from, give, want, seconds }) => {
       const fromName = get().state?.players.find((p) => p.id === from)?.name ?? "Someone";
-      set({ offer: { tradeId, from, fromName, give, want, until: Date.now() + seconds * 1000 }, declined: [], tradeOutcome: null });
+      set({ offer: { tradeId, from, fromName, give, want, until: Date.now() + seconds * 1000 }, declined: [], tradeOutcome: null, tradeTaker: null });
       if (from !== get().localId) play("trade_offer");
     },
     tradeDeclined: ({ tradeId, by }) => {

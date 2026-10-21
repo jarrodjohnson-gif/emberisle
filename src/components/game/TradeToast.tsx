@@ -1,16 +1,18 @@
-// The ask-the-table toast (docs/BUILD_BIBLE.md 4.4): "Ember offers 2 wool for 1 ore", Yes / No, and the 20 s left.
+// The ask-the-table toast (docs/BUILD_BIBLE.md 4.4): "Ember offers 2 sheep for 1 ore", Yes / No, and the 20 s left.
 // The asker sees the same offer with who has declined, then the outcome for a moment.
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { Check, Hourglass, X } from "lucide-react";
 import { useViewport } from "@/lib/viewport";
 import { Button } from "@/components/ui/button";
 import { SeatDot } from "@/components/game/SeatDot";
 import { bagText } from "@/lib/game/trade";
 import { useGame } from "@/lib/game/store";
-import { RESOURCES } from "@/lib/game/types";
+import { RESOURCES, RESOURCE_LABEL } from "@/lib/game/types";
 import type { Bag } from "@/lib/net/table";
+import "./trade-panel.css";
 
-// "Ember offers 2 wool for 1 ore"; the asker reads "You offer 2 wool for 1 ore".
+// "Ember offers 2 sheep for 1 ore"; the asker reads "You offer 2 sheep for 1 ore".
 export function offerLine(name: string | null, give: Bag, want: Bag) {
   const g = bagText(give);
   const w = bagText(want);
@@ -32,6 +34,7 @@ export function TradeToast() {
   const offer = useGame((s) => s.offer);
   const declined = useGame((s) => s.declined);
   const outcome = useGame((s) => s.tradeOutcome);
+  const takerId = useGame((s) => s.tradeTaker);
   const players = useGame((s) => s.state?.players);
   const localId = useGame((s) => s.localId);
   // A watcher (docs/design/spectator.md) reads the offer and the clock, with no Yes or No.
@@ -48,6 +51,7 @@ export function TradeToast() {
     const stack = el.closest<HTMLElement>("[data-hud-stack]");
     const root = document.documentElement;
     let lastHeight = -1;
+    let frame = 0;
     const measure = () => {
       const h = el.getBoundingClientRect().height;
       stack?.style.setProperty("--trade-height", `${h + 4}px`);
@@ -55,9 +59,13 @@ export function TradeToast() {
       if (h !== lastHeight) { lastHeight = h; useGame.getState().chromeLanded(); }
     };
     measure();
-    const observer = new ResizeObserver(measure);
+    // Size writes can resize chat in turn. Leave the observer's delivery before writing them.
+    const observer = new ResizeObserver(() => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(measure);
+    });
     observer.observe(el);
-    return () => { observer.disconnect(); stack?.style.removeProperty("--trade-height"); root.style.removeProperty("--active-offer-height"); };
+    return () => { observer.disconnect(); cancelAnimationFrame(frame); stack?.style.removeProperty("--trade-height"); root.style.removeProperty("--active-offer-height"); };
   }, [shown, aboveChat]);
 
   useEffect(() => {
@@ -75,18 +83,25 @@ export function TradeToast() {
   let answering = false;
   let why: string | null = null;
   if (!offer) {
-    return <p className="trade-result table-log rounded-control px-3 py-1 text-caption" data-testid="trade-outcome">{outcome}</p>;
+    const taker = players?.find((p) => p.id === takerId);
+    const ResultIcon = takerId ? Check : X;
+    return (
+      <p className="trade-result table-log flex items-center gap-1 rounded-control px-3 py-1 text-caption" role="status" data-testid="trade-outcome" data-taker={takerId ?? undefined}>
+        {taker ? <SeatDot color={taker.color} className="size-2.5" /> : null}
+        <ResultIcon aria-hidden="true" className="size-3.5" />{outcome}
+      </p>
+    );
   } else {
     if (declined.includes(localId)) return null;
     const left = Math.max(0, Math.ceil((offer.until - now) / 1000));
     const asker = offer.from === localId;
     const short = me ? RESOURCES.filter((r) => (offer.want[r] ?? 0) > me.resources[r]) : [];
     answering = !asker && !spectator;
-    why = me && short.length ? `Need ${short.map((r) => `${offer.want[r]! - me.resources[r]} more ${r}`).join(", ")}` : null;
+    why = me && short.length ? `Need ${short.map((r) => `${offer.want[r]! - me.resources[r]} more ${RESOURCE_LABEL[r].toLowerCase()}`).join(", ")}` : null;
     body = (
       <>
         <div className="trade-summary flex min-w-0 items-center justify-between gap-2">
-          <p id={lineId} className="text-sm font-medium leading-5">
+          <p id={lineId} className="text-sm font-medium leading-5" title={offerLine(asker ? null : offer.fromName, offer.give, offer.want)}>
             {/* #312: another seat's offer leads with that seat's dot. */}
             {!asker ? <SeatDot color={players?.find((p) => p.id === offer.from)?.color ?? "transparent"} className="mr-1.5 size-3 align-[-1px]" /> : null}
             {offerLine(asker ? null : offer.fromName, offer.give, offer.want)}
@@ -102,10 +117,34 @@ export function TradeToast() {
           </p>
         ) : null}
         {asker ? (
-          <p role="status" className="trade-wait text-xs">
+          <p role="status" className="trade-wait sr-only">
             {declined.length ? declinedLine(declined.map(name)) : "Waiting…"}
           </p>
-        ) : !answering ? null : (
+        ) : null}
+        <div className="trade-details" tabIndex={0} role="group" aria-label="Trade amounts and player responses">
+          {answering ? (
+            <p className="trade-receipt" data-testid="trade-receipt">
+              <span><strong>You give:</strong> {bagText(offer.want) || "nothing"}</span>
+              <span><strong>You get:</strong> {bagText(offer.give) || "nothing"}</span>
+            </p>
+          ) : null}
+          {why ? <p id={whyId} className="trade-short text-xs">{why}</p> : null}
+          <ul className="trade-responses" aria-label="Player responses">
+            {players?.filter((p) => p.id !== offer.from).map((p) => {
+              const refused = declined.includes(p.id);
+              const Icon = refused ? X : Hourglass;
+              const response = refused ? "declined" : "waiting";
+              return (
+                <li key={p.id} className="trade-response" data-testid={`trade-response-${p.id}`} data-response={response} aria-label={`${p.name}: ${response}`}>
+                  <SeatDot color={p.color} className="size-2.5" />
+                  <span className="trade-response-name">{p.name}</span>
+                  <Icon aria-hidden="true" className="size-3.5" />
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+        {answering ? (
           <>
             <div className="trade-answers flex items-center gap-1">
               {/* aria-disabled, not disabled, so Tab still reaches Yes and reads the reason (#285); the click refuses instead. */}
@@ -123,13 +162,8 @@ export function TradeToast() {
                 No
               </Button>
             </div>
-            {why ? (
-              <p id={whyId} className="trade-short text-xs">
-                {why}
-              </p>
-            ) : null}
           </>
-        )}
+        ) : null}
       </>
     );
   }

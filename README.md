@@ -31,16 +31,16 @@ Three or four players. First to 10 points wins. One island of 19 hexes.
 
 ### Land
 
-Each hex is forest, clay hills, pasture, fields, mountains, or the wastes. A token from 2 to 12 sits on every hex except the wastes. There is no 7 token. The wastes produce nothing.
+Each hex is forest, hills, pasture, fields, mountains, or the wastes. A token from 2 to 12 sits on every hex except the wastes. There is no 7 token. The wastes produce nothing.
 
 ### Pieces
 
 | Piece | Cost | You start with |
 |---|---|---|
-| Path | 1 timber, 1 clay | 15 |
-| Outpost | 1 timber, 1 clay, 1 wool, 1 grain | 5 |
-| Stronghold | 2 ore, 3 grain, on an outpost you own | 4 |
-| Fortune | 1 wool, 1 grain, 1 ore | a shared deck of 25 |
+| Path | 1 wood, 1 brick | 15 |
+| Outpost | 1 wood, 1 brick, 1 sheep, 1 wheat | 5 |
+| Stronghold | 2 stone, 3 wheat, on an outpost you own | 4 |
+| Fortune | 1 sheep, 1 wheat, 1 stone | a shared deck of 25 |
 
 The deck is 14 knights, 2 path-building, 2 plenty, 2 monopoly, and 5 hidden points. A fortune bought this turn cannot be played this turn. A knight may be played before the roll. A plenty takes two cards from the bank, and can name only cards the bank still has.
 
@@ -70,7 +70,7 @@ Anyone with more than 7 cards discards half, rounded down. Then the roller moves
 
 There are 9 docks, on the coast, spaced around the island. You do not get one for sitting down.
 
-- 5 are 2-for-1, one for each resource: timber, clay, wool, grain, ore.
+- 5 are 2-for-1, one for each resource: wood, brick, sheep, wheat, stone.
 - 4 are 3-for-1, and those take any resource.
 
 You get a dock's rate only when a building of yours sits on one of that dock's two corners. Otherwise the bank is 4 of one resource for 1 of another. A specific dock beats a 3-for-1, and a 3-for-1 beats the bank. The bank pays only if it still has the card.
@@ -85,7 +85,7 @@ The bank starts with 19 of each resource.
 
 <a id="names"></a>
 
-Say timber, clay, wool, grain, ore, outpost, stronghold, path, fortune, and wayfarer. The window title is Emberisle.
+Say wood, brick, sheep, wheat, stone, outpost, stronghold, path, fortune, and wayfarer. The window title is Emberisle.
 
 ---
 
@@ -160,6 +160,55 @@ npm run splash-prove     # headless Chromium at 390x844 (touch) and 1280x720: a 
 npm run install-prove    # after build: manifest, icons and home-screen meta tags from the host and vite preview; Play, Ready and the HUD inside an iPhone's safe area; ?code= and ?watch= links
 npm run chat-prove       # 3 headless tabs chat in the lobby and the game: presets, reactions, unread badge, minimized dock covers no target, the game log in the dock with Chat/All and Copy log
 npm run watch-ui-prove   # 2 headless tabs and a client seat play; a third tab watches after the start: board, no glow, no controls, read-only dock, eye count on the seats, "Watching only." for an injected intent, the full reveal at the win
+npm run banner-stable-prove  # turn banner does not move when the status line appears or clears; at 4 sizes every edge within 1 px, no overlap with hand
+npm run cap-prove            # a seat acting repeatedly cannot keep the clock alive forever; host bot passes for it at the turn total cap
+npm run dpr-prove            # renderer's pixel ratio is capped at 2, and at 1.5 on coarse pointer with simple sea; a resize keeps the cap
+npm run first-game-coach-prove  # fresh practice profile: real setup/roll and legal canvas placements; fixtures supply main-phase hands and a 7
+npm run flash-prove          # after a roll the hexes that paid glow and nothing else does; hotseat rolls verify paying hexes, unblocked by wayfarer
+npm run fortune-count-prove  # public draw-deck count: every real host purchase, empty deck, four seat views + watcher, rejoin/restart
+npm run fortune-tray-prove   # hotseat at 3 sizes: fortune tray lists held fortunes, arming picks, plenty and monopoly play, same-turn purchase blocked
+npm run goods-log-prove      # canonical public goods narration: real rule/store actions, all fortune kinds, privacy, persistent dock rows, newest HUD line
+npm run hand-cards-prove     # readable chalk faces, stable counts, bounded movement on game actions, quiet reconnect baselines and static reduced motion
+npm run hand-hidden-prove    # hand bar is not on table until seat holds a good; second outpost paying mounts hand rising over 220 ms, stays once held
+npm run hole-prove           # declared hole covers HUD persistent footprint; live hole never exceeds declared hole across width sweep on phone
+npm run howto-prove          # title's How to play is a dialog over the whole screen at 3 sizes, Close button takes tap and closes; sounds play
+npm run hud-safe-area-prove  # in-game HUD keeps every control and island hole out of the notch and home bar on 3 phones held upright and sideways
+npm run idle-prove           # with nothing moving the board renders at about 12 fps; a drag or a state push brings back full rate
+npm run keyboard-place-prove # keyboard alone places setup pieces, path, outpost, stronghold and wayfarer through PlaceList; escape restores turn banner
+npm run lobby-prove          # lobby names and bots in real tabs through server/host.mjs (the host-side rules are in server/lobby-prove.mjs)
+npm run my-numbers-prove     # at 440x956 and 956x440, on a hotseat table with the seat's outposts and a stronghold placed, the strip lists numbers on hexes touching buildings, lights on roll, never moves map
+npm run pages-prove          # GitHub Pages serves the build under /emberisle/: build with that base, serve dist only under that prefix, title screen loads with no console errors
+npm run pan-prove            # two-finger pan and map/HUD isolation on landscape and upright phone, look-at point moves within PAN_RADIUS, single finger orbits
+npm run pieces-land-prove    # pieces land in practice at 640x400: outpost drops 0.2 and settles, knock plays on land; path grows to 1; stronghold swaps in larger and settles
+npm run pieces-prove         # pieces read in every seat colour: the five checks in docs/design/pieces.md; no browser
+npm run preseat-prove        # opening a table is metered host-wide (OPEN_CAP) against real host; burst of fresh sockets refused past cap while joining and peeking stay open
+npm run proto-prove          # wire protocol version against real host: welcome carries proto, unknown or newer version refused before opening or taking a seat
+npm run public-score-prove   # four real host seat views + watcher: live public components, constant hidden-point reminder, own-private totals, no opponent disclosures
+npm run react-prove          # phone tap sends board reaction to every seat within 300 ms without opening chat or moving board; reaction controls at least 44 px
+npm run render-recovery-prove # table recovery boundary intercepts render error after online join; Rejoin restores seat and persisted game
+npm run restart-prove        # a waited-on seat's window survives a host restart, and its total-turn budget survives a drop and rejoin
+npm run restore-prove        # reload restores table in about three seconds median under 4x CPU slowdown and Fast 3G; board and hand on screen inside 3000 ms
+npm run roll-moment-prove    # each roll shown once, big and centred, then dice settle into HUD; 220 ms flight to resting row, practice at 1280x720 and 390x844
+npm run rotate-overlays-prove # simultaneous phone overlays through rotation: chat sheet, trade toast and prompt inside safe area with no overlap at 3 and 4 seats
+npm run rotate-prove         # rotating phone or resizing window refits island to HUD hole within 3 frames; camera glides to fit and corners stay inside hole
+npm run save-prove           # room saves are coalesced and asynchronous against real host; valid JSON at every instant, flush on SIGTERM/SIGINT
+npm run seat-rail-prove      # each seat is one line with the points as the number; box ≤ 44 px tall, points largest text, responsive strip and rail
+npm run size-prove           # built JS chunks stay inside a gzip size budget (run after npm run build)
+npm run size-delta-prove     # the growth check on fixture sizes (no build)
+npm run music-prove          # gameplay background music (docs/design/sound.md): silent before the first gesture, loops, ducks under stings, mute, win screen and title stop it
+npm run sounds-prove         # table sounds (docs/design/sound.md): 150 ms spacing burst rule, volumes, practice placements and turns, online chat and mute
+npm run stale-prove          # raw wire replays against the real host, independent of the client's queue-clearing behavior
+npm run tokens-prove         # number tokens are rimmed and legible, and nothing is placed or wanders within 0.31 of a hex centre
+npm run touch-place-prove    # phone camera fit and touch picking from docs/design/mobile-camera-touch.md, checked on pure math in src/lib/scene/mobile-fit.ts (no browser)
+npm run turn-copy-prove      # action-first setup, roll, builds, discard and wayfarer; 15 px, at most two lines; waiting ownership preserved
+npm run turn-gain-prove      # practice at 4 sizes: "Your turn" notice when turn passes to person, floating "+N Good" gain lines after roll
+npm run upgrade-prove        # one touch tap or click upgrades a starter outpost to a stronghold with no Place chip; status line shortfall on short hand
+npm run victory-target-prove # real lobby controls and hosted rules: default 10, public 7/10 selection, host-only updates, restart persistence, target win condition
+npm run visual-direction-prove # geometry, AA colour pairs, offer placement/refit, touch targets and truly static reduced motion
+npm run wayfarer-modes-prove # creation defaults, seven/discard completion, blocking/theft, useful fortunes and bot termination in every mode
+npm run wayfarer-prove       # wayfarer stands beside token (on waste, centre), hops (not slides), and target hexes wear a band (docs/design/wayfarer.md)
+npm run wayfarer-setup-prove # wayfarer mode at table setup through real lobby controls and hosted rules: default On, On/Off choice, persistence, rematch
+npm run win-action-prove     # real hosted winning actions -> private pre-win views -> saved/restarted rooms -> browser win screens and reload
 ```
 
 CI splits `browser-b` into `flows` and `presentation`; the required `checks` gate requires both. CI runs `npm ci` in the root and in `server/`, then these checks in this order, and installs Chromium with `npx playwright install --with-deps chromium`. `client-prove` uses the Chromium that ships with cloud sessions (`/opt/pw-browsers/chromium`). On your own PC, run `npx playwright install chromium` once first. It saves a screenshot to `test-results/client-prove.png`.
@@ -342,6 +391,7 @@ Every gameplay intent (place, roll, pass, buy, play, rob, discard, bank trade, t
 |---|---|
 | `node --import ./server/register.mjs server/prove.mjs` | Short bank pays nobody, dice histogram, setup goods, illegal placement rejected |
 | `node --import ./server/register.mjs server/trade-prove.mjs` | Bank 4:1, discards, steals |
+| `npm run music-prove` | Browser: the background track is not fetched or played before the first interaction, then plays at 0.25 and loops, ducks to 30% under `game_start` and returns, stops on mute and resumes, follows mute for a watcher, obeys the Table menu's Music row, stops at the win screen and on the title (`scripts/music-prove.mjs`) |
 | `npm run sounds-prove` | Browser: every table sound plays its clip once, a bot round is spaced, mute and a focused chat silence them (`scripts/sounds-prove.mjs`) |
 | `node server/sound-prove.mjs` | The host finds the wavs in `public/audio/` through `server/cue.mjs`, and a missing sound is null, not a crash |
 | `node --import ./server/register.mjs server/table-prove.mjs` | 3 sockets: codes, color taken, peek before sitting, ready, start, setup glow and neighbor rule, 20 rolls match the host, and the table's error strings (full, host-only start, 3 or 4, already started, not your turn) |
@@ -373,7 +423,7 @@ Every gameplay intent (place, roll, pass, buy, play, rob, discard, bank trade, t
 | `npm run hotseat-prove` | In hotseat, a 7 where another seat owes a discard shows that seat's discard bar and charges the discard to that seat, while the turn banner reads "{seat} — discard 4" (not "{seat}'s turn") and the roller's turn again after (#430); zero console errors |
 | `npm run chat-prove` | 3 browser tabs at 1280x720: the host's lobby status line runs "Waiting for 2 more players (3 or 4 play)" → "0 of 3 ready" → "Everyone is ready" as seats join and ready up, Start and Leave sit inside the 1280x720 lobby card without scrolling, lobby chat and presets, a reaction floats over the sender's rail card for 2 s, the unread badge, the remembered dock state, the minimized dock covers no board target; after setup and the first roll every dock (the phone sheet too) lists the game log as muted rows with the roll and an outpost, the Chat chip hides them, Copy log puts the whole log on the clipboard; zero console errors |
 | `npm run tabs-prove` | 3 browser tabs (or 4 with `--seats 4`, `npm run tabs-prove-4`, at 1280x720 with four rail cards inside the viewport on every tab) host, join, ready, start, roll off, play setup and 5 rolls through the rules host; dice and board match on every tab; one table trade through the store moves both hands and the goods counts on every tab; each tab draws the roll as two pip faces matching the banner and the log, labelled "Rolled a and b, sum", with no settle animation under reduced motion; then plays on until a gain has flashed green +N and a loss red -N on the hand, each gone within 2 s; a taken color dims before Join; the third tab opens the lobby's copied join link (`?code=` fills Join, the taken color dims, the code leaves the URL, `?host=` is kept); zero console errors |
-| `npm run practice-trade-prove` | Practice in the browser, no host (#363): Trade, 1 grain for 1 wool, Ask the table, and the bot that needs grain takes it; a bot one grain short asks on its turn in one toast line with Yes and No, the person's Yes moves the goods and the bot plays on; the same ask declined by everyone closes and the bot still plays on; zero console errors |
+| `npm run practice-trade-prove` | Practice in the browser, no host (#363): Trade, 1 wheat for 1 sheep, Ask the table, and the bot that needs wheat takes it; a bot one wheat short asks on its turn in one toast line with Yes and No, the person's Yes moves the goods and the bot plays on; the same ask declined by everyone closes and the bot still plays on; zero console errors |
 | `npm run trade-prove` | 3 browser tabs on the rules host: the Trade panel asks the table, the toast's No reaches every tab and leaves the offer open, Yes moves the goods (own hands exact, others' `goods` counts), a second ask runs out its 20 s with nothing moved and every toast closed, zero console errors |
 | `npm run served-prove` | The same 3 tabs, but the host serves the built `dist/` and the tabs open it with no `?host=`, so they find the socket at the page's own address (the tunnel case) |
 | `npm run chunk-fail-prove` | #488: the lazy chunks (`online`: lobby, chat dock, reactions; `sheets`: How to play, trade panel, win screen) refused on the built page. With `sheets` failing the title's idle prefetch reloads the page once and not again, Play renders the table (HUD header, canvas, four seats) with no sheet, How to play with the chunk still failing opens nothing and drops its flag, and once the route recovers the next press opens it. With `online` failing, Host shows "Couldn't load the table lobby." and a Reload button instead of a blank page; after the route recovers that Reload rejoins the saved seat into a working lobby. No other page errors |
@@ -385,11 +435,12 @@ Every gameplay intent (place, roll, pass, buy, play, rob, discard, bank trade, t
 | `npm run touch-place-prove` | The camera fit through the 25° leaned overhead camera (island corners and the far pine tops inside the hole, the island centred on it, at 390x844, 844x390 and 1280x720), the `chromeInsets` rules that turn the HUD's measured chrome into the hole (bands stack from the top and bottom, a seat rail or open chat is a rail, a lone button and a sheet are not, the safe area pads a bare edge), and touch picking, checked on the pure math in `src/lib/scene/mobile-fit.ts`, no browser |
 | `npm run dpr-prove` | In the browser, the renderer's pixel ratio is 1.5 on a coarse pointer (a 3x phone) and 2 on a fine one (a 3x desktop), and a resize keeps that cap |
 | `npm run idle-prove` | In the browser with the draw stubbed out: the title keeps its 30 fps gate, an idle board renders at most 30 times in 2 s, a drag and a state push each bring back full rate, reduced motion idles the same way; zero console errors |
-| `npm run upgrade-prove` | In a practice game past setup, at 440x956 and 956x440 (real touch taps) and 1280x720 (mouse): with Upgrade armed, one tap or click on a starter outpost raises the stronghold with no Place chip (the corner is not covered by the HUD; online, one tap sends `buildStronghold`); a path still selects, then places on the Place chip; a hand short of goods keeps Upgrade pressable and says "Need 1 more ore" in the status line instead of doing nothing |
+| `npm run upgrade-prove` | In a practice game past setup, at 440x956 and 956x440 (real touch taps) and 1280x720 (mouse): with Upgrade armed, one tap or click on a starter outpost raises the stronghold with no Place chip (the corner is not covered by the HUD; online, one tap sends `buildStronghold`); a path still selects, then places on the Place chip; a hand short of goods keeps Upgrade pressable and says "Need 1 more stone" in the status line instead of doing nothing |
 | `npm run keyboard-place-prove` | In hotseat at 1280x720, with the keyboard alone: Enter on Roll through the roll-off, Tab from How to play reaches a visible "Place an outpost" list holding exactly the glowing corners with distinct names, Enter places all eight setup outposts and paths (focus stays in the list, and a phone mark left pending on another corner or hex is never placed instead), then an armed Path, Outpost and Stronghold (each turning the turn banner into what to pick plus "Esc cancels", and Escape restoring it, #419) and a wayfarer move each match the glow and place; the legal corners wear the acting seat's colour and breathe on the 1.2 s pulse (read off `window.__isle.marks`), and hold a steady glow in a page that starts under reduced motion; zero console errors. Saves `test-results/keyboard-place-prove.png` |
-| `npm run flash-prove` | Real rolls through the store's dispatch (dice steered by queueing `crypto.getRandomValues`) on a table with every corner owned: the caps that glow, read from every drawn frame of `window.__isle.caps`, are exactly the hexes whose token is the sum, not under the wayfarer, and whose resource a hand gained (hand diff). Two same-token wool hexes with one wool left in the bank glow once; one push carrying a roll and an end turn still flashes the payers. A bank-short roll leaves that resource's hexes dark, a wayfarer-blocked hex stays dark, and a state met with dice already down (first load, or a seq jump) never flashes. Under reduced motion the glow steps to the peak and back with no ramp; zero console errors. Port from `FLASH_PORT`/`VITE_PORT`, default 8441 |
-| `npm run turn-gain-prove` | Jarrod's playtest ("not intuitive on when it's your turn", gains "too quick"): practice at 1280x720 and, with safe-area insets, 390x844, 360x640 and 844x390. "Your turn" shows in the middle of the island when a bot's turn passes to the person and is gone within 2 s; never on a bot's turn, nor in the roll-off or setup; Roll is the one filled primary and the person's seat card wears the turn ring; on a bot's turn the banner reads "Waiting for {bot} …". A steered roll shows one "+N Good" line per good in green, after the roll moment, readable ≥ 1.2 s, 150 ms apart; a bank trade shows the ore given in red and the grain in green; another seat's gain and a watcher show nothing. Every line and the moment is centred on the island's hole (or moved off it only as far as the HUD makes it), inside the safe area, over no HUD control, and its text measures ≥ 3:1 against the pixels behind it. Reduced motion: fade only. Hotseat names the seat taking the device. Zero console errors; screenshots in `test-results/turn-gain-*.png` |
-| `npm run size-prove` | After a build, the gzip size of each `dist/assets/*.js` chunk (`index`, `IslandCanvas`) is inside its budget (today plus 10%), and no chunk is unbudgeted; the budget is in `scripts/size-prove.mjs` |
+| `npm run flash-prove` | Real rolls through the store's dispatch (dice steered by queueing `crypto.getRandomValues`) on a table with every corner owned: the caps that glow, read from every drawn frame of `window.__isle.caps`, are exactly the hexes whose token is the sum, not under the wayfarer, and whose resource a hand gained (hand diff). Two same-token sheep hexes with one sheep left in the bank glow once; one push carrying a roll and an end turn still flashes the payers. A bank-short roll leaves that resource's hexes dark, a wayfarer-blocked hex stays dark, and a state met with dice already down (first load, or a seq jump) never flashes. Under reduced motion the glow steps to the peak and back with no ramp; zero console errors. Port from `FLASH_PORT`/`VITE_PORT`, default 8441 |
+| `npm run turn-gain-prove` | Jarrod's playtest ("not intuitive on when it's your turn", gains "too quick"): practice at 1280x720 and, with safe-area insets, 390x844, 360x640 and 844x390. "Your turn" shows in the middle of the island when a bot's turn passes to the person and is gone within 2 s; never on a bot's turn, nor in the roll-off or setup; Roll is the one filled primary and the person's seat card wears the turn ring; on a bot's turn the banner reads "Waiting for {bot} …". A steered roll shows one "+N Good" line per good in green, after the roll moment, readable ≥ 1.2 s, 150 ms apart; a bank trade shows the stone given in red and the wheat in green; another seat's gain and a watcher show nothing. Every line and the moment is centred on the island's hole (or moved off it only as far as the HUD makes it), inside the safe area, over no HUD control, and its text measures ≥ 3:1 against the pixels behind it. Reduced motion: fade only. Hotseat names the seat taking the device. Zero console errors; screenshots in `test-results/turn-gain-*.png` |
+| `npm run size-prove` | After a build, the gzip size of each `dist/assets/*.js` chunk is under its absolute ceiling, and no chunk lacks a ceiling. In CI, with `--base <dir>` (the PR's base, built), each chunk also grows by no more than its allowance (index 400 B, others 0.33% and at least 200 B); both are in `scripts/size-prove.mjs` |
+| `npm run size-delta-prove` | `size-prove`'s growth check on fixture sizes, no build: +300 B on index passes, +600 B fails naming chunk, base, PR and allowance, a new chunk is held to its ceiling, a removed chunk passes, a missing chunk or a chunk over its ceiling fails |
 | `npm run contrast-prove` | In the browser, the title's Play and Join buttons, white on the `sea-ink` and `accent-ink` fills (Start, End turn), the 12 px "3 bots, no network" line and the error line each measure at least 4.5:1 from their computed colours; and, sampled from screenshots over the island, the turn banner (another seat's and your own) at 1280x720 and 390x844 and the log line at 1280x720 hold the text colour at 4.5:1 or more against both the mean and the darkest 5 % of the glass behind it, and every text on a glass chip (banner, log line, header pill, rail, seat strip) clears 4.5:1 against the glass token composited over black (#424); zero console errors |
 | `npm run reflow-prove` | In the browser at 640x360 (a 1280x720 window at 200 % zoom) and 320x568: the title's Join is fully visible, no title button runs past the right edge and nothing scrolls sideways; in hotseat `main` with every fortune held, the bottom HUD starts below the header + 8 px (landscape) or the seat strip (portrait), at least 120 px of island between them takes the pointer, and End turn is reachable by scrolling the stack; at 390x844 on touch with four seats the strip stays 44 px with no name cut off (a short form under 100 px: the roll-off die during the roll-off, the points after it, never both, #420), and two seats sharing three letters ("Ember", "Emberly") still read differently, and an armed Path's banner ends "tap Path again to cancel" until a second tap restores it (#419); zero console errors |
 | `npm run fortune-tray-prove` | #423: in hotseat at 1280x720, 390x844 and 844x390 (touch) with every fortune kind held: the action row has one "Fortunes ×N" button and no `<select>`; the tray lists each kind by the Names above (wayfarer, path, plenty, monopoly, points) with its effect, plays the wayfarer, the path fortune (two paths), a plenty (two goods picked as chips, from the bank) and a monopoly (every seat's one kind) and closes on each; a card bought this turn is marked and refuses, and the seat menu's breakdown uses the same names; a good the bank lacks is a greyed chip, a pick the bank empties is dropped, an empty bank turns Plenty off; Esc, Tab and a press outside behave, 44 px targets, reduced motion; zero console errors |

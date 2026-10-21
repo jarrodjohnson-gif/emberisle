@@ -43,7 +43,7 @@ opacity 0 to 1, 220 ms `--ease-out`); (b) the primary action (Roll, then End
 turn) becomes the single Primary button and breathes with a 1.2 s sine
 box-shadow pulse in your seat colour; (c) a dedicated `ui_your_turn` chime
 fires exactly once at the turn-change event, mixed 6 dB under piece sounds.
-A `yourTurn()` exists today (`src/lib/sound.ts:88`) but it reuses the
+A `yourTurn()` exists today (`src/lib/sound.ts:198`) but it reuses the
 `chip_gain` click with a 30 ms buzz — this issue gives the moment its own cue
 entry in `server/cue.mjs` and sets the haptic to 15 ms. Banner copy is
 verb-first (same rule as the verb-first copy issue below): "Roll the dice" /
@@ -211,7 +211,7 @@ none.
 
 ## Source
 `docs/research/backend-excellence.md` section G1 (`src/lib/net/table.ts:190`,
-`:204-211`; `server/host.mjs:885` `play()`).
+`:204-211`; `server/host.mjs:1165` `play()`).
 
 ## Files
 `src/lib/net/table.ts`, `server/host.mjs`, new `server/stale-prove.mjs`.

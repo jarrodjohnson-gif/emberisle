@@ -7,7 +7,9 @@
 // - online chat: the sender hears chat_send once, the other seat chat_recv once, nothing while that seat types in the
 //   chat input, nothing when muted;
 // - #659 volumes: every soundboard sound, the win screen's GG! and robbed_fah play at exactly 0.4 (MEME_VOLUME), the core
-//   clips stay at 1 (dice_land) and the music clips at 0.5 (game_lose).
+//   clips stay at 1 (dice_land) and the music clips at 0.5 (game_lose);
+// - #660 your_turn: plays once at volume 1 for the acting seat on turn pass or mid-turn rejoin; silent for other seats,
+//   repeat pushes, when muted, in hotseat, for watchers or after game over.
 // Online trade_offer / trade_yes volumes are asserted in trade-prove. Zero console errors. Run: npm run sounds-prove
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
@@ -78,7 +80,8 @@ async function tab(name, url) {
   return page;
 }
 const clear = (page) => page.evaluate(() => (window.__plays = []));
-const heard = async (page) => (await page.evaluate(() => window.__plays)).map((p) => ({ ...p, file: CLIP.get(p.file) ?? p.file }));
+// The background track (#814) is music-prove's; it is not a table sound.
+const heard = async (page) => (await page.evaluate(() => window.__plays)).filter((p) => p.file !== "old_tower_inn_loop.mp3").map((p) => ({ ...p, file: CLIP.get(p.file) ?? p.file }));
 const names = async (page) => (await heard(page)).map((p) => p.file);
 const store = (page, fn, arg) => page.evaluate(fn, arg);
 const mute = (page, v) => page.evaluate(async (v) => (await import("/src/lib/sound.ts")).setMuted(v), v);
@@ -550,15 +553,18 @@ try {
   await b.evaluate(() => window.__emberisle.getState().setChatOpen(true));
   await clear(a);
   await clear(b);
-  await a.getByRole("button", { name: "Soundboard" }).first().click();
+  // #899: the sound chips are the chat panel's second tab, Sounds & stickers.
+  await a.getByRole("tab", { name: "Sounds & stickers", exact: true }).click();
   await a.getByRole("button", { name: "Play sound Fah" }).click();
   await until(async () => (await names(b)).length, "Tide hears the soundboard tap");
   await sleep(300);
   assert.deepEqual((await heard(b)).map((x) => [x.file, x.volume]), [["robbed_fah.mp3", 0.4]], "the other seat hears fah once, at the meme volume 0.4 (#659)");
   assert.deepEqual((await heard(a)).filter((x) => x.file === "robbed_fah.mp3").map((x) => [x.file, x.volume]), [["robbed_fah.mp3", 0.4]], "the sender hears it once too, at 0.4");
-  const chip = await b.getByTestId("chat-log").locator("li", { hasText: "Fah" }).first().textContent();
-  assert.ok(chip.includes("Ember") && chip.includes("\u{1F50A} Fah"), `the chip reads "Ember \u{1F50A} Fah": ${chip}`);
-  ok("soundboard: a tap plays on both seats and shows the chip \"Ember \u{1F50A} Fah\" in chat");
+  // The log line is a light line: the sender, a speaker mark and the chip's label.
+  const fahLine = b.getByTestId("chat-log").getByTestId("sound-line").filter({ hasText: "Fah" }).first();
+  const chip = await fahLine.textContent();
+  assert.ok(chip.includes("Ember") && chip.includes("Fah") && (await fahLine.locator("svg").count()) === 1, `the chip reads "Ember [speaker] Fah": ${chip}`);
+  ok("soundboard: a tap on the Sounds & stickers tab plays on both seats and shows the line \"Ember [speaker] Fah\" in chat");
   assert.ok(await a.getByRole("button", { name: "Play sound Bong" }).isDisabled(), "the sender's buttons rest for 3 s");
   // Past the buttons: spam straight at the host is refused and nobody hears a second clip.
   await clear(b);
@@ -573,30 +579,31 @@ try {
   await until(() => b.evaluate(() => window.__emberisle.getState().chat.some((l) => l.sound === "plop")), "the plop line arrives");
   await sleep(400);
   assert.deepEqual(await names(b), [], "a muted listener hears nothing");
-  assert.ok((await b.getByTestId("chat-log").locator("li", { hasText: "plop" }).count()) >= 1, "but still sees the chip");
+  assert.ok((await b.getByTestId("chat-log").getByTestId("sound-line").filter({ hasText: "Plop" }).count()) >= 1, "but still sees the chip");
   await mute(b, false);
   ok("soundboard: a muted listener sees the chip and hears nothing");
   // The in-game clips reach the other seat once each; a repeat of a long clip restarts it (one element per clip), never stacks.
-  for (const [id, file] of [["sb_airhorn", "sb_airhorn.mp3"], ["sb_quit_touchin", "sb_quit_touchin.mp3"], ["sb_only_wood", "sb_only_wood.mp3"]]) {
+  // #899: each is one tap on its chip in the Sounds & stickers tab (Fah above, GG! with the rest below: all nine).
+  for (const [id, file, label] of [["sb_airhorn", "sb_airhorn.mp3", "Airhorn"], ["sb_quit_touchin", "sb_quit_touchin.mp3", "Quit touchin' me"], ["sb_only_wood", "sb_only_wood.mp3", "Only wood?"]]) {
     await sleep(3100);
     await clear(b);
-    await a.evaluate((x) => window.__emberisle.getState().sendSound(x), id);
+    await a.getByRole("button", { name: `Play sound ${label}`, exact: true }).click();
     await until(async () => (await names(b)).length, `${id} reaches Tide`);
     await sleep(300);
     assert.deepEqual((await heard(b)).map((x) => [x.file, x.volume]), [[file, 0.4]], `${id} plays once on the other seat, at 0.4`);
   }
   // #659: every soundboard id plays at the meme volume 0.4 (below the music's 0.5). The rest of the board, by id, one tap each.
   // The raw played file, not its clip name: the board_* sounds reuse files that table clips own, which `heard` names by the first.
-  for (const [id, file] of [["sb_wololo", "sb_wololo.mp3"], ["bong", "bong_001"], ["plop", "plop"], ["pluck", "pluck_001"]]) {
+  for (const [id, file, label] of [["sb_wololo", "sb_wololo.mp3", "Wololo"], ["sb_win_reaction", "sb_win_reaction.mp3", "GG!"], ["bong", "bong_001", "Bong"], ["plop", "plop", "Plop"], ["pluck", "pluck_001", "Pluck"]]) {
     await sleep(3100);
     await clear(b);
-    await a.evaluate((x) => window.__emberisle.getState().sendSound(x), id);
+    await a.getByRole("button", { name: `Play sound ${label}`, exact: true }).click();
     await until(async () => (await names(b)).length, `${id} reaches Tide`);
     await sleep(300);
     const got = await b.evaluate(() => window.__plays);
     assert.deepEqual(got.map((x) => [x.file, x.volume]), [[file, 0.4]], `${id} plays once at 0.4 (${JSON.stringify(got)})`);
   }
-  ok("soundboard: every board sound (fah, wololo, airhorn, quit touchin, only wood, bong, plop, pluck) plays at 0.4");
+  ok("soundboard: a tap on each of the nine chips (fah, wololo, GG!, airhorn, quit touchin, only wood, bong, plop, pluck) plays it at 0.4");
   await b.evaluate(async () => {
     const { play } = await import("/src/lib/sound.ts");
     play("sb_airhorn");
@@ -664,6 +671,88 @@ try {
   assert.equal(banner.before, null, "no banner before the crossing");
   assert.match(banner.after, /reached 9 points \u2014 one to win$/, "online: the banner is up on the very state that crosses target - 1");
   ok(`match_point online: banner "${banner.after}" on the same state`);
+
+  // ---- #660 your_turn cue: acting seat hears it once, other seats silent, rejoin mid-turn hears once, repeat push silent, muted silent, hotseat silent.
+  const turnBase = structuredClone(await a.evaluate(() => window.__emberisle.getState().state));
+  turnBase.phase = "main";
+  turnBase.winner = null;
+  const p1Turn = { ...turnBase, current: "p1", seq: turnBase.seq + 1 };
+  const p0Turn = { ...turnBase, current: "p0", seq: turnBase.seq + 2 };
+
+  // Let the banner test's outpost knock land and drain
+  await until(async () => (await names(a)).includes("outpost_place"), "the match-point outpost lands");
+  await a.evaluate(() => new Promise((r) => setTimeout(r, 300)));
+
+  // Sync both tabs to p1's turn
+  await a.evaluate((g) => window.__sockets.at(-1).onmessage({ data: JSON.stringify({ type: "state", you: "p0", game: g }) }), p1Turn);
+  await b.evaluate((g) => window.__sockets.at(-1).onmessage({ data: JSON.stringify({ type: "state", you: "p1", game: g }) }), p1Turn);
+  await a.evaluate(() => new Promise((r) => setTimeout(r, 200)));
+  await clear(a);
+  await clear(b);
+
+  // (1) Turn passes to local seat p0: a hears your_turn once at volume 1; (2) b hears nothing
+  await a.evaluate((g) => window.__sockets.at(-1).onmessage({ data: JSON.stringify({ type: "state", you: "p0", game: g }) }), p0Turn);
+  await b.evaluate((g) => window.__sockets.at(-1).onmessage({ data: JSON.stringify({ type: "state", you: "p1", game: g }) }), p0Turn);
+  await until(async () => (await names(a)).filter((n) => n === "your_turn").length, "acting seat hears your_turn");
+  await sleep(100);
+  assert.deepEqual((await names(a)).filter((n) => n === "your_turn"), ["your_turn"], "your_turn plays exactly once when the turn passes to the local seat");
+  assert.equal((await heard(a)).find((x) => x.file === "your_turn")?.volume, 1, "your_turn plays at volume 1");
+  assert.deepEqual((await names(b)).filter((n) => n === "your_turn"), [], "it does not play for the other seats");
+  ok("your_turn: plays once for acting seat, silent for others");
+
+  // (4) Pushing the same state twice plays it once
+  await clear(a);
+  await a.evaluate((g) => window.__sockets.at(-1).onmessage({ data: JSON.stringify({ type: "state", you: "p0", game: g }) }), p0Turn);
+  await sleep(200);
+  assert.deepEqual((await names(a)).filter((n) => n === "your_turn"), [], "pushing the same state twice plays it once");
+  ok("your_turn: repeat push of the same turn plays nothing");
+
+  // (3) A tab that drops and rejoins during its own turn hears it exactly once; rejoin during another's turn hears nothing
+  await clear(a);
+  await a.evaluate((g) => {
+    const ws = window.__sockets.at(-1);
+    const code = window.__emberisle.getState().code;
+    ws.onmessage({ data: JSON.stringify({ type: "welcome", code, you: "p0", host: true }) });
+    ws.onmessage({ data: JSON.stringify({ type: "state", you: "p0", game: g }) });
+  }, p0Turn);
+  await until(async () => (await names(a)).filter((n) => n === "your_turn").length, "rejoin during own turn hears your_turn");
+  assert.deepEqual((await names(a)).filter((n) => n === "your_turn"), ["your_turn"], "rejoin during own turn hears your_turn exactly once");
+  await clear(a);
+  await a.evaluate((g) => {
+    const ws = window.__sockets.at(-1);
+    const code = window.__emberisle.getState().code;
+    ws.onmessage({ data: JSON.stringify({ type: "welcome", code, you: "p0", host: true }) });
+    ws.onmessage({ data: JSON.stringify({ type: "state", you: "p0", game: g }) });
+  }, p1Turn);
+  await sleep(200);
+  assert.deepEqual((await names(a)).filter((n) => n === "your_turn"), [], "rejoin during someone else's turn hears nothing");
+  ok("your_turn: rejoin during own turn plays once, rejoin during another seat's turn is silent");
+
+  // (5) With sound muted it does not play
+  await mute(a, true);
+  await clear(a);
+  const p0TurnAgain = { ...turnBase, current: "p0", seq: turnBase.seq + 3 };
+  await a.evaluate((g) => window.__sockets.at(-1).onmessage({ data: JSON.stringify({ type: "state", you: "p0", game: g }) }), p0TurnAgain);
+  await sleep(200);
+  assert.deepEqual((await names(a)).filter((n) => n === "your_turn"), [], "with sound muted your_turn does not play");
+  await mute(a, false);
+  ok("your_turn: muted is silent");
+
+  // (6) Hotseat plays none (also watchers and game over)
+  await a.evaluate(async () => {
+    const { hear } = await import("/src/lib/game/store.ts");
+    const base = structuredClone(window.__emberisle.getState().state);
+    const before = { ...base, current: "p1", phase: "main" };
+    const after = { ...base, current: "p0", phase: "main", seq: base.seq + 1 };
+    const over = { ...base, current: "p0", phase: "over", seq: base.seq + 2 };
+    window.__plays = [];
+    hear(before, after, "p0", "hotseat");
+    hear(null, after, "p0", "hotseat", true);
+    hear(before, over, "p0", "online");
+    hear(before, after, "", "online");
+  });
+  assert.deepEqual((await names(a)).filter((n) => n === "your_turn"), [], "hotseat, game over and watchers play none");
+  ok("your_turn: hotseat plays none");
 
   assert.deepEqual(errors, [], `console errors: ${errors.join(" | ")}`);
   console.log("PASS sounds-prove");

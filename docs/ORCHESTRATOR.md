@@ -1,0 +1,55 @@
+# Orchestrator guide (superseded in part)
+
+**How the review desk works is now in [`DESK.md`](DESK.md), and the state is in issue #916.** A new desk
+starts there. This file keeps only what `DESK.md` does not cover: Jarrod's device and preferences,
+publishing, media handover and notes for builders that don't watch PRs.
+
+There is **one desk** at a time. It talks to Jarrod, files and specs issues, decides minor calls,
+reviews and merges. Builders build: Codex (ChatGPT), Grok, Claude chats, and Josh's helper from a fork
+(`docs/HELPERS.md`). Rules for everyone: `AGENTS.md`, `docs/FRAMEWORK.md`, `docs/LANES.md`.
+
+## Jarrod (the owner)
+- He's on iPhone 17 Pro Max Safari: test at 440x956 and 956x440.
+- He hosts friends' games from his Mac:
+  - `cd ~/emberisle && git pull && npm run night` in one Terminal;
+  - a cloudflared quick tunnel in another.
+  - A restart only needs the night window restarted; the tunnel URL stays the same.
+- He wants short, plain replies, the fewest possible questions, and no clicks unless unavoidable. Give
+  him your recommendation, not a menu.
+- **Who decides what:** FRAMEWORK §7. Bugs and minor UX are yours. Major UX and design (features,
+  rules, art style, sound identity) are his, asked in one short message.
+- Firm preferences so far:
+  - the HUD never moves the map;
+  - the copyrighted meme clips are fine, his risk;
+  - player-facing goods are Wood, Sheep, Brick, Stone, Wheat (#657);
+  - the friends' media (icons, sounds, stickers) is curated by him; players never upload;
+  - the turn timer has Off / 1 / 2 / 3 min presets (#548).
+- **Budget:** Claude usage is limited weekly. Use Sonnet for reviews, Opus only for security or infra
+  (workflows, server auth, rate limits). Keep subagents to one per PR review, and stop when he says
+  usage is low.
+
+## Reviewing, merging and check-ins
+These moved to [`DESK.md`](DESK.md): who reviews, when to merge, the required checks, and what to watch.
+A desk does not run timed check-ins. It wakes on the inbox (#699) and on the PR it is about to merge.
+
+## Builders that don't watch PRs
+- Review comments on the PR are how builders hear back. Codex and Grok don't watch PRs, so tell Jarrod
+  the one-line prompt: `Work on Emberisle: fix every review comment on PR #N.`
+- Grok can't open PRs. Look for orphan branches and open the PR for it.
+- Fork PRs from a contributor with no merge yet need Jarrod's "Approve and run". Send him the direct
+  Actions run link.
+
+## Publishing
+- **Web:** GitHub Pages publishes main nightly (11:07 UTC) or on demand (Actions → Pages → Run
+  workflow), at https://jarrodjohnson-gif.github.io/emberisle/. Netlify is frozen until its credits reset.
+- **Jarrod's Mac:** gets updates with a `git pull` and a restart of `npm run night`. Tell him after
+  merges worth playing.
+
+## Media handover
+- Jarrod uploads clips and images in chat. You convert them (ffmpeg; BiRefNet or rembg for sticker
+  backgrounds), name them per `docs/design/sound.md` ("Handing over clips") and the emotes doc, and
+  commit them through a PR.
+
+## Live state
+Open work lives in the tracker, not here. Search the open PRs, `status:in-progress`, `needs: jarrod` and
+`priority:next`.

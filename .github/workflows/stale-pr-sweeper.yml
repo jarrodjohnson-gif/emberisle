@@ -1,0 +1,41 @@
+# #925: Jarrod must approve the existing close/keep list before enabling STALE_PR_SWEEPER=on.
+# Existing PRs receive a fresh 5/10-day grace period at their first enabled observation.
+name: stale-pr-sweeper
+on:
+  schedule:
+    - cron: '23 8 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Log proposed actions without changing any PR
+        type: boolean
+        default: true
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+permissions:
+  contents: read
+  pull-requests: write
+concurrency:
+  group: stale-pr-sweeper
+  cancel-in-progress: false
+jobs:
+  sweep:
+    if: vars.STALE_PR_SWEEPER == 'on'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      # Never check out or execute a PR head, including fork code.
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+          sparse-checkout: scripts/stale-pr-sweeper.mjs
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - env:
+          GITHUB_TOKEN: ${{ github.token }}
+          STALE_PR_SWEEPER: ${{ vars.STALE_PR_SWEEPER }}
+          STALE_PR_DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+        run: node scripts/stale-pr-sweeper.mjs
