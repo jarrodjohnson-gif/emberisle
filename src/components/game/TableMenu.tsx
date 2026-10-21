@@ -17,6 +17,7 @@ export function TableMenu() {
   const state = useGame((s) => s.state)!;
   const mode = useGame((s) => s.mode);
   const code = useGame((s) => s.code);
+  const serverSha = useGame((s) => s.serverSha);
   const spectator = useGame((s) => s.spectator);
   const watching = useGame((s) => s.watching);
   const setHowTo = useGame((s) => s.setHowTo);
@@ -222,6 +223,11 @@ export function TableMenu() {
               </Button>
             </>
           )}
+          {/* #913: quiet client/server version at the bottom of the menu. */}
+          <p className="mt-1 border-t border-border/40 px-3 py-1 text-caption text-muted tabular-nums" data-testid="version-line">
+            client {import.meta.env.VITE_GIT_SHA ?? "unknown"} · server {serverSha ?? "—"}
+            {serverSha && import.meta.env.VITE_GIT_SHA && serverSha !== import.meta.env.VITE_GIT_SHA ? " (differ)" : ""}
+          </p>
           {/* Outside the question's branch: the field focuses itself when it mounts, and must not take the focus back from
               Leave table each time the question folds into the rows (CI has no clipboard, so the field is the common case). */}
           <CopyFallback state={copied} label={copied?.what === "log" ? "Game log" : "Table code"} className="px-3" />
