@@ -36,6 +36,16 @@ Squash, with the full 40-character head SHA, only when all of these hold:
 
 Then set the issue to `status:in-review`. `issue_write` replaces every label, so pass the full label list.
 
+## Docs-only auto-merge
+
+The auto-merge Action (`.github/workflows/auto-merge.yml`, #923) is the one exception to the desk's merge click. It runs only when the repo variable `AUTO_MERGE` is `on`.
+
+- **What qualifies:** every changed file is under `docs/` and is added or modified, with fewer than 400 changed lines in all. `scripts/auto-merge-eligible.mjs` holds the full rules.
+- **What never qualifies:** `AGENTS.md`, `CLAUDE.md`, `README.md`, `docs/DESK.md`, `docs/REVIEWING.md`, `docs/DECISIONS.md`, `docs/LANES.md` and `docs/FRAMEWORK.md`. Code, workflows, scripts and package files never qualify either. Deletes and renames never qualify.
+- **Your part:** after a clean review of a qualifying PR, comment `<!-- review-desk: clean <40-char head SHA> -->`. Use the full head SHA you reviewed. A new push needs a new review and a new marker.
+- **It merges** with `--match-head-commit` once `checks` is green on that SHA, and adds the `auto-merged` label. Then set the issue to `status:in-review`, as for any merge.
+- **Rollback:** `git revert` the merge, then set `AUTO_MERGE` to `off`.
+
 ## Always
 
 - Never push to `main`, force-push someone else's branch, or skip or loosen a test.

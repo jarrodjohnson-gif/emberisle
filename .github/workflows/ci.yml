@@ -55,9 +55,10 @@ jobs:
           mapfile -t CHANGED <<< "$LIST"
           DOCS_ONLY=true
           for file in "${CHANGED[@]}"; do
-            # README.md is consumed by fortune-tray-prove; other markdown, docs, issue templates, and LICENSE are docs-only.
+            # README.md is consumed by fortune-tray-prove, and AGENTS.md and CLAUDE.md are agent instructions, not docs (#923).
+            # Other markdown, docs, issue templates, and LICENSE are docs-only.
             case "$file" in
-              README.md) DOCS_ONLY=false; break;;
+              README.md|AGENTS.md|CLAUDE.md) DOCS_ONLY=false; break;;
               docs/*|.github/ISSUE_TEMPLATE/*|LICENSE|*.md)
                 ;;
               *)
@@ -149,6 +150,8 @@ jobs:
         run: npm run touch-place-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run flake-rerun-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run auto-merge-prove
 
   browser-a-suites:
     name: browser-a (${{ matrix.suite }})
