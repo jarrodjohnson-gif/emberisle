@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from "react";
-import { Globe, LockKeyhole, Volume2, VolumeX } from "lucide-react";
+import { Globe, Lock, Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { HowTo, Lobby, online, openTables, OpenTables, SetupPipHints, sheets } from "@/components/game/chunks";
+import { HowTo, Lobby, online, OpenTables, SetupPipHints, sheets } from "@/components/game/chunks";
 import { Hud } from "@/components/game/Hud";
 import { PlaceList } from "@/components/game/PlaceList";
 import { TableRecoveryBoundary } from "@/components/game/TableRecoveryBoundary";
@@ -165,11 +165,7 @@ function Title() {
   }, []);
 
   // #488: How to play is a lazy chunk; idle time on the title fetches it, and so does a pointer or focus on its button.
-  // #833: the open-table list is another lazy chunk; idle fetch so a plain visit sees Join without hovering Host.
-  useEffect(() => {
-    preloadOnIdle(sheets.prefetch);
-    preloadOnIdle(openTables.prefetch);
-  }, []);
+  useEffect(() => preloadOnIdle(sheets.prefetch), []);
 
   // One primary per screen (docs/design/polish.md): Play, or Watch on a watch link. Watch only shows once there is a code.
   const showWatch = watchLink || join.length === 4;
@@ -254,17 +250,7 @@ function Title() {
               <p className="text-xs text-muted">3 bots, no network</p>
             </div>
             {/* #488: a pointer or focus on Host or Join fetches the online chunk (lobby and chat) before either is pressed. */}
-            <div
-              className="flex flex-wrap gap-2"
-              onPointerEnter={() => {
-                online.prefetch();
-                openTables.prefetch();
-              }}
-              onFocus={() => {
-                online.prefetch();
-                openTables.prefetch();
-              }}
-            >
+            <div className="flex flex-wrap gap-2" onPointerEnter={online.prefetch} onFocus={online.prefetch}>
               {/* Split Host + Open/Private: share the row with Join via flex-1 basis-0 so max-w-sm
                   (title-prove 1280x500) does not wrap. Ghost only — never a fourth filled button (#444). */}
               <div className="flex min-w-0 flex-1 basis-0 overflow-hidden rounded-control border border-control-line">
@@ -286,7 +272,7 @@ function Title() {
                   data-testid="open-mode-toggle"
                   onClick={() => setOpenMode((m) => (m === "open" ? "private" : "open"))}
                 >
-                  {openMode === "open" ? <Globe size={16} aria-hidden="true" /> : <LockKeyhole size={16} aria-hidden="true" />}
+                  {openMode === "open" ? <Globe size={16} aria-hidden="true" /> : <Lock size={16} aria-hidden="true" />}
                 </Button>
               </div>
               <form
