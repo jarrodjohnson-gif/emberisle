@@ -4,7 +4,7 @@
 // never appears in Tab B's open-table list.
 // Run with: node --import ./server/register.mjs scripts/open-table-prove.mjs
 import { spawn } from "node:child_process";
-import { existsSync, mkdtempSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { chromium } from "playwright";
@@ -43,6 +43,7 @@ const browser = await chromium.launch({
   executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
 });
 
+mkdirSync("test-results", { recursive: true });
 const T0 = Date.now();
 const errors = [];
 const elapsed = () => `+${((Date.now() - T0) / 1000).toFixed(1)}s`;
@@ -125,6 +126,12 @@ const phoneClip = await phone.page.evaluate(() => {
   return { ok: fullyIn(entry) && fullyIn(join), entry: entry.getBoundingClientRect(), join: join.getBoundingClientRect(), card: c };
 });
 check(phoneClip.ok, `390x844 open-table row and Join fully visible (got ${JSON.stringify(phoneClip)})`);
+check(await phone.page.locator("#code-help").innerText() === "Code for private tables", "private-code helper uses the approved text");
+check(await phone.page.getByRole("textbox", { name: "Join code", exact: true }).getAttribute("aria-describedby") === "code-help", "code input is described by the private-table helper");
+check(await phone.page.getByTestId("open-tables").getByText("Open tables", { exact: true }).count() === 1, "open-table heading uses the approved text");
+check(await phone.page.getByTestId("open-table-join").getAttribute("aria-label") === "Join Jarrod's table", "listed Join has the table's accessible name");
+check((await phone.page.getByTestId("open-table-join").boundingBox()).height >= 44, "listed Join has a 44px tap height");
+await phone.page.screenshot({ path: "test-results/open-tables-390x844.png" });
 await phone.ctx.close();
 
 // --- Tab B: Joshua visits the title ---
@@ -136,6 +143,8 @@ await until(
 );
 const entryText = await B.page.getByTestId("open-table-entry").innerText();
 check(entryText.includes("Jarrod's table"), `open table entry shows Jarrod's table (got "${entryText}")`);
+
+await B.page.screenshot({ path: "test-results/open-tables-1280x720.png" });
 
 // Join without typing any code.
 await B.page.getByTestId("open-table-join").click();

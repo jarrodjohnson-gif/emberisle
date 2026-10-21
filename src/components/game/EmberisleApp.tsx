@@ -267,8 +267,8 @@ function Title() {
                   variant="ghost"
                   className="w-11 shrink-0 rounded-none border-0 border-l border-control-line px-0"
                   aria-pressed={openMode === "open"}
-                  title={openMode === "open" ? "Open table (anyone can join)" : "Private table (code required)"}
-                  aria-label={openMode === "open" ? "Open table" : "Private table"}
+                  title={openMode === "open" ? "Anyone can join" : "Code needed"}
+                  aria-label={openMode === "open" ? "Open to anyone" : "Private, code needed"}
                   data-testid="open-mode-toggle"
                   onClick={() => setOpenMode((m) => (m === "open" ? "private" : "open"))}
                 >
@@ -291,6 +291,7 @@ function Title() {
                   onChange={(e) => setJoin(e.target.value.toUpperCase())}
                   placeholder="Code"
                   aria-label="Join code"
+                  aria-describedby="code-help"
                   autoCapitalize="characters"
                   autoComplete="off"
                   maxLength={4}
@@ -300,6 +301,7 @@ function Title() {
                   Join
                 </Button>
               </form>
+              <p id="code-help" className="w-full text-xs text-muted">Code for private tables</p>
             </div>
             {showWatch ? (
               <Button

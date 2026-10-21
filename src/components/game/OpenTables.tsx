@@ -62,7 +62,7 @@ export function OpenTables() {
 
   return (
     <div data-testid="open-tables" className="mt-2 border-t border-border pt-2">
-      <p className="mb-1 text-xs font-medium text-muted">Open table</p>
+      <p className="mb-1 text-xs font-medium text-muted">Open tables</p>
       <ul className="flex flex-col gap-1">
         {openTables.map((t) => {
           const full = t.seated >= t.total;
@@ -82,12 +82,12 @@ export function OpenTables() {
                     Full
                   </span>
                 ) : (
-                  <Button size="sm" variant="secondary" data-testid="open-table-join" className="h-9 min-w-0 px-3" onClick={() => joinTable(t.code)}>
+                  <Button size="sm" variant="secondary" aria-label={`Join ${t.name}`} data-testid="open-table-join" className="h-11 min-w-0 px-3" onClick={() => joinTable(t.code)}>
                     Join
                   </Button>
                 )
               ) : (
-                <Button size="sm" variant="ghost" data-testid="open-table-watch" className="h-9 min-w-0 px-3" onClick={() => watchTable(t.code)}>
+                <Button size="sm" variant="ghost" aria-label={`Watch ${t.name}`} data-testid="open-table-watch" className="h-11 min-w-0 px-3" onClick={() => watchTable(t.code)}>
                   Watch
                 </Button>
               )}
