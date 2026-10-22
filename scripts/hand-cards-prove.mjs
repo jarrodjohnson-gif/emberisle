@@ -1,6 +1,8 @@
-// Jelly Ocean hand: readable chalk faces, stable counts, bounded movement on actual game actions,
-// isolated/restarting deltas, clipping, quiet reconnect/hotseat baselines and fully static reduced motion.
-// The tests hold WAAPI timelines and wait for cue cleanup between samples.
+// Jelly Ocean hand, V1 Column goods cards (#773, docs/design/goods-cards-v1): paper faces with the symbol, count and name
+// centred on one axis (within 0.5 px, from getBoundingClientRect), stable counts and footprints, a gain's full-colour fill
+// with a +N tab from the top edge and a loss's hollow red −N tab, held FLASH_MS (2200 ms) and faded over 300 ms, bounded
+// lift/dip movement on actual game actions, isolated/restarting deltas, clipping, quiet reconnect/hotseat baselines and
+// fully static reduced motion. The tests hold WAAPI timelines and wait for cue cleanup between samples.
 import assert from "node:assert/strict";
 import { existsSync, mkdirSync } from "node:fs";
 import { chromium } from "playwright";
@@ -25,6 +27,45 @@ const ratio = (a, b) => {
   return (hi + 0.05) / (lo + 0.05);
 };
 const parse = (c) => c.match(/[\d.]+/g).slice(0, 3).map(Number);
+const NAMES = { timber: "Wood", clay: "Brick", wool: "Sheep", grain: "Wheat", ore: "Stone" };
+// The good's colour, its side colour and the text on its full fill (styles.css :root).
+const PAINT = {
+  timber: ["#2f6a4f", "#173d35", "#ffffff"],
+  clay: ["#b8533d", "#74372b", "#ffffff"],
+  wool: ["#b2ce80", "#617744", "#263d3c"],
+  grain: ["#e3c462", "#8c722d", "#263d3c"],
+  ore: ["#63748a", "#414d5b", "#ffffff"],
+};
+// The cue's whole life: FLASH_MS (2200) held, then a 300 ms fade (Hand.tsx CUE_MS).
+const CUE_MS = 2500;
+// Each layout's fixed card: upright and short as today; the wide, fine-pointer layout at 1.3x the upright mock.
+const SIZE = {
+  desk: { box: [88, 80], symbol: 22, count: 30, name: 12 },
+  port: { box: [66.8, 62], symbol: 18, count: 24, name: 10 },
+  short: { box: [47.2, 44], symbol: 14, count: 24, name: 0 },
+};
+// A gain lifts by the tray's --goods-lift: 6 px upright, 4 px short and where the hand heads a wide screen's stack.
+const LIFT = { desk: -4, port: -6, short: -4 };
+
+// The symbol, the count and the name of every card centre on the card's vertical axis within 0.5 px, and so do the lit
+// copy's when a gain lays one over it. Read from getBoundingClientRect, so a glyph box that is off-centre cannot hide.
+async function centring(page, tag, { lit = false } = {}) {
+  const rows = await page.evaluate((lit) => ["timber", "clay", "wool", "grain", "ore"].flatMap((r) => {
+    const card = document.querySelector(`[data-testid="resource-${r}"]`);
+    const face = lit ? card.querySelector('[data-testid="goods-lit"]') : card;
+    if (!face) return [];
+    const c = card.getBoundingClientRect();
+    const mid = c.left + c.width / 2;
+    return [...face.querySelectorAll(":scope > svg, :scope > .goods-count, :scope > .goods-label")].filter((e) => e.getBoundingClientRect().width > 0).map((e) => {
+      const b = e.getBoundingClientRect();
+      return { r, part: e.tagName === "svg" ? "symbol" : e.classList.contains("goods-count") ? "count" : "name", off: b.left + b.width / 2 - mid, w: b.width, h: b.height, top: b.top - c.top, size: parseFloat(getComputedStyle(e).fontSize) };
+    });
+  }), lit);
+  assert.ok(rows.length > 0, `${tag}: centring found the card parts${lit ? " (lit)" : ""}`);
+  for (const p of rows) assert.ok(Math.abs(p.off) <= 0.5, `${tag} ${p.r} ${p.part}${lit ? " (lit)" : ""}: centred within 0.5 px (off by ${p.off.toFixed(3)} px)`);
+  const worst = Math.max(...rows.map((p) => Math.abs(p.off)));
+  return { rows, worst };
+}
 
 // Read the actual card animation after a game action. Pause and seek its WAAPI timeline to the furthest
 // transform keyframe, then read the browser-computed matrix; checking the stylesheet alone would miss a
@@ -94,7 +135,7 @@ async function sampleCardMotion(page, expected, tag) {
     assert.equal(c.flash, want.flash, `${tag} ${r}: visible delta label`);
     assert.ok(c.overlap <= 1, `${tag} ${r}: delta badge does not cover the count (${c.overlap.toFixed(1)}px² overlap)`);
     assert.ok(c.n >= 1, `${tag} ${r}: action started a WAAPI card transform`);
-    assert.ok(c.duration > 0 && c.duration <= 320, `${tag} ${r}: animation settles within 320ms (duration ${c.duration})`);
+    assert.equal(c.duration, CUE_MS, `${tag} ${r}: movement holds with the fill and settles as it fades (duration ${c.duration})`);
     assert.ok(c.frames.every((keys) => keys.every((k) => k === "transform")), `${tag} ${r}: card animation changes transform only (${JSON.stringify(c.frames)})`);
     assert.ok(Math.abs(c.y - want.y) <= 0.35, `${tag} ${r}: sampled transform ${c.y.toFixed(2)}px, expected ${want.y}px`);
     assert.ok(Math.abs(c.extreme.y - want.y) <= 0.35, `${tag} ${r}: transform keyframe reached ${c.extreme.y}px, expected ${want.y}px`);
@@ -143,7 +184,7 @@ async function proveResourceMotion(page, tag) {
   await page.getByRole("button", { name: "More sheep to want" }).click();
   await page.getByRole("button", { name: /^(Bank 4|Dock 3|Dock 2):1$/ }).click();
   await page.waitForFunction(() => document.querySelector('[data-testid="resource-wool"] [data-testid="hand-count"]')?.textContent.trim() === "2", null, { timeout: STEP_MS });
-  await sampleCardMotion(page, { wool: { count: "2", flash: "+1", y: -3 }, ore: { count: "4", flash: "-4", y: 2 } }, tag);
+  await sampleCardMotion(page, { wool: { count: "2", flash: "+1", y: LIFT[tag] }, ore: { count: "4", flash: "\u22124", y: 2 } }, tag);
   // Hold the first sample while a second legal bank trade arrives in the same direction. The card nodes stay mounted,
   // but each affected card must get a fresh animation that starts from the beginning.
   await page.evaluate(() => {
@@ -168,7 +209,7 @@ async function proveResourceMotion(page, tag) {
   assert.equal(restart.wool.count, "3", `${tag}: second gain count is immediate`);
   assert.equal(restart.wool.flash, "+1", `${tag}: second gain shows +N`);
   assert.equal(restart.ore.count, "0", `${tag}: second loss count is immediate`);
-  assert.equal(restart.ore.flash, "-4", `${tag}: second loss shows -N at zero`);
+  assert.equal(restart.ore.flash, "\u22124", `${tag}: second loss shows −N at zero`);
   await page.evaluate(() => {
     for (const r of ["wool", "ore"]) {
       const card = document.querySelector(`[data-testid="resource-${r}"]`);
@@ -235,7 +276,7 @@ async function proveDynamicMotionCancellation(page, tag) {
   });
   assert.equal(started.found, true, `${tag}: live preference fixture started native card motion`);
   assert.equal(started.state, "paused", `${tag}: test holds the native WAAPI timeline before changing preference`);
-  assert.ok(started.duration > 0 && started.duration <= 320, `${tag}: live preference fixture uses bounded card motion`);
+  assert.equal(started.duration, CUE_MS, `${tag}: live preference fixture uses bounded card motion`);
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.waitForFunction(() => window.__dynamicMotion?.playState === "idle", null, { timeout: STEP_MS });
   const canceled = await page.evaluate(() => {
@@ -355,9 +396,14 @@ async function proveReducedMotion(page, tag) {
     const transforms = [ore, wool].flatMap((card) => card.getAnimations().filter((a) => a.effect?.target === card && a.effect.getKeyframes().some((f) => "transform" in f)));
     const flash = wool.parentElement.querySelector('[data-testid="resource-flash"]');
     const fade = flash.getAnimations().find((a) => a.effect?.target === flash && a.effect.getKeyframes().some((f) => "opacity" in f));
-    const ring = ore.querySelector('[data-testid="hand-ring"]');
+    const lit = wool.querySelector('[data-testid="goods-lit"]');
+    const lost = ore.querySelector('[data-testid="goods-lost"]');
     if (fade) { fade.pause(); fade.currentTime = 600; }
+    const still = (e) => e && { name: getComputedStyle(e).animationName, opacity: getComputedStyle(e).opacity, transform: getComputedStyle(e).transform, animations: e.getAnimations().length };
     return {
+      lit: still(lit), lost: still(lost),
+      litFill: lit && getComputedStyle(lit).backgroundColor,
+      cardTransforms: [ore, wool].map((c) => getComputedStyle(c).transform),
       count: ore.querySelector('[data-testid="hand-count"]').textContent.trim(),
       loss: ore.parentElement.querySelector('[data-testid="resource-flash"]')?.textContent.trim(),
       gain: wool.parentElement.querySelector('[data-testid="resource-flash"]')?.textContent.trim(),
@@ -366,19 +412,22 @@ async function proveReducedMotion(page, tag) {
       fadeDuration: fade?.effect.getTiming().duration,
       fadeOpacity: Number(getComputedStyle(flash).opacity),
       fadeProps: fade?.effect.getKeyframes().map((f) => Object.keys(f).filter((k) => !["offset", "easing", "composite", "computedOffset"].includes(k))),
-      ringDuration: ring && getComputedStyle(ring).animationDuration,
       footprint: [ore.offsetWidth, ore.offsetHeight],
     };
   });
   assert.equal(reduced.count, "0", `${tag}: reduced-motion loss reaches zero immediately`);
-  assert.equal(reduced.loss, "-4", `${tag}: reduced-motion loss remains visible`);
+  assert.equal(reduced.loss, "\u22124", `${tag}: reduced-motion loss remains visible`);
   assert.equal(reduced.gain, "+1", `${tag}: reduced-motion gain remains visible`);
   assert.equal(reduced.transforms, 0, `${tag}: reduced motion removes card transforms`);
   assert.equal(reduced.fadeName, "none", `${tag}: reduced-motion labels use the opacity fade`);
   assert.equal(reduced.fadeDuration, undefined, `${tag}: reduced-motion feedback lasts 1200ms`);
   assert.equal(reduced.fadeOpacity, 1, `${tag}: midpoint label stays readable at opacity ${reduced.fadeOpacity}`);
   assert.equal(reduced.fadeProps, undefined, `${tag}: reduced-motion feedback changes opacity only`);
-  assert.equal(reduced.ringDuration, "0s", `${tag}: ring remains a 1 ms reduced-motion step`);
+  // The highlight stands still: the gain's fill and the loss's ring are up at full opacity, with no animation or transform.
+  assert.deepEqual(reduced.lit, { name: "none", opacity: "1", transform: "none", animations: 0 }, `${tag}: reduced-motion gain fill is a still highlight`);
+  assert.deepEqual(reduced.lost, { name: "none", opacity: "1", transform: "none", animations: 0 }, `${tag}: reduced-motion loss ring is a still highlight`);
+  assert.deepEqual(parse(reduced.litFill), rgb(PAINT.wool[0]), `${tag}: reduced-motion gain fill is the good's colour`);
+  assert.deepEqual(reduced.cardTransforms, ["none", "none"], `${tag}: reduced-motion cards carry no transform`);
 }
 
 mkdirSync("test-results", { recursive: true });
@@ -408,6 +457,30 @@ async function open(v, reducedMotion) {
         (window.__resourceMotionAnimations ??= []).push({ target: this, animation });
       }
       return animation;
+    };
+    // A slow runner (software GL under CI load) can take longer than a cue's 2500 ms between finding a cue and reading it,
+    // and the cue is gone by then. While __holdCues is set, the hand's 2500 ms end-of-cue timer waits for __releaseCues(),
+    // so a measured cue stays on the page until the proof has read it. clearTimeout still cancels a held timer.
+    const later = window.setTimeout.bind(window);
+    const clear = window.clearTimeout.bind(window);
+    const held = new Map();
+    window.setTimeout = function (fn, ms, ...args) {
+      if (window.__holdCues && ms === 2500 && typeof fn === "function") {
+        const id = later(() => {}, 2_147_000_000);
+        held.set(id, () => fn(...args));
+        return id;
+      }
+      return later(fn, ms, ...args);
+    };
+    window.clearTimeout = function (id) {
+      held.delete(id);
+      return clear(id);
+    };
+    window.__releaseCues = () => {
+      window.__holdCues = false;
+      const due = [...held.entries()];
+      held.clear();
+      for (const [id, fn] of due) { clear(id); fn(); }
     };
   });
   const errors = [];
@@ -443,7 +516,7 @@ try {
     const { ctx, page, errors } = await open(v, false);
     await setHand(page, { timber: 3, clay: 0, wool: 12, grain: 1, ore: 0 });
     await page.waitForFunction(() => document.querySelector('[data-testid="resource-wool"]')?.textContent.includes("12"), null, { timeout: STEP_MS });
-    await page.waitForTimeout(2300); // the first set's flashes are over
+    await page.waitForFunction(() => !document.querySelector('[data-testid="resource-flash"], [data-testid="goods-lit"], [data-testid="goods-lost"]'), null, { timeout: STEP_MS }); // the first set's cues are over
     await page.waitForFunction(() => getComputedStyle(document.querySelector('[data-testid="resource-timber"]')).opacity === "1", null, { timeout: STEP_MS });
     const cards = await page.evaluate(() =>
       Object.fromEntries(
@@ -462,6 +535,9 @@ try {
             visibleText: visible.map((e) => e.textContent.trim()), icon: !!el.querySelector("svg"),
             iconOpacity: el.querySelector("svg") && getComputedStyle(el.querySelector("svg")).opacity,
             name: el.textContent,
+            symbol: (() => { const b = el.querySelector("svg").getBoundingClientRect(); return [b.width, b.height]; })(),
+            label: (() => { const l = getComputedStyle(el.querySelector(".goods-label")); return { size: l.fontSize, weight: l.fontWeight, spacing: l.letterSpacing, transform: l.textTransform }; })(),
+            box: (() => { const b = el.getBoundingClientRect(); return [Math.round(b.width * 10) / 10, Math.round(b.height * 10) / 10]; })(),
           }];
         }),
       ),
@@ -475,11 +551,15 @@ try {
       const cr = ratio(parse(c.color), fill);
       assert.ok(cr >= 4.5, `${v.tag} ${r}: count contrast ${cr.toFixed(2)}`);
       assert.equal(c.text, String(want[r]), `${v.tag} ${r}: count`);
-      assert.equal(c.size, v.tag === "desk" ? "24px" : v.tag === "port" ? "28px" : "24px", `${v.tag} ${r}: count size`);
+      assert.equal(c.size, `${SIZE[v.tag].count}px`, `${v.tag} ${r}: count size`);
       assert.equal(c.weight, "700", `${v.tag} ${r}: count weight`);
       assert.match(c.tabular, /tabular-nums/, `${v.tag} ${r}: tabular`);
-      assert.ok(c.sizes.every((s) => s.px <= 28), `${v.tag} ${r}: count is the largest text ${JSON.stringify(c.sizes)}`);
-      assert.ok(c.sizes.filter((s) => s.px === parseFloat(c.size)).length === 1, `${v.tag} ${r}: only the count is 28 px`);
+      assert.ok(c.sizes.every((s) => s.px <= SIZE[v.tag].count), `${v.tag} ${r}: count is the largest text ${JSON.stringify(c.sizes)}`);
+      assert.ok(c.sizes.filter((s) => s.px === parseFloat(c.size)).length === 1, `${v.tag} ${r}: only the count is ${c.size}`);
+      // V1: an 18 px symbol (14 px in the short card), a 24 px count, and a 10 px tracked uppercase name.
+      assert.deepEqual(c.symbol, [SIZE[v.tag].symbol, SIZE[v.tag].symbol], `${v.tag} ${r}: symbol size`);
+      if (SIZE[v.tag].name) assert.deepEqual(c.label, { size: `${SIZE[v.tag].name}px`, weight: "700", spacing: `${+(SIZE[v.tag].name * 0.08).toFixed(2)}px`, transform: "uppercase" }, `${v.tag} ${r}: tracked name`);
+      assert.deepEqual(c.box, SIZE[v.tag].box, `${v.tag} ${r}: card footprint is its layout's fixed size`);
       assert.equal(c.opacity, "1", `${v.tag} ${r}: opacity`);
       assert.ok(c.icon && c.iconOpacity === "1", `${v.tag} ${r}: icon at 70 % (${c.iconOpacity})`);
       assert.deepEqual(c.visibleText, v.tag === "short" ? [String(want[r])] : [String(want[r]), {timber:"Wood",clay:"Brick",wool:"Sheep",grain:"Wheat",ore:"Stone"}[r]], `${v.tag} ${r}: only the count is visible text`);
@@ -489,38 +569,101 @@ try {
     const tinted = await page.evaluate(() => [...document.querySelectorAll('[data-testid^="resource-"]')].filter((e) => /emerald|rose/.test(e.className)).length);
     assert.equal(tinted, 0, `${v.tag}: no emerald / rose fill`);
 
-    // A gain and a loss each pulse the ring once. Counted from the DOM, so a re-render cannot hide a second one.
-    // The ring unmounts when its flash ends (soon on a slow runner), so its computed style is captured at mount.
+    const still = await centring(page, v.tag);
+
+    // A gain fills its card once, a loss rings its card once, each with one tab, and the old corner ring is gone. Counted
+    // from the DOM, so a re-render cannot hide a second one. The cues unmount when they end (soon on a slow runner), so
+    // their computed style is read at mount.
     await page.evaluate(() => {
-      window.__rings = [];
-      window.__ringStyles = [];
+      window.__cues = [];
       new MutationObserver((ms) => {
-        for (const m of ms) for (const n of m.addedNodes) if (n.nodeType === 1 && n.dataset?.testid === "hand-ring") {
-          window.__rings.push(n.parentElement.dataset.testid);
+        for (const m of ms) for (const n of m.addedNodes) if (n.nodeType === 1 && ["goods-lit", "goods-lost", "resource-flash", "hand-ring"].includes(n.dataset?.testid)) {
           const cs = getComputedStyle(n);
-          window.__ringStyles.push({ anim: cs.animationName, duration: cs.animationDuration });
+          window.__cues.push({ what: n.dataset.testid, on: n.parentElement.dataset.testid, anim: cs.animationName, duration: cs.animationDuration });
         }
       }).observe(document.body, { childList: true, subtree: true });
     });
+    await page.evaluate(() => (window.__holdCues = true));
     await setHand(page, { timber: 5 });
-    await page.waitForFunction(() => window.__rings.length === 1, null, { timeout: STEP_MS });
+    await page.waitForFunction(() => window.__cues.length === 2, null, { timeout: STEP_MS });
     await page.evaluate(() => { const g = window.__emberisle; g.setState({ state: structuredClone(g.getState().state) }); });
     await page.waitForTimeout(300);
-    const ring = await page.evaluate(() => {
-      const kf = [...document.styleSheets].flatMap((s) => [...s.cssRules]).find((r) => r.name === "resource-ring");
-      return { styles: window.__ringStyles.slice(), rings: window.__rings.slice(), kf: kf?.cssText ?? "" };
+    // Hold the cue at full strength (1200 ms into its 2500 ms) and read the lit face and the tab.
+    const gain = await page.evaluate(() => {
+      const card = document.querySelector('[data-testid="resource-timber"]');
+      // The card's own lift is held too, so the tab is probed where it really goes.
+      for (const an of card.getAnimations({ subtree: true })) { an.pause(); an.currentTime = 1200; }
+      const lit = card.querySelector('[data-testid="goods-lit"]');
+      const tab = card.querySelector('[data-testid="resource-flash"]');
+      const c = card.getBoundingClientRect();
+      const t = tab.getBoundingClientRect();
+      // The tab takes no taps, so hit testing skips it; let it take them for the probe. A clipped or covered tab still loses.
+      tab.style.pointerEvents = "auto";
+      const hit = document.elementFromPoint(t.left + t.width / 2, t.top + 1);
+      tab.style.pointerEvents = "";
+      const lc = getComputedStyle(lit);
+      return {
+        cues: window.__cues.slice(), fill: lc.backgroundColor, opacity: lc.opacity,
+        count: getComputedStyle(lit.querySelector(".goods-count")).color, litText: lit.textContent,
+        symbol: getComputedStyle(lit.querySelector("svg")).color,
+        tab: { font: [getComputedStyle(tab).fontSize, getComputedStyle(tab).fontWeight], h: t.height, text: tab.textContent, bg: getComputedStyle(tab).backgroundColor, color: getComputedStyle(tab).color, off: t.left + t.width / 2 - (c.left + c.width / 2), above: c.top - t.top, into: t.bottom - c.top, opacity: getComputedStyle(tab).opacity },
+        tabOnTop: hit === tab || tab.contains(hit), lift: c.top - card.parentElement.getBoundingClientRect().top,
+        hit: hit && `${hit.tagName}.${String(hit.className).slice(0, 60)} ${hit.dataset?.testid ?? ""}`,
+        tabBox: [t.top, t.bottom, t.left, t.right], stackTop: card.closest("[data-hud-stack]")?.getBoundingClientRect().top,
+        tray: getComputedStyle(card.closest(".goods-tray")).paddingTop,
+      };
     });
-    assert.deepEqual(ring.rings, ["resource-timber"], `${v.tag}: one gain, one ring on timber, none after a cloned setState: ${JSON.stringify(ring.rings)}`);
-    assert.equal(ring.styles[0]?.anim, "resource-ring", `${v.tag}: ring animation`);
-    assert.match(ring.kf, /rgb\(255, 255, 255\) 0px 0px 0px 2px/, `${v.tag}: 2 px ring`);
+    assert.deepEqual(gain.cues.map((q) => [q.what, q.on]), [["goods-lit", "resource-timber"], ["resource-flash", "resource-timber"]], `${v.tag}: one gain, one fill and one tab on timber, none after a cloned setState`);
+    assert.ok(gain.cues.every((q) => q.anim === "goods-cue" && q.duration === "2.5s"), `${v.tag}: the fill and the tab hold 2200 ms and fade over 300 ms (${JSON.stringify(gain.cues)})`);
+    assert.deepEqual(parse(gain.fill), rgb(PAINT.timber[0]), `${v.tag}: gain fills the card with the good's colour`);
+    assert.equal(gain.opacity, "1", `${v.tag}: the fill is at full strength while it holds`);
+    assert.equal(gain.tab.opacity, "1", `${v.tag}: the tab is at full strength while it holds`);
+    assert.deepEqual(parse(gain.count), rgb(PAINT.timber[2]), `${v.tag}: the count on the fill is the good's on-colour`);
+    assert.deepEqual(parse(gain.symbol), rgb(PAINT.timber[2]), `${v.tag}: the symbol on the fill is the good's on-colour`);
+    assert.ok(ratio(parse(gain.count), parse(gain.fill)) >= 4.5, `${v.tag}: count on the fill ≥ 4.5:1 (${ratio(parse(gain.count), parse(gain.fill)).toFixed(2)})`);
+    assert.equal(gain.litText, "5Wood", `${v.tag}: the lit face shows the new count`);
+    assert.equal(gain.tab.text, "+2", `${v.tag}: gain tab reads +N`);
+    assert.deepEqual(parse(gain.tab.bg), rgb(PAINT.timber[1]), `${v.tag}: gain tab is the good's side colour`);
+    assert.deepEqual(parse(gain.tab.color), rgb("#ffffff"), `${v.tag}: gain tab text is white`);
+    assert.ok(ratio(parse(gain.tab.color), parse(gain.tab.bg)) >= 4.5, `${v.tag}: gain tab ≥ 4.5:1`);
+    assert.ok(Math.abs(gain.tab.off) <= 0.5, `${v.tag}: the tab is centred on its card (off by ${gain.tab.off.toFixed(3)} px)`);
+    assert.deepEqual(gain.tab.font, ["14px", "700"], `${v.tag}: the +N tab is 14 px bold`);
+    assert.ok(Math.abs(gain.tab.h - 22) <= 0.5, `${v.tag}: the +N tab is 22 px tall (${gain.tab.h})`);
+    assert.ok(Math.abs(gain.tab.above - 18) <= 0.5 && Math.abs(gain.tab.into - 4) <= 0.5, `${v.tag}: the tab grows out of the card's top edge (${gain.tab.above} px above, ${gain.tab.into} px into it)`);
+    assert.ok(Math.abs(gain.lift - LIFT[v.tag]) <= 0.35, `${v.tag}: the gained card is lifted ${LIFT[v.tag]} px while the fill holds (${gain.lift})`);
+    assert.equal(gain.tabOnTop, true, `${v.tag}: nothing covers or clips the tab (${JSON.stringify([gain.hit, gain.tabBox, gain.stackTop, gain.tray])})`);
+    const lit = await centring(page, `${v.tag} gain`, { lit: true });
     await page.screenshot({ path: `test-results/hand-cards-${v.tag}.png` });
-    await page.waitForTimeout(1500);
+    await page.evaluate(() => { for (const an of document.querySelector('[data-testid="resource-timber"]').getAnimations({ subtree: true })) an.play(); });
+    await page.evaluate(() => window.__releaseCues());
+    await page.waitForFunction(() => !document.querySelector('[data-testid="resource-flash"]'), null, { timeout: STEP_MS });
+    await page.evaluate(() => (window.__holdCues = true));
     await setHand(page, { timber: 4 });
-    await page.waitForFunction(() => window.__rings.length === 2, null, { timeout: STEP_MS });
-    assert.equal(await page.locator('[data-testid="resource-flash"]').textContent(), "-1", `${v.tag}: loss label`);
+    await page.waitForFunction(() => window.__cues.length === 4, null, { timeout: STEP_MS });
+    const loss = await page.evaluate(() => {
+      const card = document.querySelector('[data-testid="resource-timber"]');
+      const tab = card.querySelector('[data-testid="resource-flash"]');
+      const t = tab.getBoundingClientRect();
+      const c = card.getBoundingClientRect();
+      window.__releaseCues();
+      return { cues: window.__cues.slice(2), lit: !!card.querySelector('[data-testid="goods-lit"]'), font: [getComputedStyle(tab).fontSize, getComputedStyle(tab).fontWeight], h: t.height, above: c.top - t.top, text: tab.textContent, bg: getComputedStyle(tab).backgroundColor, color: getComputedStyle(tab).color, edge: getComputedStyle(tab).boxShadow, off: t.left + t.width / 2 - (c.left + c.width / 2) };
+    });
+    assert.deepEqual(loss.cues.map((q) => [q.what, q.on]), [["goods-lost", "resource-timber"], ["resource-flash", "resource-timber"]], `${v.tag}: one loss, one red ring and one tab on timber`);
+    assert.equal(loss.lit, false, `${v.tag}: a loss does not fill the card`);
+    assert.equal(loss.text, "−1", `${v.tag}: loss tab reads −N`);
+    assert.deepEqual(parse(loss.bg), rgb("#fff9f0"), `${v.tag}: loss tab is hollow (paper)`);
+    assert.deepEqual(parse(loss.color), rgb("#8a2219"), `${v.tag}: loss tab text is the loss red`);
+    assert.match(loss.edge, /rgb\(138, 34, 25\) 0px 0px 0px 1px inset/, `${v.tag}: loss tab has a 1 px red edge`);
+    assert.ok(ratio(parse(loss.color), parse(loss.bg)) >= 4.5, `${v.tag}: loss tab ≥ 4.5:1`);
+    assert.ok(Math.abs(loss.off) <= 0.5, `${v.tag}: the loss tab is centred on its card`);
+    assert.deepEqual(loss.font, ["14px", "700"], `${v.tag}: the −N tab is 14 px bold`);
+    assert.ok(Math.abs(loss.h - 22) <= 0.5 && Math.abs(loss.above - 19) <= 0.5, `${v.tag}: the −N tab is 22 px tall and grows out of the top edge (${loss.h}, ${loss.above})`);
+    assert.ok(!gain.cues.concat(loss.cues).some((q) => q.what === "hand-ring"), `${v.tag}: no ring is drawn`);
+    assert.equal(await page.locator('[data-testid="hand-ring"]').count(), 0, `${v.tag}: no ring on the page`);
     assert.deepEqual(errors, [], `${v.tag}: console errors`);
-    console.log(`${v.tag} ${v.width}x${v.height}: fills ${RESOURCES.map((r) => cards[r].fill).join(" ")}; tabular hero counts, contrast ` +
-      RESOURCES.map((r) => ratio(parse(cards[r].color), parse(cards[r].fill)).toFixed(1)).join(" ") + "; zero cards stay opaque; 1 ring per change; 0 console errors");
+    console.log(`${v.tag} ${v.width}x${v.height}: ${SIZE[v.tag].box.join("x")} cards, ${SIZE[v.tag].symbol} px symbols, ${SIZE[v.tag].count} px tabular counts; fills ${RESOURCES.map((r) => cards[r].fill).join(" ")}; contrast ` +
+      RESOURCES.map((r) => ratio(parse(cards[r].color), parse(cards[r].fill)).toFixed(1)).join(" ") + `; symbol, count and name centred within ${still.worst.toFixed(3)} px at rest, ${lit.worst.toFixed(3)} px lit; ` +
+      `gain fill ${gain.fill}, count ${ratio(parse(gain.count), parse(gain.fill)).toFixed(2)}:1, +2 tab ${gain.tab.font.join(" ")} ${gain.tab.h} px tall ${ratio(parse(gain.tab.color), parse(gain.tab.bg)).toFixed(2)}:1, −1 tab ${ratio(parse(loss.color), parse(loss.bg)).toFixed(2)}:1; 1 cue per change; 0 console errors`);
     await page.waitForFunction(() => !document.querySelector('[data-testid="resource-flash"]'), null, { timeout: STEP_MS });
     await proveResourceMotion(page, v.tag);
     if (v.tag === "desk") {
@@ -531,22 +674,64 @@ try {
     await ctx.close();
   }
 
-  // Reduced motion on the short touch viewport keeps the ring as a 1 ms step and the delta as a readable 1200 ms fade.
+  // Reduced motion on the short touch viewport: the fill and the tab are still (no animation), and no card moves.
   const rm = await open(VIEWS[2], true);
   await rm.page.evaluate(() => {
-    window.__ringDurations = [];
+    window.__cueDurations = [];
     new MutationObserver((ms) => {
-      for (const m of ms) for (const n of m.addedNodes) if (n.nodeType === 1 && n.dataset?.testid === "hand-ring") window.__ringDurations.push(getComputedStyle(n).animationDuration);
+      for (const m of ms) for (const n of m.addedNodes) if (n.nodeType === 1 && ["goods-lit", "resource-flash"].includes(n.dataset?.testid)) window.__cueDurations.push(getComputedStyle(n).animationDuration);
     }).observe(document.body, { childList: true, subtree: true });
   });
   await setHand(rm.page, { timber: 2 });
-  await rm.page.waitForFunction(() => window.__ringDurations.length > 0, null, { timeout: STEP_MS });
-  const dur = await rm.page.evaluate(() => window.__ringDurations[0]);
-  assert.equal(dur, "0s", "reduced motion: ring duration");
+  await rm.page.waitForFunction(() => window.__cueDurations.length >= 2, null, { timeout: STEP_MS });
+  const dur = await rm.page.evaluate(() => window.__cueDurations.slice());
+  assert.ok(dur.every((d) => d === "0s"), `reduced motion: the fill and the tab do not animate (${dur})`);
   await proveReducedMotion(rm.page, "reduced-short");
   assert.deepEqual(rm.errors, [], "reduced motion: console errors");
-  console.log(`reduced short touch: ring runs ${dur}; card motion removed; +N/-N remain fully static`);
+  console.log(`reduced short touch: fill and tab run ${dur.join(", ")}; card motion removed; the highlight and +N/−N stand still`);
   await rm.ctx.close();
+  // A wide, short window with a fine pointer (1000x450): the non-phone layout in the short range keeps main's card and tray
+  // (139.2x52 in a 60 px tray), and the box stays that size before, during and after a gain and a loss. The tab hangs from
+  // the tray's top edge there, so the scrolling HUD stack does not clip it.
+  {
+    const ds = await open({ tag: "deskshort", width: 1000, height: 450 }, false);
+    const box = () => ds.page.evaluate(() => ["timber", "clay", "wool", "grain", "ore"].map((r) => {
+      const card = document.querySelector(`[data-testid="resource-${r}"]`);
+      const t = card.closest(".goods-tray").getBoundingClientRect();
+      return { r, w: Math.round(card.getBoundingClientRect().width * 10) / 10, h: card.offsetHeight, tray: Math.round(t.height * 10) / 10 };
+    }));
+    await setHand(ds.page, { timber: 3, clay: 0, wool: 2, grain: 1, ore: 0 });
+    await ds.page.waitForFunction(() => document.querySelector('[data-testid="resource-wool"]')?.textContent.includes("2"), null, { timeout: STEP_MS });
+    await ds.page.waitForFunction(() => !document.querySelector('[data-testid="resource-flash"], [data-testid="goods-lit"], [data-testid="goods-lost"]'), null, { timeout: STEP_MS });
+    const rest = await box();
+    for (const c of rest) assert.deepEqual([c.w, c.h, c.tray], [139.2, 52, 60], `deskshort ${c.r}: card is main's 139.2x52 in a 60 px tray (${JSON.stringify(c)})`);
+    const during = [];
+    for (const hand of [{ timber: 5 }, { wool: 1 }]) {
+      await ds.page.evaluate(() => (window.__holdCues = true));
+      await setHand(ds.page, hand);
+      await ds.page.waitForSelector('[data-testid="resource-flash"]', { timeout: STEP_MS });
+      // Hold every cue and the card's own motion at 1200 ms, inside the hold, and read the boxes and the tab there.
+      const tab = await ds.page.evaluate(() => {
+        for (const a of document.querySelector(".goods-tray").getAnimations({ subtree: true })) { a.pause(); a.currentTime = 1200; }
+        const t = document.querySelector('[data-testid="resource-flash"]');
+        const r = t.getBoundingClientRect();
+        t.style.pointerEvents = "auto";
+        const hit = document.elementFromPoint(r.left + r.width / 2, r.top + 1);
+        t.style.pointerEvents = "";
+        return { top: hit === t || t.contains(hit), font: getComputedStyle(t).fontSize, h: r.height };
+      });
+      assert.equal(tab.top, true, `deskshort ${JSON.stringify(hand)}: nothing clips or covers the tab`);
+      assert.ok(tab.font === "14px" && Math.abs(tab.h - 22) <= 0.5, `deskshort ${JSON.stringify(hand)}: the tab is 14 px text, 22 px tall (${JSON.stringify(tab)})`);
+      during.push(await box());
+      await ds.page.evaluate(() => { for (const a of document.querySelector(".goods-tray").getAnimations({ subtree: true })) a.play(); window.__releaseCues(); });
+      await ds.page.waitForFunction(() => !document.querySelector('[data-testid="resource-flash"]'), null, { timeout: STEP_MS });
+    }
+    const after = await box();
+    for (const b of [...during, after]) assert.deepEqual(b, rest, `deskshort: the card and tray boxes are fixed during and after a cue (${JSON.stringify(b)})`);
+    assert.deepEqual(ds.errors, [], "deskshort: console errors");
+    console.log(`deskshort 1000x450 fine pointer: cards ${rest[0].w}x${rest[0].h} in a ${rest[0].tray} px tray, unchanged through a gain and a loss; tab unclipped`);
+    await ds.ctx.close();
+  }
   console.log("hand-cards-prove: ok");
 } catch (e) {
   console.error(e);
