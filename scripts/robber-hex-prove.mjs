@@ -1,6 +1,6 @@
 // #826: while the wayfarer stands on a hex, that hex and its number token go grey; the Wastes stay plain;
 // moving him clears the old hex. Run: node scripts/robber-hex-prove.mjs
-import { existsSync } from "node:fs";
+import { existsSync, mkdirSync } from "node:fs";
 import { chromium } from "playwright";
 import { createServer } from "vite";
 
@@ -9,6 +9,7 @@ const PORT = Number(process.env.VITE_PORT) || 8126;
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();
 
+mkdirSync("test-results", { recursive: true });
 const errors = [];
 const fails = [];
 const check = (name, ok, detail) => {
@@ -20,6 +21,121 @@ const browser = await chromium.launch({
   executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
+
+// Read the actual composed WebGL frame. Hiding the token and robber only during sampling
+// isolates terrain tint from their moving pixels/shadows; owner screenshots restore both.
+async function pixelProof(width, height) {
+  const ctx = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: 1, hasTouch: width < 600, isMobile: width < 600, reducedMotion: "reduce" });
+  await ctx.addInitScript(() => localStorage.setItem("emberisle-jelly", "full"));
+  const page = await ctx.newPage();
+  page.on("console", m => m.type() === "error" && errors.push(m.text()));
+  page.on("pageerror", e => errors.push(String(e)));
+  await page.goto(`http://127.0.0.1:${PORT}/`);
+  await page.waitForFunction(() => window.__emberisle && window.__isle, null, { timeout: STEP_MS });
+  const ids = await page.evaluate(() => {
+    const g = window.__emberisle;
+    g.getState().startHotseat(3);
+    g.getState().setViewChoice("overhead");
+    const st = structuredClone(g.getState().state);
+    const target = st.hexes.find(h => h.q === 0 && h.r === 0);
+    const grain = st.hexes.find(h => h.terrain === "grain");
+    if (target.id !== grain.id) {
+      grain.terrain = target.terrain;
+      grain.pip = target.pip;
+      target.terrain = "grain";
+    }
+    target.pip = 6;
+    const waste = st.hexes.find(h => h.terrain === "waste");
+    st.robberHex = waste.id;
+    st.phase = "roll";
+    st.seq++;
+    st.hexes.forEach(h => h.blocked = h.id === waste.id);
+    g.setState({ state: st });
+    return { target: target.id, waste: waste.id };
+  });
+  await page.waitForFunction(() => window.__isle.landReady, null, { timeout: STEP_MS });
+  await page.evaluate(() => {
+    const isle = window.__isle;
+    const canvas = isle.renderer.domElement;
+    const copy = document.createElement("canvas");
+    window.__terrainFrame = copy;
+    window.__terrainFrames = 0;
+    const render = isle.composer.render.bind(isle.composer);
+    isle.composer.render = (...args) => {
+      const out = render(...args);
+      copy.width = canvas.width;
+      copy.height = canvas.height;
+      copy.getContext("2d", { willReadFrequently: true }).drawImage(canvas, 0, 0);
+      window.__terrainFrames++;
+      return out;
+    };
+    isle.wayfarer.visible = false;
+    isle.tokens.forEach(t => t.visible = false);
+    isle.wake();
+  });
+  const settle = async (id, dull) => {
+    const frame = await page.evaluate(() => window.__terrainFrames);
+    await page.evaluate(id => {
+      const g = window.__emberisle;
+      const st = structuredClone(g.getState().state);
+      st.robberHex = id;
+      st.hexes.forEach(h => h.blocked = h.id === id);
+      st.seq++;
+      g.setState({ state: st });
+      window.__isle.wake();
+    }, id);
+    await page.waitForFunction(({ frame, target, dull }) => window.__terrainFrames > frame && window.__isle.jellyBoard.dullOf(target) === dull, { frame, target: ids.target, dull }, { timeout: STEP_MS });
+  };
+  const sample = () => page.evaluate(async id => {
+    const { worldOfHex } = await import("/src/lib/game/board.ts");
+    const { topOf } = await import("/src/lib/scene/isle-renderer.ts");
+    const isle = window.__isle;
+    const hex = window.__emberisle.getState().state.hexes.find(h => h.id === id);
+    const center = worldOfHex(hex);
+    const c = window.__terrainFrame;
+    const k = c.width / innerWidth;
+    const pixels = c.getContext("2d").getImageData(0, 0, c.width, c.height).data;
+    const lum = [];
+    // Stay inside the hex, clear of its central token and neighboring hexes.
+    for (const radius of [0.5, 0.65, 0.8]) for (let n = 0; n < 24; n++) {
+      const a = n * Math.PI / 12;
+      const point = isle.screenAt(center.x + radius * Math.cos(a), topOf(hex.terrain), center.z + radius * Math.sin(a));
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+        const x = Math.round(point.x * k) + dx, y = Math.round(point.y * k) + dy;
+        if (x < 0 || y < 0 || x >= c.width || y >= c.height) continue;
+        const i = (y * c.width + x) * 4;
+        if (pixels[i + 3] < 250) continue;
+        lum.push((pixels[i] * 0.2126 + pixels[i + 1] * 0.7152 + pixels[i + 2] * 0.0722) / 255);
+      }
+    }
+    return { count: lum.length, mean: lum.reduce((a, b) => a + b, 0) / lum.length };
+  }, ids.target);
+  await settle(ids.waste, 0);
+  const before = await sample();
+  await settle(ids.target, 1);
+  const blocked = await sample();
+  check(`${width}x${height}: rendered terrain sample covers the hex`, before.count >= 500 && blocked.count >= 500, { before, blocked });
+  check(`${width}x${height}: rendered blocked hex is at least 10% darker`, blocked.mean <= before.mean * 0.9, { before: before.mean, blocked: blocked.mean });
+  const screenshotFrame = await page.evaluate(() => {
+    const isle = window.__isle;
+    const frame = window.__terrainFrames;
+    isle.wayfarer.visible = true;
+    isle.tokens.forEach(t => t.visible = true);
+    isle.wake();
+    return frame;
+  });
+  await page.waitForFunction(frame => window.__terrainFrames > frame, screenshotFrame, { timeout: STEP_MS });
+  await page.screenshot({ path: `test-results/robber-grey-${width}x${height}.png` });
+  await page.evaluate(() => {
+    const isle = window.__isle;
+    isle.wayfarer.visible = false;
+    isle.tokens.forEach(t => t.visible = false);
+  });
+  await settle(ids.waste, 0);
+  const restored = await sample();
+  check(`${width}x${height}: moving away restores rendered full colour`, Math.abs(restored.mean - before.mean) <= 0.02, { before: before.mean, restored: restored.mean });
+  await ctx.close();
+}
 
 try {
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 720 } });
@@ -179,6 +295,9 @@ try {
   });
   check("390x844: production hex dulls", phone.dull === 1, phone);
 
+  await ctx.close();
+  await pixelProof(1280, 720);
+  await pixelProof(390, 844);
   check("no console errors", errors.length === 0, errors.slice(0, 5));
 } finally {
   await browser.close();
