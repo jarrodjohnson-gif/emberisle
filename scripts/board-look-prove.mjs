@@ -823,7 +823,7 @@ try {
       return { kinds, stats: window.__terrain, rest, clearance: jelly.clearance(0.6), strata };
     });
     const kinds = Object.keys(t.kinds).sort();
-    check("terrain: all six kinds are on the board, the full scenes", kinds.join() === "clay,grain,ore,timber,waste,wool" && t.stats.kinds === 6 && !t.stats.lite, { kinds, lite: t.stats.lite });
+    check("terrain: all six kinds are on the board, the full scenes", kinds.join() === "clay,grain,ore,timber,waste,wool" && t.stats.kinds >= 6 && !t.stats.lite, { kinds, lite: t.stats.lite });
     for (const k of kinds) {
       const s = t.kinds[k];
       // A landform: more than 0.02 of spread, and under 0.8 (the tallest peak stands well within the block's own scale).

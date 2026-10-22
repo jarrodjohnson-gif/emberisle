@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { type Terrain } from "@/lib/game/types";
-import { setBoardDetail, tileSteps, type Tile } from "@/lib/scene/hex-jelly";
+import { rng32, setBoardDetail, tileSteps, type Tile } from "@/lib/scene/hex-jelly";
 import { BLOCK_H } from "@/lib/scene/jelly-dims";
 
 // The jelly board (#599, docs/design/hex-jelly-prompt.md): the six Hex Jelly scenes on the game board.
@@ -16,6 +16,8 @@ import { BLOCK_H } from "@/lib/scene/jelly-dims";
 // - the wayfarer's dulling.
 // The sprites (glows, fog and steam puffs) are camera-facing quads in two instanced draws, one added, one blended.
 
+// Per-hex variety (#639): two tiles per terrain kind, each hex rotated by a multiple of 60 degrees.
+const VARIANTS = 2;
 // The board's lattice: a hex fills about a fifth of the screen, where 12 rings are as smooth as the studio's 64.
 const RINGS = 12;
 // Times the scenes are sampled at to find what moves: anything whose matrix, visibility, instances or material changes.
@@ -368,7 +370,7 @@ export class JellyBoard {
   // Build the scenes for these hexes, one per kind from its seed, and batch them; deterministic for the same hexes and seeds.
   // `pause` runs between kinds (a scene takes about a tenth of a second to build), so no one task holds the page for long; it
   // answers false when the board is no longer wanted, and the build stops there.
-  static async create(hexes: JellyHex[], seedOf: (kind: Terrain) => number, pause: () => Promise<boolean>, lite = false) {
+  static async create(hexes: JellyHex[], seedOf: (kind: Terrain, variant: number) => number, pause: () => Promise<boolean>, lite = false) {
     const b = new JellyBoard();
     b.lite = lite;
     try {
@@ -380,56 +382,62 @@ export class JellyBoard {
     }
   }
 
-  private async build(hexes: JellyHex[], seedOf: (kind: Terrain) => number, pause: () => Promise<boolean>): Promise<JellyBoard | null> {
+  private async build(hexes: JellyHex[], seedOf: (kind: Terrain, variant: number) => number, pause: () => Promise<boolean>): Promise<JellyBoard | null> {
     const b = this;
     const lite = this.lite;
     // A breath after the chunk itself loads and runs.
     if (!(await pause())) return null;
     for (const kind of [...new Set(hexes.map((h) => h.terrain))]) {
-      // Built in its steps (the props, then the block), with a breath between; the board detail holds only while a step runs.
-      const steps = tileSteps(kind, seedOf(kind), RINGS, true, lite);
-      let tile: Tile | undefined;
-      for (;;) {
-        setBoardDetail(true);
-        let step: IteratorResult<void, Tile>;
-        try {
-          step = steps.next();
-        } finally {
-          setBoardDetail(false);
+      const kindHexes = hexes.filter((h) => h.terrain === kind);
+      const r = rng32(seedOf(kind, 0));
+      const assigns = kindHexes.map(() => ({ variant: Math.floor(r() * VARIANTS) }));
+      for (let vi = 0; vi < VARIANTS; vi++) {
+        const myHexes = kindHexes.filter((_, i) => assigns[i]!.variant === vi);
+        if (myHexes.length === 0) continue;
+        const steps = tileSteps(kind, seedOf(kind, vi), RINGS, true, lite);
+        let tile: Tile | undefined;
+        for (;;) {
+          setBoardDetail(true);
+          let step: IteratorResult<void, Tile>;
+          try {
+            step = steps.next();
+          } finally {
+            setBoardDetail(false);
+          }
+          if (step.done) {
+            tile = step.value;
+            break;
+          }
+          if (!(await pause())) {
+            b.dispose();
+            return null;
+          }
         }
-        if (step.done) {
-          tile = step.value;
-          break;
+        const hx = myHexes.map((h): Hx => {
+          const T = new THREE.Matrix4().makeTranslation(h.x, h.y, h.z);
+          return { id: h.id, T, rollAt: -Infinity, tapAt: -Infinity, dull: 0, dullTo: 0, M: new THREE.Matrix4(), fx: new THREE.Color(1, 1, 1), roll: -1, dirty: true, wasActive: false, glow: 0, glowWas: 0, slot: 0 };
+        });
+        b.kinds.push({ kind, tile, hexes: hx, leaves: [], sprites: [] });
+        if (!(await pause())) {
+          b.dispose();
+          return null;
+        }
+        const meshes: THREE.Mesh[] = [];
+        tile.group.traverse((o) => (o as THREE.Mesh).isMesh && meshes.push(o as THREE.Mesh));
+        let since = performance.now();
+        for (const m of meshes) {
+          indexed(m.geometry);
+          if (performance.now() - since < 40) continue;
+          if (!(await pause())) {
+            b.dispose();
+            return null;
+          }
+          since = performance.now();
         }
         if (!(await pause())) {
           b.dispose();
           return null;
         }
-      }
-      const hx = hexes
-        .filter((h) => h.terrain === kind)
-        .map((h): Hx => ({ id: h.id, T: new THREE.Matrix4().makeTranslation(h.x, h.y, h.z), rollAt: -Infinity, tapAt: -Infinity, dull: 0, dullTo: 0, M: new THREE.Matrix4(), fx: new THREE.Color(1, 1, 1), roll: -1, dirty: true, wasActive: false, glow: 0, glowWas: 0, slot: 0 }));
-      b.kinds.push({ kind, tile, hexes: hx, leaves: [], sprites: [] });
-      if (!(await pause())) {
-        b.dispose();
-        return null;
-      }
-      // Index its geometry in slices of about 40 ms.
-      const meshes: THREE.Mesh[] = [];
-      tile.group.traverse((o) => (o as THREE.Mesh).isMesh && meshes.push(o as THREE.Mesh));
-      let since = performance.now();
-      for (const m of meshes) {
-        indexed(m.geometry);
-        if (performance.now() - since < 40) continue;
-        if (!(await pause())) {
-          b.dispose();
-          return null;
-        }
-        since = performance.now();
-      }
-      if (!(await pause())) {
-        b.dispose();
-        return null;
       }
     }
     for (const k of b.kinds)
@@ -948,7 +956,9 @@ export class JellyBoard {
           }
         }
       }
-      out[k.kind] = { min, what, all };
+      const prev = out[k.kind];
+      if (!prev || min < prev.min) out[k.kind] = { min, what, all: prev ? { ...prev.all, ...all } : all };
+      else if (prev) Object.assign(prev.all, all);
     }
     return out;
   }

@@ -1569,7 +1569,7 @@ export class IsleRenderer {
     }
     performance.mark("props-start");
     loadJelly()
-      .then(({ JellyBoard }) => (alive() ? JellyBoard.create(hexes, (kind) => hashStr(`${key}|${kind}`), () => new Promise<boolean>((r) => setTimeout(() => r(alive()), 0)), this.lite) : null))
+      .then(({ JellyBoard }) => (alive() ? JellyBoard.create(hexes, (kind, variant) => hashStr(`${key}|${kind}|${variant}`), () => new Promise<boolean>((r) => setTimeout(() => r(alive()), 0)), this.lite) : null))
       // Its shaders compile before it swaps in (in parallel where the browser can, KHR_parallel_shader_compile), not in the
       // first frame that draws it. Compiled in place, into the composer's own target, so the programs are the frame's.
       .then(async (jelly) => {
