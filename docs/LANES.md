@@ -77,7 +77,7 @@ to any tier. Helpers don't use this list: they follow the queue in [`HELPERS.md`
 |---|---|---|
 | `tier:1-deep` | Hours-long research and architecture carried through to a finished document | Claude Fable 5.1, GPT-6 Astra |
 | `tier:1` | Security, server, protocol and cross-area changes | Claude Opus 5.5, GPT-6.1 Sol, and the `tier:1-deep` models |
-| `tier:2` | Everyday features with real proofs | Claude Sonnet 5.5, Gemini 3.8 Flash (thinking HIGH), Grok 4.7, GLM 5.3 and Kimi K3 (the last two provisional, see below), and every `tier:1` model |
+| `tier:2` | Everyday features with real proofs | Claude Sonnet 5.5, Cursor Composer, Gemini 3.8 Flash (thinking HIGH), Grok 4.7, GLM 5.3 and Kimi K3 (the last two provisional, see below), and every `tier:1` model |
 | `tier:3` | Small single-purpose fixes, docs and screenshot QA | Claude Haiku 5.5, GPT-6 Luna, and every model above |
 
 **Tier and model labels.** Every issue carries a `tier:` label. Any model at that tier or below may take it. Nobody assigns builders.
