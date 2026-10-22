@@ -446,15 +446,25 @@ export function legalFor(game, you) {
 
 // Hidden fortunes and the deck order stay on the host until the game ends.
 export function viewFor(game, you) {
-  if (game.phase === "over") return { ...game, deckLeft: game.deck.length };
+  if (game.phase === "over") return { ...game, deckLeft: game.deck.length, players: game.players.map(revealLoss) };
   return closedView(game, you);
+}
+
+// Goods lost to successful steals (#550) stay on the host until the win: no view carries them, not even the seat's own.
+// At the win every seat and watcher gets the count with the final state, a 0 for a seat that lost nothing.
+function withoutLoss({ goodsLost, ...rest }) {
+  return rest;
+}
+
+function revealLoss(p) {
+  return { ...p, goodsLost: p.goodsLost ?? 0 };
 }
 
 // A watcher gets the opponent view, and at the win the same reveal as the seats minus the seed and rng (#347).
 function watchView(game) {
   if (game.phase !== "over") return closedView(game, null);
   const { seed, rng, ...open } = game;
-  return { ...open, deckLeft: game.deck.length };
+  return { ...open, deckLeft: game.deck.length, players: game.players.map(revealLoss) };
 }
 
 function closedView(game, you) {
@@ -467,9 +477,9 @@ function closedView(game, you) {
     deckLeft: game.deck.length,
     players: game.players.map((p) =>
       p.id === you
-        ? p
+        ? withoutLoss(p)
         : {
-            ...withoutHand(p),
+            ...withoutHand(withoutLoss(p)),
             goods: RESOURCES.reduce((n, r) => n + p.resources[r], 0),
             hidden: { knight: 0, road: 0, plenty: 0, monopoly: 0, vp: 0 },
             boughtThisTurn: { knight: 0, road: 0, plenty: 0, monopoly: 0, vp: 0 },
