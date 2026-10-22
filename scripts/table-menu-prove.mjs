@@ -99,6 +99,7 @@ try {
       return r.left >= 0 && r.right <= innerWidth && r.top >= 0 && r.bottom <= innerHeight;
     });
     assert.ok(fits, `${v.tag}: the sheet is inside the viewport`);
+    await page.waitForFunction(() => window.__isle?.caps.size > 0 && window.__isle.renders > 5, null, { timeout: 90_000 });
     await page.screenshot({ path: `test-results/table-menu-${v.tag}.png` });
 
     // How to play works from the menu and gives the focus back to the button.
