@@ -40,6 +40,11 @@ if (role) {
     if (hold === "reclaim-empty" && String(name) === path.join(dir, "writer.lock")) pause();
     return rmdir.call(this, name);
   };
+  if (hold === "reused-pid") {
+    const lock = path.join(dir, "writer.lock");
+    fs.mkdirSync(lock, { mode: 0o700 });
+    fs.writeFileSync(path.join(lock, `owner-${process.pid}-${"0".repeat(24)}`), String(process.pid), { mode: 0o600 });
+  }
   syncBuiltinESMExports();
   const { openProfiles } = await import("./profiles.mjs");
   const store = openProfiles(dir, { colors: [] });
@@ -82,7 +87,7 @@ if (role) {
         await new Promise((resolve) => setTimeout(resolve, 5));
       }
     };
-    return { c, next, release: () => fs.writeFileSync(marker, "go"), stop: async (signal) => { if (signal) c.kill(signal); else c.send("stop"); await exited; }, write: async (key) => { c.send({ type: "write", key }); return next("wrote"); } };
+    return { c, next, errors: () => errors, release: () => fs.writeFileSync(marker, "go"), stop: async (signal) => { if (signal) c.kill(signal); else c.send("stop"); await exited; }, write: async (key) => { c.send({ type: "write", key }); return next("wrote"); } };
   };
   const loser = async (c, p, why) => {
     const before = disk(p);
@@ -123,6 +128,29 @@ if (role) {
     const lock = path.join(p, "writer.lock"), entries = fs.readdirSync(lock);
     check("published directory and its unique owner file are private", (fs.statSync(lock).mode & 0o777) === 0o700 && entries.length === 1 && (fs.statSync(path.join(lock, entries[0])).mode & 0o777) === 0o600);
     await b.stop(); await a.stop();
+  }
+  {
+    const p = area("reused-pid"), a = start(p, "reused-pid");
+    check("an earlier owner's marker with this process PID is recovered", (await a.next("ready")).ready);
+    check("reused-PID recovery permits a durable write", (await a.write("restarted")).ok);
+    a.c.send("duplicate");
+    check("the recovered process cannot reopen its own published lock", !(await a.next("duplicate")).ready);
+    const b = start(p);
+    check("reused-PID recovery excludes another process", !(await b.next("ready")).ready);
+    await loser(b, p, "reused PID");
+    await b.stop(); await a.stop();
+  }
+  for (const name of ["stray-file", "symlink", "malformed-owner"]) {
+    const p = area(name), lock = path.join(p, "writer.lock");
+    fs.mkdirSync(lock, { mode: 0o700 });
+    const entry = path.join(lock, name);
+    if (name === "symlink") fs.symlinkSync("missing", entry);
+    else fs.writeFileSync(entry, "junk", { mode: 0o600 });
+    const c = start(p);
+    check(`${name}: ambiguous lock is refused`, !(await c.next("ready")).ready);
+    await c.stop();
+    check(`${name}: recovery diagnostic identifies the lock and requires hosts to stop`, c.errors().includes(lock) && c.errors().includes("stop every host") && c.errors().includes("remove this lock path"));
+    check(`${name}: refused lock entry remains untouched`, fs.readdirSync(lock).length === 1 && fs.lstatSync(entry).isSymbolicLink() === (name === "symlink") && (name === "symlink" ? fs.readlinkSync(entry) === "missing" : fs.readFileSync(entry, "utf8") === "junk"));
   }
   let deadPid;
   for (const [legacy, boundary] of [[false, "reclaim"], [true, "reclaim"], [false, "reclaim-empty"]]) {

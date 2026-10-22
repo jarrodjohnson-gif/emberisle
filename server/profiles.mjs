@@ -111,12 +111,14 @@ export function validDoc(doc, colors) {
 const emptyDoc = () => ({ schemaVersion: SCHEMA, profiles: {}, logins: {}, reservedLogins: {}, tombstones: {}, devices: {}, unknownLogins: {} });
 const newGuard = () => ({ times: [], pending: {}, lifetime: 0 });
 
+const publishedOwners = new Set();
+
 // Publish a complete, nonempty owner directory. Empty-file PID publication is not exclusive (#1021).
 function takeLock(dir) {
   const file = path.join(dir, LOCK);
   let candidate = mkdtempSync(path.join(dir, ".writer-"));
   const owner = `owner-${process.pid}-${randomBytes(12).toString("hex")}`;
-  const changed = (e) => ["ENOENT", "EEXIST", "ENOTEMPTY", "ENOTDIR", "EISDIR"].includes(e.code);
+  const changed = (e) => ["ENOENT", "EEXIST", "ENOTEMPTY", "ENOTDIR", "EISDIR", "EPERM"].includes(e.code);
   try {
     const fd = openSync(path.join(candidate, owner), "wx", 0o600);
     try {
@@ -128,6 +130,7 @@ function takeLock(dir) {
         // Rename can replace an empty directory, but never another published, nonempty owner.
         renameSync(candidate, file);
         candidate = null;
+        publishedOwners.add(owner);
         // Leave ownership until the process is dead: pending native writes must not outlive exclusion.
         return true;
       } catch (e) { if (!changed(e)) throw e; }
@@ -139,7 +142,9 @@ function takeLock(dir) {
             const match = entries.length === 1 && /^owner-([1-9][0-9]*)-[0-9a-f]{24}$/.exec(entries[0]);
             if (!match) return false;
             const pid = Number(match[1]);
-            if (!Number.isSafeInteger(pid) || alive(pid)) return false;
+            // A prior process can have our PID after a container restart. Our own published markers stay live.
+            const reusedPid = pid === process.pid && !publishedOwners.has(entries[0]);
+            if (!Number.isSafeInteger(pid) || (!reusedPid && alive(pid))) return false;
             // A stale contender knows only this unique dead marker. It cannot unlink a new owner's marker.
             unlinkSync(path.join(file, entries[0]));
           }
@@ -244,7 +249,10 @@ export function openProfiles(dir, { colors, clock = Date.now } = {}) {
     reason = reason ?? "unreadable";
     console.error("profiles: store unavailable:", e.message);
   }
-  if (reason) console.error(`profiles: store unavailable (${reason}); guests can still play`);
+  if (reason) {
+    console.error(`profiles: store unavailable (${reason}); guests can still play`);
+    if (reason === "locked") console.error(`profiles: lock refused at ${path.join(dir, LOCK)}; stop every host using this store, then remove this lock path and retry`);
+  }
 
   // Writes are serialized across every caller. Each mutation runs on a copy; the live store changes only after the copy is
   // durably on disk. Failures before replacement leave the old snapshot usable; uncertain replacements fence every caller
