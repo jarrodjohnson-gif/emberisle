@@ -32,6 +32,7 @@
     "watch-ui-prove": "node --import ./server/register.mjs scripts/watch-ui-prove.mjs",
     "win-action-prove": "node --import ./server/register.mjs scripts/win-action-prove.mjs",
     "ore-tokens-prove": "node scripts/ore-tokens-prove.mjs",
+    "climber-prove": "node scripts/climber-prove.mjs",
     "tokens-prove": "node scripts/tokens-prove.mjs",
     "idle-prove": "node scripts/idle-prove.mjs",
     "upgrade-prove": "node --import ./server/register.mjs scripts/upgrade-prove.mjs",
