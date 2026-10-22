@@ -390,7 +390,8 @@ export class JellyBoard {
     for (const kind of [...new Set(hexes.map((h) => h.terrain))]) {
       const kindHexes = hexes.filter((h) => h.terrain === kind);
       const r = rng32(seedOf(kind, 0));
-      const assigns = kindHexes.map(() => ({ variant: Math.floor(r() * VARIANTS) }));
+      // Guarantee at least one hex per variant for kinds with enough hexes.
+      const assigns = kindHexes.map((_, i) => ({ variant: i < VARIANTS ? i : Math.floor(r() * VARIANTS) }));
       for (let vi = 0; vi < VARIANTS; vi++) {
         const myHexes = kindHexes.filter((_, i) => assigns[i]!.variant === vi);
         if (myHexes.length === 0) continue;
@@ -1026,7 +1027,7 @@ export class JellyBoard {
     }
     for (const m of this.bakes) triangles += m.userData.tris as number;
     for (const sb of this.sprites) triangles += 2 * sb.count;
-    return { lite: this.lite, drawCalls: this.batches.size + this.bakes.length + this.sprites.length, triangles: Math.round(triangles), kinds: this.kinds.length, batches: this.batches.size, bakes: this.bakes.length, sprites: this.sprites.length };
+    return { lite: this.lite, drawCalls: this.batches.size + this.bakes.length + this.sprites.length, triangles: Math.round(triangles), kinds: new Set(this.kinds.map((k) => k.kind)).size, batches: this.batches.size, bakes: this.bakes.length, sprites: this.sprites.length };
   }
 
   dispose() {
