@@ -118,6 +118,8 @@ const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const goodsLine = (name) => new RegExp(`^(Nobody gains goods|.+ gains .+) — ${esc(name)}'s roll(; the bank is short of [a-z ]+; nobody gains it)?\\.$`);
 const ROLLED = /^(.+) rolled (\d+)!$/;
 
+// Mark before the roll-off: the bot can roll as soon as setup ends, and its roll must count from the first line.
+const first = people.map((c) => c.logs.length);
 // Roll-off, then setup (the bot plays its own turns inside the host).
 while (ember.state.game.phase === "rollOff") await act(await actor(), { type: "roll" });
 while (["setupSettle", "setupRoad"].includes(ember.state.game.phase)) {
@@ -126,7 +128,6 @@ while (["setupSettle", "setupRoad"].includes(ember.state.game.phase)) {
   await act(c, game.phase === "setupSettle" ? { type: "place", kind: "outpost", id: legal.outpost[0] } : { type: "place", kind: "path", id: legal.path[0] });
 }
 await until(() => people.every((c) => c.state.game.seq === people[0].state.game.seq), "the table to settle");
-const first = people.map((c) => c.logs.length);
 console.log("setup done, phase", ember.state.game.phase);
 
 // A person's roll: exactly the host's lines for it, the same on every socket.
