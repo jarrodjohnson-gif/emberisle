@@ -300,6 +300,16 @@ try {
   await frames(tab, 6);
   check(samePan(await camera(tab), tabletPan), "tablet blur cycle keeps its pan after full restoration", await camera(tab));
 
+  // A shorter layout viewport must not amplify a real gesture while the keyboard stays up.
+  await tab.locator("#test-keyboard-input").focus();
+  await tab.setViewportSize({ width: 1024, height: 420 });
+  await frames(tab, 6);
+  const dragBefore = await tab.evaluate(() => window.__isle.screenAt(0, 0, 0));
+  await pan(tab, tabCtx, "tablet while typing", -40);
+  const dragAfter = await tab.evaluate(() => window.__isle.screenAt(0, 0, 0));
+  const dragRatio = (dragAfter.x - dragBefore.x) / -40;
+  check(dragRatio > 0.85 && dragRatio < 1.15, "tablet keyboard crop keeps touch movement about 1:1", { dragRatio });
+
   await tabCtx.close();
 
   if (errors.length) throw new Error(`console errors:\n${errors.join("\n")}`);
