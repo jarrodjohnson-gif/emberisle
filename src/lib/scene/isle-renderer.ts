@@ -785,11 +785,11 @@ export class IsleRenderer {
     return this.keyboardShrunk;
   }
 
-  private onFocusOut = () => {
-    if (this.keyboardShrunk) {
+  private onFocusOut = (event: FocusEvent) => {
+    const nextInput = event.relatedTarget instanceof Element && event.relatedTarget.matches("input, textarea");
+    if (this.keyboardShrunk && !nextInput && (!this.play() || this.renderer.domElement.clientHeight >= this.unshrunkH)) {
       this.keyboardShrunk = false;
-      this.fit = null;
-      this.refit(true);
+      this.refit(true, true);
     }
     this.remeasure();
   };
@@ -853,12 +853,13 @@ export class IsleRenderer {
     // On browsers where the on-screen keyboard shrinks the layout viewport, keep the previous fit and skip both refit
     // and default-view re-evaluation so typing never moves the map (#627).
     const hasFocus = Boolean(document.activeElement?.matches("input, textarea"));
-    // Clear keyboard-shrink state when the width changes (e.g. rotation) or when no input is focused.
-    if (this.keyboardShrunk && (!hasFocus || w !== prevW)) {
+    const wasKeyboardShrunk = this.keyboardShrunk;
+    // Blur can arrive before the keyboard close animation restores the canvas: keep the crop until it really returns.
+    if (this.keyboardShrunk && (!this.play() || w !== prevW)) {
       this.keyboardShrunk = false;
-      this.fit = null;
     }
     const keyboardShrink =
+      this.play() &&
       this.coarse() &&
       hasFocus &&
       prevW > 0 &&
@@ -874,7 +875,6 @@ export class IsleRenderer {
       }
     } else if (this.keyboardShrunk && h >= this.unshrunkH) {
       this.keyboardShrunk = false;
-      this.fit = null;
     }
     // A phone turned upright or on its side changes the default view (setView resizes again, in the new view).
     if (!this.keyboardShrunk && this.play() && this.view !== this.playView()) return this.setView(this.playView());
@@ -902,10 +902,11 @@ export class IsleRenderer {
         this.persp.fov = (2 * Math.atan(fullH / 2 / p.focal) * 180) / Math.PI;
         this.persp.aspect = fullW / fullH;
         this.persp.setViewOffset(fullW, fullH, fullW / 2 - p.cx, fullH / 2 - p.cy, w, h);
+        this.orbit.panSpeed = h / fullH;
         this.persp.updateProjectionMatrix();
       }
     } else {
-      this.refit(true);
+      this.refit(true, wasKeyboardShrunk);
       // The HUD re-lays out for the new size after this event (a rotation swaps its columns and rails), so the hole just
       // measured is the old one: measure again on each of the next frames.
       this.relayout = RELAYOUT_FRAMES;
@@ -920,7 +921,7 @@ export class IsleRenderer {
 
   // Fit the play view to the hole the HUD leaves now. The first fit of a view lands at home; a later change of hole
   // (the phase bar grew with the state) glides the frustum and the look-at point and keeps the eye the player set.
-  private refit(instant: boolean) {
+  private refit(instant: boolean, restoreProjection = false) {
     this.refitDue = false;
     if (!this.play()) return;
     const c = this.renderer.domElement;
@@ -931,7 +932,8 @@ export class IsleRenderer {
     const [w, h] = [c.clientWidth || 1, c.clientHeight || 1];
     const f = this.view === "diorama" ? fitDiorama(w, h, base) : fitOrtho(w, h, base, OVERHEAD_LEAN);
     const was = this.fit;
-    if (was && FIT_KEYS.every((k) => Math.abs(this.fitPose(f)[k] - this.fitPose(was)[k]) < 1e-6)) return;
+    // A keyboard crop changes the live projection without changing the saved fit signature.
+    if (!restoreProjection && was && FIT_KEYS.every((k) => Math.abs(this.fitPose(f)[k] - this.fitPose(was)[k]) < 1e-6)) return;
     this.fit = f;
     const upright = h > w;
     const carry = upright === this.fitUpright;
@@ -1087,7 +1089,8 @@ export class IsleRenderer {
   panLimit(): number {
     const f = this.fit;
     if (!f) return 0;
-    const half = "focal" in f ? (f.dist * Math.min(this.sizeW, this.sizeH)) / 2 / f.focal : Math.min(f.right - f.left, f.top - f.bottom) / 2;
+    const h = this.keyboardShrunk ? this.unshrunkH : this.sizeH;
+    const half = "focal" in f ? (f.dist * Math.min(this.sizeW, h)) / 2 / f.focal : Math.min(f.right - f.left, f.top - f.bottom) / 2;
     return Math.min(PAN_RADIUS, PAN_VIEW * half);
   }
 
