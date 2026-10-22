@@ -7,7 +7,8 @@ name: CI
 # is kept because the ruleset requires it.
 # browser-a is split three ways (a1, a2, a3) by measured step time, about 8-12 minutes each (the whole was ~29);
 # the browser-a job itself only reports whether all three passed, because the ruleset requires that name.
-# `checks` is the required merge check: it requires every job, including every browser-a and browser-b suite.
+# `checks` is the required merge check: it requires every job, including every browser-a and browser-b suite,
+# except the advisory `loosen` job.
 # Docs-only PRs (see changes job) skip the heavy steps but still report success so required checks stay green.
 on:
   pull_request:
@@ -55,9 +56,10 @@ jobs:
           mapfile -t CHANGED <<< "$LIST"
           DOCS_ONLY=true
           for file in "${CHANGED[@]}"; do
-            # README.md is consumed by fortune-tray-prove; other markdown, docs, issue templates, and LICENSE are docs-only.
+            # README.md is consumed by fortune-tray-prove, and AGENTS.md and CLAUDE.md are agent instructions, not docs (#923).
+            # Other markdown, docs, issue templates, and LICENSE are docs-only.
             case "$file" in
-              README.md) DOCS_ONLY=false; break;;
+              README.md|AGENTS.md|CLAUDE.md) DOCS_ONLY=false; break;;
               docs/*|.github/ISSUE_TEMPLATE/*|LICENSE|*.md)
                 ;;
               *)
@@ -121,7 +123,8 @@ jobs:
   server:
     needs: changes
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # dice-prove's sampling took 99 s on CI (#926, a349dbf); the whole job took under 6 minutes.
+    timeout-minutes: 15
     steps:
       - if: needs.changes.outputs.docs_only != 'true'
         uses: actions/checkout@v4
@@ -137,8 +140,13 @@ jobs:
         run: npm ci
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm ci --prefix server
+      # Before the suites, so it still reports when a test fails.
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run registered-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run wayfarer-modes-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run bot-harbor-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm test
       - if: needs.changes.outputs.docs_only != 'true'
@@ -146,7 +154,40 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run touch-place-prove
       - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run stale-pr-sweeper-prove
+      - if: needs.changes.outputs.docs_only != 'true'
         run: npm run flake-rerun-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run auto-merge-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run label-commands-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run dice-prove
+
+  # #924: advisory, so it is not in `checks.needs`. The desk reads it for REVIEWING.md item 4.
+  # It diffs this PR's proofs against the commit it merges onto (the merge commit's first parent, as in build), using the
+  # base's copy of loosen-prove so a PR cannot weaken the check that judges it.
+  loosen:
+    if: github.event_name == 'pull_request' && !github.event.pull_request.draft
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: |
+          set -euo pipefail
+          BASE_SHA=$(git cat-file -p HEAD | awk '/^parent /{print $2; exit}')
+          git fetch --depth=1 origin "$BASE_SHA"
+          if git cat-file -e "$BASE_SHA:scripts/loosen-prove.mjs" 2>/dev/null; then
+            echo "Running the base's loosen-prove from $BASE_SHA."
+            git show "$BASE_SHA:scripts/loosen-prove.mjs" > "$RUNNER_TEMP/loosen-prove.mjs"
+            node "$RUNNER_TEMP/loosen-prove.mjs" --base "$BASE_SHA"
+          else
+            echo "The base $BASE_SHA has no scripts/loosen-prove.mjs yet, so this runs the PR's copy."
+            node scripts/loosen-prove.mjs --base "$BASE_SHA"
+          fi
 
   browser-a-suites:
     name: browser-a (${{ matrix.suite }})
@@ -194,6 +235,8 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
         run: npm run countdown-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
+        run: npm run turn-extension-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
         run: npm run trade-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a2'
         run: npm run practice-trade-prove
@@ -209,6 +252,15 @@ jobs:
         run: npm run fortune-count-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
         run: npm run fortune-tray-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
+        run: npm run fortune-cue-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
+        run: npm run lobby-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
+        run: npm run my-numbers-prove
+      # pages-prove rebuilds dist/ under /emberisle/; browser-a has no later dist/ reader.
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
+        run: npm run pages-prove
       - if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -217,9 +269,10 @@ jobs:
           if-no-files-found: ignore
 
   # The ruleset requires a check named exactly "browser-a"; it passes only when all three suites pass.
+  # A draft skips it (grey), like every other job; ready_for_review starts the run that must pass.
   browser-a:
     needs: browser-a-suites
-    if: always()
+    if: always() && (github.event_name != 'pull_request' || !github.event.pull_request.draft)
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -282,6 +335,8 @@ jobs:
         run: npm run sounds-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
         run: npm run music-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
+        run: npm run ore-tokens-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
         run: npm run tokens-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
@@ -370,16 +425,14 @@ jobs:
           if-no-files-found: ignore
 
   # always() so a failed or cancelled job above fails this check instead of skipping it (a skipped required check passes).
+  # A draft skips it (grey): GitHub never merges a draft, and marking it ready starts a fresh run on the same head SHA,
+  # whose checks must each pass. Every other run keeps always() and the explicit tests below.
   checks:
     needs: [changes, build, server, browser-a, browser-b]
-    if: always()
+    if: always() && (github.event_name != 'pull_request' || !github.event.pull_request.draft)
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - if: github.event_name == 'pull_request' && github.event.pull_request.draft
-        run: |
-          echo "Draft PR: CI runs when it is marked ready for review."
-          exit 1
       - run: |
           echo 'build=${{ needs.build.result }} server=${{ needs.server.result }} browser-a=${{ needs.browser-a.result }} browser-b=${{ needs.browser-b.result }}'
           test '${{ needs.build.result }}' = success

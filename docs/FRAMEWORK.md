@@ -101,8 +101,8 @@ Size: XS | S
 ```
 
 An issue may carry a `model:opus` or `model:sonnet` label when it needs a particular model: opus for
-UI, visual or tricky multi-file work, sonnet for well-specified mechanical steps. A Builder uses that
-model, or a subagent on it. If it can do neither, it says in the PR which model it used. The Reviewer uses a different model from the one that built the PR.
+UI, visual or tricky multi-file work, sonnet for well-specified mechanical steps. A `model:` label pins the issue to that model, so a Builder on another model skips it (`docs/LANES.md`, "Tier and model labels"). A Builder uses that
+model, or a subagent on it. The Reviewer uses a different model from the one that built the PR.
 
 A mock-based design or `ux` issue is ready only when its mock covers 390x844, 844x390 and 1280x720. The mock gives pixel sizes for type, controls and footprints at each size. A mock for one size leaves the Builder guessing at the others (#909).
 
@@ -117,8 +117,10 @@ on its own line when an AI cannot finish it. Those issues still get Research don
 |---|---|
 | Backlog | Known, not scheduled. Research files new children here. |
 | Todo | Picked for now. Any AI may take it. |
-| In Progress | Claimed. Someone is on it. |
-| In Review | Built and tested. Waiting for Jarrod to accept. |
+| Claimed | An agent has posted `/claim`. The label bot sets `status:claimed`. |
+| In Progress | Someone is on it. |
+| Paused | Stopped on purpose, with the claim kept. The label bot sets `status:paused`. |
+| In Review | Reviewed by a different model and merged by the desk. Waiting for Jarrod to accept. |
 | Done | Accepted. The issue is closed. |
 | Canceled | Will not do. Close the issue as "not planned". Never delete it. |
 
@@ -207,7 +209,7 @@ Not a bug, or a no? Close it with a one-line reason.
   hand them to a subagent, and keep working. Run proofs one at a time, never in parallel: they share
   ports. Before you push or open the PR, wait for every check to finish and read its result. A check
   you haven't read the result of counts as failed.
-- **Pick the model to fit the work.** Use the issue's `model:` label if it has one. Otherwise use a
+- **Pick the model to fit the work.** Use the issue's `model:` label if it has one, and skip the issue if you cannot run that model. Otherwise use a
   smaller model for mechanical or search subagents, and the strongest one for UI, visual or tricky
   multi-file work.
 - **Independent steps go out together.** Send unrelated tool calls in one batch, and launch independent
@@ -253,6 +255,15 @@ Ideas live in [IDEAS.md](IDEAS.md), never straight in the tracker. When Jarrod d
 
 If bugs live in an outside log, do not copy each one. Make one pointer issue per milestone:
 `Eng: <topic> — Log IMP-06, 13, 14`, listing the item ids and saying the details live in the log.
+
+## 10. Changing the rules
+
+Churn costs more than most rule fixes are worth. So:
+
+- **The rule documents** (`AGENTS.md`, `docs/FRAMEWORK.md`, `docs/LANES.md`, `docs/DESK.md`, `docs/REVIEWING.md`, `docs/HELPERS.md`) change only through an open issue titled `Decide: <the change>`. The desk batches the decisions and applies them **at most once a week**. Jarrod's dated words in that issue are the authority.
+- **These don't need a `Decide:` issue:** fixing a typo, a wrong number or a broken link; recording an owner decision in `docs/DECISIONS.md`; updating `#916`.
+- **GitHub settings** (the `main` ruleset, variables, secrets) change only on Jarrod's own say-so, and each change gets a row in `docs/DECISIONS.md`.
+- **CI suite names are fixed.** The four `browser-b` names, the three `browser-a` parts, `server`, `build` and `checks` live in three places: the `main` ruleset, the job names in `.github/workflows/ci.yml`, and `AGGREGATE_JOBS` in `scripts/flake-rerun.mjs`. Don't rename or add a suite without changing all three in one go and logging it.
 
 ## Writing
 

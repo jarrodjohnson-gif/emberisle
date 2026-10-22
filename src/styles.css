@@ -188,7 +188,9 @@ body {
   --shadow-sheet: 0 10px 28px rgb(24 51 45 / 0.18);
   --duration-gain: 2200ms;
   --duration-turn: 1800ms;
-  --chat-sheet-height: min(420px, calc(100dvh - max(12px, env(safe-area-inset-top)) - 68px - var(--active-offer-height, 0px) - var(--active-prompt-height, 0px) - var(--keyboard-inset, 0px)));
+  /* #899: the phone sheet ends under the island, clear of the seat strip (68 px) and the 40 px band of seat bubbles under it.
+     While the keyboard is up or an offer or steal prompt is showing, the band is 0 (Chat.tsx), so the input and the choice fit. */
+  --chat-sheet-height: min(420px, calc(100dvh - max(12px, env(safe-area-inset-top)) - 68px - var(--chat-bubble-band, 40px) - var(--active-offer-height, 0px) - var(--active-prompt-height, 0px) - var(--keyboard-inset, 0px)));
 }
 .seat-card { background: var(--table); color: var(--table-ink); box-shadow: inset 0 0 0 1px var(--table-line); }
 .seat-card [class*='text-zinc-700'] { color: var(--table-muted); }
@@ -292,20 +294,13 @@ input, select, textarea { border-color: var(--control-line); }
 @media (pointer: coarse) {
   input, select, textarea { font-size: 16px !important; }
 }
+.seat-card .seat-bubble [class*='text-zinc-700'] { color: var(--ink); }
+/* #899: typing on a short (sideways) phone, the emoji row gives its room to the log and the input, as the presets did before. */
 @media (max-height: 480px) {
-  [data-keyboard-open='true'] .chat-presets, [data-keyboard-open='true'] .chat-filters { display: none; }
-}
-.seat-card [data-testid='reaction'] [class*='text-zinc-700'] { color: var(--ink); }
-.seat-card [data-testid='reaction'] { right: 24px; }
-.seat-card [data-testid='reaction'] > div { max-width: 100%; }
-@media (max-width: 767px), (pointer: coarse) {
-  .seat-card [data-testid='reaction'] [role='img'], .seat-card [data-testid='reaction'] img { width: 32px; height: 32px; font-size: 28px; }
+  [data-keyboard-open='true'] [data-testid='emoji-row'] { display: none; }
 }
 .action-utilities [data-testid="dice-row"] { color: var(--table-muted); }
 .bg-glass, .title-cover, .title-cover > div, .lobby-cover { backdrop-filter: none; }
-@media (max-height: 480px) {
-  [data-choice-open='true'] .chat-presets, [data-choice-open='true'] .chat-filters { display: none; }
-}
 .hud-stack [data-testid="dice-row"] { background: var(--table); color: var(--table-muted); border-radius: var(--radius-control); }
 
 /* #643: the "My numbers" strip in the log line's row; a chip lights when its number is rolled. */
@@ -320,3 +315,14 @@ input, select, textarea { border-color: var(--control-line); }
   100% { box-shadow: 0 0 0 0 rgb(36 109 114 / 0); transform: scale(1); }
 }
 @media (prefers-reduced-motion: reduce) { .my-number-lit { animation: none; } }
+
+/* #829: the fortunes button cue: one soft glow when the turn starts (the ring is
+   keyed on the turn in Hud.tsx). Under reduced motion the ring is a still outline instead. */
+.fortune-cue-glow { position: absolute; inset: 0; border-radius: inherit; pointer-events: none; animation: fortune-cue-glow 1600ms ease-out 1 both; }
+@keyframes fortune-cue-glow {
+  0% { box-shadow: 0 0 0 0 rgb(36 109 114 / 0.6); }
+  40% { box-shadow: 0 0 0 6px rgb(36 109 114 / 0.35); }
+  100% { box-shadow: 0 0 0 0 rgb(36 109 114 / 0); }
+}
+.fortune-cue-glow[data-done] { animation: none; }
+@media (prefers-reduced-motion: reduce) { .fortune-cue-glow { animation: none; box-shadow: 0 0 0 2px var(--color-accent); } }

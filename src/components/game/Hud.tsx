@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Dices,
   Home,
@@ -26,7 +26,7 @@ import { TradeButton } from "@/components/game/TradeButton";
 import { CostChips, hintLine, needLine, priceLabel, shortfall, type Price } from "@/components/game/BuildCost";
 import { useEscapeDisarm } from "@/components/game/escape-disarm";
 import { COST, RESOURCES, type BuildMode, type GameState, type PlayerState } from "@/lib/game/types";
-import { legalCities, legalRoads, legalSettle, totalVP } from "@/lib/game/rules";
+import { legalCities, legalRoads, legalSettle, playable, totalVP } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
 import { LazyBoundary, preloadOnIdle } from "@/lib/lazy";
 import { useViewport } from "@/lib/viewport";
@@ -101,9 +101,9 @@ function armedCopy(mode: BuildMode, roadPicks: number): [string, string] | null 
       return ["Build a stronghold", "Stronghold"];
     // #423: both fortunes are armed from the tray, and the My fortunes button stays pressed until the pick is made or cancelled.
     case "knight":
-      return ["Move the wayfarer", "My fortunes"];
+      return ["Move the wayfarer", "Play fortune"];
     case "roadCard":
-      return [roadPicks ? "Place one more path" : "Place two paths", "My fortunes"];
+      return [roadPicks ? "Place one more path" : "Place two paths", "Play fortune"];
     default:
       return null;
   }
@@ -151,6 +151,7 @@ export function Hud() {
   // #492: the sheets chunk is asked for again on each open and at the win (the boundary's key). When the ask made at the
   // win fails, the win screen cannot show and the winner line gets the way out; a failure under an earlier key is not it.
   const sheetsKey = `${tradeOpen}|${howTo}|${costs}|${state?.winner ?? ""}`;
+  const [timerHeader, setTimerHeader] = useState<HTMLDivElement | null>(null);
   const [sheetsLost, setSheetsLost] = useState<string | null>(null);
   useEscapeDisarm();
   const [stackRef, moreBelow] = useMoreBelow();
@@ -161,6 +162,14 @@ export function Hud() {
   const fortunesButton = useRef<HTMLButtonElement>(null);
   const turnKey = state ? `${state.turn}|${state.current}|${state.phase}` : "";
   useEffect(() => setFortunesOpen(false), [turnKey]);
+  // #829: the cue glows once per turn. The button is rendered in more than one place (roll, main, robber), so a phase change
+  // remounts it; a ring that mounts for a turn whose glow already started is marked done and does not animate again.
+  const cueKey = state ? `${state.turn}|${state.current}` : "";
+  const glowed = useRef("");
+  const cueRing = useCallback((el: HTMLSpanElement | null) => {
+    if (!el) return;
+    if (glowed.current === cueKey) el.dataset.done = "1";
+  }, [cueKey]);
   const actor = mode === "hotseat" ? (state?.current ?? "") : localId;
   const me = state ? (state.players.find((p) => p.id === actor) ?? state.players[0]!) : null;
   // #776: My fortunes leaves with the last held fortune; when that drops focus to the page, End turn takes it.
@@ -214,17 +223,22 @@ export function Hud() {
         : (state.discardNeeded[actor] ?? 0) > 0
           ? actor
           : null;
-  // #776: "My fortunes · N" opens the tray of held cards. It shows only while a fortune is held or armed, so a fresh hand has no
+  // #776: "Play fortune · N" or "Fortunes · N" opens the tray of held cards. It shows only while a fortune is held or armed, so a fresh hand has no
   // such button; the deck count lives on the Fortune buy tile.
   const deckLeft = state.deckLeft ?? state.deck.length;
+  // #829: on my own turn, the fortunes I can play now (points are never played; ones bought this turn wait). The glow ring is keyed
+  // on the turn, so it runs once when the turn starts and no later state change restarts it.
+  const playableNow = mine && !spectator && !state.playedCard ? (["knight", "road", "plenty", "monopoly"] as const).reduce((n, k) => n + Math.max(0, playable(me, k)), 0) : 0;
+  // Owner decision (#829, provisional): the label itself says a fortune can be played now.
+  const fortunesLabel = playableNow > 0 ? "Play fortune" : "Fortunes";
   const fortunes = showFortunes ? (
     <Button
       ref={fortunesButton}
       size="sm"
       data-testid="fortunes-button"
       data-deck-left={deckLeft}
-      aria-label={`My fortunes, ${heldNow} held`}
-      className="h-11 min-w-11 px-3 text-sm tabular-nums"
+      aria-label={`${fortunesLabel}, ${heldNow} held`}
+      className="relative h-11 min-w-11 px-3 text-sm tabular-nums"
       aria-pressed={fortunesOpen || fortuneArmed}
       aria-expanded={fortunesOpen}
       variant={fortunesOpen || fortuneArmed ? "primary" : "secondary"}
@@ -233,7 +247,8 @@ export function Hud() {
         setFortunesOpen((o) => !o);
       }}
     >
-      My fortunes · {heldNow}
+      {playableNow > 0 && <span key={cueKey} ref={cueRing} onAnimationStart={() => (glowed.current = cueKey)} aria-hidden="true" data-testid="fortune-cue-glow" className="fortune-cue-glow" />}
+      {fortunesLabel} · {heldNow}
     </Button>
   ) : null;
   // Hotseat has no "you": every seat is named. The turn banner sits out once the isle has a ruler (the pill says who).
@@ -288,12 +303,13 @@ export function Hud() {
     <>
 
       {/* #442: one control up top. The turn number, watcher count, How to play, sound and Leave live in the menu, whose open
-          sheet rises over the z-20 chat dock (it reaches the header on a sideways phone). Online, Open chat and Quick reactions
-          sit in this row too, left of the menu, so they never move with the turn and never reach the board. A watcher's badge stays out here,
+          sheet rises over the z-20 chat dock (it reaches the header on a sideways phone). Online, Open chat (#899: the one chat button)
+          sits in this row too, left of the menu, so it never moves with the turn and never reaches the board. A watcher's badge stays out here,
           a chip and not a button, so a watcher always sees why it has no controls (docs/design/spectator.md). */}
-      <header className={cn("hud-header pointer-events-none absolute inset-x-0 top-0 z-20 px-safe pt-[max(0.75rem,env(safe-area-inset-top))] has-[#table-menu]:z-30 has-[#quick-reaction-picker]:z-[25]", phone ? "pb-0" : "pb-3")}>
+      <header className={cn("hud-header pointer-events-none absolute inset-x-0 top-0 z-20 px-safe pt-[max(0.75rem,env(safe-area-inset-top))] has-[#table-menu]:z-30", phone ? "pb-0" : "pb-3")}>
         <div className="pointer-events-auto flex items-center justify-end gap-1">
-          {phone ? <SeatStrip actor={actor} className="min-w-0 max-w-[48rem] flex-1" /> : <div className="mr-auto">{instruction}</div>}
+          {phone ? <SeatStrip actor={actor} className="min-w-0 max-w-[48rem] flex-1" /> : <div className="mr-auto shrink-0">{instruction}</div>}
+          {phone ? null : <div ref={setTimerHeader} className="mx-2 min-w-0 flex-1 empty:hidden" />}
           {spectator && !(phone && portrait) ? (
             <span data-testid="watching-badge" className="flex h-11 items-center rounded-chip bg-glass px-3 text-caption text-fg backdrop-blur-md">
               Watching
@@ -383,7 +399,7 @@ export function Hud() {
                 pointer-events-none: a porous child would make the stack's chrome only its parts, and the column no rail. */}
             <PlaceChip column />
             {phone ? instruction : null}
-            <TurnCountdown />
+            <TurnCountdown header={phone ? null : timerHeader} />
             {winner || error ? (
               <p className="rounded-[16px] border border-white/50 bg-glass px-3 py-2 text-sm text-zinc-900 backdrop-blur-md">
                 {winner ? <span id="hud-winner">{`${winner.name} wins with ${totalVP(state, winner.id)} points.`}</span> : null}
