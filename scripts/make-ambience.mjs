@@ -5,6 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
+import ffmpeg from "@ffmpeg-installer/ffmpeg";
 
 export const RATE = 44100;
 export const SECONDS = 20;
@@ -64,7 +65,7 @@ export function makePcm() {
 export function encode(output) {
   mkdirSync(path.dirname(output), { recursive: true });
   const wave = makePcm();
-  const result = spawnSync("ffmpeg", ["-hide_banner", "-loglevel", "error", "-i", "pipe:0", "-map_metadata", "-1", "-fflags", "+bitexact", "-c:a", "libmp3lame", "-b:a", "96k", "-flags:a", "+bitexact", "-id3v2_version", "0", "-write_id3v1", "0", "-write_xing", "1", "-y", output], { input: wave, encoding: "utf8" });
+  const result = spawnSync(ffmpeg.path, ["-hide_banner", "-loglevel", "error", "-i", "pipe:0", "-map_metadata", "-1", "-fflags", "+bitexact", "-c:a", "libmp3lame", "-b:a", "96k", "-flags:a", "+bitexact", "-id3v2_version", "0", "-write_id3v1", "0", "-write_xing", "1", "-y", output], { input: wave, encoding: "utf8" });
   if (result.error || result.status !== 0) throw new Error(`ffmpeg failed: ${result.error?.message ?? result.stderr}`);
   console.log(JSON.stringify({ output, bytes: statSync(output).size, seconds: SECONDS, rate: RATE, crossfadeSeconds: CROSSFADE_SECONDS, swellHz: SWELL_HZ, pcmSha256: createHash("sha256").update(wave).digest("hex") }));
 }

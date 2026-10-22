@@ -5,6 +5,7 @@ import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import ffmpeg from "@ffmpeg-installer/ffmpeg";
 import { RATE, SECONDS, CROSSFADE_SECONDS, SWELL_HZ } from "./make-ambience.mjs";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
@@ -18,7 +19,7 @@ const command = (name, args) => {
   assert.equal(result.status, 0, `${name}: ${result.error?.message ?? result.stderr.toString()}`);
   return result.stdout;
 };
-const decode = (file) => command("ffmpeg", ["-hide_banner", "-loglevel", "error", "-i", file, "-f", "f32le", "-ar", "44100", "-ac", "1", "pipe:1"]);
+const decode = (file) => command(ffmpeg.path, ["-hide_banner", "-loglevel", "error", "-i", file, "-f", "f32le", "-ar", "44100", "-ac", "1", "pipe:1"]);
 try {
   check("the specified recipe remains 20 s, 2 s crossfade and 0.1 Hz swell", RATE === 44100 && SECONDS === 20 && CROSSFADE_SECONDS === 2 && SWELL_HZ === 0.1);
   const pcm = decode(shipped);
