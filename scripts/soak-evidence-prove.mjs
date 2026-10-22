@@ -90,6 +90,10 @@ try {
       assert.equal(existsSync(path.join(cwd, base, "evidence/test-results/stale.txt")), false, `${suite}/${run}: unrelated old evidence excluded`);
     }
     for (const run of [3, 4, 5]) assert.equal(existsSync(path.join(cwd, `soak-results/failed/${suite}/run-${run}/${target}`)), false, `${suite}/${run}: successful logs and evidence are not retained`);
+    const retained = spawnSync("find", ["soak-results/failed", "-type", "f", "-print0"], { cwd, encoding: "utf8" });
+    assert.equal(retained.status, 0);
+    const expected = [1, 2].flatMap((run) => ["output.log", "evidence/test-results/shared.txt", "evidence/test-results/nested space/with space.txt"].map((file) => `soak-results/failed/${suite}/run-${run}/${target}/${file}`));
+    assert.deepEqual(retained.stdout.split("\0").filter(Boolean).sort(), expected.sort(), `${suite}: only the failed attempts retain any output`);
     const gate = spawnSync("bash", ["-c", gates[0]], { cwd, env, encoding: "utf8" });
     assert.equal(gate.status, 1, `${suite}: real final gate still fails the job`);
     assert.match(gate.stdout, /Soak detected failing proofs/);
