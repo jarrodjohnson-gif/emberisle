@@ -99,16 +99,18 @@ function connectedToNetwork(state: GameState, pid: string, eid: string) {
   return touch(e.va) || touch(e.vb);
 }
 
-export function harborRate(state: GameState, pid: string, res: Resource): number {
+export function heldRates(state: GameState, pid: string, res: Resource): number[] {
   let any = false;
   let specific = false;
   for (const v of playerVertices(state, pid)) {
     if (v.harbor === res) specific = true;
     if (v.harbor === "any") any = true;
   }
-  if (specific) return 2;
-  if (any) return 3;
-  return 4;
+  return [4, ...(any ? [3] : []), ...(specific ? [2] : [])];
+}
+
+export function harborRate(state: GameState, pid: string, res: Resource): number {
+  return Math.min(...heldRates(state, pid, res));
 }
 
 export function legalSettle(state: GameState, pid: string, setup: boolean): string[] {
@@ -408,6 +410,7 @@ function stealOne(state: GameState, fromId: string, toId: string) {
   const pick = pool[Math.floor(nextRand(state) * pool.length)]!;
   from.resources[pick] -= 1;
   to.resources[pick] += 1;
+  from.goodsLost = (from.goodsLost ?? 0) + 1;
   // The table hears that a card moved, not which one: only the two hands change (#187).
   log(state, `${to.name} steals a card from ${from.name}.`);
 }

@@ -80,7 +80,8 @@ async function tab(name, url) {
   return page;
 }
 const clear = (page) => page.evaluate(() => (window.__plays = []));
-const heard = async (page) => (await page.evaluate(() => window.__plays)).map((p) => ({ ...p, file: CLIP.get(p.file) ?? p.file }));
+// The background track (#814) is music-prove's; it is not a table sound.
+const heard = async (page) => (await page.evaluate(() => window.__plays)).filter((p) => p.file !== "old_tower_inn_loop.mp3").map((p) => ({ ...p, file: CLIP.get(p.file) ?? p.file }));
 const names = async (page) => (await heard(page)).map((p) => p.file);
 const store = (page, fn, arg) => page.evaluate(fn, arg);
 const mute = (page, v) => page.evaluate(async (v) => (await import("/src/lib/sound.ts")).setMuted(v), v);
@@ -552,15 +553,18 @@ try {
   await b.evaluate(() => window.__emberisle.getState().setChatOpen(true));
   await clear(a);
   await clear(b);
-  await a.getByRole("button", { name: "Soundboard" }).first().click();
+  // #899: the sound chips are the chat panel's second tab, Sounds & stickers.
+  await a.getByRole("tab", { name: "Sounds & stickers", exact: true }).click();
   await a.getByRole("button", { name: "Play sound Fah" }).click();
   await until(async () => (await names(b)).length, "Tide hears the soundboard tap");
   await sleep(300);
   assert.deepEqual((await heard(b)).map((x) => [x.file, x.volume]), [["robbed_fah.mp3", 0.4]], "the other seat hears fah once, at the meme volume 0.4 (#659)");
   assert.deepEqual((await heard(a)).filter((x) => x.file === "robbed_fah.mp3").map((x) => [x.file, x.volume]), [["robbed_fah.mp3", 0.4]], "the sender hears it once too, at 0.4");
-  const chip = await b.getByTestId("chat-log").locator("li", { hasText: "Fah" }).first().textContent();
-  assert.ok(chip.includes("Ember") && chip.includes("\u{1F50A} Fah"), `the chip reads "Ember \u{1F50A} Fah": ${chip}`);
-  ok("soundboard: a tap plays on both seats and shows the chip \"Ember \u{1F50A} Fah\" in chat");
+  // The log line is a light line: the sender, a speaker mark and the chip's label.
+  const fahLine = b.getByTestId("chat-log").getByTestId("sound-line").filter({ hasText: "Fah" }).first();
+  const chip = await fahLine.textContent();
+  assert.ok(chip.includes("Ember") && chip.includes("Fah") && (await fahLine.locator("svg").count()) === 1, `the chip reads "Ember [speaker] Fah": ${chip}`);
+  ok("soundboard: a tap on the Sounds & stickers tab plays on both seats and shows the line \"Ember [speaker] Fah\" in chat");
   assert.ok(await a.getByRole("button", { name: "Play sound Bong" }).isDisabled(), "the sender's buttons rest for 3 s");
   // Past the buttons: spam straight at the host is refused and nobody hears a second clip.
   await clear(b);
@@ -575,30 +579,31 @@ try {
   await until(() => b.evaluate(() => window.__emberisle.getState().chat.some((l) => l.sound === "plop")), "the plop line arrives");
   await sleep(400);
   assert.deepEqual(await names(b), [], "a muted listener hears nothing");
-  assert.ok((await b.getByTestId("chat-log").locator("li", { hasText: "plop" }).count()) >= 1, "but still sees the chip");
+  assert.ok((await b.getByTestId("chat-log").getByTestId("sound-line").filter({ hasText: "Plop" }).count()) >= 1, "but still sees the chip");
   await mute(b, false);
   ok("soundboard: a muted listener sees the chip and hears nothing");
   // The in-game clips reach the other seat once each; a repeat of a long clip restarts it (one element per clip), never stacks.
-  for (const [id, file] of [["sb_airhorn", "sb_airhorn.mp3"], ["sb_quit_touchin", "sb_quit_touchin.mp3"], ["sb_only_wood", "sb_only_wood.mp3"]]) {
+  // #899: each is one tap on its chip in the Sounds & stickers tab (Fah above, GG! with the rest below: all nine).
+  for (const [id, file, label] of [["sb_airhorn", "sb_airhorn.mp3", "Airhorn"], ["sb_quit_touchin", "sb_quit_touchin.mp3", "Quit touchin' me"], ["sb_only_wood", "sb_only_wood.mp3", "Only wood?"]]) {
     await sleep(3100);
     await clear(b);
-    await a.evaluate((x) => window.__emberisle.getState().sendSound(x), id);
+    await a.getByRole("button", { name: `Play sound ${label}`, exact: true }).click();
     await until(async () => (await names(b)).length, `${id} reaches Tide`);
     await sleep(300);
     assert.deepEqual((await heard(b)).map((x) => [x.file, x.volume]), [[file, 0.4]], `${id} plays once on the other seat, at 0.4`);
   }
   // #659: every soundboard id plays at the meme volume 0.4 (below the music's 0.5). The rest of the board, by id, one tap each.
   // The raw played file, not its clip name: the board_* sounds reuse files that table clips own, which `heard` names by the first.
-  for (const [id, file] of [["sb_wololo", "sb_wololo.mp3"], ["bong", "bong_001"], ["plop", "plop"], ["pluck", "pluck_001"]]) {
+  for (const [id, file, label] of [["sb_wololo", "sb_wololo.mp3", "Wololo"], ["sb_win_reaction", "sb_win_reaction.mp3", "GG!"], ["bong", "bong_001", "Bong"], ["plop", "plop", "Plop"], ["pluck", "pluck_001", "Pluck"]]) {
     await sleep(3100);
     await clear(b);
-    await a.evaluate((x) => window.__emberisle.getState().sendSound(x), id);
+    await a.getByRole("button", { name: `Play sound ${label}`, exact: true }).click();
     await until(async () => (await names(b)).length, `${id} reaches Tide`);
     await sleep(300);
     const got = await b.evaluate(() => window.__plays);
     assert.deepEqual(got.map((x) => [x.file, x.volume]), [[file, 0.4]], `${id} plays once at 0.4 (${JSON.stringify(got)})`);
   }
-  ok("soundboard: every board sound (fah, wololo, airhorn, quit touchin, only wood, bong, plop, pluck) plays at 0.4");
+  ok("soundboard: a tap on each of the nine chips (fah, wololo, GG!, airhorn, quit touchin, only wood, bong, plop, pluck) plays it at 0.4");
   await b.evaluate(async () => {
     const { play } = await import("/src/lib/sound.ts");
     play("sb_airhorn");

@@ -37,7 +37,7 @@ function fit(free: Band[], top: number, h: number) {
   return best;
 }
 
-// How far to move a centre-screen moment (TurnMoment, GainFloats) off the centre of the hole so it covers no HUD: none
+// How far to move a centre-screen moment (TurnMoment) off the centre of the hole so it covers no HUD: none
 // when it is clear; else the least move that clears all of it; else the least that clears all but the status line; else
 // the middle of the largest free band. Measured from layout boxes when it shows and whenever `dep` changes, as a
 // `translate` that leaves its own animated transform alone, and again when the hole resizes: the renderer refits it a

@@ -27,6 +27,7 @@ const DULL = new THREE.Color(0.38, 0.38, 0.42);
 
 export type JellyHex = { id: string; terrain: Terrain; x: number; z: number; y: number };
 export type JellyStats = { lite: boolean; drawCalls: number; triangles: number; kinds: number; batches: number; bakes: number; sprites: number };
+export type OcclusionHit = { point: { x: number; y: number; z: number }; kind: Terrain; seed: number };
 
 type Batch = {
   mesh: THREE.BatchedMesh;
@@ -961,17 +962,20 @@ export class JellyBoard {
   }
 
   // For the proofs: whether anything opaque in the scenes (landforms, buildings, trees, creatures) lies on the segment from a
-  // to b, short of b by 0.01.
-  occludes(a: THREE.Vector3, b: THREE.Vector3) {
+  // to b, short of b by 0.01. Returns the nearest hit's point, hex kind and seed, or null when clear.
+  occludes(a: THREE.Vector3, b: THREE.Vector3): OcclusionHit | null {
     const dir = b.clone().sub(a);
     const len = dir.length() - 0.01;
     dir.normalize();
     const ray = new THREE.Ray(a, dir);
     const [lo, hi] = [a.clone().min(b), a.clone().max(b)];
     const t0 = new THREE.Vector3(), t1 = new THREE.Vector3(), t2 = new THREE.Vector3(), hit = new THREE.Vector3();
+    let minDist = len;
+    let closest: OcclusionHit | null = null;
     for (const m of this.bakes) {
       if ((m.material as THREE.Material).transparent) continue;
       const pos = m.geometry.getAttribute("position") as THREE.BufferAttribute;
+      const aHex = m.geometry.getAttribute("aHex") as THREE.BufferAttribute | undefined;
       const idx = m.geometry.index!;
       const end = m.geometry.drawRange.count === Infinity ? idx.count : Math.min(idx.count, m.geometry.drawRange.count);
       for (let i = 0; i < end; i += 3) {
@@ -981,15 +985,34 @@ export class JellyBoard {
         if (Math.max(t0.x, t1.x, t2.x) < lo.x || Math.min(t0.x, t1.x, t2.x) > hi.x) continue;
         if (Math.max(t0.z, t1.z, t2.z) < lo.z || Math.min(t0.z, t1.z, t2.z) > hi.z) continue;
         if (Math.max(t0.y, t1.y, t2.y) < lo.y || Math.min(t0.y, t1.y, t2.y) > hi.y) continue;
-        if (ray.intersectTriangle(t0, t1, t2, false, hit) && hit.distanceTo(a) < len) return true;
+        if (ray.intersectTriangle(t0, t1, t2, false, hit)) {
+          const d = hit.distanceTo(a);
+          if (d < minDist) {
+            minDist = d;
+            const slot = aHex ? aHex.getX(idx.getX(i)) : -1;
+            let kind: Terrain = "waste", seed = 0;
+            for (const k of this.kinds) for (const h of k.hexes) if (h.slot === slot) { kind = k.kind; seed = k.tile.layout.seed; }
+            closest = { point: { x: hit.x, y: hit.y, z: hit.z }, kind, seed };
+          }
+        }
       }
     }
-    const caster = new THREE.Raycaster(a, dir, 0, len);
-    for (const b of this.batches.values()) {
-      if ((b.mesh.material as THREE.Material).transparent) continue;
-      if (caster.intersectObject(b.mesh, false).length) return true;
+    const caster = new THREE.Raycaster(a, dir, 0, minDist);
+    for (const bm of this.batches.values()) {
+      if ((bm.mesh.material as THREE.Material).transparent) continue;
+      for (const h of caster.intersectObject(bm.mesh, false)) {
+        if (h.distance < minDist) {
+          minDist = h.distance;
+          caster.far = minDist;
+          let kind: Terrain = "waste", seed = 0;
+          for (const k of this.kinds)
+            for (const L of k.leaves)
+              if (L.batch === bm && L.ids.indexOf(h.batchId!) !== -1) { kind = k.kind; seed = k.tile.layout.seed; break; }
+          closest = { point: { x: h.point.x, y: h.point.y, z: h.point.z }, kind, seed };
+        }
+      }
     }
-    return false;
+    return closest;
   }
 
   stats(): JellyStats {
