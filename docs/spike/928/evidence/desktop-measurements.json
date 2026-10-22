@@ -1,0 +1,98 @@
+{
+  "initial": {
+    "loadMs": 855.6000000000931,
+    "metadata": {
+      "width": 580,
+      "height": 320,
+      "frameRate": 24,
+      "numFrames": 79,
+      "swfVersion": 6,
+      "backgroundColor": "#FFFFFF",
+      "isActionScript3": false,
+      "uncompressedLength": 236799
+    },
+    "resources": [
+      {
+        "name": "http://127.0.0.1:8098/runtime/ruffle.js",
+        "bytes": 465885,
+        "duration": 17.800000000279397
+      },
+      {
+        "name": "http://127.0.0.1:8098/runtime/core.ruffle.16d61072ac7fdc4d5013.js",
+        "bytes": 108322,
+        "duration": 4.7999999998137355
+      },
+      {
+        "name": "http://127.0.0.1:8098/runtime/172de42e6619eac8f371.wasm",
+        "bytes": 14302754,
+        "duration": 148.70000000018626
+      },
+      {
+        "name": "http://127.0.0.1:8098/sandwichStacker.swf",
+        "bytes": 183738,
+        "duration": 97.89999999990687
+      }
+    ],
+    "audio": [
+      "running"
+    ]
+  },
+  "perf": {
+    "raf": {
+      "frames": 146,
+      "seconds": 5,
+      "p50": 33.30000000000109,
+      "p95": 66.69999999999891,
+      "max": 83.30000000000109
+    },
+    "audio": {
+      "peak": 0.6094360947608948,
+      "contexts": [
+        {
+          "state": "running",
+          "rate": 44100
+        }
+      ]
+    },
+    "events": [
+      {
+        "code": "ArrowLeft",
+        "down": true,
+        "t": 8119.5
+      },
+      {
+        "code": "ArrowLeft",
+        "down": false,
+        "t": 8992.399999999907
+      },
+      {
+        "code": "ArrowRight",
+        "down": true,
+        "t": 9447
+      },
+      {
+        "code": "ArrowRight",
+        "down": false,
+        "t": 10304.80000000028
+      }
+    ]
+  },
+  "logs": [
+    {
+      "type": "log",
+      "text": "%cINFO%c web/src/lib.rs:1416%c Ruffle WASM module has been initialized color: whitesmoke; background: #444 color: gray; font-style: italic color: inherit"
+    },
+    {
+      "type": "log",
+      "text": "%cNew Ruffle instance created (Version: 0.7.1 | WebAssembly extensions: ON | Used renderer: webgl) background: #37528C; color: #FFAD33"
+    },
+    {
+      "type": "log",
+      "text": "Loading SWF file ./sandwichStacker.swf"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    }
+  ]
+}

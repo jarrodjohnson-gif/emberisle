@@ -46,7 +46,12 @@ const settle = async () => {
   await frames(3);
 };
 const plays = () => page.evaluate(() => window.__plays.map((p) => p.file));
-const clear = () => page.evaluate(() => { window.__plays.length = 0; });
+// Sounds are paced 150 ms apart, up to 8 queued, so a bot's last clip can start after the move it belongs to.
+// Wait for a second with no new clip, then empty the list.
+const clear = async () => {
+  for (let n = -1, m; n !== (m = await page.evaluate(() => window.__plays.length)); n = m) await sleep(1000);
+  await page.evaluate(() => { window.__plays.length = 0; });
+};
 const until = (fn, arg) => page.waitForFunction(fn, arg, { timeout: STEP_MS });
 // A hex's screen point, if the point is on the canvas and hit-tests to nothing else on the page.
 const spot = (id) => page.evaluate((id) => {
