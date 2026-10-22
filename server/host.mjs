@@ -8,13 +8,14 @@ import { randomBytes, randomInt, randomUUID, timingSafeEqual } from "node:crypto
 import { WebSocketServer } from "ws";
 import { chooseBotAction, chooseRecoveryAction, chooseTradeAsk, logBotAction, shouldAcceptTrade } from "../src/lib/game/ai.ts";
 import { createGame } from "../src/lib/game/board.ts";
-import { applyAction, bankShort, legalCities, legalRoads, legalSettle, playable, stealTargets, validBag } from "../src/lib/game/rules.ts";
+import { applyAction, bankShort, legalCities, legalRoads, legalSettle, playable, stealTargets, totalVP, validBag } from "../src/lib/game/rules.ts";
 import { COST, PLAYER_COLORS, RESOURCES } from "../src/lib/game/types.ts";
 import { PROTO } from "../src/lib/net/proto.ts";
 import { allow, cleanText, loadEmotes, remember, SOUNDBOARD } from "./chat.mjs";
 import { cue } from "./cue.mjs";
 import { PROFILE_TYPES, profileGate, profileHandler, seatCredential, seatProfile, tableCard, watchRefusal } from "./profile-protocol.mjs";
 import { openProfiles, UUID } from "./profiles.mjs";
+import { OUTCOME_V, openJournal, validOutcome, writeDurable } from "./result-journal.mjs";
 import { extensionBudget, turnExtensions } from "./turn-extension.mjs";
 
 function hear(name) {
@@ -128,6 +129,29 @@ const RENAME_MS = envMs("RENAME_MS", 2000);
 // over plain ws:// for local development; every other plaintext link stays guest-only (docs/design/profiles.md).
 const PROFILES = path.resolve(process.env.PROFILES_DIR ?? fileURLToPath(new URL("./profiles/", import.meta.url)));
 const PROFILES_DEV = process.env.PROFILES_DEV === "1";
+// Pending outcomes of finished games (#889): one durable file per game id, beside the profile store and apart from the rooms,
+// so no room cleanup ever removes one. Result recording (#890) consumes them.
+const RESULTS = path.resolve(process.env.RESULTS_DIR ?? path.join(PROFILES, "pending"));
+// Proof-only fault points (#889). RESULT_FAULT="room-before:fail:2,journal-after:exit" fails that commit point N times
+// (default once), or kills the host there with no exit flush, as a crash or power cut would. The points are start-, room-
+// and journal-, each -before or -after its durable write.
+const FAULTS = new Map(
+  String(process.env.RESULT_FAULT ?? "")
+    .split(",")
+    .filter(Boolean)
+    .map((s) => {
+      const [point, act = "fail", n = "1"] = s.split(":");
+      return [point, { act, n: Number(n) }];
+    }),
+);
+function fault(point) {
+  const f = FAULTS.get(point);
+  if (!f || !(f.n > 0)) return;
+  f.n -= 1;
+  if (f.act === "exit") process.kill(process.pid, "SIGKILL");
+  throw new Error(`injected fault at ${point}`);
+}
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 // The built client (npm run build). DIST lets a proof point the host at a small temp folder.
 const DIST = path.resolve(process.env.DIST ?? fileURLToPath(new URL("../dist/", import.meta.url)));
 const TYPES = {
@@ -200,10 +224,38 @@ function seatsOf(room) {
 // and at each rematch, and saved with the room; durable result recording reads this, never the live seats. Nothing is counted.
 const ROSTER_V = 1;
 const COUNT_POLICY = 1;
-function freezeRoster(room, order) {
+// `order` is the starting seats, each with its new game pid. The roster is written durably before the game is put in place.
+function freezeRoster(order) {
   const players = order.map((s) => ({ pid: s.pid, seat: s.id, profileId: (!s.bot && s.profileId) || null, name: s.name, color: s.color, kind: s.bot ? "bot" : "human" }));
   // Guests count as humans toward eligibility; a game needs two humans at its start to count.
-  room.roster = { v: ROSTER_V, gameId: randomUUID(), startedAt: Date.now(), policy: COUNT_POLICY, eligible: players.filter((p) => p.kind === "human").length >= 2, players };
+  return { v: ROSTER_V, gameId: randomUUID(), startedAt: Date.now(), policy: COUNT_POLICY, eligible: players.filter((p) => p.kind === "human").length >= 2, players };
+}
+
+// The frozen outcome of a finished tracked game (#889, profiles.md "Exactly-once recording"), computed once at the win and
+// never rebuilt from live seats: the roster's rows with the rules engine's winner and final points, and whether the bot
+// played an originally human seat at any point (`assisted`, from takeover).
+function freezeOutcome(game, roster, assisted, endedAt) {
+  return {
+    v: OUTCOME_V,
+    gameId: roster.gameId,
+    startedAt: roster.startedAt,
+    endedAt: Math.max(endedAt, roster.startedAt),
+    policy: roster.policy,
+    eligible: roster.eligible,
+    victoryTarget: game.victoryTarget ?? 10,
+    winner: game.winner,
+    players: roster.players.map((p) => ({ pid: p.pid, seat: p.seat, profileId: p.profileId, name: p.name, color: p.color, kind: p.kind, points: totalVP(game, p.pid), won: p.pid === game.winner, assisted: assisted.includes(p.pid) })),
+  };
+}
+
+// A saved outcome that is not this roster's is dropped; the load freezes a fresh one from the terminal snapshot instead.
+function loadOutcome(o, roster) {
+  return o && roster && validOutcome(o) && o.gameId === roster.gameId ? o : null;
+}
+
+// A finished tracked game whose final room and pending outcome are not yet both durable: no terminal state goes out (#889).
+function unsettled(room) {
+  return room.game?.phase === "over" && Boolean(room.roster) && room.settled !== room.roster.gameId;
 }
 
 // A saved roster that does not match its game is dropped, leaving that game untracked; a legacy room has none (#764).
@@ -249,7 +301,9 @@ function save(room) {
   if (!room.saveTimer && !room.saving) room.saveTimer = setTimeout(() => flush(room), SAVE_MS);
 }
 
-function snapshot(room) {
+// `over` replaces fields for a room about to be: start and rematch write their new game before putting it in place (#889).
+function snapshot(room, over = {}) {
+  room = { ...room, ...over };
   return JSON.stringify({
     code: room.code,
     host: room.host,
@@ -264,6 +318,9 @@ function snapshot(room) {
     seats: room.seats.map(({ id, name, color, ready, pid, secret, bot, turnDeadline, turnStartedAt, extension, profileId }) => ({ id, name, color, ready, pid, secret, ...(bot ? { bot: true } : {}), turnDeadline: turnDeadline ?? null, turnStartedAt: turnStartedAt ?? null, extension, ...(profileId ? { profileId } : {}) })),
     // Optional versioned metadata (#764): no ROOM_SHAPE bump, so a legacy room loads with no roster and is not tracked.
     roster: room.roster ?? null,
+    // The frozen outcome once the game is over, and the pids the bot played for (#889). Optional, like the roster.
+    outcome: room.outcome ?? null,
+    assisted: room.assisted ?? [],
     shape: ROOM_SHAPE,
     savedAt: Date.now(),
   });
@@ -271,24 +328,57 @@ function snapshot(room) {
 
 // One write at a time per room: changes that land mid-write set `dirty` again and the next write follows.
 // Write then rename, so a crash mid-write never leaves half a room behind.
+// `room.saving` is the write in flight, if any; commitRoom shares it, so the two never race on one room file.
 async function flush(room) {
   room.saveTimer = null;
-  if (!room.dirty || !rooms.has(room.code)) return;
+  // A durable commit is in flight: it reschedules this write when it is done.
+  if (!room.dirty || !rooms.has(room.code) || room.saving) return;
   room.dirty = false;
-  room.saving = true;
   const file = path.join(ROOMS, `${room.code}.json`);
-  try {
+  const run = (async () => {
     const json = snapshot(room);
     await mkdir(ROOMS, { recursive: true });
     await writeFile(`${file}.tmp`, json);
     await rename(`${file}.tmp`, file);
+  })();
+  room.saving = run;
+  try {
+    await run;
   } catch (err) {
     console.error("save failed:", err);
   }
-  room.saving = false;
+  room.saving = null;
   // The table closed while the write was in flight: the rename may have landed after unsave(), so remove it again.
   if (room.dropped) unsave(room);
   else if (room.dirty) room.saveTimer = setTimeout(() => flush(room), SAVE_MS);
+}
+
+// The awaited, durable room write (#889): it waits out the write in flight, then writes the snapshot with a file sync,
+// rename and directory sync, and resolves only once that is on disk. `save(room)` is never such an acknowledgment.
+// With `over`, it writes the room as it is about to be (a new game) without touching the live room's pending changes.
+async function commitRoom(room, label, over) {
+  while (room.saving) await room.saving.catch(() => {});
+  if (!over) {
+    clearTimeout(room.saveTimer);
+    room.saveTimer = null;
+    room.dirty = false;
+  }
+  const run = (async () => {
+    fault(`${label}-before`);
+    await writeDurable(ROOMS, `${room.code}.json`, snapshot(room, over));
+    fault(`${label}-after`);
+  })();
+  room.saving = run;
+  try {
+    await run;
+  } catch (err) {
+    if (!over) room.dirty = true;
+    throw err;
+  } finally {
+    room.saving = null;
+    if (room.dropped) unsave(room);
+    else if (room.dirty && !room.saveTimer) room.saveTimer = setTimeout(() => flush(room), SAVE_MS);
+  }
 }
 
 // Synchronous, for the end of the process: every room with a change not yet on disk (or a write in flight) is written now.
@@ -319,14 +409,28 @@ function unsave(room) {
   rmSync(path.join(ROOMS, `${room.code}.json.tmp`), { force: true });
 }
 
+// The saved roster of a parsed room file, or null; a file too broken to check is null here and is judged below as before.
+function savedRoster(saved) {
+  try {
+    return saved?.game && Array.isArray(saved.game.players) ? loadRoster(saved.roster, saved.game) : null;
+  } catch {
+    return null;
+  }
+}
+
 // Rebuild every saved room. Nobody is connected yet, so each seat is held as if it had just dropped.
-function load() {
+// Startup reconciliation (#889) comes first for each file, before expiry, any shape check, play or listen: a terminal room
+// whose pending outcome never reached disk gets one now, frozen from that snapshot, and a nonterminal room for a game that
+// already finished is fenced from play and kept aside for repair. A failed repair write stops the host before it listens.
+async function load() {
   let names;
   try {
     names = readdirSync(ROOMS).filter((n) => n.endsWith(".json"));
   } catch {
-    return;
+    names = [];
   }
+  let repaired = 0;
+  let fenced = 0;
   for (const name of names) {
     const file = path.join(ROOMS, name);
     let saved;
@@ -334,6 +438,20 @@ function load() {
       saved = JSON.parse(readFileSync(file, "utf8"));
     } catch {
       console.error("unreadable room file:", name);
+      continue;
+    }
+    const roster = savedRoster(saved);
+    if (roster && saved.game.phase === "over") {
+      saved.outcome = loadOutcome(saved.outcome, roster) ?? freezeOutcome(saved.game, roster, Array.isArray(saved.assisted) ? saved.assisted : [], Number.isSafeInteger(saved.savedAt) ? saved.savedAt : Date.now());
+      if (!journal.has(roster.gameId)) {
+        await journal.put(saved.outcome);
+        repaired++;
+        console.log(`results: repaired the pending outcome of game ${roster.gameId} from room ${name}`);
+      }
+    } else if (roster && journal.has(roster.gameId)) {
+      console.error(`results: room ${name} holds game ${roster.gameId} at ${saved.game.phase}, but that game already finished; fenced from play and kept as ${name}.fenced`);
+      renameSync(file, `${file}.fenced`);
+      fenced++;
       continue;
     }
     if (typeof saved?.code !== "string" || !Array.isArray(saved.seats) || !(Date.now() - saved.savedAt < ROOM_TTL) || saved.seats.length === 0) {
@@ -366,10 +484,14 @@ function load() {
         // Legacy hosted snapshots had no practice-bot seats, so a bot linked to a held seat means takeover.
         recoveryPids: [...new Set([...(Array.isArray(saved.recoveryPids) ? saved.recoveryPids : []), ...legacyRecovery])].slice(-4),
         roster: loadRoster(saved.roster, saved.game),
+        assisted: Array.isArray(saved.assisted) ? saved.assisted.filter((pid) => typeof pid === "string") : [],
         seats: [],
         watchers: new Set(),
       };
       delete room.savedAt;
+      // Reconciled above: a terminal tracked room loads with its frozen outcome already journalled, so it is settled.
+      room.outcome = loadOutcome(saved.outcome, room.roster);
+      room.settled = room.outcome && journal.has(room.outcome.gameId) ? room.outcome.gameId : null;
       for (const s of saved.seats) {
         if (typeof s?.id !== "string" || typeof s.secret !== "string") throw new Error(`bad seat ${JSON.stringify(s)}`);
         // Avatars live in memory only, so a restored seat has none.
@@ -400,6 +522,7 @@ function load() {
     rooms.set(room.code, room);
   }
   if (rooms.size) console.log(`restored ${rooms.size} room(s): ${[...rooms.keys()].join(" ")}`);
+  console.log(`results: ${journal.pending().length} pending outcome(s) kept for recording, ${repaired} repaired from rooms, ${fenced} room(s) fenced`);
 }
 
 function affords(player, cost) {
@@ -633,6 +756,12 @@ function pushState(room) {
   const soonest = room.seats.reduce((d, s) => (s.turnDeadline && (!d || s.turnDeadline < d.turnDeadline) ? s : d), null);
   const turnDeadline = soonest?.turnDeadline ?? null;
   save(room);
+  // The one terminal gate (#889): every route to the win (a move, a timer, a bot, takeover, rejoin) publishes through here,
+  // and a finished tracked game goes out only once its final room and its pending outcome are both durable.
+  if (unsettled(room)) {
+    settle(room).catch((err) => console.error("result settle failed:", err));
+    return;
+  }
   for (const seat of room.seats) {
     if (!seat.ws) continue;
     send(seat.ws, {
@@ -650,6 +779,36 @@ function pushState(room) {
   if (!room.watchers.size) return;
   const raw = JSON.stringify({ type: "state", you: null, game: watchView(room.game), legal: legalFor(room.game, null), turnExtension: extensions(room).state(), turnDeadline, turnPlayer: soonest?.pid ?? null, serverNow: Date.now() });
   for (const ws of room.watchers) if (ws.readyState === ws.OPEN) ws.send(raw);
+}
+
+// The awaitable terminal transition (#889, profiles.md "Exactly-once recording" steps 1-4). The outcome is frozen once, at
+// the first call, before any write can carry the over state. Then the final room snapshot is committed, then the
+// independent pending outcome; a failure of either withholds the final state and rematch, says so at the table, and retries
+// with bounded backoff, reusing the same frozen outcome. A second caller while this runs only waits for it to publish.
+async function settle(room) {
+  const id = room.roster.gameId;
+  if (room.outcome?.gameId !== id) room.outcome = freezeOutcome(room.game, room.roster, room.assisted ?? [], Date.now());
+  if (room.settling === id) return;
+  room.settling = id;
+  let told = false;
+  for (let wait = 250; ; wait = Math.min(wait * 2, 10_000)) {
+    try {
+      // A dropped room has no file to commit, but its outcome is still journalled.
+      if (rooms.get(room.code) === room) await commitRoom(room, "room");
+      await journal.put(room.outcome);
+      break;
+    } catch (err) {
+      console.error(`result save failed for game ${id}:`, err.message);
+      if (!told && rooms.get(room.code) === room) {
+        told = true;
+        say(room, "Couldn't save the result. Retrying…");
+      }
+      await sleep(wait);
+    }
+  }
+  room.settling = null;
+  room.settled = id;
+  if (rooms.get(room.code) === room && room.game) pushState(room);
 }
 
 // A connection-bound baseline for gameplay intents. Rejoin/restart gets a new connection id even when
@@ -674,6 +833,8 @@ function freshAction(ws, room, msg) {
     msg.connection !== stamp.connection || seen.includes(msg.cid)
   ) {
     send(ws, { type: "error", message: "The table has updated. Please try again." });
+    // A finished game still being saved is not resent: the terminal gate publishes it once it is durable (#889).
+    if (unsettled(room)) return false;
     // Resync this seat only. Refusing an intent must not rearm any clock, run bots, or write a room.
     const soonest = room.seats.reduce((d, s) => (s.turnDeadline && (!d || s.turnDeadline < d.turnDeadline) ? s : d), null);
     send(ws, {
@@ -849,6 +1010,7 @@ async function serveStatic(req, res) {
 const wss = new WebSocketServer({ server, maxPayload: 16 * 1024 });
 const profiles = openProfiles(PROFILES, { colors: PLAYER_COLORS });
 const onProfile = profileHandler(profiles, send);
+const journal = openJournal(RESULTS, { fault });
 
 // A name is the join key for the away marker, chat mentions and the log, so it is cleaned and made unique.
 function seatName(room, raw, fallback, except = null) {
@@ -909,7 +1071,7 @@ function openTable(ws, msg) {
 function sitDown(ws, msg) {
   const room = rooms.get(String(msg.code || "").toUpperCase());
   if (!room) return send(ws, { type: "error", message: "No table with that code" });
-  if (room.game) return send(ws, { type: "error", message: "Game already started." });
+  if (room.game || room.busy) return send(ws, { type: "error", message: "Game already started." });
   if (room.seats.length >= 4) return send(ws, { type: "error", message: "Table full." });
   const color = seatColor(room, msg.color);
   if (!color || room.seats.some((s) => s.color === color)) return send(ws, { type: "error", message: "Color taken." });
@@ -948,25 +1110,61 @@ function watch(ws, msg) {
   ws.watch = room;
   send(ws, { type: "welcome", proto: PROTO, code: room.code, spectator: true, chat: room.chat, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on" });
   watchersChanged(room, "Someone is watching.");
+  // A finished game still being saved reaches this watcher with everyone else, through the terminal gate (#889).
+  if (unsettled(room)) return;
   const soonest = room.seats.reduce((d, s) => (s.turnDeadline && (!d || s.turnDeadline < d.turnDeadline) ? s : d), null);
   send(ws, { type: "state", you: null, game: watchView(room.game), legal: legalFor(room.game, null), turnExtension: extensions(room).state(), turnDeadline: deadlineOf(room), turnPlayer: soonest?.pid ?? null, serverNow: Date.now() });
 }
 
-function startGame(ws, room) {
+// The durable start write (#889, profiles.md "Exactly-once recording"): the new game, its UUID, start time and frozen
+// roster reach disk, synced, before the game is put in place, so no game message goes out first. While it is written the
+// room is busy (no second start, again or lobby change), and a table that changed meanwhile is told to try again. A failed
+// write keeps the lobby or the finished game as it was. Returns false when the new game was not put in place.
+async function durableStart(ws, room, order, game, unchanged) {
+  const seats = order.map((s, i) => ({ ...s, pid: game.players[i].id }));
+  const roster = freezeRoster(seats);
+  const before = room.game;
+  room.busy = true;
+  try {
+    await commitRoom(room, "start", { game, roster, outcome: null, assisted: [], botDeclined: {}, recoveryPids: [], seats });
+  } catch (err) {
+    console.error("start save failed:", err.message);
+    save(room);
+    send(ws, { type: "error", message: "Couldn't save the new game. Try again." });
+    return false;
+  } finally {
+    room.busy = false;
+  }
+  if (rooms.get(room.code) !== room || room.game !== before || !unchanged()) {
+    // The file now holds a game that is not in place; the next save puts the room back as it is.
+    save(room);
+    send(ws, { type: "error", message: "The table changed. Try again." });
+    return false;
+  }
+  seats.forEach((s, i) => (order[i].pid = s.pid));
+  room.game = game;
+  room.roster = roster;
+  room.outcome = null;
+  room.settled = null;
+  room.assisted = [];
+  room.botDeclined = {};
+  room.recoveryPids = [];
+  return true;
+}
+
+async function startGame(ws, room) {
   const n = room.seats.length;
   if (ws.seat.id !== room.host) return send(ws, { type: "error", message: "Only the host can start." });
+  if (room.busy) return send(ws, { type: "error", message: "Game already started." });
   if (n < 3 || n > 4) return send(ws, { type: "error", message: "Need 3 or 4 at the table." });
   if (room.seats.some((s) => !s.ready)) return send(ws, { type: "error", message: "Not everyone is ready." });
   const game = createGame({ humans: room.seats.map((s) => ({ name: s.name })), bots: 0, victoryTarget: room.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? "on" });
-  room.seats.forEach((s, i) => {
-    s.pid = game.players[i].id;
+  const order = [...room.seats];
+  order.forEach((s, i) => {
     game.players[i].color = s.color;
     if (s.bot) game.players[i].kind = "bot";
   });
-  room.game = game;
-  freezeRoster(room, room.seats);
-  room.botDeclined = {};
-  room.recoveryPids = [];
+  if (!(await durableStart(ws, room, order, game, () => room.seats.length === order.length && order.every((s, i) => room.seats[i] === s)))) return;
   for (const seat of room.seats) if (seat.ws) seat.ws.actionConnection = randomBytes(16).toString("hex");
   hear("ui_confirm");
   say(room, "Roll for first place.");
@@ -1026,11 +1224,31 @@ function renameSeat(ws, room, msg) {
 
 // `again` (#266, docs/design/rematch.md): a new island at the same table. The last winner places first and the rest
 // roll off behind it (Jarrod, 2026-10-03). Seats with no socket are let go; watchers stay and get the new game.
-function rematch(ws, room) {
+// #889: the finished game's pending outcome is durable before `again` can replace it, and the new game, with its own UUID
+// and roster, is durable before its first message. The room is busy meanwhile, so no second again lands on a stale game.
+async function rematch(ws, room) {
   if (ws.seat.id !== room.host) return send(ws, { type: "error", message: "Only the host can start." });
   if (room.game?.phase !== "over") return send(ws, { type: "error", message: "Game is not over." });
-  const live = room.seats.filter((s) => s.bot || (s.ws && s.ws.readyState === s.ws.OPEN));
+  if (room.busy) return send(ws, { type: "error", message: "Game is not over." });
+  if (unsettled(room)) return send(ws, { type: "error", message: "Couldn't save the result. Retrying…" });
+  const isLive = (s) => s.bot || (s.ws && s.ws.readyState === s.ws.OPEN);
+  const live = room.seats.filter(isLive);
   if (live.length < 3) return send(ws, { type: "error", message: "Need 3 or 4 at the table." });
+  const winner = live.find((s) => s.pid === room.game.winner);
+  const order = winner ? [winner, ...live.filter((s) => s !== winner)] : live;
+  const game = createGame({ humans: order.map((s) => ({ name: s.name })), bots: 0, winnerFirst: Boolean(winner), victoryTarget: room.victoryTarget ?? room.game.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game.wayfarerMode ?? "on" });
+  order.forEach((s, i) => {
+    game.players[i].color = s.color;
+    if (s.bot) game.players[i].kind = "bot";
+  });
+  const unchanged = () => {
+    const now = room.seats.filter(isLive);
+    return now.length === live.length && live.every((s) => now.includes(s));
+  };
+  // Seats get new pids, so no offer (or a bot's answer timer on it) may outlive the old game.
+  if (room.offer) broadcast(room, { type: "tradeClosed", tradeId: room.offer.tradeId });
+  closeOffer(room);
+  if (!(await durableStart(ws, room, order, game, unchanged))) return;
   for (const seat of room.seats) {
     if (live.includes(seat)) continue;
     clearTimeout(seat.graceTimer);
@@ -1040,22 +1258,6 @@ function rematch(ws, room) {
     seat.ws = null;
   }
   room.seats = live;
-  // Seats get new pids below, so no offer (or a bot's answer timer on it) may outlive the old game.
-  if (room.offer) broadcast(room, { type: "tradeClosed", tradeId: room.offer.tradeId });
-  closeOffer(room);
-  room.botDeclined = {};
-  room.recoveryPids = [];
-  const winner = live.find((s) => s.pid === room.game.winner);
-  const order = winner ? [winner, ...live.filter((s) => s !== winner)] : live;
-  const game = createGame({ humans: order.map((s) => ({ name: s.name })), bots: 0, winnerFirst: Boolean(winner), victoryTarget: room.victoryTarget ?? room.game.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game.wayfarerMode ?? "on" });
-  order.forEach((s, i) => {
-    s.pid = game.players[i].id;
-    game.players[i].color = s.color;
-    if (s.bot) game.players[i].kind = "bot";
-  });
-  room.game = game;
-  // New pids in the new order: the rematch gets its own game UUID and roster (#764).
-  freezeRoster(room, order);
   for (const seat of room.seats) if (seat.ws) seat.ws.actionConnection = randomBytes(16).toString("hex");
   hear("ui_confirm");
   say(room, winner ? `${winner.name} won last time and places first. The rest roll for their order.` : "Roll for first place.");
@@ -1415,6 +1617,8 @@ function handle(ws, raw) {
   if (msg.wayfarerMode !== undefined || msg.type === "setWayfarerMode") return send(ws, { type: "error", message: "Wayfarer mode is fixed when the table is created." });
   if (msg.type === "chat" || msg.type === "react" || msg.type === "sound") return talk(ws, room, msg);
   if (!allow(ws.seat.act, Date.now(), ACT_CAP, ACT_RATE)) return send(ws, { type: "error", message: "Slow down." });
+  // A new game is being written to disk (#889): nothing else changes the table until it is in place or refused.
+  if (room.busy) return send(ws, { type: "error", message: "The table has updated. Please try again." });
   if (msg.type === "setVictoryTarget") {
     if (ws.seat.id !== room.host) return send(ws, { type: "error", message: "Only the host can choose the target." });
     if (room.game && room.game.phase !== "over") return send(ws, { type: "error", message: "The target is fixed for this game." });
@@ -1431,8 +1635,8 @@ function handle(ws, raw) {
   if (msg.type === "rename") return renameSeat(ws, room, msg);
   if (msg.type === "addBot") return addBot(ws, room);
   if (msg.type === "removeBot") return removeBot(ws, room, msg);
-  if (msg.type === "start") return room.game ? send(ws, { type: "error", message: "Game already started." }) : startGame(ws, room);
-  if (msg.type === "again") return rematch(ws, room);
+  if (msg.type === "start") return room.game ? send(ws, { type: "error", message: "Game already started." }) : void startGame(ws, room).catch((err) => console.error("start failed:", err));
+  if (msg.type === "again") return void rematch(ws, room).catch((err) => console.error("again failed:", err));
   if (!room.game) return send(ws, { type: "error", message: "not ready" });
   if (!freshAction(ws, room, msg)) return;
   if (msg.type === "turnExtensionAsk" || msg.type === "turnExtensionAnswer") {
@@ -1549,6 +1753,8 @@ function takeOver(room, seat) {
     broadcast(room, { type: "tradeClosed", tradeId });
   }
   room.recoveryPids = [...new Set([...(room.recoveryPids ?? []), seat.pid])].slice(-4);
+  // Assistance is marked for the outcome and never cleared by a rejoin; the frozen roster keeps the seat human (#889).
+  room.assisted = [...new Set([...(room.assisted ?? []), seat.pid])];
   room.game = { ...room.game, players: room.game.players.map((x) => (x === p ? { ...x, kind: "bot", name: `${x.name} (bot)` } : x)) };
   say(room, `${seat.name} is played by the bot until they return.`);
   save(room);
@@ -1613,5 +1819,5 @@ const pinger = setInterval(() => {
 pinger.unref();
 wss.on("close", () => clearInterval(pinger));
 
-load();
+await load();
 server.listen(PORT, () => console.log(`host listening ${server.address().port}`));
