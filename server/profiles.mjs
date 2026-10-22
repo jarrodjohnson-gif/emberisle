@@ -1,7 +1,7 @@
 // Player profiles (#762, docs/design/profiles.md): the host's private store, PIN hashing, device credentials and PIN budgets.
 // Socket handling lives in profile-protocol.mjs. Nothing here goes into game, seat or watcher state.
 import { createHash, randomBytes, randomUUID, scrypt, timingSafeEqual } from "node:crypto";
-import { closeSync, fsyncSync, mkdirSync, openSync, readFileSync, rmSync, unlinkSync, writeSync } from "node:fs";
+import { closeSync, fsyncSync, lstatSync, mkdirSync, mkdtempSync, openSync, readFileSync, readdirSync, renameSync, rmdirSync, rmSync, unlinkSync, writeSync } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
 
@@ -111,31 +111,56 @@ export function validDoc(doc, colors) {
 const emptyDoc = () => ({ schemaVersion: SCHEMA, profiles: {}, logins: {}, reservedLogins: {}, tombstones: {}, devices: {}, unknownLogins: {} });
 const newGuard = () => ({ times: [], pending: {}, lifetime: 0 });
 
-// One host owns a profile directory. A lock naming a live process refuses this one; a crashed owner's lock is taken over.
+// Publish a complete, nonempty owner directory. Empty-file PID publication is not exclusive (#1021).
 function takeLock(dir) {
   const file = path.join(dir, LOCK);
-  for (let tries = 0; tries < 2; tries++) {
+  let candidate = mkdtempSync(path.join(dir, ".writer-"));
+  const owner = `owner-${process.pid}-${randomBytes(12).toString("hex")}`;
+  const changed = (e) => ["ENOENT", "EEXIST", "ENOTEMPTY", "ENOTDIR", "EISDIR"].includes(e.code);
+  try {
+    const fd = openSync(path.join(candidate, owner), "wx", 0o600);
     try {
-      const fd = openSync(file, "wx", 0o600);
       writeSync(fd, String(process.pid));
       fsyncSync(fd);
-      closeSync(fd);
-      process.on("exit", () => {
-        try {
-          if (readFileSync(file, "utf8") === String(process.pid)) unlinkSync(file);
-        } catch {
-          /* already gone */
-        }
-      });
-      return true;
-    } catch (e) {
-      if (e.code !== "EEXIST") throw e;
-      const pid = Number(readFileSync(file, "utf8"));
-      if (Number.isSafeInteger(pid) && pid > 0 && pid !== process.pid && alive(pid)) return false;
-      rmSync(file, { force: true });
+    } finally { closeSync(fd); }
+    for (let tries = 0; tries < 4; tries++) {
+      try {
+        // Rename can replace an empty directory, but never another published, nonempty owner.
+        renameSync(candidate, file);
+        candidate = null;
+        process.on("exit", () => {
+          try {
+            unlinkSync(path.join(file, owner));
+            rmdirSync(file); // Only an empty directory can be removed; never recursively delete a lock.
+          } catch { /* already gone, or another owner has published */ }
+        });
+        return true;
+      } catch (e) { if (!changed(e)) throw e; }
+      try {
+        const stat = lstatSync(file);
+        if (stat.isDirectory()) {
+          const entries = readdirSync(file);
+          if (entries.length) {
+            const match = entries.length === 1 && /^owner-([1-9][0-9]*)-[0-9a-f]{24}$/.exec(entries[0]);
+            if (!match) return false;
+            const pid = Number(match[1]);
+            if (!Number.isSafeInteger(pid) || alive(pid)) return false;
+            // A stale contender knows only this unique dead marker. It cannot unlink a new owner's marker.
+            unlinkSync(path.join(file, entries[0]));
+          }
+          rmdirSync(file);
+        } else if (stat.isFile()) {
+          // Upgrade a dead legacy PID file. An empty/malformed file may still be in publication: refuse it.
+          const pid = Number(readFileSync(file, "utf8"));
+          if (!Number.isSafeInteger(pid) || pid <= 0 || alive(pid)) return false;
+          unlinkSync(file); // If another contender published a directory, unlink refuses it.
+        } else return false;
+      } catch (e) { if (!changed(e)) throw e; }
     }
+    return false;
+  } finally {
+    if (candidate) rmSync(candidate, { recursive: true, force: true });
   }
-  return false;
 }
 
 function alive(pid) {
