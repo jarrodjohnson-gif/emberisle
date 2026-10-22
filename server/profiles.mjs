@@ -148,6 +148,9 @@ function alive(pid) {
 }
 
 // Temp file, sync, rename, then sync the directory: a commit is acknowledged only once it would survive power loss.
+// A rename may have taken effect even when it rejects. Never reuse the old in-memory snapshot after that boundary.
+class UncertainProfileWrite extends Error {}
+
 async function writeDurable(dir, name, text) {
   const tmp = path.join(dir, `.${name}.${process.pid}.${randomBytes(6).toString("hex")}.tmp`);
   const fh = await fs.open(tmp, "wx", 0o600);
@@ -157,12 +160,16 @@ async function writeDurable(dir, name, text) {
   } finally {
     await fh.close();
   }
-  await fs.rename(tmp, path.join(dir, name));
-  const d = await fs.open(dir, "r");
   try {
-    await d.sync();
-  } finally {
-    await d.close();
+    await fs.rename(tmp, path.join(dir, name));
+    const d = await fs.open(dir, "r");
+    try {
+      await d.sync();
+    } finally {
+      await d.close();
+    }
+  } catch (e) {
+    throw new UncertainProfileWrite(e.message, { cause: e });
   }
 }
 
@@ -220,7 +227,8 @@ export function openProfiles(dir, { colors, clock = Date.now } = {}) {
   if (reason) console.error(`profiles: store unavailable (${reason}); guests can still play`);
 
   // Writes are serialized across every caller. Each mutation runs on a copy; the live store changes only after the copy is
-  // durably on disk, so a failed write leaves memory and disk in agreement.
+  // durably on disk. Failures before replacement leave the old snapshot usable; uncertain replacements fence every caller
+  // until a clean reload, so no queued write can roll the file back from stale memory.
   let chain = Promise.resolve();
   function mutate(fn) {
     const run = chain.then(async () => {
@@ -230,6 +238,10 @@ export function openProfiles(dir, { colors, clock = Date.now } = {}) {
       try {
         await writeDurable(dir, FILE, JSON.stringify(next));
       } catch (e) {
+        if (e instanceof UncertainProfileWrite) {
+          doc = null;
+          reason = "unreadable";
+        }
         console.error("profiles: write failed:", e.message);
         throw new ProfileError("unavailable");
       }
@@ -419,7 +431,9 @@ export function openProfiles(dir, { colors, clock = Date.now } = {}) {
     get ready() {
       return Boolean(doc);
     },
-    reason,
+    get reason() {
+      return reason;
+    },
     create,
     login,
     resume,
