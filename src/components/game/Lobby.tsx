@@ -175,12 +175,13 @@ export function Lobby() {
             );
           })}
         </ul>
+        {/* #937: wait box above the chat so the collapsed toggle never sits under the chat input (chat-prove hit test at 1280x720). */}
+        <LazyBoundary failed={null}><LobbyWaitBox /></LazyBoundary>
         {/* #417, #895: the chat sits below the seats and its log is the one flexible piece (down to one line), so at 1280x720 the
             tabs, the emoji, the input and Send stay above the Ready footer, and Start and Leave stay inside the card. */}
         <div data-testid="lobby-chat" className={cn("mt-2 flex flex-col rounded-[12px] border border-border bg-surface p-2", landscape ? "min-h-0 flex-1" : sheet ? "min-h-[16.5rem] shrink-0" : "min-h-0 flex-1")}>
           <ChatBox className="flex-1" rows={6} minRows={sheet ? 4 : landscape ? 0 : 1} dense={desk} />
         </div>
-        <LazyBoundary failed={null}><LobbyWaitBox /></LazyBoundary>
         </div>
         {/* #389: on a phone Ready/Start stay pinned to the bottom of the card; a fade above them says the rest scrolls. */}
         <div

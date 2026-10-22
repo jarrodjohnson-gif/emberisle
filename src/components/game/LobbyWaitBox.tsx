@@ -131,14 +131,15 @@ export function LobbyWaitBox() {
   return (
     <div
       data-testid="lobby-wait-box"
-      className="mt-2 shrink-0 rounded-[12px] border border-border bg-surface p-2"
+      // Closed: one compact line so 1280x720 still fits the chat input above the Ready footer (chat-prove). Open: bordered stage.
+      className={open ? "mt-1 shrink-0 rounded-[12px] border border-border bg-surface p-2" : "mt-1 shrink-0"}
       // Arrows steer the game while focus is inside the box, so they must not scroll the lobby card. Only the default is
       // cancelled: stopping propagation would keep the event from Ruffle's own listener (docs/spike/928/FINDINGS.md).
       onKeyDownCapture={(e) => {
         if (e.key === "ArrowLeft" || e.key === "ArrowRight" || e.key === "ArrowUp" || e.key === "ArrowDown" || e.key === " ") e.preventDefault();
       }}
     >
-      <button type="button" data-testid="lobby-wait-box-toggle" aria-expanded={open} className="min-h-8 w-full cursor-pointer text-left text-sm" onClick={() => setOpen(!open)}>
+      <button type="button" data-testid="lobby-wait-box-toggle" aria-expanded={open} className="h-7 w-full cursor-pointer text-left text-sm text-muted" onClick={() => setOpen(!open)}>
         Play while you wait {open ? "▾" : "▸"}
       </button>
       {open ? (
