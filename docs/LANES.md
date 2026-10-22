@@ -100,6 +100,10 @@ Gemini never builds a new look, animation or layout that needs taste. Split such
 
 **Big design work needs Claude Opus 5.5 or stronger.** Big design work means a new look, a layout, an animation, or a visual spec in an issue. Fable and Astra count. Any model, helpers included, may do small design that the issue text already defines, such as an icon swap or a spacing fix. Any model may also build to an approved mock.
 
+**Design issues start in backlog.** The desk files an issue that changes a layout, a look or an animation as `tier:1` and `status:backlog`. Backlog is not eligible. The desk moves it to `status:todo` only when the issue links an Astra or Opus spec or an approved mock that settles the exact sizes, states and wording. A proof-only issue that measures the current screen (no change to `Hud.tsx`, `styles.css` or any visible look) is not design and may be `tier:2`.
+
+**Only listed models claim.** The tier table lists every model that may take issues. A model that is not in it, including Claude Sonnet 4.6 and earlier Claude models, claims nothing, at any tier. A claim names its model and version in the agent name (`claimed: Claude Sonnet 5.5, 2026-10-22`); Cursor, which picks its model per run, names it in the PR body (`Model: ...`). The label bot cannot check this, so the desk does. A claim by an unlisted or unnamed model, or on an issue above its tier, is void: the desk releases it with `/paused`, says why on the issue, and puts the issue back where it belongs.
+
 Grok's usage limits are low, so give it one `tier:2` or `tier:3` issue at a time.
 
 **Bedrock models (Jarrod, 2026-10-21):** GLM 5.3 and Kimi K3 are provisional `tier:2`. Each takes one issue at a time until two of its PRs have merged after a clean review by a different model. Then it is simply `tier:2`. Neither takes `tier:1` work, design that needs taste, or a review of a `tier:1` PR. gpt-oss is not used. Setup: [`setup-bedrock-agents.md`](setup-bedrock-agents.md).
