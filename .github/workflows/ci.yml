@@ -152,6 +152,8 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run profile-pin-queue-prove
       - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run profile-permissions-prove
+      - if: needs.changes.outputs.docs_only != 'true'
         run: npm run next-up-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run touch-place-prove
