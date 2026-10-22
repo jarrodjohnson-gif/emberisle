@@ -28,7 +28,7 @@ export function TableMenu() {
   const setViewChoice = useGame((s) => s.setViewChoice);
   const muted = useMuted();
   const haptics = useHaptics();
-  const showHaptics = hapticsAvailable();
+  const showHaptics = hapticsAvailable() && matchMedia("(pointer: coarse)").matches;
   const music = useMusicOn();
   const { state: copied, copy, reset } = useCopy<"code" | "log">();
   const gameLog = useGame((s) => s.gameLog);
@@ -185,7 +185,7 @@ export function TableMenu() {
                 {music ? <Volume2 className={ICON} /> : <VolumeX className={ICON} />}
                 Music {music ? "on" : "off"}
               </Button>
-              {/* #542: phones only in effect (coarse pointer). The row stays when vibrate exists so the choice is clear. */}
+              {/* #542: Offer the row only where the coarse-pointer and vibration guards allow an effect. */}
               {showHaptics ? (
                 <Button
                   variant="ghost"

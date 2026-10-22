@@ -321,8 +321,12 @@ async function desktopQuietProof(page) {
   });
   const got = await page.evaluate(() => window.__buzz.slice());
   assert.deepEqual(got, [], `desktop must ignore haptics, got ${JSON.stringify(got)}`);
-  // Toggle row is still offered when vibrate exists (stubbed), but effect is coarse-gated.
-  console.log("desktop: coarse=false stays quiet");
+  await page.getByRole("button", { name: "Table menu" }).click();
+  const menu = page.getByRole("dialog", { name: "Table menu" });
+  await menu.waitFor();
+  assert.equal(await menu.getByTestId("haptics-toggle").count(), 0, "desktop has no ineffective Haptics row");
+  await page.keyboard.press("Escape");
+  console.log("desktop: coarse=false stays quiet and has no Haptics row");
 }
 
 async function reducedStillBuzzes(page) {
