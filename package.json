@@ -73,6 +73,7 @@
     "polish-tokens-prove": "node scripts/polish-tokens-prove.mjs",
     "roll-moment-prove": "node scripts/roll-moment-prove.mjs",
     "table-menu-prove": "node scripts/table-menu-prove.mjs",
+    "version-prove": "node --import ./server/register.mjs scripts/version-prove.mjs",
     "hand-cards-prove": "node scripts/hand-cards-prove.mjs",
     "hand-offer-prove": "node scripts/hand-offer-prove.mjs",
     "hand-hidden-prove": "node scripts/hand-hidden-prove.mjs",

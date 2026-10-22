@@ -1,4 +1,5 @@
-import { execSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
+import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
@@ -38,7 +39,8 @@ function preloadChunks(): Plugin {
 // #834: the commit and build time the Table menu shows. A source download has no git, so the commit reads "dev".
 function buildSha(): string {
   try {
-    return execSync("git rev-parse --short HEAD", { stdio: ["ignore", "pipe", "ignore"] }).toString().trim();
+    if (!existsSync(new URL("./.git", import.meta.url))) return "dev";
+    return execFileSync("git", ["rev-parse", "--short", "HEAD"], { cwd: new URL(".", import.meta.url), stdio: ["ignore", "pipe", "ignore"], encoding: "utf8" }).trim();
   } catch {
     return "dev";
   }

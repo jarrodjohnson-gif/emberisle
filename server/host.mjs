@@ -1,4 +1,5 @@
-import { mkdirSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
 import { mkdir, rename, writeFile } from "node:fs/promises";
 import { readFile } from "node:fs/promises";
 import http from "node:http";
@@ -16,6 +17,14 @@ import { cue } from "./cue.mjs";
 import { PROFILE_TYPES, profileGate, profileHandler, seatCredential, seatProfile, tableCard, watchRefusal } from "./profile-protocol.mjs";
 import { openProfiles, UUID } from "./profiles.mjs";
 import { extensionBudget, turnExtensions } from "./turn-extension.mjs";
+
+// The running host's checkout, regardless of the shell's cwd. Archives and hosts without git report dev (#913).
+const SERVER_SHA = (() => {
+  try {
+    if (!existsSync(new URL("../.git", import.meta.url))) return "dev";
+    return execFileSync("git", ["rev-parse", "--short", "HEAD"], { cwd: new URL("..", import.meta.url), stdio: ["ignore", "pipe", "ignore"], encoding: "utf8" }).trim();
+  } catch { return "dev"; }
+})();
 
 function hear(name) {
   try {
@@ -901,7 +910,7 @@ function openTable(ws, msg) {
   room.host = seat.id;
   ws.room = room;
   ws.seat = seat;
-  send(ws, { type: "welcome", proto: PROTO, code: room.code, you: seat.id, host: true, chat: room.chat, secret: seat.secret, ...HOLD_INFO, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on" });
+  send(ws, { type: "welcome", proto: PROTO, serverSha: SERVER_SHA, code: room.code, you: seat.id, host: true, chat: room.chat, secret: seat.secret, ...HOLD_INFO, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on" });
   say(room, `${seat.name} sat down.`);
   publish(room);
 }
@@ -931,7 +940,7 @@ function sitDown(ws, msg) {
   room.seats.push(seat);
   ws.room = room;
   ws.seat = seat;
-  send(ws, { type: "welcome", proto: PROTO, code: room.code, you: seat.id, host: false, chat: room.chat, secret: seat.secret, ...HOLD_INFO, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on" });
+  send(ws, { type: "welcome", proto: PROTO, serverSha: SERVER_SHA, code: room.code, you: seat.id, host: false, chat: room.chat, secret: seat.secret, ...HOLD_INFO, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on" });
   say(room, `${seat.name} sat down.`);
   publish(room);
 }
@@ -946,7 +955,7 @@ function watch(ws, msg) {
   if (room.watchers.size >= SPECTATOR_MAX) return send(ws, { type: "error", message: "Table is full to watch." });
   room.watchers.add(ws);
   ws.watch = room;
-  send(ws, { type: "welcome", proto: PROTO, code: room.code, spectator: true, chat: room.chat, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on" });
+  send(ws, { type: "welcome", proto: PROTO, serverSha: SERVER_SHA, code: room.code, spectator: true, chat: room.chat, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on" });
   watchersChanged(room, "Someone is watching.");
   const soonest = room.seats.reduce((d, s) => (s.turnDeadline && (!d || s.turnDeadline < d.turnDeadline) ? s : d), null);
   send(ws, { type: "state", you: null, game: watchView(room.game), legal: legalFor(room.game, null), turnExtension: extensions(room).state(), turnDeadline: deadlineOf(room), turnPlayer: soonest?.pid ?? null, serverNow: Date.now() });
@@ -1472,7 +1481,7 @@ function rejoin(ws, msg) {
   seat.gone = null;
   ws.room = room;
   ws.seat = seat;
-  send(ws, { type: "welcome", proto: PROTO, code: room.code, you: seat.id, host: seat.id === room.host, chat: room.chat, secret: seat.secret, ...HOLD_INFO, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on" });
+  send(ws, { type: "welcome", proto: PROTO, serverSha: SERVER_SHA, code: room.code, you: seat.id, host: seat.id === room.host, chat: room.chat, secret: seat.secret, ...HOLD_INFO, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on" });
   say(room, `${seat.name} is back.`);
   publish(room);
   if (!room.game) return;
