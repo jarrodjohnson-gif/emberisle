@@ -141,22 +141,7 @@ export function profileHandler(store, send) {
         backupColor: msg.backupColor,
         catchphrase: msg.catchphrase,
       });
-      const p = out.profile;
-      const reply = {
-        type: "profileSession",
-        id,
-        profile: {
-          profileId: p.profileId,
-          displayName: p.displayName,
-          login: p.login,
-          color: p.color,
-          backupColor: p.backupColor,
-          catchphrase: p.catchphrase,
-          winSongId: p.winSongId,
-        },
-      };
-      if (p.pinMustChange) reply.profile.pinMustChange = true;
-      return send(ws, reply);
+      return send(ws, session(id, out, false));
     }
     if (msg.type === "profileChangePin") {
       const out = await store.profileChangePin(msg.credential, msg.currentPin, msg.newPin, msg.newPinConfirm);
@@ -191,6 +176,7 @@ const SEAT_MESSAGES = {
   unavailable: MESSAGES.unavailable,
   slowDown: MESSAGES.slowDown,
   signedOut: "Signed out on this device. Sign in again, or join as a guest.",
+  mustChangePin: MESSAGES.mustChangePin,
   profileSeated: "That profile already has a seat at this table. Join as a guest, or leave the other seat.",
   watcher: "Watchers join as guests.",
   notAtTable: "Profile cards are for players at your table.",
@@ -207,6 +193,7 @@ export function seatCredential(store, ws, msg, taken) {
   if (!store.ready) return refuse("unavailable");
   const profileId = store.validate(msg.credential);
   if (!profileId) return refuse("signedOut");
+  if (store.profile(profileId)?.pinMustChange) return refuse("mustChangePin");
   if (taken(profileId)) return refuse("profileSeated");
   return { profileId };
 }

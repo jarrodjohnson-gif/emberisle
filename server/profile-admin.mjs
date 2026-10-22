@@ -8,7 +8,7 @@
 //   node --import ./register.mjs profile-admin.mjs <profiles-dir> <login-or-uuid>
 import { createInterface } from "node:readline";
 import { PLAYER_COLORS } from "../src/lib/game/types.ts";
-import { LOGIN, normLogin, openProfiles } from "./profiles.mjs";
+import { normLogin, openProfiles } from "./profiles.mjs";
 
 function usage() {
   console.error("Usage: profile-admin.mjs [profiles-dir] <login-or-uuid>");
@@ -17,9 +17,9 @@ function usage() {
 
 const [, , a1, a2] = process.argv;
 if (!a1) usage();
-const dir = a2 ? a1 : (process.env.PROFILES_DIR ?? a1);
+const dir = a2 ? a1 : process.env.PROFILES_DIR;
 const target = a2 ?? a1;
-if (!dir || !target) usage();
+if (!dir || !target || process.argv.length > 4) usage();
 
 const store = openProfiles(dir, { colors: PLAYER_COLORS });
 if (!store.ready) {

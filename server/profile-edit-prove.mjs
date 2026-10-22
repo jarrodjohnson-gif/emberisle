@@ -2,10 +2,13 @@
 // Uses real profile sockets against a temporary private store, matching profile-auth-prove.mjs patterns.
 // Run from the repo root: node --import ./server/register.mjs server/profile-edit-prove.mjs
 import { spawn } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import WebSocket from "ws";
+import { openProfiles, SCRYPT } from "./profiles.mjs";
+import { seatCredential } from "./profile-protocol.mjs";
+import { PLAYER_COLORS } from "../src/lib/game/types.ts";
 
 const ROOMS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-rooms-"));
 const PROFILES_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-profiles-"));
@@ -118,13 +121,16 @@ const fields = (login, pin, over = {}) => ({ type: "profileCreate", displayName:
 
 // Run the admin CLI as a subprocess. Pipes YES (or other input) to stdin. Returns { stdout, stderr, code }.
 async function runAdmin(args, input = "YES\n", dir = PROFILES_DIR) {
+  const env = { ...process.env };
+  if (dir === null) delete env.PROFILES_DIR;
+  else env.PROFILES_DIR = dir;
   return new Promise((resolve) => {
     const proc = spawn(
       process.execPath,
       ["--import", "./register.mjs", "profile-admin.mjs", ...args],
       {
         cwd: new URL(".", import.meta.url),
-        env: { ...process.env, PROFILES_DIR: dir },
+        env,
         stdio: ["pipe", "pipe", "pipe"],
       },
     );
@@ -188,7 +194,9 @@ check("login rename with correct PIN succeeds", renamed.type === "profileSession
 check("UUID survives rename", renamed.profile.profileId === duneId, renamed.profile);
 check("old login is reserved", !!store().reservedLogins["dune"], store().reservedLogins);
 check("old login cannot be claimed", isErr(await (await client(h, tunnel())).req(fields("dune", "1234")), "loginTaken"));
+const renameFailuresBefore = byLogin(store(), "dune-new").guard.lifetime;
 check("wrong PIN is refused for rename", isErr(await renameOkC.req({ type: "profileEdit", credential: duneCred, login: "dune-newer", pin: "0000" }), "signInFailed"));
+check("wrong rename PIN durably counts once and releases its reservation", byLogin(store(), "dune-new").guard.lifetime === renameFailuresBefore + 1 && Object.keys(byLogin(store(), "dune-new").guard.pending).length === 0);
 
 // mediaKey and winSongId survive rename (inject mediaKey via editStore then verify via ownerView)
 editStore((d) => {
@@ -263,7 +271,9 @@ check("new credential works", (await (await client(h, tunnel())).req({ type: "pr
 // Budgets are retained (not replenished) after ordinary PIN change
 const afterLifetime = byLogin(store(), "cedar").guard.lifetime;
 check("lifetime budget is retained after PIN change (not replenished)", afterLifetime === beforeLifetime, { beforeLifetime, afterLifetime });
+const pinFailuresBefore = byLogin(store(), "cedar").guard.lifetime;
 check("wrong PIN is refused for changePin", isErr(await (await client(h, tunnel())).req({ type: "profileChangePin", credential: cedarCred3, currentPin: "0000", newPin: "4444", newPinConfirm: "4444" }), "signInFailed"));
+check("wrong change PIN durably counts once and releases its reservation", byLogin(store(), "cedar").guard.lifetime === pinFailuresBefore + 1 && Object.keys(byLogin(store(), "cedar").guard.pending).length === 0);
 check("mismatched newPin confirmation is rejected", isErr(await pcC1.req({ type: "profileChangePin", credential: cedarCred3, currentPin: "3333", newPin: "5555", newPinConfirm: "5556" }), "invalid"));
 
 // --- Lifetime lock blocks changePin via device -------------------------------------------------------
@@ -485,6 +495,62 @@ check("pine normal login works after recovery and restart", pineResumeAfter.type
 check("reserved logins survive restart", !!store().reservedLogins["dune"]);
 
 await h.stop();
+
+// Direct store calls make queued revocation races and expiry clocks deterministic.
+{
+  const dir = path.join(PROFILES_DIR, "race-clock");
+  let now = Date.now();
+  let db = openProfiles(dir, { colors: PLAYER_COLORS, clock: () => now });
+  const codeOf = p => p.then(() => null, e => e.code);
+  const made = await db.create(fields("racer", "1234"));
+  const rename = codeOf(db.profileEdit(made.token, { login: "racer-next", pin: "1234" }));
+  await db.logout(made.token);
+  check("logout during a queued rename refuses its commit", await rename === "signedOut");
+  check("revoked rename leaves login and reservations intact", db.profile(made.profile.profileId).login === "racer" && Object.keys(db.profile(made.profile.profileId).guard.pending).length === 0);
+  const signed = await db.login("racer", "1234");
+  const change = codeOf(db.profileChangePin(signed.token, "1234", "5678", "5678"));
+  await db.logout(signed.token);
+  check("logout during PIN hashing cannot issue a replacement credential", await change === "signedOut");
+  check("a refused queued PIN change leaves the old PIN usable", !!(await db.login("racer", "1234")).token);
+
+  const editSession = await db.login("racer", "1234");
+  const loggingOut = db.logout(editSession.token);
+  const textEdit = codeOf(db.profileEdit(editSession.token, { displayName: "Revoked" }));
+  await loggingOut;
+  check("queued text edits also recheck credential revocation", await textEdit === "signedOut" && db.profile(made.profile.profileId).displayName !== "Revoked");
+  const resetting = db.localResetPin(made.profile.profileId);
+  const staleLogin = codeOf(db.login("racer", "1234"));
+  const reset = await resetting;
+  check("in-flight old-PIN login cannot survive a local reset", await staleLogin === "signInFailed");
+  const temp = await db.login("racer", reset.tempPin);
+  check("temporary credential cannot bind a table profile", seatCredential(db, { profileGate: { credentials: true } }, { credential: temp.token }, () => false).code === "mustChangePin");
+  now += TEMP_PIN_MS + 1;
+  let resumeCode;
+  try { db.resume(temp.token); } catch (e) { resumeCode = e.code; }
+  check("expired temporary credential cannot resume a profile", resumeCode === "signInFailed");
+  check("expired temporary credential cannot change its PIN", await codeOf(db.profileChangePin(temp.token, reset.tempPin, "6789", "6789")) === "signInFailed");
+  check("expiry keeps the profile locked and the attempt counted", db.profile(made.profile.profileId).pinMustChange && db.profile(made.profile.profileId).guard.lifetime === 1);
+  db = openProfiles(dir, { colors: PLAYER_COLORS, clock: () => now });
+  check("expiry lock and failed attempt survive reopening", db.profile(made.profile.profileId).pinMustChange && db.profile(made.profile.profileId).guard.lifetime === 1);
+  const resetAgain = await db.localResetPin(made.profile.profileId);
+  const recovered = await db.login("racer", resetAgain.tempPin);
+  check("a verified second reset allows required PIN change", !!(await db.profileChangePin(recovered.token, resetAgain.tempPin, "6789", "6789")).token);
+  const beforeFailure = JSON.stringify(db.profile(made.profile.profileId));
+  const normalN = SCRYPT.N;
+  let hashFailed = false;
+  try {
+    SCRYPT.N = 3; // Force the synchronous scrypt failure path without allocating memory.
+    await db.localResetPin(made.profile.profileId);
+  } catch { hashFailed = true; }
+  finally { SCRYPT.N = normalN; }
+  check("failed reset hashing leaves the profile unchanged", hashFailed && JSON.stringify(db.profile(made.profile.profileId)) === beforeFailure);
+  let slots = 0;
+  while (slots < 12 && db.claimHash()) slots++;
+  check("failed reset hashing releases exactly one queue slot", slots === 9);
+  const accidentalDir = path.join(PROFILES_DIR, "not-a-store");
+  const noDirectory = await runAdmin([accidentalDir], "YES\n", null);
+  check("admin refuses a missing store directory before creating anything", noDirectory.code === 2 && !existsSync(accidentalDir));
+}
 
 console.log(`\nprofile-edit-prove: ${passed} checks passed`);
 process.exit(0);
