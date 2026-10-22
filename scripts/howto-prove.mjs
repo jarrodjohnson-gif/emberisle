@@ -139,6 +139,7 @@ try {
   ];
   // The setup reference, read from an open dialog.
   const checkSetup = async (page, dialog, tag, touch, want) => {
+    await dialog.getByRole("figure").first().waitFor();
     const text = await dialog.innerText();
     assert.match(text, /Win at 10 points|Win at 7 points/, `${tag}: target stays`);
     assert.ok(text.includes(want.wayfarer), `${tag}: the mode's wayfarer text stays`);
@@ -154,6 +155,7 @@ try {
     assert.match(text, /A three-seat table runs 1, 2, 3, then 3, 2, 1/, `${tag}: not every table has four seats`);
     assert.match(text, /a second outpost touching a wood hex, a wheat hex and the wastes pays 1 wood and 1 wheat\. The wastes pay nothing/, `${tag}: goods example text`);
     const figures = dialog.getByRole("figure");
+    await figures.first().waitFor();
     assert.equal(await figures.count(), 3, `${tag}: three figures`);
     for (let i = 0; i < 3; i++) {
       const f = figures.nth(i);

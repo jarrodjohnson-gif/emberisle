@@ -877,10 +877,15 @@ try {
     await dlg.waitFor({ timeout: 3000 });
     const at = await page.evaluate(() => document.activeElement?.getAttribute("aria-label"));
     await page.keyboard.press("Tab");
+    const rulesFocus = await page.evaluate(() => document.activeElement?.getAttribute("aria-label"));
+    // The new scroll region is the next stop; the following Tab must still wrap to Close.
+    const inside = await page.evaluate(() => !!document.activeElement?.closest('[role="dialog"][aria-labelledby="howto-title"]'));
+    if (!inside || rulesFocus !== "Rules and setup") throw new Error(`how to play ${label}: Tab did not reach the rules region: ${rulesFocus}`);
+    await page.keyboard.press("Tab");
     const afterTab = await page.evaluate(() => document.activeElement?.getAttribute("aria-label"));
-    // The "Rules and setup" region is focusable so the keyboard can scroll it (#749); Tab may stop there before Close.
-    const inside = await page.evaluate(() => !!document.activeElement?.closest('[role="dialog"]'));
-    if (!inside || (afterTab !== "Close" && afterTab !== "Rules and setup")) throw new Error(`how to play ${label}: Tab left the dialog: ${afterTab}`);
+    if (afterTab !== "Close") throw new Error(`how to play ${label}: Tab left the dialog: ${afterTab}`);
+    await page.keyboard.press("Shift+Tab");
+    if (await page.evaluate(() => document.activeElement?.getAttribute("aria-label")) !== "Rules and setup") throw new Error(`how to play ${label}: reverse Tab did not wrap to rules`);
     await page.keyboard.press("Escape");
     await dlg.waitFor({ state: "detached", timeout: 3000 });
     const back = await page.evaluate(() => document.activeElement?.getAttribute("aria-label") ?? document.activeElement?.textContent?.trim());
