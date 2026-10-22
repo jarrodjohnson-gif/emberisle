@@ -1,7 +1,7 @@
 // #1018: private profile data stays owner-only even with deployment umask 000.
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
-import { mkdtempSync, readdirSync, rmSync, statSync } from "node:fs";
+import { lstatSync, mkdtempSync, readdirSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { openProfiles } from "./profiles.mjs";
@@ -29,7 +29,16 @@ try {
   const store = openProfiles(dir, { colors: ["red", "blue"] });
   check("the real store opens", store.ready);
   check("a new profile directory permits only its owner", (statSync(dir).mode & 0o777) === 0o700);
-  check("the live writer lock permits only its owner", mode("writer.lock") === 0o600);
+  const lock = lstatSync(path.join(dir, "writer.lock"));
+  if (lock.isDirectory()) {
+    check("the published lock directory permits only its owner", mode("writer.lock") === 0o700);
+    const owners = readdirSync(path.join(dir, "writer.lock"));
+    check("the lock contains exactly this process's unique owner marker", owners.length === 1 && new RegExp(`^owner-${process.pid}-[0-9a-f]{24}$`).test(owners[0]));
+    check("the owner marker is a private regular file", lstatSync(path.join(dir, "writer.lock", owners[0])).isFile() && mode(path.join("writer.lock", owners[0])) === 0o600);
+  } else {
+    check("the legacy writer lock is a regular file", lock.isFile());
+    check("the live writer lock permits only its owner", mode("writer.lock") === 0o600);
+  }
   const owner = await store.create({ login: "private-owner", displayName: "Private", color: "red", pin: "2468", pinConfirm: "2468" });
   check("the first committed store permits only its owner", mode("profiles.json") === 0o600);
   check("the first remembered credential works", store.resume(owner.token).profile.profileId === owner.profile.profileId);
