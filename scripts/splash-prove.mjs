@@ -8,6 +8,9 @@ import { mkdirSync } from "node:fs";
 import { chromium } from "playwright";
 import { createServer } from "vite";
 
+const cpuThrottle = Number(process.env.SPLASH_PROVE_CPU_THROTTLE || 1);
+assert.ok(Number.isInteger(cpuThrottle) && cpuThrottle >= 1 && cpuThrottle <= 16, "CPU throttle must be an integer from 1 to 16");
+console.log(`splash-prove: tab-local CPU throttle x${cpuThrottle}`);
 const port = Number(process.env.VITE_PORT || 8173);
 const vite = await createServer({ server: { host: "127.0.0.1", port, strictPort: true }, logLevel: "error" });
 await vite.listen();
@@ -24,6 +27,7 @@ async function open(width, height, touch, water) {
     HTMLMediaElement.prototype.play = function () { window.__played.push(this.src.split("/").pop()); return Promise.resolve(); };
   });
   const page = await context.newPage();
+  if (cpuThrottle > 1) await (await context.newCDPSession(page)).send("Emulation.setCPUThrottlingRate", { rate: cpuThrottle });
   page.on("pageerror", (e) => errors.push(`${width}: ${e.message}`));
   page.on("console", (m) => m.type() === "error" && errors.push(`${width}: ${m.text()}`));
   await page.goto(`http://127.0.0.1:${port}`);
@@ -135,10 +139,69 @@ async function heldPair(page, at, age) {
   });
 }
 
+// Exercise the real renderer wiring with one stalled visible frame. Other animation caps stay in place.
+async function slowOceanFrame(page, tag) {
+  const slow = await page.evaluate(() => {
+    const isle = window.__isle, life = isle.oceanLife, delta = isle.clock.getDelta, busy = isle.busyUntil;
+    try {
+      life.reset("splash-frame-clock");
+      const fish = life.fishAt()[0];
+      life.scatter(fish.x, fish.z);
+      const ids = life.fishFlee.flatMap((f, i) => f ? [i] : []), before = life.fishTime;
+      isle.clock.getDelta = () => 4.25;
+      isle.lastFrame = -Infinity;
+      isle.busyUntil = performance.now() + 1000;
+      isle.tick();
+      const ages = ids.map((i) => life.fishFlee[i]?.age ?? 0), posed = life.fishAt();
+      life.fishFlee.fill(null);
+      life.swim();
+      const home = life.fishAt();
+      return { elapsed: life.fishTime - before, ages, error: Math.max(...ids.map((i) => Math.hypot(posed[i].x - home[i].x, posed[i].z - home[i].z))) };
+    } finally {
+      isle.clock.getDelta = delta;
+      isle.busyUntil = busy;
+      life.reset("splash-frame-clock-done");
+    }
+  });
+  assert.ok(Math.abs(slow.elapsed - 4.25) < 1e-9, `${tag}: one slow frame advances ocean life by elapsed seconds (${slow.elapsed})`);
+  assert.ok(slow.ages.length > 0 && slow.ages.every((age) => age >= 4), `${tag}: a four-second stall completes every affected fish escape (${slow.ages})`);
+  assert.ok(slow.error < 1e-6, `${tag}: fish return to their unfled swimming positions after the stall (${slow.error})`);
+
+  // A reduced-motion pause is not a slow visible frame. Capture the first enabled step on a real preference change.
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.waitForFunction(() => window.__isle.wasCalm);
+  await page.evaluate(() => {
+    const isle = window.__isle, life = isle.oceanLife, delta = isle.clock.getDelta, step = life.step;
+    window.__oceanResume = null;
+    window.__restoreOceanResume = () => { isle.clock.getDelta = delta; life.step = step; };
+    isle.clock.getDelta = () => 7;
+    life.step = function (dt, enabled, ...rest) {
+      const before = this.fishTime, out = step.call(this, dt, enabled, ...rest);
+      if (enabled) {
+        window.__oceanResume = { dt, before, after: this.fishTime };
+        window.__restoreOceanResume();
+      }
+      return out;
+    };
+  });
+  try {
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await page.waitForFunction(() => window.__oceanResume);
+    const resume = await page.evaluate(() => window.__oceanResume);
+    assert.equal(resume.dt, 0, `${tag}: motion resume discards time spent paused`);
+    assert.equal(resume.after, resume.before, `${tag}: motion resume preserves the frozen ocean phase`);
+  } finally {
+    await page.evaluate(() => { window.__restoreOceanResume(); delete window.__restoreOceanResume; });
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+  }
+  console.log(`${tag}: stalled-frame fish return and reduced-motion resume passed`);
+}
+
 try {
   for (const [width, height, touch] of [[390, 844, true], [1280, 720, false]]) {
     const tag = `${width}x${height}`;
     const { context, page } = await open(width, height, touch, "crystal");
+    await slowOceanFrame(page, tag);
 
     // 1. Build mode: a press on the water just past a coast corner (inside its pick reach) is the corner's, not a splash.
     await craft(page, "setupSettle");

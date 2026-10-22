@@ -1256,6 +1256,7 @@ export class IsleRenderer {
     const pulsing = this.marks.children.some((m) => m.userData.kind === "hex" && m.userData.id !== this.pending?.id);
     // Reduced motion (#382): no tick at all; a drag, a camera move or a state push still draws for its 1 s hold.
     const calm = this.calm();
+    const resumedMotion = this.wasCalm && !calm;
     // Reading `matches` here can swallow the change event, so a flip seen on this frame wakes the loop itself.
     if (calm !== this.wasCalm) {
       this.wasCalm = calm;
@@ -1309,7 +1310,8 @@ export class IsleRenderer {
     }
     this.water.uniforms.uTime!.value = t;
     const swell = this.waterPath === "crystal" ? this.crystal?.swell : undefined;
-    this.oceanLife.step(dt, true, this.oceanViewport, swell ? (x, z) => swell(x, z, t).y : undefined);
+    // Analytic ocean poses follow elapsed visible time, even on slow frames; a motion resume excludes the paused interval.
+    this.oceanLife.step(resumedMotion ? 0 : this.clock.getDelta(), true, this.oceanViewport, swell ? (x, z) => swell(x, z, t).y : undefined);
     this.foam.material.opacity = 0.32 + 0.23 * (0.5 + 0.5 * Math.sin(t * 0.8));
     this.jellyT = t;
     this.jelly?.update(t);
