@@ -5,7 +5,7 @@
 // Run from the repo root: node --import ./server/register.mjs server/profile-seat-prove.mjs
 import { spawn } from "node:child_process";
 import { createHash, randomBytes, randomUUID, scryptSync } from "node:crypto";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import WebSocket from "ws";
@@ -459,6 +459,8 @@ await h.stop();
 // --- Independent saved-roster guards (#992) ---------------------------------------------------------------------------------
 // BADR above has a wrong pid. Corrupt one other field at a time so that pid failure cannot mask a removed loader guard.
 // Use a separate restart after the existing checks; extra fixtures cannot consume their four-second recovery holds.
+const rosterCodes = Array.from("ABCDEFGHJKLMNPQRSTUVWXYZ", (letter) => `RST${letter}`)
+  .filter((code) => !existsSync(path.join(ROOMS_DIR, `${code}.json`)));
 const rosterCases = [
   ["valid control", () => {}, true],
   ["version", (r) => { r.v = 2; }],
@@ -477,7 +479,7 @@ const rosterCases = [
   ["duplicate profile", (r) => { r.players[1].profileId = r.players[0].profileId; }],
 ].map(([label, corrupt, valid], i) => {
   const fixture = structuredClone(saved);
-  fixture.code = `RST${"ABCDEFGHJKLMNPQRSTUVWXYZ"[i]}`;
+  fixture.code = rosterCodes[i];
   fixture.game.phase = "over";
   fixture.game.winner = fixture.game.players[0].id;
   fixture.seats.forEach((s) => { s.secret = randomBytes(16).toString("hex"); });
