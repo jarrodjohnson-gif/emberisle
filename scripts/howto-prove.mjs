@@ -10,11 +10,12 @@
 // against the rules' own grantSecondSettlement (through applyAction).
 // Run: npm run howto-prove
 import assert from "node:assert/strict";
-import { existsSync } from "node:fs";
+import { existsSync, mkdirSync } from "node:fs";
 import { chromium } from "playwright";
 import { createServer } from "vite";
 
 const PORT = Number(process.env.VITE_PORT) || 8104;
+mkdirSync("test-results", { recursive: true });
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();
 const { wayfarerRules } = await vite.ssrLoadModule("/src/lib/game/fortunes.ts");
@@ -222,6 +223,13 @@ try {
     }
     await page.keyboard.press("Shift+Tab");
     assert.equal(await label(), "Close", `${tag}: Shift+Tab returns to Close`);
+    if (!tag.includes("reduced") && tag.endsWith("title") && !tag.startsWith("956")) {
+      const size = tag.split(" ")[0];
+      await figures.first().scrollIntoViewIfNeeded();
+      await page.screenshot({ path: `test-results/setup-${size}-order.png` });
+      await figures.nth(2).scrollIntoViewIfNeeded();
+      await page.screenshot({ path: `test-results/setup-${size}-goods.png` });
+    }
     await region.evaluate((el) => { el.scrollTop = 0; });
     return lay;
   };
