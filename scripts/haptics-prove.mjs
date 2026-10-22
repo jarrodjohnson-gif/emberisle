@@ -31,9 +31,11 @@ async function openPage({ coarse = true, reducedMotion = false } = {}) {
     window.__buzz = [];
     window.__buzzTimes = [];
     window.__knocks = [];
+    window.__gainTicks = 0;
     const realPlay = HTMLMediaElement.prototype.play;
     HTMLMediaElement.prototype.play = function () {
       if (this.src.endsWith("/drop_003.wav")) window.__knocks.push(performance.now());
+      if (this.src.endsWith("/click_002.wav")) window.__gainTicks++;
       return realPlay.call(this);
     };
     const realMatch = window.matchMedia.bind(window);
@@ -249,11 +251,36 @@ async function payProof(page) {
     hear(before, paid, me, "ai");
     isle.pulsePayers(paid);
     for (let i = 0; i < 200 && isle.payingPieces?.length; i++) isle.stepPayers(0.01, false);
-    return { n: window.__buzz.filter((ms) => ms === 8).length, grants: (paid.lastProduction ?? []).length, buzz: window.__buzz.slice() };
+    const own = { n: window.__buzz.filter((ms) => ms === 8).length, grants: (paid.lastProduction ?? []).length, buzz: window.__buzz.slice() };
+    const other = paid.players.find(p => p.id !== me).id;
+    const cases = [];
+    for (const scenario of [
+      { name: "opponent-only", owners: [other, other, other], mode: "online", spectator: false, expected: 0 },
+      { name: "watcher", owners: [me, other, me], mode: "online", spectator: true, expected: 0 },
+      { name: "mixed", owners: [me, other, me], mode: "online", spectator: false, expected: 2 },
+      { name: "hotseat", owners: [other, other, other], mode: "hotseat", spectator: false, expected: 3 },
+    ]) {
+      const next = structuredClone(paid);
+      corners.forEach((v, i) => next.vertices.find(c => c.id === v.id).building.playerId = scenario.owners[i]);
+      next.current = other; // Local income still buzzes when an opponent rolls.
+      next.seq += 1;
+      g.setState({ state: next, mode: scenario.mode, spectator: scenario.spectator });
+      isle.clearPayers();
+      window.__buzz = []; window.__buzzTimes = []; window.__gainTicks = 0;
+      isle.pulsePayers(next);
+      for (let i = 0; i < 200 && isle.payingPieces?.length; i++) isle.stepPayers(0.01, false);
+      cases.push({ name: scenario.name, expected: scenario.expected, buzz: window.__buzz.slice(), ticks: window.__gainTicks });
+    }
+    return { ...own, cases };
   });
   assert.equal(n.grants, 3, `pay setup: expected 3 grants, got ${n.grants}`);
   assert.equal(n.n, 3, `pay ticks: expected 3 buzzes of 8, got ${n.n} (${JSON.stringify(n.buzz)})`);
   console.log("pay: three pieces buzzed 8 each");
+  for (const scenario of n.cases) {
+    assert.deepEqual(scenario.buzz, Array(scenario.expected).fill(8), `${scenario.name}: only local owned pieces buzz`);
+    assert.equal(scenario.ticks, 3, `${scenario.name}: all three payer sound ticks remain audible`);
+  }
+  console.log("pay: opponent-only and watcher silent; mixed pays only local pieces; hotseat pays all seats");
 }
 
 async function toggleProof(page) {

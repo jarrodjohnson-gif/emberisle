@@ -275,9 +275,9 @@ export function yourTurn() {
 }
 
 // One soft tick and guarded phone kick per paying piece. The renderer owns timing and the per-roll cap.
-export function gainTick() {
+export function gainTick(ownPiece = false) {
   play("gain_tick", 0.35);
-  haptic(HAPTIC_MS.pay);
+  if (ownPiece) haptic(HAPTIC_MS.pay);
 }
 
 // Background music (#814): "Medieval: The Old Tower Inn" (docs/design/sound.md). The file is fetched on the first start, after
