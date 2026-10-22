@@ -141,6 +141,7 @@ try {
   // The setup reference, read from an open dialog.
   const checkSetup = async (page, dialog, tag, touch, want) => {
     await dialog.getByRole("figure").first().waitFor();
+    await page.evaluate(() => document.fonts.ready);
     const text = await dialog.innerText();
     assert.match(text, /Win at 10 points|Win at 7 points/, `${tag}: target stays`);
     assert.ok(text.includes(want.wayfarer), `${tag}: the mode's wayfarer text stays`);
@@ -213,7 +214,10 @@ try {
     assert.equal(await label(), "Rules and setup", `${tag}: Shift+Tab wraps back`);
     if (lay.scrolls) {
       await page.keyboard.press("End");
-      await page.waitForFunction(() => { const b = document.querySelector('[role="region"][aria-label="Rules and setup"]'); return b.scrollTop + b.clientHeight >= b.scrollHeight - 1; });
+      await page.waitForFunction(() => { const b = document.querySelector('[role="region"][aria-label="Rules and setup"]'); return b.scrollTop + b.clientHeight >= b.scrollHeight - 1; }).catch(async e => {
+        const geometry = await region.evaluate(el => ({ top: el.scrollTop, height: el.clientHeight, total: el.scrollHeight, focused: document.activeElement === el }));
+        throw new Error(`${tag}: End did not reach the bottom: ${JSON.stringify(geometry)}; ${e.message}`);
+      });
       // PageUp, not Home: on a live table Home is the camera reset.
       for (let i = 0; i < 40 && (await region.evaluate((el) => el.scrollTop)) > 0; i++) {
         await page.keyboard.press("PageUp");
