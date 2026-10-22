@@ -302,6 +302,45 @@ await prove('commands inside code fences are ignored', async () => {
   winner(mixed, 1);
   assert.deepEqual(mixed.labels, ['status:claimed']);
 });
+await prove('CRLF fences hide commands and reservation metadata', async () => {
+  for (const fence of ['```', '~~~', '````']) {
+    const block = lines => [fence, ...lines, fence].join('\r\n');
+    const s = fixture([comment(1, block(['/claim', 'claimed: A, 2026-10-16'])), claim(2, 'B')]);
+    await s.run(2);
+    winner(s, 2);
+    assert.equal(s.has(1, '+1'), false);
+    const release = fixture([claim(1, 'A'), comment(2, '/unclaim\r\n' +
+      block(['released: A, 2026-10-16'])), claim(3, 'B')]);
+    await release.run(2);
+    assert.ok(release.has(2, '-1'));
+    assert.equal(release.has(2, '+1'), false);
+    await release.run(3);
+    winner(release, 1, [3]);
+  }
+});
+await prove('edited pauses, releases and PR associations cannot change reservations', async () => {
+  const first = fixture([comment(1, '/claim\nclaimed: A, 2026-10-16', owner, minute(1), minute(2))]);
+  await first.run(1);
+  assert.deepEqual(first.labels, ['status:todo']);
+  assert.ok(first.has(1, '-1'));
+  assert.equal(first.has(1, '+1'), false);
+  for (const body of ['/paused\npaused: A, 2026-10-16',
+    '/todo\nreleased: A, 2026-10-16', '/unclaim\nreleased: A, 2026-10-16',
+    '/in-review\npr: #700']) {
+    const s = fixture([claim(1, 'A'), comment(2, body, owner, minute(2), minute(3)), claim(5, 'B')], {
+      prs: { 700: { number: 700, body: 'Refs #694', user: { login: owner }, closed_at: minute(4) } },
+    });
+    await s.run(2);
+    if (!body.startsWith('/in-review')) {
+      assert.ok(s.has(2, '-1'));
+      assert.equal(s.has(2, '+1'), false);
+      assert.deepEqual(s.labels, ['status:claimed']);
+    }
+    await s.run(5);
+    winner(s, 1, [5]);
+    assert.equal(s.calls.length, 0);
+  }
+});
 await prove('owner /todo and /unclaim release the active claim', async () => {
   for (const release of ['/todo', '/unclaim']) {
     const s = fixture([claim(1, 'A'), comment(2, `${release}\nreleased: A, 2026-10-16`), claim(3, 'B')]);
@@ -311,6 +350,9 @@ await prove('owner /todo and /unclaim release the active claim', async () => {
     assert.deepEqual(s.labels, ['status:claimed']);
   }
   const helperTodo = fixture([claim(1, 'A'), comment(2, '/todo', helper), claim(3, 'B')]);
+  await helperTodo.run(2);
+  assert.ok(helperTodo.has(2, '-1'));
+  assert.equal(helperTodo.has(2, '+1'), false);
   await helperTodo.run(3);
   winner(helperTodo, 1, [3]);
   const helperUnclaim = fixture([claim(1, 'A'), comment(2, '/unclaim', helper)]);
@@ -323,9 +365,13 @@ await prove('shared owner account cannot release a claim without its explicit ta
     for (const metadata of ['', '\nreleased: B, 2026-10-16',
       '\n/claim\nclaimed: B, 2026-10-16\nreleased: A, 2026-10-16',
       '\nclaimed: B, 2026-10-16\nreleased: A, 2026-10-16']) {
-      const s = fixture([claim(1, 'A'), comment(2, command + metadata), claim(3, 'C')]);
+      const s = fixture([claim(1, 'A'), comment(2, command + metadata), claim(3, 'C')], {
+        reactions: [{ id: 901, comment_id: 2, content: '+1', user: bot }],
+      });
       await s.run(2);
       assert.deepEqual(s.labels, ['status:claimed']);
+      assert.ok(s.has(2, '-1'), 'suppressed release is refused');
+      assert.equal(s.has(2, '+1'), false, 'suppressed release has no approval');
       await s.run(3);
       winner(s, 1, [3]);
     }
