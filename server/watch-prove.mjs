@@ -326,8 +326,9 @@ for (const w of [w1, w2]) {
   const got = w.states.map((m) => m.game.seq);
   if (JSON.stringify(got) !== JSON.stringify(seatSeqs)) {
     const firstDivergence = Array.from({ length: Math.max(got.length, seatSeqs.length) }, (_, i) => i).find((i) => got[i] !== seatSeqs[i]);
-    fail(`${w.name} missed or invented a state`, JSON.stringify({ got, seatSeqs, firstDivergence, stateTrace }));
+    console.error("sequence divergence", JSON.stringify({ got, seatSeqs, firstDivergence, stateTrace }));
   }
+  if (JSON.stringify(got) !== JSON.stringify(seatSeqs)) fail(`${w.name} missed or invented a state`, { got: got.length, seats: seatSeqs.length });
 }
 for (const w of [w1, w2]) if (!w.inbox.some((m) => m.type === "rolled" && Array.isArray(m.dice))) fail(`${w.name} never got a rolled message`);
 console.log(`played to the win in ${actions} actions: ${w1.states.length} watcher states, every one before the end the opponent view, same seqs as the seats; the rolled messages reached the watchers`);
