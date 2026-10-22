@@ -306,7 +306,7 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
     switch (msg.type) {
       case "welcome": {
         stamp = null;
-        const m = msg as { proto?: number; code: string; you?: string; host?: boolean; chat?: ChatLine[]; secret?: string; spectator?: true; holdMs?: number; lobbyHoldMs?: number; victoryTarget?: VictoryTarget; wayfarerMode?: WayfarerMode };
+        const m = msg as Parameters<TableEvents["welcome"]>[0];
         if (typeof m.secret === "string") seat = { code: m.code, secret: m.secret };
         if (typeof m.holdMs === "number" && typeof m.lobbyHoldMs === "number") hold = { game: m.holdMs, lobby: m.lobbyHoldMs };
         rejoining = false;
