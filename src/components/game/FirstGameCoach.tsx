@@ -29,9 +29,11 @@ const signature = (s: GameState) => `${s.seed}:${s.hexes.map((h) => `${h.terrain
 const paths = (s: GameState, id: string) => s.edges.filter((e) => e.path === id).length;
 const homes = (s: GameState, id: string) => s.vertices.filter((v) => v.building?.playerId === id).length;
 
-// One browser's first table, including reconnects. Progress records real placements, never an armed button.
+// One browser's first practice table, including reconnects. Progress records real placements, never an armed button.
+// Setup tip (#546) covers both opening outposts with live pip hints; it is not a fourth coach step.
 export function FirstGameCoach({ className, hidden }: { className?: string; hidden?: boolean }) {
   const state = useGame((s) => s.state);
+  const mode = useGame((s) => s.mode);
   const spectator = useGame((s) => s.spectator);
   const pendingSteal = useGame((s) => s.pendingSteal);
   const [progress, setProgress] = useState<Saved>(read);
@@ -44,8 +46,9 @@ export function FirstGameCoach({ className, hidden }: { className?: string; hidd
     const update = () => {
       const store = useGame.getState();
       const next = store.state;
-      if (!next || store.spectator || saved === "done" || skipped.current) return;
-      const actor = store.mode === "hotseat" ? next.players.find((p) => p.kind === "human")?.id : store.localId;
+      // Coach is practice-only (#546); hotseat and online never see it.
+      if (!next || store.mode !== "ai" || store.spectator || saved === "done" || skipped.current) return;
+      const actor = store.localId;
       if (!actor || next.players.find((p) => p.id === actor)?.kind !== "human") return;
       let p: Saved = saved;
       if (!p) p = { game: signature(next), actor, setup: false, roll: false, path: false, outpost: false, seven: false };
@@ -54,7 +57,8 @@ export function FirstGameCoach({ className, hidden }: { className?: string; hidd
         p = { ...p };
         const before = previous;
         if (before && before.current === p.actor) {
-          if (before.phase === "setupSettle" && homes(next, p.actor) > homes(before, p.actor)) p.setup = true;
+          // Both opening outposts finish the setup lesson; the first alone keeps the tip up.
+          if (before.phase === "setupSettle" && homes(next, p.actor) > homes(before, p.actor) && homes(next, p.actor) >= 2) p.setup = true;
           if (before.phase === "roll" && (next.rolls ?? 0) > (before.rolls ?? 0)) p.roll = true;
           if (before.phase === "main") {
             if (paths(next, p.actor) > paths(before, p.actor)) p.path = true;
@@ -78,7 +82,7 @@ export function FirstGameCoach({ className, hidden }: { className?: string; hidd
     return useGame.subscribe(update);
   }, []);
 
-  if (!state || spectator || !progress || progress === "done" || progress.game !== signature(state) || state.current !== progress.actor) return null;
+  if (mode !== "ai" || !state || spectator || !progress || progress === "done" || progress.game !== signature(state) || state.current !== progress.actor) return null;
   const me = state.players.find((p) => p.id === progress.actor);
   if (!me?.resources) return null;
   const ready = (kind: "path" | "outpost") =>
@@ -86,9 +90,12 @@ export function FirstGameCoach({ className, hidden }: { className?: string; hidd
     (kind === "path" ? me.pathsLeft > 0 && legalRoads(state, me.id, false).length > 0 : me.outpostsLeft > 0 && legalSettle(state, me.id, false).length > 0);
   let step = 3;
   let text = "";
-  if (!progress.setup && state.phase === "setupSettle" && legalSettle(state, me.id, true).length) {
+  const setupPhase = state.phase === "setupSettle" || state.phase === "setupRoad";
+  if (!progress.setup && setupPhase) {
     step = 1;
-    text = "Tap a glowing corner, then Place";
+    text = homes(state, me.id) === 0
+      ? "Place both opening outposts. Hover or tap a glowing corner to compare its pips."
+      : "Lay your path, then place the second outpost. Compare pips before you Place.";
   } else if (!progress.roll && state.phase === "roll") {
     step = 2;
     text = "You gain goods when your numbers roll";
@@ -101,7 +108,7 @@ export function FirstGameCoach({ className, hidden }: { className?: string; hidd
   }
   if (!text || hidden) return null;
   return (
-    <div data-testid="first-game-coach" data-step={step} data-steps="3" className={cn("pointer-events-none rounded-control border border-accent/40 bg-surface px-3 py-1 text-sm text-fg", className)}>
+    <div data-testid="first-game-coach" data-step={step} data-steps="3" data-setup-lesson={step === 1 ? "pips" : undefined} className={cn("pointer-events-none rounded-control border border-accent/40 bg-surface px-3 py-1 text-sm text-fg", className)}>
       <p role="status"><span className="text-xs text-muted">Tip {step} of 3 · </span>{text}</p>
       {/* Only pointer-transparent text floats over the island. Skip shares the header's existing reserved footprint. */}
       {skipSlot ? createPortal(
