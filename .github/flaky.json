@@ -44,6 +44,11 @@
       "id": "flash-prove",
       "pattern": "flash-prove failed: page\\.waitForFunction: Timeout 120000ms exceeded\\.\\n\\S+ +at settled \\(",
       "issue": 904
+    },
+    {
+      "id": "jelly-ocean-prove",
+      "pattern": "page\\.screenshot: Timeout \\d+ms exceeded\\.\\nCall log:\\n  - taking page screenshot",
+      "issue": 1024
     }
   ]
 }
