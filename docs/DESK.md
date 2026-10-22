@@ -41,21 +41,17 @@ A different model from the builder. Sonnet by default, and never the builder's o
 
 Squash, with the full 40-character head SHA, only when all of these hold:
 - the review is clean, and its findings are fixed;
-- CI is green on that head;
+- CI is green on that head: `checks` shows **success**, not skipped or grey. A draft skips it, and a skipped required check counts as passing, so never merge on a skipped `checks`;
 - there is no conflict and the PR isn't a draft;
 - Jarrod has seen the screenshots of any visual change.
 
 Then set the issue to `status:in-review`. `issue_write` replaces every label, so pass the full label list.
 
-## Docs-only auto-merge
+## Weekly
 
-The auto-merge Action (`.github/workflows/auto-merge.yml`, #923) is the one exception to the desk's merge click. It runs only when the repo variable `AUTO_MERGE` is `on`.
-
-- **What qualifies:** every changed file is under `docs/` and is added or modified, with fewer than 400 changed lines in all. `scripts/auto-merge-eligible.mjs` holds the full rules.
-- **What never qualifies:** `AGENTS.md`, `CLAUDE.md`, `README.md`, `docs/DESK.md`, `docs/REVIEWING.md`, `docs/DECISIONS.md`, `docs/LANES.md` and `docs/FRAMEWORK.md`. Code, workflows, scripts and package files never qualify either. Deletes and renames never qualify.
-- **Your part:** after a clean review of a qualifying PR, comment `<!-- review-desk: clean <40-char head SHA> -->`. Use the full head SHA you reviewed. A new push needs a new review and a new marker.
-- **It merges** with `--match-head-commit` once `checks` is green on that SHA, and adds the `auto-merged` label. Then set the issue to `status:in-review`, as for any merge.
-- **Rollback:** `git revert` the merge, then set `AUTO_MERGE` to `off`.
+- **Monday, post a hub digest** on #854: one comment, headed `Hub digest, <date>`, listing the standing directions that still apply, and replace the "Directions" bullet in #854's body with a pointer to it. Agents read #854's body, then only the comments after the newest digest. Don't open a new hub issue: the inbox workflow is wired to #854.
+- **Batch the `Decide:` issues** (`docs/FRAMEWORK.md` section 10) and apply them in one docs PR.
+- **Add any new flaky proof to `.github/flaky.json`** the day it is seen on `main`, with its log line. Red on `main` is a flake until shown otherwise. Red on a PR after one re-run is real. A run marked cancelled is not a result.
 
 ## Always
 
