@@ -35,7 +35,7 @@ Jarrod pastes: `Run the Emberisle review desk. Read docs/DESK.md.`
 
 ## Who reviews
 
-A different model from the builder. Sonnet by default, and never the builder's own model. Opus for server, protocol, CI or security work, and whenever Sonnet built it. Haiku for docs-only changes. A builder with several open PRs lists them in priority order on #854. The desk reviews in that order, one at a time.
+A different model from the builder. Sonnet by default, and never the builder's own model. Opus for server, protocol, CI or security work, and whenever Sonnet built it. Docs-only changes get no review: the desk checks that CI is green and merges (`docs/DECISIONS.md`, 2026-10-22). A builder with several open PRs lists them in priority order on #854. The desk reviews in that order, one at a time.
 
 ## When to merge
 
