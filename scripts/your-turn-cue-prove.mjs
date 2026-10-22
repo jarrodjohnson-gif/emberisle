@@ -8,7 +8,7 @@
 // - public/audio/your_turn.wav is about 420 ms (rising fifth), not the old 150 ms knocks.
 // Run: node scripts/your-turn-cue-prove.mjs
 import assert from "node:assert/strict";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { chromium } from "playwright";
 import { createServer } from "vite";
 
@@ -113,6 +113,30 @@ try {
   assert.deepEqual(steady, [YOURS], `focused tab does not flash: ${JSON.stringify(steady)}`);
   ok("focus return stops the flash");
 
+  // End a hidden local turn while its interval is running. No stale tick may restore it.
+  await page.evaluate(() => {
+    window.__forceHidden = true;
+    document.dispatchEvent(new Event("visibilitychange"));
+    const g = window.__emberisle;
+    const st = structuredClone(g.getState().state);
+    st.current = st.players.find(p => p.id !== g.getState().localId).id;
+    st.seq += 1;
+    g.setState({ state: st });
+  });
+  await until(page, () => document.title === "Emberisle", "hidden turn handoff clears title");
+  await page.waitForTimeout(1200);
+  assert.equal(await page.title(), IDLE, "old hidden interval stays cleared after turn handoff");
+  await page.evaluate(() => window.__emberisle.setState({ spectator: true }));
+  await until(page, () => document.title === "Watching — Emberisle", "spectator title");
+  await page.waitForTimeout(1200);
+  assert.equal(await page.title(), "Watching — Emberisle", "spectator title never flashes your turn");
+  await page.evaluate(() => {
+    window.__forceHidden = false;
+    window.__emberisle.setState({ spectator: false });
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  ok("hidden turn handoff and spectator never retain the flash");
+
   // Chime rules via hear() (same path as the online state push).
   const chime = await page.evaluate(async () => {
     const { hear } = await import("/src/lib/game/store.ts");
@@ -137,13 +161,19 @@ try {
     hear(before, after, "p0", "hotseat");
     const hotseat = window.__heard.filter((x) => x.file === "your_turn");
 
-    return { once, muted, wasMuted, hotseat };
+    window.__heard = [];
+    hear(after, before, "p0", "online");
+    hear(before, after, "", "online");
+    const others = window.__heard.filter((x) => x.file === "your_turn");
+
+    return { once, muted, wasMuted, hotseat, others };
   });
   assert.equal(chime.once.length, 1, `your_turn once: ${JSON.stringify(chime.once)}`);
   assert.equal(chime.once[0].volume, 1, "your_turn at full table volume");
   assert.equal(chime.wasMuted, true, "mute engaged for silent check");
   assert.deepEqual(chime.muted, [], "muted your_turn silent");
   assert.deepEqual(chime.hotseat, [], "hotseat your_turn silent");
+  assert.deepEqual(chime.others, [], "other seat and watcher your_turn silent");
   ok("your_turn chime: once at vol 1, mute and hotseat silent");
 
   await page.goto(`http://127.0.0.1:${PORT}/`);
@@ -171,6 +201,25 @@ try {
   });
   assert.ok(ms >= 350 && ms <= 500, `your_turn duration ~420 ms, got ${ms}`);
   ok(`your_turn wav is ${ms} ms (rising two-note)`);
+
+  // Check the shipped PCM, so replacing it with a same-duration knock fails too.
+  const wav = readFileSync(new URL("../public/audio/your_turn.wav", import.meta.url));
+  assert.equal(wav.toString("ascii", 0, 4), "RIFF");
+  assert.equal(wav.readUInt16LE(22), 1, "mono clip");
+  assert.equal(wav.readUInt16LE(34), 16, "16-bit PCM");
+  const rate = wav.readUInt32LE(24);
+  const energy = (hz, start) => {
+    let re = 0, im = 0;
+    for (let i = Math.round(start * rate); i < Math.round((start + 0.05) * rate); i++) {
+      const value = wav.readInt16LE(44 + 2 * i);
+      re += value * Math.cos(2 * Math.PI * hz * i / rate);
+      im += value * Math.sin(2 * Math.PI * hz * i / rate);
+    }
+    return re * re + im * im;
+  };
+  assert.ok(energy(660, 0.04) > 4 * energy(990, 0.04), "first note is 660 Hz");
+  assert.ok(energy(990, 0.21) > 4 * energy(660, 0.21), "second note rises to 990 Hz");
+  ok("shipped PCM has the rising 660/990 Hz notes");
 
   assert.deepEqual(errors, [], `console errors: ${errors.join("; ")}`);
   console.log("your-turn-cue-prove: all ok");
