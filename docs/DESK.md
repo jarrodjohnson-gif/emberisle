@@ -41,11 +41,17 @@ A different model from the builder. Sonnet by default, and never the builder's o
 
 Squash, with the full 40-character head SHA, only when all of these hold:
 - the review is clean, and its findings are fixed;
-- CI is green on that head;
+- CI is green on that head: `checks` shows **success**, not skipped or grey. A draft skips it, and a skipped required check counts as passing, so never merge on a skipped `checks`;
 - there is no conflict and the PR isn't a draft;
 - Jarrod has seen the screenshots of any visual change.
 
 Then set the issue to `status:in-review`. `issue_write` replaces every label, so pass the full label list.
+
+## Weekly
+
+- **Monday, post a hub digest** on #854: one comment, headed `Hub digest, <date>`, listing the standing directions that still apply, and replace the "Directions" bullet in #854's body with a pointer to it. Agents read #854's body, then only the comments after the newest digest. Don't open a new hub issue: the inbox workflow is wired to #854.
+- **Batch the `Decide:` issues** (`docs/FRAMEWORK.md` section 10) and apply them in one docs PR.
+- **Add any new flaky proof to `.github/flaky.json`** the day it is seen on `main`, with its log line. Red on `main` is a flake until shown otherwise. Red on a PR after one re-run is real. A run marked cancelled is not a result.
 
 ## Always
 

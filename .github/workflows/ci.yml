@@ -269,9 +269,10 @@ jobs:
           if-no-files-found: ignore
 
   # The ruleset requires a check named exactly "browser-a"; it passes only when all three suites pass.
+  # A draft skips it (grey), like every other job; ready_for_review starts the run that must pass.
   browser-a:
     needs: browser-a-suites
-    if: always()
+    if: always() && (github.event_name != 'pull_request' || !github.event.pull_request.draft)
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -426,16 +427,14 @@ jobs:
           if-no-files-found: ignore
 
   # always() so a failed or cancelled job above fails this check instead of skipping it (a skipped required check passes).
+  # A draft skips it (grey): GitHub never merges a draft, and marking it ready starts a fresh run on the same head SHA,
+  # whose checks must each pass. Every other run keeps always() and the explicit tests below.
   checks:
     needs: [changes, build, server, browser-a, browser-b]
-    if: always()
+    if: always() && (github.event_name != 'pull_request' || !github.event.pull_request.draft)
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - if: github.event_name == 'pull_request' && github.event.pull_request.draft
-        run: |
-          echo "Draft PR: CI runs when it is marked ready for review."
-          exit 1
       - run: |
           echo 'build=${{ needs.build.result }} server=${{ needs.server.result }} browser-a=${{ needs.browser-a.result }} browser-b=${{ needs.browser-b.result }}'
           test '${{ needs.build.result }}' = success

@@ -14,6 +14,11 @@ const failures = {
   "rotate-overlays-prove": `${at}FAIL locator.waitFor: Timeout 120000ms exceeded.\n${at}  - waiting for getByTestId('chat-sheet') to be visible`,
   "hotseat-prove": `${at}hotseat-prove failed: Error: Leave played ["/audio/click_001.wav","/audio/click_001.wav"], not click_001.wav once`,
   "turn-gain-prove": `${at}FAIL host 844x390: no gain line is up while "Your turn" is [{"t":1}]`,
+  "chat-prove": `${at}FAIL phone game 390x844 {"total":63,"whole":9,"newest":false,"newestText":"Embergame line 6","font":14,"size":"390x844"}: 9 whole chat lines on screen, newest ("Embergame line 6") visible, 14px text\n`,
+  "tokens-prove": `${at}FAIL 7 no numeral behind the scenery (1280x720): the 8: 1 of 5 points (hit (-3.144, 1.362, 1.186) on ore seed 450910998)\n`,
+  "tabs-prove-4": `${at}FAIL timed out: start\n${at}##[error]Process completed with exit code 1.`,
+  "board-touch-prove": `${at}AssertionError [ERR_ASSERTION]: setup: a tap on a Pasture hex plays nothing\n${at}+ actual - expected`,
+  "flash-prove": `${at}flash-prove failed: page.waitForFunction: Timeout 120000ms exceeded.\n${at}    at settled (/home/runner/work/emberisle/emberisle/scripts/flash-prove.mjs:131:8)`,
 };
 assert.deepEqual(flakes.map((f) => f.id).sort(), Object.keys(failures).sort());
 for (const f of flakes) {
@@ -22,6 +27,24 @@ for (const f of flakes) {
 }
 // The passing log line of the same text is not a failure.
 assert.equal(flakes.find((f) => f.id === "hotseat-prove").regex.test(`${at}Leave played ["/audio/click_001.wav"]`), false);
+// The near misses of each signature that are not that flake: a passing line, a wider failure, or another step's timeout.
+const notFlake = {
+  "chat-prove": [
+    `${at}ok phone game 390x844 {"total":63,"whole":9,"newest":true,"newestText":"Embergame line 6","font":14,"size":"390x844"}: 9 whole chat lines on screen\n`,
+    `${at}FAIL phone game 390x844 {"total":63,"whole":9,"newest":true,"newestText":"Embergame line 6","font":12,"size":"390x844"}: 9 whole chat lines on screen\n`,
+  ],
+  "tokens-prove": [
+    `${at}ok   7 no numeral behind the scenery (1280x720): 0 of 90 points\n`,
+    `${at}FAIL 7 no numeral behind the scenery (1280x720): the 8: 2 of 5 points (hit (1, 1, 1) on ore seed 1; hit (1, 1, 1) on ore seed 1)\n`,
+    `${at}FAIL 7 no numeral behind the scenery (1280x720): the 8: 1 of 5 points (hit (1, 1, 1) on ore seed 1), the 9: 1 of 5 points (hit (1, 1, 1) on ore seed 2)\n`,
+  ],
+  "tabs-prove-4": [`${at}FAIL timed out: start the game\n`, `${at}FAIL timed out: tab B notices the drop\n`],
+  "board-touch-prove": [`${at}AssertionError [ERR_ASSERTION]: a one-finger drag from a Pasture hex plays nothing\n`],
+  "flash-prove": [`${at}flash-prove failed: page.waitForFunction: Timeout 120000ms exceeded.\n${at}    at pieceProof (/x/scripts/flash-prove.mjs:216:9)`],
+};
+for (const [id, lines] of Object.entries(notFlake)) {
+  for (const line of lines) assert.equal(flakes.find((f) => f.id === id).regex.test(line), false, `${id} signature is not ${JSON.stringify(line)}`);
+}
 
 let id = 0;
 const job = (name, conclusion, step) => ({
