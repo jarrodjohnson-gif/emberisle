@@ -213,6 +213,11 @@ try {
     await page.keyboard.press("Shift+Tab");
     assert.equal(await label(), "Rules and setup", `${tag}: Shift+Tab wraps back`);
     if (lay.scrolls) {
+      // DOM focus updates before Chromium commits its keyboard scroll target. Let the
+      // focused region paint before End; otherwise a fast Tab/Shift+Tab can lose it.
+      await region.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+      assert.equal(await label(), "Rules and setup", `${tag}: the scroll region retains focus after paint`);
+      assert.equal(await region.evaluate(el => el.scrollTop), 0, `${tag}: keyboard scrolling starts at the top`);
       await page.keyboard.press("End");
       await page.waitForFunction(() => { const b = document.querySelector('[role="region"][aria-label="Rules and setup"]'); return b.scrollTop + b.clientHeight >= b.scrollHeight - 1; }).catch(async e => {
         const geometry = await region.evaluate(el => ({ top: el.scrollTop, height: el.clientHeight, total: el.scrollHeight, focused: document.activeElement === el }));
