@@ -5,7 +5,7 @@
 // Run from the repo root: node --import ./server/register.mjs server/profile-seat-prove.mjs
 import { spawn } from "node:child_process";
 import { createHash, randomBytes, randomUUID, scryptSync } from "node:crypto";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import WebSocket from "ws";
@@ -545,6 +545,51 @@ check("no login reached any table or watcher socket", !LOGINS.some((l) => frames
 check("no private profile field reached any table or watcher socket", !/backupColor|"guard"|"pin"|"devices"|mediaKey|expiresAt|winSongId/.test(frames));
 check("no game state frame carries a profile", tableFrames.filter((f) => f.startsWith('{"type":"state"')).every((f) => !/profile/i.test(f)));
 
+await h.stop();
+
+// --- Independent saved-roster guards (#992) ---------------------------------------------------------------------------------
+// BADR above has a wrong pid. Corrupt one other field at a time so that pid failure cannot mask a removed loader guard.
+// Use a separate restart after the existing checks; extra fixtures cannot consume their four-second recovery holds.
+const rosterCodes = Array.from("ABCDEFGHJKLMNPQRSTUVWXYZ", (letter) => `RST${letter}`)
+  .filter((code) => !existsSync(path.join(ROOMS_DIR, `${code}.json`)));
+const rosterCases = [
+  ["valid control", () => {}, true],
+  ["version", (r) => { r.v = 2; }],
+  ["game UUID", (r) => { r.gameId = "not-a-uuid"; }],
+  ["start time", (r) => { r.startedAt = 1.5; }],
+  ["policy type", (r) => { r.policy = "1"; }],
+  ["eligibility type", (r) => { r.eligible = "true"; }],
+  ["player array", (r) => { r.players = null; }],
+  ["player count", (r) => { r.players.pop(); }],
+  ["player order", (r) => { [r.players[0], r.players[1]] = [r.players[1], r.players[0]]; }],
+  ["seat type", (r) => { r.players[0].seat = null; }],
+  ["profile UUID", (r) => { r.players[0].profileId = "not-a-uuid"; }],
+  ["name type", (r) => { r.players[0].name = 42; }],
+  ["colour type", (r) => { r.players[0].color = 42; }],
+  ["player kind", (r) => { r.players[0].kind = "unknown"; }],
+  ["duplicate profile", (r) => { r.players[1].profileId = r.players[0].profileId; }],
+].map(([label, corrupt, valid], i) => {
+  const fixture = structuredClone(saved);
+  fixture.code = rosterCodes[i];
+  fixture.game.phase = "over";
+  fixture.game.winner = fixture.game.players[0].id;
+  fixture.seats.forEach((s) => { s.secret = randomBytes(16).toString("hex"); });
+  corrupt(fixture.roster);
+  writeFileSync(path.join(ROOMS_DIR, `${fixture.code}.json`), JSON.stringify(fixture));
+  return { label, valid, fixture };
+});
+h = await startHost();
+// Recover all fixture seats promptly, then inspect resaved bytes. The production hold and save timers stay unchanged.
+await Promise.all(rosterCases.map(async ({ label, valid, fixture }) => {
+  const c = await client(h);
+  c.send({ type: "hello", code: fixture.code, secret: fixture.seats[0].secret });
+  const welcome = await c.reply();
+  check(`roster ${label}: seat secret still recovers the room`, welcome.type === "welcome" && welcome.code === fixture.code && welcome.you === fixture.seats[0].id, welcome);
+  const restored = await roomWhere(fixture.code, (r) => r.savedAt > fixture.savedAt, `${label} resaved`);
+  check(`roster ${label}: game identity survives metadata validation`, restored.game.seed === fixture.game.seed && restored.game.winner === fixture.game.winner);
+  check(`roster ${label}: ${valid ? "valid frozen record preserved exactly" : "invalid record resaved as null"}`,
+    valid ? JSON.stringify(restored.roster) === JSON.stringify(fixture.roster) : restored.roster === null, restored.roster);
+}));
 await h.stop();
 console.log(`profile-seat-prove: ${passed} checks passed`);
 process.exit(0);
