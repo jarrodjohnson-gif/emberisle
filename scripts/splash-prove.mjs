@@ -54,7 +54,15 @@ async function open(width, height, touch, water) {
       }
       return out;
     };
-    window.__grab = (label) => new Promise((res) => { window.__want = { label, res }; isle.wake(); });
+    window.__grab = (label) => new Promise((res) => {
+      window.__want = { label, res };
+      const request = () => {
+        if (window.__want?.res !== res) return;
+        isle.wake();
+        requestAnimationFrame(request);
+      };
+      request();
+    });
   });
   await settle(page);
   return { context, page };
@@ -156,20 +164,44 @@ async function slowOceanFrame(page, tag) {
       life.fishFlee.fill(null);
       life.swim();
       const home = life.fishAt();
-      return { elapsed: life.fishTime - before, ages, error: Math.max(...ids.map((i) => Math.hypot(posed[i].x - home[i].x, posed[i].z - home[i].z))) };
+      const elapsed = life.fishTime - before, error = Math.max(...ids.map((i) => Math.hypot(posed[i].x - home[i].x, posed[i].z - home[i].z)));
+      life.reset("splash-recent-input");
+      const recent = life.fishAt()[0];
+      isle.lastFrame = performance.now() - 4200;
+      isle.splashAt(recent.x, recent.z, 1);
+      const recentIds = life.fishFlee.flatMap((f, i) => f ? [i] : []);
+      isle.busyUntil = performance.now() + 1000;
+      isle.tick();
+      const recentAges = recentIds.map((i) => life.fishFlee[i]?.age ?? -1);
+      isle.lastFrame = -Infinity;
+      isle.busyUntil = performance.now() + 1000;
+      isle.tick();
+      const laterAges = recentIds.map((i) => life.fishFlee[i]?.age ?? -1);
+      return { elapsed, ages, error, recentAges, laterAges };
     } finally {
       isle.clock.getDelta = delta;
       isle.busyUntil = busy;
       life.reset("splash-frame-clock-done");
+      for (const slot of isle.splash.uniforms.uSplash.value) slot.w = 0;
+      window.__played.length = 0; // Only the clock fixtures have run; the real interaction checks start next.
     }
   });
   assert.ok(Math.abs(slow.elapsed - 4.25) < 1e-9, `${tag}: one slow frame advances ocean life by elapsed seconds (${slow.elapsed})`);
   assert.ok(slow.ages.length > 0 && slow.ages.every((age) => age >= 4), `${tag}: a four-second stall completes every affected fish escape (${slow.ages})`);
   assert.ok(slow.error < 1e-6, `${tag}: fish return to their unfled swimming positions after the stall (${slow.error})`);
+  assert.ok(slow.recentAges.length > 0 && slow.recentAges.every((age) => age >= 0 && age < 0.15), `${tag}: a new tap excludes the frame interval before the input (${slow.recentAges})`);
+  assert.ok(slow.laterAges.every((age) => age >= 4), `${tag}: the input offset is consumed once, then escape time advances normally (${slow.laterAges})`);
 
   // A reduced-motion pause is not a slow visible frame. Capture the first enabled step on a real preference change.
   await page.emulateMedia({ reducedMotion: "reduce" });
-  await page.waitForFunction(() => window.__isle.wasCalm);
+  await page.waitForFunction(() => window.__isle.wasCalm && window.__isle.busyUntil < performance.now());
+  await page.evaluate(() => {
+    void window.__grab("delayed-calm");
+    const until = performance.now() + 1100;
+    while (performance.now() < until) { /* delay the next frame past the one-second wake hold */ }
+  });
+  await page.waitForFunction(() => window.__shots["delayed-calm"]?.data.length > 0, null, { timeout: 15_000 });
+  assert.ok(await page.evaluate(() => !window.__want), `${tag}: a delayed calm frame still fulfills its snapshot request`);
   await page.evaluate(() => {
     const isle = window.__isle, life = isle.oceanLife, delta = isle.clock.getDelta, step = life.step;
     window.__oceanResume = null;
@@ -245,6 +277,28 @@ try {
     assert.ok(spot, `${tag}: open water near a fish in the hole`);
     const before = await page.evaluate(({ x, z }) => window.__isle.oceanLife.fishAt().map((f, i) => ({ i, d: Math.hypot(f.x - x, f.z - z) })).filter((f) => f.d <= 1.5), spot);
     assert.ok(before.length > 0, `${tag}: a fish within 1.5 of the tap`);
+    // Hold the original check's 0.3s dart phase while its native pose is captured; clock timing is tested above.
+    await page.evaluate((ids) => {
+      const life = window.__isle.oceanLife, step = life.step, scatter = life.scatter;
+      let press = null;
+      window.__fishDart = null;
+      window.__restoreFishDart = () => { life.step = step; life.scatter = scatter; };
+      life.scatter = function (x, z, ...rest) {
+        press = { x, z };
+        return scatter.call(this, x, z, ...rest);
+      };
+      life.step = function (dt, enabled, ...rest) {
+        const age = Math.min(...ids.map((i) => this.fishFlee[i]?.age ?? 0));
+        const heldDt = press && enabled ? Math.max(0, 0.3 - age) : dt;
+        const out = step.call(this, heldDt, enabled, ...rest);
+        if (press && ids.every((i) => this.fishFlee[i] && this.fishFlee[i].age >= 0.3 && this.fishFlee[i].age < 4)) {
+          const fish = this.fishAt();
+          window.__fishDart = ids.map((i) => Math.hypot(fish[i].x - press.x, fish[i].z - press.z));
+          window.__restoreFishDart();
+        }
+        return out;
+      };
+    }, before.map((f) => f.i));
     if (touch) await tap(page, spot.s, true);
     else {
       await page.mouse.move(spot.s.x, spot.s.y);
@@ -295,10 +349,11 @@ try {
 
     // The fish within reach darted away.
     await page.waitForFunction((ids) => ids.every((i) => (window.__isle.oceanLife.fishFlee[i]?.age ?? 0) >= 0.3), before.map((f) => f.i), { timeout: 15_000 });
-    const after = await page.evaluate(({ x, z, ids }) => {
-      const fish = window.__isle.oceanLife.fishAt();
-      return ids.map((i) => Math.hypot(fish[i].x - x, fish[i].z - z));
-    }, { x: made.x, z: made.z, ids: before.map((f) => f.i) });
+    const after = await page.evaluate(() => {
+      window.__restoreFishDart();
+      return window.__fishDart;
+    });
+    assert.ok(after && after.length === before.length, `${tag}: every nearby fish was observed during its actual escape`);
     const moved = after.map((d, j) => d - before[j].d);
     assert.ok(moved.every((m) => m > 0.1), `${tag}: every fish within 1.5 moved away (${moved.map((m) => m.toFixed(2))})`);
     // The visitor too: one posed near a splash darts off it.
