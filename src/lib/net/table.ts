@@ -14,6 +14,8 @@ export interface Seat {
   away?: boolean;
   // A lobby bot the host seated (README: addBot). It is always ready and never away.
   bot?: boolean;
+  player?: string | null;
+  needs?: Resource[];
 }
 
 // What a peek answers (G10): enough to dim taken swatches, no names or pictures.
@@ -128,6 +130,7 @@ export interface TableClient {
   // Ask-the-table trades are host-run (not rules Actions): offer `give` for `want` to every other seat, and answer one.
   ask(give: Bag, want: Bag): void;
   answer(tradeId: string, yes: boolean): void;
+  need(kinds: Resource[]): void;
   requestTurnExtension(target: string, key: string): boolean;
   answerTurnExtension(voteId: string, yes: boolean): boolean;
   getTurnExtension(): TurnExtensionState | null;
@@ -400,6 +403,7 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
     answer: (tradeId, yes) => {
       act({ type: "tradeAnswer", tradeId, yes });
     },
+    need: (kinds) => send({ type: "need", kinds }),
     requestTurnExtension: (target, key) => act({ type: "turnExtensionAsk", target, key }),
     answerTurnExtension: (voteId, yes) => act({ type: "turnExtensionAnswer", voteId, yes }),
     getTurnExtension: () => extension,

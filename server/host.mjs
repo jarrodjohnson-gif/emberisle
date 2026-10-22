@@ -15,6 +15,7 @@ import { allow, cleanText, loadEmotes, remember, SOUNDBOARD } from "./chat.mjs";
 import { cue } from "./cue.mjs";
 import { PROFILE_TYPES, profileGate, profileHandler, seatCredential, seatProfile, tableCard, watchRefusal } from "./profile-protocol.mjs";
 import { openProfiles, UUID } from "./profiles.mjs";
+import { advanceRoomNeeds, restoredNeed, validNeeds } from "./needs.mjs";
 import { extensionBudget, turnExtensions } from "./turn-extension.mjs";
 
 function hear(name) {
@@ -189,6 +190,8 @@ function seatsOf(room) {
     host: s.id === room.host,
     away: !s.bot && !s.ws,
     bot: Boolean(s.bot),
+    player: s.pid ?? null,
+    needs: [...(s.needs?.kinds ?? [])],
     url: s.avatarId ? `/avatars/${s.avatarId}.jpg` : null,
     // A guest seat carries no profile field at all (#764).
     ...(s.profileId ? { profile: seatProfile(profiles, s.profileId) } : {}),
@@ -261,7 +264,7 @@ function snapshot(room) {
     game: room.game,
     victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10,
     wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on",
-    seats: room.seats.map(({ id, name, color, ready, pid, secret, bot, turnDeadline, turnStartedAt, extension, profileId }) => ({ id, name, color, ready, pid, secret, ...(bot ? { bot: true } : {}), turnDeadline: turnDeadline ?? null, turnStartedAt: turnStartedAt ?? null, extension, ...(profileId ? { profileId } : {}) })),
+    seats: room.seats.map(({ id, name, color, ready, pid, secret, bot, turnDeadline, turnStartedAt, needs, extension, profileId }) => ({ id, name, color, ready, pid, secret, ...(bot ? { bot: true } : {}), ...(needs ? { needs } : {}), turnDeadline: turnDeadline ?? null, turnStartedAt: turnStartedAt ?? null, extension, ...(profileId ? { profileId } : {}) })),
     // Optional versioned metadata (#764): no ROOM_SHAPE bump, so a legacy room loads with no roster and is not tracked.
     roster: room.roster ?? null,
     shape: ROOM_SHAPE,
@@ -375,7 +378,7 @@ function load() {
         // Avatars live in memory only, so a restored seat has none.
         // G9: the saved window rides in `resume` until the seat is back and waited on; older files have none.
         const at = (n) => (Number.isFinite(n) ? n : null);
-        room.seats.push({ ...s, turnDeadline: null, turnStartedAt: at(s.turnStartedAt), resume: at(s.turnDeadline), avatarId: null, ws: null, bucket: { tokens: 5, at: Date.now() }, act: { tokens: ACT_CAP, at: Date.now() } });
+        room.seats.push({ ...s, needs: restoredNeed(s.needs), turnDeadline: null, turnStartedAt: at(s.turnStartedAt), resume: at(s.turnDeadline), avatarId: null, ws: null, bucket: { tokens: 5, at: Date.now() }, act: { tokens: ACT_CAP, at: Date.now() } });
       }
       // A profile binding must be a UUID on a human seat, once per room; anything else leaves that seat a guest (#764).
       const bound = new Set();
@@ -523,6 +526,7 @@ function runBots(room) {
       const seatName = room.seats.find((s) => s.pid === waiting.id)?.name ?? waiting.name.replace(/ \(bot\)$/i, "");
       room.game = logBotAction(g, next.state, action, waiting.id, seatName);
     }
+    if (advanceRoomNeeds(room, g, room.game, action?.type === "bankTrade")) publish(room);
   }
 }
 
@@ -959,6 +963,7 @@ function startGame(ws, room) {
   if (room.seats.some((s) => !s.ready)) return send(ws, { type: "error", message: "Not everyone is ready." });
   const game = createGame({ humans: room.seats.map((s) => ({ name: s.name })), bots: 0, victoryTarget: room.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? "on" });
   room.seats.forEach((s, i) => {
+    s.needs = undefined;
     s.pid = game.players[i].id;
     game.players[i].color = s.color;
     if (s.bot) game.players[i].kind = "bot";
@@ -1049,6 +1054,7 @@ function rematch(ws, room) {
   const order = winner ? [winner, ...live.filter((s) => s !== winner)] : live;
   const game = createGame({ humans: order.map((s) => ({ name: s.name })), bots: 0, winnerFirst: Boolean(winner), victoryTarget: room.victoryTarget ?? room.game.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game.wayfarerMode ?? "on" });
   order.forEach((s, i) => {
+    s.needs = undefined;
     s.pid = game.players[i].id;
     game.players[i].color = s.color;
     if (s.bot) game.players[i].kind = "bot";
@@ -1196,6 +1202,7 @@ function answer(ws, room, msg) {
 
 // `actor`'s Yes or No to the open offer, from a person or a bot seat. Returns an error for that seat, if any.
 function respond(room, actor, yes) {
+  const before = room.game;
   const offer = room.offer;
   if (!yes) {
     // A "No" is told to the whole table. The offer stays open for seats that have not answered and
@@ -1237,6 +1244,7 @@ function respond(room, actor, yes) {
   closeOffer(room);
   const tradeLines = newLog(room.game.log, accepted.state.log).filter((line) => !line.includes(" offers a trade to "));
   room.game = { ...accepted.state, log: [...room.game.log, ...tradeLines].slice(-200) };
+  if (advanceRoomNeeds(room, before, room.game, true)) publish(room);
   for (const line of tradeLines) say(room, line);
   // The asker's trade went through: that is their action, so their window restarts (pushState re-arms it).
   const asker = room.seats.find((s) => s.pid === offer.from);
@@ -1290,6 +1298,7 @@ function play(ws, room, msg, automated = false) {
   room.game = automated
     ? logBotAction(before, next.state, action, ws.seat.pid, room.seats.find((s) => s.pid === ws.seat.pid)?.name ?? ws.seat.name)
     : next.state;
+  if (advanceRoomNeeds(room, before, room.game, action.type === "bankTrade")) publish(room);
   disarmTurn(ws.seat);
   hear(msg.type === "place" ? `${msg.kind}_place` : SOUND[msg.type]);
   // A roll-off die is not a production roll: its lines reach every seat through the log below.
@@ -1415,6 +1424,12 @@ function handle(ws, raw) {
   if (msg.wayfarerMode !== undefined || msg.type === "setWayfarerMode") return send(ws, { type: "error", message: "Wayfarer mode is fixed when the table is created." });
   if (msg.type === "chat" || msg.type === "react" || msg.type === "sound") return talk(ws, room, msg);
   if (!allow(ws.seat.act, Date.now(), ACT_CAP, ACT_RATE)) return send(ws, { type: "error", message: "Slow down." });
+  if (msg.type === "need") {
+    if (!room.game || room.game.phase === "over") return send(ws, { type: "error", message: "Needs are available during a game." });
+    if (!validNeeds(msg.kinds)) return send(ws, { type: "error", message: "Choose up to two different goods." });
+    ws.seat.needs = msg.kinds.length ? { kinds: [...msg.kinds], turnsLeft: 2 } : undefined;
+    return publish(room);
+  }
   if (msg.type === "setVictoryTarget") {
     if (ws.seat.id !== room.host) return send(ws, { type: "error", message: "Only the host can choose the target." });
     if (room.game && room.game.phase !== "over") return send(ws, { type: "error", message: "The target is fixed for this game." });
