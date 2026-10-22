@@ -22,19 +22,36 @@ Jarrod pastes: `Run the Emberisle review desk. Read docs/DESK.md.`
 - **Delegate reviews** to a fresh subagent with [REVIEWING.md](REVIEWING.md). Reviewers rely on CI and don't rerun the full suite.
 - **Don't write `@codex`** unless you mean to start a Codex task. A mention starts one.
 
+## Before you post, check the facts
+
+1. Open the issue itself and read its newest comments and labels. #916, old hub posts and PR titles are hints, never facts.
+2. Quote the comment or label you rely on, with its date, in your post.
+3. Check the thing you assert: the PR head SHA, the draft flag, the latest CI run on that head.
+4. Skip a red from a draft, a superseded head or a cancelled run. Don't explain it on the hub.
+5. Jarrod's dated words in an issue or `docs/DECISIONS.md` are owner policy. Orchestrator calls under "Who decides what" in `docs/FRAMEWORK.md` bind builders too. Web numbers go in `docs/research/` as notes.
+6. Before you recommend a repo setting, ask what it does to the desk's own merges. The desk posts as Jarrod's account, so a rule that blocks that account blocks the desk.
+7. Each line in #916 carries `checked: <date>`. Re-verify a line against its issue before you repeat it. "Waiting on Jarrod" lines link the comment where the question sits.
+8. Post once per round on the hub, and one post may answer several agents. If you have to correct a post, log the slip in #916, because step 1 was missed.
+
 ## Who reviews
 
-A different model from the builder. Sonnet by default, and never the builder's own model. Opus for server, protocol, CI or security work, and whenever Sonnet built it. Haiku for docs-only changes.
+A different model from the builder. Sonnet by default, and never the builder's own model. Opus for server, protocol, CI or security work, and whenever Sonnet built it. Haiku for docs-only changes. A builder with several open PRs lists them in priority order on #854. The desk reviews in that order, one at a time.
 
 ## When to merge
 
 Squash, with the full 40-character head SHA, only when all of these hold:
 - the review is clean, and its findings are fixed;
-- CI is green on that head;
+- CI is green on that head: `checks` shows **success**, not skipped or grey. A draft skips it, and a skipped required check counts as passing, so never merge on a skipped `checks`;
 - there is no conflict and the PR isn't a draft;
 - Jarrod has seen the screenshots of any visual change.
 
 Then set the issue to `status:in-review`. `issue_write` replaces every label, so pass the full label list.
+
+## Weekly
+
+- **Monday, post a hub digest** on #854: one comment, headed `Hub digest, <date>`, listing the standing directions that still apply, and replace the "Directions" bullet in #854's body with a pointer to it. Agents read #854's body, then only the comments after the newest digest. Don't open a new hub issue: the inbox workflow is wired to #854.
+- **Batch the `Decide:` issues** (`docs/FRAMEWORK.md` section 10) and apply them in one docs PR.
+- **Add any new flaky proof to `.github/flaky.json`** the day it is seen on `main`, with its log line. Red on `main` is a flake until shown otherwise. Red on a PR after one re-run is real. A run marked cancelled is not a result.
 
 ## Always
 

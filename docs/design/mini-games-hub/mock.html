@@ -1,0 +1,477 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mini games hub</title>
+<meta name="description" content="Clickable mock for the Emberisle lobby 'Play games' tab and the 'While you wait' shelf (#929, #937). Not production code.">
+<style>
+  /* Jelly Ocean tokens, copied from src/styles.css. The app has one theme (light), so this mock has one theme. */
+  :root {
+    --ground: #eeece7; --studio: #f1efe9; --paper: #fff9f0; --raised: #ffffff;
+    --ink: #263d3c; --muted: #555e58; --line: #cbcfc6; --control-line: #78837a;
+    --sea: #158e9a; --sea-shallow: #65d8cb; --sea-ink: #246d72; --accent: #246d72;
+    --timber: #2f6a4f; --clay: #b8533d; --wool: #b2ce80; --grain: #e3c462; --ore: #63748a; --waste: #dfc99a;
+    --danger: #b3261e; --gain: #10562a;
+    --ember: #e23d2e; --tide: #2d6ee8; --dune: #f3ecd9; --pine: #8a4fd3;
+    --radius-control: 8px; --radius-chip: 12px; --radius-sheet: 20px;
+    --shadow-control: 0 1px 0 rgb(24 51 45 / 0.12);
+    --shadow-sheet: 0 10px 28px rgb(24 51 45 / 0.18);
+    --duration-press: 80ms; --duration-quick: 150ms; --duration-base: 220ms;
+    --ease-out: cubic-bezier(0.22, 1, 0.36, 1); --ease-snap: cubic-bezier(0.2, 0.8, 0.2, 1);
+    --font-ui: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-display: ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--studio); color: var(--ink); font-family: var(--font-ui); font-size: 15px; line-height: 1.375; }
+  body { padding: 16px; max-width: 1360px; margin: 0 auto; overflow-x: hidden; }
+  h1 { font-family: var(--font-display); font-size: 22px; line-height: 26px; letter-spacing: -0.01em; margin: 0; }
+  h2 { font-size: 15px; font-weight: 600; margin: 0 0 6px; }
+  p { margin: 0; }
+  button { font: inherit; color: inherit; cursor: pointer; }
+
+  /* ---- page chrome (not part of the mock) ---- */
+  .top { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .top .sub { color: var(--muted); font-size: 13px; }
+  .seg { display: inline-flex; border: 1px solid var(--control-line); border-radius: var(--radius-control); overflow: hidden; background: var(--paper); }
+  .seg button { min-height: 44px; padding: 0 14px; border: 0; background: transparent; font-weight: 500; }
+  .seg button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+  .nav { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 12px; }
+  .nav button { min-height: 44px; padding: 0 12px; border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--paper); font-weight: 500; }
+  .nav button[aria-current="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .nav button b { font-family: var(--font-display); margin-right: 6px; opacity: 0.7; }
+  .layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  @media (min-width: 1100px) { .layout { grid-template-columns: minmax(0, 1fr) 360px; align-items: start; } }
+  .stage { width: 100%; overflow: hidden; border-radius: var(--radius-sheet); background: #d9e6e2; position: relative; }
+  .frame { position: absolute; left: 0; top: 0; transform-origin: 0 0; overflow: hidden; background: #a9dcd4; }
+  .notes { display: grid; gap: 12px; }
+  .note { background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius-chip); padding: 12px 14px; }
+  .note.now { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+  .note ol, .note ul { margin: 0; padding-left: 20px; }
+  .note li { margin: 4px 0; }
+  .note li b { font-weight: 600; }
+  .note .trade { color: var(--muted); font-size: 13px; display: block; }
+  .note .demo { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .note .demo button { min-height: 36px; padding: 0 10px; border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--ground); font-size: 13px; }
+  .tag { display: inline-block; font-size: 12px; font-weight: 600; color: var(--sea-ink); margin-bottom: 4px; }
+
+  /* ---- the mock itself ---- */
+  .sea { position: absolute; inset: 0; background: radial-gradient(ellipse at 60% 40%, #bfe6df 0%, #9fd6cf 45%, #8fcdc6 100%); }
+  .sea svg { position: absolute; }
+  .card-wrap { position: absolute; z-index: 10; display: flex; flex-direction: column; }
+  .desk .card-wrap { top: 24px; bottom: 24px; left: 40px; width: 384px; }
+  /* Lobby.tsx: inset-x-3, bottom at the safe-area inset, max-height 100dvh minus the insets; the sheet scrolls, the footer stays. */
+  .phone .card-wrap { left: 12px; right: 12px; bottom: 12px; max-height: 808px; }
+  .card { display: flex; flex-direction: column; min-height: 0; flex: 1; overflow-y: auto; background: var(--paper); border: 1px solid rgb(255 255 255 / 0.5); border-radius: var(--radius-sheet); box-shadow: var(--shadow-sheet); padding: 20px; }
+  .desk .card { padding: 24px; }
+  .phone .card { padding: 20px; flex: 0 1 auto; }
+  .cap { font-size: 12px; line-height: 16px; font-weight: 600; color: var(--sea-ink); }
+  .code-row { display: flex; align-items: center; gap: 12px; margin-top: 4px; }
+  .code { font-family: var(--font-display); font-weight: 500; font-size: 36px; line-height: 40px; letter-spacing: 0.15em; }
+  .desk .code { font-size: 56px; line-height: 60px; letter-spacing: 0.2em; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; min-width: 44px; padding: 0 14px; border-radius: var(--radius-control); border: 1px solid var(--control-line); background: transparent; font-weight: 500; font-size: 14px; transition: transform var(--duration-press) ease-out; }
+  .btn:active { transform: scale(0.97); }
+  .btn.sm { min-height: 32px; padding: 0 12px; }
+  .desk .btn.auto { min-height: 32px; padding: 0 12px; }
+  .btn.lg { min-height: 48px; font-size: 16px; }
+  .btn.sea { background: var(--sea-ink); color: #fff; border-color: var(--sea-ink); }
+  .btn.ink { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .btn.ghost { border-color: transparent; }
+  .btn[disabled] { color: var(--muted); border-color: var(--line); background: var(--ground); cursor: default; }
+  .col { display: flex; flex-direction: column; gap: 4px; }
+
+  /* lobby tabs: the same tab style the Chat C panel uses (icon, text, underline when selected) */
+  .tabs { display: flex; gap: 4px; margin-top: 10px; border-bottom: 1px solid var(--line); }
+  .tab { position: relative; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 10px; border: 0; background: transparent; font-size: 14px; color: var(--muted); }
+  .desk .tab { min-height: 36px; }
+  .tab[aria-selected="true"] { color: var(--ink); font-weight: 600; box-shadow: inset 0 -2px 0 var(--ink); }
+  .tab[disabled] { color: var(--muted); opacity: 0.6; cursor: default; }
+  .tab .badge { min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--sea-ink); color: #fff; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
+  .roster { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 12px; color: var(--muted); min-height: 20px; flex-wrap: wrap; }
+  .roster .dot { width: 8px; height: 8px; }
+
+  .dot { width: 12px; height: 12px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.25); flex-shrink: 0; }
+  /* placeholder for the lobby as it is today; the lobby is not part of this mock */
+  .ph { margin-top: 12px; flex: 1; min-height: 220px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; border: 1px dashed var(--control-line); border-radius: 12px; color: var(--muted); font-size: 14px; }
+  .ph small { font-size: 12px; }
+
+  .foot { position: sticky; bottom: -20px; margin: 12px -20px -20px; padding: 8px 20px 20px; background: var(--paper); display: flex; flex-direction: column; gap: 8px; }
+  .desk .foot { bottom: -24px; margin: 12px -24px -24px; padding: 8px 24px 24px; }
+  .foot::before { content: ""; position: absolute; left: 0; right: 0; top: -24px; height: 24px; background: linear-gradient(to top, var(--paper), transparent); pointer-events: none; }
+  .status { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
+  .status p { flex: 1; text-align: center; }
+  .win { display: inline-flex; gap: 4px; align-items: center; }
+  .win span { width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--control-line); border-radius: var(--radius-control); font-weight: 600; }
+  .desk .win span { width: 36px; height: 36px; }
+  .win span.on { text-decoration: underline; text-underline-offset: 3px; }
+  .actions { display: flex; flex-direction: column; gap: 8px; }
+  .desk .actions { flex-direction: row; }
+  .desk .actions .btn { flex: 1; }
+
+  /* ---- the shelf ---- */
+  .shelf { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+  .shelf h3 { margin: 0; font-size: 15px; font-weight: 600; }
+  .shelf .hint { font-size: 12px; color: var(--muted); }
+  .tile { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 12px; align-items: center; min-height: 64px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--paper); }
+  .tile.locked { color: var(--muted); background: var(--ground); }
+  .tile .pic { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+  .tile .pic.sand { background: var(--grain); }
+  .tile .pic.ttt { background: var(--wool); }
+  .tile .pic.triv { background: var(--ore); opacity: 0.55; }
+  .tile .t { min-width: 0; }
+  .tile .t b { display: block; font-weight: 600; font-size: 14px; }
+  .tile .t span { display: block; font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tile .t span.live { color: var(--sea-ink); font-weight: 600; }
+  .tile .t span.live::before { content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--sea-ink); margin-right: 6px; vertical-align: 1px; }
+  .tile .pick { grid-column: 2 / -1; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; font-size: 12px; color: var(--muted); }
+  .tile .pick .btn { min-height: 36px; }
+  .tile .pick .btn .dot { width: 10px; height: 10px; }
+
+  /* ---- a game open ---- */
+  .box { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+  .box .head { display: flex; align-items: center; gap: 8px; }
+  .box .head b { flex: 1; font-size: 15px; font-weight: 600; min-width: 0; }
+  .box .head .btn { min-height: 44px; min-width: 44px; padding: 0 10px; }
+  .desk .box .head .btn { min-height: 36px; }
+  .frame-stage { position: relative; width: 100%; aspect-ratio: 580 / 320; border-radius: 8px; overflow: hidden; background: #243b3a; color: #fff; border: 1px solid var(--control-line); }
+  .frame-stage .inner { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; background: linear-gradient(#5aa7c9, #2b6e8f 60%, #c9a35b 60%, #b08a45); }
+  .frame-stage .inner b { font-family: var(--font-display); font-size: 22px; letter-spacing: 0.02em; text-shadow: 0 1px 0 rgb(0 0 0 / 0.4); }
+  .frame-stage .inner .play { min-height: 44px; padding: 0 18px; border-radius: 22px; border: 0; background: #fff; color: #243b3a; font-weight: 700; }
+  .frame-stage .inner .tiny { font-size: 11px; opacity: 0.9; }
+  .frame-stage .meta { position: absolute; right: 6px; bottom: 4px; font-size: 10px; opacity: 0.8; font-family: var(--font-display); }
+  .frame-stage .tray { position: absolute; left: 50%; bottom: 10%; width: 14%; height: 6%; background: #8b4a2b; border-radius: 3px; transform: translateX(-50%); }
+  .frame-stage .tray.l { left: 35%; } .frame-stage .tray.r { left: 65%; }
+  .hold { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .hold .btn { min-height: 56px; font-size: 16px; user-select: none; -webkit-user-select: none; touch-action: none; }
+  .hold .btn.down { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .keys { font-size: 12px; color: var(--muted); text-align: center; }
+  .box .row { display: flex; align-items: center; gap: 8px; }
+  .box .row .btn { min-height: 44px; }
+  .desk .box .row .btn { min-height: 36px; }
+  .box .row .spacer { flex: 1; }
+  .closes { font-size: 12px; color: var(--muted); text-align: center; }
+
+  /* tic-tac-toe */
+  .ttt-who { display: flex; justify-content: space-between; gap: 8px; font-size: 14px; }
+  .ttt-who span { display: inline-flex; align-items: center; gap: 6px; }
+  .ttt-who .mk { font-family: var(--font-display); font-weight: 800; font-size: 18px; }
+  .ttt-turn { font-size: 14px; font-weight: 600; text-align: center; min-height: 20px; }
+  .ttt-turn.me { color: var(--sea-ink); }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; max-width: 300px; margin: 0 auto; width: 100%; }
+  .cell { aspect-ratio: 1; min-height: 44px; border: 1px solid var(--control-line); border-radius: 10px; background: var(--paper); font-family: var(--font-display); font-weight: 800; font-size: 36px; display: flex; align-items: center; justify-content: center; }
+  .cell.x { color: var(--ember); } .cell.o { color: var(--tide); }
+  .cell.win { background: #e6f4e4; box-shadow: inset 0 0 0 2px #2f8f5b; }
+  .cell[disabled] { cursor: default; }
+
+  /* the interrupt: the table is starting, so the box closes */
+  .interrupt { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; background: var(--sea-ink); color: #fff; font-weight: 600; font-size: 14px; animation: in var(--duration-base) var(--ease-out) both; }
+  .interrupt .dot { width: 8px; height: 8px; background: #fff; box-shadow: none; }
+  .toast { margin-top: 8px; padding: 8px 12px; border-radius: 10px; background: var(--ground); color: var(--muted); font-size: 13px; text-align: center; }
+  .starting { position: absolute; inset: 0; z-index: 20; display: flex; align-items: center; justify-content: center; pointer-events: none; }
+  .starting div { background: var(--paper); color: var(--ink); border-radius: 12px; padding: 14px 22px; font-family: var(--font-display); font-weight: 800; font-size: 28px; box-shadow: var(--shadow-control); border-bottom: 3px solid var(--ground); animation: stamp var(--duration-base) var(--ease-snap) both; }
+  @keyframes in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+  @keyframes stamp { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+
+  /* mock-only callouts inside the frame */
+  .callout { position: absolute; z-index: 30; max-width: 260px; padding: 8px 10px; border-radius: 8px; background: #263d3c; color: #fff; font-size: 12px; line-height: 16px; box-shadow: var(--shadow-sheet); }
+  .callout b { color: #9fe3d9; }
+</style>
+</head>
+<body>
+<div class="top">
+  <div>
+    <h1>Mini games hub, lobby mock</h1>
+    <p class="sub">For #929 and #937. Clickable. Not production code. Only the games are mocked; the lobby is a frame. One theme: the app is Jelly Ocean light only.</p>
+  </div>
+  <div class="seg" role="group" aria-label="Viewport">
+    <button id="vp-phone" aria-pressed="true" onclick="setVp('phone')">Phone 390×844</button>
+    <button id="vp-desk" aria-pressed="false" onclick="setVp('desk')">Desktop 1280×720</button>
+  </div>
+</div>
+<div class="nav" id="nav"></div>
+
+<div class="layout">
+  <div class="stage" id="stage"><div class="frame" id="frame"></div></div>
+  <aside class="notes" id="notes"></aside>
+</div>
+
+<script>
+// ---------- state ----------
+const S = {
+  vp: 'phone',
+  screen: 'A',           // A lobby, B hub, C sandwich, D tic-tac-toe, E table starts
+  ttt: 'idle',           // idle | pick | waiting | playing | invited
+  tttBoard: ['X','','O','','X','','','',''],
+  tttTurn: 'them',       // me | them | won
+  hold: null,            // 'L' | 'R' while a held button is down
+  sound: false,
+  interrupt: false,
+  playing: false,        // sandwich PLAY pressed
+};
+const NAV = [['A','Lobby'],['B','Play games'],['C','Sandwich Stacker'],['D','Tic-tac-toe'],['E','Table starts']];
+const VP = { phone: [390, 844], desk: [1280, 720] };
+
+function go(screen, extra) {
+  S.screen = screen; S.interrupt = false; S.hold = null;
+  if (screen === 'A') { S.ttt = 'idle'; S.playing = false; }
+  if (screen === 'B' && extra) S.ttt = extra;
+  if (screen === 'B' && !extra && S.ttt === 'playing') S.ttt = 'idle';
+  if (screen === 'D') { S.ttt = 'playing'; }
+  render();
+}
+function setVp(v) { S.vp = v; render(); }
+function startTable() {
+  // The host pressed Start while a game box is open: the box shows the banner, then unloads. Nothing waits on it.
+  S.interrupt = true; render();
+  setTimeout(() => { S.screen = 'E'; S.interrupt = false; S.ttt = 'idle'; S.playing = false; render(); }, 1100);
+}
+function tttPlay(i) {
+  if (S.tttTurn !== 'me' || S.tttBoard[i]) return;
+  S.tttBoard[i] = 'X'; S.tttTurn = 'them'; render();
+  setTimeout(() => { const e = S.tttBoard.indexOf(''); if (e >= 0) { S.tttBoard[e] = 'O'; } S.tttTurn = 'me'; render(); }, 700);
+}
+function tttReset() { S.tttBoard = ['','','','','','','','','']; S.tttTurn = 'me'; render(); }
+function invite(name) { S.ttt = 'waiting'; render(); setTimeout(() => { if (S.ttt === 'waiting') { S.ttt = 'playing'; S.tttTurn = 'me'; S.tttBoard = ['','','','','','','','','']; S.screen = 'D'; render(); } }, 1800); }
+function holdStart(side) { S.hold = side; paintHold(); }
+function holdEnd() { S.hold = null; paintHold(); }
+function paintHold() {
+  document.querySelectorAll('.hold .btn').forEach(b => b.classList.toggle('down', b.dataset.side === S.hold));
+  const tray = document.getElementById('tray'); if (tray) tray.className = 'tray ' + (S.hold === 'L' ? 'l' : S.hold === 'R' ? 'r' : '');
+}
+
+// ---------- pieces ----------
+const dot = c => `<span class="dot" style="background:${c}"></span>`;
+const SEATS = [
+  { name: 'Ember', color: 'var(--ember)', me: true, host: true, state: 'Waiting' },
+  { name: 'Moss', color: 'var(--tide)', state: 'Ready' },
+  { name: 'Tide', color: 'var(--dune)', state: 'Ready' },
+  { name: 'Bot', color: 'var(--pine)', bot: true, state: 'Bot' },
+];
+function head() {
+  return `<p class="cap">Table code · Wayfarer On</p>
+  <div class="code-row"><p class="code">YHRR</p>
+    <div class="col"><button class="btn auto sm">Copy</button><button class="btn auto sm">Copy link</button></div></div>`;
+}
+function tabs(active, opts = {}) {
+  const invited = S.ttt === 'invited';
+  const dis = opts.disabled ? 'disabled' : '';
+  return `<div class="tabs" role="tablist">
+    <button class="tab" role="tab" aria-selected="${active === 'table'}" onclick="go('A')">${ico('users')} Table</button>
+    <button class="tab" role="tab" aria-selected="${active === 'games'}" ${dis} onclick="go('B')">${ico('game')} Play games${invited ? ' <span class="badge">1</span>' : ''}</button>
+  </div>`;
+}
+function roster() {
+  return `<div class="roster">${SEATS.map(s => `<span style="display:inline-flex;align-items:center;gap:4px">${dot(s.color)}${s.name}</span>`).join('')}<span>· 2 of 4 ready</span></div>`;
+}
+// The lobby itself is not mocked. This is a placeholder for the seats and chat as they are today (Lobby.tsx, Chat C).
+function lobbyAsToday() {
+  return `<div class="ph"><span>Seats and chat, as today</span><small>Not part of this mock</small></div>`;
+}
+function foot(status, opts = {}) {
+  const start = opts.start ? `<button class="btn lg sea" onclick="startTable()">Start</button>` : '';
+  return `<div class="foot">
+    <div class="status"><p aria-live="polite">${status}</p><span class="win">Win at <span>7</span><span class="on">10</span></span></div>
+    <div class="actions"><button class="btn lg">${opts.ready ? 'Not ready' : 'Ready'}</button>${start}</div>
+    <button class="btn ghost auto" onclick="go('E')">Leave the table</button>
+  </div>`;
+}
+function ico(n) {
+  const p = {
+    users: '<circle cx="9" cy="7" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="8" r="2.5"/><path d="M21 19c0-2.5-1.8-4.5-4-4.9"/>',
+    game: '<rect x="2" y="7" width="20" height="11" rx="4"/><path d="M7 11v4M5 13h4M15 12h.01M18 14h.01"/>',
+    chat: '<path d="M4 5h16v11H9l-5 4z"/>',
+    speaker: '<path d="M4 10v4h3l4 4V6L7 10z"/><path d="M15 9a4 4 0 0 1 0 6"/>',
+    mute: '<path d="M4 10v4h3l4 4V6L7 10z"/><path d="M16 9l5 6M21 9l-5 6"/>',
+    close: '<path d="M6 6l12 12M18 6L6 18"/>',
+    lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+    left: '<path d="M15 5l-7 7 7 7"/>', right: '<path d="M9 5l7 7-7 7"/>',
+    sand: '<path d="M4 8h16M4 12h16M4 16h16" stroke-width="3"/>',
+    ttt: '<path d="M9 3v18M15 3v18M3 9h18M3 15h18"/>',
+    triv: '<path d="M9 9a3 3 0 1 1 4.5 2.6c-1 .6-1.5 1.2-1.5 2.4M12 17h.01"/>',
+  }[n];
+  return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
+}
+
+// ---------- the shelf ----------
+function tileSand() {
+  return `<div class="tile"><div class="pic sand">${ico('sand')}</div>
+    <div class="t"><b>Sandwich Stacker</b><span>Solo</span></div>
+    <button class="btn" onclick="go('C')">Play</button></div>`;
+}
+function tileTtt() {
+  const pic = `<div class="pic ttt">${ico('ttt')}</div>`;
+  switch (S.ttt) {
+    case 'pick': return `<div class="tile">${pic}<div class="t"><b>Tic-tac-toe</b><span>Play with…</span></div><button class="btn ghost" onclick="go('B','idle')">Cancel</button>
+      <div class="pick">${SEATS.filter(s => !s.me && !s.bot).map(s => `<button class="btn" onclick="invite('${s.name}')">${dot(s.color)}${s.name}</button>`).join('')}</div></div>`;
+    case 'waiting': return `<div class="tile">${pic}<div class="t"><b>Tic-tac-toe</b><span class="live">Waiting for Moss…</span></div><button class="btn ghost" onclick="go('B','idle')">Cancel</button></div>`;
+    case 'playing': return `<div class="tile">${pic}<div class="t"><b>Tic-tac-toe</b><span class="live">You and Moss · in progress</span></div><button class="btn ink" onclick="go('D')">Open</button></div>`;
+    case 'invited': return `<div class="tile">${pic}<div class="t"><b>Tic-tac-toe</b><span class="live">Moss wants to play</span></div><button class="btn ink" onclick="go('D')">Play</button></div>`;
+    case 'alone': return `<div class="tile">${pic}<div class="t"><b>Tic-tac-toe</b><span>Needs a table-mate</span></div><button class="btn" disabled>Play</button></div>`;
+    default: return `<div class="tile">${pic}<div class="t"><b>Tic-tac-toe</b><span>With a table-mate</span></div><button class="btn" onclick="go('B','pick')">Play</button></div>`;
+  }
+}
+function tileTriv() {
+  return `<div class="tile locked"><div class="pic triv" style="color:#fff">${ico('triv')}</div>
+    <div class="t"><b>Trivia</b><span>Soon</span></div><span style="color:var(--muted)">${ico('lock')}</span></div>`;
+}
+function shelf() {
+  return roster() + `<div class="shelf"><h3>While you wait</h3>${tileSand()}${tileTtt()}${tileTriv()}
+    <p class="hint">A game closes itself when the table starts.</p></div>`;
+}
+
+// ---------- a game open ----------
+function interrupt() {
+  return S.interrupt ? `<div class="interrupt">${dot('#fff')}Table is starting. Closing the game.</div>` : '';
+}
+function soundBtn() {
+  return `<button class="btn" aria-pressed="${S.sound}" onclick="S.sound=!S.sound;render()">${ico(S.sound ? 'speaker' : 'mute')} ${S.sound ? 'Sound on' : 'Sound off'}</button>`;
+}
+function sandwich() {
+  const phone = S.vp === 'phone';
+  return roster() + `<div class="box">
+    ${interrupt()}
+    <div class="head"><b>Sandwich Stacker</b>${soundBtn()}<button class="btn" aria-label="Close" onclick="go('B')">${ico('close')} Close</button></div>
+    <div class="frame-stage" tabindex="0" aria-label="Sandwich Stacker game, 580 by 320">
+      <div class="inner">${S.playing
+        ? `<b style="position:absolute;left:8px;top:6px;font-size:14px">Level 1 · Score 50</b><div id="tray" class="tray ${S.hold === 'L' ? 'l' : S.hold === 'R' ? 'r' : ''}"></div>`
+        : `<b>Sandwich Stacker</b><button class="play" onclick="S.playing=true;render()">PLAY</button><span class="tiny">Loads here when you tap. Nothing before.</span>`}</div>
+      <span class="meta">580 : 320</span>
+    </div>
+    ${phone
+      ? `<div class="hold"><button class="btn" data-side="L" onpointerdown="holdStart('L')" onpointerup="holdEnd()" onpointercancel="holdEnd()" onpointerleave="holdEnd()">${ico('left')} Left</button><button class="btn" data-side="R" onpointerdown="holdStart('R')" onpointerup="holdEnd()" onpointercancel="holdEnd()" onpointerleave="holdEnd()">Right ${ico('right')}</button></div><p class="keys">Hold to move.</p>`
+      : `<p class="keys">Arrow keys move. Keys stay in the game while it has focus.</p>`}
+  </div>`;
+}
+function ttt() {
+  const b = S.tttBoard;
+  const turn = S.tttTurn;
+  const lines = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+  let winner = null, winCells = [];
+  for (const l of lines) { if (b[l[0]] && b[l[0]] === b[l[1]] && b[l[1]] === b[l[2]]) { winner = b[l[0]]; winCells = l; } }
+  const full = b.every(Boolean);
+  const line = winner ? (winner === 'X' ? 'You won' : 'Moss won') : full ? 'Draw' : turn === 'me' ? 'Your turn' : 'Moss’s turn';
+  const over = winner || full;
+  return roster() + `<div class="box">
+    ${interrupt()}
+    <div class="head"><b>Tic-tac-toe</b><button class="btn" aria-label="Close" onclick="go('B','playing')">${ico('close')} Close</button></div>
+    <div class="ttt-who"><span>${dot('var(--ember)')}You <span class="mk" style="color:var(--ember)">X</span></span><span>${dot('var(--tide)')}Moss <span class="mk" style="color:var(--tide)">O</span></span></div>
+    <p class="ttt-turn ${turn === 'me' && !over ? 'me' : ''}" aria-live="polite">${line}</p>
+    <div class="grid">${b.map((v, i) => `<button class="cell ${v.toLowerCase()} ${winCells.includes(i) ? 'win' : ''}" ${v || over || turn !== 'me' ? 'disabled' : ''} onclick="tttPlay(${i})" aria-label="Cell ${i + 1}${v ? ', ' + v : ''}">${v}</button>`).join('')}</div>
+    <div class="row">${over ? `<button class="btn" onclick="tttReset()">Play again</button>` : ''}<span class="spacer"></span><button class="btn ghost" onclick="go('B','idle')">Quit game</button></div>
+    <p class="closes">Moves go through the host. Nothing is saved.</p>
+  </div>`;
+}
+
+// ---------- screens ----------
+function cardFor() {
+  switch (S.screen) {
+    case 'A': return head() + tabs('table') + lobbyAsToday() + foot('2 of 4 ready');
+    case 'B': return head() + tabs('games') + shelf() + foot('2 of 4 ready');
+    case 'C': return head() + tabs('games') + sandwich() + foot('Everyone is ready', { start: true, ready: true });
+    case 'D': return head() + tabs('games') + ttt() + foot('Everyone is ready', { start: true, ready: true });
+    case 'E': return head() + tabs('table', { disabled: true }) + `<div class="toast">Game closed.</div>` + lobbyAsToday() + foot('Starting…', { ready: true });
+  }
+}
+function callouts() {
+  const c = (x, y, html) => `<div class="callout" style="left:${x};top:${y}">${html}</div>`;
+  const phone = S.vp === 'phone';
+  switch (S.screen) {
+    case 'A': return c(phone ? '12px' : '440px', phone ? '220px' : '140px', `<b>A.</b> The entry: one <b>Play games</b> tab beside <b>Table</b>, under the code. Closed by default. The rest of the lobby is not mocked here.`);
+    case 'B': return c(phone ? '12px' : '440px', phone ? '220px' : '140px', `<b>B.</b> The tab swaps seats and chat for the <b>While you wait</b> shelf. The code, a one-line roster and the Ready footer stay. Try Tic-tac-toe → Play.`)
+      + c(phone ? '12px' : '440px', phone ? '290px' : '220px', `Tile states: Solo · With a table-mate · Needs a table-mate · Waiting for Moss… · In progress · Moss wants to play (badge on the tab) · Soon (locked).`);
+    case 'C': return c(phone ? '12px' : '440px', phone ? '220px' : '140px', `<b>C.</b> Stage at exactly 580:320, inside the card. Sound off until tapped. ${phone ? 'Held Left and Right buttons, 56 px.' : 'Arrow keys; no buttons on a fine pointer.'} Press <b>Start</b> in the footer to see the close.`);
+    case 'D': return c(phone ? '12px' : '440px', phone ? '220px' : '140px', `<b>D.</b> My mark, theirs, whose turn. Moves relay through the host with seat ids. Press <b>Start</b> in the footer: the banner shows, then the box closes.`);
+    case 'E': return c(phone ? '12px' : '440px', phone ? '220px' : '140px', `<b>E.</b> Start pressed. The box closed and unloaded first (0 player elements, no Ruffle left). The lobby then hands over to the table as today. One quiet line, no dialog.`);
+  }
+}
+
+function island(w, h) {
+  // A plain SVG island so the card sits on something like the real screen. Pointy-top hexes, radius-2 ring of 19.
+  const R = Math.min(w, h) * (S.vp === 'phone' ? 0.075 : 0.11);
+  const cx = S.vp === 'phone' ? w * 0.5 : w * 0.66, cy = S.vp === 'phone' ? h * 0.17 : h * 0.5;
+  const cols = ['var(--timber)','var(--wool)','var(--grain)','var(--clay)','var(--ore)','var(--wool)','var(--timber)'];
+  const nums = [5,2,6,3,8,10,9,12,11,4,8,10,9,4,5,6,3,11];
+  let out = '', k = 0, n = 0;
+  for (let q = -2; q <= 2; q++) for (let r = -2; r <= 2; r++) {
+    if (Math.abs(q + r) > 2) continue;
+    const x = cx + R * Math.sqrt(3) * (q + r / 2), y = cy + R * 1.5 * r;
+    const waste = q === 0 && r === 0;
+    const pts = [0,1,2,3,4,5].map(i => { const a = Math.PI / 180 * (60 * i - 30); return `${(x + R * 0.96 * Math.cos(a)).toFixed(1)},${(y + R * 0.96 * Math.sin(a)).toFixed(1)}`; }).join(' ');
+    out += `<polygon points="${pts}" fill="${waste ? 'var(--waste)' : cols[k++ % cols.length]}" stroke="#f1e6c8" stroke-width="2"/>`;
+    if (!waste) { const v = nums[n++ % nums.length]; out += `<circle cx="${x}" cy="${y}" r="${R * 0.3}" fill="#fff9f0" stroke="#6b3f22" stroke-width="1.5"/><text x="${x}" y="${y + R * 0.11}" text-anchor="middle" font-family="Georgia,serif" font-weight="700" font-size="${R * 0.32}" fill="${v === 6 || v === 8 ? '#b3261e' : '#1c1916'}">${v}</text>`; }
+  }
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true">${out}</svg>`;
+}
+
+function render() {
+  const [w, h] = VP[S.vp];
+  const frame = document.getElementById('frame');
+  frame.className = 'frame ' + S.vp;
+  frame.style.width = w + 'px'; frame.style.height = h + 'px';
+  frame.innerHTML = `<div class="sea">${island(w, h)}</div>
+    ${S.screen === 'E' ? `<div class="starting"><div>Starting…</div></div>` : ''}
+    <div class="card-wrap"><div class="card">${cardFor()}</div></div>${callouts()}`;
+  fit();
+  document.getElementById('vp-phone').setAttribute('aria-pressed', S.vp === 'phone');
+  document.getElementById('vp-desk').setAttribute('aria-pressed', S.vp === 'desk');
+  document.getElementById('nav').innerHTML = NAV.map(([k, t]) => `<button aria-current="${S.screen === k}" onclick="go('${k}')"><b>${k}</b>${t}</button>`).join('');
+  renderNotes();
+}
+function fit() {
+  const [w, h] = VP[S.vp];
+  const stage = document.getElementById('stage');
+  const s = Math.min(1, stage.clientWidth / w);
+  const frame = document.getElementById('frame');
+  frame.style.transform = `scale(${s})`;
+  stage.style.height = Math.round(h * s) + 'px';
+}
+addEventListener('resize', fit);
+
+// ---------- notes ----------
+function renderNotes() {
+  const now = S.screen;
+  const per = {
+    A: `<span class="tag">Screen A · The entry, closed</span><p>Only the frame the hub needs: a tab row under the code, <b>Table</b> and <b>Play games</b>. The tab is closed by default and loads nothing. The lobby itself (seats, chat, Ready, Start, Leave) is the one built today and is not redesigned or mocked here; the dashed box stands in for it.</p>`,
+    B: `<span class="tag">Screen B · The shelf</span><p>Heading <b>While you wait</b>. One row per game: a 44 px picture, the name, one state line, one 44 px button. The one-line roster and the Ready footer stay so you never lose the table.</p>
+      <div class="demo"><button onclick="go('B','idle')">With a table-mate</button><button onclick="go('B','alone')">Needs a table-mate</button><button onclick="go('B','waiting')">Waiting for Moss…</button><button onclick="go('B','playing')">In progress</button><button onclick="go('B','invited')">Moss wants to play</button></div>`,
+    C: `<span class="tag">Screen C · Sandwich Stacker open</span><p>The shelf is replaced by the game box: a head row (name, <b>Sound off</b>, <b>Close</b>), the Ruffle stage at exactly 580:320, and on a coarse pointer two held 56 px buttons that send ArrowLeft/ArrowRight keydown on press and keyup on release. The stage has focus; while it does, arrow keys never scroll the page or fire Emberisle shortcuts. Escape closes the box, not the lobby.</p>
+      <div class="demo"><button onclick="startTable()">Simulate: host presses Start</button></div>`,
+    D: `<span class="tag">Screen D · Tic-tac-toe</span><p>You are X in your seat colour, Moss is O in theirs. One line says whose turn. A move is one message to the host, which relays it with the seat id; the host keeps the board so a reconnect gets it back. Click a cell on your turn. Then simulate Start.</p>
+      <div class="demo"><button onclick="S.tttTurn='me';render()">Make it my turn</button><button onclick="tttReset()">Reset board</button><button onclick="startTable()">Simulate: host presses Start</button></div>`,
+    E: `<span class="tag">Screen E · The table starts</span><p>Start was pressed while a box was open. Order: the box shows the banner for about a second, unloads the player (zero <code>ruffle-player</code> elements) or sends one “quit” to the host, the tab greys out with one line, then the lobby hands over to the table exactly as it does now (not mocked). The table never waits for any of this; if the box hangs, the lobby still unmounts and the box goes with it.</p>
+      <div class="demo"><button onclick="go('A')">Back to the lobby</button></div>`,
+  };
+  document.getElementById('notes').innerHTML = `
+    <div class="note now">${per[now]}</div>
+    <div class="note"><h2>Notes: the five #929 questions</h2><ol>
+      <li><b>One shelf, not one game at a time.</b> “While you wait”, one tile per game, inside the Play games tab. Only one game can be open at once; opening another closes the first.<span class="trade">Trade-off: three rows is more chrome than one button, but a new game is one row, and a tile is where a table-mate’s invite can show.</span></li>
+      <li><b>Placement: a tab in the lobby card, on both.</b> Phone 390×844: the card is the bottom sheet as today; the tab swaps seats and chat for the shelf, the Ready footer stays pinned, 44 px targets, safe-area insets unchanged. Desktop 1280×720: the same tab in the 384 px card at the left; the island stays uncovered.<span class="trade">Trade-off: seats and chat hide while you play. A one-line roster under the tabs and a badge on the Play games tab keep you informed. Rejected: a second panel beside the card on desktop, which covers the island, and a third chat tab, which breaks Chat C’s two-tab rule.</span></li>
+      <li><b>First native game: tic-tac-toe.</b> Nine cells, two seats, no content to write. Messages: invite, accept, move, quit; the host holds the board. Trivia shows as a locked “Soon” tile so the shelf already has a shape for it.<span class="trade">Trade-off: tic-tac-toe is short, so people will play it a few times; “Play again” covers that. Trivia waits on question content and an owner call on who writes it.</span></li>
+      <li><b>Opens only when tapped.</b> The tab is closed by default, sound is off by default, and nothing (no Ruffle, no wasm) loads until a Play tile is tapped. A table-mate’s invite is a badge on the tab and a line on the tile, never a popup.<span class="trade">Trade-off: someone may miss an invite for a few seconds. That is fine; the real game is the point.</span></li>
+      <li><b>No scores or leaderboards.</b> Sandwich Stacker shows its own score inside the Flash stage. Tic-tac-toe says “You won”, “Moss won” or “Draw”, then “Play again”. Nothing is saved anywhere.<span class="trade">Trade-off: no bragging rights across nights. Easy to add later as a lobby chat line (“Moss beat Ember at tic-tac-toe”) if wanted.</span></li>
+    </ol></div>
+    <div class="note"><h2>Hard constraints, as drawn</h2><ul>
+      <li>A mini-game never blocks, delays or slows the table: the box is its own lazy chunk, loads only on tap, and the lobby unmounts on Start whether or not the box has finished closing.</li>
+      <li>The box closes itself and unloads on Start and on Leave the table (screen E).</li>
+      <li>Solo Flash games cannot see the table. Phone: held Left and Right buttons. Desktop: arrow keys, keys isolated to the stage.</li>
+      <li>Native games sync through the host with lobby names, seat colours and seat ids. Bots are not offered as opponents.</li>
+      <li>Copy: a few plain words per control. No taglines.</li>
+    </ul></div>
+    <div class="note"><h2>Open choices for Jarrod</h2><ul>
+      <li>Tab name <b>Play games</b> is yours; the shelf heading is <b>While you wait</b>. Either can be shorter (“Games”, no heading).</li>
+      <li>Seats and chat hide while the Play games tab is open. If you would rather keep the seat list visible, the shelf can sit under the seats and push the chat down, at the cost of a scroll on the phone sheet.</li>
+      <li>Tic-tac-toe asks a named seat (Moss or Tide). The other option is “anyone”, first to tap plays.</li>
+      <li>Desktop Sandwich Stacker has no Left/Right buttons, only arrow keys. They can be shown on desktop too.</li>
+      <li>A game box stays open while someone else joins or readies; only Start, Leave or Close ends it. It could also close when you press Ready.</li>
+      <li>The Trivia tile is shown locked now. It can be left out until trivia exists.</li>
+      <li>Spectators (watch link) see the Play games tab for solo games only; they cannot be invited. Say if watchers should get nothing.</li>
+      <li>One theme only: the app has no dark mode, so none is mocked. Say if you want one.</li>
+    </ul></div>
+    <div class="note"><h2>What #937 builds, and what this adds</h2><p>#937’s plain prototype already has the box: closed and muted by default, lazy Ruffle, held buttons, unload on start, keyboard isolation, a proof. This mock gives it a home (the tab and shelf, screens A–C) and adds tic-tac-toe (screen D) as its own tier-1 issue after #937 lands.</p></div>`;
+}
+
+render();
+</script>
+</body>
+</html>

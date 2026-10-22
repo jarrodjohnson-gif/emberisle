@@ -56,9 +56,10 @@ jobs:
           mapfile -t CHANGED <<< "$LIST"
           DOCS_ONLY=true
           for file in "${CHANGED[@]}"; do
-            # README.md is consumed by fortune-tray-prove; other markdown, docs, issue templates, and LICENSE are docs-only.
+            # README.md is consumed by fortune-tray-prove, and AGENTS.md and CLAUDE.md are agent instructions, not docs (#923).
+            # Other markdown, docs, issue templates, and LICENSE are docs-only.
             case "$file" in
-              README.md) DOCS_ONLY=false; break;;
+              README.md|AGENTS.md|CLAUDE.md) DOCS_ONLY=false; break;;
               docs/*|.github/ISSUE_TEMPLATE/*|LICENSE|*.md)
                 ;;
               *)
@@ -156,6 +157,8 @@ jobs:
         run: npm run stale-pr-sweeper-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run flake-rerun-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run auto-merge-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run label-commands-prove
       - if: needs.changes.outputs.docs_only != 'true'
@@ -266,9 +269,10 @@ jobs:
           if-no-files-found: ignore
 
   # The ruleset requires a check named exactly "browser-a"; it passes only when all three suites pass.
+  # A draft skips it (grey), like every other job; ready_for_review starts the run that must pass.
   browser-a:
     needs: browser-a-suites
-    if: always()
+    if: always() && (github.event_name != 'pull_request' || !github.event.pull_request.draft)
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -423,16 +427,14 @@ jobs:
           if-no-files-found: ignore
 
   # always() so a failed or cancelled job above fails this check instead of skipping it (a skipped required check passes).
+  # A draft skips it (grey): GitHub never merges a draft, and marking it ready starts a fresh run on the same head SHA,
+  # whose checks must each pass. Every other run keeps always() and the explicit tests below.
   checks:
     needs: [changes, build, server, browser-a, browser-b]
-    if: always()
+    if: always() && (github.event_name != 'pull_request' || !github.event.pull_request.draft)
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - if: github.event_name == 'pull_request' && github.event.pull_request.draft
-        run: |
-          echo "Draft PR: CI runs when it is marked ready for review."
-          exit 1
       - run: |
           echo 'build=${{ needs.build.result }} server=${{ needs.server.result }} browser-a=${{ needs.browser-a.result }} browser-b=${{ needs.browser-b.result }}'
           test '${{ needs.build.result }}' = success
