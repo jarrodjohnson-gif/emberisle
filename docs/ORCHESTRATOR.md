@@ -1,9 +1,10 @@
-# Orchestrator guide
+# Orchestrator guide (superseded in part)
 
-A new Claude chat that Jarrod names as orchestrator starts here. The prompt is
-`Continue as Emberisle orchestrator: read docs/ORCHESTRATOR.md.`
+**How the review desk works is now in [`DESK.md`](DESK.md), and the state is in issue #916.** A new desk
+starts there. This file keeps only what `DESK.md` does not cover: Jarrod's device and preferences,
+publishing, media handover and notes for builders that don't watch PRs.
 
-There is **one orchestrator** at a time. It talks to Jarrod, files and specs issues, decides minor calls,
+There is **one desk** at a time. It talks to Jarrod, files and specs issues, decides minor calls,
 reviews and merges. Builders build: Codex (ChatGPT), Grok, Claude chats, and Josh's helper from a fork
 (`docs/HELPERS.md`). Rules for everyone: `AGENTS.md`, `docs/FRAMEWORK.md`, `docs/LANES.md`.
 
@@ -27,25 +28,16 @@ reviews and merges. Builders build: Codex (ChatGPT), Grok, Claude chats, and Jos
   (workflows, server auth, rate limits). Keep subagents to one per PR review, and stop when he says
   usage is low.
 
-## Reviewing and merging
-- Review each PR with a model different from its builder. In budget mode, Sonnet is fine for everything
-  except security and infra.
-- Check the issue's completion test, its lane, and the framework rules.
-- Merge only when the review is clean, all 7 required checks are green (browser-a, browser-b
-  ×3, server, build, checks), there's no conflict, and it's not a draft. Squash with the full head SHA.
-- After a merge, label the closed issues `status:in-review`. If a PR didn't auto-close its issue, close
-  it yourself.
+## Reviewing, merging and check-ins
+These moved to [`DESK.md`](DESK.md): who reviews, when to merge, the required checks, and what to watch.
+A desk does not run timed check-ins. It wakes on the inbox (#699) and on the PR it is about to merge.
+
+## Builders that don't watch PRs
 - Review comments on the PR are how builders hear back. Codex and Grok don't watch PRs, so tell Jarrod
   the one-line prompt: `Work on Emberisle: fix every review comment on PR #N.`
 - Grok can't open PRs. Look for orphan branches and open the PR for it.
 - Fork PRs from a contributor with no merge yet need Jarrod's "Approve and run". Send him the direct
   Actions run link.
-
-## Check-ins
-- Every ~30 min while any PR is open (use send_later); a quiet check-in is cheap.
-- On each one: list the open PRs and subscribe to new ones. Look for new issues by anyone but Jarrod,
-  `Idea:`/`Bug:` issues, and comments starting `Question:`, and answer them (minor) or bring them to
-  Jarrod (major).
 
 ## Publishing
 - **Web:** GitHub Pages publishes main nightly (11:07 UTC) or on demand (Actions → Pages → Run
