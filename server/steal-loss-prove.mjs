@@ -16,7 +16,7 @@ import WebSocket from "ws";
 import { chooseBotAction } from "../src/lib/game/ai.ts";
 import { createGame } from "../src/lib/game/board.ts";
 import { AXIAL_DIRS } from "../src/lib/game/hex.ts";
-import { applyAction, stealTargets } from "../src/lib/game/rules.ts";
+import { applyAction, legalRoads, stealTargets } from "../src/lib/game/rules.ts";
 import { RESOURCES } from "../src/lib/game/types.ts";
 import { connectTable } from "../src/lib/net/table.ts";
 
@@ -107,6 +107,73 @@ const knight = (hexId, stealFrom) => ({ type: "playKnight", hexId, stealFrom });
 // ---- Part 1: the rules -------------------------------------------------------------------------------------------------
 const { g: base, H } = seedGame();
 const fresh = () => structuredClone(base);
+// #982: spending, discarding, exchanging and Monopoly all remove goods without a wayfarer steal.
+// Keep nonzero counters too: these actions must neither increment nor reset anyone's earlier losses.
+{
+  const counts = [2, 4, 0, 1];
+  const counted = () => {
+    const g = fresh();
+    g.players.forEach((p, i) => { p.goodsLost = counts[i]; });
+    return g;
+  };
+  const act = (g, actor, action, expectedHands, why) => {
+    const before = structuredClone(g);
+    const result = applyAction(g, actor, action);
+    assert.ifError(result.error);
+    assert.notEqual(result.state, g, `${why}: a real action succeeds`);
+    assert.deepEqual(hands(result.state), expectedHands, `${why}: actual inventory movement`);
+    assert.deepEqual(lost(result.state), counts, `${why}: only wayfarer steals count`);
+    assert.deepEqual(g, before, `${why}: the input state is untouched`);
+    return result.state;
+  };
+  const bag = (values) => ({ timber: 0, clay: 0, wool: 0, grain: 0, ore: 0, ...values });
+
+  const discard = counted();
+  discard.phase = "discard";
+  discard.discardNeeded = { p1: 4 };
+  discard.players[1].resources = bag({ timber: 8 });
+  const discarded = act(discard, "p1", { type: "discard", resources: { timber: 4 } }, [3, 4, 3, 0], "discard");
+  assert.equal(discarded.bank.timber, discard.bank.timber + 4, "discarded cards reach the bank");
+
+  const bank = counted();
+  for (const v of bank.vertices) v.building = null; // No owned docks: the ordinary 4:1 rate.
+  bank.players[0].resources = bag({ timber: 4 });
+  const exchanged = act(bank, "p0", { type: "bankTrade", give: "timber", want: "grain" }, [1, 5, 3, 0], "bank trade");
+  assert.deepEqual(exchanged.players[0].resources, bag({ grain: 1 }), "four timber buys one grain");
+
+  const road = counted();
+  road.players[0].resources = bag({ timber: 1, clay: 1 });
+  const edgeId = legalRoads(road, "p0", false)[0];
+  assert.ok(edgeId, "fixture has a legal path");
+  const built = act(road, "p0", { type: "buildPath", edgeId }, [0, 5, 3, 0], "path spending");
+  assert.equal(built.edges.find((e) => e.id === edgeId).path, "p0", "the paid-for path is placed");
+
+  const upgrade = counted();
+  upgrade.players[0].resources = bag({ grain: 3, ore: 2 });
+  const vertexId = upgrade.vertices.find((v) => v.building?.playerId === "p0").id;
+  const upgraded = act(upgrade, "p0", { type: "buildStronghold", vertexId }, [0, 5, 3, 0], "stronghold spending");
+  assert.equal(upgraded.vertices.find((v) => v.id === vertexId).building.kind, "stronghold");
+
+  const fortune = counted();
+  fortune.players[0].resources = bag({ wool: 1, grain: 1, ore: 1 });
+  const bought = act(fortune, "p0", { type: "buyCard" }, [0, 5, 3, 0], "fortune spending");
+  assert.equal(bought.deck.length, fortune.deck.length - 1, "a fortune is actually bought");
+
+  const trade = counted();
+  const offered = act(trade, "p0", { type: "offerTrade", to: "p1", give: { timber: 1 }, want: { ore: 1 } }, START_HANDS, "player offer");
+  const accepted = act(offered, "p1", { type: "respondTrade", accept: true }, START_HANDS, "player exchange");
+  assert.equal(accepted.players[0].resources.timber, 0);
+  assert.equal(accepted.players[0].resources.ore, 1);
+  assert.equal(accepted.players[1].resources.timber, 2);
+  assert.equal(accepted.players[1].resources.ore, 0, "both sides' named goods actually move");
+  assert.equal(accepted.trade, null, "the accepted offer closes");
+
+  const monopoly = counted();
+  monopoly.players[0].hidden.monopoly = 1;
+  const taken = act(monopoly, "p0", { type: "playMonopoly", resource: "timber" }, [6, 4, 1, 0], "Monopoly");
+  assert.deepEqual(taken.players.map((p) => p.resources.timber), [4, 0, 0, 0], "Monopoly takes timber from both opponents without recording wayfarer losses");
+  console.log("exclusions: discard, bank/player exchange, path/stronghold/fortune spending and Monopoly preserve earlier per-seat steal counts; inputs stay immutable");
+}
 {
   assert.deepEqual(hands(base), START_HANDS);
   assert.deepEqual(lost(base), [0, 0, 0, 0]);
