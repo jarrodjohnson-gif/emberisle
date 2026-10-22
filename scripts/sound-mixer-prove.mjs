@@ -150,6 +150,13 @@ try {
   closeTo((await audio(TRACK)).volume, 0.024, "ducking composes with master and category");
   await page.evaluate(() => window.sound.stop("game_start"));
   closeTo((await audio(TRACK)).volume, 0.08, "cutting a sting restores the mixed background gain");
+  await page.evaluate(() => window.sound.play("match_point", 0.5));
+  await page.waitForFunction((f) => window.__plays.some((p) => p.file === f), files.match_point);
+  closeTo((await audio(TRACK)).volume, 0.024, "audible match-point sting ducks music");
+  await page.evaluate(() => window.mix.setCategoryMuted("memes", true));
+  closeTo((await audio(files.match_point)).volume, 0, "muting memes silences its active sting");
+  closeTo((await audio(TRACK)).volume, 0.08, "an inaudible meme sting cannot keep unrelated music ducked");
+  await page.evaluate(() => { window.mix.setCategoryMuted("memes", false); window.sound.stop("match_point"); });
   await page.evaluate(() => window.mix.setCategoryMuted("music", true));
   assert.equal((await audio(TRACK)).paused, true, "music category mute pauses the loop");
   await page.evaluate(() => window.mix.setCategoryMuted("music", false));
