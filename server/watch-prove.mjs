@@ -289,12 +289,19 @@ if (a.state.phase !== "over") fail(`no winner after ${MAX_ACTIONS} actions`, { p
 await until(() => all.every((x) => x.state.phase === "over") && [w1, w2].every((w) => w.state().game.phase === "over"), "the end reaching every socket");
 
 // A terminal phase is not an ordered fence: a later push can have the same seq and phase.
-// Hold actual watcher transports while a seat rejoins the finished table. The seats receive
-// another final snapshot, but the old phase-only condition is already true for the watchers.
-stage = "delayed terminal snapshot";
-for (const w of [w1, w2]) w.ws.pause();
+// Let the grace timer finish before pausing watchers, so it cannot add an unexpected
+// snapshot during a slow rejoin. Drain through a marker before freezing either transport.
+stage = "terminal takeover baseline";
 b.t.close();
 await until(() => a.seats.find((s) => s.name === b.name)?.away, "the finished seat dropping");
+await until(() => [a.state, w1.state().game, w2.state().game].every((g) => g.players.find((p) => p.id === b.you)?.kind === "bot"), "the finished seat's takeover reaching the watchers");
+const terminalBaseline = `watch proof terminal baseline ${a.state.seq}`;
+a.t.say(terminalBaseline);
+await until(() => [a, c, w1, w2].every((p) => p.chats.some((line) => line.text === terminalBaseline)), "the terminal baseline reaching every connected socket");
+// Rejoin contributes exactly one additional snapshot. The old phase-only condition
+// is already true while that snapshot remains queued behind the paused transports.
+stage = "delayed terminal snapshot";
+for (const w of [w1, w2]) w.ws.pause();
 const terminalSeatCount = a.seqs.length;
 const terminalRejoinCount = b.seqs.length;
 attach(b);
