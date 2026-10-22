@@ -104,7 +104,10 @@ if (role) {
     const c = start(p);
     check("publication: losing process exit cannot release the winner", !(await c.next("ready")).ready);
     await c.stop(); await b.stop();
-    check("clean owner exit releases its exact lock", !fs.existsSync(path.join(p, "writer.lock")));
+    check("ownership remains published until dead-owner recovery", fs.existsSync(path.join(p, "writer.lock")));
+    const recovered = start(p);
+    check("clean owner exit is recovered without losing its committed data", (await recovered.next("ready")).ready && Object.hasOwn(JSON.parse(disk(p)).unknownLogins, "winner"));
+    await recovered.stop();
   }
   {
     const p = area("published"), a = start(p, "published");

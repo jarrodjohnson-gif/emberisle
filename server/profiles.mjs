@@ -128,12 +128,7 @@ function takeLock(dir) {
         // Rename can replace an empty directory, but never another published, nonempty owner.
         renameSync(candidate, file);
         candidate = null;
-        process.on("exit", () => {
-          try {
-            unlinkSync(path.join(file, owner));
-            rmdirSync(file); // Only an empty directory can be removed; never recursively delete a lock.
-          } catch { /* already gone, or another owner has published */ }
-        });
+        // Leave ownership until the process is dead: pending native writes must not outlive exclusion.
         return true;
       } catch (e) { if (!changed(e)) throw e; }
       try {
