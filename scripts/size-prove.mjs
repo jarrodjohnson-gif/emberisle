@@ -36,7 +36,7 @@ const CEILINGS = [
   { name: "DockInspection", gzipBytes: 1200 },
   { name: "HandRates", gzipBytes: 800 },
   // #833: title open-table list; measured ~1.1 kB after extract from index.
-  { name: "OpenTables", gzipBytes: 2000 },
+  { name: "OpenTables", gzipBytes: 1300 },
   // #832: the online-only timer ballot loads separately (2026-10-20; measured 1.20 kB).
   { name: "TurnExtensionVote", gzipBytes: 1400 },
 ];

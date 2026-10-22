@@ -18,8 +18,8 @@ function statusLabel(status: OpenTableEntry["status"], seated: number, total: nu
 function hostExpected(): boolean {
   if (new URLSearchParams(location.search).has("host")) return true;
   if (import.meta.env.DEV) return false;
-  // Pages deploys (`--base=/emberisle/`) are static — including pages-prove on 127.0.0.1.
-  if (import.meta.env.BASE_URL === "/emberisle/") return false;
+  // Non-root base builds are static — including local Pages previews after a repository rename.
+  if (import.meta.env.BASE_URL !== "/") return false;
   if (location.hostname.endsWith("github.io")) return false;
   return true;
 }
