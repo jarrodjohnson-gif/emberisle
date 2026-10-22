@@ -87,6 +87,9 @@ export interface PlayerState {
   // Fortunes drawn during this player's current turn; they cannot be played until a later turn.
   boughtThisTurn: Record<DevKind, number>;
   knightsPlayed: number;
+  // Goods this seat lost to successful wayfarer steals (#550); absent reads as 0. Online the host keeps it out of every
+  // view until the game is won, then sends it to every seat and watcher with the rest of the final state (server/host.mjs).
+  goodsLost?: number;
   pathsLeft: number;
   outpostsLeft: number;
   strongholdsLeft: number;
