@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ChatBox, SeatBubbles } from "@/components/game/Chat";
 import { CopyFallback, useCopy } from "@/components/game/CopyText";
+import { LobbyWaitBox } from "@/components/game/chunks";
 import { SeatDot } from "@/components/game/SeatDot";
 import { useGame } from "@/lib/game/store";
 import type { Seat } from "@/lib/net/table";
@@ -179,6 +180,7 @@ export function Lobby() {
         <div data-testid="lobby-chat" className={cn("mt-2 flex flex-col rounded-[12px] border border-border bg-surface p-2", landscape ? "min-h-0 flex-1" : sheet ? "min-h-[16.5rem] shrink-0" : "min-h-0 flex-1")}>
           <ChatBox className="flex-1" rows={6} minRows={sheet ? 4 : landscape ? 0 : 1} dense={desk} />
         </div>
+        <LazyBoundary failed={null}><LobbyWaitBox /></LazyBoundary>
         </div>
         {/* #389: on a phone Ready/Start stay pinned to the bottom of the card; a fade above them says the rest scrolls. */}
         <div

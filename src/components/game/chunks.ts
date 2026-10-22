@@ -14,6 +14,9 @@ export const ChatControls = online.pick((m) => m.ChatControls);
 export const ChatDock = online.pick((m) => m.ChatDock);
 export const SeatBubbles = online.pick((m) => m.SeatBubbles);
 
+// #937: the lobby's "Play while you wait" box, a chunk of its own so the lobby's own chunk stays inside its growth allowance.
+export const LobbyWaitBox = chunk(() => import("@/components/game/LobbyWaitBox")).pick((m) => m.LobbyWaitBox);
+
 export const sheets = chunk(() => import("@/components/game/sheets"));
 export const CostCard = sheets.pick((m) => m.CostCard);
 export const FortuneTray = sheets.pick((m) => m.FortuneTray);

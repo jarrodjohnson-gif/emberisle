@@ -37,6 +37,8 @@ const CEILINGS = [
   { name: "HandRates", gzipBytes: 800 },
   // #832: the online-only timer ballot loads separately (2026-10-20; measured 1.20 kB).
   { name: "TurnExtensionVote", gzipBytes: 1400 },
+  // #937: the lobby's "Play while you wait" box (Ruffle itself is not a chunk: it is copied to dist/minigames/ and fetched on open).
+  { name: "LobbyWaitBox", gzipBytes: 2200 },
 ];
 
 // Growth allowance against the base, in gzip bytes. index is fixed at 400 B; the others take 0.33% of the base size, at least 200 B.
