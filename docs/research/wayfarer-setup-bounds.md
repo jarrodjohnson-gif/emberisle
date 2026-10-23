@@ -114,6 +114,8 @@ PLAYWRIGHT_BROWSERS_PATH=/path/to/installed/browsers node /tmp/wayfarer-native-b
 
 ## Follow-up boundary
 
+Backlog child #1059 records the bounded diagnostic work and waits for this research review plus the narrow reservation release. [Coordination question](https://github.com/jarrodjohnson-gif/emberisle/issues/539#issuecomment-6373038055) is open.
+
 Capture the original box, each existing predicate, viewport, button offset dimensions/active state, ancestor rectangles/transforms and animation states on the next native failure. Keep the original assertion exactly as it is. Without that sample, increasing waits, ignoring fractional sizes or changing runtime geometry would select a cause without evidence.
 
 The needed proof file remains reserved by #539. Coordinate that narrow diagnostic change before claiming it. Any later runtime child must identify the actual function and recheck #539's Hud/styles reservation, #936's Hud surroundings, #883's focus-trap changes and #706's separate styles hunks. No source overlap is authorized by this report. The chat fix #1056/#1057 is separate.
