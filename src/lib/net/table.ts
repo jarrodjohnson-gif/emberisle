@@ -73,7 +73,10 @@ export interface TurnExtensionState {
   result: { id: string; target: string; outcome: "passed" | "failed" | "cancelled" } | null;
 }
 
+export type ConnectionHealth = { status: "Reachable" | "Reconnecting" | "Offline"; rtt: number | null };
+
 export interface TableEvents {
+  health(value: ConnectionHealth): void;
   // A watcher's welcome (docs/design/spectator.md) has `spectator: true` and no `you`, `host` or `secret`. `proto` is the
   // host's wire protocol (G2): newer than PROTO means this page is out of date.
   // `holdMs`/`lobbyHoldMs`: how long the host holds this seat after a drop, in a game and in the lobby (G7).
@@ -207,6 +210,9 @@ const LOBBY_GIVE_UP_MS = 90 * 1000;
 // The last redial lands this long before the host lets the seat go, so the hold always outlasts the retries (G7, #528).
 const LAST_CALL_MS = 1000;
 
+// Both action IDs and health challenges use 128 random bits, including on plain-HTTP LAN joins.
+const randomNonce = () => crypto.getRandomValues(new Uint8Array(16)).reduce((hex, b) => hex + b.toString(16).padStart(2, "0"), "");
+
 // `giveUpMs` is only for proofs that cannot wait 10 minutes: it stands in for both holds until a welcome says otherwise.
 export function connectTable(url: string, on: Partial<TableEvents>, Socket?: SocketCtor, giveUpMs?: number): TableClient {
   const Ctor = Socket ?? (globalThis.WebSocket as unknown as SocketCtor);
@@ -232,6 +238,38 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
     extension = value;
     extensionListeners.forEach((listener) => listener());
   };
+  let healthTimer: ReturnType<typeof setTimeout> | undefined;
+  // Undefined until welcome (or after close), null while authenticated and idle, otherwise the outstanding nonce.
+  // lastProbe is its send time; another probe cannot start until it is cleared.
+  let probe: string | null | undefined;
+  let lastProbe = -Infinity;
+  let awaitingState = false;
+  const health = (status: ConnectionHealth["status"], rtt: number | null = null) => on.health?.({ status, rtt });
+  const stopHealth = () => {
+    clearTimeout(healthTimer);
+    healthTimer = undefined;
+    probe = undefined;
+  };
+  const probeHealth = () => {
+    // A repeated welcome must not cancel the timeout of a challenge already in flight.
+    if (probe !== null || closedByUs || ws.readyState !== 1) return;
+    clearTimeout(healthTimer);
+    const wait = 30_000 - (performance.now() - lastProbe);
+    if (wait > 0) {
+      healthTimer = setTimeout(probeHealth, wait);
+      return;
+    }
+    const nonce = randomNonce();
+    lastProbe = performance.now();
+    probe = nonce;
+    send({ type: "healthPing", nonce });
+    healthTimer = setTimeout(() => {
+      probe = null;
+      health("Reconnecting");
+      // Health never forces a seat drop. A real socket close owns recovery; setTimeout clamps an overdue wait to zero.
+      healthTimer = setTimeout(probeHealth, 30_000 - (performance.now() - lastProbe));
+    }, 3000);
+  };
 
   const send = (msg: Record<string, unknown>) => {
     const raw = JSON.stringify(msg);
@@ -243,12 +281,14 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
   const act = (msg: Record<string, unknown>) => {
     if (!stamp || ws.readyState !== 1 || rejoining || closedByUs) return false;
     // getRandomValues also works on the documented plain-HTTP LAN join; randomUUID requires HTTPS.
-    const cid = Array.from(globalThis.crypto.getRandomValues(new Uint8Array(16)), (b) => b.toString(16).padStart(2, "0")).join("");
+    const cid = randomNonce();
     ws.send(JSON.stringify({ ...msg, ...stamp, cid }));
     return true;
   };
 
   const giveUp = (keepSeat = false) => {
+    stopHealth();
+    health("Offline");
     closedByUs = true;
     seat = null;
     rejoining = false;
@@ -274,8 +314,10 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
       if (sock !== ws) return;
       stamp = null;
       setExtension(null);
+      stopHealth();
       if (closedByUs) return;
       if (!seat) {
+        health("Offline");
         on.closed?.();
         return;
       }
@@ -287,6 +329,7 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
         return;
       }
       attempt += 1;
+      health("Reconnecting");
       on.reconnecting?.(attempt);
       timer = setTimeout(dial, Math.min(BACKOFF_MS[Math.min(attempt, BACKOFF_MS.length) - 1]!, left));
     };
@@ -304,11 +347,25 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
 
   const handle = (msg: { type?: string; [k: string]: unknown }) => {
     switch (msg.type) {
+      case "healthPong": {
+        if (!probe || msg.nonce !== probe) break;
+        const elapsed = performance.now() - lastProbe;
+        if (elapsed < 0 || elapsed >= 3000) break;
+        clearTimeout(healthTimer);
+        probe = null;
+        if (!awaitingState) health("Reachable", Math.round(elapsed));
+        healthTimer = setTimeout(probeHealth, 30_000 - (performance.now() - lastProbe));
+        break;
+      }
       case "welcome": {
         stamp = null;
         const m = msg as { proto?: number; code: string; you?: string; host?: boolean; chat?: ChatLine[]; secret?: string; spectator?: true; holdMs?: number; lobbyHoldMs?: number; victoryTarget?: VictoryTarget; wayfarerMode?: WayfarerMode };
         if (typeof m.secret === "string") seat = { code: m.code, secret: m.secret };
         if (typeof m.holdMs === "number" && typeof m.lobbyHoldMs === "number") hold = { game: m.holdMs, lobby: m.lobbyHoldMs };
+        awaitingState = rejoining && inGame;
+        probe ??= null;
+        if (!awaitingState) health("Reachable");
+        probeHealth();
         rejoining = false;
         taken = false;
         attempt = 0;
@@ -326,6 +383,7 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
         stamp = (msg as { actionStamp?: ActionStamp }).actionStamp ?? null;
         inGame = true;
         on.state?.(msg as never);
+        if (awaitingState) { awaitingState = false; health("Reachable"); }
         break;
       case "rolled":
         on.rolled?.(msg as never);
@@ -417,6 +475,7 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
       dial();
     },
     close: () => {
+      stopHealth();
       stamp = null;
       setExtension(null);
       closedByUs = true;

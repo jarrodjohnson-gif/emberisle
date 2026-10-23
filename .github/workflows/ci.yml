@@ -248,6 +248,8 @@ jobs:
         run: npm run practice-trade-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a1'
         run: npm run hud-safe-area-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a1'
+        run: npm run connection-health-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
         run: npm run first-game-coach-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a2'

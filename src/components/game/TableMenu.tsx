@@ -6,9 +6,11 @@
 import { useEffect, useRef, useState } from "react";
 import { BookOpen, Box, Copy, Ellipsis, Eye, Hammer, LogOut, ScrollText, Volume2, VolumeX, Waves } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ConnectionOverlay } from "@/components/game/chunks";
 import { CopyFallback, useCopy } from "@/components/game/CopyText";
 import { useGame } from "@/lib/game/store";
 import { play, setMusicOn, setMuted, useMuted, useMusicOn } from "@/lib/sound";
+import { LazyBoundary } from "@/lib/lazy";
 
 const ROW = "h-11 w-full justify-start px-3 text-body";
 const ICON = "size-4 shrink-0 text-muted";
@@ -98,6 +100,7 @@ export function TableMenu() {
 
   return (
     <div className="relative">
+      {mode === "online" ? <LazyBoundary failed={null}><ConnectionOverlay /></LazyBoundary> : null}
       <Button
         ref={trigger}
         variant="ghost"
