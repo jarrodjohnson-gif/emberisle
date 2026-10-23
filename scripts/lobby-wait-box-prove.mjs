@@ -2,8 +2,8 @@
 // 1. Closed and muted by default, and only in the online lobby: nothing under /minigames/ is requested and there is no Ruffle until it opens.
 // 2. Opening loads exactly one ruffle-player (Ruffle's script and wasm and the SWF, all self-hosted), on a 580:320 stage.
 // 3. The held Left and Right buttons fire ArrowLeft/ArrowRight keydown at the player and keyup on release, and the stage changes.
-// 4. Keyboard isolation: arrows are default-prevented only while focus is inside the box, and still reach the window (nothing
-//    stops propagation, which would starve Ruffle); the lobby card does not scroll.
+// 4. Keyboard isolation: arrows and Space are default-prevented only while focus is on the ruffle-player; Space on the toggle
+//    opens the box and Space on the Sound checkbox ticks it. Events still reach the window (nothing stops propagation).
 // 5. Closing the box, leaving the lobby and starting the game each leave zero ruffle-player elements; Start is not delayed.
 // 6. No console errors, no failed requests.
 import { spawn } from "node:child_process";
@@ -95,6 +95,14 @@ try {
   check(minigameRequests().length === 0, "lobby: nothing under /minigames/ was requested while the box is closed");
   check((await players()) === 0 && (await page.evaluate(() => !window.RufflePlayer && !document.querySelector('script[src*="ruffle"]'))), "lobby: no ruffle-player and no Ruffle script while closed");
 
+  // 1b. Space on the toggle opens the box.
+  await toggle.focus();
+  await page.keyboard.press("Space");
+  check((await toggle.getAttribute("aria-expanded")) === "true", "keys: Space on the toggle opens the box");
+  await toggle.focus();
+  await page.keyboard.press("Space");
+  check((await toggle.getAttribute("aria-expanded")) === "false" && (await page.getByTestId("lobby-wait-box-stage").count()) === 0, "keys: Space on the toggle closes the box");
+
   // 2. Open.
   await openBox();
   check((await players()) === 1, "open: exactly one ruffle-player");
@@ -132,7 +140,7 @@ try {
   check((await page.evaluate(() => window.__keys)).at(-1) === "keyup:ArrowRight", "buttons: releasing Right fires ArrowRight keyup");
   check((await shot()) !== before, "buttons: after PLAY the stage keeps changing: the game is running");
 
-  // 4. Keyboard isolation.
+  // 4. Keyboard isolation: only the ruffle-player's arrows and Space are prevented.
   const card = page.getByTestId("lobby-card").locator("> div").first();
   await page.evaluate(() => {
     window.__seen = [];
@@ -142,7 +150,7 @@ try {
   const scrollBefore = await card.evaluate((el) => el.scrollTop);
   for (const k of ["ArrowLeft", "ArrowRight", "ArrowDown"]) await page.keyboard.press(k);
   const inside = await page.evaluate(() => window.__seen.splice(0));
-  check(inside.length === 3 && inside.every((e) => e.prevented), "keys: arrows with focus in the box reach the window (not stopped) and are default-prevented, so the card does not scroll");
+  check(inside.length === 3 && inside.every((e) => e.prevented), "keys: arrows with focus on the ruffle-player are default-prevented");
   check((await card.evaluate((el) => el.scrollTop)) === scrollBefore, "keys: the lobby card did not scroll");
   await page.evaluate(() => document.activeElement?.blur());
   await page.getByTestId("table-code").click();
@@ -150,6 +158,15 @@ try {
   await page.keyboard.press("ArrowLeft");
   const outside = await page.evaluate(() => window.__seen.splice(0));
   check(outside.length === 2 && outside.every((e) => !e.prevented), "keys: with focus outside the box the box does not touch the arrows");
+
+  // 4b. Space on the Sound checkbox ticks it.
+  const soundBox = page.getByTestId("lobby-wait-sound");
+  check((await soundBox.isChecked()) === false, "keys: Sound is unchecked before the Space test");
+  await soundBox.focus();
+  await page.keyboard.press("Space");
+  check((await soundBox.isChecked()) === true, "keys: Space on the Sound checkbox ticks it");
+  await page.keyboard.press("Space");
+  check((await soundBox.isChecked()) === false, "keys: second Space unticks the Sound checkbox");
 
   // 5a. Closing unloads.
   await toggle.click();
