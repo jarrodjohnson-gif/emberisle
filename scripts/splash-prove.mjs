@@ -59,7 +59,8 @@ async function open(width, height, touch, water) {
       const request = () => {
         if (window.__want?.res !== res) return;
         isle.wake();
-        requestAnimationFrame(request);
+        isle.tick();
+        if (window.__want?.res === res) requestAnimationFrame(request);
       };
       request();
     });
