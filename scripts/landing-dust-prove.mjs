@@ -351,7 +351,7 @@ async function runMotionSuite(page, label) {
     const l1 = isle.landings.find((l) => l.obj.userData.key === key);
     const sameStart = l1?.start === start;
     const newMesh = l1 && l1.obj !== l0.obj;
-    isle.stepLandings(start + 400, false);
+    isle.stepLandings(start + 350, false);
     return {
       sameStart,
       newMesh,
