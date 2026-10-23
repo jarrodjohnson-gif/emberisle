@@ -1311,7 +1311,8 @@ export class IsleRenderer {
     this.oceanLife.step(dt, true, this.oceanViewport, swell ? (x, z) => swell(x, z, t).y : undefined);
     this.foam.material.opacity = 0.32 + 0.23 * (0.5 + 0.5 * Math.sin(t * 0.8));
     this.jellyT = t;
-    this.jelly?.update(t);
+    // Title and lobby show a demo island: hold board-age stories (the ore climber) at 0 until play (#966).
+    this.jelly?.update(t, false, false, this.titleMode);
     this.shore?.update(t);
     if (this.walk) {
       const w = this.walk;
