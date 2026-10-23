@@ -170,8 +170,10 @@ async function slowOceanFrame(page, tag) {
   assert.equal(fence.pending, 0, `${tag}: busy motion waits for a pending GPU fence`);
   assert.ok(fence.ready > 0, `${tag}: busy motion draws once the GPU fence is ready`);
   const slow = await page.evaluate(() => {
-    const isle = window.__isle, life = isle.oceanLife, delta = isle.clock.getDelta, busy = isle.busyUntil;
+    const isle = window.__isle, life = isle.oceanLife, delta = isle.clock.getDelta, busy = isle.busyUntil, behind = isle.gpuBehind;
     try {
+      // Fence readiness is tested above; these controlled frames isolate elapsed-time wiring.
+      isle.gpuBehind = () => false;
       life.reset("splash-frame-clock");
       const fish = life.fishAt()[0];
       life.scatter(fish.x, fish.z);
@@ -179,7 +181,6 @@ async function slowOceanFrame(page, tag) {
       isle.clock.getDelta = () => 4.25;
       isle.lastFrame = -Infinity;
       isle.busyUntil = performance.now() + 1000;
-      isle.renderer.getContext().finish();
       isle.tick();
       const ages = ids.map((i) => life.fishFlee[i]?.age ?? 0), posed = life.fishAt();
       life.fishFlee.fill(null);
@@ -192,17 +193,16 @@ async function slowOceanFrame(page, tag) {
       isle.splashAt(recent.x, recent.z, 1);
       const recentIds = life.fishFlee.flatMap((f, i) => f ? [i] : []);
       isle.busyUntil = performance.now() + 1000;
-      isle.renderer.getContext().finish();
       isle.tick();
       const recentAges = recentIds.map((i) => life.fishFlee[i]?.age ?? -1);
       isle.lastFrame = -Infinity;
       isle.busyUntil = performance.now() + 1000;
-      isle.renderer.getContext().finish();
       isle.tick();
       const laterAges = recentIds.map((i) => life.fishFlee[i]?.age ?? -1);
       return { elapsed, ages, error, recentAges, laterAges };
     } finally {
       isle.clock.getDelta = delta;
+      isle.gpuBehind = behind;
       isle.busyUntil = busy;
       life.reset("splash-frame-clock-done");
       for (const slot of isle.splash.uniforms.uSplash.value) slot.w = 0;
