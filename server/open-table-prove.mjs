@@ -10,6 +10,9 @@ import { mkdtempSync, readFileSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import WebSocket from "ws";
+import { createGame } from "../src/lib/game/board.ts";
+import { chooseBotAction } from "../src/lib/game/ai.ts";
+import { applyAction, totalVP } from "../src/lib/game/rules.ts";
 import { getOpenTables, maybeReleaseOpenSlot, registerOpenTable, unregisterOpenTable } from "./open-table.mjs";
 
 // A connected finished table must release its slot; an unrelated drop cannot remove its successor.
@@ -320,6 +323,55 @@ let openCode;
     observer.ws.terminate();
   }
   console.log("restart: open visibility persists through kill -9 and rejoin; private, missing and invalid visibility stay hidden");
+}
+
+// 10. Rejoin can finish a game through conservative recovery, while its reader stays connected.
+{
+  const stop = async () => {
+    const exited = new Promise((resolve) => host.once("exit", resolve));
+    host.kill("SIGKILL");
+    await exited;
+  };
+  await stop();
+  let game = createGame({ humans: [{ name: "Ember" }, { name: "Tide" }, { name: "Pine" }], bots: 0, seed: 55 });
+  for (let i = 0; i < 40 && game.phase !== "roll"; i++) {
+    const result = applyAction(game, game.current, chooseBotAction(game, game.current));
+    assert.ifError(result.error);
+    game = result.state;
+  }
+  assert.equal(game.phase, "roll", "recovery fixture completes real engine setup");
+  game.phase = "main";
+  game.current = "p0";
+  // Off-turn points are checked as the next turn starts (rules.ts endTurn).
+  const winner = game.players.find((p) => p.id === "p1");
+  winner.hidden.vp = game.victoryTarget - totalVP(game, "p1");
+  assert.equal(totalVP(game, "p1"), game.victoryTarget);
+  game.players[0].kind = "bot";
+  const terminal = applyAction(game, "p0", { type: "endTurn" });
+  assert.ifError(terminal.error);
+  assert.equal(terminal.state.phase, "over");
+  assert.equal(terminal.state.winner, "p1");
+  assert.equal(terminal.state.winReason.trigger, "turnStart");
+  const seats = game.players.map((p, i) => ({ id: `s${i}`, name: p.name, color: p.color, ready: true, pid: p.id, secret: `recovery-${p.id}` }));
+  writeFileSync(path.join(ROOMS_DIR, "RCVR.json"), JSON.stringify({
+    code: "RCVR", host: "s1", next: 3, visibility: "open", recoveryPids: ["p0"],
+    chat: [], chatSeq: 0, game, seats, shape: 2, savedAt: Date.now(),
+  }));
+  const recoveryPort = await boot();
+  const returning = client(recoveryPort, "recovery-winner");
+  await returning.open;
+  returning.send({ type: "hello", code: "RCVR", secret: "recovery-p1" });
+  await returning.next("welcome");
+  const state = await returning.next("state");
+  assert.equal(state.game.phase, "over", "rejoin publishes the recovery win");
+  assert.equal(state.game.winner, "p1");
+  assert.equal(returning.ws.readyState, WebSocket.OPEN, "winner remains connected during discovery check");
+  const observer = client(recoveryPort, "terminal-observer");
+  await observer.open;
+  observer.send({ type: "list" });
+  assert.deepEqual((await observer.next("openTables")).tables, [], "terminal recovery releases the slot even with its winner connected");
+  assert.deepEqual(await (await fetch(`http://127.0.0.1:${recoveryPort}/tables`)).json(), [], "HTTP discovery also omits the terminal recovery table");
+  console.log("recovery: authenticated rejoin finishes at turn start and releases discovery while the winner stays connected");
 }
 
 console.log("open-table-prove ok: list empty, private never listed, open listed, join via code, parallel private hidden, handoff, bots count, rate limit, cleanup on drop");
