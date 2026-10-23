@@ -196,12 +196,14 @@ async function slowOceanFrame(page, tag) {
   // A reduced-motion pause is not a slow visible frame. Capture the first enabled step on a real preference change.
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.waitForFunction(() => window.__isle.wasCalm && window.__isle.busyUntil < performance.now());
-  await page.evaluate(() => {
-    void window.__grab("delayed-calm");
-    const until = performance.now() + 1100;
-    while (performance.now() < until) { /* delay the next frame past the one-second wake hold */ }
-  });
-  await page.waitForFunction(() => window.__shots["delayed-calm"]?.data.length > 0, null, { timeout: 15_000 });
+  await Promise.all([
+    page.waitForFunction(() => window.__shots["delayed-calm"]?.data.length > 0, null, { timeout: 15_000 }),
+    page.evaluate(() => {
+      void window.__grab("delayed-calm");
+      const until = performance.now() + 1100;
+      while (performance.now() < until) { /* delay the next frame past the one-second wake hold */ }
+    }),
+  ]);
   assert.ok(await page.evaluate(() => !window.__want), `${tag}: a delayed calm frame still fulfills its snapshot request`);
   await page.evaluate(() => {
     const isle = window.__isle, life = isle.oceanLife, delta = isle.clock.getDelta, step = life.step;
