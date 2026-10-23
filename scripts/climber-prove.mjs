@@ -50,6 +50,26 @@ const climberAt = () =>
   });
 
 let page;
+const screenshotAge = async (age, viewport) => {
+  await page.evaluate((age) => {
+    const isle = window.__isle;
+    isle.renderer.setAnimationLoop(null);
+    isle.jellyBoard.setAge(age);
+    isle.draw();
+    isle.renderer.getContext().finish();
+  }, age);
+  try {
+    const actual = await climberAt();
+    check(`screenshot ${viewport}: rendered age ${age}`, actual && actual.age === age && actual.envAge === age, actual);
+    await page.screenshot({ path: `${outDir}/play-age${age}-${viewport}.png` });
+  } finally {
+    await page.evaluate(() => {
+      const isle = window.__isle;
+      isle.renderer.setAnimationLoop(isle.tick);
+      isle.wake();
+    });
+  }
+};
 try {
   // --- Title: age stays 0 even as the renderer clock runs ---
   {
@@ -89,6 +109,11 @@ try {
     // Let a live play frame start t0, then sample via setAge (desk: fixed ages, not wall waits).
     await page.waitForFunction(() => window.__isle.jellyBoard.age() >= 0 && !window.__isle.titleMode);
     await page.waitForTimeout(200);
+    const liveStart = await climberAt();
+    await page.waitForTimeout(21_000);
+    const liveLater = await climberAt();
+    check("first game: natural clock advances over at least 20s", liveStart && liveLater && liveLater.age - liveStart.age >= 20, { liveStart, liveLater });
+    check("first game: climber naturally leaves the foot and moves up the flank", liveStart && liveLater && liveLater.y > liveStart.y + 0.05 && liveLater.dist < liveStart.dist - 0.05, { liveStart, liveLater });
 
     const samples = await page.evaluate(() => {
       const jelly = window.__isle.jellyBoard;
@@ -134,10 +159,8 @@ try {
     // If the seeded story reaches the top by 160s without a late fall, he sits.
     if (late.sit) check("age 160: on the summit when seated", late.dist < 0.05, late);
 
-    await page.evaluate(() => window.__isle.jellyBoard.setAge(4));
-    await page.screenshot({ path: `${outDir}/play-age4-1280x720.png` });
-    await page.evaluate(() => window.__isle.jellyBoard.setAge(160));
-    await page.screenshot({ path: `${outDir}/play-age160-1280x720.png` });
+    await screenshotAge(4, "1280x720");
+    await screenshotAge(160, "1280x720");
 
     // Rematch / new deal: a fresh island, climber story restarts at age 0.
     const previousBoard = await page.evaluateHandle(() => window.__isle.jellyBoard);
@@ -180,10 +203,8 @@ try {
     await page.goto(`http://127.0.0.1:${port}/`);
     await page.getByRole("button", { name: "Four seats, one table", exact: true }).click();
     await page.waitForFunction(() => window.__isle?.landReady && window.__isle.jellyBoard && !window.__isle.titleMode, null, { timeout: 180_000 });
-    await page.evaluate(() => window.__isle.jellyBoard.setAge(4));
-    await page.screenshot({ path: `${outDir}/play-age4-390x844.png` });
-    await page.evaluate(() => window.__isle.jellyBoard.setAge(160));
-    await page.screenshot({ path: `${outDir}/play-age160-390x844.png` });
+    await screenshotAge(4, "390x844");
+    await screenshotAge(160, "390x844");
     await ctx.close();
   }
 
