@@ -343,6 +343,8 @@ try {
     assert.ok(twin.lift > 0.015, `${tag}: and rebounds above the swell (${twin.lift.toFixed(3)})`);
     assert.ok(twin.radii[0] < twin.radii[1] && twin.radii[1] < twin.radii[2] && twin.radii[2] - twin.radii[0] > 0.5, `${tag}: the rings expand over the next second (${twin.radii.map((r) => r.toFixed(2))})`);
     assert.ok(twin.twinDelta < -0.04, `${tag}: makeSwell (the boats' sea) carries the splash (${twin.twinDelta.toFixed(3)})`);
+    // Drain the real frame's GPU work before starting the observation deadline; queued SwiftShader work can block polling.
+    await page.evaluate(() => window.__grab("elapsed"));
     // The GPU clock runs it: the loop holds full rate for its life, so the drawn age passes 1 s.
     await page.waitForFunction((t0) => window.__isle.splash.uniforms.uSplashNow.value - t0 > 1, made.t0, { timeout: 15_000 });
     console.log(`${tag}: open water splashes on pointerdown; twin dips ${twin.dip.toFixed(3)}, lifts ${twin.lift.toFixed(3)}, rings at ${twin.radii.map((r) => r.toFixed(2)).join(" / ")} after 0.3 / 0.6 / 0.9 s`);
