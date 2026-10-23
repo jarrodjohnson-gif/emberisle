@@ -6,6 +6,7 @@ The review desk adds a line whenever Jarrod decides something.
 
 | Date | Decision | Where |
 |---|---|---|
+| 2026-10-23 | The repo can be flipped public or private by a manual workflow (`.github/workflows/visibility.yml`), so the review desk can trigger it on the owner's command. Its token lives in the `visibility` Environment, which has the owner as a required reviewer and deployment branches limited to `main`; no run is automatic, because going public cannot be undone. The workflow runs only on a GitHub-hosted runner. | Jarrod, in chat; [#1041](https://github.com/jarrodjohnson-gif/emberisle/issues/1041) |
 | 2026-10-21 | The leftover GitHub App is removed: it is off the `main` ruleset's bypass list (only Repository admin remains, checked live), and Jarrod deleted the app, its secrets and its key. | Jarrod, in chat |
 | 2026-10-21 | Rejected from the S-tier review: rebalancing the browser shards and skipping the Playwright install. The log data did not support either. | Jarrod, in chat; [`docs/research/s-tier-setup-review-2026-10-21.md`](research/s-tier-setup-review-2026-10-21.md) |
 | 2026-10-21 | (Superseded: auto-merge was dropped later on 2026-10-21.) Auto-merge phase 1 was docs only (narrows the 2026-10-20 "docs and test-only" call). Test-only waits for loosen-prove (#924). | Jarrod approved Fable's design ("proceed with Fable recs"); [#923](https://github.com/jarrodjohnson-gif/emberisle/issues/923) |
