@@ -118,7 +118,7 @@ function Title() {
   const setHowTo = useGame((s) => s.setHowTo);
   const howTo = useGame((s) => s.howTo);
   const [join, setJoin] = useState("");
-  const [openMode, setOpenMode] = useState<"private" | "open">("private");
+  const [openMode, setOpenMode] = useState(false);
   const hostTable = useGame((s) => s.hostTable);
   const joinTable = useGame((s) => s.joinTable);
   const watchTable = useGame((s) => s.watchTable);
@@ -258,7 +258,7 @@ function Title() {
                   size="lg"
                   variant="secondary"
                   className="min-w-0 flex-1 rounded-none border-0 px-3"
-                  onClick={() => hostTable(openMode)}
+                  onClick={() => hostTable(openMode ? "open" : "private")}
                 >
                   Host a table
                 </Button>
@@ -266,13 +266,13 @@ function Title() {
                   size="sm"
                   variant="ghost"
                   className="w-11 rounded-none border-0 border-l border-control-line px-0"
-                  aria-pressed={openMode === "open"}
-                  title={openMode === "open" ? "Anyone can join" : "Code needed"}
-                  aria-label={openMode === "open" ? "Open to anyone" : "Private, code needed"}
+                  aria-pressed={openMode}
+                  title={openMode ? "Anyone can join" : "Code needed"}
+                  aria-label={openMode ? "Open to anyone" : "Private, code needed"}
                   data-testid="open-mode-toggle"
-                  onClick={() => setOpenMode((m) => (m === "open" ? "private" : "open"))}
+                  onClick={() => setOpenMode((m) => !m)}
                 >
-                  {openMode === "open" ? <Globe size={16} aria-hidden="true" /> : <Lock size={16} aria-hidden="true" />}
+                  {openMode ? <Globe size={16} aria-hidden="true" /> : <Lock size={16} aria-hidden="true" />}
                 </Button>
               </div>
               <form
