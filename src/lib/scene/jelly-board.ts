@@ -16,8 +16,7 @@ import { BLOCK_H } from "@/lib/scene/jelly-dims";
 // - the wayfarer's dulling.
 // The sprites (glows, fog and steam puffs) are camera-facing quads in two instanced draws, one added, one blended.
 
-// Per-hex variety (#639): one tile per terrain kind, each hex turned by a multiple of 60° from an even seeded shuffle.
-// Only rotations that keep the hill crest behind the eye (+z) are allowed, so tall scenery never hides a token.
+// Per-hex variety (#639): one tile per terrain kind, each hex turned by a safe multiple of 60° (hill stays behind the eye).
 // The board's lattice: a hex fills about a fifth of the screen, where 12 rings are as smooth as the studio's 64.
 const RINGS = 12;
 // Times the scenes are sampled at to find what moves: anything whose matrix, visibility, instances or material changes.
@@ -412,8 +411,7 @@ export class JellyBoard {
       const kindHexes = hexes.filter((h) => h.terrain === kind);
       const r = rng32(seedOf(kind));
       const ha = tile.layout.hillAt;
-      const safe = [0, 1, 2, 3, 4, 5].filter(s => Math.sin(ha + s * Math.PI / 3) < -0.25);
-      const pool = safe.length >= 2 ? safe : [0, 1, 2, 3, 4, 5].filter(s => Math.sin(ha + s * Math.PI / 3) < 0);
+      const pool = [0, 1, 2, 3, 4, 5].filter(s => Math.sin(ha + s * Math.PI / 3) < -0.25);
       const rots = kindHexes.map((_, i) => pool[i % pool.length]!);
       for (let i = rots.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [rots[i], rots[j]] = [rots[j]!, rots[i]!]; }
       const hx = kindHexes.map((h, i): Hx => {
