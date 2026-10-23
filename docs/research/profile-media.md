@@ -3,7 +3,7 @@
 Research checkpoint for #768, based on main `30737a5c81f194b1c6235c1409555ee8e6cb19bd`, 2026-10-23.
 Builder: Codex-open-table-833 (GPT-6.1 Sol), with same-model read-only source tracing.
 
-**Unvalidated checkpoint:** the execution environment became unavailable during corrections and final fresh-clone reference checks (`exec-server transport closed`). This report was preserved through GitHub access; fresh-clone link, source-reference, scope and whitespace checks remain unrun on this checkpoint. No runtime, audio, browser, host, listening or iPhone validation is claimed.
+**Source validation:** execution access returned after the checkpoint outage. A fresh remote clone passed all 47 local references, heading fragments and line bounds. Source excerpts and attached child contracts were checked against the audited main. The diff contains this document alone, and `git diff --check` passes. These are documentation checks. No runtime, audio, browser, host, listening or iPhone validation is claimed.
 
 The category mixer exists. Profile song selection, verified custom bindings, profile arrivals, authoritative outcome playback and an exclusive long-clip owner do not exist on the audited main. The next bounded leaves are [#1043](https://github.com/jarrodjohnson-gif/emberisle/issues/1043), [#1044](https://github.com/jarrodjohnson-gif/emberisle/issues/1044) and [#1045](https://github.com/jarrodjohnson-gif/emberisle/issues/1045). They are Backlog, reserve no runtime files and remain blocked by their stated dependencies and the decisions below.
 
@@ -68,4 +68,4 @@ Implementation leaves require registered real-module audio stubs and real-host c
 
 Stubs cannot establish iPhone autoplay, audible level, clipping, overlap or hide/resume behavior. Release also needs a real iPhone gesture/playback run for selected/default outcomes, present watchers, mute/Skip/hide and rapid rematch, and listening to the actual approved assets. None was performed for this report.
 
-Same-model source verification caught and corrected two distinctions preserved in this checkpoint: custom-win explicit selection does not establish a personal-loss selector, and terminal closure cancellation does not cover transient reconnects. Fresh-clone reference/anchor/scope/whitespace validation is still required before this draft is ready. No runtime validation is claimed.
+Same-model source verification caught and corrected two distinctions preserved in this checkpoint: custom-win explicit selection does not establish a personal-loss selector, and terminal closure cancellation does not cover transient reconnects. Fresh-clone reference, anchor, scope and whitespace validation passed. Child issues #1043–#1045 exist under #768 with status, lane, tier and priority labels. Their stated dependencies remain open, and the source questions remain unresolved. No runtime validation is claimed.
