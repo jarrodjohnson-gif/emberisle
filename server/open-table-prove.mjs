@@ -354,6 +354,11 @@ let openCode;
   }
   winner.hidden.vp = game.victoryTarget - totalVP(game, "p1");
   assert.equal(winner.hidden.vp, 3, "fixture uses three points fortunes and two strongholds");
+  for (let i = 0; i < winner.hidden.vp; i++) {
+    const card = game.deck.indexOf("vp");
+    assert.ok(card >= 0, "points fortune comes from the real deck");
+    game.deck.splice(card, 1);
+  }
   assert.equal(totalVP(game, "p1"), game.victoryTarget);
   game.players[0].kind = "bot";
   const terminal = applyAction(game, "p0", { type: "endTurn" });
