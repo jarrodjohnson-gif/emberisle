@@ -72,7 +72,7 @@ jobs:
 
   build:
     needs: changes
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '"ubuntu-latest"') }}
     timeout-minutes: 15
     steps:
       - if: needs.changes.outputs.docs_only != 'true'
@@ -122,7 +122,7 @@ jobs:
 
   server:
     needs: changes
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '"ubuntu-latest"') }}
     # dice-prove's sampling took 99 s on CI (#926, a349dbf); the whole job took under 6 minutes.
     timeout-minutes: 15
     steps:
@@ -196,7 +196,7 @@ jobs:
   browser-a-suites:
     name: browser-a (${{ matrix.suite }})
     needs: changes
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '"ubuntu-latest"') }}
     # The browser jobs run about 19-20 minutes on a busy runner; 20 cancelled them mid-proof.
     timeout-minutes: 30
     strategy:
@@ -224,7 +224,7 @@ jobs:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
       - if: needs.changes.outputs.docs_only != 'true'
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install ${{ runner.os == 'Linux' && '--with-deps' || '' }} chromium
       # Give a new proof one suite's condition (the shortest: a3, then a1); without one it runs in all three.
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a1'
         run: npm run client-prove
@@ -284,7 +284,7 @@ jobs:
 
   browser-b:
     needs: [changes, build]
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '"ubuntu-latest"') }}
     timeout-minutes: 30
     strategy:
       fail-fast: false
@@ -311,7 +311,7 @@ jobs:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
       - if: needs.changes.outputs.docs_only != 'true'
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install ${{ runner.os == 'Linux' && '--with-deps' || '' }} chromium
       - if: needs.changes.outputs.docs_only != 'true'
         uses: actions/download-artifact@v4
         with:

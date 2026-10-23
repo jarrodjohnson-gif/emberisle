@@ -6,6 +6,7 @@ The review desk adds a line whenever Jarrod decides something.
 
 | Date | Decision | Where |
 |---|---|---|
+| 2026-10-23 | The heavy CI jobs (`build`, `server`, `browser-a-suites`, `browser-b`) may run on the owner's self-hosted Mac runners, chosen by the repository variable `CI_RUNS_ON` (unset = GitHub-hosted `ubuntu-latest`). This is private-repo only: the runner executes PR code on the owner's computer, so fork-PR workflows stay disabled for it and it is not used if the repo goes public. `changes`, `loosen`, `browser-a` and `checks` stay on GitHub-hosted runners so the required checks always report. Reason: the free 3,000 Actions minutes a month were nearly spent. | Jarrod, in chat; [#1039](https://github.com/jarrodjohnson-gif/emberisle/issues/1039) |
 | 2026-10-21 | The leftover GitHub App is removed: it is off the `main` ruleset's bypass list (only Repository admin remains, checked live), and Jarrod deleted the app, its secrets and its key. | Jarrod, in chat |
 | 2026-10-21 | Rejected from the S-tier review: rebalancing the browser shards and skipping the Playwright install. The log data did not support either. | Jarrod, in chat; [`docs/research/s-tier-setup-review-2026-10-21.md`](research/s-tier-setup-review-2026-10-21.md) |
 | 2026-10-21 | (Superseded: auto-merge was dropped later on 2026-10-21.) Auto-merge phase 1 was docs only (narrows the 2026-10-20 "docs and test-only" call). Test-only waits for loosen-prove (#924). | Jarrod approved Fable's design ("proceed with Fable recs"); [#923](https://github.com/jarrodjohnson-gif/emberisle/issues/923) |
