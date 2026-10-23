@@ -192,6 +192,9 @@ jobs:
             echo "The base $BASE_SHA has no scripts/loosen-prove.mjs yet, so this runs the PR's copy."
             node scripts/loosen-prove.mjs --base "$BASE_SHA"
           fi
+          # #947: exercise the proposed guard and its self-tests too; the base check above still judges this PR.
+          echo "Testing the PR's guard copy in the same advisory job."
+          node scripts/loosen-prove.mjs --base "$BASE_SHA"
 
   browser-a-suites:
     name: browser-a (${{ matrix.suite }})
