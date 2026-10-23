@@ -88,7 +88,9 @@ try {
   check("native refill observation has a nonzero, bounded timing window", lower >= 1 && upper < 10 && upper - lower <= 1);
   check("an exhausted connection recovers at one token per native second", accepted >= lower && accepted <= upper);
   check("refill does not reset the connection to a fresh burst", accepted < 10);
-  check("remaining recovery requests are explicitly throttled", recovery.replies.every((r) => hello(r) || slow(r)) && recovery.replies.slice(accepted).every(slow));
+  // A native refill may arrive between two requests; successes need not be a contiguous prefix.
+  check("remaining recovery requests are explicitly throttled", recovery.replies.every((r) => hello(r) || slow(r)) && recovery.replies.filter(slow).length === 11 - accepted);
+  check("recovery replies preserve all original request ids", recovery.replies.every((r, i) => r.id === i + 12));
   check("rate errors leave the original connection usable", hello(recovery.replies[0]));
   check("the host reports no request errors", stderr === "");
   console.log(`profile-socket-rate-prove: ${passed} checks passed`);
