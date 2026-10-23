@@ -169,6 +169,23 @@ check("a mismatched PIN confirmation is invalid", isErr(await (await client(h, t
 check("a bad login shape is invalid", isErr(await (await client(h, tunnel())).req(fields("-no-", "1111")), "invalid"));
 check("a colour off the palette is invalid", isErr(await (await client(h, tunnel())).req(fields("ash", "1111", { color: "#000000" })), "invalid"));
 
+// Text caps count characters, including those outside the BMP; UTF-16 clipping must not halve these limits.
+for (const [label, extra] of [["exact", 0], ["clipped", 1]]) {
+  const login = `unicode-${label}`;
+  const reply = await (await client(h, tunnel())).req(fields(login, "4821", {
+    displayName: ` \u0007${"𠮷".repeat(16 + extra)}\u200b `,
+    catchphrase: ` \u0000${"🚀".repeat(80 + extra)}\u200b `,
+  }));
+  check(`${label} Unicode text creates a profile`, reply.type === "profileSession");
+  check(`${label} display name preserves sixteen complete characters`, reply.profile.displayName === "𠮷".repeat(16));
+  check(`${label} catchphrase preserves eighty complete characters`, reply.profile.catchphrase === "🚀".repeat(80));
+  const stored = byLogin(store(), login);
+  check(`${label} cleaned text is durable`, stored.displayName === reply.profile.displayName && stored.catchphrase === reply.profile.catchphrase);
+}
+const beforeEmptyName = readFileSync(STORE, "utf8");
+check("control-only display name cannot create a profile", isErr(await (await client(h, tunnel())).req(fields("empty-name", "4821", { displayName: " \u0007\u200b\n " })), "invalid"));
+check("rejected empty name leaves the private file unchanged", readFileSync(STORE, "utf8") === beforeEmptyName);
+
 // Two devices race for one login; a third spells it differently.
 const racers = await Promise.all([1, 2, 3].map(() => client(h, tunnel())));
 const race = await Promise.all([racers[0].req(fields("tide", "1357")), racers[1].req(fields("tide", "2468")), racers[2].req(fields("tide", "9999", { login: " TIDE " }))]);
