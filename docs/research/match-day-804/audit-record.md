@@ -1,12 +1,20 @@
 # Match-day audit evidence
 
+## Current-main recapture, 2026-10-23
+
+The fresh [current-main report](current-main-307/README.md) records 56 PNGs on
+`30737a5c81f194b1c6235c1409555ee8e6cb19bd`, including touch contexts at all three
+phone sizes and natural practice winners. It supersedes the unverified-current-main
+status below. The original JPEGs and their provenance remain a historical baseline.
+
 ## Baseline status
 
 These 56 captures are a pre-fix baseline. They are not a check of current `main`. Every image was taken on `587951aa81db45982a8e79e51c4378afaa2986e3` (2026-10-18). When the review desk read this PR, `main` was 29 commits ahead (`00ba9a505d0ab9794cef0ef29ddeba050b5c4a6a`). When `main` was merged into this branch (`ea327a3`, 2026-10-21), it was 67 commits ahead.
 
 Fixes landed after the baseline: #718 (`e378820`), #809 (`bd21ecc`), #811 (`833a463`), and the win-screen table fit in merged PR #878 (`c8df182`, for #808). Because of that, these images cannot show those problems fixed, and they cannot show them still present on `main`. Closed #895 (the lobby chat overlap below) was closed by merged PR #918. This record did not re-check it.
 
-Candidates the review desk listed from the baseline images. None has been checked on current `main`, and none has been filed:
+Candidates the review desk listed from the baseline images. Their current-main results
+are recorded in the fresh report linked above; this table describes the historical images:
 
 | Baseline image | What the baseline image shows | Related change on `main` |
 |---|---|---|
@@ -15,7 +23,10 @@ Candidates the review desk listed from the baseline images. None has been checke
 | `844x390-win-screen.jpg` | Only the winner's row shows. | #809 (`bd21ecc`) |
 | 390 and 440 phone images with seat names | Seat names truncate to three letters ("Tid", "Dun"), and the last status line is cut off. | None found |
 
-Recapturing on current `main` is not part of this PR. The review desk asked for at least the trade and win screens at 844×390 and 390×844. That recapture is waiting on the review desk and owner. Until it runs, read every "matches closed #…" line below as "matches the pre-fix baseline", not as a statement about current behaviour.
+The review desk asked for at least the trade and win screens at 844×390 and 390×844.
+Those screens are included in the fresh report. Read every "matches closed #…" line
+in the historical record below as "matches the pre-fix baseline"; current behaviour
+is documented separately in that report.
 
 ## Capture provenance
 
