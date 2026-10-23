@@ -109,28 +109,28 @@ try {
     // callback while we supply frames, as the old synchronous fixture implicitly did; keep the native fence check.
     const frame = async () => {
       isle.renderer.getContext().finish();
-      await new Promise((resolve) => setTimeout(resolve, 0));
+      await new Promise((resolve) => requestAnimationFrame(resolve));
       const before = isle.renders;
       isle.tick();
       if (isle.renders !== before + 1) throw new Error("virtual wayfarer frame did not draw after real GPU completion");
     };
     isle.renderer.setAnimationLoop(null);
     try {
-    for (let ms = 0; ms < 700; ms += 50) {
-      vt += 0.05;
-      await frame();
-      const p = isle.wayfarer.position;
-      const e = Math.hypot(p.x - stood.x, p.z - stood.z) / Math.hypot(tw.x - stood.x, tw.z - stood.z);
-      ys.push(p.y - (stood.y + (face - stood.y) * e));
-    }
-    let rises = 0;
-    for (let i = 1; i < ys.length; i++) if (ys[i - 1] <= 0.2 && ys[i] > 0.2) rises++;
-    for (let ms = 700; ms < 1000; ms += 50) {
-      vt += 0.05;
-      await frame();
-    }
+      for (let ms = 0; ms < 700; ms += 50) {
+        vt += 0.05;
+        await frame();
+        const p = isle.wayfarer.position;
+        const e = Math.hypot(p.x - stood.x, p.z - stood.z) / Math.hypot(tw.x - stood.x, tw.z - stood.z);
+        ys.push(p.y - (stood.y + (face - stood.y) * e));
+      }
+      let rises = 0;
+      for (let i = 1; i < ys.length; i++) if (ys[i - 1] <= 0.2 && ys[i] > 0.2) rises++;
+      for (let ms = 700; ms < 1000; ms += 50) {
+        vt += 0.05;
+        await frame();
+      }
     } finally {
-    delete isle.clock.getElapsed;
+      delete isle.clock.getElapsed;
       isle.renderer.setAnimationLoop(isle.tick);
     }
     const w = window.__spot(to);
