@@ -6,7 +6,7 @@
 // swell (`floaters`, placed by their userData.rest) and paints a claimed harbor's sail.
 import * as THREE from "three";
 import type { HarborKind } from "@/lib/game/types";
-import { BLOCK_H } from "@/lib/scene/jelly-dims";
+import { BLOCK_H, TILE_Y } from "@/lib/scene/jelly-dims";
 import { PAINT } from "@/lib/scene/palette";
 import { rng32, setBoardDetail, shoreKit } from "@/lib/scene/hex-jelly";
 
@@ -820,7 +820,7 @@ function build(coast: CoastPt[], docks: Dock[], seed: number): Shore {
       min: goodsBounds.min.toArray(), max: goodsBounds.max.toArray(), frame: frame.toArray(),
       deck: { width: W, from: v0, to: v1 }, scale: S });
 
-    const cornerY = 0.04 + BLOCK_H;
+    const cornerY = TILE_Y + BLOCK_H;
     const ramp = cornerY - DECK;
     for (const corner of d.corners) {
       const cl = new THREE.Vector3(corner.x, 0, corner.z).applyMatrix4(inverse);
