@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ChatBox, SeatBubbles } from "@/components/game/Chat";
 import { CopyFallback, useCopy } from "@/components/game/CopyText";
+import { LobbyWaitBox } from "@/components/game/chunks";
 import { SeatDot } from "@/components/game/SeatDot";
 import { useGame } from "@/lib/game/store";
 import type { Seat } from "@/lib/net/table";
@@ -174,6 +175,8 @@ export function Lobby() {
             );
           })}
         </ul>
+        {/* #937: wait box above the chat so the collapsed toggle never sits under the chat input (chat-prove hit test at 1280x720). */}
+        <LazyBoundary failed={null}><LobbyWaitBox /></LazyBoundary>
         {/* #417, #895: the chat sits below the seats and its log is the one flexible piece (down to one line), so at 1280x720 the
             tabs, the emoji, the input and Send stay above the Ready footer, and Start and Leave stay inside the card. */}
         <div data-testid="lobby-chat" className={cn("mt-2 flex flex-col rounded-[12px] border border-border bg-surface p-2", landscape ? "min-h-0 flex-1" : sheet ? "min-h-[16.5rem] shrink-0" : "min-h-0 flex-1")}>

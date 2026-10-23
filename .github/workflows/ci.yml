@@ -263,6 +263,8 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
         run: npm run lobby-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
+        run: npm run lobby-wait-box-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
         run: npm run my-numbers-prove
       # pages-prove rebuilds dist/ under /emberisle/; browser-a has no later dist/ reader.
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
