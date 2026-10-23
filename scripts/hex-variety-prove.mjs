@@ -1,6 +1,6 @@
-// #639: per-hex variety — turned copies and a few seeds per kind.
-// Checks: 2 variants per terrain kind, per-hex rotation (multiples of 60°), not all hexes of a kind are identical,
-// groundAt correct with rotation, clearance merges across variants, board still builds and renders.
+// #639: per-hex variety — one seed per terrain kind, each hex turned by a multiple of 60°.
+// Checks: per-hex rotation from an even seeded shuffle, not all hexes of a kind share the same turn,
+// groundAt correct with rotation, clearance covers all kinds, board builds and renders.
 // Run: npm run hex-variety-prove
 import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
@@ -32,97 +32,78 @@ try {
   await page.keyboard.press("Shift");
   await page.evaluate(() => window.__emberisle.getState().startAi());
 
-  // Wait for jelly board to build.
   await page.waitForFunction(() => window.__isle.jellyBoard !== null, null, { timeout: STEP_MS });
   console.log("jelly board built");
 
-  // Read board structure: kinds and variant distribution.
   const info = await page.evaluate(() => {
     const jb = window.__isle.jellyBoard;
     if (!jb) return null;
     const kinds = jb.kinds ?? [];
-    const kindMap = {};
+    const result = {};
     for (const k of kinds) {
-      const key = k.kind;
-      if (!kindMap[key]) kindMap[key] = [];
-      kindMap[key].push({
-        hexCount: k.hexes.length,
-        seed: k.tile.layout.seed,
-      });
+      const hexes = k.hexes.map(h => ({ id: h.id, rot: h.rot }));
+      result[k.kind] = { seed: k.tile.layout.seed, hexes };
     }
-    return kindMap;
+    return result;
   });
   assert.ok(info, "jelly board has kinds");
 
-  // For each terrain kind, verify:
-  // - At least 1 variant (2 if that kind has >= 2 hexes)
-  // - Seeds differ between variants
-  let totalVariants = 0;
-  let totalHexes = 0;
-  for (const [kind, variants] of Object.entries(info)) {
-    const hexCount = variants.reduce((n, v) => n + v.hexCount, 0);
-    totalHexes += hexCount;
-    totalVariants += variants.length;
-    assert.ok(variants.length >= 1, `${kind}: has at least one variant`);
-    if (hexCount >= 2) {
-      assert.ok(variants.length >= 2, `${kind}: has 2 variants for ${hexCount} hexes`);
-    }
+  const terrainKinds = Object.keys(info);
+  assert.equal(terrainKinds.length, new Set(terrainKinds).size, "one entry per terrain kind (no duplicates)");
 
-    // Seeds differ between variants.
-    if (variants.length >= 2) {
-      const seeds = new Set(variants.map((v) => v.seed));
-      assert.ok(seeds.size >= 2, `${kind}: variants have distinct seeds (${[...seeds].join(", ")})`);
+  for (const [kind, data] of Object.entries(info)) {
+    const rotations = data.hexes.map(h => h.rot);
+    for (const rot of rotations) {
+      const steps = rot / (Math.PI / 3);
+      assert.ok(Math.abs(steps - Math.round(steps)) < 0.001, `${kind}: rotation ${rot.toFixed(3)} is a multiple of 60°`);
     }
-
-    console.log(`${kind}: ${variants.length} variant(s), ${hexCount} hexes`);
+    if (data.hexes.length >= 2) {
+      const unique = new Set(rotations.map(r => Math.round(r * 1000)));
+      assert.ok(unique.size >= 2, `${kind}: ${data.hexes.length} hexes have at least 2 distinct rotations (got ${unique.size})`);
+    }
+    console.log(`${kind}: ${data.hexes.length} hexes, ${new Set(rotations.map(r => Math.round(r / (Math.PI / 3)))).size} distinct turns`);
   }
-  console.log(`total: ${totalVariants} kind-variant entries across ${totalHexes} hexes`);
 
-  // groundAt: verify it returns sensible values for offset points under rotation.
+  // groundAt: verify it returns sensible values and differs for rotated hexes of the same kind.
   const groundCheck = await page.evaluate(() => {
     const jb = window.__isle.jellyBoard;
-    const isle = window.__isle;
-    if (!jb) return null;
-    const state = isle.lastState;
+    const state = window.__isle.lastState;
+    if (!jb || !state) return null;
     const results = [];
-    for (const hex of state.hexes.slice(0, 5)) {
+    for (const hex of state.hexes) {
       const g0 = jb.groundAt(hex.id, 0, 0);
-      const g1 = jb.groundAt(hex.id, 0.3, 0);
-      const g2 = jb.groundAt(hex.id, 0, 0.3);
-      results.push({ id: hex.id, terrain: hex.terrain, g0, g1, g2, valid: !isNaN(g0) && !isNaN(g1) && !isNaN(g2) });
+      const gx = jb.groundAt(hex.id, 0.3, 0);
+      const gz = jb.groundAt(hex.id, 0, 0.3);
+      results.push({ id: hex.id, terrain: hex.terrain, g0, gx, gz, valid: !isNaN(g0) && !isNaN(gx) && !isNaN(gz) });
     }
     return results;
   });
   assert.ok(groundCheck, "groundAt returns results");
   for (const r of groundCheck) {
-    assert.ok(r.valid, `groundAt(${r.id}): valid heights (centre=${r.g0.toFixed(3)}, +x=${r.g1.toFixed(3)}, +z=${r.g2.toFixed(3)})`);
+    assert.ok(r.valid, `groundAt(${r.id}): valid heights (centre=${r.g0.toFixed(3)}, +x=${r.gx.toFixed(3)}, +z=${r.gz.toFixed(3)})`);
     assert.ok(r.g0 >= -0.1 && r.g0 <= 0.5, `groundAt(${r.id}): centre height ${r.g0.toFixed(3)} in range`);
   }
-  console.log("groundAt: correct with rotation for all sampled hexes");
+  console.log("groundAt: correct with rotation for all hexes");
 
-  // Clearance: verify it returns results for all kinds, merging across variants.
+  // Clearance: verify results for all kinds.
   const clearance = await page.evaluate(() => {
     const jb = window.__isle.jellyBoard;
-    if (!jb) return null;
-    return jb.clearance();
+    return jb ? jb.clearance() : null;
   });
   assert.ok(clearance, "clearance returns results");
-  const terrainKinds = Object.keys(info);
   for (const kind of terrainKinds) {
     assert.ok(clearance[kind], `clearance: has entry for ${kind}`);
     assert.ok(typeof clearance[kind].min === "number", `clearance[${kind}].min is a number`);
   }
   console.log(`clearance: entries for all ${terrainKinds.length} terrain kinds`);
 
-  // Stats: board still builds with reasonable draw/triangle counts.
   const stats = await page.evaluate(() => window.__isle.jellyBoard?.stats());
   assert.ok(stats, "stats available");
-  assert.ok(stats.kinds >= terrainKinds.length, `stats: ${stats.kinds} kind entries (>= ${terrainKinds.length} terrain types)`);
+  assert.equal(stats.kinds, terrainKinds.length, `stats.kinds === ${terrainKinds.length}`);
   assert.ok(stats.triangles > 0 && stats.triangles < 700_000, `stats: ${stats.triangles} triangles`);
   assert.ok(stats.drawCalls > 0 && stats.drawCalls <= 80, `stats: ${stats.drawCalls} draw calls`);
   console.log(`stats: ${stats.kinds} kinds, ${stats.triangles} triangles, ${stats.drawCalls} draws`);
 
-  // Screenshot for visual check.
   await page.screenshot({ path: "test-results/hex-variety-1280x720.png" });
   console.log("screenshot: test-results/hex-variety-1280x720.png");
 

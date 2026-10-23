@@ -16,8 +16,8 @@ import { BLOCK_H } from "@/lib/scene/jelly-dims";
 // - the wayfarer's dulling.
 // The sprites (glows, fog and steam puffs) are camera-facing quads in two instanced draws, one added, one blended.
 
-// Per-hex variety (#639): two tiles per terrain kind, each hex rotated by a multiple of 60 degrees.
-const VARIANTS = 2;
+// Per-hex variety (#639): one tile per terrain kind, each hex turned by a multiple of 60° from an even seeded shuffle.
+// Only rotations that keep the hill crest behind the eye (+z) are allowed, so tall scenery never hides a token.
 // The board's lattice: a hex fills about a fifth of the screen, where 12 rings are as smooth as the studio's 64.
 const RINGS = 12;
 // Times the scenes are sampled at to find what moves: anything whose matrix, visibility, instances or material changes.
@@ -41,6 +41,7 @@ type Batch = {
 type Hx = {
   id: string;
   T: THREE.Matrix4;
+  rot: number;
   rollAt: number;
   tapAt: number;
   dull: number;
@@ -370,7 +371,7 @@ export class JellyBoard {
   // Build the scenes for these hexes, one per kind from its seed, and batch them; deterministic for the same hexes and seeds.
   // `pause` runs between kinds (a scene takes about a tenth of a second to build), so no one task holds the page for long; it
   // answers false when the board is no longer wanted, and the build stops there.
-  static async create(hexes: JellyHex[], seedOf: (kind: Terrain, variant: number) => number, pause: () => Promise<boolean>, lite = false) {
+  static async create(hexes: JellyHex[], seedOf: (kind: Terrain) => number, pause: () => Promise<boolean>, lite = false) {
     const b = new JellyBoard();
     b.lite = lite;
     try {
@@ -382,63 +383,65 @@ export class JellyBoard {
     }
   }
 
-  private async build(hexes: JellyHex[], seedOf: (kind: Terrain, variant: number) => number, pause: () => Promise<boolean>): Promise<JellyBoard | null> {
+  private async build(hexes: JellyHex[], seedOf: (kind: Terrain) => number, pause: () => Promise<boolean>): Promise<JellyBoard | null> {
     const b = this;
     const lite = this.lite;
     // A breath after the chunk itself loads and runs.
     if (!(await pause())) return null;
     for (const kind of [...new Set(hexes.map((h) => h.terrain))]) {
+      // Built in its steps (the props, then the block), with a breath between; the board detail holds only while a step runs.
+      const steps = tileSteps(kind, seedOf(kind), RINGS, true, lite);
+      let tile: Tile | undefined;
+      for (;;) {
+        setBoardDetail(true);
+        let step: IteratorResult<void, Tile>;
+        try {
+          step = steps.next();
+        } finally {
+          setBoardDetail(false);
+        }
+        if (step.done) {
+          tile = step.value;
+          break;
+        }
+        if (!(await pause())) {
+          b.dispose();
+          return null;
+        }
+      }
       const kindHexes = hexes.filter((h) => h.terrain === kind);
-      const r = rng32(seedOf(kind, 0));
-      // Guarantee at least one hex per variant for kinds with enough hexes.
-      const assigns = kindHexes.map((_, i) => ({ variant: i < VARIANTS ? i : Math.floor(r() * VARIANTS) }));
-      for (let vi = 0; vi < VARIANTS; vi++) {
-        const myHexes = kindHexes.filter((_, i) => assigns[i]!.variant === vi);
-        if (myHexes.length === 0) continue;
-        const steps = tileSteps(kind, seedOf(kind, vi), RINGS, true, lite);
-        let tile: Tile | undefined;
-        for (;;) {
-          setBoardDetail(true);
-          let step: IteratorResult<void, Tile>;
-          try {
-            step = steps.next();
-          } finally {
-            setBoardDetail(false);
-          }
-          if (step.done) {
-            tile = step.value;
-            break;
-          }
-          if (!(await pause())) {
-            b.dispose();
-            return null;
-          }
-        }
-        const hx = myHexes.map((h): Hx => {
-          const T = new THREE.Matrix4().makeTranslation(h.x, h.y, h.z);
-          return { id: h.id, T, rollAt: -Infinity, tapAt: -Infinity, dull: 0, dullTo: 0, M: new THREE.Matrix4(), fx: new THREE.Color(1, 1, 1), roll: -1, dirty: true, wasActive: false, glow: 0, glowWas: 0, slot: 0 };
-        });
-        b.kinds.push({ kind, tile, hexes: hx, leaves: [], sprites: [] });
+      const r = rng32(seedOf(kind));
+      const ha = tile.layout.hillAt;
+      const safe = [0, 1, 2, 3, 4, 5].filter(s => Math.sin(ha + s * Math.PI / 3) < -0.25);
+      const pool = safe.length >= 2 ? safe : [0, 1, 2, 3, 4, 5].filter(s => Math.sin(ha + s * Math.PI / 3) < 0);
+      const rots = kindHexes.map((_, i) => pool[i % pool.length]!);
+      for (let i = rots.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [rots[i], rots[j]] = [rots[j]!, rots[i]!]; }
+      const hx = kindHexes.map((h, i): Hx => {
+        const angle = rots[i]! * Math.PI / 3;
+        const T = new THREE.Matrix4().makeRotationY(angle).setPosition(h.x, h.y, h.z);
+        return { id: h.id, T, rot: angle, rollAt: -Infinity, tapAt: -Infinity, dull: 0, dullTo: 0, M: new THREE.Matrix4(), fx: new THREE.Color(1, 1, 1), roll: -1, dirty: true, wasActive: false, glow: 0, glowWas: 0, slot: 0 };
+      });
+      b.kinds.push({ kind, tile, hexes: hx, leaves: [], sprites: [] });
+      if (!(await pause())) {
+        b.dispose();
+        return null;
+      }
+      // Index its geometry in slices of about 40 ms.
+      const meshes: THREE.Mesh[] = [];
+      tile.group.traverse((o) => (o as THREE.Mesh).isMesh && meshes.push(o as THREE.Mesh));
+      let since = performance.now();
+      for (const m of meshes) {
+        indexed(m.geometry);
+        if (performance.now() - since < 40) continue;
         if (!(await pause())) {
           b.dispose();
           return null;
         }
-        const meshes: THREE.Mesh[] = [];
-        tile.group.traverse((o) => (o as THREE.Mesh).isMesh && meshes.push(o as THREE.Mesh));
-        let since = performance.now();
-        for (const m of meshes) {
-          indexed(m.geometry);
-          if (performance.now() - since < 40) continue;
-          if (!(await pause())) {
-            b.dispose();
-            return null;
-          }
-          since = performance.now();
-        }
-        if (!(await pause())) {
-          b.dispose();
-          return null;
-        }
+        since = performance.now();
+      }
+      if (!(await pause())) {
+        b.dispose();
+        return null;
       }
     }
     for (const k of b.kinds)
@@ -930,7 +933,10 @@ export class JellyBoard {
   // For the proofs. The ground's height (world y) at a point of a hex, from the hex's centre.
   groundAt(id: string, dx: number, dz: number) {
     const e = this.byHex.get(id);
-    return e ? e.h.T.elements[13]! + e.k.tile.ground(dx, dz) : NaN;
+    if (!e) return NaN;
+    const a = -e.h.rot;
+    const c = Math.cos(a), s = Math.sin(a);
+    return e.h.T.elements[13]! + e.k.tile.ground(c * dx - s * dz, s * dx + c * dz);
   }
 
   // For the proofs: per kind, how near to the hex's centre (horizontally) any corner of anything on it comes now, and what
