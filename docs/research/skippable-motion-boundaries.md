@@ -30,7 +30,7 @@ Comments in Dice, TurnMoment and the renderer mention tokens, but their schedule
 | [Landing knocks in store.ts:113–133](../../src/lib/game/store.ts#L113) | Sound timers use shared `LAND_MS`, matching scene landing. Reduced motion schedules no fall delay. Navigation/new game clears pending knocks. Visual speed or skip completion must be reconciled with this separate owner rather than leaving a late or duplicate knock. | [pieces-land-prove.mjs](../../scripts/pieces-land-prove.mjs) checks visual rest and delayed/reduced-motion knocks together. |
 | [WinScreen.tsx:11–14,190–200](../../src/components/game/WinScreen.tsx#L11) | A winner immediately renders the current panel. No three-beat celebration producer exists here or in the scene modules. The 3000ms React-button timer is a soundboard cooldown, not a win beat. | [win-action-prove.mjs](../../scripts/win-action-prove.mjs) preserves actual winning actions, private pre-win projections, saved/restarted games and resulting screens. #541 owns new win choreography after #539. |
 
-The existing skip listeners do not consume input. That is an established roll/turn contract, not evidence that a second canvas listener can safely be added without accounting for legal actions.
+The existing skip listeners do not consume input. The roll proof explicitly checks input delivery; TurnMoment's handler has the same non-consuming source behavior. Neither establishes that a second canvas listener can safely be added without accounting for legal actions.
 
 ## Scene owners
 
@@ -55,7 +55,7 @@ Canonical game clocks remain separate: practice bot scheduling is 700ms in [Embe
 
 The direct existing proof consumers are `roll-moment-prove`, `turn-gain-prove`, `pieces-land-prove`, `wayfarer-prove` and `flash-prove`. CSS offer-slot changes also need `hand-offer-prove`; Table-menu integration needs existing menu/client focus checks. Renderer/input changes need `idle-prove`, `pan-prove` and `board-touch-prove`. `splash-prove` and `climber-prove` are neighbors when the eventual scope touches decorative clocks. These names are all registered in [package.json](../../package.json) and [CI](../../.github/workflows/ci.yml). They describe dependencies, not a replacement claim or authorization to edit them.
 
-Current proofs already verify normal pacing, skip for roll/turn, reduced motion, sound timing and scene rest. None establishes the unimplemented Brisk preference, scene-wide skip, active speed changes or skip-versus-legal-pick/audio ownership. Preserve existing baseline assertions and add evidence for accepted new behavior; changing their old timing bounds would conceal the gap.
+Current proofs already verify normal pacing, roll-moment skip, reduced motion, sound timing and scene rest. Turn-moment input skip exists in source, but turn-gain-prove checks expiry rather than explicit pointer/key skip completion. None establishes the unimplemented Brisk preference, scene-wide skip, active speed changes or skip-versus-legal-pick/audio ownership. Preserve existing baseline assertions and add evidence for accepted new behavior; changing their old timing bounds would conceal the gap.
 
 Two next-layer design leaves are recorded:
 
