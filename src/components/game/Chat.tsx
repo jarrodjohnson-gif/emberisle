@@ -137,8 +137,8 @@ export function ChatBox({ rows, minRows = 0, game, dense, narrow, onEscape, acti
   const me = useMyName();
   const log = useRef<HTMLUListElement>(null);
   const stuck = useRef(true);
-  // The log's height when last pinned; a scroll event at another height came from a resize, not from the reader.
-  const pinnedH = useRef(0);
+  // Reflow at either dimension can scroll the log before its resize observer repins it.
+  const pinnedSize = useRef({ width: 0, height: 0 });
   const withLog = game;
   const visibleChat = chat.filter((line) => !muted.has(line.seat));
 
@@ -151,9 +151,9 @@ export function ChatBox({ rows, minRows = 0, game, dense, narrow, onEscape, acti
   useEffect(() => {
     const el = log.current;
     if (!el || typeof ResizeObserver === "undefined") return;
-    pinnedH.current = el.clientHeight;
+    pinnedSize.current = { width: el.clientWidth, height: el.clientHeight };
     const observer = new ResizeObserver(() => {
-      pinnedH.current = el.clientHeight;
+      pinnedSize.current = { width: el.clientWidth, height: el.clientHeight };
       if (stuck.current) el.scrollTop = el.scrollHeight;
     });
     observer.observe(el);
@@ -207,7 +207,7 @@ export function ChatBox({ rows, minRows = 0, game, dense, narrow, onEscape, acti
             tabIndex={0}
             onScroll={(e) => {
               const el = e.currentTarget;
-              if (el.clientHeight !== pinnedH.current) return;
+              if (el.clientWidth !== pinnedSize.current.width || el.clientHeight !== pinnedSize.current.height) return;
               stuck.current = el.scrollHeight - el.scrollTop - el.clientHeight < 8;
             }}
             className="flex min-h-0 flex-col gap-1 overflow-y-auto"
