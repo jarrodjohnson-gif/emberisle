@@ -150,6 +150,25 @@ async function heldPair(page, at, age) {
 
 // Exercise the real renderer wiring with one stalled visible frame. Other animation caps stay in place.
 async function slowOceanFrame(page, tag) {
+  const fence = await page.evaluate(() => {
+    const isle = window.__isle, behind = isle.gpuBehind, busy = isle.busyUntil;
+    const renders = isle.renderer.info.render.frame;
+    try {
+      isle.busyUntil = performance.now() + 1000;
+      isle.lastFrame = -Infinity;
+      isle.gpuBehind = () => true;
+      isle.tick();
+      const pending = isle.renderer.info.render.frame - renders;
+      isle.gpuBehind = () => false;
+      isle.tick();
+      return { pending, ready: isle.renderer.info.render.frame - renders };
+    } finally {
+      isle.gpuBehind = behind;
+      isle.busyUntil = busy;
+    }
+  });
+  assert.equal(fence.pending, 0, `${tag}: busy motion waits for a pending GPU fence`);
+  assert.ok(fence.ready > 0, `${tag}: busy motion draws once the GPU fence is ready`);
   const slow = await page.evaluate(() => {
     const isle = window.__isle, life = isle.oceanLife, delta = isle.clock.getDelta, busy = isle.busyUntil;
     try {
@@ -160,6 +179,7 @@ async function slowOceanFrame(page, tag) {
       isle.clock.getDelta = () => 4.25;
       isle.lastFrame = -Infinity;
       isle.busyUntil = performance.now() + 1000;
+      isle.renderer.getContext().finish();
       isle.tick();
       const ages = ids.map((i) => life.fishFlee[i]?.age ?? 0), posed = life.fishAt();
       life.fishFlee.fill(null);
@@ -172,10 +192,12 @@ async function slowOceanFrame(page, tag) {
       isle.splashAt(recent.x, recent.z, 1);
       const recentIds = life.fishFlee.flatMap((f, i) => f ? [i] : []);
       isle.busyUntil = performance.now() + 1000;
+      isle.renderer.getContext().finish();
       isle.tick();
       const recentAges = recentIds.map((i) => life.fishFlee[i]?.age ?? -1);
       isle.lastFrame = -Infinity;
       isle.busyUntil = performance.now() + 1000;
+      isle.renderer.getContext().finish();
       isle.tick();
       const laterAges = recentIds.map((i) => life.fishFlee[i]?.age ?? -1);
       return { elapsed, ages, error, recentAges, laterAges };
@@ -203,9 +225,11 @@ async function slowOceanFrame(page, tag) {
   });
   assert.ok(captured, `${tag}: a calm snapshot completes synchronously without waiting for a sleeping animation loop`);
   await page.evaluate(() => {
-    const isle = window.__isle, life = isle.oceanLife, delta = isle.clock.getDelta, step = life.step;
+    const isle = window.__isle, life = isle.oceanLife, delta = isle.clock.getDelta, step = life.step, behind = isle.gpuBehind;
     window.__oceanResume = null;
-    window.__restoreOceanResume = () => { isle.clock.getDelta = delta; life.step = step; };
+    window.__resumeFenceReady = false;
+    window.__restoreOceanResume = () => { isle.clock.getDelta = delta; life.step = step; isle.gpuBehind = behind; };
+    isle.gpuBehind = () => !window.__resumeFenceReady;
     isle.clock.getDelta = () => 7;
     life.step = function (dt, enabled, ...rest) {
       const before = this.fishTime, out = step.call(this, dt, enabled, ...rest);
@@ -218,6 +242,13 @@ async function slowOceanFrame(page, tag) {
   });
   try {
     await page.emulateMedia({ reducedMotion: "no-preference" });
+    await page.waitForFunction(() => !window.__isle.calm());
+    const waiting = await page.evaluate(() => {
+      window.__isle.tick();
+      return !window.__oceanResume && window.__isle.wasCalm;
+    });
+    assert.ok(waiting, `${tag}: a pending GPU fence preserves the paused-time reset until motion can draw`);
+    await page.evaluate(() => { window.__resumeFenceReady = true; });
     await page.waitForFunction(() => window.__oceanResume);
     const resume = await page.evaluate(() => window.__oceanResume);
     assert.equal(resume.dt, 0, `${tag}: motion resume discards time spent paused`);
