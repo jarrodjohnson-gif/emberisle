@@ -11,6 +11,8 @@ Open [the image index](index.html), the contact sheets ([desktop](contact-1280.p
 - All 56 SHA-256 hashes, byte counts, PNG dimensions, unique state labels and pointer modes were checked. The filename set is 14 states × four viewports.
 - Fresh root/server frozen installs and production build exited 0; isolated `npm run night` served HTTP 200 on 8787. Actual output is in `setup-validation.log` and `setup-result.log`; only trailing whitespace was removed from retained logs.
 
+Final checks from a new clone of `c175c97` pass: both installs, typecheck, build, registered119, loosen (zero changed proofs), size (all chunks +0 B), diff and the full evidence checks. Actual output is in `final-validation.log`.
+
 ## Review candidates checked again
 
 | Historical candidate | Current-main observation |
