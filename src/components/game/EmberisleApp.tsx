@@ -327,9 +327,7 @@ function Title() {
               </p>
             ) : null}
             <LazyBoundary failed={null}>
-              <Suspense fallback={null}>
-                <OpenTables />
-              </Suspense>
+              <OpenTables />
             </LazyBoundary>
             <div className="flex flex-wrap items-center justify-center">
               <Button variant="ghost" className="px-3" title="Pass one device around" onClick={() => startHotseat(4)}>
