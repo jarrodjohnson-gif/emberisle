@@ -69,7 +69,12 @@ async function open(width, height, touch, water) {
   return { context, page };
 }
 
-const settle = (page) => page.waitForFunction(() => !window.__isle.refitDue && !window.__isle.glide);
+const settle = async (page) => {
+  // Store delivery and camera work can precede a GPU-deferred draw. Sample picks only after that state has drawn.
+  await page.waitForFunction(() => window.__isle.lastState === window.__emberisle.getState().state && !window.__isle.refitDue && !window.__isle.glide);
+  const frame = await page.evaluate(() => window.__isle.renders);
+  await page.waitForFunction((before) => window.__isle.renders > before && window.__isle.lastState === window.__emberisle.getState().state && !window.__isle.refitDue && !window.__isle.glide, frame);
+};
 
 // The page holds a crafted turn: `phase` for the seat on turn, nothing armed.
 const craft = (page, phase) =>
