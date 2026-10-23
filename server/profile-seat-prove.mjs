@@ -203,6 +203,47 @@ check("guest room files carry no profile binding", readRoom(gw.code).seats.every
 const guestFrames = [...tableFrames];
 check("guest table frames carry no profile fields", !guestFrames.some((f) => /profile/i.test(f) && !f.includes('"code":"https"')));
 
+// --- Explicit seat aliases and Origin refusal (#1047, #965 review item 3) ---------------------------------------------------
+const aliasHost = await client(h, tunnel());
+aliasHost.send({ type: "create", name: "Alias host", credential: A.credential });
+const aliasWelcome = await aliasHost.reply();
+check("explicit create binds the authenticated host", aliasWelcome.type === "welcome" && aliasWelcome.host === true, aliasWelcome);
+await aliasHost.until(() => seatOf(aliasHost, aliasWelcome.you)?.profile, 3000, "create alias profile");
+const aliasJoin = await client(h, tunnel());
+aliasJoin.send({ type: "join", code: aliasWelcome.code, name: "Alias join", credential: B.credential });
+const aliasJoined = await aliasJoin.reply();
+check("explicit join binds a non-host seat", aliasJoined.type === "welcome" && aliasJoined.host === false && aliasJoined.code === aliasWelcome.code, aliasJoined);
+await aliasHost.until(() => seatOf(aliasHost, aliasJoined.you)?.profile, 3000, "join alias profile");
+for (const [label, id, profile, name] of [["create", aliasWelcome.you, A, "Ember"], ["join", aliasJoined.you, B, "Tide"]]) {
+  const projected = seatOf(aliasHost, id).profile;
+  check(`${label} alias uses the public profile allowlist`, Object.keys(projected).sort().join() === "displayName,profileId" && projected.profileId === profile.id && projected.displayName === name, projected);
+}
+const aliasSaved = await roomWhere(aliasWelcome.code, (r) => r.seats.length === 2, "alias bindings saved");
+check("both explicit aliases persist their authenticated profile IDs", aliasSaved.seats.map((s) => s.profileId).join() === [A.id, B.id].join(), aliasSaved.seats);
+
+for (const type of ["create", "join"]) {
+  const headers = { ...tunnel(), origin: "https://another-origin.example" };
+  const refused = await client(h, headers);
+  const target = type === "join" ? { code: aliasWelcome.code } : {};
+  const beforeSeats = JSON.stringify(aliasHost.seats.seats);
+  let first;
+  for (const credential of [A.credential, "A".repeat(43)]) {
+    refused.send({ type, ...target, name: "Origin refusal", credential });
+    const reply = await refused.reply();
+    check(`${type} refuses a mismatched HTTPS Origin before credential validity`, isErr(reply, "origin") && refused.welcome === null, reply);
+    if (first) check(`${type} origin refusal exposes no credential-validity distinction`, JSON.stringify(reply) === JSON.stringify(first), reply);
+    first = reply;
+  }
+  check(`${type} origin refusal leaves existing seats unchanged`, JSON.stringify(aliasHost.seats.seats) === beforeSeats);
+  refused.send({ type, ...target, name: "Origin guest" });
+  const guest = await refused.reply();
+  check(`${type} refused socket can retry as a guest`, guest.type === "welcome" && guest.host === (type === "create"), guest);
+  await refused.until(() => seatOf(refused, guest.you), 3000, `${type} guest seat`);
+  check(`${type} guest retry attaches no profile`, !("profile" in seatOf(refused, guest.you)), seatOf(refused, guest.you));
+  const guestSaved = await roomWhere(guest.code, (r) => r.seats.some((s) => s.id === guest.you), `${type} guest saved`);
+  check(`${type} guest retry persists no profile binding`, !("profileId" in guestSaved.seats.find((s) => s.id === guest.you)));
+}
+
 // A one-human bot game is frozen as not eligible.
 const solo = await client(h);
 solo.send({ type: "hello", name: "Solo" });
