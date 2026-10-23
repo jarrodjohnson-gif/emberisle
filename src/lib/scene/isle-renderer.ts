@@ -37,7 +37,7 @@ import { LAND_MS } from "@/lib/scene/landing";
 import { hashStr } from "@/lib/utils";
 import { chunkUrl } from "@/lib/lazy";
 import { PAINT, RIM } from "@/lib/scene/palette";
-import { BLOCK_H } from "@/lib/scene/jelly-dims";
+import { BLOCK_H, TILE_Y } from "@/lib/scene/jelly-dims";
 import type { JellyBoard, JellyStats } from "@/lib/scene/jelly-board";
 import type { Dock, Shore } from "@/lib/scene/harbor-jelly";
 import { OceanLife } from "@/lib/scene/ocean-life";
@@ -49,7 +49,6 @@ import { gainTick, play, touchHex } from "@/lib/sound";
 import { payingHexes } from "@/lib/game/rules";
 import { type GameState, type HarborKind, type HexCell, type Terrain, type Vertex } from "@/lib/game/types";
 
-const TILE_Y = 0.04;
 
 // The y of a hex's top surface: the jelly block's flat pad (the token) and its rim (the pieces) are exactly here, the same on
 // every kind (docs/design/hex-jelly-prompt.md "THE BLOCK").
@@ -1704,7 +1703,7 @@ export class IsleRenderer {
       pier.castShadow = true;
       this.land.add(pier);
       this.piers.push(pier);
-      this.docks.push({ cx, cz, mx, mz, kind: va.harbor, vids: [va.id, vb.id] });
+      this.docks.push({ cx, cz, mx, mz, kind: va.harbor, vids: [va.id, vb.id], corners: [{ x: va.x, z: va.z }, { x: vb.x, z: vb.z }] });
 
       const boat = makeBoat(va.harbor);
       boat.position.set(cx + mx * (jettyStart + jettyLen + 0.16), 0.08, cz + mz * (jettyStart + jettyLen + 0.16));

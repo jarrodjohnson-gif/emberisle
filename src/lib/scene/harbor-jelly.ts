@@ -6,12 +6,13 @@
 // swell (`floaters`, placed by their userData.rest) and paints a claimed harbor's sail.
 import * as THREE from "three";
 import type { HarborKind } from "@/lib/game/types";
+import { BLOCK_H, TILE_Y } from "@/lib/scene/jelly-dims";
 import { PAINT } from "@/lib/scene/palette";
 import { rng32, setBoardDetail, shoreKit } from "@/lib/scene/hex-jelly";
 
 export type CoastPt = { id: string; x: number; z: number; mx: number; mz: number };
-// A dock: the middle of its coastal edge, the outward miter there, its good and its two corners.
-export type Dock = { cx: number; cz: number; mx: number; mz: number; kind: HarborKind; vids: string[] };
+// A dock: the middle of its coastal edge, the outward miter there, its good, its two corners and their world positions.
+export type Dock = { cx: number; cz: number; mx: number; mz: number; kind: HarborKind; vids: string[]; corners: [{ x: number; z: number }, { x: number; z: number }] };
 export type Shore = {
   group: THREE.Group;
   // Everything the swell carries (ships first, one per dock in order, then the buoys): rest = { x, z, yaw }.
@@ -818,6 +819,19 @@ function build(coast: CoastPt[], docks: Dock[], seed: number): Shore {
       count: goodsParts.reduce((count, part) => count + part.attributes.position.count, 0),
       min: goodsBounds.min.toArray(), max: goodsBounds.max.toArray(), frame: frame.toArray(),
       deck: { width: W, from: v0, to: v1 }, scale: S });
+
+    const cornerY = TILE_Y + BLOCK_H;
+    const ramp = cornerY - DECK;
+    for (const corner of d.corners) {
+      const cl = new THREE.Vector3(corner.x, 0, corner.z).applyMatrix4(inverse);
+      const x0 = Math.sign(cl.x) * (W / 2 + 0.02), z0 = v0 - 0.01;
+      const dx = cl.x - x0, dz = cl.z - z0;
+      const a = Math.atan2(dx, dz);
+      for (let k = 0; k < 4; k++) {
+        const u = (k + 0.5) / 4;
+        P(K.part(box, "#a46e42", [x0 + dx * u, DECK + ramp * u, z0 + dz * u], [0, a, 0], [0.05, 0.008, 0.038]));
+      }
+    }
 
     // The ship, moored alongside the T-head's ship side, bow to the shore.
     const sv = tv - 0.04;
