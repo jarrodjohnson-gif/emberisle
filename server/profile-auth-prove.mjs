@@ -404,8 +404,34 @@ await restartAfter(() =>
 check("an expired credential no longer resumes", isErr(await (await client(h, tunnel())).req({ type: "profileResume", credential: cred1 }), "signedOut"));
 check("a weaker verifier still signs in", (await (await client(h, tunnel())).req({ type: "profileLogin", login: "dune", pin: "7531" })).profile.profileId === duneId);
 check("and is upgraded to the accepted parameters", byLogin(store(), "dune").pin.N === 131072);
-for (let i = 0; i < 6; i++) await (await client(h, tunnel())).req({ type: "profileLogin", login: "ember", pin: "4821" });
+const overflowSessions = [];
+for (let i = 0; i < 6; i++) overflowSessions.push(await (await client(h, tunnel())).req({ type: "profileLogin", login: "ember", pin: "4821" }));
 check("at most five remembered devices per profile", Object.values(store().devices).filter((d) => d.profileId === emberId).length === 5);
+// A row count alone can pass even if login returns a credential that was immediately evicted (#999).
+check("each overflow login returns a credential for the same profile", overflowSessions.every((r) => r.type === "profileSession" && r.profile.profileId === emberId && typeof r.credential === "string"));
+const budgetState = () => {
+  const d = store();
+  return JSON.stringify({ guards: Object.values(d.profiles).map((p) => [p.id, p.guard]), unknown: d.unknownLogins });
+};
+const beforeResumes = budgetState();
+const resumeOverflow = async () => {
+  const replies = [];
+  for (const r of overflowSessions) replies.push(await (await client(h, tunnel())).req({ type: "profileResume", credential: r.credential }));
+  return replies;
+};
+const overflowResumes = await resumeOverflow();
+check("newest credential remains usable at capacity", overflowResumes.at(-1).type === "profileSession" && overflowResumes.at(-1).profile.profileId === emberId);
+check("five issued credentials resume and one is signed out", overflowResumes.filter((r) => r.type === "profileSession" && r.profile.profileId === emberId).length === 5 && overflowResumes.filter((r) => isErr(r, "signedOut")).length === 1);
+check("overflow does not evict another profile's credential", (await (await client(h, tunnel())).req({ type: "profileResume", credential: dune.credential })).profile?.profileId === duneId);
+check("resume at capacity changes no PIN budget", budgetState() === beforeResumes);
+await h.stop("SIGKILL");
+h = await startHost();
+const recoveredResumes = await resumeOverflow();
+const outcome = (r) => r.type === "profileSession" ? r.profile.profileId : r.code;
+check("crash/restart preserves each credential's capacity outcome", JSON.stringify(recoveredResumes.map(outcome)) === JSON.stringify(overflowResumes.map(outcome)));
+check("other profile still resumes after overflow and restart", (await (await client(h, tunnel())).req({ type: "profileResume", credential: dune.credential })).profile?.profileId === duneId);
+check("restart and repeated resumes preserve every PIN budget", budgetState() === beforeResumes);
+
 
 // --- Nothing secret on disk or in game frames -----------------------------------------------------------------------------
 const files = readdirSync(PROFILES_DIR);
