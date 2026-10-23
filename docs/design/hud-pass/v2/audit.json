@@ -1,0 +1,192 @@
+{
+  "revision": "51cbe38",
+  "coverage": "19 core states at each of three required sizes, plus supplementary own-player and keyboard checks. Full-size images and per-state DOM measurements are included.",
+  "findings": [
+    {
+      "rank": 1,
+      "id": "sameness",
+      "category": "Sameness",
+      "priority": "High",
+      "title": "The same cream container frames almost everything.",
+      "finding": "Seats, instructions, actions, event lines and overlays repeat filled rounded surfaces at similar weight. The build tiles sit inside another filled container. Fortune cards add another layer inside their sheet.",
+      "alternative": "Use one flat surface and let the game content carry the colour. Remove containers before adding styling.",
+      "change": "A removes individual seat cards and replaces the build cluster with one launcher. B uses one continuous cool shelf with direct actions. Both use flat sheets and no cream in proposed chrome.",
+      "scope": "#903. The approved goods hand and pending chat C remain fixed dependencies.",
+      "evidence": [
+        "390x844-main.png",
+        "844x390-main.png",
+        "1280x720-main.png",
+        "390x844-fortunes.png"
+      ],
+      "source": "src/styles.css:25–40,160–170,193–221; src/components/game/FortuneTray.tsx:129."
+    },
+    {
+      "rank": 2,
+      "id": "scale",
+      "category": "Scale",
+      "priority": "High",
+      "title": "Important quantities reach 9 px; some desktop inputs are 36 px tall.",
+      "finding": "Build shortfall counts are 9 px; the deck label and readiness glyph are 10 px; landscape build names are 10.5 px. Trade uses 10–11 px labels and results headings use 11 px. Main controls meet 44 px at all three sizes. Five desktop discard inputs measure 48 × 36 px. The bank/dock action in your landscape player menu shrinks to 270 × 20 px.",
+      "alternative": "Show fewer, more readable quantities and large plain actions. A readable control footprint must include its label, not just a large hit area.",
+      "change": "Use a 12 px floor for all new text, 14–16 px action names, and 44 × 44 px minimum targets. Show shortfalls in a legible line. Keep approved hand labels as a flagged phase-boundary exception.",
+      "scope": "Core #903. Route trade to #831, compact results to #748, and the fixed landscape hand to #774. #909's loss-tab fix is already landed.",
+      "evidence": [
+        "390x844-disabled-build.png",
+        "844x390-disabled-build.png",
+        "1280x720-discard.png",
+        "844x390-trade.png",
+        "390x844-results.png",
+        "supplement/844x390-own-player-menu.png"
+      ],
+      "source": "BuildCost.tsx:60; Hud.tsx:119,452; styles.css:277–278; DiscardBar.tsx:44; trade-panel.css:12,69–74; WinScreen.tsx:112."
+    },
+    {
+      "rank": 3,
+      "id": "hierarchy",
+      "category": "Weak hierarchy",
+      "priority": "High",
+      "title": "Names, the latest event, and result totals lose the space they need.",
+      "finding": "Phone names become Jar / Luc / Ale / J2. Even Jarrod truncates on desktop because score and counts share its first line. The latest-event area shrinks to 67.78 px in portrait and 27.5 px in landscape. Portrait results initially hide the Total column; horizontal scrolling is required. The existing turn cue is present but small.",
+      "alternative": "Give the current player and primary number clear priority. Let a deliberate detail view carry secondary information.",
+      "change": "Give names their own line and public scores a stable column. Distinguish the active seat with a static marker and a text cue. Keep a readable latest event and put history/My numbers behind disclosure. Preserve compact result summaries under #748.",
+      "scope": "#903 seats and event hierarchy. Result totals are already tracked by #748; #878's short headings landed but do not solve this long-name fixture. Turn/gain behaviour remains #531/#827.",
+      "evidence": [
+        "390x844-main.png",
+        "844x390-main.png",
+        "1280x720-main.png",
+        "390x844-results.png",
+        "844x390-fortunes.png"
+      ],
+      "source": "SeatRail.tsx:72,82,105–122,150,170; styles.css:195,200; Hud.tsx:498–512; MyNumbers.tsx:53; WinScreen.tsx:112."
+    },
+    {
+      "rank": 4,
+      "id": "clutter",
+      "category": "Clutter",
+      "priority": "Medium",
+      "title": "Repeated rules and secondary data compete with the action.",
+      "finding": "The persistent hidden-points warning and Build/trade/end instruction restate available knowledge. The deck count appears on the Fortune tile and again in the event row. Player detail repeats points in facts and the score ledger. In hotseat trade, a helper describes player trading while only Bank is offered.",
+      "alternative": "Hide evergreen explanation until requested. One visible location per piece of information; one clear next action.",
+      "change": "Move hidden-score explanation to player detail. Use one public deck count, available off turn and with no fortunes held. Keep disabled reasons and prices deliberately accessible. Show trade copy only for the current route.",
+      "scope": "#903 chrome. Preserve the landed #776 My fortunes behaviour. Trade flow stays with #831; help is #749.",
+      "evidence": [
+        "390x844-main.png",
+        "844x390-main.png",
+        "1280x720-main.png",
+        "1280x720-player-menu.png",
+        "390x844-trade.png"
+      ],
+      "source": "SeatRail.tsx:21–23,177; Hud.tsx:65,310,452,512; PlayerMenu.tsx:86–90,135–144; TradePanel.tsx:141,161."
+    },
+    {
+      "rank": 5,
+      "id": "inconsistency",
+      "category": "Inconsistency",
+      "priority": "Medium",
+      "title": "The same build and the same sheet use different language and treatments.",
+      "finding": "Stronghold becomes Upgrade on phones, Build a stronghold when armed, and Raise a stronghold in the keyboard list. Sheet titles and corner radii vary. Player detail uses a blurred surface while help and costs use opaque sheets.",
+      "alternative": "One vocabulary and one deliberate surface system. Make the action sound like the result it produces.",
+      "change": "Use Upgrade consistently for the short action, with stronghold named in its detail and armed instruction. Share title, sheet, spacing and control tokens across approved builders. Keep Route/Swords and resource symbols unchanged.",
+      "scope": "#903 specification. Existing fortunes, help, trade and results implementation issues retain their approved flows.",
+      "evidence": [
+        "390x844-main.png",
+        "844x390-main.png",
+        "1280x720-main.png",
+        "1280x720-player-menu.png",
+        "390x844-help.png"
+      ],
+      "source": "Hud.tsx:100–101,447; PlaceList.tsx:92; HowTo.tsx:55; CostCard.tsx:55; PlayerMenu.tsx:101."
+    },
+    {
+      "rank": 6,
+      "id": "alignment",
+      "category": "Misalignment",
+      "priority": "Medium",
+      "title": "The landscape action column looks unfinished.",
+      "finding": "Landscape reserves a large filled area below the build controls while dice and End turn sit at opposite ends of a footer. This is a composition problem, not a claim that current controls overlap. The landed portrait utility alignment fix is retained.",
+      "alternative": "Use clear row roles and shared baselines. Empty space can stay empty without a panel around it.",
+      "change": "A leaves unused action space open. B groups direct builds and secondary actions on an intentional shelf grid. Preserve the exact playing hole through setup, roll, main, robber and discard; no phase-by-phase refit.",
+      "scope": "#903 layout. Do not move the goods hand or adopt #774's unmerged right-rail plan.",
+      "evidence": [
+        "390x844-main.png",
+        "844x390-main.png",
+        "1280x720-main.png"
+      ],
+      "source": "Hud.tsx:263–284,375–379,514; styles.css:254,273–278; src/lib/scene/mobile-fit.ts:84–100."
+    },
+    {
+      "rank": 7,
+      "id": "decoration",
+      "category": "Generic decoration",
+      "priority": "Low–medium",
+      "title": "Menu effects add visual noise without clarifying the ledger.",
+      "finding": "Player detail blurs the terrain and nests a rounded score card. Shadow treatments vary among menus and sheets. Functional overflow fades, readiness cues and roll feedback do communicate state. Seat tallies already use lucide Route/Swords; there is no visible tally-emoji defect.",
+      "alternative": "One flat overlay with depth only where it explains the layer. Personality comes from the island and players.",
+      "change": "Remove nested score cards, decorative blur and gratuitous gradients/glows/shadows. Preserve purposeful feedback and reduced-motion information. Add no emoji outside the approved chat reactions.",
+      "scope": "#903 visual specification. Chat C and functional turn/gain behaviour remain fixed.",
+      "evidence": [
+        "390x844-player-menu.png",
+        "844x390-player-menu.png",
+        "1280x720-player-menu.png"
+      ],
+      "source": "PlayerMenu.tsx:101,135; TableMenu.tsx:120; FortuneTray.tsx:129; CostCard.tsx:52; SeatRail.tsx:11,121–122."
+    }
+  ],
+  "categories": [
+    {
+      "name": "Scale",
+      "a": "12 px minimum proposed text; larger scores and plain controls; full prices in the Build sheet.",
+      "b": "Same type and target floor; readable direct build labels, no tiny cost badges."
+    },
+    {
+      "name": "Sameness",
+      "a": "Unboxed seats and event text; one Build launcher; cool flat sheets.",
+      "b": "One continuous shelf replaces separate cream cards and nested action panels."
+    },
+    {
+      "name": "Generic decoration",
+      "a": "No decorative glow, blur or gradients; a clear static active marker.",
+      "b": "Flat shelf and sheets; colour identifies state, not decoration."
+    },
+    {
+      "name": "Clutter",
+      "a": "Evergreen rules, My numbers and costs move to deliberate detail.",
+      "b": "Direct builds remain; one deck count and a clear secondary action row."
+    },
+    {
+      "name": "Weak hierarchy",
+      "a": "Current player, public score and immediate action form the main hierarchy.",
+      "b": "Current row and action group align; secondary counts sit below names."
+    },
+    {
+      "name": "Inconsistency",
+      "a": "Shared wording, icons, sheet and control dimensions.",
+      "b": "Same tokens and wording; a distinct persistent layout."
+    },
+    {
+      "name": "Misalignment",
+      "a": "Stable name/score rows and action baselines; unused space stays open.",
+      "b": "A continuous grid gives the reserved landscape column a purpose."
+    }
+  ],
+  "metrics": [
+    {
+      "viewport": "390 × 844",
+      "text": "Main: 12 text nodes, including fixed 10 px goods labels. Shortfall 9 px; readiness/deck 10 px.",
+      "targets": "Main: 0. Discard: 0.",
+      "link": "evidence/390x844-main.json"
+    },
+    {
+      "viewport": "844 × 390",
+      "text": "Main: 11 text nodes. Build names 10.5 px; shortfall 9 px; readiness/deck 10 px.",
+      "targets": "Main: 0. Discard: 0. Own-player bank/dock action: 270 × 20 px.",
+      "link": "evidence/supplement/844x390-own-player-menu.json"
+    },
+    {
+      "viewport": "1280 × 720",
+      "text": "Main: 7 text nodes. Shortfall 9 px; readiness/deck 10 px. Goods labels are now 12 px.",
+      "targets": "Main: 0. Discard: five 48 × 36 px fields.",
+      "link": "evidence/1280x720-discard.json"
+    }
+  ]
+}
