@@ -50,6 +50,51 @@ const climberAt = () =>
   });
 
 let page;
+// Pin only createGame's synchronous seed draw; input, renderer time and story updates remain native.
+const seedHotseat = () => page.evaluate(() => {
+  const store = window.__emberisle;
+  const start = store.getState().startHotseat;
+  let nextSeed = 676;
+  store.setState({ startHotseat(count) {
+    const random = Math.random;
+    const seed = nextSeed++;
+    Math.random = () => seed / 1e9;
+    try { start(count); } finally { Math.random = random; }
+  } });
+});
+// Record inside the first natural update of a fresh board, before slow screenshot/GL work can delay the browser poll.
+const nextBoard = async (start) => {
+  await page.evaluate(() => {
+    const previous = window.__isle.jellyBoard;
+    const proto = Object.getPrototypeOf(previous);
+    const update = proto.update;
+    const probe = window.__climberNext = { proto, update, sample: null };
+    proto.update = function (t, all = false, snap = false, holdAge = false) {
+      const result = update.call(this, t, all, snap, holdAge);
+      if (this !== previous && !all && !snap && !holdAge && !probe.sample) {
+        const tile = [...this.byHex.values()].find((e) => e.k.kind === "ore").k.tile;
+        let climber;
+        tile.group.traverse((o) => { if (o.userData?.ref === "climber") climber = o; });
+        const peak = tile.layout.peaks[0];
+        probe.sample = { age: this.age(), envAge: tile.env.age, newBoard: this !== previous,
+          dist: Math.hypot(climber.position.x - peak.x, climber.position.z - peak.z),
+          sit: climber.scale.y < 1, peakR: peak.r, seed: window.__emberisle.getState().state.seed };
+      }
+      return result;
+    };
+  });
+  try {
+    await start();
+    await page.waitForFunction(() => window.__climberNext.sample, null, { timeout: 180_000 });
+    return await page.evaluate(() => window.__climberNext.sample);
+  } finally {
+    await page.evaluate(() => {
+      const probe = window.__climberNext;
+      probe.proto.update = probe.update;
+      delete window.__climberNext;
+    });
+  }
+};
 const screenshotAge = async (age, viewport) => {
   await page.evaluate((age) => {
     const isle = window.__isle;
@@ -100,6 +145,7 @@ try {
     page = await ctx.newPage();
     page.on("pageerror", (e) => errors.push(String(e)));
     await page.goto(`http://127.0.0.1:${port}/`);
+    await seedHotseat();
     await page.getByRole("button", { name: "Four seats, one table", exact: true }).click();
     await page.waitForFunction(
       () => window.__emberisle.getState().screen === "play" && window.__isle?.landReady && window.__isle.jellyBoard && !window.__isle.titleMode,
@@ -133,7 +179,7 @@ try {
         };
       };
       const out = {};
-      for (const a of [0, 4, 20, 100, 160]) {
+      for (const a of [0, 4, 20, 100, 160, 800]) {
         jelly.setAge(a);
         out[a] = read();
       }
@@ -158,35 +204,15 @@ try {
     );
     // If the seeded story reaches the top by 160s without a late fall, he sits.
     if (late.sit) check("age 160: on the summit when seated", late.dist < 0.05, late);
+    check("age 800: all seeded retries have ended on the summit", samples[800].sit && samples[800].dist < 0.05, samples[800]);
 
     await screenshotAge(4, "1280x720");
     await screenshotAge(160, "1280x720");
 
     // Rematch / new deal: a fresh island, climber story restarts at age 0.
-    const previousBoard = await page.evaluateHandle(() => window.__isle.jellyBoard);
-    await page.evaluate(() => window.__emberisle.getState().startHotseat(4));
-    await page.waitForFunction(
-      (previous) => window.__isle?.landReady && window.__isle.jellyBoard && window.__isle.jellyBoard !== previous,
-      previousBoard,
-      { timeout: 180_000 },
-    );
-    const afterRematch = await page.evaluate(() => {
-      const jelly = window.__isle.jellyBoard;
-      const tile = [...jelly.byHex.values()].find((e) => e.k.kind === "ore").k.tile;
-      let c = null;
-      tile.group.traverse((o) => {
-        if (o.userData?.ref === "climber") c = o;
-      });
-      const p0 = tile.layout.peaks[0];
-      return {
-        age: jelly.age(),
-        dist: +Math.hypot(c.position.x - p0.x, c.position.z - p0.z).toFixed(4),
-        sit: c.scale.y < 1,
-        peakR: p0.r,
-      };
-    });
+    const afterRematch = await nextBoard(() => page.evaluate(() => window.__emberisle.getState().startHotseat(4)));
+    check("rematch: new board and next fixed seed", afterRematch.newBoard && afterRematch.seed === 677, afterRematch);
     check("rematch: natural age below 2s at the foot on a new board", afterRematch.age >= 0 && afterRematch.age < 2 && afterRematch.dist > afterRematch.peakR * 1.5 && !afterRematch.sit, afterRematch);
-    await previousBoard.dispose();
 
     await ctx.close();
   }
@@ -200,6 +226,7 @@ try {
     });
     page = await ctx.newPage();
     await page.goto(`http://127.0.0.1:${port}/`);
+    await seedHotseat();
     await page.getByRole("button", { name: "Four seats, one table", exact: true }).click();
     await page.waitForFunction(() => window.__isle?.landReady && window.__isle.jellyBoard && !window.__isle.titleMode, null, { timeout: 180_000 });
     await screenshotAge(4, "390x844");
@@ -221,25 +248,9 @@ try {
     await page.waitForTimeout(4000);
     const lingered = await climberAt();
     check("lobby/title linger: still age 0 at the foot", lingered && lingered.age === 0 && !lingered.sit && lingered.dist > lingered.peakR, lingered);
-    await page.getByRole("button", { name: "Four seats, one table", exact: true }).click();
-    await page.waitForFunction(() => window.__isle?.landReady && window.__isle.jellyBoard && !window.__isle.titleMode, null, { timeout: 180_000 });
-    await page.waitForTimeout(300);
-    const justPlay = await page.evaluate(() => {
-      const jelly = window.__isle.jellyBoard;
-      // Natural age shortly after play — must still be early in the story.
-      const tile = [...jelly.byHex.values()].find((e) => e.k.kind === "ore").k.tile;
-      let c = null;
-      tile.group.traverse((o) => {
-        if (o.userData?.ref === "climber") c = o;
-      });
-      const p0 = tile.layout.peaks[0];
-      return {
-        age: jelly.age(),
-        dist: +Math.hypot(c.position.x - p0.x, c.position.z - p0.z).toFixed(4),
-        sit: c.scale.y < 1,
-        peakR: p0.r,
-      };
-    });
+    await seedHotseat();
+    const justPlay = await nextBoard(() => page.getByRole("button", { name: "Four seats, one table", exact: true }).click());
+    check("after lobby: a newly built board uses the fixed seed", justPlay.newBoard && justPlay.seed === 676, justPlay);
     check(
       "after lobby: natural play age below 2s, excluding the 4s title linger",
       justPlay.age >= 0 && justPlay.age < 2 && !justPlay.sit && justPlay.dist > justPlay.peakR,
@@ -257,6 +268,7 @@ try {
     });
     page = await ctx.newPage();
     await page.goto(`http://127.0.0.1:${port}/`);
+    await seedHotseat();
     await page.getByRole("button", { name: "Four seats, one table", exact: true }).click();
     await page.waitForFunction(() => window.__isle?.landReady && window.__isle.jellyBoard && window.__isle.wasCalm, null, { timeout: 180_000 });
     const a = await climberAt();
