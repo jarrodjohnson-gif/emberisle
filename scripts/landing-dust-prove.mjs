@@ -164,7 +164,7 @@ async function runMotionSuite(page, label) {
     return { count: plays.length, dt: plays.length ? plays[0].t - window.__t0 : null };
   });
   assert.ok(outpostSounds.count >= 1, `${label} outpost: sound event recorded (${outpostSounds.count})`);
-  assert.ok(outpostSounds.dt >= 250 && outpostSounds.dt <= 700, `${label} outpost: sound at ${outpostSounds.dt?.toFixed(0)}ms (~280ms expected)`);
+  assert.ok(outpostSounds.dt >= 250 && outpostSounds.dt <= 500, `${label} outpost: sound at ${outpostSounds.dt?.toFixed(0)}ms (~280ms expected)`);
   console.log(`${label} outpost: sound at ${outpostSounds.dt?.toFixed(0)}ms, dust aligned`);
 
   // Place a path.
@@ -218,7 +218,7 @@ async function runMotionSuite(page, label) {
     return { count: plays.length, dt: plays.length ? plays[0].t - window.__t0 : null };
   });
   assert.ok(pathSounds.count >= 1, `${label} path: sound event recorded (${pathSounds.count})`);
-  assert.ok(pathSounds.dt >= 190 && pathSounds.dt <= 650, `${label} path: sound at ${pathSounds.dt?.toFixed(0)}ms (~220ms expected)`);
+  assert.ok(pathSounds.dt >= 190 && pathSounds.dt <= 450, `${label} path: sound at ${pathSounds.dt?.toFixed(0)}ms (~220ms expected)`);
   console.log(`${label} path: grow + squash + dust + sound at ${pathSounds.dt?.toFixed(0)}ms verified`);
 
   // Stronghold: upgrade from outpost.

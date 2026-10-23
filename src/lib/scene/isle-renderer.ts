@@ -1829,7 +1829,7 @@ export class IsleRenderer {
       for (const l of this.landings) {
         if (!l.dusted && now - l.start >= LAND_MS[LAND_SOUND[l.kind]]) {
           l.dusted = true;
-          if (now - l.start < LAND_MS[LAND_SOUND[l.kind]] * 2) this.dust.emit(l.obj.position.x, l.restY, l.obj.position.z);
+          if (now - l.start < LAND_MS[LAND_SOUND[l.kind]] + 100) this.dust.emit(l.obj.position.x, l.restY, l.obj.position.z);
         }
       }
     }
