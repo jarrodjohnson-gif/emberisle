@@ -1,0 +1,498 @@
+[
+  {
+    "filename": "a-390x844-main.html",
+    "direction": "a",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "state": "main",
+    "boardSource": "/Users/jarrod.johnson/Documents/Codex/2026-10-20/resume-emberisle-903-from-the-paused/work/emberisle-current/docs/design/hud-pass/v2/evidence/current/390x844-board.png",
+    "errors": [],
+    "controls": 10,
+    "small": [],
+    "offscreen": [],
+    "tiny": [],
+    "images": [
+      {
+        "loaded": true,
+        "alt": "Unmodified 390 by 844 real board screenshot"
+      },
+      {
+        "loaded": true,
+        "alt": "Approved V1 goods hand, unchanged current screenshot crop"
+      }
+    ],
+    "hand": {
+      "x": 20,
+      "y": 600,
+      "width": 349.96875,
+      "height": 62
+    }
+  },
+  {
+    "filename": "a-390x844-player.html",
+    "direction": "a",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "state": "player",
+    "boardSource": "/Users/jarrod.johnson/Documents/Codex/2026-10-20/resume-emberisle-903-from-the-paused/work/emberisle-current/docs/design/hud-pass/v2/evidence/current/390x844-board.png",
+    "errors": [],
+    "controls": 11,
+    "small": [],
+    "offscreen": [],
+    "tiny": [],
+    "images": [
+      {
+        "loaded": true,
+        "alt": "Unmodified 390 by 844 real board screenshot"
+      },
+      {
+        "loaded": true,
+        "alt": "Approved V1 goods hand, unchanged current screenshot crop"
+      }
+    ],
+    "hand": {
+      "x": 20,
+      "y": 600,
+      "width": 349.96875,
+      "height": 62
+    }
+  },
+  {
+    "filename": "a-390x844-self.html",
+    "direction": "a",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "state": "self",
+    "boardSource": "/Users/jarrod.johnson/Documents/Codex/2026-10-20/resume-emberisle-903-from-the-paused/work/emberisle-current/docs/design/hud-pass/v2/evidence/current/390x844-board.png",
+    "errors": [],
+    "controls": 11,
+    "small": [],
+    "offscreen": [],
+    "tiny": [],
+    "images": [
+      {
+        "loaded": true,
+        "alt": "Unmodified 390 by 844 real board screenshot"
+      },
+      {
+        "loaded": true,
+        "alt": "Approved V1 goods hand, unchanged current screenshot crop"
+      }
+    ],
+    "hand": {
+      "x": 20,
+      "y": 600,
+      "width": 349.96875,
+      "height": 62
+    }
+  },
+  {
+    "filename": "a-390x844-table.html",
+    "direction": "a",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "state": "table",
+    "boardSource": "/Users/jarrod.johnson/Documents/Codex/2026-10-20/resume-emberisle-903-from-the-paused/work/emberisle-current/docs/design/hud-pass/v2/evidence/current/390x844-board.png",
+    "errors": [],
+    "controls": 19,
+    "small": [],
+    "offscreen": [],
+    "tiny": [],
+    "images": [
+      {
+        "loaded": true,
+        "alt": "Unmodified 390 by 844 real board screenshot"
+      },
+      {
+        "loaded": true,
+        "alt": "Approved V1 goods hand, unchanged current screenshot crop"
+      }
+    ],
+    "hand": {
+      "x": 20,
+      "y": 600,
+      "width": 349.96875,
+      "height": 62
+    }
+  },
+  {
+    "filename": "a-390x844-build.html",
+    "direction": "a",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "state": "build",
+    "boardSource": "/Users/jarrod.johnson/Documents/Codex/2026-10-20/resume-emberisle-903-from-the-paused/work/emberisle-current/docs/design/hud-pass/v2/evidence/current/390x844-board.png",
+    "errors": [],
+    "controls": 15,
+    "small": [],
+    "offscreen": [],
+    "tiny": [],
+    "images": [
+      {
+        "loaded": true,
+        "alt": "Unmodified 390 by 844 real board screenshot"
+      },
+      {
+        "loaded": true,
+        "alt": "Approved V1 goods hand, unchanged current screenshot crop"
+      }
+    ],
+    "hand": {
+      "x": 20,
+      "y": 600,
+      "width": 349.96875,
+      "height": 62
+    }
+  },
+  {
+    "filename": "a-390x844-roll.html",
+    "direction": "a",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "state": "roll",
+    "boardSource": "/Users/jarrod.johnson/Documents/Codex/2026-10-20/resume-emberisle-903-from-the-paused/work/emberisle-current/docs/design/hud-pass/v2/evidence/current/390x844-board.png",
+    "errors": [],
+    "controls": 7,
+    "small": [],
+    "offscreen": [],
+    "tiny": [],
+    "images": [
+      {
+        "loaded": true,
+        "alt": "Unmodified 390 by 844 real board screenshot"
+      },
+      {
+        "loaded": true,
+        "alt": "Approved V1 goods hand, unchanged current screenshot crop"
+      }
+    ],
+    "hand": {
+      "x": 0,
+      "y": 0,
+      "width": 0,
+      "height": 0
+    }
+  },
+  {
+    "filename": "a-844x390-main.html",
+    "direction": "a",
+    "viewport": {
+      "width": 844,
+      "height": 390
+    },
+    "state": "main",
+    "boardSource": "/Users/jarrod.johnson/Documents/Codex/2026-10-20/resume-emberisle-903-from-the-paused/work/emberisle-current/docs/design/hud-pass/v2/evidence/current/844x390-board.png",
+    "errors": [],
+    "controls": 10,
+    "small": [],
+    "offscreen": [],
+    "tiny": [],
+    "images": [
+      {
+        "loaded": true,
+        "alt": "Unmodified 844 by 390 real board screenshot"
+      },
+      {
+        "loaded": true,
+        "alt": "Approved V1 goods hand, unchanged current screenshot crop"
+      }
+    ],
+    "hand": {
+      "x": 20,
+      "y": 151,
+      "width": 252.015625,
+      "height": 44
+    }
+  },
+  {
+    "filename": "a-1280x720-main.html",
+    "direction": "a",
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
+    "state": "main",
+    "boardSource": "/Users/jarrod.johnson/Documents/Codex/2026-10-20/resume-emberisle-903-from-the-paused/work/emberisle-current/docs/design/hud-pass/v2/evidence/current/1280x720-board.png",
+    "errors": [],
+    "controls": 10,
+    "small": [],
+    "offscreen": [],
+    "tiny": [],
+    "images": [
+      {
+        "loaded": true,
+        "alt": "Unmodified 1280 by 720 real board screenshot"
+      },
+      {
+        "loaded": true,
+        "alt": "Approved V1 goods hand, unchanged current screenshot crop"
+      }
+    ],
+    "hand": {
+      "x": 412,
+      "y": 544,
+      "width": 456,
+      "height": 80
+    }
+  },
+  {
+    "filename": "b-390x844-main.html",
+    "direction": "b",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "state": "main",
+    "boardSource": "/Users/jarrod.johnson/Documents/Codex/2026-10-20/resume-emberisle-903-from-the-paused/work/emberisle-current/docs/design/hud-pass/v2/evidence/current/390x844-board.png",
+    "errors": [],
+    "controls": 13,
+    "small": [],
+    "offscreen": [],
+    "tiny": [],
+    "images": [
+      {
+        "loaded": true,
+        "alt": "Unmodified 390 by 844 real board screenshot"
+      },
+      {
+        "loaded": true,
+        "alt": "Approved V1 goods hand, unchanged current screenshot crop"
+      }
+    ],
+    "hand": {
+      "x": 20,
+      "y": 654,
+      "width": 349.96875,
+      "height": 62
+    }
+  },
+  {
+    "filename": "b-390x844-player.html",
+    "direction": "b",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "state": "player",
+    "boardSource": "/Users/jarrod.johnson/Documents/Codex/2026-10-20/resume-emberisle-903-from-the-paused/work/emberisle-current/docs/design/hud-pass/v2/evidence/current/390x844-board.png",
+    "errors": [],
+    "controls": 14,
+    "small": [],
+    "offscreen": [],
+    "tiny": [],
+    "images": [
+      {
+        "loaded": true,
+        "alt": "Unmodified 390 by 844 real board screenshot"
+      },
+      {
+        "loaded": true,
+        "alt": "Approved V1 goods hand, unchanged current screenshot crop"
+      }
+    ],
+    "hand": {
+      "x": 20,
+      "y": 654,
+      "width": 349.96875,
+      "height": 62
+    }
+  },
+  {
+    "filename": "b-390x844-self.html",
+    "direction": "b",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "state": "self",
+    "boardSource": "/Users/jarrod.johnson/Documents/Codex/2026-10-20/resume-emberisle-903-from-the-paused/work/emberisle-current/docs/design/hud-pass/v2/evidence/current/390x844-board.png",
+    "errors": [],
+    "controls": 14,
+    "small": [],
+    "offscreen": [],
+    "tiny": [],
+    "images": [
+      {
+        "loaded": true,
+        "alt": "Unmodified 390 by 844 real board screenshot"
+      },
+      {
+        "loaded": true,
+        "alt": "Approved V1 goods hand, unchanged current screenshot crop"
+      }
+    ],
+    "hand": {
+      "x": 20,
+      "y": 654,
+      "width": 349.96875,
+      "height": 62
+    }
+  },
+  {
+    "filename": "b-390x844-table.html",
+    "direction": "b",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "state": "table",
+    "boardSource": "/Users/jarrod.johnson/Documents/Codex/2026-10-20/resume-emberisle-903-from-the-paused/work/emberisle-current/docs/design/hud-pass/v2/evidence/current/390x844-board.png",
+    "errors": [],
+    "controls": 22,
+    "small": [],
+    "offscreen": [],
+    "tiny": [],
+    "images": [
+      {
+        "loaded": true,
+        "alt": "Unmodified 390 by 844 real board screenshot"
+      },
+      {
+        "loaded": true,
+        "alt": "Approved V1 goods hand, unchanged current screenshot crop"
+      }
+    ],
+    "hand": {
+      "x": 20,
+      "y": 654,
+      "width": 349.96875,
+      "height": 62
+    }
+  },
+  {
+    "filename": "b-390x844-build.html",
+    "direction": "b",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "state": "build",
+    "boardSource": "/Users/jarrod.johnson/Documents/Codex/2026-10-20/resume-emberisle-903-from-the-paused/work/emberisle-current/docs/design/hud-pass/v2/evidence/current/390x844-board.png",
+    "errors": [],
+    "controls": 18,
+    "small": [],
+    "offscreen": [],
+    "tiny": [],
+    "images": [
+      {
+        "loaded": true,
+        "alt": "Unmodified 390 by 844 real board screenshot"
+      },
+      {
+        "loaded": true,
+        "alt": "Approved V1 goods hand, unchanged current screenshot crop"
+      }
+    ],
+    "hand": {
+      "x": 20,
+      "y": 654,
+      "width": 349.96875,
+      "height": 62
+    }
+  },
+  {
+    "filename": "b-390x844-roll.html",
+    "direction": "b",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "state": "roll",
+    "boardSource": "/Users/jarrod.johnson/Documents/Codex/2026-10-20/resume-emberisle-903-from-the-paused/work/emberisle-current/docs/design/hud-pass/v2/evidence/current/390x844-board.png",
+    "errors": [],
+    "controls": 7,
+    "small": [],
+    "offscreen": [],
+    "tiny": [],
+    "images": [
+      {
+        "loaded": true,
+        "alt": "Unmodified 390 by 844 real board screenshot"
+      },
+      {
+        "loaded": true,
+        "alt": "Approved V1 goods hand, unchanged current screenshot crop"
+      }
+    ],
+    "hand": {
+      "x": 0,
+      "y": 0,
+      "width": 0,
+      "height": 0
+    }
+  },
+  {
+    "filename": "b-844x390-main.html",
+    "direction": "b",
+    "viewport": {
+      "width": 844,
+      "height": 390
+    },
+    "state": "main",
+    "boardSource": "/Users/jarrod.johnson/Documents/Codex/2026-10-20/resume-emberisle-903-from-the-paused/work/emberisle-current/docs/design/hud-pass/v2/evidence/current/844x390-board.png",
+    "errors": [],
+    "controls": 13,
+    "small": [],
+    "offscreen": [],
+    "tiny": [],
+    "images": [
+      {
+        "loaded": true,
+        "alt": "Unmodified 844 by 390 real board screenshot"
+      },
+      {
+        "loaded": true,
+        "alt": "Approved V1 goods hand, unchanged current screenshot crop"
+      }
+    ],
+    "hand": {
+      "x": 16,
+      "y": 200,
+      "width": 252.015625,
+      "height": 44
+    }
+  },
+  {
+    "filename": "b-1280x720-main.html",
+    "direction": "b",
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
+    "state": "main",
+    "boardSource": "/Users/jarrod.johnson/Documents/Codex/2026-10-20/resume-emberisle-903-from-the-paused/work/emberisle-current/docs/design/hud-pass/v2/evidence/current/1280x720-board.png",
+    "errors": [],
+    "controls": 13,
+    "small": [],
+    "offscreen": [],
+    "tiny": [],
+    "images": [
+      {
+        "loaded": true,
+        "alt": "Unmodified 1280 by 720 real board screenshot"
+      },
+      {
+        "loaded": true,
+        "alt": "Approved V1 goods hand, unchanged current screenshot crop"
+      }
+    ],
+    "hand": {
+      "x": 412,
+      "y": 544,
+      "width": 456,
+      "height": 80
+    }
+  }
+]
