@@ -1272,6 +1272,12 @@ export class IsleRenderer {
     const busy = now < this.busyUntil || this.flashes.length > 0 || this.payingPieces.length > 0 || !!this.jelly?.busy();
     const gap = calm ? (busy ? 0 : Infinity) : this.titleMode ? 1000 / 30 : this.walk || pulsing || busy ? 0 : 1000 / 12;
     if (now - this.lastFrame < gap - 2) return;
+    // Camera constraints and glides are input state: process them even when the next draw waits on the GPU.
+    if (this.play()) {
+      this.orbit.update();
+      this.clampPan();
+      this.stepGlide(now);
+    }
     // Moving frames, including busy ones, wait for the previous GPU work instead of flooding a software renderer's queue.
     // Explicit reduced-motion frames still draw immediately, including synchronous snapshots.
     if (!calm && this.gpuBehind()) return;
@@ -1285,11 +1291,7 @@ export class IsleRenderer {
     this.stepFlashes(dt, calm);
     this.stepPayers(dt, calm);
     this.controls.autoRotate = this.titleMode && !calm;
-    if (this.play()) {
-      this.orbit.update();
-      this.clampPan();
-      this.stepGlide(now);
-    } else {
+    if (!this.play()) {
       this.controls.enableDamping = !calm;
       this.controls.update();
     }

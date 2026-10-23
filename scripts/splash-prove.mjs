@@ -158,21 +158,31 @@ async function slowOceanFrame(page, tag) {
   const fence = await page.evaluate(() => {
     const isle = window.__isle, behind = isle.gpuBehind, busy = isle.busyUntil;
     const renders = isle.renderer.info.render.frame;
+    const target = isle.orbit.target.clone(), eye = isle.orbit.object.position.clone();
     try {
+      const home = isle.fitPose(isle.fit), limit = isle.panLimit();
+      const shift = target.clone().set(home.tx + limit * 2, target.y, home.tz).sub(target);
+      isle.orbit.target.add(shift);
+      isle.orbit.object.position.add(shift);
       isle.busyUntil = performance.now() + 1000;
       isle.lastFrame = -Infinity;
       isle.gpuBehind = () => true;
       isle.tick();
       const pending = isle.renderer.info.render.frame - renders;
+      const pan = Math.hypot(isle.orbit.target.x - home.tx, isle.orbit.target.z - home.tz);
       isle.gpuBehind = () => false;
       isle.tick();
-      return { pending, ready: isle.renderer.info.render.frame - renders };
+      return { pending, ready: isle.renderer.info.render.frame - renders, pan, limit };
     } finally {
+      isle.orbit.target.copy(target);
+      isle.orbit.object.position.copy(eye);
+      isle.orbit.update();
       isle.gpuBehind = behind;
       isle.busyUntil = busy;
     }
   });
   assert.equal(fence.pending, 0, `${tag}: busy motion waits for a pending GPU fence`);
+  assert.ok(fence.pan <= fence.limit + 1e-6, `${tag}: a pending GPU fence still clamps the camera pan (${fence.pan}/${fence.limit})`);
   assert.ok(fence.ready > 0, `${tag}: busy motion draws once the GPU fence is ready`);
   const slow = await page.evaluate(() => {
     const isle = window.__isle, life = isle.oceanLife, delta = isle.clock.getDelta, busy = isle.busyUntil, behind = isle.gpuBehind;
