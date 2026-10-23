@@ -342,9 +342,18 @@ let openCode;
   assert.equal(game.phase, "roll", "recovery fixture completes real engine setup");
   game.phase = "main";
   game.current = "p0";
+  game.players.sort((a, b) => a.id.localeCompare(b.id));
+  game.victoryTarget = 7;
   // Off-turn points are checked as the next turn starts (rules.ts endTurn).
   const winner = game.players.find((p) => p.id === "p1");
+  for (const v of game.vertices) {
+    if (v.building?.playerId !== "p1") continue;
+    v.building.kind = "stronghold";
+    winner.strongholdsLeft -= 1;
+    winner.outpostsLeft += 1;
+  }
   winner.hidden.vp = game.victoryTarget - totalVP(game, "p1");
+  assert.equal(winner.hidden.vp, 3, "fixture uses three points fortunes and two strongholds");
   assert.equal(totalVP(game, "p1"), game.victoryTarget);
   game.players[0].kind = "bot";
   const terminal = applyAction(game, "p0", { type: "endTurn" });
