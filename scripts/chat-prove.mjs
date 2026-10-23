@@ -1416,9 +1416,9 @@ try {
   check((await phone.page.getByTestId("chat-unread").count()) === 0, "phone game: opening the chat clears the unread badge");
   for (const [w, h] of [[440, 956], [390, 844], [956, 440]]) {
     await phone.page.setViewportSize({ width: w, height: h });
-    await new Promise((r) => setTimeout(r, 700));
     if (!(await phone.page.getByTestId("chat-sheet").count())) await phone.page.getByRole("button", { name: /^Open chat/ }).click();
     await phone.page.getByTestId("chat-sheet").waitFor();
+    await until(async () => (await logView(phone)).newest, `${w}x${h} phone game: log scrolled to newest line`, 3000).catch(() => {});
     const v = await logView(phone);
     check(v.whole >= 4 && v.newest && v.newestText.includes("game line 6") && v.font >= 14, `phone game ${v.size} ${JSON.stringify(v)}: ${v.whole} whole chat lines on screen, newest ("${v.newestText.trim()}") visible, ${v.font}px text`);
     if (w === 440) await shot(phone, "chat-game-440x956.jpg");
