@@ -73,3 +73,4 @@ The review desk adds a line whenever Jarrod decides something.
 | Not dated | Profiles are p0. | [#763](https://github.com/jarrodjohnson-gif/emberisle/issues/763), [#764](https://github.com/jarrodjohnson-gif/emberisle/issues/764), [#766](https://github.com/jarrodjohnson-gif/emberisle/issues/766) |
 | Not dated | The Fable security review happens only at launch. | Jarrod, in chat |
 | Not dated | Agents may spawn cheaper or stronger sub-agents. Stop starting work at 5% or less of the 5-hour or weekly limit. | [`docs/LANES.md`](LANES.md) |
+| 2026-10-22 | Repartition the existing `browser-b` matrix from measured proof timings, isolating the heavy scene proofs. Keep every proof, assertion, timeout, setup step and existing required check name; the `checks` aggregate covers added legs. This approval revisits the 2026-10-21 rejection of shard rebalancing for this scope. | [#1034](https://github.com/jarrodjohnson-gif/emberisle/issues/1034) |
