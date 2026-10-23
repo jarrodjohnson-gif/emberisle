@@ -170,7 +170,6 @@ try {
       previousBoard,
       { timeout: 180_000 },
     );
-    await page.waitForTimeout(300);
     const afterRematch = await page.evaluate(() => {
       const jelly = window.__isle.jellyBoard;
       const tile = [...jelly.byHex.values()].find((e) => e.k.kind === "ore").k.tile;
