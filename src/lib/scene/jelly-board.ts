@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { type Terrain } from "@/lib/game/types";
-import { setBoardDetail, tileSteps, type Tile } from "@/lib/scene/hex-jelly";
+import { rng32, setBoardDetail, tileSteps, type Tile } from "@/lib/scene/hex-jelly";
 import { BLOCK_H } from "@/lib/scene/jelly-dims";
 
 // The jelly board (#599, docs/design/hex-jelly-prompt.md): the six Hex Jelly scenes on the game board.
@@ -16,6 +16,7 @@ import { BLOCK_H } from "@/lib/scene/jelly-dims";
 // - the wayfarer's dulling.
 // The sprites (glows, fog and steam puffs) are camera-facing quads in two instanced draws, one added, one blended.
 
+// Per-hex variety (#639): one tile per terrain kind, each hex turned by a safe multiple of 60° (hill stays behind the eye).
 // The board's lattice: a hex fills about a fifth of the screen, where 12 rings are as smooth as the studio's 64.
 const RINGS = 12;
 // Times the scenes are sampled at to find what moves: anything whose matrix, visibility, instances or material changes.
@@ -39,6 +40,7 @@ type Batch = {
 type Hx = {
   id: string;
   T: THREE.Matrix4;
+  rot: number;
   rollAt: number;
   tapAt: number;
   dull: number;
@@ -406,9 +408,17 @@ export class JellyBoard {
           return null;
         }
       }
-      const hx = hexes
-        .filter((h) => h.terrain === kind)
-        .map((h): Hx => ({ id: h.id, T: new THREE.Matrix4().makeTranslation(h.x, h.y, h.z), rollAt: -Infinity, tapAt: -Infinity, dull: 0, dullTo: 0, M: new THREE.Matrix4(), fx: new THREE.Color(1, 1, 1), roll: -1, dirty: true, wasActive: false, glow: 0, glowWas: 0, slot: 0 }));
+      const kindHexes = hexes.filter((h) => h.terrain === kind);
+      const r = rng32(seedOf(kind));
+      const ha = tile.layout.hillAt;
+      const pool = [0, 1, 2, 3, 4, 5].filter(s => Math.sin(ha + s * Math.PI / 3) < -0.25);
+      const rots = kindHexes.map((_, i) => pool[i % pool.length]!);
+      for (let i = rots.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [rots[i], rots[j]] = [rots[j]!, rots[i]!]; }
+      const hx = kindHexes.map((h, i): Hx => {
+        const angle = rots[i]! * Math.PI / 3;
+        const T = new THREE.Matrix4().makeRotationY(angle).setPosition(h.x, h.y, h.z);
+        return { id: h.id, T, rot: angle, rollAt: -Infinity, tapAt: -Infinity, dull: 0, dullTo: 0, M: new THREE.Matrix4(), fx: new THREE.Color(1, 1, 1), roll: -1, dirty: true, wasActive: false, glow: 0, glowWas: 0, slot: 0 };
+      });
       b.kinds.push({ kind, tile, hexes: hx, leaves: [], sprites: [] });
       if (!(await pause())) {
         b.dispose();
@@ -921,7 +931,10 @@ export class JellyBoard {
   // For the proofs. The ground's height (world y) at a point of a hex, from the hex's centre.
   groundAt(id: string, dx: number, dz: number) {
     const e = this.byHex.get(id);
-    return e ? e.h.T.elements[13]! + e.k.tile.ground(dx, dz) : NaN;
+    if (!e) return NaN;
+    const a = -e.h.rot;
+    const c = Math.cos(a), s = Math.sin(a);
+    return e.h.T.elements[13]! + e.k.tile.ground(c * dx - s * dz, s * dx + c * dz);
   }
 
   // For the proofs: per kind, how near to the hex's centre (horizontally) any corner of anything on it comes now, and what
@@ -963,7 +976,9 @@ export class JellyBoard {
           }
         }
       }
-      out[k.kind] = { min, what, all };
+      const prev = out[k.kind];
+      if (!prev || min < prev.min) out[k.kind] = { min, what, all: prev ? { ...prev.all, ...all } : all };
+      else if (prev) Object.assign(prev.all, all);
     }
     return out;
   }
@@ -1031,7 +1046,7 @@ export class JellyBoard {
     }
     for (const m of this.bakes) triangles += m.userData.tris as number;
     for (const sb of this.sprites) triangles += 2 * sb.count;
-    return { lite: this.lite, drawCalls: this.batches.size + this.bakes.length + this.sprites.length, triangles: Math.round(triangles), kinds: this.kinds.length, batches: this.batches.size, bakes: this.bakes.length, sprites: this.sprites.length };
+    return { lite: this.lite, drawCalls: this.batches.size + this.bakes.length + this.sprites.length, triangles: Math.round(triangles), kinds: new Set(this.kinds.map((k) => k.kind)).size, batches: this.batches.size, bakes: this.bakes.length, sprites: this.sprites.length };
   }
 
   dispose() {
