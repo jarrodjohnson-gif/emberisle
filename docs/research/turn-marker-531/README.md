@@ -17,3 +17,11 @@ The existing proof rejects zero and two markers on both fixtures and the live pa
 Prior adoption narrowed the lobby because it has no current turn before Start; trade and win rows use `data-turn-ring`, preserving exactly one `data-current-turn` on the mounted seat rail or strip. The prior adopter's non-color cue is an ink pointer, since the older per-seat glyphs were removed. These existing readings are retained for independent review, not newly accepted here.
 
 Model provenance: the first issue claim names Grok; later adoption comments name Claude-Haiku-5.5-helper while the prior PR body names Claude Sonnet 5.5. This main refresh and verification are by Codex-open-table-833 (GPT-6.1 Sol). Independent Opus 5.5 review avoids all those named models. No independent approval is claimed.
+
+Static fresh-clone checks pass: installs, TypeScript, production build, registration of all 120 proofs, no loosened proofs against main, and every bundle ceiling and growth allowance. Measured index growth is +106 B / 400 B; IslandCanvas is −6 B / 660 B and hex-jelly +1 B / 200 B. No budget changes.
+
+The trade and win screenshots use the existing proof's synthetic offer/winner fixtures after the legal move sequence. They are UI checks, not a claim that these short games reached natural winners.
+
+The fresh safety run passed all 269 safe-area checks with zero console errors, including the original phone-strip position regression. The unchanged hole proof passed all 500 size/phase pairs with zero sides over the declared hole. The seat-rail proof passed its portrait/landscape layouts, counts, facts and marker checks. Actual output is committed beside this report.
+
+The final `longest-army-prove` run also passed all four viewports and its lead, tie, transfer and shared-holder states. [Complete result codes](results.json) show every required fresh check exited 0. The worker finished and its browser/server processes closed before publication. CI and independent current-head review remain separate gates.

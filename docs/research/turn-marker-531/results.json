@@ -1,0 +1,41 @@
+{
+  "install": {
+    "exit": 0
+  },
+  "server-install": {
+    "exit": 0
+  },
+  "types": {
+    "exit": 0
+  },
+  "build": {
+    "exit": 0
+  },
+  "registered": {
+    "exit": 0
+  },
+  "loosen": {
+    "exit": 0
+  },
+  "size": {
+    "exit": 0
+  },
+  "turn-marker": {
+    "exit": 0
+  },
+  "hud-safe-area": {
+    "exit": 0
+  },
+  "hole": {
+    "exit": 0
+  },
+  "seat-rail": {
+    "exit": 0
+  },
+  "longest-army": {
+    "exit": 0
+  },
+  "diff": {
+    "exit": 0
+  }
+}
