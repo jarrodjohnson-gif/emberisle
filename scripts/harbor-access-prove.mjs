@@ -1,5 +1,5 @@
-// #640: harbor corner access — boardwalks from each pier to its two corners, colored landings at the corners,
-// and an enlarged rate plate. Nothing tall (> 0.36) within 0.14 of a corner (the landing disc sits at 0.34).
+// #640: harbor corner access — boardwalk planks from each pier to its two corners, ramping up to the hex surface.
+// Nothing tall (> 0.36) within 0.14 of a corner.
 // Run: npm run harbor-access-prove
 import { existsSync, mkdirSync } from "node:fs";
 import { chromium } from "playwright";
@@ -71,41 +71,7 @@ try {
       else cornersWithoutGeom.push(hv.id);
     }
 
-    // Landing disc height: the highest harbor vertex within 0.07 of each corner.
-    const TOP = 0.34;
-    const landingHeights = [];
-    for (const hv of harborVertices) {
-      let maxY = -Infinity;
-      for (const p of harborVerts) {
-        if (Math.hypot(p.x - hv.x, p.z - hv.z) < 0.07) maxY = Math.max(maxY, p.y);
-      }
-      landingHeights.push({ vid: hv.id, harbor: hv.harbor, y: +maxY.toFixed(3), top: TOP });
-    }
-    const landingAtTop = landingHeights.every((l) => Math.abs(l.y - l.top) < 0.02);
-
-    // Landing colour per harbor: sample the colour attribute near each corner.
-    const colAttr = harbors.geometry.attributes.color;
-    const landingColours = {};
-    if (colAttr) {
-      for (const hv of harborVertices) {
-        for (let i = 0; i < pos.count; i++) {
-          const lx = pos.getX(i), ly = pos.getY(i), lz = pos.getZ(i);
-          const wx = mat[0] * lx + mat[4] * ly + mat[8] * lz + mat[12];
-          const wy = mat[1] * lx + mat[5] * ly + mat[9] * lz + mat[13];
-          const wz = mat[2] * lx + mat[6] * ly + mat[10] * lz + mat[14];
-          if (Math.hypot(wx - hv.x, wz - hv.z) < 0.07 && wy > 0.3) {
-            const r = colAttr.getX(i), g = colAttr.getY(i), b = colAttr.getZ(i);
-            const hex = "#" + [r, g, b].map((c) => Math.round(c * 255).toString(16).padStart(2, "0")).join("");
-            landingColours[hv.harbor] = landingColours[hv.harbor] || new Set();
-            landingColours[hv.harbor].add(hex);
-            break;
-          }
-        }
-      }
-    }
-    const uniqueKinds = Object.keys(landingColours);
-
-    // Nothing tall (> 0.36, above the landing disc at 0.34) within 0.14 of any harbor corner.
+    // Nothing tall (> 0.36) within 0.14 of any harbor corner.
     const tallNearCorner = [];
     group.traverse((o) => {
       if (!o.isMesh || !o.geometry?.attributes?.position) return;
@@ -165,9 +131,6 @@ try {
       harborCorners: harborVertices.length,
       cornersWithGeom: cornersWithNearbyGeom.length,
       cornersWithoutGeom,
-      landingAtTop,
-      landingHeights: landingHeights.slice(0, 4),
-      uniqueKinds: uniqueKinds.length,
       tallNearCorner: tallNearCorner.slice(0, 5),
       tallCount: tallNearCorner.length,
       hasPlates,
@@ -183,8 +146,6 @@ try {
     check("nine docks on a standard board", result.dockCount === 9, { docks: result.dockCount });
     check("18 harbor corners (two per dock)", result.harborCorners === 18, { corners: result.harborCorners });
     check("every harbor corner has boardwalk geometry nearby (within 0.12)", result.cornersWithGeom === 18 && result.cornersWithoutGeom.length === 0, { withGeom: result.cornersWithGeom, missing: result.cornersWithoutGeom });
-    check("landing disc at corner top height (within 0.02 of topOf)", result.landingAtTop, { sample: result.landingHeights });
-    check("landing colours differ across harbor kinds", result.uniqueKinds >= 4, { kinds: result.uniqueKinds });
     check("nothing tall (y > 0.36) within 0.14 of any harbor corner", result.tallCount === 0, { tallNearCorner: result.tallNearCorner });
     check("rate plates are present", result.hasPlates, { hasPlates: result.hasPlates });
     check("goods piles on each dock", result.piles === 9, { piles: result.piles });

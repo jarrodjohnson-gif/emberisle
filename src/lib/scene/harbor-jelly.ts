@@ -6,6 +6,7 @@
 // swell (`floaters`, placed by their userData.rest) and paints a claimed harbor's sail.
 import * as THREE from "three";
 import type { HarborKind } from "@/lib/game/types";
+import { BLOCK_H } from "@/lib/scene/jelly-dims";
 import { PAINT } from "@/lib/scene/palette";
 import { rng32, setBoardDetail, shoreKit } from "@/lib/scene/hex-jelly";
 
@@ -679,7 +680,7 @@ function build(coast: CoastPt[], docks: Dock[], seed: number): Shore {
     for (const x of [-W / 2, W / 2]) P(K.part(box, "#7a5236", [x, DECK - 0.014, v0 + len / 2], [0, 0, 0], [0.014, 0.018, len]));
     // The rate plate, flat on the T-head, its text upright on screen whichever side of the island (the camera looks north).
     {
-      const pl = new THREE.PlaneGeometry(0.42, 0.19);
+      const pl = new THREE.PlaneGeometry(0.36, 0.165);
       const row = PLATE_KINDS.indexOf(d.kind);
       const uv = pl.attributes.uv as THREE.BufferAttribute;
       for (let i = 0; i < uv.count; i++) uv.setY(i, 1 - (row + 1 - uv.getY(i)) / PLATE_KINDS.length);
@@ -819,6 +820,8 @@ function build(coast: CoastPt[], docks: Dock[], seed: number): Shore {
       min: goodsBounds.min.toArray(), max: goodsBounds.max.toArray(), frame: frame.toArray(),
       deck: { width: W, from: v0, to: v1 }, scale: S });
 
+    const cornerY = 0.04 + BLOCK_H;
+    const ramp = cornerY - DECK;
     for (const corner of d.corners) {
       const cl = new THREE.Vector3(corner.x, 0, corner.z).applyMatrix4(inverse);
       const x0 = Math.sign(cl.x) * (W / 2 + 0.02), z0 = v0 - 0.01;
@@ -826,9 +829,8 @@ function build(coast: CoastPt[], docks: Dock[], seed: number): Shore {
       const a = Math.atan2(dx, dz);
       for (let k = 0; k < 4; k++) {
         const u = (k + 0.5) / 4;
-        P(K.part(box, "#a46e42", [x0 + dx * u, DECK + 0.24 * u, z0 + dz * u], [0, a, 0], [0.05, 0.008, 0.038]));
+        P(K.part(box, "#a46e42", [x0 + dx * u, DECK + ramp * u, z0 + dz * u], [0, a, 0], [0.05, 0.008, 0.038]));
       }
-      P(K.part(K.cyl(1, 1, 8), goodOf(d.kind), [cl.x, 0.34, cl.z], [0, 0, 0], [0.06, 0.012, 0.06]));
     }
 
     // The ship, moored alongside the T-head's ship side, bow to the shore.
