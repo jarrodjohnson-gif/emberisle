@@ -1111,7 +1111,7 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
   clearWake();
   get().net?.close();
   let pending = kind === "quiet";
-  let recovery = kind === "quiet";
+  let recovery = pending;
   set({ connectionHealth: { status: "Reconnecting", rtt: null } });
   let welcomed = false;
   let outdated: string | null = null;

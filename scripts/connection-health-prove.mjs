@@ -109,6 +109,33 @@ if (process.argv.includes("--host-fixture")) {
     await page.waitForFunction(() => window.__emberisle);
     await page.clock.install();
     await page.clock.pauseAt(new Date());
+    // Exercise the transport without the store: a duplicate welcome cannot cancel a pending challenge's timeout.
+    await page.evaluate(async () => {
+      const { connectTable } = await import("/src/lib/net/table.ts");
+      const h = window.__healthLifecycle = { sent: [], reports: [] };
+      class Socket {
+        readyState = 1;
+        constructor() { h.socket = this; }
+        send(raw) { h.sent.push(JSON.parse(raw)); }
+        close() { this.readyState = 3; this.onclose?.({}); }
+      }
+      h.client = connectTable("ws://fixture", { health: value => h.reports.push(value) }, Socket);
+      h.socket.onopen?.({});
+    });
+    await page.clock.fastForward(30000);
+    assert.equal(await page.evaluate(() => window.__healthLifecycle.sent.length), 0, "no client probe before welcome");
+    await page.evaluate(() => {
+      const h = window.__healthLifecycle;
+      for (let i = 0; i < 2; i++) h.socket.onmessage({ data: JSON.stringify({ type: "welcome", code: "ABCD", you: "s0" }) });
+    });
+    assert.equal(await page.evaluate(() => window.__healthLifecycle.sent.length), 1, "duplicate welcome keeps one outstanding probe");
+    assert.match(await page.evaluate(() => window.__healthLifecycle.sent[0].nonce), /^[a-f0-9]{32}$/);
+    await page.clock.fastForward(3000);
+    assert.equal(await page.evaluate(() => window.__healthLifecycle.reports.at(-1).status), "Reconnecting", "duplicate welcome preserves the 3s timeout");
+    await page.evaluate(() => window.__healthLifecycle.client.close());
+    await page.clock.fastForward(30000);
+    assert.equal(await page.evaluate(() => window.__healthLifecycle.sent.length), 1, "close cancels the next probe");
+    console.log("ok transport: no pre-welcome probe; duplicate welcome keeps one challenge and its 3s timeout; close cancels probing");
     await page.evaluate(() => {
       let previous = null;
       window.__emberisle.subscribe(s => {
@@ -250,6 +277,11 @@ if (process.argv.includes("--host-fixture")) {
     await watcher.next("welcome"); await watcher.next("state");
     watcher.send({ type: "healthPing", nonce: "c".repeat(32) });
     assert.equal((await watcher.next("healthPong")).nonce, "c".repeat(32));
+    // Check refusal while ingress tokens remain, rather than relying on the flood dropping these commands.
+    for (const command of [{ type: "hello", name: "Sneak" }, { type: "start" }, { type: "profileHello", id: "watch-health" }]) {
+      watcher.send(command);
+      assert.equal((await watcher.next("error")).message, "Watching only.", `watcher refuses ${command.type} before rate exhaustion`);
+    }
     watcher.inbox.length = 0;
     for (let i = 0; i < 100; i++) watcher.ws.send(i % 2 ? "{" : "null");
     watcher.send({ type: "hello", name: "Sneak" }); watcher.send({ type: "start" });

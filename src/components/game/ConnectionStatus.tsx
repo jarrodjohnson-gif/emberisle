@@ -1,5 +1,6 @@
 import { useGame } from "@/lib/game/store";
 import { cn } from "@/lib/utils";
+import { useViewport } from "@/lib/viewport";
 
 // The app-level probe is separate from the host's websocket control keepalive.
 export function ConnectionStatus({ className }: { className?: string }) {
@@ -11,4 +12,10 @@ export function ConnectionStatus({ className }: { className?: string }) {
       {status}{rtt === null ? "" : ` · ${rtt} ms`}
     </p>
   );
+}
+
+// Online-only UI stays with the lobby and chat instead of the first-load index.
+export function ConnectionOverlay() {
+  const { phone, portrait } = useViewport();
+  return <div className={`pointer-events-none absolute right-0 top-full whitespace-nowrap rounded bg-surface/90 ${phone && portrait ? "mt-14" : "mt-1"}`}><ConnectionStatus /></div>;
 }

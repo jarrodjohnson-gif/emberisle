@@ -210,6 +210,9 @@ const LOBBY_GIVE_UP_MS = 90 * 1000;
 // The last redial lands this long before the host lets the seat go, so the hold always outlasts the retries (G7, #528).
 const LAST_CALL_MS = 1000;
 
+// Both action IDs and health challenges use 128 random bits, including on plain-HTTP LAN joins.
+const randomNonce = () => crypto.getRandomValues(new Uint8Array(16)).reduce((hex, b) => hex + b.toString(16).padStart(2, "0"), "");
+
 // `giveUpMs` is only for proofs that cannot wait 10 minutes: it stands in for both holds until a welcome says otherwise.
 export function connectTable(url: string, on: Partial<TableEvents>, Socket?: SocketCtor, giveUpMs?: number): TableClient {
   const Ctor = Socket ?? (globalThis.WebSocket as unknown as SocketCtor);
@@ -235,36 +238,36 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
     extension = value;
     extensionListeners.forEach((listener) => listener());
   };
-  let healthTimer: ReturnType<typeof setTimeout> | null = null;
-  let probe: { nonce: string; at: number } | null = null;
+  let healthTimer: ReturnType<typeof setTimeout> | undefined;
+  // Undefined until welcome (or after close), null while authenticated and idle, otherwise the outstanding nonce.
+  // lastProbe is its send time; another probe cannot start until it is cleared.
+  let probe: string | null | undefined;
   let lastProbe = -Infinity;
-  let authenticated = false;
   let awaitingState = false;
   const health = (status: ConnectionHealth["status"], rtt: number | null = null) => on.health?.({ status, rtt });
   const stopHealth = () => {
-    if (healthTimer) clearTimeout(healthTimer);
-    healthTimer = null;
-    probe = null;
-    authenticated = false;
+    clearTimeout(healthTimer);
+    healthTimer = undefined;
+    probe = undefined;
   };
   const probeHealth = () => {
-    if (healthTimer) clearTimeout(healthTimer);
-    healthTimer = null;
-    if (!authenticated || closedByUs || ws.readyState !== 1 || probe) return;
+    // A repeated welcome must not cancel the timeout of a challenge already in flight.
+    if (probe !== null || closedByUs || ws.readyState !== 1) return;
+    clearTimeout(healthTimer);
     const wait = 30_000 - (performance.now() - lastProbe);
     if (wait > 0) {
       healthTimer = setTimeout(probeHealth, wait);
       return;
     }
-    const nonce = Array.from(crypto.getRandomValues(new Uint8Array(16)), (b) => b.toString(16).padStart(2, "0")).join("");
+    const nonce = randomNonce();
     lastProbe = performance.now();
-    probe = { nonce, at: lastProbe };
-    ws.send(JSON.stringify({ type: "healthPing", nonce }));
+    probe = nonce;
+    send({ type: "healthPing", nonce });
     healthTimer = setTimeout(() => {
       probe = null;
       health("Reconnecting");
-      // Health never changes gameplay or forces a seat drop. A real socket close owns recovery.
-      healthTimer = setTimeout(probeHealth, Math.max(0, 30_000 - (performance.now() - lastProbe)));
+      // Health never forces a seat drop. A real socket close owns recovery; setTimeout clamps an overdue wait to zero.
+      healthTimer = setTimeout(probeHealth, 30_000 - (performance.now() - lastProbe));
     }, 3000);
   };
 
@@ -278,7 +281,7 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
   const act = (msg: Record<string, unknown>) => {
     if (!stamp || ws.readyState !== 1 || rejoining || closedByUs) return false;
     // getRandomValues also works on the documented plain-HTTP LAN join; randomUUID requires HTTPS.
-    const cid = Array.from(globalThis.crypto.getRandomValues(new Uint8Array(16)), (b) => b.toString(16).padStart(2, "0")).join("");
+    const cid = randomNonce();
     ws.send(JSON.stringify({ ...msg, ...stamp, cid }));
     return true;
   };
@@ -345,13 +348,13 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
   const handle = (msg: { type?: string; [k: string]: unknown }) => {
     switch (msg.type) {
       case "healthPong": {
-        if (!probe || msg.nonce !== probe.nonce) break;
-        const elapsed = performance.now() - probe.at;
+        if (!probe || msg.nonce !== probe) break;
+        const elapsed = performance.now() - lastProbe;
         if (elapsed < 0 || elapsed >= 3000) break;
-        if (healthTimer) clearTimeout(healthTimer);
+        clearTimeout(healthTimer);
         probe = null;
-        if (!awaitingState) health("Reachable", Math.min(3000, Math.round(elapsed)));
-        healthTimer = setTimeout(probeHealth, Math.max(0, 30_000 - (performance.now() - lastProbe)));
+        if (!awaitingState) health("Reachable", Math.round(elapsed));
+        healthTimer = setTimeout(probeHealth, 30_000 - (performance.now() - lastProbe));
         break;
       }
       case "welcome": {
@@ -360,7 +363,7 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
         if (typeof m.secret === "string") seat = { code: m.code, secret: m.secret };
         if (typeof m.holdMs === "number" && typeof m.lobbyHoldMs === "number") hold = { game: m.holdMs, lobby: m.lobbyHoldMs };
         awaitingState = rejoining && inGame;
-        authenticated = true;
+        probe ??= null;
         if (!awaitingState) health("Reachable");
         probeHealth();
         rejoining = false;

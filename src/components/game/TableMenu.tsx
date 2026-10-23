@@ -6,17 +6,16 @@
 import { useEffect, useRef, useState } from "react";
 import { BookOpen, Box, Copy, Ellipsis, Eye, Hammer, LogOut, ScrollText, Volume2, VolumeX, Waves } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ConnectionStatus } from "@/components/game/ConnectionStatus";
+import { ConnectionOverlay } from "@/components/game/chunks";
 import { CopyFallback, useCopy } from "@/components/game/CopyText";
 import { useGame } from "@/lib/game/store";
 import { play, setMusicOn, setMuted, useMuted, useMusicOn } from "@/lib/sound";
-import { useViewport } from "@/lib/viewport";
+import { LazyBoundary } from "@/lib/lazy";
 
 const ROW = "h-11 w-full justify-start px-3 text-body";
 const ICON = "size-4 shrink-0 text-muted";
 
 export function TableMenu() {
-  const { phone, portrait } = useViewport();
   const state = useGame((s) => s.state)!;
   const mode = useGame((s) => s.mode);
   const code = useGame((s) => s.code);
@@ -101,7 +100,7 @@ export function TableMenu() {
 
   return (
     <div className="relative">
-      <div className={`pointer-events-none absolute right-0 top-full whitespace-nowrap rounded bg-surface/90 ${phone && portrait ? "mt-14" : "mt-1"}`}><ConnectionStatus /></div>
+      {mode === "online" ? <LazyBoundary failed={null}><ConnectionOverlay /></LazyBoundary> : null}
       <Button
         ref={trigger}
         variant="ghost"
