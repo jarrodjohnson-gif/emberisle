@@ -140,12 +140,16 @@ try {
     await page.screenshot({ path: `${outDir}/play-age160-1280x720.png` });
 
     // Rematch / new deal: a fresh island, climber story restarts at age 0.
+    const previousBoard = await page.evaluateHandle(() => window.__isle.jellyBoard);
     await page.evaluate(() => window.__emberisle.getState().startHotseat(4));
-    await page.waitForFunction(() => window.__isle?.landReady && window.__isle.jellyBoard, null, { timeout: 180_000 });
+    await page.waitForFunction(
+      (previous) => window.__isle?.landReady && window.__isle.jellyBoard && window.__isle.jellyBoard !== previous,
+      previousBoard,
+      { timeout: 180_000 },
+    );
     await page.waitForTimeout(300);
     const afterRematch = await page.evaluate(() => {
       const jelly = window.__isle.jellyBoard;
-      jelly.setAge(0);
       const tile = [...jelly.byHex.values()].find((e) => e.k.kind === "ore").k.tile;
       let c = null;
       tile.group.traverse((o) => {
@@ -159,7 +163,8 @@ try {
         peakR: p0.r,
       };
     });
-    check("rematch: age 0 at the foot", afterRematch.age === 0 && afterRematch.dist > afterRematch.peakR * 1.5 && !afterRematch.sit, afterRematch);
+    check("rematch: natural age below 2s at the foot on a new board", afterRematch.age >= 0 && afterRematch.age < 2 && afterRematch.dist > afterRematch.peakR * 1.5 && !afterRematch.sit, afterRematch);
+    await previousBoard.dispose();
 
     await ctx.close();
   }
@@ -192,7 +197,7 @@ try {
     page = await ctx.newPage();
     await page.goto(`http://127.0.0.1:${port}/`);
     await page.waitForFunction(() => window.__isle?.landReady && window.__isle.jellyBoard, null, { timeout: 180_000 });
-    // Linger on the title (demo board) long enough that a buggy age clock would finish the climb.
+    // Linger longer than the allowed initial play age, so a clock started on the title fails.
     await page.waitForTimeout(4000);
     const lingered = await climberAt();
     check("lobby/title linger: still age 0 at the foot", lingered && lingered.age === 0 && !lingered.sit && lingered.dist > lingered.peakR, lingered);
@@ -216,8 +221,8 @@ try {
       };
     });
     check(
-      "after lobby: play starts near the foot (age << climb)",
-      justPlay.age < 30 && !justPlay.sit && justPlay.dist > justPlay.peakR,
+      "after lobby: natural play age below 2s, excluding the 4s title linger",
+      justPlay.age >= 0 && justPlay.age < 2 && !justPlay.sit && justPlay.dist > justPlay.peakR,
       justPlay,
     );
     await ctx.close();
