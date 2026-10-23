@@ -19,6 +19,31 @@
       "id": "turn-gain-prove",
       "pattern": "FAIL .*: no gain line is up while \"Your turn\" is",
       "issue": 860
+    },
+    {
+      "id": "chat-prove",
+      "pattern": "FAIL phone game 390x844 \\{\"total\":\\d+,\"whole\":\\d+,\"newest\":false,\"newestText\":\"[^\"]*\",\"font\":\\d+,\"size\":\"390x844\"\\}: \\d+ whole chat lines on screen",
+      "issue": 860
+    },
+    {
+      "id": "tokens-prove",
+      "pattern": "FAIL 7 no numeral behind the scenery \\(1280x720\\): the \\d+: 1 of 5 points( \\(hit \\([^)]*\\) on \\w+ seed \\d+\\))?\\n",
+      "issue": 887
+    },
+    {
+      "id": "tabs-prove-4",
+      "pattern": "FAIL timed out: start\\n",
+      "issue": 951
+    },
+    {
+      "id": "board-touch-prove",
+      "pattern": "AssertionError \\[ERR_ASSERTION\\]: setup: a tap on a Pasture hex plays nothing\\n",
+      "issue": 860
+    },
+    {
+      "id": "flash-prove",
+      "pattern": "flash-prove failed: page\\.waitForFunction: Timeout 120000ms exceeded\\.\\n\\S+ +at settled \\(",
+      "issue": 904
     }
   ]
 }
