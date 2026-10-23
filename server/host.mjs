@@ -634,6 +634,8 @@ function deadlineOf(room) {
 }
 
 function pushState(room) {
+  // Recovery during rejoin or takeover can finish a game too. Release before publishing it.
+  maybeReleaseOpenSlot(room);
   armTurns(room);
   extensions(room).sync();
   // The soonest armed window, and whose it is, so every HUD can count it down (#345). `serverNow` lets a client
