@@ -275,30 +275,34 @@ try {
     await page.waitForFunction(() => (window.__isle.busyUntil ?? 0) < performance.now());
     const spot = await waterNearFish(page);
     assert.ok(spot, `${tag}: open water near a fish in the hole`);
-    const before = await page.evaluate(({ x, z }) => window.__isle.oceanLife.fishAt().map((f, i) => ({ i, d: Math.hypot(f.x - x, f.z - z) })).filter((f) => f.d <= 1.5), spot);
-    assert.ok(before.length > 0, `${tag}: a fish within 1.5 of the tap`);
-    // Hold the original check's 0.3s dart phase while its native pose is captured; clock timing is tested above.
-    await page.evaluate((ids) => {
+    // Sample the native affected set at input delivery; fish may move while browser input is queued.
+    // Hold just past the original check's 0.3s phase until its native pose is captured; timing is tested above.
+    await page.evaluate(() => {
       const life = window.__isle.oceanLife, step = life.step, scatter = life.scatter;
-      let press = null;
+      let press = null, ids = [];
+      window.__fishBefore = [];
       window.__fishDart = null;
       window.__restoreFishDart = () => { life.step = step; life.scatter = scatter; };
       life.scatter = function (x, z, ...rest) {
         press = { x, z };
+        window.__fishBefore = this.fishAt().map((f, i) => ({ i, d: Math.hypot(f.x - x, f.z - z) })).filter((f) => f.d <= 1.5);
+        ids = window.__fishBefore.map((f) => f.i);
         return scatter.call(this, x, z, ...rest);
       };
       life.step = function (dt, enabled, ...rest) {
         const age = Math.min(...ids.map((i) => this.fishFlee[i]?.age ?? 0));
-        const heldDt = press && enabled ? Math.max(0, 0.3 - age) : dt;
+        const pending = Math.max(0, ...ids.map((i) => this.fishFlee[i]?.pending ?? 0));
+        // Preserve the input interval that native step subtracts once; avoid requiring a second slow frame.
+        const heldDt = press && enabled ? pending + Math.max(0, 0.31 - age) : dt;
         const out = step.call(this, heldDt, enabled, ...rest);
-        if (press && ids.every((i) => this.fishFlee[i] && this.fishFlee[i].age >= 0.3 && this.fishFlee[i].age < 4)) {
+        if (press && ids.length > 0 && ids.every((i) => this.fishFlee[i] && this.fishFlee[i].age >= 0.3 && this.fishFlee[i].age < 4)) {
           const fish = this.fishAt();
           window.__fishDart = ids.map((i) => Math.hypot(fish[i].x - press.x, fish[i].z - press.z));
           window.__restoreFishDart();
         }
         return out;
       };
-    }, before.map((f) => f.i));
+    });
     if (touch) await tap(page, spot.s, true);
     else {
       await page.mouse.move(spot.s.x, spot.s.y);
@@ -306,6 +310,8 @@ try {
       assert.equal(await live(page), 1, `${tag}: the splash is there on pointerdown, before the release`);
       await page.mouse.up();
     }
+    const before = await page.evaluate(() => window.__fishBefore);
+    assert.ok(before.length > 0, `${tag}: a fish within 1.5 of the tap`);
     const made = await page.evaluate(() => {
       const isle = window.__isle, s = isle.splash.uniforms.uSplash.value.find((v) => v.w > 0);
       return { x: s.x, z: s.y, t0: s.z, w: s.w };
