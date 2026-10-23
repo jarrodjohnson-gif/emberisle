@@ -40,6 +40,7 @@ async function open(width, height, touch, water) {
     const gl = isle.renderer.domElement;
     const draw = isle.composer.render.bind(isle.composer);
     window.__shots = {};
+    window.__shotScenes = {};
     isle.composer.render = (...a) => {
       const out = draw(...a);
       const want = window.__want;
@@ -49,6 +50,7 @@ async function open(width, height, touch, water) {
         c.height = gl.height;
         c.getContext("2d").drawImage(gl, 0, 0);
         window.__shots[want.label] = c.getContext("2d").getImageData(0, 0, c.width, c.height);
+        window.__shotScenes[want.label] = { land: isle.jellyBoard, shore: isle.shore, gen: isle.landGen };
         window.__want = null;
         want.res();
       }
@@ -71,9 +73,9 @@ async function open(width, height, touch, water) {
 
 const settle = async (page) => {
   // Store delivery and camera work can precede a GPU-deferred draw. Sample picks only after that state has drawn.
-  await page.waitForFunction(() => window.__isle.lastState === window.__emberisle.getState().state && !window.__isle.refitDue && !window.__isle.glide);
+  await page.waitForFunction(() => window.__isle.lastState === window.__emberisle.getState().state && window.__isle.landReady && (window.__isle.lite || window.__isle.shore) && window.__isle.relayout === 0 && !window.__isle.refitDue && !window.__isle.glide);
   const frame = await page.evaluate(() => window.__isle.renders);
-  await page.waitForFunction((before) => window.__isle.renders > before && window.__isle.lastState === window.__emberisle.getState().state && !window.__isle.refitDue && !window.__isle.glide, frame);
+  await page.waitForFunction((before) => window.__isle.renders > before && window.__isle.lastState === window.__emberisle.getState().state && window.__isle.landReady && (window.__isle.lite || window.__isle.shore) && window.__isle.relayout === 0 && !window.__isle.refitDue && !window.__isle.glide, frame);
 };
 
 // The page holds a crafted turn: `phase` for the seat on turn, nothing armed.
@@ -146,6 +148,11 @@ async function heldPair(page, at, age) {
   }, { at, age });
   await page.evaluate(() => window.__grab("with"));
   await page.evaluate(() => { window.__held = false; return window.__grab("without"); });
+  const stableScene = await page.evaluate(() => {
+    const a = window.__shotScenes.with, b = window.__shotScenes.without;
+    return !!a.land && a.land === b.land && a.shore === b.shore && a.gen === b.gen;
+  });
+  assert.ok(stableScene, "paired splash images use the same fully built scene");
   await page.evaluate(() => {
     const isle = window.__isle;
     isle.splash.step = window.__step;
