@@ -105,9 +105,17 @@ try {
     const stood = isle.wayfarer.position.clone();
     const tw = window.__spot(to);
     const ys = [];
+    // These synchronous samples advance virtual time without yielding a real frame. Complete the previous GPU work
+    // before each virtual frame, as the native loop's backpressure requires; never bypass the renderer's fence check.
+    const frame = () => {
+      isle.renderer.getContext().finish();
+      const before = isle.renders;
+      isle.tick();
+      if (isle.renders !== before + 1) throw new Error("virtual wayfarer frame did not draw after real GPU completion");
+    };
     for (let ms = 0; ms < 700; ms += 50) {
       vt += 0.05;
-      isle.tick();
+      frame();
       const p = isle.wayfarer.position;
       const e = Math.hypot(p.x - stood.x, p.z - stood.z) / Math.hypot(tw.x - stood.x, tw.z - stood.z);
       ys.push(p.y - (stood.y + (face - stood.y) * e));
@@ -116,7 +124,7 @@ try {
     for (let i = 1; i < ys.length; i++) if (ys[i - 1] <= 0.2 && ys[i] > 0.2) rises++;
     for (let ms = 700; ms < 1000; ms += 50) {
       vt += 0.05;
-      isle.tick();
+      frame();
     }
     delete isle.clock.getElapsed;
     const w = window.__spot(to);
