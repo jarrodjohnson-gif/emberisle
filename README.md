@@ -197,6 +197,7 @@ npm run size-prove           # built JS chunks stay inside a gzip size budget (r
 npm run size-delta-prove     # the growth check on fixture sizes (no build)
 npm run music-prove          # gameplay background music (docs/design/sound.md): silent before the first gesture, loops, ducks under stings, mute, win screen and title stop it
 npm run sounds-prove         # table sounds (docs/design/sound.md): 150 ms spacing burst rule, volumes, practice placements and turns, online chat and mute
+npm run audio-level-prove  # every file in public/audio is within 1 LU of its type's target (reactions -16 LUFS, music -18, table effects -18) and peaks at or below -1 dBTP (#1073); needs ffmpeg
 npm run stale-prove          # raw wire replays against the real host, independent of the client's queue-clearing behavior
 npm run tokens-prove         # number tokens are rimmed and legible, and nothing is placed or wanders within 0.31 of a hex centre
 npm run touch-place-prove    # phone camera fit and touch picking from docs/design/mobile-camera-touch.md, checked on pure math in src/lib/scene/mobile-fit.ts (no browser)
@@ -341,6 +342,7 @@ Full rules: **[docs/FRAMEWORK.md](docs/FRAMEWORK.md)**. In short:
 - `sb_airhorn.mp3`
 - `sb_quit_touchin.mp3`
 - `sb_only_wood.mp3`
+- `sb_perfect.mp3` (approved 2026-10-24)
 
 ---
 
@@ -365,7 +367,7 @@ WebSocket JSON. The client sends intents. The server answers with `state` or `er
 | `{type:"rob", hexId, stealFrom}` `{type:"discard", cards}` | After a 7 |
 | `{type:"tradeBank", give, take}` `{type:"tradeAsk", give, want}` `{type:"tradeAnswer", tradeId, yes}` | Trades. A `tradeAsk` is refused to the asker alone, with "Bad trade." (`give` or `want` is not a bag of known resources), "You lack those goods." or "Offer something." (both bags empty). A new ask closes the open one with `tradeClosed`. |
 | `{type:"chat", text}` | One chat line, lobby or game (200 chars, rate-limited) |
-| `{type:"sound", id}` | A soundboard tap over the chat path: `id` is one of `robbed_fah` ("Fah"), `sb_wololo` ("Wololo"), `sb_win_reaction` ("GG!"), `sb_airhorn` ("Airhorn"), `sb_quit_touchin` ("Quit touchin' me"), `sb_only_wood` ("Only wood?"), `bong`, `plop`, `pluck` (the clips are in public/audio; the host relays only a whitelisted id). Same chat bucket as `chat`, plus one tap per seat every `SOUND_MS` (default 3000); a seat's renames are paced the same way by `RENAME_MS` (default 2000, "Slow down."). Errors: "Unknown sound.", "Slow down.". Every seat gets `chat` with `sound:id` and `text:"🔊 Label"` (shown as the chip "Ember 🔊 Fah"; kept in the room's chat history, which a late joiner sees without hearing it); each page plays the clip unless that listener has muted. |
+| `{type:"sound", id}` | A soundboard tap over the chat path: `id` is one of `robbed_fah` ("Fah"), `sb_wololo` ("Wololo"), `sb_win_reaction` ("GG!"), `sb_airhorn` ("Airhorn"), `sb_quit_touchin` ("Quit touchin' me"), `sb_only_wood` ("Only wood?"), `sb_perfect` ("Perfect"), `bong`, `plop`, `pluck` (the clips are in public/audio; the host relays only a whitelisted id). Same chat bucket as `chat`, plus one tap per seat every `SOUND_MS` (default 3000); a seat's renames are paced the same way by `RENAME_MS` (default 2000, "Slow down."). Errors: "Unknown sound.", "Slow down.". Every seat gets `chat` with `sound:id` and `text:"🔊 Label"` (shown as the chip "Ember 🔊 Fah"; kept in the room's chat history, which a late joiner sees without hearing it); each page plays the clip unless that listener has muted. |
 | `{type:"react", emote, to}` | A reaction image, `to` a seat or player id or omitted |
 
 | Host → client | Meaning |
@@ -393,6 +395,7 @@ Every gameplay intent (place, roll, pass, buy, play, rob, discard, bank trade, t
 | `node --import ./server/register.mjs server/trade-prove.mjs` | Bank 4:1, discards, steals |
 | `npm run music-prove` | Browser: the background track is not fetched or played before the first interaction, then plays at 0.25 and loops, ducks to 30% under `game_start` and returns, stops on mute and resumes, follows mute for a watcher, obeys the Table menu's Music row, stops at the win screen and on the title (`scripts/music-prove.mjs`) |
 | `npm run sounds-prove` | Browser: every table sound plays its clip once, a bot round is spaced, mute and a focused chat silence them (`scripts/sounds-prove.mjs`) |
+| `npm run audio-level-prove` | Every file in `public/audio/` is within 1 LU of its type's target (reactions and soundboard -16 LUFS, music -18 LUFS, table effects -18 by short-clip loudness) and peaks at or below -1 dBTP; needs ffmpeg (`scripts/audio-level-prove.mjs`; levels made by `scripts/level-audio.mjs`, #1073) |
 | `node server/sound-prove.mjs` | The host finds the wavs in `public/audio/` through `server/cue.mjs`, and a missing sound is null, not a crash |
 | `node --import ./server/register.mjs server/table-prove.mjs` | 3 sockets: codes, color taken, peek before sitting, ready, start, setup glow and neighbor rule, 20 rolls match the host, and the table's error strings (full, host-only start, 3 or 4, already started, not your turn) |
 | `node --import ./server/register.mjs server/trade-table-prove.mjs` | 3 sockets: a table trade's decline reaches every seat, a yes swaps both hands, a pass closes the offer and a late yes errors |
