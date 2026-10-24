@@ -33,10 +33,12 @@ async function openPage({ coarse = true, reducedMotion = false, missingAPI = fal
     window.__buzzTimes = [];
     window.__knocks = [];
     window.__gainTicks = 0;
+    window.__uiClicks = 0;
     const realPlay = HTMLMediaElement.prototype.play;
     HTMLMediaElement.prototype.play = function () {
       if (this.src.endsWith("/drop_003.wav")) window.__knocks.push(performance.now());
       if (this.src.endsWith("/click_002.wav")) window.__gainTicks++;
+      if (this.src.endsWith("/click_001.wav")) window.__uiClicks++;
       return realPlay.call(this);
     };
     const realMatch = window.matchMedia.bind(window);
@@ -441,21 +443,33 @@ async function coldLoadProof(url, production) {
   let tap;
   try {
     await Promise.race([request, new Promise((_, reject) => setTimeout(() => reject(new Error("cold haptics module was not requested")), STEP_MS))]);
+    await page.evaluate(() => {
+      const store = window.__emberisle;
+      const rejoin = store.getState().rejoinTable;
+      window.__rejoins = 0;
+      store.setState({rejoinTable: (...args) => { window.__rejoins++; return rejoin(...args); }});
+    });
     let tapped = false;
     tap = page.getByRole("button", {name: "Four seats, one table", exact: true}).click({timeout: STEP_MS}).then(() => { tapped = true; });
     // This is an intentional held-download control, not an event deadline or retry.
     await page.waitForTimeout(250);
     assert.equal(tapped, false, "first native tap must wait for the optional module's registration");
+    assert.equal(await page.evaluate(() => window.__rejoins), 0, "network rejoin waits for initialization too");
     assert.equal(await page.getByRole("button").count(), 0, "interactive controls are held before initialization");
     assert.equal(await page.locator("#splash").count(), 1, "the existing loading splash remains until initialization");
     release();
     await tap;
+    assert.equal(await page.evaluate(() => window.__rejoins), 1, "bootstrap resumes rejoin exactly once after initialization");
     await page.waitForFunction(() => window.__emberisle?.getState().state && window.__isle?.lastState, null, {timeout: STEP_MS});
     // Roll real rules to the first legal outpost; the title tap was the only unlock gesture.
     for (let i = 0; i < 40; i++) {
       const phase = await page.evaluate(() => window.__emberisle.getState().state.phase);
       if (phase !== "rollOff") break;
+      // Observe each button's real sound before the next roll, so this cold fixture does not
+      // queue an artificial burst of UI clicks ahead of the first placement's recorded knock.
+      const clicks = await page.evaluate(() => window.__uiClicks);
       await page.getByRole("button", {name: "Roll", exact: true}).click({timeout: STEP_MS});
+      await page.waitForFunction((before) => window.__uiClicks > before, clicks, {timeout: STEP_MS});
     }
     assert.equal(await page.evaluate(() => window.__emberisle.getState().state.phase), "setupSettle");
     await clearBuzz(page);
