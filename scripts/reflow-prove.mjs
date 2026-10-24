@@ -157,14 +157,16 @@ try {
       const stack = r(document.querySelector("[data-hud-stack]"));
       const canvas = r(document.querySelector("canvas"));
       const chrome = portraitStrip ? portraitStrip.bottom : header.bottom;
-      // #422: on a sideways phone the stack is a left column, and the island's room is beside it, not above it.
+      // #422 / #774: on a sideways phone the stack is a left column, the hand is a right rail, and the island is between them.
       const column = stack.width < innerWidth / 2;
+      const rail = document.querySelector(".hud-goods-rail")?.getBoundingClientRect();
       const gapTop = Math.max(canvas.top, chrome);
       const gapBottom = column ? canvas.bottom : Math.min(canvas.bottom, stack.top);
       const gapLeft = column ? stack.right : canvas.left;
+      const gapRight = column && rail ? rail.left : canvas.right;
       const midY = (gapTop + gapBottom) / 2;
       // Sample across the gap: the island must take the pointer there, not a HUD panel.
-      const xs = [0.25, 0.5, 0.75].map((f) => Math.round(gapLeft + (canvas.right - gapLeft) * f));
+      const xs = [0.25, 0.5, 0.75].map((f) => Math.round(gapLeft + (gapRight - gapLeft) * f));
       const hits = gapBottom > gapTop ? xs.map((x) => document.elementFromPoint(x, midY)?.tagName ?? null) : [];
       return {
         headerBottom: Math.round(header.bottom),
@@ -172,7 +174,7 @@ try {
         stackTop: Math.round(stack.top),
         stackBottom: Math.round(stack.bottom),
         column,
-        uncovered: Math.round(Math.min(gapBottom - gapTop, canvas.right - gapLeft)),
+        uncovered: Math.round(Math.min(gapBottom - gapTop, gapRight - gapLeft)),
         hits,
         scrollWidth: document.documentElement.scrollWidth,
       };
