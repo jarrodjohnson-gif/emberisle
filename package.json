@@ -113,6 +113,7 @@
     "victory-target-prove": "node --import ./server/register.mjs scripts/victory-target-prove.mjs",
     "visual-direction-prove": "node scripts/visual-direction-prove.mjs",
     "turn-copy-prove": "node scripts/turn-copy-prove.mjs",
+    "stage-prove": "node scripts/stage-prove.mjs",
     "turn-gain-prove": "node scripts/turn-gain-prove.mjs",
     "takeover-prove": "node --import ./server/register.mjs server/takeover-prove.mjs",
     "jelly-ocean-prove": "node scripts/jelly-ocean-prove.mjs",
