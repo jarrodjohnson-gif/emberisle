@@ -158,7 +158,7 @@ async function runStoreFixture(stage) {
   proc.stdout.on("data", d => process.stdout.write(d));
   proc.stderr.on("data", d => process.stderr.write(d));
   proc.on("message", message => { count = message.checks; });
-  await new Promise((resolve, reject) => {
+  return await new Promise((resolve, reject) => {
     const timer = setTimeout(() => { proc.kill("SIGKILL"); reject(new Error(`store fixture ${stage} timed out`)); }, 60_000);
     proc.once("error", error => { clearTimeout(timer); reject(error); });
     proc.once("exit", code => {
@@ -525,7 +525,7 @@ await h.stop();
 
   const firstOwner = await runStoreFixture("prepare");
   const nextOwner = await runStoreFixture("reopen");
-  check("direct-store reopening uses a different process", firstOwner !== nextOwner);
+  check("direct-store reopening uses a different process", Number.isInteger(firstOwner) && Number.isInteger(nextOwner) && firstOwner !== nextOwner);
 }
 
 // Direct store calls make queued revocation races and expiry clocks deterministic.
