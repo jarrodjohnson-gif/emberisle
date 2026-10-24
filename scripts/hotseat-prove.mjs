@@ -330,10 +330,12 @@ try {
   // #442: Leave table is a row of the table menu; the menu's own open click is not counted.
   await page.getByRole("button", { name: "Table menu" }).click();
   // Clips start 150 ms apart (#609): let the tray's Escape and the menu's open click start before counting.
-  await page.waitForFunction(() => {
-    const n = window.__plays.length;
-    return new Promise((r) => setTimeout(() => r(window.__plays.length === n), 400));
-  }, null, { timeout: 4000 });
+  // The predicate must return a boolean, not a Promise: Playwright resolves a Promise-returning predicate once, even with false (#1071).
+  await page.waitForFunction((quietMs) => {
+    const n = window.__plays.length, now = performance.now();
+    if (window.__quietN !== n) { window.__quietN = n; window.__quietAt = now; }
+    return now - window.__quietAt >= quietMs;
+  }, 400, { timeout: 4000 });
   const playsBeforeLeave = await page.evaluate(() => window.__plays.length);
   await page.getByRole("button", { name: "Leave table" }).click();
   await page.waitForFunction(() => !window.__emberisle.getState().state, null, { timeout: STEP_MS });

@@ -154,6 +154,12 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run profile-unknown-cap-prove
       - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run profile-reservation-recovery-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run profile-expiry-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run profile-pin-race-prove
+      - if: needs.changes.outputs.docs_only != 'true'
         run: npm run next-up-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run touch-place-prove
@@ -340,8 +346,10 @@ jobs:
         run: npm run wayfarer-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-2'
         run: npm run sounds-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation'
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
         run: npm run sound-mixer-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
+        run: npm run your-turn-cue-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-2'
         run: npm run music-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
@@ -412,6 +420,8 @@ jobs:
         run: npm run turn-copy-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-2'
         run: npm run table-menu-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-2'
+        run: npm run version-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation'
         run: npm run build-ready-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-3'

@@ -341,6 +341,7 @@ Full rules: **[docs/FRAMEWORK.md](docs/FRAMEWORK.md)**. In short:
 - `sb_airhorn.mp3`
 - `sb_quit_touchin.mp3`
 - `sb_only_wood.mp3`
+- `sb_perfect.mp3` (approved 2026-10-24)
 
 ---
 
@@ -365,7 +366,7 @@ WebSocket JSON. The client sends intents. The server answers with `state` or `er
 | `{type:"rob", hexId, stealFrom}` `{type:"discard", cards}` | After a 7 |
 | `{type:"tradeBank", give, take}` `{type:"tradeAsk", give, want}` `{type:"tradeAnswer", tradeId, yes}` | Trades. A `tradeAsk` is refused to the asker alone, with "Bad trade." (`give` or `want` is not a bag of known resources), "You lack those goods." or "Offer something." (both bags empty). A new ask closes the open one with `tradeClosed`. |
 | `{type:"chat", text}` | One chat line, lobby or game (200 chars, rate-limited) |
-| `{type:"sound", id}` | A soundboard tap over the chat path: `id` is one of `robbed_fah` ("Fah"), `sb_wololo` ("Wololo"), `sb_win_reaction` ("GG!"), `sb_airhorn` ("Airhorn"), `sb_quit_touchin` ("Quit touchin' me"), `sb_only_wood` ("Only wood?"), `bong`, `plop`, `pluck` (the clips are in public/audio; the host relays only a whitelisted id). Same chat bucket as `chat`, plus one tap per seat every `SOUND_MS` (default 3000); a seat's renames are paced the same way by `RENAME_MS` (default 2000, "Slow down."). Errors: "Unknown sound.", "Slow down.". Every seat gets `chat` with `sound:id` and `text:"🔊 Label"` (shown as the chip "Ember 🔊 Fah"; kept in the room's chat history, which a late joiner sees without hearing it); each page plays the clip unless that listener has muted. |
+| `{type:"sound", id}` | A soundboard tap over the chat path: `id` is one of `robbed_fah` ("Fah"), `sb_wololo` ("Wololo"), `sb_win_reaction` ("GG!"), `sb_airhorn` ("Airhorn"), `sb_quit_touchin` ("Quit touchin' me"), `sb_only_wood` ("Only wood?"), `sb_perfect` ("Perfect"), `bong`, `plop`, `pluck` (the clips are in public/audio; the host relays only a whitelisted id). Same chat bucket as `chat`, plus one tap per seat every `SOUND_MS` (default 3000); a seat's renames are paced the same way by `RENAME_MS` (default 2000, "Slow down."). Errors: "Unknown sound.", "Slow down.". Every seat gets `chat` with `sound:id` and `text:"🔊 Label"` (shown as the chip "Ember 🔊 Fah"; kept in the room's chat history, which a late joiner sees without hearing it); each page plays the clip unless that listener has muted. |
 | `{type:"react", emote, to}` | A reaction image, `to` a seat or player id or omitted |
 
 | Host → client | Meaning |

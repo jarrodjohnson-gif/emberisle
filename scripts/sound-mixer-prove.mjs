@@ -9,7 +9,7 @@ import { createServer } from "vite";
 const groups = {
   game: ["dice_land", "path_place", "outpost_place", "stronghold_place", "card_buy", "card_play", "trade_yes", "trade_no", "ui_click", "ui_back", "ui_error", "win", "your_turn", "timer_tick", "timer_final", "chip_gain", "gain_tick", "wayfarer_move", "trade_offer", "chat_send", "chat_recv"],
   touch: ["plop", "tap_pasture", "tap_forest", "tap_hills", "tap_fields", "tap_mountains", "tap_waste"],
-  memes: ["robbed_fah", "match_point", "sb_wololo", "sb_win_reaction", "sb_airhorn", "sb_quit_touchin", "sb_only_wood", "board_bong", "board_plop", "board_pluck"],
+  memes: ["robbed_fah", "match_point", "sb_wololo", "sb_win_reaction", "sb_airhorn", "sb_quit_touchin", "sb_only_wood", "sb_perfect", "board_bong", "board_plop", "board_pluck"],
   music: ["game_start", "game_lose", "end_music"],
 };
 const source = readFileSync(new URL("../src/lib/sound.ts", import.meta.url), "utf8");
