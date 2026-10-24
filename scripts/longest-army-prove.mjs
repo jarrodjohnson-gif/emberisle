@@ -44,18 +44,36 @@ try {
     if (action.type === "playKnight") me.hidden.knight = 1;
     return applyAction(s, pid, action);
   };
+  // Board seeds do not fix crypto dice. Four real roll-off draws give p0,p2,p3,p1, usable at seed 1.
+  const fixtureRolls = [5, 2, 4, 3]; // dice 6,3,5,4 for p0,p1,p2,p3 (rollDie adds one)
+  const nativeRandomValues = crypto.getRandomValues;
+  const nativeRandomDescriptor = Object.getOwnPropertyDescriptor(crypto, "getRandomValues");
   const settled = (seed) => {
-    let st = createGame({ seed, humans: ["Seat 1", "Seat 2", "Seat 3", "Seat 4"].map((name) => ({ name })), bots: 0, wayfarerMode: "off" });
-    for (let i = 0; i < 200 && st.phase !== "roll"; i++) {
-      const cur = st.current;
-      const action = st.phase === "rollOff" ? { type: "roll" }
-        : st.phase === "setupSettle" ? { type: "setupSettle", vertexId: legalSettle(st, cur, true)[0] }
-        : { type: "setupRoad", edgeId: legalRoads(st, cur, true)[0] };
-      const r = applyAction(st, cur, action);
-      assert.ok(!r.error, `setup: ${r.error}`);
-      st = r.state;
+    let draws = 0;
+    try {
+      // This synchronous fixture alone controls its four roll-off dice; other array types stay native.
+      Object.defineProperty(crypto, "getRandomValues", { configurable: true, writable: true, value: (buf) => {
+        if (!(buf instanceof Uint32Array) || buf.length !== 1) return nativeRandomValues.call(crypto, buf);
+        assert.ok(draws < fixtureRolls.length, "fixture roll-off requested an unexpected extra die");
+        buf[0] = fixtureRolls[draws++];
+        return buf;
+      } });
+      let st = createGame({ seed, humans: ["Seat 1", "Seat 2", "Seat 3", "Seat 4"].map((name) => ({ name })), bots: 0, wayfarerMode: "off" });
+      for (let i = 0; i < 200 && st.phase !== "roll"; i++) {
+        const cur = st.current;
+        const action = st.phase === "rollOff" ? { type: "roll" }
+          : st.phase === "setupSettle" ? { type: "setupSettle", vertexId: legalSettle(st, cur, true)[0] }
+          : { type: "setupRoad", edgeId: legalRoads(st, cur, true)[0] };
+        const r = applyAction(st, cur, action);
+        assert.ok(!r.error, `setup: ${r.error}`);
+        st = r.state;
+      }
+      assert.equal(draws, fixtureRolls.length, "fixture roll-off used four distinct dice");
+      return st;
+    } finally {
+      if (nativeRandomDescriptor) Object.defineProperty(crypto, "getRandomValues", nativeRandomDescriptor);
+      else delete crypto.getRandomValues;
     }
-    return st;
   };
   // Lay paths for `pid` one at a time, each one lengthening its longest path by one, until it is `target` long; null if boxed in.
   const grow = (st, pid, target) => {
@@ -109,6 +127,10 @@ try {
     ];
   }
   assert.ok(steps, "the rules built every scenario on some island");
+  assert.equal(steps[0].st.seed, 1, "the fixed fixture succeeds on seed 1");
+  assert.deepEqual(steps[0].st.players.map((p) => p.id), ["p0", "p2", "p3", "p1"], "the real roll-off produced the usable setup order");
+  assert.equal(crypto.getRandomValues, nativeRandomValues, "native crypto restored before browser pages");
+  assert.deepEqual(Object.getOwnPropertyDescriptor(crypto, "getRandomValues"), nativeRandomDescriptor, "native crypto descriptor restored");
   for (const s of steps) {
     assert.equal(s.st.longestRoad, s.path, `${s.name}: rules say path holder ${s.path}, got ${s.st.longestRoad}`);
     assert.equal(s.st.largestArmy, s.army, `${s.name}: rules say army holder ${s.army}, got ${s.st.largestArmy}`);
@@ -179,7 +201,22 @@ try {
         for (const [kind, t] of [["path", s.path], ["army", s.army]]) {
           assert.ok(t.shown && t.box.w > 0 && t.box.h > 0, `${tag}: ${kind} tally is shown`);
           assert.ok(t.box.l >= s.card.l && t.box.r <= s.card.r && t.box.t >= s.card.t && t.box.b <= s.card.b, `${tag}: ${kind} tally ${JSON.stringify(t.box)} is inside its card ${JSON.stringify(s.card)}`);
+          try {
           assert.ok(t.box.r <= s.vp.l + 0.5 || t.box.b <= s.vp.t || t.box.t >= s.vp.b, `${tag}: ${kind} tally clears the points`);
+          } catch (error) {
+            // #1081: retain the failing read, rather than measuring a later animation frame.
+            console.error("army-clearance-diagnostic " + JSON.stringify({
+              viewport: v, step: step.name, phase: phase ?? null, seat: s.id, kind,
+              badge: t.badge, shown: t.shown, label: t.label, animation: t.anim,
+              tally: t.box, card: s.card, points: s.vp,
+              clauses: {
+                leftOfPoints: t.box.r <= s.vp.l + 0.5,
+                abovePoints: t.box.b <= s.vp.t,
+                belowPoints: t.box.t >= s.vp.b,
+              },
+            }));
+            throw error;
+          }
           const [r, g, b, a] = t.bg;
           assert.equal(a === 255 && r > 200 && g > 150 && b < 120, t.badge, `${tag}: ${kind} is gold [${t.bg}] exactly when it is the badge`);
           if (!t.badge) assert.equal(a, 0, `${tag}: ${kind} has no fill without the badge`);
