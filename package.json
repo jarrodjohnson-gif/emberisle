@@ -33,6 +33,7 @@
     "music-prove": "node scripts/music-prove.mjs",
     "practice-trade-prove": "node --import ./server/register.mjs scripts/practice-trade-prove.mjs",
     "pieces-prove": "node --import ./server/register.mjs scripts/pieces-prove.mjs",
+    "legal-glow-prove": "node --import ./server/register.mjs scripts/legal-glow-prove.mjs",
     "pieces-land-prove": "node scripts/pieces-land-prove.mjs",
     "watch-ui-prove": "node --import ./server/register.mjs scripts/watch-ui-prove.mjs",
     "win-action-prove": "node --import ./server/register.mjs scripts/win-action-prove.mjs",
