@@ -71,3 +71,51 @@ The existing haptics proof remains registered in package.json and CI; CI's brows
 already downloads the production build used by its added cold-start cases.
 
 These are local results. CI and independent review remain separate gates; no merge was performed.
+
+
+## CI fixture startup refresh
+
+The split's first CI run (`40103460570`, head `3345c78`) passed build/size, then
+`climber-prove` failed before any climber check on a fresh phone page:
+`seedHotseat` accessed an unpublished `window.__emberisle` at line 229 (job
+`120900335776`). Haptics had not run in that leg yet. The phone bootstrap is intentionally
+async; document/navigation readiness is not the app's store-ready signal.
+
+Current main `672a54f` is merged normally at `2f96e94`. The CI conflict retains every main
+suite assignment and our existing single haptics registration. Removing only that step
+and package script makes both files semantically identical to main; no other CI change.
+
+At `65fc7b7`, only `seedHotseat` gains an actual store-ready boolean predicate before its
+existing deterministic setup. Its new readiness bound is 30 seconds; every existing
+180-second renderer wait and all age/assertion/seed/RNG logic remain unchanged. There is
+no fixed sleep or early publication of the app store. A source audit compares the entire
+file outside that helper byte-for-byte and its original fixture body ignoring indentation.
+
+Fresh independent clone `work/verify844-climber`, frozen root/server installs:
+
+- [Full climber](climber-full.log) passes title, real play, rematch, both phone screenshot
+  ages, title/lobby linger, and reduced-motion checks.
+- [Held-download control](climber-cold.log): execute the actual old/new helper definitions
+  on a supported phone while the haptics request is held. Old helper fails with the exact
+  undefined/getState error; the new helper waits across a 250 ms hold, then the native
+  Four-seats action uses seed 676 and restores Math.random. [Results](climber-cold.json)
+  and [portable harness](climber-cold.mjs) are included. The controlled navigation uses
+  DOMContentLoaded to hold startup deliberately; it is a deterministic fixture-readiness
+  control, not a replay of the CI runner.
+- [Types](climber-types.log), [build](climber-build.log), [registration130](climber-registered.log),
+  [loosen](climber-loosen.log) (four changed existing proofs, none loosened),
+  [unchanged size-delta cases](climber-size-delta.log) and [all size limits](climber-size.log)
+  pass: built main `672a54f` index 125138 B, PR 125192 B, +54 B / 400 B and below 125200 B.
+
+The application's haptics implementation is unchanged from the verified split. Its other
+old-head CI failures were the documented hotseat Leave sound and same-frame turn/hand
+geometry overlap; neither is hidden or attributed to this fixture fix. New-head CI and
+independent review are still separate gates. The Leave diagnostic follow-up is #1092,
+with a separately gated stricter-boundary leaf #1093. Main's turn-gain soak recurrence is
+tracked by #1091.
+
+To repeat the held-download control after installing dependencies:
+
+```sh
+PLAYWRIGHT_BROWSERS_PATH=/path/to/browsers node docs/proofs/542-haptics/climber-cold.mjs
+```
