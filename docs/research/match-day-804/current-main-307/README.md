@@ -2,9 +2,11 @@
 
 56 PNGs cover 14 states at 1280×720 (mouse), 390×844, 844×390 and 440×956 (touch emulation). Baseline: `30737a5c81f194b1c6235c1409555ee8e6cb19bd`. Application, server, scripts and package files in the fresh capture clone are byte-identical to that main commit. The adoption preserves original authorship and merges main normally at `a987d6c`.
 
+Owner publication decision, 24 October: publish the report, logs and manifests with the [57 original JPEGs](../captures/) (56 state captures plus the [contact sheet](../contact-sheet.jpg)) and [two original PNGs](../current-main-repro/). These 59 images remain byte-for-byte unchanged. There is no attachment or recapture step before this report can merge.
+
 The new PNGs are not tracked in this report tree. They are preserved byte-for-byte in `match-day-804-current-main-307-images.zip`: 56 primary captures, four contact sheets and two supplemental scroll captures. [image-archive.json](image-archive.json) records the archive size/SHA-256 and all 62 image hashes; the original 56-capture manifest is unchanged.
 
-The owner holds the ZIP (13,787,401 bytes; SHA-256 `b83116840e9709b460bc40b7fd1f36f711bd76318fce4b5c0a8633cbdb171fde`) and may attach it to [issue #804](https://github.com/jarrodjohnson-gif/emberisle/issues/804) later. An attachment is not required to publish this report. File names, sizes and SHA-256 hashes for the 56 primary captures remain in [manifest.json](manifest.json); [image-archive.json](image-archive.json) covers all 62 PNGs, including the six contact and supplemental images.
+The optional archived payload is 13,787,401 bytes, SHA-256 `b83116840e9709b460bc40b7fd1f36f711bd76318fce4b5c0a8633cbdb171fde`. Its metadata is retained as capture provenance; it is not part of the required publication delivery. File names, sizes and SHA-256 hashes for the 56 primary captures remain in [manifest.json](manifest.json); [image-archive.json](image-archive.json) covers all 62 PNGs, including the six contact and supplemental images.
 
 After downloading the archive, extract it alongside [the local image index](index.html). Its `captures/` paths then resolve; contact sheets are `contact-1280.png`, `contact-390.png`, `contact-844.png` and `contact-440.png`. No fresh recapture is claimed by this publication cleanup.
 
