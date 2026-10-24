@@ -4,7 +4,7 @@
 
 The new PNGs are not tracked in this report tree. They are preserved byte-for-byte in `match-day-804-current-main-307-images.zip`: 56 primary captures, four contact sheets and two supplemental scroll captures. [image-archive.json](image-archive.json) records the archive size/SHA-256 and all 62 image hashes; the original 56-capture manifest is unchanged.
 
-**Archive publication is pending:** the verified ZIP is prepared in the builder workspace for attachment to [PR #896](https://github.com/jarrodjohnson-gif/emberisle/pull/896) or [issue #804](https://github.com/jarrodjohnson-gif/emberisle/issues/804). This report is awaiting that attachment URL before publication is complete.
+The owner holds the ZIP (13,787,401 bytes; SHA-256 `b83116840e9709b460bc40b7fd1f36f711bd76318fce4b5c0a8633cbdb171fde`) and may attach it to [issue #804](https://github.com/jarrodjohnson-gif/emberisle/issues/804) later. An attachment is not required to publish this report. File names, sizes and SHA-256 hashes for the 56 primary captures remain in [manifest.json](manifest.json); [image-archive.json](image-archive.json) covers all 62 PNGs, including the six contact and supplemental images.
 
 After downloading the archive, extract it alongside [the local image index](index.html). Its `captures/` paths then resolve; contact sheets are `contact-1280.png`, `contact-390.png`, `contact-844.png` and `contact-440.png`. No fresh recapture is claimed by this publication cleanup.
 
