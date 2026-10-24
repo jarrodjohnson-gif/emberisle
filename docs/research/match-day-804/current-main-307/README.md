@@ -2,7 +2,7 @@
 
 56 PNGs cover 14 states at 1280×720 (mouse), 390×844, 844×390 and 440×956 (touch emulation). Baseline: `30737a5c81f194b1c6235c1409555ee8e6cb19bd`. Application, server, scripts and package files in the fresh capture clone are byte-identical to that main commit. The adoption preserves original authorship and merges main normally at `a987d6c`.
 
-Owner publication decision, 24 October: publish the report, logs and manifests with the [57 original JPEGs](../captures/) (56 state captures plus the [contact sheet](../contact-sheet.jpg)) and [two original PNGs](../current-main-repro/). These 59 images remain byte-for-byte unchanged. There is no attachment or recapture step before this report can merge.
+Owner publication decision, 24 October: publish the report, logs and manifests with the 57 original JPEGs ([56 state captures](../captures/) plus the [contact sheet](../contact-sheet.jpg)) and [two original PNGs](../current-main-repro/). These 59 images remain byte-for-byte unchanged. There is no attachment or recapture step before this report can merge.
 
 The new PNGs are not tracked in this report tree. They are preserved byte-for-byte in `match-day-804-current-main-307-images.zip`: 56 primary captures, four contact sheets and two supplemental scroll captures. [image-archive.json](image-archive.json) records the archive size/SHA-256 and all 62 image hashes; the original 56-capture manifest is unchanged.
 
