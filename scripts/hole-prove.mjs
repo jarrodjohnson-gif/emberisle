@@ -1,8 +1,8 @@
 // #625: the declared hole (`playHole`, what the island is fitted to) covers the HUD's persistent footprint. On a phone, at rest and in
 // each in-play phase (roll, main, robber, setup), every side of the live hole (`__isle.liveInsets()`, what the chrome around the canvas
 // leaves right now) is no bigger than the declared one (`__isle.insets()`), across a width sweep: upright 320-440 px (every pixel
-// from 375 to 410, around TRAY_WRAP_MAX, where the main phase's action row stops taking two lines by rule), sideways 667-956 px. A side where the live hole is
-// bigger is a place the HUD covers a corner. Run: npm run hole-prove
+// from 375 to 411, around TRAY_WRAP_MAX (400), where the main phase's action row stops taking two lines by rule), sideways 667-956 px,
+// a 440 px case, and safe-area notch insets. A side where the live hole is bigger is a place the HUD covers a corner. Run: npm run hole-prove
 import { existsSync } from "node:fs";
 import { chromium } from "playwright";
 import { createServer } from "vite";
@@ -30,6 +30,7 @@ try {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
   await ctx.addInitScript(() => localStorage.setItem("emberisle-water", "simple"));
   const page = await ctx.newPage();
+  const cdp = await ctx.newCDPSession(page);
   page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
   page.on("pageerror", (e) => errors.push(String(e)));
   await page.goto(`http://127.0.0.1:${PORT}/`);
@@ -40,8 +41,8 @@ try {
   await page.waitForFunction(() => !document.querySelector('[data-testid="banner"]'), null, { timeout: STEP_MS });
 
   const sizes = [];
-  for (let w = 320; w <= 440; w += w >= 375 && w <= 410 ? 1 : 10) sizes.push([w, 800]);
-  sizes.push([440, 800]);
+  for (let w = 320; w <= 440; w += w === 370 ? 5 : (w >= 375 && w <= 410 ? 1 : 10)) sizes.push([w, 800]);
+  sizes.push([440, 800], [440, 956]);
   for (const w of [667, 740, 800, 844, 896, 932, 956]) sizes.push([w, 390]);
   sizes.push([956, 440], [956, 410]);
   let checked = 0;
@@ -70,6 +71,42 @@ try {
       }
     }
   }
+
+  const safeCases = [
+    { w: 390, h: 844, insets: { top: 47, right: 0, bottom: 34, left: 0 } },
+    { w: 844, h: 390, insets: { top: 0, right: 47, bottom: 21, left: 47 } },
+    { w: 440, h: 956, insets: { top: 62, right: 0, bottom: 34, left: 0 } },
+    { w: 956, h: 440, insets: { top: 0, right: 62, bottom: 21, left: 62 } },
+  ];
+  let safeTopGrew = false;
+  for (const { w, h, insets } of safeCases) {
+    await page.setViewportSize({ width: w, height: h });
+    await cdp.send("Emulation.setSafeAreaInsetsOverride", { insets });
+    for (const ph of PHASES) {
+      await page.evaluate((ph) => {
+        const g = window.__emberisle;
+        const st = structuredClone(g.getState().state);
+        st.current = st.players[0].id;
+        st.phase = ph;
+        st.dice = [3, 5];
+        st.seq++;
+        for (const p of st.players) p.resources = { timber: 4, clay: 3, wool: 2, grain: 5, ore: 2 };
+        g.setState({ state: st, localId: st.current, banner: null, error: null });
+      }, ph);
+      await frames(page, 6);
+      await page.waitForTimeout(150);
+      const m = await page.evaluate(() => ({ live: window.__isle.liveInsets(), hole: window.__isle.insets() }));
+      if (insets.top > 0 && m.hole.top > 68) safeTopGrew = true;
+      const over = ["top", "right", "bottom", "left"].filter((k) => m.live[k] > m.hole[k] + 0.5);
+      checked++;
+      if (over.length) {
+        failures.push(`${w}x${h} safe ${ph}`);
+        console.log(`FAIL ${w}x${h} safe ${ph}: live ${JSON.stringify(m.live)} over declared ${JSON.stringify(m.hole)} on ${over.join(", ")}`);
+      }
+    }
+  }
+  await cdp.send("Emulation.setSafeAreaInsetsOverride", { insets: {} });
+  if (!safeTopGrew) throw new Error("safe-area override top did not take effect");
   console.log(`${checked} size/phase pairs: live hole inside the declared hole on every side except ${failures.length}`);
   if (errors.length) throw new Error(`console errors:\n${errors.join("\n")}`);
   if (failures.length) throw new Error(`${failures.length} pair(s) over`);

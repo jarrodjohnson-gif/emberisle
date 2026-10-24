@@ -195,6 +195,11 @@ export class IsleRenderer {
   private relayout = 0;
   private sizeW = 0;
   private sizeH = 0;
+  private keyboardShrunk = false;
+  private unshrunkH = 0;
+  private unshrunkTop = 0;
+  private unshrunkWorldH = 0;
+  private unshrunkDiorama: DioramaFit | null = null;
   private raycaster = new THREE.Raycaster();
   private pointer = new THREE.Vector2();
   private land = new THREE.Group();
@@ -450,7 +455,7 @@ export class IsleRenderer {
     window.addEventListener("keydown", this.onKey);
     // Focus moving into or out of the chrome (the keyboard PlaceList shows while focused) changes the hole.
     canvas.parentElement?.addEventListener("focusin", this.remeasure);
-    canvas.parentElement?.addEventListener("focusout", this.remeasure);
+    canvas.parentElement?.addEventListener("focusout", this.onFocusOut);
     this.resize();
     this.clock.connect(document);
     this.composer = new EffectComposer(this.renderer);
@@ -761,6 +766,34 @@ export class IsleRenderer {
     return Math.hypot(b.x - a.x, b.y - a.y);
   }
 
+  // The active camera's frustum aspect ratio. Keyboard proofs read it to verify no squashing.
+  frustumAspect(): number {
+    if (this.view === "overhead") {
+      const w = this.ortho.right - this.ortho.left;
+      const h = this.ortho.top - this.ortho.bottom;
+      return h === 0 ? 0 : w / h;
+    }
+    if (this.view === "diorama") {
+      const vo = this.persp.view;
+      if (vo && vo.enabled && vo.height > 0) return vo.width / vo.height;
+      return this.persp.aspect;
+    }
+    return this.camera.aspect;
+  }
+
+  get isKeyboardShrunk(): boolean {
+    return this.keyboardShrunk;
+  }
+
+  private onFocusOut = (event: FocusEvent) => {
+    const nextInput = event.relatedTarget instanceof Element && event.relatedTarget.matches("input, textarea");
+    if (this.keyboardShrunk && !nextInput && (!this.play() || this.renderer.domElement.clientHeight >= this.unshrunkH)) {
+      this.keyboardShrunk = false;
+      this.refit(true, true);
+    }
+    this.remeasure();
+  };
+
   dispose() {
     this.clearPayers();
     this.stopped = true;
@@ -779,7 +812,7 @@ export class IsleRenderer {
     window.visualViewport?.removeEventListener("resize", this.onViewport);
     window.removeEventListener("keydown", this.onKey);
     this.renderer.domElement.parentElement?.removeEventListener("focusin", this.remeasure);
-    this.renderer.domElement.parentElement?.removeEventListener("focusout", this.remeasure);
+    this.renderer.domElement.parentElement?.removeEventListener("focusout", this.onFocusOut);
     for (const t of GATE_EVENTS) this.renderer.domElement.parentElement?.removeEventListener(t, this.gate, true);
     this.renderer.domElement.removeEventListener("pointerdown", this.onDown);
     this.renderer.domElement.removeEventListener("pointerup", this.onUp);
@@ -813,10 +846,38 @@ export class IsleRenderer {
   private resize = () => {
     this.onCameraChange();
     const c = this.renderer.domElement;
+    const prevW = this.sizeW;
+    const prevH = this.sizeH;
     const w = (this.sizeW = c.clientWidth || 1);
     const h = (this.sizeH = c.clientHeight || 1);
+    // On browsers where the on-screen keyboard shrinks the layout viewport, keep the previous fit and skip both refit
+    // and default-view re-evaluation so typing never moves the map (#627).
+    const hasFocus = Boolean(document.activeElement?.matches("input, textarea"));
+    const wasKeyboardShrunk = this.keyboardShrunk;
+    // Blur can arrive before the keyboard close animation restores the canvas: keep the crop until it really returns.
+    if (this.keyboardShrunk && (!this.play() || w !== prevW)) {
+      this.keyboardShrunk = false;
+    }
+    const keyboardShrink =
+      this.play() &&
+      this.coarse() &&
+      hasFocus &&
+      prevW > 0 &&
+      w === prevW &&
+      h < prevH;
+    if (keyboardShrink) {
+      if (!this.keyboardShrunk) {
+        this.keyboardShrunk = true;
+        this.unshrunkH = prevH;
+        this.unshrunkTop = this.ortho.top;
+        this.unshrunkWorldH = this.ortho.top - this.ortho.bottom;
+        this.unshrunkDiorama = { ...this.lens };
+      }
+    } else if (this.keyboardShrunk && h >= this.unshrunkH) {
+      this.keyboardShrunk = false;
+    }
     // A phone turned upright or on its side changes the default view (setView resizes again, in the new view).
-    if (this.play() && this.view !== this.playView()) return this.setView(this.playView());
+    if (!this.keyboardShrunk && this.play() && this.view !== this.playView()) return this.setView(this.playView());
     this.camera.aspect = w / h;
     // Dolly limit: OrbitControls.update() clamps the current distance to the new max on the next frame.
     this.controls.maxDistance = freeMaxDistance(h, hudInsets(w, h, this.coarse(), this.safe()), this.coarse());
@@ -826,10 +887,30 @@ export class IsleRenderer {
     const ratio = this.renderer.getPixelRatio();
     this.under?.setSize(Math.round(w * ratio), Math.round(h * ratio));
     this.ssao?.setSize(w, h);
-    this.refit(true);
-    // The HUD re-lays out for the new size after this event (a rotation swaps its columns and rails), so the hole just
-    // measured is the old one: measure again on each of the next frames.
-    this.relayout = RELAYOUT_FRAMES;
+    if (this.keyboardShrunk) {
+      // #627: keep world-per-pixel scale and crop to top of hole so the island never squashes while typing.
+      if (this.view === "overhead") {
+        const scale = h / this.unshrunkH;
+        const worldH = this.unshrunkWorldH * scale;
+        this.ortho.top = this.unshrunkTop;
+        this.ortho.bottom = this.unshrunkTop - worldH;
+        this.ortho.updateProjectionMatrix();
+      } else if (this.view === "diorama") {
+        const p = this.unshrunkDiorama ?? this.lens;
+        const fullW = 2 * Math.max(p.cx, w - p.cx, 1);
+        const fullH = 2 * Math.max(p.cy, this.unshrunkH - p.cy, 1);
+        this.persp.fov = (2 * Math.atan(fullH / 2 / p.focal) * 180) / Math.PI;
+        this.persp.aspect = fullW / fullH;
+        this.persp.setViewOffset(fullW, fullH, fullW / 2 - p.cx, fullH / 2 - p.cy, w, h);
+        this.orbit.panSpeed = h / fullH;
+        this.persp.updateProjectionMatrix();
+      }
+    } else {
+      this.refit(true, wasKeyboardShrunk);
+      // The HUD re-lays out for the new size after this event (a rotation swaps its columns and rails), so the hole just
+      // measured is the old one: measure again on each of the next frames.
+      this.relayout = RELAYOUT_FRAMES;
+    }
   };
 
   // The player changed the chrome without the game moving (opened the chat or a sheet, focused the PlaceList): measure the
@@ -840,17 +921,19 @@ export class IsleRenderer {
 
   // Fit the play view to the hole the HUD leaves now. The first fit of a view lands at home; a later change of hole
   // (the phase bar grew with the state) glides the frustum and the look-at point and keeps the eye the player set.
-  private refit(instant: boolean) {
+  private refit(instant: boolean, restoreProjection = false) {
     this.refitDue = false;
     if (!this.play()) return;
     const c = this.renderer.domElement;
     const base = this.insets();
     // The hole's edges on the shell, so the HUD can centre a moment on the island (TurnMoment): the one the map is fitted to.
     for (const k of ["top", "right", "bottom", "left"] as const) c.parentElement?.style.setProperty(`--hole-${k}`, `${base[k]}px`);
+    if (this.keyboardShrunk) return;
     const [w, h] = [c.clientWidth || 1, c.clientHeight || 1];
     const f = this.view === "diorama" ? fitDiorama(w, h, base) : fitOrtho(w, h, base, OVERHEAD_LEAN);
     const was = this.fit;
-    if (was && FIT_KEYS.every((k) => Math.abs(this.fitPose(f)[k] - this.fitPose(was)[k]) < 1e-6)) return;
+    // A keyboard crop changes the live projection without changing the saved fit signature.
+    if (!restoreProjection && was && FIT_KEYS.every((k) => Math.abs(this.fitPose(f)[k] - this.fitPose(was)[k]) < 1e-6)) return;
     this.fit = f;
     const upright = h > w;
     const carry = upright === this.fitUpright;
@@ -860,8 +943,8 @@ export class IsleRenderer {
       this.orbit.update();
       return;
     }
-    // The pan survives any refit but a turn of the phone (a view toggle starts from home anyway): a Safari toolbar or a
-    // keyboard resizing the canvas keeps the player's offset from home.
+    // The pan survives any refit but a turn of the phone (a view toggle starts from home anyway): a Safari toolbar
+    // resizing the canvas keeps the player's offset from home (an on-screen keyboard skips refit).
     const to = this.fitPose(f);
     if (carry) {
       const from = this.fitPose(was);
@@ -1006,7 +1089,8 @@ export class IsleRenderer {
   panLimit(): number {
     const f = this.fit;
     if (!f) return 0;
-    const half = "focal" in f ? (f.dist * Math.min(this.sizeW, this.sizeH)) / 2 / f.focal : Math.min(f.right - f.left, f.top - f.bottom) / 2;
+    const h = this.keyboardShrunk ? this.unshrunkH : this.sizeH;
+    const half = "focal" in f ? (f.dist * Math.min(this.sizeW, h)) / 2 / f.focal : Math.min(f.right - f.left, f.top - f.bottom) / 2;
     return Math.min(PAN_RADIUS, PAN_VIEW * half);
   }
 
