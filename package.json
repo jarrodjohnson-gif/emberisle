@@ -52,6 +52,7 @@
     "chat-prove": "node scripts/chat-prove.mjs",
     "lobby-prove": "node scripts/lobby-prove.mjs",
     "title-chunks-prove": "node scripts/title-chunks-prove.mjs",
+    "open-host-prove": "node scripts/open-host-prove.mjs",
     "open-table-prove": "node --import ./server/register.mjs scripts/open-table-prove.mjs",
     "lobby-overflow-prove": "node scripts/lobby-overflow-prove.mjs",
     "goods-log-prove": "node scripts/goods-log-prove.mjs",

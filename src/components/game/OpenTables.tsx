@@ -7,11 +7,9 @@ import { useGame } from "@/lib/game/store";
 import { connectTable, hostUrl, type OpenTableEntry } from "@/lib/net/table";
 import { Button } from "@/components/ui/button";
 
-// Dial only when a rules host is expected. Vite without ?host= and the GitHub Pages build have no host,
-// and a failed WebSocket would log console errors that pages-prove / client-prove treat as a hard fail.
+// Only the rules host marks its served HTML. Static root builds also support offline play.
 function hostExpected(): boolean {
-  return new URLSearchParams(location.search).has("host") ||
-    (!import.meta.env.DEV && import.meta.env.BASE_URL === "/" && !location.hostname.endsWith("github.io"));
+  return new URLSearchParams(location.search).has("host") || !!document.querySelector('meta[name="emberisle-host"]');
 }
 
 export function OpenTables() {

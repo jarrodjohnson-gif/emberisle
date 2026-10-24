@@ -882,6 +882,8 @@ async function serveStatic(req, res) {
     }
     return;
   }
+  // Automatic discovery is native-host-only; static copies of the build carry no marker.
+  if (file === path.join(DIST, "index.html")) body = Buffer.from(body.toString().replace("</head>", '<meta name="emberisle-host" content="1"></head>'));
   const hashed = raw.startsWith("/assets/");
   res.writeHead(200, {
     "content-type": TYPES[path.extname(file).toLowerCase()] ?? "application/octet-stream",
