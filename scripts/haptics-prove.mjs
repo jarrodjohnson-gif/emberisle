@@ -443,12 +443,20 @@ async function coldLoadProof(url, production) {
   let tap;
   try {
     await Promise.race([request, new Promise((_, reject) => setTimeout(() => reject(new Error("cold haptics module was not requested")), STEP_MS))]);
-    await page.evaluate(() => {
-      const store = window.__emberisle;
+    await page.evaluate(async (production) => {
+      // The app publishes __emberisle on mount, deliberately after this gate. Read the existing
+      // store export without mounting it; the production entry must finish evaluating while its
+      // async bootstrap waits, otherwise the shared-module graph would deadlock here too.
+      const exports = await import(production
+        ? document.querySelector('script[type="module"]').src
+        : "/src/lib/game/store.ts");
+      const store = Object.values(exports).find((value) => typeof value === "function" &&
+        typeof value.getState === "function" && typeof value.getState().rejoinTable === "function");
+      if (!store) throw new Error("cold entry did not expose its shared game store");
       const rejoin = store.getState().rejoinTable;
       window.__rejoins = 0;
       store.setState({rejoinTable: (...args) => { window.__rejoins++; return rejoin(...args); }});
-    });
+    }, production);
     let tapped = false;
     tap = page.getByRole("button", {name: "Four seats, one table", exact: true}).click({timeout: STEP_MS}).then(() => { tapped = true; });
     // This is an intentional held-download control, not an event deadline or retry.
