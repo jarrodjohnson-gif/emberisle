@@ -1,0 +1,82 @@
+
+> board-look-prove
+> node scripts/board-look-prove.mjs
+
+ok   one key lamp casts the shadows, no flat ambient ["HemisphereLight #e9e4da x0.55","DirectionalLight #ffe3bd x2.1","DirectionalLight #d9e4ea x0.3"]
+ok   the key carries the light: at least 3x the bounce {"keyOverBounce":3.82}
+ok   the key is warm (linear r/b at least 1.5) and the bounce near grey (sky spread <= 0.1, ground <= 0.3) {"keyWarm":1.97,"skySpread":0.06,"groundSpread":0.26}
+ok   soft shadows: PCF blurred at least 4 texels, from a map of at most 1024 {"type":1,"radius":6,"map":1024}
+ok   exposure at most 1.1 {"exposure":1.05}
+ok   the title keeps the free camera and its orbit {"view":"free","autoRotate":true}
+ok   1280x720 crystal: a coast edge with open water beside it inside the hole {"shore":{"x":810.7970901619864,"y":290.277916890374},"deep":{"x":927.2267360166284,"y":290.277916890374}}
+ok   1280x720 crystal: deep water is a light blue-green, no darker or more saturated than #4ab9b5 {"deep":[138,211,212]}
+ok   1280x720 crystal: the shallow band is near-white aqua #cdf1ec (within 20/255), lighter than the deep {"shore":[199,228,219],"deep":[138,211,212]}
+ok   1280x720 crystal, zoomed out: the sea fills the canvas to its corner (teal, no paper) {"rgb":[138,211,213]}
+ok   1280x720 crystal, free view tilted low: the far horizon is the studio paper #f1efe9 (within 6/255) {"rgb":[241,239,233]}
+ok   1280x720: the diorama camera is on in play (the default for the screen's shape) {"view":"diorama"}
+ok   1280x720: every corner and dock inside the measured HUD hole {"hole":{"l":216,"t":68,"r":968,"b":500},"dockIn":0,"out":[]}
+ok   1280x720: every corner lands on the canvas (clear of the HUD) []
+ok   1280x720: nine piers and nine boats, one per dock, each boat on its dock's two corners {"piers":9,"boats":9,"corners":18,"mismatched":0}
+ok   1280x720: every number token is at least 24 px across {"smallest":31.7}
+ok   1280x720: the default view is at its fitted home, 38° above the horizon {"polar":0.908,"azimuth":0.349,"zoom":1,"target":[0,0.35,0],"glide":false}
+ok   1280x720: a drag orbits the camera {"polar":0.489,"azimuth":-0.698,"zoom":1,"target":[0,0.35,0],"glide":false}
+ok   1280x720: a drag from a legal corner places nothing {"seq":[4,4],"pieces":[0,0],"mark":"-2.91,-0.56"}
+ok   1280x720: an out-and-back drag ending on the corner places nothing {"seq":[4,4],"pieces":[0,0]}
+ok   1280x720: a wheel zooms in {"zoom":1.131}
+ok   1280x720: Home glides back to the fitted view {"startedGlide":true,"polar":0.908,"azimuth":0.349,"zoom":1,"target":[0,0.35,0],"glide":false}
+ok   1280x720: the two clicks land inside the 350 ms double-tap window {"downMs":2,"upMs":1}
+ok   1280x720: a double click on empty board returns to the fitted view and places nothing {"before":{"polar":0.646,"azimuth":1.396,"zoom":1,"target":[0,0.35,0],"glide":false},"after":{"polar":0.908,"azimuth":0.349,"zoom":1,"target":[0,0.35,0],"glide":false},"seq":[4,4],"gaps":{"downMs":2,"upMs":1}}
+ok   1280x720: a click on the legal corner still places {"seq":[4,5],"pieces":[0,1]}
+ok   1280x720: under reduced motion Home snaps at once {"before":{"polar":0.908,"azimuth":-0.698,"zoom":1,"target":[0,0.35,0],"glide":false},"noGlide":true,"after":{"polar":0.908,"azimuth":0.349,"zoom":1,"target":[0,0.35,0],"glide":false}}
+ok   1280x720: mid-game with the hand shown and an armed path every token is at least 24 px across {"phase":"main","armed":"path","hand":true,"insets":{"top":68,"right":312,"bottom":220,"left":216},"token":31.7}
+ok   1280x720: closed-chat lines are one seat bubble, not a rail: no preview pills, taps pass through, the right inset is the rail the wide layout always keeps (312) and the camera stays put {"previews":0,"bubbles":1,"bubbleW":192,"passes":true,"right":312,"target":[0,0.35,0],"before":[0,0.35,0]}
+ok   1280x720: View > Overhead shows the fitted 25° overhead view, every corner and dock in the hole, and is saved {"view":"overhead","polar":0.436,"azimuth":0,"zoom":1,"target":[1.2,0.35,2.09],"glide":false,"out":[],"covered":[],"saved":"overhead"}
+ok   1280x720: the overhead view still orbits on a drag {"polar":0.175,"azimuth":-1.047,"zoom":1,"target":[1.2,0.35,2.09],"glide":false}
+ok   1280x720: the overhead choice outlives a reload
+ok   1280x720: View > Diorama switches back and is saved
+ok   390x844 touch: the overhead camera is on in play (the default for the screen's shape) {"view":"overhead"}
+ok   390x844 touch: every corner and dock inside the measured HUD hole {"hole":{"l":12,"t":68,"r":378,"b":518},"dockIn":7.9,"out":[]}
+ok   390x844 touch: every corner lands on the canvas (clear of the HUD) []
+ok   390x844 touch: nine piers and nine boats, one per dock, each boat on its dock's two corners {"piers":9,"boats":9,"corners":18,"mismatched":0}
+ok   390x844 touch: every number token is at least 18 px across {"smallest":21.5}
+ok   390x844 touch: the default view is at its fitted home, leaned 25° {"polar":0.436,"azimuth":0,"zoom":1,"target":[0,0.35,4.51],"glide":false}
+ok   390x844 touch: a one-finger drag orbits the camera {"polar":0.12,"azimuth":-0.893,"zoom":1,"target":[0,0.35,4.51],"glide":false}
+ok   390x844 touch: a drag from a legal corner places nothing {"seq":[4,4],"pieces":[0,0],"mark":"-2.91,-0.56"}
+ok   390x844 touch: an out-and-back drag ending on the corner places nothing {"seq":[4,4],"pieces":[0,0]}
+ok   390x844 touch: the two taps land inside the 350 ms double-tap window {"downMs":2,"upMs":2}
+ok   390x844 touch: a double tap on empty board returns to the fitted view and places nothing {"before":{"polar":0.12,"azimuth":0,"zoom":1,"target":[0,0.35,4.51],"glide":false},"after":{"polar":0.436,"azimuth":0,"zoom":1,"target":[0,0.35,4.51],"glide":false},"seq":[4,4],"gaps":{"downMs":2,"upMs":2}}
+ok   1024x768: the fit is the one the hole asks for {"seq":6,"ins":"{\"top\":68,\"right\":312,\"bottom\":220,\"left\":216}","pose":"{\"focal\":1129.111226274829,\"dist\":25.115055372017117,\"cx\":456.32705615278894,\"cy\":284.65365089958675}","right":312,"fresh":true,"railLeft":null,"rightmost":678,"covered":[],"glide":false}
+ok   1024x768: a remeasure that changes nothing does not wake the loop {"before":3250.5999999940395,"after":3250.5999999940395}
+ok   1024x768: focusing the PlaceList leaves the fit where it was and the island clear of it {"base":{"seq":6,"ins":"{\"top\":68,\"right\":312,\"bottom\":220,\"left\":216}","pose":"{\"focal\":1129.111226274829,\"dist\":25.115055372017117,\"cx\":456.32705615278894,\"cy\":284.65365089958675}","right":312,"fresh":true,"railLeft":null,"rightmost":678,"covered":[],"glide":false},"list":{"seq":6,"ins":"{\"top\":68,\"right\":312,\"bottom\":220,\"left\":216}","pose":"{\"focal\":1129.111226274829,\"dist\":25.115055372017117,\"cx\":456.32705615278894,\"cy\":284.65365089958675}","right":312,"fresh":true,"railLeft":724,"rightmost":678,"covered":[],"glide":false}}
+ok   1024x768: blurring the PlaceList leaves the fit where it was {"base":{"seq":6,"ins":"{\"top\":68,\"right\":312,\"bottom\":220,\"left\":216}","pose":"{\"focal\":1129.111226274829,\"dist\":25.115055372017117,\"cx\":456.32705615278894,\"cy\":284.65365089958675}","right":312,"fresh":true,"railLeft":null,"rightmost":678,"covered":[],"glide":false},"blurred":{"seq":6,"ins":"{\"top\":68,\"right\":312,\"bottom\":220,\"left\":216}","pose":"{\"focal\":1129.111226274829,\"dist\":25.115055372017117,\"cx\":456.32705615278894,\"cy\":284.65365089958675}","right":312,"fresh":true,"railLeft":null,"rightmost":678,"covered":[],"glide":false}}
+ok   1024x768: opening the chat leaves the fit where it was and the island clear of the chat rail {"online":{"seq":6,"ins":"{\"top\":68,\"right\":312,\"bottom\":220,\"left\":216}","pose":"{\"focal\":1129.111226274829,\"dist\":25.115055372017117,\"cx\":456.32705615278894,\"cy\":284.65365089958675}","right":312,"fresh":true,"railLeft":null,"rightmost":678,"covered":[],"glide":false},"chat":{"seq":6,"ins":"{\"top\":68,\"right\":312,\"bottom\":220,\"left\":216}","pose":"{\"focal\":1129.111226274829,\"dist\":25.115055372017117,\"cx\":456.32705615278894,\"cy\":284.65365089958675}","right":312,"fresh":true,"railLeft":712,"rightmost":678,"covered":[],"glide":false}}
+ok   1024x768: closing the chat leaves the fit where it was {"online":{"seq":6,"ins":"{\"top\":68,\"right\":312,\"bottom\":220,\"left\":216}","pose":"{\"focal\":1129.111226274829,\"dist\":25.115055372017117,\"cx\":456.32705615278894,\"cy\":284.65365089958675}","right":312,"fresh":true,"railLeft":null,"rightmost":678,"covered":[],"glide":false},"closed":{"seq":6,"ins":"{\"top\":68,\"right\":312,\"bottom\":220,\"left\":216}","pose":"{\"focal\":1129.111226274829,\"dist\":25.115055372017117,\"cx\":456.32705615278894,\"cy\":284.65365089958675}","right":312,"fresh":true,"railLeft":null,"rightmost":678,"covered":[],"glide":false}}
+ok   1024x768: opening the table menu leaves the hole and the fit unchanged {"shut":{"seq":6,"ins":"{\"top\":68,\"right\":312,\"bottom\":220,\"left\":216}","pose":"{\"focal\":1129.111226274829,\"dist\":25.115055372017117,\"cx\":456.32705615278894,\"cy\":284.65365089958675}","right":312,"fresh":true,"railLeft":null,"rightmost":678,"covered":[],"glide":false},"menu":{"seq":6,"ins":"{\"top\":68,\"right\":312,\"bottom\":220,\"left\":216}","pose":"{\"focal\":1129.111226274829,\"dist\":25.115055372017117,\"cx\":456.32705615278894,\"cy\":284.65365089958675}","right":312,"fresh":true,"railLeft":null,"rightmost":678,"covered":[],"glide":false}}
+ok   1024x768: opening a seat popover leaves the hole and the fit unchanged {"shut":{"seq":6,"ins":"{\"top\":68,\"right\":312,\"bottom\":220,\"left\":216}","pose":"{\"focal\":1129.111226274829,\"dist\":25.115055372017117,\"cx\":456.32705615278894,\"cy\":284.65365089958675}","right":312,"fresh":true,"railLeft":null,"rightmost":678,"covered":[],"glide":false},"seatMenu":{"seq":6,"ins":"{\"top\":68,\"right\":312,\"bottom\":220,\"left\":216}","pose":"{\"focal\":1129.111226274829,\"dist\":25.115055372017117,\"cx\":456.32705615278894,\"cy\":284.65365089958675}","right":312,"fresh":true,"railLeft":null,"rightmost":678,"covered":[],"glide":false}}
+ok   844x390 touch: main phase with the hand shown, the HUD a left column {"phase":"main","hand":true,"column":{"left":12,"right":272,"top":68,"bottom":378},"insets":{"top":68,"right":12,"bottom":12,"left":284},"holeH":310,"isle":"279x234","area":65376,"token":19.6,"apart":29.2,"view":"overhead","widthOverHoleH":0.9,"covered":[]}
+ok   844x390 touch: the island is larger than before #422 (8581 px²) {"area":65376,"isle":"279x234","token":19.6}
+ok   844x390 touch: the island is at least 60 % as wide as the hole is tall, every corner clear of the HUD {"widthOverHoleH":0.9,"holeH":310,"covered":[]}
+ok   844x390 touch: overhead by default (under 900 px wide) and adjacent corners at least 24 px apart {"view":"overhead","apart":29.2}
+ok   844x390 touch: an armed Path's Place chip is the column's first row, in view, clear of the hand and the turn banner {"armed":"path","row":{"l":12,"t":78,"r":272,"b":122},"hand":{"l":12,"t":182,"r":272,"b":234},"turn":{"l":12,"t":126,"r":272,"b":178},"onTop":true,"inView":true,"overHand":false,"overTurn":false}
+ok   844x390 touch: the diorama by choice keeps adjacent corners at least 18 px apart {"apart":22.6}
+ok   844x390 touch: a path on the far coast spans at least the 24 px touch slop on screen, and the touch pick at its corner reaches 24 px across {"edge":"-1.94,-4.48|-2.91,-3.92","path":{"w":34,"h":12.2},"outpost":{"w":24.3,"h":23.6},"reachPx":28,"seq":22}
+ok   667x375 touch: main phase with the hand shown, the HUD a left column {"phase":"main","hand":true,"column":{"left":12,"right":272,"top":68,"bottom":363},"insets":{"top":68,"right":12,"bottom":12,"left":284},"holeH":295,"isle":"266x223","area":59203,"token":18.6,"apart":27.8,"view":"overhead","widthOverHoleH":0.9,"covered":[]}
+ok   667x375 touch: the island is larger than before #422 (8569 px²) {"area":59203,"isle":"266x223","token":18.6}
+ok   667x375 touch: the island is at least 60 % as wide as the hole is tall, every corner clear of the HUD {"widthOverHoleH":0.9,"holeH":295,"covered":[]}
+ok   667x375 touch: overhead by default (under 900 px wide) and adjacent corners at least 24 px apart {"view":"overhead","apart":27.8}
+ok   667x375 touch: an armed Path's Place chip is the column's first row, in view, clear of the hand and the turn banner {"armed":"path","row":{"l":12,"t":68,"r":272,"b":112},"hand":{"l":12,"t":167,"r":272,"b":219},"turn":{"l":12,"t":116,"r":272,"b":163},"onTop":true,"inView":true,"overHand":false,"overTurn":false}
+ok   terrain: all six kinds are on the board, the full scenes {"kinds":["clay","grain","ore","timber","waste","wool"],"lite":false}
+ok   terrain clay: flat at topOf on the pad and at the corners and edges; a landform elsewhere (spread 0.02 to 0.8) {"hexes":3,"pad":0,"rim":0,"spread":0.2431883552342818}
+ok   terrain grain: flat at topOf on the pad and at the corners and edges; a landform elsewhere (spread 0.02 to 0.8) {"hexes":4,"pad":0,"rim":0,"spread":0.4372672289407964}
+ok   terrain ore: flat at topOf on the pad and at the corners and edges; a landform elsewhere (spread 0.02 to 0.8) {"hexes":3,"pad":0,"rim":0,"spread":0.3823658295948833}
+ok   terrain timber: flat at topOf on the pad and at the corners and edges; a landform elsewhere (spread 0.02 to 0.8) {"hexes":4,"pad":0,"rim":0,"spread":0.6343567438075257}
+ok   terrain waste: flat at topOf on the pad and at the corners and edges; a landform elsewhere (spread 0.02 to 0.8) {"hexes":1,"pad":0,"rim":0,"spread":0.1509952661300516}
+ok   terrain wool: flat at topOf on the pad and at the corners and edges; a landform elsewhere (spread 0.02 to 0.8) {"hexes":4,"pad":0,"rim":0,"spread":0.32803329514132007}
+ok   terrain: every kind's block side shows its strata ["clay","grain","ore","timber","waste","wool"]
+ok   terrain: the scenes draw in at most 60 calls {"ready":true,"lite":false,"drawCalls":35,"triangles":336902,"kinds":6,"batches":9,"bakes":24,"sprites":2}
+ok   terrain: the scenes hold at most 600k triangles, the whole island at most 620k {"scenes":336902,"rest":62572}
+ok   terrain: nothing standing on a hex comes within 0.31 of its centre {"ore":"0.338 (peaks)","grain":"0.342 (hen)","wool":"0.346 (dog)","clay":"0.359 (jelly-blob#16)","timber":"0.382 (jelly-blob#0)","waste":"0.405 (hyena)"}
+ok   terrain: the 390x844 phone is overhead
+ok   no console errors []
+
+board-look-prove: all checks passed
