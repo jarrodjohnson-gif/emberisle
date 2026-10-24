@@ -264,9 +264,8 @@ function Title() {
                   Host a table
                 </Button>
                 <Button
-                  size="sm"
                   variant="ghost"
-                  className="w-11 rounded-none border-0 border-l border-control-line px-0"
+                  className="w-11 rounded-none border-l border-control-line px-0"
                   aria-pressed={openMode}
                   title={openMode ? "Anyone can join" : "Code needed"}
                   aria-label={openMode ? "Open to anyone" : "Private, code needed"}
