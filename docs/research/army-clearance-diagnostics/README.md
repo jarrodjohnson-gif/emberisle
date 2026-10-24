@@ -5,7 +5,7 @@ The original failure named the phone, scenario and seat but supplied no coordina
 This change logs the boxes already used by that assertion, then rethrows the same error.
 It does not diagnose or fix the original CI geometry.
 
-Only `scripts/longest-army-prove.mjs:182–196` changes in the proof: 15 added try/catch and logging lines.
+Only `scripts/longest-army-prove.mjs:182–197` changes in the proof: 15 added try/catch and logging lines.
 The original assertion remains at line 183, including its predicate and 0.5 px allowance.
 Removing the wrapper restores the complete main proof byte for byte.
 Every other assertion, scenario, viewport, wait and runtime file is unchanged.
