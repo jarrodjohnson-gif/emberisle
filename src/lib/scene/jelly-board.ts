@@ -22,8 +22,8 @@ const RINGS = 12;
 const SAMPLES = [0.37, 1.91, 3.53, 5.2];
 const ROLL_S = 2.4;
 const TAP_S = 0.9;
-// #826: cool grey shade on the wayfarer's hex (skip waste in robber()).
-const DULL = new THREE.Color(0.22, 0.22, 0.24);
+// #826: the owner chose plain black for a blocked hex (skip waste in robber()).
+const DULL = new THREE.Color(0, 0, 0);
 
 export type JellyHex = { id: string; terrain: Terrain; x: number; z: number; y: number };
 export type JellyStats = { lite: boolean; drawCalls: number; triangles: number; kinds: number; batches: number; bakes: number; sprites: number };

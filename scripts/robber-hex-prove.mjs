@@ -1,4 +1,4 @@
-// #826: while the wayfarer stands on a hex, that hex and its number token go grey; the Wastes stay plain;
+// #826: the owner's blocked hex/token palette is black with readable light ink; the Wastes stay plain;
 // moving him clears the old hex. Run: node scripts/robber-hex-prove.mjs
 import { existsSync, mkdirSync } from "node:fs";
 import { chromium } from "playwright";
@@ -96,6 +96,7 @@ async function pixelProof(width, height) {
     const k = c.width / innerWidth;
     const pixels = c.getContext("2d").getImageData(0, 0, c.width, c.height).data;
     const lum = [];
+    const channels = [[], [], []];
     // Stay inside the hex, clear of its central token and neighboring hexes.
     for (const radius of [0.5, 0.65, 0.8]) for (let n = 0; n < 24; n++) {
       const a = n * Math.PI / 12;
@@ -106,9 +107,11 @@ async function pixelProof(width, height) {
         const i = (y * c.width + x) * 4;
         if (pixels[i + 3] < 250) continue;
         lum.push((pixels[i] * 0.2126 + pixels[i + 1] * 0.7152 + pixels[i + 2] * 0.0722) / 255);
+        channels.forEach((values, c) => values.push(pixels[i + c] / 255));
       }
     }
-    return { count: lum.length, mean: lum.reduce((a, b) => a + b, 0) / lum.length };
+    const rgb = channels.map(values => values.reduce((a, b) => a + b, 0) / values.length);
+    return { count: lum.length, mean: lum.reduce((a, b) => a + b, 0) / lum.length, rgb };
   }, ids.target);
   await settle(ids.waste, 0);
   const before = await sample();
@@ -116,6 +119,7 @@ async function pixelProof(width, height) {
   const blocked = await sample();
   check(`${width}x${height}: rendered terrain sample covers the hex`, before.count >= 500 && blocked.count >= 500, { before, blocked });
   check(`${width}x${height}: rendered blocked hex is at least 10% darker`, blocked.mean <= before.mean * 0.9, { before: before.mean, blocked: blocked.mean });
+  check(`${width}x${height}: blocked terrain is black without a brown cast`, blocked.mean <= 0.08 && Math.max(...blocked.rgb) - Math.min(...blocked.rgb) <= 0.02, blocked);
   const screenshotFrame = await page.evaluate(() => {
     const isle = window.__isle;
     const frame = window.__terrainFrames;
@@ -203,10 +207,19 @@ try {
       if (!tok) return null;
       const label = tok.children.find((c) => c.material?.map);
       const disc = tok.children.find((c) => c.material && !c.material.map);
+      const canvas = label?.material.map.image;
+      const data = canvas?.getContext("2d").getImageData(0, 0, canvas.width, canvas.height).data;
+      const background = data ? [...data.slice((228 * canvas.width + 128) * 4, (228 * canvas.width + 128) * 4 + 4)] : null;
+      let lightInk = 0, faceHash = 0;
+      if (data) for (let i = 0; i < data.length; i += 4) {
+        if (data[i] >= 250 && data[i + 1] >= 250 && data[i + 2] >= 250 && data[i + 3] >= 250) lightInk++;
+        for (let c = 0; c < 4; c++) faceHash = (Math.imul(faceHash, 31) + data[i + c]) >>> 0;
+      }
       return {
         disc: disc?.material.color.getHexString() ?? null,
         label: label?.material.color.getHexString() ?? null,
         restDisc: disc?.material.userData.rest?.getHexString?.() ?? null,
+        background, lightInk, faceHash,
       };
     };
     const place = (hexId) => {
@@ -226,6 +239,7 @@ try {
     const b = st0.hexes.find((h) => h.terrain !== "waste" && h.pip != null && h.id !== a.id && h.id !== st0.robberHex);
     const waste = st0.hexes.find((h) => h.terrain === "waste");
     if (!a || !b || !waste) return { error: "missing hexes", a: !!a, b: !!b, waste: !!waste };
+    const restA = tokenColor(a.id), restB = tokenColor(b.id);
 
     place(a.id);
     await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
@@ -255,7 +269,7 @@ try {
       tokenB: tokenColor(b.id),
     };
 
-    return { a: a.id, b: b.id, waste: waste.id, afterA, afterB, afterWaste };
+    return { a: a.id, b: b.id, waste: waste.id, afterA, afterB, afterWaste, restA, restB };
   });
 
   check("move: landed on a production hex", !moved.error, moved);
@@ -266,6 +280,8 @@ try {
     moved.afterA?.tokenA,
   );
   check("move: token disc is dimmed vs its rest colour", moved.afterA?.tokenA?.disc && moved.afterA.tokenA.restDisc && moved.afterA.tokenA.disc !== moved.afterA.tokenA.restDisc, moved.afterA?.tokenA);
+  check("move: token disc and face are plain black", moved.afterA?.tokenA?.disc === "000000" && JSON.stringify(moved.afterA.tokenA.background) === "[0,0,0,255]", moved.afterA?.tokenA);
+  check("move: light numeral and pips remain on the black face", moved.afterA?.tokenA?.lightInk >= 1000, moved.afterA?.tokenA);
 
   check("second move: old hex clears", moved.afterB?.dullA === 0, moved.afterB);
   check("second move: new hex is dulled", moved.afterB?.dullB === 1, moved.afterB);
@@ -277,6 +293,7 @@ try {
     a: moved.afterWaste?.tokenA,
     b: moved.afterWaste?.tokenB,
   });
+  check("back on Wastes: original face pixels restored exactly", moved.afterWaste?.tokenA?.faceHash === moved.restA?.faceHash && moved.afterWaste?.tokenB?.faceHash === moved.restB?.faceHash, moved.afterWaste);
 
   // Phone size: dull targets still flip (scene maths, not pixels).
   await page.setViewportSize({ width: 390, height: 844 });
