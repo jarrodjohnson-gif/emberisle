@@ -48,6 +48,7 @@ try {
     }
     const later = window.setTimeout;
     let pumpOrdinal = 0;
+    window.__pendingPumps = 0;
     const pumps = new WeakMap();
     window.setTimeout = function (callback, ms, ...args) {
       // The served sound pump arms only one timer at a time. Reuse its wrapper across re-arms.
@@ -58,13 +59,17 @@ try {
         pump.fire = function (...firedArgs) {
           const { ordinal, ms, scheduled } = pump, now = performance.now();
           note("pump-fired", { ordinal, ms, scheduled, lateness: now - scheduled - ms }, now);
-          return callback.apply(this, firedArgs);
+          // Keep an in-flight callback counted through any synchronous re-arm.
+          try { return callback.apply(this, firedArgs); }
+          finally { window.__pendingPumps--; }
         };
         pumps.set(callback, pump);
       }
       pump.ordinal = ++pumpOrdinal; pump.ms = ms; pump.scheduled = performance.now();
       note("pump-scheduled", { ordinal: pump.ordinal, ms, scheduled: pump.scheduled }, pump.scheduled);
-      return later.call(this, pump.fire, ms, ...args);
+      window.__pendingPumps++;
+      try { return later.call(this, pump.fire, ms, ...args); }
+      catch (failure) { window.__pendingPumps--; throw failure; }
     };
     const play = HTMLMediaElement.prototype.play;
     HTMLMediaElement.prototype.play = function () {
@@ -371,7 +376,7 @@ try {
   await page.waitForFunction((quietMs) => {
     const n = window.__plays.length, now = performance.now();
     if (window.__quietN !== n) { window.__quietN = n; window.__quietAt = now; }
-    return now - window.__quietAt >= quietMs;
+    return window.__pendingPumps === 0 && now - window.__quietAt >= quietMs;
   }, 400, { timeout: 4000 });
   const playsBeforeLeave = await page.evaluate(() => window.__plays.length);
   await page.getByRole("button", { name: "Leave table" }).click();
