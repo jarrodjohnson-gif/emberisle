@@ -179,7 +179,22 @@ try {
         for (const [kind, t] of [["path", s.path], ["army", s.army]]) {
           assert.ok(t.shown && t.box.w > 0 && t.box.h > 0, `${tag}: ${kind} tally is shown`);
           assert.ok(t.box.l >= s.card.l && t.box.r <= s.card.r && t.box.t >= s.card.t && t.box.b <= s.card.b, `${tag}: ${kind} tally ${JSON.stringify(t.box)} is inside its card ${JSON.stringify(s.card)}`);
+          try {
           assert.ok(t.box.r <= s.vp.l + 0.5 || t.box.b <= s.vp.t || t.box.t >= s.vp.b, `${tag}: ${kind} tally clears the points`);
+          } catch (error) {
+            // #1081: retain the failing read, rather than measuring a later animation frame.
+            console.error("army-clearance-diagnostic " + JSON.stringify({
+              viewport: v, step: step.name, phase: phase ?? null, seat: s.id, kind,
+              badge: t.badge, shown: t.shown, label: t.label, animation: t.anim,
+              tally: t.box, card: s.card, points: s.vp,
+              clauses: {
+                leftOfPoints: t.box.r <= s.vp.l + 0.5,
+                abovePoints: t.box.b <= s.vp.t,
+                belowPoints: t.box.t >= s.vp.b,
+              },
+            }));
+            throw error;
+          }
           const [r, g, b, a] = t.bg;
           assert.equal(a === 255 && r > 200 && g > 150 && b < 120, t.badge, `${tag}: ${kind} is gold [${t.bg}] exactly when it is the badge`);
           if (!t.badge) assert.equal(a, 0, `${tag}: ${kind} has no fill without the badge`);
