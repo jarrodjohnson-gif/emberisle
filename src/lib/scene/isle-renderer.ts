@@ -2184,7 +2184,7 @@ export function numberToken(n: number) {
   const c = document.createElement("canvas");
   c.width = 256;
   c.height = 256;
-  const ctx = c.getContext("2d")!;
+  const ctx = c.getContext("2d", { willReadFrequently: true })!;
   ctx.fillStyle = "#fff9f0";
   ctx.beginPath();
   ctx.arc(128, 128, 124, 0, Math.PI * 2);
@@ -2228,7 +2228,7 @@ export function numberToken(n: number) {
 function blackNumberFace(map: THREE.Texture, n: number) {
   const c = document.createElement("canvas");
   c.width = c.height = 256;
-  const ctx = c.getContext("2d")!;
+  const ctx = c.getContext("2d", { willReadFrequently: true })!;
   ctx.drawImage(map.image as HTMLCanvasElement, 0, 0);
   const image = ctx.getImageData(0, 0, 256, 256);
   const ink = n === 6 || n === 8 ? 38 : 25;
