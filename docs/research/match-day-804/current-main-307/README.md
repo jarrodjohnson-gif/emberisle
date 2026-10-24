@@ -2,7 +2,11 @@
 
 56 PNGs cover 14 states at 1280×720 (mouse), 390×844, 844×390 and 440×956 (touch emulation). Baseline: `30737a5c81f194b1c6235c1409555ee8e6cb19bd`. Application, server, scripts and package files in the fresh capture clone are byte-identical to that main commit. The adoption preserves original authorship and merges main normally at `a987d6c`.
 
-Open [the image index](index.html), the contact sheets ([desktop](contact-1280.png), [390](contact-390.png), [landscape](contact-844.png), [440](contact-440.png)), or the full-size [captures](captures). The contact sheets render the original images in an HTML grid.
+The new PNGs are not tracked in this report tree. They are preserved byte-for-byte in `match-day-804-current-main-307-images.zip`: 56 primary captures, four contact sheets and two supplemental scroll captures. [image-archive.json](image-archive.json) records the archive size/SHA-256 and all 62 image hashes; the original 56-capture manifest is unchanged.
+
+**Archive publication is pending:** the verified ZIP is prepared in the builder workspace for attachment to [PR #896](https://github.com/jarrodjohnson-gif/emberisle/pull/896) or [issue #804](https://github.com/jarrodjohnson-gif/emberisle/issues/804). This report is awaiting that attachment URL before publication is complete.
+
+After downloading the archive, extract it alongside [the local image index](index.html). Its `captures/` paths then resolve; contact sheets are `contact-1280.png`, `contact-390.png`, `contact-844.png` and `contact-440.png`. No fresh recapture is claimed by this publication cleanup.
 
 ## Results
 
@@ -19,7 +23,7 @@ Final checks from a new clone of `c175c97` pass: both installs, typecheck, build
 |---|---|
 | 390×844 win table cuts off Army, Hidden and Total | All columns and four rows are visible. Table client/scroll width both 324 px. No duplicate of #808/#878 filed. |
 | 844×390 win shows only the winner | Four rows and both actions are visible. Table client/scroll height both 104 px. No duplicate of #809 filed. |
-| 844×390 trade cuts off wanted goods | A separate native practice run verified a real wheel scroll from 0 to 39 px (218 px client height, 257 px content), independently of the fixed footer. All ten wanted-goods buttons fit inside the scroll area afterward; all five enabled increment buttons were hit-testable. Clicking More Wood then Fewer Wood changed the wanted quantity 0→1→0. [Before](supplemental/captures/844x390-trade-panel.png), [after](supplemental/captures/844x390-trade-panel-scrolled.png), [metrics](supplemental/scroll-metrics.json). Disabled decrements intentionally do not receive pointer events. No duplicate of #811 filed. |
+| 844×390 trade cuts off wanted goods | A separate native practice run verified a real wheel scroll from 0 to 39 px (218 px client height, 257 px content), independently of the fixed footer. All ten wanted-goods buttons fit inside the scroll area afterward; all five enabled increment buttons were hit-testable. Clicking More Wood then Fewer Wood changed the wanted quantity 0→1→0. Archive images `supplemental/captures/844x390-trade-panel.png` (before) and `supplemental/captures/844x390-trade-panel-scrolled.png` (after); [metrics](supplemental/scroll-metrics.json). Disabled decrements intentionally do not receive pointer events. No duplicate of #811 filed. |
 | 390/440 seat names shorten and the status line clips | Three-letter labels are intentional (`SeatRail.shortNames`; approved `docs/design/mobile-hud.md`: truncated names). Full names remain in accessible text. “Hidden fortunes may add points.” is visible in fresh portrait play images. No new defect established. |
 | Prior #895 desktop lobby chat overlap | The fresh four-seat desktop image shows composer, Send, Ready and Leave clear of one another. #918 already fixed this; no duplicate filed. |
 
