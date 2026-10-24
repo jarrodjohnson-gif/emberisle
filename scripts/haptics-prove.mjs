@@ -4,7 +4,7 @@
 import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
 import { chromium } from "playwright";
-import { createServer } from "vite";
+import { createServer, preview } from "vite";
 
 const PORT = Number(process.env.HAPTICS_PORT || process.env.VITE_PORT) || 8452;
 const STEP_MS = 30_000;
@@ -18,7 +18,7 @@ const browser = await chromium.launch({
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 
-async function openPage({ coarse = true, reducedMotion = false } = {}) {
+async function openPage({ coarse = true, reducedMotion = false, missingAPI = false, url = `http://127.0.0.1:${PORT}/`, beforeNavigate, waitReady = true } = {}) {
   const page = await browser.newPage({
     viewport: { width: coarse ? 390 : 960, height: coarse ? 844 : 540 },
     reducedMotion: reducedMotion ? "reduce" : "no-preference",
@@ -27,7 +27,8 @@ async function openPage({ coarse = true, reducedMotion = false } = {}) {
   });
   page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
   page.on("pageerror", (e) => errors.push(String(e)));
-  await page.addInitScript((coarse) => {
+  await page.addInitScript(({coarse, missingAPI}) => {
+    window.__coarse = coarse;
     window.__buzz = [];
     window.__buzzTimes = [];
     window.__knocks = [];
@@ -42,7 +43,7 @@ async function openPage({ coarse = true, reducedMotion = false } = {}) {
     window.matchMedia = (q) =>
       q === "(pointer: coarse)"
         ? {
-            matches: coarse,
+            get matches() { return window.__coarse; },
             media: q,
             onchange: null,
             addListener() {},
@@ -56,14 +57,16 @@ async function openPage({ coarse = true, reducedMotion = false } = {}) {
         : realMatch(q);
     Object.defineProperty(navigator, "vibrate", {
       configurable: true,
-      value: (ms) => {
+      value: missingAPI ? undefined : (ms) => {
         window.__buzz.push(ms);
         window.__buzzTimes.push(performance.now());
         return true;
       },
     });
-  }, coarse);
-  await page.goto(`http://127.0.0.1:${PORT}/`);
+  }, {coarse, missingAPI});
+  if (beforeNavigate) await beforeNavigate(page);
+  await page.goto(url, {waitUntil: "domcontentloaded"});
+  if (!waitReady) return page;
   await page.waitForFunction(() => window.__emberisle && window.__isle, null, { timeout: STEP_MS });
   // Unlock sound / haptics (first gesture).
   await page.keyboard.press("Shift");
@@ -424,8 +427,96 @@ async function tradeFramesProof(page) {
   console.log("trade: received frames buzz only seated recipients, never watchers or the sender");
 }
 
+// Hold the optional download across a queued first native tap. UI/rejoin must not race registration.
+// Runs against both transformed source and the actual production chunk graph (which shares React with index).
+async function coldLoadProof(url, production) {
+  let release;
+  const held = new Promise((resolve) => { release = resolve; });
+  let requested;
+  const request = new Promise((resolve) => { requested = resolve; });
+  const moduleURL = production ? /\/assets\/haptics-[\w-]+\.js(?:\?|$)/ : /\/src\/lib\/haptics\.tsx(?:\?|$)/;
+  const page = await openPage({url, waitReady: false, beforeNavigate: async (page) => {
+    await page.route(moduleURL, async (route) => { requested(); await held; await route.continue(); });
+  }});
+  let tap;
+  try {
+    await Promise.race([request, new Promise((_, reject) => setTimeout(() => reject(new Error("cold haptics module was not requested")), STEP_MS))]);
+    let tapped = false;
+    tap = page.getByRole("button", {name: "Four seats, one table", exact: true}).click({timeout: STEP_MS}).then(() => { tapped = true; });
+    // This is an intentional held-download control, not an event deadline or retry.
+    await page.waitForTimeout(250);
+    assert.equal(tapped, false, "first native tap must wait for the optional module's registration");
+    assert.equal(await page.locator("#root").textContent(), "", "interactive root is held before initialization");
+    release();
+    await tap;
+    await page.waitForFunction(() => window.__emberisle?.getState().state && window.__isle?.lastState, null, {timeout: STEP_MS});
+    // Roll real rules to the first legal outpost; the title tap was the only unlock gesture.
+    for (let i = 0; i < 40; i++) {
+      const phase = await page.evaluate(() => window.__emberisle.getState().state.phase);
+      if (phase !== "rollOff") break;
+      await page.getByRole("button", {name: "Roll", exact: true}).click({timeout: STEP_MS});
+    }
+    assert.equal(await page.evaluate(() => window.__emberisle.getState().state.phase), "setupSettle");
+    await clearBuzz(page);
+    await page.evaluate(() => {
+      const g = window.__emberisle.getState();
+      window.__knocks = [];
+      const id = g.highlights().vertices[0];
+      if (!id) throw new Error("cold first outpost has no legal vertex");
+      g.pickVertex(id);
+    });
+    await page.waitForFunction(() => window.__buzz.includes(10) && window.__knocks.length, null, {timeout: STEP_MS});
+    const delta = await page.evaluate(() => Math.abs(window.__buzzTimes[window.__buzz.indexOf(10)] - window.__knocks[0]));
+    assert.ok(delta <= 100, `cold first land buzz follows its knock within 100 ms (got ${delta})`);
+    await page.getByRole("button", {name: "Table menu", exact: true}).click();
+    const toggle = page.getByTestId("haptics-toggle");
+    await toggle.click();
+    assert.equal(await toggle.getAttribute("aria-pressed"), "false", "cold-loaded React row updates");
+    console.log(`cold ${production ? "production" : "source"}: held first tap, first legal land buzz ${Math.round(delta)} ms from knock, live menu toggle`);
+  } finally {
+    release();
+    await tap?.catch(() => {});
+    await page.close();
+  }
+}
+
+async function skippedLoadProof(url, {coarse = false, missingAPI = false} = {}) {
+  const loads = [];
+  const page = await openPage({url, coarse, missingAPI, beforeNavigate: async (page) => {
+    page.on("request", (request) => { if (/\/haptics(?:-[\w-]+\.js|\.tsx)/.test(request.url())) loads.push(request.url()); });
+  }});
+  await page.getByRole("button", {name: "Four seats, one table", exact: true}).click();
+  await page.getByRole("button", {name: "Table menu", exact: true}).click();
+  assert.equal(await page.getByTestId("haptics-toggle").count(), 0, "unsupported cold load has no haptics row");
+  assert.deepEqual(loads, [], "unsupported cold load never downloads optional haptics");
+  assert.deepEqual(await page.evaluate(() => window.__buzz), []);
+  await page.close();
+  console.log(`cold skip: coarse=${coarse}, missingAPI=${missingAPI}; no module, row or buzz`);
+}
+
+async function changedPointerProof(page) {
+  const got = await page.evaluate(async () => {
+    const sound = await import("/src/lib/sound.ts");
+    window.__coarse = false;
+    window.__buzz = [];
+    sound.haptic(10);
+    return {available: sound.hapticsAvailable(), buzz: window.__buzz};
+  });
+  assert.equal(got.available, false, "loaded haptics rechecks the current pointer");
+  assert.deepEqual(got.buzz, [], "a phone changed to a fine pointer stays quiet");
+  console.log("pointer change: loaded motor still enforces the current coarse-pointer guard");
+}
+
+let served;
 let code = 0;
 try {
+  served = await preview({preview: {host: "127.0.0.1", port: PORT + 1, strictPort: true}, logLevel: "error"});
+  const builtURL = `http://127.0.0.1:${PORT + 1}/`;
+  await coldLoadProof(`http://127.0.0.1:${PORT}/`, false);
+  await coldLoadProof(builtURL, true);
+  await skippedLoadProof(builtURL);
+  await skippedLoadProof(builtURL, {coarse: true, missingAPI: true});
+  { const page = await openPage(); await changedPointerProof(page); await page.close(); }
   {
     const page = await openPage({ coarse: true });
     await landProof(page);
@@ -474,5 +565,6 @@ try {
 } finally {
   await browser.close();
   await vite.close();
+  if (served) await new Promise((resolve) => served.httpServer.close(resolve));
   process.exit(code);
 }
