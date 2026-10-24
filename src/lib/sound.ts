@@ -43,6 +43,7 @@ const FILES = {
   sb_airhorn: "sb_airhorn.mp3",
   sb_quit_touchin: "sb_quit_touchin.mp3",
   sb_only_wood: "sb_only_wood.mp3",
+  sb_perfect: "sb_perfect.mp3",
   // End-of-game music: starts a moment after the win or loss sting, stops when the end screen is left or a new game starts.
   end_music: "end_music.mp3",
   board_bong: "bong_001.wav",
@@ -65,6 +66,7 @@ export const SOUNDBOARD = [
   { id: "sb_airhorn", label: "Airhorn", clip: "sb_airhorn" },
   { id: "sb_quit_touchin", label: "Quit touchin' me", clip: "sb_quit_touchin" },
   { id: "sb_only_wood", label: "Only wood?", clip: "sb_only_wood" },
+  { id: "sb_perfect", label: "Perfect", clip: "sb_perfect" },
   { id: "bong", label: "Bong", clip: "board_bong" },
   { id: "plop", label: "Plop", clip: "board_plop" },
   { id: "pluck", label: "Pluck", clip: "board_pluck" },

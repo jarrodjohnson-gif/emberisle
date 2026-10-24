@@ -583,8 +583,8 @@ try {
   await mute(b, false);
   ok("soundboard: a muted listener sees the chip and hears nothing");
   // The in-game clips reach the other seat once each; a repeat of a long clip restarts it (one element per clip), never stacks.
-  // #899: each is one tap on its chip in the Sounds & stickers tab (Fah above, GG! with the rest below: all nine).
-  for (const [id, file, label] of [["sb_airhorn", "sb_airhorn.mp3", "Airhorn"], ["sb_quit_touchin", "sb_quit_touchin.mp3", "Quit touchin' me"], ["sb_only_wood", "sb_only_wood.mp3", "Only wood?"]]) {
+  // #899: each is one tap on its chip in the Sounds & stickers tab (Fah above, GG! with the rest below: all ten).
+  for (const [id, file, label] of [["sb_airhorn", "sb_airhorn.mp3", "Airhorn"], ["sb_quit_touchin", "sb_quit_touchin.mp3", "Quit touchin' me"], ["sb_only_wood", "sb_only_wood.mp3", "Only wood?"], ["sb_perfect", "sb_perfect.mp3", "Perfect"]]) {
     await sleep(3100);
     await clear(b);
     await a.getByRole("button", { name: `Play sound ${label}`, exact: true }).click();
@@ -603,7 +603,7 @@ try {
     const got = await b.evaluate(() => window.__plays);
     assert.deepEqual(got.map((x) => [x.file, x.volume]), [[file, 0.4]], `${id} plays once at 0.4 (${JSON.stringify(got)})`);
   }
-  ok("soundboard: a tap on each of the nine chips (fah, wololo, GG!, airhorn, quit touchin, only wood, bong, plop, pluck) plays it at 0.4");
+  ok("soundboard: a tap on each of the ten chips (fah, wololo, GG!, airhorn, quit touchin, only wood, perfect, bong, plop, pluck) plays it at 0.4");
   await b.evaluate(async () => {
     const { play } = await import("/src/lib/sound.ts");
     play("sb_airhorn");
