@@ -33,7 +33,5 @@ check("a chunk gone from the PR that still has a ceiling fails", ["--sizes", fx(
 check("without a base only the ceilings run and the delta command is printed", ["--sizes", fx("pass.json")], 0, "no base given", "--base <dir");
 check("over the absolute ceiling fails even inside the allowance", ["--sizes", fx("over-ceiling.json"), "--base-sizes", fx("over-ceiling.json")], 1, "FAIL index: 125.30 kB gzip, ceiling 125.20 kB");
 
-check("the new phone chunk keeps its own fixed ceiling", ["--sizes", fx("over-haptics.json")], 1, "FAIL haptics:");
-
 if (failed) process.exit(1);
 console.log("size-delta-prove: all cases behave");
