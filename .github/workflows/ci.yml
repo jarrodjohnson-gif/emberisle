@@ -1,10 +1,10 @@
 name: CI
 
 # The README "Run it" checks, on every pull request and every push to main.
-# build, server and browser-a run on separate runners; browser-b has four suites (flows-a, flows-b, presentation, presentation-2) after build's dist/;
-# flows is split in two so each half stays near 14 minutes (the whole was ~28); presentation is split the same way
-# (presentation and presentation-2, ~16 minutes each; the whole hit the 30-minute timeout). The "presentation" name
-# is kept because the ruleset requires it.
+# build, server and browser-a run on separate runners; browser-b has eight matrix legs after build's dist/:
+# flows-a, flows-b, flows-c, presentation, presentation-2, presentation-3, scene-life and scene-water.
+# The four existing required browser-b names stay; checks gates the result of the entire matrix.
+# Heavy scene proofs are isolated from UI proofs; #1034 tracks measured timing and full-green-run acceptance.
 # browser-a is split three ways (a1, a2, a3) by measured step time, about 8-12 minutes each (the whole was ~29);
 # the browser-a job itself only reports whether all three passed, because the ruleset requires that name.
 # `checks` is the required merge check: it requires every job, including every browser-a and browser-b suite,
@@ -151,6 +151,8 @@ jobs:
         run: npm test
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run profile-pin-queue-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run profile-unknown-cap-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run next-up-prove
       - if: needs.changes.outputs.docs_only != 'true'
@@ -344,6 +346,8 @@ jobs:
         run: npm run music-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
         run: npm run ore-tokens-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'scene-life'
+        run: npm run climber-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-c'
         run: npm run tokens-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-c'
@@ -418,6 +422,8 @@ jobs:
         run: npm run seat-rail-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
         run: npm run longest-army-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-2'
+        run: npm run roll-log-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-2'
         run: npm run public-score-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation'
