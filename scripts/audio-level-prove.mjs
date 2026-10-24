@@ -26,6 +26,10 @@ const files = readdirSync(dir).filter((f) => /\.(mp3|wav)$/.test(f)).sort();
 assert.ok(files.length >= 40, `found the audio files (${files.length})`);
 const bad = [];
 for (const f of files) {
+  try { typeOf(f); } catch (e) { bad.push(e.message); }
+}
+assert.deepEqual(bad, [], "every file has a type");
+for (const f of files) {
   const m = measure(join(dir, f));
   const { target } = TARGETS[typeOf(f)];
   const off = m.level - target;

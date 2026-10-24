@@ -4,22 +4,30 @@
 //             on the LUFS scale (a steady tone would read the same in LUFS). Decoded to 48 kHz mono, cut into 2 ms blocks, and only
 //             the blocks within 30 dB of the loudest block count, so silence and a decay below that do not dilute the clip.
 // True peak is always ffmpeg ebur128 peak=true (4x oversampled), in dBTP.
-import { spawnSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { basename } from "node:path";
 
-export const MEMES = ["robbed_fah", "sb_airhorn", "sb_only_wood", "sb_perfect", "sb_quit_touchin", "sb_win_reaction", "sb_wololo"];
-export const MUSIC = ["end_music", "game_lose", "game_start", "match_point", "old_tower_inn_loop"];
+// Every file in public/audio has exactly one type here. A file with no entry is an error (audio-level-prove names it): a new sound
+// needs a type, and a type may need its own target (an ambience bed is not a table effect), which is the owner's call.
 // The Pasture tap is a clip of the owner's sheep, but it plays as a table touch (tap_pasture), so it is levelled with the effects.
-export const EFFECT_MP3 = ["sb_plump_sheep"];
+export const TYPE_OF = {
+  memes: ["robbed_fah", "sb_airhorn", "sb_only_wood", "sb_perfect", "sb_quit_touchin", "sb_win_reaction", "sb_wololo"],
+  music: ["end_music", "game_lose", "game_start", "match_point", "old_tower_inn_loop"],
+  effects: [
+    "back_001", "bong_001", "chat_recv", "chat_send", "click_001", "click_002", "click_005", "confirmation_001", "drop_001", "drop_002",
+    "drop_003", "drop_004", "error_001", "error_002", "open_001", "plop", "pluck_001", "sb_plump_sheep", "scratch_001", "tap_fields",
+    "tap_forest", "tap_hills", "tap_mountains", "tap_waste", "timer_final", "timer_tick", "trade_offer", "wayfarer_move", "your_turn",
+  ],
+};
 export const TARGETS = { memes: { method: "lufs", target: -16 }, music: { method: "lufs", target: -18 }, effects: { method: "short", target: -18 } };
 export const TOLERANCE = 1; // LU or dB
 export const MAX_TRUE_PEAK = -1; // dBTP
 
 export function typeOf(file) {
   const name = basename(file).replace(/\.(mp3|wav)$/, "");
-  if (MEMES.includes(name)) return "memes";
-  if (MUSIC.includes(name)) return "music";
-  return "effects";
+  const type = Object.keys(TYPE_OF).find((t) => TYPE_OF[t].includes(name));
+  if (!type) throw new Error(`assign a type to ${basename(file)} in scripts/audio-level-lib.mjs (TYPE_OF)`);
+  return type;
 }
 
 function ff(args, opts = {}) {
@@ -78,4 +86,50 @@ export function measure(file, type = typeOf(file)) {
   const e = ebur128(file);
   const level = method === "lufs" ? e.lufs : shortLoudness(file);
   return { file: basename(file), type, method, level, truePeak: e.truePeak, seconds: duration(file) };
+}
+
+// ---- Levelling (used by level-audio.mjs and by make-sounds.mjs for the synth wavs) ----
+const probe = (f, entry) => String(execFileSync("ffprobe", ["-v", "error", "-select_streams", "a:0", "-show_entries", `stream=${entry}`, "-of", "csv=p=0", f])).trim().split(",")[0];
+const run = (args) => { const r = spawnSync("ffmpeg", ["-hide_banner", "-nostats", "-y", ...args], { maxBuffer: 1 << 28 }); if (r.status) throw new Error(String(r.stderr).slice(-500)); return String(r.stderr); };
+
+function encode(src, out, filter) {
+  const fmt = out.endsWith(".wav") ? ["-c:a", "pcm_s16le"] : ["-c:a", "libmp3lame", "-b:a", `${Math.round(Number(probe(src, "bit_rate")) / 1000)}k`];
+  run(["-i", src, "-vn", "-map_metadata", "-1", "-af", filter, "-ar", probe(src, "sample_rate"), "-ac", probe(src, "channels"), ...fmt, out]);
+}
+
+function loudnormTwoPass(src, out, target) {
+  const log = run(["-i", src, "-af", `loudnorm=I=${target}:TP=-1.5:LRA=20:print_format=json`, "-f", "null", "-"]);
+  const j = JSON.parse(log.slice(log.lastIndexOf("{"), log.lastIndexOf("}") + 1));
+  encode(src, out, `loudnorm=I=${target}:TP=-1.5:LRA=20:measured_I=${j.input_i}:measured_TP=${j.input_tp}:measured_LRA=${j.input_lra}:measured_thresh=${j.input_thresh}:offset=${j.target_offset}:linear=true`);
+}
+
+function gainLimit(src, out, type, level0) {
+  const target = TARGETS[type].target;
+  let ceiling = -1.5;
+  let gain = target - level0;
+  for (let i = 0; i < 40; i++) {
+    encode(src, out, `volume=${gain.toFixed(3)}dB,alimiter=limit=${(10 ** (ceiling / 20)).toFixed(5)}:attack=1:release=30:level=0`);
+    const m = measure(out, type);
+    const err = target - m.level;
+    if (m.truePeak > MAX_TRUE_PEAK) { ceiling -= 0.25; continue; }
+    if (Math.abs(err) <= 0.1) return;
+    gain += err;
+  }
+  throw new Error(`${src}: cannot reach ${target} at <= ${MAX_TRUE_PEAK} dBTP`);
+}
+
+// Levels the ORIGINAL file `src` to its type's target and writes `out` (the same name as the clip, so its type is known).
+// Returns { before, how }. Always start from an unleveled file: levelling a leveled file is a second pass.
+export function levelFile(src, out, type = typeOf(out)) {
+  const before = measure(src, type);
+  let how = "";
+  if (out.endsWith(".mp3") && before.seconds >= 1 && TARGETS[type].method === "lufs") {
+    try {
+      loudnormTwoPass(src, out, TARGETS[type].target);
+      const m = measure(out, type);
+      how = Math.abs(m.level - TARGETS[type].target) > 0.3 || m.truePeak > MAX_TRUE_PEAK ? "" : "loudnorm two-pass linear";
+    } catch { how = ""; } // e.g. a clip that clips (loudnorm cannot take a positive measured_I)
+  }
+  if (!how) { gainLimit(src, out, type, before.level); how = "gain + alimiter"; }
+  return { before, how };
 }

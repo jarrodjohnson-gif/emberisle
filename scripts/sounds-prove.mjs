@@ -225,7 +225,7 @@ try {
   const rollSounds = await heard(p);
   const payerTicks = await p.evaluate(() => Math.min(8, new Set((window.__emberisle.getState().state.lastProduction ?? []).map((g) => g.vertex).filter(Boolean)).size));
   assert.deepEqual(rollSounds.filter((x) => x.file !== "gain_tick").map((x) => x.file), ["dice_land"], "my roll plays dice_land once, with no other non-payout sounds");
-  assert.equal(rollSounds.find((x) => x.file === "dice_land").volume, 1, "dice_land stays at full volume (#659: only the meme clips drop to 0.4)");
+  assert.equal(rollSounds.find((x) => x.file === "dice_land").volume, 1, "dice_land stays at full volume (#1073: every clip plays at 1, leveled in the file)");
   const ticks = rollSounds.filter((x) => x.file === "gain_tick");
   assert.equal(ticks.length, payerTicks, "one gain tick per actual paying piece, capped at eight");
   assert.ok(ticks.every((x) => x.volume === 0.35), "paying-piece ticks stay soft");

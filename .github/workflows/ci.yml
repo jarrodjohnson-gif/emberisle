@@ -173,7 +173,7 @@ jobs:
         run: npm run dice-prove
       # #1073: measures every file in public/audio with ffmpeg.
       - if: needs.changes.outputs.docs_only != 'true'
-        run: sudo apt-get install -y --no-install-recommends ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run audio-level-prove
 

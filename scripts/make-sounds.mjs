@@ -1,12 +1,17 @@
 // #609, #616: synthesises the table clips Kenney's set lacks into public/audio/ (docs/design/sound.md "The generator").
 // Plain sine and filtered noise, a fixed noise seed: the same bytes every run, no sample taken from anywhere, no licence
-// to carry. Mono, 16-bit, 22.05 kHz, each peak-normalised to the Kenney clips' level (about 29000 of 32767).
+// to carry. Mono, 16-bit, 22.05 kHz, each first peak-normalised (about 29000 of 32767), then leveled to the table-effect target by the same
+// levelFile() as scripts/level-audio.mjs (#1073), so the files written here are the leveled ones. Needs ffmpeg.
 // Run: node scripts/make-sounds.mjs
-import { writeFileSync } from "node:fs";
+import { mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { levelFile } from "./audio-level-lib.mjs";
 
 const RATE = 22050;
 const PEAK = 29000;
 const OUT = new URL("../public/audio/", import.meta.url);
+const RAW = mkdtempSync(join(tmpdir(), "make-sounds-"));
 
 let seed = 609;
 const noise = () => {
@@ -82,7 +87,8 @@ for (const [name, { ms, voices }] of Object.entries(CLIPS)) {
   pcm.write("data", 36);
   pcm.writeUInt32LE(n * 2, 40);
   for (let i = 0; i < n; i++) pcm.writeInt16LE(Math.round((x[i] / top) * PEAK), 44 + i * 2);
-  writeFileSync(new URL(`${name}.wav`, OUT), pcm);
+  writeFileSync(join(RAW, `${name}.wav`), pcm);
+  const { how } = levelFile(join(RAW, `${name}.wav`), new URL(`${name}.wav`, OUT).pathname);
   const rms = Math.sqrt(x.reduce((s, v) => s + ((v / top) * PEAK) ** 2, 0) / n);
-  console.log(`${name}.wav ${pcm.length} bytes, ${ms} ms, rms ${Math.round(rms)}`);
+  console.log(`${name}.wav ${pcm.length} bytes, ${ms} ms, rms ${Math.round(rms)} before leveling (${how})`);
 }
