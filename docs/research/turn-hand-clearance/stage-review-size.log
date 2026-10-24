@@ -1,0 +1,74 @@
+Measured code head: 25408c1657daa09416afd04ba6325be734047087
+Base: fb0fb75f04bd4526968f4b5f321ab8fc5e2f400c (fresh production build in /private/tmp/emberisle-size-base-1097)
+Command: node scripts/size-prove.mjs --base /private/tmp/emberisle-size-base-1097
+Exit: 0
+
+ok   haptics: 1.09 kB gzip, ceiling 1.20 kB
+ok   index: 124.95 kB gzip, ceiling 125.20 kB
+ok   IslandCanvas: 199.48 kB gzip, ceiling 202.50 kB
+ok   jelly-board: 7.89 kB gzip, ceiling 9.00 kB
+ok   hex-jelly: 46.78 kB gzip, ceiling 50.00 kB
+ok   harbor-jelly: 10.21 kB gzip, ceiling 11.50 kB
+ok   online: 7.78 kB gzip, ceiling 9.00 kB
+ok   Reactions: 2.32 kB gzip, ceiling 2.60 kB
+ok   sheets: 7.11 kB gzip, ceiling 7.80 kB
+ok   SetupReference: 1.85 kB gzip, ceiling 2.20 kB
+ok   moments: 4.14 kB gzip, ceiling 5.70 kB
+ok   VictoryTargetSelect: 0.69 kB gzip, ceiling 1.00 kB
+ok   DockInspection: 1.03 kB gzip, ceiling 1.20 kB
+ok   HandRates: 0.65 kB gzip, ceiling 0.80 kB
+ok   TurnExtensionVote: 1.20 kB gzip, ceiling 1.40 kB
+ok   haptics growth: base 1086 B, PR 1088 B, +2 B, allowance 200 B
+ok   index growth: base 124948 B, PR 124950 B, +2 B, allowance 400 B
+ok   IslandCanvas growth: base 199478 B, PR 199478 B, +0 B, allowance 658 B
+ok   jelly-board growth: base 7892 B, PR 7891 B, -1 B, allowance 200 B
+ok   hex-jelly growth: base 46788 B, PR 46785 B, -3 B, allowance 200 B
+ok   harbor-jelly growth: base 10214 B, PR 10211 B, -3 B, allowance 200 B
+ok   online growth: base 7781 B, PR 7780 B, -1 B, allowance 200 B
+ok   Reactions growth: base 2318 B, PR 2319 B, +1 B, allowance 200 B
+ok   sheets growth: base 7113 B, PR 7113 B, +0 B, allowance 200 B
+ok   SetupReference growth: base 1856 B, PR 1855 B, -1 B, allowance 200 B
+ok   moments growth: base 4138 B, PR 4139 B, +1 B, allowance 200 B
+ok   VictoryTargetSelect growth: base 683 B, PR 685 B, +2 B, allowance 200 B
+ok   DockInspection growth: base 1029 B, PR 1031 B, +2 B, allowance 200 B
+ok   HandRates growth: base 645 B, PR 646 B, +1 B, allowance 200 B
+ok   TurnExtensionVote growth: base 1201 B, PR 1201 B, +0 B, allowance 200 B
+size-prove: all chunks inside ceiling and growth allowance
+
+
+Final tested code head: 2ffec02007927cef8548855e26e544d88121ca5c
+Base: fb0fb75f04bd4526968f4b5f321ab8fc5e2f400c (fresh production build in /private/tmp/emberisle-size-base-1097)
+Command: node scripts/size-prove.mjs --base /private/tmp/emberisle-size-base-1097
+Exit: 0
+
+ok   haptics: 1.09 kB gzip, ceiling 1.20 kB
+ok   index: 124.95 kB gzip, ceiling 125.20 kB
+ok   IslandCanvas: 199.48 kB gzip, ceiling 202.50 kB
+ok   jelly-board: 7.89 kB gzip, ceiling 9.00 kB
+ok   hex-jelly: 46.78 kB gzip, ceiling 50.00 kB
+ok   harbor-jelly: 10.21 kB gzip, ceiling 11.50 kB
+ok   online: 7.78 kB gzip, ceiling 9.00 kB
+ok   Reactions: 2.32 kB gzip, ceiling 2.60 kB
+ok   sheets: 7.11 kB gzip, ceiling 7.80 kB
+ok   SetupReference: 1.85 kB gzip, ceiling 2.20 kB
+ok   moments: 4.14 kB gzip, ceiling 5.70 kB
+ok   VictoryTargetSelect: 0.69 kB gzip, ceiling 1.00 kB
+ok   DockInspection: 1.03 kB gzip, ceiling 1.20 kB
+ok   HandRates: 0.65 kB gzip, ceiling 0.80 kB
+ok   TurnExtensionVote: 1.20 kB gzip, ceiling 1.40 kB
+ok   haptics growth: base 1086 B, PR 1088 B, +2 B, allowance 200 B
+ok   index growth: base 124948 B, PR 124950 B, +2 B, allowance 400 B
+ok   IslandCanvas growth: base 199478 B, PR 199478 B, +0 B, allowance 658 B
+ok   jelly-board growth: base 7892 B, PR 7891 B, -1 B, allowance 200 B
+ok   hex-jelly growth: base 46788 B, PR 46785 B, -3 B, allowance 200 B
+ok   harbor-jelly growth: base 10214 B, PR 10211 B, -3 B, allowance 200 B
+ok   online growth: base 7781 B, PR 7780 B, -1 B, allowance 200 B
+ok   Reactions growth: base 2318 B, PR 2319 B, +1 B, allowance 200 B
+ok   sheets growth: base 7113 B, PR 7113 B, +0 B, allowance 200 B
+ok   SetupReference growth: base 1856 B, PR 1855 B, -1 B, allowance 200 B
+ok   moments growth: base 4138 B, PR 4139 B, +1 B, allowance 200 B
+ok   VictoryTargetSelect growth: base 683 B, PR 685 B, +2 B, allowance 200 B
+ok   DockInspection growth: base 1029 B, PR 1031 B, +2 B, allowance 200 B
+ok   HandRates growth: base 645 B, PR 646 B, +1 B, allowance 200 B
+ok   TurnExtensionVote growth: base 1201 B, PR 1201 B, +0 B, allowance 200 B
+size-prove: all chunks inside ceiling and growth allowance
