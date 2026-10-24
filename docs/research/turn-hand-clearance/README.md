@@ -66,7 +66,7 @@ Validation at `c6acbca` in the fresh installed verification clone passed:
   hotseat and reconnect checks pass; zero console errors.
 - `npm run typecheck`, build, registered-prove (131 proofs), loosen-prove (0 changed proofs),
   source/registration audit and size against freshly built main `f334d47` pass.
-- Index 125191 B versus 125189 B base (+2/400 B), ceiling 125200 B; moments 4122 B
+- Index 125191 B versus 125193 B base (−2 B, allowance 400 B), ceiling 125200 B; moments 4122 B
   versus 4090 B (+32/200 B). Every existing budget is unchanged.
 
 Logs are adjacent. The full browser run used the same runtime/proof/registration
