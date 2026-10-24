@@ -8,7 +8,7 @@ import { BookOpen, Box, Copy, Ellipsis, Eye, Hammer, LogOut, ScrollText, Volume2
 import { Button } from "@/components/ui/button";
 import { CopyFallback, useCopy } from "@/components/game/CopyText";
 import { useGame } from "@/lib/game/store";
-import { play, setMusicOn, setMuted, useMuted, useMusicOn } from "@/lib/sound";
+import { haptics, play, setMusicOn, setMuted, useMuted, useMusicOn } from "@/lib/sound";
 
 const ROW = "h-11 w-full justify-start px-3 text-body";
 const ICON = "size-4 shrink-0 text-muted";
@@ -184,6 +184,7 @@ export function TableMenu() {
                 {music ? <Volume2 className={ICON} /> : <VolumeX className={ICON} />}
                 Music {music ? "on" : "off"}
               </Button>
+              {haptics.row}
               {/* The sea's look; the choice is remembered and overrides the GPU probe (docs/design/crystal-water.md). */}
               <div role="group" aria-label="Water" data-testid="water-toggle" className="flex h-11 items-center gap-2 px-3 text-body">
                 <Waves className={ICON} /> Water
