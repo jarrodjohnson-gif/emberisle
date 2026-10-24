@@ -24,7 +24,7 @@ dist/assets/hex-jelly-CtklWtF-.js            136.94 kB │ gzip:  47.25 kB
 dist/assets/index-rC4Z3njT.js                397.83 kB │ gzip: 126.06 kB
 dist/assets/IslandCanvas-GgG7d2Yw.js         759.43 kB │ gzip: 201.52 kB
 
-[plugin builtin:vite-reporter] 
+[plugin builtin:vite-reporter]
 (!) Some chunks are larger than 500 kB after minification. Consider:
 - Using dynamic import() to code-split the application
 - Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting

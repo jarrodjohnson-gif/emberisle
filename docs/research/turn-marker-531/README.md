@@ -1,3 +1,6 @@
+Latest: [2026-10-24 main refresh, actual outputs and nine captures](current-main-7d/README.md).
+The records below retain the earlier main307 validation.
+
 # Current-turn marker validation, 2026-10-23
 
 PR #706, issue #531. This adoption merges main `30737a5` normally at `9a36fd8`; the feature files and `turn-marker-prove.mjs` are byte-identical to the prior `d85dff8` head. No appearance, behavior, assertion or budget changes were made.
