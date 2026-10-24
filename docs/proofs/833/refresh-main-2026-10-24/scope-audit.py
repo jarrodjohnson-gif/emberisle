@@ -1,6 +1,6 @@
 from pathlib import Path
 import subprocess,json,re
-BASE='e448575'; PUBLISHED='28b1686'
+BASE='4892049'; PUBLISHED='28b1686'
 def old(p,ref=BASE):return subprocess.check_output(['git','show',ref+':'+p],text=True)
 def read(p):return Path(p).read_text()
 p='scripts/size-prove.mjs'
