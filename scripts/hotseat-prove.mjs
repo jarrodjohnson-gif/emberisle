@@ -368,7 +368,7 @@ try {
   const leavePlays = await page.evaluate((n) => window.__plays.slice(n), playsBeforeLeave);
   console.log("Leave played", JSON.stringify(leavePlays));
   try {
-  if (leavePlays.join() !== "/audio/click_001.wav") throw new Error(`Leave played ${JSON.stringify(leavePlays)}, not click_001.wav once`);
+    if (leavePlays.join() !== "/audio/click_001.wav") throw new Error(`Leave played ${JSON.stringify(leavePlays)}, not click_001.wav once`);
   } catch (failure) {
     try {
       const diagnostic = await page.evaluate(({ baseline, observed }) => ({
