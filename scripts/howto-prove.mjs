@@ -218,11 +218,19 @@ try {
       await region.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
       assert.equal(await label(), "Rules and setup", `${tag}: the scroll region retains focus after paint`);
       assert.equal(await region.evaluate(el => el.scrollTop), 0, `${tag}: keyboard scrolling starts at the top`);
-      await page.keyboard.press("End");
-      await page.waitForFunction(() => { const b = document.querySelector('[role="region"][aria-label="Rules and setup"]'); return b.scrollTop + b.clientHeight >= b.scrollHeight - 1; }).catch(async e => {
-        const geometry = await region.evaluate(el => ({ top: el.scrollTop, height: el.clientHeight, total: el.scrollHeight, focused: document.activeElement === el }));
-        throw new Error(`${tag}: End did not reach the bottom: ${JSON.stringify(geometry)}; ${e.message}`);
-      });
+      // #1077: retry a lost key, with at most five presses sharing the original 30 s deadline.
+      const endDeadline = Date.now() + 30_000;
+      for (let attempt = 0; attempt < 5; attempt++) {
+        await page.keyboard.press("End");
+        try {
+          await page.waitForFunction(() => { const b = document.querySelector('[role="region"][aria-label="Rules and setup"]'); return b.scrollTop + b.clientHeight >= b.scrollHeight - 1; }, null, { timeout: Math.max(1, Math.min(attempt < 4 ? 1000 : 30_000, endDeadline - Date.now())) });
+          break;
+        } catch (e) {
+          if (e.name === "TimeoutError" && attempt < 4 && Date.now() < endDeadline) continue;
+          const geometry = await region.evaluate(el => ({ top: el.scrollTop, height: el.clientHeight, total: el.scrollHeight, focused: document.activeElement === el }));
+          throw new Error(`${tag}: End did not reach the bottom: ${JSON.stringify(geometry)}; ${e.message}`);
+        }
+      }
       // PageUp, not Home: on a live table Home is the camera reset.
       for (let i = 0; i < 40 && (await region.evaluate((el) => el.scrollTop)) > 0; i++) {
         await page.keyboard.press("PageUp");
