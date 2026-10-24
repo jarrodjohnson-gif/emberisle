@@ -14,7 +14,7 @@ measured in a browser. Tailwind `size-11` is 44 px, `size-8` is 32 px and `size-
 |---|---|---|---|
 | **Emoji reactions** | `QUICK_REACTIONS` in `src/components/game/emotes.ts`: 😠 😊 👏 😂 🔥 🐑 | The same six, hard-coded again in `talk()` in `server/host.mjs` (there is a comment saying to keep the two in sync) | No. Each float lasts 2 s |
 | **Image emotes** | Every `*.png` / `*.webp` file in `src/assets/emotes/`, read by `import.meta.glob` (client) and `loadEmotes` (host) | Any id found in that folder | No |
-| **Soundboard** **[#635]** | `SOUNDBOARD` in `src/lib/sound.ts`, and again in `server/chat.mjs` | 9 ids: `robbed_fah` (Fah), `sb_wololo` (Wololo), `sb_win_reaction` (GG!), `sb_airhorn` (Airhorn), `sb_quit_touchin` (Quit touchin' me), `sb_only_wood` (Only wood?), `bong`, `plop`, `pluck` | Yes. It is a chat line, `🔊 Label`, so it counts toward the room's 30 lines |
+| **Soundboard** **[#635]** | `SOUNDBOARD` in `src/lib/sound.ts`, and again in `server/chat.mjs` | 10 ids: `robbed_fah` (Fah), `sb_wololo` (Wololo), `sb_win_reaction` (GG!), `sb_airhorn` (Airhorn), `sb_quit_touchin` (Quit touchin' me), `sb_only_wood` (Only wood?), `sb_perfect` (Perfect), `bong`, `plop`, `pluck` | Yes. It is a chat line, `🔊 Label`, so it counts toward the room's 30 lines |
 
 The `public/` folder holds no emote art. `public/audio/` holds the sounds, and **[#635]** adds the six `.mp3` clips
 the soundboard uses (plus the music stings). There is exactly **one image emote**: `src/assets/emotes/ben-10.webp`,

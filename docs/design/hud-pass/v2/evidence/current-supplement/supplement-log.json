@@ -1,0 +1,356 @@
+[
+  {
+    "viewport": "390x844",
+    "state": "main-geometry",
+    "smallText": 12,
+    "smallTargets": 0,
+    "clipping": 1,
+    "goodsTray": {
+      "x": 12,
+      "y": 570,
+      "width": 366,
+      "height": 78,
+      "right": 378,
+      "bottom": 648
+    },
+    "focus": {
+      "tag": "BODY",
+      "name": "JarrodJar12 goods4 fortunes4 points, plus 2 hidden+251Lucke DigglerLuc12 goods4 points13AlexandriaAle12 goods2 points10Joshspicy2J212 goods2 points20Hidden fortunes may add points.Jarrod's turn.The isle is dealt. Roll for first place.Jarrod rolled 1 and 5: 6.Build, trade, or end your turn3Wood2Brick4Sheep1Wheat2Stone Path✓ Outpost✓ Upgrade3−22 Fortune✓17 left TradeMy fortunes · 46End turn6531112The isle is dealt. Roll for first place.Deck 17",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 844,
+        "right": 390,
+        "bottom": 844
+      }
+    },
+    "errors": []
+  },
+  {
+    "viewport": "390x844",
+    "state": "own-player-menu",
+    "smallText": 12,
+    "smallTargets": 0,
+    "clipping": 1,
+    "goodsTray": {
+      "x": 12,
+      "y": 570,
+      "width": 366,
+      "height": 78,
+      "right": 378,
+      "bottom": 648
+    },
+    "focus": {
+      "tag": "BUTTON",
+      "name": "Trade with the bank or a dock…",
+      "rect": {
+        "x": 21,
+        "y": 341,
+        "width": 348,
+        "height": 44,
+        "right": 369,
+        "bottom": 385
+      }
+    },
+    "errors": []
+  },
+  {
+    "viewport": "390x844",
+    "state": "own-player-menu",
+    "escapeClosed": true,
+    "returnedFocus": true
+  },
+  {
+    "viewport": "390x844",
+    "state": "hand-rates",
+    "smallText": 12,
+    "smallTargets": 0,
+    "clipping": 1,
+    "goodsTray": {
+      "x": 12,
+      "y": 570,
+      "width": 366,
+      "height": 78,
+      "right": 378,
+      "bottom": 648
+    },
+    "focus": {
+      "tag": "DIV",
+      "name": "Wood: 3. Show trade rates",
+      "rect": {
+        "x": 20,
+        "y": 578,
+        "width": 66.796875,
+        "height": 62,
+        "right": 86.796875,
+        "bottom": 640
+      }
+    },
+    "errors": []
+  },
+  {
+    "viewport": "390x844",
+    "state": "keyboard-place-list",
+    "smallText": 11,
+    "smallTargets": 0,
+    "clipping": 1,
+    "goodsTray": {
+      "x": 12,
+      "y": 570,
+      "width": 366,
+      "height": 78,
+      "right": 378,
+      "bottom": 648
+    },
+    "focus": {
+      "tag": "BUTTON",
+      "name": "Path from your outpost at 6 wool, 5 timber and 3 clay to 6 wool, 4 timber and 3 clay",
+      "rect": {
+        "x": 91,
+        "y": 105,
+        "width": 286,
+        "height": 70,
+        "right": 377,
+        "bottom": 175
+      }
+    },
+    "errors": []
+  },
+  {
+    "viewport": "844x390",
+    "state": "main-geometry",
+    "smallText": 11,
+    "smallTargets": 0,
+    "clipping": 1,
+    "goodsTray": {
+      "x": 12,
+      "y": 134,
+      "width": 260,
+      "height": 52,
+      "right": 272,
+      "bottom": 186
+    },
+    "focus": {
+      "tag": "BODY",
+      "name": "JarrodJar12 goods4 fortunes4 points, plus 2 hidden+251Lucke DigglerLuc12 goods4 points13AlexandriaAle12 goods2 points10Joshspicy2J212 goods2 points20Hidden fortunes may add points.Jarrod's turn.The isle is dealt. Roll for first place.Jarrod rolled 1 and 5: 6.Build, trade, or end your turn3Wood2Brick4Sheep1Wheat2Stone Path✓ Outpost✓ Upgrade3−22 Fortune✓17 left TradeMy fortunes · 46531112The isle is dealt. Roll for first place.Deck 176End turn",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 844,
+        "height": 390,
+        "right": 844,
+        "bottom": 390
+      }
+    },
+    "errors": []
+  },
+  {
+    "viewport": "844x390",
+    "state": "own-player-menu",
+    "smallText": 11,
+    "smallTargets": 1,
+    "clipping": 1,
+    "goodsTray": {
+      "x": 12,
+      "y": 134,
+      "width": 260,
+      "height": 52,
+      "right": 272,
+      "bottom": 186
+    },
+    "focus": {
+      "tag": "BUTTON",
+      "name": "Trade with the bank or a dock…",
+      "rect": {
+        "x": 553,
+        "y": 353,
+        "width": 270,
+        "height": 20,
+        "right": 823,
+        "bottom": 373
+      }
+    },
+    "errors": []
+  },
+  {
+    "viewport": "844x390",
+    "state": "own-player-menu",
+    "escapeClosed": true,
+    "returnedFocus": true
+  },
+  {
+    "viewport": "844x390",
+    "state": "hand-rates",
+    "smallText": 11,
+    "smallTargets": 0,
+    "clipping": 1,
+    "goodsTray": {
+      "x": 12,
+      "y": 134,
+      "width": 260,
+      "height": 52,
+      "right": 272,
+      "bottom": 186
+    },
+    "focus": {
+      "tag": "DIV",
+      "name": "Wood: 3. Show trade rates",
+      "rect": {
+        "x": 16,
+        "y": 138,
+        "width": 47.203125,
+        "height": 44,
+        "right": 63.203125,
+        "bottom": 182
+      }
+    },
+    "errors": []
+  },
+  {
+    "viewport": "844x390",
+    "state": "keyboard-place-list",
+    "smallText": 10,
+    "smallTargets": 0,
+    "clipping": 2,
+    "goodsTray": {
+      "x": 12,
+      "y": 134,
+      "width": 260,
+      "height": 52,
+      "right": 272,
+      "bottom": 186
+    },
+    "focus": {
+      "tag": "BUTTON",
+      "name": "Path from your outpost at 6 wool, 5 timber and 3 clay to 6 wool, 4 timber and 3 clay",
+      "rect": {
+        "x": 545,
+        "y": 105,
+        "width": 286,
+        "height": 70,
+        "right": 831,
+        "bottom": 175
+      }
+    },
+    "errors": []
+  },
+  {
+    "viewport": "1280x720",
+    "state": "main-geometry",
+    "smallText": 7,
+    "smallTargets": 0,
+    "clipping": 0,
+    "goodsTray": {
+      "x": 280,
+      "y": 514,
+      "width": 720,
+      "height": 106,
+      "right": 1000,
+      "bottom": 620
+    },
+    "focus": {
+      "tag": "BODY",
+      "name": "Build, trade, or end your turnJarrod12 goods4 fortunes4 points, plus 2 hidden+251Lucke Diggler12 goods4 points13Alexandria12 goods2 points10Joshspicy212 goods2 points20Hidden fortunes may add points.Jarrod's turn.The isle is dealt. Roll for first place.Jarrod rolled 1 and 5: 6.3Wood2Brick4Sheep1Wheat2Stone Path✓ Outpost✓ Stronghold3−22 Fortune✓17 left TradeMy fortunes · 46End turn6531112The isle is dealt. Roll for first place.Deck 17",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720,
+        "right": 1280,
+        "bottom": 720
+      }
+    },
+    "errors": []
+  },
+  {
+    "viewport": "1280x720",
+    "state": "own-player-menu",
+    "smallText": 7,
+    "smallTargets": 0,
+    "clipping": 0,
+    "goodsTray": {
+      "x": 280,
+      "y": 514,
+      "width": 720,
+      "height": 106,
+      "right": 1000,
+      "bottom": 620
+    },
+    "focus": {
+      "tag": "BUTTON",
+      "name": "Trade with the bank or a dock…",
+      "rect": {
+        "x": 21,
+        "y": 453,
+        "width": 174,
+        "height": 44,
+        "right": 195,
+        "bottom": 497
+      }
+    },
+    "errors": []
+  },
+  {
+    "viewport": "1280x720",
+    "state": "own-player-menu",
+    "escapeClosed": true,
+    "returnedFocus": true
+  },
+  {
+    "viewport": "1280x720",
+    "state": "hand-rates",
+    "smallText": 7,
+    "smallTargets": 0,
+    "clipping": 0,
+    "goodsTray": {
+      "x": 280,
+      "y": 514,
+      "width": 720,
+      "height": 106,
+      "right": 1000,
+      "bottom": 620
+    },
+    "focus": {
+      "tag": "DIV",
+      "name": "Wood: 3. Show trade rates",
+      "rect": {
+        "x": 412,
+        "y": 536,
+        "width": 88,
+        "height": 80,
+        "right": 500,
+        "bottom": 616
+      }
+    },
+    "errors": []
+  },
+  {
+    "viewport": "1280x720",
+    "state": "keyboard-place-list",
+    "smallText": 6,
+    "smallTargets": 0,
+    "clipping": 0,
+    "goodsTray": {
+      "x": 280,
+      "y": 514,
+      "width": 720,
+      "height": 106,
+      "right": 1000,
+      "bottom": 620
+    },
+    "focus": {
+      "tag": "BUTTON",
+      "name": "Path from your outpost at 6 wool, 5 timber and 3 clay to 6 wool, 4 timber and 3 clay",
+      "rect": {
+        "x": 981,
+        "y": 105,
+        "width": 286,
+        "height": 70,
+        "right": 1267,
+        "bottom": 175
+      }
+    },
+    "errors": []
+  }
+]
