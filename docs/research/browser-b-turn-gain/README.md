@@ -98,4 +98,3 @@ The approved owner-decision row is preserved; every main decision remains intact
 After this push, new-head CI must confirm the hypothesis on its own runners.
 The desk's one rerun of the old head is spent. No builder CI rerun was requested.
 No proof, runtime, package script, assertion or size budget changes are part of this PR.
-
