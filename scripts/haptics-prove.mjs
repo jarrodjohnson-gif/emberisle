@@ -429,6 +429,15 @@ async function tradeFramesProof(page) {
   console.log("trade: received frames buzz only seated recipients, never watchers or the sender");
 }
 
+async function coldStep(promise, label) {
+  let timer;
+  try {
+    return await Promise.race([promise, new Promise((_, reject) => {
+      timer = setTimeout(() => reject(new Error(label)), STEP_MS);
+    })]);
+  } finally { clearTimeout(timer); }
+}
+
 // Hold the optional download across a queued first native tap. UI/rejoin must not race registration.
 // Runs against both transformed source and the actual production chunk graph (which shares React with index).
 async function coldLoadProof(url, production) {
@@ -442,8 +451,8 @@ async function coldLoadProof(url, production) {
   }});
   let tap;
   try {
-    await Promise.race([request, new Promise((_, reject) => setTimeout(() => reject(new Error("cold haptics module was not requested")), STEP_MS))]);
-    await page.evaluate(async (production) => {
+    await coldStep(request, "cold haptics module was not requested");
+    await coldStep(page.evaluate(async (production) => {
       // The app publishes __emberisle on mount, deliberately after this gate. Read the existing
       // store export without mounting it; the production entry must finish evaluating while its
       // async bootstrap waits, otherwise the shared-module graph would deadlock here too.
@@ -456,7 +465,7 @@ async function coldLoadProof(url, production) {
       const rejoin = store.getState().rejoinTable;
       window.__rejoins = 0;
       store.setState({rejoinTable: (...args) => { window.__rejoins++; return rejoin(...args); }});
-    }, production);
+    }, production), "cold shared entry evaluation did not finish");
     let tapped = false;
     tap = page.getByRole("button", {name: "Four seats, one table", exact: true}).click({timeout: STEP_MS}).then(() => { tapped = true; });
     // This is an intentional held-download control, not an event deadline or retry.
