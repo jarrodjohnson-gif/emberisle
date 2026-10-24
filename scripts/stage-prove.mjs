@@ -65,6 +65,11 @@ try {
       hud: box('#hud'), gain: box('#gain'), stage: document.querySelector('#moment').dataset.stage,
       shift: Number(document.querySelector('#moment').dataset.shift), text: document.querySelector('#moment').textContent });
     const frame = () => new Promise(resolve => requestAnimationFrame(resolve));
+    const writeThenSample = (top, bottom, label) => new Promise(resolve => requestAnimationFrame(() => {
+      shell.style.setProperty('--hole-top', top + 'px');
+      shell.style.setProperty('--hole-bottom', bottom + 'px');
+      requestAnimationFrame(() => resolve(sample(label)));
+    }));
     const move = async (top, bottom, label) => {
       shell.style.setProperty('--hole-top', top + 'px');
       shell.style.setProperty('--hole-bottom', bottom + 'px');
@@ -78,8 +83,7 @@ try {
     window.rerender(); out.push(sample('React dependency update while moved'));
     out.push(await move(103, 360, 'restore observed pre-refit hole'));
     await frame();
-    out.push(await move(500, 56, 'size-changing refit: first frame'));
-    await frame(); out.push(sample('size-changing refit: next frame'));
+    out.push(await writeThenSample(500, 56, 'size-changing refit: write in RAF, sample next RAF'));
     out.push(await move(100, 456, 'restore clear centre: first frame'));
     return out;
   });
