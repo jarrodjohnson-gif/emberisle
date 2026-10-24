@@ -123,7 +123,7 @@ export function hear(before: GameState | null, after: GameState, me: string, mod
   const victim =
     mode !== "hotseat" && !!before && before.current !== me && after.vertices.some((v) => v.building?.playerId === me && v.hexes.includes(after.robberHex));
   const cue = haptics.player?.(before, after, me, mode) ?? play;
-  for (const [sound, volume] of soundsFor(before, after, mode === "hotseat" || (!!me && after.current === me), victim, lost)) {
+  for (const [sound, volume] of soundsFor(before, after, mode === "hotseat" || after.current === me, victim, lost)) {
     // A piece knocks when it lands, not when it is picked (#438); reduced motion has no fall, so it knocks at once.
     const land = sound in LAND_MS && !calmMotion() ? LAND_MS[sound as keyof typeof LAND_MS] : 0;
     if (land) {
@@ -151,7 +151,7 @@ export function hear(before: GameState | null, after: GameState, me: string, mod
     for (const _ of reached) play("match_point", MUSIC_VOLUME);
     if (reached[0]) matchLine = `${reached[0].name} reached ${publicVP(after, reached[0].id)} points — one to win`;
   }
-  if (mode !== "hotseat" && after.current === me && after.phase !== "over" && (reconnect || (before && before.current !== me))) cue("your_turn", 1);
+  if (mode !== "hotseat" && after.current === me && after.phase !== "over" && (reconnect || (before && before.current !== me))) cue("your_turn");
 }
 
 // The game log the dock shows (#305): a line of `state.log` or a host `log` message, stamped when this browser saw it.

@@ -45,7 +45,7 @@ export function player(before: GameState | null, after: GameState, me: string, m
     after.vertices.some((vertex, i) => vertex.building?.playerId === me && vertex.building.kind !== before.vertices[i]?.building?.kind)
   ));
   const ownFortune = mode === "hotseat" || (!!me && before?.current === me);
-  return (sound: SoundName, volume: number) => {
+  return (sound: SoundName, volume?: number) => {
     play(sound, volume);
     if (sound === "your_turn") buzz(HAPTIC_MS.yourTurn);
     if (ownsPiece && (sound === "path_place" || sound === "outpost_place" || sound === "stronghold_place")) buzz(HAPTIC_MS.land);
