@@ -15,6 +15,7 @@
     "profile-pin-queue-prove": "node server/profile-pin-queue-prove.mjs",
     "profile-unknown-cap-prove": "node server/profile-unknown-cap-prove.mjs",
     "profile-reservation-recovery-prove": "node server/profile-reservation-recovery-prove.mjs",
+    "profile-expiry-prove": "node server/profile-expiry-prove.mjs",
     "bot-harbor-prove": "node --import ./server/register.mjs server/bot-harbor-prove.mjs",
     "client-prove": "node scripts/client-prove.mjs",
     "dock-rates-prove": "node scripts/dock-rates-prove.mjs",
