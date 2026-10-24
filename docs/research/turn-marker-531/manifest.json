@@ -1,0 +1,88 @@
+{
+  "checked_utc": "2026-10-23T14:34:34.259078+00:00",
+  "proof_commit": "9a36fd841b959c22257b025ecf9ba95c61637bfa",
+  "main": "30737a5c81f194b1c6235c1409555ee8e6cb19bd",
+  "captures": [
+    {
+      "file": "turn-marker-1280x720-trade.png",
+      "dimensions": [
+        1280,
+        720
+      ],
+      "bytes": 421904,
+      "sha256": "ffd7d5e8a3d3f15eb332ee6f1555be4e59310286823043c2f3a977e0d11fb949"
+    },
+    {
+      "file": "turn-marker-1280x720-win.png",
+      "dimensions": [
+        1280,
+        720
+      ],
+      "bytes": 100387,
+      "sha256": "39d7524e24f110fce8bed841b8dad2a7c13c8f81b2d8c9920fd0f466ffd41edf"
+    },
+    {
+      "file": "turn-marker-1280x720.png",
+      "dimensions": [
+        1280,
+        720
+      ],
+      "bytes": 401776,
+      "sha256": "305c3fd34a2e7be11ca7f034744e058858c5f7928ea781d19c5724b13201da79"
+    },
+    {
+      "file": "turn-marker-390x844-trade.png",
+      "dimensions": [
+        390,
+        844
+      ],
+      "bytes": 186834,
+      "sha256": "73b55b12136c3d34fa2985edf976ceb35c9f5897b3cb16fae67e7994574ec9f3"
+    },
+    {
+      "file": "turn-marker-390x844-win.png",
+      "dimensions": [
+        390,
+        844
+      ],
+      "bytes": 70501,
+      "sha256": "bb3b6062df3fc91bd1f7394913ee3d98ab0a6eb111c3518cde0e8f5420161874"
+    },
+    {
+      "file": "turn-marker-390x844.png",
+      "dimensions": [
+        390,
+        844
+      ],
+      "bytes": 189725,
+      "sha256": "05265c1c20b869b35f3b6ed147ee617d3f4dcf80571e8a949726c63b23f0035b"
+    },
+    {
+      "file": "turn-marker-844x390-trade.png",
+      "dimensions": [
+        844,
+        390
+      ],
+      "bytes": 181374,
+      "sha256": "ed1c3701b22bcc95081c76edc5fc401d8cad598aa19e75f7b4745a0c1981a17e"
+    },
+    {
+      "file": "turn-marker-844x390-win.png",
+      "dimensions": [
+        844,
+        390
+      ],
+      "bytes": 62947,
+      "sha256": "f08fa294e675a4d459427541961e88b3e16d29b38232837f3ff77dd348071900"
+    },
+    {
+      "file": "turn-marker-844x390.png",
+      "dimensions": [
+        844,
+        390
+      ],
+      "bytes": 169092,
+      "sha256": "c9c16659981d0e8e34d5f1b29db84ec0894ef474206124edb764ab8f35a4546b"
+    }
+  ]
+}
