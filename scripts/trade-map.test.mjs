@@ -173,11 +173,14 @@ try {
   // Long mixed offers must fit the frozen desktop board hole and leave chat usable after rotation.
   const long = structuredClone(base);
   for (const p of long.players) {
-    p.name = `Alexanderthe${p.id}`;
+    // 16 characters, the longest a name can be (NAME_MAX). A recipient who can pay (#537) has no "Need" line any more, so
+    // names this long are what wrap the responses and keep the details taller than the room above the chat.
+    p.name = `Alexanderthegr${p.id}`;
     p.resources = Object.fromEntries(RESOURCES.map((r) => [r, 0]));
   }
   Object.assign(long.players[0].resources, { timber: 8, clay: 8, grain: 8 });
-  Object.assign(long.players[1].resources, { wool: 8 });
+  // #537: recipient must be able to pay, or the toast collapses to compact demand without details/receipt.
+  Object.assign(long.players[1].resources, { wool: 8, ore: 8 });
   for (const r of RESOURCES) long.bank[r] = 19 - long.players.reduce((n, p) => n + p.resources[r], 0);
   const longOffer = { tradeId: "long", from: "p0", fromName: long.players[0].name,
     give: { timber: 6, clay: 6, grain: 6 }, want: { wool: 6, ore: 6 }, until: Date.now() + 60_000 };
@@ -262,13 +265,14 @@ try {
   await page.evaluate(() => window.__emberisle.setState({ localId: "p1" }));
   await textHas(page.getByTestId("trade-receipt"), "You give: 1 sheep, 1 stone");
   await textHas(page.getByTestId("trade-receipt"), "You get: 1 wood, 1 brick");
+  // #537: a short hand switches to compact demand (no Accept), then recovers to Yes/No when goods return.
   await change('g.players[1].resources.ore = 0');
-  await page.waitForFunction(() => document.querySelector(".trade-yes")?.getAttribute("aria-disabled") === "true");
-  await toast.getByRole("button", { name: "Yes", exact: true }).focus();
-  await page.keyboard.press("Enter");
-  assert((await settled()).offer, "unaffordable Yes must not settle");
+  await page.waitForFunction(() => document.querySelector('[data-testid="trade-toast"]')?.getAttribute("data-compact") === "true");
+  assert.equal(await page.getByTestId("trade-demand").count(), 1);
+  assert.equal(await page.getByRole("button", { name: "Yes", exact: true }).count(), 0);
+  assert((await settled()).offer, "compact demand must keep the offer open without Accept");
   await change('g.players[1].resources.ore = 2');
-  await page.waitForFunction(() => !document.querySelector(".trade-yes")?.hasAttribute("aria-disabled"));
+  await page.waitForFunction(() => document.querySelector('[data-testid="trade-toast"]')?.getAttribute("data-compact") !== "true");
   await toast.getByRole("button", { name: "Yes", exact: true }).click();
   await page.getByTestId("trade-outcome").waitFor();
   assert.equal(await page.getByTestId("trade-outcome").getAttribute("data-taker"), "p1");
@@ -279,7 +283,7 @@ try {
   assert.deepEqual(actual.hands[0], { timber: 5, clay: 1, wool: 1, grain: 1, ore: 7 });
   assert.deepEqual(actual.hands[1], { timber: 1, clay: 1, wool: 2, grain: 0, ore: 1 });
   assert.deepEqual(actual.bank, mixed.bank, "player trade must not touch bank");
-  console.log("real mixed trade: reduced-motion bot cross <1s, recipient pays/gets preview, stale hand refuses, one Yes settles both bags exactly once");
+  console.log("real mixed trade: reduced-motion bot cross <1s, recipient pays/gets preview, #537 compact when short, one Yes settles both bags exactly once");
   assert.deepEqual(errors, []);
   console.log("trade map proof ok; zero browser errors");
 } finally {
