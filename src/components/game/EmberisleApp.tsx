@@ -119,6 +119,7 @@ function Title() {
   const howTo = useGame((s) => s.howTo);
   const [join, setJoin] = useState("");
   const [openMode, setOpenMode] = useState(false);
+  const VisibilityIcon = openMode ? Globe : Lock;
   const hostTable = useGame((s) => s.hostTable);
   const joinTable = useGame((s) => s.joinTable);
   const watchTable = useGame((s) => s.watchTable);
@@ -272,7 +273,7 @@ function Title() {
                   data-testid="open-mode-toggle"
                   onClick={() => setOpenMode((m) => !m)}
                 >
-                  {openMode ? <Globe size={16} aria-hidden="true" /> : <Lock size={16} aria-hidden="true" />}
+                  <VisibilityIcon size={16} aria-hidden="true" />
                 </Button>
               </div>
               <form
