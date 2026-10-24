@@ -13,13 +13,14 @@ import { basename } from "node:path";
 export const TYPE_OF = {
   memes: ["robbed_fah", "sb_airhorn", "sb_only_wood", "sb_perfect", "sb_quit_touchin", "sb_win_reaction", "sb_wololo"],
   music: ["end_music", "game_lose", "game_start", "match_point", "old_tower_inn_loop"],
+  ambience: ["amb_sea"],
   effects: [
     "back_001", "bong_001", "chat_recv", "chat_send", "click_001", "click_002", "click_005", "confirmation_001", "drop_001", "drop_002",
     "drop_003", "drop_004", "error_001", "error_002", "open_001", "plop", "pluck_001", "sb_plump_sheep", "scratch_001", "tap_fields",
     "tap_forest", "tap_hills", "tap_mountains", "tap_waste", "timer_final", "timer_tick", "trade_offer", "wayfarer_move", "your_turn",
   ],
 };
-export const TARGETS = { memes: { method: "lufs", target: -16 }, music: { method: "lufs", target: -18 }, effects: { method: "short", target: -18 } };
+export const TARGETS = { memes: { method: "lufs", target: -16 }, music: { method: "lufs", target: -18 }, effects: { method: "short", target: -18 }, ambience: { method: "lufs", target: -30.6 } };
 export const TOLERANCE = 1; // LU or dB
 export const MAX_TRUE_PEAK = -1; // dBTP
 

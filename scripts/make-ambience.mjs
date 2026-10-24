@@ -1,11 +1,13 @@
 // #1014 / #662 candidate 3: original procedural sea-and-wind noise, released under CC0 1.0.
 // No recording or third-party sample. Regenerate: node scripts/make-ambience.mjs [--output file.mp3].
-import { mkdirSync, statSync } from "node:fs";
+import { mkdirSync, statSync, mkdtempSync, rmSync } from "node:fs";
 import path from "node:path";
+import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import ffmpeg from "@ffmpeg-installer/ffmpeg";
+import { levelFile, measure } from "./audio-level-lib.mjs";
 
 export const RATE = 44100;
 export const SECONDS = 20;
@@ -62,15 +64,34 @@ export function makePcm() {
   return wave;
 }
 
-export function encode(output) {
+function encodeRaw(output) {
   mkdirSync(path.dirname(output), { recursive: true });
   const wave = makePcm();
   const result = spawnSync(ffmpeg.path, ["-hide_banner", "-loglevel", "error", "-i", "pipe:0", "-map_metadata", "-1", "-fflags", "+bitexact", "-c:a", "libmp3lame", "-b:a", "96k", "-flags:a", "+bitexact", "-id3v2_version", "0", "-write_id3v1", "0", "-write_xing", "1", "-y", output], { input: wave, encoding: "utf8" });
   if (result.error || result.status !== 0) throw new Error(`ffmpeg failed: ${result.error?.message ?? result.stderr}`);
-  console.log(JSON.stringify({ output, bytes: statSync(output).size, seconds: SECONDS, rate: RATE, crossfadeSeconds: CROSSFADE_SECONDS, swellHz: SWELL_HZ, pcmSha256: createHash("sha256").update(wave).digest("hex") }));
+  return createHash("sha256").update(wave).digest("hex");
+}
+
+// Always master the original generated candidate once, through the shared levelling tool.
+export function encode(output, { raw = false } = {}) {
+  let pcmSha256, mastering = null;
+  if (raw) pcmSha256 = encodeRaw(output);
+  else {
+    const temp = mkdtempSync(path.join(tmpdir(), "emberisle-ambience-master-"));
+    try {
+      const original = path.join(temp, "amb_sea.mp3");
+      pcmSha256 = encodeRaw(original);
+      mkdirSync(path.dirname(output), { recursive: true });
+      const result = levelFile(original, output, "ambience");
+      mastering = { how: result.how, before: result.before.level, after: measure(output, "ambience") };
+    } finally {
+      rmSync(temp, { recursive: true, force: true });
+    }
+  }
+  console.log(JSON.stringify({ output, bytes: statSync(output).size, seconds: SECONDS, rate: RATE, crossfadeSeconds: CROSSFADE_SECONDS, swellHz: SWELL_HZ, pcmSha256, mastering }));
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const flag = process.argv.indexOf("--output");
-  encode(flag < 0 ? fileURLToPath(new URL("../public/audio/amb_sea.mp3", import.meta.url)) : path.resolve(process.argv[flag + 1]));
+  encode(flag < 0 ? fileURLToPath(new URL("../public/audio/amb_sea.mp3", import.meta.url)) : path.resolve(process.argv[flag + 1]), { raw: process.argv.includes("--raw") });
 }
