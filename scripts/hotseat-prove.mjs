@@ -33,32 +33,45 @@ try {
     // #1089: collect provenance without changing input, playback, timer arguments or proof waits.
     // Only the original Leave-sound failure emits these records.
     window.__leaveTrace = [];
-    const note = (kind, data) => window.__leaveTrace.push({ kind, at: performance.now(), ...data });
+    const note = (kind, record, at = performance.now()) => {
+      record.kind = kind; record.at = at; window.__leaveTrace.push(record);
+    };
     for (const kind of ["pointerdown", "pointerup", "click", "keydown", "keyup"]) {
       document.addEventListener(kind, (event) => {
         const button = event.target.closest?.("button");
-        note("input", { event: kind, key: event.key, pointer: event.pointerType, trusted: event.isTrusted,
-          target: event.target.tagName, button: button?.textContent?.trim(), label: button?.getAttribute("aria-label") });
+        const input = { event: kind, eventAt: event.timeStamp, key: event.key, pointer: event.pointerType, trusted: event.isTrusted,
+          target: event.target.tagName, button: button?.textContent?.trim(), label: button?.getAttribute("aria-label") };
+        // One stack for the native Leave click; never allocate a stack per sound or timer.
+        if (kind === "click" && input.button === "Leave table") input.stack = new Error().stack;
+        note("input", input);
       }, { capture: true, passive: true });
     }
     const later = window.setTimeout;
     let pumpOrdinal = 0;
+    const pumps = new WeakMap();
     window.setTimeout = function (callback, ms, ...args) {
-      // The proof serves unminified source. This hook names only sound.ts's existing pump.
+      // The served sound pump arms only one timer at a time. Reuse its wrapper across re-arms.
       if (typeof callback !== "function" || callback.name !== "pump") return later.call(this, callback, ms, ...args);
-      const ordinal = ++pumpOrdinal, scheduled = performance.now();
-      note("pump-scheduled", { ordinal, ms, scheduled, stack: new Error().stack });
-      return later.call(this, function (...firedArgs) {
-        note("pump-fired", { ordinal, ms, scheduled, lateness: performance.now() - scheduled - ms });
-        return callback.apply(this, firedArgs);
-      }, ms, ...args);
+      let pump = pumps.get(callback);
+      if (!pump) {
+        pump = {};
+        pump.fire = function (...firedArgs) {
+          const { ordinal, ms, scheduled } = pump, now = performance.now();
+          note("pump-fired", { ordinal, ms, scheduled, lateness: now - scheduled - ms }, now);
+          return callback.apply(this, firedArgs);
+        };
+        pumps.set(callback, pump);
+      }
+      pump.ordinal = ++pumpOrdinal; pump.ms = ms; pump.scheduled = performance.now();
+      note("pump-scheduled", { ordinal: pump.ordinal, ms, scheduled: pump.scheduled }, pump.scheduled);
+      return later.call(this, pump.fire, ms, ...args);
     };
     const play = HTMLMediaElement.prototype.play;
     HTMLMediaElement.prototype.play = function () {
       // #814: the background music is music-prove's, not a table sound.
       if (this.src.endsWith("/old_tower_inn_loop.mp3")) return play.call(this);
       window.__plays.push(new URL(this.src).pathname);
-      note("audio", { ordinal: window.__plays.length, path: new URL(this.src).pathname, stack: new Error().stack });
+      note("audio", { ordinal: window.__plays.length, path: window.__plays[window.__plays.length - 1] });
       return play.call(this);
     };
   });

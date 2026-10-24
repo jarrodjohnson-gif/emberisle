@@ -10,6 +10,8 @@ chromium.launch=async(...args)=>{
   await page.addInitScript(()=>{
    document.addEventListener('pointerup',function controlledLeaveExtraClip(event){
     if(event.target.closest?.('button')?.textContent?.trim()!=='Leave table')return;
+    window.__leaveTrace.push({kind:'controlled-extra',at:performance.now(),eventAt:event.timeStamp,
+      path:'/audio/back_001.wav',ordinal:window.__plays.length+1});
     const clip=new Audio('/audio/back_001.wav');
     void clip.play()?.catch(()=>{});
    },{capture:true,passive:true});
