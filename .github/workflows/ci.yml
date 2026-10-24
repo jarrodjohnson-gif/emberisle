@@ -150,6 +150,16 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm test
       - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run profile-pin-queue-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run profile-unknown-cap-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run profile-reservation-recovery-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run profile-expiry-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run profile-pin-race-prove
+      - if: needs.changes.outputs.docs_only != 'true'
         run: npm run next-up-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run touch-place-prove
@@ -157,6 +167,8 @@ jobs:
         run: npm run stale-pr-sweeper-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run flake-rerun-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run soak-evidence-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run auto-merge-prove
       - if: needs.changes.outputs.docs_only != 'true'
@@ -334,9 +346,15 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
         run: npm run sounds-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
+        run: npm run sound-mixer-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
+        run: npm run your-turn-cue-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
         run: npm run music-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
         run: npm run ore-tokens-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
+        run: npm run climber-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
         run: npm run tokens-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
@@ -404,6 +422,8 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-2'
         run: npm run table-menu-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-2'
+        run: npm run version-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-2'
         run: npm run build-ready-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation'
         run: npm run board-look-prove
@@ -413,6 +433,8 @@ jobs:
         run: npm run seat-rail-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-2'
         run: npm run longest-army-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-2'
+        run: npm run roll-log-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-2'
         run: npm run public-score-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-2'

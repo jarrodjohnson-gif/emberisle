@@ -143,17 +143,17 @@ try {
     await menu.waitFor();
     assert.equal(await page.evaluate(() => document.activeElement?.textContent.trim()), "How to play", `${v.tag}: Enter opens with the focus on the first row`);
     const canvas = page.locator("canvas").first();
-    const outside = await canvas.evaluate(el => {
-      const r = el.getBoundingClientRect();
-      for (const x of [r.width / 2, 8, r.width - 8]) {
-        for (const y of [r.height / 2, r.height / 3, r.height * 2 / 3]) {
-          if (document.elementFromPoint(r.left + x, r.top + y) === el) return {x, y};
-        }
-      }
+    // The version footer can reach the viewport centre. Measure an actual outside point rather than tapping its text.
+    const box = await menu.boundingBox(), surface = await canvas.boundingBox();
+    const outside = { x: Math.min(v.width / 2, box.x - 12), y: v.height / 2 };
+    assert.ok(outside.x >= surface.x && outside.x < box.x && outside.y >= surface.y && outside.y < surface.y + surface.height, `${v.tag}: outside gesture stays on the canvas, left of the sheet`);
+    assert.ok(await canvas.evaluate((el, p) => document.elementFromPoint(p.x, p.y) === el, outside), `${v.tag}: the outside point really hits the canvas`);
+    if (!await canvas.evaluate((el, p) => document.elementFromPoint(p.x, p.y) === el, outside)) {
       throw new Error("no exposed board point outside the menu");
-    });
-    if (v.touch) await canvas.tap({ position: outside });
-    else await canvas.click({ position: outside });
+    }
+    const position = { x: outside.x - surface.x, y: outside.y - surface.y };
+    if (v.touch) await canvas.tap({ position });
+    else await canvas.click({ position });
     await menu.waitFor({ state: "detached" });
 
     // Online: the watcher count and the table code live in the sheet; Leave asks first.

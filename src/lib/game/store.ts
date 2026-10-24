@@ -277,6 +277,7 @@ interface GameStore {
   // null until the player picks a swatch; see savedColor().
   color: string | null;
   mode: "ai" | "hotseat" | "online";
+  serverSha: string | null;
   table: string;
   localId: string;
   host: boolean;
@@ -503,6 +504,7 @@ export const useGame = create<GameStore>((set, get) => ({
   name: savedName(),
   color: savedColor(),
   mode: "ai",
+  serverSha: null,
   table: "",
   localId: "p0",
   host: true,
@@ -665,6 +667,7 @@ export const useGame = create<GameStore>((set, get) => ({
     get().net?.close();
     set({
       screen: "title",
+      serverSha: null,
       wayfarerChoices: {},
       state: null,
       error: null,
@@ -1123,19 +1126,20 @@ function respond(set: Set, get: Get, actor: string, yes: boolean): string | null
 type ConnectKind = "normal" | "quiet" | "peek" | "watch";
 function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, kind: ConnectKind = "normal") {
   clearWake();
+  set({ serverSha: null });
   get().net?.close();
   let pending = kind === "quiet";
   let welcomed = false;
   let outdated: string | null = null;
   let firstState = false;
   const table = connectTable(hostUrl(window.location), {
-    welcome: ({ proto, code, you, host, chat, secret, spectator, victoryTarget, wayfarerMode }) => {
+    welcome: ({ proto, serverSha, code, you, host, chat, secret, spectator, victoryTarget, wayfarerMode }) => {
       pending = false;
       welcomed = true;
       firstState = true;
       // G2: a host on a newer wire protocol than this page says so where errors go, and keeps saying it after every state.
       outdated = (proto ?? 0) > PROTO ? "This page is out of date. Reload to update." : null;
-      set({ resync: true, tableVictoryTarget: victoryTarget === 7 ? 7 : 10, tableWayfarerMode: wayfarerMode ?? "on" });
+      set({ serverSha: typeof serverSha === "string" && /^(?:[a-f0-9]{7,40}|dev)$/.test(serverSha) ? serverSha : null, resync: true, tableVictoryTarget: victoryTarget === 7 ? 7 : 10, tableWayfarerMode: wayfarerMode ?? "on" });
       if (secret) rememberSeat({ code, secret });
       // A page-load rejoin has no state yet, so it passes through the lobby until the host's state push moves it to play.
       // A mid-game reconnect already holds the game: stay on the board so the HUD keeps its local state.

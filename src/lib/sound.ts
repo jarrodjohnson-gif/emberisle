@@ -2,6 +2,7 @@
 // named as in server/cue.mjs. Nothing plays before the first pointer or key gesture (browsers refuse autoplay), and a
 // missing or blocked file is silent, never a thrown error or a console error.
 import { useSyncExternalStore } from "react";
+import { categoryGain, subscribeSoundMix, type SoundCategory } from "./sound-settings";
 
 const FILES = {
   dice_land: "drop_001.wav",
@@ -42,6 +43,7 @@ const FILES = {
   sb_airhorn: "sb_airhorn.mp3",
   sb_quit_touchin: "sb_quit_touchin.mp3",
   sb_only_wood: "sb_only_wood.mp3",
+  sb_perfect: "sb_perfect.mp3",
   // End-of-game music: starts a moment after the win or loss sting, stops when the end screen is left or a new game starts.
   end_music: "end_music.mp3",
   board_bong: "bong_001.wav",
@@ -64,6 +66,7 @@ export const SOUNDBOARD = [
   { id: "sb_airhorn", label: "Airhorn", clip: "sb_airhorn" },
   { id: "sb_quit_touchin", label: "Quit touchin' me", clip: "sb_quit_touchin" },
   { id: "sb_only_wood", label: "Only wood?", clip: "sb_only_wood" },
+  { id: "sb_perfect", label: "Perfect", clip: "sb_perfect" },
   { id: "bong", label: "Bong", clip: "board_bong" },
   { id: "plop", label: "Plop", clip: "board_plop" },
   { id: "pluck", label: "Pluck", clip: "board_pluck" },
@@ -77,10 +80,19 @@ export const MEME_VOLUME = 0.4;
 
 export type SoundName = keyof typeof FILES;
 
+// Board soundboard buttons are memes; only plain board touches belong to touch. Match point is a meme (#669).
+export function soundCategory(name: SoundName): SoundCategory {
+  if (/^tap_|^plop$/.test(name)) return "touch";
+  if (/^sb_|^board_|^robbed_fah$|^match_point$/.test(name)) return "memes";
+  if (/^game_|^end_music$/.test(name)) return "music";
+  return "game";
+}
+
 const MUTED_KEY = "emberisle-muted";
 // #542: phone haptics (coarse pointer only). Default on where vibrate exists; desktop ignores the toggle.
 const HAPTICS_KEY = "emberisle-haptics";
 const clips = new Map<SoundName, HTMLAudioElement>();
+const gains = new Map<SoundName, number>();
 let unlocked = false;
 let muted = savedMuted();
 let hapticsOn = savedHaptics();
@@ -130,6 +142,7 @@ export function isMuted() {
 export function setMuted(v: boolean) {
   muted = v;
   if (v) stop("end_music");
+  syncVolumes();
   syncMusic();
   try {
     if (v) localStorage.setItem(MUTED_KEY, "1");
@@ -214,7 +227,8 @@ function pump() {
 }
 
 function start(name: SoundName, volume: number) {
-  if (muted) return;
+  const gain = volume * categoryGain(soundCategory(name));
+  if (muted || !gain) return;
   try {
     // The first roll cuts the game-start sting off.
     if (name === "dice_land") clips.get("game_start")?.pause();
@@ -225,7 +239,8 @@ function start(name: SoundName, volume: number) {
       if (DUCKERS.has(name)) for (const e of ["play", "pause", "ended"]) clip.addEventListener(e, duckMusic);
     }
     clip.currentTime = 0;
-    clip.volume = volume;
+    gains.set(name, volume);
+    clip.volume = gain;
     clip.play()?.catch(() => {});
   } catch {
     // a blocked or unsupported file stays quiet
@@ -233,7 +248,7 @@ function start(name: SoundName, volume: number) {
 }
 
 export function play(name: SoundName, volume = 1) {
-  if (!unlocked || muted || typeof Audio === "undefined") return;
+  if (!unlocked || muted || !categoryGain(soundCategory(name)) || typeof Audio === "undefined") return;
   // Paying pieces are already staggered by the renderer at 90 ms, capped at eight per roll. The general 150 ms
   // burst filter would silently lose every other tick; play these directly at their visual onset.
   if (name === "gain_tick") { start(name, volume); return; }
@@ -333,14 +348,14 @@ function duckMusic() {
   let ducked = false;
   for (const n of DUCKERS) {
     const c = clips.get(n);
-    if (c && !c.paused && !c.ended) ducked = true;
+    if (c && !c.paused && !c.ended && c.volume > 0) ducked = true;
   }
-  bg.volume = ducked ? BG_VOLUME * BG_DUCK : BG_VOLUME;
+  bg.volume = BG_VOLUME * (ducked ? BG_DUCK : 1) * categoryGain("music");
 }
 
 function syncMusic() {
   if (typeof Audio === "undefined") return;
-  if (!(bgWanted && bgOn && unlocked && !muted)) {
+  if (!(bgWanted && bgOn && unlocked && !muted && categoryGain("music"))) {
     if (bg) {
       bg.pause();
       if (!bgWanted) bg.currentTime = 0;
@@ -368,6 +383,11 @@ function syncMusic() {
     // a blocked or unsupported file stays quiet
   }
 }
+
+function syncVolumes() {
+  for (const [name, clip] of clips) clip.volume = muted ? 0 : (gains.get(name) ?? 1) * categoryGain(soundCategory(name));
+}
+subscribeSoundMix(() => { syncVolumes(); syncMusic(); });
 
 // #667: a tap on a hex that places nothing plays that terrain's clip, quietly, at most once per TOUCH_GAP_MS. Only a sheep
 // hex (Pasture, "wool") baas. The renderer calls this for a plain tap only: never for a drag, a pinch or an armed placement.

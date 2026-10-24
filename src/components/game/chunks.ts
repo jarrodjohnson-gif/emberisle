@@ -14,6 +14,8 @@ export const ChatControls = online.pick((m) => m.ChatControls);
 export const ChatDock = online.pick((m) => m.ChatDock);
 export const SeatBubbles = online.pick((m) => m.SeatBubbles);
 
+export const SetupReference = chunk(() => import("@/components/game/SetupReference")).pick(m => m.SetupReference);
+
 export const sheets = chunk(() => import("@/components/game/sheets"));
 export const CostCard = sheets.pick((m) => m.CostCard);
 export const FortuneTray = sheets.pick((m) => m.FortuneTray);
