@@ -11,7 +11,8 @@ Its only presentation failure was `1280x720: "Your turn" never covers a hand tab
 The howto timeout in another leg is tracked by #1077.
 
 Local runtime: main `0e816528a7dc461b107c82af4a8a32520c54d4d9`, Node24.19.0, Chromium/SwiftShader.
-The report branch also contains later docs-only main984b0e7; runtime and proof bytes match0e81652.
+The report branch includes main984b0e7, with the later PIN-race test and draft-design documents.
+Application files, the existing turn-gain proof and Vite configuration match0e81652.
 
 - [Main desktop control](main-desktop-control.log): original desktop case passes with frame observation.
 - [PR desktop CPU×2 control](pr-desktop-cpu2-control.log): original desktop case passes with frame observation.
