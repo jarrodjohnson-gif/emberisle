@@ -1,8 +1,8 @@
 # Turn cue and hand-tab overlap during a controlled refit
 
-The existing desktop proof reports the same `+2` overlap as CI when a wool gain accompanies its refit.
-The recorded boxes overlap in one RAF callback. Painted overlap is not confirmed.
-No runtime or registered proof changed.
+The existing desktop proof reports the same `+2` message as CI when a wool gain accompanies its refit.
+The selected sample contains one same-RAF pair among seven matching pairs. Painted overlap is not confirmed.
+The original report changed no runtime or registered proof. The diagnostic follow-up below extends only the proof.
 
 ## Provenance
 
@@ -10,12 +10,12 @@ CI: PR #1023 at `44730fb`, run [40068582965](https://github.com/jarrodjohnson-gi
 Its only presentation failure was `1280x720: "Your turn" never covers a hand tab ["+2"]`.
 The howto timeout in another leg is tracked by #1077.
 
-Local runtime: main `0e816528a7dc461b107c82af4a8a32520c54d4d9`, Node24.19.0, Chromium/SwiftShader.
-The report branch includes main984b0e7, with the later PIN-race test and draft-design documents.
-Application files, the existing turn-gain proof and Vite configuration match0e81652.
+Local runtime: main `0e816528a7dc461b107c82af4a8a32520c54d4d9`, Node 24.19.0, Chromium/SwiftShader.
+The report branch includes main 984b0e7, with the later PIN-race test and draft-design documents.
+In the original report, application files, the turn-gain proof and Vite configuration matched 0e81652.
 
-- [Main desktop control](main-desktop-control.log): original desktop case passes with frame observation.
-- [PR desktop CPU×2 control](pr-desktop-cpu2-control.log): original desktop case passes with frame observation.
+- [Main desktop control](main-desktop-control.log): original desktop case passes. This log does not publish the frame observation.
+- [PR desktop control](pr-desktop-cpu2-control.log): original desktop case passes. The log records neither throttling nor frame observations; it does not establish CPU×2 validation.
 - [Controlled case](controlled-failure.log): one original assertion fails, with zero console errors.
 - [Measured pair](observed-overlap.json): seven matching pairs; one pair belongs to the same recorder RAF callback.
 
@@ -29,15 +29,15 @@ This is a controlled geometry reproduction, not a natural-game capture or a full
 
 ## Observed geometry
 
-The selected turn box spans x488.875–695.125, y516.5–583.5.
-The wool tab spans x623–657, y526.784–548.784.
-The turn opacity is1; the tab opacity is0.804104.
-Their samples are0.1ms apart inside the same recorder callback interval.
-The next settled refit position is higher, with the turn box ending at y518.
+The selected turn box spans x = 488.875–695.125, y = 516.5–583.5.
+The wool tab spans x = 623–657, y = 526.784–548.784.
+The turn opacity is 1; the tab opacity is 0.804104.
+Their samples are 0.1 ms apart inside the same recorder callback interval.
+The next settled refit position is higher, with the turn box ending at y = 518.
 The overlap is therefore transient during the refit, rather than its settled placement.
 
-The original global test compares frames up to50ms apart.
-The selected pair also matches within one callback, so cross-frame pairing alone does not explain this reproduction.
+The original global test compares frames up to 50 ms apart.
+The selected sample is the one same-RAF pair among seven matches. It also matches within one callback, so cross-frame pairing alone does not explain this reproduction.
 
 ## Paint limit and next decision
 
@@ -50,12 +50,14 @@ Tracing returned no screenshot events. Those captures do not settle the paint qu
 The original CI run has no raw frame pairs, so its identical message does not prove an identical cause.
 Capture the original frame/callback/placement data on failure before choosing a runtime or measurement fix.
 Keep the existing no-cover assertion intact. Do not add a flake entry or increase any limit.
-The proof file remains reserved by #539; implementation needs that path released and the cause confirmed.
+The desk later narrowed #539 and approved failure-only diagnostics in #1082. Runtime changes still require classifying the cause.
 
 ## Bounded reproduction
 
 From a clean checkout with root dependencies and Chromium installed, save the following as `/tmp/turn-gain-refit-observer.mjs`.
-The observer wraps the browser API; application and proof files stay unchanged.
+The observer wraps the browser API; application and proof files stay unchanged by that harness.
+It matches source text (`rec.frames.push` and `--hole-top`); proof edits can silently invalidate those hooks.
+Verify the expected failure and evidence file explicitly after any source change.
 
 ```js
 import { pathToFileURL } from "node:url";
@@ -118,16 +120,52 @@ Use the browser path installed in your environment. This session uses:
 PLAYWRIGHT_BROWSERS_PATH=/workspace/emberisle/work/browsers ONLY=1280x720 REFIT_EVIDENCE=/tmp/turn-gain-refit.json node --import /tmp/turn-gain-refit-observer.mjs scripts/turn-gain-prove.mjs
 ```
 
-Expected: exit1, one `FAIL 1280x720: "Your turn" never covers a hand tab ["+2"]`, and `turn-gain-prove: 1 failed`.
+Expected: exit 1, one `FAIL 1280x720: "Your turn" never covers a hand tab ["+2"]`, and `turn-gain-prove: 1 failed`.
 The evidence file contains the original clash result, original recorded boxes and recorder callback intervals.
 The observer preserves returned values and crypto results. It adds no clock or timer override; the proof's existing hold remains.
 Its explicit diagnostic wait only ensures the added hand tab mounted before the existing refit.
 
-## Fresh-checkout verification
+## Historical report verification
 
-The exact observer block above was extracted from report commit5f2c6ea and run in a fresh clone.
-Root `npm ci` passed. The documented command returned its expected exit1 with only the original overlap failure.
-Application files, Vite configuration and the target proof were checked byte-for-byte against0e81652.
+The exact observer block above was extracted from report commit 5f2c6ea and run in a fresh clone.
+Root `npm ci` passed. The documented command returned its expected exit 1 with only the original overlap failure.
+Application files, Vite configuration and the target proof were checked byte-for-byte against 0e81652.
 The later report edits add qualification and validation records only.
 
-[Fresh output](fresh-reproduction.log), [validation record](validation.json), [registration129](registered.log) and [loosen0](loosen.log).
+[Fresh output](fresh-reproduction.log), [validation record](validation.json), [registration 129](registered.log) and [loosen 0](loosen.log).
+
+
+## Current diagnostic follow-up (#1085)
+
+This follow-up adds 29 lines to the existing proof, removing or changing none of its original lines.
+The added lines are frame identity at 196 and 198, placement metadata at 205–214, and failure logging at 626–642.
+The original clash predicate at 624 and the no-cover check at 625 remain verbatim.
+Every original assertion, scenario, viewport, wait and limit remains active.
+No runtime, registration, timeout, budget or retry policy changes.
+
+Each existing RAF sample now records its callback identity.
+Turn samples also retain their stage, shift, area and hole CSS values at that measurement.
+On failure, the original check records its failure first.
+The diagnostic then selects the first matching pair and first same-callback pair from the existing records.
+It reports the full match count without rereading the live DOM or adding a wait.
+Success emits no diagnostic.
+
+Fresh independent clone validation of implementation `5fdc31f`, based on main `c0d15d0`:
+
+- [Full normal proof](diagnostic-normal.log): all four viewport cases, reduced motion, hotseat and reconnect pass; zero console errors.
+- [Controlled desktop refit](diagnostic-controlled.log): expected exit 1, exactly one original `+2` failure and one diagnostic record.
+- [Selected diagnostic pairs](diagnostic-pairs.json): six matches, including a selected same-callback pair at frame 1775.
+- [Complete raw recorder evidence](diagnostic-raw.json): original turn/tab records and external callback intervals for independent recomputation.
+- [Validation exits](diagnostic-validation.json), [registration](diagnostic-registered.log), [loosen](diagnostic-loosen.log) and [size](diagnostic-size.log) pass their expected outcomes. Typecheck and build also pass.
+
+In the selected same-callback pair, the turn opacity is 1 and the tab opacity is 0.926767.
+The turn is still at stage `centre`, shift 0, inside the changed area from y = 406 to 694.
+Its box spans y = 516.5 to 583.5; the tab spans y = 526.293 to 548.293.
+The first matching pair instead uses an earlier opacity-zero tab sample from another callback.
+Both are retained because the existing predicate tests geometry within 50 ms, without an opacity filter.
+This qualification changes no predicate and establishes no painted-overlap cause for either CI failure.
+The controlled witness is one selected pair, rather than an enumeration of every frame pair in the log.
+
+Use the exact bounded-reproduction harness above on this revision to reproduce the controlled failure.
+The source hooks still match this proof; future proof edits require checking them again.
+The raw JSON and selected record allow a reader to check the measured frames without trusting that source hook.
