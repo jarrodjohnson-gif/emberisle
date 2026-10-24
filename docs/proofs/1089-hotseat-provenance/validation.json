@@ -1,0 +1,17 @@
+{
+  "normal_exit": 0,
+  "controlled_exit": 1,
+  "baseline": 24,
+  "observed": [
+    "/audio/back_001.wav",
+    "/audio/click_001.wav",
+    "/audio/click_001.wav"
+  ],
+  "trace_records": 150,
+  "audio_starts": 27,
+  "pump_scheduled": 26,
+  "pump_fired": 25,
+  "audio_and_pump_stack_count": 0,
+  "leave_click_stack_count": 1,
+  "all_metadata_checks_passed": true
+}

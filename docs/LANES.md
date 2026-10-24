@@ -67,6 +67,7 @@ Your claim and its file reservations release when your PR merges or closes, or w
 When told "next", pick in this order:
 
 1. Highest priority first: `prio:p0`, then `prio:p1`, then `prio:p2`, then no `prio:` label.
+   Bugs come first (owner decision, 2026-10-24): at any priority, take an open bug (broken for a player, or red CI that blocks merging) before a new feature.
 2. Within a priority, the earliest milestone and lowest step (`docs/FRAMEWORK.md` section 7).
 3. If several still tie, prefer your own tier.
 
@@ -77,7 +78,7 @@ to any tier. Helpers don't use this list: they follow the queue in [`HELPERS.md`
 |---|---|---|
 | `tier:1-deep` | Hours-long research and architecture carried through to a finished document | Claude Fable 5.1, GPT-6 Astra |
 | `tier:1` | Security, server, protocol and cross-area changes | Claude Opus 5.5, GPT-6.1 Sol, and the `tier:1-deep` models |
-| `tier:2` | Everyday features with real proofs | Claude Sonnet 5.5, Cursor Composer, Gemini 3.8 Flash (thinking HIGH), Grok 4.7, GLM 5.3 and Kimi K3 (the last two provisional, see below), and every `tier:1` model |
+| `tier:2` | Everyday features with real proofs | Claude Sonnet 5.5, Claude Opus 4.6 and older Claude models run through AWS (see below), Cursor Composer, Gemini 3.8 Flash (thinking HIGH), Grok 4.7, GLM 5.3 and Kimi K3 (the last two provisional, see below), and every `tier:1` model |
 | `tier:3` | Small single-purpose fixes, docs and screenshot QA | Claude Haiku 5.5, GPT-6 Luna, and every model above |
 
 **Tier and model labels.** Every issue carries a `tier:` label. Any model at that tier or below may take it. Nobody assigns builders.
@@ -102,7 +103,7 @@ Gemini never builds a new look, animation or layout that needs taste. Split such
 
 **Design issues start in backlog.** The desk files an issue that changes a layout, a look or an animation as `tier:1` and `status:backlog`. Backlog is not eligible. The desk moves it to `status:todo` only when the issue links an Astra or Opus spec or an approved mock that settles the exact sizes, states and wording. A proof-only issue that measures the current screen (no change to `Hud.tsx`, `styles.css` or any visible look) is not design and may be `tier:2`.
 
-**Only listed models claim.** The tier table lists every model that may take issues. A model that is not in it, including Claude Sonnet 4.6 and earlier Claude models, claims nothing, at any tier. A claim names its model and version in the agent name (`claimed: Claude Sonnet 5.5, 2026-10-22`); Cursor, which picks its model per run, names it in the PR body (`Model: ...`). The label bot cannot check this, so the desk does. A claim by an unlisted or unnamed model, or on an issue above its tier, is void: the desk releases it with `/paused`, says why on the issue, and puts the issue back where it belongs.
+**Only listed models claim.** The tier table lists every model that may take issues. A model that is not in it claims nothing, at any tier. Claude Opus 4.6 and older Claude models run through AWS are in it at `tier:2` and `tier:3` (Jarrod, 2026-10-23); they never take `tier:1`, big design work, or a review of a `tier:1` PR. A claim names its model and version in the agent name (`claimed: Claude Sonnet 5.5, 2026-10-22`); Cursor, which picks its model per run, names it in the PR body (`Model: ...`). The label bot cannot check this, so the desk does. A claim by an unlisted or unnamed model, or on an issue above its tier, is void: the desk releases it with `/paused`, says why on the issue, and puts the issue back where it belongs.
 
 Grok's usage limits are low, so give it one `tier:2` or `tier:3` issue at a time.
 
