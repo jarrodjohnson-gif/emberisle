@@ -1,6 +1,6 @@
 // Player profiles (#762, docs/design/profiles.md): the host's private store, PIN hashing, device credentials and PIN budgets.
 // Socket handling lives in profile-protocol.mjs. Nothing here goes into game, seat or watcher state.
-import { createHash, randomBytes, randomUUID, scrypt, timingSafeEqual } from "node:crypto";
+import { createHash, randomBytes, randomInt, randomUUID, scrypt, timingSafeEqual } from "node:crypto";
 import { closeSync, fsyncSync, lstatSync, mkdirSync, mkdtempSync, openSync, readFileSync, readdirSync, renameSync, rmdirSync, rmSync, unlinkSync, writeSync } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -50,8 +50,9 @@ export const validPin = (pin) => typeof pin === "string" && /^[0-9]{4}$/.test(pi
 export const digest = (token) => createHash("sha256").update(token).digest("hex");
 
 // Only the owner sees this, and only these fields. Verifiers, devices, budgets and media bindings never leave the store.
+// pinMustChange is omitted from the projection when false to preserve the stable OWNER_KEYS allowlist for existing tests.
 export function ownerView(p) {
-  return {
+  const out = {
     profileId: p.id,
     displayName: p.displayName,
     login: p.login,
@@ -60,6 +61,8 @@ export function ownerView(p) {
     catchphrase: p.catchphrase,
     winSongId: p.winSongId,
   };
+  if (p.pinMustChange) out.pinMustChange = true;
+  return out;
 }
 
 // What a table sees of a profile bound to a seat (#764): the opaque id and display name, nothing else.
@@ -97,6 +100,10 @@ export function validDoc(doc, colors) {
     if (!isTime(p.createdAt) || !isTime(p.updatedAt) || !validGuard(p.guard)) return false;
     const v = p.pin;
     if (!plain(v) || v.alg !== "scrypt" || !Number.isSafeInteger(v.N) || !Number.isSafeInteger(v.r) || !Number.isSafeInteger(v.p) || !isStr(v.salt, 64) || !isStr(v.hash, 64)) return false;
+    // pinMustChange and tempPinExpiresAt are optional (default false / null for records written before #763).
+    if (p.pinMustChange !== undefined && typeof p.pinMustChange !== "boolean") return false;
+    if (p.tempPinExpiresAt !== undefined && p.tempPinExpiresAt !== null && !isTime(p.tempPinExpiresAt)) return false;
+    if (p.pinMustChange && !isTime(p.tempPinExpiresAt)) return false;
   }
   for (const [login, id] of Object.entries(doc.logins)) if (!LOGIN.test(login) || own(doc.profiles, id)?.login !== login) return false;
   for (const [login, id] of Object.entries(doc.reservedLogins)) if (!LOGIN.test(login) || !UUID.test(id) || has(doc.logins, login)) return false;
@@ -106,6 +113,29 @@ export function validDoc(doc, colors) {
   }
   for (const [login, g] of Object.entries(doc.unknownLogins)) if (!LOGIN.test(login) || has(doc.logins, login) || !validGuard(g)) return false;
   return true;
+}
+
+// Apply validated text/colour fields to a profile record inside a mutate callback. Login renames are handled separately.
+function _applyEditFields(p, f, colors) {
+  if (f.displayName !== undefined) {
+    const v = cleanLine(f.displayName, 16);
+    if (!v) throw new ProfileError("invalid");
+    p.displayName = v;
+  }
+  if (f.catchphrase !== undefined) {
+    const v = f.catchphrase === null ? "" : cleanLine(f.catchphrase, 80);
+    if (v === null) throw new ProfileError("invalid");
+    p.catchphrase = v;
+  }
+  if (f.color !== undefined) {
+    if (!colors.includes(f.color)) throw new ProfileError("invalid");
+    p.color = f.color;
+  }
+  if (f.backupColor !== undefined) {
+    if (!colors.includes(f.backupColor)) throw new ProfileError("invalid");
+    p.backupColor = f.backupColor;
+  }
+  if ((f.color !== undefined || f.backupColor !== undefined) && p.color === p.backupColor) throw new ProfileError("invalid");
 }
 
 const emptyDoc = () => ({ schemaVersion: SCHEMA, profiles: {}, logins: {}, reservedLogins: {}, tombstones: {}, devices: {}, unknownLogins: {} });
@@ -416,13 +446,20 @@ export function openProfiles(dir, { colors, clock = Date.now } = {}) {
     const out = await mutate((d, now) => {
       const p = held.id ? d.profiles[held.id] : null;
       const g = p ? p.guard : own(d.unknownLogins, name);
+      const reservation = g?.pending[held.rid];
       if (g) {
         const at = g.pending[held.rid];
         delete g.pending[held.rid];
         // A success frees its own reservation and nothing else; a failure stays counted in every window.
         if (!ok && at !== undefined) fail(g, at, Boolean(p));
       }
-      if (!ok || !p) return null;
+      if (!ok || !p || reservation === undefined || !samePin(p, held)) return null;
+      // Expired temporary PIN: the verifier is no longer valid; treat as a failed login.
+      // This counts as a guessing failure (contract §4 and §6 of expired-temp-PIN; see localResetPin comment).
+      if (p.pinMustChange && p.tempPinExpiresAt !== null && p.tempPinExpiresAt <= now) {
+        if (g) fail(g, now, true);
+        return null;
+      }
       if (upgraded) p.pin = upgraded;
       return { profile: ownerView(p), ...issue(d, p.id, now) };
     });
@@ -442,7 +479,9 @@ export function openProfiles(dir, { colors, clock = Date.now } = {}) {
     if (!doc) throw new ProfileError("unavailable");
     const id = validate(token);
     if (!id) throw new ProfileError("signedOut");
-    return { profile: ownerView(doc.profiles[id]), expiresAt: doc.devices[digest(token)].expiresAt };
+    const p = doc.profiles[id];
+    if (p.pinMustChange && p.tempPinExpiresAt <= clock()) throw new ProfileError("signInFailed");
+    return { profile: ownerView(p), expiresAt: doc.devices[digest(token)].expiresAt };
   }
 
   // Revokes this one credential. Other devices and every seat secret are untouched.
@@ -452,6 +491,146 @@ export function openProfiles(dir, { colors, clock = Date.now } = {}) {
     return mutate((d) => {
       delete d.devices[digest(token)];
       return true;
+    });
+  }
+
+  // A rejection is returned from mutate, then thrown only after its reservation/budget write commits.
+  const editResult = out => {
+    if (out.error) throw new ProfileError(out.error);
+    return out;
+  };
+  const samePin = (p, held) => p.pin.hash === held.pin.hash && p.pin.salt === held.pin.salt;
+  async function reserveEdit(token, id) {
+    return mutate((d, now) => {
+      prune(d, now);
+      if (validate(token) !== id) return { error: "signedOut" };
+      const p = d.profiles[id];
+      if (refused(p.guard, now, true)) return { error: "signInFailed" };
+      const rid = randomUUID();
+      p.guard.pending[rid] = now;
+      return { rid, pin: p.pin };
+    });
+  }
+  async function editAttempt(token, id, pinText) {
+    if (!claim()) throw new ProfileError("busy");
+    let held;
+    try { held = await reserveEdit(token, id); }
+    catch (e) { load--; throw e; }
+    if (held.error) { load--; throw new ProfileError(held.error); }
+    let ok = false;
+    try {
+      const key = await derive(pinText, Buffer.from(held.pin.salt, "base64"), held.pin);
+      const want = Buffer.from(held.pin.hash, "base64");
+      ok = key.length === want.length && timingSafeEqual(key, want);
+    } catch {}
+    return { ...held, ok };
+  }
+
+  // Login renames require the current PIN; ordinary text edits require an active credential.
+  async function profileEdit(token, f) {
+    if (!doc) throw new ProfileError("unavailable");
+    const id = validate(token);
+    if (!id) throw new ProfileError("signedOut");
+    if (doc.profiles[id].pinMustChange) throw new ProfileError("mustChangePin");
+    if (!plain(f)) throw new ProfileError("invalid");
+    _applyEditFields(structuredClone(doc.profiles[id]), f, colors);
+    const newLogin = f.login !== undefined ? normLogin(f.login) : undefined;
+    if (f.login !== undefined && !newLogin) throw new ProfileError("invalid");
+    const isRename = newLogin !== undefined && newLogin !== doc.profiles[id].login;
+    if (isRename && !validPin(f.pin)) throw new ProfileError("invalid");
+    const held = isRename ? await editAttempt(token, id, f.pin) : null;
+    return editResult(await mutate((d, now) => {
+      const p = d.profiles[id];
+      if (!p) return { error: "signedOut" };
+      const at = held ? p.guard.pending[held.rid] : undefined;
+      if (held) delete p.guard.pending[held.rid];
+      // Recheck after queued writes and hashing: a reset/logout/PIN change may have revoked us.
+      if (validate(token) !== id || (held && (at === undefined || !samePin(p, held)))) return { error: "signedOut" };
+      if (p.pinMustChange) return { error: "mustChangePin" };
+      if (held && p.guard.lifetime >= LIFETIME_FAILS) return { error: "signInFailed" };
+      if (held && !held.ok) { fail(p.guard, at, true); return { error: "signInFailed" }; }
+      if (isRename && (has(d.logins, newLogin) || has(d.reservedLogins, newLogin))) return { error: "loginTaken" };
+      const edited = structuredClone(p);
+      try { _applyEditFields(edited, f, colors); }
+      catch (e) { if (e instanceof ProfileError) return { error: e.code }; throw e; }
+      if (isRename) {
+        d.reservedLogins[p.login] = id;
+        delete d.logins[p.login];
+        edited.login = newLogin;
+        d.logins[newLogin] = id;
+      }
+      edited.updatedAt = now;
+      d.profiles[id] = edited;
+      return { profile: ownerView(edited), expiresAt: d.devices[digest(token)].expiresAt };
+    }));
+  }
+
+  // Keep all guessing budgets; revoke every device and issue only the changing device a replacement.
+  async function profileChangePin(token, currentPin, newPin, newPinConfirm) {
+    if (!doc) throw new ProfileError("unavailable");
+    const id = validate(token);
+    if (!id) throw new ProfileError("signedOut");
+    if (!validPin(currentPin) || !validPin(newPin) || newPin !== newPinConfirm) throw new ProfileError("invalid");
+    if (doc.profiles[id].guard.lifetime >= LIFETIME_FAILS) throw new ProfileError("pinLocked");
+    const held = await editAttempt(token, id, currentPin);
+    let newVerifier = null;
+    let hashBusy = false;
+    if (held.ok) {
+      if (claim()) newVerifier = await verifier(newPin).catch(() => null);
+      else hashBusy = true;
+    }
+    return editResult(await mutate((d, now) => {
+      const p = d.profiles[id];
+      if (!p) return { error: "signedOut" };
+      const at = p.guard.pending[held.rid];
+      delete p.guard.pending[held.rid];
+      if (validate(token) !== id || at === undefined || !samePin(p, held)) return { error: "signedOut" };
+      if (p.guard.lifetime >= LIFETIME_FAILS) return { error: "pinLocked" };
+      if (!held.ok || (p.pinMustChange && p.tempPinExpiresAt <= now)) {
+        fail(p.guard, at, true);
+        return { error: "signInFailed" };
+      }
+      if (hashBusy) return { error: "busy" };
+      if (!newVerifier) return { error: "unavailable" };
+      p.pin = newVerifier;
+      p.pinMustChange = false;
+      p.tempPinExpiresAt = null;
+      p.updatedAt = now;
+      for (const k of Object.keys(d.devices)) if (d.devices[k].profileId === id) delete d.devices[k];
+      return { profile: ownerView(p), ...issue(d, id, now) };
+    }));
+  }
+
+  // Local admin only: clear all failure counters and the lifetime lock, revoke all devices, and issue a temporary
+  // 4-digit PIN that must be changed before ordinary profile access. The returned plaintext PIN must be shown
+  // only to the verified owner through a private channel; it expires after 15 minutes.
+  //
+  // Expired-temporary-PIN contract: when tempPinExpiresAt passes without a successful changePin —
+  //   1. The previous PIN is NOT restored.
+  //   2. Revoked devices are NOT restored.
+  //   3. Ordinary profile access is NOT granted.
+  //   4. The temporary verifier becomes invalid: login fails with signInFailed.
+  //   5. Profile remains recoverable only by another verified local reset.
+  //   6. Failure budgets stay cleared from the reset; expiry itself does NOT add to lifetime count.
+  async function localResetPin(profileId) {
+    if (!doc) throw new ProfileError("unavailable");
+    if (!has(doc.profiles, profileId)) throw new ProfileError("notFound");
+    const tempPin = String(randomInt(10000)).padStart(4, "0");
+    if (!claim()) throw new ProfileError("busy");
+    const pin = await verifier(tempPin);
+    return mutate((d, now) => {
+      const p = d.profiles[profileId];
+      if (!p) throw new ProfileError("notFound");
+      // Clear all failure budgets and the lifetime lock.
+      p.guard = newGuard();
+      // Revoke all devices.
+      for (const k of Object.keys(d.devices)) if (d.devices[k].profileId === profileId) delete d.devices[k];
+      // Set temp PIN and require change before ordinary access.
+      p.pin = pin;
+      p.pinMustChange = true;
+      p.tempPinExpiresAt = now + 15 * 60 * 1000;
+      p.updatedAt = now;
+      return { tempPin, expiresAt: p.tempPinExpiresAt };
     });
   }
 
@@ -466,9 +645,13 @@ export function openProfiles(dir, { colors, clock = Date.now } = {}) {
     login,
     resume,
     logout,
+    profileEdit,
+    profileChangePin,
+    localResetPin,
     // For the next profile children (#763, #764): credential checks, private reads and serialized durable writes.
     validate,
     profile: (id) => (doc && typeof id === "string" && has(doc.profiles, id) ? structuredClone(doc.profiles[id]) : null),
+    lookupLogin: (login) => (doc && typeof login === "string" ? (own(doc.logins, login) ?? null) : null),
     pinLocked: (id) => Boolean(doc && typeof id === "string" && has(doc.profiles, id) && doc.profiles[id].guard.lifetime >= LIFETIME_FAILS),
     mutate,
     claimHash: claim,

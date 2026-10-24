@@ -30,6 +30,8 @@ const CEILINGS = [
   // #899: Chat C's Sounds & stickers tab and seat bubbles load as their own chunk, prefetched by online; measured 2.20 kB.
   { name: "Reactions", gzipBytes: 2600 },
   { name: "sheets", gzipBytes: 7800 },
+  // #749: static setup diagrams load only when How to play opens; existing ceilings and growth limits stay unchanged.
+  { name: "SetupReference", gzipBytes: 2200 },
   { name: "moments", gzipBytes: 5700 },
   { name: "VictoryTargetSelect", gzipBytes: 1000 },
   // #538: coast inspection UI loads separately; measured 1030 B.
