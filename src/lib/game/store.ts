@@ -36,7 +36,7 @@ function rollOffLine(before: GameState | null, after: GameState) {
 function soundsFor(before: GameState | null, after: GameState, mine: boolean, victim = false, lost = false): [SoundName, number][] {
   if (!before) return [];
   // The winner keeps the win sound; every other seat at the table gets the loss sting.
-  if (after.winner && !before.winner) return [lost ? ["game_lose", MUSIC_VOLUME] : ["win", 1]];
+  if (after.winner && !before.winner) return [lost ? ["game_lose", 1] : ["win", 1]];
   const out: [SoundName, number][] = [];
   const built = (s: GameState, kind: "outpost" | "stronghold") => s.vertices.filter((v) => v.building?.kind === kind).length;
   const paths = (s: GameState) => s.edges.filter((e) => e.path).length;
@@ -51,7 +51,7 @@ function soundsFor(before: GameState | null, after: GameState, mine: boolean, vi
   const sameGame = before.phase !== "over" && after.turn >= before.turn && after.hexes.every((h, i) => h.terrain === before.hexes[i]?.terrain);
   // The one set against (a piece on the new hex) hears robbed_fah in its place; everyone else keeps the usual cue.
   // One point from the target, by public points only (a held point fortune is never counted, so it cannot leak). Once per player.
-  if (sameGame && after.robberHex !== before.robberHex) out.push(victim ? ["robbed_fah", MEME_VOLUME] : ["wayfarer_move", 1]);
+  if (sameGame && after.robberHex !== before.robberHex) out.push(victim ? ["robbed_fah", 1] : ["wayfarer_move", 1]);
   return out;
 }
 
@@ -138,17 +138,17 @@ export function hear(before: GameState | null, after: GameState, me: string, mod
   // Keyed on the board: a bot may already have rolled first (seq > 0), and a reconnect into setup must not replay it.
   if (mode === "online" && me && (!before || before.phase === "over") && (after.phase === "rollOff" || after.phase === "setupSettle") && startedSig() !== gameSig(after)) {
     rememberStart(gameSig(after));
-    play("game_start", MUSIC_VOLUME);
+    play("game_start");
   }
   if (before?.phase === "over" && after.phase !== "over") stopEndMusic();
   if (mode !== "hotseat" && me && before && before.phase !== "over" && after.phase === "over" && after.winner) {
     stopEndMusic();
-    playLater("end_music", MUSIC_VOLUME, END_MUSIC_DELAY_MS);
+    playLater("end_music", 1, END_MUSIC_DELAY_MS);
   }
   matchLine = null;
   if (before && before.phase !== "over" && after.turn >= before.turn && after.hexes.every((h, i) => h.terrain === before.hexes[i]?.terrain)) {
     const reached = claimMatchPoints(before, after);
-    for (const _ of reached) play("match_point", MUSIC_VOLUME);
+    for (const _ of reached) play("match_point");
     if (reached[0]) matchLine = `${reached[0].name} reached ${publicVP(after, reached[0].id)} points — one to win`;
   }
   if (mode !== "hotseat" && after.current === me && after.phase !== "over" && (reconnect || (before && before.current !== me))) cue("your_turn");
@@ -211,7 +211,7 @@ import { PLAYER_COLORS, RESOURCES, type Action, type BuildMode, type GameState, 
 import { connectTable, hostUrl, type Bag, type ChatLine, type Legal, type Me, type Reaction, type Seat, type TableClient } from "@/lib/net/table";
 import { PROTO } from "@/lib/net/proto";
 import { readMutedSeats } from "@/lib/muted-seats";
-import { MEME_VOLUME, MUSIC_VOLUME, haptics, play, playLater, SOUNDBOARD, stop, type SoundName } from "@/lib/sound";
+import { haptics, play, playLater, SOUNDBOARD, stop, yourTurn, type SoundName } from "@/lib/sound";
 import { calmMotion, LAND_MS } from "@/lib/scene/landing";
 import type { WaterPath, WaterStatus } from "@/lib/scene/crystal-water";
 import type { PlayView } from "@/lib/scene/mobile-fit";
@@ -592,7 +592,7 @@ export const useGame = create<GameStore>((set, get) => ({
       declined: [],
       tradeOutcome: null, tradeTaker: null,
     });
-    play("game_start", MUSIC_VOLUME);
+    play("game_start");
   },
   startHotseat: (count) => {
     stopEndMusic();
@@ -1168,7 +1168,7 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       const board = SOUNDBOARD.find((b) => b.id === line.sound);
       // A muted seat's soundboard taps are as silent here as its chat line is hidden.
       if (board) {
-        if (!readMutedSeats(get().code).includes(line.seat)) play(board.clip, MEME_VOLUME);
+        if (!readMutedSeats(get().code).includes(line.seat)) play(board.clip);
       } else if (line.seat !== seatId && document.activeElement?.id !== "chat-input") play("chat_recv");
     },
     react: (r) => {
