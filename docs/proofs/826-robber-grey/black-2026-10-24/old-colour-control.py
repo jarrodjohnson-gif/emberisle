@@ -6,7 +6,20 @@ original={p:Path(p).read_bytes() for p in paths}
 shots={p:Path(p).read_bytes() for p in ["test-results/robber-grey-1280x720.png","test-results/robber-grey-390x844.png"]}
 out=Path(os.environ["CONTROL_LOG_DIR"]);out.mkdir(parents=True,exist_ok=True)
 try:
- for p in paths:Path(p).write_bytes(subprocess.check_output(["git","show","f1bbf7a:"+p]))
+ # Substitute only the old colour paths; keep current CPU canvas readback and all other code.
+ for p in paths:
+  text=original[p].decode();old=subprocess.check_output(["git","show","f1bbf7a:"+p],text=True)
+  if p.endswith("isle-renderer.ts"):
+   start="  private shadeRobber(";end="\n  // Where the wayfarer stands"
+   a=text.index(start);b=text.index(end,a);oa=old.index(start);ob=old.index(end,oa)
+   text=text[:a]+old[oa:ob]+text[b:]
+  else:
+   assert text.count("const DULL = new THREE.Color(0, 0, 0);")==1
+   text=text.replace("const DULL = new THREE.Color(0, 0, 0);","const DULL = new THREE.Color(0.22, 0.22, 0.24);")
+   start="function hexPatch(";end="\n// The camera-facing quads"
+   a=text.index(start);b=text.index(end,a);oa=old.index(start);ob=old.index(end,oa)
+   text=text[:a]+old[oa:ob]+text[b:]
+  Path(p).write_text(text)
  with (out/"old-colour.log").open("w") as log:
   r=subprocess.run(["npm","run","robber-hex-prove"],stdout=log,stderr=subprocess.STDOUT)
  text=(out/"old-colour.log").read_text()
@@ -18,5 +31,5 @@ finally:
  for p,data in original.items():Path(p).write_bytes(data)
  for p,data in shots.items():Path(p).write_bytes(data)
  assert all(Path(p).read_bytes()==data for p,data in {**original,**shots}.items())
-(out/"old-colour-control.json").write_text(json.dumps({"oldColourCommit":"f1bbf7a","exit":1,"expectedFailures":expected,"restoredSha256":{p:hashlib.sha256(data).hexdigest() for p,data in original.items()},"positiveCapturesRestored":True},indent=2)+"\n")
+(out/"old-colour-control.json").write_text(json.dumps({"oldColourSourceCommit":"f1bbf7a","substitutedOnly":["shadeRobber","DULL","hexPatch"],"cpuCanvasReadbackRetained":True,"exit":1,"expectedFailures":expected,"restoredSha256":{p:hashlib.sha256(data).hexdigest() for p,data in original.items()},"positiveCapturesRestored":True},indent=2)+"\n")
 print("PASS: published brown/grey implementation fails exactly the four added black/readability checks; original assertions pass; final source and positive captures restored byte-for-byte.")
