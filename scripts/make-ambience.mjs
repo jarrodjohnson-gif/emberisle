@@ -1,5 +1,6 @@
 // #1014 / #662 candidate 3: original procedural sea-and-wind noise, released under CC0 1.0.
 // No recording or third-party sample. Regenerate: node scripts/make-ambience.mjs [--output file.mp3].
+// --raw emits the original for level-audio.mjs --new; default output applies the same shared mastering once.
 import { mkdirSync, statSync, mkdtempSync, rmSync } from "node:fs";
 import path from "node:path";
 import { tmpdir } from "node:os";
