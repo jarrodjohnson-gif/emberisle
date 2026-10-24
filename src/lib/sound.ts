@@ -104,9 +104,12 @@ function savedMuted() {
 }
 
 export let haptics: typeof import("./haptics") | undefined;
-// The synchronous entry starts this only for a supported phone; bootstrap awaits it before rejoin or UI.
-export const hapticsReady = typeof window !== "undefined" && typeof navigator.vibrate === "function" && matchMedia("(pointer: coarse)").matches
-  ? import("./haptics").then(module => { haptics = module; }).catch(() => {}) : undefined;
+// Bootstrap finishes this before restoring a seat or accepting the first interactive event.
+export async function loadHaptics() {
+  try {
+    if (typeof navigator.vibrate === "function" && matchMedia("(pointer: coarse)").matches) haptics = await import("./haptics");
+  } catch { /* the optional motor must not prevent the game from loading */ }
+}
 
 if (typeof window !== "undefined") {
   const unlock = () => {
@@ -232,12 +235,6 @@ export function stop(name: SoundName) {
 export function yourTurn() {
   play("your_turn");
   haptics?.turn();
-}
-
-// One soft tick and guarded phone kick per paying piece. The renderer owns timing and the per-roll cap.
-export function gainTick(ownPiece?: boolean) {
-  play("gain_tick", 0.35);
-  haptics?.pay(ownPiece);
 }
 
 // Background music (#814): "Medieval: The Old Tower Inn" (docs/design/sound.md). The file is fetched on the first start, after

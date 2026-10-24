@@ -1044,7 +1044,6 @@ function openOffer(set: Set, get: Get, from: string, give: Bag, want: Bag) {
   const fromName = state.players.find((p) => p.id === from)?.name ?? "Someone";
   set({ offer: { tradeId, from, fromName, give, want, until: Date.now() + OFFER_MS }, declined: [], tradeOutcome: null, tradeTaker: null });
   if (from !== get().localId) play("trade_offer");
-  haptics?.offer(from);
   offerTimers.push(setTimeout(() => endOffer(set, get, null), OFFER_MS));
   for (const p of state.players) {
     if (p.kind !== "bot" || p.id === from) continue;
@@ -1211,8 +1210,7 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       const fromName = get().state?.players.find((p) => p.id === from)?.name ?? "Someone";
       set({ offer: { tradeId, from, fromName, give, want, until: Date.now() + seconds * 1000 }, declined: [], tradeOutcome: null, tradeTaker: null });
       if (from !== get().localId) play("trade_offer");
-      haptics?.offer(from);
-    },
+        },
     tradeDeclined: ({ tradeId, by }) => {
       const { offer, declined } = get();
       if (offer?.tradeId === tradeId && !declined.includes(by)) set({ declined: [...declined, by] });

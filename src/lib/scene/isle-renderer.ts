@@ -45,7 +45,7 @@ import { makeBruno, type Bruno } from "@/lib/scene/bruno";
 import { makeJellyOutpost, makeJellyPath, makeJellyStronghold } from "@/lib/scene/pieces-jelly";
 import { CAUSTIC_GLSL, PAPER, SPLASH, addSplashRings, makeCrystalSea, makeFloorProps, makeSeaFloor, makeSplashes, makeSwell, makeWash, nearestCoast, type SeaUniforms, type WaterPath, type WaterStatus } from "@/lib/scene/crystal-water";
 import { Wobble } from "@/lib/scene/wobble";
-import { gainTick, play, touchHex } from "@/lib/sound";
+import { haptics, play, touchHex } from "@/lib/sound";
 import { payingHexes } from "@/lib/game/rules";
 import { type GameState, type HarborKind, type HexCell, type Terrain, type Vertex } from "@/lib/game/types";
 
@@ -628,7 +628,10 @@ export class IsleRenderer {
       if (!obj || age < 0) continue;
       if (!p.sounded) {
         p.sounded = true;
-        if (p.delay < 0.72) gainTick(this.payerSeat === true || p.owner === this.payerSeat);
+        if (p.delay < 0.72) {
+          play("gain_tick", 0.35);
+          haptics?.pay(this.payerSeat === true || p.owner === this.payerSeat);
+        }
       }
       const active = age < duration;
       obj.scale.setScalar(calm || !active ? 1 : 1 + 0.12 * snapBezier(age < 0.14 ? age / 0.14 : (0.28 - age) / 0.14));

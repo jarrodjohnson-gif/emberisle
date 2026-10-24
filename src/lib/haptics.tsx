@@ -31,10 +31,12 @@ export function buzz(ms: number) {
 }
 export const turn = () => buzz(HAPTIC_MS.yourTurn);
 export const pay = (own?: boolean) => { if (own) buzz(HAPTIC_MS.pay); };
-export function offer(from: string) {
-  const state = useGame.getState();
-  if (from !== state.localId && !state.spectator) buzz(HAPTIC_MS.tradeOffer);
-}
+// Both local practice and socket offers enter this store field. Install before bootstrap starts either source.
+const unsubscribeOffers = useGame.subscribe((state, previous) => {
+  const offer = state.offer;
+  if (offer && offer !== previous.offer && offer.from !== state.localId && !state.spectator) buzz(HAPTIC_MS.tradeOffer);
+});
+import.meta.hot?.dispose(unsubscribeOffers);
 
 // Decorate the existing cue player, so the same landing callback still owns audio and motor timing.
 export function player(before: GameState | null, after: GameState, me: string, mode: string) {
