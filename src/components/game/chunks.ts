@@ -15,8 +15,7 @@ export const ChatDock = online.pick((m) => m.ChatDock);
 export const SeatBubbles = online.pick((m) => m.SeatBubbles);
 
 // #833: open-table list on the title; separate so Host/Join stay in the index budget.
-export const openTables = chunk(() => import("@/components/game/OpenTables"));
-export const OpenTables = openTables.pick((m) => m.OpenTables);
+export const OpenTables = chunk(() => import("@/components/game/OpenTables")).pick((m) => m.OpenTables);
 export const SetupReference = chunk(() => import("@/components/game/SetupReference")).pick(m => m.SetupReference);
 
 export const sheets = chunk(() => import("@/components/game/sheets"));
