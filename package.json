@@ -29,6 +29,7 @@
     "wayfarer-modes-prove": "node --import ./server/register.mjs server/wayfarer-modes-prove.mjs",
     "wayfarer-setup-prove": "node --import ./server/register.mjs scripts/wayfarer-setup-prove.mjs",
     "wayfarer-prove": "node scripts/wayfarer-prove.mjs",
+    "robber-hex-prove": "node scripts/robber-hex-prove.mjs",
     "trade-prove": "node scripts/trade-prove.mjs",
     "sounds-prove": "node scripts/sounds-prove.mjs",
     "sound-mixer-prove": "node scripts/sound-mixer-prove.mjs",

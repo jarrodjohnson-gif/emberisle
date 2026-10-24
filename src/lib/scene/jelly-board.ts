@@ -22,8 +22,8 @@ const RINGS = 12;
 const SAMPLES = [0.37, 1.91, 3.53, 5.2];
 const ROLL_S = 2.4;
 const TAP_S = 0.9;
-// The wayfarer's shade on his hex: darker and cooler, as if a cloud stood over it.
-const DULL = new THREE.Color(0.46, 0.48, 0.58);
+// #826: cool grey shade on the wayfarer's hex (skip waste in robber()).
+const DULL = new THREE.Color(0.22, 0.22, 0.24);
 
 export type JellyHex = { id: string; terrain: Terrain; x: number; z: number; y: number };
 export type JellyStats = { lite: boolean; drawCalls: number; triangles: number; kinds: number; batches: number; bakes: number; sprites: number };
@@ -776,9 +776,17 @@ export class JellyBoard {
     if (e) e.h.tapAt = this.t;
   }
 
-  // The wayfarer stands on this hex (or none): it dulls, the others clear.
+  // The wayfarer stands on this hex (or none): it dulls; waste stays plain (#826).
   robber(id: string | null) {
-    for (const { h } of this.byHex.values()) h.dullTo = h.id === id ? 1 : 0;
+    for (const { k, h } of this.byHex.values()) h.dullTo = id && h.id === id && k.kind !== "waste" ? 1 : 0;
+  }
+
+  // Proofs: target / settled dull (0..1).
+  dullTarget(id: string) {
+    return this.byHex.get(id)?.h.dullTo ?? 0;
+  }
+  dullOf(id: string) {
+    return this.byHex.get(id)?.h.dull ?? 0;
   }
 
   // Something is still playing out (a roll, a tap, a dulling): the loop should draw at full rate.
