@@ -252,9 +252,9 @@ function Title() {
             </div>
             {/* #488: a pointer or focus on Host or Join fetches the online chunk (lobby and chat) before either is pressed. */}
             <div className="flex flex-wrap gap-x-2" onPointerEnter={online.prefetch} onFocus={online.prefetch}>
-              {/* Split Host + Open/Private: share the row with Join via flex-1 basis-0 so max-w-sm
+              {/* Split Host + Open/Private: share the row with Join via flex-1 so max-w-sm
                   (title-prove 1280x500) does not wrap. Ghost only — never a fourth filled button (#444). */}
-              <div className="flex min-w-0 flex-1 basis-0 overflow-hidden rounded-control border border-control-line">
+              <div className="flex min-w-0 flex-1 overflow-hidden rounded-control border border-control-line">
                 <Button
                   size="lg"
                   variant="secondary"
@@ -277,7 +277,7 @@ function Title() {
               </div>
               <form
                 aria-label="Join code"
-                className="flex min-w-[11rem] flex-1 basis-0 gap-2"
+                className="flex min-w-[11rem] flex-1 gap-2"
                 onSubmit={(e) => {
                   e.preventDefault();
                   if (join.length !== 4) return;
