@@ -29,7 +29,10 @@ The obstacle was present and the callback read it correctly. Existing placement
 math chooses top545, leaving its original 8px gap above the HUD. The sampled
 frame precedes resize delivery; React state also defers the callback's DOM
 application. This establishes stale sampled DOM placement, not a CPU cause or
-actual painted overlap. A size-only observer additionally misses position-only
+actual painted overlap. Instrumentation adds call overhead; this is an observed
+main reproduction, not proof of the exact callback ordering in the earlier CI
+run. The separate controlled case tests the source defect directly. A size-only
+observer additionally misses position-only
 hole changes altogether.
 
 The fix leaves `HARD`, `SOFT`, `GAP`, `bands` and `fit` unchanged. The hook owns
@@ -60,3 +63,12 @@ Full unchanged turn/gain and final static/build/size results are recorded alongs
 this note when validation completes. Local runtime is Node24.19, Playwright's
 installed Chromium with SwiftShader for the full game proof; CI uses its own
 configured Node version. These local runs do not claim CI acceptance.
+
+## Viewed captures
+
+The unchanged full-game proof produced the committed [390×844](turn-gain-390x844-turn.png),
+[844×390](turn-gain-844x390-turn.png) and [1280×720](turn-gain-1280x720-turn.png)
+turn captures. All three were viewed; cue and controls remain legible and clear.
+These are ordinary turn captures, not screenshots of the forced refit interval.
+The first-frame refit assertions and raw geometry are the regression evidence.
+`screenshots.json` records original byte sizes and SHA-256 hashes.
