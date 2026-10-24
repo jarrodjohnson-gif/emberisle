@@ -495,6 +495,20 @@ async function skippedLoadProof(url, {coarse = false, missingAPI = false} = {}) 
   console.log(`cold skip: coarse=${coarse}, missingAPI=${missingAPI}; no module, row or buzz`);
 }
 
+async function unavailableModuleProof(url) {
+  const page = await openPage({url, beforeNavigate: async (page) => {
+    await page.route(/\/assets\/haptics-[\w-]+\.js(?:\?|$)/, (route) => route.fulfill({
+      status: 200, contentType: "application/javascript", body: 'throw new Error("optional motor unavailable");',
+    }));
+  }});
+  await page.getByRole("button", {name: "Four seats, one table", exact: true}).click();
+  await page.getByRole("button", {name: "Table menu", exact: true}).click();
+  assert.equal(await page.getByTestId("haptics-toggle").count(), 0, "a failed optional module leaves a usable game without its row");
+  assert.deepEqual(await page.evaluate(() => window.__buzz), []);
+  await page.close();
+  console.log("cold failure: rejected optional module leaves the game and table menu usable");
+}
+
 async function changedPointerProof(page) {
   const got = await page.evaluate(async () => {
     const sound = await import("/src/lib/sound.ts");
@@ -517,6 +531,7 @@ try {
   await coldLoadProof(builtURL, true);
   await skippedLoadProof(builtURL);
   await skippedLoadProof(builtURL, {coarse: true, missingAPI: true});
+  await unavailableModuleProof(builtURL);
   { const page = await openPage(); await changedPointerProof(page); await page.close(); }
   {
     const page = await openPage({ coarse: true });
