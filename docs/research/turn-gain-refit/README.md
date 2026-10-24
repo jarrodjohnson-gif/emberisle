@@ -122,3 +122,12 @@ Expected: exit1, one `FAIL 1280x720: "Your turn" never covers a hand tab ["+2"]`
 The evidence file contains the original clash result, original recorded boxes and recorder callback intervals.
 The observer preserves returned values and crypto results. It adds no clock or timer override; the proof's existing hold remains.
 Its explicit diagnostic wait only ensures the added hand tab mounted before the existing refit.
+
+## Fresh-checkout verification
+
+The exact observer block above was extracted from report commit5f2c6ea and run in a fresh clone.
+Root `npm ci` passed. The documented command returned its expected exit1 with only the original overlap failure.
+Application files, Vite configuration and the target proof were checked byte-for-byte against0e81652.
+The later report edits add qualification and validation records only.
+
+[Fresh output](fresh-reproduction.log), [validation record](validation.json), [registration129](registered.log) and [loosen0](loosen.log).
