@@ -22,6 +22,9 @@ import { join } from "node:path";
 import { levelFile, measure, TARGETS, typeOf } from "./audio-level-lib.mjs";
 
 export const ORIGINALS_REV = "8d5e23c";
+// Clips replaced on main after ORIGINALS_REV (still unleveled there): their original is read from the commit that replaced them,
+// so the no-argument mode does not bring the old clip back. your_turn.wav: the #840 chime (PR #856).
+export const REPLACED = { "your_turn.wav": "7d2d0d9" };
 const root = new URL("..", import.meta.url).pathname;
 const audio = join(root, "public/audio");
 const work = mkdtempSync(join(tmpdir(), "level-audio-"));
@@ -48,7 +51,7 @@ if (newMode > 0) {
   const names = String(git("ls-tree", "--name-only", ORIGINALS_REV, "public/audio/")).trim().split("\n").map((n) => n.split("/").pop());
   for (const name of names) {
     const src = join(work, "orig_" + name);
-    writeFileSync(src, git("show", `${ORIGINALS_REV}:public/audio/${name}`));
+    writeFileSync(src, git("show", `${REPLACED[name] ?? ORIGINALS_REV}:public/audio/${name}`));
     const type = typeOf(name);
     const out = join(work, name);
     const { before, how } = levelFile(src, out, type);

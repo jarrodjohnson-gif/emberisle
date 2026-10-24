@@ -349,6 +349,8 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
         run: npm run sound-mixer-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
+        run: npm run your-turn-cue-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
         run: npm run music-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
         run: npm run ore-tokens-prove

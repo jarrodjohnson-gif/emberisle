@@ -31,6 +31,7 @@
     "sounds-prove": "node scripts/sounds-prove.mjs",
     "sound-mixer-prove": "node scripts/sound-mixer-prove.mjs",
     "audio-level-prove": "node scripts/audio-level-prove.mjs",
+    "your-turn-cue-prove": "node scripts/your-turn-cue-prove.mjs",
     "music-prove": "node scripts/music-prove.mjs",
     "practice-trade-prove": "node --import ./server/register.mjs scripts/practice-trade-prove.mjs",
     "pieces-prove": "node --import ./server/register.mjs scripts/pieces-prove.mjs",

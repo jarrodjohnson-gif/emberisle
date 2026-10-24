@@ -51,8 +51,8 @@ const CLIPS = {
   chat_recv: { ms: 140, voices: [tone(700, 0, 0.022, 1), tone(1400, 0, 0.012, 0.3)] },
   // #616: a soft water plop for a tap on the sea, a rising bloop over a short dark splash.
   plop: { ms: 150, voices: [slide(260, 620, 0.03, 0, 0.045, 1), hiss(0.004, 0.03, 0.12, 0.35)] },
-  // #660: dry wood-block knocks 70 ms apart for the acting seat's turn start.
-  your_turn: { ms: 150, voices: [tone(640, 0, 0.04, 1), hiss(0, 0.005, 0.15, 0.5), tone(480, 0.07, 0.04, 1), hiss(0.07, 0.005, 0.15, 0.5)] },
+  // #840: two-note rising fifth (docs/design/sound.md your_turn), louder and longer than the #660 wood knocks.
+  your_turn: { ms: 420, voices: [tone(660, 0, 0.12, 1), tone(990, 0.16, 0.18, 1), hiss(0, 0.008, 0.12, 0.25)] },
   // #661: the last seconds of your turn. A quiet 1.2 kHz sine tick (played at 0.5), then a lower 700 Hz wood knock (0.8).
   timer_tick: { ms: 30, voices: [tone(1200, 0, 0.012, 1)] },
   timer_final: { ms: 90, voices: [tone(700, 0, 0.03, 1), hiss(0, 0.006, 0.15, 0.5)] },
