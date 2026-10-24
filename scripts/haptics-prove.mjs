@@ -446,7 +446,8 @@ async function coldLoadProof(url, production) {
     // This is an intentional held-download control, not an event deadline or retry.
     await page.waitForTimeout(250);
     assert.equal(tapped, false, "first native tap must wait for the optional module's registration");
-    assert.equal(await page.locator("#root").textContent(), "", "interactive root is held before initialization");
+    assert.equal(await page.getByRole("button").count(), 0, "interactive controls are held before initialization");
+    assert.equal(await page.locator("#splash").count(), 1, "the existing loading splash remains until initialization");
     release();
     await tap;
     await page.waitForFunction(() => window.__emberisle?.getState().state && window.__isle?.lastState, null, {timeout: STEP_MS});
