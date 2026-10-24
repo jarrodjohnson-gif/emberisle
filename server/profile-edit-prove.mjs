@@ -592,8 +592,7 @@ if (fixtureStage) {
   check("admin refuses a missing store directory before creating anything", noDirectory.code === 2 && !existsSync(accidentalDir));
   }
   await new Promise((resolve, reject) => process.send({ checks: passed }, error => error ? reject(error) : resolve()));
-  process.exit(0);
 }
 
-console.log(`\nprofile-edit-prove: ${passed} checks passed`);
+if (!fixtureStage) console.log(`\nprofile-edit-prove: ${passed} checks passed`);
 process.exit(0);
