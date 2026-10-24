@@ -37,15 +37,15 @@ the file it plays is in `public/audio/`.
 | Chat received | `store.ts:1014` (635:1140) | `chat_recv` → `chat_recv.wav` (synth) | other seats; silent while typing | **wrong** | #635 hides a muted seat's lines, but their tick still plays: it does not check `readMutedSeats` the way the soundboard does (635:1139). Per-seat mute applies everywhere (decided). |
 | Emote / reaction sent | `src/components/game/Reactions.tsx:149`, `:170`, `:190` (635:135, :156, :176) | `ui_click` | the sender | has | Only the button press makes a sound. |
 | Emote received | `store.ts:1016` (`react`) | none | others | missing | Not added (Decision 5). |
-| Soundboard tap | 635:1139, the whitelist in `server/chat.mjs` 635:11, the buttons in `src/components/game/Chat.tsx` 635:213 | `robbed_fah`, `sb_wololo`, `sb_win_reaction`, `sb_airhorn`, `sb_quit_touchin`, `sb_only_wood`, `board_bong`, `board_plop`, `board_pluck` (`sound.ts` 635:49) | **#635** every seat, the sender included, unless that listener muted the sender | **wrong** | The clips are owner-approved and stay (Decision 6). They play at 1.0, and Decision 3 sets 0.4. |
-| GG on the end screen | `src/components/game/WinScreen.tsx` 635:192 | `sb_win_reaction` via the soundboard | **#635** every seat | **wrong** | Same as the soundboard row: it should play at 0.4. |
+| Soundboard tap | 635:1139, the whitelist in `server/chat.mjs` 635:11, the buttons in `src/components/game/Chat.tsx` 635:213 | `robbed_fah`, `sb_wololo`, `sb_win_reaction`, `sb_airhorn`, `sb_quit_touchin`, `sb_only_wood`, `sb_perfect`, `board_bong`, `board_plop`, `board_pluck` (`sound.ts` 635:49) | **#635** every seat, the sender included, unless that listener muted the sender | **wrong** | The clips are owner-approved and stay (Decision 6). They play at 1.0, leveled by type in the files (Decision 3, 2026-10-24). |
+| GG on the end screen | `src/components/game/WinScreen.tsx` 635:192 | `sb_win_reaction` via the soundboard | **#635** every seat | **wrong** | Same as the soundboard row: it plays at 1.0, leveled in the file. |
 | Player joins / leaves the lobby | `store.ts:1021` (`seats`) | none | everyone at the table | missing | Not added (Decision 5). |
 | Rejoin / reconnect | `store.ts:771` (`rejoinTable`), `store.ts:1007` (`reconnecting`), `store.ts:969` (`welcome`) | none | the rejoining seat | missing | Not added (Decision 5). |
-| Game start | 635:140 (online), 635:587 (practice) | `game_start` → `game_start.mp3` at 0.5 | **#635** every seat, once per board | has | Hotseat never plays it (`store.ts:491`, `startHotseat`). The first roll cuts it off. |
-| Match point (one point from winning) | 635:150 | `match_point` → `match_point.mp3` at 0.5 | **#635** everyone | has | Counts public points only, once per player per game. 4.2 s long. |
+| Game start | 635:140 (online), 635:587 (practice) | `game_start` → `game_start.mp3` at 1.0 (leveled to -18 LUFS) | **#635** every seat, once per board | has | Hotseat never plays it (`store.ts:491`, `startHotseat`). The first roll cuts it off. |
+| Match point (one point from winning) | 635:150 | `match_point` → `match_point.mp3` at 1.0 (leveled to -18 LUFS) | **#635** everyone | has | Counts public points only, once per player per game. 4.2 s long. |
 | Win (you won) | `store.ts:38` (635:39) | `win` → `pluck_001.wav` | main: everyone; #635: the winner (and every seat in hotseat) | **wrong** | One short pluck, while on #635 the losers get a 3.4 s sting. Jarrod picks the replacement; the pluck stays until then (Decision 4). |
-| Lose | 635:39 | `game_lose` → `game_lose.mp3` at 0.5 | **#635** every seat but the winner (not hotseat) | has | A watcher counts as having lost, so they hear it too. |
-| End music | 635:145, stopped at 635:89, 635:142 and `sound.ts` 635:95 | `end_music` → `end_music.mp3` at 0.5, 1.5 s after the sting | **#635** every seat (not hotseat) | has | A 14.6 s mp3, which is stopped at the end screen, at a rematch and at mute. |
+| Lose | 635:39 | `game_lose` → `game_lose.mp3` at 1.0 (leveled to -18 LUFS) | **#635** every seat but the winner (not hotseat) | has | A watcher counts as having lost, so they hear it too. |
+| End music | 635:145, stopped at 635:89, 635:142 and `sound.ts` 635:95 | `end_music` → `end_music.mp3` at 1.0 (leveled to -18 LUFS), 1.5 s after the sting | **#635** every seat (not hotseat) | has | A 14.6 s mp3, which is stopped at the end screen, at a rematch and at mute. |
 | Menu / button tap | `src/components/ui/button.tsx:37` | `ui_click` → `click_001.wav` / `ui_back` → `back_001.wav` | the presser | has | Back also plays from `TableMenu.tsx:74`, `FortuneTray.tsx:73`, `CostCard.tsx:38`, `HowTo.tsx:36` and `escape-disarm.ts:21`. |
 | Sound toggled on | `src/components/game/TableMenu.tsx:175`, `src/components/game/EmberisleApp.tsx:309` (635:311) | `ui_click` | the presser | has | |
 | Confirm (Ready, Start) | `button.tsx:37` | `ui_click` | the presser | missing | `polish.md:212` lists a separate `ui_confirm`. Not added (Decision 5). |
@@ -65,10 +65,10 @@ the file it plays is in `public/audio/`.
 
   | Tier | Volume | Clips |
   |---|---|---|
-  | Core table | 1.0 | dice, builds, fortunes, wayfarer, trade yes for the two parties, your turn, error |
+  | Core table | 1.0, files at -18 (short-clip loudness) | dice, builds, fortunes, wayfarer, trade yes for the two parties, your turn, error |
   | Others' echo | 0.5–0.6 | someone else's fortune bought (0.6), trade yes for bystanders (0.5), both shipped |
-  | Music and stings | 0.5 (`MUSIC_VOLUME`, `sound.ts` 635:63) | `game_start`, `match_point`, `game_lose`, `end_music`, the win sting |
-  | Meme / soundboard | **0.4** (Decision 3) | every soundboard clip, `robbed_fah`, the end screen's GG |
+  | Music and stings | 1.0, files at -18 LUFS (Decision 3) | `game_start`, `match_point`, `game_lose`, `end_music`, the win sting, the background loop (which still plays under `BG_VOLUME`) |
+  | Reactions / soundboard | 1.0, files at -16 LUFS (Decision 3) | every soundboard clip, `robbed_fah`, the end screen's GG |
 
 - The only new cues are a **your-turn** cue for the seat whose turn starts and a **turn-timer countdown** tick for that seat in
   the last seconds (Decision 5). There are no join/leave, emote-received, payout, steal, discard, bank-trade or confirm cues.
@@ -121,7 +121,7 @@ to about 15 s and 300 kB at most.
 
 | Slot prefix | Where it plays | Today's clip |
 |---|---|---|
-| `sb_` | a soundboard button, heard by every seat at 0.4 | `sb_wololo`, `sb_win_reaction`, `sb_airhorn`, `sb_quit_touchin`, `sb_only_wood` (#635) |
+| `sb_` | a soundboard button, heard by every seat at 1.0 (file leveled to -16 LUFS) | `sb_wololo`, `sb_win_reaction`, `sb_airhorn`, `sb_quit_touchin`, `sb_only_wood`, `sb_perfect` (#635) |
 | `robbed_` | the seat the wayfarer lands on | `robbed_fah` (#635) |
 | `match_` | someone is one point from winning | `match_point` (#635) |
 | `win_` | the winner | `pluck_001.wav` (to be replaced, Decision 4) |
@@ -145,7 +145,7 @@ All six are answered by the Decisions below. Each question keeps the recommendat
 2. **Music beyond start and end?** Recommended: *no music loop; add an optional very quiet sea-and-wind ambience, off by
    default*. **Answered (Decision 2):** as recommended.
 3. **How loud are the meme clips against the core sounds?** Recommended: *0.4, below the music's 0.5*. **Answered
-   (Decision 3):** 0.4.
+   (Decision 3):** 0.4, then replaced on 2026-10-24: no blanket volume, the files are leveled by type (see Decision 3).
 4. **Replace soundboard and music clips with no known source (Wololo is from Age of Empires)?** Recommended: *yes, use CC0
    sound-alikes, or drop the clip*. **Answered (Decision 6):** no. They are kept as owner-approved, and the rule becomes "CC0 or
    owner-approved".
@@ -160,7 +160,7 @@ These answer section 4 and override any recommendation above that disagrees.
 
 1. **Vibe:** core sounds are dry and woody, like a board game. Meme clips live on the soundboard only.
 2. **Music:** no in-game loop. An optional, very quiet sea-and-wind ambience is allowed, **off by default**.
-3. **Meme volume:** soundboard and meme clips play at **0.4**, below music.
+3. **Sound levels (replaced 2026-10-24, #1073):** every sound is leveled by type, with no blanket gain. The first answer was "soundboard and meme clips play at 0.4, below music"; Jarrod withdrew it: "Everything should play at the same volume. I'm not enforcing lowering everything by 60%. I want things all leveled equally, so all types sound the same: all sound effects the same volume, all game music the same volume, all reactions the same volume." The fix is in the files (`scripts/level-audio.mjs`), then one volume per type, 1.0, with the player's mixer on top. `MEME_VOLUME`, `MUSIC_VOLUME` and `TOUCH_VOLUME` are gone; `BG_VOLUME` and `BG_DUCK` stay, since they are real behaviour (a bed under the stings). Targets, which Jarrod can adjust after listening: reactions and soundboard clips (and `robbed_fah`) **-16 LUFS**, music and stings **-18 LUFS**, table effects **-18** by short-clip loudness (K-weighted, active part only, on the LUFS scale). True peak at or below -1 dBTP everywhere. The pasture tap `sb_plump_sheep.mp3` is a table effect (it plays as a hex tap), so it sits with the effects. `bong_001`, `plop` and `pluck_001` are table effects whose soundboard chips use the same files. `npm run audio-level-prove` fails if any file is more than 1 LU from its type's target or peaks above -1 dBTP. Originals: `docs/research/audio-originals-note.md`. This also supersedes the earlier "Fah plays at half volume" rule (DECISIONS, 2026-10-18): `robbed_fah` is leveled with the other reactions and plays at 1.0.
 4. **Win sound:** the winner gets a real win sting. **Jarrod will pick the song or clip**; until then the current sound stays.
 5. **New cues:** only two: a **"your turn"** cue for the seat whose turn starts, and a **turn-timer countdown** tick for the last seconds of your turn. No join/leave, emote-received or payout cues.
 6. **Licensing:** Jarrod keeps the soundboard and meme clips (Wololo, the Charlie Kirk song, the airhorn, etc.) public and accepts the risk, since this is a free game for friends. The README's "CC0 only" line becomes "CC0 or owner-approved".

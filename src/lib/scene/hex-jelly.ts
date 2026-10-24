@@ -4392,7 +4392,10 @@ function mine(L: Layout, ground: (x: number, z: number) => number, r: () => numb
     });
     const look = -Math.atan2(-dir.z, -dir.x);
     life.push((t) => {
-      const age = env.age ?? t;
+      // On the game board, age is seconds since the first live play frame (jelly-board.ts). Unset only in the studio or
+      // while the batcher samples motion — never fall back to the renderer's clock on the board (#966): that parks him on
+      // the summit after a long title or lobby.
+      const age = env.age ?? (env.board ? 0 : t);
       let k = tries.length - 1;
       while (k > 0 && age < tries[k]!.at) k--;
       const q = tries[k]!;
