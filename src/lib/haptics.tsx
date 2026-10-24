@@ -3,7 +3,7 @@ import { useSyncExternalStore } from "react";
 import { Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { HAPTIC_MS } from "@/lib/haptic-durations";
-import { haptics, unlocked, muted, play, type SoundName } from "@/lib/sound";
+import { haptics, unlocked, isMuted, play, type SoundName } from "@/lib/sound";
 import { useGame } from "@/lib/game/store";
 import type { GameState } from "@/lib/game/types";
 
@@ -26,7 +26,7 @@ function setHaptics(value: boolean) {
 }
 
 export function buzz(ms: number) {
-  if (!ms || !unlocked || muted || !on || !available()) return;
+  if (!ms || !unlocked || isMuted() || !on || !available()) return;
   try { navigator.vibrate?.(ms); } catch { /* an embedding may forbid vibration */ }
 }
 export const turn = () => buzz(HAPTIC_MS.yourTurn);

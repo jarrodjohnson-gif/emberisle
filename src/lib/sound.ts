@@ -92,7 +92,7 @@ const MUTED_KEY = "emberisle-muted";
 const clips = new Map<SoundName, HTMLAudioElement>();
 const gains = new Map<SoundName, number>();
 export let unlocked = false;
-export let muted = savedMuted();
+let muted = savedMuted();
 const listeners = new Set<() => void>();
 
 function savedMuted() {
@@ -104,9 +104,7 @@ function savedMuted() {
 }
 
 // The optional phone module registers these callbacks before bootstrap exposes UI or rejoin events.
-type Haptics = typeof import("./haptics").api;
-// The unloaded implementation preserves the ordinary audio player.
-export const haptics: Partial<Haptics> & Pick<Haptics, "player"> = { player: () => play };
+export const haptics: Partial<typeof import("./haptics").api> = {};
 
 if (typeof window !== "undefined") {
   const unlock = () => {
