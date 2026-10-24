@@ -33,7 +33,7 @@ const FILES = {
   // The player the wayfarer is set against hears this instead of wayfarer_move (the owner's clip).
   robbed_fah: "robbed_fah.mp3",
   // Music: a short sting when a game starts (cut off by the first roll), when a player is one point from winning, and for the
-  // seats that did not win. Played at MUSIC volume.
+  // seats that did not win.
   game_start: "game_start.mp3",
   match_point: "match_point.mp3",
   game_lose: "game_lose.mp3",
@@ -73,10 +73,9 @@ export const SOUNDBOARD = [
 ] as const satisfies readonly { id: string; label: string; clip: keyof typeof FILES }[];
 export type BoardSound = (typeof SOUNDBOARD)[number]["id"];
 
-// Music is quieter than the table's knocks and clicks.
-export const MUSIC_VOLUME = 0.5;
-// The soundboard and the meme clips (robbed_fah) sit below the music (docs/design/sound.md, decisions).
-export const MEME_VOLUME = 0.4;
+// Levels live in the files, not here (#1073, docs/design/sound.md Decision 3): every table effect, every reaction and soundboard
+// clip and every piece of music was leveled by type (scripts/level-audio.mjs), so each plays at volume 1 unless a caller asks
+// for less on purpose (a bystander's echo, the paying-piece tick). The player's mixer (sound-settings.ts) still scales a category.
 
 export type SoundName = keyof typeof FILES;
 
@@ -327,10 +326,9 @@ function syncVolumes() {
 }
 subscribeSoundMix(() => { syncVolumes(); syncMusic(); });
 
-// #667: a tap on a hex that places nothing plays that terrain's clip, quietly, at most once per TOUCH_GAP_MS. Only a sheep
+// #667: a tap on a hex that places nothing plays that terrain's clip, at most once per TOUCH_GAP_MS. Only a sheep
 // hex (Pasture, "wool") baas. The renderer calls this for a plain tap only: never for a drag, a pinch or an armed placement.
 const TOUCH_GAP_MS = 400;
-export const TOUCH_VOLUME = 0.3;
 const TOUCH_CLIP: Record<string, SoundName> = {
   wool: "tap_pasture",
   timber: "tap_forest",
@@ -346,5 +344,5 @@ export function touchHex(terrain: string) {
   const now = Date.now();
   if (now - touchedAt < TOUCH_GAP_MS) return;
   touchedAt = now;
-  play(clip, TOUCH_VOLUME);
+  play(clip);
 }
