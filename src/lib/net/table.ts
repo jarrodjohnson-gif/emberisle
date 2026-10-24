@@ -361,11 +361,9 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
       case "tradeClosed":
         on.tradeClosed?.(msg as never);
         break;
-      case "openTables": {
-        const tables = Array.isArray(msg.tables) ? (msg.tables as OpenTableEntry[]) : [];
-        on.openTables?.(tables);
+      case "openTables":
+        on.openTables?.(Array.isArray(msg.tables) ? (msg.tables as OpenTableEntry[]) : []);
         break;
-      }
       case "error": {
         const message = String(msg.message);
         if (rejoining) taken = message === "Seat is taken.";
