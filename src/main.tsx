@@ -9,7 +9,7 @@ import "./styles.css";
 // This async function leaves the entry module synchronous, so the lazy module can share its React imports.
 void (async () => {
   try {
-    if (typeof navigator.vibrate === "function" && matchMedia("(pointer: coarse)").matches) await import("./lib/haptics");
+    if (matchMedia("(pointer: coarse)").matches && typeof navigator.vibrate === "function") await import("./lib/haptics");
   } catch { /* the optional motor must not prevent the game from loading */ }
   // The dial still starts before React, in parallel with the first render and island load (#196/#543).
   if (useGame.getState().rejoinTable()) void online.prefetch();
