@@ -378,6 +378,9 @@ try {
     if (window.__quietN !== n) { window.__quietN = n; window.__quietAt = now; }
     return window.__pendingPumps === 0 && now - window.__quietAt >= quietMs;
   }, 400, { timeout: 4000 });
+  const scheduledPumps = await page.evaluate(() => window.__leaveTrace.filter(entry => entry.kind === "pump-scheduled").length);
+  console.log("Sound pumps scheduled before Leave", scheduledPumps);
+  if (scheduledPumps < 1) throw new Error("No sound pump was scheduled before Leave");
   const playsBeforeLeave = await page.evaluate(() => window.__plays.length);
   await page.getByRole("button", { name: "Leave table" }).click();
   await page.waitForFunction(() => !window.__emberisle.getState().state, null, { timeout: STEP_MS });
