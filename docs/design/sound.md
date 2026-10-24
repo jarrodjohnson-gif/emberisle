@@ -37,7 +37,7 @@ the file it plays is in `public/audio/`.
 | Chat received | `store.ts:1014` (635:1140) | `chat_recv` → `chat_recv.wav` (synth) | other seats; silent while typing | **wrong** | #635 hides a muted seat's lines, but their tick still plays: it does not check `readMutedSeats` the way the soundboard does (635:1139). Per-seat mute applies everywhere (decided). |
 | Emote / reaction sent | `src/components/game/Reactions.tsx:149`, `:170`, `:190` (635:135, :156, :176) | `ui_click` | the sender | has | Only the button press makes a sound. |
 | Emote received | `store.ts:1016` (`react`) | none | others | missing | Not added (Decision 5). |
-| Soundboard tap | 635:1139, the whitelist in `server/chat.mjs` 635:11, the buttons in `src/components/game/Chat.tsx` 635:213 | `robbed_fah`, `sb_wololo`, `sb_win_reaction`, `sb_airhorn`, `sb_quit_touchin`, `sb_only_wood`, `board_bong`, `board_plop`, `board_pluck` (`sound.ts` 635:49) | **#635** every seat, the sender included, unless that listener muted the sender | **wrong** | The clips are owner-approved and stay (Decision 6). They play at 1.0, and Decision 3 sets 0.4. |
+| Soundboard tap | 635:1139, the whitelist in `server/chat.mjs` 635:11, the buttons in `src/components/game/Chat.tsx` 635:213 | `robbed_fah`, `sb_wololo`, `sb_win_reaction`, `sb_airhorn`, `sb_quit_touchin`, `sb_only_wood`, `sb_perfect`, `board_bong`, `board_plop`, `board_pluck` (`sound.ts` 635:49) | **#635** every seat, the sender included, unless that listener muted the sender | **wrong** | The clips are owner-approved and stay (Decision 6). They play at 1.0, and Decision 3 sets 0.4. |
 | GG on the end screen | `src/components/game/WinScreen.tsx` 635:192 | `sb_win_reaction` via the soundboard | **#635** every seat | **wrong** | Same as the soundboard row: it should play at 0.4. |
 | Player joins / leaves the lobby | `store.ts:1021` (`seats`) | none | everyone at the table | missing | Not added (Decision 5). |
 | Rejoin / reconnect | `store.ts:771` (`rejoinTable`), `store.ts:1007` (`reconnecting`), `store.ts:969` (`welcome`) | none | the rejoining seat | missing | Not added (Decision 5). |
@@ -121,7 +121,7 @@ to about 15 s and 300 kB at most.
 
 | Slot prefix | Where it plays | Today's clip |
 |---|---|---|
-| `sb_` | a soundboard button, heard by every seat at 0.4 | `sb_wololo`, `sb_win_reaction`, `sb_airhorn`, `sb_quit_touchin`, `sb_only_wood` (#635) |
+| `sb_` | a soundboard button, heard by every seat at 0.4 | `sb_wololo`, `sb_win_reaction`, `sb_airhorn`, `sb_quit_touchin`, `sb_only_wood`, `sb_perfect` (#635) |
 | `robbed_` | the seat the wayfarer lands on | `robbed_fah` (#635) |
 | `match_` | someone is one point from winning | `match_point` (#635) |
 | `win_` | the winner | `pluck_001.wav` (to be replaced, Decision 4) |
