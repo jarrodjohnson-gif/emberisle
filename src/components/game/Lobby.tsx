@@ -146,7 +146,7 @@ export function Lobby() {
         </div>
         <div className={cn(landscape ? "col-start-1 row-span-2 row-start-1 flex min-h-0 flex-col" : "contents")}>
         {/* #899: held sideways the seats are a 2x2 grid in the wider left column, so the chat under them has the height for the
-            Sounds & stickers tab (nine 44 px chips and the presets). */}
+            Sounds & stickers tab (ten 44 px chips and the presets). */}
         <ul className={cn(landscape ? "grid grid-cols-2" : "flex flex-col", sheet ? "gap-1.5" : "gap-2", landscape ? "shrink-0 gap-1.5" : sheet ? "mt-3" : "mt-4 shrink-0")}>
           {[0, 1, 2, 3].map((i) => {
             const s = seats[i];
