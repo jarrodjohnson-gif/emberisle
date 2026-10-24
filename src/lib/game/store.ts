@@ -122,7 +122,7 @@ export function hear(before: GameState | null, after: GameState, me: string, mod
   const lost = mode !== "hotseat" && me !== "" && !!after.winner && after.winner !== me;
   const victim =
     mode !== "hotseat" && !!before && before.current !== me && after.vertices.some((v) => v.building?.playerId === me && v.hexes.includes(after.robberHex));
-  const cue = haptics?.player(before, after, me, mode) ?? play;
+  const cue = haptics.player?.(before, after, me, mode) ?? play;
   for (const [sound, volume] of soundsFor(before, after, mode === "hotseat" || (!!me && after.current === me), victim, lost)) {
     // A piece knocks when it lands, not when it is picked (#438); reduced motion has no fall, so it knocks at once.
     const land = sound in LAND_MS && !calmMotion() ? LAND_MS[sound as keyof typeof LAND_MS] : 0;

@@ -630,7 +630,7 @@ export class IsleRenderer {
         p.sounded = true;
         if (p.delay < 0.72) {
           play("gain_tick", 0.35);
-          haptics?.pay(this.payerSeat === true || p.owner === this.payerSeat);
+          haptics.pay?.(this.payerSeat === true || p.owner === this.payerSeat);
         }
       }
       const active = age < duration;

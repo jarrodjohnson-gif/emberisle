@@ -91,8 +91,8 @@ export function soundCategory(name: SoundName): SoundCategory {
 const MUTED_KEY = "emberisle-muted";
 const clips = new Map<SoundName, HTMLAudioElement>();
 const gains = new Map<SoundName, number>();
-let unlocked = false;
-let muted = savedMuted();
+export let unlocked = false;
+export let muted = savedMuted();
 const listeners = new Set<() => void>();
 
 function savedMuted() {
@@ -103,9 +103,8 @@ function savedMuted() {
   }
 }
 
-export let haptics: typeof import("./haptics") | undefined;
-// Installed once by the phone bootstrap, before rejoin and interactive rendering.
-export function installHaptics(module: typeof import("./haptics")) { haptics = module; }
+// The optional phone module registers these callbacks before bootstrap exposes UI or rejoin events.
+export const haptics: Partial<typeof import("./haptics").api> = {};
 
 if (typeof window !== "undefined") {
   const unlock = () => {
@@ -145,9 +144,8 @@ export function useMuted() {
   return useSyncExternalStore(subscribe, isMuted, () => false);
 }
 
-export const canHaptic = () => unlocked && !muted;
-export const hapticsAvailable = () => haptics?.available() ?? false;
-export const haptic = (ms: number) => { haptics?.buzz(ms); };
+export const hapticsAvailable = () => haptics.available?.() ?? false;
+export const haptic = (ms: number) => { haptics.buzz?.(ms); };
 
 // A clip never starts twice within GAP_MS of its last request (a burst is one sound), and clips start at least GAP_MS apart
 // in the order asked, so a bot round of five moves is five separate sounds. A backlog past MAX_QUEUE is dropped, not played late.
@@ -230,7 +228,7 @@ export function stop(name: SoundName) {
 // The your-turn chime, with a short buzz on phones that have a motor (#542: 15 ms, was 30).
 export function yourTurn() {
   play("your_turn");
-  haptics?.turn();
+  haptics.turn?.();
 }
 
 // Background music (#814): "Medieval: The Old Tower Inn" (docs/design/sound.md). The file is fetched on the first start, after
