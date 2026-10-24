@@ -78,7 +78,7 @@ are separate from local validation. No merge or CI retry by this builder.
 
 After the main sound-level merge, the full normal proof passes with exactly
 `click_001`. The full real-module delayed-pump run also passes: pending 1 at
-7850.7ms, last pump fired8785.2ms, baseline9043.0ms with pending 0
+7850.7ms, last pump fired 8785.2ms, baseline 9043.0ms with pending 0
 and 407.2ms quiet. The measured bounded wait spans
 1192.3ms, inside the unchanged 4000ms deadline. These are explicit
 control timings, not claims about ordinary CI performance.
