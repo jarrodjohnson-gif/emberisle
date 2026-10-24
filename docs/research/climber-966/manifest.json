@@ -1,0 +1,52 @@
+{
+  "captured_utc": "2026-10-23T10:34:22.588227+00:00",
+  "proof_commit": "64cc7b3",
+  "runtime_base": "30737a5c81f194b1c6235c1409555ee8e6cb19bd",
+  "captures": [
+    {
+      "file": "play-age160-1280x720.png",
+      "size": [
+        1280,
+        720
+      ],
+      "bytes": 519179,
+      "sha256": "964823e8707d0097e9730219482e96e91209d419b423e68eb4f649e59ae70d9e"
+    },
+    {
+      "file": "play-age160-390x844.png",
+      "size": [
+        390,
+        844
+      ],
+      "bytes": 234095,
+      "sha256": "30955132d2a04d1bb197933b42fc2c076477cdfe2d9fc56252d831560f10ca9c"
+    },
+    {
+      "file": "play-age4-1280x720.png",
+      "size": [
+        1280,
+        720
+      ],
+      "bytes": 519002,
+      "sha256": "22a71531dbc3a028736eca6d6ffc85a65aea202eb7cdf2e03dae386857bed1e0"
+    },
+    {
+      "file": "play-age4-390x844.png",
+      "size": [
+        390,
+        844
+      ],
+      "bytes": 214965,
+      "sha256": "5c0dd51982f058a341af4792fe77958cc7416700cdfed6bb50f7da855aa4252a"
+    },
+    {
+      "file": "title-1280x720.png",
+      "size": [
+        1280,
+        720
+      ],
+      "bytes": 711435,
+      "sha256": "65cdb2fee0c7a626eaf816210724eee9199ea7b5a3bbaa860de68e8d44f43ab5"
+    }
+  ]
+}
