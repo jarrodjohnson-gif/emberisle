@@ -288,7 +288,10 @@ function hexPatch(m: THREE.Material, u: HexU) {
         transformed = hC + ( transformed - hC ) * vec3( 1.0 - 0.03 * hA.w, 1.0 + 0.07 * hA.w, 1.0 - 0.03 * hA.w );
         vHexTint = uHexT[ int( aHex + 0.5 ) ];`,
       );
-    sh.fragmentShader = "varying vec3 vHexTint;\n" + sh.fragmentShader.replace("#include <color_fragment>", "#include <color_fragment>\n\tdiffuseColor.rgb *= vHexTint;");
+    sh.fragmentShader = "varying vec3 vHexTint;\n" + sh.fragmentShader
+      .replace("#include <color_fragment>", "#include <color_fragment>\n\tdiffuseColor.rgb *= vHexTint;")
+      // Plain black also removes the lit/specular/emissive remainder; unblocked hexes are unchanged.
+      .replace("#include <fog_fragment>", "#include <fog_fragment>\ngl_FragColor.rgb *= min(1.0, max(vHexTint.r, max(vHexTint.g, vHexTint.b)));");
   };
   m.customProgramCacheKey = () => `${key}|hex`;
 }

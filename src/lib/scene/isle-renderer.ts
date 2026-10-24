@@ -712,8 +712,18 @@ export class IsleRenderer {
         m.userData.rest ??= m.color.clone();
         m.color.copy(m.userData.rest as THREE.Color).multiplyScalar(blocked ? (m.map ? 0.55 : 0) : 1);
         if (m.map && blocked !== !!m.userData.blocked) {
-          m.map.dispose();
-          m.map = numberFace(t.userData.token, blocked);
+          if (!m.userData.restMap) {
+            m.userData.restMap = m.map;
+            m.addEventListener("dispose", () => {
+              m.map?.dispose();
+              if (m.map !== m.userData.restMap) m.userData.restMap.dispose();
+            });
+          }
+          if (blocked) m.map = blackNumberFace(m.userData.restMap, t.userData.token);
+          else {
+            m.map.dispose();
+            m.map = m.userData.restMap;
+          }
           m.userData.blocked = blocked;
         }
       }
@@ -2171,26 +2181,15 @@ export function numberToken(n: number) {
   const disc = new THREE.Mesh(new THREE.CylinderGeometry(TOKEN_R, TOKEN_R, TOKEN_H, 40), new THREE.MeshStandardMaterial({ color: hot ? 0xb3261e : 0x6b3f22, roughness: 0.6 }));
   disc.castShadow = true;
   g.add(disc);
-  const tex = numberFace(n);
-  const label = new THREE.Mesh(new THREE.CircleGeometry(TOKEN_FACE, 40), new THREE.MeshBasicMaterial({ map: tex }));
-  label.rotation.x = -Math.PI / 2;
-  label.position.y = TOKEN_H / 2 + 0.001;
-  g.add(label);
-  return g;
-}
-
-// Same face geometry/type; only the blocked palette changes. Replaced maps are disposed.
-function numberFace(n: number, blocked = false) {
-  const hot = n === 6 || n === 8;
   const c = document.createElement("canvas");
   c.width = 256;
   c.height = 256;
   const ctx = c.getContext("2d")!;
-  ctx.fillStyle = blocked ? "#000000" : "#fff9f0";
+  ctx.fillStyle = "#fff9f0";
   ctx.beginPath();
   ctx.arc(128, 128, 124, 0, Math.PI * 2);
   ctx.fill();
-  const ink = blocked ? "#ffffff" : hot ? "#b3261e" : "#1c1916";
+  const ink = hot ? "#b3261e" : "#1c1916";
   ctx.fillStyle = ink;
   // The numeral fills the face above the pips (#597: about 1.2x the glyph it was, so it still reads on the tilted diorama
   // token); a two-digit one is condensed to the face's chord.
@@ -2215,6 +2214,29 @@ function numberFace(n: number, blocked = false) {
     ctx.arc(128 - span / 2 + i * 32, 196, 14, 0, Math.PI * 2);
     ctx.fill();
   }
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 8;
+  const label = new THREE.Mesh(new THREE.CircleGeometry(TOKEN_FACE, 40), new THREE.MeshBasicMaterial({ map: tex }));
+  label.rotation.x = -Math.PI / 2;
+  label.position.y = TOKEN_H / 2 + 0.001;
+  g.add(label);
+  return g;
+}
+
+// Recolour the existing glyph pixels, so late-loading fonts cannot change its shape.
+function blackNumberFace(map: THREE.Texture, n: number) {
+  const c = document.createElement("canvas");
+  c.width = c.height = 256;
+  const ctx = c.getContext("2d")!;
+  ctx.drawImage(map.image, 0, 0);
+  const image = ctx.getImageData(0, 0, 256, 256);
+  const ink = n === 6 || n === 8 ? 38 : 25;
+  for (let i = 0; i < image.data.length; i += 4) {
+    const coverage = Math.max(0, Math.min(255, Math.round((249 - image.data[i + 1]!) * 255 / (249 - ink))));
+    image.data[i] = image.data[i + 1] = image.data[i + 2] = coverage;
+  }
+  ctx.putImageData(image, 0, 0);
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.anisotropy = 8;
