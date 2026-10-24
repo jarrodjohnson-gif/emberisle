@@ -1221,7 +1221,7 @@ export class IsleRenderer {
   /** A splash on the sea at (x, z), 1 for a tap. Starts at once; the fish and the visitor near it scatter. */
   splashAt(x: number, z: number, strength: number) {
     this.splash.add(x, z, strength, this.clock.getElapsed() + (performance.now() - this.lastFrame) / 1000);
-    if (!this.calm()) this.oceanLife.scatter(x, z);
+    if (!this.calm()) this.oceanLife.scatter(x, z, Math.max(0, performance.now() - this.lastFrame) / 1000);
     // A tap plops (sound.ts keeps it quiet while muted); a drag's trail does not.
     if (strength >= 1) play("plop");
     this.busyUntil = Math.max(this.busyUntil, performance.now() + SPLASH.life * 1000);
@@ -1256,11 +1256,9 @@ export class IsleRenderer {
     const pulsing = this.marks.children.some((m) => m.userData.kind === "hex" && m.userData.id !== this.pending?.id);
     // Reduced motion (#382): no tick at all; a drag, a camera move or a state push still draws for its 1 s hold.
     const calm = this.calm();
+    const resumedMotion = this.wasCalm && !calm;
     // Reading `matches` here can swallow the change event, so a flip seen on this frame wakes the loop itself.
-    if (calm !== this.wasCalm) {
-      this.wasCalm = calm;
-      this.wake();
-    }
+    if (calm !== this.wasCalm) this.wake();
     this.stepLandings(now, calm);
     if (this.relayout > 0) {
       this.relayout--;
@@ -1274,11 +1272,17 @@ export class IsleRenderer {
     const busy = now < this.busyUntil || this.flashes.length > 0 || this.payingPieces.length > 0 || !!this.jelly?.busy();
     const gap = calm ? (busy ? 0 : Infinity) : this.titleMode ? 1000 / 30 : this.walk || pulsing || busy ? 0 : 1000 / 12;
     if (now - this.lastFrame < gap - 2) return;
-    // Backpressure on ambient frames (the title's turn, the idle sea): while the GPU is still on the last one, wait for it
-    // rather than queue another. A GPU that keeps up has always finished; a software one (CI, no GPU) would otherwise block
-    // the page in its GL calls, frame after frame, and starve input and every other tab. A frame a change or an interaction
-    // asked for (busy), and every frame under reduced motion, goes at once.
-    if (!busy && !calm && this.gpuBehind()) return;
+    // Camera constraints and glides are input state: process them even when the next draw waits on the GPU.
+    if (this.play()) {
+      this.orbit.update();
+      this.clampPan();
+      this.stepGlide(now);
+    }
+    // Moving frames, including busy ones, wait for the previous GPU work instead of flooding a software renderer's queue.
+    // Explicit reduced-motion frames still draw immediately, including synchronous snapshots.
+    if (!calm && this.gpuBehind()) return;
+    // Keep a motion resume pending until a frame is accepted; a GPU wait must not consume the paused-time reset.
+    this.wasCalm = calm;
     this.lastFrame = now;
     this.clock.update();
     const t = this.clock.getElapsed();
@@ -1287,11 +1291,7 @@ export class IsleRenderer {
     this.stepFlashes(dt, calm);
     this.stepPayers(dt, calm);
     this.controls.autoRotate = this.titleMode && !calm;
-    if (this.play()) {
-      this.orbit.update();
-      this.clampPan();
-      this.stepGlide(now);
-    } else {
+    if (!this.play()) {
       this.controls.enableDamping = !calm;
       this.controls.update();
     }
@@ -1309,7 +1309,8 @@ export class IsleRenderer {
     }
     this.water.uniforms.uTime!.value = t;
     const swell = this.waterPath === "crystal" ? this.crystal?.swell : undefined;
-    this.oceanLife.step(dt, true, this.oceanViewport, swell ? (x, z) => swell(x, z, t).y : undefined);
+    // Analytic ocean poses follow elapsed visible time, even on slow frames; a motion resume excludes the paused interval.
+    this.oceanLife.step(resumedMotion ? 0 : this.clock.getDelta(), true, this.oceanViewport, swell ? (x, z) => swell(x, z, t).y : undefined);
     this.foam.material.opacity = 0.32 + 0.23 * (0.5 + 0.5 * Math.sin(t * 0.8));
     this.jellyT = t;
     // Title and lobby show a demo island: hold board-age stories (the ore climber) at 0 until play (#966).
