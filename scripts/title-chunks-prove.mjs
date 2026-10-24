@@ -86,6 +86,19 @@ try {
     check(await input.inputValue() === "AB" && await input.evaluate(el => el === document.activeElement), "mode arrival preserves Join text and focus");
     check(await page.getByTestId("open-mode-toggle").getAttribute("aria-pressed") === "false", "loaded mode remains Private by default");
   });
+  await controlled("OpenTables", false, async (page, release) => {
+    const hostButton = page.getByRole("button", { name: "Host a table", exact: true });
+    const node = await hostButton.elementHandle(); assert.ok(node);
+    const box = await hostButton.boundingBox(); assert.ok(box);
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.down();
+    release();
+    await page.getByTestId("open-mode-toggle").waitFor();
+    check(await node.evaluate(el => el.isConnected), "Host node survives optional mode arrival");
+    await page.mouse.up();
+    await page.waitForFunction(() => window.__emberisle.getState().screen === "lobby", null, { timeout: 4000 });
+    check(true, "module arrival between pointer down/up preserves the first Host tap");
+  });
   await controlled("OpenTables", false, async page => {
     await page.getByRole("button", { name: "Play", exact: true }).click();
     await page.waitForFunction(() => window.__emberisle.getState().screen === "play");

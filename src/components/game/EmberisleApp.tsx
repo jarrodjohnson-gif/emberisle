@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import { Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { HostTable, HowTo, Lobby, online, OpenTables, SetupPipHints, sheets, WayfarerOptions } from "@/components/game/chunks";
+import { OpenModeToggle, HowTo, Lobby, online, OpenTables, SetupPipHints, sheets, WayfarerOptions } from "@/components/game/chunks";
 import { Hud } from "@/components/game/Hud";
 import { PlaceList } from "@/components/game/PlaceList";
 import { TableRecoveryBoundary } from "@/components/game/TableRecoveryBoundary";
@@ -105,26 +105,18 @@ function stripLink() {
 }
 
 function Title() {
-  const setName = useGame((s) => s.setName);
-  const commitName = useGame((s) => s.commitName);
-  const setColor = useGame((s) => s.setColor);
-  const chooseWayfarer = useGame((s) => s.setWayfarerChoice);
-  const startAi = useGame((s) => s.startAi);
-  const startHotseat = useGame((s) => s.startHotseat);
-  const setHowTo = useGame((s) => s.setHowTo);
-  const joinTable = useGame((s) => s.joinTable);
-  const watchTable = useGame((s) => s.watchTable);
-  const peekTable = useGame((s) => s.peekTable);
   const name = useGame((s) => s.name);
   const color = useGame((s) => s.color);
   const choices = useGame((s) => s.wayfarerChoices);
   const rules = { ai: choices.ai ?? "on", online: choices.online ?? "on", hotseat: choices.hotseat ?? "on" };
+  const setHowTo = useGame.getState().setHowTo;
   const howTo = useGame((s) => s.howTo);
   const [join, setJoin] = useState("");
-  // Keep private hosting available while the optional open-table controls load or fail.
-  const host = <Button size="lg" variant="secondary" className="min-w-0 flex-1" onClick={() => useGame.getState().hostTable()}>Host a table</Button>;
+  const [openMode, setOpenMode] = useState(false);
+  const watchTable = useGame.getState().watchTable;
   // A ?watch= link makes Watch the primary button for this visit (docs/design/spectator.md).
   const [watchLink, setWatchLink] = useState(false);
+  const peekTable = useGame.getState().peekTable;
   const peekedCode = useGame((s) => s.code);
   const peekedSeats = useGame((s) => s.seats);
   const error = useGame((s) => s.error);
@@ -156,11 +148,10 @@ function Title() {
     const code = url.searchParams.get("code")?.toUpperCase();
     const watch = url.searchParams.get("watch")?.toUpperCase();
     if (code === undefined && watch === undefined) return;
-    const strip = stripLink;
     const fill = code ?? watch!;
-    if (!PEEK_CODE.test(fill)) return strip();
+    if (!PEEK_CODE.test(fill)) return stripLink();
     setJoin(fill);
-    void online.prefetch().then((ok) => ok && strip());
+    void online.prefetch().then((ok) => ok && stripLink());
     if (code === undefined) setWatchLink(true);
   }, []);
 
@@ -203,8 +194,8 @@ function Title() {
               </summary>
             <input
               value={name}
-              onChange={(e) => setName(e.target.value)}
-              onBlur={commitName}
+              onChange={(e) => useGame.getState().setName(e.target.value)}
+              onBlur={useGame.getState().commitName}
               placeholder="Your name"
               aria-label="Your name"
               className="mt-5 h-11 w-full rounded-[12px] border border-border bg-surface px-3 text-base text-fg"
@@ -219,7 +210,7 @@ function Title() {
                   aria-label={taken.includes(c) ? `${PLAYER_NAMES[i]} (taken)` : PLAYER_NAMES[i]}
                   title={taken.includes(c) ? `${PLAYER_NAMES[i]} (taken)` : PLAYER_NAMES[i]}
                   disabled={taken.includes(c)}
-                  onClick={() => setColor(c)}
+                  onClick={() => useGame.getState().setColor(c)}
                   className={cn("grid size-11 place-items-center rounded-control border-2 p-1 transition", taken.includes(c) && "cursor-not-allowed opacity-35")}
                   style={{ borderColor: !taken.includes(c) && color === c ? "#1c1915" : "transparent" }}
                 >
@@ -234,13 +225,13 @@ function Title() {
                 <span className="capitalize">Practice: {rules.ai} · Online: {rules.online} · Hotseat: {rules.hotseat}</span>
               </summary>
               <LazyBoundary failed={null}>
-                <WayfarerOptions rules={rules} choose={chooseWayfarer} />
+                <WayfarerOptions rules={rules} choose={useGame.getState().setWayfarerChoice} />
               </LazyBoundary>
             </details>
           </div>
           <div className="mt-2 flex flex-col gap-1">
             <div className="flex flex-col items-center gap-1">
-              <Button size="lg" variant={watchLink ? "secondary" : "primary"} className="w-full" onClick={startAi}>
+              <Button size="lg" variant={watchLink ? "secondary" : "primary"} className="w-full" onClick={useGame.getState().startAi}>
                 Play
               </Button>
               {/* #411: the offline button says what it is in one tiny muted line. */}
@@ -248,9 +239,15 @@ function Title() {
             </div>
             {/* #488: a pointer or focus on Host or Join fetches the online chunk (lobby and chat) before either is pressed. */}
             <div className="flex flex-wrap gap-x-2" onPointerEnter={online.prefetch} onFocus={online.prefetch}>
-              <LazyBoundary failed={host}>
-                <Suspense fallback={host}><HostTable /></Suspense>
-              </LazyBoundary>
+              <div className="relative flex flex-1 overflow-hidden rounded-control border border-control-line">
+                <Button size="lg" variant="secondary" className="mr-11 min-w-0 flex-1 rounded-none border-0 px-3"
+                  onClick={() => useGame.getState().hostTable(openMode ? "open" : undefined)}>
+                  Host a table
+                </Button>
+                <LazyBoundary failed={null}>
+                  <OpenModeToggle openMode={openMode} setOpenMode={setOpenMode} />
+                </LazyBoundary>
+              </div>
               <form
                 aria-label="Join code"
                 className="flex min-w-[11rem] flex-1 gap-2"
@@ -259,7 +256,7 @@ function Title() {
                   if (join.length !== 4) return;
                   // Enter does what the primary button does.
                   if (watchLink) watchTable(join);
-                  else joinTable(join);
+                  else useGame.getState().joinTable(join);
                 }}
               >
                 <input
@@ -306,7 +303,7 @@ function Title() {
               <OpenTables />
             </LazyBoundary>
             <div className="flex flex-wrap items-center justify-center">
-              <Button variant="ghost" className="px-3" title="Pass one device around" onClick={() => startHotseat(4)}>
+              <Button variant="ghost" className="px-3" title="Pass one device around" onClick={() => useGame.getState().startHotseat(4)}>
                 Four seats, one table
               </Button>
               <Button variant="ghost" className="px-3" onPointerEnter={sheets.prefetch} onFocus={sheets.prefetch} onClick={(e) => setHowTo(!howTo, e.currentTarget)}>

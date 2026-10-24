@@ -17,7 +17,7 @@ export const SeatBubbles = online.pick((m) => m.SeatBubbles);
 // #833: title-only list and mode controls share a lazy load; private Host/Join remain available in the index.
 const openTables = chunk(() => import("@/components/game/OpenTables"));
 export const OpenTables = openTables.pick((m) => m.OpenTables);
-export const HostTable = openTables.pick((m) => m.HostTable);
+export const OpenModeToggle = openTables.pick((m) => m.OpenModeToggle);
 export const SetupReference = chunk(() => import("@/components/game/SetupReference")).pick(m => m.SetupReference);
 export const WayfarerOptions = chunk(() => import("@/components/game/WayfarerOptions")).pick(m => m.WayfarerOptions);
 

@@ -87,31 +87,23 @@ export function OpenTables() {
   );
 }
 
-// Same approved split control, deferred with the optional title list; no title-only icons in the index.
-export function HostTable() {
-  const [openMode, setOpenMode] = useState(false);
+// The optional toggle never replaces the eager Host button under an in-flight press.
+export function OpenModeToggle({ openMode, setOpenMode }: {
+  openMode: boolean;
+  setOpenMode: (toggle: (old: boolean) => boolean) => void;
+}) {
   const VisibilityIcon = openMode ? Globe : Lock;
   return (
-    <div className="flex min-w-0 flex-1 overflow-hidden rounded-control border border-control-line">
-      <Button
-        size="lg"
-        variant="secondary"
-        className="min-w-0 flex-1 rounded-none border-0 px-3"
-        onClick={() => useGame.getState().hostTable(openMode ? "open" : "private")}
-      >
-        Host a table
-      </Button>
-      <Button
-        variant="ghost"
-        className="w-11 rounded-none border-l border-control-line px-0"
-        aria-pressed={openMode}
-        title={openMode ? "Anyone can join" : "Code needed"}
-        aria-label={openMode ? "Open to anyone" : "Private, code needed"}
-        data-testid="open-mode-toggle"
-        onClick={() => setOpenMode((m) => !m)}
-      >
-        <VisibilityIcon size={16} aria-hidden />
-      </Button>
-    </div>
+    <Button
+      variant="ghost"
+      className="absolute right-0 top-0 w-11 rounded-none border-l border-control-line px-0"
+      aria-pressed={openMode}
+      title={openMode ? "Anyone can join" : "Code needed"}
+      aria-label={openMode ? "Open to anyone" : "Private, code needed"}
+      data-testid="open-mode-toggle"
+      onClick={() => setOpenMode((m) => !m)}
+    >
+      <VisibilityIcon size={16} aria-hidden />
+    </Button>
   );
 }
