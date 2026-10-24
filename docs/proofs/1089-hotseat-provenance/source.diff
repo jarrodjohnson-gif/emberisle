@@ -1,0 +1,73 @@
+diff --git a/scripts/hotseat-prove.mjs b/scripts/hotseat-prove.mjs
+index 80ed885..b15035f 100644
+--- a/scripts/hotseat-prove.mjs
++++ b/scripts/hotseat-prove.mjs
+@@ -6,7 +6,7 @@
+ // #410: with the bank out of ore, the fortune tray's ore chip is greyed out (aria-disabled, described) and it cannot be picked (#423).
+ // #430: while p2 owes that discard on p0's turn the banner reads "{p2} — discard 4", not "{p2}'s turn", and p0's turn after.
+ // #412: a pick the bank empties while the tray is open is dropped and Play waits; an empty bank turns Plenty off.
+-import { existsSync } from "node:fs";
++import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+ import { chromium } from "playwright";
+ import { createServer } from "vite";
+ 
+@@ -30,11 +30,35 @@ try {
+   page.on("response", (r) => r.status() >= 400 && errors.push(`${r.status()} ${r.url()}`));
+   await page.addInitScript(() => {
+     window.__plays = [];
++    // #1089: collect provenance without changing input, playback, timer arguments or proof waits.
++    // Only the original Leave-sound failure emits these records.
++    window.__leaveTrace = [];
++    const note = (kind, data) => window.__leaveTrace.push({ kind, at: performance.now(), ...data });
++    for (const kind of ["pointerdown", "pointerup", "click", "keydown", "keyup"]) {
++      document.addEventListener(kind, (event) => {
++        const button = event.target.closest?.("button");
++        note("input", { event: kind, key: event.key, pointer: event.pointerType, trusted: event.isTrusted,
++          target: event.target.tagName, button: button?.textContent?.trim(), label: button?.getAttribute("aria-label") });
++      }, { capture: true, passive: true });
++    }
++    const later = window.setTimeout;
++    let pumpOrdinal = 0;
++    window.setTimeout = function (callback, ms, ...args) {
++      // The proof serves unminified source. This hook names only sound.ts's existing pump.
++      if (typeof callback !== "function" || callback.name !== "pump") return later.call(this, callback, ms, ...args);
++      const ordinal = ++pumpOrdinal, scheduled = performance.now();
++      note("pump-scheduled", { ordinal, ms, scheduled, stack: new Error().stack });
++      return later.call(this, function (...firedArgs) {
++        note("pump-fired", { ordinal, ms, scheduled, lateness: performance.now() - scheduled - ms });
++        return callback.apply(this, firedArgs);
++      }, ms, ...args);
++    };
+     const play = HTMLMediaElement.prototype.play;
+     HTMLMediaElement.prototype.play = function () {
+       // #814: the background music is music-prove's, not a table sound.
+       if (this.src.endsWith("/old_tower_inn_loop.mp3")) return play.call(this);
+       window.__plays.push(new URL(this.src).pathname);
++      note("audio", { ordinal: window.__plays.length, path: new URL(this.src).pathname, stack: new Error().stack });
+       return play.call(this);
+     };
+   });
+@@ -343,7 +367,22 @@ try {
+   await page.waitForFunction((n) => window.__plays.length > n, playsBeforeLeave, { timeout: 2000 }).catch(() => {});
+   const leavePlays = await page.evaluate((n) => window.__plays.slice(n), playsBeforeLeave);
+   console.log("Leave played", JSON.stringify(leavePlays));
+-  if (leavePlays.join() !== "/audio/click_001.wav") throw new Error(`Leave played ${JSON.stringify(leavePlays)}, not click_001.wav once`);
++  try {
++    if (leavePlays.join() !== "/audio/click_001.wav") throw new Error(`Leave played ${JSON.stringify(leavePlays)}, not click_001.wav once`);
++  } catch (failure) {
++    try {
++      const diagnostic = await page.evaluate(({ baseline, observed }) => ({
++        origin: performance.timeOrigin, at: performance.now(), baseline, observed,
++        quiet: { count: window.__quietN, at: window.__quietAt },
++        plays: window.__plays, trace: window.__leaveTrace,
++      }), { baseline: playsBeforeLeave, observed: leavePlays });
++      mkdirSync("test-results", { recursive: true });
++      writeFileSync("test-results/hotseat-leave-diagnostic.json", JSON.stringify(diagnostic, null, 2));
++      // Full history is in the uploaded artifact; keep the last 80 records readable in the job log.
++      console.error("hotseat-leave-diagnostic", JSON.stringify({ ...diagnostic, trace: diagnostic.trace.slice(-80) }));
++    } catch (diagnosticError) { console.error("hotseat-leave-diagnostic capture failed", diagnosticError); }
++    throw failure;
++  }
+ } catch (e) {
+   console.error("hotseat-prove failed:", e);
+   code = 1;

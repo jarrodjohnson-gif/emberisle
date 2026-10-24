@@ -1,0 +1,1280 @@
+{
+  "origin": 1792853537482.3,
+  "at": 7991.0999999940395,
+  "baseline": 21,
+  "observed": [
+    "/audio/scratch_001.wav",
+    "/audio/back_001.wav",
+    "/audio/click_001.wav"
+  ],
+  "quiet": {
+    "count": 21,
+    "at": 7251.5
+  },
+  "plays": [
+    "/audio/click_001.wav",
+    "/audio/click_001.wav",
+    "/audio/click_001.wav",
+    "/audio/click_001.wav",
+    "/audio/click_001.wav",
+    "/audio/error_001.wav",
+    "/audio/error_001.wav",
+    "/audio/click_001.wav",
+    "/audio/click_001.wav",
+    "/audio/click_001.wav",
+    "/audio/click_001.wav",
+    "/audio/click_001.wav",
+    "/audio/click_001.wav",
+    "/audio/click_001.wav",
+    "/audio/scratch_001.wav",
+    "/audio/click_001.wav",
+    "/audio/click_001.wav",
+    "/audio/click_001.wav",
+    "/audio/click_001.wav",
+    "/audio/click_001.wav",
+    "/audio/click_001.wav",
+    "/audio/scratch_001.wav",
+    "/audio/back_001.wav",
+    "/audio/click_001.wav"
+  ],
+  "trace": [
+    {
+      "kind": "input",
+      "at": 965.7999999821186,
+      "event": "pointerdown",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Four seats, one table",
+      "label": null
+    },
+    {
+      "kind": "audio",
+      "at": 970.5,
+      "ordinal": 1,
+      "path": "/audio/click_001.wav",
+      "stack": "Error\n    at HTMLMediaElement.play (<anonymous>:32:96)\n    at start (http://127.0.0.1:8096/src/lib/sound.ts:217:8)\n    at pump (http://127.0.0.1:8096/src/lib/sound.ts:195:2)\n    at play (http://127.0.0.1:8096/src/lib/sound.ts:232:15)\n    at press (http://127.0.0.1:8096/src/components/ui/button.tsx:25:77)\n    at onPointerDown (http://127.0.0.1:8096/src/components/ui/button.tsx:32:4)\n    at executeDispatch (http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:9906:5)\n    at runWithFiberInDEV (http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:944:66)\n    at processDispatchQueue (http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:9932:27)\n    at http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:10201:5"
+    },
+    {
+      "kind": "pump-scheduled",
+      "at": 970.6999999880791,
+      "ordinal": 1,
+      "ms": 150,
+      "scheduled": 970.5999999940395,
+      "stack": "Error\n    at window.setTimeout (<anonymous>:21:63)\n    at pump (http://127.0.0.1:8096/src/lib/sound.ts:196:2)\n    at play (http://127.0.0.1:8096/src/lib/sound.ts:232:15)\n    at press (http://127.0.0.1:8096/src/components/ui/button.tsx:25:77)\n    at onPointerDown (http://127.0.0.1:8096/src/components/ui/button.tsx:32:4)\n    at executeDispatch (http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:9906:5)\n    at runWithFiberInDEV (http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:944:66)\n    at processDispatchQueue (http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:9932:27)\n    at http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:10201:5\n    at batchedUpdates$1 (http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:2145:12)"
+    },
+    {
+      "kind": "input",
+      "at": 972.2999999821186,
+      "event": "pointerup",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Four seats, one table",
+      "label": null
+    },
+    {
+      "kind": "input",
+      "at": 972.5999999940395,
+      "event": "click",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Four seats, one table",
+      "label": null
+    },
+    {
+      "kind": "pump-fired",
+      "at": 1524.9000000059605,
+      "ordinal": 1,
+      "ms": 150,
+      "scheduled": 970.5999999940395,
+      "lateness": 404.30000001192093
+    },
+    {
+      "kind": "input",
+      "at": 2182.2999999821186,
+      "event": "pointerdown",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Roll",
+      "label": null
+    },
+    {
+      "kind": "audio",
+      "at": 2182.699999988079,
+      "ordinal": 2,
+      "path": "/audio/click_001.wav",
+      "stack": "Error\n    at HTMLMediaElement.play (<anonymous>:32:96)\n    at start (http://127.0.0.1:8096/src/lib/sound.ts:217:8)\n    at pump (http://127.0.0.1:8096/src/lib/sound.ts:195:2)\n    at play (http://127.0.0.1:8096/src/lib/sound.ts:232:15)\n    at press (http://127.0.0.1:8096/src/components/ui/button.tsx:25:77)\n    at onPointerDown (http://127.0.0.1:8096/src/components/ui/button.tsx:32:4)\n    at executeDispatch (http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:9906:5)\n    at runWithFiberInDEV (http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:944:66)\n    at processDispatchQueue (http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:9932:27)\n    at http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:10201:5"
+    },
+    {
+      "kind": "pump-scheduled",
+      "at": 2182.7999999821186,
+      "ordinal": 2,
+      "ms": 150,
+      "scheduled": 2182.699999988079,
+      "stack": "Error\n    at window.setTimeout (<anonymous>:21:63)\n    at pump (http://127.0.0.1:8096/src/lib/sound.ts:196:2)\n    at play (http://127.0.0.1:8096/src/lib/sound.ts:232:15)\n    at press (http://127.0.0.1:8096/src/components/ui/button.tsx:25:77)\n    at onPointerDown (http://127.0.0.1:8096/src/components/ui/button.tsx:32:4)\n    at executeDispatch (http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:9906:5)\n    at runWithFiberInDEV (http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:944:66)\n    at processDispatchQueue (http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:9932:27)\n    at http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:10201:5\n    at batchedUpdates$1 (http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:2145:12)"
+    },
+    {
+      "kind": "input",
+      "at": 2183.0999999940395,
+      "event": "pointerup",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Roll",
+      "label": null
+    },
+    {
+      "kind": "input",
+      "at": 2183.199999988079,
+      "event": "click",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Roll",
+      "label": null
+    },
+    {
+      "kind": "pump-fired",
+      "at": 2372.199999988079,
+      "ordinal": 2,
+      "ms": 150,
+      "scheduled": 2182.699999988079,
+      "lateness": 39.30000001192093
+    },
+    {
+      "kind": "input",
+      "at": 2417.9000000059605,
+      "event": "pointerdown",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Roll",
+      "label": null
+    },
+    {
+      "kind": "audio",
+      "at": 2418.4000000059605,
+      "ordinal": 3,
+      "path": "/audio/click_001.wav",
+      "stack": "Error\n    at HTMLMediaElement.play (<anonymous>:32:96)\n    at start (http://127.0.0.1:8096/src/lib/sound.ts:217:8)\n    at pump (http://127.0.0.1:8096/src/lib/sound.ts:195:2)\n    at play (http://127.0.0.1:8096/src/lib/sound.ts:232:15)\n    at press (http://127.0.0.1:8096/src/components/ui/button.tsx:25:77)\n    at onPointerDown (http://127.0.0.1:8096/src/components/ui/button.tsx:32:4)\n    at executeDispatch (http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:9906:5)\n    at runWithFiberInDEV (http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:944:66)\n    at processDispatchQueue (http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:9932:27)\n    at http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:10201:5"
+    },
+    {
+      "kind": "pump-scheduled",
+      "at": 2419.199999988079,
+      "ordinal": 3,
+      "ms": 150,
+      "scheduled": 2418.9000000059605,
+      "stack": "Error\n    at window.setTimeout (<anonymous>:21:63)\n    at pump (http://127.0.0.1:8096/src/lib/sound.ts:196:2)\n    at play (http://127.0.0.1:8096/src/lib/sound.ts:232:15)\n    at press (http://127.0.0.1:8096/src/components/ui/button.tsx:25:77)\n    at onPointerDown (http://127.0.0.1:8096/src/components/ui/button.tsx:32:4)\n    at executeDispatch (http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:9906:5)\n    at runWithFiberInDEV (http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:944:66)\n    at processDispatchQueue (http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:9932:27)\n    at http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:10201:5\n    at batchedUpdates$1 (http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:2145:12)"
+    },
+    {
+      "kind": "input",
+      "at": 2419.5,
+      "event": "pointerup",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Roll",
+      "label": null
+    },
+    {
+      "kind": "input",
+      "at": 2419.5999999940395,
+      "event": "click",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Roll",
+      "label": null
+    },
+    {
+      "kind": "pump-fired",
+      "at": 2569.4000000059605,
+      "ordinal": 3,
+      "ms": 150,
+      "scheduled": 2418.9000000059605,
+      "lateness": 0.5
+    },
+    {
+      "kind": "input",
+      "at": 2617.9000000059605,
+      "event": "pointerdown",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Roll",
+      "label": null
+    },
+    {
+      "kind": "audio",
+      "at": 2618.5,
+      "ordinal": 4,
+      "path": "/audio/click_001.wav",
+      "stack": "Error\n    at HTMLMediaElement.play (<anonymous>:32:96)\n    at start (http://127.0.0.1:8096/src/lib/sound.ts:217:8)\n    at pump (http://127.0.0.1:8096/src/lib/sound.ts:195:2)\n    at play (http://127.0.0.1:8096/src/lib/sound.ts:232:15)\n    at press (http://127.0.0.1:8096/src/components/ui/button.tsx:25:77)\n    at onPointerDown (http://127.0.0.1:8096/src/components/ui/button.tsx:32:4)\n    at executeDispatch (http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:9906:5)\n    at runWithFiberInDEV (http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:944:66)\n    at processDispatchQueue (http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:9932:27)\n    at http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:10201:5"
+    },
+    {
+      "kind": "pump-scheduled",
+      "at": 2618.5,
+      "ordinal": 4,
+      "ms": 150,
+      "scheduled": 2618.5,
+      "stack": "Error\n    at window.setTimeout (<anonymous>:21:63)\n    at pump (http://127.0.0.1:8096/src/lib/sound.ts:196:2)\n    at play (http://127.0.0.1:8096/src/lib/sound.ts:232:15)\n    at press (http://127.0.0.1:8096/src/components/ui/button.tsx:25:77)\n    at onPointerDown (http://127.0.0.1:8096/src/components/ui/button.tsx:32:4)\n    at executeDispatch (http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:9906:5)\n    at runWithFiberInDEV (http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:944:66)\n    at processDispatchQueue (http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:9932:27)\n    at http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:10201:5\n    at batchedUpdates$1 (http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:2145:12)"
+    },
+    {
+      "kind": "input",
+      "at": 2622.2999999821186,
+      "event": "pointerup",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Roll",
+      "label": null
+    },
+    {
+      "kind": "input",
+      "at": 2622.2999999821186,
+      "event": "click",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Roll",
+      "label": null
+    },
+    {
+      "kind": "input",
+      "at": 2755.699999988079,
+      "event": "pointerdown",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Roll",
+      "label": null
+    },
+    {
+      "kind": "input",
+      "at": 2756.0999999940395,
+      "event": "pointerup",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Roll",
+      "label": null
+    },
+    {
+      "kind": "input",
+      "at": 2756.0999999940395,
+      "event": "click",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Roll",
+      "label": null
+    },
+    {
+      "kind": "pump-fired",
+      "at": 2822.4000000059605,
+      "ordinal": 4,
+      "ms": 150,
+      "scheduled": 2618.5,
+      "lateness": 53.900000005960464
+    },
+    {
+      "kind": "audio",
+      "at": 2823.0999999940395,
+      "ordinal": 5,
+      "path": "/audio/click_001.wav",
+      "stack": "Error\n    at HTMLMediaElement.play (<anonymous>:32:96)\n    at start (http://127.0.0.1:8096/src/lib/sound.ts:217:8)\n    at pump (http://127.0.0.1:8096/src/lib/sound.ts:195:2)\n    at <anonymous>:24:25"
+    },
+    {
+      "kind": "pump-scheduled",
+      "at": 2823.199999988079,
+      "ordinal": 5,
+      "ms": 150,
+      "scheduled": 2823.199999988079,
+      "stack": "Error\n    at window.setTimeout (<anonymous>:21:63)\n    at pump (http://127.0.0.1:8096/src/lib/sound.ts:196:2)\n    at <anonymous>:24:25"
+    },
+    {
+      "kind": "pump-fired",
+      "at": 2973.2999999821186,
+      "ordinal": 5,
+      "ms": 150,
+      "scheduled": 2823.199999988079,
+      "lateness": 0.09999999403953552
+    },
+    {
+      "kind": "audio",
+      "at": 2973.5999999940395,
+      "ordinal": 6,
+      "path": "/audio/error_001.wav",
+      "stack": "Error\n    at HTMLMediaElement.play (<anonymous>:32:96)\n    at start (http://127.0.0.1:8096/src/lib/sound.ts:217:8)\n    at pump (http://127.0.0.1:8096/src/lib/sound.ts:195:2)\n    at <anonymous>:24:25"
+    },
+    {
+      "kind": "pump-scheduled",
+      "at": 2973.699999988079,
+      "ordinal": 6,
+      "ms": 150,
+      "scheduled": 2973.699999988079,
+      "stack": "Error\n    at window.setTimeout (<anonymous>:21:63)\n    at pump (http://127.0.0.1:8096/src/lib/sound.ts:196:2)\n    at <anonymous>:24:25"
+    },
+    {
+      "kind": "pump-fired",
+      "at": 3534.5,
+      "ordinal": 6,
+      "ms": 150,
+      "scheduled": 2973.699999988079,
+      "lateness": 410.80000001192093
+    },
+    {
+      "kind": "audio",
+      "at": 3534.5999999940395,
+      "ordinal": 7,
+      "path": "/audio/error_001.wav",
+      "stack": "Error\n    at HTMLMediaElement.play (<anonymous>:32:96)\n    at start (http://127.0.0.1:8096/src/lib/sound.ts:217:8)\n    at pump (http://127.0.0.1:8096/src/lib/sound.ts:195:2)\n    at <anonymous>:24:25"
+    },
+    {
+      "kind": "pump-scheduled",
+      "at": 3534.699999988079,
+      "ordinal": 7,
+      "ms": 150,
+      "scheduled": 3534.5999999940395,
+      "stack": "Error\n    at window.setTimeout (<anonymous>:21:63)\n    at pump (http://127.0.0.1:8096/src/lib/sound.ts:196:2)\n    at <anonymous>:24:25"
+    },
+    {
+      "kind": "pump-fired",
+      "at": 3744.5999999940395,
+      "ordinal": 7,
+      "ms": 150,
+      "scheduled": 3534.5999999940395,
+      "lateness": 60
+    },
+    {
+      "kind": "input",
+      "at": 3997.2999999821186,
+      "event": "pointerdown",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Discard",
+      "label": null
+    },
+    {
+      "kind": "audio",
+      "at": 3997.7999999821186,
+      "ordinal": 8,
+      "path": "/audio/click_001.wav",
+      "stack": "Error\n    at HTMLMediaElement.play (<anonymous>:32:96)\n    at start (http://127.0.0.1:8096/src/lib/sound.ts:217:8)\n    at pump (http://127.0.0.1:8096/src/lib/sound.ts:195:2)\n    at play (http://127.0.0.1:8096/src/lib/sound.ts:232:15)\n    at press (http://127.0.0.1:8096/src/components/ui/button.tsx:25:77)\n    at onPointerDown (http://127.0.0.1:8096/src/components/ui/button.tsx:32:4)\n    at executeDispatch (http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:9906:5)\n    at runWithFiberInDEV (http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:944:66)\n    at processDispatchQueue (http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:9932:27)\n    at http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:10201:5"
+    },
+    {
+      "kind": "pump-scheduled",
+      "at": 3998,
+      "ordinal": 8,
+      "ms": 150,
+      "scheduled": 3997.9000000059605,
+      "stack": "Error\n    at window.setTimeout (<anonymous>:21:63)\n    at pump (http://127.0.0.1:8096/src/lib/sound.ts:196:2)\n    at play (http://127.0.0.1:8096/src/lib/sound.ts:232:15)\n    at press (http://127.0.0.1:8096/src/components/ui/button.tsx:25:77)\n    at onPointerDown (http://127.0.0.1:8096/src/components/ui/button.tsx:32:4)\n    at executeDispatch (http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:9906:5)\n    at runWithFiberInDEV (http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:944:66)\n    at processDispatchQueue (http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:9932:27)\n    at http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:10201:5\n    at batchedUpdates$1 (http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:2145:12)"
+    },
+    {
+      "kind": "input",
+      "at": 3998.5999999940395,
+      "event": "pointerup",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Discard",
+      "label": null
+    },
+    {
+      "kind": "input",
+      "at": 3998.5999999940395,
+      "event": "click",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Discard",
+      "label": null
+    },
+    {
+      "kind": "pump-fired",
+      "at": 4153.699999988079,
+      "ordinal": 8,
+      "ms": 150,
+      "scheduled": 3997.9000000059605,
+      "lateness": 5.799999982118607
+    },
+    {
+      "kind": "input",
+      "at": 4214.4000000059605,
+      "event": "pointerdown",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Discard",
+      "label": null
+    },
+    {
+      "kind": "audio",
+      "at": 4215.299999982119,
+      "ordinal": 9,
+      "path": "/audio/click_001.wav",
+      "stack": "Error\n    at HTMLMediaElement.play (<anonymous>:32:96)\n    at start (http://127.0.0.1:8096/src/lib/sound.ts:217:8)\n    at pump (http://127.0.0.1:8096/src/lib/sound.ts:195:2)\n    at play (http://127.0.0.1:8096/src/lib/sound.ts:232:15)\n    at press (http://127.0.0.1:8096/src/components/ui/button.tsx:25:77)\n    at onPointerDown (http://127.0.0.1:8096/src/components/ui/button.tsx:32:4)\n    at executeDispatch (http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:9906:5)\n    at runWithFiberInDEV (http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:944:66)\n    at processDispatchQueue (http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:9932:27)\n    at http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:10201:5"
+    },
+    {
+      "kind": "pump-scheduled",
+      "at": 4215.9000000059605,
+      "ordinal": 9,
+      "ms": 150,
+      "scheduled": 4215.5999999940395,
+      "stack": "Error\n    at window.setTimeout (<anonymous>:21:63)\n    at pump (http://127.0.0.1:8096/src/lib/sound.ts:196:2)\n    at play (http://127.0.0.1:8096/src/lib/sound.ts:232:15)\n    at press (http://127.0.0.1:8096/src/components/ui/button.tsx:25:77)\n    at onPointerDown (http://127.0.0.1:8096/src/components/ui/button.tsx:32:4)\n    at executeDispatch (http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:9906:5)\n    at runWithFiberInDEV (http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:944:66)\n    at processDispatchQueue (http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:9932:27)\n    at http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:10201:5\n    at batchedUpdates$1 (http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:2145:12)"
+    },
+    {
+      "kind": "input",
+      "at": 4216.5999999940395,
+      "event": "pointerup",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Discard",
+      "label": null
+    },
+    {
+      "kind": "input",
+      "at": 4216.699999988079,
+      "event": "click",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Discard",
+      "label": null
+    },
+    {
+      "kind": "pump-fired",
+      "at": 4366,
+      "ordinal": 9,
+      "ms": 150,
+      "scheduled": 4215.5999999940395,
+      "lateness": 0.4000000059604645
+    },
+    {
+      "kind": "input",
+      "at": 4460,
+      "event": "pointerdown",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Discard",
+      "label": null
+    },
+    {
+      "kind": "audio",
+      "at": 4460.699999988079,
+      "ordinal": 10,
+      "path": "/audio/click_001.wav",
+      "stack": "Error\n    at HTMLMediaElement.play (<anonymous>:32:96)\n    at start (http://127.0.0.1:8096/src/lib/sound.ts:217:8)\n    at pump (http://127.0.0.1:8096/src/lib/sound.ts:195:2)\n    at play (http://127.0.0.1:8096/src/lib/sound.ts:232:15)\n    at press (http://127.0.0.1:8096/src/components/ui/button.tsx:25:77)\n    at onPointerDown (http://127.0.0.1:8096/src/components/ui/button.tsx:32:4)\n    at executeDispatch (http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:9906:5)\n    at runWithFiberInDEV (http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:944:66)\n    at processDispatchQueue (http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:9932:27)\n    at http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:10201:5"
+    },
+    {
+      "kind": "pump-scheduled",
+      "at": 4460.9000000059605,
+      "ordinal": 10,
+      "ms": 150,
+      "scheduled": 4460.799999982119,
+      "stack": "Error\n    at window.setTimeout (<anonymous>:21:63)\n    at pump (http://127.0.0.1:8096/src/lib/sound.ts:196:2)\n    at play (http://127.0.0.1:8096/src/lib/sound.ts:232:15)\n    at press (http://127.0.0.1:8096/src/components/ui/button.tsx:25:77)\n    at onPointerDown (http://127.0.0.1:8096/src/components/ui/button.tsx:32:4)\n    at executeDispatch (http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:9906:5)\n    at runWithFiberInDEV (http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:944:66)\n    at processDispatchQueue (http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:9932:27)\n    at http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:10201:5\n    at batchedUpdates$1 (http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:2145:12)"
+    },
+    {
+      "kind": "input",
+      "at": 4461.5,
+      "event": "pointerup",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Discard",
+      "label": null
+    },
+    {
+      "kind": "input",
+      "at": 4461.5999999940395,
+      "event": "click",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Discard",
+      "label": null
+    },
+    {
+      "kind": "pump-fired",
+      "at": 4611.0999999940395,
+      "ordinal": 10,
+      "ms": 150,
+      "scheduled": 4460.799999982119,
+      "lateness": 0.30000001192092896
+    },
+    {
+      "kind": "input",
+      "at": 5100.5,
+      "event": "pointerdown",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Play fortune · 1",
+      "label": "Play fortune, 1 held"
+    },
+    {
+      "kind": "audio",
+      "at": 5101.199999988079,
+      "ordinal": 11,
+      "path": "/audio/click_001.wav",
+      "stack": "Error\n    at HTMLMediaElement.play (<anonymous>:32:96)\n    at start (http://127.0.0.1:8096/src/lib/sound.ts:217:8)\n    at pump (http://127.0.0.1:8096/src/lib/sound.ts:195:2)\n    at play (http://127.0.0.1:8096/src/lib/sound.ts:232:15)\n    at press (http://127.0.0.1:8096/src/components/ui/button.tsx:25:77)\n    at onPointerDown (http://127.0.0.1:8096/src/components/ui/button.tsx:32:4)\n    at executeDispatch (http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:9906:5)\n    at runWithFiberInDEV (http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:944:66)\n    at processDispatchQueue (http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:9932:27)\n    at http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:10201:5"
+    },
+    {
+      "kind": "pump-scheduled",
+      "at": 5101.5,
+      "ordinal": 11,
+      "ms": 150,
+      "scheduled": 5101.4000000059605,
+      "stack": "Error\n    at window.setTimeout (<anonymous>:21:63)\n    at pump (http://127.0.0.1:8096/src/lib/sound.ts:196:2)\n    at play (http://127.0.0.1:8096/src/lib/sound.ts:232:15)\n    at press (http://127.0.0.1:8096/src/components/ui/button.tsx:25:77)\n    at onPointerDown (http://127.0.0.1:8096/src/components/ui/button.tsx:32:4)\n    at executeDispatch (http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:9906:5)\n    at runWithFiberInDEV (http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:944:66)\n    at processDispatchQueue (http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:9932:27)\n    at http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:10201:5\n    at batchedUpdates$1 (http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:2145:12)"
+    },
+    {
+      "kind": "input",
+      "at": 5104.699999988079,
+      "event": "pointerup",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Play fortune · 1",
+      "label": "Play fortune, 1 held"
+    },
+    {
+      "kind": "input",
+      "at": 5104.799999982119,
+      "event": "click",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Play fortune · 1",
+      "label": "Play fortune, 1 held"
+    },
+    {
+      "kind": "pump-fired",
+      "at": 5272.5,
+      "ordinal": 11,
+      "ms": 150,
+      "scheduled": 5101.4000000059605,
+      "lateness": 21.099999994039536
+    },
+    {
+      "kind": "input",
+      "at": 5397.5,
+      "event": "keydown",
+      "key": "Enter",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "",
+      "label": "Stone"
+    },
+    {
+      "kind": "input",
+      "at": 5398,
+      "event": "click",
+      "pointer": "",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "",
+      "label": "Stone"
+    },
+    {
+      "kind": "input",
+      "at": 5399.5999999940395,
+      "event": "keyup",
+      "key": "Enter",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "",
+      "label": "Stone"
+    },
+    {
+      "kind": "input",
+      "at": 5417.9000000059605,
+      "event": "pointerdown",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "path",
+      "button": "",
+      "label": "Stone"
+    },
+    {
+      "kind": "input",
+      "at": 5418.5999999940395,
+      "event": "pointerup",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "path",
+      "button": "",
+      "label": "Stone"
+    },
+    {
+      "kind": "input",
+      "at": 5418.699999988079,
+      "event": "click",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "path",
+      "button": "",
+      "label": "Stone"
+    },
+    {
+      "kind": "input",
+      "at": 5517.199999988079,
+      "event": "pointerdown",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "path",
+      "button": "",
+      "label": "Wheat"
+    },
+    {
+      "kind": "audio",
+      "at": 5517.5,
+      "ordinal": 12,
+      "path": "/audio/click_001.wav",
+      "stack": "Error\n    at HTMLMediaElement.play (<anonymous>:32:96)\n    at start (http://127.0.0.1:8096/src/lib/sound.ts:217:8)\n    at pump (http://127.0.0.1:8096/src/lib/sound.ts:195:2)\n    at play (http://127.0.0.1:8096/src/lib/sound.ts:232:15)\n    at press (http://127.0.0.1:8096/src/components/ui/button.tsx:25:77)\n    at onPointerDown (http://127.0.0.1:8096/src/components/ui/button.tsx:32:4)\n    at executeDispatch (http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:9906:5)\n    at runWithFiberInDEV (http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:944:66)\n    at processDispatchQueue (http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:9932:27)\n    at http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:10201:5"
+    },
+    {
+      "kind": "pump-scheduled",
+      "at": 5517.5999999940395,
+      "ordinal": 12,
+      "ms": 150,
+      "scheduled": 5517.5,
+      "stack": "Error\n    at window.setTimeout (<anonymous>:21:63)\n    at pump (http://127.0.0.1:8096/src/lib/sound.ts:196:2)\n    at play (http://127.0.0.1:8096/src/lib/sound.ts:232:15)\n    at press (http://127.0.0.1:8096/src/components/ui/button.tsx:25:77)\n    at onPointerDown (http://127.0.0.1:8096/src/components/ui/button.tsx:32:4)\n    at executeDispatch (http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:9906:5)\n    at runWithFiberInDEV (http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:944:66)\n    at processDispatchQueue (http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:9932:27)\n    at http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:10201:5\n    at batchedUpdates$1 (http://127.0.0.1:8096/node_modules/.vite/deps/react-dom_client.js?v=44fec517:2145:12)"
+    },
+    {
+      "kind": "input",
+      "at": 5518.5,
+      "event": "pointerup",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "path",
+      "button": "",
+      "label": "Wheat"
+    },
+    {
+      "kind": "input",
+      "at": 5518.5,
+      "event": "click",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "path",
+      "button": "",
+      "label": "Wheat"
+    },
+    {
+      "kind": "input",
+      "at": 5584.799999982119,
+      "event": "pointerdown",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "path",
+      "button": "",
+      "label": "Wheat, picked"
+    },
+    {
+      "kind": "input",
+      "at": 5585,
+      "event": "pointerup",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "path",
+      "button": "",
+      "label": "Wheat, picked"
+    },
+    {
+      "kind": "input",
+      "at": 5585,
+      "event": "click",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "path",
+      "button": "",
+      "label": "Wheat, picked"
+    },
+    {
+      "kind": "input",
+      "at": 5663.299999982119,
+      "event": "pointerdown",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Play",
+      "label": null
+    },
+    {
+      "kind": "input",
+      "at": 5663.799999982119,
+      "event": "pointerup",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Play",
+      "label": null
+    },
+    {
+      "kind": "input",
+      "at": 5663.9000000059605,
+      "event": "click",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Play",
+      "label": null
+    },
+    {
+      "kind": "pump-fired",
+      "at": 5792.4000000059605,
+      "ordinal": 12,
+      "ms": 150,
+      "scheduled": 5517.5,
+      "lateness": 124.90000000596046
+    },
+    {
+      "kind": "audio",
+      "at": 5792.5,
+      "ordinal": 13,
+      "path": "/audio/click_001.wav",
+      "stack": "Error\n    at HTMLMediaElement.play (<anonymous>:32:96)\n    at start (http://127.0.0.1:8096/src/lib/sound.ts:217:8)\n    at pump (http://127.0.0.1:8096/src/lib/sound.ts:195:2)\n    at <anonymous>:24:25"
+    },
+    {
+      "kind": "pump-scheduled",
+      "at": 5792.5,
+      "ordinal": 13,
+      "ms": 150,
+      "scheduled": 5792.5,
+      "stack": "Error\n    at window.setTimeout (<anonymous>:21:63)\n    at pump (http://127.0.0.1:8096/src/lib/sound.ts:196:2)\n    at <anonymous>:24:25"
+    },
+    {
+      "kind": "input",
+      "at": 5920.5999999940395,
+      "event": "pointerdown",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Play fortune · 1",
+      "label": "Play fortune, 1 held"
+    },
+    {
+      "kind": "input",
+      "at": 5921,
+      "event": "pointerup",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Play fortune · 1",
+      "label": "Play fortune, 1 held"
+    },
+    {
+      "kind": "input",
+      "at": 5921.0999999940395,
+      "event": "click",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Play fortune · 1",
+      "label": "Play fortune, 1 held"
+    },
+    {
+      "kind": "pump-fired",
+      "at": 5970.699999988079,
+      "ordinal": 13,
+      "ms": 150,
+      "scheduled": 5792.5,
+      "lateness": 28.19999998807907
+    },
+    {
+      "kind": "audio",
+      "at": 5970.9000000059605,
+      "ordinal": 14,
+      "path": "/audio/click_001.wav",
+      "stack": "Error\n    at HTMLMediaElement.play (<anonymous>:32:96)\n    at start (http://127.0.0.1:8096/src/lib/sound.ts:217:8)\n    at pump (http://127.0.0.1:8096/src/lib/sound.ts:195:2)\n    at <anonymous>:24:25"
+    },
+    {
+      "kind": "pump-scheduled",
+      "at": 5971,
+      "ordinal": 14,
+      "ms": 150,
+      "scheduled": 5971,
+      "stack": "Error\n    at window.setTimeout (<anonymous>:21:63)\n    at pump (http://127.0.0.1:8096/src/lib/sound.ts:196:2)\n    at <anonymous>:24:25"
+    },
+    {
+      "kind": "pump-fired",
+      "at": 6121.0999999940395,
+      "ordinal": 14,
+      "ms": 150,
+      "scheduled": 5971,
+      "lateness": 0.09999999403953552
+    },
+    {
+      "kind": "audio",
+      "at": 6121.199999988079,
+      "ordinal": 15,
+      "path": "/audio/scratch_001.wav",
+      "stack": "Error\n    at HTMLMediaElement.play (<anonymous>:32:96)\n    at start (http://127.0.0.1:8096/src/lib/sound.ts:217:8)\n    at pump (http://127.0.0.1:8096/src/lib/sound.ts:195:2)\n    at <anonymous>:24:25"
+    },
+    {
+      "kind": "pump-scheduled",
+      "at": 6121.299999982119,
+      "ordinal": 15,
+      "ms": 150,
+      "scheduled": 6121.299999982119,
+      "stack": "Error\n    at window.setTimeout (<anonymous>:21:63)\n    at pump (http://127.0.0.1:8096/src/lib/sound.ts:196:2)\n    at <anonymous>:24:25"
+    },
+    {
+      "kind": "input",
+      "at": 6256.4000000059605,
+      "event": "pointerdown",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "path",
+      "button": "",
+      "label": "Wood"
+    },
+    {
+      "kind": "input",
+      "at": 6257.0999999940395,
+      "event": "pointerup",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "path",
+      "button": "",
+      "label": "Wood"
+    },
+    {
+      "kind": "input",
+      "at": 6257.199999988079,
+      "event": "click",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "path",
+      "button": "",
+      "label": "Wood"
+    },
+    {
+      "kind": "pump-fired",
+      "at": 6271.299999982119,
+      "ordinal": 15,
+      "ms": 150,
+      "scheduled": 6121.299999982119,
+      "lateness": 0
+    },
+    {
+      "kind": "audio",
+      "at": 6272.299999982119,
+      "ordinal": 16,
+      "path": "/audio/click_001.wav",
+      "stack": "Error\n    at HTMLMediaElement.play (<anonymous>:32:96)\n    at start (http://127.0.0.1:8096/src/lib/sound.ts:217:8)\n    at pump (http://127.0.0.1:8096/src/lib/sound.ts:195:2)\n    at <anonymous>:24:25"
+    },
+    {
+      "kind": "pump-scheduled",
+      "at": 6272.4000000059605,
+      "ordinal": 16,
+      "ms": 150,
+      "scheduled": 6272.4000000059605,
+      "stack": "Error\n    at window.setTimeout (<anonymous>:21:63)\n    at pump (http://127.0.0.1:8096/src/lib/sound.ts:196:2)\n    at <anonymous>:24:25"
+    },
+    {
+      "kind": "input",
+      "at": 6314.199999988079,
+      "event": "pointerdown",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "path",
+      "button": "",
+      "label": "Wood, picked"
+    },
+    {
+      "kind": "input",
+      "at": 6314.4000000059605,
+      "event": "pointerup",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "path",
+      "button": "",
+      "label": "Wood, picked"
+    },
+    {
+      "kind": "input",
+      "at": 6314.5,
+      "event": "click",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "path",
+      "button": "",
+      "label": "Wood, picked"
+    },
+    {
+      "kind": "pump-fired",
+      "at": 6450.9000000059605,
+      "ordinal": 16,
+      "ms": 150,
+      "scheduled": 6272.4000000059605,
+      "lateness": 28.5
+    },
+    {
+      "kind": "audio",
+      "at": 6451.5,
+      "ordinal": 17,
+      "path": "/audio/click_001.wav",
+      "stack": "Error\n    at HTMLMediaElement.play (<anonymous>:32:96)\n    at start (http://127.0.0.1:8096/src/lib/sound.ts:217:8)\n    at pump (http://127.0.0.1:8096/src/lib/sound.ts:195:2)\n    at <anonymous>:24:25"
+    },
+    {
+      "kind": "pump-scheduled",
+      "at": 6451.5999999940395,
+      "ordinal": 17,
+      "ms": 150,
+      "scheduled": 6451.5999999940395,
+      "stack": "Error\n    at window.setTimeout (<anonymous>:21:63)\n    at pump (http://127.0.0.1:8096/src/lib/sound.ts:196:2)\n    at <anonymous>:24:25"
+    },
+    {
+      "kind": "input",
+      "at": 6464.699999988079,
+      "event": "pointerdown",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "svg",
+      "button": "",
+      "label": "Brick"
+    },
+    {
+      "kind": "input",
+      "at": 6465.699999988079,
+      "event": "pointerup",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "svg",
+      "button": "",
+      "label": "Brick"
+    },
+    {
+      "kind": "input",
+      "at": 6465.799999982119,
+      "event": "click",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "svg",
+      "button": "",
+      "label": "Brick"
+    },
+    {
+      "kind": "input",
+      "at": 6514.4000000059605,
+      "event": "pointerdown",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "svg",
+      "button": "",
+      "label": "Brick, picked"
+    },
+    {
+      "kind": "input",
+      "at": 6514.9000000059605,
+      "event": "pointerup",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "svg",
+      "button": "",
+      "label": "Brick, picked"
+    },
+    {
+      "kind": "input",
+      "at": 6514.9000000059605,
+      "event": "click",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "svg",
+      "button": "",
+      "label": "Brick, picked"
+    },
+    {
+      "kind": "input",
+      "at": 6608.199999988079,
+      "event": "pointerdown",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Play",
+      "label": null
+    },
+    {
+      "kind": "input",
+      "at": 6610.5,
+      "event": "pointerup",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Play",
+      "label": null
+    },
+    {
+      "kind": "input",
+      "at": 6610.5999999940395,
+      "event": "click",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Play",
+      "label": null
+    },
+    {
+      "kind": "pump-fired",
+      "at": 6785,
+      "ordinal": 17,
+      "ms": 150,
+      "scheduled": 6451.5999999940395,
+      "lateness": 183.40000000596046
+    },
+    {
+      "kind": "audio",
+      "at": 6785.5999999940395,
+      "ordinal": 18,
+      "path": "/audio/click_001.wav",
+      "stack": "Error\n    at HTMLMediaElement.play (<anonymous>:32:96)\n    at start (http://127.0.0.1:8096/src/lib/sound.ts:217:8)\n    at pump (http://127.0.0.1:8096/src/lib/sound.ts:195:2)\n    at <anonymous>:24:25"
+    },
+    {
+      "kind": "pump-scheduled",
+      "at": 6785.699999988079,
+      "ordinal": 18,
+      "ms": 150,
+      "scheduled": 6785.699999988079,
+      "stack": "Error\n    at window.setTimeout (<anonymous>:21:63)\n    at pump (http://127.0.0.1:8096/src/lib/sound.ts:196:2)\n    at <anonymous>:24:25"
+    },
+    {
+      "kind": "pump-fired",
+      "at": 6935.799999982119,
+      "ordinal": 18,
+      "ms": 150,
+      "scheduled": 6785.699999988079,
+      "lateness": 0.09999999403953552
+    },
+    {
+      "kind": "audio",
+      "at": 6936.0999999940395,
+      "ordinal": 19,
+      "path": "/audio/click_001.wav",
+      "stack": "Error\n    at HTMLMediaElement.play (<anonymous>:32:96)\n    at start (http://127.0.0.1:8096/src/lib/sound.ts:217:8)\n    at pump (http://127.0.0.1:8096/src/lib/sound.ts:195:2)\n    at <anonymous>:24:25"
+    },
+    {
+      "kind": "pump-scheduled",
+      "at": 6936.199999988079,
+      "ordinal": 19,
+      "ms": 150,
+      "scheduled": 6936.199999988079,
+      "stack": "Error\n    at window.setTimeout (<anonymous>:21:63)\n    at pump (http://127.0.0.1:8096/src/lib/sound.ts:196:2)\n    at <anonymous>:24:25"
+    },
+    {
+      "kind": "input",
+      "at": 6961.299999982119,
+      "event": "pointerdown",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Play fortune · 1",
+      "label": "Play fortune, 1 held"
+    },
+    {
+      "kind": "input",
+      "at": 6961.9000000059605,
+      "event": "pointerup",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Play fortune · 1",
+      "label": "Play fortune, 1 held"
+    },
+    {
+      "kind": "input",
+      "at": 6961.9000000059605,
+      "event": "click",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Play fortune · 1",
+      "label": "Play fortune, 1 held"
+    },
+    {
+      "kind": "input",
+      "at": 7055.799999982119,
+      "event": "keydown",
+      "key": "Escape",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "",
+      "label": "Close"
+    },
+    {
+      "kind": "input",
+      "at": 7084.9000000059605,
+      "event": "keyup",
+      "key": "Escape",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Play fortune · 1",
+      "label": "Play fortune, 1 held"
+    },
+    {
+      "kind": "pump-fired",
+      "at": 7091.9000000059605,
+      "ordinal": 19,
+      "ms": 150,
+      "scheduled": 6936.199999988079,
+      "lateness": 5.700000017881393
+    },
+    {
+      "kind": "audio",
+      "at": 7092.199999988079,
+      "ordinal": 20,
+      "path": "/audio/click_001.wav",
+      "stack": "Error\n    at HTMLMediaElement.play (<anonymous>:32:96)\n    at start (http://127.0.0.1:8096/src/lib/sound.ts:217:8)\n    at pump (http://127.0.0.1:8096/src/lib/sound.ts:195:2)\n    at <anonymous>:24:25"
+    },
+    {
+      "kind": "pump-scheduled",
+      "at": 7092.299999982119,
+      "ordinal": 20,
+      "ms": 150,
+      "scheduled": 7092.299999982119,
+      "stack": "Error\n    at window.setTimeout (<anonymous>:21:63)\n    at pump (http://127.0.0.1:8096/src/lib/sound.ts:196:2)\n    at <anonymous>:24:25"
+    },
+    {
+      "kind": "input",
+      "at": 7131.4000000059605,
+      "event": "pointerdown",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "circle",
+      "button": "",
+      "label": "Table menu"
+    },
+    {
+      "kind": "input",
+      "at": 7131.9000000059605,
+      "event": "pointerup",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "circle",
+      "button": "",
+      "label": "Table menu"
+    },
+    {
+      "kind": "input",
+      "at": 7131.9000000059605,
+      "event": "click",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "circle",
+      "button": "",
+      "label": "Table menu"
+    },
+    {
+      "kind": "pump-fired",
+      "at": 7250.699999988079,
+      "ordinal": 20,
+      "ms": 150,
+      "scheduled": 7092.299999982119,
+      "lateness": 8.400000005960464
+    },
+    {
+      "kind": "audio",
+      "at": 7251.299999982119,
+      "ordinal": 21,
+      "path": "/audio/click_001.wav",
+      "stack": "Error\n    at HTMLMediaElement.play (<anonymous>:32:96)\n    at start (http://127.0.0.1:8096/src/lib/sound.ts:217:8)\n    at pump (http://127.0.0.1:8096/src/lib/sound.ts:195:2)\n    at <anonymous>:24:25"
+    },
+    {
+      "kind": "pump-scheduled",
+      "at": 7251.299999982119,
+      "ordinal": 21,
+      "ms": 150,
+      "scheduled": 7251.299999982119,
+      "stack": "Error\n    at window.setTimeout (<anonymous>:21:63)\n    at pump (http://127.0.0.1:8096/src/lib/sound.ts:196:2)\n    at <anonymous>:24:25"
+    },
+    {
+      "kind": "pump-fired",
+      "at": 7702.699999988079,
+      "ordinal": 21,
+      "ms": 150,
+      "scheduled": 7251.299999982119,
+      "lateness": 301.40000000596046
+    },
+    {
+      "kind": "audio",
+      "at": 7704.799999982119,
+      "ordinal": 22,
+      "path": "/audio/scratch_001.wav",
+      "stack": "Error\n    at HTMLMediaElement.play (<anonymous>:32:96)\n    at start (http://127.0.0.1:8096/src/lib/sound.ts:217:8)\n    at pump (http://127.0.0.1:8096/src/lib/sound.ts:195:2)\n    at <anonymous>:24:25"
+    },
+    {
+      "kind": "pump-scheduled",
+      "at": 7704.799999982119,
+      "ordinal": 22,
+      "ms": 150,
+      "scheduled": 7704.799999982119,
+      "stack": "Error\n    at window.setTimeout (<anonymous>:21:63)\n    at pump (http://127.0.0.1:8096/src/lib/sound.ts:196:2)\n    at <anonymous>:24:25"
+    },
+    {
+      "kind": "input",
+      "at": 7764.5999999940395,
+      "event": "pointerdown",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Leave table",
+      "label": null
+    },
+    {
+      "kind": "audio",
+      "at": 7768.199999988079,
+      "ordinal": 23,
+      "path": "/audio/back_001.wav",
+      "stack": "Error\n    at HTMLMediaElement.play (<anonymous>:32:96)\n    at HTMLDocument.controlledLeaveExtraClip (<anonymous>:6:15)"
+    },
+    {
+      "kind": "input",
+      "at": 7768.199999988079,
+      "event": "pointerup",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Leave table",
+      "label": null
+    },
+    {
+      "kind": "input",
+      "at": 7768.299999982119,
+      "event": "click",
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Leave table",
+      "label": null
+    },
+    {
+      "kind": "pump-fired",
+      "at": 7856.9000000059605,
+      "ordinal": 22,
+      "ms": 150,
+      "scheduled": 7704.799999982119,
+      "lateness": 2.100000023841858
+    },
+    {
+      "kind": "audio",
+      "at": 7857.199999988079,
+      "ordinal": 24,
+      "path": "/audio/click_001.wav",
+      "stack": "Error\n    at HTMLMediaElement.play (<anonymous>:32:96)\n    at start (http://127.0.0.1:8096/src/lib/sound.ts:217:8)\n    at pump (http://127.0.0.1:8096/src/lib/sound.ts:195:2)\n    at <anonymous>:24:25"
+    },
+    {
+      "kind": "pump-scheduled",
+      "at": 7857.199999988079,
+      "ordinal": 23,
+      "ms": 150,
+      "scheduled": 7857.199999988079,
+      "stack": "Error\n    at window.setTimeout (<anonymous>:21:63)\n    at pump (http://127.0.0.1:8096/src/lib/sound.ts:196:2)\n    at <anonymous>:24:25"
+    }
+  ]
+}
