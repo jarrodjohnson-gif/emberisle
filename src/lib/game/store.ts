@@ -122,16 +122,17 @@ export function hear(before: GameState | null, after: GameState, me: string, mod
   const lost = mode !== "hotseat" && me !== "" && !!after.winner && after.winner !== me;
   const victim =
     mode !== "hotseat" && !!before && before.current !== me && after.vertices.some((v) => v.building?.playerId === me && v.hexes.includes(after.robberHex));
+  const cue = haptics.player?.(before, after, me, mode) ?? play;
   for (const [sound, volume] of soundsFor(before, after, mode === "hotseat" || after.current === me, victim, lost)) {
     // A piece knocks when it lands, not when it is picked (#438); reduced motion has no fall, so it knocks at once.
     const land = sound in LAND_MS && !calmMotion() ? LAND_MS[sound as keyof typeof LAND_MS] : 0;
     if (land) {
       const t = setTimeout(() => {
         knocks.delete(t);
-        play(sound, volume);
+        cue(sound, volume);
       }, land);
       knocks.add(t);
-    } else play(sound, volume);
+    } else cue(sound, volume);
   }
   // A new game (the lobby's Start, a rematch): the sting plays once, for a seat; the first roll cuts it off.
   // Keyed on the board: a bot may already have rolled first (seq > 0), and a reconnect into setup must not replay it.
@@ -150,7 +151,7 @@ export function hear(before: GameState | null, after: GameState, me: string, mod
     for (const _ of reached) play("match_point", MUSIC_VOLUME);
     if (reached[0]) matchLine = `${reached[0].name} reached ${publicVP(after, reached[0].id)} points — one to win`;
   }
-  if (mode !== "hotseat" && after.current === me && after.phase !== "over" && (reconnect || (before && before.current !== me))) yourTurn();
+  if (mode !== "hotseat" && after.current === me && after.phase !== "over" && (reconnect || (before && before.current !== me))) cue("your_turn");
 }
 
 // The game log the dock shows (#305): a line of `state.log` or a host `log` message, stamped when this browser saw it.
@@ -210,7 +211,7 @@ import { PLAYER_COLORS, RESOURCES, type Action, type BuildMode, type GameState, 
 import { connectTable, hostUrl, type Bag, type ChatLine, type Legal, type Me, type Reaction, type Seat, type TableClient } from "@/lib/net/table";
 import { PROTO } from "@/lib/net/proto";
 import { readMutedSeats } from "@/lib/muted-seats";
-import { MEME_VOLUME, MUSIC_VOLUME, play, playLater, SOUNDBOARD, stop, yourTurn, type SoundName } from "@/lib/sound";
+import { MEME_VOLUME, MUSIC_VOLUME, haptics, play, playLater, SOUNDBOARD, stop, type SoundName } from "@/lib/sound";
 import { calmMotion, LAND_MS } from "@/lib/scene/landing";
 import type { WaterPath, WaterStatus } from "@/lib/scene/crystal-water";
 import type { PlayView } from "@/lib/scene/mobile-fit";
