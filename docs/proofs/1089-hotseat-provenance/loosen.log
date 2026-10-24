@@ -14,4 +14,4 @@ ok   self-test: a fail() that no longer sets exitCode 1 fails
 ok   self-test: an added process.exit(0) fails
 ok   self-test: an added process.exit() fails
 ok   self-test: a new .skip fails
-loosen-prove: 1 changed proof(s) against 5bb959c41a69, none loosened
+loosen-prove: 1 changed proof(s) against 672a54f, none loosened

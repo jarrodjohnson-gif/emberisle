@@ -1,6 +1,6 @@
 from pathlib import Path
 import subprocess
-base = subprocess.check_output(["git", "show", "5bb959c:scripts/hotseat-prove.mjs"], text=True).splitlines()
+base = subprocess.check_output(["git", "show", "672a54f:scripts/hotseat-prove.mjs"], text=True).splitlines()
 head = Path("scripts/hotseat-prove.mjs").read_text().splitlines()
 pos = 0
 for line in base:

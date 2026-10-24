@@ -1,21 +1,17 @@
 {
-  "normal": 0,
+  "normal_exit": 0,
   "controlled_exit": 1,
-  "baseline": 21,
+  "baseline": 24,
   "observed": [
-    "/audio/scratch_001.wav",
     "/audio/back_001.wav",
+    "/audio/click_001.wav",
     "/audio/click_001.wav"
   ],
-  "records": 140,
-  "audio_starts": 24,
-  "pump_scheduled": 23,
-  "pump_fired": 22,
-  "controlled_clip_after_native_pointerup_ms": 0.0,
-  "all_audio_ordinals_paths_match": true,
-  "native_leave_events": [
-    "pointerdown",
-    "pointerup",
-    "click"
-  ]
+  "trace_records": 150,
+  "audio_starts": 27,
+  "pump_scheduled": 26,
+  "pump_fired": 25,
+  "audio_and_pump_stack_count": 0,
+  "leave_click_stack_count": 1,
+  "all_metadata_checks_passed": true
 }
