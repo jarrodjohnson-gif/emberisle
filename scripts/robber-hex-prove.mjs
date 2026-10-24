@@ -219,7 +219,7 @@ try {
         disc: disc?.material.color.getHexString() ?? null,
         label: label?.material.color.getHexString() ?? null,
         restDisc: disc?.material.userData.rest?.getHexString?.() ?? null,
-        background, lightInk, faceHash,
+        background, lightInk, faceHash, textureId: label?.material.map.uuid,
       };
     };
     const place = (hexId) => {
