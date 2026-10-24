@@ -9,6 +9,7 @@ marker, = [x for x in d["trace"] if x["kind"] == "controlled-extra"]
 controlled = next(x for x in audio if x["ordinal"] == marker["ordinal"])
 assert controlled["path"] == marker["path"] == "/audio/back_001.wav"
 assert controlled["at"] >= marker["at"]
+assert d["baseline"] < marker["ordinal"] <= d["baseline"] + len(d["observed"])
 native = [x for x in d["trace"] if x["kind"] == "input" and x.get("button") == "Leave table" and x.get("trusted")]
 assert {"pointerdown", "pointerup", "click"} <= {x["event"] for x in native}
 up = next(x for x in native if x["event"] == "pointerup")
