@@ -32,8 +32,8 @@ Sizes: **390x844, 844x390, 1280x720** for every mock.
 ## Inputs (read these, do not redo them)
 
 - Design laws v1, Apple notes, builder and reviewer checklists, open questions: `docs/design/app-review/laws/design-laws.md`, `apple-notes.md`, `open-questions.md` in this repo. The laws are a **draft** until Jarrod votes. Follow them, and mark any mock choice that depends on an unvoted law with its number.
-- Current captures at all three sizes (title, lobby, table, results) and the dice jump measurements: `scratchpad/current/` (cur-*.png, dice-measure.json). The dock jumps 170 px portrait / 198 px landscape; the dock fix v2 mock is on the review page.
-- Your earlier 36 frames: `scratchpad/current/gal/` (opt01 to opt03).
+- Current screens: run the app (`npm run dev`) or use the images the owner passes you. The dock jumps 170 px portrait / 198 px landscape when the dice are rolled (measured in #971).
+- Your earlier 36 frames (options 1 to 3 for title, lobby, table and results at 390, 844 and 1280): the owner has them in `emberisle-903-offline.html` and sends the three option-3 frames (title, lobby, table, results) with this brief. Option 3 is the title layout the owner prefers for landscape phones.
 - Repo: `docs/DECISIONS.md` (read first; owner decisions beat everything), `docs/design/polish.md` (north star Offsuit x Catan, island is the hero), `docs/design/ux-review-2026-10.md`, `docs/design/jelly-ocean.md`, the audit in `docs/design/hud-pass/v2/` (69 measured views).
 
 ## Hard constraints (do not break; if a mock must, name the conflict)
