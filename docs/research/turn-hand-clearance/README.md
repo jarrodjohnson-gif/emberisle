@@ -59,8 +59,20 @@ gap. The negative control initially ran against untouched main source in the
 fresh verification clone, before copying the implementation; it exited1 on the
 geometry assertions, with zero browser errors. The fixed run exited0.
 
-Full unchanged turn/gain and final static/build/size results are recorded alongside
-this note when validation completes. Local runtime is Node24.19, Playwright's
+Validation at `c6acbca` in the fresh installed verification clone passed:
+
+- `npm run stage-prove`: all24 checks, no browser errors (old source exits1).
+- Full unchanged `npm run turn-gain-prove`: all four viewport, reduced-motion,
+  hotseat and reconnect checks pass; zero console errors.
+- `npm run typecheck`, build, registered-prove131, loosen-prove0 changed proofs,
+  source/registration audit and size against freshly built main`f334d47` pass.
+- Index125191 B versus125189 B base (+2/400 B), ceiling125200 B; moments4122 B
+  versus4090 B (+32/200 B). Every existing budget is unchanged.
+
+Logs are adjacent. The full browser run used the same runtime/proof/registration
+bytes before the unrelated main hotseat-proof merge; a content comparison at
+`c6acbca` confirms those bytes unchanged. Final stage/static checks ran after that
+normal main merge. Local runtime is Node24.19, Playwright's
 installed Chromium with SwiftShader for the full game proof; CI uses its own
 configured Node version. These local runs do not claim CI acceptance.
 
