@@ -36,7 +36,7 @@ function rollOffLine(before: GameState | null, after: GameState) {
 function soundsFor(before: GameState | null, after: GameState, mine: boolean, victim = false, lost = false): [SoundName, number][] {
   if (!before) return [];
   // The winner keeps the win sound; every other seat at the table gets the loss sting.
-  if (after.winner && !before.winner) return [lost ? ["game_lose", MUSIC_VOLUME] : ["win", 1]];
+  if (after.winner && !before.winner) return [lost ? ["game_lose", 1] : ["win", 1]];
   const out: [SoundName, number][] = [];
   const built = (s: GameState, kind: "outpost" | "stronghold") => s.vertices.filter((v) => v.building?.kind === kind).length;
   const paths = (s: GameState) => s.edges.filter((e) => e.path).length;
@@ -51,7 +51,7 @@ function soundsFor(before: GameState | null, after: GameState, mine: boolean, vi
   const sameGame = before.phase !== "over" && after.turn >= before.turn && after.hexes.every((h, i) => h.terrain === before.hexes[i]?.terrain);
   // The one set against (a piece on the new hex) hears robbed_fah in its place; everyone else keeps the usual cue.
   // One point from the target, by public points only (a held point fortune is never counted, so it cannot leak). Once per player.
-  if (sameGame && after.robberHex !== before.robberHex) out.push(victim ? ["robbed_fah", MEME_VOLUME] : ["wayfarer_move", 1]);
+  if (sameGame && after.robberHex !== before.robberHex) out.push(victim ? ["robbed_fah", 1] : ["wayfarer_move", 1]);
   return out;
 }
 
@@ -122,35 +122,36 @@ export function hear(before: GameState | null, after: GameState, me: string, mod
   const lost = mode !== "hotseat" && me !== "" && !!after.winner && after.winner !== me;
   const victim =
     mode !== "hotseat" && !!before && before.current !== me && after.vertices.some((v) => v.building?.playerId === me && v.hexes.includes(after.robberHex));
+  const cue = haptics.player?.(before, after, me, mode) ?? play;
   for (const [sound, volume] of soundsFor(before, after, mode === "hotseat" || after.current === me, victim, lost)) {
     // A piece knocks when it lands, not when it is picked (#438); reduced motion has no fall, so it knocks at once.
     const land = sound in LAND_MS && !calmMotion() ? LAND_MS[sound as keyof typeof LAND_MS] : 0;
     if (land) {
       const t = setTimeout(() => {
         knocks.delete(t);
-        play(sound, volume);
+        cue(sound, volume);
       }, land);
       knocks.add(t);
-    } else play(sound, volume);
+    } else cue(sound, volume);
   }
   // A new game (the lobby's Start, a rematch): the sting plays once, for a seat; the first roll cuts it off.
   // Keyed on the board: a bot may already have rolled first (seq > 0), and a reconnect into setup must not replay it.
   if (mode === "online" && me && (!before || before.phase === "over") && (after.phase === "rollOff" || after.phase === "setupSettle") && startedSig() !== gameSig(after)) {
     rememberStart(gameSig(after));
-    play("game_start", MUSIC_VOLUME);
+    play("game_start");
   }
   if (before?.phase === "over" && after.phase !== "over") stopEndMusic();
   if (mode !== "hotseat" && me && before && before.phase !== "over" && after.phase === "over" && after.winner) {
     stopEndMusic();
-    playLater("end_music", MUSIC_VOLUME, END_MUSIC_DELAY_MS);
+    playLater("end_music", 1, END_MUSIC_DELAY_MS);
   }
   matchLine = null;
   if (before && before.phase !== "over" && after.turn >= before.turn && after.hexes.every((h, i) => h.terrain === before.hexes[i]?.terrain)) {
     const reached = claimMatchPoints(before, after);
-    for (const _ of reached) play("match_point", MUSIC_VOLUME);
+    for (const _ of reached) play("match_point");
     if (reached[0]) matchLine = `${reached[0].name} reached ${publicVP(after, reached[0].id)} points — one to win`;
   }
-  if (mode !== "hotseat" && after.current === me && after.phase !== "over" && (reconnect || (before && before.current !== me))) yourTurn();
+  if (mode !== "hotseat" && after.current === me && after.phase !== "over" && (reconnect || (before && before.current !== me))) cue("your_turn");
 }
 
 // The game log the dock shows (#305): a line of `state.log` or a host `log` message, stamped when this browser saw it.
@@ -210,7 +211,7 @@ import { PLAYER_COLORS, RESOURCES, type Action, type BuildMode, type GameState, 
 import { connectTable, hostUrl, type Bag, type ChatLine, type Legal, type Me, type Reaction, type Seat, type TableClient } from "@/lib/net/table";
 import { PROTO } from "@/lib/net/proto";
 import { readMutedSeats } from "@/lib/muted-seats";
-import { MEME_VOLUME, MUSIC_VOLUME, play, playLater, SOUNDBOARD, stop, yourTurn, type SoundName } from "@/lib/sound";
+import { haptics, play, playLater, SOUNDBOARD, stop, yourTurn, type SoundName } from "@/lib/sound";
 import { calmMotion, LAND_MS } from "@/lib/scene/landing";
 import type { WaterPath, WaterStatus } from "@/lib/scene/crystal-water";
 import type { PlayView } from "@/lib/scene/mobile-fit";
@@ -262,6 +263,7 @@ interface GameStore {
   // null until the player picks a swatch; see savedColor().
   color: string | null;
   mode: "ai" | "hotseat" | "online";
+  serverSha: string | null;
   table: string;
   localId: string;
   host: boolean;
@@ -488,6 +490,7 @@ export const useGame = create<GameStore>((set, get) => ({
   name: savedName(),
   color: savedColor(),
   mode: "ai",
+  serverSha: null,
   table: "",
   localId: "p0",
   host: true,
@@ -589,7 +592,7 @@ export const useGame = create<GameStore>((set, get) => ({
       declined: [],
       tradeOutcome: null, tradeTaker: null,
     });
-    play("game_start", MUSIC_VOLUME);
+    play("game_start");
   },
   startHotseat: (count) => {
     stopEndMusic();
@@ -650,6 +653,7 @@ export const useGame = create<GameStore>((set, get) => ({
     get().net?.close();
     set({
       screen: "title",
+      serverSha: null,
       wayfarerChoices: {},
       state: null,
       error: null,
@@ -1107,19 +1111,20 @@ function respond(set: Set, get: Get, actor: string, yes: boolean): string | null
 type ConnectKind = "normal" | "quiet" | "peek" | "watch";
 function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, kind: ConnectKind = "normal") {
   clearWake();
+  set({ serverSha: null });
   get().net?.close();
   let pending = kind === "quiet";
   let welcomed = false;
   let outdated: string | null = null;
   let firstState = false;
   const table = connectTable(hostUrl(window.location), {
-    welcome: ({ proto, code, you, host, chat, secret, spectator, victoryTarget, wayfarerMode }) => {
+    welcome: ({ proto, serverSha, code, you, host, chat, secret, spectator, victoryTarget, wayfarerMode }) => {
       pending = false;
       welcomed = true;
       firstState = true;
       // G2: a host on a newer wire protocol than this page says so where errors go, and keeps saying it after every state.
       outdated = (proto ?? 0) > PROTO ? "This page is out of date. Reload to update." : null;
-      set({ resync: true, tableVictoryTarget: victoryTarget === 7 ? 7 : 10, tableWayfarerMode: wayfarerMode ?? "on" });
+      set({ serverSha: typeof serverSha === "string" && /^(?:[a-f0-9]{7,40}|dev)$/.test(serverSha) ? serverSha : null, resync: true, tableVictoryTarget: victoryTarget === 7 ? 7 : 10, tableWayfarerMode: wayfarerMode ?? "on" });
       if (secret) rememberSeat({ code, secret });
       // A page-load rejoin has no state yet, so it passes through the lobby until the host's state push moves it to play.
       // A mid-game reconnect already holds the game: stay on the board so the HUD keeps its local state.
@@ -1163,7 +1168,7 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       const board = SOUNDBOARD.find((b) => b.id === line.sound);
       // A muted seat's soundboard taps are as silent here as its chat line is hidden.
       if (board) {
-        if (!readMutedSeats(get().code).includes(line.seat)) play(board.clip, MEME_VOLUME);
+        if (!readMutedSeats(get().code).includes(line.seat)) play(board.clip);
       } else if (line.seat !== seatId && document.activeElement?.id !== "chat-input") play("chat_recv");
     },
     react: (r) => {

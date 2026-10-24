@@ -1,5 +1,5 @@
 // #667: board touch sounds. At 440x956 (touch, a practice game), a plain tap on a hex that places nothing plays that
-// terrain's clip once, at 0.3; only a Pasture hex plays the sheep (sb_plump_sheep.mp3).
+// terrain's clip once, at 1 (#1073); only a Pasture hex plays the sheep (sb_plump_sheep.mp3).
 //  - each terrain on the board plays its own clip, once, and only Pasture plays sb_plump_sheep;
 //  - rapid taps are one sound per 400 ms;
 //  - a one-finger drag that starts on a Pasture hex, a two-finger pan and a pinch play nothing;
@@ -112,7 +112,7 @@ await settle();
 const marks = await page.evaluate(() => { const h = window.__emberisle.getState().highlights(); return h.hexes.length + h.vertices.length + h.edges.length; });
 assert.equal(marks, 0, "nothing is legal at the roll");
 
-// Each terrain plays its own clip once, at 0.3; only Pasture baas.
+// Each terrain plays its own clip once, at 1; only Pasture baas.
 let sheepTaps = 0;
 for (const terrain of Object.keys(CLIP)) {
   if (!(await hexesOf(terrain)).length) continue;
@@ -122,9 +122,9 @@ for (const terrain of Object.keys(CLIP)) {
   await sleep(500);
   const got = await page.evaluate(() => window.__plays);
   assert.deepEqual(got.map((p) => p.file), [CLIP[terrain]], `${terrain}: its clip, once`);
-  assert.equal(got[0].volume, 0.3, `${terrain}: at 0.3`);
+  assert.equal(got[0].volume, 1, `${terrain}: at 1`);
   if (terrain === "wool") sheepTaps++;
-  ok(`${terrain} hex ${id}: ${CLIP[terrain]} once at 0.3${terrain === "wool" ? "" : ", no sheep"}`);
+  ok(`${terrain} hex ${id}: ${CLIP[terrain]} once at 1${terrain === "wool" ? "" : ", no sheep"}`);
   await settle();
 }
 assert.equal(sheepTaps, 1, "the Pasture tap was proven");

@@ -1,0 +1,14 @@
+{
+  "nativeTimerRegistrations": 3,
+  "nonPumpIdentityPreserved": true,
+  "stableWrapper": true,
+  "delayAndHandleDelegated": true,
+  "receiverAndArgsDelegated": true,
+  "clockReadsForTwoPumpCyclesAndOneSound": 5,
+  "traceRecords": 5,
+  "audioAndPumpStacks": 0,
+  "nativePlayResultPreserved": true,
+  "pendingSpansSynchronousRearm": true,
+  "callbackThrowClearsPending": true,
+  "nativeRegistrationThrowRollsBackPending": true
+}

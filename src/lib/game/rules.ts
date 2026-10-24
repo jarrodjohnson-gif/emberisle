@@ -379,7 +379,7 @@ const LABEL_TO_RESOURCE: Record<string, Resource> = {
 
 // The shortage travels with the canonical roll event, including after a rejoin.
 export function bankShort(state: GameState): Resource[] {
-  const i = state.log.findLastIndex((l) => / rolls \d\+\d = \d+\.| — .+'s roll[;.]/.test(l));
+  const i = state.log.findLastIndex((l) => / rolled \d+!| — .+'s roll[;.]/.test(l));
   const m = /[Tt]he bank is short of ([a-z and]+);/.exec(`${state.log[i] ?? ""} ${state.log[i + 1] ?? ""}`);
   return m ? (m[1]!.split(" and ").map((w) => LABEL_TO_RESOURCE[w] ?? (w as Resource))) : [];
 }
@@ -522,7 +522,9 @@ export function applyAction(prev: GameState, actor: string, action: Action): { s
   const added = next.log.slice(overlap);
   const awards = added.filter((v) => / (holds|loses) the (longest path|largest army)\./.test(v));
   const endings = added.filter((v) => / claims the isle |^The isle is settled/.test(v));
-  next.log = [...prev.log, ...awards, line, ...endings].slice(-200);
+  // The roll's own line ("<name> rolled <sum>!", #687) is part of the public log, ahead of what the roll paid.
+  const rolled = action.type === "roll" ? added.filter((v) => /^.+ rolled \d+!$/.test(v)) : [];
+  next.log = [...prev.log, ...rolled, ...awards, line, ...endings].slice(-200);
   return result;
 }
 
@@ -578,7 +580,7 @@ function applyActionInternal(prev: GameState, actor: string, action: Action): { 
       state.rolls = (state.rolls ?? 0) + 1;
       state.lastProduction = [];
       const total = a + b;
-      log(state, `${me.name} rolls ${a}+${b} = ${total}.`);
+      log(state, `${me.name} rolled ${total}!`);
       if (total === 7) {
         const need: Record<string, number> = {};
         for (const p of state.players) {
