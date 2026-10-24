@@ -2229,7 +2229,7 @@ function blackNumberFace(map: THREE.Texture, n: number) {
   const c = document.createElement("canvas");
   c.width = c.height = 256;
   const ctx = c.getContext("2d")!;
-  ctx.drawImage(map.image, 0, 0);
+  ctx.drawImage(map.image as HTMLCanvasElement, 0, 0);
   const image = ctx.getImageData(0, 0, 256, 256);
   const ink = n === 6 || n === 8 ? 38 : 25;
   for (let i = 0; i < image.data.length; i += 4) {
