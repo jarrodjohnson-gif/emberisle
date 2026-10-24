@@ -92,7 +92,7 @@ try {
   console.log("open-host-prove: all passed");
 } finally {
   await browser?.close();
-  await served?.httpServer.close();
+  if (served) await new Promise(resolve => served.httpServer.close(resolve));
   fixture?.close();
   if (host.exitCode === null && host.signalCode === null) {
     await new Promise(resolve => { host.once("exit", resolve); host.kill(); });
