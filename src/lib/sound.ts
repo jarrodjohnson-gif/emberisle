@@ -103,13 +103,10 @@ function savedMuted() {
   }
 }
 
-export function hapticsAvailable() {
-  try { return typeof globalThis.navigator?.vibrate === "function" && matchMedia("(pointer: coarse)").matches; }
-  catch { return false; }
-}
 export let haptics: typeof import("./haptics") | undefined;
-// Bootstrap awaits this before activating rejoin or UI events. No top-level await: the lazy module shares React.
-export const hapticsReady = hapticsAvailable() ? import("./haptics").then(module => { haptics = module; }).catch(() => {}) : Promise.resolve();
+// The synchronous entry starts this only for a supported phone; bootstrap awaits it before rejoin or UI.
+export const hapticsReady = typeof window !== "undefined" && typeof navigator.vibrate === "function" && matchMedia("(pointer: coarse)").matches
+  ? import("./haptics").then(module => { haptics = module; }).catch(() => {}) : undefined;
 
 if (typeof window !== "undefined") {
   const unlock = () => {
@@ -150,10 +147,8 @@ export function useMuted() {
 }
 
 export const canHaptic = () => unlocked && !muted;
-export const isHapticsOn = () => haptics?.isHapticsOn() ?? false;
-export const setHaptics = (value: boolean) => { haptics?.setHaptics(value); };
+export const hapticsAvailable = () => haptics?.available() ?? false;
 export const haptic = (ms: number) => { haptics?.buzz(ms); };
-export { HAPTIC_MS } from "@/lib/haptic-durations";
 
 // A clip never starts twice within GAP_MS of its last request (a burst is one sound), and clips start at least GAP_MS apart
 // in the order asked, so a bot round of five moves is five separate sounds. A backlog past MAX_QUEUE is dropped, not played late.
@@ -240,7 +235,7 @@ export function yourTurn() {
 }
 
 // One soft tick and guarded phone kick per paying piece. The renderer owns timing and the per-roll cap.
-export function gainTick(ownPiece = false) {
+export function gainTick(ownPiece?: boolean) {
   play("gain_tick", 0.35);
   haptics?.pay(ownPiece);
 }

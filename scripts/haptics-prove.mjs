@@ -314,10 +314,10 @@ async function desktopQuietProof(page) {
   await toPractice(page);
   await clearBuzz(page);
   await page.evaluate(async () => {
-    const { yourTurn, haptic, HAPTIC_MS } = await import("/src/lib/sound.ts");
+    const { yourTurn, haptic } = await import("/src/lib/sound.ts");
     yourTurn();
-    haptic(HAPTIC_MS.land);
-    haptic(HAPTIC_MS.pay);
+    haptic(10);
+    haptic(8);
   });
   const got = await page.evaluate(() => window.__buzz.slice());
   assert.deepEqual(got, [], `desktop must ignore haptics, got ${JSON.stringify(got)}`);
@@ -364,7 +364,7 @@ async function eventGuardsProof(page) {
     const win = [...window.__buzz];
     sound.setMuted(true);
     window.__buzz = []; window.__buzzTimes = [];
-    sound.yourTurn(); sound.haptic(sound.HAPTIC_MS.tradeOffer);
+    sound.yourTurn(); sound.haptic(10);
     const muted = [...window.__buzz];
     sound.setMuted(false);
     const vibrate = navigator.vibrate;
