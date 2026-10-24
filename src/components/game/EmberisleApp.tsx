@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from "react";
-import { Globe, Lock, Volume2, VolumeX } from "lucide-react";
+import { Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { HowTo, Lobby, online, OpenTables, SetupPipHints, sheets } from "@/components/game/chunks";
+import { HostTable, HowTo, Lobby, online, OpenTables, SetupPipHints, sheets, WayfarerOptions } from "@/components/game/chunks";
 import { Hud } from "@/components/game/Hud";
 import { PlaceList } from "@/components/game/PlaceList";
 import { TableRecoveryBoundary } from "@/components/game/TableRecoveryBoundary";
@@ -10,7 +10,7 @@ import { useGame } from "@/lib/game/store";
 import { JOIN_CODE, LazyBoundary, preloadOnIdle, reloadOnStaleChunk } from "@/lib/lazy";
 import { play, setMusicWanted, setMuted, useMuted } from "@/lib/sound";
 import { useTurnTitle } from "@/lib/turn-title";
-import { PLAYER_COLORS, PLAYER_NAMES, type WayfarerMode } from "@/lib/game/types";
+import { PLAYER_COLORS, PLAYER_NAMES } from "@/lib/game/types";
 import { cn } from "@/lib/utils";
 import { useViewport } from "@/lib/viewport";
 
@@ -105,27 +105,26 @@ function stripLink() {
 }
 
 function Title() {
-  const name = useGame((s) => s.name);
   const setName = useGame((s) => s.setName);
   const commitName = useGame((s) => s.commitName);
-  const color = useGame((s) => s.color);
   const setColor = useGame((s) => s.setColor);
-  const choices = useGame((s) => s.wayfarerChoices);
   const chooseWayfarer = useGame((s) => s.setWayfarerChoice);
-  const rules = { ai: choices.ai ?? "on", online: choices.online ?? "on", hotseat: choices.hotseat ?? "on" };
   const startAi = useGame((s) => s.startAi);
   const startHotseat = useGame((s) => s.startHotseat);
   const setHowTo = useGame((s) => s.setHowTo);
-  const howTo = useGame((s) => s.howTo);
-  const [join, setJoin] = useState("");
-  const [openMode, setOpenMode] = useState(false);
-  const VisibilityIcon = openMode ? Globe : Lock;
-  const hostTable = useGame((s) => s.hostTable);
   const joinTable = useGame((s) => s.joinTable);
   const watchTable = useGame((s) => s.watchTable);
+  const peekTable = useGame((s) => s.peekTable);
+  const name = useGame((s) => s.name);
+  const color = useGame((s) => s.color);
+  const choices = useGame((s) => s.wayfarerChoices);
+  const rules = { ai: choices.ai ?? "on", online: choices.online ?? "on", hotseat: choices.hotseat ?? "on" };
+  const howTo = useGame((s) => s.howTo);
+  const [join, setJoin] = useState("");
+  // Keep private hosting available while the optional open-table controls load or fail.
+  const host = <Button size="lg" variant="secondary" className="min-w-0 flex-1" onClick={() => useGame.getState().hostTable()}>Host a table</Button>;
   // A ?watch= link makes Watch the primary button for this visit (docs/design/spectator.md).
   const [watchLink, setWatchLink] = useState(false);
-  const peekTable = useGame((s) => s.peekTable);
   const peekedCode = useGame((s) => s.code);
   const peekedSeats = useGame((s) => s.seats);
   const error = useGame((s) => s.error);
@@ -234,12 +233,9 @@ function Title() {
                 <span className="flex w-full items-center justify-between text-sm font-medium text-fg">Wayfarer<svg aria-hidden viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4 group-open:rotate-180"><path d="m6 9 6 6 6-6" /></svg></span>
                 <span className="capitalize">Practice: {rules.ai} · Online: {rules.online} · Hotseat: {rules.hotseat}</span>
               </summary>
-              {([["ai", "Practice"], ["online", "Online"], ["hotseat", "Hotseat"]] as const).map(([context, label]) => <label key={context} className="flex min-h-11 items-center justify-between gap-2 text-sm">
-                {label}<select aria-label={`${label} wayfarer`} aria-describedby="wayfarer-help" value={rules[context]} onChange={e => chooseWayfarer(context, e.target.value as WayfarerMode)} className="h-11 min-w-32 rounded-control border bg-surface px-2 text-fg">
-                  <option value="on">On</option><option value="off">Off</option>
-                </select>
-              </label>)}
-              <p id="wayfarer-help" className="py-2 text-xs text-muted">Off never moves or blocks. Sevens still discard. Off fortunes add to the army.</p>
+              <LazyBoundary failed={null}>
+                <WayfarerOptions rules={rules} choose={chooseWayfarer} />
+              </LazyBoundary>
             </details>
           </div>
           <div className="mt-2 flex flex-col gap-1">
@@ -252,29 +248,9 @@ function Title() {
             </div>
             {/* #488: a pointer or focus on Host or Join fetches the online chunk (lobby and chat) before either is pressed. */}
             <div className="flex flex-wrap gap-x-2" onPointerEnter={online.prefetch} onFocus={online.prefetch}>
-              {/* Split Host + Open/Private: share the row with Join via flex-1 so max-w-sm
-                  (title-prove 1280x500) does not wrap. Ghost only — never a fourth filled button (#444). */}
-              <div className="flex min-w-0 flex-1 overflow-hidden rounded-control border border-control-line">
-                <Button
-                  size="lg"
-                  variant="secondary"
-                  className="min-w-0 flex-1 rounded-none border-0 px-3"
-                  onClick={() => hostTable(openMode ? "open" : "private")}
-                >
-                  Host a table
-                </Button>
-                <Button
-                  variant="ghost"
-                  className="w-11 rounded-none border-l border-control-line px-0"
-                  aria-pressed={openMode}
-                  title={openMode ? "Anyone can join" : "Code needed"}
-                  aria-label={openMode ? "Open to anyone" : "Private, code needed"}
-                  data-testid="open-mode-toggle"
-                  onClick={() => setOpenMode((m) => !m)}
-                >
-                  <VisibilityIcon size={16} aria-hidden="true" />
-                </Button>
-              </div>
+              <LazyBoundary failed={host}>
+                <Suspense fallback={host}><HostTable /></Suspense>
+              </LazyBoundary>
               <form
                 aria-label="Join code"
                 className="flex min-w-[11rem] flex-1 gap-2"

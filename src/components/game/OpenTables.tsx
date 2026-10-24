@@ -2,26 +2,16 @@
 // Lives in its own lazy chunk so the first-load index stays inside the growth allowance.
 // The list rides the WebSocket `{type:"list"}` → `openTables` path — no HTTP /tables poll.
 import { useEffect, useState } from "react";
+import { Globe, Lock } from "lucide-react";
 import { useGame } from "@/lib/game/store";
 import { connectTable, hostUrl, type OpenTableEntry } from "@/lib/net/table";
 import { Button } from "@/components/ui/button";
 
-function statusLabel(status: OpenTableEntry["status"], seated: number, total: number) {
-  if (status === "playing") return `${seated}/${total} · in game`;
-  if (status === "over") return `${seated}/${total} · game over`;
-  if (seated >= total) return `${seated}/${total} full`;
-  return `${seated}/${total} seated`;
-}
-
 // Dial only when a rules host is expected. Vite without ?host= and the GitHub Pages build have no host,
 // and a failed WebSocket would log console errors that pages-prove / client-prove treat as a hard fail.
 function hostExpected(): boolean {
-  if (new URLSearchParams(location.search).has("host")) return true;
-  if (import.meta.env.DEV) return false;
-  // Non-root base builds are static — including local Pages previews after a repository rename.
-  if (import.meta.env.BASE_URL !== "/") return false;
-  if (location.hostname.endsWith("github.io")) return false;
-  return true;
+  return new URLSearchParams(location.search).has("host") ||
+    (!import.meta.env.DEV && import.meta.env.BASE_URL === "/" && !location.hostname.endsWith("github.io"));
 }
 
 export function OpenTables() {
@@ -33,7 +23,7 @@ export function OpenTables() {
     if (!hostExpected()) return;
     let alive = true;
     let timer: ReturnType<typeof setTimeout> | undefined;
-    const client = connectTable(hostUrl(window.location), {
+    const client = connectTable(hostUrl(location), {
       openTables: (tables) => {
         if (alive) setOpenTables(tables);
       },
@@ -41,8 +31,7 @@ export function OpenTables() {
         // Seatless dial failed or dropped: clear the list and stop. No redial without a seat.
         if (!alive) return;
         setOpenTables([]);
-        if (timer !== undefined) clearTimeout(timer);
-        timer = undefined;
+        clearTimeout(timer);
       },
     });
     const refresh = () => {
@@ -53,7 +42,7 @@ export function OpenTables() {
     refresh();
     return () => {
       alive = false;
-      if (timer !== undefined) clearTimeout(timer);
+      clearTimeout(timer);
       client.close();
     };
   }, []);
@@ -65,7 +54,6 @@ export function OpenTables() {
       <p className="mb-1 text-xs font-medium text-muted">Open tables</p>
       <ul className="flex flex-col gap-1">
         {openTables.map((t) => {
-          const full = t.seated >= t.total;
           return (
             <li
               key={t.code}
@@ -74,10 +62,10 @@ export function OpenTables() {
             >
               <div className="min-w-0">
                 <p className="truncate text-sm font-medium leading-tight">{t.name}</p>
-                <p className="text-xs leading-tight text-muted">{statusLabel(t.status, t.seated, t.total)}</p>
+                <p className="text-xs leading-tight text-muted">{`${t.seated}/${t.total}${t.status === "playing" ? " · in game" : t.status === "over" ? " · game over" : t.seated >= t.total ? " full" : " seated"}`}</p>
               </div>
               {t.status === "lobby" ? (
-                full ? (
+                t.seated >= t.total ? (
                   <span data-testid="open-table-full" className="shrink-0 px-2 text-xs text-muted">
                     Full
                   </span>
@@ -95,6 +83,35 @@ export function OpenTables() {
           );
         })}
       </ul>
+    </div>
+  );
+}
+
+// Same approved split control, deferred with the optional title list; no title-only icons in the index.
+export function HostTable() {
+  const [openMode, setOpenMode] = useState(false);
+  const VisibilityIcon = openMode ? Globe : Lock;
+  return (
+    <div className="flex min-w-0 flex-1 overflow-hidden rounded-control border border-control-line">
+      <Button
+        size="lg"
+        variant="secondary"
+        className="min-w-0 flex-1 rounded-none border-0 px-3"
+        onClick={() => useGame.getState().hostTable(openMode ? "open" : "private")}
+      >
+        Host a table
+      </Button>
+      <Button
+        variant="ghost"
+        className="w-11 rounded-none border-l border-control-line px-0"
+        aria-pressed={openMode}
+        title={openMode ? "Anyone can join" : "Code needed"}
+        aria-label={openMode ? "Open to anyone" : "Private, code needed"}
+        data-testid="open-mode-toggle"
+        onClick={() => setOpenMode((m) => !m)}
+      >
+        <VisibilityIcon size={16} aria-hidden />
+      </Button>
     </div>
   );
 }
