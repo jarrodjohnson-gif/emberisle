@@ -15,10 +15,12 @@ const chunks = Object.fromEntries(["OpenTables", "WayfarerOptions"].map(name => 
   return [name, `http://127.0.0.1:${PORT}/assets/${files[0]}`];
 }));
 const rooms = mkdtempSync(path.join(tmpdir(), "emberisle-title-chunks-"));
+const profiles = mkdtempSync(path.join(tmpdir(), "emberisle-title-profiles-"));
 const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
-  cwd: new URL("../server/", import.meta.url), env: { ...process.env, PORT: "0", ROOMS_DIR: rooms },
+  cwd: new URL("../server/", import.meta.url), env: { ...process.env, PORT: "0", ROOMS_DIR: rooms, PROFILES_DIR: profiles },
 });
-process.on("exit", () => { host.kill(); rmSync(rooms, { recursive: true, force: true }); });
+const exited = new Promise(resolve => host.once("exit", resolve));
+process.on("exit", () => { host.kill(); rmSync(rooms, { recursive: true, force: true }); rmSync(profiles, { recursive: true, force: true }); });
 const hostErrors = [];
 host.stderr.on("data", d => hostErrors.push(String(d)));
 let hostPort;
@@ -145,4 +147,5 @@ try {
   await browser?.close();
   await vite?.close();
   host.kill();
+  await exited;
 }
