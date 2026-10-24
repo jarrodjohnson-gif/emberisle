@@ -98,3 +98,36 @@ The approved owner-decision row is preserved; every main decision remains intact
 After this push, new-head CI must confirm the hypothesis on its own runners.
 The desk's one rerun of the old head is spent. No builder CI rerun was requested.
 No proof, runtime, package script, assertion or size budget changes are part of this PR.
+
+## Follow-up run and main refresh (2026-10-24)
+
+Run [40096975989](https://github.com/jarrodjohnson-gif/emberisle/actions/runs/40096975989)
+at `4116a94` completed with two failing browser legs. [Exact selected output](follow-up-ci.json):
+
+- `presentation-2`, job `120881269315`: `howto-prove` failed the 956×440 reduced-motion
+  title End check with scroll top 0. The [desk requested a normal main merge](https://github.com/jarrodjohnson-gif/emberisle/pull/1037#issuecomment-6384663928)
+  to pick up the independently reviewed #1087 fix, rather than retry the old head.
+- `presentation-3`, job `120881269344`: turn-gain started at 13:16:20 UTC, following
+  hand-offer → chunk-fail → idle → rotate → banner-stable → roll-moment → goods-log.
+  It still failed the unchanged 390×844 `+1` no-cover assertion. The new failure-only
+  diagnostics record six matching geometry pairs, including frame 1733 for both nodes
+  (timestamps differ by 0.1 ms), turn stage `centre`, shift 0. This is a real observed
+  geometry overlap. The matching last two predecessors did **not** prevent recurrence;
+  the assignment change is not established as a fix. This data still does not prove a
+  runner-load cause or identify the runtime cause. No old-head retry was requested.
+
+Main `5bb959c` is merged normally at `d4ea7f3`. Only main's already reviewed help-proof
+change enters that merge; the partition assignments and every proof line match main.
+Fresh independent clone `work/verify1037-main5bb` uses frozen root/server installs.
+The full [help proof](main5bb-howto.log) passes all motion/reduced-motion views, title/table
+entry points, focus/scroll checks and sound checks, including the failing CI view.
+The [complete workflow audit](main5bb-audit.log) still preserves 97 commands and 57
+browser-b proofs exactly once and rejects all ten meaningful negative controls.
+[Types](main5bb-types.log), [build](main5bb-build.log), [registration](main5bb-registered.log),
+[loosen](main5bb-loosen.log) (zero changed proof files), and [size](main5bb-size.log) pass:
+index 125138 B versus built main 125141 B, all existing budgets unchanged.
+
+This refresh addresses the merged help fix and records the remaining turn failure. It
+introduces no proof, application, setup, runner or assertion edit. The prior complete local
+leg pass remains historical evidence; it is not a new CI-green claim. New-head CI and the
+parent's timing/three-green acceptance remain outstanding.
