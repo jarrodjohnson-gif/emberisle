@@ -1,1 +1,34 @@
-{"main-normal": {"exit": 0, "head": "c0d15d0", "cpu": 1}, "main-cpu2": {"exit": 0, "head": "c0d15d0", "cpu": 2, "seconds": 12.96}, "pr-normal": {"exit": 0, "head": "d517827", "cpu": 1, "seconds": 10.06}, "pr-cpu2": {"exit": 0, "head": "d517827", "cpu": 2, "seconds": 14.1}}
+{
+  "main-normal": {
+    "exit": 0,
+    "head": "c0d15d0",
+    "cpu": 1
+  },
+  "main-cpu2": {
+    "exit": 0,
+    "head": "c0d15d0",
+    "cpu": 2,
+    "seconds": 12.96
+  },
+  "pr-normal": {
+    "exit": 0,
+    "head": "d517827",
+    "cpu": 1,
+    "seconds": 10.06
+  },
+  "pr-cpu2": {
+    "exit": 0,
+    "head": "d517827",
+    "cpu": 2,
+    "seconds": 14.1
+  },
+  "registered": {
+    "exit": 0
+  },
+  "loosen": {
+    "exit": 0
+  },
+  "source-links-scope": {
+    "exit": 0
+  }
+}

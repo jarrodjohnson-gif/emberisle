@@ -157,3 +157,13 @@ chromium.launch = async (...args) => {
   return browser;
 };
 ```
+
+
+## Report checks
+
+Fresh-clone [registration](registered.log) confirms all 129 existing proofs remain registered.
+[Loosen](loosen.log) compares zero changed existing proofs.
+The report's local links and exact observer block pass verification.
+Every trace's audio paths equal the proof's playback array, and its final slice matches the recorded baseline.
+Native Leave events are trusted; all four successful clip stacks include the Button and sound source paths.
+The final report changes only this research directory. No new product proof is added.
