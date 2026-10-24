@@ -122,31 +122,17 @@ export function hear(before: GameState | null, after: GameState, me: string, mod
   const lost = mode !== "hotseat" && me !== "" && !!after.winner && after.winner !== me;
   const victim =
     mode !== "hotseat" && !!before && before.current !== me && after.vertices.some((v) => v.building?.playerId === me && v.hexes.includes(after.robberHex));
-  // #542: buzz only for this seat's own actions (hotseat is every seat on this page). Never for a piece you only watch.
-  const mine = mode === "hotseat" || (!!me && after.current === me);
-  const ownsPiece = mode === "hotseat" || (!!me && !!before && (
-    after.edges.some((e, i) => e.path === me && !before.edges[i]?.path) ||
-    after.vertices.some((v, i) => v.building?.playerId === me && v.building.kind !== before.vertices[i]?.building?.kind)
-  ));
-  for (const [sound, volume] of soundsFor(before, after, mine, victim, lost)) {
+  const cue = haptics?.player(before, after, me, mode) ?? play;
+  for (const [sound, volume] of soundsFor(before, after, mode === "hotseat" || (!!me && after.current === me), victim, lost)) {
     // A piece knocks when it lands, not when it is picked (#438); reduced motion has no fall, so it knocks at once.
     const land = sound in LAND_MS && !calmMotion() ? LAND_MS[sound as keyof typeof LAND_MS] : 0;
-    const landBuzz = ownsPiece && (sound === "path_place" || sound === "outpost_place" || sound === "stronghold_place");
-    const fortuneBuzz = (mode === "hotseat" || (!!me && before?.current === me)) && sound === "card_play";
-    const winBuzz = !!me && sound === "win";
     if (land) {
       const t = setTimeout(() => {
         knocks.delete(t);
-        play(sound, volume);
-        if (landBuzz) haptic(HAPTIC_MS.land);
+        cue(sound, volume);
       }, land);
       knocks.add(t);
-    } else {
-      play(sound, volume);
-      if (landBuzz) haptic(HAPTIC_MS.land);
-      if (fortuneBuzz) haptic(HAPTIC_MS.fortune);
-      if (winBuzz) haptic(HAPTIC_MS.win);
-    }
+    } else cue(sound, volume);
   }
   // A new game (the lobby's Start, a rematch): the sting plays once, for a seat; the first roll cuts it off.
   // Keyed on the board: a bot may already have rolled first (seq > 0), and a reconnect into setup must not replay it.
@@ -225,7 +211,7 @@ import { PLAYER_COLORS, RESOURCES, type Action, type BuildMode, type GameState, 
 import { connectTable, hostUrl, type Bag, type ChatLine, type Legal, type Me, type Reaction, type Seat, type TableClient } from "@/lib/net/table";
 import { PROTO } from "@/lib/net/proto";
 import { readMutedSeats } from "@/lib/muted-seats";
-import { HAPTIC_MS, MEME_VOLUME, MUSIC_VOLUME, haptic, play, playLater, SOUNDBOARD, stop, yourTurn, type SoundName } from "@/lib/sound";
+import { MEME_VOLUME, MUSIC_VOLUME, haptics, play, playLater, SOUNDBOARD, stop, yourTurn, type SoundName } from "@/lib/sound";
 import { calmMotion, LAND_MS } from "@/lib/scene/landing";
 import type { WaterPath, WaterStatus } from "@/lib/scene/crystal-water";
 import type { PlayView } from "@/lib/scene/mobile-fit";
@@ -1058,7 +1044,7 @@ function openOffer(set: Set, get: Get, from: string, give: Bag, want: Bag) {
   const fromName = state.players.find((p) => p.id === from)?.name ?? "Someone";
   set({ offer: { tradeId, from, fromName, give, want, until: Date.now() + OFFER_MS }, declined: [], tradeOutcome: null, tradeTaker: null });
   if (from !== get().localId) play("trade_offer");
-  if (from !== get().localId && !get().spectator) haptic(HAPTIC_MS.tradeOffer);
+  haptics?.offer(from);
   offerTimers.push(setTimeout(() => endOffer(set, get, null), OFFER_MS));
   for (const p of state.players) {
     if (p.kind !== "bot" || p.id === from) continue;
@@ -1225,7 +1211,7 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       const fromName = get().state?.players.find((p) => p.id === from)?.name ?? "Someone";
       set({ offer: { tradeId, from, fromName, give, want, until: Date.now() + seconds * 1000 }, declined: [], tradeOutcome: null, tradeTaker: null });
       if (from !== get().localId) play("trade_offer");
-      if (from !== get().localId && !get().spectator) haptic(HAPTIC_MS.tradeOffer);
+      haptics?.offer(from);
     },
     tradeDeclined: ({ tradeId, by }) => {
       const { offer, declined } = get();

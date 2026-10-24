@@ -89,13 +89,10 @@ export function soundCategory(name: SoundName): SoundCategory {
 }
 
 const MUTED_KEY = "emberisle-muted";
-// #542: phone haptics (coarse pointer only). Default on where vibrate exists; desktop ignores the toggle.
-const HAPTICS_KEY = "emberisle-haptics";
 const clips = new Map<SoundName, HTMLAudioElement>();
 const gains = new Map<SoundName, number>();
 let unlocked = false;
 let muted = savedMuted();
-let hapticsOn = savedHaptics();
 const listeners = new Set<() => void>();
 
 function savedMuted() {
@@ -106,25 +103,13 @@ function savedMuted() {
   }
 }
 
-function vibrateSupported() {
-  return typeof globalThis.navigator?.vibrate === "function";
+export function hapticsAvailable() {
+  try { return typeof globalThis.navigator?.vibrate === "function" && matchMedia("(pointer: coarse)").matches; }
+  catch { return false; }
 }
-
-function coarsePointer() {
-  try {
-    return matchMedia("(pointer: coarse)").matches;
-  } catch {
-    return false;
-  }
-}
-
-function savedHaptics() {
-  try {
-    return vibrateSupported() && localStorage.getItem(HAPTICS_KEY) !== "0";
-  } catch {
-    return vibrateSupported();
-  }
-}
+export let haptics: typeof import("./haptics") | undefined;
+// Bootstrap awaits this before activating rejoin or UI events. No top-level await: the lazy module shares React.
+export const hapticsReady = hapticsAvailable() ? import("./haptics").then(module => { haptics = module; }).catch(() => {}) : Promise.resolve();
 
 if (typeof window !== "undefined") {
   const unlock = () => {
@@ -164,46 +149,11 @@ export function useMuted() {
   return useSyncExternalStore(subscribe, isMuted, () => false);
 }
 
-export const hapticsAvailable = vibrateSupported;
-
-export function isHapticsOn() {
-  return hapticsOn;
-}
-
-export function setHaptics(v: boolean) {
-  hapticsOn = v;
-  try {
-    localStorage.setItem(HAPTICS_KEY, v ? "1" : "0");
-  } catch {
-    // storage can be blocked; the toggle still holds for this page
-  }
-  for (const l of listeners) l();
-}
-
-export function useHaptics() {
-  return useSyncExternalStore(subscribe, isHapticsOn, () => false);
-}
-
-// Guarded phone buzz (#542). No-op on desktop, when off, before unlock, or where vibrate is missing.
-// Reduced motion does not suppress this: it is not visual motion.
-export function haptic(ms: number) {
-  if (muted || !unlocked || !hapticsOn || !coarsePointer() || !vibrateSupported()) return;
-  try {
-    navigator.vibrate?.(ms);
-  } catch {
-    // embedded pages may forbid vibration
-  }
-}
-
-// Durations from the issue: land / pay / turn / fortune / trade offer / win.
-export const HAPTIC_MS = {
-  land: 10,
-  pay: 8,
-  yourTurn: 15,
-  fortune: 10,
-  tradeOffer: 10,
-  win: 20,
-} as const;
+export const canHaptic = () => unlocked && !muted;
+export const isHapticsOn = () => haptics?.isHapticsOn() ?? false;
+export const setHaptics = (value: boolean) => { haptics?.setHaptics(value); };
+export const haptic = (ms: number) => { haptics?.buzz(ms); };
+export { HAPTIC_MS } from "@/lib/haptic-durations";
 
 // A clip never starts twice within GAP_MS of its last request (a burst is one sound), and clips start at least GAP_MS apart
 // in the order asked, so a bot round of five moves is five separate sounds. A backlog past MAX_QUEUE is dropped, not played late.
@@ -286,13 +236,13 @@ export function stop(name: SoundName) {
 // The your-turn chime, with a short buzz on phones that have a motor (#542: 15 ms, was 30).
 export function yourTurn() {
   play("your_turn");
-  haptic(HAPTIC_MS.yourTurn);
+  haptics?.turn();
 }
 
 // One soft tick and guarded phone kick per paying piece. The renderer owns timing and the per-roll cap.
 export function gainTick(ownPiece = false) {
   play("gain_tick", 0.35);
-  if (ownPiece) haptic(HAPTIC_MS.pay);
+  haptics?.pay(ownPiece);
 }
 
 // Background music (#814): "Medieval: The Old Tower Inn" (docs/design/sound.md). The file is fetched on the first start, after
