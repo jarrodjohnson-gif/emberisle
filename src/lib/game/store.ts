@@ -864,7 +864,7 @@ export const useGame = create<GameStore>((set, get) => ({
     if (buildMode === "path") return { vertices: [], edges: legalRoads(state, actor, false), hexes: [] };
     return { vertices: [], edges: [], hexes: [] };
   },
-  hostTable: (visibility = "private") => {
+  hostTable: (visibility) => {
     get().commitName();
     connect(set, get, (t, me) => t.open(me, { wayfarerMode: get().wayfarerChoices.online ?? "on", visibility }));
   },
