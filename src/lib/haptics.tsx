@@ -66,5 +66,5 @@ export function Row() {
 }
 
 // Import completion includes registration, so bootstrap cannot expose an event before these callbacks exist.
-export const api = { available, buzz, turn, pay, player, Row };
+export const api = { available, buzz, turn, pay, player, row: <Row /> };
 Object.assign(haptics, api);

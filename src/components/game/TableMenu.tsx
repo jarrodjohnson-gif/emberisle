@@ -184,7 +184,7 @@ export function TableMenu() {
                 {music ? <Volume2 className={ICON} /> : <VolumeX className={ICON} />}
                 Music {music ? "on" : "off"}
               </Button>
-              {haptics.Row && <haptics.Row />}
+              {haptics.row}
               {/* The sea's look; the choice is remembered and overrides the GPU probe (docs/design/crystal-water.md). */}
               <div role="group" aria-label="Water" data-testid="water-toggle" className="flex h-11 items-center gap-2 px-3 text-body">
                 <Waves className={ICON} /> Water
