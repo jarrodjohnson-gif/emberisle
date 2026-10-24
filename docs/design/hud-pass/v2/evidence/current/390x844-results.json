@@ -1,0 +1,4262 @@
+{
+  "baseline": "51cbe384b24f5ba45c91b630ec45f6a05c162a43",
+  "captured": "2026-10-20T22:25:40.291Z",
+  "state": "results",
+  "kind": "rendered coherent result fixture",
+  "notes": "10 points at target10:2strongholds(4)+longestpath(2)+4hidden. Source-scored; not played to completion.",
+  "errors": [],
+  "viewport": {
+    "width": 390,
+    "height": 844,
+    "dpr": 1
+  },
+  "smallText": [
+    {
+      "selector": "span[data-testid=\"hand-name\"]",
+      "text": "Wood",
+      "font": {
+        "size": 10,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "700",
+        "lineHeight": "12px"
+      },
+      "rect": {
+        "x": 35.42,
+        "y": 738,
+        "width": 36.73,
+        "height": 12,
+        "right": 72.16,
+        "bottom": 750
+      },
+      "elementRect": {
+        "x": 34.63,
+        "y": 738,
+        "width": 37.53,
+        "height": 12,
+        "right": 72.16,
+        "bottom": 750
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div[data-testid=\"win-screen\"]"
+    },
+    {
+      "selector": "span[data-testid=\"hand-name\"]",
+      "text": "Brick",
+      "font": {
+        "size": 10,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "700",
+        "lineHeight": "12px"
+      },
+      "rect": {
+        "x": 106.52,
+        "y": 738,
+        "width": 36.16,
+        "height": 12,
+        "right": 142.67,
+        "bottom": 750
+      },
+      "elementRect": {
+        "x": 105.72,
+        "y": 738,
+        "width": 36.95,
+        "height": 12,
+        "right": 142.67,
+        "bottom": 750
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div[data-testid=\"win-screen\"]"
+    },
+    {
+      "selector": "span[data-testid=\"hand-name\"]",
+      "text": "Sheep",
+      "font": {
+        "size": 10,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "700",
+        "lineHeight": "12px"
+      },
+      "rect": {
+        "x": 176.2,
+        "y": 738,
+        "width": 38.36,
+        "height": 12,
+        "right": 214.56,
+        "bottom": 750
+      },
+      "elementRect": {
+        "x": 175.41,
+        "y": 738,
+        "width": 39.16,
+        "height": 12,
+        "right": 214.56,
+        "bottom": 750
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div[data-testid=\"win-screen\"]"
+    },
+    {
+      "selector": "span[data-testid=\"hand-name\"]",
+      "text": "Wheat",
+      "font": {
+        "size": 10,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "700",
+        "lineHeight": "12px"
+      },
+      "rect": {
+        "x": 245.23,
+        "y": 738,
+        "width": 41.91,
+        "height": 12,
+        "right": 287.14,
+        "bottom": 750
+      },
+      "elementRect": {
+        "x": 244.44,
+        "y": 738,
+        "width": 42.7,
+        "height": 12,
+        "right": 287.14,
+        "bottom": 750
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div[data-testid=\"win-screen\"]"
+    },
+    {
+      "selector": "span[data-testid=\"hand-name\"]",
+      "text": "Stone",
+      "font": {
+        "size": 10,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "700",
+        "lineHeight": "12px"
+      },
+      "rect": {
+        "x": 317.25,
+        "y": 738,
+        "width": 39.47,
+        "height": 12,
+        "right": 356.72,
+        "bottom": 750
+      },
+      "elementRect": {
+        "x": 316.45,
+        "y": 738,
+        "width": 40.27,
+        "height": 12,
+        "right": 356.72,
+        "bottom": 750
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div[data-testid=\"win-screen\"]"
+    },
+    {
+      "selector": "div[data-testid=\"win-table-wrap\"] > table:nth-child(1) > thead:nth-child(1) > tr:nth-child(1) > th:nth-child(1)",
+      "text": "Player",
+      "font": {
+        "size": 11,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "15.7143px"
+      },
+      "rect": {
+        "x": 102,
+        "y": 374.89,
+        "width": 43.7,
+        "height": 13,
+        "right": 145.7,
+        "bottom": 387.89
+      },
+      "elementRect": {
+        "x": 33,
+        "y": 365.89,
+        "width": 116.7,
+        "height": 32.2,
+        "right": 149.7,
+        "bottom": 398.09
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "div[data-testid=\"win-table-wrap\"] > table:nth-child(1) > thead:nth-child(1) > tr:nth-child(1) > th:nth-child(2) > span:nth-child(1)",
+      "text": "Out",
+      "font": {
+        "size": 11,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "15.7143px"
+      },
+      "rect": {
+        "x": 153.7,
+        "y": 374.89,
+        "width": 24.83,
+        "height": 13,
+        "right": 178.53,
+        "bottom": 387.89
+      },
+      "elementRect": {
+        "x": 153.7,
+        "y": 374.89,
+        "width": 24.83,
+        "height": 13,
+        "right": 178.53,
+        "bottom": 387.89
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "div[data-testid=\"win-table-wrap\"] > table:nth-child(1) > thead:nth-child(1) > tr:nth-child(1) > th:nth-child(3) > span:nth-child(1)",
+      "text": "Str",
+      "font": {
+        "size": 11,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "15.7143px"
+      },
+      "rect": {
+        "x": 186.53,
+        "y": 374.89,
+        "width": 22.58,
+        "height": 13,
+        "right": 209.11,
+        "bottom": 387.89
+      },
+      "elementRect": {
+        "x": 186.53,
+        "y": 374.89,
+        "width": 22.58,
+        "height": 13,
+        "right": 209.11,
+        "bottom": 387.89
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "div[data-testid=\"win-table-wrap\"] > table:nth-child(1) > thead:nth-child(1) > tr:nth-child(1) > th:nth-child(4) > span:nth-child(1)",
+      "text": "Path",
+      "font": {
+        "size": 11,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "15.7143px"
+      },
+      "rect": {
+        "x": 217.11,
+        "y": 374.89,
+        "width": 30.11,
+        "height": 13,
+        "right": 247.22,
+        "bottom": 387.89
+      },
+      "elementRect": {
+        "x": 217.11,
+        "y": 374.89,
+        "width": 30.11,
+        "height": 13,
+        "right": 247.22,
+        "bottom": 387.89
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "div[data-testid=\"win-table-wrap\"] > table:nth-child(1) > thead:nth-child(1) > tr:nth-child(1) > th:nth-child(5) > span:nth-child(1)",
+      "text": "Army",
+      "font": {
+        "size": 11,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "15.7143px"
+      },
+      "rect": {
+        "x": 255.22,
+        "y": 374.89,
+        "width": 33.47,
+        "height": 13,
+        "right": 288.69,
+        "bottom": 387.89
+      },
+      "elementRect": {
+        "x": 255.22,
+        "y": 374.89,
+        "width": 33.47,
+        "height": 13,
+        "right": 288.69,
+        "bottom": 387.89
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "div[data-testid=\"win-table-wrap\"] > table:nth-child(1) > thead:nth-child(1) > tr:nth-child(1) > th:nth-child(6) > span:nth-child(1)",
+      "text": "Hid",
+      "font": {
+        "size": 11,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "15.7143px"
+      },
+      "rect": {
+        "x": 296.69,
+        "y": 374.89,
+        "width": 20.55,
+        "height": 13,
+        "right": 317.23,
+        "bottom": 387.89
+      },
+      "elementRect": {
+        "x": 296.69,
+        "y": 374.89,
+        "width": 20.55,
+        "height": 13,
+        "right": 317.23,
+        "bottom": 387.89
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "div[data-testid=\"win-table-wrap\"] > table:nth-child(1) > thead:nth-child(1) > tr:nth-child(1) > th:nth-child(7)",
+      "text": "Total",
+      "font": {
+        "size": 11,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "15.7143px"
+      },
+      "rect": {
+        "x": 325.23,
+        "y": 374.89,
+        "width": 36.86,
+        "height": 13,
+        "right": 362.09,
+        "bottom": 387.89
+      },
+      "elementRect": {
+        "x": 321.23,
+        "y": 365.89,
+        "width": 44.86,
+        "height": 32.2,
+        "right": 366.09,
+        "bottom": 398.09
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    }
+  ],
+  "controls": [
+    {
+      "selector": "div[data-testid=\"seat-p1\"] > button:nth-child(1)",
+      "tag": "button",
+      "role": null,
+      "name": "Jarrod Jar 6 points, plus 4 hidden +4 5 1",
+      "disabled": false,
+      "ariaDisabled": null,
+      "font": {
+        "size": 16,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400"
+      },
+      "rect": {
+        "x": 12,
+        "y": 12,
+        "width": 76.5,
+        "height": 44,
+        "right": 88.5,
+        "bottom": 56
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "below44": false,
+      "occludedAtCenterBy": "div[data-testid=\"win-screen\"]"
+    },
+    {
+      "selector": "div[data-testid=\"seat-p3\"] > button:nth-child(1)",
+      "tag": "button",
+      "role": null,
+      "name": "Lucke Diggler Luc 4 points 1 3",
+      "disabled": false,
+      "ariaDisabled": null,
+      "font": {
+        "size": 16,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400"
+      },
+      "rect": {
+        "x": 92.5,
+        "y": 12,
+        "width": 76.5,
+        "height": 44,
+        "right": 169,
+        "bottom": 56
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "below44": false,
+      "occludedAtCenterBy": "div[data-testid=\"win-screen\"]"
+    },
+    {
+      "selector": "div[data-testid=\"seat-p0\"] > button:nth-child(1)",
+      "tag": "button",
+      "role": null,
+      "name": "Alexandria Ale 2 points 1 0",
+      "disabled": false,
+      "ariaDisabled": null,
+      "font": {
+        "size": 16,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400"
+      },
+      "rect": {
+        "x": 173,
+        "y": 12,
+        "width": 76.5,
+        "height": 44,
+        "right": 249.5,
+        "bottom": 56
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "below44": false,
+      "occludedAtCenterBy": "div[data-testid=\"win-screen\"]"
+    },
+    {
+      "selector": "div[data-testid=\"seat-p2\"] > button:nth-child(1)",
+      "tag": "button",
+      "role": null,
+      "name": "Joshspicy2 J2 2 points 2 0",
+      "disabled": false,
+      "ariaDisabled": null,
+      "font": {
+        "size": 16,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400"
+      },
+      "rect": {
+        "x": 253.5,
+        "y": 12,
+        "width": 76.5,
+        "height": 44,
+        "right": 330,
+        "bottom": 56
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "below44": false,
+      "occludedAtCenterBy": "div[data-testid=\"win-screen\"]"
+    },
+    {
+      "selector": "div:nth-child(1) > div:nth-child(1) > header:nth-child(3) > div:nth-child(1) > div:nth-child(3) > button[aria-label=\"Table menu\"]",
+      "tag": "button",
+      "role": null,
+      "name": "Table menu",
+      "disabled": false,
+      "ariaDisabled": null,
+      "font": {
+        "size": 16,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500"
+      },
+      "rect": {
+        "x": 334,
+        "y": 12,
+        "width": 44,
+        "height": 44,
+        "right": 378,
+        "bottom": 56
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "below44": false,
+      "occludedAtCenterBy": "div[data-testid=\"win-screen\"]"
+    },
+    {
+      "selector": "div[data-testid=\"resource-timber\"]",
+      "tag": "div",
+      "role": "button",
+      "name": "Wood: 3. Show trade rates",
+      "disabled": false,
+      "ariaDisabled": null,
+      "font": {
+        "size": 16,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400"
+      },
+      "rect": {
+        "x": 20,
+        "y": 690,
+        "width": 66.8,
+        "height": 62,
+        "right": 86.8,
+        "bottom": 752
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "below44": false,
+      "occludedAtCenterBy": "div[data-testid=\"win-screen\"]"
+    },
+    {
+      "selector": "div[data-testid=\"resource-clay\"]",
+      "tag": "div",
+      "role": "button",
+      "name": "Brick: 2. Show trade rates",
+      "disabled": false,
+      "ariaDisabled": null,
+      "font": {
+        "size": 16,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400"
+      },
+      "rect": {
+        "x": 90.8,
+        "y": 690,
+        "width": 66.8,
+        "height": 62,
+        "right": 157.59,
+        "bottom": 752
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "below44": false,
+      "occludedAtCenterBy": "div[data-testid=\"win-screen\"]"
+    },
+    {
+      "selector": "div[data-testid=\"resource-wool\"]",
+      "tag": "div",
+      "role": "button",
+      "name": "Sheep: 4. Show trade rates",
+      "disabled": false,
+      "ariaDisabled": null,
+      "font": {
+        "size": 16,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400"
+      },
+      "rect": {
+        "x": 161.59,
+        "y": 690,
+        "width": 66.8,
+        "height": 62,
+        "right": 228.39,
+        "bottom": 752
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "below44": false,
+      "occludedAtCenterBy": "div[data-testid=\"win-screen\"]"
+    },
+    {
+      "selector": "div[data-testid=\"resource-grain\"]",
+      "tag": "div",
+      "role": "button",
+      "name": "Wheat: 1. Show trade rates",
+      "disabled": false,
+      "ariaDisabled": null,
+      "font": {
+        "size": 16,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400"
+      },
+      "rect": {
+        "x": 232.39,
+        "y": 690,
+        "width": 66.8,
+        "height": 62,
+        "right": 299.19,
+        "bottom": 752
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "below44": false,
+      "occludedAtCenterBy": "div[data-testid=\"win-screen\"]"
+    },
+    {
+      "selector": "div[data-testid=\"resource-ore\"]",
+      "tag": "div",
+      "role": "button",
+      "name": "Stone: 2. Show trade rates",
+      "disabled": false,
+      "ariaDisabled": null,
+      "font": {
+        "size": 16,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400"
+      },
+      "rect": {
+        "x": 303.19,
+        "y": 690,
+        "width": 66.8,
+        "height": 62,
+        "right": 369.98,
+        "bottom": 752
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "below44": false,
+      "occludedAtCenterBy": "div[data-testid=\"win-screen\"]"
+    },
+    {
+      "selector": "button[data-testid=\"fortunes-button\"]",
+      "tag": "button",
+      "role": null,
+      "name": "My fortunes, 6 held",
+      "disabled": false,
+      "ariaDisabled": null,
+      "font": {
+        "size": 14,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500"
+      },
+      "rect": {
+        "x": 12,
+        "y": 764,
+        "width": 125.75,
+        "height": 44,
+        "right": 137.75,
+        "bottom": 808
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "below44": false,
+      "occludedAtCenterBy": "div[data-testid=\"win-screen\"]"
+    },
+    {
+      "selector": "button[data-testid=\"win-look\"]",
+      "tag": "button",
+      "role": null,
+      "name": "Look around",
+      "disabled": false,
+      "ariaDisabled": null,
+      "font": {
+        "size": 14,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500"
+      },
+      "rect": {
+        "x": 33,
+        "y": 565.59,
+        "width": 159,
+        "height": 44,
+        "right": 192,
+        "bottom": 609.59
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "below44": false,
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "button[data-testid=\"win-again\"]",
+      "tag": "button",
+      "role": null,
+      "name": "Play again",
+      "disabled": false,
+      "ariaDisabled": null,
+      "font": {
+        "size": 14,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500"
+      },
+      "rect": {
+        "x": 200,
+        "y": 565.59,
+        "width": 157,
+        "height": 44,
+        "right": 357,
+        "bottom": 609.59
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "below44": false,
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "button[data-testid=\"win-menu\"]",
+      "tag": "button",
+      "role": null,
+      "name": "Back to menu",
+      "disabled": false,
+      "ariaDisabled": null,
+      "font": {
+        "size": 14,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500"
+      },
+      "rect": {
+        "x": 33,
+        "y": 617.59,
+        "width": 324,
+        "height": 44,
+        "right": 357,
+        "bottom": 661.59
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "below44": false,
+      "occludedAtCenterBy": null
+    }
+  ],
+  "smallTargets": [],
+  "clipping": [
+    {
+      "selector": "p[data-testid=\"log-line\"]",
+      "text": "Seat 2 gains 1 sheep; Seat 4 gains 1 sheep, 1 stone; Ember gains 1 sheep, 1 stone; Seat 3 gains 1 stone — Seat 2's roll.",
+      "font": {
+        "size": 12,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400",
+        "lineHeight": "20px"
+      },
+      "rect": {
+        "x": 254.91,
+        "y": 814,
+        "width": 666.41,
+        "height": 15,
+        "right": 921.31,
+        "bottom": 829
+      },
+      "elementRect": {
+        "x": 242.91,
+        "y": 812,
+        "width": 67.78,
+        "height": 20,
+        "right": 310.69,
+        "bottom": 832
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div[data-testid=\"win-screen\"]",
+      "clippingAncestors": [
+        {
+          "selector": "p[data-testid=\"log-line\"]",
+          "axes": [
+            "x"
+          ],
+          "rect": {
+            "x": 242.91,
+            "y": 812,
+            "width": 67.78,
+            "height": 20,
+            "right": 310.69,
+            "bottom": 832
+          },
+          "overflowX": "hidden",
+          "overflowY": "hidden",
+          "scrollWidth": 690,
+          "clientWidth": 68,
+          "scrollHeight": 20,
+          "clientHeight": 20,
+          "textOverflow": "ellipsis"
+        },
+        {
+          "selector": "div:nth-child(1) > div:nth-child(1) > div:nth-child(6) > div:nth-child(1) > div:nth-child(1)",
+          "axes": [
+            "x"
+          ],
+          "rect": {
+            "x": 12,
+            "y": 640,
+            "width": 366,
+            "height": 192,
+            "right": 378,
+            "bottom": 832
+          },
+          "overflowX": "auto",
+          "overflowY": "auto",
+          "scrollWidth": 366,
+          "clientWidth": 366,
+          "scrollHeight": 192,
+          "clientHeight": 192,
+          "textOverflow": "clip"
+        },
+        {
+          "selector": "div:nth-child(1) > div:nth-child(1)",
+          "axes": [
+            "x"
+          ],
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 844,
+            "right": 390,
+            "bottom": 844
+          },
+          "overflowX": "hidden",
+          "overflowY": "hidden",
+          "scrollWidth": 390,
+          "clientWidth": 390,
+          "scrollHeight": 844,
+          "clientHeight": 844,
+          "textOverflow": "clip"
+        },
+        {
+          "selector": "viewport",
+          "rect": {
+            "width": 390,
+            "height": 844,
+            "dpr": 1
+          }
+        }
+      ]
+    },
+    {
+      "selector": "div[data-testid=\"win-table-wrap\"] > table:nth-child(1) > thead:nth-child(1) > tr:nth-child(1) > th:nth-child(7)",
+      "text": "Total",
+      "font": {
+        "size": 11,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "15.7143px"
+      },
+      "rect": {
+        "x": 325.23,
+        "y": 374.89,
+        "width": 36.86,
+        "height": 13,
+        "right": 362.09,
+        "bottom": 387.89
+      },
+      "elementRect": {
+        "x": 321.23,
+        "y": 365.89,
+        "width": 44.86,
+        "height": 32.2,
+        "right": 366.09,
+        "bottom": 398.09
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "clippingAncestors": [
+        {
+          "selector": "div[data-testid=\"win-table-wrap\"]",
+          "axes": [
+            "x"
+          ],
+          "rect": {
+            "x": 33,
+            "y": 365.89,
+            "width": 324,
+            "height": 179.7,
+            "right": 357,
+            "bottom": 545.59
+          },
+          "overflowX": "auto",
+          "overflowY": "auto",
+          "scrollWidth": 333,
+          "clientWidth": 324,
+          "scrollHeight": 180,
+          "clientHeight": 180,
+          "textOverflow": "clip"
+        }
+      ]
+    },
+    {
+      "selector": "td[data-testid=\"win-total\"]",
+      "text": "10",
+      "font": {
+        "size": 14,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "20px"
+      },
+      "rect": {
+        "x": 344.38,
+        "y": 407.59,
+        "width": 17.72,
+        "height": 17,
+        "right": 362.09,
+        "bottom": 424.59
+      },
+      "elementRect": {
+        "x": 321.23,
+        "y": 398.09,
+        "width": 44.86,
+        "height": 37,
+        "right": 366.09,
+        "bottom": 435.09
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "clippingAncestors": [
+        {
+          "selector": "div[data-testid=\"win-table-wrap\"]",
+          "axes": [
+            "x"
+          ],
+          "rect": {
+            "x": 33,
+            "y": 365.89,
+            "width": 324,
+            "height": 179.7,
+            "right": 357,
+            "bottom": 545.59
+          },
+          "overflowX": "auto",
+          "overflowY": "auto",
+          "scrollWidth": 333,
+          "clientWidth": 324,
+          "scrollHeight": 180,
+          "clientHeight": 180,
+          "textOverflow": "clip"
+        }
+      ]
+    },
+    {
+      "selector": "td[data-testid=\"win-total\"]",
+      "text": "4",
+      "font": {
+        "size": 14,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "20px"
+      },
+      "rect": {
+        "x": 353.23,
+        "y": 444.59,
+        "width": 8.86,
+        "height": 17,
+        "right": 362.09,
+        "bottom": 461.59
+      },
+      "elementRect": {
+        "x": 321.23,
+        "y": 435.09,
+        "width": 44.86,
+        "height": 37,
+        "right": 366.09,
+        "bottom": 472.09
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "clippingAncestors": [
+        {
+          "selector": "div[data-testid=\"win-table-wrap\"]",
+          "axes": [
+            "x"
+          ],
+          "rect": {
+            "x": 33,
+            "y": 365.89,
+            "width": 324,
+            "height": 179.7,
+            "right": 357,
+            "bottom": 545.59
+          },
+          "overflowX": "auto",
+          "overflowY": "auto",
+          "scrollWidth": 333,
+          "clientWidth": 324,
+          "scrollHeight": 180,
+          "clientHeight": 180,
+          "textOverflow": "clip"
+        }
+      ]
+    },
+    {
+      "selector": "td[data-testid=\"win-total\"]",
+      "text": "2",
+      "font": {
+        "size": 14,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "20px"
+      },
+      "rect": {
+        "x": 353.23,
+        "y": 481.59,
+        "width": 8.86,
+        "height": 17,
+        "right": 362.09,
+        "bottom": 498.59
+      },
+      "elementRect": {
+        "x": 321.23,
+        "y": 472.09,
+        "width": 44.86,
+        "height": 37,
+        "right": 366.09,
+        "bottom": 509.09
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "clippingAncestors": [
+        {
+          "selector": "div[data-testid=\"win-table-wrap\"]",
+          "axes": [
+            "x"
+          ],
+          "rect": {
+            "x": 33,
+            "y": 365.89,
+            "width": 324,
+            "height": 179.7,
+            "right": 357,
+            "bottom": 545.59
+          },
+          "overflowX": "auto",
+          "overflowY": "auto",
+          "scrollWidth": 333,
+          "clientWidth": 324,
+          "scrollHeight": 180,
+          "clientHeight": 180,
+          "textOverflow": "clip"
+        }
+      ]
+    },
+    {
+      "selector": "td[data-testid=\"win-total\"]",
+      "text": "2",
+      "font": {
+        "size": 14,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "20px"
+      },
+      "rect": {
+        "x": 353.23,
+        "y": 518.59,
+        "width": 8.86,
+        "height": 17,
+        "right": 362.09,
+        "bottom": 535.59
+      },
+      "elementRect": {
+        "x": 321.23,
+        "y": 509.09,
+        "width": 44.86,
+        "height": 36.5,
+        "right": 366.09,
+        "bottom": 545.59
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "clippingAncestors": [
+        {
+          "selector": "div[data-testid=\"win-table-wrap\"]",
+          "axes": [
+            "x"
+          ],
+          "rect": {
+            "x": 33,
+            "y": 365.89,
+            "width": 324,
+            "height": 179.7,
+            "right": 357,
+            "bottom": 545.59
+          },
+          "overflowX": "auto",
+          "overflowY": "auto",
+          "scrollWidth": 333,
+          "clientWidth": 324,
+          "scrollHeight": 180,
+          "clientHeight": 180,
+          "textOverflow": "clip"
+        }
+      ]
+    }
+  ],
+  "allVisibleText": [
+    {
+      "selector": "span[data-testid=\"seat-name\"]",
+      "text": "Jar",
+      "font": {
+        "size": 12,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "16px"
+      },
+      "rect": {
+        "x": 32,
+        "y": 18,
+        "width": 18.25,
+        "height": 15,
+        "right": 50.25,
+        "bottom": 33
+      },
+      "elementRect": {
+        "x": 32,
+        "y": 18,
+        "width": 33.69,
+        "height": 16,
+        "right": 65.69,
+        "bottom": 34
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div[data-testid=\"win-screen\"]"
+    },
+    {
+      "selector": "span[data-testid=\"seat-vp\"]",
+      "text": "6",
+      "font": {
+        "size": 20,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "750",
+        "lineHeight": "26px"
+      },
+      "rect": {
+        "x": 69.69,
+        "y": 14,
+        "width": 12.81,
+        "height": 23,
+        "right": 82.5,
+        "bottom": 37
+      },
+      "elementRect": {
+        "x": 69.69,
+        "y": 13,
+        "width": 12.81,
+        "height": 26,
+        "right": 82.5,
+        "bottom": 39
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div[data-testid=\"win-screen\"]"
+    },
+    {
+      "selector": "span[data-testid=\"tally-path\"]",
+      "text": "5",
+      "font": {
+        "size": 12,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "16px"
+      },
+      "rect": {
+        "x": 34,
+        "y": 39,
+        "width": 7.78,
+        "height": 15,
+        "right": 41.78,
+        "bottom": 54
+      },
+      "elementRect": {
+        "x": 18,
+        "y": 39,
+        "width": 25.78,
+        "height": 16,
+        "right": 43.78,
+        "bottom": 55
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div[data-testid=\"win-screen\"]"
+    },
+    {
+      "selector": "span[data-testid=\"tally-army\"]",
+      "text": "1",
+      "font": {
+        "size": 12,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "16px"
+      },
+      "rect": {
+        "x": 63.78,
+        "y": 39,
+        "width": 5.77,
+        "height": 15,
+        "right": 69.55,
+        "bottom": 54
+      },
+      "elementRect": {
+        "x": 47.78,
+        "y": 39,
+        "width": 23.77,
+        "height": 16,
+        "right": 71.55,
+        "bottom": 55
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div[data-testid=\"win-screen\"]"
+    },
+    {
+      "selector": "span[data-testid=\"seat-name\"]",
+      "text": "Luc",
+      "font": {
+        "size": 12,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "16px"
+      },
+      "rect": {
+        "x": 112.5,
+        "y": 18,
+        "width": 20.94,
+        "height": 15,
+        "right": 133.44,
+        "bottom": 33
+      },
+      "elementRect": {
+        "x": 112.5,
+        "y": 18,
+        "width": 33.69,
+        "height": 16,
+        "right": 146.19,
+        "bottom": 34
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div[data-testid=\"win-screen\"]"
+    },
+    {
+      "selector": "span[data-testid=\"seat-vp\"]",
+      "text": "4",
+      "font": {
+        "size": 20,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "750",
+        "lineHeight": "26px"
+      },
+      "rect": {
+        "x": 150.19,
+        "y": 14,
+        "width": 12.81,
+        "height": 23,
+        "right": 163,
+        "bottom": 37
+      },
+      "elementRect": {
+        "x": 150.19,
+        "y": 13,
+        "width": 12.81,
+        "height": 26,
+        "right": 163,
+        "bottom": 39
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div[data-testid=\"win-screen\"]"
+    },
+    {
+      "selector": "span[data-testid=\"tally-path\"]",
+      "text": "1",
+      "font": {
+        "size": 12,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "16px"
+      },
+      "rect": {
+        "x": 114.5,
+        "y": 39,
+        "width": 5.77,
+        "height": 15,
+        "right": 120.27,
+        "bottom": 54
+      },
+      "elementRect": {
+        "x": 98.5,
+        "y": 39,
+        "width": 23.77,
+        "height": 16,
+        "right": 122.27,
+        "bottom": 55
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div[data-testid=\"win-screen\"]"
+    },
+    {
+      "selector": "span[data-testid=\"tally-army\"]",
+      "text": "3",
+      "font": {
+        "size": 12,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "16px"
+      },
+      "rect": {
+        "x": 142.27,
+        "y": 39,
+        "width": 7.86,
+        "height": 15,
+        "right": 150.13,
+        "bottom": 54
+      },
+      "elementRect": {
+        "x": 126.27,
+        "y": 39,
+        "width": 25.86,
+        "height": 16,
+        "right": 152.13,
+        "bottom": 55
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div[data-testid=\"win-screen\"]"
+    },
+    {
+      "selector": "span[data-testid=\"seat-name\"]",
+      "text": "Ale",
+      "font": {
+        "size": 12,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "16px"
+      },
+      "rect": {
+        "x": 193,
+        "y": 18,
+        "width": 18.5,
+        "height": 15,
+        "right": 211.5,
+        "bottom": 33
+      },
+      "elementRect": {
+        "x": 193,
+        "y": 18,
+        "width": 33.69,
+        "height": 16,
+        "right": 226.69,
+        "bottom": 34
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div[data-testid=\"win-screen\"]"
+    },
+    {
+      "selector": "span[data-testid=\"seat-vp\"]",
+      "text": "2",
+      "font": {
+        "size": 20,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "750",
+        "lineHeight": "26px"
+      },
+      "rect": {
+        "x": 230.69,
+        "y": 14,
+        "width": 12.81,
+        "height": 23,
+        "right": 243.5,
+        "bottom": 37
+      },
+      "elementRect": {
+        "x": 230.69,
+        "y": 13,
+        "width": 12.81,
+        "height": 26,
+        "right": 243.5,
+        "bottom": 39
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div[data-testid=\"win-screen\"]"
+    },
+    {
+      "selector": "span[data-testid=\"tally-path\"]",
+      "text": "1",
+      "font": {
+        "size": 12,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "16px"
+      },
+      "rect": {
+        "x": 195,
+        "y": 39,
+        "width": 5.77,
+        "height": 15,
+        "right": 200.77,
+        "bottom": 54
+      },
+      "elementRect": {
+        "x": 179,
+        "y": 39,
+        "width": 23.77,
+        "height": 16,
+        "right": 202.77,
+        "bottom": 55
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div[data-testid=\"win-screen\"]"
+    },
+    {
+      "selector": "span[data-testid=\"tally-army\"]",
+      "text": "0",
+      "font": {
+        "size": 12,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "16px"
+      },
+      "rect": {
+        "x": 222.77,
+        "y": 39,
+        "width": 7.78,
+        "height": 15,
+        "right": 230.55,
+        "bottom": 54
+      },
+      "elementRect": {
+        "x": 206.77,
+        "y": 39,
+        "width": 25.78,
+        "height": 16,
+        "right": 232.55,
+        "bottom": 55
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div[data-testid=\"win-screen\"]"
+    },
+    {
+      "selector": "span[data-testid=\"seat-name\"]",
+      "text": "J2",
+      "font": {
+        "size": 12,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "16px"
+      },
+      "rect": {
+        "x": 273.5,
+        "y": 18,
+        "width": 14.11,
+        "height": 15,
+        "right": 287.61,
+        "bottom": 33
+      },
+      "elementRect": {
+        "x": 273.5,
+        "y": 18,
+        "width": 33.69,
+        "height": 16,
+        "right": 307.19,
+        "bottom": 34
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div[data-testid=\"win-screen\"]"
+    },
+    {
+      "selector": "span[data-testid=\"seat-vp\"]",
+      "text": "2",
+      "font": {
+        "size": 20,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "750",
+        "lineHeight": "26px"
+      },
+      "rect": {
+        "x": 311.19,
+        "y": 14,
+        "width": 12.81,
+        "height": 23,
+        "right": 324,
+        "bottom": 37
+      },
+      "elementRect": {
+        "x": 311.19,
+        "y": 13,
+        "width": 12.81,
+        "height": 26,
+        "right": 324,
+        "bottom": 39
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div[data-testid=\"win-screen\"]"
+    },
+    {
+      "selector": "span[data-testid=\"tally-path\"]",
+      "text": "2",
+      "font": {
+        "size": 12,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "16px"
+      },
+      "rect": {
+        "x": 275.5,
+        "y": 39,
+        "width": 7.41,
+        "height": 15,
+        "right": 282.91,
+        "bottom": 54
+      },
+      "elementRect": {
+        "x": 259.5,
+        "y": 39,
+        "width": 25.41,
+        "height": 16,
+        "right": 284.91,
+        "bottom": 55
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div[data-testid=\"win-screen\"]"
+    },
+    {
+      "selector": "span[data-testid=\"tally-army\"]",
+      "text": "0",
+      "font": {
+        "size": 12,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "16px"
+      },
+      "rect": {
+        "x": 304.91,
+        "y": 39,
+        "width": 7.78,
+        "height": 15,
+        "right": 312.69,
+        "bottom": 54
+      },
+      "elementRect": {
+        "x": 288.91,
+        "y": 39,
+        "width": 25.78,
+        "height": 16,
+        "right": 314.69,
+        "bottom": 55
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div[data-testid=\"win-screen\"]"
+    },
+    {
+      "selector": "p[data-testid=\"hidden-point-hint\"]",
+      "text": "Hidden fortunes may add points.",
+      "font": {
+        "size": 12,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400",
+        "lineHeight": "12px"
+      },
+      "rect": {
+        "x": 20,
+        "y": 54,
+        "width": 184.5,
+        "height": 15,
+        "right": 204.5,
+        "bottom": 69
+      },
+      "elementRect": {
+        "x": 12,
+        "y": 56,
+        "width": 366,
+        "height": 12,
+        "right": 378,
+        "bottom": 68
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div[data-testid=\"win-screen\"]"
+    },
+    {
+      "selector": "#hud-winner",
+      "text": "Jarrod wins with 10 points.",
+      "font": {
+        "size": 14,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400",
+        "lineHeight": "20px"
+      },
+      "rect": {
+        "x": 25,
+        "y": 650,
+        "width": 172.03,
+        "height": 17,
+        "right": 197.03,
+        "bottom": 667
+      },
+      "elementRect": {
+        "x": 25,
+        "y": 650,
+        "width": 172.03,
+        "height": 17,
+        "right": 197.03,
+        "bottom": 667
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "button[data-testid=\"win-menu\"]"
+    },
+    {
+      "selector": "span[data-testid=\"hand-count\"]",
+      "text": "3",
+      "font": {
+        "size": 24,
+        "family": "ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+        "weight": "700",
+        "lineHeight": "24px"
+      },
+      "rect": {
+        "x": 45.55,
+        "y": 711,
+        "width": 15.23,
+        "height": 28,
+        "right": 60.78,
+        "bottom": 739
+      },
+      "elementRect": {
+        "x": 45.55,
+        "y": 713,
+        "width": 15.7,
+        "height": 24,
+        "right": 61.25,
+        "bottom": 737
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div[data-testid=\"win-screen\"]"
+    },
+    {
+      "selector": "span[data-testid=\"hand-name\"]",
+      "text": "Wood",
+      "font": {
+        "size": 10,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "700",
+        "lineHeight": "12px"
+      },
+      "rect": {
+        "x": 35.42,
+        "y": 738,
+        "width": 36.73,
+        "height": 12,
+        "right": 72.16,
+        "bottom": 750
+      },
+      "elementRect": {
+        "x": 34.63,
+        "y": 738,
+        "width": 37.53,
+        "height": 12,
+        "right": 72.16,
+        "bottom": 750
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div[data-testid=\"win-screen\"]"
+    },
+    {
+      "selector": "span[data-testid=\"hand-count\"]",
+      "text": "2",
+      "font": {
+        "size": 24,
+        "family": "ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+        "weight": "700",
+        "lineHeight": "24px"
+      },
+      "rect": {
+        "x": 116.34,
+        "y": 711,
+        "width": 15.23,
+        "height": 28,
+        "right": 131.58,
+        "bottom": 739
+      },
+      "elementRect": {
+        "x": 116.34,
+        "y": 713,
+        "width": 15.7,
+        "height": 24,
+        "right": 132.05,
+        "bottom": 737
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div[data-testid=\"win-screen\"]"
+    },
+    {
+      "selector": "span[data-testid=\"hand-name\"]",
+      "text": "Brick",
+      "font": {
+        "size": 10,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "700",
+        "lineHeight": "12px"
+      },
+      "rect": {
+        "x": 106.52,
+        "y": 738,
+        "width": 36.16,
+        "height": 12,
+        "right": 142.67,
+        "bottom": 750
+      },
+      "elementRect": {
+        "x": 105.72,
+        "y": 738,
+        "width": 36.95,
+        "height": 12,
+        "right": 142.67,
+        "bottom": 750
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div[data-testid=\"win-screen\"]"
+    },
+    {
+      "selector": "span[data-testid=\"hand-count\"]",
+      "text": "4",
+      "font": {
+        "size": 24,
+        "family": "ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+        "weight": "700",
+        "lineHeight": "24px"
+      },
+      "rect": {
+        "x": 187.14,
+        "y": 711,
+        "width": 15.23,
+        "height": 28,
+        "right": 202.38,
+        "bottom": 739
+      },
+      "elementRect": {
+        "x": 187.14,
+        "y": 713,
+        "width": 15.7,
+        "height": 24,
+        "right": 202.84,
+        "bottom": 737
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div[data-testid=\"win-screen\"]"
+    },
+    {
+      "selector": "span[data-testid=\"hand-name\"]",
+      "text": "Sheep",
+      "font": {
+        "size": 10,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "700",
+        "lineHeight": "12px"
+      },
+      "rect": {
+        "x": 176.2,
+        "y": 738,
+        "width": 38.36,
+        "height": 12,
+        "right": 214.56,
+        "bottom": 750
+      },
+      "elementRect": {
+        "x": 175.41,
+        "y": 738,
+        "width": 39.16,
+        "height": 12,
+        "right": 214.56,
+        "bottom": 750
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div[data-testid=\"win-screen\"]"
+    },
+    {
+      "selector": "span[data-testid=\"hand-count\"]",
+      "text": "1",
+      "font": {
+        "size": 24,
+        "family": "ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+        "weight": "700",
+        "lineHeight": "24px"
+      },
+      "rect": {
+        "x": 257.94,
+        "y": 711,
+        "width": 15.23,
+        "height": 28,
+        "right": 273.17,
+        "bottom": 739
+      },
+      "elementRect": {
+        "x": 257.94,
+        "y": 713,
+        "width": 15.7,
+        "height": 24,
+        "right": 273.64,
+        "bottom": 737
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div[data-testid=\"win-screen\"]"
+    },
+    {
+      "selector": "span[data-testid=\"hand-name\"]",
+      "text": "Wheat",
+      "font": {
+        "size": 10,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "700",
+        "lineHeight": "12px"
+      },
+      "rect": {
+        "x": 245.23,
+        "y": 738,
+        "width": 41.91,
+        "height": 12,
+        "right": 287.14,
+        "bottom": 750
+      },
+      "elementRect": {
+        "x": 244.44,
+        "y": 738,
+        "width": 42.7,
+        "height": 12,
+        "right": 287.14,
+        "bottom": 750
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div[data-testid=\"win-screen\"]"
+    },
+    {
+      "selector": "span[data-testid=\"hand-count\"]",
+      "text": "2",
+      "font": {
+        "size": 24,
+        "family": "ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+        "weight": "700",
+        "lineHeight": "24px"
+      },
+      "rect": {
+        "x": 328.73,
+        "y": 711,
+        "width": 15.23,
+        "height": 28,
+        "right": 343.97,
+        "bottom": 739
+      },
+      "elementRect": {
+        "x": 328.73,
+        "y": 713,
+        "width": 15.7,
+        "height": 24,
+        "right": 344.44,
+        "bottom": 737
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div[data-testid=\"win-screen\"]"
+    },
+    {
+      "selector": "span[data-testid=\"hand-name\"]",
+      "text": "Stone",
+      "font": {
+        "size": 10,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "700",
+        "lineHeight": "12px"
+      },
+      "rect": {
+        "x": 317.25,
+        "y": 738,
+        "width": 39.47,
+        "height": 12,
+        "right": 356.72,
+        "bottom": 750
+      },
+      "elementRect": {
+        "x": 316.45,
+        "y": 738,
+        "width": 40.27,
+        "height": 12,
+        "right": 356.72,
+        "bottom": 750
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div[data-testid=\"win-screen\"]"
+    },
+    {
+      "selector": "button[data-testid=\"fortunes-button\"]",
+      "text": "My fortunes ·",
+      "font": {
+        "size": 14,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "20px"
+      },
+      "rect": {
+        "x": 25,
+        "y": 777,
+        "width": 90.89,
+        "height": 17,
+        "right": 115.89,
+        "bottom": 794
+      },
+      "elementRect": {
+        "x": 12,
+        "y": 764,
+        "width": 125.75,
+        "height": 44,
+        "right": 137.75,
+        "bottom": 808
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div[data-testid=\"win-screen\"]"
+    },
+    {
+      "selector": "button[data-testid=\"fortunes-button\"]",
+      "text": "6",
+      "font": {
+        "size": 14,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "20px"
+      },
+      "rect": {
+        "x": 115.89,
+        "y": 777,
+        "width": 8.86,
+        "height": 17,
+        "right": 124.75,
+        "bottom": 794
+      },
+      "elementRect": {
+        "x": 12,
+        "y": 764,
+        "width": 125.75,
+        "height": 44,
+        "right": 137.75,
+        "bottom": 808
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div[data-testid=\"win-screen\"]"
+    },
+    {
+      "selector": "div[data-testid=\"dice-row\"] > span:nth-child(3)",
+      "text": "6",
+      "font": {
+        "size": 14,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400",
+        "lineHeight": "20px"
+      },
+      "rect": {
+        "x": 233.75,
+        "y": 773,
+        "width": 8.67,
+        "height": 17,
+        "right": 242.42,
+        "bottom": 790
+      },
+      "elementRect": {
+        "x": 233.75,
+        "y": 772,
+        "width": 8.67,
+        "height": 20,
+        "right": 242.42,
+        "bottom": 792
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div[data-testid=\"win-screen\"]"
+    },
+    {
+      "selector": "ul[data-testid=\"my-numbers\"] > li[aria-label=\"6: Sheep, Sheep\"] > span:nth-child(1)",
+      "text": "6",
+      "font": {
+        "size": 12,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "16px"
+      },
+      "rect": {
+        "x": 18,
+        "y": 814,
+        "width": 7.91,
+        "height": 15,
+        "right": 25.91,
+        "bottom": 829
+      },
+      "elementRect": {
+        "x": 18,
+        "y": 814,
+        "width": 7.91,
+        "height": 16,
+        "right": 25.91,
+        "bottom": 830
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div[data-testid=\"win-screen\"]"
+    },
+    {
+      "selector": "ul[data-testid=\"my-numbers\"] > li[aria-label=\"5: Wood, Wood, Wood, Wood\"] > span:nth-child(1)",
+      "text": "5",
+      "font": {
+        "size": 12,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "16px"
+      },
+      "rect": {
+        "x": 73.91,
+        "y": 814,
+        "width": 7.91,
+        "height": 15,
+        "right": 81.81,
+        "bottom": 829
+      },
+      "elementRect": {
+        "x": 73.91,
+        "y": 814,
+        "width": 7.91,
+        "height": 16,
+        "right": 81.81,
+        "bottom": 830
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div[data-testid=\"win-screen\"]"
+    },
+    {
+      "selector": "ul[data-testid=\"my-numbers\"] > li[aria-label=\"3: Brick, Brick\"] > span:nth-child(1)",
+      "text": "3",
+      "font": {
+        "size": 12,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "16px"
+      },
+      "rect": {
+        "x": 161.81,
+        "y": 814,
+        "width": 7.91,
+        "height": 15,
+        "right": 169.72,
+        "bottom": 829
+      },
+      "elementRect": {
+        "x": 161.81,
+        "y": 814,
+        "width": 7.91,
+        "height": 16,
+        "right": 169.72,
+        "bottom": 830
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div[data-testid=\"win-screen\"]"
+    },
+    {
+      "selector": "ul[data-testid=\"my-numbers\"] > li[aria-label=\"11: Stone, Stone\"] > span:nth-child(1)",
+      "text": "11",
+      "font": {
+        "size": 12,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "16px"
+      },
+      "rect": {
+        "x": 217.72,
+        "y": 814,
+        "width": 15.8,
+        "height": 15,
+        "right": 233.52,
+        "bottom": 829
+      },
+      "elementRect": {
+        "x": 217.72,
+        "y": 814,
+        "width": 15.8,
+        "height": 16,
+        "right": 233.52,
+        "bottom": 830
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div[data-testid=\"win-screen\"]"
+    },
+    {
+      "selector": "p[data-testid=\"log-line\"]",
+      "text": "Seat 2 gains 1 sheep; Seat 4 gains 1 sheep, 1 stone; Ember gains 1 sheep, 1 stone; Seat 3 gains 1 stone — Seat 2's roll.",
+      "font": {
+        "size": 12,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400",
+        "lineHeight": "20px"
+      },
+      "rect": {
+        "x": 254.91,
+        "y": 814,
+        "width": 666.41,
+        "height": 15,
+        "right": 921.31,
+        "bottom": 829
+      },
+      "elementRect": {
+        "x": 242.91,
+        "y": 812,
+        "width": 67.78,
+        "height": 20,
+        "right": 310.69,
+        "bottom": 832
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div[data-testid=\"win-screen\"]"
+    },
+    {
+      "selector": "span[data-testid=\"deck-count\"]",
+      "text": "Deck",
+      "font": {
+        "size": 12,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400",
+        "lineHeight": "20px"
+      },
+      "rect": {
+        "x": 322.69,
+        "y": 814,
+        "width": 32.19,
+        "height": 15,
+        "right": 354.88,
+        "bottom": 829
+      },
+      "elementRect": {
+        "x": 314.69,
+        "y": 812,
+        "width": 63.31,
+        "height": 20,
+        "right": 378,
+        "bottom": 832
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div[data-testid=\"win-screen\"]"
+    },
+    {
+      "selector": "span[data-testid=\"deck-count\"]",
+      "text": "15",
+      "font": {
+        "size": 12,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400",
+        "lineHeight": "20px"
+      },
+      "rect": {
+        "x": 354.88,
+        "y": 814,
+        "width": 15.13,
+        "height": 15,
+        "right": 370,
+        "bottom": 829
+      },
+      "elementRect": {
+        "x": 314.69,
+        "y": 812,
+        "width": 63.31,
+        "height": 20,
+        "right": 378,
+        "bottom": 832
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div[data-testid=\"win-screen\"]"
+    },
+    {
+      "selector": "#win-headline",
+      "text": "Jarrod",
+      "font": {
+        "size": 30,
+        "family": "ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+        "weight": "400",
+        "lineHeight": "36px"
+      },
+      "rect": {
+        "x": 134.08,
+        "y": 182.39,
+        "width": 82.28,
+        "height": 35,
+        "right": 216.36,
+        "bottom": 217.39
+      },
+      "elementRect": {
+        "x": 134.08,
+        "y": 182.39,
+        "width": 147.83,
+        "height": 36,
+        "right": 281.91,
+        "bottom": 218.39
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "#win-headline",
+      "text": "wins",
+      "font": {
+        "size": 30,
+        "family": "ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+        "weight": "400",
+        "lineHeight": "36px"
+      },
+      "rect": {
+        "x": 216.36,
+        "y": 182.39,
+        "width": 65.55,
+        "height": 35,
+        "right": 281.91,
+        "bottom": 217.39
+      },
+      "elementRect": {
+        "x": 134.08,
+        "y": 182.39,
+        "width": 147.83,
+        "height": 36,
+        "right": 281.91,
+        "bottom": 218.39
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "p[data-testid=\"win-points\"]",
+      "text": "10",
+      "font": {
+        "size": 56,
+        "family": "ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+        "weight": "800",
+        "lineHeight": "60px"
+      },
+      "rect": {
+        "x": 138.34,
+        "y": 227.39,
+        "width": 61.83,
+        "height": 66,
+        "right": 200.17,
+        "bottom": 293.39
+      },
+      "elementRect": {
+        "x": 33,
+        "y": 230.39,
+        "width": 324,
+        "height": 60,
+        "right": 357,
+        "bottom": 290.39
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "p[data-testid=\"win-points\"] > span:nth-child(1)",
+      "text": "points",
+      "font": {
+        "size": 15,
+        "family": "ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+        "weight": "500",
+        "lineHeight": "22px"
+      },
+      "rect": {
+        "x": 208.17,
+        "y": 266.39,
+        "width": 43.47,
+        "height": 18,
+        "right": 251.64,
+        "bottom": 284.39
+      },
+      "elementRect": {
+        "x": 208.17,
+        "y": 266.39,
+        "width": 43.47,
+        "height": 18,
+        "right": 251.64,
+        "bottom": 284.39
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "p[data-testid=\"win-action\"]",
+      "text": "Drew a point fortune (+1)",
+      "font": {
+        "size": 14,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400",
+        "lineHeight": "20px"
+      },
+      "rect": {
+        "x": 44.88,
+        "y": 299.39,
+        "width": 161.31,
+        "height": 17,
+        "right": 206.19,
+        "bottom": 316.39
+      },
+      "elementRect": {
+        "x": 33,
+        "y": 298.39,
+        "width": 324,
+        "height": 20,
+        "right": 357,
+        "bottom": 318.39
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "p[data-testid=\"win-action\"]",
+      "text": "·",
+      "font": {
+        "size": 14,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400",
+        "lineHeight": "20px"
+      },
+      "rect": {
+        "x": 206.19,
+        "y": 299.39,
+        "width": 11.59,
+        "height": 17,
+        "right": 217.78,
+        "bottom": 316.39
+      },
+      "elementRect": {
+        "x": 33,
+        "y": 298.39,
+        "width": 324,
+        "height": 20,
+        "right": 357,
+        "bottom": 318.39
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "p[data-testid=\"win-action\"]",
+      "text": "10",
+      "font": {
+        "size": 14,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400",
+        "lineHeight": "20px"
+      },
+      "rect": {
+        "x": 217.78,
+        "y": 299.39,
+        "width": 15.02,
+        "height": 17,
+        "right": 232.8,
+        "bottom": 316.39
+      },
+      "elementRect": {
+        "x": 33,
+        "y": 298.39,
+        "width": 324,
+        "height": 20,
+        "right": 357,
+        "bottom": 318.39
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "p[data-testid=\"win-action\"]",
+      "text": "points, target",
+      "font": {
+        "size": 14,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400",
+        "lineHeight": "20px"
+      },
+      "rect": {
+        "x": 232.8,
+        "y": 299.39,
+        "width": 93.84,
+        "height": 17,
+        "right": 326.64,
+        "bottom": 316.39
+      },
+      "elementRect": {
+        "x": 33,
+        "y": 298.39,
+        "width": 324,
+        "height": 20,
+        "right": 357,
+        "bottom": 318.39
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "p[data-testid=\"win-action\"]",
+      "text": "10",
+      "font": {
+        "size": 14,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400",
+        "lineHeight": "20px"
+      },
+      "rect": {
+        "x": 326.64,
+        "y": 299.39,
+        "width": 14.47,
+        "height": 17,
+        "right": 341.11,
+        "bottom": 316.39
+      },
+      "elementRect": {
+        "x": 33,
+        "y": 298.39,
+        "width": 324,
+        "height": 20,
+        "right": 357,
+        "bottom": 318.39
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "p[data-testid=\"win-action\"]",
+      "text": ".",
+      "font": {
+        "size": 14,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400",
+        "lineHeight": "20px"
+      },
+      "rect": {
+        "x": 341.11,
+        "y": 299.39,
+        "width": 4.02,
+        "height": 17,
+        "right": 345.13,
+        "bottom": 316.39
+      },
+      "elementRect": {
+        "x": 33,
+        "y": 298.39,
+        "width": 324,
+        "height": 20,
+        "right": 357,
+        "bottom": 318.39
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "div[data-testid=\"win-reason\"] > span:nth-child(1)",
+      "text": "4 stronghold points",
+      "font": {
+        "size": 13,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400",
+        "lineHeight": "19.5px"
+      },
+      "rect": {
+        "x": 42.16,
+        "y": 331.39,
+        "width": 118.06,
+        "height": 16,
+        "right": 160.22,
+        "bottom": 347.39
+      },
+      "elementRect": {
+        "x": 42.16,
+        "y": 330.39,
+        "width": 118.06,
+        "height": 19.5,
+        "right": 160.22,
+        "bottom": 349.89
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "div[data-testid=\"win-reason\"] > span:nth-child(2)",
+      "text": "+",
+      "font": {
+        "size": 13,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400",
+        "lineHeight": "19.5px"
+      },
+      "rect": {
+        "x": 172.22,
+        "y": 331.39,
+        "width": 11.7,
+        "height": 16,
+        "right": 183.92,
+        "bottom": 347.39
+      },
+      "elementRect": {
+        "x": 172.22,
+        "y": 330.39,
+        "width": 98.64,
+        "height": 19.5,
+        "right": 270.86,
+        "bottom": 349.89
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "div[data-testid=\"win-reason\"] > span:nth-child(2)",
+      "text": "2 longest path",
+      "font": {
+        "size": 13,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400",
+        "lineHeight": "19.5px"
+      },
+      "rect": {
+        "x": 183.92,
+        "y": 331.39,
+        "width": 86.94,
+        "height": 16,
+        "right": 270.86,
+        "bottom": 347.39
+      },
+      "elementRect": {
+        "x": 172.22,
+        "y": 330.39,
+        "width": 98.64,
+        "height": 19.5,
+        "right": 270.86,
+        "bottom": 349.89
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "div[data-testid=\"win-reason\"] > span:nth-child(3)",
+      "text": "+",
+      "font": {
+        "size": 13,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400",
+        "lineHeight": "19.5px"
+      },
+      "rect": {
+        "x": 282.86,
+        "y": 331.39,
+        "width": 11.7,
+        "height": 16,
+        "right": 294.56,
+        "bottom": 347.39
+      },
+      "elementRect": {
+        "x": 282.86,
+        "y": 330.39,
+        "width": 64.97,
+        "height": 19.5,
+        "right": 347.83,
+        "bottom": 349.89
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "div[data-testid=\"win-reason\"] > span:nth-child(3)",
+      "text": "4 hidden",
+      "font": {
+        "size": 13,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400",
+        "lineHeight": "19.5px"
+      },
+      "rect": {
+        "x": 294.56,
+        "y": 331.39,
+        "width": 53.27,
+        "height": 16,
+        "right": 347.83,
+        "bottom": 347.39
+      },
+      "elementRect": {
+        "x": 282.86,
+        "y": 330.39,
+        "width": 64.97,
+        "height": 19.5,
+        "right": 347.83,
+        "bottom": 349.89
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "div[data-testid=\"win-table-wrap\"] > table:nth-child(1) > thead:nth-child(1) > tr:nth-child(1) > th:nth-child(1)",
+      "text": "Player",
+      "font": {
+        "size": 11,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "15.7143px"
+      },
+      "rect": {
+        "x": 102,
+        "y": 374.89,
+        "width": 43.7,
+        "height": 13,
+        "right": 145.7,
+        "bottom": 387.89
+      },
+      "elementRect": {
+        "x": 33,
+        "y": 365.89,
+        "width": 116.7,
+        "height": 32.2,
+        "right": 149.7,
+        "bottom": 398.09
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "div[data-testid=\"win-table-wrap\"] > table:nth-child(1) > thead:nth-child(1) > tr:nth-child(1) > th:nth-child(2) > span:nth-child(1)",
+      "text": "Out",
+      "font": {
+        "size": 11,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "15.7143px"
+      },
+      "rect": {
+        "x": 153.7,
+        "y": 374.89,
+        "width": 24.83,
+        "height": 13,
+        "right": 178.53,
+        "bottom": 387.89
+      },
+      "elementRect": {
+        "x": 153.7,
+        "y": 374.89,
+        "width": 24.83,
+        "height": 13,
+        "right": 178.53,
+        "bottom": 387.89
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "div[data-testid=\"win-table-wrap\"] > table:nth-child(1) > thead:nth-child(1) > tr:nth-child(1) > th:nth-child(3) > span:nth-child(1)",
+      "text": "Str",
+      "font": {
+        "size": 11,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "15.7143px"
+      },
+      "rect": {
+        "x": 186.53,
+        "y": 374.89,
+        "width": 22.58,
+        "height": 13,
+        "right": 209.11,
+        "bottom": 387.89
+      },
+      "elementRect": {
+        "x": 186.53,
+        "y": 374.89,
+        "width": 22.58,
+        "height": 13,
+        "right": 209.11,
+        "bottom": 387.89
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "div[data-testid=\"win-table-wrap\"] > table:nth-child(1) > thead:nth-child(1) > tr:nth-child(1) > th:nth-child(4) > span:nth-child(1)",
+      "text": "Path",
+      "font": {
+        "size": 11,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "15.7143px"
+      },
+      "rect": {
+        "x": 217.11,
+        "y": 374.89,
+        "width": 30.11,
+        "height": 13,
+        "right": 247.22,
+        "bottom": 387.89
+      },
+      "elementRect": {
+        "x": 217.11,
+        "y": 374.89,
+        "width": 30.11,
+        "height": 13,
+        "right": 247.22,
+        "bottom": 387.89
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "div[data-testid=\"win-table-wrap\"] > table:nth-child(1) > thead:nth-child(1) > tr:nth-child(1) > th:nth-child(5) > span:nth-child(1)",
+      "text": "Army",
+      "font": {
+        "size": 11,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "15.7143px"
+      },
+      "rect": {
+        "x": 255.22,
+        "y": 374.89,
+        "width": 33.47,
+        "height": 13,
+        "right": 288.69,
+        "bottom": 387.89
+      },
+      "elementRect": {
+        "x": 255.22,
+        "y": 374.89,
+        "width": 33.47,
+        "height": 13,
+        "right": 288.69,
+        "bottom": 387.89
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "div[data-testid=\"win-table-wrap\"] > table:nth-child(1) > thead:nth-child(1) > tr:nth-child(1) > th:nth-child(6) > span:nth-child(1)",
+      "text": "Hid",
+      "font": {
+        "size": 11,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "15.7143px"
+      },
+      "rect": {
+        "x": 296.69,
+        "y": 374.89,
+        "width": 20.55,
+        "height": 13,
+        "right": 317.23,
+        "bottom": 387.89
+      },
+      "elementRect": {
+        "x": 296.69,
+        "y": 374.89,
+        "width": 20.55,
+        "height": 13,
+        "right": 317.23,
+        "bottom": 387.89
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "div[data-testid=\"win-table-wrap\"] > table:nth-child(1) > thead:nth-child(1) > tr:nth-child(1) > th:nth-child(7)",
+      "text": "Total",
+      "font": {
+        "size": 11,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "15.7143px"
+      },
+      "rect": {
+        "x": 325.23,
+        "y": 374.89,
+        "width": 36.86,
+        "height": 13,
+        "right": 362.09,
+        "bottom": 387.89
+      },
+      "elementRect": {
+        "x": 321.23,
+        "y": 365.89,
+        "width": 44.86,
+        "height": 32.2,
+        "right": 366.09,
+        "bottom": 398.09
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "tr[data-testid=\"win-row\"] > td:nth-child(1)",
+      "text": "Jarrod",
+      "font": {
+        "size": 14,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "20px"
+      },
+      "rect": {
+        "x": 55,
+        "y": 407.59,
+        "width": 43.06,
+        "height": 17,
+        "right": 98.06,
+        "bottom": 424.59
+      },
+      "elementRect": {
+        "x": 33,
+        "y": 398.09,
+        "width": 116.7,
+        "height": 37,
+        "right": 149.7,
+        "bottom": 435.09
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "tr[data-testid=\"win-row\"] > td:nth-child(2)",
+      "text": "0",
+      "font": {
+        "size": 14,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400",
+        "lineHeight": "20px"
+      },
+      "rect": {
+        "x": 169.86,
+        "y": 407.59,
+        "width": 8.67,
+        "height": 17,
+        "right": 178.53,
+        "bottom": 424.59
+      },
+      "elementRect": {
+        "x": 149.7,
+        "y": 398.09,
+        "width": 32.83,
+        "height": 37,
+        "right": 182.53,
+        "bottom": 435.09
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "tr[data-testid=\"win-row\"] > td:nth-child(3)",
+      "text": "2",
+      "font": {
+        "size": 14,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400",
+        "lineHeight": "20px"
+      },
+      "rect": {
+        "x": 200.44,
+        "y": 407.59,
+        "width": 8.67,
+        "height": 17,
+        "right": 209.11,
+        "bottom": 424.59
+      },
+      "elementRect": {
+        "x": 182.53,
+        "y": 398.09,
+        "width": 30.58,
+        "height": 37,
+        "right": 213.11,
+        "bottom": 435.09
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "tr[data-testid=\"win-row\"] > td:nth-child(4)",
+      "text": "✓",
+      "font": {
+        "size": 14,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400",
+        "lineHeight": "20px"
+      },
+      "rect": {
+        "x": 235.23,
+        "y": 407.59,
+        "width": 11.98,
+        "height": 17,
+        "right": 247.22,
+        "bottom": 424.59
+      },
+      "elementRect": {
+        "x": 213.11,
+        "y": 398.09,
+        "width": 38.11,
+        "height": 37,
+        "right": 251.22,
+        "bottom": 435.09
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "tr[data-testid=\"win-row\"] > td:nth-child(6)",
+      "text": "4",
+      "font": {
+        "size": 14,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400",
+        "lineHeight": "20px"
+      },
+      "rect": {
+        "x": 308.56,
+        "y": 407.59,
+        "width": 8.67,
+        "height": 17,
+        "right": 317.23,
+        "bottom": 424.59
+      },
+      "elementRect": {
+        "x": 292.69,
+        "y": 398.09,
+        "width": 28.55,
+        "height": 37,
+        "right": 321.23,
+        "bottom": 435.09
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "td[data-testid=\"win-total\"]",
+      "text": "10",
+      "font": {
+        "size": 14,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "20px"
+      },
+      "rect": {
+        "x": 344.38,
+        "y": 407.59,
+        "width": 17.72,
+        "height": 17,
+        "right": 362.09,
+        "bottom": 424.59
+      },
+      "elementRect": {
+        "x": 321.23,
+        "y": 398.09,
+        "width": 44.86,
+        "height": 37,
+        "right": 366.09,
+        "bottom": 435.09
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "tr[data-testid=\"win-row\"] > td:nth-child(1)",
+      "text": "Lucke Diggler",
+      "font": {
+        "size": 14,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "20px"
+      },
+      "rect": {
+        "x": 55,
+        "y": 444.59,
+        "width": 90.7,
+        "height": 17,
+        "right": 145.7,
+        "bottom": 461.59
+      },
+      "elementRect": {
+        "x": 33,
+        "y": 435.09,
+        "width": 116.7,
+        "height": 37,
+        "right": 149.7,
+        "bottom": 472.09
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "tr[data-testid=\"win-row\"] > td:nth-child(2)",
+      "text": "2",
+      "font": {
+        "size": 14,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400",
+        "lineHeight": "20px"
+      },
+      "rect": {
+        "x": 169.86,
+        "y": 444.59,
+        "width": 8.67,
+        "height": 17,
+        "right": 178.53,
+        "bottom": 461.59
+      },
+      "elementRect": {
+        "x": 149.7,
+        "y": 435.09,
+        "width": 32.83,
+        "height": 37,
+        "right": 182.53,
+        "bottom": 472.09
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "tr[data-testid=\"win-row\"] > td:nth-child(3)",
+      "text": "0",
+      "font": {
+        "size": 14,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400",
+        "lineHeight": "20px"
+      },
+      "rect": {
+        "x": 200.44,
+        "y": 444.59,
+        "width": 8.67,
+        "height": 17,
+        "right": 209.11,
+        "bottom": 461.59
+      },
+      "elementRect": {
+        "x": 182.53,
+        "y": 435.09,
+        "width": 30.58,
+        "height": 37,
+        "right": 213.11,
+        "bottom": 472.09
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "tr[data-testid=\"win-row\"] > td:nth-child(5)",
+      "text": "✓",
+      "font": {
+        "size": 14,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400",
+        "lineHeight": "20px"
+      },
+      "rect": {
+        "x": 276.7,
+        "y": 444.59,
+        "width": 11.98,
+        "height": 17,
+        "right": 288.69,
+        "bottom": 461.59
+      },
+      "elementRect": {
+        "x": 251.22,
+        "y": 435.09,
+        "width": 41.47,
+        "height": 37,
+        "right": 292.69,
+        "bottom": 472.09
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "tr[data-testid=\"win-row\"] > td:nth-child(6)",
+      "text": "0",
+      "font": {
+        "size": 14,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400",
+        "lineHeight": "20px"
+      },
+      "rect": {
+        "x": 308.56,
+        "y": 444.59,
+        "width": 8.67,
+        "height": 17,
+        "right": 317.23,
+        "bottom": 461.59
+      },
+      "elementRect": {
+        "x": 292.69,
+        "y": 435.09,
+        "width": 28.55,
+        "height": 37,
+        "right": 321.23,
+        "bottom": 472.09
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "td[data-testid=\"win-total\"]",
+      "text": "4",
+      "font": {
+        "size": 14,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "20px"
+      },
+      "rect": {
+        "x": 353.23,
+        "y": 444.59,
+        "width": 8.86,
+        "height": 17,
+        "right": 362.09,
+        "bottom": 461.59
+      },
+      "elementRect": {
+        "x": 321.23,
+        "y": 435.09,
+        "width": 44.86,
+        "height": 37,
+        "right": 366.09,
+        "bottom": 472.09
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "tr[data-testid=\"win-row\"] > td:nth-child(1)",
+      "text": "Alexandria",
+      "font": {
+        "size": 14,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "20px"
+      },
+      "rect": {
+        "x": 55,
+        "y": 481.59,
+        "width": 69.55,
+        "height": 17,
+        "right": 124.55,
+        "bottom": 498.59
+      },
+      "elementRect": {
+        "x": 33,
+        "y": 472.09,
+        "width": 116.7,
+        "height": 37,
+        "right": 149.7,
+        "bottom": 509.09
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "tr[data-testid=\"win-row\"] > td:nth-child(2)",
+      "text": "2",
+      "font": {
+        "size": 14,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400",
+        "lineHeight": "20px"
+      },
+      "rect": {
+        "x": 169.86,
+        "y": 481.59,
+        "width": 8.67,
+        "height": 17,
+        "right": 178.53,
+        "bottom": 498.59
+      },
+      "elementRect": {
+        "x": 149.7,
+        "y": 472.09,
+        "width": 32.83,
+        "height": 37,
+        "right": 182.53,
+        "bottom": 509.09
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "tr[data-testid=\"win-row\"] > td:nth-child(3)",
+      "text": "0",
+      "font": {
+        "size": 14,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400",
+        "lineHeight": "20px"
+      },
+      "rect": {
+        "x": 200.44,
+        "y": 481.59,
+        "width": 8.67,
+        "height": 17,
+        "right": 209.11,
+        "bottom": 498.59
+      },
+      "elementRect": {
+        "x": 182.53,
+        "y": 472.09,
+        "width": 30.58,
+        "height": 37,
+        "right": 213.11,
+        "bottom": 509.09
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "tr[data-testid=\"win-row\"] > td:nth-child(6)",
+      "text": "0",
+      "font": {
+        "size": 14,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400",
+        "lineHeight": "20px"
+      },
+      "rect": {
+        "x": 308.56,
+        "y": 481.59,
+        "width": 8.67,
+        "height": 17,
+        "right": 317.23,
+        "bottom": 498.59
+      },
+      "elementRect": {
+        "x": 292.69,
+        "y": 472.09,
+        "width": 28.55,
+        "height": 37,
+        "right": 321.23,
+        "bottom": 509.09
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "td[data-testid=\"win-total\"]",
+      "text": "2",
+      "font": {
+        "size": 14,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "20px"
+      },
+      "rect": {
+        "x": 353.23,
+        "y": 481.59,
+        "width": 8.86,
+        "height": 17,
+        "right": 362.09,
+        "bottom": 498.59
+      },
+      "elementRect": {
+        "x": 321.23,
+        "y": 472.09,
+        "width": 44.86,
+        "height": 37,
+        "right": 366.09,
+        "bottom": 509.09
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "tr[data-testid=\"win-row\"] > td:nth-child(1)",
+      "text": "Joshspicy2",
+      "font": {
+        "size": 14,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "20px"
+      },
+      "rect": {
+        "x": 55,
+        "y": 518.59,
+        "width": 74.98,
+        "height": 17,
+        "right": 129.98,
+        "bottom": 535.59
+      },
+      "elementRect": {
+        "x": 33,
+        "y": 509.09,
+        "width": 116.7,
+        "height": 36.5,
+        "right": 149.7,
+        "bottom": 545.59
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "tr[data-testid=\"win-row\"] > td:nth-child(2)",
+      "text": "2",
+      "font": {
+        "size": 14,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400",
+        "lineHeight": "20px"
+      },
+      "rect": {
+        "x": 169.86,
+        "y": 518.59,
+        "width": 8.67,
+        "height": 17,
+        "right": 178.53,
+        "bottom": 535.59
+      },
+      "elementRect": {
+        "x": 149.7,
+        "y": 509.09,
+        "width": 32.83,
+        "height": 36.5,
+        "right": 182.53,
+        "bottom": 545.59
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "tr[data-testid=\"win-row\"] > td:nth-child(3)",
+      "text": "0",
+      "font": {
+        "size": 14,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400",
+        "lineHeight": "20px"
+      },
+      "rect": {
+        "x": 200.44,
+        "y": 518.59,
+        "width": 8.67,
+        "height": 17,
+        "right": 209.11,
+        "bottom": 535.59
+      },
+      "elementRect": {
+        "x": 182.53,
+        "y": 509.09,
+        "width": 30.58,
+        "height": 36.5,
+        "right": 213.11,
+        "bottom": 545.59
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "tr[data-testid=\"win-row\"] > td:nth-child(6)",
+      "text": "0",
+      "font": {
+        "size": 14,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400",
+        "lineHeight": "20px"
+      },
+      "rect": {
+        "x": 308.56,
+        "y": 518.59,
+        "width": 8.67,
+        "height": 17,
+        "right": 317.23,
+        "bottom": 535.59
+      },
+      "elementRect": {
+        "x": 292.69,
+        "y": 509.09,
+        "width": 28.55,
+        "height": 36.5,
+        "right": 321.23,
+        "bottom": 545.59
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "td[data-testid=\"win-total\"]",
+      "text": "2",
+      "font": {
+        "size": 14,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "20px"
+      },
+      "rect": {
+        "x": 353.23,
+        "y": 518.59,
+        "width": 8.86,
+        "height": 17,
+        "right": 362.09,
+        "bottom": 535.59
+      },
+      "elementRect": {
+        "x": 321.23,
+        "y": 509.09,
+        "width": 44.86,
+        "height": 36.5,
+        "right": 366.09,
+        "bottom": 545.59
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "button[data-testid=\"win-look\"]",
+      "text": "Look around",
+      "font": {
+        "size": 14,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "20px"
+      },
+      "rect": {
+        "x": 71.58,
+        "y": 578.59,
+        "width": 81.83,
+        "height": 17,
+        "right": 153.41,
+        "bottom": 595.59
+      },
+      "elementRect": {
+        "x": 33,
+        "y": 565.59,
+        "width": 159,
+        "height": 44,
+        "right": 192,
+        "bottom": 609.59
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "button[data-testid=\"win-again\"]",
+      "text": "Play again",
+      "font": {
+        "size": 14,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "20px"
+      },
+      "rect": {
+        "x": 244.91,
+        "y": 578.59,
+        "width": 67.17,
+        "height": 17,
+        "right": 312.08,
+        "bottom": 595.59
+      },
+      "elementRect": {
+        "x": 200,
+        "y": 565.59,
+        "width": 157,
+        "height": 44,
+        "right": 357,
+        "bottom": 609.59
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "button[data-testid=\"win-menu\"]",
+      "text": "Back to menu",
+      "font": {
+        "size": 14,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "20px"
+      },
+      "rect": {
+        "x": 150.02,
+        "y": 630.59,
+        "width": 89.97,
+        "height": 17,
+        "right": 239.98,
+        "bottom": 647.59
+      },
+      "elementRect": {
+        "x": 33,
+        "y": 617.59,
+        "width": 324,
+        "height": 44,
+        "right": 357,
+        "bottom": 661.59
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    }
+  ],
+  "geometry": {
+    "insets": {
+      "top": 68,
+      "right": 12,
+      "bottom": 326,
+      "left": 12
+    },
+    "liveInsets": {
+      "top": 68,
+      "right": 12,
+      "bottom": 216,
+      "left": 12
+    },
+    "pose": {
+      "left": -6.180327868852459,
+      "right": 6.180327868852459,
+      "top": 13.374863387978142,
+      "bottom": -13.374863387978142,
+      "tx": 0,
+      "tz": 4.511187753922056,
+      "focal": 0,
+      "dist": 0,
+      "cx": 0,
+      "cy": 0,
+      "polar": 0.43633231299858244,
+      "azimuth": 0,
+      "zoom": 1
+    },
+    "fit": {
+      "left": -6.180327868852459,
+      "right": 6.180327868852459,
+      "top": 13.374863387978142,
+      "bottom": -13.374863387978142,
+      "x": 0,
+      "z": 4.511187753922056
+    },
+    "view": "overhead",
+    "canvas": {
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 844,
+        "right": 390,
+        "bottom": 844
+      },
+      "width": 390,
+      "height": 844,
+      "clientWidth": 390,
+      "clientHeight": 844
+    },
+    "shell": {
+      "x": 0,
+      "y": 0,
+      "width": 390,
+      "height": 844,
+      "right": 390,
+      "bottom": 844
+    },
+    "projectedVertexBounds": {
+      "left": 41.98227003477711,
+      "right": 348.0177299652229,
+      "top": 165.0251750508378,
+      "bottom": 421.24151164536437
+    },
+    "projectedVertices": [
+      {
+        "id": "-2.91,-0.56",
+        "x": 103.18936202086628,
+        "y": 277.1198223109431
+      },
+      {
+        "id": "-2.91,0.56",
+        "x": 103.18936202086628,
+        "y": 309.146864385259
+      },
+      {
+        "id": "-3.88,1.12",
+        "x": 72.58581602782169,
+        "y": 325.1603854224169
+      },
+      {
+        "id": "-4.85,0.56",
+        "x": 41.98227003477711,
+        "y": 309.146864385259
+      },
+      {
+        "id": "-4.85,-0.56",
+        "x": 41.98227003477711,
+        "y": 277.1198223109431
+      },
+      {
+        "id": "-3.88,-1.12",
+        "x": 72.58581602782169,
+        "y": 261.1063012737852
+      },
+      {
+        "id": "-1.94,1.12",
+        "x": 133.79290801391087,
+        "y": 325.1603854224169
+      },
+      {
+        "id": "-1.94,2.24",
+        "x": 133.79290801391087,
+        "y": 357.1874274967327
+      },
+      {
+        "id": "-2.91,2.8",
+        "x": 103.18936202086628,
+        "y": 373.2009485338906
+      },
+      {
+        "id": "-3.88,2.24",
+        "x": 72.58581602782169,
+        "y": 357.1874274967327
+      },
+      {
+        "id": "-0.97,2.8",
+        "x": 164.39645400695542,
+        "y": 373.2009485338906
+      },
+      {
+        "id": "-0.97,3.92",
+        "x": 164.39645400695542,
+        "y": 405.2279906082064
+      },
+      {
+        "id": "-1.94,4.48",
+        "x": 133.79290801391085,
+        "y": 421.24151164536437
+      },
+      {
+        "id": "-2.91,3.92",
+        "x": 103.18936202086628,
+        "y": 405.2279906082064
+      },
+      {
+        "id": "-1.94,-2.24",
+        "x": 133.79290801391087,
+        "y": 229.07925919946933
+      },
+      {
+        "id": "-1.94,-1.12",
+        "x": 133.79290801391087,
+        "y": 261.1063012737852
+      },
+      {
+        "id": "-3.88,-2.24",
+        "x": 72.58581602782169,
+        "y": 229.07925919946933
+      },
+      {
+        "id": "-2.91,-2.8",
+        "x": 103.18936202086628,
+        "y": 213.06573816231145
+      },
+      {
+        "id": "-0.97,-0.56",
+        "x": 164.39645400695542,
+        "y": 277.1198223109431
+      },
+      {
+        "id": "-0.97,0.56",
+        "x": 164.39645400695542,
+        "y": 309.146864385259
+      },
+      {
+        "id": "0,1.12",
+        "x": 195,
+        "y": 325.1603854224169
+      },
+      {
+        "id": "0,2.24",
+        "x": 195,
+        "y": 357.1874274967327
+      },
+      {
+        "id": "0.97,2.8",
+        "x": 225.60354599304458,
+        "y": 373.2009485338906
+      },
+      {
+        "id": "0.97,3.92",
+        "x": 225.60354599304458,
+        "y": 405.2279906082064
+      },
+      {
+        "id": "0,4.48",
+        "x": 195,
+        "y": 421.24151164536437
+      },
+      {
+        "id": "-0.97,-3.92",
+        "x": 164.39645400695542,
+        "y": 181.03869608799567
+      },
+      {
+        "id": "-0.97,-2.8",
+        "x": 164.39645400695542,
+        "y": 213.06573816231145
+      },
+      {
+        "id": "-2.91,-3.92",
+        "x": 103.18936202086628,
+        "y": 181.03869608799567
+      },
+      {
+        "id": "-1.94,-4.48",
+        "x": 133.79290801391085,
+        "y": 165.0251750508378
+      },
+      {
+        "id": "0,-2.24",
+        "x": 195,
+        "y": 229.07925919946933
+      },
+      {
+        "id": "0,-1.12",
+        "x": 195,
+        "y": 261.1063012737852
+      },
+      {
+        "id": "0.97,-0.56",
+        "x": 225.60354599304458,
+        "y": 277.1198223109431
+      },
+      {
+        "id": "0.97,0.56",
+        "x": 225.60354599304458,
+        "y": 309.146864385259
+      },
+      {
+        "id": "1.94,1.12",
+        "x": 256.20709198608915,
+        "y": 325.1603854224169
+      },
+      {
+        "id": "1.94,2.24",
+        "x": 256.20709198608915,
+        "y": 357.1874274967327
+      },
+      {
+        "id": "2.91,2.8",
+        "x": 286.81063797913373,
+        "y": 373.2009485338906
+      },
+      {
+        "id": "2.91,3.92",
+        "x": 286.81063797913373,
+        "y": 405.2279906082064
+      },
+      {
+        "id": "1.94,4.48",
+        "x": 256.20709198608915,
+        "y": 421.24151164536437
+      },
+      {
+        "id": "0.97,-3.92",
+        "x": 225.60354599304458,
+        "y": 181.03869608799567
+      },
+      {
+        "id": "0.97,-2.8",
+        "x": 225.60354599304458,
+        "y": 213.06573816231145
+      },
+      {
+        "id": "0,-4.48",
+        "x": 195,
+        "y": 165.0251750508378
+      },
+      {
+        "id": "1.94,-2.24",
+        "x": 256.20709198608915,
+        "y": 229.07925919946933
+      },
+      {
+        "id": "1.94,-1.12",
+        "x": 256.20709198608915,
+        "y": 261.1063012737852
+      },
+      {
+        "id": "2.91,-0.56",
+        "x": 286.81063797913373,
+        "y": 277.1198223109431
+      },
+      {
+        "id": "2.91,0.56",
+        "x": 286.81063797913373,
+        "y": 309.146864385259
+      },
+      {
+        "id": "3.88,1.12",
+        "x": 317.4141839721783,
+        "y": 325.1603854224169
+      },
+      {
+        "id": "3.88,2.24",
+        "x": 317.4141839721783,
+        "y": 357.1874274967327
+      },
+      {
+        "id": "2.91,-3.92",
+        "x": 286.81063797913373,
+        "y": 181.03869608799567
+      },
+      {
+        "id": "2.91,-2.8",
+        "x": 286.81063797913373,
+        "y": 213.06573816231145
+      },
+      {
+        "id": "1.94,-4.48",
+        "x": 256.20709198608915,
+        "y": 165.0251750508378
+      },
+      {
+        "id": "3.88,-2.24",
+        "x": 317.4141839721783,
+        "y": 229.07925919946933
+      },
+      {
+        "id": "3.88,-1.12",
+        "x": 317.4141839721783,
+        "y": 261.1063012737852
+      },
+      {
+        "id": "4.85,-0.56",
+        "x": 348.0177299652229,
+        "y": 277.1198223109431
+      },
+      {
+        "id": "4.85,0.56",
+        "x": 348.0177299652229,
+        "y": 309.146864385259
+      }
+    ],
+    "scroll": {
+      "width": 390,
+      "height": 844,
+      "x": 0,
+      "y": 0
+    },
+    "settled": {
+      "glide": false,
+      "refitDue": false,
+      "gainFloats": 0,
+      "rollMoments": 0,
+      "turnMoments": 0
+    }
+  },
+  "fixture": {
+    "phase": "over",
+    "mode": "hotseat",
+    "current": "p1",
+    "target": 10,
+    "winner": "p1",
+    "water": {
+      "path": "simple",
+      "source": "saved",
+      "ms": null
+    },
+    "waterChoice": "simple"
+  }
+}
