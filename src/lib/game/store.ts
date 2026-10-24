@@ -334,7 +334,7 @@ interface GameStore {
   // spent on the way, so the largest one seen is the closest. The final-countdown cues are timed from it, not from `at`.
   clockSkew: number;
   lobbyLog: string;
-  hostTable: () => void;
+  hostTable: (visibility?: "open" | "private") => void;
   joinTable: (code: string) => void;
   // Ask which colors a lobby already holds, on a connection of its own, before the player joins.
   peekTable: (code: string) => void;
@@ -864,9 +864,9 @@ export const useGame = create<GameStore>((set, get) => ({
     if (buildMode === "path") return { vertices: [], edges: legalRoads(state, actor, false), hexes: [] };
     return { vertices: [], edges: [], hexes: [] };
   },
-  hostTable: () => {
+  hostTable: (visibility) => {
     get().commitName();
-    connect(set, get, (t, me) => t.open(me, { wayfarerMode: get().wayfarerChoices.online ?? "on" }));
+    connect(set, get, (t, me) => t.open(me, { wayfarerMode: get().wayfarerChoices.online ?? "on", visibility }));
   },
   joinTable: (code) => {
     get().commitName();

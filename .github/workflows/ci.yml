@@ -387,6 +387,8 @@ jobs:
         run: npm run watch-ui-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-b'
         run: npm run tabs-prove-4
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-b'
+        run: npm run open-table-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation'
         run: npm run visual-direction-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation'

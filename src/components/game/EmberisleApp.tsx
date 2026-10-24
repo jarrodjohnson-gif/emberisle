@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from "react";
-import { Volume2, VolumeX } from "lucide-react";
+import { Globe, Lock, Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { HowTo, Lobby, online, SetupPipHints, sheets } from "@/components/game/chunks";
+import { HowTo, Lobby, online, OpenTables, SetupPipHints, sheets } from "@/components/game/chunks";
 import { Hud } from "@/components/game/Hud";
 import { PlaceList } from "@/components/game/PlaceList";
 import { TableRecoveryBoundary } from "@/components/game/TableRecoveryBoundary";
@@ -118,6 +118,8 @@ function Title() {
   const setHowTo = useGame((s) => s.setHowTo);
   const howTo = useGame((s) => s.howTo);
   const [join, setJoin] = useState("");
+  const [openMode, setOpenMode] = useState(false);
+  const VisibilityIcon = openMode ? Globe : Lock;
   const hostTable = useGame((s) => s.hostTable);
   const joinTable = useGame((s) => s.joinTable);
   const watchTable = useGame((s) => s.watchTable);
@@ -240,7 +242,7 @@ function Title() {
               <p id="wayfarer-help" className="py-2 text-xs text-muted">Off never moves or blocks. Sevens still discard. Off fortunes add to the army.</p>
             </details>
           </div>
-          <div className="mt-4 flex flex-col gap-2">
+          <div className="mt-2 flex flex-col gap-1">
             <div className="flex flex-col items-center gap-1">
               <Button size="lg" variant={watchLink ? "secondary" : "primary"} className="w-full" onClick={startAi}>
                 Play
@@ -249,10 +251,30 @@ function Title() {
               <p className="text-xs text-muted">3 bots, no network</p>
             </div>
             {/* #488: a pointer or focus on Host or Join fetches the online chunk (lobby and chat) before either is pressed. */}
-            <div className="flex flex-wrap gap-2" onPointerEnter={online.prefetch} onFocus={online.prefetch}>
-              <Button size="lg" variant="secondary" className="grow" onClick={hostTable}>
-                Host a table
-              </Button>
+            <div className="flex flex-wrap gap-x-2" onPointerEnter={online.prefetch} onFocus={online.prefetch}>
+              {/* Split Host + Open/Private: share the row with Join via flex-1 so max-w-sm
+                  (title-prove 1280x500) does not wrap. Ghost only — never a fourth filled button (#444). */}
+              <div className="flex min-w-0 flex-1 overflow-hidden rounded-control border border-control-line">
+                <Button
+                  size="lg"
+                  variant="secondary"
+                  className="min-w-0 flex-1 rounded-none border-0 px-3"
+                  onClick={() => hostTable(openMode ? "open" : "private")}
+                >
+                  Host a table
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="w-11 rounded-none border-l border-control-line px-0"
+                  aria-pressed={openMode}
+                  title={openMode ? "Anyone can join" : "Code needed"}
+                  aria-label={openMode ? "Open to anyone" : "Private, code needed"}
+                  data-testid="open-mode-toggle"
+                  onClick={() => setOpenMode((m) => !m)}
+                >
+                  <VisibilityIcon size={16} aria-hidden="true" />
+                </Button>
+              </div>
               <form
                 aria-label="Join code"
                 className="flex min-w-[11rem] flex-1 gap-2"
@@ -269,6 +291,7 @@ function Title() {
                   onChange={(e) => setJoin(e.target.value.toUpperCase())}
                   placeholder="Code"
                   aria-label="Join code"
+                  aria-describedby="code-help"
                   autoCapitalize="characters"
                   autoComplete="off"
                   maxLength={4}
@@ -278,6 +301,7 @@ function Title() {
                   Join
                 </Button>
               </form>
+              <p id="code-help" className="w-full text-xs text-muted">Code for private tables</p>
             </div>
             {showWatch ? (
               <Button
@@ -302,6 +326,9 @@ function Title() {
                 {error}
               </p>
             ) : null}
+            <LazyBoundary failed={null}>
+              <OpenTables />
+            </LazyBoundary>
             <div className="flex flex-wrap items-center justify-center">
               <Button variant="ghost" className="px-3" title="Pass one device around" onClick={() => startHotseat(4)}>
                 Four seats, one table
