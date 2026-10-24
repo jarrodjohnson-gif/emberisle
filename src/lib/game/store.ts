@@ -151,7 +151,7 @@ export function hear(before: GameState | null, after: GameState, me: string, mod
     for (const _ of reached) play("match_point", MUSIC_VOLUME);
     if (reached[0]) matchLine = `${reached[0].name} reached ${publicVP(after, reached[0].id)} points — one to win`;
   }
-  if (mode !== "hotseat" && after.current === me && after.phase !== "over" && (reconnect || (before && before.current !== me))) yourTurn();
+  if (mode !== "hotseat" && after.current === me && after.phase !== "over" && (reconnect || (before && before.current !== me))) cue("your_turn", 1);
 }
 
 // The game log the dock shows (#305): a line of `state.log` or a host `log` message, stamped when this browser saw it.
@@ -211,7 +211,7 @@ import { PLAYER_COLORS, RESOURCES, type Action, type BuildMode, type GameState, 
 import { connectTable, hostUrl, type Bag, type ChatLine, type Legal, type Me, type Reaction, type Seat, type TableClient } from "@/lib/net/table";
 import { PROTO } from "@/lib/net/proto";
 import { readMutedSeats } from "@/lib/muted-seats";
-import { MEME_VOLUME, MUSIC_VOLUME, haptics, play, playLater, SOUNDBOARD, stop, yourTurn, type SoundName } from "@/lib/sound";
+import { MEME_VOLUME, MUSIC_VOLUME, haptics, play, playLater, SOUNDBOARD, stop, type SoundName } from "@/lib/sound";
 import { calmMotion, LAND_MS } from "@/lib/scene/landing";
 import type { WaterPath, WaterStatus } from "@/lib/scene/crystal-water";
 import type { PlayView } from "@/lib/scene/mobile-fit";
@@ -1210,7 +1210,7 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       const fromName = get().state?.players.find((p) => p.id === from)?.name ?? "Someone";
       set({ offer: { tradeId, from, fromName, give, want, until: Date.now() + seconds * 1000 }, declined: [], tradeOutcome: null, tradeTaker: null });
       if (from !== get().localId) play("trade_offer");
-        },
+    },
     tradeDeclined: ({ tradeId, by }) => {
       const { offer, declined } = get();
       if (offer?.tradeId === tradeId && !declined.includes(by)) set({ declined: [...declined, by] });

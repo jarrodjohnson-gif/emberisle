@@ -104,12 +104,8 @@ function savedMuted() {
 }
 
 export let haptics: typeof import("./haptics") | undefined;
-// Bootstrap finishes this before restoring a seat or accepting the first interactive event.
-export async function loadHaptics() {
-  try {
-    if (typeof navigator.vibrate === "function" && matchMedia("(pointer: coarse)").matches) haptics = await import("./haptics");
-  } catch { /* the optional motor must not prevent the game from loading */ }
-}
+// Installed once by the phone bootstrap, before rejoin and interactive rendering.
+export function installHaptics(module: typeof import("./haptics")) { haptics = module; }
 
 if (typeof window !== "undefined") {
   const unlock = () => {

@@ -47,6 +47,7 @@ export function player(before: GameState | null, after: GameState, me: string, m
   const ownFortune = mode === "hotseat" || (!!me && before?.current === me);
   return (sound: SoundName, volume: number) => {
     play(sound, volume);
+    if (sound === "your_turn") buzz(HAPTIC_MS.yourTurn);
     if (ownsPiece && (sound === "path_place" || sound === "outpost_place" || sound === "stronghold_place")) buzz(HAPTIC_MS.land);
     if (ownFortune && sound === "card_play") buzz(HAPTIC_MS.fortune);
     if (me && sound === "win") buzz(HAPTIC_MS.win);
