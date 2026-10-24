@@ -171,6 +171,11 @@ jobs:
         run: npm run label-commands-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run dice-prove
+      # #1073: measures every file in public/audio with ffmpeg.
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run audio-level-prove
 
   # #924: advisory, so it is not in `checks.needs`. The desk reads it for REVIEWING.md item 4.
   # It diffs this PR's proofs against the commit it merges onto (the merge commit's first parent, as in build), using the
