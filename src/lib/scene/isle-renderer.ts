@@ -45,7 +45,7 @@ import { makeBruno, type Bruno } from "@/lib/scene/bruno";
 import { makeJellyOutpost, makeJellyPath, makeJellyStronghold } from "@/lib/scene/pieces-jelly";
 import { CAUSTIC_GLSL, PAPER, SPLASH, addSplashRings, makeCrystalSea, makeFloorProps, makeSeaFloor, makeSplashes, makeSwell, makeWash, nearestCoast, type SeaUniforms, type WaterPath, type WaterStatus } from "@/lib/scene/crystal-water";
 import { Wobble } from "@/lib/scene/wobble";
-import { gainTick, play, touchHex } from "@/lib/sound";
+import { haptics, play, touchHex } from "@/lib/sound";
 import { payingHexes } from "@/lib/game/rules";
 import { type GameState, type HarborKind, type HexCell, type Terrain, type Vertex } from "@/lib/game/types";
 
@@ -253,7 +253,8 @@ export class IsleRenderer {
   // Each land hex's glow by hex id (its level read as `emissiveIntensity`, as when it was the cap's), and the flashes under
   // way (age in seconds, advanced by the frame's dt). The jelly board warms each hex by its level.
   caps = new Map<string, { emissiveIntensity: number }>();
-  private payingPieces: { key: string; age: number; delay: number; sounded: boolean }[] = [];
+  private payingPieces: { key: string; owner: string; age: number; delay: number; sounded: boolean }[] = [];
+  private payerSeat: string | true | undefined;
   private flashes: { mat: { emissiveIntensity: number }; id: string; age: number }[] = [];
   private clock = new THREE.Timer();
   private water = makeWater();
@@ -610,7 +611,7 @@ export class IsleRenderer {
   private pulsePayers(state: GameState) {
     const paid = new Set((state.lastProduction ?? []).map((g) => g.vertex));
     const ordered = state.players.flatMap((p) => state.vertices.filter((v) => paid.has(v.id) && v.building?.playerId === p.id));
-    this.payingPieces = ordered.map((v, i) => ({ key: `v:${v.id}`, age: 0, delay: i * 0.09, sounded: false }));
+    this.payingPieces = ordered.map((v, i) => ({ key: `v:${v.id}`, owner: v.building!.playerId, age: 0, delay: i * 0.09, sounded: false }));
   }
 
   private clearPayers() {
@@ -627,7 +628,10 @@ export class IsleRenderer {
       if (!obj || age < 0) continue;
       if (!p.sounded) {
         p.sounded = true;
-        if (p.delay < 0.72) gainTick();
+        if (p.delay < 0.72) {
+          play("gain_tick", 0.35);
+          haptics.pay?.(this.payerSeat === true || p.owner === this.payerSeat);
+        }
       }
       const active = age < duration;
       obj.scale.setScalar(calm || !active ? 1 : 1 + 0.12 * snapBezier(age < 0.14 ? age / 0.14 : (0.28 - age) / 0.14));
@@ -650,7 +654,8 @@ export class IsleRenderer {
     this.payingPieces = this.payingPieces.filter((p) => p.age - p.delay < duration);
   }
 
-  setBoard(state: GameState, highlights: Highlights, interactive: boolean) {
+  setBoard(state: GameState, highlights: Highlights, interactive: boolean, payerSeat?: string | true) {
+    this.payerSeat = payerSeat;
     // Only a roll seen live flashes: the same island and exactly one more dice roll than last time. Landing on a state that
     // already has rolls (a spectator, a rejoin, the title's island carried into a game) does not; several actions in one push
     // (online bots) still flash when one roll is among them.

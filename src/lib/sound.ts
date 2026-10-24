@@ -90,7 +90,7 @@ export function soundCategory(name: SoundName): SoundCategory {
 const MUTED_KEY = "emberisle-muted";
 const clips = new Map<SoundName, HTMLAudioElement>();
 const gains = new Map<SoundName, number>();
-let unlocked = false;
+export let unlocked = false;
 let muted = savedMuted();
 const listeners = new Set<() => void>();
 
@@ -101,6 +101,9 @@ function savedMuted() {
     return false;
   }
 }
+
+// The optional phone module registers these callbacks before bootstrap exposes UI or rejoin events.
+export const haptics: Partial<typeof import("./haptics").api> = {};
 
 if (typeof window !== "undefined") {
   const unlock = () => {
@@ -139,6 +142,9 @@ function subscribe(l: () => void) {
 export function useMuted() {
   return useSyncExternalStore(subscribe, isMuted, () => false);
 }
+
+export const hapticsAvailable = () => haptics.available?.() ?? false;
+export const haptic = (ms: number) => { haptics.buzz?.(ms); };
 
 // A clip never starts twice within GAP_MS of its last request (a burst is one sound), and clips start at least GAP_MS apart
 // in the order asked, so a bot round of five moves is five separate sounds. A backlog past MAX_QUEUE is dropped, not played late.
@@ -218,18 +224,10 @@ export function stop(name: SoundName) {
   clip.currentTime = 0;
 }
 
-// The your-turn chime, with a short buzz on phones that have a motor.
+// The your-turn chime, with a short buzz on phones that have a motor (#542: 15 ms, was 30).
 export function yourTurn() {
   play("your_turn");
-  if (unlocked && !muted) navigator.vibrate?.(30);
-}
-
-// One soft tick and guarded phone kick per paying piece. The renderer owns timing and the per-roll cap.
-export function gainTick() {
-  play("gain_tick", 0.35);
-  if (unlocked && !muted) {
-    try { navigator.vibrate?.(8); } catch { /* embedded pages may forbid vibration */ }
-  }
+  haptics.turn?.();
 }
 
 // Background music (#814): "Medieval: The Old Tower Inn" (docs/design/sound.md). The file is fetched on the first start, after
