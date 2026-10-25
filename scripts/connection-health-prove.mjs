@@ -444,6 +444,8 @@ if (process.argv.includes("--host-fixture")) {
     const quiet = await cold({ seed: savedSeatRecord });
     try {
       await until(() => quiet.requests.length > 0, "saved-seat client held");
+      await quiet.p.evaluate(code => { for (let i = 0; i < 3; i++) window.__emberisle.getState().peekTable(code); }, code);
+      assert.equal(await quiet.p.evaluate(() => window.__emberisle.getState().peeking), false, "background peeks cannot replace a pending saved-seat dial");
       await until(() => quiet.p.evaluate(() => !window.__emberisle.getState().restoring), "original 3s fallback includes module fetch");
       assert.deepEqual(await quiet.p.evaluate(() => window.__coldDeadlines), [3000], "quiet fallback keeps the original 3000ms delay");
       assert.equal(await quiet.p.evaluate(() => localStorage.getItem("emberisle-seat")), savedSeatRecord, "held loader preserves the exact saved seat");

@@ -889,6 +889,7 @@ export const useGame = create<GameStore>((set, get) => ({
     const { screen, net, peeking } = get();
     if (screen !== "title") return;
     // A non-peek `net` is the page-load rejoin; a peek queued on it would reach a seated socket and come back "not ready".
+    if (!net && stopWake && !peeking) return;
     if (net) return peeking ? net.peek(code) : undefined;
     connect(set, get, (t) => t.peek(code), "peek");
   },
@@ -1125,7 +1126,7 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => vo
   stopWake = () => { cancelled = true; clearTimeout(restoreTimer); removeListeners(); };
   // The original three-second fallback includes time spent fetching the client.
   if (kind === "quiet" && get().restoring) restoreTimer = setTimeout(() => !cancelled && get().restoring && set({ restoring: false }), 3000);
-  set({ serverSha: null, net: null, connectionHealth: { status: "Reconnecting", rtt: null } });
+  set({ serverSha: null, net: null, peeking: kind === "peek", connectionHealth: { status: "Reconnecting", rtt: null } });
   const loadFailed = () => {
     if (cancelled) return;
     clearWake();
