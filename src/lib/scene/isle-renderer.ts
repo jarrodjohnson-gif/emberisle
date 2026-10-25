@@ -687,8 +687,9 @@ export class IsleRenderer {
       this.flashHexes(payingHexes(state));
       this.pulsePayers(state);
     }
-    this.jelly?.robber(state.robberHex ?? null);
+    // #826: blacken the blocked hex and its token; skip the Wastes.
     const rh = state.hexes.find((h) => h.id === state.robberHex);
+    this.shadeRobber(rh);
     if (rh) {
       this.robberSpot(rh);
       if (!this.wayfarer.userData.placed || landChanged) {
@@ -696,6 +697,36 @@ export class IsleRenderer {
         this.wayfarer.position.copy(this.robberTarget);
         this.wayfarer.userData.placed = true;
       } else if (!this.walk) this.startWalk();
+    }
+  }
+
+  // #826: black terrain/token with readable light ink (waste / missing → restore).
+  private shadeRobber(rh?: HexCell) {
+    const id = rh && rh.terrain !== "waste" ? rh.id : null;
+    this.jelly?.robber(id);
+    for (const t of this.tokens) {
+      const blocked = id === t.userData.hex;
+      for (const c of t.children as THREE.Mesh[]) {
+        const m = c.material as THREE.MeshBasicMaterial;
+        if (!m?.color) continue;
+        m.userData.rest ??= m.color.clone();
+        m.color.copy(m.userData.rest as THREE.Color).multiplyScalar(blocked ? (m.map ? 0.55 : 0) : 1);
+        if (m.map && blocked !== !!m.userData.blocked) {
+          if (!m.userData.restMap) {
+            m.userData.restMap = m.map;
+            m.addEventListener("dispose", () => {
+              m.map?.dispose();
+              if (m.map !== m.userData.restMap) m.userData.restMap.dispose();
+            });
+          }
+          if (blocked) m.map = blackNumberFace(m.userData.restMap, t.userData.token);
+          else {
+            m.map.dispose();
+            m.map = m.userData.restMap;
+          }
+          m.userData.blocked = blocked;
+        }
+      }
     }
   }
 
@@ -1597,9 +1628,9 @@ export class IsleRenderer {
           if (!jelly) return;
           if (!alive()) return jelly.dispose();
           this.jelly = jelly;
-          jelly.robber(this.lastState?.robberHex ?? null);
-          // The scenes' ground beside the token can stand off the flat cap: he steps onto it.
           const rh = this.lastState?.hexes.find((h) => h.id === this.lastState?.robberHex);
+          this.shadeRobber(rh);
+          // The scenes' ground beside the token can stand off the flat cap: he steps onto it.
           if (rh) {
             this.robberSpot(rh);
             if (!this.walk) this.wayfarer.position.copy(this.robberTarget);
@@ -2153,7 +2184,7 @@ export function numberToken(n: number) {
   const c = document.createElement("canvas");
   c.width = 256;
   c.height = 256;
-  const ctx = c.getContext("2d")!;
+  const ctx = c.getContext("2d", { willReadFrequently: true })!;
   ctx.fillStyle = "#fff9f0";
   ctx.beginPath();
   ctx.arc(128, 128, 124, 0, Math.PI * 2);
@@ -2191,6 +2222,25 @@ export function numberToken(n: number) {
   label.position.y = TOKEN_H / 2 + 0.001;
   g.add(label);
   return g;
+}
+
+// Recolour the existing glyph pixels, so late-loading fonts cannot change its shape.
+function blackNumberFace(map: THREE.Texture, n: number) {
+  const c = document.createElement("canvas");
+  c.width = c.height = 256;
+  const ctx = c.getContext("2d", { willReadFrequently: true })!;
+  ctx.drawImage(map.image as HTMLCanvasElement, 0, 0);
+  const image = ctx.getImageData(0, 0, 256, 256);
+  const ink = n === 6 || n === 8 ? 38 : 25;
+  for (let i = 0; i < image.data.length; i += 4) {
+    const coverage = Math.max(0, Math.min(255, Math.round((249 - image.data[i + 1]!) * 255 / (249 - ink))));
+    image.data[i] = image.data[i + 1] = image.data[i + 2] = coverage;
+  }
+  ctx.putImageData(image, 0, 0);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 8;
+  return tex;
 }
 
 const PIECE_MAT = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.55 });
