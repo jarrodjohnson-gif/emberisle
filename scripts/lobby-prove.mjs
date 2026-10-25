@@ -71,7 +71,7 @@ const remembered = (t) => t.page.evaluate(() => localStorage.getItem("emberisle-
 try {
   // 1. The title's name field.
   const hana = await tab("Hana");
-  await hana.page.getByRole("group", { name: "Your seat" }).or(hana.page.locator("summary[aria-label='Your seat']")).first().click();
+  await hana.page.getByLabel("Your name", { exact: true }).click();
   const field = hana.page.getByLabel("Your name");
   await field.fill("Hana");
   await field.fill("");
@@ -94,7 +94,7 @@ try {
 
   // 2. A guest joins and renames.
   const gus = await tab("Gus");
-  await gus.page.locator("summary[aria-label='Your seat']").click();
+  await gus.page.getByLabel("Your name", { exact: true }).click();
   await gus.page.getByLabel("Your name").fill("Gus");
   await gus.page.getByLabel("Your name").blur();
   await gus.page.getByPlaceholder(/code/i).fill(tableCode);

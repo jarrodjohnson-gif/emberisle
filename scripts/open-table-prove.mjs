@@ -87,7 +87,7 @@ async function openTab(name, viewport = { width: 1280, height: 720 }) {
 // --- Tab A: Jarrod hosts an Open table ---
 const A = await openTab("Jarrod");
 // Set name to Jarrod.
-await A.page.locator("details.seat-settings summary").click();
+await A.page.getByLabel("Your name", { exact: true }).click();
 const nameInput = A.page.locator('input[placeholder="Your name"]');
 await nameInput.fill("Jarrod");
 await nameInput.press("Escape");
@@ -154,7 +154,7 @@ check(true, "Joshua joined the open table without typing a code");
 // --- Private table: never in the list ---
 // Tab C hosts a private table while the open one is running.
 const C = await openTab("Sidecar");
-await C.page.locator("details.seat-settings summary").click();
+await C.page.getByLabel("Your name", { exact: true }).click();
 await C.page.locator('input[placeholder="Your name"]').fill("Sidecar");
 await C.page.locator('input[placeholder="Your name"]').press("Escape");
 await C.page.getByRole("button", { name: "Host a table" }).click();

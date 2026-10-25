@@ -48,9 +48,11 @@ try {
   const mode = page.getByTestId("open-mode-toggle");
   await mode.waitFor();
   assert.equal(await mode.getAttribute("aria-pressed"), "false");
-  const wayfarer = page.locator('select[aria-label="Online wayfarer"]');
+  await page.getByRole("button", { name: "Wayfarer rules", exact: true }).click();
+  const wayfarer = page.getByRole("combobox", { name: "Host a table online", exact: true });
   await wayfarer.waitFor({ state: "attached" });
   assert.equal(await wayfarer.inputValue(), "on");
+  await page.getByRole("dialog", { name: "Wayfarer rules", exact: true }).getByRole("button", { name: "Close", exact: true }).click();
 
   const hrefs = await page.evaluate(() => ({
     manifest: document.querySelector('link[rel="manifest"]').href,

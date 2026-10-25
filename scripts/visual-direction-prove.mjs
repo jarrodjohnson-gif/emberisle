@@ -27,7 +27,7 @@ try {
     page.on("pageerror", e => errors.push(e.message));
     await page.goto(`http://127.0.0.1:${port}/`);
     await page.waitForFunction(() => window.__isle?.renders > 1);
-    await page.locator(".seat-settings > summary").click();
+    await page.getByRole("button", { name: "Your color", exact: true }).click();
     await page.getByRole("radio", { name: "Tide", exact: true }).click();
     await page.getByRole("button", { name: "Pass this device", exact: true }).click();
     await page.evaluate(() => {

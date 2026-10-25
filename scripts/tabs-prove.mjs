@@ -150,7 +150,7 @@ try {
   const b = await tab("Tide");
 
   // #142: picking a color on the Title screen must reach the actual seat and game state.
-  await a.page.locator(".seat-settings > summary").click();
+  await a.page.getByRole("button", { name: "Your color", exact: true }).click();
   await a.page.getByRole("radio", { name: "Tide" }).click();
   await a.page.getByRole("button", { name: "Host a table" }).click();
   const tableCode = (await a.page.getByTestId("table-code").textContent()).trim();
@@ -171,7 +171,7 @@ try {
 
   // #156/#271: before Join, the color the table already holds is dimmed and cannot be picked.
   const tideDims = async (t) => {
-    await t.page.locator(".seat-settings > summary").click();
+    await t.page.getByRole("button", { name: "Your color", exact: true }).click();
     const swatch = (n) => t.page.getByRole("radio", { name: n });
     await until(async () => {
       const tide = swatch("Tide (taken)");
@@ -180,6 +180,7 @@ try {
       return opacity === "0.35" && checked === "false" ? true : null;
     }, `Tide swatch dims on ${t.name} before Join`);
     for (const n of ["Ember", "Dune", "Pine"]) if (await swatch(n).isDisabled()) throw new Error(`${n} swatch is disabled on ${t.name}`);
+    await t.page.keyboard.press("Escape");
   };
   await b.page.getByPlaceholder(/code/i).fill(tableCode);
   await tideDims(b);
