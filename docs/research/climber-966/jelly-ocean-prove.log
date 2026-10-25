@@ -1,0 +1,8 @@
+
+> jelly-ocean-prove
+> node scripts/jelly-ocean-prove.mjs
+
+1280×720: game state preserved, clear water lanes, ≤4 animal meshes, random visits, island scenes, hidden/reduced pause [{"species":"dolphin","fits":true},{"species":"turtle","fits":true},{"species":"whale","fits":true}]
+390×844: game state preserved, clear water lanes, ≤4 animal meshes, random visits, island scenes, hidden/reduced pause [{"species":"dolphin","fits":true},{"species":"turtle","fits":true},{"species":"whale","fits":true}]
+844×390: game state preserved, clear water lanes, ≤4 animal meshes, random visits, island scenes, hidden/reduced pause [{"species":"dolphin","fits":true},{"species":"turtle","fits":true},{"species":"whale","fits":true}]
+jelly-ocean-prove: all checks passed

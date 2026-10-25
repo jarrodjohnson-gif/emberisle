@@ -1,0 +1,5 @@
+PASS every main script unchanged; own script added once
+PASS main workflow byte-identical after removing own single conditional step
+PASS reviewed proof byte-identical cd11455; SHA256 10af788f1de8e45a1aa8364d78e60deb971c2071433a1b7270a84ded7fcedb3a
+PASS runtime, existing proofs, lockfiles and budgets byte-identical main d37d5969bf127aca22165be581d5b0a84656e46a
+Merge parents cd11455d192635e83ab12464c1c18b5f6ce5374e d37d5969bf127aca22165be581d5b0a84656e46a

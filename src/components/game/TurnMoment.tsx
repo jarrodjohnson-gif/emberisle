@@ -47,7 +47,7 @@ export function TurnMoment() {
     }
   }
 
-  const [stage, { dy, how }] = useStage<HTMLParagraphElement>(up);
+  const stage = useStage<HTMLParagraphElement>(up);
   useEffect(() => {
     if (!up) return;
     const end = () => setUp(null);
@@ -73,9 +73,6 @@ export function TurnMoment() {
         key={up}
         ref={stage}
         data-testid="turn-moment"
-        data-shift={dy}
-        data-stage={how}
-        style={{ translate: `0 ${dy}px` }}
         className="flex items-center gap-3 rounded-sheet turn-stamp bg-surface px-6 py-4 text-number text-fg backdrop-blur-md motion-safe:animate-[turn-moment_1800ms_both]"
       >
         <SeatDot color={player.color} className="size-5" />
