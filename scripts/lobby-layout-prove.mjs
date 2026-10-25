@@ -81,6 +81,22 @@ async function geometry(page, minimum) {
   }
   return { ...data, share };
 }
+async function clearOfName(page, kind) {
+  const bubble = page.locator(`[data-testid="${kind}"] > div`).first();
+  await bubble.waitFor();
+  const bounds = await bubble.evaluate(el => {
+    const seat = el.closest("li");
+    const name = seat.querySelector('[data-testid="lobby-name"]');
+    const b = el.getBoundingClientRect();
+    const n = name.getBoundingClientRect();
+    const s = seat.getBoundingClientRect();
+    return {
+      clear: b.right <= n.left || b.left >= n.right || b.bottom <= n.top || b.top >= n.bottom,
+      inside: b.left >= s.left && b.right <= s.right && b.top >= s.top && b.bottom <= s.bottom,
+    };
+  });
+  assert.ok(bounds.clear && bounds.inside, `${kind}: whole bubble stays inside its seat and clear of the name`);
+}
 try {
   for (const [width, height, minimum] of [[390, 844, .52], [844, 390, .39], [1280, 720, .40]]) {
     const page = await client("Jarrod", { width, height }, width < 1000);
@@ -124,9 +140,14 @@ try {
     assert.equal(await page.locator("#chat-input").inputValue(), "");
     await page.getByTestId("emoji-row").locator("button").first().click();
     await guest.getByTestId("react-line").waitFor();
+    await clearOfName(page, "reaction");
     await page.getByRole("tab", { name: "Sounds & stickers" }).click();
     await page.getByTestId("sounds-tab").waitFor();
     assert.ok(await page.getByTestId("soundboard").locator("button").count() > 0);
+    await guest.getByRole("tab", { name: "Sounds & stickers" }).click();
+    await guest.getByRole("button", { name: "Play sound Wololo", exact: true }).click();
+    await clearOfName(page, "sound-bubble");
+    await guest.getByRole("tab", { name: "Chat", exact: true }).click();
     await page.getByRole("tab", { name: "Chat", exact: true }).click();
     await page.getByRole("button", { name: "Ready", exact: true }).click();
     await page.getByTestId("lobby-status").getByText("3 of 4 ready").waitFor();

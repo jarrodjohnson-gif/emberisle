@@ -57,7 +57,7 @@
   border-radius: 12px;
   background: #fff;
 }
-.lobby-name { display: flex; min-width: 0; align-items: center; font-size: 14px; font-weight: 600; }
+.lobby-name { display: flex; width: fit-content; max-width: 100%; min-width: 0; align-items: center; font-size: 14px; font-weight: 600; }
 .lobby-name > button, .lobby-name > input { width: 100%; }
 .lobby-player-status { grid-column: 2; grid-row: 2; font-size: 12px; line-height: 18px; }
 .lobby-player > button { grid-column: 3; grid-row: 1 / 3; padding: 0 6px; font-size: 12px; }
@@ -125,7 +125,10 @@
   .lobby-actions { grid-template-columns: minmax(0, 42fr) minmax(0, 58fr); column-gap: 8px; }
 }
 
-.lobby-player:has(.lobby-bubble):not(:has(> button)) .lobby-name { max-width: calc(100% - 44px); }
+.lobby-player:has([data-seat-bubble]):not(:has(> button)) .lobby-name { min-width: 48px; max-width: calc(100% - 88px); }
+.lobby-player:has([data-seat-bubble="react"]):not(:has(> button)) .lobby-name { max-width: calc(100% - 44px); }
+.lobby-bubble { max-width: calc(100% - 88px); }
+.lobby-bubble [data-seat-bubble] > div { max-width: 100%; overflow: hidden; }
 @media (max-width: 360px) and (orientation: portrait) {
   .lobby-header > p { font-size: 22px; }
   .lobby-copy-controls > button { padding: 0 4px; }
