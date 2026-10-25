@@ -22,8 +22,8 @@ const RINGS = 12;
 const SAMPLES = [0.37, 1.91, 3.53, 5.2];
 const ROLL_S = 2.4;
 const TAP_S = 0.9;
-// The wayfarer's shade on his hex: darker and cooler, as if a cloud stood over it.
-const DULL = new THREE.Color(0.46, 0.48, 0.58);
+// #826: the owner chose plain black for a blocked hex (skip waste in robber()).
+const DULL = new THREE.Color(0, 0, 0);
 
 export type JellyHex = { id: string; terrain: Terrain; x: number; z: number; y: number };
 export type JellyStats = { lite: boolean; drawCalls: number; triangles: number; kinds: number; batches: number; bakes: number; sprites: number };
@@ -288,7 +288,10 @@ function hexPatch(m: THREE.Material, u: HexU) {
         transformed = hC + ( transformed - hC ) * vec3( 1.0 - 0.03 * hA.w, 1.0 + 0.07 * hA.w, 1.0 - 0.03 * hA.w );
         vHexTint = uHexT[ int( aHex + 0.5 ) ];`,
       );
-    sh.fragmentShader = "varying vec3 vHexTint;\n" + sh.fragmentShader.replace("#include <color_fragment>", "#include <color_fragment>\n\tdiffuseColor.rgb *= vHexTint;");
+    sh.fragmentShader = "varying vec3 vHexTint;\n" + sh.fragmentShader
+      .replace("#include <color_fragment>", "#include <color_fragment>\n\tdiffuseColor.rgb *= vHexTint;")
+      // Plain black also removes the lit/specular/emissive remainder; unblocked hexes are unchanged.
+      .replace("#include <fog_fragment>", "#include <fog_fragment>\ngl_FragColor.rgb *= min(1.0, max(vHexTint.r, max(vHexTint.g, vHexTint.b)));");
   };
   m.customProgramCacheKey = () => `${key}|hex`;
 }
@@ -467,10 +470,13 @@ export class JellyBoard {
       };
       const seen: ReturnType<typeof snap>[][] = leaves.map(() => []);
       for (const t of SAMPLES) {
+        // Board stories (the ore climber) read env.age; set it so the sampler sees the gear-out motion. Cleared after.
+        k.tile.env.age = t;
         k.tile.update(t);
         root.updateMatrixWorld(true);
         leaves.forEach((o, i) => seen[i]!.push(snap(o)));
       }
+      delete k.tile.env.age;
       leaves.forEach((o, i) => {
         const s = seen[i]!;
         const differs = (f: (x: (typeof s)[0]) => unknown) => s.some((x) => f(x) !== f(s[0]!));
@@ -773,9 +779,17 @@ export class JellyBoard {
     if (e) e.h.tapAt = this.t;
   }
 
-  // The wayfarer stands on this hex (or none): it dulls, the others clear.
+  // The wayfarer stands on this hex (or none): it dulls; waste stays plain (#826).
   robber(id: string | null) {
-    for (const { h } of this.byHex.values()) h.dullTo = h.id === id ? 1 : 0;
+    for (const { k, h } of this.byHex.values()) h.dullTo = id && h.id === id && k.kind !== "waste" ? 1 : 0;
+  }
+
+  // Proofs: target / settled dull (0..1).
+  dullTarget(id: string) {
+    return this.byHex.get(id)?.h.dullTo ?? 0;
+  }
+  dullOf(id: string) {
+    return this.byHex.get(id)?.h.dull ?? 0;
   }
 
   // Something is still playing out (a roll, a tap, a dulling): the loop should draw at full rate.
@@ -784,16 +798,28 @@ export class JellyBoard {
     return false;
   }
 
+  // Seconds since the first live play frame (0 until then, under reduced motion, or on the title/lobby board).
+  age() {
+    return this.t0 === undefined ? 0 : Math.max(0, this.t - this.t0);
+  }
+
+  // Proofs: put every board story at this age (seconds) and rewrite every instance.
+  setAge(seconds: number) {
+    this.t0 = 0;
+    this.update(Math.max(0, seconds), true, false);
+  }
+
   // Advance every scene to time t (seconds) and copy what moved to its instances. `all` rewrites every instance; `snap` lands
-  // the dulling at once (reduced motion).
-  update(t: number, all = false, snap = false) {
+  // the dulling at once (reduced motion). `holdAge` keeps stories at age 0 (title and lobby: the match has not started).
+  update(t: number, all = false, snap = false, holdAge = false) {
     const dt = Math.max(0, t - this.t);
     this.t = t;
-    // The board's age: a story that starts with the match (the ore's climber) counts from the first live frame. Not from
-    // create()'s update(0, true) or a snap (the swap, reduced motion): those would pin the start to the renderer's clock.
-    if (!all && !snap) this.t0 ??= t;
+    // The board's age: a story that starts with the match (the ore's climber) counts from the first live play frame. Not from
+    // create()'s update(0, true), a snap (the swap, reduced motion), or the title/lobby board: those would pin the start to
+    // the renderer's clock or finish the story before anyone sits down.
+    if (!all && !snap && !holdAge) this.t0 ??= t;
     for (const k of this.kinds) {
-      k.tile.env.age = this.t0 === undefined ? 0 : t - this.t0;
+      k.tile.env.age = holdAge || this.t0 === undefined ? 0 : t - this.t0;
       k.tile.update(t);
       k.tile.group.updateMatrixWorld(true);
       // The hex level: its squash (the roll's jelly wobble, a tap's smaller one) and its colour (flash, dulling).

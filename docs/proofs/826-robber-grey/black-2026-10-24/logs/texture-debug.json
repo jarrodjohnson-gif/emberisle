@@ -1,0 +1,15 @@
+{
+  "sameMap": true,
+  "repeatRead": {
+    "count": 0,
+    "examples": []
+  },
+  "afterBlock": {
+    "count": 0,
+    "examples": []
+  },
+  "afterUnblock": {
+    "count": 0,
+    "examples": []
+  }
+}
