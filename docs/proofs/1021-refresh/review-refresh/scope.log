@@ -1,0 +1,7 @@
+PASS exact Opus delta-reviewed df502a1 server/profiles.mjs 8b2c480a8450de542e2195f9563ef33421b74618020ba754e373304b2957c74c
+PASS exact Opus delta-reviewed df502a1 server/profile-lock-prove.mjs 72a6ccbe5c69ef80a46bd9af82c5a68b0ba390a2e56cdf0be45f09b65a5637f6
+PASS exact Opus delta-reviewed df502a1 server/profile-auth-prove.mjs 0380575dad6de076c08574c618fbdf346c1ac20af76ab2f2925746371c448352
+PASS exact Opus delta-reviewed df502a1 server/profile-edit-prove.mjs 44a9241f59a87bc9c492a341e52cff7fcbea5f5e74fa9f72ce13243179dc613f
+PASS approved470c4c7 publishedOwners/takeLock exact bytes
+PASS every main package command/CI condition/matrix retained; lock registered exactly once
+PASS all other runtime/proofs/budgets exact main; own six implementation files only
