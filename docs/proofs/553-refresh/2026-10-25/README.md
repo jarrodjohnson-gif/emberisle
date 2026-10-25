@@ -28,3 +28,5 @@ The full native and six neighboring browser runs were at `e9568ec`, rather than 
 
 ![Phone health status](connection-health-phone.png)
 ![Landscape lobby health status](connection-health-lobby-667x375.png)
+
+Main advanced to `a7592b0` while evidence was being packaged. Normal merge `22e6488` adds only main's `server/watch-prove.mjs` update; application, protocol, backend and registration bytes remain exact `a1ae342`. Build/size/registered139/loosen pass again, and the updated native watcher proof passes (368 actions,375 watcher states). Two mistaken initial invocations, missing the TypeScript import loader and a nonexistent npm script, failed before exercising the proof; their logs are retained separately. The successful command is `node --import ./server/register.mjs server/watch-prove.mjs`. Built main2638 is still an exact application baseline for a7592b0.
