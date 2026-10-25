@@ -1,0 +1,44 @@
+raw GET // -> 400                                        
+raw GET //[ -> 400                                       
+raw GET //a b -> 400                                     
+raw GET http://[ -> 400                                  
+raw GET /% -> 404                                        
+raw GET http://x// -> 404                                
+GET / -> 200 text/html; charset=utf-8, no-cache          
+GET /assets/app-abc123.js -> 200 text/javascript, immutable 
+HEAD /assets/app-abc123.js -> 200, empty body            
+GET /assets/missing.js -> 404                            
+GET /assets -> 404                                       
+GET /../secret.txt -> 404                                
+GET /%2e%2e/secret.txt -> 404                            
+GET /assets/..%2f..%2fsecret.txt -> 404                  
+GET /%00 -> 404                                          
+GET /%E0%A4%A -> 404                                     
+POST / -> 404                                            
+WS on the same port -> welcome 6G4G                      
+POST /avatars with no secret, then a wrong one -> 403, 403 
+POST /avatars with the seat's secret -> 200              
+seats then shows /avatars/be9b9a187e54a9dc.jpg on the uploader 
+GET /avatars/be9b9a187e54a9dc.jpg -> 200 image/jpeg, nosniff 
+POST /avatars with bytes that are not a JPEG -> 400      
+second seat's 600 B over a 1000 B store -> 503           
+second seat's 300 B -> 200                               
+third seat's 50 B over AVATAR_MAX=2 -> 503               
+uploader replaces its picture -> 200; old url -> 404     
+stranger peeks -> sees ["id","color","ready"], no picture 
+stranger hellos with that avatarId -> seat shows null    
+stranger's table N4AF dropped after the lobby hold       
+GET /avatars/4d361aa4bf74dbc0.jpg after that -> 200      
+seat let go: GET /avatars/1c35f52f78d85a52.jpg -> 404    
+table ZC2N dropped with an upload half sent              
+the rest of that upload arrives -> 410                   
+third seat's 50 B into the freed slot -> 200             
+watcher welcome has no secret; its upload -> 403         
+upload burst: 18 accepted, then 429                      
+host with DIST=<empty dir>: GET / -> 503                 
+hostUrl https://abc.trycloudflare.com/ -> wss://abc.trycloudflare.com 
+hostUrl http://192.168.1.20:8787/ -> ws://192.168.1.20:8787 
+hostUrl http://localhost:8080/ (dev) -> ws://localhost:8787 
+hostUrl http://localhost:8080/?host=ws://x:1 -> ws://x:1 
+hostUrl default dev under node -> ws://h:9               
+serve prove ok

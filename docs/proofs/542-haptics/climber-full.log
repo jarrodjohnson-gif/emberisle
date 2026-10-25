@@ -1,0 +1,27 @@
+
+> climber-prove
+> node scripts/climber-prove.mjs
+
+ok   title: board age stays 0 {"age":0,"envAge":0,"titleMode":true,"dist":0.6192,"y":0.3026,"scaleY":1.15,"sit":false,"peakR":0.24,"peakH":0.577,"baseY":0.29}
+ok   title: climber at the foot (not on the summit) {"age":0,"envAge":0,"titleMode":true,"dist":0.6192,"y":0.3026,"scaleY":1.15,"sit":false,"peakR":0.24,"peakH":0.577,"baseY":0.29}
+ok   first game: natural clock advances over at least 20s {"liveStart":{"age":0,"envAge":0,"titleMode":false,"dist":0.6321,"y":0.2964,"scaleY":1.15,"sit":false,"peakR":0.24,"peakH":0.5971,"baseY":0.29},"liveLater":{"age":21.422199999988077,"envAge":21.422199999988077,"titleMode":false,"dist":0.2229,"y":0.6038,"scaleY":1.15,"sit":false,"peakR":0.24,"peakH":0.5971,"baseY":0.29}}
+ok   first game: climber naturally leaves the foot and moves up the flank {"liveStart":{"age":0,"envAge":0,"titleMode":false,"dist":0.6321,"y":0.2964,"scaleY":1.15,"sit":false,"peakR":0.24,"peakH":0.5971,"baseY":0.29},"liveLater":{"age":21.422199999988077,"envAge":21.422199999988077,"titleMode":false,"dist":0.2229,"y":0.6038,"scaleY":1.15,"sit":false,"peakR":0.24,"peakH":0.5971,"baseY":0.29}}
+ages {"0":{"age":0,"dist":0.6321,"y":0.2964,"sit":false,"peakR":0.24},"4":{"age":4,"dist":0.6633,"y":0.2966,"sit":false,"peakR":0.24},"20":{"age":20,"dist":0.2251,"y":0.5982,"sit":false,"peakR":0.24},"100":{"age":100,"dist":0.1,"y":0.916,"sit":false,"peakR":0.24},"160":{"age":160,"dist":0.2053,"y":0.6485,"sit":false,"peakR":0.24},"800":{"age":800,"dist":0,"y":1.1332,"sit":true,"peakR":0.24}}
+ok   age 0: at the foot {"age":0,"dist":0.6321,"y":0.2964,"sit":false,"peakR":0.24}
+ok   age 4: still in gear-out near the foot {"age":4,"dist":0.6633,"y":0.2966,"sit":false,"peakR":0.24}
+ok   age 20: climbing (higher and closer than age 0) {"a0":{"age":0,"dist":0.6321,"y":0.2964,"sit":false,"peakR":0.24},"a20":{"age":20,"dist":0.2251,"y":0.5982,"sit":false,"peakR":0.24}}
+ok   age 100: not sitting on the summit {"age":100,"dist":0.1,"y":0.916,"sit":false,"peakR":0.24}
+ok   age 160: left the foot (summit, climb, or fall) {"age":160,"dist":0.2053,"y":0.6485,"sit":false,"peakR":0.24}
+ok   age 800: all seeded retries have ended on the summit {"age":800,"dist":0,"y":1.1332,"sit":true,"peakR":0.24}
+ok   screenshot 1280x720: rendered age 4 {"age":4,"envAge":4,"titleMode":false,"dist":0.6633,"y":0.2966,"scaleY":1.15,"sit":false,"peakR":0.24,"peakH":0.5971,"baseY":0.29}
+ok   screenshot 1280x720: rendered age 160 {"age":160,"envAge":160,"titleMode":false,"dist":0.2053,"y":0.6485,"scaleY":1.15,"sit":false,"peakR":0.24,"peakH":0.5971,"baseY":0.29}
+ok   rematch: new board and next fixed seed {"age":0,"envAge":0,"newBoard":true,"dist":0.6202022882847259,"sit":false,"peakR":0.24,"seed":677}
+ok   rematch: natural age below 2s at the foot on a new board {"age":0,"envAge":0,"newBoard":true,"dist":0.6202022882847259,"sit":false,"peakR":0.24,"seed":677}
+ok   screenshot 390x844: rendered age 4 {"age":4,"envAge":4,"titleMode":false,"dist":0.6633,"y":0.2966,"scaleY":1.15,"sit":false,"peakR":0.24,"peakH":0.5971,"baseY":0.29}
+ok   screenshot 390x844: rendered age 160 {"age":160,"envAge":160,"titleMode":false,"dist":0.2053,"y":0.6485,"scaleY":1.15,"sit":false,"peakR":0.24,"peakH":0.5971,"baseY":0.29}
+ok   lobby/title linger: still age 0 at the foot {"age":0,"envAge":0,"titleMode":true,"dist":0.6192,"y":0.3026,"scaleY":1.15,"sit":false,"peakR":0.24,"peakH":0.577,"baseY":0.29}
+ok   after lobby: a newly built board uses the fixed seed {"age":0,"envAge":0,"newBoard":true,"dist":0.6320516267923142,"sit":false,"peakR":0.24,"seed":676}
+ok   after lobby: natural play age below 2s, excluding the 4s title linger {"age":0,"envAge":0,"newBoard":true,"dist":0.6320516267923142,"sit":false,"peakR":0.24,"seed":676}
+ok   reduced motion: age stays 0 {"a":{"age":0,"envAge":0,"titleMode":false,"dist":0.6321,"y":0.2964,"scaleY":1.15,"sit":false,"peakR":0.24,"peakH":0.5971,"baseY":0.29},"b":{"age":0,"envAge":0,"titleMode":false,"dist":0.6321,"y":0.2964,"scaleY":1.15,"sit":false,"peakR":0.24,"peakH":0.5971,"baseY":0.29}}
+ok   reduced motion: holds at the foot {"a":{"age":0,"envAge":0,"titleMode":false,"dist":0.6321,"y":0.2964,"scaleY":1.15,"sit":false,"peakR":0.24,"peakH":0.5971,"baseY":0.29},"b":{"age":0,"envAge":0,"titleMode":false,"dist":0.6321,"y":0.2964,"scaleY":1.15,"sit":false,"peakR":0.24,"peakH":0.5971,"baseY":0.29}}
+climber-prove: ok
