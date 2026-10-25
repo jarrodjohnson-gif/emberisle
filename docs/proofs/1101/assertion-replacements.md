@@ -85,3 +85,5 @@ Justification keys:
 | scripts/chat-prove.mjs:1445 | Sheet top at least strip bottom+56 | Portrait retains exact predicate; landscape requires nonoverlap, viewport containment, exact game player count and uncovered seat totals | Keep bubble band and seat visibility with the approved dock. All log/newest/font/map-hole and failure assertions remain. |
 
 The trade-map and rotate-overlays proofs remain byte-for-byte unchanged. Their full-card receipts, scrolling, safe areas,44px targets,8px separation, Escape behavior, seat visibility and zero-error checks pass.
+
+The added chat seat-visibility check uses the same `elementsFromPoint` rule as rotate-overlays: ignore only the transparent `chat-backdrop` click catcher. Every opaque overlay still fails visibility. Desktop input keeps its original below-opener predicate; dock geometry applies only when the fixed dock is present.
