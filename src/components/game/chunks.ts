@@ -13,6 +13,7 @@ export const Lobby = online.pick((m) => m.Lobby);
 export const ChatControls = online.pick((m) => m.ChatControls);
 export const ChatDock = online.pick((m) => m.ChatDock);
 export const SeatBubbles = online.pick((m) => m.SeatBubbles);
+export const ConnectionOverlay = online.pick((m) => m.Health);
 
 // #833: title-only list and mode controls share a lazy load; private Host/Join remain available in the index.
 const openTables = chunk(() => import("@/components/game/OpenTables"));
