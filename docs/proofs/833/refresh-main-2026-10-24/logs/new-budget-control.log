@@ -1,0 +1,2 @@
+PASS: 501 B fails only the new 500 B WayfarerOptions ceiling; growth and every other fixed budget pass.
+FAIL WayfarerOptions: 0.50 kB gzip, ceiling 0.50 kB (0.00 kB over)
