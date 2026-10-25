@@ -258,15 +258,15 @@ try {
   const w = await tab("Watcher");
   const errorsBefore = await w.page.evaluate(() => window.__emberisle.getState().errorSeq);
   await w.page.getByPlaceholder(/code/i).fill(tableCode.slice(0, 3));
-  // #444: Watch only shows once the field holds a whole code, so under 4 there is nothing to press.
-  if (await w.page.getByRole("button", { name: "Watch", exact: true }).count()) throw new Error("Watch shows with a 3-character code");
+  // #1102: Watch stays visible, but cannot send until the field holds a whole code.
+  if (await w.page.getByRole("button", { name: "Watch", exact: true }).count() !== 1 || !await w.page.getByRole("button", { name: "Watch", exact: true }).isDisabled()) throw new Error("Watch must be present and disabled with a 3-character code");
   await w.page.getByPlaceholder(/code/i).fill(tableCode);
   await w.page.getByRole("button", { name: "Watch", exact: true }).click();
   await until(async () => (await view(w)).alert === "Not started yet.", 'the lobby refusal "Not started yet."');
   if ((await view(w)).screen !== "title") throw new Error("a refused watch left the Title");
   const errorsAfter = await w.page.evaluate(() => window.__emberisle.getState().errorSeq);
   if (errorsAfter !== errorsBefore + 1) throw new Error(`a 3-character Watch sent something: errorSeq ${errorsBefore} -> ${errorsAfter}`);
-  console.log(`table ${tableCode}: no Watch at 3 characters; at 4 on the lobby -> "Not started yet.", still on the Title`);
+  console.log(`table ${tableCode}: Watch disabled at 3 characters; at 4 on the lobby -> "Not started yet.", still on the Title`);
 
   for (const t of [a, b]) {
     await until(async () => (await t.page.locator("li", { hasText: "Pine" }).count()) === 1, `${t.name} sees 3 seats`);
