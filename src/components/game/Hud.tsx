@@ -242,7 +242,7 @@ export function Hud() {
       size="sm"
       data-testid="fortunes-button"
       data-deck-left={deckLeft}
-      aria-label={`${fortunesLabel}, ${heldNow} held`}
+      aria-label={spectator ? fortunesLabel : `${fortunesLabel}, ${heldNow} held`}
       className={cn("relative h-11 min-w-11 px-3 text-sm tabular-nums", phone && "w-full whitespace-normal px-1 leading-4", NOT_NOW)}
       aria-pressed={fortunesOpen || fortuneArmed}
       aria-expanded={fortunesOpen}
@@ -256,7 +256,7 @@ export function Hud() {
       }}
     >
       {playableNow > 0 && <span key={cueKey} ref={cueRing} onAnimationStart={() => (glowed.current = cueKey)} aria-hidden="true" data-testid="fortune-cue-glow" className="fortune-cue-glow" />}
-      {fortunesLabel} · {heldNow}
+      {fortunesLabel}{spectator ? null : <> · {heldNow}</>}
     </Button>
   ) : null;
   // Hotseat has no "you": every seat is named. The turn banner sits out once the isle has a ruler (the pill says who).
