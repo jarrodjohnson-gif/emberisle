@@ -1,0 +1,20 @@
+[
+  {
+    "case": "no-await",
+    "exit": 1,
+    "expected_failure": "interactive controls are held before initialization",
+    "matched": true
+  },
+  {
+    "case": "no-pointer-guard",
+    "exit": 1,
+    "expected_failure": "loaded haptics rechecks the current pointer",
+    "matched": true
+  },
+  {
+    "case": "no-mute-guard",
+    "exit": 1,
+    "expected_failure": "table mute preserves the previous haptic mute behavior",
+    "matched": true
+  }
+]
