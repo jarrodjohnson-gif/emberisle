@@ -1,0 +1,4 @@
+$ git fetch origin gemini/627-board-fit-keyboard
+From https://github.com/jarrodjohnson-gif/emberisle
+ * branch            gemini/627-board-fit-keyboard -> FETCH_HEAD
+   111cdff..c89bfc1  gemini/627-board-fit-keyboard -> origin/gemini/627-board-fit-keyboard

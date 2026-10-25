@@ -1,0 +1,16 @@
+{
+  "proof_commit": "c89bfc1739acaf9ceda497a1f4504fc061bd2b7b",
+  "all_assertion_and_failure_lines_identical_to_111cdff": true,
+  "runtime_byte_identical_to_111cdff": true,
+  "budget_registration_lock_files_unchanged_from_111cdff": true,
+  "sha256": {
+    "src/lib/scene/isle-renderer.ts": "63d29957cf076d983c217e17e0d85a8fd53a27126af9e6f115787381f60148dc",
+    "scripts/keyboard-fit-prove.mjs": "6e27c293a1969b9c1d569d17f8e163463b3abcdf12ebb459ca1da60964f0ec31",
+    "scripts/hole-prove.mjs": "2b18e6b8616f57f5cd17840e86789841120cf839d0282b2ff2d7146dcca6b662",
+    "package.json": "9c329ea4f130b43ec2abca2fa5b70f4843f333fc7d48b12bf894ef035a1aa72d",
+    ".github/workflows/ci.yml": "e5a5f9b10551028e3f09d788b7b84446c64d8a7164b3bcbc8394a4a1ecc5ce16",
+    "scripts/size-prove.mjs": "2516904a090aac4b6a731396deed654255cf1781dc3bacd1c260e3c6d156aa50",
+    "package-lock.json": "8f3a57d5235fe5b7650c06b841042aec2c9edbb0b5bfbb370f39efdb631644a5",
+    "server/package-lock.json": "d9db9d5e7601f2102acd29da2b96e014688eb0235b511a481c2078f8f67e1c97"
+  }
+}

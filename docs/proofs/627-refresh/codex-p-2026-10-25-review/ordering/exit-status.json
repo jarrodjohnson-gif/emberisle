@@ -1,0 +1,31 @@
+{
+  "fetch": {
+    "exit": 0,
+    "command": [
+      "git",
+      "fetch",
+      "origin",
+      "gemini/627-board-fit-keyboard"
+    ],
+    "tested_commit": "111cdff07934644a9a9aef69cf207222a20d013b"
+  },
+  "checkout": {
+    "exit": 0,
+    "command": [
+      "git",
+      "checkout",
+      "--detach",
+      "c89bfc1"
+    ],
+    "tested_commit": "c89bfc1739acaf9ceda497a1f4504fc061bd2b7b"
+  },
+  "keyboard": {
+    "exit": 0,
+    "command": [
+      "npm",
+      "run",
+      "keyboard-fit-prove"
+    ],
+    "tested_commit": "c89bfc1739acaf9ceda497a1f4504fc061bd2b7b"
+  }
+}
