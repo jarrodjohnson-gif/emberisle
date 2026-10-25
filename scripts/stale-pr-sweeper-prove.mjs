@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
-import { sweep, activity, decision, githubApi, MAX_CLOSES } from './stale-pr-sweeper.mjs';
+import { sweep, activity, decision, githubApi, MAX_CLOSES, CLOSE_COMMENT } from './stale-pr-sweeper.mjs';
 
 const DAY = 86_400_000;
 const now = Date.parse('2026-10-20T12:00:00Z');
@@ -9,8 +9,16 @@ const sha = 'a'.repeat(40), newer = 'b'.repeat(40);
 const repo = 'owner/repo';
 const bot = { login: 'github-actions[bot]', type: 'Bot' };
 const pr = (number = 1, extra = {}) => ({ number, state: 'open', head: { sha }, labels: [], ...extra });
-const marker = (days, extra = {}) => ({ id: 99, user: bot,
-  body: `<!-- emberisle:stale-pr-activity ${JSON.stringify({ sha, observedAt: new Date(now - days * DAY).toISOString() })} -->`, ...extra });
+const marker = (days, extra = {}) => {
+  const observedAt = new Date(now - days * DAY).toISOString();
+  const data = { sha, observedAt };
+  if (extra.labeledAt !== undefined) {
+    if (extra.labeledAt) data.labeledAt = extra.labeledAt;
+  } else if (days >= 10) {
+    data.labeledAt = new Date(now - (days - 5) * DAY).toISOString();
+  }
+  return { id: 99, user: bot, body: `<!-- emberisle:stale-pr-activity ${JSON.stringify(data)} -->`, ...extra };
+};
 let groups = 0;
 function ok(name) { groups++; console.log(`ok ${name}`); }
 function fake(pulls = [pr()], initial = []) {
@@ -35,7 +43,10 @@ function fake(pulls = [pr()], initial = []) {
       if (api.creationRace) { api.labelMissing = false; const error = new Error('already exists'); error.status = 422; throw error; }
       api.labelMissing = false; return {};
     }
-    if (method === 'POST' && path.endsWith('/labels')) pulls.find(p => path.includes(`/issues/${p.number}/`)).labels.push({ name: 'stale' });
+    if (method === 'POST' && path.endsWith('/labels')) {
+      pulls.find(p => path.includes(`/issues/${p.number}/`)).labels.push({ name: 'stale' });
+      if (api.onLabelWrite) api.onLabelWrite(pulls, comments);
+    }
     if (method === 'DELETE' && path.endsWith('/labels/stale')) {
       const target = pulls.find(p => path.includes(`/issues/${p.number}/`));
       target.labels = target.labels.filter(label => label.name !== 'stale');
@@ -43,7 +54,13 @@ function fake(pulls = [pr()], initial = []) {
     if (method === 'PATCH' && n) pulls.find(p => p.number === n).state = body.state;
     return {};
   };
-  api.list = async path => { calls.push({ method: 'LIST', path }); return structuredClone(path.includes('/comments') ? comments : pulls); };
+  api.list = async path => {
+    calls.push({ method: 'LIST', path });
+    if (path.includes('/pulls/') && path.endsWith('/reviews')) return structuredClone(api.reviews || []);
+    if (path.includes('/pulls/') && path.endsWith('/comments')) return structuredClone(api.reviewComments || []);
+    if (path.includes('/issues/') && path.endsWith('/comments')) return structuredClone(comments);
+    return structuredClone(path.includes('/comments') ? comments : pulls);
+  };
   return { api, calls, comments, pulls, writes: () => calls.filter(c => !['GET', 'LIST'].includes(c.method)) };
 }
 async function run(f, more = {}) { await sweep({ api: f.api, enabled: 'on', repo, now, log: () => {}, ...more }); }
@@ -67,6 +84,42 @@ for (const days of [0, 4.999999, 5, 9.999999, 10, 100]) {
   if (days >= 10) { assert.match(writes[0].body.body, /Reopen this PR and push/); assert.match(writes[0].body.body, /branch is preserved/); }
 }
 ok('exact 5-day label and 10-day close boundaries; close includes reopening instructions');
+const fourDay = fake([pr(1, { labels: [{ name: 'stale' }] })], [marker(10, { labeledAt: new Date(now - 4 * DAY).toISOString() })]);
+await run(fourDay);
+assert.equal(fourDay.pulls[0].state, 'open');
+assert(!fourDay.writes().some(c => c.body?.state === 'closed'));
+const fiveDay = fake([pr(1, { labels: [{ name: 'stale' }] })], [marker(10, { labeledAt: new Date(now - 5 * DAY).toISOString() })]);
+await run(fiveDay);
+assert.equal(fiveDay.pulls[0].state, 'closed');
+assert(fiveDay.writes().some(c => c.body?.state === 'closed'));
+ok('1: warning period enforces minimum 5-day stale label before closure');
+
+const draftPr = fake([pr(1, { draft: true, labels: [{ name: 'stale' }] })], [marker(20, { labeledAt: new Date(now - 10 * DAY).toISOString() })]);
+await run(draftPr);
+assert.equal(draftPr.pulls[0].state, 'open');
+assert(!draftPr.pulls[0].labels.some(l => l.name === 'stale'));
+assert(!draftPr.writes().some(c => c.body?.state === 'closed'));
+
+const reviewedPr = fake([pr(1, { labels: [{ name: 'stale' }] })], [marker(15, { labeledAt: new Date(now - 6 * DAY).toISOString() })]);
+reviewedPr.api.reviewComments = [{ id: 101, created_at: new Date(now - 2 * DAY).toISOString() }];
+await run(reviewedPr);
+assert.equal(reviewedPr.pulls[0].state, 'open');
+assert(!reviewedPr.pulls[0].labels.some(l => l.name === 'stale'));
+assert(!reviewedPr.writes().some(c => c.body?.state === 'closed'));
+
+const submittedReviewPr = fake([pr(1, { labels: [{ name: 'stale' }] })], [marker(15, { labeledAt: new Date(now - 6 * DAY).toISOString() })]);
+submittedReviewPr.api.reviews = [{ id: 102, submitted_at: new Date(now - 1 * DAY).toISOString(), state: 'COMMENTED' }];
+await run(submittedReviewPr);
+assert.equal(submittedReviewPr.pulls[0].state, 'open');
+assert(!submittedReviewPr.pulls[0].labels.some(l => l.name === 'stale'));
+assert(!submittedReviewPr.writes().some(c => c.body?.state === 'closed'));
+ok('2: drafts and PRs with recent reviews or review comments are protected and reset clock');
+
+assert.match(CLOSE_COMMENT, /#916/);
+assert(!CLOSE_COMMENT.toLowerCase().includes('add keep-open to exempt'));
+assert.match(CLOSE_COMMENT, /ask on #916 and the desk adds keep-open/);
+ok('3: close comment directs author to #916 instead of instructing them to add keep-open');
+
 for (const initial of [[], [marker(50, { user: { login: 'attacker', type: 'User' } })], [marker(50, { user: { login: 'github-actions[bot]', type: 'User' } })], [{ id: 1, user: bot, body: '<!-- emberisle:stale-pr-activity invalid -->' }]]) {
   const f = fake([pr()], initial); await run(f); assert.equal(f.writes().length, 1);
   assert.equal(f.writes()[0].method, 'POST'); assert.equal(activity(f.comments).observedAt, new Date(now).toISOString());
@@ -80,6 +133,46 @@ const dryMissing = fake([pr()], [marker(6)]); dryMissing.api.labelMissing = true
 await run(dryMissing, { dryRun: true }); assert.equal(dryMissing.writes().length, 0);
 const labelRace = fake([pr()], [marker(6)]); labelRace.api.labelMissing = true; labelRace.api.creationRace = true;
 await run(labelRace); assert(labelRace.pulls[0].labels.some(l => l.name === 'stale'));
+
+const racingLabel = fake([pr(1)], [marker(6)]);
+racingLabel.api.onLabelWrite = (pulls, comments) => {
+  pulls[0].head.sha = newer;
+  comments[0] = marker(0, { sha: newer });
+};
+await run(racingLabel);
+assert(!racingLabel.pulls[0].labels.some(l => l.name === 'stale'));
+assert(racingLabel.writes().some(c => c.method === 'DELETE' && c.path.endsWith('/labels/stale')));
+ok('4: concurrent event race during labeling detects marker/head change and cleans up stale label');
+
+{
+  const stale4d = pr(1, { labels: [{ name: 'stale' }] });
+  const m10_4 = activity([marker(10, { labeledAt: new Date(now - 4 * DAY).toISOString() })]);
+  const unhardenedCloseDecision = (p, m, t) => (t - Date.parse(m.observedAt) >= 10 * DAY && p.labels.some(l => l.name === 'stale') ? 'close' : 'skip');
+  assert.equal(unhardenedCloseDecision(stale4d, m10_4, now), 'close');
+  assert.equal(decision(stale4d, m10_4, now), 'skip');
+
+  const draftFixture = pr(1, { draft: true, labels: [{ name: 'stale' }] });
+  const m10_5 = activity([marker(10, { labeledAt: new Date(now - 5 * DAY).toISOString() })]);
+  const unhardenedDraftDecision = (p, m, t) => decision({ ...p, draft: false }, m, t);
+  assert.equal(unhardenedDraftDecision(draftFixture, m10_5, now), 'close');
+  assert.notEqual(decision(draftFixture, m10_5, now), 'close');
+
+  const unhardenedReviewDecision = (p, m, t) => decision(p, m, t, { reviews: [], reviewComments: [] });
+  assert.equal(unhardenedReviewDecision(stale4d, m10_5, now), 'close');
+  assert.equal(decision(stale4d, m10_5, now, { reviewComments: [{ created_at: new Date(now - DAY).toISOString() }] }), 'initialize');
+
+  const legacyCloseComment = 'Closed after 10 days without a push to this PR. The branch is preserved. Reopen this PR and push an update when you are ready, or add keep-open to exempt it.';
+  assert.throws(() => assert.match(legacyCloseComment, /#916/));
+  assert.match(CLOSE_COMMENT, /#916/);
+
+  const unhardenedRace = fake([pr(1)], [marker(6)]);
+  unhardenedRace.pulls[0].labels.push({ name: 'stale' });
+  unhardenedRace.comments[0] = marker(0, { sha: newer });
+  unhardenedRace.pulls[0].head.sha = newer;
+  assert(unhardenedRace.pulls[0].labels.some(l => l.name === 'stale'));
+  assert(!racingLabel.pulls[0].labels.some(l => l.name === 'stale'));
+}
+ok('negative controls: mutation checks verify each of the four rules fails when removed');
 for (const status of [403, 500]) {
   const fail = fake([pr()], [marker(6)]); fail.api.labelError = status;
   await assert.rejects(() => run(fail), /label error/); assert.equal(fail.writes().length, 0);
