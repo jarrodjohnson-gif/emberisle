@@ -26,6 +26,13 @@ const FILES = {
   // Synthesised by scripts/make-sounds.mjs (docs/design/sound.md).
   wayfarer_move: "wayfarer_move.wav",
   trade_offer: "trade_offer.wav",
+  sheep_for_wood: "sheep_for_wood.mp3",
+  stone_for_wood: "stone_for_wood.mp3",
+  three_wood: "three_wood.mp3",
+  daking_wood: "daking_wood.mp3",
+  lucke_diggler: "lucke_diggler.mp3",
+  corn_no: "corn_no.mp3",
+  isaac_win: "isaac_win.mp3",
   chat_send: "chat_send.wav",
   chat_recv: "chat_recv.wav",
   // A tap on the sea (#616): a normal table clip, paced and burst-dropped like the rest.
@@ -43,14 +50,19 @@ const FILES = {
   sb_airhorn: "sb_airhorn.mp3",
   sb_quit_touchin: "sb_quit_touchin.mp3",
   sb_only_wood: "sb_only_wood.mp3",
+  sb_plump_sheep: "sb_plump_sheep.mp3",
+  sb_nice_sheep: "sb_nice_sheep.mp3",
+  sb_sheep_please: "sb_sheep_please.mp3",
+  sb_grain_please: "sb_grain_please.mp3",
+  sb_brick_please: "sb_brick_please.mp3",
   sb_perfect: "sb_perfect.mp3",
   // End-of-game music: starts a moment after the win or loss sting, stops when the end screen is left or a new game starts.
   end_music: "end_music.mp3",
   board_bong: "bong_001.wav",
   board_plop: "plop.wav",
   board_pluck: "pluck_001.wav",
-  // #667: a tap on a hex that places nothing. Pasture is the owner's own sheep clip; the rest are synthesised (make-sounds.mjs).
-  tap_pasture: "sb_plump_sheep.mp3",
+  // #667: a tap on a hex that places nothing. Pasture uses a short baa; the rest are synthesised (make-sounds.mjs).
+  tap_pasture: "tap_pasture.mp3",
   tap_forest: "tap_forest.wav",
   tap_hills: "tap_hills.wav",
   tap_fields: "tap_fields.wav",
@@ -66,6 +78,11 @@ export const SOUNDBOARD = [
   { id: "sb_airhorn", label: "Airhorn", clip: "sb_airhorn" },
   { id: "sb_quit_touchin", label: "Quit touchin' me", clip: "sb_quit_touchin" },
   { id: "sb_only_wood", label: "Only wood?", clip: "sb_only_wood" },
+  { id: "sb_plump_sheep", label: "Plump sheep", clip: "sb_plump_sheep" },
+  { id: "sb_nice_sheep", label: "Nice sheep", clip: "sb_nice_sheep" },
+  { id: "sb_sheep_please", label: "Sheep please", clip: "sb_sheep_please" },
+  { id: "sb_grain_please", label: "Grain please", clip: "sb_grain_please" },
+  { id: "sb_brick_please", label: "Brick please", clip: "sb_brick_please" },
   { id: "sb_perfect", label: "Perfect", clip: "sb_perfect" },
   { id: "bong", label: "Bong", clip: "board_bong" },
   { id: "plop", label: "Plop", clip: "board_plop" },
@@ -83,7 +100,7 @@ export type SoundName = keyof typeof FILES;
 export function soundCategory(name: SoundName): SoundCategory {
   if (/^tap_|^plop$/.test(name)) return "touch";
   if (/^sb_|^board_|^robbed_fah$|^match_point$/.test(name)) return "memes";
-  if (/^game_|^end_music$/.test(name)) return "music";
+  if (/^game_|^end_music$|^isaac_win$/.test(name)) return "music";
   return "game";
 }
 

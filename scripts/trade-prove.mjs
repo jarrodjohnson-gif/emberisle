@@ -9,6 +9,7 @@
 // it, and Escape (or the ask itself) puts focus back on the Trade button.
 import { spawn } from "node:child_process";
 import { once } from "node:events";
+import assert from "node:assert/strict";
 import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -54,6 +55,15 @@ async function tab(name) {
   await page.addInitScript(() => {
     window.__plays = [];
     window.__heard = [];
+    window.__sockets = [];
+    const NativeWebSocket = window.WebSocket;
+    window.WebSocket = new Proxy(NativeWebSocket, {
+      construct(target, args) {
+        const socket = Reflect.construct(target, args);
+        window.__sockets.push(socket);
+        return socket;
+      },
+    });
     const play = HTMLMediaElement.prototype.play;
     HTMLMediaElement.prototype.play = function () {
       // #814: the background music is music-prove's, not a table sound.
@@ -412,6 +422,49 @@ try {
   if (vs[0].seq !== again[0].seq) throw new Error("the timeout changed the game");
   for (const n of [0, 1, 2]) if (!same(vs[n].mine, again[n].mine)) throw new Error(`${tabs[n].name}'s hand changed on a timeout`);
   console.log(`second offer ran out after ${left} s left on the clock: hands unchanged, toast closed on all 3 tabs`);
+
+  const dakingId = vs[tabs.indexOf(A)].you;
+  await Promise.all(tabs.map((t) => t.page.evaluate((id) => {
+    const store = window.__emberisle;
+    const state = store.getState().state;
+    store.setState({ state: { ...state, players: state.players.map((p) => p.id === id ? { ...p, name: "Daking" } : p) } });
+  }, dakingId)));
+  const issueTradeSounds = (t) => t.page.evaluate(() => window.__heard.filter((h) => /^(trade_offer|three_wood|daking_wood|sheep_for_wood|stone_for_wood|corn_no|error_002)\./.test(h)));
+  const sendTableEvent = async (event) => Promise.all(tabs.map((t) => t.page.evaluate((msg) => window.__sockets.at(-1).onmessage({ data: JSON.stringify(msg) }), event)));
+  const hearOffer = async (tradeId, give, want) => {
+    await forget(tabs);
+    await sendTableEvent({ type: "tradeOffer", tradeId, from: dakingId, give, want, seconds: 20 });
+    await sleep(300);
+    return Promise.all(tabs.map(issueTradeSounds));
+  };
+  let clip = await hearOffer("new-three-wood", { timber: 3 }, { wool: 1 });
+  for (const got of clip) assert.deepEqual(got, ["three_wood.mp3@1"], "3+ timber uses the same clip on every seat, including the asker");
+  clip = await hearOffer("new-daking-wood", { timber: 2 }, { wool: 1 });
+  for (const got of clip) assert.deepEqual(got, ["daking_wood.mp3@1"], "Daking's 1-2 timber clip reaches every seat");
+  clip = await hearOffer("new-sheep-for-wood", { wool: 1 }, { timber: 1 });
+  for (const got of clip) assert.deepEqual(got, ["sheep_for_wood.mp3@1"], "sheep for timber reaches every seat, including the asker");
+  clip = await hearOffer("new-stone-for-wood", { ore: 1 }, { timber: 1 });
+  for (const got of clip) assert.deepEqual(got, ["stone_for_wood.mp3@1"], "stone for timber reaches every seat, including the asker");
+  clip = await hearOffer("new-plain-offer", { grain: 1 }, { wool: 1 });
+  assert.deepEqual(clip[tabs.indexOf(A)], [], "the asker does not hear the plain offer chime");
+  for (const t of [B, C]) assert.deepEqual(clip[tabs.indexOf(t)], ["trade_offer.wav@1"], "other seats hear the plain offer chime");
+
+  await hearOffer("new-all-no", { grain: 1 }, { wool: 1 });
+  await forget(tabs);
+  const otherIds = vs.map((v) => v.you).filter((id) => id !== dakingId);
+  await sendTableEvent({ type: "tradeDeclined", tradeId: "new-all-no", by: otherIds[0] });
+  await sleep(200);
+  assert.ok((await Promise.all(tabs.map(issueTradeSounds))).every((got) => !got.some((h) => h.startsWith("corn_no."))), "one No is not enough for corn_no");
+  await sendTableEvent({ type: "tradeDeclined", tradeId: "new-all-no", by: otherIds[1] });
+  await sendTableEvent({ type: "tradeClosed", tradeId: "new-all-no" });
+  await sleep(300);
+  for (const got of await Promise.all(tabs.map(issueTradeSounds))) assert.deepEqual(got, ["corn_no.mp3@1"], "all explicit No answers play corn_no on every seat");
+  await sendTableEvent({ type: "tradeOffer", tradeId: "new-timeout", from: dakingId, give: { grain: 1 }, want: { wool: 1 }, seconds: 20 });
+  await forget(tabs);
+  await sendTableEvent({ type: "tradeClosed", tradeId: "new-timeout" });
+  await sleep(300);
+  for (const got of await Promise.all(tabs.map(issueTradeSounds))) assert.ok(!got.some((h) => h.startsWith("corn_no.")), "timeout without all explicit No answers does not play corn_no");
+  console.log("#1107: trade clips follow precedence, reach all seats, plain chime excludes the asker, and corn_no needs every explicit No");
 
   if (errors.length) throw new Error(`console errors:\n${errors.join("\n")}`);
   console.log("trade prove ok");

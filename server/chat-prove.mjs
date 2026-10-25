@@ -45,7 +45,7 @@ assert.deepEqual(loadEmotes(path.join(emoteDir, "missing")), new Set());
 rmSync(emoteDir, { recursive: true, force: true });
 
 const realEmotes = loadEmotes(new URL("../src/assets/emotes/", import.meta.url));
-assert.ok(realEmotes.has("ben-10"), "real emote folder has ben-10");
+assert.deepEqual(realEmotes, new Set(["ben-10", "daffy-shock", "goggles-guy", "leo-laugh", "memoji-scheme", "mike-sully", "old-grump", "shrek-smirk", "sponge-thumbs", "wide-eyes"]));
 
 console.log("unit checks ok");
 

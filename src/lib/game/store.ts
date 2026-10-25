@@ -36,7 +36,7 @@ function rollOffLine(before: GameState | null, after: GameState) {
 function soundsFor(before: GameState | null, after: GameState, mine: boolean, victim = false, lost = false): [SoundName, number][] {
   if (!before) return [];
   // The winner keeps the win sound; every other seat at the table gets the loss sting.
-  if (after.winner && !before.winner) return [lost ? ["game_lose", 1] : ["win", 1]];
+  if (after.winner && !before.winner) return [[isaacWon(after) ? "isaac_win" : lost ? "game_lose" : "win", 1]];
   const out: [SoundName, number][] = [];
   const built = (s: GameState, kind: "outpost" | "stronghold") => s.vertices.filter((v) => v.building?.kind === kind).length;
   const paths = (s: GameState) => s.edges.filter((e) => e.path).length;
@@ -87,6 +87,13 @@ export function takeMatchPointLine() {
 const END_MUSIC_DELAY_MS = 1500;
 function stopEndMusic() {
   stop("end_music");
+  stop("isaac_win");
+}
+const isDiggler = (name: string | undefined) => /digg?l?er|pickle|isa+c/i.test(name ?? "");
+const isaacWon = (s: GameState) => isDiggler(s.players.find((p) => p.id === s.winner)?.name);
+function diggerBell(before: Seat[], after: Seat[], me: string) {
+  const was = new Map(before.map((s) => [s.id, isDiggler(s.name)]));
+  if (after.some((s) => isDiggler(s.name) && (was.has(s.id) ? !was.get(s.id) : before.length > 0 || s.id === me))) play("lucke_diggler");
 }
 
 // The board the start sting last played for, kept for the tab session so a reload mid-setup does not replay it.
@@ -141,7 +148,7 @@ export function hear(before: GameState | null, after: GameState, me: string, mod
     play("game_start");
   }
   if (before?.phase === "over" && after.phase !== "over") stopEndMusic();
-  if (mode !== "hotseat" && me && before && before.phase !== "over" && after.phase === "over" && after.winner) {
+  if (mode !== "hotseat" && me && before && before.phase !== "over" && after.phase === "over" && after.winner && !isaacWon(after)) {
     stopEndMusic();
     playLater("end_music", 1, END_MUSIC_DELAY_MS);
   }
@@ -1021,19 +1028,30 @@ type Get = () => GameStore;
 
 // The open offer is over, taken by `taker` or by nobody: the toast goes, and the asker reads the outcome for a moment.
 function endOffer(set: Set, get: Get, taker: string | null) {
-  const { offer, state } = get();
+  const { offer, state, declined } = get();
   if (!offer) return;
   clearOfferTimers();
   const takerName = state?.players.find((p) => p.id === taker)?.name ?? "Someone";
+  const allNo = !taker && !!state && state.players.every((p) => p.id === offer.from || declined.includes(p.id));
   set({ offer: null, declined: [] });
   // Both parties hear a deal in full and the rest of the table softer; only the asker hears a No (#609).
   const me = get().localId;
   if (taker) play("trade_yes", me === taker || me === offer.from ? 1 : 0.5);
+  else if (allNo) play("corn_no");
   else if (me === offer.from) play("trade_no");
   // Every receiver gets the resolved offer as one brief log line, with no response controls.
   if (outcomeTimer) clearTimeout(outcomeTimer);
   set({ tradeTaker: taker, tradeOutcome: taker ? `${takerName} takes it.` : "Nobody took it." });
   outcomeTimer = setTimeout(() => set({ tradeOutcome: null, tradeTaker: null }), BANNER_MS);
+}
+
+function offerChime(from: string, fromName: string, me: string, give: Bag, want: Bag) {
+  const timber = give.timber ?? 0;
+  if (timber >= 3) play("three_wood");
+  else if (timber && fromName === "Daking") play("daking_wood");
+  else if (want.timber && give.wool) play("sheep_for_wood");
+  else if (want.timber && give.ore) play("stone_for_wood");
+  else if (from !== me) play("trade_offer");
 }
 
 // Practice's table offer for `from`, closing any earlier one (host.mjs openOffer). Every other bot answers it after a delay.
@@ -1043,7 +1061,7 @@ function openOffer(set: Set, get: Get, from: string, give: Bag, want: Bag) {
   const tradeId = `t${state.seq}-${++offerSeq}`;
   const fromName = state.players.find((p) => p.id === from)?.name ?? "Someone";
   set({ offer: { tradeId, from, fromName, give, want, until: Date.now() + OFFER_MS }, declined: [], tradeOutcome: null, tradeTaker: null });
-  if (from !== get().localId) play("trade_offer");
+  offerChime(from, fromName, get().localId, give, want);
   offerTimers.push(setTimeout(() => endOffer(set, get, null), OFFER_MS));
   for (const p of state.players) {
     if (p.kind !== "bot" || p.id === from) continue;
@@ -1176,7 +1194,10 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       setTimeout(() => set({ reactions: get().reactions.filter((x) => x !== r) }), 2000);
     },
     // A peek answers id/color/ready only (G10); the lobby is not shown until the full broadcast after sitting replaces it.
-    seats: ({ code, seats, watching, victoryTarget, wayfarerMode }) => set({ code, seats: seats as Seat[], watching: watching ?? 0, tableVictoryTarget: victoryTarget === 7 ? 7 : 10, tableWayfarerMode: wayfarerMode ?? "on" }),
+    seats: ({ code, seats, watching, victoryTarget, wayfarerMode }) => {
+      diggerBell(get().seats, seats as Seat[], get().localId);
+      set({ code, seats: seats as Seat[], watching: watching ?? 0, tableVictoryTarget: victoryTarget === 7 ? 7 : 10, tableWayfarerMode: wayfarerMode ?? "on" });
+    },
     // Dice and gain floats present the roll; its words live only in the persistent log.
     rolled: () => {},
     state: ({ you, game, legal, turnDeadline, turnPlayer, serverNow }) => {
@@ -1209,7 +1230,7 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
     tradeOffer: ({ tradeId, from, give, want, seconds }) => {
       const fromName = get().state?.players.find((p) => p.id === from)?.name ?? "Someone";
       set({ offer: { tradeId, from, fromName, give, want, until: Date.now() + seconds * 1000 }, declined: [], tradeOutcome: null, tradeTaker: null });
-      if (from !== get().localId) play("trade_offer");
+      offerChime(from, fromName, get().localId, give, want);
     },
     tradeDeclined: ({ tradeId, by }) => {
       const { offer, declined } = get();
