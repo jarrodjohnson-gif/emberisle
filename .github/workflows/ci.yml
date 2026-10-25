@@ -156,6 +156,8 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run profile-reservation-recovery-prove
       - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run profile-socket-rate-prove
+      - if: needs.changes.outputs.docs_only != 'true'
         run: npm run profile-expiry-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run profile-pin-race-prove
