@@ -34,7 +34,7 @@ try{
  await start();await vite.listen();browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||(existsSync('/opt/pw-browsers/chromium')?'/opt/pw-browsers/chromium':undefined),args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});mkdirSync('test-results',{recursive:true});
  for(const contextName of ['ai','hotseat','online'])for(const mode of ['on','off']){
   const {context,page}=await pageAt();await setup(page);
-  assert.equal(await page.getByLabel('Practice wayfarer',{exact:true}).inputValue(),'on');assert.equal(await page.getByLabel('Online wayfarer',{exact:true}).inputValue(),'on');assert.equal(await page.getByLabel('Hotseat wayfarer',{exact:true}).inputValue(),'on');
+  assert.equal(await page.getByLabel('Play against bots',{exact:true}).inputValue(),'on');assert.equal(await page.getByLabel('Host a table online',{exact:true}).inputValue(),'on');assert.equal(await page.getByLabel('Pass this device',{exact:true}).inputValue(),'on');
   const label={ai:'Practice',hotseat:'Hotseat',online:'Online'}[contextName],select=page.getByLabel(`${label} wayfarer`,{exact:true});await select.selectOption(mode);
   const b=await select.boundingBox();assert.ok(b.height>=44&&b.width>=44&&b.x>=0&&b.x+b.width<=390,'44px safe setup target');
   const contrast=await select.evaluate(el=>{const s=getComputedStyle(el),c=document.createElement('canvas').getContext('2d');const l=css=>{c.fillStyle=css;c.fillRect(0,0,1,1);const a=[...c.getImageData(0,0,1,1).data].slice(0,3).map(v=>{v/=255;return v<=0.04045?v/12.92:((v+0.055)/1.055)**2.4;});return .2126*a[0]+.7152*a[1]+.0722*a[2];};const r=(a,b)=>(Math.max(a,b)+.05)/(Math.min(a,b)+.05),bg=l(s.backgroundColor);return{text:r(l(s.color),bg),border:r(l(s.borderTopColor),bg)};});assert.ok(contrast.text>=4.5&&contrast.border>=3,`AA setup control: ${JSON.stringify(contrast)}`);
@@ -59,14 +59,16 @@ try{
  {const {context:stickyContext,page:sticky}=await pageAt();await setup(sticky);
   for(const label of ['Practice','Hotseat','Online'])await sticky.getByLabel(`${label} wayfarer`,{exact:true}).selectOption('off');
   const mode=()=>sticky.evaluate(()=>window.__emberisle.getState().state.wayfarerMode);
-  await sticky.getByRole('button',{name:'Play',exact:true}).click();assert.equal(await mode(),'off');
+  await sticky.getByRole('button',{name:'Play against bots',exact:true}).click();
+  assert.equal(await mode(),'off');
   await sticky.evaluate(()=>window.__emberisle.getState().startAi());assert.equal(await mode(),'off','new practice game without the menu keeps Off');
   await sticky.evaluate(()=>window.__emberisle.getState().startHotseat(4));assert.equal(await mode(),'off','hotseat game without the menu keeps Off');
   await sticky.evaluate(()=>{const g=window.__emberisle,s=structuredClone(g.getState().state);s.phase='over';s.winner='p0';g.setState({state:s});g.getState().playAgain();});assert.equal(await mode(),'off','hotseat play again keeps Off');
   await sticky.evaluate(()=>window.__emberisle.getState().startAi());assert.equal(await mode(),'off');
   await sticky.evaluate(()=>window.__emberisle.getState().goTitle());await sticky.getByRole('button',{name:'Play',exact:true}).waitFor();await setup(sticky);
-  for(const label of ['Practice','Hotseat','Online'])assert.equal(await sticky.getByLabel(`${label} wayfarer`,{exact:true}).inputValue(),'on',`${label} resets to the default on the menu`);
-  await sticky.getByRole('button',{name:'Play',exact:true}).click();assert.equal(await mode(),'on');
+  for(const label of ['Play against bots','Pass this device','Host a table online'])assert.equal(await sticky.getByLabel(label,{exact:true}).inputValue(),'on',`${label} resets to the default on the menu`);
+  await sticky.getByRole('button',{name:'Play against bots',exact:true}).click();
+  assert.equal(await mode(),'on');
   await stickyContext.close();console.log('ok sticky choice: Off survives new/play-again games, menu resets to On');}
  for(const [width,height] of [[390,844],[1280,720],[844,390]]){
   const {context,page}=await pageAt(width,height);await setup(page);await page.getByLabel('Practice wayfarer',{exact:true}).selectOption('off');await page.getByRole('button',{name:'Play',exact:true}).click();

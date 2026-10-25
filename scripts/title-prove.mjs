@@ -79,8 +79,8 @@ try {
         heightShare: c.height / innerHeight,
       };
     });
-    assert.deepEqual(card.primary, ["Play"], `${tag}: the one primary`);
-    assert.deepEqual([...card.filled].sort(), ["Host a table", "Join", "Play"], `${tag}: filled buttons`);
+    assert.deepEqual(card.primary, ["Play against bots"], `${tag}: the one primary`);
+    assert.deepEqual([...card.filled].sort(), ["Join", "Play against bots", "Watch"], `${tag}: filled buttons`);
     assert.ok(card.hostFits, `${tag}: Host a table label is not clipped`);
     assert.equal(card.uppercase, 0, `${tag}: uppercase text on the card`);
     assert.ok(!card.texts.some((t) => /living island|Claim hexes/.test(t)), `${tag}: eyebrow or tagline still there: ${card.texts}`);
@@ -89,12 +89,12 @@ try {
     if (v.touch && v.height > v.width) assert.ok(card.heightShare <= 0.6, `${tag}: portrait card is ${Math.round(card.heightShare * 100)} % tall`);
 
     const watch = page.getByRole("button", { name: "Watch", exact: true });
-    assert.equal(await watch.count(), 0, `${tag}: Watch before a code`);
+    assert.equal(await watch.isVisible(), true, `${tag}: Watch visible before a code`);
     const live = page.getByTestId("watch-announce");
     assert.equal(await live.getAttribute("aria-live"), "polite", `${tag}: Watch live region`);
     assert.equal(await live.textContent(), "", `${tag}: live region speaks before a code`);
     await page.getByRole("textbox", { name: "Join code" }).fill("ABC");
-    assert.equal(await watch.count(), 0, `${tag}: Watch at 3 characters`);
+    assert.equal(await watch.isVisible(), true, `${tag}: Watch visible at 3 characters`);
     assert.equal(await live.textContent(), "", `${tag}: live region speaks at 3 characters`);
     await page.getByRole("textbox", { name: "Join code" }).fill("ABCD");
     await watch.waitFor();

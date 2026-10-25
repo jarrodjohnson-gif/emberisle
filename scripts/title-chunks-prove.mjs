@@ -121,7 +121,7 @@ try {
   });
   await controlled("WayfarerOptions", false, async (page, release) => {
     const settings = page.getByTestId("wayfarer-setup");
-    check((await settings.locator("summary").textContent()).includes("Online: on"), "settings summary stays eager");
+    check(await page.getByRole("button", { name: "Wayfarer rules", exact: true }).isVisible(), "rules sheet entry stays eager");
     await settings.locator("summary").click();
     check(await settings.getByRole("combobox").count() === 0, "held settings body is isolated from core title controls");
     check(await page.getByRole("button", { name: "Host a table", exact: true }).isVisible(), "held settings retain Host");
@@ -131,7 +131,7 @@ try {
       await select.waitFor(); check(await select.inputValue() === "on", label + " keeps its existing default");
     }
     await page.getByRole("combobox", { name: "Online wayfarer" }).selectOption("off");
-    check((await settings.locator("summary").textContent()).includes("Online: off") &&
+    check(await page.getByRole("combobox", { name: "Host a table online", exact: true }).inputValue() === "off" &&
       await page.evaluate(() => window.__emberisle.getState().wayfarerChoices.online === "off"), "loaded settings preserve their existing store action and summary");
     check((await page.locator("#wayfarer-help").textContent()) === "Off never moves or blocks. Sevens still discard. Off fortunes add to the army.", "existing settings help text retained");
   });
