@@ -390,22 +390,22 @@ async function eventGuardsProof(page) {
 
 async function tradeFramesProof(page) {
   await toPractice(page);
-  const got = await page.evaluate(async () => {
-    // Injected frames require the optional transport before this synchronous socket fixture.
-    await import("/src/lib/net/table.ts");
+  const got = await coldStep(page.evaluate(async () => {
     const { PROTO } = await import("/src/lib/net/proto.ts");
     const store = window.__emberisle;
     const NativeSocket = window.WebSocket;
-    let socket;
+    let socket, onDial;
+    const dialled = new Promise(resolve => { onDial = resolve; });
     window.WebSocket = class {
       static OPEN = 1;
       readyState = 1;
-      constructor() { socket = this; setTimeout(() => this.onopen?.({}), 0); }
+      constructor() { socket = this; onDial(); setTimeout(() => this.onopen?.({}), 0); }
       send() {}
       close() { this.readyState = 3; this.onclose?.({}); }
     };
     try {
       store.getState().joinTable("HAPT");
+      await dialled; // The optional client must create the injected socket before any frames arrive.
       await new Promise(resolve => setTimeout(resolve, 0));
       const frame = msg => socket.onmessage({data: JSON.stringify(msg)});
       frame({type:"welcome", proto:PROTO, code:"HAPT", you:"s0", secret:"haptic-test-seat", host:false, chat:[]});
@@ -424,7 +424,7 @@ async function tradeFramesProof(page) {
       store.getState().net.close();
       return {seated, watcher, own};
     } finally { window.WebSocket = NativeSocket; }
-  });
+  }), "timed out: haptic trade socket fixture");
   assert.deepEqual(got.seated, [10], "a received offer buzzes the seated recipient");
   assert.deepEqual(got.watcher, [], "watchers receive no trade-offer haptic");
   assert.deepEqual(got.own, [], "the offer sender receives no trade-offer haptic");
