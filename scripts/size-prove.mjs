@@ -45,6 +45,8 @@ const CEILINGS = [
   { name: "WayfarerOptions", gzipBytes: 500 },
   // #832: the online-only timer ballot loads separately (2026-10-20; measured 1.20 kB).
   { name: "TurnExtensionVote", gzipBytes: 1400 },
+  // #1101: the phone dock's offer slot (Yes and No) loads separately, prefetched on idle; new chunk only (measured 0.80 kB).
+  { name: "TradeSlot", gzipBytes: 1000 },
 ];
 
 // Growth allowance against the base, in gzip bytes. index is fixed at 400 B; the others take 0.33% of the base size, at least 200 B.

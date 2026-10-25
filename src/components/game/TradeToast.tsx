@@ -8,9 +8,13 @@ import { Button } from "@/components/ui/button";
 import { SeatDot } from "@/components/game/SeatDot";
 import { bagText } from "@/lib/game/trade";
 import { useGame } from "@/lib/game/store";
+import { chunk, LazyBoundary } from "@/lib/lazy";
 import { RESOURCES, RESOURCE_LABEL } from "@/lib/game/types";
 import type { Bag } from "@/lib/net/table";
 import "./trade-panel.css";
+
+export const tradeSlot = chunk(() => import("./TradeSlot"));
+const TradeSlot = tradeSlot.pick((m) => m.TradeSlot);
 
 // "Ember offers 2 sheep for 1 ore"; the asker reads "You offer 2 sheep for 1 ore".
 export function offerLine(name: string | null, give: Bag, want: Bag) {
@@ -27,8 +31,8 @@ function declinedLine(names: string[]) {
   return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]} declined`;
 }
 
-// #1101 (DECISIONS 2026-10-22): `slot` draws the offer in the phone dock's status line, one line plus Yes and No, in the
-// line's fixed box, so an offer coming or going moves nothing. With the chat open the full card still rises above it.
+// #1101: `slot` draws the offer in the phone dock's status line (TradeSlot, its own chunk, prefetched on idle by the table).
+// With the chat open the full card still rises above it.
 export function TradeToast({ slot }: { slot?: boolean }) {
   const { phone } = useViewport();
   const chatOpen = useGame((s) => s.chatOpen);
@@ -100,65 +104,23 @@ export function TradeToast({ slot }: { slot?: boolean }) {
     const short = me ? RESOURCES.filter((r) => (offer.want[r] ?? 0) > me.resources[r]) : [];
     answering = !asker && !spectator;
     why = me && short.length ? `Need ${short.map((r) => `${offer.want[r]! - me.resources[r]} more ${RESOURCE_LABEL[r].toLowerCase()}`).join(", ")}` : null;
+    const line = offerLine(asker ? null : offer.fromName, offer.give, offer.want);
+    const color = asker ? undefined : players?.find((p) => p.id === offer.from)?.color ?? "transparent";
+    const wait = asker ? (declined.length ? declinedLine(declined.map(name)) : "Waiting…") : undefined;
     if (slot) {
-      const line = offerLine(asker ? null : offer.fromName, offer.give, offer.want);
       return (
-        <section
-          data-testid="trade-toast"
-          className="trade-slot flex h-11 min-w-0 flex-1 items-center gap-2 rounded-control pl-3"
-          role="region"
-          aria-label="Trade offer"
-          aria-labelledby={lineId}
-          aria-describedby={why ? whyId : undefined}
-          onKeyDown={(e) => {
-            if (answering && e.key === "Escape") answerTrade(false);
-          }}
-        >
-          <div className="min-w-0 flex-1">
-            <p id={lineId} className="truncate text-sm font-medium leading-5" title={line}>
-              {!asker ? <SeatDot color={players?.find((p) => p.id === offer.from)?.color ?? "transparent"} className="mr-1.5 size-3 align-[-1px]" /> : null}
-              {line}
-            </p>
-            <p className="flex min-w-0 gap-2 truncate text-xs leading-4">
-              <span aria-hidden={!asker || undefined} className="trade-clock shrink-0 tabular-nums" data-testid="trade-countdown" data-urgent={left <= 5 || undefined}>
-                {left} s
-              </span>
-              {why ? <span id={whyId} className="trade-short truncate">{why}</span> : null}
-              {asker ? <span role="status" className="trade-wait truncate">{declined.length ? declinedLine(declined.map(name)) : "Waiting…"}</span> : null}
-            </p>
-          </div>
-          {answering ? (
-            <>
-              <p aria-live="polite" className="sr-only" data-testid="trade-countdown-live">
-                {left === 5 ? "5 seconds left" : ""}
-              </p>
-              <div className="flex shrink-0 gap-2">
-                <Button
-                  className="trade-yes h-11 min-w-14 aria-disabled:cursor-not-allowed aria-disabled:active:scale-100"
-                  aria-disabled={why !== null || undefined}
-                  aria-describedby={why ? whyId : undefined}
-                  onClick={() => {
-                    if (why === null) answerTrade(true);
-                  }}
-                >
-                  Yes
-                </Button>
-                <Button variant="secondary" className="trade-no h-11 min-w-14" onClick={() => answerTrade(false)}>
-                  No
-                </Button>
-              </div>
-            </>
-          ) : null}
-        </section>
+        <LazyBoundary failed={null}>
+          <TradeSlot line={line} color={color} left={left} why={why} wait={wait} answering={answering} lineId={lineId} whyId={whyId} />
+        </LazyBoundary>
       );
     }
     body = (
       <>
         <div className="trade-summary flex min-w-0 items-center justify-between gap-2">
-          <p id={lineId} className="text-sm font-medium leading-5" title={offerLine(asker ? null : offer.fromName, offer.give, offer.want)}>
+          <p id={lineId} className="text-sm font-medium leading-5" title={line}>
             {/* #312: another seat's offer leads with that seat's dot. */}
-            {!asker ? <SeatDot color={players?.find((p) => p.id === offer.from)?.color ?? "transparent"} className="mr-1.5 size-3 align-[-1px]" /> : null}
-            {offerLine(asker ? null : offer.fromName, offer.give, offer.want)}
+            {color ? <SeatDot color={color} className="mr-1.5 size-3 align-[-1px]" /> : null}
+            {line}
           </p>
           {/* For answerers the 250 ms tick would chatter, so it is hidden; the polite line below speaks once, at 5 s. */}
           <span aria-hidden={!asker || undefined} className="trade-clock shrink-0 tabular-nums text-xs" data-testid="trade-countdown" data-urgent={left <= 5 || undefined}>
@@ -172,7 +134,7 @@ export function TradeToast({ slot }: { slot?: boolean }) {
         ) : null}
         {asker ? (
           <p role="status" className="trade-wait sr-only">
-            {declined.length ? declinedLine(declined.map(name)) : "Waiting…"}
+            {wait}
           </p>
         ) : null}
         <div className="trade-details" tabIndex={0} role="group" aria-label="Trade amounts and player responses">

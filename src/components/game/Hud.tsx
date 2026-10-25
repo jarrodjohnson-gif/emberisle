@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ChatControls, ChatDock, ChromeLanded, CostCard, FirstGameCoach, FortuneTray, HowTo, MyNumbers, sheets, TradePanel, TurnMoment, WinScreen } from "@/components/game/chunks";
-import { TradeToast } from "@/components/game/TradeToast";
+import { TradeToast, tradeSlot } from "@/components/game/TradeToast";
 import { WinFailed } from "@/components/game/WinFailed";
 import { Announcer } from "@/components/game/Announcer";
 import { PlayerMenu } from "@/components/game/PlayerMenu";
@@ -157,7 +157,8 @@ export function Hud() {
   const [sheetsLost, setSheetsLost] = useState<string | null>(null);
   useEscapeDisarm();
   const [stackRef, moreBelow] = useMoreBelow();
-  useEffect(() => preloadOnIdle(sheets.prefetch), []);
+  // #1101: the dock's offer slot too, so an offer never waits on the network.
+  useEffect(() => preloadOnIdle(() => { sheets.prefetch(); tradeSlot.prefetch(); }), []);
   // #423: the fortune tray is open until a fortune is played, it is closed, the phase moves (a roll with the tray up) or the
   // turn moves on (hotseat: to the next seat); it never comes back on its own.
   const [fortunesOpen, setFortunesOpen] = useState(false);
