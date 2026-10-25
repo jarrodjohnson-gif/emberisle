@@ -95,6 +95,8 @@ export interface TableEvents {
   reconnecting(attempt: number): void;
   // `keepSeat`: the seat is still ours but open in another tab, so the saved secret stays.
   closed(keepSeat?: boolean): void;
+  // Open tables on this host (#833); never includes private codes. Seatless `list` replies only.
+  openTables(tables: OpenTableEntry[]): void;
 }
 
 export interface Me {
@@ -103,13 +105,24 @@ export interface Me {
   avatarId?: string;
 }
 
+// An open table entry from the server's openTables list (never includes private table codes).
+export interface OpenTableEntry {
+  code: string;
+  name: string;
+  seated: number;
+  total: number;
+  status: "lobby" | "playing" | "over";
+}
+
 export interface TableClient {
-  open(me: Me, options?: { wayfarerMode: WayfarerMode }): void;
+  open(me: Me, options?: { wayfarerMode?: WayfarerMode; visibility?: "open" | "private" }): void;
   join(code: string, me: Me): void;
   // Watch a started table, read-only: hello {code, watch:true} (docs/design/spectator.md). No seat, no secret, so no redial.
   watch(code: string): void;
   // Ask which seats a lobby holds before sitting down (docs/design/color-peek.md). Answered as `seats`.
   peek(code: string): void;
+  // Ask for the open-table list on a seatless socket (#833). Answered as `openTables`.
+  list(): void;
   // Sit back down in a held seat (#196): hello {code, secret} from an earlier welcome.
   rejoin(code: string, secret: string): void;
   // Close the socket the way a lost network would (not on purpose), so the client dials again. For proofs.
@@ -348,6 +361,9 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
       case "tradeClosed":
         on.tradeClosed?.(msg as never);
         break;
+      case "openTables":
+        on.openTables?.(Array.isArray(msg.tables) ? (msg.tables as OpenTableEntry[]) : []);
+        break;
       case "error": {
         const message = String(msg.message);
         if (rejoining) taken = message === "Seat is taken.";
@@ -376,6 +392,7 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
     join: (code, me) => send({ type: "hello", proto: PROTO, code: code.toUpperCase(), ...me }),
     watch: (code) => send({ type: "hello", proto: PROTO, code: code.toUpperCase(), watch: true }),
     peek: (code) => send({ type: "peek", code: code.toUpperCase() }),
+    list: () => send({ type: "list" }),
     rejoin: (code, secret) => {
       stamp = null;
       seat = { code: code.toUpperCase(), secret };

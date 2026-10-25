@@ -396,6 +396,12 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-b'
         run: npm run title-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-b'
+        run: npm run open-table-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-b'
+        run: npm run title-chunks-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-b'
+        run: npm run open-host-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-b'
         run: npm run wayfarer-setup-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-b'
         run: npm run victory-target-prove
