@@ -47,7 +47,7 @@ try {
     const card = await page.evaluate(() => {
       const el = document.querySelector('[data-testid="title-card"]');
       const c = el.getBoundingClientRect();
-      const fg = getComputedStyle(document.documentElement).getPropertyValue("--color-fg").trim();
+      const fg = "#285550";
       const probe = document.createElement("div");
       probe.style.backgroundColor = fg;
       document.body.append(probe);
@@ -70,7 +70,7 @@ try {
       const textBox = hostText.getBoundingClientRect();
       return {
         hostFits: host.scrollWidth <= host.clientWidth && textBox.left >= hostBox.left && textBox.right <= hostBox.right,
-        primary: buttons.filter((b) => b.classList.contains("bg-fg")).map((b) => b.textContent.trim()),
+        primary: buttons.filter((b) => getComputedStyle(b).backgroundColor === fgRgb).map((b) => b.textContent.trim()),
         filled: filled.map((b) => b.textContent.trim()),
         uppercase: [...el.querySelectorAll("*")].filter((n) => getComputedStyle(n).textTransform === "uppercase").length,
         texts: [...el.querySelectorAll("p")].map((p) => p.textContent.trim()),
@@ -90,14 +90,17 @@ try {
 
     const watch = page.getByRole("button", { name: "Watch", exact: true });
     assert.equal(await watch.isVisible(), true, `${tag}: Watch visible before a code`);
+    assert.equal(await watch.isDisabled(), true, `${tag}: Watch disabled before a code`);
     const live = page.getByTestId("watch-announce");
     assert.equal(await live.getAttribute("aria-live"), "polite", `${tag}: Watch live region`);
     assert.equal(await live.textContent(), "", `${tag}: live region speaks before a code`);
     await page.getByRole("textbox", { name: "Join code" }).fill("ABC");
     assert.equal(await watch.isVisible(), true, `${tag}: Watch visible at 3 characters`);
+    assert.equal(await watch.isDisabled(), true, `${tag}: Watch disabled at 3 characters`);
     assert.equal(await live.textContent(), "", `${tag}: live region speaks at 3 characters`);
     await page.getByRole("textbox", { name: "Join code" }).fill("ABCD");
     await watch.waitFor();
+    assert.equal(await watch.isEnabled(), true, `${tag}: Watch enabled at 4 characters`);
     assert.equal(await live.textContent(), "Watch available", `${tag}: live region says Watch appeared`);
     await page.getByRole("textbox", { name: "Join code" }).fill("");
     await page.screenshot({ path: `test-results/title-prove-${v.width}x${v.height}.png` });

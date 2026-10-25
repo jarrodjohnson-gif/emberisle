@@ -6,7 +6,7 @@ import path from "node:path";
 import { chromium } from "playwright";
 import { createServer } from "vite";
 
-const output = "docs/proofs/1102";
+const output = process.env.TITLE_PROOF_OUTPUT || "test-results/title-1102";
 mkdirSync(output, { recursive: true });
 const rooms = mkdtempSync(path.join(tmpdir(), "emberisle-title-1102-"));
 const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {

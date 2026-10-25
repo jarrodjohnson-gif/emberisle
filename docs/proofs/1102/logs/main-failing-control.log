@@ -6,8 +6,8 @@ locator.waitFor: Timeout 30000ms exceeded.
 Call log:
 [2m  - waiting for getByRole('button', { name: 'Play against bots', exact: true }) to be visible[22m
 
-    at pageAt (/Users/jarrod.johnson/emberisle-1102/scripts/title-layout-prove.mjs:34:80)
-    at async file:///Users/jarrod.johnson/emberisle-1102/scripts/title-layout-prove.mjs:38:31 {
+    at pageAt (<repo>/scripts/title-layout-prove.mjs:34:80)
+    at async file://<repo>/scripts/title-layout-prove.mjs:38:31 {
   log: [
     "  - waiting for getByRole('button', { name: 'Play against bots', exact: true }) to be visible"
   ],

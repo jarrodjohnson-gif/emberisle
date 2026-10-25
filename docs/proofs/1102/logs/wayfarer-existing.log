@@ -12,7 +12,7 @@ locator.click: Timeout 30000ms exceeded.
 Call log:
 [2m  - waiting for getByRole('button', { name: 'Play', exact: true })[22m
 
-    at /Users/jarrod.johnson/emberisle-1102/scripts/wayfarer-setup-prove.mjs:64:61 {
+    at <repo>/scripts/wayfarer-setup-prove.mjs:64:61 {
   log: [
     "  - waiting for getByRole('button', { name: 'Play', exact: true })"
   ],

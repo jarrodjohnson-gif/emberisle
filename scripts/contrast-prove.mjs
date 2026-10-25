@@ -45,8 +45,12 @@ try {
   const errors = [];
   page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
   page.on("pageerror", (e) => errors.push(String(e)));
+  await page.routeWebSocket(/:8787\//, () => {});
   await page.goto(`http://127.0.0.1:${PORT}/`);
   await page.getByRole("button", { name: "Join", exact: true }).waitFor();
+  await page.getByRole("textbox", { name: "Join code", exact: true }).fill("ABCD");
+  await page.evaluate(() => window.__emberisle.setState({ error: "That table is unavailable." }));
+  await page.getByRole("alert").waitFor();
   // Computed colours can be oklch or color-mix, so resolve each to sRGB through a canvas pixel.
   const read = await page.evaluate(() => {
     const px = (css) => {
@@ -56,29 +60,39 @@ try {
       c.fillRect(0, 0, 1, 1);
       return [...c.getImageData(0, 0, 1, 1).data].slice(0, 3);
     };
+    const background = (el) => {
+      const c = document.createElement("canvas").getContext("2d", { willReadFrequently: true });
+      const layers = [];
+      for (let node = el; node; node = node.parentElement) layers.unshift(getComputedStyle(node).backgroundColor);
+      c.fillStyle = "white";
+      c.fillRect(0, 0, 1, 1);
+      for (const layer of layers) { c.fillStyle = layer; c.fillRect(0, 0, 1, 1); }
+      return [...c.getImageData(0, 0, 1, 1).data].slice(0, 3);
+    };
     const btn = (name) => {
       const el = [...document.querySelectorAll("button")].find((b) => b.textContent.trim() === name);
       const s = getComputedStyle(el);
-      return { fg: px(s.color), bg: px(s.backgroundColor) };
+      return { fg: px(s.color), bg: background(el) };
     };
-    const caption = getComputedStyle([...document.querySelectorAll("p")].find((p) => p.textContent === "3 bots, no network"));
+    const caption = getComputedStyle([...document.querySelectorAll("p")].find((p) => p.textContent === "Just you and three bots. No network needed."));
     const root = getComputedStyle(document.documentElement);
     return {
-      play: btn("Play"),
+      play: btn("Play against bots"),
       join: btn("Join"),
       host: btn("Host a table"),
       quietSeats: btn("Pass this device"),
       quietHow: btn("How to play"),
       caption: px(caption.color),
       seaInk: px(root.getPropertyValue("--color-sea-ink").trim()),
-      surface: px(root.getPropertyValue("--color-surface").trim()),
+      surface: background(document.querySelector('[data-testid="title-card"]')),
+      errorInk: px(getComputedStyle(document.querySelector('[role="alert"]')).color),
       bg: px(root.getPropertyValue("--color-bg").trim()),
       accentInk: px(root.getPropertyValue("--color-accent-ink").trim()),
       accent: px(root.getPropertyValue("--color-accent").trim()),
     };
   });
   // The error line only appears after a failed join, so take its colour from the token the source names.
-  const errorInk = /text-accent-ink/.test(readFileSync("src/components/game/EmberisleApp.tsx", "utf8")) ? read.accentInk : read.accent;
+  const errorInk = read.errorInk;
   await page.screenshot({ path: "test-results/contrast-prove.png" });
   // Its colours and image are captured. Do not leave this title renderer competing with later fixtures.
   await page.close();
@@ -103,7 +117,7 @@ try {
     if (r < MIN) bad.push(`${name} is ${r.toFixed(2)}:1`);
   }
   // The source must use the ink tokens where the error line and eyebrows are drawn.
-  const app = readFileSync("src/components/game/EmberisleApp.tsx", "utf8");
+  const app = readFileSync("src/components/game/EmberisleApp.tsx", "utf8") + readFileSync("src/components/game/Title.tsx", "utf8");
   if (/text-accent"/.test(app)) bad.push("EmberisleApp.tsx still uses text-accent for text");
   if (/text-sea"/.test(app)) bad.push("EmberisleApp.tsx still uses text-sea for text");
 

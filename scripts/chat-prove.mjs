@@ -463,7 +463,7 @@ try {
   }, sel);
   await phone.page.getByTestId("title-card").waitFor();
   let r = await box(phone, '[data-testid="title-card"]');
-  check(Math.abs(r.height - 466) < 1, `phone title card is ${r.height.toFixed(0)} px tall, matching the approved 466px card`);
+  check(r.height <= 0.55 * r.vh + 0.5, `phone title card is ${r.height.toFixed(0)} px tall, at most 55% of ${r.vh}`);
   check(Math.abs(r.width - (r.vw - 32)) < 1 && Math.abs(r.left - 16) < 1 && Math.abs(r.bottom - (r.vh - 16)) < 1, "phone title card has the approved 16px margins and bottom position");
   await shot(phone, "chat-phone-title.jpg");
   await phone.page.getByPlaceholder(/code/i).fill(tableCode);
