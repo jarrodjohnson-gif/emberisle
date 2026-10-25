@@ -1,0 +1,28 @@
+
+> title-chunks-prove
+> node scripts/title-chunks-prove.mjs
+
+ok  held mode controls retain private Host
+ok  mode arrival preserves Join text and focus
+ok  loaded mode remains Private by default
+ok  OpenTables held: no unrelated browser errors []
+ok  Host node survives optional mode arrival
+ok  module arrival between pointer down/up preserves the first Host tap
+ok  OpenTables held: no unrelated browser errors []
+ok  practice starts while open-table module remains held
+ok  OpenTables held: no unrelated browser errors []
+ok  failed mode controls still host a real private table {"code":"KB2P","listed":[]}
+ok  OpenTables failed: no unrelated browser errors []
+ok  settings summary stays eager
+ok  held settings body is isolated from core title controls
+ok  held settings retain Host
+ok  Practice keeps its existing default
+ok  Online keeps its existing default
+ok  Hotseat keeps its existing default
+ok  loaded settings preserve their existing store action and summary
+ok  existing settings help text retained
+ok  WayfarerOptions held: no unrelated browser errors []
+ok  failed optional settings do not block hosting
+ok  WayfarerOptions failed: no unrelated browser errors []
+ok  no host errors []
+title-chunks-prove: all passed
