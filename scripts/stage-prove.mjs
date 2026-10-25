@@ -86,6 +86,7 @@ try {
     out.push(await move(103, 360, 'restore observed pre-refit hole'));
     await frame();
     out.push(await writeThenSample(500, 56, 'size-changing refit: writer and reader RAFs in one frame'));
+    await frame(); out.push(sample('size-changing refit: next frame'));
     out.push(await move(100, 456, 'restore clear centre: first frame'));
     return out;
   });
