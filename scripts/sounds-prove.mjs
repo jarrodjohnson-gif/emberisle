@@ -616,8 +616,9 @@ try {
     play("sb_airhorn");
     await new Promise((r) => setTimeout(r, 400));
     play("sb_airhorn");
-  });
-  assert.ok(["Airhorn", "Quit touchin' me", "Only wood?"].every((label) => labels.includes(`Play sound ${label}`)), "button labels");
+    return (await import("/src/lib/sound.ts")).SOUNDBOARD.map((x) => x.label);
+  }).then((labels) => assert.ok(["Airhorn", "Quit touchin' me", "Only wood?"].every((l) => labels.includes(l)), "button labels"));
+  assert.ok(["Airhorn", "Quit touchin' me", "Only wood?"].every((label) => labels.includes(`Play sound ${label}`)), "visible button labels");
   await b.getByRole("tab", { name: "Chat", exact: true }).click();
   ok("soundboard: Airhorn, Quit touchin' me and Only wood? each play once on the other seat, labelled; a repeat reuses the clip's element");
   await sleep(3100);

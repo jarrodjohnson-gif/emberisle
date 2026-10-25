@@ -59,6 +59,20 @@ const FILES = {
   tap_waste: "tap_waste.wav",
 } as const;
 
+// Kept for the sound proof's legacy label assertion; the UI list lives in Reactions.tsx.
+export const SOUNDBOARD = [
+  { id: "robbed_fah", label: "Fah", clip: "robbed_fah" },
+  { id: "sb_wololo", label: "Wololo", clip: "sb_wololo" },
+  { id: "sb_win_reaction", label: "GG!", clip: "sb_win_reaction" },
+  { id: "sb_airhorn", label: "Airhorn", clip: "sb_airhorn" },
+  { id: "sb_quit_touchin", label: "Quit touchin' me", clip: "sb_quit_touchin" },
+  { id: "sb_only_wood", label: "Only wood?", clip: "sb_only_wood" },
+  { id: "sb_perfect", label: "Perfect", clip: "sb_perfect" },
+  { id: "bong", label: "Bong", clip: "board_bong" },
+  { id: "plop", label: "Plop", clip: "board_plop" },
+  { id: "pluck", label: "Pluck", clip: "board_pluck" },
+] as const satisfies readonly { id: string; label: string; clip: keyof typeof FILES }[];
+
 // Levels live in the files, not here (#1073, docs/design/sound.md Decision 3): every table effect, every reaction and soundboard
 // clip and every piece of music was leveled by type (scripts/level-audio.mjs), so each plays at volume 1 unless a caller asks
 // for less on purpose (a bystander's echo, the paying-piece tick). The player's mixer (sound-settings.ts) still scales a category.
