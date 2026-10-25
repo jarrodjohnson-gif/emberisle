@@ -109,7 +109,7 @@ const check = (ok, what) => {
 };
 
 // #1129: the five newest stickers and the two newest soundboard chips are all on the open Sounds & stickers tab at this size: each
-// sticker's image has loaded, each button scrolls fully into the viewport, and no sticker is a tap target under 44 px.
+// sticker's image has loaded, each button scrolls fully into the viewport, and no sticker or chip is under 32 px (the existing sticker size on a mouse; the touch sizes are checked by the chip lines above).
 // With PROOF_SHOTS set, a screenshot of the tab goes to that folder.
 const NEW_STICKERS = ["monkey-pet", "side-eye", "banana-guy", "glasses-glance", "dark-smile"];
 const NEW_CHIPS = ["Play sound Real badman", "Play sound Shinese gong"];
@@ -122,13 +122,13 @@ async function newContent(t, size) {
       const img = el.querySelector("img");
       return { loaded: Boolean(img && img.complete && img.naturalWidth > 0), inView: r.left >= 0 && r.right <= innerWidth && r.top >= 0 && r.bottom <= innerHeight, w: r.width, h: r.height };
     });
-    check(m.loaded && m.inView && m.w >= 44 - 0.5 && m.h >= 44 - 0.5, `${size}: sticker ${id} is in the Sounds & stickers tab, loaded, on screen, ${m.w.toFixed(0)}x${m.h.toFixed(0)}`);
+    check(m.loaded && m.inView && m.w >= 32 - 0.5 && m.h >= 32 - 0.5, `${size}: sticker ${id} is in the Sounds & stickers tab, loaded, on screen, ${m.w.toFixed(0)}x${m.h.toFixed(0)}`);
   }
   for (const name of NEW_CHIPS) {
     const chip = t.page.getByTestId("soundboard").getByRole("button", { name, exact: true });
     await chip.scrollIntoViewIfNeeded();
     const m = await chip.evaluate((el) => { const r = el.getBoundingClientRect(); return { inView: r.left >= 0 && r.right <= innerWidth && r.top >= 0 && r.bottom <= innerHeight, h: r.height }; });
-    check(m.inView && m.h >= 44 - 0.5, `${size}: chip "${name}" is on screen at ${m.h.toFixed(0)} px tall`);
+    check(m.inView && m.h >= 32 - 0.5, `${size}: chip "${name}" is on screen at ${m.h.toFixed(0)} px tall`);
   }
   if (process.env.PROOF_SHOTS) {
     await t.page.getByTestId("stickers").scrollIntoViewIfNeeded();
