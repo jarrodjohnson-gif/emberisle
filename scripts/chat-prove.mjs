@@ -108,6 +108,34 @@ const check = (ok, what) => {
   console.log(`ok ${what}`, `+${((Date.now() - T0) / 1000).toFixed(1)}s`);
 };
 
+// #1129: the five newest stickers and the two newest soundboard chips are all on the open Sounds & stickers tab at this size: each
+// sticker's image has loaded, each button scrolls fully into the viewport, and no sticker is a tap target under 44 px.
+// With PROOF_SHOTS set, a screenshot of the tab goes to that folder.
+const NEW_STICKERS = ["monkey-pet", "side-eye", "banana-guy", "glasses-glance", "dark-smile"];
+const NEW_CHIPS = ["Play sound Real badman", "Play sound Shinese gong"];
+async function newContent(t, size) {
+  for (const id of NEW_STICKERS) {
+    const button = t.page.getByTestId("stickers").getByRole("button", { name: `React ${id}`, exact: true });
+    await button.scrollIntoViewIfNeeded();
+    const m = await button.evaluate((el) => {
+      const r = el.getBoundingClientRect();
+      const img = el.querySelector("img");
+      return { loaded: Boolean(img && img.complete && img.naturalWidth > 0), inView: r.left >= 0 && r.right <= innerWidth && r.top >= 0 && r.bottom <= innerHeight, w: r.width, h: r.height };
+    });
+    check(m.loaded && m.inView && m.w >= 44 - 0.5 && m.h >= 44 - 0.5, `${size}: sticker ${id} is in the Sounds & stickers tab, loaded, on screen, ${m.w.toFixed(0)}x${m.h.toFixed(0)}`);
+  }
+  for (const name of NEW_CHIPS) {
+    const chip = t.page.getByTestId("soundboard").getByRole("button", { name, exact: true });
+    await chip.scrollIntoViewIfNeeded();
+    const m = await chip.evaluate((el) => { const r = el.getBoundingClientRect(); return { inView: r.left >= 0 && r.right <= innerWidth && r.top >= 0 && r.bottom <= innerHeight, h: r.height }; });
+    check(m.inView && m.h >= 44 - 0.5, `${size}: chip "${name}" is on screen at ${m.h.toFixed(0)} px tall`);
+  }
+  if (process.env.PROOF_SHOTS) {
+    await t.page.getByTestId("stickers").scrollIntoViewIfNeeded();
+    await t.page.screenshot({ path: `${process.env.PROOF_SHOTS}/stickers-${size}.png` });
+  }
+}
+
 // Accumulate the style failures so a main run reports both viewports, rather than stopping at the first 8 px corner.
 const polishFailures = [];
 async function polish(t, state, selector = 'section[aria-label="Table chat"]', minControls = 1) {
@@ -349,6 +377,15 @@ async function quickReactions(a, b, c, phone) {
   await delivered(a, "ben-10", before);
   await b.page.locator('[data-testid="reaction"][data-emote="ben-10"] img').waitFor();
   check(true, "chat panel: the sticker sends from the Sounds & stickers tab");
+  // #1129: each of the five newest stickers reaches the other seat as an image through the host.
+  for (const id of NEW_STICKERS) {
+    before = await receivedCount();
+    await a.page.getByTestId("stickers").getByRole("button", { name: `React ${id}`, exact: true }).click();
+    await delivered(a, id, before);
+    await b.page.locator(`[data-testid="reaction"][data-emote="${id}"] img`).waitFor();
+    check(true, `chat panel: sticker ${id} is sent and seen by another seat`);
+    await new Promise((r) => setTimeout(r, 600));
+  }
   await showTab(a, "Chat");
   await closeChat(a);
 
@@ -536,6 +573,7 @@ try {
     }, ["Play sound Fah", "Play sound Wololo", "Play sound GG!", "Play sound Airhorn", "Play sound Quit touchin' me", "Play sound Only wood?", "Play sound Perfect", "Play sound Bong", "Play sound Plop", "Play sound Pluck"]);
     check(board.n === 10 && !board.wide && board.inside && board.font >= 14, `phone lobby ${v.size}: the Sounds & stickers tab shows all 10 chips at ${board.font}px with no sideways scroll`);
     check(board.total === 17 && !board.wide && board.inside, `phone lobby ${v.size}: the Sounds & stickers tab shows all 17 chips inside the box`);
+    if (w === 390) await newContent(hp, "390x844");
     await hp.page.getByRole("tab", { name: "Chat", exact: true }).click();
     const back = await logView(hp);
     check(back.whole >= 4 && back.newest, `phone lobby ${v.size}: back on the Chat tab, ${back.whole} chat lines and the newest are on screen`);
@@ -592,6 +630,7 @@ try {
     }, ["Play sound Fah", "Play sound Wololo", "Play sound GG!", "Play sound Airhorn", "Play sound Quit touchin' me", "Play sound Only wood?", "Play sound Perfect", "Play sound Bong", "Play sound Plop", "Play sound Pluck"]);
     check(land.n === 15 && land.small === 0 && !land.wide && (land.whole || land.height >= 66), `phone landscape ${w}x${h}: Sounds & stickers shows the 10 chips and 5 presets at 44 px, ${land.whole ? "all without scrolling" : `in a ${land.height} px scroll box (scrollHeight ${land.scroll})`}`);
     check(land.total === 22 && land.small === 0 && !land.wide && (land.whole || land.height >= 66), `phone landscape ${w}x${h}: Sounds & stickers shows the 17 chips and 5 presets at 44 px`);
+    if (w === 844) await newContent(hp, "844x390");
     await hp.page.getByRole("tab", { name: "Chat", exact: true }).click();
   }
   await fourth.page.context().close();
@@ -631,6 +670,15 @@ try {
   await c.page.getByRole("tab", { name: "Chat", exact: true }).click();
   for (const t of tabs) await t.page.getByTestId("chat-log").getByTestId("sound-line").filter({ hasText: "Wololo" }).waitFor({ timeout: 5000 });
   check(true, "lobby: Pine's sound is a bubble and a light line on all 3 tabs");
+  // #1129: the two newest chips, one from each of two other seats, are a bubble and a sound line on every seat.
+  for (const [sender, senderSeat, id, label] of [[b, tideSeat, "sb_real_badman", "Real badman"], [a, await store(a, () => window.__emberisle.getState().seatId), "sb_shinese_gong", "Shinese gong"]]) {
+    await sender.page.getByRole("tab", { name: "Sounds & stickers", exact: true }).click();
+    await sender.page.getByRole("button", { name: `Play sound ${label}`, exact: true }).click();
+    for (const t of tabs) await t.page.getByTestId(`lobby-seat-${senderSeat}`).locator(`[data-testid="sound-bubble"][data-sound="${id}"]`).waitFor({ timeout: 5000 });
+    await sender.page.getByRole("tab", { name: "Chat", exact: true }).click();
+    for (const t of tabs) await t.page.getByTestId("chat-log").getByTestId("sound-line").filter({ hasText: label }).waitFor({ timeout: 5000 });
+    check(true, `lobby: ${label} from ${sender.name} is a bubble and a sound line on all 3 tabs`);
+  }
   check((await a.page.getByPlaceholder("Say something…").inputValue()) === "", "lobby: input cleared after Enter");
   // #895: at 1280x720 the lobby input, Send and both tabs are reachable: a hit test at each centre finds the control itself,
   // not the Ready footer over it. Run as a guest and as the host once Start has joined the footer.
@@ -685,6 +733,7 @@ try {
   }, ["Play sound Fah", "Play sound Wololo", "Play sound GG!", "Play sound Airhorn", "Play sound Quit touchin' me", "Play sound Only wood?", "Play sound Perfect", "Play sound Bong", "Play sound Plop", "Play sound Pluck"]);
   check(lobbyBoard.n === 10 && !lobbyBoard.wide && lobbyBoard.inside && lobbyBoard.tabs, `desktop lobby 1280x720 (host, Sounds & stickers tab): all 10 chips with no sideways scroll, both tabs reachable; ${lobbyBoard.reached} of 10 chips in view without scrolling the tab`);
   check(lobbyBoard.total === 17 && !lobbyBoard.wide && lobbyBoard.inside && lobbyBoard.tabs, `desktop lobby 1280x720 (host, Sounds & stickers tab): all 17 chips with no sideways scroll, both tabs reachable; ${lobbyBoard.totalReached} of 17 chips in view without scrolling the tab`);
+  await newContent(a, "1280x720");
   await shot(a, "chat-lobby-desktop-sounds.jpg");
   await a.page.getByRole("tab", { name: "Chat", exact: true }).click();
   await a.page.getByRole("button", { name: "Start" }).click();
