@@ -55,12 +55,14 @@ try{
    // #776: the public chip beside the log line shows the count on every seat and the watcher, with any hand and on or off turn.
    const chip=n=>page.waitForFunction(n=>document.querySelector('[data-testid="deck-count"]')?.textContent===`Deck ${n}`,n);
    await load(history[0][i],i);const opener=page.getByTestId('fortunes-button');await chip(25);
-   // My fortunes shows exactly when this seat holds a fortune (never to the watcher); buyers keep what they drew, so it is compared with the hand.
+    // The phone's fixed Fortunes slot is disabled when empty; watchers keep the slot without any held count.
    const heldMatchesOpener=async()=>{const held=await page.evaluate(()=>{const g=window.__emberisle.getState();if(g.spectator)return 0;const me=g.state.players.find(p=>p.id===g.localId);return Object.values(me.hidden).reduce((n,c)=>n+c,0);});
     await page.waitForFunction(h=>{const b=document.querySelectorAll('[data-testid="fortunes-button"]');if(!(matchMedia('(pointer: coarse)').matches||innerWidth<768))return b.length===(h>0?1:0);if(b.length!==1||(b[0].getAttribute('aria-disabled')==='true')!==(h===0))return false;const r=b[0].getBoundingClientRect(),k=[r.x,r.y,r.width,r.height].join();return(window.__fortunesBox??=k)===k;},held);};
-   if(i!==1){const phone=await page.evaluate(()=>matchMedia('(pointer: coarse)').matches||innerWidth<768);assert.equal(await opener.count(),phone?1:0);if(phone)assert.equal(await opener.getAttribute('aria-disabled'),'true');
-    for(let bought=1;bought<=25;bought++){await load(history[bought][i],i);await chip(25-bought);await heldMatchesOpener();}
-    await load(restarted[i],i);await chip(0);await heldMatchesOpener();
+    if(i!==1){const phone=await page.evaluate(()=>matchMedia('(pointer: coarse)').matches||innerWidth<768);assert.equal(await opener.count(),phone?1:0);if(phone)assert.equal(await opener.getAttribute('aria-disabled'),'true');
+     const watcherPrivate=async()=>{if(i===4&&phone){assert.equal(await opener.textContent(),'Fortunes');assert.equal(await opener.getAttribute('aria-label'),'Fortunes');assert.doesNotMatch(`${await opener.textContent()} ${await opener.getAttribute('aria-label')} ${await opener.getAttribute('aria-description')}`,/\d/);}};
+     await watcherPrivate();
+     for(let bought=1;bought<=25;bought++){await load(history[bought][i],i);await chip(25-bought);await heldMatchesOpener();await watcherPrivate();}
+     await load(restarted[i],i);await chip(0);await heldMatchesOpener();await watcherPrivate();
     continue;}
    await opener.waitFor();assert.equal(await opener.getAttribute('data-deck-left'),'25');
    const b=await opener.boundingBox();assert.ok(b.width>=44&&b.height>=44&&b.x>=0&&b.y>=0&&b.x+b.width<=width&&b.y+b.height<=height);

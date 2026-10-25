@@ -218,12 +218,12 @@ async function pinned(p, moment, name, mustScroll) {
       const b = el.getBoundingClientRect();
       const top = document.elementFromPoint((b.left + b.right) / 2, (b.top + b.bottom) / 2);
       const cue = document.querySelector('[data-testid="hud-more-below"]');
-      const end = [...sc.querySelectorAll("button")].find((x) => x.textContent.trim() === "End turn")?.parentElement.getBoundingClientRect();
+      const end = [...sc.querySelectorAll("button")].find((x) => x.textContent.trim() === "End turn");
       return {
         name: (el.getAttribute("aria-label") || el.textContent.trim()).slice(0, 24),
         y: [Math.round(b.top), Math.round(b.bottom)],
         uncovered: el.contains(top),
-        cueClear: !cue && !!end,
+        cueClear: !cue && !!end && end.parentElement === sc.querySelector('[data-slot="turn"]'),
       };
     });
     if (!f) break;
@@ -243,7 +243,7 @@ async function pinned(p, moment, name, mustScroll) {
   ).then(() =>
     page.evaluate((insets) => {
       const t = document.querySelector("#fortune-title").closest('[role="dialog"]').getBoundingClientRect();
-      const sc = document.querySelector('[data-testid="turn-banner"]').parentElement;
+      const sc = document.querySelector('[data-testid="dock"]');
       const end = [...sc.querySelectorAll("button")].find((x) => x.textContent.trim() === "End turn");
       const b = end.parentElement.getBoundingClientRect();
       const hit = document.elementFromPoint((b.left + b.right) / 2, (b.top + b.bottom) / 2);
