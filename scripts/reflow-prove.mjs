@@ -158,7 +158,7 @@ try {
       const canvas = r(document.querySelector("canvas"));
       const chrome = portraitStrip ? portraitStrip.bottom : header.bottom;
       // #422: on a sideways phone the stack is a left column, and the island's room is beside it, not above it.
-      const column = stack.width < innerWidth / 2;
+      const column = document.querySelector('[data-testid="dock"]') ? innerWidth > innerHeight : stack.width < innerWidth / 2;
       const gapTop = Math.max(canvas.top, chrome);
       const gapBottom = column ? canvas.bottom : Math.min(canvas.bottom, stack.top);
       const gapLeft = column ? stack.right : canvas.left;
