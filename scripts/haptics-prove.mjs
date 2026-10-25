@@ -391,6 +391,8 @@ async function eventGuardsProof(page) {
 async function tradeFramesProof(page) {
   await toPractice(page);
   const got = await page.evaluate(async () => {
+    // Injected frames require the optional transport before this synchronous socket fixture.
+    await import("/src/lib/net/table.ts");
     const { PROTO } = await import("/src/lib/net/proto.ts");
     const store = window.__emberisle;
     const NativeSocket = window.WebSocket;
