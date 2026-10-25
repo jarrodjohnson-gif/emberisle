@@ -13,7 +13,8 @@ const groups = {
   music: ["game_start", "game_lose", "end_music", "isaac_win"],
 };
 const source = readFileSync(new URL("../src/lib/sound.ts", import.meta.url), "utf8");
-const files = Object.fromEntries([...source.match(/const FILES = \{([\s\S]*?)\} as const/)[1].matchAll(/^\s+(\w+): "([\w.]+)",/gm)].map((m) => [m[1], m[2]]));
+const extraSource = readFileSync(new URL("../src/lib/sound-extra.ts", import.meta.url), "utf8");
+const files = Object.fromEntries([source.match(/const FILES = \{([\s\S]*?)\} as const/)[1], extraSource.match(/const EXTRA_FILES = \{([\s\S]*?)\} as const/)[1]].flatMap((block) => [...block.matchAll(/^\s+(\w+): "([\w.]+)",/gm)].map((m) => [m[1], m[2]])));
 const all = Object.values(groups).flat();
 assert.deepEqual([...all].sort(), Object.keys(files).sort(), "every clip has exactly one independently specified category");
 const TRACK = "old_tower_inn_loop.mp3";
