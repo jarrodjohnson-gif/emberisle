@@ -1,0 +1,39 @@
+
+> build
+> vite build
+
+vite v8.3.1 building client environment for production...
+transforming...
+✓ 1998 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                2.61 kB │ gzip:   1.30 kB
+dist/assets/ben-10-BZkFZeMq.webp               6.80 kB
+dist/assets/Title-NArnEYC6.css                 3.07 kB │ gzip:   1.00 kB
+dist/assets/index-T3oa8gsB.css                74.27 kB │ gzip:  15.31 kB
+dist/assets/WayfarerOptions-DzpB4TPL.js        0.73 kB │ gzip:   0.44 kB
+dist/assets/focus-trap-DrmTqqpD.js             0.73 kB │ gzip:   0.46 kB
+dist/assets/HandRates-DQQhMAmG.js              1.01 kB │ gzip:   0.64 kB
+dist/assets/VictoryTargetSelect-BcH9xEl0.js    1.12 kB │ gzip:   0.68 kB
+dist/assets/haptics-lhH_Fn54.js                1.85 kB │ gzip:   1.09 kB
+dist/assets/DockInspection-diiBUlhR.js         2.03 kB │ gzip:   1.03 kB
+dist/assets/OpenTables-D_S6FaPB.js             2.66 kB │ gzip:   1.25 kB
+dist/assets/TurnExtensionVote-XbyMN9h_.js      2.67 kB │ gzip:   1.20 kB
+dist/assets/SetupReference-BuqrB8r4.js         4.92 kB │ gzip:   1.85 kB
+dist/assets/Reactions-BLoUbrU4.js              5.47 kB │ gzip:   2.31 kB
+dist/assets/Title-DwIonyBU.js                  6.02 kB │ gzip:   2.19 kB
+dist/assets/moments-B4C18GKa.js                9.66 kB │ gzip:   4.11 kB
+dist/assets/jelly-board-48pdTxVg.js           20.84 kB │ gzip:   8.02 kB
+dist/assets/sheets-C0POIvM0.js                21.93 kB │ gzip:   7.00 kB
+dist/assets/online-ZpRQlNYF.js                23.01 kB │ gzip:   7.82 kB
+dist/assets/harbor-jelly-CAjPYXXd.js          25.97 kB │ gzip:  10.32 kB
+dist/assets/hex-jelly-D9kd1V-q.js            136.96 kB │ gzip:  47.25 kB
+dist/assets/index-Ysxk8MEe.js                392.68 kB │ gzip: 124.76 kB
+dist/assets/IslandCanvas-DL1c1Mrl.js         760.81 kB │ gzip: 202.00 kB
+
+[plugin builtin:vite-reporter] 
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 571ms
