@@ -16,9 +16,6 @@ on:
   workflow_run:
     workflows: [CI]
     types: [completed]
-  # The desk's clean marker can land after CI goes green, so it triggers a check too.
-  issue_comment:
-    types: [created]
 
 permissions:
   contents: write
