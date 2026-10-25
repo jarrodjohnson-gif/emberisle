@@ -1,0 +1,120 @@
+ok profileHello advertises profilesV1 on the plain localhost link
+ok plain production localhost is guest-only
+ok a PIN over plain localhost is refused
+ok plain localhost cannot create a profile
+ok a profile connection cannot open a table
+ok direct same-Wi-Fi ws:// refuses credentials
+ok a direct peer's spoofed cf-connecting-ip and X-Forwarded-Proto are ignored
+ok spoofed headers cannot log in
+ok a tunnel hop without HTTPS evidence refuses credentials
+ok a tunnel hop from another site's page is refused
+ok no Origin header refuses credentials
+ok the tunnel link offers profiles
+ok profileCreate returns a private profileSession
+ok the session carries only the owner allowlist
+ok display text is cleaned and no song is assigned
+ok a distinct backup colour is stored
+ok the profile id is a UUID
+ok a mismatched PIN confirmation is invalid
+ok a bad login shape is invalid
+ok a colour off the palette is invalid
+ok exact Unicode text creates a profile
+ok exact display name preserves sixteen complete characters
+ok exact catchphrase preserves eighty complete characters
+ok exact cleaned text is durable
+ok clipped Unicode text creates a profile
+ok clipped display name preserves sixteen complete characters
+ok clipped catchphrase preserves eighty complete characters
+ok clipped cleaned text is durable
+ok control-only display name cannot create a profile
+ok rejected empty name leaves the private file unchanged
+ok concurrent creation keeps one login
+ok the store holds one tide
+ok Choose another login
+ok profileLogin with the right PIN issues a second credential
+ok profileResume returns the owner without a new credential
+ok profileLogout answers
+ok the logged-out credential no longer resumes
+ok the other device's credential still resumes
+ok Signed out reads plainly
+ok login "constructor" before creation is an ordinary unknown login
+ok login "Constructor" before creation is an ordinary unknown login
+ok login "tostring" before creation is an ordinary unknown login
+ok login "hasownproperty" before creation is an ordinary unknown login
+ok a profile named constructor can be created
+ok and signs in as Constructor
+ok the host is still serving after those names
+ok a guest seat rejoins with its secret after a profile logout
+ok a table socket cannot sign in
+ok an unknown login and a wrong PIN give the same answer
+ok an unknown login costs a real derivation
+ok an unknown login's failure is counted in its own bucket
+ok 7 flood attempts are durably reserved before releasing native work
+ok 9 flood attempts are durably reserved before releasing native work
+ok overflow replies arrive before any gated native derivation starts
+ok one running plus eight queued derivations; the overflow is refused
+ok native derivations never overlap
+ok overflow is refused before any derivation finishes
+ok derivations run one at a time
+native queue timing {"done":[319.914794921875,618.586669921875,913.020751953125,1199.043701171875,1643.8837890625,1981.3134765625,2286.477783203125,2582.989501953125,2889.9501953125],"gaps":[298.671875,294.43408203125,286.02294921875,444.840087890625,337.4296875,305.164306640625,296.51171875,306.960693359375],"delayedClientReplies":[324,619,914,1203,1644,1983,2287,2885,2885]}
+ok eight concurrent wrong PINs all fail alike
+ok only five were hashed and counted
+ok the right PIN is refused during the cooldown
+ok three creations per address per hour
+ok twenty authentication requests per address per minute
+ok another tunnel visitor has its own address bucket
+ok the attempt is reserved durably before hashing
+ok an interrupted attempt is recovered as a failure
+ok a crashed host's lock is taken over
+ok credentials survive a restart
+ok logins survive a restart
+ok budgets survive a restart and a successful login
+ok the cooldown survives a restart
+ok ten failures inside a day
+ok the tenth daily failure blocks even the right PIN after the cooldown
+ok the old login cannot sign in
+ok the old login cannot be claimed again
+ok a rename keeps the day's budget
+ok the next day the right PIN works
+ok a successful login replenishes nothing
+ok thirty lifetime failures are recorded
+ok the lifetime lock refuses the right PIN
+ok time does not clear the lifetime lock
+ok a remembered device still resumes under the lifetime lock
+ok resume clears no counter
+ok a device credential expires 90 days after issue
+ok an expired credential no longer resumes
+ok a weaker verifier still signs in
+ok and is upgraded to the accepted parameters
+ok at most five remembered devices per profile
+ok each overflow login returns a credential for the same profile
+ok newest credential remains usable at capacity
+ok five issued credentials resume and one is signed out
+ok overflow does not evict another profile's credential
+ok resume at capacity changes no PIN budget
+ok crash/restart preserves each credential's capacity outcome
+ok other profile still resumes after overflow and restart
+ok restart and repeated resumes preserve every PIN budget
+ok no plaintext PIN on disk
+ok no device credential on disk
+ok no stray temp files
+ok the guest sockets saw game frames
+ok game frames carry no profile fields
+ok the store never names a custom media binding
+ok a second host on the same profile directory refuses profiles
+ok that second host still seats guests
+ok an unknown schema is refused, not replaced
+ok guests still play over an unknown schema
+ok an unknown schema is left on disk for repair
+ok a corrupt store is refused, not replaced
+ok guests still play over a corrupt store
+ok a corrupt store is left on disk for repair
+ok a store with a broken login index is refused, not replaced
+ok guests still play over a store with a broken login index
+ok a store with a broken login index is left on disk for repair
+ok the repaired store serves profiles again
+ok PROFILES_DEV=1 allows a loopback page over ws://
+ok development still refuses a LAN page
+ok development still refuses a proxied loopback hop
+ok development still refuses a direct LAN peer
+profile-auth-prove: 118 checks passed
