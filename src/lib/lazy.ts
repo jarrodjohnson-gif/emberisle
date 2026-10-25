@@ -62,7 +62,12 @@ export function chunk<M>(load: () => Promise<M>) {
       // React's type for `use` wants one settled shape at a time; the promise reports whichever it is in at run time.
       return createElement(select(use(p as Promise<M>)), props);
     };
-  return { prefetch, pick };
+  // Non-React callers share the same cache and failed-URL retry as the UI.
+  const loadModule = () => {
+    if (pending?.status === "rejected") pending = undefined;
+    return preload();
+  };
+  return { prefetch, pick, load: loadModule };
 }
 
 // Prefetch when the browser is idle (within 2 s even while the island keeps every frame busy), or after a short delay

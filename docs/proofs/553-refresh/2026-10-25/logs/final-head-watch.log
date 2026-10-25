@@ -1,0 +1,12 @@
+before the start: "Not started yet."; no code and a bad code: "No table with that code"
+after the start: welcome {spectator:true}, seats {watching:1}, redacted state at seq 0; two watchers counted at every seat, one log line, a third gets "Table is full to watch."
+turn timer: idle roll-off, "Ember took too long; the table moved on." (a seat, never a watcher), watcher at seq 1
+every seat dropped at seq 16: after GRACE_MS=300 the bot took all three and waited (0 states pushed to the watchers); all three rejoined, seq 16, every seat human
+terminal fixture w1: phase-only readiness is true with one frame pending; first divergence 374, expected seq 369, received end-of-stream
+terminal fixture w2: phase-only readiness is true with one frame pending; first divergence 374, expected seq 369, received end-of-stream
+played to the win in 368 actions: 375 watcher states, every one before the end the opponent view, same seqs as the seats; the rolled messages reached the watchers
+at the win: p0 wins; the watcher holds every hand and hidden card and the deck (2), no seed or rng
+refusals: a seat's secret, roll, chat, tradeAnswer, junk, place, pass, buy, tradeAsk, react -> 10 x "Watching only."; ready, start, peek and a second watch past the burst -> silence; nothing moved; "gg" from a seat reached both watchers
+leaving: watching 2 -> 1 at every seat, 0 "A watcher left." line(s) (coalesced), three seats still seated
+dropped room: every seat gone, after HOLD_MS=5000 the watcher got "The table closed." and its socket closed
+watch prove ok
