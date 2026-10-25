@@ -243,6 +243,17 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
   let rejoining = false;
   // The last rejoin answer was "Seat is taken.": another tab of ours holds the seat, so giving up must keep the secret.
   let taken = false;
+  let seatId: string | undefined;
+  // Guest continuity stays scoped to the server that issued these host-seat bearers.
+  const hostKey = `emberisle-host-seats:${new URL(url).href}`;
+  const hostHints = (): string[] => {
+    try { return (localStorage.getItem(hostKey) ?? "").split(",").filter((s) => /^[a-f0-9]{32}$/.test(s)).slice(-64); }
+    catch { return []; }
+  };
+  const rememberHost = () => {
+    if (!seat) return;
+    try { localStorage.setItem(hostKey, [...new Set([...hostHints(), seat.secret])].slice(-64).join(",")); } catch { /* storage may be blocked */ }
+  };
   let timer: ReturnType<typeof setTimeout> | null = null;
   let stamp: ActionStamp | null = null;
   let extension: TurnExtensionState | null = null;
@@ -374,6 +385,8 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
         stamp = null;
         const m = msg as Parameters<TableEvents["welcome"]>[0];
         if (typeof m.secret === "string") seat = { code: m.code, secret: m.secret };
+        seatId = m.you;
+        if (m.host) rememberHost();
         if (typeof m.holdMs === "number" && typeof m.lobbyHoldMs === "number") hold = { game: m.holdMs, lobby: m.lobbyHoldMs };
         awaitingState = rejoining && inGame;
         probe ??= null;
@@ -386,6 +399,7 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
         break;
       }
       case "seats":
+        if ((msg.seats as Seat[] | undefined)?.some((s) => s.id === seatId && s.host)) rememberHost();
         on.seats?.(msg as never);
         break;
       case "turnExtension":
@@ -446,7 +460,7 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
   dial();
 
   return {
-    open: (me, options) => send({ type: "hello", proto: PROTO, ...me, ...options }),
+    open: (me, options) => send({ type: "hello", proto: PROTO, hostingSecrets: hostHints(), ...me, ...options }),
     join: (code, me) => send({ type: "hello", proto: PROTO, code: code.toUpperCase(), ...me }),
     watch: (code) => send({ type: "hello", proto: PROTO, code: code.toUpperCase(), watch: true }),
     peek: (code) => send({ type: "peek", code: code.toUpperCase() }),

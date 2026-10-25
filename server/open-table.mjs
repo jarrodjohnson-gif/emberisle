@@ -1,28 +1,27 @@
 // Open-table list for server/host.mjs (#833).
-// At most one open table per host process: the first host to set visibility:"open" claims the slot.
+// Multiple players may host; host.mjs enforces one live host seat per authenticated profile or guest bearer.
 // Only { code, name, seated, status } is ever published — private table codes are never exposed.
 
-let openRoom = null;
+const openRooms = new Set();
 
-/** @returns {boolean} false when another open table already holds the single slot. */
+/** Register only rooms explicitly marked open by the host. */
 export function registerOpenTable(room) {
-  if (openRoom && openRoom !== room) return false;
-  openRoom = room;
+  openRooms.add(room);
   return true;
 }
 
 export function unregisterOpenTable(room) {
-  if (openRoom === room) openRoom = null;
+  openRooms.delete(room);
 }
 
 /** Drop the open listing when the game ends or nobody is connected (slot stays free for a new open host). */
 export function maybeReleaseOpenSlot(room) {
-  if (openRoom !== room) return;
+  if (!openRooms.has(room)) return;
   if (room.game?.phase === "over" || !room.seats.some((s) => s.ws)) unregisterOpenTable(room);
 }
 
 export function getOpenTables() {
-  if (!openRoom) return [];
+  return [...openRooms].map((openRoom) => {
   const status = openRoom.game
     ? openRoom.game.phase === "over"
       ? "over"
@@ -32,13 +31,12 @@ export function getOpenTables() {
   const hostSeat = openRoom.seats.find((s) => s.id === openRoom.host) ?? openRoom.seats[0];
   // Count every seat (bots included): sitDown refuses when length >= 4.
   const seated = openRoom.seats.length;
-  return [
-    {
+  return {
       code: openRoom.code,
       name: `${hostSeat?.name ?? "Host"}'s table`,
       seated,
       total: 4,
       status,
-    },
-  ];
+    };
+  });
 }

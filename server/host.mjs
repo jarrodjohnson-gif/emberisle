@@ -922,6 +922,15 @@ function openTable(ws, msg) {
   // An optional profile, verified before the table opens; a refusal opens nothing (#764).
   const profile = seatCredential(profiles, ws, msg, () => false);
   if (profile?.code) return send(ws, { type: "error", ...profile });
+  // Same-host guest bearers are hints to existing seats, never a new identity or a rejoin request.
+  const hints = Array.isArray(msg.hostingSecrets) ? msg.hostingSecrets.slice(0, 64).filter((s) => typeof s === "string" && /^[a-f0-9]{32}$/.test(s)) : [];
+  const known = new Set(hints.map((secret) => seatOf(secret)?.seat));
+  for (const current of rooms.values()) {
+    if (current.game?.phase === "over" || !current.seats.some((s) => s.ws)) continue;
+    const holder = current.seats.find((s) => s.id === current.host);
+    if (holder && (known.has(holder) || (profile && holder.profileId === profile.profileId)))
+      return send(ws, { type: "error", message: "You're already hosting a table." });
+  }
   const now = Date.now();
   const mine = ws.ipKey ? ipBucket(ws.ipKey, now) : null;
   if (mine && !allow(mine, now, OPEN_IP_CAP, 1000 / OPEN_IP_MS)) return send(ws, { type: "error", message: "You have opened several tables lately. Try again in a minute." });

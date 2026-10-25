@@ -1,0 +1,19 @@
+ok first guest opens an open table
+ok different guest opens a second open table on the same server
+ok both independent open tables are discoverable
+ok same guest host cannot create a second open table
+ok same guest host cannot create a second private table
+ok independent guest can create a private table
+ok private-table host cannot create another open table
+ok private table never leaks into discovery
+ok existing lobby drop hands the host role to the connected successor
+ok old host can create again after handing off the host seat
+ok new current host inherits the second-create restriction
+ok handoff and new create preserve the other listings
+ok entirely disconnected old room no longer blocks creation
+ok malformed and unknown hints confer no host identity
+ok profile identity comes from authenticated native profile creation
+ok verified profile can host its first private table
+ok verified profile cannot evade cap through a different socket without a seat hint
+ok an unauthenticated raw profile ID grants no profile identity
+host-player-prove: 18 checks passed
