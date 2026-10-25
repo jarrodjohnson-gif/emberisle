@@ -33,10 +33,8 @@ function rollOffLine(before: GameState | null, after: GameState) {
 // The table sounds a change of state makes, with their volume (#303, #609): the same diff serves practice, hotseat, and the
 // host's pushes, so a bot's placement knocks like yours. `mine` is whether this browser's seat took the action (a fortune
 // bought by someone else is a touch quieter).
-function soundsFor(before: GameState | null, after: GameState, mine: boolean, victim = false, lost = false): [SoundName, number][] {
+function soundsFor(before: GameState | null, after: GameState, mine: boolean, victim = false): [SoundName, number][] {
   if (!before) return [];
-  // The winner keeps the win sound; every other seat at the table gets the loss sting.
-  if (after.winner && !before.winner) return [lost ? ["game_lose", 1] : ["win", 1]];
   const out: [SoundName, number][] = [];
   const built = (s: GameState, kind: "outpost" | "stronghold") => s.vertices.filter((v) => v.building?.kind === kind).length;
   const paths = (s: GameState) => s.edges.filter((e) => e.path).length;
@@ -84,9 +82,9 @@ export function takeMatchPointLine() {
 
 // End music: queued a moment after the win/lose sting at game over, once per game end. Leaving the end screen (the menu, a
 // rematch, a new game) cancels it. Only a live change into "over" starts it, so a reload into a finished game stays quiet.
-const END_MUSIC_DELAY_MS = 1500;
 function stopEndMusic() {
   stop("end_music");
+  stop("isaac_win");
 }
 
 // The board the start sting last played for, kept for the tab session so a reload mid-setup does not replay it.
@@ -119,20 +117,25 @@ function clearKnocks() {
 // Play the sound for a state change, and the your-turn chime when the turn comes round to this browser's seat
 // (not in hotseat, where every seat is this browser).
 export function hear(before: GameState | null, after: GameState, me: string, mode: GameStore["mode"], reconnect?: boolean) {
-  const lost = mode !== "hotseat" && me !== "" && !!after.winner && after.winner !== me;
   const victim =
     mode !== "hotseat" && !!before && before.current !== me && after.vertices.some((v) => v.building?.playerId === me && v.hexes.includes(after.robberHex));
   const cue = haptics.player?.(before, after, me, mode) ?? play;
-  for (const [sound, volume] of soundsFor(before, after, mode === "hotseat" || after.current === me, victim, lost)) {
-    // A piece knocks when it lands, not when it is picked (#438); reduced motion has no fall, so it knocks at once.
-    const land = sound in LAND_MS && !calmMotion() ? LAND_MS[sound as keyof typeof LAND_MS] : 0;
-    if (land) {
-      const t = setTimeout(() => {
-        knocks.delete(t);
-        cue(sound, volume);
-      }, land);
-      knocks.add(t);
-    } else cue(sound, volume);
+  if (before && after.winner && !before.winner) {
+    // The banner buzz is felt at once; only the choice of sting waits for the lazy trade-sound chunk.
+    if (me && (mode === "hotseat" || after.winner === me)) haptics.buzz?.(HAPTIC_MS.win);
+    void tradeSounds.then(({ gameEnd }) => gameEnd(play, before, after, me, mode));
+  } else {
+    for (const [sound, volume] of soundsFor(before, after, mode === "hotseat" || after.current === me, victim)) {
+      // A piece knocks when it lands, not when it is picked (#438); reduced motion has no fall, so it knocks at once.
+      const land = sound in LAND_MS && !calmMotion() ? LAND_MS[sound as keyof typeof LAND_MS] : 0;
+      if (land) {
+        const t = setTimeout(() => {
+          knocks.delete(t);
+          cue(sound, volume);
+        }, land);
+        knocks.add(t);
+      } else cue(sound, volume);
+    }
   }
   // A new game (the lobby's Start, a rematch): the sting plays once, for a seat; the first roll cuts it off.
   // Keyed on the board: a bot may already have rolled first (seq > 0), and a reconnect into setup must not replay it.
@@ -141,10 +144,6 @@ export function hear(before: GameState | null, after: GameState, me: string, mod
     play("game_start");
   }
   if (before?.phase === "over" && after.phase !== "over") stopEndMusic();
-  if (mode !== "hotseat" && me && before && before.phase !== "over" && after.phase === "over" && after.winner) {
-    stopEndMusic();
-    playLater("end_music", 1, END_MUSIC_DELAY_MS);
-  }
   matchLine = null;
   if (before && before.phase !== "over" && after.turn >= before.turn && after.hexes.every((h, i) => h.terrain === before.hexes[i]?.terrain)) {
     const reached = claimMatchPoints(before, after);
@@ -212,10 +211,13 @@ import type { Bag, ChatLine, Legal, Me, Reaction, Seat, TableClient } from "@/li
 import { chunk } from "@/lib/lazy";
 import { PROTO } from "@/lib/net/proto";
 import { readMutedSeats } from "@/lib/muted-seats";
-import { haptics, play, playLater, SOUNDBOARD, stop, yourTurn, type SoundName } from "@/lib/sound";
+import { HAPTIC_MS } from "@/lib/haptic-durations";
+import { haptics, play, playLater, stop, yourTurn, type SoundName } from "@/lib/sound";
 import { calmMotion, LAND_MS } from "@/lib/scene/landing";
 import type { WaterPath, WaterStatus } from "@/lib/scene/crystal-water";
 import type { PlayView } from "@/lib/scene/mobile-fit";
+
+const tradeSounds = import("../trade-sound");
 
 // The ask-the-table offer every seat is looking at (docs/BUILD_BIBLE.md 4.4). `until` is when the host's 20 s run out.
 export interface OpenOffer {
@@ -1033,7 +1035,7 @@ type Get = () => GameStore;
 
 // The open offer is over, taken by `taker` or by nobody: the toast goes, and the asker reads the outcome for a moment.
 function endOffer(set: Set, get: Get, taker: string | null) {
-  const { offer, state } = get();
+  const { offer, state, declined } = get();
   if (!offer) return;
   clearOfferTimers();
   const takerName = state?.players.find((p) => p.id === taker)?.name ?? "Someone";
@@ -1041,6 +1043,7 @@ function endOffer(set: Set, get: Get, taker: string | null) {
   // Both parties hear a deal in full and the rest of the table softer; only the asker hears a No (#609).
   const me = get().localId;
   if (taker) play("trade_yes", me === taker || me === offer.from ? 1 : 0.5);
+  else if (state?.players.every((p) => p.id === offer.from || declined.includes(p.id))) play("corn_no");
   else if (me === offer.from) play("trade_no");
   // Every receiver gets the resolved offer as one brief log line, with no response controls.
   if (outcomeTimer) clearTimeout(outcomeTimer);
@@ -1055,7 +1058,8 @@ function openOffer(set: Set, get: Get, from: string, give: Bag, want: Bag) {
   const tradeId = `t${state.seq}-${++offerSeq}`;
   const fromName = state.players.find((p) => p.id === from)?.name ?? "Someone";
   set({ offer: { tradeId, from, fromName, give, want, until: Date.now() + OFFER_MS }, declined: [], tradeOutcome: null, tradeTaker: null });
-  if (from !== get().localId) play("trade_offer");
+  const me = get().localId;
+  void tradeSounds.then(({ offerChime }) => offerChime(play, from, fromName, me, give, want));
   offerTimers.push(setTimeout(() => endOffer(set, get, null), OFFER_MS));
   for (const p of state.players) {
     if (p.kind !== "bot" || p.id === from) continue;
@@ -1208,10 +1212,10 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => vo
       set({ chat: [...chat, { ...line, at: Date.now() }].slice(-50), unread: counts ? unread + 1 : unread });
       // Others' lines tick; the sender's echo does not, and nothing ticks under the hands of someone typing in the chat (#609).
       // A soundboard line plays its clip for everyone, the sender too; it is not also a tick.
-      const board = SOUNDBOARD.find((b) => b.id === line.sound);
       // A muted seat's soundboard taps are as silent here as its chat line is hidden.
-      if (board) {
-        if (!readMutedSeats(get().code).includes(line.seat)) play(board.clip);
+      if (line.sound) {
+        const clip = line.sound.replace(/^(bong|plop|pluck)$/, "board_$1") as SoundName;
+        if (!readMutedSeats(get().code).includes(line.seat)) play(clip);
       } else if (line.seat !== seatId && document.activeElement?.id !== "chat-input") play("chat_recv");
     },
     react: (r) => {
@@ -1219,7 +1223,13 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => vo
       setTimeout(() => set({ reactions: get().reactions.filter((x) => x !== r) }), 2000);
     },
     // A peek answers id/color/ready only (G10); the lobby is not shown until the full broadcast after sitting replaces it.
-    seats: ({ code, seats, watching, victoryTarget, wayfarerMode }) => set({ code, seats: seats as Seat[], watching: watching ?? 0, tableVictoryTarget: victoryTarget === 7 ? 7 : 10, tableWayfarerMode: wayfarerMode ?? "on" }),
+    seats: ({ code, seats, watching, victoryTarget, wayfarerMode }) => {
+      const before = get().seats;
+      const after = seats as Seat[];
+      const me = get().localId;
+      void tradeSounds.then(({ diggerBell }) => diggerBell(play, before, after, me));
+      set({ code, seats: seats as Seat[], watching: watching ?? 0, tableVictoryTarget: victoryTarget === 7 ? 7 : 10, tableWayfarerMode: wayfarerMode ?? "on" });
+    },
     // Dice and gain floats present the roll; its words live only in the persistent log.
     rolled: () => {},
     state: ({ you, game, legal, turnDeadline, turnPlayer, serverNow }) => {
@@ -1256,7 +1266,8 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => vo
     tradeOffer: ({ tradeId, from, give, want, seconds }) => {
       const fromName = get().state?.players.find((p) => p.id === from)?.name ?? "Someone";
       set({ offer: { tradeId, from, fromName, give, want, until: Date.now() + seconds * 1000 }, declined: [], tradeOutcome: null, tradeTaker: null });
-      if (from !== get().localId) play("trade_offer");
+      const me = get().localId;
+      void tradeSounds.then(({ offerChime }) => offerChime(play, from, fromName, me, give, want));
     },
     tradeDeclined: ({ tradeId, by }) => {
       const { offer, declined } = get();
