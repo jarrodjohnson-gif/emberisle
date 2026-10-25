@@ -198,7 +198,7 @@ body {
 /* #531: the current-turn ring on every chip of the seat on turn (the rail and strip cards, the trade toast, a win row): 3 px solid in
    the seat's colour (--seat-color, set inline), a 1 px ink edge inside it so the palest seat still reads on paper, then an 8 px band
    of the same colour at 20 %. It is an inset shadow on an overlay (::before), so it stays inside the box (the strip's 4 px gaps, the
-   safe area and the next row are never touched) and a hovered button cannot paint over it. Its turn mark (TurnMark, SeatDot.tsx) is
+   safe area and the next row are never touched) and a hovered button cannot paint over it. Its turn mark (TurnMark, SeatRail.tsx) is
    the non-colour cue. */
 .seat-card.seat-turn::before, .turn-chip[data-turn-ring='true']::before, .trade-dock[data-turn-ring='true']::before {
   content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;

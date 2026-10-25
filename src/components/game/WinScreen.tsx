@@ -1,7 +1,8 @@
 import { type CSSProperties, useEffect, useRef, useState } from "react";
 import { VictoryTargetSelect } from "@/components/game/VictoryTargetSelect";
 import { Button } from "@/components/ui/button";
-import { SeatDot, TurnMark } from "@/components/game/SeatDot";
+import { SeatDot } from "@/components/game/SeatDot";
+import { TurnMark } from "@/components/game/SeatRail";
 import { totalVP, victoryTarget } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
 import { useViewport } from "@/lib/viewport";

@@ -14,7 +14,7 @@ import { type LucideIcon, Route, ScrollText, Swords } from "lucide-react";
 import { SeatBubbles } from "@/components/game/chunks";
 import { LazyBoundary } from "@/lib/lazy";
 import { PlayerMenu, seatAway } from "@/components/game/PlayerMenu";
-import { SeatDot, TurnMark } from "@/components/game/SeatDot";
+import { SeatDot } from "@/components/game/SeatDot";
 import type { GameState, PlayerState } from "@/lib/game/types";
 import { cards, hiddenCount, publicVP, roadLength } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
@@ -125,6 +125,13 @@ function SeatLine({ p, actor, short }: { p: PlayerState; actor: string; short?: 
       </span>
     </>
   );
+}
+
+// #531: the non-colour half of the current-turn marker. Every chip of the seat on turn (rail, phone strip, trade toast, win rows)
+// wears one beside its ring: an ink pointer hanging from the top edge, so the turn never rests on the seat's colour alone (#312).
+// It sits out of the flow, so a chip with and without it is the same size. The parent must be positioned.
+export function TurnMark() {
+  return <span aria-hidden="true" data-testid="turn-mark" className="turn-mark" />;
 }
 
 // One seat's card: the menu's trigger (docs/design/chat.md "The player action menu") with its seat bubble beside it (#899). The rail
