@@ -174,7 +174,7 @@ function start(name: SoundName, volume: number) {
     // The first roll cuts the game-start sting off.
     if (name === "dice_land") clips.get("game_start")?.pause();
     let clip = clips.get(name);
-    if (!clip) {
+    if (!clip || clip.error) {
       clip = new Audio(`${import.meta.env.BASE_URL}audio/${FILES[name]}`);
       clips.set(name, clip);
       if (DUCKERS.has(name)) for (const e of ["play", "pause", "ended"]) clip.addEventListener(e, duckMusic);
