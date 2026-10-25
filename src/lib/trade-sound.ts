@@ -5,11 +5,12 @@ import { playLater, stop, type SoundName } from "./sound";
 type Play = (name: SoundName, volume?: number) => void;
 
 const isDiggler = (name = "") => /luck(e|y|ie)?digg?ler|pickle|isa+c/.test(name.toLowerCase().replace(/[^a-z]/g, ""));
+export const isDaking = (name = "") => name.trim().toLowerCase() === "daking";
 
 export function offerChime(play: Play, from: string, fromName: string, me: string, give: Bag, want: Bag) {
   const timber = give.timber ?? 0;
   if (timber >= 3) play("three_wood");
-  else if (timber && fromName === "Daking") play("daking_wood");
+  else if (timber && isDaking(fromName)) play("daking_wood");
   else if (want.timber && give.wool) play("sheep_for_wood");
   else if (want.timber && give.ore) play("stone_for_wood");
   else if (from !== me) play("trade_offer");

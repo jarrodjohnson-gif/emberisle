@@ -441,6 +441,17 @@ try {
   for (const got of clip) assert.deepEqual(got, ["three_wood.mp3@1"], "3+ timber uses the same clip on every seat, including the asker");
   clip = await hearOffer("new-daking-wood", { timber: 2 }, { wool: 1 });
   for (const got of clip) assert.deepEqual(got, ["daking_wood.mp3@1"], "Daking's 1-2 timber clip reaches every seat");
+  for (const [id, name] of [["lower", "daking"], ["padded", " DAKING "]]) {
+    await Promise.all(tabs.map((t) => t.page.evaluate(([who, n]) => {
+      const store = window.__emberisle;
+      const state = store.getState().state;
+      store.setState({ state: { ...state, players: state.players.map((p) => p.id === who ? { ...p, name: n } : p) } });
+    }, [dakingId, name])));
+    clip = await hearOffer(`new-daking-${id}`, { timber: 1 }, { wool: 1 });
+    for (const got of clip) assert.deepEqual(got, ["daking_wood.mp3@1"], `"${name}" counts as Daking: 1-2 timber plays daking_wood on every seat`);
+    clip = await hearOffer(`new-daking-${id}-three`, { timber: 3 }, { wool: 1 });
+    for (const got of clip) assert.deepEqual(got, ["three_wood.mp3@1"], `"${name}" with 3 timber still plays three_wood first`);
+  }
   clip = await hearOffer("new-sheep-for-wood", { wool: 1 }, { timber: 1 });
   for (const got of clip) assert.deepEqual(got, ["sheep_for_wood.mp3@1"], "sheep for timber reaches every seat, including the asker");
   clip = await hearOffer("new-stone-for-wood", { ore: 1 }, { timber: 1 });
