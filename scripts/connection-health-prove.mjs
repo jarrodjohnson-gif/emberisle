@@ -380,7 +380,7 @@ if (process.argv.includes("--host-fixture")) {
       let open = false, failNext = fail;
       p.on("websocket", ws => ws.on("framesent", ({ payload }) => {
         const m = JSON.parse(String(payload));
-        if (["hello", "peek"].includes(m.type)) intents.push({ type: m.type, watch: !!m.watch, secret: !!m.secret, code: m.code, url: ws.url() });
+        if (["hello", "peek"].includes(m.type)) intents.push({ type: m.type, watch: !!m.watch, secret: !!m.secret, code: m.code, url: ws.url(), ...(typeof m.name === "string" ? { name: m.name } : {}), ...(typeof m.color === "string" ? { color: m.color } : {}) });
       }));
       await context.route(/\/assets\/table-[^/]+\.js(?:\?.*)?$/, route => {
         requests.push(route.request().url());
@@ -441,6 +441,21 @@ if (process.argv.includes("--host-fixture")) {
       await until(() => latest.p.evaluate(() => { const s = window.__emberisle.getState(); return s.spectator && s.screen === "play" && !!s.state; }), "latest Watch gets full state");
       assert.deepEqual(latest.intents, [{ type: "hello", watch: true, secret: false, code, url: `ws://127.0.0.1:${port}/` }], "only latest intent dials its originally selected host");
     } finally { await latest.close(); }
+    const identity = await cold();
+    try {
+      await identity.p.evaluate(() => {
+        const s = window.__emberisle.getState();
+        s.setName("Intent"); s.setColor("#8a4fd3"); s.hostTable();
+        s.setName("Later"); s.setColor("#2d6ee8");
+      });
+      await until(() => identity.requests.length > 0, "selected identity waits for client");
+      await identity.release();
+      await until(() => identity.p.evaluate(() => window.__emberisle.getState().screen === "lobby"), "selected identity reaches lobby");
+      assert.equal(identity.intents.length, 1);
+      assert.equal(identity.intents[0].name, "Intent", "late edits cannot change the name chosen at Host");
+      assert.equal(identity.intents[0].color, "#8a4fd3", "late edits cannot change the colour chosen at Host");
+      assert.deepEqual(await identity.p.evaluate(() => { const s = window.__emberisle.getState(); const me = s.seats.find(p => p.id === s.seatId); return [me.name, me.color]; }), ["Intent", "#8a4fd3"], "host commits the intent identity");
+    } finally { await identity.close(); }
     const quiet = await cold({ seed: savedSeatRecord });
     try {
       await until(() => quiet.requests.length > 0, "saved-seat client held");

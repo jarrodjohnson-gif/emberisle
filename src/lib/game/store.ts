@@ -1120,6 +1120,7 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => vo
   clearWake();
   get().net?.close();
   const selectedHost = new URL(window.location.href);
+  const selectedMe: Me = { name: get().name.trim() || "Ember", color: get().color ?? undefined };
   let cancelled = false;
   let removeListeners = () => {};
   let restoreTimer: ReturnType<typeof setTimeout> | undefined;
@@ -1318,5 +1319,5 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => vo
       window.removeEventListener("visibilitychange", visible);
     };
   }
-  first(table, { name: get().name.trim() || "Ember", color: get().color ?? undefined });
+  first(table, selectedMe);
 }
