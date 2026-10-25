@@ -134,7 +134,8 @@ if (process.argv.includes("--host-fixture")) {
     assert.equal(await page.evaluate(() => window.__healthLifecycle.reports.at(-1).status), "Reconnecting", "duplicate welcome preserves the 3s timeout");
     await page.evaluate(() => window.__healthLifecycle.client.close());
     await page.clock.fastForward(30000);
-    assert.equal(await page.evaluate(() => window.__healthLifecycle.sent.length), 1, "close cancels the next probe");
+    assert.equal(await page.evaluate(() => window.__healthLifecycle.sent.filter(m => m.type === "healthPing").length), 1, "close cancels the next probe");
+    assert.deepEqual(await page.evaluate(() => window.__healthLifecycle.sent.filter(m => m.type !== "healthPing")), [{ type: "leave" }], "close sends exactly one leave");
     console.log("ok transport: no pre-welcome probe; duplicate welcome keeps one challenge and its 3s timeout; close cancels probing");
     await page.evaluate(() => {
       let previous = null;

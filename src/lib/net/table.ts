@@ -153,7 +153,8 @@ export interface TableClient {
   react(emote: string, to?: string): void;
   // The browser says the network or the tab is back: if a backoff timer is pending, dial now. Otherwise nothing.
   wake(): void;
-  close(): void;
+  // Leave on purpose: the host frees a lobby seat at once. `leave: false` only closes, and the seat is held as a drop.
+  close(leave?: boolean): void;
 }
 
 interface SocketLike {
@@ -491,13 +492,14 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
       clearTimeout(timer);
       dial();
     },
-    close: () => {
+    close: (leave = true) => {
       stopHealth();
       stamp = null;
       setExtension(null);
       closedByUs = true;
       if (timer) clearTimeout(timer);
       timer = null;
+      if (leave && ws.readyState === 1) ws.send(JSON.stringify({ type: "leave" }));
       ws.close();
     },
   };
