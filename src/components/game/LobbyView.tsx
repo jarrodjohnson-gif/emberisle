@@ -96,14 +96,14 @@ export function LobbyView({ ChatBox, SeatBubbles, HowTo, prefetchRules }: { Chat
     <>
       <div data-testid="lobby-card" className="lobby-layout absolute z-10">
         <div className="lobby-cover lobby-layout-cover">
-          <header className="lobby-header">
+          <div className="lobby-header">
             <p data-testid="table-code" className="font-display">{code}</p>
             <div className="lobby-copy-controls">
               <Button variant="outline" onClick={() => copy("code", code)}>{copied?.ok && copied.what === "code" ? "Copied" : "Copy"}</Button>
               <Button variant="outline" onClick={() => copy("link", joinLink())}>{copied?.ok && copied.what === "link" ? "Copied" : "Copy link"}</Button>
               <Button variant="outline" onClick={invite}>Invite</Button>
             </div>
-          </header>
+          </div>
           {copied && !copied.ok ? <div className="lobby-copy-fallback"><CopyFallback state={copied} label={copied.what === "link" ? "Join link" : "Table code"} /></div> : <CopyFallback state={copied} label="Table code" />}
           <div className="lobby-rules">
             <Button variant="outline" onPointerEnter={prefetchRules} onFocus={prefetchRules} onClick={e => setHowTo(true, e.currentTarget)}>Rules</Button>
