@@ -208,7 +208,8 @@ function withPaths(state: GameState, edgeIds: string[], pid: string): GameState 
 }
 import { chooseBotAction, chooseTradeAsk, shouldAcceptTrade } from "./ai";
 import { PLAYER_COLORS, RESOURCES, type Action, type BuildMode, type GameState, type VictoryTarget, type WayfarerMode } from "./types";
-import { connectTable, hostUrl, type Bag, type ChatLine, type Legal, type Me, type Reaction, type Seat, type TableClient } from "@/lib/net/table";
+import type { Bag, ChatLine, Legal, Me, Reaction, Seat, TableClient } from "@/lib/net/table";
+import { chunk } from "@/lib/lazy";
 import { PROTO } from "@/lib/net/proto";
 import { readMutedSeats } from "@/lib/muted-seats";
 import { haptics, play, playLater, SOUNDBOARD, stop, yourTurn, type SoundName } from "@/lib/sound";
@@ -225,6 +226,9 @@ export interface OpenOffer {
   want: Bag;
   until: number;
 }
+
+// The client is needed only for discovery or an explicit online journey.
+const tableModule = chunk(() => import("@/lib/net/table"));
 
 // The window listeners that wake a backing-off table; one connection at a time, so one remover.
 let stopWake: (() => void) | null = null;
@@ -322,6 +326,7 @@ interface GameStore {
   net: TableClient | null;
   // True when `net` is the pre-join peek connection (docs/design/color-peek.md), not a seated or rejoining one.
   peeking: boolean;
+  connectionHealth: import("@/lib/net/table").ConnectionHealth;
   code: string;
   isHost: boolean;
   tableVictoryTarget: VictoryTarget;
@@ -508,6 +513,7 @@ export const useGame = create<GameStore>((set, get) => ({
   banner: null,
   net: null,
   peeking: false,
+  connectionHealth: { status: "Offline", rtt: null },
   code: "",
   isHost: false,
   tableVictoryTarget: 10,
@@ -870,7 +876,8 @@ export const useGame = create<GameStore>((set, get) => ({
   },
   hostTable: (visibility) => {
     get().commitName();
-    connect(set, get, (t, me) => t.open(me, { wayfarerMode: get().wayfarerChoices.online ?? "on", visibility }));
+    const wayfarerMode = get().wayfarerChoices.online ?? "on";
+    connect(set, get, (t, me) => t.open(me, { wayfarerMode, visibility }));
   },
   joinTable: (code) => {
     get().commitName();
@@ -883,6 +890,7 @@ export const useGame = create<GameStore>((set, get) => ({
     const { screen, net, peeking } = get();
     if (screen !== "title") return;
     // A non-peek `net` is the page-load rejoin; a peek queued on it would reach a seated socket and come back "not ready".
+    if (!net && stopWake && !peeking) return;
     if (net) return peeking ? net.peek(code) : undefined;
     connect(set, get, (t) => t.peek(code), "peek");
   },
@@ -1109,15 +1117,39 @@ function respond(set: Set, get: Get, actor: string, yes: boolean): string | null
 // "watch" is a spectator (docs/design/spectator.md): no seat and no secret, so a drop never redials and must not erase a
 // seat this browser saved for another table.
 type ConnectKind = "normal" | "quiet" | "peek" | "watch";
-function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, kind: ConnectKind = "normal") {
+async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, kind: ConnectKind = "normal") {
   clearWake();
-  set({ serverSha: null });
   get().net?.close();
+  const selectedHost = new URL(window.location.href);
+  const selectedMe: Me = { name: get().name.trim() || "Ember", color: get().color ?? undefined };
+  let cancelled = false;
+  let removeListeners = () => {};
+  let restoreTimer: ReturnType<typeof setTimeout> | undefined;
+  stopWake = () => { cancelled = true; clearTimeout(restoreTimer); removeListeners(); };
+  // The original three-second fallback includes time spent fetching the client.
+  if (kind === "quiet" && get().restoring) restoreTimer = setTimeout(() => !cancelled && get().restoring && set({ restoring: false }), 3000);
+  set({ serverSha: null, net: null, peeking: kind === "peek", connectionHealth: { status: "Reconnecting", rtt: null } });
+  const loadFailed = () => {
+    if (cancelled) return;
+    clearWake();
+    const error = "Online play could not load. Try again.";
+    set(kind === "peek" ? { peeking: false, connectionHealth: { status: "Offline", rtt: null } } : { restoring: false, error, toast: error, connectionHealth: { status: "Offline", rtt: null } });
+  };
+  let transport;
+  try { transport = await tableModule.load(); } catch { loadFailed(); return; }
+  if (cancelled) return;
+  const { connectTable, hostUrl } = transport;
   let pending = kind === "quiet";
+  let recovery = pending;
   let welcomed = false;
   let outdated: string | null = null;
   let firstState = false;
-  const table = connectTable(hostUrl(window.location), {
+  let table: TableClient;
+  try { table = connectTable(hostUrl(selectedHost), {
+    health: (connectionHealth) => {
+      if (recovery && (get().restoring || get().state !== null) && connectionHealth.status === "Reachable") return;
+      set({ connectionHealth });
+    },
     welcome: ({ proto, serverSha, code, you, host, chat, secret, spectator, victoryTarget, wayfarerMode }) => {
       pending = false;
       welcomed = true;
@@ -1142,6 +1174,8 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       // A reload at a table that was in play (#543) waits on the loading screen for the state that follows at once, not the
       // lobby; if none comes (the table was reset meanwhile), the lobby is where the seat belongs.
       const restoring = get().restoring;
+      // A recovered lobby has no full game state to recover. Its later Start is a new game.
+      if (!inGame && !restoring) recovery = false;
       if (restoring)
         setTimeout(() => {
           if (!get().restoring || get().net !== table) return;
@@ -1152,12 +1186,17 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
             // storage can be blocked
           }
           liveCode = "";
+          recovery = false;
           set({ restoring: false, screen: "lobby" });
         }, 1500);
       set({ announcement: null, code, spectator: false, seatId: you ?? "", isHost: host ?? false, screen: restoring ? "title" : inGame ? "play" : "lobby", mode: "online", error: outdated, toast: outdated, chat: history, reactions: [], unread: 0 });
     },
     // The window may have closed while we were away; the next state brings it back rather than a chip stuck at 0:00.
-    reconnecting: (attempt) => (firstState = true, set({ announcement: null, error: `Reconnecting… (try ${attempt})`, toast: "Reconnecting…", turnTimer: null })),
+    reconnecting: (attempt) => {
+      recovery = true;
+      firstState = true;
+      set({ announcement: null, error: `Reconnecting… (try ${attempt})`, toast: "Reconnecting…", turnTimer: null });
+    },
     chat: (line) => {
       const { chat, chatOpen, unread, seatId, screen } = get();
       // The lobby box is always open, so only lines that arrive during the game can be unread.
@@ -1200,6 +1239,10 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       // A rematch's new game (#266): drop any half-made move or open panel left over from the win.
       if (get().state?.phase === "over" && game.phase !== "over") set({ buildMode: "none", roadPicks: [], pendingPlace: null, tradeOpen: false });
       get().loadState(game, me, get().isHost, get().code);
+      if (recovery && !get().spectator) {
+        recovery = false;
+        set({ announcement: "Back at the table", toast: "Back at the table", connectionHealth: { status: "Reachable", rtt: get().connectionHealth.rtt } });
+      }
       if (!get().spectator) rememberLive(get().code);
       if (outdated) set({ announcement: null, error: outdated, toast: outdated });
       if (rollOff) showBanner(set, rollOff);
@@ -1262,9 +1305,7 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       set({ announcement: null, error: "Lost the table", toast: "Lost the table", screen: "title", net: null, peeking: false, seats: [], code: "", state: null });
     },
   });
-  // A host that cannot be dialled never welcomes, so the splash would wait out the whole backoff: after 3 s the Title shows
-  // with "Reconnecting…" while the retries go on.
-  if (kind === "quiet" && get().restoring) setTimeout(() => get().restoring && get().net === table && set({ restoring: false }), 3000);
+  } catch { loadFailed(); return; }
   // A peek is not the player's action, so it leaves a join error ("Lost the table") on the Title card.
   set(kind === "peek" ? { net: table, peeking: true, mode: "online" } : { net: table, peeking: false, mode: "online", error: null, announcement: null });
   if (kind !== "peek") {
@@ -1274,10 +1315,10 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
     };
     window.addEventListener("online", online);
     window.addEventListener("visibilitychange", visible);
-    stopWake = () => {
+    removeListeners = () => {
       window.removeEventListener("online", online);
       window.removeEventListener("visibilitychange", visible);
     };
   }
-  first(table, { name: get().name.trim() || "Ember", color: get().color ?? undefined });
+  first(table, selectedMe);
 }
