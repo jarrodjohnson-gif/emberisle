@@ -122,12 +122,11 @@ async function synced(tabs, seq, what, ms) {
 // #609: the clips this tab started since `forget`, as "file@volume", without the UI clicks.
 const forget = (tabs) => Promise.all(tabs.map((t) => t.page.evaluate(() => (window.__heard = []))));
 const trades = (t) => t.page.evaluate(() => window.__heard.filter((h) => /^(trade_offer|confirmation_001|error_002|three_wood|daking_wood|sheep_for_wood|stone_for_wood|corn_no)/.test(h)));
-// #1107: what a seat hears when an offer of 1 `gives` for `wants` arrives. Sheep or stone for wood plays its own clip on every seat,
-// the asker included; any other offer is the plain chime on the other seats and silent on the asker.
-const offerHeard = (gives, wants, asker) => {
-  const clip = wants === "timber" && gives === "wool" ? "sheep_for_wood.mp3" : wants === "timber" && gives === "ore" ? "stone_for_wood.mp3" : null;
-  return clip ? [`${clip}@1`] : asker ? [] : ["trade_offer.wav@1"];
-};
+// #1107: what a seat hears when an offer of 1 `gives` for `wants` arrives, from fixed expectations (the precedence itself is proved
+// with explicit give/want bags in hearOffer below). Sheep or stone for wood plays its own clip on every seat, the asker included;
+// any other pair is the plain chime on the other seats and silent on the asker.
+const OFFER_CLIP = { "wool>timber": "sheep_for_wood.mp3@1", "ore>timber": "stone_for_wood.mp3@1" };
+const offerHeard = (gives, wants, asker) => (OFFER_CLIP[`${gives}>${wants}`] ? [OFFER_CLIP[`${gives}>${wants}`]] : asker ? [] : ["trade_offer.wav@1"]);
 const act = (t, fn, arg) => t.page.evaluate(([f, a]) => window.__emberisle.getState()[f](...[].concat(a)), [fn, arg]);
 const total = (hand) => RES.reduce((n, r) => n + hand[r], 0);
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
@@ -281,7 +280,8 @@ try {
   await until(async () => (await trades(B)).length && (await trades(C)).length, "the offer sound");
   // #609: the offer's arrival ticks on the other seats, not on the asker.
   for (const t of [B, C]) if (!same(await trades(t), offerHeard(give, want, false))) throw new Error(`${t.name} heard ${JSON.stringify(await trades(t))} for the offer`);
-  await sleep(300);
+  // The asker hears its clip on the same frame as the others; silence cannot be polled, so only a clip is waited for.
+  if (offerHeard(give, want, true).length) await until(async () => (await trades(A)).length || null, "the asker's offer clip");
   if (!same(await trades(A), offerHeard(give, want, true))) throw new Error(`the asker heard ${JSON.stringify(await trades(A))} for its own offer`);
   console.log(`#609/#1107: offer of ${give} for ${want} heard as ${JSON.stringify(offerHeard(give, want, false))} on the other seats and ${JSON.stringify(offerHeard(give, want, true))} on the asker`);
   if (await A.page.getByTestId("trade-panel").isVisible()) throw new Error("the panel stayed open after the ask");
