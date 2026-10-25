@@ -70,6 +70,34 @@ const pan = async (page, ctx, label, distance = 20) => {
   return after;
 };
 
+
+// Exercise the same real touch double tap that invokes goHome, at an unobstructed nonlegal point.
+const croppedHome = async (page, ctx, label) => {
+  const before = await camera(page);
+  await page.evaluate(() => document.activeElement?.blur());
+  const point = await page.evaluate(() => {
+    const i = window.__isle, c = document.querySelector("canvas");
+    for (let y = 80; y < c.clientHeight - 40; y += 30) for (let x = 30; x < c.clientWidth - 30; x += 30) {
+      if (document.elementFromPoint(x, y) !== c) continue;
+      const e = new PointerEvent("pointerup", { clientX: x, clientY: y, pointerType: "touch" });
+      if (i.hitsAt(e, true).some((h) => i.legalIds.has(h.id))) continue;
+      if (i.dockPositions.some((d) => Math.abs(x - d.x) <= 22 && Math.abs(y - d.y) <= 22)) continue;
+      return { x, y };
+    }
+    throw new Error("no clear nonlegal point for double tap");
+  });
+  const cdp = await ctx.newCDPSession(page);
+  await page.evaluate(() => { window.__keyboardHomeCalls = 0; const i = window.__isle, home = i.goHome.bind(i); i.goHome = () => { window.__keyboardHomeCalls++; home(); }; });
+  for (let tap = 0; tap < 2; tap++) {
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ ...point, id: 1 }] });
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+  }
+  await frames(page, 6);
+  const after = await camera(page);
+  check(await page.evaluate(() => window.__keyboardHomeCalls > 0), `${label}: real empty-board double tap invokes goHome`);
+  check(after.shrunk && samePan(after, before) && Math.abs(after.aspect - before.aspect) < 1e-6 && Math.abs(after.scale - before.scale) < 0.05 && !await page.evaluate(() => Boolean(window.__isle.glide)), `${label}: home while cropped keeps pan and projection without starting a glide`, { before, after });
+};
+
 let code = 0;
 try {
   // --- Section 1: Phone (390x844) ---
@@ -233,6 +261,30 @@ try {
   check(backUpright.view === "overhead", "view is overhead upright", backUpright.view);
   check(Math.abs(backUpright.aspect - 390 / 844) < 0.01, "upright frustum aspect matches canvas aspect", { got: backUpright.aspect, want: 390 / 844 });
 
+  // A blurred keyboard close can settle a few pixels below its saved height.
+  const settlePan = await pan(page, ctx, "phone before short restoration");
+  await page.locator("#test-keyboard-input").focus();
+  await page.setViewportSize({ width: 390, height: 500 });
+  await frames(page, 6);
+  await page.evaluate(() => document.activeElement.blur());
+  await page.setViewportSize({ width: 390, height: 840 });
+  await page.waitForTimeout(900);
+  const settled = await camera(page);
+  check(!settled.shrunk && samePan(settled, settlePan) && Math.abs(settled.aspect - 390 / 840) < 0.01, "blurred short restoration settles to a full projection with pan preserved", settled);
+  await page.setViewportSize({ width: 390, height: 820 });
+  await frames(page, 6);
+  const laterFit = await camera(page);
+  check(!laterFit.shrunk && samePan(laterFit, settlePan) && Math.abs(laterFit.aspect - 390 / 820) < 0.01 && Math.abs(laterFit.scale - settled.scale) > 0.05, "later no-focus resize refits normally after short restoration", { settled, laterFit });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await frames(page, 6);
+  await page.locator("#test-keyboard-input").focus();
+  await page.setViewportSize({ width: 390, height: 500 });
+  await frames(page, 6);
+  await croppedHome(page, ctx, "phone overhead");
+  await page.setViewportSize({ width: 390, height: 844 });
+  await frames(page, 6);
+  check(! (await camera(page)).shrunk && samePan(await camera(page), settlePan), "phone height restoration after cropped home preserves pan");
+
   await ctx.close();
 
   // --- Section 2: Tablet (1024x768, coarse pointer, diorama view) ---
@@ -310,6 +362,8 @@ try {
   const dragAfter = await tab.evaluate(() => window.__isle.screenAt(0, 0, 0));
   const dragRatio = (dragAfter.x - dragBefore.x) / -120;
   check(dragRatio > 0.85 && dragRatio < 1.15, "tablet keyboard crop keeps touch movement about 1:1", { dragRatio });
+
+  await croppedHome(tab, tabCtx, "tablet diorama");
 
   await tabCtx.close();
 
