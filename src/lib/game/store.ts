@@ -876,7 +876,8 @@ export const useGame = create<GameStore>((set, get) => ({
   },
   hostTable: (visibility) => {
     get().commitName();
-    connect(set, get, (t, me) => t.open(me, { wayfarerMode: get().wayfarerChoices.online ?? "on", visibility }));
+    const wayfarerMode = get().wayfarerChoices.online ?? "on";
+    connect(set, get, (t, me) => t.open(me, { wayfarerMode, visibility }));
   },
   joinTable: (code) => {
     get().commitName();
