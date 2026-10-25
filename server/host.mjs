@@ -1424,21 +1424,32 @@ function cardAllowed(ws) {
 }
 
 function handle(ws, raw) {
-  // A watcher sends nothing after its hello. Above the parse and the seatless branch, so it can never sit down or rejoin.
-  if (ws.watch) {
-    if (!allow(ws.bucket, Date.now())) return;
-    // The one read a watcher may make: a public card of someone at the table it watches (#764).
-    const card = cardRequest(raw);
-    if (card) return tableCard(profiles, send, ws, card, rooms.get(ws.watch.code) === ws.watch && ws.watch.watchers.has(ws) ? visibleProfiles(ws.watch) : null, cardAllowed(ws));
-    return send(ws, { type: "error", message: "Watching only." });
-  }
+  // Watchers retain their pre-parse budget, including malformed frames and health probes.
+  if (ws.watch && !allow(ws.bucket, Date.now())) return;
   let msg;
   try {
     msg = JSON.parse(String(raw));
   } catch {
-    return send(ws, { type: "error", message: "not ready" });
+    return send(ws, { type: "error", message: ws.watch ? "Watching only." : "not ready" });
   }
-  if (!msg || typeof msg !== "object") return send(ws, { type: "error", message: "not ready" });
+  if (!msg || typeof msg !== "object") return send(ws, { type: "error", message: ws.watch ? "Watching only." : "not ready" });
+  // Health has no room/state access, action bucket, publish, save, or game timer side effects.
+  // Unauthenticated probes consume the same budget as hello/peek, and never earn a reply.
+  if (msg.type === "healthPing") {
+    if (!ws.room && !ws.watch) { allow(ws.bucket, Date.now()); return; }
+    if (typeof msg.nonce !== "string" || !/^[a-f0-9]{32}$/.test(msg.nonce)) return;
+    const now = performance.now();
+    // Two arrivals may bunch when network delay changes; sustained replies stay at one per 30 seconds.
+    ws.healthBucket ??= { tokens: 2, at: now };
+    if (!allow(ws.healthBucket, now, 2, 1 / 30)) return;
+    return send(ws, { type: "healthPong", nonce: msg.nonce });
+  }
+  if (ws.watch) {
+    // Preserve main's public-card read after the separately bounded health probe; the pre-parse budget was charged above.
+    const card = cardRequest(raw);
+    if (card) return tableCard(profiles, send, ws, card, rooms.get(ws.watch.code) === ws.watch && ws.watch.watchers.has(ws) ? visibleProfiles(ws.watch) : null, cardAllowed(ws));
+    return send(ws, { type: "error", message: "Watching only." });
+  }
   // Profile frames have their own connection and limits (#762); a profile connection never opens, joins or watches a table.
   if (PROFILE_TYPES.has(msg.type)) return onProfile(ws, msg);
   if (ws.profileSocket) return send(ws, { type: "error", message: "not ready" });
