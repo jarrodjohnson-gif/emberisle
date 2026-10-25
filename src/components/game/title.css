@@ -37,7 +37,7 @@
 .title-colors button { display: grid; place-items: center; width: 44px; height: 44px; border: 2px solid; border-radius: 12px; }
 .title-colors button:disabled { opacity: .35; }
 @media (max-width: 767px) and (orientation: portrait) {
-  .title-card { left: 16px; bottom: max(16px, env(safe-area-inset-bottom)); width: calc(100% - 32px); }
+  .title-card { left: 16px; bottom: max(16px, env(safe-area-inset-bottom)); width: calc(100% - 32px); row-gap: 10px; }
   .title-card .title-wordmark { font-size: 28px; line-height: 32px; }
 }
 @media (max-height: 500px) and (orientation: landscape) {

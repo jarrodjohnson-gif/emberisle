@@ -82,7 +82,7 @@ try {
       assert.ok(c >= 4.5, `${v.tag}: ${r}-on on ${r} is ${c.toFixed(2)}:1`);
     }
 
-    const host = await buttonStyle(page, "Play");
+    const host = await buttonStyle(page, "Play against bots");
     assert.deepEqual(host, { radius: "8px", duration: "0.08s", easing: TOKENS["--ease-out"] }, `${v.tag}: Play`);
     await page.screenshot({ path: `test-results/polish-tokens-${v.tag}-title.png` });
 
