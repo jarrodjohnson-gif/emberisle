@@ -1,0 +1,16 @@
+2026-10-23T16:12:34.9328979Z ok phone game 440x956 Chat tab: the sheet (top 536) leaves the seat strip (bottom 56) and its bubble band clear +98.0s
+2026-10-23T16:12:34.9364198Z ok phone game 440x956: the sheet has a labelled Close +98.0s
+2026-10-23T16:12:37.9989516Z FAIL phone game 390x844 {"total":69,"whole":9,"newest":false,"newestText":"Embergame line 6","font":14,"size":"390x844"}: 9 whole chat lines on screen, newest ("Embergame line 6") visible, 14px text
+2026-10-23T16:12:38.1348224Z ##[error]Process completed with exit code 1.
+2026-10-23T16:12:38.1561704Z ##[group]Run actions/upload-artifact@v4
+2026-10-23T16:12:38.1561956Z with:
+2026-10-23T16:12:38.1562147Z   name: browser-b-flows-a-test-results
+2026-10-23T16:12:38.1562598Z   path: test-results/
+2026-10-23T16:12:38.1562797Z   if-no-files-found: ignore
+2026-10-23T16:12:38.1563008Z   compression-level: 6
+2026-10-23T16:12:38.1563196Z   overwrite: false
+2026-10-23T16:12:38.1563387Z   include-hidden-files: false
+2026-10-23T16:12:38.1563600Z ##[endgroup]
+2026-10-23T16:12:38.2981313Z (node:4522) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-10-23T16:12:38.2982032Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-23T16:12:38.3063946Z With the provided path, there will be 27 files uploaded
