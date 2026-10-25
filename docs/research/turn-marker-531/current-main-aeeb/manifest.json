@@ -1,0 +1,69 @@
+{
+  "browser_code": "2ea5ff6d1824ef57af72f4248524ee715f2b7e29",
+  "main_refresh": "2ddf8df158df1f278f1301e978b7734258429092",
+  "images": [
+    {
+      "file": "turn-marker-1280x720-trade.png",
+      "width": 1280,
+      "height": 720,
+      "bytes": 404649,
+      "sha256": "6e497bc05f56d5e1103f3e4ea760129e14366f113d123702e8b127085ce2047b"
+    },
+    {
+      "file": "turn-marker-1280x720-win.png",
+      "width": 1280,
+      "height": 720,
+      "bytes": 100297,
+      "sha256": "81ad4918f13d269b680d8cecf6b92ef243f383bfbb4d96637116fad4cb3dac43"
+    },
+    {
+      "file": "turn-marker-1280x720.png",
+      "width": 1280,
+      "height": 720,
+      "bytes": 389739,
+      "sha256": "d3610c2995d104f536ad5bf126312bec333b2cd95cb30945cfc4f992aaf95ff1"
+    },
+    {
+      "file": "turn-marker-390x844-trade.png",
+      "width": 390,
+      "height": 844,
+      "bytes": 181188,
+      "sha256": "f87a5c8bf5211435d013f91d235d6564784749d2f51df2aa3241e15877926f44"
+    },
+    {
+      "file": "turn-marker-390x844-win.png",
+      "width": 390,
+      "height": 844,
+      "bytes": 67576,
+      "sha256": "bd08a049c969a1f4d7096d16978226ee6bb50456bb8b571fd4c58a30a765e3b0"
+    },
+    {
+      "file": "turn-marker-390x844.png",
+      "width": 390,
+      "height": 844,
+      "bytes": 173652,
+      "sha256": "636becca4a7c8edf4b4f285e15cc65fd64343b84181c899f770a80b2298d6940"
+    },
+    {
+      "file": "turn-marker-844x390-trade.png",
+      "width": 844,
+      "height": 390,
+      "bytes": 181510,
+      "sha256": "e2751fee68909506210d39625ac98dbec131071c19acfcbeb966bb6bb96e8ee9"
+    },
+    {
+      "file": "turn-marker-844x390-win.png",
+      "width": 844,
+      "height": 390,
+      "bytes": 62935,
+      "sha256": "8f55ca2ee939f1d61ffbf5d45afe6866293f079205092af7196317285320b16e"
+    },
+    {
+      "file": "turn-marker-844x390.png",
+      "width": 844,
+      "height": 390,
+      "bytes": 162981,
+      "sha256": "270f88d378f880e002e695d42b8ba9ea3625436e972d64e2d0c5eea275cae42c"
+    }
+  ]
+}
