@@ -245,12 +245,14 @@ for (const dryRun of [false, true]) {
   assert(!many.writes().some(c => /\/(issues|pulls)\/[67](?:\/|$)/.test(c.path)));
 }
 ok('A2: live and dry-run sweeps cap closes at five and defer without commenting on the remainder');
-const unwarned = fake([pr()], [marker(30)]); await run(unwarned);
+const unwarned = fake([pr()], [marker(30, { labeledAt: null })]); await run(unwarned);
 assert.equal(unwarned.pulls[0].state, 'open');
 assert(unwarned.pulls[0].labels.some(label => label.name === 'stale'));
 assert(!unwarned.writes().some(c => c.path.endsWith('/comments') || c.body?.state === 'closed'));
-await run(unwarned); assert.equal(unwarned.pulls[0].state, 'closed');
-ok('A3: even a thirty-day-old PR receives a stale warning before a later sweep can close it');
+await run(unwarned); assert.equal(unwarned.pulls[0].state, 'open');
+await run(unwarned, { now: now + 4 * DAY }); assert.equal(unwarned.pulls[0].state, 'open');
+await run(unwarned, { now: now + 5 * DAY }); assert.equal(unwarned.pulls[0].state, 'closed');
+ok('A3: even a thirty-day-old PR receives a five-day warning before a later sweep can close it');
 const reopened = fake([pr(1, { labels: [{ name: 'stale' }] })], [marker(30)]);
 const reopenEvent = { action: 'reopened', pull_request: { number: 1, head: { sha }, updated_at: new Date(now).toISOString() } };
 await run(reopened, { event: reopenEvent }); await run(reopened);
