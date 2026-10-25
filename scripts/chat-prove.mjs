@@ -1294,16 +1294,14 @@ try {
     const panel = document.querySelector('section[aria-label="Table chat"]').getBoundingClientRect();
     const rail = document.querySelector("aside").getBoundingClientRect();
     const chips = [...el.querySelectorAll("button")];
-    const tab = el.closest('[data-testid="sounds-tab"]');
     const wide = el.scrollWidth > el.clientWidth + 0.5;
-    const inWidth = chips.every((button) => {
+    const inPanel = chips.every((button) => {
+      button.scrollIntoView({ block: "nearest" });
       const r = button.getBoundingClientRect();
-      return r.left >= panel.left && r.right <= panel.right;
+      return r.left >= panel.left && r.right <= panel.right && r.bottom <= panel.bottom;
     });
-    tab.scrollTop = tab.scrollHeight;
-    const last = chips.at(-1).getBoundingClientRect();
     const legacyLabels = ["Play sound Fah", "Play sound Wololo", "Play sound GG!", "Play sound Airhorn", "Play sound Quit touchin' me", "Play sound Only wood?", "Play sound Perfect", "Play sound Bong", "Play sound Plop", "Play sound Pluck"];
-    return { n: chips.filter((button) => legacyLabels.includes(button.getAttribute("aria-label"))).length, total: chips.length, wide, inside: inWidth && last.bottom <= tab.getBoundingClientRect().bottom, font: parseFloat(getComputedStyle(el.querySelector("button")).fontSize), clearOfRail: panel.left >= rail.right + 100 };
+    return { n: chips.filter((button) => legacyLabels.includes(button.getAttribute("aria-label"))).length, total: chips.length, wide, inside: inPanel, font: parseFloat(getComputedStyle(el.querySelector("button")).fontSize), clearOfRail: panel.left >= rail.right + 100 };
   });
   check(deskBoard.n === 10 && !deskBoard.wide && deskBoard.inside && deskBoard.font >= 14 && deskBoard.clearOfRail, `desktop: Sounds & stickers shows all 10 chips at ${deskBoard.font}px with no sideways scroll, in a panel clear of the seat rail`);
   check(deskBoard.total === 15 && !deskBoard.wide && deskBoard.inside && deskBoard.clearOfRail, `desktop: Sounds & stickers shows all 15 chips with no sideways scroll, in a panel clear of the seat rail`);
