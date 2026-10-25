@@ -261,6 +261,24 @@ try {
   check(backUpright.view === "overhead", "view is overhead upright", backUpright.view);
   check(Math.abs(backUpright.aspect - 390 / 844) < 0.01, "upright frustum aspect matches canvas aspect", { got: backUpright.aspect, want: 390 / 844 });
 
+  // A pending blur timer must neither end a field transfer nor pre-empt continuing resize frames.
+  await page.locator("#test-keyboard-input").focus();
+  await page.setViewportSize({ width: 390, height: 500 });
+  await frames(page, 6);
+  await page.evaluate(() => document.activeElement.blur());
+  await page.locator("#test-keyboard-next").focus();
+  await page.waitForTimeout(900);
+  check((await camera(page)).shrunk, "a new focused field keeps the crop past the pending blur settle timer");
+  await page.evaluate(() => document.activeElement.blur());
+  for (const height of [580, 680, 780]) {
+    await page.waitForTimeout(250);
+    await page.setViewportSize({ width: 390, height });
+    await frames(page, 2);
+    check((await camera(page)).shrunk, `ongoing blurred close at ${height}px restarts the quiet settle timer`);
+  }
+  await page.setViewportSize({ width: 390, height: 844 });
+  await frames(page, 6);
+
   // A blurred keyboard close can settle a few pixels below its saved height.
   const settlePan = await pan(page, ctx, "phone before short restoration");
   await page.locator("#test-keyboard-input").focus();
@@ -270,11 +288,12 @@ try {
   await page.setViewportSize({ width: 390, height: 840 });
   await page.waitForTimeout(900);
   const settled = await camera(page);
+  const settledFitTop = await page.evaluate(() => window.__isle.fit.top);
   check(!settled.shrunk && samePan(settled, settlePan) && Math.abs(settled.aspect - 390 / 840) < 0.01, "blurred short restoration settles to a full projection with pan preserved", settled);
   await page.setViewportSize({ width: 390, height: 820 });
   await frames(page, 6);
   const laterFit = await camera(page);
-  check(!laterFit.shrunk && samePan(laterFit, settlePan) && Math.abs(laterFit.aspect - 390 / 820) < 0.01 && Math.abs(laterFit.scale - settled.scale) > 0.05, "later no-focus resize refits normally after short restoration", { settled, laterFit });
+  check(!laterFit.shrunk && samePan(laterFit, settlePan) && Math.abs(laterFit.aspect - 390 / 820) < 0.01 && await page.evaluate((top) => { const i = window.__isle; return Math.abs(i.fit.top - top) > 0.05 && Math.abs(i.ortho.top - i.fit.top) < 1e-6 && Math.abs(i.ortho.bottom - i.fit.bottom) < 1e-6; }, settledFitTop), "later no-focus resize refits normally after short restoration", { settled, laterFit });
   await page.setViewportSize({ width: 390, height: 844 });
   await frames(page, 6);
   await page.locator("#test-keyboard-input").focus();

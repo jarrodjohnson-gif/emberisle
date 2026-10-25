@@ -196,6 +196,7 @@ export class IsleRenderer {
   private sizeW = 0;
   private sizeH = 0;
   private keyboardShrunk = false;
+  private keyboardSettle = 0;
   private unshrunkH = 0;
   private unshrunkTop = 0;
   private unshrunkWorldH = 0;
@@ -827,10 +828,24 @@ export class IsleRenderer {
       this.keyboardShrunk = false;
       this.refit(true, true);
     }
+    this.settleKeyboard();
     this.remeasure();
   };
 
+  // A blurred close may settle below the saved height (browser chrome changed). Wait for resize to go quiet.
+  private settleKeyboard() {
+    clearTimeout(this.keyboardSettle);
+    if (!this.keyboardShrunk) return;
+    this.keyboardSettle = window.setTimeout(() => {
+      if (!this.keyboardShrunk || document.activeElement?.matches("input, textarea")) return;
+      this.keyboardShrunk = false;
+      this.refit(true, true);
+      this.resize();
+    }, 600);
+  }
+
   dispose() {
+    clearTimeout(this.keyboardSettle);
     this.clearPayers();
     this.stopped = true;
     this.renderer.domElement.removeEventListener("webglcontextlost", this.onContextLost);
@@ -912,6 +927,7 @@ export class IsleRenderer {
     } else if (this.keyboardShrunk && h >= this.unshrunkH) {
       this.keyboardShrunk = false;
     }
+    this.settleKeyboard();
     // A phone turned upright or on its side changes the default view (setView resizes again, in the new view).
     if (!this.keyboardShrunk && this.play() && this.view !== this.playView()) return this.setView(this.playView());
     this.camera.aspect = w / h;
@@ -1151,7 +1167,7 @@ export class IsleRenderer {
 
   // Back to the fitted view, zoom 1, over the hole's centre.
   goHome() {
-    if (!this.play() || !this.fit) return;
+    if (!this.play() || !this.fit || this.keyboardShrunk) return;
     this.moveTo(this.fitPose(this.fit), [...FIT_KEYS, ...EYE_KEYS], false);
   }
 

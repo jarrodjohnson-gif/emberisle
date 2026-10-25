@@ -82,26 +82,27 @@ try {
   for (const { w, h, insets } of safeCases) {
     await page.setViewportSize({ width: w, height: h });
     await cdp.send("Emulation.setSafeAreaInsetsOverride", { insets });
-    for (const ph of PHASES) {
-      await page.evaluate((ph) => {
+    for (const [ph, held] of PHASES.flatMap((ph) => [[ph, 0], [ph, 1]])) {
+      await page.evaluate(([ph, held]) => {
         const g = window.__emberisle;
         const st = structuredClone(g.getState().state);
         st.current = st.players[0].id;
         st.phase = ph;
         st.dice = [3, 5];
         st.seq++;
-        for (const p of st.players) p.resources = { timber: 4, clay: 3, wool: 2, grain: 5, ore: 2 };
+        for (const p of st.players) { p.resources = { timber: 4, clay: 3, wool: 2, grain: 5, ore: 2 }; p.hidden = { ...p.hidden, plenty: held }; }
         g.setState({ state: st, localId: st.current, banner: null, error: null });
-      }, ph);
+      }, [ph, held]);
       await frames(page, 6);
       await page.waitForTimeout(150);
       const m = await page.evaluate(() => ({ live: window.__isle.liveInsets(), hole: window.__isle.insets() }));
+      if (insets.left > 0 && (m.hole.left < 284 + insets.left || m.hole.right < 12 + insets.right)) throw new Error(`safe-area landscape side overrides did not take effect: ${JSON.stringify(m.hole)}`);
       if (insets.top > 0 && m.hole.top > 68) safeTopGrew = true;
       const over = ["top", "right", "bottom", "left"].filter((k) => m.live[k] > m.hole[k] + 0.5);
       checked++;
       if (over.length) {
-        failures.push(`${w}x${h} safe ${ph}`);
-        console.log(`FAIL ${w}x${h} safe ${ph}: live ${JSON.stringify(m.live)} over declared ${JSON.stringify(m.hole)} on ${over.join(", ")}`);
+        failures.push(`${w}x${h} safe ${ph} held ${held}`);
+        console.log(`FAIL ${w}x${h} safe ${ph} held ${held}: live ${JSON.stringify(m.live)} over declared ${JSON.stringify(m.hole)} on ${over.join(", ")}`);
       }
     }
   }
