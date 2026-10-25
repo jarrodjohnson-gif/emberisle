@@ -289,6 +289,11 @@ try {
   await page.waitForTimeout(900);
   const settled = await camera(page);
   const settledFitTop = await page.evaluate(() => window.__isle.fit.top);
+  const settledProjection = await page.evaluate(() => {
+    const i = window.__isle;
+    return { top: i.ortho.top, bottom: i.ortho.bottom, fitTop: i.fit.top, fitBottom: i.fit.bottom };
+  });
+  check(Math.abs(settledProjection.top - settledProjection.fitTop) < 1e-6 && Math.abs(settledProjection.bottom - settledProjection.fitBottom) < 1e-6, "quiet short restoration immediately restores the full fitted frustum", settledProjection);
   check(!settled.shrunk && samePan(settled, settlePan) && Math.abs(settled.aspect - 390 / 840) < 0.01, "blurred short restoration settles to a full projection with pan preserved", settled);
   await page.setViewportSize({ width: 390, height: 820 });
   await frames(page, 6);
