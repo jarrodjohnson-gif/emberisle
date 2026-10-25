@@ -34,6 +34,7 @@
     "wayfarer-setup-prove": "node --import ./server/register.mjs scripts/wayfarer-setup-prove.mjs",
     "wayfarer-prove": "node scripts/wayfarer-prove.mjs",
     "robber-hex-prove": "node scripts/robber-hex-prove.mjs",
+    "robber-prompt-prove": "node scripts/robber-prompt-prove.mjs",
     "trade-prove": "node scripts/trade-prove.mjs",
     "sounds-prove": "node scripts/sounds-prove.mjs",
     "audio-recovery-prove": "node scripts/audio-recovery-prove.mjs",
