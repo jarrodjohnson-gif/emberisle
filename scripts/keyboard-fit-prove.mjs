@@ -73,8 +73,9 @@ const pan = async (page, ctx, label, distance = 20) => {
 
 // Exercise the same real touch double tap that invokes goHome, at an unobstructed nonlegal point.
 const croppedHome = async (page, ctx, label) => {
+  // A preceding touch pan may blur the field; keep setup outside the no-focus settle window.
+  await page.locator("#test-keyboard-input").focus();
   const before = await camera(page);
-  await page.evaluate(() => document.activeElement?.blur());
   const point = await page.evaluate(() => {
     const i = window.__isle, c = document.querySelector("canvas");
     for (let y = 80; y < c.clientHeight - 40; y += 30) for (let x = 30; x < c.clientWidth - 30; x += 30) {
@@ -88,6 +89,7 @@ const croppedHome = async (page, ctx, label) => {
   });
   const cdp = await ctx.newCDPSession(page);
   await page.evaluate(() => { window.__keyboardHomeCalls = 0; const i = window.__isle, home = i.goHome.bind(i); i.goHome = () => { window.__keyboardHomeCalls++; home(); }; });
+  await page.evaluate(() => document.activeElement?.blur());
   for (let tap = 0; tap < 2; tap++) {
     await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ ...point, id: 1 }] });
     await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
