@@ -69,6 +69,7 @@ try{
   await sticky.evaluate(()=>window.__emberisle.getState().startAi());assert.equal(await mode(),'off');
   await sticky.evaluate(()=>window.__emberisle.getState().goTitle());await sticky.getByRole('button',{name:'Play against bots',exact:true}).waitFor();await setup(sticky);
   for(const label of ['Play against bots','Pass this device','Host a table online'])assert.equal(await sticky.getByLabel(label,{exact:true}).inputValue(),'on',`${label} resets to the default on the menu`);
+  await sticky.getByRole('dialog',{name:'Wayfarer rules',exact:true}).getByRole('button',{name:'Close',exact:true}).click();
   await sticky.getByRole('button',{name:'Play against bots',exact:true}).click();
   assert.equal(await mode(),'on');
   await stickyContext.close();console.log('ok sticky choice: Off survives new/play-again games, menu resets to On');}
