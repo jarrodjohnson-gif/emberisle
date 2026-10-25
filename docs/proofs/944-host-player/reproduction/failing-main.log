@@ -1,0 +1,17 @@
+ok first guest opens an open table
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: different guest opens a second open table on the same server
+    at check (file:///workspace/emberisle/work/p2-host944/server/host-player-prove.mjs:14:31)
+    at file:///workspace/emberisle/work/p2-host944/server/host-player-prove.mjs:21:31 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+Node.js v24.19.0
