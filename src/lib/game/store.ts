@@ -1119,7 +1119,8 @@ function respond(set: Set, get: Get, actor: string, yes: boolean): string | null
 type ConnectKind = "normal" | "quiet" | "peek" | "watch";
 async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, kind: ConnectKind = "normal") {
   clearWake();
-  get().net?.close();
+  // Not a leave: a rejoin after a crash dials the same seat, which the host must still be holding.
+  get().net?.close(false);
   const selectedHost = new URL(window.location.href);
   const selectedMe: Me = { name: get().name.trim() || "Ember", color: get().color ?? undefined };
   let cancelled = false;
