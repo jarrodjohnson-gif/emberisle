@@ -15,6 +15,7 @@
     "profile-pin-queue-prove": "node server/profile-pin-queue-prove.mjs",
     "profile-unknown-cap-prove": "node server/profile-unknown-cap-prove.mjs",
     "profile-reservation-recovery-prove": "node server/profile-reservation-recovery-prove.mjs",
+    "profile-permissions-prove": "node server/profile-permissions-prove.mjs",
     "profile-socket-rate-prove": "node server/profile-socket-rate-prove.mjs",
     "profile-expiry-prove": "node server/profile-expiry-prove.mjs",
     "profile-pin-race-prove": "node server/profile-pin-race-prove.mjs",
