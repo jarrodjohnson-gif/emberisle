@@ -1,0 +1,27 @@
+
+> profile-unknown-cap-prove
+> node server/profile-unknown-cap-prove.mjs
+
+ok the real store opens
+ok all 1024 live unknown budgets are persisted
+ok new-unknown: the ordinary sign-in failure returns
+ok a new unknown login at capacity still runs one real dummy derivation
+ok replacement keeps exactly 1024 buckets
+ok exactly one old bucket is replaced
+ok the new failure is durably counted without a pending reservation
+ok all retained old budgets are unchanged
+ok replacement cannot reset the real profile's budget
+ok guard-1: the ordinary sign-in failure returns
+ok an existing unknown login still derives at capacity
+ok an existing bucket adds exactly its own failure
+ok existing-login work neither replaces nor resets other buckets
+ok a real profile can sign in while the unknown table is full
+ok successful sign-in preserves the profile's existing failure budget
+ok successful sign-in leaves all unknown budgets intact
+ok after-expiry: the ordinary sign-in failure returns
+ok expired buckets are reclaimed before admitting new work
+ok the post-expiry failure uses real derivation and its new timestamp
+ok profile rolling failures expire without resetting lifetime failures
+ok guard cleanup preserves valid remembered credentials
+ok the durable store remains usable
+profile-unknown-cap-prove: 22 checks passed; 5 native derivations

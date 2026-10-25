@@ -1,0 +1,61 @@
+
+> profile-lock-prove
+> node server/profile-lock-prove.mjs
+
+ok publication: contender owns the complete published lock
+ok publication: winner commits through the real store
+ok publication: delayed publisher is refused
+ok publication: refused store cannot overwrite the winner
+ok publication: losing process exit cannot release the winner
+ok ownership remains published until dead-owner recovery
+ok clean owner exit is recovered without losing its committed data
+ok published lock excludes a contender before its owner returns
+ok published owner becomes ready
+ok published owner commits
+ok published: refused store cannot overwrite the winner
+ok another store in the same live process is also refused
+ok published directory and its unique owner file are private
+ok an earlier owner's marker with this process PID is recovered
+ok reused-PID recovery permits a durable write
+ok the recovered process cannot reopen its own published lock
+ok reused-PID recovery excludes another process
+ok reused PID: refused store cannot overwrite the winner
+ok stray-file: ambiguous lock is refused
+ok stray-file: recovery diagnostic identifies the lock and requires hosts to stop
+ok stray-file: refused lock entry remains untouched
+ok symlink: ambiguous lock is refused
+ok symlink: recovery diagnostic identifies the lock and requires hosts to stop
+ok symlink: refused lock entry remains untouched
+ok malformed-owner: ambiguous lock is refused
+ok malformed-owner: recovery diagnostic identifies the lock and requires hosts to stop
+ok malformed-owner: refused lock entry remains untouched
+ok stale fixture owner starts and commits
+ok stale: second reclaimer takes over the dead owner
+ok stale: new owner preserves the seed and commits
+ok stale: delayed cleanup cannot remove a new owner's marker
+ok stale: refused store cannot overwrite the winner
+ok stale: delayed contender exit leaves the winner protected
+ok stale fixture owner starts and commits
+ok stale: second reclaimer takes over the dead owner
+ok stale: new owner preserves the seed and commits
+ok stale: delayed cleanup cannot remove a new owner's marker
+ok stale: refused store cannot overwrite the winner
+ok stale: delayed contender exit leaves the winner protected
+ok stale fixture owner starts and commits
+ok stale: second reclaimer takes over the dead owner
+ok stale: new owner preserves the seed and commits
+ok stale: delayed cleanup cannot remove a new owner's marker
+ok stale: refused store cannot overwrite the winner
+ok stale: delayed contender exit leaves the winner protected
+ok a dead legacy PID-file owner is recovered
+ok legacy recovery publishes a nonempty owner directory
+ok legacy recovery produces a writable store
+ok legacy-live: opener is refused
+ok legacy-live: the lock is untouched and no store is written
+ok legacy-empty: opener is refused
+ok legacy-empty: the lock is untouched and no store is written
+ok legacy-malformed: opener is refused
+ok legacy-malformed: the lock is untouched and no store is written
+ok an abandoned empty lock directory is recoverable
+ok every proof child exited
+profile-lock-prove: 56 checks passed
