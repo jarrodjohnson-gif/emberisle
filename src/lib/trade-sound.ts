@@ -4,7 +4,7 @@ import { playLater, stop, type SoundName } from "./sound";
 
 type Play = (name: SoundName, volume?: number) => void;
 
-const isDiggler = (name = "") => /digg?l?er|pickle|isa+c/i.test(name);
+const isDiggler = (name = "") => /luck(e|y|ie)?digg?ler|pickle|isa+c/.test(name.toLowerCase().replace(/[^a-z]/g, ""));
 
 export function offerChime(play: Play, from: string, fromName: string, me: string, give: Bag, want: Bag) {
   const timber = give.timber ?? 0;

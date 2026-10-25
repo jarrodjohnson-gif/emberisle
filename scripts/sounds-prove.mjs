@@ -702,6 +702,23 @@ try {
   assert.deepEqual(bell.rejoined, [], "the same matching seats on a later seats update do not ring again");
   ok("Isaac's bell rings for a new matching seat and lobby rename, not a repeated seat update");
 
+  const nameRings = await a.evaluate(async () => {
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+    const ember = { id: "s1", name: "Ember" };
+    const out = {};
+    for (const name of ["Isa-ac", "Pick le", "The Lucke Diggler", "Digger"]) {
+      window.__emberisle.setState({ seats: [ember] });
+      window.__plays = [];
+      window.__sockets.at(-1).onmessage({ data: JSON.stringify({ type: "seats", code: window.__emberisle.getState().code, seats: [ember, { id: "s9", name }] }) });
+      await sleep(300);
+      out[name] = window.__plays.map((x) => x.file);
+    }
+    return out;
+  });
+  for (const name of ["Isa-ac", "Pick le", "The Lucke Diggler"]) assert.deepEqual(nameRings[name], ["lucke_diggler.mp3"], `"${name}" rings the bell (spaces, punctuation and case ignored)`);
+  assert.deepEqual(nameRings.Digger, [], "\"Digger\" does not ring the bell");
+  ok("Isaac's name rule ignores spaces, punctuation and case, and rejects Digger");
+
   // Online, the match-point banner shows on the same state that crosses target - 1 (the banner is read after the sound claims it).
   const banner = await a.evaluate(async () => {
     const base = structuredClone(window.__emberisle.getState().state);
