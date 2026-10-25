@@ -67,6 +67,7 @@ Your claim and its file reservations release when your PR merges or closes, or w
 When told "next", pick in this order:
 
 1. Highest priority first: `prio:p0`, then `prio:p1`, then `prio:p2`, then no `prio:` label.
+   Bugs come first (owner decision, 2026-10-24): at any priority, take an open bug (broken for a player, or red CI that blocks merging) before a new feature.
 2. Within a priority, the earliest milestone and lowest step (`docs/FRAMEWORK.md` section 7).
 3. If several still tie, prefer your own tier.
 

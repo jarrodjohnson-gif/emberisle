@@ -21,6 +21,8 @@ const DIR = "dist/assets";
 // Hard ceilings, set 2026-10-19 (#868) from main's gzip sizes (index 122150 B, IslandCanvas 199470 B) plus generous room:
 // +3 kB on the two big chunks, about +1 kB on the lazy ones.
 const CEILINGS = [
+  // #542: optional phone motor/preferences/menu, loaded before the first interactive tap; measured 1.09 kB.
+  { name: "haptics", gzipBytes: 1200 },
   { name: "index", gzipBytes: 125200 },
   { name: "IslandCanvas", gzipBytes: 202500 },
   { name: "jelly-board", gzipBytes: 9000 },
@@ -37,6 +39,10 @@ const CEILINGS = [
   // #538: coast inspection UI loads separately; measured 1030 B.
   { name: "DockInspection", gzipBytes: 1200 },
   { name: "HandRates", gzipBytes: 800 },
+  // #833: title open-table list; measured ~1.1 kB after extract from index.
+  { name: "OpenTables", gzipBytes: 1300 },
+  // #833: the existing closed title settings body loads separately; new chunk only.
+  { name: "WayfarerOptions", gzipBytes: 500 },
   // #832: the online-only timer ballot loads separately (2026-10-20; measured 1.20 kB).
   { name: "TurnExtensionVote", gzipBytes: 1400 },
 ];

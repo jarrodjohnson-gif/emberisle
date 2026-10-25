@@ -1,0 +1,26 @@
+
+> open-host-prove
+> node scripts/open-host-prove.mjs
+
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: automatic discovery opens no WebSocket on a static root build
++ actual - expected
+
++ [
++   'ws://127.0.0.1:8494/'
++ ]
+- []
+
+    at file:///workspace/emberisle/work/verify882-oct24/scripts/open-host-prove.mjs:65:12 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: [ 'ws://127.0.0.1:8494/' ],
+  expected: [],
+  operator: 'deepStrictEqual',
+  diff: 'simple'
+}
+
+Node.js v24.19.0
