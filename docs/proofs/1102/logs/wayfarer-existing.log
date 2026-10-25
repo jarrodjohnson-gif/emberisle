@@ -1,0 +1,22 @@
+ok 390 ai on: visible pre-creation choice, correct default, fixed after creation
+ok 390 ai off: visible pre-creation choice, correct default, fixed after creation
+ok 390 hotseat on: visible pre-creation choice, correct default, fixed after creation
+ok 390 hotseat off: visible pre-creation choice, correct default, fixed after creation
+ok 390 online on: visible pre-creation choice, correct default, fixed after creation, public joiner rule
+ok 390 online off: visible pre-creation choice, correct default, fixed after creation, public joiner rule
+node:internal/modules/run_main:123
+    triggerUncaughtException(
+    ^
+
+locator.click: Timeout 30000ms exceeded.
+Call log:
+[2m  - waiting for getByRole('button', { name: 'Play', exact: true })[22m
+
+    at /Users/jarrod.johnson/emberisle-1102/scripts/wayfarer-setup-prove.mjs:64:61 {
+  log: [
+    "  - waiting for getByRole('button', { name: 'Play', exact: true })"
+  ],
+  name: 'TimeoutError'
+}
+
+Node.js v22.23.4
