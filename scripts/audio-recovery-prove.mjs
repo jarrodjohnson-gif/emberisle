@@ -101,6 +101,7 @@ try {
   await tabs[0].page.waitForFunction(() => window.game.getState().seats.every(s => s.ready));
   await call(tabs[0], 'startTable');
   let vs = await synced(-1);
+  check(new Set(vs.map(v => v.id)).size === 3 && vs.every(v => v.id && v.seat), 'each real host seat has a distinct player identity');
   // Keep target media unavailable through an actual transport loss/rejoin; the other page remains connected.
   const before = vs.map(v => ({ id: v.id, seat: v.seat, synced: v.synced }));
   await tabs[0].page.evaluate(() => window.sockets.at(-1).close());
@@ -138,12 +139,13 @@ try {
       const give = Object.keys(vs[i].mine).find(r => vs[i].mine[r] > 0);
       // A one-way gift is a legal accepted table trade, so no lucky matching resource draw is needed.
       if (give) {
+        const goodsBefore = [vs[i].mine[give], vs[j].mine[give]];
         await call(tabs[i], 'askTable', { [give]: 1 }, {});
         await tabs[j].page.waitForFunction(() => window.game.getState().offer !== null);
         await call(tabs[j], 'answerTrade', true);
         vs = await synced(vs[0].seq);
         traded = true;
-        check(true, 'a real host trade completes after network restoration');
+        check(vs[i].mine[give] === goodsBefore[0] - 1 && vs[j].mine[give] === goodsBefore[1] + 1, 'a real host trade transfers the offered resource after restoration');
       }
     }
     await step();
@@ -152,7 +154,15 @@ try {
   await call(tabs[0], 'sendSound', 'bong');
   for (const t of tabs) await t.page.waitForFunction(() => window.game.getState().chat.some(l => l.sound === 'bong'));
   check(true, 'host broadcasts the soundboard cue to all seats');
-  await sleep(1800); // Four queued targets each require the unchanged 150ms pacing gap.
+  // Observe native playback until a bounded deadline, allowing slow CI media decoding. No resolved-play stub.
+  const deadline = Date.now() + 8000;
+  while (Date.now() < deadline) {
+    const heard = await Promise.all(tabs.map(t => t.page.evaluate(files => files.every(file =>
+      window.mediaEvents.some(e => e.file === file && e.event === 'playing') &&
+      window.mediaEvents.some(e => e.file === file && e.event === 'timeupdate' && e.time > 0)), files)));
+    if (heard.every(Boolean)) break;
+    await sleep(50);
+  }
   const failures = [];
   for (const t of tabs) {
     const result = await t.page.evaluate(files => ({ identity: window.documentIdentity,

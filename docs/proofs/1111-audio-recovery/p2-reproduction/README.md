@@ -18,3 +18,10 @@ Other cues continue playing. This isolates cached per-clip media failure, not a 
 The initial two-seat attempt failed setup because the host requires at least three players; its output is retained.
 The initial legal-table run and the strengthened host-message/roll run both reproduce the media failure.
 No claim covers iOS/Android interruption, reload persistence, or the entire live game-night incident.
+
+Final strengthened baseline: failing-main-final.log.
+It checks distinct player identities and exact donor decrement/recipient increment for the real host gift trade.
+Native playback observation has an eight-second deadline, under a 120-second whole-proof watchdog.
+The lightweight HTML harness imports the real store and sound modules without rendering the game UI.
+Chromium uses --autoplay-policy=no-user-gesture-required to isolate native fetch/decode recovery from autoplay permissions.
+It makes no full-UI, audible-device-output or mobile policy/interruption claim.
