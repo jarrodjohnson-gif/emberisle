@@ -30,7 +30,11 @@ concurrency:
 
 jobs:
   label:
-    if: contains(github.event.comment.body, '/')
+    if: >-
+      contains(github.event.comment.body, '/claim') ||
+      contains(github.event.comment.body, '/paused') ||
+      contains(github.event.comment.body, '/done') ||
+      contains(github.event.comment.body, '/canceled')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/github-script@v7
