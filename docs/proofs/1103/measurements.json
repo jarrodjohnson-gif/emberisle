@@ -1,0 +1,785 @@
+[
+  {
+    "viewport": "390x844",
+    "card": {
+      "x": 16,
+      "y": 16,
+      "right": 374,
+      "bottom": 828,
+      "width": 358,
+      "height": 812
+    },
+    "chat": {
+      "x": 25,
+      "y": 269,
+      "right": 365,
+      "bottom": 715,
+      "width": 340,
+      "height": 446
+    },
+    "overflow": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "seats": [
+      {
+        "x": 25,
+        "y": 129,
+        "right": 191,
+        "bottom": 191,
+        "width": 166,
+        "height": 62
+      },
+      {
+        "x": 199,
+        "y": 129,
+        "right": 365,
+        "bottom": 191,
+        "width": 166,
+        "height": 62
+      },
+      {
+        "x": 25,
+        "y": 199,
+        "right": 191,
+        "bottom": 261,
+        "width": 166,
+        "height": 62
+      },
+      {
+        "x": 199,
+        "y": 199,
+        "right": 365,
+        "bottom": 261,
+        "width": 166,
+        "height": 62
+      }
+    ],
+    "controls": [
+      {
+        "label": "Copy",
+        "x": 163.8125,
+        "y": 25,
+        "right": 216.046875,
+        "bottom": 69,
+        "width": 52.234375,
+        "height": 44
+      },
+      {
+        "label": "Copy link",
+        "x": 224.046875,
+        "y": 25,
+        "right": 303,
+        "bottom": 69,
+        "width": 78.953125,
+        "height": 44
+      },
+      {
+        "label": "Invite",
+        "x": 311,
+        "y": 25,
+        "right": 365,
+        "bottom": 69,
+        "width": 54,
+        "height": 44
+      },
+      {
+        "label": "Rules",
+        "x": 25,
+        "y": 77,
+        "right": 207,
+        "bottom": 121,
+        "width": 182,
+        "height": 44
+      },
+      {
+        "label": "Your name is Jarrod. Change it",
+        "x": 54,
+        "y": 129,
+        "right": 130,
+        "bottom": 173,
+        "width": 76,
+        "height": 44
+      },
+      {
+        "label": "Remove Bot",
+        "x": 122.15625,
+        "y": 208,
+        "right": 182,
+        "bottom": 252,
+        "width": 59.84375,
+        "height": 44
+      },
+      {
+        "label": "Remove Bot 2",
+        "x": 296.15625,
+        "y": 208,
+        "right": 356,
+        "bottom": 252,
+        "width": 59.84375,
+        "height": 44
+      },
+      {
+        "label": "Chat",
+        "x": 34,
+        "y": 278,
+        "right": 79.9375,
+        "bottom": 322,
+        "width": 45.9375,
+        "height": 44
+      },
+      {
+        "label": "Sounds & stickers",
+        "x": 87.9375,
+        "y": 278,
+        "right": 356,
+        "bottom": 322,
+        "width": 268.0625,
+        "height": 44
+      },
+      {
+        "label": "React angry",
+        "x": 34,
+        "y": 610,
+        "right": 81,
+        "bottom": 654,
+        "width": 47,
+        "height": 44
+      },
+      {
+        "label": "React happy",
+        "x": 89,
+        "y": 610,
+        "right": 136,
+        "bottom": 654,
+        "width": 47,
+        "height": 44
+      },
+      {
+        "label": "React clap",
+        "x": 144,
+        "y": 610,
+        "right": 191,
+        "bottom": 654,
+        "width": 47,
+        "height": 44
+      },
+      {
+        "label": "React laugh",
+        "x": 199,
+        "y": 610,
+        "right": 246,
+        "bottom": 654,
+        "width": 47,
+        "height": 44
+      },
+      {
+        "label": "React fire",
+        "x": 254,
+        "y": 610,
+        "right": 301,
+        "bottom": 654,
+        "width": 47,
+        "height": 44
+      },
+      {
+        "label": "React sheep",
+        "x": 309,
+        "y": 610,
+        "right": 356,
+        "bottom": 654,
+        "width": 47,
+        "height": 44
+      },
+      {
+        "label": "Say something…",
+        "x": 34,
+        "y": 662,
+        "right": 290.21875,
+        "bottom": 706,
+        "width": 256.21875,
+        "height": 44
+      },
+      {
+        "label": "Send",
+        "x": 298.21875,
+        "y": 662,
+        "right": 356,
+        "bottom": 706,
+        "width": 57.78125,
+        "height": 44
+      },
+      {
+        "label": "7 points",
+        "x": 269,
+        "y": 723,
+        "right": 313,
+        "bottom": 767,
+        "width": 44,
+        "height": 44
+      },
+      {
+        "label": "10 points",
+        "x": 321,
+        "y": 723,
+        "right": 365,
+        "bottom": 767,
+        "width": 44,
+        "height": 44
+      },
+      {
+        "label": "Ready",
+        "x": 25,
+        "y": 775,
+        "right": 134.328125,
+        "bottom": 819,
+        "width": 109.328125,
+        "height": 44
+      },
+      {
+        "label": "Start",
+        "x": 142.328125,
+        "y": 775,
+        "right": 249.671875,
+        "bottom": 819,
+        "width": 107.34375,
+        "height": 44
+      },
+      {
+        "label": "Leave the table",
+        "x": 257.671875,
+        "y": 775,
+        "right": 365,
+        "bottom": 819,
+        "width": 107.328125,
+        "height": 44
+      }
+    ],
+    "background": "rgb(243, 246, 245)",
+    "share": 0.521644604672923
+  },
+  {
+    "viewport": "844x390",
+    "card": {
+      "x": 16,
+      "y": 16,
+      "right": 828,
+      "bottom": 374,
+      "width": 812,
+      "height": 358
+    },
+    "chat": {
+      "x": 316.53125,
+      "y": 77,
+      "right": 819,
+      "bottom": 313,
+      "width": 502.46875,
+      "height": 236
+    },
+    "overflow": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "seats": [
+      {
+        "x": 25,
+        "y": 129,
+        "right": 158.765625,
+        "bottom": 191,
+        "width": 133.765625,
+        "height": 62
+      },
+      {
+        "x": 166.765625,
+        "y": 129,
+        "right": 300.53125,
+        "bottom": 191,
+        "width": 133.765625,
+        "height": 62
+      },
+      {
+        "x": 25,
+        "y": 199,
+        "right": 158.765625,
+        "bottom": 261,
+        "width": 133.765625,
+        "height": 62
+      },
+      {
+        "x": 166.765625,
+        "y": 199,
+        "right": 300.53125,
+        "bottom": 261,
+        "width": 133.765625,
+        "height": 62
+      }
+    ],
+    "controls": [
+      {
+        "label": "Copy",
+        "x": 617.8125,
+        "y": 25,
+        "right": 670.046875,
+        "bottom": 69,
+        "width": 52.234375,
+        "height": 44
+      },
+      {
+        "label": "Copy link",
+        "x": 678.046875,
+        "y": 25,
+        "right": 757,
+        "bottom": 69,
+        "width": 78.953125,
+        "height": 44
+      },
+      {
+        "label": "Invite",
+        "x": 765,
+        "y": 25,
+        "right": 819,
+        "bottom": 69,
+        "width": 54,
+        "height": 44
+      },
+      {
+        "label": "Rules",
+        "x": 25,
+        "y": 77,
+        "right": 174.765625,
+        "bottom": 121,
+        "width": 149.765625,
+        "height": 44
+      },
+      {
+        "label": "Your name is Jarrod. Change it",
+        "x": 54,
+        "y": 129,
+        "right": 98,
+        "bottom": 173,
+        "width": 44,
+        "height": 44
+      },
+      {
+        "label": "Remove Bot",
+        "x": 89.921875,
+        "y": 208,
+        "right": 149.765625,
+        "bottom": 252,
+        "width": 59.84375,
+        "height": 44
+      },
+      {
+        "label": "Remove Bot 2",
+        "x": 231.6875,
+        "y": 208,
+        "right": 291.53125,
+        "bottom": 252,
+        "width": 59.84375,
+        "height": 44
+      },
+      {
+        "label": "Chat",
+        "x": 325.53125,
+        "y": 86,
+        "right": 371.46875,
+        "bottom": 130,
+        "width": 45.9375,
+        "height": 44
+      },
+      {
+        "label": "Sounds & stickers",
+        "x": 379.46875,
+        "y": 86,
+        "right": 810,
+        "bottom": 130,
+        "width": 430.53125,
+        "height": 44
+      },
+      {
+        "label": "React angry",
+        "x": 325.53125,
+        "y": 208,
+        "right": 399.609375,
+        "bottom": 252,
+        "width": 74.078125,
+        "height": 44
+      },
+      {
+        "label": "React happy",
+        "x": 407.609375,
+        "y": 208,
+        "right": 481.6875,
+        "bottom": 252,
+        "width": 74.078125,
+        "height": 44
+      },
+      {
+        "label": "React clap",
+        "x": 489.6875,
+        "y": 208,
+        "right": 563.765625,
+        "bottom": 252,
+        "width": 74.078125,
+        "height": 44
+      },
+      {
+        "label": "React laugh",
+        "x": 571.765625,
+        "y": 208,
+        "right": 645.84375,
+        "bottom": 252,
+        "width": 74.078125,
+        "height": 44
+      },
+      {
+        "label": "React fire",
+        "x": 653.84375,
+        "y": 208,
+        "right": 727.921875,
+        "bottom": 252,
+        "width": 74.078125,
+        "height": 44
+      },
+      {
+        "label": "React sheep",
+        "x": 735.921875,
+        "y": 208,
+        "right": 810,
+        "bottom": 252,
+        "width": 74.078125,
+        "height": 44
+      },
+      {
+        "label": "Say something…",
+        "x": 325.53125,
+        "y": 260,
+        "right": 744.21875,
+        "bottom": 304,
+        "width": 418.6875,
+        "height": 44
+      },
+      {
+        "label": "Send",
+        "x": 752.21875,
+        "y": 260,
+        "right": 810,
+        "bottom": 304,
+        "width": 57.78125,
+        "height": 44
+      },
+      {
+        "label": "7 points",
+        "x": 204.53125,
+        "y": 321,
+        "right": 248.53125,
+        "bottom": 365,
+        "width": 44,
+        "height": 44
+      },
+      {
+        "label": "10 points",
+        "x": 256.53125,
+        "y": 321,
+        "right": 300.53125,
+        "bottom": 365,
+        "width": 44,
+        "height": 44
+      },
+      {
+        "label": "Ready",
+        "x": 316.53125,
+        "y": 321,
+        "right": 480.015625,
+        "bottom": 365,
+        "width": 163.484375,
+        "height": 44
+      },
+      {
+        "label": "Start",
+        "x": 488.015625,
+        "y": 321,
+        "right": 649.515625,
+        "bottom": 365,
+        "width": 161.5,
+        "height": 44
+      },
+      {
+        "label": "Leave the table",
+        "x": 657.515625,
+        "y": 321,
+        "right": 819,
+        "bottom": 365,
+        "width": 161.484375,
+        "height": 44
+      }
+    ],
+    "background": "rgb(243, 246, 245)",
+    "share": 0.40792657965709883
+  },
+  {
+    "viewport": "1280x720",
+    "card": {
+      "x": 40,
+      "y": 24,
+      "right": 600,
+      "bottom": 696,
+      "width": 560,
+      "height": 672
+    },
+    "chat": {
+      "x": 57,
+      "y": 285,
+      "right": 583,
+      "bottom": 575,
+      "width": 526,
+      "height": 290
+    },
+    "overflow": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "seats": [
+      {
+        "x": 57,
+        "y": 145,
+        "right": 316,
+        "bottom": 207,
+        "width": 259,
+        "height": 62
+      },
+      {
+        "x": 324,
+        "y": 145,
+        "right": 583,
+        "bottom": 207,
+        "width": 259,
+        "height": 62
+      },
+      {
+        "x": 57,
+        "y": 215,
+        "right": 316,
+        "bottom": 277,
+        "width": 259,
+        "height": 62
+      },
+      {
+        "x": 324,
+        "y": 215,
+        "right": 583,
+        "bottom": 277,
+        "width": 259,
+        "height": 62
+      }
+    ],
+    "controls": [
+      {
+        "label": "Copy",
+        "x": 381.8125,
+        "y": 41,
+        "right": 434.046875,
+        "bottom": 85,
+        "width": 52.234375,
+        "height": 44
+      },
+      {
+        "label": "Copy link",
+        "x": 442.046875,
+        "y": 41,
+        "right": 521,
+        "bottom": 85,
+        "width": 78.953125,
+        "height": 44
+      },
+      {
+        "label": "Invite",
+        "x": 529,
+        "y": 41,
+        "right": 583,
+        "bottom": 85,
+        "width": 54,
+        "height": 44
+      },
+      {
+        "label": "Rules",
+        "x": 57,
+        "y": 93,
+        "right": 332,
+        "bottom": 137,
+        "width": 275,
+        "height": 44
+      },
+      {
+        "label": "Your name is Jarrod. Change it",
+        "x": 86,
+        "y": 145,
+        "right": 255,
+        "bottom": 189,
+        "width": 169,
+        "height": 44
+      },
+      {
+        "label": "Remove Bot",
+        "x": 247.15625,
+        "y": 224,
+        "right": 307,
+        "bottom": 268,
+        "width": 59.84375,
+        "height": 44
+      },
+      {
+        "label": "Remove Bot 2",
+        "x": 514.15625,
+        "y": 224,
+        "right": 574,
+        "bottom": 268,
+        "width": 59.84375,
+        "height": 44
+      },
+      {
+        "label": "Chat",
+        "x": 66,
+        "y": 294,
+        "right": 111.9375,
+        "bottom": 338,
+        "width": 45.9375,
+        "height": 44
+      },
+      {
+        "label": "Sounds & stickers",
+        "x": 119.9375,
+        "y": 294,
+        "right": 574,
+        "bottom": 338,
+        "width": 454.0625,
+        "height": 44
+      },
+      {
+        "label": "React angry",
+        "x": 66,
+        "y": 470,
+        "right": 144,
+        "bottom": 514,
+        "width": 78,
+        "height": 44
+      },
+      {
+        "label": "React happy",
+        "x": 152,
+        "y": 470,
+        "right": 230,
+        "bottom": 514,
+        "width": 78,
+        "height": 44
+      },
+      {
+        "label": "React clap",
+        "x": 238,
+        "y": 470,
+        "right": 316,
+        "bottom": 514,
+        "width": 78,
+        "height": 44
+      },
+      {
+        "label": "React laugh",
+        "x": 324,
+        "y": 470,
+        "right": 402,
+        "bottom": 514,
+        "width": 78,
+        "height": 44
+      },
+      {
+        "label": "React fire",
+        "x": 410,
+        "y": 470,
+        "right": 488,
+        "bottom": 514,
+        "width": 78,
+        "height": 44
+      },
+      {
+        "label": "React sheep",
+        "x": 496,
+        "y": 470,
+        "right": 574,
+        "bottom": 514,
+        "width": 78,
+        "height": 44
+      },
+      {
+        "label": "Say something…",
+        "x": 66,
+        "y": 522,
+        "right": 508.21875,
+        "bottom": 566,
+        "width": 442.21875,
+        "height": 44
+      },
+      {
+        "label": "Send",
+        "x": 516.21875,
+        "y": 522,
+        "right": 574,
+        "bottom": 566,
+        "width": 57.78125,
+        "height": 44
+      },
+      {
+        "label": "7 points",
+        "x": 487,
+        "y": 583,
+        "right": 531,
+        "bottom": 627,
+        "width": 44,
+        "height": 44
+      },
+      {
+        "label": "10 points",
+        "x": 539,
+        "y": 583,
+        "right": 583,
+        "bottom": 627,
+        "width": 44,
+        "height": 44
+      },
+      {
+        "label": "Ready",
+        "x": 57,
+        "y": 635,
+        "right": 228.328125,
+        "bottom": 679,
+        "width": 171.328125,
+        "height": 44
+      },
+      {
+        "label": "Start",
+        "x": 236.328125,
+        "y": 635,
+        "right": 405.671875,
+        "bottom": 679,
+        "width": 169.34375,
+        "height": 44
+      },
+      {
+        "label": "Leave the table",
+        "x": 413.671875,
+        "y": 635,
+        "right": 583,
+        "bottom": 679,
+        "width": 169.328125,
+        "height": 44
+      }
+    ],
+    "background": "rgb(243, 246, 245)",
+    "share": 0.40534651360544216
+  }
+]

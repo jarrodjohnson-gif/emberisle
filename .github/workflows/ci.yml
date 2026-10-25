@@ -433,6 +433,8 @@ jobs:
         run: npm run win-action-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation'
         run: npm run lobby-overflow-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation'
+        run: npm run lobby-layout-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
         run: npm run turn-copy-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-2'

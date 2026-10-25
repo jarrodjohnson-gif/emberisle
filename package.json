@@ -51,6 +51,7 @@
     "haptics-prove": "node scripts/haptics-prove.mjs",
     "orphan-check": "node scripts/orphan-check.mjs",
     "chat-prove": "node scripts/chat-prove.mjs",
+    "lobby-layout-prove": "node scripts/lobby-layout-prove.mjs",
     "lobby-prove": "node scripts/lobby-prove.mjs",
     "title-chunks-prove": "node scripts/title-chunks-prove.mjs",
     "open-host-prove": "node scripts/open-host-prove.mjs",
