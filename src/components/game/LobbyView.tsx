@@ -1,10 +1,8 @@
 import { useRef, useState } from "react";
 import { VictoryTargetSelect } from "@/components/game/VictoryTargetSelect";
 import { Button } from "@/components/ui/button";
-import { ChatBox, SeatBubbles } from "@/components/game/Chat";
 import { CopyFallback, useCopy } from "@/components/game/CopyText";
 import { SeatDot } from "@/components/game/SeatDot";
-import { chunk } from "@/lib/lazy";
 import { useGame } from "@/lib/game/store";
 import type { Seat } from "@/lib/net/table";
 import { LazyBoundary } from "@/lib/lazy";
@@ -59,10 +57,7 @@ function OwnName({ seat, compact }: { seat: Seat; compact: boolean }) {
   );
 }
 
-const rules = chunk(() => import("@/components/game/HowTo"));
-const HowTo = rules.pick(m => m.HowTo);
-
-export function LobbyView() {
+export function LobbyView({ ChatBox, SeatBubbles, HowTo, prefetchRules }: { ChatBox: typeof import("./Chat").ChatBox; SeatBubbles: typeof import("./Chat").SeatBubbles; HowTo: typeof import("./HowTo").HowTo; prefetchRules: () => Promise<boolean> }) {
   const rule = useGame(s => s.tableWayfarerMode);
   const code = useGame(s => s.code);
   const seats = useGame(s => s.seats);
@@ -111,7 +106,7 @@ export function LobbyView() {
           </header>
           {copied && !copied.ok ? <div className="lobby-copy-fallback"><CopyFallback state={copied} label={copied.what === "link" ? "Join link" : "Table code"} /></div> : <CopyFallback state={copied} label="Table code" />}
           <div className="lobby-rules">
-            <Button variant="outline" onPointerEnter={rules.prefetch} onFocus={rules.prefetch} onClick={e => setHowTo(true, e.currentTarget)}>Rules</Button>
+            <Button variant="outline" onPointerEnter={prefetchRules} onFocus={prefetchRules} onClick={e => setHowTo(true, e.currentTarget)}>Rules</Button>
             <span className="lobby-rule-status">Wayfarer {rule}</span>
           </div>
           <ul data-testid="lobby-players" className="lobby-players">

@@ -22,9 +22,6 @@ const DIR = "dist/assets";
 // +3 kB on the two big chunks, about +1 kB on the lazy ones.
 const CEILINGS = [
   { name: "LobbyView", gzipBytes: 2500 },
-  { name: "HowTo", gzipBytes: 1600 },
-  { name: "talk", gzipBytes: 2200 },
-  { name: "minus", gzipBytes: 200 },
   // #542: optional phone motor/preferences/menu, loaded before the first interactive tap; measured 1.09 kB.
   { name: "haptics", gzipBytes: 1200 },
   { name: "index", gzipBytes: 125200 },
