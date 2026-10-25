@@ -426,7 +426,7 @@ if (process.argv.includes("--host-fixture")) {
     try {
       await cancelled.p.getByRole("button", { name: "Host a table", exact: true }).click();
       await until(() => cancelled.requests.length > 0, "held table-client request");
-      await cancelled.p.getByRole("button", { name: "Play", exact: true }).click();
+      await cancelled.p.getByRole("button", { name: "Play against bots", exact: true }).click();
       await cancelled.release(); await cancelled.settled();
       assert.deepEqual(await cancelled.p.evaluate(() => { const s = window.__emberisle.getState(); return [s.screen, s.mode, s.net]; }), ["play", "ai", null], "late client load cannot pull practice back online");
       assert.deepEqual(cancelled.intents, [], "cancelled Host sends no hello after module arrival");
@@ -469,7 +469,7 @@ if (process.argv.includes("--host-fixture")) {
       await until(() => quiet.p.evaluate(() => !window.__emberisle.getState().restoring), "original 3s fallback includes module fetch");
       assert.deepEqual(await quiet.p.evaluate(() => window.__coldDeadlines), [3000], "quiet fallback keeps the original 3000ms delay");
       assert.equal(await quiet.p.evaluate(() => localStorage.getItem("emberisle-seat")), savedSeatRecord, "held loader preserves the exact saved seat");
-      await quiet.p.getByRole("button", { name: "Play", exact: true }).click();
+      await quiet.p.getByRole("button", { name: "Play against bots", exact: true }).click();
       await quiet.release(); await quiet.settled();
       assert.deepEqual(quiet.intents, [], "offline escape cancels pending saved-seat rejoin");
       assert.equal(await quiet.p.evaluate(() => window.__emberisle.getState().mode), "ai");
@@ -480,6 +480,7 @@ if (process.argv.includes("--host-fixture")) {
       assert.equal(await failed.p.evaluate(() => localStorage.getItem("emberisle-seat")), savedSeatRecord, "failed fetch never erases the saved credential");
       assert.equal(await failed.p.evaluate(() => window.__emberisle.getState().restoring), false);
       assert.deepEqual(failed.intents, [], "failed fetch opens no seated connection");
+      await until(() => failed.p.evaluate(() => window.__coldPreloads.length >= 2), "client and optional parent finish reporting failed loads");
       const failedUrls = await failed.p.evaluate(() => window.__coldPreloads.map(error => error.slice(error.lastIndexOf("http"))).sort());
       assert.deepEqual(failedUrls, [moduleUrl, discoveryUrl].sort(), "only the failed client and optional parent use their spent reload budgets");
       await failed.release();
