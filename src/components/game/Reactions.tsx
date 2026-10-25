@@ -28,7 +28,7 @@ const SOUNDBOARD = [
   { id: "pluck", label: "Pluck" },
 ];
 
-// Tab 2: all fifteen sound chips in a wrapping grid (14 px labels, no sideways scroll), the text presets, then the stickers.
+// Tab 2: all seventeen sound chips in a wrapping grid (14 px labels, no sideways scroll), the text presets, then the stickers.
 const PRESETS = ["gg", "nice roll", "your turn", "one sec", "ty"];
 
 export function SoundsTab({ dense }: { dense?: boolean }) {
