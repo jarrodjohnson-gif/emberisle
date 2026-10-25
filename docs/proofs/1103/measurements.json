@@ -98,9 +98,9 @@
         "label": "Your name is Jarrod. Change it",
         "x": 54,
         "y": 129,
-        "right": 130,
+        "right": 98.3125,
         "bottom": 173,
-        "width": 76,
+        "width": 44.3125,
         "height": 44
       },
       {
@@ -359,9 +359,9 @@
         "label": "Your name is Jarrod. Change it",
         "x": 54,
         "y": 129,
-        "right": 98,
+        "right": 98.3125,
         "bottom": 173,
-        "width": 44,
+        "width": 44.3125,
         "height": 44
       },
       {
@@ -620,9 +620,9 @@
         "label": "Your name is Jarrod. Change it",
         "x": 86,
         "y": 145,
-        "right": 255,
+        "right": 130.3125,
         "bottom": 189,
-        "width": 169,
+        "width": 44.3125,
         "height": 44
       },
       {
