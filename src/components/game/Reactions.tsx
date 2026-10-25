@@ -21,6 +21,8 @@ const SOUNDBOARD = [
   { id: "sb_grain_please", label: "Grain please" },
   { id: "sb_brick_please", label: "Brick please" },
   { id: "sb_perfect", label: "Perfect" },
+  { id: "sb_real_badman", label: "Real badman" },
+  { id: "sb_shinese_gong", label: "Shinese gong" },
   { id: "bong", label: "Bong" },
   { id: "plop", label: "Plop" },
   { id: "pluck", label: "Pluck" },
