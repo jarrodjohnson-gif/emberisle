@@ -1449,9 +1449,9 @@ try {
         const band = { left: strip.left, right: strip.right, top: strip.top, bottom: strip.bottom + 56 };
         const overlap = sheet.left < band.right && band.left < sheet.right && sheet.top < band.bottom && band.top < sheet.bottom;
         const points = [...document.querySelectorAll('[data-testid="seat-vp"]')].filter((el) => el.getClientRects().length);
-        return { sheet: sheet.top, strip: strip.bottom, clear: !overlap, inside: sheet.left >= 0 && sheet.top >= 0 && sheet.right <= innerWidth && sheet.bottom <= innerHeight, seats: points.length, uncovered: points.every((el) => { const b = el.getBoundingClientRect(); return b.width > 0 && b.height > 0 && el.contains(document.elementFromPoint((b.left + b.right) / 2, (b.top + b.bottom) / 2)); }) };
+        return { sheet: sheet.top, strip: strip.bottom, clear: !overlap, inside: sheet.left >= 0 && sheet.top >= 0 && sheet.right <= innerWidth && sheet.bottom <= innerHeight, seats: points.length, expected: window.__emberisle.getState().state.players.length, uncovered: points.every((el) => { const b = el.getBoundingClientRect(); return b.width > 0 && b.height > 0 && el.contains(document.elementFromPoint((b.left + b.right) / 2, (b.top + b.bottom) / 2)); }) };
       });
-      check(w > h ? g.clear && g.inside && g.seats === 4 && g.uncovered : g.sheet >= g.strip + 56, `phone game ${w}x${h} ${tab} tab: the sheet (top ${Math.round(g.sheet)}) leaves the seat strip (bottom ${Math.round(g.strip)}) and its bubble band clear`);
+      check(w > h ? g.clear && g.inside && g.seats === g.expected && g.uncovered : g.sheet >= g.strip + 56, `phone game ${w}x${h} ${tab} tab: the sheet leaves the seat strip and its bubble band clear ${JSON.stringify(g)}`);
     }
     check((await phone.page.getByRole("button", { name: "Minimize chat" }).textContent()).trim() === "Close", `phone game ${v.size}: the sheet has a labelled Close`);
   }

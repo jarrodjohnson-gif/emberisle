@@ -81,7 +81,7 @@ Justification keys:
 | Base file:line | Old assertion / supporting geometry | New assertion / supporting geometry | Why |
 |---|---|---|---|
 | scripts/chat-prove.mjs:1249 | Emoji row below the closed Open-chat button, within safe bounds | Portrait retains below-opener rule; landscape requires row contained in chat sheet, clear of dock Menu and seat strip; all safe bounds retained | Landscape opener moves into bottom dock row, #1101. |
-| scripts/chat-prove.mjs:1444 | Read sheet top and strip bottom only | Read full sheet/strip rectangles; test full56px bubble-band nonoverlap, full viewport containment and four visible uncovered seat totals | Equivalent landscape geometry for a sheet beside or below fixed column. |
-| scripts/chat-prove.mjs:1445 | Sheet top at least strip bottom+56 | Portrait retains exact predicate; landscape requires nonoverlap, viewport containment, exactly4 uncovered seat totals | Keep bubble band and seat visibility with the approved dock. All log/newest/font/map-hole and failure assertions remain. |
+| scripts/chat-prove.mjs:1444 | Read sheet top and strip bottom only | Read full sheet/strip rectangles; test full56px bubble-band nonoverlap, full viewport containment and every player's visible uncovered seat total | Equivalent landscape geometry for a sheet beside or below fixed column. |
+| scripts/chat-prove.mjs:1445 | Sheet top at least strip bottom+56 | Portrait retains exact predicate; landscape requires nonoverlap, viewport containment, exact game player count and uncovered seat totals | Keep bubble band and seat visibility with the approved dock. All log/newest/font/map-hole and failure assertions remain. |
 
 The trade-map and rotate-overlays proofs remain byte-for-byte unchanged. Their full-card receipts, scrolling, safe areas,44px targets,8px separation, Escape behavior, seat visibility and zero-error checks pass.
