@@ -57,7 +57,7 @@ function OwnName({ seat, compact }: { seat: Seat; compact: boolean }) {
   );
 }
 
-export function LobbyView({ ChatBox, SeatBubbles, HowTo, prefetchRules }: { ChatBox: typeof import("./Chat").ChatBox; SeatBubbles: typeof import("./Chat").SeatBubbles; HowTo: typeof import("./HowTo").HowTo; prefetchRules: () => Promise<boolean> }) {
+export function LobbyView({ ConnectionStatus, ChatBox, SeatBubbles, HowTo, prefetchRules }: { ConnectionStatus: typeof import("./ConnectionStatus").ConnectionStatus; ChatBox: typeof import("./Chat").ChatBox; SeatBubbles: typeof import("./Chat").SeatBubbles; HowTo: typeof import("./HowTo").HowTo; prefetchRules: () => Promise<boolean> }) {
   const rule = useGame(s => s.tableWayfarerMode);
   const code = useGame(s => s.code);
   const seats = useGame(s => s.seats);
@@ -107,7 +107,10 @@ export function LobbyView({ ChatBox, SeatBubbles, HowTo, prefetchRules }: { Chat
           {copied && !copied.ok ? <div className="lobby-copy-fallback"><CopyFallback state={copied} label={copied.what === "link" ? "Join link" : "Table code"} /></div> : <CopyFallback state={copied} label="Table code" />}
           <div className="lobby-rules">
             <Button variant="outline" onPointerEnter={prefetchRules} onFocus={prefetchRules} onClick={e => setHowTo(true, e.currentTarget)}>Rules</Button>
-            <span className="lobby-rule-status">Wayfarer {rule}</span>
+            <div className="lobby-rule-status">
+              <span data-testid="lobby-caption" className="max-w-full truncate">Wayfarer {rule}</span>
+              <ConnectionStatus className="max-w-full truncate whitespace-nowrap px-0" />
+            </div>
           </div>
           <ul data-testid="lobby-players" className="lobby-players">
             {[0, 1, 2, 3].map(i => {

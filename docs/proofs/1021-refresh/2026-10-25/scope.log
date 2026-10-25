@@ -1,0 +1,7 @@
+PASS byte-identical previous integration44730fb server/profiles.mjs SHA256 8b2c480a8450de542e2195f9563ef33421b74618020ba754e373304b2957c74c
+PASS byte-identical previous integration44730fb server/profile-lock-prove.mjs SHA256 72a6ccbe5c69ef80a46bd9af82c5a68b0ba390a2e56cdf0be45f09b65a5637f6
+PASS byte-identical previous integration44730fb server/profile-auth-prove.mjs SHA256 0380575dad6de076c08574c618fbdf346c1ac20af76ab2f2925746371c448352
+PASS byte-identical previous integration44730fb server/profile-edit-prove.mjs SHA256 44a9241f59a87bc9c492a341e52cff7fcbea5f5e74fa9f72ce13243179dc613f
+PASS takeLock plus publishedOwners byte-identical Opus-approved470c4c7 SHA256 72ae1dca0cff7f52070ef671eb481f79808b7336b80bb686436d7af78b1c5768
+PASS exact main registrations/conditions/matrix plus own lock proof once
+PASS six-file implementation scope; all other runtime/proofs/budgets byte-identical main aeeb4134b1be24f7d3472125b8893ac2d9bd5b27

@@ -435,7 +435,11 @@ check("restart and repeated resumes preserve every PIN budget", budgetState() ==
 
 // --- Nothing secret on disk or in game frames -----------------------------------------------------------------------------
 const files = readdirSync(PROFILES_DIR);
-const text = files.map((f) => readFileSync(path.join(PROFILES_DIR, f), "utf8")).join("\n");
+const privateText = (dir) => readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+  const file = path.join(dir, entry.name);
+  return entry.isDirectory() ? privateText(file) : [readFileSync(file, "utf8")];
+});
+const text = privateText(PROFILES_DIR).join("\n");
 const values = [];
 (function walk(v) {
   if (typeof v === "string") values.push(v);

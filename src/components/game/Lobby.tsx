@@ -1,3 +1,4 @@
+import { ConnectionStatus } from "@/components/game/ConnectionStatus";
 import { chunk } from "@/lib/lazy";
 import { ChatBox, SeatBubbles } from "@/components/game/Chat";
 
@@ -7,5 +8,5 @@ const rules = chunk(() => import("@/components/game/sheets"));
 const HowTo = rules.pick(m => m.HowTo);
 void lobby.prefetch();
 export function Lobby() {
-  return <LobbyView ChatBox={ChatBox} SeatBubbles={SeatBubbles} HowTo={HowTo} prefetchRules={rules.prefetch} />;
+  return <LobbyView ConnectionStatus={ConnectionStatus} ChatBox={ChatBox} SeatBubbles={SeatBubbles} HowTo={HowTo} prefetchRules={rules.prefetch} />;
 }
