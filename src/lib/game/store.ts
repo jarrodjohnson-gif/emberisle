@@ -632,7 +632,10 @@ export const useGame = create<GameStore>((set, get) => ({
     });
   },
   restoring: typeof window !== "undefined" && inPlayAtSavedSeat(),
-  loadState: (s, localId, host, table) =>
+  loadState: (s, localId, host, table) => {
+    // A push that leaves the turn alone (a seat rejoining) keeps an open picker, with the host's fresh victims (#1110).
+    const { pendingSteal: ps, state: was, legal } = get();
+    const targets = ps && was && s.phase === was.phase && s.current === was.current ? (legal?.steal[ps.hexId] ?? []) : [];
     set({
       restoring: false,
       screen: "play",
@@ -643,10 +646,11 @@ export const useGame = create<GameStore>((set, get) => ({
       table: table ?? get().table,
       error: null,
       announcement: null,
-      pendingSteal: null,
+      pendingSteal: ps && targets.length > 1 ? { ...ps, targets } : null,
       resync: false,
       synced: get().resync ? get().synced + 1 : get().synced,
-    }),
+    });
+  },
   goTitle: () => {
     stopEndMusic();
     // Leaving on purpose frees the seat; only a drop keeps it. A watcher never held one, and the saved seat may be another table's.
