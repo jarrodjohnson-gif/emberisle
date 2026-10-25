@@ -1,0 +1,43 @@
+{
+  "typecheck": {
+    "command": [
+      "npm",
+      "run",
+      "typecheck"
+    ],
+    "exit": 0
+  },
+  "build": {
+    "command": [
+      "npm",
+      "run",
+      "build"
+    ],
+    "exit": 0
+  },
+  "registered": {
+    "command": [
+      "node",
+      "scripts/registered-prove.mjs"
+    ],
+    "exit": 0
+  },
+  "loosen": {
+    "command": [
+      "node",
+      "scripts/loosen-prove.mjs",
+      "--base",
+      "origin/main"
+    ],
+    "exit": 1
+  },
+  "size": {
+    "command": [
+      "node",
+      "scripts/size-prove.mjs",
+      "--base",
+      ".base-main"
+    ],
+    "exit": 1
+  }
+}
