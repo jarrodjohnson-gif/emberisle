@@ -1,0 +1,11 @@
+Baseline: 587951aa81db45982a8e79e51c4378afaa2986e3 (main)
+Model: GPT-6 Luna
+Host: http://127.0.0.1:8788/
+Viewport captures: 390x844, 844x390, 440x956, 1280x720
+Online table code was captured in browser state only; it is not copied into this report.
+Observed final practice state: {"winner":"p2","phase":"over","turn":17,"roll":67}
+Practice automation: real UI actions; natural built-in bot scheduler; no bot fast-forward or state injection.
+Stop: {"stopReason":"winner reached","actions":48,"polls":829,"elapsedMs":219760}
+Missing practice captures (never reached/captured within bounds): []
+Captured state manifest: {"roll-off":{"phase":"rollOff","seq":0,"current":"p0","turn":0,"winner":null},"first-settlement-placement":{"phase":"setupSettle","seq":10,"current":"p0","turn":0,"winner":null},"first-road-placement":{"phase":"setupRoad","seq":11,"current":"p0","turn":0,"winner":null},"paying-roll":{"phase":"main","seq":27,"current":"p0","turn":1,"winner":null},"settlement-and-road-placed":{"phase":"main","seq":27,"current":"p0","turn":1,"winner":null},"trade-panel":{"phase":"main","seq":27,"current":"p0","turn":1,"winner":null},"fortune-tray":{"phase":"main","seq":27,"current":"p0","turn":1,"winner":null},"end-turn":{"phase":"main","seq":27,"current":"p0","turn":1,"winner":null},"robber":{"phase":"robber","seq":87,"current":"p0","turn":6,"winner":null},"win-screen":{"phase":"over","seq":240,"current":"p2","turn":17,"winner":"p2"}}
+Page errors: []

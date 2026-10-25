@@ -44,6 +44,14 @@ try {
   await page.getByRole("button", { name: "Play", exact: true }).waitFor();
   await page.waitForLoadState("networkidle");
 
+  // #833: both optional title modules must resolve under the hosted prefix too.
+  const mode = page.getByTestId("open-mode-toggle");
+  await mode.waitFor();
+  assert.equal(await mode.getAttribute("aria-pressed"), "false");
+  const wayfarer = page.locator('select[aria-label="Online wayfarer"]');
+  await wayfarer.waitFor({ state: "attached" });
+  assert.equal(await wayfarer.inputValue(), "on");
+
   const hrefs = await page.evaluate(() => ({
     manifest: document.querySelector('link[rel="manifest"]').href,
     preload: [...document.querySelectorAll('link[rel="modulepreload"]')].map((l) => l.href),

@@ -1,0 +1,12 @@
+[
+  "npm run hand-offer-prove",
+  "npm run chunk-fail-prove",
+  "npm run idle-prove",
+  "npm run rotate-prove",
+  "npm run banner-stable-prove",
+  "npm run roll-moment-prove",
+  "npm run goods-log-prove",
+  "npm run turn-gain-prove",
+  "npm run board-look-prove",
+  "npm run dock-piles-prove"
+]

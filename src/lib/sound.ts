@@ -33,7 +33,7 @@ const FILES = {
   // The player the wayfarer is set against hears this instead of wayfarer_move (the owner's clip).
   robbed_fah: "robbed_fah.mp3",
   // Music: a short sting when a game starts (cut off by the first roll), when a player is one point from winning, and for the
-  // seats that did not win. Played at MUSIC volume.
+  // seats that did not win.
   game_start: "game_start.mp3",
   match_point: "match_point.mp3",
   game_lose: "game_lose.mp3",
@@ -43,6 +43,7 @@ const FILES = {
   sb_airhorn: "sb_airhorn.mp3",
   sb_quit_touchin: "sb_quit_touchin.mp3",
   sb_only_wood: "sb_only_wood.mp3",
+  sb_perfect: "sb_perfect.mp3",
   // End-of-game music: starts a moment after the win or loss sting, stops when the end screen is left or a new game starts.
   end_music: "end_music.mp3",
   board_bong: "bong_001.wav",
@@ -65,16 +66,16 @@ export const SOUNDBOARD = [
   { id: "sb_airhorn", label: "Airhorn", clip: "sb_airhorn" },
   { id: "sb_quit_touchin", label: "Quit touchin' me", clip: "sb_quit_touchin" },
   { id: "sb_only_wood", label: "Only wood?", clip: "sb_only_wood" },
+  { id: "sb_perfect", label: "Perfect", clip: "sb_perfect" },
   { id: "bong", label: "Bong", clip: "board_bong" },
   { id: "plop", label: "Plop", clip: "board_plop" },
   { id: "pluck", label: "Pluck", clip: "board_pluck" },
 ] as const satisfies readonly { id: string; label: string; clip: keyof typeof FILES }[];
 export type BoardSound = (typeof SOUNDBOARD)[number]["id"];
 
-// Music is quieter than the table's knocks and clicks.
-export const MUSIC_VOLUME = 0.5;
-// The soundboard and the meme clips (robbed_fah) sit below the music (docs/design/sound.md, decisions).
-export const MEME_VOLUME = 0.4;
+// Levels live in the files, not here (#1073, docs/design/sound.md Decision 3): every table effect, every reaction and soundboard
+// clip and every piece of music was leveled by type (scripts/level-audio.mjs), so each plays at volume 1 unless a caller asks
+// for less on purpose (a bystander's echo, the paying-piece tick). The player's mixer (sound-settings.ts) still scales a category.
 
 export type SoundName = keyof typeof FILES;
 
@@ -89,7 +90,7 @@ export function soundCategory(name: SoundName): SoundCategory {
 const MUTED_KEY = "emberisle-muted";
 const clips = new Map<SoundName, HTMLAudioElement>();
 const gains = new Map<SoundName, number>();
-let unlocked = false;
+export let unlocked = false;
 let muted = savedMuted();
 const listeners = new Set<() => void>();
 
@@ -100,6 +101,9 @@ function savedMuted() {
     return false;
   }
 }
+
+// The optional phone module registers these callbacks before bootstrap exposes UI or rejoin events.
+export const haptics: Partial<typeof import("./haptics").api> = {};
 
 if (typeof window !== "undefined") {
   const unlock = () => {
@@ -138,6 +142,9 @@ function subscribe(l: () => void) {
 export function useMuted() {
   return useSyncExternalStore(subscribe, isMuted, () => false);
 }
+
+export const hapticsAvailable = () => haptics.available?.() ?? false;
+export const haptic = (ms: number) => { haptics.buzz?.(ms); };
 
 // A clip never starts twice within GAP_MS of its last request (a burst is one sound), and clips start at least GAP_MS apart
 // in the order asked, so a bot round of five moves is five separate sounds. A backlog past MAX_QUEUE is dropped, not played late.
@@ -217,18 +224,10 @@ export function stop(name: SoundName) {
   clip.currentTime = 0;
 }
 
-// The your-turn chime, with a short buzz on phones that have a motor.
+// The your-turn chime, with a short buzz on phones that have a motor (#542: 15 ms, was 30).
 export function yourTurn() {
   play("your_turn");
-  if (unlocked && !muted) navigator.vibrate?.(30);
-}
-
-// One soft tick and guarded phone kick per paying piece. The renderer owns timing and the per-roll cap.
-export function gainTick() {
-  play("gain_tick", 0.35);
-  if (unlocked && !muted) {
-    try { navigator.vibrate?.(8); } catch { /* embedded pages may forbid vibration */ }
-  }
+  haptics.turn?.();
 }
 
 // Background music (#814): "Medieval: The Old Tower Inn" (docs/design/sound.md). The file is fetched on the first start, after
@@ -325,10 +324,9 @@ function syncVolumes() {
 }
 subscribeSoundMix(() => { syncVolumes(); syncMusic(); });
 
-// #667: a tap on a hex that places nothing plays that terrain's clip, quietly, at most once per TOUCH_GAP_MS. Only a sheep
+// #667: a tap on a hex that places nothing plays that terrain's clip, at most once per TOUCH_GAP_MS. Only a sheep
 // hex (Pasture, "wool") baas. The renderer calls this for a plain tap only: never for a drag, a pinch or an armed placement.
 const TOUCH_GAP_MS = 400;
-export const TOUCH_VOLUME = 0.3;
 const TOUCH_CLIP: Record<string, SoundName> = {
   wool: "tap_pasture",
   timber: "tap_forest",
@@ -344,5 +342,5 @@ export function touchHex(terrain: string) {
   const now = Date.now();
   if (now - touchedAt < TOUCH_GAP_MS) return;
   touchedAt = now;
-  play(clip, TOUCH_VOLUME);
+  play(clip);
 }

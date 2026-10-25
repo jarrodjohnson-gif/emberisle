@@ -1,0 +1,8 @@
+
+> hand-offer-prove
+> node scripts/hand-offer-prove.mjs
+
+motion: received, answered, own and closed offers raise and clear the right cards
+reduced: received, answered, own and closed offers raise and clear the right cards
+short 844x390: a flash and an offer on one card never overlap, and the offer label returns
+hand offer prove ok

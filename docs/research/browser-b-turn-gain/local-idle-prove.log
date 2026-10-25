@@ -1,0 +1,22 @@
+
+> idle-prove
+> node scripts/idle-prove.mjs
+
+ok   title 30 fps gate (31..75 in 2 s) {"renders":60,"draws":60,"ms":2000}
+ok   idle: at most 30 renders in 2 s {"renders":24,"draws":24,"ms":2000}
+ok   window.__isle.renders counts every draw {"renders":24,"draws":24,"ms":2000}
+ok   drag: at least 3x idle in 2 s {"drag":{"draws":117,"ms":2019},"idle":24}
+ok   state push: at least 3x idle over its 1 s {"pushed":{"draws":60,"ms":1005,"held":1000.4000000059605},"idlePerSecond":12}
+ok   walk after idle: start is the real time (lag <= 10 ms) {"walking":true,"lagMs":0.2,"u":0.04733333329360434,"stale":68}
+ok   walk after idle: first frame progress < 50% {"walking":true,"lagMs":0.2,"u":0.04733333329360434,"stale":68}
+ok   reduced motion: a hop is in flight before the flip {"walk":true,"atTarget":false,"r0":499}
+ok   reduced motion: change event reached the page
+ok   reduced motion: the hop in flight lands at once {"walk":false,"atTarget":true}
+ok   reduced motion idle: at most 30 in 2 s {"renders":0,"draws":0,"ms":2000}
+ok   reduced motion idle: no mesh moved in 2 s {"meshes":230,"moved":[]}
+ok   reduced motion idle: at most 1 draw in 2 s {"renders":0,"draws":0,"ms":2000}
+ok   reduced motion: robber move places the wayfarer at once and draws {"walk":false,"atTarget":true,"r0":560}
+ok   reduced motion off: ambient motion resumes (more than 1 draw in 2 s) {"renders":24,"draws":24,"ms":2000}
+ok   no console errors []
+
+idle-prove: all checks passed

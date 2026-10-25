@@ -35,6 +35,8 @@ try {
     const before=g.getState().gameLog.length,r=g.getState().dispatch(action,actor);
     if(!r.ok)throw Error(r.error);
     const lines=g.getState().gameLog.slice(before).map(l=>l.text);
+    // #687 (owner-approved): a roll adds its own "<name> rolled <sum>!" line ahead of its one goods event. Every other action still adds exactly one line.
+    if(action.type==='roll'&&lines.length===2&&/^.+ rolled \d+!$/.test(lines[0]))lines.shift();
     if(lines.length!==1)throw Error(`${action.type}: ${JSON.stringify(lines)}`);
     if(g.getState().banner)throw Error(`duplicate banner ${g.getState().banner}`);
     events.push({kind:action.type,line:lines[0]});
