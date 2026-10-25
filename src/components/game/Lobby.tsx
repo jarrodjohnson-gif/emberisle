@@ -1,4 +1,5 @@
 // The table lobby: code, seats, chat and Ready/Start. Online-only, so it loads with the chat as one lazy chunk (#488).
+import { ConnectionStatus } from "@/components/game/ConnectionStatus";
 import { VictoryTargetSelect } from "@/components/game/VictoryTargetSelect";
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -120,7 +121,10 @@ export function Lobby() {
         )}
       >
         <div className={cn(landscape && "col-start-2 row-start-1")}>
-        <p className="text-caption font-semibold text-sea-ink">Table code · Wayfarer <span className="capitalize">{rule}</span></p>
+        <div className="flex min-w-0 items-center justify-between gap-x-2">
+          <p data-testid="lobby-caption" className="min-w-0 truncate text-caption font-semibold text-sea-ink">Table code · Wayfarer <span className="capitalize">{rule}</span></p>
+          <ConnectionStatus className="shrink-0 whitespace-nowrap px-0" />
+        </div>
         <div className="mt-1 flex items-center gap-3">
           <p
             data-testid="table-code"
@@ -146,7 +150,7 @@ export function Lobby() {
         </div>
         <div className={cn(landscape ? "col-start-1 row-span-2 row-start-1 flex min-h-0 flex-col" : "contents")}>
         {/* #899: held sideways the seats are a 2x2 grid in the wider left column, so the chat under them has the height for the
-            Sounds & stickers tab (nine 44 px chips and the presets). */}
+            Sounds & stickers tab (ten 44 px chips and the presets). */}
         <ul className={cn(landscape ? "grid grid-cols-2" : "flex flex-col", sheet ? "gap-1.5" : "gap-2", landscape ? "shrink-0 gap-1.5" : sheet ? "mt-3" : "mt-4 shrink-0")}>
           {[0, 1, 2, 3].map((i) => {
             const s = seats[i];

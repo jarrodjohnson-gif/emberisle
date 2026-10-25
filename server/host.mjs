@@ -1,10 +1,11 @@
-import { mkdirSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
 import { mkdir, rename, writeFile } from "node:fs/promises";
 import { readFile } from "node:fs/promises";
 import http from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { randomBytes, randomInt, timingSafeEqual } from "node:crypto";
+import { randomBytes, randomInt, randomUUID, timingSafeEqual } from "node:crypto";
 import { WebSocketServer } from "ws";
 import { chooseBotAction, chooseRecoveryAction, chooseTradeAsk, logBotAction, shouldAcceptTrade } from "../src/lib/game/ai.ts";
 import { createGame } from "../src/lib/game/board.ts";
@@ -13,9 +14,18 @@ import { COST, PLAYER_COLORS, RESOURCES } from "../src/lib/game/types.ts";
 import { PROTO } from "../src/lib/net/proto.ts";
 import { allow, cleanText, loadEmotes, remember, SOUNDBOARD } from "./chat.mjs";
 import { cue } from "./cue.mjs";
-import { PROFILE_TYPES, profileGate, profileHandler } from "./profile-protocol.mjs";
-import { openProfiles } from "./profiles.mjs";
+import { PROFILE_TYPES, profileGate, profileHandler, seatCredential, seatProfile, tableCard, watchRefusal } from "./profile-protocol.mjs";
+import { openProfiles, UUID } from "./profiles.mjs";
+import { getOpenTables, maybeReleaseOpenSlot, registerOpenTable, unregisterOpenTable } from "./open-table.mjs";
 import { extensionBudget, turnExtensions } from "./turn-extension.mjs";
+
+// The running host's checkout, regardless of the shell's cwd. Archives and hosts without git report dev (#913).
+const SERVER_SHA = (() => {
+  try {
+    if (!existsSync(new URL("../.git", import.meta.url))) return "dev";
+    return execFileSync("git", ["rev-parse", "--short", "HEAD"], { cwd: new URL("..", import.meta.url), stdio: ["ignore", "pipe", "ignore"], encoding: "utf8" }).trim();
+  } catch { return "dev"; }
+})();
 
 function hear(name) {
   try {
@@ -81,6 +91,11 @@ function ipBucket(key, now) {
   return b;
 }
 const opens = { tokens: OPEN_CAP, at: Date.now() };
+// Per-address throttle for GET /tables (same allow() shape as peek/list: burst then refill).
+// Slightly above the WS peek burst so two title tabs can poll without 429 noise in the console.
+const httpListBuckets = new Map();
+const TABLES_CAP = 10;
+const TABLES_RATE = 2;
 // Watchers per room (docs/design/spectator.md). A watcher has no seat and is never saved; 0 turns watching off.
 const SPECTATOR_MAX = envNum("SPECTATOR_MAX", 8);
 // A watcher coming or going is logged to the table at most this often per room, so a watch-and-close loop cannot
@@ -190,7 +205,36 @@ function seatsOf(room) {
     away: !s.bot && !s.ws,
     bot: Boolean(s.bot),
     url: s.avatarId ? `/avatars/${s.avatarId}.jpg` : null,
+    // A guest seat carries no profile field at all (#764).
+    ...(s.profileId ? { profile: seatProfile(profiles, s.profileId) } : {}),
   }));
+}
+
+// The frozen roster of one game (#764, profiles.md "Exactly-once recording"): a fresh game UUID, the start time and, per
+// starting player, its seat, bound profile, starting name and colour and human/bot class, in game player order. Set at start
+// and at each rematch, and saved with the room; durable result recording reads this, never the live seats. Nothing is counted.
+const ROSTER_V = 1;
+const COUNT_POLICY = 1;
+function freezeRoster(room, order) {
+  const players = order.map((s) => ({ pid: s.pid, seat: s.id, profileId: (!s.bot && s.profileId) || null, name: s.name, color: s.color, kind: s.bot ? "bot" : "human" }));
+  // Guests count as humans toward eligibility; a game needs two humans at its start to count.
+  room.roster = { v: ROSTER_V, gameId: randomUUID(), startedAt: Date.now(), policy: COUNT_POLICY, eligible: players.filter((p) => p.kind === "human").length >= 2, players };
+}
+
+// A saved roster that does not match its game is dropped, leaving that game untracked; a legacy room has none (#764).
+function loadRoster(r, game) {
+  if (!game || r === undefined || r === null) return null;
+  const row = (p, i) => p && typeof p === "object" && p.pid === game.players[i].id && typeof p.seat === "string" && (p.profileId === null || (typeof p.profileId === "string" && UUID.test(p.profileId))) && typeof p.name === "string" && typeof p.color === "string" && (p.kind === "human" || p.kind === "bot");
+  const ok = typeof r === "object" && r.v === ROSTER_V && typeof r.gameId === "string" && UUID.test(r.gameId) && Number.isSafeInteger(r.startedAt) && Number.isSafeInteger(r.policy) && typeof r.eligible === "boolean" && Array.isArray(r.players) && r.players.length === game.players.length && r.players.every(row);
+  const ids = ok ? r.players.map((p) => p.profileId).filter(Boolean) : [];
+  if (ok && new Set(ids).size === ids.length) return r;
+  console.error("bad roster in room file; this game is not tracked");
+  return null;
+}
+
+// The profile ids a table socket can see: the bound seats of its current room and that game's frozen roster.
+function visibleProfiles(room) {
+  return new Set([...room.seats.map((s) => s.profileId), ...(room.roster?.players ?? []).map((p) => p.profileId)].filter(Boolean));
 }
 
 function seatsMsg(room) {
@@ -223,6 +267,7 @@ function save(room) {
 function snapshot(room) {
   return JSON.stringify({
     code: room.code,
+    visibility: room.visibility ?? "private",
     host: room.host,
     next: room.next,
     botDeclined: room.botDeclined ?? {},
@@ -232,7 +277,9 @@ function snapshot(room) {
     game: room.game,
     victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10,
     wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on",
-    seats: room.seats.map(({ id, name, color, ready, pid, secret, bot, turnDeadline, turnStartedAt, extension }) => ({ id, name, color, ready, pid, secret, ...(bot ? { bot: true } : {}), turnDeadline: turnDeadline ?? null, turnStartedAt: turnStartedAt ?? null, extension })),
+    seats: room.seats.map(({ id, name, color, ready, pid, secret, bot, turnDeadline, turnStartedAt, extension, profileId }) => ({ id, name, color, ready, pid, secret, ...(bot ? { bot: true } : {}), turnDeadline: turnDeadline ?? null, turnStartedAt: turnStartedAt ?? null, extension, ...(profileId ? { profileId } : {}) })),
+    // Optional versioned metadata (#764): no ROOM_SHAPE bump, so a legacy room loads with no roster and is not tracked.
+    roster: room.roster ?? null,
     shape: ROOM_SHAPE,
     savedAt: Date.now(),
   });
@@ -331,9 +378,11 @@ function load() {
         offer: null,
         offerTimer: null,
         botDeclined: saved.botDeclined ?? {},
+        visibility: saved.visibility === "open" ? "open" : "private",
         wayfarerMode: saved.wayfarerMode === "off" ? "off" : "on",
         // Legacy hosted snapshots had no practice-bot seats, so a bot linked to a held seat means takeover.
         recoveryPids: [...new Set([...(Array.isArray(saved.recoveryPids) ? saved.recoveryPids : []), ...legacyRecovery])].slice(-4),
+        roster: loadRoster(saved.roster, saved.game),
         seats: [],
         watchers: new Set(),
       };
@@ -344,6 +393,15 @@ function load() {
         // G9: the saved window rides in `resume` until the seat is back and waited on; older files have none.
         const at = (n) => (Number.isFinite(n) ? n : null);
         room.seats.push({ ...s, turnDeadline: null, turnStartedAt: at(s.turnStartedAt), resume: at(s.turnDeadline), avatarId: null, ws: null, bucket: { tokens: 5, at: Date.now() }, act: { tokens: ACT_CAP, at: Date.now() } });
+      }
+      // A profile binding must be a UUID on a human seat, once per room; anything else leaves that seat a guest (#764).
+      const bound = new Set();
+      for (const seat of room.seats) {
+        if (seat.profileId === undefined) continue;
+        if (typeof seat.profileId !== "string" || !UUID.test(seat.profileId) || seat.bot || bound.has(seat.profileId)) {
+          console.error(`bad profile binding in room file: ${name}`);
+          delete seat.profileId;
+        } else bound.add(seat.profileId);
       }
     } catch (err) {
       console.error("unreadable room file:", name, err.message);
@@ -405,15 +463,25 @@ export function legalFor(game, you) {
 
 // Hidden fortunes and the deck order stay on the host until the game ends.
 export function viewFor(game, you) {
-  if (game.phase === "over") return { ...game, deckLeft: game.deck.length };
+  if (game.phase === "over") return { ...game, deckLeft: game.deck.length, players: game.players.map(revealLoss) };
   return closedView(game, you);
+}
+
+// Goods lost to successful steals (#550) stay on the host until the win: no view carries them, not even the seat's own.
+// At the win every seat and watcher gets the count with the final state, a 0 for a seat that lost nothing.
+function withoutLoss({ goodsLost, ...rest }) {
+  return rest;
+}
+
+function revealLoss(p) {
+  return { ...p, goodsLost: p.goodsLost ?? 0 };
 }
 
 // A watcher gets the opponent view, and at the win the same reveal as the seats minus the seed and rng (#347).
 function watchView(game) {
   if (game.phase !== "over") return closedView(game, null);
   const { seed, rng, ...open } = game;
-  return { ...open, deckLeft: game.deck.length };
+  return { ...open, deckLeft: game.deck.length, players: game.players.map(revealLoss) };
 }
 
 function closedView(game, you) {
@@ -426,9 +494,9 @@ function closedView(game, you) {
     deckLeft: game.deck.length,
     players: game.players.map((p) =>
       p.id === you
-        ? p
+        ? withoutLoss(p)
         : {
-            ...withoutHand(p),
+            ...withoutHand(withoutLoss(p)),
             goods: RESOURCES.reduce((n, r) => n + p.resources[r], 0),
             hidden: { knight: 0, road: 0, plenty: 0, monopoly: 0, vp: 0 },
             boughtThisTurn: { knight: 0, road: 0, plenty: 0, monopoly: 0, vp: 0 },
@@ -575,6 +643,8 @@ function deadlineOf(room) {
 }
 
 function pushState(room) {
+  // Recovery during rejoin or takeover can finish a game too. Release before publishing it.
+  maybeReleaseOpenSlot(room);
   armTurns(room);
   extensions(room).sync();
   // The soonest armed window, and whose it is, so every HUD can count it down (#345). `serverNow` lets a client
@@ -738,6 +808,32 @@ function route(req, res) {
     res.end(avatars.get(got[1]).body);
     return;
   }
+  if (req.method === "GET" && url.pathname === "/tables") {
+    // Same allow() throttle shape as the WS peek/list bucket (#833 review).
+    const key = ipKey(req.socket.remoteAddress, req.headers["cf-connecting-ip"]) ?? "loopback";
+    const now = Date.now();
+    let bucket = httpListBuckets.get(key);
+    if (!bucket) httpListBuckets.set(key, (bucket = { tokens: TABLES_CAP, at: now }));
+    if (httpListBuckets.size > 1024) for (const [k, b] of httpListBuckets) if (now - b.at > 60_000) httpListBuckets.delete(k);
+    if (!allow(bucket, now, TABLES_CAP, TABLES_RATE)) {
+      res.writeHead(429, {
+        "content-type": "application/json",
+        "access-control-allow-origin": "*",
+        "cache-control": "no-cache",
+        "retry-after": "1",
+      });
+      res.end("[]");
+      return;
+    }
+    const body = JSON.stringify(getOpenTables());
+    res.writeHead(200, {
+      "content-type": "application/json",
+      "access-control-allow-origin": "*",
+      "cache-control": "no-cache",
+    });
+    res.end(body);
+    return;
+  }
   if (req.method === "GET" || req.method === "HEAD") {
     serveStatic(req, res);
     return;
@@ -786,6 +882,8 @@ async function serveStatic(req, res) {
     }
     return;
   }
+  // Automatic discovery is native-host-only; static copies of the build carry no marker.
+  if (file === path.join(DIST, "index.html")) body = Buffer.from(body.toString().replace("</head>", '<meta name="emberisle-host" content="1"></head>'));
   const hashed = raw.startsWith("/assets/");
   res.writeHead(200, {
     "content-type": TYPES[path.extname(file).toLowerCase()] ?? "application/octet-stream",
@@ -821,6 +919,9 @@ function seatColor(room, raw) {
 function openTable(ws, msg) {
   if (msg.wayfarerMode !== undefined && !["on", "off"].includes(msg.wayfarerMode)) return send(ws, { type: "error", message: "Choose Wayfarer On or Off." });
   if (rooms.size >= ROOM_MAX) return send(ws, { type: "error", message: "The host is full." });
+  // An optional profile, verified before the table opens; a refusal opens nothing (#764).
+  const profile = seatCredential(profiles, ws, msg, () => false);
+  if (profile?.code) return send(ws, { type: "error", ...profile });
   const now = Date.now();
   const mine = ws.ipKey ? ipBucket(ws.ipKey, now) : null;
   if (mine && !allow(mine, now, OPEN_IP_CAP, 1000 / OPEN_IP_MS)) return send(ws, { type: "error", message: "You have opened several tables lately. Try again in a minute." });
@@ -828,7 +929,8 @@ function openTable(ws, msg) {
     if (mine) mine.tokens += 1;
     return send(ws, { type: "error", message: "Too many new tables right now. Try again in a minute." });
   }
-  const room = { victoryTarget: 10, wayfarerMode: msg.wayfarerMode ?? "on", code: code(), seats: [], game: null, host: null, next: 0, offer: null, offerTimer: null, botDeclined: {}, chat: [], chatSeq: 0, watchers: new Set() };
+  const visibility = msg.visibility === "open" ? "open" : "private";
+  const room = { victoryTarget: 10, wayfarerMode: msg.wayfarerMode ?? "on", visibility, code: code(), seats: [], game: null, host: null, next: 0, offer: null, offerTimer: null, botDeclined: {}, chat: [], chatSeq: 0, watchers: new Set() };
   rooms.set(room.code, room);
   const seat = {
     id: `s${room.next++}`,
@@ -841,12 +943,17 @@ function openTable(ws, msg) {
     bucket: { tokens: 5, at: Date.now() },
     act: { tokens: ACT_CAP, at: Date.now() },
     secret: randomBytes(16).toString("hex"),
+    ...(profile ? { profileId: profile.profileId } : {}),
   };
   room.seats.push(seat);
   room.host = seat.id;
+  if (visibility === "open" && !registerOpenTable(room)) {
+    rooms.delete(room.code);
+    return send(ws, { type: "error", message: "An open table is already listed." });
+  }
   ws.room = room;
   ws.seat = seat;
-  send(ws, { type: "welcome", proto: PROTO, code: room.code, you: seat.id, host: true, chat: room.chat, secret: seat.secret, ...HOLD_INFO, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on" });
+  send(ws, { type: "welcome", proto: PROTO, serverSha: SERVER_SHA, code: room.code, you: seat.id, host: true, chat: room.chat, secret: seat.secret, ...HOLD_INFO, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on" });
   say(room, `${seat.name} sat down.`);
   publish(room);
 }
@@ -858,6 +965,9 @@ function sitDown(ws, msg) {
   if (room.seats.length >= 4) return send(ws, { type: "error", message: "Table full." });
   const color = seatColor(room, msg.color);
   if (!color || room.seats.some((s) => s.color === color)) return send(ws, { type: "error", message: "Color taken." });
+  // One profile, one seat: a seat it holds, live or held, is never recovered or doubled by the credential (#764).
+  const profile = seatCredential(profiles, ws, msg, (id) => room.seats.some((s) => s.profileId === id));
+  if (profile?.code) return send(ws, { type: "error", ...profile });
   const seat = {
     id: `s${room.next++}`,
     name: seatName(room, msg.name, "Tide"),
@@ -868,11 +978,12 @@ function sitDown(ws, msg) {
     bucket: { tokens: 5, at: Date.now() },
     act: { tokens: ACT_CAP, at: Date.now() },
     secret: randomBytes(16).toString("hex"),
+    ...(profile ? { profileId: profile.profileId } : {}),
   };
   room.seats.push(seat);
   ws.room = room;
   ws.seat = seat;
-  send(ws, { type: "welcome", proto: PROTO, code: room.code, you: seat.id, host: false, chat: room.chat, secret: seat.secret, ...HOLD_INFO, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on" });
+  send(ws, { type: "welcome", proto: PROTO, serverSha: SERVER_SHA, code: room.code, you: seat.id, host: false, chat: room.chat, secret: seat.secret, ...HOLD_INFO, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on" });
   say(room, `${seat.name} sat down.`);
   publish(room);
 }
@@ -882,10 +993,12 @@ function watch(ws, msg) {
   const room = rooms.get(String(msg.code || "").toUpperCase());
   if (!room) return send(ws, { type: "error", message: "No table with that code" });
   if (!room.game) return send(ws, { type: "error", message: "Not started yet." });
+  // A watcher never attaches a profile (#764); its credential is refused, not looked at.
+  if (msg.credential !== undefined && msg.credential !== null) return send(ws, { type: "error", ...watchRefusal() });
   if (room.watchers.size >= SPECTATOR_MAX) return send(ws, { type: "error", message: "Table is full to watch." });
   room.watchers.add(ws);
   ws.watch = room;
-  send(ws, { type: "welcome", proto: PROTO, code: room.code, spectator: true, chat: room.chat, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on" });
+  send(ws, { type: "welcome", proto: PROTO, serverSha: SERVER_SHA, code: room.code, spectator: true, chat: room.chat, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on" });
   watchersChanged(room, "Someone is watching.");
   const soonest = room.seats.reduce((d, s) => (s.turnDeadline && (!d || s.turnDeadline < d.turnDeadline) ? s : d), null);
   send(ws, { type: "state", you: null, game: watchView(room.game), legal: legalFor(room.game, null), turnExtension: extensions(room).state(), turnDeadline: deadlineOf(room), turnPlayer: soonest?.pid ?? null, serverNow: Date.now() });
@@ -903,6 +1016,7 @@ function startGame(ws, room) {
     if (s.bot) game.players[i].kind = "bot";
   });
   room.game = game;
+  freezeRoster(room, room.seats);
   room.botDeclined = {};
   room.recoveryPids = [];
   for (const seat of room.seats) if (seat.ws) seat.ws.actionConnection = randomBytes(16).toString("hex");
@@ -992,6 +1106,8 @@ function rematch(ws, room) {
     if (s.bot) game.players[i].kind = "bot";
   });
   room.game = game;
+  // New pids in the new order: the rematch gets its own game UUID and roster (#764).
+  freezeRoster(room, order);
   for (const seat of room.seats) if (seat.ws) seat.ws.actionConnection = randomBytes(16).toString("hex");
   hear("ui_confirm");
   say(room, winner ? `${winner.name} won last time and places first. The rest roll for their order.` : "Roll for first place.");
@@ -1060,7 +1176,10 @@ function botsOn(room, offer) {
   const phase = room.game.phase;
   runBots(room);
   for (const line of newLog(seen, room.game.log)) say(room, line);
-  if (room.game.phase === "over" && phase !== "over") hear("win");
+  if (room.game.phase === "over" && phase !== "over") {
+    hear("win");
+    maybeReleaseOpenSlot(room);
+  }
   pushState(room);
   return true;
 }
@@ -1234,9 +1353,7 @@ function play(ws, room, msg, automated = false) {
     const paid = gains(before, room.game);
     const short = bankShort(room.game);
     broadcast(room, { type: "rolled", dice: [a, b], sum: a + b, gains: paid, short });
-    const parts = paid.map((g) => `${g.name} +${g.amount} ${g.resource}`);
-    if (short.length) parts.push(`bank short of ${short.join(" and ")}`);
-    if (!automated) say(room, [String(a + b), ...parts].join(" · "));
+    // No summary line here (#687): the log loop below says the roll's own lines, "<name> rolled <sum>!" then the goods line.
   }
   // An offer lives only while its asker still has the turn in `main` and still holds the offered goods. Checked before
   // the bots play, so a bot never sees the stale offer of a seat that just passed.
@@ -1255,7 +1372,10 @@ function play(ws, room, msg, automated = false) {
   runBots(room);
   for (const line of newLog(before.log, room.game.log)) say(room, line);
   if (withdrawn) say(room, withdrawn);
-  if (room.game.phase === "over" && before.phase !== "over") hear("win");
+  if (room.game.phase === "over" && before.phase !== "over") {
+    hear("win");
+    maybeReleaseOpenSlot(room);
+  }
   pushState(room);
 }
 
@@ -1287,25 +1407,62 @@ wss.on("connection", (ws, req) => {
   });
 });
 
-function handle(ws, raw) {
-  // A watcher sends nothing after its hello. Above the parse and the seatless branch, so it can never sit down or rejoin.
-  if (ws.watch) {
-    if (!allow(ws.bucket, Date.now())) return;
-    return send(ws, { type: "error", message: "Watching only." });
+// A watcher's frame, read only far enough to see whether it is a tableProfileCard request (#764).
+function cardRequest(raw) {
+  try {
+    const msg = JSON.parse(String(raw));
+    return msg && typeof msg === "object" && msg.type === "tableProfileCard" ? msg : null;
+  } catch {
+    return null;
   }
+}
+
+// Card reads have their own per-socket bucket: a burst of 10, two a second.
+function cardAllowed(ws) {
+  const now = Date.now();
+  return allow((ws.cardBucket ??= { tokens: 10, at: now }), now, 10, 2);
+}
+
+function handle(ws, raw) {
+  // Watchers retain their pre-parse budget, including malformed frames and health probes.
+  if (ws.watch && !allow(ws.bucket, Date.now())) return;
   let msg;
   try {
     msg = JSON.parse(String(raw));
   } catch {
-    return send(ws, { type: "error", message: "not ready" });
+    return send(ws, { type: "error", message: ws.watch ? "Watching only." : "not ready" });
   }
-  if (!msg || typeof msg !== "object") return send(ws, { type: "error", message: "not ready" });
+  if (!msg || typeof msg !== "object") return send(ws, { type: "error", message: ws.watch ? "Watching only." : "not ready" });
+  // Health has no room/state access, action bucket, publish, save, or game timer side effects.
+  // Unauthenticated probes consume the same budget as hello/peek, and never earn a reply.
+  if (msg.type === "healthPing") {
+    if (!ws.room && !ws.watch) { allow(ws.bucket, Date.now()); return; }
+    if (typeof msg.nonce !== "string" || !/^[a-f0-9]{32}$/.test(msg.nonce)) return;
+    const now = performance.now();
+    // Two arrivals may bunch when network delay changes; sustained replies stay at one per 30 seconds.
+    ws.healthBucket ??= { tokens: 2, at: now };
+    if (!allow(ws.healthBucket, now, 2, 1 / 30)) return;
+    return send(ws, { type: "healthPong", nonce: msg.nonce });
+  }
+  if (ws.watch) {
+    // Preserve main's public-card read after the separately bounded health probe; the pre-parse budget was charged above.
+    const card = cardRequest(raw);
+    if (card) return tableCard(profiles, send, ws, card, rooms.get(ws.watch.code) === ws.watch && ws.watch.watchers.has(ws) ? visibleProfiles(ws.watch) : null, cardAllowed(ws));
+    return send(ws, { type: "error", message: "Watching only." });
+  }
   // Profile frames have their own connection and limits (#762); a profile connection never opens, joins or watches a table.
   if (PROFILE_TYPES.has(msg.type)) return onProfile(ws, msg);
   if (ws.profileSocket) return send(ws, { type: "error", message: "not ready" });
+  // A seat's card read is scoped to its own live seat at its current table; a seatless socket sees no cards (#764).
+  if (msg.type === "tableProfileCard") {
+    const room = ws.room;
+    const here = room && rooms.get(room.code) === room && ws.seat?.ws === ws && room.seats.includes(ws.seat);
+    return tableCard(profiles, send, ws, msg, here ? visibleProfiles(room) : null, cardAllowed(ws));
+  }
   if (!ws.room) {
     // A socket with no seat has no seat.bucket; this one throttles the pre-seat frames (docs/design/color-peek.md).
     const ok = allow(ws.bucket, Date.now());
+    if (msg.type === "list") return ok ? send(ws, { type: "openTables", tables: getOpenTables() }) : undefined;
     if (msg.type === "peek") return ok ? peek(ws, msg) : undefined;
     if (!ok && (msg.type === "create" || msg.type === "join" || msg.type === "hello")) return send(ws, { type: "error", message: "Slow down." });
     // G2: a hello on a protocol newer than this host, or on a version that is not a whole number, is refused before it opens,
@@ -1323,6 +1480,7 @@ function handle(ws, raw) {
     return send(ws, { type: "error", message: "not ready" });
   }
   const room = ws.room;
+  if (msg.type === "leave") return leaveOnPurpose(ws, room);
   if (msg.wayfarerMode !== undefined || msg.type === "setWayfarerMode") return send(ws, { type: "error", message: "Wayfarer mode is fixed when the table is created." });
   if (msg.type === "chat" || msg.type === "react" || msg.type === "sound") return talk(ws, room, msg);
   if (!allow(ws.seat.act, Date.now(), ACT_CAP, ACT_RATE)) return send(ws, { type: "error", message: "Slow down." });
@@ -1381,9 +1539,11 @@ function rejoin(ws, msg) {
   seat.graceTimer = seat.holdTimer = null;
   seat.ws = ws;
   seat.gone = null;
+  // Restore discovery after a reload, without displacing a newer open table.
+  if (room.visibility === "open" && room.game?.phase !== "over") registerOpenTable(room);
   ws.room = room;
   ws.seat = seat;
-  send(ws, { type: "welcome", proto: PROTO, code: room.code, you: seat.id, host: seat.id === room.host, chat: room.chat, secret: seat.secret, ...HOLD_INFO, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on" });
+  send(ws, { type: "welcome", proto: PROTO, serverSha: SERVER_SHA, code: room.code, you: seat.id, host: seat.id === room.host, chat: room.chat, secret: seat.secret, ...HOLD_INFO, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on" });
   say(room, `${seat.name} is back.`);
   publish(room);
   if (!room.game) return;
@@ -1414,6 +1574,7 @@ function resendOffer(ws, room, seat, offer) {
 }
 
 function dropRoom(room) {
+  unregisterOpenTable(room);
   room.extensions?.close();
   closeOffer(room);
   for (const seat of room.seats) {
@@ -1440,6 +1601,8 @@ function hold(room, seat) {
   if (room.game) extensions(room).sync();
   if (room.game && seat.pid) seat.graceTimer = setTimeout(() => takeOver(room, seat), GRACE_MS);
   seat.holdTimer = setTimeout(() => letGo(room, seat), room.game ? HOLD_MS : LOBBY_HOLD_MS);
+  // Free the open-list slot when nobody is connected so a finished or abandoned table cannot block a new open host.
+  maybeReleaseOpenSlot(room);
 }
 
 // The host role goes to the first seat with a socket; with none, to the first held seat.
@@ -1480,6 +1643,18 @@ function letGo(room, seat) {
   if (!room.game) say(room, `${seat.name} left.`);
   if (room.host === seat.id) handOffHost(room);
   publish(room);
+}
+
+// The Leave button in the lobby: the seat goes now, so it never blocks Start. A dropped socket is held instead
+// (leave), so a locked phone keeps its seat. In a game, Leave is a drop like any other: the seat is held for a rejoin.
+function leaveOnPurpose(ws, room) {
+  if (room.game) return;
+  const seat = ws.seat;
+  if (seat.ws !== ws) return;
+  ws.room = ws.seat = null;
+  seat.ws = null;
+  letGo(room, seat);
+  maybeReleaseOpenSlot(room);
 }
 
 function leave(ws) {

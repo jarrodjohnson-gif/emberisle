@@ -1,10 +1,10 @@
 // The profile connection (#762, docs/design/profiles.md "Protocol and seat recovery"): a seatless socket that creates, signs in,
 // resumes and signs out a profile. It never opens, joins, watches or recovers a table, and table sockets never carry these frames.
 import { allow } from "./chat.mjs";
-import { ProfileError } from "./profiles.mjs";
+import { ProfileError, publicCard, seatView } from "./profiles.mjs";
 
 export const CAPS = ["profilesV1"];
-export const PROFILE_TYPES = new Set(["profileHello", "profileCreate", "profileLogin", "profileResume", "profileLogout"]);
+export const PROFILE_TYPES = new Set(["profileHello", "profileCreate", "profileLogin", "profileResume", "profileLogout", "profileEdit", "profileChangePin"]);
 
 // What a refused request says. Sign-in failures share one message: a wrong PIN, an unknown login and a spent budget look alike.
 const MESSAGES = {
@@ -18,6 +18,9 @@ const MESSAGES = {
   origin: "Profiles need the HTTPS link. You can still play as a guest.",
   unavailable: "Profiles unavailable on this host.",
   tableSocket: "Profiles use their own connection.",
+  pinLocked: "PIN changes are locked. Contact the host for a verified local reset.",
+  mustChangePin: "Change your PIN before continuing.",
+  notFound: "Profile not found.",
 };
 
 const AUTH_PER_MIN = 20;
@@ -89,6 +92,8 @@ function session(id, out, withCredential) {
     },
     expiresAt: out.expiresAt,
   };
+  // pinMustChange is omitted when false to keep the stable profile projection for existing clients.
+  if (p.pinMustChange) msg.profile.pinMustChange = true;
   if (withCredential) msg.credential = out.token;
   return msg;
 }
@@ -127,6 +132,21 @@ export function profileHandler(store, send) {
       await store.logout(msg.credential);
       return send(ws, { type: "profileLoggedOut", id });
     }
+    if (msg.type === "profileEdit") {
+      const out = await store.profileEdit(msg.credential, {
+        displayName: msg.displayName,
+        login: msg.login,
+        pin: msg.pin,
+        color: msg.color,
+        backupColor: msg.backupColor,
+        catchphrase: msg.catchphrase,
+      });
+      return send(ws, session(id, out, false));
+    }
+    if (msg.type === "profileChangePin") {
+      const out = await store.profileChangePin(msg.credential, msg.currentPin, msg.newPin, msg.newPinConfirm);
+      return send(ws, session(id, out, true));
+    }
   }
 
   // The host routes every PROFILE_TYPES frame here, after parsing and before any table branch.
@@ -145,4 +165,59 @@ export function profileHandler(store, send) {
       refuse(ws, id, e instanceof ProfileError ? e.code : "unavailable");
     });
   };
+}
+
+// --- Seats and table cards (#764, docs/design/profiles.md "Protocol and seat recovery") -------------------------------------
+// The table side of a profile: an optional `credential` on the initial host/join, the public projection of a bound seat, and
+// `tableProfileCard` for a participant visible at the asking socket's own table. Rejoin never comes through here.
+const SEAT_MESSAGES = {
+  https: MESSAGES.https,
+  origin: MESSAGES.origin,
+  unavailable: MESSAGES.unavailable,
+  slowDown: MESSAGES.slowDown,
+  signedOut: "Signed out on this device. Sign in again, or join as a guest.",
+  mustChangePin: MESSAGES.mustChangePin,
+  profileSeated: "That profile already has a seat at this table. Join as a guest, or leave the other seat.",
+  watcher: "Watchers join as guests.",
+  notAtTable: "Profile cards are for players at your table.",
+  notFound: "No profile card for that player.",
+};
+
+// The profile a host/join may bind: null for a guest (no credential), { profileId } once the host has verified it, or a
+// refusal { code, message }, which leaves the player where they were. `taken(id)` says whether that profile already holds
+// a seat at the table, held or live. The transport is checked before the credential is looked at.
+export function seatCredential(store, ws, msg, taken) {
+  if (msg.credential === undefined || msg.credential === null) return null;
+  const refuse = (code) => ({ code, message: SEAT_MESSAGES[code] ?? SEAT_MESSAGES.unavailable });
+  if (!ws.profileGate?.credentials) return refuse(ws.profileGate?.reason ?? "https");
+  if (!store.ready) return refuse("unavailable");
+  const profileId = store.validate(msg.credential);
+  if (!profileId) return refuse("signedOut");
+  if (store.profile(profileId)?.pinMustChange) return refuse("mustChangePin");
+  if (taken(profileId)) return refuse("profileSeated");
+  return { profileId };
+}
+
+export function watchRefusal() {
+  return { code: "watcher", message: SEAT_MESSAGES.watcher };
+}
+
+// The public `profile` field of one bound seat, built from the allowlist; the bare id when the store cannot read it.
+export function seatProfile(store, profileId) {
+  const p = store.profile(profileId);
+  return p ? seatView(p) : { profileId };
+}
+
+// tableProfileCard {id, profileId}: `visible` is the profile ids of the asking socket's current table (its seats and the
+// frozen roster of its game), or null when the socket is at no table; `allowed` is false when its request limit is spent.
+// Any room or code in the request is ignored.
+export function tableCard(store, send, ws, msg, visible, allowed) {
+  const id = reqId(msg.id);
+  const refuse = (code) => send(ws, { type: "profileError", id, code, message: SEAT_MESSAGES[code] });
+  if (!allowed) return refuse("slowDown");
+  if (!visible) return refuse("notAtTable");
+  if (typeof msg.profileId !== "string" || !visible.has(msg.profileId)) return refuse("notFound");
+  const p = store.profile(msg.profileId);
+  if (!p) return refuse("notFound");
+  send(ws, { type: "tableProfileCard", id, card: publicCard(p) });
 }

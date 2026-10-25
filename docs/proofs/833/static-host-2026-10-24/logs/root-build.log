@@ -1,0 +1,36 @@
+
+> build
+> vite build
+
+vite v8.3.1 building client environment for production...
+transforming...
+✓ 1996 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                2.61 kB │ gzip:   1.30 kB
+dist/assets/ben-10-BZkFZeMq.webp               6.80 kB
+dist/assets/index-C0t3Taxv.css                75.18 kB │ gzip:  15.48 kB
+dist/assets/WayfarerOptions-4jEVS0PO.js        0.80 kB │ gzip:   0.49 kB
+dist/assets/HandRates-Bd5lVIkD.js              1.01 kB │ gzip:   0.64 kB
+dist/assets/VictoryTargetSelect-DtpGdC60.js    1.12 kB │ gzip:   0.68 kB
+dist/assets/haptics-CVM78MMT.js                1.85 kB │ gzip:   1.09 kB
+dist/assets/DockInspection-QG35u_XT.js         2.03 kB │ gzip:   1.03 kB
+dist/assets/OpenTables-CdRsKPVV.js             2.66 kB │ gzip:   1.25 kB
+dist/assets/TurnExtensionVote-hW8cZx_V.js      2.67 kB │ gzip:   1.20 kB
+dist/assets/SetupReference-aqhFffSA.js         4.92 kB │ gzip:   1.86 kB
+dist/assets/Reactions-aPmdnCjl.js              5.47 kB │ gzip:   2.31 kB
+dist/assets/moments-ObIcKr59.js                9.65 kB │ gzip:   4.13 kB
+dist/assets/jelly-board-DZqbpoy9.js           20.58 kB │ gzip:   7.96 kB
+dist/assets/sheets-C24aVKsu.js                22.55 kB │ gzip:   7.13 kB
+dist/assets/online-QlsilM8P.js                23.01 kB │ gzip:   7.82 kB
+dist/assets/harbor-jelly-jIqv6KGb.js          25.97 kB │ gzip:  10.32 kB
+dist/assets/hex-jelly--lIAsex9.js            136.96 kB │ gzip:  47.25 kB
+dist/assets/index-DkXczHCS.js                398.85 kB │ gzip: 126.40 kB
+dist/assets/IslandCanvas-BXflA7of.js         759.82 kB │ gzip: 201.68 kB
+
+[plugin builtin:vite-reporter] 
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 676ms

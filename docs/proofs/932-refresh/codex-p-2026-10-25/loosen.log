@@ -1,0 +1,21 @@
+
+> loosen-prove
+> node scripts/loosen-prove.mjs --base 3db641d6744617ebc55a3dbb6add1ce34855a72b
+
+ok   self-test: an unchanged proof passes
+ok   self-test: re-indenting passes
+ok   self-test: an added check passes
+ok   self-test: editing only the block comment passes
+ok   self-test: a removed assert fails
+ok   self-test: a removed assert lowers the count
+ok   self-test: a wider tolerance fails
+ok   self-test: a //-commented assert fails
+ok   self-test: a /* */-commented assert fails
+ok   self-test: a check wrapped in a multi-line /* */ fails
+ok   self-test: a removed throw fails
+ok   self-test: a removed expect fails
+ok   self-test: a fail() that no longer sets exitCode 1 fails
+ok   self-test: an added process.exit(0) fails
+ok   self-test: an added process.exit() fails
+ok   self-test: a new .skip fails
+loosen-prove: 1 changed proof(s) against 3db641d67446, none loosened

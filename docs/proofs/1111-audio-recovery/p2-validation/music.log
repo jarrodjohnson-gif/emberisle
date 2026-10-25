@@ -1,0 +1,20 @@
+
+> music-prove
+> node scripts/music-prove.mjs
+
+ok nothing is requested or played before the first interaction, on the play screen
+ok the track plays at 0.25, loop=true, and its clock advances
+ok it loops: seeking to the last 0.6 s wraps to the start, still playing
+ok game_start ducks it to 0.075
+ok the volume is back to 0.25 when game_start ends
+ok a cut-off sting restores it too
+ok mute stops it, unmuting resumes it
+ok a watcher follows the same mute rule
+ok the Music toggle stops and resumes it, and is stored
+ok the Table menu's Music row switches it off and on
+ok it stops at the win screen
+ok it comes back when the game leaves the win screen
+ok it stops when you leave to the title
+ok a title and game round trip reuses the one track element
+ok zero console errors
+music-prove: pass
