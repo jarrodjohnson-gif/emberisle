@@ -1,0 +1,19 @@
+$ npm run connection-health-prove
+source sha256: 1e8403474a253ccea94148712be00671f4336e13c07aa571dde9fb4f4b590302
+
+> connection-health-prove
+> node scripts/connection-health-prove.mjs
+
+node:internal/modules/run_main:123
+    triggerUncaughtException(
+    ^
+
+clock.pauseAt: Error: Cannot fast-forward to the past
+    at ClockController._innerFastForwardTo (eval at evaluate (:311:30), <anonymous>:201:13)
+    at ClockController.pauseAt (eval at evaluate (:311:30), <anonymous>:132:16)
+    at async <anonymous>:337:30
+    at /private<fresh-checkout>/head/scripts/connection-health-prove.mjs:111:22 {
+  log: []
+}
+
+Node.js v22.23.4

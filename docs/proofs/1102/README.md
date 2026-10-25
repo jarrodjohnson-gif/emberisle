@@ -9,7 +9,7 @@ The final new proof passes at 390×844, 844×390, and 1280×720.
 It checks real Host, Join, Watch, taken-colour peek, bots, pass-device, rules, names, sound, help and focus.
 Screenshots use the real renderer.
 
-## Final commands and results
+## Initial ready-PR commands and results
 
 | Command | Exit | Evidence |
 |---|---:|---|
@@ -39,11 +39,33 @@ Every flag from loosen-prove appears below. The detector remains unchanged.
 |---|---|---|---|
 | scripts/title-prove.mjs:82 | `assert.deepEqual(card.primary, ["Play"], `${tag}: the one primary`);` | `assert.deepEqual(card.primary, ["Play against bots"], `${tag}: the one primary`);` | Approved direct play label. |
 | scripts/title-prove.mjs:83 | `assert.deepEqual([...card.filled].sort(), ["Host a table", "Join", "Play"], `${tag}: filled buttons`);` | `assert.deepEqual([...card.filled].sort(), ["Join", "Play against bots", "Watch"], `${tag}: filled buttons`);` | Exact filled-button set for the approved design. |
-| scripts/title-prove.mjs:92 | `assert.equal(await watch.count(), 0, `${tag}: Watch before a code`);` | `assert.equal(await watch.isVisible(), true, `${tag}: Watch visible before a code`);` | Watch remains visible before a code. |
-| scripts/title-prove.mjs:97 | `assert.equal(await watch.count(), 0, `${tag}: Watch at 3 characters`);` | `assert.equal(await watch.isVisible(), true, `${tag}: Watch visible at 3 characters`);` | Watch remains visible with an incomplete code. |
+| scripts/title-prove.mjs:92 | `assert.equal(await watch.count(), 0, `${tag}: Watch before a code`);` | Visible **and disabled** at zero characters; enabled at four. | Watch remains visible and disabled before a code; enabled only at four characters. |
+| scripts/title-prove.mjs:97 | `assert.equal(await watch.count(), 0, `${tag}: Watch at 3 characters`);` | Visible **and disabled** at three characters; enabled at four. | Watch remains visible and disabled with an incomplete code. |
 | scripts/title-chunks-prove.mjs:124 | `check((await settings.locator("summary").textContent()).includes("Online: on"), "settings summary stays eager");` | `check(await page.getByRole("button", { name: "Wayfarer rules", exact: true }).isVisible(), "rules sheet entry stays eager");` | Eager rules entry replaces the disclosure. |
 | scripts/title-chunks-prove.mjs:134 | `check((await settings.locator("summary").textContent()).includes("Online: off") &&` | `check(await page.getByRole("combobox", { name: "Host a table online", exact: true }).inputValue() === "off" &&` | Read the sheet selection and retain the same store check. |
 | scripts/wayfarer-setup-prove.mjs:37 | `assert.equal(await page.getByLabel('Practice wayfarer',{exact:true}).inputValue(),'on');assert.equal(await page.getByLabel('Online wayfarer',{exact:true}).inputValue(),'on');assert.equal(await page.getByLabel('Hotseat wayfarer',{exact:true}).inputValue(),'on');` | `assert.equal(await page.getByLabel('Play against bots',{exact:true}).inputValue(),'on');assert.equal(await page.getByLabel('Host a table online',{exact:true}).inputValue(),'on');assert.equal(await page.getByLabel('Pass this device',{exact:true}).inputValue(),'on');` | All three renamed choices still default to On. |
 | scripts/wayfarer-setup-prove.mjs:62 | `await sticky.getByRole('button',{name:'Play',exact:true}).click();assert.equal(await mode(),'off');` | `await sticky.getByRole('button',{name:'Play against bots',exact:true}).click(); assert.equal(await mode(),'off');` | Only the button selector changes; the Off assertion is unchanged and split onto its own line. |
 | scripts/wayfarer-setup-prove.mjs:68 | `for(const label of ['Practice','Hotseat','Online'])assert.equal(await sticky.getByLabel(`${label} wayfarer`,{exact:true}).inputValue(),'on',`${label} resets to the default on the menu`);` | `for(const label of ['Play against bots','Pass this device','Host a table online'])assert.equal(await sticky.getByLabel(label,{exact:true}).inputValue(),'on',`${label} resets to the default on the menu`);` | Only the three labels change; every reset value must still equal On. |
 | scripts/wayfarer-setup-prove.mjs:69 | `await sticky.getByRole('button',{name:'Play',exact:true}).click();assert.equal(await mode(),'on');` | `await sticky.getByRole('button',{name:'Play against bots',exact:true}).click(); assert.equal(await mode(),'on');` | Only the button selector changes; the On assertion is unchanged and split onto its own line. |
+
+## Desk review follow-up
+
+See [review-assertions.md](review-assertions.md) for every additional old/new probe and assertion row, including restored computed-color measurement and disabled/enabled Watch states. The 55% phone height cap is unchanged; portrait padding gives a 464px card. Final refreshed-main results are recorded separately below after verification.
+
+## Final review verification, 2026-10-25
+
+Fresh head/base clones with offline `npm ci`, Node 22.23.4; base `b90290abf4a3cd8c63bddf1e7f939e75b71c2418`. The serial final sequence tested `5e92df66`; the later connection-health-only selector/synchronization fix has its own full proof. Runtime files are identical. Raw output and source hashes: [logs/ci-review](logs/ci-review/).
+
+| Command / proof | Exit |
+|---|---:|
+| typecheck, build, registered-prove (146 registrations), size-delta-prove | 0 each |
+| title-layout-prove, title-prove, title-chunks-prove | 0 each |
+| wayfarer-setup-prove, chat-prove, reflow-prove, contrast-prove | 0 each |
+| polish-tokens-prove, chunk-fail-prove, watch-ui-prove, pages-prove | 0 each |
+| connection-health-prove (after selector/synchronization fix) | 0 |
+| size-prove against freshly built main | 0 |
+| loosen-prove against main | 1: exactly 14 approved-equivalent lines in six proofs |
+
+Index: 122671 B gzip versus main 124283 B (−1612 B); ceiling 125200 B, original allowance 400 B. All other chunks pass their unchanged ceilings/allowances. Only Title/focus-trap have new chunk entries. The original 55% portrait height assertion remains; actual card height is 464px. Screenshots at 390x844, 844x390 and 1280x720 were captured by the fresh-clone proof and inspected.
+
+Preserved unsuccessful attempts: a sandboxed Node 26 Watch launch exited 13 before host startup; Node 22 focused and final Watch runs pass. Connection-health first failed at unchanged `clock.pauseAt` with “Cannot fast-forward to the past”; the next run reached its unchanged exact failed-URL assertion before the lazy Title's parent import settled. The final run waits with the existing 5-second helper for both reports, then passes the unchanged exact set and all recovery checks. No clock/transport timings or assertions were changed. An initial `size-prove --fixtures` invocation read stale build output because that option does not select fixtures; the correct size-delta proof and both fresh builds/size comparison pass. Personal/temp checkout prefixes are redacted in logs; results remain intact.

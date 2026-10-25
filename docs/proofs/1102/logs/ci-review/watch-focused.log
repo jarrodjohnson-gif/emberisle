@@ -1,0 +1,15 @@
+
+> watch-ui-prove
+> node --import ./server/register.mjs scripts/watch-ui-prove.mjs
+
+table X4EZ: Watch disabled at 3 characters; at 4 on the lobby -> "Not started yet.", still on the Title
+?watch=x4ez: field "X4EZ", URL "?host=ws%3A%2F%2F127.0.0.1%3A50185", Watch primary
+watcher: the chat dock is in the HUD's first frame
+watching: board at seq 0, badge "Watching", eye count "1" on every seat, title "Watching — Emberisle", 0 hand tiles, 0 glow, no controls; turn line "Wait for Ember to roll for first place"
+dock: read-only line, 0 inputs, 2 buttons (Mute players, Minimize chat); "hello watcher @Ember" from Ember shown plain
+refusals: dispatch, chat, react, ask, ready, start -> 0 messages; public score menu read-only; net.act(roll) -> false/0 frames; raw socket roll -> "Watching only." at seq 0 with no game mutation
+win: "Tide wins" at seq 275; the watcher's 3 rows equal Ember's (hidden [0,1,1], hands [6,9,2]); no seed or rng, no Play again
+leave: Title with no confirm; eye count gone on every seat; the saved seat for another table kept
+drop: Title with "Lost the table", no redial, the saved seat for another table kept
+proto: a welcome with proto 2 over this page's 1 shows "This page is out of date. Reload to update." while it keeps watching
+watch ui prove ok
