@@ -48,6 +48,8 @@ try {
   const mode = page.getByTestId("open-mode-toggle");
   await mode.waitFor();
   assert.equal(await mode.getAttribute("aria-pressed"), "false");
+  // Arm before the first sound-producing tap; later taps can reuse the cached click audio.
+  const audio = page.waitForRequest((r) => r.url().endsWith(".wav"), { timeout: 5000 });
   await page.getByRole("button", { name: "Wayfarer rules", exact: true }).click();
   const wayfarer = page.getByRole("combobox", { name: "Host a table online", exact: true });
   await wayfarer.waitFor({ state: "attached" });
@@ -67,7 +69,6 @@ try {
   }
 
   // The sound module builds its URL from BASE_URL; ask it to play, and see which URL the page asks for.
-  const audio = page.waitForRequest((r) => r.url().endsWith(".wav"), { timeout: 5000 });
   await page.getByRole("button", { name: "Play against bots", exact: true }).click();
   const url = (await audio).url();
   assert.ok(url.startsWith(`${origin}${BASE}audio/`), `audio URL ${url}`);
