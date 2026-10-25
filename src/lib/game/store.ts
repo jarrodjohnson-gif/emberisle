@@ -89,12 +89,8 @@ function stopEndMusic() {
   stop("end_music");
   stop("isaac_win");
 }
-const isDiggler = (name: string | undefined) => /digg?l?er|pickle|isa+c/i.test(name ?? "");
+const isDiggler = (name = "") => /digg?l?er|pickle|isa+c/i.test(name);
 const isaacWon = (s: GameState) => isDiggler(s.players.find((p) => p.id === s.winner)?.name);
-function diggerBell(before: Seat[], after: Seat[], me: string) {
-  const was = new Map(before.map((s) => [s.id, isDiggler(s.name)]));
-  if (after.some((s) => isDiggler(s.name) && (was.has(s.id) ? !was.get(s.id) : before.length > 0 || s.id === me))) play("lucke_diggler");
-}
 
 // The board the start sting last played for, kept for the tab session so a reload mid-setup does not replay it.
 const START_KEY = "emberisle-start-sig";
@@ -218,7 +214,7 @@ import { PLAYER_COLORS, RESOURCES, type Action, type BuildMode, type GameState, 
 import { connectTable, hostUrl, type Bag, type ChatLine, type Legal, type Me, type Reaction, type Seat, type TableClient } from "@/lib/net/table";
 import { PROTO } from "@/lib/net/proto";
 import { readMutedSeats } from "@/lib/muted-seats";
-import { haptics, play, playLater, SOUNDBOARD, stop, yourTurn, type SoundName } from "@/lib/sound";
+import { haptics, play, playLater, stop, yourTurn, type SoundName } from "@/lib/sound";
 import { calmMotion, LAND_MS } from "@/lib/scene/landing";
 import type { WaterPath, WaterStatus } from "@/lib/scene/crystal-water";
 import type { PlayView } from "@/lib/scene/mobile-fit";
@@ -1032,26 +1028,16 @@ function endOffer(set: Set, get: Get, taker: string | null) {
   if (!offer) return;
   clearOfferTimers();
   const takerName = state?.players.find((p) => p.id === taker)?.name ?? "Someone";
-  const allNo = !taker && !!state && state.players.every((p) => p.id === offer.from || declined.includes(p.id));
   set({ offer: null, declined: [] });
   // Both parties hear a deal in full and the rest of the table softer; only the asker hears a No (#609).
   const me = get().localId;
   if (taker) play("trade_yes", me === taker || me === offer.from ? 1 : 0.5);
-  else if (allNo) play("corn_no");
+  else if (state?.players.every((p) => p.id === offer.from || declined.includes(p.id))) play("corn_no");
   else if (me === offer.from) play("trade_no");
   // Every receiver gets the resolved offer as one brief log line, with no response controls.
   if (outcomeTimer) clearTimeout(outcomeTimer);
   set({ tradeTaker: taker, tradeOutcome: taker ? `${takerName} takes it.` : "Nobody took it." });
   outcomeTimer = setTimeout(() => set({ tradeOutcome: null, tradeTaker: null }), BANNER_MS);
-}
-
-function offerChime(from: string, fromName: string, me: string, give: Bag, want: Bag) {
-  const timber = give.timber ?? 0;
-  if (timber >= 3) play("three_wood");
-  else if (timber && fromName === "Daking") play("daking_wood");
-  else if (want.timber && give.wool) play("sheep_for_wood");
-  else if (want.timber && give.ore) play("stone_for_wood");
-  else if (from !== me) play("trade_offer");
 }
 
 // Practice's table offer for `from`, closing any earlier one (host.mjs openOffer). Every other bot answers it after a delay.
@@ -1061,7 +1047,8 @@ function openOffer(set: Set, get: Get, from: string, give: Bag, want: Bag) {
   const tradeId = `t${state.seq}-${++offerSeq}`;
   const fromName = state.players.find((p) => p.id === from)?.name ?? "Someone";
   set({ offer: { tradeId, from, fromName, give, want, until: Date.now() + OFFER_MS }, declined: [], tradeOutcome: null, tradeTaker: null });
-  offerChime(from, fromName, get().localId, give, want);
+  const me = get().localId;
+  void import("../trade-sound").then(({ offerChime }) => offerChime(play, from, fromName, me, give, want));
   offerTimers.push(setTimeout(() => endOffer(set, get, null), OFFER_MS));
   for (const p of state.players) {
     if (p.kind !== "bot" || p.id === from) continue;
@@ -1183,10 +1170,10 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       set({ chat: [...chat, { ...line, at: Date.now() }].slice(-50), unread: counts ? unread + 1 : unread });
       // Others' lines tick; the sender's echo does not, and nothing ticks under the hands of someone typing in the chat (#609).
       // A soundboard line plays its clip for everyone, the sender too; it is not also a tick.
-      const board = SOUNDBOARD.find((b) => b.id === line.sound);
       // A muted seat's soundboard taps are as silent here as its chat line is hidden.
-      if (board) {
-        if (!readMutedSeats(get().code).includes(line.seat)) play(board.clip);
+      if (line.sound) {
+        const clip = line.sound.replace(/^(bong|plop|pluck)$/, "board_$1") as SoundName;
+        if (!readMutedSeats(get().code).includes(line.seat)) play(clip);
       } else if (line.seat !== seatId && document.activeElement?.id !== "chat-input") play("chat_recv");
     },
     react: (r) => {
@@ -1195,7 +1182,10 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
     },
     // A peek answers id/color/ready only (G10); the lobby is not shown until the full broadcast after sitting replaces it.
     seats: ({ code, seats, watching, victoryTarget, wayfarerMode }) => {
-      diggerBell(get().seats, seats as Seat[], get().localId);
+      const before = get().seats;
+      const after = seats as Seat[];
+      const me = get().localId;
+      void import("../trade-sound").then(({ diggerBell }) => diggerBell(play, isDiggler, before, after, me));
       set({ code, seats: seats as Seat[], watching: watching ?? 0, tableVictoryTarget: victoryTarget === 7 ? 7 : 10, tableWayfarerMode: wayfarerMode ?? "on" });
     },
     // Dice and gain floats present the roll; its words live only in the persistent log.
@@ -1230,7 +1220,8 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
     tradeOffer: ({ tradeId, from, give, want, seconds }) => {
       const fromName = get().state?.players.find((p) => p.id === from)?.name ?? "Someone";
       set({ offer: { tradeId, from, fromName, give, want, until: Date.now() + seconds * 1000 }, declined: [], tradeOutcome: null, tradeTaker: null });
-      offerChime(from, fromName, get().localId, give, want);
+      const me = get().localId;
+      void import("../trade-sound").then(({ offerChime }) => offerChime(play, from, fromName, me, give, want));
     },
     tradeDeclined: ({ tradeId, by }) => {
       const { offer, declined } = get();

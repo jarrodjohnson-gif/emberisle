@@ -148,12 +148,16 @@ const span = await page.evaluate((pts) => {
 }, rapid);
 assert.ok(span < 350, `the four taps took ${Math.round(span)} ms, inside the 400 ms gap`);
 await sleep(300);
-assert.deepEqual(await plays(), ["tap_pasture.mp3"], "four taps inside 400 ms are one sound, the first");
+assert.deepEqual(await plays(), ["tap_pasture.mp3"], "four Pasture taps inside 400 ms are one sound, the first");
 await sleep(500);
 await settle();
 await tapHex("wool");
 await sleep(300);
 assert.equal(await sheep(), 2, "a tap after the gap baas again");
+await clear();
+await page.evaluate(async () => { const { play } = await import("/src/lib/sound.ts"); for (let i = 0; i < 4; i++) play("sb_plump_sheep"); });
+await sleep(300);
+assert.deepEqual(await plays(), ["sb_plump_sheep.mp3"], "four taps inside 400 ms are one sound, the first");
 ok(`rapid taps: four in ${Math.round(span)} ms are one sound; the next after the gap baas again`);
 
 // A drag that starts on a Pasture hex, a two-finger pan and a pinch play nothing.

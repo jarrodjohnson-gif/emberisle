@@ -609,13 +609,16 @@ try {
     assert.deepEqual(got.map((x) => [x.file, x.volume]), [[file, 1]], `${id} plays once at 1 (${JSON.stringify(got)})`);
   }
   ok("soundboard: all fifteen chips play once at 1, including all five sheep/please clips");
+  await b.getByRole("tab", { name: "Sounds & stickers", exact: true }).click();
+  const labels = await b.getByTestId("soundboard").getByRole("button").evaluateAll((buttons) => buttons.map((button) => button.getAttribute("aria-label")));
   await b.evaluate(async () => {
     const { play } = await import("/src/lib/sound.ts");
     play("sb_airhorn");
     await new Promise((r) => setTimeout(r, 400));
     play("sb_airhorn");
-    return (await import("/src/lib/sound.ts")).SOUNDBOARD.map((x) => x.label);
-  }).then((labels) => assert.ok(["Airhorn", "Quit touchin' me", "Only wood?"].every((l) => labels.includes(l)), "button labels"));
+  });
+  assert.ok(["Airhorn", "Quit touchin' me", "Only wood?"].every((label) => labels.includes(`Play sound ${label}`)), "button labels");
+  await b.getByRole("tab", { name: "Chat", exact: true }).click();
   ok("soundboard: Airhorn, Quit touchin' me and Only wood? each play once on the other seat, labelled; a repeat reuses the clip's element");
   await sleep(3100);
   // Muting a seat (the chat's Mute menu) silences that seat's soundboard taps for this listener only.

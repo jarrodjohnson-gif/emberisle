@@ -3,6 +3,7 @@
 // missing or blocked file is silent, never a thrown error or a console error.
 import { useSyncExternalStore } from "react";
 import { categoryGain, subscribeSoundMix, type SoundCategory } from "./sound-settings";
+import type { ExtraSoundName } from "./sound-extra";
 
 const FILES = {
   dice_land: "drop_001.wav",
@@ -26,13 +27,6 @@ const FILES = {
   // Synthesised by scripts/make-sounds.mjs (docs/design/sound.md).
   wayfarer_move: "wayfarer_move.wav",
   trade_offer: "trade_offer.wav",
-  sheep_for_wood: "sheep_for_wood.mp3",
-  stone_for_wood: "stone_for_wood.mp3",
-  three_wood: "three_wood.mp3",
-  daking_wood: "daking_wood.mp3",
-  lucke_diggler: "lucke_diggler.mp3",
-  corn_no: "corn_no.mp3",
-  isaac_win: "isaac_win.mp3",
   chat_send: "chat_send.wav",
   chat_recv: "chat_recv.wav",
   // A tap on the sea (#616): a normal table clip, paced and burst-dropped like the rest.
@@ -51,10 +45,6 @@ const FILES = {
   sb_quit_touchin: "sb_quit_touchin.mp3",
   sb_only_wood: "sb_only_wood.mp3",
   sb_plump_sheep: "sb_plump_sheep.mp3",
-  sb_nice_sheep: "sb_nice_sheep.mp3",
-  sb_sheep_please: "sb_sheep_please.mp3",
-  sb_grain_please: "sb_grain_please.mp3",
-  sb_brick_please: "sb_brick_please.mp3",
   sb_perfect: "sb_perfect.mp3",
   // End-of-game music: starts a moment after the win or loss sting, stops when the end screen is left or a new game starts.
   end_music: "end_music.mp3",
@@ -62,7 +52,6 @@ const FILES = {
   board_plop: "plop.wav",
   board_pluck: "pluck_001.wav",
   // #667: a tap on a hex that places nothing. Pasture uses a short baa; the rest are synthesised (make-sounds.mjs).
-  tap_pasture: "tap_pasture.mp3",
   tap_forest: "tap_forest.wav",
   tap_hills: "tap_hills.wav",
   tap_fields: "tap_fields.wav",
@@ -70,37 +59,17 @@ const FILES = {
   tap_waste: "tap_waste.wav",
 } as const;
 
-// The soundboard buttons in the chat, in order. `id` is what the host whitelists and relays; `clip` is what a page plays.
-export const SOUNDBOARD = [
-  { id: "robbed_fah", label: "Fah", clip: "robbed_fah" },
-  { id: "sb_wololo", label: "Wololo", clip: "sb_wololo" },
-  { id: "sb_win_reaction", label: "GG!", clip: "sb_win_reaction" },
-  { id: "sb_airhorn", label: "Airhorn", clip: "sb_airhorn" },
-  { id: "sb_quit_touchin", label: "Quit touchin' me", clip: "sb_quit_touchin" },
-  { id: "sb_only_wood", label: "Only wood?", clip: "sb_only_wood" },
-  { id: "sb_plump_sheep", label: "Plump sheep", clip: "sb_plump_sheep" },
-  { id: "sb_nice_sheep", label: "Nice sheep", clip: "sb_nice_sheep" },
-  { id: "sb_sheep_please", label: "Sheep please", clip: "sb_sheep_please" },
-  { id: "sb_grain_please", label: "Grain please", clip: "sb_grain_please" },
-  { id: "sb_brick_please", label: "Brick please", clip: "sb_brick_please" },
-  { id: "sb_perfect", label: "Perfect", clip: "sb_perfect" },
-  { id: "bong", label: "Bong", clip: "board_bong" },
-  { id: "plop", label: "Plop", clip: "board_plop" },
-  { id: "pluck", label: "Pluck", clip: "board_pluck" },
-] as const satisfies readonly { id: string; label: string; clip: keyof typeof FILES }[];
-export type BoardSound = (typeof SOUNDBOARD)[number]["id"];
-
 // Levels live in the files, not here (#1073, docs/design/sound.md Decision 3): every table effect, every reaction and soundboard
 // clip and every piece of music was leveled by type (scripts/level-audio.mjs), so each plays at volume 1 unless a caller asks
 // for less on purpose (a bystander's echo, the paying-piece tick). The player's mixer (sound-settings.ts) still scales a category.
 
-export type SoundName = keyof typeof FILES;
+export type SoundName = keyof typeof FILES | ExtraSoundName;
 
 // Board soundboard buttons are memes; only plain board touches belong to touch. Match point is a meme (#669).
 export function soundCategory(name: SoundName): SoundCategory {
   if (/^tap_|^plop$/.test(name)) return "touch";
   if (/^sb_|^board_|^robbed_fah$|^match_point$/.test(name)) return "memes";
-  if (/^game_|^end_music$|^isaac_win$/.test(name)) return "music";
+  if (/^game_|^end_music|^isaac_win/.test(name)) return "music";
   return "game";
 }
 
@@ -184,15 +153,25 @@ function pump() {
   setTimeout(pump, GAP_MS);
 }
 
+let extraFiles: Partial<Record<ExtraSoundName, string>> | null = null;
 function start(name: SoundName, volume: number) {
   const gain = volume * categoryGain(soundCategory(name));
   if (muted || !gain) return;
+  const file = FILES[name as keyof typeof FILES] ?? extraFiles?.[name as ExtraSoundName];
+  if (!file) {
+    if (extraFiles) return;
+    void import("./sound-extra").then(({ EXTRA_FILES }) => {
+      extraFiles = EXTRA_FILES;
+      start(name, volume);
+    });
+    return;
+  }
   try {
     // The first roll cuts the game-start sting off.
     if (name === "dice_land") clips.get("game_start")?.pause();
     let clip = clips.get(name);
     if (!clip) {
-      clip = new Audio(`${import.meta.env.BASE_URL}audio/${FILES[name]}`);
+      clip = new Audio(`${import.meta.env.BASE_URL}audio/${file}`);
       clips.set(name, clip);
       if (DUCKERS.has(name)) for (const e of ["play", "pause", "ended"]) clip.addEventListener(e, duckMusic);
     }
