@@ -33,10 +33,8 @@ function rollOffLine(before: GameState | null, after: GameState) {
 // The table sounds a change of state makes, with their volume (#303, #609): the same diff serves practice, hotseat, and the
 // host's pushes, so a bot's placement knocks like yours. `mine` is whether this browser's seat took the action (a fortune
 // bought by someone else is a touch quieter).
-function soundsFor(before: GameState | null, after: GameState, mine: boolean, victim = false, lost = false): [SoundName, number][] {
+function soundsFor(before: GameState | null, after: GameState, mine: boolean, victim = false): [SoundName, number][] {
   if (!before) return [];
-  // The winner keeps the win sound; every other seat at the table gets the loss sting.
-  if (after.winner && !before.winner) return [[isaacWon(after) ? "isaac_win" : lost ? "game_lose" : "win", 1]];
   const out: [SoundName, number][] = [];
   const built = (s: GameState, kind: "outpost" | "stronghold") => s.vertices.filter((v) => v.building?.kind === kind).length;
   const paths = (s: GameState) => s.edges.filter((e) => e.path).length;
@@ -84,13 +82,10 @@ export function takeMatchPointLine() {
 
 // End music: queued a moment after the win/lose sting at game over, once per game end. Leaving the end screen (the menu, a
 // rematch, a new game) cancels it. Only a live change into "over" starts it, so a reload into a finished game stays quiet.
-const END_MUSIC_DELAY_MS = 1500;
 function stopEndMusic() {
   stop("end_music");
   stop("isaac_win");
 }
-const isDiggler = (name = "") => /digg?l?er|pickle|isa+c/i.test(name);
-const isaacWon = (s: GameState) => isDiggler(s.players.find((p) => p.id === s.winner)?.name);
 
 // The board the start sting last played for, kept for the tab session so a reload mid-setup does not replay it.
 const START_KEY = "emberisle-start-sig";
@@ -122,20 +117,23 @@ function clearKnocks() {
 // Play the sound for a state change, and the your-turn chime when the turn comes round to this browser's seat
 // (not in hotseat, where every seat is this browser).
 export function hear(before: GameState | null, after: GameState, me: string, mode: GameStore["mode"], reconnect?: boolean) {
-  const lost = mode !== "hotseat" && me !== "" && !!after.winner && after.winner !== me;
   const victim =
     mode !== "hotseat" && !!before && before.current !== me && after.vertices.some((v) => v.building?.playerId === me && v.hexes.includes(after.robberHex));
   const cue = haptics.player?.(before, after, me, mode) ?? play;
-  for (const [sound, volume] of soundsFor(before, after, mode === "hotseat" || after.current === me, victim, lost)) {
-    // A piece knocks when it lands, not when it is picked (#438); reduced motion has no fall, so it knocks at once.
-    const land = sound in LAND_MS && !calmMotion() ? LAND_MS[sound as keyof typeof LAND_MS] : 0;
-    if (land) {
-      const t = setTimeout(() => {
-        knocks.delete(t);
-        cue(sound, volume);
-      }, land);
-      knocks.add(t);
-    } else cue(sound, volume);
+  if (before && after.winner && !before.winner) {
+    void tradeSounds.then(({ gameEnd }) => gameEnd(cue, before, after, me, mode));
+  } else {
+    for (const [sound, volume] of soundsFor(before, after, mode === "hotseat" || after.current === me, victim)) {
+      // A piece knocks when it lands, not when it is picked (#438); reduced motion has no fall, so it knocks at once.
+      const land = sound in LAND_MS && !calmMotion() ? LAND_MS[sound as keyof typeof LAND_MS] : 0;
+      if (land) {
+        const t = setTimeout(() => {
+          knocks.delete(t);
+          cue(sound, volume);
+        }, land);
+        knocks.add(t);
+      } else cue(sound, volume);
+    }
   }
   // A new game (the lobby's Start, a rematch): the sting plays once, for a seat; the first roll cuts it off.
   // Keyed on the board: a bot may already have rolled first (seq > 0), and a reconnect into setup must not replay it.
@@ -144,10 +142,6 @@ export function hear(before: GameState | null, after: GameState, me: string, mod
     play("game_start");
   }
   if (before?.phase === "over" && after.phase !== "over") stopEndMusic();
-  if (mode !== "hotseat" && me && before && before.phase !== "over" && after.phase === "over" && after.winner && !isaacWon(after)) {
-    stopEndMusic();
-    playLater("end_music", 1, END_MUSIC_DELAY_MS);
-  }
   matchLine = null;
   if (before && before.phase !== "over" && after.turn >= before.turn && after.hexes.every((h, i) => h.terrain === before.hexes[i]?.terrain)) {
     const reached = claimMatchPoints(before, after);
@@ -218,6 +212,8 @@ import { haptics, play, playLater, stop, yourTurn, type SoundName } from "@/lib/
 import { calmMotion, LAND_MS } from "@/lib/scene/landing";
 import type { WaterPath, WaterStatus } from "@/lib/scene/crystal-water";
 import type { PlayView } from "@/lib/scene/mobile-fit";
+
+const tradeSounds = import("../trade-sound");
 
 // The ask-the-table offer every seat is looking at (docs/BUILD_BIBLE.md 4.4). `until` is when the host's 20 s run out.
 export interface OpenOffer {
@@ -1048,7 +1044,7 @@ function openOffer(set: Set, get: Get, from: string, give: Bag, want: Bag) {
   const fromName = state.players.find((p) => p.id === from)?.name ?? "Someone";
   set({ offer: { tradeId, from, fromName, give, want, until: Date.now() + OFFER_MS }, declined: [], tradeOutcome: null, tradeTaker: null });
   const me = get().localId;
-  void import("../trade-sound").then(({ offerChime }) => offerChime(play, from, fromName, me, give, want));
+  void tradeSounds.then(({ offerChime }) => offerChime(play, from, fromName, me, give, want));
   offerTimers.push(setTimeout(() => endOffer(set, get, null), OFFER_MS));
   for (const p of state.players) {
     if (p.kind !== "bot" || p.id === from) continue;
@@ -1185,7 +1181,7 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       const before = get().seats;
       const after = seats as Seat[];
       const me = get().localId;
-      void import("../trade-sound").then(({ diggerBell }) => diggerBell(play, isDiggler, before, after, me));
+      void tradeSounds.then(({ diggerBell }) => diggerBell(play, before, after, me));
       set({ code, seats: seats as Seat[], watching: watching ?? 0, tableVictoryTarget: victoryTarget === 7 ? 7 : 10, tableWayfarerMode: wayfarerMode ?? "on" });
     },
     // Dice and gain floats present the roll; its words live only in the persistent log.
@@ -1221,7 +1217,7 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       const fromName = get().state?.players.find((p) => p.id === from)?.name ?? "Someone";
       set({ offer: { tradeId, from, fromName, give, want, until: Date.now() + seconds * 1000 }, declined: [], tradeOutcome: null, tradeTaker: null });
       const me = get().localId;
-      void import("../trade-sound").then(({ offerChime }) => offerChime(play, from, fromName, me, give, want));
+      void tradeSounds.then(({ offerChime }) => offerChime(play, from, fromName, me, give, want));
     },
     tradeDeclined: ({ tradeId, by }) => {
       const { offer, declined } = get();
