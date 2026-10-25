@@ -45,7 +45,7 @@ import { makeBruno, type Bruno } from "@/lib/scene/bruno";
 import { makeJellyOutpost, makeJellyPath, makeJellyStronghold } from "@/lib/scene/pieces-jelly";
 import { CAUSTIC_GLSL, PAPER, SPLASH, addSplashRings, makeCrystalSea, makeFloorProps, makeSeaFloor, makeSplashes, makeSwell, makeWash, nearestCoast, type SeaUniforms, type WaterPath, type WaterStatus } from "@/lib/scene/crystal-water";
 import { Wobble } from "@/lib/scene/wobble";
-import { gainTick, play, touchHex } from "@/lib/sound";
+import { haptics, play, touchHex } from "@/lib/sound";
 import { payingHexes } from "@/lib/game/rules";
 import { type GameState, type HarborKind, type HexCell, type Terrain, type Vertex } from "@/lib/game/types";
 
@@ -253,7 +253,8 @@ export class IsleRenderer {
   // Each land hex's glow by hex id (its level read as `emissiveIntensity`, as when it was the cap's), and the flashes under
   // way (age in seconds, advanced by the frame's dt). The jelly board warms each hex by its level.
   caps = new Map<string, { emissiveIntensity: number }>();
-  private payingPieces: { key: string; age: number; delay: number; sounded: boolean }[] = [];
+  private payingPieces: { key: string; owner: string; age: number; delay: number; sounded: boolean }[] = [];
+  private payerSeat: string | true | undefined;
   private flashes: { mat: { emissiveIntensity: number }; id: string; age: number }[] = [];
   private clock = new THREE.Timer();
   private water = makeWater();
@@ -610,7 +611,7 @@ export class IsleRenderer {
   private pulsePayers(state: GameState) {
     const paid = new Set((state.lastProduction ?? []).map((g) => g.vertex));
     const ordered = state.players.flatMap((p) => state.vertices.filter((v) => paid.has(v.id) && v.building?.playerId === p.id));
-    this.payingPieces = ordered.map((v, i) => ({ key: `v:${v.id}`, age: 0, delay: i * 0.09, sounded: false }));
+    this.payingPieces = ordered.map((v, i) => ({ key: `v:${v.id}`, owner: v.building!.playerId, age: 0, delay: i * 0.09, sounded: false }));
   }
 
   private clearPayers() {
@@ -627,7 +628,10 @@ export class IsleRenderer {
       if (!obj || age < 0) continue;
       if (!p.sounded) {
         p.sounded = true;
-        if (p.delay < 0.72) gainTick();
+        if (p.delay < 0.72) {
+          play("gain_tick", 0.35);
+          haptics.pay?.(this.payerSeat === true || p.owner === this.payerSeat);
+        }
       }
       const active = age < duration;
       obj.scale.setScalar(calm || !active ? 1 : 1 + 0.12 * snapBezier(age < 0.14 ? age / 0.14 : (0.28 - age) / 0.14));
@@ -650,7 +654,8 @@ export class IsleRenderer {
     this.payingPieces = this.payingPieces.filter((p) => p.age - p.delay < duration);
   }
 
-  setBoard(state: GameState, highlights: Highlights, interactive: boolean) {
+  setBoard(state: GameState, highlights: Highlights, interactive: boolean, payerSeat?: string | true) {
+    this.payerSeat = payerSeat;
     // Only a roll seen live flashes: the same island and exactly one more dice roll than last time. Landing on a state that
     // already has rolls (a spectator, a rejoin, the title's island carried into a game) does not; several actions in one push
     // (online bots) still flash when one roll is among them.
@@ -682,8 +687,9 @@ export class IsleRenderer {
       this.flashHexes(payingHexes(state));
       this.pulsePayers(state);
     }
-    this.jelly?.robber(state.robberHex ?? null);
+    // #826: blacken the blocked hex and its token; skip the Wastes.
     const rh = state.hexes.find((h) => h.id === state.robberHex);
+    this.shadeRobber(rh);
     if (rh) {
       this.robberSpot(rh);
       if (!this.wayfarer.userData.placed || landChanged) {
@@ -691,6 +697,36 @@ export class IsleRenderer {
         this.wayfarer.position.copy(this.robberTarget);
         this.wayfarer.userData.placed = true;
       } else if (!this.walk) this.startWalk();
+    }
+  }
+
+  // #826: black terrain/token with readable light ink (waste / missing → restore).
+  private shadeRobber(rh?: HexCell) {
+    const id = rh && rh.terrain !== "waste" ? rh.id : null;
+    this.jelly?.robber(id);
+    for (const t of this.tokens) {
+      const blocked = id === t.userData.hex;
+      for (const c of t.children as THREE.Mesh[]) {
+        const m = c.material as THREE.MeshBasicMaterial;
+        if (!m?.color) continue;
+        m.userData.rest ??= m.color.clone();
+        m.color.copy(m.userData.rest as THREE.Color).multiplyScalar(blocked ? (m.map ? 0.55 : 0) : 1);
+        if (m.map && blocked !== !!m.userData.blocked) {
+          if (!m.userData.restMap) {
+            m.userData.restMap = m.map;
+            m.addEventListener("dispose", () => {
+              m.map?.dispose();
+              if (m.map !== m.userData.restMap) m.userData.restMap.dispose();
+            });
+          }
+          if (blocked) m.map = blackNumberFace(m.userData.restMap, t.userData.token);
+          else {
+            m.map.dispose();
+            m.map = m.userData.restMap;
+          }
+          m.userData.blocked = blocked;
+        }
+      }
     }
   }
 
@@ -845,7 +881,7 @@ export class IsleRenderer {
     if (!this.play()) return;
     const c = this.renderer.domElement;
     const base = this.insets();
-    // The hole's edges on the shell, so the HUD can centre a moment on the island (TurnMoment, GainFloats): the one the map is fitted to.
+    // The hole's edges on the shell, so the HUD can centre a moment on the island (TurnMoment): the one the map is fitted to.
     for (const k of ["top", "right", "bottom", "left"] as const) c.parentElement?.style.setProperty(`--hole-${k}`, `${base[k]}px`);
     const [w, h] = [c.clientWidth || 1, c.clientHeight || 1];
     const f = this.view === "diorama" ? fitDiorama(w, h, base) : fitOrtho(w, h, base, OVERHEAD_LEAN);
@@ -1221,7 +1257,7 @@ export class IsleRenderer {
   /** A splash on the sea at (x, z), 1 for a tap. Starts at once; the fish and the visitor near it scatter. */
   splashAt(x: number, z: number, strength: number) {
     this.splash.add(x, z, strength, this.clock.getElapsed() + (performance.now() - this.lastFrame) / 1000);
-    if (!this.calm()) this.oceanLife.scatter(x, z);
+    if (!this.calm()) this.oceanLife.scatter(x, z, Math.max(0, performance.now() - this.lastFrame) / 1000);
     // A tap plops (sound.ts keeps it quiet while muted); a drag's trail does not.
     if (strength >= 1) play("plop");
     this.busyUntil = Math.max(this.busyUntil, performance.now() + SPLASH.life * 1000);
@@ -1256,11 +1292,9 @@ export class IsleRenderer {
     const pulsing = this.marks.children.some((m) => m.userData.kind === "hex" && m.userData.id !== this.pending?.id);
     // Reduced motion (#382): no tick at all; a drag, a camera move or a state push still draws for its 1 s hold.
     const calm = this.calm();
+    const resumedMotion = this.wasCalm && !calm;
     // Reading `matches` here can swallow the change event, so a flip seen on this frame wakes the loop itself.
-    if (calm !== this.wasCalm) {
-      this.wasCalm = calm;
-      this.wake();
-    }
+    if (calm !== this.wasCalm) this.wake();
     this.stepLandings(now, calm);
     if (this.relayout > 0) {
       this.relayout--;
@@ -1274,11 +1308,17 @@ export class IsleRenderer {
     const busy = now < this.busyUntil || this.flashes.length > 0 || this.payingPieces.length > 0 || !!this.jelly?.busy();
     const gap = calm ? (busy ? 0 : Infinity) : this.titleMode ? 1000 / 30 : this.walk || pulsing || busy ? 0 : 1000 / 12;
     if (now - this.lastFrame < gap - 2) return;
-    // Backpressure on ambient frames (the title's turn, the idle sea): while the GPU is still on the last one, wait for it
-    // rather than queue another. A GPU that keeps up has always finished; a software one (CI, no GPU) would otherwise block
-    // the page in its GL calls, frame after frame, and starve input and every other tab. A frame a change or an interaction
-    // asked for (busy), and every frame under reduced motion, goes at once.
-    if (!busy && !calm && this.gpuBehind()) return;
+    // Camera constraints and glides are input state: process them even when the next draw waits on the GPU.
+    if (this.play()) {
+      this.orbit.update();
+      this.clampPan();
+      this.stepGlide(now);
+    }
+    // Moving frames, including busy ones, wait for the previous GPU work instead of flooding a software renderer's queue.
+    // Explicit reduced-motion frames still draw immediately, including synchronous snapshots.
+    if (!calm && this.gpuBehind()) return;
+    // Keep a motion resume pending until a frame is accepted; a GPU wait must not consume the paused-time reset.
+    this.wasCalm = calm;
     this.lastFrame = now;
     this.clock.update();
     const t = this.clock.getElapsed();
@@ -1287,11 +1327,7 @@ export class IsleRenderer {
     this.stepFlashes(dt, calm);
     this.stepPayers(dt, calm);
     this.controls.autoRotate = this.titleMode && !calm;
-    if (this.play()) {
-      this.orbit.update();
-      this.clampPan();
-      this.stepGlide(now);
-    } else {
+    if (!this.play()) {
       this.controls.enableDamping = !calm;
       this.controls.update();
     }
@@ -1309,10 +1345,12 @@ export class IsleRenderer {
     }
     this.water.uniforms.uTime!.value = t;
     const swell = this.waterPath === "crystal" ? this.crystal?.swell : undefined;
-    this.oceanLife.step(dt, true, this.oceanViewport, swell ? (x, z) => swell(x, z, t).y : undefined);
+    // Analytic ocean poses follow elapsed visible time, even on slow frames; a motion resume excludes the paused interval.
+    this.oceanLife.step(resumedMotion ? 0 : this.clock.getDelta(), true, this.oceanViewport, swell ? (x, z) => swell(x, z, t).y : undefined);
     this.foam.material.opacity = 0.32 + 0.23 * (0.5 + 0.5 * Math.sin(t * 0.8));
     this.jellyT = t;
-    this.jelly?.update(t);
+    // Title and lobby show a demo island: hold board-age stories (the ore climber) at 0 until play (#966).
+    this.jelly?.update(t, false, false, this.titleMode);
     this.shore?.update(t);
     if (this.walk) {
       const w = this.walk;
@@ -1590,9 +1628,9 @@ export class IsleRenderer {
           if (!jelly) return;
           if (!alive()) return jelly.dispose();
           this.jelly = jelly;
-          jelly.robber(this.lastState?.robberHex ?? null);
-          // The scenes' ground beside the token can stand off the flat cap: he steps onto it.
           const rh = this.lastState?.hexes.find((h) => h.id === this.lastState?.robberHex);
+          this.shadeRobber(rh);
+          // The scenes' ground beside the token can stand off the flat cap: he steps onto it.
           if (rh) {
             this.robberSpot(rh);
             if (!this.walk) this.wayfarer.position.copy(this.robberTarget);
@@ -2146,7 +2184,7 @@ export function numberToken(n: number) {
   const c = document.createElement("canvas");
   c.width = 256;
   c.height = 256;
-  const ctx = c.getContext("2d")!;
+  const ctx = c.getContext("2d", { willReadFrequently: true })!;
   ctx.fillStyle = "#fff9f0";
   ctx.beginPath();
   ctx.arc(128, 128, 124, 0, Math.PI * 2);
@@ -2184,6 +2222,25 @@ export function numberToken(n: number) {
   label.position.y = TOKEN_H / 2 + 0.001;
   g.add(label);
   return g;
+}
+
+// Recolour the existing glyph pixels, so late-loading fonts cannot change its shape.
+function blackNumberFace(map: THREE.Texture, n: number) {
+  const c = document.createElement("canvas");
+  c.width = c.height = 256;
+  const ctx = c.getContext("2d", { willReadFrequently: true })!;
+  ctx.drawImage(map.image as HTMLCanvasElement, 0, 0);
+  const image = ctx.getImageData(0, 0, 256, 256);
+  const ink = n === 6 || n === 8 ? 38 : 25;
+  for (let i = 0; i < image.data.length; i += 4) {
+    const coverage = Math.max(0, Math.min(255, Math.round((249 - image.data[i + 1]!) * 255 / (249 - ink))));
+    image.data[i] = image.data[i + 1] = image.data[i + 2] = coverage;
+  }
+  ctx.putImageData(image, 0, 0);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 8;
+  return tex;
 }
 
 const PIECE_MAT = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.55 });

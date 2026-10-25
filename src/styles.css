@@ -77,12 +77,6 @@ body {
   to { transform: scale(1); }
 }
 
-/* #436: the hand card's gain/loss cue is a 2 px white ring that pulses once; the fill carries the resource. */
-@keyframes resource-ring {
-  0% { box-shadow: 0 0 0 2px rgba(255, 255, 255, 1); opacity: 1; }
-  100% { box-shadow: 0 0 0 2px rgba(255, 255, 255, 0); opacity: 0; }
-}
-
 /* #439: the hand rises in over --duration-base. Opacity and translateY only: the layout is already final when it mounts. */
 @keyframes hand-in {
   from { opacity: 0; transform: translateY(8px); }
@@ -96,7 +90,6 @@ body {
 }
 .build-ready { animation: build-ready 320ms var(--ease-snap); }
 
-/* A good gained or lost rises about 20 px and fades over 1.8 s, readable for well over 1.2 s (GainFloats.tsx). */
 /* The turn moment comes in over --duration-base with --ease-out, holds, and leaves over about 0.7x of that (TurnMoment.tsx). */
 @keyframes turn-moment {
   0% { opacity: 0; transform: scale(0.96); animation-timing-function: var(--ease-snap); }
@@ -195,7 +188,9 @@ body {
   --shadow-sheet: 0 10px 28px rgb(24 51 45 / 0.18);
   --duration-gain: 2200ms;
   --duration-turn: 1800ms;
-  --chat-sheet-height: min(420px, calc(100dvh - max(12px, env(safe-area-inset-top)) - 68px - var(--active-offer-height, 0px) - var(--active-prompt-height, 0px) - var(--keyboard-inset, 0px)));
+  /* #899: the phone sheet ends under the island, clear of the seat strip (68 px) and the 40 px band of seat bubbles under it.
+     While the keyboard is up or an offer or steal prompt is showing, the band is 0 (Chat.tsx), so the input and the choice fit. */
+  --chat-sheet-height: min(420px, calc(100dvh - max(12px, env(safe-area-inset-top)) - 68px - var(--chat-bubble-band, 40px) - var(--active-offer-height, 0px) - var(--active-prompt-height, 0px) - var(--keyboard-inset, 0px)));
 }
 .seat-card { background: var(--table); color: var(--table-ink); box-shadow: inset 0 0 0 1px var(--table-line); }
 .seat-card [class*='text-zinc-700'] { color: var(--table-muted); }
@@ -213,10 +208,6 @@ body {
 .turn-instruction-own { color: var(--table-ink); }
 .turn-instruction-own::before { content: ''; display: inline-block; width: 6px; height: 6px; background: var(--accent); border-radius: 50%; margin-right: 8px; vertical-align: 2px; }
 .goods-tray { background: transparent; }
-.goods-card { box-shadow: var(--shadow-control); padding-top: 12px; }
-.goods-value [data-testid='hand-count'] { line-height: 28px; }
-.goods-empty { background: var(--ground); }
-.goods-empty .goods-icon { color: var(--muted) !important; }
 .hud-actions { display: flex; align-items: center; gap: 4px; padding: 4px; background: var(--table); border-radius: var(--radius-control); }
 .build-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; flex: 1; min-width: 0; }
 .build-tile { width: 100%; background: var(--table-raised); color: var(--table-ink); border-color: var(--table-line); }
@@ -244,7 +235,6 @@ body {
 .trade-short { color: var(--accent); }
 .trade-dock button:focus-visible { outline-color: var(--ink); }
 .turn-stamp { box-shadow: var(--shadow-control); font-weight: 750; letter-spacing: -0.8px; border-bottom: 3px solid var(--table); }
-.gain-stamp { box-shadow: var(--shadow-control); }
 .title-cover { box-shadow: var(--shadow-sheet); }
 .title-wordmark { font-weight: 800; font-size: 64px; line-height: 64px; letter-spacing: -2px; }
 .seat-settings { margin-top: 16px; border-top: 1px solid var(--line); padding-top: 4px; }
@@ -255,11 +245,15 @@ body {
 .lobby-cover { box-shadow: var(--shadow-sheet); background: var(--paper); }
 .win-equation { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 12px; margin-top: 12px; font-size: 13px; color: var(--muted); }
 .win-total-hero { font-family: var(--font-numeral); font-size: 56px; line-height: 60px; font-weight: 800; letter-spacing: -2px; }
+@media (max-height: 480px) {
+  .win-total-hero { font-size: 26px; line-height: 28px; }
+  .win-equation { margin-top: 2px; font-size: 11px; gap: 2px 6px; }
+}
 
 @media (max-width: 767px), (pointer: coarse) {
   .hud-actions { flex-direction: column; align-items: stretch; }
   .build-grid { flex: none; }
-  .action-utilities { justify-content: space-between; }
+  .action-utilities { justify-content: flex-start; }
   .trade-dock { grid-template-columns: minmax(0, 1fr); }
   .trade-summary { min-height: 32px; }
   .trade-answers { width: 100%; }
@@ -273,43 +267,16 @@ body {
   *, *::before, *::after { animation: none !important; transition: none !important; }
   .build-ready { transform: none; }
 }
-/* Cue opacity holds until the exit; gains rise and losses fall. */
-@keyframes resource-flash {
-  0%, 80% { opacity: 1; transform: none; }
-  100% { opacity: 0; transform: translateY(-4px); }
-}
-@keyframes resource-flash-loss {
-  0%, 80% { opacity: 1; transform: none; }
-  100% { opacity: 0; transform: translateY(4px); }
-}
-@keyframes gain-float {
-  0% { opacity: 0; transform: translateY(6px); }
-  10% { opacity: 1; transform: none; }
-  80% { opacity: 1; transform: none; }
-  100% { opacity: 0; transform: translateY(-8px); }
-}
-@keyframes loss-float {
-  0% { opacity: 0; transform: translateY(-6px); }
-  10% { opacity: 1; transform: none; }
-  80% { opacity: 1; transform: none; }
-  100% { opacity: 0; transform: translateY(8px); }
-}
 @media (min-width: 768px) and (pointer: fine) {
-  .goods-card { height: 52px; padding-top: 0; }
-  .goods-card .goods-icon { position: static; width: 18px; height: 18px; }
-  .goods-card [data-testid='hand-count'] { font-size: 24px; line-height: 28px; }
   .trade-dock { padding: 6px 8px; }
 }
 .table-log[hidden] { display: none; }
 .action-utilities { flex-wrap: wrap; }
 /* #625: the main phase's action row wraps by rule, not by font metrics, so the fit can declare its height (TRAY_WRAP_MAX in
-   mobile-fit.ts is the 400 here): up to 400 px wide the end row takes a line of its own, above it the row never wraps. */
-@media (orientation: portrait) and (max-width: 400px) { .action-utilities > .tray-end { flex: 1 0 100%; } }
+   mobile-fit.ts is the 400 here): up to 400 px wide the end row takes a line of its own while My fortunes is held (#776), and shares Trade's line otherwise; above 400 the row never wraps. */
+@media (orientation: portrait) and (max-width: 400px) { .action-utilities > .tray-end { flex: 1 0 100%; } .action-utilities:not([data-fortunes]) > .tray-end { flex: 0 1 auto; } }
 @media (orientation: portrait) and (min-width: 401px) { .action-utilities { flex-wrap: nowrap; } .action-utilities > * { min-width: 0; } }
 @media (max-height: 480px) {
-  .goods-card { flex-direction: column; gap: 0; padding: 12px 0 0; }
-  .goods-card .goods-icon { width: 12px; height: 12px; }
-  .goods-card [data-testid='hand-count'] { font-size: 24px; line-height: 28px; }
   .build-tile > span:first-child { font-size: 10.5px; letter-spacing: -0.2px; }
 }
 @media (max-height: 480px) {
@@ -323,28 +290,17 @@ body {
 .hud-header button:focus-visible, .hud-utilities button:focus-visible { outline-color: var(--ink); }
 .hud-stack > .trade-dock { position: sticky; bottom: 0; z-index: 12; }
 .hud-stack { scroll-padding-bottom: calc(var(--trade-height, 0px) + 52px); }
-.hand-resource-flash { top: 0; right: 0; font-size: 11px; line-height: 12px; padding-left: 3px; padding-right: 3px; }
-@media (max-height: 480px) {
-  .hand-resource-flash { font-size: 10px; line-height: 10px; }
-}
 input, select, textarea { border-color: var(--control-line); }
 @media (pointer: coarse) {
   input, select, textarea { font-size: 16px !important; }
 }
+.seat-card .seat-bubble [class*='text-zinc-700'] { color: var(--ink); }
+/* #899: typing on a short (sideways) phone, the emoji row gives its room to the log and the input, as the presets did before. */
 @media (max-height: 480px) {
-  [data-keyboard-open='true'] .chat-presets, [data-keyboard-open='true'] .chat-filters { display: none; }
-}
-.seat-card [data-testid='reaction'] [class*='text-zinc-700'] { color: var(--ink); }
-.seat-card [data-testid='reaction'] { right: 24px; }
-.seat-card [data-testid='reaction'] > div { max-width: 100%; }
-@media (max-width: 767px), (pointer: coarse) {
-  .seat-card [data-testid='reaction'] [role='img'], .seat-card [data-testid='reaction'] img { width: 32px; height: 32px; font-size: 28px; }
+  [data-keyboard-open='true'] [data-testid='emoji-row'] { display: none; }
 }
 .action-utilities [data-testid="dice-row"] { color: var(--table-muted); }
 .bg-glass, .title-cover, .title-cover > div, .lobby-cover { backdrop-filter: none; }
-@media (max-height: 480px) {
-  [data-choice-open='true'] .chat-presets, [data-choice-open='true'] .chat-filters { display: none; }
-}
 .hud-stack [data-testid="dice-row"] { background: var(--table); color: var(--table-muted); border-radius: var(--radius-control); }
 
 /* #643: the "My numbers" strip in the log line's row; a chip lights when its number is rolled. */
@@ -359,3 +315,14 @@ input, select, textarea { border-color: var(--control-line); }
   100% { box-shadow: 0 0 0 0 rgb(36 109 114 / 0); transform: scale(1); }
 }
 @media (prefers-reduced-motion: reduce) { .my-number-lit { animation: none; } }
+
+/* #829: the fortunes button cue: one soft glow when the turn starts (the ring is
+   keyed on the turn in Hud.tsx). Under reduced motion the ring is a still outline instead. */
+.fortune-cue-glow { position: absolute; inset: 0; border-radius: inherit; pointer-events: none; animation: fortune-cue-glow 1600ms ease-out 1 both; }
+@keyframes fortune-cue-glow {
+  0% { box-shadow: 0 0 0 0 rgb(36 109 114 / 0.6); }
+  40% { box-shadow: 0 0 0 6px rgb(36 109 114 / 0.35); }
+  100% { box-shadow: 0 0 0 0 rgb(36 109 114 / 0); }
+}
+.fortune-cue-glow[data-done] { animation: none; }
+@media (prefers-reduced-motion: reduce) { .fortune-cue-glow { animation: none; box-shadow: 0 0 0 2px var(--color-accent); } }

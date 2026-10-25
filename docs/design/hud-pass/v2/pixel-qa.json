@@ -1,0 +1,74 @@
+[
+  {
+    "direction": "a",
+    "viewport": "390x844",
+    "hole": [
+      12,
+      68,
+      378,
+      518
+    ],
+    "equal": true,
+    "differenceBounds": null
+  },
+  {
+    "direction": "b",
+    "viewport": "390x844",
+    "hole": [
+      12,
+      68,
+      378,
+      518
+    ],
+    "equal": true,
+    "differenceBounds": null
+  },
+  {
+    "direction": "a",
+    "viewport": "844x390",
+    "hole": [
+      284,
+      68,
+      832,
+      378
+    ],
+    "equal": true,
+    "differenceBounds": null
+  },
+  {
+    "direction": "b",
+    "viewport": "844x390",
+    "hole": [
+      284,
+      68,
+      832,
+      378
+    ],
+    "equal": true,
+    "differenceBounds": null
+  },
+  {
+    "direction": "a",
+    "viewport": "1280x720",
+    "hole": [
+      216,
+      68,
+      968,
+      500
+    ],
+    "equal": true,
+    "differenceBounds": null
+  },
+  {
+    "direction": "b",
+    "viewport": "1280x720",
+    "hole": [
+      216,
+      68,
+      968,
+      500
+    ],
+    "equal": true,
+    "differenceBounds": null
+  }
+]

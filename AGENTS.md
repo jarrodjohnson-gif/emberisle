@@ -5,6 +5,7 @@
 - Rules: [`docs/FRAMEWORK.md`](docs/FRAMEWORK.md)
 - Picking work: [`docs/LANES.md`](docs/LANES.md)
 - Helpers: [`docs/HELPERS.md`](docs/HELPERS.md)
+- Review desk: [`docs/DESK.md`](docs/DESK.md), with live state in issue [#916](https://github.com/jarrodjohnson-gif/emberisle/issues/916)
 - Owner decisions: [`docs/DECISIONS.md`](docs/DECISIONS.md) (read before you design or build)
 - Feature designs: [`docs/design/`](docs/design/)
 - Game rules: [`README.md`](README.md)
@@ -14,18 +15,19 @@
 
 These are short on purpose. Follow all of them, every round.
 
-1. **Start each round by reading the Agent hub, issue [#854](https://github.com/jarrodjohnson-gif/emberisle/issues/854).** Do any direction that names you first.
+1. **Start each round by reading the Agent hub, issue [#854](https://github.com/jarrodjohnson-gif/emberisle/issues/854).** Read its body, then only the comments after the newest `Hub digest`. Do any direction that names you first.
 2. **Pick work in this order:** `prio:p0`, then `prio:p1`, then `prio:p2` (`docs/LANES.md`). Helpers take the queue in [#851](https://github.com/jarrodjohnson-gif/emberisle/issues/851).
 3. **Claim before you code.** Comment on the issue: `/claim`, `claimed: <your agent name>, <date>`, `files: <paths>`. If you can't comment (a 403), put that block at the top of your PR body.
-4. **One issue per PR. At most 2 open PRs per agent.** At the limit, work only on those two.
+4. **One issue per PR. At most 4 open PRs per agent**, unless `docs/DECISIONS.md` logs a dated, different limit for you. At the limit, work only on those PRs. A PR with no push for 24 hours is open for any builder to adopt (`docs/LANES.md`, rung 1).
 5. **Don't park drafts.** Open the PR as ready for review once your own checks pass. If CI goes red, fix it or say why on the PR.
 6. **Register every new proof** in `package.json` and `.github/workflows/ci.yml`, next to its neighbours. A proof that CI never runs doesn't count.
 7. **Never merge, never push to `main`, never force-push someone else's branch, never skip or loosen a test.**
-8. **Build with the issue's `model:` label.** A `tier:` label says which other models may take it.
+8. **Build with the issue's `model:` label, if it has one, and skip the issue if you can't run that model.** A `tier:` label says which models may take it.
 9. **Busy files are fine.** `package.json`, `ci.yml` and `scripts/size-prove.mjs` never count as overlap. A different function in a file another PR touches is fine if you name that PR in your claim.
-10. **Never stop silently.** If nothing is eligible, post on #854 which issues you skipped and why. The review desk answers with work.
+10. **Never stop, and never ask the desk for work.** If the lineup and the ready list are empty, work down the fallback ladder in [`docs/LANES.md`](docs/LANES.md#when-nothing-is-eligible) yourself. Post on #854 only when every rung is empty.
 11. **Run long browser proofs one at a time**, and paste real output in the PR. Never estimate numbers.
 12. **Don't make design decisions.** Ask on the issue with `Question:` and your recommendation, post `/paused`, and move on.
+13. **A `Question:` is not a stop.** After you post one, carry on with any part of the issue that does not depend on the answer (other files, the proof, screenshots, docs). Stop only when nothing is left to do, and check the issue for the desk's answer before you finish. A test line that an owner-approved design makes obsolete may be replaced, never deleted: own commit, old/new table in the PR ([`docs/DECISIONS.md`](docs/DECISIONS.md), 2026-10-25). Size ceilings and allowances never move without the owner.
 
 ## The full procedure
 
@@ -49,10 +51,9 @@ These are short on purpose. Follow all of them, every round.
    `package.json`, `.github/workflows/ci.yml` and `scripts/size-prove.mjs` never count as file overlap.
    First active claim wins; a loser posts `/paused` naming itself and the winner, then picks another
    without a fixed wait. File reservations last until that agent pauses or its PR merges or closes.
-6. **Still nothing eligible?** Post one line on #854 saying so and which issues you skipped and why. The
-   review desk replies with work. Don't stop silently.
+6. **Still nothing eligible?** Work down the fallback ladder in [`docs/LANES.md`](docs/LANES.md#when-nothing-is-eligible). Post one line on #854 only if every rung is empty, naming the issues you skipped and why.
 
-**Told you are a helper**, for example a friend's AI working from a fork? Read #854, then take work
+**Told you are a helper**, for example a friend's AI working from a fork? (Josh's agent is a full builder, not a helper, even from his fork: see `docs/LANES.md`.) Read #854, then take work
 from the helper queue, issue [#851](https://github.com/jarrodjohnson-gif/emberisle/issues/851), and follow
 [`docs/HELPERS.md`](docs/HELPERS.md). It wins over everything else here.
 

@@ -1,5 +1,5 @@
 // Public draw-deck count: every real host purchase, empty deck, four seat views + watcher,
-// private card boundary, rejoin/restart, and live opener/tray updates with an empty hand.
+// private card boundary, rejoin/restart, the public "Deck N" chip on every seat and the watcher (#776), and live tray updates for the seat that holds a fortune.
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync } from 'node:fs';
@@ -52,22 +52,30 @@ try{
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));await page.goto(`http://127.0.0.1:${port}`);await page.waitForFunction(()=>window.__emberisle);
   const load=(view,i)=>page.evaluate(({view,i})=>{const store=window.__emberisle;store.setState({spectator:i===4,menuFor:null,chatOpen:false,code:'FDAB',seatId:`s${i}`});store.getState().loadState(view.game,view.you??'',i===0,'FDAB');},{view,i});
   for(let i=0;i<5;i++){
-   await load(history[0][i],i);const opener=page.getByTestId('fortunes-button');await opener.waitFor();assert.equal(await opener.getAttribute('data-deck-left'),'25');
+   // #776: the public chip beside the log line shows the count on every seat and the watcher, with any hand and on or off turn.
+   const chip=n=>page.waitForFunction(n=>document.querySelector('[data-testid="deck-count"]')?.textContent===`Deck ${n}`,n);
+   await load(history[0][i],i);const opener=page.getByTestId('fortunes-button');await chip(25);
+   // My fortunes shows exactly when this seat holds a fortune (never to the watcher); buyers keep what they drew, so it is compared with the hand.
+   const heldMatchesOpener=async()=>{const held=await page.evaluate(()=>{const g=window.__emberisle.getState();if(g.spectator)return 0;const me=g.state.players.find(p=>p.id===g.localId);return Object.values(me.hidden).reduce((n,c)=>n+c,0);});
+    await page.waitForFunction(h=>document.querySelectorAll('[data-testid="fortunes-button"]').length===(h>0?1:0),held);};
+   if(i!==1){assert.equal(await opener.count(),0);
+    for(let bought=1;bought<=25;bought++){await load(history[bought][i],i);await chip(25-bought);await heldMatchesOpener();}
+    await load(restarted[i],i);await chip(0);await heldMatchesOpener();
+    continue;}
+   await opener.waitFor();assert.equal(await opener.getAttribute('data-deck-left'),'25');
    const b=await opener.boundingBox();assert.ok(b.width>=44&&b.height>=44&&b.x>=0&&b.y>=0&&b.x+b.width<=width&&b.y+b.height<=height);
    await opener.click();await page.getByTestId('fortune-deck-count').waitFor();
-   if(i===0||i===2||i===3)await page.getByText('None held',{exact:true}).waitFor();
-   if(i===1)assert.equal(await page.getByTestId('fortune-play-knight').getAttribute('aria-disabled'),'true');
+   assert.equal(await page.getByTestId('fortune-play-knight').getAttribute('aria-disabled'),'true');
    for(let bought=1;bought<=25;bought++){
     await load(history[bought][i],i);
-    await page.waitForFunction(n=>document.querySelector('[data-testid="fortune-deck-count"]')?.dataset.deckLeft===String(n),25-bought);
+    await chip(25-bought);await page.waitForFunction(n=>document.querySelector('[data-testid="fortune-deck-count"]')?.dataset.deckLeft===String(n),25-bought);
     assert.equal(await opener.getAttribute('data-deck-left'),String(25-bought));
-    if(i>=2)assert.equal(await page.locator('[data-testid^="fortune-row-"]').count(),0);
    }
-   await load(restarted[i],i);assert.equal(await page.getByTestId('fortune-deck-count').textContent(),'0 left in deck');
+   await load(restarted[i],i);await chip(0);assert.equal(await page.getByTestId('fortune-deck-count').textContent(),'0 left in deck');
    await page.keyboard.press('Escape');await page.getByTestId('fortune-tray').waitFor({state:'detached'});assert.equal(await opener.getAttribute('data-deck-left'),'0');
   }
   await page.screenshot({path:`test-results/fortune-count-${width}.png`});await context.close();
-  console.log(`ok ${width}x${height}${reduced?' reduced':''}: all seats + watcher, 25→0 live opener/tray, empty hand, off-turn refusal, rejoin/restart, private deck/kinds protected`);
+  console.log(`ok ${width}x${height}${reduced?' reduced':''}: all seats + watcher read the public Deck chip 25→0 and after restart; the holder's tray updates live; off-turn refusal, private deck/kinds protected`);
  }
  assert.deepEqual(errors,[]);console.log('fortune-count-prove: all passed');
 }finally{await browser?.close();await vite.close();for(const ws of sockets)ws.terminate();host?.kill('SIGKILL');rmSync(dir,{recursive:true,force:true});}

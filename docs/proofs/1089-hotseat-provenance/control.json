@@ -1,0 +1,1378 @@
+{
+  "origin": 1792863236412.7,
+  "at": 8022.899999976158,
+  "baseline": 24,
+  "observed": [
+    "/audio/back_001.wav",
+    "/audio/click_001.wav",
+    "/audio/click_001.wav"
+  ],
+  "quiet": {
+    "count": 23,
+    "at": 7140.199999988079
+  },
+  "plays": [
+    "/audio/click_001.wav",
+    "/audio/click_001.wav",
+    "/audio/click_001.wav",
+    "/audio/click_001.wav",
+    "/audio/click_001.wav",
+    "/audio/error_001.wav",
+    "/audio/error_001.wav",
+    "/audio/click_001.wav",
+    "/audio/click_001.wav",
+    "/audio/click_001.wav",
+    "/audio/click_001.wav",
+    "/audio/click_001.wav",
+    "/audio/click_001.wav",
+    "/audio/click_001.wav",
+    "/audio/scratch_001.wav",
+    "/audio/click_001.wav",
+    "/audio/click_001.wav",
+    "/audio/click_001.wav",
+    "/audio/click_001.wav",
+    "/audio/click_001.wav",
+    "/audio/click_001.wav",
+    "/audio/scratch_001.wav",
+    "/audio/click_001.wav",
+    "/audio/back_001.wav",
+    "/audio/back_001.wav",
+    "/audio/click_001.wav",
+    "/audio/click_001.wav"
+  ],
+  "trace": [
+    {
+      "event": "pointerdown",
+      "eventAt": 937.3999999761581,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Four seats, one table",
+      "label": null,
+      "kind": "input",
+      "at": 943.3999999761581
+    },
+    {
+      "ordinal": 1,
+      "path": "/audio/click_001.wav",
+      "kind": "audio",
+      "at": 945.7999999821186
+    },
+    {
+      "ordinal": 1,
+      "ms": 150,
+      "scheduled": 945.7999999821186,
+      "kind": "pump-scheduled",
+      "at": 945.7999999821186
+    },
+    {
+      "event": "pointerup",
+      "eventAt": 937.5999999940395,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Four seats, one table",
+      "label": null,
+      "kind": "input",
+      "at": 950.7999999821186
+    },
+    {
+      "event": "click",
+      "eventAt": 937.5999999940395,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Four seats, one table",
+      "label": null,
+      "kind": "input",
+      "at": 951
+    },
+    {
+      "ordinal": 1,
+      "ms": 150,
+      "scheduled": 945.7999999821186,
+      "lateness": 348.80000001192093,
+      "kind": "pump-fired",
+      "at": 1444.5999999940395
+    },
+    {
+      "event": "pointerdown",
+      "eventAt": 1526,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Roll",
+      "label": null,
+      "kind": "input",
+      "at": 1528
+    },
+    {
+      "ordinal": 2,
+      "path": "/audio/click_001.wav",
+      "kind": "audio",
+      "at": 1528.2999999821186
+    },
+    {
+      "ordinal": 2,
+      "ms": 150,
+      "scheduled": 1528.3999999761581,
+      "kind": "pump-scheduled",
+      "at": 1528.3999999761581
+    },
+    {
+      "event": "pointerup",
+      "eventAt": 1526.0999999940395,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Roll",
+      "label": null,
+      "kind": "input",
+      "at": 1528.699999988079
+    },
+    {
+      "event": "click",
+      "eventAt": 1526.0999999940395,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Roll",
+      "label": null,
+      "kind": "input",
+      "at": 1528.699999988079
+    },
+    {
+      "ordinal": 2,
+      "ms": 150,
+      "scheduled": 1528.3999999761581,
+      "lateness": 317,
+      "kind": "pump-fired",
+      "at": 1995.3999999761581
+    },
+    {
+      "event": "pointerdown",
+      "eventAt": 2188.899999976158,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Roll",
+      "label": null,
+      "kind": "input",
+      "at": 2190
+    },
+    {
+      "ordinal": 3,
+      "path": "/audio/click_001.wav",
+      "kind": "audio",
+      "at": 2190.2999999821186
+    },
+    {
+      "ordinal": 3,
+      "ms": 150,
+      "scheduled": 2190.399999976158,
+      "kind": "pump-scheduled",
+      "at": 2190.399999976158
+    },
+    {
+      "event": "pointerup",
+      "eventAt": 2188.899999976158,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Roll",
+      "label": null,
+      "kind": "input",
+      "at": 2190.5999999940395
+    },
+    {
+      "event": "click",
+      "eventAt": 2188.899999976158,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Roll",
+      "label": null,
+      "kind": "input",
+      "at": 2190.5999999940395
+    },
+    {
+      "ordinal": 3,
+      "ms": 150,
+      "scheduled": 2190.399999976158,
+      "lateness": 8.100000023841858,
+      "kind": "pump-fired",
+      "at": 2348.5
+    },
+    {
+      "event": "pointerdown",
+      "eventAt": 2399.7999999821186,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Roll",
+      "label": null,
+      "kind": "input",
+      "at": 2400.5
+    },
+    {
+      "ordinal": 4,
+      "path": "/audio/click_001.wav",
+      "kind": "audio",
+      "at": 2400.699999988079
+    },
+    {
+      "ordinal": 4,
+      "ms": 150,
+      "scheduled": 2400.7999999821186,
+      "kind": "pump-scheduled",
+      "at": 2400.7999999821186
+    },
+    {
+      "event": "pointerup",
+      "eventAt": 2399.7999999821186,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Roll",
+      "label": null,
+      "kind": "input",
+      "at": 2400.899999976158
+    },
+    {
+      "event": "click",
+      "eventAt": 2399.7999999821186,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Roll",
+      "label": null,
+      "kind": "input",
+      "at": 2401
+    },
+    {
+      "event": "pointerdown",
+      "eventAt": 2499.899999976158,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Roll",
+      "label": null,
+      "kind": "input",
+      "at": 2500.5
+    },
+    {
+      "event": "pointerup",
+      "eventAt": 2499.899999976158,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Roll",
+      "label": null,
+      "kind": "input",
+      "at": 2500.699999988079
+    },
+    {
+      "event": "click",
+      "eventAt": 2499.899999976158,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Roll",
+      "label": null,
+      "kind": "input",
+      "at": 2500.7999999821186
+    },
+    {
+      "ordinal": 4,
+      "ms": 150,
+      "scheduled": 2400.7999999821186,
+      "lateness": 19,
+      "kind": "pump-fired",
+      "at": 2569.7999999821186
+    },
+    {
+      "ordinal": 5,
+      "path": "/audio/click_001.wav",
+      "kind": "audio",
+      "at": 2570
+    },
+    {
+      "ordinal": 5,
+      "ms": 150,
+      "scheduled": 2570.0999999940395,
+      "kind": "pump-scheduled",
+      "at": 2570.0999999940395
+    },
+    {
+      "ordinal": 5,
+      "ms": 150,
+      "scheduled": 2570.0999999940395,
+      "lateness": 55.900000005960464,
+      "kind": "pump-fired",
+      "at": 2776
+    },
+    {
+      "ordinal": 6,
+      "path": "/audio/error_001.wav",
+      "kind": "audio",
+      "at": 2776.0999999940395
+    },
+    {
+      "ordinal": 6,
+      "ms": 150,
+      "scheduled": 2776.0999999940395,
+      "kind": "pump-scheduled",
+      "at": 2776.0999999940395
+    },
+    {
+      "ordinal": 6,
+      "ms": 150,
+      "scheduled": 2776.0999999940395,
+      "lateness": 0.19999998807907104,
+      "kind": "pump-fired",
+      "at": 2926.2999999821186
+    },
+    {
+      "ordinal": 7,
+      "path": "/audio/error_001.wav",
+      "kind": "audio",
+      "at": 2926.5
+    },
+    {
+      "ordinal": 7,
+      "ms": 150,
+      "scheduled": 2926.5999999940395,
+      "kind": "pump-scheduled",
+      "at": 2926.5999999940395
+    },
+    {
+      "ordinal": 7,
+      "ms": 150,
+      "scheduled": 2926.5999999940395,
+      "lateness": 401.2999999821186,
+      "kind": "pump-fired",
+      "at": 3477.899999976158
+    },
+    {
+      "event": "pointerdown",
+      "eventAt": 3760.5,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Discard",
+      "label": null,
+      "kind": "input",
+      "at": 3762.5999999940395
+    },
+    {
+      "ordinal": 8,
+      "path": "/audio/click_001.wav",
+      "kind": "audio",
+      "at": 3763.0999999940395
+    },
+    {
+      "ordinal": 8,
+      "ms": 150,
+      "scheduled": 3763.399999976158,
+      "kind": "pump-scheduled",
+      "at": 3763.399999976158
+    },
+    {
+      "event": "pointerup",
+      "eventAt": 3760.5,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Discard",
+      "label": null,
+      "kind": "input",
+      "at": 3764.5
+    },
+    {
+      "event": "click",
+      "eventAt": 3760.5,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Discard",
+      "label": null,
+      "kind": "input",
+      "at": 3764.5
+    },
+    {
+      "ordinal": 8,
+      "ms": 150,
+      "scheduled": 3763.399999976158,
+      "lateness": 11,
+      "kind": "pump-fired",
+      "at": 3924.399999976158
+    },
+    {
+      "event": "pointerdown",
+      "eventAt": 3960.899999976158,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Discard",
+      "label": null,
+      "kind": "input",
+      "at": 3961.699999988079
+    },
+    {
+      "ordinal": 9,
+      "path": "/audio/click_001.wav",
+      "kind": "audio",
+      "at": 3962.5
+    },
+    {
+      "ordinal": 9,
+      "ms": 150,
+      "scheduled": 3962.5,
+      "kind": "pump-scheduled",
+      "at": 3962.5
+    },
+    {
+      "event": "pointerup",
+      "eventAt": 3961.0999999940395,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Discard",
+      "label": null,
+      "kind": "input",
+      "at": 3963.399999976158
+    },
+    {
+      "event": "click",
+      "eventAt": 3961.0999999940395,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Discard",
+      "label": null,
+      "kind": "input",
+      "at": 3963.5999999940395
+    },
+    {
+      "event": "pointerdown",
+      "eventAt": 4094.5999999940395,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Discard",
+      "label": null,
+      "kind": "input",
+      "at": 4095.699999988079
+    },
+    {
+      "event": "pointerup",
+      "eventAt": 4094.7999999821186,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Discard",
+      "label": null,
+      "kind": "input",
+      "at": 4096.5
+    },
+    {
+      "event": "click",
+      "eventAt": 4094.7999999821186,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Discard",
+      "label": null,
+      "kind": "input",
+      "at": 4096.5
+    },
+    {
+      "ordinal": 9,
+      "ms": 150,
+      "scheduled": 3962.5,
+      "lateness": 20.399999976158142,
+      "kind": "pump-fired",
+      "at": 4132.899999976158
+    },
+    {
+      "ordinal": 10,
+      "path": "/audio/click_001.wav",
+      "kind": "audio",
+      "at": 4133.199999988079
+    },
+    {
+      "ordinal": 10,
+      "ms": 150,
+      "scheduled": 4133.199999988079,
+      "kind": "pump-scheduled",
+      "at": 4133.199999988079
+    },
+    {
+      "ordinal": 10,
+      "ms": 150,
+      "scheduled": 4133.199999988079,
+      "lateness": 3.5999999940395355,
+      "kind": "pump-fired",
+      "at": 4286.799999982119
+    },
+    {
+      "event": "pointerdown",
+      "eventAt": 4647.5999999940395,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Play fortune · 1",
+      "label": "Play fortune, 1 held",
+      "kind": "input",
+      "at": 4649.799999982119
+    },
+    {
+      "ordinal": 11,
+      "path": "/audio/click_001.wav",
+      "kind": "audio",
+      "at": 4650.5
+    },
+    {
+      "ordinal": 11,
+      "ms": 150,
+      "scheduled": 4650.5,
+      "kind": "pump-scheduled",
+      "at": 4650.5
+    },
+    {
+      "event": "pointerup",
+      "eventAt": 4647.5999999940395,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Play fortune · 1",
+      "label": "Play fortune, 1 held",
+      "kind": "input",
+      "at": 4650.899999976158
+    },
+    {
+      "event": "click",
+      "eventAt": 4647.5999999940395,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Play fortune · 1",
+      "label": "Play fortune, 1 held",
+      "kind": "input",
+      "at": 4650.899999976158
+    },
+    {
+      "event": "keydown",
+      "eventAt": 4730.699999988079,
+      "key": "Enter",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "",
+      "label": "Stone",
+      "kind": "input",
+      "at": 4731.199999988079
+    },
+    {
+      "event": "click",
+      "eventAt": 4730.699999988079,
+      "pointer": "",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "",
+      "label": "Stone",
+      "kind": "input",
+      "at": 4731.5999999940395
+    },
+    {
+      "event": "keyup",
+      "eventAt": 4732.199999988079,
+      "key": "Enter",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "",
+      "label": "Stone",
+      "kind": "input",
+      "at": 4732.5999999940395
+    },
+    {
+      "event": "pointerdown",
+      "eventAt": 4738.5,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "path",
+      "button": "",
+      "label": "Stone",
+      "kind": "input",
+      "at": 4744.699999988079
+    },
+    {
+      "event": "pointerup",
+      "eventAt": 4743.799999982119,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "path",
+      "button": "",
+      "label": "Stone",
+      "kind": "input",
+      "at": 4745.5999999940395
+    },
+    {
+      "event": "click",
+      "eventAt": 4743.799999982119,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "path",
+      "button": "",
+      "label": "Stone",
+      "kind": "input",
+      "at": 4745.699999988079
+    },
+    {
+      "ordinal": 11,
+      "ms": 150,
+      "scheduled": 4650.5,
+      "lateness": 20.099999994039536,
+      "kind": "pump-fired",
+      "at": 4820.5999999940395
+    },
+    {
+      "event": "pointerdown",
+      "eventAt": 5023.5999999940395,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "path",
+      "button": "",
+      "label": "Wheat",
+      "kind": "input",
+      "at": 5025.399999976158
+    },
+    {
+      "ordinal": 12,
+      "path": "/audio/click_001.wav",
+      "kind": "audio",
+      "at": 5025.799999982119
+    },
+    {
+      "ordinal": 12,
+      "ms": 150,
+      "scheduled": 5025.899999976158,
+      "kind": "pump-scheduled",
+      "at": 5025.899999976158
+    },
+    {
+      "event": "pointerup",
+      "eventAt": 5024.699999988079,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "path",
+      "button": "",
+      "label": "Wheat",
+      "kind": "input",
+      "at": 5026.299999982119
+    },
+    {
+      "event": "click",
+      "eventAt": 5024.699999988079,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "path",
+      "button": "",
+      "label": "Wheat",
+      "kind": "input",
+      "at": 5026.5
+    },
+    {
+      "ordinal": 12,
+      "ms": 150,
+      "scheduled": 5025.899999976158,
+      "lateness": 0.10000002384185791,
+      "kind": "pump-fired",
+      "at": 5176
+    },
+    {
+      "event": "pointerdown",
+      "eventAt": 5342.399999976158,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "path",
+      "button": "",
+      "label": "Wheat, picked",
+      "kind": "input",
+      "at": 5343.5999999940395
+    },
+    {
+      "ordinal": 13,
+      "path": "/audio/click_001.wav",
+      "kind": "audio",
+      "at": 5345.299999982119
+    },
+    {
+      "ordinal": 13,
+      "ms": 150,
+      "scheduled": 5345.399999976158,
+      "kind": "pump-scheduled",
+      "at": 5345.399999976158
+    },
+    {
+      "event": "pointerup",
+      "eventAt": 5342.5,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "path",
+      "button": "",
+      "label": "Wheat, picked",
+      "kind": "input",
+      "at": 5346.799999982119
+    },
+    {
+      "event": "click",
+      "eventAt": 5342.5,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "path",
+      "button": "",
+      "label": "Wheat, picked",
+      "kind": "input",
+      "at": 5346.799999982119
+    },
+    {
+      "event": "pointerdown",
+      "eventAt": 5432.799999982119,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Play",
+      "label": null,
+      "kind": "input",
+      "at": 5434.5999999940395
+    },
+    {
+      "event": "pointerup",
+      "eventAt": 5432.799999982119,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Play",
+      "label": null,
+      "kind": "input",
+      "at": 5435.199999988079
+    },
+    {
+      "event": "click",
+      "eventAt": 5432.799999982119,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Play",
+      "label": null,
+      "kind": "input",
+      "at": 5435.199999988079
+    },
+    {
+      "ordinal": 13,
+      "ms": 150,
+      "scheduled": 5345.399999976158,
+      "lateness": 54.20000001788139,
+      "kind": "pump-fired",
+      "at": 5549.5999999940395
+    },
+    {
+      "ordinal": 14,
+      "path": "/audio/click_001.wav",
+      "kind": "audio",
+      "at": 5550.0999999940395
+    },
+    {
+      "ordinal": 14,
+      "ms": 150,
+      "scheduled": 5550.199999988079,
+      "kind": "pump-scheduled",
+      "at": 5550.199999988079
+    },
+    {
+      "ordinal": 14,
+      "ms": 150,
+      "scheduled": 5550.199999988079,
+      "lateness": 21.69999998807907,
+      "kind": "pump-fired",
+      "at": 5721.899999976158
+    },
+    {
+      "ordinal": 15,
+      "path": "/audio/scratch_001.wav",
+      "kind": "audio",
+      "at": 5722.0999999940395
+    },
+    {
+      "ordinal": 15,
+      "ms": 150,
+      "scheduled": 5722.0999999940395,
+      "kind": "pump-scheduled",
+      "at": 5722.0999999940395
+    },
+    {
+      "event": "pointerdown",
+      "eventAt": 5733.799999982119,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Play fortune · 1",
+      "label": "Play fortune, 1 held",
+      "kind": "input",
+      "at": 5735.399999976158
+    },
+    {
+      "event": "pointerup",
+      "eventAt": 5733.799999982119,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Play fortune · 1",
+      "label": "Play fortune, 1 held",
+      "kind": "input",
+      "at": 5735.799999982119
+    },
+    {
+      "event": "click",
+      "eventAt": 5733.799999982119,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Play fortune · 1",
+      "label": "Play fortune, 1 held",
+      "kind": "input",
+      "at": 5735.799999982119
+    },
+    {
+      "ordinal": 15,
+      "ms": 150,
+      "scheduled": 5722.0999999940395,
+      "lateness": 0.19999998807907104,
+      "kind": "pump-fired",
+      "at": 5872.299999982119
+    },
+    {
+      "ordinal": 16,
+      "path": "/audio/click_001.wav",
+      "kind": "audio",
+      "at": 5872.5
+    },
+    {
+      "ordinal": 16,
+      "ms": 150,
+      "scheduled": 5873.199999988079,
+      "kind": "pump-scheduled",
+      "at": 5873.199999988079
+    },
+    {
+      "ordinal": 16,
+      "ms": 150,
+      "scheduled": 5873.199999988079,
+      "lateness": 0.09999999403953552,
+      "kind": "pump-fired",
+      "at": 6023.299999982119
+    },
+    {
+      "event": "pointerdown",
+      "eventAt": 6177.199999988079,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "path",
+      "button": "",
+      "label": "Wood",
+      "kind": "input",
+      "at": 6179.299999982119
+    },
+    {
+      "ordinal": 17,
+      "path": "/audio/click_001.wav",
+      "kind": "audio",
+      "at": 6179.899999976158
+    },
+    {
+      "ordinal": 17,
+      "ms": 150,
+      "scheduled": 6180.0999999940395,
+      "kind": "pump-scheduled",
+      "at": 6180.0999999940395
+    },
+    {
+      "event": "pointerup",
+      "eventAt": 6177.299999982119,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "path",
+      "button": "",
+      "label": "Wood",
+      "kind": "input",
+      "at": 6180.5999999940395
+    },
+    {
+      "event": "click",
+      "eventAt": 6177.299999982119,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "path",
+      "button": "",
+      "label": "Wood",
+      "kind": "input",
+      "at": 6180.799999982119
+    },
+    {
+      "event": "pointerdown",
+      "eventAt": 6244.5,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "path",
+      "button": "",
+      "label": "Wood, picked",
+      "kind": "input",
+      "at": 6246.699999988079
+    },
+    {
+      "event": "pointerup",
+      "eventAt": 6244.5999999940395,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "path",
+      "button": "",
+      "label": "Wood, picked",
+      "kind": "input",
+      "at": 6246.899999976158
+    },
+    {
+      "event": "click",
+      "eventAt": 6244.5999999940395,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "path",
+      "button": "",
+      "label": "Wood, picked",
+      "kind": "input",
+      "at": 6247
+    },
+    {
+      "ordinal": 17,
+      "ms": 150,
+      "scheduled": 6180.0999999940395,
+      "lateness": 1.2999999821186066,
+      "kind": "pump-fired",
+      "at": 6331.399999976158
+    },
+    {
+      "ordinal": 18,
+      "path": "/audio/click_001.wav",
+      "kind": "audio",
+      "at": 6331.899999976158
+    },
+    {
+      "ordinal": 18,
+      "ms": 150,
+      "scheduled": 6332,
+      "kind": "pump-scheduled",
+      "at": 6332
+    },
+    {
+      "event": "pointerdown",
+      "eventAt": 6377.399999976158,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "svg",
+      "button": "",
+      "label": "Brick",
+      "kind": "input",
+      "at": 6379.5999999940395
+    },
+    {
+      "event": "pointerup",
+      "eventAt": 6377.5,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "svg",
+      "button": "",
+      "label": "Brick",
+      "kind": "input",
+      "at": 6379.899999976158
+    },
+    {
+      "event": "click",
+      "eventAt": 6377.5,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "svg",
+      "button": "",
+      "label": "Brick",
+      "kind": "input",
+      "at": 6380.0999999940395
+    },
+    {
+      "event": "pointerdown",
+      "eventAt": 6444.5,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "svg",
+      "button": "",
+      "label": "Brick, picked",
+      "kind": "input",
+      "at": 6446.399999976158
+    },
+    {
+      "event": "pointerup",
+      "eventAt": 6444.5,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "svg",
+      "button": "",
+      "label": "Brick, picked",
+      "kind": "input",
+      "at": 6446.5999999940395
+    },
+    {
+      "event": "click",
+      "eventAt": 6444.5,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "svg",
+      "button": "",
+      "label": "Brick, picked",
+      "kind": "input",
+      "at": 6446.699999988079
+    },
+    {
+      "ordinal": 18,
+      "ms": 150,
+      "scheduled": 6332,
+      "lateness": 0.09999999403953552,
+      "kind": "pump-fired",
+      "at": 6482.0999999940395
+    },
+    {
+      "ordinal": 19,
+      "path": "/audio/click_001.wav",
+      "kind": "audio",
+      "at": 6482.399999976158
+    },
+    {
+      "ordinal": 19,
+      "ms": 150,
+      "scheduled": 6482.399999976158,
+      "kind": "pump-scheduled",
+      "at": 6482.399999976158
+    },
+    {
+      "event": "pointerdown",
+      "eventAt": 6528.899999976158,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Play",
+      "label": null,
+      "kind": "input",
+      "at": 6531.199999988079
+    },
+    {
+      "event": "pointerup",
+      "eventAt": 6528.899999976158,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Play",
+      "label": null,
+      "kind": "input",
+      "at": 6532
+    },
+    {
+      "event": "click",
+      "eventAt": 6528.899999976158,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Play",
+      "label": null,
+      "kind": "input",
+      "at": 6532
+    },
+    {
+      "ordinal": 19,
+      "ms": 150,
+      "scheduled": 6482.399999976158,
+      "lateness": 32.400000005960464,
+      "kind": "pump-fired",
+      "at": 6664.799999982119
+    },
+    {
+      "ordinal": 20,
+      "path": "/audio/click_001.wav",
+      "kind": "audio",
+      "at": 6664.899999976158
+    },
+    {
+      "ordinal": 20,
+      "ms": 150,
+      "scheduled": 6665,
+      "kind": "pump-scheduled",
+      "at": 6665
+    },
+    {
+      "ordinal": 20,
+      "ms": 150,
+      "scheduled": 6665,
+      "lateness": 0.09999999403953552,
+      "kind": "pump-fired",
+      "at": 6815.0999999940395
+    },
+    {
+      "ordinal": 21,
+      "path": "/audio/click_001.wav",
+      "kind": "audio",
+      "at": 6815.299999982119
+    },
+    {
+      "ordinal": 21,
+      "ms": 150,
+      "scheduled": 6815.299999982119,
+      "kind": "pump-scheduled",
+      "at": 6815.299999982119
+    },
+    {
+      "event": "pointerdown",
+      "eventAt": 6841.299999982119,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Play fortune · 1",
+      "label": "Play fortune, 1 held",
+      "kind": "input",
+      "at": 6842.699999988079
+    },
+    {
+      "event": "pointerup",
+      "eventAt": 6843.0999999940395,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Play fortune · 1",
+      "label": "Play fortune, 1 held",
+      "kind": "input",
+      "at": 6843.299999982119
+    },
+    {
+      "event": "click",
+      "eventAt": 6843.0999999940395,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Play fortune · 1",
+      "label": "Play fortune, 1 held",
+      "kind": "input",
+      "at": 6843.299999982119
+    },
+    {
+      "event": "keydown",
+      "eventAt": 6933.5999999940395,
+      "key": "Escape",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "",
+      "label": "Close",
+      "kind": "input",
+      "at": 6933.799999982119
+    },
+    {
+      "event": "keyup",
+      "eventAt": 6966.199999988079,
+      "key": "Escape",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Play fortune · 1",
+      "label": "Play fortune, 1 held",
+      "kind": "input",
+      "at": 6970.0999999940395
+    },
+    {
+      "ordinal": 21,
+      "ms": 150,
+      "scheduled": 6815.299999982119,
+      "lateness": 8.700000017881393,
+      "kind": "pump-fired",
+      "at": 6974
+    },
+    {
+      "ordinal": 22,
+      "path": "/audio/scratch_001.wav",
+      "kind": "audio",
+      "at": 6974.799999982119
+    },
+    {
+      "ordinal": 22,
+      "ms": 150,
+      "scheduled": 6975,
+      "kind": "pump-scheduled",
+      "at": 6975
+    },
+    {
+      "event": "pointerdown",
+      "eventAt": 7034.199999988079,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "circle",
+      "button": "",
+      "label": "Table menu",
+      "kind": "input",
+      "at": 7037
+    },
+    {
+      "event": "pointerup",
+      "eventAt": 7034.299999982119,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "circle",
+      "button": "",
+      "label": "Table menu",
+      "kind": "input",
+      "at": 7037.5
+    },
+    {
+      "event": "click",
+      "eventAt": 7034.299999982119,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "circle",
+      "button": "",
+      "label": "Table menu",
+      "kind": "input",
+      "at": 7037.5999999940395
+    },
+    {
+      "ordinal": 22,
+      "ms": 150,
+      "scheduled": 6975,
+      "lateness": 1.7999999821186066,
+      "kind": "pump-fired",
+      "at": 7126.799999982119
+    },
+    {
+      "ordinal": 23,
+      "path": "/audio/click_001.wav",
+      "kind": "audio",
+      "at": 7127.199999988079
+    },
+    {
+      "ordinal": 23,
+      "ms": 150,
+      "scheduled": 7127.399999976158,
+      "kind": "pump-scheduled",
+      "at": 7127.399999976158
+    },
+    {
+      "ordinal": 23,
+      "ms": 150,
+      "scheduled": 7127.399999976158,
+      "lateness": 356.40000000596046,
+      "kind": "pump-fired",
+      "at": 7633.799999982119
+    },
+    {
+      "ordinal": 24,
+      "path": "/audio/back_001.wav",
+      "kind": "audio",
+      "at": 7633.899999976158
+    },
+    {
+      "ordinal": 24,
+      "ms": 150,
+      "scheduled": 7633.899999976158,
+      "kind": "pump-scheduled",
+      "at": 7633.899999976158
+    },
+    {
+      "event": "pointerdown",
+      "eventAt": 7724.799999982119,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Leave table",
+      "label": null,
+      "kind": "input",
+      "at": 7728.5
+    },
+    {
+      "kind": "controlled-extra",
+      "at": 7730.799999982119,
+      "eventAt": 7724.799999982119,
+      "path": "/audio/back_001.wav",
+      "ordinal": 25
+    },
+    {
+      "ordinal": 25,
+      "path": "/audio/back_001.wav",
+      "kind": "audio",
+      "at": 7730.899999976158
+    },
+    {
+      "event": "pointerup",
+      "eventAt": 7724.799999982119,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Leave table",
+      "label": null,
+      "kind": "input",
+      "at": 7730.899999976158
+    },
+    {
+      "event": "click",
+      "eventAt": 7724.799999982119,
+      "pointer": "mouse",
+      "trusted": true,
+      "target": "BUTTON",
+      "button": "Leave table",
+      "label": null,
+      "stack": "Error\n    at document.addEventListener.capture (<anonymous>:16:79)",
+      "kind": "input",
+      "at": 7731.0999999940395
+    },
+    {
+      "ordinal": 24,
+      "ms": 150,
+      "scheduled": 7633.899999976158,
+      "lateness": 38.400000005960464,
+      "kind": "pump-fired",
+      "at": 7822.299999982119
+    },
+    {
+      "ordinal": 26,
+      "path": "/audio/click_001.wav",
+      "kind": "audio",
+      "at": 7825.199999988079
+    },
+    {
+      "ordinal": 25,
+      "ms": 150,
+      "scheduled": 7825.199999988079,
+      "kind": "pump-scheduled",
+      "at": 7825.199999988079
+    },
+    {
+      "ordinal": 25,
+      "ms": 150,
+      "scheduled": 7825.199999988079,
+      "lateness": 31.80000001192093,
+      "kind": "pump-fired",
+      "at": 8007
+    },
+    {
+      "ordinal": 27,
+      "path": "/audio/click_001.wav",
+      "kind": "audio",
+      "at": 8007.299999982119
+    },
+    {
+      "ordinal": 26,
+      "ms": 150,
+      "scheduled": 8007.5999999940395,
+      "kind": "pump-scheduled",
+      "at": 8007.5999999940395
+    }
+  ]
+}

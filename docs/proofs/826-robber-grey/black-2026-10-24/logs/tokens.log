@@ -1,0 +1,39 @@
+
+> tokens-prove
+> node scripts/tokens-prove.mjs
+
+ok   1 placement clear (title demo): 6 kinds, nearest point 0.341, ore (adit)
+ok   1 placement clear (practice): 6 kinds, nearest point 0.340, grain (hen)
+ok   2 wander clear: 600 samples, nearest point 0.323, ore (climber)
+ok   3 token geometry (title demo): 18 tokens
+ok   4 rim rule (title demo)
+ok   6 pips on canvas (title demo): 28/28/28/28 28/28/28/28
+ok   3 token geometry (practice): 18 tokens
+ok   4 rim rule (practice)
+ok   6 pips on canvas (practice): 28/28/28/28 28/28/28/28
+ok   7 diorama tokens face the camera (1280x720): 18 of 18
+ok   7 diorama numerals at least 11 px tall (1280x720): smallest 12.3 px (the 4)
+ok   7 diorama pips at least 2 px across (1280x720): smallest 2.04 px (the 8)
+ok   7 diorama discs their own size, at most 30 % of a hex across (1280x720): largest 26.8 % (the 11, 1.000x)
+ok   7 diorama discs never overlap on screen (1280x720)
+ok   7 no numeral behind the scenery (1280x720): 0 of 90 points
+ok   8 the wayfarer hides no numeral (diorama, 1280x720): 18 hexes clear
+ok   8 the wayfarer hides no numeral (overhead, 1280x720): 18 hexes clear
+ok   7 diorama tokens face the camera (960x680): 18 of 18
+ok   7 diorama numerals at least 11 px tall (960x680): smallest 12.0 px (the 3)
+ok   7 diorama pips at least 2 px across (960x680): smallest 2.04 px (the 3)
+ok   7 diorama discs their own size, at most 30 % of a hex across (960x680): largest 26.8 % (the 3, 1.000x)
+ok   7 diorama discs never overlap on screen (960x680)
+ok   7 no numeral behind the scenery (960x680): 0 of 90 points
+ok   8 the wayfarer hides no numeral (diorama, 960x680): 18 hexes clear
+ok   8 the wayfarer hides no numeral (overhead, 960x680): 18 hexes clear
+ok   5 contrast on timber: 5.35
+ok   5 contrast on clay: 4.18
+ok   5 contrast on wool: 4.14
+ok   5 contrast on grain: 4.46
+ok   5 contrast on ore: 3.89
+ok   5 contrast on waste: 3.81
+ok   5 red on cream: 5.47
+ok   5 dark on cream: 14.66
+ok   no console errors
+tokens-prove ok

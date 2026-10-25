@@ -1,0 +1,13 @@
+
+> your-turn-cue-prove
+> node scripts/your-turn-cue-prove.mjs
+
+ok: focused tab shows ● Your turn — Emberisle
+ok: hidden tab flashes ● Your turn with Emberisle
+ok: focus return stops the flash
+ok: hidden turn handoff and spectator never retain the flash
+ok: your_turn chime: once at vol 1, mute and hotseat silent
+ok: hotseat never uses the your-turn title
+ok: your_turn wav is 420 ms (rising two-note)
+ok: shipped PCM has the rising 660/990 Hz notes
+your-turn-cue-prove: all ok

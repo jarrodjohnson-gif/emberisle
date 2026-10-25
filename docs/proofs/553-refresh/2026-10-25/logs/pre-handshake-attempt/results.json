@@ -1,0 +1,83 @@
+[
+  {
+    "head": "48af1d25cdbabee0fe0464ee836f16aa2d2d7b6c",
+    "name": "types",
+    "command": [
+      "npm",
+      "run",
+      "typecheck"
+    ],
+    "exit_code": 0,
+    "seconds": 1.09
+  },
+  {
+    "head": "48af1d25cdbabee0fe0464ee836f16aa2d2d7b6c",
+    "name": "registered",
+    "command": [
+      "npm",
+      "run",
+      "registered-prove"
+    ],
+    "exit_code": 0,
+    "seconds": 0.13
+  },
+  {
+    "head": "48af1d25cdbabee0fe0464ee836f16aa2d2d7b6c",
+    "name": "loosen",
+    "command": [
+      "npm",
+      "run",
+      "loosen-prove",
+      "--",
+      "--base",
+      "2638b7013abb21127e8c6507df508f84bb207b38"
+    ],
+    "exit_code": 0,
+    "seconds": 0.14
+  },
+  {
+    "head": "48af1d25cdbabee0fe0464ee836f16aa2d2d7b6c",
+    "name": "size-delta",
+    "command": [
+      "npm",
+      "run",
+      "size-delta-prove"
+    ],
+    "exit_code": 0,
+    "seconds": 0.36
+  },
+  {
+    "head": "48af1d25cdbabee0fe0464ee836f16aa2d2d7b6c",
+    "name": "build",
+    "command": [
+      "npm",
+      "run",
+      "build"
+    ],
+    "exit_code": 0,
+    "seconds": 0.97
+  },
+  {
+    "head": "48af1d25cdbabee0fe0464ee836f16aa2d2d7b6c",
+    "name": "size",
+    "command": [
+      "node",
+      "scripts/size-prove.mjs",
+      "--base",
+      "/workspace/emberisle/work/base1037-main137"
+    ],
+    "exit_code": 0,
+    "seconds": 0.1
+  },
+  {
+    "head": "48af1d25cdbabee0fe0464ee836f16aa2d2d7b6c",
+    "name": "haptics",
+    "command": [
+      "npm",
+      "run",
+      "haptics-prove"
+    ],
+    "exit_code": 1,
+    "seconds": 33.87
+  }
+]
