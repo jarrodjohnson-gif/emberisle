@@ -175,44 +175,73 @@ async function selectionMotion(page, resource, side, count, motion, tag) {
 async function armBankMotion(page, rate) {
   await page.evaluate((rate) => {
     window.__tradeTabsBankObserver?.disconnect();
+    window.__tradeTabsBankEndObserver?.disconnect();
     window.__tradeTabsBankMotion = { ready: false, rate };
     const beforeSeq = window.__emberisle.getState().state.seq;
     const cues = [
       { key: "handLoss", selector: `[data-testid="resource-flash"][data-resource="timber"][data-delta="-${rate}"]` },
       { key: "handGain", selector: '[data-testid="resource-flash"][data-resource="ore"][data-delta="+1"]' },
-      { key: "centerLoss", selector: `[data-testid="gain-float"][data-resource="timber"][data-delta="-${rate}"]` },
-      { key: "centerGain", selector: '[data-testid="gain-float"][data-resource="ore"][data-delta="1"]' },
+      { key: "cardLoss", selector: '[data-testid="resource-timber"] [data-testid="goods-lost"]' },
+      { key: "cardGain", selector: '[data-testid="resource-ore"] [data-testid="goods-lit"]' },
     ];
+    const color = (token) => {
+      const probe = document.createElement("span");
+      probe.style.color = token;
+      document.body.appendChild(probe);
+      const value = getComputedStyle(probe).color;
+      probe.remove();
+      return value;
+    };
     const read = (element) => {
+      const card = element.closest(".goods-card");
+      const tab = card.querySelector('[data-testid="resource-flash"]');
       const animations = element.getAnimations();
       const animation = animations[0];
-      const firstStyle = getComputedStyle(element);
-      const result = { text: element.textContent.replace(/\s+/g, " ").trim(), resource: element.dataset.resource, delta: element.dataset.delta,
-        animations: animations.length, animationName: firstStyle.animationName, color: firstStyle.color };
+      const movements = card.getAnimations().filter((a) => a.effect.target === card && a.effect.getKeyframes().some((f) => "transform" in f));
+      const movement = element === tab ? null : movements[0];
+      const firstStyle = getComputedStyle(element), tabStyle = getComputedStyle(tab), cardStyle = getComputedStyle(card);
+      const result = { text: tab.textContent.replace(/\s+/g, " ").trim(), resource: card.dataset.testid.slice("resource-".length), pairedResource: tab.dataset.resource, delta: tab.dataset.delta,
+        pairedTabVisible: tabStyle.visibility !== "hidden" && tab.getBoundingClientRect().height > 0,
+        animations: animations.length, cardAnimations: movements.length, animationName: firstStyle.animationName, color: firstStyle.color,
+        background: firstStyle.backgroundColor, shadow: firstStyle.boxShadow,
+        tabColor: tabStyle.color, tabBackground: tabStyle.backgroundColor, tabShadow: tabStyle.boxShadow,
+        palette: { resource: color(cardStyle.getPropertyValue("--c")), deep: color(cardStyle.getPropertyValue("--deep")),
+          loss: color(cardStyle.getPropertyValue("--loss")), paper: color(cardStyle.getPropertyValue("--paper")) } };
       const at = (time) => {
         if (animation) animation.currentTime = time;
-        const style = getComputedStyle(element);
-        return { y: new DOMMatrixReadOnly(style.transform === "none" ? undefined : style.transform).m42,
+        if (movement) movement.currentTime = time;
+        const style = getComputedStyle(element), position = getComputedStyle(element === tab ? element : card);
+        return { y: new DOMMatrixReadOnly(position.transform === "none" ? undefined : position.transform).m42,
           opacity: Number(style.opacity), visible: style.visibility !== "hidden" && element.getBoundingClientRect().height > 0 };
       };
-      if (!animation) return { ...result, start: at(0), readable: at(0), hold: at(0), end: at(0) };
+      if (!animation) return { ...result, start: at(0), peak: at(0), readable: at(0), hold: at(0), end: at(0) };
       animation.pause();
+      movement?.pause();
       const timing = animation.effect.getTiming();
       const duration = Number(timing.duration), delay = Number(timing.delay);
-      const holdFraction = element.dataset.testid === "resource-flash" && innerHeight <= 480 ? 0.65 : 0.8;
-      const sampled = { ...result, duration, delay, start: at(delay), readable: at(delay + duration / 2),
-        hold: at(delay + duration * holdFraction), holdFraction, end: at(delay + duration) };
+      const sampled = { ...result, duration, delay, movementDuration: movement?.effect.getTiming().duration,
+        start: at(delay), peak: at(delay + 120), readable: at(delay + duration / 2),
+        hold: at(delay + 2200), end: at(delay + duration) };
       animation.currentTime = delay + duration / 2;
+      if (movement) movement.currentTime = delay + duration / 2;
       return sampled;
     };
     const look = () => {
       if (window.__emberisle.getState().state.seq <= beforeSeq) return;
       const elements = cues.map((cue) => document.querySelector(cue.selector));
       if (elements.some((element) => !element)) return;
-      window.__tradeTabsBankMotion = { ready: true, rate, beforeSeq, afterSeq: window.__emberisle.getState().state.seq,
-        reduced: matchMedia("(prefers-reduced-motion: reduce)").matches, compact: innerHeight <= 480,
-        cues: Object.fromEntries(cues.map((cue, index) => [cue.key, read(elements[index])])) };
       window.__tradeTabsBankObserver.disconnect();
+      window.__tradeTabsBankMotion = { ready: true, rate, beforeSeq, afterSeq: window.__emberisle.getState().state.seq,
+        observedAt: performance.now(), reduced: matchMedia("(prefers-reduced-motion: reduce)").matches,
+        compact: innerHeight <= 480, coarse: matchMedia("(pointer: coarse)").matches, upright: innerHeight > innerWidth,
+        islandText: document.querySelectorAll('[data-testid="gain-float"]').length,
+        cues: Object.fromEntries(cues.map((cue, index) => [cue.key, read(elements[index])])) };
+      window.__tradeTabsBankEndObserver = new MutationObserver(() => {
+        if (elements.some((element) => element.isConnected)) return;
+        window.__tradeTabsBankMotion.endedAt = performance.now();
+        window.__tradeTabsBankEndObserver.disconnect();
+      });
+      window.__tradeTabsBankEndObserver.observe(document.body, { childList: true, subtree: true });
     };
     window.__tradeTabsBankObserver = new MutationObserver(look);
     window.__tradeTabsBankObserver.observe(document.body, { childList: true, subtree: true, characterData: true });
@@ -223,29 +252,48 @@ async function bankMotion(page, rate, tag) {
   await page.waitForFunction(() => window.__tradeTabsBankMotion?.ready);
   const actual = await page.evaluate(() => window.__tradeTabsBankMotion);
   assert.equal(actual.afterSeq, actual.beforeSeq + 1, `${tag}: movement belongs to the genuine one-action bank settlement`);
-  const trajectories = { handLoss: [0, 4], handGain: [0, -4], centerLoss: [-6, 8], centerGain: [6, -8] };
+  // #773's approved V1 moves the card, keeps its signed tab still, and removes island gain text.
+  const lift = actual.compact && !actual.coarse ? 0 : actual.upright && actual.coarse ? 6 : 4;
+  const trajectories = { handLoss: 0, handGain: 0, cardLoss: 2, cardGain: -lift };
   for (const [key, cue] of Object.entries(actual.cues)) {
     const loss = key.endsWith("Loss");
     assert.equal(cue.resource, loss ? "timber" : "ore", `${tag}: ${key} identifies the actually traded resource`);
+    assert.equal(cue.pairedResource, cue.resource, `${tag}: ${key} pairs its own card with the same-resource signed tab`);
+    assert.equal(cue.delta, loss ? `-${rate}` : "+1", `${tag}: ${key} paired tab carries the exact settled delta`);
+    assert.equal(cue.pairedTabVisible, true, `${tag}: ${key} paired signed tab stays visible`);
     assert.equal(cue.text.replace(/−/g, "-").startsWith(loss ? `-${rate}` : "+1"), true, `${tag}: ${key} shows the actual signed delta`);
     assert.equal(cue.readable.visible, true, `${tag}: ${key} remains on screen while readable`);
     assert.equal(cue.readable.opacity, 1, `${tag}: ${key} remains fully readable through the middle of its lifetime`);
-    assert.equal(cue.hold.opacity, 1, `${tag}: ${key} preserves its readable hold${cue.holdFraction ? ` through ${cue.holdFraction * 100}%` : ""}`);
+    assert.equal(cue.hold.opacity, 1, `${tag}: ${key} preserves its readable hold through 2200ms`);
     if (actual.reduced) {
       assert.equal(cue.animations, 0, `${tag}: ${key} stays static with reduced motion`);
       assert.equal(cue.readable.y, 0, `${tag}: ${key} has no reduced-motion translation`);
+      assert.equal(cue.cardAnimations, 0, `${tag}: ${key} has no reduced-motion card movement`);
     } else {
-      assert.equal(cue.duration, 2200, `${tag}: ${key} keeps the 2200ms reading window`);
-      const expectedName = key.startsWith("hand") ? actual.compact ? "hand-resource-flash-fade" : loss ? "resource-flash-loss" : "resource-flash" : loss ? "loss-float" : "gain-float";
+      assert.equal(cue.duration, 2500, `${tag}: ${key} holds 2200ms then fades for 300ms`);
+      const expectedName = "goods-cue";
       assert.equal(cue.animationName, expectedName, `${tag}: the genuine cue uses its signed animation`);
-      const [start, end] = key.startsWith("hand") && actual.compact ? [0, 0] : trajectories[key];
+      const [start, end] = [0, 0];
       assert.ok(Math.abs(cue.start.y - start) < 0.1 && Math.abs(cue.end.y - end) < 0.1,
-        `${tag}: ${key} ${actual.compact && key.startsWith("hand") ? "preserves the compact fade-only cue" : "rises for a gain and falls for a loss"} ${JSON.stringify(cue)}`);
+        `${tag}: ${key} starts and settles at rest ${JSON.stringify(cue)}`);
+      assert.ok(Math.abs(cue.peak.y - trajectories[key]) < 0.1 && Math.abs(cue.hold.y - trajectories[key]) < 0.1,
+        `${tag}: ${key} lifts for gain or dips for loss through the full hold ${JSON.stringify(cue)}`);
+      if (key.startsWith("card")) assert.equal(cue.movementDuration, 2500, `${tag}: ${key} card movement shares the fill clock`);
       assert.equal(cue.end.opacity, 0, `${tag}: ${key} fades after its reading window`);
     }
   }
   assert.notEqual(actual.cues.handLoss.color, actual.cues.handGain.color, `${tag}: hand signs retain distinct loss/gain colors`);
-  assert.notEqual(actual.cues.centerLoss.color, actual.cues.centerGain.color, `${tag}: center signs retain distinct loss/gain colors`);
+  assert.notEqual(actual.cues.cardLoss.tabColor, actual.cues.cardGain.tabColor, `${tag}: V1 card signs retain distinct loss/gain colors`);
+  assert.equal(actual.islandText, 0, `${tag}: approved V1 replaces both island delta texts with card cues`);
+  const gain = actual.cues.cardGain, loss = actual.cues.cardLoss;
+  assert.equal(gain.background, gain.palette.resource, `${tag}: gain fills with the actual good's full color`);
+  assert.ok(gain.shadow.includes(gain.palette.deep), `${tag}: gain retains its dark ring and shadow`);
+  assert.equal(loss.tabBackground, loss.palette.paper, `${tag}: loss tab remains hollow on paper`);
+  assert.equal(loss.tabColor, loss.palette.loss, `${tag}: loss tab uses the loss color`);
+  assert.ok(loss.tabShadow.includes(loss.palette.loss) && loss.shadow !== "none", `${tag}: loss retains its red tab outline and card ring`);
+  await page.waitForFunction(() => Boolean(window.__tradeTabsBankMotion?.endedAt));
+  const lifetime = await page.evaluate(() => window.__tradeTabsBankMotion.endedAt - window.__tradeTabsBankMotion.observedAt);
+  assert.ok(lifetime >= 2200, `${tag}: actual DOM cues retain the full 2200ms hold, including reduced motion (${lifetime}ms)`);
 }
 
 async function tableAndRoutes(page, tag, motion) {
@@ -516,7 +564,7 @@ async function ratesAndRejections(page, tag) {
     assert.deepEqual(await sent(page), [{ kind: "dispatch", action: { type: "bankTrade", give: "timber", want: "ore" } }], `${tag}: ${rate}:1 sends one bank action`);
     await bankMotion(page, rate, `${tag} ${rate}:1`);
   }
-  console.log(`${tag}: live 4/3/2:1 quotes, invalid exchanges refused, real bank conservation, signed gains rise/losses fall with readable 2200ms cues (compact hand fades; reduced motion static)`);
+  console.log(`${tag}: live 4/3/2:1 quotes, invalid exchanges refused, real bank conservation, V1 signed tabs, gains lift/losses dip, 2200ms hold + 300ms fade, no island text (reduced motion static)`);
 }
 
 async function modes(page, tag) {
