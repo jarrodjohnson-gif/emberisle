@@ -71,7 +71,7 @@ export default function IslandCanvas() {
         const actor =
           s.mode === "hotseat" ? s.state.current : s.localId;
         const mine = s.state.current === actor || s.state.phase === "discard";
-        renderer.setBoard(s.state, s.highlights(), mine && s.screen === "play");
+        renderer.setBoard(s.state, s.highlights(), mine && s.screen === "play", s.mode === "hotseat" ? true : s.spectator ? undefined : s.localId);
       } else if (s.screen === "title" || s.screen === "lobby") {
         demo ??= demoBoard();
         renderer.setBoard(demo, { vertices: [], edges: [], hexes: [] }, false);

@@ -51,17 +51,21 @@ const climberAt = () =>
 
 let page;
 // Pin only createGame's synchronous seed draw; input, renderer time and story updates remain native.
-const seedHotseat = () => page.evaluate(() => {
-  const store = window.__emberisle;
-  const start = store.getState().startHotseat;
-  let nextSeed = 676;
-  store.setState({ startHotseat(count) {
-    const random = Math.random;
-    const seed = nextSeed++;
-    Math.random = () => seed / 1e9;
-    try { start(count); } finally { Math.random = random; }
-  } });
-});
+const seedHotseat = async () => {
+  // A phone's optional motor initializes before App mounts; DOMContentLoaded can precede the store publication.
+  await page.waitForFunction(() => typeof window.__emberisle?.getState().startHotseat === "function", null, { timeout: 30_000 });
+  await page.evaluate(() => {
+    const store = window.__emberisle;
+    const start = store.getState().startHotseat;
+    let nextSeed = 676;
+    store.setState({ startHotseat(count) {
+      const random = Math.random;
+      const seed = nextSeed++;
+      Math.random = () => seed / 1e9;
+      try { start(count); } finally { Math.random = random; }
+    } });
+  });
+};
 // Record inside the first natural update of a fresh board, before slow screenshot/GL work can delay the browser poll.
 const nextBoard = async (start) => {
   await page.evaluate(() => {
