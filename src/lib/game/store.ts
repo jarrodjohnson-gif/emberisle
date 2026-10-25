@@ -121,7 +121,9 @@ export function hear(before: GameState | null, after: GameState, me: string, mod
     mode !== "hotseat" && !!before && before.current !== me && after.vertices.some((v) => v.building?.playerId === me && v.hexes.includes(after.robberHex));
   const cue = haptics.player?.(before, after, me, mode) ?? play;
   if (before && after.winner && !before.winner) {
-    void tradeSounds.then(({ gameEnd }) => gameEnd(cue, before, after, me, mode));
+    // The banner buzz is felt at once; only the choice of sting waits for the lazy trade-sound chunk.
+    if (me && (mode === "hotseat" || after.winner === me)) haptics.buzz?.(HAPTIC_MS.win);
+    void tradeSounds.then(({ gameEnd }) => gameEnd(play, before, after, me, mode));
   } else {
     for (const [sound, volume] of soundsFor(before, after, mode === "hotseat" || after.current === me, victim)) {
       // A piece knocks when it lands, not when it is picked (#438); reduced motion has no fall, so it knocks at once.
@@ -209,6 +211,7 @@ import type { Bag, ChatLine, Legal, Me, Reaction, Seat, TableClient } from "@/li
 import { chunk } from "@/lib/lazy";
 import { PROTO } from "@/lib/net/proto";
 import { readMutedSeats } from "@/lib/muted-seats";
+import { HAPTIC_MS } from "@/lib/haptic-durations";
 import { haptics, play, playLater, stop, yourTurn, type SoundName } from "@/lib/sound";
 import { calmMotion, LAND_MS } from "@/lib/scene/landing";
 import type { WaterPath, WaterStatus } from "@/lib/scene/crystal-water";
