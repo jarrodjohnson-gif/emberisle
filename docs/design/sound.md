@@ -165,6 +165,34 @@ These answer section 4 and override any recommendation above that disagrees.
 5. **New cues:** only two: a **"your turn"** cue for the seat whose turn starts, and a **turn-timer countdown** tick for the last seconds of your turn. No join/leave, emote-received or payout cues.
 6. **Licensing:** Jarrod keeps the soundboard and meme clips (Wololo, the Charlie Kirk song, the airhorn, etc.) public and accepts the risk, since this is a free game for friends. The README's "CC0 only" line becomes "CC0 or owner-approved".
 
+## Owner clips carried to main (#1107)
+
+`public/audio/three_wood.mp3`: Jarrod's clip for a table offer that gives 3 or more timber. Every seat hears it, including the asker. It takes precedence over all other trade clips.
+
+`public/audio/daking_wood.mp3`: Jarrod's clip when a player named "daking" offers 1 or 2 timber. Every seat hears it. A 3-or-more-timber offer uses `three_wood` first.
+
+`public/audio/sheep_for_wood.mp3`: Jarrod's clip when a table offer gives wool for timber. Every seat hears it, including the asker.
+
+`public/audio/stone_for_wood.mp3`: Jarrod's clip when a table offer gives ore for timber. Every seat hears it, including the asker.
+
+`public/audio/corn_no.mp3`: Jarrod's clip when every other seat explicitly declines a table offer. It plays for the whole table; a timeout or a declined Yes keeps the normal No cue.
+
+`public/audio/lucke_diggler.mp3`: Jarrod's undertaker's bell. It plays when a seat joins or is renamed in the lobby to a name matching Lucke/Lucky/Luckie Diggler, Pickle, or Isaac (spaces, punctuation and case ignored). A rejoin does not ring it.
+
+`public/audio/isaac_win.mp3`: Isaac's win music. At 1.0 it replaces the win and loss stings for the whole table, keeps `end_music` off and stops when the end screen is left. The MP3 is unchanged from the source branch; its level check uses the -16 LUFS group to preserve the owner's mastering.
+
+`public/audio/tap_pasture.mp3`: "Sheep Baa", CC0 from [OpenGameArt](https://opengameart.org/content/sheep-baa). It plays on a plain tap of a Pasture hex, instead of the soundboard's `sb_plump_sheep` file.
+
+`public/audio/sb_nice_sheep.mp3`: Jarrod's soundboard clip, "Nice sheep".
+
+`public/audio/sb_sheep_please.mp3`: Jarrod's soundboard clip, "Sheep please".
+
+`public/audio/sb_grain_please.mp3`: Jarrod's soundboard clip, "Grain please".
+
+`public/audio/sb_brick_please.mp3`: Jarrod's soundboard clip, "Brick please".
+
+`sb_plump_sheep.mp3` remains the existing soundboard clip and keeps its already-levelled effect file unchanged.
+
 ## Game music (#814)
 
 `public/audio/old_tower_inn_loop.mp3`: "Medieval: The Old Tower Inn" (loop version) by RandomMind, CC0, from <https://opengameart.org/content/medieval-the-old-tower-inn>. Converted to 128 kbps MP3. Jarrod chose it on 2026-10-18. This supersedes decision 2 above ("no in-game loop").
