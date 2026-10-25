@@ -1,0 +1,3200 @@
+[
+  {
+    "tag": "844x390-mouse",
+    "titleBefore": {
+      "screen": "title",
+      "coarse": false,
+      "card": {
+        "x": 40,
+        "y": 40,
+        "w": 384,
+        "h": 310,
+        "bottom": 350
+      },
+      "scroll": {
+        "top": 0,
+        "height": 414,
+        "client": 310
+      },
+      "controls": [
+        {
+          "label": "Your name",
+          "rect": {
+            "x": 64,
+            "y": 213,
+            "w": 336,
+            "h": 44,
+            "bottom": 257
+          },
+          "hit": false,
+          "disabled": false
+        },
+        {
+          "label": "Ember",
+          "rect": {
+            "x": 64,
+            "y": 269,
+            "w": 44,
+            "h": 44,
+            "bottom": 313
+          },
+          "hit": false,
+          "disabled": false
+        },
+        {
+          "label": "Tide",
+          "rect": {
+            "x": 116,
+            "y": 269,
+            "w": 44,
+            "h": 44,
+            "bottom": 313
+          },
+          "hit": false,
+          "disabled": false
+        },
+        {
+          "label": "Dune",
+          "rect": {
+            "x": 168,
+            "y": 269,
+            "w": 44,
+            "h": 44,
+            "bottom": 313
+          },
+          "hit": false,
+          "disabled": false
+        },
+        {
+          "label": "Pine",
+          "rect": {
+            "x": 220,
+            "y": 269,
+            "w": 44,
+            "h": 44,
+            "bottom": 313
+          },
+          "hit": false,
+          "disabled": false
+        },
+        {
+          "label": "Play",
+          "rect": {
+            "x": 64,
+            "y": 254,
+            "w": 336,
+            "h": 48,
+            "bottom": 302
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Host a table",
+          "rect": {
+            "x": 64,
+            "y": 330,
+            "w": 152,
+            "h": 48,
+            "bottom": 378
+          },
+          "hit": false,
+          "disabled": false
+        },
+        {
+          "label": "Join code",
+          "rect": {
+            "x": 224,
+            "y": 330,
+            "w": 97.921875,
+            "h": 48,
+            "bottom": 378
+          },
+          "hit": false,
+          "disabled": false
+        },
+        {
+          "label": "Join",
+          "rect": {
+            "x": 329.921875,
+            "y": 330,
+            "w": 70.078125,
+            "h": 48,
+            "bottom": 378
+          },
+          "hit": false,
+          "disabled": false
+        },
+        {
+          "label": "Four seats, one table",
+          "rect": {
+            "x": 78.640625,
+            "y": 386,
+            "w": 161.109375,
+            "h": 44,
+            "bottom": 430
+          },
+          "hit": false,
+          "disabled": false
+        },
+        {
+          "label": "How to play",
+          "rect": {
+            "x": 239.75,
+            "y": 386,
+            "w": 101.59375,
+            "h": 44,
+            "bottom": 430
+          },
+          "hit": false,
+          "disabled": false
+        },
+        {
+          "label": "Table sounds on",
+          "rect": {
+            "x": 341.34375,
+            "y": 386,
+            "w": 44,
+            "h": 44,
+            "bottom": 430
+          },
+          "hit": false,
+          "disabled": false
+        }
+      ]
+    },
+    "titleAfter": {
+      "screen": "title",
+      "coarse": false,
+      "card": {
+        "x": 40,
+        "y": 40,
+        "w": 384,
+        "h": 310,
+        "bottom": 350
+      },
+      "scroll": {
+        "top": 104,
+        "height": 414,
+        "client": 310
+      },
+      "controls": [
+        {
+          "label": "Your name",
+          "rect": {
+            "x": 64,
+            "y": 109,
+            "w": 336,
+            "h": 44,
+            "bottom": 153
+          },
+          "hit": false,
+          "disabled": false
+        },
+        {
+          "label": "Ember",
+          "rect": {
+            "x": 64,
+            "y": 165,
+            "w": 44,
+            "h": 44,
+            "bottom": 209
+          },
+          "hit": false,
+          "disabled": false
+        },
+        {
+          "label": "Tide",
+          "rect": {
+            "x": 116,
+            "y": 165,
+            "w": 44,
+            "h": 44,
+            "bottom": 209
+          },
+          "hit": false,
+          "disabled": false
+        },
+        {
+          "label": "Dune",
+          "rect": {
+            "x": 168,
+            "y": 165,
+            "w": 44,
+            "h": 44,
+            "bottom": 209
+          },
+          "hit": false,
+          "disabled": false
+        },
+        {
+          "label": "Pine",
+          "rect": {
+            "x": 220,
+            "y": 165,
+            "w": 44,
+            "h": 44,
+            "bottom": 209
+          },
+          "hit": false,
+          "disabled": false
+        },
+        {
+          "label": "Play",
+          "rect": {
+            "x": 64,
+            "y": 150,
+            "w": 336,
+            "h": 48,
+            "bottom": 198
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Host a table",
+          "rect": {
+            "x": 64,
+            "y": 226,
+            "w": 152,
+            "h": 48,
+            "bottom": 274
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Join code",
+          "rect": {
+            "x": 224,
+            "y": 226,
+            "w": 97.921875,
+            "h": 48,
+            "bottom": 274
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Join",
+          "rect": {
+            "x": 329.921875,
+            "y": 226,
+            "w": 70.078125,
+            "h": 48,
+            "bottom": 274
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Four seats, one table",
+          "rect": {
+            "x": 78.640625,
+            "y": 282,
+            "w": 161.109375,
+            "h": 44,
+            "bottom": 326
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "How to play",
+          "rect": {
+            "x": 239.75,
+            "y": 282,
+            "w": 101.59375,
+            "h": 44,
+            "bottom": 326
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Table sounds on",
+          "rect": {
+            "x": 341.34375,
+            "y": 282,
+            "w": 44,
+            "h": 44,
+            "bottom": 326
+          },
+          "hit": true,
+          "disabled": false
+        }
+      ]
+    },
+    "lobbyBefore": {
+      "screen": "lobby",
+      "coarse": false,
+      "card": {
+        "x": 40,
+        "y": 24,
+        "w": 384,
+        "h": 342,
+        "bottom": 366
+      },
+      "scroll": {
+        "top": 227,
+        "height": 744,
+        "client": 340
+      },
+      "controls": [
+        {
+          "label": "Copy",
+          "rect": {
+            "x": 274.640625,
+            "y": -158,
+            "w": 85.78125,
+            "h": 44,
+            "bottom": -114
+          },
+          "hit": false,
+          "disabled": false
+        },
+        {
+          "label": "Copy link",
+          "rect": {
+            "x": 274.640625,
+            "y": -110,
+            "w": 85.78125,
+            "h": 44,
+            "bottom": -66
+          },
+          "hit": false,
+          "disabled": false
+        },
+        {
+          "label": "Ember",
+          "rect": {
+            "x": 102,
+            "y": -41,
+            "w": 43.171875,
+            "h": 44,
+            "bottom": 3
+          },
+          "hit": false,
+          "disabled": false
+        },
+        {
+          "label": "Remove",
+          "rect": {
+            "x": 307.09375,
+            "y": 25,
+            "w": 78.90625,
+            "h": 44,
+            "bottom": 69
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Remove",
+          "rect": {
+            "x": 307.09375,
+            "y": 95,
+            "w": 78.90625,
+            "h": 44,
+            "bottom": 139
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Remove",
+          "rect": {
+            "x": 307.09375,
+            "y": 165,
+            "w": 78.90625,
+            "h": 44,
+            "bottom": 209
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "gg",
+          "rect": {
+            "x": 74,
+            "y": 249,
+            "w": 44,
+            "h": 44,
+            "bottom": 293
+          },
+          "hit": false,
+          "disabled": false
+        },
+        {
+          "label": "nice roll",
+          "rect": {
+            "x": 122,
+            "y": 249,
+            "w": 60.34375,
+            "h": 44,
+            "bottom": 293
+          },
+          "hit": false,
+          "disabled": false
+        },
+        {
+          "label": "your turn",
+          "rect": {
+            "x": 186.34375,
+            "y": 249,
+            "w": 69,
+            "h": 44,
+            "bottom": 293
+          },
+          "hit": false,
+          "disabled": false
+        },
+        {
+          "label": "one sec",
+          "rect": {
+            "x": 259.34375,
+            "y": 249,
+            "w": 58.84375,
+            "h": 44,
+            "bottom": 293
+          },
+          "hit": false,
+          "disabled": false
+        },
+        {
+          "label": "ty",
+          "rect": {
+            "x": 322.1875,
+            "y": 249,
+            "w": 44,
+            "h": 44,
+            "bottom": 293
+          },
+          "hit": false,
+          "disabled": false
+        },
+        {
+          "label": "Soundboard",
+          "rect": {
+            "x": 74,
+            "y": 301,
+            "w": 44,
+            "h": 44,
+            "bottom": 345
+          },
+          "hit": false,
+          "disabled": false
+        },
+        {
+          "label": "Emotes",
+          "rect": {
+            "x": 122,
+            "y": 301,
+            "w": 44,
+            "h": 44,
+            "bottom": 345
+          },
+          "hit": false,
+          "disabled": false
+        },
+        {
+          "label": "Say something…",
+          "rect": {
+            "x": 170,
+            "y": 301,
+            "w": 159.140625,
+            "h": 44,
+            "bottom": 345
+          },
+          "hit": false,
+          "disabled": false
+        },
+        {
+          "label": "Send",
+          "rect": {
+            "x": 333.140625,
+            "y": 301,
+            "w": 56.859375,
+            "h": 44,
+            "bottom": 345
+          },
+          "hit": false,
+          "disabled": false
+        },
+        {
+          "label": "7",
+          "rect": {
+            "x": 307,
+            "y": 189,
+            "w": 44,
+            "h": 44,
+            "bottom": 233
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "10",
+          "rect": {
+            "x": 355,
+            "y": 189,
+            "w": 44,
+            "h": 44,
+            "bottom": 233
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Ready",
+          "rect": {
+            "x": 65,
+            "y": 241,
+            "w": 334,
+            "h": 48,
+            "bottom": 289
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Leave the table",
+          "rect": {
+            "x": 65,
+            "y": 297,
+            "w": 334,
+            "h": 44,
+            "bottom": 341
+          },
+          "hit": true,
+          "disabled": false
+        }
+      ]
+    },
+    "lobbyAfter": {
+      "screen": "lobby",
+      "coarse": false,
+      "card": {
+        "x": 40,
+        "y": 24,
+        "w": 384,
+        "h": 342,
+        "bottom": 366
+      },
+      "scroll": {
+        "top": 404,
+        "height": 744,
+        "client": 340
+      },
+      "controls": [
+        {
+          "label": "Copy",
+          "rect": {
+            "x": 274.640625,
+            "y": -335,
+            "w": 85.78125,
+            "h": 44,
+            "bottom": -291
+          },
+          "hit": false,
+          "disabled": false
+        },
+        {
+          "label": "Copy link",
+          "rect": {
+            "x": 274.640625,
+            "y": -287,
+            "w": 85.78125,
+            "h": 44,
+            "bottom": -243
+          },
+          "hit": false,
+          "disabled": false
+        },
+        {
+          "label": "Ember",
+          "rect": {
+            "x": 102,
+            "y": -218,
+            "w": 43.171875,
+            "h": 44,
+            "bottom": -174
+          },
+          "hit": false,
+          "disabled": false
+        },
+        {
+          "label": "Remove",
+          "rect": {
+            "x": 307.09375,
+            "y": -152,
+            "w": 78.90625,
+            "h": 44,
+            "bottom": -108
+          },
+          "hit": false,
+          "disabled": false
+        },
+        {
+          "label": "Remove",
+          "rect": {
+            "x": 307.09375,
+            "y": -82,
+            "w": 78.90625,
+            "h": 44,
+            "bottom": -38
+          },
+          "hit": false,
+          "disabled": false
+        },
+        {
+          "label": "Remove",
+          "rect": {
+            "x": 307.09375,
+            "y": -12,
+            "w": 78.90625,
+            "h": 44,
+            "bottom": 32
+          },
+          "hit": false,
+          "disabled": false
+        },
+        {
+          "label": "gg",
+          "rect": {
+            "x": 74,
+            "y": 72,
+            "w": 44,
+            "h": 44,
+            "bottom": 116
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "nice roll",
+          "rect": {
+            "x": 122,
+            "y": 72,
+            "w": 60.34375,
+            "h": 44,
+            "bottom": 116
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "your turn",
+          "rect": {
+            "x": 186.34375,
+            "y": 72,
+            "w": 69,
+            "h": 44,
+            "bottom": 116
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "one sec",
+          "rect": {
+            "x": 259.34375,
+            "y": 72,
+            "w": 58.84375,
+            "h": 44,
+            "bottom": 116
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "ty",
+          "rect": {
+            "x": 322.1875,
+            "y": 72,
+            "w": 44,
+            "h": 44,
+            "bottom": 116
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Soundboard",
+          "rect": {
+            "x": 74,
+            "y": 124,
+            "w": 44,
+            "h": 44,
+            "bottom": 168
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Emotes",
+          "rect": {
+            "x": 122,
+            "y": 124,
+            "w": 44,
+            "h": 44,
+            "bottom": 168
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Say something…",
+          "rect": {
+            "x": 170,
+            "y": 124,
+            "w": 159.140625,
+            "h": 44,
+            "bottom": 168
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Send",
+          "rect": {
+            "x": 333.140625,
+            "y": 124,
+            "w": 56.859375,
+            "h": 44,
+            "bottom": 168
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "7",
+          "rect": {
+            "x": 307,
+            "y": 189,
+            "w": 44,
+            "h": 44,
+            "bottom": 233
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "10",
+          "rect": {
+            "x": 355,
+            "y": 189,
+            "w": 44,
+            "h": 44,
+            "bottom": 233
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Ready",
+          "rect": {
+            "x": 65,
+            "y": 241,
+            "w": 334,
+            "h": 48,
+            "bottom": 289
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Leave the table",
+          "rect": {
+            "x": 65,
+            "y": 297,
+            "w": 334,
+            "h": 44,
+            "bottom": 341
+          },
+          "hit": true,
+          "disabled": false
+        }
+      ]
+    },
+    "lobbyAfterField": {
+      "screen": "lobby",
+      "coarse": false,
+      "card": {
+        "x": 40,
+        "y": 24,
+        "w": 384,
+        "h": 342,
+        "bottom": 366
+      },
+      "scroll": {
+        "top": 404,
+        "height": 744,
+        "client": 340
+      },
+      "controls": [
+        {
+          "label": "Copy",
+          "rect": {
+            "x": 274.640625,
+            "y": -335,
+            "w": 85.78125,
+            "h": 44,
+            "bottom": -291
+          },
+          "hit": false,
+          "disabled": false
+        },
+        {
+          "label": "Copy link",
+          "rect": {
+            "x": 274.640625,
+            "y": -287,
+            "w": 85.78125,
+            "h": 44,
+            "bottom": -243
+          },
+          "hit": false,
+          "disabled": false
+        },
+        {
+          "label": "Ember",
+          "rect": {
+            "x": 102,
+            "y": -218,
+            "w": 43.171875,
+            "h": 44,
+            "bottom": -174
+          },
+          "hit": false,
+          "disabled": false
+        },
+        {
+          "label": "Remove",
+          "rect": {
+            "x": 307.09375,
+            "y": -152,
+            "w": 78.90625,
+            "h": 44,
+            "bottom": -108
+          },
+          "hit": false,
+          "disabled": false
+        },
+        {
+          "label": "Remove",
+          "rect": {
+            "x": 307.09375,
+            "y": -82,
+            "w": 78.90625,
+            "h": 44,
+            "bottom": -38
+          },
+          "hit": false,
+          "disabled": false
+        },
+        {
+          "label": "Remove",
+          "rect": {
+            "x": 307.09375,
+            "y": -12,
+            "w": 78.90625,
+            "h": 44,
+            "bottom": 32
+          },
+          "hit": false,
+          "disabled": false
+        },
+        {
+          "label": "gg",
+          "rect": {
+            "x": 74,
+            "y": 72,
+            "w": 44,
+            "h": 44,
+            "bottom": 116
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "nice roll",
+          "rect": {
+            "x": 122,
+            "y": 72,
+            "w": 60.34375,
+            "h": 44,
+            "bottom": 116
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "your turn",
+          "rect": {
+            "x": 186.34375,
+            "y": 72,
+            "w": 69,
+            "h": 44,
+            "bottom": 116
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "one sec",
+          "rect": {
+            "x": 259.34375,
+            "y": 72,
+            "w": 58.84375,
+            "h": 44,
+            "bottom": 116
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "ty",
+          "rect": {
+            "x": 322.1875,
+            "y": 72,
+            "w": 44,
+            "h": 44,
+            "bottom": 116
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Soundboard",
+          "rect": {
+            "x": 74,
+            "y": 124,
+            "w": 44,
+            "h": 44,
+            "bottom": 168
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Emotes",
+          "rect": {
+            "x": 122,
+            "y": 124,
+            "w": 44,
+            "h": 44,
+            "bottom": 168
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Say something…",
+          "rect": {
+            "x": 170,
+            "y": 124,
+            "w": 159.140625,
+            "h": 44,
+            "bottom": 168
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Send",
+          "rect": {
+            "x": 333.140625,
+            "y": 124,
+            "w": 56.859375,
+            "h": 44,
+            "bottom": 168
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "7",
+          "rect": {
+            "x": 307,
+            "y": 189,
+            "w": 44,
+            "h": 44,
+            "bottom": 233
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "10",
+          "rect": {
+            "x": 355,
+            "y": 189,
+            "w": 44,
+            "h": 44,
+            "bottom": 233
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Ready",
+          "rect": {
+            "x": 65,
+            "y": 241,
+            "w": 334,
+            "h": 48,
+            "bottom": 289
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Leave the table",
+          "rect": {
+            "x": 65,
+            "y": 297,
+            "w": 334,
+            "h": 44,
+            "bottom": 341
+          },
+          "hit": true,
+          "disabled": false
+        }
+      ]
+    },
+    "errors": []
+  },
+  {
+    "tag": "844x390-touch",
+    "titleBefore": {
+      "screen": "title",
+      "coarse": true,
+      "card": {
+        "x": 12,
+        "y": 144,
+        "w": 704,
+        "h": 234,
+        "bottom": 378
+      },
+      "scroll": {
+        "top": 0,
+        "height": 232,
+        "client": 232
+      },
+      "controls": [
+        {
+          "label": "Your name",
+          "rect": {
+            "x": 33,
+            "y": 319,
+            "w": 319,
+            "h": 44,
+            "bottom": 363
+          },
+          "hit": false,
+          "disabled": false
+        },
+        {
+          "label": "Ember",
+          "rect": {
+            "x": 33,
+            "y": 375,
+            "w": 44,
+            "h": 44,
+            "bottom": 419
+          },
+          "hit": false,
+          "disabled": false
+        },
+        {
+          "label": "Tide",
+          "rect": {
+            "x": 85,
+            "y": 375,
+            "w": 44,
+            "h": 44,
+            "bottom": 419
+          },
+          "hit": false,
+          "disabled": false
+        },
+        {
+          "label": "Dune",
+          "rect": {
+            "x": 137,
+            "y": 375,
+            "w": 44,
+            "h": 44,
+            "bottom": 419
+          },
+          "hit": false,
+          "disabled": false
+        },
+        {
+          "label": "Pine",
+          "rect": {
+            "x": 189,
+            "y": 375,
+            "w": 44,
+            "h": 44,
+            "bottom": 419
+          },
+          "hit": false,
+          "disabled": false
+        },
+        {
+          "label": "Play",
+          "rect": {
+            "x": 376,
+            "y": 181,
+            "w": 319,
+            "h": 48,
+            "bottom": 229
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Host a table",
+          "rect": {
+            "x": 376,
+            "y": 257,
+            "w": 135,
+            "h": 48,
+            "bottom": 305
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Join code",
+          "rect": {
+            "x": 519,
+            "y": 257,
+            "w": 97.921875,
+            "h": 48,
+            "bottom": 305
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Join",
+          "rect": {
+            "x": 624.921875,
+            "y": 257,
+            "w": 70.078125,
+            "h": 48,
+            "bottom": 305
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Four seats, one table",
+          "rect": {
+            "x": 382.140625,
+            "y": 313,
+            "w": 161.109375,
+            "h": 44,
+            "bottom": 357
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "How to play",
+          "rect": {
+            "x": 543.25,
+            "y": 313,
+            "w": 101.59375,
+            "h": 44,
+            "bottom": 357
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Table sounds on",
+          "rect": {
+            "x": 644.84375,
+            "y": 313,
+            "w": 44,
+            "h": 44,
+            "bottom": 357
+          },
+          "hit": true,
+          "disabled": false
+        }
+      ]
+    },
+    "titleAfter": {
+      "screen": "title",
+      "coarse": true,
+      "card": {
+        "x": 12,
+        "y": 144,
+        "w": 704,
+        "h": 234,
+        "bottom": 378
+      },
+      "scroll": {
+        "top": 0,
+        "height": 232,
+        "client": 232
+      },
+      "controls": [
+        {
+          "label": "Your name",
+          "rect": {
+            "x": 33,
+            "y": 319,
+            "w": 319,
+            "h": 44,
+            "bottom": 363
+          },
+          "hit": false,
+          "disabled": false
+        },
+        {
+          "label": "Ember",
+          "rect": {
+            "x": 33,
+            "y": 375,
+            "w": 44,
+            "h": 44,
+            "bottom": 419
+          },
+          "hit": false,
+          "disabled": false
+        },
+        {
+          "label": "Tide",
+          "rect": {
+            "x": 85,
+            "y": 375,
+            "w": 44,
+            "h": 44,
+            "bottom": 419
+          },
+          "hit": false,
+          "disabled": false
+        },
+        {
+          "label": "Dune",
+          "rect": {
+            "x": 137,
+            "y": 375,
+            "w": 44,
+            "h": 44,
+            "bottom": 419
+          },
+          "hit": false,
+          "disabled": false
+        },
+        {
+          "label": "Pine",
+          "rect": {
+            "x": 189,
+            "y": 375,
+            "w": 44,
+            "h": 44,
+            "bottom": 419
+          },
+          "hit": false,
+          "disabled": false
+        },
+        {
+          "label": "Play",
+          "rect": {
+            "x": 376,
+            "y": 181,
+            "w": 319,
+            "h": 48,
+            "bottom": 229
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Host a table",
+          "rect": {
+            "x": 376,
+            "y": 257,
+            "w": 135,
+            "h": 48,
+            "bottom": 305
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Join code",
+          "rect": {
+            "x": 519,
+            "y": 257,
+            "w": 97.921875,
+            "h": 48,
+            "bottom": 305
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Join",
+          "rect": {
+            "x": 624.921875,
+            "y": 257,
+            "w": 70.078125,
+            "h": 48,
+            "bottom": 305
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Four seats, one table",
+          "rect": {
+            "x": 382.140625,
+            "y": 313,
+            "w": 161.109375,
+            "h": 44,
+            "bottom": 357
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "How to play",
+          "rect": {
+            "x": 543.25,
+            "y": 313,
+            "w": 101.59375,
+            "h": 44,
+            "bottom": 357
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Table sounds on",
+          "rect": {
+            "x": 644.84375,
+            "y": 313,
+            "w": 44,
+            "h": 44,
+            "bottom": 357
+          },
+          "hit": true,
+          "disabled": false
+        }
+      ]
+    },
+    "lobbyBefore": {
+      "screen": "lobby",
+      "coarse": true,
+      "card": {
+        "x": 12,
+        "y": 12,
+        "w": 704,
+        "h": 366,
+        "bottom": 378
+      },
+      "scroll": {
+        "top": 0,
+        "height": 364,
+        "client": 364
+      },
+      "controls": [
+        {
+          "label": "Copy",
+          "rect": {
+            "x": 479.171875,
+            "y": 45,
+            "w": 85.78125,
+            "h": 44,
+            "bottom": 89
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Copy link",
+          "rect": {
+            "x": 479.171875,
+            "y": 93,
+            "w": 85.78125,
+            "h": 44,
+            "bottom": 137
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Ember",
+          "rect": {
+            "x": 66,
+            "y": 30,
+            "w": 43.171875,
+            "h": 20,
+            "bottom": 50
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Remove",
+          "rect": {
+            "x": 262.09375,
+            "y": 68,
+            "w": 78.90625,
+            "h": 44,
+            "bottom": 112
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Remove",
+          "rect": {
+            "x": 262.09375,
+            "y": 130,
+            "w": 78.90625,
+            "h": 44,
+            "bottom": 174
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Remove",
+          "rect": {
+            "x": 262.09375,
+            "y": 192,
+            "w": 78.90625,
+            "h": 44,
+            "bottom": 236
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "gg",
+          "rect": {
+            "x": 38,
+            "y": 266,
+            "w": 44,
+            "h": 44,
+            "bottom": 310
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "nice roll",
+          "rect": {
+            "x": 86,
+            "y": 266,
+            "w": 60.34375,
+            "h": 44,
+            "bottom": 310
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "your turn",
+          "rect": {
+            "x": 150.34375,
+            "y": 266,
+            "w": 69,
+            "h": 44,
+            "bottom": 310
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "one sec",
+          "rect": {
+            "x": 223.34375,
+            "y": 266,
+            "w": 58.84375,
+            "h": 44,
+            "bottom": 310
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "ty",
+          "rect": {
+            "x": 286.1875,
+            "y": 266,
+            "w": 44,
+            "h": 44,
+            "bottom": 310
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Soundboard",
+          "rect": {
+            "x": 38,
+            "y": 318,
+            "w": 44,
+            "h": 44,
+            "bottom": 362
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Emotes",
+          "rect": {
+            "x": 86,
+            "y": 318,
+            "w": 44,
+            "h": 44,
+            "bottom": 362
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Say something…",
+          "rect": {
+            "x": 134,
+            "y": 318,
+            "w": 150.140625,
+            "h": 44,
+            "bottom": 362
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Send",
+          "rect": {
+            "x": 288.140625,
+            "y": 318,
+            "w": 56.859375,
+            "h": 44,
+            "bottom": 362
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "7",
+          "rect": {
+            "x": 607,
+            "y": 225,
+            "w": 44,
+            "h": 44,
+            "bottom": 269
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "10",
+          "rect": {
+            "x": 655,
+            "y": 225,
+            "w": 44,
+            "h": 44,
+            "bottom": 269
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Ready",
+          "rect": {
+            "x": 374,
+            "y": 273,
+            "w": 325,
+            "h": 44,
+            "bottom": 317
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Leave the table",
+          "rect": {
+            "x": 374,
+            "y": 321,
+            "w": 325,
+            "h": 44,
+            "bottom": 365
+          },
+          "hit": true,
+          "disabled": false
+        }
+      ]
+    },
+    "lobbyAfter": {
+      "screen": "lobby",
+      "coarse": true,
+      "card": {
+        "x": 12,
+        "y": 12,
+        "w": 704,
+        "h": 366,
+        "bottom": 378
+      },
+      "scroll": {
+        "top": 0,
+        "height": 364,
+        "client": 364
+      },
+      "controls": [
+        {
+          "label": "Copy",
+          "rect": {
+            "x": 479.171875,
+            "y": 45,
+            "w": 85.78125,
+            "h": 44,
+            "bottom": 89
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Copy link",
+          "rect": {
+            "x": 479.171875,
+            "y": 93,
+            "w": 85.78125,
+            "h": 44,
+            "bottom": 137
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Ember",
+          "rect": {
+            "x": 66,
+            "y": 30,
+            "w": 43.171875,
+            "h": 20,
+            "bottom": 50
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Remove",
+          "rect": {
+            "x": 262.09375,
+            "y": 68,
+            "w": 78.90625,
+            "h": 44,
+            "bottom": 112
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Remove",
+          "rect": {
+            "x": 262.09375,
+            "y": 130,
+            "w": 78.90625,
+            "h": 44,
+            "bottom": 174
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Remove",
+          "rect": {
+            "x": 262.09375,
+            "y": 192,
+            "w": 78.90625,
+            "h": 44,
+            "bottom": 236
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "gg",
+          "rect": {
+            "x": 38,
+            "y": 266,
+            "w": 44,
+            "h": 44,
+            "bottom": 310
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "nice roll",
+          "rect": {
+            "x": 86,
+            "y": 266,
+            "w": 60.34375,
+            "h": 44,
+            "bottom": 310
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "your turn",
+          "rect": {
+            "x": 150.34375,
+            "y": 266,
+            "w": 69,
+            "h": 44,
+            "bottom": 310
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "one sec",
+          "rect": {
+            "x": 223.34375,
+            "y": 266,
+            "w": 58.84375,
+            "h": 44,
+            "bottom": 310
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "ty",
+          "rect": {
+            "x": 286.1875,
+            "y": 266,
+            "w": 44,
+            "h": 44,
+            "bottom": 310
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Soundboard",
+          "rect": {
+            "x": 38,
+            "y": 318,
+            "w": 44,
+            "h": 44,
+            "bottom": 362
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Emotes",
+          "rect": {
+            "x": 86,
+            "y": 318,
+            "w": 44,
+            "h": 44,
+            "bottom": 362
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Say something…",
+          "rect": {
+            "x": 134,
+            "y": 318,
+            "w": 150.140625,
+            "h": 44,
+            "bottom": 362
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Send",
+          "rect": {
+            "x": 288.140625,
+            "y": 318,
+            "w": 56.859375,
+            "h": 44,
+            "bottom": 362
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "7",
+          "rect": {
+            "x": 607,
+            "y": 225,
+            "w": 44,
+            "h": 44,
+            "bottom": 269
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "10",
+          "rect": {
+            "x": 655,
+            "y": 225,
+            "w": 44,
+            "h": 44,
+            "bottom": 269
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Ready",
+          "rect": {
+            "x": 374,
+            "y": 273,
+            "w": 325,
+            "h": 44,
+            "bottom": 317
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Leave the table",
+          "rect": {
+            "x": 374,
+            "y": 321,
+            "w": 325,
+            "h": 44,
+            "bottom": 365
+          },
+          "hit": true,
+          "disabled": false
+        }
+      ]
+    },
+    "lobbyAfterField": {
+      "screen": "lobby",
+      "coarse": true,
+      "card": {
+        "x": 12,
+        "y": 12,
+        "w": 704,
+        "h": 366,
+        "bottom": 378
+      },
+      "scroll": {
+        "top": 0,
+        "height": 364,
+        "client": 364
+      },
+      "controls": [
+        {
+          "label": "Copy",
+          "rect": {
+            "x": 479.171875,
+            "y": 45,
+            "w": 85.78125,
+            "h": 44,
+            "bottom": 89
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Copy link",
+          "rect": {
+            "x": 479.171875,
+            "y": 93,
+            "w": 85.78125,
+            "h": 44,
+            "bottom": 137
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Ember",
+          "rect": {
+            "x": 66,
+            "y": 30,
+            "w": 43.171875,
+            "h": 20,
+            "bottom": 50
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Remove",
+          "rect": {
+            "x": 262.09375,
+            "y": 68,
+            "w": 78.90625,
+            "h": 44,
+            "bottom": 112
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Remove",
+          "rect": {
+            "x": 262.09375,
+            "y": 130,
+            "w": 78.90625,
+            "h": 44,
+            "bottom": 174
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Remove",
+          "rect": {
+            "x": 262.09375,
+            "y": 192,
+            "w": 78.90625,
+            "h": 44,
+            "bottom": 236
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "gg",
+          "rect": {
+            "x": 38,
+            "y": 266,
+            "w": 44,
+            "h": 44,
+            "bottom": 310
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "nice roll",
+          "rect": {
+            "x": 86,
+            "y": 266,
+            "w": 60.34375,
+            "h": 44,
+            "bottom": 310
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "your turn",
+          "rect": {
+            "x": 150.34375,
+            "y": 266,
+            "w": 69,
+            "h": 44,
+            "bottom": 310
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "one sec",
+          "rect": {
+            "x": 223.34375,
+            "y": 266,
+            "w": 58.84375,
+            "h": 44,
+            "bottom": 310
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "ty",
+          "rect": {
+            "x": 286.1875,
+            "y": 266,
+            "w": 44,
+            "h": 44,
+            "bottom": 310
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Soundboard",
+          "rect": {
+            "x": 38,
+            "y": 318,
+            "w": 44,
+            "h": 44,
+            "bottom": 362
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Emotes",
+          "rect": {
+            "x": 86,
+            "y": 318,
+            "w": 44,
+            "h": 44,
+            "bottom": 362
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Say something…",
+          "rect": {
+            "x": 134,
+            "y": 318,
+            "w": 150.140625,
+            "h": 44,
+            "bottom": 362
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Send",
+          "rect": {
+            "x": 288.140625,
+            "y": 318,
+            "w": 56.859375,
+            "h": 44,
+            "bottom": 362
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "7",
+          "rect": {
+            "x": 607,
+            "y": 225,
+            "w": 44,
+            "h": 44,
+            "bottom": 269
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "10",
+          "rect": {
+            "x": 655,
+            "y": 225,
+            "w": 44,
+            "h": 44,
+            "bottom": 269
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Ready",
+          "rect": {
+            "x": 374,
+            "y": 273,
+            "w": 325,
+            "h": 44,
+            "bottom": 317
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Leave the table",
+          "rect": {
+            "x": 374,
+            "y": 321,
+            "w": 325,
+            "h": 44,
+            "bottom": 365
+          },
+          "hit": true,
+          "disabled": false
+        }
+      ]
+    },
+    "errors": []
+  },
+  {
+    "tag": "1280x720-mouse",
+    "titleBefore": {
+      "screen": "title",
+      "coarse": false,
+      "card": {
+        "x": 40,
+        "y": 266,
+        "w": 384,
+        "h": 414,
+        "bottom": 680
+      },
+      "scroll": {
+        "top": 0,
+        "height": 414,
+        "client": 414
+      },
+      "controls": [
+        {
+          "label": "Your name",
+          "rect": {
+            "x": 64,
+            "y": 439,
+            "w": 336,
+            "h": 44,
+            "bottom": 483
+          },
+          "hit": false,
+          "disabled": false
+        },
+        {
+          "label": "Ember",
+          "rect": {
+            "x": 64,
+            "y": 495,
+            "w": 44,
+            "h": 44,
+            "bottom": 539
+          },
+          "hit": false,
+          "disabled": false
+        },
+        {
+          "label": "Tide",
+          "rect": {
+            "x": 116,
+            "y": 495,
+            "w": 44,
+            "h": 44,
+            "bottom": 539
+          },
+          "hit": false,
+          "disabled": false
+        },
+        {
+          "label": "Dune",
+          "rect": {
+            "x": 168,
+            "y": 495,
+            "w": 44,
+            "h": 44,
+            "bottom": 539
+          },
+          "hit": false,
+          "disabled": false
+        },
+        {
+          "label": "Pine",
+          "rect": {
+            "x": 220,
+            "y": 495,
+            "w": 44,
+            "h": 44,
+            "bottom": 539
+          },
+          "hit": false,
+          "disabled": false
+        },
+        {
+          "label": "Play",
+          "rect": {
+            "x": 64,
+            "y": 480,
+            "w": 336,
+            "h": 48,
+            "bottom": 528
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Host a table",
+          "rect": {
+            "x": 64,
+            "y": 556,
+            "w": 152,
+            "h": 48,
+            "bottom": 604
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Join code",
+          "rect": {
+            "x": 224,
+            "y": 556,
+            "w": 97.921875,
+            "h": 48,
+            "bottom": 604
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Join",
+          "rect": {
+            "x": 329.921875,
+            "y": 556,
+            "w": 70.078125,
+            "h": 48,
+            "bottom": 604
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Four seats, one table",
+          "rect": {
+            "x": 78.640625,
+            "y": 612,
+            "w": 161.109375,
+            "h": 44,
+            "bottom": 656
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "How to play",
+          "rect": {
+            "x": 239.75,
+            "y": 612,
+            "w": 101.59375,
+            "h": 44,
+            "bottom": 656
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Table sounds on",
+          "rect": {
+            "x": 341.34375,
+            "y": 612,
+            "w": 44,
+            "h": 44,
+            "bottom": 656
+          },
+          "hit": true,
+          "disabled": false
+        }
+      ]
+    },
+    "titleAfter": {
+      "screen": "title",
+      "coarse": false,
+      "card": {
+        "x": 40,
+        "y": 266,
+        "w": 384,
+        "h": 414,
+        "bottom": 680
+      },
+      "scroll": {
+        "top": 0,
+        "height": 414,
+        "client": 414
+      },
+      "controls": [
+        {
+          "label": "Your name",
+          "rect": {
+            "x": 64,
+            "y": 439,
+            "w": 336,
+            "h": 44,
+            "bottom": 483
+          },
+          "hit": false,
+          "disabled": false
+        },
+        {
+          "label": "Ember",
+          "rect": {
+            "x": 64,
+            "y": 495,
+            "w": 44,
+            "h": 44,
+            "bottom": 539
+          },
+          "hit": false,
+          "disabled": false
+        },
+        {
+          "label": "Tide",
+          "rect": {
+            "x": 116,
+            "y": 495,
+            "w": 44,
+            "h": 44,
+            "bottom": 539
+          },
+          "hit": false,
+          "disabled": false
+        },
+        {
+          "label": "Dune",
+          "rect": {
+            "x": 168,
+            "y": 495,
+            "w": 44,
+            "h": 44,
+            "bottom": 539
+          },
+          "hit": false,
+          "disabled": false
+        },
+        {
+          "label": "Pine",
+          "rect": {
+            "x": 220,
+            "y": 495,
+            "w": 44,
+            "h": 44,
+            "bottom": 539
+          },
+          "hit": false,
+          "disabled": false
+        },
+        {
+          "label": "Play",
+          "rect": {
+            "x": 64,
+            "y": 480,
+            "w": 336,
+            "h": 48,
+            "bottom": 528
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Host a table",
+          "rect": {
+            "x": 64,
+            "y": 556,
+            "w": 152,
+            "h": 48,
+            "bottom": 604
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Join code",
+          "rect": {
+            "x": 224,
+            "y": 556,
+            "w": 97.921875,
+            "h": 48,
+            "bottom": 604
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Join",
+          "rect": {
+            "x": 329.921875,
+            "y": 556,
+            "w": 70.078125,
+            "h": 48,
+            "bottom": 604
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Four seats, one table",
+          "rect": {
+            "x": 78.640625,
+            "y": 612,
+            "w": 161.109375,
+            "h": 44,
+            "bottom": 656
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "How to play",
+          "rect": {
+            "x": 239.75,
+            "y": 612,
+            "w": 101.59375,
+            "h": 44,
+            "bottom": 656
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Table sounds on",
+          "rect": {
+            "x": 341.34375,
+            "y": 612,
+            "w": 44,
+            "h": 44,
+            "bottom": 656
+          },
+          "hit": true,
+          "disabled": false
+        }
+      ]
+    },
+    "lobbyBefore": {
+      "screen": "lobby",
+      "coarse": false,
+      "card": {
+        "x": 40,
+        "y": 24,
+        "w": 384,
+        "h": 672,
+        "bottom": 696
+      },
+      "scroll": {
+        "top": 0,
+        "height": 744,
+        "client": 670
+      },
+      "controls": [
+        {
+          "label": "Copy",
+          "rect": {
+            "x": 286.234375,
+            "y": 69,
+            "w": 85.78125,
+            "h": 44,
+            "bottom": 113
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Copy link",
+          "rect": {
+            "x": 286.234375,
+            "y": 117,
+            "w": 85.78125,
+            "h": 44,
+            "bottom": 161
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Ember",
+          "rect": {
+            "x": 102,
+            "y": 186,
+            "w": 43.171875,
+            "h": 44,
+            "bottom": 230
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Remove",
+          "rect": {
+            "x": 307.09375,
+            "y": 252,
+            "w": 78.90625,
+            "h": 44,
+            "bottom": 296
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Remove",
+          "rect": {
+            "x": 307.09375,
+            "y": 322,
+            "w": 78.90625,
+            "h": 44,
+            "bottom": 366
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Remove",
+          "rect": {
+            "x": 307.09375,
+            "y": 392,
+            "w": 78.90625,
+            "h": 44,
+            "bottom": 436
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "gg",
+          "rect": {
+            "x": 74,
+            "y": 476,
+            "w": 44,
+            "h": 44,
+            "bottom": 520
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "nice roll",
+          "rect": {
+            "x": 122,
+            "y": 476,
+            "w": 60.34375,
+            "h": 44,
+            "bottom": 520
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "your turn",
+          "rect": {
+            "x": 186.34375,
+            "y": 476,
+            "w": 69,
+            "h": 44,
+            "bottom": 520
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "one sec",
+          "rect": {
+            "x": 259.34375,
+            "y": 476,
+            "w": 58.84375,
+            "h": 44,
+            "bottom": 520
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "ty",
+          "rect": {
+            "x": 322.1875,
+            "y": 476,
+            "w": 44,
+            "h": 44,
+            "bottom": 520
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Soundboard",
+          "rect": {
+            "x": 74,
+            "y": 528,
+            "w": 44,
+            "h": 44,
+            "bottom": 572
+          },
+          "hit": false,
+          "disabled": false
+        },
+        {
+          "label": "Emotes",
+          "rect": {
+            "x": 122,
+            "y": 528,
+            "w": 44,
+            "h": 44,
+            "bottom": 572
+          },
+          "hit": false,
+          "disabled": false
+        },
+        {
+          "label": "Say something…",
+          "rect": {
+            "x": 170,
+            "y": 528,
+            "w": 159.140625,
+            "h": 44,
+            "bottom": 572
+          },
+          "hit": false,
+          "disabled": false
+        },
+        {
+          "label": "Send",
+          "rect": {
+            "x": 333.140625,
+            "y": 528,
+            "w": 56.859375,
+            "h": 44,
+            "bottom": 572
+          },
+          "hit": false,
+          "disabled": false
+        },
+        {
+          "label": "7",
+          "rect": {
+            "x": 307,
+            "y": 519,
+            "w": 44,
+            "h": 44,
+            "bottom": 563
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "10",
+          "rect": {
+            "x": 355,
+            "y": 519,
+            "w": 44,
+            "h": 44,
+            "bottom": 563
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Ready",
+          "rect": {
+            "x": 65,
+            "y": 571,
+            "w": 334,
+            "h": 48,
+            "bottom": 619
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Leave the table",
+          "rect": {
+            "x": 65,
+            "y": 627,
+            "w": 334,
+            "h": 44,
+            "bottom": 671
+          },
+          "hit": true,
+          "disabled": false
+        }
+      ]
+    },
+    "lobbyAfter": {
+      "screen": "lobby",
+      "coarse": false,
+      "card": {
+        "x": 40,
+        "y": 24,
+        "w": 384,
+        "h": 672,
+        "bottom": 696
+      },
+      "scroll": {
+        "top": 74,
+        "height": 744,
+        "client": 670
+      },
+      "controls": [
+        {
+          "label": "Copy",
+          "rect": {
+            "x": 286.234375,
+            "y": -5,
+            "w": 85.78125,
+            "h": 44,
+            "bottom": 39
+          },
+          "hit": false,
+          "disabled": false
+        },
+        {
+          "label": "Copy link",
+          "rect": {
+            "x": 286.234375,
+            "y": 43,
+            "w": 85.78125,
+            "h": 44,
+            "bottom": 87
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Ember",
+          "rect": {
+            "x": 102,
+            "y": 112,
+            "w": 43.171875,
+            "h": 44,
+            "bottom": 156
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Remove",
+          "rect": {
+            "x": 307.09375,
+            "y": 178,
+            "w": 78.90625,
+            "h": 44,
+            "bottom": 222
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Remove",
+          "rect": {
+            "x": 307.09375,
+            "y": 248,
+            "w": 78.90625,
+            "h": 44,
+            "bottom": 292
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Remove",
+          "rect": {
+            "x": 307.09375,
+            "y": 318,
+            "w": 78.90625,
+            "h": 44,
+            "bottom": 362
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "gg",
+          "rect": {
+            "x": 74,
+            "y": 402,
+            "w": 44,
+            "h": 44,
+            "bottom": 446
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "nice roll",
+          "rect": {
+            "x": 122,
+            "y": 402,
+            "w": 60.34375,
+            "h": 44,
+            "bottom": 446
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "your turn",
+          "rect": {
+            "x": 186.34375,
+            "y": 402,
+            "w": 69,
+            "h": 44,
+            "bottom": 446
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "one sec",
+          "rect": {
+            "x": 259.34375,
+            "y": 402,
+            "w": 58.84375,
+            "h": 44,
+            "bottom": 446
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "ty",
+          "rect": {
+            "x": 322.1875,
+            "y": 402,
+            "w": 44,
+            "h": 44,
+            "bottom": 446
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Soundboard",
+          "rect": {
+            "x": 74,
+            "y": 454,
+            "w": 44,
+            "h": 44,
+            "bottom": 498
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Emotes",
+          "rect": {
+            "x": 122,
+            "y": 454,
+            "w": 44,
+            "h": 44,
+            "bottom": 498
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Say something…",
+          "rect": {
+            "x": 170,
+            "y": 454,
+            "w": 159.140625,
+            "h": 44,
+            "bottom": 498
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Send",
+          "rect": {
+            "x": 333.140625,
+            "y": 454,
+            "w": 56.859375,
+            "h": 44,
+            "bottom": 498
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "7",
+          "rect": {
+            "x": 307,
+            "y": 519,
+            "w": 44,
+            "h": 44,
+            "bottom": 563
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "10",
+          "rect": {
+            "x": 355,
+            "y": 519,
+            "w": 44,
+            "h": 44,
+            "bottom": 563
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Ready",
+          "rect": {
+            "x": 65,
+            "y": 571,
+            "w": 334,
+            "h": 48,
+            "bottom": 619
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Leave the table",
+          "rect": {
+            "x": 65,
+            "y": 627,
+            "w": 334,
+            "h": 44,
+            "bottom": 671
+          },
+          "hit": true,
+          "disabled": false
+        }
+      ]
+    },
+    "lobbyAfterField": {
+      "screen": "lobby",
+      "coarse": false,
+      "card": {
+        "x": 40,
+        "y": 24,
+        "w": 384,
+        "h": 672,
+        "bottom": 696
+      },
+      "scroll": {
+        "top": 74,
+        "height": 744,
+        "client": 670
+      },
+      "controls": [
+        {
+          "label": "Copy",
+          "rect": {
+            "x": 286.234375,
+            "y": -5,
+            "w": 85.78125,
+            "h": 44,
+            "bottom": 39
+          },
+          "hit": false,
+          "disabled": false
+        },
+        {
+          "label": "Copy link",
+          "rect": {
+            "x": 286.234375,
+            "y": 43,
+            "w": 85.78125,
+            "h": 44,
+            "bottom": 87
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Ember",
+          "rect": {
+            "x": 102,
+            "y": 112,
+            "w": 43.171875,
+            "h": 44,
+            "bottom": 156
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Remove",
+          "rect": {
+            "x": 307.09375,
+            "y": 178,
+            "w": 78.90625,
+            "h": 44,
+            "bottom": 222
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Remove",
+          "rect": {
+            "x": 307.09375,
+            "y": 248,
+            "w": 78.90625,
+            "h": 44,
+            "bottom": 292
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Remove",
+          "rect": {
+            "x": 307.09375,
+            "y": 318,
+            "w": 78.90625,
+            "h": 44,
+            "bottom": 362
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "gg",
+          "rect": {
+            "x": 74,
+            "y": 402,
+            "w": 44,
+            "h": 44,
+            "bottom": 446
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "nice roll",
+          "rect": {
+            "x": 122,
+            "y": 402,
+            "w": 60.34375,
+            "h": 44,
+            "bottom": 446
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "your turn",
+          "rect": {
+            "x": 186.34375,
+            "y": 402,
+            "w": 69,
+            "h": 44,
+            "bottom": 446
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "one sec",
+          "rect": {
+            "x": 259.34375,
+            "y": 402,
+            "w": 58.84375,
+            "h": 44,
+            "bottom": 446
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "ty",
+          "rect": {
+            "x": 322.1875,
+            "y": 402,
+            "w": 44,
+            "h": 44,
+            "bottom": 446
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Soundboard",
+          "rect": {
+            "x": 74,
+            "y": 454,
+            "w": 44,
+            "h": 44,
+            "bottom": 498
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Emotes",
+          "rect": {
+            "x": 122,
+            "y": 454,
+            "w": 44,
+            "h": 44,
+            "bottom": 498
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Say something…",
+          "rect": {
+            "x": 170,
+            "y": 454,
+            "w": 159.140625,
+            "h": 44,
+            "bottom": 498
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Send",
+          "rect": {
+            "x": 333.140625,
+            "y": 454,
+            "w": 56.859375,
+            "h": 44,
+            "bottom": 498
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "7",
+          "rect": {
+            "x": 307,
+            "y": 519,
+            "w": 44,
+            "h": 44,
+            "bottom": 563
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "10",
+          "rect": {
+            "x": 355,
+            "y": 519,
+            "w": 44,
+            "h": 44,
+            "bottom": 563
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Ready",
+          "rect": {
+            "x": 65,
+            "y": 571,
+            "w": 334,
+            "h": 48,
+            "bottom": 619
+          },
+          "hit": true,
+          "disabled": false
+        },
+        {
+          "label": "Leave the table",
+          "rect": {
+            "x": 65,
+            "y": 627,
+            "w": 334,
+            "h": 44,
+            "bottom": 671
+          },
+          "hit": true,
+          "disabled": false
+        }
+      ]
+    },
+    "errors": []
+  }
+]

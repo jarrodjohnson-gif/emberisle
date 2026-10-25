@@ -6,7 +6,7 @@
 // #410: with the bank out of ore, the fortune tray's ore chip is greyed out (aria-disabled, described) and it cannot be picked (#423).
 // #430: while p2 owes that discard on p0's turn the banner reads "{p2} — discard 4", not "{p2}'s turn", and p0's turn after.
 // #412: a pick the bank empties while the tray is open is dropped and Play waits; an empty bank turns Plenty off.
-import { existsSync } from "node:fs";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { chromium } from "playwright";
 import { createServer } from "vite";
 
@@ -30,11 +30,53 @@ try {
   page.on("response", (r) => r.status() >= 400 && errors.push(`${r.status()} ${r.url()}`));
   await page.addInitScript(() => {
     window.__plays = [];
+    // #1089: collect provenance without changing input, playback, timer arguments or proof waits.
+    // Only the original Leave-sound failure emits these records.
+    window.__leaveTrace = [];
+    const note = (kind, record, at = performance.now()) => {
+      record.kind = kind; record.at = at; window.__leaveTrace.push(record);
+    };
+    for (const kind of ["pointerdown", "pointerup", "click", "keydown", "keyup"]) {
+      document.addEventListener(kind, (event) => {
+        const button = event.target.closest?.("button");
+        const input = { event: kind, eventAt: event.timeStamp, key: event.key, pointer: event.pointerType, trusted: event.isTrusted,
+          target: event.target.tagName, button: button?.textContent?.trim(), label: button?.getAttribute("aria-label") };
+        // One stack for the native Leave click; never allocate a stack per sound or timer.
+        if (kind === "click" && input.button === "Leave table") input.stack = new Error().stack;
+        note("input", input);
+      }, { capture: true, passive: true });
+    }
+    const later = window.setTimeout;
+    let pumpOrdinal = 0;
+    window.__pendingPumps = 0;
+    const pumps = new WeakMap();
+    window.setTimeout = function (callback, ms, ...args) {
+      // The served sound pump arms only one timer at a time. Reuse its wrapper across re-arms.
+      if (typeof callback !== "function" || callback.name !== "pump") return later.call(this, callback, ms, ...args);
+      let pump = pumps.get(callback);
+      if (!pump) {
+        pump = {};
+        pump.fire = function (...firedArgs) {
+          const { ordinal, ms, scheduled } = pump, now = performance.now();
+          note("pump-fired", { ordinal, ms, scheduled, lateness: now - scheduled - ms }, now);
+          // Keep an in-flight callback counted through any synchronous re-arm.
+          try { return callback.apply(this, firedArgs); }
+          finally { window.__pendingPumps--; }
+        };
+        pumps.set(callback, pump);
+      }
+      pump.ordinal = ++pumpOrdinal; pump.ms = ms; pump.scheduled = performance.now();
+      note("pump-scheduled", { ordinal: pump.ordinal, ms, scheduled: pump.scheduled }, pump.scheduled);
+      window.__pendingPumps++;
+      try { return later.call(this, pump.fire, ms, ...args); }
+      catch (failure) { window.__pendingPumps--; throw failure; }
+    };
     const play = HTMLMediaElement.prototype.play;
     HTMLMediaElement.prototype.play = function () {
       // #814: the background music is music-prove's, not a table sound.
       if (this.src.endsWith("/old_tower_inn_loop.mp3")) return play.call(this);
       window.__plays.push(new URL(this.src).pathname);
+      note("audio", { ordinal: window.__plays.length, path: window.__plays[window.__plays.length - 1] });
       return play.call(this);
     };
   });
@@ -334,8 +376,11 @@ try {
   await page.waitForFunction((quietMs) => {
     const n = window.__plays.length, now = performance.now();
     if (window.__quietN !== n) { window.__quietN = n; window.__quietAt = now; }
-    return now - window.__quietAt >= quietMs;
+    return window.__pendingPumps === 0 && now - window.__quietAt >= quietMs;
   }, 400, { timeout: 4000 });
+  const scheduledPumps = await page.evaluate(() => window.__leaveTrace.filter(entry => entry.kind === "pump-scheduled").length);
+  console.log("Sound pumps scheduled before Leave", scheduledPumps);
+  if (scheduledPumps < 1) throw new Error("No sound pump was scheduled before Leave");
   const playsBeforeLeave = await page.evaluate(() => window.__plays.length);
   await page.getByRole("button", { name: "Leave table" }).click();
   await page.waitForFunction(() => !window.__emberisle.getState().state, null, { timeout: STEP_MS });
@@ -343,7 +388,22 @@ try {
   await page.waitForFunction((n) => window.__plays.length > n, playsBeforeLeave, { timeout: 2000 }).catch(() => {});
   const leavePlays = await page.evaluate((n) => window.__plays.slice(n), playsBeforeLeave);
   console.log("Leave played", JSON.stringify(leavePlays));
-  if (leavePlays.join() !== "/audio/click_001.wav") throw new Error(`Leave played ${JSON.stringify(leavePlays)}, not click_001.wav once`);
+  try {
+    if (leavePlays.join() !== "/audio/click_001.wav") throw new Error(`Leave played ${JSON.stringify(leavePlays)}, not click_001.wav once`);
+  } catch (failure) {
+    try {
+      const diagnostic = await page.evaluate(({ baseline, observed }) => ({
+        origin: performance.timeOrigin, at: performance.now(), baseline, observed,
+        quiet: { count: window.__quietN, at: window.__quietAt },
+        plays: window.__plays, trace: window.__leaveTrace,
+      }), { baseline: playsBeforeLeave, observed: leavePlays });
+      mkdirSync("test-results", { recursive: true });
+      writeFileSync("test-results/hotseat-leave-diagnostic.json", JSON.stringify(diagnostic, null, 2));
+      // Full history is in the uploaded artifact; keep the last 80 records readable in the job log.
+      console.error("hotseat-leave-diagnostic", JSON.stringify({ ...diagnostic, trace: diagnostic.trace.slice(-80) }));
+    } catch (diagnosticError) { console.error("hotseat-leave-diagnostic capture failed", diagnosticError); }
+    throw failure;
+  }
 } catch (e) {
   console.error("hotseat-prove failed:", e);
   code = 1;
