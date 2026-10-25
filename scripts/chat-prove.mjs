@@ -1244,9 +1244,11 @@ try {
       await t.page.getByTestId("emoji-row").waitFor();
       const row = await t.page.getByTestId("emoji-row").evaluate((el) => {
         const r = el.getBoundingClientRect();
-        return { left: r.left, top: r.top, right: r.right, bottom: r.bottom };
+        const box = (el) => { if (!el) return null; const b = el.getBoundingClientRect(); return { left: b.left, top: b.top, right: b.right, bottom: b.bottom }; };
+        return { left: r.left, top: r.top, right: r.right, bottom: r.bottom, dock: !!document.querySelector('[data-testid="dock"]'), sheet: box(document.querySelector('[data-testid="chat-sheet"]')), strip: box(document.querySelector('[data-testid="seat-strip"]')) };
       });
-      if (row.left < safe.left || row.right > safe.right || row.top < m.chat.bottom || row.bottom > safe.bottom) bad(`the panel's emoji row is not inside the safe area, below the button ${JSON.stringify(row)}`);
+      const placed = row.dock && size.width > size.height ? !!row.strip && row.left >= row.sheet.left && row.right <= row.sheet.right && row.top >= row.sheet.top && row.bottom <= row.sheet.bottom && !hit(row, m.menu) && !hit(row, row.strip) : row.top >= m.chat.bottom;
+      if (row.left < safe.left || row.right > safe.right || row.top < safe.top || !placed || row.bottom > safe.bottom) bad(`the panel's emoji row is not safely placed inside its sheet, clear of the dock menu and seats ${JSON.stringify(row)}`);
       await t.page.getByRole("button", { name: "Minimize chat" }).click();
       await t.page.getByRole("button", { name: /^Open chat/ }).waitFor();
       if (checkBanner && size.width === 390) {
@@ -1441,8 +1443,15 @@ try {
     // #899: at every size and on both tabs the sheet starts below the seat strip and the 56 px bubble band under it (16 px gap, 40 px bubble).
     for (const tab of ["Sounds & stickers", "Chat"]) {
       await showTab(phone, tab);
-      const g = await phone.page.evaluate(() => ({ sheet: document.querySelector('[data-testid="chat-sheet"]').getBoundingClientRect().top, strip: document.querySelector('[data-testid="seat-strip"]').getBoundingClientRect().bottom }));
-      check(g.sheet >= g.strip + 56, `phone game ${w}x${h} ${tab} tab: the sheet (top ${Math.round(g.sheet)}) leaves the seat strip (bottom ${Math.round(g.strip)}) and its bubble band clear`);
+      const g = await phone.page.evaluate(() => {
+        const sheet = document.querySelector('[data-testid="chat-sheet"]').getBoundingClientRect();
+        const strip = document.querySelector('[data-testid="seat-strip"]').getBoundingClientRect();
+        const band = { left: strip.left, right: strip.right, top: strip.top, bottom: strip.bottom + 56 };
+        const overlap = sheet.left < band.right && band.left < sheet.right && sheet.top < band.bottom && band.top < sheet.bottom;
+        const points = [...document.querySelectorAll('[data-testid="seat-vp"]')].filter((el) => el.getClientRects().length);
+        return { sheet: sheet.top, strip: strip.bottom, clear: !overlap, inside: sheet.left >= 0 && sheet.top >= 0 && sheet.right <= innerWidth && sheet.bottom <= innerHeight, seats: points.length, uncovered: points.every((el) => { const b = el.getBoundingClientRect(); return b.width > 0 && b.height > 0 && el.contains(document.elementFromPoint((b.left + b.right) / 2, (b.top + b.bottom) / 2)); }) };
+      });
+      check(w > h ? g.clear && g.inside && g.seats === 4 && g.uncovered : g.sheet >= g.strip + 56, `phone game ${w}x${h} ${tab} tab: the sheet (top ${Math.round(g.sheet)}) leaves the seat strip (bottom ${Math.round(g.strip)}) and its bubble band clear`);
     }
     check((await phone.page.getByRole("button", { name: "Minimize chat" }).textContent()).trim() === "Close", `phone game ${v.size}: the sheet has a labelled Close`);
   }
