@@ -14,6 +14,13 @@ export const ChatControls = online.pick((m) => m.ChatControls);
 export const ChatDock = online.pick((m) => m.ChatDock);
 export const SeatBubbles = online.pick((m) => m.SeatBubbles);
 
+// #833: title-only list and mode controls share a lazy load; private Host/Join remain available in the index.
+const openTables = chunk(() => import("@/components/game/OpenTables"));
+export const OpenTables = openTables.pick((m) => m.OpenTables);
+export const OpenModeToggle = openTables.pick((m) => m.OpenModeToggle);
+export const SetupReference = chunk(() => import("@/components/game/SetupReference")).pick(m => m.SetupReference);
+export const WayfarerOptions = chunk(() => import("@/components/game/WayfarerOptions")).pick(m => m.WayfarerOptions);
+
 export const sheets = chunk(() => import("@/components/game/sheets"));
 export const CostCard = sheets.pick((m) => m.CostCard);
 export const FortuneTray = sheets.pick((m) => m.FortuneTray);

@@ -15,6 +15,7 @@ export const SOUNDBOARD = new Map([
   ["sb_airhorn", "Airhorn"],
   ["sb_quit_touchin", "Quit touchin' me"],
   ["sb_only_wood", "Only wood?"],
+  ["sb_perfect", "Perfect"],
   ["bong", "Bong"],
   ["plop", "Plop"],
   ["pluck", "Pluck"],

@@ -1,4 +1,4 @@
-// #899 (Chat C): one chat button, a panel with two tabs (Chat with the six emoji, Sounds & stickers with nine chips and the
+// #899 (Chat C): one chat button, a panel with two tabs (Chat with the six emoji, Sounds & stickers with ten chips and the
 // sticker), seat bubbles beside the card and never on the name (lobby, rail and strip), closed-chat line bubbles, the #895
 // lobby hit test at 1280x720, a phone sheet that leaves the strip and its bubbles clear, and reduced motion.
 // #160: three headless tabs at 1280x720 chat through server/host.mjs. Lobby chat, a floating reaction,
@@ -526,14 +526,14 @@ try {
     check(v.whole >= 4 && v.newest && v.newestText.includes("lobby line 8") && v.font >= 14, `phone lobby ${v.size}: ${v.whole} whole chat lines on screen, newest ("${v.newestText.trim()}") visible, ${v.font}px text`);
     check(await inView(hp, '[data-testid="lobby-actions"]'), `phone lobby ${v.size}: Ready/Start stay on screen beside the chat`);
     if (w === 440) await shot(hp, "chat-lobby-440x956.jpg");
-    // #899: the lobby box has the same two tabs. Sounds & stickers shows all nine chips with no sideways scroll, inside the box.
+    // #899: the lobby box has the same two tabs. Sounds & stickers shows all ten chips with no sideways scroll, inside the box.
     await hp.page.getByRole("tab", { name: "Sounds & stickers", exact: true }).click();
     const board = await hp.page.getByTestId("soundboard").evaluate((el) => {
       const box = document.querySelector('[data-testid="lobby-chat"]').getBoundingClientRect();
       const chips = [...el.querySelectorAll("button")].map((b) => b.getBoundingClientRect());
       return { n: chips.length, wide: el.scrollWidth > el.clientWidth + 0.5, inside: chips.every((r) => r.left >= box.left && r.right <= box.right), font: parseFloat(getComputedStyle(el.querySelector("button")).fontSize) };
     });
-    check(board.n === 9 && !board.wide && board.inside && board.font >= 14, `phone lobby ${v.size}: the Sounds & stickers tab shows all 9 chips at ${board.font}px with no sideways scroll`);
+    check(board.n === 10 && !board.wide && board.inside && board.font >= 14, `phone lobby ${v.size}: the Sounds & stickers tab shows all 10 chips at ${board.font}px with no sideways scroll`);
     await hp.page.getByRole("tab", { name: "Chat", exact: true }).click();
     const back = await logView(hp);
     check(back.whole >= 4 && back.newest, `phone lobby ${v.size}: back on the Chat tab, ${back.whole} chat lines and the newest are on screen`);
@@ -587,7 +587,7 @@ try {
       const whole = chips.every((r) => r.top >= b.top - 0.5 && r.bottom <= b.bottom + 0.5 && r.left >= b.left - 0.5 && r.right <= b.right + 0.5);
       return { n: chips.length, whole, height: Math.round(box.clientHeight), scroll: box.scrollHeight, small: chips.filter((r) => r.height < 43.5).length, wide: box.scrollWidth > box.clientWidth + 0.5 };
     });
-    check(land.n === 14 && land.small === 0 && !land.wide && (land.whole || land.height >= 66), `phone landscape ${w}x${h}: Sounds & stickers shows the 9 chips and 5 presets at 44 px, ${land.whole ? "all without scrolling" : `in a ${land.height} px scroll box (scrollHeight ${land.scroll})`}`);
+    check(land.n === 15 && land.small === 0 && !land.wide && (land.whole || land.height >= 66), `phone landscape ${w}x${h}: Sounds & stickers shows the 10 chips and 5 presets at 44 px, ${land.whole ? "all without scrolling" : `in a ${land.height} px scroll box (scrollHeight ${land.scroll})`}`);
     await hp.page.getByRole("tab", { name: "Chat", exact: true }).click();
   }
   await fourth.page.context().close();
@@ -678,7 +678,7 @@ try {
     const chips = [...el.querySelectorAll("button")];
     return { n: chips.length, wide: el.scrollWidth > el.clientWidth + 0.5, inside: chips.every((b) => { const r = b.getBoundingClientRect(); return r.left >= box.left && r.right <= box.right; }), reached: chips.filter(reach).length, tabs: ["#chat-tab-chat", "#chat-tab-sounds"].every((q) => reach(document.querySelector(q))) };
   });
-  check(lobbyBoard.n === 9 && !lobbyBoard.wide && lobbyBoard.inside && lobbyBoard.tabs, `desktop lobby 1280x720 (host, Sounds & stickers tab): all 9 chips with no sideways scroll, both tabs reachable; ${lobbyBoard.reached} of 9 chips in view without scrolling the tab`);
+  check(lobbyBoard.n === 10 && !lobbyBoard.wide && lobbyBoard.inside && lobbyBoard.tabs, `desktop lobby 1280x720 (host, Sounds & stickers tab): all 10 chips with no sideways scroll, both tabs reachable; ${lobbyBoard.reached} of 10 chips in view without scrolling the tab`);
   await shot(a, "chat-lobby-desktop-sounds.jpg");
   await a.page.getByRole("tab", { name: "Chat", exact: true }).click();
   await a.page.getByRole("button", { name: "Start" }).click();
@@ -1027,7 +1027,7 @@ try {
     const chips = [...el.querySelectorAll("button")].map((b) => b.getBoundingClientRect());
     return { n: chips.length, wide: el.scrollWidth > el.clientWidth + 0.5, inside: chips.every((r) => r.left >= sheet.left && r.right <= sheet.right && r.bottom <= sheet.bottom), font: parseFloat(getComputedStyle(el.querySelector("button")).fontSize) };
   });
-  check(phoneBoard.n === 9 && !phoneBoard.wide && phoneBoard.inside && phoneBoard.font >= 14, `phone: Sounds & stickers shows all 9 chips at ${phoneBoard.font}px, inside the sheet, with no sideways scroll`);
+  check(phoneBoard.n === 10 && !phoneBoard.wide && phoneBoard.inside && phoneBoard.font >= 14, `phone: Sounds & stickers shows all 10 chips at ${phoneBoard.font}px, inside the sheet, with no sideways scroll`);
   await sheetClear("Sounds & stickers");
   await shot(phone, "chat-phone-sounds.jpg");
   await showTab(phone, "Chat");
@@ -1288,7 +1288,7 @@ try {
     const chips = [...el.querySelectorAll("button")].map((b) => b.getBoundingClientRect());
     return { n: chips.length, wide: el.scrollWidth > el.clientWidth + 0.5, inside: chips.every((r) => r.left >= panel.left && r.right <= panel.right && r.bottom <= panel.bottom), font: parseFloat(getComputedStyle(el.querySelector("button")).fontSize), clearOfRail: panel.left >= rail.right + 100 };
   });
-  check(deskBoard.n === 9 && !deskBoard.wide && deskBoard.inside && deskBoard.font >= 14 && deskBoard.clearOfRail, `desktop: Sounds & stickers shows all 9 chips at ${deskBoard.font}px with no sideways scroll, in a panel clear of the seat rail`);
+  check(deskBoard.n === 10 && !deskBoard.wide && deskBoard.inside && deskBoard.font >= 14 && deskBoard.clearOfRail, `desktop: Sounds & stickers shows all 10 chips at ${deskBoard.font}px with no sideways scroll, in a panel clear of the seat rail`);
   await shot(a, "chat-desktop-sounds.jpg");
   await showTab(a, "Chat");
   // The panel remembers the last tab: a page reload in the same browser starts on it.

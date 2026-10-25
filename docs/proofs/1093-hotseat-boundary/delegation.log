@@ -1,0 +1,3 @@
+{"nativeTimerRegistrations":3,"nonPumpIdentityPreserved":true,"stableWrapper":true,"delayAndHandleDelegated":true,"receiverAndArgsDelegated":true,"clockReadsForTwoPumpCyclesAndOneSound":5,"traceRecords":5,"audioAndPumpStacks":0,"nativePlayResultPreserved":true}
+PASS: pending count spans real delegated callback/re-arm and clears on callback throw; all original delegation contracts retained.
+PASS: failed native registration rolls back pending count and preserves the thrown error.
