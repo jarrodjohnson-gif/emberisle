@@ -143,5 +143,41 @@ const port = await boot();
   ok("a leave before sitting is refused and the host keeps serving");
 }
 
+// 6. An open table: the host leaves while the only guest is held (dropped). Nobody is connected, so the open listing
+// goes at once instead of blocking a new open host for the hold.
+{
+  const listed = async () => {
+    const c = client(port, "Lister");
+    await c.open;
+    c.send({ type: "list" });
+    await until(() => c.inbox.some((m) => m.type === "openTables"), "the open list");
+    c.ws.close();
+    return c.inbox.find((m) => m.type === "openTables").tables;
+  };
+  const ember = client(port, "Ember");
+  await ember.open;
+  ember.send({ type: "create", name: "Ember", visibility: "open" });
+  await until(() => ember.inbox.some((m) => m.type === "welcome"), "the open table");
+  const code = ember.inbox.find((m) => m.type === "welcome").code;
+  const tide = client(port, "Tide");
+  await tide.open;
+  tide.send({ type: "hello", code, name: "Tide" });
+  await until(() => tide.inbox.some((m) => m.type === "welcome"), "Tide welcome");
+  await until(() => ember.seats?.length === 2, "both seats");
+  assert.deepEqual((await listed()).map((t) => t.code), [code], "the open table is listed");
+  tide.ws.terminate();
+  await until(() => ember.seats[1]?.away, "Tide held");
+  ember.send({ type: "leave" });
+  ember.ws.close();
+  const end = Date.now() + 2000;
+  let tables = await listed();
+  while (tables.length && Date.now() < end) {
+    await sleep(50);
+    tables = await listed();
+  }
+  assert.deepEqual(tables, [], "the open slot is released when the host leaves a table nobody is connected to");
+  ok("open table: the host leaves with the guest held, and the listing is released at once");
+}
+
 console.log("leave prove ok");
 process.exit(0);

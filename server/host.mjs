@@ -1654,6 +1654,7 @@ function leaveOnPurpose(ws, room) {
   ws.room = ws.seat = null;
   seat.ws = null;
   letGo(room, seat);
+  maybeReleaseOpenSlot(room);
 }
 
 function leave(ws) {
