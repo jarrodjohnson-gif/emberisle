@@ -1,0 +1,25 @@
+$ npm run loosen-prove -- --base 716c5f3f2c94bb97cff5d18f9ff40a1d7b55de64
+
+> loosen-prove
+> node scripts/loosen-prove.mjs --base 716c5f3f2c94bb97cff5d18f9ff40a1d7b55de64
+
+ok   self-test: an unchanged proof passes
+ok   self-test: re-indenting passes
+ok   self-test: an added check passes
+ok   self-test: editing only the block comment passes
+ok   self-test: a removed assert fails
+ok   self-test: a removed assert lowers the count
+ok   self-test: a wider tolerance fails
+ok   self-test: a //-commented assert fails
+ok   self-test: a /* */-commented assert fails
+ok   self-test: a check wrapped in a multi-line /* */ fails
+ok   self-test: a removed throw fails
+ok   self-test: a removed expect fails
+ok   self-test: a fail() that no longer sets exitCode 1 fails
+ok   self-test: an added process.exit(0) fails
+ok   self-test: an added process.exit() fails
+ok   self-test: a new .skip fails
+FAIL scripts/trade-tabs-prove.mjs: removed or edited check line: assert.equal(cue.hold.opacity, 1, `${tag}: ${key} preserves its readable hold${cue.holdFraction ? ` through ${cue.holdFraction * 100}%` : ""}`);
+FAIL scripts/trade-tabs-prove.mjs: removed or edited check line: assert.equal(cue.duration, 2200, `${tag}: ${key} keeps the 2200ms reading window`);
+FAIL scripts/trade-tabs-prove.mjs: removed or edited check line: assert.notEqual(actual.cues.centerLoss.color, actual.cues.centerGain.color, `${tag}: center signs retain distinct loss/gain colors`);
+1 proof(s) loosened against 716c5f3f2c94. Restore the checks, or keep them and add new ones (AGENTS.md rule 7).

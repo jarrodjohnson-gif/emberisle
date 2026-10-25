@@ -1,0 +1,16 @@
+$ npm run howto-prove
+
+> howto-prove
+> node scripts/howto-prove.mjs
+
+phone portrait 390x844: title and table menu entry points; backdrop 390x844, Close at 178-222 px on screen and tappable, closes
+phone landscape 844x390: title and table menu entry points; backdrop 844x390, Close at 60-104 px on screen and tappable, closes
+desktop 1280x720: title and table menu entry points; backdrop 1280x720, Close at 93-137 px on screen and tappable, closes
+rules: first outpost pays 0; second pays one card per productive hex (wastes + 2 land = 2, 3 land = 3); setup walks 1..n then n..1
+440x956 touch motion: setup reference from the title and a live table; 3 labelled diagrams with captions; no sideways overflow; body scrolls (scrollable here); Close on screen and tappable at both ends; Tab/Shift+Tab trap; Escape and Close return focus
+440x956 touch reduced motion: setup reference from the title and a live table; 3 labelled diagrams with captions; no sideways overflow; body scrolls (scrollable here); Close on screen and tappable at both ends; Tab/Shift+Tab trap; Escape and Close return focus
+956x440 touch motion: setup reference from the title and a live table; 3 labelled diagrams with captions; no sideways overflow; body scrolls (scrollable here); Close on screen and tappable at both ends; Tab/Shift+Tab trap; Escape and Close return focus
+956x440 touch reduced motion: setup reference from the title and a live table; 3 labelled diagrams with captions; no sideways overflow; body scrolls (scrollable here); Close on screen and tappable at both ends; Tab/Shift+Tab trap; Escape and Close return focus
+1280x720 motion: setup reference from the title and a live table; 3 labelled diagrams with captions; no sideways overflow; body scrolls (scrollable here); Close on screen and tappable at both ends; Tab/Shift+Tab trap; Escape and Close return focus
+1280x720 reduced motion: setup reference from the title and a live table; 3 labelled diagrams with captions; no sideways overflow; body scrolls (scrollable here); Close on screen and tappable at both ends; Tab/Shift+Tab trap; Escape and Close return focus
+sounds: open click_001, Close back_001, Escape back_001, Enter click_001, once each; muting and muted play nothing; unmuting clicks

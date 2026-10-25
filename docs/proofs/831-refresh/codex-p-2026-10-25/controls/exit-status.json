@@ -1,0 +1,28 @@
+{
+  "no-card-waapi": {
+    "exit": 1,
+    "expected_exit": 1,
+    "target_failure_caught": true,
+    "restored_byte_exact": true,
+    "baseline_sha256": "8dce345f95462d725142bb61f8a12764607329593eeb29b0394f2c833fe35b3f",
+    "command": [
+      "npm",
+      "run",
+      "trade-tabs-prove"
+    ],
+    "baseline_commit": "fdac0aba3d09a9376eb2e6a6be8ad5d0b970af03"
+  },
+  "gain-falls": {
+    "exit": 1,
+    "expected_exit": 1,
+    "target_failure_caught": true,
+    "restored_byte_exact": true,
+    "baseline_sha256": "8dce345f95462d725142bb61f8a12764607329593eeb29b0394f2c833fe35b3f",
+    "command": [
+      "npm",
+      "run",
+      "trade-tabs-prove"
+    ],
+    "baseline_commit": "fdac0aba3d09a9376eb2e6a6be8ad5d0b970af03"
+  }
+}

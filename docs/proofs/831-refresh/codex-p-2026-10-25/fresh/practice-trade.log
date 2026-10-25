@@ -1,0 +1,10 @@
+$ npm run practice-trade-prove
+
+> practice-trade-prove
+> node --import ./server/register.mjs scripts/practice-trade-prove.mjs
+
+person asks: "Dune (bot) takes it."; Ember {"timber":1,"clay":0,"wool":1,"grain":0,"ore":1}, Dune (bot) {"timber":0,"clay":0,"wool":1,"grain":3,"ore":2}
+bot asks: "Dune (bot) offers 1 sheep for 1 wheat" [Yes / No]
+person says Yes: Ember {"timber":0,"clay":1,"wool":1,"grain":0,"ore":0}; Dune (bot) plays on: ["Dune (bot) traded 1 sheep to Ember for 1 wheat.","Dune (bot) spends 3 wheat, 2 stone — stronghold."]
+person says No: nothing moves, and Dune (bot) plays on
+practice trade ui prove ok

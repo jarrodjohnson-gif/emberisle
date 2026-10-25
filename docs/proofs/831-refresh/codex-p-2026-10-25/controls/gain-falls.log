@@ -1,0 +1,24 @@
+
+> trade-tabs-prove
+> node --import ./server/register.mjs scripts/trade-tabs-prove.mjs
+
+390x844-no-preference: mixed exact bags, separate retained drafts, selected-only minus, route keyboard/focus, one footer, 44px controls, close reset
+390x844-no-preference: live hand clamp, no stale revival, turn/phase closure and reset
+390x844-no-preference: inactive tabs skipped; one radio stop per group; arrows skip same kind; owned/count/rate descriptions stay live; final-minus focus recovers
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: 390x844-no-preference 4:1: cardGain lifts for gain or dips for loss through the full hold {"text":"+1","resource":"ore","pairedResource":"ore","delta":"+1","pairedTabVisible":true,"animations":1,"cardAnimations":1,"animationName":"goods-cue","color":"rgb(255, 255, 255)","background":"rgb(99, 116, 138)","shadow":"rgb(65, 77, 91) 0px 0px 0px 1px inset, rgba(24, 51, 45, 0.22) 0px 6px 12px 0px","tabColor":"rgb(255, 255, 255)","tabBackground":"rgb(65, 77, 91)","tabShadow":"none","palette":{"resource":"rgb(99, 116, 138)","deep":"rgb(65, 77, 91)","loss":"rgb(138, 34, 25)","paper":"rgb(255, 249, 240)"},"duration":2500,"delay":0,"movementDuration":2500,"start":{"y":0,"opacity":0,"visible":true},"peak":{"y":6,"opacity":1,"visible":true},"readable":{"y":6,"opacity":1,"visible":true},"hold":{"y":6,"opacity":1,"visible":true},"end":{"y":0,"opacity":0,"visible":true}}
+    at bankMotion (file:///workspace/emberisle/work/p-verify883/scripts/trade-tabs-prove.mjs:279:14)
+    at async ratesAndRejections (file:///workspace/emberisle/work/p-verify883/scripts/trade-tabs-prove.mjs:565:5)
+    at async file:///workspace/emberisle/work/p-verify883/scripts/trade-tabs-prove.mjs:672:9 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+Node.js v24.19.0

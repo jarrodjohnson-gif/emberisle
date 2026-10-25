@@ -1,0 +1,13 @@
+diff --git a/src/components/game/Hand.tsx b/src/components/game/Hand.tsx
+index 5878408..5897e21 100644
+--- a/src/components/game/Hand.tsx
++++ b/src/components/game/Hand.tsx
+@@ -143,7 +143,7 @@ function ResourceCard({ resource, count, flash, offer, showRates, buildMode, own
+     const preference = matchMedia("(prefers-reduced-motion: reduce)");
+     // 0 is a real value (a short wide window has no room to lift); only a missing property falls back to 6 px.
+     const lift = parseFloat(getComputedStyle(card.current).getPropertyValue("--goods-lift"));
+-    const y = flash.delta > 0 ? -(Number.isNaN(lift) ? 6 : lift) : 2;
++    const y = flash.delta > 0 ? (Number.isNaN(lift) ? 6 : lift) : 2;
+     const animation = preference.matches
+       ? null
+       : card.current.animate(

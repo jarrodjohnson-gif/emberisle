@@ -1,0 +1,6 @@
+{
+  "merge-install": 0,
+  "merge-server-install": 0,
+  "equivalent-attempt1": 0,
+  "note": "obsolete-trade-tabs and sandbox size-delta diagnostics plus final/approved statuses are in merge-checks/exit-status.json; controlled mutations are expected exit1 in controls/exit-status.json"
+}

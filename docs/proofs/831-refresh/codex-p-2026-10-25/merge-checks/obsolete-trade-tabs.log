@@ -1,0 +1,20 @@
+
+> trade-tabs-prove
+> node --import ./server/register.mjs scripts/trade-tabs-prove.mjs
+
+390x844-no-preference: mixed exact bags, separate retained drafts, selected-only minus, route keyboard/focus, one footer, 44px controls, close reset
+390x844-no-preference: live hand clamp, no stale revival, turn/phase closure and reset
+390x844-no-preference: inactive tabs skipped; one radio stop per group; arrows skip same kind; owned/count/rate descriptions stay live; final-minus focus recovers
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+page.waitForFunction: Timeout 20000ms exceeded.
+    at bankMotion (/workspace/emberisle/work/p-refresh883/scripts/trade-tabs-prove.mjs:223:14)
+    at ratesAndRejections (/workspace/emberisle/work/p-refresh883/scripts/trade-tabs-prove.mjs:517:11)
+    at async file:///workspace/emberisle/work/p-refresh883/scripts/trade-tabs-prove.mjs:624:9 {
+  log: [],
+  name: 'TimeoutError'
+}
+
+Node.js v24.19.0

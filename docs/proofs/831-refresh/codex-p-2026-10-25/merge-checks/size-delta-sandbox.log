@@ -1,0 +1,20 @@
+
+> size-delta-prove
+> node scripts/size-delta-prove.mjs
+
+FAIL +300 B on index passes: exit 0 (want 0), output lacks ["ok   index growth: base 122000 B, PR 122300 B, +300 B, allowance 400 B"]
+
+FAIL a second +300 B on top of it passes: exit 0 (want 0), output lacks ["+0 B"]
+
+FAIL +600 B on index fails and names chunk, base, PR, allowance: exit 1 (want 1), output lacks ["FAIL index growth: base 122000 B, PR 122600 B, +600 B, allowance 400 B (200 B over)"]
+
+FAIL a new chunk is held to its ceiling only: exit 0 (want 0), output lacks ["new  VictoryTargetSelect","not in the base"]
+
+FAIL a removed chunk passes and is reported: exit 0 (want 0), output lacks ["gone legacy"]
+
+FAIL a chunk gone from the PR that still has a ceiling fails: exit 1 (want 1), output lacks ["FAIL VictoryTargetSelect: no chunk named"]
+
+FAIL without a base only the ceilings run and the delta command is printed: exit 0 (want 0), output lacks ["no base given","--base <dir"]
+
+FAIL over the absolute ceiling fails even inside the allowance: exit 1 (want 1), output lacks ["FAIL index: 125.30 kB gzip, ceiling 125.20 kB"]
+
