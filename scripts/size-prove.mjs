@@ -23,7 +23,8 @@ const DIR = "dist/assets";
 const CEILINGS = [
   // #542: optional phone motor/preferences/menu, loaded before the first interactive tap; measured 1.09 kB.
   { name: "haptics", gzipBytes: 1200 },
-  { name: "index", gzipBytes: 125200 },
+  // #1101: one-PR allowance of +900 B (owner decision, 2026-10-25, Option B) for the phone dock; the desk removes it after merge.
+  { name: "index", gzipBytes: 125200 + 900 },
   { name: "IslandCanvas", gzipBytes: 202500 },
   { name: "jelly-board", gzipBytes: 9000 },
   { name: "hex-jelly", gzipBytes: 50000 },
@@ -50,7 +51,8 @@ const CEILINGS = [
 ];
 
 // Growth allowance against the base, in gzip bytes. index is fixed at 400 B; the others take 0.33% of the base size, at least 200 B.
-const ALLOWANCE = { index: 400 };
+// #1101: index growth gets +900 B for this PR only (owner decision, 2026-10-25); the desk removes it after merge.
+const ALLOWANCE = { index: 400 + 900 };
 const ALLOWANCE_RATE = 0.0033;
 const ALLOWANCE_MIN = 200;
 const allowanceFor = (name, baseBytes) => ALLOWANCE[name] ?? Math.max(ALLOWANCE_MIN, Math.round(baseBytes * ALLOWANCE_RATE));
