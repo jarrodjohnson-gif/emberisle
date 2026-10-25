@@ -1,0 +1,58 @@
+$ npm run client-prove
+
+> client-prove
+> node scripts/client-prove.mjs
+
+plays before the first gesture: []
+roll-off: setupSettle, order p3 p2 p1 p0, 4 die tiles [3 4 5 –] (gone after), banner "Bot rolled for Pine: roll-off die 6. · Pine (bot) places first, then Dune (bot), Tide (bot), and Ember."
+after setup: roll
+turn announcements: ["Your turn.","Tide (bot)'s turn.","Dune (bot)'s turn.","Pine (bot)'s turn.","Dune (bot)'s turn.","Tide (bot)'s turn.","Your turn.","Tide (bot)'s turn.","Dune (bot)'s turn.","Pine (bot)'s turn."]
+rolled: [ 4, 5 ]
+sounds heard in setup and the first roll: ["click_001.wav","game_start.mp3","drop_003.wav","drop_002.wav","drop_003.wav","drop_002.wav","drop_003.wav","your_turn.wav","drop_002.wav","drop_003.wav","drop_002.wav","drop_003.wav","drop_002.wav","drop_003.wav","drop_002.wav","drop_003.wav","drop_002.wav","drop_003.wav","drop_002.wav","drop_001.wav","click_002.wav","click_002.wav","click_002.wav","drop_001.wav","click_002.wav","click_002.wav","click_002.wav","drop_002.wav","drop_001.wav","click_002.wav","click_002.wav","click_002.wav","drop_002.wav","your_turn.wav","drop_001.wav","click_002.wav","click_002.wav"]
+roll banner: null
+offline steal picker: {"targets":2,"asked":true,"got":1,"left":1,"phase":"main","cleared":true}
+path fortune: {"first":2,"picked":1,"second":2,"laid":2,"cardLeft":0,"played":true,"mode":"none","error":null}
+plenty fortune: {"ore":1,"wool":1,"cardLeft":0,"error":null}
+monopoly fortune: {"gained":6,"othersLeft":0,"cardLeft":0,"error":null}
+bank trade through the panel: Bank 4:1 {"ore":4,"wool":1,"open":false,"error":null} ask-the-table buttons in practice: 1
+screenshot: test-results/client-prove.png
+online bots + leave: {"botActs":0,"log":"","place":null,"seat":"","host":false,"picks":0,"toast":null,"screen":"title"}
+knight before roll: {"armed":"knight","phase":"roll","played":1,"error":null,"roll":true}
+rail cards: ["Ember2 fortunes0 points, plus 2 hidden+201","Tide (bot)0 points00","Dune (bot)0 points00","Pine (bot)0 points00"]
+turn banner: {"mineText":"Build, trade, or end your turn","bot":"Tide (bot)","theirs":"Wait for Tide (bot) to roll","strip":0}
+win screen: {"rows":[{"id":"p1","total":9},{"id":"p0","total":6},{"id":"p2","total":2},{"id":"p3","total":1}],"winner":"p1","headline":"Tide (bot) wins","want":{"p0":6,"p1":9,"p2":2,"p3":1}}
+win tab order: {"tabs":[{"id":"win-look","inDialog":true},{"id":"win-menu","inDialog":true},{"id":"win-look","inDialog":true},{"id":"win-menu","inDialog":true}],"back":{"id":"win-menu","inDialog":true}}
+win screen ok
+hotseat rematch: {"phase":"rollOff","winner":null,"names":["Seat 3","Ember","Seat 2","Seat 4"],"first":"p0","current":"p1","localId":"p0","buildMode":"none"}
+online play again: {"hostSent":2,"guest":{"again":0,"waiting":"Waiting for Ember to start another.","chip":0}}
+play again ok
+mute: {"wasOn":"true","stored":"1","stillOff":"false","mutedPlays":[],"menuSays":"Table sounds on","cleared":null}
+sounds: dice_land path_place outpost_place played; mute remembered
+lobby host from seats: {"handedOver":1,"notHost":0}
+copy fallback: {"noClip":{"value":"http://127.0.0.1:8091/?code=ABCD","readOnly":true,"selected":true,"live":"Select and copy","polite":"polite"},"clip":{"live":"Copied","field":0}}
+tab titles: {"start":"● Your turn — Emberisle","bot":"Emberisle","back":"● Your turn — Emberisle","title":"Emberisle"}
+join form: {"alert":"Lost the table","value":"ZZZZ","caps":"characters","auto":"off"}
+win dialog: {"focused":"Back to menu","modal":"true"}
+reduced motion: {"flash":"0s","fade":"0s"}
+leave asks: {"text":"Leave the table? Your seat goes to the bot.StayLeave","screen":"play","seat":"{\"code\":\"ABCD\",\"secret\":\"x\"}"}
+leave then leave: {"screen":"title","seat":null}
+phone leave question topmost: {"ok":true,"hit":"P."}
+practice leave: one click
+build row, empty hand: {"Path":{"disabled":true,"native":false,"cursor":"not-allowed","title":"Path · 1 wood, 1 brick","desc":"Path · 1 wood, 1 brick · Need 1 more wood and 1 more brick","pressed":"false"},"Outpost":{"disabled":true,"native":false,"cursor":"not-allowed","title":"Outpost · 1 wood, 1 brick, 1 sheep, 1 wheat","desc":"Outpost · 1 wood, 1 brick, 1 sheep, 1 wheat · No spot","pressed":"false"},"Stronghold":{"disabled":true,"native":false,"cursor":"not-allowed","title":"Stronghold · 3 wheat, 2 stone","desc":"Stronghold · 3 wheat, 2 stone · Need 3 more wheat and 2 more stone","pressed":"false"},"Fortune":{"disabled":true,"native":false,"cursor":"not-allowed","title":"Fortune · 1 sheep, 1 wheat, 1 stone","desc":"Fortune · 1 sheep, 1 wheat, 1 stone · Need 1 more sheep and 1 more wheat and 1 more stone","pressed":null}}
+Tab to unaffordable Path: {"tabbedTo":"Path","aria":"true","desc":"Path · 1 wood, 1 brick · Need 1 more wood and 1 more brick"}
+click unaffordable: {"buildMode":"none","cards":25,"error":null,"said":"Need 1 more sheep and 1 more wheat and 1 more stone","cardsBefore":25}
+quiet message, then a refused move: {"refused":"Cannot roll now.","mid":{"announcement":null},"after":""}
+build row, 1 timber 1 clay: {"Path":{"disabled":false,"native":false,"cursor":"pointer","title":"Path · 1 wood, 1 brick","desc":"Path · 1 wood, 1 brick · Ready","pressed":"false"},"Outpost":{"disabled":true,"native":false,"cursor":"not-allowed","title":"Outpost · 1 wood, 1 brick, 1 sheep, 1 wheat","desc":"Outpost · 1 wood, 1 brick, 1 sheep, 1 wheat · No spot","pressed":"false"},"Stronghold":{"disabled":true,"native":false,"cursor":"not-allowed","title":"Stronghold · 3 wheat, 2 stone","desc":"Stronghold · 3 wheat, 2 stone · Need 3 more wheat and 2 more stone","pressed":"false"},"Fortune":{"disabled":true,"native":false,"cursor":"not-allowed","title":"Fortune · 1 sheep, 1 wheat, 1 stone","desc":"Fortune · 1 sheep, 1 wheat, 1 stone · Need 1 more sheep and 1 more wheat and 1 more stone","pressed":null}}
+arm then Escape: {"armed":"path","pressed":"true","edges":3,"disarmed":{"buildMode":"none","tradeOpen":false,"howTo":false,"pressed":"false"}}
+escape order, trade over arm: {"layer1":{"buildMode":"path","tradeOpen":false,"howTo":false},"layer2":{"buildMode":"none","tradeOpen":false,"howTo":false}}
+escape order, how-to over arm: {"layer3":{"buildMode":"path","tradeOpen":false,"howTo":false},"layer4":{"buildMode":"none","tradeOpen":false,"howTo":false}}
+phone build button heights: [52,52,52,52]
+how to play (title): {"focusedOnOpen":"Close","focusedAfter":"How to play"}
+how to play (table menu): {"focusedOnOpen":"Close","focusedAfter":"Table menu"}
+stale rejoin on load: {"screen":"title","error":null,"toast":null,"net":true}
+live seat at a missing table: {"screen":"title","error":"Seat is gone.","restoring":false}
+live seat, host down: title card after 3491 ms
+peek after a stale rejoin: {"peeking":true,"error":null,"toast":null,"screen":"title"}
+peek after a refused Join (Color taken.): the taken color shows again
+peek during a pending rejoin: {"screen":"play","error":null,"toast":null,"peeking":false}
+client prove ok
