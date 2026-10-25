@@ -21,6 +21,8 @@ const DIR = "dist/assets";
 // Hard ceilings, set 2026-10-19 (#868) from main's gzip sizes (index 122150 B, IslandCanvas 199470 B) plus generous room:
 // +3 kB on the two big chunks, about +1 kB on the lazy ones.
 const CEILINGS = [
+  { name: "Title", gzipBytes: 3000 },
+  { name: "focus-trap", gzipBytes: 600 },
   // #542: optional phone motor/preferences/menu, loaded before the first interactive tap; measured 1.09 kB.
   { name: "haptics", gzipBytes: 1200 },
   { name: "index", gzipBytes: 125200 },

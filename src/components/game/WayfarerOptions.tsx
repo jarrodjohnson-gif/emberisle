@@ -6,8 +6,8 @@ export function WayfarerOptions({ rules, choose }: {
   choose: (context: "ai" | "online" | "hotseat", mode: WayfarerMode) => void;
 }) {
   return <>
-    {([["ai", "Practice"], ["online", "Online"], ["hotseat", "Hotseat"]] as const).map(([context, label]) => <label key={context} className="flex min-h-11 items-center justify-between gap-2 text-sm">
-      {label}<select aria-label={`${label} wayfarer`} aria-describedby="wayfarer-help" value={rules[context]} onChange={e => choose(context, e.target.value as WayfarerMode)} className="h-11 min-w-32 rounded-control border bg-surface px-2 text-fg">
+    {([["ai", "Play against bots"], ["online", "Host a table online"], ["hotseat", "Pass this device"]] as const).map(([context, label]) => <label key={context} className="title-rule">
+      {label}<select aria-label={label} aria-describedby="wayfarer-help" value={rules[context]} onChange={e => choose(context, e.target.value as WayfarerMode)} className="title-rule-select">
         <option value="on">On</option><option value="off">Off</option>
       </select>
     </label>)}
