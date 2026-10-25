@@ -96,7 +96,7 @@ try {
       }
     }).observe(document.body, { subtree: true, childList: true, characterData: true });
   });
-  await page.getByRole("button", { name: "Four seats, one table" }).click();
+  await page.getByRole("button", { name: "Pass this device" }).click();
   await page.waitForFunction(() => window.__emberisle?.getState().state);
 
   // #232: the Roll button rolls off for whichever seat is current, until one seat places first.

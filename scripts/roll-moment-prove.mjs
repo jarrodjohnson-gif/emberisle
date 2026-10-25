@@ -278,7 +278,7 @@ async function practice(viewport, touch) {
   let ok = false;
   for (let deal = 0; deal < 10 && !ok; deal++) {
     page = await open(viewport, { touch });
-    await page.getByRole("button", { name: "Play", exact: true }).click();
+    await page.getByRole("button", { name: "Play against bots", exact: true }).click();
     await playUntil(page, myRoll);
     await frames(page);
     const producing = await page.evaluate(() => {
@@ -424,7 +424,7 @@ async function practice(viewport, touch) {
 async function noFlight() {
   const tag = "animate throws 1280x720";
   const page = await open({ width: 1280, height: 720 });
-  await page.getByRole("button", { name: "Four seats, one table" }).click();
+  await page.getByRole("button", { name: "Pass this device" }).click();
   await playUntil(page, myRoll);
   await page.evaluate(() => (window.__animateThrows = true));
   const { applied } = await clickRoll(page);
@@ -440,7 +440,7 @@ async function noFlight() {
 async function hotseat() {
   const tag = "hotseat 1280x720";
   const page = await open({ width: 1280, height: 720 });
-  await page.getByRole("button", { name: "Four seats, one table" }).click();
+  await page.getByRole("button", { name: "Pass this device" }).click();
   await playUntil(page, myRoll);
   const roll = await clickRoll(page);
   await settleChecks(page, tag, roll);
@@ -452,7 +452,7 @@ async function hotseat() {
 async function reduced() {
   const tag = "reduced motion 1280x720";
   const page = await open({ width: 1280, height: 720 }, { reduced: true });
-  await page.getByRole("button", { name: "Play", exact: true }).click();
+  await page.getByRole("button", { name: "Play against bots", exact: true }).click();
   await playUntil(page, myRoll);
   await settleChecks(page, tag, await clickRoll(page), { reduced: true });
   await page.close();

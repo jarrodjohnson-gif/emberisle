@@ -267,7 +267,7 @@ async function pinned(p, moment, name, mustScroll) {
 async function practice(spec) {
   const p = await phone(spec);
   const { page } = p;
-  await page.getByRole("button", { name: "Play", exact: true }).click();
+  await page.getByRole("button", { name: "Play against bots", exact: true }).click();
   await until(page, () => window.__emberisle.getState().state?.phase === "rollOff");
   const roll = page.getByRole("button", { name: "Roll", exact: true });
   await roll.waitFor({ timeout: STEP_MS });

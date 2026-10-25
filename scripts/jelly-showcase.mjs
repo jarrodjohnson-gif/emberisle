@@ -9,7 +9,7 @@ try {
   const context=await browser.newContext({viewport:{width:1280,height:720},recordVideo:{dir:"test-results/jelly/video",size:{width:1280,height:720}}});
   const page=await context.newPage();
   await page.goto("http://localhost:8080");
-  await page.getByRole("button",{name:"Four seats, one table",exact:true}).click();
+  await page.getByRole("button",{name:"Pass this device",exact:true}).click();
   await page.waitForFunction(()=>window.__isle?.lastState);
   await page.evaluate(async()=>{
     const {createGame}=await import("/src/lib/game/board.ts");

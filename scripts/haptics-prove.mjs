@@ -467,7 +467,7 @@ async function coldLoadProof(url, production) {
       store.setState({rejoinTable: (...args) => { window.__rejoins++; return rejoin(...args); }});
     }, production), "cold shared entry evaluation did not finish");
     let tapped = false;
-    tap = page.getByRole("button", {name: "Four seats, one table", exact: true}).click({timeout: STEP_MS}).then(() => { tapped = true; });
+    tap = page.getByRole("button", {name: "Pass this device", exact: true}).click({timeout: STEP_MS}).then(() => { tapped = true; });
     // This is an intentional held-download control, not an event deadline or retry.
     await page.waitForTimeout(250);
     assert.equal(tapped, false, "first native tap must wait for the optional module's registration");
@@ -517,7 +517,7 @@ async function skippedLoadProof(url, {coarse = false, missingAPI = false} = {}) 
   const page = await openPage({url, coarse, missingAPI, beforeNavigate: async (page) => {
     page.on("request", (request) => { if (/\/haptics(?:-[\w-]+\.js|\.tsx)/.test(request.url())) loads.push(request.url()); });
   }});
-  await page.getByRole("button", {name: "Four seats, one table", exact: true}).click();
+  await page.getByRole("button", {name: "Pass this device", exact: true}).click();
   await page.getByRole("button", {name: "Table menu", exact: true}).click();
   assert.equal(await page.getByTestId("haptics-toggle").count(), 0, "unsupported cold load has no haptics row");
   assert.deepEqual(loads, [], "unsupported cold load never downloads optional haptics");
@@ -532,7 +532,7 @@ async function unavailableModuleProof(url) {
       status: 200, contentType: "application/javascript", body: 'throw new Error("optional motor unavailable");',
     }));
   }});
-  await page.getByRole("button", {name: "Four seats, one table", exact: true}).click();
+  await page.getByRole("button", {name: "Pass this device", exact: true}).click();
   await page.getByRole("button", {name: "Table menu", exact: true}).click();
   assert.equal(await page.getByTestId("haptics-toggle").count(), 0, "a failed optional module leaves a usable game without its row");
   assert.deepEqual(await page.evaluate(() => window.__buzz), []);

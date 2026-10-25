@@ -56,7 +56,7 @@ try {
     page.on("pageerror", (e) => errors.push(`${v.tag}: ${e}`));
     if (v.insets) await (await ctx.newCDPSession(page)).send("Emulation.setSafeAreaInsetsOverride", { insets: v.insets });
     await page.goto(`http://127.0.0.1:${PORT}/`);
-    await page.getByRole("button", { name: "Play", exact: true }).click();
+    await page.getByRole("button", { name: "Play against bots", exact: true }).click();
     await page.waitForFunction(() => window.__emberisle?.getState().state);
     const press = async (loc) => {
       const b = await loc.boundingBox();

@@ -81,7 +81,7 @@ const sheep = async () => (await plays()).filter((f) => f === "sb_plump_sheep.mp
 
 await page.goto(`http://127.0.0.1:${PORT}/`);
 await until(() => window.__isle?.renders > 0);
-await page.getByRole("button", { name: "Play", exact: true }).click();
+await page.getByRole("button", { name: "Play against bots", exact: true }).click();
 await until(() => window.__emberisle.getState().state?.phase === "rollOff");
 await page.keyboard.press("Shift");
 const roll = page.getByRole("button", { name: "Roll", exact: true });

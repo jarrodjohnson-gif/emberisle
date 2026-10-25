@@ -107,7 +107,7 @@ async function tab(name, chunk, query = "", { reloaded = [], seat, viewport = { 
   await page.goto(url + query);
   return t;
 }
-const title = (page) => page.getByRole("button", { name: "Play", exact: true }).waitFor({ timeout: 15_000 });
+const title = (page) => page.getByRole("button", { name: "Play against bots", exact: true }).waitFor({ timeout: 15_000 });
 
 try {
   // --- 1. The sheets chunk fails. Idle on the title prefetches it: one reload, then the flag holds.
@@ -121,7 +121,7 @@ try {
   const loads = a.loads;
   check("sheets: the title reloaded itself once on the failed prefetch and not again", loads === 2 && a.blocked >= 2, { loads, blocked: a.blocked });
 
-  await a.page.getByRole("button", { name: "Play", exact: true }).click();
+  await a.page.getByRole("button", { name: "Play against bots", exact: true }).click();
   await a.page.waitForFunction(() => window.__emberisle?.getState().screen === "play", null, { timeout: 15_000 });
   await a.page.waitForSelector("header", { timeout: 15_000 });
   await a.page.waitForSelector("canvas", { timeout: 15_000 });
@@ -253,7 +253,7 @@ try {
   await f.page.getByRole("button", { name: "Host a table" }).hover(); // the retry succeeds
   await sleep(1000);
   await fInput.fill("ZZZZ");
-  await f.page.getByRole("button", { name: "Play", exact: true }).click();
+  await f.page.getByRole("button", { name: "Play against bots", exact: true }).click();
   await f.page.waitForFunction(() => window.__emberisle.getState().screen === "play", null, { timeout: 15_000 });
   await f.page.evaluate(() => window.__emberisle.getState().goTitle());
   await title(f.page);
@@ -317,7 +317,7 @@ try {
   // preloadOnIdle's 2 s) have been refused and nothing has asked for longer than that, so the next ask is game over's.
   const settled = async (t) => {
     const atPlay = t.blocked;
-    await t.page.getByRole("button", { name: "Play", exact: true }).click();
+    await t.page.getByRole("button", { name: "Play against bots", exact: true }).click();
     await t.page.waitForFunction(() => window.__emberisle?.getState().screen === "play", null, { timeout: 15_000 });
     await t.page.waitForSelector("header", { timeout: 15_000 });
     await until(() => t.blocked > atPlay, "the table's own sheets request being refused");

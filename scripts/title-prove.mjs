@@ -42,7 +42,7 @@ try {
     // socket and say nothing back.
     await page.routeWebSocket(/:8787\//, () => {});
     await page.goto(`http://127.0.0.1:${PORT}/`);
-    await page.getByRole("button", { name: "Play", exact: true }).waitFor();
+    await page.getByRole("button", { name: "Play against bots", exact: true }).waitFor();
 
     const card = await page.evaluate(() => {
       const el = document.querySelector('[data-testid="title-card"]');
@@ -70,7 +70,7 @@ try {
       const textBox = hostText.getBoundingClientRect();
       return {
         hostFits: host.scrollWidth <= host.clientWidth && textBox.left >= hostBox.left && textBox.right <= hostBox.right,
-        primary: buttons.filter((b) => getComputedStyle(b).backgroundColor === fgRgb).map((b) => b.textContent.trim()),
+        primary: buttons.filter((b) => b.classList.contains("bg-fg")).map((b) => b.textContent.trim()),
         filled: filled.map((b) => b.textContent.trim()),
         uppercase: [...el.querySelectorAll("*")].filter((n) => getComputedStyle(n).textTransform === "uppercase").length,
         texts: [...el.querySelectorAll("p")].map((p) => p.textContent.trim()),
@@ -103,7 +103,7 @@ try {
     await page.screenshot({ path: `test-results/title-prove-${v.width}x${v.height}.png` });
 
     assert.deepEqual(errors, [], `${tag}: console errors`);
-    console.log(`ok   ${tag}: one primary (Play), filled ${card.filled.join(" / ")}, card ${Math.round(card.heightShare * 100)} % tall, nothing clipped, Watch only at 4 characters`);
+    console.log(`ok   ${tag}: one primary (Play against bots), filled ${card.filled.join(" / ")}, card ${Math.round(card.heightShare * 100)} % tall, nothing clipped, Watch visible throughout, available at 4 characters`);
     await ctx.close();
   }
   console.log("title-prove: ok");

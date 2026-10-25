@@ -49,7 +49,7 @@ try {
       }, field);
     }
     await page.screenshot({ path: `${out}/${width}-title.png` });
-    await page.getByRole("button", { name: "Four seats, one table", exact: true }).click();
+    await page.getByRole("button", { name: "Pass this device", exact: true }).click();
     await page.waitForFunction(() => window.__emberisle?.getState().state);
     await page.evaluate(async () => {
       const game = window.__emberisle;

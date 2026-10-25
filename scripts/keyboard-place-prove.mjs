@@ -26,7 +26,7 @@ try {
   page.on("pageerror", (e) => errors.push(String(e)));
   page.on("response", (r) => r.status() >= 400 && errors.push(`${r.status()} ${r.url()}`));
   await page.goto(`http://127.0.0.1:${PORT}/`);
-  const four = page.getByRole("button", { name: "Four seats, one table" });
+  const four = page.getByRole("button", { name: "Pass this device" });
   await four.focus();
   await page.keyboard.press("Enter");
   await page.waitForFunction(() => window.__emberisle?.getState().state, null, { timeout: STEP_MS });
@@ -365,7 +365,7 @@ try {
   const still = await browser.newPage({ viewport: { width: 1280, height: 720 }, reducedMotion: "reduce" });
   still.on("pageerror", (e) => errors.push(String(e)));
   await still.goto(`http://127.0.0.1:${PORT}/`);
-  await still.getByRole("button", { name: "Four seats, one table" }).focus();
+  await still.getByRole("button", { name: "Pass this device" }).focus();
   await still.keyboard.press("Enter");
   await still.waitForFunction(() => window.__emberisle?.getState().state, null, { timeout: STEP_MS });
   for (let i = 0; i < 40; i++) {

@@ -15,7 +15,7 @@ try{
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
   await page.addInitScript(()=>{localStorage.setItem('emberisle-jelly','full');localStorage.setItem('emberisle-water','simple');});
   await page.goto(`http://127.0.0.1:${port}`);await page.waitForFunction(()=>window.__emberisle);
-  await page.getByRole('button',{name:'Four seats, one table',exact:true}).click();
+  await page.getByRole('button',{name:'Pass this device',exact:true}).click();
   await page.evaluate(async()=>{
    const {createGame}=await import('/src/lib/game/board.ts');
    const s=createGame({humans:[{name:'Ember'},{name:'Tide'},{name:'Dune'}],bots:0,seed:14});

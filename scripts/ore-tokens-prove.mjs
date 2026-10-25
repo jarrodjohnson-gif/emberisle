@@ -15,7 +15,7 @@ try {
   const page = await browser.newPage({ viewport: { width: 960, height: 680 } });
   await page.addInitScript(() => localStorage.setItem("emberisle-jelly", "full"));
   await page.goto(`http://127.0.0.1:${port}/`);
-  await page.getByRole("button", { name: "Play", exact: true }).click();
+  await page.getByRole("button", { name: "Play against bots", exact: true }).click();
   await page.waitForFunction(() => window.__emberisle.getState().screen === "play" && window.__isle?.lastState === window.__emberisle.getState().state && window.__isle.landReady && window.__isle.fit && !window.__isle.refitDue && !window.__isle.glide, null, { timeout: 120_000 });
   await page.waitForFunction((r) => window.__isle?.renders > r + 2, await page.evaluate(() => window.__isle.renders));
   const results = await page.evaluate(async () => {

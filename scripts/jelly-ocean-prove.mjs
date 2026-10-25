@@ -22,7 +22,7 @@ try {
     page.on("pageerror", e => errors.push(e.message));
     page.on("console", m => m.type() === "error" && errors.push(m.text()));
     await page.goto(`http://127.0.0.1:${port}`);
-    await page.getByRole("button", { name: "Four seats, one table", exact: true }).click();
+    await page.getByRole("button", { name: "Pass this device", exact: true }).click();
     await page.waitForFunction(() => window.__isle?.lastState && window.__isle.landReady, null, { timeout: 120_000 });
     await page.evaluate(() => {
       const g = window.__emberisle, state = structuredClone(g.getState().state);

@@ -1382,7 +1382,7 @@ try {
 
   // Versus bots the menu shows only the facts (and the bank trade on your main turn, not during setup).
   const { page: solo } = await tab("Solo");
-  await solo.getByRole("button", { name: "Play", exact: true }).click();
+  await solo.getByRole("button", { name: "Play against bots", exact: true }).click();
   // The human rolls off (#232) when it is up; the bots roll on the app's timer.
   await solo.waitForFunction(() => {
     const s = window.__emberisle.getState();
