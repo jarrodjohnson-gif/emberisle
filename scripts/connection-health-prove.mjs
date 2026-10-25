@@ -1,7 +1,7 @@
 // Real browser + real host. Only the browser clock advances; the host's flood limiter keeps real time.
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -33,7 +33,7 @@ if (process.argv.includes("--host-fixture")) {
   await import("../server/host.mjs");
 } else {
   const { chromium } = await import("playwright");
-  const { createServer } = await import("vite");
+  const { createServer, build, preview } = await import("vite");
   const resultsDir = fileURLToPath(new URL("../test-results/", import.meta.url));
   mkdirSync(resultsDir, { recursive: true });
   const dir = mkdtempSync(path.join(tmpdir(), "emberisle-health-"));
@@ -43,7 +43,7 @@ if (process.argv.includes("--host-fixture")) {
     stdio: ["ignore", "pipe", "pipe", "ipc"],
   });
   host.stderr.on("data", d => process.stderr.write(d));
-  let browser, vite;
+  let browser, vite, production;
   const clients = [];
   const sleep = ms => new Promise(r => setTimeout(r, ms));
   const until = async (fn, label) => {
@@ -359,11 +359,121 @@ if (process.argv.includes("--host-fixture")) {
     }
     await layout.close();
     console.log("ok lobby: four ready seats and every health state fit 320/390/667/844px layouts; no landscape scrolling");
+    // Production demand loading: the protocol itself remains synchronous once imported.
+    await build({ logLevel: "error" });
+    const asset = readdirSync("dist/assets").find(name => /^table-[^/]+\.js$/.test(name));
+    assert.ok(asset, "production has a separately budgeted table client");
+    production = await preview({ preview: { host: "127.0.0.1", port: 0, strictPort: false }, logLevel: "error" });
+    const origin = `http://127.0.0.1:${production.httpServer.address().port}`;
+    const moduleUrl = `${origin}/assets/${asset}`;
+    const discoveryAsset = readdirSync("dist/assets").find(name => /^OpenTables-[^/]+\.js$/.test(name));
+    assert.ok(discoveryAsset, "optional discovery parent remains separately loaded");
+    const discoveryUrl = `${origin}/assets/${discoveryAsset}`;
+    const savedSeatRecord = await page.evaluate(() => localStorage.getItem("emberisle-seat"));
+    assert.ok(savedSeatRecord, "cold recovery fixture has a real saved seat");
+    async function cold({ seed = null, fail = false } = {}) {
+      const context = await browser.newContext({ viewport: { width: 1280, height: 720 } });
+      const p = await context.newPage();
+      p.on("pageerror", e => errors.push(String(e)));
+      p.on("console", message => { if (message.text().startsWith("COLD preload")) console.log(message.text()); });
+      const intents = [], requests = [], held = [];
+      let open = false, failNext = fail;
+      p.on("websocket", ws => ws.on("framesent", ({ payload }) => {
+        const m = JSON.parse(String(payload));
+        if (["hello", "peek"].includes(m.type)) intents.push({ type: m.type, watch: !!m.watch, secret: !!m.secret, code: m.code, url: ws.url() });
+      }));
+      await context.route(/\/assets\/table-[^/]+\.js(?:\?.*)?$/, route => {
+        requests.push(route.request().url());
+        if (failNext) { failNext = false; return route.abort("failed"); }
+        if (open) return route.continue();
+        return new Promise(resolve => held.push({ route, resolve }));
+      });
+      await p.addInitScript(({ moduleUrl, discoveryUrl, seed }) => {
+        // The client and its optional discovery parent already spent their separately proved stale reloads.
+        sessionStorage.setItem("emberisle-chunk-reloaded", JSON.stringify([moduleUrl, discoveryUrl]));
+        localStorage.setItem("emberisle-water", "simple");
+        if (seed) {
+          localStorage.setItem("emberisle-seat", seed);
+          localStorage.setItem("emberisle-seat-live", JSON.parse(seed).code);
+        }
+        window.__coldPreloads = [];
+        window.addEventListener("vite:preloadError", e => { window.__coldPreloads.push(String(e.payload)); console.log("COLD preload", String(e.payload)); });
+        window.__coldDeadlines = [];
+        const timer = window.setTimeout;
+        window.setTimeout = function(fn, ms, ...args) {
+          if (ms === 3000 || ms === 4000) window.__coldDeadlines.push(ms);
+          return timer.call(this, fn, ms, ...args);
+        };
+      }, { moduleUrl, discoveryUrl, seed });
+      const release = async () => {
+        open = true;
+        await Promise.all(held.splice(0).map(async ({ route, resolve }) => {
+          try { await route.continue(); } catch { /* a closed context cancels its held request */ } finally { resolve(); }
+        }));
+      };
+      const settled = () => p.evaluate(async url => {
+        await import(url);
+        await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      }, moduleUrl);
+      try {
+        await p.goto(`${origin}/?host=ws://127.0.0.1:${port}`);
+        await until(() => p.evaluate(() => !!window.__emberisle), "cold production store");
+        return { p, intents, requests, release, settled, close: async () => { await context.close(); await release(); } };
+      } catch (error) { await context.close(); await release(); throw error; }
+    }
+    const cancelled = await cold();
+    try {
+      await cancelled.p.getByRole("button", { name: "Host a table", exact: true }).click();
+      await until(() => cancelled.requests.length > 0, "held table-client request");
+      await cancelled.p.getByRole("button", { name: "Play", exact: true }).click();
+      await cancelled.release(); await cancelled.settled();
+      assert.deepEqual(await cancelled.p.evaluate(() => { const s = window.__emberisle.getState(); return [s.screen, s.mode, s.net]; }), ["play", "ai", null], "late client load cannot pull practice back online");
+      assert.deepEqual(cancelled.intents, [], "cancelled Host sends no hello after module arrival");
+    } finally { await cancelled.close(); }
+    const latest = await cold();
+    try {
+      await latest.p.evaluate(({ code, port }) => {
+        const s = window.__emberisle.getState(); s.peekTable(code); s.watchTable(code);
+        const url = new URL(location.href); url.searchParams.set("host", `ws://localhost:${port}`); history.replaceState(null, "", url);
+      }, { code, port });
+      await until(() => latest.requests.length > 0, "latest intent waits for client");
+      await latest.release();
+      await until(() => latest.p.evaluate(() => { const s = window.__emberisle.getState(); return s.spectator && s.screen === "play" && !!s.state; }), "latest Watch gets full state");
+      assert.deepEqual(latest.intents, [{ type: "hello", watch: true, secret: false, code, url: `ws://127.0.0.1:${port}/` }], "only latest intent dials its originally selected host");
+    } finally { await latest.close(); }
+    const quiet = await cold({ seed: savedSeatRecord });
+    try {
+      await until(() => quiet.requests.length > 0, "saved-seat client held");
+      await until(() => quiet.p.evaluate(() => !window.__emberisle.getState().restoring), "original 3s fallback includes module fetch");
+      assert.deepEqual(await quiet.p.evaluate(() => window.__coldDeadlines), [3000], "quiet fallback keeps the original 3000ms delay");
+      assert.equal(await quiet.p.evaluate(() => localStorage.getItem("emberisle-seat")), savedSeatRecord, "held loader preserves the exact saved seat");
+      await quiet.p.getByRole("button", { name: "Play", exact: true }).click();
+      await quiet.release(); await quiet.settled();
+      assert.deepEqual(quiet.intents, [], "offline escape cancels pending saved-seat rejoin");
+      assert.equal(await quiet.p.evaluate(() => window.__emberisle.getState().mode), "ai");
+    } finally { await quiet.close(); }
+    const failed = await cold({ seed: savedSeatRecord, fail: true });
+    try {
+      await until(() => failed.p.evaluate(() => window.__emberisle.getState().error === "Online play could not load. Try again."), "load failure is usable feedback");
+      assert.equal(await failed.p.evaluate(() => localStorage.getItem("emberisle-seat")), savedSeatRecord, "failed fetch never erases the saved credential");
+      assert.equal(await failed.p.evaluate(() => window.__emberisle.getState().restoring), false);
+      assert.deepEqual(failed.intents, [], "failed fetch opens no seated connection");
+      const failedUrls = await failed.p.evaluate(() => window.__coldPreloads.map(error => error.slice(error.lastIndexOf("http"))).sort());
+      assert.deepEqual(failedUrls, [moduleUrl, discoveryUrl].sort(), "only the failed client and optional parent use their spent reload budgets");
+      await failed.release();
+      await failed.p.evaluate(code => window.__emberisle.getState().watchTable(code), code);
+      await until(() => failed.p.evaluate(() => { const s = window.__emberisle.getState(); return s.spectator && s.screen === "play" && !!s.state; }), "next explicit action retries the client");
+      assert.ok(failed.requests.some(url => /\?retry=\d+$/.test(url)), "retry uses a fresh URL rather than cached failure");
+      assert.equal(await failed.p.evaluate(() => localStorage.getItem("emberisle-seat")), savedSeatRecord, "retry Watch still preserves the saved seat");
+      assert.equal(failed.intents.length, 1);
+      assert.equal(failed.intents[0].secret, false, "Watch does not transmit the saved secret");
+    } finally { await failed.close(); }
+    console.log("ok production startup: cancelled Host/rejoin stay offline; latest intent/selected host win; 3s fallback and saved seat survive held/failed load; explicit retry recovers");
     assert.deepEqual(errors, []);
     console.log("ok host: malformed/oversized/prehello probes refused; peek/hello bucket retained; seated flood bounded to two pongs; game/timers/disk unchanged");
     console.log("connection health prove ok");
   } finally {
     clients.forEach(c => c.ws.close());
-    await browser?.close(); await vite?.close(); host.kill("SIGKILL"); rmSync(dir, { recursive: true, force: true });
+    await browser?.close(); if (production) await new Promise(resolve => production.httpServer.close(resolve)); await vite?.close(); host.kill("SIGKILL"); rmSync(dir, { recursive: true, force: true });
   }
 }
