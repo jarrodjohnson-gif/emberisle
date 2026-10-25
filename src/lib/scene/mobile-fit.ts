@@ -81,18 +81,22 @@ export function hudInsets(cssW: number, cssH: number, coarse: boolean, safe: Par
 // bars, toasts) overlays the board and never counts, so opening or closing one never moves the map. The footprint is the
 // largest of the roll, main and robber layouts, measured at the sizes below with the HUD at rest (`insets()` against the
 // live `liveInsets()` in rotate-prove and pan-prove keeps it honest). `safe` is added to the sides the HUD is inset from.
-// A phone upright: the top bar over a bottom tray, taller on a narrow phone (the action row wraps up to TRAY_WRAP_MAX).
-// A phone on its side: a 284 px column on the left. A desktop: the seat rail on the left, and, from RAIL_FROM to RAIL_FULL px
-// wide, the docked right rail (chat, offer, PlaceList: 312 px) and the offer's taller bottom stack (220 px) ramp in.
-// The widest upright phone whose main-phase action row takes two lines: styles.css forces the wrap up to here and forbids it above.
-// The declared bottom carries 4 px for sub-pixel font differences.
+// A phone upright: the top bar over the stationary dock (#1101), one 244 px box at every width and in every state, so the
+// bottom is 12 + 244 + 12 (the island keeps 508 of 844 px, 60 %). A phone on its side: the dock's 320 px column on the left,
+// running the full height, so the island has the full height beside it. A desktop: the seat rail on the left, and, from
+// RAIL_FROM to RAIL_FULL px wide, the docked right rail (chat, offer, PlaceList: 312 px) and the offer's taller bottom stack
+// (220 px) ramp in.
+// The widest portrait window whose main-phase action row takes two lines: styles.css forces the wrap up to here and forbids it
+// above. Phones no longer have that row (the dock's rows are fixed); the rule stays with the desktop stack it belongs to.
 export const TRAY_WRAP_MAX = 400;
+export const DOCK_HEIGHT = 244;
+export const DOCK_COLUMN = 320;
 const RAIL_FROM = 960;
 const RAIL_FULL = 1024;
 export function playHole(cssW: number, cssH: number, phone: boolean, safe: Partial<Insets> = {}): Insets {
   let i: Insets;
-  if (phone && cssH > cssW) i = { top: 68, right: 12, bottom: (cssW <= TRAY_WRAP_MAX ? 322 : 274) + 4, left: 12 };
-  else if (phone) i = { top: 68, right: 12, bottom: 12, left: 284 };
+  if (phone && cssH > cssW) i = { top: 68, right: 12, bottom: 12 + DOCK_HEIGHT + 12, left: 12 };
+  else if (phone) i = { top: 12, right: 12, bottom: 12, left: 12 + DOCK_COLUMN + 12 };
   else {
     const t = Math.min(1, Math.max(0, (cssW - RAIL_FROM) / (RAIL_FULL - RAIL_FROM)));
     i = { top: 68, right: 12 + 300 * t, bottom: 180 + 40 * t, left: 216 };

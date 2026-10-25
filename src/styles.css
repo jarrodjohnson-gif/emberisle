@@ -303,6 +303,20 @@ input, select, textarea { border-color: var(--control-line); }
 .bg-glass, .title-cover, .title-cover > div, .lobby-cover { backdrop-filter: none; }
 .hud-stack [data-testid="dice-row"] { background: var(--table); color: var(--table-muted); border-radius: var(--radius-control); }
 
+/* #1101: the phone dock (Hud.tsx). Every row is a fixed box, and every target in it is 44 px with 8 px to the next (design law 6). */
+.dock .goods-tray { padding: 0; gap: 8px; }
+.dock .build-grid { gap: 8px; }
+/* The dock has no scroller to clip the ready pulse, so the end tiles grow inward and stay inside the safe area. */
+.dock .build-grid > :first-child { transform-origin: left center; }
+.dock .build-grid > :last-child { transform-origin: right center; }
+.dock-status, .trade-slot { background: var(--table); color: var(--table-ink); }
+.dock-status .turn-instruction { min-height: 0; background: transparent; }
+.dock [data-slot] button:not(.build-tile):not(.trade-yes):not(.trade-no) { background: var(--table-raised); color: var(--table-ink); border: 1px solid var(--table-line); }
+.dock [data-slot] button.bg-fg { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.dock [data-slot] button:disabled, .dock [data-slot] button[aria-disabled='true'] { color: var(--table-muted); }
+.dock [data-slot='chat'] button { width: 100%; height: 44px; }
+.dock button:focus-visible { outline-color: var(--ink); }
+
 /* #643: the "My numbers" strip in the log line's row; a chip lights when its number is rolled. */
 .my-numbers { scrollbar-width: none; mask-image: linear-gradient(to right, #000 calc(100% - 10px), transparent); -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 10px), transparent); padding-right: 8px; }
 .my-numbers::-webkit-scrollbar { display: none; }

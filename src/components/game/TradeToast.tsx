@@ -27,7 +27,9 @@ function declinedLine(names: string[]) {
   return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]} declined`;
 }
 
-export function TradeToast() {
+// #1101 (DECISIONS 2026-10-22): `slot` draws the offer in the phone dock's status line, one line plus Yes and No, in the
+// line's fixed box, so an offer coming or going moves nothing. With the chat open the full card still rises above it.
+export function TradeToast({ slot }: { slot?: boolean }) {
   const { phone } = useViewport();
   const chatOpen = useGame((s) => s.chatOpen);
   const aboveChat = phone && chatOpen;
@@ -47,7 +49,7 @@ export function TradeToast() {
   const shown = !!offer && !declined.includes(localId);
   useLayoutEffect(() => {
     const el = dock.current;
-    if (!el) return;
+    if (!el || slot) return;
     const stack = el.closest<HTMLElement>("[data-hud-stack]");
     const root = document.documentElement;
     let lastHeight = -1;
@@ -66,7 +68,7 @@ export function TradeToast() {
     });
     observer.observe(el);
     return () => { observer.disconnect(); cancelAnimationFrame(frame); stack?.style.removeProperty("--trade-height"); root.style.removeProperty("--active-offer-height"); };
-  }, [shown, aboveChat]);
+  }, [shown, aboveChat, slot]);
 
   useEffect(() => {
     if (!offer) return;
@@ -86,7 +88,7 @@ export function TradeToast() {
     const taker = players?.find((p) => p.id === takerId);
     const ResultIcon = takerId ? Check : X;
     return (
-      <p className="trade-result table-log flex items-center gap-1 rounded-control px-3 py-1 text-caption" role="status" data-testid="trade-outcome" data-taker={takerId ?? undefined}>
+      <p className={`trade-result table-log flex items-center gap-1 rounded-control px-3 text-caption ${slot ? "h-11 min-w-0 flex-1" : "py-1"}`} role="status" data-testid="trade-outcome" data-taker={takerId ?? undefined}>
         {taker ? <SeatDot color={taker.color} className="size-2.5" /> : null}
         <ResultIcon aria-hidden="true" className="size-3.5" />{outcome}
       </p>
@@ -98,6 +100,58 @@ export function TradeToast() {
     const short = me ? RESOURCES.filter((r) => (offer.want[r] ?? 0) > me.resources[r]) : [];
     answering = !asker && !spectator;
     why = me && short.length ? `Need ${short.map((r) => `${offer.want[r]! - me.resources[r]} more ${RESOURCE_LABEL[r].toLowerCase()}`).join(", ")}` : null;
+    if (slot) {
+      const line = offerLine(asker ? null : offer.fromName, offer.give, offer.want);
+      return (
+        <section
+          data-testid="trade-toast"
+          className="trade-slot flex h-11 min-w-0 flex-1 items-center gap-2 rounded-control pl-3"
+          role="region"
+          aria-label="Trade offer"
+          aria-labelledby={lineId}
+          aria-describedby={why ? whyId : undefined}
+          onKeyDown={(e) => {
+            if (answering && e.key === "Escape") answerTrade(false);
+          }}
+        >
+          <div className="min-w-0 flex-1">
+            <p id={lineId} className="truncate text-sm font-medium leading-5" title={line}>
+              {!asker ? <SeatDot color={players?.find((p) => p.id === offer.from)?.color ?? "transparent"} className="mr-1.5 size-3 align-[-1px]" /> : null}
+              {line}
+            </p>
+            <p className="flex min-w-0 gap-2 truncate text-xs leading-4">
+              <span aria-hidden={!asker || undefined} className="trade-clock shrink-0 tabular-nums" data-testid="trade-countdown" data-urgent={left <= 5 || undefined}>
+                {left} s
+              </span>
+              {why ? <span id={whyId} className="trade-short truncate">{why}</span> : null}
+              {asker ? <span role="status" className="trade-wait truncate">{declined.length ? declinedLine(declined.map(name)) : "Waiting…"}</span> : null}
+            </p>
+          </div>
+          {answering ? (
+            <>
+              <p aria-live="polite" className="sr-only" data-testid="trade-countdown-live">
+                {left === 5 ? "5 seconds left" : ""}
+              </p>
+              <div className="flex shrink-0 gap-2">
+                <Button
+                  className="trade-yes h-11 min-w-14 aria-disabled:cursor-not-allowed aria-disabled:active:scale-100"
+                  aria-disabled={why !== null || undefined}
+                  aria-describedby={why ? whyId : undefined}
+                  onClick={() => {
+                    if (why === null) answerTrade(true);
+                  }}
+                >
+                  Yes
+                </Button>
+                <Button variant="secondary" className="trade-no h-11 min-w-14" onClick={() => answerTrade(false)}>
+                  No
+                </Button>
+              </div>
+            </>
+          ) : null}
+        </section>
+      );
+    }
     body = (
       <>
         <div className="trade-summary flex min-w-0 items-center justify-between gap-2">
