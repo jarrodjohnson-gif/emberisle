@@ -11,7 +11,7 @@ export const EXTRA_FILES = {
   sb_grain_please: "sb_grain_please.mp3",
   sb_brick_please: "sb_brick_please.mp3",
   sb_real_badman: "sb_real_badman.mp3",
-  sb_shinese_gong: "sb_shinese_gong.mp3",
+  sb_gong: "sb_gong.mp3",
   tap_pasture: "tap_pasture.mp3",
 } as const;
 

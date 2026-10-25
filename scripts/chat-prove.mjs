@@ -112,7 +112,7 @@ const check = (ok, what) => {
 // sticker's image has loaded, each button scrolls fully into the viewport, and no sticker or chip is under 32 px (the existing sticker size on a mouse; the touch sizes are checked by the chip lines above).
 // With PROOF_SHOTS set, a screenshot of the tab goes to that folder.
 const NEW_STICKERS = ["monkey-pet", "side-eye", "banana-guy", "glasses-glance", "dark-smile"];
-const NEW_CHIPS = ["Play sound Real badman", "Play sound Shinese gong"];
+const NEW_CHIPS = ["Play sound Real badman", "Play sound Gong"];
 async function newContent(t, size) {
   for (const id of NEW_STICKERS) {
     const button = t.page.getByTestId("stickers").getByRole("button", { name: `React ${id}`, exact: true });
@@ -671,7 +671,7 @@ try {
   for (const t of tabs) await t.page.getByTestId("chat-log").getByTestId("sound-line").filter({ hasText: "Wololo" }).waitFor({ timeout: 5000 });
   check(true, "lobby: Pine's sound is a bubble and a light line on all 3 tabs");
   // #1129: the two newest chips, one from each of two other seats, are a bubble and a sound line on every seat.
-  for (const [sender, senderSeat, id, label] of [[b, tideSeat, "sb_real_badman", "Real badman"], [a, await store(a, () => window.__emberisle.getState().seatId), "sb_shinese_gong", "Shinese gong"]]) {
+  for (const [sender, senderSeat, id, label] of [[b, tideSeat, "sb_real_badman", "Real badman"], [a, await store(a, () => window.__emberisle.getState().seatId), "sb_gong", "Gong"]]) {
     await sender.page.getByRole("tab", { name: "Sounds & stickers", exact: true }).click();
     await sender.page.getByRole("button", { name: `Play sound ${label}`, exact: true }).click();
     for (const t of tabs) await t.page.getByTestId(`lobby-seat-${senderSeat}`).locator(`[data-testid="sound-bubble"][data-sound="${id}"]`).waitFor({ timeout: 5000 });

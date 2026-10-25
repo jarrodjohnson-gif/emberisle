@@ -22,7 +22,7 @@ export const SOUNDBOARD = new Map([
   ["sb_brick_please", "Brick please"],
   ["sb_perfect", "Perfect"],
   ["sb_real_badman", "Real badman"],
-  ["sb_shinese_gong", "Shinese gong"],
+  ["sb_gong", "Gong"],
   ["bong", "Bong"],
   ["plop", "Plop"],
   ["pluck", "Pluck"],
