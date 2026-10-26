@@ -192,6 +192,7 @@ try{
  port=await start({graceMs:400,turnMs:30000,holdMs:2800});
  a=await connect(port,'p0',false,true,takeoverCode);b=await connect(port,'p1',false,true,takeoverCode);c=await connect(port,'p2',false,true,takeoverCode);
  const takeoverSeatId=a.seat;
+ const projectedTakeoverNeed=m=>m.seats.find(s=>s.id===takeoverSeatId)?.needs;
  assert.equal(takeoverSeatId,'s0');
  const liveNeed=await need(a,['ore']);
  assert.deepEqual(ownNeeds(liveNeed,a),['ore'],'the human seat sets the need through the real host');
@@ -199,8 +200,8 @@ try{
  for(const observer of [b,c]){observer.inbox=[];}
  a.ws.terminate();
  const [graceB,graceC]=await Promise.all([b.next('seats',heldNeed),c.next('seats',heldNeed)]);
- assert.deepEqual(ownNeeds(graceB,b),['ore'],'the public need remains during the real disconnect grace');
- assert.deepEqual(ownNeeds(graceC,c),['ore'],'both connected observers see the need during grace');
+ assert.deepEqual(projectedTakeoverNeed(graceB),['ore'],'the public need remains during the real disconnect grace');
+ assert.deepEqual(projectedTakeoverNeed(graceC),['ore'],'both connected observers see the need during grace');
  assert.equal(b.state.game.players.find(p=>p.id==='p0').kind,'human','the seat is still human during grace');
  console.log('ok a dropped human keeps the public need during grace');
 
@@ -214,8 +215,8 @@ try{
  b.inbox=[];c.inbox=[];
  a.ws.terminate();
  const [secondHoldB,secondHoldC]=await Promise.all([b.next('seats',heldNeed),c.next('seats',heldNeed)]);
- assert.deepEqual(ownNeeds(secondHoldB,b),['ore'],'the same need remains while the second grace is active');
- assert.deepEqual(ownNeeds(secondHoldC,c),['ore'],'both observers see the need before takeover');
+ assert.deepEqual(projectedTakeoverNeed(secondHoldB),['ore'],'the same need remains while the second grace is active');
+ assert.deepEqual(projectedTakeoverNeed(secondHoldC),['ore'],'both observers see the need before takeover');
  assert.equal(b.state.game.players.find(p=>p.id==='p0').kind,'human','the old human turn still owns the seat before grace ends');
  b.inbox=[];c.inbox=[];
  const beforeTakeoverTurn=b.state.game.turn;
@@ -224,7 +225,7 @@ try{
  assert.equal(botTakeover.game.turn,beforeTakeoverTurn+1,'only one bot-owned turn elapsed; the two-turn need cannot expire naturally');
  const takeoverProjection=b.inbox.filter(m=>m.type==='seats').at(-1);
  assert.ok(takeoverProjection,'the actual bot takeover publishes a fresh seat projection');
- assert.deepEqual(ownNeeds(takeoverProjection,b),[],'the need clears at human-to-bot takeover, before natural two-turn expiry');
+ assert.deepEqual(projectedTakeoverNeed(takeoverProjection),[],'the need clears at human-to-bot takeover, before natural two-turn expiry');
  assert.equal(takeoverProjection.seats.find(s=>s.id===takeoverSeatId).player,'p0','the seat keeps the same game player at takeover');
  console.log('ok actual bot takeover clears the public need before any two-turn expiry');
 
