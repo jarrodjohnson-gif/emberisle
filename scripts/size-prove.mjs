@@ -48,7 +48,7 @@ const CEILINGS = [
   // #538: coast inspection UI loads separately; measured 1030 B.
   { name: "DockInspection", gzipBytes: 1200 },
   { name: "HandRates", gzipBytes: 800 },
-  // #831: route selectors load separately; measured 1.46 kB.
+  // #831: shared quantity cards load separately.
   { name: "TradeResource", gzipBytes: 1650 },
   // #833: title open-table list; measured ~1.1 kB after extract from index.
   { name: "OpenTables", gzipBytes: 1300 },
