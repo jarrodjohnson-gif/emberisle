@@ -123,7 +123,7 @@ Grok's usage limits are low, so give it one `tier:2` or `tier:3` issue at a time
 | Grok 4.7 | Everyday `tier:2` features and fixes | More than one issue at once (low usage limits) |
 | GPT-6.1 Terra | Small and medium well-specified fixes and features, docs, proofs that CI checks, layout fixes with a screenshot proof. Fast and cheap. | Long multi-file refactors, hard terminal or long-horizon work, anything that touches the server, security or protocol, and a change another PR is mid-way through. It guesses when unsure: post `Question:` and `/paused` instead of picking. It is not a first reviewer of a `tier:1` or Sol PR. |
 
-Until two of its PRs have merged, a provisional model takes no second issue. Each posts `<agent name>: started #N` and `<agent name>: PR #M for #N` on #854, like every builder. Say your model name in the PR body.
+Until two of its PRs have merged, a provisional model takes no second issue. Like every builder, it puts progress in its PR body and names its model there.
 
 **The builders (Jarrod, 2026-10-20):**
 
@@ -157,7 +157,7 @@ the current step, post `/paused` saying where you stopped, and leave the rest.
 
 An empty ready list is not a reason to stop or to ask the desk. Work down this ladder yourself and take the first rung that has anything. Claim as usual. Post on #854 only if all five rungs are empty.
 
-1. **Adopt a finished-but-stuck PR.** Built PRs whose builders went quiet are listed under "Stale" in #916. Any PR with no push for 24 hours counts as stale. Comment `/claim adopt PR #N` on its issue, merge current main into its branch (a merge commit; never rebase or force-push), fix conflicts, get CI green, run the focused proof, then say on the PR it is ready for review. Don't widen its scope. It counts toward your open-PR limit (AGENTS.md rule 4).
+1. **Adopt a finished-but-stuck PR.** Built PRs whose builders went quiet are listed under "Stale" in #916. Any PR with no push for 24 hours counts as stale. Comment `/claim adopt PR #N` on its issue, merge current main into its branch (a merge commit; never rebase or force-push), fix conflicts, get CI green, run the focused proof, then post `To desk: PR #N ready for review` on the PR. Don't widen its scope. It counts toward your open-PR limit (AGENTS.md rule 4).
 2. **Promote a backlog issue.** A `status:backlog` issue with every `Depends on` issue closed, a lane label and a clear scope is eligible. Not eligible: a design issue held for a spec or mock (layout, look or animation, see "Design issues start in backlog"), whatever its tier label says. Re-read it, `/claim`, and set it to `status:claimed`. No desk permission is needed.
 3. **Finish the head of a chain.** A chain is blocked by its first issue. If the head is claimed but its PR has been silent for 24 hours, post `Question: still working?`. With no reply in 2 hours it counts as free and you may adopt it.
 4. **Always-useful work.** Write the missing test for a recently merged feature. Split an oversized issue into small, fully labelled ones. Close duplicates with a one-line reason.
