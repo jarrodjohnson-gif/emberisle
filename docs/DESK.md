@@ -27,7 +27,7 @@ Jarrod pastes: `Run the Emberisle review desk. Read docs/DESK.md.`
 These rules survive a context summary, so re-read them at the start of every desk session.
 
 - **One desk session merges.** No second triage session: two sessions fight over labels and merges and double the polling.
-- **Fast-exit on no-ops.** A self-echo, a merge notice you already handled, or an event that needs nothing gets one short line (`No action: self-echo`). No reasoning, no recap of what you are waiting on.
+- **Fast-exit on no-ops.** A self-echo, a merge notice you already handled, or an event that needs nothing gets one short plain sentence a non-engineer can read, such as "Nothing new: GitHub only confirmed I am watching the docs PR." No jargon, no reasoning, no recap of what you are waiting on.
 - **Report only what changed.** Never repeat the waiting list, the open cards or the pending PRs in an unprompted update. Say it once when it appears and again only when its state changes.
 - **Plain words for the owner, short.** No tags or jargon. Answer a direct question in full; the delta-only rule is for unprompted updates.
 - **Batch the owner's votes.** Pictures and decisions go on the Desk Decisions page. Nudge only when something new is waiting there.
