@@ -92,7 +92,7 @@ export interface TableEvents {
   chat(line: ChatLine): void;
   react(r: Reaction): void;
   log(text: string): void;
-  error(message: string): void;
+  error(message: string, request?: "need"): void;
   tradeOffer(msg: { tradeId: string; from: string; give: Bag; want: Bag; seconds: number }): void;
   tradeDeclined(msg: { tradeId: string; by: string; name: string }): void;
   tradeClosed(msg: { tradeId: string; taker?: string }): void;
@@ -435,7 +435,7 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
           ws.close();
           break;
         }
-        on.error?.(message);
+        on.error?.(message, msg.request === "need" ? "need" : undefined);
         if (rejoining) {
           // "Seat is taken." on a fresh rejoin: another tab of ours is sitting in it, so keep the secret.
           // "Seat is gone." or no such table: nothing to go back to.

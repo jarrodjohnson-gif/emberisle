@@ -1494,10 +1494,10 @@ function handle(ws, raw) {
   if (msg.type === "leave") return leaveOnPurpose(ws, room);
   if (msg.wayfarerMode !== undefined || msg.type === "setWayfarerMode") return send(ws, { type: "error", message: "Wayfarer mode is fixed when the table is created." });
   if (msg.type === "chat" || msg.type === "react" || msg.type === "sound") return talk(ws, room, msg);
-  if (!allow(ws.seat.act, Date.now(), ACT_CAP, ACT_RATE)) return send(ws, { type: "error", message: "Slow down." });
+  if (!allow(ws.seat.act, Date.now(), ACT_CAP, ACT_RATE)) return send(ws, { type: "error", message: "Slow down.", ...(msg.type === "need" ? { request: "need" } : {}) });
   if (msg.type === "need") {
-    if (!room.game || room.game.phase === "over") return send(ws, { type: "error", message: "Needs are available during a game." });
-    if (!validNeeds(msg.kinds)) return send(ws, { type: "error", message: "Choose up to two different goods." });
+    if (!room.game || room.game.phase === "over") return send(ws, { type: "error", message: "Needs are available during a game.", request: "need" });
+    if (!validNeeds(msg.kinds)) return send(ws, { type: "error", message: "Choose up to two different goods.", request: "need" });
     ws.seat.needs = msg.kinds.length ? { kinds: [...msg.kinds], turnsLeft: 2 } : undefined;
     return publish(room);
   }

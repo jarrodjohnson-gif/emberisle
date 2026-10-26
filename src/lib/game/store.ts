@@ -277,6 +277,8 @@ interface GameStore {
   error: string | null;
   // Bumped on every refused move, so the same error twice is announced twice (#380).
   errorSeq: number;
+  // Need refusals only; monotonic for this store lifetime, so unrelated errors never discard an in-flight selection.
+  needError: number;
   // Said to a screen reader (and sounded) without a line on screen: a short build's tap is answered by its chip (#535).
   announcement: string | null;
   buildMode: BuildMode;
@@ -505,6 +507,7 @@ export const useGame = create<GameStore>((set, get) => ({
   error: null,
   announcement: null,
   errorSeq: 0,
+  needError: 0,
   buildMode: "none",
   roadPicks: [],
   howTo: false,
@@ -1277,9 +1280,9 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => vo
     tradeClosed: ({ tradeId, taker }) => {
       if (get().offer?.tradeId === tradeId) endOffer(set, get, taker ?? null);
     },
-    error: (message) => {
+    error: (message, request) => {
       if (!pending && kind !== "peek") {
-        set({ announcement: null, error: message, toast: message, errorSeq: get().errorSeq + 1 });
+        set({ announcement: null, error: message, toast: message, errorSeq: get().errorSeq + 1, needError: get().needError + Number(request === "need") });
         play("ui_error");
       }
       // A refused join leaves an unseated socket the host never closes; drop it so the next peek can open its own.

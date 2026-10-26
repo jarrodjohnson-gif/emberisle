@@ -76,6 +76,7 @@ try{
  await b.waitForFunction(()=>window.__emberisle.getState().state.players.find(p=>p.id==='p1').resources.ore===1);
  console.log('ok real table trade: received requested Stone clears the public need on the other client');
  await a.waitForFunction(()=>window.__emberisle.getState().seats.find(s=>s.player==='p0')?.needs?.length===0);
+ await a.evaluate(()=>window.__emberisle.getState().setTradeOpen(true));
  await a.getByRole('button',{name:'Need',exact:true}).click();
  // Hold real host seat echoes so unrelated messages cannot hide an optimistic-draft reset.
  await a.evaluate(()=>{window.__holdNeedSeats=true;});
@@ -87,8 +88,10 @@ try{
  await a.evaluate(()=>{for(let i=0;i<30;i++)window.__emberisle.getState().net.rename('Still the same person');});
  await a.waitForFunction(n=>window.__emberisle.getState().errorSeq>n&&window.__emberisle.getState().error==='Slow down.',errorBefore);
  assert.equal(await a.getByRole('button',{name:'Need Stone',exact:true}).getAttribute('aria-pressed'),'true','unrelated host ACT rate errors preserve the delayed Need draft');
+ const rejectedAt=Date.now();
  await a.getByRole('button',{name:'Need Wheat',exact:true}).click();
  await a.waitForFunction(()=>[...document.querySelectorAll('#need-picker [aria-pressed]')].every(button=>button.getAttribute('aria-pressed')==='false'));
+ assert(Date.now()-rejectedAt<1000,'Need rejection rolls back promptly, before the unchanged three-second fallback');
  assert.equal(await a.evaluate(()=>window.__emberisle.getState().error),'Slow down.','a genuinely rate-rejected Need rolls back to the authoritative selection');
  await a.evaluate(()=>{window.__holdNeedSeats=false;for(const deliver of window.__needSeats??[])deliver();window.__needSeats=[];});
  console.log('ok delayed Need draft survives unrelated announcements and host ACT errors; actual Need rate rejection rolls back');

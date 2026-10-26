@@ -16,7 +16,7 @@ function useNeeds() {
 export function NeedPicker({ player }: { player: string }) {
   const [open, setOpen] = useState(false), actual = useNeeds()[player] ?? [];
   const [draft, setDraft] = useState<typeof actual | null>(null);
-  const error = useGame(state => state.errorSeq);
+  const error = useGame(state => state.needError);
   const needs = draft ?? actual;
   // Rapid taps compose locally while host echoes are in flight; only the host controls public chips.
   useEffect(() => {
