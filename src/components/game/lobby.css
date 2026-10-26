@@ -71,6 +71,8 @@
 .lobby-player > button svg { width: 16px; height: 16px; }
 /* an empty seat has an invisible dot: drop its column so "Empty" and Add bot both fit on a 320 px phone */
 .lobby-player:has(> [data-testid="add-bot"]) { grid-template-columns: 0 minmax(max-content, 1fr) minmax(44px, auto); column-gap: 0; }
+.lobby-player:has(> [data-testid="add-bot"]) > .lobby-name { grid-column: 2; grid-row: 1 / 3; align-self: center; height: auto; }
+.lobby-player:has(> [data-testid="add-bot"]) > span.rounded-full { visibility: hidden; }
 .lobby-layout .lobby-player:has(> [data-testid="add-bot"]) > button { margin-left: 8px; padding: 0 7px; }
 .lobby-player:not(:has(> button)) .lobby-player-status { grid-column: 2 / 4; }
 .lobby-bubble { grid-column: 3; grid-row: 1; align-self: center; justify-self: end; min-width: 0; max-width: 100%; pointer-events: none; }

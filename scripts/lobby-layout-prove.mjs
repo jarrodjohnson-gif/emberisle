@@ -103,6 +103,14 @@ async function clearOfName(page, kind) {
 async function emptySeatsFit(page, label) {
   const bad = await page.evaluate(() => [...document.querySelectorAll(".lobby-player")].filter(li => li.querySelector('[data-testid="add-bot"]')).map(li => li.querySelector('[data-testid="lobby-name"] > span')).filter(el => el.scrollWidth > el.clientWidth || el.getBoundingClientRect().width < 8).length);
   assert.equal(bad, 0, `${label}: "Empty" is not truncated next to Add bot`);
+  const off = await page.evaluate(() => [...document.querySelectorAll(".lobby-player")].filter(li => li.querySelector('[data-testid="add-bot"]')).map(li => {
+    const rg = document.createRange();
+    rg.selectNodeContents(li.querySelector('[data-testid="lobby-name"] > span'));
+    const t = rg.getBoundingClientRect();
+    const b = li.querySelector('[data-testid="add-bot"]').getBoundingClientRect();
+    return Math.abs((t.top + t.bottom) / 2 - (b.top + b.bottom) / 2);
+  }));
+  assert.ok(off.every(d => d <= 1), `${label}: "Empty" is vertically centred on Add bot (off by ${off.map(d => d.toFixed(2)).join(", ")} px)`);
 }
 async function renameTappable(page, label) {
   const hit = await page.getByTestId("rename-seat").evaluate(el => {
@@ -158,8 +166,10 @@ async function centred(page, label) {
     assert.ok(Math.abs(l.dx) <= 1 && Math.abs(l.dy) <= 1, `${label}: "${l.name}" label centred in its button (dx ${l.dx.toFixed(2)}, dy ${l.dy.toFixed(2)})`);
     if (!l.icon) assert.ok(l.padL >= 8 && l.padR >= 8, `${label}: "${l.name}" has at least 8 px between text and button edge (${l.padL.toFixed(1)} / ${l.padR.toFixed(1)})`);
   }
+  const filled = m.seats.filter(s => s.hasStatus);
   for (const s of m.seats) {
-    assert.ok(Math.abs(s.name - m.seats[0].name) <= 1, `${label}: every seat name shares one vertical position (${s.name.toFixed(2)} vs ${m.seats[0].name.toFixed(2)})`);
+    if (!s.hasStatus) continue;
+    assert.ok(Math.abs(s.name - filled[0].name) <= 1, `${label}: every seat name shares one vertical position (${s.name.toFixed(2)} vs ${filled[0].name.toFixed(2)})`);
     assert.ok(Math.abs(s.name - s.dot) <= 1, `${label}: seat name centred on its colour dot (${s.name.toFixed(2)} vs ${s.dot.toFixed(2)})`);
     if (s.hasStatus) assert.ok(Math.abs(s.left) <= 1, `${label}: seat status starts under its name (${s.left.toFixed(2)})`);
   }
