@@ -164,7 +164,6 @@ try{
  assert.equal(a.state.game.phase,'roll','the next human seat reached its normal turn start');
  assert.equal(a.state.game.current,'p2','the bot completed its own turn before the host returned state');
  const afterBotTurn=a.inbox.filter(m=>m.type==='seats').at(-1);
- assert.ok(a.inbox.filter(m=>m.type==='seats').length>=2,'runBots publishes the own bot turn advancing its need from two turns to one');
  assert.deepEqual(afterBotTurn.seats.find(s=>s.id==='s1').needs,['ore'],'the bot need remains after its first own turn');
  assert.deepEqual(afterBotTurn.seats.find(s=>s.id==='s2').needs,['clay'],'the next human need did not age on the bot turn');
  c=await connect(port,'p2');
@@ -178,6 +177,7 @@ try{
  assert.equal(a.state.game.current,'p2','the bot completed its second own turn');
  const afterSecondBotTurn=a.inbox.filter(m=>m.type==='seats').at(-1);
  assert.deepEqual(afterSecondBotTurn.seats.find(s=>s.id==='s1').needs,[],'the bot need expires on its second own completed turn');
+ assert.ok(a.inbox.filter(m=>m.type==='seats').length>=2,'runBots publishes the bot need expiry on its own completed turn');
  console.log('ok runBots decrements only the acting bot’s need; it survives one own turn and expires on the second');
  console.log('needs server prove ok');
 }finally{
