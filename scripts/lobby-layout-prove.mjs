@@ -265,7 +265,8 @@ try {
     await page.evaluate(() => document.fonts.ready);
     await renameTappable(page, `${width}x${height}`);
     await emptySeatsFit(page, `${width}x${height}`);
-    await geometry(page, 0);
+    const data = await geometry(page, 0);
+    results.push({ viewport: `${width}x${height}`, ...data });
     if (width === 375) await centred(page, `${width}x${height}`);
     await page.getByTestId("emoji-row").locator("button").first().click();
     await guest.getByTestId("react-line").waitFor();
@@ -280,7 +281,7 @@ try {
   }
   assert.deepEqual(errors, [], "zero browser errors");
   writeFileSync(`${out}/measurements.json`, JSON.stringify(results, null, 2) + "\n");
-  console.log("lobby-layout-prove: ok; real host, two clients, three viewports; zero browser errors");
+  console.log("lobby-layout-prove: ok; real host, two clients, six viewports; zero browser errors");
 } finally {
   await browser.close();
   await vite.close();
