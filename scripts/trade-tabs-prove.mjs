@@ -477,23 +477,26 @@ async function accessibility(page, tag) {
   await describedAs(more(page, "ore", "want"), "Have 6 1", `${tag} shared Bank get`);
   await describedAs(bankFor(page), `You give 4 wood. You get 1 stone. Bank stock: ${base.bank.ore} stone.`, `${tag} exact Bank receipt and live stock`);
   const initial = await snapshot(page);
-  // Native Tab navigation must visit every usable quantity/action exactly once and wrap inside this modal.
-  const expected = await panelFor(page).evaluate((element) => [...element.querySelectorAll('button, [tabindex="0"]')]
-    .filter((item) => !item.disabled && item.tabIndex >= 0).length);
+  // Fixed fixture sequence: disabled same-kind and empty-hand controls must be skipped.
   await panelFor(page).getByRole("button", { name: "Close", exact: true }).focus();
-  const stops = new Set();
-  for (let index = 0; index < expected; index++) {
+  for (const [name, target] of [
+    ["goods region", goodsFor(page)],
+    ["More Wood give", more(page, "timber", "give")],
+    ["Fewer Wood give", fewer(page, "timber", "give")],
+    ["More Brick give", more(page, "clay", "give")],
+    ["More Wheat give", more(page, "grain", "give")],
+    ["More Brick want", more(page, "clay", "want")],
+    ["More Sheep want", more(page, "wool", "want")],
+    ["More Wheat want", more(page, "grain", "want")],
+    ["More Stone want", more(page, "ore", "want")],
+    ["Fewer Stone want", fewer(page, "ore", "want")],
+    ["Ask", askFor(page)],
+    ["Bank", bankFor(page)],
+    ["Close", panelFor(page).getByRole("button", { name: "Close", exact: true })],
+  ]) {
     await page.keyboard.press("Tab");
-    const stop = await panelFor(page).evaluate((element) => {
-      const active = document.activeElement;
-      return { inside: element.contains(active), usable: active.tabIndex >= 0 && !active.disabled,
-        key: active.id || active.getAttribute("aria-label") || active.textContent.trim() };
-    });
-    assert.equal(stop.inside && stop.usable, true, `${tag}: keyboard reaches connected usable controls inside the shared composer`);
-    assert.equal(stops.has(stop.key), false, `${tag}: each quantity/action is reached once before focus wraps (${stop.key})`);
-    stops.add(stop.key);
+    assert.equal(await target.evaluate((element) => element === document.activeElement), true, `${tag}: fixed shared-control Tab sequence reaches ${name}, skipping disabled controls and wrapping inside the modal`);
   }
-  assert.equal(await panelFor(page).getByRole("button", { name: "Close", exact: true }).evaluate((element) => element === document.activeElement), true, `${tag}: complete quantity/action Tab sequence wraps to Close`);
   for (const side of ["give", "want"]) {
     const resource = side === "give" ? "timber" : "ore";
     const opposite = side === "give" ? "want" : "give";
