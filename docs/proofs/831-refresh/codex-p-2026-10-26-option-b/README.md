@@ -1,6 +1,52 @@
 # Option B proof-first checkpoint
 
+
+## Final checkpoint status
+
 parent: Codex-p
+
+Two unexpected failures remain retained with **unproved causes**:
+first source-run `window.__emberisle` disappeared after a layout screenshot;
+first frozen-client run reported an IslandCanvas import failure and timed out6000ms waiting for the host-down title.
+No product/assertion fix followed either failure. Later frozen B validation and passive client diagnostics passed.
+The client result is **initial FAIL, then instrumented candidate PASS**, not an unqualified clean first run.
+
+Tested product/proof source is frozen `2c0a70425047a48df32b25c3f1a48b29f4f63203`, runtime c149923.
+Every source, test, lock and budget file remains byte-exact that freeze; source-sha256.json records319 hashes.
+
+| Command | Actual result |
+| --- | --- |
+| Root/server `npm ci` | PASS, frozen installs |
+| `npm run typecheck` | PASS, exit0 |
+| `npm run registered-prove` | PASS,151 proofs registered |
+| `npm run loosen-prove -- --base d09d72faaa3c23b426362d7a4f49df498e42e153` | PASS,3 changed proofs, none loosened |
+| `npm run size-delta-prove` | PASS, exit0 |
+| `npm run build` | PASS, exit0 |
+| `node scripts/size-prove.mjs --base /tmp/emberisle-873-main-size-base` | PASS, all unchanged ceilings/growth allowances |
+| `npm run trade-tabs-prove` | Initial source FAIL retained; independent frozen PASS across six viewport/motion contexts and lazy failure/reopen |
+| `npm run client-prove` | Initial frozen FAIL retained; later unchanged-source passive candidate diagnostic PASS, host-down title3365ms |
+| `npm run hand-cards-prove` | PASS, exit0 |
+| `node --import ./server/register.mjs scripts/trade-map.test.mjs` | PASS, exit0 |
+| `npm run trade-prove` | PASS, exit0 |
+| `npm run rotate-overlays-prove` | PASS, exit0 |
+| Corrected external owner capture helper | PASS,9 actual UI pictures, zero page/console errors |
+
+Frozen build gzip: index124370/125200 B,−1/400 versus separately built main124371;
+sheets7138 B,−7/200 versus main7145; BankTradePicker827/1650 B. No budget or allowance changed.
+
+All browser commands ran serially under the shared lock. All static builds/file preparation preceded browser runs.
+No source checkout edits, builds, copies or git checkouts occurred during frozen validation or diagnostics.
+Existing proof test-results output and browser/Vite's own operational files were the only served-checkout output.
+Raw logs remain outside Vite and are retained losslessly here. Full commands/observer versions live in [diagnostics](diagnostics/README.md).
+
+The four remaining independent commands now pass; earlier "NOT RUN" entries below describe the stopped first chain historically.
+The main control also passed3194ms; neither main nor candidate passive trace reproduced a source-request failure or Vite reload.
+That does not establish why either earlier failure happened.
+
+[Final nine owner pictures and capture provenance](owner-pictures/README.md) supersede the external blank-board/tutorial drafts.
+All nine were inspected. Short landscape goods still scroll; the owner decides whether the shown layout is acceptable.
+Owner visual acceptance, fresh independent review and exact-head CI remain pending. No ready-state change or merge.
+
 
 The registered `npm run trade-tabs-prove` exits1 on unchanged A runtime at `390x844-no-preference: B has no route tabs`: actual2, expected0.
 The proof ran serially under `/tmp/emberisle-team-browser.lock`, using pinned Playwright revision1243 and no CHROMIUM_PATH override.
