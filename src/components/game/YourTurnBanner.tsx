@@ -12,12 +12,12 @@ import type { GameState } from "@/lib/game/types";
 // movement (moment-fade), which has ended by then.
 const BANNER_MS = 1800;
 
-// One id per move of this seat: a turn's roll, a roll-off throw (a tie re-throws), a setup step (the settlement and its path
-// are one move, setupIndex moves on after the path).
+// One id per move of this seat: a turn's roll, a roll-off throw (keyed on seq: an all-tie
+// re-throw has empty rolls again), a setup step (the settlement and its path are one move, setupIndex moves on after the path).
 function moveKey(s: GameState, me: string) {
   if (s.current !== me) return null;
   if (s.phase === "roll") return `${s.seed}|t${s.turn}|${me}`;
-  if (s.phase === "rollOff") return `${s.seed}|o${JSON.stringify(s.rollOff?.rolls)}|${me}`;
+  if (s.phase === "rollOff") return `${s.seed}|o${s.seq}|${me}`;
   if (s.phase === "setupSettle" || s.phase === "setupRoad") return `${s.seed}|s${s.setupIndex}|${me}`;
   return null;
 }

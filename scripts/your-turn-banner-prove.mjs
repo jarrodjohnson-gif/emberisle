@@ -3,7 +3,7 @@
 // island, 0.3 s in, a 1.2 s hold, 0.3 s out; once per move of the person's seat; pointer-events none.
 // - Online, over a scripted socket (page.routeWebSocket) at 390x844, once as each of the four seats (the four seat colours):
 //   it appears once when the turn arrives; a repeat state push of the same move adds none; a seat's turn that is not the person's,
-//   a bot's turn and a watcher's table show none; the roll-off and the setup (a settlement, then its path: one banner) show one
+//   a bot's turn and a watcher's table show none; the roll-off (an all-tie re-throw with no rolls recorded too) and the setup (a settlement, then its path: one banner) show one
 //   each; a first load and a rejoin onto a move under way show none, and a live change after the rejoin still shows one; the
 //   text is "Your turn", its background is the seat's colour and its ink reads at 4.5:1 or better on it.
 // - Practice (real roll-off, setup and turns against three bots) at 320x568, 390x844, 844x390 and 1280x720, with safe-area
@@ -330,6 +330,16 @@ async function online(me) {
     push(at({ turn: 0, phase: "setupSettle", current: me, setupIndex: 4 }));
     await page.waitForSelector('[data-testid="your-turn"]', { timeout: STEP_MS });
     check((await bannerCount(page)) === 5, `${tg} setup: a banner at the person's second placement`);
+    await gone();
+    // An all-tie roll-off: every roll is deleted, so the throw comes back with `rolls` empty again. Each is a new move.
+    push(at({ turn: 0, phase: "rollOff", current: me, rollOff: { rolls: {}, pending: [me, notMe] } }));
+    await page.waitForSelector('[data-testid="your-turn"]', { timeout: STEP_MS });
+    check((await bannerCount(page)) === 6, `${tg} roll-off: a banner at the person's throw`);
+    await gone();
+    push(at({ turn: 0, phase: "rollOff", current: notMe, rollOff: { rolls: { [me]: 4 }, pending: [notMe] } }));
+    push(at({ turn: 0, phase: "rollOff", current: me, rollOff: { rolls: {}, pending: [me, notMe] } }));
+    await page.waitForSelector('[data-testid="your-turn"]', { timeout: STEP_MS });
+    check((await bannerCount(page)) === 7, `${tg} roll-off: an all-tie re-throw (rolls empty again) shows a banner again`);
   } catch (e) {
     console.error(`${tg}:`, e);
     failures++;
