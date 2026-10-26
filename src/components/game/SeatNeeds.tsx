@@ -25,11 +25,11 @@ export function NeedPicker({ player }: { player: string }) {
   useEffect(() => setDraft(null), [error]);
   useEffect(() => { const timer = setTimeout(() => setDraft(null), 3000); return () => clearTimeout(timer); }, [draft]);
   const choose = (kinds: typeof actual) => { setDraft(kinds); setPlayerNeeds(player, kinds); };
-  return <div className="mb-2">
+  return <div className="mb-2 [@media(max-height:480px)_and_(min-width:540px)]:flex [@media(max-height:480px)_and_(min-width:540px)]:items-end [@media(max-height:480px)_and_(min-width:540px)]:gap-2">
     <Button variant="secondary" className="h-11" aria-expanded={open} aria-controls={open ? "need-picker" : undefined} onClick={() => setOpen(value => !value)}>Need</Button>
-    {open ? <fieldset id="need-picker" className="mt-2 rounded-control border p-2">
+    {open ? <fieldset id="need-picker" className="mt-2 min-w-0 rounded-control border p-2 [@media(max-height:480px)_and_(min-width:540px)]:mt-0 [@media(max-height:480px)_and_(min-width:540px)]:flex [@media(max-height:480px)_and_(min-width:540px)]:flex-1 [@media(max-height:480px)_and_(min-width:540px)]:items-center [@media(max-height:480px)_and_(min-width:540px)]:gap-2">
       <legend className="text-sm">Show the table up to two goods you need</legend>
-      <div className="grid grid-cols-5 gap-2">
+      <div className="grid grid-cols-5 gap-2 [@media(max-height:480px)_and_(min-width:540px)]:min-w-0 [@media(max-height:480px)_and_(min-width:540px)]:flex-1">
         {RESOURCES.map(resource => {
           const Icon = ICON[resource], selected = needs.includes(resource);
           return <Button key={resource} variant={selected ? 'default' : 'secondary'} className="h-auto min-h-11 min-w-11 flex-col px-0.5 py-1 text-xs"
@@ -39,7 +39,7 @@ export function NeedPicker({ player }: { player: string }) {
           </Button>;
         })}
       </div>
-      <Button variant="ghost" className="mt-1 h-11" disabled={!needs.length} onClick={() => choose([])}>Clear needs</Button>
+      <Button variant="ghost" className="mt-1 h-11 [@media(max-height:480px)_and_(min-width:540px)]:mt-0 [@media(max-height:480px)_and_(min-width:540px)]:shrink-0" disabled={!needs.length} onClick={() => choose([])}>Clear needs</Button>
     </fieldset> : null}
   </div>;
 }

@@ -147,9 +147,10 @@ try{
    const grid=field.querySelector('div'),style=getComputedStyle(grid),scroll=field.closest('.trade-composer-scroll');
    const viewport=scroll.getBoundingClientRect(),give=scroll.querySelector('[data-testid="trade-give-row"]');
    const controls=[give.querySelector('h3'),...give.querySelectorAll('button')].map(control=>{const box=control.getBoundingClientRect();return {label:control.getAttribute('aria-label')||control.textContent,top:box.top,bottom:box.bottom,visible:box.top>=viewport.top&&box.bottom<=viewport.bottom};});
-   return {gap:Number.parseFloat(style.columnGap),scrollHeight:scroll.scrollHeight,clientHeight:scroll.clientHeight,viewport:{top:viewport.top,bottom:viewport.bottom},giveControls:controls};
+   const targets=[field.parentElement.querySelector('button'),...field.querySelectorAll('button')].map(button=>{const box=button.getBoundingClientRect();return {label:button.getAttribute('aria-label')||button.textContent,width:box.width,height:box.height};});
+   return {targets,noOverflow:field.scrollWidth<=field.clientWidth&&scroll.scrollWidth<=scroll.clientWidth,gap:Number.parseFloat(style.columnGap),scrollHeight:scroll.scrollHeight,clientHeight:scroll.clientHeight,viewport:{top:viewport.top,bottom:viewport.bottom},giveControls:controls};
   });
-  geometry.at(-1).picker=picker;if(width===844&&picker.giveControls.some(control=>!control.visible))geometryProblems.push(`${width}x${height}: open picker pushes give heading/steppers below scroll fold`);if(picker.gap<8)geometryProblems.push(`${width}x${height}: picker gap below8px`);
+  geometry.at(-1).picker=picker;if(!picker.noOverflow)geometryProblems.push(`${width}x${height}: picker horizontal overflow`);if(picker.targets.some(target=>target.width<44||target.height<44))geometryProblems.push(`${width}x${height}: picker target below44px`);if(width===844&&picker.giveControls.some(control=>!control.visible))geometryProblems.push(`${width}x${height}: open picker pushes give heading/steppers below scroll fold`);if(picker.gap<8)geometryProblems.push(`${width}x${height}: picker gap below8px`);
   await need.click();if(await need.getAttribute('aria-controls'))geometryProblems.push(`${width}x${height}: closed picker leaves dangling aria-controls`);
   await page.getByRole('button',{name:'Close',exact:true}).click();await context.close();
  }
