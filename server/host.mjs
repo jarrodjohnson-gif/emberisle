@@ -1114,6 +1114,8 @@ function rematch(ws, room) {
   room.game = game;
   // New pids in the new order: the rematch gets its own game UUID and roster (#764).
   freezeRoster(room, order);
+  // Reclaim a finished open room's slot only if no successor has taken it (#986).
+  if (room.visibility === "open") registerOpenTable(room);
   for (const seat of room.seats) if (seat.ws) seat.ws.actionConnection = randomBytes(16).toString("hex");
   hear("ui_confirm");
   say(room, winner ? `${winner.name} won last time and places first. The rest roll for their order.` : "Roll for first place.");
