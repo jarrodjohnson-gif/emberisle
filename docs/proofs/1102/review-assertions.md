@@ -49,3 +49,5 @@ Proof changes are separate from runtime changes. `title-layout-prove` adds liste
 | `scripts/title-chunks-prove.mjs:72` | Click rules before waiting for its module request. | Wait for the module request without any click; open rules only inside the held/failed interaction cases. | Restore the issue’s idle-prefetch guarantee while retaining all held/failed checks. |
 
 The before-fix overflow proof fails at 844x390 with wordmark y=−207. Desk comment 6402475580 explicitly approves the chat width and Watch assertion equivalents; the owner accepted the existing pictures in comment 6402771837.
+
+The restored Wayfarer prefetch can retry the intentionally aborted target on opening its sheet. The console filter now recognizes only that exact controlled `target + "?retry="` URL in addition to the existing target URL; the no-unrelated-errors assertion is unchanged. This probe-only change is separate from runtime code.

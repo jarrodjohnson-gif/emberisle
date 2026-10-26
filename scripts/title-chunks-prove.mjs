@@ -58,7 +58,7 @@ try {
     }, target);
     page.on("pageerror", e => { if (!String(e).includes(target)) errors.push(String(e)); });
     page.on("console", m => {
-      if (m.type() === "error" && !m.text().includes(target) && m.location().url !== target) errors.push(m.text());
+      if (m.type() === "error" && !m.text().includes(target) && m.location().url !== target && !m.location().url.startsWith(target + "?retry=")) errors.push(m.text() + " " + m.location().url);
     });
     await page.route(target + "*", async route => {
       requested();
