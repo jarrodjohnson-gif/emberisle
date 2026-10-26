@@ -50,14 +50,14 @@ export function SeatPublicGains({ scope }: { scope: 'rail' | 'seat' }) {
     const label = RESOURCES.filter(r => change.goods[r]).map(r => `${change.goods[r]! > 0 ? '+' : '−'}${Math.abs(change.goods[r]!)} ${RESOURCE_LABEL[r]}`).join(', ');
     return createPortal(
       <span data-testid="seat-public-gains" data-player={change.player} role="status" aria-label={`${name}: ${label}`}
-        className="pointer-events-none absolute inset-0 z-20 flex flex-col justify-center rounded-[inherit] px-0.5 text-[10px] font-semibold tabular-nums"
-        style={{ background: 'var(--table)', color: 'var(--ink)', lineHeight: '12px' }}>
+        className="pointer-events-none absolute inset-0 z-20 flex flex-col justify-center rounded-[inherit] px-1 text-[12px] font-semibold tabular-nums"
+        style={{ background: 'var(--table)', color: 'var(--ink)', lineHeight: '14px' }}>
         <span className="block truncate" aria-hidden="true">{name}</span>
-        <span className="flex flex-wrap justify-end">
+        <span className="flex flex-wrap justify-end gap-x-1">
         {RESOURCES.filter(r => change.goods[r]).map(resource => {
           const n = change.goods[resource]!, Icon = SYMBOLS[resource];
           return <span key={resource} className="inline-flex items-center whitespace-nowrap" aria-hidden="true">
-            {n > 0 ? '+' : '−'}{Math.abs(n)}<Icon width={10} height={10} />
+            {n > 0 ? '+' : '−'}{Math.abs(n)}<Icon width={12} height={12} />
           </span>;
         })}
         </span>

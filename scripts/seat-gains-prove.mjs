@@ -83,11 +83,12 @@ try {
  const baseline=await jarrod.evaluate(()=>window.__isle.insets());
  await jarrod.evaluate(()=>window.__emberisle.getState().dispatch({type:'roll'}));
  await cue.waitFor();assert.equal(await cue.getAttribute('aria-label'),'Joshua: +2 Wheat');
+ const started=Date.now();
  assert.equal(await jarrod.getByTestId('rail-p0').getByTestId('seat-public-gains').count(),0);
  assert.equal(await jarrod.evaluate(()=>window.__emberisle.getState().state.players.find(p=>p.id==='p1').resources),undefined,'other hand stays hidden');
  assert.deepEqual(await jarrod.evaluate(()=>window.__isle.insets()),baseline);
  mkdirSync('test-results',{recursive:true});await jarrod.screenshot({path:'test-results/seat-gains-desktop.png'});
- const started=Date.now();await cue.waitFor({state:'detached',timeout:3200});
+ await cue.waitFor({state:'detached',timeout:3200});
  assert(Date.now()-started>=1900,'cue stays visible near 2.5 seconds');
  console.log('ok real host, two clients: Joshua gains +2 Wheat on Jarrod\'s rail, then clears; hidden hand absent; map hole unchanged');
  await jarrod.emulateMedia({reducedMotion:'reduce'});await jarrod.setViewportSize({width:390,height:844});
