@@ -56,9 +56,9 @@ async function connect(port,pid,watch=false,waitForState=true){
   for(;;){const i=c.inbox.findIndex(m=>m.type===type&&predicate(m));if(i>=0)return c.inbox.splice(i,1)[0];
    await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(Error(`timeout ${pid} ${type}: ${stderr}`)),Math.max(1,deadline-Date.now()));c.changed=()=>{clearTimeout(timer);c.changed=null;resolve();};});}
  };
- c.nextAny=async(types)=>{
+ c.nextAny=async(types,predicate=()=>true)=>{
   const accepted=new Set(types),deadline=Date.now()+5000;
-  for(;;){const i=c.inbox.findIndex(m=>accepted.has(m.type));if(i>=0)return c.inbox.splice(i,1)[0];
+  for(;;){const i=c.inbox.findIndex(m=>accepted.has(m.type)&&predicate(m));if(i>=0)return c.inbox.splice(i,1)[0];
    await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(Error(`timeout ${pid} ${types.join('/')} : ${stderr}`)),Math.max(1,deadline-Date.now()));c.changed=()=>{clearTimeout(timer);c.changed=null;resolve();};});}
  };
  c.send=msg=>ws.send(JSON.stringify(msg));
@@ -137,7 +137,7 @@ try{
  assert.deepEqual(ownNeeds(beforeOverAct,a),['grain'],'finished-game fixture exposes the existing need before the rejected ACT');
  const beforeOverState=structuredClone(stableState(a.state));
  a.inbox=[];a.send({type:'need',kinds:['ore']});
- const overResult=await a.nextAny(['error','seats']);
+ const overResult=await a.nextAny(['error','seats'],m=>m.type==='error'||JSON.stringify(ownNeeds(m,a))===JSON.stringify(['ore']));
  assert.equal(overResult.type,'error','need ACT after game over is rejected before publishing seat changes');
  assert.equal(overResult.message,'Needs are available during a game.');
  assert.deepEqual(stableState(a.state),beforeOverState,'rejected postgame ACT preserves the public game state and clocks');
