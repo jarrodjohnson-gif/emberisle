@@ -100,6 +100,10 @@ async function clearOfName(page, kind) {
   assert.ok(bounds.clearStatus, `${kind}: bubble clear of the seat status ${JSON.stringify(bounds)}`);
   assert.ok(bounds.clear && bounds.inside, `${kind}: whole bubble stays inside its seat and clear of the name`);
 }
+async function emptySeatsFit(page, label) {
+  const bad = await page.evaluate(() => [...document.querySelectorAll(".lobby-player")].filter(li => li.querySelector('[data-testid="add-bot"]')).map(li => li.querySelector('[data-testid="lobby-name"] > span')).filter(el => el.scrollWidth > el.clientWidth || el.getBoundingClientRect().width < 8).length);
+  assert.equal(bad, 0, `${label}: "Empty" is not truncated next to Add bot`);
+}
 async function renameTappable(page, label) {
   const hit = await page.getByTestId("rename-seat").evaluate(el => {
     const r = el.getBoundingClientRect();
@@ -176,6 +180,8 @@ try {
     await guest.evaluate(code => window.__emberisle.getState().joinTable(code), code);
     await guest.getByTestId("lobby-card").waitFor();
     await page.waitForFunction(() => window.__emberisle.getState().seats.length === 2);
+    await page.evaluate(() => document.fonts.ready);
+    await emptySeatsFit(page, `${width}x${height}`);
     await page.getByTestId("add-bot").first().click();
     await page.getByTestId("add-bot").first().click();
     await page.waitForFunction(() => window.__emberisle.getState().seats.length === 4);
@@ -236,7 +242,7 @@ try {
     await page.context().close();
     await guest.context().close();
   }
-  for (const [width, height] of [[375, 667], [320, 568]]) {
+  for (const [width, height] of [[375, 667], [390, 640], [320, 568]]) {
     const page = await client("Jarrod", { width, height }, true);
     await page.evaluate(() => window.__emberisle.getState().hostTable());
     await page.getByTestId("lobby-card").waitFor();
@@ -248,6 +254,8 @@ try {
     await guest.waitForFunction(() => window.__emberisle.getState().seats.length === 2);
     await page.evaluate(() => document.fonts.ready);
     await renameTappable(page, `${width}x${height}`);
+    await emptySeatsFit(page, `${width}x${height}`);
+    await geometry(page, 0);
     if (width === 375) await centred(page, `${width}x${height}`);
     await page.getByTestId("emoji-row").locator("button").first().click();
     await guest.getByTestId("react-line").waitFor();
