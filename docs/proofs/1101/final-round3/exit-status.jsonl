@@ -16,3 +16,4 @@
 {"name": "typecheck", "command": ["npm", "run", "typecheck"], "cwd": "/Users/jarrod.johnson/emberisle-1101", "exit": 0, "expectedExit": 0, "verdict": "pass", "log": "docs/proofs/1101/final-round3/typecheck-1.log"}
 {"name": "build", "command": ["npm", "run", "build"], "cwd": "/Users/jarrod.johnson/emberisle-1101", "exit": 0, "expectedExit": 0, "verdict": "pass", "log": "docs/proofs/1101/final-round3/build-1.log"}
 {"name": "registered", "command": ["node", "scripts/registered-prove.mjs"], "cwd": "/Users/jarrod.johnson/emberisle-1101", "exit": 0, "expectedExit": 0, "verdict": "pass", "log": "docs/proofs/1101/final-round3/registered-1.log"}
+{"name": "loosen", "command": ["node", "scripts/loosen-prove.mjs", "--base", "origin/main"], "cwd": "/Users/jarrod.johnson/emberisle-1101", "exit": 1, "expectedExit": 1, "verdict": "pass", "log": "docs/proofs/1101/final-round3/loosen-1.log"}
