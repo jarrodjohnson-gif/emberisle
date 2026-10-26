@@ -33,7 +33,7 @@ export default function IslandCanvas() {
         (sel) => useGame.getState().setPendingPlace(sel),
       );
     } catch (e) {
-      console.warn("WebGL creation failed; 3D view unavailable:", e);
+      console.error("WebGL creation failed; 3D view unavailable:", e);
       setUnavailable(true);
       return;
     }
@@ -50,7 +50,19 @@ export default function IslandCanvas() {
     renderer.onView = (playView) => queueMicrotask(() => useGame.setState({ playView }));
     let action = "";
     let chrome = "";
+    let failed = false;
+    let unsub: () => void = () => {};
+    const fail = (e: unknown) => {
+      if (failed) return;
+      failed = true;
+      unsub();
+      console.error("Renderer sync failed; 3D view unavailable:", e);
+      setUnavailable(true);
+      renderer.dispose();
+    };
+
     const sync = () => {
+      if (failed) return;
       const s = useGame.getState();
       renderer.setWaterChoice(s.waterChoice);
       renderer.setPlayView(s.viewChoice);
@@ -88,18 +100,14 @@ export default function IslandCanvas() {
     try {
       sync();
     } catch (e) {
-      console.warn("Renderer sync failed:", e);
-      setUnavailable(true);
-      renderer.dispose();
+      fail(e);
       return;
     }
-    const unsub = useGame.subscribe(() => {
+    unsub = useGame.subscribe(() => {
       try {
         sync();
       } catch (e) {
-        console.warn("Renderer sync failed:", e);
-        setUnavailable(true);
-        renderer.dispose();
+        fail(e);
       }
     });
     return () => {

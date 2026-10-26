@@ -318,14 +318,12 @@ export class IsleRenderer {
     document.body.appendChild(this.safeProbe);
     try {
       this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: "high-performance" });
-    } catch {
-      try {
-        this.renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: false });
-      } catch (err) {
-        this.safeProbe.remove();
-        throw err;
-      }
+    } catch (err) {
+      this.safeProbe.remove();
+      throw err;
     }
+
+    try {
     // Frame cost tracks pixels (#310). The crystal sea runs at up to 2 everywhere (every player's phone is an iPhone Pro class
     // GPU); `applyWater` keeps 1.5 on a phone for the simple sea (2.25x the pixels of 1, against 4x at 2).
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, this.coarse() ? 1.5 : 2));
@@ -335,8 +333,8 @@ export class IsleRenderer {
     // ("full" or "lite") overrides either way; the proofs of the scenes themselves ask for full.
     {
       const gl = this.renderer.getContext();
-      const dbg = gl?.getExtension?.("WEBGL_debug_renderer_info");
-      this.software = /swiftshader|llvmpipe|softpipe|software/i.test(String(gl ? gl.getParameter(dbg ? dbg.UNMASKED_RENDERER_WEBGL : gl.RENDERER) : "software"));
+      const dbg = gl.getExtension("WEBGL_debug_renderer_info");
+      this.software = /swiftshader|llvmpipe|softpipe|software/i.test(String(gl.getParameter(dbg ? dbg.UNMASKED_RENDERER_WEBGL : gl.RENDERER)));
       let saved: string | null = null;
       try {
         saved = localStorage.getItem("emberisle-jelly");
@@ -473,6 +471,10 @@ export class IsleRenderer {
     this.composer.addPass(this.ssao);
     this.composer.addPass(new OutputPass());
     this.renderer.setAnimationLoop(this.tick);
+    } catch (err) {
+      this.dispose();
+      throw err;
+    }
   }
 
   // Off the table (title and lobby) the island is a backdrop under a card: the slow orbit, no SSAO, 30 frames a second.
@@ -809,32 +811,32 @@ export class IsleRenderer {
   dispose() {
     this.clearPayers();
     this.stopped = true;
-    this.renderer.domElement.removeEventListener("webglcontextlost", this.onContextLost);
+    this.renderer?.domElement?.removeEventListener("webglcontextlost", this.onContextLost);
     this.dropFence();
-    this.fps?.el.remove();
+    this.fps?.el?.remove();
     this.jelly?.dispose();
     this.jelly = null;
     this.shore?.dispose();
     this.shore = null;
-    this.renderer.setAnimationLoop(null);
-    this.controls.dispose();
-    this.orbit.dispose();
+    this.renderer?.setAnimationLoop(null);
+    this.controls?.dispose?.();
+    this.orbit?.dispose?.();
     this.calmMq?.removeEventListener("change", this.onCalm);
     window.removeEventListener("resize", this.resize);
     window.visualViewport?.removeEventListener("resize", this.onViewport);
     window.removeEventListener("keydown", this.onKey);
-    this.renderer.domElement.parentElement?.removeEventListener("focusin", this.remeasure);
-    this.renderer.domElement.parentElement?.removeEventListener("focusout", this.remeasure);
-    for (const t of GATE_EVENTS) this.renderer.domElement.parentElement?.removeEventListener(t, this.gate, true);
-    this.renderer.domElement.removeEventListener("pointerdown", this.onDown);
-    this.renderer.domElement.removeEventListener("pointerup", this.onUp);
-    this.renderer.domElement.removeEventListener("pointermove", this.onMove);
-    this.renderer.domElement.removeEventListener("pointercancel", this.onCancel);
-    this.safeProbe.remove();
-    this.oceanLife.dispose();
-    this.bruno.dispose();
-    this.under?.dispose();
-    this.renderer.dispose();
+    this.renderer?.domElement?.parentElement?.removeEventListener("focusin", this.remeasure);
+    this.renderer?.domElement?.parentElement?.removeEventListener("focusout", this.remeasure);
+    for (const t of GATE_EVENTS) this.renderer?.domElement?.parentElement?.removeEventListener(t, this.gate, true);
+    this.renderer?.domElement?.removeEventListener("pointerdown", this.onDown);
+    this.renderer?.domElement?.removeEventListener("pointerup", this.onUp);
+    this.renderer?.domElement?.removeEventListener("pointermove", this.onMove);
+    this.renderer?.domElement?.removeEventListener("pointercancel", this.onCancel);
+    this.safeProbe?.remove();
+    this.oceanLife?.dispose?.();
+    this.bruno?.dispose?.();
+    this.under?.dispose?.();
+    this.renderer?.dispose?.();
   }
 
   private wake = () => {
@@ -1664,15 +1666,7 @@ export class IsleRenderer {
           this.wake();
           performance.mark("props-end");
         },
-        (err: unknown) => {
-          if (!this.lite) {
-            console.warn("The Hex Jelly scenes did not build; falling back to the lite board.", err);
-            this.lite = true;
-            if (alive()) this.growScenes(gen, key, hexes, 0);
-            return;
-          }
-          if (tries < 5) setTimeout(() => alive() && this.growScenes(gen, key, hexes, tries + 1), JELLY_RETRY_MS);
-        },
+        () => tries < 5 && setTimeout(() => alive() && this.growScenes(gen, key, hexes, tries + 1), JELLY_RETRY_MS),
       );
   }
 

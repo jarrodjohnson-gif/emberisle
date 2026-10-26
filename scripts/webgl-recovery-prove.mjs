@@ -98,11 +98,12 @@ try {
 
     // Disable WebGL completely so THREE.WebGLRenderer fails
     await page.addInitScript(() => {
+      const origGetContext = HTMLCanvasElement.prototype.getContext;
       HTMLCanvasElement.prototype.getContext = function (type, ...args) {
         if (typeof type === "string" && (type.includes("webgl") || type.includes("experimental-webgl"))) {
           return null;
         }
-        return HTMLCanvasElement.prototype.getContext.apply(this, [type, ...args]);
+        return origGetContext.apply(this, [type, ...args]);
       };
     });
 
