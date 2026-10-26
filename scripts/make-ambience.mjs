@@ -41,12 +41,21 @@ export function makePcm() {
       value = value * (1 - blend) + (source[at] - mean) * blend;
     }
     value *= 0.65 + 0.35 * Math.cos(2 * Math.PI * SWELL_HZ * i / RATE);
-    // A 150 ms cosine landing at zero protects the lossy decoder's first/last 10 ms.
-    // The full two-second tail crossfade above joins adjacent points of the source stream.
-    const edge = Math.min(i, n - 1 - i) / (0.15 * RATE);
-    if (edge < 1) value *= 0.5 - 0.5 * Math.cos(Math.PI * edge);
     samples[i] = value;
     peak = Math.max(peak, Math.abs(value));
+  }
+  // Rotate the completed loop to a natural zero crossing. Keep every sample: no edge envelope or silence.
+  // Among crossings, choose the closest first/last 10 ms waveforms for the decoded seam contract.
+  const window = Math.ceil(0.01 * RATE);
+  let start = 0;
+  let best = Infinity;
+  for (let i = 1; i < n; i++) {
+    if (samples[i - 1] * samples[i] > 0) continue;
+    let difference = 0;
+    for (let j = 0; j < window && difference < best; j++) {
+      difference = Math.max(difference, Math.abs(samples[(i + j) % n] - samples[(i - window + j + n) % n]));
+    }
+    if (difference < best) { best = difference; start = i; }
   }
   const wave = Buffer.alloc(44 + n * 2);
   wave.write("RIFF", 0);
@@ -61,7 +70,7 @@ export function makePcm() {
   wave.writeUInt16LE(16, 34);
   wave.write("data", 36);
   wave.writeUInt32LE(n * 2, 40);
-  for (let i = 0; i < n; i++) wave.writeInt16LE(Math.round(samples[i] / peak * 0.4 * 32767), 44 + i * 2);
+  for (let i = 0; i < n; i++) wave.writeInt16LE(Math.round(samples[(start + i) % n] / peak * 0.4 * 32767), 44 + i * 2);
   return wave;
 }
 

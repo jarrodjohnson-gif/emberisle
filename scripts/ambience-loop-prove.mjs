@@ -40,6 +40,17 @@ try {
   for (let i = 0; i < window; i++) seam = Math.max(seam, Math.abs(pcm.readFloatLE(i * 4) - pcm.readFloatLE((n - window + i) * 4)));
   check("first/last 10 ms differ by less than 2% of full scale", seam < 0.02);
   check("the decoded loop endpoints remain near zero", Math.abs(pcm.readFloatLE(0)) < 0.002 && Math.abs(pcm.readFloatLE((n - 1) * 4)) < 0.002);
+  // A zero-crossing seam must not hide a restart dip under a 150 ms edge envelope.
+  const edge = Math.round(0.15 * RATE);
+  const energy = (from) => {
+    let total = 0;
+    for (let i = from; i < from + edge; i++) total += pcm.readFloatLE(i * 4) ** 2;
+    return Math.sqrt(total / edge);
+  };
+  const startRatio = energy(0) / energy(edge);
+  const endRatio = energy(n - edge) / energy(n - 2 * edge);
+  check("the first 150 ms retain at least 60% of adjacent RMS without a restart fade", startRatio >= 0.6);
+  check("the last 150 ms retain at least 60% of adjacent RMS without a restart fade", endRatio >= 0.6);
   const a = path.join(temp, "a.mp3"), b = path.join(temp, "b.mp3");
   for (const output of [a, b]) command(process.execPath, [path.join(root, "scripts/make-ambience.mjs"), "--output", output]);
   check("two regenerations with the same encoder are byte-identical", readFileSync(a).equals(readFileSync(b)));
@@ -51,7 +62,7 @@ try {
   check("the shipped waveform matches the reproducible recipe within 2% full scale", delta < 0.02);
   const credits = readFileSync(path.join(root, "public/audio/CREDITS.md"), "utf8");
   check("the original clip has a CC0 attribution", credits.includes("amb_sea.mp3") && credits.includes("https://creativecommons.org/publicdomain/zero/1.0/"));
-  console.log(`ambience-loop-prove: ${passed} checks passed ${JSON.stringify({ seconds: n / 44100, peak, rms, seamMax: seam, recipeDeltaMax: delta, bytes: readFileSync(shipped).length })}`);
+  console.log(`ambience-loop-prove: ${passed} checks passed ${JSON.stringify({ seconds: n / 44100, peak, rms, seamMax: seam, recipeDeltaMax: delta, startRatio, endRatio, bytes: readFileSync(shipped).length })}`);
 } finally {
   rmSync(temp, { recursive: true, force: true });
 }
