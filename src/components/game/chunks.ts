@@ -31,8 +31,6 @@ export const WinScreen = sheets.pick((m) => m.WinScreen);
 
 export const moments = chunk(() => import("@/components/game/moments"));
 export const TurnMoment = moments.pick((m) => m.TurnMoment);
-// #1140: its own chunk, so the moments chunk stays inside its growth allowance; it is asked for with the table, like them.
-export const YourTurnBanner = chunk(() => import("@/components/game/YourTurnBanner")).pick((m) => m.YourTurnBanner);
 export const MyNumbers = moments.pick((m) => m.MyNumbers);
 export const FirstGameCoach = moments.pick((m) => m.FirstGameCoach);
 export const SetupPipHints = moments.pick((m) => m.SetupPipHints);
