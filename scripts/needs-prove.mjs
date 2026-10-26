@@ -38,7 +38,8 @@ try{
    Object.defineProperty(WebSocket.prototype,'onmessage',{...descriptor,set(callback){
     descriptor.set.call(this,event=>{
      const later=JSON.parse(event.data).type==='seats';
-     if(later)setTimeout(()=>callback.call(this,event),250);else callback.call(this,event);
+     if(later&&window.__holdNeedSeats)(window.__needSeats??=[]).push(()=>callback.call(this,event));
+     else if(later)setTimeout(()=>callback.call(this,event),250);else callback.call(this,event);
     });
    }});
   });
@@ -74,6 +75,23 @@ try{
  await b.getByRole('button',{name:'Yes',exact:true}).click();await chip.waitFor({state:'detached'});
  await b.waitForFunction(()=>window.__emberisle.getState().state.players.find(p=>p.id==='p1').resources.ore===1);
  console.log('ok real table trade: received requested Stone clears the public need on the other client');
+ await a.waitForFunction(()=>window.__emberisle.getState().seats.find(s=>s.player==='p0')?.needs?.length===0);
+ await a.getByRole('button',{name:'Need',exact:true}).click();
+ // Hold real host seat echoes so unrelated messages cannot hide an optimistic-draft reset.
+ await a.evaluate(()=>{window.__holdNeedSeats=true;});
+ await a.getByRole('button',{name:'Need Stone',exact:true}).click();
+ await a.evaluate(()=>window.__emberisle.getState().refuseQuietly('An unrelated announcement.'));
+ await a.evaluate(()=>new Promise(requestAnimationFrame));
+ assert.equal(await a.getByRole('button',{name:'Need Stone',exact:true}).getAttribute('aria-pressed'),'true','an unrelated announcement preserves the delayed Need draft');
+ const errorBefore=await a.evaluate(()=>window.__emberisle.getState().errorSeq);
+ await a.evaluate(()=>{for(let i=0;i<30;i++)window.__emberisle.getState().net.rename('Still the same person');});
+ await a.waitForFunction(n=>window.__emberisle.getState().errorSeq>n&&window.__emberisle.getState().error==='Slow down.',errorBefore);
+ assert.equal(await a.getByRole('button',{name:'Need Stone',exact:true}).getAttribute('aria-pressed'),'true','unrelated host ACT rate errors preserve the delayed Need draft');
+ await a.getByRole('button',{name:'Need Wheat',exact:true}).click();
+ await a.waitForFunction(()=>[...document.querySelectorAll('#need-picker [aria-pressed]')].every(button=>button.getAttribute('aria-pressed')==='false'));
+ assert.equal(await a.evaluate(()=>window.__emberisle.getState().error),'Slow down.','a genuinely rate-rejected Need rolls back to the authoritative selection');
+ await a.evaluate(()=>{window.__holdNeedSeats=false;for(const deliver of window.__needSeats??[])deliver();window.__needSeats=[];});
+ console.log('ok delayed Need draft survives unrelated announcements and host ACT errors; actual Need rate rejection rolls back');
  // Isolated hotseat session exercises the same picker and the lazy local-state lifecycle.
  await a.evaluate(async()=>{
   const {createGame}=await import('/src/lib/game/board.ts');
