@@ -27,7 +27,7 @@ const vite = await createServer({
   plugins: [{ name: "mixer-proof-page", configureServer(server) {
     server.middlewares.use("/__mixer-proof", (_req, res) => {
       res.setHeader("Content-Type", "text/html");
-      res.end('<!doctype html><title>Mixer proof</title><script type="module">window.sound=await import("/src/lib/sound.ts");window.mix=await import("/src/lib/sound-settings.ts");</script>');
+      res.end('<!doctype html><title>Mixer proof</title><link rel="icon" href="data:,"><script type="module">window.sound=await import("/src/lib/sound.ts");window.mix=await import("/src/lib/sound-settings.ts");</script>');
     });
   } }],
 });
@@ -40,15 +40,34 @@ try {
   const page = await context.newPage();
   page.on("pageerror", (e) => errors.push(String(e)));
   page.on("console", (e) => { if (e.type() === "error") errors.push(e.text()); });
-  await page.addInitScript(() => {
+  const installAudioStub = () => {
     window.__audios = [];
     window.__plays = [];
+    window.__attempts = [];
+    window.__rejectBackground = false;
+    window.__rejectedBackground = 0;
+    window.__retryListeners = [];
+    window.__unhandled = [];
+    window.addEventListener("unhandledrejection", (event) => window.__unhandled.push(String(event.reason)));
+    const addListener = window.addEventListener.bind(window);
+    window.addEventListener = (type, listener, options) => {
+      if (window.__rejectedBackground && ["pointerup", "keydown"].includes(type) && options?.once) window.__retryListeners.push(type);
+      return addListener(type, listener, options);
+    };
     window.Audio = class extends EventTarget {
       constructor(src) { super(); this.src = src.split("/").at(-1); this.volume = 1; this.currentTime = 0; this.paused = true; this.ended = false; window.__audios.push(this); }
-      play() { this.paused = false; this.ended = false; window.__plays.push({ file: this.src, volume: this.volume }); this.dispatchEvent(new Event("play")); return Promise.resolve(); }
+      play() {
+        window.__attempts.push({ file: this.src, volume: this.volume });
+        if (this.src === "old_tower_inn_loop.mp3" && window.__rejectBackground) {
+          window.__rejectedBackground++;
+          return Promise.reject(new DOMException("controlled background autoplay rejection", "NotAllowedError"));
+        }
+        this.paused = false; this.ended = false; window.__plays.push({ file: this.src, volume: this.volume }); this.dispatchEvent(new Event("play")); return Promise.resolve();
+      }
       pause() { this.paused = true; this.dispatchEvent(new Event("pause")); }
     };
-  });
+  };
+  await page.addInitScript(installAudioStub);
   const load = async () => { await page.goto(`http://127.0.0.1:${vite.httpServer.address().port}/__mixer-proof`); await page.waitForFunction(() => window.sound && window.mix); };
   const clear = () => page.evaluate(() => { window.__plays = []; });
   const plays = () => page.evaluate(() => window.__plays);
@@ -222,6 +241,69 @@ try {
   assert.equal(await blocked.evaluate(() => window.mix.getSoundMix().game.muted), true);
   await freshContext.close();
   ok("invalid/partial/blocked storage is safe and settings remain per device");
+
+  // Each page owns a fresh module and both one-shot retry listeners; no previous case can unlock it.
+  const retryCases = ["title", "ownership", "Music off", "master mute", "master zero", "Music mute", "Music zero", "still wanted", "retry rejected"];
+  for (const scenario of retryCases) {
+    const retryContext = await browser.newContext();
+    try {
+      const retryPage = await retryContext.newPage();
+      retryPage.on("pageerror", (e) => errors.push(String(e)));
+      retryPage.on("console", (e) => { if (e.type() === "error") errors.push(e.text()); });
+      await retryPage.addInitScript(installAudioStub);
+      await retryPage.goto(`http://127.0.0.1:${vite.httpServer.address().port}/__mixer-proof`);
+      await retryPage.waitForFunction(() => window.sound && window.mix);
+      await retryPage.keyboard.press("Shift");
+      await retryPage.mouse.click(10, 10);
+      assert.deepEqual(await retryPage.evaluate(() => window.__audios), [], `${scenario}: unlocked title constructs no background`);
+      if (scenario !== "title") {
+        await retryPage.evaluate(() => { window.__rejectBackground = true; window.sound.setMusicWanted(true); });
+        await retryPage.waitForFunction(() => window.__retryListeners.length === 2);
+        assert.equal(await retryPage.evaluate(() => window.__rejectedBackground), 1, `${scenario}: controlled initial rejection`);
+        assert.deepEqual(await retryPage.evaluate(() => window.__retryListeners), ["pointerup", "keydown"], `${scenario}: real retry catch armed both gestures`);
+        assert.deepEqual(await retryPage.evaluate(() => window.__plays), [], `${scenario}: rejected play never starts`);
+        assert.equal(await retryPage.evaluate(() => window.__audios[0].paused), true, `${scenario}: rejection leaves background paused`);
+      }
+      await retryPage.evaluate((scenario) => {
+        if (scenario === "ownership") window.sound.setMusicWanted(false);
+        if (scenario === "Music off") window.sound.setMusicOn(false);
+        if (scenario === "master mute") window.sound.setMuted(true);
+        if (scenario === "master zero") window.mix.setMasterVolume(0);
+        if (scenario === "Music mute") window.mix.setCategoryMuted("music", true);
+        if (scenario === "Music zero") window.mix.setCategoryVolume("music", 0);
+        window.__rejectBackground = scenario === "retry rejected";
+      }, scenario);
+      const attemptsBeforeGesture = await retryPage.evaluate(() => window.__attempts.length);
+      assert.equal(attemptsBeforeGesture, scenario === "title" ? 0 : 1, `${scenario}: only the initial rejected attempt precedes the gesture`);
+      const stillWanted = scenario === "still wanted";
+      for (const gesture of ["keydown", "pointerup"]) {
+        if (gesture === "keydown") await retryPage.keyboard.press("Shift");
+        else await retryPage.mouse.click(10, 10);
+        // Flush the promise rejection and the browser's unhandledrejection reporting task.
+        await retryPage.evaluate(() => new Promise((resolve) => setTimeout(resolve, 0)));
+        const attempts = await retryPage.evaluate(() => window.__attempts);
+        const heard = await retryPage.evaluate(() => window.__plays);
+        if (stillWanted) {
+          assert.equal(attempts.length, attemptsBeforeGesture + (gesture === "keydown" ? 1 : 2), `${gesture}: still-wanted retry attempts playback`);
+          assert.equal(heard.length, gesture === "keydown" ? 1 : 2, `${gesture}: still-wanted retry succeeds`);
+          closeTo(heard.at(-1).volume, 0.25, `${gesture}: wanted retry retains quiet background gain`);
+          assert.equal(await retryPage.evaluate(() => window.__audios[0].paused), false, `${gesture}: wanted background resumes`);
+        } else if (scenario === "retry rejected") {
+          assert.ok(attempts.length > attemptsBeforeGesture, `${gesture}: retry reaches rejecting Audio.play`);
+          assert.deepEqual(heard, [], `${gesture}: rejected retry never starts`);
+          assert.equal(await retryPage.evaluate(() => window.__audios[0].paused), true, `${gesture}: rejected retry remains paused`);
+        } else {
+          assert.equal(attempts.length, attemptsBeforeGesture, `${scenario}: late ${gesture} must not attempt background restart`);
+          assert.deepEqual(heard, [], `${scenario}: late ${gesture} stays silent`);
+          assert.equal(await retryPage.evaluate(() => window.__audios.every((a) => a.paused)), true, `${scenario}: late ${gesture} keeps background paused`);
+        }
+        assert.deepEqual(await retryPage.evaluate(() => window.__unhandled), [], `${scenario}: ${gesture} has no unhandled rejection`);
+      }
+      ok(`background autoplay ${scenario}: late key and pointer checks pass without unhandled rejection`);
+    } finally {
+      await retryContext.close();
+    }
+  }
   assert.deepEqual(errors, [], "zero browser errors");
   console.log("sound-mixer-prove ok");
 } finally {
