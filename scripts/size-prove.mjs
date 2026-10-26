@@ -49,7 +49,7 @@ const CEILINGS = [
   { name: "DockInspection", gzipBytes: 1200 },
   { name: "HandRates", gzipBytes: 800 },
   // #831: route selectors load separately; measured 1.46 kB.
-  { name: "BankTradePicker", gzipBytes: 1650 },
+  { name: "TradeResource", gzipBytes: 1650 },
   // #833: title open-table list; measured ~1.1 kB after extract from index.
   { name: "OpenTables", gzipBytes: 1300 },
   // #833: the existing closed title settings body loads separately; new chunk only.

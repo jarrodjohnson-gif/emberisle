@@ -11,7 +11,7 @@ import { bagText } from "@/lib/game/trade";
 import { chunk, LazyBoundary } from "@/lib/lazy";
 import "./trade-panel.css";
 
-const picker = chunk(() => import("./BankTradePicker"));
+const picker = chunk(() => import("./TradeResource"));
 picker.prefetch();
 const Stepper = picker.pick((m) => m.TradeResource);
 

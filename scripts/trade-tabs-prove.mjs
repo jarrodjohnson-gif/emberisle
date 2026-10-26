@@ -611,7 +611,7 @@ async function lazyRecovery() {
   page.on("console", (message) => {
     if (message.type() === "error") isolatedErrors.push({ text: message.text(), url: message.location().url });
   });
-  await page.route(/\/src\/components\/game\/BankTradePicker\.tsx(?:\?|$)/, async (route) => {
+  await page.route(/\/src\/components\/game\/TradeResource\.tsx(?:\?|$)/, async (route) => {
     requests++;
     if (aborted === 0) {
       aborted++;
@@ -652,7 +652,7 @@ async function lazyRecovery() {
     assert.equal(hand.timber, 2, "lazy picker: recovered Bank controls debit the actual rate");
     assert.equal(hand.ore, 7, "lazy picker: recovered Bank controls receive one actual good");
     assert.deepEqual(await sent(page), [{ kind: "dispatch", action: { type: "bankTrade", give: "timber", want: "ore" } }], "lazy picker: recovery sends exactly one genuine bank action");
-    const unexpected = isolatedErrors.filter((error) => !/BankTradePicker\.tsx/.test(`${error.text} ${error.url}`)
+    const unexpected = isolatedErrors.filter((error) => !/TradeResource\.tsx/.test(`${error.text} ${error.url}`)
       && !/The above error occurred in the <Lazy> component|An error occurred in the <Lazy> component/.test(error.text));
     assert.deepEqual(unexpected, [], "lazy picker: only the isolated deliberately refused module and its React boundary may report errors");
     console.log(`lazy picker: one failed request, usable exit, fresh reopen, recovered Table and Bank controls; ${isolatedErrors.length} expected isolated error reports`);
