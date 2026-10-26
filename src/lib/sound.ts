@@ -2,6 +2,7 @@
 // named as in server/cue.mjs. Nothing plays before the first pointer or key gesture (browsers refuse autoplay), and a
 // missing or blocked file is silent, never a thrown error or a console error.
 import { useSyncExternalStore } from "react";
+import { createBufferedAmbience } from "./ambience";
 import { categoryGain, subscribeSoundMix, type SoundCategory } from "./sound-settings";
 import type { ExtraSoundName } from "./sound-extra";
 
@@ -108,6 +109,7 @@ if (typeof window !== "undefined") {
   const unlock = () => {
     unlocked = true;
     syncMusic();
+    syncAmbience();
   };
   window.addEventListener("pointerdown", unlock, { once: true, capture: true, passive: true });
   window.addEventListener("keydown", unlock, { once: true, capture: true, passive: true });
@@ -122,6 +124,7 @@ export function setMuted(v: boolean) {
   if (v) stop("end_music");
   syncVolumes();
   syncMusic();
+  syncAmbience();
   try {
     if (v) localStorage.setItem(MUTED_KEY, "1");
     else localStorage.removeItem(MUTED_KEY);
@@ -328,10 +331,49 @@ function syncMusic() {
   }
 }
 
+const AMBIENCE_KEY = "emberisle-ambience";
+const AMBIENCE_VOLUME = 0.12;
+let ambienceOn = (() => {
+  try { return localStorage.getItem(AMBIENCE_KEY) === "1"; } catch { return false; }
+})();
+let ambienceVolume = AMBIENCE_VOLUME;
+let ambience: ReturnType<typeof import("./ambience").createBufferedAmbience> | null = null;
+
+export function isAmbienceOn() { return ambienceOn; }
+
+export function setAmbienceOn(value: boolean) {
+  ambienceOn = value;
+  try {
+    if (value) localStorage.setItem(AMBIENCE_KEY, "1");
+    else localStorage.removeItem(AMBIENCE_KEY);
+  } catch {
+    // storage can be blocked; the setting still holds for this page
+  }
+  syncAmbience();
+  for (const listener of listeners) listener();
+}
+
+export function setAmbienceVolume(value: number) {
+  if (!Number.isFinite(value)) return;
+  ambienceVolume = Math.max(0, Math.min(1, value));
+  syncAmbience();
+}
+
+function syncAmbience() {
+  const active = ambienceOn && unlocked && !muted && typeof document !== "undefined" && !document.hidden && categoryGain("music") > 0;
+  if (!ambience && active) ambience = createBufferedAmbience(`${import.meta.env.BASE_URL}audio/amb_sea.mp3`);
+  if (ambience) {
+    ambience.setGain(ambienceVolume * categoryGain("music"));
+    ambience.setActive(active);
+  }
+}
+
+if (typeof document !== "undefined") document.addEventListener("visibilitychange", syncAmbience);
+
 function syncVolumes() {
   for (const [name, clip] of clips) clip.volume = muted ? 0 : (gains.get(name) ?? 1) * categoryGain(soundCategory(name));
 }
-subscribeSoundMix(() => { syncVolumes(); syncMusic(); });
+subscribeSoundMix(() => { syncVolumes(); syncMusic(); syncAmbience(); });
 
 // #667: a tap on a hex that places nothing plays that terrain's clip, at most once per TOUCH_GAP_MS. Only a sheep
 // hex (Pasture, "wool") baas. The renderer calls this for a plain tap only: never for a drag, a pinch or an armed placement.
