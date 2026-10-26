@@ -298,6 +298,7 @@ let openCode;
     else saved.visibility = "OPEN";
     writeFileSync(file, JSON.stringify(saved));
   }
+  const preSavedAt = new Map(credentials.map((c) => [c.code, JSON.parse(readFileSync(path.join(ROOMS_DIR, `${c.code}.json`), "utf8")).savedAt]));
   restartPort = await boot({ SAVE_MS: "20", LOBBY_HOLD_MS: "10000" });
   const lister = client(restartPort, "restart-observer");
   await lister.open;
@@ -321,6 +322,26 @@ let openCode;
       assert.equal(tables[0].name, "Restart-open's table");
     } else assert.deepEqual(tables, [], `${c.name} remains private after restart and authenticated rejoin`);
     observer.ws.terminate();
+
+    // Inspect the actual rewritten room snapshot on disk after authenticated rejoin (#988).
+    const file = path.join(ROOMS_DIR, `${c.code}.json`);
+    let rewritten;
+    const saveDeadline = Date.now() + 3000;
+    while (Date.now() < saveDeadline) {
+      try { rewritten = JSON.parse(readFileSync(file, "utf8")); } catch {}
+      if (rewritten?.savedAt && rewritten.savedAt > (preSavedAt.get(c.code) ?? 0)) break;
+      await settle(20);
+    }
+    assert.ok(rewritten?.savedAt && rewritten.savedAt > (preSavedAt.get(c.code) ?? 0), `${c.name} snapshot was rewritten after rejoin`);
+    if (c.name === "Restart-invalid") {
+      assert.equal(rewritten.visibility, "private", "invalid visibility persists as private after restart and authenticated rejoin");
+    } else if (c.name === "Restart-legacy") {
+      assert.equal(rewritten.visibility, "private", "missing visibility persists as private after restart and authenticated rejoin");
+    } else if (c.visibility === "open") {
+      assert.equal(rewritten.visibility, "open", "valid open visibility stays open after restart and authenticated rejoin");
+    } else {
+      assert.equal(rewritten.visibility, "private", "valid private visibility stays private after restart and authenticated rejoin");
+    }
   }
   console.log("restart: open visibility persists through kill -9 and rejoin; private, missing and invalid visibility stay hidden");
 }
