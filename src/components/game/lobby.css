@@ -85,6 +85,7 @@
 .lobby-chat-panel [data-testid="chat-log"] { flex-basis: 0 !important; }
 .lobby-chat-panel [data-testid="emoji-row"] { gap: 8px; justify-content: space-between; }
 .lobby-chat-panel [data-testid="emoji-row"] button, .lobby-chat-panel [role="tab"] { background: transparent; }
+.lobby-chat-panel [data-testid="emoji-row"] button { font-size: 24px; font-weight: 400; }
 .lobby-chat-panel [role="tab"] { padding-inline: 8px; color: #263b3b; }
 .lobby-chat-panel input {
   border: 1px solid #899b9b;
@@ -138,7 +139,7 @@
 .lobby-bubble [data-seat-bubble="sound"] > div > span { min-width: 0; }
 .lobby-bubble [data-seat-bubble="sound"] > div > span > span:first-child { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 13px; line-height: 18px; }
 .lobby-bubble [data-seat-bubble="sound"] svg { display: inline; width: 14px; height: 14px; margin-right: 4px; vertical-align: -2px; }
-.lobby-player:has(> .lobby-bubble [data-seat-bubble="sound"]) { grid-template-columns: 12px minmax(48px, 1fr) minmax(0, max-content); }
+.lobby-player:has(> .lobby-bubble [data-seat-bubble="sound"]) { grid-template-columns: 12px minmax(40px, 1fr) minmax(0, max-content); }
 @media (max-width: 360px) and (orientation: portrait) {
   .lobby-header > p { font-size: 20px; }
   .lobby-copy-controls > button { padding: 0 7px; font-size: 12px !important; }
