@@ -1,4 +1,4 @@
-// #831: real trade routes keep separate drafts, quote the live bank rate, and settle one exchange.
+// #831 B: one shared draft exposes exact table and bank quotes; each action settles its own receipt.
 import assert from "node:assert/strict";
 import { existsSync, mkdirSync } from "node:fs";
 import { chromium } from "playwright";
@@ -40,12 +40,11 @@ const errors = [];
 mkdirSync("test-results", { recursive: true });
 
 const panelFor = (page) => page.getByTestId("trade-panel");
-const tabFor = (page, name) => panelFor(page).getByRole("tab", { name, exact: true });
+const goodsFor = (page) => panelFor(page).getByRole("region", { name: "Trade goods", exact: true });
 const more = (page, resource, side) => panelFor(page).getByRole("button", { name: `More ${RESOURCE_LABEL[resource]} to ${side}`, exact: true });
 const fewer = (page, resource, side) => panelFor(page).getByRole("button", { name: `Fewer ${RESOURCE_LABEL[resource]} to ${side}`, exact: true });
 const askFor = (page) => panelFor(page).getByRole("button", { name: "Ask the table", exact: true });
 const bankFor = (page) => panelFor(page).getByRole("button", { name: /^(Bank(?: 4:1)?|Dock [23]:1)$/ });
-const bankKind = (page, side, resource) => panelFor(page).getByTestId(`bank-${side}-${resource}`);
 const snapshot = (page) => page.evaluate(() => JSON.stringify(window.__emberisle.getState().state));
 const sent = (page) => page.evaluate(() => window.__tradeTabsSent);
 
@@ -109,25 +108,26 @@ async function preview(page, fragments) {
   }, fragments);
 }
 
+// Edit the visible quantity cards; Bank derives kinds from the very same draft as Table.
 async function bankSelect(page, give = "timber", want = "ore") {
-  await bankKind(page, "give", give).click();
-  await bankKind(page, "want", want).click();
+  for (const side of ["give", "want"]) for (const resource of RESOURCES) {
+    while (await fewer(page, resource, side).count()) await fewer(page, resource, side).click();
+  }
+  await more(page, give, "give").click();
+  await more(page, want, "want").click();
 }
 
-async function selectedTab(page, name, focus = false) {
-  const tab = tabFor(page, name);
-  assert.equal(await tab.getAttribute("aria-selected"), "true", `${name}: selected route`);
-  assert.equal(await tab.getAttribute("tabindex"), "0", `${name}: selected tab is in the tab sequence`);
-  const relations = await panelFor(page).evaluate((element) => {
-    const tabs = [...element.querySelectorAll('[role="tab"]')];
-    const panel = element.querySelector('[role="tabpanel"]');
-    return { tabs: tabs.map((item) => ({ id: item.id, controls: item.getAttribute("aria-controls"), target: document.getElementById(item.getAttribute("aria-controls"))?.id ?? null })),
-      panel: panel ? { id: panel.id, labelledBy: panel.getAttribute("aria-labelledby") } : null };
+async function sharedComposer(page, tag) {
+  assert.equal(await panelFor(page).getByRole("tab").count(), 0, `${tag}: B has no route tabs`);
+  assert.equal(await panelFor(page).getByRole("radio").count(), 0, `${tag}: B has no separate Bank selectors`);
+  assert.equal(await goodsFor(page).count(), 1, `${tag}: one named goods region replaces both route panels`);
+  assert.equal(await goodsFor(page).getAttribute("tabindex"), "0", `${tag}: the shared goods region is keyboard reachable`);
+  const named = await goodsFor(page).evaluate((element) => {
+    const ids = (element.getAttribute("aria-labelledby") ?? "").split(/\s+/).filter(Boolean);
+    return ids.map((id) => document.getElementById(id)?.textContent.trim() ?? null);
   });
-  assert.equal(relations.tabs.length, 2, `${name}: both route tabs remain present`);
-  assert.ok(relations.tabs.every((item) => item.controls && item.target === relations.panel?.id), `${name}: both route controls resolve to the rendered panel ${JSON.stringify(relations)}`);
-  assert.equal(relations.panel?.labelledBy, await tab.getAttribute("id"), `${name}: active panel is labelled by its selected tab`);
-  if (focus) assert.equal(await tab.evaluate((element) => element === document.activeElement), true, `${name}: keyboard focus follows route`);
+  assert.deepEqual(named, ["Trade goods"], `${tag}: the shared region's accessible label resolves to rendered text`);
+  assert.equal(await panelFor(page).getByTestId("trade-hint").isVisible(), true, `${tag}: Bank always exposes its live quote or disabled reason`);
 }
 
 async function layout(page, tag, route) {
@@ -138,14 +138,18 @@ async function layout(page, tag, route) {
       pageHorizontal: document.documentElement.scrollWidth > innerWidth + 1,
       buttons: [...element.querySelectorAll("button")].filter((button) => button.getClientRects().length).map((button) => ({
         label: button.getAttribute("aria-label") || button.textContent.trim(), ...rect(button),
-      })), footerActions: footer.querySelectorAll("button").length };
+      })), footerActions: footer.querySelectorAll("button").length,
+      gaps: [...element.querySelectorAll(".trade-resource-grid, footer")].map((node) => Number.parseFloat(getComputedStyle(node).gap)),
+      smallText: [...element.querySelectorAll("h3, p, button, output, .trade-resource-name, .trade-owned")].filter((node) => node.getClientRects().length).map((node) => ({ text: node.textContent.trim(), size: Number.parseFloat(getComputedStyle(node).fontSize) })) };
   });
   const { width, height } = page.viewportSize();
   assert.ok(result.panel.left >= -0.5 && result.panel.right <= width + 0.5 && result.panel.top >= -0.5 && result.panel.bottom <= height + 0.5, `${tag} ${route}: panel fits ${JSON.stringify(result.panel)}`);
   assert.ok(result.footer.top >= 0 && result.footer.bottom <= height + 0.5, `${tag} ${route}: quote and action stay on screen ${JSON.stringify(result.footer)}`);
   assert.equal(result.horizontal || result.pageHorizontal, false, `${tag} ${route}: no horizontal overflow`);
-  assert.equal(result.footerActions, 1, `${tag} ${route}: exactly one footer action`);
+  assert.equal(result.footerActions, route === "hotseat-bank" ? 1 : 2, `${tag} ${route}: one Bank action plus Table only for distinct players`);
   for (const button of result.buttons) assert.ok(button.width >= 43.9 && button.height >= 43.9, `${tag} ${route}: 44px control ${JSON.stringify(button)}`);
+  assert.ok(result.gaps.every((gap) => gap >= 8), `${tag} ${route}: goods and action gaps are at least 8px ${JSON.stringify(result.gaps)}`);
+  assert.ok(result.smallText.every((item) => item.size >= 12), `${tag} ${route}: composer text remains at least 12px ${JSON.stringify(result.smallText)}`);
   await panelFor(page).locator(".trade-composer-scroll").evaluate((element) => { element.scrollTop = 0; });
   await page.screenshot({ path: `test-results/trade-tabs-${tag}-${route}.png` });
 }
@@ -308,10 +312,10 @@ async function bankMotion(page, rate, tag) {
 async function tableAndRoutes(page, tag, motion) {
   await load(page);
   await open(page);
-  await selectedTab(page, "Table");
+  await sharedComposer(page, tag);
   assert.equal(await askFor(page).isDisabled(), true, `${tag}: empty table offer refuses`);
   assert.equal(await panelFor(page).getByRole("button", { name: /^Fewer / }).count(), 0, `${tag}: unselected goods have no subtract button`);
-  assert.equal(await panelFor(page).getByTestId("trade-hint").count(), 0, `${tag}: Table has no bank quote`);
+  assert.equal(await bankFor(page).isDisabled(), true, `${tag}: empty shared draft disables Bank with a visible reason`);
   await more(page, "timber", "give").click();
   await selectionMotion(page, "timber", "give", 1, motion, tag);
   assert.equal(await fewer(page, "timber", "give").count(), 1, `${tag}: selected good gets one subtract control`);
@@ -330,33 +334,28 @@ async function tableAndRoutes(page, tag, motion) {
   if (motion === "reduce") assert.equal(await panelFor(page).getByTestId("trade-give-timber").getByTestId("trade-selection-motion").evaluate((element) => element.getAnimations().length), 0, `${tag}: selected quantity does not animate under reduced motion`);
   await layout(page, tag, "table");
   const before = await snapshot(page);
-  await tabFor(page, "Table").focus();
-  for (const [key, name] of [["ArrowRight", "Bank & docks"], ["Home", "Table"], ["End", "Bank & docks"], ["ArrowLeft", "Table"]]) {
-    await page.keyboard.press(key);
-    await selectedTab(page, name, true);
-  }
-  assert.equal(await snapshot(page), before, `${tag}: changing routes does not change the game`);
-  assert.deepEqual(await sent(page), [], `${tag}: changing routes sends no dispatch or offer`);
-  await tabFor(page, "Bank & docks").click();
-  assert.equal(await askFor(page).count(), 0, `${tag}: Bank has no table action`);
-  assert.equal(await panelFor(page).getByTestId("trade-player-preview").count(), 0, `${tag}: Bank has no player quote`);
-  assert.equal(await bankFor(page).isDisabled(), true, `${tag}: empty bank selection refuses`);
-  assert.equal(await panelFor(page).getByRole("radio", { checked: true }).count(), 0, `${tag}: bank starts with its own empty draft`);
+  assert.equal(await bankFor(page).isVisible(), true, `${tag}: mixed table bags retain the compact Bank action`);
+  assert.equal(await bankFor(page).isDisabled(), true, `${tag}: mixed bags cannot settle at Bank`);
+  await hint(page, "Choose one kind on each side");
+  await describedAs(bankFor(page), "Choose one kind on each side for a bank or dock exchange.", `${tag} mixed bank refusal`);
+  await bankFor(page).click({ force: true });
+  assert.equal(await snapshot(page), before, `${tag}: inspecting or pressing the mixed-bank refusal does not change the game`);
+  assert.deepEqual(await sent(page), [], `${tag}: mixed-bank refusal sends no dispatch or offer`);
   for (const side of ["give", "want"]) for (const resource of RESOURCES) {
-    const selector = bankKind(page, side, resource);
-    assert.equal(await selector.evaluate((element) => element.tagName), "BUTTON", `${tag}: bank selector is a native button`);
-    assert.equal(await selector.getAttribute("role"), "radio", `${tag}: bank ${side} selector has radio semantics`);
+    const selector = more(page, resource, side);
+    assert.equal(await selector.evaluate((element) => element.tagName), "BUTTON", `${tag}: shared ${side} selector is a native button`);
+    assert.equal(await selector.getAttribute("role"), null, `${tag}: quantity buttons retain native semantics without radio choices`);
   }
   await bankSelect(page, "ore", "grain");
   await hint(page, "You give 4 stone. You get 1 wheat.");
+  await preview(page, ["You give: 1 stone", "You get: 1 wheat"]);
+  assert.equal(await askFor(page).isEnabled(), true, `${tag}: the same single-kind draft remains available to Table`);
+  assert.equal(await bankFor(page).isEnabled(), true, `${tag}: the same single-kind draft enables the exact Bank quote`);
   await layout(page, tag, "bank");
-  await tabFor(page, "Table").click();
-  await preview(page, ["You give: 2 wood, 1 brick", "You get: 1 sheep, 1 stone"]);
-  await tabFor(page, "Bank & docks").click();
-  assert.equal(await bankKind(page, "give", "ore").getAttribute("aria-checked"), "true", `${tag}: bank give kind survives a route change`);
-  assert.equal(await bankKind(page, "want", "grain").getAttribute("aria-checked"), "true", `${tag}: bank want kind survives a route change`);
-  assert.equal(await snapshot(page), before, `${tag}: both independent drafts leave all game fields intact`);
-  assert.deepEqual(await sent(page), [], `${tag}: editing either draft sends no action`);
+  assert.equal(await panelFor(page).getByTestId("trade-give-ore").getByRole("status").textContent(), "1", `${tag}: Bank derives its give kind from the shared quantity`);
+  assert.equal(await panelFor(page).getByTestId("trade-want-grain").getByRole("status").textContent(), "1", `${tag}: Bank derives its get kind from the shared quantity`);
+  assert.equal(await snapshot(page), before, `${tag}: editing shared quantities leaves all game fields intact`);
+  assert.deepEqual(await sent(page), [], `${tag}: editing the shared draft sends no action`);
   for (let count = 0; count < 18; count++) {
     await page.keyboard.press(count < 15 ? "Tab" : "Shift+Tab");
     assert.equal(await panelFor(page).evaluate((element) => element.contains(document.activeElement)), true, `${tag}: focus stays inside the modal`);
@@ -365,13 +364,12 @@ async function tableAndRoutes(page, tag, motion) {
   await panelFor(page).waitFor({ state: "detached" });
   assert.equal(await page.getByRole("button", { name: "Trade", exact: true }).evaluate((element) => element === document.activeElement), true, `${tag}: Escape restores the opener`);
   await open(page);
-  await selectedTab(page, "Table");
+  await sharedComposer(page, tag);
   assert.equal(await askFor(page).isDisabled(), true, `${tag}: close clears the player draft`);
   assert.equal(await panelFor(page).getByRole("button", { name: /^Fewer / }).count(), 0, `${tag}: close removes selected quantities`);
-  await tabFor(page, "Bank & docks").click();
-  assert.equal(await panelFor(page).getByRole("radio", { checked: true }).count(), 0, `${tag}: close clears both bank kinds`);
+  assert.equal(await panelFor(page).getByRole("button", { name: /^Fewer / }).count(), 0, `${tag}: close clears both shared Bank kinds`);
   assert.equal(await bankFor(page).isDisabled(), true, `${tag}: a reopened bank needs a new quote`);
-  console.log(`${tag}: mixed exact bags, separate retained drafts, selected-only minus, route keyboard/focus, one footer, 44px controls, close reset`);
+  console.log(`${tag}: mixed exact bags, shared Table/Bank draft, selected-only minus, keyboard/focus, two receipts, 44px controls, close reset`);
 }
 
 async function liveDrafts(page, tag) {
@@ -398,14 +396,12 @@ async function liveDrafts(page, tag) {
   assert.equal(await panelFor(page).count(), 0, `${tag}: returning to the owner does not reopen it`);
   await open(page);
   assert.equal(await askFor(page).isDisabled(), true, `${tag}: turn change clears the player draft`);
-  await tabFor(page, "Bank & docks").click();
   await bankSelect(page);
   await change(page, { phase: "roll" });
   await panelFor(page).waitFor({ state: "detached" });
   await change(page, { phase: "main" });
   await open(page);
-  await tabFor(page, "Bank & docks").click();
-  assert.equal(await panelFor(page).getByRole("radio", { checked: true }).count(), 0, `${tag}: phase change clears the bank draft`);
+  assert.equal(await panelFor(page).getByRole("button", { name: /^Fewer / }).count(), 0, `${tag}: phase change clears the shared Bank draft`);
   console.log(`${tag}: live hand clamp, no stale revival, turn/phase closure and reset`);
 }
 
@@ -441,12 +437,12 @@ async function focusAfterRemoval(page, resource, side, tag) {
 async function accessibility(page, tag) {
   await load(page);
   await open(page);
-  await tabFor(page, "Table").focus();
+  await panelFor(page).getByRole("button", { name: "Close", exact: true }).focus();
   await page.keyboard.press("Tab");
-  assert.equal(await panelFor(page).getByRole("tabpanel").evaluate((element) => element === document.activeElement), true, `${tag}: Tab skips the inactive Bank tab and reaches the Table panel`);
-  assert.equal(await tabFor(page, "Bank & docks").getAttribute("tabindex"), "-1", `${tag}: inactive Bank tab stays outside the tab sequence`);
+  assert.equal(await goodsFor(page).evaluate((element) => element === document.activeElement), true, `${tag}: Tab reaches the named shared goods region without hidden route stops`);
+  assert.equal(await panelFor(page).getByRole("tab").count(), 0, `${tag}: no obsolete route stop remains in the tab sequence`);
   await page.keyboard.press("Tab");
-  assert.equal(await more(page, "timber", "give").evaluate((element) => element === document.activeElement), true, `${tag}: Table panel leads to its first available good`);
+  assert.equal(await more(page, "timber", "give").evaluate((element) => element === document.activeElement), true, `${tag}: shared region leads to its first available good`);
   await describedAs(more(page, "timber", "give"), "Have 6 0", `${tag} empty table give`);
   await more(page, "timber", "give").click();
   await describedAs(more(page, "timber", "give"), "Have 6 1", `${tag} selected table give`);
@@ -476,49 +472,54 @@ async function accessibility(page, tag) {
 
   await load(page);
   await open(page);
-  await tabFor(page, "Bank & docks").click();
   await bankSelect(page);
-  await describedAs(bankKind(page, "give", "timber"), "Have 6 4:1", `${tag} bank give`);
-  await describedAs(bankKind(page, "want", "ore"), `Bank ${base.bank.ore} 1`, `${tag} bank want`);
+  await describedAs(more(page, "timber", "give"), "Have 6 1", `${tag} shared Bank give`);
+  await describedAs(more(page, "ore", "want"), "Have 6 1", `${tag} shared Bank get`);
+  await describedAs(bankFor(page), `You give 4 wood. You get 1 stone. Bank stock: ${base.bank.ore} stone.`, `${tag} exact Bank receipt and live stock`);
   const initial = await snapshot(page);
-  await tabFor(page, "Bank & docks").focus();
-  for (const expected of ["panel", "give", "want", "action", "close"]) {
+  // Native Tab navigation must visit every usable quantity/action exactly once and wrap inside this modal.
+  const expected = await panelFor(page).evaluate((element) => [...element.querySelectorAll('button, [tabindex="0"]')]
+    .filter((item) => !item.disabled && item.tabIndex >= 0).length);
+  await panelFor(page).getByRole("button", { name: "Close", exact: true }).focus();
+  const stops = new Set();
+  for (let index = 0; index < expected; index++) {
     await page.keyboard.press("Tab");
-    const target = expected === "panel" ? panelFor(page).getByRole("tabpanel")
-      : expected === "give" ? bankKind(page, "give", "timber")
-        : expected === "want" ? bankKind(page, "want", "ore")
-          : expected === "action" ? bankFor(page) : panelFor(page).getByRole("button", { name: "Close", exact: true });
-    assert.equal(await target.evaluate((element) => element === document.activeElement), true, `${tag}: Bank Tab sequence reaches ${expected} without visiting every radio`);
+    const stop = await panelFor(page).evaluate((element) => {
+      const active = document.activeElement;
+      return { inside: element.contains(active), usable: active.tabIndex >= 0 && !active.disabled,
+        key: active.id || active.getAttribute("aria-label") || active.textContent.trim() };
+    });
+    assert.equal(stop.inside && stop.usable, true, `${tag}: keyboard reaches connected usable controls inside the shared composer`);
+    assert.equal(stops.has(stop.key), false, `${tag}: each quantity/action is reached once before focus wraps (${stop.key})`);
+    stops.add(stop.key);
   }
-  assert.equal(await panelFor(page).getByRole("radio").evaluateAll((elements) => elements.filter((element) => element.tabIndex === 0).length), 2, `${tag}: one radio per group participates in the tab sequence`);
-
-  await bankKind(page, "want", "ore").focus();
-  for (const [key, resource] of [["ArrowRight", "clay"], ["ArrowLeft", "ore"], ["Home", "clay"], ["End", "ore"]]) {
-    await page.keyboard.press(key);
-    assert.equal(await bankKind(page, "want", resource).getAttribute("aria-checked"), "true", `${tag}: want ${key} selects ${resource}, skipping disabled timber`);
-    assert.equal(await bankKind(page, "want", resource).evaluate((element) => element === document.activeElement), true, `${tag}: want arrow focus follows the selected radio`);
+  assert.equal(await panelFor(page).getByRole("button", { name: "Close", exact: true }).evaluate((element) => element === document.activeElement), true, `${tag}: complete quantity/action Tab sequence wraps to Close`);
+  for (const side of ["give", "want"]) {
+    const resource = side === "give" ? "timber" : "ore";
+    const opposite = side === "give" ? "want" : "give";
+    await more(page, resource, side).focus();
+    await page.keyboard.press("Enter");
+    await describedAs(more(page, resource, side), "Have 6 2", `${tag} keyboard ${side} quantity`);
+    await fewer(page, resource, side).focus();
+    await page.keyboard.press("Enter");
+    await describedAs(more(page, resource, side), "Have 6 1", `${tag} keyboard ${side} removal`);
+    assert.equal(await more(page, resource, opposite).isDisabled(), true, `${tag}: keyboard cannot choose the same kind on the opposite side`);
   }
-  await bankKind(page, "give", "timber").focus();
-  for (const [key, resource] of [["ArrowLeft", "grain"], ["ArrowRight", "timber"], ["End", "grain"], ["Home", "timber"]]) {
-    await page.keyboard.press(key);
-    assert.equal(await bankKind(page, "give", resource).getAttribute("aria-checked"), "true", `${tag}: give ${key} selects ${resource}, skipping disabled ore`);
-    assert.equal(await bankKind(page, "give", resource).evaluate((element) => element === document.activeElement), true, `${tag}: give arrow focus follows the selected radio`);
-  }
-  assert.equal(await snapshot(page), initial, `${tag}: radio keyboard navigation changes only the draft`);
-  assert.deepEqual(await sent(page), [], `${tag}: radio keyboard navigation sends no action`);
+  assert.equal(await snapshot(page), initial, `${tag}: quantity keyboard navigation changes only the shared draft`);
+  assert.deepEqual(await sent(page), [], `${tag}: quantity keyboard navigation sends no action`);
   await change(page, { rate: 2 });
   await hint(page, "You give 2 wood. You get 1 stone.");
-  await describedAs(bankKind(page, "give", "timber"), "Have 6 2:1", `${tag} live dock description`);
+  await describedAs(bankFor(page), `You give 2 wood. You get 1 stone. Bank stock: ${base.bank.ore} stone.`, `${tag} live dock and stock description`);
   await change(page, { bank: { ore: 0 } });
   await hint(page, "no stone");
-  await describedAs(bankKind(page, "want", "ore"), "Bank 0 1", `${tag} live stock description`);
-  console.log(`${tag}: inactive tabs skipped; one radio stop per group; arrows skip same kind; owned/count/rate descriptions stay live; final-minus focus recovers`);
+  await describedAs(bankFor(page), "The bank has no stone. Bank stock: 0 stone.", `${tag} live zero-stock refusal description`);
+  console.log(`${tag}: named goods region, native quantity/action Tab sequence; keyboard edits skip same kinds; live owned/count/Bank descriptions; final-minus focus recovers`);
+
 }
 
 async function ratesAndRejections(page, tag) {
   await load(page);
   await open(page);
-  await tabFor(page, "Bank & docks").click();
   await bankSelect(page);
   for (const [rate, label] of [[4, "Bank 4:1"], [3, "Dock 3:1"], [2, "Dock 2:1"], [4, "Bank 4:1"]]) {
     await change(page, { rate });
@@ -539,10 +540,10 @@ async function ratesAndRejections(page, tag) {
   assert.equal(await snapshot(page), exhausted, `${tag}: exhausted stock cannot be traded`);
   await change(page, { bank: { ore: base.bank.ore } });
   await hint(page, "You give 4 wood. You get 1 stone.");
-  assert.equal(await bankKind(page, "want", "timber").isDisabled(), true, `${tag}: bank cannot request its give kind`);
-  await bankKind(page, "want", "timber").click({ force: true });
-  assert.equal(await bankKind(page, "want", "ore").getAttribute("aria-checked"), "true", `${tag}: rejecting the same kind preserves the valid want`);
-  assert.equal(await bankKind(page, "want", "timber").getAttribute("aria-checked"), "false", `${tag}: a same-kind quote cannot be selected`);
+  assert.equal(await more(page, "timber", "want").isDisabled(), true, `${tag}: bank cannot request its give kind`);
+  await more(page, "timber", "want").click({ force: true });
+  assert.equal(await panelFor(page).getByTestId("trade-want-ore").getByRole("status").textContent(), "1", `${tag}: rejecting the same kind preserves the valid want`);
+  assert.equal(await panelFor(page).getByTestId("trade-want-timber").getByRole("status").textContent(), "0", `${tag}: a same-kind quote cannot be selected`);
   assert.deepEqual(await sent(page), [], `${tag}: every invalid bank press leaves dispatch untouched`);
 
   for (const rate of [4, 3, 2]) {
@@ -550,7 +551,6 @@ async function ratesAndRejections(page, tag) {
     await change(page, { rate });
     const initial = await page.evaluate(() => structuredClone(window.__emberisle.getState().state));
     await open(page);
-    await tabFor(page, "Bank & docks").click();
     await bankSelect(page);
     await hint(page, `You give ${rate} wood. You get 1 stone.`);
     await armBankMotion(page, rate);
@@ -579,21 +579,20 @@ async function ratesAndRejections(page, tag) {
 async function modes(page, tag) {
   await load(page, base, "online");
   await open(page);
-  await selectedTab(page, "Table");
-  await tabFor(page, "Bank & docks").click();
-  await tabFor(page, "Table").click();
-  assert.deepEqual(await sent(page), [], `${tag}: online route changes send no host action`);
+  await sharedComposer(page, tag);
+  assert.deepEqual(await sent(page), [], `${tag}: opening the shared online composer sends no host action`);
   await load(page, base, "hotseat");
   await open(page);
-  assert.equal(await tabFor(page, "Table").count(), 0, `${tag}: hotseat has no Table route`);
+  assert.equal(await panelFor(page).getByRole("tab").count(), 0, `${tag}: hotseat has no route tabs`);
   assert.equal(await askFor(page).count(), 0, `${tag}: hotseat has no player offer action`);
   assert.equal(await panelFor(page).getByTestId("trade-player-preview").count(), 0, `${tag}: hotseat has no player quote`);
-  assert.equal(await panelFor(page).getByRole("radio").count(), 10, `${tag}: hotseat opens the one-kind bank selector`);
+  assert.equal(await panelFor(page).getByRole("radio").count(), 0, `${tag}: hotseat has no separate Bank selectors`);
+  assert.equal(await panelFor(page).getByRole("button", { name: /^More / }).count(), 10, `${tag}: hotseat uses the same ten quantity cards`);
   await bankSelect(page);
   await hint(page, "You give 4 wood. You get 1 stone.");
   await layout(page, tag, "hotseat-bank");
   assert.deepEqual(await sent(page), [], `${tag}: choosing a hotseat quote does not trade yet`);
-  console.log(`${tag}: online defaults to Table; hotseat exposes bank only`);
+  console.log(`${tag}: online exposes both receipts; hotseat uses shared cards with Bank only`);
 }
 
 async function lazyRecovery() {
@@ -639,7 +638,6 @@ async function lazyRecovery() {
     await more(page, "ore", "want").click();
     await preview(page, ["You give: 1 wood", "You get: 1 stone"]);
     assert.equal(await askFor(page).isEnabled(), true, "lazy picker: reopened Table controls produce a real valid draft");
-    await tabFor(page, "Bank & docks").click();
     await bankSelect(page);
     await hint(page, "You give 4 wood. You get 1 stone.");
     assert.ok(requests >= 2, "lazy picker: reopen makes a fresh network request after the cached failure");

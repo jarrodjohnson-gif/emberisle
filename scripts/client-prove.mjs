@@ -257,9 +257,8 @@ try {
   await page.getByRole("button", { name: "Trade", exact: true }).click();
   await page.getByTestId("trade-panel").waitFor();
   const askPractice = await page.getByRole("button", { name: "Ask the table" }).count();
-  await page.getByRole("tab", { name: "Bank & docks", exact: true }).click();
-  await page.getByTestId("bank-give-ore").click();
-  await page.getByTestId("bank-want-wool").click();
+  await page.getByRole("button", { name: "More Stone to give", exact: true }).click();
+  await page.getByRole("button", { name: "More Sheep to want", exact: true }).click();
   const rateButton = page.getByRole("button", { name: /^(Bank 4|Dock 3|Dock 2):1$/ });
   const rateLabel = await rateButton.textContent();
   await rateButton.click();
