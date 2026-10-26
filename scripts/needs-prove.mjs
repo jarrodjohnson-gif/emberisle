@@ -117,6 +117,57 @@ try{
   act({type:'roll'});act({type:'endTurn'});if(useLocalNeeds.getState().p0)throw Error('second own turn did not clear');
  });
  console.log('ok hotseat/practice shared local path: matching bank trade clears; only two own completed turns expire a need');
+ // Local transaction identity must not depend on player names or public narration.
+ await a.evaluate(async()=>{
+  const {createGame}=await import('/src/lib/game/board.ts');
+  const {setPlayerNeeds,useLocalNeeds}=await import('/src/components/game/need-state.ts');
+  const g=window.__emberisle;
+  const check=(condition,message)=>{if(!condition)throw Error(message);};
+  const fresh=(edit=()=>{})=>{
+   const s=createGame({humans:[{name:'Trader\nA'},{name:'Buyer\nB'},{name:'Other C'}],bots:0,seed:14,wayfarerMode:'on'});
+   s.phase='main';s.rollOff=null;s.current='p0';s.log=[];
+   for(const v of s.vertices)v.building=null;
+   for(const p of s.players)for(const r of ['timber','clay','wool','grain','ore'])p.resources[r]=0;
+   s.players[0].resources.timber=8;s.players[1].resources.ore=4;
+   s.bank={timber:11,clay:19,wool:19,grain:19,ore:15};edit(s);
+   useLocalNeeds.setState({},true);g.setState({mode:'ai',screen:'play',state:s,localId:'p0',spectator:false,offer:null,declined:[]});
+  };
+  const need=(id,kinds)=>{g.setState({localId:id});setPlayerNeeds(id,kinds);};
+  const act=(action,actor='p0')=>{const r=g.getState().dispatch(action,actor);check(r.ok,r.error);return r;};
+  const remains=(id,label)=>check(Boolean(useLocalNeeds.getState()[id]),label);
+  const clears=(id,label)=>check(!useLocalNeeds.getState()[id],label);
+  fresh();need('p0',['ore']);act({type:'bankTrade',give:'timber',want:'ore'});
+  check(g.getState().state.players[0].resources.ore===1,'bank trade actually receives requested Stone');
+  clears('p0','newline-name bank settlement clears Need independently of log wording');
+  fresh();need('p0',['ore']);need('p1',['timber']);
+  act({type:'offerTrade',to:'p1',give:{timber:1},want:{ore:1}});remains('p0','opening an offer does not clear Need');
+  act({type:'respondTrade',accept:true},'p1');clears('p0','direct accepted trade clears proposer Need');clears('p1','direct accepted trade clears recipient Need');
+  fresh();need('p0',['ore']);need('p1',['timber']);g.setState({localId:'p0'});
+  g.getState().askTable({timber:1},{ore:1});g.setState({localId:'p1'});g.getState().answerTrade(true);
+  check(g.getState().state.players[0].resources.ore===1,'askTable actually settles');
+  clears('p0','askTable direct settlement clears proposer Need');clears('p1','askTable direct settlement clears recipient Need');
+  fresh();need('p0',['grain']);act({type:'bankTrade',give:'timber',want:'ore'});remains('p0','nonmatching bank trade preserves Need');
+  fresh();need('p0',['ore']);const failed=g.getState().dispatch({type:'bankTrade',give:'ore',want:'grain'});
+  check(!failed.ok,'fixture bank trade really refuses missing goods');remains('p0','failed bank trade preserves Need');
+  act({type:'offerTrade',to:'p1',give:{timber:1},want:{ore:1}});act({type:'respondTrade',accept:false},'p1');remains('p0','declined trade preserves Need');
+  fresh(s=>{s.players[0].hidden.plenty=1;s.players[0].boughtThisTurn.plenty=0;s.playedCard=false;});
+  need('p0',['ore']);act({type:'playPlenty',resources:['ore','grain']});
+  check(g.getState().state.players[0].resources.ore===1,'Plenty actually grants requested Stone');remains('p0','Plenty gain does not satisfy a trade Need');
+  fresh(s=>{s.phase='roll';const h=s.hexes.find(h=>h.terrain==='ore'&&h.id!==s.robberHex);h.pip=8;s.vertices.find(v=>v.hexes.includes(h.id)).building={playerId:'p0',kind:'outpost'};});
+  need('p0',['ore']);const originalRandom=crypto.getRandomValues.bind(crypto),dice=[3,3];
+  crypto.getRandomValues=values=>dice.length?(values[0]=dice.shift(),values):originalRandom(values);
+  try{act({type:'roll'});}finally{crypto.getRandomValues=originalRandom;}
+  check(g.getState().state.players[0].resources.ore>0,'production roll actually grants requested Stone');remains('p0','production roll does not satisfy a trade Need');
+  fresh(s=>{s.phase='robber';const h=s.hexes.find(h=>h.id!==s.robberHex&&h.terrain!=='waste');s.vertices.find(v=>v.hexes.includes(h.id)).building={playerId:'p1',kind:'outpost'};});
+  need('p0',['ore']);const target=g.getState().state.hexes.find(h=>g.getState().state.vertices.some(v=>v.hexes.includes(h.id)&&v.building?.playerId==='p1'));
+  act({type:'moveRobber',hexId:target.id,stealFrom:'p1'});
+  check(g.getState().state.players[0].resources.ore===1,'steal actually receives requested Stone');remains('p0','steal does not satisfy a trade Need');
+  fresh();need('p0',['ore']);
+  const gained=structuredClone(g.getState().state);gained.seq++;gained.players[0].resources.ore++;
+  gained.log=['Other traded 1 wood to Trader for 1 stone.'];g.setState({state:gained});
+  remains('p0','ordinary state gain with trade-looking narration cannot masquerade as settlement');
+ });
+ console.log('ok explicit local settlements: newline bank, direct acceptance and askTable; nonmatching/refused/declined trades and Plenty/ordinary gains preserve Needs');
  // Four seats and two published needs are the worst narrow-card case from desk review6409765942.
  // Keep the protocol/trade/expiry assertions above intact; this adds real rendered geometry coverage.
  const geometryProblems=[],geometry=[];
