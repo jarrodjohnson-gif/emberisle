@@ -59,6 +59,7 @@
     "stronghold-upgrade-prove": "node --import ./server/register.mjs scripts/stronghold-upgrade-prove.mjs",
     "flash-prove": "node scripts/flash-prove.mjs",
     "haptics-prove": "node scripts/haptics-prove.mjs",
+    "haptics-startup-prove": "node scripts/haptics-startup-prove.mjs",
     "orphan-check": "node scripts/orphan-check.mjs",
     "chat-prove": "node scripts/chat-prove.mjs",
     "lobby-layout-prove": "node scripts/lobby-layout-prove.mjs",

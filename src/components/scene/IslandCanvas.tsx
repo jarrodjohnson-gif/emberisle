@@ -15,7 +15,7 @@ export default function IslandCanvas() {
   const ref = useRef<HTMLCanvasElement>(null);
   const [docks, setDocks] = useState<DockTarget[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
-  const [unavailable, setUnavailable] = useState(false);
+  const [fallback, setFallback] = useState<string | null>(null);
   useEffect(() => {
     const canvas = ref.current;
     if (!canvas) return;
@@ -33,8 +33,10 @@ export default function IslandCanvas() {
         (sel) => useGame.getState().setPendingPlace(sel),
       );
     } catch (e) {
-      console.error("WebGL creation failed; 3D view unavailable:", e);
-      setUnavailable(true);
+      const msg = e instanceof Error ? e.message : String(e);
+      const isWebGL = Boolean(e && typeof e === "object" && (e as { isWebGL?: boolean }).isWebGL) || /webgl/i.test(msg);
+      console.error(isWebGL ? "WebGL creation failed; 3D view unavailable:" : "Renderer init failed; 3D view failed to start:", e);
+      setFallback((current) => current ?? (isWebGL ? "3D view unavailable" : "3D view failed to start"));
       return;
     }
     renderer.onDocks = setDocks;
@@ -57,7 +59,7 @@ export default function IslandCanvas() {
       failed = true;
       unsub();
       console.error("Renderer sync failed; 3D view unavailable:", e);
-      setUnavailable(true);
+      setFallback("3D view unavailable");
       renderer.dispose();
     };
 
@@ -112,15 +114,15 @@ export default function IslandCanvas() {
     });
     return () => {
       unsub();
-      renderer.dispose();
+      if (!failed) renderer.dispose();
     };
   }, []);
 
   return <>
     <canvas ref={ref} className="absolute inset-0 h-full w-full" />
-    {unavailable && (
-      <div data-testid="canvas-fallback" className="absolute inset-0 flex items-center justify-center p-6 text-center select-none pointer-events-none">
-        <p className="text-sm text-muted">3D view unavailable</p>
+    {fallback && (
+      <div data-testid="canvas-fallback" className="absolute inset-0 flex items-center justify-center bg-bg p-6 text-center select-none pointer-events-none">
+        <p className="text-sm text-muted">{fallback}</p>
       </div>
     )}
     {docks.length > 0 && <LazyBoundary retryKey={selected ?? ""} failed={null}><DockInspection docks={docks} selected={selected} setSelected={setSelected} /></LazyBoundary>}
