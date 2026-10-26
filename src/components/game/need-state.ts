@@ -12,9 +12,8 @@ useGame.subscribe((next, previous) => {
     return;
   }
   if (a === b) return;
-  // Only local full-hand games use this path. The canonical public log identifies trade settlement, not rolls or thefts.
-  const last = b.log.at(-1) ?? '';
-  const traded = b.seq > a.seq && /^.+ traded .+ to .+ for \d+ (wood|brick|sheep|wheat|stone)(, \d+ (wood|brick|sheep|wheat|stone))*\.$/.test(last);
+  // The store marks only successful local settlements, atomically with their state; public narration is never authoritative.
+  const traded = b.seq > a.seq && next.localTrade !== previous.localTrade;
   const needs = Object.fromEntries(Object.entries(useLocalNeeds.getState()).flatMap(([player, need]) => {
     const updated = advanceNeed(need, player, a, b, traded);
     return updated ? [[player, updated]] : [];
