@@ -13,7 +13,7 @@ Jarrod pastes: `Run the Emberisle review desk. Read docs/DESK.md.`
 
 ## Keep it cheap
 
-- **Start fresh** when the chat gets long. Update #916 first, then start a new session with the line above. Starting fresh is cheaper than a huge context on every wake-up.
+- **Restart once a day, or when context passes about 150K tokens**, after rewriting the #916 body. Update #916 first, then start a new session with the line above (`Run the Emberisle review desk. Read docs/DESK.md.`). Starting fresh is cheaper than a huge context on every wake-up.
 - **Edit #916, don't comment on it.** Update it at the end of every round.
 - **Mark every post you write** with `<!-- review-desk -->`, so the inbox doesn't wake you for it.
 - **Ignore echoes:** subscription notices, your own reviews coming back, and merge confirmations. Also ignore red `browser-a` or `checks` results from a CI run that a newer push cancelled.
@@ -47,22 +47,27 @@ These rules survive a context summary, so re-read them at the start of every des
 
 ## Who reviews
 
-A different model from the builder. Sonnet by default, and never the builder's own model. Opus for server, protocol, CI or security work, and whenever Sonnet built it. Haiku for docs-only changes. A builder with several open PRs lists them in priority order in a `To desk:` comment on #854. The desk reviews in that order, one at a time.
+A different model from the builder.
+- **Reviewers:** Sonnet by default. Opus only for `tier:1` (server, protocol, CI, security). Haiku for docs-only changes. Fable or Astra only on Jarrod's request.
+- **Taste:** Visual and audio taste goes to Jarrod, not to a model.
+- **Order:** A builder with several open PRs lists them in priority order in a `To desk:` comment on #854 (or the PR body). The desk reviews in that order, one at a time.
+- **Review footer:** Each review comment ends with `Reviewer: <model> · Builder: <model> · Head: <sha>`.
 
 ## When to merge
 
 Squash, with the full 40-character head SHA, only when all of these hold:
 - the review is clean, and its findings are fixed;
-- CI is green on that head: `checks` shows **success**, not skipped or grey. A draft skips it, and a skipped required check counts as passing, so never merge on a skipped `checks`;
+- CI is green on that head: `checks` shows **success**, not skipped or grey. Never merge while `checks` is pending, even though the owner account can bypass the ruleset. A draft skips it, and a skipped required check counts as passing, so never merge on a skipped `checks`;
 - there is no conflict and the PR isn't a draft;
 - Jarrod has seen the screenshots of any visual change.
 
+After a merge: unsubscribe from the PR, so its merge notices don't wake the desk.
 Then set the issue to `status:in-review`. `issue_write` replaces every label, so pass the full label list.
 
 ## Weekly
 
-- **Monday, post a hub digest** on #854: one comment, headed `Hub digest, <date>`, listing the standing directions that still apply, and replace the "Directions" bullet in #854's body with a pointer to it. Agents read #854's body, then only the comments after the newest digest. Don't open a new hub issue: the inbox workflow is wired to #854.
-- **Batch the `Decide:` issues** (`docs/FRAMEWORK.md` section 10) and apply them in one docs PR.
+- **Monday, post a hub digest** on #854: a Haiku subagent drafts the Hub digest and the desk checks it. One comment, headed `Hub digest, <date>`, listing the standing directions that still apply, and replace the "Directions" bullet in #854's body with a pointer to it. Agents read #854's body, then only the comments after the newest digest. Don't open a new hub issue: the inbox workflow is wired to #854.
+- **Rule documents change only in that Monday batch**, apart from logging an owner decision. Batch the `Decide:` issues (`docs/FRAMEWORK.md` section 10) and apply them in that Monday docs PR.
 - **Add any new flaky proof to `.github/flaky.json`** the day it is seen on `main`, with its log line. Red on `main` is a flake until shown otherwise. Red on a PR after one re-run is real. A run marked cancelled is not a result.
 
 ## Always
