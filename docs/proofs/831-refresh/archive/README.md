@@ -50,7 +50,8 @@ Temporary extraction is sufficient for verification and does not modify the chec
 
 | Record | Original path inside archive |
 | --- | --- |
-| First source B failure; `__emberisle` undefined; correlation unproved | `docs/proofs/831-refresh/codex-p-2026-10-26-option-b/b-fail-first.log.gz` |
+| Intentional B-proof failure against old A; route tabs remain | `docs/proofs/831-refresh/codex-p-2026-10-26-option-b/b-fail-first.log.gz` |
+| First source B runtime failure; `__emberisle` undefined; correlation unproved | `docs/proofs/831-refresh/codex-p-2026-10-26-option-b/b-runtime-trade-tabs.log.gz` |
 | Frozen client host-down restore failure after IslandCanvas import failure | `docs/proofs/831-refresh/codex-p-2026-10-26-option-b/frozen/client.log.gz` |
 | Passive candidate PASS; no cause established | `docs/proofs/831-refresh/codex-p-2026-10-26-option-b/diagnostics/p883-candidate-client-diagnostic.log.gz` |
 | Passive main PASS; no cause established | `docs/proofs/831-refresh/codex-p-2026-10-26-option-b/diagnostics/p883-main-client-control.log.gz` |
