@@ -56,6 +56,7 @@
     "upgrade-prove": "node --import ./server/register.mjs scripts/upgrade-prove.mjs",
     "keyboard-place-prove": "node scripts/keyboard-place-prove.mjs",
     "placement-glow-prove": "node scripts/placement-glow-prove.mjs",
+    "stronghold-upgrade-prove": "node --import ./server/register.mjs scripts/stronghold-upgrade-prove.mjs",
     "flash-prove": "node scripts/flash-prove.mjs",
     "haptics-prove": "node scripts/haptics-prove.mjs",
     "orphan-check": "node scripts/orphan-check.mjs",
