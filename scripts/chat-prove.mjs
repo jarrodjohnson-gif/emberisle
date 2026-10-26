@@ -524,7 +524,7 @@ try {
       const leave = [...row.querySelectorAll("button")].some((b) => b.textContent.trim() === "Leave the table");
       return { gap: Math.round((scroller.getBoundingClientRect().bottom - 1 - rb) * 10) / 10, below, leave };
     });
-    check(Math.abs(m.gap - 8) <= 0.1 && m.below.length === 0 && m.leave, `phone lobby 390x${h}, 4 seats scrolled down: footer keeps the approved 8 px bottom padding (gap ${m.gap}), nothing below it, Leave inside it`);
+    check(Math.abs(m.gap - 12) <= 0.1 && m.below.length === 0 && m.leave, `phone lobby 390x${h}, 4 seats scrolled down: footer keeps the approved 12 px bottom padding (gap ${m.gap}), nothing below it, Leave inside it`);
   }
   await phone.page.setViewportSize({ width: 390, height: 844 });
   await phone.page.evaluate(() => { document.querySelector('[data-testid="lobby-card"] > div').scrollTop = 0; });

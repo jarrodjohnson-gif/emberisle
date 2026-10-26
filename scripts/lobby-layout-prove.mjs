@@ -87,14 +87,17 @@ async function clearOfName(page, kind) {
   const bounds = await bubble.evaluate(el => {
     const seat = el.closest("li");
     const name = seat.querySelector('[data-testid="lobby-name"]');
+    const st = seat.querySelector(".lobby-player-status").getBoundingClientRect();
     const b = el.getBoundingClientRect();
     const n = name.getBoundingClientRect();
     const s = seat.getBoundingClientRect();
     return {
       clear: b.right <= n.left || b.left >= n.right || b.bottom <= n.top || b.top >= n.bottom,
+      clearStatus: b.right <= st.left || b.left >= st.right || b.bottom <= st.top || b.top >= st.bottom,
       inside: b.left >= s.left && b.right <= s.right && b.top >= s.top && b.bottom <= s.bottom,
     };
   });
+  assert.ok(bounds.clearStatus, `${kind}: bubble clear of the seat status`);
   assert.ok(bounds.clear && bounds.inside, `${kind}: whole bubble stays inside its seat and clear of the name`);
 }
 try {
@@ -111,11 +114,12 @@ try {
     await page.getByTestId("add-bot").first().click();
     await page.waitForFunction(() => window.__emberisle.getState().seats.length === 4);
     await page.evaluate(() => document.fonts.ready);
-    for (const label of ["Copy", "Copy link", "Invite", "Rules", "Ready", "Start", "Leave the table"]) {
+    for (const label of ["Copy", "Copy link", "Invite", "Rules", "Ready", "Leave the table"]) {
       assert.equal(await page.getByRole("button", { name: label, exact: true }).count(), 1, label);
     }
     assert.equal(await page.getByRole("tab").count(), 2);
     assert.equal(await page.getByTestId("emoji-row").locator("button").count(), 6);
+    assert.equal(await page.getByRole("button", { name: "Start", exact: true }).count(), 0, "host sees no Start until everyone is ready");
     assert.equal(await guest.getByRole("button", { name: "Start", exact: true }).count(), 0, "guest cannot start");
     assert.equal(await guest.getByRole("radio").count(), 0, "guest cannot change target");
     assert.equal(await guest.getByTestId("remove-bot").count(), 0, "guest cannot remove bots");
@@ -154,6 +158,8 @@ try {
     await page.waitForFunction(() => !!window.__isle);
     await page.screenshot({ path: `${out}/${width}x${height}.png` });
     await guest.getByRole("button", { name: "Ready", exact: true }).click();
+    await page.getByRole("button", { name: "Start", exact: true }).waitFor();
+    await geometry(page, minimum);
     await page.getByRole("button", { name: "Start", exact: true }).click();
     await page.waitForFunction(() => window.__emberisle.getState().screen === "play");
     await guest.waitForFunction(() => window.__emberisle.getState().screen === "play");
