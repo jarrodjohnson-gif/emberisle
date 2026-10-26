@@ -120,7 +120,7 @@ export function TradePanel() {
         </header>
 
         {mode !== "hotseat" ? <div className="trade-tabs" role="tablist" aria-label="Trade route">
-          {(["table", "bank"] as const).map((tab, index) => <button key={tab} id={`trade-tab-${tab}`} role="tab" aria-selected={route === tab} aria-controls={`trade-route-${tab}`} tabIndex={route === tab ? 0 : -1}
+          {(["table", "bank"] as const).map((tab, index) => <button key={tab} id={`trade-tab-${tab}`} role="tab" aria-selected={route === tab} aria-controls="trade-route" tabIndex={route === tab ? 0 : -1}
             onClick={() => setRoute(tab)} onKeyDown={(e) => {
               if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key)) return;
               e.preventDefault();
@@ -130,7 +130,7 @@ export function TradePanel() {
             }}>{tab === "table" ? "Table" : "Bank & docks"}</button>)}
         </div> : null}
 
-        <div className="trade-composer-scroll" id={`trade-route-${bankRoute ? "bank" : "table"}`} role={mode === "hotseat" ? undefined : "tabpanel"} aria-labelledby={mode === "hotseat" ? undefined : `trade-tab-${route}`} tabIndex={0}>
+        <div className="trade-composer-scroll" id="trade-route" role={mode === "hotseat" ? undefined : "tabpanel"} aria-labelledby={mode === "hotseat" ? undefined : `trade-tab-${route}`} tabIndex={0}>
           <LazyBoundary failed={<p role="alert">Trade choices could not load. Close and reopen to retry.</p>}>
           {bankRoute ? <BankTradePicker state={state} player={me} give={g} want={w} onGive={setBankGive} onWant={setBankWant} /> : <>
           <p className="trade-instructions">Tap a good to add it. Mix goods to make an offer to the table.</p>
