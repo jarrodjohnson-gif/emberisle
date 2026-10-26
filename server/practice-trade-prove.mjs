@@ -7,6 +7,9 @@
 //   D. A bot asks and the person stays silent: it closes at 20 s and the bot plays on.
 //   E. The person's offer closes when their turn ends, and its bots' answers never land.
 //   F. Leaving for the Title, or starting a new practice game, drops an open offer, and its bots' answers never land.
+//   H. A bot asks and another bot wants it: with the person silent, that bot's Yes waits until 8 s (#850).
+//   I. The same ask, and the person's Yes at 5 s takes it before the bot that wanted it (#850).
+//   J. The same ask, and the person's No at 3 s lets the waiting bot take it at once (#850).
 import { mock } from "node:test";
 import { chooseBotAction, chooseTradeAsk, shouldAcceptTrade } from "../src/lib/game/ai.ts";
 import { createGame } from "../src/lib/game/board.ts";
@@ -87,7 +90,7 @@ if (s().offer) fail("B: the offer is still open after p2's Yes");
 if (hand("p0").grain !== 0 || hand("p0").wool !== 1 || hand("p2").grain !== 3 || hand("p2").wool !== 1) fail("B: the goods did not move", [hand("p0"), hand("p2")]);
 const p2 = names(["p2"])[0];
 if (s().tradeOutcome !== `${p2} takes it.`) fail("B: the asker's outcome", s().tradeOutcome);
-if (!logHas(`Ember gains 1 wool; Ember loses 1 grain; ${p2} gains 1 grain; ${p2} loses 1 wool — table trade.`)) fail("B: no accept line in the log", s().gameLog);
+if (!logHas(`Ember traded 1 wheat to ${p2} for 1 sheep.`)) fail("B: no accept line in the log", s().gameLog);
 console.log(`B ok: ${p2} takes the ask that helps it, 1-2 s after it`);
 
 // C: p2 has the turn and lacks one grain; Ember holds a grain, p1 and p3 hold none.
@@ -195,6 +198,39 @@ useGame.setState({ state: changed, offer: null, declined: [] });
 s().runBots();
 if (!s().offer || JSON.stringify({ give: s().offer.give, want: s().offer.want }) !== JSON.stringify(useful)) fail("G: changed useful proposal did not open", s().offer);
 console.log("G ok: an all-declined proposal stays suppressed on the next turn with the same hand and after a hand-only change; a changed proposal opens");
+
+// H, I, J: p2 asks 1 ore for 1 grain. p3, one ore short of a stronghold with grain to spare, wants it; p1 cannot pay.
+const gH = game("p2", { p0: { grain: 1, clay: 1 }, p1: { clay: 1 }, p2: { grain: 2, ore: 3 }, p3: { grain: 4, ore: 1 } }, 11);
+const askH = chooseTradeAsk(gH, "p2");
+if (!askH || !shouldAcceptTrade(gH, "p3", { from: "p2", ...askH }) || shouldAcceptTrade(gH, "p1", { from: "p2", ...askH })) fail("H: hands do not give an ask only p3 takes", askH);
+const p3 = names(["p3"])[0];
+const askedH = () => {
+  practice(structuredClone(gH));
+  s().runBots();
+  if (s().offer?.from !== "p2") fail("H: the bot did not ask", s().offer);
+};
+
+askedH();
+mock.timers.tick(2000);
+if (JSON.stringify(s().declined) !== JSON.stringify(["p1"])) fail("H: p1's No did not show by 2 s", s().declined);
+mock.timers.tick(5999);
+if (!s().offer || hand("p3").ore !== 1) fail("H: a bot's Yes landed before 8 s while the person had not answered");
+mock.timers.tick(1);
+if (s().offer || s().tradeTaker !== "p3" || hand("p3").ore !== 2) fail("H: p3's held Yes did not land at 8 s", { offer: s().offer, taker: s().tradeTaker });
+console.log(`H ok: ${p3}'s Yes waits for the person until 8 s, then takes it`);
+
+askedH();
+mock.timers.tick(5000);
+s().answerTrade(true);
+if (s().offer || s().tradeTaker !== "p0" || hand("p0").grain !== 0 || hand("p3").ore !== 1) fail("I: the person's Yes at 5 s did not beat the bot", { taker: s().tradeTaker, error: s().error });
+console.log(`I ok: the person's Yes at 5 s takes the ask ${p3} wanted`);
+
+askedH();
+mock.timers.tick(3000);
+if (!s().offer) fail("J: the offer closed before the person answered");
+s().answerTrade(false);
+if (s().offer || s().tradeTaker !== "p3" || hand("p3").ore !== 2) fail("J: the bot's held Yes did not land at once after the person's No", { taker: s().tradeTaker });
+console.log(`J ok: the person's No at 3 s lets ${p3} take it at once`);
 
 mock.timers.reset();
 console.log("practice trade prove ok");

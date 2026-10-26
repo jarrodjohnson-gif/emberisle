@@ -1,0 +1,46 @@
+
+> banner-stable-prove
+> node scripts/banner-stable-prove.mjs
+
+ok   1280x720 motion: turn banner box unchanged when the status line appears {"cleared":{"x":12,"y":18,"w":233.515625,"h":32,"over":false},"shown":{"x":12,"y":18,"w":233.515625,"h":32,"over":false,"pillLeft":280,"pillRight":1000}}
+ok   1280x720 motion: turn banner box unchanged when the status line clears {"shown":{"x":12,"y":18,"w":233.515625,"h":32,"over":false,"pillLeft":280,"pillRight":1000},"clearedAgain":{"x":12,"y":18,"w":233.515625,"h":32,"over":false}}
+ok   1280x720 motion: the status line covers neither the turn banner nor the hand {"x":12,"y":18,"w":233.515625,"h":32,"over":false,"pillLeft":280,"pillRight":1000}
+ok   1280x720 motion: the status line stays inside the safe area {"left":280,"right":1000,"safeRight":1280}
+ok   1280x720 reduced motion: turn banner box unchanged when the status line appears {"cleared":{"x":12,"y":18,"w":233.515625,"h":32,"over":false},"shown":{"x":12,"y":18,"w":233.515625,"h":32,"over":false,"pillLeft":280,"pillRight":1000}}
+ok   1280x720 reduced motion: turn banner box unchanged when the status line clears {"shown":{"x":12,"y":18,"w":233.515625,"h":32,"over":false,"pillLeft":280,"pillRight":1000},"clearedAgain":{"x":12,"y":18,"w":233.515625,"h":32,"over":false}}
+ok   1280x720 reduced motion: the status line covers neither the turn banner nor the hand {"x":12,"y":18,"w":233.515625,"h":32,"over":false,"pillLeft":280,"pillRight":1000}
+ok   1280x720 reduced motion: the status line stays inside the safe area {"left":280,"right":1000,"safeRight":1280}
+ok   390x844 motion: turn banner box unchanged when the status line appears {"cleared":{"x":12,"y":582,"w":366,"h":32,"over":false},"shown":{"x":12,"y":582,"w":366,"h":32,"over":false,"pillLeft":12,"pillRight":378}}
+ok   390x844 motion: turn banner box unchanged when the status line clears {"shown":{"x":12,"y":582,"w":366,"h":32,"over":false,"pillLeft":12,"pillRight":378},"clearedAgain":{"x":12,"y":582,"w":366,"h":32,"over":false}}
+ok   390x844 motion: the status line covers neither the turn banner nor the hand {"x":12,"y":582,"w":366,"h":32,"over":false,"pillLeft":12,"pillRight":378}
+ok   390x844 motion: the status line stays inside the safe area {"left":12,"right":378,"safeRight":390}
+ok   390x844 reduced motion: turn banner box unchanged when the status line appears {"cleared":{"x":12,"y":582,"w":366,"h":32,"over":false},"shown":{"x":12,"y":582,"w":366,"h":32,"over":false,"pillLeft":12,"pillRight":378}}
+ok   390x844 reduced motion: turn banner box unchanged when the status line clears {"shown":{"x":12,"y":582,"w":366,"h":32,"over":false,"pillLeft":12,"pillRight":378},"clearedAgain":{"x":12,"y":582,"w":366,"h":32,"over":false}}
+ok   390x844 reduced motion: the status line covers neither the turn banner nor the hand {"x":12,"y":582,"w":366,"h":32,"over":false,"pillLeft":12,"pillRight":378}
+ok   390x844 reduced motion: the status line stays inside the safe area {"left":12,"right":378,"safeRight":390}
+ok   844x390 motion: turn banner box unchanged when the status line appears {"cleared":{"x":12,"y":146,"w":260,"h":32,"over":false},"shown":{"x":12,"y":146,"w":260,"h":32,"over":false,"pillLeft":284,"pillRight":740.453125}}
+ok   844x390 motion: turn banner box unchanged when the status line clears {"shown":{"x":12,"y":146,"w":260,"h":32,"over":false,"pillLeft":284,"pillRight":740.453125},"clearedAgain":{"x":12,"y":146,"w":260,"h":32,"over":false}}
+ok   844x390 motion: the status line covers neither the turn banner nor the hand {"x":12,"y":146,"w":260,"h":32,"over":false,"pillLeft":284,"pillRight":740.453125}
+ok   844x390 motion: the status line stays inside the safe area {"left":284,"right":740.453125,"safeRight":844}
+ok   844x390 reduced motion: turn banner box unchanged when the status line appears {"cleared":{"x":12,"y":146,"w":260,"h":32,"over":false},"shown":{"x":12,"y":146,"w":260,"h":32,"over":false,"pillLeft":284,"pillRight":740.453125}}
+ok   844x390 reduced motion: turn banner box unchanged when the status line clears {"shown":{"x":12,"y":146,"w":260,"h":32,"over":false,"pillLeft":284,"pillRight":740.453125},"clearedAgain":{"x":12,"y":146,"w":260,"h":32,"over":false}}
+ok   844x390 reduced motion: the status line covers neither the turn banner nor the hand {"x":12,"y":146,"w":260,"h":32,"over":false,"pillLeft":284,"pillRight":740.453125}
+ok   844x390 reduced motion: the status line stays inside the safe area {"left":284,"right":740.453125,"safeRight":844}
+ok   667x375 motion: turn banner box unchanged when the status line appears {"cleared":{"x":12,"y":131,"w":260,"h":32,"over":false},"shown":{"x":12,"y":131,"w":260,"h":32,"over":false,"pillLeft":284,"pillRight":583}}
+ok   667x375 motion: turn banner box unchanged when the status line clears {"shown":{"x":12,"y":131,"w":260,"h":32,"over":false,"pillLeft":284,"pillRight":583},"clearedAgain":{"x":12,"y":131,"w":260,"h":32,"over":false}}
+ok   667x375 motion: the status line covers neither the turn banner nor the hand {"x":12,"y":131,"w":260,"h":32,"over":false,"pillLeft":284,"pillRight":583}
+ok   667x375 motion: the status line stays inside the safe area {"left":284,"right":583,"safeRight":667}
+ok   667x375 reduced motion: turn banner box unchanged when the status line appears {"cleared":{"x":12,"y":131,"w":260,"h":32,"over":false},"shown":{"x":12,"y":131,"w":260,"h":32,"over":false,"pillLeft":284,"pillRight":583}}
+ok   667x375 reduced motion: turn banner box unchanged when the status line clears {"shown":{"x":12,"y":131,"w":260,"h":32,"over":false,"pillLeft":284,"pillRight":583},"clearedAgain":{"x":12,"y":131,"w":260,"h":32,"over":false}}
+ok   667x375 reduced motion: the status line covers neither the turn banner nor the hand {"x":12,"y":131,"w":260,"h":32,"over":false,"pillLeft":284,"pillRight":583}
+ok   667x375 reduced motion: the status line stays inside the safe area {"left":284,"right":583,"safeRight":667}
+ok   667x375 notched motion: turn banner box unchanged when the status line appears {"cleared":{"x":44,"y":122,"w":260,"h":32,"over":false},"shown":{"x":44,"y":122,"w":260,"h":32,"over":false,"pillLeft":316,"pillRight":551}}
+ok   667x375 notched motion: turn banner box unchanged when the status line clears {"shown":{"x":44,"y":122,"w":260,"h":32,"over":false,"pillLeft":316,"pillRight":551},"clearedAgain":{"x":44,"y":122,"w":260,"h":32,"over":false}}
+ok   667x375 notched motion: the status line covers neither the turn banner nor the hand {"x":44,"y":122,"w":260,"h":32,"over":false,"pillLeft":316,"pillRight":551}
+ok   667x375 notched motion: the status line stays inside the safe area {"left":316,"right":551,"safeRight":623}
+ok   667x375 notched reduced motion: turn banner box unchanged when the status line appears {"cleared":{"x":44,"y":122,"w":260,"h":32,"over":false},"shown":{"x":44,"y":122,"w":260,"h":32,"over":false,"pillLeft":316,"pillRight":551}}
+ok   667x375 notched reduced motion: turn banner box unchanged when the status line clears {"shown":{"x":44,"y":122,"w":260,"h":32,"over":false,"pillLeft":316,"pillRight":551},"clearedAgain":{"x":44,"y":122,"w":260,"h":32,"over":false}}
+ok   667x375 notched reduced motion: the status line covers neither the turn banner nor the hand {"x":44,"y":122,"w":260,"h":32,"over":false,"pillLeft":316,"pillRight":551}
+ok   667x375 notched reduced motion: the status line stays inside the safe area {"left":316,"right":551,"safeRight":623}
+ok   zero console errors []
+banner-stable-prove: ok

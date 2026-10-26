@@ -1,0 +1,132 @@
+{
+  "tag": "1280x720",
+  "matches": [
+    {
+      "turn": {
+        "text": "Your turn",
+        "at": 38424.09999999404,
+        "gone": 40925.69999998808
+      },
+      "tab": {
+        "text": "+2",
+        "resource": "wool",
+        "delta": 2,
+        "at": 40537,
+        "gone": 40925.69999998808
+      },
+      "pairCount": 6,
+      "firstPair": {
+        "turn": {
+          "t": 40607.90000000596,
+          "o": 1,
+          "tf": "none",
+          "box": {
+            "x": 488.875,
+            "y": 516.5,
+            "width": 206.25,
+            "height": 67,
+            "top": 516.5,
+            "right": 695.125,
+            "bottom": 583.5,
+            "left": 488.875
+          },
+          "frameId": 1775,
+          "placement": {
+            "stage": "centre",
+            "shift": 0,
+            "area": {
+              "x": 216,
+              "y": 406,
+              "width": 752,
+              "height": 288,
+              "top": 406,
+              "right": 968,
+              "bottom": 694,
+              "left": 216
+            },
+            "hole": {
+              "top": "406px",
+              "right": "312px",
+              "bottom": "26px",
+              "left": "216px"
+            }
+          }
+        },
+        "tab": {
+          "t": 40590.90000000596,
+          "o": 0,
+          "tf": "matrix(1, 0, 0, 1, 0, 0)",
+          "box": {
+            "x": 623,
+            "y": 530,
+            "width": 34,
+            "height": 22,
+            "top": 530,
+            "right": 657,
+            "bottom": 552,
+            "left": 623
+          },
+          "frameId": 1773
+        },
+        "deltaMs": 17,
+        "sameFrame": false
+      },
+      "sameFramePair": {
+        "turn": {
+          "t": 40607.90000000596,
+          "o": 1,
+          "tf": "none",
+          "box": {
+            "x": 488.875,
+            "y": 516.5,
+            "width": 206.25,
+            "height": 67,
+            "top": 516.5,
+            "right": 695.125,
+            "bottom": 583.5,
+            "left": 488.875
+          },
+          "frameId": 1775,
+          "placement": {
+            "stage": "centre",
+            "shift": 0,
+            "area": {
+              "x": 216,
+              "y": 406,
+              "width": 752,
+              "height": 288,
+              "top": 406,
+              "right": 968,
+              "bottom": 694,
+              "left": 216
+            },
+            "hole": {
+              "top": "406px",
+              "right": "312px",
+              "bottom": "26px",
+              "left": "216px"
+            }
+          }
+        },
+        "tab": {
+          "t": 40607.90000000596,
+          "o": 0.926767,
+          "tf": "matrix(1, 0, 0, 1, 0, -3.70707)",
+          "box": {
+            "x": 623,
+            "y": 526.2929077148438,
+            "width": 34,
+            "height": 22,
+            "top": 526.2929077148438,
+            "right": 657,
+            "bottom": 548.2929077148438,
+            "left": 623
+          },
+          "frameId": 1775
+        },
+        "deltaMs": 0,
+        "sameFrame": true
+      }
+    }
+  ]
+}

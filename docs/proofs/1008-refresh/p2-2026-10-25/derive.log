@@ -1,0 +1,30 @@
+
+> profile-derive-error-prove
+> node server/profile-derive-error-prove.mjs
+
+profiles: hash failed: injected throw derivation failure
+ok throw: a verification error returns the ordinary failure
+ok throw: the selected error ran without a replacement native derivation
+ok throw: its reservation is durably charged exactly once
+ok throw: no verifier or device credential changes
+profiles: hash failed: injected callback derivation failure
+ok callback: a verification error returns the ordinary failure
+ok callback: the selected error ran without a replacement native derivation
+ok callback: its reservation is durably charged exactly once
+ok callback: no verifier or device credential changes
+ok normal sign-in progresses after both verification error paths
+ok successful recovery preserves both charged failures
+ok throw: correct legacy PIN still signs in when its upgrade fails
+ok throw: real legacy verification precedes the injected upgrade error
+ok throw: the old verifier remains byte-for-byte intact
+ok throw: optional upgrade failure does not charge or reset the budget
+ok callback: correct legacy PIN still signs in when its upgrade fails
+ok callback: real legacy verification precedes the injected upgrade error
+ok callback: the old verifier remains byte-for-byte intact
+ok callback: optional upgrade failure does not charge or reset the budget
+ok a later successful upgrade installs accepted parameters
+ok the upgraded verifier still verifies the same correct PIN
+ok successful upgrade preserves the failure budget
+ok all five legitimately issued credentials remain usable
+ok all four selected errors were exercised and the store stays ready
+profile-derive-error-prove: 23 checks passed; 6 native async derivations, 4 injected errors

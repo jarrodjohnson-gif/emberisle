@@ -1,0 +1,7723 @@
+{
+  "baseline": "51cbe38",
+  "method": "Visible/intersecting DOM text nodes and control boxes; all enabled/disabled native buttons, role=button, inputs and selects. Center occlusion recorded but not used to suppress visible DOM nodes. Duplicate counts deduped by viewport+selector+text+font. Clipping is a candidate requiring visual review, including intentionally scrollable/ellipsized elements.",
+  "summary": [
+    {
+      "viewport": "390x844",
+      "snapshots": 23,
+      "distinctSmallTextBySelectorTextFont": 45,
+      "smallFontSizes": [
+        9,
+        10,
+        11
+      ],
+      "distinctSmallTargets": 0
+    },
+    {
+      "viewport": "844x390",
+      "snapshots": 23,
+      "distinctSmallTextBySelectorTextFont": 61,
+      "smallFontSizes": [
+        9,
+        10,
+        10.5,
+        11
+      ],
+      "distinctSmallTargets": 1
+    },
+    {
+      "viewport": "1280x720",
+      "snapshots": 23,
+      "distinctSmallTextBySelectorTextFont": 40,
+      "smallFontSizes": [
+        9,
+        10,
+        11
+      ],
+      "distinctSmallTargets": 5
+    }
+  ],
+  "snapshots": [
+    {
+      "viewport": "1280x720",
+      "state": "coach",
+      "file": "current/1280x720-coach.json",
+      "smallText": 0,
+      "smallTargets": 0,
+      "clippingCandidates": 0,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "1280x720",
+      "state": "costs",
+      "file": "current/1280x720-costs.json",
+      "smallText": 7,
+      "smallTargets": 0,
+      "clippingCandidates": 0,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "1280x720",
+      "state": "disabled-build",
+      "file": "current/1280x720-disabled-build.json",
+      "smallText": 24,
+      "smallTargets": 0,
+      "clippingCandidates": 0,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "1280x720",
+      "state": "discard",
+      "file": "current/1280x720-discard.json",
+      "smallText": 0,
+      "smallTargets": 5,
+      "clippingCandidates": 0,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "1280x720",
+      "state": "error",
+      "file": "current/1280x720-error.json",
+      "smallText": 7,
+      "smallTargets": 0,
+      "clippingCandidates": 0,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "1280x720",
+      "state": "fortunes",
+      "file": "current/1280x720-fortunes.json",
+      "smallText": 7,
+      "smallTargets": 0,
+      "clippingCandidates": 0,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "1280x720",
+      "state": "help",
+      "file": "current/1280x720-help.json",
+      "smallText": 7,
+      "smallTargets": 0,
+      "clippingCandidates": 0,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "1280x720",
+      "state": "incoming-offer",
+      "file": "current/1280x720-incoming-offer.json",
+      "smallText": 7,
+      "smallTargets": 0,
+      "clippingCandidates": 0,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "1280x720",
+      "state": "main",
+      "file": "current/1280x720-main.json",
+      "smallText": 7,
+      "smallTargets": 0,
+      "clippingCandidates": 0,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "1280x720",
+      "state": "player-menu",
+      "file": "current/1280x720-player-menu.json",
+      "smallText": 7,
+      "smallTargets": 0,
+      "clippingCandidates": 0,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "1280x720",
+      "state": "restoring",
+      "file": "current/1280x720-restoring.json",
+      "smallText": 0,
+      "smallTargets": 0,
+      "clippingCandidates": 0,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "1280x720",
+      "state": "results-look",
+      "file": "current/1280x720-results-look.json",
+      "smallText": 0,
+      "smallTargets": 0,
+      "clippingCandidates": 0,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "1280x720",
+      "state": "results",
+      "file": "current/1280x720-results.json",
+      "smallText": 7,
+      "smallTargets": 0,
+      "clippingCandidates": 0,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "1280x720",
+      "state": "robber",
+      "file": "current/1280x720-robber.json",
+      "smallText": 0,
+      "smallTargets": 0,
+      "clippingCandidates": 0,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "1280x720",
+      "state": "rolloff",
+      "file": "current/1280x720-rolloff.json",
+      "smallText": 0,
+      "smallTargets": 0,
+      "clippingCandidates": 0,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "1280x720",
+      "state": "setup",
+      "file": "current/1280x720-setup.json",
+      "smallText": 0,
+      "smallTargets": 0,
+      "clippingCandidates": 0,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "1280x720",
+      "state": "table-menu",
+      "file": "current/1280x720-table-menu.json",
+      "smallText": 7,
+      "smallTargets": 0,
+      "clippingCandidates": 0,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "1280x720",
+      "state": "trade",
+      "file": "current/1280x720-trade.json",
+      "smallText": 27,
+      "smallTargets": 0,
+      "clippingCandidates": 0,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "1280x720",
+      "state": "victim",
+      "file": "current/1280x720-victim.json",
+      "smallText": 0,
+      "smallTargets": 0,
+      "clippingCandidates": 0,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "390x844",
+      "state": "coach",
+      "file": "current/390x844-coach.json",
+      "smallText": 0,
+      "smallTargets": 0,
+      "clippingCandidates": 0,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "390x844",
+      "state": "costs",
+      "file": "current/390x844-costs.json",
+      "smallText": 12,
+      "smallTargets": 0,
+      "clippingCandidates": 1,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "390x844",
+      "state": "disabled-build",
+      "file": "current/390x844-disabled-build.json",
+      "smallText": 29,
+      "smallTargets": 0,
+      "clippingCandidates": 1,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "390x844",
+      "state": "discard",
+      "file": "current/390x844-discard.json",
+      "smallText": 5,
+      "smallTargets": 0,
+      "clippingCandidates": 1,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "390x844",
+      "state": "error",
+      "file": "current/390x844-error.json",
+      "smallText": 12,
+      "smallTargets": 0,
+      "clippingCandidates": 1,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "390x844",
+      "state": "fortunes",
+      "file": "current/390x844-fortunes.json",
+      "smallText": 12,
+      "smallTargets": 0,
+      "clippingCandidates": 1,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "390x844",
+      "state": "help",
+      "file": "current/390x844-help.json",
+      "smallText": 12,
+      "smallTargets": 0,
+      "clippingCandidates": 1,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "390x844",
+      "state": "incoming-offer",
+      "file": "current/390x844-incoming-offer.json",
+      "smallText": 12,
+      "smallTargets": 0,
+      "clippingCandidates": 0,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "390x844",
+      "state": "main",
+      "file": "current/390x844-main.json",
+      "smallText": 12,
+      "smallTargets": 0,
+      "clippingCandidates": 1,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "390x844",
+      "state": "player-menu",
+      "file": "current/390x844-player-menu.json",
+      "smallText": 12,
+      "smallTargets": 0,
+      "clippingCandidates": 1,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "390x844",
+      "state": "restoring",
+      "file": "current/390x844-restoring.json",
+      "smallText": 0,
+      "smallTargets": 0,
+      "clippingCandidates": 0,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "390x844",
+      "state": "results-look",
+      "file": "current/390x844-results-look.json",
+      "smallText": 5,
+      "smallTargets": 0,
+      "clippingCandidates": 1,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "390x844",
+      "state": "results",
+      "file": "current/390x844-results.json",
+      "smallText": 12,
+      "smallTargets": 0,
+      "clippingCandidates": 6,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "390x844",
+      "state": "robber",
+      "file": "current/390x844-robber.json",
+      "smallText": 5,
+      "smallTargets": 0,
+      "clippingCandidates": 1,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "390x844",
+      "state": "rolloff",
+      "file": "current/390x844-rolloff.json",
+      "smallText": 0,
+      "smallTargets": 0,
+      "clippingCandidates": 0,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "390x844",
+      "state": "setup",
+      "file": "current/390x844-setup.json",
+      "smallText": 0,
+      "smallTargets": 0,
+      "clippingCandidates": 0,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "390x844",
+      "state": "table-menu",
+      "file": "current/390x844-table-menu.json",
+      "smallText": 12,
+      "smallTargets": 0,
+      "clippingCandidates": 1,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "390x844",
+      "state": "trade",
+      "file": "current/390x844-trade.json",
+      "smallText": 32,
+      "smallTargets": 0,
+      "clippingCandidates": 1,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "390x844",
+      "state": "victim",
+      "file": "current/390x844-victim.json",
+      "smallText": 5,
+      "smallTargets": 0,
+      "clippingCandidates": 1,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "844x390",
+      "state": "coach",
+      "file": "current/844x390-coach.json",
+      "smallText": 0,
+      "smallTargets": 0,
+      "clippingCandidates": 1,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "844x390",
+      "state": "costs",
+      "file": "current/844x390-costs.json",
+      "smallText": 11,
+      "smallTargets": 0,
+      "clippingCandidates": 1,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "844x390",
+      "state": "disabled-build",
+      "file": "current/844x390-disabled-build.json",
+      "smallText": 28,
+      "smallTargets": 0,
+      "clippingCandidates": 1,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "844x390",
+      "state": "discard",
+      "file": "current/844x390-discard.json",
+      "smallText": 0,
+      "smallTargets": 0,
+      "clippingCandidates": 3,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "844x390",
+      "state": "error",
+      "file": "current/844x390-error.json",
+      "smallText": 11,
+      "smallTargets": 0,
+      "clippingCandidates": 1,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "844x390",
+      "state": "fortunes",
+      "file": "current/844x390-fortunes.json",
+      "smallText": 11,
+      "smallTargets": 0,
+      "clippingCandidates": 2,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "844x390",
+      "state": "help",
+      "file": "current/844x390-help.json",
+      "smallText": 11,
+      "smallTargets": 0,
+      "clippingCandidates": 2,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "844x390",
+      "state": "incoming-offer",
+      "file": "current/844x390-incoming-offer.json",
+      "smallText": 11,
+      "smallTargets": 0,
+      "clippingCandidates": 0,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "844x390",
+      "state": "main",
+      "file": "current/844x390-main.json",
+      "smallText": 11,
+      "smallTargets": 0,
+      "clippingCandidates": 1,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "844x390",
+      "state": "player-menu",
+      "file": "current/844x390-player-menu.json",
+      "smallText": 11,
+      "smallTargets": 0,
+      "clippingCandidates": 1,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "844x390",
+      "state": "restoring",
+      "file": "current/844x390-restoring.json",
+      "smallText": 0,
+      "smallTargets": 0,
+      "clippingCandidates": 0,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "844x390",
+      "state": "results-look",
+      "file": "current/844x390-results-look.json",
+      "smallText": 0,
+      "smallTargets": 0,
+      "clippingCandidates": 1,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "844x390",
+      "state": "results",
+      "file": "current/844x390-results.json",
+      "smallText": 12,
+      "smallTargets": 0,
+      "clippingCandidates": 1,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "844x390",
+      "state": "robber",
+      "file": "current/844x390-robber.json",
+      "smallText": 0,
+      "smallTargets": 0,
+      "clippingCandidates": 1,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "844x390",
+      "state": "rolloff",
+      "file": "current/844x390-rolloff.json",
+      "smallText": 0,
+      "smallTargets": 0,
+      "clippingCandidates": 1,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "844x390",
+      "state": "setup",
+      "file": "current/844x390-setup.json",
+      "smallText": 0,
+      "smallTargets": 0,
+      "clippingCandidates": 1,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "844x390",
+      "state": "table-menu",
+      "file": "current/844x390-table-menu.json",
+      "smallText": 11,
+      "smallTargets": 0,
+      "clippingCandidates": 2,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "844x390",
+      "state": "trade",
+      "file": "current/844x390-trade.json",
+      "smallText": 43,
+      "smallTargets": 0,
+      "clippingCandidates": 6,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "844x390",
+      "state": "victim",
+      "file": "current/844x390-victim.json",
+      "smallText": 0,
+      "smallTargets": 0,
+      "clippingCandidates": 3,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "1280x720",
+      "state": "hand-rates",
+      "file": "current-supplement/1280x720-hand-rates.json",
+      "smallText": 7,
+      "smallTargets": 0,
+      "clippingCandidates": 0,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "1280x720",
+      "state": "keyboard-place-list",
+      "file": "current-supplement/1280x720-keyboard-place-list.json",
+      "smallText": 6,
+      "smallTargets": 0,
+      "clippingCandidates": 0,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "1280x720",
+      "state": "main-geometry",
+      "file": "current-supplement/1280x720-main-geometry.json",
+      "smallText": 7,
+      "smallTargets": 0,
+      "clippingCandidates": 0,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "1280x720",
+      "state": "own-player-menu",
+      "file": "current-supplement/1280x720-own-player-menu.json",
+      "smallText": 7,
+      "smallTargets": 0,
+      "clippingCandidates": 0,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "390x844",
+      "state": "hand-rates",
+      "file": "current-supplement/390x844-hand-rates.json",
+      "smallText": 12,
+      "smallTargets": 0,
+      "clippingCandidates": 1,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "390x844",
+      "state": "keyboard-place-list",
+      "file": "current-supplement/390x844-keyboard-place-list.json",
+      "smallText": 11,
+      "smallTargets": 0,
+      "clippingCandidates": 1,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "390x844",
+      "state": "main-geometry",
+      "file": "current-supplement/390x844-main-geometry.json",
+      "smallText": 12,
+      "smallTargets": 0,
+      "clippingCandidates": 1,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "390x844",
+      "state": "own-player-menu",
+      "file": "current-supplement/390x844-own-player-menu.json",
+      "smallText": 12,
+      "smallTargets": 0,
+      "clippingCandidates": 1,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "844x390",
+      "state": "hand-rates",
+      "file": "current-supplement/844x390-hand-rates.json",
+      "smallText": 11,
+      "smallTargets": 0,
+      "clippingCandidates": 1,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "844x390",
+      "state": "keyboard-place-list",
+      "file": "current-supplement/844x390-keyboard-place-list.json",
+      "smallText": 10,
+      "smallTargets": 0,
+      "clippingCandidates": 2,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "844x390",
+      "state": "main-geometry",
+      "file": "current-supplement/844x390-main-geometry.json",
+      "smallText": 11,
+      "smallTargets": 0,
+      "clippingCandidates": 1,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    },
+    {
+      "viewport": "844x390",
+      "state": "own-player-menu",
+      "file": "current-supplement/844x390-own-player-menu.json",
+      "smallText": 11,
+      "smallTargets": 1,
+      "clippingCandidates": 1,
+      "settled": {
+        "glide": false,
+        "refitDue": false,
+        "gainFloats": 0,
+        "rollMoments": 0,
+        "turnMoments": 0
+      }
+    }
+  ],
+  "distinctSmallText": [
+    {
+      "selector": "button[data-testid=\"build-path\"] > span:nth-child(1) > span:nth-child(2)",
+      "text": "\u2713",
+      "font": {
+        "size": 10,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "700",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 342.34,
+        "y": 631,
+        "width": 9.23,
+        "height": 12,
+        "right": 351.58,
+        "bottom": 643
+      },
+      "elementRect": {
+        "x": 338.97,
+        "y": 629,
+        "width": 16,
+        "height": 16,
+        "right": 354.97,
+        "bottom": 645
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div:nth-child(1) > div:nth-child(1) > div:nth-child(8)",
+      "states": [
+        "costs",
+        "error",
+        "fortunes",
+        "help",
+        "incoming-offer",
+        "main",
+        "player-menu",
+        "table-menu",
+        "trade",
+        "hand-rates",
+        "main-geometry",
+        "own-player-menu"
+      ],
+      "files": [
+        "current/1280x720-costs.json",
+        "current/1280x720-error.json",
+        "current/1280x720-fortunes.json",
+        "current/1280x720-help.json",
+        "current/1280x720-incoming-offer.json",
+        "current/1280x720-main.json",
+        "current/1280x720-player-menu.json",
+        "current/1280x720-table-menu.json",
+        "current/1280x720-trade.json",
+        "current-supplement/1280x720-hand-rates.json",
+        "current-supplement/1280x720-main-geometry.json",
+        "current-supplement/1280x720-own-player-menu.json"
+      ]
+    },
+    {
+      "selector": "button[data-testid=\"build-outpost\"] > span:nth-child(1) > span:nth-child(2)",
+      "text": "\u2713",
+      "font": {
+        "size": 10,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "700",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 418.33,
+        "y": 631,
+        "width": 9.23,
+        "height": 12,
+        "right": 427.56,
+        "bottom": 643
+      },
+      "elementRect": {
+        "x": 414.95,
+        "y": 629,
+        "width": 16,
+        "height": 16,
+        "right": 430.95,
+        "bottom": 645
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div:nth-child(1) > div:nth-child(1) > div:nth-child(8)",
+      "states": [
+        "costs",
+        "error",
+        "fortunes",
+        "help",
+        "incoming-offer",
+        "main",
+        "player-menu",
+        "table-menu",
+        "trade",
+        "hand-rates",
+        "keyboard-place-list",
+        "main-geometry",
+        "own-player-menu"
+      ],
+      "files": [
+        "current/1280x720-costs.json",
+        "current/1280x720-error.json",
+        "current/1280x720-fortunes.json",
+        "current/1280x720-help.json",
+        "current/1280x720-incoming-offer.json",
+        "current/1280x720-main.json",
+        "current/1280x720-player-menu.json",
+        "current/1280x720-table-menu.json",
+        "current/1280x720-trade.json",
+        "current-supplement/1280x720-hand-rates.json",
+        "current-supplement/1280x720-keyboard-place-list.json",
+        "current-supplement/1280x720-main-geometry.json",
+        "current-supplement/1280x720-own-player-menu.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-stronghold-grain\"] > span:nth-child(2)",
+      "text": "\u2212",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 454.75,
+        "y": 649,
+        "width": 6.09,
+        "height": 11,
+        "right": 460.84,
+        "bottom": 660
+      },
+      "elementRect": {
+        "x": 450.75,
+        "y": 650,
+        "width": 20.19,
+        "height": 10,
+        "right": 470.94,
+        "bottom": 660
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div:nth-child(1) > div:nth-child(1) > div:nth-child(8)",
+      "states": [
+        "costs",
+        "disabled-build",
+        "error",
+        "fortunes",
+        "help",
+        "incoming-offer",
+        "main",
+        "player-menu",
+        "table-menu",
+        "trade",
+        "hand-rates",
+        "keyboard-place-list",
+        "main-geometry",
+        "own-player-menu"
+      ],
+      "files": [
+        "current/1280x720-costs.json",
+        "current/1280x720-disabled-build.json",
+        "current/1280x720-error.json",
+        "current/1280x720-fortunes.json",
+        "current/1280x720-help.json",
+        "current/1280x720-incoming-offer.json",
+        "current/1280x720-main.json",
+        "current/1280x720-player-menu.json",
+        "current/1280x720-table-menu.json",
+        "current/1280x720-trade.json",
+        "current-supplement/1280x720-hand-rates.json",
+        "current-supplement/1280x720-keyboard-place-list.json",
+        "current-supplement/1280x720-main-geometry.json",
+        "current-supplement/1280x720-own-player-menu.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-stronghold-grain\"] > span:nth-child(2)",
+      "text": "2",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 460.84,
+        "y": 649,
+        "width": 6.09,
+        "height": 11,
+        "right": 466.94,
+        "bottom": 660
+      },
+      "elementRect": {
+        "x": 450.75,
+        "y": 650,
+        "width": 20.19,
+        "height": 10,
+        "right": 470.94,
+        "bottom": 660
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div:nth-child(1) > div:nth-child(1) > div:nth-child(8)",
+      "states": [
+        "costs",
+        "error",
+        "fortunes",
+        "help",
+        "incoming-offer",
+        "main",
+        "player-menu",
+        "table-menu",
+        "trade",
+        "hand-rates",
+        "keyboard-place-list",
+        "main-geometry",
+        "own-player-menu"
+      ],
+      "files": [
+        "current/1280x720-costs.json",
+        "current/1280x720-error.json",
+        "current/1280x720-fortunes.json",
+        "current/1280x720-help.json",
+        "current/1280x720-incoming-offer.json",
+        "current/1280x720-main.json",
+        "current/1280x720-player-menu.json",
+        "current/1280x720-table-menu.json",
+        "current/1280x720-trade.json",
+        "current-supplement/1280x720-hand-rates.json",
+        "current-supplement/1280x720-keyboard-place-list.json",
+        "current-supplement/1280x720-main-geometry.json",
+        "current-supplement/1280x720-own-player-menu.json"
+      ]
+    },
+    {
+      "selector": "button[data-testid=\"build-card\"] > span:nth-child(1) > span:nth-child(2)",
+      "text": "\u2713",
+      "font": {
+        "size": 10,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "700",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 570.3,
+        "y": 631,
+        "width": 9.23,
+        "height": 12,
+        "right": 579.53,
+        "bottom": 643
+      },
+      "elementRect": {
+        "x": 566.92,
+        "y": 629,
+        "width": 16,
+        "height": 16,
+        "right": 582.92,
+        "bottom": 645
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div:nth-child(1) > div:nth-child(1) > div:nth-child(8)",
+      "states": [
+        "costs",
+        "error",
+        "fortunes",
+        "help",
+        "incoming-offer",
+        "main",
+        "player-menu",
+        "table-menu",
+        "trade",
+        "hand-rates",
+        "keyboard-place-list",
+        "main-geometry",
+        "own-player-menu"
+      ],
+      "files": [
+        "current/1280x720-costs.json",
+        "current/1280x720-error.json",
+        "current/1280x720-fortunes.json",
+        "current/1280x720-help.json",
+        "current/1280x720-incoming-offer.json",
+        "current/1280x720-main.json",
+        "current/1280x720-player-menu.json",
+        "current/1280x720-table-menu.json",
+        "current/1280x720-trade.json",
+        "current-supplement/1280x720-hand-rates.json",
+        "current-supplement/1280x720-keyboard-place-list.json",
+        "current-supplement/1280x720-main-geometry.json",
+        "current-supplement/1280x720-own-player-menu.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"deck-left\"]",
+      "text": "17",
+      "font": {
+        "size": 10,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 531.67,
+        "y": 664,
+        "width": 13.11,
+        "height": 12,
+        "right": 544.78,
+        "bottom": 676
+      },
+      "elementRect": {
+        "x": 531.67,
+        "y": 665,
+        "width": 32.52,
+        "height": 10,
+        "right": 564.19,
+        "bottom": 675
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div:nth-child(1) > div:nth-child(1) > div:nth-child(8)",
+      "states": [
+        "costs",
+        "disabled-build",
+        "error",
+        "fortunes",
+        "help",
+        "incoming-offer",
+        "main",
+        "player-menu",
+        "table-menu",
+        "trade",
+        "hand-rates",
+        "keyboard-place-list",
+        "main-geometry",
+        "own-player-menu"
+      ],
+      "files": [
+        "current/1280x720-costs.json",
+        "current/1280x720-disabled-build.json",
+        "current/1280x720-error.json",
+        "current/1280x720-fortunes.json",
+        "current/1280x720-help.json",
+        "current/1280x720-incoming-offer.json",
+        "current/1280x720-main.json",
+        "current/1280x720-player-menu.json",
+        "current/1280x720-table-menu.json",
+        "current/1280x720-trade.json",
+        "current-supplement/1280x720-hand-rates.json",
+        "current-supplement/1280x720-keyboard-place-list.json",
+        "current-supplement/1280x720-main-geometry.json",
+        "current-supplement/1280x720-own-player-menu.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"deck-left\"]",
+      "text": "left",
+      "font": {
+        "size": 10,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 544.78,
+        "y": 664,
+        "width": 19.41,
+        "height": 12,
+        "right": 564.19,
+        "bottom": 676
+      },
+      "elementRect": {
+        "x": 531.67,
+        "y": 665,
+        "width": 32.52,
+        "height": 10,
+        "right": 564.19,
+        "bottom": 675
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div:nth-child(1) > div:nth-child(1) > div:nth-child(8)",
+      "states": [
+        "costs",
+        "disabled-build",
+        "error",
+        "fortunes",
+        "help",
+        "incoming-offer",
+        "main",
+        "player-menu",
+        "table-menu",
+        "trade",
+        "hand-rates",
+        "keyboard-place-list",
+        "main-geometry",
+        "own-player-menu"
+      ],
+      "files": [
+        "current/1280x720-costs.json",
+        "current/1280x720-disabled-build.json",
+        "current/1280x720-error.json",
+        "current/1280x720-fortunes.json",
+        "current/1280x720-help.json",
+        "current/1280x720-incoming-offer.json",
+        "current/1280x720-main.json",
+        "current/1280x720-player-menu.json",
+        "current/1280x720-table-menu.json",
+        "current/1280x720-trade.json",
+        "current-supplement/1280x720-hand-rates.json",
+        "current-supplement/1280x720-keyboard-place-list.json",
+        "current-supplement/1280x720-main-geometry.json",
+        "current-supplement/1280x720-own-player-menu.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-path-timber\"] > span:nth-child(2)",
+      "text": "\u2212",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 302.8,
+        "y": 649,
+        "width": 6.09,
+        "height": 11,
+        "right": 308.89,
+        "bottom": 660
+      },
+      "elementRect": {
+        "x": 298.8,
+        "y": 650,
+        "width": 20.19,
+        "height": 10,
+        "right": 318.98,
+        "bottom": 660
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "disabled-build"
+      ],
+      "files": [
+        "current/1280x720-disabled-build.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-path-timber\"] > span:nth-child(2)",
+      "text": "1",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 308.89,
+        "y": 649,
+        "width": 6.09,
+        "height": 11,
+        "right": 314.98,
+        "bottom": 660
+      },
+      "elementRect": {
+        "x": 298.8,
+        "y": 650,
+        "width": 20.19,
+        "height": 10,
+        "right": 318.98,
+        "bottom": 660
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "span[data-testid=\"cost-path-clay\"] > span:nth-child(2)",
+      "states": [
+        "disabled-build"
+      ],
+      "files": [
+        "current/1280x720-disabled-build.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-path-clay\"] > span:nth-child(2)",
+      "text": "\u2212",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 316.8,
+        "y": 649,
+        "width": 6.09,
+        "height": 11,
+        "right": 322.89,
+        "bottom": 660
+      },
+      "elementRect": {
+        "x": 312.8,
+        "y": 650,
+        "width": 20.19,
+        "height": 10,
+        "right": 332.98,
+        "bottom": 660
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "disabled-build"
+      ],
+      "files": [
+        "current/1280x720-disabled-build.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-path-clay\"] > span:nth-child(2)",
+      "text": "1",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 322.89,
+        "y": 649,
+        "width": 6.09,
+        "height": 11,
+        "right": 328.98,
+        "bottom": 660
+      },
+      "elementRect": {
+        "x": 312.8,
+        "y": 650,
+        "width": 20.19,
+        "height": 10,
+        "right": 332.98,
+        "bottom": 660
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "disabled-build"
+      ],
+      "files": [
+        "current/1280x720-disabled-build.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-outpost-timber\"] > span:nth-child(2)",
+      "text": "\u2212",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 364.77,
+        "y": 649,
+        "width": 6.09,
+        "height": 11,
+        "right": 370.86,
+        "bottom": 660
+      },
+      "elementRect": {
+        "x": 360.77,
+        "y": 650,
+        "width": 20.19,
+        "height": 10,
+        "right": 380.95,
+        "bottom": 660
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "disabled-build"
+      ],
+      "files": [
+        "current/1280x720-disabled-build.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-outpost-timber\"] > span:nth-child(2)",
+      "text": "1",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 370.86,
+        "y": 649,
+        "width": 6.09,
+        "height": 11,
+        "right": 376.95,
+        "bottom": 660
+      },
+      "elementRect": {
+        "x": 360.77,
+        "y": 650,
+        "width": 20.19,
+        "height": 10,
+        "right": 380.95,
+        "bottom": 660
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "span[data-testid=\"cost-outpost-clay\"] > span:nth-child(2)",
+      "states": [
+        "disabled-build"
+      ],
+      "files": [
+        "current/1280x720-disabled-build.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-outpost-clay\"] > span:nth-child(2)",
+      "text": "\u2212",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 378.77,
+        "y": 649,
+        "width": 6.09,
+        "height": 11,
+        "right": 384.86,
+        "bottom": 660
+      },
+      "elementRect": {
+        "x": 374.77,
+        "y": 650,
+        "width": 20.19,
+        "height": 10,
+        "right": 394.95,
+        "bottom": 660
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "disabled-build"
+      ],
+      "files": [
+        "current/1280x720-disabled-build.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-outpost-clay\"] > span:nth-child(2)",
+      "text": "1",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 384.86,
+        "y": 649,
+        "width": 6.09,
+        "height": 11,
+        "right": 390.95,
+        "bottom": 660
+      },
+      "elementRect": {
+        "x": 374.77,
+        "y": 650,
+        "width": 20.19,
+        "height": 10,
+        "right": 394.95,
+        "bottom": 660
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "span[data-testid=\"cost-outpost-wool\"] > span:nth-child(2)",
+      "states": [
+        "disabled-build"
+      ],
+      "files": [
+        "current/1280x720-disabled-build.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-outpost-wool\"] > span:nth-child(2)",
+      "text": "\u2212",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 392.77,
+        "y": 649,
+        "width": 6.09,
+        "height": 11,
+        "right": 398.86,
+        "bottom": 660
+      },
+      "elementRect": {
+        "x": 388.77,
+        "y": 650,
+        "width": 20.19,
+        "height": 10,
+        "right": 408.95,
+        "bottom": 660
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "disabled-build"
+      ],
+      "files": [
+        "current/1280x720-disabled-build.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-outpost-wool\"] > span:nth-child(2)",
+      "text": "1",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 398.86,
+        "y": 649,
+        "width": 6.09,
+        "height": 11,
+        "right": 404.95,
+        "bottom": 660
+      },
+      "elementRect": {
+        "x": 388.77,
+        "y": 650,
+        "width": 20.19,
+        "height": 10,
+        "right": 408.95,
+        "bottom": 660
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "span[data-testid=\"cost-outpost-grain\"] > span:nth-child(2)",
+      "states": [
+        "disabled-build"
+      ],
+      "files": [
+        "current/1280x720-disabled-build.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-outpost-grain\"] > span:nth-child(2)",
+      "text": "\u2212",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 406.77,
+        "y": 649,
+        "width": 6.09,
+        "height": 11,
+        "right": 412.86,
+        "bottom": 660
+      },
+      "elementRect": {
+        "x": 402.77,
+        "y": 650,
+        "width": 20.19,
+        "height": 10,
+        "right": 422.95,
+        "bottom": 660
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "disabled-build"
+      ],
+      "files": [
+        "current/1280x720-disabled-build.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-outpost-grain\"] > span:nth-child(2)",
+      "text": "1",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 412.86,
+        "y": 649,
+        "width": 6.09,
+        "height": 11,
+        "right": 418.95,
+        "bottom": 660
+      },
+      "elementRect": {
+        "x": 402.77,
+        "y": 650,
+        "width": 20.19,
+        "height": 10,
+        "right": 422.95,
+        "bottom": 660
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "disabled-build"
+      ],
+      "files": [
+        "current/1280x720-disabled-build.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-stronghold-grain\"] > span:nth-child(2)",
+      "text": "3",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 460.84,
+        "y": 649,
+        "width": 6.09,
+        "height": 11,
+        "right": 466.94,
+        "bottom": 660
+      },
+      "elementRect": {
+        "x": 450.75,
+        "y": 650,
+        "width": 20.19,
+        "height": 10,
+        "right": 470.94,
+        "bottom": 660
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "disabled-build"
+      ],
+      "files": [
+        "current/1280x720-disabled-build.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-stronghold-ore\"] > span:nth-child(2)",
+      "text": "\u2212",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 479.61,
+        "y": 649,
+        "width": 6.09,
+        "height": 11,
+        "right": 485.7,
+        "bottom": 660
+      },
+      "elementRect": {
+        "x": 475.61,
+        "y": 650,
+        "width": 20.19,
+        "height": 10,
+        "right": 495.8,
+        "bottom": 660
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "disabled-build"
+      ],
+      "files": [
+        "current/1280x720-disabled-build.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-stronghold-ore\"] > span:nth-child(2)",
+      "text": "2",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 485.7,
+        "y": 649,
+        "width": 6.09,
+        "height": 11,
+        "right": 491.8,
+        "bottom": 660
+      },
+      "elementRect": {
+        "x": 475.61,
+        "y": 650,
+        "width": 20.19,
+        "height": 10,
+        "right": 495.8,
+        "bottom": 660
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "disabled-build"
+      ],
+      "files": [
+        "current/1280x720-disabled-build.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-card-wool\"] > span:nth-child(2)",
+      "text": "\u2212",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 523.73,
+        "y": 642,
+        "width": 6.09,
+        "height": 11,
+        "right": 529.83,
+        "bottom": 653
+      },
+      "elementRect": {
+        "x": 519.73,
+        "y": 643,
+        "width": 20.19,
+        "height": 10,
+        "right": 539.92,
+        "bottom": 653
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "disabled-build"
+      ],
+      "files": [
+        "current/1280x720-disabled-build.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-card-wool\"] > span:nth-child(2)",
+      "text": "1",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 529.83,
+        "y": 642,
+        "width": 6.09,
+        "height": 11,
+        "right": 535.92,
+        "bottom": 653
+      },
+      "elementRect": {
+        "x": 519.73,
+        "y": 643,
+        "width": 20.19,
+        "height": 10,
+        "right": 539.92,
+        "bottom": 653
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "span[data-testid=\"cost-card-grain\"] > span:nth-child(2)",
+      "states": [
+        "disabled-build"
+      ],
+      "files": [
+        "current/1280x720-disabled-build.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-card-grain\"] > span:nth-child(2)",
+      "text": "\u2212",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 537.73,
+        "y": 642,
+        "width": 6.09,
+        "height": 11,
+        "right": 543.83,
+        "bottom": 653
+      },
+      "elementRect": {
+        "x": 533.73,
+        "y": 643,
+        "width": 20.19,
+        "height": 10,
+        "right": 553.92,
+        "bottom": 653
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "disabled-build"
+      ],
+      "files": [
+        "current/1280x720-disabled-build.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-card-grain\"] > span:nth-child(2)",
+      "text": "1",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 543.83,
+        "y": 642,
+        "width": 6.09,
+        "height": 11,
+        "right": 549.92,
+        "bottom": 653
+      },
+      "elementRect": {
+        "x": 533.73,
+        "y": 643,
+        "width": 20.19,
+        "height": 10,
+        "right": 553.92,
+        "bottom": 653
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "span[data-testid=\"cost-card-ore\"] > span:nth-child(2)",
+      "states": [
+        "disabled-build"
+      ],
+      "files": [
+        "current/1280x720-disabled-build.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-card-ore\"] > span:nth-child(2)",
+      "text": "\u2212",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 551.73,
+        "y": 642,
+        "width": 6.09,
+        "height": 11,
+        "right": 557.83,
+        "bottom": 653
+      },
+      "elementRect": {
+        "x": 547.73,
+        "y": 643,
+        "width": 20.19,
+        "height": 10,
+        "right": 567.92,
+        "bottom": 653
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "disabled-build"
+      ],
+      "files": [
+        "current/1280x720-disabled-build.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-card-ore\"] > span:nth-child(2)",
+      "text": "1",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 557.83,
+        "y": 642,
+        "width": 6.09,
+        "height": 11,
+        "right": 563.92,
+        "bottom": 653
+      },
+      "elementRect": {
+        "x": 547.73,
+        "y": 643,
+        "width": 20.19,
+        "height": 10,
+        "right": 567.92,
+        "bottom": 653
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "disabled-build"
+      ],
+      "files": [
+        "current/1280x720-disabled-build.json"
+      ]
+    },
+    {
+      "selector": "div[data-testid=\"win-table-wrap\"] > table:nth-child(1) > thead:nth-child(1) > tr:nth-child(1) > th:nth-child(1)",
+      "text": "Player",
+      "font": {
+        "size": 11,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "15.7143px"
+      },
+      "rect": {
+        "x": 402,
+        "y": 338.89,
+        "width": 43.7,
+        "height": 13,
+        "right": 445.7,
+        "bottom": 351.89
+      },
+      "elementRect": {
+        "x": 329,
+        "y": 322.05,
+        "width": 124.7,
+        "height": 47.91,
+        "right": 453.7,
+        "bottom": 369.95
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "results"
+      ],
+      "files": [
+        "current/1280x720-results.json"
+      ]
+    },
+    {
+      "selector": "div[data-testid=\"win-table-wrap\"] > table:nth-child(1) > thead:nth-child(1) > tr:nth-child(1) > th:nth-child(2) > span:nth-child(2)",
+      "text": "Outposts",
+      "font": {
+        "size": 11,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "15.7143px"
+      },
+      "rect": {
+        "x": 461.7,
+        "y": 338.89,
+        "width": 63.56,
+        "height": 13,
+        "right": 525.27,
+        "bottom": 351.89
+      },
+      "elementRect": {
+        "x": 461.7,
+        "y": 338.89,
+        "width": 63.56,
+        "height": 13,
+        "right": 525.27,
+        "bottom": 351.89
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "results"
+      ],
+      "files": [
+        "current/1280x720-results.json"
+      ]
+    },
+    {
+      "selector": "div[data-testid=\"win-table-wrap\"] > table:nth-child(1) > thead:nth-child(1) > tr:nth-child(1) > th:nth-child(3) > span:nth-child(2)",
+      "text": "Strongholds",
+      "font": {
+        "size": 11,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "15.7143px"
+      },
+      "rect": {
+        "x": 541.27,
+        "y": 338.89,
+        "width": 88.77,
+        "height": 13,
+        "right": 630.03,
+        "bottom": 351.89
+      },
+      "elementRect": {
+        "x": 541.27,
+        "y": 338.89,
+        "width": 88.77,
+        "height": 13,
+        "right": 630.03,
+        "bottom": 351.89
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "results"
+      ],
+      "files": [
+        "current/1280x720-results.json"
+      ]
+    },
+    {
+      "selector": "div[data-testid=\"win-table-wrap\"] > table:nth-child(1) > thead:nth-child(1) > tr:nth-child(1) > th:nth-child(4) > span:nth-child(2)",
+      "text": "Longest path",
+      "font": {
+        "size": 11,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "15.7143px"
+      },
+      "rect": {
+        "x": 674.78,
+        "y": 331.05,
+        "width": 54.38,
+        "height": 28.7,
+        "right": 729.16,
+        "bottom": 359.75
+      },
+      "elementRect": {
+        "x": 674.78,
+        "y": 331.05,
+        "width": 54.38,
+        "height": 28.7,
+        "right": 729.16,
+        "bottom": 359.75
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "results"
+      ],
+      "files": [
+        "current/1280x720-results.json"
+      ]
+    },
+    {
+      "selector": "div[data-testid=\"win-table-wrap\"] > table:nth-child(1) > thead:nth-child(1) > tr:nth-child(1) > th:nth-child(5) > span:nth-child(2)",
+      "text": "Largest army",
+      "font": {
+        "size": 11,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "15.7143px"
+      },
+      "rect": {
+        "x": 776.78,
+        "y": 331.05,
+        "width": 52.81,
+        "height": 28.7,
+        "right": 829.59,
+        "bottom": 359.75
+      },
+      "elementRect": {
+        "x": 776.78,
+        "y": 331.05,
+        "width": 52.81,
+        "height": 28.7,
+        "right": 829.59,
+        "bottom": 359.75
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "results"
+      ],
+      "files": [
+        "current/1280x720-results.json"
+      ]
+    },
+    {
+      "selector": "div[data-testid=\"win-table-wrap\"] > table:nth-child(1) > thead:nth-child(1) > tr:nth-child(1) > th:nth-child(6) > span:nth-child(2)",
+      "text": "Hidden",
+      "font": {
+        "size": 11,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "15.7143px"
+      },
+      "rect": {
+        "x": 845.59,
+        "y": 338.89,
+        "width": 44.53,
+        "height": 13,
+        "right": 890.13,
+        "bottom": 351.89
+      },
+      "elementRect": {
+        "x": 845.59,
+        "y": 338.89,
+        "width": 44.53,
+        "height": 13,
+        "right": 890.13,
+        "bottom": 351.89
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "results"
+      ],
+      "files": [
+        "current/1280x720-results.json"
+      ]
+    },
+    {
+      "selector": "div[data-testid=\"win-table-wrap\"] > table:nth-child(1) > thead:nth-child(1) > tr:nth-child(1) > th:nth-child(7)",
+      "text": "Total",
+      "font": {
+        "size": 11,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "15.7143px"
+      },
+      "rect": {
+        "x": 906.14,
+        "y": 338.89,
+        "width": 36.86,
+        "height": 13,
+        "right": 943,
+        "bottom": 351.89
+      },
+      "elementRect": {
+        "x": 898.13,
+        "y": 322.05,
+        "width": 52.88,
+        "height": 47.91,
+        "right": 951,
+        "bottom": 369.95
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "results"
+      ],
+      "files": [
+        "current/1280x720-results.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"trade-owned\"]",
+      "text": "Have",
+      "font": {
+        "size": 11,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400",
+        "lineHeight": "16.5px"
+      },
+      "rect": {
+        "x": 376.95,
+        "y": 248.25,
+        "width": 29.47,
+        "height": 13,
+        "right": 406.42,
+        "bottom": 261.25
+      },
+      "elementRect": {
+        "x": 376.95,
+        "y": 247.25,
+        "width": 36.47,
+        "height": 16.5,
+        "right": 413.42,
+        "bottom": 263.75
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "trade",
+        "trade",
+        "trade",
+        "trade",
+        "trade",
+        "trade",
+        "trade",
+        "trade",
+        "trade",
+        "trade"
+      ],
+      "files": [
+        "current/1280x720-trade.json",
+        "current/1280x720-trade.json",
+        "current/1280x720-trade.json",
+        "current/1280x720-trade.json",
+        "current/1280x720-trade.json",
+        "current/1280x720-trade.json",
+        "current/1280x720-trade.json",
+        "current/1280x720-trade.json",
+        "current/1280x720-trade.json",
+        "current/1280x720-trade.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"trade-owned\"]",
+      "text": "3",
+      "font": {
+        "size": 11,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400",
+        "lineHeight": "16.5px"
+      },
+      "rect": {
+        "x": 406.42,
+        "y": 248.25,
+        "width": 7,
+        "height": 13,
+        "right": 413.42,
+        "bottom": 261.25
+      },
+      "elementRect": {
+        "x": 376.95,
+        "y": 247.25,
+        "width": 36.47,
+        "height": 16.5,
+        "right": 413.42,
+        "bottom": 263.75
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "trade",
+        "trade"
+      ],
+      "files": [
+        "current/1280x720-trade.json",
+        "current/1280x720-trade.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"trade-owned\"]",
+      "text": "2",
+      "font": {
+        "size": 11,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400",
+        "lineHeight": "16.5px"
+      },
+      "rect": {
+        "x": 528.83,
+        "y": 248.25,
+        "width": 7,
+        "height": 13,
+        "right": 535.83,
+        "bottom": 261.25
+      },
+      "elementRect": {
+        "x": 499.36,
+        "y": 247.25,
+        "width": 36.47,
+        "height": 16.5,
+        "right": 535.83,
+        "bottom": 263.75
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "trade",
+        "trade",
+        "trade",
+        "trade"
+      ],
+      "files": [
+        "current/1280x720-trade.json",
+        "current/1280x720-trade.json",
+        "current/1280x720-trade.json",
+        "current/1280x720-trade.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"trade-owned\"]",
+      "text": "4",
+      "font": {
+        "size": 11,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400",
+        "lineHeight": "16.5px"
+      },
+      "rect": {
+        "x": 651.22,
+        "y": 248.25,
+        "width": 7,
+        "height": 13,
+        "right": 658.22,
+        "bottom": 261.25
+      },
+      "elementRect": {
+        "x": 621.75,
+        "y": 247.25,
+        "width": 36.47,
+        "height": 16.5,
+        "right": 658.22,
+        "bottom": 263.75
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "trade",
+        "trade"
+      ],
+      "files": [
+        "current/1280x720-trade.json",
+        "current/1280x720-trade.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"trade-owned\"]",
+      "text": "1",
+      "font": {
+        "size": 11,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400",
+        "lineHeight": "16.5px"
+      },
+      "rect": {
+        "x": 773.63,
+        "y": 248.25,
+        "width": 7,
+        "height": 13,
+        "right": 780.63,
+        "bottom": 261.25
+      },
+      "elementRect": {
+        "x": 744.16,
+        "y": 247.25,
+        "width": 36.47,
+        "height": 16.5,
+        "right": 780.63,
+        "bottom": 263.75
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "trade",
+        "trade"
+      ],
+      "files": [
+        "current/1280x720-trade.json",
+        "current/1280x720-trade.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"hand-name\"]",
+      "text": "Wood",
+      "font": {
+        "size": 10,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "700",
+        "lineHeight": "12px"
+      },
+      "rect": {
+        "x": 35.42,
+        "y": 626,
+        "width": 36.73,
+        "height": 12,
+        "right": 72.16,
+        "bottom": 638
+      },
+      "elementRect": {
+        "x": 34.63,
+        "y": 626,
+        "width": 37.53,
+        "height": 12,
+        "right": 72.16,
+        "bottom": 638
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div[data-testid=\"cost-card\"]",
+      "states": [
+        "costs",
+        "disabled-build",
+        "discard",
+        "error",
+        "fortunes",
+        "help",
+        "incoming-offer",
+        "main",
+        "player-menu",
+        "results-look",
+        "results",
+        "robber",
+        "table-menu",
+        "trade",
+        "victim",
+        "hand-rates",
+        "keyboard-place-list",
+        "main-geometry",
+        "own-player-menu"
+      ],
+      "files": [
+        "current/390x844-costs.json",
+        "current/390x844-disabled-build.json",
+        "current/390x844-discard.json",
+        "current/390x844-error.json",
+        "current/390x844-fortunes.json",
+        "current/390x844-help.json",
+        "current/390x844-incoming-offer.json",
+        "current/390x844-main.json",
+        "current/390x844-player-menu.json",
+        "current/390x844-results-look.json",
+        "current/390x844-results.json",
+        "current/390x844-robber.json",
+        "current/390x844-table-menu.json",
+        "current/390x844-trade.json",
+        "current/390x844-victim.json",
+        "current-supplement/390x844-hand-rates.json",
+        "current-supplement/390x844-keyboard-place-list.json",
+        "current-supplement/390x844-main-geometry.json",
+        "current-supplement/390x844-own-player-menu.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"hand-name\"]",
+      "text": "Brick",
+      "font": {
+        "size": 10,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "700",
+        "lineHeight": "12px"
+      },
+      "rect": {
+        "x": 106.52,
+        "y": 626,
+        "width": 36.16,
+        "height": 12,
+        "right": 142.67,
+        "bottom": 638
+      },
+      "elementRect": {
+        "x": 105.72,
+        "y": 626,
+        "width": 36.95,
+        "height": 12,
+        "right": 142.67,
+        "bottom": 638
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div[data-testid=\"cost-card\"] > div:nth-child(2) > ul:nth-child(1)",
+      "states": [
+        "costs",
+        "disabled-build",
+        "discard",
+        "error",
+        "fortunes",
+        "help",
+        "incoming-offer",
+        "main",
+        "player-menu",
+        "results-look",
+        "results",
+        "robber",
+        "table-menu",
+        "trade",
+        "victim",
+        "hand-rates",
+        "keyboard-place-list",
+        "main-geometry",
+        "own-player-menu"
+      ],
+      "files": [
+        "current/390x844-costs.json",
+        "current/390x844-disabled-build.json",
+        "current/390x844-discard.json",
+        "current/390x844-error.json",
+        "current/390x844-fortunes.json",
+        "current/390x844-help.json",
+        "current/390x844-incoming-offer.json",
+        "current/390x844-main.json",
+        "current/390x844-player-menu.json",
+        "current/390x844-results-look.json",
+        "current/390x844-results.json",
+        "current/390x844-robber.json",
+        "current/390x844-table-menu.json",
+        "current/390x844-trade.json",
+        "current/390x844-victim.json",
+        "current-supplement/390x844-hand-rates.json",
+        "current-supplement/390x844-keyboard-place-list.json",
+        "current-supplement/390x844-main-geometry.json",
+        "current-supplement/390x844-own-player-menu.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"hand-name\"]",
+      "text": "Sheep",
+      "font": {
+        "size": 10,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "700",
+        "lineHeight": "12px"
+      },
+      "rect": {
+        "x": 176.2,
+        "y": 626,
+        "width": 38.36,
+        "height": 12,
+        "right": 214.56,
+        "bottom": 638
+      },
+      "elementRect": {
+        "x": 175.41,
+        "y": 626,
+        "width": 39.16,
+        "height": 12,
+        "right": 214.56,
+        "bottom": 638
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div[data-testid=\"cost-card\"] > div:nth-child(2) > ul:nth-child(1)",
+      "states": [
+        "costs",
+        "disabled-build",
+        "discard",
+        "error",
+        "fortunes",
+        "help",
+        "incoming-offer",
+        "main",
+        "player-menu",
+        "results-look",
+        "results",
+        "robber",
+        "table-menu",
+        "trade",
+        "victim",
+        "hand-rates",
+        "keyboard-place-list",
+        "main-geometry",
+        "own-player-menu"
+      ],
+      "files": [
+        "current/390x844-costs.json",
+        "current/390x844-disabled-build.json",
+        "current/390x844-discard.json",
+        "current/390x844-error.json",
+        "current/390x844-fortunes.json",
+        "current/390x844-help.json",
+        "current/390x844-incoming-offer.json",
+        "current/390x844-main.json",
+        "current/390x844-player-menu.json",
+        "current/390x844-results-look.json",
+        "current/390x844-results.json",
+        "current/390x844-robber.json",
+        "current/390x844-table-menu.json",
+        "current/390x844-trade.json",
+        "current/390x844-victim.json",
+        "current-supplement/390x844-hand-rates.json",
+        "current-supplement/390x844-keyboard-place-list.json",
+        "current-supplement/390x844-main-geometry.json",
+        "current-supplement/390x844-own-player-menu.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"hand-name\"]",
+      "text": "Wheat",
+      "font": {
+        "size": 10,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "700",
+        "lineHeight": "12px"
+      },
+      "rect": {
+        "x": 245.23,
+        "y": 626,
+        "width": 41.91,
+        "height": 12,
+        "right": 287.14,
+        "bottom": 638
+      },
+      "elementRect": {
+        "x": 244.44,
+        "y": 626,
+        "width": 42.7,
+        "height": 12,
+        "right": 287.14,
+        "bottom": 638
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div[data-testid=\"cost-card\"] > div:nth-child(2) > ul:nth-child(1)",
+      "states": [
+        "costs",
+        "disabled-build",
+        "discard",
+        "error",
+        "fortunes",
+        "help",
+        "incoming-offer",
+        "main",
+        "player-menu",
+        "results-look",
+        "results",
+        "robber",
+        "table-menu",
+        "trade",
+        "victim",
+        "hand-rates",
+        "keyboard-place-list",
+        "main-geometry",
+        "own-player-menu"
+      ],
+      "files": [
+        "current/390x844-costs.json",
+        "current/390x844-disabled-build.json",
+        "current/390x844-discard.json",
+        "current/390x844-error.json",
+        "current/390x844-fortunes.json",
+        "current/390x844-help.json",
+        "current/390x844-incoming-offer.json",
+        "current/390x844-main.json",
+        "current/390x844-player-menu.json",
+        "current/390x844-results-look.json",
+        "current/390x844-results.json",
+        "current/390x844-robber.json",
+        "current/390x844-table-menu.json",
+        "current/390x844-trade.json",
+        "current/390x844-victim.json",
+        "current-supplement/390x844-hand-rates.json",
+        "current-supplement/390x844-keyboard-place-list.json",
+        "current-supplement/390x844-main-geometry.json",
+        "current-supplement/390x844-own-player-menu.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"hand-name\"]",
+      "text": "Stone",
+      "font": {
+        "size": 10,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "700",
+        "lineHeight": "12px"
+      },
+      "rect": {
+        "x": 317.25,
+        "y": 626,
+        "width": 39.47,
+        "height": 12,
+        "right": 356.72,
+        "bottom": 638
+      },
+      "elementRect": {
+        "x": 316.45,
+        "y": 626,
+        "width": 40.27,
+        "height": 12,
+        "right": 356.72,
+        "bottom": 638
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div[data-testid=\"cost-card\"]",
+      "states": [
+        "costs",
+        "disabled-build",
+        "discard",
+        "error",
+        "fortunes",
+        "help",
+        "incoming-offer",
+        "main",
+        "player-menu",
+        "results-look",
+        "results",
+        "robber",
+        "table-menu",
+        "trade",
+        "victim",
+        "hand-rates",
+        "keyboard-place-list",
+        "main-geometry",
+        "own-player-menu"
+      ],
+      "files": [
+        "current/390x844-costs.json",
+        "current/390x844-disabled-build.json",
+        "current/390x844-discard.json",
+        "current/390x844-error.json",
+        "current/390x844-fortunes.json",
+        "current/390x844-help.json",
+        "current/390x844-incoming-offer.json",
+        "current/390x844-main.json",
+        "current/390x844-player-menu.json",
+        "current/390x844-results-look.json",
+        "current/390x844-results.json",
+        "current/390x844-robber.json",
+        "current/390x844-table-menu.json",
+        "current/390x844-trade.json",
+        "current/390x844-victim.json",
+        "current-supplement/390x844-hand-rates.json",
+        "current-supplement/390x844-keyboard-place-list.json",
+        "current-supplement/390x844-main-geometry.json",
+        "current-supplement/390x844-own-player-menu.json"
+      ]
+    },
+    {
+      "selector": "button[data-testid=\"build-path\"] > span:nth-child(1) > span:nth-child(2)",
+      "text": "\u2713",
+      "font": {
+        "size": 10,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "700",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 88.88,
+        "y": 659,
+        "width": 9.23,
+        "height": 12,
+        "right": 98.11,
+        "bottom": 671
+      },
+      "elementRect": {
+        "x": 85.5,
+        "y": 657,
+        "width": 16,
+        "height": 16,
+        "right": 101.5,
+        "bottom": 673
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "li[data-testid=\"cost-row-card\"]",
+      "states": [
+        "costs",
+        "error",
+        "fortunes",
+        "help",
+        "incoming-offer",
+        "main",
+        "player-menu",
+        "table-menu",
+        "trade",
+        "hand-rates",
+        "main-geometry",
+        "own-player-menu"
+      ],
+      "files": [
+        "current/390x844-costs.json",
+        "current/390x844-error.json",
+        "current/390x844-fortunes.json",
+        "current/390x844-help.json",
+        "current/390x844-incoming-offer.json",
+        "current/390x844-main.json",
+        "current/390x844-player-menu.json",
+        "current/390x844-table-menu.json",
+        "current/390x844-trade.json",
+        "current-supplement/390x844-hand-rates.json",
+        "current-supplement/390x844-main-geometry.json",
+        "current-supplement/390x844-own-player-menu.json"
+      ]
+    },
+    {
+      "selector": "button[data-testid=\"build-outpost\"] > span:nth-child(1) > span:nth-child(2)",
+      "text": "\u2713",
+      "font": {
+        "size": 10,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "700",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 179.38,
+        "y": 659,
+        "width": 9.23,
+        "height": 12,
+        "right": 188.61,
+        "bottom": 671
+      },
+      "elementRect": {
+        "x": 176,
+        "y": 657,
+        "width": 16,
+        "height": 16,
+        "right": 192,
+        "bottom": 673
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "li[data-testid=\"cost-row-card\"]",
+      "states": [
+        "costs",
+        "error",
+        "fortunes",
+        "help",
+        "incoming-offer",
+        "main",
+        "player-menu",
+        "table-menu",
+        "trade",
+        "hand-rates",
+        "keyboard-place-list",
+        "main-geometry",
+        "own-player-menu"
+      ],
+      "files": [
+        "current/390x844-costs.json",
+        "current/390x844-error.json",
+        "current/390x844-fortunes.json",
+        "current/390x844-help.json",
+        "current/390x844-incoming-offer.json",
+        "current/390x844-main.json",
+        "current/390x844-player-menu.json",
+        "current/390x844-table-menu.json",
+        "current/390x844-trade.json",
+        "current-supplement/390x844-hand-rates.json",
+        "current-supplement/390x844-keyboard-place-list.json",
+        "current-supplement/390x844-main-geometry.json",
+        "current-supplement/390x844-own-player-menu.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-stronghold-grain\"] > span:nth-child(2)",
+      "text": "\u2212",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 223.06,
+        "y": 677,
+        "width": 6.09,
+        "height": 11,
+        "right": 229.16,
+        "bottom": 688
+      },
+      "elementRect": {
+        "x": 219.06,
+        "y": 678,
+        "width": 20.19,
+        "height": 10,
+        "right": 239.25,
+        "bottom": 688
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "li[data-testid=\"worth-row\"]",
+      "states": [
+        "costs",
+        "disabled-build",
+        "error",
+        "fortunes",
+        "help",
+        "incoming-offer",
+        "main",
+        "player-menu",
+        "table-menu",
+        "trade",
+        "hand-rates",
+        "keyboard-place-list",
+        "main-geometry",
+        "own-player-menu"
+      ],
+      "files": [
+        "current/390x844-costs.json",
+        "current/390x844-disabled-build.json",
+        "current/390x844-error.json",
+        "current/390x844-fortunes.json",
+        "current/390x844-help.json",
+        "current/390x844-incoming-offer.json",
+        "current/390x844-main.json",
+        "current/390x844-player-menu.json",
+        "current/390x844-table-menu.json",
+        "current/390x844-trade.json",
+        "current-supplement/390x844-hand-rates.json",
+        "current-supplement/390x844-keyboard-place-list.json",
+        "current-supplement/390x844-main-geometry.json",
+        "current-supplement/390x844-own-player-menu.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-stronghold-grain\"] > span:nth-child(2)",
+      "text": "2",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 229.16,
+        "y": 677,
+        "width": 6.09,
+        "height": 11,
+        "right": 235.25,
+        "bottom": 688
+      },
+      "elementRect": {
+        "x": 219.06,
+        "y": 678,
+        "width": 20.19,
+        "height": 10,
+        "right": 239.25,
+        "bottom": 688
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "li[data-testid=\"worth-row\"]",
+      "states": [
+        "costs",
+        "error",
+        "fortunes",
+        "help",
+        "incoming-offer",
+        "main",
+        "player-menu",
+        "table-menu",
+        "trade",
+        "hand-rates",
+        "keyboard-place-list",
+        "main-geometry",
+        "own-player-menu"
+      ],
+      "files": [
+        "current/390x844-costs.json",
+        "current/390x844-error.json",
+        "current/390x844-fortunes.json",
+        "current/390x844-help.json",
+        "current/390x844-incoming-offer.json",
+        "current/390x844-main.json",
+        "current/390x844-player-menu.json",
+        "current/390x844-table-menu.json",
+        "current/390x844-trade.json",
+        "current-supplement/390x844-hand-rates.json",
+        "current-supplement/390x844-keyboard-place-list.json",
+        "current-supplement/390x844-main-geometry.json",
+        "current-supplement/390x844-own-player-menu.json"
+      ]
+    },
+    {
+      "selector": "button[data-testid=\"build-card\"] > span:nth-child(1) > span:nth-child(2)",
+      "text": "\u2713",
+      "font": {
+        "size": 10,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "700",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 360.38,
+        "y": 659,
+        "width": 9.23,
+        "height": 12,
+        "right": 369.61,
+        "bottom": 671
+      },
+      "elementRect": {
+        "x": 357,
+        "y": 657,
+        "width": 16,
+        "height": 16,
+        "right": 373,
+        "bottom": 673
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div:nth-child(1) > div:nth-child(1) > div:nth-child(7)",
+      "states": [
+        "costs",
+        "error",
+        "fortunes",
+        "help",
+        "incoming-offer",
+        "main",
+        "player-menu",
+        "table-menu",
+        "trade",
+        "hand-rates",
+        "keyboard-place-list",
+        "main-geometry",
+        "own-player-menu"
+      ],
+      "files": [
+        "current/390x844-costs.json",
+        "current/390x844-error.json",
+        "current/390x844-fortunes.json",
+        "current/390x844-help.json",
+        "current/390x844-incoming-offer.json",
+        "current/390x844-main.json",
+        "current/390x844-player-menu.json",
+        "current/390x844-table-menu.json",
+        "current/390x844-trade.json",
+        "current-supplement/390x844-hand-rates.json",
+        "current-supplement/390x844-keyboard-place-list.json",
+        "current-supplement/390x844-main-geometry.json",
+        "current-supplement/390x844-own-player-menu.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"deck-left\"]",
+      "text": "17",
+      "font": {
+        "size": 10,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 314.48,
+        "y": 692,
+        "width": 13.11,
+        "height": 12,
+        "right": 327.59,
+        "bottom": 704
+      },
+      "elementRect": {
+        "x": 314.48,
+        "y": 693,
+        "width": 32.52,
+        "height": 10,
+        "right": 347,
+        "bottom": 703
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div[data-testid=\"cost-card\"] > div:nth-child(2) > ul:nth-child(2)",
+      "states": [
+        "costs",
+        "disabled-build",
+        "error",
+        "fortunes",
+        "help",
+        "incoming-offer",
+        "main",
+        "player-menu",
+        "table-menu",
+        "trade",
+        "hand-rates",
+        "keyboard-place-list",
+        "main-geometry",
+        "own-player-menu"
+      ],
+      "files": [
+        "current/390x844-costs.json",
+        "current/390x844-disabled-build.json",
+        "current/390x844-error.json",
+        "current/390x844-fortunes.json",
+        "current/390x844-help.json",
+        "current/390x844-incoming-offer.json",
+        "current/390x844-main.json",
+        "current/390x844-player-menu.json",
+        "current/390x844-table-menu.json",
+        "current/390x844-trade.json",
+        "current-supplement/390x844-hand-rates.json",
+        "current-supplement/390x844-keyboard-place-list.json",
+        "current-supplement/390x844-main-geometry.json",
+        "current-supplement/390x844-own-player-menu.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"deck-left\"]",
+      "text": "left",
+      "font": {
+        "size": 10,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 327.59,
+        "y": 692,
+        "width": 19.41,
+        "height": 12,
+        "right": 347,
+        "bottom": 704
+      },
+      "elementRect": {
+        "x": 314.48,
+        "y": 693,
+        "width": 32.52,
+        "height": 10,
+        "right": 347,
+        "bottom": 703
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div[data-testid=\"cost-card\"]",
+      "states": [
+        "costs",
+        "disabled-build",
+        "error",
+        "fortunes",
+        "help",
+        "incoming-offer",
+        "main",
+        "player-menu",
+        "table-menu",
+        "trade",
+        "hand-rates",
+        "keyboard-place-list",
+        "main-geometry",
+        "own-player-menu"
+      ],
+      "files": [
+        "current/390x844-costs.json",
+        "current/390x844-disabled-build.json",
+        "current/390x844-error.json",
+        "current/390x844-fortunes.json",
+        "current/390x844-help.json",
+        "current/390x844-incoming-offer.json",
+        "current/390x844-main.json",
+        "current/390x844-player-menu.json",
+        "current/390x844-table-menu.json",
+        "current/390x844-trade.json",
+        "current-supplement/390x844-hand-rates.json",
+        "current-supplement/390x844-keyboard-place-list.json",
+        "current-supplement/390x844-main-geometry.json",
+        "current-supplement/390x844-own-player-menu.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-path-timber\"] > span:nth-child(2)",
+      "text": "\u2212",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 42.06,
+        "y": 677,
+        "width": 6.09,
+        "height": 11,
+        "right": 48.16,
+        "bottom": 688
+      },
+      "elementRect": {
+        "x": 38.06,
+        "y": 678,
+        "width": 20.19,
+        "height": 10,
+        "right": 58.25,
+        "bottom": 688
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "disabled-build"
+      ],
+      "files": [
+        "current/390x844-disabled-build.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-path-timber\"] > span:nth-child(2)",
+      "text": "1",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 48.16,
+        "y": 677,
+        "width": 6.09,
+        "height": 11,
+        "right": 54.25,
+        "bottom": 688
+      },
+      "elementRect": {
+        "x": 38.06,
+        "y": 678,
+        "width": 20.19,
+        "height": 10,
+        "right": 58.25,
+        "bottom": 688
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "span[data-testid=\"cost-path-clay\"] > span:nth-child(2)",
+      "states": [
+        "disabled-build"
+      ],
+      "files": [
+        "current/390x844-disabled-build.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-path-clay\"] > span:nth-child(2)",
+      "text": "\u2212",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 56.06,
+        "y": 677,
+        "width": 6.09,
+        "height": 11,
+        "right": 62.16,
+        "bottom": 688
+      },
+      "elementRect": {
+        "x": 52.06,
+        "y": 678,
+        "width": 20.19,
+        "height": 10,
+        "right": 72.25,
+        "bottom": 688
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "disabled-build"
+      ],
+      "files": [
+        "current/390x844-disabled-build.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-path-clay\"] > span:nth-child(2)",
+      "text": "1",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 62.16,
+        "y": 677,
+        "width": 6.09,
+        "height": 11,
+        "right": 68.25,
+        "bottom": 688
+      },
+      "elementRect": {
+        "x": 52.06,
+        "y": 678,
+        "width": 20.19,
+        "height": 10,
+        "right": 72.25,
+        "bottom": 688
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "disabled-build"
+      ],
+      "files": [
+        "current/390x844-disabled-build.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-outpost-timber\"] > span:nth-child(2)",
+      "text": "\u2212",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 118.56,
+        "y": 677,
+        "width": 6.09,
+        "height": 11,
+        "right": 124.66,
+        "bottom": 688
+      },
+      "elementRect": {
+        "x": 114.56,
+        "y": 678,
+        "width": 20.19,
+        "height": 10,
+        "right": 134.75,
+        "bottom": 688
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "disabled-build"
+      ],
+      "files": [
+        "current/390x844-disabled-build.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-outpost-timber\"] > span:nth-child(2)",
+      "text": "1",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 124.66,
+        "y": 677,
+        "width": 6.09,
+        "height": 11,
+        "right": 130.75,
+        "bottom": 688
+      },
+      "elementRect": {
+        "x": 114.56,
+        "y": 678,
+        "width": 20.19,
+        "height": 10,
+        "right": 134.75,
+        "bottom": 688
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "span[data-testid=\"cost-outpost-clay\"] > span:nth-child(2)",
+      "states": [
+        "disabled-build"
+      ],
+      "files": [
+        "current/390x844-disabled-build.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-outpost-clay\"] > span:nth-child(2)",
+      "text": "\u2212",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 132.56,
+        "y": 677,
+        "width": 6.09,
+        "height": 11,
+        "right": 138.66,
+        "bottom": 688
+      },
+      "elementRect": {
+        "x": 128.56,
+        "y": 678,
+        "width": 20.19,
+        "height": 10,
+        "right": 148.75,
+        "bottom": 688
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "disabled-build"
+      ],
+      "files": [
+        "current/390x844-disabled-build.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-outpost-clay\"] > span:nth-child(2)",
+      "text": "1",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 138.66,
+        "y": 677,
+        "width": 6.09,
+        "height": 11,
+        "right": 144.75,
+        "bottom": 688
+      },
+      "elementRect": {
+        "x": 128.56,
+        "y": 678,
+        "width": 20.19,
+        "height": 10,
+        "right": 148.75,
+        "bottom": 688
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "span[data-testid=\"cost-outpost-wool\"] > span:nth-child(2)",
+      "states": [
+        "disabled-build"
+      ],
+      "files": [
+        "current/390x844-disabled-build.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-outpost-wool\"] > span:nth-child(2)",
+      "text": "\u2212",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 146.56,
+        "y": 677,
+        "width": 6.09,
+        "height": 11,
+        "right": 152.66,
+        "bottom": 688
+      },
+      "elementRect": {
+        "x": 142.56,
+        "y": 678,
+        "width": 20.19,
+        "height": 10,
+        "right": 162.75,
+        "bottom": 688
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "disabled-build"
+      ],
+      "files": [
+        "current/390x844-disabled-build.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-outpost-wool\"] > span:nth-child(2)",
+      "text": "1",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 152.66,
+        "y": 677,
+        "width": 6.09,
+        "height": 11,
+        "right": 158.75,
+        "bottom": 688
+      },
+      "elementRect": {
+        "x": 142.56,
+        "y": 678,
+        "width": 20.19,
+        "height": 10,
+        "right": 162.75,
+        "bottom": 688
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "span[data-testid=\"cost-outpost-grain\"] > span:nth-child(2)",
+      "states": [
+        "disabled-build"
+      ],
+      "files": [
+        "current/390x844-disabled-build.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-outpost-grain\"] > span:nth-child(2)",
+      "text": "\u2212",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 160.56,
+        "y": 677,
+        "width": 6.09,
+        "height": 11,
+        "right": 166.66,
+        "bottom": 688
+      },
+      "elementRect": {
+        "x": 156.56,
+        "y": 678,
+        "width": 20.19,
+        "height": 10,
+        "right": 176.75,
+        "bottom": 688
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "disabled-build"
+      ],
+      "files": [
+        "current/390x844-disabled-build.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-outpost-grain\"] > span:nth-child(2)",
+      "text": "1",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 166.66,
+        "y": 677,
+        "width": 6.09,
+        "height": 11,
+        "right": 172.75,
+        "bottom": 688
+      },
+      "elementRect": {
+        "x": 156.56,
+        "y": 678,
+        "width": 20.19,
+        "height": 10,
+        "right": 176.75,
+        "bottom": 688
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "disabled-build"
+      ],
+      "files": [
+        "current/390x844-disabled-build.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-stronghold-grain\"] > span:nth-child(2)",
+      "text": "3",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 229.16,
+        "y": 677,
+        "width": 6.09,
+        "height": 11,
+        "right": 235.25,
+        "bottom": 688
+      },
+      "elementRect": {
+        "x": 219.06,
+        "y": 678,
+        "width": 20.19,
+        "height": 10,
+        "right": 239.25,
+        "bottom": 688
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "disabled-build"
+      ],
+      "files": [
+        "current/390x844-disabled-build.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-stronghold-ore\"] > span:nth-child(2)",
+      "text": "\u2212",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 247.92,
+        "y": 677,
+        "width": 6.09,
+        "height": 11,
+        "right": 254.02,
+        "bottom": 688
+      },
+      "elementRect": {
+        "x": 243.92,
+        "y": 678,
+        "width": 20.19,
+        "height": 10,
+        "right": 264.11,
+        "bottom": 688
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "disabled-build"
+      ],
+      "files": [
+        "current/390x844-disabled-build.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-stronghold-ore\"] > span:nth-child(2)",
+      "text": "2",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 254.02,
+        "y": 677,
+        "width": 6.09,
+        "height": 11,
+        "right": 260.11,
+        "bottom": 688
+      },
+      "elementRect": {
+        "x": 243.92,
+        "y": 678,
+        "width": 20.19,
+        "height": 10,
+        "right": 264.11,
+        "bottom": 688
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "disabled-build"
+      ],
+      "files": [
+        "current/390x844-disabled-build.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-card-wool\"] > span:nth-child(2)",
+      "text": "\u2212",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 306.56,
+        "y": 670,
+        "width": 6.09,
+        "height": 11,
+        "right": 312.66,
+        "bottom": 681
+      },
+      "elementRect": {
+        "x": 302.56,
+        "y": 671,
+        "width": 20.19,
+        "height": 10,
+        "right": 322.75,
+        "bottom": 681
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "disabled-build"
+      ],
+      "files": [
+        "current/390x844-disabled-build.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-card-wool\"] > span:nth-child(2)",
+      "text": "1",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 312.66,
+        "y": 670,
+        "width": 6.09,
+        "height": 11,
+        "right": 318.75,
+        "bottom": 681
+      },
+      "elementRect": {
+        "x": 302.56,
+        "y": 671,
+        "width": 20.19,
+        "height": 10,
+        "right": 322.75,
+        "bottom": 681
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "span[data-testid=\"cost-card-grain\"] > span:nth-child(2)",
+      "states": [
+        "disabled-build"
+      ],
+      "files": [
+        "current/390x844-disabled-build.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-card-grain\"] > span:nth-child(2)",
+      "text": "\u2212",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 320.56,
+        "y": 670,
+        "width": 6.09,
+        "height": 11,
+        "right": 326.66,
+        "bottom": 681
+      },
+      "elementRect": {
+        "x": 316.56,
+        "y": 671,
+        "width": 20.19,
+        "height": 10,
+        "right": 336.75,
+        "bottom": 681
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "disabled-build"
+      ],
+      "files": [
+        "current/390x844-disabled-build.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-card-grain\"] > span:nth-child(2)",
+      "text": "1",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 326.66,
+        "y": 670,
+        "width": 6.09,
+        "height": 11,
+        "right": 332.75,
+        "bottom": 681
+      },
+      "elementRect": {
+        "x": 316.56,
+        "y": 671,
+        "width": 20.19,
+        "height": 10,
+        "right": 336.75,
+        "bottom": 681
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "span[data-testid=\"cost-card-ore\"] > span:nth-child(2)",
+      "states": [
+        "disabled-build"
+      ],
+      "files": [
+        "current/390x844-disabled-build.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-card-ore\"] > span:nth-child(2)",
+      "text": "\u2212",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 334.56,
+        "y": 670,
+        "width": 6.09,
+        "height": 11,
+        "right": 340.66,
+        "bottom": 681
+      },
+      "elementRect": {
+        "x": 330.56,
+        "y": 671,
+        "width": 20.19,
+        "height": 10,
+        "right": 350.75,
+        "bottom": 681
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "disabled-build"
+      ],
+      "files": [
+        "current/390x844-disabled-build.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-card-ore\"] > span:nth-child(2)",
+      "text": "1",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 340.66,
+        "y": 670,
+        "width": 6.09,
+        "height": 11,
+        "right": 346.75,
+        "bottom": 681
+      },
+      "elementRect": {
+        "x": 330.56,
+        "y": 671,
+        "width": 20.19,
+        "height": 10,
+        "right": 350.75,
+        "bottom": 681
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "disabled-build"
+      ],
+      "files": [
+        "current/390x844-disabled-build.json"
+      ]
+    },
+    {
+      "selector": "div[data-testid=\"win-table-wrap\"] > table:nth-child(1) > thead:nth-child(1) > tr:nth-child(1) > th:nth-child(1)",
+      "text": "Player",
+      "font": {
+        "size": 11,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "15.7143px"
+      },
+      "rect": {
+        "x": 102,
+        "y": 374.89,
+        "width": 43.7,
+        "height": 13,
+        "right": 145.7,
+        "bottom": 387.89
+      },
+      "elementRect": {
+        "x": 33,
+        "y": 365.89,
+        "width": 116.7,
+        "height": 32.2,
+        "right": 149.7,
+        "bottom": 398.09
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "results"
+      ],
+      "files": [
+        "current/390x844-results.json"
+      ]
+    },
+    {
+      "selector": "div[data-testid=\"win-table-wrap\"] > table:nth-child(1) > thead:nth-child(1) > tr:nth-child(1) > th:nth-child(2) > span:nth-child(1)",
+      "text": "Out",
+      "font": {
+        "size": 11,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "15.7143px"
+      },
+      "rect": {
+        "x": 153.7,
+        "y": 374.89,
+        "width": 24.83,
+        "height": 13,
+        "right": 178.53,
+        "bottom": 387.89
+      },
+      "elementRect": {
+        "x": 153.7,
+        "y": 374.89,
+        "width": 24.83,
+        "height": 13,
+        "right": 178.53,
+        "bottom": 387.89
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "results"
+      ],
+      "files": [
+        "current/390x844-results.json"
+      ]
+    },
+    {
+      "selector": "div[data-testid=\"win-table-wrap\"] > table:nth-child(1) > thead:nth-child(1) > tr:nth-child(1) > th:nth-child(3) > span:nth-child(1)",
+      "text": "Str",
+      "font": {
+        "size": 11,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "15.7143px"
+      },
+      "rect": {
+        "x": 186.53,
+        "y": 374.89,
+        "width": 22.58,
+        "height": 13,
+        "right": 209.11,
+        "bottom": 387.89
+      },
+      "elementRect": {
+        "x": 186.53,
+        "y": 374.89,
+        "width": 22.58,
+        "height": 13,
+        "right": 209.11,
+        "bottom": 387.89
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "results"
+      ],
+      "files": [
+        "current/390x844-results.json"
+      ]
+    },
+    {
+      "selector": "div[data-testid=\"win-table-wrap\"] > table:nth-child(1) > thead:nth-child(1) > tr:nth-child(1) > th:nth-child(4) > span:nth-child(1)",
+      "text": "Path",
+      "font": {
+        "size": 11,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "15.7143px"
+      },
+      "rect": {
+        "x": 217.11,
+        "y": 374.89,
+        "width": 30.11,
+        "height": 13,
+        "right": 247.22,
+        "bottom": 387.89
+      },
+      "elementRect": {
+        "x": 217.11,
+        "y": 374.89,
+        "width": 30.11,
+        "height": 13,
+        "right": 247.22,
+        "bottom": 387.89
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "results"
+      ],
+      "files": [
+        "current/390x844-results.json"
+      ]
+    },
+    {
+      "selector": "div[data-testid=\"win-table-wrap\"] > table:nth-child(1) > thead:nth-child(1) > tr:nth-child(1) > th:nth-child(5) > span:nth-child(1)",
+      "text": "Army",
+      "font": {
+        "size": 11,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "15.7143px"
+      },
+      "rect": {
+        "x": 255.22,
+        "y": 374.89,
+        "width": 33.47,
+        "height": 13,
+        "right": 288.69,
+        "bottom": 387.89
+      },
+      "elementRect": {
+        "x": 255.22,
+        "y": 374.89,
+        "width": 33.47,
+        "height": 13,
+        "right": 288.69,
+        "bottom": 387.89
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "results"
+      ],
+      "files": [
+        "current/390x844-results.json"
+      ]
+    },
+    {
+      "selector": "div[data-testid=\"win-table-wrap\"] > table:nth-child(1) > thead:nth-child(1) > tr:nth-child(1) > th:nth-child(6) > span:nth-child(1)",
+      "text": "Hid",
+      "font": {
+        "size": 11,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "15.7143px"
+      },
+      "rect": {
+        "x": 296.69,
+        "y": 374.89,
+        "width": 20.55,
+        "height": 13,
+        "right": 317.23,
+        "bottom": 387.89
+      },
+      "elementRect": {
+        "x": 296.69,
+        "y": 374.89,
+        "width": 20.55,
+        "height": 13,
+        "right": 317.23,
+        "bottom": 387.89
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "results"
+      ],
+      "files": [
+        "current/390x844-results.json"
+      ]
+    },
+    {
+      "selector": "div[data-testid=\"win-table-wrap\"] > table:nth-child(1) > thead:nth-child(1) > tr:nth-child(1) > th:nth-child(7)",
+      "text": "Total",
+      "font": {
+        "size": 11,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "15.7143px"
+      },
+      "rect": {
+        "x": 325.23,
+        "y": 374.89,
+        "width": 36.86,
+        "height": 13,
+        "right": 362.09,
+        "bottom": 387.89
+      },
+      "elementRect": {
+        "x": 321.23,
+        "y": 365.89,
+        "width": 44.86,
+        "height": 32.2,
+        "right": 366.09,
+        "bottom": 398.09
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "results"
+      ],
+      "files": [
+        "current/390x844-results.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"trade-owned\"]",
+      "text": "Have",
+      "font": {
+        "size": 11,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400",
+        "lineHeight": "16.5px"
+      },
+      "rect": {
+        "x": 38.36,
+        "y": 336.5,
+        "width": 29.47,
+        "height": 13,
+        "right": 67.83,
+        "bottom": 349.5
+      },
+      "elementRect": {
+        "x": 38.36,
+        "y": 335.5,
+        "width": 36.47,
+        "height": 16.5,
+        "right": 74.83,
+        "bottom": 352
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "trade",
+        "trade",
+        "trade",
+        "trade",
+        "trade",
+        "trade",
+        "trade",
+        "trade",
+        "trade",
+        "trade"
+      ],
+      "files": [
+        "current/390x844-trade.json",
+        "current/390x844-trade.json",
+        "current/390x844-trade.json",
+        "current/390x844-trade.json",
+        "current/390x844-trade.json",
+        "current/390x844-trade.json",
+        "current/390x844-trade.json",
+        "current/390x844-trade.json",
+        "current/390x844-trade.json",
+        "current/390x844-trade.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"trade-owned\"]",
+      "text": "3",
+      "font": {
+        "size": 11,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400",
+        "lineHeight": "16.5px"
+      },
+      "rect": {
+        "x": 67.83,
+        "y": 336.5,
+        "width": 7,
+        "height": 13,
+        "right": 74.83,
+        "bottom": 349.5
+      },
+      "elementRect": {
+        "x": 38.36,
+        "y": 335.5,
+        "width": 36.47,
+        "height": 16.5,
+        "right": 74.83,
+        "bottom": 352
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "trade",
+        "trade"
+      ],
+      "files": [
+        "current/390x844-trade.json",
+        "current/390x844-trade.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"trade-owned\"]",
+      "text": "2",
+      "font": {
+        "size": 11,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400",
+        "lineHeight": "16.5px"
+      },
+      "rect": {
+        "x": 137.02,
+        "y": 336.5,
+        "width": 7,
+        "height": 13,
+        "right": 144.02,
+        "bottom": 349.5
+      },
+      "elementRect": {
+        "x": 107.55,
+        "y": 335.5,
+        "width": 36.47,
+        "height": 16.5,
+        "right": 144.02,
+        "bottom": 352
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "trade",
+        "trade",
+        "trade",
+        "trade"
+      ],
+      "files": [
+        "current/390x844-trade.json",
+        "current/390x844-trade.json",
+        "current/390x844-trade.json",
+        "current/390x844-trade.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"trade-owned\"]",
+      "text": "4",
+      "font": {
+        "size": 11,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400",
+        "lineHeight": "16.5px"
+      },
+      "rect": {
+        "x": 206.22,
+        "y": 336.5,
+        "width": 7,
+        "height": 13,
+        "right": 213.22,
+        "bottom": 349.5
+      },
+      "elementRect": {
+        "x": 176.75,
+        "y": 335.5,
+        "width": 36.47,
+        "height": 16.5,
+        "right": 213.22,
+        "bottom": 352
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "trade",
+        "trade"
+      ],
+      "files": [
+        "current/390x844-trade.json",
+        "current/390x844-trade.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"trade-owned\"]",
+      "text": "1",
+      "font": {
+        "size": 11,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400",
+        "lineHeight": "16.5px"
+      },
+      "rect": {
+        "x": 275.42,
+        "y": 336.5,
+        "width": 7,
+        "height": 13,
+        "right": 282.42,
+        "bottom": 349.5
+      },
+      "elementRect": {
+        "x": 245.95,
+        "y": 335.5,
+        "width": 36.47,
+        "height": 16.5,
+        "right": 282.42,
+        "bottom": 352
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "trade",
+        "trade"
+      ],
+      "files": [
+        "current/390x844-trade.json",
+        "current/390x844-trade.json"
+      ]
+    },
+    {
+      "selector": "button[data-testid=\"build-path\"] > span:nth-child(1)",
+      "text": "Path",
+      "font": {
+        "size": 10.5,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "16px"
+      },
+      "rect": {
+        "x": 34.78,
+        "y": 204,
+        "width": 22.42,
+        "height": 12,
+        "right": 57.2,
+        "bottom": 216
+      },
+      "elementRect": {
+        "x": 34.78,
+        "y": 202,
+        "width": 22.42,
+        "height": 16,
+        "right": 57.2,
+        "bottom": 218
+      },
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div:nth-child(1) > div:nth-child(1) > div:nth-child(7)",
+      "states": [
+        "costs",
+        "disabled-build",
+        "error",
+        "fortunes",
+        "help",
+        "incoming-offer",
+        "main",
+        "player-menu",
+        "table-menu",
+        "trade",
+        "hand-rates",
+        "keyboard-place-list",
+        "main-geometry",
+        "own-player-menu"
+      ],
+      "files": [
+        "current/844x390-costs.json",
+        "current/844x390-disabled-build.json",
+        "current/844x390-error.json",
+        "current/844x390-fortunes.json",
+        "current/844x390-help.json",
+        "current/844x390-incoming-offer.json",
+        "current/844x390-main.json",
+        "current/844x390-player-menu.json",
+        "current/844x390-table-menu.json",
+        "current/844x390-trade.json",
+        "current-supplement/844x390-hand-rates.json",
+        "current-supplement/844x390-keyboard-place-list.json",
+        "current-supplement/844x390-main-geometry.json",
+        "current-supplement/844x390-own-player-menu.json"
+      ]
+    },
+    {
+      "selector": "button[data-testid=\"build-path\"] > span:nth-child(1) > span:nth-child(2)",
+      "text": "\u2713",
+      "font": {
+        "size": 10,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "700",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 62.48,
+        "y": 197,
+        "width": 9.03,
+        "height": 12,
+        "right": 71.52,
+        "bottom": 209
+      },
+      "elementRect": {
+        "x": 59,
+        "y": 195,
+        "width": 16,
+        "height": 16,
+        "right": 75,
+        "bottom": 211
+      },
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div:nth-child(1) > div:nth-child(1) > div:nth-child(7)",
+      "states": [
+        "costs",
+        "error",
+        "fortunes",
+        "help",
+        "incoming-offer",
+        "main",
+        "player-menu",
+        "table-menu",
+        "trade",
+        "hand-rates",
+        "main-geometry",
+        "own-player-menu"
+      ],
+      "files": [
+        "current/844x390-costs.json",
+        "current/844x390-error.json",
+        "current/844x390-fortunes.json",
+        "current/844x390-help.json",
+        "current/844x390-incoming-offer.json",
+        "current/844x390-main.json",
+        "current/844x390-player-menu.json",
+        "current/844x390-table-menu.json",
+        "current/844x390-trade.json",
+        "current-supplement/844x390-hand-rates.json",
+        "current-supplement/844x390-main-geometry.json",
+        "current-supplement/844x390-own-player-menu.json"
+      ]
+    },
+    {
+      "selector": "button[data-testid=\"build-outpost\"] > span:nth-child(1)",
+      "text": "Outpost",
+      "font": {
+        "size": 10.5,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "16px"
+      },
+      "rect": {
+        "x": 89.94,
+        "y": 204,
+        "width": 40.11,
+        "height": 12,
+        "right": 130.05,
+        "bottom": 216
+      },
+      "elementRect": {
+        "x": 89.94,
+        "y": 202,
+        "width": 40.11,
+        "height": 16,
+        "right": 130.05,
+        "bottom": 218
+      },
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div:nth-child(1) > div:nth-child(1) > div:nth-child(7)",
+      "states": [
+        "costs",
+        "disabled-build",
+        "error",
+        "fortunes",
+        "help",
+        "incoming-offer",
+        "main",
+        "player-menu",
+        "table-menu",
+        "trade",
+        "hand-rates",
+        "keyboard-place-list",
+        "main-geometry",
+        "own-player-menu"
+      ],
+      "files": [
+        "current/844x390-costs.json",
+        "current/844x390-disabled-build.json",
+        "current/844x390-error.json",
+        "current/844x390-fortunes.json",
+        "current/844x390-help.json",
+        "current/844x390-incoming-offer.json",
+        "current/844x390-main.json",
+        "current/844x390-player-menu.json",
+        "current/844x390-table-menu.json",
+        "current/844x390-trade.json",
+        "current-supplement/844x390-hand-rates.json",
+        "current-supplement/844x390-keyboard-place-list.json",
+        "current-supplement/844x390-main-geometry.json",
+        "current-supplement/844x390-own-player-menu.json"
+      ]
+    },
+    {
+      "selector": "button[data-testid=\"build-outpost\"] > span:nth-child(1) > span:nth-child(2)",
+      "text": "\u2713",
+      "font": {
+        "size": 10,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "700",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 126.48,
+        "y": 197,
+        "width": 9.03,
+        "height": 12,
+        "right": 135.52,
+        "bottom": 209
+      },
+      "elementRect": {
+        "x": 123,
+        "y": 195,
+        "width": 16,
+        "height": 16,
+        "right": 139,
+        "bottom": 211
+      },
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div:nth-child(1) > div:nth-child(1) > div:nth-child(7)",
+      "states": [
+        "costs",
+        "error",
+        "fortunes",
+        "help",
+        "incoming-offer",
+        "main",
+        "player-menu",
+        "table-menu",
+        "trade",
+        "hand-rates",
+        "keyboard-place-list",
+        "main-geometry",
+        "own-player-menu"
+      ],
+      "files": [
+        "current/844x390-costs.json",
+        "current/844x390-error.json",
+        "current/844x390-fortunes.json",
+        "current/844x390-help.json",
+        "current/844x390-incoming-offer.json",
+        "current/844x390-main.json",
+        "current/844x390-player-menu.json",
+        "current/844x390-table-menu.json",
+        "current/844x390-trade.json",
+        "current-supplement/844x390-hand-rates.json",
+        "current-supplement/844x390-keyboard-place-list.json",
+        "current-supplement/844x390-main-geometry.json",
+        "current-supplement/844x390-own-player-menu.json"
+      ]
+    },
+    {
+      "selector": "button[data-testid=\"build-stronghold\"] > span:nth-child(1)",
+      "text": "Upgrade",
+      "font": {
+        "size": 10.5,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "16px"
+      },
+      "rect": {
+        "x": 152.55,
+        "y": 204,
+        "width": 42.91,
+        "height": 12,
+        "right": 195.45,
+        "bottom": 216
+      },
+      "elementRect": {
+        "x": 152.55,
+        "y": 202,
+        "width": 42.91,
+        "height": 16,
+        "right": 195.45,
+        "bottom": 218
+      },
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div:nth-child(1) > div:nth-child(1) > div:nth-child(7)",
+      "states": [
+        "costs",
+        "disabled-build",
+        "error",
+        "fortunes",
+        "help",
+        "incoming-offer",
+        "main",
+        "player-menu",
+        "table-menu",
+        "trade",
+        "hand-rates",
+        "keyboard-place-list",
+        "main-geometry",
+        "own-player-menu"
+      ],
+      "files": [
+        "current/844x390-costs.json",
+        "current/844x390-disabled-build.json",
+        "current/844x390-error.json",
+        "current/844x390-fortunes.json",
+        "current/844x390-help.json",
+        "current/844x390-incoming-offer.json",
+        "current/844x390-main.json",
+        "current/844x390-player-menu.json",
+        "current/844x390-table-menu.json",
+        "current/844x390-trade.json",
+        "current-supplement/844x390-hand-rates.json",
+        "current-supplement/844x390-keyboard-place-list.json",
+        "current-supplement/844x390-main-geometry.json",
+        "current-supplement/844x390-own-player-menu.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-stronghold-grain\"] > span:nth-child(2)",
+      "text": "\u2212",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 156.81,
+        "y": 215,
+        "width": 6.09,
+        "height": 11,
+        "right": 162.91,
+        "bottom": 226
+      },
+      "elementRect": {
+        "x": 152.81,
+        "y": 216,
+        "width": 20.19,
+        "height": 10,
+        "right": 173,
+        "bottom": 226
+      },
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div:nth-child(1) > div:nth-child(1) > div:nth-child(7)",
+      "states": [
+        "costs",
+        "disabled-build",
+        "error",
+        "fortunes",
+        "help",
+        "incoming-offer",
+        "main",
+        "player-menu",
+        "table-menu",
+        "trade",
+        "hand-rates",
+        "keyboard-place-list",
+        "main-geometry",
+        "own-player-menu"
+      ],
+      "files": [
+        "current/844x390-costs.json",
+        "current/844x390-disabled-build.json",
+        "current/844x390-error.json",
+        "current/844x390-fortunes.json",
+        "current/844x390-help.json",
+        "current/844x390-incoming-offer.json",
+        "current/844x390-main.json",
+        "current/844x390-player-menu.json",
+        "current/844x390-table-menu.json",
+        "current/844x390-trade.json",
+        "current-supplement/844x390-hand-rates.json",
+        "current-supplement/844x390-keyboard-place-list.json",
+        "current-supplement/844x390-main-geometry.json",
+        "current-supplement/844x390-own-player-menu.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-stronghold-grain\"] > span:nth-child(2)",
+      "text": "2",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 162.91,
+        "y": 215,
+        "width": 6.09,
+        "height": 11,
+        "right": 169,
+        "bottom": 226
+      },
+      "elementRect": {
+        "x": 152.81,
+        "y": 216,
+        "width": 20.19,
+        "height": 10,
+        "right": 173,
+        "bottom": 226
+      },
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div:nth-child(1) > div:nth-child(1) > div:nth-child(7)",
+      "states": [
+        "costs",
+        "error",
+        "fortunes",
+        "help",
+        "incoming-offer",
+        "main",
+        "player-menu",
+        "table-menu",
+        "trade",
+        "hand-rates",
+        "keyboard-place-list",
+        "main-geometry",
+        "own-player-menu"
+      ],
+      "files": [
+        "current/844x390-costs.json",
+        "current/844x390-error.json",
+        "current/844x390-fortunes.json",
+        "current/844x390-help.json",
+        "current/844x390-incoming-offer.json",
+        "current/844x390-main.json",
+        "current/844x390-player-menu.json",
+        "current/844x390-table-menu.json",
+        "current/844x390-trade.json",
+        "current-supplement/844x390-hand-rates.json",
+        "current-supplement/844x390-keyboard-place-list.json",
+        "current-supplement/844x390-main-geometry.json",
+        "current-supplement/844x390-own-player-menu.json"
+      ]
+    },
+    {
+      "selector": "button[data-testid=\"build-card\"] > span:nth-child(1)",
+      "text": "Fortune",
+      "font": {
+        "size": 10.5,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "16px"
+      },
+      "rect": {
+        "x": 218.69,
+        "y": 201,
+        "width": 38.61,
+        "height": 12,
+        "right": 257.3,
+        "bottom": 213
+      },
+      "elementRect": {
+        "x": 218.69,
+        "y": 199,
+        "width": 38.61,
+        "height": 16,
+        "right": 257.3,
+        "bottom": 215
+      },
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div[data-testid=\"cost-card\"] > div:nth-child(2) > ul:nth-child(1)",
+      "states": [
+        "costs",
+        "disabled-build",
+        "error",
+        "fortunes",
+        "help",
+        "incoming-offer",
+        "main",
+        "player-menu",
+        "table-menu",
+        "trade",
+        "hand-rates",
+        "keyboard-place-list",
+        "main-geometry",
+        "own-player-menu"
+      ],
+      "files": [
+        "current/844x390-costs.json",
+        "current/844x390-disabled-build.json",
+        "current/844x390-error.json",
+        "current/844x390-fortunes.json",
+        "current/844x390-help.json",
+        "current/844x390-incoming-offer.json",
+        "current/844x390-main.json",
+        "current/844x390-player-menu.json",
+        "current/844x390-table-menu.json",
+        "current/844x390-trade.json",
+        "current-supplement/844x390-hand-rates.json",
+        "current-supplement/844x390-keyboard-place-list.json",
+        "current-supplement/844x390-main-geometry.json",
+        "current-supplement/844x390-own-player-menu.json"
+      ]
+    },
+    {
+      "selector": "button[data-testid=\"build-card\"] > span:nth-child(1) > span:nth-child(2)",
+      "text": "\u2713",
+      "font": {
+        "size": 10,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "700",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 254.48,
+        "y": 197,
+        "width": 9.03,
+        "height": 12,
+        "right": 263.52,
+        "bottom": 209
+      },
+      "elementRect": {
+        "x": 251,
+        "y": 195,
+        "width": 16,
+        "height": 16,
+        "right": 267,
+        "bottom": 211
+      },
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div[data-testid=\"cost-card\"] > div:nth-child(2) > ul:nth-child(1)",
+      "states": [
+        "costs",
+        "error",
+        "fortunes",
+        "help",
+        "incoming-offer",
+        "main",
+        "player-menu",
+        "table-menu",
+        "trade",
+        "hand-rates",
+        "keyboard-place-list",
+        "main-geometry",
+        "own-player-menu"
+      ],
+      "files": [
+        "current/844x390-costs.json",
+        "current/844x390-error.json",
+        "current/844x390-fortunes.json",
+        "current/844x390-help.json",
+        "current/844x390-incoming-offer.json",
+        "current/844x390-main.json",
+        "current/844x390-player-menu.json",
+        "current/844x390-table-menu.json",
+        "current/844x390-trade.json",
+        "current-supplement/844x390-hand-rates.json",
+        "current-supplement/844x390-keyboard-place-list.json",
+        "current-supplement/844x390-main-geometry.json",
+        "current-supplement/844x390-own-player-menu.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"deck-left\"]",
+      "text": "17",
+      "font": {
+        "size": 10,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 221.73,
+        "y": 230,
+        "width": 13.11,
+        "height": 12,
+        "right": 234.84,
+        "bottom": 242
+      },
+      "elementRect": {
+        "x": 221.73,
+        "y": 231,
+        "width": 32.52,
+        "height": 10,
+        "right": 254.25,
+        "bottom": 241
+      },
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "li[data-testid=\"cost-row-stronghold\"]",
+      "states": [
+        "costs",
+        "disabled-build",
+        "error",
+        "fortunes",
+        "help",
+        "incoming-offer",
+        "main",
+        "player-menu",
+        "table-menu",
+        "trade",
+        "hand-rates",
+        "keyboard-place-list",
+        "main-geometry",
+        "own-player-menu"
+      ],
+      "files": [
+        "current/844x390-costs.json",
+        "current/844x390-disabled-build.json",
+        "current/844x390-error.json",
+        "current/844x390-fortunes.json",
+        "current/844x390-help.json",
+        "current/844x390-incoming-offer.json",
+        "current/844x390-main.json",
+        "current/844x390-player-menu.json",
+        "current/844x390-table-menu.json",
+        "current/844x390-trade.json",
+        "current-supplement/844x390-hand-rates.json",
+        "current-supplement/844x390-keyboard-place-list.json",
+        "current-supplement/844x390-main-geometry.json",
+        "current-supplement/844x390-own-player-menu.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"deck-left\"]",
+      "text": "left",
+      "font": {
+        "size": 10,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 234.84,
+        "y": 230,
+        "width": 19.41,
+        "height": 12,
+        "right": 254.25,
+        "bottom": 242
+      },
+      "elementRect": {
+        "x": 221.73,
+        "y": 231,
+        "width": 32.52,
+        "height": 10,
+        "right": 254.25,
+        "bottom": 241
+      },
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "li[data-testid=\"cost-row-stronghold\"]",
+      "states": [
+        "costs",
+        "disabled-build",
+        "error",
+        "fortunes",
+        "help",
+        "incoming-offer",
+        "main",
+        "player-menu",
+        "table-menu",
+        "trade",
+        "hand-rates",
+        "keyboard-place-list",
+        "main-geometry",
+        "own-player-menu"
+      ],
+      "files": [
+        "current/844x390-costs.json",
+        "current/844x390-disabled-build.json",
+        "current/844x390-error.json",
+        "current/844x390-fortunes.json",
+        "current/844x390-help.json",
+        "current/844x390-incoming-offer.json",
+        "current/844x390-main.json",
+        "current/844x390-player-menu.json",
+        "current/844x390-table-menu.json",
+        "current/844x390-trade.json",
+        "current-supplement/844x390-hand-rates.json",
+        "current-supplement/844x390-keyboard-place-list.json",
+        "current-supplement/844x390-main-geometry.json",
+        "current-supplement/844x390-own-player-menu.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-path-timber\"] > span:nth-child(2)",
+      "text": "\u2212",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 28.81,
+        "y": 215,
+        "width": 6.09,
+        "height": 11,
+        "right": 34.91,
+        "bottom": 226
+      },
+      "elementRect": {
+        "x": 24.81,
+        "y": 216,
+        "width": 20.19,
+        "height": 10,
+        "right": 45,
+        "bottom": 226
+      },
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "disabled-build"
+      ],
+      "files": [
+        "current/844x390-disabled-build.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-path-timber\"] > span:nth-child(2)",
+      "text": "1",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 34.91,
+        "y": 215,
+        "width": 6.09,
+        "height": 11,
+        "right": 41,
+        "bottom": 226
+      },
+      "elementRect": {
+        "x": 24.81,
+        "y": 216,
+        "width": 20.19,
+        "height": 10,
+        "right": 45,
+        "bottom": 226
+      },
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "span[data-testid=\"cost-path-clay\"] > span:nth-child(2)",
+      "states": [
+        "disabled-build"
+      ],
+      "files": [
+        "current/844x390-disabled-build.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-path-clay\"] > span:nth-child(2)",
+      "text": "\u2212",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 42.81,
+        "y": 215,
+        "width": 6.09,
+        "height": 11,
+        "right": 48.91,
+        "bottom": 226
+      },
+      "elementRect": {
+        "x": 38.81,
+        "y": 216,
+        "width": 20.19,
+        "height": 10,
+        "right": 59,
+        "bottom": 226
+      },
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "disabled-build"
+      ],
+      "files": [
+        "current/844x390-disabled-build.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-path-clay\"] > span:nth-child(2)",
+      "text": "1",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 48.91,
+        "y": 215,
+        "width": 6.09,
+        "height": 11,
+        "right": 55,
+        "bottom": 226
+      },
+      "elementRect": {
+        "x": 38.81,
+        "y": 216,
+        "width": 20.19,
+        "height": 10,
+        "right": 59,
+        "bottom": 226
+      },
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "disabled-build"
+      ],
+      "files": [
+        "current/844x390-disabled-build.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-outpost-timber\"] > span:nth-child(2)",
+      "text": "\u2212",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 78.81,
+        "y": 215,
+        "width": 6.09,
+        "height": 11,
+        "right": 84.91,
+        "bottom": 226
+      },
+      "elementRect": {
+        "x": 74.81,
+        "y": 216,
+        "width": 20.19,
+        "height": 10,
+        "right": 95,
+        "bottom": 226
+      },
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "disabled-build"
+      ],
+      "files": [
+        "current/844x390-disabled-build.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-outpost-timber\"] > span:nth-child(2)",
+      "text": "1",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 84.91,
+        "y": 215,
+        "width": 6.09,
+        "height": 11,
+        "right": 91,
+        "bottom": 226
+      },
+      "elementRect": {
+        "x": 74.81,
+        "y": 216,
+        "width": 20.19,
+        "height": 10,
+        "right": 95,
+        "bottom": 226
+      },
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "span[data-testid=\"cost-outpost-clay\"] > span:nth-child(2)",
+      "states": [
+        "disabled-build"
+      ],
+      "files": [
+        "current/844x390-disabled-build.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-outpost-clay\"] > span:nth-child(2)",
+      "text": "\u2212",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 92.81,
+        "y": 215,
+        "width": 6.09,
+        "height": 11,
+        "right": 98.91,
+        "bottom": 226
+      },
+      "elementRect": {
+        "x": 88.81,
+        "y": 216,
+        "width": 20.19,
+        "height": 10,
+        "right": 109,
+        "bottom": 226
+      },
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "disabled-build"
+      ],
+      "files": [
+        "current/844x390-disabled-build.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-outpost-clay\"] > span:nth-child(2)",
+      "text": "1",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 98.91,
+        "y": 215,
+        "width": 6.09,
+        "height": 11,
+        "right": 105,
+        "bottom": 226
+      },
+      "elementRect": {
+        "x": 88.81,
+        "y": 216,
+        "width": 20.19,
+        "height": 10,
+        "right": 109,
+        "bottom": 226
+      },
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "span[data-testid=\"cost-outpost-wool\"] > span:nth-child(2)",
+      "states": [
+        "disabled-build"
+      ],
+      "files": [
+        "current/844x390-disabled-build.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-outpost-wool\"] > span:nth-child(2)",
+      "text": "\u2212",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 106.81,
+        "y": 215,
+        "width": 6.09,
+        "height": 11,
+        "right": 112.91,
+        "bottom": 226
+      },
+      "elementRect": {
+        "x": 102.81,
+        "y": 216,
+        "width": 20.19,
+        "height": 10,
+        "right": 123,
+        "bottom": 226
+      },
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "disabled-build"
+      ],
+      "files": [
+        "current/844x390-disabled-build.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-outpost-wool\"] > span:nth-child(2)",
+      "text": "1",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 112.91,
+        "y": 215,
+        "width": 6.09,
+        "height": 11,
+        "right": 119,
+        "bottom": 226
+      },
+      "elementRect": {
+        "x": 102.81,
+        "y": 216,
+        "width": 20.19,
+        "height": 10,
+        "right": 123,
+        "bottom": 226
+      },
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "span[data-testid=\"cost-outpost-grain\"] > span:nth-child(2)",
+      "states": [
+        "disabled-build"
+      ],
+      "files": [
+        "current/844x390-disabled-build.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-outpost-grain\"] > span:nth-child(2)",
+      "text": "\u2212",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 120.81,
+        "y": 215,
+        "width": 6.09,
+        "height": 11,
+        "right": 126.91,
+        "bottom": 226
+      },
+      "elementRect": {
+        "x": 116.81,
+        "y": 216,
+        "width": 20.19,
+        "height": 10,
+        "right": 137,
+        "bottom": 226
+      },
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "disabled-build"
+      ],
+      "files": [
+        "current/844x390-disabled-build.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-outpost-grain\"] > span:nth-child(2)",
+      "text": "1",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 126.91,
+        "y": 215,
+        "width": 6.09,
+        "height": 11,
+        "right": 133,
+        "bottom": 226
+      },
+      "elementRect": {
+        "x": 116.81,
+        "y": 216,
+        "width": 20.19,
+        "height": 10,
+        "right": 137,
+        "bottom": 226
+      },
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "disabled-build"
+      ],
+      "files": [
+        "current/844x390-disabled-build.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-stronghold-grain\"] > span:nth-child(2)",
+      "text": "3",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 162.91,
+        "y": 215,
+        "width": 6.09,
+        "height": 11,
+        "right": 169,
+        "bottom": 226
+      },
+      "elementRect": {
+        "x": 152.81,
+        "y": 216,
+        "width": 20.19,
+        "height": 10,
+        "right": 173,
+        "bottom": 226
+      },
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "disabled-build"
+      ],
+      "files": [
+        "current/844x390-disabled-build.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-stronghold-ore\"] > span:nth-child(2)",
+      "text": "\u2212",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 181.67,
+        "y": 215,
+        "width": 6.09,
+        "height": 11,
+        "right": 187.77,
+        "bottom": 226
+      },
+      "elementRect": {
+        "x": 177.67,
+        "y": 216,
+        "width": 20.19,
+        "height": 10,
+        "right": 197.86,
+        "bottom": 226
+      },
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "disabled-build"
+      ],
+      "files": [
+        "current/844x390-disabled-build.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-stronghold-ore\"] > span:nth-child(2)",
+      "text": "2",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 187.77,
+        "y": 215,
+        "width": 6.09,
+        "height": 11,
+        "right": 193.86,
+        "bottom": 226
+      },
+      "elementRect": {
+        "x": 177.67,
+        "y": 216,
+        "width": 20.19,
+        "height": 10,
+        "right": 197.86,
+        "bottom": 226
+      },
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "disabled-build"
+      ],
+      "files": [
+        "current/844x390-disabled-build.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-card-wool\"] > span:nth-child(2)",
+      "text": "\u2212",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 213.81,
+        "y": 208,
+        "width": 6.09,
+        "height": 11,
+        "right": 219.91,
+        "bottom": 219
+      },
+      "elementRect": {
+        "x": 209.81,
+        "y": 209,
+        "width": 20.19,
+        "height": 10,
+        "right": 230,
+        "bottom": 219
+      },
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "disabled-build"
+      ],
+      "files": [
+        "current/844x390-disabled-build.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-card-wool\"] > span:nth-child(2)",
+      "text": "1",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 219.91,
+        "y": 208,
+        "width": 6.09,
+        "height": 11,
+        "right": 226,
+        "bottom": 219
+      },
+      "elementRect": {
+        "x": 209.81,
+        "y": 209,
+        "width": 20.19,
+        "height": 10,
+        "right": 230,
+        "bottom": 219
+      },
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "span[data-testid=\"cost-card-grain\"] > span:nth-child(2)",
+      "states": [
+        "disabled-build"
+      ],
+      "files": [
+        "current/844x390-disabled-build.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-card-grain\"] > span:nth-child(2)",
+      "text": "\u2212",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 227.81,
+        "y": 208,
+        "width": 6.09,
+        "height": 11,
+        "right": 233.91,
+        "bottom": 219
+      },
+      "elementRect": {
+        "x": 223.81,
+        "y": 209,
+        "width": 20.19,
+        "height": 10,
+        "right": 244,
+        "bottom": 219
+      },
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "disabled-build"
+      ],
+      "files": [
+        "current/844x390-disabled-build.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-card-grain\"] > span:nth-child(2)",
+      "text": "1",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 233.91,
+        "y": 208,
+        "width": 6.09,
+        "height": 11,
+        "right": 240,
+        "bottom": 219
+      },
+      "elementRect": {
+        "x": 223.81,
+        "y": 209,
+        "width": 20.19,
+        "height": 10,
+        "right": 244,
+        "bottom": 219
+      },
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "span[data-testid=\"cost-card-ore\"] > span:nth-child(2)",
+      "states": [
+        "disabled-build"
+      ],
+      "files": [
+        "current/844x390-disabled-build.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-card-ore\"] > span:nth-child(2)",
+      "text": "\u2212",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 241.81,
+        "y": 208,
+        "width": 6.09,
+        "height": 11,
+        "right": 247.91,
+        "bottom": 219
+      },
+      "elementRect": {
+        "x": 237.81,
+        "y": 209,
+        "width": 20.19,
+        "height": 10,
+        "right": 258,
+        "bottom": 219
+      },
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "disabled-build"
+      ],
+      "files": [
+        "current/844x390-disabled-build.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"cost-card-ore\"] > span:nth-child(2)",
+      "text": "1",
+      "font": {
+        "size": 9,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "600",
+        "lineHeight": "10px"
+      },
+      "rect": {
+        "x": 247.91,
+        "y": 208,
+        "width": 6.09,
+        "height": 11,
+        "right": 254,
+        "bottom": 219
+      },
+      "elementRect": {
+        "x": 237.81,
+        "y": 209,
+        "width": 20.19,
+        "height": 10,
+        "right": 258,
+        "bottom": 219
+      },
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "disabled-build"
+      ],
+      "files": [
+        "current/844x390-disabled-build.json"
+      ]
+    },
+    {
+      "selector": "div[data-testid=\"win-reason\"] > span:nth-child(1)",
+      "text": "4 stronghold points",
+      "font": {
+        "size": 11,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400",
+        "lineHeight": "16.5px"
+      },
+      "rect": {
+        "x": 293.92,
+        "y": 146.39,
+        "width": 102.36,
+        "height": 13,
+        "right": 396.28,
+        "bottom": 159.39
+      },
+      "elementRect": {
+        "x": 293.92,
+        "y": 145.39,
+        "width": 102.36,
+        "height": 16.5,
+        "right": 396.28,
+        "bottom": 161.89
+      },
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "results"
+      ],
+      "files": [
+        "current/844x390-results.json"
+      ]
+    },
+    {
+      "selector": "div[data-testid=\"win-reason\"] > span:nth-child(2)",
+      "text": "+",
+      "font": {
+        "size": 11,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400",
+        "lineHeight": "16.5px"
+      },
+      "rect": {
+        "x": 402.28,
+        "y": 146.39,
+        "width": 10.16,
+        "height": 13,
+        "right": 412.44,
+        "bottom": 159.39
+      },
+      "elementRect": {
+        "x": 402.28,
+        "y": 145.39,
+        "width": 85.53,
+        "height": 16.5,
+        "right": 487.81,
+        "bottom": 161.89
+      },
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "results"
+      ],
+      "files": [
+        "current/844x390-results.json"
+      ]
+    },
+    {
+      "selector": "div[data-testid=\"win-reason\"] > span:nth-child(2)",
+      "text": "2 longest path",
+      "font": {
+        "size": 11,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400",
+        "lineHeight": "16.5px"
+      },
+      "rect": {
+        "x": 412.44,
+        "y": 146.39,
+        "width": 75.38,
+        "height": 13,
+        "right": 487.81,
+        "bottom": 159.39
+      },
+      "elementRect": {
+        "x": 402.28,
+        "y": 145.39,
+        "width": 85.53,
+        "height": 16.5,
+        "right": 487.81,
+        "bottom": 161.89
+      },
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "results"
+      ],
+      "files": [
+        "current/844x390-results.json"
+      ]
+    },
+    {
+      "selector": "div[data-testid=\"win-reason\"] > span:nth-child(3)",
+      "text": "+",
+      "font": {
+        "size": 11,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400",
+        "lineHeight": "16.5px"
+      },
+      "rect": {
+        "x": 493.81,
+        "y": 146.39,
+        "width": 10.16,
+        "height": 13,
+        "right": 503.97,
+        "bottom": 159.39
+      },
+      "elementRect": {
+        "x": 493.81,
+        "y": 145.39,
+        "width": 56.27,
+        "height": 16.5,
+        "right": 550.08,
+        "bottom": 161.89
+      },
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "results"
+      ],
+      "files": [
+        "current/844x390-results.json"
+      ]
+    },
+    {
+      "selector": "div[data-testid=\"win-reason\"] > span:nth-child(3)",
+      "text": "4 hidden",
+      "font": {
+        "size": 11,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400",
+        "lineHeight": "16.5px"
+      },
+      "rect": {
+        "x": 503.97,
+        "y": 146.39,
+        "width": 46.11,
+        "height": 13,
+        "right": 550.08,
+        "bottom": 159.39
+      },
+      "elementRect": {
+        "x": 493.81,
+        "y": 145.39,
+        "width": 56.27,
+        "height": 16.5,
+        "right": 550.08,
+        "bottom": 161.89
+      },
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "results"
+      ],
+      "files": [
+        "current/844x390-results.json"
+      ]
+    },
+    {
+      "selector": "div[data-testid=\"win-table-wrap\"] > table:nth-child(1) > thead:nth-child(1) > tr:nth-child(1) > th:nth-child(1)",
+      "text": "Player",
+      "font": {
+        "size": 11,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "15.7143px"
+      },
+      "rect": {
+        "x": 174.42,
+        "y": 170.89,
+        "width": 43.7,
+        "height": 13,
+        "right": 218.13,
+        "bottom": 183.89
+      },
+      "elementRect": {
+        "x": 103,
+        "y": 167.89,
+        "width": 119.13,
+        "height": 20.2,
+        "right": 222.13,
+        "bottom": 188.09
+      },
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "results"
+      ],
+      "files": [
+        "current/844x390-results.json"
+      ]
+    },
+    {
+      "selector": "div[data-testid=\"win-table-wrap\"] > table:nth-child(1) > thead:nth-child(1) > tr:nth-child(1) > th:nth-child(2) > span:nth-child(2)",
+      "text": "Outposts",
+      "font": {
+        "size": 11,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "15.7143px"
+      },
+      "rect": {
+        "x": 235.42,
+        "y": 170.89,
+        "width": 63.56,
+        "height": 13,
+        "right": 298.98,
+        "bottom": 183.89
+      },
+      "elementRect": {
+        "x": 235.42,
+        "y": 170.89,
+        "width": 63.56,
+        "height": 13,
+        "right": 298.98,
+        "bottom": 183.89
+      },
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "results"
+      ],
+      "files": [
+        "current/844x390-results.json"
+      ]
+    },
+    {
+      "selector": "div[data-testid=\"win-table-wrap\"] > table:nth-child(1) > thead:nth-child(1) > tr:nth-child(1) > th:nth-child(3) > span:nth-child(2)",
+      "text": "Strongholds",
+      "font": {
+        "size": 11,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "15.7143px"
+      },
+      "rect": {
+        "x": 319.56,
+        "y": 170.89,
+        "width": 88.77,
+        "height": 13,
+        "right": 408.33,
+        "bottom": 183.89
+      },
+      "elementRect": {
+        "x": 319.56,
+        "y": 170.89,
+        "width": 88.77,
+        "height": 13,
+        "right": 408.33,
+        "bottom": 183.89
+      },
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "results"
+      ],
+      "files": [
+        "current/844x390-results.json"
+      ]
+    },
+    {
+      "selector": "div[data-testid=\"win-table-wrap\"] > table:nth-child(1) > thead:nth-child(1) > tr:nth-child(1) > th:nth-child(4) > span:nth-child(2)",
+      "text": "Longest path",
+      "font": {
+        "size": 11,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "15.7143px"
+      },
+      "rect": {
+        "x": 428.78,
+        "y": 170.89,
+        "width": 87.83,
+        "height": 13,
+        "right": 516.61,
+        "bottom": 183.89
+      },
+      "elementRect": {
+        "x": 428.78,
+        "y": 170.89,
+        "width": 87.83,
+        "height": 13,
+        "right": 516.61,
+        "bottom": 183.89
+      },
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "results"
+      ],
+      "files": [
+        "current/844x390-results.json"
+      ]
+    },
+    {
+      "selector": "div[data-testid=\"win-table-wrap\"] > table:nth-child(1) > thead:nth-child(1) > tr:nth-child(1) > th:nth-child(5) > span:nth-child(2)",
+      "text": "Largest army",
+      "font": {
+        "size": 11,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "15.7143px"
+      },
+      "rect": {
+        "x": 537.3,
+        "y": 170.89,
+        "width": 89.63,
+        "height": 13,
+        "right": 626.92,
+        "bottom": 183.89
+      },
+      "elementRect": {
+        "x": 537.3,
+        "y": 170.89,
+        "width": 89.63,
+        "height": 13,
+        "right": 626.92,
+        "bottom": 183.89
+      },
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "results"
+      ],
+      "files": [
+        "current/844x390-results.json"
+      ]
+    },
+    {
+      "selector": "div[data-testid=\"win-table-wrap\"] > table:nth-child(1) > thead:nth-child(1) > tr:nth-child(1) > th:nth-child(6) > span:nth-child(2)",
+      "text": "Hidden",
+      "font": {
+        "size": 11,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "15.7143px"
+      },
+      "rect": {
+        "x": 641.75,
+        "y": 170.89,
+        "width": 44.53,
+        "height": 13,
+        "right": 686.28,
+        "bottom": 183.89
+      },
+      "elementRect": {
+        "x": 641.75,
+        "y": 170.89,
+        "width": 44.53,
+        "height": 13,
+        "right": 686.28,
+        "bottom": 183.89
+      },
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "results"
+      ],
+      "files": [
+        "current/844x390-results.json"
+      ]
+    },
+    {
+      "selector": "div[data-testid=\"win-table-wrap\"] > table:nth-child(1) > thead:nth-child(1) > tr:nth-child(1) > th:nth-child(7)",
+      "text": "Total",
+      "font": {
+        "size": 11,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "15.7143px"
+      },
+      "rect": {
+        "x": 700.14,
+        "y": 170.89,
+        "width": 36.86,
+        "height": 13,
+        "right": 737,
+        "bottom": 183.89
+      },
+      "elementRect": {
+        "x": 690.28,
+        "y": 167.89,
+        "width": 50.72,
+        "height": 20.2,
+        "right": 741,
+        "bottom": 188.09
+      },
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "results"
+      ],
+      "files": [
+        "current/844x390-results.json"
+      ]
+    },
+    {
+      "selector": "div[data-testid=\"trade-give-timber\"] > span:nth-child(2)",
+      "text": "Wood",
+      "font": {
+        "size": 11,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "650",
+        "lineHeight": "16.5px"
+      },
+      "rect": {
+        "x": 159.95,
+        "y": 109,
+        "width": 31.28,
+        "height": 13,
+        "right": 191.23,
+        "bottom": 122
+      },
+      "elementRect": {
+        "x": 159.95,
+        "y": 108,
+        "width": 31.28,
+        "height": 16.5,
+        "right": 191.23,
+        "bottom": 124.5
+      },
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "trade"
+      ],
+      "files": [
+        "current/844x390-trade.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"trade-owned\"]",
+      "text": "Have",
+      "font": {
+        "size": 10,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400",
+        "lineHeight": "15px"
+      },
+      "rect": {
+        "x": 158.83,
+        "y": 125.5,
+        "width": 27.09,
+        "height": 12,
+        "right": 185.92,
+        "bottom": 137.5
+      },
+      "elementRect": {
+        "x": 158.83,
+        "y": 124.5,
+        "width": 33.52,
+        "height": 15,
+        "right": 192.34,
+        "bottom": 139.5
+      },
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "trade",
+        "trade",
+        "trade",
+        "trade",
+        "trade",
+        "trade",
+        "trade",
+        "trade",
+        "trade",
+        "trade"
+      ],
+      "files": [
+        "current/844x390-trade.json",
+        "current/844x390-trade.json",
+        "current/844x390-trade.json",
+        "current/844x390-trade.json",
+        "current/844x390-trade.json",
+        "current/844x390-trade.json",
+        "current/844x390-trade.json",
+        "current/844x390-trade.json",
+        "current/844x390-trade.json",
+        "current/844x390-trade.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"trade-owned\"]",
+      "text": "3",
+      "font": {
+        "size": 10,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400",
+        "lineHeight": "15px"
+      },
+      "rect": {
+        "x": 185.92,
+        "y": 125.5,
+        "width": 6.42,
+        "height": 12,
+        "right": 192.34,
+        "bottom": 137.5
+      },
+      "elementRect": {
+        "x": 158.83,
+        "y": 124.5,
+        "width": 33.52,
+        "height": 15,
+        "right": 192.34,
+        "bottom": 139.5
+      },
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "trade",
+        "trade"
+      ],
+      "files": [
+        "current/844x390-trade.json",
+        "current/844x390-trade.json"
+      ]
+    },
+    {
+      "selector": "div[data-testid=\"trade-give-clay\"] > span:nth-child(2)",
+      "text": "Brick",
+      "font": {
+        "size": 11,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "650",
+        "lineHeight": "16.5px"
+      },
+      "rect": {
+        "x": 284.48,
+        "y": 109,
+        "width": 28.59,
+        "height": 13,
+        "right": 313.08,
+        "bottom": 122
+      },
+      "elementRect": {
+        "x": 284.48,
+        "y": 108,
+        "width": 28.59,
+        "height": 16.5,
+        "right": 313.08,
+        "bottom": 124.5
+      },
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "trade"
+      ],
+      "files": [
+        "current/844x390-trade.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"trade-owned\"]",
+      "text": "2",
+      "font": {
+        "size": 10,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400",
+        "lineHeight": "15px"
+      },
+      "rect": {
+        "x": 309.13,
+        "y": 125.5,
+        "width": 6.42,
+        "height": 12,
+        "right": 315.55,
+        "bottom": 137.5
+      },
+      "elementRect": {
+        "x": 282.03,
+        "y": 124.5,
+        "width": 33.52,
+        "height": 15,
+        "right": 315.55,
+        "bottom": 139.5
+      },
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "trade",
+        "trade",
+        "trade",
+        "trade"
+      ],
+      "files": [
+        "current/844x390-trade.json",
+        "current/844x390-trade.json",
+        "current/844x390-trade.json",
+        "current/844x390-trade.json"
+      ]
+    },
+    {
+      "selector": "div[data-testid=\"trade-give-wool\"] > span:nth-child(2)",
+      "text": "Sheep",
+      "font": {
+        "size": 11,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "650",
+        "lineHeight": "16.5px"
+      },
+      "rect": {
+        "x": 404.63,
+        "y": 109,
+        "width": 34.72,
+        "height": 13,
+        "right": 439.34,
+        "bottom": 122
+      },
+      "elementRect": {
+        "x": 404.63,
+        "y": 108,
+        "width": 34.72,
+        "height": 16.5,
+        "right": 439.34,
+        "bottom": 124.5
+      },
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "trade"
+      ],
+      "files": [
+        "current/844x390-trade.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"trade-owned\"]",
+      "text": "4",
+      "font": {
+        "size": 10,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400",
+        "lineHeight": "15px"
+      },
+      "rect": {
+        "x": 432.33,
+        "y": 125.5,
+        "width": 6.42,
+        "height": 12,
+        "right": 438.75,
+        "bottom": 137.5
+      },
+      "elementRect": {
+        "x": 405.23,
+        "y": 124.5,
+        "width": 33.52,
+        "height": 15,
+        "right": 438.75,
+        "bottom": 139.5
+      },
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "trade",
+        "trade"
+      ],
+      "files": [
+        "current/844x390-trade.json",
+        "current/844x390-trade.json"
+      ]
+    },
+    {
+      "selector": "div[data-testid=\"trade-give-grain\"] > span:nth-child(2)",
+      "text": "Wheat",
+      "font": {
+        "size": 11,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "650",
+        "lineHeight": "16.5px"
+      },
+      "rect": {
+        "x": 527.36,
+        "y": 109,
+        "width": 35.66,
+        "height": 13,
+        "right": 563.02,
+        "bottom": 122
+      },
+      "elementRect": {
+        "x": 527.36,
+        "y": 108,
+        "width": 35.66,
+        "height": 16.5,
+        "right": 563.02,
+        "bottom": 124.5
+      },
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "trade"
+      ],
+      "files": [
+        "current/844x390-trade.json"
+      ]
+    },
+    {
+      "selector": "span[data-testid=\"trade-owned\"]",
+      "text": "1",
+      "font": {
+        "size": 10,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400",
+        "lineHeight": "15px"
+      },
+      "rect": {
+        "x": 555.53,
+        "y": 125.5,
+        "width": 6.42,
+        "height": 12,
+        "right": 561.95,
+        "bottom": 137.5
+      },
+      "elementRect": {
+        "x": 528.44,
+        "y": 124.5,
+        "width": 33.52,
+        "height": 15,
+        "right": 561.95,
+        "bottom": 139.5
+      },
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "trade",
+        "trade"
+      ],
+      "files": [
+        "current/844x390-trade.json",
+        "current/844x390-trade.json"
+      ]
+    },
+    {
+      "selector": "div[data-testid=\"trade-give-ore\"] > span:nth-child(2)",
+      "text": "Stone",
+      "font": {
+        "size": 11,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "650",
+        "lineHeight": "16.5px"
+      },
+      "rect": {
+        "x": 652.28,
+        "y": 109,
+        "width": 32.22,
+        "height": 13,
+        "right": 684.5,
+        "bottom": 122
+      },
+      "elementRect": {
+        "x": 652.28,
+        "y": 108,
+        "width": 32.22,
+        "height": 16.5,
+        "right": 684.5,
+        "bottom": 124.5
+      },
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "trade"
+      ],
+      "files": [
+        "current/844x390-trade.json"
+      ]
+    },
+    {
+      "selector": "div[data-testid=\"trade-want-timber\"] > span:nth-child(2)",
+      "text": "Wood",
+      "font": {
+        "size": 11,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "650",
+        "lineHeight": "16.5px"
+      },
+      "rect": {
+        "x": 159.95,
+        "y": 235.5,
+        "width": 31.28,
+        "height": 13,
+        "right": 191.23,
+        "bottom": 248.5
+      },
+      "elementRect": {
+        "x": 159.95,
+        "y": 234.5,
+        "width": 31.28,
+        "height": 16.5,
+        "right": 191.23,
+        "bottom": 251
+      },
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "trade"
+      ],
+      "files": [
+        "current/844x390-trade.json"
+      ]
+    },
+    {
+      "selector": "div[data-testid=\"trade-want-clay\"] > span:nth-child(2)",
+      "text": "Brick",
+      "font": {
+        "size": 11,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "650",
+        "lineHeight": "16.5px"
+      },
+      "rect": {
+        "x": 284.48,
+        "y": 235.5,
+        "width": 28.59,
+        "height": 13,
+        "right": 313.08,
+        "bottom": 248.5
+      },
+      "elementRect": {
+        "x": 284.48,
+        "y": 234.5,
+        "width": 28.59,
+        "height": 16.5,
+        "right": 313.08,
+        "bottom": 251
+      },
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "trade"
+      ],
+      "files": [
+        "current/844x390-trade.json"
+      ]
+    },
+    {
+      "selector": "div[data-testid=\"trade-want-wool\"] > span:nth-child(2)",
+      "text": "Sheep",
+      "font": {
+        "size": 11,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "650",
+        "lineHeight": "16.5px"
+      },
+      "rect": {
+        "x": 404.63,
+        "y": 235.5,
+        "width": 34.72,
+        "height": 13,
+        "right": 439.34,
+        "bottom": 248.5
+      },
+      "elementRect": {
+        "x": 404.63,
+        "y": 234.5,
+        "width": 34.72,
+        "height": 16.5,
+        "right": 439.34,
+        "bottom": 251
+      },
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "trade"
+      ],
+      "files": [
+        "current/844x390-trade.json"
+      ]
+    },
+    {
+      "selector": "div[data-testid=\"trade-want-grain\"] > span:nth-child(2)",
+      "text": "Wheat",
+      "font": {
+        "size": 11,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "650",
+        "lineHeight": "16.5px"
+      },
+      "rect": {
+        "x": 527.36,
+        "y": 235.5,
+        "width": 35.66,
+        "height": 13,
+        "right": 563.02,
+        "bottom": 248.5
+      },
+      "elementRect": {
+        "x": 527.36,
+        "y": 234.5,
+        "width": 35.66,
+        "height": 16.5,
+        "right": 563.02,
+        "bottom": 251
+      },
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "trade"
+      ],
+      "files": [
+        "current/844x390-trade.json"
+      ]
+    },
+    {
+      "selector": "div[data-testid=\"trade-want-ore\"] > span:nth-child(2)",
+      "text": "Stone",
+      "font": {
+        "size": 11,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "650",
+        "lineHeight": "16.5px"
+      },
+      "rect": {
+        "x": 652.28,
+        "y": 235.5,
+        "width": 32.22,
+        "height": 13,
+        "right": 684.5,
+        "bottom": 248.5
+      },
+      "elementRect": {
+        "x": 652.28,
+        "y": 234.5,
+        "width": 32.22,
+        "height": 16.5,
+        "right": 684.5,
+        "bottom": 251
+      },
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "trade"
+      ],
+      "files": [
+        "current/844x390-trade.json"
+      ]
+    },
+    {
+      "selector": "section[data-testid=\"trade-panel\"] > footer:nth-child(3) > div:nth-child(1) > h3:nth-child(1)",
+      "text": "Bank & docks \u00b7 one exchange",
+      "font": {
+        "size": 11,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "750",
+        "lineHeight": "16.5px"
+      },
+      "rect": {
+        "x": 117,
+        "y": 299.5,
+        "width": 163.2,
+        "height": 13,
+        "right": 280.2,
+        "bottom": 312.5
+      },
+      "elementRect": {
+        "x": 117,
+        "y": 298.5,
+        "width": 610,
+        "height": 16.5,
+        "right": 727,
+        "bottom": 315
+      },
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "trade"
+      ],
+      "files": [
+        "current/844x390-trade.json"
+      ]
+    },
+    {
+      "selector": "p[data-testid=\"trade-hint\"]",
+      "text": "Choose one kind on each side for a bank or dock exchange.",
+      "font": {
+        "size": 11,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400",
+        "lineHeight": "14px"
+      },
+      "rect": {
+        "x": 117,
+        "y": 317,
+        "width": 312.3,
+        "height": 13,
+        "right": 429.3,
+        "bottom": 330
+      },
+      "elementRect": {
+        "x": 117,
+        "y": 317,
+        "width": 610,
+        "height": 14,
+        "right": 727,
+        "bottom": 331
+      },
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null,
+      "states": [
+        "trade"
+      ],
+      "files": [
+        "current/844x390-trade.json"
+      ]
+    }
+  ],
+  "distinctSmallTargets": [
+    {
+      "selector": "div:nth-child(6) > div:nth-child(1) > div:nth-child(1) > form:nth-child(2) > label:nth-child(3) > input:nth-child(1)",
+      "tag": "input",
+      "role": null,
+      "name": "timber",
+      "disabled": false,
+      "ariaDisabled": null,
+      "font": {
+        "size": 12,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400"
+      },
+      "rect": {
+        "x": 489.34,
+        "y": 539,
+        "width": 48,
+        "height": 36,
+        "right": 537.34,
+        "bottom": 575
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "below44": true,
+      "occludedAtCenterBy": null,
+      "states": [
+        "discard"
+      ],
+      "files": [
+        "current/1280x720-discard.json"
+      ]
+    },
+    {
+      "selector": "div:nth-child(6) > div:nth-child(1) > div:nth-child(1) > form:nth-child(2) > label:nth-child(4) > input:nth-child(1)",
+      "tag": "input",
+      "role": null,
+      "name": "clay",
+      "disabled": false,
+      "ariaDisabled": null,
+      "font": {
+        "size": 12,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400"
+      },
+      "rect": {
+        "x": 578,
+        "y": 539,
+        "width": 48,
+        "height": 36,
+        "right": 626,
+        "bottom": 575
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "below44": true,
+      "occludedAtCenterBy": null,
+      "states": [
+        "discard"
+      ],
+      "files": [
+        "current/1280x720-discard.json"
+      ]
+    },
+    {
+      "selector": "div:nth-child(6) > div:nth-child(1) > div:nth-child(1) > form:nth-child(2) > label:nth-child(5) > input:nth-child(1)",
+      "tag": "input",
+      "role": null,
+      "name": "wool",
+      "disabled": false,
+      "ariaDisabled": null,
+      "font": {
+        "size": 12,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400"
+      },
+      "rect": {
+        "x": 673.75,
+        "y": 539,
+        "width": 48,
+        "height": 36,
+        "right": 721.75,
+        "bottom": 575
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "below44": true,
+      "occludedAtCenterBy": null,
+      "states": [
+        "discard"
+      ],
+      "files": [
+        "current/1280x720-discard.json"
+      ]
+    },
+    {
+      "selector": "div:nth-child(6) > div:nth-child(1) > div:nth-child(1) > form:nth-child(2) > label:nth-child(6) > input:nth-child(1)",
+      "tag": "input",
+      "role": null,
+      "name": "grain",
+      "disabled": false,
+      "ariaDisabled": null,
+      "font": {
+        "size": 12,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400"
+      },
+      "rect": {
+        "x": 770.27,
+        "y": 539,
+        "width": 48,
+        "height": 36,
+        "right": 818.27,
+        "bottom": 575
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "below44": true,
+      "occludedAtCenterBy": null,
+      "states": [
+        "discard"
+      ],
+      "files": [
+        "current/1280x720-discard.json"
+      ]
+    },
+    {
+      "selector": "div:nth-child(6) > div:nth-child(1) > div:nth-child(1) > form:nth-child(2) > label:nth-child(7) > input:nth-child(1)",
+      "tag": "input",
+      "role": null,
+      "name": "ore",
+      "disabled": false,
+      "ariaDisabled": null,
+      "font": {
+        "size": 12,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400"
+      },
+      "rect": {
+        "x": 863.14,
+        "y": 539,
+        "width": 48,
+        "height": 36,
+        "right": 911.14,
+        "bottom": 575
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "below44": true,
+      "occludedAtCenterBy": null,
+      "states": [
+        "discard"
+      ],
+      "files": [
+        "current/1280x720-discard.json"
+      ]
+    },
+    {
+      "selector": "div[data-testid=\"player-menu\"] > button:nth-child(4)",
+      "tag": "button",
+      "role": null,
+      "name": "Trade with the bank or a dock\u2026",
+      "disabled": false,
+      "ariaDisabled": null,
+      "font": {
+        "size": 14,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400"
+      },
+      "rect": {
+        "x": 553,
+        "y": 353,
+        "width": 270,
+        "height": 20,
+        "right": 823,
+        "bottom": 373
+      },
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "dpr": 1
+      },
+      "below44": true,
+      "occludedAtCenterBy": null,
+      "states": [
+        "own-player-menu"
+      ],
+      "files": [
+        "current-supplement/844x390-own-player-menu.json"
+      ]
+    }
+  ]
+}

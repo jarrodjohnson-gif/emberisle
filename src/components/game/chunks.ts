@@ -12,7 +12,15 @@ export const online = chunk(() => import("@/components/game/online"));
 export const Lobby = online.pick((m) => m.Lobby);
 export const ChatControls = online.pick((m) => m.ChatControls);
 export const ChatDock = online.pick((m) => m.ChatDock);
-export const ReactionFloats = online.pick((m) => m.ReactionFloats);
+export const SeatBubbles = online.pick((m) => m.SeatBubbles);
+export const ConnectionOverlay = online.pick((m) => m.Health);
+
+// #833: title-only list and mode controls share a lazy load; private Host/Join remain available in the index.
+const openTables = chunk(() => import("@/components/game/OpenTables"));
+export const OpenTables = openTables.pick((m) => m.OpenTables);
+export const OpenModeToggle = openTables.pick((m) => m.OpenModeToggle);
+export const SetupReference = chunk(() => import("@/components/game/SetupReference")).pick(m => m.SetupReference);
+export const WayfarerOptions = chunk(() => import("@/components/game/WayfarerOptions")).pick(m => m.WayfarerOptions);
 
 export const sheets = chunk(() => import("@/components/game/sheets"));
 export const CostCard = sheets.pick((m) => m.CostCard);
@@ -23,7 +31,9 @@ export const WinScreen = sheets.pick((m) => m.WinScreen);
 
 export const moments = chunk(() => import("@/components/game/moments"));
 export const TurnMoment = moments.pick((m) => m.TurnMoment);
-export const GainFloats = moments.pick((m) => m.GainFloats);
+export const MyNumbers = moments.pick((m) => m.MyNumbers);
+export const FirstGameCoach = moments.pick((m) => m.FirstGameCoach);
+export const SetupPipHints = moments.pick((m) => m.SetupPipHints);
 
 // A sibling of the lazy dock or panel inside its Suspense boundary: its effect runs on the commit that lands them, which is
 // a commit later than the chatOpen or tradeOpen flip when the chunk was still loading, so the island measures the hole again.

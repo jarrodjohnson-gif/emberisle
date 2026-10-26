@@ -8,6 +8,9 @@ import { mkdirSync } from "node:fs";
 import { chromium } from "playwright";
 import { createServer } from "vite";
 
+const cpuThrottle = Number(process.env.SPLASH_PROVE_CPU_THROTTLE || 1);
+assert.ok(Number.isInteger(cpuThrottle) && cpuThrottle >= 1 && cpuThrottle <= 16, "CPU throttle must be an integer from 1 to 16");
+console.log(`splash-prove: tab-local CPU throttle x${cpuThrottle}`);
 const port = Number(process.env.VITE_PORT || 8173);
 const vite = await createServer({ server: { host: "127.0.0.1", port, strictPort: true }, logLevel: "error" });
 await vite.listen();
@@ -24,6 +27,7 @@ async function open(width, height, touch, water) {
     HTMLMediaElement.prototype.play = function () { window.__played.push(this.src.split("/").pop()); return Promise.resolve(); };
   });
   const page = await context.newPage();
+  if (cpuThrottle > 1) await (await context.newCDPSession(page)).send("Emulation.setCPUThrottlingRate", { rate: cpuThrottle });
   page.on("pageerror", (e) => errors.push(`${width}: ${e.message}`));
   page.on("console", (m) => m.type() === "error" && errors.push(`${width}: ${m.text()}`));
   await page.goto(`http://127.0.0.1:${port}`);
@@ -36,6 +40,7 @@ async function open(width, height, touch, water) {
     const gl = isle.renderer.domElement;
     const draw = isle.composer.render.bind(isle.composer);
     window.__shots = {};
+    window.__shotScenes = {};
     isle.composer.render = (...a) => {
       const out = draw(...a);
       const want = window.__want;
@@ -45,18 +50,33 @@ async function open(width, height, touch, water) {
         c.height = gl.height;
         c.getContext("2d").drawImage(gl, 0, 0);
         window.__shots[want.label] = c.getContext("2d").getImageData(0, 0, c.width, c.height);
+        window.__shotScenes[want.label] = { land: isle.jellyBoard, shore: isle.shore, gen: isle.landGen };
         window.__want = null;
         want.res();
       }
       return out;
     };
-    window.__grab = (label) => new Promise((res) => { window.__want = { label, res }; isle.wake(); });
+    window.__grab = (label) => new Promise((res) => {
+      window.__want = { label, res };
+      const request = () => {
+        if (window.__want?.res !== res) return;
+        isle.wake();
+        isle.tick();
+        if (window.__want?.res === res) requestAnimationFrame(request);
+      };
+      request();
+    });
   });
   await settle(page);
   return { context, page };
 }
 
-const settle = (page) => page.waitForFunction(() => !window.__isle.refitDue && !window.__isle.glide);
+const settle = async (page) => {
+  // Store delivery and camera work can precede a GPU-deferred draw. Sample picks only after that state has drawn.
+  await page.waitForFunction(() => window.__isle.lastState === window.__emberisle.getState().state && window.__isle.landReady && (window.__isle.lite || window.__isle.shore) && window.__isle.relayout === 0 && !window.__isle.refitDue && !window.__isle.glide);
+  const frame = await page.evaluate(() => window.__isle.renders);
+  await page.waitForFunction((before) => window.__isle.renders > before && window.__isle.lastState === window.__emberisle.getState().state && window.__isle.landReady && (window.__isle.lite || window.__isle.shore) && window.__isle.relayout === 0 && !window.__isle.refitDue && !window.__isle.glide, frame);
+};
 
 // The page holds a crafted turn: `phase` for the seat on turn, nothing armed.
 const craft = (page, phase) =>
@@ -128,6 +148,11 @@ async function heldPair(page, at, age) {
   }, { at, age });
   await page.evaluate(() => window.__grab("with"));
   await page.evaluate(() => { window.__held = false; return window.__grab("without"); });
+  const stableScene = await page.evaluate(() => {
+    const a = window.__shotScenes.with, b = window.__shotScenes.without;
+    return !!a.land && a.land === b.land && a.shore === b.shore && a.gen === b.gen;
+  });
+  assert.ok(stableScene, "paired splash images use the same fully built scene");
   await page.evaluate(() => {
     const isle = window.__isle;
     isle.splash.step = window.__step;
@@ -135,10 +160,133 @@ async function heldPair(page, at, age) {
   });
 }
 
+// Exercise the real renderer wiring with one stalled visible frame. Other animation caps stay in place.
+async function slowOceanFrame(page, tag) {
+  const fence = await page.evaluate(() => {
+    const isle = window.__isle, behind = isle.gpuBehind, busy = isle.busyUntil;
+    const renders = isle.renderer.info.render.frame;
+    const target = isle.orbit.target.clone(), eye = isle.orbit.object.position.clone();
+    try {
+      const home = isle.fitPose(isle.fit), limit = isle.panLimit();
+      const shift = target.clone().set(home.tx + limit * 2, target.y, home.tz).sub(target);
+      isle.orbit.target.add(shift);
+      isle.orbit.object.position.add(shift);
+      isle.busyUntil = performance.now() + 1000;
+      isle.lastFrame = -Infinity;
+      isle.gpuBehind = () => true;
+      isle.tick();
+      const pending = isle.renderer.info.render.frame - renders;
+      const pan = Math.hypot(isle.orbit.target.x - home.tx, isle.orbit.target.z - home.tz);
+      isle.gpuBehind = () => false;
+      isle.tick();
+      return { pending, ready: isle.renderer.info.render.frame - renders, pan, limit };
+    } finally {
+      isle.orbit.target.copy(target);
+      isle.orbit.object.position.copy(eye);
+      isle.orbit.update();
+      isle.gpuBehind = behind;
+      isle.busyUntil = busy;
+    }
+  });
+  assert.equal(fence.pending, 0, `${tag}: busy motion waits for a pending GPU fence`);
+  assert.ok(fence.pan <= fence.limit + 1e-6, `${tag}: a pending GPU fence still clamps the camera pan (${fence.pan}/${fence.limit})`);
+  assert.ok(fence.ready > 0, `${tag}: busy motion draws once the GPU fence is ready`);
+  const slow = await page.evaluate(() => {
+    const isle = window.__isle, life = isle.oceanLife, delta = isle.clock.getDelta, busy = isle.busyUntil, behind = isle.gpuBehind;
+    try {
+      // Fence readiness is tested above; these controlled frames isolate elapsed-time wiring.
+      isle.gpuBehind = () => false;
+      life.reset("splash-frame-clock");
+      const fish = life.fishAt()[0];
+      life.scatter(fish.x, fish.z);
+      const ids = life.fishFlee.flatMap((f, i) => f ? [i] : []), before = life.fishTime;
+      isle.clock.getDelta = () => 4.25;
+      isle.lastFrame = -Infinity;
+      isle.busyUntil = performance.now() + 1000;
+      isle.tick();
+      const ages = ids.map((i) => life.fishFlee[i]?.age ?? 0), posed = life.fishAt();
+      life.fishFlee.fill(null);
+      life.swim();
+      const home = life.fishAt();
+      const elapsed = life.fishTime - before, error = Math.max(...ids.map((i) => Math.hypot(posed[i].x - home[i].x, posed[i].z - home[i].z)));
+      life.reset("splash-recent-input");
+      const recent = life.fishAt()[0];
+      isle.lastFrame = performance.now() - 4200;
+      isle.splashAt(recent.x, recent.z, 1);
+      const recentIds = life.fishFlee.flatMap((f, i) => f ? [i] : []);
+      isle.busyUntil = performance.now() + 1000;
+      isle.tick();
+      const recentAges = recentIds.map((i) => life.fishFlee[i]?.age ?? -1);
+      isle.lastFrame = -Infinity;
+      isle.busyUntil = performance.now() + 1000;
+      isle.tick();
+      const laterAges = recentIds.map((i) => life.fishFlee[i]?.age ?? -1);
+      return { elapsed, ages, error, recentAges, laterAges };
+    } finally {
+      isle.clock.getDelta = delta;
+      isle.gpuBehind = behind;
+      isle.busyUntil = busy;
+      life.reset("splash-frame-clock-done");
+      for (const slot of isle.splash.uniforms.uSplash.value) slot.w = 0;
+      window.__played.length = 0; // Only the clock fixtures have run; the real interaction checks start next.
+    }
+  });
+  assert.ok(Math.abs(slow.elapsed - 4.25) < 1e-9, `${tag}: one slow frame advances ocean life by elapsed seconds (${slow.elapsed})`);
+  assert.ok(slow.ages.length > 0 && slow.ages.every((age) => age >= 4), `${tag}: a four-second stall completes every affected fish escape (${slow.ages})`);
+  assert.ok(slow.error < 1e-6, `${tag}: fish return to their unfled swimming positions after the stall (${slow.error})`);
+  assert.ok(slow.recentAges.length > 0 && slow.recentAges.every((age) => age >= 0 && age < 0.15), `${tag}: a new tap excludes the frame interval before the input (${slow.recentAges})`);
+  assert.ok(slow.laterAges.every((age) => age >= 4), `${tag}: the input offset is consumed once, then escape time advances normally (${slow.laterAges})`);
+
+  // A reduced-motion pause is not a slow visible frame. Capture the first enabled step on a real preference change.
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.waitForFunction(() => window.__isle.wasCalm && window.__isle.busyUntil < performance.now());
+  // A requested calm frame completes in this task, even if its GPU readback takes longer than a wake hold.
+  const captured = await page.evaluate(() => {
+    void window.__grab("calm");
+    return !!window.__shots.calm?.data.length && !window.__want;
+  });
+  assert.ok(captured, `${tag}: a calm snapshot completes synchronously without waiting for a sleeping animation loop`);
+  await page.evaluate(() => {
+    const isle = window.__isle, life = isle.oceanLife, delta = isle.clock.getDelta, step = life.step, behind = isle.gpuBehind;
+    window.__oceanResume = null;
+    window.__resumeFenceReady = false;
+    window.__restoreOceanResume = () => { isle.clock.getDelta = delta; life.step = step; isle.gpuBehind = behind; };
+    isle.gpuBehind = () => !window.__resumeFenceReady;
+    isle.clock.getDelta = () => 7;
+    life.step = function (dt, enabled, ...rest) {
+      const before = this.fishTime, out = step.call(this, dt, enabled, ...rest);
+      if (enabled) {
+        window.__oceanResume = { dt, before, after: this.fishTime };
+        window.__restoreOceanResume();
+      }
+      return out;
+    };
+  });
+  try {
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await page.waitForFunction(() => !window.__isle.calm());
+    const waiting = await page.evaluate(() => {
+      window.__isle.tick();
+      return !window.__oceanResume && window.__isle.wasCalm;
+    });
+    assert.ok(waiting, `${tag}: a pending GPU fence preserves the paused-time reset until motion can draw`);
+    await page.evaluate(() => { window.__resumeFenceReady = true; });
+    await page.waitForFunction(() => window.__oceanResume);
+    const resume = await page.evaluate(() => window.__oceanResume);
+    assert.equal(resume.dt, 0, `${tag}: motion resume discards time spent paused`);
+    assert.equal(resume.after, resume.before, `${tag}: motion resume preserves the frozen ocean phase`);
+  } finally {
+    await page.evaluate(() => { window.__restoreOceanResume(); delete window.__restoreOceanResume; });
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+  }
+  console.log(`${tag}: stalled-frame fish return and reduced-motion resume passed`);
+}
+
 try {
   for (const [width, height, touch] of [[390, 844, true], [1280, 720, false]]) {
     const tag = `${width}x${height}`;
     const { context, page } = await open(width, height, touch, "crystal");
+    await slowOceanFrame(page, tag);
 
     // 1. Build mode: a press on the water just past a coast corner (inside its pick reach) is the corner's, not a splash.
     await craft(page, "setupSettle");
@@ -180,8 +328,34 @@ try {
     await page.waitForFunction(() => (window.__isle.busyUntil ?? 0) < performance.now());
     const spot = await waterNearFish(page);
     assert.ok(spot, `${tag}: open water near a fish in the hole`);
-    const before = await page.evaluate(({ x, z }) => window.__isle.oceanLife.fishAt().map((f, i) => ({ i, d: Math.hypot(f.x - x, f.z - z) })).filter((f) => f.d <= 1.5), spot);
-    assert.ok(before.length > 0, `${tag}: a fish within 1.5 of the tap`);
+    // Sample the native affected set at input delivery; fish may move while browser input is queued.
+    // Hold just past the original check's 0.3s phase until its native pose is captured; timing is tested above.
+    await page.evaluate(() => {
+      const life = window.__isle.oceanLife, step = life.step, scatter = life.scatter;
+      let press = null, ids = [];
+      window.__fishBefore = [];
+      window.__fishDart = null;
+      window.__restoreFishDart = () => { life.step = step; life.scatter = scatter; };
+      life.scatter = function (x, z, ...rest) {
+        press = { x, z };
+        window.__fishBefore = this.fishAt().map((f, i) => ({ i, d: Math.hypot(f.x - x, f.z - z) })).filter((f) => f.d <= 1.5);
+        ids = window.__fishBefore.map((f) => f.i);
+        return scatter.call(this, x, z, ...rest);
+      };
+      life.step = function (dt, enabled, ...rest) {
+        const age = Math.min(...ids.map((i) => this.fishFlee[i]?.age ?? 0));
+        const pending = Math.max(0, ...ids.map((i) => this.fishFlee[i]?.pending ?? 0));
+        // Preserve the input interval that native step subtracts once; avoid requiring a second slow frame.
+        const heldDt = press && enabled ? pending + Math.max(0, 0.31 - age) : dt;
+        const out = step.call(this, heldDt, enabled, ...rest);
+        if (press && ids.length > 0 && ids.every((i) => this.fishFlee[i] && this.fishFlee[i].age >= 0.3 && this.fishFlee[i].age < 4)) {
+          const fish = this.fishAt();
+          window.__fishDart = ids.map((i) => Math.hypot(fish[i].x - press.x, fish[i].z - press.z));
+          window.__restoreFishDart();
+        }
+        return out;
+      };
+    });
     if (touch) await tap(page, spot.s, true);
     else {
       await page.mouse.move(spot.s.x, spot.s.y);
@@ -189,6 +363,8 @@ try {
       assert.equal(await live(page), 1, `${tag}: the splash is there on pointerdown, before the release`);
       await page.mouse.up();
     }
+    const before = await page.evaluate(() => window.__fishBefore);
+    assert.ok(before.length > 0, `${tag}: a fish within 1.5 of the tap`);
     const made = await page.evaluate(() => {
       const isle = window.__isle, s = isle.splash.uniforms.uSplash.value.find((v) => v.w > 0);
       return { x: s.x, z: s.y, t0: s.z, w: s.w };
@@ -226,16 +402,19 @@ try {
     assert.ok(twin.lift > 0.015, `${tag}: and rebounds above the swell (${twin.lift.toFixed(3)})`);
     assert.ok(twin.radii[0] < twin.radii[1] && twin.radii[1] < twin.radii[2] && twin.radii[2] - twin.radii[0] > 0.5, `${tag}: the rings expand over the next second (${twin.radii.map((r) => r.toFixed(2))})`);
     assert.ok(twin.twinDelta < -0.04, `${tag}: makeSwell (the boats' sea) carries the splash (${twin.twinDelta.toFixed(3)})`);
+    // Drain queued GPU work before the observation deadline, without driving the native animation loop or its clock.
+    await page.evaluate(() => window.__isle.renderer.getContext().finish());
     // The GPU clock runs it: the loop holds full rate for its life, so the drawn age passes 1 s.
     await page.waitForFunction((t0) => window.__isle.splash.uniforms.uSplashNow.value - t0 > 1, made.t0, { timeout: 15_000 });
     console.log(`${tag}: open water splashes on pointerdown; twin dips ${twin.dip.toFixed(3)}, lifts ${twin.lift.toFixed(3)}, rings at ${twin.radii.map((r) => r.toFixed(2)).join(" / ")} after 0.3 / 0.6 / 0.9 s`);
 
     // The fish within reach darted away.
     await page.waitForFunction((ids) => ids.every((i) => (window.__isle.oceanLife.fishFlee[i]?.age ?? 0) >= 0.3), before.map((f) => f.i), { timeout: 15_000 });
-    const after = await page.evaluate(({ x, z, ids }) => {
-      const fish = window.__isle.oceanLife.fishAt();
-      return ids.map((i) => Math.hypot(fish[i].x - x, fish[i].z - z));
-    }, { x: made.x, z: made.z, ids: before.map((f) => f.i) });
+    const after = await page.evaluate(() => {
+      window.__restoreFishDart();
+      return window.__fishDart;
+    });
+    assert.ok(after && after.length === before.length, `${tag}: every nearby fish was observed during its actual escape`);
     const moved = after.map((d, j) => d - before[j].d);
     assert.ok(moved.every((m) => m > 0.1), `${tag}: every fish within 1.5 moved away (${moved.map((m) => m.toFixed(2))})`);
     // The visitor too: one posed near a splash darts off it.

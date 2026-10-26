@@ -47,7 +47,7 @@ Ranked by frequency × severity, most severe first.
   - https://www.appbrain.com/app/catan-universe/com.usm.catanuniverse — "Where players clocks usually expire, a computer's clock goes on forever" (Aug 9, 2026)
 - **Frequency/severity:** High — the dominant 1-star theme on Steam's negative page; still reported in 2026.
 - **Category:** tech
-- **Emberisle today?** No. `TURN_MS` defaults to 120 s (`server/host.mjs:54`); on expiry the host's bot executes one legal move for the idle seat and the seat stays human — a table can never freeze this way.
+- **Emberisle today?** No. `TURN_MS` defaults to 120 s (`server/host.mjs:99`); on expiry the host's bot executes one legal move for the idle seat and the seat stays human — a table can never freeze this way.
 - **What Emberisle should do:** Accept, by design — but surface the per-seat countdown in the HUD so the table *sees* the stalled seat will be moved, which is the visible proof CATAN Universe lacks. Add a hard bot-turn contract: max one trade ask per bot turn, never re-offer a rejected ask, the whole bot turn resolves inside TURN_MS, and the log always shows "bot plays for {seat}".
 
 ### 3. The AI gangs up on the human: targets the player, never the bots
@@ -67,7 +67,7 @@ Ranked by frequency × severity, most severe first.
   - https://worldsapps.com/reviews-colonist-io — "When the app crashes it usually lets you rejoin your current game, but sometimes that doesn't work either."
 - **Frequency/severity:** High — pairs with #2/#5 as the core reliability cluster; phones are the venue and Emberisle is phone-first.
 - **Category:** tech
-- **Emberisle today?** No. Reconnect is by saved secret; rooms persist to disk; a dropped seat is held (90 s lobby, 10 min in-game — `server/host.mjs:49-51`), then a bot subs in without deleting the seat.
+- **Emberisle today?** No. Reconnect is by saved secret; rooms persist to disk; a dropped seat is held (90 s lobby, 10 min in-game — `server/host.mjs:93-94`), then a bot subs in without deleting the seat.
 - **What Emberisle should do:** Accept, by design — and make it visible: the join page auto-retries with the saved secret and shows "reconnecting… / back at the table" states plus a visible connection indicator, so a network blip never looks like a dead game. Keep the rejoin/persist prove scripts green as the top reliability gate.
 
 ### 5. Crashes and freezes mid-game, getting worse over time
@@ -166,7 +166,7 @@ Ranked by frequency × severity, most severe first.
   - https://android.chrome-stats.com/d/com.exozet.android.catan/reviews — "each game requires a minimum of four players, so this won't be a quick play title."
 - **Frequency/severity:** Med — the dead-table variant is rare but total (game over for everyone); the forced-bot variant is common as lobbies emptied.
 - **Category:** pacing
-- **Emberisle today?** Partly. The 3–4 seat minimum stands ("Need 3 or 4 at the table"), but there IS a clock: idle seats are bot-moved after 120 s (`server/host.mjs:54`), so a table can never freeze the way the complaint describes.
+- **Emberisle today?** Partly. The 3–4 seat minimum stands ("Need 3 or 4 at the table"), but there IS a clock: idle seats are bot-moved after 120 s (`server/host.mjs:99`), so a table can never freeze the way the complaint describes.
 - **What Emberisle should do:** Accept the 3-seat minimum by design (the game genuinely needs it) — but make the clock visible ("bot moves in 0:12") and never let a human stare at a silent seat. Practice-vs-bots is the instant-play answer when humans are short.
 
 ### 15. Unlabeled, confusing UI: mystery buttons, broken lists, overlapping controls
@@ -213,7 +213,7 @@ Ranked by frequency × severity, most severe first.
   - https://victoryconditions.com/settlers-of-catan-online-for-free-https-colonist-io/ — "it can be a bit annoying when a player starts the game and a bot takes over in the middle."
 - **Frequency/severity:** Med — one crisp quote naming the exact social failure mode of live multiplayer; the bot-takeover variant is the sharper pain.
 - **Category:** pacing
-- **Emberisle today?** No. Every waited-on human seat gets 120 s, then the host's bot makes one legal move and play continues; the table hears "took too long; the table moved on." Dropped seats are held 10 min for reconnect (`server/host.mjs:49-51`).
+- **Emberisle today?** No. Every waited-on human seat gets 120 s, then the host's bot makes one legal move and play continues; the table hears "took too long; the table moved on." Dropped seats are held 10 min for reconnect (`server/host.mjs:93-94`).
 - **What Emberisle should do:** Accept, by design — keep the visible countdown and the log line; CATAN Universe's failure is invisibility (a frozen seat with no clock), and Emberisle's timer is the fix. Badge every bot move in the log ("bot passed for Ash") so the table trusts the fill-in.
 
 ### 20. Tutorials that don't teach: onboarding gates the game without explaining it

@@ -1,5 +1,7 @@
 # The jelly board (#599, #624)
 
+Building something new in this look? Start from the master prompt, [jelly-style-prompt.md](jelly-style-prompt.md).
+
 The island's hexes are the six Hex Jelly scenes (`hex-jelly-prompt.md`, built in `src/lib/scene/hex-jelly.ts`), drawn on the
 game board by `src/lib/scene/jelly-board.ts` and wired in `buildLand` in `isle-renderer.ts`. It replaces the sculpted
 terrain (`terrain.md`, `terrain.ts`), which the renderer no longer uses.
@@ -86,6 +88,10 @@ grow while play stays snappy); measured locally, the median is about 1.5 s.
 - **Tap:** a tapped hex gives a small jelly wobble, and its token wobbles with it.
 - **Wayfarer:** the hex he stands on darkens and cools.
 - **Reduced motion:** the scenes hold still. A dulling or a glow still lands.
+- **Board age:** `env.age` is seconds since the board's first live *play* frame, so a story can start with the match (the
+  ore's climber), however late the board is built (after the lobby, a rematch). `create()`'s first update, the snaps (the
+  swap, reduced motion), and the title/lobby demo board don't start it; until it starts, the age is 0. Unset (the studio),
+  a story uses `t`; the batcher sets `age` to each sample time so motion is still found.
 - **Picking:** an unseen hex prism per hex.
 
 ## The shore (Harbor Jelly)

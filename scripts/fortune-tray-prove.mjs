@@ -16,7 +16,7 @@
 // - under reduced motion the tray's entry animation collapses to 1 ms;
 // - a seat change (hotseat) closes an open tray even when the next seat holds fortunes, and a phase change within the turn
 //   (a roll with the tray up, through robber to main) closes it and it does not come back;
-// - your last fortune played takes the Fortunes button with the tray, and focus falls to End turn;
+// - your last fortune played takes the Fortunes button with the tray, and focus falls to Trade;
 // - a second pick of a good the bank has only one of is refused and says so, while a tap with two picked still replaces the
 //   oldest; Monopoly's chips are radios and Plenty's caption is a live region.
 // - (#511) on a sideways phone with notch insets (844x390, 667x375) and the tray open and settled, a point just inside each
@@ -101,12 +101,15 @@ try {
       const bar = document.querySelector('[data-testid="fortunes-button"]').parentElement;
       return {
         deck: window.__emberisle.getState().state.deckLeft ?? window.__emberisle.getState().state.deck.length,
-        fortunes: [...document.querySelectorAll("button")].filter((b) => /^Fortunes/.test(b.textContent.trim())).map((b) => b.textContent.trim()),
+        fortunes: [...document.querySelectorAll("button")].filter((b) => /^(Play fortune|Fortunes)/.test(b.textContent.trim())).map((b) => b.textContent.trim()),
         selects: document.querySelectorAll("select").length,
         stale: [...bar.querySelectorAll("button")].map((b) => b.textContent.trim()).filter((t) => /knight|Wayfarer card|Path fortune|Plenty|Monopoly/.test(t)),
       };
     });
-    assert.deepEqual(row.fortunes, [`Fortunes ${row.deck} left`], `${v.tag}: one Fortunes button with the public deck count, got ${JSON.stringify(row.fortunes)}`);
+    assert.deepEqual(row.fortunes, ["Play fortune · 6"], `${v.tag}: one fortunes button with the number held, got ${JSON.stringify(row.fortunes)}`);
+    // #776: the deck count sits on the Fortune buy tile and in its label.
+    assert.equal(await page.getByTestId("deck-left").textContent(), `${row.deck} left`, `${v.tag}: the buy tile shows the deck count`);
+    assert.equal(await page.getByTestId("build-card").getAttribute("aria-label"), `Fortune, ${row.deck} left in deck`, `${v.tag}: the buy tile's label says how many are left`);
     assert.equal(row.selects, 0, `${v.tag}: no <select> on the page`);
     assert.deepEqual(row.stale, [], `${v.tag}: no per-fortune buttons left in the row`);
     // The row's buttons are 44 px on a phone, as the other build buttons are (the desktop row is 32 px under a fine pointer).
@@ -170,7 +173,7 @@ try {
     assert.equal(await store(() => window.__emberisle.getState().buildMode), "knight", `${v.tag}: wayfarer armed`);
     assert.equal(await button.getAttribute("aria-pressed"), "true", `${v.tag}: Fortunes pressed while armed`);
     const banner = await page.getByTestId("turn-banner").textContent();
-    assert.match(banner, /Move the wayfarer · (tap Fortunes again to cancel|Esc cancels)/, `${v.tag}: banner "${banner}"`);
+    assert.match(banner, /Move the wayfarer · (tap Play fortune again to cancel|Esc cancels)/, `${v.tag}: banner "${banner}"`);
     await button.click();
     await page.waitForFunction(() => window.__emberisle.getState().buildMode === "none", null, { timeout: STEP_MS });
     await open();
@@ -218,12 +221,12 @@ try {
     assert.equal(await page.getByTestId("fortune-play-plenty").getAttribute("aria-disabled"), "true", `${v.tag}: Plenty waits for two picks`);
     await page.getByTestId("plenty-chip-timber").click();
     await page.getByTestId("plenty-chip-timber").click();
-    assert.equal(await page.getByTestId("plenty-picks").textContent(), "Timber ×2");
-    assert.equal(await page.getByTestId("plenty-chip-timber").getAttribute("aria-label"), "Timber, picked 2");
+    assert.equal(await page.getByTestId("plenty-picks").textContent(), "Wood ×2");
+    assert.equal(await page.getByTestId("plenty-chip-timber").getAttribute("aria-label"), "Wood, picked 2");
     await page.getByTestId("plenty-chip-ore").click();
-    assert.equal(await page.getByTestId("plenty-picks").textContent(), "Timber and ore");
+    assert.equal(await page.getByTestId("plenty-picks").textContent(), "Wood and stone");
     await page.getByTestId("plenty-chip-wool").click();
-    assert.equal(await page.getByTestId("plenty-picks").textContent(), "Ore and wool");
+    assert.equal(await page.getByTestId("plenty-picks").textContent(), "Stone and sheep");
     const before = await me();
     await page.getByTestId("fortune-play-plenty").click();
     await closed();
@@ -238,7 +241,7 @@ try {
     assert.equal(await page.locator('[data-testid^="monopoly-chip-"]').count(), 5, `${v.tag}: five monopoly chips`);
     assert.equal(await page.getByTestId("fortune-play-monopoly").getAttribute("aria-disabled"), "true", `${v.tag}: Monopoly waits for a pick`);
     await page.getByTestId("monopoly-chip-ore").click();
-    assert.equal(await page.getByTestId("monopoly-pick").textContent(), "Every other seat's ore");
+    assert.equal(await page.getByTestId("monopoly-pick").textContent(), "Every other seat's stone");
     assert.deepEqual(await page.locator('[role="radio"]').evaluateAll((els) => els.map((b) => b.getAttribute("aria-checked"))), ["false", "false", "false", "false", "true"], `${v.tag}: monopoly chips are radios`);
     await page.getByTestId("fortune-play-monopoly").click();
     await closed();
@@ -277,23 +280,23 @@ try {
     await open();
     const ore = page.getByTestId("plenty-chip-ore");
     assert.equal(await ore.getAttribute("aria-disabled"), "true");
-    assert.equal(await ore.getAttribute("aria-description"), "The bank has no ore.");
+    assert.equal(await ore.getAttribute("aria-description"), "The bank has no stone.");
     await ore.click({ force: true });
     assert.equal(await page.getByTestId("plenty-picks").textContent(), "Tap two goods", `${v.tag}: the empty ore cannot be picked`);
     await page.getByTestId("plenty-chip-timber").click();
     await page.getByTestId("plenty-chip-clay").click();
-    assert.equal(await page.getByTestId("plenty-picks").textContent(), "Timber and clay");
+    assert.equal(await page.getByTestId("plenty-picks").textContent(), "Wood and brick");
     assert.equal(await page.getByTestId("plenty-picks").getAttribute("aria-live"), "polite");
     // One timber in the bank and one picked: a second timber is short, said so, but with two picked a tap replaces the oldest
     // (that timber), so the chip stays live.
     await store(() => { const g = window.__emberisle; const st = structuredClone(g.getState().state); st.bank.timber = 1; st.seq += 1; g.setState({ state: st }); });
     await page.waitForFunction(() => document.querySelector('[data-testid="plenty-chip-timber"]')?.getAttribute("aria-disabled") === null, null, { timeout: STEP_MS });
     await page.getByTestId("plenty-chip-timber").click();
-    assert.equal(await page.getByTestId("plenty-picks").textContent(), "Clay and timber", `${v.tag}: with two picked, a tap replaces the oldest`);
+    assert.equal(await page.getByTestId("plenty-picks").textContent(), "Brick and wood", `${v.tag}: with two picked, a tap replaces the oldest`);
     const only = await page.getByTestId("plenty-chip-timber").evaluate((b) => [b.getAttribute("aria-disabled"), b.getAttribute("aria-description")]);
-    assert.deepEqual(only, ["true", "The bank has only 1 timber."], `${v.tag}: a second timber the bank lacks: ${JSON.stringify(only)}`);
+    assert.deepEqual(only, ["true", "The bank has only 1 wood."], `${v.tag}: a second timber the bank lacks: ${JSON.stringify(only)}`);
     await page.getByTestId("plenty-chip-clay").click();
-    assert.equal(await page.getByTestId("plenty-picks").textContent(), "Timber and clay");
+    assert.equal(await page.getByTestId("plenty-picks").textContent(), "Wood and brick");
     await store(() => {
       const g = window.__emberisle;
       const st = structuredClone(g.getState().state);
@@ -301,7 +304,7 @@ try {
       st.seq += 1;
       g.setState({ state: st });
     });
-    await page.waitForFunction(() => document.querySelector('[data-testid="plenty-picks"]')?.textContent === "Clay", null, { timeout: STEP_MS });
+    await page.waitForFunction(() => document.querySelector('[data-testid="plenty-picks"]')?.textContent === "Brick", null, { timeout: STEP_MS });
     assert.equal(await page.getByTestId("fortune-play-plenty").getAttribute("aria-disabled"), "true", `${v.tag}: one pick left, Play waits`);
     await page.getByTestId("plenty-chip-clay").click();
     await page.getByTestId("fortune-play-plenty").click();
@@ -314,7 +317,7 @@ try {
     assert.deepEqual(dry, { why: "The bank is empty", play: "true", chips: 0 }, `${v.tag}: ${JSON.stringify(dry)}`);
     console.log(`${v.tag}: empty ore greyed, emptied timber dropped, empty bank refused`);
 
-    // The public deck opener remains after the last held fortune; focus returns to it.
+    // The My fortunes button leaves with the last held fortune (#776); focus falls to Trade.
     await page.keyboard.press("Escape");
     await closed();
     await craft({ plenty: 1 });
@@ -323,8 +326,8 @@ try {
     await page.getByTestId("plenty-chip-wool").click();
     await page.getByTestId("fortune-play-plenty").click();
     await closed();
-    assert.equal(await button.count(), 1, `${v.tag}: the public count stays available with no held fortunes`);
-    assert.equal(await page.evaluate(() => document.activeElement?.dataset.testid), "fortunes-button", `${v.tag}: focus returns to the persistent deck opener`);
+    assert.equal(await button.count(), 0, `${v.tag}: no My fortunes button with no held fortunes`);
+    assert.equal(await page.evaluate(() => document.activeElement?.textContent?.trim()), "Trade", `${v.tag}: focus falls to Trade`);
     await craft({ plenty: 1 }, {}, { timber: 0, clay: 0, wool: 0, grain: 0, ore: 0 });
     await open();
 

@@ -212,7 +212,8 @@ export function layoutOf(kind: Terrain, seed: number): Layout {
     // running out from it across a dry gully to the tipple on that flank; the tarn on the other front flank.
     const s = r() < 0.5 ? -1 : 1;
     // The peaks are faceted rock meshes (mine()); the ground only swells under them.
-    L.peaks.push({ ...at(hillAt, 0.56), r: 0.24, h: 0.74 + r() * 0.04 });
+    // Keep the rear summit below the sightline to the next hex’s numeral (#634).
+    L.peaks.push({ ...at(hillAt, 0.56), r: 0.24, h: 0.56 + r() * 0.04 });
     L.peaks.push({ ...at(hillAt - s * 0.62, 0.54), r: 0.19, h: 0.5 + r() * 0.05 });
     L.peaks.push({ ...at(hillAt + s * 0.55, 0.56), r: 0.17, h: 0.42 + r() * 0.04 });
     // The massif (the owner, 2026-10-16: "more mountains on the hex so it's easier to see that it's ore"): two shoulders
@@ -1007,7 +1008,8 @@ type Built = { g: THREE.Group; stands: { x: number; z: number; r: number }[]; li
 // What the board tells a tile (prompt "THE TILE IN PLAY"): night (0 day to 1 night), whether the robber stands on it, and the
 // roll payoff's progress (0 to 1 while it plays, -1 otherwise). Every life loop reads it.
 // `board`: built for the game board, where the wayfarer is the game's own piece, not part of the waste's scene.
-export type Env = { night: number; robber: boolean; roll: number; board?: boolean };
+// `age`: seconds since the board first drew (jelly-board.ts), so a story can start with the match; unset, a story uses t.
+export type Env = { night: number; robber: boolean; roll: number; board?: boolean; age?: number };
 const ease = (u: number) => u * u * (3 - 2 * u);
 
 // TIMBER, "The Salmon Run" (docs/design/hex-jelly-prompt.md): the wooded hill and its canopy, the spring, the stream and its
@@ -4282,6 +4284,185 @@ function mine(L: Layout, ground: (x: number, z: number) => number, r: () => numb
       eagle.rotation.set(0, -(a + Math.PI / 2), 0, "YXZ");
       eagle.rotation.x = -0.35;
       wings.forEach(({ w, sg }) => (w.rotation.x = -sg * (0.12 + 0.05 * Math.sin(t * 1.5))));
+    });
+  }
+
+  // The climber (the owner, 2026-10-16): as the match starts he walks to the foot of the tallest peak and gets his gear out
+  // (rope, helmet), then climbs its flank a step at a time. He reaches the summit and sits there with his flag; or, now and
+  // then, he slips, tumbles to the scree and lies there a skeleton, and a while later the next one tries. Seeded, so every
+  // ore hex of an island tells it the same.
+  {
+    const p0 = L.peaks[0]!;
+    // The climb: up the flank the eye sees best (off the line from the token to the eye), not the face behind the token.
+    const seen = (p: Pt) => Math.abs(p.x * EYE.z - p.z * EYE.x);
+    const flank = (sg: number) => {
+      const a = Math.atan2(-p0.z, -p0.x) + sg * 0.55;
+      return { x: p0.x + Math.cos(a) * p0.r * 1.08, z: p0.z + Math.sin(a) * p0.r * 1.08, a };
+    };
+    const fl = seen(flank(1)) > seen(flank(-1)) ? flank(1) : flank(-1);
+    const dir = { x: Math.cos(fl.a), z: Math.sin(fl.a) };
+    const foot = { x: fl.x, z: fl.z };
+    // He gets his gear out off to the side of the climb, clear of the token from the eye, then walks to the foot.
+    // (An open patch of scree near the foot that the eye sees clear of the token: well off the line from the token to the
+    // eye, and toward the eye, so the gear-out and any bones read.)
+    // Hidden from the eye: a peak stands on the sight line, which climbs about 0.78 per unit toward the eye (38 degrees up).
+    const hidden = (p: Pt) =>
+      L.peaks.some((q) => {
+        for (let k = 1; k <= 12; k++) {
+          const u = k * 0.05;
+          const d = Math.hypot(p.x + EYE.x * u - q.x, p.z + EYE.z * u - q.z);
+          if (d < q.r && q.h * (1 - d / q.r) > 0.78 * u + 0.03) return true;
+        }
+        return false;
+      });
+    let start: Pt | null = null;
+    let fallback: Pt | null = null;
+    for (let i = 0, best = -Infinity, bestAny = -Infinity; i < 320; i++) {
+      const a = (i / 40) * Math.PI * 2;
+      const d = 0.14 + 0.045 * Math.floor(i / 40);
+      const p = { x: foot.x + Math.cos(a) * d, z: foot.z + Math.sin(a) * d };
+      if (!ok(p.x, p.z, 0.05) || Math.abs(ground(p.x, p.z)) > 0.08 || hidden(p)) continue;
+      const score = Math.min(seen(p), 0.5) + 0.3 * (p.x * EYE.x + p.z * EYE.z) - 0.4 * d;
+      if (score > bestAny) (bestAny = score), (fallback = p);
+      if (seen(p) >= 0.34 && score > best) (best = score), (start = p);
+    }
+    start ??= fallback ?? { x: foot.x * 1.15, z: foot.z * 1.15 };
+    const baseY = BLOCK_H + ground(p0.x, p0.z) - 0.05;
+    const topY = baseY + p0.h;
+    // The face: from the foot up the cone's surface to just under the summit.
+    const face = (u: number) => {
+      const k = 1 - u * 0.96;
+      const x = p0.x + dir.x * p0.r * 1.02 * k;
+      const z = p0.z + dir.z * p0.r * 1.02 * k;
+      return { x, z, y: u < 0.04 ? Y(foot.x, foot.z) * (1 - u / 0.04) + (baseY + p0.h * 0.04) * (u / 0.04) : baseY + p0.h * u };
+    };
+    // The schedule: gear out, climb, and per try a fall (at some height) or the top. Three skeletons at most; the fourth makes it.
+    const GEAR = 8;
+    const CLIMB = 150;
+    const REST = 25;
+    const tries: { at: number; fallAt: number }[] = [];
+    for (let k = 0, at0 = 0; k < 4; k++) {
+      const falls = k < 3 && r() < 0.4;
+      tries.push({ at: at0, fallAt: falls ? 0.3 + r() * 0.55 : -1 });
+      if (!falls) break;
+      at0 += GEAR + CLIMB * tries[k]!.fallAt + 2 + REST;
+    }
+    const climber = person(cm, "#d0482e", 0, "#e8c56a");
+    climber.g.userData.ref = "climber";
+    // His gear: a rope coil over the shoulder, a red helmet over the hat, and the flag he plants at the top.
+    const rope = mesh(merge([part(new THREE.TorusGeometry(1, 0.28, 6, 14), "#e8d080", [-0.004, 0.026, 0], [0, 0, 0.5], [0.012, 0.012, 0.012])]), cm);
+    const helmet = mesh(merge([part(sphere(10), "#e83a2a", [0, 0.06, 0], [0, 0, 0], [0.013, 0.01, 0.013])]), cm);
+    const flag = new THREE.Group();
+    flag.add(mesh(merge([part(cyl(0.0012, 0.0012, 6), "#3a2a20", [0, 0.03, 0], [0, 0, 0], [1, 0.06, 1]), part(new THREE.BoxGeometry(1, 1, 1), "#ffd23a", [0.008, 0.052, 0], [0, 0, 0], [0.016, 0.011, 0.002])]), cm));
+    climber.top.add(rope, helmet);
+    climber.g.add(flag);
+    g.add(climber.g);
+    // The pack he unpacks, left at the foot.
+    const pack = mesh(merge([part(sphere(8), "#7a5a3a", [start.x, Y(start.x, start.z) + 0.01, start.z], [0, 0, 0], [0.014, 0.012, 0.011])]), cm);
+    g.add(pack);
+    stands.push({ x: start.x, z: start.z, r: 0.05 });
+    // The skeletons: a skull, ribs, limbs, lying flat (facing +x), one per fall; hidden ones ride along with the climber.
+    const bones = () =>
+      mesh(
+        merge([
+          part(sphere(10), "#f3eee2", [0.04, 0.008, 0], [0, 0, 0], [0.011, 0.01, 0.01]),
+          part(sphere(6), "#3a302a", [0.049, 0.01, 0.004], [0, 0, 0], [0.002, 0.002, 0.002]),
+          part(sphere(6), "#3a302a", [0.049, 0.01, -0.004], [0, 0, 0], [0.002, 0.002, 0.002]),
+          part(cyl(0.0015, 0.0015, 6), "#f3eee2", [0.008, 0.004, 0], [0, 0, Math.PI / 2], [1, 0.05, 1]),
+          ...[0.022, 0.014, 0.006].map((x) => part(new THREE.TorusGeometry(1, 0.18, 4, 10, Math.PI), "#f3eee2", [x, 0.004, 0], [Math.PI / 2, 0, 0], [0.007, 0.011, 0.007])),
+          ...[1, -1].flatMap((sg) => [
+            part(cyl(0.0014, 0.0014, 6), "#f3eee2", [0.02, 0.003, 0.016 * sg], [0, sg * 0.6, Math.PI / 2], [1, 0.022, 1]),
+            part(cyl(0.0016, 0.0016, 6), "#f3eee2", [-0.018, 0.003, 0.008 * sg], [0, -sg * 0.25, Math.PI / 2], [1, 0.034, 1]),
+          ]),
+          // His red helmet, rolled off beside him (it reads from across the board), and a dark scuff under the bones.
+          part(sphere(10), "#e83a2a", [0.056, 0.008, 0.02], [0.5, 0, 0.3], [0.013, 0.01, 0.013]),
+          part(cyl(1, 1, 16), "#5a5650", [0.012, 0.0005, 0], [0, 0, 0], [0.05, 0.001, 0.024]),
+        ]),
+        cm,
+      );
+    const skels = tries.filter((q) => q.fallAt >= 0).map((q, k) => {
+      const o = bones();
+      o.scale.setScalar(SIZE.person * 1.6);
+      o.userData.ref = "skeleton";
+      g.add(o);
+      // Where he lands: in the scree by the pack, where the eye can see him, a little apart from the last.
+      const ka = k * 2.1 + 0.6;
+      const land = { x: start.x + Math.cos(ka) * 0.06, z: start.z + Math.sin(ka) * 0.06 };
+      return { o, land, yaw: k * 1.7 + 0.4 };
+    });
+    const look = -Math.atan2(-dir.z, -dir.x);
+    life.push((t) => {
+      // On the game board, age is seconds since the first live play frame (jelly-board.ts). Unset only in the studio or
+      // while the batcher samples motion — never fall back to the renderer's clock on the board (#966): that parks him on
+      // the summit after a long title or lobby.
+      const age = env.age ?? (env.board ? 0 : t);
+      let k = tries.length - 1;
+      while (k > 0 && age < tries[k]!.at) k--;
+      const q = tries[k]!;
+      const a = age - q.at;
+      const fallsDone = k;
+      let x = start.x, y = Y(start.x, start.z), z = start.z;
+      let yaw = look, lean = 0, roll = 0, sit = false;
+      let shown = true;
+      rope.visible = a > 2;
+      helmet.visible = a > 4;
+      flag.visible = false;
+      if (a < GEAR) {
+        // Walks in, kneels at the pack, coils the rope, puts the helmet on, stands and walks to the foot.
+        const w = Math.min(1, a / 1.2);
+        const v = ease(Math.max(0, Math.min(1, (a - 4.6) / 3.4)));
+        x = start.x - dir.z * 0.07 * (1 - w) + (foot.x - start.x) * v;
+        z = start.z + dir.x * 0.07 * (1 - w) + (foot.z - start.z) * v;
+        y = Y(x, z);
+        lean = a > 1.2 && a < 4.6 ? 0.6 * Math.sin(((a - 1.2) / 3.4) * Math.PI) : 0;
+        yaw = a < 1.2 ? look + Math.PI / 2 : a < 4.6 ? look - Math.PI / 4 : -Math.atan2(foot.z - start.z, foot.x - start.x);
+      } else {
+        const c = a - GEAR;
+        const up = Math.min(1, c / CLIMB);
+        const fell = q.fallAt >= 0 && up >= q.fallAt;
+        if (!fell && up >= 1) {
+          // On top: sits on the summit facing the eye, the flag beside him.
+          x = p0.x; z = p0.z; y = topY - 0.012;
+          yaw = -Math.atan2(EYE.z, EYE.x);
+          sit = true;
+          flag.visible = true;
+        } else if (!fell) {
+          // A step at a time: a pull up, a pause.
+          const steps = c / 1.4;
+          const u = Math.min(1, (Math.floor(steps) + ease(Math.min(1, (steps % 1) * 1.6))) * (1.4 / CLIMB));
+          const f = face(u);
+          x = f.x; y = f.y; z = f.z;
+          lean = 0.5;
+          roll = 0.08 * Math.sin(steps * Math.PI);
+        } else {
+          // The slip: out and down to the scree, tumbling; then he is bones.
+          const ft = c - q.fallAt * CLIMB;
+          const f = face(q.fallAt);
+          const s0 = skels[fallsDone]!;
+          const v = Math.min(1, ft / 1.1);
+          x = f.x + (s0.land.x - f.x) * v;
+          z = f.z + (s0.land.z - f.z) * v;
+          const gy = Y(s0.land.x, s0.land.z);
+          y = f.y + (gy - f.y) * v * v + 0.06 * Math.sin(v * Math.PI) * (1 - v);
+          roll = ft * 8;
+          lean = 0.4 + ft * 6;
+          shown = ft < 1.3;
+        }
+      }
+      climber.g.visible = shown;
+      climber.g.position.set(x, y, z);
+      climber.g.rotation.set(0, yaw, roll);
+      climber.top.rotation.z = -lean;
+      climber.g.scale.set(SIZE.person, SIZE.person * (sit ? 0.7 : 1), SIZE.person);
+      // The fallen lie where they landed; the rest wait hidden with the climber.
+      skels.forEach((s0, i) => {
+        const fallen = i < fallsDone || (i === fallsDone && q.fallAt >= 0 && a - GEAR - q.fallAt * CLIMB >= 1.3);
+        s0.o.visible = fallen;
+        if (fallen) {
+          s0.o.position.set(s0.land.x, Y(s0.land.x, s0.land.z), s0.land.z);
+          s0.o.rotation.set(0, s0.yaw, 0);
+        } else s0.o.position.set(x, y, z);
+      });
     });
   }
 

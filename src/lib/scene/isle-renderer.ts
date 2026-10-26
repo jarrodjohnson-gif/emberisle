@@ -45,7 +45,7 @@ import { makeBruno, type Bruno } from "@/lib/scene/bruno";
 import { makeJellyOutpost, makeJellyPath, makeJellyStronghold } from "@/lib/scene/pieces-jelly";
 import { CAUSTIC_GLSL, PAPER, SPLASH, addSplashRings, makeCrystalSea, makeFloorProps, makeSeaFloor, makeSplashes, makeSwell, makeWash, nearestCoast, type SeaUniforms, type WaterPath, type WaterStatus } from "@/lib/scene/crystal-water";
 import { Wobble } from "@/lib/scene/wobble";
-import { play } from "@/lib/sound";
+import { haptics, play, touchHex } from "@/lib/sound";
 import { payingHexes } from "@/lib/game/rules";
 import { type GameState, type HarborKind, type HexCell, type Terrain, type Vertex } from "@/lib/game/types";
 
@@ -160,6 +160,8 @@ export const TOKEN_FACE = 0.245;
 // How far a tilted token is lifted so its near edge stays where the flat disc's underside was.
 export const TOKEN_LIFT = TOKEN_R * Math.sin(TOKEN_TILT) + (TOKEN_H / 2) * Math.cos(TOKEN_TILT) - TOKEN_H / 2;
 
+type DockPosition = { id: string; kind: HarborKind; x: number; y: number };
+
 export class IsleRenderer {
   private renderer: THREE.WebGLRenderer;
   private scene = new THREE.Scene();
@@ -241,6 +243,8 @@ export class IsleRenderer {
   private legalIds = new Set<string>();
   // An armed Upgrade: only the player's own outposts are legal, so a touch tap on one raises it at once, with no Place chip.
   private oneTap = false;
+  // A build is armed (#667): a tap on a hex is aimed at a placement, so it makes no touch sound.
+  private armed = false;
   private down = { x: 0, y: 0 };
   private stopped = false;
   private robberTarget = new THREE.Vector3();
@@ -249,6 +253,8 @@ export class IsleRenderer {
   // Each land hex's glow by hex id (its level read as `emissiveIntensity`, as when it was the cap's), and the flashes under
   // way (age in seconds, advanced by the frame's dt). The jelly board warms each hex by its level.
   caps = new Map<string, { emissiveIntensity: number }>();
+  private payingPieces: { key: string; owner: string; age: number; delay: number; sounded: boolean }[] = [];
+  private payerSeat: string | true | undefined;
   private flashes: { mat: { emissiveIntensity: number }; id: string; age: number }[] = [];
   private clock = new THREE.Timer();
   private water = makeWater();
@@ -260,6 +266,10 @@ export class IsleRenderer {
   onWater: (w: WaterStatus) => void = () => {};
   // The play view now shown, for the table menu's View row.
   onView: (v: PlayView) => void = () => {};
+  onDocks: (docks: DockPosition[]) => void = () => {};
+  onDock: (id: string) => boolean = () => false;
+  private dockPositions: DockPosition[] = [];
+  private docksDirty = true;
   private choice: WaterPath | null = null;
   private waterSet = false;
   private probed: { path: WaterPath; ms: number } | null = null;
@@ -306,7 +316,14 @@ export class IsleRenderer {
     this.safeProbe.style.cssText =
       "position:fixed;visibility:hidden;pointer-events:none;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)";
     document.body.appendChild(this.safeProbe);
-    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: "high-performance" });
+    try {
+      this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: "high-performance" });
+    } catch (err) {
+      this.safeProbe.remove();
+      throw err;
+    }
+
+    try {
     // Frame cost tracks pixels (#310). The crystal sea runs at up to 2 everywhere (every player's phone is an iPhone Pro class
     // GPU); `applyWater` keeps 1.5 on a phone for the simple sea (2.25x the pixels of 1, against 4x at 2).
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, this.coarse() ? 1.5 : 2));
@@ -352,7 +369,7 @@ export class IsleRenderer {
     this.controls.autoRotateSpeed = 0.28;
     this.calmMq?.addEventListener("change", this.onCalm);
     this.controls.addEventListener("start", this.wake);
-    this.controls.addEventListener("change", this.wake);
+    this.controls.addEventListener("change", this.onCameraChange);
     this.orbit = new OrbitControls(this.ortho, canvas);
     this.orbit.enabled = false;
     // No damping: the board stops where the pointer stops, and nothing drifts after a glide home.
@@ -364,7 +381,7 @@ export class IsleRenderer {
     this.orbit.minPolarAngle = 0.12;
     this.orbit.maxPolarAngle = 1.15;
     this.orbit.addEventListener("start", this.wake);
-    this.orbit.addEventListener("change", this.wake);
+    this.orbit.addEventListener("change", this.onCameraChange);
 
     this.scene.fog = new THREE.Fog(PAPER, 26, 52);
     // A lit board on a table (polish.md "The board look target", #135): one warm key lamp carries the light, so the
@@ -454,13 +471,18 @@ export class IsleRenderer {
     this.composer.addPass(this.ssao);
     this.composer.addPass(new OutputPass());
     this.renderer.setAnimationLoop(this.tick);
+    } catch (err) {
+      this.dispose();
+      throw err;
+    }
   }
 
   // Off the table (title and lobby) the island is a backdrop under a card: the slow orbit, no SSAO, 30 frames a second.
   // In play it is the board fitted to the HUD hole, which the player may orbit and zoom and snap home again.
   setTitleMode(v: boolean) {
-    if (v !== this.titleMode) this.wake();
+    if (v !== this.titleMode) this.onCameraChange();
     this.titleMode = v;
+    if (v) this.clearPayers();
     this.ssao.enabled = !v && !this.play();
     this.setView(v ? "free" : this.playView());
   }
@@ -553,6 +575,10 @@ export class IsleRenderer {
     this.oneTap = on;
   }
 
+  setArmed(on: boolean) {
+    this.armed = on;
+  }
+
   // The mark a coarse pointer has selected, waiting for the Place chip. Pulses it and locks orbit meanwhile.
   setPending(p: { kind: string; id: string } | null) {
     if (p?.id !== this.pending?.id) this.wake();
@@ -591,7 +617,56 @@ export class IsleRenderer {
     this.flashes = this.flashes.filter((f) => f.age < FLASH_S);
   }
 
-  setBoard(state: GameState, highlights: Highlights, interactive: boolean) {
+  // Canonical grants identify the actual paying corner, including coalesced builds before/after the roll.
+  // Older saved grants have no vertex identity: keep those silent rather than guessing a neighbour.
+  private pulsePayers(state: GameState) {
+    const paid = new Set((state.lastProduction ?? []).map((g) => g.vertex));
+    const ordered = state.players.flatMap((p) => state.vertices.filter((v) => paid.has(v.id) && v.building?.playerId === p.id));
+    this.payingPieces = ordered.map((v, i) => ({ key: `v:${v.id}`, owner: v.building!.playerId, age: 0, delay: i * 0.09, sounded: false }));
+  }
+
+  private clearPayers() {
+    for (const p of this.payingPieces) { p.age = Infinity; p.sounded = true; }
+    this.stepPayers(0, true);
+  }
+
+  private stepPayers(dt: number, calm: boolean) {
+    const duration = calm ? 1.2 : 0.28;
+    for (const p of this.payingPieces) {
+      p.age += dt;
+      const age = p.age - p.delay;
+      const obj = this.pieces.children.find((o) => o.userData.key === p.key);
+      if (!obj || age < 0) continue;
+      if (!p.sounded) {
+        p.sounded = true;
+        if (p.delay < 0.72) {
+          play("gain_tick", 0.35);
+          haptics.pay?.(this.payerSeat === true || p.owner === this.payerSeat);
+        }
+      }
+      const active = age < duration;
+      obj.scale.setScalar(calm || !active ? 1 : 1 + 0.12 * snapBezier(age < 0.14 ? age / 0.14 : (0.28 - age) / 0.14));
+      // Jelly pieces share their base material. Clone before warming one so its non-paying neighbours stay untouched.
+      obj.traverse((child) => {
+        const mesh = child as THREE.Mesh;
+        if (!(mesh.material instanceof THREE.MeshStandardMaterial)) return;
+        if (calm && active && !mesh.userData.payerMaterial) {
+          mesh.material = mesh.material.clone();
+          mesh.material.userData.shared = false;
+          mesh.userData.payerMaterial = true;
+        }
+        if (mesh.userData.payerMaterial) {
+          const mat = mesh.material as THREE.MeshStandardMaterial;
+          mat.emissive.set(0xffd27a);
+          mat.emissiveIntensity = calm && active ? 0.35 : 0;
+        }
+      });
+    }
+    this.payingPieces = this.payingPieces.filter((p) => p.age - p.delay < duration);
+  }
+
+  setBoard(state: GameState, highlights: Highlights, interactive: boolean, payerSeat?: string | true) {
+    this.payerSeat = payerSeat;
     // Only a roll seen live flashes: the same island and exactly one more dice roll than last time. Landing on a state that
     // already has rolls (a spectator, a rejoin, the title's island carried into a game) does not; several actions in one push
     // (online bots) still flash when one roll is among them.
@@ -618,9 +693,14 @@ export class IsleRenderer {
       this.lastSeq = state.seq;
     }
     this.buildMarks(state, highlights, interactive);
-    if (rolled) this.flashHexes(payingHexes(state));
-    this.jelly?.robber(state.robberHex ?? null);
+    if (landChanged) this.payingPieces = [];
+    if (rolled) {
+      this.flashHexes(payingHexes(state));
+      this.pulsePayers(state);
+    }
+    // #826: blacken the blocked hex and its token; skip the Wastes.
     const rh = state.hexes.find((h) => h.id === state.robberHex);
+    this.shadeRobber(rh);
     if (rh) {
       this.robberSpot(rh);
       if (!this.wayfarer.userData.placed || landChanged) {
@@ -628,6 +708,36 @@ export class IsleRenderer {
         this.wayfarer.position.copy(this.robberTarget);
         this.wayfarer.userData.placed = true;
       } else if (!this.walk) this.startWalk();
+    }
+  }
+
+  // #826: black terrain/token with readable light ink (waste / missing → restore).
+  private shadeRobber(rh?: HexCell) {
+    const id = rh && rh.terrain !== "waste" ? rh.id : null;
+    this.jelly?.robber(id);
+    for (const t of this.tokens) {
+      const blocked = id === t.userData.hex;
+      for (const c of t.children as THREE.Mesh[]) {
+        const m = c.material as THREE.MeshBasicMaterial;
+        if (!m?.color) continue;
+        m.userData.rest ??= m.color.clone();
+        m.color.copy(m.userData.rest as THREE.Color).multiplyScalar(blocked ? (m.map ? 0.55 : 0) : 1);
+        if (m.map && blocked !== !!m.userData.blocked) {
+          if (!m.userData.restMap) {
+            m.userData.restMap = m.map;
+            m.addEventListener("dispose", () => {
+              m.map?.dispose();
+              if (m.map !== m.userData.restMap) m.userData.restMap.dispose();
+            });
+          }
+          if (blocked) m.map = blackNumberFace(m.userData.restMap, t.userData.token);
+          else {
+            m.map.dispose();
+            m.map = m.userData.restMap;
+          }
+          m.userData.blocked = blocked;
+        }
+      }
     }
   }
 
@@ -699,41 +809,48 @@ export class IsleRenderer {
   }
 
   dispose() {
+    this.clearPayers();
     this.stopped = true;
-    this.renderer.domElement.removeEventListener("webglcontextlost", this.onContextLost);
+    this.renderer?.domElement?.removeEventListener("webglcontextlost", this.onContextLost);
     this.dropFence();
-    this.fps?.el.remove();
+    this.fps?.el?.remove();
     this.jelly?.dispose();
     this.jelly = null;
     this.shore?.dispose();
     this.shore = null;
-    this.renderer.setAnimationLoop(null);
-    this.controls.dispose();
-    this.orbit.dispose();
+    this.renderer?.setAnimationLoop(null);
+    this.controls?.dispose?.();
+    this.orbit?.dispose?.();
     this.calmMq?.removeEventListener("change", this.onCalm);
     window.removeEventListener("resize", this.resize);
     window.visualViewport?.removeEventListener("resize", this.onViewport);
     window.removeEventListener("keydown", this.onKey);
-    this.renderer.domElement.parentElement?.removeEventListener("focusin", this.remeasure);
-    this.renderer.domElement.parentElement?.removeEventListener("focusout", this.remeasure);
-    for (const t of GATE_EVENTS) this.renderer.domElement.parentElement?.removeEventListener(t, this.gate, true);
-    this.renderer.domElement.removeEventListener("pointerdown", this.onDown);
-    this.renderer.domElement.removeEventListener("pointerup", this.onUp);
-    this.renderer.domElement.removeEventListener("pointermove", this.onMove);
-    this.renderer.domElement.removeEventListener("pointercancel", this.onCancel);
-    this.safeProbe.remove();
-    this.oceanLife.dispose();
-    this.bruno.dispose();
-    this.under?.dispose();
-    this.renderer.dispose();
+    this.renderer?.domElement?.parentElement?.removeEventListener("focusin", this.remeasure);
+    this.renderer?.domElement?.parentElement?.removeEventListener("focusout", this.remeasure);
+    for (const t of GATE_EVENTS) this.renderer?.domElement?.parentElement?.removeEventListener(t, this.gate, true);
+    this.renderer?.domElement?.removeEventListener("pointerdown", this.onDown);
+    this.renderer?.domElement?.removeEventListener("pointerup", this.onUp);
+    this.renderer?.domElement?.removeEventListener("pointermove", this.onMove);
+    this.renderer?.domElement?.removeEventListener("pointercancel", this.onCancel);
+    this.safeProbe?.remove();
+    this.oceanLife?.dispose?.();
+    this.bruno?.dispose?.();
+    this.under?.dispose?.();
+    this.renderer?.dispose?.();
   }
 
   private wake = () => {
     this.busyUntil = performance.now() + 1000;
   };
 
+  private onCameraChange = () => {
+    this.docksDirty = true;
+    this.wake();
+  };
+
   // The visual viewport also moves with the keyboard and a pinch, which leave the canvas as it is: only the hole is measured then.
   private onViewport = () => {
+    this.docksDirty = true;
     const c = this.renderer.domElement;
     if ((c.clientWidth || 1) !== this.sizeW || (c.clientHeight || 1) !== this.sizeH) return this.resize();
     this.remeasure();
@@ -741,7 +858,7 @@ export class IsleRenderer {
   };
 
   private resize = () => {
-    this.wake();
+    this.onCameraChange();
     const c = this.renderer.domElement;
     const w = (this.sizeW = c.clientWidth || 1);
     const h = (this.sizeH = c.clientHeight || 1);
@@ -775,7 +892,7 @@ export class IsleRenderer {
     if (!this.play()) return;
     const c = this.renderer.domElement;
     const base = this.insets();
-    // The hole's edges on the shell, so the HUD can centre a moment on the island (TurnMoment, GainFloats): the one the map is fitted to.
+    // The hole's edges on the shell, so the HUD can centre a moment on the island (TurnMoment): the one the map is fitted to.
     for (const k of ["top", "right", "bottom", "left"] as const) c.parentElement?.style.setProperty(`--hole-${k}`, `${base[k]}px`);
     const [w, h] = [c.clientWidth || 1, c.clientHeight || 1];
     const f = this.view === "diorama" ? fitDiorama(w, h, base) : fitOrtho(w, h, base, OVERHEAD_LEAN);
@@ -819,6 +936,7 @@ export class IsleRenderer {
   // Overhead: leaned toward the player (+Z is screen-down), looking at cap level over the hole's centre. Diorama: looking at
   // cap level over the island's centre, the lens axis meeting the canvas at (cx, cy), so the island sits in the hole.
   private applyPose(p: Pose) {
+    this.docksDirty = true;
     if (this.view === "diorama") {
       const c = this.persp;
       const [w, h] = [this.sizeW || 1, this.sizeH || 1];
@@ -950,6 +1068,7 @@ export class IsleRenderer {
     const dz = t.z - home.tz;
     const d = Math.hypot(dx, dz);
     if (d <= max) return;
+    this.docksDirty = true;
     const k = max / d - 1;
     t.x += dx * k;
     t.z += dz * k;
@@ -1052,6 +1171,23 @@ export class IsleRenderer {
     if (this.gesture.up(e.pointerId) || this.dragged) return;
     const coarse = this.coarse();
     if (Math.hypot(e.clientX - this.down.x, e.clientY - this.down.y) > tapSlop(this.downType, coarse)) return;
+    if (e.button === 0) {
+      let nearest: DockPosition | undefined;
+      let distance = Infinity;
+      for (const dock of this.dockPositions) {
+        const dx = e.clientX - dock.x;
+        const dy = e.clientY - dock.y;
+        const d = dx * dx + dy * dy;
+        if (Math.abs(dx) <= 22 && Math.abs(dy) <= 22 && d < distance) {
+          nearest = dock;
+          distance = d;
+        }
+      }
+      if (nearest && this.onDock(nearest.id)) {
+        this.lastTap.t = 0;
+        return;
+      }
+    }
     const hit = pickBest(this.hitsAt(e, coarse || this.downType === "touch"));
     const legal = hit !== undefined && this.legalIds.has(hit.id);
     // Two taps on empty board (nothing legal under either) within DOUBLE_TAP_MS and DOUBLE_TAP_PX snap the view home.
@@ -1064,6 +1200,11 @@ export class IsleRenderer {
       return;
     }
     this.lastTap = { t: now, x: e.clientX, y: e.clientY, empty: !legal };
+    // #667: a plain tap on a hex that places nothing (no drag or pinch got here; nothing armed, nothing legal to place) sounds its terrain.
+    if (hit?.kind === "hex" && !this.armed && !this.pending && this.legalIds.size === 0 && !this.titleMode) {
+      const terrain = this.lastState?.hexes.find((h) => h.id === hit.id)?.terrain;
+      if (terrain) touchHex(terrain);
+    }
     const touch = coarse || this.downType === "touch";
     if (!touch) {
       if (hit) this.onPick(hit.kind, hit.id);
@@ -1127,7 +1268,7 @@ export class IsleRenderer {
   /** A splash on the sea at (x, z), 1 for a tap. Starts at once; the fish and the visitor near it scatter. */
   splashAt(x: number, z: number, strength: number) {
     this.splash.add(x, z, strength, this.clock.getElapsed() + (performance.now() - this.lastFrame) / 1000);
-    if (!this.calm()) this.oceanLife.scatter(x, z);
+    if (!this.calm()) this.oceanLife.scatter(x, z, Math.max(0, performance.now() - this.lastFrame) / 1000);
     // A tap plops (sound.ts keeps it quiet while muted); a drag's trail does not.
     if (strength >= 1) play("plop");
     this.busyUntil = Math.max(this.busyUntil, performance.now() + SPLASH.life * 1000);
@@ -1162,11 +1303,9 @@ export class IsleRenderer {
     const pulsing = this.marks.children.some((m) => m.userData.kind === "hex" && m.userData.id !== this.pending?.id);
     // Reduced motion (#382): no tick at all; a drag, a camera move or a state push still draws for its 1 s hold.
     const calm = this.calm();
+    const resumedMotion = this.wasCalm && !calm;
     // Reading `matches` here can swallow the change event, so a flip seen on this frame wakes the loop itself.
-    if (calm !== this.wasCalm) {
-      this.wasCalm = calm;
-      this.wake();
-    }
+    if (calm !== this.wasCalm) this.wake();
     this.stepLandings(now, calm);
     if (this.relayout > 0) {
       this.relayout--;
@@ -1177,26 +1316,29 @@ export class IsleRenderer {
       this.walk = null;
       this.startWalk();
     }
-    const busy = now < this.busyUntil || this.flashes.length > 0 || !!this.jelly?.busy();
+    const busy = now < this.busyUntil || this.flashes.length > 0 || this.payingPieces.length > 0 || !!this.jelly?.busy();
     const gap = calm ? (busy ? 0 : Infinity) : this.titleMode ? 1000 / 30 : this.walk || pulsing || busy ? 0 : 1000 / 12;
     if (now - this.lastFrame < gap - 2) return;
-    // Backpressure on ambient frames (the title's turn, the idle sea): while the GPU is still on the last one, wait for it
-    // rather than queue another. A GPU that keeps up has always finished; a software one (CI, no GPU) would otherwise block
-    // the page in its GL calls, frame after frame, and starve input and every other tab. A frame a change or an interaction
-    // asked for (busy), and every frame under reduced motion, goes at once.
-    if (!busy && !calm && this.gpuBehind()) return;
+    // Camera constraints and glides are input state: process them even when the next draw waits on the GPU.
+    if (this.play()) {
+      this.orbit.update();
+      this.clampPan();
+      this.stepGlide(now);
+    }
+    // Moving frames, including busy ones, wait for the previous GPU work instead of flooding a software renderer's queue.
+    // Explicit reduced-motion frames still draw immediately, including synchronous snapshots.
+    if (!calm && this.gpuBehind()) return;
+    // Keep a motion resume pending until a frame is accepted; a GPU wait must not consume the paused-time reset.
+    this.wasCalm = calm;
     this.lastFrame = now;
     this.clock.update();
     const t = this.clock.getElapsed();
     // An idle frame is 83 ms apart; a smaller cap would slow the sheep while idle.
     const dt = Math.min(this.clock.getDelta(), 0.1);
     this.stepFlashes(dt, calm);
+    this.stepPayers(dt, calm);
     this.controls.autoRotate = this.titleMode && !calm;
-    if (this.play()) {
-      this.orbit.update();
-      this.clampPan();
-      this.stepGlide(now);
-    } else {
+    if (!this.play()) {
       this.controls.enableDamping = !calm;
       this.controls.update();
     }
@@ -1214,10 +1356,12 @@ export class IsleRenderer {
     }
     this.water.uniforms.uTime!.value = t;
     const swell = this.waterPath === "crystal" ? this.crystal?.swell : undefined;
-    this.oceanLife.step(dt, true, this.oceanViewport, swell ? (x, z) => swell(x, z, t).y : undefined);
+    // Analytic ocean poses follow elapsed visible time, even on slow frames; a motion resume excludes the paused interval.
+    this.oceanLife.step(resumedMotion ? 0 : this.clock.getDelta(), true, this.oceanViewport, swell ? (x, z) => swell(x, z, t).y : undefined);
     this.foam.material.opacity = 0.32 + 0.23 * (0.5 + 0.5 * Math.sin(t * 0.8));
     this.jellyT = t;
-    this.jelly?.update(t);
+    // Title and lobby show a demo island: hold board-age stories (the ore climber) at 0 until play (#966).
+    this.jelly?.update(t, false, false, this.titleMode);
     this.shore?.update(t);
     if (this.walk) {
       const w = this.walk;
@@ -1338,6 +1482,30 @@ export class IsleRenderer {
     this.onWater({ path, source: this.choice ? "saved" : "probe", ms: this.probed?.ms ?? null });
   }
 
+  // Dock targets follow camera and canvas changes; ambient frames leave their cached positions alone.
+  private updateDockPositions() {
+    if (this.titleMode || !this.docksDirty) return;
+    this.docksDirty = false;
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    const camera = this.cam();
+    const docks = this.docks.map((d) => {
+      const p = _p.set(d.cx + d.mx * 0.62, 0.12, d.cz + d.mz * 0.62).project(camera);
+      return {
+        id: d.vids.join(":"),
+        kind: d.kind,
+        x: rect.left + ((p.x + 1) / 2) * rect.width,
+        y: rect.top + ((1 - p.y) / 2) * rect.height,
+      };
+    });
+    if (docks.length !== this.dockPositions.length || docks.some((d, i) => {
+      const previous = this.dockPositions[i]!;
+      return d.id !== previous.id || d.kind !== previous.kind || Math.round(d.x) !== Math.round(previous.x) || Math.round(d.y) !== Math.round(previous.y);
+    })) {
+      this.dockPositions = docks;
+      this.onDocks(docks);
+    }
+  }
+
   // The one-time GPU check, on a built and warm scene of a settled client (a second after setSettled and after the last
   // pointer on the canvas), each frame made to finish by a 1-pixel read. First up to 10 simple frames after 5 warm ones: over 11 ms on average (the crystal sea draws the scene twice), the sea
   // stays simple and the crystal one is never drawn. Otherwise up to 10 crystal frames after 3 warm ones: over 22 ms, back to
@@ -1359,6 +1527,7 @@ export class IsleRenderer {
       this.renderer.shadowMap.autoUpdate = true;
     }
     this.renders += 1;
+    this.updateDockPositions();
     const p = this.probe;
     const warm = p?.stage === "simple" ? 5 : 3;
     const budget = p?.stage === "simple" ? 11 : 22;
@@ -1470,9 +1639,9 @@ export class IsleRenderer {
           if (!jelly) return;
           if (!alive()) return jelly.dispose();
           this.jelly = jelly;
-          jelly.robber(this.lastState?.robberHex ?? null);
-          // The scenes' ground beside the token can stand off the flat cap: he steps onto it.
           const rh = this.lastState?.hexes.find((h) => h.id === this.lastState?.robberHex);
+          this.shadeRobber(rh);
+          // The scenes' ground beside the token can stand off the flat cap: he steps onto it.
           if (rh) {
             this.robberSpot(rh);
             if (!this.walk) this.wayfarer.position.copy(this.robberTarget);
@@ -1502,6 +1671,7 @@ export class IsleRenderer {
   }
 
   private buildLand(state: GameState) {
+    this.docksDirty = true;
     this.jelly?.dispose();
     this.jelly = null;
     this.slabs = null;
@@ -1808,7 +1978,7 @@ function solidRects(shell: Element, canvas: Element): Rect[] {
   const join = (a: Rect | null, b: Rect | null): Rect | null =>
     !a ? b : !b ? a : { left: Math.min(a.left, b.left), top: Math.min(a.top, b.top), right: Math.max(a.right, b.right), bottom: Math.max(a.bottom, b.bottom) };
   const box = (el: Element): { r: Rect | null; porous: boolean } => {
-    if (el === canvas) return { r: null, porous: false };
+    if (el === canvas || el.hasAttribute("data-board-overlay")) return { r: null, porous: false };
     const cs = getComputedStyle(el);
     if (cs.display === "none" || cs.visibility === "hidden") return { r: null, porous: false };
     const kids = [...el.children].map(box);
@@ -2025,7 +2195,7 @@ export function numberToken(n: number) {
   const c = document.createElement("canvas");
   c.width = 256;
   c.height = 256;
-  const ctx = c.getContext("2d")!;
+  const ctx = c.getContext("2d", { willReadFrequently: true })!;
   ctx.fillStyle = "#fff9f0";
   ctx.beginPath();
   ctx.arc(128, 128, 124, 0, Math.PI * 2);
@@ -2063,6 +2233,25 @@ export function numberToken(n: number) {
   label.position.y = TOKEN_H / 2 + 0.001;
   g.add(label);
   return g;
+}
+
+// Recolour the existing glyph pixels, so late-loading fonts cannot change its shape.
+function blackNumberFace(map: THREE.Texture, n: number) {
+  const c = document.createElement("canvas");
+  c.width = c.height = 256;
+  const ctx = c.getContext("2d", { willReadFrequently: true })!;
+  ctx.drawImage(map.image as HTMLCanvasElement, 0, 0);
+  const image = ctx.getImageData(0, 0, 256, 256);
+  const ink = n === 6 || n === 8 ? 38 : 25;
+  for (let i = 0; i < image.data.length; i += 4) {
+    const coverage = Math.max(0, Math.min(255, Math.round((249 - image.data[i + 1]!) * 255 / (249 - ink))));
+    image.data[i] = image.data[i + 1] = image.data[i + 2] = coverage;
+  }
+  ctx.putImageData(image, 0, 0);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 8;
+  return tex;
 }
 
 const PIECE_MAT = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.55 });
@@ -2257,4 +2446,17 @@ function makeFps(renderer: THREE.WebGLRenderer) {
       sentAt = 0;
     },
   };
+}
+
+// CSS --ease-snap is cubic-bezier(0.2, 0.8, 0.2, 1). Invert its x coordinate before evaluating y.
+function snapBezier(u: number) {
+  let lo = 0, hi = 1;
+  for (let i = 0; i < 16; i++) {
+    const t = (lo + hi) / 2;
+    const x = 0.6 * (1 - t) * t + t ** 3;
+    if (x < u) lo = t;
+    else hi = t;
+  }
+  const t = (lo + hi) / 2;
+  return 2.4 * (1 - t) ** 2 * t + 3 * (1 - t) * t * t + t ** 3;
 }

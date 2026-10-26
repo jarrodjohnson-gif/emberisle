@@ -23,6 +23,8 @@ try {
   await page.addInitScript(() => {
     window.__plays = [];
     HTMLMediaElement.prototype.play = function () {
+      // #814: the background music is music-prove's, not a table sound.
+      if (this.src.endsWith("/old_tower_inn_loop.mp3")) return Promise.resolve();
       window.__plays.push(new URL(this.src).pathname);
       return Promise.resolve();
     };
@@ -255,8 +257,8 @@ try {
   await page.getByRole("button", { name: "Trade", exact: true }).click();
   await page.getByTestId("trade-panel").waitFor();
   const askPractice = await page.getByRole("button", { name: "Ask the table" }).count();
-  await page.getByRole("button", { name: "More ore to give" }).click();
-  await page.getByRole("button", { name: "More wool to want" }).click();
+  await page.getByRole("button", { name: "More stone to give" }).click();
+  await page.getByRole("button", { name: "More sheep to want" }).click();
   const rateButton = page.getByRole("button", { name: /^(Bank 4|Dock 3|Dock 2):1$/ });
   const rateLabel = await rateButton.textContent();
   await rateButton.click();
@@ -781,7 +783,7 @@ try {
         }),
       ),
     );
-  const price = { Path: "Path · 1 timber, 1 clay", Outpost: "Outpost · 1 timber, 1 clay, 1 wool, 1 grain", Stronghold: "Stronghold · 3 grain, 2 ore", Fortune: "Fortune · 1 wool, 1 grain, 1 ore" };
+  const price = { Path: "Path · 1 wood, 1 brick", Outpost: "Outpost · 1 wood, 1 brick, 1 sheep, 1 wheat", Stronghold: "Stronghold · 3 wheat, 2 stone", Fortune: "Fortune · 1 sheep, 1 wheat, 1 stone" };
   const storeNow = () => page.evaluate(() => ({ buildMode: window.__emberisle.getState().buildMode, tradeOpen: window.__emberisle.getState().tradeOpen, howTo: window.__emberisle.getState().howTo }));
   await setHand({});
   await page.getByRole("button", { name: "Path", exact: true }).waitFor({ timeout: 5000 });
@@ -800,7 +802,7 @@ try {
   console.log("Tab to unaffordable Path:", JSON.stringify({ tabbedTo, ...tabFocus }));
   if (tabbedTo !== "Path" || tabFocus.aria !== "true" || !tabFocus.desc.startsWith(price.Path)) throw new Error(`Tab/aria-disabled: ${JSON.stringify({ tabbedTo, ...tabFocus })}`);
   const cardsBefore = await page.evaluate(() => window.__emberisle.getState().state.deck.length);
-  for (const n of ["Path", "Outpost", "Stronghold", "Fortune"]) await page.getByRole("button", { name: n, exact: true }).click({ force: true });
+  for (const n of ["Path", "Outpost", "Stronghold", "Fortune"]) await page.getByRole("button", n === "Fortune" ? { name: /^Fortune, \d+ left in deck$/ } : { name: n, exact: true }).click({ force: true });
   await page.keyboard.press("Enter");
   const clickRes = await page.evaluate(() => ({ buildMode: window.__emberisle.getState().buildMode, cards: window.__emberisle.getState().state.deck.length, error: window.__emberisle.getState().error, said: window.__emberisle.getState().announcement }));
   console.log("click unaffordable:", JSON.stringify({ ...clickRes, cardsBefore }));
@@ -875,8 +877,15 @@ try {
     await dlg.waitFor({ timeout: 3000 });
     const at = await page.evaluate(() => document.activeElement?.getAttribute("aria-label"));
     await page.keyboard.press("Tab");
+    const rulesFocus = await page.evaluate(() => document.activeElement?.getAttribute("aria-label"));
+    // The new scroll region is the next stop; the following Tab must still wrap to Close.
+    const inside = await page.evaluate(() => !!document.activeElement?.closest('[role="dialog"][aria-labelledby="howto-title"]'));
+    if (!inside || rulesFocus !== "Rules and setup") throw new Error(`how to play ${label}: Tab did not reach the rules region: ${rulesFocus}`);
+    await page.keyboard.press("Tab");
     const afterTab = await page.evaluate(() => document.activeElement?.getAttribute("aria-label"));
     if (afterTab !== "Close") throw new Error(`how to play ${label}: Tab left the dialog: ${afterTab}`);
+    await page.keyboard.press("Shift+Tab");
+    if (await page.evaluate(() => document.activeElement?.getAttribute("aria-label")) !== "Rules and setup") throw new Error(`how to play ${label}: reverse Tab did not wrap to rules`);
     await page.keyboard.press("Escape");
     await dlg.waitFor({ state: "detached", timeout: 3000 });
     const back = await page.evaluate(() => document.activeElement?.getAttribute("aria-label") ?? document.activeElement?.textContent?.trim());

@@ -1,0 +1,32 @@
+
+> stale-pr-sweeper-prove
+> node scripts/stale-pr-sweeper-prove.mjs
+
+ok disabled mode makes zero API calls
+ok CLI also defaults disabled without token or repository
+ok inbox, archive, keep-open and closed PRs stay untouched
+ok exact 5-day label and 10-day close boundaries; close includes reopening instructions
+ok missing, forged and malformed markers receive a conservative observation grace
+ok missing label creation is gated, handles creation races, and fails closed on 403/5xx
+ok unobserved head changes restart grace instead of closing
+ok comments and PR updated_at never reset push age
+ok stale labels are idempotent
+ok push events refresh activity, even when pushing an old or identical commit SHA
+ok delayed events cannot overwrite newer heads or timestamps
+ok fresh head, keep-open, state and push-marker checks protect every mutation
+ok rechecks eligibility between explanatory comment and close
+ok retry does not duplicate the same head close explanation
+ok future clock values fail closed
+ok dry-run logs fixture label/close/initialization decisions and never mutates, including events
+ok A2: live and dry-run sweeps cap closes at five and defer without commenting on the remainder
+ok A3: even a thirty-day-old PR receives a stale warning before a later sweep can close it
+ok A1/A4: same-SHA reopen removes stale and starts a new full warning cycle
+ok A4: a recent event retry completes label cleanup without erasing a later cycle warning
+ok A3/A4: a new head observed before its event clears the old warning and earns a new day-five warning
+ok cleanup rechecks both head and marker after its write, for events and initialization
+ok REST adapter paginates and fails closed on API errors, entirely offline
+ok A1: each PR event has a separate concurrency group from other PRs and the scheduled sweep
+ok B1: actual inline permission probe validates target identity, applies/restores labels, and cleans up after failure
+ok DELETE label responses support HTTP 204 without attempting JSON parsing
+ok workflow stays owner-gated, default-branch-only, with no branch deletion permissions
+stale-pr-sweeper-prove: PASS 27 groups (offline)

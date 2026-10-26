@@ -1,0 +1,20 @@
+
+> profile-permissions-prove
+> node server/profile-permissions-prove.mjs
+
+ok the proof actually runs with umask 000
+ok the real store opens
+ok a new profile directory permits only its owner
+ok the legacy writer lock is a regular file
+ok the live writer lock permits only its owner
+ok the first committed store permits only its owner
+ok the first remembered credential works
+ok the replacement after PIN login stays private
+ok the new remembered credential works
+ok the original credential can be durably revoked
+ok the replacement after revocation stays private
+ok revocation leaves the other remembered device usable
+ok real durable temporary files were observed
+ok every temporary file is private before receiving data
+ok successful commits leave only the private store and live lock
+profile-permissions-prove: 15 checks passed; 4 real temporary descriptors observed
