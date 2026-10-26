@@ -26,10 +26,10 @@ export function NeedPicker({ player }: { player: string }) {
   useEffect(() => { const timer = setTimeout(() => setDraft(null), 3000); return () => clearTimeout(timer); }, [draft]);
   const choose = (kinds: typeof actual) => { setDraft(kinds); setPlayerNeeds(player, kinds); };
   return <div className="mb-2">
-    <Button variant="secondary" className="h-11" aria-expanded={open} aria-controls="need-picker" onClick={() => setOpen(value => !value)}>Need</Button>
+    <Button variant="secondary" className="h-11" aria-expanded={open} aria-controls={open ? "need-picker" : undefined} onClick={() => setOpen(value => !value)}>Need</Button>
     {open ? <fieldset id="need-picker" className="mt-2 rounded-control border p-2">
       <legend className="text-sm">Show the table up to two goods you need</legend>
-      <div className="grid grid-cols-5 gap-1">
+      <div className="grid grid-cols-5 gap-2">
         {RESOURCES.map(resource => {
           const Icon = ICON[resource], selected = needs.includes(resource);
           return <Button key={resource} variant={selected ? 'default' : 'secondary'} className="h-auto min-h-11 min-w-11 flex-col px-0.5 py-1 text-xs"
@@ -53,7 +53,7 @@ export function SeatNeeds({ scope }: { scope: 'rail' | 'seat' }) {
     const anchor = [...document.querySelectorAll<HTMLElement>('.seat-card')].find(card => card.dataset.testid === `${scope}-${player}`);
     if (!anchor) return null;
     const name = players?.find(p => p.id === player)?.name ?? '';
-    return createPortal(<span data-testid="seat-needs" data-player={player} role="status"
+    return createPortal(<span data-testid="seat-needs" data-player={player} role="img"
       aria-label={`${name} needs ${kinds.map(kind => RESOURCE_LABEL[kind]).join(' and ')}`}
       className="pointer-events-none absolute -bottom-1 right-1 z-10 flex items-center gap-0.5 rounded-chip bg-glass px-1 text-[10px] leading-3"
       style={{ color: 'var(--ink)' }}>
