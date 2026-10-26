@@ -1,0 +1,152 @@
+{
+  "main": "9bde9861490662ef3e95e90db5cfa2dc7874fd55",
+  "old_head": "18f6794c01059051108f913016522751a4b61b89",
+  "checks": {
+    "all_other_main_files_exact": true,
+    "own_need_modules_proofs_mounts_exact": true,
+    "all_main_fixture_values_exact": true,
+    "original_fixture_1780_exact": true,
+    "package.json_all_main_values_exact": true,
+    "server/package.json_all_main_values_exact": true,
+    "locks_exact_main": true,
+    "ci_exact_main_plus_needs_once": true,
+    "size_policy_exact_main_plus_original1900": true,
+    "host_exact_main_except_original_need_hooks": true,
+    "table_exact_main_except_original_need_contract": true
+  },
+  "main_files_count": 1575,
+  "own_exact_files": [
+    "server/needs.mjs",
+    "server/needs-prove.mjs",
+    "scripts/needs-prove.mjs",
+    "src/lib/game/needs.ts",
+    "src/components/game/SeatNeeds.tsx",
+    "src/components/game/need-state.ts",
+    "src/components/game/SeatRail.tsx",
+    "src/components/game/TradePanel.tsx"
+  ],
+  "exception_files": [
+    ".github/workflows/ci.yml",
+    "package.json",
+    "scripts/fixtures/size/base-old.json",
+    "scripts/fixtures/size/base-with-legacy.json",
+    "scripts/fixtures/size/base.json",
+    "scripts/fixtures/size/fail.json",
+    "scripts/fixtures/size/new-chunk.json",
+    "scripts/fixtures/size/over-ceiling.json",
+    "scripts/fixtures/size/pass.json",
+    "scripts/size-prove.mjs",
+    "server/host.mjs",
+    "server/package.json",
+    "src/components/game/SeatRail.tsx",
+    "src/components/game/TradePanel.tsx",
+    "src/lib/net/table.ts"
+  ],
+  "hashes": {
+    ".github/workflows/ci.yml": {
+      "main": "0299a96d4c7e7736ed73da22c86c1aa067e631b6",
+      "old": "254bce4b822d6969704b141ab2a426f76710fdc1",
+      "merged_stage": "2f4ea9970f9d1083d9a48e25227c142bf2903cb7"
+    },
+    "package.json": {
+      "main": "f23910092fa96583e9c3d2bb148485d236d466a2",
+      "old": "6dfde20ed22dafa602cf76c6f0110ab5c2744449",
+      "merged_stage": "be619a7881c84912b2c65695cba3351f97bdcd5b"
+    },
+    "scripts/fixtures/size/base-old.json": {
+      "main": "87ec073b69d1374ad2f2bd42870d23d82117b039",
+      "old": "9bee04ccd22030e33474f027e7dd186e1a443a1d",
+      "merged_stage": "84814c3dbbe2ed002ffd2802a41a3d45b8feee10"
+    },
+    "scripts/fixtures/size/base-with-legacy.json": {
+      "main": "333b5630f719272c39bc47948ea71e2b7f540e12",
+      "old": "23a34e968362da151e0f3f7f7d8ad9ee068c4fd3",
+      "merged_stage": "09ce58dd65f83e26e58b9a47ece10f2b32c75010"
+    },
+    "scripts/fixtures/size/base.json": {
+      "main": "0b9e684615cb1a019643a8e90240a05e2e4347c3",
+      "old": "e2464bc443b8823ffb8397644f9da108166d0056",
+      "merged_stage": "a809deb146a319c8f30e49414ac50413fd7de973"
+    },
+    "scripts/fixtures/size/fail.json": {
+      "main": "b094409269c5d70dbf1370baa3ef9b629dc07431",
+      "old": "09f47f0875e9b5e516f0d2b94a1c872dc218b4ea",
+      "merged_stage": "f9fbb218079547b35ff01aaf8d3c269919b4a9a8"
+    },
+    "scripts/fixtures/size/new-chunk.json": {
+      "main": "642aae37fbbcdcbbda08c7f745515957b0a07ac1",
+      "old": "2d923940d8f789bf89a2c8051f8aa6a768f22d96",
+      "merged_stage": "dd87db2a61866ac6c1800ad138c660552fdddfcb"
+    },
+    "scripts/fixtures/size/over-ceiling.json": {
+      "main": "fc370362424c00435bd846f7c87aabb2858ecde8",
+      "old": "7a530c119b738f9ea470e27e10d6f957efcd091a",
+      "merged_stage": "ecbd2ea83229e8764809dcab453001e8a77f6a66"
+    },
+    "scripts/fixtures/size/pass.json": {
+      "main": "39dc06b6f15451384f6a4ef35982b602ef9866da",
+      "old": "85f29aab268122f8655f044d7ee01615acc6ed52",
+      "merged_stage": "56679d357ca34cee170b366a22753861e49f593e"
+    },
+    "scripts/needs-prove.mjs": {
+      "main": null,
+      "old": "e907679d96dd5239d027969659f7e4be381df9e9",
+      "merged_stage": "e907679d96dd5239d027969659f7e4be381df9e9"
+    },
+    "scripts/size-prove.mjs": {
+      "main": "ddd65037fd0cd9d844ff6744962189bc3fd82a93",
+      "old": "6bb75ba9177a9917e1e9eef847c35b98ac8fab4d",
+      "merged_stage": "096cc94f2416c2b1d7823af3829eda811cf294d4"
+    },
+    "server/host.mjs": {
+      "main": "adfc458d8439d1c478f23eb582d4eadc4ce03a40",
+      "old": "35da8f4a45e4f409f10de7e3f4d97f19176d693b",
+      "merged_stage": "a3ea14c81f9293d30a8a1a2fa24b40c22038e5d9"
+    },
+    "server/needs-prove.mjs": {
+      "main": null,
+      "old": "abc250f5c98a9adea83ff57568b8dbe8ff516bc6",
+      "merged_stage": "abc250f5c98a9adea83ff57568b8dbe8ff516bc6"
+    },
+    "server/needs.mjs": {
+      "main": null,
+      "old": "f8ef1d8df5896baf9b3b8d49714ca5250ad4d2d4",
+      "merged_stage": "f8ef1d8df5896baf9b3b8d49714ca5250ad4d2d4"
+    },
+    "server/package.json": {
+      "main": "d7ba9c47c4d24334790c4e07024dbe3ce7bedc42",
+      "old": "714072311d145c03c2d43911e94468e2e0d0af15",
+      "merged_stage": "7f9d0ff2211ba47dd4296b7d0449ad6199d07287"
+    },
+    "src/components/game/SeatNeeds.tsx": {
+      "main": null,
+      "old": "3aab6859bc63459217190743a3bae63b65e25aac",
+      "merged_stage": "3aab6859bc63459217190743a3bae63b65e25aac"
+    },
+    "src/components/game/SeatRail.tsx": {
+      "main": "c85e020ebb9cd73093bedf2b3a9391d1fa3e4d0c",
+      "old": "fcd3ee6fbc1e525e9c077196287c4200136a37a1",
+      "merged_stage": "fcd3ee6fbc1e525e9c077196287c4200136a37a1"
+    },
+    "src/components/game/TradePanel.tsx": {
+      "main": "cd290ee465d201c8e94b6f0fc724af1cb4beecb2",
+      "old": "b9aa9cab0362573528d20cca864f303ec11dfca6",
+      "merged_stage": "b9aa9cab0362573528d20cca864f303ec11dfca6"
+    },
+    "src/components/game/need-state.ts": {
+      "main": null,
+      "old": "2eb39bb2dabd5d530397c947fd3b6951f185e0f6",
+      "merged_stage": "2eb39bb2dabd5d530397c947fd3b6951f185e0f6"
+    },
+    "src/lib/game/needs.ts": {
+      "main": null,
+      "old": "7c5e2618f2b575f2b15fcf040fb9fecf986636e3",
+      "merged_stage": "7c5e2618f2b575f2b15fcf040fb9fecf986636e3"
+    },
+    "src/lib/net/table.ts": {
+      "main": "0e05b5ea532c485179e9090bdd71fc39fac70eaf",
+      "old": "f1f8f55445e40128c623a2d8f3ea87ba945e501e",
+      "merged_stage": "4c66f7ad1e8abf338cfd0d1dd1be8e2f36119b7b"
+    }
+  }
+}
