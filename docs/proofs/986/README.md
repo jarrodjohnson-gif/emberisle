@@ -51,3 +51,6 @@ The complete confirmation exited1 after329.85s at unchanged lobby-prove's bot-ro
 That lobby proof passes independently on both exact head and exact main, with its original waits/assertions.
 Both aggregate failures and all four focused diagnostics/controls are retained. No cause is claimed or test modified.
 A final complete server run follows these paired passing diagnostics.
+
+Final complete npm test: PASS, exit0, 518.88s. It includes the unchanged rejoin/lobby checks, all profile proofs and the full original/new open-table cases.
+Earlier nonzero aggregate runs remain historical failures; no test was modified to make this final run pass.
