@@ -69,7 +69,6 @@ try {
       await page.goto(`http://127.0.0.1:${PORT}/?host=ws://127.0.0.1:${hostPort}`, { waitUntil: "domcontentloaded" });
       await page.getByTestId("title-card").waitFor();
       const deadline = setTimeout(() => requested(new Error("optional chunk was not requested")), 8000);
-      if (name === "WayfarerOptions") await page.getByRole("button", { name: "Wayfarer rules", exact: true }).click();
       const observed = await seen; clearTimeout(deadline); if (observed instanceof Error) throw observed;
       if (fail) await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
       await run(page, release);
@@ -121,6 +120,7 @@ try {
     check(!listed.includes(code), "failed mode controls still host a real private table", { code, listed });
   });
   await controlled("WayfarerOptions", false, async (page, release) => {
+    await page.getByRole("button", { name: "Wayfarer rules", exact: true }).click();
     const settings = page.getByTestId("wayfarer-setup");
     check(await page.getByRole("button", { name: "Wayfarer rules", exact: true }).isVisible(), "rules sheet entry stays eager");
     await page.getByRole("dialog", { name: "Wayfarer rules", exact: true }).waitFor();
@@ -137,6 +137,7 @@ try {
     check((await page.locator("#wayfarer-help").textContent()) === "Off never moves or blocks. Sevens still discard. Off fortunes add to the army.", "existing settings help text retained");
   });
   await controlled("WayfarerOptions", true, async page => {
+    await page.getByRole("button", { name: "Wayfarer rules", exact: true }).click();
     await page.getByRole("dialog", { name: "Wayfarer rules", exact: true }).getByRole("button", { name: "Close", exact: true }).click();
     await page.getByRole("button", { name: "Host a table", exact: true }).click();
     await page.waitForFunction(() => window.__emberisle.getState().screen === "lobby");

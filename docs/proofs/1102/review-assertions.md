@@ -39,3 +39,13 @@ The original ten replacements are tabulated in [README.md](README.md). The rows 
 
 
 Historical `main-failing-control.log` and `wayfarer-existing.log` replace the personal workspace prefix with `<repo>/`; results and failures are retained. The nonblocking Title-prefetch/stripLink cleanup is deferred from this review fix.
+
+## Second desk review, B1/S1–S6
+
+Proof changes are separate from runtime changes. `title-layout-prove` adds listed-table/error coverage (three entries from one real table plus two list-response fixtures because the server limits public hosting per IP), Unicode names, identity/lock/helper/heading visibility, approved desktop/landscape placement, and 44px/8px sheet checks. No existing predicate is removed.
+
+| File / setup | Old | New | Why |
+|---|---|---|---|
+| `scripts/title-chunks-prove.mjs:72` | Click rules before waiting for its module request. | Wait for the module request without any click; open rules only inside the held/failed interaction cases. | Restore the issue’s idle-prefetch guarantee while retaining all held/failed checks. |
+
+The before-fix overflow proof fails at 844x390 with wordmark y=−207. Desk comment 6402475580 explicitly approves the chat width and Watch assertion equivalents; the owner accepted the existing pictures in comment 6402771837.
