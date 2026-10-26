@@ -581,6 +581,7 @@ try {
   await mute(b, true);
   await clear(b);
   await a.evaluate(() => window.__emberisle.getState().sendSound("bong"));
+  await until(() => b.evaluate(() => window.__emberisle.getState().chat.some((l) => l.sound === "bong")), "the bong line arrives");
   await sleep(400);
   assert.deepEqual(await names(b), [], "a muted listener hears nothing");
   assert.ok((await b.getByTestId("chat-log").getByTestId("sound-line").filter({ hasText: "Bong" }).count()) >= 1, "but still sees the chip");
