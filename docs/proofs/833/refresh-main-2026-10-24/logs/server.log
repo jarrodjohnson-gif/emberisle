@@ -1,0 +1,894 @@
+
+> test
+> node --import ./register.mjs prove.mjs && node --import ./register.mjs trade-prove.mjs && node sound-prove.mjs && node --import ./register.mjs table-prove.mjs && node --import ./register.mjs roll-lines-prove.mjs && node --import ./register.mjs trade-table-prove.mjs && node --import ./register.mjs bot-trade-prove.mjs && node --import ./register.mjs practice-trade-prove.mjs && node --import ./register.mjs harden-prove.mjs && node --import ./register.mjs net-prove.mjs && node --import ./register.mjs rules-prove.mjs && node --import ./register.mjs steal-loss-prove.mjs && node --import ./register.mjs bots-prove.mjs && node --import ./register.mjs ai-prove.mjs && node --import ./register.mjs bot-harbor-prove.mjs && node --import ./register.mjs serve-prove.mjs && node --import ./register.mjs chat-prove.mjs && node --import ./register.mjs rejoin-prove.mjs && node --import ./register.mjs hold-prove.mjs && node --import ./register.mjs stale-prove.mjs && node --import ./register.mjs reconnect-prove.mjs && node --import ./register.mjs persist-prove.mjs && node --import ./register.mjs save-prove.mjs && node --import ./register.mjs finish-prove.mjs && node --import ./register.mjs turn-prove.mjs && node --import ./register.mjs turn-extension-prove.mjs && node --import ./register.mjs cap-prove.mjs && node --import ./register.mjs restart-prove.mjs && node --import ./register.mjs watch-prove.mjs && node --import ./register.mjs takeover-prove.mjs && node --import ./register.mjs preseat-prove.mjs && node --import ./register.mjs proto-prove.mjs && node --import ./register.mjs bot-action-log-prove.mjs && node --import ./register.mjs lobby-prove.mjs && node --import ./register.mjs profile-auth-prove.mjs && node --import ./register.mjs profile-write-prove.mjs && node --import ./register.mjs profile-seat-prove.mjs && node --import ./register.mjs profile-edit-prove.mjs && node --import ./register.mjs open-table-prove.mjs
+
+short bank pays nobody: timber hands [ 0, 0, 0 ] bank 1
+short bank: logged
+bank of 3 pays 1 and 2: [ 1, 2, 0 ]
+histogram {
+  '2': 166,
+  '3': 362,
+  '4': 520,
+  '5': 681,
+  '6': 862,
+  '7': 957,
+  '8': 873,
+  '9': 617,
+  '10': 462,
+  '11': 359,
+  '12': 141
+}
+setup goods first then second [ 0, 0, 0, 2, 2, 3 ]
+illegal second place: That corner is taken. buildings 1
+4 wool became 1 ore, bank ore 4
+3 wool at 4:1: Need 4 sheep.
+discard 3 rejected, hand 8
+discard 4 accepted, hand 4
+one ore moved 1 0
+two opponents on one hex (p1, p2); stole from the second (p2): 2 -> 1, first (p1) untouched at 1
+legal settle and road exist -2.91,-0.56 -2.91,-0.56|-2.91,0.56
+ui_click 10190 bytes; amb_wind missing and did not throw
+peek: 3 seats with Ember's color, lowercase same, ZZZZ empty, nothing published, then Color taken. and a free color seats
+seat list on Tide: Ember, Tide, Pine code WSAS
+peek after start: no seats
+roll-off: 3 rolls, one seat up at a time, "Not your turn." for the wrong seat, no rolled, order ok on every socket: Pine 6, Tide 4, Ember 3
+neighbors of -2.91,-0.56 stay dark (3); illegal click: Not your turn.
+setup done, phase roll
+error "Not your turn." (roll out of turn): ok
+after setup, Ember sees counts only (Pine 3, Tide 2) and they match each seat's own hand
+20 rolls match the host: 4+6 3+2 5+6 5+5 1+4 6+1 3+6 4+1 2+6 3+4 1+1 2+5 1+2 1+4 3+5 3+1 6+2 1+2 2+1 5+5
+after 20 rolls, Ember sees counts only (Pine 5, Tide 6) and they match each seat's own hand
+error "Game already started." (hello after the start): ok
+error "Only the host can start." (start by a guest): ok
+error "Need 3 or 4 at the table." (start with two): ok
+error "Table full." (fifth seat): ok
+host left the lobby: Tide is host, saw the log line, and started the game
+table prove ok
+table 7LJN: Ember and Tide with Bot
+setup done, phase roll
+Ember: 8 rolls = 8 roll lines + 8 goods lines (3 by Bot), no "<sum> · ..." line
+Tide: 8 rolls = 8 roll lines + 8 goods lines (3 by Bot), no "<sum> · ..." line
+5 person rolls (8 7 3 10 4): each was "<name> rolled <sum>!" then the goods line, the same on every socket
+roll lines prove ok
+asker Pine gives timber, wants wool; Tide declines, Ember accepts
+decline reached all three seats; yes swapped both hands in every seat's next state
+bad asks refused to the asker alone: lack, empty, array bag, unknown resource
+a replaced offer sent tradeClosed before the new tradeOffer to all three seats
+a stale yes to the replaced offer got: Offer is gone. - no goods moved
+pass closed the offer for all three seats; late yes got: Offer is gone.
+Pine offered its wool and bank-traded it away: all three seats got tradeClosed and the log line; late yes got: Offer is gone.
+trade table prove ok
+H: Tide rejoined with 20.0 s left and got the offer again with 19 s and Pine's No; its Yes moved both hands
+A: bot declined {"timber":1} for {"wool":1} after 1444 ms; Tide's No then closed it
+A: bot took {"grain":1} for {"wool":1} after 8001 ms, once Tide's window ran out; Ember's hand moved
+B: bot asked {"wool":1} for {"grain":1}; the other bot said No; Ember took it; the bot's turn played on
+D: the offer open at Ember's win closed at every seat; after the rematch a late Yes got: Offer is gone.
+E: the person declined the bot's offer; its unchanged proposal stayed suppressed on its next turn
+F: the host kept the same ask closed after the bot gained wool
+G: a different useful proposal opened through the host
+C: nobody answered the bot's ask; no bot answered it; it closed after 20032 ms and the bot's turn played on
+C boundary: a 20-second expiry does not suppress the same proposal on a later turn
+H: a rejoin after the offer ran out got no tradeOffer; a watcher got none while it was open
+I: Tide's Yes 5 s in took the ask the bot wanted, 5002 ms after it
+J: Tide said No 3 s in; the bot's held Yes took it 1 ms later
+bot trade prove ok
+A ok: a useless ask gets three bot Nos between 1 and 2 s and closes at once
+B ok: Dune (bot) takes the ask that helps it, 1-2 s after it
+C ok: a bot asks once on its turn, waits, and plays on after the person's Yes
+D ok: a bot's unanswered ask closes at 20 s and its turn plays on
+D boundary ok: an expired ask does not create declined-proposal memory
+E ok: ending the turn closes the person's offer, and no bot answers it
+F ok: goTitle and startAi drop an open offer, and no bot answers it
+G ok: an all-declined proposal stays suppressed on the next turn with the same hand and after a hand-only change; a changed proposal opens
+H ok: Pine (bot)'s Yes waits for the person until 8 s, then takes it
+I ok: the person's Yes at 5 s takes the ask Pine (bot) wanted
+J ok: the person's No at 3 s lets Pine (bot) take it at once
+practice trade prove ok
+engine rejects bad bags, names, and non-arrays
+picture: 300 KB refused (413), id picked by host
+host survived 6 malformed messages; default colors differ: #e23d2e #2d6ee8 #f3ecd9
+names de-duped (Ember, Ember 2, Ember 3), control-only name defaulted, hostile colour replaced
+16-char cut trimmed to 15 B's; zero-width-only name defaulted
+peeks: 4 bad shapes silent, 1 valid answered, 6 peeks gave 5 replies, 6 hellos gave 5 errors then Slow down.
+seat p0 left on its roll-off turn; the bot rolled and play moved to p1
+SPECTATOR_MAX=0: the first watcher of the started table got "Table is full to watch."
+ROOM_MAX=3: three hellos got welcome, the fourth got 'The host is full.', rooms/ holds 3 files
+60 ready toggles gave 40 'Slow down.'; host up; ready and start answered a second later ("Need 3 or 4 at the table.")
+ROOM_MAX=3 with 2 watchers on HP92: a new table still got "The host is full.", rooms/ holds 3 files, both watchers stayed and got seq 1
+harden prove ok
+3 table.ts clients rolled off via the host in 3 rolls: Tide, Pine, Ember
+3 table.ts clients finished setup via the host: phase roll, seq 15
+moveRobber by p0 on -2,0, targets p1,p2: p2 3 -> 2, p1 stays 5
+playKnight by p1 on -2,0, targets p2,p0: p0 6 -> 5, p2 stays 6
+189 pushed states before the end, none carry seed or rng
+net prove ok
+star of 6 segments: trail 4, no award
+line of 5: award to p0, and the log says so
+tie at 5 with no holder: nobody
+holder p0 tied at 5: keeps it
+outpost at the middle of p0's line: p0 trail 3, award removed
+buy a knight, play it the same turn: rejected ("A fortune cannot be played the turn it is bought.")
+pass, then play it next turn before the roll: works
+path fortune with no paths left: rejected ("No paths left to place."), card kept
+path fortune with no legal edge: rejected ("No place for a path."), card kept
+path past an opponent's outpost: rejected ("Path must connect to you.")
+path from your own outpost: works
+README three or four players: ok
+README first to 10 points wins: ok
+README 10 points reached on another's turn win as your turn starts: ok
+README one island of 19 hexes: ok
+20000 deals: 0 land hexes without a token, 0 adjacent red tokens
+README forest, hills, pasture, fields, mountains, or the wastes: ok
+README a token from 2 to 12 on every hex except the wastes: ok
+README there is no 7 token: ok
+README the wastes produce nothing: ok
+README stock: 15 paths, 5 outposts, 4 strongholds: ok
+README path costs 1 wood, 1 brick: ok
+README no path past the stock: ok
+README outpost costs wood, brick, sheep, wheat: ok
+README no outpost past the stock: ok
+README stronghold costs 2 stone, 3 wheat, on an outpost you own: ok
+README a shared deck of 25: ok
+README 14 knights, 2 path-building, 2 plenty, 2 monopoly, 5 hidden points: ok
+README fortune costs sheep, wheat, stone: ok
+README a fortune bought this turn cannot be played this turn (check 6 above): ok
+README a knight may be played before the roll (check 7 above): ok
+README an outpost is 1, a stronghold is 2: ok
+README longest path is 2 and takes 5 segments in one unbroken line (checks 1, 2 above): ok
+README a tie with nobody holding the longest path gives it to nobody (check 3 above): ok
+README largest army is 2 and takes 3 knights: ok
+README the log says who holds the largest army (#188): ok
+README a tie does not take the award away (army; path is check 4 above): ok
+README hidden points stay hidden until the end (server/table-prove.mjs, viewFor): ok
+roll-off: starts with p0, "Not your turn." out of turn, "Not placing outposts." before it, a sent face is ignored, order ok
+roll-off: a forced tie at 6 rerolls only the leaders, in join order; order ok after it
+README before setup, each player rolls one die; the highest roll places first; tied players reroll among themselves: ok
+roll-off: 400 full roll-offs (3 and 4 seats), 108 with a tie, order ok, rng untouched
+README in a rematch at the same table, the last game's winner places first; the others roll off for the remaining order: ok
+roll-off: 400 rematch roll-offs (3 and 4 seats), p0 first with no die, 81 with a tie among the rest, rest ordered by the roll-off rule
+README seat order, then the reverse: ok
+README each setup turn is one outpost and one path from it: ok
+README only the second outpost pays: one card per hex it touches: ok
+README an outpost must not touch another building, including your own: ok
+README after setup, a new outpost must touch one of your paths: ok
+README a path must touch your own path or building: ok
+README a path cannot continue past an opponent's building (check 8 above): ok
+README an outpost next to a building says "Too close — leave one corner between buildings." and changes nothing: ok
+README an outpost on a built corner says "That corner is taken." and changes nothing: ok
+README an outpost that touches no path of yours says "Outpost must touch your path." and changes nothing: ok
+README a stronghold on another seat's outpost says "Upgrade one of your own outposts." and changes nothing: ok
+README a stronghold on an empty corner says "Upgrade one of your own outposts." and changes nothing: ok
+README a path on a built edge says "That edge already has a path." and changes nothing: ok
+README a disconnected path says "Path must connect to you." and changes nothing: ok
+README a setup outpost next to a building says "Too close — leave one corner between buildings." and changes nothing: ok
+README a setup outpost on a built corner says "That corner is taken." and changes nothing: ok
+README a setup path on a built edge says "That edge already has a path." and changes nothing: ok
+README an outpost two corners on, touching your path, is built: ok
+README a stronghold on your own outpost is built: ok
+README a path joined to yours is built: ok
+README the server rolls (dice sent by a client are ignored): ok
+README a matching token pays the building; an outpost takes 1: ok
+README a stronghold takes 2: ok
+README unless the wayfarer is standing there: ok
+README if the bank cannot pay everyone for a resource, nobody gets it: ok
+README unless only one player is owed it: then they take whatever is left: ok
+README and the bank is not reported short: ok
+README trade, build, and buy after the roll; pass ends the turn: ok
+README more than 7 cards discards half, rounded down: ok
+README the wayfarer moves onto a different hex: ok
+README steal one card from a player with a building there: ok
+README the stolen card stays between the two players: ok
+README 9 docks on the coast, each on two corners: ok
+README 5 are 2-for-1, one per resource; 4 are 3-for-1: ok
+README no dock for sitting down: the bank is 4 for 1: ok
+README a 3-for-1 beats the bank: ok
+README a specific dock beats a 3-for-1, only for its resource: ok
+README the bank pays only if it still has the card: ok
+README a new game keeps the same nine docks and may rotate their types: ok
+README the bank starts with 19 of each resource: ok
+README a discard must be exactly half: ok
+README the wayfarer steals only from a player with a building there: ok
+README nothing happens once the game is over: ok
+README the bank is 4 of one resource for 1 of another: ok
+fortune effect: plenty puts two cards in hand, takes them from the bank, spends the card
+fortune effect: plenty sets playedCard so a second fortune that turn is refused
+fortune effect: plenty naming a card the bank has none of is refused, card stays in hand
+fortune effect: plenty naming grain twice with one grain in the bank is refused
+fortune effect: plenty naming cards the bank holds still pays them
+fortune effect: monopoly takes every other hand's copies, adds the sum, leaves other resources alone
+fortune effect: monopoly logs the total
+fortune effect: monopoly keeps 19 of each resource across hands and bank
+fortune effect: a duplicate path pair is refused and the card stays in hand
+fortune effect: a path fortune places two connected paths, the second legal only after the first, and drops pathsLeft by 2
+fortune effect: the two free paths complete a 5-line and take the longest path, with a log line
+rules prove ok
+exclusions: discard, bank/player exchange, path/stronghold/fortune spending and Monopoly preserve earlier per-seat steal counts; inputs stay immutable
+rules: impossible and declined steals count 0, successful ones count 1 against the victim, the winning steal is in the final count [1,2,0,0]
+hosted game: 77 frames before the win carry no loss total, 5 after it carry [1,2,0,0] (1 rolled 7s sent the wayfarer clear)
+restart after the win: seats and watcher read [1,2,0,0] from the saved game
+steal-loss prove ok
+200 games, 68271 actions, 30848 ms
+#233 stalled at 9 with 11 grain and no ore: trades grain for ore twice, raises a stronghold, wins
+#233 stalled at 8 with a third knight in hand: plays it, largest army, wins
+#233 no clay anywhere, two strongholds each, deck gone: trades for clay and lays two paths
+bots prove ok
+plenty: short clay and grain for an outpost, names both, then builds it
+plenty: short one clay, still names two cards
+plenty: held back when the bank cannot pay a named card
+plenty: held back when the stronghold is five cards away
+plenty: one grain short of a stronghold, then raises it
+path fortune: two legal edges, laid in order, reaching a new outpost corner
+path fortune: one path left, one edge
+monopoly: names the card its stronghold is short of most, not the one opponents hold
+bought this turn: plenty, path and monopoly all stay in hand
+already played: no second fortune
+robs the leader: two targets, the one showing more points is robbed
+robs the leader: tied on points, the fuller hand is robbed
+robs the leader: an empty-handed leader is blocked, the steal goes to the hand with cards
+robs the leader: the wayfarer card robs the leader too
+robs the leader: the leader's strongholds on a 6 outweigh a trailing outpost on an 8
+own hex: never blocked while another hex blocks an opponent, even with no steal there
+trade: says Yes to the clay its outpost lacks, for a spare ore, then builds
+trade: says No to the leader on public points, Yes to a trailing seat
+trade: says No when it cannot pay, Yes to the same ask once it can
+trade: says No when it brings the outpost no closer, or pays more cards than it gets
+ask: names the one clay its outpost lacks, for a spare ore
+ask: null when nothing spare, two short, or not its turn
+ai prove ok
+2:1 dock: bot gives exactly 2 timber for one grain; player and bank balances agree
+3:1 dock: bot gives exactly 3 timber for one grain; player and bank balances agree
+first short grain unavailable from bank: bot trades 2 timber toward its second short good, ore
+no dock: bot refuses an unaffordable 3-card trade and uses the ordinary 4:1 rate with four spare goods
+reservation diagnostic: 4 grain / 1 ore keeps the 3-grain stronghold goal; sacrificing 2 grain for ore leaves one card missing
+PASS bot-harbor-prove
+raw GET // -> 400                                        
+raw GET //[ -> 400                                       
+raw GET //a b -> 400                                     
+raw GET http://[ -> 400                                  
+raw GET /% -> 404                                        
+raw GET http://x// -> 404                                
+GET / -> 200 text/html; charset=utf-8, no-cache          
+GET /assets/app-abc123.js -> 200 text/javascript, immutable 
+HEAD /assets/app-abc123.js -> 200, empty body            
+GET /assets/missing.js -> 404                            
+GET /assets -> 404                                       
+GET /../secret.txt -> 404                                
+GET /%2e%2e/secret.txt -> 404                            
+GET /assets/..%2f..%2fsecret.txt -> 404                  
+GET /%00 -> 404                                          
+GET /%E0%A4%A -> 404                                     
+POST / -> 404                                            
+WS on the same port -> welcome 6ZNH                      
+POST /avatars with no secret, then a wrong one -> 403, 403 
+POST /avatars with the seat's secret -> 200              
+seats then shows /avatars/415b02d416a50aee.jpg on the uploader 
+GET /avatars/415b02d416a50aee.jpg -> 200 image/jpeg, nosniff 
+POST /avatars with bytes that are not a JPEG -> 400      
+second seat's 600 B over a 1000 B store -> 503           
+second seat's 300 B -> 200                               
+third seat's 50 B over AVATAR_MAX=2 -> 503               
+uploader replaces its picture -> 200; old url -> 404     
+stranger peeks -> sees ["id","color","ready"], no picture 
+stranger hellos with that avatarId -> seat shows null    
+stranger's table NUAE dropped after the lobby hold       
+GET /avatars/411eb3e6c85ac683.jpg after that -> 200      
+seat let go: GET /avatars/356199cde201e76c.jpg -> 404    
+table NFWY dropped with an upload half sent              
+the rest of that upload arrives -> 410                   
+third seat's 50 B into the freed slot -> 200             
+watcher welcome has no secret; its upload -> 403         
+upload burst: 18 accepted, then 429                      
+host with DIST=<empty dir>: GET / -> 503                 
+hostUrl https://abc.trycloudflare.com/ -> wss://abc.trycloudflare.com 
+hostUrl http://192.168.1.20:8787/ -> ws://192.168.1.20:8787 
+hostUrl http://localhost:8080/ (dev) -> ws://localhost:8787 
+hostUrl http://localhost:8080/?host=ws://x:1 -> ws://x:1 
+hostUrl default dev under node -> ws://h:9               
+serve prove ok
+chat: no emote folder at /tmp/emotes-B4JBd0/missing
+unit checks ok
+lobby chat: host fills in the sender
+empty chat and unknown emote are dropped silently
+rate limit: 5 through, the 6th slowed down, other seats unaffected
+reactions: aimed and unaimed
+late joiner gets the chat history
+chat after start carries the seat's player id: p0
+an over-limit frame closes only that socket; the table carries on
+chat prove ok
+table EL8D: 3 seats, Ember (p0) rolls first, seq 0
+within the grace: Ember is away, no state pushed, seq still 0
+rejoin: welcome you=s0, state you=p0, seq 0; the grace timer was cancelled
+same secret on a live seat: "Seat is taken."
+past the grace: p0 is a bot, play moved to p1
+late rejoin: p0 is human again, named Ember
+all sockets closed for 900 ms: room EL8D survived, Tide rejoined at seq 1
+past the hold: "Seat is gone."
+keepalive: silent socket cut after 316 ms (ping 300 ms), answering seats kept for 900 ms more, Reed rejoined as s2
+lobby hold: away+not ready with 3 seats, start refused, rejoin kept s1, after 300 ms 2 seats and "Seat is gone."
+lobby host drop: Pine is host, Ember rejoined as s0 with host=false
+rejoin prove ok
+table E8BY: welcome says holdMs 6000, lobbyHoldMs 3000
+lobby: relay cut, redials queued at 3, 1006 ms, back in seat s0 at 2008 ms (hold 3000)
+lobby: relay stays cut, redials queued at 0, 1002 ms, gave up at 2004 ms, host let go at 3004 ms
+game: relay cut, redials queued at 1, 1001, 3002 ms, gave up at 5003 ms, host let go at 6005 ms (hold 6000)
+reload: rejoin welcome says holdMs 6000, relay cut, redials queued at 1, 1002, 3005 ms, gave up at 5003 ms, host let go at 6006 ms
+hold prove ok
+ok same-baseline non-current discards both accepted exactly once
+ok current-player discard still requires exact sequence: calm refusal, private resync, unchanged game/deadline/save
+ok duplicate parallel discard with updated baseline: calm refusal, private resync, unchanged game/deadline/save
+ok parallel discard wrong turn: calm refusal, private resync, unchanged game/deadline/save
+ok parallel discard wrong connection: calm refusal, private resync, unchanged game/deadline/save
+ok parallel discard malformed sequence: calm refusal, private resync, unchanged game/deadline/save
+ok parallel discard future sequence: calm refusal, private resync, unchanged game/deadline/save
+ok parallel discard negative sequence: calm refusal, private resync, unchanged game/deadline/save
+ok first parallel discard replay after reconnect: calm refusal, private resync, unchanged game/deadline/save
+ok second parallel discard replay after reconnect: calm refusal, private resync, unchanged game/deadline/save
+ok rules validate discard contents; fresh current-player discard finishes the phase
+ok duplicate older-baseline trade acceptance: calm refusal, private resync, unchanged game/deadline/save
+ok older-baseline trade reply accepted; racing reply cannot transfer twice
+ok missing stamp: calm refusal, private resync, unchanged game/deadline/save
+ok wrong turn: calm refusal, private resync, unchanged game/deadline/save
+ok old sequence: calm refusal, private resync, unchanged game/deadline/save
+ok future sequence: calm refusal, private resync, unchanged game/deadline/save
+ok malformed sequence: calm refusal, private resync, unchanged game/deadline/save
+ok malformed cid: calm refusal, private resync, unchanged game/deadline/save
+ok wrong connection: calm refusal, private resync, unchanged game/deadline/save
+ok fresh bank trade accepted
+ok identical already-applied frame: calm refusal, private resync, unchanged game/deadline/save
+ok duplicate cid with updated baseline: calm refusal, private resync, unchanged game/deadline/save
+ok duplicate trade ask without sequence advancement: calm refusal, private resync, unchanged game/deadline/save
+ok duplicate trade decline without sequence advancement: calm refusal, private resync, unchanged game/deadline/save
+ok exact unsent frame replayed after reconnect with no progress: calm refusal, private resync, unchanged game/deadline/save
+ok seat cid ledger retained across reconnect: calm refusal, private resync, unchanged game/deadline/save
+ok fresh stamped action after reconnect accepted
+ok exact roll replay after bot progress and reconnect: calm refusal, private resync, unchanged game/deadline/save
+ok old island frame after rematch resets turn/seq: calm refusal, private resync, unchanged game/deadline/save
+ok new-island stamped action accepted
+ok disconnected ready lobby seat blocks start until rejoining and readying again
+ok exact pre-restart frame replayed after restore with no progress: calm refusal, private resync, unchanged game/deadline/save
+ok fresh stamped action after host restart accepted
+stale prove ok
+second tab on a live seat: stops, keeps the saved seat
+failed first dial: the redial sends one hello
+drop with a half-open old socket: kept dialing, back in on try 2, stale roll not replayed
+seat gone: gives up and forgets the seat
+failed first dial, then Seat is taken on every redial: gives up, keeps the saved seat
+wake: redials at once during a backoff, once; no-op otherwise
+G1 client: fresh stamps and unique cids on actions/trades; offline and pre-state gameplay never queued
+lobby hold 2500 ms from the welcome: dialed at 1 s and 1.5 s, gave up at 1754 ms, before the hold
+game hold 4000 ms: last call dialed at 3104 ms, rejoin there kept the seat; a replaced socket's late close was ignored
+welcome without hold fields: the default window applies
+reconnect prove ok
+28Z7.json on disk mid-roll-off: phase rollOff, 1 die ({"p0":4}), pending p1,p2
+table 28Z7: setup done, rolled 3 times, seq 20, p1 to play, 1 watching; 28Z7.json on disk with no watcher data
+host killed and restarted on 46647: restored 1 room(s): 28Z7; OLD1 (25 h) dropped, BAD1 and BAD2 skipped
+stale shape dropped (ZZZ1 shape 1, from before the roll-off; ZZZ3 unstamped), bad game dropped (ZZZ2)
+Ember rejoined: you=s0, player p0, seq 20, current p1, watching 0
+Tide rejoined: you=s1, player p1, seq 20, current p1, watching 0
+Pine rejoined: you=s2, player p2, seq 20, current p1, watching 0
+restored room 28Z7: the old watcher closed with the host, a new one watches at seq 20
+after the restart Tide played (main): seq 21 on all three and the watcher
+restored lobby HFH6: start refused with "Not everyone is ready."
+persist prove ok
+profiles: store unavailable (locked); guests can still play
+burst: 51 changes in 2 ms -> 1 write(s), 366 reads all valid JSON, last state on disk 207 ms after the last change (SAVE_MS 200)
+profiles: store unavailable (locked); guests can still play
+profiles: store unavailable (locked); guests can still play
+kill -9 mid-burst: 3 writes during the burst, 432 reads all valid JSON, file loads on restart
+profiles: store unavailable (locked); guests can still play
+SIGTERM: debounce 60 s, nothing on disk, then the stop flushed the last state (exit 143)
+profiles: store unavailable (locked); guests can still play
+SIGINT: debounce 60 s, nothing on disk, then the stop flushed the last state (exit 130)
+profiles: store unavailable (locked); guests can still play
+a table closed before its flush stays deleted, also across the exit flush
+save-prove ok
+game 1: Tide wins with 10 in 407 actions, reveal ok, post-win refused
+rematch: same code EJUM, Pine (closed) let go and its picture 404, seats s0,s1,s3, new seed, Tide is p0 and places first, then Dune and Ember by roll; guest, watcher and second again refused; the watcher stayed
+game 2: Dune wins with 11 in 237 actions, reveal ok, post-win refused
+rematch: two at the table is refused, the finished game and all three seats kept
+2 hosted games to the win in 3972 ms
+finish prove ok
+table QFDX: 3 seats, Ember (p0) opens the roll-off, TURN_MS 1200, GRACE_MS 6000
+idle roll-off: "Ember took too long; the table moved on." after 1207 ms, "Bot rolled for Ember: roll-off die 2.", the rest rolled themselves, Pine places first
+idle setup: "Pine took too long; the table moved on." 3 ms past the deadline, outpost and path placed, play moved to p1, Pine is human
+in time: Tide placed after 400 ms, deadline 1792882280996 -> 1792882281400, never moved
+idle discard: Pine held 18, owed 9, holds 9
+idle discard: Ember held 13, owed 6, holds 7
+idle wayfarer and pass: Ember moved on with 8 goods, phase roll, now p2
+dropped seat: Pine held 6008 ms (TURN_MS 1200, GRACE_MS 6000), no turn-timer line, then "Pine is played by the bot until they return.", seq 62 -> 64
+turn prove ok
+majority: requester yes + one yes of three passes; default 60-second extension / 15-second answer window; target, watcher, malformed and stale frames refused
+tie: one yes / one no fails; failed attempt remains spent after an accepted action
+timeout: silence counts against a majority; duplicate and late replies cannot change the result
+turn change: an open vote cancels; the next seat gets a fresh request identity
+disconnect: dropping the silent voter leaves one yes of one connected other human, which passes
+rejoin: an in-flight electorate only shrinks; the removed voter cannot reply after returning
+target drop: the timer disappears and its open vote cancels
+electorate: no other connected human refuses; a lobby bot and a held human do not block one eligible yes
+takeover: a held bot-controlled human seat is excluded from the electorate
+discard: the timed seat can differ from current; only that timer gains time and the resumed target keeps its request
+restart and cap: approved extra time and used attempt survived kill -9; 10 actions; passed 10 ms from extended cap
+configured extension: +90000ms once; later windows remain normal; token and used request survive reads, action and kill -9
+privacy: every raw seated and watcher frame hides seed/rng and uses only opaque public vote identities
+PASS turn-extension-prove
+capped: 8 actions every 400 ms (TURN_MS 1500), passed 6 ms past the cap (TURN_TOTAL_MS 3600), "Ember took too long; the table moved on.", Ember is still human
+normal turn: Tide acted after 500 ms, deadline 1792882306595 -> 1792882307110, never moved
+cap prove ok
+restart: deadline 1792882314154, killed -9 and restarted, rejoined with 4356 ms left, state deadline off by 0 ms
+expired: host down 767 ms past the deadline, rejoin fires "took too long" and the turn moves on, Ember is still human
+budget: dropped, another seat joined, rejoined at 2 s: deadline 0 ms from the cap, passed 2 ms past it
+restart prove ok
+before the start: "Not started yet."; no code and a bad code: "No table with that code"
+after the start: welcome {spectator:true}, seats {watching:1}, redacted state at seq 0; two watchers counted at every seat, one log line, a third gets "Table is full to watch."
+turn timer: idle roll-off, "Ember took too long; the table moved on." (a seat, never a watcher), watcher at seq 1
+every seat dropped at seq 16: after GRACE_MS=300 the bot took all three and waited (0 states pushed to the watchers); all three rejoined, seq 16, every seat human
+played to the win in 297 actions: 302 watcher states, every one before the end the opponent view, same seqs as the seats; the rolled messages reached the watchers
+at the win: p0 wins; the watcher holds every hand and hidden card and the deck (17), no seed or rng
+refusals: a seat's secret, roll, chat, tradeAnswer, junk, place, pass, buy, tradeAsk, react -> 10 x "Watching only."; ready, start, peek and a second watch past the burst -> silence; nothing moved; "gg" from a seat reached both watchers
+leaving: watching 2 -> 1 at every seat, 0 "A watcher left." line(s) (coalesced), three seats still seated
+dropped room: every seat gone, after HOLD_MS=5000 the watcher got "The table closed." and its socket closed
+watch prove ok
+connected turn: waited-on human received the configured 30000 ms deadline
+setup: after GRACE_MS=400, recovery completed the forced free outpost and path
+main: recovery passed with build materials and a playable fortune untouched
+own offer: takeover withdrew the old ask, rejected a late Yes, and passed without waiting for its timeout
+rejoin: the covered seat returned to human control
+roll: recovery rolled and advanced the engine phase with an explicit action line
+discard: recovery paid the mandatory half-hand discard
+wayfarer: recovery moved the robber with one public action line
+persistence: legacy bot-seat identity was inferred and saved in the room snapshot
+trade: a helpful offer to a legacy recovery bot was declined with no goods transferred
+timers: grace 400 ms, connected turn 30000 ms, hold 2800 ms exercised; source defaults remain 90 s / 120 s / 10 min
+hold expiry: the seat was removed while its recovery identity remained persisted
+restart: the expired seat's persisted recovery identity passed without spending resources or its fortune
+takeover prove ok
+profiles: store unavailable (locked); guests can still play
+12 hellos at once: 4 tables opened, 8 got "Too many new tables right now. Try again in a minute.", 4 room files, ROOM_MAX 16 untouched; a retry and a fresh create are still refused
+one address opened 2 tables, then "You have opened several tables lately. Try again in a minute." without touching the shared cap; a different address still opened one
+behind the tunnel one cf-connecting-ip opened 2 tables, then "You have opened several tables lately. Try again in a minute."; a different cf-connecting-ip still opened one
+under the cap a join to 7MP9 sat down and saw 2 named seats
+peek 7MP9: 2 seats, keys id,color,ready, no name or picture
+after 3000 ms one more hello opened JVD5 and the next was refused; 11 room files; host up
+preseat-prove ok
+ok matching proto 1: opened W7K9, welcome proto 1
+ok no proto: accepted as 0, seated as s1, welcome proto 1
+ok open with proto 999: "Unknown protocol version; this table speaks protocol 1. Reload to update."
+ok the refused socket stayed seatless and opens a table with a known proto
+ok join with proto 999: "Unknown protocol version; this table speaks protocol 1. Reload to update."
+ok join with proto 2: "Unknown protocol version; this table speaks protocol 1. Reload to update."
+ok join with proto "1": "Unknown protocol version; this table speaks protocol 1. Reload to update."
+ok join with proto -1: "Unknown protocol version; this table speaks protocol 1. Reload to update."
+ok join with proto 1.5: "Unknown protocol version; this table speaks protocol 1. Reload to update."
+ok join with proto {}: "Unknown protocol version; this table speaks protocol 1. Reload to update."
+ok lobby: still 2 seats, no broadcast
+ok rejoin with proto 999: "Unknown protocol version; this table speaks protocol 1. Reload to update."
+ok rejoin: the refused secret left s1 held; a matching rejoin took it, welcome proto 1
+ok watch with proto 999: "Unknown protocol version; this table speaks protocol 1. Reload to update."
+ok watch: refused watcher not counted; a matching watcher counted 1, welcome proto 1
+proto prove ok
+practice roll: canonical goods event retains the bank shortage
+practice build: runBots applies and logs one attributed path build
+practice bank trade: action log keeps the public give and receive amounts
+practice Wayfarer: public leader rationale matches the selected victim; neutral case stays neutral and both log one public line
+implicit victim: a null selected id is named only when the rules actually steal from the sole target
+hidden VP: raising the victim's unrevealed points does not create a public leader claim
+practice bot action log prove ok
+lobby-prove ok: soundboard, rename (clean, dedupe, empty, burst, started), add/remove bot (host only, 4 max), start 2 humans + 1 bot, restore
+ok profileHello advertises profilesV1 on the plain localhost link
+ok plain production localhost is guest-only
+ok a PIN over plain localhost is refused
+ok plain localhost cannot create a profile
+ok a profile connection cannot open a table
+ok direct same-Wi-Fi ws:// refuses credentials
+ok a direct peer's spoofed cf-connecting-ip and X-Forwarded-Proto are ignored
+ok spoofed headers cannot log in
+ok a tunnel hop without HTTPS evidence refuses credentials
+ok a tunnel hop from another site's page is refused
+ok no Origin header refuses credentials
+ok the tunnel link offers profiles
+ok profileCreate returns a private profileSession
+ok the session carries only the owner allowlist
+ok display text is cleaned and no song is assigned
+ok a distinct backup colour is stored
+ok the profile id is a UUID
+ok a mismatched PIN confirmation is invalid
+ok a bad login shape is invalid
+ok a colour off the palette is invalid
+ok exact Unicode text creates a profile
+ok exact display name preserves sixteen complete characters
+ok exact catchphrase preserves eighty complete characters
+ok exact cleaned text is durable
+ok clipped Unicode text creates a profile
+ok clipped display name preserves sixteen complete characters
+ok clipped catchphrase preserves eighty complete characters
+ok clipped cleaned text is durable
+ok control-only display name cannot create a profile
+ok rejected empty name leaves the private file unchanged
+ok concurrent creation keeps one login
+ok the store holds one tide
+ok Choose another login
+ok profileLogin with the right PIN issues a second credential
+ok profileResume returns the owner without a new credential
+ok profileLogout answers
+ok the logged-out credential no longer resumes
+ok the other device's credential still resumes
+ok Signed out reads plainly
+ok login "constructor" before creation is an ordinary unknown login
+ok login "Constructor" before creation is an ordinary unknown login
+ok login "tostring" before creation is an ordinary unknown login
+ok login "hasownproperty" before creation is an ordinary unknown login
+ok a profile named constructor can be created
+ok and signs in as Constructor
+ok the host is still serving after those names
+ok a guest seat rejoins with its secret after a profile logout
+ok a table socket cannot sign in
+ok an unknown login and a wrong PIN give the same answer
+ok an unknown login costs a real derivation
+ok an unknown login's failure is counted in its own bucket
+ok 7 flood attempts are durably reserved before releasing native work
+ok 9 flood attempts are durably reserved before releasing native work
+ok overflow replies arrive before any gated native derivation starts
+ok one running plus eight queued derivations; the overflow is refused
+ok native derivations never overlap
+ok overflow is refused before any derivation finishes
+ok derivations run one at a time
+native queue timing {"done":[384.848388671875,750.588134765625,1082.7626953125,1622.99951171875,2118.373779296875,2548.291259765625,2926.904541015625,3223.62890625,3627.515869140625],"gaps":[365.73974609375,332.174560546875,540.23681640625,495.374267578125,429.91748046875,378.61328125,296.724365234375,403.886962890625],"delayedClientReplies":[387,756,1119,1624,2128,2552,2928,3622,3622]}
+ok eight concurrent wrong PINs all fail alike
+ok only five were hashed and counted
+ok the right PIN is refused during the cooldown
+ok three creations per address per hour
+ok twenty authentication requests per address per minute
+ok another tunnel visitor has its own address bucket
+ok the attempt is reserved durably before hashing
+ok an interrupted attempt is recovered as a failure
+ok a crashed host's lock is taken over
+ok credentials survive a restart
+ok logins survive a restart
+ok budgets survive a restart and a successful login
+ok the cooldown survives a restart
+ok ten failures inside a day
+ok the tenth daily failure blocks even the right PIN after the cooldown
+ok the old login cannot sign in
+ok the old login cannot be claimed again
+ok a rename keeps the day's budget
+ok the next day the right PIN works
+ok a successful login replenishes nothing
+ok thirty lifetime failures are recorded
+ok the lifetime lock refuses the right PIN
+ok time does not clear the lifetime lock
+ok a remembered device still resumes under the lifetime lock
+ok resume clears no counter
+ok a device credential expires 90 days after issue
+ok an expired credential no longer resumes
+ok a weaker verifier still signs in
+ok and is upgraded to the accepted parameters
+ok at most five remembered devices per profile
+ok each overflow login returns a credential for the same profile
+ok newest credential remains usable at capacity
+ok five issued credentials resume and one is signed out
+ok overflow does not evict another profile's credential
+ok resume at capacity changes no PIN budget
+ok crash/restart preserves each credential's capacity outcome
+ok other profile still resumes after overflow and restart
+ok restart and repeated resumes preserve every PIN budget
+ok no plaintext PIN on disk
+ok no device credential on disk
+ok no stray temp files
+ok the guest sockets saw game frames
+ok game frames carry no profile fields
+ok the store never names a custom media binding
+ok a second host on the same profile directory refuses profiles
+ok that second host still seats guests
+ok an unknown schema is refused, not replaced
+ok guests still play over an unknown schema
+ok an unknown schema is left on disk for repair
+ok a corrupt store is refused, not replaced
+ok guests still play over a corrupt store
+ok a corrupt store is left on disk for repair
+ok a store with a broken login index is refused, not replaced
+ok guests still play over a store with a broken login index
+ok a store with a broken login index is left on disk for repair
+ok the repaired store serves profiles again
+ok PROFILES_DEV=1 allows a loopback page over ws://
+ok development still refuses a LAN page
+ok development still refuses a proxied loopback hop
+ok development still refuses a direct LAN peer
+profile-auth-prove: 118 checks passed
+profiles: write failed: injected file-open
+ok file-open: fault reached and first mutation refused
+ok file-open: recoverable failure leaves queue and store usable
+profiles: write failed: injected file-write
+ok file-write: fault reached and first mutation refused
+ok file-write: recoverable failure leaves queue and store usable
+profiles: write failed: injected file-sync
+ok file-sync: fault reached and first mutation refused
+ok file-sync: recoverable failure leaves queue and store usable
+profiles: write failed: injected file-close
+ok file-close: fault reached and first mutation refused
+ok file-close: recoverable failure leaves queue and store usable
+profiles: write failed: injected rename-before
+ok rename-before: fault reached and first mutation refused
+ok rename-before: readiness fenced and queued callback never runs
+ok rename-before: actual replacement state preserved
+ok rename-before: all later writes and credentials refused without disk rollback
+profiles: write failed: injected rename-after
+ok rename-after: fault reached and first mutation refused
+ok rename-after: readiness fenced and queued callback never runs
+ok rename-after: actual replacement state preserved
+ok rename-after: all later writes and credentials refused without disk rollback
+profiles: write failed: injected directory-open
+ok directory-open: fault reached and first mutation refused
+ok directory-open: readiness fenced and queued callback never runs
+ok directory-open: actual replacement state preserved
+ok directory-open: all later writes and credentials refused without disk rollback
+profiles: write failed: injected directory-sync
+ok directory-sync: fault reached and first mutation refused
+ok directory-sync: readiness fenced and queued callback never runs
+ok directory-sync: actual replacement state preserved
+ok directory-sync: all later writes and credentials refused without disk rollback
+profiles: write failed: injected directory-close
+ok directory-close: fault reached and first mutation refused
+ok directory-close: readiness fenced and queued callback never runs
+ok directory-close: actual replacement state preserved
+ok directory-close: all later writes and credentials refused without disk rollback
+ok real host creates a durable profile before faults
+ok real host file-write: request refused
+ok real host file-write: original file and readiness preserved
+ok real host file-write: next request succeeds
+ok real host file-sync: request refused
+ok real host file-sync: original file and readiness preserved
+ok real host file-sync: next request succeeds
+ok real host refuses uncertain login reservation
+ok failed acknowledgement leaves the real PIN reservation on disk
+ok real host stops advertising profile availability
+ok real host fences profileResume
+ok real host fences profileLogout
+ok real host fences profileLogin
+ok real host fences profileCreate
+ok later profile traffic cannot overwrite the pending budget
+ok guests still host and join while profiles are fenced
+ok clean restart reloads the file and restores availability
+ok original device credential survives recovery
+ok restart charges uncertain reservation plus later wrong PIN exactly once
+profile-write-prove: 47 checks passed
+four profiles in the store: 8b93e049 cdebb57c 725a2a26 771a20b3
+ok the host opened the seeded store
+ok a guest host hello without a credential still opens a table
+ok a guest seat carries no profile field
+ok credential: null is a guest join
+ok a credential over plain ws:// is refused before it is looked at; no seat
+ok the refused socket can still sit down as a guest
+ok a guest game freezes a roster with no profiles, all human and eligible
+ok guest room files carry no profile binding
+ok guest table frames carry no profile fields
+ok one human with two bots is frozen as not eligible, bots classed as bots
+ok a host hello with a valid credential opens a table
+ok the bound seat projects only profileId and displayName
+ok an unknown credential is refused
+ok a malformed credential is refused
+ok a join with a valid credential sits down bound
+ok the same profile cannot take a second seat
+ok a duplicate-binding race seats one and refuses the other
+ok a credential alone cannot recover a held lobby seat
+ok the seat secret recovers the held lobby seat and its binding
+ok a bot seat carries no profile
+ok each profile is bound to exactly one seat
+ok the room file stores the opaque binding on each bound seat
+ok the room file holds no credential, login or profile record
+ok a lobby rename keeps the profile binding
+ok the refused second device ...
+ok ... stays at the join screen and can sit down as a guest
+ok that guest seat has no profile
+ok the roster has a game UUID, start time, policy and eligibility
+ok the roster freezes seats, profiles, starting names and classes in player order
+ok game state carries no profile, credential or login
+ok a rename mid-game is refused and the roster is unchanged
+ok a watcher cannot attach a profile
+ok a watcher without a credential watches
+ok a watcher's later hello with a credential is refused
+ok the watcher took no seat
+ok a seat reads a card of a profile at its table
+ok the card is the public allowlist only
+ok a watcher reads a card at the table it watches
+ok a seat cannot read a profile from another table
+ok naming another room's code changes nothing
+ok a watcher cannot read a profile from another table
+ok the other table cannot read this one's profiles
+ok a guest id or junk is not found
+ok a socket at no table reads no card
+ok a valid credential alone cannot recover the held game seat
+ok a credential beside a wrong secret recovers nothing
+ok Ash's seat is still held, not handed to the credential
+ok past the grace the bot plays Ash's seat
+ok the takeover keeps the frozen roster
+ok the seat keeps its public binding under the bot
+ok Ash's seat secret recovers the seat after the takeover
+ok the rejoin restores the binding without a profile session
+ok Pine's seat is let go after the hold
+ok seat expiry keeps Pine in the frozen roster
+ok a frozen participant's card is still readable after the seat expires
+ok and by the watcher
+ok the stopped host saved the roster
+ok Tide's credential has expired
+ok Ember's first device is signed out
+ok the expired credential cannot attach anywhere
+ok nor can the signed-out one
+ok Tide's seat secret recovers her seat after expiry and restart
+ok Ash's seat secret recovers his seat after sign-out and restart
+ok a guest seat with a non-UUID binding still rejoins
+ok a legacy room still loads and rejoins
+ok a damaged room still loads
+ok the non-UUID binding is dropped
+ok both bindings come back from the room file
+ok the restart keeps the frozen roster and game UUID
+ok after a restart a credential alone still recovers nothing
+ok a legacy room has no bindings and no roster
+ok duplicate and bot bindings are dropped; the first good one stays
+ok a roster that does not match its game is dropped, not trusted
+ok the rematch freezes a new game UUID
+ok the winner's seat goes first and the roster follows the new order
+ok the starting names carry into the rematch roster
+ok seats keep their bindings across the rematch
+ok a player from the last game but not this one has no card here
+ok this game's players still do
+ok the rate-test socket recovers the existing seat
+ok seat: a card burst gets throttled
+ok seat: successful cards obey the ten-token burst and two-per-second refill
+ok seat: every reply is a public card or a cardless slowDown
+ok the exhausted seat card bucket refills and returns only a public card
+ok the rate-test watcher watches without taking a seat
+ok an exhausted seat cannot throttle a fresh watcher
+ok a seated card burst does not block chat to another seat
+ok a card burst does not spend the gameplay action bucket
+ok the rate-test watcher watches without taking a seat
+ok a watcher burst is bounded by its stricter ingress bucket
+ok admitted watcher replies remain public cards; excess frames are dropped before card handling
+ok an exhausted watcher cannot throttle another seated socket
+ok the exhausted watcher ingress bucket refills and returns only a public card
+ok card bursts and chat leave the canonical game sequence unchanged
+ok no credential reached any table or watcher socket
+ok no login reached any table or watcher socket
+ok no private profile field reached any table or watcher socket
+ok no game state frame carries a profile
+ok roster valid control: seat secret still recovers the room
+ok roster version: seat secret still recovers the room
+ok roster game UUID: seat secret still recovers the room
+ok roster start time: seat secret still recovers the room
+ok roster policy type: seat secret still recovers the room
+ok roster eligibility type: seat secret still recovers the room
+ok roster player array: seat secret still recovers the room
+ok roster player count: seat secret still recovers the room
+ok roster player order: seat secret still recovers the room
+ok roster seat type: seat secret still recovers the room
+ok roster profile UUID: seat secret still recovers the room
+ok roster name type: seat secret still recovers the room
+ok roster player kind: seat secret still recovers the room
+ok roster colour type: seat secret still recovers the room
+ok roster duplicate profile: seat secret still recovers the room
+ok roster valid control: game identity survives metadata validation
+ok roster valid control: valid frozen record preserved exactly
+ok roster version: game identity survives metadata validation
+ok roster version: invalid record resaved as null
+ok roster game UUID: game identity survives metadata validation
+ok roster game UUID: invalid record resaved as null
+ok roster start time: game identity survives metadata validation
+ok roster start time: invalid record resaved as null
+ok roster policy type: game identity survives metadata validation
+ok roster policy type: invalid record resaved as null
+ok roster eligibility type: game identity survives metadata validation
+ok roster eligibility type: invalid record resaved as null
+ok roster player array: game identity survives metadata validation
+ok roster player array: invalid record resaved as null
+ok roster player count: game identity survives metadata validation
+ok roster player count: invalid record resaved as null
+ok roster player order: game identity survives metadata validation
+ok roster player order: invalid record resaved as null
+ok roster seat type: game identity survives metadata validation
+ok roster seat type: invalid record resaved as null
+ok roster profile UUID: game identity survives metadata validation
+ok roster profile UUID: invalid record resaved as null
+ok roster name type: game identity survives metadata validation
+ok roster name type: invalid record resaved as null
+ok roster player kind: game identity survives metadata validation
+ok roster player kind: invalid record resaved as null
+ok roster colour type: game identity survives metadata validation
+ok roster colour type: invalid record resaved as null
+ok roster duplicate profile: game identity survives metadata validation
+ok roster duplicate profile: invalid record resaved as null
+profile-seat-prove: 143 checks passed
+ok profileCreate succeeds
+ok profileEdit with missing credential is refused
+ok profileEdit with expired/invalid credential is refused
+ok profileEdit displayName succeeds with valid credential
+ok UUID is unchanged after displayName edit
+ok profileEdit colour and catchphrase
+ok identical color and backupColor is rejected
+ok login rename with correct PIN succeeds
+ok UUID survives rename
+ok old login is reserved
+ok old login cannot be claimed
+ok wrong PIN is refused for rename
+ok wrong rename PIN durably counts once and releases its reservation
+ok mediaKey and winSongId survive rename+restart (they stay private)
+ok mediaKey not in owner view (stays private)
+ok winSongId is in owner view
+ok mediaKey is preserved in store after rename
+ok rename race preserves exactly one login
+ok winning login is 'river'
+ok loser got loginTaken
+ok two devices for cedar
+ok two failures recorded before PIN change
+ok profileChangePin succeeds with correct current PIN
+ok PIN change issues a new credential
+ok old credential 1 is revoked after PIN change
+ok old credential 2 is revoked after PIN change
+ok new credential works
+ok lifetime budget is retained after PIN change (not replenished)
+ok wrong PIN is refused for changePin
+ok wrong change PIN durably counts once and releases its reservation
+ok mismatched newPin confirmation is rejected
+ok pine has 30 lifetime failures
+ok lifetime-locked profile still resumes via device credential
+ok lifetime lock blocks changePin even with correct PIN and valid device
+ok pinLocked message is informative
+ok stolen device + lifetime lock cannot change PIN
+ok admin resets pine and shows temp PIN
+ok temp PIN is exactly 4 digits
+ok lifetime lock is cleared after local reset
+ok failure times are cleared after local reset
+ok pinMustChange is true after local reset
+ok tempPinExpiresAt is set after local reset
+ok all devices are revoked after local reset
+ok temp PIN can log in successfully
+ok session shows pinMustChange=true after temp PIN login
+ok profileEdit is refused when pinMustChange is true
+ok mustChangePin message is informative
+ok profileChangePin clears pinMustChange
+ok old temp credential is revoked after changePin
+ok profileEdit works after PIN change
+ok second admin reset works
+ok wrong guess 1 against temp PIN fails
+ok wrong guess 2 against temp PIN fails
+ok wrong guess 3 against temp PIN fails
+ok wrong guess 4 against temp PIN fails
+ok wrong guess 5 against temp PIN fails
+ok 5 wrong guesses against temp PIN are counted
+ok correct temp PIN is refused during cooldown after 5 failures
+ok expired temp PIN login fails with signInFailed
+ok failure budget increments on expired-PIN attempt
+ok devices are NOT restored after temp PIN expiry
+ok pinMustChange stays true after expiry
+ok another local reset works after expired temp PIN
+ok new temp PIN from second reset works
+ok pine fully recovered after two resets
+ok admin is refused while host holds the lock
+ok a second host on same profile dir refuses profiles while admin holds lock
+ok guest seat rejoin works alongside profile traffic
+ok game frames contain no fixture PINs
+ok game frames contain no credentials
+ok dune (renamed to river) login survives across restarts
+ok credential survives restart
+ok cedar credential and new PIN survive restart
+ok cedar pinMustChange stays false after restart
+ok pine normal login works after recovery and restart
+ok reserved logins survive restart
+ok logout during a queued rename refuses its commit
+ok revoked rename leaves login and reservations intact
+ok logout during PIN hashing cannot issue a replacement credential
+ok a refused queued PIN change leaves the old PIN usable
+ok queued text edits also recheck credential revocation
+ok in-flight old-PIN login cannot survive a local reset
+ok temporary credential cannot bind a table profile
+ok expired temporary credential cannot resume a profile
+ok expired temporary credential cannot change its PIN
+ok expiry keeps the profile locked and the attempt counted
+ok expiry lock and failed attempt survive reopening
+ok a verified second reset allows required PIN change
+ok failed reset hashing leaves the profile unchanged
+ok failed reset hashing releases exactly one queue slot
+ok admin refuses a missing store directory before creating anything
+
+profile-edit-prove: 91 checks passed
+restart: open visibility persists through kill -9 and rejoin; private, missing and invalid visibility stay hidden
+recovery: authenticated rejoin finishes at turn start and releases discovery while the winner stays connected
+open-table-prove ok: list empty, private never listed, open listed, join via code, parallel private hidden, handoff, bots count, rate limit, cleanup on drop

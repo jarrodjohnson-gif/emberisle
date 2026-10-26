@@ -108,6 +108,34 @@ const check = (ok, what) => {
   console.log(`ok ${what}`, `+${((Date.now() - T0) / 1000).toFixed(1)}s`);
 };
 
+// #1129: the five newest stickers and the two newest soundboard chips are all on the open Sounds & stickers tab at this size: each
+// sticker's image has loaded, each button scrolls fully into the viewport, and no sticker or chip is under 32 px (the existing sticker size on a mouse; the touch sizes are checked by the chip lines above).
+// With PROOF_SHOTS set, a screenshot of the tab goes to that folder.
+const NEW_STICKERS = ["monkey-pet", "side-eye", "banana-guy", "glasses-glance", "dark-smile"];
+const NEW_CHIPS = ["Play sound Real badman", "Play sound Gong"];
+async function newContent(t, size) {
+  for (const id of NEW_STICKERS) {
+    const button = t.page.getByTestId("stickers").getByRole("button", { name: `React ${id}`, exact: true });
+    await button.scrollIntoViewIfNeeded();
+    const m = await button.evaluate((el) => {
+      const r = el.getBoundingClientRect();
+      const img = el.querySelector("img");
+      return { loaded: Boolean(img && img.complete && img.naturalWidth > 0), inView: r.left >= 0 && r.right <= innerWidth && r.top >= 0 && r.bottom <= innerHeight, w: r.width, h: r.height };
+    });
+    check(m.loaded && m.inView && m.w >= 32 - 0.5 && m.h >= 32 - 0.5, `${size}: sticker ${id} is in the Sounds & stickers tab, loaded, on screen, ${m.w.toFixed(0)}x${m.h.toFixed(0)}`);
+  }
+  for (const name of NEW_CHIPS) {
+    const chip = t.page.getByTestId("soundboard").getByRole("button", { name, exact: true });
+    await chip.scrollIntoViewIfNeeded();
+    const m = await chip.evaluate((el) => { const r = el.getBoundingClientRect(); return { inView: r.left >= 0 && r.right <= innerWidth && r.top >= 0 && r.bottom <= innerHeight, h: r.height }; });
+    check(m.inView && m.h >= 32 - 0.5, `${size}: chip "${name}" is on screen at ${m.h.toFixed(0)} px tall`);
+  }
+  if (process.env.PROOF_SHOTS) {
+    await t.page.getByTestId("stickers").scrollIntoViewIfNeeded();
+    await t.page.screenshot({ path: `${process.env.PROOF_SHOTS}/stickers-${size}.png` });
+  }
+}
+
 // Accumulate the style failures so a main run reports both viewports, rather than stopping at the first 8 px corner.
 const polishFailures = [];
 async function polish(t, state, selector = 'section[aria-label="Table chat"]', minControls = 1) {
@@ -349,6 +377,15 @@ async function quickReactions(a, b, c, phone) {
   await delivered(a, "ben-10", before);
   await b.page.locator('[data-testid="reaction"][data-emote="ben-10"] img').waitFor();
   check(true, "chat panel: the sticker sends from the Sounds & stickers tab");
+  // #1129: each of the five newest stickers reaches the other seat as an image through the host.
+  for (const id of NEW_STICKERS) {
+    before = await receivedCount();
+    await a.page.getByTestId("stickers").getByRole("button", { name: `React ${id}`, exact: true }).click();
+    await delivered(a, id, before);
+    await b.page.locator(`[data-testid="reaction"][data-emote="${id}"] img`).waitFor();
+    check(true, `chat panel: sticker ${id} is sent and seen by another seat`);
+    await new Promise((r) => setTimeout(r, 600));
+  }
   await showTab(a, "Chat");
   await closeChat(a);
 
@@ -528,12 +565,15 @@ try {
     if (w === 440) await shot(hp, "chat-lobby-440x956.jpg");
     // #899: the lobby box has the same two tabs. Sounds & stickers shows all ten chips with no sideways scroll, inside the box.
     await hp.page.getByRole("tab", { name: "Sounds & stickers", exact: true }).click();
-    const board = await hp.page.getByTestId("soundboard").evaluate((el) => {
+    const board = await hp.page.getByTestId("soundboard").evaluate((el, legacyLabels) => {
       const box = document.querySelector('[data-testid="lobby-chat"]').getBoundingClientRect();
-      const chips = [...el.querySelectorAll("button")].map((b) => b.getBoundingClientRect());
-      return { n: chips.length, wide: el.scrollWidth > el.clientWidth + 0.5, inside: chips.every((r) => r.left >= box.left && r.right <= box.right), font: parseFloat(getComputedStyle(el.querySelector("button")).fontSize) };
-    });
+      const buttons = [...el.querySelectorAll("button")];
+      const chips = buttons.map((b) => b.getBoundingClientRect());
+      return { n: buttons.filter((b) => legacyLabels.includes(b.getAttribute("aria-label"))).length, total: buttons.length, wide: el.scrollWidth > el.clientWidth + 0.5, inside: chips.every((r) => r.left >= box.left && r.right <= box.right), font: parseFloat(getComputedStyle(el.querySelector("button")).fontSize) };
+    }, ["Play sound Fah", "Play sound Wololo", "Play sound GG!", "Play sound Airhorn", "Play sound Quit touchin' me", "Play sound Only wood?", "Play sound Perfect", "Play sound Bong", "Play sound Plop", "Play sound Pluck"]);
     check(board.n === 10 && !board.wide && board.inside && board.font >= 14, `phone lobby ${v.size}: the Sounds & stickers tab shows all 10 chips at ${board.font}px with no sideways scroll`);
+    check(board.total === 17 && !board.wide && board.inside, `phone lobby ${v.size}: the Sounds & stickers tab shows all 17 chips inside the box`);
+    if (w === 390) await newContent(hp, "390x844");
     await hp.page.getByRole("tab", { name: "Chat", exact: true }).click();
     const back = await logView(hp);
     check(back.whole >= 4 && back.newest, `phone lobby ${v.size}: back on the Chat tab, ${back.whole} chat lines and the newest are on screen`);
@@ -581,13 +621,16 @@ try {
     // #899 (UI audit): the Sounds & stickers tab gets real height sideways: every sound chip and the preset row show without
     // scrolling, or the scroll box is at least 1.5 chip rows (66 px) tall. Chips stay 44 px on touch.
     await hp.page.getByRole("tab", { name: "Sounds & stickers", exact: true }).click();
-    const land = await hp.page.getByTestId("sounds-tab").evaluate((box) => {
+    const land = await hp.page.getByTestId("sounds-tab").evaluate((box, legacyLabels) => {
       const b = box.getBoundingClientRect();
-      const chips = [...box.querySelectorAll('[data-testid="soundboard"] button, [data-testid="presets"] button')].map((el) => el.getBoundingClientRect());
+      const buttons = [...box.querySelectorAll('[data-testid="soundboard"] button, [data-testid="presets"] button')];
+      const chips = buttons.map((el) => el.getBoundingClientRect());
       const whole = chips.every((r) => r.top >= b.top - 0.5 && r.bottom <= b.bottom + 0.5 && r.left >= b.left - 0.5 && r.right <= b.right + 0.5);
-      return { n: chips.length, whole, height: Math.round(box.clientHeight), scroll: box.scrollHeight, small: chips.filter((r) => r.height < 43.5).length, wide: box.scrollWidth > box.clientWidth + 0.5 };
-    });
+      return { n: buttons.filter((button) => legacyLabels.includes(button.getAttribute("aria-label")) || button.closest('[data-testid="presets"]')).length, total: buttons.length, whole, height: Math.round(box.clientHeight), scroll: box.scrollHeight, small: chips.filter((r) => r.height < 43.5).length, wide: box.scrollWidth > box.clientWidth + 0.5 };
+    }, ["Play sound Fah", "Play sound Wololo", "Play sound GG!", "Play sound Airhorn", "Play sound Quit touchin' me", "Play sound Only wood?", "Play sound Perfect", "Play sound Bong", "Play sound Plop", "Play sound Pluck"]);
     check(land.n === 15 && land.small === 0 && !land.wide && (land.whole || land.height >= 66), `phone landscape ${w}x${h}: Sounds & stickers shows the 10 chips and 5 presets at 44 px, ${land.whole ? "all without scrolling" : `in a ${land.height} px scroll box (scrollHeight ${land.scroll})`}`);
+    check(land.total === 22 && land.small === 0 && !land.wide && (land.whole || land.height >= 66), `phone landscape ${w}x${h}: Sounds & stickers shows the 17 chips and 5 presets at 44 px`);
+    if (w === 844) await newContent(hp, "844x390");
     await hp.page.getByRole("tab", { name: "Chat", exact: true }).click();
   }
   await fourth.page.context().close();
@@ -627,6 +670,15 @@ try {
   await c.page.getByRole("tab", { name: "Chat", exact: true }).click();
   for (const t of tabs) await t.page.getByTestId("chat-log").getByTestId("sound-line").filter({ hasText: "Wololo" }).waitFor({ timeout: 5000 });
   check(true, "lobby: Pine's sound is a bubble and a light line on all 3 tabs");
+  // #1129: the two newest chips, one from each of two other seats, are a bubble and a sound line on every seat.
+  for (const [sender, senderSeat, id, label] of [[b, tideSeat, "sb_real_badman", "Real badman"], [a, await store(a, () => window.__emberisle.getState().seatId), "sb_gong", "Gong"]]) {
+    await sender.page.getByRole("tab", { name: "Sounds & stickers", exact: true }).click();
+    await sender.page.getByRole("button", { name: `Play sound ${label}`, exact: true }).click();
+    for (const t of tabs) await t.page.getByTestId(`lobby-seat-${senderSeat}`).locator(`[data-testid="sound-bubble"][data-sound="${id}"]`).waitFor({ timeout: 5000 });
+    await sender.page.getByRole("tab", { name: "Chat", exact: true }).click();
+    for (const t of tabs) await t.page.getByTestId("chat-log").getByTestId("sound-line").filter({ hasText: label }).waitFor({ timeout: 5000 });
+    check(true, `lobby: ${label} from ${sender.name} is a bubble and a sound line on all 3 tabs`);
+  }
   check((await a.page.getByPlaceholder("Say something…").inputValue()) === "", "lobby: input cleared after Enter");
   // #895: at 1280x720 the lobby input, Send and both tabs are reachable: a hit test at each centre finds the control itself,
   // not the Ready footer over it. Run as a guest and as the host once Start has joined the footer.
@@ -672,13 +724,16 @@ try {
   }
   await lobbyReach(a, "(host, everyone ready, Start showing)");
   await a.page.getByRole("tab", { name: "Sounds & stickers", exact: true }).click();
-  const lobbyBoard = await a.page.getByTestId("soundboard").evaluate((el) => {
+  const lobbyBoard = await a.page.getByTestId("soundboard").evaluate((el, legacyLabels) => {
     const box = document.querySelector('[data-testid="lobby-chat"]').getBoundingClientRect();
     const reach = (b) => { const r = b.getBoundingClientRect(); const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); return hit === b || b.contains(hit); };
     const chips = [...el.querySelectorAll("button")];
-    return { n: chips.length, wide: el.scrollWidth > el.clientWidth + 0.5, inside: chips.every((b) => { const r = b.getBoundingClientRect(); return r.left >= box.left && r.right <= box.right; }), reached: chips.filter(reach).length, tabs: ["#chat-tab-chat", "#chat-tab-sounds"].every((q) => reach(document.querySelector(q))) };
-  });
+    const legacy = chips.filter((button) => legacyLabels.includes(button.getAttribute("aria-label")));
+    return { n: legacy.length, total: chips.length, wide: el.scrollWidth > el.clientWidth + 0.5, inside: chips.every((b) => { const r = b.getBoundingClientRect(); return r.left >= box.left && r.right <= box.right; }), reached: legacy.filter(reach).length, totalReached: chips.filter(reach).length, tabs: ["#chat-tab-chat", "#chat-tab-sounds"].every((q) => reach(document.querySelector(q))) };
+  }, ["Play sound Fah", "Play sound Wololo", "Play sound GG!", "Play sound Airhorn", "Play sound Quit touchin' me", "Play sound Only wood?", "Play sound Perfect", "Play sound Bong", "Play sound Plop", "Play sound Pluck"]);
   check(lobbyBoard.n === 10 && !lobbyBoard.wide && lobbyBoard.inside && lobbyBoard.tabs, `desktop lobby 1280x720 (host, Sounds & stickers tab): all 10 chips with no sideways scroll, both tabs reachable; ${lobbyBoard.reached} of 10 chips in view without scrolling the tab`);
+  check(lobbyBoard.total === 17 && !lobbyBoard.wide && lobbyBoard.inside && lobbyBoard.tabs, `desktop lobby 1280x720 (host, Sounds & stickers tab): all 17 chips with no sideways scroll, both tabs reachable; ${lobbyBoard.totalReached} of 17 chips in view without scrolling the tab`);
+  await newContent(a, "1280x720");
   await shot(a, "chat-lobby-desktop-sounds.jpg");
   await a.page.getByRole("tab", { name: "Chat", exact: true }).click();
   await a.page.getByRole("button", { name: "Start" }).click();
@@ -1022,12 +1077,14 @@ try {
   await sheetClear("Chat");
   await showTab(phone, "Sounds & stickers");
   await polish(phone, "open on the Sounds & stickers tab", undefined, 13);
-  const phoneBoard = await phone.page.getByTestId("soundboard").evaluate((el) => {
+  const phoneBoard = await phone.page.getByTestId("soundboard").evaluate((el, legacyLabels) => {
     const sheet = document.querySelector('[data-testid="chat-sheet"]').getBoundingClientRect();
-    const chips = [...el.querySelectorAll("button")].map((b) => b.getBoundingClientRect());
-    return { n: chips.length, wide: el.scrollWidth > el.clientWidth + 0.5, inside: chips.every((r) => r.left >= sheet.left && r.right <= sheet.right && r.bottom <= sheet.bottom), font: parseFloat(getComputedStyle(el.querySelector("button")).fontSize) };
-  });
+    const buttons = [...el.querySelectorAll("button")];
+    const chips = buttons.map((b) => b.getBoundingClientRect());
+    return { n: buttons.filter((button) => legacyLabels.includes(button.getAttribute("aria-label"))).length, total: buttons.length, wide: el.scrollWidth > el.clientWidth + 0.5, inside: chips.every((r) => r.left >= sheet.left && r.right <= sheet.right && r.bottom <= sheet.bottom), font: parseFloat(getComputedStyle(el.querySelector("button")).fontSize) };
+  }, ["Play sound Fah", "Play sound Wololo", "Play sound GG!", "Play sound Airhorn", "Play sound Quit touchin' me", "Play sound Only wood?", "Play sound Perfect", "Play sound Bong", "Play sound Plop", "Play sound Pluck"]);
   check(phoneBoard.n === 10 && !phoneBoard.wide && phoneBoard.inside && phoneBoard.font >= 14, `phone: Sounds & stickers shows all 10 chips at ${phoneBoard.font}px, inside the sheet, with no sideways scroll`);
+  check(phoneBoard.total === 17 && !phoneBoard.wide && phoneBoard.inside, `phone: Sounds & stickers shows all 17 chips inside the sheet, with no sideways scroll`);
   await sheetClear("Sounds & stickers");
   await shot(phone, "chat-phone-sounds.jpg");
   await showTab(phone, "Chat");
@@ -1285,10 +1342,18 @@ try {
   const deskBoard = await a.page.getByTestId("soundboard").evaluate((el) => {
     const panel = document.querySelector('section[aria-label="Table chat"]').getBoundingClientRect();
     const rail = document.querySelector("aside").getBoundingClientRect();
-    const chips = [...el.querySelectorAll("button")].map((b) => b.getBoundingClientRect());
-    return { n: chips.length, wide: el.scrollWidth > el.clientWidth + 0.5, inside: chips.every((r) => r.left >= panel.left && r.right <= panel.right && r.bottom <= panel.bottom), font: parseFloat(getComputedStyle(el.querySelector("button")).fontSize), clearOfRail: panel.left >= rail.right + 100 };
+    const chips = [...el.querySelectorAll("button")];
+    const wide = el.scrollWidth > el.clientWidth + 0.5;
+    const inPanel = chips.every((button) => {
+      button.scrollIntoView({ block: "nearest" });
+      const r = button.getBoundingClientRect();
+      return r.left >= panel.left && r.right <= panel.right && r.bottom <= panel.bottom;
+    });
+    const legacyLabels = ["Play sound Fah", "Play sound Wololo", "Play sound GG!", "Play sound Airhorn", "Play sound Quit touchin' me", "Play sound Only wood?", "Play sound Perfect", "Play sound Bong", "Play sound Plop", "Play sound Pluck"];
+    return { n: chips.filter((button) => legacyLabels.includes(button.getAttribute("aria-label"))).length, total: chips.length, wide, inside: inPanel, font: parseFloat(getComputedStyle(el.querySelector("button")).fontSize), clearOfRail: panel.left >= rail.right + 100 };
   });
   check(deskBoard.n === 10 && !deskBoard.wide && deskBoard.inside && deskBoard.font >= 14 && deskBoard.clearOfRail, `desktop: Sounds & stickers shows all 10 chips at ${deskBoard.font}px with no sideways scroll, in a panel clear of the seat rail`);
+  check(deskBoard.total === 17 && !deskBoard.wide && deskBoard.inside && deskBoard.clearOfRail, `desktop: Sounds & stickers shows all 17 chips with no sideways scroll, in a panel clear of the seat rail`);
   await shot(a, "chat-desktop-sounds.jpg");
   await showTab(a, "Chat");
   // The panel remembers the last tab: a page reload in the same browser starts on it.

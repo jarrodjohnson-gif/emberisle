@@ -16,13 +16,14 @@ assert.equal(TARGETS.ambience.target, -30.6, "ambience keeps the owner-quoted qu
 console.log(`ok all ${assetNames.length} audio assets have one mastering type; ambience is isolated at -30.6 LUFS`);
 
 const groups = {
-  game: ["dice_land", "path_place", "outpost_place", "stronghold_place", "card_buy", "card_play", "trade_yes", "trade_no", "ui_click", "ui_back", "ui_error", "win", "your_turn", "timer_tick", "timer_final", "chip_gain", "gain_tick", "wayfarer_move", "trade_offer", "chat_send", "chat_recv"],
+  game: ["dice_land", "path_place", "outpost_place", "stronghold_place", "card_buy", "card_play", "trade_yes", "trade_no", "ui_click", "ui_back", "ui_error", "win", "your_turn", "timer_tick", "timer_final", "chip_gain", "gain_tick", "wayfarer_move", "trade_offer", "three_wood", "daking_wood", "sheep_for_wood", "stone_for_wood", "corn_no", "lucke_diggler", "chat_send", "chat_recv"],
   touch: ["plop", "tap_pasture", "tap_forest", "tap_hills", "tap_fields", "tap_mountains", "tap_waste"],
-  memes: ["robbed_fah", "match_point", "sb_wololo", "sb_win_reaction", "sb_airhorn", "sb_quit_touchin", "sb_only_wood", "sb_perfect", "board_bong", "board_plop", "board_pluck"],
-  music: ["game_start", "game_lose", "end_music"],
+  memes: ["robbed_fah", "match_point", "sb_wololo", "sb_win_reaction", "sb_airhorn", "sb_quit_touchin", "sb_only_wood", "sb_perfect", "sb_plump_sheep", "sb_nice_sheep", "sb_sheep_please", "sb_grain_please", "sb_brick_please", "sb_real_badman", "sb_gong", "board_bong", "board_plop", "board_pluck"],
+  music: ["game_start", "game_lose", "end_music", "isaac_win"],
 };
 const source = readFileSync(new URL("../src/lib/sound.ts", import.meta.url), "utf8");
-const files = Object.fromEntries([...source.match(/const FILES = \{([\s\S]*?)\} as const/)[1].matchAll(/^\s+(\w+): "([\w.]+)",/gm)].map((m) => [m[1], m[2]]));
+const extraSource = readFileSync(new URL("../src/lib/sound-extra.ts", import.meta.url), "utf8");
+const files = Object.fromEntries([source.match(/const FILES = \{([\s\S]*?)\} as const/)[1], extraSource.match(/const EXTRA_FILES = \{([\s\S]*?)\} as const/)[1]].flatMap((block) => [...block.matchAll(/^\s+(\w+): "([\w.]+)",/gm)].map((m) => [m[1], m[2]])));
 const all = Object.values(groups).flat();
 assert.deepEqual([...all].sort(), Object.keys(files).sort(), "every clip has exactly one independently specified category");
 const TRACK = "old_tower_inn_loop.mp3";

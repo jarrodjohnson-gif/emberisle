@@ -156,6 +156,14 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run profile-reservation-recovery-prove
       - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run profile-derive-error-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run profile-permissions-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run profile-socket-rate-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run profile-lock-prove
+      - if: needs.changes.outputs.docs_only != 'true'
         run: npm run profile-expiry-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run profile-pin-race-prove
@@ -256,11 +264,15 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
         run: npm run turn-extension-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
+        run: npm run steal-picker-push-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
         run: npm run trade-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a2'
         run: npm run practice-trade-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a1'
         run: npm run hud-safe-area-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a1'
+        run: npm run connection-health-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
         run: npm run first-game-coach-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a2'
@@ -351,8 +363,14 @@ jobs:
         run: npm run react-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-c'
         run: npm run wayfarer-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-c'
+        run: npm run robber-hex-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-c'
+        run: npm run robber-prompt-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-2'
         run: npm run sounds-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-2'
+        run: npm run audio-recovery-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
         run: npm run sound-mixer-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
@@ -397,6 +415,12 @@ jobs:
         run: npm run howto-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-b'
         run: npm run title-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-b'
+        run: npm run open-table-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-b'
+        run: npm run title-chunks-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-b'
+        run: npm run open-host-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-b'
         run: npm run wayfarer-setup-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-b'

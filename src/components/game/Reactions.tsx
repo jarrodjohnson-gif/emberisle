@@ -2,19 +2,40 @@
 // seat bubbles. The online chunk prefetches it as it loads (talk.tsx), so it is in memory long before a bubble is due.
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Volume2 } from "lucide-react";
-import { EMOTES, QUICK_REACTIONS } from "@/components/game/emotes";
-import { CONTROL, Emote, LIFE, reactArrived, sendBoard, sendReaction, useMutedSeats, useTalk } from "@/components/game/talk";
+import { CONTROL, Emote, LIFE, QUICK_REACTIONS, loadEmotes, reactArrived, sendBoard, sendReaction, useMutedSeats, useTalk } from "@/components/game/talk";
 import { useGame } from "@/lib/game/store";
 import type { ChatLine, Reaction } from "@/lib/net/table";
-import { play, SOUNDBOARD } from "@/lib/sound";
+import { play } from "@/lib/sound";
 import { cn } from "@/lib/utils";
 
-// Tab 2: all ten sound chips in a wrapping grid (14 px labels, no sideways scroll), the text presets, then the stickers.
+const SOUNDBOARD = [
+  { id: "robbed_fah", label: "Fah" },
+  { id: "sb_wololo", label: "Wololo" },
+  { id: "sb_win_reaction", label: "GG!" },
+  { id: "sb_airhorn", label: "Airhorn" },
+  { id: "sb_quit_touchin", label: "Quit touchin' me" },
+  { id: "sb_only_wood", label: "Only wood?" },
+  { id: "sb_plump_sheep", label: "Plump sheep" },
+  { id: "sb_nice_sheep", label: "Nice sheep" },
+  { id: "sb_sheep_please", label: "Sheep please" },
+  { id: "sb_grain_please", label: "Grain please" },
+  { id: "sb_brick_please", label: "Brick please" },
+  { id: "sb_perfect", label: "Perfect" },
+  { id: "sb_real_badman", label: "Real badman" },
+  { id: "sb_gong", label: "Gong" },
+  { id: "bong", label: "Bong" },
+  { id: "plop", label: "Plop" },
+  { id: "pluck", label: "Pluck" },
+];
+
+// Tab 2: all seventeen sound chips in a wrapping grid (14 px labels, no sideways scroll), the text presets, then the stickers.
 const PRESETS = ["gg", "nice roll", "your turn", "one sec", "ty"];
+
 export function SoundsTab({ dense }: { dense?: boolean }) {
   const resting = useTalk((s) => s.resting);
   const cooling = useTalk((s) => s.cooling);
-  const stickers = Object.entries(EMOTES);
+  const [stickers, setStickers] = useState<[string, string][]>([]);
+  useEffect(() => { void loadEmotes().then((emotes) => setStickers(Object.entries(emotes))); }, []);
   return (
     <div data-testid="sounds-tab" className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto">
       <p className="flex items-baseline justify-between text-caption text-zinc-700">
@@ -185,7 +206,6 @@ export function SeatBubbles({ by, id, at }: { by: "player" | "seat"; id: string;
   const grouped = new Map<string, { reaction: Reaction; count: number }>();
   for (const reaction of reactions) {
     if (!mine(reaction)) continue;
-    if (!QUICK_REACTIONS.some((item) => item.emoji === reaction.emote) && !Object.hasOwn(EMOTES, reaction.emote)) continue;
     const key = reaction.emote;
     const previous = grouped.get(key);
     grouped.delete(key);
