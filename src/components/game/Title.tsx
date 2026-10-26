@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
-import { OpenModeToggle, HowTo, online, OpenTables, sheets, WayfarerOptions } from "@/components/game/chunks";
+import { OpenModeToggle, HowTo, online, OpenTables, sheets, wayfarer, WayfarerOptions } from "@/components/game/chunks";
 import { SeatDot } from "@/components/game/SeatDot";
 import { useGame } from "@/lib/game/store";
 import { JOIN_CODE, LazyBoundary, preloadOnIdle } from "@/lib/lazy";
@@ -72,6 +72,7 @@ export function Title() {
 
   // #488: How to play is a lazy chunk; idle time on the title fetches it, and so does a pointer or focus on its button.
   useEffect(() => preloadOnIdle(sheets.prefetch), []);
+  useEffect(() => preloadOnIdle(wayfarer.prefetch), []);
 
   // One primary per screen (docs/design/polish.md): Play, or Watch on a watch link. Watch only shows once there is a code.
   const showWatch = watchLink || join.length === 4;
@@ -86,7 +87,7 @@ export function Title() {
               <SeatDot color={color ?? PLAYER_COLORS[0]!} className="size-5" />
             </Button>
             <input value={name} onChange={e => useGame.getState().setName(e.target.value)} onBlur={useGame.getState().commitName}
-              placeholder="Your name" aria-label="Your name" maxLength={16} />
+              placeholder="Your name" aria-label="Your name" />
           </div>
         </div>
         <div className="title-journeys">

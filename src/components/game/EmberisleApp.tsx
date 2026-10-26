@@ -5,7 +5,7 @@ import { Hud } from "@/components/game/Hud";
 import { PlaceList } from "@/components/game/PlaceList";
 import { TableRecoveryBoundary } from "@/components/game/TableRecoveryBoundary";
 import { useGame } from "@/lib/game/store";
-import { LazyBoundary, reloadOnStaleChunk } from "@/lib/lazy";
+import { chunk, LazyBoundary, reloadOnStaleChunk } from "@/lib/lazy";
 import { setMusicWanted } from "@/lib/sound";
 import { useTurnTitle } from "@/lib/turn-title";
 
@@ -16,7 +16,9 @@ function stripLink() {
   history.replaceState(history.state, "", `${url.pathname}${url.search}${url.hash}`);
 }
 
-const Title = lazy(() => import("@/components/game/Title").then(m => ({ default: m.Title })));
+const title = chunk(() => import("@/components/game/Title"));
+const Title = title.pick(m => m.Title);
+if (typeof window !== "undefined") void title.prefetch();
 
 const IslandCanvas = lazy(() => import("@/components/scene/IslandCanvas"));
 
