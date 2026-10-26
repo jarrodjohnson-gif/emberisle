@@ -144,6 +144,8 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run registered-prove
       - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run spiral-prove
+      - if: needs.changes.outputs.docs_only != 'true'
         run: npm run wayfarer-modes-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run bot-harbor-prove

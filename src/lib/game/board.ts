@@ -72,6 +72,7 @@ export function createGame(opts: {
   winnerFirst?: boolean;
   wayfarerMode?: import("./types").WayfarerMode;
   victoryTarget?: VictoryTarget;
+  numberTokens?: "official" | "random";
 }): GameState {
   const seed = opts.seed ?? (Math.floor(Math.random() * 1e9) | 0);
   const rand = mulberry32(seed);
@@ -98,23 +99,45 @@ export function createGame(opts: {
     blocked: opts.wayfarerMode !== "off" && terrains[i] === "waste",
   }));
 
-  const pips = shuffle([2, 3, 3, 4, 4, 5, 5, 6, 6, 8, 8, 9, 9, 10, 10, 11, 11, 12], rand);
-  const land = hexes.filter((h) => h.terrain !== "waste");
-  // Deal until no 6 or 8 touches another 6 or 8. About one shuffle in eight passes, so this ends
-  // quickly, and a cap would leave a board with empty hexes (#182: 68 of 20,000 seeds did).
-  for (let attempt = 0; ; attempt++) {
-    const order = attempt === 0 ? pips : shuffle(pips, rand);
-    let ok = true;
-    land.forEach((h) => (h.pip = null));
-    for (let i = 0; i < land.length; i++) {
-      const pip = order[i]!;
-      if (adjacentPips(hexes, land[i]!.id, pip)) {
-        ok = false;
-        break;
-      }
-      land[i]!.pip = pip;
+  if (opts.numberTokens !== "random" && hexes.length === 19) {
+    const outer: [number, number][] = [[0, -2], [1, -2], [2, -2], [2, -1], [2, 0], [1, 1], [0, 2], [-1, 2], [-2, 2], [-2, 1], [-2, 0], [-1, -1]];
+    const inner: [number, number][] = [[0, -1], [1, -1], [1, 0], [0, 1], [-1, 1], [-1, 0]];
+    const corner = Math.floor(rand() * 6);
+    const direction = rand() < 0.5 ? 1 : -1;
+    const rotate = ([q, r]: [number, number]): [number, number] => {
+      for (let i = 0; i < corner; i++) [q, r] = [-r, q + r];
+      return [q, r];
+    };
+    const path = [
+      ...outer.map((_, i) => outer[(i * direction + 12) % 12]!),
+      ...inner.map((_, i) => inner[(i * direction + 6) % 6]!),
+      [0, 0] as [number, number],
+    ].map(rotate);
+    const order = [5, 2, 6, 3, 8, 10, 9, 12, 11, 4, 8, 10, 9, 4, 5, 6, 3, 11];
+    let index = 0;
+    for (const [q, r] of path) {
+      const hex = hexes.find((h) => h.q === q && h.r === r)!;
+      if (hex.terrain !== "waste") hex.pip = order[index++]!;
     }
-    if (ok) break;
+  } else {
+    const pips = shuffle([2, 3, 3, 4, 4, 5, 5, 6, 6, 8, 8, 9, 9, 10, 10, 11, 11, 12], rand);
+    const land = hexes.filter((h) => h.terrain !== "waste");
+    // Deal until no 6 or 8 touches another 6 or 8. About one shuffle in eight passes, so this ends
+    // quickly, and a cap would leave a board with empty hexes (#182: 68 of 20,000 seeds did).
+    for (let attempt = 0; ; attempt++) {
+      const order = attempt === 0 ? pips : shuffle(pips, rand);
+      let ok = true;
+      land.forEach((h) => (h.pip = null));
+      for (let i = 0; i < land.length; i++) {
+        const pip = order[i]!;
+        if (adjacentPips(hexes, land[i]!.id, pip)) {
+          ok = false;
+          break;
+        }
+        land[i]!.pip = pip;
+      }
+      if (ok) break;
+    }
   }
 
   const robberHex = hexes.find((h) => h.terrain === "waste")?.id ?? hexes[0]!.id;
