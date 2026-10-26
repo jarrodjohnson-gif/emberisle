@@ -24,3 +24,7 @@ A `node --check server/needs-prove.mjs` syntax check is recorded only if it appe
 ## Remaining review points
 
 The cases restore host fixtures from JSON and restart the real host between scenarios. Their assumptions about restored lobby readiness, phase transitions, game/seat identity mapping, and bot turn startup have not been exercised for this patch. The post-game case also logs the first response for diagnosis. Run the focused proof and inspect its actual output before treating any assertion as established.
+
+## Candidate attempt blocked before assertions
+
+The first run on this candidate could not bind the server host to `0.0.0.0` in the execution sandbox (`EPERM`, `server/host.mjs:1718`). It stopped before all proof cases, so this says nothing about fixture correctness. Raw output and the shell-pipeline status caveat are in `STATUS.md` and `candidate-host-start.log`. No retry or mutation run was made.

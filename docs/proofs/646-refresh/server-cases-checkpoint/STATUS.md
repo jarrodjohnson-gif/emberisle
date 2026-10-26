@@ -8,3 +8,9 @@
 - Existing baseline log: `/tmp/p873-main/fresh/server-needs.log`, 2026-10-26 01:22 UTC, covers the prior server proof only.
 - No runtime changes, broad tests, or mutation runs in this checkpoint.
 - Next: review the cases and run focused validation when directed; keep the historical pass from the earlier proof separate.
+
+## First candidate attempt
+
+On 2026-10-26, `npm --prefix server run needs-prove 2>&1 | tee /tmp/p873-server-cases-candidate.log` stopped before the first real-host case. Host startup failed at `server/host.mjs:1718` with `listen EPERM: operation not permitted 0.0.0.0` (Node v24.19.0). No proof assertion ran and no fixture change or mutation was made.
+
+The command was piped through `tee` without `pipefail`, so the tool reported the pipeline status as 0; npm's exit status was not captured separately. The child host's exit 1 is printed in the raw output. No retry was attempted. The raw output is preserved in `candidate-host-start.log`.
