@@ -64,7 +64,7 @@ Reduced motion: crossfade panels.
 Skip camera tweens.
 Keep the same copy and controls.
 
-Tap the island on the reveal beat to play the board-touch sheep cue from #667.
+Touching a pasture hex plays the sheep baa (#667). Any other tap makes no sound.
 Use the real renderer hit target, not a drawn preview mesh.
 
 ### Prototype and real-board shots
@@ -95,9 +95,21 @@ Create or resume a profile through the invite, per [profiles.md](profiles.md) as
 | Field | Contract |
 |---|---|
 | Display name | Required. Strip controls. Cap 16 characters. |
+| Login name | Required ASCII slug, 3–24 characters: `^[a-z0-9]+(-[a-z0-9]+)*$`. Suggested automatically from the display name, editable before submit. Enforced unique by the host. |
 | PIN | Exactly four ASCII digits. Confirm on create. Hash with the existing scrypt recipe. Never store plaintext. |
 | Favourite colour | One free seat colour for this invite night (see Colour). |
 | Picture | Optional upload (see Picture upload). |
+
+### How a login slug is chosen
+
+When the guest enters their Display name on the invite screen, the form automatically suggests a proposed login slug:
+1. Strip diacritics and convert text to lowercase ASCII.
+2. Replace whitespace and non-alphanumeric characters with hyphens.
+3. Collapse repeated hyphens and strip leading or trailing hyphens.
+4. If shorter than 3 characters, append `-1` (e.g. `al` → `al-1`).
+5. Truncate at 24 characters on a clean word/hyphen boundary.
+6. The proposed slug is displayed in an editable field so the guest can customize it if desired.
+7. The host enforces the canonical regex `^[a-z0-9]+(-[a-z0-9]+)*$` and rejects collisions with existing profiles. If taken, the form alerts: "That login name is already taken. Pick another."
 
 HTTPS / WSS only, through the tunnel.
 Plain LAN stays guest-only for profiles.
@@ -141,6 +153,8 @@ The other sees "That colour was just taken. Pick another."
 
 Seat palette today: `#e23d2e`, `#2d6ee8`, `#f3ecd9`, `#8a4fd3`.
 
+If more than four guests RSVP Yes when only 4 seat colours exist, the extra guests are confirmed on the night's RSVP guest list as standby/spectator ("All 4 table seats are claimed; you are RSVP'd as standby/spectator"). If a seated guest later switches to Not tonight, the freed colour becomes available to the next standby guest.
+
 ## Lobby and invite music
 
 Owner pick: **"The Old Tower Inn"** by RandomMind (CC0).
@@ -149,7 +163,7 @@ Owner pick: **"The Old Tower Inn"** by RandomMind (CC0).
 Ship a small looped MP3 or OGG.
 Lazy-load after the first tap.
 Play at music volume `0.5`.
-Mute is remembered in `localStorage` (`emberisle-invite-music`).
+Mute is remembered in `localStorage` (`emberisle-music`, sharing #823's global toggle so one switch controls music everywhere, with `emberisle-invite-music` accepted as fallback).
 The loop is not a sting.
 `src/lib/sound.ts` must treat it as a music loop category.
 Credit RandomMind in the README as courtesy.
@@ -209,7 +223,7 @@ Change my mind moves Not tonight → Going and re-enters colour pick if needed.
 | `lane:net` | Invite token create / lookup / RSVP on the host; durable fields beside profiles. |
 | `lane:net` | Picture upload endpoint, re-encode, storage and admin delete. |
 | `lane:hud` | Invite route UI: five beats, profile form, countdown, Join. |
-| `lane:board` | Mount live `IsleRenderer` for reveal; island tap → sheep cue (#667). |
+| `lane:board` | Mount live `IsleRenderer` for reveal; pasture hex touch → sheep baa (#667); other taps silent. |
 | `lane:hud` | Colour picker with host-enforced availability. |
 | `lane:net` / `lane:hud` | Lobby + invite music loop wiring in `sound.ts`. |
 | `lane:net` | Jarrod-only RSVP admin view; guest coming list. |
