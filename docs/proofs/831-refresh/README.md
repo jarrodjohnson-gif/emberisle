@@ -3,6 +3,7 @@
 [Current nine owner pictures](codex-p-2026-10-26-option-b/owner-pictures/README.md) remain directly visible.
 The owner reviews these at 390×844, 844×390 and 1280×720.
 
+- [Final scoped validation and shared-focus negative control](codex-p-focus-negative/README.md)
 - [Option B implementation, frozen validation and failure record](codex-p-2026-10-26-option-b/README.md)
 - [Exact Option B old/new assertion table](codex-p-2026-10-26-option-b/old-new.md)
 - [Rename paths, unchanged budget keys and hotseat assertion](codex-p-2026-10-26-desk-nits/README.md)
