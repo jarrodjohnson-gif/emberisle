@@ -110,6 +110,62 @@ async function renameTappable(page, label) {
   });
   assert.ok(hit.centre && hit.low, `${label}: the rename button receives taps at its centre and 8 px above its bottom`);
 }
+async function centred(page, label) {
+  const m = await page.evaluate(() => {
+    const card = document.querySelector('[data-testid="lobby-card"]');
+    const box = el => el.getBoundingClientRect();
+    const text = el => {
+      const rg = document.createRange();
+      rg.selectNodeContents(el);
+      const rs = [...rg.getClientRects()];
+      return { l: Math.min(...rs.map(r => r.left)), r: Math.max(...rs.map(r => r.right)), t: Math.min(...rs.map(r => r.top)), b: Math.max(...rs.map(r => r.bottom)) };
+    };
+    const labels = [...card.querySelectorAll("button, [role=tab]")].filter(el => !el.matches('[data-testid="rename-seat"], [data-emote]') && !el.closest('[data-testid="emoji-row"]')).map(el => {
+      const b = box(el);
+      const icon = el.querySelector("svg");
+      const ib = icon && !el.textContent.trim() ? box(icon) : null;
+      const t = ib ? { l: ib.left, r: ib.right, t: ib.top, b: ib.bottom } : text(el);
+      return { name: el.getAttribute("aria-label") || el.textContent.trim(), dx: (t.l + t.r) / 2 - (b.left + b.right) / 2, dy: (t.t + t.b) / 2 - (b.top + b.bottom) / 2, padL: t.l - b.left, padR: b.right - t.r, icon: !!icon && !el.textContent.trim() };
+    });
+    const seats = [...card.querySelectorAll(".lobby-player")].map(li => {
+      const nm = li.querySelector('[data-testid="lobby-name"]');
+      const t = text(nm.querySelector("button, input, span") || nm);
+      const d = box(li.querySelector("span.rounded-full"));
+      const st = text(li.querySelector(".lobby-player-status"));
+      return { name: (t.t + t.b) / 2 - box(li).top, dot: (d.top + d.bottom) / 2 - box(li).top, left: t.l - st.l, hasStatus: !!li.querySelector(".lobby-player-status").textContent };
+    });
+    const emoji = [...card.querySelectorAll('[data-testid="emoji-row"] button')].map(box);
+    const chat = box(card.querySelector('[data-testid="lobby-chat"]'));
+    const row = box(card.querySelector('[data-testid="emoji-row"]'));
+    const code = card.querySelector('[data-testid="table-code"]');
+    const header = box(card.querySelector(".lobby-header"));
+    const ct = text(code);
+    const foot = [...card.querySelectorAll(".lobby-action-buttons > *")].map(el => { const b = box(el); return (b.top + b.bottom) / 2; });
+    const input = box(card.querySelector("#chat-input"));
+    const send = box([...card.querySelectorAll('[data-testid="lobby-chat"] button')].find(b => b.textContent.trim() === "Send"));
+    return {
+      labels, seats,
+      emoji: { left: emoji[0].left - row.left, right: row.right - emoji.at(-1).right, gaps: emoji.slice(1).map((r, i) => r.left - emoji[i].right), centres: emoji.map(r => (r.top + r.bottom) / 2), rowLeft: row.left - chat.left, rowRight: chat.right - row.right },
+      codeDy: (ct.t + ct.b) / 2 - (header.top + header.bottom) / 2,
+      foot, inputDy: (input.top + input.bottom) / 2 - (send.top + send.bottom) / 2,
+    };
+  });
+  for (const l of m.labels) {
+    assert.ok(Math.abs(l.dx) <= 1 && Math.abs(l.dy) <= 1, `${label}: "${l.name}" label centred in its button (dx ${l.dx.toFixed(2)}, dy ${l.dy.toFixed(2)})`);
+    if (!l.icon) assert.ok(l.padL >= 8 && l.padR >= 8, `${label}: "${l.name}" has at least 8 px between text and button edge (${l.padL.toFixed(1)} / ${l.padR.toFixed(1)})`);
+  }
+  for (const s of m.seats) {
+    assert.ok(Math.abs(s.name - m.seats[0].name) <= 1, `${label}: every seat name shares one vertical position (${s.name.toFixed(2)} vs ${m.seats[0].name.toFixed(2)})`);
+    assert.ok(Math.abs(s.name - s.dot) <= 1, `${label}: seat name centred on its colour dot (${s.name.toFixed(2)} vs ${s.dot.toFixed(2)})`);
+    if (s.hasStatus) assert.ok(Math.abs(s.left) <= 1, `${label}: seat status starts under its name (${s.left.toFixed(2)})`);
+  }
+  assert.ok(Math.abs(m.emoji.left - m.emoji.right) <= 1 && Math.abs(m.emoji.rowLeft - m.emoji.rowRight) <= 1, `${label}: emoji row centred under the chat`);
+  assert.ok(Math.max(...m.emoji.gaps) - Math.min(...m.emoji.gaps) <= 1, `${label}: emoji evenly spaced (${m.emoji.gaps.join(", ")})`);
+  assert.ok(Math.max(...m.emoji.centres) - Math.min(...m.emoji.centres) <= 1, `${label}: emoji on one centre line`);
+  assert.ok(Math.abs(m.codeDy) <= 1, `${label}: table code centred in the header row (${m.codeDy.toFixed(2)})`);
+  assert.ok(Math.max(...m.foot) - Math.min(...m.foot) <= 1, `${label}: footer buttons on one centre line`);
+  assert.ok(Math.abs(m.inputDy) <= 1, `${label}: chat input and Send share a centre line`);
+}
 try {
   for (const [width, height, minimum] of [[390, 844, .52], [844, 390, .39], [1280, 720, .40]]) {
     const page = await client("Jarrod", { width, height }, width < 1000);
@@ -135,6 +191,7 @@ try {
     assert.equal(await guest.getByTestId("remove-bot").count(), 0, "guest cannot remove bots");
     const data = await geometry(page, minimum);
     await renameTappable(page, `${width}x${height}`);
+    await centred(page, `${width}x${height}`);
     await page.getByRole("button", { name: "Copy", exact: true }).click();
     await page.waitForFunction(code => window.__copies.includes(code), code);
     await page.getByRole("button", { name: "Copy link", exact: true }).click();
@@ -190,6 +247,7 @@ try {
     await page.waitForFunction(() => window.__emberisle.getState().seats.length === 2);
     await page.evaluate(() => document.fonts.ready);
     await renameTappable(page, `${width}x${height}`);
+    if (width === 375) await centred(page, `${width}x${height}`);
     await page.getByTestId("emoji-row").locator("button").first().click();
     await guest.getByTestId("react-line").waitFor();
     await clearOfName(page, "reaction");
