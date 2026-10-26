@@ -1,5 +1,6 @@
 // #826: Pictures of blocked hex vs normal across all five terrains at 4 viewports,
-// plus comparison pictures at 25%, 50%, and 75% black.
+// plus comparison pictures at 25%, 50%, and 75% black, and zoomed crops for owner cards.
+// Run: node --import ./server/register.mjs scripts/robber-pictures.mjs
 import { existsSync, mkdirSync } from "node:fs";
 import { chromium } from "playwright";
 import { createServer } from "vite";
@@ -108,6 +109,27 @@ try {
       await drawn(page, 3);
       await page.screenshot({ path: `docs/proofs/826/${terrain}-blocked-${tag}.png` });
 
+      // Zoomed crop of blocked hex for owner comparison
+      const crop = await page.evaluate((ter) => {
+        const g = window.__emberisle;
+        const isle = window.__isle;
+        const st = g.getState().state;
+        const hex = st.hexes.find((h) => h.terrain === ter && h.pip != null);
+        const tokenObj = isle.tokens.find((t) => t.userData.hex === hex.id);
+        const pos = tokenObj ? tokenObj.position.clone() : isle.robberTarget.clone();
+        pos.project(isle.camera);
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        const cx = Math.round((pos.x * 0.5 + 0.5) * w);
+        const cy = Math.round((-pos.y * 0.5 + 0.5) * h);
+        const size = Math.min(w, h, w > 800 ? 280 : 200);
+        const half = Math.round(size / 2);
+        const x = Math.max(0, Math.min(w - size, cx - half));
+        const y = Math.max(0, Math.min(h - size, cy - half));
+        return { x, y, width: size, height: size };
+      }, terrain);
+      await page.screenshot({ path: `docs/proofs/826/${terrain}-blocked-crop-${tag}.png`, clip: crop });
+
       // 2. Normal (unblocked)
       await page.evaluate(() => {
         const g = window.__emberisle;
@@ -124,13 +146,14 @@ try {
       });
       await drawn(page, 3);
       await page.screenshot({ path: `docs/proofs/826/${terrain}-normal-${tag}.png` });
-      console.log(`  ${terrain}: blocked & normal captured for ${tag}`);
+      await page.screenshot({ path: `docs/proofs/826/${terrain}-normal-crop-${tag}.png`, clip: crop });
+      console.log(`  ${terrain}: blocked & normal (and crops) captured for ${tag}`);
     }
 
     // Comparison across 25%, 50%, and 75% black (on desktop and mobile)
     if (tag === "1280x720" || tag === "390x844") {
       // Put robber on grain
-      await page.evaluate(() => {
+      const grainCrop = await page.evaluate(() => {
         const g = window.__emberisle;
         const isle = window.__isle;
         const st = structuredClone(g.getState().state);
@@ -142,12 +165,25 @@ try {
         isle.walk = null;
         isle.wayfarer.position.copy(isle.robberTarget);
         isle.wake();
+        const tokenObj = isle.tokens.find((t) => t.userData.hex === grain.id);
+        const pos = tokenObj ? tokenObj.position.clone() : isle.robberTarget.clone();
+        pos.project(isle.camera);
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        const cx = Math.round((pos.x * 0.5 + 0.5) * w);
+        const cy = Math.round((-pos.y * 0.5 + 0.5) * h);
+        const size = Math.min(w, h, w > 800 ? 280 : 200);
+        const half = Math.round(size / 2);
+        const x = Math.max(0, Math.min(w - size, cx - half));
+        const y = Math.max(0, Math.min(h - size, cy - half));
+        return { x, y, width: size, height: size };
       });
       for (const pct of [25, 50, 75]) {
         await page.evaluate((dim) => window.__isle.setRobberHexDim(dim), pct / 100);
         await drawn(page, 3);
         await page.screenshot({ path: `docs/proofs/826/robber-dim-${pct}pct-${tag}.png` });
-        console.log(`  dim ${pct}% captured for ${tag}`);
+        await page.screenshot({ path: `docs/proofs/826/robber-dim-${pct}pct-crop-${tag}.png`, clip: grainCrop });
+        console.log(`  dim ${pct}% (and crop) captured for ${tag}`);
       }
       await page.evaluate(() => window.__isle.setRobberHexDim(0.5));
     }

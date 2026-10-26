@@ -5,3 +5,7 @@ export const BLOCK_H = 0.3;
 
 // #826: blocked-hex dimming amount (0.5 = 50% blend to black / half as dark).
 export const ROBBER_HEX_DIM = 0.5;
+export let robberHexDim = ROBBER_HEX_DIM;
+export function setRobberHexDim(dim: number) {
+  robberHexDim = dim;
+}

@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { type Terrain } from "@/lib/game/types";
 import { setBoardDetail, tileSteps, type Tile } from "@/lib/scene/hex-jelly";
-import { BLOCK_H, ROBBER_HEX_DIM } from "@/lib/scene/jelly-dims";
+import { BLOCK_H, ROBBER_HEX_DIM, robberHexDim, setRobberHexDim as setDim } from "@/lib/scene/jelly-dims";
 
 // The jelly board (#599, docs/design/hex-jelly-prompt.md): the six Hex Jelly scenes on the game board.
 //
@@ -23,11 +23,10 @@ const SAMPLES = [0.37, 1.91, 3.53, 5.2];
 const ROLL_S = 2.4;
 const TAP_S = 0.9;
 // #826: blocked-hex dimming amount (0.5 = 50% blend to black / half as dark).
-export { ROBBER_HEX_DIM };
-export let robberHexDim = ROBBER_HEX_DIM;
+export { ROBBER_HEX_DIM, robberHexDim };
 const DULL = new THREE.Color(1 - ROBBER_HEX_DIM, 1 - ROBBER_HEX_DIM, 1 - ROBBER_HEX_DIM);
 export function setRobberHexDim(dim: number) {
-  robberHexDim = dim;
+  setDim(dim);
   DULL.setRGB(1 - dim, 1 - dim, 1 - dim);
 }
 

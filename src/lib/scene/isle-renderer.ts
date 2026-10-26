@@ -37,9 +37,8 @@ import { LAND_MS } from "@/lib/scene/landing";
 import { hashStr } from "@/lib/utils";
 import { chunkUrl } from "@/lib/lazy";
 import { PAINT, RIM } from "@/lib/scene/palette";
-import { BLOCK_H, ROBBER_HEX_DIM } from "@/lib/scene/jelly-dims";
-export { ROBBER_HEX_DIM };
-export let robberHexDim = ROBBER_HEX_DIM;
+import { BLOCK_H, ROBBER_HEX_DIM, robberHexDim, setRobberHexDim } from "@/lib/scene/jelly-dims";
+export { ROBBER_HEX_DIM, robberHexDim };
 import type { JellyBoard, JellyStats } from "@/lib/scene/jelly-board";
 import type { Dock, Shore } from "@/lib/scene/harbor-jelly";
 import { OceanLife } from "@/lib/scene/ocean-life";
@@ -731,7 +730,7 @@ export class IsleRenderer {
         const m = c.material as THREE.MeshBasicMaterial;
         if (!m?.color) continue;
         m.userData.rest ??= m.color.clone();
-        m.color.copy(m.userData.rest as THREE.Color).multiplyScalar(blocked ? (m.map ? 0.75 : 1 - robberHexDim) : 1);
+        m.color.copy(m.userData.rest as THREE.Color).multiplyScalar(blocked ? 1 - robberHexDim : 1);
         if (m.map && blocked !== !!m.userData.blocked) {
           if (!m.userData.restMap) {
             m.userData.restMap = m.map;
@@ -742,7 +741,7 @@ export class IsleRenderer {
           }
           if (blocked) m.map = blackNumberFace(m.userData.restMap, t.userData.token);
           else {
-            m.map.dispose();
+            if (m.map !== m.userData.restMap) m.map.dispose();
             m.map = m.userData.restMap;
           }
           m.userData.blocked = blocked;
@@ -752,13 +751,13 @@ export class IsleRenderer {
   }
 
   setRobberHexDim(dim: number) {
-    robberHexDim = dim;
-    (this.jelly as any)?.setRobberHexDim?.(dim);
+    setRobberHexDim(dim);
+    this.jelly?.setRobberHexDim(dim);
     for (const t of this.tokens) {
       for (const c of t.children as THREE.Mesh[]) {
         const m = c.material as THREE.MeshBasicMaterial;
         if (m?.map && m.userData.blocked) {
-          m.map.dispose();
+          if (m.map !== m.userData.restMap) m.map.dispose();
           m.map = blackNumberFace(m.userData.restMap, t.userData.token);
         }
       }
@@ -2271,9 +2270,12 @@ function blackNumberFace(map: THREE.Texture, n: number) {
   ctx.drawImage(map.image as HTMLCanvasElement, 0, 0);
   const image = ctx.getImageData(0, 0, 256, 256);
   const ink = n === 6 || n === 8 ? 38 : 25;
-  const bg = Math.round(50 * (robberHexDim / 0.5));
+  // Face background derived from (1 - robberHexDim): higher dimming (more black) gives a darker face.
+  // 50% dimming -> bg = 50; 25% -> bg = 75; 75% -> bg = 25. Numerals/pips at 255 maintain >= 4.5:1 contrast across all.
+  const bg = Math.round(100 * (1 - robberHexDim));
   const fg = 255;
   for (let i = 0; i < image.data.length; i += 4) {
+    // Leave transparent pixels outside the circular token boundary untouched.
     if (image.data[i + 3]! === 0) continue;
     const coverage = Math.max(0, Math.min(255, Math.round((249 - image.data[i + 1]!) * 255 / (249 - ink))));
     const val = Math.round(bg + (coverage * (fg - bg)) / 255);
