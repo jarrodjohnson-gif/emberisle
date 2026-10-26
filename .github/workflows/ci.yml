@@ -188,6 +188,8 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run audio-level-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run ambience-loop-prove
 
   # #924: advisory, so it is not in `checks.needs`. The desk reads it for REVIEWING.md item 4.
   # It diffs this PR's proofs against the commit it merges onto (the merge commit's first parent, as in build), using the
@@ -277,6 +279,8 @@ jobs:
         run: npm run first-game-coach-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a2'
         run: npm run render-recovery-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a2'
+        run: npm run webgl-recovery-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a2'
         run: npm run rotate-overlays-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
@@ -399,6 +403,8 @@ jobs:
         run: npm run flash-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
         run: npm run haptics-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
+        run: npm run haptics-startup-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-2'
         run: npm run reflow-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-3'
@@ -451,6 +457,8 @@ jobs:
         run: npm run win-action-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation'
         run: npm run lobby-overflow-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation'
+        run: npm run lobby-layout-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
         run: npm run turn-copy-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-2'

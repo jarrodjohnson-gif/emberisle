@@ -1,7 +1,7 @@
 // The table chat dock and the shared chat box. Design: docs/design/chat.md, and Chat C (#899, docs/design/chat-c/README.md):
 // one chat button opens one panel with two tabs, Chat (the log, the six emoji, the composer) and Sounds & stickers.
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { MessageSquare, Minus, Volume2, VolumeX } from "lucide-react";
+import { MessageSquare, Volume2, VolumeX } from "lucide-react";
 import { EmojiRow, Emote, setTab, SoundsTab, useMutedSeats, useTalk, type ChatTab, type ReactLine } from "@/components/game/talk";
 import { useGame, type GameLogLine } from "@/lib/game/store";
 import type { ChatLine } from "@/lib/net/table";
@@ -497,7 +497,7 @@ export function ChatDock() {
       onClick={() => setOpen(false)}
       className={cn("flex h-11 min-w-10 cursor-pointer items-center justify-center gap-1 rounded-control bg-glass text-zinc-700 hover:text-zinc-900", phone && open && "px-3 text-sm")}
     >
-      <Minus className="size-4" />
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-minus size-4" aria-hidden="true"><path d="M5 12h14" /></svg>
       {phone && open ? <span>Close</span> : null}
     </button>
   );
