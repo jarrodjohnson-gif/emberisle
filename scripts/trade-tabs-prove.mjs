@@ -594,14 +594,17 @@ async function lazyRecovery() {
   const isolatedErrors = [];
   let requests = 0;
   let aborted = 0;
+  let failMountedPicker;
+  const mountedPicker = new Promise((resolve) => { failMountedPicker = resolve; });
   page.on("pageerror", (error) => isolatedErrors.push({ text: String(error), url: "" }));
   page.on("console", (message) => {
     if (message.type() === "error") isolatedErrors.push({ text: message.text(), url: message.location().url });
   });
-  await page.route(/\/src\/components\/game\/BankTradePicker\.tsx(?:\?|$)/, (route) => {
+  await page.route(/\/src\/components\/game\/BankTradePicker\.tsx(?:\?|$)/, async (route) => {
     requests++;
     if (aborted === 0) {
       aborted++;
+      await mountedPicker;
       return route.abort("failed");
     }
     return route.continue();
@@ -612,6 +615,8 @@ async function lazyRecovery() {
     await load(page);
     const before = await snapshot(page);
     await open(page);
+    // Prefetch may start before opening; fail only once the real panel renders its waiting picker.
+    failMountedPicker();
     await panelFor(page).getByRole("alert").filter({ hasText: "Trade choices could not load" }).waitFor();
     assert.equal(aborted, 1, "lazy picker: exactly one request was deliberately refused");
     assert.equal(await snapshot(page), before, "lazy picker: a failed load preserves the real game");
