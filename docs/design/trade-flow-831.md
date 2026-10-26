@@ -1,39 +1,52 @@
-# Trade flow: Option A
+# Trade flow: Option B
 
-Jarrod approved Option A on 2026-10-19 in issue #831.
-The composer separates Table offers from Bank & docks exchanges.
-Each route shows one exact quote and one action.
+parent: Codex-p
 
-## Table
+Jarrod chose Option B on 2026-10-26: one window, Bank as a small box.
+Desk answer [6410081679](https://github.com/jarrodjohnson-gif/emberisle/issues/831#issuecomment-6410081679) confirms the shared-draft reading.
+This replaces the earlier Option A tabs, approved on 2026-10-19.
+The owner reviews real pictures before acceptance. No acceptance or merge is claimed.
+
+## Shared goods
 
 Tap a good to add one. Selected goods expose a separate remove control.
+Both Table and Bank use these same give/get quantities, with no separate Bank selections.
 Mixed offers remain supported. The same good cannot appear on both sides.
 Give quantities follow the live hand. Want quantities retain the existing limit.
-The pinned footer summarizes both bags before Ask the table.
+The pinned Table receipt summarizes both bags before Ask the table.
 Incoming offers, hand cues, acceptance, and host settlement keep their existing behavior.
 
-## Bank & docks
+## Compact Bank box
 
-Choose one kind to give and one different kind to receive.
-The composer uses the player's best owned rate: 4:1, 3:1, or 2:1.
-Each exchange receives exactly one good.
-The pinned footer explains missing choices, insufficient holdings, or empty bank stock.
-Only a valid exchange enables the bank or dock action.
-Hotseat opens this route directly because table offers require distinct players.
+Bank derives its kinds from a single kind in each shared bag.
+The live owned rate determines the exact quote: 4:1, 3:1, or 2:1.
+Each exchange receives exactly one good, regardless of the Table quantities.
+The Bank box shows its own exact quote and selected get kind's current bank stock.
+Its action describes the quote, stock, and current disabled reason accessibly.
+Missing or mixed choices, insufficient holdings, and empty stock leave Bank visible and disabled.
+Only a valid exchange enables the Bank or Dock action.
+Hotseat uses the same quantity cards and Bank box, without a player-table receipt or action.
 
 ## Interaction
 
-Both routes retain their own drafts while switching tabs.
-Closing the composer or losing the turn clears both drafts.
-Tabs support arrows, Home, and End. Bank choices support radio keyboard navigation.
+Closing the composer or losing the turn clears the shared draft.
 The dialog traps focus, supports Escape, and restores the opener.
-Controls retain 44 px touch targets. Goods scroll while the action stays visible.
+The named Trade goods region and native quantity buttons replace tab and radio navigation.
+Removing a final quantity restores focus to its add button or the named goods region.
+Controls retain 44 px targets. Goods and actions have at least 8 px gaps.
+Composer text remains at least 12 px, including owned counts and short-screen overrides.
+Goods scroll while both receipts and their actions stay visible.
 Gains rise and losses fall, as Jarrod confirmed on 2026-10-19.
-Selection chips and settled hand feedback use the same direction and signed amounts.
+Selection chips retain their signed amounts and 220 ms motion.
+Actual hand cards retain the approved Astra V1 goods-card look and existing cue timing.
 Reduced motion suppresses selection chips and keeps settled amounts static.
 
 ## Proof
 
-`npm run trade-tabs-prove` exercises route isolation, keyboard navigation, and bank settlement.
-It checks live rates, refusals, draft resets, hotseat, and three viewport sizes.
-Existing trade, client, hand, and modal proofs cover the surrounding flows.
+`npm run trade-tabs-prove` keeps its registered name and exercises the shared composer.
+It checks keyboard focus, live descriptions, rates, refusals, resets, hotseat and three viewport sizes.
+Real dispatches prove one-exchange settlement, bank conservation and unchanged V1 cues.
+The lazy quantity-card chunk retains its genuine mounted-failure and successful-reopen checks.
+Existing client, hand and trade-map proofs use the shared controls for the same outcome assertions.
+Exact approved equivalents are recorded in `docs/proofs/831-refresh/codex-p-2026-10-26-option-b/old-new.md`.
+Previous V1 equivalent tables remain preserved with their historical evidence.
