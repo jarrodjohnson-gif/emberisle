@@ -245,6 +245,7 @@ try {
     await guest.evaluate(code => window.__emberisle.getState().joinTable(code), code);
     await guest.getByTestId("lobby-card").waitFor();
     await page.waitForFunction(() => window.__emberisle.getState().seats.length === 2);
+    await guest.waitForFunction(() => window.__emberisle.getState().seats.length === 2);
     await page.evaluate(() => document.fonts.ready);
     await renameTappable(page, `${width}x${height}`);
     if (width === 375) await centred(page, `${width}x${height}`);
