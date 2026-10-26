@@ -97,8 +97,18 @@ async function clearOfName(page, kind) {
       inside: b.left >= s.left && b.right <= s.right && b.top >= s.top && b.bottom <= s.bottom,
     };
   });
-  assert.ok(bounds.clearStatus, `${kind}: bubble clear of the seat status`);
+  assert.ok(bounds.clearStatus, `${kind}: bubble clear of the seat status ${JSON.stringify(bounds)}`);
   assert.ok(bounds.clear && bounds.inside, `${kind}: whole bubble stays inside its seat and clear of the name`);
+}
+async function renameTappable(page, label) {
+  const hit = await page.getByTestId("rename-seat").evaluate(el => {
+    const r = el.getBoundingClientRect();
+    const x = r.left + Math.min(8, r.width / 2);
+    const top = document.elementFromPoint(x, r.top + r.height / 2);
+    const low = document.elementFromPoint(x, r.bottom - 8);
+    return { centre: !!top && el.contains(top), low: !!low && el.contains(low) };
+  });
+  assert.ok(hit.centre && hit.low, `${label}: the rename button receives taps at its centre and 8 px above its bottom`);
 }
 try {
   for (const [width, height, minimum] of [[390, 844, .52], [844, 390, .39], [1280, 720, .40]]) {
@@ -124,6 +134,7 @@ try {
     assert.equal(await guest.getByRole("radio").count(), 0, "guest cannot change target");
     assert.equal(await guest.getByTestId("remove-bot").count(), 0, "guest cannot remove bots");
     const data = await geometry(page, minimum);
+    await renameTappable(page, `${width}x${height}`);
     await page.getByRole("button", { name: "Copy", exact: true }).click();
     await page.waitForFunction(code => window.__copies.includes(code), code);
     await page.getByRole("button", { name: "Copy link", exact: true }).click();
@@ -165,6 +176,28 @@ try {
     await guest.waitForFunction(() => window.__emberisle.getState().screen === "play");
     results.push({ viewport: `${width}x${height}`, ...data });
     console.log(`${width}x${height}: chat ${(data.share * 100).toFixed(2)}%; two columns; 44px targets / 8px gaps; no card/people scroll; copy/invite/rules/target/chat/reaction/ready/start passed`);
+    await page.context().close();
+    await guest.context().close();
+  }
+  for (const [width, height] of [[375, 667], [320, 568]]) {
+    const page = await client("Jarrod", { width, height }, true);
+    await page.evaluate(() => window.__emberisle.getState().hostTable());
+    await page.getByTestId("lobby-card").waitFor();
+    const code = (await page.getByTestId("table-code").textContent()).trim();
+    const guest = await client("Josh", { width: 390, height: 844 }, true);
+    await guest.evaluate(code => window.__emberisle.getState().joinTable(code), code);
+    await guest.getByTestId("lobby-card").waitFor();
+    await page.waitForFunction(() => window.__emberisle.getState().seats.length === 2);
+    await page.evaluate(() => document.fonts.ready);
+    await renameTappable(page, `${width}x${height}`);
+    await page.getByTestId("emoji-row").locator("button").first().click();
+    await guest.getByTestId("react-line").waitFor();
+    await clearOfName(page, "reaction");
+    await page.getByRole("tab", { name: "Sounds & stickers" }).click();
+    await guest.getByRole("tab", { name: "Sounds & stickers" }).click();
+    await guest.getByRole("button", { name: "Play sound Wololo", exact: true }).click();
+    await clearOfName(page, "sound-bubble");
+    console.log(`${width}x${height}: rename button tappable; bubbles clear of the name and status`);
     await page.context().close();
     await guest.context().close();
   }

@@ -61,11 +61,11 @@
 }
 .lobby-name { display: flex; width: fit-content; max-width: 100%; min-width: 0; align-items: center; font-size: 15px; font-weight: 600; }
 .lobby-name > button, .lobby-name > input { width: 100%; }
-.lobby-player-status { grid-column: 2; grid-row: 2; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 13px; line-height: 18px; color: #555e58; }
-.lobby-player > button { grid-column: 3; grid-row: 1 / 3; padding: 0; font-size: 22px; line-height: 1; }
+.lobby-player-status { grid-column: 2; grid-row: 2; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 13px; line-height: 18px; color: #555e58; pointer-events: none; }
+.lobby-player > button { grid-column: 3; grid-row: 1 / 3; padding: 0; font-size: 12px; }
+.lobby-player > button[data-testid="remove-bot"] { font-size: 22px; line-height: 1; }
 .lobby-player:not(:has(> button)) .lobby-player-status { grid-column: 2 / 4; }
-.lobby-bubble { grid-row: 1 !important; align-self: center; }
-.lobby-bubble { grid-column: 3; grid-row: 1 / 3; justify-self: end; min-width: 0; max-width: 100%; pointer-events: none; }
+.lobby-bubble { grid-column: 3; grid-row: 1; align-self: center; justify-self: end; min-width: 0; max-width: 100%; pointer-events: none; }
 .lobby-chat-panel {
   display: flex;
   flex-direction: column;
@@ -115,7 +115,8 @@
 @media (max-height: 700px) and (orientation: portrait) {
   .lobby-layout .lobby-layout-cover { grid-template-rows: 44px 44px 96px minmax(148px, 1fr) 96px; overflow-y: auto; }
   .lobby-players { grid-template-rows: repeat(2, 44px); }
-  .lobby-player { grid-template-rows: 18px 18px; }
+  .lobby-player { grid-template-rows: 22px 18px; padding: 1px 10px; }
+  .lobby-player .lobby-bubble [data-seat-bubble="react"] .size-8 { width: 22px; height: 22px; font-size: 18px; line-height: 22px; }
 }
 @media (max-width: 700px) and (orientation: landscape) {
   .lobby-layout { inset: 8px; }
