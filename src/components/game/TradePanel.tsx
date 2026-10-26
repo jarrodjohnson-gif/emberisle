@@ -12,6 +12,7 @@ import { chunk, LazyBoundary } from "@/lib/lazy";
 import "./trade-panel.css";
 
 const picker = chunk(() => import("./BankTradePicker"));
+picker.prefetch();
 const BankTradePicker = picker.pick((m) => m.BankTradePicker);
 const Stepper = picker.pick((m) => m.TradeResource);
 
