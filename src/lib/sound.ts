@@ -233,6 +233,12 @@ export function stop(name: SoundName) {
   clip.currentTime = 0;
 }
 
+// The your-turn chime, with a short buzz on phones that have a motor (#542: 15 ms, was 30).
+export function yourTurn() {
+  play("your_turn");
+  haptics.turn?.();
+}
+
 // Background music (#814): "Medieval: The Old Tower Inn" (docs/design/sound.md). The file is fetched on the first start, after
 // the first gesture, never before, and is not part of any JS chunk. It plays while the table wants it (the lobby and play, not
 // the title or the end screen), unless muted or switched off; it dips under the stings.
