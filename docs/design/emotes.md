@@ -14,7 +14,7 @@ measured in a browser. Tailwind `size-11` is 44 px, `size-8` is 32 px and `size-
 |---|---|---|---|
 | **Emoji reactions** | `QUICK_REACTIONS` in `src/components/game/emotes.ts`: 😠 😊 👏 😂 🔥 🐑 | The same six, hard-coded again in `talk()` in `server/host.mjs` (there is a comment saying to keep the two in sync) | No. Each float lasts 2 s |
 | **Image emotes** | Every `*.png` / `*.webp` file in `src/assets/emotes/`, read by `import.meta.glob` (client) and `loadEmotes` (host) | Any id found in that folder | No |
-| **Soundboard** **[#635]** | `SOUNDBOARD` in `src/lib/sound.ts`, and again in `server/chat.mjs` | 10 ids: `robbed_fah` (Fah), `sb_wololo` (Wololo), `sb_win_reaction` (GG!), `sb_airhorn` (Airhorn), `sb_quit_touchin` (Quit touchin' me), `sb_only_wood` (Only wood?), `sb_perfect` (Perfect), `bong`, `plop`, `pluck` | Yes. It is a chat line, `🔊 Label`, so it counts toward the room's 30 lines |
+| **Soundboard** **[#635]** | `SOUNDBOARD` in `src/lib/sound.ts`, and again in `server/chat.mjs` | 15 ids: Fah, Wololo, GG!, Airhorn, Quit touchin' me, Wood please, Plump sheep, Nice sheep, Sheep please, Grain please, Brick please, Perfect, Real badman, Gong, Bong. Plop and Pluck remain game sounds, not soundboard ids. | Yes. It is a chat line, `🔊 Label`, so it counts toward the room's 30 lines |
 
 The `public/` folder holds no emote art. `public/audio/` holds the sounds, and **[#635]** adds the six `.mp3` clips
 the soundboard uses (plus the music stings). There is exactly **one image emote**: `src/assets/emotes/ben-10.webp`,
@@ -95,18 +95,18 @@ clips are the only reactions that play a sound for the table (Decision 3).
 - **Display:** 32 px inside the tray, as today. 48 px when floating over a seat. On a 440 px wide phone, 6 per row
   is about 300 px, which fits. Art must stay readable at 32 px.
 
-### Soundboard: no cuts (Decision 6) [#635]
+### Soundboard (Decision 6 amended 2026-10-25) [#635]
 
-- All 9 clips on #635 stay, because Jarrod approves them and accepts the risk:
+- The earlier no-cuts decision below is superseded for the two chips removed by #1131. The current chip set is:
   - Fah;
   - Wololo;
   - GG!;
   - Airhorn;
   - Quit touchin' me;
-  - Only wood?;
+  - Wood please;
   - Bong;
-  - Plop;
-  - Pluck.
+  - Plump sheep, Nice sheep, Sheep please, Grain please, Brick please, Perfect, Real badman and Gong.
+- Plop and Pluck remain available as board/game sounds; they are not soundboard chips.
 - The host's limits are unchanged:
   - the chat bucket;
   - `SOUND_MS`, 3 s.
@@ -161,7 +161,7 @@ The questions as asked:
 2. **Emoji set: swap 😊 for 🤝 and add 😱 and 😭, for 8 total (keys 1–8)?** Recommended: yes.
 3. **Do emotes get sounds?** Recommended: no. The soundboard is the only sound; emotes stay silent.
 4. **Where does the tray live: only the one quick-react button by Open chat, also in the lobby, with the chat's emote tray removed?** Recommended: yes.
-5. **Soundboard: cut Bong, Plop, Pluck and Wololo, and keep the airhorn and "Quit touchin' me" only if you can name a CC0 or self-made source?** Recommended: yes.
+5. **Soundboard: cut Bong, Plop, Pluck and Wololo, and keep the airhorn and "Quit touchin' me" only if you can name a CC0 or self-made source?** Recommended: yes. (Historical question; the later owner decision keeps Bong and removes only the Plop and Pluck chips.)
 6. **Win screen: relabel "React" as "GG! 🔊"?** Recommended: yes.
 
 ## Decisions (Jarrod, 2026-10-16)

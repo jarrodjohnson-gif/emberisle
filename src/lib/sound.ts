@@ -66,11 +66,9 @@ export const SOUNDBOARD = [
   { id: "sb_win_reaction", label: "GG!", clip: "sb_win_reaction" },
   { id: "sb_airhorn", label: "Airhorn", clip: "sb_airhorn" },
   { id: "sb_quit_touchin", label: "Quit touchin' me", clip: "sb_quit_touchin" },
-  { id: "sb_only_wood", label: "Only wood?", clip: "sb_only_wood" },
+  { id: "sb_only_wood", label: "Wood please", clip: "sb_only_wood" },
   { id: "sb_perfect", label: "Perfect", clip: "sb_perfect" },
   { id: "bong", label: "Bong", clip: "board_bong" },
-  { id: "plop", label: "Plop", clip: "board_plop" },
-  { id: "pluck", label: "Pluck", clip: "board_pluck" },
 ] as const satisfies readonly { id: string; label: string; clip: keyof typeof FILES }[];
 
 // Levels live in the files, not here (#1073, docs/design/sound.md Decision 3): every table effect, every reaction and soundboard
