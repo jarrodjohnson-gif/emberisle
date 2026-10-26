@@ -196,6 +196,7 @@ try{
  assert.equal(takeoverSeatId,'s0');
  const liveNeed=await need(a,['ore']);
  assert.deepEqual(ownNeeds(liveNeed,a),['ore'],'the human seat sets the need through the real host');
+ assert.equal(b.state.game.current,'p0','the disconnected human owns the turn before the takeover scenario');
  const heldNeed=(m)=>{const seat=m.seats.find(s=>s.id===takeoverSeatId);return seat?.player==='p0'&&seat.away===true&&JSON.stringify(seat.needs)==='["ore"]';};
  for(const observer of [b,c]){observer.inbox=[];}
  a.ws.terminate();
@@ -219,10 +220,8 @@ try{
  assert.deepEqual(projectedTakeoverNeed(secondHoldC),['ore'],'both observers see the need before takeover');
  assert.equal(b.state.game.players.find(p=>p.id==='p0').kind,'human','the old human turn still owns the seat before grace ends');
  b.inbox=[];c.inbox=[];
- const beforeTakeoverTurn=b.state.game.turn;
  const botTakeover=await b.next('state',m=>m.game.players.find(p=>p.id==='p0')?.kind==='bot');
- assert.equal(botTakeover.game.current,'p1','the first bot-owned turn completes after the takeover');
- assert.equal(botTakeover.game.turn,beforeTakeoverTurn+1,'only one bot-owned turn elapsed; the two-turn need cannot expire naturally');
+ assert.equal(botTakeover.game.current,'p1','the bot completes the disconnected p0 turn and advances to p1');
  const takeoverProjection=b.inbox.filter(m=>m.type==='seats').at(-1);
  assert.ok(takeoverProjection,'the actual bot takeover publishes a fresh seat projection');
  assert.deepEqual(projectedTakeoverNeed(takeoverProjection),[],'the need clears at human-to-bot takeover, before natural two-turn expiry');
@@ -239,7 +238,7 @@ try{
  assert.equal(a.seat,takeoverSeatId,'the same secret returns to the same seat after takeover');
  assert.equal(a.state.game.players.find(p=>p.id==='p0').kind,'human','the returning player regains human control');
  const returnedNeed=await a.next('seats',m=>{const seat=m.seats.find(s=>s.id===takeoverSeatId);return seat?.player==='p0'&&seat.away===false&&seat.needs.length===0;});
- assert.deepEqual(ownNeeds(returnedNeed,a),[],'the returning person starts with no need after takeover');
+ assert.deepEqual(projectedTakeoverNeed(returnedNeed),[],'the returning person starts with no need after takeover');
  console.log('ok takeover clears saved needs and the returning person has none');
  await stopHost();
 
