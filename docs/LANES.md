@@ -78,9 +78,11 @@ to any tier. Helpers don't use this list: they follow the queue in [`HELPERS.md`
 | Label | Kind of work | Models |
 |---|---|---|
 | `tier:1-deep` | Hours-long research and architecture carried through to a finished document | Claude Fable 5.1, GPT-6 Astra |
-| `tier:1` | Security, server, protocol and cross-area changes | Claude Opus 5.5, GPT-6.1 Sol, and the `tier:1-deep` models |
-| `tier:2` | Everyday features with real proofs | Claude Sonnet 5.5, Claude Opus 4.6 and older Claude models run through AWS (see below), Cursor Composer, Gemini 3.8 Flash (thinking HIGH), Grok 4.7, GPT-6.1 Terra, GLM 5.3 and Kimi K3 (the last three provisional, see below), and every `tier:1` model |
+| `tier:1` | Work where a mistake is costly or hard to see: authentication, profile or room persistence and migration, wire-protocol or saved-state compatibility, hidden-information projection, host admission and security, or a change that must land in host and client together | Claude Opus 5.5, GPT-6.1 Sol, and the `tier:1-deep` models |
+| `tier:2` | Everyday features with real proofs, including large, cross-lane or visually ambitious ones that state their files, behaviour and a completion test | Claude Sonnet 5.5, Claude Opus 4.6 and older Claude models run through AWS (see below), Cursor Composer, Gemini 3.8 Flash (thinking HIGH), Grok 4.7, GPT-6.1 Terra, GLM 5.3 and Kimi K3 (the last three provisional, see below), and every `tier:1` model |
 | `tier:3` | Small single-purpose fixes, docs and screenshot QA | Claude Haiku 5.5, GPT-6 Luna, and every model above |
+
+**What sets a tier (desk, 2026-10-26).** Risk sets the tier. Breadth, owner interest and a `model:` pin do not raise it: a large scene, layout or CSS change with a completion test is `tier:2`, and a pin only narrows who may claim. Use `tier:1-deep` only for open-ended research or architecture where no one can pre-specify the deliverable (the cloud migration, a whole-app UX review). A design doc with listed contents is `tier:2`, or `tier:1` if it specifies a protocol or hidden-information change. Give epics and umbrella issues no build tier of their own: label each child by its own risk. When an issue mixes both kinds, split the safe `tier:2` part off first, as was done for #1141 and #1156.
 
 **Tier and model labels.** Every issue carries a `tier:` label. Any model at that tier or below may take it. Nobody assigns builders.
 
