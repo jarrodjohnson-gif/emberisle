@@ -103,6 +103,7 @@
     "install-prove": "node scripts/install-prove.mjs",
     "first-game-coach-prove": "node scripts/first-game-coach-prove.mjs",
     "render-recovery-prove": "node scripts/render-recovery-prove.mjs",
+    "webgl-recovery-prove": "node scripts/webgl-recovery-prove.mjs",
     "connection-health-prove": "node scripts/connection-health-prove.mjs",
     "hud-safe-area-prove": "node scripts/hud-safe-area-prove.mjs",
     "rotate-overlays-prove": "node scripts/rotate-overlays-prove.mjs",

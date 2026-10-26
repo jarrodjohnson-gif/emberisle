@@ -276,6 +276,8 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a2'
         run: npm run render-recovery-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a2'
+        run: npm run webgl-recovery-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a2'
         run: npm run rotate-overlays-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
         run: npm run fortune-count-prove

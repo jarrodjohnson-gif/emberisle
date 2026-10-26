@@ -316,7 +316,16 @@ export class IsleRenderer {
     this.safeProbe.style.cssText =
       "position:fixed;visibility:hidden;pointer-events:none;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)";
     document.body.appendChild(this.safeProbe);
-    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: "high-performance" });
+    try {
+      this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: "high-performance" });
+    } catch {
+      try {
+        this.renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: false });
+      } catch (err) {
+        this.safeProbe.remove();
+        throw err;
+      }
+    }
     // Frame cost tracks pixels (#310). The crystal sea runs at up to 2 everywhere (every player's phone is an iPhone Pro class
     // GPU); `applyWater` keeps 1.5 on a phone for the simple sea (2.25x the pixels of 1, against 4x at 2).
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, this.coarse() ? 1.5 : 2));
@@ -326,8 +335,8 @@ export class IsleRenderer {
     // ("full" or "lite") overrides either way; the proofs of the scenes themselves ask for full.
     {
       const gl = this.renderer.getContext();
-      const dbg = gl.getExtension("WEBGL_debug_renderer_info");
-      this.software = /swiftshader|llvmpipe|softpipe|software/i.test(String(gl.getParameter(dbg ? dbg.UNMASKED_RENDERER_WEBGL : gl.RENDERER)));
+      const dbg = gl?.getExtension?.("WEBGL_debug_renderer_info");
+      this.software = /swiftshader|llvmpipe|softpipe|software/i.test(String(gl ? gl.getParameter(dbg ? dbg.UNMASKED_RENDERER_WEBGL : gl.RENDERER) : "software"));
       let saved: string | null = null;
       try {
         saved = localStorage.getItem("emberisle-jelly");
@@ -1655,7 +1664,15 @@ export class IsleRenderer {
           this.wake();
           performance.mark("props-end");
         },
-        () => tries < 5 && setTimeout(() => alive() && this.growScenes(gen, key, hexes, tries + 1), JELLY_RETRY_MS),
+        (err: unknown) => {
+          if (!this.lite) {
+            console.warn("The Hex Jelly scenes did not build; falling back to the lite board.", err);
+            this.lite = true;
+            if (alive()) this.growScenes(gen, key, hexes, 0);
+            return;
+          }
+          if (tries < 5) setTimeout(() => alive() && this.growScenes(gen, key, hexes, tries + 1), JELLY_RETRY_MS);
+        },
       );
   }
 
