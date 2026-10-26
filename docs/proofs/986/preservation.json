@@ -1,0 +1,10 @@
+{
+  "package.json": true,
+  ".github/workflows/ci.yml": true,
+  "package-lock.json": true,
+  "server/package-lock.json": true,
+  "server/open-table.mjs": true,
+  "src": true,
+  "allOriginalProofLinesInOrder": true,
+  "unfixedAndFixedProofIdentical": true
+}
