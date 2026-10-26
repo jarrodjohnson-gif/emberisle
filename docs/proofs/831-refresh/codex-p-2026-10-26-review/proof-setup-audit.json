@@ -1,0 +1,8 @@
+{
+  "old_runtime": "1a2db48c131ce4dd7e7427093b85195e2c0437fb",
+  "proof": "scripts/trade-tabs-prove.mjs",
+  "assertion_failure_tolerance_timeout_frame_lines_identical": true,
+  "guard_line_count": 142,
+  "same_single_real_request_abort": true,
+  "only_change": "hold the first intercepted prefetch until the real panel has rendered, then abort"
+}

@@ -1,0 +1,52 @@
+$ npm run trade-tabs-prove
+
+> trade-tabs-prove
+> node --import ./server/register.mjs scripts/trade-tabs-prove.mjs
+
+390x844-no-preference: mixed exact bags, separate retained drafts, selected-only minus, route keyboard/focus, one footer, 44px controls, close reset
+390x844-no-preference: live hand clamp, no stale revival, turn/phase closure and reset
+390x844-no-preference: inactive tabs skipped; one radio stop per group; arrows skip same kind; owned/count/rate descriptions stay live; final-minus focus recovers
+390x844-no-preference: live 4/3/2:1 quotes, invalid exchanges refused, real bank conservation, V1 signed tabs, gains lift/losses dip, 2200ms hold + 300ms fade, no island text (reduced motion static)
+390x844-no-preference: online defaults to Table; hotseat exposes bank only
+390x844-reduce: mixed exact bags, separate retained drafts, selected-only minus, route keyboard/focus, one footer, 44px controls, close reset
+390x844-reduce: live hand clamp, no stale revival, turn/phase closure and reset
+390x844-reduce: inactive tabs skipped; one radio stop per group; arrows skip same kind; owned/count/rate descriptions stay live; final-minus focus recovers
+390x844-reduce: live 4/3/2:1 quotes, invalid exchanges refused, real bank conservation, V1 signed tabs, gains lift/losses dip, 2200ms hold + 300ms fade, no island text (reduced motion static)
+390x844-reduce: online defaults to Table; hotseat exposes bank only
+844x390-no-preference: mixed exact bags, separate retained drafts, selected-only minus, route keyboard/focus, one footer, 44px controls, close reset
+844x390-no-preference: live hand clamp, no stale revival, turn/phase closure and reset
+844x390-no-preference: inactive tabs skipped; one radio stop per group; arrows skip same kind; owned/count/rate descriptions stay live; final-minus focus recovers
+844x390-no-preference: live 4/3/2:1 quotes, invalid exchanges refused, real bank conservation, V1 signed tabs, gains lift/losses dip, 2200ms hold + 300ms fade, no island text (reduced motion static)
+844x390-no-preference: online defaults to Table; hotseat exposes bank only
+844x390-reduce: mixed exact bags, separate retained drafts, selected-only minus, route keyboard/focus, one footer, 44px controls, close reset
+844x390-reduce: live hand clamp, no stale revival, turn/phase closure and reset
+844x390-reduce: inactive tabs skipped; one radio stop per group; arrows skip same kind; owned/count/rate descriptions stay live; final-minus focus recovers
+844x390-reduce: live 4/3/2:1 quotes, invalid exchanges refused, real bank conservation, V1 signed tabs, gains lift/losses dip, 2200ms hold + 300ms fade, no island text (reduced motion static)
+844x390-reduce: online defaults to Table; hotseat exposes bank only
+1280x720-no-preference: mixed exact bags, separate retained drafts, selected-only minus, route keyboard/focus, one footer, 44px controls, close reset
+1280x720-no-preference: live hand clamp, no stale revival, turn/phase closure and reset
+1280x720-no-preference: inactive tabs skipped; one radio stop per group; arrows skip same kind; owned/count/rate descriptions stay live; final-minus focus recovers
+1280x720-no-preference: live 4/3/2:1 quotes, invalid exchanges refused, real bank conservation, V1 signed tabs, gains lift/losses dip, 2200ms hold + 300ms fade, no island text (reduced motion static)
+1280x720-no-preference: online defaults to Table; hotseat exposes bank only
+1280x720-reduce: mixed exact bags, separate retained drafts, selected-only minus, route keyboard/focus, one footer, 44px controls, close reset
+1280x720-reduce: live hand clamp, no stale revival, turn/phase closure and reset
+1280x720-reduce: inactive tabs skipped; one radio stop per group; arrows skip same kind; owned/count/rate descriptions stay live; final-minus focus recovers
+1280x720-reduce: live 4/3/2:1 quotes, invalid exchanges refused, real bank conservation, V1 signed tabs, gains lift/losses dip, 2200ms hold + 300ms fade, no island text (reduced motion static)
+1280x720-reduce: online defaults to Table; hotseat exposes bank only
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+locator.waitFor: Timeout 20000ms exceeded.
+Call log:
+[2m  - waiting for getByTestId('trade-panel').getByRole('alert').filter({ hasText: 'Trade choices could not load' }) to be visible[22m
+
+    at lazyRecovery (/workspace/emberisle/work/p-verify883/scripts/trade-tabs-prove.mjs:615:97)
+    at async file:///workspace/emberisle/work/p-verify883/scripts/trade-tabs-prove.mjs:679:3 {
+  log: [
+    "  - waiting for getByTestId('trade-panel').getByRole('alert').filter({ hasText: 'Trade choices could not load' }) to be visible"
+  ],
+  name: 'TimeoutError'
+}
+
+Node.js v24.19.0

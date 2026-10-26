@@ -1,0 +1,1028 @@
+{
+  "old_head": "d18ee9f4f8af83eac46635526e8b288831c468d5",
+  "tested_runtime": "1a2db48c131ce4dd7e7427093b85195e2c0437fb",
+  "size_base": "9bde9861490662ef3e95e90db5cfa2dc7874fd55",
+  "only_runtime_change": [
+    "src/components/game/TradePanel.tsx"
+  ],
+  "exact_one_prefetch_insertion": true,
+  "proofs_helpers_focus_hand_css_budgets_registrations_locks_unchanged": true,
+  "hashes": {
+    ".github/workflows/auto-merge.yml": {
+      "old": "4fcadaf4d570ccde81f851422d398877ae91eec2",
+      "new": "4fcadaf4d570ccde81f851422d398877ae91eec2"
+    },
+    ".github/workflows/ci.yml": {
+      "old": "b052f82fc10303249b1e1239eecdcdcd5530acda",
+      "new": "b052f82fc10303249b1e1239eecdcdcd5530acda"
+    },
+    ".github/workflows/flake-rerun.yml": {
+      "old": "376e63884699735e9b086a492e63deb35487cf6f",
+      "new": "376e63884699735e9b086a492e63deb35487cf6f"
+    },
+    ".github/workflows/label-commands.yml": {
+      "old": "c1e7d68eb2356f34c6f3f18daa8223ae05024a46",
+      "new": "c1e7d68eb2356f34c6f3f18daa8223ae05024a46"
+    },
+    ".github/workflows/next-up.yml": {
+      "old": "9f2cf7b37af2da03493f83005dd03c29c77d690a",
+      "new": "9f2cf7b37af2da03493f83005dd03c29c77d690a"
+    },
+    ".github/workflows/pages.yml": {
+      "old": "17294725c05b788a7c87ec619f3da96cd8f1f513",
+      "new": "17294725c05b788a7c87ec619f3da96cd8f1f513"
+    },
+    ".github/workflows/review-desk-inbox.yml": {
+      "old": "d46c6e05c27685794267e6e64814e387d700c4e1",
+      "new": "d46c6e05c27685794267e6e64814e387d700c4e1"
+    },
+    ".github/workflows/soak.yml": {
+      "old": "348faa8be162258d6505e6a06f34a68445b82199",
+      "new": "348faa8be162258d6505e6a06f34a68445b82199"
+    },
+    ".github/workflows/stale-pr-sweeper.yml": {
+      "old": "d6c91478b660e801c7e40e2ef06ddd87f2dbde08",
+      "new": "d6c91478b660e801c7e40e2ef06ddd87f2dbde08"
+    },
+    ".github/workflows/trade-map.yml": {
+      "old": "aad448796216f36fce5113ec7d4cd804c9ff9191",
+      "new": "aad448796216f36fce5113ec7d4cd804c9ff9191"
+    },
+    ".github/workflows/visibility.yml": {
+      "old": "2f5697c43968e2e822694976164538191faf7e57",
+      "new": "2f5697c43968e2e822694976164538191faf7e57"
+    },
+    "package-lock.json": {
+      "old": "5dd0418528b610113d6b24baf4edc4358338be26",
+      "new": "5dd0418528b610113d6b24baf4edc4358338be26"
+    },
+    "package.json": {
+      "old": "2cc1223a4e707a48f41a132d63e4ac668f1282e2",
+      "new": "2cc1223a4e707a48f41a132d63e4ac668f1282e2"
+    },
+    "scripts/audio-level-lib.mjs": {
+      "old": "20013c0bb5b7e1734633686b8d2e2cad75031bca",
+      "new": "20013c0bb5b7e1734633686b8d2e2cad75031bca"
+    },
+    "scripts/audio-level-prove.mjs": {
+      "old": "b476dfe4ea6a9c2850c926d06720f155400831b7",
+      "new": "b476dfe4ea6a9c2850c926d06720f155400831b7"
+    },
+    "scripts/audio-recovery-prove.mjs": {
+      "old": "b015b62cd752744e4f8eba00d1b01f9ede293b40",
+      "new": "b015b62cd752744e4f8eba00d1b01f9ede293b40"
+    },
+    "scripts/auto-merge-eligible.mjs": {
+      "old": "7fba6d50bd20d0aedc721ae58b13fe8f899e9d95",
+      "new": "7fba6d50bd20d0aedc721ae58b13fe8f899e9d95"
+    },
+    "scripts/auto-merge-prove.mjs": {
+      "old": "cf6d340e48641388cced74a44ea62dd3162fb7a5",
+      "new": "cf6d340e48641388cced74a44ea62dd3162fb7a5"
+    },
+    "scripts/banner-stable-prove.mjs": {
+      "old": "63f83595691b43d81d1d1d1af565f00b844e0ad6",
+      "new": "63f83595691b43d81d1d1d1af565f00b844e0ad6"
+    },
+    "scripts/board-look-prove.mjs": {
+      "old": "e1bb498cf45cc40064a74ab83e6bf0ede5fef98a",
+      "new": "e1bb498cf45cc40064a74ab83e6bf0ede5fef98a"
+    },
+    "scripts/board-touch-prove.mjs": {
+      "old": "f23da0c5e078468b4756063712d014457bf9b607",
+      "new": "f23da0c5e078468b4756063712d014457bf9b607"
+    },
+    "scripts/build-ready-prove.mjs": {
+      "old": "7c79e5c90d2e3a55b0858fb1c9c0d4e02d164c53",
+      "new": "7c79e5c90d2e3a55b0858fb1c9c0d4e02d164c53"
+    },
+    "scripts/chat-prove.mjs": {
+      "old": "85e114c6c7ad4afbb789832386b8bfbfb2985f1d",
+      "new": "85e114c6c7ad4afbb789832386b8bfbfb2985f1d"
+    },
+    "scripts/chunk-fail-prove.mjs": {
+      "old": "2e95f4ebf8ee9342188673ac14644f06fd423380",
+      "new": "2e95f4ebf8ee9342188673ac14644f06fd423380"
+    },
+    "scripts/client-prove.mjs": {
+      "old": "dc40b48ca3461fcf26fae27323289cb7957a5e1f",
+      "new": "dc40b48ca3461fcf26fae27323289cb7957a5e1f"
+    },
+    "scripts/climber-prove.mjs": {
+      "old": "534ab731590c774bc152e64a1f4b8e9eb7ae84aa",
+      "new": "534ab731590c774bc152e64a1f4b8e9eb7ae84aa"
+    },
+    "scripts/connection-health-prove.mjs": {
+      "old": "823268f58e1ab2e36e10ff9dffc6a6cf813a46df",
+      "new": "823268f58e1ab2e36e10ff9dffc6a6cf813a46df"
+    },
+    "scripts/contrast-prove.mjs": {
+      "old": "fc45ccc655cb9962bce44c6a356787d9f90e424e",
+      "new": "fc45ccc655cb9962bce44c6a356787d9f90e424e"
+    },
+    "scripts/countdown-prove.mjs": {
+      "old": "cba83ef2e052fc5ca3da92ee909971b6d94401f3",
+      "new": "cba83ef2e052fc5ca3da92ee909971b6d94401f3"
+    },
+    "scripts/design-shots.mjs": {
+      "old": "4f84dc7d56c0c9513fec48a3825d8b2d6ef99ecd",
+      "new": "4f84dc7d56c0c9513fec48a3825d8b2d6ef99ecd"
+    },
+    "scripts/dice-prove.mjs": {
+      "old": "46b4ad43c624e5890a76c05dcf0b2e5b92060bdc",
+      "new": "46b4ad43c624e5890a76c05dcf0b2e5b92060bdc"
+    },
+    "scripts/dock-piles-prove.mjs": {
+      "old": "4d5e8711c87e2603c45847d9a1d7c4916385a951",
+      "new": "4d5e8711c87e2603c45847d9a1d7c4916385a951"
+    },
+    "scripts/dock-rates-prove.mjs": {
+      "old": "bfb6dd359f51b222b72c9a8a3eb9329fefda3d30",
+      "new": "bfb6dd359f51b222b72c9a8a3eb9329fefda3d30"
+    },
+    "scripts/dpr-prove.mjs": {
+      "old": "31c177f3f2304913325f8985b73f041a0029a789",
+      "new": "31c177f3f2304913325f8985b73f041a0029a789"
+    },
+    "scripts/emberisle-up.sh": {
+      "old": "aa5344f5701528e4da3bb55a87a31ac5d6396b50",
+      "new": "aa5344f5701528e4da3bb55a87a31ac5d6396b50"
+    },
+    "scripts/emote.mjs": {
+      "old": "6092cf898245220eab4faab85e226a34282f5587",
+      "new": "6092cf898245220eab4faab85e226a34282f5587"
+    },
+    "scripts/first-game-coach-prove.mjs": {
+      "old": "7ae7db9c7de31118bfb240c724749cc879763c5e",
+      "new": "7ae7db9c7de31118bfb240c724749cc879763c5e"
+    },
+    "scripts/fixtures/next-up/queue.json": {
+      "old": "73a1ab122604be1217f8810b27a17d930c9d7438",
+      "new": "73a1ab122604be1217f8810b27a17d930c9d7438"
+    },
+    "scripts/fixtures/size/base-old.json": {
+      "old": "169c05e838f67fa8cb58f04e4a5feb024dc44940",
+      "new": "169c05e838f67fa8cb58f04e4a5feb024dc44940"
+    },
+    "scripts/fixtures/size/base-with-legacy.json": {
+      "old": "7d8d6952c8dc4d50ff0c23d0c532e2daa0556da5",
+      "new": "7d8d6952c8dc4d50ff0c23d0c532e2daa0556da5"
+    },
+    "scripts/fixtures/size/base.json": {
+      "old": "d679435282689ea4c2e125e68e7d54a32560f36a",
+      "new": "d679435282689ea4c2e125e68e7d54a32560f36a"
+    },
+    "scripts/fixtures/size/fail.json": {
+      "old": "b5a253429964fb6d0b2a02006d23f782a69b0e33",
+      "new": "b5a253429964fb6d0b2a02006d23f782a69b0e33"
+    },
+    "scripts/fixtures/size/new-chunk.json": {
+      "old": "5cdf8f07f10c26760651ae1478b16267a172290c",
+      "new": "5cdf8f07f10c26760651ae1478b16267a172290c"
+    },
+    "scripts/fixtures/size/over-ceiling.json": {
+      "old": "175d67be976b6da589c4cd227f13c1a03310bf8e",
+      "new": "175d67be976b6da589c4cd227f13c1a03310bf8e"
+    },
+    "scripts/fixtures/size/pass.json": {
+      "old": "2a436438673283ee7aa180759f285f3b2fcc3af9",
+      "new": "2a436438673283ee7aa180759f285f3b2fcc3af9"
+    },
+    "scripts/flake-rerun-prove.mjs": {
+      "old": "10bd7e93711f6a5ddaa990a58397c8f010163da2",
+      "new": "10bd7e93711f6a5ddaa990a58397c8f010163da2"
+    },
+    "scripts/flake-rerun.mjs": {
+      "old": "cbe4fded686fab32899fa64c23aad0672162cbba",
+      "new": "cbe4fded686fab32899fa64c23aad0672162cbba"
+    },
+    "scripts/flash-prove.mjs": {
+      "old": "ae9228acd153bbb64a8ba2e4bdcaee873f40337b",
+      "new": "ae9228acd153bbb64a8ba2e4bdcaee873f40337b"
+    },
+    "scripts/fortune-count-prove.mjs": {
+      "old": "f47d9f482031f1bdb3d94a4d755909b2a93d912f",
+      "new": "f47d9f482031f1bdb3d94a4d755909b2a93d912f"
+    },
+    "scripts/fortune-cue-prove.mjs": {
+      "old": "0cbde0990a25c957d412eef67acd6c32e63b7b96",
+      "new": "0cbde0990a25c957d412eef67acd6c32e63b7b96"
+    },
+    "scripts/fortune-tray-prove.mjs": {
+      "old": "7233231c736453a56aecb50401d493432e36c90c",
+      "new": "7233231c736453a56aecb50401d493432e36c90c"
+    },
+    "scripts/goods-log-prove.mjs": {
+      "old": "c23d12b6a2080da501a4a606fe794c345569e1ee",
+      "new": "c23d12b6a2080da501a4a606fe794c345569e1ee"
+    },
+    "scripts/hand-cards-prove.mjs": {
+      "old": "fedd2e380dc81c17bb01b138fdc836fdd0a969df",
+      "new": "fedd2e380dc81c17bb01b138fdc836fdd0a969df"
+    },
+    "scripts/hand-hidden-prove.mjs": {
+      "old": "b89a2bc858eae29b1baa29b49367dc1e4a6a9229",
+      "new": "b89a2bc858eae29b1baa29b49367dc1e4a6a9229"
+    },
+    "scripts/hand-offer-prove.mjs": {
+      "old": "5f79fcbac0209d7a2b4cda773bc25a8c97c0c02f",
+      "new": "5f79fcbac0209d7a2b4cda773bc25a8c97c0c02f"
+    },
+    "scripts/haptics-prove.mjs": {
+      "old": "c5a6ba34fc710ee8101e6df555c4ec17e4e460ab",
+      "new": "c5a6ba34fc710ee8101e6df555c4ec17e4e460ab"
+    },
+    "scripts/hex-jelly-gif.mjs": {
+      "old": "93afc07e2b6bc7ae19736693e5a4cb420df0a4c4",
+      "new": "93afc07e2b6bc7ae19736693e5a4cb420df0a4c4"
+    },
+    "scripts/hex-jelly-lineup.html": {
+      "old": "70d8cdf07d9c4cd6c1caabe6a3c7e8f80894cf67",
+      "new": "70d8cdf07d9c4cd6c1caabe6a3c7e8f80894cf67"
+    },
+    "scripts/hex-jelly.html": {
+      "old": "2b9e6e8e385ab97208f659088387100dff1a83b2",
+      "new": "2b9e6e8e385ab97208f659088387100dff1a83b2"
+    },
+    "scripts/hex-jelly.mjs": {
+      "old": "973289a6dccb3f7124b3c39ec59efd5b1c8e0cfc",
+      "new": "973289a6dccb3f7124b3c39ec59efd5b1c8e0cfc"
+    },
+    "scripts/hole-prove.mjs": {
+      "old": "2a259fe6fbca0f0ce48fd87bb96e9af11bc0cea1",
+      "new": "2a259fe6fbca0f0ce48fd87bb96e9af11bc0cea1"
+    },
+    "scripts/hotseat-prove.mjs": {
+      "old": "3a73c33b7d03cc3b13477231d21cc57043db7b01",
+      "new": "3a73c33b7d03cc3b13477231d21cc57043db7b01"
+    },
+    "scripts/howto-prove.mjs": {
+      "old": "5040ad2c8090a6a9d5b65018db753884a147984a",
+      "new": "5040ad2c8090a6a9d5b65018db753884a147984a"
+    },
+    "scripts/hud-safe-area-prove.mjs": {
+      "old": "5beb040dafe93099b2a6840f0baa04d967bd7cd6",
+      "new": "5beb040dafe93099b2a6840f0baa04d967bd7cd6"
+    },
+    "scripts/idle-prove.mjs": {
+      "old": "ab77492e468cd1b428be69112e7b2ec5847bbecb",
+      "new": "ab77492e468cd1b428be69112e7b2ec5847bbecb"
+    },
+    "scripts/install-prove.mjs": {
+      "old": "4391d5787f37cb392f714f15eb78dae74e231acb",
+      "new": "4391d5787f37cb392f714f15eb78dae74e231acb"
+    },
+    "scripts/jelly-board.html": {
+      "old": "ad05d2c28c49a10a95ff12b83583d963341e1c93",
+      "new": "ad05d2c28c49a10a95ff12b83583d963341e1c93"
+    },
+    "scripts/jelly-ocean-prove.mjs": {
+      "old": "9cdc1e640653ff02ecfcaa7756bfab4375ef2497",
+      "new": "9cdc1e640653ff02ecfcaa7756bfab4375ef2497"
+    },
+    "scripts/jelly-showcase.mjs": {
+      "old": "5e3d32d9c04f297ad2303bae88d73d4b4d46a759",
+      "new": "5e3d32d9c04f297ad2303bae88d73d4b4d46a759"
+    },
+    "scripts/keyboard-place-prove.mjs": {
+      "old": "ae33ff626e43d12eeb35963173eb629708e00ac2",
+      "new": "ae33ff626e43d12eeb35963173eb629708e00ac2"
+    },
+    "scripts/label-commands-prove.mjs": {
+      "old": "a7c18e5995dff2b62ebc312da2b22fe6155b8ca6",
+      "new": "a7c18e5995dff2b62ebc312da2b22fe6155b8ca6"
+    },
+    "scripts/level-audio.mjs": {
+      "old": "5b855d05baa4311d44aa919a59889a36ff8085d5",
+      "new": "5b855d05baa4311d44aa919a59889a36ff8085d5"
+    },
+    "scripts/lobby-overflow-prove.mjs": {
+      "old": "5b6e6a279b23b9850d319bea926bf2fd235ed026",
+      "new": "5b6e6a279b23b9850d319bea926bf2fd235ed026"
+    },
+    "scripts/lobby-prove.mjs": {
+      "old": "019a32ef38d4bb5dfee25c7b7746484ab413013a",
+      "new": "019a32ef38d4bb5dfee25c7b7746484ab413013a"
+    },
+    "scripts/longest-army-prove.mjs": {
+      "old": "15e7afb7dc13631a77dba2dcbd8f585ae7560338",
+      "new": "15e7afb7dc13631a77dba2dcbd8f585ae7560338"
+    },
+    "scripts/loosen-prove.mjs": {
+      "old": "7de1f243590f88e1ab3852607cf32d06bba69159",
+      "new": "7de1f243590f88e1ab3852607cf32d06bba69159"
+    },
+    "scripts/make-icons.mjs": {
+      "old": "cf7a77b08e0ae03c9a39ce75466a7c8ab7f73f33",
+      "new": "cf7a77b08e0ae03c9a39ce75466a7c8ab7f73f33"
+    },
+    "scripts/make-sounds.mjs": {
+      "old": "b60ae906fc0c5eaa052a9ad7bbeeae99c51aa733",
+      "new": "b60ae906fc0c5eaa052a9ad7bbeeae99c51aa733"
+    },
+    "scripts/mobile-shots.mjs": {
+      "old": "f0c69f2e709880e59b45de48f9c48dae5bf8c6c9",
+      "new": "f0c69f2e709880e59b45de48f9c48dae5bf8c6c9"
+    },
+    "scripts/music-prove.mjs": {
+      "old": "d30ddc562053b1de932c8c002c6f2d2ccd5652b3",
+      "new": "d30ddc562053b1de932c8c002c6f2d2ccd5652b3"
+    },
+    "scripts/my-numbers-prove.mjs": {
+      "old": "5e0ba323691adb9c8b4c0d65360e09d9b71a163e",
+      "new": "5e0ba323691adb9c8b4c0d65360e09d9b71a163e"
+    },
+    "scripts/named-tunnel.mjs": {
+      "old": "435fced18e230a4571952c618eab35c71638dd43",
+      "new": "435fced18e230a4571952c618eab35c71638dd43"
+    },
+    "scripts/named-tunnel.test.mjs": {
+      "old": "0ef9598f73b0d9e3ad5a08bf0dd5ae07ed194c50",
+      "new": "0ef9598f73b0d9e3ad5a08bf0dd5ae07ed194c50"
+    },
+    "scripts/next-up-prove.mjs": {
+      "old": "8b37fcf94bc19d3eec70cbb33a06caeaaeea1477",
+      "new": "8b37fcf94bc19d3eec70cbb33a06caeaaeea1477"
+    },
+    "scripts/next-up.mjs": {
+      "old": "d73ba43303cbb1c245c88e38315445fd23140208",
+      "new": "d73ba43303cbb1c245c88e38315445fd23140208"
+    },
+    "scripts/night-prove.mjs": {
+      "old": "6d887edae78b56c3b937ebc0d2e6b7563bba0856",
+      "new": "6d887edae78b56c3b937ebc0d2e6b7563bba0856"
+    },
+    "scripts/night.mjs": {
+      "old": "fecc19f576e4f12f6e39c74c3d040dfe07d6e440",
+      "new": "fecc19f576e4f12f6e39c74c3d040dfe07d6e440"
+    },
+    "scripts/open-host-prove.mjs": {
+      "old": "43dee1d9d3e1901c0808bd4dfca3417ebe01a258",
+      "new": "43dee1d9d3e1901c0808bd4dfca3417ebe01a258"
+    },
+    "scripts/open-table-prove.mjs": {
+      "old": "a2d670928397b55f2886727527e838a787d394dc",
+      "new": "a2d670928397b55f2886727527e838a787d394dc"
+    },
+    "scripts/ore-tokens-prove.mjs": {
+      "old": "b6b06cd27c981b7bcf04da493e8a78aa464ecbaa",
+      "new": "b6b06cd27c981b7bcf04da493e8a78aa464ecbaa"
+    },
+    "scripts/orphan-check.mjs": {
+      "old": "a65155d28df4a91dfe5a2a8dc036665a2a9889f3",
+      "new": "a65155d28df4a91dfe5a2a8dc036665a2a9889f3"
+    },
+    "scripts/pages-prove.mjs": {
+      "old": "cdcd9f1af0f74a6786aa0ac0081e81ba974fa728",
+      "new": "cdcd9f1af0f74a6786aa0ac0081e81ba974fa728"
+    },
+    "scripts/pan-prove.mjs": {
+      "old": "695b0c019e23a90bfa9edc5b89b44750f7deeba3",
+      "new": "695b0c019e23a90bfa9edc5b89b44750f7deeba3"
+    },
+    "scripts/pieces-land-prove.mjs": {
+      "old": "5836f4271b2931dd286b8680ba9eaab9c63998de",
+      "new": "5836f4271b2931dd286b8680ba9eaab9c63998de"
+    },
+    "scripts/pieces-prove.mjs": {
+      "old": "3d17863b112983ed7fcf65cb44c6a10bd7c8e7ad",
+      "new": "3d17863b112983ed7fcf65cb44c6a10bd7c8e7ad"
+    },
+    "scripts/polish-tokens-prove.mjs": {
+      "old": "398be7b49d329205ac053eb9cb016fd2f1674fef",
+      "new": "398be7b49d329205ac053eb9cb016fd2f1674fef"
+    },
+    "scripts/practice-trade-prove.mjs": {
+      "old": "b3224d93be600f841f3b67d46265c528a356e16d",
+      "new": "b3224d93be600f841f3b67d46265c528a356e16d"
+    },
+    "scripts/public-score-prove.mjs": {
+      "old": "93470b4f6ee3233de13eeaadc844a787825be996",
+      "new": "93470b4f6ee3233de13eeaadc844a787825be996"
+    },
+    "scripts/react-prove.mjs": {
+      "old": "cb0b352d89e01d8bc5eadfeba159b4acbca20704",
+      "new": "cb0b352d89e01d8bc5eadfeba159b4acbca20704"
+    },
+    "scripts/reflow-prove.mjs": {
+      "old": "afa76039e171fdae367181ccd11426f6f16c418b",
+      "new": "afa76039e171fdae367181ccd11426f6f16c418b"
+    },
+    "scripts/registered-prove.mjs": {
+      "old": "957cbda1b66d77179e4a300a63f6c04bfdc8def2",
+      "new": "957cbda1b66d77179e4a300a63f6c04bfdc8def2"
+    },
+    "scripts/render-recovery-prove.mjs": {
+      "old": "d23578fd2331bc1ce8c3f47b251e7fa5ed044fd6",
+      "new": "d23578fd2331bc1ce8c3f47b251e7fa5ed044fd6"
+    },
+    "scripts/restore-prove.mjs": {
+      "old": "7057615493fa83630040709fa0ce88ed6c780b72",
+      "new": "7057615493fa83630040709fa0ce88ed6c780b72"
+    },
+    "scripts/robber-hex-prove.mjs": {
+      "old": "579038b80ddabcdf75fdf462d72b23048fa5b252",
+      "new": "579038b80ddabcdf75fdf462d72b23048fa5b252"
+    },
+    "scripts/roll-log-prove.mjs": {
+      "old": "8b3fcc0855b0522616786e2f7c717f694673bfc4",
+      "new": "8b3fcc0855b0522616786e2f7c717f694673bfc4"
+    },
+    "scripts/roll-moment-prove.mjs": {
+      "old": "f45f8b10cc0a076bd8724e891cfc4126097a05ce",
+      "new": "f45f8b10cc0a076bd8724e891cfc4126097a05ce"
+    },
+    "scripts/rotate-overlays-prove.mjs": {
+      "old": "0a91521d3fb6f6a0e2aa1a0ad812f215d594d4e1",
+      "new": "0a91521d3fb6f6a0e2aa1a0ad812f215d594d4e1"
+    },
+    "scripts/rotate-prove.mjs": {
+      "old": "0d45405e9222f6c272fb182f98daed65a897b20c",
+      "new": "0d45405e9222f6c272fb182f98daed65a897b20c"
+    },
+    "scripts/seat-rail-prove.mjs": {
+      "old": "6a161763e75df71df6e8ece32901cd9a0bf6f95c",
+      "new": "6a161763e75df71df6e8ece32901cd9a0bf6f95c"
+    },
+    "scripts/shots.mjs": {
+      "old": "36e5aa98d67ba998e718d621588a9dcfd647944e",
+      "new": "36e5aa98d67ba998e718d621588a9dcfd647944e"
+    },
+    "scripts/size-delta-prove.mjs": {
+      "old": "6a16c97fc24b4f8139698e494e2f44f595fa7f46",
+      "new": "6a16c97fc24b4f8139698e494e2f44f595fa7f46"
+    },
+    "scripts/size-prove.mjs": {
+      "old": "7de0478f428e7975d6e60f79dac384d908f2998e",
+      "new": "7de0478f428e7975d6e60f79dac384d908f2998e"
+    },
+    "scripts/soak-evidence-prove.mjs": {
+      "old": "7b381089cd3da8e4d333150bfc9f8b03908c0e8f",
+      "new": "7b381089cd3da8e4d333150bfc9f8b03908c0e8f"
+    },
+    "scripts/sound-mixer-prove.mjs": {
+      "old": "28de61a8c2e183fdad0c4a7c4765890c8154a8ef",
+      "new": "28de61a8c2e183fdad0c4a7c4765890c8154a8ef"
+    },
+    "scripts/sounds-prove.mjs": {
+      "old": "9dd1b2cca964246470ee2d78e862b31676211bb0",
+      "new": "9dd1b2cca964246470ee2d78e862b31676211bb0"
+    },
+    "scripts/splash-prove.mjs": {
+      "old": "c74bfe3c01b2964ed1693dbc8cba1fb30b5c3de6",
+      "new": "c74bfe3c01b2964ed1693dbc8cba1fb30b5c3de6"
+    },
+    "scripts/stage-prove.mjs": {
+      "old": "25c3fa907775e984f584e20d009fcb4dbd52feac",
+      "new": "25c3fa907775e984f584e20d009fcb4dbd52feac"
+    },
+    "scripts/stale-pr-sweeper-prove.mjs": {
+      "old": "09e02e081fe7c1d2fb9eea7ef742429376e00914",
+      "new": "09e02e081fe7c1d2fb9eea7ef742429376e00914"
+    },
+    "scripts/stale-pr-sweeper.mjs": {
+      "old": "fcc6fe16dfd6c3d6b0c8b777a1de1d11c100cc09",
+      "new": "fcc6fe16dfd6c3d6b0c8b777a1de1d11c100cc09"
+    },
+    "scripts/steal-picker-push-prove.mjs": {
+      "old": "6345bfe91ea29ac929146a1c35f57bb609eb9d43",
+      "new": "6345bfe91ea29ac929146a1c35f57bb609eb9d43"
+    },
+    "scripts/table-menu-prove.mjs": {
+      "old": "c4446dc9dd47ddcb7b4c2ba7d7b046643e8bf07a",
+      "new": "c4446dc9dd47ddcb7b4c2ba7d7b046643e8bf07a"
+    },
+    "scripts/tabs-prove.mjs": {
+      "old": "30a9cddfeb32e6f0f8a5a3e7572d8bd9f9a8239f",
+      "new": "30a9cddfeb32e6f0f8a5a3e7572d8bd9f9a8239f"
+    },
+    "scripts/title-chunks-prove.mjs": {
+      "old": "8e2575164d1841ac8f690b5b330b5ea7cf6959d3",
+      "new": "8e2575164d1841ac8f690b5b330b5ea7cf6959d3"
+    },
+    "scripts/title-prove.mjs": {
+      "old": "2bd8173efbafbf55710dc3d8755e02b9905bcd7b",
+      "new": "2bd8173efbafbf55710dc3d8755e02b9905bcd7b"
+    },
+    "scripts/tokens-prove.mjs": {
+      "old": "21e5ab79460f8b2b439c17065c9c522126a019c3",
+      "new": "21e5ab79460f8b2b439c17065c9c522126a019c3"
+    },
+    "scripts/touch-place-prove.mjs": {
+      "old": "b53c4370faa693b37f9b76e6057ec5907e88dd87",
+      "new": "b53c4370faa693b37f9b76e6057ec5907e88dd87"
+    },
+    "scripts/trade-map.test.mjs": {
+      "old": "ce74982381d1b8bb9038d57f387d9e84bd863168",
+      "new": "ce74982381d1b8bb9038d57f387d9e84bd863168"
+    },
+    "scripts/trade-prove.mjs": {
+      "old": "6e51c63ba1eeeebe8e75fd2721cf748efeef25fb",
+      "new": "6e51c63ba1eeeebe8e75fd2721cf748efeef25fb"
+    },
+    "scripts/trade-tabs-prove.mjs": {
+      "old": "72d4c80f7e43aedf69523d843ced8afd6b26f416",
+      "new": "72d4c80f7e43aedf69523d843ced8afd6b26f416"
+    },
+    "scripts/turn-copy-prove.mjs": {
+      "old": "e60a02a31db70530fd5b7151c696ce6d792786c8",
+      "new": "e60a02a31db70530fd5b7151c696ce6d792786c8"
+    },
+    "scripts/turn-extension-prove.mjs": {
+      "old": "3d1980f96bb53399041bc395072ff2e14a0a3b87",
+      "new": "3d1980f96bb53399041bc395072ff2e14a0a3b87"
+    },
+    "scripts/turn-gain-prove.mjs": {
+      "old": "bb5d0be8bcca0c1524fda756097a21339b749859",
+      "new": "bb5d0be8bcca0c1524fda756097a21339b749859"
+    },
+    "scripts/upgrade-prove.mjs": {
+      "old": "0bc68cf98c30c74df859cb7382015d4f13aa7aa6",
+      "new": "0bc68cf98c30c74df859cb7382015d4f13aa7aa6"
+    },
+    "scripts/version-prove.mjs": {
+      "old": "9bde15d673d0997fabfcab5c30338b55e213226c",
+      "new": "9bde15d673d0997fabfcab5c30338b55e213226c"
+    },
+    "scripts/victory-target-prove.mjs": {
+      "old": "6cfb8f33ffc2a5ec8b6dee42a2de36e0e0c59bf8",
+      "new": "6cfb8f33ffc2a5ec8b6dee42a2de36e0e0c59bf8"
+    },
+    "scripts/visual-direction-prove.mjs": {
+      "old": "278c0d980a7b0e3fb7e9c8b0d01bc6f844f87f82",
+      "new": "278c0d980a7b0e3fb7e9c8b0d01bc6f844f87f82"
+    },
+    "scripts/watch-ui-prove.mjs": {
+      "old": "65da0a8d7d7711ae74cc7b9b1d51393900bd1316",
+      "new": "65da0a8d7d7711ae74cc7b9b1d51393900bd1316"
+    },
+    "scripts/waves-prove.mjs": {
+      "old": "3de69ae6126b85311377c13cf5da2f5122aad6b2",
+      "new": "3de69ae6126b85311377c13cf5da2f5122aad6b2"
+    },
+    "scripts/wayfarer-prove.mjs": {
+      "old": "7566e7c34c13bcacbeefa89353a442b6e0293c05",
+      "new": "7566e7c34c13bcacbeefa89353a442b6e0293c05"
+    },
+    "scripts/wayfarer-setup-prove.mjs": {
+      "old": "2328c9508d3b1b1004a3413edcd18c385107458c",
+      "new": "2328c9508d3b1b1004a3413edcd18c385107458c"
+    },
+    "scripts/win-action-prove.mjs": {
+      "old": "342d74fc46ae0a5c0da0745165544a8b0fc9276b",
+      "new": "342d74fc46ae0a5c0da0745165544a8b0fc9276b"
+    },
+    "scripts/your-turn-cue-prove.mjs": {
+      "old": "bf10d244f3dac107099919afbff7d2c35ada1135",
+      "new": "bf10d244f3dac107099919afbff7d2c35ada1135"
+    },
+    "server/package-lock.json": {
+      "old": "a8ef1db18d375896a6527f470265c47beb01d291",
+      "new": "a8ef1db18d375896a6527f470265c47beb01d291"
+    },
+    "src/assets/emotes/ben-10.webp": {
+      "old": "bfb27a45ffa350e799f4edd8caafecfc91e1942c",
+      "new": "bfb27a45ffa350e799f4edd8caafecfc91e1942c"
+    },
+    "src/assets/emotes/daffy-shock.webp": {
+      "old": "b420790132f44fa517077bf4b8c1b06070fddb0b",
+      "new": "b420790132f44fa517077bf4b8c1b06070fddb0b"
+    },
+    "src/assets/emotes/goggles-guy.webp": {
+      "old": "6be87046feb7c780b2f56b694cf75cdd9cd0ee6a",
+      "new": "6be87046feb7c780b2f56b694cf75cdd9cd0ee6a"
+    },
+    "src/assets/emotes/leo-laugh.webp": {
+      "old": "22c2a8c019e69ad7d5e11591e3f36d9b71dae07b",
+      "new": "22c2a8c019e69ad7d5e11591e3f36d9b71dae07b"
+    },
+    "src/assets/emotes/memoji-scheme.webp": {
+      "old": "83400b760c6f675263d61de7fbb8adc6ec80db64",
+      "new": "83400b760c6f675263d61de7fbb8adc6ec80db64"
+    },
+    "src/assets/emotes/mike-sully.webp": {
+      "old": "52a762b6c17cc2a1c19a2604763ef6c9bf3e24be",
+      "new": "52a762b6c17cc2a1c19a2604763ef6c9bf3e24be"
+    },
+    "src/assets/emotes/old-grump.webp": {
+      "old": "600f99f09e25da0bc266046d6ace15b16d2a9be4",
+      "new": "600f99f09e25da0bc266046d6ace15b16d2a9be4"
+    },
+    "src/assets/emotes/shrek-smirk.webp": {
+      "old": "5cede693bf6f2dec342a29b6baa294258625be34",
+      "new": "5cede693bf6f2dec342a29b6baa294258625be34"
+    },
+    "src/assets/emotes/sponge-thumbs.webp": {
+      "old": "4071c179442269e4dcd8d34bf84b350020132b06",
+      "new": "4071c179442269e4dcd8d34bf84b350020132b06"
+    },
+    "src/assets/emotes/wide-eyes.webp": {
+      "old": "70275422a601aff8836826a9e46629b733a862bf",
+      "new": "70275422a601aff8836826a9e46629b733a862bf"
+    },
+    "src/assets/textures/README.md": {
+      "old": "92976129ba36fa430ebdd9ec4a78c4bbadd9a1c6",
+      "new": "92976129ba36fa430ebdd9ec4a78c4bbadd9a1c6"
+    },
+    "src/components/game/Announcer.tsx": {
+      "old": "c3f519cb361c505addd4d435dfae26602ca5c38b",
+      "new": "c3f519cb361c505addd4d435dfae26602ca5c38b"
+    },
+    "src/components/game/BankTradePicker.tsx": {
+      "old": "fd5ef27a362b1b591fae8bdb7e8454cc32dcfa04",
+      "new": "fd5ef27a362b1b591fae8bdb7e8454cc32dcfa04"
+    },
+    "src/components/game/BuildCost.tsx": {
+      "old": "d3abc090ffa4b6145d0f226c458f3745dae52813",
+      "new": "d3abc090ffa4b6145d0f226c458f3745dae52813"
+    },
+    "src/components/game/Chat.tsx": {
+      "old": "669e6d4d1b28c66928f47446a49faadd78a0c523",
+      "new": "669e6d4d1b28c66928f47446a49faadd78a0c523"
+    },
+    "src/components/game/ConnectionStatus.tsx": {
+      "old": "21cdd4fa46d4a7bc435fca0d993ad569a0ae425d",
+      "new": "21cdd4fa46d4a7bc435fca0d993ad569a0ae425d"
+    },
+    "src/components/game/CopyText.tsx": {
+      "old": "1ffb28986805bc9d5867054e7e78fd644a2297cf",
+      "new": "1ffb28986805bc9d5867054e7e78fd644a2297cf"
+    },
+    "src/components/game/CostCard.tsx": {
+      "old": "40a29656c380ee4717b480eb0afa61ebed22bc19",
+      "new": "40a29656c380ee4717b480eb0afa61ebed22bc19"
+    },
+    "src/components/game/Dice.tsx": {
+      "old": "4e724207b0aa8f959cc5b6582764bf483f79dddb",
+      "new": "4e724207b0aa8f959cc5b6582764bf483f79dddb"
+    },
+    "src/components/game/DiscardBar.tsx": {
+      "old": "70bd3fc9174ed6f049d5d5d4d18773838a42a223",
+      "new": "70bd3fc9174ed6f049d5d5d4d18773838a42a223"
+    },
+    "src/components/game/EmberisleApp.tsx": {
+      "old": "19dde9744a9f725ba8c5d1e0a937eb5656551dc5",
+      "new": "19dde9744a9f725ba8c5d1e0a937eb5656551dc5"
+    },
+    "src/components/game/FirstGameCoach.tsx": {
+      "old": "51c4db96d249189f3dad7d93fc4a7e6988c19a5b",
+      "new": "51c4db96d249189f3dad7d93fc4a7e6988c19a5b"
+    },
+    "src/components/game/FortuneTray.tsx": {
+      "old": "df08ccc921d2e1e7590f89ebd91c66f5e0d66ed3",
+      "new": "df08ccc921d2e1e7590f89ebd91c66f5e0d66ed3"
+    },
+    "src/components/game/Hand.tsx": {
+      "old": "5878408f93c1212b524d0e10d1348b85bfdccf25",
+      "new": "5878408f93c1212b524d0e10d1348b85bfdccf25"
+    },
+    "src/components/game/HandRates.tsx": {
+      "old": "2ad9298fdc5beb1d01f88525bfbaa42c72a1b911",
+      "new": "2ad9298fdc5beb1d01f88525bfbaa42c72a1b911"
+    },
+    "src/components/game/HowTo.tsx": {
+      "old": "1a1281965eb0fc407c7cf5eebdff466b779cf616",
+      "new": "1a1281965eb0fc407c7cf5eebdff466b779cf616"
+    },
+    "src/components/game/Hud.tsx": {
+      "old": "44df295d5966e5b19c5a8cd52adcf6e3ef1e98c4",
+      "new": "44df295d5966e5b19c5a8cd52adcf6e3ef1e98c4"
+    },
+    "src/components/game/Lobby.tsx": {
+      "old": "5445defe31de9ba62f546f352f038adc217502e5",
+      "new": "5445defe31de9ba62f546f352f038adc217502e5"
+    },
+    "src/components/game/MyNumbers.tsx": {
+      "old": "9c60d6db97f19e999708206a8f7d4cd35bfc69c0",
+      "new": "9c60d6db97f19e999708206a8f7d4cd35bfc69c0"
+    },
+    "src/components/game/OpenTables.tsx": {
+      "old": "f0977b89c61a76992831adb7d9ca4447563e5b75",
+      "new": "f0977b89c61a76992831adb7d9ca4447563e5b75"
+    },
+    "src/components/game/PlaceChip.tsx": {
+      "old": "1175e6612d16b956d08872f1da6cd6719e7107ef",
+      "new": "1175e6612d16b956d08872f1da6cd6719e7107ef"
+    },
+    "src/components/game/PlaceList.tsx": {
+      "old": "e2fa394b3ff4d2b3a46f91a58c09ee34f6c8aba3",
+      "new": "e2fa394b3ff4d2b3a46f91a58c09ee34f6c8aba3"
+    },
+    "src/components/game/PlayerMenu.tsx": {
+      "old": "22e4ae906c912427ebbbd6a21ab3d6d793770ecb",
+      "new": "22e4ae906c912427ebbbd6a21ab3d6d793770ecb"
+    },
+    "src/components/game/Reactions.tsx": {
+      "old": "df1634e44f46bda490afdc474ec002edb4e0c411",
+      "new": "df1634e44f46bda490afdc474ec002edb4e0c411"
+    },
+    "src/components/game/ResourceSymbols.tsx": {
+      "old": "5cd268b58bd676dfd759c80ab5bc39ae898e47c6",
+      "new": "5cd268b58bd676dfd759c80ab5bc39ae898e47c6"
+    },
+    "src/components/game/SeatDot.tsx": {
+      "old": "56f4a4d077e89568762f0bbc971bad79400c6d1a",
+      "new": "56f4a4d077e89568762f0bbc971bad79400c6d1a"
+    },
+    "src/components/game/SeatRail.tsx": {
+      "old": "c85e020ebb9cd73093bedf2b3a9391d1fa3e4d0c",
+      "new": "c85e020ebb9cd73093bedf2b3a9391d1fa3e4d0c"
+    },
+    "src/components/game/SetupPipHints.tsx": {
+      "old": "692ea56025e044a6fcd0ed5cfe7a9a98351a2ab6",
+      "new": "692ea56025e044a6fcd0ed5cfe7a9a98351a2ab6"
+    },
+    "src/components/game/SetupReference.tsx": {
+      "old": "04d21c7ef2d3516b6b8714acf8ac691b31cfe19d",
+      "new": "04d21c7ef2d3516b6b8714acf8ac691b31cfe19d"
+    },
+    "src/components/game/SheetsFailed.tsx": {
+      "old": "f18a7e210966d3393bec4be04b0ba8cfdf335069",
+      "new": "f18a7e210966d3393bec4be04b0ba8cfdf335069"
+    },
+    "src/components/game/TableMenu.tsx": {
+      "old": "470cf2a5c2671c6c56a68198e69cf8ef8e20beca",
+      "new": "470cf2a5c2671c6c56a68198e69cf8ef8e20beca"
+    },
+    "src/components/game/TableRecoveryBoundary.tsx": {
+      "old": "d0168c4d474f2d72a1b621b899450bedd74b8298",
+      "new": "d0168c4d474f2d72a1b621b899450bedd74b8298"
+    },
+    "src/components/game/TakeFromBar.tsx": {
+      "old": "57f9f2c75a42acaceb5344e487f3d45e46df4b63",
+      "new": "57f9f2c75a42acaceb5344e487f3d45e46df4b63"
+    },
+    "src/components/game/TradeButton.tsx": {
+      "old": "209891e8fd8cb21846e31540bcc4e5d5cdf0bca5",
+      "new": "209891e8fd8cb21846e31540bcc4e5d5cdf0bca5"
+    },
+    "src/components/game/TradePanel.tsx": {
+      "old": "5093f2dc93c1b3649ec5aceb86c8fc9fd1cb0a93",
+      "new": "479a02702e98e904b2535d9384e394a2457cae7b"
+    },
+    "src/components/game/TradeToast.tsx": {
+      "old": "37d3b384760da7ee5a92d7ed242d397dba6b95f6",
+      "new": "37d3b384760da7ee5a92d7ed242d397dba6b95f6"
+    },
+    "src/components/game/TrayFailed.tsx": {
+      "old": "272f3cd3cd9f859fb77fe6ba9cf93151723f3444",
+      "new": "272f3cd3cd9f859fb77fe6ba9cf93151723f3444"
+    },
+    "src/components/game/TurnCountdown.tsx": {
+      "old": "04b8053f98d0aafb61cdbd7bfd76938faa2c7884",
+      "new": "04b8053f98d0aafb61cdbd7bfd76938faa2c7884"
+    },
+    "src/components/game/TurnExtensionVote.tsx": {
+      "old": "10f39128cb18c98e5defb4f0d55041db1b175ced",
+      "new": "10f39128cb18c98e5defb4f0d55041db1b175ced"
+    },
+    "src/components/game/TurnMoment.tsx": {
+      "old": "afee7c31422a20780ea6e08709291e1d51cf1cf9",
+      "new": "afee7c31422a20780ea6e08709291e1d51cf1cf9"
+    },
+    "src/components/game/VictoryTargetSelect.tsx": {
+      "old": "bd56b9aeef0ec33369de2cf8a2d908a666801d9e",
+      "new": "bd56b9aeef0ec33369de2cf8a2d908a666801d9e"
+    },
+    "src/components/game/WayfarerOptions.tsx": {
+      "old": "a7967ed798fd02da5718bf9e228e4aa5384aaaff",
+      "new": "a7967ed798fd02da5718bf9e228e4aa5384aaaff"
+    },
+    "src/components/game/WinFailed.tsx": {
+      "old": "e5eaaa4438df882a20f5d17a48597e239e9a2467",
+      "new": "e5eaaa4438df882a20f5d17a48597e239e9a2467"
+    },
+    "src/components/game/WinScreen.tsx": {
+      "old": "da46ea35ce63a3ccd90cde6a640973769ea86116",
+      "new": "da46ea35ce63a3ccd90cde6a640973769ea86116"
+    },
+    "src/components/game/chunks.ts": {
+      "old": "827e942383e892d10d6c48f4fadec505343f08bf",
+      "new": "827e942383e892d10d6c48f4fadec505343f08bf"
+    },
+    "src/components/game/emotes.ts": {
+      "old": "18bae91989e591ab2c0171d047c9c6717cfe66de",
+      "new": "18bae91989e591ab2c0171d047c9c6717cfe66de"
+    },
+    "src/components/game/escape-disarm.ts": {
+      "old": "3b9adcb01f8312b5356c75e4e27facc790a72a61",
+      "new": "3b9adcb01f8312b5356c75e4e27facc790a72a61"
+    },
+    "src/components/game/hand-motion.css": {
+      "old": "f98b84c5d2fe9eb7561b019a0bd5838f8dfac1d6",
+      "new": "f98b84c5d2fe9eb7561b019a0bd5838f8dfac1d6"
+    },
+    "src/components/game/moments.ts": {
+      "old": "1f6fa3c6436ec86e1a64b3164f9897ee8fea7cc1",
+      "new": "1f6fa3c6436ec86e1a64b3164f9897ee8fea7cc1"
+    },
+    "src/components/game/online.ts": {
+      "old": "5955c0d83b90ff3218bf5e742066e5d2eb6be886",
+      "new": "5955c0d83b90ff3218bf5e742066e5d2eb6be886"
+    },
+    "src/components/game/sheets.ts": {
+      "old": "06937df91d42fc1b33721133d70b55d875364be8",
+      "new": "06937df91d42fc1b33721133d70b55d875364be8"
+    },
+    "src/components/game/stage.ts": {
+      "old": "c5428664b8b12425e26a6dde5380fa10bfac2561",
+      "new": "c5428664b8b12425e26a6dde5380fa10bfac2561"
+    },
+    "src/components/game/talk.tsx": {
+      "old": "6c844b8caf8bbaacdef1b729a5b2972fa3bd0102",
+      "new": "6c844b8caf8bbaacdef1b729a5b2972fa3bd0102"
+    },
+    "src/components/game/trade-panel.css": {
+      "old": "f6bebc7c4d91edaae9e7be852c21373f6f05265a",
+      "new": "f6bebc7c4d91edaae9e7be852c21373f6f05265a"
+    },
+    "src/components/scene/DockInspection.tsx": {
+      "old": "5ea14336c3d856332cf6609a41ae8dd54797ae29",
+      "new": "5ea14336c3d856332cf6609a41ae8dd54797ae29"
+    },
+    "src/components/scene/IslandCanvas.tsx": {
+      "old": "05dbe3c30fefbae8cdd10d3d83b83a7cf54fb1c1",
+      "new": "05dbe3c30fefbae8cdd10d3d83b83a7cf54fb1c1"
+    },
+    "src/components/ui/button.tsx": {
+      "old": "ef00715e521fd1446f1b802cfecdcfa854211790",
+      "new": "ef00715e521fd1446f1b802cfecdcfa854211790"
+    },
+    "src/lib/focus-trap.ts": {
+      "old": "fdc8ae8f78d3593cea142f00a345509c3f19aadf",
+      "new": "fdc8ae8f78d3593cea142f00a345509c3f19aadf"
+    },
+    "src/lib/game/ai.ts": {
+      "old": "8b7cc199388f775c3f3e9fbd062d434eca3a67c1",
+      "new": "8b7cc199388f775c3f3e9fbd062d434eca3a67c1"
+    },
+    "src/lib/game/board.ts": {
+      "old": "dfa63ebbce39912edfde63fa6568a0b8d6371965",
+      "new": "dfa63ebbce39912edfde63fa6568a0b8d6371965"
+    },
+    "src/lib/game/fortunes.ts": {
+      "old": "862939bb9d7b452555ba6abcb210c0c26ed5b22a",
+      "new": "862939bb9d7b452555ba6abcb210c0c26ed5b22a"
+    },
+    "src/lib/game/hex.ts": {
+      "old": "2800b3bd314ca594a390cdf1cad4a04cbe5dbf61",
+      "new": "2800b3bd314ca594a390cdf1cad4a04cbe5dbf61"
+    },
+    "src/lib/game/random.ts": {
+      "old": "615915eda5526d259a257fac3d1917375d113442",
+      "new": "615915eda5526d259a257fac3d1917375d113442"
+    },
+    "src/lib/game/rules.ts": {
+      "old": "ae0bbc4b57fac2b2fe37fd2c39e95bf1ac9cba64",
+      "new": "ae0bbc4b57fac2b2fe37fd2c39e95bf1ac9cba64"
+    },
+    "src/lib/game/store.ts": {
+      "old": "ea7453c8f77beedbda075c06d70f7be62547a8dd",
+      "new": "ea7453c8f77beedbda075c06d70f7be62547a8dd"
+    },
+    "src/lib/game/trade.ts": {
+      "old": "16c43f68ab59c89d32c38067c95379eb4169401e",
+      "new": "16c43f68ab59c89d32c38067c95379eb4169401e"
+    },
+    "src/lib/game/types.ts": {
+      "old": "d4947081e8a3c6791aaca2f39e87959589d95be0",
+      "new": "d4947081e8a3c6791aaca2f39e87959589d95be0"
+    },
+    "src/lib/haptic-durations.ts": {
+      "old": "6f4bc3beb9a0587f8a8bda21ab30f4f3c5479ab2",
+      "new": "6f4bc3beb9a0587f8a8bda21ab30f4f3c5479ab2"
+    },
+    "src/lib/haptics.tsx": {
+      "old": "8880524434c446df661b7dc4296c8f811b9e4eaa",
+      "new": "8880524434c446df661b7dc4296c8f811b9e4eaa"
+    },
+    "src/lib/lazy.ts": {
+      "old": "0df174183aaf8fec2144ee153f3da67f7c11f4e6",
+      "new": "0df174183aaf8fec2144ee153f3da67f7c11f4e6"
+    },
+    "src/lib/muted-seats.ts": {
+      "old": "d2ebdb0fabe9a78dd5f1b4e7a746dd6ca9541f65",
+      "new": "d2ebdb0fabe9a78dd5f1b4e7a746dd6ca9541f65"
+    },
+    "src/lib/net/proto.ts": {
+      "old": "5881bcfc8377c9b66fa1bab56ee5dc781b5ee78c",
+      "new": "5881bcfc8377c9b66fa1bab56ee5dc781b5ee78c"
+    },
+    "src/lib/net/table.ts": {
+      "old": "0e05b5ea532c485179e9090bdd71fc39fac70eaf",
+      "new": "0e05b5ea532c485179e9090bdd71fc39fac70eaf"
+    },
+    "src/lib/scene/bruno.ts": {
+      "old": "791f48215f85901e71390ef1f61c51501f0ceabf",
+      "new": "791f48215f85901e71390ef1f61c51501f0ceabf"
+    },
+    "src/lib/scene/crystal-water.ts": {
+      "old": "d9936904fc4f60313962ab3de8662afb2b92cad2",
+      "new": "d9936904fc4f60313962ab3de8662afb2b92cad2"
+    },
+    "src/lib/scene/harbor-jelly.ts": {
+      "old": "fddc66f2759107d95f5126069c9b30c03fb8afac",
+      "new": "fddc66f2759107d95f5126069c9b30c03fb8afac"
+    },
+    "src/lib/scene/hex-jelly-lineup.ts": {
+      "old": "2f716fb5dae76188c54ae3d2cb44730769e089a6",
+      "new": "2f716fb5dae76188c54ae3d2cb44730769e089a6"
+    },
+    "src/lib/scene/hex-jelly-studio.ts": {
+      "old": "91f6f3a2d9f6cd19bdf28cdfbd41b2b2a7ba901f",
+      "new": "91f6f3a2d9f6cd19bdf28cdfbd41b2b2a7ba901f"
+    },
+    "src/lib/scene/hex-jelly.ts": {
+      "old": "7bb216b16f68fbbc82a975e70e272e258b3dc275",
+      "new": "7bb216b16f68fbbc82a975e70e272e258b3dc275"
+    },
+    "src/lib/scene/isle-renderer.ts": {
+      "old": "48aaf1b733cbf0a832d641fdd4941607e9596c3b",
+      "new": "48aaf1b733cbf0a832d641fdd4941607e9596c3b"
+    },
+    "src/lib/scene/jelly-board-studio.ts": {
+      "old": "4139d6827fc2eb66fb7c92e77d384c8184c47fd4",
+      "new": "4139d6827fc2eb66fb7c92e77d384c8184c47fd4"
+    },
+    "src/lib/scene/jelly-board.ts": {
+      "old": "6396dbce9648d46b33a73efaddf613f5b5e43476",
+      "new": "6396dbce9648d46b33a73efaddf613f5b5e43476"
+    },
+    "src/lib/scene/jelly-dims.ts": {
+      "old": "ed79b2686158e512cfc038f2b1f7f390aac0ec0e",
+      "new": "ed79b2686158e512cfc038f2b1f7f390aac0ec0e"
+    },
+    "src/lib/scene/landing.ts": {
+      "old": "e188384fafcef3ceefbd3e43a779cb09111a02f5",
+      "new": "e188384fafcef3ceefbd3e43a779cb09111a02f5"
+    },
+    "src/lib/scene/mobile-fit.ts": {
+      "old": "0a84125676266d9f8a970d628ed7058f7a548dad",
+      "new": "0a84125676266d9f8a970d628ed7058f7a548dad"
+    },
+    "src/lib/scene/ocean-life.ts": {
+      "old": "e0b95c0a8976afc8bccb1872a29fcda641649c7b",
+      "new": "e0b95c0a8976afc8bccb1872a29fcda641649c7b"
+    },
+    "src/lib/scene/palette.ts": {
+      "old": "1842f3a11c9679080333d02bf770965129b78a52",
+      "new": "1842f3a11c9679080333d02bf770965129b78a52"
+    },
+    "src/lib/scene/pieces-jelly.ts": {
+      "old": "3e05e4e5fd7f3aaaf75f015ee98a729c635b3b64",
+      "new": "3e05e4e5fd7f3aaaf75f015ee98a729c635b3b64"
+    },
+    "src/lib/scene/terrain.ts": {
+      "old": "9327237e7d33e06ee7f99becaf75ae32d56f8f06",
+      "new": "9327237e7d33e06ee7f99becaf75ae32d56f8f06"
+    },
+    "src/lib/scene/wobble.ts": {
+      "old": "32c4616234b00d442e630ec1a98211dd3e75a265",
+      "new": "32c4616234b00d442e630ec1a98211dd3e75a265"
+    },
+    "src/lib/scroll-fade.ts": {
+      "old": "dcb459be1066985602b70c0b7630820bd8729e93",
+      "new": "dcb459be1066985602b70c0b7630820bd8729e93"
+    },
+    "src/lib/sound-extra.ts": {
+      "old": "446a07d3144e62537ebcebd3dc588cce6a6431f6",
+      "new": "446a07d3144e62537ebcebd3dc588cce6a6431f6"
+    },
+    "src/lib/sound-settings.ts": {
+      "old": "9ea96054e08f85facbee0c0813ae81d373a760c0",
+      "new": "9ea96054e08f85facbee0c0813ae81d373a760c0"
+    },
+    "src/lib/sound.ts": {
+      "old": "0acfb3a93b9f336491d736726ae7189a75f942a5",
+      "new": "0acfb3a93b9f336491d736726ae7189a75f942a5"
+    },
+    "src/lib/trade-sound.ts": {
+      "old": "401f51228186b88b9be091fa095c5f668b866eb8",
+      "new": "401f51228186b88b9be091fa095c5f668b866eb8"
+    },
+    "src/lib/turn-title.ts": {
+      "old": "a74cad3c73501f4d319300f1b9805ffee6826d85",
+      "new": "a74cad3c73501f4d319300f1b9805ffee6826d85"
+    },
+    "src/lib/utils.ts": {
+      "old": "a3e2bae573234b79130cf8f31c43d96b61dc87d9",
+      "new": "a3e2bae573234b79130cf8f31c43d96b61dc87d9"
+    },
+    "src/lib/viewport.ts": {
+      "old": "cf11752316030d319dff69507be51b78e84665d4",
+      "new": "cf11752316030d319dff69507be51b78e84665d4"
+    },
+    "src/main.tsx": {
+      "old": "c595b45b14487a816e92ce19cb5a93753936d6bd",
+      "new": "c595b45b14487a816e92ce19cb5a93753936d6bd"
+    },
+    "src/styles.css": {
+      "old": "935a50e95cb0e10d52404d80b87e03b8b02a0efa",
+      "new": "935a50e95cb0e10d52404d80b87e03b8b02a0efa"
+    },
+    "src/vite-env.d.ts": {
+      "old": "47fa3acb6ce886ee18374419db19e4194a49a82c",
+      "new": "47fa3acb6ce886ee18374419db19e4194a49a82c"
+    }
+  }
+}
