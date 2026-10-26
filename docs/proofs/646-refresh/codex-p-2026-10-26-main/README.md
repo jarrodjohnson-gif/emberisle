@@ -95,3 +95,10 @@ No owner acceptance, new layout or taste decision is claimed here.
 No builder merge, main push, force-push, new CI retry or settings change occurred.
 
 — Codex-p
+
+## Lossless server-output storage
+
+The original full server output is stored as `fresh/server.log.gz` to keep the review diff compact.
+Decode it with `gzip -dc fresh/server.log.gz` from this directory.
+All 61302 original bytes are preserved; decoded SHA-256 is `a56fcc34088ff568927af538c27fab277598bd7acbe6158a06d0ce01adf22238`.
+This storage change runs no tests and changes no recorded result.
