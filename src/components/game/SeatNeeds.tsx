@@ -63,6 +63,6 @@ export function MenuNeeds({ player }: { player: string }) {
   const kinds = useNeeds()[player] ?? [];
   if (!kinds.length) return null;
   return <div data-testid="menu-needs" className="mx-1 mb-2 flex flex-wrap items-center gap-2 text-xs leading-4 text-zinc-700">
-    <span>Needs</span>{kinds.map(kind => <span key={kind} data-testid="need-chip" className="rounded-full bg-[#dce5ed] px-3 py-2 text-xs leading-4">{RESOURCE_LABEL[kind]}</span>)}
+    <span>Needs</span>{kinds.map(kind => <span key={kind} data-testid="need-chip" className="rounded-full bg-[#dce5ed] px-3 py-2">{RESOURCE_LABEL[kind]}</span>)}
   </div>;
 }
