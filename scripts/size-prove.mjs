@@ -23,6 +23,7 @@ const DIR = "dist/assets";
 const CEILINGS = [
   // #646: lazy public needs and picker; reviewed ceiling retained.
   { name: "SeatNeeds", gzipBytes: 1900 },
+  { name: "LobbyView", gzipBytes: 2500 },
   // #553: shared on-demand table transport, measured 2.08 kB; existing caps stay fixed.
   { name: "table", gzipBytes: 2200 },
   // #542: optional phone motor/preferences/menu, loaded before the first interactive tap; measured 1.09 kB.
