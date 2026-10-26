@@ -1,0 +1,1 @@
+{"name": "robber-prompt-prove", "command": ["npm", "run", "robber-prompt-prove"], "cwd": "/Users/jarrod.johnson/emberisle-1101", "exit": 0, "expectedExit": 0, "verdict": "pass", "log": "docs/proofs/1101/final-round3/robber-prompt-prove-1.log"}
