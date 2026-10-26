@@ -1260,6 +1260,9 @@ try {
     const roll = t.page.getByRole("button", { name: "Roll", exact: true });
     const turn = ownTurn ? "own Roll turn" : "another seat's turn";
     const cdp = await t.page.context().newCDPSession(t.page);
+    const wasTouch = await t.page.evaluate(() => matchMedia("(pointer: coarse)").matches);
+    await cdp.send("Emulation.setTouchEmulationEnabled", { enabled: true, maxTouchPoints: 1 });
+    check(await t.page.evaluate(() => matchMedia("(pointer: coarse)").matches), "chat dock: both turn fixtures use phone touch input");
     for (const size of DOCK_SIZES) {
       const tag = `${size.width}x${size.height}, ${turn}`;
       await t.page.setViewportSize({ width: size.width, height: size.height });
@@ -1313,13 +1316,14 @@ try {
       }
     }
     await cdp.send("Emulation.setSafeAreaInsetsOverride", { insets: { top: 0, right: 0, bottom: 0, left: 0 } });
+    await cdp.send("Emulation.setTouchEmulationEnabled", { enabled: wasTouch, maxTouchPoints: 1 });
   };
   const ownTab = await tabForTurn(true);
   const otherTab = await tabForTurn(false);
   const originalViewports = new Map([ownTab, otherTab].map((t) => [t, t.page.viewportSize()]));
   await phoneLayout(ownTab, true, true);
   await phoneLayout(otherTab, false);
-  check(dockFailures.length === 0, `chat dock: top-row buttons at 390x844, 360x640 and 844x390, own and another seat's turn${dockFailures.length ? `\n${dockFailures.join("\n")}` : ""}`);
+  check(dockFailures.length === 0, `chat dock: fixed phone controls at 390x844, 360x640 and 844x390, own and another seat's turn${dockFailures.length ? `\n${dockFailures.join("\n")}` : ""}`);
   for (const [t, viewport] of originalViewports) {
     if (viewport) await t.page.setViewportSize(viewport);
   }
