@@ -103,7 +103,7 @@ try {
     window.client = p.createProfileClient(A);
   }, { A, B });
   assert.equal(await page.evaluate(async () => (await window.client.check()).status), "available");
-  assert.equal(await page.evaluate(async () => { try { await window.client.login("ember-user", "4821"); return "sent"; } catch (e) { return e.code; } }), "confirmHost");
+  assert.equal(await page.evaluate(async () => { try { await window.client.login("ember-user", "4821"); return "sent"; } catch (e) { return e.code; } }), "confirmHost", "host confirmation blocks authentication before credentials are sent");
   assert.equal(await page.evaluate(() => window.client.confirmHost(window.B)), false);
   assert.deepEqual(await page.evaluate(() => window.__wire.map((frame) => frame.message.type)), ["profileHello"]);
   ok("canonical endpoint and explicit host confirmation precede every credential");
@@ -114,7 +114,7 @@ try {
   });
   assert.equal(owner.displayName, "Ember");
   assert.equal(await page.evaluate(() => window.client.getSnapshot().remembered), true);
-  assert.equal(await page.evaluate(() => window.client.credentialForHost(window.B)), null);
+  assert.equal(await page.evaluate(() => window.client.credentialForHost(window.B)), null, "attachment credential stays within its normalized host");
   assert.equal(await page.evaluate(() => /credential|4821/.test(JSON.stringify(window.client.getSnapshot()))), false);
   assert.equal(await page.evaluate(() => localStorage.getItem("emberisle-seat")), "seat-recovery-sentinel");
   ok("create persists only the selected host credential and keeps private fields out of snapshots and saved seats");
