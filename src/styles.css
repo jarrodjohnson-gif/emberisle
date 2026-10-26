@@ -97,6 +97,14 @@ body {
   90% { opacity: 1; animation-timing-function: var(--ease-in); }
   100% { opacity: 0; }
 }
+/* "Your turn" (YourTurnBanner.tsx, #1140): 0.3 s in with a short settle, a 1.2 s hold, 0.3 s out. */
+@keyframes your-turn {
+  0% { opacity: 0; transform: translateY(-6px); animation-timing-function: var(--ease-out); }
+  16.667% { opacity: 1; transform: none; }
+  83.333% { opacity: 1; animation-timing-function: var(--ease-in); }
+  100% { opacity: 0; }
+}
+.your-turn { animation: your-turn 1800ms both; }
 /* Reduced motion: the same moments as a fade alone, no rise and no scale. */
 @keyframes moment-fade {
   0% { opacity: 0; }
@@ -269,6 +277,8 @@ body {
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
   .build-ready { transform: none; }
+  /* "Your turn" is the one cue that must stay: a plain 1.5 s fade, no movement (YourTurnBanner.tsx, #1140). */
+  .your-turn { animation: moment-fade 1500ms both !important; }
 }
 @media (min-width: 768px) and (pointer: fine) {
   .trade-dock { padding: 6px 8px; }

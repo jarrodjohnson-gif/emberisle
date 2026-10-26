@@ -127,6 +127,7 @@
     "turn-copy-prove": "node scripts/turn-copy-prove.mjs",
     "stage-prove": "node scripts/stage-prove.mjs",
     "turn-gain-prove": "node scripts/turn-gain-prove.mjs",
+    "your-turn-banner-prove": "node scripts/your-turn-banner-prove.mjs",
     "takeover-prove": "node --import ./server/register.mjs server/takeover-prove.mjs",
     "jelly-ocean-prove": "node scripts/jelly-ocean-prove.mjs",
     "waves-prove": "node --import ./server/register.mjs scripts/waves-prove.mjs",

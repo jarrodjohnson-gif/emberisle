@@ -7,7 +7,7 @@ import {
   ScrollText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ChatControls, ChatDock, ChromeLanded, CostCard, FirstGameCoach, FortuneTray, HowTo, MyNumbers, sheets, TradePanel, TurnMoment, WinScreen } from "@/components/game/chunks";
+import { ChatControls, ChatDock, ChromeLanded, CostCard, FirstGameCoach, FortuneTray, HowTo, MyNumbers, sheets, TradePanel, TurnMoment, WinScreen, YourTurnBanner } from "@/components/game/chunks";
 import { TradeToast } from "@/components/game/TradeToast";
 import { WinFailed } from "@/components/game/WinFailed";
 import { Announcer } from "@/components/game/Announcer";
@@ -360,6 +360,9 @@ export function Hud() {
       {/* If the moments' chunk cannot load, the table stands without them. Gains and losses show on the hand's cards (#773). */}
       <LazyBoundary failed={null}>
         <TurnMoment />
+      </LazyBoundary>
+      <LazyBoundary failed={null}>
+        <YourTurnBanner />
       </LazyBoundary>
 
       <div className="pointer-events-none absolute bottom-0 inset-x-0 z-10 px-safe pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
