@@ -14,7 +14,7 @@ const SOUNDBOARD = [
   { id: "sb_win_reaction", label: "GG!" },
   { id: "sb_airhorn", label: "Airhorn" },
   { id: "sb_quit_touchin", label: "Quit touchin' me" },
-  { id: "sb_only_wood", label: "Only wood?" },
+  { id: "sb_only_wood", label: "Wood please" },
   { id: "sb_plump_sheep", label: "Plump sheep" },
   { id: "sb_nice_sheep", label: "Nice sheep" },
   { id: "sb_sheep_please", label: "Sheep please" },
@@ -24,11 +24,9 @@ const SOUNDBOARD = [
   { id: "sb_real_badman", label: "Real badman" },
   { id: "sb_gong", label: "Gong" },
   { id: "bong", label: "Bong" },
-  { id: "plop", label: "Plop" },
-  { id: "pluck", label: "Pluck" },
 ];
 
-// Tab 2: all seventeen sound chips in a wrapping grid (14 px labels, no sideways scroll), the text presets, then the stickers.
+// Tab 2: all fifteen sound chips in a wrapping grid (14 px labels, no sideways scroll), the text presets, then the stickers.
 const PRESETS = ["gg", "nice roll", "your turn", "one sec", "ty"];
 
 export function SoundsTab({ dense }: { dense?: boolean }) {
