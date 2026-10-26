@@ -2,11 +2,11 @@
 
 - Scope: finish the interrupted server-proof continuation for existing PR #873.
 - Private branch: `codex-p/873-server-cases`.
-- Code head with final focused positive run: `ce4ff81dad7fec37faa1fe85337258c4bda8a664`.
+- Validated code head: `685acf7d9ddb4d9401e812e98d40e7e8ca96c03d`.
 - Original base: `76ceddf43db9f48e369aab3427ed6e9695d9236e`.
-- Server runtime: unchanged; `server/host.mjs` SHA256 remained `540ccd1a2e0e259d8547459c01790ef81ed76c32c7435bed7dac9862959aec5e` through temporary mutations.
-- Positive focused server proof: exit 0 on a fresh no-local clone after `npm ci --prefix server`.
-- Negative controls: all four mutants fail at their intended assertions; host source is restored byte-for-byte after each.
+- Server runtime: unchanged; `server/host.mjs` SHA256 stayed `540ccd1a2e0e259d8547459c01790ef81ed76c32c7435bed7dac9862959aec5e` through every temporary mutation.
+- Fresh no-local clone, `npm ci --prefix server`, then focused server proof: exit 0 on three consecutive runs.
+- All four temporary mutants exited 1 at their intended assertions; see the provenance below.
 - `node --check server/needs-prove.mjs`: exit 0.
 - `npm run registered-prove`: exit 0, all 148 proofs registered.
 - `npm run loosen-prove`: exit 0, one changed proof against `9bde98614906`, none loosened.
@@ -14,9 +14,11 @@
 
 ## Mutation provenance
 
-The start reset, rematch reset and bot-owner expiry controls ran in the fresh clone at `77d0e4f7316e4b1c3f91074cbbc884e4ef117c24`. Each exited 1 at its named new assertion. The bot seat-projection count was captured after the first bot turn and checked after the explicit second-own-turn expiry assertion, preserving the original count predicate while keeping the failure at the expiry assertion.
+The start reset, rematch reset and bot-owner expiry controls ran in a fresh clone at `77d0e4f7316e4b1c3f91074cbbc884e4ef117c24`. Each exited 1 at its named new assertion. The bot seat-projection count was captured after the first bot turn and checked after the explicit second-own-turn expiry assertion, preserving the original count predicate while keeping the failure at the expiry assertion. Those case paths are unchanged at the validated code head.
 
-The post-game guard control ran again in the fresh clone at `ce4ff81dad7fec37faa1fe85337258c4bda8a664`, after adding a predicate that ignores delayed unchanged seat projections and accepts only the error or the changed `ore` projection. It exited 1 at the intended post-game rejection assertion. Root review found that this could leave delayed frames in the inbox and weaken the no-broadcast check. The current fixture replaces that filter with a causal barrier: it toggles the real seat's `ready` flag, awaits the matching public seat projection, verifies the prior `grain` need, then clears the inbox before the post-game ACT. This preserves the no-seat-update assertion and adds no wait. Final verification of this barrier is pending.
+The post-game guard control ran in a fresh clone at the validated code head `685acf7d9ddb4d9401e812e98d40e7e8ca96c03d`. Before the ACT, the test sends the real `ready:false` message and awaits the matching public seat projection. It verifies the existing `grain` need, then clears all queued frames and sends the post-game need ACT. This ordered barrier prevents a delayed initial seat projection from being mistaken for the response while preserving the assertion that the rejected ACT sends no seat update. The mutant exited 1 at that post-game rejection assertion.
+
+For every mutant, the temporary host edit was restored byte-for-byte and its SHA256 matched the original. The final positive proof ran three times at the validated code head and passed each time.
 
 ## Earlier environment/setup attempt
 
