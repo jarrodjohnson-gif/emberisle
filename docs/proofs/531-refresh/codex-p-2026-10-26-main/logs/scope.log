@@ -1,0 +1,11 @@
+PASS exact original marker file: scripts/turn-marker-prove.mjs
+PASS exact original marker file: src/components/game/SeatRail.tsx
+PASS exact original marker file: src/components/game/TradeToast.tsx
+PASS exact original marker file: src/components/game/WinScreen.tsx
+PASS exact main lock/budget/reserved proof: package-lock.json
+PASS exact main lock/budget/reserved proof: server/package-lock.json
+PASS exact main lock/budget/reserved proof: scripts/size-prove.mjs
+PASS exact main lock/budget/reserved proof: scripts/longest-army-prove.mjs
+PASS marker registration once: package.json
+PASS marker registration once: .github/workflows/ci.yml
+PASS source/registration diff whitespace; inherited raw evidence whitespace retained separately
