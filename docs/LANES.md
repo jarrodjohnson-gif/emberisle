@@ -79,7 +79,7 @@ to any tier. Helpers don't use this list: they follow the queue in [`HELPERS.md`
 |---|---|---|
 | `tier:1-deep` | Hours-long research and architecture carried through to a finished document | Claude Fable 5.1, GPT-6 Astra |
 | `tier:1` | Security, server, protocol and cross-area changes | Claude Opus 5.5, GPT-6.1 Sol, and the `tier:1-deep` models |
-| `tier:2` | Everyday features with real proofs | Claude Sonnet 5.5, Claude Opus 4.6 and older Claude models run through AWS (see below), Cursor Composer, Gemini 3.8 Flash (thinking HIGH), Grok 4.7, GLM 5.3 and Kimi K3 (the last two provisional, see below), and every `tier:1` model |
+| `tier:2` | Everyday features with real proofs | Claude Sonnet 5.5, Claude Opus 4.6 and older Claude models run through AWS (see below), Cursor Composer, Gemini 3.8 Flash (thinking HIGH), Grok 4.7, GPT-6.1 Terra, GLM 5.3 and Kimi K3 (the last three provisional, see below), and every `tier:1` model |
 | `tier:3` | Small single-purpose fixes, docs and screenshot QA | Claude Haiku 5.5, GPT-6 Luna, and every model above |
 
 **Tier and model labels.** Every issue carries a `tier:` label. Any model at that tier or below may take it. Nobody assigns builders.
@@ -89,7 +89,7 @@ A `model:` label is optional. It narrows the tier: only that model, or a subagen
 - **Why a pin exists:** to keep an issue for the model that already started it, or for a model that is known to do well on that kind of work. A pin is not a work assignment. Builders still claim with `/claim`.
 - **Resuming:** an agent that pauses work it means to finish adds `model:<its model>` and a `resume: <agent name>` line to its `/paused` comment. Nobody else claims the issue.
 - **Expiry:** a pin lapses after 48 hours with no claim or PR activity. The first builder to notice removes it and says so in one line. The issue is then open to its tier again. Anyone may remove a pin that has no `/claim` or `resume:` behind it.
-- **Names:** short, with no version number: `model:fable`, `model:opus`, `model:sonnet`, `model:haiku`, `model:sol`, `model:astra`, `model:luna`, `model:gemini`, `model:grok`, `model:kimi`, `model:glm`. Only `model:opus`, `model:sonnet` and `model:gemini-ok` exist today. The first builder or desk to need another creates it. Versions live in the tier table.
+- **Names:** short, with no version number: `model:fable`, `model:opus`, `model:sonnet`, `model:haiku`, `model:sol`, `model:terra`, `model:astra`, `model:luna`, `model:gemini`, `model:grok`, `model:kimi`, `model:glm`. Only `model:opus`, `model:sonnet` and `model:gemini-ok` exist today. The first builder or desk to need another creates it. Versions live in the tier table.
 - **`model:gemini-ok`** marks issues kept for Gemini. It is a hint, not a pin: other models at the tier may still claim them.
 
 **Gemini takes clearly defined work with hard checks.** It is good at:
@@ -108,6 +108,8 @@ Gemini never builds a new look, animation or layout that needs taste. Split such
 
 Grok's usage limits are low, so give it one `tier:2` or `tier:3` issue at a time.
 
+**GPT-6.1 Terra (Jarrod, 2026-10-26):** provisional `tier:2`. It takes one issue at a time until two of its PRs have merged after a clean review by a different model. Then it is simply `tier:2`. It never takes `tier:1` work, design that needs taste, or a review of a `tier:1` PR. It is not Astra: OpenAI's own figures put it below Sol and Astra on terminal coding, and an independent index puts it a few points below Sol. Say `Model: GPT-6.1 Terra` in the PR body, because Codex chats often misreport their model.
+
 **Bedrock models (Jarrod, 2026-10-21):** GLM 5.3 and Kimi K3 are provisional `tier:2`. Each takes one issue at a time until two of its PRs have merged after a clean review by a different model. Then it is simply `tier:2`. Neither takes `tier:1` work, design that needs taste, or a review of a `tier:1` PR. gpt-oss is not used. Setup: [`setup-bedrock-agents.md`](setup-bedrock-agents.md).
 
 **Abilities within a tier.** Nobody assigns these builders to issues, and the desk adds no new tier labels for them. A `model:` pin is optional (see Tier and model labels). Each model looks up its own tier in the table above and takes the top eligible issue at or below it. The table below is for self-checking: if an eligible issue sits in the "Avoid" column for your model, skip it and take the next.
@@ -117,6 +119,7 @@ Grok's usage limits are low, so give it one `tier:2` or `tier:3` issue at a time
 | Kimi K3 | Well-defined features with hard proofs, long unattended runs, multi-file changes | Quick turnarounds: it is slow, about 44 minutes a ticket on one private benchmark ([Superconductor](https://www.superconductor.com/blog/kimi-k3-benchmark)). That never lets it skip a `prio:p0` issue. |
 | GLM 5.3 | Defined coding, terminal and script work, reviewing Kimi K3's PRs | Design that needs taste |
 | Grok 4.7 | Everyday `tier:2` features and fixes | More than one issue at once (low usage limits) |
+| GPT-6.1 Terra | Small and medium well-specified fixes and features, docs, proofs that CI checks, layout fixes with a screenshot proof. Fast and cheap. | Long multi-file refactors, hard terminal or long-horizon work, anything that touches the server, security or protocol, and a change another PR is mid-way through. It guesses when unsure: post `Question:` and `/paused` instead of picking. It is not a first reviewer of a `tier:1` or Sol PR. |
 
 Until two of its PRs have merged, a provisional model takes no second issue. Each posts `<agent name>: started #N` and `<agent name>: PR #M for #N` on #854, like every builder. Say your model name in the PR body.
 
@@ -124,7 +127,7 @@ Until two of its PRs have merged, a provisional model takes no second issue. Eac
 
 | Builder | Models | Takes |
 |---|---|---|
-| Codex | GPT-6.1 Sol | Server, net, rules and bots (`tier:1`) |
+| Codex | GPT-6.1 Sol, GPT-6.1 Terra | Sol: server, net, rules and bots (`tier:1`). Terra: `tier:2` only, provisional. |
 | Cursor | Any model it picks, Opus included | Any lane, at the tier of the model it uses |
 | Josh's agent | Claude Opus 5.5, Sonnet 5.5 and Haiku 5.5, free to use any of them | Any lane, as a full builder. It follows AGENTS.md, not HELPERS.md, and works from Josh's fork. |
 | Jarrod's Claude | Opus and Sonnet subagents | UI builds from approved mocks, defined fixes and docs |
