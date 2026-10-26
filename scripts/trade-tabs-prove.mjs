@@ -118,6 +118,15 @@ async function selectedTab(page, name, focus = false) {
   const tab = tabFor(page, name);
   assert.equal(await tab.getAttribute("aria-selected"), "true", `${name}: selected route`);
   assert.equal(await tab.getAttribute("tabindex"), "0", `${name}: selected tab is in the tab sequence`);
+  const relations = await panelFor(page).evaluate((element) => {
+    const tabs = [...element.querySelectorAll('[role="tab"]')];
+    const panel = element.querySelector('[role="tabpanel"]');
+    return { tabs: tabs.map((item) => ({ id: item.id, controls: item.getAttribute("aria-controls"), target: document.getElementById(item.getAttribute("aria-controls"))?.id ?? null })),
+      panel: panel ? { id: panel.id, labelledBy: panel.getAttribute("aria-labelledby") } : null };
+  });
+  assert.equal(relations.tabs.length, 2, `${name}: both route tabs remain present`);
+  assert.ok(relations.tabs.every((item) => item.controls && item.target === relations.panel?.id), `${name}: both route controls resolve to the rendered panel ${JSON.stringify(relations)}`);
+  assert.equal(relations.panel?.labelledBy, await tab.getAttribute("id"), `${name}: active panel is labelled by its selected tab`);
   if (focus) assert.equal(await tab.evaluate((element) => element === document.activeElement), true, `${name}: keyboard focus follows route`);
 }
 
