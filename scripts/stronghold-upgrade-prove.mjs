@@ -112,10 +112,14 @@ for (const { w, h, isMobile, hasTouch } of VIEWPORTS) {
     page.evaluate(() => {
       const kids = window.__isle.marks.children;
       const rings = kids.filter((m) => m.userData.kind === "vertex" && m.geometry?.type === "TorusGeometry");
+      const outlinesMesh = kids.find((m) => m.userData.kind === "vertex-outlines");
+      const discsMesh = kids.find((m) => m.userData.kind === "vertex-discs");
+      const outlines = outlinesMesh ? outlinesMesh.count : kids.filter((m) => m.userData.kind === "vertex-outline").length;
+      const discs = discsMesh ? discsMesh.count : kids.filter((m) => m.userData.kind === "vertex-disc").length;
       return {
         rings: rings.length,
-        outlines: kids.filter((m) => m.userData.kind === "vertex-outline").length,
-        discs: kids.filter((m) => m.userData.kind === "vertex-disc").length,
+        outlines,
+        discs,
         ringTubes: rings.map((r) => +r.position.y.toFixed(3)),
         total: kids.length,
       };
@@ -148,31 +152,36 @@ for (const { w, h, isMobile, hasTouch } of VIEWPORTS) {
   );
 
   check(
-    `${tag}: instruction clearly says "Pick a home to upgrade to a stronghold"`,
-    bannerText.includes("Pick a home to upgrade to a stronghold"),
+    `${tag}: instruction clearly says "Pick a home to upgrade"`,
+    bannerText.includes("Pick a home to upgrade"),
     bannerText,
   );
 
   const expectedCancelWay = isMobile || hasTouch ? "tap Upgrade again to cancel" : "Esc cancels";
   check(
     `${tag}: instruction provides clear way out (${expectedCancelWay})`,
-    bannerText.includes(expectedCancelWay) || bannerText.includes("cancel"),
+    bannerText.includes(expectedCancelWay),
     bannerText,
   );
 
-  // Capture screenshot of upgrade mode with eligible homes glowing
-  await page.screenshot({ path: `docs/proofs/1155/upgrade-mode-eligible-${tag}.png` });
+  if (process.env.CAPTURE_PROOFS) {
+    await page.screenshot({ path: `docs/proofs/1155/upgrade-mode-eligible-${tag}.png` });
+  }
   await page.screenshot({ path: `test-results/upgrade-mode-eligible-${tag}.png` });
 
-  // Test disarm via clicking button again or Esc
-  await page.keyboard.press("Escape");
+  // Test disarm: tap again on touch, Esc on desktop
+  if (isMobile || hasTouch) {
+    await press(upgradeBtn);
+  } else {
+    await page.keyboard.press("Escape");
+  }
   await page.waitForFunction(() => window.__emberisle.getState().buildMode === "none", null, { timeout: STEP_MS });
   await drawn(page, 2);
   const afterDisarm = await marksInfo();
-  check(`${tag}: Esc disarms upgrade mode`, afterDisarm.total === 0);
+  check(`${tag}: disarm returns to buildMode none with 0 marks`, afterDisarm.total === 0);
 
-  // --- Part 2: Upgrade mode with none eligible ---
-  // Upgrade all player outposts to strongholds so 0 eligible homes remain
+  // --- Part 2: Zero eligible homes (do not arm, show hint) ---
+  // Upgrade the 2 outposts to strongholds, leaving 0 outposts but strongholds still available
   await page.evaluate(() => {
     const g = window.__emberisle;
     const st = structuredClone(g.getState().state);
@@ -181,7 +190,7 @@ for (const { w, h, isMobile, hasTouch } of VIEWPORTS) {
         v.building.kind = "stronghold";
       }
     }
-    st.players.find((p) => p.id === "p0").strongholdsLeft -= 2;
+    st.players.find((p) => p.id === "p0").strongholdsLeft = 2;
     st.seq += 1;
     g.setState({ state: st, buildMode: "none" });
   });
@@ -195,13 +204,19 @@ for (const { w, h, isMobile, hasTouch } of VIEWPORTS) {
     btnSubtitle,
   );
 
-  // Click the stronghold button when none are eligible:
-  // It says why via hint balloon & announcement, and enters upgrade mode with the clear message
+  // Click the stronghold button when zero eligible:
+  // It says why via hint tooltip and does NOT arm (leaving End turn as primary)
   await press(upgradeBtn);
-  await page.waitForFunction(() => window.__emberisle.getState().buildMode === "stronghold", null, { timeout: STEP_MS });
   await drawn(page, 2);
 
-  const hintText = await page.getByTestId("build-hint-stronghold").innerText().catch(() => "");
+  const modeWhenNone = await page.evaluate(() => window.__emberisle.getState().buildMode);
+  check(
+    `${tag}: clicking button with zero eligible does not arm (buildMode is none)`,
+    modeWhenNone === "none",
+    { mode: modeWhenNone },
+  );
+
+  const hintText = await page.getByTestId("build-hint-stronghold").innerText({ timeout: 5000 }).catch(() => "");
   check(
     `${tag}: clicking button with none eligible says why in hint tooltip`,
     hintText.includes("No homes to upgrade"),
@@ -209,36 +224,50 @@ for (const { w, h, isMobile, hasTouch } of VIEWPORTS) {
   );
 
   const infoNone = await marksInfo();
-  const bannerNone = (await page.getByTestId("turn-banner").innerText()).trim();
-
   check(
-    `${tag}: upgrade mode with none eligible leaves 0 marks`,
+    `${tag}: zero eligible leaves 0 marks`,
     infoNone.rings === 0 && infoNone.total === 0,
     infoNone,
   );
 
-  check(
-    `${tag}: banner says "No homes to upgrade" when none eligible`,
-    bannerNone.includes("No homes to upgrade"),
-    bannerNone,
-  );
-
-  check(
-    `${tag}: banner provides clear way out when none eligible`,
-    bannerNone.includes(expectedCancelWay) || bannerNone.includes("cancel"),
-    bannerNone,
-  );
-
-  // Capture screenshot of upgrade mode with none eligible
-  await page.screenshot({ path: `docs/proofs/1155/upgrade-mode-none-${tag}.png` });
+  if (process.env.CAPTURE_PROOFS) {
+    await page.screenshot({ path: `docs/proofs/1155/upgrade-mode-none-${tag}.png` });
+  }
   await page.screenshot({ path: `test-results/upgrade-mode-none-${tag}.png` });
 
-  // Test disarm again
-  await page.keyboard.press("Escape");
-  await page.waitForFunction(() => window.__emberisle.getState().buildMode === "none", null, { timeout: STEP_MS });
+  // --- Part 3: None left (all 4 strongholds built) ---
+  await page.evaluate(() => {
+    const g = window.__emberisle;
+    const st = structuredClone(g.getState().state);
+    st.players.find((p) => p.id === "p0").strongholdsLeft = 0;
+    st.seq += 1;
+    g.setState({ state: st, buildMode: "none" });
+  });
   await drawn(page, 2);
-  const afterNoneDisarm = await marksInfo();
-  check(`${tag}: Esc disarms from none-eligible mode`, afterNoneDisarm.total === 0);
+
+  const noneLeftSub = await upgradeBtn.innerText();
+  check(
+    `${tag}: all strongholds built displays subtitle "None left"`,
+    noneLeftSub.includes("None left"),
+    noneLeftSub,
+  );
+
+  // Click when none left: shows hint tooltip "No strongholds left" and does not arm
+  await press(upgradeBtn);
+  await drawn(page, 2);
+
+  const modeWhenNoneLeft = await page.evaluate(() => window.__emberisle.getState().buildMode);
+  check(
+    `${tag}: clicking button with none left does not arm`,
+    modeWhenNoneLeft === "none",
+  );
+
+  const hintNoneLeft = await page.getByTestId("build-hint-stronghold").innerText({ timeout: 5000 }).catch(() => "");
+  check(
+    `${tag}: clicking button with none left says "No strongholds left"`,
+    hintNoneLeft.includes("No strongholds left"),
+    { hintNoneLeft },
+  );
 
   await ctx.close();
 }

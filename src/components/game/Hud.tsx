@@ -99,7 +99,7 @@ function armedCopy(mode: BuildMode, roadPicks: number, eligibleCount = 1, phone 
       return ["Place an outpost", "Outpost"];
     case "stronghold":
       return [
-        eligibleCount === 0 ? "No homes to upgrade" : "Pick a home to upgrade to a stronghold",
+        eligibleCount === 0 ? "No homes to upgrade" : "Pick a home to upgrade",
         phone ? "Upgrade" : "Stronghold",
       ];
     // #423: both fortunes are armed from the tray, and the My fortunes button stays pressed until the pick is made or cancelled.
@@ -260,7 +260,7 @@ export function Hud() {
   const subjectPlayer = state.players.find((p) => p.id === subject) ?? state.players[0]!;
   const yours = mode !== "hotseat" && subject === actor && (state.phase !== "discard" || discarder !== null);
   // #419: an armed build says what to pick and how to cancel (a touch screen has no Esc key).
-  const eligibleHomes = buildMode === "stronghold" ? legalCities(state, actor).length : 1;
+  const eligibleHomes = useGame((s) => (buildMode === "stronghold" ? s.highlights().vertices.length : 1));
   const armed = mine ? armedCopy(buildMode, roadPicks.length, eligibleHomes, phone) : null;
   const cancelNote = matchMedia("(pointer: coarse)").matches || phone ? `tap ${armed?.[1]} again to cancel` : "Esc cancels";
   const phaseText = armed
@@ -455,16 +455,10 @@ export function Hud() {
                       onClick={() => {
                         // aria-disabled keeps the button focusable, so the click itself must refuse (but may still disarm).
                         // A tap the hand cannot pay for says what is missing (a spot waiting, goods short) instead of doing nothing.
-                        if (!spectator && why && buildMode !== arm) {
+                        if (!spectator && why && kind === "stronghold" && buildMode !== arm) {
                           setHint({ kind });
-                          const reason = why === "None left"
-                            ? (kind === "stronghold" ? "No strongholds left" : "None left")
-                            : (kind === "stronghold" ? "No homes to upgrade" : "No legal spot to build");
-                          refuseQuietly(reason);
-                          if (kind === "stronghold" && !missing && arm) {
-                            setBuildMode(arm);
-                          }
-                          return;
+                          const reason = why === "None left" ? "No strongholds left" : "No homes to upgrade";
+                          return void refuseQuietly(reason);
                         }
                         if (!spectator && !why && missing && buildMode !== arm) {
                           setHint({ kind });
