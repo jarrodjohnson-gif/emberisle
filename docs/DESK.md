@@ -22,6 +22,18 @@ Jarrod pastes: `Run the Emberisle review desk. Read docs/DESK.md.`
 - **Delegate reviews** to a fresh subagent with [REVIEWING.md](REVIEWING.md). Reviewers rely on CI and don't rerun the full suite.
 - **Don't write `@codex`** unless you mean to start a Codex task. A mention starts one.
 
+## Talk less (owner, 2026-10-26)
+
+These rules survive a context summary, so re-read them at the start of every desk session.
+
+- **One desk session merges.** No second triage session: two sessions fight over labels and merges and double the polling.
+- **Fast-exit on no-ops.** A self-echo, a merge notice you already handled, or an event that needs nothing gets one short plain sentence a non-engineer can read, such as "Nothing new: GitHub only confirmed I am watching the docs PR." No jargon, no reasoning, no recap of what you are waiting on.
+- **Report only what changed.** Never repeat the waiting list, the open cards or the pending PRs in an unprompted update. Say it once when it appears and again only when its state changes.
+- **Plain words for the owner, short.** No tags or jargon. Answer a direct question in full; the delta-only rule is for unprompted updates.
+- **Batch the owner's votes.** Pictures and decisions go on the Desk Decisions page. Nudge only when something new is waiting there.
+- **Use parallel throwaway subagents for triage too.** Builder questions, stale-claim scans, tier audits and label sweeps go to a Sonnet or Haiku subagent that returns a short table or one line. The desk applies the labels and answers on the issue. Reviews keep their model per "Who reviews".
+- **Triage subagents return flags, not prose.** Ask a Haiku or Sonnet subagent for a compact table: a route (`opus-review`, `sonnet-review`, `ready-for-builder`, `needs-mock-pic`, `needs-owner-vote`, `stale-or-superseded`), whether the issue already states its numbers and a completion test (yes or no), and a one-line reason. The desk checks the table against the issue before it changes a label or promotes anything. A subagent never decides alone: anything the owner would see or hear, and anything that changes a product rule, goes to the Desk Decisions page, whatever the table says.
+
 ## Before you post, check the facts
 
 1. Open the issue itself and read its newest comments and labels. #916, old hub posts and PR titles are hints, never facts.
