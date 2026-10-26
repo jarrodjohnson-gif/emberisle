@@ -49,6 +49,7 @@ const FILES = {
   // End-of-game music: starts a moment after the win or loss sting, stops when the end screen is left or a new game starts.
   end_music: "end_music.mp3",
   board_bong: "bong_001.wav",
+  // Keep game sound mappings from store.ts and mixer coverage after removing their soundboard chips (#1131).
   board_plop: "plop.wav",
   board_pluck: "pluck_001.wav",
   // #667: a tap on a hex that places nothing. Pasture uses a short baa; the rest are synthesised (make-sounds.mjs).

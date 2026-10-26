@@ -49,7 +49,7 @@ Watchers can't send any of the three.
 4. **Duplicated pickers.** Image emotes appear in three places: the quick picker, the chat tray and the player menu. Emoji appear in only one of them. The chat tray is a weaker copy of the quick picker, which sits right beside the Open chat button.
 5. **The lobby can't send emoji.** The quick-react button hides outside `screen === "play"`, so in the lobby the chat tray, with images only, is all there is.
 6. **Aimed reactions are image-only.** The player menu has no emoji row, although the host accepts `to` with any allow-listed emote.
-7. **The soundboard duplicates board sounds** **[#635]**. `bong`, `plop` and `pluck` are the board's own cues (`plop` is the sea tap). A soundboard plop sounds like something happened on the board.
+7. **The soundboard duplicates board sounds** **[#635]**. `bong`, `plop` and `pluck` are the board's own cues (`plop` is the sea tap). A soundboard plop sounds like something happened on the board. This is historical: #1131 removes Plop and Pluck chips.
 8. **"React" on the win screen plays a sound** **[#635]**. Everywhere else, "react" means an emote. The button says React but plays the GG! clip.
 9. **Soundboard taps fill the chat log** **[#635]**. Each tap is a stored chat line, so 30 taps push all real chat out of a late joiner's history.
 10. **Two hand-kept copies.** The emoji list lives in `emotes.ts` and in `talk()`. The soundboard list lives in `sound.ts` and in `chat.mjs`. `chat-prove` and `sounds-prove` catch a drift, but one shared list would remove the risk.
