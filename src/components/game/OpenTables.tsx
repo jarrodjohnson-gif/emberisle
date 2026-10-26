@@ -21,23 +21,33 @@ export function OpenTables() {
     if (!hostExpected()) return;
     let alive = true;
     let timer: ReturnType<typeof setTimeout> | undefined;
-    const client = connectTable(hostUrl(location), {
-      openTables: (tables) => {
-        if (alive) setOpenTables(tables);
-      },
-      closed: () => {
-        // Seatless dial failed or dropped: clear the list and stop. No redial without a seat.
-        if (!alive) return;
-        setOpenTables([]);
-        clearTimeout(timer);
-      },
-    });
+    let client: ReturnType<typeof connectTable>;
+    let attempt = 0;
     const refresh = () => {
       if (!alive) return;
       client.list();
       timer = setTimeout(refresh, 5000);
     };
-    refresh();
+    const dial = () => {
+      if (!alive) return;
+      client = connectTable(hostUrl(location), {
+        openTables: (tables) => {
+          if (!alive) return;
+          attempt = 0;
+          setOpenTables(tables);
+        },
+        closed: () => {
+          if (!alive) return;
+          setOpenTables([]);
+          clearTimeout(timer);
+          // Discovery has no seat to rejoin. Redial only this seatless list client,
+          // using the network client's 1/2/4/8/15-second backoff convention.
+          timer = setTimeout(dial, Math.min(1000 * 2 ** Math.min(attempt++, 4), 15000));
+        },
+      });
+      refresh();
+    };
+    dial();
     return () => {
       alive = false;
       clearTimeout(timer);

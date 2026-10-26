@@ -17,19 +17,19 @@ let host;
 const hostLog = [];
 async function boot(port = 0) {
   host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
-  cwd: new URL("../server/", import.meta.url),
-  env: { ...process.env, PORT: String(port), ROOMS_DIR, PROFILES_DIR: path.join(ROOMS_DIR, "profiles") },
-});
-
-host.stderr.on("data", (d) => hostLog.push(String(d).trimEnd()));
-return await new Promise((resolve, reject) => {
-  host.once("error", reject);
-  host.stdout.on("data", (d) => {
-    hostLog.push(String(d).trimEnd());
-    const m = String(d).match(/listening (\d+)/);
-    if (m) resolve(Number(m[1]));
+    cwd: new URL("../server/", import.meta.url),
+    env: { ...process.env, PORT: String(port), ROOMS_DIR, PROFILES_DIR: path.join(ROOMS_DIR, "profiles") },
   });
-});
+  host.stderr.on("data", (d) => hostLog.push(String(d).trimEnd()));
+  return await new Promise((resolve, reject) => {
+    host.once("error", reject);
+    host.once("exit", (code) => reject(new Error(`host exited before listening: ${code}`)));
+    host.stdout.on("data", (d) => {
+      hostLog.push(String(d).trimEnd());
+      const m = String(d).match(/listening (\d+)/);
+      if (m) resolve(Number(m[1]));
+    });
+  });
 }
 const hostPort = await boot();
 process.on("exit", () => host?.kill());
@@ -83,11 +83,14 @@ async function openTab(name, viewport = { width: 1280, height: 720 }) {
   await page.addInitScript(() => {
     window.discoveryTraffic = [];
     window.discoveryDials = [];
+    window.discoveryLive = 0;
     const NativeSocket = WebSocket;
     window.WebSocket = class extends NativeSocket {
       constructor(...args) {
         super(...args);
         window.discoveryDials.push(performance.now());
+        window.discoveryLive++;
+        this.addEventListener("close", () => window.discoveryLive--);
       }
       send(data) {
         window.discoveryTraffic.push(JSON.parse(data));
@@ -231,6 +234,16 @@ check(await D.page.evaluate(() => window.discoveryDocument) === documentMarker, 
 check(await D.page.getByTestId("open-table-entry").count() === 1, "recovered list contains only the current open table");
 check(!(await D.page.getByTestId("open-tables").innerText()).includes(restartPrivateCode), "private table remains excluded after restart");
 check(await D.page.evaluate(() => window.discoveryTraffic.every((m) => m.type === "list" && Object.keys(m).length === 1)), "seatless discovery sends only list, never credentials");
+// A connected title closes its socket when it leaves, and its polling timer stays cancelled.
+const G = await openTab("Connected cleanup");
+await until(() => G.page.getByTestId("open-table-entry").isVisible().catch(() => false), "connected cleanup listing");
+await G.page.getByRole("button", { name: "Play", exact: true }).click();
+await G.page.getByTestId("title-card").waitFor({ state: "detached" });
+await until(() => G.page.evaluate(() => window.discoveryLive === 0), "connected title socket closed on unmount");
+const connectedDials = await G.page.evaluate(() => window.discoveryDials.length);
+await wait(5500);
+check(await G.page.evaluate((n) => window.discoveryLive === 0 && window.discoveryDials.length === n, connectedDials), "connected unmount cancels socket and polling");
+await G.ctx.close();
 // Leave the title while a reconnect timer is pending, then keep the page mounted beyond its deadline.
 await E.ctx.close();
 await F.ctx.close();
@@ -242,6 +255,7 @@ const afterUnmount = await D.page.evaluate(() => ({ dials: window.discoveryDials
 await wait(17000);
 check(await D.page.evaluate((before) => window.discoveryDials.length === before.dials && window.discoveryTraffic.length === before.traffic, afterUnmount), "unmount cancels pending redial and list timers");
 
+check(await D.page.evaluate(() => window.discoveryLive === 0), "no discovery socket survives pending-retry unmount");
 console.log("open-table-prove ok: open table visible with Join, private table hidden, Joshua joined without code");
 await browser.close();
 await vite.close();

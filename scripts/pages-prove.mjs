@@ -34,6 +34,8 @@ let code = 0;
 try {
   const page = await (await browser.newContext()).newPage();
   const problems = [];
+  const sockets = [];
+  page.on("websocket", (socket) => sockets.push(socket.url()));
   page.on("console", (m) => m.type() === "error" && problems.push(`console: ${m.text()}`));
   page.on("pageerror", (e) => problems.push(`pageerror: ${e}`));
   page.on("response", (r) => r.status() >= 400 && problems.push(`${r.status()} ${r.url()}`));
@@ -51,6 +53,11 @@ try {
   const wayfarer = page.locator('select[aria-label="Online wayfarer"]');
   await wayfarer.waitFor({ state: "attached" });
   assert.equal(await wayfarer.inputValue(), "on");
+
+  // #987: a static non-root title must never start automatic discovery or retries.
+  await page.waitForTimeout(17000);
+  assert.deepEqual(sockets, [], "static title opens no automatic host connection");
+  console.log("PASS static non-root title: zero automatic WebSockets after 17 seconds");
 
   const hrefs = await page.evaluate(() => ({
     manifest: document.querySelector('link[rel="manifest"]').href,
