@@ -56,9 +56,9 @@ async function connect(port,pid,watch=false,waitForState=true){
   for(;;){const i=c.inbox.findIndex(m=>m.type===type&&predicate(m));if(i>=0)return c.inbox.splice(i,1)[0];
    await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(Error(`timeout ${pid} ${type}: ${stderr}`)),Math.max(1,deadline-Date.now()));c.changed=()=>{clearTimeout(timer);c.changed=null;resolve();};});}
  };
- c.nextAny=async(types,predicate=()=>true)=>{
+ c.nextAny=async(types)=>{
   const accepted=new Set(types),deadline=Date.now()+5000;
-  for(;;){const i=c.inbox.findIndex(m=>accepted.has(m.type)&&predicate(m));if(i>=0)return c.inbox.splice(i,1)[0];
+  for(;;){const i=c.inbox.findIndex(m=>accepted.has(m.type));if(i>=0)return c.inbox.splice(i,1)[0];
    await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(Error(`timeout ${pid} ${types.join('/')} : ${stderr}`)),Math.max(1,deadline-Date.now()));c.changed=()=>{clearTimeout(timer);c.changed=null;resolve();};});}
  };
  c.send=msg=>ws.send(JSON.stringify(msg));
@@ -133,11 +133,12 @@ try{
  saveFixture(overGame,overSeats);
  port=await start();a=await connect(port,'p0');b=await connect(port,'p1');c=await connect(port,'p2');
  assert.equal(a.state.game.phase,'over','finished-game fixture remains over after host restoration');
- const beforeOverAct=a.inbox.filter(m=>m.type==='seats').at(-1);
+ a.send({type:'ready',value:false});
+ const beforeOverAct=await a.next('seats',m=>m.seats.find(s=>s.id===a.seat)?.ready===false);
  assert.deepEqual(ownNeeds(beforeOverAct,a),['grain'],'finished-game fixture exposes the existing need before the rejected ACT');
  const beforeOverState=structuredClone(stableState(a.state));
  a.inbox=[];a.send({type:'need',kinds:['ore']});
- const overResult=await a.nextAny(['error','seats'],m=>m.type==='error'||JSON.stringify(ownNeeds(m,a))===JSON.stringify(['ore']));
+ const overResult=await a.nextAny(['error','seats']);
  assert.equal(overResult.type,'error','need ACT after game over is rejected before publishing seat changes');
  assert.equal(overResult.message,'Needs are available during a game.');
  assert.deepEqual(stableState(a.state),beforeOverState,'rejected postgame ACT preserves the public game state and clocks');

@@ -1,20 +1,27 @@
 # Checkpoint status
 
-- Scope: preserve the interrupted server-proof additions for existing PR #873.
-- Source: `server/needs-prove.mjs` only, plus this evidence note.
-- Base: `76ceddf43db9f48e369aab3427ed6e9695d9236e`.
-- Added cases: start reset, post-game rejection, rematch reset, bot-owner turn expiry.
-- Validation: **unverified**; no confirmed passing output or mutation results retained for these additions.
-- Existing baseline log: `/tmp/p873-main/fresh/server-needs.log`, 2026-10-26 01:22 UTC, covers the prior server proof only.
-- No runtime changes, broad tests, or mutation runs in this checkpoint.
-- Next: review the cases and run focused validation when directed; keep the historical pass from the earlier proof separate.
+- Scope: finish the interrupted server-proof continuation for existing PR #873.
+- Private branch: `codex-p/873-server-cases`.
+- Code head with final focused positive run: `ce4ff81dad7fec37faa1fe85337258c4bda8a664`.
+- Original base: `76ceddf43db9f48e369aab3427ed6e9695d9236e`.
+- Server runtime: unchanged; `server/host.mjs` SHA256 remained `540ccd1a2e0e259d8547459c01790ef81ed76c32c7435bed7dac9862959aec5e` through temporary mutations.
+- Positive focused server proof: exit 0 on a fresh no-local clone after `npm ci --prefix server`.
+- Negative controls: all four mutants fail at their intended assertions; host source is restored byte-for-byte after each.
+- `node --check server/needs-prove.mjs`: exit 0.
+- `npm run registered-prove`: exit 0, all 148 proofs registered.
+- `npm run loosen-prove`: exit 0, one changed proof against `9bde98614906`, none loosened.
+- No broad server suite or browser suite was run in this continuation.
 
-## First candidate attempt
+## Mutation provenance
 
-On 2026-10-26, `npm --prefix server run needs-prove 2>&1 | tee /tmp/p873-server-cases-candidate.log` stopped before the first real-host case. Host startup failed at `server/host.mjs:1718` with `listen EPERM: operation not permitted 0.0.0.0` (Node v24.19.0). No proof assertion ran and no fixture change or mutation was made.
+The start reset, rematch reset and bot-owner expiry controls ran in the fresh clone at `77d0e4f7316e4b1c3f91074cbbc884e4ef117c24`. Each exited 1 at its named new assertion. The bot seat-projection count was captured after the first bot turn and checked after the explicit second-own-turn expiry assertion, preserving the original count predicate while keeping the failure at the expiry assertion.
 
-The command was piped through `tee` without `pipefail`, so the tool reported the pipeline status as 0; npm's exit status was not captured separately. The child host's exit 1 is printed in the raw output. No retry was attempted. The raw output is preserved in `candidate-host-start.log`.
+The post-game guard control ran again in the fresh clone at `ce4ff81dad7fec37faa1fe85337258c4bda8a664`, after adding a predicate that ignores delayed unchanged seat projections and accepts only the error or the changed `ore` projection. It exited 1 at the intended post-game rejection assertion. Root review found that this could leave delayed frames in the inbox and weaken the no-broadcast check. The current fixture replaces that filter with a causal barrier: it toggles the real seat's `ready` flag, awaits the matching public seat projection, verifies the prior `grain` need, then clears the inbox before the post-game ACT. This preserves the no-seat-update assertion and adds no wait. Final verification of this barrier is pending.
 
-## Mutation-control adjustment in progress
+## Earlier environment/setup attempt
 
-On the fresh clone, the start reset, rematch reset, and post-game guard mutants each failed at their targeted new assertions. The `runBots` mutant initially tripped the new seat-notification count assertion before reaching the bot-expiry assertion. I moved that assertion after the explicit second-own-turn expiry assertion while capturing its original count value immediately after the first bot turn. This preserves the count predicate and lets the negative control demonstrate the intended expiry failure. A later cleaned-up fresh run also exposed a race where a delayed initial `seats` projection could be mistaken for the post-game ACT response. The fixture now ignores unchanged seat projections and waits for either the error or the requested `ore` projection. Both fixture synchronizations need final verification.
+Before the reviewed listening permission was used, the default sandbox rejected the host's `0.0.0.0` bind with `EPERM` before any case assertion. The output is kept in `candidate-host-start.log`. That shell command used `tee` without `pipefail`, so its pipeline status was 0 and npm's separate exit status was not captured. The child host's exit 1 appears in the log. No fixture edits were made in response to that environment failure.
+
+## Remaining integration gates
+
+This private branch has not been merged into the live #873 branch. Root will integrate it normally and rerun the focused server proof against the latest main behavior, including the newer rematch-listing assertions. The independent review and existing owner-pictures acceptance remain separate PR #873 gates.

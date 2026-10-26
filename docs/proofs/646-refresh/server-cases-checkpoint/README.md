@@ -1,30 +1,14 @@
 # Server proof checkpoint
 
-Date: 2026-10-26 UTC
-Parent: Codex-p
-PR: #873, continuing the already published `codex/646-seat-needs` work
-Checkpoint branch: `codex-p/873-server-cases`
-Base: `76ceddf43db9f48e369aab3427ed6e9695d9236e`
+- Date: 2026-10-26 UTC
+- Parent: Codex-p
+- PR: #873, continuation of the existing published `codex/646-seat-needs` work
+- Private branch: `codex-p/873-server-cases`
+- Previously validated code head: `ce4ff81dad7fec37faa1fe85337258c4bda8a664`
+- Base: `76ceddf43db9f48e369aab3427ed6e9695d9236e`
 
-This checkpoint preserves four added real-host cases in `server/needs-prove.mjs`:
+The existing `server/needs-prove.mjs` now covers the four remaining review mutations through real host sockets: start and rematch clear restored needs; a post-game need ACT is rejected without changing public state or its previous need; and `runBots` advances expiry only on the bot owner's turns. Fixture helpers restart/stop the real host between restored-room cases. No host runtime code changed.
 
-- Starting a game clears restored public seat needs.
-- A need update after game over is rejected while the existing public need and game state stay intact.
-- A rematch clears restored public seat needs.
-- `runBots` advances the bot owner's need on that bot's own turns; another player's turn does not age it.
+Fresh no-local clone validation and all retained raw output are summarized in [STATUS.md](STATUS.md) and [RESULTS.md](RESULTS.md). The server-side proof passes on the validated code head. The browser proof remains the existing `npm run needs-prove` entry and was not rerun in this server-only continuation.
 
-The patch also adds host/socket cleanup, fixture writing, optional initial-state waiting, and a helper that accepts either an error or seats response. The existing public `DEBUG postgame response` line is part of the preserved WIP.
-
-## Validation status
-
-The four added cases are **unverified**. No confirmed passing output or mutation results for them are retained. The available `/tmp/p873-main/fresh/server-needs.log` is dated 2026-10-26 01:22 UTC and ends at the original `needs server prove ok` output; it predates these added cases and does not validate this patch. No broad suite or mutation run is represented here.
-
-A `node --check server/needs-prove.mjs` syntax check is recorded only if it appears in the checkpoint handoff/commit audit; syntax checking does not establish runtime behavior.
-
-## Remaining review points
-
-The cases restore host fixtures from JSON and restart the real host between scenarios. Their assumptions about restored lobby readiness, phase transitions, game/seat identity mapping, and bot turn startup have not been exercised for this patch. The post-game case also logs the first response for diagnosis. Run the focused proof and inspect its actual output before treating any assertion as established.
-
-## Candidate attempt blocked before assertions
-
-The first run on this candidate could not bind the server host to `0.0.0.0` in the execution sandbox (`EPERM`, `server/host.mjs:1718`). It stopped before all proof cases, so this says nothing about fixture correctness. Raw output and the shell-pipeline status caveat are in `STATUS.md` and `candidate-host-start.log`. No retry or mutation run was made.
+The first default-sandbox attempt could not bind `0.0.0.0` (`EPERM`) and stopped before assertions; its output is retained as `candidate-host-start.log`. The same focused command passed with reviewed listening permission. The temporary `DEBUG postgame response` line was removed after its response had been captured in `logs/server-positive-debug-capture.log`.
