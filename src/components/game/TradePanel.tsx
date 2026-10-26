@@ -1,4 +1,4 @@
-// #831: each trade route keeps its own draft, exact quote, and action.
+// #831 B: shared quantity cards feed the table offer and the compact exact Bank quote.
 import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,6 @@ import "./trade-panel.css";
 
 const picker = chunk(() => import("./BankTradePicker"));
 picker.prefetch();
-const BankTradePicker = picker.pick((m) => m.BankTradePicker);
 const Stepper = picker.pick((m) => m.TradeResource);
 
 const ZERO: Record<Resource, number> = { timber: 0, clay: 0, wool: 0, grain: 0, ore: 0 };
@@ -29,9 +28,6 @@ export function TradePanel() {
   const opener = useGame((s) => s.tradeOpener);
   const [draftGive, setGive] = useState(ZERO);
   const [want, setWant] = useState(ZERO);
-  const [route, setRoute] = useState<"table" | "bank">("table");
-  const [bankGive, setBankGive] = useState<Resource | null>(null);
-  const [bankWant, setBankWant] = useState<Resource | null>(null);
   const panel = useRef<HTMLElement>(null);
 
   const actor = mode === "hotseat" ? state?.current : localId;
@@ -62,9 +58,6 @@ export function TradePanel() {
     if (open) return;
     setGive(ZERO);
     setWant(ZERO);
-    setBankGive(null);
-    setBankWant(null);
-    setRoute("table");
   }, [open]);
   useEffect(() => {
     if (!open) return;
@@ -82,8 +75,10 @@ export function TradePanel() {
   const asking = RESOURCES.some((r) => give[r] > 0) && RESOURCES.some((r) => want[r] > 0);
 
   // The bank and the docks take one kind for one other kind, at the best rate a building of yours earns.
-  const g = bankGive;
-  const w = bankWant;
+  const giving = RESOURCES.filter((r) => give[r] > 0);
+  const wanting = RESOURCES.filter((r) => want[r] > 0);
+  const g = giving.length === 1 ? giving[0]! : null;
+  const w = wanting.length === 1 ? wanting[0]! : null;
   const rate = g ? harborRate(state, me.id, g) : null;
   const bankLabel = rate === null ? "Bank" : rate === 4 ? "Bank 4:1" : `Dock ${rate}:1`;
   const bankWhy = !g || !w || g === w
@@ -99,7 +94,6 @@ export function TradePanel() {
     if (!g || !w || bankWhy) return;
     if (dispatch({ type: "bankTrade", give: g, want: w }).ok) setTradeOpen(false);
   };
-  const bankRoute = mode === "hotseat" || route === "bank";
 
   return (
     <div className="absolute inset-0 z-30 flex items-end justify-center bg-white/45 p-safe sm:items-center" onClick={() => setTradeOpen(false)}>
@@ -119,21 +113,10 @@ export function TradePanel() {
           </Button>
         </header>
 
-        {mode !== "hotseat" ? <div className="trade-tabs" role="tablist" aria-label="Trade route">
-          {(["table", "bank"] as const).map((tab, index) => <button key={tab} id={`trade-tab-${tab}`} role="tab" aria-selected={route === tab} aria-controls="trade-route" tabIndex={route === tab ? 0 : -1}
-            onClick={() => setRoute(tab)} onKeyDown={(e) => {
-              if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key)) return;
-              e.preventDefault();
-              const next = e.key === "Home" ? "table" : e.key === "End" ? "bank" : index === 0 ? "bank" : "table";
-              setRoute(next);
-              document.getElementById(`trade-tab-${next}`)?.focus();
-            }}>{tab === "table" ? "Table" : "Bank & docks"}</button>)}
-        </div> : null}
-
-        <div className="trade-composer-scroll" id="trade-route" role={mode === "hotseat" ? undefined : "tabpanel"} aria-labelledby={mode === "hotseat" ? undefined : `trade-tab-${route}`} tabIndex={0}>
+        <div className="trade-composer-scroll" id="trade-goods" role="region" aria-labelledby="trade-goods-title" tabIndex={0}>
+          <h3 id="trade-goods-title" className="sr-only">Trade goods</h3>
           <LazyBoundary failed={<p role="alert">Trade choices could not load. Close and reopen to retry.</p>}>
-          {bankRoute ? <BankTradePicker state={state} player={me} give={g} want={w} onGive={setBankGive} onWant={setBankWant} /> : <>
-          <p className="trade-instructions">Tap a good to add it. Mix goods to make an offer to the table.</p>
+          <p className="trade-instructions">{mode === "hotseat" ? "Choose one kind to give and one to get. Bank shows your exact exchange." : "Tap a good to add it. Mix goods to make an offer to the table."}</p>
           {(["give", "want"] as const).map((side) => {
             const bag = side === "give" ? give : want;
             return (
@@ -149,12 +132,12 @@ export function TradePanel() {
                 </div>
               </section>
             );
-          })}</>}
+          })}
           </LazyBoundary>
         </div>
 
         <footer className="trade-composer-footer">
-          {!bankRoute ? (
+          {mode !== "hotseat" ? (
             <div className="trade-route">
               <h3>Table offer</h3>
               <p className="trade-exact-preview" data-testid="trade-player-preview" aria-live="polite">
@@ -163,11 +146,13 @@ export function TradePanel() {
               </p>
               <Button className="h-11 w-full" disabled={!asking} onClick={() => askTable(give, want)}>Ask the table</Button>
             </div>
-          ) : <div className="trade-route">
-            <h3>Bank &amp; docks · one exchange</h3>
-            <p className="trade-exact-preview" data-testid="trade-hint" aria-live="polite">{bankHint}</p>
-            <Button variant="secondary" className="h-11 w-full" disabled={bankWhy !== null} onClick={bank}>{bankLabel}</Button>
-          </div>}
+          ) : null}
+          <div className="trade-route trade-bank-box" role="group" aria-labelledby="trade-bank-title">
+            <h3 id="trade-bank-title">Bank &amp; docks · one exchange</h3>
+            <p className="trade-exact-preview" id="trade-bank-quote" data-testid="trade-hint" aria-live="polite">{bankHint}</p>
+            {w ? <p className="trade-bank-stock" id="trade-bank-stock" aria-live="polite">Bank stock: {state.bank[w]} {RESOURCE_LABEL[w].toLowerCase()}.</p> : null}
+            <Button variant="secondary" className="h-11 w-full" aria-describedby={w ? "trade-bank-quote trade-bank-stock" : "trade-bank-quote"} disabled={bankWhy !== null} onClick={bank}>{bankLabel}</Button>
+          </div>
         </footer>
       </section>
     </div>
