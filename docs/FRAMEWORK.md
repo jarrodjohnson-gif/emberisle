@@ -209,6 +209,14 @@ Not a bug, or a no? Close it with a one-line reason.
   hand them to a subagent, and keep working. Run proofs one at a time, never in parallel: they share
   ports. Before you push or open the PR, wait for every check to finish and read its result. A check
   you haven't read the result of counts as failed.
+- **Choose proofs by what you changed.** CI runs every suite on GitHub's servers at no cost to your usage
+  limit, and your local browser runs spend it. Before the first push, run the proofs for your feature and
+  every proof that could break from the files you touched: search `scripts/` for proofs that load the
+  changed module or render the changed scene. A change to the renderer, the harbour, the board generator
+  or other shared board code needs the board-look and scene proofs. A text or HUD-only change needs
+  neither. Run the full presentation suites locally only when a reviewer asks, or when the change touches
+  the renderer or shared board code. After the first push, let CI run the rest. Record your usage before
+  and after each issue in the PR if you can see it, so the desk can compare builders.
 - **Pick the model to fit the work.** Use the issue's `model:` label if it has one, and skip the issue if you cannot run that model. Otherwise use a
   smaller model for mechanical or search subagents, and the strongest one for UI, visual or tricky
   multi-file work.

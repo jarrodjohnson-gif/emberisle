@@ -1,0 +1,41 @@
+
+> build
+> vite build
+
+vite v8.3.1 building client environment for production...
+transforming...
+✓ 1998 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                2.61 kB │ gzip:   1.30 kB
+dist/assets/ben-10-BZkFZeMq.webp               6.80 kB
+dist/assets/LobbyView-Dhyh8qdO.css             4.81 kB │ gzip:   1.31 kB
+dist/assets/index-DtrSlrKq.css                72.52 kB │ gzip:  15.07 kB
+dist/assets/minus-DVZgOhVN.js                  0.14 kB │ gzip:   0.15 kB
+dist/assets/WayfarerOptions-CYpTIYL9.js        0.80 kB │ gzip:   0.49 kB
+dist/assets/HandRates-Dkv2Ca8z.js              1.01 kB │ gzip:   0.64 kB
+dist/assets/VictoryTargetSelect-CsA3RBL6.js    1.02 kB │ gzip:   0.61 kB
+dist/assets/haptics-Cnkiz9D_.js                1.85 kB │ gzip:   1.09 kB
+dist/assets/DockInspection-BM-JvOZk.js         2.03 kB │ gzip:   1.03 kB
+dist/assets/HowTo-D410SlfG.js                  2.64 kB │ gzip:   1.39 kB
+dist/assets/OpenTables-fHsz6ekJ.js             2.66 kB │ gzip:   1.25 kB
+dist/assets/TurnExtensionVote-BjOaPF7w.js      2.67 kB │ gzip:   1.20 kB
+dist/assets/talk-CXk_n2I7.js                   4.15 kB │ gzip:   2.03 kB
+dist/assets/SetupReference-Df_cX7ul.js         4.92 kB │ gzip:   1.86 kB
+dist/assets/Reactions-C11IpqVY.js              5.46 kB │ gzip:   2.31 kB
+dist/assets/LobbyView-DwoC568l.js              5.54 kB │ gzip:   2.25 kB
+dist/assets/moments-CfTfZy0v.js                9.65 kB │ gzip:   4.13 kB
+dist/assets/online-D_5jlQ2F.js                13.10 kB │ gzip:   4.57 kB
+dist/assets/sheets-Bwjg8TJm.js                20.12 kB │ gzip:   6.54 kB
+dist/assets/jelly-board-IdpXvfM3.js           20.84 kB │ gzip:   8.02 kB
+dist/assets/harbor-jelly-DwCUbXma.js          25.97 kB │ gzip:  10.32 kB
+dist/assets/hex-jelly-CuOZ9vna.js            136.96 kB │ gzip:  47.25 kB
+dist/assets/index-DqlTYyRA.js                398.94 kB │ gzip: 126.45 kB
+dist/assets/IslandCanvas-CTnRL39u.js         760.81 kB │ gzip: 202.01 kB
+
+[plugin builtin:vite-reporter] 
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 362ms

@@ -8,19 +8,31 @@ Jarrod pastes: `Run the Emberisle review desk. Read docs/DESK.md.`
 
 1. Read the **Desk state** issue, [#916](https://github.com/jarrodjohnson-gif/emberisle/issues/916). It lists what is waiting on Jarrod, every open PR, the builds in flight and the queue.
 2. Read the hub, [#854](https://github.com/jarrodjohnson-gif/emberisle/issues/854), from the newest comment back to the last desk post.
-3. Subscribe to the inbox PR #699 only. The inbox relays every new PR, PR comment and hub post, but not CI. Subscribe to a PR directly only while you wait on its CI to merge it. Unsubscribe once it merges.
+3. Subscribe to the inbox PR #699 only. The inbox relays PRs opened or marked ready, not drafts. It also relays any comment that starts with `Question:` or `To desk:`. It skips CI and hub status lines. Subscribe to a PR directly only while you wait on its CI to merge it. Unsubscribe once it merges.
 4. Pick up anything waiting: an unreviewed PR, a red PR you own, or a question on the hub.
 
 ## Keep it cheap
 
 - **Start fresh** when the chat gets long. Update #916 first, then start a new session with the line above. Starting fresh is cheaper than a huge context on every wake-up.
 - **Edit #916, don't comment on it.** Update it at the end of every round.
-- **Mark your own hub posts** with `<!-- review-desk -->`, so the inbox doesn't wake you for them.
+- **Mark every post you write** with `<!-- review-desk -->`, so the inbox doesn't wake you for it.
 - **Ignore echoes:** subscription notices, your own reviews coming back, and merge confirmations. Also ignore red `browser-a` or `checks` results from a CI run that a newer push cancelled.
 - **Run the desk on Sonnet.** Give reviews their model per subagent (see "Who reviews"), so Opus runs only when a review needs it.
 - **Check small fix pushes yourself** by reading the diff, unless you are the builder's model. Use a fresh reviewer for a first review or a large push.
 - **Delegate reviews** to a fresh subagent with [REVIEWING.md](REVIEWING.md). Reviewers rely on CI and don't rerun the full suite.
 - **Don't write `@codex`** unless you mean to start a Codex task. A mention starts one.
+
+## Talk less (owner, 2026-10-26)
+
+These rules survive a context summary, so re-read them at the start of every desk session.
+
+- **One desk session merges.** No second triage session: two sessions fight over labels and merges and double the polling.
+- **Fast-exit on no-ops.** A self-echo, a merge notice you already handled, or an event that needs nothing gets one short plain sentence a non-engineer can read, such as "Nothing new: GitHub only confirmed I am watching the docs PR." No jargon, no reasoning, no recap of what you are waiting on.
+- **Report only what changed.** Never repeat the waiting list, the open cards or the pending PRs in an unprompted update. Say it once when it appears and again only when its state changes.
+- **Plain words for the owner, short.** No tags or jargon. Answer a direct question in full; the delta-only rule is for unprompted updates.
+- **Batch the owner's votes.** Pictures and decisions go on the Desk Decisions page. Nudge only when something new is waiting there.
+- **Use parallel throwaway subagents for triage too.** Builder questions, stale-claim scans, tier audits and label sweeps go to a Sonnet or Haiku subagent that returns a short table or one line. The desk applies the labels and answers on the issue. Reviews keep their model per "Who reviews".
+- **Triage subagents return flags, not prose.** Ask a Haiku or Sonnet subagent for a compact table: a route (`opus-review`, `sonnet-review`, `ready-for-builder`, `needs-mock-pic`, `needs-owner-vote`, `stale-or-superseded`), whether the issue already states its numbers and a completion test (yes or no), a one-line reason, and three overlap fields: `overlaps_open_or_merged` (yes or no, with the issue or PR number, which catches stale or superseded issues and two builders editing the same files), `severity` for bugs (`cosmetic`, `broken` or `blocking`), and `theme_cluster` (so the desk can batch related owner cards together). The desk checks the table against the issue before it changes a label or promotes anything. A subagent never decides alone: anything the owner would see or hear, and anything that changes a product rule, goes to the Desk Decisions page, whatever the table says.
 
 ## Before you post, check the facts
 
@@ -35,7 +47,7 @@ Jarrod pastes: `Run the Emberisle review desk. Read docs/DESK.md.`
 
 ## Who reviews
 
-A different model from the builder. Sonnet by default, and never the builder's own model. Opus for server, protocol, CI or security work, and whenever Sonnet built it. Haiku for docs-only changes. A builder with several open PRs lists them in priority order on #854. The desk reviews in that order, one at a time.
+A different model from the builder. Sonnet by default, and never the builder's own model. Opus for server, protocol, CI or security work, and whenever Sonnet built it. Haiku for docs-only changes. A builder with several open PRs lists them in priority order in a `To desk:` comment on #854. The desk reviews in that order, one at a time.
 
 ## When to merge
 
