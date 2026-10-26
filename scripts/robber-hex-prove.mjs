@@ -119,7 +119,7 @@ async function pixelProof(width, height) {
   const blocked = await sample();
   check(`${width}x${height}: rendered terrain sample covers the hex`, before.count >= 500 && blocked.count >= 500, { before, blocked });
   check(`${width}x${height}: rendered blocked hex is at least 10% darker`, blocked.mean <= before.mean * 0.9, { before: before.mean, blocked: blocked.mean });
-  check(`${width}x${height}: blocked terrain is black without a brown cast`, blocked.mean <= 0.08 && Math.max(...blocked.rgb) - Math.min(...blocked.rgb) <= 0.02, blocked);
+  check(`${width}x${height}: blocked terrain is dimmed but above plain black`, blocked.mean <= before.mean * 0.85 && blocked.mean >= 0.15, blocked);
   const screenshotFrame = await page.evaluate(() => {
     const isle = window.__isle;
     const frame = window.__terrainFrames;
@@ -280,8 +280,14 @@ try {
     moved.afterA?.tokenA,
   );
   check("move: token disc is dimmed vs its rest colour", moved.afterA?.tokenA?.disc && moved.afterA.tokenA.restDisc && moved.afterA.tokenA.disc !== moved.afterA.tokenA.restDisc, moved.afterA?.tokenA);
-  check("move: token disc and face are plain black", moved.afterA?.tokenA?.disc === "000000" && JSON.stringify(moved.afterA.tokenA.background) === "[0,0,0,255]", moved.afterA?.tokenA);
-  check("move: light numeral and pips remain on the black face", moved.afterA?.tokenA?.lightInk >= 1000, moved.afterA?.tokenA);
+  check(
+    "move: token disc and face are dimmed (dark face, matching hex)",
+    moved.afterA?.tokenA?.disc &&
+      moved.afterA.tokenA.disc !== "000000" &&
+      JSON.stringify(moved.afterA.tokenA.background) === "[50,50,50,255]",
+    moved.afterA?.tokenA,
+  );
+  check("move: light numeral and pips remain on the dark face", moved.afterA?.tokenA?.lightInk >= 1000, moved.afterA?.tokenA);
 
   check("second move: old hex clears", moved.afterB?.dullA === 0, moved.afterB);
   check("second move: new hex is dulled", moved.afterB?.dullB === 1, moved.afterB);
