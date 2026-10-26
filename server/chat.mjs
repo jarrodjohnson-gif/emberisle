@@ -21,6 +21,8 @@ export const SOUNDBOARD = new Map([
   ["sb_grain_please", "Grain please"],
   ["sb_brick_please", "Brick please"],
   ["sb_perfect", "Perfect"],
+  ["sb_real_badman", "Real badman"],
+  ["sb_gong", "Gong"],
   ["bong", "Bong"],
   ["plop", "Plop"],
   ["pluck", "Pluck"],
