@@ -3,7 +3,7 @@
 // left, 47 right, 21 bottom; the HUD is a left column), played through the real roll-off and setup:
 // - "Your turn" (data-testid="turn-moment") shows when a move passes to the person (a roll-off
 //   throw, a setup placement, a roll; #1140) and, untouched, stays up, pulsing, until its 8 s cap (a press or the move passing ends it
-//   sooner: your-turn-prove); it never shows on a bot's turn; while
+//   sooner: your-turn-stay-prove); it never shows on a bot's turn; while
 //   it is the person's roll, Roll is the one filled primary and their seat card wears the turn ring (seat-turn,
 //   aria-current); on a bot's turn the banner reads "Wait for {bot} …" and there is no Roll;
 // - a roll steered to pay the person shows its goods on the hand only (#773): one +N tab (data-testid="resource-flash") per
