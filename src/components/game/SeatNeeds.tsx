@@ -55,9 +55,14 @@ export function SeatNeeds({ scope }: { scope: 'rail' | 'seat' }) {
     const name = players?.find(p => p.id === player)?.name ?? '';
     return createPortal(<span data-testid="seat-needs" data-player={player} role="img"
       aria-label={`${name} needs ${kinds.map(kind => RESOURCE_LABEL[kind]).join(' and ')}`}
-      className="pointer-events-none absolute -bottom-1 right-1 z-10 flex items-center gap-0.5 rounded-chip bg-glass px-1 text-[10px] leading-3"
-      style={{ color: 'var(--ink)' }}>
-      <span aria-hidden="true">needs</span>{kinds.map(kind => { const Icon = ICON[kind]; return <Icon key={kind} width={12} height={12} aria-hidden="true" />; })}
-    </span>, anchor, `${scope}-${player}`);
+      className="pointer-events-none absolute -left-[3px] -top-[3px] z-10 size-2 rounded-full bg-[#be5b39] shadow-[0_0_0_1px_#fff]" />, anchor, `${scope}-${player}`);
   });
+}
+
+export function MenuNeeds({ player }: { player: string }) {
+  const kinds = useNeeds()[player] ?? [];
+  if (!kinds.length) return null;
+  return <div data-testid="menu-needs" className="mx-1 mb-2 flex flex-wrap items-center gap-2 text-xs leading-4 text-zinc-700">
+    <span>Needs</span>{kinds.map(kind => <span key={kind} data-testid="need-chip" className="rounded-full bg-[#dce5ed] px-3 py-2 text-xs leading-4">{RESOURCE_LABEL[kind]}</span>)}
+  </div>;
 }
