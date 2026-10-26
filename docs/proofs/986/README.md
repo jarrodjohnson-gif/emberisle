@@ -1,56 +1,42 @@
 # Open rematch listing regression (#986)
 
-Builder: GPT-6 1026-0601hh (Codex-p3). Signed Codex-p. No sub-agents.
-Base: main0f5690d. Failing proof checkpointe9df7c3. Fix06a4eb8.
+Builder: GPT-6 1026-0601hh (Codex-p3), signed Codex-p. Base main0f5690d.
+Regression checkpointe9df7c3; runtime fix06a4eb8; full-suite evidence head7f91878.
+The later review follow-up only adds exact listing-count assertions and trims scratch/full logs.
 
-## Behavior
+A finished open game releases its listing slot. The guarded registerOpenTable(room) call after freezeRoster()
+reclaims a free slot for its rematch, preserves an already-listed successor and keeps private rooms hidden.
+The one-slot policy, roster attribution, colors, seat ordering, settings and client runtime stay unchanged.
 
-A completed open game releases its one listing slot. Previously rematch() created the new game without reclaiming it.
-After the new game's frozen roster is created, open rooms call the existing registerOpenTable(room).
-The helper refuses a different current owner. Its single-slot policy is unchanged.
-Private rematches never register. Match settings, seat ordering and frozen roster behavior remain intact.
-No application bundle, lockfile, dependency, budget or registry-helper change.
+## Proof
 
-## Regression evidence
+before.log records the real failure on the original handler: free-slot discovery lists0 rooms, expected1 (exit1).
+after.log records the identical proof passing with only the two-line handler addition.
+Three scenarios restore a completed game, authenticate all three seats and start a real rematch:
+free slot lists playing; occupied slot preserves its successor; private rematch stays absent.
+HTTP and WS agree. Each case verifies winner-first order, colors and the new saved frozen roster.
+The review follow-up also checks rematch seated3/successor seated1 and total4.
+Every original assertion remains. The existing server test chain registers the extended proof in CI.
 
-before.log runs the extended real-host proof on the unchanged handler. It exits1 at the free-slot listing assertion (0 rooms, expected1).
-The same proof then passes with only the two-line host change; see after.log.
-The failing checkpoint is exactly the fix with its registration hook absent, providing the requested negative control.
-No assertion was changed between the failing and passing runs.
+## Validation
 
-Three cases restore a completed room, authenticate all three human seats and start a genuine rematch:
-- free slot: HTTP and WS list the rematch as playing;
-- occupied slot: the already-listed successor remains the sole lobby listing;
-- private room: the rematch stays absent from both discovery surfaces.
-Each also verifies winner-first player order, colors and the persisted new frozen roster's seat attribution and guest identities.
-Every original proof line remains, in its original order. preservation.json records source/lock/registration audits.
-The existing server test chain runs this proof in CI. No new proof file or command was added.
+Fresh independent locked-install clone at06a4eb8, Node24.19.0.
+fresh/results.json records passing static/build/registered146/loosen1-none/size checks and the FIRST FAILED aggregate run.
+The full successful npm test result is fresh/server-final.json: exit0, 518.88s.
+fresh/server-final-tail.log retains the actual final output, including all three rematch cases.
+fresh/open-table.log is the independent focused completion proof.
+preservation.json audits original proof, runtime, lockfile and registration preservation before review strengthening.
 
-## Fresh validation
+Two earlier aggregate attempts failed in unchanged rejoin welcome and lobby bot-roll checks.
+Keep their exact failure tails in server-welcome-failure-tail.log and server-lobby-failure-tail.log under fresh/.
+Their timings/exits remain in results.json and server-confirmation.json. Both checks passed independently on main and head;
+their full-suite failures were never called passes. No assertion or timeout was weakened or skipped.
+The final complete run passed both and every remaining server proof.
 
-Independent local clone /workspace/work/rematch986-verify at06a4eb8; root/server npm ci --ignore-scripts.
-Independent main0f5690d build in /workspace/work/ambience-base.
-Node24.19.0. No browser proof is needed for this server-only change; none was run.
-fresh/results.json records actual commands, exits and timings. Raw logs are retained alongside it.
-Static checks pass: typecheck, build, registered146, loosen1-none, size.
-Index124333/125200 B, base124340 B, -7/400 B. All chunk ceilings and growth allowances pass unchanged.
-Full npm test result is recorded in fresh/results.json and fresh/server.log.
+Final7f91878 source/build/clean/remote audit passed; index124337/125200 B, base124340 B, -3/400 B.
+The earlier tested code-head measured124333 B. All budgets and lockfiles stay unchanged.
+The review requested removal of the scratch runner, full suite logs and build logs; their compact actual tails/summaries remain.
+No browser proof was run locally for this server-only fix. GitHub CI runs its complete configured suite.
+Independent review6409958401 called the fix/proof correct; exact-head CI remains required before merge.
 
-Independent review and exact-head CI are required before merge. Builders never merge.
-
-## Retained full-suite interruption
-
-The first fresh full npm test exited1 after136.52s in unchanged rejoin-prove: `FAIL Ember waited for welcome`.
-This happened before that proof started its game, and before the aggregate reached the new open-table cases.
-The same unchanged rejoin proof passes independently on both exact head and exact main; raw diagnostic/control logs are retained.
-The cause of the intermittent initial welcome timeout is not established. No timeout or assertion was edited.
-The fresh focused open-table completion proof passes all original and new cases independently.
-A single complete confirmation run is recorded separately; the first failure is never overwritten or called a pass.
-
-The complete confirmation exited1 after329.85s at unchanged lobby-prove's bot-roll assertion.
-That lobby proof passes independently on both exact head and exact main, with its original waits/assertions.
-Both aggregate failures and all four focused diagnostics/controls are retained. No cause is claimed or test modified.
-A final complete server run follows these paired passing diagnostics.
-
-Final complete npm test: PASS, exit0, 518.88s. It includes the unchanged rejoin/lobby checks, all profile proofs and the full original/new open-table cases.
-Earlier nonzero aggregate runs remain historical failures; no test was modified to make this final run pass.
+Review follow-up: strict open-table proof, registered146 and loosen1-none pass again. No previous assertion changed; seated/total assertions are additive. See review-open-table.log, review-registered.log and review-loosen.log.

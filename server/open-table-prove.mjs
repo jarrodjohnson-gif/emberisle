@@ -438,6 +438,8 @@ let openCode;
       assert.equal(tables.length, 1, "exactly one room retains the open slot");
       assert.equal(tables[0].code, expectedCode, "rematch reclaims a free slot without replacing its successor");
       assert.equal(tables[0].status, scenario === "free" ? "playing" : "lobby");
+      assert.equal(tables[0].seated, scenario === "free" ? 3 : 1, "listing counts exactly the rematch or successor seats");
+      assert.equal(tables[0].total, 4, "the listed capacity stays four");
     } else assert.deepEqual(tables, [], "private rematch never becomes discoverable");
     const http = await fetch(`http://127.0.0.1:${rematchPort}/tables`);
     assert.equal(http.status, 200, "HTTP listing succeeds without masking the result with rate limiting");

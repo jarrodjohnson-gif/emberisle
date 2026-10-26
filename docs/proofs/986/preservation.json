@@ -6,5 +6,7 @@
   "server/open-table.mjs": true,
   "src": true,
   "allOriginalProofLinesInOrder": true,
-  "unfixedAndFixedProofIdentical": true
+  "unfixedAndFixedProofIdentical": true,
+  "reviewAllPriorProofLinesInOrder": true,
+  "reviewRuntimeExactly06a4eb8": true
 }
