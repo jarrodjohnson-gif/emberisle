@@ -13,11 +13,11 @@ Jarrod pastes: `Run the Emberisle review desk. Read docs/DESK.md.`
 
 ## Keep it cheap
 
-- **Start fresh** when the chat gets long. Update #916 first, then start a new session with the line above. Starting fresh is cheaper than a huge context on every wake-up.
+- **Restart once a day, or when your context passes about 150K tokens,** whichever comes first. Rewrite the #916 body first, then Jarrod starts a new session with the line above. Every wake re-reads your whole context: the desk that ran 10-21 to 10-26 grew to 570K tokens and cost about $500 (audit, 2026-10-26).
 - **Edit #916, don't comment on it.** Update it at the end of every round.
 - **Mark every post you write** with `<!-- review-desk -->`, so the inbox doesn't wake you for it.
 - **Ignore echoes:** subscription notices, your own reviews coming back, and merge confirmations. Also ignore red `browser-a` or `checks` results from a CI run that a newer push cancelled.
-- **Run the desk on Sonnet.** Give reviews their model per subagent (see "Who reviews"), so Opus runs only when a review needs it.
+- **Run the desk on Sonnet.** Give reviews their model per subagent (see "Who reviews"), so Opus runs only when a review needs it. Never start Fable or Astra unless Jarrod asks.
 - **Check small fix pushes yourself** by reading the diff, unless you are the builder's model. Use a fresh reviewer for a first review or a large push.
 - **Delegate reviews** to a fresh subagent with [REVIEWING.md](REVIEWING.md). Reviewers rely on CI and don't rerun the full suite.
 - **Don't write `@codex`** unless you mean to start a Codex task. A mention starts one.
@@ -47,13 +47,13 @@ These rules survive a context summary, so re-read them at the start of every des
 
 ## Who reviews
 
-A different model from the builder. Sonnet by default, and never the builder's own model. Opus for server, protocol, CI or security work, and whenever Sonnet built it. Haiku for docs-only changes. A builder with several open PRs lists them in priority order in a `To desk:` comment on #854. The desk reviews in that order, one at a time.
+A different model from the builder. Sonnet by default, and never the builder's own model. Opus only for `tier:1` work (server, protocol, CI, security), and for a Sonnet-built PR that changes more than docs. Haiku for docs-only changes. Sound, renderer and HUD work don't need Opus because of their area: Sonnet checks the code, and Jarrod judges the look and sound. End every review with `Reviewer: <model> · Builder: <model> · Head: <sha>`. A builder with several open PRs lists them in priority order in a `To desk:` comment on #854. The desk reviews in that order, one at a time.
 
 ## When to merge
 
 Squash, with the full 40-character head SHA, only when all of these hold:
 - the review is clean, and its findings are fixed;
-- CI is green on that head: `checks` shows **success**, not skipped or grey. A draft skips it, and a skipped required check counts as passing, so never merge on a skipped `checks`;
+- CI is green on that head: `checks` shows **completed** and **success**, not skipped, grey, pending or missing. A draft skips it, and a skipped required check counts as passing, so never merge on a skipped `checks`. An empty check list means CI hasn't started, not that it passed. The owner account can merge past the required checks, so this rule is the only guard (#1168 merged on pending checks, 2026-10-26);
 - there is no conflict and the PR isn't a draft;
 - Jarrod has seen the screenshots of any visual change.
 
@@ -61,8 +61,8 @@ Then set the issue to `status:in-review`. `issue_write` replaces every label, so
 
 ## Weekly
 
-- **Monday, post a hub digest** on #854: one comment, headed `Hub digest, <date>`, listing the standing directions that still apply, and replace the "Directions" bullet in #854's body with a pointer to it. Agents read #854's body, then only the comments after the newest digest. Don't open a new hub issue: the inbox workflow is wired to #854.
-- **Batch the `Decide:` issues** (`docs/FRAMEWORK.md` section 10) and apply them in one docs PR.
+- **Monday, post a hub digest** on #854. A Haiku subagent drafts it, and you check it against the issues before posting: one comment, headed `Hub digest, <date>`, listing the standing directions that still apply, and replace the "Directions" bullet in #854's body with a pointer to it. Agents read #854's body, then only the comments after the newest digest. Don't open a new hub issue: the inbox workflow is wired to #854.
+- **Batch the `Decide:` issues** (`docs/FRAMEWORK.md` section 10) and apply them in one docs PR. Rule documents change only in this Monday batch. The one exception is a new row in `docs/DECISIONS.md` for an owner decision.
 - **Add any new flaky proof to `.github/flaky.json`** the day it is seen on `main`, with its log line. Red on `main` is a flake until shown otherwise. Red on a PR after one re-run is real. A run marked cancelled is not a result.
 
 ## Always
