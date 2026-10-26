@@ -1,0 +1,13 @@
+AssertionError [ERR_ASSERTION]: interactive controls are held before initialization
+
+6 !== 0
+
+    at coldLoadProof (file:///workspace/emberisle/work/verify844-split/scripts/haptics-prove.mjs:466:12)
+    at async file:///workspace/emberisle/work/verify844-split/scripts/haptics-prove.mjs:552:3 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: 6,
+  expected: 0,
+  operator: 'strictEqual',
+  diff: 'simple'
+}

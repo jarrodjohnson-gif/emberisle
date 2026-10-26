@@ -14,8 +14,8 @@ const owner = 'jarrodjohnson-gif';
 const helper = 'joshspicy2';
 const bot = { login: 'github-actions[bot]', type: 'Bot' };
 const minute = n => `2026-10-16T12:${String(n).padStart(2, '0')}:00Z`;
-const comment = (id, body, login = owner, at = minute(id)) =>
-  ({ id, body, user: { login, type: 'User' }, created_at: at });
+const comment = (id, body, login = owner, at = minute(id), updatedAt = at) =>
+  ({ id, body, user: { login, type: 'User' }, created_at: at, updated_at: updatedAt });
 const claim = (id, name, login = owner, at) =>
   comment(id, `/claim\nclaimed: ${name}, 2026-10-16`, login, at);
 const pause = (id, name, slash = true) =>
@@ -47,7 +47,8 @@ function fixture(comments, options = {}) {
       removeLabel: async ({ name }) => { state.labels = state.labels.filter(l => l !== name); },
       addLabels: async ({ labels }) => { state.labels = [...new Set([...state.labels, ...labels])]; },
       createComment: async ({ body }) => {
-        state.comments.push({ id: 5000 + state.comments.length, body, user: bot, created_at: minute(59) });
+        const at = minute(59);
+        state.comments.push({ id: 5000 + state.comments.length, body, user: bot, created_at: at, updated_at: at });
       },
     },
     pulls: { get: async ({ pull_number }) => {
@@ -279,5 +280,166 @@ await prove('comment bodies containing executable text remain inert data', async
   await s.run(2);
   winner(s, 1, [2]);
   assert.ok(s.replies(2)[0].body.includes(name));
+});
+await prove('edited comments cannot become claims', async () => {
+  const edited = comment(1, `/claim\nclaimed: A, 2026-10-16`, owner, minute(1), minute(2));
+  const s = fixture([edited, claim(2, 'B')]);
+  await s.run(2);
+  winner(s, 2);
+  assert.equal(s.has(1, '+1'), false);
+  assert.equal(s.has(1, '-1'), false);
+  assert.deepEqual(s.labels, ['status:claimed']);
+});
+await prove('commands inside code fences are ignored', async () => {
+  const fenced = comment(1, ['```', '/claim', 'claimed: A, 2026-10-16', '```', 'still open'].join('\n'));
+  const s = fixture([fenced, claim(2, 'B')]);
+  await s.run(2);
+  winner(s, 2);
+  assert.equal(s.has(1, '+1'), false);
+  const mixed = fixture([comment(1, ['Note:', '```', '/claim', 'claimed: A, 2026-10-16', '```',
+    '/claim', 'claimed: B, 2026-10-16'].join('\n'))]);
+  await mixed.run(1);
+  winner(mixed, 1);
+  assert.deepEqual(mixed.labels, ['status:claimed']);
+});
+await prove('CRLF fences hide commands and reservation metadata', async () => {
+  for (const fence of ['```', '~~~', '````']) {
+    const block = lines => [fence, ...lines, fence].join('\r\n');
+    const s = fixture([comment(1, block(['/claim', 'claimed: A, 2026-10-16'])), claim(2, 'B')]);
+    await s.run(2);
+    winner(s, 2);
+    assert.equal(s.has(1, '+1'), false);
+    const release = fixture([claim(1, 'A'), comment(2, '/unclaim\r\n' +
+      block(['released: A, 2026-10-16'])), claim(3, 'B')]);
+    await release.run(2);
+    assert.ok(release.has(2, '-1'));
+    assert.equal(release.has(2, '+1'), false);
+    await release.run(3);
+    winner(release, 1, [3]);
+  }
+});
+await prove('edited pauses, releases and PR associations cannot change reservations', async () => {
+  const first = fixture([comment(1, '/claim\nclaimed: A, 2026-10-16', owner, minute(1), minute(2))]);
+  await first.run(1);
+  assert.deepEqual(first.labels, ['status:todo']);
+  assert.ok(first.has(1, '-1'));
+  assert.equal(first.has(1, '+1'), false);
+  for (const body of ['/paused\npaused: A, 2026-10-16',
+    '/todo\nreleased: A, 2026-10-16', '/unclaim\nreleased: A, 2026-10-16',
+    '/in-review\npr: #700']) {
+    const s = fixture([claim(1, 'A'), comment(2, body, owner, minute(2), minute(3)), claim(5, 'B')], {
+      prs: { 700: { number: 700, body: 'Refs #694', user: { login: owner }, closed_at: minute(4) } },
+    });
+    await s.run(2);
+    if (!body.startsWith('/in-review')) {
+      assert.ok(s.has(2, '-1'));
+      assert.equal(s.has(2, '+1'), false);
+      assert.deepEqual(s.labels, ['status:claimed']);
+    }
+    await s.run(5);
+    winner(s, 1, [5]);
+    assert.equal(s.calls.length, 0);
+  }
+});
+await prove('owner /todo and /unclaim release the active claim', async () => {
+  for (const release of ['/todo', '/unclaim']) {
+    const s = fixture([claim(1, 'A'), comment(2, `${release}\nreleased: A, 2026-10-16`), claim(3, 'B')]);
+    await s.run(3);
+    winner(s, 1);
+    winner(s, 3);
+    assert.deepEqual(s.labels, ['status:claimed']);
+  }
+  const helperTodo = fixture([claim(1, 'A'), comment(2, '/todo', helper), claim(3, 'B')]);
+  await helperTodo.run(2);
+  assert.ok(helperTodo.has(2, '-1'));
+  assert.equal(helperTodo.has(2, '+1'), false);
+  await helperTodo.run(3);
+  winner(helperTodo, 1, [3]);
+  const helperUnclaim = fixture([claim(1, 'A'), comment(2, '/unclaim', helper)]);
+  await helperUnclaim.run(2);
+  assert.ok(helperUnclaim.has(2, '-1'));
+  assert.ok(helperUnclaim.labels.includes('status:claimed'));
+});
+await prove('shared owner account cannot release a claim without its explicit target', async () => {
+  for (const command of ['/todo', '/unclaim']) {
+    for (const metadata of ['', '\nreleased: B, 2026-10-16',
+      '\n/claim\nclaimed: B, 2026-10-16\nreleased: A, 2026-10-16',
+      '\nclaimed: B, 2026-10-16\nreleased: A, 2026-10-16']) {
+      const s = fixture([claim(1, 'A'), comment(2, command + metadata), claim(3, 'C')], {
+        reactions: [{ id: 901, comment_id: 2, content: '+1', user: bot }],
+      });
+      await s.run(2);
+      assert.deepEqual(s.labels, ['status:claimed']);
+      assert.ok(s.has(2, '-1'), 'suppressed release is refused');
+      assert.equal(s.has(2, '+1'), false, 'suppressed release has no approval');
+      await s.run(3);
+      winner(s, 1, [3]);
+    }
+  }
+});
+await prove('fenced identities, pauses, releases and PR links never reserve or release', async () => {
+  for (const fence of ['```', '~~~', '````']) {
+    const block = lines => [fence, ...lines, fence].join('\n');
+    const mixed = fixture([comment(1, block(['claimed: A, 2026-10-16']) +
+      '\n/claim\nclaimed: B, 2026-10-16'), claim(2, 'B'), claim(3, 'C')]);
+    await mixed.run(3);
+    winner(mixed, 1, [3]);
+    winner(mixed, 2); // Proves B, rather than the fenced A, owns the claim.
+    for (const payload of [block(['paused: A, 2026-10-16']),
+      '/unclaim\n' + block(['released: A, 2026-10-16']),
+      '/in-review\n' + block(['pr: #700'])]) {
+      const s = fixture([claim(1, 'A'), comment(2, payload), claim(5, 'C')], {
+        prs: { 700: { number: 700, body: 'Refs #694', user: { login: owner }, closed_at: minute(4) } },
+      });
+      await s.run(5);
+      winner(s, 1, [5]);
+      assert.equal(s.calls.length, 0);
+    }
+  }
+  const nested = fixture([comment(1, '````\n```\n/claim\nclaimed: A, 2026-10-16\n```\n````'), claim(2, 'B')]);
+  await nested.run(2);
+  winner(nested, 2);
+  assert.equal(nested.has(1, '+1'), false);
+});
+await prove('same-agent re-claim is a no-op approval', async () => {
+  const s = fixture([claim(1, 'A'), claim(2, 'A')]);
+  await s.run(2);
+  winner(s, 1);
+  winner(s, 2);
+  assert.equal(s.replies(2).length, 0);
+  assert.deepEqual(s.labels, ['status:claimed']);
+  const other = fixture([claim(1, 'A'), claim(2, 'B')]);
+  await other.run(2);
+  winner(other, 1, [2]);
+});
+await prove('non-status commands preserve a hand-set status label', async () => {
+  const s = fixture([claim(1, 'A'), comment(2, '/changed')], { labels: ['status:todo'] });
+  await s.run(2);
+  assert.deepEqual(s.labels.sort(), ['mark:changed', 'status:todo']);
+  assert.ok(s.has(2, '+1'));
+  const statusRun = fixture([claim(1, 'A'), comment(2, '/in-progress')]);
+  await statusRun.run(2);
+  assert.deepEqual(statusRun.labels, ['status:in-progress']);
+});
+await prove('label-commands-prove is registered for CI', async () => {
+  const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+  assert.equal(pkg.scripts['label-commands-prove'], 'node scripts/label-commands-prove.mjs');
+  const ci = readFileSync(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
+  assert.match(ci, /npm run label-commands-prove/);
+});
+await prove('each command in KNOWN appears in the workflow if: guard', async () => {
+  const guardMatch = workflow.match(/jobs:\s*\n\s*label:\s*\n\s*if:\s*>-?\s*\n((?:\s+.*\n)+?)\s*runs-on:/);
+  assert.ok(guardMatch, 'found label job if: guard in workflow');
+  const guard = guardMatch[1];
+  const statusBlock = source.match(/const STATUS = \{[\s\S]*?\};/)[0];
+  const knownBlock = source.match(/const KNOWN = \[[\s\S]*?\];/)[0];
+  const KNOWN = vm.runInNewContext(`(() => { ${statusBlock} ${knownBlock} return KNOWN; })()`);
+  assert.ok(KNOWN.length > 0, 'KNOWN is non-empty');
+  for (const cmd of KNOWN) {
+    assert.ok(
+      guard.includes(`'${cmd}'`) || guard.includes(`"${cmd}"`),
+      `command ${cmd} from KNOWN must appear in label-commands.yml job if: guard`
+    );
+  }
 });
 console.log(`PASS ${checks} workflow proof groups`);

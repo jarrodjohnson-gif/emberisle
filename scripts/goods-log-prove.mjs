@@ -35,6 +35,8 @@ try {
     const before=g.getState().gameLog.length,r=g.getState().dispatch(action,actor);
     if(!r.ok)throw Error(r.error);
     const lines=g.getState().gameLog.slice(before).map(l=>l.text);
+    // #687 (owner-approved): a roll adds its own "<name> rolled <sum>!" line ahead of its one goods event. Every other action still adds exactly one line.
+    if(action.type==='roll'&&lines.length===2&&/^.+ rolled \d+!$/.test(lines[0]))lines.shift();
     if(lines.length!==1)throw Error(`${action.type}: ${JSON.stringify(lines)}`);
     if(g.getState().banner)throw Error(`duplicate banner ${g.getState().banner}`);
     events.push({kind:action.type,line:lines[0]});
@@ -66,10 +68,11 @@ try {
   });
   assert.equal(result.cap,200);
   assert.deepEqual(result.events.map(e=>e.kind),['roll','buildPath','bankTrade','respondTrade','discard','playKnight','playRoad','playPlenty','playMonopoly','buyCard']);
-  for(const event of result.events)assert.match(event.line,/^[A-Z][a-z]+ (gains|spends|steals|discards|trades|plays)/);
+  for(const event of result.events)assert.match(event.line,/^[A-Z][a-z]+ (gains|spends|steals|discards|traded|plays)/);
   assert.match(result.events[0].line,/— Ember's roll[;.]/);
   assert.match(result.events[1].line,/spends 1 wood, 1 brick — path/);
-  assert.match(result.events[3].line,/gains 1 brick;.*loses 1 wood;.*gains 1 wood;.*loses 1 brick — table trade/);
+  assert.match(result.events[2].line,/^.+ traded [234] stone to (the bank|a dock) for 1 wheat\.$/);
+  assert.match(result.events[3].line,/ traded 1 wood to .+ for 1 brick\.$/);
   for(const [index,kind] of [[5,'Wayfarer'],[6,'Path'],[7,'Plenty'],[8,'Monopoly']])assert.ok(result.events[index].line.includes(`plays ${kind}`));
   assert.match(result.events[5].line,/gains 1 good;.*loses 1 good/);
   assert.doesNotMatch(result.events[5].line,/timber|clay|wool|grain|wood|brick|sheep|wheat|ore|\bVP\b/);

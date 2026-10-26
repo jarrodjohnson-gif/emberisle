@@ -1,0 +1,210 @@
+
+> turn-gain-prove
+> node scripts/turn-gain-prove.mjs
+
+ok   1280x720: no turn moment in the roll-off or setup 0
+ok   1280x720: the roll's +N tabs sit on their own goods' cards [["ore","resource-ore"]]
+ok   1280x720: the roll's +N tabs are centred on their cards and grow out of the top edge [["0.00","18.00"]]
+ok   1280x720: the roll's +N tabs inside the safe area [{"x":807,"y":514,"width":34,"height":22,"top":514,"right":841,"bottom":536,"left":807}]
+ok   1280x720: nothing covers or clips the roll's +N tabs [["ore",true]]
+1280x720: rolled 11; own ["ore+2"]; cues ["Stone +2"]
+ok   1280x720: one cue per good the roll paid, right good and amount {"want":["ore+2"],"got":["ore+2"]}
+ok   1280x720: each reads "+N" in white on its good's side colour [["ore","+2","rgb(255, 255, 255)","rgb(65, 77, 91)"]]
+ok   1280x720: each gained card fills with its good's colour [["ore","rgb(99, 116, 138)"]]
+ok   1280x720: no "+N Good" text over the island
+ok   1280x720: each cue readable for at least 1.2 s ["2290"]
+ok   1280x720: the tab, the fill and the lift each run exactly 2500 ms (2200 ms held, 300 ms fade) [[2500,2500]]
+ok   1280x720: the batch has left within 2.6 s, excluding measured stalls [{"raw":2511.199999988079,"stalled":534.2999999821186,"running":1976.9000000059605}]
+ok   1280x720: raw expiry stays below the 3.5 s guard [{"raw":2511.199999988079,"stalled":534.2999999821186,"running":1976.9000000059605}]
+ok   1280x720: gained cards lift (a translateY keyframe)
+ok   1280x720 trade: the trade's tabs sit on their own goods' cards [["grain","resource-grain"],["ore","resource-ore"]]
+ok   1280x720 trade: the trade's tabs are centred on their cards and grow out of the top edge [["0.00","18.00"],["0.00","19.00"]]
+ok   1280x720 trade: the trade's tabs inside the safe area [{"x":715,"y":514,"width":34,"height":22,"top":514,"right":749,"bottom":536,"left":715},{"x":807,"y":519,"width":34,"height":22,"top":519,"right":841,"bottom":541,"left":807}]
+ok   1280x720 trade: nothing covers or clips the trade's tabs [["grain",true],["ore",true]]
+ok   1280x720: a bank trade shows −4 on Stone as a hollow red tab, the card ringed red [{"r":"grain","text":"+1","color":"rgb(255, 255, 255)","bg":"rgb(140, 114, 45)","lit":"rgb(227, 196, 98)","lost":false,"move":["translateY(0px)","translateY(-4px)","translateY(-4px)","translateY(0px)"]},{"r":"ore","text":"−4","color":"rgb(138, 34, 25)","bg":"rgb(255, 249, 240)","lit":null,"lost":true,"move":["translateY(0px)","translateY(2px)","translateY(2px)","translateY(0px)"]}]
+ok   1280x720: and +1 on the filled Wheat card {"r":"grain","text":"+1","color":"rgb(255, 255, 255)","bg":"rgb(140, 114, 45)","lit":"rgb(227, 196, 98)","lost":false,"move":["translateY(0px)","translateY(-4px)","translateY(-4px)","translateY(0px)"]}
+ok   1280x720: the given card dips and the received card lifts {"stone":["translateY(0px)","translateY(2px)","translateY(2px)","translateY(0px)"],"wheat":["translateY(0px)","translateY(-4px)","translateY(-4px)","translateY(0px)"]}
+ok   1280x720: gain tab text ≥ 4.5:1 against the pixels behind it {"color":"rgb(255, 255, 255)","min":"4.61","pixels":242}
+ok   1280x720: loss tab text ≥ 4.5:1 against the pixels behind it {"color":"rgb(138, 34, 25)","min":"8.63","pixels":242}
+ok   1280x720: another seat's gain shows no cue
+ok   1280x720: on a bot's turn the banner says whom the person waits for, and there is no Roll {"banner":"Wait for Dune (bot) to roll","bot":"Dune (bot)","roll":false}
+ok   1280x720 refit: "Your turn" after the hole changed under it found room (moved)
+ok   1280x720 refit: "Your turn" after the hole changed under it centred on the island's hole, moved -66 px to clear the HUD {"centre":["592","485"],"hole":["592","550"],"shift":-65.5}
+ok   1280x720 refit: "Your turn" after the hole changed under it moved only because the centre was covered when it showed
+ok   1280x720 refit: "Your turn" after the hole changed under it inside the safe area {"box":{"left":488.875,"top":451,"right":695.125,"bottom":518},"safe":{"left":0,"top":0,"right":1280,"bottom":720}}
+ok   1280x720 refit: "Your turn" after the hole changed under it inside the hole {"box":{"left":488.875,"top":451,"right":695.125,"bottom":518},"hole":{"x":216,"y":406,"width":752,"height":288,"top":406,"right":968,"bottom":694,"left":216}}
+ok   1280x720 refit: "Your turn" after the hole changed under it covers no HUD control or chip {"hit":[],"how":"moved","shift":-65.5}
+ok   1280x720: on the person's roll, Roll is the one filled primary ["Roll"]
+ok   1280x720: the person's seat card wears the turn ring and the banner leads with Roll {"primaries":["Roll"],"seatTurn":true,"current":true,"banner":"Roll the dice"}
+ok   1280x720: the moment reads "Your turn" "Your turn"
+ok   1280x720: "Your turn" found room (centre)
+ok   1280x720: "Your turn" centred on the island's hole {"centre":["592","284"],"hole":["592","284"],"shift":0}
+ok   1280x720: "Your turn" inside the safe area {"box":{"left":488.875,"top":250.5,"right":695.125,"bottom":317.5},"safe":{"left":0,"top":0,"right":1280,"bottom":720}}
+ok   1280x720: "Your turn" inside the hole {"box":{"left":488.875,"top":250.5,"right":695.125,"bottom":317.5},"hole":{"left":216,"top":68,"right":968,"bottom":500}}
+ok   1280x720: "Your turn" covers no HUD control or chip {"hit":[],"how":"centre","shift":0}
+ok   1280x720: "Your turn" text ≥ 3:1 against the pixels behind it {"color":"rgb(38, 61, 60)","min":"11.05"}
+ok   1280x720: untouched, "Your turn" is up about 1.6 s and gone within 2 s {"up":"1795","readable":"1600"}
+ok   1280x720: every turn moment was on the person's own roll 3
+ok   1280x720: every cue shown was one of the person's own hand changes []
+ok   1280x720: "Your turn" never covers a hand tab []
+ok   1280x720: over the whole game, no gain text ever mounted over the island
+ok   1280x720: a watcher sees no cues
+ok   390x844: no turn moment in the roll-off or setup 0
+ok   390x844: the roll's +N tabs sit on their own goods' cards [["wool","resource-wool"]]
+ok   390x844: the roll's +N tabs are centred on their cards and grow out of the top edge [["-0.01","18.00"]]
+ok   390x844: the roll's +N tabs inside the safe area [{"x":178,"y":580,"width":34,"height":22,"top":580,"right":212,"bottom":602,"left":178}]
+ok   390x844: nothing covers or clips the roll's +N tabs [["wool",true]]
+390x844: rolled 9; own ["wool+2"]; cues ["Sheep +2"]
+ok   390x844: one cue per good the roll paid, right good and amount {"want":["wool+2"],"got":["wool+2"]}
+ok   390x844: each reads "+N" in white on its good's side colour [["wool","+2","rgb(255, 255, 255)","rgb(97, 119, 68)"]]
+ok   390x844: each gained card fills with its good's colour [["wool","rgb(178, 206, 128)"]]
+ok   390x844: no "+N Good" text over the island
+ok   390x844: each cue readable for at least 1.2 s ["2290"]
+ok   390x844: the tab, the fill and the lift each run exactly 2500 ms (2200 ms held, 300 ms fade) [[2500,2500]]
+ok   390x844: the batch has left within 2.6 s, excluding measured stalls [{"raw":2511,"stalled":511.6999999284744,"running":1999.3000000715256}]
+ok   390x844: raw expiry stays below the 3.5 s guard [{"raw":2511,"stalled":511.6999999284744,"running":1999.3000000715256}]
+ok   390x844: gained cards lift (a translateY keyframe)
+ok   390x844 trade: the trade's tabs sit on their own goods' cards [["grain","resource-grain"],["ore","resource-ore"]]
+ok   390x844 trade: the trade's tabs are centred on their cards and grow out of the top edge [["-0.01","18.00"],["-0.01","19.00"]]
+ok   390x844 trade: the trade's tabs inside the safe area [{"x":248.796875,"y":580,"width":34,"height":22,"top":580,"right":282.796875,"bottom":602,"left":248.796875},{"x":319.59375,"y":587,"width":34,"height":22,"top":587,"right":353.59375,"bottom":609,"left":319.59375}]
+ok   390x844 trade: nothing covers or clips the trade's tabs [["grain",true],["ore",true]]
+ok   390x844: a bank trade shows −4 on Stone as a hollow red tab, the card ringed red [{"r":"grain","text":"+1","color":"rgb(255, 255, 255)","bg":"rgb(140, 114, 45)","lit":"rgb(227, 196, 98)","lost":false,"move":["translateY(0px)","translateY(-6px)","translateY(-6px)","translateY(0px)"]},{"r":"ore","text":"−4","color":"rgb(138, 34, 25)","bg":"rgb(255, 249, 240)","lit":null,"lost":true,"move":["translateY(0px)","translateY(2px)","translateY(2px)","translateY(0px)"]}]
+ok   390x844: and +1 on the filled Wheat card {"r":"grain","text":"+1","color":"rgb(255, 255, 255)","bg":"rgb(140, 114, 45)","lit":"rgb(227, 196, 98)","lost":false,"move":["translateY(0px)","translateY(-6px)","translateY(-6px)","translateY(0px)"]}
+ok   390x844: the given card dips and the received card lifts {"stone":["translateY(0px)","translateY(2px)","translateY(2px)","translateY(0px)"],"wheat":["translateY(0px)","translateY(-6px)","translateY(-6px)","translateY(0px)"]}
+ok   390x844: gain tab text ≥ 4.5:1 against the pixels behind it {"color":"rgb(255, 255, 255)","min":"4.61","pixels":242}
+ok   390x844: loss tab text ≥ 4.5:1 against the pixels behind it {"color":"rgb(138, 34, 25)","min":"8.63","pixels":242}
+ok   390x844: another seat's gain shows no cue
+ok   390x844: on a bot's turn the banner says whom the person waits for, and there is no Roll {"banner":"Wait for Tide (bot) to roll","bot":"Tide (bot)","roll":false}
+ok   390x844 refit: "Your turn" after the hole changed under it found room (moved)
+ok   390x844 refit: "Your turn" after the hole changed under it centred on the island's hole, moved -66 px to clear the HUD {"centre":["195","579"],"hole":["195","644"],"shift":-65.5}
+ok   390x844 refit: "Your turn" after the hole changed under it moved only because the centre was covered when it showed
+ok   390x844 refit: "Your turn" after the hole changed under it inside the safe area {"box":{"left":91.875,"top":545,"right":298.125,"bottom":612},"safe":{"left":0,"top":47,"right":390,"bottom":810}}
+ok   390x844 refit: "Your turn" after the hole changed under it inside the hole {"box":{"left":91.875,"top":545,"right":298.125,"bottom":612},"hole":{"x":12,"y":500,"width":366,"height":288,"top":500,"right":378,"bottom":788,"left":12}}
+ok   390x844 refit: "Your turn" after the hole changed under it covers no HUD control or chip {"hit":[],"how":"moved","shift":-65.5}
+ok   390x844: on the person's roll, Roll is the one filled primary ["Roll"]
+ok   390x844: the person's seat card wears the turn ring and the banner leads with Roll {"primaries":["Roll"],"seatTurn":true,"current":true,"banner":"Roll the dice"}
+ok   390x844: the moment reads "Your turn" "Your turn"
+ok   390x844: "Your turn" found room (centre)
+ok   390x844: "Your turn" centred on the island's hole {"centre":["195","294"],"hole":["195","294"],"shift":0}
+ok   390x844: "Your turn" inside the safe area {"box":{"left":91.875,"top":260,"right":298.125,"bottom":327},"safe":{"left":0,"top":47,"right":390,"bottom":810}}
+ok   390x844: "Your turn" inside the hole {"box":{"left":91.875,"top":260,"right":298.125,"bottom":327},"hole":{"left":12,"top":103,"right":378,"bottom":484}}
+ok   390x844: "Your turn" covers no HUD control or chip {"hit":[],"how":"centre","shift":0}
+ok   390x844: "Your turn" text ≥ 3:1 against the pixels behind it {"color":"rgb(38, 61, 60)","min":"11.05"}
+ok   390x844: untouched, "Your turn" is up about 1.6 s and gone within 2 s {"up":"1829","readable":"1600"}
+ok   390x844: every turn moment was on the person's own roll 3
+ok   390x844: every cue shown was one of the person's own hand changes []
+ok   390x844: "Your turn" never covers a hand tab []
+ok   390x844: over the whole game, no gain text ever mounted over the island
+ok   390x844: a watcher sees no cues
+ok   360x640: no turn moment in the roll-off or setup 0
+ok   360x640: the roll's +N tabs sit on their own goods' cards [["grain","resource-grain"]]
+ok   360x640: the roll's +N tabs are centred on their cards and grow out of the top edge [["-0.01","18.00"]]
+ok   360x640: the roll's +N tabs inside the safe area [{"x":227.796875,"y":394,"width":34,"height":22,"top":394,"right":261.796875,"bottom":416,"left":227.796875}]
+ok   360x640: nothing covers or clips the roll's +N tabs [["grain",true]]
+360x640: rolled 8; own ["grain+1"]; cues ["Wheat +1"]
+ok   360x640: one cue per good the roll paid, right good and amount {"want":["grain+1"],"got":["grain+1"]}
+ok   360x640: each reads "+N" in white on its good's side colour [["grain","+1","rgb(255, 255, 255)","rgb(140, 114, 45)"]]
+ok   360x640: each gained card fills with its good's colour [["grain","rgb(227, 196, 98)"]]
+ok   360x640: no "+N Good" text over the island
+ok   360x640: each cue readable for at least 1.2 s ["2290"]
+ok   360x640: the tab, the fill and the lift each run exactly 2500 ms (2200 ms held, 300 ms fade) [[2500,2500]]
+ok   360x640: the batch has left within 2.6 s, excluding measured stalls [{"raw":2505.2000000178814,"stalled":495.20000007748604,"running":2009.9999999403954}]
+ok   360x640: raw expiry stays below the 3.5 s guard [{"raw":2505.2000000178814,"stalled":495.20000007748604,"running":2009.9999999403954}]
+ok   360x640: gained cards lift (a translateY keyframe)
+ok   360x640 trade: the trade's tabs sit on their own goods' cards [["grain","resource-grain"],["ore","resource-ore"]]
+ok   360x640 trade: the trade's tabs are centred on their cards and grow out of the top edge [["-0.01","18.00"],["-0.01","19.00"]]
+ok   360x640 trade: the trade's tabs inside the safe area [{"x":227.796875,"y":394,"width":34,"height":22,"top":394,"right":261.796875,"bottom":416,"left":227.796875},{"x":292.59375,"y":401,"width":34,"height":22,"top":401,"right":326.59375,"bottom":423,"left":292.59375}]
+ok   360x640 trade: nothing covers or clips the trade's tabs [["grain",true],["ore",true]]
+ok   360x640: a bank trade shows −4 on Stone as a hollow red tab, the card ringed red [{"r":"grain","text":"+1","color":"rgb(255, 255, 255)","bg":"rgb(140, 114, 45)","lit":"rgb(227, 196, 98)","lost":false,"move":["translateY(0px)","translateY(-6px)","translateY(-6px)","translateY(0px)"]},{"r":"ore","text":"−4","color":"rgb(138, 34, 25)","bg":"rgb(255, 249, 240)","lit":null,"lost":true,"move":["translateY(0px)","translateY(2px)","translateY(2px)","translateY(0px)"]}]
+ok   360x640: and +1 on the filled Wheat card {"r":"grain","text":"+1","color":"rgb(255, 255, 255)","bg":"rgb(140, 114, 45)","lit":"rgb(227, 196, 98)","lost":false,"move":["translateY(0px)","translateY(-6px)","translateY(-6px)","translateY(0px)"]}
+ok   360x640: the given card dips and the received card lifts {"stone":["translateY(0px)","translateY(2px)","translateY(2px)","translateY(0px)"],"wheat":["translateY(0px)","translateY(-6px)","translateY(-6px)","translateY(0px)"]}
+ok   360x640: gain tab text ≥ 4.5:1 against the pixels behind it {"color":"rgb(255, 255, 255)","min":"4.61","pixels":242}
+ok   360x640: loss tab text ≥ 4.5:1 against the pixels behind it {"color":"rgb(138, 34, 25)","min":"8.63","pixels":242}
+ok   360x640: another seat's gain shows no cue
+ok   360x640: on a bot's turn the banner says whom the person waits for, and there is no Roll {"banner":"Wait for Dune (bot) to roll","bot":"Dune (bot)","roll":false}
+ok   360x640 refit: "Your turn" after the hole changed under it found room (moved)
+ok   360x640 refit: "Your turn" after the hole changed under it centred on the island's hole, moved -66 px to clear the HUD {"centre":["180","393"],"hole":["180","458"],"shift":-65.5}
+ok   360x640 refit: "Your turn" after the hole changed under it moved only because the centre was covered when it showed
+ok   360x640 refit: "Your turn" after the hole changed under it inside the safe area {"box":{"left":76.875,"top":359,"right":283.125,"bottom":426},"safe":{"left":0,"top":24,"right":360,"bottom":624}}
+ok   360x640 refit: "Your turn" after the hole changed under it inside the hole {"box":{"left":76.875,"top":359,"right":283.125,"bottom":426},"hole":{"x":12,"y":314,"width":336,"height":288,"top":314,"right":348,"bottom":602,"left":12}}
+ok   360x640 refit: "Your turn" after the hole changed under it covers no HUD control or chip {"hit":[],"how":"moved","shift":-65.5}
+ok   360x640: on the person's roll, Roll is the one filled primary ["Roll"]
+ok   360x640: the person's seat card wears the turn ring and the banner leads with Roll {"primaries":["Roll"],"seatTurn":true,"current":true,"banner":"Roll the dice"}
+ok   360x640: the moment reads "Your turn" "Your turn"
+ok   360x640: "Your turn" found room (centre)
+ok   360x640: "Your turn" centred on the island's hole {"centre":["180","189"],"hole":["180","189"],"shift":0}
+ok   360x640: "Your turn" inside the safe area {"box":{"left":76.875,"top":155.5,"right":283.125,"bottom":222.5},"safe":{"left":0,"top":24,"right":360,"bottom":624}}
+ok   360x640: "Your turn" inside the hole {"box":{"left":76.875,"top":155.5,"right":283.125,"bottom":222.5},"hole":{"left":12,"top":80,"right":348,"bottom":298}}
+ok   360x640: "Your turn" covers no HUD control or chip {"hit":[],"how":"centre","shift":0}
+ok   360x640: "Your turn" text ≥ 3:1 against the pixels behind it {"color":"rgb(38, 61, 60)","min":"11.05"}
+ok   360x640: untouched, "Your turn" is up about 1.6 s and gone within 2 s {"up":"1807","readable":"1600"}
+ok   360x640: every turn moment was on the person's own roll 3
+ok   360x640: every cue shown was one of the person's own hand changes []
+ok   360x640: "Your turn" never covers a hand tab []
+ok   360x640: over the whole game, no gain text ever mounted over the island
+ok   360x640: a watcher sees no cues
+ok   844x390: no turn moment in the roll-off or setup 0
+ok   844x390: the roll's +N tabs sit on their own goods' cards [["grain","resource-grain"]]
+ok   844x390: the roll's +N tabs are centred on their cards and grow out of the top edge [["-0.01","18.00"]]
+ok   844x390: the roll's +N tabs inside the safe area [{"x":211.1875,"y":155,"width":34,"height":22,"top":155,"right":245.1875,"bottom":177,"left":211.1875}]
+ok   844x390: nothing covers or clips the roll's +N tabs [["grain",true]]
+844x390: rolled 4; own ["grain+1"]; cues ["Wheat +1"]
+ok   844x390: one cue per good the roll paid, right good and amount {"want":["grain+1"],"got":["grain+1"]}
+ok   844x390: each reads "+N" in white on its good's side colour [["grain","+1","rgb(255, 255, 255)","rgb(140, 114, 45)"]]
+ok   844x390: each gained card fills with its good's colour [["grain","rgb(227, 196, 98)"]]
+ok   844x390: no "+N Good" text over the island
+ok   844x390: each cue readable for at least 1.2 s ["2290"]
+ok   844x390: the tab, the fill and the lift each run exactly 2500 ms (2200 ms held, 300 ms fade) [[2500,2500]]
+ok   844x390: the batch has left within 2.6 s, excluding measured stalls [{"raw":2503,"stalled":427.1999999284744,"running":2075.8000000715256}]
+ok   844x390: raw expiry stays below the 3.5 s guard [{"raw":2503,"stalled":427.1999999284744,"running":2075.8000000715256}]
+ok   844x390: gained cards lift (a translateY keyframe)
+ok   844x390 trade: the trade's tabs sit on their own goods' cards [["grain","resource-grain"],["ore","resource-ore"]]
+ok   844x390 trade: the trade's tabs are centred on their cards and grow out of the top edge [["-0.01","18.00"],["-0.01","19.00"]]
+ok   844x390 trade: the trade's tabs inside the safe area [{"x":211.1875,"y":155,"width":34,"height":22,"top":155,"right":245.1875,"bottom":177,"left":211.1875},{"x":262.390625,"y":160,"width":34,"height":22,"top":160,"right":296.390625,"bottom":182,"left":262.390625}]
+ok   844x390 trade: nothing covers or clips the trade's tabs [["grain",true],["ore",true]]
+ok   844x390: a bank trade shows −4 on Stone as a hollow red tab, the card ringed red [{"r":"grain","text":"+1","color":"rgb(255, 255, 255)","bg":"rgb(140, 114, 45)","lit":"rgb(227, 196, 98)","lost":false,"move":["translateY(0px)","translateY(-4px)","translateY(-4px)","translateY(0px)"]},{"r":"ore","text":"−4","color":"rgb(138, 34, 25)","bg":"rgb(255, 249, 240)","lit":null,"lost":true,"move":["translateY(0px)","translateY(2px)","translateY(2px)","translateY(0px)"]}]
+ok   844x390: and +1 on the filled Wheat card {"r":"grain","text":"+1","color":"rgb(255, 255, 255)","bg":"rgb(140, 114, 45)","lit":"rgb(227, 196, 98)","lost":false,"move":["translateY(0px)","translateY(-4px)","translateY(-4px)","translateY(0px)"]}
+ok   844x390: the given card dips and the received card lifts {"stone":["translateY(0px)","translateY(2px)","translateY(2px)","translateY(0px)"],"wheat":["translateY(0px)","translateY(-4px)","translateY(-4px)","translateY(0px)"]}
+ok   844x390: gain tab text ≥ 4.5:1 against the pixels behind it {"color":"rgb(255, 255, 255)","min":"4.61","pixels":242}
+ok   844x390: loss tab text ≥ 4.5:1 against the pixels behind it {"color":"rgb(138, 34, 25)","min":"8.63","pixels":242}
+ok   844x390: another seat's gain shows no cue
+ok   844x390: on a bot's turn the banner says whom the person waits for, and there is no Roll {"banner":"Wait for Pine (bot) to roll","bot":"Pine (bot)","roll":false}
+ok   844x390 refit: "Your turn" after the hole changed under it found room (moved)
+ok   844x390 refit: "Your turn" after the hole changed under it centred on the island's hole, moved 18 px to clear the HUD {"centre":["558","110"],"hole":["558","92"],"shift":17.5}
+ok   844x390 refit: "Your turn" after the hole changed under it moved only because the centre was covered when it showed
+ok   844x390 refit: "Your turn" after the hole changed under it inside the safe area {"box":{"left":454.875,"top":76,"right":661.125,"bottom":143},"safe":{"left":47,"top":0,"right":797,"bottom":369}}
+ok   844x390 refit: "Your turn" after the hole changed under it inside the hole {"box":{"left":454.875,"top":76,"right":661.125,"bottom":143},"hole":{"x":331,"y":-52,"width":454,"height":288,"top":-52,"right":785,"bottom":236,"left":331}}
+ok   844x390 refit: "Your turn" after the hole changed under it covers no HUD control or chip {"hit":[],"how":"moved","shift":17.5}
+ok   844x390: on the person's roll, Roll is the one filled primary ["Roll"]
+ok   844x390: the person's seat card wears the turn ring and the banner leads with Roll {"primaries":["Roll"],"seatTurn":true,"current":true,"banner":"Roll the dice"}
+ok   844x390: the moment reads "Your turn" "Your turn"
+ok   844x390: "Your turn" found room (centre)
+ok   844x390: "Your turn" centred on the island's hole {"centre":["558","213"],"hole":["558","213"],"shift":0}
+ok   844x390: "Your turn" inside the safe area {"box":{"left":454.875,"top":179,"right":661.125,"bottom":246},"safe":{"left":47,"top":0,"right":797,"bottom":369}}
+ok   844x390: "Your turn" inside the hole {"box":{"left":454.875,"top":179,"right":661.125,"bottom":246},"hole":{"left":331,"top":68,"right":785,"bottom":357}}
+ok   844x390: "Your turn" covers no HUD control or chip {"hit":[],"how":"centre","shift":0}
+ok   844x390: "Your turn" text ≥ 3:1 against the pixels behind it {"color":"rgb(38, 61, 60)","min":"11.05"}
+ok   844x390: untouched, "Your turn" is up about 1.6 s and gone within 2 s {"up":"1810","readable":"1600"}
+ok   844x390: every turn moment was on the person's own roll 3
+ok   844x390: every cue shown was one of the person's own hand changes []
+ok   844x390: "Your turn" never covers a hand tab []
+ok   844x390: over the whole game, no gain text ever mounted over the island
+ok   844x390: a watcher sees no cues
+1280x720 reduced: [{"text":"+1","at":"21376","gone":"23914","anim":null}]
+ok   1280x720 reduced: all cues are fully static under reduced motion ["none","none"]
+ok   1280x720 reduced: no card lifts or dips (no WAAPI transform) [null]
+ok   1280x720 reduced: the gain's fill is a still highlight in the good's colour [{"name":"none","opacity":"1","animations":0,"fill":"rgb(99, 116, 138)"}]
+ok   1280x720 reduced: no gain text over the island
+ok   1280x720 reduced: no fade, rise or scale on any frame
+ok   1280x720 reduced: static cues retain a readable hold [2538.300000011921,1769.5]
+ok   1280x720 reduced: each line readable for at least 1.2 s ["2538"]
+ok   1280x720 hotseat: the moment names the seat taking the device {"text":"Seat 2's turn","next":"Seat 2"}
+ok   390x844 first load, seq 20: nothing shown {"turns":0,"lines":0,"up":false}
+ok   390x844 reconnect: the seat was re-welcomed through the redial {"welcomes":2}
+ok   390x844 reconnect: the restored hand holds timber +2 over the last seen 4
+ok   390x844 rejoin onto own roll at seq 22 (no Your turn, no +2 on Wood, the cue from before the drop gone): nothing shown {"turns":0,"lines":1,"up":false}
+ok   390x844 reconnect: the cue from before the drop was cancelled
+ok   390x844 reconnect: a live gain after the rejoin shows "+1" on Wood
+ok   390x844 reconnect: a live turn after the rejoin shows "Your turn"
+ok   zero console errors []
+turn-gain-prove: all passed

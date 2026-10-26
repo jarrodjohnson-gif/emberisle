@@ -33,10 +33,8 @@ function rollOffLine(before: GameState | null, after: GameState) {
 // The table sounds a change of state makes, with their volume (#303, #609): the same diff serves practice, hotseat, and the
 // host's pushes, so a bot's placement knocks like yours. `mine` is whether this browser's seat took the action (a fortune
 // bought by someone else is a touch quieter).
-function soundsFor(before: GameState | null, after: GameState, mine: boolean, victim = false, lost = false): [SoundName, number][] {
+function soundsFor(before: GameState | null, after: GameState, mine: boolean, victim = false): [SoundName, number][] {
   if (!before) return [];
-  // The winner keeps the win sound; every other seat at the table gets the loss sting.
-  if (after.winner && !before.winner) return [lost ? ["game_lose", MUSIC_VOLUME] : ["win", 1]];
   const out: [SoundName, number][] = [];
   const built = (s: GameState, kind: "outpost" | "stronghold") => s.vertices.filter((v) => v.building?.kind === kind).length;
   const paths = (s: GameState) => s.edges.filter((e) => e.path).length;
@@ -51,7 +49,7 @@ function soundsFor(before: GameState | null, after: GameState, mine: boolean, vi
   const sameGame = before.phase !== "over" && after.turn >= before.turn && after.hexes.every((h, i) => h.terrain === before.hexes[i]?.terrain);
   // The one set against (a piece on the new hex) hears robbed_fah in its place; everyone else keeps the usual cue.
   // One point from the target, by public points only (a held point fortune is never counted, so it cannot leak). Once per player.
-  if (sameGame && after.robberHex !== before.robberHex) out.push(victim ? ["robbed_fah", MEME_VOLUME] : ["wayfarer_move", 1]);
+  if (sameGame && after.robberHex !== before.robberHex) out.push(victim ? ["robbed_fah", 1] : ["wayfarer_move", 1]);
   return out;
 }
 
@@ -84,9 +82,9 @@ export function takeMatchPointLine() {
 
 // End music: queued a moment after the win/lose sting at game over, once per game end. Leaving the end screen (the menu, a
 // rematch, a new game) cancels it. Only a live change into "over" starts it, so a reload into a finished game stays quiet.
-const END_MUSIC_DELAY_MS = 1500;
 function stopEndMusic() {
   stop("end_music");
+  stop("isaac_win");
 }
 
 // The board the start sting last played for, kept for the tab session so a reload mid-setup does not replay it.
@@ -119,38 +117,40 @@ function clearKnocks() {
 // Play the sound for a state change, and the your-turn chime when the turn comes round to this browser's seat
 // (not in hotseat, where every seat is this browser).
 export function hear(before: GameState | null, after: GameState, me: string, mode: GameStore["mode"], reconnect?: boolean) {
-  const lost = mode !== "hotseat" && me !== "" && !!after.winner && after.winner !== me;
   const victim =
     mode !== "hotseat" && !!before && before.current !== me && after.vertices.some((v) => v.building?.playerId === me && v.hexes.includes(after.robberHex));
-  for (const [sound, volume] of soundsFor(before, after, mode === "hotseat" || after.current === me, victim, lost)) {
-    // A piece knocks when it lands, not when it is picked (#438); reduced motion has no fall, so it knocks at once.
-    const land = sound in LAND_MS && !calmMotion() ? LAND_MS[sound as keyof typeof LAND_MS] : 0;
-    if (land) {
-      const t = setTimeout(() => {
-        knocks.delete(t);
-        play(sound, volume);
-      }, land);
-      knocks.add(t);
-    } else play(sound, volume);
+  const cue = haptics.player?.(before, after, me, mode) ?? play;
+  if (before && after.winner && !before.winner) {
+    // The banner buzz is felt at once; only the choice of sting waits for the lazy trade-sound chunk.
+    if (me && (mode === "hotseat" || after.winner === me)) haptics.buzz?.(HAPTIC_MS.win);
+    void tradeSounds.then(({ gameEnd }) => gameEnd(play, before, after, me, mode));
+  } else {
+    for (const [sound, volume] of soundsFor(before, after, mode === "hotseat" || after.current === me, victim)) {
+      // A piece knocks when it lands, not when it is picked (#438); reduced motion has no fall, so it knocks at once.
+      const land = sound in LAND_MS && !calmMotion() ? LAND_MS[sound as keyof typeof LAND_MS] : 0;
+      if (land) {
+        const t = setTimeout(() => {
+          knocks.delete(t);
+          cue(sound, volume);
+        }, land);
+        knocks.add(t);
+      } else cue(sound, volume);
+    }
   }
   // A new game (the lobby's Start, a rematch): the sting plays once, for a seat; the first roll cuts it off.
   // Keyed on the board: a bot may already have rolled first (seq > 0), and a reconnect into setup must not replay it.
   if (mode === "online" && me && (!before || before.phase === "over") && (after.phase === "rollOff" || after.phase === "setupSettle") && startedSig() !== gameSig(after)) {
     rememberStart(gameSig(after));
-    play("game_start", MUSIC_VOLUME);
+    play("game_start");
   }
   if (before?.phase === "over" && after.phase !== "over") stopEndMusic();
-  if (mode !== "hotseat" && me && before && before.phase !== "over" && after.phase === "over" && after.winner) {
-    stopEndMusic();
-    playLater("end_music", MUSIC_VOLUME, END_MUSIC_DELAY_MS);
-  }
   matchLine = null;
   if (before && before.phase !== "over" && after.turn >= before.turn && after.hexes.every((h, i) => h.terrain === before.hexes[i]?.terrain)) {
     const reached = claimMatchPoints(before, after);
-    for (const _ of reached) play("match_point", MUSIC_VOLUME);
+    for (const _ of reached) play("match_point");
     if (reached[0]) matchLine = `${reached[0].name} reached ${publicVP(after, reached[0].id)} points — one to win`;
   }
-  if (mode !== "hotseat" && after.current === me && after.phase !== "over" && (reconnect || (before && before.current !== me))) yourTurn();
+  if (mode !== "hotseat" && after.current === me && after.phase !== "over" && (reconnect || (before && before.current !== me))) cue("your_turn");
 }
 
 // The game log the dock shows (#305): a line of `state.log` or a host `log` message, stamped when this browser saw it.
@@ -159,7 +159,6 @@ export interface GameLogLine {
   text: string;
 }
 const GAME_LOG_MAX = 200;
-const LOG_FILTER_KEY = "emberisle-log-filter";
 const WATER_KEY = "emberisle-water";
 const VIEW_KEY = "emberisle-view";
 
@@ -201,14 +200,6 @@ function savedView(): PlayView | null {
   }
 }
 
-function savedLogFilter(): "all" | "chat" {
-  try {
-    return localStorage.getItem(LOG_FILTER_KEY) === "chat" ? "chat" : "all";
-  } catch {
-    return "all";
-  }
-}
-
 // The board as it would be with these paths laid, so the second pick of a path fortune can glow (#184).
 function withPaths(state: GameState, edgeIds: string[], pid: string): GameState {
   if (!edgeIds.length) return state;
@@ -216,13 +207,17 @@ function withPaths(state: GameState, edgeIds: string[], pid: string): GameState 
 }
 import { chooseBotAction, chooseTradeAsk, shouldAcceptTrade } from "./ai";
 import { PLAYER_COLORS, RESOURCES, type Action, type BuildMode, type GameState, type VictoryTarget, type WayfarerMode } from "./types";
-import { connectTable, hostUrl, type Bag, type ChatLine, type Legal, type Me, type Reaction, type Seat, type TableClient } from "@/lib/net/table";
+import type { Bag, ChatLine, Legal, Me, Reaction, Seat, TableClient } from "@/lib/net/table";
+import { chunk } from "@/lib/lazy";
 import { PROTO } from "@/lib/net/proto";
 import { readMutedSeats } from "@/lib/muted-seats";
-import { MEME_VOLUME, MUSIC_VOLUME, play, playLater, SOUNDBOARD, stop, yourTurn, type SoundName } from "@/lib/sound";
+import { HAPTIC_MS } from "@/lib/haptic-durations";
+import { haptics, play, playLater, stop, yourTurn, type SoundName } from "@/lib/sound";
 import { calmMotion, LAND_MS } from "@/lib/scene/landing";
 import type { WaterPath, WaterStatus } from "@/lib/scene/crystal-water";
 import type { PlayView } from "@/lib/scene/mobile-fit";
+
+const tradeSounds = import("../trade-sound");
 
 // The ask-the-table offer every seat is looking at (docs/BUILD_BIBLE.md 4.4). `until` is when the host's 20 s run out.
 export interface OpenOffer {
@@ -233,6 +228,9 @@ export interface OpenOffer {
   want: Bag;
   until: number;
 }
+
+// The client is needed only for discovery or an explicit online journey.
+const tableModule = chunk(() => import("@/lib/net/table"));
 
 // The window listeners that wake a backing-off table; one connection at a time, so one remover.
 let stopWake: (() => void) | null = null;
@@ -246,7 +244,12 @@ let outcomeTimer: ReturnType<typeof setTimeout> | null = null;
 // after the ask, and an offer nobody takes closes after OFFER_MS. The timers belong to the open offer.
 const BOT_ANSWER_MS = 1000;
 const OFFER_MS = 20000;
+// People first (#850), as host.mjs: a bot's Yes waits this long, or until every person asked has said No.
+const PEOPLE_FIRST_MS = 8000;
 let offerTimers: ReturnType<typeof setTimeout>[] = [];
+let peopleUntil = 0;
+// Bots that said Yes inside the people-first window, in the order they said it.
+let heldYes: string[] = [];
 let offerSeq = 0;
 // `${turn}:${bot}` of the last bot turn that had its one chance to ask the table.
 let botAsked = "";
@@ -255,6 +258,7 @@ let botDeclined = new Map<string, { give: Bag; want: Bag }>();
 function clearOfferTimers() {
   for (const t of offerTimers) clearTimeout(t);
   offerTimers = [];
+  heldYes = [];
 }
 
 export type Screen = "title" | "lobby" | "play";
@@ -265,6 +269,7 @@ interface GameStore {
   // null until the player picks a swatch; see savedColor().
   color: string | null;
   mode: "ai" | "hotseat" | "online";
+  serverSha: string | null;
   table: string;
   localId: string;
   host: boolean;
@@ -323,6 +328,7 @@ interface GameStore {
   net: TableClient | null;
   // True when `net` is the pre-join peek connection (docs/design/color-peek.md), not a seated or rejoining one.
   peeking: boolean;
+  connectionHealth: import("@/lib/net/table").ConnectionHealth;
   code: string;
   isHost: boolean;
   tableVictoryTarget: VictoryTarget;
@@ -331,9 +337,13 @@ interface GameStore {
   legal: Legal | null;
   // The host's turn timer (#344): when it fires on this tab's clock, whose seat it is, and the host's own value
   // (`deadline`) that tells one window from the next. Null when none is armed.
-  turnTimer: { at: number; player: string; deadline: number } | null;
+  // `host` is the host's clock on the push that opened this window (0 when the push carried none).
+  turnTimer: { at: number; player: string; deadline: number; host: number } | null;
+  // The host clock minus this one, as best this tab has measured it (0 before any push). A push shows the skew less the time it
+  // spent on the way, so the largest one seen is the closest. The final-countdown cues are timed from it, not from `at`.
+  clockSkew: number;
   lobbyLog: string;
-  hostTable: () => void;
+  hostTable: (visibility?: "open" | "private") => void;
   joinTable: (code: string) => void;
   // Ask which colors a lobby already holds, on a connection of its own, before the player joins.
   peekTable: (code: string) => void;
@@ -375,9 +385,6 @@ interface GameStore {
   sendReact: (emote: string, to?: string) => void;
   // The whole game log, for the dock (#305): the new lines of `state.log` after each local action, and the host's `log` messages online.
   gameLog: GameLogLine[];
-  // Which rows the dock lists: the chat alone, or the chat and the game log together. Remembered like `chatOpen`.
-  logFilter: "all" | "chat";
-  setLogFilter: (v: "all" | "chat") => void;
   // The sea (docs/design/crystal-water.md): the player's saved Water choice (null lets the GPU probe decide), and what the
   // renderer actually shows.
   waterChoice: WaterPath | null;
@@ -490,6 +497,7 @@ export const useGame = create<GameStore>((set, get) => ({
   name: savedName(),
   color: savedColor(),
   mode: "ai",
+  serverSha: null,
   table: "",
   localId: "p0",
   host: true,
@@ -507,12 +515,14 @@ export const useGame = create<GameStore>((set, get) => ({
   banner: null,
   net: null,
   peeking: false,
+  connectionHealth: { status: "Offline", rtt: null },
   code: "",
   isHost: false,
   tableVictoryTarget: 10,
   seats: [],
   legal: null,
   turnTimer: null,
+  clockSkew: 0,
   lobbyLog: "",
   spectator: false,
   synced: 0,
@@ -526,7 +536,6 @@ export const useGame = create<GameStore>((set, get) => ({
   unread: 0,
   chatDraft: "",
   gameLog: [],
-  logFilter: savedLogFilter(),
   waterChoice: savedWater(),
   water: null,
   viewChoice: savedView(),
@@ -591,7 +600,7 @@ export const useGame = create<GameStore>((set, get) => ({
       declined: [],
       tradeOutcome: null, tradeTaker: null,
     });
-    play("game_start", MUSIC_VOLUME);
+    play("game_start");
   },
   startHotseat: (count) => {
     stopEndMusic();
@@ -625,7 +634,10 @@ export const useGame = create<GameStore>((set, get) => ({
     });
   },
   restoring: typeof window !== "undefined" && inPlayAtSavedSeat(),
-  loadState: (s, localId, host, table) =>
+  loadState: (s, localId, host, table) => {
+    // A push that leaves the turn alone (a seat rejoining) keeps an open picker, with the host's fresh victims (#1110).
+    const { pendingSteal: ps, state: was, legal } = get();
+    const targets = ps && was && s.phase === was.phase && s.current === was.current ? (legal?.steal[ps.hexId] ?? []) : [];
     set({
       restoring: false,
       screen: "play",
@@ -636,10 +648,11 @@ export const useGame = create<GameStore>((set, get) => ({
       table: table ?? get().table,
       error: null,
       announcement: null,
-      pendingSteal: null,
+      pendingSteal: ps && targets.length > 1 ? { ...ps, targets } : null,
       resync: false,
       synced: get().resync ? get().synced + 1 : get().synced,
-    }),
+    });
+  },
   goTitle: () => {
     stopEndMusic();
     // Leaving on purpose frees the seat; only a drop keeps it. A watcher never held one, and the saved seat may be another table's.
@@ -652,6 +665,7 @@ export const useGame = create<GameStore>((set, get) => ({
     get().net?.close();
     set({
       screen: "title",
+      serverSha: null,
       wayfarerChoices: {},
       state: null,
       error: null,
@@ -866,9 +880,10 @@ export const useGame = create<GameStore>((set, get) => ({
     if (buildMode === "path") return { vertices: [], edges: legalRoads(state, actor, false), hexes: [] };
     return { vertices: [], edges: [], hexes: [] };
   },
-  hostTable: () => {
+  hostTable: (visibility) => {
     get().commitName();
-    connect(set, get, (t, me) => t.open(me, { wayfarerMode: get().wayfarerChoices.online ?? "on" }));
+    const wayfarerMode = get().wayfarerChoices.online ?? "on";
+    connect(set, get, (t, me) => t.open(me, { wayfarerMode, visibility }));
   },
   joinTable: (code) => {
     get().commitName();
@@ -881,6 +896,7 @@ export const useGame = create<GameStore>((set, get) => ({
     const { screen, net, peeking } = get();
     if (screen !== "title") return;
     // A non-peek `net` is the page-load rejoin; a peek queued on it would reach a seated socket and come back "not ready".
+    if (!net && stopWake && !peeking) return;
     if (net) return peeking ? net.peek(code) : undefined;
     connect(set, get, (t) => t.peek(code), "peek");
   },
@@ -945,14 +961,6 @@ export const useGame = create<GameStore>((set, get) => ({
     set(v ? { chatOpen: true, unread: 0 } : { chatOpen: false });
   },
   setChatDraft: (v) => set({ chatDraft: v }),
-  setLogFilter: (v) => {
-    try {
-      localStorage.setItem(LOG_FILTER_KEY, v);
-    } catch {
-      // storage can be blocked; the filter still holds for this page
-    }
-    set({ logFilter: v });
-  },
   setWaterChoice: (v) => {
     try {
       localStorage.setItem(WATER_KEY, v);
@@ -1027,7 +1035,7 @@ type Get = () => GameStore;
 
 // The open offer is over, taken by `taker` or by nobody: the toast goes, and the asker reads the outcome for a moment.
 function endOffer(set: Set, get: Get, taker: string | null) {
-  const { offer, state } = get();
+  const { offer, state, declined } = get();
   if (!offer) return;
   clearOfferTimers();
   const takerName = state?.players.find((p) => p.id === taker)?.name ?? "Someone";
@@ -1035,6 +1043,7 @@ function endOffer(set: Set, get: Get, taker: string | null) {
   // Both parties hear a deal in full and the rest of the table softer; only the asker hears a No (#609).
   const me = get().localId;
   if (taker) play("trade_yes", me === taker || me === offer.from ? 1 : 0.5);
+  else if (state?.players.every((p) => p.id === offer.from || declined.includes(p.id))) play("corn_no");
   else if (me === offer.from) play("trade_no");
   // Every receiver gets the resolved offer as one brief log line, with no response controls.
   if (outcomeTimer) clearTimeout(outcomeTimer);
@@ -1049,14 +1058,34 @@ function openOffer(set: Set, get: Get, from: string, give: Bag, want: Bag) {
   const tradeId = `t${state.seq}-${++offerSeq}`;
   const fromName = state.players.find((p) => p.id === from)?.name ?? "Someone";
   set({ offer: { tradeId, from, fromName, give, want, until: Date.now() + OFFER_MS }, declined: [], tradeOutcome: null, tradeTaker: null });
-  if (from !== get().localId) play("trade_offer");
+  const me = get().localId;
+  void tradeSounds.then(({ offerChime }) => offerChime(play, from, fromName, me, give, want));
   offerTimers.push(setTimeout(() => endOffer(set, get, null), OFFER_MS));
   for (const p of state.players) {
     if (p.kind !== "bot" || p.id === from) continue;
     const answer = () => {
-      if (get().offer?.tradeId === tradeId) respond(set, get, p.id, shouldAcceptTrade(get().state!, p.id, { from, give, want }));
+      if (get().offer?.tradeId !== tradeId) return;
+      const yes = shouldAcceptTrade(get().state!, p.id, { from, give, want });
+      if (yes && peopleWaiting(get)) heldYes.push(p.id);
+      else respond(set, get, p.id, yes);
     };
     offerTimers.push(setTimeout(answer, BOT_ANSWER_MS + Math.floor(Math.random() * (BOT_ANSWER_MS + 1))));
+  }
+  peopleUntil = Date.now() + PEOPLE_FIRST_MS;
+  offerTimers.push(setTimeout(() => releaseHeld(set, get), PEOPLE_FIRST_MS));
+}
+
+function peopleWaiting(get: Get) {
+  const { offer, state, declined } = get();
+  if (!offer || !state || Date.now() >= peopleUntil) return false;
+  return state.players.some((p) => p.kind !== "bot" && p.id !== offer.from && !declined.includes(p.id));
+}
+
+// The first bot to say Yes still takes it (host.mjs releaseHeld).
+function releaseHeld(set: Set, get: Get) {
+  for (const id of heldYes.splice(0)) {
+    if (!get().offer) return;
+    respond(set, get, id, true);
   }
 }
 
@@ -1074,7 +1103,7 @@ function respond(set: Set, get: Get, actor: string, yes: boolean): string | null
         botDeclined.set(offer.from, { give: offer.give, want: offer.want });
       }
       endOffer(set, get, null);
-    }
+    } else if (!peopleWaiting(get)) releaseHeld(set, get);
     return null;
   }
   const offered = applyAction(state, offer.from, { type: "offerTrade", to: actor, give: offer.give, want: offer.want });
@@ -1096,21 +1125,47 @@ function respond(set: Set, get: Get, actor: string, yes: boolean): string | null
 // "watch" is a spectator (docs/design/spectator.md): no seat and no secret, so a drop never redials and must not erase a
 // seat this browser saved for another table.
 type ConnectKind = "normal" | "quiet" | "peek" | "watch";
-function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, kind: ConnectKind = "normal") {
+async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, kind: ConnectKind = "normal") {
   clearWake();
-  get().net?.close();
+  // Not a leave: a rejoin after a crash dials the same seat, which the host must still be holding.
+  get().net?.close(false);
+  const selectedHost = new URL(window.location.href);
+  const selectedMe: Me = { name: get().name.trim() || "Ember", color: get().color ?? undefined };
+  let cancelled = false;
+  let removeListeners = () => {};
+  let restoreTimer: ReturnType<typeof setTimeout> | undefined;
+  stopWake = () => { cancelled = true; clearTimeout(restoreTimer); removeListeners(); };
+  // The original three-second fallback includes time spent fetching the client.
+  if (kind === "quiet" && get().restoring) restoreTimer = setTimeout(() => !cancelled && get().restoring && set({ restoring: false }), 3000);
+  set({ serverSha: null, net: null, peeking: kind === "peek", connectionHealth: { status: "Reconnecting", rtt: null } });
+  const loadFailed = () => {
+    if (cancelled) return;
+    clearWake();
+    const error = "Online play could not load. Try again.";
+    set(kind === "peek" ? { peeking: false, connectionHealth: { status: "Offline", rtt: null } } : { restoring: false, error, toast: error, connectionHealth: { status: "Offline", rtt: null } });
+  };
+  let transport;
+  try { transport = await tableModule.load(); } catch { loadFailed(); return; }
+  if (cancelled) return;
+  const { connectTable, hostUrl } = transport;
   let pending = kind === "quiet";
+  let recovery = pending;
   let welcomed = false;
   let outdated: string | null = null;
   let firstState = false;
-  const table = connectTable(hostUrl(window.location), {
-    welcome: ({ proto, code, you, host, chat, secret, spectator, victoryTarget, wayfarerMode }) => {
+  let table: TableClient;
+  try { table = connectTable(hostUrl(selectedHost), {
+    health: (connectionHealth) => {
+      if (recovery && (get().restoring || get().state !== null) && connectionHealth.status === "Reachable") return;
+      set({ connectionHealth });
+    },
+    welcome: ({ proto, serverSha, code, you, host, chat, secret, spectator, victoryTarget, wayfarerMode }) => {
       pending = false;
       welcomed = true;
       firstState = true;
       // G2: a host on a newer wire protocol than this page says so where errors go, and keeps saying it after every state.
       outdated = (proto ?? 0) > PROTO ? "This page is out of date. Reload to update." : null;
-      set({ resync: true, tableVictoryTarget: victoryTarget === 7 ? 7 : 10, tableWayfarerMode: wayfarerMode ?? "on" });
+      set({ serverSha: typeof serverSha === "string" && /^(?:[a-f0-9]{7,40}|dev)$/.test(serverSha) ? serverSha : null, resync: true, tableVictoryTarget: victoryTarget === 7 ? 7 : 10, tableWayfarerMode: wayfarerMode ?? "on" });
       if (secret) rememberSeat({ code, secret });
       // A page-load rejoin has no state yet, so it passes through the lobby until the host's state push moves it to play.
       // A mid-game reconnect already holds the game: stay on the board so the HUD keeps its local state.
@@ -1128,6 +1183,8 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       // A reload at a table that was in play (#543) waits on the loading screen for the state that follows at once, not the
       // lobby; if none comes (the table was reset meanwhile), the lobby is where the seat belongs.
       const restoring = get().restoring;
+      // A recovered lobby has no full game state to recover. Its later Start is a new game.
+      if (!inGame && !restoring) recovery = false;
       if (restoring)
         setTimeout(() => {
           if (!get().restoring || get().net !== table) return;
@@ -1138,12 +1195,17 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
             // storage can be blocked
           }
           liveCode = "";
+          recovery = false;
           set({ restoring: false, screen: "lobby" });
         }, 1500);
       set({ announcement: null, code, spectator: false, seatId: you ?? "", isHost: host ?? false, screen: restoring ? "title" : inGame ? "play" : "lobby", mode: "online", error: outdated, toast: outdated, chat: history, reactions: [], unread: 0 });
     },
     // The window may have closed while we were away; the next state brings it back rather than a chip stuck at 0:00.
-    reconnecting: (attempt) => (firstState = true, set({ announcement: null, error: `Reconnecting… (try ${attempt})`, toast: "Reconnecting…", turnTimer: null })),
+    reconnecting: (attempt) => {
+      recovery = true;
+      firstState = true;
+      set({ announcement: null, error: `Reconnecting… (try ${attempt})`, toast: "Reconnecting…", turnTimer: null });
+    },
     chat: (line) => {
       const { chat, chatOpen, unread, seatId, screen } = get();
       // The lobby box is always open, so only lines that arrive during the game can be unread.
@@ -1151,10 +1213,10 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       set({ chat: [...chat, { ...line, at: Date.now() }].slice(-50), unread: counts ? unread + 1 : unread });
       // Others' lines tick; the sender's echo does not, and nothing ticks under the hands of someone typing in the chat (#609).
       // A soundboard line plays its clip for everyone, the sender too; it is not also a tick.
-      const board = SOUNDBOARD.find((b) => b.id === line.sound);
       // A muted seat's soundboard taps are as silent here as its chat line is hidden.
-      if (board) {
-        if (!readMutedSeats(get().code).includes(line.seat)) play(board.clip, MEME_VOLUME);
+      if (line.sound) {
+        const clip = line.sound.replace(/^(bong|plop|pluck)$/, "board_$1") as SoundName;
+        if (!readMutedSeats(get().code).includes(line.seat)) play(clip);
       } else if (line.seat !== seatId && document.activeElement?.id !== "chat-input") play("chat_recv");
     },
     react: (r) => {
@@ -1162,7 +1224,13 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       setTimeout(() => set({ reactions: get().reactions.filter((x) => x !== r) }), 2000);
     },
     // A peek answers id/color/ready only (G10); the lobby is not shown until the full broadcast after sitting replaces it.
-    seats: ({ code, seats, watching, victoryTarget, wayfarerMode }) => set({ code, seats: seats as Seat[], watching: watching ?? 0, tableVictoryTarget: victoryTarget === 7 ? 7 : 10, tableWayfarerMode: wayfarerMode ?? "on" }),
+    seats: ({ code, seats, watching, victoryTarget, wayfarerMode }) => {
+      const before = get().seats;
+      const after = seats as Seat[];
+      const me = get().localId;
+      void tradeSounds.then(({ diggerBell }) => diggerBell(play, before, after, me));
+      set({ code, seats: seats as Seat[], watching: watching ?? 0, tableVictoryTarget: victoryTarget === 7 ? 7 : 10, tableWayfarerMode: wayfarerMode ?? "on" });
+    },
     // Dice and gain floats present the roll; its words live only in the persistent log.
     rolled: () => {},
     state: ({ you, game, legal, turnDeadline, turnPlayer, serverNow }) => {
@@ -1171,19 +1239,25 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       const rollOff = rollOffLine(get().state, game);
       // hear first: it is what claims a match point, and the banner line is read off that claim on this same state.
       hear(get().state, game, me, "online", firstState);
-      firstState = false;
       const swing = awardLine(get().state, game) ?? takeMatchPointLine();
       // The deadline moves onto this clock by the skew the message shows, so a phone minutes off still counts true.
       // Every push carries the same window, and the skew wobbles by however long this tab took to get to the message:
       // the timer we hold stays while the host's deadline is the same, so the chip neither remounts nor announces twice.
       const skew = typeof serverNow === "number" ? serverNow - Date.now() : 0;
       const prev = get().turnTimer;
-      const turnTimer = !turnDeadline || !turnPlayer ? null : prev?.deadline === turnDeadline && prev.player === turnPlayer ? prev : { at: turnDeadline - skew, player: turnPlayer, deadline: turnDeadline };
+      // A new connection starts the estimate over: a rejoin may reach a different host clock.
+      const clockSkew = firstState ? skew : Math.max(skew, get().clockSkew);
+      firstState = false;
+      const turnTimer = !turnDeadline || !turnPlayer ? null : prev?.deadline === turnDeadline && prev.player === turnPlayer ? prev : { at: turnDeadline - skew, player: turnPlayer, deadline: turnDeadline, host: serverNow as number };
       // The first state after a join or a page-load rejoin seeds the log with what the engine kept, the way practice does.
-      set({ legal, turnTimer, gameLog: get().state ? get().gameLog : appendLog(get().gameLog, game.log) });
+      set({ legal, turnTimer, clockSkew, gameLog: get().state ? get().gameLog : appendLog(get().gameLog, game.log) });
       // A rematch's new game (#266): drop any half-made move or open panel left over from the win.
       if (get().state?.phase === "over" && game.phase !== "over") set({ buildMode: "none", roadPicks: [], pendingPlace: null, tradeOpen: false });
       get().loadState(game, me, get().isHost, get().code);
+      if (recovery && !get().spectator) {
+        recovery = false;
+        set({ announcement: "Back at the table", toast: "Back at the table", connectionHealth: { status: "Reachable", rtt: get().connectionHealth.rtt } });
+      }
       if (!get().spectator) rememberLive(get().code);
       if (outdated) set({ announcement: null, error: outdated, toast: outdated });
       if (rollOff) showBanner(set, rollOff);
@@ -1193,7 +1267,8 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
     tradeOffer: ({ tradeId, from, give, want, seconds }) => {
       const fromName = get().state?.players.find((p) => p.id === from)?.name ?? "Someone";
       set({ offer: { tradeId, from, fromName, give, want, until: Date.now() + seconds * 1000 }, declined: [], tradeOutcome: null, tradeTaker: null });
-      if (from !== get().localId) play("trade_offer");
+      const me = get().localId;
+      void tradeSounds.then(({ offerChime }) => offerChime(play, from, fromName, me, give, want));
     },
     tradeDeclined: ({ tradeId, by }) => {
       const { offer, declined } = get();
@@ -1246,9 +1321,7 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
       set({ announcement: null, error: "Lost the table", toast: "Lost the table", screen: "title", net: null, peeking: false, seats: [], code: "", state: null });
     },
   });
-  // A host that cannot be dialled never welcomes, so the splash would wait out the whole backoff: after 3 s the Title shows
-  // with "Reconnecting…" while the retries go on.
-  if (kind === "quiet" && get().restoring) setTimeout(() => get().restoring && get().net === table && set({ restoring: false }), 3000);
+  } catch { loadFailed(); return; }
   // A peek is not the player's action, so it leaves a join error ("Lost the table") on the Title card.
   set(kind === "peek" ? { net: table, peeking: true, mode: "online" } : { net: table, peeking: false, mode: "online", error: null, announcement: null });
   if (kind !== "peek") {
@@ -1258,10 +1331,10 @@ function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, ki
     };
     window.addEventListener("online", online);
     window.addEventListener("visibilitychange", visible);
-    stopWake = () => {
+    removeListeners = () => {
       window.removeEventListener("online", online);
       window.removeEventListener("visibilitychange", visible);
     };
   }
-  first(table, { name: get().name.trim() || "Ember", color: get().color ?? undefined });
+  first(table, selectedMe);
 }

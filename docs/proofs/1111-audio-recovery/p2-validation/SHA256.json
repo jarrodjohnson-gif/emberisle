@@ -1,0 +1,22 @@
+{
+  "README.md": "c01fc5637c351d766038139a339902be17fdfcdea0460e11a3884d27f0d8b436",
+  "browser-install.log": "06a14c5802ecab09bbb5d1a101da6c92f736918144fd0268a880915e02427d27",
+  "build.log": "5277bc44fe16d93900a1db98f96e87c9174c45efa4daae00e340e374870eba1b",
+  "favicon-diagnostic.log": "9b0229e91d5b2c4a520119dcaa4183c2d0fcf11ac4d959451f4553c1274ec974",
+  "fresh-install.log": "e4e3907cbaf1349e7b09741bc31688971f24b693b805a33fb0cac02f4480f39b",
+  "fresh-native-pinned.log": "b72f93fe2be4a8fc969ca93382d605f87a4201e9471ae0895dd7224ab9dcbb44",
+  "fresh-native.log": "1b5c658cbf1923c43477dd19aedc57c183a7ba57e912d5b00875b6f891adabc6",
+  "fresh-server-install.log": "67ee773432361dd97b97fea7ba7103f466d449193c60e6f27672e4c920c5dd70",
+  "loosen.log": "6f7e4ee7d2f76d6218e80ac2f48c78d69af66d3289da18044b2eb2b746af7c0f",
+  "mixer-base-diagnostic.log": "aa8907fff4378ebcbf0986bedd425f25fcad3d27b29fdd364e80b400d9e6157e",
+  "mixer-pinned.log": "ff967a3b7a6beaf7b6adedfa10671055cff19917c9486c9431e15e2c749da29b",
+  "mixer.log": "95beadf23d5467ffec47ff26afcfda22828ab7e43a3d14c20a81e75afe234096",
+  "music.log": "991a633f713383afe927b289ea87a61fc17ab3945570536217a4d5f768419ec0",
+  "registered.log": "6adf6cc0fc9bd8bf6cf857929af58c66914d791ab11964485b79e6f81c0a1601",
+  "restore.log": "06b20078f5d1646517172de816f234b5cbc72aa72ed7ebe6df0642e266427d56",
+  "scope.log": "d49131d3531ecf2c9c3fb6489950b5aa699fb89a9f3f2dadace9b8bd22930707",
+  "size.log": "af117c4ed25cb1557fff7a1bb8f8e36e2d51682fbc7dc92b84342dfa0b39408b",
+  "sounds.log": "0c2dd7d49516e4d02739795a1774918033ff89727f17b4ea546929c0be1be0ff",
+  "types.log": "8fa1cf5506304e8abac55868e7f1a136c9b1dde57a3981a382da4c21ea129a6f",
+  "your-turn.log": "72427d3cc3b99c1aa26b1f669cd88cac905ed88df100288427d58bf2aaa7265b"
+}

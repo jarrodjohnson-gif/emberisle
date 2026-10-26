@@ -99,16 +99,18 @@ function connectedToNetwork(state: GameState, pid: string, eid: string) {
   return touch(e.va) || touch(e.vb);
 }
 
-export function harborRate(state: GameState, pid: string, res: Resource): number {
+export function heldRates(state: GameState, pid: string, res: Resource): number[] {
   let any = false;
   let specific = false;
   for (const v of playerVertices(state, pid)) {
     if (v.harbor === res) specific = true;
     if (v.harbor === "any") any = true;
   }
-  if (specific) return 2;
-  if (any) return 3;
-  return 4;
+  return [4, ...(any ? [3] : []), ...(specific ? [2] : [])];
+}
+
+export function harborRate(state: GameState, pid: string, res: Resource): number {
+  return Math.min(...heldRates(state, pid, res));
 }
 
 export function legalSettle(state: GameState, pid: string, setup: boolean): string[] {
@@ -377,7 +379,7 @@ const LABEL_TO_RESOURCE: Record<string, Resource> = {
 
 // The shortage travels with the canonical roll event, including after a rejoin.
 export function bankShort(state: GameState): Resource[] {
-  const i = state.log.findLastIndex((l) => / rolls \d\+\d = \d+\.| — .+'s roll[;.]/.test(l));
+  const i = state.log.findLastIndex((l) => / rolled \d+!| — .+'s roll[;.]/.test(l));
   const m = /[Tt]he bank is short of ([a-z and]+);/.exec(`${state.log[i] ?? ""} ${state.log[i + 1] ?? ""}`);
   return m ? (m[1]!.split(" and ").map((w) => LABEL_TO_RESOURCE[w] ?? (w as Resource))) : [];
 }
@@ -408,6 +410,7 @@ function stealOne(state: GameState, fromId: string, toId: string) {
   const pick = pool[Math.floor(nextRand(state) * pool.length)]!;
   from.resources[pick] -= 1;
   to.resources[pick] += 1;
+  from.goodsLost = (from.goodsLost ?? 0) + 1;
   // The table hears that a card moved, not which one: only the two hands change (#187).
   log(state, `${to.name} steals a card from ${from.name}.`);
 }
@@ -501,8 +504,16 @@ export function applyAction(prev: GameState, actor: string, action: Action): { s
     case "playRoad": line = `${me.name} plays Path — places ${prev.players.find((p) => p.id === actor)!.pathsLeft - me.pathsLeft} ${prev.players.find((p) => p.id === actor)!.pathsLeft - me.pathsLeft === 1 ? "path" : "paths"}.`; break;
     case "playPlenty": line = `${me.name} plays Plenty — ${delta}.`; break;
     case "playMonopoly": line = `${me.name} plays Monopoly — ${delta || `gains 0 ${RESOURCE_LABEL[action.resource].toLowerCase()}`}.`; break;
-    case "bankTrade": line = `${delta} — bank trade.`; break;
-    case "respondTrade": if (action.accept) line = `${delta} — table trade.`; break;
+    case "bankTrade": {
+      const rate = harborRate(prev, actor, action.give);
+      line = `${me.name} traded ${rate} ${RESOURCE_LABEL[action.give].toLowerCase()} to ${rate < 4 ? "a dock" : "the bank"} for 1 ${RESOURCE_LABEL[action.want].toLowerCase()}.`;
+      break;
+    }
+    case "respondTrade": {
+      const t = prev.trade;
+      if (action.accept && t) line = `${prev.players.find((p) => p.id === t.from)!.name} traded ${goods(t.give) || "nothing"} to ${me.name} for ${goods(t.want) || "nothing"}.`;
+      break;
+    }
   }
   if (!line) return result;
   // Awards and victory remain separate public events; setup's transition also stays in order.
@@ -511,7 +522,9 @@ export function applyAction(prev: GameState, actor: string, action: Action): { s
   const added = next.log.slice(overlap);
   const awards = added.filter((v) => / (holds|loses) the (longest path|largest army)\./.test(v));
   const endings = added.filter((v) => / claims the isle |^The isle is settled/.test(v));
-  next.log = [...prev.log, ...awards, line, ...endings].slice(-200);
+  // The roll's own line ("<name> rolled <sum>!", #687) is part of the public log, ahead of what the roll paid.
+  const rolled = action.type === "roll" ? added.filter((v) => /^.+ rolled \d+!$/.test(v)) : [];
+  next.log = [...prev.log, ...rolled, ...awards, line, ...endings].slice(-200);
   return result;
 }
 
@@ -567,7 +580,7 @@ function applyActionInternal(prev: GameState, actor: string, action: Action): { 
       state.rolls = (state.rolls ?? 0) + 1;
       state.lastProduction = [];
       const total = a + b;
-      log(state, `${me.name} rolls ${a}+${b} = ${total}.`);
+      log(state, `${me.name} rolled ${total}!`);
       if (total === 7) {
         const need: Record<string, number> = {};
         for (const p of state.players) {
