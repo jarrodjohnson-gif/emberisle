@@ -165,6 +165,15 @@ racingLabel.api.onLabelWrite = (pulls, comments) => {
 await run(racingLabel);
 assert(!racingLabel.pulls[0].labels.some(l => l.name === 'stale'));
 assert(racingLabel.writes().some(c => c.method === 'DELETE' && c.path.endsWith('/labels/stale')));
+
+const markerRewrittenRace = fake([pr(1)], [marker(6)]);
+markerRewrittenRace.api.onLabelWrite = (pulls, comments) => {
+  // An event run rewrites the marker with identical sha and observedAt, but without labeledAt
+  comments[0] = marker(6, { sha, labeledAt: '' });
+};
+await run(markerRewrittenRace);
+assert(!markerRewrittenRace.pulls[0].labels.some(l => l.name === 'stale'));
+assert(markerRewrittenRace.writes().some(c => c.method === 'DELETE' && c.path.endsWith('/labels/stale')));
 ok('4: concurrent event race during labeling detects marker/head change and cleans up stale label');
 
 {
@@ -196,6 +205,8 @@ ok('4: concurrent event race during labeling detects marker/head change and clea
   assert(!normalLabel.writes().some(c => c.method === 'DELETE'));
   assert(!racingLabel.pulls[0].labels.some(l => l.name === 'stale'));
   assert(racingLabel.writes().some(c => c.method === 'DELETE'));
+  assert(!markerRewrittenRace.pulls[0].labels.some(l => l.name === 'stale'));
+  assert(markerRewrittenRace.writes().some(c => c.method === 'DELETE'));
 }
 ok('negative controls: mutation checks verify each of the four rules on real inputs');
 for (const status of [403, 500]) {
