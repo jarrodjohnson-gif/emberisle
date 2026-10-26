@@ -17,7 +17,7 @@ This worker independently verified logs, final source hashes, clean frozen check
 | --- | --- | --- |
 | Typecheck | 0 | `typecheck.log.gz` |
 | Registration, all 151 proofs | 0 | `registered.log.gz` |
-| Proof loosening against actual main d09d72f | 0 | `loosen.log.gz` |
+| Proof loosening against frozen main baseline d09d72f | 0 | `loosen.log.gz` |
 | Eight size fixtures at browser source | 0 | `size-delta.log.gz` |
 | Production build | 0 | `build.log.gz` |
 | Size ceilings and base growth | 0 | `size.log.gz` |
@@ -65,7 +65,7 @@ See `source-sha256.json` and `audit.json`. No runtime or proof changed during ar
 `focusableIn` affects every dialog using `useFocusTrap`, beyond trading.
 The existing client proof adds a WinScreen case temporarily assigning `tabindex=-1` to Look around.
 It preserves the earlier positive Tab/Shift+Tab assertions and restores the attribute before continuing.
-Both forward and backward focus must reach Table menu.
+Both directions remain on Back to menu (`win-menu`).
 
 Parent ran the negative control alone on private proof checkpoint `35a2e1265cbd5c1c14b33fd69cd1ceb95509128e`.
 It removed only ` && el.tabIndex >= 0` from the shared helper.
