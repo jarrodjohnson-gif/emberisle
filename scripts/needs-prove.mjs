@@ -96,6 +96,67 @@ try{
   act({type:'roll'});act({type:'endTurn'});if(useLocalNeeds.getState().p0)throw Error('second own turn did not clear');
  });
  console.log('ok hotseat/practice shared local path: matching bank trade clears; only two own completed turns expire a need');
+ // Four seats and two published needs are the worst narrow-card case from desk review6409765942.
+ // Keep the protocol/trade/expiry assertions above intact; this adds real rendered geometry coverage.
+ const geometryProblems=[],geometry=[];
+ const captureDirectory=process.env.NEEDS_CAPTURE_DIR||'test-results';mkdirSync(captureDirectory,{recursive:true});
+ for(const [width,height] of [[320,568],[390,844],[844,390],[1280,720]]){
+  const context=await browser.newContext({viewport:{width,height},hasTouch:width!==1280,isMobile:width!==1280});
+  const page=await context.newPage();
+  await page.addInitScript(()=>{for(const method of ['drawElements','drawArrays','drawElementsInstanced','drawArraysInstanced'])WebGL2RenderingContext.prototype[method]=()=>{};});
+  await page.goto(`http://127.0.0.1:${port}/`);await page.waitForFunction(()=>window.__emberisle);
+  await page.evaluate(()=>window.__emberisle.getState().startHotseat(4));
+  await page.waitForFunction(()=>document.querySelectorAll('.seat-card').length===4);
+  await page.evaluate(async()=>{
+   const {createGame}=await import('/src/lib/game/board.ts');
+   const state=createGame({humans:[{name:'Jarrod'},{name:'Joshua'},{name:'Dune'},{name:'Ember'}],bots:0,seed:14,wayfarerMode:'off'});
+   state.phase='main';state.rollOff=null;state.current='p0';state.log=[];
+   window.__emberisle.setState({mode:'hotseat',state,localId:'p0',tradeOpen:false,spectator:false});
+  });
+  await page.waitForFunction(()=>[...document.querySelectorAll('.seat-card')].filter(e=>e.getBoundingClientRect().width).length===4);
+  await page.evaluate(async()=>{
+   const {useLocalNeeds}=await import('/src/components/game/need-state.ts');
+   useLocalNeeds.setState(Object.fromEntries(window.__emberisle.getState().state.players.map(player=>[player.id,{kinds:['ore','grain'],turnsLeft:2}])),true);
+  });
+  await page.waitForFunction(()=>[...document.querySelectorAll('[data-testid="seat-needs"]')].filter(e=>e.getBoundingClientRect().width).length===4);
+  const measured=await page.evaluate(()=>{
+   const rect=e=>{const r=e.getBoundingClientRect();return {x:r.x,y:r.y,right:r.right,bottom:r.bottom,width:r.width,height:r.height};};
+   const visible=e=>e.getBoundingClientRect().width>0;
+   return [...document.querySelectorAll('[data-testid="seat-needs"]')].filter(visible).map(chip=>{
+    const card=chip.closest('.seat-card'),css=getComputedStyle(chip);
+    return {player:chip.dataset.player,chip:rect(chip),card:rect(card),font:Number.parseFloat(css.fontSize),paddingX:Number.parseFloat(css.paddingLeft),paddingY:Number.parseFloat(css.paddingTop),
+     status:chip.getAttribute('role'),tallies:[...card.querySelectorAll('[data-testid="tally-path"],[data-testid="tally-army"]')].map(rect),
+     hints:[...document.querySelectorAll('[data-testid="hidden-point-hint"]')].filter(visible).map(rect)};
+   });
+  });
+  geometry.push({width,height,seats:measured});
+  await page.screenshot({path:path.join(captureDirectory,`needs-${width}x${height}-table.png`)});
+  const overlap=(a,b)=>Math.min(a.right,b.right)>Math.max(a.x,b.x)&&Math.min(a.bottom,b.bottom)>Math.max(a.y,b.y);
+  for(const seat of measured){
+   const prefix=`${width}x${height} ${seat.player}`;
+   if(seat.chip.x<seat.card.x||seat.chip.right>seat.card.right||seat.chip.y<seat.card.y||seat.chip.bottom>seat.card.bottom)geometryProblems.push(`${prefix}: chip outside own card`);
+   if([...seat.tallies,...seat.hints].some(r=>overlap(seat.chip,r)))geometryProblems.push(`${prefix}: chip covers public tally/hint`);
+   if(measured.some(other=>other!==seat&&overlap(seat.chip,other.chip)))geometryProblems.push(`${prefix}: chip overlaps neighbour`);
+   if(seat.font<12||seat.paddingX<12||seat.paddingY<8)geometryProblems.push(`${prefix}: caption/padding below approved minimum`);
+   if(seat.status==='status')geometryProblems.push(`${prefix}: public chip is a live region`);
+  }
+  await page.evaluate(()=>window.__emberisle.getState().setTradeOpen(true));
+  const need=page.getByRole('button',{name:'Need',exact:true});await need.click();
+  await page.screenshot({path:path.join(captureDirectory,`needs-${width}x${height}-picker.png`)});
+  const picker=await page.locator('#need-picker').evaluate(field=>{
+   const grid=field.querySelector('div'),style=getComputedStyle(grid),scroll=field.closest('.trade-composer-scroll');
+   const viewport=scroll.getBoundingClientRect(),give=scroll.querySelector('[data-testid="trade-give-row"]');
+   const controls=[give.querySelector('h3'),...give.querySelectorAll('button')].map(control=>{const box=control.getBoundingClientRect();return {label:control.getAttribute('aria-label')||control.textContent,top:box.top,bottom:box.bottom,visible:box.top>=viewport.top&&box.bottom<=viewport.bottom};});
+   return {gap:Number.parseFloat(style.columnGap),scrollHeight:scroll.scrollHeight,clientHeight:scroll.clientHeight,viewport:{top:viewport.top,bottom:viewport.bottom},giveControls:controls};
+  });
+  geometry.at(-1).picker=picker;if(width===844&&picker.giveControls.some(control=>!control.visible))geometryProblems.push(`${width}x${height}: open picker pushes give heading/steppers below scroll fold`);if(picker.gap<8)geometryProblems.push(`${width}x${height}: picker gap below8px`);
+  await need.click();if(await need.getAttribute('aria-controls'))geometryProblems.push(`${width}x${height}: closed picker leaves dangling aria-controls`);
+  await page.getByRole('button',{name:'Close',exact:true}).click();await context.close();
+ }
+ writeFileSync(path.join(captureDirectory,'needs-geometry.json'),JSON.stringify(geometry,null,2));
+ console.log('four-seat needs geometry',JSON.stringify(geometry));
+ assert.deepEqual(geometryProblems,[],'four-seat chips stay inside cards, clear public information and meet approved type/spacing');
+ console.log('ok four-seat needs table and own picker:320x568,390x844,844x390,1280x720');
  assert.deepEqual(errors,[]);console.log('needs browser prove ok');
 }finally{
  await browser?.close();await vite?.close();
