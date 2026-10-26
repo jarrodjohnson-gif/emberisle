@@ -1,0 +1,13 @@
+
+> hud-safe-area-prove
+> node scripts/hud-safe-area-prove.mjs
+
+ok   844x390 roll-off: the inset emulation reached env() [0,47,21,47]
+ok   844x390 roll-off: all 17 visible controls inside the safe area
+ok   844x390 roll-off: the HUD hole is inside the safe area {"l":391,"t":12,"r":785,"b":357}
+ok   844x390 roll-off: all 54 island corners and docks inside the hole
+ok   844x390 setup: the inset emulation reached env() [0,47,21,47]
+ok   844x390 setup: all 17 visible controls inside the safe area
+ok   844x390 setup: the HUD hole is inside the safe area {"l":391,"t":12,"r":785,"b":357}
+ok   844x390 setup: all 54 island corners and docks inside the hole
+FAIL Cannot read properties of null (reading 'x')

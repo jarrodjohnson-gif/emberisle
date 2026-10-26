@@ -5,3 +5,4 @@
 {"name": "fortune-cue-prove", "command": ["npm", "run", "fortune-cue-prove"], "cwd": "/Users/jarrod.johnson/emberisle-1101", "exit": 0, "expectedExit": 0, "verdict": "pass", "log": "docs/proofs/1101/final-round3/fortune-cue-prove-1.log"}
 {"name": "fortune-tray-prove", "command": ["npm", "run", "fortune-tray-prove"], "cwd": "/Users/jarrod.johnson/emberisle-1101", "exit": 0, "expectedExit": 0, "verdict": "pass", "log": "docs/proofs/1101/final-round3/fortune-tray-prove-1.log"}
 {"name": "table-menu-prove", "command": ["npm", "run", "table-menu-prove"], "cwd": "/Users/jarrod.johnson/emberisle-1101", "exit": 0, "expectedExit": 0, "verdict": "pass", "log": "docs/proofs/1101/final-round3/table-menu-prove-1.log"}
+{"name": "hud-safe-area-prove", "command": ["npm", "run", "hud-safe-area-prove"], "cwd": "/Users/jarrod.johnson/emberisle-1101", "exit": 1, "expectedExit": 0, "verdict": "FAIL", "log": "docs/proofs/1101/final-round3/hud-safe-area-prove-1.log"}
