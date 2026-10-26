@@ -196,6 +196,8 @@ try{
  assert.equal(takeoverSeatId,'s0');
  const liveNeed=await need(a,['ore']);
  assert.deepEqual(ownNeeds(liveNeed,a),['ore'],'the human seat sets the need through the real host');
+ const activeNeed=m=>{const seat=m.seats.find(s=>s.id===takeoverSeatId);return seat?.player==='p0'&&seat.away===false&&JSON.stringify(seat.needs)==='["ore"]';};
+ await Promise.all([b.next('seats',activeNeed),c.next('seats',activeNeed)]);
  assert.equal(b.state.game.current,'p0','the disconnected human owns the turn before the takeover scenario');
  const heldNeed=(m)=>{const seat=m.seats.find(s=>s.id===takeoverSeatId);return seat?.player==='p0'&&seat.away===true&&JSON.stringify(seat.needs)==='["ore"]';};
  for(const observer of [b,c]){observer.inbox=[];}
