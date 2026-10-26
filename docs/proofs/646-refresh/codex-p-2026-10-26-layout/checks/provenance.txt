@@ -1,0 +1,7 @@
+Recovery: 2026-10-26T12:22:02.458740+00:00
+Source and frozen clone HEAD: ed86195fdbc20d678efda09ebf508f252ac2a1b7
+Built base HEAD: 87ab69cc804517d54d2fc51a21018976ba885272
+All 411 tracked non-doc files match frozen clone byte-for-byte.
+Frozen clone git status: clean. No proof rerun during recovery.
+Existing built assets measured with Node zlib.gzipSync: SeatNeeds 1881 B; index 124413 B; base index 124345 B.
+Raw final logs copied unchanged after browser/host processes exited.
