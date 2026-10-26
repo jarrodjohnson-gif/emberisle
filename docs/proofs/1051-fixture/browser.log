@@ -1,0 +1,41 @@
+
+> longest-army-prove
+> node scripts/longest-army-prove.mjs
+
+440x956: path 4 (below the minimum): p0 🛤4 ⚔0  p2 🛤1 ⚔0  p3 🛤1 ⚔0  p1 🛤2 ⚔0
+440x956: path 5 leads: p0 🛤4 ⚔0  p2 🛤1 ⚔0  p3 🛤1 ⚔0  p1 🛤5* ⚔0
+440x956: path 5 ties path 5: p0 🛤4 ⚔0  p2 🛤5 ⚔0  p3 🛤2 ⚔0  p1 🛤5* ⚔0
+440x956: paths 4, 5, 7, 2: p0 🛤4 ⚔0  p2 🛤7* ⚔0  p3 🛤2 ⚔0  p1 🛤5 ⚔0
+440x956: army 2 (below the minimum): p0 🛤4 ⚔0  p2 🛤7* ⚔0  p3 🛤2 ⚔0  p1 🛤5 ⚔2
+440x956: army 3 against 2: p0 🛤4 ⚔3*  p2 🛤7* ⚔0  p3 🛤2 ⚔0  p1 🛤5 ⚔2
+440x956: army 3 ties army 3: p0 🛤4 ⚔3*  p2 🛤7* ⚔0  p3 🛤2 ⚔0  p1 🛤5 ⚔3
+440x956: army 4 passes army 3: p0 🛤4 ⚔3  p2 🛤7* ⚔0  p3 🛤2 ⚔0  p1 🛤5 ⚔4*
+440x956: one seat holds both: p0 🛤4 ⚔0  p2 🛤7* ⚔3*  p3 🛤2 ⚔0  p1 🛤5 ⚔0
+956x440: path 4 (below the minimum): p0 🛤4 ⚔0  p2 🛤1 ⚔0  p3 🛤1 ⚔0  p1 🛤2 ⚔0
+956x440: path 5 leads: p0 🛤4 ⚔0  p2 🛤1 ⚔0  p3 🛤1 ⚔0  p1 🛤5* ⚔0
+956x440: path 5 ties path 5: p0 🛤4 ⚔0  p2 🛤5 ⚔0  p3 🛤2 ⚔0  p1 🛤5* ⚔0
+956x440: paths 4, 5, 7, 2: p0 🛤4 ⚔0  p2 🛤7* ⚔0  p3 🛤2 ⚔0  p1 🛤5 ⚔0
+956x440: army 2 (below the minimum): p0 🛤4 ⚔0  p2 🛤7* ⚔0  p3 🛤2 ⚔0  p1 🛤5 ⚔2
+956x440: army 3 against 2: p0 🛤4 ⚔3*  p2 🛤7* ⚔0  p3 🛤2 ⚔0  p1 🛤5 ⚔2
+956x440: army 3 ties army 3: p0 🛤4 ⚔3*  p2 🛤7* ⚔0  p3 🛤2 ⚔0  p1 🛤5 ⚔3
+956x440: army 4 passes army 3: p0 🛤4 ⚔3  p2 🛤7* ⚔0  p3 🛤2 ⚔0  p1 🛤5 ⚔4*
+956x440: one seat holds both: p0 🛤4 ⚔0  p2 🛤7* ⚔3*  p3 🛤2 ⚔0  p1 🛤5 ⚔0
+1280x720: path 4 (below the minimum): p0 🛤4 ⚔0  p2 🛤1 ⚔0  p3 🛤1 ⚔0  p1 🛤2 ⚔0
+1280x720: path 5 leads: p0 🛤4 ⚔0  p2 🛤1 ⚔0  p3 🛤1 ⚔0  p1 🛤5* ⚔0
+1280x720: path 5 ties path 5: p0 🛤4 ⚔0  p2 🛤5 ⚔0  p3 🛤2 ⚔0  p1 🛤5* ⚔0
+1280x720: paths 4, 5, 7, 2: p0 🛤4 ⚔0  p2 🛤7* ⚔0  p3 🛤2 ⚔0  p1 🛤5 ⚔0
+1280x720: army 2 (below the minimum): p0 🛤4 ⚔0  p2 🛤7* ⚔0  p3 🛤2 ⚔0  p1 🛤5 ⚔2
+1280x720: army 3 against 2: p0 🛤4 ⚔3*  p2 🛤7* ⚔0  p3 🛤2 ⚔0  p1 🛤5 ⚔2
+1280x720: army 3 ties army 3: p0 🛤4 ⚔3*  p2 🛤7* ⚔0  p3 🛤2 ⚔0  p1 🛤5 ⚔3
+1280x720: army 4 passes army 3: p0 🛤4 ⚔3  p2 🛤7* ⚔0  p3 🛤2 ⚔0  p1 🛤5 ⚔4*
+1280x720: one seat holds both: p0 🛤4 ⚔0  p2 🛤7* ⚔3*  p3 🛤2 ⚔0  p1 🛤5 ⚔0
+390x844: path 4 (below the minimum): p0 🛤4 ⚔0  p2 🛤1 ⚔0  p3 🛤1 ⚔0  p1 🛤2 ⚔0
+390x844: path 5 leads: p0 🛤4 ⚔0  p2 🛤1 ⚔0  p3 🛤1 ⚔0  p1 🛤5* ⚔0
+390x844: path 5 ties path 5: p0 🛤4 ⚔0  p2 🛤5 ⚔0  p3 🛤2 ⚔0  p1 🛤5* ⚔0
+390x844: paths 4, 5, 7, 2: p0 🛤4 ⚔0  p2 🛤7* ⚔0  p3 🛤2 ⚔0  p1 🛤5 ⚔0
+390x844: army 2 (below the minimum): p0 🛤4 ⚔0  p2 🛤7* ⚔0  p3 🛤2 ⚔0  p1 🛤5 ⚔2
+390x844: army 3 against 2: p0 🛤4 ⚔3*  p2 🛤7* ⚔0  p3 🛤2 ⚔0  p1 🛤5 ⚔2
+390x844: army 3 ties army 3: p0 🛤4 ⚔3*  p2 🛤7* ⚔0  p3 🛤2 ⚔0  p1 🛤5 ⚔3
+390x844: army 4 passes army 3: p0 🛤4 ⚔3  p2 🛤7* ⚔0  p3 🛤2 ⚔0  p1 🛤5 ⚔4*
+390x844: one seat holds both: p0 🛤4 ⚔0  p2 🛤7* ⚔3*  p3 🛤2 ⚔0  p1 🛤5 ⚔0
+longest-army-prove: ok

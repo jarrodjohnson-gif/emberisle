@@ -1,0 +1,23 @@
+
+> loosen-prove
+> node scripts/loosen-prove.mjs
+
+ok   self-test: an unchanged proof passes
+ok   self-test: re-indenting passes
+ok   self-test: an added check passes
+ok   self-test: editing only the block comment passes
+ok   self-test: a removed assert fails
+ok   self-test: a removed assert lowers the count
+ok   self-test: a wider tolerance fails
+ok   self-test: a //-commented assert fails
+ok   self-test: a /* */-commented assert fails
+ok   self-test: a check wrapped in a multi-line /* */ fails
+ok   self-test: a removed throw fails
+ok   self-test: a removed expect fails
+ok   self-test: a fail() that no longer sets exitCode 1 fails
+ok   self-test: an added process.exit(0) fails
+ok   self-test: an added process.exit() fails
+ok   self-test: a new .skip fails
+FAIL scripts/chat-prove.mjs: removed or edited check line: check(r.top >= 11 && r.height <= r.vh - 23 && Math.abs(r.width - (r.vw - 24)) < 1, `phone lobby card is ${r.width.toFixed(0)}x${r.height.toFixed(0)}, inside the ${r.vw}x${r.vh} screen and full width`);
+FAIL scripts/chat-prove.mjs: removed or edited check line: check(m.gap <= 1 && m.below.length === 0 && m.leave, `phone lobby 390x${h}, 4 seats scrolled down: sticky row ends at the card's bottom edge (gap ${m.gap}), nothing below it, Leave inside it`);
+1 proof(s) loosened against b32b40d90467. Restore the checks, or keep them and add new ones (AGENTS.md rule 7).

@@ -1,7 +1,7 @@
 // The table chat dock and the shared chat box. Design: docs/design/chat.md, and Chat C (#899, docs/design/chat-c/README.md):
 // one chat button opens one panel with two tabs, Chat (the log, the six emoji, the composer) and Sounds & stickers.
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { MessageSquare, Minus, Volume2, VolumeX } from "lucide-react";
+import { MessageSquare, Volume2, VolumeX } from "lucide-react";
 import { EmojiRow, Emote, setTab, SoundsTab, useMutedSeats, useTalk, type ChatTab, type ReactLine } from "@/components/game/talk";
 import { useGame, type GameLogLine } from "@/lib/game/store";
 import type { ChatLine } from "@/lib/net/table";
@@ -109,8 +109,25 @@ function Tabs({ actions, testid, dense, narrow }: { actions?: ReactNode; testid?
   );
 }
 
-// A game log line (#305): a muted system row, no speaker.
-function LogRow({ line }: { line: GameLogLine }) {
+// The main-phase roll line rules.ts writes: "<name> rolled <sum>!", sums 2 to 12 (the roll-off's "rolls a N." is another line).
+const ROLL_LINE = /^(.+) rolled (1[0-2]|[2-9])!$/;
+
+// A game log line (#305): a muted system row, no speaker. A roll line (#687) has its sum in the number tokens' red on 6 and 8,
+// and your own roll in green with the name bold, so it does not rest on colour alone. Only the online table lists the log (the dock),
+// and a watcher has no seat, so no roll is its own. `mine` is this seat's player name ("" for a watcher), worked out once by the
+// list that renders the rows, so no row subscribes to the store.
+function LogRow({ line, mine }: { line: GameLogLine; mine: string }) {
+  const roll = ROLL_LINE.exec(line.text);
+  if (roll) {
+    const own = mine !== "" && roll[1] === mine;
+    const sum = Number(roll[2]);
+    return (
+      <li data-testid="log-row" data-roll={sum} data-own={own ? "true" : undefined} className={cn("break-words text-sm leading-snug", own ? "text-gain" : "text-zinc-700")}>
+        <span data-testid="log-roll-name" className={own ? "font-bold" : undefined}>{roll[1]}</span> rolled{" "}
+        <span data-testid="log-roll-sum" className={sum === 6 || sum === 8 ? "text-danger" : undefined}>{sum}</span>!
+      </li>
+    );
+  }
   return (
     <li data-testid="log-row" className="break-words text-sm leading-snug text-zinc-700">
       {line.text}
@@ -130,6 +147,8 @@ export function ChatBox({ rows, minRows = 0, game, dense, narrow, onEscape, acti
   const setDraft = useGame((s) => s.setChatDraft);
   const sendChat = useGame((s) => s.sendChat);
   const spectator = useGame((s) => s.spectator);
+  // The local player's name at the table, for the roll rows' own-roll test (a watcher has none).
+  const mine = useGame((s) => (s.spectator ? "" : (s.state?.players.find((p) => p.id === s.localId)?.name ?? "")));
   const reactLog = useTalk((s) => s.reactLog);
   // A watcher sends nothing, so it has the log alone: no tabs (docs/design/spectator.md).
   const tab = useTalk((s) => (spectator ? "chat" : s.tab));
@@ -137,8 +156,8 @@ export function ChatBox({ rows, minRows = 0, game, dense, narrow, onEscape, acti
   const me = useMyName();
   const log = useRef<HTMLUListElement>(null);
   const stuck = useRef(true);
-  // The log's height when last pinned; a scroll event at another height came from a resize, not from the reader.
-  const pinnedH = useRef(0);
+  // Reflow at either dimension can scroll the log before its resize observer repins it.
+  const pinnedSize = useRef({ width: 0, height: 0 });
   const withLog = game;
   const visibleChat = chat.filter((line) => !muted.has(line.seat));
 
@@ -151,9 +170,9 @@ export function ChatBox({ rows, minRows = 0, game, dense, narrow, onEscape, acti
   useEffect(() => {
     const el = log.current;
     if (!el || typeof ResizeObserver === "undefined") return;
-    pinnedH.current = el.clientHeight;
+    pinnedSize.current = { width: el.clientWidth, height: el.clientHeight };
     const observer = new ResizeObserver(() => {
-      pinnedH.current = el.clientHeight;
+      pinnedSize.current = { width: el.clientWidth, height: el.clientHeight };
       if (stuck.current) el.scrollTop = el.scrollHeight;
     });
     observer.observe(el);
@@ -172,7 +191,7 @@ export function ChatBox({ rows, minRows = 0, game, dense, narrow, onEscape, acti
   type Row = { at: number; node: ReactNode } | { at: number; react: ReactLine; count: number };
   const lines: Row[] = visibleChat.map((line) => ({ at: line.at, node: <Line key={`c${line.id}`} line={line} me={me} /> }));
   for (const line of reactLog) if (!muted.has(line.seat)) lines.push({ at: line.at, react: line, count: 1 });
-  if (withLog) for (const [i, line] of gameLog.entries()) lines.push({ at: line.at, node: <LogRow key={`g${i}`} line={line} /> });
+  if (withLog) for (const [i, line] of gameLog.entries()) lines.push({ at: line.at, node: <LogRow key={`g${i}`} line={line} mine={mine} /> });
   lines.sort((x, y) => x.at - y.at);
   const rowsShown: Row[] = [];
   for (const row of lines) {
@@ -207,7 +226,7 @@ export function ChatBox({ rows, minRows = 0, game, dense, narrow, onEscape, acti
             tabIndex={0}
             onScroll={(e) => {
               const el = e.currentTarget;
-              if (el.clientHeight !== pinnedH.current) return;
+              if (el.clientWidth !== pinnedSize.current.width || el.clientHeight !== pinnedSize.current.height) return;
               stuck.current = el.scrollHeight - el.scrollTop - el.clientHeight < 8;
             }}
             className="flex min-h-0 flex-col gap-1 overflow-y-auto"
@@ -478,7 +497,7 @@ export function ChatDock() {
       onClick={() => setOpen(false)}
       className={cn("flex h-11 min-w-10 cursor-pointer items-center justify-center gap-1 rounded-control bg-glass text-zinc-700 hover:text-zinc-900", phone && open && "px-3 text-sm")}
     >
-      <Minus className="size-4" />
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-minus size-4" aria-hidden="true"><path d="M5 12h14" /></svg>
       {phone && open ? <span>Close</span> : null}
     </button>
   );

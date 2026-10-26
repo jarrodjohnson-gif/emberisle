@@ -335,6 +335,8 @@ try {
   await settled(h);
   const hBefore = h.blocked;
   const hName = await over(h.page);
+  // Wait for the win-key remount to ask sheets again before reading blocked (CI raced the abort).
+  await until(() => h.blocked > hBefore, "game over asking for the sheets chunk again");
   const hButton = h.page.getByTestId("win-failed");
   await hButton.waitFor({ timeout: 15_000 });
   const hShown = await shown(h.page);

@@ -1,0 +1,26 @@
+ok Ember: native baseline plays and advances before failure
+ok Ember: every target first download actually aborted
+FAILED_MEDIA Ember [
+  { file: 'your_turn.wav', error: 4, readyState: 0, time: 0 },
+  { file: 'confirmation_001.wav', error: 4, readyState: 0, time: 0 },
+  { file: 'drop_001.wav', error: 4, readyState: 0, time: 0 },
+  { file: 'bong_001.wav', error: 4, readyState: 0, time: 0 }
+]
+ok Tide: native baseline plays and advances before failure
+ok Tide: every target first download actually aborted
+FAILED_MEDIA Tide [
+  { file: 'your_turn.wav', error: 4, readyState: 0, time: 0 },
+  { file: 'confirmation_001.wav', error: 4, readyState: 0, time: 0 },
+  { file: 'drop_001.wav', error: 4, readyState: 0, time: 0 },
+  { file: 'bong_001.wav', error: 4, readyState: 0, time: 0 }
+]
+ok two distinct seats joined the real host
+file:///workspace/emberisle/work/p2-audio1111/scripts/audio-recovery-prove.mjs:88
+    throw new Error(`timed out ${why}`);
+          ^
+
+Error: timed out host state after -1
+    at wait (file:///workspace/emberisle/work/p2-audio1111/scripts/audio-recovery-prove.mjs:88:11)
+    at async file:///workspace/emberisle/work/p2-audio1111/scripts/audio-recovery-prove.mjs:103:12
+
+Node.js v24.19.0
