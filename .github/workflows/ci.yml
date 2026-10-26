@@ -301,7 +301,7 @@ jobs:
   # A draft skips it (grey), like every other job; ready_for_review starts the run that must pass.
   browser-a:
     needs: browser-a-suites
-    if: always() && (github.event_name != 'pull_request' || !github.event.pull_request.draft)
+    if: always() && github.event_name == 'pull_request' && !github.event.pull_request.draft
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -309,6 +309,7 @@ jobs:
 
   browser-b:
     needs: [changes, build]
+    if: github.event_name == 'pull_request' && !github.event.pull_request.draft
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
@@ -493,5 +494,10 @@ jobs:
           echo 'build=${{ needs.build.result }} server=${{ needs.server.result }} browser-a=${{ needs.browser-a.result }} browser-b=${{ needs.browser-b.result }}'
           test '${{ needs.build.result }}' = success
           test '${{ needs.server.result }}' = success
-          test '${{ needs.browser-a.result }}' = success
-          test '${{ needs.browser-b.result }}' = success
+          if [ '${{ github.event_name }}' = 'pull_request' ]; then
+            test '${{ needs.browser-a.result }}' = success
+            test '${{ needs.browser-b.result }}' = success
+          else
+            test '${{ needs.browser-a.result }}' = skipped
+            test '${{ needs.browser-b.result }}' = skipped
+          fi
