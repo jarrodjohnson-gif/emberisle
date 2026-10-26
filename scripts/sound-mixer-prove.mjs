@@ -2,9 +2,18 @@
 // Check every clip's category, multiplicative gain, mute isolation, live/delayed/queued playback,
 // background ducking, device persistence, bad storage and autoplay. Run: npm run sound-mixer-prove
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { chromium } from "playwright";
 import { createServer } from "vite";
+import { TARGETS, TYPE_OF } from "./audio-level-lib.mjs";
+
+// The asset-only ambience candidate has its own mastering type before playback integration.
+const assetNames = readdirSync(new URL("../public/audio/", import.meta.url)).filter(f => /\.(mp3|wav)$/.test(f)).map(f => f.replace(/\.(mp3|wav)$/, "")).sort();
+assert.deepEqual(Object.values(TYPE_OF).flat().sort(), assetNames, "every physical audio asset has exactly one mastering type");
+assert.deepEqual(TYPE_OF.ambience, ["amb_sea"], "sea ambience is isolated from effects, reactions and music");
+assert.equal(TARGETS.ambience.method, "lufs");
+assert.equal(TARGETS.ambience.target, -30.6, "ambience keeps the owner-quoted quiet bed level");
+console.log(`ok all ${assetNames.length} audio assets have one mastering type; ambience is isolated at -30.6 LUFS`);
 
 const groups = {
   game: ["dice_land", "path_place", "outpost_place", "stronghold_place", "card_buy", "card_play", "trade_yes", "trade_no", "ui_click", "ui_back", "ui_error", "win", "your_turn", "timer_tick", "timer_final", "chip_gain", "gain_tick", "wayfarer_move", "trade_offer", "three_wood", "daking_wood", "sheep_for_wood", "stone_for_wood", "corn_no", "lucke_diggler", "chat_send", "chat_recv"],

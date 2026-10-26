@@ -43,6 +43,7 @@
     "audio-level-prove": "node scripts/audio-level-prove.mjs",
     "your-turn-cue-prove": "node scripts/your-turn-cue-prove.mjs",
     "music-prove": "node scripts/music-prove.mjs",
+    "ambience-loop-prove": "node scripts/ambience-loop-prove.mjs",
     "practice-trade-prove": "node --import ./server/register.mjs scripts/practice-trade-prove.mjs",
     "pieces-prove": "node --import ./server/register.mjs scripts/pieces-prove.mjs",
     "pieces-land-prove": "node scripts/pieces-land-prove.mjs",
@@ -145,6 +146,7 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
+    "@ffmpeg-installer/ffmpeg": "1.1.0",
     "@tailwindcss/vite": "^4.3.3",
     "@types/node": "^26.6.3",
     "@types/react": "^19.3.0",
