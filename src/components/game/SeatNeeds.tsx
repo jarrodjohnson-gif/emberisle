@@ -55,7 +55,7 @@ export function SeatNeeds({ scope }: { scope: 'rail' | 'seat' }) {
     const name = players?.find(p => p.id === player)?.name ?? '';
     return createPortal(<span data-testid="seat-needs" data-player={player} role="img"
       aria-label={`${name} needs ${kinds.map(kind => RESOURCE_LABEL[kind]).join(' and ')}`}
-      className="pointer-events-none absolute -left-[3px] -top-[3px] z-10 size-2 rounded-full bg-[#be5b39] shadow-[0_0_0_1px_#fff]" />, anchor, `${scope}-${player}`);
+      className="pointer-events-none absolute -left-[3px] -top-[3px] z-10 size-2 rounded-full bg-[#be5b39]" style={{ boxShadow: '0 0 0 1px #fff' }} />, anchor, `${scope}-${player}`);
   });
 }
 
