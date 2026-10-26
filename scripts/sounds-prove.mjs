@@ -588,8 +588,8 @@ try {
   await mute(b, false);
   ok("soundboard: a muted listener sees the chip and hears nothing");
   // The in-game clips reach the other seat once each; a repeat of a long clip restarts it (one element per clip), never stacks.
-  // #899: each is one tap on its chip in the Sounds & stickers tab (Fah above, GG! with the rest below: all fifteen).
-  for (const [id, file, label] of [["sb_airhorn", "sb_airhorn.mp3", "Airhorn"], ["sb_quit_touchin", "sb_quit_touchin.mp3", "Quit touchin' me"], ["sb_only_wood", "sb_only_wood.mp3", "Only wood?"], ["sb_perfect", "sb_perfect.mp3", "Perfect"], ["sb_plump_sheep", "sb_plump_sheep.mp3", "Plump sheep"], ["sb_nice_sheep", "sb_nice_sheep.mp3", "Nice sheep"], ["sb_sheep_please", "sb_sheep_please.mp3", "Sheep please"], ["sb_grain_please", "sb_grain_please.mp3", "Grain please"], ["sb_brick_please", "sb_brick_please.mp3", "Brick please"]]) {
+  // #899: each is one tap on its chip in the Sounds & stickers tab (Fah above, GG! with the rest below: all seventeen).
+  for (const [id, file, label] of [["sb_airhorn", "sb_airhorn.mp3", "Airhorn"], ["sb_quit_touchin", "sb_quit_touchin.mp3", "Quit touchin' me"], ["sb_only_wood", "sb_only_wood.mp3", "Only wood?"], ["sb_perfect", "sb_perfect.mp3", "Perfect"], ["sb_plump_sheep", "sb_plump_sheep.mp3", "Plump sheep"], ["sb_nice_sheep", "sb_nice_sheep.mp3", "Nice sheep"], ["sb_sheep_please", "sb_sheep_please.mp3", "Sheep please"], ["sb_grain_please", "sb_grain_please.mp3", "Grain please"], ["sb_brick_please", "sb_brick_please.mp3", "Brick please"], ["sb_real_badman", "sb_real_badman.mp3", "Real badman"], ["sb_gong", "sb_gong.mp3", "Gong"]]) {
     await sleep(3100);
     await clear(b);
     await a.getByRole("button", { name: `Play sound ${label}`, exact: true }).click();
@@ -608,7 +608,7 @@ try {
     const got = await b.evaluate(() => window.__plays);
     assert.deepEqual(got.map((x) => [x.file, x.volume]), [[file, 1]], `${id} plays once at 1 (${JSON.stringify(got)})`);
   }
-  ok("soundboard: all fifteen chips play once at 1, including all five sheep/please clips");
+  ok("soundboard: all seventeen chips play once at 1, including all five sheep/please clips and the two newest clips");
   await b.getByRole("tab", { name: "Sounds & stickers", exact: true }).click();
   const labels = await b.getByTestId("soundboard").getByRole("button").evaluateAll((buttons) => buttons.map((button) => button.getAttribute("aria-label")));
   await b.evaluate(async () => {

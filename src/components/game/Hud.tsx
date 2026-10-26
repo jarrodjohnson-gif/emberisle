@@ -140,6 +140,7 @@ export function Hud() {
   const chatOpen = useGame((s) => s.chatOpen);
   const tradeOpen = useGame((s) => s.tradeOpen);
   const dispatch = useGame((s) => s.dispatch);
+  const choosing = useGame((s) => !!s.pendingSteal);
   const refuseQuietly = useGame((s) => s.refuseQuietly);
   const setBuildMode = useGame((s) => s.setBuildMode);
   const setHowTo = useGame((s) => s.setHowTo);
@@ -292,7 +293,7 @@ export function Hud() {
   const turnLine = (inSlot?: boolean) => state.phase === "over" ? null : (
     <p key={`turn-${state.current}`} data-testid="turn-banner"
       style={{ borderLeftColor: yours ? undefined : subjectPlayer.color }}
-      className={cn("turn-instruction rounded-control px-3 text-[15px] font-medium leading-5", inSlot ? "flex h-11 min-w-0 flex-1 items-center overflow-hidden" : "py-1.5", yours ? "turn-instruction-own" : "border-l-4")}
+      className={cn("turn-instruction rounded-control px-3 text-[15px] font-medium leading-5", inSlot ? "flex h-11 min-w-0 flex-1 items-center overflow-hidden" : "py-1.5", yours ? "turn-instruction-own" : "border-l-4", !waiting && !choosing && (state.phase === "robber" || buildMode === "knight") && "turn-instruction-move")}
     >{turnText}</p>
   );
 
