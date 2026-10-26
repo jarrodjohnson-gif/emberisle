@@ -1,14 +1,14 @@
 name: CI
 
-# The README "Run it" checks, on every pull request and every push to main.
+# Non-draft pull requests run the full suite; main pushes run build and server checks.
 # build, server and browser-a run on separate runners; browser-b has eight matrix legs after build's dist/:
 # flows-a, flows-b, flows-c, presentation, presentation-2, presentation-3, scene-life and scene-water.
 # The four existing required browser-b names stay; checks gates the result of the entire matrix.
 # Heavy scene proofs are isolated from UI proofs; #1034 tracks measured timing and full-green-run acceptance.
 # browser-a is split three ways (a1, a2, a3) by measured step time, about 8-12 minutes each (the whole was ~29);
 # the browser-a job itself only reports whether all three passed, because the ruleset requires that name.
-# `checks` is the required merge check: it requires every job, including every browser-a and browser-b suite,
-# except the advisory `loosen` job.
+# `checks` requires every browser suite on pull requests and verifies browsers are skipped on main pushes.
+# The advisory `loosen` job is not required.
 # Docs-only PRs (see changes job) skip the heavy steps but still report success so required checks stay green.
 on:
   pull_request:
@@ -215,6 +215,7 @@ jobs:
           fi
 
   browser-a-suites:
+    if: github.event_name == 'pull_request' && !github.event.pull_request.draft
     name: browser-a (${{ matrix.suite }})
     needs: changes
     runs-on: ubuntu-latest
@@ -483,7 +484,8 @@ jobs:
 
   # always() so a failed or cancelled job above fails this check instead of skipping it (a skipped required check passes).
   # A draft skips it (grey): GitHub never merges a draft, and marking it ready starts a fresh run on the same head SHA,
-  # whose checks must each pass. Every other run keeps always() and the explicit tests below.
+  # whose checks must each pass. Main pushes require build/server success and skipped browser jobs.
+  # Every other run keeps always() and the explicit tests below.
   checks:
     needs: [changes, build, server, browser-a, browser-b]
     if: always() && (github.event_name != 'pull_request' || !github.event.pull_request.draft)
