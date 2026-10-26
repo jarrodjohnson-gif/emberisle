@@ -28,6 +28,7 @@ These are short on purpose. Follow all of them, every round.
 11. **Run long browser proofs one at a time**, and paste real output in the PR. Never estimate numbers.
 12. **Don't make design decisions.** Ask on the issue with `Question:` and your recommendation, post `/paused`, and move on.
 13. **A `Question:` is not a stop.** After you post one, carry on with any part of the issue that does not depend on the answer (other files, the proof, screenshots, docs). Stop only when nothing is left to do, and check the issue for the desk's answer before you finish. A test line that an owner-approved design makes obsolete may be replaced, never deleted: own commit, old/new table in the PR ([`docs/DECISIONS.md`](docs/DECISIONS.md), 2026-10-25). Size ceilings and allowances never move without the owner.
+14. **Need the desk? Open the comment with `To desk:`** (ready for re-review, blocked, a PR to adopt). Only `To desk:` and `Question:` comments wake the desk; status lines on #854 don't, so put progress in your PR body.
 
 ## The full procedure
 

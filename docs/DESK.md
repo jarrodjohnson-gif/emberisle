@@ -8,7 +8,7 @@ Jarrod pastes: `Run the Emberisle review desk. Read docs/DESK.md.`
 
 1. Read the **Desk state** issue, [#916](https://github.com/jarrodjohnson-gif/emberisle/issues/916). It lists what is waiting on Jarrod, every open PR, the builds in flight and the queue.
 2. Read the hub, [#854](https://github.com/jarrodjohnson-gif/emberisle/issues/854), from the newest comment back to the last desk post.
-3. Subscribe to the inbox PR #699 only. The inbox relays every new PR, PR comment and hub post, but not CI. Subscribe to a PR directly only while you wait on its CI to merge it. Unsubscribe once it merges.
+3. Subscribe to the inbox PR #699 only. The inbox relays PRs opened or marked ready (not drafts) and any comment that opens with `Question:` or `To desk:`. It does not relay CI or hub status lines. Subscribe to a PR directly only while you wait on its CI to merge it. Unsubscribe once it merges.
 4. Pick up anything waiting: an unreviewed PR, a red PR you own, or a question on the hub.
 
 ## Keep it cheap
