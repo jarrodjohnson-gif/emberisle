@@ -59,7 +59,7 @@ No merge, main push, force-push or CI retry occurred.
 
 - Marker: PASS;29/32/29 legal moves, seven passes at each viewport; live zero/duplicate controls pass.
 - Safe area: PASS;269 checks, zero console errors;233.56seconds.
-- Hole: PASS;600 size/phase pairs;161.38seconds.
+- Hole: PASS;500 size/phase pairs;161.38seconds.
 - Seat rail: PASS;18.74seconds.
 - Typecheck, registration147, permitted loosen0-none, build, source audit and size: PASS.
 - Index:124313/125200 B gzip; base124336; growth−23/400 B.
