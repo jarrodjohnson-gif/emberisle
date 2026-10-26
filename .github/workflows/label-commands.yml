@@ -4,11 +4,14 @@
 #   /todo  /backlog  /claim  /in-progress  /in-review
 #   /paused  /done  /failed  /canceled      -> swaps the status:* label
 #                                              (/done and /canceled: repo owner only)
+#   /unclaim                                -> owner only: release the named claim, status:todo
+#   released: <active agent name>, YYYY-MM-DD -> required with /todo or /unclaim to release a claim
 #   /changed   /unchanged                   -> adds / removes mark:changed
 #   /label <name>   /unlabel <name>         -> any existing status:, mark:, lane:, model: label
 #                                              (repo owner only; helpers use the status commands)
 #
 # Several commands can go in one comment, one per line.
+# Commands inside fenced code blocks are ignored. An edited claim comment is ignored.
 # The bot reacts 👍 when it applied the labels, 👎 when it refused.
 
 name: label-commands
@@ -62,10 +65,30 @@ jobs:
             const react = (content) =>
               github.rest.reactions.createForIssueComment({ owner, repo, comment_id, content });
 
-            const lines = context.payload.comment.body
-              .split('\n').map(s => s.trim()).filter(s => s.startsWith('/'));
+            // Strip fenced examples before reading commands or reservation metadata.
+            const visibleBody = body => {
+              const out = [];
+              let fence = null;
+              for (const raw of (body || '').split(/\r?\n/)) {
+                const marker = raw.match(/^\s{0,3}(`{3,}|~{3,})(.*)$/);
+                if (fence) {
+                  if (marker && marker[1][0] === fence.char &&
+                      marker[1].length >= fence.length && !marker[2].trim()) fence = null;
+                  continue;
+                }
+                if (marker) { fence = { char: marker[1][0], length: marker[1].length }; continue; }
+                out.push(raw);
+              }
+              return out.join('\n');
+            };
+            const commandLines = body => visibleBody(body).split('\n')
+              .map(line => line.trim()).filter(line => line.startsWith('/'));
+            const editedComment = c =>
+              !!(c.updated_at && c.created_at && c.updated_at !== c.created_at);
+
+            const lines = commandLines(context.payload.comment.body);
             if (!lines.length) return;
-            const KNOWN = [...Object.keys(STATUS), '/changed', '/unchanged', '/label', '/unlabel'];
+            const KNOWN = [...Object.keys(STATUS), '/unclaim', '/changed', '/unchanged', '/label', '/unlabel'];
             if (!lines.some(l => KNOWN.includes(l.split(/\s+/)[0].toLowerCase()))) return;
 
             // Refuse everyone not on the list before doing anything else.
@@ -81,10 +104,9 @@ jobs:
             const liveIssue = (await github.rest.issues.get({ owner, repo, issue_number })).data;
             const timeline = await github.paginate(github.rest.issues.listEventsForTimeline,
               { owner, repo, issue_number, per_page: 100 });
-            const commandLines = body => (body || '').split('\n').map(s => s.trim()).filter(s => s.startsWith('/'));
             const agentLine = (body, kind) => {
               // The date is the delimiter: agent names themselves can contain commas.
-              const match = (body || '').match(new RegExp(`^${kind}:\\s*(.+),\\s*\\d{4}-\\d{2}-\\d{2}\\s*$`, 'im'));
+              const match = visibleBody(body).match(new RegExp(`^${kind}:\\s*(.+),\\s*\\d{4}-\\d{2}-\\d{2}\\s*$`, 'im'));
               return match && match[1].trim();
             };
             const trusted = c => ALLOWED_USERS.includes(c.user?.login);
@@ -125,7 +147,8 @@ jobs:
             // PR closure events enter the replay at closure time, even if their workflow ran later.
             // Associate them when the pr: comment is encountered, rather than releasing from current state.
             for (const c of ordered) {
-              for (const match of (c.body || '').matchAll(/^pr:\s*#(\d+)\s*$/gim)) {
+              if (editedComment(c)) continue;
+              for (const match of visibleBody(c.body).matchAll(/^pr:\s*#(\d+)\s*$/gim)) {
                 const pr = await linkedPR(Number(match[1]));
                 if (pr && pr.user?.login === c.user.login) {
                   for (const closedAt of pr.claimClosedAt) {
@@ -143,6 +166,11 @@ jobs:
             let issueClosed = false;
             const accepted = new Set();
             const refusals = new Map();
+            const statusRefusals = new Map();
+            const rejectStatus = (id, reason) => {
+              if (!statusRefusals.has(id)) statusRefusals.set(id, new Set());
+              statusRefusals.get(id).add(reason);
+            };
             const applyReplayStatus = (label, actorLogin) => {
               // Preserve owner-only addition AND removal of sign-off labels during replay.
               if (actorLogin !== owner && (OWNER_ONLY.includes(label) || OWNER_ONLY.includes(replayStatus))) return;
@@ -159,12 +187,20 @@ jobs:
               const cLines = commandLines(c.body);
               const name = agentLine(c.body, 'claimed');
               const pauseName = agentLine(c.body, 'paused');
-              const isClaim = cLines.some(l => ['/claim', '/claimed'].includes(l.split(/\s+/)[0].toLowerCase()));
+              const edited = editedComment(c);
+              // Edited comments never create a claim or change a reservation (#703).
+              const isClaim = !editedComment(c) &&
+                cLines.some(l => ['/claim', '/claimed'].includes(l.split(/\s+/)[0].toLowerCase()));
               let deniedClaim = false;
               if (isClaim) {
                 if (active) {
-                  refusals.set(c.id, active.comment);
-                  deniedClaim = true;
+                  // Same-agent re-claim is a no-op approval (#703).
+                  if (name && name === active.name) {
+                    accepted.add(c.id);
+                  } else {
+                    refusals.set(c.id, active.comment);
+                    deniedClaim = true;
+                  }
                 } else if (name && !issueClosed) {
                   active = { name, comment: c, prs: new Set() };
                   accepted.add(c.id);
@@ -177,14 +213,42 @@ jobs:
               // A historical plain paused: line also releases only its own agent.
               const foreignAgent = active && ((name && name !== active.name) || (pauseName && pauseName !== active.name));
               const hadActive = !!active;
-              const ownPause = pauseName && active?.name === pauseName;
-              if (ownPause) active = null;
+              const ownPause = !edited && pauseName && active?.name === pauseName;
+              if (ownPause && !deniedClaim && !foreignAgent) active = null;
+              // Shared owner login is not an agent identity. Require an explicit target.
+              const releaseName = agentLine(c.body, 'released');
+              const ownerRelease = !edited && !deniedClaim && !foreignAgent && c.user.login === owner &&
+                (!active || releaseName === active.name) &&
+                cLines.some(l => ['/todo', '/unclaim'].includes(l.split(/\s+/)[0].toLowerCase()));
+              if (ownerRelease) active = null;
               for (const line of cLines) {
                 const [raw, ...args] = line.split(/\s+/);
                 const cmd = raw.toLowerCase();
+                if (edited && ['/claim', '/claimed', '/paused', '/todo', '/unclaim'].includes(cmd)) {
+                  rejectStatus(c.id, 'edited reservation command');
+                  continue;
+                }
+                if (cmd === '/unclaim') {
+                  if (!ownerRelease) {
+                    rejectStatus(c.id, 'release needs released: <active name> from the owner');
+                    continue;
+                  }
+                  applyReplayStatus('status:todo', c.user.login);
+                  continue;
+                }
                 if (STATUS[cmd]) {
-                  if (deniedClaim || foreignAgent) continue;
-                  if (cmd === '/paused' && hadActive && !ownPause) continue;
+                  if (deniedClaim || foreignAgent) {
+                    rejectStatus(c.id, 'status command from a refused or foreign agent');
+                    continue;
+                  }
+                  if (cmd === '/todo' && hadActive && !ownerRelease) {
+                    rejectStatus(c.id, 'release needs released: <active name> from the owner');
+                    continue;
+                  }
+                  if (cmd === '/paused' && hadActive && !ownPause) {
+                    rejectStatus(c.id, 'pause needs the active agent name');
+                    continue;
+                  }
                   applyReplayStatus(STATUS[cmd], c.user.login);
                 } else if (!deniedClaim && !foreignAgent && c.user.login === owner && (cmd === '/label' || cmd === '/unlabel')) {
                   // Canonicalize status labels just as the normal command path does.
@@ -198,8 +262,8 @@ jobs:
                   else if (replayStatus === canonical) replayStatus = null;
                 }
               }
-              if (active && c.user.login === active.comment.user.login && !deniedClaim && (!name || name === active.name) && (!pauseName || pauseName === active.name)) {
-                for (const match of (c.body || '').matchAll(/^pr:\s*#(\d+)\s*$/gim)) {
+              if (!edited && active && c.user.login === active.comment.user.login && !deniedClaim && (!name || name === active.name) && (!pauseName || pauseName === active.name)) {
+                for (const match of visibleBody(c.body).matchAll(/^pr:\s*#(\d+)\s*$/gim)) {
                   const pr = await linkedPR(Number(match[1]));
                   if (pr && pr.user?.login === c.user.login) active.prs.add(pr.number);
                 }
@@ -244,12 +308,20 @@ jobs:
               want.add(label);
             };
 
+            // Status reconciliation runs only for status commands (#703).
+            // A hand-set status:* label must survive /changed and other non-status commands.
+            let statusCommand = false;
             for (const line of lines) {
               const [rawCmd, ...rest] = line.split(/\s+/);
               const cmd = rawCmd.toLowerCase();
               const arg = rest.join(' ').trim();
 
-              if (STATUS[cmd]) { setStatus(STATUS[cmd]); matched = true; }
+              if (STATUS[cmd] || cmd === '/unclaim') { statusCommand = true; matched = true; }
+              if (STATUS[cmd]) { setStatus(STATUS[cmd]); }
+              else if (cmd === '/unclaim') {
+                if (!isOwner) { bad.push('/unclaim (owner only)'); }
+                else setStatus('status:todo');
+              }
               else if (cmd === '/changed') { want.add('mark:changed'); matched = true; }
               else if (cmd === '/unchanged') { want.delete('mark:changed'); matched = true; }
               else if (cmd === '/label' || cmd === '/unlabel') {
@@ -262,7 +334,7 @@ jobs:
                 catch { bad.push(arg || '(blank)'); continue; }
                 if (!PREFIXES.some(p => name.startsWith(p))) { bad.push(name); continue; }
                 if (cmd === '/unlabel') want.delete(name);
-                else if (name.startsWith('status:')) setStatus(name);
+                else if (name.startsWith('status:')) { statusCommand = true; setStatus(name); }
                 else want.add(name);
               }
             }
@@ -274,12 +346,17 @@ jobs:
               const blocked = OWNER_ONLY.filter(l => want.has(l) !== current.includes(l));
               bad.push(...blocked.map(l => `${l} (owner only)`));
             }
-            // Reconcile chronological status even when this run handles an older comment.
-            if (replayStatus !== undefined) {
+            // Reconcile chronological status only when this comment carries a status command (#703).
+            if (statusCommand && replayStatus !== undefined) {
               for (const l of [...want]) if (l.startsWith('status:')) want.delete(l);
               if (replayStatus) want.add(replayStatus);
             }
+            if (statusCommand && replayStatus === undefined && statusRefusals.has(comment_id)) {
+              for (const l of [...want]) if (l.startsWith('status:')) want.delete(l);
+              for (const l of current) if (l.startsWith('status:')) want.add(l);
+            }
             if (refused) bad.push('claim refused');
+            bad.push(...(statusRefusals.get(comment_id) || []));
 
             // Keep the original live-label sign-off boundary, including labels set outside this bot.
             if (!isOwner) {

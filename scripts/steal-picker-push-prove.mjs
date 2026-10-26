@@ -1,0 +1,128 @@
+// #1110: a state the host pushes while "Take from whom?" is open (another seat rejoining) must not close it.
+// A push that changes the turn or phase still does. Run: npm run steal-picker-push-prove
+import { spawn } from "node:child_process";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { chromium } from "playwright";
+import { createServer } from "vite";
+import { chooseBotAction } from "../src/lib/game/ai.ts";
+import { createGame } from "../src/lib/game/board.ts";
+import { applyAction, stealTargets } from "../src/lib/game/rules.ts";
+
+const dir = mkdtempSync(path.join(tmpdir(), "emberisle-steal-push-"));
+const code = "XSPA";
+let game = createGame({ humans: [{ name: "Ember" }, { name: "Tide" }, { name: "Pine" }], bots: 0, seed: 11 });
+while (game.phase !== "roll") {
+  const next = applyAction(game, game.current, chooseBotAction(game, game.current));
+  if (next.error) throw new Error(next.error);
+  game = next.state;
+}
+game.players.sort((a, b) => a.id.localeCompare(b.id));
+// One hex with p1 and p2 both on a corner, both holding goods, and the wayfarer elsewhere.
+const hex = game.hexes.find((h) => h.id !== game.robberHex && h.terrain !== "waste");
+const corners = game.vertices.filter((v) => v.hexes.includes(hex.id));
+for (const v of corners) v.building = null;
+corners[0].building = { playerId: "p1", kind: "outpost" };
+corners[2].building = { playerId: "p2", kind: "outpost" };
+for (const p of game.players) p.resources = { timber: 2, grain: 2, ore: 0, clay: 0, wool: 0 };
+game.current = "p0";
+game.phase = "robber";
+game.turn = 7;
+if (stealTargets(game, hex.id, "p0").length !== 2) throw new Error("setup: expected two victims");
+const seats = game.players.map((p, i) => ({ id: `s${i}`, name: p.name, color: p.color, ready: true, pid: p.id, secret: `sp-${p.id}` }));
+writeFileSync(path.join(dir, `${code}.json`), JSON.stringify({ code, host: "s0", next: 3, chat: [], chatSeq: 0, game, seats, shape: 2, savedAt: Date.now() }));
+
+let host, vite, browser;
+let hostErrors = "";
+const fails = [];
+const check = (name, ok, detail) => {
+  console.log(`${ok ? "ok  " : "FAIL"} ${name}${detail === undefined ? "" : " " + JSON.stringify(detail)}`);
+  if (!ok) fails.push(name);
+};
+const until = async (fn, label, ms = 15000) => {
+  const end = Date.now() + ms;
+  while (Date.now() < end) { const v = await fn(); if (v) return v; await new Promise((r) => setTimeout(r, 50)); }
+  throw new Error(`timed out: ${label}; ${hostErrors}`);
+};
+const peek = (page) => page.evaluate(() => {
+  const s = window.__emberisle.getState();
+  return { picker: s.pendingSteal, bar: document.querySelectorAll('[aria-label="The wayfarer takes a card"] button').length, phase: s.state?.phase, current: s.state?.current, pushes: window.__pushes };
+});
+try {
+  host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], { cwd: new URL("../server/", import.meta.url), env: { ...process.env, PORT: "0", ROOMS_DIR: dir, TURN_MS: "600000", GRACE_MS: "120000", HOLD_MS: "180000", ACT_CAP: "1000", ACT_RATE: "1000" } });
+  host.stderr.on("data", (d) => { hostErrors += d; });
+  const port = await new Promise((resolve, reject) => {
+    host.stdout.on("data", (d) => { const m = String(d).match(/listening (\d+)/); if (m) resolve(Number(m[1])); });
+    host.on("exit", (c) => reject(new Error(`host exited ${c}: ${hostErrors}`)));
+  });
+  vite = await createServer({ server: { host: "127.0.0.1", port: 0 }, logLevel: "error" });
+  await vite.listen();
+  const url = `http://127.0.0.1:${vite.httpServer.address().port}/?host=ws://127.0.0.1:${port}`;
+  browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined });
+  const seat = async (i) => {
+    const page = await browser.newPage({ viewport: { width: 1280, height: 720 }, reducedMotion: "reduce" });
+    await page.addInitScript(({ code, secret }) => {
+      localStorage.setItem("emberisle-seat", JSON.stringify({ code, secret }));
+      localStorage.setItem("emberisle-seat-live", code);
+      HTMLMediaElement.prototype.play = () => Promise.resolve();
+    }, { code, secret: `sp-p${i}` });
+    await page.goto(url);
+    await page.waitForFunction(() => window.__emberisle?.getState().state && window.__emberisle.getState().legal, null, { timeout: 30000 });
+    return page;
+  };
+  const a = await seat(0);
+  const b = await seat(1);
+  // Count pushes in the page: every host state ends in loadState.
+  await a.evaluate(() => {
+    window.__pushes = 0;
+    window.__emberisle.subscribe((s, prev) => { if (s.state !== prev.state) window.__pushes++; });
+  });
+
+  await a.evaluate((id) => window.__emberisle.getState().pickHex(id), hex.id);
+  await a.getByText("Take from whom?").waitFor();
+  const open = await peek(a);
+  check("picker opens with both victims", open.picker?.targets.length === 2 && open.bar === 2, open);
+
+  // Case 1: a third seat joins; the host pushes a state to everyone and the turn is unchanged.
+  const pushed = open.pushes;
+  const c = await seat(2);
+  await until(async () => (await peek(a)).pushes > pushed, "push reached the picker's seat");
+  const kept = await peek(a);
+  check("a push that leaves the turn alone keeps the picker", kept.picker?.hexId === hex.id && kept.picker.targets.length === 2 && kept.bar === 2, kept);
+  await c.close();
+  await b.close();
+
+  // Case 2: a push that changes whose turn it is closes it.
+  await a.evaluate(() => {
+    const g = window.__emberisle;
+    const st = structuredClone(g.getState().state);
+    st.current = "p1";
+    st.seq++;
+    g.getState().loadState(st, g.getState().localId, g.getState().isHost, g.getState().code);
+  });
+  const moved = await peek(a);
+  check("a push that changes the current player closes the picker", moved.picker === null && moved.bar === 0, moved);
+
+  // Case 3: same turn, but the host no longer lists two victims for the hex.
+  await a.evaluate((id) => {
+    const g = window.__emberisle;
+    const st = structuredClone(g.getState().state);
+    st.current = "p0";
+    g.setState({ state: st, pendingSteal: { hexId: id, kind: "moveRobber", targets: ["p1", "p2"] } });
+    const legal = structuredClone(g.getState().legal);
+    legal.steal[id] = ["p1"];
+    g.setState({ legal });
+    g.getState().loadState(st, g.getState().localId, g.getState().isHost, g.getState().code);
+  }, hex.id);
+  const stale = await peek(a);
+  check("a push that leaves one victim does not keep a stale list", stale.picker === null, stale);
+  if (hostErrors) check("host stayed quiet", false, hostErrors);
+  if (fails.length) throw new Error(`FAIL steal-picker-push-prove: ${fails.join("; ")}`);
+  console.log("PASS steal-picker-push-prove");
+} finally {
+  await browser?.close();
+  await vite?.close();
+  host?.kill("SIGKILL");
+  rmSync(dir, { recursive: true, force: true });
+}
