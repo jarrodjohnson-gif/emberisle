@@ -1,0 +1,11 @@
+ok the specified recipe remains 20 s, 2 s crossfade and 0.1 Hz swell
+ok decoded duration is exactly 20 seconds
+ok the candidate is non-silent
+ok the decoded clip never clips
+ok first/last 10 ms differ by less than 2% of full scale
+ok the decoded loop endpoints remain near zero
+ok two regenerations with the same encoder are byte-identical
+ok regeneration preserves the decoded length
+ok the shipped waveform matches the reproducible recipe within 2% full scale
+ok the original clip has a CC0 attribution
+ambience-loop-prove: 10 checks passed {"seconds":20,"peak":0.3740852475166321,"rms":0.06642732580928266,"seamMax":0.01836300827562809,"recipeDeltaMax":0,"bytes":240788}
