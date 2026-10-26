@@ -207,7 +207,7 @@ try {
   const ARMED = {
     Path: "Place a path · Esc cancels",
     Outpost: "Place an outpost · Esc cancels",
-    Stronghold: "Pick a home to upgrade to a stronghold · Esc cancels",
+    Stronghold: "Pick a home to upgrade · Esc cancels",
   };
   const arm = async (name, heading) => {
     await page.getByRole("button", { name, exact: true }).focus({ timeout: STEP_MS });
