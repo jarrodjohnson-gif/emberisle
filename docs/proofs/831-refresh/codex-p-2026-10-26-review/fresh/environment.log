@@ -1,8 +1,0 @@
-$ bash -c "node --version; npm ls playwright --depth=0; /workspace/emberisle/work/browsers/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell --version; git rev-parse HEAD; git merge-base origin/main HEAD"
-v24.19.0
-emberisle@ /workspace/emberisle/work/p-verify883
-└── playwright@1.63.0
-
-Google Chrome for Testing 153.0.8010.12
-1a2db48c131ce4dd7e7427093b85195e2c0437fb
-b90290abf4a3cd8c63bddf1e7f939e75b71c2418

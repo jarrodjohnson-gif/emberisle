@@ -1,9 +1,0 @@
-{
-  "src/components/game/TradePanel.tsx": true,
-  "src/components/game/BankTradePicker.tsx": true,
-  "src/lib/focus-trap.ts": true,
-  "scripts/trade-tabs-prove.mjs": true,
-  "scripts/trade-map.test.mjs": true,
-  "package-lock.json": true,
-  "server/package-lock.json": true
-}

@@ -1,3 +1,0 @@
-$ git checkout --detach 1a2db48c131ce4dd7e7427093b85195e2c0437fb
-Previous HEAD position was d18ee9f docs: record fresh trade reconciliation proofs and controls
-HEAD is now at 1a2db48 Prefetch trade picker when the trade module loads

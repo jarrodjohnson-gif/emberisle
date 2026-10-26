@@ -1,4 +1,0 @@
-$ git fetch origin refs/heads/codex/831-option-a-complete:refs/remotes/origin/codex/831-option-a-complete refs/heads/main:refs/remotes/origin/main
-From https://github.com/jarrodjohnson-gif/emberisle
-   d18ee9f..1a2db48  codex/831-option-a-complete -> origin/codex/831-option-a-complete
- * [new branch]      main       -> origin/main
