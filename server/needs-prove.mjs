@@ -138,7 +138,6 @@ try{
  const beforeOverState=structuredClone(stableState(a.state));
  a.inbox=[];a.send({type:'need',kinds:['ore']});
  const overResult=await a.nextAny(['error','seats']);
- console.log('DEBUG postgame response',JSON.stringify(overResult));
  assert.equal(overResult.type,'error','need ACT after game over is rejected before publishing seat changes');
  assert.equal(overResult.message,'Needs are available during a game.');
  assert.deepEqual(stableState(a.state),beforeOverState,'rejected postgame ACT preserves the public game state and clocks');
