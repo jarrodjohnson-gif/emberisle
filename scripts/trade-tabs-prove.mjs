@@ -587,6 +587,7 @@ async function modes(page, tag) {
   await load(page, base, "hotseat");
   await open(page);
   assert.equal(await panelFor(page).getByRole("tab").count(), 0, `${tag}: hotseat has no route tabs`);
+  assert.equal(await panelFor(page).locator(".trade-instructions").textContent(), "Choose one kind to give and one to get. Trade with the bank or your docks.", `${tag}: hotseat instructions describe only one-kind bank or dock exchange`);
   assert.equal(await askFor(page).count(), 0, `${tag}: hotseat has no player offer action`);
   assert.equal(await panelFor(page).getByTestId("trade-player-preview").count(), 0, `${tag}: hotseat has no player quote`);
   assert.equal(await panelFor(page).getByRole("radio").count(), 0, `${tag}: hotseat has no separate Bank selectors`);

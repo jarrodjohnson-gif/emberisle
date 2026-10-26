@@ -27,3 +27,12 @@ Browser validation belongs to the parent's serial frozen run.
 
 Validation: typecheck, JavaScript syntax and diff whitespace checks pass. The eight size fixture cases pass outside the sandbox.
 The sandbox suppressed child-process output; its initial fixture run failed output checks. No source fix followed that environment result.
+
+## Hotseat instructions
+
+| Old | New | Proof change |
+| --- | --- | --- |
+| Choose one kind to give and one to get. Bank shows your exact exchange. | Choose one kind to give and one to get. Trade with the bank or your docks. | Add exact text assertion in the existing hotseat mode check. |
+
+The conditional retains the existing AI and online table-offer wording. Every prior hotseat assertion remains.
+Typecheck and JavaScript syntax checks pass. Parent runs the existing browser proof serially on a frozen checkout.

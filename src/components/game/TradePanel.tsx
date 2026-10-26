@@ -116,7 +116,7 @@ export function TradePanel() {
         <div className="trade-composer-scroll" id="trade-goods" role="region" aria-labelledby="trade-goods-title" tabIndex={0}>
           <h3 id="trade-goods-title" className="sr-only">Trade goods</h3>
           <LazyBoundary failed={<p role="alert">Trade choices could not load. Close and reopen to retry.</p>}>
-          <p className="trade-instructions">{mode === "hotseat" ? "Choose one kind to give and one to get. Bank shows your exact exchange." : "Tap a good to add it. Mix goods to make an offer to the table."}</p>
+          <p className="trade-instructions">{mode === "hotseat" ? "Choose one kind to give and one to get. Trade with the bank or your docks." : "Tap a good to add it. Mix goods to make an offer to the table."}</p>
           {(["give", "want"] as const).map((side) => {
             const bag = side === "give" ? give : want;
             return (
