@@ -33,11 +33,13 @@ jobs:
 
   relay:
     # Only comments addressed to the desk: they open with "Question:" or "To desk:" (startsWith ignores case).
-    # Status lines on the hub (#854) no longer wake the desk. The inbox's own comments, and the desk's own posts
-    # (marked <!-- review-desk -->), are skipped.
+    # Status lines on the hub (#854) no longer wake the desk. The inbox's own comments and the desk's own posts are
+    # skipped, by the <!-- review-desk --> marker or by their opening words, in case the marker is missing.
     if: >-
       github.event_name == 'issue_comment' && github.event.issue.number != 699 &&
       !contains(github.event.comment.body, '<!-- review-desk -->') &&
+      !startsWith(github.event.comment.body, 'Desk') && !startsWith(github.event.comment.body, 'Review desk') &&
+      !startsWith(github.event.comment.body, 'Hub digest') &&
       (startsWith(github.event.comment.body, 'Question:') || startsWith(github.event.comment.body, 'To desk:'))
     runs-on: ubuntu-latest
     steps:
