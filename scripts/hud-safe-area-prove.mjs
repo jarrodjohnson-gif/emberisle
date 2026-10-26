@@ -291,10 +291,13 @@ async function practice(spec) {
   for (let tries = 0; !(await chip.isVisible()); tries++) {
     if (tries === 5) throw new Error("setup: five taps on a legal corner brought up no PlaceChip");
     await settled(page);
-    const spot = await page.evaluate(() => {
+    const point = await page.waitForFunction(() => {
       const id = window.__emberisle.getState().highlights().vertices[0];
-      return window.__isle.screenOf(id);
-    });
+      const spot = id && window.__isle.screenOf(id);
+      return spot && Number.isFinite(spot.x) && Number.isFinite(spot.y) ? spot : null;
+    }, null, { timeout: STEP_MS });
+    const spot = await point.jsonValue();
+    await point.dispose();
     await page.touchscreen.tap(spot.x, spot.y);
     await chip.waitFor({ timeout: STEP_MS / 4 }).catch(() => {});
   }
