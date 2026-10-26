@@ -1,0 +1,12 @@
+
+> connection-health-prove
+> node scripts/connection-health-prove.mjs
+
+ok transport: no pre-welcome probe; duplicate welcome keeps one challenge and its 3s timeout; close cancels probing
+ok browser: nonce matched 137ms monotonic RTT; 30s spacing, one outstanding, 3s timeout, full-state recovery once; host timers/save bytes unchanged
+ok lobby: four ready seats and every health state fit 320/390/667/844px layouts; no landscape scrolling
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:41985/assets/table-BDd_O3ov.js
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:41985/assets/OpenTables-CxHzgXW9.js
+ok production startup: cancelled Host/rejoin stay offline; latest intent/selected host win; 3s fallback and saved seat survive held/failed load; explicit retry recovers
+ok host: malformed/oversized/prehello probes refused; peek/hello bucket retained; seated flood bounded to two pongs; game/timers/disk unchanged
+connection health prove ok

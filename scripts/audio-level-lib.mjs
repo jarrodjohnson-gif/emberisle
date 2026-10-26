@@ -11,15 +11,16 @@ import { basename } from "node:path";
 // needs a type, and a type may need its own target (an ambience bed is not a table effect), which is the owner's call.
 // The Pasture tap is a clip of the owner's sheep, but it plays as a table touch (tap_pasture), so it is levelled with the effects.
 export const TYPE_OF = {
-  memes: ["robbed_fah", "sb_airhorn", "sb_only_wood", "sb_perfect", "sb_quit_touchin", "sb_win_reaction", "sb_wololo"],
+  memes: ["corn_no", "daking_wood", "isaac_win", "robbed_fah", "sb_airhorn", "sb_brick_please", "sb_grain_please", "sb_nice_sheep", "sb_only_wood", "sb_perfect", "sb_quit_touchin", "sb_real_badman", "sb_sheep_please", "sb_gong", "sb_win_reaction", "sb_wololo", "sheep_for_wood", "stone_for_wood", "three_wood"],
   music: ["end_music", "game_lose", "game_start", "match_point", "old_tower_inn_loop"],
+  ambience: ["amb_sea"],
   effects: [
     "back_001", "bong_001", "chat_recv", "chat_send", "click_001", "click_002", "click_005", "confirmation_001", "drop_001", "drop_002",
     "drop_003", "drop_004", "error_001", "error_002", "open_001", "plop", "pluck_001", "sb_plump_sheep", "scratch_001", "tap_fields",
-    "tap_forest", "tap_hills", "tap_mountains", "tap_waste", "timer_final", "timer_tick", "trade_offer", "wayfarer_move", "your_turn",
+    "lucke_diggler", "tap_forest", "tap_hills", "tap_mountains", "tap_pasture", "tap_waste", "timer_final", "timer_tick", "trade_offer", "wayfarer_move", "your_turn",
   ],
 };
-export const TARGETS = { memes: { method: "lufs", target: -16 }, music: { method: "lufs", target: -18 }, effects: { method: "short", target: -18 } };
+export const TARGETS = { memes: { method: "lufs", target: -16 }, music: { method: "lufs", target: -18 }, effects: { method: "short", target: -18 }, ambience: { method: "lufs", target: -30.6 } };
 export const TOLERANCE = 1; // LU or dB
 export const MAX_TRUE_PEAK = -1; // dBTP
 

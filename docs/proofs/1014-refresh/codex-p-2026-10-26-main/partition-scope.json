@@ -1,0 +1,26 @@
+{
+  "old_head": "7d0eb7de06bf5001299d2bfb5dc9a950f7e04ed3",
+  "main": "9bde9861490662ef3e95e90db5cfa2dc7874fd55",
+  "checks": {
+    "all_main_type_arrays_exact": true,
+    "all_main_targets_exact": true,
+    "partition_exact": true,
+    "ambience_isolated": true,
+    "ambience_target": true,
+    "ambience_exact_old": true,
+    "every_other_main_file_exact": true,
+    "all_main_audio_bytes_exact": true,
+    "generator_loop_asset_exact_old": true,
+    "full_main_mixer_body_exact": true,
+    "all_main_scripts_exact": true,
+    "loop_script_once": true,
+    "loop_ci_once": true,
+    "all_main_locked_packages_exact": true,
+    "lock_exact_old": true
+  },
+  "physical_asset_count": 56,
+  "main_physical_asset_count": 55,
+  "ambience_bytes": 240788,
+  "ambience_sha256": "bfe40ad07db180577a7cd4b0378cf065f17e9b995db5da4a14add15e7b75aa2e",
+  "main_files": 1575
+}

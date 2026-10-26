@@ -1,0 +1,16 @@
+ok matching proto 1: opened G8JD, welcome proto 1
+ok no proto: accepted as 0, seated as s1, welcome proto 1
+ok open with proto 999: "Unknown protocol version; this table speaks protocol 1. Reload to update."
+ok the refused socket stayed seatless and opens a table with a known proto
+ok join with proto 999: "Unknown protocol version; this table speaks protocol 1. Reload to update."
+ok join with proto 2: "Unknown protocol version; this table speaks protocol 1. Reload to update."
+ok join with proto "1": "Unknown protocol version; this table speaks protocol 1. Reload to update."
+ok join with proto -1: "Unknown protocol version; this table speaks protocol 1. Reload to update."
+ok join with proto 1.5: "Unknown protocol version; this table speaks protocol 1. Reload to update."
+ok join with proto {}: "Unknown protocol version; this table speaks protocol 1. Reload to update."
+ok lobby: still 2 seats, no broadcast
+ok rejoin with proto 999: "Unknown protocol version; this table speaks protocol 1. Reload to update."
+ok rejoin: the refused secret left s1 held; a matching rejoin took it, welcome proto 1
+ok watch with proto 999: "Unknown protocol version; this table speaks protocol 1. Reload to update."
+ok watch: refused watcher not counted; a matching watcher counted 1, welcome proto 1
+proto prove ok

@@ -156,7 +156,13 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run profile-reservation-recovery-prove
       - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run profile-derive-error-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run profile-permissions-prove
+      - if: needs.changes.outputs.docs_only != 'true'
         run: npm run profile-socket-rate-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run profile-lock-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run profile-expiry-prove
       - if: needs.changes.outputs.docs_only != 'true'
@@ -182,6 +188,8 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run audio-level-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run ambience-loop-prove
 
   # #924: advisory, so it is not in `checks.needs`. The desk reads it for REVIEWING.md item 4.
   # It diffs this PR's proofs against the commit it merges onto (the merge commit's first parent, as in build), using the
@@ -256,15 +264,21 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
         run: npm run turn-extension-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
+        run: npm run steal-picker-push-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
         run: npm run trade-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a2'
         run: npm run practice-trade-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a1'
         run: npm run hud-safe-area-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a1'
+        run: npm run connection-health-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
         run: npm run first-game-coach-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a2'
         run: npm run render-recovery-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a2'
+        run: npm run webgl-recovery-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a2'
         run: npm run rotate-overlays-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
@@ -351,8 +365,14 @@ jobs:
         run: npm run react-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-c'
         run: npm run wayfarer-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-c'
+        run: npm run robber-hex-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-c'
+        run: npm run robber-prompt-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-2'
         run: npm run sounds-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-2'
+        run: npm run audio-recovery-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
         run: npm run sound-mixer-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
@@ -435,6 +455,8 @@ jobs:
         run: npm run win-action-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation'
         run: npm run lobby-overflow-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation'
+        run: npm run lobby-layout-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
         run: npm run turn-copy-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-2'

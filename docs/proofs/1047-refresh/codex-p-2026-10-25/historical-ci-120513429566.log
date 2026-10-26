@@ -1,0 +1,16 @@
+2026-10-23T16:08:28.6253828Z > node scripts/longest-army-prove.mjs
+2026-10-23T16:08:28.6254028Z 
+2026-10-23T16:08:30.0722399Z AssertionError [ERR_ASSERTION]: the rules built every scenario on some island
+2026-10-23T16:08:30.0723011Z     at file:///home/runner/work/emberisle/emberisle/scripts/longest-army-prove.mjs:111:10 {
+2026-10-23T16:08:30.0723425Z   generatedMessage: false,
+2026-10-23T16:08:30.0723700Z   code: 'ERR_ASSERTION',
+2026-10-23T16:08:30.0723933Z   actual: null,
+2026-10-23T16:08:30.0724140Z   expected: true,
+2026-10-23T16:08:30.0724348Z   operator: '==',
+2026-10-23T16:08:30.0724551Z   diff: 'simple'
+2026-10-23T16:08:30.0724748Z }
+2026-10-23T16:08:30.1105405Z ##[error]Process completed with exit code 1.
+2026-10-23T16:08:30.1179787Z ##[group]Run actions/upload-artifact@v4
+2026-10-23T16:08:30.1180086Z with:
+2026-10-23T16:08:30.1180348Z   name: browser-b-presentation-2-test-results
+2026-10-23T16:08:30.1180652Z   path: test-results/
