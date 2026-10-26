@@ -2,6 +2,7 @@
 // Uses real profile sockets against a temporary private store, matching profile-auth-prove.mjs patterns.
 // Run from the repo root: node --import ./server/register.mjs server/profile-edit-prove.mjs
 import { spawn } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -10,15 +11,17 @@ import { openProfiles, SCRYPT } from "./profiles.mjs";
 import { seatCredential } from "./profile-protocol.mjs";
 import { PLAYER_COLORS } from "../src/lib/game/types.ts";
 
+const fixtureStage = process.env.PROFILE_EDIT_FIXTURE_STAGE;
+if (fixtureStage && !["prepare", "reopen"].includes(fixtureStage)) throw new Error("invalid fixture stage");
 const ROOMS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-rooms-"));
-const PROFILES_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-profiles-"));
+const PROFILES_DIR = fixtureStage ? process.env.PROFILE_EDIT_FIXTURE_DIR : mkdtempSync(path.join(tmpdir(), "emberisle-profiles-"));
 const STORE = path.join(PROFILES_DIR, "profiles.json");
 const hosts = new Set();
 const sockets = new Set();
 process.on("exit", () => {
   for (const h of hosts) h.proc.kill("SIGKILL");
   rmSync(ROOMS_DIR, { recursive: true, force: true });
-  rmSync(PROFILES_DIR, { recursive: true, force: true });
+  if (!fixtureStage) rmSync(PROFILES_DIR, { recursive: true, force: true });
 });
 for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
 
@@ -144,6 +147,30 @@ async function runAdmin(args, input = "YES\n", dir = PROFILES_DIR) {
   });
 }
 
+// Each fixture owner exits before the next process opens its private store.
+async function runStoreFixture(stage) {
+  let count;
+  const proc = spawn(process.execPath, [...process.execArgv, fileURLToPath(import.meta.url)], {
+    env: { ...process.env, PROFILE_EDIT_FIXTURE_STAGE: stage, PROFILE_EDIT_FIXTURE_DIR: PROFILES_DIR },
+    stdio: ["ignore", "pipe", "pipe", "ipc"],
+  });
+  hosts.add({ proc });
+  proc.stdout.on("data", d => process.stdout.write(d));
+  proc.stderr.on("data", d => process.stderr.write(d));
+  proc.on("message", message => { count = message.checks; });
+  return await new Promise((resolve, reject) => {
+    const timer = setTimeout(() => { proc.kill("SIGKILL"); reject(new Error(`store fixture ${stage} timed out`)); }, 60_000);
+    proc.once("error", error => { clearTimeout(timer); reject(error); });
+    proc.once("exit", code => {
+      clearTimeout(timer);
+      for (const h of hosts) if (h.proc === proc) hosts.delete(h);
+      if (code !== 0 || !Number.isInteger(count) || count <= 0) reject(new Error(`store fixture ${stage} failed: ${code}`));
+      else { passed += count; resolve(proc.pid); }
+    });
+  });
+}
+
+if (!fixtureStage) {
 // --- Setup: start host, create test profiles ---------------------------------------------------------
 let h = await startHost();
 
@@ -496,13 +523,23 @@ check("reserved logins survive restart", !!store().reservedLogins["dune"]);
 
 await h.stop();
 
+  const firstOwner = await runStoreFixture("prepare");
+  const nextOwner = await runStoreFixture("reopen");
+  check("direct-store reopening uses a different process", Number.isInteger(firstOwner) && Number.isInteger(nextOwner) && firstOwner !== nextOwner);
+}
+
 // Direct store calls make queued revocation races and expiry clocks deterministic.
-{
+if (fixtureStage) {
   const dir = path.join(PROFILES_DIR, "race-clock");
-  let now = Date.now();
-  let db = openProfiles(dir, { colors: PLAYER_COLORS, clock: () => now });
+  const checkpoint = path.join(PROFILES_DIR, "race-clock-checkpoint.json");
+  const saved = fixtureStage === "reopen" ? JSON.parse(readFileSync(checkpoint, "utf8")) : null;
+  let now = saved?.now ?? Date.now();
+  let db;
+  let made;
+  if (fixtureStage === "prepare") {
+  db = openProfiles(dir, { colors: PLAYER_COLORS, clock: () => now });
   const codeOf = p => p.then(() => null, e => e.code);
-  const made = await db.create(fields("racer", "1234"));
+  made = await db.create(fields("racer", "1234"));
   const rename = codeOf(db.profileEdit(made.token, { login: "racer-next", pin: "1234" }));
   await db.logout(made.token);
   check("logout during a queued rename refuses its commit", await rename === "signedOut");
@@ -530,6 +567,9 @@ await h.stop();
   check("expired temporary credential cannot resume a profile", resumeCode === "signInFailed");
   check("expired temporary credential cannot change its PIN", await codeOf(db.profileChangePin(temp.token, reset.tempPin, "6789", "6789")) === "signInFailed");
   check("expiry keeps the profile locked and the attempt counted", db.profile(made.profile.profileId).pinMustChange && db.profile(made.profile.profileId).guard.lifetime === 1);
+  writeFileSync(checkpoint, JSON.stringify({ now, profileId: made.profile.profileId }), { mode: 0o600 });
+  } else {
+  made = { profile: { profileId: saved.profileId } };
   db = openProfiles(dir, { colors: PLAYER_COLORS, clock: () => now });
   check("expiry lock and failed attempt survive reopening", db.profile(made.profile.profileId).pinMustChange && db.profile(made.profile.profileId).guard.lifetime === 1);
   const resetAgain = await db.localResetPin(made.profile.profileId);
@@ -550,7 +590,9 @@ await h.stop();
   const accidentalDir = path.join(PROFILES_DIR, "not-a-store");
   const noDirectory = await runAdmin([accidentalDir], "YES\n", null);
   check("admin refuses a missing store directory before creating anything", noDirectory.code === 2 && !existsSync(accidentalDir));
+  }
+  await new Promise((resolve, reject) => process.send({ checks: passed }, error => error ? reject(error) : resolve()));
 }
 
-console.log(`\nprofile-edit-prove: ${passed} checks passed`);
+if (!fixtureStage) console.log(`\nprofile-edit-prove: ${passed} checks passed`);
 process.exit(0);

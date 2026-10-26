@@ -236,6 +236,9 @@ body {
 .turn-instruction { min-height: 32px; line-height: 20px; }
 .turn-instruction-own { color: var(--table-ink); }
 .turn-instruction-own::before { content: ''; display: inline-block; width: 6px; height: 6px; background: var(--accent); border-radius: 50%; margin-right: 8px; vertical-align: 2px; }
+/* #1112: the mover's "Move the wayfarer" line goes dark with white ink, in the same slot, so it stands out from every other phase line. */
+.turn-instruction-move { background: var(--ink); color: #fff; font-weight: 600; }
+.turn-instruction-move::before { background: #fff; }
 .goods-tray { background: transparent; }
 .hud-actions { display: flex; align-items: center; gap: 4px; padding: 4px; background: var(--table); border-radius: var(--radius-control); }
 .build-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; flex: 1; min-width: 0; }

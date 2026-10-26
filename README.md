@@ -344,6 +344,9 @@ Full rules: **[docs/FRAMEWORK.md](docs/FRAMEWORK.md)**. In short:
 - `sb_quit_touchin.mp3`
 - `sb_only_wood.mp3`
 - `sb_perfect.mp3` (approved 2026-10-24)
+- `three_wood.mp3`, `daking_wood.mp3`, `sheep_for_wood.mp3`, `stone_for_wood.mp3`, `corn_no.mp3`, `lucke_diggler.mp3`, `isaac_win.mp3`
+- `tap_pasture.mp3` (CC0, OpenGameArt)
+- `sb_nice_sheep.mp3`, `sb_sheep_please.mp3`, `sb_grain_please.mp3`, `sb_brick_please.mp3`, `sb_real_badman.mp3`, `sb_gong.mp3` (approved 2026-10-25)
 
 ---
 
@@ -368,7 +371,7 @@ WebSocket JSON. The client sends intents. The server answers with `state` or `er
 | `{type:"rob", hexId, stealFrom}` `{type:"discard", cards}` | After a 7 |
 | `{type:"tradeBank", give, take}` `{type:"tradeAsk", give, want}` `{type:"tradeAnswer", tradeId, yes}` | Trades. A `tradeAsk` is refused to the asker alone, with "Bad trade." (`give` or `want` is not a bag of known resources), "You lack those goods." or "Offer something." (both bags empty). A new ask closes the open one with `tradeClosed`. |
 | `{type:"chat", text}` | One chat line, lobby or game (200 chars, rate-limited) |
-| `{type:"sound", id}` | A soundboard tap over the chat path: `id` is one of `robbed_fah` ("Fah"), `sb_wololo` ("Wololo"), `sb_win_reaction` ("GG!"), `sb_airhorn` ("Airhorn"), `sb_quit_touchin` ("Quit touchin' me"), `sb_only_wood` ("Only wood?"), `sb_perfect` ("Perfect"), `bong`, `plop`, `pluck` (the clips are in public/audio; the host relays only a whitelisted id). Same chat bucket as `chat`, plus one tap per seat every `SOUND_MS` (default 3000); a seat's renames are paced the same way by `RENAME_MS` (default 2000, "Slow down."). Errors: "Unknown sound.", "Slow down.". Every seat gets `chat` with `sound:id` and `text:"🔊 Label"` (shown as the chip "Ember 🔊 Fah"; kept in the room's chat history, which a late joiner sees without hearing it); each page plays the clip unless that listener has muted. |
+| `{type:"sound", id}` | A soundboard tap over the chat path: `id` is one of `robbed_fah` ("Fah"), `sb_wololo` ("Wololo"), `sb_win_reaction` ("GG!"), `sb_airhorn` ("Airhorn"), `sb_quit_touchin` ("Quit touchin' me"), `sb_only_wood` ("Wood please"), `sb_perfect` ("Perfect"), `sb_plump_sheep` ("Plump sheep"), `sb_nice_sheep` ("Nice sheep"), `sb_sheep_please` ("Sheep please"), `sb_grain_please` ("Grain please"), `sb_brick_please` ("Brick please"), `sb_real_badman` ("Real badman"), `sb_gong` ("Gong"), and `bong` (the clips are in public/audio; the host relays only a whitelisted id). Plop and Pluck remain game sounds, not soundboard ids. Same chat bucket as `chat`, plus one tap per seat every `SOUND_MS` (default 3000); a seat's renames are paced the same way by `RENAME_MS` (default 2000, "Slow down."). Errors: "Unknown sound.", "Slow down.". Every seat gets `chat` with `sound:id` and `text:"🔊 Label"` (shown as the chip "Ember 🔊 Fah"; kept in the room's chat history, which a late joiner sees without hearing it); each page plays the clip unless that listener has muted. |
 | `{type:"react", emote, to}` | A reaction image, `to` a seat or player id or omitted |
 
 | Host → client | Meaning |
