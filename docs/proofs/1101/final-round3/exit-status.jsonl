@@ -1,3 +1,4 @@
 {"name": "robber-prompt-prove", "command": ["npm", "run", "robber-prompt-prove"], "cwd": "/Users/jarrod.johnson/emberisle-1101", "exit": 0, "expectedExit": 0, "verdict": "pass", "log": "docs/proofs/1101/final-round3/robber-prompt-prove-1.log"}
 {"name": "build-ready-prove", "command": ["npm", "run", "build-ready-prove"], "cwd": "/Users/jarrod.johnson/emberisle-1101", "exit": 0, "expectedExit": 0, "verdict": "pass", "log": "docs/proofs/1101/final-round3/build-ready-prove-1.log"}
 {"name": "first-game-coach-prove", "command": ["npm", "run", "first-game-coach-prove"], "cwd": "/Users/jarrod.johnson/emberisle-1101", "exit": 0, "expectedExit": 0, "verdict": "pass", "log": "docs/proofs/1101/final-round3/first-game-coach-prove-1.log"}
+{"name": "fortune-count-prove", "command": ["npm", "run", "fortune-count-prove"], "cwd": "/Users/jarrod.johnson/emberisle-1101", "exit": 0, "expectedExit": 0, "verdict": "pass", "log": "docs/proofs/1101/final-round3/fortune-count-prove-1.log"}
