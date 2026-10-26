@@ -11,7 +11,7 @@ import { basename } from "node:path";
 // needs a type, and a type may need its own target (an ambience bed is not a table effect), which is the owner's call.
 // The Pasture tap is a clip of the owner's sheep, but it plays as a table touch (tap_pasture), so it is levelled with the effects.
 export const TYPE_OF = {
-  memes: ["corn_no", "daking_wood", "isaac_win", "robbed_fah", "sb_airhorn", "sb_brick_please", "sb_grain_please", "sb_nice_sheep", "sb_only_wood", "sb_perfect", "sb_quit_touchin", "sb_sheep_please", "sb_win_reaction", "sb_wololo", "sheep_for_wood", "stone_for_wood", "three_wood"],
+  memes: ["corn_no", "daking_wood", "isaac_win", "robbed_fah", "sb_airhorn", "sb_brick_please", "sb_grain_please", "sb_nice_sheep", "sb_only_wood", "sb_perfect", "sb_quit_touchin", "sb_real_badman", "sb_sheep_please", "sb_gong", "sb_win_reaction", "sb_wololo", "sheep_for_wood", "stone_for_wood", "three_wood"],
   music: ["end_music", "game_lose", "game_start", "match_point", "old_tower_inn_loop"],
   effects: [
     "back_001", "bong_001", "chat_recv", "chat_send", "click_001", "click_002", "click_005", "confirmation_001", "drop_001", "drop_002",
