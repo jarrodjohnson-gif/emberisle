@@ -13,21 +13,27 @@ import { createServer } from "vite";
 const PORT = Number(process.env.VITE_PORT) || 8112;
 const ROOMS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-open-table-ui-"));
 process.on("exit", () => rmSync(ROOMS_DIR, { recursive: true, force: true }));
-const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
-  cwd: new URL("../server/", import.meta.url),
-  env: { ...process.env, PORT: "0", ROOMS_DIR },
-});
-process.on("exit", () => host.kill());
-for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
+let host;
 const hostLog = [];
+async function boot(port = 0) {
+  host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
+  cwd: new URL("../server/", import.meta.url),
+  env: { ...process.env, PORT: String(port), ROOMS_DIR, PROFILES_DIR: path.join(ROOMS_DIR, "profiles") },
+});
+
 host.stderr.on("data", (d) => hostLog.push(String(d).trimEnd()));
-const hostPort = await new Promise((resolve) =>
+return await new Promise((resolve, reject) => {
+  host.once("error", reject);
   host.stdout.on("data", (d) => {
     hostLog.push(String(d).trimEnd());
     const m = String(d).match(/listening (\d+)/);
     if (m) resolve(Number(m[1]));
-  }),
-);
+  });
+});
+}
+const hostPort = await boot();
+process.on("exit", () => host?.kill());
+for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 for (let tries = 0; ; tries++) {
   try {
@@ -75,6 +81,19 @@ async function openTab(name, viewport = { width: 1280, height: 720 }) {
   page.on("pageerror", (e) => errors.push(`${name}: ${e}`));
   // Disable WebGL draw calls so headless tabs run fast.
   await page.addInitScript(() => {
+    window.discoveryTraffic = [];
+    window.discoveryDials = [];
+    const NativeSocket = WebSocket;
+    window.WebSocket = class extends NativeSocket {
+      constructor(...args) {
+        super(...args);
+        window.discoveryDials.push(performance.now());
+      }
+      send(data) {
+        window.discoveryTraffic.push(JSON.parse(data));
+        return super.send(data);
+      }
+    };
     for (const fn of ["drawElements", "drawArrays", "drawElementsInstanced", "drawArraysInstanced"]) {
       WebGL2RenderingContext.prototype[fn] = function () {};
     }
@@ -176,8 +195,52 @@ check(entryOnD.includes("Jarrod"), `open entry is Jarrod's, got "${entryOnD}"`);
 check(!entryOnD.includes("Sidecar"), `private host name Sidecar not exposed, got "${entryOnD}"`);
 check(!entryOnD.includes(privateCode), `private code ${privateCode} not exposed, got "${entryOnD}"`);
 
+// Preserve the original error assertion before deliberately taking the host offline.
 // Confirm there are no console errors.
 check(errors.length === 0, `no console errors (found: ${errors.join(", ")})`);
+
+// #987: the same mounted title must recover a new list after a real host restart.
+const documentMarker = await D.page.evaluate(() => {
+  window.discoveryDocument = crypto.randomUUID();
+  localStorage.setItem("emberisle-seat", JSON.stringify({ code: "SEAT", secret: "saved-seat-secret" }));
+  return window.discoveryDocument;
+});
+await A.ctx.close();
+await B.ctx.close();
+await C.ctx.close();
+const beforeOutage = await D.page.evaluate(() => window.discoveryDials.length);
+await new Promise((resolve) => { host.once("exit", resolve); host.kill("SIGTERM"); });
+await until(() => D.page.getByTestId("open-table-entry").count().then((n) => n === 0), "dropped host clears stale list");
+await wait(3500); // At least two bounded redials fail while the host really stays down.
+const offlineDials = await D.page.evaluate(() => window.discoveryDials.length) - beforeOutage;
+check(offlineDials === 2, `bounded offline backoff: ${offlineDials} redials during 3.5 seconds offline`);
+check(await boot(hostPort) === hostPort, "host restarted at the same address");
+const E = await openTab("After restart");
+await E.page.locator("details.seat-settings summary").click();
+await E.page.locator('input[placeholder="Your name"]').fill("After restart");
+await E.page.locator('input[placeholder="Your name"]').press("Escape");
+await E.page.getByTestId("open-mode-toggle").click();
+await E.page.getByRole("button", { name: "Host a table" }).click();
+await E.page.getByTestId("lobby-card").waitFor();
+const F = await openTab("Restart private");
+await F.page.getByRole("button", { name: "Host a table" }).click();
+await F.page.getByTestId("lobby-card").waitFor();
+const restartPrivateCode = await F.page.evaluate(() => window.__emberisle.getState().code);
+await until(() => D.page.getByTestId("open-table-entry").innerText().then((t) => t.includes("After restart")).catch(() => false), "same title recovers current listing after restart", 22000);
+check(await D.page.evaluate(() => window.discoveryDocument) === documentMarker, "discovery recovered without document reload");
+check(await D.page.getByTestId("open-table-entry").count() === 1, "recovered list contains only the current open table");
+check(!(await D.page.getByTestId("open-tables").innerText()).includes(restartPrivateCode), "private table remains excluded after restart");
+check(await D.page.evaluate(() => window.discoveryTraffic.every((m) => m.type === "list" && Object.keys(m).length === 1)), "seatless discovery sends only list, never credentials");
+// Leave the title while a reconnect timer is pending, then keep the page mounted beyond its deadline.
+await E.ctx.close();
+await F.ctx.close();
+await new Promise((resolve) => { host.once("exit", resolve); host.kill("SIGTERM"); });
+await until(() => D.page.getByTestId("open-table-entry").count().then((n) => n === 0), "second drop clears list");
+await D.page.getByRole("button", { name: "Play", exact: true }).click();
+await D.page.getByTestId("title-card").waitFor({ state: "detached" });
+const afterUnmount = await D.page.evaluate(() => ({ dials: window.discoveryDials.length, traffic: window.discoveryTraffic.length }));
+await wait(17000);
+check(await D.page.evaluate((before) => window.discoveryDials.length === before.dials && window.discoveryTraffic.length === before.traffic, afterUnmount), "unmount cancels pending redial and list timers");
 
 console.log("open-table-prove ok: open table visible with Join, private table hidden, Joshua joined without code");
 await browser.close();
