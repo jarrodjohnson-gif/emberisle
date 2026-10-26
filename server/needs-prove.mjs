@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 import { randomUUID } from 'node:crypto';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import WebSocket from 'ws';
@@ -35,8 +35,8 @@ writeFileSync(path.join(directory,`${code}.json`),JSON.stringify({code,host:'s0'
 const sockets=[];let host,stderr='';
 process.on('exit',()=>{host?.kill();rmSync(directory,{recursive:true,force:true});});
 for(const signal of ['SIGINT','SIGTERM'])process.on(signal,()=>process.exit(130));
-async function start(){
- host=spawn(process.execPath,['--import','./register.mjs','host.mjs'],{cwd:new URL('.',import.meta.url),env:{...process.env,PORT:'0',ROOMS_DIR:directory,PROFILES_DIR:path.join(directory,'profiles'),TURN_MS:'600000',GRACE_MS:'600000',HOLD_MS:'600000'},stdio:['ignore','pipe','pipe']});
+async function start({turnMs='600000',graceMs='600000',holdMs='600000'}={}){
+ host=spawn(process.execPath,['--import','./register.mjs','host.mjs'],{cwd:new URL('.',import.meta.url),env:{...process.env,PORT:'0',ROOMS_DIR:directory,PROFILES_DIR:path.join(directory,'profiles'),TURN_MS:String(turnMs),GRACE_MS:String(graceMs),HOLD_MS:String(holdMs)},stdio:['ignore','pipe','pipe']});
  host.stderr.on('data',data=>stderr+=data);
  return new Promise((resolve,reject)=>{const timeout=setTimeout(()=>reject(Error(`host startup timeout: ${stderr}`)),10000);host.once('error',reject);host.once('exit',exit=>{clearTimeout(timeout);reject(Error(`host exit ${exit}: ${stderr}`));});host.stdout.on('data',data=>{const m=String(data).match(/listening (\d+)/);if(m){clearTimeout(timeout);resolve(Number(m[1]));}});});
 }
@@ -45,10 +45,10 @@ async function stopHost(){
  sockets.length=0;
  if(host?.exitCode===null&&host?.signalCode===null){const current=host,stopped=once(current,'exit');current.kill('SIGTERM');await stopped;}
 }
-function saveFixture(game,fixtureSeats){
- writeFileSync(path.join(directory,`${code}.json`),JSON.stringify({code,host:'s0',next:3,chat:[],chatSeq:0,game,seats:fixtureSeats,shape:2,savedAt:Date.now(),wayfarerMode:'off'}));
+function saveFixture(game,fixtureSeats,roomCode=code){
+ writeFileSync(path.join(directory,`${roomCode}.json`),JSON.stringify({code:roomCode,host:'s0',next:3,chat:[],chatSeq:0,game,seats:fixtureSeats,shape:2,savedAt:Date.now(),wayfarerMode:'off'}));
 }
-async function connect(port,pid,watch=false,waitForState=true){
+async function connect(port,pid,watch=false,waitForState=true,roomCode=code){
  const ws=new WebSocket(`ws://127.0.0.1:${port}`), c={ws,inbox:[],state:null};sockets.push(ws);
  ws.on('message',raw=>{const message=JSON.parse(String(raw));if(message.type==='state')c.state=message;c.inbox.push(message);c.changed?.();});
  c.next=async(type,predicate=()=>true)=>{
@@ -63,7 +63,7 @@ async function connect(port,pid,watch=false,waitForState=true){
  };
  c.send=msg=>ws.send(JSON.stringify(msg));
  c.act=async msg=>{const seq=c.state.game.seq;c.send({...msg,...c.state.actionStamp,cid:randomUUID()});return c.next('state',m=>m.game.seq>seq);};
- await once(ws,'open');c.send(watch?{type:'hello',code,watch:true}:{type:'hello',code,secret:`fixture-${pid}`});
+ await once(ws,'open');c.send(watch?{type:'hello',code:roomCode,watch:true}:{type:'hello',code:roomCode,secret:`fixture-${pid}`});
  const welcome=await c.next('welcome');c.seat=welcome.you;if(waitForState)await c.next('state');return c;
 }
 const ownNeeds=(message,c)=>message.seats.find(s=>s.id===c.seat)?.needs;
@@ -180,6 +180,70 @@ try{
  assert.deepEqual(afterSecondBotTurn.seats.find(s=>s.id==='s1').needs,[],'the bot need expires on its second own completed turn');
  assert.ok(botSeatProjectionCount>=2,'runBots publishes the bot need expiry on its own completed turn');
  console.log('ok runBots decrements only the acting bot’s need; it survives one own turn and expires on the second');
+
+ // A held human keeps the need through grace and a same-secret rejoin; clear only at actual bot takeover.
+ await stopHost();
+ const takeoverCode='TAKE';
+ const takeoverGame=createGame({humans:[{name:'A'},{name:'B'},{name:'C'}],bots:0,seed:14,wayfarerMode:'off'});
+ takeoverGame.phase='main';takeoverGame.rollOff=null;takeoverGame.current='p0';takeoverGame.turn=1;takeoverGame.log=[];
+ for(const p of takeoverGame.players)for(const r of ['timber','clay','wool','grain','ore'])p.resources[r]=0;
+ const takeoverSeats=takeoverGame.players.map((p,i)=>({id:`s${i}`,name:p.name,color:p.color,ready:true,pid:p.id,secret:`fixture-${p.id}`}));
+ saveFixture(takeoverGame,takeoverSeats,takeoverCode);
+ port=await start({graceMs:400,turnMs:30000,holdMs:2800});
+ a=await connect(port,'p0',false,true,takeoverCode);b=await connect(port,'p1',false,true,takeoverCode);c=await connect(port,'p2',false,true,takeoverCode);
+ const takeoverSeatId=a.seat;
+ const projectedTakeoverNeed=m=>m.seats.find(s=>s.id===takeoverSeatId)?.needs;
+ assert.equal(takeoverSeatId,'s0');
+ const liveNeed=await need(a,['ore']);
+ assert.deepEqual(ownNeeds(liveNeed,a),['ore'],'the human seat sets the need through the real host');
+ const activeNeed=m=>{const seat=m.seats.find(s=>s.id===takeoverSeatId);return seat?.player==='p0'&&seat.away===false&&JSON.stringify(seat.needs)==='["ore"]';};
+ await Promise.all([b.next('seats',activeNeed),c.next('seats',activeNeed)]);
+ assert.equal(b.state.game.current,'p0','the disconnected human owns the turn before the takeover scenario');
+ const heldNeed=(m)=>{const seat=m.seats.find(s=>s.id===takeoverSeatId);return seat?.player==='p0'&&seat.away===true&&JSON.stringify(seat.needs)==='["ore"]';};
+ for(const observer of [b,c]){observer.inbox=[];}
+ a.ws.terminate();
+ const [graceB,graceC]=await Promise.all([b.next('seats',heldNeed),c.next('seats',heldNeed)]);
+ assert.deepEqual(projectedTakeoverNeed(graceB),['ore'],'the public need remains during the real disconnect grace');
+ assert.deepEqual(projectedTakeoverNeed(graceC),['ore'],'both connected observers see the need during grace');
+ assert.equal(b.state.game.players.find(p=>p.id==='p0').kind,'human','the seat is still human during grace');
+ console.log('ok a dropped human keeps the public need during grace');
+
+ a=await connect(port,'p0',false,true,takeoverCode);
+ assert.equal(a.seat,takeoverSeatId,'the same secret returns to the original seat before takeover');
+ assert.equal(a.state.game.players.find(p=>p.id==='p0').kind,'human','the same player remains human before takeover');
+ const rejoinedNeed=(m)=>{const seat=m.seats.find(s=>s.id===takeoverSeatId);return seat?.player==='p0'&&seat.away===false&&JSON.stringify(seat.needs)==='["ore"]';};
+ await Promise.all([a.next('seats',rejoinedNeed),b.next('seats',rejoinedNeed),c.next('seats',rejoinedNeed)]);
+ console.log('ok the same person rejoining before takeover keeps the public need');
+
+ b.inbox=[];c.inbox=[];
+ a.ws.terminate();
+ const [secondHoldB,secondHoldC]=await Promise.all([b.next('seats',heldNeed),c.next('seats',heldNeed)]);
+ assert.deepEqual(projectedTakeoverNeed(secondHoldB),['ore'],'the same need remains while the second grace is active');
+ assert.deepEqual(projectedTakeoverNeed(secondHoldC),['ore'],'both observers see the need before takeover');
+ assert.equal(b.state.game.players.find(p=>p.id==='p0').kind,'human','the old human turn still owns the seat before grace ends');
+ b.inbox=[];c.inbox=[];
+ const botTakeover=await b.next('state',m=>m.game.players.find(p=>p.id==='p0')?.kind==='bot');
+ assert.equal(botTakeover.game.current,'p1','the bot completes the disconnected p0 turn and advances to p1');
+ const takeoverProjection=b.inbox.filter(m=>m.type==='seats').at(-1);
+ assert.ok(takeoverProjection,'the actual bot takeover publishes a fresh seat projection');
+ assert.deepEqual(projectedTakeoverNeed(takeoverProjection),[],'the need clears at human-to-bot takeover, before natural two-turn expiry');
+ assert.equal(takeoverProjection.seats.find(s=>s.id===takeoverSeatId).player,'p0','the seat keeps the same game player at takeover');
+ console.log('ok actual bot takeover clears the public need before any two-turn expiry');
+
+ await stopHost();
+ const savedAfterTakeover=JSON.parse(readFileSync(path.join(directory,`${takeoverCode}.json`),'utf8'));
+ const savedTakeoverSeat=savedAfterTakeover.seats.find(s=>s.id===takeoverSeatId);
+ assert.equal(savedTakeoverSeat.needs,undefined,'the cleared need is absent from the saved room');
+ assert(savedAfterTakeover.recoveryPids.includes('p0'),'the saved room retains the same recovery player id');
+ port=await start({graceMs:400,turnMs:30000,holdMs:2800});
+ a=await connect(port,'p0',false,true,takeoverCode);
+ assert.equal(a.seat,takeoverSeatId,'the same secret returns to the same seat after takeover');
+ assert.equal(a.state.game.players.find(p=>p.id==='p0').kind,'human','the returning player regains human control');
+ const returnedNeed=await a.next('seats',m=>{const seat=m.seats.find(s=>s.id===takeoverSeatId);return seat?.player==='p0'&&seat.away===false&&seat.needs.length===0;});
+ assert.deepEqual(projectedTakeoverNeed(returnedNeed),[],'the returning person starts with no need after takeover');
+ console.log('ok takeover clears saved needs and the returning person has none');
+ await stopHost();
+
  console.log('needs server prove ok');
 }finally{
  for(const socket of sockets)socket.terminate();

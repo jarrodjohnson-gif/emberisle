@@ -1641,8 +1641,9 @@ function takeOver(room, seat) {
   }
   room.recoveryPids = [...new Set([...(room.recoveryPids ?? []), seat.pid])].slice(-4);
   room.game = { ...room.game, players: room.game.players.map((x) => (x === p ? { ...x, kind: "bot", name: `${x.name} (bot)` } : x)) };
+  seat.needs = undefined;
   say(room, `${seat.name} is played by the bot until they return.`);
-  save(room);
+  publish(room);
   // With nobody connected, the bots wait too: a rejoin runs them.
   if (!room.seats.some((s) => s.ws)) return;
   const seen = room.game.log;
