@@ -10,3 +10,4 @@
 {"name": "hud-safe-area-prove", "command": ["npm", "run", "hud-safe-area-prove"], "cwd": "/Users/jarrod.johnson/emberisle-1101", "exit": 0, "expectedExit": 0, "verdict": "pass", "log": "docs/proofs/1101/final-round3/hud-safe-area-prove-3.log"}
 {"name": "reflow-prove", "command": ["npm", "run", "reflow-prove"], "cwd": "/Users/jarrod.johnson/emberisle-1101", "exit": 0, "expectedExit": 0, "verdict": "pass", "log": "docs/proofs/1101/final-round3/reflow-prove-1.log"}
 {"name": "hand-hidden-prove", "command": ["npm", "run", "hand-hidden-prove"], "cwd": "/Users/jarrod.johnson/emberisle-1101", "exit": 0, "expectedExit": 0, "verdict": "pass", "log": "docs/proofs/1101/final-round3/hand-hidden-prove-1.log"}
+{"name": "visual-direction-prove", "command": ["npm", "run", "visual-direction-prove"], "cwd": "/Users/jarrod.johnson/emberisle-1101", "exit": 0, "expectedExit": 0, "verdict": "pass", "log": "docs/proofs/1101/final-round3/visual-direction-prove-1.log"}
