@@ -1,0 +1,23 @@
+
+> needs-prove
+> node --import ./server/register.mjs scripts/needs-prove.mjs
+
+ok Need picker with 250ms host echoes: rapid selections compose; five 44px controls, maximum two, clear, public chip within 1s, hidden hand preserved, rejoin and unchanged hole
+ok real table trade: received requested Stone clears the public need on the other client
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: Need rejection rolls back promptly, before the unchanged three-second fallback
+    at file:///workspace/emberisle/work/p-needs-layout873/scripts/needs-prove.mjs:94:2
+    at runNextTicks (node:internal/process/task_queues:65:5)
+    at process.processImmediate (node:internal/timers:502:9) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+Node.js v24.19.0
