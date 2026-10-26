@@ -10,18 +10,19 @@ const errors=[];
 try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||(existsSync('/opt/pw-browsers/chromium')?'/opt/pw-browsers/chromium':undefined),args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
  mkdirSync('test-results',{recursive:true});
+ for(const [seed,numberTokens] of [[14,"random"],...Array.from({length:20},(_,i)=>[100+i,"official"])]){
  for(const [width,height,phone]of [[1280,720,false],[1920,1080,false],[390,844,true]]){
   const context=await browser.newContext({viewport:{width,height},deviceScaleFactor:1,...(phone?{hasTouch:true,isMobile:true}:{})});
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
   await page.addInitScript(()=>{localStorage.setItem('emberisle-jelly','full');localStorage.setItem('emberisle-water','simple');});
   await page.goto(`http://127.0.0.1:${port}`);await page.waitForFunction(()=>window.__emberisle);
   await page.getByRole('button',{name:'Four seats, one table',exact:true}).click();
-  await page.evaluate(async()=>{
+  await page.evaluate(async({seed,numberTokens})=>{
    const {createGame}=await import('/src/lib/game/board.ts');
-   const s=createGame({humans:[{name:'Ember'},{name:'Tide'},{name:'Dune'}],bots:0,seed:14,numberTokens:"random"});
+   const s=createGame({humans:[{name:'Ember'},{name:'Tide'},{name:'Dune'}],bots:0,seed,numberTokens});
    s.phase='main';s.rollOff=null;s.current='p0';s.seq=991;
    window.__emberisle.setState({state:s,mode:'hotseat',localId:'p0',banner:null,coachDismissed:true});
-  });
+  },{seed,numberTokens});
   await page.waitForFunction(()=>window.__isle?.lastSeq===991&&window.__isle.shore?.group.userData.goodsPiles?.length===9&&!window.__isle.refitDue&&!window.__isle.glide,null,{timeout:60000});
   await page.evaluate(()=>{
    const isle=window.__isle;isle.shore.update=()=>{};
@@ -121,12 +122,14 @@ try{
    for(const [node,material] of window.__tokenMaterials)node.material=material;
    window.__tokenMaskMaterial.dispose();
   });
+  console.log(`checking ${numberTokens} seed ${seed} at ${width}x${height}: ${JSON.stringify(pixels)}`);
   const minimum=phone?12:20;
   for(const pile of pixels)assert(pile.colour>=minimum,`${width}x${height} ${pile.kind}: ${pile.colour.toFixed(1)} real good-colour pixels; need ${minimum}`);
   await page.evaluate(()=>{const colors=window.__isle.shore.group.getObjectByName('harbors').geometry.attributes.color;colors.array.set(window.__cargoColors);colors.needsUpdate=true;});
   await frame();await page.screenshot({path:`test-results/dock-piles-${width}.png`});
   console.log(`ok ${width}x${height}: all nine piles enlarged 2.5x, within piers and clear of corners; visible colour pixels ${JSON.stringify(pixels)}`);
   await context.close();
+ }
  }
  assert.deepEqual(errors,[]);console.log('dock piles prove ok');
 }finally{await browser?.close();await vite.close();}
