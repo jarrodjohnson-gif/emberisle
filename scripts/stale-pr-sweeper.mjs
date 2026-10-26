@@ -1,6 +1,7 @@
 import { pathToFileURL } from 'node:url';
 
 const DAY = 86_400_000;
+export const MAX_CLOSES = 5;
 const PREFIX = '<!-- emberisle:stale-pr-activity ';
 const PROTECTED = new Set([699, 920]); // Permanent desk inbox and Astra archive.
 export const CLOSE_COMMENT = 'Closed after 10 days without a push to this PR. The branch is preserved. Reopen this PR and push an update when you are ready, or add keep-open to exempt it.';
@@ -27,7 +28,7 @@ export function decision(pr, marker, now) {
   if (!marker || marker.sha !== pr.head.sha) return 'initialize';
   const age = now - Date.parse(marker.observedAt);
   if (!Number.isFinite(age) || age < 0) return 'skip';
-  if (age >= 10 * DAY) return 'close';
+  if (age >= 10 * DAY && pr.labels.some(label => label.name === 'stale')) return 'close';
   if (age >= 5 * DAY && !pr.labels.some(label => label.name === 'stale')) return 'label';
   return 'skip';
 }
@@ -49,6 +50,18 @@ export async function sweep({ api, enabled, repo, now = Date.now(), event = null
     if (old) await api('PATCH', `${base}/issues/comments/${old.id}`, body);
     else await api('POST', `${base}/issues/${number}/comments`, body);
   };
+  const removeStale = async pr => {
+    if (!pr.labels.some(label => label.name === 'stale')) return;
+    if (dryRun) log(`#${pr.number}: would remove stale`);
+    else await api('DELETE', `${base}/issues/${pr.number}/labels/stale`);
+  };
+  const cleanupStale = async (number, sha, observedAt) => {
+    const fresh = await getPr(number);
+    if (protectedPr(fresh) || fresh.head.sha !== sha) return;
+    const marker = activity(await comments(number));
+    if (!dryRun && (marker?.observedAt !== observedAt || marker?.sha !== sha)) return;
+    await removeStale(fresh);
+  };
   if (event) {
     if (!['opened', 'synchronize', 'reopened'].includes(event.action)) throw new Error('Unsupported event');
     const incoming = event.pull_request;
@@ -57,21 +70,30 @@ export async function sweep({ api, enabled, repo, now = Date.now(), event = null
     const timestamp = Date.parse(incoming.updated_at);
     if (!Number.isFinite(timestamp) || timestamp > now) throw new Error('Invalid push timestamp');
     const old = activity(await comments(pr.number));
-    if (old && Date.parse(old.observedAt) >= timestamp) return;
+    if (old && Date.parse(old.observedAt) > timestamp) return;
+    if (old && Date.parse(old.observedAt) === timestamp && now - timestamp >= 5 * DAY) return;
     // Re-read immediately before writing: a queued event must never reset a newer head.
     const fresh = await getPr(pr.number);
     if (protectedPr(fresh) || fresh.head.sha !== incoming.head.sha) return;
-    await writeMarker(pr.number, fresh.head.sha, new Date(timestamp).toISOString(), old);
+    if (!old || Date.parse(old.observedAt) !== timestamp) {
+      await writeMarker(pr.number, fresh.head.sha, new Date(timestamp).toISOString(), old);
+    }
+    await cleanupStale(pr.number, incoming.head.sha, new Date(timestamp).toISOString());
     log(`#${pr.number}: recorded ${event.action} activity`);
     return;
   }
 
+  let closes = 0;
   for (const listed of await api.list(`${base}/pulls?state=open`)) {
     let pr = await getPr(listed.number);
     if (protectedPr(pr)) continue;
     let old = activity(await comments(pr.number));
     const action = decision(pr, old, now);
     if (action === 'skip') continue;
+    if (action === 'close' && closes >= MAX_CLOSES) {
+      log(`#${pr.number}: deferred close; run cap ${MAX_CLOSES} reached`);
+      continue;
+    }
     // Every mutation is preceded by a fresh head, label and activity read.
     const fresh = await getPr(pr.number);
     const current = activity(await comments(pr.number));
@@ -79,9 +101,11 @@ export async function sweep({ api, enabled, repo, now = Date.now(), event = null
     pr = fresh; old = current;
     if (action === 'initialize') {
       await writeMarker(pr.number, pr.head.sha, new Date(now).toISOString(), old);
+      await cleanupStale(pr.number, pr.head.sha, new Date(now).toISOString());
       log(`#${pr.number}: ${dryRun ? 'would start' : 'started'} observation grace period`);
     } else if (dryRun) {
       log(`#${pr.number}: would ${action}`);
+      if (action === 'close') closes++;
     } else if (action === 'label') {
       try { await api('GET', `${base}/labels/stale`); }
       catch (error) {
@@ -108,6 +132,7 @@ export async function sweep({ api, enabled, repo, now = Date.now(), event = null
       const beforeMarker = activity(await comments(pr.number));
       if (beforeClose.head.sha !== pr.head.sha || decision(beforeClose, beforeMarker, now) !== 'close') continue;
       await api('PATCH', `${base}/pulls/${pr.number}`, { state: 'closed' });
+      closes++;
       log(`#${pr.number}: closed; branch preserved`);
     }
   }
@@ -125,7 +150,7 @@ export function githubApi(token, fetcher = fetch) {
       error.status = response.status;
       throw error;
     }
-    return response.json();
+    return response.status === 204 ? null : response.json();
   };
   request.list = async path => {
     const result = [];
