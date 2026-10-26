@@ -1895,34 +1895,53 @@ export class IsleRenderer {
     // The corner rings lean further to cream (#830); the path bars keep the glow above.
     const ringGlow = seat.clone().lerp(new THREE.Color(0xfff6e8), 0.5);
 
-    for (const v of state.vertices) {
-      if (!vset.has(v.id)) continue;
+    const legalVertices = state.vertices.filter((v) => vset.has(v.id));
+    if (legalVertices.length > 0) {
+      // Outlines and discs are instanced across all legal vertices: drops 108 draw calls down to 2 (#830).
+      const outlineGeo = new THREE.TorusGeometry(VERTEX_RING.radius, VERTEX_RING.tube + VERTEX_RING.outline, 8, 32);
+      const outlineMat = new THREE.MeshBasicMaterial({ color: VERTEX_RING.outlineColor, depthTest: false });
+      const outlines = new THREE.InstancedMesh(outlineGeo, outlineMat, legalVertices.length);
+      outlines.renderOrder = 98;
+      outlines.userData = { kind: "vertex-outlines" };
+
+      const discGeo = new THREE.CircleGeometry(VERTEX_RING.radius, 32);
+      const discMat = new THREE.MeshBasicMaterial({ color: 0xfff6e8, transparent: true, opacity: 0.3, depthWrite: false, depthTest: false });
+      const discs = new THREE.InstancedMesh(discGeo, discMat, legalVertices.length);
+      discs.renderOrder = 99;
+      discs.userData = { kind: "vertex-discs" };
+
+      const dummy = new THREE.Object3D();
+      legalVertices.forEach((v, i) => {
+        const y = vertexTop(tops, v) + (v.building ? PIECE_BASE_TOP + VERTEX_RING.tube : 0.03);
+        dummy.position.set(v.x, y - 0.04, v.z);
+        dummy.rotation.set(Math.PI / 2, 0, 0);
+        dummy.scale.set(1, 1, 1);
+        dummy.updateMatrix();
+        outlines.setMatrixAt(i, dummy.matrix);
+
+        dummy.position.set(v.x, y - 0.016, v.z);
+        dummy.rotation.set(-Math.PI / 2, 0, 0);
+        dummy.scale.set(1, 1, 1);
+        dummy.updateMatrix();
+        discs.setMatrixAt(i, dummy.matrix);
+      });
+      outlines.instanceMatrix.needsUpdate = true;
+      discs.instanceMatrix.needsUpdate = true;
+      this.marks.add(outlines);
+      this.marks.add(discs);
+    }
+
+    for (const v of legalVertices) {
       const m = new THREE.Mesh(
         new THREE.TorusGeometry(VERTEX_RING.radius, VERTEX_RING.tube, 8, 32),
-        new THREE.MeshStandardMaterial({ color: seat, emissive: ringGlow, emissiveIntensity: 1 }),
+        new THREE.MeshStandardMaterial({ color: seat, emissive: ringGlow, emissiveIntensity: 1, depthTest: false }),
       );
+      m.renderOrder = 100;
       m.rotation.x = Math.PI / 2;
       // A built corner lifts the ring to rest on the base (its tube's underside at the base top); the outline and disc follow it.
       m.position.set(v.x, vertexTop(tops, v) + (v.building ? PIECE_BASE_TOP + VERTEX_RING.tube : 0.03), v.z);
       m.userData = { kind: "vertex", id: v.id, baseGlow: 1 };
       this.marks.add(m);
-      // A dark outline under the ring and a soft cream disc inside it: the ring reads on pale sand and on dark forest alike (#830).
-      const outline = new THREE.Mesh(
-        new THREE.TorusGeometry(VERTEX_RING.radius, VERTEX_RING.tube + VERTEX_RING.outline, 8, 32),
-        new THREE.MeshBasicMaterial({ color: VERTEX_RING.outlineColor }),
-      );
-      outline.rotation.x = Math.PI / 2;
-      outline.position.set(v.x, m.position.y - 0.04, v.z);
-      outline.userData = { kind: "vertex-outline" };
-      this.marks.add(outline);
-      const disc = new THREE.Mesh(
-        new THREE.CircleGeometry(VERTEX_RING.radius, 32),
-        new THREE.MeshBasicMaterial({ color: 0xfff6e8, transparent: true, opacity: 0.3, depthWrite: false }),
-      );
-      disc.rotation.x = -Math.PI / 2;
-      disc.position.set(v.x, m.position.y - 0.016, v.z);
-      disc.userData = { kind: "vertex-disc" };
-      this.marks.add(disc);
       const pick = new THREE.Mesh(new THREE.SphereGeometry(PICK_VERTEX_RADIUS, 8, 6), new THREE.MeshBasicMaterial());
       pick.visible = false;
       pick.position.copy(m.position);
