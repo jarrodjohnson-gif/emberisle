@@ -200,8 +200,8 @@ try{
    const visible=e=>e.getBoundingClientRect().width>0;
    return [...document.querySelectorAll('[data-testid="seat-needs"]')].filter(visible).map(chip=>{
     const card=chip.closest('.seat-card'),css=getComputedStyle(chip);
-    return {player:chip.dataset.player,chip:rect(chip),card:rect(card),font:Number.parseFloat(css.fontSize),paddingX:Number.parseFloat(css.paddingLeft),paddingY:Number.parseFloat(css.paddingTop),
-     status:chip.getAttribute('role'),tallies:[...card.querySelectorAll('[data-testid="tally-path"],[data-testid="tally-army"]')].map(rect),
+    return {player:chip.dataset.player,chip:rect(chip),card:rect(card),borderLeft:card.clientLeft,borderTop:card.clientTop,trigger:rect(card.querySelector('[data-menu-trigger]')),pointerEvents:css.pointerEvents,buttons:chip.querySelectorAll('button,a,input,[tabindex]').length,
+     status:chip.getAttribute('role'),tallies:[...card.querySelectorAll('[data-testid="seat-vp"],[data-testid="tally-path"],[data-testid="tally-army"]')].map(rect),
      hints:[...document.querySelectorAll('[data-testid="hidden-point-hint"]')].filter(visible).map(rect)};
    });
   });
@@ -210,12 +210,20 @@ try{
   const overlap=(a,b)=>Math.min(a.right,b.right)>Math.max(a.x,b.x)&&Math.min(a.bottom,b.bottom)>Math.max(a.y,b.y);
   for(const seat of measured){
    const prefix=`${width}x${height} ${seat.player}`;
-   if(seat.chip.x<seat.card.x||seat.chip.right>seat.card.right||seat.chip.y<seat.card.y||seat.chip.bottom>seat.card.bottom)geometryProblems.push(`${prefix}: chip outside own card`);
+   if(seat.chip.width!==8||seat.chip.height!==8||seat.chip.x!==seat.card.x+seat.borderLeft-3||seat.chip.y!==seat.card.y+seat.borderTop-3)geometryProblems.push(`${prefix}: dot size/offset differs from approved mock`);
+   if(seat.trigger.height!==44||seat.pointerEvents!=='none'||seat.buttons!==0)geometryProblems.push(`${prefix}: trigger or dot interaction changed`);
    if([...seat.tallies,...seat.hints].some(r=>overlap(seat.chip,r)))geometryProblems.push(`${prefix}: chip covers public tally/hint`);
-   if(measured.some(other=>other!==seat&&overlap(seat.chip,other.chip)))geometryProblems.push(`${prefix}: chip overlaps neighbour`);
-   if(seat.font<12||seat.paddingX<12||seat.paddingY<8)geometryProblems.push(`${prefix}: caption/padding below approved minimum`);
+   if(measured.some(other=>other!==seat&&(overlap(seat.chip,other.chip)||overlap(seat.chip,other.card)||overlap(seat.chip,other.trigger))))geometryProblems.push(`${prefix}: dot overlaps neighbour`);
    if(seat.status==='status')geometryProblems.push(`${prefix}: public chip is a live region`);
   }
+  await page.locator('[data-menu-trigger="p0"]').click();
+  const menu=page.getByTestId('player-menu');
+  const details=menu.getByTestId('menu-needs');await details.waitFor();
+  const menuGeometry=await details.evaluate(row=>{const css=getComputedStyle(row);return {gap:Number.parseFloat(css.gap),role:row.getAttribute('role'),chips:[...row.querySelectorAll('[data-testid="need-chip"]')].map(chip=>{const style=getComputedStyle(chip);return {text:chip.textContent,font:Number.parseFloat(style.fontSize),paddingX:Number.parseFloat(style.paddingLeft),paddingY:Number.parseFloat(style.paddingTop)};})};});
+  geometry.at(-1).menu=menuGeometry;
+  if(menuGeometry.gap!==8||menuGeometry.role==='status'||menuGeometry.chips.length!==2||menuGeometry.chips.map(c=>c.text).join(',')!=='Stone,Wheat'||menuGeometry.chips.some(c=>c.font!==12||c.paddingX!==12||c.paddingY!==8))geometryProblems.push(`${width}x${height}: menu needs differ from approved details`);
+  await page.screenshot({path:path.join(captureDirectory,`needs-${width}x${height}-menu.png`)});
+  await page.keyboard.press('Escape');
   await page.evaluate(()=>window.__emberisle.getState().setTradeOpen(true));
   const need=page.getByRole('button',{name:'Need',exact:true});await need.click();
   await page.screenshot({path:path.join(captureDirectory,`needs-${width}x${height}-picker.png`)});
@@ -232,7 +240,7 @@ try{
  }
  writeFileSync(path.join(captureDirectory,'needs-geometry.json'),JSON.stringify(geometry,null,2));
  console.log('four-seat needs geometry',JSON.stringify(geometry));
- assert.deepEqual(geometryProblems,[],'four-seat chips stay inside cards, clear public information and meet approved type/spacing');
+ assert.deepEqual(geometryProblems,[],'four-seat dots match approved geometry, clear public information and menu chips meet approved type/spacing');
  console.log('ok four-seat needs table and own picker:320x568,390x844,844x390,1280x720');
  assert.deepEqual(errors,[]);console.log('needs browser prove ok');
 }finally{
