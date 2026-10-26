@@ -89,7 +89,11 @@ try{
  await a.waitForFunction(n=>window.__emberisle.getState().errorSeq>n&&window.__emberisle.getState().error==='Slow down.',errorBefore);
  assert.equal(await a.getByRole('button',{name:'Need Stone',exact:true}).getAttribute('aria-pressed'),'true','unrelated host ACT rate errors preserve the delayed Need draft');
  const rejectedAt=Date.now();
- await a.getByRole('button',{name:'Need Wheat',exact:true}).click();
+ await a.evaluate(()=>{
+  // Exhaust and choose in one task: no intervening browser round trip can refill an ACT token.
+  for(let i=0;i<30;i++)window.__emberisle.getState().net.rename('Still the same person');
+  document.querySelector('#need-picker [aria-label="Need Wheat"]').click();
+ });
  await a.waitForFunction(()=>[...document.querySelectorAll('#need-picker [aria-pressed]')].every(button=>button.getAttribute('aria-pressed')==='false'));
  assert(Date.now()-rejectedAt<1000,'Need rejection rolls back promptly, before the unchanged three-second fallback');
  assert.equal(await a.evaluate(()=>window.__emberisle.getState().error),'Slow down.','a genuinely rate-rejected Need rolls back to the authoritative selection');
