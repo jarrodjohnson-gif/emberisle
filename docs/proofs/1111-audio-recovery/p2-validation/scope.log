@@ -1,0 +1,5 @@
+PASS single runtime condition changes cached error handling only
+PASS all main scripts/CI conditions unchanged plus recovery proof once
+PASS all other sources, media, mixer, lockfiles, existing proofs and budgets byte-identical main d37d5969bf127aca22165be581d5b0a84656e46a
+Tested implementation 354143d705985b2889b52ccbc983066153a844c2
+proof SHA256 0b4e491a0dd6f02af2d8e11218842f024859b42e6f7ad373609e5428b7a5682b

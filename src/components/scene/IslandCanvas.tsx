@@ -15,20 +15,28 @@ export default function IslandCanvas() {
   const ref = useRef<HTMLCanvasElement>(null);
   const [docks, setDocks] = useState<DockTarget[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
+  const [unavailable, setUnavailable] = useState(false);
   useEffect(() => {
     const canvas = ref.current;
     if (!canvas) return;
-    const renderer = new IsleRenderer(
-      canvas,
-      (kind, id) => {
-        const g = useGame.getState();
-        g.setPendingPlace(null);
-        if (kind === "hex") g.pickHex(id);
-        if (kind === "vertex") g.pickVertex(id);
-        if (kind === "edge") g.pickEdge(id);
-      },
-      (sel) => useGame.getState().setPendingPlace(sel),
-    );
+    let renderer: IsleRenderer;
+    try {
+      renderer = new IsleRenderer(
+        canvas,
+        (kind, id) => {
+          const g = useGame.getState();
+          g.setPendingPlace(null);
+          if (kind === "hex") g.pickHex(id);
+          if (kind === "vertex") g.pickVertex(id);
+          if (kind === "edge") g.pickEdge(id);
+        },
+        (sel) => useGame.getState().setPendingPlace(sel),
+      );
+    } catch (e) {
+      console.error("WebGL creation failed; 3D view unavailable:", e);
+      setUnavailable(true);
+      return;
+    }
     renderer.onDocks = setDocks;
     renderer.onDock = (id) => {
       const s = useGame.getState();
@@ -42,7 +50,19 @@ export default function IslandCanvas() {
     renderer.onView = (playView) => queueMicrotask(() => useGame.setState({ playView }));
     let action = "";
     let chrome = "";
+    let failed = false;
+    let unsub: () => void = () => {};
+    const fail = (e: unknown) => {
+      if (failed) return;
+      failed = true;
+      unsub();
+      console.error("Renderer sync failed; 3D view unavailable:", e);
+      setUnavailable(true);
+      renderer.dispose();
+    };
+
     const sync = () => {
+      if (failed) return;
       const s = useGame.getState();
       renderer.setWaterChoice(s.waterChoice);
       renderer.setPlayView(s.viewChoice);
@@ -71,14 +91,25 @@ export default function IslandCanvas() {
         const actor =
           s.mode === "hotseat" ? s.state.current : s.localId;
         const mine = s.state.current === actor || s.state.phase === "discard";
-        renderer.setBoard(s.state, s.highlights(), mine && s.screen === "play");
+        renderer.setBoard(s.state, s.highlights(), mine && s.screen === "play", s.mode === "hotseat" ? true : s.spectator ? undefined : s.localId);
       } else if (s.screen === "title" || s.screen === "lobby") {
         demo ??= demoBoard();
         renderer.setBoard(demo, { vertices: [], edges: [], hexes: [] }, false);
       }
     };
-    sync();
-    const unsub = useGame.subscribe(sync);
+    try {
+      sync();
+    } catch (e) {
+      fail(e);
+      return;
+    }
+    unsub = useGame.subscribe(() => {
+      try {
+        sync();
+      } catch (e) {
+        fail(e);
+      }
+    });
     return () => {
       unsub();
       renderer.dispose();
@@ -87,6 +118,11 @@ export default function IslandCanvas() {
 
   return <>
     <canvas ref={ref} className="absolute inset-0 h-full w-full" />
+    {unavailable && (
+      <div data-testid="canvas-fallback" className="absolute inset-0 flex items-center justify-center p-6 text-center select-none pointer-events-none">
+        <p className="text-sm text-muted">3D view unavailable</p>
+      </div>
+    )}
     {docks.length > 0 && <LazyBoundary retryKey={selected ?? ""} failed={null}><DockInspection docks={docks} selected={selected} setSelected={setSelected} /></LazyBoundary>}
   </>;
 }

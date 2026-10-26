@@ -1,0 +1,37 @@
+
+> build
+> vite build --base=/renamed/
+
+vite v8.3.1 building client environment for production...
+transforming...
+✓ 1996 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                2.65 kB │ gzip:   1.30 kB
+dist/assets/ben-10-BZkFZeMq.webp               6.80 kB
+dist/assets/index-C0t3Taxv.css                75.18 kB │ gzip:  15.48 kB
+dist/assets/WayfarerOptions-CTMN9E83.js        0.80 kB │ gzip:   0.48 kB
+dist/assets/HandRates-CQs5aQcs.js              1.01 kB │ gzip:   0.64 kB
+dist/assets/VictoryTargetSelect-2CV6STrF.js    1.12 kB │ gzip:   0.68 kB
+dist/assets/haptics-CEspU12q.js                1.85 kB │ gzip:   1.09 kB
+dist/assets/DockInspection-CX45Fk7p.js         2.03 kB │ gzip:   1.03 kB
+dist/assets/OpenTables-B5M2ZM87.js             2.61 kB │ gzip:   1.21 kB
+dist/assets/TurnExtensionVote-C4oRc5fE.js      2.67 kB │ gzip:   1.20 kB
+dist/assets/SetupReference-32j6jAVZ.js         4.92 kB │ gzip:   1.85 kB
+dist/assets/Reactions-Cjk-iQvm.js              5.47 kB │ gzip:   2.31 kB
+dist/assets/moments-lfD4Bwq5.js                9.65 kB │ gzip:   4.13 kB
+dist/assets/jelly-board-gRVDbeKP.js           20.58 kB │ gzip:   7.96 kB
+dist/assets/sheets-C0RGO0_w.js                22.55 kB │ gzip:   7.13 kB
+dist/assets/online-DCmHh3PR.js                23.02 kB │ gzip:   7.83 kB
+dist/assets/harbor-jelly-CQF9Om1t.js          25.97 kB │ gzip:  10.32 kB
+dist/assets/hex-jelly-Bjc-9Ghd.js            136.96 kB │ gzip:  47.25 kB
+dist/assets/index-wnnHuzWn.js                398.87 kB │ gzip: 126.41 kB
+dist/assets/IslandCanvas-Cscu-3Fx.js         759.82 kB │ gzip: 201.68 kB
+
+[plugin builtin:vite-reporter] 
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 687ms
+PASS pages-prove: title loads under /renamed/; manifest, icons, preloads and /renamed/audio/click_001.wav all resolve; no console errors, no 404s

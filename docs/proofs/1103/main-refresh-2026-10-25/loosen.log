@@ -1,0 +1,171 @@
+
+> loosen-prove
+> node scripts/loosen-prove.mjs --base origin/main
+
+ok   self-test: an unchanged proof passes
+ok   self-test: re-indenting passes
+ok   self-test: an added check passes
+ok   self-test: editing only the block comment passes
+ok   self-test: a removed assert fails
+ok   self-test: a removed assert lowers the count
+ok   self-test: a wider tolerance fails
+ok   self-test: a //-commented assert fails
+ok   self-test: a /* */-commented assert fails
+ok   self-test: a check wrapped in a multi-line /* */ fails
+ok   self-test: a removed throw fails
+ok   self-test: a removed expect fails
+ok   self-test: a fail() that no longer sets exitCode 1 fails
+ok   self-test: an added process.exit(0) fails
+ok   self-test: an added process.exit() fails
+ok   self-test: a new .skip fails
+FAIL scripts/audio-recovery-prove.mjs: deleted or renamed away from *-prove.mjs
+FAIL scripts/board-touch-prove.mjs: removed or edited check line: assert.deepEqual(await plays(), ["tap_pasture.mp3"], "four Pasture taps inside 400 ms are one sound, the first");
+FAIL scripts/board-touch-prove.mjs: check count fell from 18 to 17
+FAIL scripts/chat-prove.mjs: removed or edited check line: check(r.top >= 11 && r.height <= r.vh - 23 && Math.abs(r.width - (r.vw - 24)) < 1, `phone lobby card is ${r.width.toFixed(0)}x${r.height.toFixed(0)}, inside the ${r.vw}x${r.vh} screen and full width`);
+FAIL scripts/chat-prove.mjs: removed or edited check line: check(m.gap <= 1 && m.below.length === 0 && m.leave, `phone lobby 390x${h}, 4 seats scrolled down: sticky row ends at the card's bottom edge (gap ${m.gap}), nothing below it, Leave inside it`);
+FAIL scripts/chat-prove.mjs: removed or edited check line: check(board.total === 15 && !board.wide && board.inside, `phone lobby ${v.size}: the Sounds & stickers tab shows all 15 chips inside the box`);
+FAIL scripts/chat-prove.mjs: removed or edited check line: check(land.total === 20 && land.small === 0 && !land.wide && (land.whole || land.height >= 66), `phone landscape ${w}x${h}: Sounds & stickers shows the 15 chips and 5 presets at 44 px`);
+FAIL scripts/chat-prove.mjs: removed or edited check line: check(lobbyBoard.total === 15 && !lobbyBoard.wide && lobbyBoard.inside && lobbyBoard.tabs, `desktop lobby 1280x720 (host, Sounds & stickers tab): all 15 chips with no sideways scroll, both tabs reachable; ${lobbyBoard.totalReached} of 15 chips in view without scrolling the tab`);
+FAIL scripts/chat-prove.mjs: removed or edited check line: check(phoneBoard.total === 15 && !phoneBoard.wide && phoneBoard.inside, `phone: Sounds & stickers shows all 15 chips inside the sheet, with no sideways scroll`);
+FAIL scripts/chat-prove.mjs: removed or edited check line: check(deskBoard.total === 15 && !deskBoard.wide && deskBoard.inside && deskBoard.clearOfRail, `desktop: Sounds & stickers shows all 15 chips with no sideways scroll, in a panel clear of the seat rail`);
+FAIL scripts/chat-prove.mjs: check count fell from 150 to 145
+FAIL scripts/connection-health-prove.mjs: deleted or renamed away from *-prove.mjs
+FAIL scripts/label-commands-prove.mjs: removed or edited check line: assert.equal(s.has(1, '+1'), false);
+FAIL scripts/label-commands-prove.mjs: removed or edited check line: assert.equal(s.has(1, '-1'), false);
+FAIL scripts/label-commands-prove.mjs: removed or edited check line: assert.deepEqual(s.labels, ['status:claimed']);
+FAIL scripts/label-commands-prove.mjs: removed or edited check line: assert.equal(s.has(1, '+1'), false);
+FAIL scripts/label-commands-prove.mjs: removed or edited check line: assert.deepEqual(mixed.labels, ['status:claimed']);
+FAIL scripts/label-commands-prove.mjs: removed or edited check line: assert.equal(s.has(1, '+1'), false);
+FAIL scripts/label-commands-prove.mjs: removed or edited check line: assert.ok(release.has(2, '-1'));
+FAIL scripts/label-commands-prove.mjs: removed or edited check line: assert.equal(release.has(2, '+1'), false);
+FAIL scripts/label-commands-prove.mjs: removed or edited check line: assert.deepEqual(first.labels, ['status:todo']);
+FAIL scripts/label-commands-prove.mjs: removed or edited check line: assert.ok(first.has(1, '-1'));
+FAIL scripts/label-commands-prove.mjs: removed or edited check line: assert.equal(first.has(1, '+1'), false);
+FAIL scripts/label-commands-prove.mjs: removed or edited check line: assert.ok(s.has(2, '-1'));
+FAIL scripts/label-commands-prove.mjs: removed or edited check line: assert.equal(s.has(2, '+1'), false);
+FAIL scripts/label-commands-prove.mjs: removed or edited check line: assert.deepEqual(s.labels, ['status:claimed']);
+FAIL scripts/label-commands-prove.mjs: removed or edited check line: assert.equal(s.calls.length, 0);
+FAIL scripts/label-commands-prove.mjs: removed or edited check line: assert.deepEqual(s.labels, ['status:claimed']);
+FAIL scripts/label-commands-prove.mjs: removed or edited check line: assert.ok(helperTodo.has(2, '-1'));
+FAIL scripts/label-commands-prove.mjs: removed or edited check line: assert.equal(helperTodo.has(2, '+1'), false);
+FAIL scripts/label-commands-prove.mjs: removed or edited check line: assert.ok(helperUnclaim.has(2, '-1'));
+FAIL scripts/label-commands-prove.mjs: removed or edited check line: assert.ok(helperUnclaim.labels.includes('status:claimed'));
+FAIL scripts/label-commands-prove.mjs: removed or edited check line: assert.deepEqual(s.labels, ['status:claimed']);
+FAIL scripts/label-commands-prove.mjs: removed or edited check line: assert.ok(s.has(2, '-1'), 'suppressed release is refused');
+FAIL scripts/label-commands-prove.mjs: removed or edited check line: assert.equal(s.has(2, '+1'), false, 'suppressed release has no approval');
+FAIL scripts/label-commands-prove.mjs: removed or edited check line: assert.equal(s.calls.length, 0);
+FAIL scripts/label-commands-prove.mjs: removed or edited check line: assert.equal(nested.has(1, '+1'), false);
+FAIL scripts/label-commands-prove.mjs: removed or edited check line: assert.equal(s.replies(2).length, 0);
+FAIL scripts/label-commands-prove.mjs: removed or edited check line: assert.deepEqual(s.labels, ['status:claimed']);
+FAIL scripts/label-commands-prove.mjs: removed or edited check line: assert.deepEqual(s.labels.sort(), ['mark:changed', 'status:todo']);
+FAIL scripts/label-commands-prove.mjs: removed or edited check line: assert.ok(s.has(2, '+1'));
+FAIL scripts/label-commands-prove.mjs: removed or edited check line: assert.deepEqual(statusRun.labels, ['status:in-progress']);
+FAIL scripts/label-commands-prove.mjs: removed or edited check line: assert.equal(pkg.scripts['label-commands-prove'], 'node scripts/label-commands-prove.mjs');
+FAIL scripts/label-commands-prove.mjs: removed or edited check line: assert.match(ci, /npm run label-commands-prove/);
+FAIL scripts/label-commands-prove.mjs: check count fell from 75 to 43
+FAIL scripts/sounds-prove.mjs: removed or edited check line: assert.ok(["Airhorn", "Quit touchin' me", "Only wood?"].every((label) => labels.includes(`Play sound ${label}`)), "visible button labels");
+FAIL scripts/sounds-prove.mjs: removed or edited check line: assert.deepEqual(result.heard, [["isaac_win.mp3", 1]], "Isaac's win replaces both stings at 1 without end_music");
+FAIL scripts/sounds-prove.mjs: removed or edited check line: assert.ok(result.pauses.includes("isaac_win.mp3"), "leaving the end screen stops Isaac's win music");
+FAIL scripts/sounds-prove.mjs: removed or edited check line: assert.deepEqual(bell.joined, ["lucke_diggler.mp3"], "a new matching lobby seat rings once");
+FAIL scripts/sounds-prove.mjs: removed or edited check line: assert.deepEqual(bell.renamed, ["lucke_diggler.mp3"], "a lobby rename to a matching name rings once");
+FAIL scripts/sounds-prove.mjs: removed or edited check line: assert.deepEqual(bell.rejoined, [], "the same matching seats on a later seats update do not ring again");
+FAIL scripts/sounds-prove.mjs: removed or edited check line: for (const name of ["Isa-ac", "Pick le", "The Lucke Diggler"]) assert.deepEqual(nameRings[name], ["lucke_diggler.mp3"], `"${name}" rings the bell (spaces, punctuation and case ignored)`);
+FAIL scripts/sounds-prove.mjs: removed or edited check line: assert.deepEqual(nameRings.Digger, [], "\"Digger\" does not ring the bell");
+FAIL scripts/sounds-prove.mjs: check count fell from 92 to 84
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert(!f.pulls[0].labels.some(label => label.name === 'stale'));
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert(f.writes().some(call => call.method === 'DELETE' && call.path.endsWith('/labels/stale')));
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert(!f.calls.some(call => call.path.includes('/git/refs') || (call.method === 'DELETE' && !call.path.endsWith('/labels/stale'))));
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert.equal(many.pulls.filter(p => p.state === 'closed').length, dryRun ? 0 : MAX_CLOSES);
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert.equal(logs.filter(line => line.includes('deferred close; run cap 5 reached')).length, 2);
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert.equal(logs.filter(line => line.includes(dryRun ? 'would close' : 'closed; branch')).length, 5);
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert(!many.writes().some(c => /\/(issues|pulls)\/[67](?:\/|$)/.test(c.path)));
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert.equal(unwarned.pulls[0].state, 'open');
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert(unwarned.pulls[0].labels.some(label => label.name === 'stale'));
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert(!unwarned.writes().some(c => c.path.endsWith('/comments') || c.body?.state === 'closed'));
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: await run(unwarned); assert.equal(unwarned.pulls[0].state, 'closed');
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert.equal(reopened.pulls[0].state, 'open');
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert(!reopened.pulls[0].labels.some(label => label.name === 'stale'));
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert(reopened.pulls[0].labels.some(label => label.name === 'stale'));
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert.equal(reopened.pulls[0].state, 'open');
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert(!retryCleanup.pulls[0].labels.some(label => label.name === 'stale'));
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert.equal(lateDuplicate.writes().length, 0);
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert(!newHead.pulls[0].labels.some(label => label.name === 'stale'));
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert.equal(activity(newHead.comments).sha, newer);
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert.equal(newHead.pulls[0].state, 'open');
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert(!newHead.pulls[0].labels.some(label => label.name === 'stale'));
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert.equal(newHead.pulls[0].state, 'open');
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert(newHead.pulls[0].labels.some(label => label.name === 'stale'));
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert(newHead.writes().some(c => c.method === 'POST' && c.body?.labels?.includes('stale')));
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert.equal(newHead.pulls[0].state, 'open');
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: await run(newHead, { now: now + 10 * DAY }); assert.equal(newHead.pulls[0].state, 'closed');
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert(!racing.writes().some(c => c.method === 'DELETE'));
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert(racing.pulls[0].labels.some(label => label.name === 'stale'));
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert(workflow.includes("if: vars.STALE_PR_SWEEPER == 'on' && !inputs.permission_probe"));
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert(workflow.includes("group: stale-pr-sweeper-${{ github.event.pull_request.number || 'sweep' }}"));
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert(path.startsWith('/repos/owner/repo/'));
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: else if (method !== 'GET') throw new Error('Unexpected mutation: ' + method + path);
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: if (scenario.startsWith('wrong-')) { assert(caught); assert.equal(mutations.length, 0); }
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert.equal(Boolean(caught), scenario === 'failure');
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert.deepEqual([...labels].sort(), scenario === 'existing' ? ['original', 'stale'] : ['original']);
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert(!mutations.some(m => m.path.includes('/pulls/') || m.path.includes('/git/refs')));
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert.equal(result.status, 0, `${scenario}: ${result.stderr}`);
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: const empty = githubApi('fake-token', async () => ({ ok: true, status: 204, json: () => { throw new Error('204 must not parse JSON'); } }));
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert.equal(await empty('DELETE', '/repos/owner/repo/issues/1/labels/stale'), null);
+FAIL scripts/stale-pr-sweeper-prove.mjs: check count fell from 87 to 47
+FAIL scripts/steal-picker-push-prove.mjs: deleted or renamed away from *-prove.mjs
+FAIL scripts/trade-prove.mjs: removed or edited check line: for (const t of [B, C]) if (!same(await trades(t), offerHeard(give, want, false))) throw new Error(`${t.name} heard ${JSON.stringify(await trades(t))} for the offer`);
+FAIL scripts/trade-prove.mjs: removed or edited check line: if (!same(await trades(A), offerHeard(give, want, true))) throw new Error(`the asker heard ${JSON.stringify(await trades(A))} for its own offer`);
+FAIL scripts/trade-prove.mjs: removed or edited check line: if (!same(await trades(A), [...offerHeard(want, give, true), "error_002.wav@1"])) throw new Error(`the asker heard ${JSON.stringify(await trades(A))} for the expiry`);
+FAIL scripts/trade-prove.mjs: removed or edited check line: for (const t of [B, C]) if (!same(await trades(t), offerHeard(want, give, false))) throw new Error(`${t.name} heard ${JSON.stringify(await trades(t))} for the expiry`);
+FAIL scripts/trade-prove.mjs: removed or edited check line: for (const got of clip) assert.deepEqual(got, ["three_wood.mp3@1"], "3+ timber uses the same clip on every seat, including the asker");
+FAIL scripts/trade-prove.mjs: removed or edited check line: for (const got of clip) assert.deepEqual(got, ["daking_wood.mp3@1"], "Daking's 1-2 timber clip reaches every seat");
+FAIL scripts/trade-prove.mjs: removed or edited check line: for (const got of clip) assert.deepEqual(got, ["daking_wood.mp3@1"], `"${name}" counts as Daking: 1-2 timber plays daking_wood on every seat`);
+FAIL scripts/trade-prove.mjs: removed or edited check line: for (const got of clip) assert.deepEqual(got, ["three_wood.mp3@1"], `"${name}" with 3 timber still plays three_wood first`);
+FAIL scripts/trade-prove.mjs: removed or edited check line: for (const got of clip) assert.deepEqual(got, ["sheep_for_wood.mp3@1"], "sheep for timber reaches every seat, including the asker");
+FAIL scripts/trade-prove.mjs: removed or edited check line: for (const got of clip) assert.deepEqual(got, ["stone_for_wood.mp3@1"], "stone for timber reaches every seat, including the asker");
+FAIL scripts/trade-prove.mjs: removed or edited check line: assert.deepEqual(clip[tabs.indexOf(A)], [], "the asker does not hear the plain offer chime");
+FAIL scripts/trade-prove.mjs: removed or edited check line: for (const t of [B, C]) assert.deepEqual(clip[tabs.indexOf(t)], ["trade_offer.wav@1"], "other seats hear the plain offer chime");
+FAIL scripts/trade-prove.mjs: removed or edited check line: assert.ok((await Promise.all(tabs.map(issueTradeSounds))).every((got) => !got.some((h) => h.startsWith("corn_no."))), "one No is not enough for corn_no");
+FAIL scripts/trade-prove.mjs: removed or edited check line: for (const got of await Promise.all(tabs.map(issueTradeSounds))) assert.deepEqual(got, ["corn_no.mp3@1"], "all explicit No answers play corn_no on every seat");
+FAIL scripts/trade-prove.mjs: removed or edited check line: for (const got of await Promise.all(tabs.map(issueTradeSounds))) assert.ok(!got.some((h) => h.startsWith("corn_no.")), "timeout without all explicit No answers does not play corn_no");
+FAIL scripts/trade-prove.mjs: check count fell from 65 to 54
+FAIL server/chat-prove.mjs: removed or edited check line: assert.deepEqual(new Set([...realEmotes].filter((name) => name !== "ben-10")), new Set(["daffy-shock", "goggles-guy", "leo-laugh", "memoji-scheme", "mike-sully", "old-grump", "shrek-smirk", "sponge-thumbs", "wide-eyes"]));
+FAIL server/chat-prove.mjs: check count fell from 38 to 37
+FAIL server/leave-prove.mjs: deleted or renamed away from *-prove.mjs
+FAIL server/net-prove.mjs: removed or edited check line: if (left.length !== 1 || left[0] !== keep) fail("a neighbour with no goods was still a steal target", { hexId, keep, empty, left });
+FAIL server/net-prove.mjs: check count fell from 17 to 16
+FAIL server/profile-derive-error-prove.mjs: deleted or renamed away from *-prove.mjs
+FAIL server/profile-edit-prove.mjs: removed or edited check line: if (fixtureStage && !["prepare", "reopen"].includes(fixtureStage)) throw new Error("invalid fixture stage");
+FAIL server/profile-edit-prove.mjs: removed or edited check line: check("direct-store reopening uses a different process", Number.isInteger(firstOwner) && Number.isInteger(nextOwner) && firstOwner !== nextOwner);
+FAIL server/profile-edit-prove.mjs: check count fell from 94 to 92
+FAIL server/profile-lock-prove.mjs: deleted or renamed away from *-prove.mjs
+FAIL server/profile-permissions-prove.mjs: deleted or renamed away from *-prove.mjs
+FAIL server/profile-seat-prove.mjs: removed or edited check line: check("explicit create binds the authenticated host", aliasWelcome.type === "welcome" && aliasWelcome.host === true, aliasWelcome);
+FAIL server/profile-seat-prove.mjs: removed or edited check line: check("explicit join binds a non-host seat", aliasJoined.type === "welcome" && aliasJoined.host === false && aliasJoined.code === aliasWelcome.code, aliasJoined);
+FAIL server/profile-seat-prove.mjs: removed or edited check line: check(`${label} alias uses the public profile allowlist`, Object.keys(projected).sort().join() === "displayName,profileId" && projected.profileId === profile.id && projected.displayName === name, projected);
+FAIL server/profile-seat-prove.mjs: removed or edited check line: check("both explicit aliases persist their authenticated profile IDs", aliasSaved.seats.map((s) => s.profileId).join() === [A.id, B.id].join(), aliasSaved.seats);
+FAIL server/profile-seat-prove.mjs: removed or edited check line: check(`${type} refuses a mismatched HTTPS Origin before credential validity`, isErr(reply, "origin") && refused.welcome === null, reply);
+FAIL server/profile-seat-prove.mjs: removed or edited check line: if (first) check(`${type} origin refusal exposes no credential-validity distinction`, JSON.stringify(reply) === JSON.stringify(first), reply);
+FAIL server/profile-seat-prove.mjs: removed or edited check line: check(`${type} origin refusal leaves existing seats unchanged`, JSON.stringify(aliasHost.seats.seats) === beforeSeats);
+FAIL server/profile-seat-prove.mjs: removed or edited check line: check(`${type} refused socket can retry as a guest`, guest.type === "welcome" && guest.host === (type === "create"), guest);
+FAIL server/profile-seat-prove.mjs: removed or edited check line: check(`${type} guest retry attaches no profile`, !("profile" in seatOf(refused, guest.you)), seatOf(refused, guest.you));
+FAIL server/profile-seat-prove.mjs: removed or edited check line: check(`${type} guest retry persists no profile binding`, !("profileId" in guestSaved.seats.find((s) => s.id === guest.you)));
+FAIL server/profile-seat-prove.mjs: removed or edited check line: check("bound-logout fixture creates a real authenticated profile", logoutSession.type === "profileSession" && !!logoutSession.credential, logoutSession.type);
+FAIL server/profile-seat-prove.mjs: removed or edited check line: check("the logout fixture hosts a profile-bound seat", logoutWelcome.type === "welcome" && logoutWelcome.host === true);
+FAIL server/profile-seat-prove.mjs: removed or edited check line: check("a guest joins the bound-logout fixture", (await guest.reply()).type === "welcome");
+FAIL server/profile-seat-prove.mjs: removed or edited check line: check("the started game freezes the authenticated profile", logoutBefore.roster.players.find((p) => p.seat === logoutWelcome.you)?.profileId === logoutProfile);
+FAIL server/profile-seat-prove.mjs: removed or edited check line: check("logout acknowledges the bound device", (await logoutAuth.req({ type: "profileLogout", credential: logoutSession.credential })).type === "profileLoggedOut");
+FAIL server/profile-seat-prove.mjs: removed or edited check line: check("the logged-out bound credential cannot resume", cardErr(await logoutAuth.req({ type: "profileResume", credential: logoutSession.credential }), "signedOut"));
+FAIL server/profile-seat-prove.mjs: removed or edited check line: check("the logged-out bound credential cannot open another seat", isErr(await revokedSeat.reply(), "signedOut") && revokedSeat.welcome === null);
+FAIL server/profile-seat-prove.mjs: removed or edited check line: check("logout keeps the original live public binding", seatOf(logoutSeat, logoutWelcome.you)?.profile?.profileId === logoutProfile && !seatOf(logoutSeat, logoutWelcome.you).away);
+FAIL server/profile-seat-prove.mjs: removed or edited check line: check("the live bound socket still reads its profile card", (await logoutSeat.req({ type: "tableProfileCard", profileId: logoutProfile })).card?.profileId === logoutProfile);
+FAIL server/profile-seat-prove.mjs: removed or edited check line: check("another participant still reads the bound profile card", (await logoutGuests[0].req({ type: "tableProfileCard", profileId: logoutProfile })).card?.catchphrase === "Still seated");
+FAIL server/profile-seat-prove.mjs: removed or edited check line: check("logout leaves frozen attribution unchanged", JSON.stringify(readRoom(logoutWelcome.code).roster) === JSON.stringify(logoutBefore.roster));
+FAIL server/profile-seat-prove.mjs: removed or edited check line: check("the seat secret alone recovers the logged-out profile seat", logoutRecovered.type === "welcome" && logoutRecovered.you === logoutWelcome.you && logoutRecovered.code === logoutWelcome.code);
+FAIL server/profile-seat-prove.mjs: removed or edited check line: check("recovery preserves the profile without adding a seat", logoutRejoin.seats.seats.length === 3 && logoutRejoin.seats.seats.filter((s) => s.profile?.profileId === logoutProfile).length === 1);
+FAIL server/profile-seat-prove.mjs: removed or edited check line: check("recovery durably preserves the same frozen game attribution", JSON.stringify(logoutAfter.roster) === JSON.stringify(logoutBefore.roster));
+FAIL server/profile-seat-prove.mjs: check count fell from 134 to 110
+FAIL server/watch-prove.mjs: removed or edited check line: if (!all.every((x) => x.state.phase === "over") || w.state().game.phase !== "over") fail("the terminal fixture lost its final phase");
+FAIL server/watch-prove.mjs: removed or edited check line: fail("the terminal fixture must hold exactly one final snapshot", JSON.stringify({ got, seatSeqs, index, stateTrace }));
+FAIL server/watch-prove.mjs: check count fell from 60 to 58
+18 proof(s) loosened against origin/main. Restore the checks, or keep them and add new ones (AGENTS.md rule 7).

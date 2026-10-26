@@ -1,0 +1,66 @@
+{
+  "audit": {
+    "exit": 0,
+    "negativeControls": 10
+  },
+  "types": {
+    "exit": 0,
+    "seconds": 1.29
+  },
+  "registered": {
+    "exit": 0,
+    "seconds": 0.14
+  },
+  "loosen": {
+    "exit": 0,
+    "seconds": 0.17
+  },
+  "build": {
+    "exit": 0,
+    "seconds": 1.32
+  },
+  "hand-offer-prove": {
+    "exit": 0,
+    "seconds": 14.15
+  },
+  "chunk-fail-prove": {
+    "exit": 0,
+    "seconds": 43.05
+  },
+  "idle-prove": {
+    "exit": 0,
+    "seconds": 22.12
+  },
+  "rotate-prove": {
+    "exit": 0,
+    "seconds": 101.01
+  },
+  "banner-stable-prove": {
+    "exit": 0,
+    "seconds": 33.81
+  },
+  "roll-moment-prove": {
+    "exit": 0,
+    "seconds": 98.25
+  },
+  "goods-log-prove": {
+    "exit": 0,
+    "seconds": 12.18
+  },
+  "turn-gain-prove": {
+    "exit": 0,
+    "seconds": 249.35
+  },
+  "board-look-prove": {
+    "exit": 0,
+    "seconds": 95.52
+  },
+  "dock-piles-prove": {
+    "exit": 0,
+    "seconds": 45.22
+  },
+  "size-prove": {
+    "exit": 0,
+    "seconds": 0.19
+  }
+}

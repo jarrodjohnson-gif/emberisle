@@ -1,4 +1,4 @@
-import { Component, type ReactNode } from "react";
+import { Component, type ErrorInfo, type ReactNode } from "react";
 import { savedSeat, useGame } from "@/lib/game/store";
 
 type Props = { children: ReactNode; code: string; synced: number };
@@ -13,6 +13,10 @@ class RecoveryBoundary extends Component<Props> {
 
   static getDerivedStateFromError() {
     return { failed: true, pending: false };
+  }
+
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error(error, info.componentStack);
   }
 
   componentDidUpdate(previous: Props) {

@@ -1,0 +1,8 @@
+npm error code ENOSPC
+npm error syscall mkdir
+npm error path /workspace/emberisle/work/verify1062-oct25/node_modules/.bin
+npm error errno -28
+npm error nospc ENOSPC: no space left on device, mkdir '/workspace/emberisle/work/verify1062-oct25/node_modules/.bin'
+npm error nospc There appears to be insufficient space on your system to finish.
+npm error nospc Clear up some disk space and try again.
+npm error A complete log of this run can be found in: /home/agent/.npm/_logs/2026-10-25T00_12_00_785Z-debug-0.log

@@ -23,6 +23,7 @@ not overlap. Claims reserve files, including while a PR waits for review.
 2. **Check files across all lanes:** read active claims and their open PRs, including work In Review.
    A `claimed:` remains active until that agent posts a later pause, or its PR merges or closes.
    Historical same-agent `paused:` comments also release claims; new pauses must include `/paused`.
+   Only the review desk or Jarrod may release another agent's claim (`released: <name>, <YYYY-MM-DD>` or `paused:` with that agent's exact name); every agent on the shared owner login can post these, so this is by agreement and the bot does not enforce it. Agents release only their own claims.
    Ignore released historical claims. If your planned files overlap another active claim's files or
    PR changes, pick a different issue. A shared lane alone is not a conflict. Neither are the shared
    registration files `package.json`, `.github/workflows/ci.yml` and `scripts/size-prove.mjs`: almost
@@ -67,6 +68,7 @@ Your claim and its file reservations release when your PR merges or closes, or w
 When told "next", pick in this order:
 
 1. Highest priority first: `prio:p0`, then `prio:p1`, then `prio:p2`, then no `prio:` label.
+   Bugs come first (owner decision, 2026-10-24): at any priority, take an open bug (broken for a player, or red CI that blocks merging) before a new feature.
 2. Within a priority, the earliest milestone and lowest step (`docs/FRAMEWORK.md` section 7).
 3. If several still tie, prefer your own tier.
 
@@ -77,7 +79,7 @@ to any tier. Helpers don't use this list: they follow the queue in [`HELPERS.md`
 |---|---|---|
 | `tier:1-deep` | Hours-long research and architecture carried through to a finished document | Claude Fable 5.1, GPT-6 Astra |
 | `tier:1` | Security, server, protocol and cross-area changes | Claude Opus 5.5, GPT-6.1 Sol, and the `tier:1-deep` models |
-| `tier:2` | Everyday features with real proofs | Claude Sonnet 5.5, Gemini 3.8 Flash (thinking HIGH), Grok 4.7, GLM 5.3 and Kimi K3 (the last two provisional, see below), and every `tier:1` model |
+| `tier:2` | Everyday features with real proofs | Claude Sonnet 5.5, Claude Opus 4.6 and older Claude models run through AWS (see below), Cursor Composer, Gemini 3.8 Flash (thinking HIGH), Grok 4.7, GLM 5.3 and Kimi K3 (the last two provisional, see below), and every `tier:1` model |
 | `tier:3` | Small single-purpose fixes, docs and screenshot QA | Claude Haiku 5.5, GPT-6 Luna, and every model above |
 
 **Tier and model labels.** Every issue carries a `tier:` label. Any model at that tier or below may take it. Nobody assigns builders.
@@ -99,6 +101,10 @@ A `model:` label is optional. It narrows the tier: only that model, or a subagen
 Gemini never builds a new look, animation or layout that needs taste. Split such an issue: another builder takes the design part, and Gemini takes the audit or the defined part. `model:gemini-ok` marks issues kept for Gemini.
 
 **Big design work needs Claude Opus 5.5 or stronger.** Big design work means a new look, a layout, an animation, or a visual spec in an issue. Fable and Astra count. Any model, helpers included, may do small design that the issue text already defines, such as an icon swap or a spacing fix. Any model may also build to an approved mock.
+
+**Design issues start in backlog.** The desk files an issue that changes a layout, a look or an animation as `tier:1` and `status:backlog`. Backlog is not eligible. The desk moves it to `status:todo` only when the issue links an Astra or Opus spec or an approved mock that settles the exact sizes, states and wording. A proof-only issue that measures the current screen (no change to `Hud.tsx`, `styles.css` or any visible look) is not design and may be `tier:2`.
+
+**Only listed models claim.** The tier table lists every model that may take issues. A model that is not in it claims nothing, at any tier. Claude Opus 4.6 and older Claude models run through AWS are in it at `tier:2` and `tier:3` (Jarrod, 2026-10-23); they never take `tier:1`, big design work, or a review of a `tier:1` PR. A claim names its model and version in the agent name (`claimed: Claude Sonnet 5.5, 2026-10-22`); Cursor, which picks its model per run, names it in the PR body (`Model: ...`). The label bot cannot check this, so the desk does. A claim by an unlisted or unnamed model, or on an issue above its tier, is void: the desk releases it with `/paused`, says why on the issue, and puts the issue back where it belongs.
 
 Grok's usage limits are low, so give it one `tier:2` or `tier:3` issue at a time.
 
@@ -147,7 +153,7 @@ the current step, post `/paused` saying where you stopped, and leave the rest.
 An empty ready list is not a reason to stop or to ask the desk. Work down this ladder yourself and take the first rung that has anything. Claim as usual. Post on #854 only if all five rungs are empty.
 
 1. **Adopt a finished-but-stuck PR.** Built PRs whose builders went quiet are listed under "Stale" in #916. Any PR with no push for 24 hours counts as stale. Comment `/claim adopt PR #N` on its issue, merge current main into its branch (a merge commit; never rebase or force-push), fix conflicts, get CI green, run the focused proof, then say on the PR it is ready for review. Don't widen its scope. It counts toward your open-PR limit (AGENTS.md rule 4).
-2. **Promote a backlog issue.** A `status:backlog` issue with every `Depends on` issue closed, a lane label and a clear scope is eligible. Re-read it, `/claim`, and set it to `status:claimed`. No desk permission is needed.
+2. **Promote a backlog issue.** A `status:backlog` issue with every `Depends on` issue closed, a lane label and a clear scope is eligible. Not eligible: a design issue held for a spec or mock (layout, look or animation, see "Design issues start in backlog"), whatever its tier label says. Re-read it, `/claim`, and set it to `status:claimed`. No desk permission is needed.
 3. **Finish the head of a chain.** A chain is blocked by its first issue. If the head is claimed but its PR has been silent for 24 hours, post `Question: still working?`. With no reply in 2 hours it counts as free and you may adopt it.
 4. **Always-useful work.** Write the missing test for a recently merged feature. Split an oversized issue into small, fully labelled ones. Close duplicates with a one-line reason.
 5. **Research gaps.** Read `docs/research/` and the #903 review notes. File 1 to 3 well-scoped issues (all four labels, a completion test, `Depends on`) for work nobody has listed.
