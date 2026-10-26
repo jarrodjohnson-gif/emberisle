@@ -1,14 +1,15 @@
 # Lobby turn-timer presets
 
 Design for [#548](https://github.com/jarrodjohnson-gif/emberisle/issues/548).
-**Owner decision, 2026-10-16:** Jarrod chose "Keep 120 seconds for both 3 and
-4 players; offer 60/120/180." This note records that decision and specifies
-the proposed implementation for review. It does not change the game or
-authorize implementation.
+**Owner decisions, 2026-10-16 and 2026-10-17:** Jarrod approved presets
+"Off / 1 / 2 / 3 min", keeping 120 seconds as default for both 3 and 4 players.
+With Off there is no turn timer and no total budget. This note records those
+decisions and specifies the proposed implementation for review. It does not
+change the game or authorize implementation.
 
-**Decision attribution:** Jarrod approved the selectable durations and
-seat-count defaults. The orchestrator resolved the supporting behavior on
-2026-10-16 in the [PR review](https://github.com/jarrodjohnson-gif/emberisle/pull/682).
+**Decision attribution:** Jarrod approved the selectable durations, the Off
+option, and the seat-count defaults. The orchestrator resolved the supporting
+behavior on 2026-10-16 in the [PR review](https://github.com/jarrodjohnson-gif/emberisle/pull/682).
 
 ## Current behavior and reason for the option
 
@@ -33,47 +34,51 @@ the same 120-second default.
 
 ## Presets and defaults — owner decision
 
-| Choice | Inactivity window |
-| --- | --- |
-| 1 minute | 60 seconds |
-| 2 minutes | 120 seconds |
-| 3 minutes | 180 seconds |
+| Choice | Inactivity window | Total budget | Representation |
+| --- | --- | --- | --- |
+| Off | None (`0`) | None (`0`) | `turnPresetMs: 0` |
+| 1 minute | 60 seconds (`60000`) | 6 minutes | `turnPresetMs: 60000` |
+| 2 minutes | 120 seconds (`120000`) | 12 minutes | `turnPresetMs: 120000` |
+| 3 minutes | 180 seconds (`180000`) | 18 minutes | `turnPresetMs: 180000` |
 
 Default: **2 minutes for both three and four seats**, including tables
-with practice bots. A shorter option is explicit opt-in. Adding/removing a
-seat or transferring host never silently changes the chosen value. There is
-no unlimited or custom duration option. An Off option is a separate owner
-question, not part of this design. Practice and hotseat remain outside this
-online-lobby issue.
+with practice bots. A shorter option or Off is explicit opt-in. Adding/removing
+a seat or transferring host never silently changes the chosen value. There is
+no arbitrary custom duration option; Off is an approved explicit preset (`0`).
+Practice and hotseat remain outside this online-lobby issue.
 
-Jarrod approved these presets and defaults in the onboarding conversation on
-2026-10-16. The current 120-second runtime behavior remains in force until a
-separate implementation is reviewed and accepted.
+Jarrod approved the initial presets and defaults on 2026-10-16 and confirmed
+the Off preset on 2026-10-17. The current 120-second runtime behavior remains
+in force until a separate implementation is reviewed and accepted.
 
 ## Supporting behavior — orchestrator decision, 2026-10-16
 
 The host may change the timer before the first game and at game over before
 a rematch, matching `setVictoryTarget`; never during a live game. A change
 clears human guests' ready flags. The total budget remains six windows
-(6/12/18 minutes). Override deployments show actual timing and disable the
-selector. Only the approved presets are selectable, with no custom or Off
-option. These decisions come from the orchestrator's review response, not
-Jarrod's earlier approval of durations/defaults.
+(6/12/18 minutes) for timed presets, and none for Off. Override deployments
+show actual timing and disable the selector. Only the approved presets
+(Off, 1 min, 2 min, 3 min) are selectable, with no arbitrary custom duration.
+These decisions come from the orchestrator's review response, incorporating
+Jarrod's approved durations and presets.
 
 ## Proposed lobby control
 
 Place a labelled **Turn timer** control beside the existing points target,
 inside the existing lobby card; no new screen. Use a native select with
-visible duration labels, keyboard operation and a label association. The
-host can choose before the first game and after a game before rematch,
-never during a live game. Guests see
-the server-confirmed value as text. Watchers cannot change it. When the host
+visible labels (`Off`, `1 minute`, `2 minutes`, `3 minutes`), keyboard
+operation and a label association. The host can choose before the first game
+and after a game before rematch, never during a live game. Guests see the
+server-confirmed value as text. Watchers cannot change it. When the host
 leaves, the new host inherits the table's choice.
 
 Explain beneath the control: "Time to make your next move. Making a move
-resets the timer, up to 12 minutes." Substitute 6 or 18 for the selected
-option. Preserve the existing timeout explanation and countdown behavior.
-Do not call this a whole-turn limit or suggest that trading/chat freezes it.
+resets the timer, up to 12 minutes." Substitute 6 or 18 for the 1 or 3 minute
+options. When Off is selected, display: "No turn timer or total budget. The
+table waits indefinitely for each player's move." Preserve the existing timeout
+explanation and countdown behavior when a timed preset is active; when Off is
+selected, no countdown or urgent state is displayed.
+Do not call timed presets a whole-turn limit or suggest that trading/chat freezes them.
 
 Send a selection immediately. Show the confirmed server value; a pending
 selection must not let Start race ahead of its acknowledgement. A changed
@@ -88,26 +93,27 @@ read-only; it does not add a live timer control.
 
 Separate `turnPresetMs`, the selectable preset, from the resolved timing:
 
-- `turnPresetMs` is an integer in `{60000, 120000, 180000}` (default 120000).
+- `turnPresetMs` is an integer in `{0, 60000, 120000, 180000}` (default 120000).
   This allowlist applies only to public preset selection, never to effective
   operator timing.
-- `turnWindowMs` and `turnTotalMs` are resolved effective milliseconds,
-  positive finite integers that may be outside the preset allowlist (for
-  example, a 1200 ms test window). Persist and restore these values directly.
+- `turnWindowMs` and `turnTotalMs` are resolved effective milliseconds: `0`
+  when Off, or positive finite integers for timed presets (which may be outside
+  the preset allowlist, for example a 1200 ms test window). Persist and restore
+  these values directly.
 - `turnOperatorControlled` records whether an operator override was used
   when the room's effective timing was resolved.
 
 Keep this metadata outside the pure rules state: it governs host scheduling.
-Clients request `{ type: "setTurnTimer", value: 60000 }`. Only the current
-host before a game or after `phase === "over"` can change it. Validate the numeric
-allowlist; reject strings, fractions, null, negatives and arbitrary values.
+Clients request `{ type: "setTurnTimer", value: 60000 }` (or `value: 0` for Off).
+Only the current host before a game or after `phase === "over"` can change it.
+Validate the numeric allowlist; reject strings, fractions, null, negatives and arbitrary values.
 Refusals leave the setting, ready flags and any deadlines unchanged.
 
 After the existing watcher guard and action rate limit, validate in order:
 host authority ("Only the host can choose the turn timer."), live-game state
 ("The turn timer is fixed for this game."), operator lock
 ("Timer set by the host server."), then preset value
-("Choose a 1, 2 or 3 minute timer."). Publish and save accepted changes together.
+("Choose Off, or a 1, 2 or 3 minute timer."). Publish and save accepted changes together.
 
 Include all four fields in `welcome`, `seats` (including peek), and
 `state` for seats and watchers. Late joins, rejoin and host migration read
@@ -124,33 +130,44 @@ changing what old clients do.
 ## Persistence, restart and operator overrides
 
 Save all four fields as room metadata alongside the existing per-seat
-`turnDeadline` and `turnStartedAt`. Validate the preset against its allowlist,
-but validate effective window/total values only as positive finite integers.
-Thus an operator-controlled room with `turnWindowMs: 1200` restores normally.
-An explicit invalid value is a diagnosed restore failure, not a request for
-an unlimited timer; never apply the preset allowlist to effective timing.
-Do not drop existing rooms merely to add an optional metadata field.
+`turnDeadline` and `turnStartedAt`. Validate the preset against its allowlist
+`{0, 60000, 120000, 180000}`, but validate effective window/total values as
+positive finite integers (or `0` when Off). Thus an operator-controlled room
+with `turnWindowMs: 1200` restores normally, and an Off room with
+`turnWindowMs: 0` restores without timing. An explicit invalid value (such as
+negative numbers, non-integers, or unparseable strings) is a diagnosed restore
+failure, not a request for an unlimited timer; an intentional Off setting is
+represented strictly by `turnPresetMs: 0` / `turnWindowMs: 0`. Never apply
+the preset allowlist to effective timing. Do not drop existing rooms merely to
+add an optional metadata field.
+
+With Off (`turnPresetMs === 0` / `turnWindowMs === 0`), there is no deadline,
+no total budget (`turnTotalMs: 0`), and no countdown. The host's `armTurns`
+arms nothing (no timer intervals or timeout callbacks are scheduled), leaving
+players to take their turns at their own pace. On restore, an Off save is valid
+and distinct from an invalid value. The 6× total relationship and the
+`min(5000, turnWindowMs / 10)` resume threshold do not apply when Off.
 
 Resolve a new room in this order:
 `turnWindowMs = TURN_MS override ?? turnPresetMs`, then
-`turnTotalMs = TURN_TOTAL_MS override ?? 6 * turnWindowMs`. An explicit total
-override wins even when it is not six times the window. An override means
-an explicitly set, valid positive finite integer, never a truthiness check.
-Derive the resume
-threshold as `min(5000, turnWindowMs / 10)`. Thread these room-local values
-through scheduling, timeout, restore and rematch. Changing one lobby must
-not affect another room. Keep grace, hold, ping, trade-offer and bot-answer
-durations independent of the selected preset.
+`turnTotalMs = TURN_TOTAL_MS override ?? (turnWindowMs === 0 ? 0 : 6 * turnWindowMs)`.
+An explicit total override wins even when it is not six times the window. An
+override means an explicitly set, valid positive finite integer, never a
+truthiness check. When `turnWindowMs > 0`, derive the resume threshold as
+`min(5000, turnWindowMs / 10)`. Thread these room-local values through
+scheduling, timeout, restore and rematch. Changing one lobby must not affect
+another room. Keep grace, hold, ping, trade-offer and bot-answer durations
+independent of the selected preset.
 
 Keep `TURN_MS` and `TURN_TOTAL_MS` as explicit operator/test overrides. When
-present, they take precedence in the new-room resolution above;
-compute the effective values once for a new room and persist them. Display
-the actual effective timing, not a misleading preset label, and disable
-host selection on an overridden deployment with "Timer set by the host
-server." Normal deployments with
-neither override use the proposed presets.
-Existing proofs depend on subsecond/short operator durations; the network
-allowlist must not constrain these trusted server overrides.
+present, they take precedence in the new-room resolution above, overriding any
+lobby choice including Off; compute the effective values once for a new room
+and persist them. Display the actual effective timing, not a misleading preset
+label, and disable host selection on an overridden deployment with "Timer set
+by the host server." Normal deployments with neither override use the proposed
+presets (Off, 1 min, 2 min, 3 min). Existing proofs depend on subsecond/short
+operator durations; the network allowlist must not constrain these trusted
+server overrides.
 
 Restoring an active room uses its persisted effective timing even if the
 process defaults changed. Preserve the exact saved deadline and original
@@ -181,6 +198,11 @@ A later implementation needs these functional checks:
 - Guests, watchers and live games cannot change timing. Invalid messages
   are refused with no mutation. Host changes at game over work and clear
   human guests' readiness; selecting the same value is a no-op.
+- Selecting Off (`setTurnTimer` with `value: 0`) round-trips to all clients; no
+  deadline is armed on game start (`turnDeadline` is null/unset), no countdown
+  or urgent warning appears, and no timeout passes or auto-moves trigger. An Off
+  save survives restart/restore without arming deadlines. At game over, the host
+  can change between Off and timed presets, clearing human guest readiness.
 - With no overrides, create concurrent rooms selecting 60000 and 180000;
   after start, each `turnDeadline - serverNow` is near its own effective
   window, within a documented runner tolerance. Operator overrides
