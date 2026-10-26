@@ -55,14 +55,20 @@ try{
  const started=Date.now();await a.getByRole('button',{name:'Need Stone',exact:true}).click();
  const chip=b.getByTestId('rail-p0').getByTestId('seat-needs');await chip.waitFor({timeout:1000});
  assert.equal(await chip.getAttribute('aria-label'),'Jarrod needs Stone');assert(Date.now()-started<1000);
+ await b.locator('[data-menu-trigger="p0"]').click();
+ const peerNeeds=b.getByTestId('player-menu').getByTestId('menu-needs');await peerNeeds.waitFor();
+ assert.deepEqual(await peerNeeds.getByTestId('need-chip').allTextContents(),['Stone']);
  await a.getByRole('button',{name:'Need Wheat',exact:true}).click();
  await b.waitForFunction(()=>document.querySelector('[data-testid="rail-p0"] [data-testid="seat-needs"]')?.getAttribute('aria-label')==='Jarrod needs Stone and Wheat');
+ await b.waitForFunction(()=>[...document.querySelectorAll('[data-testid="player-menu"] [data-testid="need-chip"]')].map(e=>e.textContent).join(',')==='Stone,Wheat');
+ assert.deepEqual(await peerNeeds.getByTestId('need-chip').allTextContents(),['Stone','Wheat']);
  assert(await a.getByRole('button',{name:'Need Wood',exact:true}).isDisabled());
  const dimensions=await a.getByRole('button',{name:/^Need (Wood|Brick|Sheep|Wheat|Stone)$/}).evaluateAll(buttons=>buttons.map(button=>{const box=button.getBoundingClientRect();return {w:box.width,h:box.height};}));
  assert(dimensions.every(d=>d.w>=44&&d.h>=44));
  assert.deepEqual(await a.evaluate(()=>window.__isle.insets()),before);
  assert.equal(await b.evaluate(()=>window.__emberisle.getState().state.players.find(p=>p.id==='p0').resources),undefined);
  await a.getByRole('button',{name:'Clear needs',exact:true}).click();await chip.waitFor({state:'detached'});
+ await peerNeeds.waitFor({state:'detached'});await b.keyboard.press('Escape');
  await a.getByRole('button',{name:'Need Stone',exact:true}).click();await chip.waitFor();
  mkdirSync('test-results',{recursive:true});await a.screenshot({path:'test-results/needs-picker-phone.png'});
  await a.getByRole('button',{name:'Close',exact:true}).click();
@@ -200,7 +206,7 @@ try{
    const visible=e=>e.getBoundingClientRect().width>0;
    return [...document.querySelectorAll('[data-testid="seat-needs"]')].filter(visible).map(chip=>{
     const card=chip.closest('.seat-card'),css=getComputedStyle(chip);
-    return {player:chip.dataset.player,chip:rect(chip),card:rect(card),borderLeft:card.clientLeft,borderTop:card.clientTop,trigger:rect(card.querySelector('[data-menu-trigger]')),pointerEvents:css.pointerEvents,buttons:chip.querySelectorAll('button,a,input,[tabindex]').length,
+    return {player:chip.dataset.player,chip:rect(chip),card:rect(card),borderLeft:card.clientLeft,borderTop:card.clientTop,trigger:rect(card.querySelector('[data-menu-trigger]')),pointerEvents:css.pointerEvents,buttons:chip.querySelectorAll('button,a,input,[tabindex]').length,tabIndex:chip.tabIndex,label:chip.getAttribute('aria-label'),live:chip.getAttribute('aria-live'),color:css.backgroundColor,radius:css.borderRadius,shadow:css.boxShadow,
      status:chip.getAttribute('role'),tallies:[...card.querySelectorAll('[data-testid="seat-vp"],[data-testid="tally-path"],[data-testid="tally-army"]')].map(rect),
      hints:[...document.querySelectorAll('[data-testid="hidden-point-hint"]')].filter(visible).map(rect)};
    });
@@ -211,7 +217,9 @@ try{
   for(const seat of measured){
    const prefix=`${width}x${height} ${seat.player}`;
    if(seat.chip.width!==8||seat.chip.height!==8||seat.chip.x!==seat.card.x+seat.borderLeft-3||seat.chip.y!==seat.card.y+seat.borderTop-3)geometryProblems.push(`${prefix}: dot size/offset differs from approved mock`);
-   if(seat.trigger.height!==44||seat.pointerEvents!=='none'||seat.buttons!==0)geometryProblems.push(`${prefix}: trigger or dot interaction changed`);
+   if(seat.trigger.height!==44||seat.pointerEvents!=='none'||seat.buttons!==0||seat.tabIndex>=0)geometryProblems.push(`${prefix}: trigger or dot interaction changed`);
+   if(seat.status!=='img'||seat.live!==null||seat.label!==`${{p0:'Jarrod',p1:'Joshua',p2:'Dune',p3:'Ember'}[seat.player]} needs Stone and Wheat`)geometryProblems.push(`${prefix}: dot accessibility differs from published needs`);
+   if(seat.color!=='rgb(190, 91, 57)'||Number.parseFloat(seat.radius)<4||seat.shadow!=='rgb(255, 255, 255) 0px 0px 0px 1px')geometryProblems.push(`${prefix}: dot appearance differs from approved mock`);
    if([...seat.tallies,...seat.hints].some(r=>overlap(seat.chip,r)))geometryProblems.push(`${prefix}: chip covers public tally/hint`);
    if(measured.some(other=>other!==seat&&(overlap(seat.chip,other.chip)||overlap(seat.chip,other.card)||overlap(seat.chip,other.trigger))))geometryProblems.push(`${prefix}: dot overlaps neighbour`);
    if(seat.status==='status')geometryProblems.push(`${prefix}: public chip is a live region`);
@@ -219,9 +227,9 @@ try{
   await page.locator('[data-menu-trigger="p0"]').click();
   const menu=page.getByTestId('player-menu');
   const details=menu.getByTestId('menu-needs');await details.waitFor();
-  const menuGeometry=await details.evaluate(row=>{const css=getComputedStyle(row);return {gap:Number.parseFloat(css.gap),role:row.getAttribute('role'),chips:[...row.querySelectorAll('[data-testid="need-chip"]')].map(chip=>{const style=getComputedStyle(chip);return {text:chip.textContent,font:Number.parseFloat(style.fontSize),paddingX:Number.parseFloat(style.paddingLeft),paddingY:Number.parseFloat(style.paddingTop)};})};});
+  const menuGeometry=await details.evaluate(row=>{const css=getComputedStyle(row);return {gap:Number.parseFloat(css.gap),role:row.getAttribute('role'),live:row.getAttribute('aria-live'),childLive:[...row.querySelectorAll('*')].some(e=>e.hasAttribute('aria-live')||e.getAttribute('role')==='status'),chips:[...row.querySelectorAll('[data-testid="need-chip"]')].map(chip=>{const style=getComputedStyle(chip);return {text:chip.textContent,font:Number.parseFloat(style.fontSize),paddingX:Number.parseFloat(style.paddingLeft),paddingY:Number.parseFloat(style.paddingTop)};})};});
   geometry.at(-1).menu=menuGeometry;
-  if(menuGeometry.gap!==8||menuGeometry.role==='status'||menuGeometry.chips.length!==2||menuGeometry.chips.map(c=>c.text).join(',')!=='Stone,Wheat'||menuGeometry.chips.some(c=>c.font!==12||c.paddingX!==12||c.paddingY!==8))geometryProblems.push(`${width}x${height}: menu needs differ from approved details`);
+  if(menuGeometry.gap!==8||menuGeometry.role==='status'||menuGeometry.live!==null||menuGeometry.childLive||menuGeometry.chips.length!==2||menuGeometry.chips.map(c=>c.text).join(',')!=='Stone,Wheat'||menuGeometry.chips.some(c=>c.font!==12||c.paddingX!==12||c.paddingY!==8))geometryProblems.push(`${width}x${height}: menu needs differ from approved details`);
   await page.screenshot({path:path.join(captureDirectory,`needs-${width}x${height}-menu.png`)});
   await page.keyboard.press('Escape');
   await page.evaluate(()=>window.__emberisle.getState().setTradeOpen(true));
