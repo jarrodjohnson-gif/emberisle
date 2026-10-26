@@ -21,12 +21,14 @@ const SOUNDBOARD = [
   { id: "sb_grain_please", label: "Grain please" },
   { id: "sb_brick_please", label: "Brick please" },
   { id: "sb_perfect", label: "Perfect" },
+  { id: "sb_real_badman", label: "Real badman" },
+  { id: "sb_gong", label: "Gong" },
   { id: "bong", label: "Bong" },
   { id: "plop", label: "Plop" },
   { id: "pluck", label: "Pluck" },
 ];
 
-// Tab 2: all fifteen sound chips in a wrapping grid (14 px labels, no sideways scroll), the text presets, then the stickers.
+// Tab 2: all seventeen sound chips in a wrapping grid (14 px labels, no sideways scroll), the text presets, then the stickers.
 const PRESETS = ["gg", "nice roll", "your turn", "one sec", "ty"];
 
 export function SoundsTab({ dense }: { dense?: boolean }) {
