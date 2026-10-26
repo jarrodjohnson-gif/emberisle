@@ -246,7 +246,7 @@ export function createGame(opts: {
   };
 }
 
-// The island behind the title and the lobby (#130). The day the repo was created. It never changes.
+// The island behind the title and the lobby (#130), seeded with the day the repo was created.
 export const DEMO_SEED = 20260921;
 
 export function demoBoard(): GameState {

@@ -752,7 +752,7 @@ function build(coast: CoastPt[], docks: Dock[], seed: number): Shore {
     const goodsParts: THREE.BufferGeometry[] = [];
     const G = (geometry: THREE.BufferGeometry) => { goodsParts.push(geometry); P(geometry); };
     const S = 2.5;
-    const gv = Math.max(v0 + 0.18, Math.min(wv - 0.04, v1 - 0.53));
+    const gv = Math.max(v0 + 0.18, Math.min(wv - 0.04, v1 - (d.kind === "any" ? 0.55 : 0.53)));
     const gy = DECK + 0.008;
     const stride = Math.min(1, (len - 0.2) / 0.64);
     const good = d.kind;
