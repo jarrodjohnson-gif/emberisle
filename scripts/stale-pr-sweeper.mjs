@@ -26,10 +26,7 @@ export function activity(comments) {
 
 export function decision(pr, marker, now, { reviews = [], reviewComments = [] } = {}) {
   if (protectedPr(pr)) return 'skip';
-  if (pr.draft) {
-    if (pr.labels?.some(label => label.name === 'stale') || !marker || marker.sha !== pr.head.sha) return 'initialize';
-    return 'skip';
-  }
+  if (pr.draft) return 'initialize';
   if (!marker || marker.sha !== pr.head.sha) return 'initialize';
   const observedAt = Date.parse(marker.observedAt);
   if (!Number.isFinite(observedAt) || observedAt > now) return 'skip';
@@ -41,12 +38,13 @@ export function decision(pr, marker, now, { reviews = [], reviewComments = [] } 
     ...reviewComments.map(c => Date.parse(c.created_at)).filter(t => Number.isFinite(t) && t <= now),
     0
   );
-  if (latestReview > observedAt && now - latestReview < 5 * DAY) {
+  if (latestReview > observedAt) {
     return 'initialize';
   }
 
   const hasStale = pr.labels?.some(label => label.name === 'stale');
   if (hasStale) {
+    // Fail-safe: a stale label without labeledAt skips closing until a valid labeledAt timestamp is recorded.
     if (!marker.labeledAt) return 'skip';
     const labeledAt = Date.parse(marker.labeledAt);
     if (!Number.isFinite(labeledAt) || labeledAt > now) return 'skip';
@@ -145,7 +143,7 @@ export async function sweep({ api, enabled, repo, now = Date.now(), event = null
         ...freshReviewComments.map(c => Date.parse(c.created_at)).filter(Number.isFinite),
         0
       );
-      const initTime = latestReview > Date.parse(old?.observedAt || 0) && now - latestReview < 5 * DAY
+      const initTime = latestReview > Date.parse(old?.observedAt || 0)
         ? new Date(latestReview).toISOString()
         : new Date(now).toISOString();
       await writeMarker(pr.number, pr.head.sha, initTime, old);
@@ -168,12 +166,14 @@ export async function sweep({ api, enabled, repo, now = Date.now(), event = null
       const beforeLabel = await getPr(pr.number);
       const beforeMarker = activity(await comments(pr.number));
       if (beforeLabel.head.sha !== pr.head.sha || decision(beforeLabel, beforeMarker, now) !== 'label') continue;
+      const labeledAt = new Date(now).toISOString();
+      await writeMarker(pr.number, pr.head.sha, beforeMarker.observedAt, beforeMarker, labeledAt);
       await api('POST', `${base}/issues/${pr.number}/labels`, { labels: ['stale'] });
-      await writeMarker(pr.number, pr.head.sha, beforeMarker.observedAt, beforeMarker, new Date(now).toISOString());
       const afterPr = await getPr(pr.number);
       const afterMarker = activity(await comments(pr.number));
       if (afterPr.head.sha !== pr.head.sha || afterPr.state !== 'open' || !afterMarker
-        || afterMarker.sha !== pr.head.sha || Date.parse(afterMarker.observedAt) !== Date.parse(beforeMarker.observedAt)) {
+        || afterMarker.sha !== pr.head.sha || Date.parse(afterMarker.observedAt) !== Date.parse(beforeMarker.observedAt)
+        || afterMarker.labeledAt !== labeledAt) {
         await removeStale(afterPr);
         continue;
       }
@@ -186,7 +186,9 @@ export async function sweep({ api, enabled, repo, now = Date.now(), event = null
       }
       const beforeClose = await getPr(pr.number);
       const beforeMarker = activity(await comments(pr.number));
-      if (beforeClose.head.sha !== pr.head.sha || decision(beforeClose, beforeMarker, now) !== 'close') continue;
+      const freshReviews = await getReviews(pr.number);
+      const freshReviewComments = await getReviewComments(pr.number);
+      if (beforeClose.head.sha !== pr.head.sha || decision(beforeClose, beforeMarker, now, { reviews: freshReviews, reviewComments: freshReviewComments }) !== 'close') continue;
       await api('PATCH', `${base}/pulls/${pr.number}`, { state: 'closed' });
       closes++;
       log(`#${pr.number}: closed; branch preserved`);

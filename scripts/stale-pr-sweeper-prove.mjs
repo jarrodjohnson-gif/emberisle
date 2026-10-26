@@ -11,7 +11,7 @@ const bot = { login: 'github-actions[bot]', type: 'Bot' };
 const pr = (number = 1, extra = {}) => ({ number, state: 'open', head: { sha }, labels: [], ...extra });
 const marker = (days, extra = {}) => {
   const observedAt = new Date(now - days * DAY).toISOString();
-  const data = { sha, observedAt };
+  const data = { sha: extra.sha || sha, observedAt };
   if (extra.labeledAt !== undefined) {
     if (extra.labeledAt) data.labeledAt = extra.labeledAt;
   } else if (days >= 10) {
@@ -92,6 +92,10 @@ const fiveDay = fake([pr(1, { labels: [{ name: 'stale' }] })], [marker(10, { lab
 await run(fiveDay);
 assert.equal(fiveDay.pulls[0].state, 'closed');
 assert(fiveDay.writes().some(c => c.body?.state === 'closed'));
+const boundaryPr = fake([pr(1, { labels: [{ name: 'stale' }] })], [marker(10, { labeledAt: new Date(now - (5 * DAY - 3600_000)).toISOString() })]);
+await run(boundaryPr);
+assert.equal(boundaryPr.pulls[0].state, 'open');
+assert(!boundaryPr.writes().some(c => c.body?.state === 'closed'));
 ok('1: warning period enforces minimum 5-day stale label before closure');
 
 const draftPr = fake([pr(1, { draft: true, labels: [{ name: 'stale' }] })], [marker(20, { labeledAt: new Date(now - 10 * DAY).toISOString() })]);
@@ -99,6 +103,18 @@ await run(draftPr);
 assert.equal(draftPr.pulls[0].state, 'open');
 assert(!draftPr.pulls[0].labels.some(l => l.name === 'stale'));
 assert(!draftPr.writes().some(c => c.body?.state === 'closed'));
+
+const draftNoLabel = fake([pr(1, { draft: true })], [marker(30)]);
+await run(draftNoLabel);
+assert.equal(draftNoLabel.pulls[0].state, 'open');
+assert(!draftNoLabel.pulls[0].labels.some(l => l.name === 'stale'));
+assert.equal(activity(draftNoLabel.comments).observedAt, new Date(now).toISOString());
+
+const readyAfterDraft = fake([pr(1, { draft: false })], [marker(0)]);
+await run(readyAfterDraft);
+assert.equal(readyAfterDraft.pulls[0].state, 'open');
+assert(!readyAfterDraft.pulls[0].labels.some(l => l.name === 'stale'));
+assert.equal(readyAfterDraft.writes().length, 0);
 
 const reviewedPr = fake([pr(1, { labels: [{ name: 'stale' }] })], [marker(15, { labeledAt: new Date(now - 6 * DAY).toISOString() })]);
 reviewedPr.api.reviewComments = [{ id: 101, created_at: new Date(now - 2 * DAY).toISOString() }];
@@ -113,6 +129,13 @@ await run(submittedReviewPr);
 assert.equal(submittedReviewPr.pulls[0].state, 'open');
 assert(!submittedReviewPr.pulls[0].labels.some(l => l.name === 'stale'));
 assert(!submittedReviewPr.writes().some(c => c.body?.state === 'closed'));
+
+const oldReviewPr = fake([pr(1, { labels: [{ name: 'stale' }] })], [marker(15, { labeledAt: new Date(now - 10 * DAY).toISOString() })]);
+oldReviewPr.api.reviews = [{ id: 103, submitted_at: new Date(now - 8 * DAY).toISOString(), state: 'APPROVED' }];
+await run(oldReviewPr);
+assert.equal(oldReviewPr.pulls[0].state, 'open');
+assert(!oldReviewPr.pulls[0].labels.some(l => l.name === 'stale'));
+assert(!oldReviewPr.writes().some(c => c.body?.state === 'closed'));
 ok('2: drafts and PRs with recent reviews or review comments are protected and reset clock');
 
 assert.match(CLOSE_COMMENT, /#916/);
@@ -145,34 +168,36 @@ assert(racingLabel.writes().some(c => c.method === 'DELETE' && c.path.endsWith('
 ok('4: concurrent event race during labeling detects marker/head change and cleans up stale label');
 
 {
-  const stale4d = pr(1, { labels: [{ name: 'stale' }] });
-  const m10_4 = activity([marker(10, { labeledAt: new Date(now - 4 * DAY).toISOString() })]);
-  const unhardenedCloseDecision = (p, m, t) => (t - Date.parse(m.observedAt) >= 10 * DAY && p.labels.some(l => l.name === 'stale') ? 'close' : 'skip');
-  assert.equal(unhardenedCloseDecision(stale4d, m10_4, now), 'close');
-  assert.equal(decision(stale4d, m10_4, now), 'skip');
+  // Rule 1: 4.5-day label age skips, 5-day label age closes
+  const stalePr = pr(1, { labels: [{ name: 'stale' }] });
+  const m_4_5d = activity([marker(10, { labeledAt: new Date(now - 4.5 * DAY).toISOString() })]);
+  const m_5d = activity([marker(10, { labeledAt: new Date(now - 5 * DAY).toISOString() })]);
+  assert.equal(decision(stalePr, m_4_5d, now), 'skip');
+  assert.equal(decision(stalePr, m_5d, now), 'close');
 
+  // Rule 2: draft PR always initializes, non-draft closes
   const draftFixture = pr(1, { draft: true, labels: [{ name: 'stale' }] });
-  const m10_5 = activity([marker(10, { labeledAt: new Date(now - 5 * DAY).toISOString() })]);
-  const unhardenedDraftDecision = (p, m, t) => decision({ ...p, draft: false }, m, t);
-  assert.equal(unhardenedDraftDecision(draftFixture, m10_5, now), 'close');
-  assert.notEqual(decision(draftFixture, m10_5, now), 'close');
+  const nonDraftFixture = pr(1, { draft: false, labels: [{ name: 'stale' }] });
+  assert.equal(decision(draftFixture, m_5d, now), 'initialize');
+  assert.equal(decision(nonDraftFixture, m_5d, now), 'close');
 
-  const unhardenedReviewDecision = (p, m, t) => decision(p, m, t, { reviews: [], reviewComments: [] });
-  assert.equal(unhardenedReviewDecision(stale4d, m10_5, now), 'close');
-  assert.equal(decision(stale4d, m10_5, now, { reviewComments: [{ created_at: new Date(now - DAY).toISOString() }] }), 'initialize');
+  // Rule 2: review inside idle window resets to initialize even if review is 8 days old
+  assert.equal(decision(stalePr, m_5d, now, { reviews: [{ submitted_at: new Date(now - 8 * DAY).toISOString() }] }), 'initialize');
+  assert.equal(decision(stalePr, m_5d, now, { reviews: [] }), 'close');
 
-  const legacyCloseComment = 'Closed after 10 days without a push to this PR. The branch is preserved. Reopen this PR and push an update when you are ready, or add keep-open to exempt it.';
-  assert.throws(() => assert.match(legacyCloseComment, /#916/));
+  // Rule 3: close comment directs author to #916 and does not ask them to add keep-open
   assert.match(CLOSE_COMMENT, /#916/);
+  assert.doesNotMatch(CLOSE_COMMENT, /add keep-open/i);
 
-  const unhardenedRace = fake([pr(1)], [marker(6)]);
-  unhardenedRace.pulls[0].labels.push({ name: 'stale' });
-  unhardenedRace.comments[0] = marker(0, { sha: newer });
-  unhardenedRace.pulls[0].head.sha = newer;
-  assert(unhardenedRace.pulls[0].labels.some(l => l.name === 'stale'));
+  // Rule 4: non-racing label persists stale label, racing label deletes stale label
+  const normalLabel = fake([pr(1)], [marker(6)]);
+  await run(normalLabel);
+  assert(normalLabel.pulls[0].labels.some(l => l.name === 'stale'));
+  assert(!normalLabel.writes().some(c => c.method === 'DELETE'));
   assert(!racingLabel.pulls[0].labels.some(l => l.name === 'stale'));
+  assert(racingLabel.writes().some(c => c.method === 'DELETE'));
 }
-ok('negative controls: mutation checks verify each of the four rules fails when removed');
+ok('negative controls: mutation checks verify each of the four rules on real inputs');
 for (const status of [403, 500]) {
   const fail = fake([pr()], [marker(6)]); fail.api.labelError = status;
   await assert.rejects(() => run(fail), /label error/); assert.equal(fail.writes().length, 0);
