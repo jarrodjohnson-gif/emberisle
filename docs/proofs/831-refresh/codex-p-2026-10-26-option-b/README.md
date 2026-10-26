@@ -34,3 +34,31 @@ No repeat was run in that checkout. A separate frozen-clone validation remains p
 
 Owner visual acceptance remains pending. At844x390, receipts/actions fit while goods scroll;
 the initial Bank picture's get row lies below the fold. No subjective layout acceptance is claimed.
+
+## Independent frozen validation
+
+Freeze: `2c0a70425047a48df32b25c3f1a48b29f4f63203`.
+Independent clone: `/workspace/p883-b-frozen-validation`, created using `git clone --no-local`.
+Root and server frozen `npm ci` completed before validation.
+Types, registered151, loosen3-changed-none-loosened against exact main d09d72f, size-delta, build and size all exited0.
+Every static check and build finished before browser validation began.
+Logs and the serial runner stayed outside the served checkout, under `/workspace/883-frozen-output`.
+No checkout edits, builds, copying or checkouts occurred during browser runs; only existing proof `test-results` output was written there.
+Browser commands shared one serial `flock /tmp/emberisle-team-browser.lock` acquisition.
+Pinned Playwright revision1243 was selected through PLAYWRIGHT_BROWSERS_PATH; CHROMIUM_PATH was unset.
+
+- `npm run trade-tabs-prove`: PASS, exit0. All six viewport/motion contexts and genuine lazy failure/reopen pass.
+- `npm run client-prove`: FAIL, exit1. The runner stopped immediately; no retry occurred.
+- `hand-cards-prove`, `trade-map.test.mjs`, `trade-prove` and `rotate-overlays-prove`: NOT RUN after the client failure.
+
+The client Bank interaction passed: `Bank 4:1 {"ore":4,"wool":1,"open":false,"error":null}`, practice Ask count1.
+Later, unchanged client-prove958 failed its host-down restore case, waiting6000ms for `title-card` after reload with a held live seat.
+The preceding log reports IslandCanvas dynamic-import fetch failures. Their cause and relationship to the timeout remain unproved.
+Those fetch errors were not deliberately injected by client-prove. No product or assertion correction follows from this failure.
+Full output is retained in `frozen/client.log.gz`; the complete passing B output is `frozen/trade-tabs.log.gz`.
+
+Six normal-motion proof screenshots show the mixed Table draft/disabled Bank and the affordable exact Bank quote at three sizes.
+They are proof captures; the complete requested owner picture set and visual acceptance remain pending.
+The319 source/registration hashes match the frozen clone and source worktree exactly.
+The frozen clone remains clean. `frozen/SHA256.json` hashes every retained frozen artifact.
+This checkpoint does not claim all validation passed, failure causality, owner acceptance, ready state or merge.
