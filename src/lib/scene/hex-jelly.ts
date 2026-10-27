@@ -212,17 +212,17 @@ export function layoutOf(kind: Terrain, seed: number): Layout {
     // running out from it across a dry gully to the tipple on that flank; the tarn on the other front flank.
     const s = r() < 0.5 ? -1 : 1;
     // The peaks are faceted rock meshes (mine()); the ground only swells under them.
-    // Keep the rear summit below the sightline to the next hex’s numeral (#634).
-    L.peaks.push({ ...at(hillAt, 0.56), r: 0.24, h: 0.56 + r() * 0.04 });
-    L.peaks.push({ ...at(hillAt - s * 0.62, 0.54), r: 0.19, h: 0.5 + r() * 0.05 });
-    L.peaks.push({ ...at(hillAt + s * 0.55, 0.56), r: 0.17, h: 0.42 + r() * 0.04 });
+    // Keep the rear summit below the sightline to the next hex’s numeral and harbour (#634, #1158).
+    L.peaks.push({ ...at(hillAt, 0.52), r: 0.20, h: 0.36 + r() * 0.03 });
+    L.peaks.push({ ...at(hillAt - s * 0.62, 0.50), r: 0.17, h: 0.32 + r() * 0.03 });
+    L.peaks.push({ ...at(hillAt + s * 0.55, 0.52), r: 0.15, h: 0.28 + r() * 0.03 });
     // The massif (the owner, 2026-10-16: "more mountains on the hex so it's easier to see that it's ore"): two shoulders
     // behind and between the three, and one on the open flank past the snowmelt, each kept inside the edge band (where paths
     // stand) and off the corners.
     const fit = (p: Pt, r0: number) => Math.min(r0, INR - EDGE_BAND - hexDist(p.x, p.z), nearestCorner(p.x, p.z) - CORNER_DISC - 0.06);
-    for (const [da, d, r0, h] of [[-0.3, 0.64, 0.16, 0.52], [0.28, 0.64, 0.15, 0.46], [-1.15, 0.66, 0.13, 0.3]] as const) {
+    for (const [da, d, r0, h] of [[-0.3, 0.52, 0.12, 0.24], [0.28, 0.52, 0.12, 0.22], [-1.15, 0.62, 0.11, 0.20]] as const) {
       const p = at(hillAt + s * da, d);
-      L.peaks.push({ ...p, r: fit(p, r0), h: h + r() * 0.05 });
+      L.peaks.push({ ...p, r: fit(p, r0), h: h + r() * 0.04 });
     }
     const a = at(hillAt - s * 0.62, 0.56);
     const b = at(hillAt + s * 0.55, 0.58);
@@ -299,7 +299,7 @@ export function layoutOf(kind: Terrain, seed: number): Layout {
     const c = at(hillAt, 0.6);
     const [tx, tz] = [-Math.sin(hillAt), Math.cos(hillAt)];
     const half = 0.4;
-    L.ridges.push({ a: { x: c.x - tx * half, z: c.z - tz * half }, b: { x: c.x + tx * half, z: c.z + tz * half }, w: 0.3, h: 0.3 + r() * 0.05 });
+    L.ridges.push({ a: { x: c.x - tx * half, z: c.z - tz * half }, b: { x: c.x + tx * half, z: c.z + tz * half }, w: 0.3, h: 0.24 + r() * 0.04 });
     L.spots.push({ ...at(hillAt + Math.PI - 0.55, 0.62), r: 0.26, h: 0.05 }, { ...at(hillAt + Math.PI + 0.6, 0.64), r: 0.22, h: 0.04 });
     L.spots.push({ ...at(hillAt + Math.PI, 0.6), r: 0.2, h: -0.022 });
     L.marks = {
@@ -1053,9 +1053,18 @@ function forest(L: Layout, ground: (x: number, z: number) => number, r: () => nu
       const along = dx * EYE.x + dz * EYE.z;
       return along > 0 && along < 0.32 && Math.abs(dx * EYE.z - dz * EYE.x) < 0.13;
     });
-  const ok = (x: number, z: number, room: number) =>
-    !inView(x, z) &&
-    Math.hypot(x, z) > 0.37 + room && nearestCorner(x, z) > 0.22 && hexDist(x, z) < INR - 0.16 && clear(x, z, room) && stands.every((s) => Math.hypot(s.x - x, s.z - z) > (s.r + room) * 0.62);
+  const ok = (x: number, z: number, room: number) => {
+    const h = ground(x, z);
+    const maxDist = z < -0.15 && h > 0.15 ? INR - 0.35 : INR - 0.16;
+    return (
+      !inView(x, z) &&
+      Math.hypot(x, z) > 0.37 + room &&
+      nearestCorner(x, z) > 0.22 &&
+      hexDist(x, z) < maxDist &&
+      clear(x, z, room) &&
+      stands.every((s) => Math.hypot(s.x - x, s.z - z) > (s.r + room) * 0.62)
+    );
+  };
 
   // The canopy.
   type Blob = { x: number; y: number; z: number; s: number; kind: "leaf" | "pine" | "bush" };
@@ -1069,24 +1078,28 @@ function forest(L: Layout, ground: (x: number, z: number) => number, r: () => nu
     const [x, z] = [Math.cos(a) * d, Math.sin(a) * d];
     const h = ground(x, z);
     if (r() > 0.1 + h * 4) continue;
-    const pine = h > 0.32 && r() < 0.6;
-    const size = (pine ? 0.075 : 0.065 + r() * 0.03) * (0.9 + Math.min(1, h * 2) * 0.3);
+    if (z < -0.18 && h > 0.14) continue;
+    const onCrest = h > 0.20 && z < -0.15;
+    const pine = h > 0.25 && r() < 0.6;
+    const size = (pine ? 0.07 : 0.06 + r() * 0.02) * (onCrest ? 0.5 : 0.9 + Math.min(1, h * 2) * 0.3);
     if (!ok(x, z, size)) continue;
     stands.push({ x, z, r: size });
     const y0 = BLOCK_H + h;
     if (pine) {
-      const th = size * 0.9;
+      const th = size * (onCrest ? 0.4 : 0.9);
       trunks.push({ m: mat(x, y0 + th / 2, z, size * 0.22, th, size * 0.22), c: BARK });
-      for (let t = 0; t < 4; t++) blobs.push({ x, y: y0 + th + t * size * 0.62, z, s: size * (0.55 + 0.75 * (1 - t / 4)), kind: "pine" });
+      for (let t = 0; t < (onCrest ? 2 : 4); t++) blobs.push({ x, y: y0 + th + t * size * 0.4, z, s: size * (0.55 + 0.75 * (1 - t / 4)), kind: "pine" });
       pines.push({ x, z, y: y0 + th, s: size });
     } else {
-      const th = size * 0.8;
+      const th = size * (onCrest ? 0.4 : 0.8);
       trunks.push({ m: mat(x, y0 + th / 2, z, size * 0.26, th, size * 0.26), c: BARK });
-      const n = 3 + Math.floor(r() * 4);
-      blobs.push({ x, y: y0 + th + size, z, s: size * 1.05, kind: "leaf" });
+      const n = onCrest ? 2 : 3 + Math.floor(r() * 4);
+      blobs.push({ x, y: y0 + th + size * 0.6, z, s: size * 0.75, kind: "leaf" });
       for (let i = 1; i < n; i++) {
         const a2 = r() * Math.PI * 2;
-        blobs.push({ x: x + Math.cos(a2) * size * 0.75, y: y0 + th + size * (0.6 + r() * 0.8), z: z + Math.sin(a2) * size * 0.75, s: size * (0.6 + r() * 0.3), kind: "leaf" });
+        const bz = z + Math.sin(a2) * size * 0.5;
+        if (onCrest && bz < z - 0.01) continue;
+        blobs.push({ x: x + Math.cos(a2) * size * 0.5, y: y0 + th + size * (0.4 + r() * 0.4), z: bz, s: size * (0.4 + r() * 0.3), kind: "leaf" });
       }
     }
   }
@@ -1731,20 +1744,20 @@ function pasture(L: Layout, ground: (x: number, z: number) => number, r: () => n
     gate.rotation.y = -Math.atan2(tz, tx);
   }
 
-  // The oak on the crest: a fat trunk and a big round crown of blobs.
+  // The oak on the crest: a fat trunk and a round crown of blobs.
   {
     const o = M.oak!;
     const y = Y(o.x, o.z);
-    const leaves: THREE.BufferGeometry[] = [part(cyl(0.7, 1, 10), "#6e4128", [o.x, y + 0.06, o.z], [0, 0, 0], [0.028, 0.12, 0.028])];
+    const leaves: THREE.BufferGeometry[] = [part(cyl(0.7, 1, 10), "#6e4128", [o.x, y + 0.045, o.z], [0, 0, 0], [0.024, 0.09, 0.024])];
     const LEAF = ["#3f8c38", "#58a443", "#7cbd4f"];
     for (let i = 0; i < 9; i++) {
       const a = (i / 9) * Math.PI * 2;
       const up = i % 3;
-      leaves.push(part(blobGeo(i + 20), LEAF[up]!, [o.x + Math.cos(a) * 0.07, y + 0.14 + up * 0.04, o.z + Math.sin(a) * 0.07], [0, a, 0], [0.07, 0.062, 0.07]));
+      leaves.push(part(blobGeo(i + 20), LEAF[up]!, [o.x + Math.cos(a) * 0.055, y + 0.11 + up * 0.03, o.z + Math.sin(a) * 0.055], [0, a, 0], [0.055, 0.05, 0.055]));
     }
-    leaves.push(part(blobGeo(33), LEAF[2]!, [o.x, y + 0.23, o.z], [0, 0, 0], [0.075, 0.062, 0.075]));
+    leaves.push(part(blobGeo(33), LEAF[2]!, [o.x, y + 0.17, o.z], [0, 0, 0], [0.06, 0.05, 0.06]));
     g.add(mesh(merge(leaves), cm));
-    stands.push({ x: o.x, z: o.z, r: 0.14 });
+    stands.push({ x: o.x, z: o.z, r: 0.12 });
   }
 
   // The shepherd's hut: green-planked walls, a curved red roof, wheels, a step to the door, a stove pipe and its smoke.

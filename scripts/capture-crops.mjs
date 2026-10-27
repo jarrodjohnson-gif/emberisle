@@ -11,6 +11,7 @@ const browser = await chromium.launch({
 
 try {
   mkdirSync("test-results/issue-1158", { recursive: true });
+  mkdirSync("docs/proofs/1158", { recursive: true });
   const context = await browser.newContext({ viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1 });
   const page = await context.newPage();
   await page.addInitScript(() => {
@@ -18,8 +19,8 @@ try {
     localStorage.setItem("emberisle-water", "simple");
   });
   await page.goto("http://127.0.0.1:18752");
-  await page.waitForFunction(() => window.__emberisle);
-  await page.getByRole("button", { name: "Four seats, one table", exact: true }).click();
+  await page.waitForFunction(() => typeof window.__emberisle?.getState().startHotseat === "function");
+  await page.evaluate(() => window.__emberisle.getState().startHotseat(4));
 
   for (const { seed, mode, pileIndex } of [
     { seed: 5, mode: "random", pileIndex: 2 },
@@ -60,7 +61,8 @@ try {
     };
 
     await page.screenshot({ path: `test-results/issue-1158/crop-${seed}-${mode}-pile${pileIndex}-${rect.kind}.png`, clip });
-    console.log(`Captured test-results/issue-1158/crop-${seed}-${mode}-pile${pileIndex}-${rect.kind}.png at`, clip);
+    await page.screenshot({ path: `docs/proofs/1158/after-crop-${seed}-${mode}-pile${pileIndex}-${rect.kind}.png`, clip });
+    console.log(`Captured docs/proofs/1158/after-crop-${seed}-${mode}-pile${pileIndex}-${rect.kind}.png at`, clip);
   }
 } finally {
   await browser?.close();
