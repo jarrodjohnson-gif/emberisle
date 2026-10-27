@@ -165,7 +165,8 @@ async function centred(page, label) {
   });
   for (const l of m.labels) {
     assert.ok(Math.abs(l.dx) <= 1 && Math.abs(l.dy) <= 1, `${label}: "${l.name}" label centred in its button (dx ${l.dx.toFixed(2)}, dy ${l.dy.toFixed(2)})`);
-    if (!l.icon) assert.ok(l.padL >= 8 && l.padR >= 8, `${label}: "${l.name}" has at least 8 px between text and button edge (${l.padL.toFixed(1)} / ${l.padR.toFixed(1)}); header ${JSON.stringify(m.headerDiagnostic)}`);
+    if (!l.icon && (l.padL < 8 || l.padR < 8)) console.error(`header diagnostic: ${JSON.stringify(m.headerDiagnostic)}`);
+    if (!l.icon) assert.ok(l.padL >= 8 && l.padR >= 8, `${label}: "${l.name}" has at least 8 px between text and button edge (${l.padL.toFixed(1)} / ${l.padR.toFixed(1)})`);
   }
   const filled = m.seats.filter(s => s.hasStatus);
   for (const s of m.seats) {
