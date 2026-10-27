@@ -138,6 +138,23 @@ for (const [w, h, touch] of [
       return out;
     };
   });
+  // Pin createGame's synchronous seed draw so board terrain layout and legal corner positions are deterministic across runs.
+  await page.waitForFunction(() => typeof window.__emberisle?.getState().startHotseat === "function", null, { timeout: STEP_MS });
+  await page.evaluate(() => {
+    const store = window.__emberisle;
+    const start = store.getState().startHotseat;
+    store.setState({
+      startHotseat(count) {
+        const random = Math.random;
+        Math.random = () => 830 / 1e9;
+        try {
+          start(count);
+        } finally {
+          Math.random = random;
+        }
+      },
+    });
+  });
   await page.getByRole("button", { name: "Four seats, one table" }).click();
   await page.waitForFunction(() => window.__emberisle?.getState().state && window.__isle.lastState, null, { timeout: STEP_MS });
   await page.evaluate(() => {
