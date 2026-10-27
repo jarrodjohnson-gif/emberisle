@@ -19,6 +19,7 @@ const failures = {
   "tabs-prove-4": `${at}FAIL timed out: start\n${at}##[error]Process completed with exit code 1.`,
   "board-touch-prove": `${at}AssertionError [ERR_ASSERTION]: setup: a tap on a Pasture hex plays nothing\n${at}+ actual - expected`,
   "flash-prove": `${at}flash-prove failed: page.waitForFunction: Timeout 120000ms exceeded.\n${at}    at settled (/home/runner/work/emberisle/emberisle/scripts/flash-prove.mjs:131:8)`,
+  "lobby-layout-prove": `${at}AssertionError [ERR_ASSERTION]: 375x667: "Copy" has at least 8 px between text and button edge (7.3 / 7.2)`,
 };
 assert.deepEqual(flakes.map((f) => f.id).sort(), Object.keys(failures).sort());
 for (const f of flakes) {
@@ -41,6 +42,10 @@ const notFlake = {
   "tabs-prove-4": [`${at}FAIL timed out: start the game\n`, `${at}FAIL timed out: tab B notices the drop\n`],
   "board-touch-prove": [`${at}AssertionError [ERR_ASSERTION]: a one-finger drag from a Pasture hex plays nothing\n`],
   "flash-prove": [`${at}flash-prove failed: page.waitForFunction: Timeout 120000ms exceeded.\n${at}    at pieceProof (/x/scripts/flash-prove.mjs:216:9)`],
+  "lobby-layout-prove": [
+    `${at}AssertionError [ERR_ASSERTION]: 375x667: "Copy" has at least 8 px between text and button edge (not a number)`,
+    `${at}AssertionError [ERR_ASSERTION]: 320x568: "Copy" has at least 8 px between text and button edge (7.3 / 7.2)`,
+  ],
 };
 for (const [id, lines] of Object.entries(notFlake)) {
   for (const line of lines) assert.equal(flakes.find((f) => f.id === id).regex.test(line), false, `${id} signature is not ${JSON.stringify(line)}`);
