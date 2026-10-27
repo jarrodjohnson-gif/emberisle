@@ -160,10 +160,31 @@ try {
   // Wait on native playback progress itself, not delivery of a timeupdate event. CI can
   // delay/coalesce those events even while the real media element is already advancing.
   // Keep the timeout bounded and leave the playback assertions below in place.
+  try {
   await Promise.all(tabs.map(t => t.page.waitForFunction(files => files.every(file => {
     return window.audios.some((audio, id) => new URL(audio.src).pathname.endsWith('/' + file) &&
       audio.currentTime > (window.mediaTimeBaseline[id] ?? 0));
   }), files, { timeout: 8000, polling: 50 })));
+  } catch (originalError) {
+    try {
+      const snapshots = tabs.map(t => ({ name: t.name, status: 'timeout' }));
+      const attempts = tabs.map((t, index) => t.page.evaluate(files => ({
+        documentIdentity: window.documentIdentity,
+        audio: window.audios.map((audio, id) => ({ id, file: new URL(audio.src).pathname.split('/').at(-1),
+          error: audio.error?.code ?? null, readyState: audio.readyState, currentTime: audio.currentTime,
+          baseline: window.mediaTimeBaseline[id] ?? 0, paused: audio.paused, ended: audio.ended }))
+          .filter(audio => files.includes(audio.file)),
+        recentMediaEvents: window.mediaEvents.slice(-50).map(({ event, id, file, time, error }) => ({ event, id, file, time, error })),
+        hostStateReceived: window.hostFrames.some(frame => frame.type === 'state'),
+        bongReceived: window.game.getState().chat.some(line => line.sound === 'bong'),
+      }), files).then(value => { snapshots[index] = { name: t.name, status: 'fulfilled', ...value }; },
+        () => { snapshots[index] = { name: t.name, status: 'rejected' }; }));
+      await Promise.race([Promise.allSettled(attempts), sleep(1000)]);
+      for (const snapshot of snapshots) console.log('RECOVERY_WAIT_FAILURE', JSON.stringify(snapshot));
+    } finally {
+      throw originalError;
+    }
+  }
   const failures = [];
   for (const t of tabs) {
     const result = await t.page.evaluate(files => ({ identity: window.documentIdentity,
