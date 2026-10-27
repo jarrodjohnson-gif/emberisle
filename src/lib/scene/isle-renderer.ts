@@ -326,6 +326,9 @@ export class IsleRenderer {
       this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: "high-performance" });
     } catch (err) {
       this.safeProbe.remove();
+      if (err && typeof err === "object") {
+        (err as { isWebGL?: boolean }).isWebGL = true;
+      }
       throw err;
     }
 
@@ -479,6 +482,11 @@ export class IsleRenderer {
     this.renderer.setAnimationLoop(this.tick);
     } catch (err) {
       this.dispose();
+      // In dev, forceContextLoss followed by a new WebGLRenderer on the same canvas throws
+      // TypeError ... 'precision' (StrictMode's second mount hits it, which is why a second,
+      // misleading error may appear). Production is unaffected because remounts get a new canvas.
+      // It also means a transient constructor failure cannot recover on that canvas without a fresh element.
+      this.renderer?.forceContextLoss?.();
       throw err;
     }
   }
@@ -828,6 +836,7 @@ export class IsleRenderer {
     this.controls?.dispose?.();
     this.orbit?.dispose?.();
     this.calmMq?.removeEventListener("change", this.onCalm);
+    this.clock.dispose();
     window.removeEventListener("resize", this.resize);
     window.visualViewport?.removeEventListener("resize", this.onViewport);
     window.removeEventListener("keydown", this.onKey);
