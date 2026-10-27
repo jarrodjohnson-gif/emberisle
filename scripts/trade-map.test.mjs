@@ -93,7 +93,7 @@ try {
     await panel.getByRole("button", { name: "Fewer Stone to want", exact: true }).click();
     assert.equal(await panel.getByTestId("trade-give-timber").getByRole("status").textContent(), "2");
     assert.equal(await panel.getByTestId("trade-want-wool").getByRole("status").textContent(), "1");
-    assert.equal(await panel.getByTestId("trade-hint").textContent(), "Bank 4:1: give 4 wood, get 1 sheep now.");
+    assert.equal(await panel.getByTestId("trade-hint").textContent(), "You give 4 wood. You get 1 sheep.");
     assert.match(await preview.textContent(), /You give: 2 wood.*You get: 1 sheep/, "Bank kind derivation preserves the exact shared Table quantities");
     assert.equal(await panel.getByTestId("trade-give-timber").getByTestId("trade-owned").textContent(), "Have 6");
     const layout = await panel.evaluate((el) => {
@@ -158,7 +158,7 @@ try {
     await more("wool", "want").click();
     await more("wool", "want").click();
     assert(await bank().isEnabled(), "one shared give kind and get kind enable an exact one-exchange quote despite Table quantities");
-    assert.equal(await panel.getByTestId("trade-hint").textContent(), `${rate === 4 ? "Bank" : "Dock"} ${rate}:1: give ${rate} stone, get 1 sheep now.`);
+    assert.equal(await panel.getByTestId("trade-hint").textContent(), `You give ${rate} stone. You get 1 sheep.`);
     await bank().click();
     const actual = await settled();
     assert.equal(actual.hands[0].ore, 6 - rate);
