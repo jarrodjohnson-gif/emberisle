@@ -109,7 +109,8 @@
   .lobby-layout { inset: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom)); width: auto; }
   .lobby-layout .lobby-layout-cover { padding: 12px; }
   .lobby-header > p { font-size: 24px; line-height: 32px; }
-  .lobby-copy-controls { min-width: 0; }
+  .lobby-header > p { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .lobby-copy-controls { min-width: 0; flex-shrink: 0; }
   .lobby-copy-controls > button { padding: 0 8px; flex-shrink: 1; white-space: normal; }
 }
 @media (max-height: 600px) and (orientation: landscape) {
@@ -148,7 +149,7 @@
 .lobby-player:has(> .lobby-bubble [data-seat-bubble="sound"]) { grid-template-columns: 12px minmax(40px, 1fr) minmax(0, max-content); }
 @media (max-width: 360px) and (orientation: portrait) {
   .lobby-header > p { font-size: 18px; letter-spacing: 0; min-width: 0; }
-  .lobby-copy-controls { min-width: 0; }
+  .lobby-copy-controls { min-width: 0; flex-shrink: 1; }
   .lobby-copy-controls > button { flex-shrink: 1; min-width: 44px; padding: 0 7px; font-size: 12px !important; white-space: normal; line-height: 16px; }
   .lobby-chat-panel [data-testid="emoji-row"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .lobby-layout .lobby-layout-cover { grid-template-rows: 44px 44px 96px minmax(218px, 1fr) 96px; padding: 8px; }
