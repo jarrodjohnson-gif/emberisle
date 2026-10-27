@@ -80,7 +80,6 @@ export function TradePanel() {
   const g = giving.length === 1 ? giving[0]! : null;
   const w = wanting.length === 1 ? wanting[0]! : null;
   const rate = g ? harborRate(state, me.id, g) : null;
-  const bestRate = rate ?? Math.min(...RESOURCES.map((r) => harborRate(state, me.id, r)));
   const bankLabel = rate === null ? "Bank" : rate === 4 ? "Bank 4:1" : `Dock ${rate}:1`;
   const bankWhy = !g || !w || g === w
     ? "Choose one kind on each side for a bank or dock exchange."
@@ -89,7 +88,7 @@ export function TradePanel() {
       : state.bank[w] <= 0
         ? `The bank has no ${RESOURCE_LABEL[w].toLowerCase()}.`
         : null;
-  const bankHint = bankWhy ?? `${bankLabel}: give ${rate} ${RESOURCE_LABEL[g!].toLowerCase()}, get 1 ${RESOURCE_LABEL[w!].toLowerCase()} now.`;
+  const bankHint = bankWhy ?? `You give ${rate} ${RESOURCE_LABEL[g!].toLowerCase()}. You get 1 ${RESOURCE_LABEL[w!].toLowerCase()}.`;
 
   const bank = () => {
     if (!g || !w || bankWhy) return;
@@ -138,12 +137,6 @@ export function TradePanel() {
         </div>
 
         <footer className="trade-composer-footer">
-          <div className="trade-route trade-bank-box" role="group" aria-labelledby="trade-bank-title">
-            <h3 id="trade-bank-title">Bank &amp; docks · your best rate {bestRate}:1</h3>
-            <p className="trade-exact-preview" id="trade-bank-quote" data-testid="trade-hint" aria-live="polite">{bankHint}</p>
-            {w ? <p className="sr-only" id="trade-bank-stock" aria-live="polite">Bank stock: {state.bank[w]} {RESOURCE_LABEL[w].toLowerCase()}.</p> : null}
-            <Button variant="secondary" className="trade-bank-action h-11" aria-describedby={w ? "trade-bank-quote trade-bank-stock" : "trade-bank-quote"} disabled={bankWhy !== null} onClick={bank}>{bankLabel}</Button>
-          </div>
           {mode !== "hotseat" ? (
             <div className="trade-route">
               <h3>Table offer</h3>
@@ -154,6 +147,12 @@ export function TradePanel() {
               <Button className="h-11 w-full" disabled={!asking} onClick={() => askTable(give, want)}>Ask the table</Button>
             </div>
           ) : null}
+          <div className="trade-route trade-bank-box" role="group" aria-labelledby="trade-bank-title">
+            <h3 id="trade-bank-title">Bank &amp; docks · one exchange</h3>
+            <p className="trade-exact-preview" id="trade-bank-quote" data-testid="trade-hint" aria-live="polite">{bankHint}</p>
+            {w ? <p className="trade-bank-stock" id="trade-bank-stock" aria-live="polite">Bank stock: {state.bank[w]} {RESOURCE_LABEL[w].toLowerCase()}.</p> : null}
+            <Button variant="secondary" className="trade-bank-action h-11 w-full" aria-describedby={w ? "trade-bank-quote trade-bank-stock" : "trade-bank-quote"} disabled={bankWhy !== null} onClick={bank}>{bankLabel}</Button>
+          </div>
         </footer>
       </section>
     </div>
