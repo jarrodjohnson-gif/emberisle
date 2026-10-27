@@ -22,3 +22,14 @@ A uses a "Table" tab and a "Bank & docks" tab, each with its own goods picker. D
 ## Open
 
 Jarrod said on 2026-10-27 06:39 UTC that PR #883 "is not what we approved: one with colors, a better structure". Compare this B picture with the PR's own pictures and flag every difference in the PR body before asking for review. The owner decides on the final look. These are quick mockups: the icons and type are stand-ins.
+
+## Owner's final direction, 2026-10-27 (screenshots from Jarrod)
+
+Jarrod sent three screenshots and said: the first two are "it" (the version he approved), "except with the third as a better layout for bank trading". He also said the tall-rectangle cards and the tapping are "kinda weird" in the current build. Pictures in [`owner-approved-2026-10-27/`](owner-approved-2026-10-27/):
+
+1. `1-coloured-cards-phone-upright.png` and `2-coloured-cards-phone-sideways.png`: **use these for the goods cards and the overall look.** Each card shows the good's icon and name in its own colour (Wood green, Brick terracotta, Wheat gold, Stone blue-grey; an unavailable good is pale grey), "Have N", a big count and a small plus. The cards are short and squarish, not tall rectangles. The Bank box sits under the two rows with the line "Choose one kind on each side for a bank or dock exchange" and a "Bank" button; "Table offer" and a wide "Ask the table" button below. On a sideways phone the Bank box is on the left and the offer line and button on the right.
+2. `3-bank-and-footer-layout-to-use.png`: **use this footer layout for bank trading.** Two columns under the cards: on the left "Table offer" (You give / You get) with the dark "Ask the table" button under it; on the right a "Bank & docks · one exchange" box that says exactly what the exchange is ("You give 4 wood. You get 1 stone."), shows "Bank stock: 11 stone.", and has one "Bank 4:1" button. Do NOT copy this picture's tall rectangle cards or its dark-green single-colour icons.
+
+So the target is: coloured, shorter goods cards (pictures 1 and 2) plus the two-column Table offer and Bank box footer (picture 3), in one window with no tabs.
+
+**Open questions for Jarrod (post as `Question:`, do not guess):** how a player removes a good once added (picture 1 shows only a plus; picture 3 shows a minus under the count); whether tapping the count or card again should remove one.
