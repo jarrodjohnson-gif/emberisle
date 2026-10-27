@@ -1,0 +1,62 @@
+[
+  {
+    "source": "/workspace/905-lobby-compare/candidate-after.json",
+    "file": "raw/candidate-after.json.gz",
+    "sha256": "dcad9e8116c7351942dfb00af7e9d50857cf7e38c4811ac12e32adc83b3cafd8",
+    "bytes": 26271
+  },
+  {
+    "source": "/workspace/905-lobby-compare/candidate-before.json",
+    "file": "raw/candidate-before.json.gz",
+    "sha256": "dcad9e8116c7351942dfb00af7e9d50857cf7e38c4811ac12e32adc83b3cafd8",
+    "bytes": 26271
+  },
+  {
+    "source": "/workspace/905-lobby-compare/candidate-run.log",
+    "file": "raw/candidate-run.log.gz",
+    "sha256": "e8c67bb36f7a6f115e149f3cc843577cef8b3f2c4c1fb2363661a9c5be616d2c",
+    "bytes": 717
+  },
+  {
+    "source": "/workspace/905-lobby-compare/code-width/records.json",
+    "file": "raw/code-width/records.json.gz",
+    "sha256": "1240709f231dd2c66e846190058f9453c81d5a3fb9333812c68603ea5d27ed55",
+    "bytes": 9643
+  },
+  {
+    "source": "/workspace/905-lobby-compare/code-width.log",
+    "file": "raw/code-width.log.gz",
+    "sha256": "2422fa0bcb8c9b37b4a6322b569e4da273c4548dc45493c15d1faec8c54fe301",
+    "bytes": 6536
+  },
+  {
+    "source": "/workspace/905-lobby-compare/main-after.json",
+    "file": "raw/main-after.json.gz",
+    "sha256": "62276367686685e4ff2e6689e82bcc4e4f611e8686d6cf366af763349f0820ce",
+    "bytes": 26167
+  },
+  {
+    "source": "/workspace/905-lobby-compare/main-before.json",
+    "file": "raw/main-before.json.gz",
+    "sha256": "62276367686685e4ff2e6689e82bcc4e4f611e8686d6cf366af763349f0820ce",
+    "bytes": 26167
+  },
+  {
+    "source": "/workspace/905-lobby-compare/main-run.log",
+    "file": "raw/main-run.log.gz",
+    "sha256": "e8c67bb36f7a6f115e149f3cc843577cef8b3f2c4c1fb2363661a9c5be616d2c",
+    "bytes": 717
+  },
+  {
+    "source": "/workspace/905-lobby-compare/results.json",
+    "file": "raw/results.json.gz",
+    "sha256": "21b628996cf0f1029a9d72b56ea95a29ccc4530ba006066c9996c4b0e2ce2db7",
+    "bytes": 336
+  },
+  {
+    "source": "/workspace/905-lobby-code-width.mjs",
+    "file": "raw/905-lobby-code-width.mjs.gz",
+    "sha256": "cde39c50c13c1fb3669f3358de4d2411adf30ead0680518ce7fd1a048c0ab620",
+    "bytes": 4029
+  }
+]
