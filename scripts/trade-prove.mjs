@@ -490,6 +490,9 @@ try {
   await sendTableEvent({ type: "tradeOffer", tradeId: "please-repeat-within-three-seconds", from: vs[tabs.indexOf(B)].you, give: { clay: 1 }, want: { wool: 1 }, seconds: 20 });
   await sleep(250);
   assert.deepEqual(await Promise.all(tabs.map(issueTradeSounds)), [[], [], []], "a repeat ask for the same resource within 3 s does not replay the please clip");
+  await sleep(3100);
+  clip = await hearOffer("please-repeat-after-three-seconds", { clay: 1 }, { wool: 1 }, vs[tabs.indexOf(B)].you);
+  for (const got of clip) assert.deepEqual(got, ["sb_sheep_please.mp3@1"], "the same sender's ask plays again after 3 s");
   clip = await hearOffer("new-plain-offer", { grain: 1 }, { ore: 1 });
   assert.deepEqual(clip[tabs.indexOf(A)], [], "the asker does not hear the plain offer chime");
   for (const t of [B, C]) assert.deepEqual(clip[tabs.indexOf(t)], ["trade_offer.wav@1"], "other seats hear the plain offer chime");
