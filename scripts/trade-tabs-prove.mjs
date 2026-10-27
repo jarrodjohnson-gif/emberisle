@@ -188,7 +188,7 @@ async function approvedBLayout(page, tag, route) {
   assert.equal(new Set(geometry.colours.map((c) => c.icon)).size, 5, `${tag} ${route}: all five goods have distinct symbol colours`);
   assert.equal(new Set(geometry.colours.map((c) => c.name)).size, 5, `${tag} ${route}: all five goods have distinct name colours`);
   assert.ok(geometry.titleWeight >= 700, `${tag} ${route}: Trade title is bold`);
-  if (short) for (const row of geometry.rows) assert.ok(row.top >= geometry.goods.top - 0.5 && row.bottom <= geometry.goods.bottom + 0.5,
+  for (const row of geometry.rows) assert.ok(row.top >= geometry.goods.top - 0.5 && row.bottom <= geometry.goods.bottom + 0.5,
     `${tag} ${route}: both goods rows remain visible without scrolling ${JSON.stringify(geometry)}`);
   console.log(`approved B layout ${tag} ${route}: ${JSON.stringify(geometry)}`);
 }
