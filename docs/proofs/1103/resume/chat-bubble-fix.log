@@ -1,0 +1,16 @@
+
+> chat-prove
+> node scripts/chat-prove.mjs
+
+<checkout>/node_modules/vite/dist/node/chunks/node.js:14510
+			throw new Error(`Port ${port} is already in use`);
+			      ^
+
+Error: Port 8094 is already in use
+    at httpServerStart (<checkout>/node_modules/vite/dist/node/chunks/node.js:14510:10)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async startServer (<checkout>/node_modules/vite/dist/node/chunks/node.js:24946:30)
+    at async Object.listen (<checkout>/node_modules/vite/dist/node/chunks/node.js:24760:4)
+    at async <checkout>/scripts/chat-prove.mjs:44:1
+
+Node.js v26.12.0

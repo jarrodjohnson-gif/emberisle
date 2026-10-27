@@ -49,6 +49,7 @@ const FILES = {
   // End-of-game music: starts a moment after the win or loss sting, stops when the end screen is left or a new game starts.
   end_music: "end_music.mp3",
   board_bong: "bong_001.wav",
+  // Keep game sound mappings from store.ts and mixer coverage after removing their soundboard chips (#1131).
   board_plop: "plop.wav",
   board_pluck: "pluck_001.wav",
   // #667: a tap on a hex that places nothing. Pasture uses a short baa; the rest are synthesised (make-sounds.mjs).
@@ -66,11 +67,9 @@ export const SOUNDBOARD = [
   { id: "sb_win_reaction", label: "GG!", clip: "sb_win_reaction" },
   { id: "sb_airhorn", label: "Airhorn", clip: "sb_airhorn" },
   { id: "sb_quit_touchin", label: "Quit touchin' me", clip: "sb_quit_touchin" },
-  { id: "sb_only_wood", label: "Only wood?", clip: "sb_only_wood" },
+  { id: "sb_only_wood", label: "Wood please", clip: "sb_only_wood" },
   { id: "sb_perfect", label: "Perfect", clip: "sb_perfect" },
   { id: "bong", label: "Bong", clip: "board_bong" },
-  { id: "plop", label: "Plop", clip: "board_plop" },
-  { id: "pluck", label: "Pluck", clip: "board_pluck" },
 ] as const satisfies readonly { id: string; label: string; clip: keyof typeof FILES }[];
 
 // Levels live in the files, not here (#1073, docs/design/sound.md Decision 3): every table effect, every reaction and soundboard

@@ -31,7 +31,7 @@ Three or four players. First to 10 points wins. One island of 19 hexes.
 
 ### Land
 
-Each hex is forest, hills, pasture, fields, mountains, or the wastes. A token from 2 to 12 sits on every hex except the wastes. There is no 7 token. The wastes produce nothing.
+Each hex is forest, hills, pasture, fields, mountains, or the wastes. A token from 2 to 12 sits on every hex except the wastes. There is no 7 token. The wastes produce nothing. New boards place the tokens in the official spiral order, starting at a seeded corner and skipping the wastes. The generator also supports a random deal that keeps 6 and 8 apart.
 
 ### Pieces
 
@@ -370,7 +370,7 @@ WebSocket JSON. The client sends intents. The server answers with `state` or `er
 | `{type:"rob", hexId, stealFrom}` `{type:"discard", cards}` | After a 7 |
 | `{type:"tradeBank", give, take}` `{type:"tradeAsk", give, want}` `{type:"tradeAnswer", tradeId, yes}` | Trades. A `tradeAsk` is refused to the asker alone, with "Bad trade." (`give` or `want` is not a bag of known resources), "You lack those goods." or "Offer something." (both bags empty). A new ask closes the open one with `tradeClosed`. |
 | `{type:"chat", text}` | One chat line, lobby or game (200 chars, rate-limited) |
-| `{type:"sound", id}` | A soundboard tap over the chat path: `id` is one of `robbed_fah` ("Fah"), `sb_wololo` ("Wololo"), `sb_win_reaction` ("GG!"), `sb_airhorn` ("Airhorn"), `sb_quit_touchin` ("Quit touchin' me"), `sb_only_wood` ("Only wood?"), `sb_perfect` ("Perfect"), `sb_plump_sheep` ("Plump sheep"), `sb_nice_sheep` ("Nice sheep"), `sb_sheep_please` ("Sheep please"), `sb_grain_please` ("Grain please"), `sb_brick_please` ("Brick please"), `sb_real_badman` ("Real badman"), `sb_gong` ("Gong"), `bong`, `plop`, `pluck` (the clips are in public/audio; the host relays only a whitelisted id). Same chat bucket as `chat`, plus one tap per seat every `SOUND_MS` (default 3000); a seat's renames are paced the same way by `RENAME_MS` (default 2000, "Slow down."). Errors: "Unknown sound.", "Slow down.". Every seat gets `chat` with `sound:id` and `text:"🔊 Label"` (shown as the chip "Ember 🔊 Fah"; kept in the room's chat history, which a late joiner sees without hearing it); each page plays the clip unless that listener has muted. |
+| `{type:"sound", id}` | A soundboard tap over the chat path: `id` is one of `robbed_fah` ("Fah"), `sb_wololo` ("Wololo"), `sb_win_reaction` ("GG!"), `sb_airhorn` ("Airhorn"), `sb_quit_touchin` ("Quit touchin' me"), `sb_only_wood` ("Wood please"), `sb_perfect` ("Perfect"), `sb_plump_sheep` ("Plump sheep"), `sb_nice_sheep` ("Nice sheep"), `sb_sheep_please` ("Sheep please"), `sb_grain_please` ("Grain please"), `sb_brick_please` ("Brick please"), `sb_real_badman` ("Real badman"), `sb_gong` ("Gong"), and `bong` (the clips are in public/audio; the host relays only a whitelisted id). Plop and Pluck remain game sounds, not soundboard ids. Same chat bucket as `chat`, plus one tap per seat every `SOUND_MS` (default 3000); a seat's renames are paced the same way by `RENAME_MS` (default 2000, "Slow down."). Errors: "Unknown sound.", "Slow down.". Every seat gets `chat` with `sound:id` and `text:"🔊 Label"` (shown as the chip "Ember 🔊 Fah"; kept in the room's chat history, which a late joiner sees without hearing it); each page plays the clip unless that listener has muted. |
 | `{type:"react", emote, to}` | A reaction image, `to` a seat or player id or omitted |
 
 | Host → client | Meaning |
