@@ -31,7 +31,7 @@ Three or four players. First to 10 points wins. One island of 19 hexes.
 
 ### Land
 
-Each hex is forest, hills, pasture, fields, mountains, or the wastes. A token from 2 to 12 sits on every hex except the wastes. There is no 7 token. The wastes produce nothing.
+Each hex is forest, hills, pasture, fields, mountains, or the wastes. A token from 2 to 12 sits on every hex except the wastes. There is no 7 token. The wastes produce nothing. New boards place the tokens in the official spiral order, starting at a seeded corner and skipping the wastes. The generator also supports a random deal that keeps 6 and 8 apart.
 
 ### Pieces
 
