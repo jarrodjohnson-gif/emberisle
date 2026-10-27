@@ -270,9 +270,9 @@ try {
     results.push({ viewport: `${width}x${height}`, ...data });
     if (width === 375) {
       await centred(page, `${width}x${height}`);
-      await page.getByTestId("table-code").evaluate(el => { el.textContent = "WWWW"; });
-      await centred(page, `${width}x${height} wide code`);
-      await page.getByTestId("table-code").evaluate((el, value) => { el.textContent = value; }, code);
+      await page.getByTestId("table-code").evaluate(el => { el.textContent = "WWWW"; el.style.fontSize = "32px"; });
+      await centred(page, `${width}x${height} wide-font stress`);
+      await page.getByTestId("table-code").evaluate((el, value) => { el.textContent = value; el.style.fontSize = ""; }, code);
     }
     await page.getByTestId("emoji-row").locator("button").first().click();
     await guest.getByTestId("react-line").waitFor();
