@@ -161,7 +161,7 @@ async function approvedBLayout(page, tag, route) {
   const geometry = await panelFor(page).evaluate((element) => {
     const rect = (node) => {
       const b = node.getBoundingClientRect();
-      return { left: b.left, right: b.right, top: b.top, bottom: b.bottom, width: b.width };
+      return { left: b.left, right: b.right, top: b.top, bottom: b.bottom, width: b.width, height: b.height };
     };
     const bank = element.querySelector(".trade-bank-box");
     const table = element.querySelector('[data-testid="trade-player-preview"]').closest(".trade-route");
@@ -184,6 +184,7 @@ async function approvedBLayout(page, tag, route) {
       bankAction: rect(bank.querySelector("button")), quote: rect(bank.querySelector('[data-testid="trade-hint"]')),
       goods: rect(element.querySelector(".trade-composer-scroll")),
       rows: [rect(give), rect(element.querySelector('[data-testid="trade-want-row"]'))],
+      unselectedCards: [...element.querySelectorAll(".trade-resource:not([data-selected])")].map(rect),
       titleWeight: Number.parseInt(getComputedStyle(element.querySelector("h2")).fontWeight), colours,
     };
   });
@@ -206,6 +207,11 @@ async function approvedBLayout(page, tag, route) {
   assert.ok(geometry.titleWeight >= 700, `${tag} ${route}: Trade title is bold`);
   for (const row of geometry.rows) assert.ok(row.top >= geometry.goods.top - 0.5 && row.bottom <= geometry.goods.bottom + 0.5,
     `${tag} ${route}: both goods rows remain visible without scrolling ${JSON.stringify(geometry)}`);
+  for (const card of geometry.unselectedCards) assert.ok(card.height <= (page.viewportSize().height <= 480 ? 90 : 104),
+    `${tag} ${route}: unselected cards retain the final owner's compact height ${JSON.stringify(card)}`);
+  const stock = panelFor(page).locator("#trade-bank-stock");
+  if (await stock.count()) assert.equal(await stock.isVisible(), true, `${tag} ${route}: live Bank stock is visible as well as described`);
+  if (page.viewportSize().height > 480) assert.equal(await panelFor(page).locator("#trade-bank-title").textContent(), "Bank & docks · one exchange", `${tag} ${route}: final owner Bank heading`);
   console.log(`approved B layout ${tag} ${route}: ${JSON.stringify(geometry)}`);
 }
 
