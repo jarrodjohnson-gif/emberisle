@@ -212,7 +212,7 @@ export function play(name: SoundName, volume = 1) {
 let lastTradePlease = "";
 let lastTradePleaseAt = 0;
 
-export function playTradePlease(from: string, want: { timber?: number; wool?: number; grain?: number; clay?: number }) {
+export function playTradePlease(cue: typeof play, from: string, want: { timber?: number; wool?: number; grain?: number; clay?: number }) {
   const requested = Object.entries(want).filter(([, count]) => (count ?? 0) > 0);
   if (requested.length !== 1) return false;
   const resource = requested[0][0];
@@ -223,7 +223,7 @@ export function playTradePlease(from: string, want: { timber?: number; wool?: nu
   if (key !== lastTradePlease || now - lastTradePleaseAt >= 3000) {
     lastTradePlease = key;
     lastTradePleaseAt = now;
-    play(clip);
+    cue(clip);
   }
   return true;
 }
