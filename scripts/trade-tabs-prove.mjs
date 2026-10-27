@@ -394,6 +394,21 @@ async function tableAndRoutes(page, tag, motion) {
   assert.equal(await panelFor(page).getByTestId("trade-give-timber").getByTestId("trade-owned").textContent(), "Have 6", `${tag}: owned count comes from the live hand`);
   if (motion === "reduce") assert.equal(await panelFor(page).getByTestId("trade-give-timber").getByTestId("trade-selection-motion").evaluate((element) => element.getAnimations().length), 0, `${tag}: selected quantity does not animate under reduced motion`);
   await layout(page, tag, "table");
+  if (page.viewportSize().height <= 480) {
+    const mixedPreview = panelFor(page).getByTestId("trade-player-preview");
+    const originalFont = await mixedPreview.evaluate((element) => element.style.fontFamily);
+    try {
+      await mixedPreview.evaluate((element) => { element.style.fontFamily = "monospace"; });
+      const receipt = await mixedPreview.evaluate((element) => ({
+        height: element.getBoundingClientRect().height,
+        lineHeight: Number.parseFloat(getComputedStyle(element).lineHeight),
+      }));
+      assert.ok(receipt.height >= 2 * receipt.lineHeight, `${tag}: controlled mixed receipt wraps to at least two lines`);
+      await layout(page, `${tag}-wrapped-receipt`, "table");
+    } finally {
+      await mixedPreview.evaluate((element, font) => { element.style.fontFamily = font; }, originalFont);
+    }
+  }
   const before = await snapshot(page);
   assert.equal(await bankFor(page).isVisible(), true, `${tag}: mixed table bags retain the compact Bank action`);
   assert.equal(await bankFor(page).isDisabled(), true, `${tag}: mixed bags cannot settle at Bank`);
