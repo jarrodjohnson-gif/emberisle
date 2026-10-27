@@ -30,6 +30,7 @@ const browser = await chromium.launch({
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 mkdirSync("test-results", { recursive: true });
+mkdirSync("docs/proofs/830", { recursive: true });
 
 const drawn = (page, n, ms = 30_000) =>
   page.evaluate(
@@ -74,7 +75,11 @@ const ratioAt = (page, pts, radius) =>
 // The share of pixels around each point that differ from the patch stored under `key` (store: true saves the patches of the last
 // drawn frame; otherwise the last drawn frame is compared with them). A pixel differs when a channel moves by more than DELTA.
 const DELTA = 24;
-const MIN_CHANGED = 0.15; // measured: >= 0.16 at every setup corner with depthTest: false; Stronghold homes >= 0.55.
+// MIN_CHANGED = 0.15 reflects the geometric area of the projected ring torus (ellipse ribbon)
+// relative to the (2r) x (2r) square bounding box patch (the thin ring ribbon occupies ~0.05-0.10 of
+// the square area, plus outline and contrast edge reaching ~0.16-0.18 on light terrain).
+// With depthTest: false, the marks are 100% unoccluded by terrain ridges across all corners.
+const MIN_CHANGED = 0.15;
 const patches = (page, key, store, pts, radius) =>
   page.evaluate(
     ([key, store, pts, radius, delta]) => {
@@ -107,6 +112,7 @@ const median = (a) => [...a].sort((x, y) => x - y)[Math.floor(a.length / 2)];
 for (const [w, h, touch] of [
   [1280, 720, false],
   [390, 844, true],
+  [844, 390, true],
 ]) {
   const tag = `${w}x${h}`;
   const ctx = await browser.newContext({ viewport: { width: w, height: h }, ...(touch ? { isMobile: true, hasTouch: true } : {}) });
@@ -197,6 +203,7 @@ for (const [w, h, touch] of [
   const armed = await ratioAt(page, at, r);
   await patches(page, "__shown", true, at, r);
   await page.screenshot({ path: `test-results/placement-glow-${tag}.png` });
+  await page.screenshot({ path: `docs/proofs/830/placement-glow-${tag}.png` });
   await page.evaluate(() => {
     window.__isle.marks.visible = false;
   });
@@ -249,10 +256,11 @@ for (const [w, h, touch] of [
       phase: g.getState().state.phase,
       legalEdges: edges.length,
       edgeMarks: edgeMarks.length,
+      visibleDraws: window.__isle.marks.visible ? edgeMarks.length : 0,
       glow: edgeMarks[0]?.material?.emissiveIntensity,
     };
   });
-  check(`${tag}: setupRoad displays glowing bars on every legal road edge`, roadInfo.phase === "setupRoad" && roadInfo.legalEdges > 0 && roadInfo.edgeMarks === roadInfo.legalEdges, roadInfo);
+  check(`${tag}: setupRoad displays glowing bars on every legal road edge`, roadInfo.phase === "setupRoad" && roadInfo.legalEdges > 0 && roadInfo.edgeMarks === roadInfo.legalEdges && roadInfo.visibleDraws === roadInfo.legalEdges, roadInfo);
 
   // Finish setup, then nothing armed leaves no marks; an armed Stronghold rings the legal homes only.
   await page.evaluate(() => {
@@ -290,6 +298,7 @@ for (const [w, h, touch] of [
   const hr = await reachOf(own[0]);
   await patches(page, "__homeShown", true, hp, hr);
   await page.screenshot({ path: `test-results/placement-glow-stronghold-${tag}.png` });
+  await page.screenshot({ path: `docs/proofs/830/placement-glow-stronghold-${tag}.png` });
   await page.evaluate(() => {
     window.__isle.marks.visible = false;
   });
