@@ -176,18 +176,16 @@ try {
     return pixels;
   }
 
-  // Diverse test boards covering northern piers bordering timber, ore, wool, and clay hexes,
-  // in both random and official spiral token distribution modes.
+  // Multi-seed range sweep across both random and official token modes,
+  // including the issue repro seeds (14 and 105).
   const testCases = [
-    { seed: 14, mode: "official" }, // Issue #1158 repro (grain pier near timber)
+    { seed: 14, mode: "official" }, // Issue #1158 repro (grain pier)
     { seed: 105, mode: "official" }, // Issue #1158 repro (ore pier)
-    { seed: 10, mode: "random" }, // Northern pier behind timber hex
-    { seed: 5, mode: "random" }, // Northern pier behind ore hex
-    { seed: 2, mode: "random" }, // Northern pier behind wool hex (oak crest)
-    { seed: 7, mode: "random" }, // Northern pier behind wool hex
-    { seed: 12, mode: "official" }, // Northern pier behind timber hex (official mode)
-    { seed: 88, mode: "random" }, // Northern pier behind clay hex
   ];
+  for (let s = 1; s <= 6; s++) {
+    testCases.push({ seed: s, mode: "random" });
+    testCases.push({ seed: s, mode: "official" });
+  }
 
   const MIN_VISIBLE_PIXELS = 20;
 

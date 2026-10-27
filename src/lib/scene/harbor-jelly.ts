@@ -662,8 +662,9 @@ function build(coast: CoastPt[], docks: Dock[], seed: number): Shore {
         if (Math.abs(across) < best && out > 0) [best, wv] = [Math.abs(across), out];
       });
     }
+    const north = d.mz < -0.7;
     const v0 = 0.1;
-    const v1 = wv + 0.5;
+    const v1 = wv + (north ? 0.74 : 0.5);
     const len = v1 - v0;
     const W = 0.2;
     const yAt = (v: number) => (v < wv ? lerp(SURFACE + 0.07, SURFACE, smooth(v / wv, 0.3, 1)) : lerp(SURFACE, floorY(v + 0.1) + 0.004, smooth(v - wv, 0, 0.56)));
@@ -752,9 +753,9 @@ function build(coast: CoastPt[], docks: Dock[], seed: number): Shore {
     const goodsParts: THREE.BufferGeometry[] = [];
     const G = (geometry: THREE.BufferGeometry) => { goodsParts.push(geometry); P(geometry); };
     const S = 2.5;
-    const stride = Math.min(0.7, (len - 0.2) / 0.64);
-    const gv = Math.max(v0 + 0.18, Math.min(wv + 0.12, v1 - 0.38 * stride));
-    const gy = DECK + 0.09;
+    const stride = Math.min(0.65, (len - 0.2) / 0.64);
+    const gv = Math.max(v0 + 0.22, v1 - 0.48 * stride);
+    const gy = DECK + (north ? 0.14 : 0.02);
     const good = d.kind;
     if (good === "timber") {
       for (const [x, y] of [[-0.06, 0], [0, 0], [0.06, 0], [-0.03, 0.06], [0.03, 0.06], [0, 0.115]] as const) {

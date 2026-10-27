@@ -27,8 +27,8 @@ try {
     localStorage.setItem('emberisle-water', 'simple');
   });
   await page.goto(`http://127.0.0.1:${port}`);
-  await page.waitForFunction(() => window.__emberisle);
-  await page.getByRole('button', { name: 'Four seats, one table', exact: true }).click();
+  await page.waitForFunction(() => typeof window.__emberisle?.getState().startHotseat === "function");
+  await page.evaluate(() => window.__emberisle.getState().startHotseat(4));
 
   async function testBoard(seed, numberTokens) {
     await page.evaluate(async ({ seed, numberTokens }) => {
@@ -143,6 +143,7 @@ try {
           console.log(`[UNDER 20] Seed ${seed} (${mode}) pile ${i} (${p.kind}): colour=${p.colour.toFixed(1)}, visible=${p.visible.toFixed(1)}`);
         }
       }
+      process.stdout.write(`[${mode} seed ${seed}: min=${Math.min(...piles.map(p => p.colour)).toFixed(1)}] `);
     }
   }
 
