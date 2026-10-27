@@ -9,8 +9,8 @@
 
 ## What B is (read from the picture, right-hand panel)
 
-- One window, no tabs. The title row is "Trade" with a close button, then one line of help text.
-- "You give" and "You get" are two rows of five goods cards (Wood, Brick, Sheep, Wheat, Stone). Each card shows the good's icon and name in its own colour, "Have N", a big count and a plus; a minus appears once you pick it. Goods you can't use in that row are dimmed.
+- One window, no tabs. The title row is "Trade" with a close button, then a short help text (two lines on a phone).
+- "You give" and "You get" are two rows of five goods cards (Wood, Brick, Sheep, Wheat, Stone). Each card shows the good's icon and name in its own colour, "Have N", a big count and a plus; a minus appears once you pick it. Some cards are dimmed in the picture. The picture does not show the rule for dimming, so ask Jarrod before building it.
 - Under the two rows, a small "Bank & docks" box that reads what you picked: "Bank & docks · your best rate 4:1" and "Bank 4:1: give 4 wood, get 1 brick now", with its own small "Bank 4:1" button. It is a box, not a tab.
 - Under that, "Table offer" with "You give" and "You get" lines, then one big dark "Ask the table" button.
 - Seat chips stay in a plain row at the top (name and points only).
