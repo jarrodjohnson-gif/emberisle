@@ -150,8 +150,47 @@ async function layout(page, tag, route) {
   for (const button of result.buttons) assert.ok(button.width >= 43.9 && button.height >= 43.9, `${tag} ${route}: 44px control ${JSON.stringify(button)}`);
   assert.ok(result.gaps.every((gap) => gap >= 8), `${tag} ${route}: goods and action gaps are at least 8px ${JSON.stringify(result.gaps)}`);
   assert.ok(result.smallText.every((item) => item.size >= 12), `${tag} ${route}: composer text remains at least 12px ${JSON.stringify(result.smallText)}`);
+  await approvedBLayout(page, tag, route);
   await panelFor(page).locator(".trade-composer-scroll").evaluate((element) => { element.scrollTop = 0; });
   await page.screenshot({ path: `test-results/trade-tabs-${tag}-${route}.png` });
+}
+
+async function approvedBLayout(page, tag, route) {
+  // Hotseat's existing behavior checks remain; its visual spec is still an owner question.
+  if (route === "hotseat-bank") return;
+  const geometry = await panelFor(page).evaluate((element) => {
+    const rect = (node) => {
+      const b = node.getBoundingClientRect();
+      return { left: b.left, right: b.right, top: b.top, bottom: b.bottom, width: b.width };
+    };
+    const bank = element.querySelector(".trade-bank-box");
+    const table = element.querySelector('[data-testid="trade-player-preview"]').closest(".trade-route");
+    const give = element.querySelector('[data-testid="trade-give-row"]');
+    const colours = [...give.querySelectorAll(".trade-resource")].map((card) => ({
+      icon: getComputedStyle(card.querySelector(".trade-add > svg")).color,
+      name: getComputedStyle(card.querySelector(".trade-resource-name")).color,
+    }));
+    return {
+      bank: rect(bank), table: rect(table), action: rect(table.querySelector("button")),
+      bankAction: rect(bank.querySelector("button")), quote: rect(bank.querySelector('[data-testid="trade-hint"]')),
+      goods: rect(element.querySelector(".trade-composer-scroll")),
+      rows: [rect(give), rect(element.querySelector('[data-testid="trade-want-row"]'))],
+      titleWeight: Number.parseInt(getComputedStyle(element.querySelector("h2")).fontWeight), colours,
+    };
+  });
+  const short = page.viewportSize().height <= 480;
+  assert.ok(short ? geometry.bank.right <= geometry.table.left : geometry.bank.bottom <= geometry.table.top,
+    `${tag} ${route}: approved B puts Bank left on short screens and above Table otherwise ${JSON.stringify(geometry)}`);
+  if (!short) assert.ok(Math.abs(geometry.bank.left - geometry.table.left) <= 0.5 && Math.abs(geometry.bank.right - geometry.table.right) <= 0.5,
+    `${tag} ${route}: portrait Bank box spans the Table column`);
+  assert.ok(geometry.bankAction.left >= geometry.quote.right - 0.5, `${tag} ${route}: compact Bank action sits beside its quote`);
+  assert.ok(Math.abs(geometry.action.width - geometry.table.width) <= 0.5, `${tag} ${route}: Ask the table fills its column`);
+  assert.equal(new Set(geometry.colours.map((c) => c.icon)).size, 5, `${tag} ${route}: all five goods have distinct symbol colours`);
+  assert.equal(new Set(geometry.colours.map((c) => c.name)).size, 5, `${tag} ${route}: all five goods have distinct name colours`);
+  assert.ok(geometry.titleWeight >= 700, `${tag} ${route}: Trade title is bold`);
+  if (short) for (const row of geometry.rows) assert.ok(row.top >= geometry.goods.top - 0.5 && row.bottom <= geometry.goods.bottom + 0.5,
+    `${tag} ${route}: both goods rows remain visible without scrolling ${JSON.stringify(geometry)}`);
+  console.log(`approved B layout ${tag} ${route}: ${JSON.stringify(geometry)}`);
 }
 
 async function selectionMotion(page, resource, side, count, motion, tag) {
