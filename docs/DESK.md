@@ -9,7 +9,8 @@ Jarrod pastes: `Run the Emberisle review desk. Read docs/DESK.md.`
 1. Read the **Desk state** issue, [#916](https://github.com/jarrodjohnson-gif/emberisle/issues/916). It lists what is waiting on Jarrod, every open PR, the builds in flight and the queue.
 2. Read the hub, [#854](https://github.com/jarrodjohnson-gif/emberisle/issues/854), from the newest comment back to the last desk post.
 3. Subscribe to the inbox PR #699 only. The inbox relays PRs opened or marked ready, not drafts. It also relays any comment that starts with `Question:` or `To desk:`. It skips CI and hub status lines. Subscribe to a PR directly only while you wait on its CI to merge it. Unsubscribe once it merges.
-4. Pick up anything waiting: an unreviewed PR, a red PR you own, or a question on the hub.
+4. Sweep every open PR once. A builder's push doesn't wake you, so list each PR whose head SHA differs from the head your last review named. Those need a fresh review.
+5. Pick up anything waiting: an unreviewed PR, a red PR you own, or a question on the hub.
 
 ## Keep it cheap
 
@@ -62,7 +63,7 @@ Squash, with the full 40-character head SHA, only when all of these hold:
 - there is no conflict and the PR isn't a draft;
 - Jarrod has seen the screenshots of any visual change.
 
-Then set the issue to `status:in-review`. `issue_write` replaces every label, so pass the full label list.
+After the merge, watch `main`'s CI on the merge commit until `checks` is completed. Red on `main` is `prio:p0`: tell Jarrod and file it. Then set the issue to `status:in-review`. `issue_write` replaces every label, so pass the full label list.
 
 ## Weekly
 
