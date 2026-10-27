@@ -78,9 +78,11 @@ to any tier. Helpers don't use this list: they follow the queue in [`HELPERS.md`
 | Label | Kind of work | Models |
 |---|---|---|
 | `tier:1-deep` | Hours-long research and architecture carried through to a finished document | Claude Fable 5.1, GPT-6 Astra |
-| `tier:1` | Security, server, protocol and cross-area changes | Claude Opus 5.5, GPT-6.1 Sol, and the `tier:1-deep` models |
-| `tier:2` | Everyday features with real proofs | Claude Sonnet 5.5, Claude Opus 4.6 and older Claude models run through AWS (see below), Cursor Composer, Gemini 3.8 Flash (thinking HIGH), Grok 4.7, GPT-6.1 Terra, GLM 5.3 and Kimi K3 (the last three provisional, see below), and every `tier:1` model |
+| `tier:1` | Work where a mistake is costly or hard to see: authentication, profile or room persistence and migration, wire-protocol or saved-state compatibility, hidden-information projection, host admission and security, or a change that must land in host and client together | Claude Opus 5.5, GPT-6.1 Sol, and the `tier:1-deep` models |
+| `tier:2` | Everyday features with real proofs, including large, cross-lane or visually ambitious ones that state their files, behaviour and a completion test | Claude Sonnet 5.5, Claude Opus 4.6 and older Claude models run through AWS (see below), Cursor Composer, Gemini 3.8 Flash (thinking HIGH), Grok 4.7, GPT-6.1 Terra, GLM 5.3 and Kimi K3 (the last three provisional, see below), and every `tier:1` model |
 | `tier:3` | Small single-purpose fixes, docs and screenshot QA | Claude Haiku 5.5, GPT-6 Luna, and every model above |
+
+**What sets a tier (desk, 2026-10-26).** Risk sets the tier. Breadth, owner interest and a `model:` pin do not raise it: a large scene, layout or CSS change with a completion test is `tier:2`, and a pin only narrows who may claim. Use `tier:1-deep` only for open-ended research or architecture where no one can pre-specify the deliverable (the cloud migration, a whole-app UX review). A design doc with listed contents is `tier:2`, or `tier:1` if it specifies a protocol or hidden-information change. Give epics and umbrella issues no build tier of their own: label each child by its own risk. When an issue mixes both kinds, split the safe `tier:2` part off first, as was done for #1141 and #1156.
 
 **Tier and model labels.** Every issue carries a `tier:` label. Any model at that tier or below may take it. Nobody assigns builders.
 
@@ -121,7 +123,7 @@ Grok's usage limits are low, so give it one `tier:2` or `tier:3` issue at a time
 | Grok 4.7 | Everyday `tier:2` features and fixes | More than one issue at once (low usage limits) |
 | GPT-6.1 Terra | Small and medium well-specified fixes and features, docs, proofs that CI checks, layout fixes with a screenshot proof. Fast and cheap. | Long multi-file refactors, hard terminal or long-horizon work, anything that touches the server, security or protocol, and a change another PR is mid-way through. It guesses when unsure: post `Question:` and `/paused` instead of picking. It is not a first reviewer of a `tier:1` or Sol PR. |
 
-Until two of its PRs have merged, a provisional model takes no second issue. Each posts `<agent name>: started #N` and `<agent name>: PR #M for #N` on #854, like every builder. Say your model name in the PR body.
+Until two of its PRs have merged, a provisional model takes no second issue. Like every builder, it puts progress in its PR body and names its model there.
 
 **The builders (Jarrod, 2026-10-20):**
 
@@ -153,9 +155,9 @@ the current step, post `/paused` saying where you stopped, and leave the rest.
 
 ## When nothing is eligible
 
-An empty ready list is not a reason to stop or to ask the desk. Work down this ladder yourself and take the first rung that has anything. Claim as usual. Post on #854 only if all five rungs are empty.
+An empty ready list is not a reason to stop or to ask the desk. Work down this ladder yourself and take the first rung that has anything. Claim as usual. Only if all five rungs are empty, post a `To desk:` line on #854.
 
-1. **Adopt a finished-but-stuck PR.** Built PRs whose builders went quiet are listed under "Stale" in #916. Any PR with no push for 24 hours counts as stale. Comment `/claim adopt PR #N` on its issue, merge current main into its branch (a merge commit; never rebase or force-push), fix conflicts, get CI green, run the focused proof, then say on the PR it is ready for review. Don't widen its scope. It counts toward your open-PR limit (AGENTS.md rule 4).
+1. **Adopt a finished-but-stuck PR.** Built PRs whose builders went quiet are listed under "Stale" in #916. Any PR with no push for 24 hours counts as stale. Comment `/claim adopt PR #N` on its issue, merge current main into its branch (a merge commit; never rebase or force-push), fix conflicts, get CI green, run the focused proof, then post `To desk: PR #N ready for review` on the PR. Don't widen its scope. It counts toward your open-PR limit (AGENTS.md rule 4).
 2. **Promote a backlog issue.** A `status:backlog` issue with every `Depends on` issue closed, a lane label and a clear scope is eligible. Not eligible: a design issue held for a spec or mock (layout, look or animation, see "Design issues start in backlog"), whatever its tier label says. Re-read it, `/claim`, and set it to `status:claimed`. No desk permission is needed.
 3. **Finish the head of a chain.** A chain is blocked by its first issue. If the head is claimed but its PR has been silent for 24 hours, post `Question: still working?`. With no reply in 2 hours it counts as free and you may adopt it.
 4. **Always-useful work.** Write the missing test for a recently merged feature. Split an oversized issue into small, fully labelled ones. Close duplicates with a one-line reason.
