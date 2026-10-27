@@ -159,12 +159,13 @@ async function centred(page, label) {
       labels, seats,
       emoji: { left: emoji[0].left - row.left, right: row.right - emoji.at(-1).right, gaps: emoji.slice(1).map((r, i) => r.left - emoji[i].right), centres: emoji.map(r => (r.top + r.bottom) / 2), rowLeft: row.left - chat.left, rowRight: chat.right - row.right },
       codeDy: (ct.t + ct.b) / 2 - (header.top + header.bottom) / 2,
+      headerDiagnostic: { code: code.textContent, font: getComputedStyle(code).font, header: header.toJSON(), codeBox: box(code).toJSON(), buttons: [...card.querySelectorAll('.lobby-copy-controls button')].map(el => ({ text: el.textContent, font: getComputedStyle(el).font, box: box(el).toJSON() })) },
       foot, inputDy: (input.top + input.bottom) / 2 - (send.top + send.bottom) / 2,
     };
   });
   for (const l of m.labels) {
     assert.ok(Math.abs(l.dx) <= 1 && Math.abs(l.dy) <= 1, `${label}: "${l.name}" label centred in its button (dx ${l.dx.toFixed(2)}, dy ${l.dy.toFixed(2)})`);
-    if (!l.icon) assert.ok(l.padL >= 8 && l.padR >= 8, `${label}: "${l.name}" has at least 8 px between text and button edge (${l.padL.toFixed(1)} / ${l.padR.toFixed(1)})`);
+    if (!l.icon) assert.ok(l.padL >= 8 && l.padR >= 8, `${label}: "${l.name}" has at least 8 px between text and button edge (${l.padL.toFixed(1)} / ${l.padR.toFixed(1)}); header ${JSON.stringify(m.headerDiagnostic)}`);
   }
   const filled = m.seats.filter(s => s.hasStatus);
   for (const s of m.seats) {
@@ -267,7 +268,12 @@ try {
     await emptySeatsFit(page, `${width}x${height}`);
     const data = await geometry(page, 0);
     results.push({ viewport: `${width}x${height}`, ...data });
-    if (width === 375) await centred(page, `${width}x${height}`);
+    if (width === 375) {
+      await centred(page, `${width}x${height}`);
+      await page.getByTestId("table-code").evaluate(el => { el.textContent = "WWWW"; });
+      await centred(page, `${width}x${height} wide code`);
+      await page.getByTestId("table-code").evaluate((el, value) => { el.textContent = value; }, code);
+    }
     await page.getByTestId("emoji-row").locator("button").first().click();
     await guest.getByTestId("react-line").waitFor();
     await clearOfName(page, "reaction");
