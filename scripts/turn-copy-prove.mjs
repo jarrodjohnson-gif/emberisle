@@ -29,7 +29,11 @@ try {
       assert.equal(info.transform, "none");
       assert.ok(["normal", "0px"].includes(info.tracking), info.tracking);
       assert.ok(!info.text.endsWith(".") && !info.text.includes("turn ·"), info.text);
-      assert.match(info.text, /^(Roll|Place|Build|Move|Discard|Wait|Pick)\b/);
+      if (!info.text.startsWith("Pick")) {
+        assert.match(info.text, /^(Roll|Place|Build|Move|Discard|Wait)\b/);
+      } else {
+        assert.match(info.text, /^Pick\b/);
+      }
     };
     // Real roll-off and both rounds of legal setup, through the store's normal actions.
     for (let i = 0; i < 100; i++) {
