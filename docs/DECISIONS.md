@@ -7,6 +7,9 @@ Rows that a later decision replaced, or that expired, are kept word for word und
 
 | Date | Decision | Where |
 |---|---|---|
+| 2026-10-27 | **Reviews stay on Claude.** The desk's review subagents (Sonnet, Opus, Haiku, per `DESK.md`) do every review. ChatGPT plans are for building, not reviewing, and the work ChatGPT plan is not relied on. | Jarrod, in chat |
+| 2026-10-27 | **Ready for up to 15 builders.** A new model Jarrod adds may claim `tier:3` issues at once, as provisional and one at a time. After two clean merges, the desk lists it in the tier table. This replaces "a model not in the table claims nothing". | Jarrod, in chat; [`docs/LANES.md`](LANES.md) |
+| 2026-10-27 | **Mock order:** goods cards (#772) first, then dice (#680). The ore climber (#976) is not a priority. | Jarrod, in chat |
 | 2026-10-27 | **The repo stays public, with no more visibility flips.** Public gives free CI minutes. This replaces the 2026-10-23 rule that let the desk flip it. Keep secrets and private files out of the repo. | Jarrod, in chat |
 | 2026-10-27 | **Flaky proofs are `prio:p1`, ahead of new features.** Fix them at the source. Never loosen or skip them. | Jarrod, in chat; [#1173](https://github.com/jarrodjohnson-gif/emberisle/issues/1173) |
 | 2026-10-27 | **The Cloudflare design papers (#789–795) wait.** Jarrod hosts from his Mac for now. The goal is hosting that runs 24/7 or starts on command, so the game can be shared on Threads and Instagram. | Jarrod, in chat |
