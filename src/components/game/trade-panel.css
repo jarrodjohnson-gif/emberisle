@@ -1,25 +1,29 @@
 /* Shared goods scroll while the Table receipt and compact Bank box stay in view. */
 .trade-composer { display: flex; flex-direction: column; width: 100%; max-width: 640px; max-height: calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); overflow: hidden; border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--paper); color: var(--ink); box-shadow: var(--shadow-sheet); }
 .trade-composer-header { display: flex; flex-shrink: 0; align-items: center; justify-content: space-between; padding: 8px 16px; border-bottom: 1px solid var(--line); }
+.trade-title { font-size: 24px; line-height: 28px; font-weight: 750; }
 .trade-add:focus-visible, .trade-remove:focus-visible, .trade-composer-scroll:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
-.trade-composer-scroll { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 12px 16px 20px; }
-.trade-instructions { margin-bottom: 16px; color: var(--muted); font-size: 13px; }
-.trade-half + .trade-half { margin-top: 20px; }
+.trade-composer-scroll { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 12px 16px; }
+.trade-instructions { margin-bottom: 12px; color: var(--muted); font-size: 13px; }
+.trade-half + .trade-half { margin-top: 16px; }
 .trade-half h3 { margin-bottom: 8px; font-size: 15px; font-weight: 700; }
 .trade-resource-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
-.trade-resource { position: relative; display: flex; min-width: 0; flex-direction: column; align-items: center; border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--paper); }
+.trade-resource { position: relative; display: flex; min-width: 0; flex-direction: column; align-items: center; gap: 8px; border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--paper); }
 .trade-resource[data-selected] { border-color: var(--ink); background: var(--table-raised); }
+.trade-add > svg, .trade-resource-name { color: var(--sym); }
 .trade-resource-name { margin-top: 4px; font-size: 12px; font-weight: 650; }
 .trade-owned { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
-.trade-add { display: flex; width: 100%; min-width: 44px; min-height: 108px; flex-direction: column; align-items: center; justify-content: center; padding: 8px 2px; border-radius: var(--radius-control); }
+.trade-add { display: flex; flex: 1; width: 100%; min-width: 44px; min-height: 108px; flex-direction: column; align-items: center; justify-content: center; padding: 8px 2px; border-radius: var(--radius-control); }
 .trade-add:disabled { opacity: .5; }
 .trade-remove { display: flex; width: 100%; min-width: 44px; min-height: 44px; align-items: center; justify-content: center; border-top: 1px solid var(--line); border-radius: 0 0 var(--radius-control) var(--radius-control); }
 .trade-quantity { font-size: 20px; line-height: 24px; font-weight: 750; font-variant-numeric: tabular-nums; }
-.trade-composer-footer { display: grid; flex-shrink: 0; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; border-top: 1px solid var(--line); padding: 12px 16px; background: var(--paper); }
+.trade-composer-footer { display: grid; flex-shrink: 0; grid-template-columns: minmax(0, 1fr); gap: 8px; border-top: 1px solid var(--line); padding: 12px 16px; background: var(--paper); }
 .trade-route { display: flex; min-width: 0; flex-direction: column; gap: 8px; }
 .trade-route:only-child { grid-column: 1 / -1; }
-.trade-bank-box { padding: 8px; border: 1px solid var(--control-line); border-radius: var(--radius-control); }
-.trade-bank-stock { color: var(--muted); font-size: 12px; line-height: 16px; }
+.trade-bank-box { display: grid; grid-template-columns: minmax(0, 1fr) auto; padding: 8px; border: 1px solid var(--control-line); border-radius: var(--radius-control); }
+.trade-bank-box h3 { grid-column: 1; }
+.trade-bank-box .trade-exact-preview { grid-column: 1; }
+.trade-bank-action { grid-column: 2; grid-row: 1 / span 2; align-self: center; min-width: 44px; white-space: nowrap; }
 .trade-route h3 { font-size: 12px; font-weight: 750; }
 .trade-exact-preview { flex: 1; font-size: 12px; line-height: 18px; overflow-wrap: anywhere; }
 .trade-exact-preview span { display: block; }
@@ -55,19 +59,30 @@
 @media (max-width: 539px) {
   .trade-composer-header { padding: 4px 12px; }
   .trade-composer-scroll { padding: 10px 12px 16px; }
-  .trade-composer-footer { gap: 12px; padding: 10px 12px; }
+  .trade-composer-footer { padding: 10px 12px; }
 }
 @media (max-height: 480px) {
   .trade-composer { max-height: calc(100dvh - 12px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); }
-  .trade-composer-header { padding: 4px 14px; }
+  .trade-composer-header { padding: 0 14px; }
   .trade-instructions { display: none; }
-  .trade-composer-scroll { padding: 4px 14px 6px; }
-  .trade-half + .trade-half { margin-top: 6px; }
-  .trade-half h3 { margin-bottom: 2px; font-size: 12px; }
-  .trade-add { min-height: 88px; padding: 2px; }
+  .trade-composer-scroll { padding: 4px 14px; }
+  .trade-half + .trade-half { margin-top: 8px; }
+  .trade-half h3 { margin-bottom: 8px; font-size: 12px; line-height: 16px; }
+  .trade-resource[data-selected] { display: grid; grid-template-columns: minmax(44px, 1fr) 44px; }
+  .trade-add { height: 88px; min-height: 88px; padding: 2px; }
+  .trade-resource-name { line-height: 14px; }
+  .trade-remove { height: 88px; border-top: 0; border-left: 1px solid var(--line); border-radius: 0 var(--radius-control) var(--radius-control) 0; }
   .trade-resource-name { margin-top: 1px; font-size: 12px; }
   .trade-owned { font-size: 12px; }
-  .trade-composer-footer { padding: 6px 14px; gap: 10px; }
+  .trade-composer-footer { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); padding: 8px 14px; }
+  .trade-title { font-size: 20px; line-height: 24px; }
+  .trade-bank-box h3, .trade-route:not(.trade-bank-box) h3 { display: none; }
+  .trade-route:not(.trade-bank-box) .trade-exact-preview span { display: inline; }
+  .trade-route:not(.trade-bank-box) .trade-exact-preview span + span::before { content: " · "; }
+  .trade-add > svg { width: 16px; height: 16px; flex-shrink: 0; }
+  .trade-owned { line-height: 14px; }
+  .trade-quantity { line-height: 20px; }
+  .trade-bank-action { grid-row: 1; }
   .trade-route { gap: 8px; }
   .trade-route h3 { font-size: 12px; }
   .trade-exact-preview { font-size: 12px; line-height: 14px; }

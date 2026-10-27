@@ -22,7 +22,7 @@ export function TradeResource({ resource, value, owned, side, canMore, onChange 
       else add.current?.focus();
     }
   }, [value]);
-  return <div className="trade-resource" data-selected={value > 0 || undefined} data-testid={id}>
+  return <div className={`trade-resource goods-${resource}`} data-selected={value > 0 || undefined} data-testid={id}>
     <button ref={add} className="trade-add" aria-label={`More ${RESOURCE_LABEL[resource]} to ${side}`} aria-describedby={`${id}-owned ${id}-count`} disabled={!canMore} onClick={() => { play("ui_click"); onChange(value + 1); }}>
       <Icon aria-hidden="true" className="size-5" />
       <span className="trade-resource-name">{RESOURCE_LABEL[resource]}</span>
