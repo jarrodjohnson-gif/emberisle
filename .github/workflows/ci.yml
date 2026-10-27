@@ -70,7 +70,7 @@ jobs:
           done
           echo "docs_only=$DOCS_ONLY" >> "$GITHUB_OUTPUT"
 
-  build:
+  dependencies:
     needs: changes
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -79,6 +79,7 @@ jobs:
         uses: actions/checkout@v4
       - if: needs.changes.outputs.docs_only != 'true'
         uses: actions/setup-node@v4
+        id: node
         with:
           node-version: 22
           cache: npm
@@ -86,8 +87,45 @@ jobs:
             package-lock.json
             server/package-lock.json
       - if: needs.changes.outputs.docs_only != 'true'
+        uses: actions/cache@v4
+        id: dependencies
+        with:
+          path: |
+            node_modules
+            server/node_modules
+          key: installed-v1-${{ runner.os }}-${{ runner.arch }}-${{ steps.node.outputs.node-version }}-${{ hashFiles('package-lock.json', 'server/package-lock.json') }}
+      - if: needs.changes.outputs.docs_only != 'true' && steps.dependencies.outputs.cache-hit != 'true'
         run: npm ci
+      - if: needs.changes.outputs.docs_only != 'true' && steps.dependencies.outputs.cache-hit != 'true'
+        run: npm ci --prefix server
+
+  build:
+    needs: [changes, dependencies]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
       - if: needs.changes.outputs.docs_only != 'true'
+        uses: actions/checkout@v4
+      - if: needs.changes.outputs.docs_only != 'true'
+        uses: actions/setup-node@v4
+        id: node
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            server/package-lock.json
+      - if: needs.changes.outputs.docs_only != 'true'
+        uses: actions/cache@v4
+        id: dependencies
+        with:
+          path: |
+            node_modules
+            server/node_modules
+          key: installed-v1-${{ runner.os }}-${{ runner.arch }}-${{ steps.node.outputs.node-version }}-${{ hashFiles('package-lock.json', 'server/package-lock.json') }}
+      - if: needs.changes.outputs.docs_only != 'true' && steps.dependencies.outputs.cache-hit != 'true'
+        run: npm ci
+      - if: needs.changes.outputs.docs_only != 'true' && steps.dependencies.outputs.cache-hit != 'true'
         run: npm ci --prefix server
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run typecheck
@@ -121,7 +159,7 @@ jobs:
         run: npm run size-delta-prove
 
   server:
-    needs: changes
+    needs: [changes, dependencies]
     runs-on: ubuntu-latest
     # dice-prove's sampling took 99 s on CI (#926, a349dbf); the whole job took under 6 minutes.
     timeout-minutes: 15
@@ -130,6 +168,7 @@ jobs:
         uses: actions/checkout@v4
       - if: needs.changes.outputs.docs_only != 'true'
         uses: actions/setup-node@v4
+        id: node
         with:
           node-version: 22
           cache: npm
@@ -137,10 +176,20 @@ jobs:
             package-lock.json
             server/package-lock.json
       - if: needs.changes.outputs.docs_only != 'true'
+        uses: actions/cache@v4
+        id: dependencies
+        with:
+          path: |
+            node_modules
+            server/node_modules
+          key: installed-v1-${{ runner.os }}-${{ runner.arch }}-${{ steps.node.outputs.node-version }}-${{ hashFiles('package-lock.json', 'server/package-lock.json') }}
+      - if: needs.changes.outputs.docs_only != 'true' && steps.dependencies.outputs.cache-hit != 'true'
         run: npm ci
-      - if: needs.changes.outputs.docs_only != 'true'
+      - if: needs.changes.outputs.docs_only != 'true' && steps.dependencies.outputs.cache-hit != 'true'
         run: npm ci --prefix server
       # Before the suites, so it still reports when a test fails.
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run ci-install-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run registered-prove
       - if: needs.changes.outputs.docs_only != 'true'
@@ -220,7 +269,7 @@ jobs:
 
   browser-a-suites:
     name: browser-a (${{ matrix.suite }})
-    needs: changes
+    needs: [changes, dependencies]
     runs-on: ubuntu-latest
     # The browser jobs run about 19-20 minutes on a busy runner; 20 cancelled them mid-proof.
     timeout-minutes: 30
@@ -233,6 +282,7 @@ jobs:
         uses: actions/checkout@v4
       - if: needs.changes.outputs.docs_only != 'true'
         uses: actions/setup-node@v4
+        id: node
         with:
           node-version: 22
           cache: npm
@@ -240,8 +290,16 @@ jobs:
             package-lock.json
             server/package-lock.json
       - if: needs.changes.outputs.docs_only != 'true'
+        uses: actions/cache@v4
+        id: dependencies
+        with:
+          path: |
+            node_modules
+            server/node_modules
+          key: installed-v1-${{ runner.os }}-${{ runner.arch }}-${{ steps.node.outputs.node-version }}-${{ hashFiles('package-lock.json', 'server/package-lock.json') }}
+      - if: needs.changes.outputs.docs_only != 'true' && steps.dependencies.outputs.cache-hit != 'true'
         run: npm ci
-      - if: needs.changes.outputs.docs_only != 'true'
+      - if: needs.changes.outputs.docs_only != 'true' && steps.dependencies.outputs.cache-hit != 'true'
         run: npm ci --prefix server
       - if: needs.changes.outputs.docs_only != 'true'
         uses: actions/cache@v4
@@ -327,6 +385,7 @@ jobs:
         uses: actions/checkout@v4
       - if: needs.changes.outputs.docs_only != 'true'
         uses: actions/setup-node@v4
+        id: node
         with:
           node-version: 22
           cache: npm
@@ -334,8 +393,16 @@ jobs:
             package-lock.json
             server/package-lock.json
       - if: needs.changes.outputs.docs_only != 'true'
+        uses: actions/cache@v4
+        id: dependencies
+        with:
+          path: |
+            node_modules
+            server/node_modules
+          key: installed-v1-${{ runner.os }}-${{ runner.arch }}-${{ steps.node.outputs.node-version }}-${{ hashFiles('package-lock.json', 'server/package-lock.json') }}
+      - if: needs.changes.outputs.docs_only != 'true' && steps.dependencies.outputs.cache-hit != 'true'
         run: npm ci
-      - if: needs.changes.outputs.docs_only != 'true'
+      - if: needs.changes.outputs.docs_only != 'true' && steps.dependencies.outputs.cache-hit != 'true'
         run: npm ci --prefix server
       - if: needs.changes.outputs.docs_only != 'true'
         uses: actions/cache@v4
@@ -496,13 +563,14 @@ jobs:
   # A draft skips it (grey): GitHub never merges a draft, and marking it ready starts a fresh run on the same head SHA,
   # whose checks must each pass. Every other run keeps always() and the explicit tests below.
   checks:
-    needs: [changes, build, server, browser-a, browser-b]
+    needs: [changes, dependencies, build, server, browser-a, browser-b]
     if: always() && (github.event_name != 'pull_request' || !github.event.pull_request.draft)
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - run: |
-          echo 'build=${{ needs.build.result }} server=${{ needs.server.result }} browser-a=${{ needs.browser-a.result }} browser-b=${{ needs.browser-b.result }}'
+          echo 'dependencies=${{ needs.dependencies.result }} build=${{ needs.build.result }} server=${{ needs.server.result }} browser-a=${{ needs.browser-a.result }} browser-b=${{ needs.browser-b.result }}'
+          test '${{ needs.dependencies.result }}' = success
           test '${{ needs.build.result }}' = success
           test '${{ needs.server.result }}' = success
           test '${{ needs.browser-a.result }}' = success
