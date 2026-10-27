@@ -166,10 +166,19 @@ async function approvedBLayout(page, tag, route) {
     const bank = element.querySelector(".trade-bank-box");
     const table = element.querySelector('[data-testid="trade-player-preview"]').closest(".trade-route");
     const give = element.querySelector('[data-testid="trade-give-row"]');
-    const colours = [...give.querySelectorAll(".trade-resource")].map((card) => ({
-      icon: getComputedStyle(card.querySelector(".trade-add > svg")).color,
-      name: getComputedStyle(card.querySelector(".trade-resource-name")).color,
-    }));
+    const colours = [...give.querySelectorAll(".trade-resource")].map((card) => {
+      const button = card.querySelector(".trade-add");
+      const swatch = document.createElement("span");
+      card.append(swatch);
+      swatch.style.color = "var(--sym)";
+      const palette = getComputedStyle(swatch).color;
+      swatch.style.color = "var(--muted)";
+      const unavailable = getComputedStyle(swatch).color;
+      swatch.remove();
+      return { palette, unavailable, disabled: button.disabled,
+        icon: getComputedStyle(card.querySelector(".trade-add > svg")).color,
+        name: getComputedStyle(card.querySelector(".trade-resource-name")).color };
+    });
     return {
       bank: rect(bank), table: rect(table), action: rect(table.querySelector("button")),
       bankAction: rect(bank.querySelector("button")), quote: rect(bank.querySelector('[data-testid="trade-hint"]')),
@@ -189,8 +198,11 @@ async function approvedBLayout(page, tag, route) {
     assert.ok(Math.abs(geometry.bankAction.width - geometry.quote.width) <= 0.5, `${tag} ${route}: normal-height Bank action fills its inner column`);
   }
   assert.ok(Math.abs(geometry.action.width - geometry.table.width) <= 0.5, `${tag} ${route}: Ask the table fills its column`);
-  assert.equal(new Set(geometry.colours.map((c) => c.icon)).size, 5, `${tag} ${route}: all five goods have distinct symbol colours`);
-  assert.equal(new Set(geometry.colours.map((c) => c.name)).size, 5, `${tag} ${route}: all five goods have distinct name colours`);
+  assert.equal(new Set(geometry.colours.map((c) => c.palette)).size, 5, `${tag} ${route}: all five goods retain distinct palette colours`);
+  for (const colour of geometry.colours) {
+    assert.equal(colour.icon, colour.disabled ? colour.unavailable : colour.palette, `${tag} ${route}: each symbol uses its good colour, or neutral when unavailable`);
+    assert.equal(colour.name, colour.disabled ? colour.unavailable : colour.palette, `${tag} ${route}: each name uses its good colour, or neutral when unavailable`);
+  }
   assert.ok(geometry.titleWeight >= 700, `${tag} ${route}: Trade title is bold`);
   for (const row of geometry.rows) assert.ok(row.top >= geometry.goods.top - 0.5 && row.bottom <= geometry.goods.bottom + 0.5,
     `${tag} ${route}: both goods rows remain visible without scrolling ${JSON.stringify(geometry)}`);
