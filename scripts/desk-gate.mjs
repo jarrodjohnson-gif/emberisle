@@ -6,7 +6,8 @@ export function deskGate(pr, comments) {
   const footer = [...comments].reverse().map(({ body = '' }) => {
     if (!body.includes('<!-- review-desk -->')) return null;
     const match = body.match(/Reviewer:\s*([^·\r\n]+?)\s*·\s*Builder:\s*([^·\r\n]+?)\s*·\s*Head:\s*([0-9a-f]{40})(?=\s|$)/i);
-    return match && { reviewer: match[1].trim(), builder: match[2].trim(), head: match[3].toLowerCase() };
+    if (!match || !match[1].trim() || !match[2].trim()) return null;
+    return { reviewer: match[1].trim(), builder: match[2].trim(), head: match[3].toLowerCase() };
   }).find(Boolean);
   if (pr.draft) return { state: 'failure', description: 'Draft PR cannot pass the desk gate' };
   if (!footer) return { state: 'failure', description: 'No complete desk review footer' };

@@ -13,6 +13,7 @@ assert.equal(deskGate(pr, [review(), review(old)]).state, 'failure');
 assert.equal(deskGate(pr, [review(), { body: 'ordinary comment' }]).state, 'success');
 assert.equal(deskGate(pr, [{ body: `Reviewer: Sonnet · Builder: Terra · Head: ${head}` }]).state, 'failure');
 assert.equal(deskGate(pr, [review(head + 'a')]).state, 'failure');
+assert.equal(deskGate(pr, [review(head, '   ', 'Terra')]).state, 'failure');
 
 const requests = [];
 const fetchImpl = async (url, options) => {
@@ -35,4 +36,4 @@ await run({ event: { issue: { number: 42 } }, eventName: 'issue_comment', reposi
 assert.equal(requests.length, 0);
 await run({ event: { pull_request: { number: 42 } }, eventName: 'pull_request_target', repository: 'o/r', token: 'fixture', fetchImpl });
 assert.equal(requests.length, 4);
-console.log('desk-gate-prove: 15 checks passed (decision, pagination, events and head status)');
+console.log('desk-gate-prove: 16 checks passed (decision, pagination, events and head status)');
