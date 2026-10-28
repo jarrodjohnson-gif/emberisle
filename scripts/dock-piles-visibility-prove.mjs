@@ -177,10 +177,16 @@ try {
   }
 
   // Multi-seed range sweep across both random and official token modes,
-  // including the issue repro seeds (14 and 105).
+  // including the issue repro seeds (14 and 105) and all seeds that failed on main (10, 12, 13, 25, 88).
   const testCases = [
     { seed: 14, mode: "official" }, // Issue #1158 repro (grain pier)
     { seed: 105, mode: "official" }, // Issue #1158 repro (ore pier)
+    { seed: 10, mode: "random" },
+    { seed: 12, mode: "official" },
+    { seed: 13, mode: "random" },
+    { seed: 25, mode: "official" },
+    { seed: 88, mode: "random" },
+    { seed: 88, mode: "official" },
   ];
   for (let s = 1; s <= 6; s++) {
     testCases.push({ seed: s, mode: "random" });

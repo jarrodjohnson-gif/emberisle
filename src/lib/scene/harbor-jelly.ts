@@ -749,13 +749,16 @@ function build(coast: CoastPt[], docks: Dock[], seed: number): Shore {
 
     // #846: keep the original goods, enlarged 2.5x and re-packed along the narrow pier.
     // Turning pallets lengthwise and stacking bales avoids widening the deck or adding signs.
-    const goodsStart = pierParts.reduce((count, part) => count + part.attributes.position.count, 0);
-    const goodsParts: THREE.BufferGeometry[] = [];
-    const G = (geometry: THREE.BufferGeometry) => { goodsParts.push(geometry); P(geometry); };
     const S = 2.5;
     const stride = Math.min(0.65, (len - 0.2) / 0.64);
     const gv = Math.max(v0 + 0.22, v1 - 0.48 * stride);
     const gy = DECK + (north ? 0.14 : 0.02);
+    if (north) {
+      P(K.part(box, "#8a6040", [0, DECK + 0.07, gv + 0.24 * stride], [0, 0, 0], [0.18, 0.14, 0.52 * stride]));
+    }
+    const goodsStart = pierParts.reduce((count, part) => count + part.attributes.position.count, 0);
+    const goodsParts: THREE.BufferGeometry[] = [];
+    const G = (geometry: THREE.BufferGeometry) => { goodsParts.push(geometry); P(geometry); };
     const good = d.kind;
     if (good === "timber") {
       for (const [x, y] of [[-0.06, 0], [0, 0], [0.06, 0], [-0.03, 0.06], [0.03, 0.06], [0, 0.115]] as const) {
