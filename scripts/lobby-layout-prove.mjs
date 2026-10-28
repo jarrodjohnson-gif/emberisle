@@ -269,10 +269,20 @@ try {
     await emptySeatsFit(page, `${width}x${height}`);
     const data = await geometry(page, 0);
     results.push({ viewport: `${width}x${height}`, ...data });
-    if (width === 375) {
-      await centred(page, `${width}x${height}`);
-      await page.getByTestId("table-code").evaluate(el => { el.textContent = "WWWW"; el.style.fontSize = "32px"; });
-      await centred(page, `${width}x${height} wide-font stress`);
+    if (width === 375) await centred(page, `${width}x${height}`);
+    try {
+      for (const stress of ["WWWW", "MMMM"]) {
+        await page.getByTestId("table-code").evaluate((el, value) => { el.textContent = value; el.style.fontSize = "32px"; }, stress);
+        if (width === 375 && stress === "WWWW") await centred(page, `${width}x${height} wide-font stress`);
+        const padding = await page.locator(".lobby-copy-controls button").evaluateAll(buttons => buttons.map(el => {
+          const range = document.createRange(); range.selectNodeContents(el);
+          const text = range.getBoundingClientRect(), box = el.getBoundingClientRect();
+          return { name: el.textContent.trim(), left: text.left - box.left, right: box.right - text.right };
+        }));
+        for (const button of padding) assert.ok(button.left >= 8 && button.right >= 8,
+          `${width}x${height} ${stress}: ${button.name} text padding ${button.left}/${button.right}`);
+      }
+    } finally {
       await page.getByTestId("table-code").evaluate((el, value) => { el.textContent = value; el.style.fontSize = ""; }, code);
     }
     await page.getByTestId("emoji-row").locator("button").first().click();
