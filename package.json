@@ -78,6 +78,7 @@
     "auto-merge-prove": "node scripts/auto-merge-prove.mjs",
     "registered-prove": "node scripts/registered-prove.mjs",
     "loosen-prove": "node scripts/loosen-prove.mjs",
+    "desk-gate-prove": "node scripts/desk-gate-prove.mjs",
     "label-commands-prove": "node scripts/label-commands-prove.mjs",
     "dice-prove": "node --import ./server/register.mjs scripts/dice-prove.mjs",
     "dpr-prove": "node scripts/dpr-prove.mjs",

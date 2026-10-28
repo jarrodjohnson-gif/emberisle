@@ -183,6 +183,8 @@ jobs:
         run: npm run auto-merge-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run label-commands-prove
+      - name: Desk gate proof
+        run: npm run desk-gate-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run dice-prove
       # #1073: measures every file in public/audio with ffmpeg.
