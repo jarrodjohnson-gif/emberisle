@@ -176,6 +176,10 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run stale-pr-sweeper-prove
       - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run review-desk-inbox-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run ffmpeg-install-prove
+      - if: needs.changes.outputs.docs_only != 'true'
         run: npm run flake-rerun-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run soak-evidence-prove
@@ -186,8 +190,18 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run dice-prove
       # #1073: measures every file in public/audio with ffmpeg.
+      # #1186: the apt mirror sometimes hangs; bound each attempt, retry, and fail loudly if ffmpeg is still missing.
       - if: needs.changes.outputs.docs_only != 'true'
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
+        timeout-minutes: 6
+        run: |
+          command -v ffmpeg >/dev/null || for attempt in 1 2 3; do
+            sudo timeout 90 apt-get -o Acquire::Retries=3 update \
+              && sudo timeout 150 apt-get -o Acquire::Retries=3 install -y --no-install-recommends ffmpeg \
+              && break
+            echo "apt attempt $attempt failed"
+            sleep 5
+          done
+          command -v ffmpeg
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run audio-level-prove
       - if: needs.changes.outputs.docs_only != 'true'

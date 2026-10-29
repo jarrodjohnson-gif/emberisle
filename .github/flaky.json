@@ -44,6 +44,16 @@
       "id": "flash-prove",
       "pattern": "flash-prove failed: page\\.waitForFunction: Timeout 120000ms exceeded\\.\\n\\S+ +at settled \\(",
       "issue": 904
+    },
+    {
+      "id": "lobby-layout-prove",
+      "pattern": "AssertionError \\[ERR_ASSERTION\\]: 375x667: \"Copy\" has at least 8 px between text and button edge \\(7\\.\\d / 7\\.\\d\\)",
+      "issue": 1176
+    },
+    {
+      "id": "connection-health-prove",
+      "pattern": "Z \\+   saving: false,\\n\\S+ -   saving: true,",
+      "issue": 1200
     }
   ]
 }
