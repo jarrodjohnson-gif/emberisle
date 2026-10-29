@@ -93,7 +93,7 @@ jobs:
           path: |
             node_modules
             server/node_modules
-          key: installed-v1-${{ runner.os }}-${{ runner.arch }}-${{ steps.node.outputs.node-version }}-${{ hashFiles('package-lock.json', 'server/package-lock.json') }}
+          key: installed-v1-${{ runner.os }}-${{ runner.arch }}-${{ steps.node.outputs.node-version }}-${{ hashFiles('package.json', 'package-lock.json', 'server/package.json', 'server/package-lock.json') }}
       - if: needs.changes.outputs.docs_only != 'true' && steps.dependencies.outputs.cache-hit != 'true'
         run: npm ci
       - if: needs.changes.outputs.docs_only != 'true' && steps.dependencies.outputs.cache-hit != 'true'
@@ -122,7 +122,7 @@ jobs:
           path: |
             node_modules
             server/node_modules
-          key: installed-v1-${{ runner.os }}-${{ runner.arch }}-${{ steps.node.outputs.node-version }}-${{ hashFiles('package-lock.json', 'server/package-lock.json') }}
+          key: installed-v1-${{ runner.os }}-${{ runner.arch }}-${{ steps.node.outputs.node-version }}-${{ hashFiles('package.json', 'package-lock.json', 'server/package.json', 'server/package-lock.json') }}
       - if: needs.changes.outputs.docs_only != 'true' && steps.dependencies.outputs.cache-hit != 'true'
         run: npm ci
       - if: needs.changes.outputs.docs_only != 'true' && steps.dependencies.outputs.cache-hit != 'true'
@@ -182,7 +182,7 @@ jobs:
           path: |
             node_modules
             server/node_modules
-          key: installed-v1-${{ runner.os }}-${{ runner.arch }}-${{ steps.node.outputs.node-version }}-${{ hashFiles('package-lock.json', 'server/package-lock.json') }}
+          key: installed-v1-${{ runner.os }}-${{ runner.arch }}-${{ steps.node.outputs.node-version }}-${{ hashFiles('package.json', 'package-lock.json', 'server/package.json', 'server/package-lock.json') }}
       - if: needs.changes.outputs.docs_only != 'true' && steps.dependencies.outputs.cache-hit != 'true'
         run: npm ci
       - if: needs.changes.outputs.docs_only != 'true' && steps.dependencies.outputs.cache-hit != 'true'
@@ -296,7 +296,7 @@ jobs:
           path: |
             node_modules
             server/node_modules
-          key: installed-v1-${{ runner.os }}-${{ runner.arch }}-${{ steps.node.outputs.node-version }}-${{ hashFiles('package-lock.json', 'server/package-lock.json') }}
+          key: installed-v1-${{ runner.os }}-${{ runner.arch }}-${{ steps.node.outputs.node-version }}-${{ hashFiles('package.json', 'package-lock.json', 'server/package.json', 'server/package-lock.json') }}
       - if: needs.changes.outputs.docs_only != 'true' && steps.dependencies.outputs.cache-hit != 'true'
         run: npm ci
       - if: needs.changes.outputs.docs_only != 'true' && steps.dependencies.outputs.cache-hit != 'true'
@@ -399,7 +399,7 @@ jobs:
           path: |
             node_modules
             server/node_modules
-          key: installed-v1-${{ runner.os }}-${{ runner.arch }}-${{ steps.node.outputs.node-version }}-${{ hashFiles('package-lock.json', 'server/package-lock.json') }}
+          key: installed-v1-${{ runner.os }}-${{ runner.arch }}-${{ steps.node.outputs.node-version }}-${{ hashFiles('package.json', 'package-lock.json', 'server/package.json', 'server/package-lock.json') }}
       - if: needs.changes.outputs.docs_only != 'true' && steps.dependencies.outputs.cache-hit != 'true'
         run: npm ci
       - if: needs.changes.outputs.docs_only != 'true' && steps.dependencies.outputs.cache-hit != 'true'
