@@ -127,6 +127,9 @@ eq(noteSweep.inbox.map(c => c.body), [wakeLine(ready)]);
 await sweep(noteSweep.api, { now });
 eq(noteSweep.inbox.length, 1);
 eq(noteSweep.body().includes('Ready for desk'), true);
+for (const condition of ['except one should-fix', 'pending fixes', 'if the bug is fixed', 'after the follow-up']) {
+  eq(bucket({ comments: [comment(`<!-- review-desk -->\nReview of head ${A}: clean ${condition}.\nOwner pictures pending.\nHead: ${A}`)] }), 'Red / waiting');
+}
 const relayToday = today.map(c => ({ ...c, body: 'review-desk: comment on #854 by builder: https://example.test/comment' }));
 eq(notifications([ready, missing], relayToday, now), []);
 const workflow = readFileSync('.github/workflows/desk-board.yml', 'utf8');

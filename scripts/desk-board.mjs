@@ -30,7 +30,7 @@ export function reviewOf(comments) {
   // Legacy prose verdicts are accepted only in the review heading, never arbitrary mentions of "clean".
   const heading = body.replace(/<!--[\s\S]*?-->/g, '').trim().split('\n')[0].replace(/\*\*/g, '');
   const clean = !conflict && (marker === sha || (/\bre-?review\b|\breview\b/i.test(heading)
-    && /(?:\(clean\)|:\s*clean\b)/i.test(heading) && !/\bnot clean\b/i.test(heading)));
+    && /(?:\(clean\)(?:\s*[.!](?:\s|$)|\s*$)|:\s*clean(?:\s*[.!](?:\s|$)|\s*$))/i.test(heading) && !/\bnot clean\b/i.test(heading)));
   const visual = /(?:Jarrod|owner)[^\n.]{0,100}(?:must see|sign.off|approval|accept)|(?:waiting|pending|needs?)[^\n.]{0,60}(?:Jarrod|owner)|(?:visual|pictures?|audio)[^\n.]{0,80}(?:first|pending|approval|sign.off)/i.test(body) || /(?:[Jj]arrod|[Oo]wner)[^\n.]{0,100}\bOK\b/.test(body);
   return { sha: conflict ? null : sha ?? null, clean: Boolean(clean), missing: !sha || Boolean(conflict), visual };
 }
