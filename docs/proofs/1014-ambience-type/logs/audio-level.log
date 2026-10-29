@@ -1,0 +1,48 @@
+
+> audio-level-prove
+> node scripts/audio-level-prove.mjs
+
+ok the measure: -20 dBFS peak tone = -23.1 LUFS, short-clip method -23.1
+ambience amb_sea.mp3               -30.6 (target -30.6) peak  -8.4 dBTP
+effects  back_001.wav              -18.1 (target -18) peak  -1.5 dBTP
+effects  bong_001.wav              -18.0 (target -18) peak  -5.7 dBTP
+effects  chat_recv.wav             -18.0 (target -18) peak  -5.7 dBTP
+effects  chat_send.wav             -18.0 (target -18) peak  -5.4 dBTP
+effects  click_001.wav             -18.0 (target -18) peak  -1.8 dBTP
+effects  click_002.wav             -18.0 (target -18) peak  -5.4 dBTP
+effects  click_005.wav             -18.0 (target -18) peak  -2.7 dBTP
+effects  confirmation_001.wav      -18.0 (target -18) peak  -7.2 dBTP
+effects  drop_001.wav              -18.0 (target -18) peak  -7.7 dBTP
+effects  drop_002.wav              -18.0 (target -18) peak  -6.6 dBTP
+effects  drop_003.wav              -18.0 (target -18) peak  -6.8 dBTP
+effects  drop_004.wav              -18.0 (target -18) peak  -5.7 dBTP
+music    end_music.mp3             -18.1 (target -18) peak  -9.2 dBTP
+effects  error_001.wav             -18.0 (target -18) peak  -4.7 dBTP
+effects  error_002.wav             -18.0 (target -18) peak  -6.5 dBTP
+music    game_lose.mp3             -18.0 (target -18) peak  -5.8 dBTP
+music    game_start.mp3            -18.0 (target -18) peak  -1.9 dBTP
+music    match_point.mp3           -18.0 (target -18) peak  -7.0 dBTP
+music    old_tower_inn_loop.mp3    -18.0 (target -18) peak  -2.8 dBTP
+effects  open_001.wav              -18.1 (target -18) peak  -7.8 dBTP
+effects  plop.wav                  -18.1 (target -18) peak  -6.5 dBTP
+effects  pluck_001.wav             -18.0 (target -18) peak  -5.2 dBTP
+memes    robbed_fah.mp3            -16.0 (target -16) peak -11.0 dBTP
+memes    sb_airhorn.mp3            -16.0 (target -16) peak  -8.7 dBTP
+memes    sb_only_wood.mp3          -16.0 (target -16) peak  -1.6 dBTP
+memes    sb_perfect.mp3            -16.0 (target -16) peak  -3.4 dBTP
+effects  sb_plump_sheep.mp3        -18.0 (target -18) peak  -2.0 dBTP
+memes    sb_quit_touchin.mp3       -16.0 (target -16) peak  -3.4 dBTP
+memes    sb_win_reaction.mp3       -16.2 (target -16) peak  -3.8 dBTP
+memes    sb_wololo.mp3             -16.0 (target -16) peak  -6.2 dBTP
+effects  scratch_001.wav           -18.1 (target -18) peak  -9.9 dBTP
+effects  tap_fields.wav            -18.0 (target -18) peak  -8.2 dBTP
+effects  tap_forest.wav            -18.0 (target -18) peak  -7.1 dBTP
+effects  tap_hills.wav             -18.0 (target -18) peak  -4.9 dBTP
+effects  tap_mountains.wav         -18.0 (target -18) peak  -7.7 dBTP
+effects  tap_waste.wav             -18.0 (target -18) peak  -2.7 dBTP
+effects  timer_final.wav           -18.0 (target -18) peak  -7.0 dBTP
+effects  timer_tick.wav            -18.0 (target -18) peak  -9.4 dBTP
+effects  trade_offer.wav           -18.0 (target -18) peak  -5.2 dBTP
+effects  wayfarer_move.wav         -18.0 (target -18) peak  -1.9 dBTP
+effects  your_turn.wav             -18.0 (target -18) peak  -8.3 dBTP
+audio-level-prove ok: 42 files

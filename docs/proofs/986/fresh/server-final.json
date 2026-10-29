@@ -1,0 +1,11 @@
+{
+  "command": [
+    "npm",
+    "test"
+  ],
+  "cwd": "/workspace/work/rematch986-verify",
+  "exit": 0,
+  "seconds": 518.88,
+  "head": "06a4eb8",
+  "reason": "final complete run after unchanged rejoin and lobby checks passed independently on main and head"
+}
