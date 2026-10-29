@@ -139,7 +139,10 @@ export async function sweep(api, { now = new Date(), dryRun = false, only } = {}
         Object.assign(row, fresh);
         if (fresh.bucket !== 'Ready for desk') continue;
       }
-      const latestInbox = await all('/issues/699/comments');
+      // Retain old SHA receipts, but refresh only today's comments before each write.
+      const day = now.toISOString().slice(0, 10);
+      const recent = await all(`/issues/699/comments?since=${day}T00:00:00Z`);
+      const latestInbox = [...inbox.filter(c => !c.created_at?.startsWith(day)), ...recent];
       if (notifications(rows, latestInbox, now).includes(message)) await api('/issues/699/comments', 'POST', { body: message });
     }
     // Read latest body after all potentially slow calls; preserve every byte outside our block.

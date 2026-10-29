@@ -59,7 +59,7 @@ assert.throws(() => updateBody('<!-- desk-board:start -->', table)); assertions+
 // Stateful API fixture: observe actual writes on repeat sweeps and a changed head.
 function fixture({ moved = false, failedPost = false, many = false, reviewComments = [] } = {}) {
   let head = A, body = 'Desk notes must survive.', readCount = 0;
-  const inbox = [], writes = [], pageReads = [];
+  const inbox = [], writes = [], pageReads = [], inboxReads = [];
   const api = async (path, method = 'GET', payload) => {
     const url = new URL('https://example.test' + path), page = Number(url.searchParams.get('page') ?? 1), p = url.pathname;
     if (method !== 'GET') {
@@ -81,11 +81,14 @@ function fixture({ moved = false, failedPost = false, many = false, reviewCommen
       return many && page === 1 ? Array.from({ length: 100 }, (_, i) => comment(`ordinary ${i}`)) : reviewComments;
     }
     if (p.startsWith('/commits/')) return { check_runs: [{ ...green, head_sha: head }] };
-    if (p === '/issues/699/comments') return inbox.slice((page - 1) * 100, page * 100);
+    if (p === '/issues/699/comments') {
+      inboxReads.push(url.searchParams.get('since'));
+      return inbox.slice((page - 1) * 100, page * 100);
+    }
     if (p === '/issues/916') return { body };
     throw new Error('unexpected API: ' + path);
   };
-  return { api, writes, inbox, pageReads, changeHead: () => { head = B; }, body: () => body };
+  return { api, writes, inbox, pageReads, inboxReads, changeHead: () => { head = B; }, body: () => body };
 }
 const f = fixture({ many: true });
 await sweep(f.api, { now });
@@ -130,6 +133,7 @@ eq(noteSweep.body().includes('Ready for desk'), true);
 for (const condition of ['except one should-fix', 'pending fixes', 'if the bug is fixed', 'after the follow-up']) {
   eq(bucket({ comments: [comment(`<!-- review-desk -->\nReview of head ${A}: clean ${condition}.\nOwner pictures pending.\nHead: ${A}`)] }), 'Red / waiting');
 }
+eq(f.inboxReads.includes('2026-10-28T00:00:00Z'), true);
 const relayToday = today.map(c => ({ ...c, body: 'review-desk: comment on #854 by builder: https://example.test/comment' }));
 eq(notifications([ready, missing], relayToday, now), []);
 const workflow = readFileSync('.github/workflows/desk-board.yml', 'utf8');
