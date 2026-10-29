@@ -212,7 +212,7 @@ import { chunk } from "@/lib/lazy";
 import { PROTO } from "@/lib/net/proto";
 import { readMutedSeats } from "@/lib/muted-seats";
 import { HAPTIC_MS } from "@/lib/haptic-durations";
-import { haptics, play, playLater, stop, yourTurn, type SoundName } from "@/lib/sound";
+import { haptics, play, playLater, resetTradePlease, stop, yourTurn, type SoundName } from "@/lib/sound";
 import { calmMotion, LAND_MS } from "@/lib/scene/landing";
 import type { WaterPath, WaterStatus } from "@/lib/scene/crystal-water";
 import type { PlayView } from "@/lib/scene/mobile-fit";
@@ -571,6 +571,7 @@ export const useGame = create<GameStore>((set, get) => ({
     if (get().screen === "title" && ["on", "off"].includes(mode)) set({ wayfarerChoices: { ...get().wayfarerChoices, [context]: mode } });
   },
   startAi: () => {
+    resetTradePlease();
     stopEndMusic();
     // A table left dialing (a reload with a saved seat) must not pull a practice game back to the lobby.
     clearWake();
@@ -603,6 +604,7 @@ export const useGame = create<GameStore>((set, get) => ({
     play("game_start");
   },
   startHotseat: (count) => {
+    resetTradePlease();
     stopEndMusic();
     clearWake();
     clearKnocks();
@@ -635,6 +637,7 @@ export const useGame = create<GameStore>((set, get) => ({
   },
   restoring: typeof window !== "undefined" && inPlayAtSavedSeat(),
   loadState: (s, localId, host, table) => {
+    if (!get().state || (get().state?.phase === "over" && s.phase !== "over") || (table && table !== get().table)) resetTradePlease();
     // A push that leaves the turn alone (a seat rejoining) keeps an open picker, with the host's fresh victims (#1110).
     const { pendingSteal: ps, state: was, legal } = get();
     const targets = ps && was && s.phase === was.phase && s.current === was.current ? (legal?.steal[ps.hexId] ?? []) : [];
@@ -654,6 +657,7 @@ export const useGame = create<GameStore>((set, get) => ({
     });
   },
   goTitle: () => {
+    resetTradePlease();
     stopEndMusic();
     // Leaving on purpose frees the seat; only a drop keeps it. A watcher never held one, and the saved seat may be another table's.
     if (!get().spectator) rememberSeat(null);
@@ -935,6 +939,7 @@ export const useGame = create<GameStore>((set, get) => ({
     if (spectator) return;
     if (mode === "online") return net?.again();
     if (mode !== "hotseat" || state?.phase !== "over") return;
+    resetTradePlease();
     const winner = state.players.find((p) => p.id === state.winner)!;
     const ordered = [winner, ...state.players.filter((p) => p !== winner)];
     const next = createGame({ humans: ordered.map((p) => ({ name: p.name })), bots: 0, winnerFirst: true, wayfarerMode: state.wayfarerMode ?? "on" });

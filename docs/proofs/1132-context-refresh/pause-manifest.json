@@ -1,0 +1,53 @@
+{
+  "agent": "GPT-6.1 Sol medium-1029",
+  "model": "GPT-6.1 Sol",
+  "reasoning": "medium",
+  "paused_utc": "2026-10-29T17:21:21Z",
+  "reason": "Explicit user request: pause Sol; finish Terra and stop.",
+  "pr": 1139,
+  "issue": 1132,
+  "pr_head_normal_main_merge": "7259150bfb8cd9da07240d89312f2f38ea79387f",
+  "base_main": "1d87e85b8ed337924a9a9a3520c8c2d1a33d25e0",
+  "candidate_source_sha256": {
+    "src/lib/sound.ts": "0a5b87900a04549300afc14fdadbcb32875d6db68e62670395904c8e84f17ea2",
+    "src/lib/trade-sound.ts": "7d8fb223bbc48c3d9b144c899c180b2645b4532f7396235e1bc992e227bf4e82",
+    "src/lib/game/store.ts": "2780603ccab523b59482aac5533bf5de98425112e12778d32eb810e03821dc0e",
+    "scripts/trade-prove.mjs": "6b743f68df1c85eded1a2ab101d8335ae3782c67773cab9d363317b17fa7dd57"
+  },
+  "trade_final_exit": 0,
+  "negative_meme_context_exit": 1,
+  "negative_original_bug_caught": true,
+  "negative_source_restored_exactly": true,
+  "typecheck_exit": 0,
+  "build_exit": 0,
+  "registration_exit": 0,
+  "loosen_current_main_exit": 0,
+  "size_exit": 0,
+  "measured_gzip_bytes": {
+    "index": {
+      "base": 124613,
+      "candidate": 124873,
+      "growth": 260,
+      "allowance": 400
+    },
+    "trade-sound": {
+      "base": 522,
+      "candidate": 531,
+      "growth": 9,
+      "allowance": 200
+    },
+    "sound-extra": {
+      "base": 225,
+      "candidate": 225,
+      "growth": 0,
+      "allowance": 200
+    }
+  },
+  "usage_percentages": null,
+  "remaining": [
+    "Record gain metadata before a potentially throwing currentTime seek, or otherwise maintain the cache/WeakMap invariant; root review concern remains unfixed.",
+    "Run remaining affected sound proofs serially: sound-mixer, sounds, music, audio-recovery and relevant callers.",
+    "After any source fix, rerun appropriate positive proof and fresh build/size; do not reuse old-tree validation.",
+    "Fresh exact-head CI and independent Claude review; owner must listen before merge."
+  ]
+}

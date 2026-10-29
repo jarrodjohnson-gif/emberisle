@@ -4,6 +4,7 @@
 import { useSyncExternalStore } from "react";
 import { categoryGain, subscribeSoundMix, type SoundCategory } from "./sound-settings";
 import type { ExtraSoundName } from "./sound-extra";
+import type { Bag } from "./net/table";
 
 const FILES = {
   dice_land: "drop_001.wav",
@@ -87,8 +88,8 @@ export function soundCategory(name: SoundName): SoundCategory {
 }
 
 const MUTED_KEY = "emberisle-muted";
-const clips = new Map<SoundName, HTMLAudioElement>();
-const gains = new Map<SoundName, number>();
+const clips = new Map<string, HTMLAudioElement>();
+const gains = new WeakMap<HTMLAudioElement, [number, SoundCategory]>();
 export let unlocked = false;
 let muted = savedMuted();
 const listeners = new Set<() => void>();
@@ -152,7 +153,7 @@ const GAP_MS = 150;
 const MAX_QUEUE = 8;
 const UI: ReadonlySet<SoundName> = new Set<SoundName>(["ui_click", "ui_back", "ui_error"]);
 const asked = new Map<SoundName, number>();
-const queue: [SoundName, number][] = [];
+const queue: [SoundName, number, SoundCategory][] = [];
 let pacing = false;
 
 function pump() {
@@ -167,29 +168,30 @@ function pump() {
 }
 
 let extraFiles: Partial<Record<ExtraSoundName, string>> | null = null;
-function start(name: SoundName, volume: number) {
-  const gain = volume * categoryGain(soundCategory(name));
+function start(name: SoundName, volume: number, category: SoundCategory) {
+  const gain = volume * categoryGain(category);
   if (muted || !gain) return;
   const file = FILES[name as keyof typeof FILES] ?? extraFiles?.[name as ExtraSoundName];
   if (!file) {
     if (extraFiles) return;
     void import("./sound-extra").then(({ EXTRA_FILES }) => {
       extraFiles = EXTRA_FILES;
-      start(name, volume);
+      start(name, volume, category);
     });
     return;
   }
   try {
     // The first roll cuts the game-start sting off.
     if (name === "dice_land") clips.get("game_start")?.pause();
-    let clip = clips.get(name);
+    const key = category === soundCategory(name) ? name : `${name}:${category}`;
+    let clip = clips.get(key);
     if (!clip || clip.error) {
       clip = new Audio(`${import.meta.env.BASE_URL}audio/${file}`);
-      clips.set(name, clip);
+      clips.set(key, clip);
       if (DUCKERS.has(name)) for (const e of ["play", "pause", "ended"]) clip.addEventListener(e, duckMusic);
     }
     clip.currentTime = 0;
-    gains.set(name, volume);
+    gains.set(clip, [volume, category]);
     clip.volume = gain;
     clip.play()?.catch(() => {});
   } catch {
@@ -197,33 +199,35 @@ function start(name: SoundName, volume: number) {
   }
 }
 
-export function play(name: SoundName, volume = 1) {
-  if (!unlocked || muted || !categoryGain(soundCategory(name)) || typeof Audio === "undefined") return;
+export function play(name: SoundName, volume = 1, category = soundCategory(name)) {
+  if (!unlocked || muted || !categoryGain(category) || typeof Audio === "undefined") return;
   // Paying pieces are already staggered by the renderer at 90 ms, capped at eight per roll. The general 150 ms
   // burst filter would silently lose every other tick; play these directly at their visual onset.
-  if (name === "gain_tick") { start(name, volume); return; }
+  if (name === "gain_tick") { start(name, volume, category); return; }
   const now = Date.now();
   if ((!UI.has(name) && now - (asked.get(name) ?? -GAP_MS) < GAP_MS) || queue.length >= MAX_QUEUE) return;
   asked.set(name, now);
-  queue.push([name, volume]);
+  queue.push([name, volume, category]);
   if (!pacing) pump();
 }
 
-let lastTradePlease = "";
-let lastTradePleaseAt = 0;
+// Expire quiet sender/clip keys and bound memory across tables. Ordinary four-seat tables use at most 16 keys.
+const tradePlease = new Map<string, number>();
+export const resetTradePlease = () => tradePlease.clear();
 
-export function playTradePlease(cue: typeof play, from: string, want: { timber?: number; wool?: number; grain?: number; clay?: number }) {
+export function playTradePlease(cue: typeof play, from: string, want: Bag) {
   const requested = Object.entries(want).filter(([, count]) => (count ?? 0) > 0);
   if (requested.length !== 1) return false;
   const resource = requested[0][0];
   const clip: SoundName | undefined = resource === "timber" ? "sb_only_wood" : resource === "wool" ? "sb_sheep_please" : resource === "grain" ? "sb_grain_please" : resource === "clay" ? "sb_brick_please" : undefined;
   if (!clip) return false;
   const now = Date.now();
+  for (const [key, at] of tradePlease) if (now - at >= 3000 || now < at) tradePlease.delete(key);
   const key = `${from}:${clip}`;
-  if (key !== lastTradePlease || now - lastTradePleaseAt >= 3000) {
-    lastTradePlease = key;
-    lastTradePleaseAt = now;
-    cue(clip);
+  if (!tradePlease.has(key)) {
+    if (tradePlease.size >= 64) tradePlease.delete(tradePlease.keys().next().value!);
+    tradePlease.set(key, now);
+    cue(clip, 1, "game");
   }
   return true;
 }
@@ -246,10 +250,10 @@ export function stop(name: SoundName) {
   if (wait) clearTimeout(wait);
   later.delete(name);
   for (let i = queue.length - 1; i >= 0; i--) if (queue[i]![0] === name) queue.splice(i, 1);
-  const clip = clips.get(name);
-  if (!clip) return;
-  clip.pause();
-  clip.currentTime = 0;
+  for (const [key, clip] of clips) if (key === name || key.startsWith(`${name}:`)) {
+    clip.pause();
+    clip.currentTime = 0;
+  }
 }
 
 // The your-turn chime, with a short buzz on phones that have a motor (#542: 15 ms, was 30).
@@ -348,7 +352,10 @@ function syncMusic() {
 }
 
 function syncVolumes() {
-  for (const [name, clip] of clips) clip.volume = muted ? 0 : (gains.get(name) ?? 1) * categoryGain(soundCategory(name));
+  for (const clip of clips.values()) {
+    const [volume, category] = gains.get(clip)!;
+    clip.volume = muted ? 0 : volume * categoryGain(category);
+  }
 }
 subscribeSoundMix(() => { syncVolumes(); syncMusic(); });
 
