@@ -1,0 +1,37 @@
+star of 6 segments: trail 4, no award
+line of 5: award to p0, and the log says so
+tie at 5 with no holder: nobody
+holder p0 tied at 5: keeps it
+outpost at the middle of p0's line: p0 trail 3, award removed
+buy a knight, play it the same turn: rejected ("A fortune cannot be played the turn it is bought.")
+pass, then play it next turn before the roll: works
+path fortune with no paths left: rejected ("No paths left to place."), card kept
+path fortune with no legal edge: rejected ("No place for a path."), card kept
+path past an opponent's outpost: rejected ("Path must connect to you.")
+path from your own outpost: works
+README three or four players: ok
+README first to 10 points wins: ok
+README 10 points reached on another's turn win as your turn starts: ok
+README one island of 19 hexes: ok
+20000 deals: 0 land hexes without a token, 0 adjacent red tokens
+README forest, hills, pasture, fields, mountains, or the wastes: ok
+README a token from 2 to 12 on every hex except the wastes: ok
+README there is no 7 token: ok
+README the wastes produce nothing: ok
+README stock: 15 paths, 5 outposts, 4 strongholds: ok
+README path costs 1 wood, 1 brick: ok
+README no path past the stock: ok
+README outpost costs wood, brick, sheep, wheat: ok
+README no outpost past the stock: ok
+README stronghold costs 2 stone, 3 wheat, on an outpost you own: ok
+README a shared deck of 25: ok
+README 14 knights, 2 path-building, 2 plenty, 2 monopoly, 5 hidden points: ok
+README fortune costs sheep, wheat, stone: ok
+README a fortune bought this turn cannot be played this turn (check 6 above): ok
+README a knight may be played before the roll (check 7 above): ok
+FAIL README every fortune kind bought this turn is refused this turn [
+  'A fortune cannot be played the turn it is bought.',
+  'A fortune cannot be played the turn it is bought.',
+  'A fortune cannot be played the turn it is bought.',
+  undefined
+]

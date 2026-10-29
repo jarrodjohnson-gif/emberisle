@@ -1,0 +1,16 @@
+{
+  "builder": "GPT-6.1 Sol medium-1029",
+  "model": "GPT-6.1 Sol",
+  "reasoning": "medium",
+  "timestamp": "2026-10-29T16:54:46.853438+00:00",
+  "original_head": "b8f30d17267089dec5c0855765613bab98041c88",
+  "main": "1d87e85b8ed337924a9a9a3520c8c2d1a33d25e0",
+  "prepared_merge": "0b2aa980590eba0790d1ad5bb75a8d982d467bdf",
+  "checkpoint_branch": "codex/checkpoint-995-main-0b2aa980",
+  "original_proof_unchanged": true,
+  "negative_control": "Same-turn monopoly guard bypass detected by existing added assertion, exit 1; unmodified proof rerun exit 0.",
+  "remote_head_unchanged": true,
+  "usage_percentages": null,
+  "completed_utc": "2026-10-29T16:55:57.000342+00:00",
+  "server_exit_code": 0
+}
