@@ -62,7 +62,7 @@ const peek = (page) => page.evaluate(() => {
   return { picker: s.pendingSteal, bar: document.querySelectorAll('[aria-label="The wayfarer takes a card"] button').length, phase: s.state?.phase, current: s.state?.current, pushes: window.__pushes };
 });
 try {
-  host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], { cwd: new URL("../server/", import.meta.url), env: { ...process.env, PORT: "0", ROOMS_DIR: dir, TURN_MS: "600000", GRACE_MS: "120000", HOLD_MS: "180000", ACT_CAP: "1000", ACT_RATE: "1000" } });
+  host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], { cwd: new URL("../server/", import.meta.url), env: { ...process.env, PORT: "0", ROOMS_DIR: dir, PROFILES_DIR: path.join(dir, "profiles"), TURN_MS: "600000", GRACE_MS: "120000", HOLD_MS: "180000", ACT_CAP: "1000", ACT_RATE: "1000" } });
   host.stderr.on("data", (d) => { hostErrors += d; });
   const port = await new Promise((resolve, reject) => {
     host.stdout.on("data", (d) => { const m = String(d).match(/listening (\d+)/); if (m) resolve(Number(m[1])); });
