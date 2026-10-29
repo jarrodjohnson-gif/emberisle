@@ -20,6 +20,7 @@ const failures = {
   "board-touch-prove": `${at}AssertionError [ERR_ASSERTION]: setup: a tap on a Pasture hex plays nothing\n${at}+ actual - expected`,
   "flash-prove": `${at}flash-prove failed: page.waitForFunction: Timeout 120000ms exceeded.\n${at}    at settled (/home/runner/work/emberisle/emberisle/scripts/flash-prove.mjs:131:8)`,
   "lobby-layout-prove": `${at}AssertionError [ERR_ASSERTION]: 375x667: "Copy" has at least 8 px between text and button edge (7.3 / 7.2)`,
+  "connection-health-prove": `${at}+   saving: false,\n${at}-   saving: true,`,
 };
 assert.deepEqual(flakes.map((f) => f.id).sort(), Object.keys(failures).sort());
 for (const f of flakes) {

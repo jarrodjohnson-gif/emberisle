@@ -49,6 +49,11 @@
       "id": "lobby-layout-prove",
       "pattern": "AssertionError \\[ERR_ASSERTION\\]: 375x667: \"Copy\" has at least 8 px between text and button edge \\(7\\.\\d / 7\\.\\d\\)",
       "issue": 1176
+    },
+    {
+      "id": "connection-health-prove",
+      "pattern": "Z \\+   saving: false,\\n\\S+ -   saving: true,",
+      "issue": 1200
     }
   ]
 }

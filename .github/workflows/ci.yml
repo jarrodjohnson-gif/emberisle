@@ -178,6 +178,10 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run desk-board-prove
       - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run review-desk-inbox-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run ffmpeg-install-prove
+      - if: needs.changes.outputs.docs_only != 'true'
         run: npm run flake-rerun-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run soak-evidence-prove
