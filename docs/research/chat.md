@@ -1,5 +1,47 @@
 # Research: table chat and emoji reactions (issue #118)
 
+## Current audit, 2026-10-29
+
+Agent: GPT-6-1029-0830-bd (GPT-6). Source: upstream `main`
+`1d87e85b8ed337924a9a9a3520c8c2d1a33d25e0`. This refresh supports parent #117;
+it does not change the approved design or close the parent. The September proposal below is
+historical: its desktop-only scope, suggested messages, history size and implementation handoff
+do not describe the shipped client.
+
+### What ships
+
+| Area | Current behavior | Source |
+|---|---|---|
+| Sender identity | The host supplies the seat, player id (or `null` in the lobby), name and color. Client-supplied identity fields do not override them. | `server/host.mjs`, `talk`; `server/chat-prove.mjs` |
+| Chat text | `cleanText` rejects non-strings and empty text, removes control/format characters except the emoji joiner U+200D, collapses repeated spaces, trims, and caps at 200 Unicode code points. The client renders text as React children, including literal mention segments. | `server/chat.mjs`, `cleanText`; `src/components/game/Chat.tsx`, `Line` and `Mention` |
+| Rate and socket limits | Chat, image/emoji reactions and soundboard taps share a per-seat burst of five, refilled at one token per second. Sounds also have a default 3000 ms cooldown. WebSocket messages are capped at 16 KiB. | `server/chat.mjs`, `allow`; `server/host.mjs`, `talk`, `SOUND_MS`, WebSocket server |
+| History | The host retains 30 chat/sound lines and sends them in `welcome`; the client retains up to 50 chat lines. Reactions are broadcast rather than added to the host's chat history. The client also builds reaction rows locally. | `server/host.mjs`, `talk` and welcome messages; `src/lib/game/store.ts`, welcome/chat handlers; `src/components/game/talk.tsx`, reaction subscription |
+| Lobby and game UI | Chat is available in the lobby and during play. The shared panel has Chat and Sounds & stickers tabs. The game has an unread count, minimize control and phone-specific dock behavior; mobile is in scope following the 2026-09-28 owner reversal on #117. | `src/components/game/Chat.tsx`, `ChatBox` and `ChatDock`; `scripts/chat-prove.mjs` |
+| Emoji and stickers | The six emoji are 😠 😊 👏 😂 🔥 🐑. The asset folder contains 15 WebP stickers, not just `ben-10`. The host loads lowercase PNG/WebP ids from that folder; the client loads the same folder with Vite's `no-inline` asset query. | `src/components/game/talk.tsx`, `QUICK_REACTIONS`; `server/chat.mjs`, `loadEmotes`; `src/components/game/emotes.ts`; `src/assets/emotes/` |
+| Sounds and presets | The Sounds & stickers tab contains 15 sound chips, five text presets, and the stickers. The host accepts only known sound ids and records a sound tap as a chat line. | `src/components/game/Reactions.tsx`, `SoundsTab`; `server/chat.mjs`, `SOUNDBOARD`; `server/host.mjs`, `talk` |
+
+The original image guidance below is also historical. The later owner decisions in
+[`docs/design/emotes.md`](../design/emotes.md), section 2, allow sources up to 256×256,
+50 KB per file and 24 stickers. This audit counts the shipped files; it does not certify the
+art against every dimension/transparency requirement or accept #120 on the owner's behalf.
+
+### Evidence and tracking
+
+`server/chat-prove.mjs` exercises the pure validators and real host sockets: authoritative
+sender identity, invalid text/emote rejection, rate limiting, aimed and unaimed reactions,
+late-join history, player ids after start, and isolation of an oversized frame.
+`scripts/chat-prove.mjs` is the existing three-tab browser proof; it checks lobby chat and
+reaction delivery, the in-game dock and phone behavior. These are distinct checks: a socket
+proof alone cannot establish that the browser displays a message correctly.
+
+The current tracking remains in GitHub. #120 (art) and #162 (three-tab acceptance) are still open;
+the reaction-tray and sticker-pipeline work is tracked under #664 and #663 and their children.
+The 2026-10-16 wrap-up comment on #117 said only one sticker existed; the current inventory is 15 files.
+Passing existing proofs is evidence of implemented behavior, not permission to close those
+issues or to implement a different tray design.
+
+## Historical proposal, 2026-09-27
+
 - step: 1 Research, node #117 (Let players chat and send emoji reactions at the table)
 - date: 2026-09-27
 - agent: Claude
