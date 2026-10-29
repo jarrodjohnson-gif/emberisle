@@ -1,0 +1,15 @@
+
+> flake-rerun-prove
+> node scripts/flake-rerun-prove.mjs
+
+ok   every failed job is a known flake: re-run, all 2 failed jobs are known flakes
+ok   one failed job is not a known flake: no re-run, 1 of 2 failed jobs are not a known flake
+ok   attempt 2 is never re-run: no re-run, run attempt 2, only attempt 1 is re-run
+ok   no failed jobs: no re-run, no failed jobs to match
+ok   only the aggregate checks job failed: no re-run, no failed jobs to match
+ok   signature in the log, another step failed: no re-run, 1 of 1 failed jobs are not a known flake
+ok   step name must be the proof exactly: no re-run, 1 of 1 failed jobs are not a known flake
+ok   a cancelled or timed-out job is not a flake: no re-run, 1 of 1 failed jobs are not a known flake
+ok   a failed job with no log is not a flake: no re-run, 2 of 2 failed jobs are not a known flake
+ok   one job, two failed steps, only one a known flake: no re-run, 1 of 1 failed jobs are not a known flake
+flake-rerun-prove: ok

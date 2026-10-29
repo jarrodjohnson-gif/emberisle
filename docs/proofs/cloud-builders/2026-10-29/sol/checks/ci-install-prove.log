@@ -1,0 +1,12 @@
+
+> ci-install-prove
+> node scripts/ci-install-prove.mjs
+
+ok negative controls: missing root/server manifest rejected in all five cache keys
+ok manifest-only drift: old keys hit; fixed root/server keys miss with unchanged lockfiles
+ok cold: 2 npm ci calls across 14 dependency jobs (PR size baseline adds 1)
+ok warm: 0 npm ci calls across 14 dependency jobs (PR size baseline adds 1)
+ok unavailable: 28 npm ci calls across 14 dependency jobs (PR size baseline adds 1)
+ok docs: 0 npm ci calls across 14 dependency jobs (PR size baseline adds 1)
+ok failed install exits 31; exact cache identity and all required suites retained
+ci-install-prove ok

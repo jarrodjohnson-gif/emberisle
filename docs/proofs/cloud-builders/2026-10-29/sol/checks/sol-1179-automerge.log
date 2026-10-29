@@ -1,0 +1,90 @@
+
+> auto-merge-prove
+> node scripts/auto-merge-prove.mjs
+
+ok   docs and a new image: merge, 2 docs files, 10 lines, checks green, desk clean at aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+ok   an issue template alone: .github/** wins: no merge, ".github/ISSUE_TEMPLATE/idea.md": excluded folder
+ok   excluded alongside a doc: "AGENTS.md": no merge, "AGENTS.md": excluded file name
+ok   excluded alongside a doc: "CLAUDE.md": no merge, "CLAUDE.md": excluded file name
+ok   excluded alongside a doc: "README.md": no merge, "README.md": excluded governance file
+ok   excluded alongside a doc: "docs/DESK.md": no merge, "docs/DESK.md": excluded governance file
+ok   excluded alongside a doc: "docs/REVIEWING.md": no merge, "docs/REVIEWING.md": excluded governance file
+ok   excluded alongside a doc: "docs/DECISIONS.md": no merge, "docs/DECISIONS.md": excluded governance file
+ok   excluded alongside a doc: "docs/LANES.md": no merge, "docs/LANES.md": excluded governance file
+ok   excluded alongside a doc: "docs/FRAMEWORK.md": no merge, "docs/FRAMEWORK.md": excluded governance file
+ok   excluded alongside a doc: "docs/design/AGENTS.md": no merge, "docs/design/AGENTS.md": excluded file name
+ok   excluded alongside a doc: "docs/CLAUDE.md": no merge, "docs/CLAUDE.md": excluded file name
+ok   excluded alongside a doc: "docs/framework.md": no merge, "docs/framework.md": excluded governance file
+ok   excluded alongside a doc: "Docs/DESK.md": no merge, "Docs/DESK.md": excluded governance file
+ok   excluded alongside a doc: ".github/workflows/ci.yml": no merge, ".github/workflows/ci.yml": excluded folder
+ok   excluded alongside a doc: ".github/workflows/auto-merge.yml": no merge, ".github/workflows/auto-merge.yml": excluded folder
+ok   excluded alongside a doc: ".github/ISSUE_TEMPLATE/bug.md": no merge, ".github/ISSUE_TEMPLATE/bug.md": excluded folder
+ok   excluded alongside a doc: ".github/flaky.json": no merge, ".github/flaky.json": excluded folder
+ok   excluded alongside a doc: "package.json": no merge, "package.json": excluded package file
+ok   excluded alongside a doc: "package-lock.json": no merge, "package-lock.json": excluded package file
+ok   excluded alongside a doc: "server/package.json": no merge, "server/package.json": excluded folder
+ok   excluded alongside a doc: "server/package-lock.json": no merge, "server/package-lock.json": excluded folder
+ok   excluded alongside a doc: "docs/package.json": no merge, "docs/package.json": excluded package file
+ok   excluded alongside a doc: "scripts/auto-merge-eligible.mjs": no merge, "scripts/auto-merge-eligible.mjs": excluded folder
+ok   excluded alongside a doc: "server/index.ts": no merge, "server/index.ts": excluded folder
+ok   excluded alongside a doc: "src/main.tsx": no merge, "src/main.tsx": excluded folder
+ok   excluded alongside a doc: "CODEOWNERS": no merge, "CODEOWNERS": excluded file name
+ok   excluded alongside a doc: "docs/CODEOWNERS": no merge, "docs/CODEOWNERS": excluded file name
+ok   excluded alongside a doc: ".gitignore": no merge, ".gitignore": excluded file name
+ok   excluded alongside a doc: "docs/.gitignore": no merge, "docs/.gitignore": excluded file name
+ok   excluded alongside a doc: "docs/tool.mjs": no merge, "docs/tool.mjs": excluded code file
+ok   excluded alongside a doc: "docs/types.ts": no merge, "docs/types.ts": excluded code file
+ok   excluded alongside a doc: "index.html": no merge, "index.html": outside docs/
+ok   excluded alongside a doc: "vite.config.ts": no merge, "vite.config.ts": excluded code file
+ok   excluded alongside a doc: "LICENSE": no merge, "LICENSE": outside docs/
+ok   excluded alongside a doc: "public/audio/x.ogg": no merge, "public/audio/x.ogg": outside docs/
+ok   excluded alongside a doc: "docs": no merge, "docs": outside docs/
+ok   excluded alongside a doc: "notes.md": no merge, "notes.md": outside docs/
+ok   excluded alongside a doc: "docs/../src/main.tsx": no merge, "docs/../src/main.tsx": unsafe path
+ok   excluded alongside a doc: "docs//x.md": no merge, "docs//x.md": unsafe path
+ok   excluded alongside a doc: "docs/./x.md": no merge, "docs/./x.md": unsafe path
+ok   excluded alongside a doc: "/docs/x.md": no merge, "/docs/x.md": unsafe path
+ok   excluded alongside a doc: "docs\\x.md": no merge, "docs\\x.md": unsafe path
+ok   excluded alongside a doc: "docs/x\n.md": no merge, "docs/x\n.md": unsafe path
+ok   a removed doc: no merge, "docs/old.md" is removed
+ok   a renamed doc: no merge, "docs/new.md" is renamed
+ok   a doc renamed in from src/: no merge, "docs/x.ts.md" is renamed
+ok   a copied doc: no merge, "docs/copy.md" is copied
+ok   a mode change: no merge, "docs/run.md" is changed
+ok   399 changed lines: merge, 2 docs files, 399 lines, checks green, desk clean at aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+ok   400 changed lines: no merge, 400 changed lines, the limit is under 400
+ok   a file with no line counts: no merge, "docs/a.md" has no line counts
+ok   the files API listed fewer files than the PR has: no merge, files API listed 2 of 3 files
+ok   no changed files: no merge, no changed files
+ok   marker for another SHA (spoofed or stale): no merge, no desk clean marker for aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+ok   marker with the head SHA from an outsider: no merge, no desk clean marker for aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+ok   marker with the head SHA from a past contributor: no merge, no desk clean marker for aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+ok   marker with a short SHA: no merge, no desk clean marker for aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+ok   no marker: no merge, no desk clean marker for aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+ok   a stale marker and a fresh one: merge, 2 docs files, 10 lines, checks green, desk clean at aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+ok   head moved during the check: no merge, head moved from aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa to bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb during the check
+ok   no head SHA: no merge, no head SHA
+ok   checks failed: no merge, `checks` is not green on the head SHA
+ok   checks still running: no merge, `checks` is not green on the head SHA
+ok   no checks run: no merge, no `checks` run on the head SHA
+ok   checks green from another app only: no merge, no `checks` run on the head SHA
+ok   checks green on another SHA: no merge, `checks` is not green on the head SHA
+ok   one checks run green, one red: no merge, `checks` is not green on the head SHA
+ok   a draft: no merge, PR is not open and ready
+ok   a closed PR: no merge, PR is not open and ready
+ok   a merged PR: no merge, PR is not open and ready
+ok   base is not the default branch: no merge, base is not main
+ok   mutant caught: excludes ignored (43 cases, e.g. an issue template alone: .github/** wins)
+ok   mutant caught: allow list not enforced (5 cases, e.g. excluded alongside a doc: "index.html")
+ok   mutant caught: governance names matched case-sensitively (1 cases, e.g. excluded alongside a doc: "docs/framework.md")
+ok   mutant caught: names matched only at the root (4 cases, e.g. excluded alongside a doc: "docs/design/AGENTS.md")
+ok   mutant caught: renames and deletes allowed (3 cases, e.g. a removed doc)
+ok   mutant caught: size limit off by one (1 cases, e.g. 400 changed lines)
+ok   mutant caught: marker SHA not compared (1 cases, e.g. marker for another SHA (spoofed or stale))
+ok   mutant caught: marker author not checked (2 cases, e.g. marker with the head SHA from an outsider)
+ok   mutant caught: head re-read ignored (1 cases, e.g. head moved during the check)
+ok   mutant caught: checks run SHA not compared (1 cases, e.g. checks green on another SHA)
+ok   mutant caught: checks app not checked (1 cases, e.g. checks green from another app only)
+ok   mutant caught: truncated files list allowed (1 cases, e.g. the files API listed fewer files than the PR has)
+ok   ci.yml docs_only: AGENTS.md, CLAUDE.md and README.md run full CI
+auto-merge-prove: ok (72 cases, 12 mutants caught)
