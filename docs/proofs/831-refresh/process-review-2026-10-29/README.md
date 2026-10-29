@@ -16,3 +16,11 @@ The replacement was already isolated from runtime in proof-equivalence commit `4
 The next Bank/Dock button press, `STEP_MS` wait for wool count `2`, and exact sampled wool `2`/`+1`/lift and ore `4`/`−4`/dip expectations (lines185–187) are byte-for-byte identical against current main. Every remaining line after184 is identical too. The later real dispatcher trade, restarted animation, reduced-motion, geometry and browser-error checks remain. No assertion, timeout, motion threshold or fixture changes accompany this documentation. Source: `TradePanel.tsx:77–95` derives the kinds from the shared draft, quotes `harborRate`, checks hand affordability and bank stock, and dispatches `{ type: "bankTrade", give: g, want: w }`.
 
 This is a source comparison, not a new browser-proof result. Parent owns fresh serialized Hand/audio validation and records actual outputs separately.
+
+## Audio diagnostics removed from this PR
+
+The audio proof is restored byte-exact to the pre-diagnostic `0857561^` source and current main `1d87e85b8ed337924a9a9a3520c8c2d1a33d25e0`: blob `34384454e86ae35e049f5d156b9be59128858107`. This removes only the unrelated21-line failure-snapshot wrapper. All189 baseline lines and12 `check()` lines are retained, including the native wait's8000ms timeout/50ms polling, assertions, watchdog and registration.
+
+Diagnostic commit `085756116f36ced4e0abacbb3db5c33d37931355` remains reachable in this branch's history; its source blob is `0820f65` (abbreviated). The [original audio checkpoint](../audio-ci-2026-10-27/README.md), raw archives and hashes remain unchanged as historical evidence for that diagnostic source. Its statements about future snapshot logging apply to0857561, not to the restored current proof. The failure cause remains unproved; this restoration is not an audio-runtime fix. Own PR #873's diagnostic copy is untouched. No separate PR is opened while the group is at its four-PR cap.
+
+Local checks for this restoration: `node --check scripts/audio-recovery-prove.mjs` and `node --check scripts/hand-cards-prove.mjs`; byte equality with both original/main audio; exact baseline line/check counts; unchanged Hand source. Browser validation is delegated to the parent and is not claimed here.
