@@ -10,10 +10,16 @@ const END = '<!-- desk-board:end -->';
 export const DAILY_LIMIT = 24; // Strictly fewer than 25 board notifications per UTC day.
 export const MISSING = 'To desk: desk-board found review comments without a valid Head: footer or clean marker; please add full head SHAs.';
 const trusted = c => TRUSTED.includes(c.author_association);
+const reviewHeading = body => /^(?:#+\s*)?re(?:-?re)?view\b/i.test(body.replace(/<!--[\s\S]*?-->/g, '').trim().split('\n')[0].replace(/\*\*/g, ''));
 const text = c => String(c.body ?? '').replace(/```[^]*?```|~~~[^]*?~~~/g, '').replace(/^>.*$/gm, '');
 
 export function reviewOf(comments) {
-  const latest = comments.filter(trusted).filter(c => /<!--\s*review-desk(?:\s*-->|:\s*clean\s)/.test(text(c)))
+  const latest = comments.filter(trusted).filter(c => {
+    const body = text(c);
+    return /<!--\s*review-desk(?:\s*-->|:\s*clean\s)/.test(body)
+      && (/\bHead:\s*[0-9a-f]{40}(?![0-9a-f])/.test(body)
+        || /<!--\s*review-desk:\s*clean\s+[0-9a-f]{40}\s*-->/.test(body) || reviewHeading(body));
+  })
     .sort((a, b) => Date.parse(a.created_at) - Date.parse(b.created_at) || a.id - b.id).at(-1);
   if (!latest) return { sha: null, clean: false, missing: false, visual: false };
   const body = text(latest);
@@ -25,7 +31,7 @@ export function reviewOf(comments) {
   const heading = body.replace(/<!--[\s\S]*?-->/g, '').trim().split('\n')[0].replace(/\*\*/g, '');
   const clean = !conflict && (marker === sha || (/\bre-?review\b|\breview\b/i.test(heading)
     && /(?:\(clean\)|:\s*clean\b)/i.test(heading) && !/\bnot clean\b/i.test(heading)));
-  const visual = /(?:Jarrod|owner)[^\n.]{0,100}(?:must see|sign.off|approval|accept|OK)|(?:waiting|pending|needs?)[^\n.]{0,60}(?:Jarrod|owner)|(?:visual|pictures?|audio)[^\n.]{0,80}(?:first|pending|approval|sign.off)/i.test(body);
+  const visual = /(?:Jarrod|owner)[^\n.]{0,100}(?:must see|sign.off|approval|accept)|(?:waiting|pending|needs?)[^\n.]{0,60}(?:Jarrod|owner)|(?:visual|pictures?|audio)[^\n.]{0,80}(?:first|pending|approval|sign.off)/i.test(body) || /(?:[Jj]arrod|[Oo]wner)[^\n.]{0,100}\bOK\b/.test(body);
   return { sha: conflict ? null : sha ?? null, clean: Boolean(clean), missing: !sha || Boolean(conflict), visual };
 }
 
@@ -59,10 +65,10 @@ const botOrTrusted = c => trusted(c) || c.user?.login === 'github-actions[bot]';
 export function notifications(rows, inbox, now) {
   const day = now.toISOString().slice(0, 10);
   const history = inbox.filter(botOrTrusted);
-  const count = history.filter(c => c.created_at?.startsWith(day) && /^(review-desk: PR #\d+ green on |To desk: desk-board )/.test(c.body)).length;
+  const count = history.filter(c => c.created_at?.startsWith(day) && /^(review-desk: |To desk: desk-board )/.test(c.body)).length;
   let remaining = Math.max(0, DAILY_LIMIT - count);
   const out = [];
-  if (rows.some(r => r.missing) && !history.some(c => c.body === MISSING) && remaining) {
+  if (rows.some(r => r.missing) && !history.some(c => c.body === MISSING && c.created_at?.startsWith(day)) && remaining) {
     out.push(MISSING); remaining--;
   }
   for (const row of rows) {

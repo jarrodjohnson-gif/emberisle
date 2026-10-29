@@ -57,7 +57,7 @@ eq(updateBody(`before\n${table}\nafter`, 'replacement'), 'before\nreplacement\na
 assert.throws(() => updateBody('<!-- desk-board:start -->', table)); assertions++;
 
 // Stateful API fixture: observe actual writes on repeat sweeps and a changed head.
-function fixture({ moved = false, failedPost = false, many = false } = {}) {
+function fixture({ moved = false, failedPost = false, many = false, reviewComments = [] } = {}) {
   let head = A, body = 'Desk notes must survive.', readCount = 0;
   const inbox = [], writes = [], pageReads = [];
   const api = async (path, method = 'GET', payload) => {
@@ -78,7 +78,7 @@ function fixture({ moved = false, failedPost = false, many = false } = {}) {
     if (p === '/pulls/1/files') return files;
     if (p === '/issues/1/comments') {
       pageReads.push(page);
-      return many && page === 1 ? Array.from({ length: 100 }, (_, i) => comment(`ordinary ${i}`)) : [];
+      return many && page === 1 ? Array.from({ length: 100 }, (_, i) => comment(`ordinary ${i}`)) : reviewComments;
     }
     if (p.startsWith('/commits/')) return { check_runs: [{ ...green, head_sha: head }] };
     if (p === '/issues/699/comments') return inbox.slice((page - 1) * 100, page * 100);
@@ -109,6 +109,26 @@ eq(dry.writes, []);
 const failed = fixture({ failedPost: true });
 await assert.rejects(sweep(failed.api, { now }), /post failed/); assertions++;
 eq(failed.writes.some(w => w.method === 'PATCH'), false); // Failed delivery stays retryable.
+// Regression controls for the desk's 2026-10-28 review.
+const note = comment('<!-- review-desk -->\nTo Gemini: keep working; no review verdict here.', 2);
+eq(bucket({ comments: [review(B), note] }), 'Ready for desk');
+eq(bucket({ comments: [note] }), 'Ready for desk');
+eq(bucket({ comments: [review(), note] }), 'Ready for Jarrod');
+eq(reviewOf([note]).missing, false);
+eq(reviewOf([comment('<!-- review-desk -->\n**Review of PR #1 (clean).**')]).missing, true);
+eq(notifications([missing], [{ ...comment(MISSING), created_at: '2026-10-27T03:00:00Z' }], now), [MISSING]);
+eq(notifications([missing], [{ ...comment(MISSING), created_at: now.toISOString() }], now), []);
+eq(reviewOf([comment(`<!-- review-desk -->\nReview: clean.\nOwner token details are recorded.\nHead: ${A}`)]).visual, false);
+eq(reviewOf([comment(`<!-- review-desk -->\nReview: clean.\nOwner look details are recorded.\nHead: ${A}`)]).visual, false);
+eq(reviewOf([comment(`<!-- review-desk -->\nReview: clean.\nOwner OK required.\nHead: ${A}`)]).visual, true);
+const noteSweep = fixture({ reviewComments: [review(B), note] });
+await sweep(noteSweep.api, { now });
+eq(noteSweep.inbox.map(c => c.body), [wakeLine(ready)]);
+await sweep(noteSweep.api, { now });
+eq(noteSweep.inbox.length, 1);
+eq(noteSweep.body().includes('Ready for desk'), true);
+const relayToday = today.map(c => ({ ...c, body: 'review-desk: comment on #854 by builder: https://example.test/comment' }));
+eq(notifications([ready, missing], relayToday, now), []);
 const workflow = readFileSync('.github/workflows/desk-board.yml', 'utf8');
 for (const required of ['workflows: [CI]', 'types: [completed]', 'types: [ready_for_review]', "cron: '17 0,8,16 * * *'", 'group: desk-board', 'cancel-in-progress: true', 'ref: ${{ github.event.repository.default_branch }}', 'persist-credentials: false', 'sparse-checkout: scripts/desk-board.mjs', 'sparse-checkout-cone-mode: false', 'issues: write']) {
   eq(workflow.includes(required), true);
