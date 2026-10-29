@@ -33,6 +33,8 @@ late-join history, player ids after start, and isolation of an oversized frame.
 `scripts/chat-prove.mjs` is the existing three-tab browser proof; it checks lobby chat and
 reaction delivery, the in-game dock and phone behavior. These are distinct checks: a socket
 proof alone cannot establish that the browser displays a message correctly.
+The companion `scripts/chat-text-prove.mjs` sends HTML-like text through the real composer in
+the lobby and game, checking literal text, sender details and mention highlighting in three tabs.
 
 The current tracking remains in GitHub. #120 (art) and #162 (three-tab acceptance) are still open;
 the reaction-tray and sticker-pipeline work is tracked under #664 and #663 and their children.

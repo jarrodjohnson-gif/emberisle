@@ -377,6 +377,8 @@ jobs:
         run: npm run night-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-b'
         run: npm run chat-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-b'
+        run: npm run chat-text-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
         run: npm run react-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-c'
