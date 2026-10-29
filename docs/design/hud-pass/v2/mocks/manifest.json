@@ -1,0 +1,162 @@
+[
+  {
+    "filename": "a-390x844-main.html",
+    "direction": "a",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "state": "main",
+    "boardSource": "/Users/jarrod.johnson/Documents/Codex/2026-10-20/resume-emberisle-903-from-the-paused/work/emberisle-current/docs/design/hud-pass/v2/evidence/current/390x844-board.png"
+  },
+  {
+    "filename": "a-390x844-player.html",
+    "direction": "a",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "state": "player",
+    "boardSource": "/Users/jarrod.johnson/Documents/Codex/2026-10-20/resume-emberisle-903-from-the-paused/work/emberisle-current/docs/design/hud-pass/v2/evidence/current/390x844-board.png"
+  },
+  {
+    "filename": "a-390x844-self.html",
+    "direction": "a",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "state": "self",
+    "boardSource": "/Users/jarrod.johnson/Documents/Codex/2026-10-20/resume-emberisle-903-from-the-paused/work/emberisle-current/docs/design/hud-pass/v2/evidence/current/390x844-board.png"
+  },
+  {
+    "filename": "a-390x844-table.html",
+    "direction": "a",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "state": "table",
+    "boardSource": "/Users/jarrod.johnson/Documents/Codex/2026-10-20/resume-emberisle-903-from-the-paused/work/emberisle-current/docs/design/hud-pass/v2/evidence/current/390x844-board.png"
+  },
+  {
+    "filename": "a-390x844-build.html",
+    "direction": "a",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "state": "build",
+    "boardSource": "/Users/jarrod.johnson/Documents/Codex/2026-10-20/resume-emberisle-903-from-the-paused/work/emberisle-current/docs/design/hud-pass/v2/evidence/current/390x844-board.png"
+  },
+  {
+    "filename": "a-390x844-roll.html",
+    "direction": "a",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "state": "roll",
+    "boardSource": "/Users/jarrod.johnson/Documents/Codex/2026-10-20/resume-emberisle-903-from-the-paused/work/emberisle-current/docs/design/hud-pass/v2/evidence/current/390x844-board.png"
+  },
+  {
+    "filename": "a-844x390-main.html",
+    "direction": "a",
+    "viewport": {
+      "width": 844,
+      "height": 390
+    },
+    "state": "main",
+    "boardSource": "/Users/jarrod.johnson/Documents/Codex/2026-10-20/resume-emberisle-903-from-the-paused/work/emberisle-current/docs/design/hud-pass/v2/evidence/current/844x390-board.png"
+  },
+  {
+    "filename": "a-1280x720-main.html",
+    "direction": "a",
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
+    "state": "main",
+    "boardSource": "/Users/jarrod.johnson/Documents/Codex/2026-10-20/resume-emberisle-903-from-the-paused/work/emberisle-current/docs/design/hud-pass/v2/evidence/current/1280x720-board.png"
+  },
+  {
+    "filename": "b-390x844-main.html",
+    "direction": "b",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "state": "main",
+    "boardSource": "/Users/jarrod.johnson/Documents/Codex/2026-10-20/resume-emberisle-903-from-the-paused/work/emberisle-current/docs/design/hud-pass/v2/evidence/current/390x844-board.png"
+  },
+  {
+    "filename": "b-390x844-player.html",
+    "direction": "b",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "state": "player",
+    "boardSource": "/Users/jarrod.johnson/Documents/Codex/2026-10-20/resume-emberisle-903-from-the-paused/work/emberisle-current/docs/design/hud-pass/v2/evidence/current/390x844-board.png"
+  },
+  {
+    "filename": "b-390x844-self.html",
+    "direction": "b",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "state": "self",
+    "boardSource": "/Users/jarrod.johnson/Documents/Codex/2026-10-20/resume-emberisle-903-from-the-paused/work/emberisle-current/docs/design/hud-pass/v2/evidence/current/390x844-board.png"
+  },
+  {
+    "filename": "b-390x844-table.html",
+    "direction": "b",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "state": "table",
+    "boardSource": "/Users/jarrod.johnson/Documents/Codex/2026-10-20/resume-emberisle-903-from-the-paused/work/emberisle-current/docs/design/hud-pass/v2/evidence/current/390x844-board.png"
+  },
+  {
+    "filename": "b-390x844-build.html",
+    "direction": "b",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "state": "build",
+    "boardSource": "/Users/jarrod.johnson/Documents/Codex/2026-10-20/resume-emberisle-903-from-the-paused/work/emberisle-current/docs/design/hud-pass/v2/evidence/current/390x844-board.png"
+  },
+  {
+    "filename": "b-390x844-roll.html",
+    "direction": "b",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "state": "roll",
+    "boardSource": "/Users/jarrod.johnson/Documents/Codex/2026-10-20/resume-emberisle-903-from-the-paused/work/emberisle-current/docs/design/hud-pass/v2/evidence/current/390x844-board.png"
+  },
+  {
+    "filename": "b-844x390-main.html",
+    "direction": "b",
+    "viewport": {
+      "width": 844,
+      "height": 390
+    },
+    "state": "main",
+    "boardSource": "/Users/jarrod.johnson/Documents/Codex/2026-10-20/resume-emberisle-903-from-the-paused/work/emberisle-current/docs/design/hud-pass/v2/evidence/current/844x390-board.png"
+  },
+  {
+    "filename": "b-1280x720-main.html",
+    "direction": "b",
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
+    "state": "main",
+    "boardSource": "/Users/jarrod.johnson/Documents/Codex/2026-10-20/resume-emberisle-903-from-the-paused/work/emberisle-current/docs/design/hud-pass/v2/evidence/current/1280x720-board.png"
+  }
+]

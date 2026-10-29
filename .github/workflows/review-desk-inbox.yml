@@ -3,7 +3,7 @@ name: review-desk-inbox
 on:
   pull_request_target:
     types: [opened, reopened, ready_for_review]
-  # Hub (#854) posts and "Question:" comments reach the desk too, not only new PRs.
+  # Comments that open with "Question:" or "To desk:" reach the desk too, on any thread. Hub status lines don't.
   issue_comment:
     types: [created]
 
@@ -12,8 +12,10 @@ permissions:
 
 jobs:
   notify:
-    # Never comment about the inbox PR itself.
-    if: github.event_name == 'pull_request_target' && github.event.pull_request.number != 699
+    # Never comment about the inbox PR itself. A draft wakes the desk only when it is marked ready.
+    if: >-
+      github.event_name == 'pull_request_target' && github.event.pull_request.number != 699 &&
+      !github.event.pull_request.draft
     runs-on: ubuntu-latest
     steps:
       # No checkout: fork code never runs. PR fields stay in env data.
@@ -30,12 +32,15 @@ jobs:
           gh pr comment "$INBOX" --repo "$REPO" --body "review-desk: PR #$NUM $ACTION by $AUTHOR (draft=$DRAFT)"
 
   relay:
-    # Every comment on the hub, and any comment that opens with "Question:". The inbox's own comments, and the desk's
-    # own posts (marked <!-- review-desk -->), are skipped.
+    # Only comments addressed to the desk: they open with "Question:" or "To desk:" (startsWith ignores case).
+    # Status lines on the hub (#854) no longer wake the desk. The inbox's own comments and the desk's own posts are
+    # skipped, by the <!-- review-desk --> marker or by their opening words, in case the marker is missing.
     if: >-
       github.event_name == 'issue_comment' && github.event.issue.number != 699 &&
       !contains(github.event.comment.body, '<!-- review-desk -->') &&
-      (github.event.issue.number == 854 || startsWith(github.event.comment.body, 'Question:'))
+      !startsWith(github.event.comment.body, 'Desk') && !startsWith(github.event.comment.body, 'Review desk') &&
+      !startsWith(github.event.comment.body, 'Hub digest') &&
+      (startsWith(github.event.comment.body, 'Question:') || startsWith(github.event.comment.body, 'To desk:'))
     runs-on: ubuntu-latest
     steps:
       # No checkout. Only the number, author and link are posted, never the comment text.

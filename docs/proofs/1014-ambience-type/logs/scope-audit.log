@@ -1,0 +1,3 @@
+PASS: 41 existing audio files byte-identical to main; all old types/targets/tolerances/peak limits and measurement/levelling algorithms unchanged.
+PASS: original PCM recipe, loop proof, all runtime-key groups and mixer assertions retained; runtime/UI/server files unchanged.
+PASS: exact main package/CI plus pinned encoder and one loop registration after existing FFmpeg/audio-level setup; all eight legs retained.

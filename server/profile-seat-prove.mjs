@@ -5,7 +5,7 @@
 // Run from the repo root: node --import ./server/register.mjs server/profile-seat-prove.mjs
 import { spawn } from "node:child_process";
 import { createHash, randomBytes, randomUUID, scryptSync } from "node:crypto";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import WebSocket from "ws";
@@ -202,6 +202,47 @@ check("a guest game freezes a roster with no profiles, all human and eligible", 
 check("guest room files carry no profile binding", readRoom(gw.code).seats.every((s) => !("profileId" in s)));
 const guestFrames = [...tableFrames];
 check("guest table frames carry no profile fields", !guestFrames.some((f) => /profile/i.test(f) && !f.includes('"code":"https"')));
+
+// --- Explicit seat aliases and Origin refusal (#1047, #965 review item 3) ---------------------------------------------------
+const aliasHost = await client(h, tunnel());
+aliasHost.send({ type: "create", name: "Alias host", credential: A.credential });
+const aliasWelcome = await aliasHost.reply();
+check("explicit create binds the authenticated host", aliasWelcome.type === "welcome" && aliasWelcome.host === true, aliasWelcome);
+await aliasHost.until(() => seatOf(aliasHost, aliasWelcome.you)?.profile, 3000, "create alias profile");
+const aliasJoin = await client(h, tunnel());
+aliasJoin.send({ type: "join", code: aliasWelcome.code, name: "Alias join", credential: B.credential });
+const aliasJoined = await aliasJoin.reply();
+check("explicit join binds a non-host seat", aliasJoined.type === "welcome" && aliasJoined.host === false && aliasJoined.code === aliasWelcome.code, aliasJoined);
+await aliasHost.until(() => seatOf(aliasHost, aliasJoined.you)?.profile, 3000, "join alias profile");
+for (const [label, id, profile, name] of [["create", aliasWelcome.you, A, "Ember"], ["join", aliasJoined.you, B, "Tide"]]) {
+  const projected = seatOf(aliasHost, id).profile;
+  check(`${label} alias uses the public profile allowlist`, Object.keys(projected).sort().join() === "displayName,profileId" && projected.profileId === profile.id && projected.displayName === name, projected);
+}
+const aliasSaved = await roomWhere(aliasWelcome.code, (r) => r.seats.length === 2, "alias bindings saved");
+check("both explicit aliases persist their authenticated profile IDs", aliasSaved.seats.map((s) => s.profileId).join() === [A.id, B.id].join(), aliasSaved.seats);
+
+for (const type of ["create", "join"]) {
+  const headers = { ...tunnel(), origin: "https://another-origin.example" };
+  const refused = await client(h, headers);
+  const target = type === "join" ? { code: aliasWelcome.code } : {};
+  const beforeSeats = JSON.stringify(aliasHost.seats.seats);
+  let first;
+  for (const credential of [A.credential, "A".repeat(43)]) {
+    refused.send({ type, ...target, name: "Origin refusal", credential });
+    const reply = await refused.reply();
+    check(`${type} refuses a mismatched HTTPS Origin before credential validity`, isErr(reply, "origin") && refused.welcome === null, reply);
+    if (first) check(`${type} origin refusal exposes no credential-validity distinction`, JSON.stringify(reply) === JSON.stringify(first), reply);
+    first = reply;
+  }
+  check(`${type} origin refusal leaves existing seats unchanged`, JSON.stringify(aliasHost.seats.seats) === beforeSeats);
+  refused.send({ type, ...target, name: "Origin guest" });
+  const guest = await refused.reply();
+  check(`${type} refused socket can retry as a guest`, guest.type === "welcome" && guest.host === (type === "create"), guest);
+  await refused.until(() => seatOf(refused, guest.you), 3000, `${type} guest seat`);
+  check(`${type} guest retry attaches no profile`, !("profile" in seatOf(refused, guest.you)), seatOf(refused, guest.you));
+  const guestSaved = await roomWhere(guest.code, (r) => r.seats.some((s) => s.id === guest.you), `${type} guest saved`);
+  check(`${type} guest retry persists no profile binding`, !("profileId" in guestSaved.seats.find((s) => s.id === guest.you)));
+}
 
 // A one-human bot game is frozen as not eligible.
 const solo = await client(h);
@@ -447,6 +488,142 @@ check("seats keep their bindings across the rematch", seatOf(a2, wb.you)?.profil
 check("a player from the last game but not this one has no card here", cardErr(await a2.req({ type: "tableProfileCard", profileId: C.id }), "notFound"));
 check("this game's players still do", (await a2.req({ type: "tableProfileCard", profileId: B.id })).card?.displayName === "Tide");
 
+// --- Card buckets: seat and watcher isolation, chat independence and recovery (#978) --------------------------------------
+// Recover the seat on a new socket so its card bucket starts unused. Credentials remain unnecessary.
+await a2.close();
+const rateSeat = await client(h);
+rateSeat.send({ type: "hello", code: T1, secret: wa.secret });
+const rateWelcome = await rateSeat.reply();
+check("the rate-test socket recovers the existing seat", rateWelcome.you === wa.you, rateWelcome);
+const rateWatch = async () => {
+  const c = await client(h);
+  c.send({ type: "hello", code: T1, watch: true });
+  check("the rate-test watcher watches without taking a seat", (await c.reply()).spectator === true);
+  return c;
+};
+const publicCard = (m) => m.type === "tableProfileCard" && m.card?.profileId === B.id &&
+  Object.keys(m.card).sort().join() === "catchphrase,displayName,profileId";
+const exhaustCards = async (c, role) => {
+  const at = Date.now();
+  const replies = await Promise.all(Array.from({ length: 32 }, () => c.req({ type: "tableProfileCard", profileId: B.id })));
+  const elapsed = Date.now() - at;
+  const cards = replies.filter(publicCard);
+  const limited = replies.filter((m) => cardErr(m, "slowDown"));
+  check(`${role}: a card burst gets throttled`, limited.length > 0, { cards: cards.length, limited: limited.length, elapsed });
+  // Account for real time spent handling the burst, rather than imposing a runner-speed deadline.
+  check(`${role}: successful cards obey the ten-token burst and two-per-second refill`,
+    cards.length >= 10 && cards.length <= 10 + Math.ceil(elapsed * 2 / 1000), { cards: cards.length, elapsed });
+  check(`${role}: every reply is a public card or a cardless slowDown`,
+    cards.length + limited.length === replies.length && limited.every((m) => !("card" in m)));
+};
+await exhaustCards(rateSeat, "seat");
+let recoveredSeat;
+for (const until = Date.now() + 5000; Date.now() < until; await wait(50)) {
+  const reply = await rateSeat.req({ type: "tableProfileCard", profileId: B.id });
+  if (publicCard(reply)) { recoveredSeat = reply; break; }
+  if (!cardErr(reply, "slowDown")) fail("unexpected seat card response while waiting for refill", reply);
+}
+check("the exhausted seat card bucket refills and returns only a public card", publicCard(recoveredSeat ?? {}));
+const isolatedWatch = await rateWatch();
+check("an exhausted seat cannot throttle a fresh watcher", publicCard(await isolatedWatch.req({ type: "tableProfileCard", profileId: B.id })));
+// Card requests use neither the chat bucket nor the gameplay action bucket.
+rateSeat.send({ type: "chat", text: "card bucket isolation" });
+const rateChat = await b2.next((m) => m.type === "chat" && m.text === "card bucket isolation", 3000, "chat after card burst");
+check("a seated card burst does not block chat to another seat", rateChat.seat === wa.you);
+rateSeat.send({ type: "setVictoryTarget", value: 7 });
+const rateAction = await rateSeat.next((m) => m.type === "error", 3000, "action validation after card burst");
+check("a card burst does not spend the gameplay action bucket", [
+  "Only the host can choose the target.", "The target is fixed for this game.",
+].includes(rateAction.message), rateAction);
+// Watchers first pass the stricter generic ingress bucket (five tokens, one/second).
+// Excess frames are silently dropped there, before the card bucket can reply slowDown.
+// A websocket ping follows our frames on the same TCP stream. Its pong is a processing
+// barrier, so missing application replies are counted without waiting for dropped IDs.
+let flood = 0;
+const watcherBurst = async (c, count) => {
+  const prefix = `card-flood-${++flood}-`;
+  const ids = new Set(Array.from({ length: count }, (_, i) => `${prefix}${i}`));
+  const at = Date.now();
+  for (const id of ids) c.send({ type: "tableProfileCard", id, profileId: B.id });
+  await new Promise((resolve, reject) => {
+    const timer = setTimeout(() => { c.ws.off("pong", pong); reject(new Error("watcher flood barrier timed out")); }, 5000);
+    const pong = (data) => {
+      if (String(data) !== prefix) return;
+      clearTimeout(timer);
+      c.ws.off("pong", pong);
+      resolve();
+    };
+    c.ws.on("pong", pong);
+    c.ws.ping(prefix);
+  });
+  const replies = c.inbox.filter((m) => ids.has(m.id));
+  c.inbox = c.inbox.filter((m) => !ids.has(m.id));
+  return { replies, elapsed: Date.now() - at };
+};
+const burstWatch = await rateWatch();
+const watcherFlood = await watcherBurst(burstWatch, 32);
+check("a watcher burst is bounded by its stricter ingress bucket", watcherFlood.replies.length >= 4 &&
+  watcherFlood.replies.length < 32 && watcherFlood.replies.length <= 5 + Math.ceil(watcherFlood.elapsed / 1000),
+  { replies: watcherFlood.replies.length, elapsed: watcherFlood.elapsed });
+check("admitted watcher replies remain public cards; excess frames are dropped before card handling", watcherFlood.replies.every(publicCard));
+check("an exhausted watcher cannot throttle another seated socket", publicCard(await b2.req({ type: "tableProfileCard", profileId: B.id })));
+let recoveredCard;
+for (const until = Date.now() + 5000; Date.now() < until; await wait(50)) {
+  const { replies } = await watcherBurst(burstWatch, 1);
+  if (replies.length) {
+    if (!replies.every(publicCard)) fail("unexpected watcher card response after ingress refill", replies);
+    recoveredCard = replies[0];
+    break;
+  }
+}
+check("the exhausted watcher ingress bucket refills and returns only a public card", publicCard(recoveredCard ?? {}));
+check("card bursts and chat leave the canonical game sequence unchanged", readRoom(T1).game.seq === game1.seq);
+
+// --- Logout keeps live seat ownership and frozen attribution (#1054) --------------------------------------------------------
+const logoutLogin = "bound-logout";
+LOGINS.push(logoutLogin);
+const logoutAuth = await client(h, tunnel(), false);
+const logoutSession = await logoutAuth.req({
+  type: "profileCreate", login: logoutLogin, displayName: "Reed", pin: "4821", pinConfirm: "4821",
+  color: PLAYER_COLORS[0], backupColor: PLAYER_COLORS[1], catchphrase: "Still seated",
+});
+check("bound-logout fixture creates a real authenticated profile", logoutSession.type === "profileSession" && !!logoutSession.credential, logoutSession.type);
+const logoutProfile = logoutSession.profile.profileId;
+const logoutSeat = await client(h, tunnel());
+logoutSeat.send({ type: "hello", name: "Reed", credential: logoutSession.credential });
+const logoutWelcome = await logoutSeat.reply();
+check("the logout fixture hosts a profile-bound seat", logoutWelcome.type === "welcome" && logoutWelcome.host === true);
+const logoutGuests = await Promise.all([client(h), client(h)]);
+for (const [i, guest] of logoutGuests.entries()) {
+  guest.send({ type: "hello", code: logoutWelcome.code, name: `Logout guest ${i + 1}` });
+  check("a guest joins the bound-logout fixture", (await guest.reply()).type === "welcome");
+}
+for (const c of [logoutSeat, ...logoutGuests]) c.send({ type: "ready", value: true });
+await logoutSeat.until(() => logoutSeat.seats?.seats.length === 3 && logoutSeat.seats.seats.every((s) => s.ready), 3000, "logout fixture ready");
+logoutSeat.send({ type: "start" });
+await logoutSeat.next((m) => m.type === "state", 5000, "logout fixture started");
+const logoutBefore = await roomWhere(logoutWelcome.code, (r) => r.roster?.players.some((p) => p.profileId === logoutProfile), "logout roster saved");
+check("the started game freezes the authenticated profile", logoutBefore.roster.players.find((p) => p.seat === logoutWelcome.you)?.profileId === logoutProfile);
+check("logout acknowledges the bound device", (await logoutAuth.req({ type: "profileLogout", credential: logoutSession.credential })).type === "profileLoggedOut");
+check("the logged-out bound credential cannot resume", cardErr(await logoutAuth.req({ type: "profileResume", credential: logoutSession.credential }), "signedOut"));
+const revokedSeat = await client(h, tunnel());
+revokedSeat.send({ type: "hello", name: "Revoked device", credential: logoutSession.credential });
+check("the logged-out bound credential cannot open another seat", isErr(await revokedSeat.reply(), "signedOut") && revokedSeat.welcome === null);
+check("logout keeps the original live public binding", seatOf(logoutSeat, logoutWelcome.you)?.profile?.profileId === logoutProfile && !seatOf(logoutSeat, logoutWelcome.you).away);
+check("the live bound socket still reads its profile card", (await logoutSeat.req({ type: "tableProfileCard", profileId: logoutProfile })).card?.profileId === logoutProfile);
+check("another participant still reads the bound profile card", (await logoutGuests[0].req({ type: "tableProfileCard", profileId: logoutProfile })).card?.catchphrase === "Still seated");
+check("logout leaves frozen attribution unchanged", JSON.stringify(readRoom(logoutWelcome.code).roster) === JSON.stringify(logoutBefore.roster));
+await logoutSeat.close();
+await logoutGuests[0].until(() => seatOf(logoutGuests[0], logoutWelcome.you)?.away, 3000, "logged-out seat held");
+const logoutRejoin = await client(h);
+logoutRejoin.send({ type: "hello", code: logoutWelcome.code, secret: logoutWelcome.secret });
+const logoutRecovered = await logoutRejoin.reply();
+check("the seat secret alone recovers the logged-out profile seat", logoutRecovered.type === "welcome" && logoutRecovered.you === logoutWelcome.you && logoutRecovered.code === logoutWelcome.code);
+await logoutRejoin.until(() => seatOf(logoutRejoin, logoutWelcome.you)?.profile?.profileId === logoutProfile && !seatOf(logoutRejoin, logoutWelcome.you).away, 3000, "logged-out binding recovered");
+check("recovery preserves the profile without adding a seat", logoutRejoin.seats.seats.length === 3 && logoutRejoin.seats.seats.filter((s) => s.profile?.profileId === logoutProfile).length === 1);
+const logoutAfter = await roomWhere(logoutWelcome.code, (r) => r.savedAt > logoutBefore.savedAt && r.seats.some((s) => s.id === logoutWelcome.you && s.profileId === logoutProfile), "logout recovery saved");
+check("recovery durably preserves the same frozen game attribution", JSON.stringify(logoutAfter.roster) === JSON.stringify(logoutBefore.roster));
+
 // --- Nothing private reached a table socket ----------------------------------------------------------------------------------
 const frames = tableFrames.join("\n");
 check("no credential reached any table or watcher socket", ![...CREDENTIALS, A.credential, B.credential, C.credential, D.credential].some((x) => frames.includes(x)));
@@ -454,6 +631,51 @@ check("no login reached any table or watcher socket", !LOGINS.some((l) => frames
 check("no private profile field reached any table or watcher socket", !/backupColor|"guard"|"pin"|"devices"|mediaKey|expiresAt|winSongId/.test(frames));
 check("no game state frame carries a profile", tableFrames.filter((f) => f.startsWith('{"type":"state"')).every((f) => !/profile/i.test(f)));
 
+await h.stop();
+
+// --- Independent saved-roster guards (#992) ---------------------------------------------------------------------------------
+// BADR above has a wrong pid. Corrupt one other field at a time so that pid failure cannot mask a removed loader guard.
+// Use a separate restart after the existing checks; extra fixtures cannot consume their four-second recovery holds.
+const rosterCodes = Array.from("ABCDEFGHJKLMNPQRSTUVWXYZ", (letter) => `RST${letter}`)
+  .filter((code) => !existsSync(path.join(ROOMS_DIR, `${code}.json`)));
+const rosterCases = [
+  ["valid control", () => {}, true],
+  ["version", (r) => { r.v = 2; }],
+  ["game UUID", (r) => { r.gameId = "not-a-uuid"; }],
+  ["start time", (r) => { r.startedAt = 1.5; }],
+  ["policy type", (r) => { r.policy = "1"; }],
+  ["eligibility type", (r) => { r.eligible = "true"; }],
+  ["player array", (r) => { r.players = null; }],
+  ["player count", (r) => { r.players.pop(); }],
+  ["player order", (r) => { [r.players[0], r.players[1]] = [r.players[1], r.players[0]]; }],
+  ["seat type", (r) => { r.players[0].seat = null; }],
+  ["profile UUID", (r) => { r.players[0].profileId = "not-a-uuid"; }],
+  ["name type", (r) => { r.players[0].name = 42; }],
+  ["colour type", (r) => { r.players[0].color = 42; }],
+  ["player kind", (r) => { r.players[0].kind = "unknown"; }],
+  ["duplicate profile", (r) => { r.players[1].profileId = r.players[0].profileId; }],
+].map(([label, corrupt, valid], i) => {
+  const fixture = structuredClone(saved);
+  fixture.code = rosterCodes[i];
+  fixture.game.phase = "over";
+  fixture.game.winner = fixture.game.players[0].id;
+  fixture.seats.forEach((s) => { s.secret = randomBytes(16).toString("hex"); });
+  corrupt(fixture.roster);
+  writeFileSync(path.join(ROOMS_DIR, `${fixture.code}.json`), JSON.stringify(fixture));
+  return { label, valid, fixture };
+});
+h = await startHost();
+// Recover all fixture seats promptly, then inspect resaved bytes. The production hold and save timers stay unchanged.
+await Promise.all(rosterCases.map(async ({ label, valid, fixture }) => {
+  const c = await client(h);
+  c.send({ type: "hello", code: fixture.code, secret: fixture.seats[0].secret });
+  const welcome = await c.reply();
+  check(`roster ${label}: seat secret still recovers the room`, welcome.type === "welcome" && welcome.code === fixture.code && welcome.you === fixture.seats[0].id, welcome);
+  const restored = await roomWhere(fixture.code, (r) => r.savedAt > fixture.savedAt, `${label} resaved`);
+  check(`roster ${label}: game identity survives metadata validation`, restored.game.seed === fixture.game.seed && restored.game.winner === fixture.game.winner);
+  check(`roster ${label}: ${valid ? "valid frozen record preserved exactly" : "invalid record resaved as null"}`,
+    valid ? JSON.stringify(restored.roster) === JSON.stringify(fixture.roster) : restored.roster === null, restored.roster);
+}));
 await h.stop();
 console.log(`profile-seat-prove: ${passed} checks passed`);
 process.exit(0);

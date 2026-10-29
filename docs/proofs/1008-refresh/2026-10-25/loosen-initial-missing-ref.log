@@ -1,0 +1,46 @@
+
+> loosen-prove
+> node scripts/loosen-prove.mjs
+
+ok   self-test: an unchanged proof passes
+ok   self-test: re-indenting passes
+ok   self-test: an added check passes
+ok   self-test: editing only the block comment passes
+ok   self-test: a removed assert fails
+ok   self-test: a removed assert lowers the count
+ok   self-test: a wider tolerance fails
+ok   self-test: a //-commented assert fails
+ok   self-test: a /* */-commented assert fails
+ok   self-test: a check wrapped in a multi-line /* */ fails
+ok   self-test: a removed throw fails
+ok   self-test: a removed expect fails
+ok   self-test: a fail() that no longer sets exitCode 1 fails
+ok   self-test: an added process.exit(0) fails
+ok   self-test: an added process.exit() fails
+ok   self-test: a new .skip fails
+fatal: Not a valid object name origin/main
+node:internal/errors:985
+  const err = new Error(message);
+              ^
+
+Error: Command failed: git merge-base origin/main HEAD
+fatal: Not a valid object name origin/main
+
+    at genericNodeError (node:internal/errors:985:15)
+    at wrappedFn (node:internal/errors:539:14)
+    at checkExecSyncError (node:child_process:942:11)
+    at execFileSync (node:child_process:978:15)
+    at git (file:///workspace/emberisle/work/verify1009-oct25/scripts/loosen-prove.mjs:85:26)
+    at file:///workspace/emberisle/work/verify1009-oct25/scripts/loosen-prove.mjs:87:50
+    at ModuleJob.run (node:internal/modules/esm/module_job:439:25)
+    at async node:internal/modules/esm/loader:643:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {
+  status: 128,
+  signal: null,
+  output: [ null, '', 'fatal: Not a valid object name origin/main\n' ],
+  pid: 13024,
+  stdout: '',
+  stderr: 'fatal: Not a valid object name origin/main\n'
+}
+
+Node.js v24.19.0
