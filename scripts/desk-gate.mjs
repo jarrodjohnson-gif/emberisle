@@ -3,14 +3,20 @@ import { pathToFileURL } from 'node:url';
 
 // Only a complete desk footer counts. A later complete footer supersedes an older one.
 export function deskGate(pr, comments) {
-  const footer = [...comments].reverse().map(({ body = '' }) => {
+  const footer = [...comments].reverse().map(({ body = '', author_association }) => {
+    if (!['OWNER', 'MEMBER', 'COLLABORATOR'].includes(author_association)) return null;
     if (!body.includes('<!-- review-desk -->')) return null;
     const match = body.match(/Reviewer:\s*([^·\r\n]+?)\s*·\s*Builder:\s*([^·\r\n]+?)\s*·\s*Head:\s*([0-9a-f]{40})(?=\s|$)/i);
     if (!match || !match[1].trim() || !match[2].trim()) return null;
-    return { reviewer: match[1].trim(), builder: match[2].trim(), head: match[3].toLowerCase() };
+    const head = match[3].toLowerCase();
+    const cleanHeading = /^\s*(?:#{1,6}\s*)?clean[.!]?\s*$/im.test(body);
+    const cleanMarker = [...body.matchAll(/<!--\s*review-desk:\s*clean\s+([0-9a-f]{40})\s*-->/gi)]
+      .some((marker) => marker[1].toLowerCase() === head);
+    return { reviewer: match[1].trim(), builder: match[2].trim(), head, clean: cleanHeading || cleanMarker };
   }).find(Boolean);
   if (pr.draft) return { state: 'failure', description: 'Draft PR cannot pass the desk gate' };
   if (!footer) return { state: 'failure', description: 'No complete desk review footer' };
+  if (!footer.clean) return { state: 'failure', description: 'Desk review is not clean' };
   if (footer.head !== pr.head.sha.toLowerCase()) return { state: 'failure', description: 'Desk review is for a different head' };
   if (footer.reviewer.toLowerCase() === footer.builder.toLowerCase()) return { state: 'failure', description: 'Reviewer and builder must differ' };
   return { state: 'success', description: 'Different-model desk review matches this head' };

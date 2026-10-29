@@ -3,7 +3,7 @@ import { deskGate, run } from './desk-gate.mjs';
 
 const head = 'a'.repeat(40), old = 'b'.repeat(40);
 const pr = { number: 42, state: 'open', draft: false, head: { sha: head } };
-const review = (sha = head, reviewer = 'Sonnet 5.5', builder = 'GPT-6.1 Terra') => ({ body: `<!-- review-desk -->\nClean.\nReviewer: ${reviewer} · Builder: ${builder} · Head: ${sha}` });
+const review = (sha = head, reviewer = 'Sonnet 5.5', builder = 'GPT-6.1 Terra') => ({ author_association: 'OWNER', body: `<!-- review-desk -->\nClean.\nReviewer: ${reviewer} · Builder: ${builder} · Head: ${sha}` });
 assert.equal(deskGate(pr, [review()]).state, 'success');
 assert.equal(deskGate(pr, [review(old)]).state, 'failure');
 assert.equal(deskGate(pr, [review(head, 'Terra', 'terra')]).state, 'failure');
@@ -14,6 +14,12 @@ assert.equal(deskGate(pr, [review(), { body: 'ordinary comment' }]).state, 'succ
 assert.equal(deskGate(pr, [{ body: `Reviewer: Sonnet · Builder: Terra · Head: ${head}` }]).state, 'failure');
 assert.equal(deskGate(pr, [review(head + 'a')]).state, 'failure');
 assert.equal(deskGate(pr, [review(head, '   ', 'Terra')]).state, 'failure');
+assert.equal(deskGate(pr, [review(), { ...review(), body: review().body.replace('Clean.', 'Review (not clean).') }]).state, 'failure');
+assert.equal(deskGate(pr, [{ ...review(), author_association: 'NONE' }]).state, 'failure');
+assert.equal(deskGate(pr, [review(), { ...review(old), author_association: 'NONE' }]).state, 'success');
+assert.equal(deskGate(pr, [{ ...review(), body: review().body.replace('Clean.', `<!-- review-desk: clean ${head} -->`) }]).state, 'success');
+assert.equal(deskGate(pr, [{ ...review(), body: review().body.replace('Clean.', `<!-- review-desk: clean ${old} -->`) }]).state, 'failure');
+for (const author_association of ['MEMBER', 'COLLABORATOR']) assert.equal(deskGate(pr, [{ ...review(), author_association }]).state, 'success');
 
 const requests = [];
 const fetchImpl = async (url, options) => {
@@ -36,4 +42,4 @@ await run({ event: { issue: { number: 42 } }, eventName: 'issue_comment', reposi
 assert.equal(requests.length, 0);
 await run({ event: { pull_request: { number: 42 } }, eventName: 'pull_request_target', repository: 'o/r', token: 'fixture', fetchImpl });
 assert.equal(requests.length, 4);
-console.log('desk-gate-prove: 16 checks passed (decision, pagination, events and head status)');
+console.log('desk-gate-prove: 23 checks passed (decision, trust, verdict, pagination, events and head status)');
