@@ -9,7 +9,10 @@ export function deskGate(pr, comments) {
     const match = body.match(/Reviewer:\s*([^·\r\n]+?)\s*·\s*Builder:\s*([^·\r\n]+?)\s*·\s*Head:\s*([0-9a-f]{40})(?=\s|$)/i);
     if (!match || !match[1].trim() || !match[2].trim()) return null;
     const head = match[3].toLowerCase();
-    const cleanHeading = /^\s*(?:#{1,6}\s*)?clean[.!]?\s*$/im.test(body);
+    const cleanHeading = body.split(/\r?\n/).some((line) => {
+      const heading = line.trim().replace(/^#{1,6}\s+/, '').replace(/^\*\*(.*?)\*\*$/, '$1').trim();
+      return /^(?:clean[.!]?|review of (?:pr\s+#\d+|head\s+[0-9a-f]{7,40}):\s*clean[.!]?|review of pr\s+#\d+\s*\(clean\)[.!]?)$/i.test(heading);
+    });
     const cleanMarker = [...body.matchAll(/<!--\s*review-desk:\s*clean\s+([0-9a-f]{40})\s*-->/gi)]
       .some((marker) => marker[1].toLowerCase() === head);
     return { reviewer: match[1].trim(), builder: match[2].trim(), head, clean: cleanHeading || cleanMarker };

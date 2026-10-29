@@ -20,6 +20,13 @@ assert.equal(deskGate(pr, [review(), { ...review(old), author_association: 'NONE
 assert.equal(deskGate(pr, [{ ...review(), body: review().body.replace('Clean.', `<!-- review-desk: clean ${head} -->`) }]).state, 'success');
 assert.equal(deskGate(pr, [{ ...review(), body: review().body.replace('Clean.', `<!-- review-desk: clean ${old} -->`) }]).state, 'failure');
 for (const author_association of ['MEMBER', 'COLLABORATOR']) assert.equal(deskGate(pr, [{ ...review(), author_association }]).state, 'success');
+for (const heading of ['**Clean.**', '# Clean', '**Review of PR #1192 (clean).**', `**Review of head ${head}: clean.**`, 'Review of PR #1192: clean.']) {
+  assert.equal(deskGate(pr, [{ ...review(), body: review().body.replace('Clean.', heading) }]).state, 'success', heading);
+}
+for (const heading of ['Review of PR #1192 (not clean).', `Review of head ${head}: not clean.`, 'Clean except for one issue.', 'Review of PR #1192: clean except pending CI.', 'Pending clean review']) {
+  assert.equal(deskGate(pr, [{ ...review(), body: review().body.replace('Clean.', heading) }]).state, 'failure', heading);
+}
+for (const author_association of [undefined, 'FIRST_TIME_CONTRIBUTOR']) assert.equal(deskGate(pr, [{ ...review(), author_association }]).state, 'failure');
 
 const requests = [];
 const fetchImpl = async (url, options) => {
@@ -42,4 +49,4 @@ await run({ event: { issue: { number: 42 } }, eventName: 'issue_comment', reposi
 assert.equal(requests.length, 0);
 await run({ event: { pull_request: { number: 42 } }, eventName: 'pull_request_target', repository: 'o/r', token: 'fixture', fetchImpl });
 assert.equal(requests.length, 4);
-console.log('desk-gate-prove: 23 checks passed (decision, trust, verdict, pagination, events and head status)');
+console.log('desk-gate-prove: 35 checks passed (decision, trust, verdict, pagination, events and head status)');
