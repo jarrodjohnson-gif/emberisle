@@ -31,13 +31,16 @@ contracts and current production code, not a recovered copy or a new claim to it
 ## Why online order cannot be reconstructed
 
 Run `npm run bot-action-order-prove`. It imports production `createGame`, `legalSettle`,
-`legalRoads` and `applyAction`, completes legal setup, then gives a bot two legal path purchases.
+`legalRoads`, `applyAction` and `logBotAction`, completes legal setup, then gives a bot two legal path purchases.
 It applies A then B and B then A from identical starting states. Every build succeeds, both paths
-are owned, supplies balance, both action lines remain, and sequence increases twice.
+are owned, every resource's bank-plus-hands total stays 19 after each path, both action lines
+remain through the production bot-log annotation, and sequence increases twice.
 
 The **complete settled states and complete public logs are byte-identical**, while the first
-targets differ. Explicit per-commit metadata distinguishes the histories; a one-action control
-differs from both. Any public projection of those identical states is also identical. This is an
+targets differ. The requested-target/metadata comparisons are fixture sanity checks, true by
+construction; separate witnesses read the first changed edge from each production board delta
+and prove those first commits differ. A one-action state/log control differs from both completed
+histories. Any public projection of those identical settled states is also identical. This is an
 information limit, not a log-parser bug. It does not claim that all online changes are ambiguous.
 
 No sorting of edge IDs, log text, geometry, or animation timestamps may be described as the true
@@ -97,21 +100,34 @@ Its full lifetime is 1250 ms; the next bot line starts only after it ends. That 
 the parent's minimum 700 ms start spacing without overlap. Reduced motion keeps the same
 1250 ms reading interval with steady text and target outlines, no fade/pulse.
 
-Use monotonic absolute deadlines, not a sequence of timers that extends under slow frames.
-Active plus queued presentation entries are capped at **six**. Overflow becomes bounded per-actor
-counts of omitted, confirmed events, yielding “Mira made 3 more moves”. A summary itself consumes
-one of the six slots and carries no target or sound. Count each omitted event once; showing a
-summary must not count it again. Expired/reset events disappear silently rather than inflating a
-later summary. Counter storage is bounded by the current seats and the absolute expiry window;
-overflow counters never retain full event payloads.
+**Settled owner contract:** each practice action that changes the board or hands produces a
+moment, subject to the owner's **queue cap of six** and overflow summary (“Mira made 3 more
+moves”). Bot pacing and canonical state are unchanged. Count confirmed overflow actions once;
+do not use a guessed sequence delta or silently lose them. The existing #721 proposal counts
+active plus waiting entries within six and gives a summary a slot; those counting details still
+need design acceptance and must preserve the owner's overflow behaviour.
 
-Waiting events and summaries expire **2500 ms after their original capture**, including time
-spent blocked by dice or another owner. New arrivals must not refresh an existing summary's
-expiry. On transition to a human turn, stop admitting bot work from that old turn and establish
-a **nonextendable 2500 ms drain deadline**; late packets cannot move it. New higher-priority
-presentation, a human setup prompt or any human gameplay input immediately cancels active and
-waiting bot presentation. Input passes through in the same event; there is no click-to-dismiss
-step, focus change, modal, or gameplay delay.
+**Unresolved expiry/drain choice — do not implement:** #721 proposed **2500 ms waiting/summary
+expiry** and a **nonextendable 2500 ms human-turn drain deadline**. These were not approved by
+the owner's client-only decision. Silent age-based dropping can violate the every-action and
+cap-six summary contract: with 700 ms arrivals and 1250 ms line lifetimes, waiting grows by
+about 550 ms per action and reaches 2500 ms before the intended overflow is exercised.
+The earlier version of this document incorrectly made that child proposal binding.
+
+[Question 6520148623](https://github.com/jarrodjohnson-gif/emberisle/issues/608#issuecomment-6520148623)
+asks the owner to choose preservation/draining, explicit expiry, or a bounded drain followed by
+summary. **Recommendation, not approval:** preserve admitted lines and overflow summaries with
+no silent waiting-age expiry; drain when the centre is available. The question also leaves
+human-turn interruption and pending-summary treatment for explicit acceptance. Children must
+not implement the 2500 ms deadlines, silent-drop rules or a substitute policy until that answer
+is recorded and the affected contract/completion tests are reconciled with #608. The owner-written
+spec remains authoritative in the meantime; the question does not reopen client-only option A.
+
+Use monotonic timing for the accepted line animation. Any accepted queue/summary policy must
+bound storage without retaining full overflow payloads; an age deadline cannot be assumed as
+that bound. Roll/setup priority and human input must never block gameplay or move focus. Whether
+an interrupted bot line resumes, becomes a summary or is discarded is part of the unresolved
+policy above, not permission to clear waiting actions silently.
 
 Gains remain on hand cards. Coordinate against their existing presentation busy state if needed
 to preserve the original gain-preemption intent; do not bring back `GainFloats` or invent a new
@@ -128,11 +144,14 @@ Use the actor-colour accent with a contrasting neutral edge, a soft ring beneath
 brightened wayfarer hex rim, for exactly the line lifetime. Reduced motion uses a steady outline.
 Keep this in a dedicated decorative layer, separate from legal placement highlights, hover and
 pickables. It must not change raycasts, camera fit/matrices, board state or production squash.
-Preemption, expiry, epoch reset and renderer disposal all remove cues and release resources.
+End of a displayed line, epoch reset and renderer disposal remove cues and release resources.
+Queue expiry and interruption behaviour remain dependent on the unresolved #608 policy.
 
 The line reuses the existing stage/hole placement and chrome, with safe-area checks at desktop,
-portrait and landscape sizes. Keep text contrast at least 4.5:1 and decorative target contrast
-at least 3:1 against its immediate surroundings, including pale seats. The canonical game log
+portrait and landscape sizes. **Unaccepted recommendation for desk/owner approval:** text contrast
+at least 4.5:1 and decorative target contrast at least 3:1 against its immediate surroundings,
+including pale seats. These numbers are not an owner-approved #608 requirement; acceptance is
+requested in Question 6520148623 before they become this feature's completion criteria. The canonical game log
 remains the accessible history; do not create a second live announcement for the same event.
 
 ## One sound owner and lifecycle (#723)
@@ -143,16 +162,18 @@ soundboard paths retain their existing ownership.
 
 For an admitted exact practice event, transfer only its matching existing action cue to the
 presenter's start time. Suppress that specific snapshot cue atomically with admission, never
-all sounds in the commit. A dropped/expired event must not play deferred audio later. A trade
+all sounds in the commit. An event cancelled under an accepted policy must not play deferred audio later. A trade
 ask already has `offerChime` and resource clips; keep one owner and do not replay them from both
 paths. Preserve composite Wayfarer/fortune rules and victim-specific cues. Online observation
 stamps stay silent: existing snapshot/trade audio remains authoritative. Respect current mute,
 mix levels and reduced-motion behaviour without changing audio assets or gains.
 
 Visibility hide, leave/title, win, reconnect, rematch and baseline replacement clear the epoch's
-text, targets, counters, timers and deferred audio. Human input clears presentation work without
-changing game state. A lazy module/audio promise carries the epoch and expiry; recheck both
-when it resolves so hidden-tab or previous-game work cannot burst on return. Capture starts from
+text, targets, counters, timers and deferred audio. Human input never changes game state merely
+to dismiss presentation; its effect on pending lines/summaries awaits the decision above. A lazy
+module/audio promise carries the epoch and accepted cancellation state; recheck them when it
+resolves so previous-game work cannot burst on return. Do not attach the unaccepted 2500 ms
+expiry to these promises. Capture starts from
 the live baseline even if the visual chunk arrives late; failed lazy loading never blocks play.
 
 ## Delivery and acceptance
@@ -160,7 +181,7 @@ the live baseline even if the visual chunk arrives late; failed lazy loading nev
 | Existing child | Deliverable and completion evidence |
 |---|---|
 | [#720](https://github.com/jarrodjohnson-gif/emberisle/issues/720) | Pure event model and commit/offer observer. Prove actual automation vs human actions, rejects/no-ops, multi-target Path, private projection, duplicate/truncated logs and reconnect/rematch deduplication. Keep the production ordering counterexample passing. |
-| [#721](https://github.com/jarrodjohnson-gif/emberisle/issues/721) | Scheduler and presenter. Virtual-clock checks for 150/900/200 timing, six slots, exact summary counts, absolute expiry while blocked, preemption and nonextendable human-turn drain. Browser checks for exclusive centre ownership, input pass-through, no focus movement and no duplicate announcement. |
+| [#721](https://github.com/jarrodjohnson-gif/emberisle/issues/721) | Scheduler and presenter. Virtual-clock checks for 150/900/200 timing and the owner's six-entry overflow contract. Expiry, summary-slot counting, interruption and human-turn drain tests wait for Question 6520148623; do not encode the child's unaccepted 2500 ms rules. Browser checks for exclusive centre ownership, input pass-through, no focus movement and no duplicate announcement. |
 | [#722](https://github.com/jarrodjohnson-gif/emberisle/issues/722) | Dedicated target adapter. Prove stable IDs through rebuilds, both Path edges, missing targets, unchanged legal/pick IDs and camera matrices, contrast, reduced motion and cleanup without leaks. |
 | [#723](https://github.com/jarrodjohnson-gif/emberisle/issues/723) | Integration and `bot-moments-prove`: full practice round at 1280×720 and 390×844, landscape regression, ordered non-overlapping text (±80 ms), synchronized cues, exact approved sound counts, bounded summaries and lifecycle cases. Re-run `hud-safe-area-prove`, server turn proof, `sounds-prove`, affected placement proofs, typecheck, build and unchanged size budgets. |
 
