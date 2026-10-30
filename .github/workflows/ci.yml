@@ -164,10 +164,9 @@ jobs:
     # dice-prove's sampling took 99 s on CI (#926, a349dbf); the whole job took under 6 minutes.
     timeout-minutes: 15
     steps:
-      - if: needs.changes.outputs.docs_only != 'true'
-        uses: actions/checkout@v4
-      - if: needs.changes.outputs.docs_only != 'true'
-        uses: actions/setup-node@v4
+      # desk-gate-prove uses Node built-ins and runs even for docs-only PRs.
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         id: node
         with:
           node-version: 22
