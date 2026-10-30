@@ -102,6 +102,7 @@
     "reflow-prove": "node scripts/reflow-prove.mjs",
     "rotate-prove": "node scripts/rotate-prove.mjs",
     "hole-prove": "node scripts/hole-prove.mjs",
+    "stationary-dock-prove": "node scripts/stationary-dock-prove.mjs",
     "my-numbers-prove": "node scripts/my-numbers-prove.mjs",
     "pan-prove": "node scripts/pan-prove.mjs",
     "board-touch-prove": "node scripts/board-touch-prove.mjs",

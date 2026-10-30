@@ -158,7 +158,7 @@ try {
       const canvas = r(document.querySelector("canvas"));
       const chrome = portraitStrip ? portraitStrip.bottom : header.bottom;
       // #422: on a sideways phone the stack is a left column, and the island's room is beside it, not above it.
-      const column = stack.width < innerWidth / 2;
+      const column = document.querySelector('[data-testid="dock"]') ? innerWidth > innerHeight : stack.width < innerWidth / 2;
       const gapTop = Math.max(canvas.top, chrome);
       const gapBottom = column ? canvas.bottom : Math.min(canvas.bottom, stack.top);
       const gapLeft = column ? stack.right : canvas.left;
@@ -216,7 +216,7 @@ try {
         };
       });
     const before = await stackState();
-    if (viewport.height <= 568) check(before.overflow, `${tag} hud: stack overflows (End turn below the fold)`, before);
+    if (viewport.height <= 568) check(!before.overflow && !before.cue, `${tag} hud: the dock never overflows and shows no cue (End turn in its fixed slot)`, before);
     if (viewport.height === 720) check(!before.overflow && !before.cue, `${tag} hud: no overflow, no cue`, before);
     if (before.overflow) {
       await page.waitForSelector('[data-testid="hud-more-below"]', { timeout: 2000 });

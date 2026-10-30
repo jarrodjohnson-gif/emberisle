@@ -8,9 +8,13 @@ import { Button } from "@/components/ui/button";
 import { SeatDot } from "@/components/game/SeatDot";
 import { bagText } from "@/lib/game/trade";
 import { useGame } from "@/lib/game/store";
+import { chunk, LazyBoundary } from "@/lib/lazy";
 import { RESOURCES, RESOURCE_LABEL } from "@/lib/game/types";
 import type { Bag } from "@/lib/net/table";
 import "./trade-panel.css";
+
+export const tradeSlot = chunk(() => import("./TradeSlot"));
+const TradeSlot = tradeSlot.pick((m) => m.TradeSlot);
 
 // "Ember offers 2 sheep for 1 ore"; the asker reads "You offer 2 sheep for 1 ore".
 export function offerLine(name: string | null, give: Bag, want: Bag) {
@@ -27,7 +31,9 @@ function declinedLine(names: string[]) {
   return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]} declined`;
 }
 
-export function TradeToast() {
+// #1101: `slot` draws the offer in the phone dock's status line (TradeSlot, its own chunk, prefetched on idle by the table).
+// With the chat open the full card still rises above it.
+export function TradeToast({ slot }: { slot?: boolean }) {
   const { phone } = useViewport();
   const chatOpen = useGame((s) => s.chatOpen);
   const aboveChat = phone && chatOpen;
@@ -47,7 +53,7 @@ export function TradeToast() {
   const shown = !!offer && !declined.includes(localId);
   useLayoutEffect(() => {
     const el = dock.current;
-    if (!el) return;
+    if (!el || slot) return;
     const stack = el.closest<HTMLElement>("[data-hud-stack]");
     const root = document.documentElement;
     let lastHeight = -1;
@@ -66,7 +72,7 @@ export function TradeToast() {
     });
     observer.observe(el);
     return () => { observer.disconnect(); cancelAnimationFrame(frame); stack?.style.removeProperty("--trade-height"); root.style.removeProperty("--active-offer-height"); };
-  }, [shown, aboveChat]);
+  }, [shown, aboveChat, slot]);
 
   useEffect(() => {
     if (!offer) return;
@@ -86,7 +92,7 @@ export function TradeToast() {
     const taker = players?.find((p) => p.id === takerId);
     const ResultIcon = takerId ? Check : X;
     return (
-      <p className="trade-result table-log flex items-center gap-1 rounded-control px-3 py-1 text-caption" role="status" data-testid="trade-outcome" data-taker={takerId ?? undefined}>
+      <p className={`trade-result table-log flex items-center gap-1 rounded-control px-3 text-caption ${slot ? "h-11 min-w-0 flex-1" : "py-1"}`} role="status" data-testid="trade-outcome" data-taker={takerId ?? undefined}>
         {taker ? <SeatDot color={taker.color} className="size-2.5" /> : null}
         <ResultIcon aria-hidden="true" className="size-3.5" />{outcome}
       </p>
@@ -98,13 +104,23 @@ export function TradeToast() {
     const short = me ? RESOURCES.filter((r) => (offer.want[r] ?? 0) > me.resources[r]) : [];
     answering = !asker && !spectator;
     why = me && short.length ? `Need ${short.map((r) => `${offer.want[r]! - me.resources[r]} more ${RESOURCE_LABEL[r].toLowerCase()}`).join(", ")}` : null;
+    const line = offerLine(asker ? null : offer.fromName, offer.give, offer.want);
+    const color = asker ? undefined : players?.find((p) => p.id === offer.from)?.color ?? "transparent";
+    const wait = asker ? (declined.length ? declinedLine(declined.map(name)) : "Waiting…") : undefined;
+    if (slot) {
+      return (
+        <LazyBoundary failed={null}>
+          <TradeSlot line={line} color={color} left={left} why={why} wait={wait} answering={answering} lineId={lineId} whyId={whyId} />
+        </LazyBoundary>
+      );
+    }
     body = (
       <>
         <div className="trade-summary flex min-w-0 items-center justify-between gap-2">
-          <p id={lineId} className="text-sm font-medium leading-5" title={offerLine(asker ? null : offer.fromName, offer.give, offer.want)}>
+          <p id={lineId} className="text-sm font-medium leading-5" title={line}>
             {/* #312: another seat's offer leads with that seat's dot. */}
-            {!asker ? <SeatDot color={players?.find((p) => p.id === offer.from)?.color ?? "transparent"} className="mr-1.5 size-3 align-[-1px]" /> : null}
-            {offerLine(asker ? null : offer.fromName, offer.give, offer.want)}
+            {color ? <SeatDot color={color} className="mr-1.5 size-3 align-[-1px]" /> : null}
+            {line}
           </p>
           {/* For answerers the 250 ms tick would chatter, so it is hidden; the polite line below speaks once, at 5 s. */}
           <span aria-hidden={!asker || undefined} className="trade-clock shrink-0 tabular-nums text-xs" data-testid="trade-countdown" data-urgent={left <= 5 || undefined}>
@@ -118,7 +134,7 @@ export function TradeToast() {
         ) : null}
         {asker ? (
           <p role="status" className="trade-wait sr-only">
-            {declined.length ? declinedLine(declined.map(name)) : "Waiting…"}
+            {wait}
           </p>
         ) : null}
         <div className="trade-details" tabIndex={0} role="group" aria-label="Trade amounts and player responses">

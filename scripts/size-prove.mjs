@@ -54,10 +54,13 @@ const CEILINGS = [
   { name: "WayfarerOptions", gzipBytes: 500 },
   // #832: the online-only timer ballot loads separately (2026-10-20; measured 1.20 kB).
   { name: "TurnExtensionVote", gzipBytes: 1400 },
+  // #1101: the phone dock's offer slot (Yes and No) loads separately, prefetched on idle; new chunk only (measured 0.80 kB).
+  { name: "TradeSlot", gzipBytes: 1000 },
 ];
 
 // Growth allowance against the base, in gzip bytes. index is fixed at 400 B; the others take 0.33% of the base size, at least 200 B.
-const ALLOWANCE = { index: 400 };
+// #1101: one-PR growth extra of 480 B beyond 400 B covers measured build-stamp variation (owner cap 900 B, desk approval 2026-10-25); the desk removes it after merge.
+const ALLOWANCE = { index: 400 + 480 };
 const ALLOWANCE_RATE = 0.0033;
 const ALLOWANCE_MIN = 200;
 const allowanceFor = (name, baseBytes) => ALLOWANCE[name] ?? Math.max(ALLOWANCE_MIN, Math.round(baseBytes * ALLOWANCE_RATE));

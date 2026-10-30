@@ -1,0 +1,12 @@
+Updating 9bde9861..beafd405
+Fast-forward
+ README.md                         |  2 +-
+ docs/design/emotes.md             | 16 ++++++++--------
+ docs/design/sound.md              |  4 ++--
+ scripts/chat-prove.mjs            | 30 +++++++++++++++---------------
+ scripts/sounds-prove.mjs          | 22 +++++++++++-----------
+ server/chat.mjs                   |  4 +---
+ server/lobby-prove.mjs            |  6 ++++--
+ src/components/game/Reactions.tsx |  6 ++----
+ src/lib/sound.ts                  |  5 ++---
+ 9 files changed, 46 insertions(+), 49 deletions(-)
