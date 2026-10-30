@@ -1,0 +1,491 @@
+docs/proofs/1008-refresh/2026-10-25/base-build.log:31: trailing whitespace.
++[plugin builtin:vite-reporter] 
+docs/proofs/1008-refresh/2026-10-25/build.log:31: trailing whitespace.
++[plugin builtin:vite-reporter] 
+docs/proofs/1008-refresh/2026-10-25/types.log:4: new blank line at EOF.
+docs/proofs/1008-refresh/codex-p-2026-10-25/base-build.log:44: trailing whitespace.
++[plugin builtin:vite-reporter] 
+docs/proofs/1008-refresh/codex-p-2026-10-25/build.log:44: trailing whitespace.
++[plugin builtin:vite-reporter] 
+docs/proofs/1008-refresh/codex-p-2026-10-25/types.log:4: new blank line at EOF.
+docs/proofs/1008-refresh/p2-2026-10-25/base-build.log:32: trailing whitespace.
++[plugin builtin:vite-reporter] 
+docs/proofs/1008-refresh/p2-2026-10-25/build.log:32: trailing whitespace.
++[plugin builtin:vite-reporter] 
+docs/proofs/1008-refresh/p2-2026-10-25/types.log:4: new blank line at EOF.
+docs/proofs/1018-refresh/2026-10-25/base-build.log:31: trailing whitespace.
++[plugin builtin:vite-reporter] 
+docs/proofs/1018-refresh/2026-10-25/build.log:31: trailing whitespace.
++[plugin builtin:vite-reporter] 
+docs/proofs/1018-refresh/2026-10-25/types.log:4: new blank line at EOF.
+docs/proofs/1021-refresh/2026-10-25/base-build.log:31: trailing whitespace.
++[plugin builtin:vite-reporter] 
+docs/proofs/1021-refresh/2026-10-25/build.log:31: trailing whitespace.
++[plugin builtin:vite-reporter] 
+docs/proofs/1021-refresh/2026-10-25/server.log:248: trailing whitespace.
++raw GET // -> 400                                        
+docs/proofs/1021-refresh/2026-10-25/server.log:249: trailing whitespace.
++raw GET //[ -> 400                                       
+docs/proofs/1021-refresh/2026-10-25/server.log:250: trailing whitespace.
++raw GET //a b -> 400                                     
+docs/proofs/1021-refresh/2026-10-25/server.log:251: trailing whitespace.
++raw GET http://[ -> 400                                  
+docs/proofs/1021-refresh/2026-10-25/server.log:252: trailing whitespace.
++raw GET /% -> 404                                        
+docs/proofs/1021-refresh/2026-10-25/server.log:253: trailing whitespace.
++raw GET http://x// -> 404                                
+docs/proofs/1021-refresh/2026-10-25/server.log:254: trailing whitespace.
++GET / -> 200 text/html; charset=utf-8, no-cache          
+docs/proofs/1021-refresh/2026-10-25/server.log:255: trailing whitespace.
++GET /assets/app-abc123.js -> 200 text/javascript, immutable 
+docs/proofs/1021-refresh/2026-10-25/server.log:256: trailing whitespace.
++HEAD /assets/app-abc123.js -> 200, empty body            
+docs/proofs/1021-refresh/2026-10-25/server.log:257: trailing whitespace.
++GET /assets/missing.js -> 404                            
+docs/proofs/1021-refresh/2026-10-25/server.log:258: trailing whitespace.
++GET /assets -> 404                                       
+docs/proofs/1021-refresh/2026-10-25/server.log:259: trailing whitespace.
++GET /../secret.txt -> 404                                
+docs/proofs/1021-refresh/2026-10-25/server.log:260: trailing whitespace.
++GET /%2e%2e/secret.txt -> 404                            
+docs/proofs/1021-refresh/2026-10-25/server.log:261: trailing whitespace.
++GET /assets/..%2f..%2fsecret.txt -> 404                  
+docs/proofs/1021-refresh/2026-10-25/server.log:262: trailing whitespace.
++GET /%00 -> 404                                          
+docs/proofs/1021-refresh/2026-10-25/server.log:263: trailing whitespace.
++GET /%E0%A4%A -> 404                                     
+docs/proofs/1021-refresh/2026-10-25/server.log:264: trailing whitespace.
++POST / -> 404                                            
+docs/proofs/1021-refresh/2026-10-25/server.log:265: trailing whitespace.
++WS on the same port -> welcome 2NGE                      
+docs/proofs/1021-refresh/2026-10-25/server.log:266: trailing whitespace.
++POST /avatars with no secret, then a wrong one -> 403, 403 
+docs/proofs/1021-refresh/2026-10-25/server.log:267: trailing whitespace.
++POST /avatars with the seat's secret -> 200              
+docs/proofs/1021-refresh/2026-10-25/server.log:268: trailing whitespace.
++seats then shows /avatars/4862eba18b49536e.jpg on the uploader 
+docs/proofs/1021-refresh/2026-10-25/server.log:269: trailing whitespace.
++GET /avatars/4862eba18b49536e.jpg -> 200 image/jpeg, nosniff 
+docs/proofs/1021-refresh/2026-10-25/server.log:270: trailing whitespace.
++POST /avatars with bytes that are not a JPEG -> 400      
+docs/proofs/1021-refresh/2026-10-25/server.log:271: trailing whitespace.
++second seat's 600 B over a 1000 B store -> 503           
+docs/proofs/1021-refresh/2026-10-25/server.log:272: trailing whitespace.
++second seat's 300 B -> 200                               
+docs/proofs/1021-refresh/2026-10-25/server.log:273: trailing whitespace.
++third seat's 50 B over AVATAR_MAX=2 -> 503               
+docs/proofs/1021-refresh/2026-10-25/server.log:274: trailing whitespace.
++uploader replaces its picture -> 200; old url -> 404     
+docs/proofs/1021-refresh/2026-10-25/server.log:275: trailing whitespace.
++stranger peeks -> sees ["id","color","ready"], no picture 
+docs/proofs/1021-refresh/2026-10-25/server.log:276: trailing whitespace.
++stranger hellos with that avatarId -> seat shows null    
+docs/proofs/1021-refresh/2026-10-25/server.log:277: trailing whitespace.
++stranger's table WRFQ dropped after the lobby hold       
+docs/proofs/1021-refresh/2026-10-25/server.log:278: trailing whitespace.
++GET /avatars/6f710c6db8cd0655.jpg after that -> 200      
+docs/proofs/1021-refresh/2026-10-25/server.log:279: trailing whitespace.
++seat let go: GET /avatars/689b6249c272915c.jpg -> 404    
+docs/proofs/1021-refresh/2026-10-25/server.log:280: trailing whitespace.
++table 39YZ dropped with an upload half sent              
+docs/proofs/1021-refresh/2026-10-25/server.log:281: trailing whitespace.
++the rest of that upload arrives -> 410                   
+docs/proofs/1021-refresh/2026-10-25/server.log:282: trailing whitespace.
++third seat's 50 B into the freed slot -> 200             
+docs/proofs/1021-refresh/2026-10-25/server.log:283: trailing whitespace.
++watcher welcome has no secret; its upload -> 403         
+docs/proofs/1021-refresh/2026-10-25/server.log:284: trailing whitespace.
++upload burst: 18 accepted, then 429                      
+docs/proofs/1021-refresh/2026-10-25/server.log:285: trailing whitespace.
++host with DIST=<empty dir>: GET / -> 503                 
+docs/proofs/1021-refresh/2026-10-25/server.log:286: trailing whitespace.
++hostUrl https://abc.trycloudflare.com/ -> wss://abc.trycloudflare.com 
+docs/proofs/1021-refresh/2026-10-25/server.log:287: trailing whitespace.
++hostUrl http://192.168.1.20:8787/ -> ws://192.168.1.20:8787 
+docs/proofs/1021-refresh/2026-10-25/server.log:288: trailing whitespace.
++hostUrl http://localhost:8080/ (dev) -> ws://localhost:8787 
+docs/proofs/1021-refresh/2026-10-25/server.log:289: trailing whitespace.
++hostUrl http://localhost:8080/?host=ws://x:1 -> ws://x:1 
+docs/proofs/1021-refresh/2026-10-25/server.log:290: trailing whitespace.
++hostUrl default dev under node -> ws://h:9               
+docs/proofs/1021-refresh/2026-10-25/types.log:4: new blank line at EOF.
+docs/proofs/1021-refresh/review-refresh/build.log:31: trailing whitespace.
++[plugin builtin:vite-reporter] 
+docs/proofs/1021-refresh/review-refresh/types.log:4: new blank line at EOF.
+docs/proofs/1031/refresh-main-2026-10-24/build.log:29: trailing whitespace.
++[plugin builtin:vite-reporter] 
+docs/proofs/1031/refresh-main-2026-10-24/types.log:4: new blank line at EOF.
+docs/proofs/1047-refresh/codex-p-2026-10-25/base-build.log:44: trailing whitespace.
++[plugin builtin:vite-reporter] 
+docs/proofs/1047-refresh/codex-p-2026-10-25/build.log:44: trailing whitespace.
++[plugin builtin:vite-reporter] 
+docs/proofs/1047-refresh/codex-p-2026-10-25/historical-ci-120513429566.log:2: trailing whitespace.
++2026-10-23T16:08:28.6254028Z 
+docs/proofs/1047-refresh/codex-p-2026-10-25/types.log:4: new blank line at EOF.
+docs/proofs/1051-fixture/build.log:29: trailing whitespace.
++[plugin builtin:vite-reporter] 
+docs/proofs/1051-fixture/types.log:4: new blank line at EOF.
+docs/proofs/1061-refresh/2026-10-25/base-build.log:31: trailing whitespace.
++[plugin builtin:vite-reporter] 
+docs/proofs/1061-refresh/2026-10-25/build.log:31: trailing whitespace.
++[plugin builtin:vite-reporter] 
+docs/proofs/1061-refresh/2026-10-25/types.log:4: new blank line at EOF.
+docs/proofs/1089-hotseat-provenance/build.log:28: trailing whitespace.
++[plugin builtin:vite-reporter] 
+docs/proofs/1089-hotseat-provenance/source.diff:13: trailing whitespace.
++ 
+docs/proofs/1089-hotseat-provenance/types.log:4: new blank line at EOF.
+docs/proofs/1093-hotseat-boundary/line-audit.log:43: new blank line at EOF.
+docs/proofs/1093-hotseat-boundary/types.log:4: new blank line at EOF.
+docs/proofs/1111-audio-recovery/p2-reproduction/candidate-native.log:45: trailing whitespace.
++ok native host-driven playback recovers for all seats: 
+docs/proofs/1111-audio-recovery/p2-validation/build.log:32: trailing whitespace.
++[plugin builtin:vite-reporter] 
+docs/proofs/1111-audio-recovery/p2-validation/fresh-native-pinned.log:45: trailing whitespace.
++ok native host-driven playback recovers for all seats: 
+docs/proofs/1111-audio-recovery/p2-validation/fresh-native.log:45: trailing whitespace.
++ok native host-driven playback recovers for all seats: 
+docs/proofs/1111-audio-recovery/p2-validation/types.log:4: new blank line at EOF.
+docs/proofs/542-haptics/build.log:29: trailing whitespace.
++[plugin builtin:vite-reporter] 
+docs/proofs/542-haptics/climber-build.log:29: trailing whitespace.
++[plugin builtin:vite-reporter] 
+docs/proofs/542-haptics/climber-types.log:4: new blank line at EOF.
+docs/proofs/542-haptics/types.log:4: new blank line at EOF.
+docs/proofs/553-refresh/2026-10-25/logs/build-cold.log:32: trailing whitespace.
++[plugin builtin:vite-reporter] 
+docs/proofs/553-refresh/2026-10-25/logs/build-initial.log:31: trailing whitespace.
++[plugin builtin:vite-reporter] 
+docs/proofs/553-refresh/2026-10-25/logs/build-lazy.log:32: trailing whitespace.
++[plugin builtin:vite-reporter] 
+docs/proofs/553-refresh/2026-10-25/logs/build.log:32: trailing whitespace.
++[plugin builtin:vite-reporter] 
+docs/proofs/553-refresh/2026-10-25/logs/final-base-build.log:31: trailing whitespace.
++[plugin builtin:vite-reporter] 
+docs/proofs/553-refresh/2026-10-25/logs/final-head-build.log:32: trailing whitespace.
++[plugin builtin:vite-reporter] 
+docs/proofs/553-refresh/2026-10-25/logs/final/build.log:32: trailing whitespace.
++[plugin builtin:vite-reporter] 
+docs/proofs/553-refresh/2026-10-25/logs/final/types.log:4: new blank line at EOF.
+docs/proofs/553-refresh/2026-10-25/logs/pre-handshake-attempt/build.log:32: trailing whitespace.
++[plugin builtin:vite-reporter] 
+docs/proofs/553-refresh/2026-10-25/logs/pre-handshake-attempt/types.log:4: new blank line at EOF.
+docs/proofs/553-refresh/2026-10-25/logs/server.log:248: trailing whitespace.
++raw GET // -> 400                                        
+docs/proofs/553-refresh/2026-10-25/logs/server.log:249: trailing whitespace.
++raw GET //[ -> 400                                       
+docs/proofs/553-refresh/2026-10-25/logs/server.log:250: trailing whitespace.
++raw GET //a b -> 400                                     
+docs/proofs/553-refresh/2026-10-25/logs/server.log:251: trailing whitespace.
++raw GET http://[ -> 400                                  
+docs/proofs/553-refresh/2026-10-25/logs/server.log:252: trailing whitespace.
++raw GET /% -> 404                                        
+docs/proofs/553-refresh/2026-10-25/logs/server.log:253: trailing whitespace.
++raw GET http://x// -> 404                                
+docs/proofs/553-refresh/2026-10-25/logs/server.log:254: trailing whitespace.
++GET / -> 200 text/html; charset=utf-8, no-cache          
+docs/proofs/553-refresh/2026-10-25/logs/server.log:255: trailing whitespace.
++GET /assets/app-abc123.js -> 200 text/javascript, immutable 
+docs/proofs/553-refresh/2026-10-25/logs/server.log:256: trailing whitespace.
++HEAD /assets/app-abc123.js -> 200, empty body            
+docs/proofs/553-refresh/2026-10-25/logs/server.log:257: trailing whitespace.
++GET /assets/missing.js -> 404                            
+docs/proofs/553-refresh/2026-10-25/logs/server.log:258: trailing whitespace.
++GET /assets -> 404                                       
+docs/proofs/553-refresh/2026-10-25/logs/server.log:259: trailing whitespace.
++GET /../secret.txt -> 404                                
+docs/proofs/553-refresh/2026-10-25/logs/server.log:260: trailing whitespace.
++GET /%2e%2e/secret.txt -> 404                            
+docs/proofs/553-refresh/2026-10-25/logs/server.log:261: trailing whitespace.
++GET /assets/..%2f..%2fsecret.txt -> 404                  
+docs/proofs/553-refresh/2026-10-25/logs/server.log:262: trailing whitespace.
++GET /%00 -> 404                                          
+docs/proofs/553-refresh/2026-10-25/logs/server.log:263: trailing whitespace.
++GET /%E0%A4%A -> 404                                     
+docs/proofs/553-refresh/2026-10-25/logs/server.log:264: trailing whitespace.
++POST / -> 404                                            
+docs/proofs/553-refresh/2026-10-25/logs/server.log:265: trailing whitespace.
++WS on the same port -> welcome DE4A                      
+docs/proofs/553-refresh/2026-10-25/logs/server.log:266: trailing whitespace.
++POST /avatars with no secret, then a wrong one -> 403, 403 
+docs/proofs/553-refresh/2026-10-25/logs/server.log:267: trailing whitespace.
++POST /avatars with the seat's secret -> 200              
+docs/proofs/553-refresh/2026-10-25/logs/server.log:268: trailing whitespace.
++seats then shows /avatars/1e2ea5c96ae6e5d9.jpg on the uploader 
+docs/proofs/553-refresh/2026-10-25/logs/server.log:269: trailing whitespace.
++GET /avatars/1e2ea5c96ae6e5d9.jpg -> 200 image/jpeg, nosniff 
+docs/proofs/553-refresh/2026-10-25/logs/server.log:270: trailing whitespace.
++POST /avatars with bytes that are not a JPEG -> 400      
+docs/proofs/553-refresh/2026-10-25/logs/server.log:271: trailing whitespace.
++second seat's 600 B over a 1000 B store -> 503           
+docs/proofs/553-refresh/2026-10-25/logs/server.log:272: trailing whitespace.
++second seat's 300 B -> 200                               
+docs/proofs/553-refresh/2026-10-25/logs/server.log:273: trailing whitespace.
++third seat's 50 B over AVATAR_MAX=2 -> 503               
+docs/proofs/553-refresh/2026-10-25/logs/server.log:274: trailing whitespace.
++uploader replaces its picture -> 200; old url -> 404     
+docs/proofs/553-refresh/2026-10-25/logs/server.log:275: trailing whitespace.
++stranger peeks -> sees ["id","color","ready"], no picture 
+docs/proofs/553-refresh/2026-10-25/logs/server.log:276: trailing whitespace.
++stranger hellos with that avatarId -> seat shows null    
+docs/proofs/553-refresh/2026-10-25/logs/server.log:277: trailing whitespace.
++stranger's table DAX2 dropped after the lobby hold       
+docs/proofs/553-refresh/2026-10-25/logs/server.log:278: trailing whitespace.
++GET /avatars/37ca839eba21c734.jpg after that -> 200      
+docs/proofs/553-refresh/2026-10-25/logs/server.log:279: trailing whitespace.
++seat let go: GET /avatars/5ca42e59f793df2b.jpg -> 404    
+docs/proofs/553-refresh/2026-10-25/logs/server.log:280: trailing whitespace.
++table V9RL dropped with an upload half sent              
+docs/proofs/553-refresh/2026-10-25/logs/server.log:281: trailing whitespace.
++the rest of that upload arrives -> 410                   
+docs/proofs/553-refresh/2026-10-25/logs/server.log:282: trailing whitespace.
++third seat's 50 B into the freed slot -> 200             
+docs/proofs/553-refresh/2026-10-25/logs/server.log:283: trailing whitespace.
++watcher welcome has no secret; its upload -> 403         
+docs/proofs/553-refresh/2026-10-25/logs/server.log:284: trailing whitespace.
++upload burst: 18 accepted, then 429                      
+docs/proofs/553-refresh/2026-10-25/logs/server.log:285: trailing whitespace.
++host with DIST=<empty dir>: GET / -> 503                 
+docs/proofs/553-refresh/2026-10-25/logs/server.log:286: trailing whitespace.
++hostUrl https://abc.trycloudflare.com/ -> wss://abc.trycloudflare.com 
+docs/proofs/553-refresh/2026-10-25/logs/server.log:287: trailing whitespace.
++hostUrl http://192.168.1.20:8787/ -> ws://192.168.1.20:8787 
+docs/proofs/553-refresh/2026-10-25/logs/server.log:288: trailing whitespace.
++hostUrl http://localhost:8080/ (dev) -> ws://localhost:8787 
+docs/proofs/553-refresh/2026-10-25/logs/server.log:289: trailing whitespace.
++hostUrl http://localhost:8080/?host=ws://x:1 -> ws://x:1 
+docs/proofs/553-refresh/2026-10-25/logs/server.log:290: trailing whitespace.
++hostUrl default dev under node -> ws://h:9               
+docs/proofs/553-refresh/2026-10-25/logs/types-cold.log:4: new blank line at EOF.
+docs/proofs/553-refresh/2026-10-25/logs/types-identity.log:4: new blank line at EOF.
+docs/proofs/553-refresh/2026-10-25/logs/types-initial.log:4: new blank line at EOF.
+docs/proofs/553-refresh/2026-10-25/logs/types-lazy.log:4: new blank line at EOF.
+docs/proofs/553-refresh/2026-10-25/logs/types-peek-fix.log:4: new blank line at EOF.
+docs/proofs/553-refresh/2026-10-25/logs/types-ready.log:4: new blank line at EOF.
+docs/proofs/553-refresh/2026-10-25/logs/types.log:4: new blank line at EOF.
+docs/proofs/826-robber-grey/black-2026-10-24/logs/build.log:29: trailing whitespace.
++[plugin builtin:vite-reporter] 
+docs/proofs/826-robber-grey/black-2026-10-24/logs/restored-build.log:29: trailing whitespace.
++[plugin builtin:vite-reporter] 
+docs/proofs/826-robber-grey/black-2026-10-24/logs/types.log:4: new blank line at EOF.
+docs/proofs/833/refresh-main-2026-10-24/logs/base-build.log:29: trailing whitespace.
++[plugin builtin:vite-reporter] 
+docs/proofs/833/refresh-main-2026-10-24/logs/build.log:31: trailing whitespace.
++[plugin builtin:vite-reporter] 
+docs/proofs/833/refresh-main-2026-10-24/logs/firsttap-prototype-build.log:31: trailing whitespace.
++[plugin builtin:vite-reporter] 
+docs/proofs/833/refresh-main-2026-10-24/logs/firsttap-restored-build.log:31: trailing whitespace.
++[plugin builtin:vite-reporter] 
+docs/proofs/833/refresh-main-2026-10-24/logs/pages-renamed-full.log:31: trailing whitespace.
++[plugin builtin:vite-reporter] 
+docs/proofs/833/refresh-main-2026-10-24/logs/pages.log:35: trailing whitespace.
++[plugin builtin:vite-reporter] 
+docs/proofs/833/refresh-main-2026-10-24/logs/server.log:244: trailing whitespace.
++raw GET // -> 400                                        
+docs/proofs/833/refresh-main-2026-10-24/logs/server.log:245: trailing whitespace.
++raw GET //[ -> 400                                       
+docs/proofs/833/refresh-main-2026-10-24/logs/server.log:246: trailing whitespace.
++raw GET //a b -> 400                                     
+docs/proofs/833/refresh-main-2026-10-24/logs/server.log:247: trailing whitespace.
++raw GET http://[ -> 400                                  
+docs/proofs/833/refresh-main-2026-10-24/logs/server.log:248: trailing whitespace.
++raw GET /% -> 404                                        
+docs/proofs/833/refresh-main-2026-10-24/logs/server.log:249: trailing whitespace.
++raw GET http://x// -> 404                                
+docs/proofs/833/refresh-main-2026-10-24/logs/server.log:250: trailing whitespace.
++GET / -> 200 text/html; charset=utf-8, no-cache          
+docs/proofs/833/refresh-main-2026-10-24/logs/server.log:251: trailing whitespace.
++GET /assets/app-abc123.js -> 200 text/javascript, immutable 
+docs/proofs/833/refresh-main-2026-10-24/logs/server.log:252: trailing whitespace.
++HEAD /assets/app-abc123.js -> 200, empty body            
+docs/proofs/833/refresh-main-2026-10-24/logs/server.log:253: trailing whitespace.
++GET /assets/missing.js -> 404                            
+docs/proofs/833/refresh-main-2026-10-24/logs/server.log:254: trailing whitespace.
++GET /assets -> 404                                       
+docs/proofs/833/refresh-main-2026-10-24/logs/server.log:255: trailing whitespace.
++GET /../secret.txt -> 404                                
+docs/proofs/833/refresh-main-2026-10-24/logs/server.log:256: trailing whitespace.
++GET /%2e%2e/secret.txt -> 404                            
+docs/proofs/833/refresh-main-2026-10-24/logs/server.log:257: trailing whitespace.
++GET /assets/..%2f..%2fsecret.txt -> 404                  
+docs/proofs/833/refresh-main-2026-10-24/logs/server.log:258: trailing whitespace.
++GET /%00 -> 404                                          
+docs/proofs/833/refresh-main-2026-10-24/logs/server.log:259: trailing whitespace.
++GET /%E0%A4%A -> 404                                     
+docs/proofs/833/refresh-main-2026-10-24/logs/server.log:260: trailing whitespace.
++POST / -> 404                                            
+docs/proofs/833/refresh-main-2026-10-24/logs/server.log:261: trailing whitespace.
++WS on the same port -> welcome 6ZNH                      
+docs/proofs/833/refresh-main-2026-10-24/logs/server.log:262: trailing whitespace.
++POST /avatars with no secret, then a wrong one -> 403, 403 
+docs/proofs/833/refresh-main-2026-10-24/logs/server.log:263: trailing whitespace.
++POST /avatars with the seat's secret -> 200              
+docs/proofs/833/refresh-main-2026-10-24/logs/server.log:264: trailing whitespace.
++seats then shows /avatars/415b02d416a50aee.jpg on the uploader 
+docs/proofs/833/refresh-main-2026-10-24/logs/server.log:265: trailing whitespace.
++GET /avatars/415b02d416a50aee.jpg -> 200 image/jpeg, nosniff 
+docs/proofs/833/refresh-main-2026-10-24/logs/server.log:266: trailing whitespace.
++POST /avatars with bytes that are not a JPEG -> 400      
+docs/proofs/833/refresh-main-2026-10-24/logs/server.log:267: trailing whitespace.
++second seat's 600 B over a 1000 B store -> 503           
+docs/proofs/833/refresh-main-2026-10-24/logs/server.log:268: trailing whitespace.
++second seat's 300 B -> 200                               
+docs/proofs/833/refresh-main-2026-10-24/logs/server.log:269: trailing whitespace.
++third seat's 50 B over AVATAR_MAX=2 -> 503               
+docs/proofs/833/refresh-main-2026-10-24/logs/server.log:270: trailing whitespace.
++uploader replaces its picture -> 200; old url -> 404     
+docs/proofs/833/refresh-main-2026-10-24/logs/server.log:271: trailing whitespace.
++stranger peeks -> sees ["id","color","ready"], no picture 
+docs/proofs/833/refresh-main-2026-10-24/logs/server.log:272: trailing whitespace.
++stranger hellos with that avatarId -> seat shows null    
+docs/proofs/833/refresh-main-2026-10-24/logs/server.log:273: trailing whitespace.
++stranger's table NUAE dropped after the lobby hold       
+docs/proofs/833/refresh-main-2026-10-24/logs/server.log:274: trailing whitespace.
++GET /avatars/411eb3e6c85ac683.jpg after that -> 200      
+docs/proofs/833/refresh-main-2026-10-24/logs/server.log:275: trailing whitespace.
++seat let go: GET /avatars/356199cde201e76c.jpg -> 404    
+docs/proofs/833/refresh-main-2026-10-24/logs/server.log:276: trailing whitespace.
++table NFWY dropped with an upload half sent              
+docs/proofs/833/refresh-main-2026-10-24/logs/server.log:277: trailing whitespace.
++the rest of that upload arrives -> 410                   
+docs/proofs/833/refresh-main-2026-10-24/logs/server.log:278: trailing whitespace.
++third seat's 50 B into the freed slot -> 200             
+docs/proofs/833/refresh-main-2026-10-24/logs/server.log:279: trailing whitespace.
++watcher welcome has no secret; its upload -> 403         
+docs/proofs/833/refresh-main-2026-10-24/logs/server.log:280: trailing whitespace.
++upload burst: 18 accepted, then 429                      
+docs/proofs/833/refresh-main-2026-10-24/logs/server.log:281: trailing whitespace.
++host with DIST=<empty dir>: GET / -> 503                 
+docs/proofs/833/refresh-main-2026-10-24/logs/server.log:282: trailing whitespace.
++hostUrl https://abc.trycloudflare.com/ -> wss://abc.trycloudflare.com 
+docs/proofs/833/refresh-main-2026-10-24/logs/server.log:283: trailing whitespace.
++hostUrl http://192.168.1.20:8787/ -> ws://192.168.1.20:8787 
+docs/proofs/833/refresh-main-2026-10-24/logs/server.log:284: trailing whitespace.
++hostUrl http://localhost:8080/ (dev) -> ws://localhost:8787 
+docs/proofs/833/refresh-main-2026-10-24/logs/server.log:285: trailing whitespace.
++hostUrl http://localhost:8080/?host=ws://x:1 -> ws://x:1 
+docs/proofs/833/refresh-main-2026-10-24/logs/server.log:286: trailing whitespace.
++hostUrl default dev under node -> ws://h:9               
+docs/proofs/833/refresh-main-2026-10-24/logs/types.log:4: new blank line at EOF.
+docs/proofs/833/static-host-2026-10-24/logs/build.log:31: trailing whitespace.
++[plugin builtin:vite-reporter] 
+docs/proofs/833/static-host-2026-10-24/logs/old-static-build.log:31: trailing whitespace.
++[plugin builtin:vite-reporter] 
+docs/proofs/833/static-host-2026-10-24/logs/pages-renamed.log:31: trailing whitespace.
++[plugin builtin:vite-reporter] 
+docs/proofs/833/static-host-2026-10-24/logs/pages.log:35: trailing whitespace.
++[plugin builtin:vite-reporter] 
+docs/proofs/833/static-host-2026-10-24/logs/restored-build.log:31: trailing whitespace.
++[plugin builtin:vite-reporter] 
+docs/proofs/833/static-host-2026-10-24/logs/root-build.log:31: trailing whitespace.
++[plugin builtin:vite-reporter] 
+docs/proofs/833/static-host-2026-10-24/logs/server-serve.log:1: trailing whitespace.
++raw GET // -> 400                                        
+docs/proofs/833/static-host-2026-10-24/logs/server-serve.log:2: trailing whitespace.
++raw GET //[ -> 400                                       
+docs/proofs/833/static-host-2026-10-24/logs/server-serve.log:3: trailing whitespace.
++raw GET //a b -> 400                                     
+docs/proofs/833/static-host-2026-10-24/logs/server-serve.log:4: trailing whitespace.
++raw GET http://[ -> 400                                  
+docs/proofs/833/static-host-2026-10-24/logs/server-serve.log:5: trailing whitespace.
++raw GET /% -> 404                                        
+docs/proofs/833/static-host-2026-10-24/logs/server-serve.log:6: trailing whitespace.
++raw GET http://x// -> 404                                
+docs/proofs/833/static-host-2026-10-24/logs/server-serve.log:7: trailing whitespace.
++GET / -> 200 text/html; charset=utf-8, no-cache          
+docs/proofs/833/static-host-2026-10-24/logs/server-serve.log:8: trailing whitespace.
++GET /assets/app-abc123.js -> 200 text/javascript, immutable 
+docs/proofs/833/static-host-2026-10-24/logs/server-serve.log:9: trailing whitespace.
++HEAD /assets/app-abc123.js -> 200, empty body            
+docs/proofs/833/static-host-2026-10-24/logs/server-serve.log:10: trailing whitespace.
++GET /assets/missing.js -> 404                            
+docs/proofs/833/static-host-2026-10-24/logs/server-serve.log:11: trailing whitespace.
++GET /assets -> 404                                       
+docs/proofs/833/static-host-2026-10-24/logs/server-serve.log:12: trailing whitespace.
++GET /../secret.txt -> 404                                
+docs/proofs/833/static-host-2026-10-24/logs/server-serve.log:13: trailing whitespace.
++GET /%2e%2e/secret.txt -> 404                            
+docs/proofs/833/static-host-2026-10-24/logs/server-serve.log:14: trailing whitespace.
++GET /assets/..%2f..%2fsecret.txt -> 404                  
+docs/proofs/833/static-host-2026-10-24/logs/server-serve.log:15: trailing whitespace.
++GET /%00 -> 404                                          
+docs/proofs/833/static-host-2026-10-24/logs/server-serve.log:16: trailing whitespace.
++GET /%E0%A4%A -> 404                                     
+docs/proofs/833/static-host-2026-10-24/logs/server-serve.log:17: trailing whitespace.
++POST / -> 404                                            
+docs/proofs/833/static-host-2026-10-24/logs/server-serve.log:18: trailing whitespace.
++WS on the same port -> welcome 6G4G                      
+docs/proofs/833/static-host-2026-10-24/logs/server-serve.log:19: trailing whitespace.
++POST /avatars with no secret, then a wrong one -> 403, 403 
+docs/proofs/833/static-host-2026-10-24/logs/server-serve.log:20: trailing whitespace.
++POST /avatars with the seat's secret -> 200              
+docs/proofs/833/static-host-2026-10-24/logs/server-serve.log:21: trailing whitespace.
++seats then shows /avatars/be9b9a187e54a9dc.jpg on the uploader 
+docs/proofs/833/static-host-2026-10-24/logs/server-serve.log:22: trailing whitespace.
++GET /avatars/be9b9a187e54a9dc.jpg -> 200 image/jpeg, nosniff 
+docs/proofs/833/static-host-2026-10-24/logs/server-serve.log:23: trailing whitespace.
++POST /avatars with bytes that are not a JPEG -> 400      
+docs/proofs/833/static-host-2026-10-24/logs/server-serve.log:24: trailing whitespace.
++second seat's 600 B over a 1000 B store -> 503           
+docs/proofs/833/static-host-2026-10-24/logs/server-serve.log:25: trailing whitespace.
++second seat's 300 B -> 200                               
+docs/proofs/833/static-host-2026-10-24/logs/server-serve.log:26: trailing whitespace.
++third seat's 50 B over AVATAR_MAX=2 -> 503               
+docs/proofs/833/static-host-2026-10-24/logs/server-serve.log:27: trailing whitespace.
++uploader replaces its picture -> 200; old url -> 404     
+docs/proofs/833/static-host-2026-10-24/logs/server-serve.log:28: trailing whitespace.
++stranger peeks -> sees ["id","color","ready"], no picture 
+docs/proofs/833/static-host-2026-10-24/logs/server-serve.log:29: trailing whitespace.
++stranger hellos with that avatarId -> seat shows null    
+docs/proofs/833/static-host-2026-10-24/logs/server-serve.log:30: trailing whitespace.
++stranger's table N4AF dropped after the lobby hold       
+docs/proofs/833/static-host-2026-10-24/logs/server-serve.log:31: trailing whitespace.
++GET /avatars/4d361aa4bf74dbc0.jpg after that -> 200      
+docs/proofs/833/static-host-2026-10-24/logs/server-serve.log:32: trailing whitespace.
++seat let go: GET /avatars/1c35f52f78d85a52.jpg -> 404    
+docs/proofs/833/static-host-2026-10-24/logs/server-serve.log:33: trailing whitespace.
++table ZC2N dropped with an upload half sent              
+docs/proofs/833/static-host-2026-10-24/logs/server-serve.log:34: trailing whitespace.
++the rest of that upload arrives -> 410                   
+docs/proofs/833/static-host-2026-10-24/logs/server-serve.log:35: trailing whitespace.
++third seat's 50 B into the freed slot -> 200             
+docs/proofs/833/static-host-2026-10-24/logs/server-serve.log:36: trailing whitespace.
++watcher welcome has no secret; its upload -> 403         
+docs/proofs/833/static-host-2026-10-24/logs/server-serve.log:37: trailing whitespace.
++upload burst: 18 accepted, then 429                      
+docs/proofs/833/static-host-2026-10-24/logs/server-serve.log:38: trailing whitespace.
++host with DIST=<empty dir>: GET / -> 503                 
+docs/proofs/833/static-host-2026-10-24/logs/server-serve.log:39: trailing whitespace.
++hostUrl https://abc.trycloudflare.com/ -> wss://abc.trycloudflare.com 
+docs/proofs/833/static-host-2026-10-24/logs/server-serve.log:40: trailing whitespace.
++hostUrl http://192.168.1.20:8787/ -> ws://192.168.1.20:8787 
+docs/proofs/833/static-host-2026-10-24/logs/server-serve.log:41: trailing whitespace.
++hostUrl http://localhost:8080/ (dev) -> ws://localhost:8787 
+docs/proofs/833/static-host-2026-10-24/logs/server-serve.log:42: trailing whitespace.
++hostUrl http://localhost:8080/?host=ws://x:1 -> ws://x:1 
+docs/proofs/833/static-host-2026-10-24/logs/server-serve.log:43: trailing whitespace.
++hostUrl default dev under node -> ws://h:9               
+docs/proofs/833/static-host-2026-10-24/logs/types.log:4: new blank line at EOF.
+docs/proofs/932-refresh/codex-p-2026-10-25/base-build.log:44: trailing whitespace.
++[plugin builtin:vite-reporter] 
+docs/proofs/932-refresh/codex-p-2026-10-25/build.log:44: trailing whitespace.
++[plugin builtin:vite-reporter] 
+docs/proofs/932-refresh/codex-p-2026-10-25/historical-ci-120362440462.log:2: trailing whitespace.
++2026-10-23T10:35:01.9481014Z 
+docs/proofs/932-refresh/codex-p-2026-10-25/historical-ci-120362440462.log:4: trailing whitespace.
++2026-10-23T10:35:01.9482487Z 
+docs/proofs/932-refresh/codex-p-2026-10-25/historical-ci-120362440462.log:6: trailing whitespace.
++2026-10-23T10:35:01.9483554Z 
+docs/proofs/932-refresh/codex-p-2026-10-25/historical-ci-120362440462.log:15: trailing whitespace.
++2026-10-23T10:35:01.9487920Z 
+docs/proofs/932-refresh/codex-p-2026-10-25/types.log:4: new blank line at EOF.
+docs/research/browser-b-turn-gain/main5bb-build.log:28: trailing whitespace.
++[plugin builtin:vite-reporter] 
+docs/research/browser-b-turn-gain/main5bb-types.log:4: new blank line at EOF.
+docs/research/climber-966/build.log:27: trailing whitespace.
++[plugin builtin:vite-reporter] 
+docs/research/turn-hand-clearance/build.log:29: trailing whitespace.
++[plugin builtin:vite-reporter] 
+docs/research/turn-hand-clearance/types.log:4: new blank line at EOF.
+scripts/audio-level-lib.mjs:84: trailing whitespace.
++  

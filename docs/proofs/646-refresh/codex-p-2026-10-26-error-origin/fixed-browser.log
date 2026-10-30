@@ -1,0 +1,22 @@
+
+> needs-prove
+> node --import ./server/register.mjs scripts/needs-prove.mjs
+
+ok Need picker with 250ms host echoes: rapid selections compose; five 44px controls, maximum two, clear, public chip within 1s, hidden hand preserved, rejoin and unchanged hole
+ok real table trade: received requested Stone clears the public need on the other client
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+locator.click: Timeout 30000ms exceeded.
+Call log:
+[2m  - waiting for getByRole('button', { name: 'Need', exact: true })[22m
+
+    at /workspace/emberisle/work/p-needs-layout873/scripts/needs-prove.mjs:79:55 {
+  log: [
+    "  - waiting for getByRole('button', { name: 'Need', exact: true })"
+  ],
+  name: 'TimeoutError'
+}
+
+Node.js v24.19.0

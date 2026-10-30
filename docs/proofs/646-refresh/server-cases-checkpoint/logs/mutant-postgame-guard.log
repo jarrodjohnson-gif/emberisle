@@ -1,0 +1,32 @@
+mutation=postgame-guard
+expected_assertion=need ACT after game over is rejected before publishing seat changes
+exit_status=1
+
+> needs-prove
+> node --import ./register.mjs needs-prove.mjs
+
+ok needs validation and shared local/host expiry rules
+ok real need frames: public seat projection, malformed/duplicate/oversized rejection; game and clocks unchanged
+ok restart/rejoin keeps one remaining own turn; second own turn clears; watchers cannot change needs
+ok bank and player trades clear only needs satisfied by received goods, for both participants
+ok need updates share the ACT rate limit
+ok real start transition clears restored needs from every public seat
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: need ACT after game over is rejected before publishing seat changes
+
+'seats' !== 'error'
+
+    at file:///tmp/p873-server-cases-final5-20261026/server/needs-prove.mjs:142:9
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: 'seats',
+  expected: 'error',
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v24.19.0

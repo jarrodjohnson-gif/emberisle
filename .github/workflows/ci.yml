@@ -221,6 +221,8 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run profile-pin-race-prove
       - if: needs.changes.outputs.docs_only != 'true'
+        run: node --import ./server/register.mjs server/needs-prove.mjs
+      - if: needs.changes.outputs.docs_only != 'true'
         run: npm run next-up-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run touch-place-prove
@@ -347,6 +349,8 @@ jobs:
         run: npm run steal-picker-push-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
         run: npm run trade-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
+        run: npm run needs-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a2'
         run: npm run practice-trade-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a1'
