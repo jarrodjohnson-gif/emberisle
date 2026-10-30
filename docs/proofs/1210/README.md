@@ -1,18 +1,44 @@
-# #1210 diagnostic checkpoint — no fix yet
+# #1210: admit the required host cue before measuring media recovery
 
-Builder: Codex-p. Parent: Codex-p. Model: GPT-6.1 Sol. Base:28628f3. Usage percentages unavailable.
+Builder: Codex-p. Parent: Codex-p. Model: GPT-6.1 Sol. Base main: 28628f3. Tested fix source: 8d7a5f2. Usage percentages unavailable.
 
-FIRST failing genuine proof was captured before any fix: three distinct real host seats, native HTMLAudioElement playback, actual socket loss/rejoin, real host trade/turns and soundboard delivery. The existing assertions and8000ms wait were unchanged.
+## First failure and cause, before any fix
 
-- Five native runs with the first observational version passed20 checks each. Their exact source is preserved as native-baseline-source-before-robustness.txt and matches its original recorded hash.
-- Observer robustness controls pass: fulfilled/rejected/timed-out page snapshots, synchronous/logging failures preserve the identical original proof error, empty/malformed URL observation preserves native playback and exact promise/exception identity. Actual timeout-control elapsed1002.509245ms; diagnostics are bounded by the1000ms timer, with observed scheduling overhead.
-- First CPU×2 real proof on source f75aa71 fails the original8000ms wait. Pine/p1 receives the real bong message but has only the original failed bong element(id4,error4,time0); its only native play attempt precedes restoration. Ember/Tide recover all four files. No product source or media element was reset.
-- A proof-only Vite transform then observes request, admission and start without changing any original sound guard/queue/timing. Three CPU×2 runs pass, fourth fails with the same original wait: Ember/p0 misses bong while Tide/Pine recover. At board_bong gate5305.6ms: unlocked=true, muted=false, categoryGain=1, noAudio=false, burst=false, queue length8/full=true. The unchanged queue-full guard drops the cue; there is no later start or native recovery attempt. Queue later drains, but the dropped cue cannot recover by waiting longer.
+The proof was driving real host turns/trades faster than its paced sound queue could drain. Production intentionally rejects a new cue when its queue reaches 8. The final bong chat line could arrive while that queue was full, so the proof waited 8000 ms for playback of a request that was never admitted. Waiting longer cannot start a dropped cue.
 
-This identifies a concrete fixture admission failure before native decoding, in a real three-seat reproduction. Historical CI did not record admission state; no retrospective claim is made about every historical occurrence. No runtime fix, queue-cap increase, timeout change, assertion removal or green-retry claim is made.
+The FIRST failing proof used three genuine host seats and native media, with actual socket loss/rejoin, turns, resource trade and soundboard broadcast. No fake sockets or media replacement were used. Source f75aa71 preserves every original proof line. At CPU×2, Pine/p1 received the bong but retained only its initial failed media element (id 4, error 4, time 0); its only native play attempt was 938 ms, before restoration 2201 ms. Ember/Tide recovered all four files. This is cpu2-baseline-1.log.
 
-Raw failed runs: cpu2-baseline-1.log (first genuine failure), admission-cpu2-4.log (causal guard observation), parsed admission-failure.json. Every earlier passing run is retained. Source hashes and all-original-line/runtime audits are in the JSON manifests. cpu2-preload-source.txt records the Playwright CDP CPU×2 control; original autoplay/native media and real host path remain intact.
+A subsequent proof-only Vite trace retained the original sound guards and identified the exact cause in admission-cpu2-4.log: Ember/p0 received board_bong, with unlocked=true, muted=false, gain 1, burst=false, but queue length 8/full=true. Its queue contained path/outpost/dice/trade/turn cues. The request never reached start/native.play. The queue later drained but the dropped cue stayed absent. Other seats admitted and played it. This is concrete causal evidence in the real fixture; historical CI did not record these fields, so no claim is made about every old CI occurrence.
 
-Own PR #873's retained wait catch and all existing checkouts remain untouched. The added outer observer and test-only instrumentation live only on the current-main #1210 branch. All first failures were observed before considering any fixture readiness fix.
+All first failures precede the fix. Full raw outputs and parsed admission-failure.json are retained. Earlier five native observational runs and three passing admission-trace runs are separately labelled with exact source versions/hashes; they are not presented as fixed-source results. The diagnostic checkpoint note is preserved verbatim in diagnosis-checkpoint.md.
+
+## Fix and invariants
+
+Before sending the original real-host bong, the proof now waits on every actual sound queue being empty and not pacing, using its existing 10000 ms wait helper. This is a state precondition, not a fixed sleep. A new assertion requires exactly one real post-restoration request and admission gate per seat, with audio/unlock/gain available and neither burst nor full-queue rejection. The original host send, delivery checks, 8000 ms native playback wait/poll 50, every media assertion, and 120000 ms watchdog remain unchanged.
+
+The test-only Vite transform exposes queue/trace observations only inside this proof's server. Production source, queue cap 8, sound pacing 150 ms, assets, browser settings, dependencies, lockfile, flaky signature, budgets and registration are unchanged. No media reset or direct recovery replay is added. The original initial four intentionally failed downloads are unchanged. Every original source line remains in order, verified in final-source-audit.json.
+
+The additive outer failure observer records named seat/file state, native play attempts, host frames and admission history. It is outside own PR #873's inner wait catch. Observer errors cannot mask the identical original proof error; native.play always receives its original calls and returns its original promise/exception even if URL observation fails. Fulfilled/rejected/timed-out snapshot and observer-failure controls are retained. No existing checkout/PR was modified.
+
+## Actual final validation
+
+| Case | Actual output |
+| --- | --- |
+| Final native, one run | 21 checks pass; every seat recovers all four files. |
+| Final CPU×2, three runs | 21 checks pass each; actual host cues admitted and native media advance. |
+| Remove only the new queue-readiness wait, retaining the new assertion | Run 1 passes; run 2 fails the admission assertion: Tide has queue-full=true/burst=false. This is a real readiness regression control, not an altered assertion. |
+| Suppress only post-restoration board_bong in an isolated test transform | All three genuine seats receive the message and record request 1/gate 0; admission assertion fails on the first run. This behavioral control proves the fix cannot silently skip playback. |
+
+The two mutation controls are isolated temporary checkouts, never the final source. Their exact patches and hashes are retained. The first two genuine 8000 ms failures were recorded before these intentional mutation controls. Every passing/failed control output remains; no run was retried to obtain green.
+
+Typecheck, registered-prove 160, committed-head loosen (one changed proof, none loosened), whitespace and final observer robustness controls pass. Existing audio-recovery-prove remains registered in package.json and CI; no new proof command is added. Local native/browser runs were serial under /tmp/emberisle-team-browser.lock, with CHROMIUM_PATH unset. Actual recorded versions: Playwright 1.63.0, Chromium 153.0.8010.12, Node 24.19.0.
+
+Source audit records unchanged original 8000 ms timeout, polling 50 ms and watchdog 120000 ms, plus the separate existing 10000 ms readiness bound. Source-only change affects this registered proof; production/bundle files are byte-identical to main, so CI handles unrelated suites.
+
+## Reproduce
+
+Run npm run audio-recovery-prove with the pinned browser. CPU×2 uses the exact recorded temporary preload from cpu2-preload-source.txt. The genuine pre-fix failing sources are immutable f75aa71 and 341c27b; final source is 8d7a5f2. Isolated readiness-removal and host-cue-suppression mutations are recorded as patches against 8d7a5f2. observer-controls-source.txt extracts the actual observer functions for explicit error-identity/native-call controls; its actual outputs are in observer-controls-final.log.
+
+Jarrod's standing finish-one-then-next instruction and explicit fifth/sixth-slot authorization, including “Take another one”, permit reuse after #1218 merged. Own #873 overlap was coordinated with parent before claim; its branch and all existing five PRs remain unchanged. Fresh exact-head CI and independent Claude review remain required. This builder never merges or pushes main.
 
 — Codex-p <codex-p@users.noreply.github.com>
