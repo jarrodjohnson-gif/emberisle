@@ -109,7 +109,10 @@ try {
   vs = await Promise.all(tabs.map(view));
   check(vs[0].id === before[0].id && vs[0].seat === before[0].seat, 'dropped socket rejoins the same player and seat');
   check(vs.slice(1).every((v, i) => v.synced === before[i + 1].synced), 'the other host seats stay connected');
-  for (const t of tabs) { t.restore(); await t.page.evaluate(() => { window.mediaEvents = []; window.hostFrames = []; }); }
+  for (const t of tabs) { t.restore(); await t.page.evaluate(() => {
+    window.mediaEvents = []; window.hostFrames = [];
+    window.mediaTimeBaseline = window.audios.map(audio => audio.currentTime);
+  }); }
   await sleep(200); // Existing burst gap; no artificial media reset or reload.
   const recoveryStart = Date.now();
   const expected = tabs.map(() => new Set());
@@ -154,20 +157,23 @@ try {
   await call(tabs[0], 'sendSound', 'bong');
   for (const t of tabs) await t.page.waitForFunction(() => window.game.getState().chat.some(l => l.sound === 'bong'));
   check(true, 'host broadcasts the soundboard cue to all seats');
-  // Observe native playback until a bounded deadline, allowing slow CI media decoding. No resolved-play stub.
-  const deadline = Date.now() + 8000;
-  while (Date.now() < deadline) {
-    const heard = await Promise.all(tabs.map(t => t.page.evaluate(files => files.every(file =>
-      window.mediaEvents.some(e => e.file === file && e.event === 'playing') &&
-      window.mediaEvents.some(e => e.file === file && e.event === 'timeupdate' && e.time > 0)), files)));
-    if (heard.every(Boolean)) break;
-    await sleep(50);
-  }
+  // Wait on native playback progress itself, not delivery of a timeupdate event. CI can
+  // delay/coalesce those events even while the real media element is already advancing.
+  // Keep the timeout bounded and leave the playback assertions below in place.
+  await Promise.all(tabs.map(t => t.page.waitForFunction(files => files.every(file => {
+    return window.audios.some((audio, id) => new URL(audio.src).pathname.endsWith('/' + file) &&
+      audio.currentTime > (window.mediaTimeBaseline[id] ?? 0));
+  }), files, { timeout: 8000, polling: 50 })));
   const failures = [];
   for (const t of tabs) {
     const result = await t.page.evaluate(files => ({ identity: window.documentIdentity,
-      recovered: files.map(file => ({ file, playing: window.mediaEvents.some(e => e.file === file && e.event === 'playing'),
-        advanced: window.mediaEvents.some(e => e.file === file && e.event === 'timeupdate' && e.time > 0) })),
+      recovered: files.map(file => {
+        const audio = window.audios.find((item, id) => new URL(item.src).pathname.endsWith('/' + file) &&
+          item.currentTime > (window.mediaTimeBaseline[id] ?? 0));
+        return { file, playing: window.mediaEvents.some(e => e.file === file && e.event === 'playing'),
+          advanced: Boolean(audio), startedAt: audio ? window.mediaTimeBaseline[window.audios.indexOf(audio)] ?? 0 : null,
+          currentTime: audio?.currentTime ?? null };
+      }),
       media: window.audios.map(a => ({ file: a.src.split('/').at(-1), error: a.error?.code ?? null, time: a.currentTime, readyState: a.readyState })) }), files);
     console.log('RECOVERY', t.name, JSON.stringify(result));
     check(await t.page.evaluate(() => window.hostFrames.some(f => f.type === 'state') && window.game.getState().chat.some(l => l.sound === 'bong')), `${t.name}: actual host state and soundboard messages received`);

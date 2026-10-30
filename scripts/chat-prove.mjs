@@ -508,7 +508,7 @@ try {
   await phone.page.getByTestId("table-code").waitFor();
   r = await box(phone, '[data-testid="lobby-card"]');
   // The lobby sheet used to stop at 55vh, which left the chat one line. It may now use the whole screen below the notch (see "chat is readable" below).
-  check(r.top >= 11 && r.height <= r.vh - 23 && Math.abs(r.width - (r.vw - 24)) < 1, `phone lobby card is ${r.width.toFixed(0)}x${r.height.toFixed(0)}, inside the ${r.vw}x${r.vh} screen and full width`);
+  check(Math.abs(r.top - 16) < 1 && Math.abs(r.left - 16) < 1 && Math.abs(r.height - (r.vh - 32)) < 1 && Math.abs(r.width - (r.vw - 32)) < 1, `phone lobby card is ${r.width.toFixed(0)}x${r.height.toFixed(0)}, inside the ${r.vw}x${r.vh} screen with the approved 16 px margins`);
   await shot(phone, "chat-phone-lobby.jpg");
   // Four seats, scrolled to the bottom, at 844 and 640 tall: the sticky actions row reaches the card's bottom edge, so no
   // scroll content (chat chips, input, seat rows) renders below it, and Leave lives inside it.
@@ -524,7 +524,7 @@ try {
       const leave = [...row.querySelectorAll("button")].some((b) => b.textContent.trim() === "Leave the table");
       return { gap: Math.round((scroller.getBoundingClientRect().bottom - 1 - rb) * 10) / 10, below, leave };
     });
-    check(m.gap <= 1 && m.below.length === 0 && m.leave, `phone lobby 390x${h}, 4 seats scrolled down: sticky row ends at the card's bottom edge (gap ${m.gap}), nothing below it, Leave inside it`);
+    check(Math.abs(m.gap - 12) <= 0.1 && m.below.length === 0 && m.leave, `phone lobby 390x${h}, 4 seats scrolled down: footer keeps the approved 12 px bottom padding (gap ${m.gap}), nothing below it, Leave inside it`);
   }
   await phone.page.setViewportSize({ width: 390, height: 844 });
   await phone.page.evaluate(() => { document.querySelector('[data-testid="lobby-card"] > div').scrollTop = 0; });
