@@ -1,6 +1,6 @@
 # Docs-only desk proof prerequisites (#1226)
 
-Source commit: `9cdba084ad831fa5ec8d3984870a828ead4421c3`. Builder: Codex-p. Model: GPT-6.1 Sol. Parent: Codex-p.
+Source commit: `8ce98b5`. Builder: Codex-p. Model: GPT-6.1 Sol. Parent: Codex-p.
 
 ## Failure and cause
 
@@ -20,18 +20,20 @@ The desk proof still runs unconditionally.
 It imports only Node built-ins and needs no dependency installation.
 All dependency-cache/install conditions and keys remain unchanged.
 Every other server command, matrix, trigger and required job name remains unchanged.
-No proof, assertion, timeout, permission, lockfile or size allowance changes.
+No proof is skipped or removed.
+No existing assertion, timeout, permission, lockfile or size allowance changes.
 
 The existing registered `ci-install-prove` gains an additive regression section.
 All 114 original lines remain an exact prefix.
 The desk-gate proof and implementation remain byte-identical.
+Fail-closed guards reject checkout paths, command working directories and job-default working directories.
 A full parsed-YAML comparison finds only two removed prerequisite conditions.
 
 ## Actual validation
 
 - `ci-install-prove`: original cache/install cases pass, including docs zero-install behavior.
 - Both docs/code projections execute the real 38-check desk proof through npm.
-- Six controls reject gated checkout, gated Node setup, reordered checkout, gated proof, unpinned Node and swallowed failures.
+- Nine controls reject missing/gated prerequisites, skipped proof, unpinned Node, unsupported directories and swallowed failures.
 - An injected child assertion failure remains fatal.
 - A separate full-PyYAML execution projection passes docs/code paths and rejects the original path.
 - `desk-gate-prove`: 38 checks pass.

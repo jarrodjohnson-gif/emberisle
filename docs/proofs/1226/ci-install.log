@@ -13,5 +13,8 @@ ok desk proof negative control: docs-gated Node setup
 ok desk proof negative control: checkout after command
 ok desk proof negative control: docs-gated proof
 ok desk proof negative control: unpinned Node
+ok desk proof negative control: checkout subdirectory
+ok desk proof negative control: command subdirectory
+ok desk proof negative control: default subdirectory
 ok desk proof negative control: swallowed proof failure
 ok desk proof: real child assertion failure remains fatal
