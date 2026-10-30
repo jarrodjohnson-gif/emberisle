@@ -209,9 +209,26 @@ function __audioRecoveryRecord(stage, name, facts = {}) {
     await step();
   }
   check(traded && rolled && expected.every(s => s.has('your_turn.wav')), 'host actions give all players a new turn and complete a trade');
+  // #1210: a full paced queue intentionally drops new cues; admit this host cue
+  // before measuring media recovery, rather than timing out on a dropped request.
+  const readyQueues = await wait(async () => {
+    const queues = await Promise.all(tabs.map(t => t.page.evaluate(() => {
+      const s = window.sound.__audioRecoveryQueue(); return { queue: s.queue, pacing: s.pacing };
+    })));
+    return queues.every(s => s.queue.length === 0 && !s.pacing) ? queues : null;
+  }, 'sound queues quiescent before the required host bong');
+  console.log('QUEUE_BEFORE_BONG', JSON.stringify(readyQueues));
   await call(tabs[0], 'sendSound', 'bong');
   for (const t of tabs) await t.page.waitForFunction(() => window.game.getState().chat.some(l => l.sound === 'bong'));
   check(true, 'host broadcasts the soundboard cue to all seats');
+  const admissions = await Promise.all(tabs.map(async t => ({ name: t.name, ...await t.page.evaluate(() => {
+    const events = window.sound.__audioRecoveryQueue().trace.filter(e => e.name === 'board_bong' && e.at >= window.mediaRestoreAt);
+    return { requests: events.filter(e => e.stage === 'request'), gates: events.filter(e => e.stage === 'gate') };
+  }) })));
+  console.log('BONG_ADMISSION', JSON.stringify(admissions));
+  check(admissions.every(a => a.requests.length === 1 && a.gates.length === 1 &&
+    !a.requests[0].noAudio && a.requests[0].volume > 0 && a.gates[0].unlocked && !a.gates[0].muted &&
+    a.gates[0].categoryGain > 0 && !a.gates[0].burst && !a.gates[0].full), 'one real host bong is admitted for every seat without burst/full-queue drops');
   // Wait on native playback progress itself, not delivery of a timeupdate event. CI can
   // delay/coalesce those events even while the real media element is already advancing.
   // Keep the timeout bounded and leave the playback assertions below in place.
