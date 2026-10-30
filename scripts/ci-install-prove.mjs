@@ -135,6 +135,10 @@ const executeDeskPath = (source, docs, failProof = false) => {
   const checkout = steps.find(s => s.uses === 'actions/checkout@v4');
   const setup = steps.find(s => s.uses === 'actions/setup-node@v4');
   assert.ok(checkout && setup, 'desk proof: pinned prerequisite actions exist');
+  const jobHeader = source.match(/^  server:\n([\s\S]*?)^    steps:/m)?.[1];
+  assert.doesNotMatch(jobHeader, /working-directory:/, 'desk proof: unsupported job working directory');
+  assert.doesNotMatch(checkout.raw, /^          path:/m, 'desk proof: unsupported checkout path');
+  assert.doesNotMatch(gate[0].raw, /^        working-directory:/m, 'desk proof: unsupported command working directory');
   assert.match(setup.raw, /^          node-version: 22$/m, 'desk proof: declared Node 22');
   const root = mkdtempSync(path.join(tmpdir(), 'emberisle-desk-path-'));
   let nodeReady = false, calls = 0;
@@ -184,6 +188,9 @@ for (const [name, change, failure] of [
   ['checkout after command', s => s.replace('      - uses: actions/checkout@v4\n', '').replace('        run: npm run desk-gate-prove\n', '        run: npm run desk-gate-prove\n      - uses: actions/checkout@v4\n'), /ENOENT/],
   ['docs-gated proof', s => s.replace('      - name: Desk gate proof', "      - if: needs.changes.outputs.docs_only != 'true'\n        name: Desk gate proof"), /must execute the command/],
   ['unpinned Node', s => s.replace('          node-version: 22', '          node-version: 24'), /declared Node 22/],
+  ['checkout subdirectory', s => s.replace('      - uses: actions/checkout@v4\n', '      - uses: actions/checkout@v4\n        with:\n          path: nested\n'), /unsupported checkout path/],
+  ['command subdirectory', s => s.replace('        run: npm run desk-gate-prove\n', '        run: npm run desk-gate-prove\n        working-directory: nested\n'), /unsupported command working directory/],
+  ['default subdirectory', s => s.replace('    steps:\n', '    defaults:\n      run:\n        working-directory: nested\n    steps:\n'), /unsupported job working directory/],
   ['swallowed proof failure', s => s.replace('      - name: Desk gate proof', '      - continue-on-error: true\n        name: Desk gate proof'), /failure must fail the job/],
 ]) {
   const broken = mutateServer(change);
