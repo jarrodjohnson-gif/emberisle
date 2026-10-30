@@ -30,6 +30,7 @@ const observeFailure = async error => {
       phase: s?.state?.phase, seq: s?.state?.seq, localId: s?.localId,
       hostStates: window.hostFrames.filter(f => f.type === 'state').map(f => ({ seq: f.seq, you: f.you })),
       bongReceived: s?.chat.some(l => l.sound === 'bong'),
+      sound: window.sound?.__audioRecoveryQueue?.(),
       media: window.audios.map((a, id) => ({ id, file: new URL(a.src).pathname.split('/').at(-1),
         currentTime: a.currentTime, baseline: window.mediaTimeBaseline?.[id] ?? 0,
         duration: Number.isFinite(a.duration) ? a.duration : null, paused: a.paused, ended: a.ended,
@@ -52,6 +53,26 @@ try {
         res.setHeader('Content-Type', 'text/html');
         res.end('<!doctype html><button>Enable sound</button><script type="module">window.sound=await import("/src/lib/sound.ts");window.game=(await import("/src/lib/game/store.ts")).useGame;</script>');
       });
+    },
+    enforce: 'pre',
+    transform(source, id) {
+      if (!/\/src\/lib\/sound\.ts(?:\?|$)/.test(id)) return;
+      const request = 'export function play(name: SoundName, volume = 1) {';
+      const gate = '  if ((!UI.has(name) && now - (asked.get(name) ?? -GAP_MS) < GAP_MS) || queue.length >= MAX_QUEUE) return;';
+      const start = '  const gain = volume * categoryGain(soundCategory(name));';
+      for (const anchor of [request, gate, start]) if (source.split(anchor).length !== 2) throw new Error('audio diagnostic source anchor changed');
+      // Observations only: the original guards, queue, timings and start calls stay intact.
+      const trace = `const __audioRecoveryTrace = [];
+function __audioRecoveryRecord(stage, name, facts = {}) {
+  __audioRecoveryTrace.push({stage, name, at: performance.now(), queue: queue.map(item => item[0]), pacing,
+    unlocked, muted, categoryGain: categoryGain(soundCategory(name)), ...facts});
+  if (__audioRecoveryTrace.length > 400) __audioRecoveryTrace.shift();
+}\n`;
+      return { code: trace + source
+        .replace(request, request + '\n  __audioRecoveryRecord("request", name, {volume, noAudio: typeof Audio === "undefined"});')
+        .replace(gate, '  __audioRecoveryRecord("gate", name, {now, asked: asked.get(name) ?? null, burst: !UI.has(name) && now - (asked.get(name) ?? -GAP_MS) < GAP_MS, full: queue.length >= MAX_QUEUE});\n' + gate)
+        .replace(start, start + '\n  __audioRecoveryRecord("start", name, {gain});')
+        + '\nexport const __audioRecoveryQueue = () => ({pacing, queue: queue.map(item => item[0]), trace: __audioRecoveryTrace.slice()});\n', map: null };
     },
   }] });
   await vite.listen();
