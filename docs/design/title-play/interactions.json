@@ -1,0 +1,35 @@
+[
+  {
+    "size": "390x844",
+    "lastPage": "4–6 of 6",
+    "joinEnabled": true,
+    "privateBackFocus": "Online privateHost, join or watch.",
+    "modalUnderlyingInert": true,
+    "modalReturnFocus": "Wayfarer rules",
+    "soundFocus": "Sound",
+    "frontReturnFocus": "Play",
+    "errors": []
+  },
+  {
+    "size": "844x390",
+    "lastPage": "4–6 of 6",
+    "joinEnabled": true,
+    "privateBackFocus": "Online privateHost, join or watch.",
+    "modalUnderlyingInert": true,
+    "modalReturnFocus": "Wayfarer rules",
+    "soundFocus": "Sound",
+    "frontReturnFocus": "Play",
+    "errors": []
+  },
+  {
+    "size": "1280x720",
+    "lastPage": "4–6 of 6",
+    "joinEnabled": true,
+    "privateBackFocus": "Online privateHost, join or watch.",
+    "modalUnderlyingInert": true,
+    "modalReturnFocus": "Wayfarer rules",
+    "soundFocus": "Sound",
+    "frontReturnFocus": "Play",
+    "errors": []
+  }
+]
