@@ -1,6 +1,7 @@
 // The browser (or a Node proof) talking to server/host.mjs. Design: docs/design/online-client.md.
 import type { Action, GameState, Resource, VictoryTarget, WayfarerMode } from "@/lib/game/types";
 import { PROTO } from "@/lib/net/proto";
+import type { ProfileAttachment } from "@/lib/net/profiles";
 
 export interface Seat {
   id: string;
@@ -106,6 +107,7 @@ export interface Me {
   name: string;
   color?: string;
   avatarId?: string;
+  profile?: ProfileAttachment;
 }
 
 // An open table entry from the server's openTables list (never includes private table codes).
@@ -446,9 +448,14 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
 
   dial();
 
+  const initialHello = (me: Me, extra: Record<string, unknown>) => {
+    const credential = me.profile?.credentialForHost(url);
+    send({ type: "hello", proto: PROTO, name: me.name, color: me.color, avatarId: me.avatarId, ...extra, ...(credential ? { credential } : {}) });
+  };
+
   return {
-    open: (me, options) => send({ type: "hello", proto: PROTO, ...me, ...options }),
-    join: (code, me) => send({ type: "hello", proto: PROTO, code: code.toUpperCase(), ...me }),
+    open: (me, options) => initialHello(me, { wayfarerMode: options?.wayfarerMode, visibility: options?.visibility }),
+    join: (code, me) => initialHello(me, { code: code.toUpperCase() }),
     watch: (code) => send({ type: "hello", proto: PROTO, code: code.toUpperCase(), watch: true }),
     peek: (code) => send({ type: "peek", code: code.toUpperCase() }),
     list: () => send({ type: "list" }),
