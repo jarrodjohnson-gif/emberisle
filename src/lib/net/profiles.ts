@@ -24,6 +24,7 @@ export interface ProfileSnapshot {
   profile: Readonly<ProfileOwner> | null;
   remembered: boolean;
 }
+// Call check() before open/join after a transport drop; offline attachment falls back to a guest.
 // Table attachment asks at the moment of sending. No credential is put in Me, game state or saved seats.
 export interface ProfileAttachment { credentialForHost(host: string): string | null }
 type StorageLike = Pick<Storage, "getItem" | "setItem" | "removeItem">;
@@ -77,7 +78,7 @@ export function createProfileClient(initialHost: string, options: {
     snapshot = Object.freeze({ ...snapshot, ...patch });
     listeners.forEach((listener) => listener());
   };
-  const removeRemembered = () => { try { storage?.removeItem(profileStorageKey(snapshot.host)); } catch { /* blocked storage */ } };
+  const removeRemembered = (host = snapshot.host) => { try { storage?.removeItem(profileStorageKey(host)); } catch { /* blocked storage */ } };
   const forgetSession = () => { credential = null; expiresAt = 0; update({ profile: null, remembered: false }); };
   const failPending = (code: string) => {
     if (!pending) return;
@@ -112,7 +113,6 @@ export function createProfileClient(initialHost: string, options: {
     const ownGeneration = generation;
     update({ status: "connecting" });
     const connection = new Promise<void>((resolve, reject) => {
-      let opened = false;
       let settled = false;
       const cancel = (code: string) => finish(new ProfileClientError(code));
       const finish = (error?: ProfileClientError) => { if (settled) return; settled = true; clearTimeout(timer); if (cancelConnecting === cancel) cancelConnecting = null; error ? reject(error) : resolve(); };
@@ -133,7 +133,6 @@ export function createProfileClient(initialHost: string, options: {
       };
       ownSocket.onopen = async () => {
         if (!current()) return;
-        opened = true;
         try {
           const reply = await request("profileHello");
           if (!current()) throw new ProfileClientError("hostChanged");
@@ -143,8 +142,15 @@ export function createProfileClient(initialHost: string, options: {
           update({ status: "available" }); finish();
         } catch (e) { if (current() && snapshot.status === "connecting") update({ status: "unsupported" }); finish(e instanceof ProfileClientError ? e : new ProfileClientError("unavailable")); }
       };
-      ownSocket.onerror = () => { if (current()) { update({ status: "offline" }); failPending("offline"); finish(new ProfileClientError("offline")); } };
-      ownSocket.onclose = () => { if (current()) { connecting = null; update({ status: "offline" }); failPending("offline"); if (!opened || !settled) finish(new ProfileClientError("offline")); } };
+      const lost = () => {
+        if (!current()) return;
+        socket = null; connecting = null;
+        ownSocket.onopen = ownSocket.onmessage = ownSocket.onclose = ownSocket.onerror = null;
+        ownSocket.close();
+        update({ status: "offline" }); failPending("offline"); finish(new ProfileClientError("offline"));
+      };
+      ownSocket.onerror = lost;
+      ownSocket.onclose = lost;
     });
     connecting = connection;
     try { await connection; } finally { if (connecting === connection) connecting = null; }
@@ -218,9 +224,13 @@ export function createProfileClient(initialHost: string, options: {
     edit: (fields: Partial<ProfileFields> & { pin?: string }) => sessionRequest("profileEdit", { ...fieldsOf(fields), ...(fields.pin === undefined ? {} : { pin: fields.pin }) }, snapshot.remembered, true),
     changePin: (currentPin: string, newPin: string, newPinConfirm: string) => sessionRequest("profileChangePin", { currentPin, newPin, newPinConfirm }, snapshot.remembered, true),
     async logout() {
-      const ownGeneration = generation;
+      const ownHost = snapshot.host;
+      const ownCredential = credential;
       try { await authorized(); if (credential) { const reply = await request("profileLogout", { credential }); if (reply.type !== "profileLoggedOut") throw new ProfileClientError("unavailable"); } }
-      finally { if (generation === ownGeneration) { removeRemembered(); forgetSession(); } }
+      finally {
+        removeRemembered(ownHost);
+        if (snapshot.host === ownHost && credential === ownCredential) forgetSession();
+      }
     },
     credentialForHost(host: string) {
       try { if (normalizeProfileHost(host) === snapshot.host && snapshot.confirmed && snapshot.status === "available" && transportAllowed(snapshot.host) && expiresAt > Date.now() && !snapshot.profile?.pinMustChange) return credential; } catch { /* guest */ }

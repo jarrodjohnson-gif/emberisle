@@ -34,6 +34,8 @@ async function host(name, development = false) {
   return item;
 }
 const observe = () => {
+  window.__profileSockets = [];
+  window.__dropLogout = false;
   window.__wire = [];
   window.__received = [];
   window.__held = [];
@@ -44,6 +46,7 @@ const observe = () => {
   window.WebSocket = class extends Native {
     constructor(...args) {
       super(...args);
+      window.__profileSockets.push(this);
       this.addEventListener("message", (event) => {
         const message = JSON.parse(event.data);
         window.__received.push({ url: this.url, message });
@@ -54,7 +57,7 @@ const observe = () => {
     }
     set onmessage(handler) { this.handler = handler; }
     get onmessage() { return this.handler; }
-    send(raw) { window.__wire.push({ url: this.url, message: JSON.parse(raw) }); return super.send(raw); }
+    send(raw) { window.__wire.push({ url: this.url, message: JSON.parse(raw) }); if (window.__dropLogout && JSON.parse(raw).type === "profileLogout") return; return super.send(raw); }
   };
 };
 async function fixture(proxy, https) {
@@ -158,7 +161,14 @@ try {
   assert.equal(await page.evaluate(() => window.other.seats.some((s) => s.profile)), false);
   assert.equal(await page.evaluate(() => window.__wire.filter((f) => f.message.type === "hello").some((f) => f.message.pin || f.message.credential === "must-not-spread" || f.message.profile)), false);
   assert.equal(await page.evaluate(() => window.__wire.filter((f) => f.url === window.B).some((f) => f.message.credential)), false);
+  // B1: a real WebSocket close must not look like selecting another host during sign-out.
+  await page.evaluate(() => window.__profileSockets.find((ws) => ws.url === window.A && ws.readyState === WebSocket.OPEN).close());
+  await page.waitForFunction(() => window.client.getSnapshot().status === "offline");
   await page.evaluate(async () => { await window.client.logout(); window.tableClient.close(false); });
+  assert.equal(await page.evaluate(() => localStorage.getItem(window.profiles.profileStorageKey(window.A))), null);
+  assert.equal(await page.evaluate(() => window.client.getSnapshot().profile), null);
+  assert.equal(await page.evaluate(() => window.client.credentialForHost(window.A)), null);
+  ok("sign-out after a real socket close clears remembered and in-memory credentials");
   await page.waitForFunction(() => window.guest.seats?.some((s) => s.id === window.hosted.welcome.you && s.away));
   await page.evaluate((welcome) => {
     window.recovered = null;
@@ -179,6 +189,31 @@ try {
     return window.memory.getSnapshot().remembered === false && !!window.memory.credentialForHost(window.A);
   }), true);
   ok("blocked storage keeps an authenticated memory-only session and preserves guest seat storage");
+
+  await page.evaluate(async () => {
+    window.recovery = window.profiles.createProfileClient(window.A, { timeoutMs: 500 });
+    window.recovery.confirmHost(window.A);
+    await window.recovery.login("ember-user", "8521", true);
+    window.__profileSockets.at(-1).close();
+  });
+  await page.waitForFunction(() => window.recovery.getSnapshot().status === "offline");
+  assert.equal(await page.evaluate(async () => (await window.recovery.login("ember-user", "8521", true)).profileId), owner.profileId);
+  await page.evaluate(() => window.__profileSockets.at(-1).close());
+  await page.waitForFunction(() => window.recovery.getSnapshot().status === "offline");
+  assert.equal(await page.evaluate(async () => (await window.recovery.resume()).profileId), owner.profileId);
+  ok("login and remembered resume succeed on the first call after socket loss");
+  const timedOut = await page.evaluate(async () => {
+    window.__dropLogout = true;
+    let code;
+    try { await window.recovery.logout(); } catch (error) { code = error.code; }
+    window.__dropLogout = false;
+    await window.recovery.check();
+    return { code, saved: localStorage.getItem(window.profiles.profileStorageKey(window.A)),
+      profile: window.recovery.getSnapshot().profile, credential: window.recovery.credentialForHost(window.A) };
+  });
+  assert.deepEqual(timedOut, { code: "offline", saved: null, profile: null, credential: null });
+  ok("timed-out sign-out forgets the credential even after reconnecting");
+
 
   await page.evaluate(() => {
     window.stale = window.profiles.createProfileClient(window.A); window.stale.confirmHost(window.A);
