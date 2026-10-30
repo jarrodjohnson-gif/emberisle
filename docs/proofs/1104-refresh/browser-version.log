@@ -1,0 +1,4 @@
+$ node --input-type=module -e import { chromium } from "playwright"; const b = await chromium.launch(); console.log(await b.version()); await b.close();
+153.0.8010.12
+
+EXIT 0
