@@ -54,6 +54,16 @@
       "id": "connection-health-prove",
       "pattern": "Z \\+   saving: false,\\n\\S+ -   saving: true,",
       "issue": 1200
+    },
+    {
+      "id": "steal-picker-push-prove",
+      "pattern": "Error: setup: seeded roll must leave the same player and two legal victims",
+      "issue": 1209
+    },
+    {
+      "id": "audio-recovery-prove",
+      "pattern": "page\\.waitForFunction: Timeout 8000ms exceeded\\.\\n\\S+ +at \\S*audio-recovery-prove\\.mjs:\\d+",
+      "issue": 1210
     }
   ]
 }
