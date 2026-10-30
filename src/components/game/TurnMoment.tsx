@@ -1,17 +1,30 @@
-// "Your turn", said once in the middle of the island when a turn comes round to this seat (Jarrod's playtest: "not intuitive
-// on when it's your turn"). Hotseat has no "you", so it names the seat taking the device. It fades in, holds about 1.2 s and
-// fades out; it takes no pointer events, and any press or key ends it, since the player has seen it. It waits for the roll
-// moment to leave the centre (gains show on the hand, #773). Not in the roll-off or setup: there the banner already says what to place, the
-// legal corners pulse in your colour, and a moment would sit over the very corners to pick. The your-turn chime is the
-// store's (sound.ts yourTurn), on the same change. A first load or a rejoin replays nothing, and a watcher never has a turn.
+// "Your turn", said once in the middle of the island when a move comes round to this seat (Jarrod's playtest: "not intuitive
+// on when it's your turn"; #1140: sound-off players still missed it). Online and in practice it comes in, then stays up with a
+// slow calm pulse until the person presses or types anything (they have seen it) or the move passes on (they rolled, placed or
+// the turn went elsewhere), and never longer than STAY_MS. It appears on a roll, not during the opening setup. Hotseat has
+// no "you", so it names the seat taking the device, on a roll only, and keeps the old timed fade (it fades in, holds about
+// 1.2 s and fades out). It takes no pointer events, so it never blocks a tap, and reduced motion gets a steady pill, no pulse.
+// It waits for the roll moment to leave the centre (gains show on the hand, #773). The your-turn chime is the store's
+// (sound.ts yourTurn), on the same change. A first load or a rejoin replays nothing, and a watcher never has a turn.
 import { useEffect, useState } from "react";
 import { SeatDot } from "@/components/game/SeatDot";
 import { useMomentUp } from "@/components/game/Dice";
 import { useStage } from "@/components/game/stage";
+import { cn } from "@/lib/utils";
 import { useGame } from "@/lib/game/store";
+import type { GameState } from "@/lib/game/types";
 
-// --duration-base in, a 1.2 s hold, about 0.7x of the entry out (docs/design/polish.md "Motion").
+// Hotseat: --duration-base in, a 1.2 s hold, about 0.7x of the entry out (docs/design/polish.md "Motion").
 const MOMENT_MS = 1800;
+// Online and practice: the longest it stays up if nobody presses anything.
+const STAY_MS = 8000;
+
+// One id per move of this seat. Hotseat has only the roll.
+function moveKey(s: GameState, me: string) {
+  if (s.current !== me) return null;
+  if (s.phase === "roll") return `${s.seed}|${s.turn}|${me}`;
+  return null;
+}
 
 export function TurnMoment() {
   const state = useGame((s) => s.state);
@@ -21,8 +34,9 @@ export function TurnMoment() {
   const rolling = useMomentUp((s) => s.up);
   const synced = useGame((s) => s.synced);
   const actor = mode === "hotseat" ? state?.current : localId;
-  const key = state && !spectator && state.phase === "roll" && state.current === actor ? `${state.seed}|${state.turn}|${state.current}` : null;
-  const [seen, setSeen] = useState(key);
+  const key = state && !spectator && actor ? moveKey(state, actor) : null;
+  // Mounted on a move already under way is the baseline, unless nobody has acted yet (a game that has just begun).
+  const [seen, setSeen] = useState(state?.seq === 0 ? null : key);
   const [due, setDue] = useState<string | null>(null);
   const [up, setUp] = useState<string | null>(null);
   const [baseline, setBaseline] = useState(synced);
@@ -51,7 +65,7 @@ export function TurnMoment() {
   useEffect(() => {
     if (!up) return;
     const end = () => setUp(null);
-    const t = setTimeout(end, MOMENT_MS);
+    const t = setTimeout(end, mode === "hotseat" ? MOMENT_MS : STAY_MS);
     window.addEventListener("pointerdown", end, true);
     window.addEventListener("keydown", end, true);
     return () => {
@@ -59,7 +73,7 @@ export function TurnMoment() {
       window.removeEventListener("pointerdown", end, true);
       window.removeEventListener("keydown", end, true);
     };
-  }, [up]);
+  }, [up, mode]);
 
   const player = state?.players.find((p) => p.id === state.current);
   if (!up || !player) return null;
@@ -73,9 +87,12 @@ export function TurnMoment() {
         key={up}
         ref={stage}
         data-testid="turn-moment"
-        className="flex items-center gap-3 rounded-sheet turn-stamp bg-surface px-6 py-4 text-number text-fg backdrop-blur-md motion-safe:animate-[turn-moment_1800ms_both]"
+        className={cn(
+          "flex items-center gap-3 rounded-sheet turn-stamp bg-surface px-6 py-4 text-number text-fg backdrop-blur-md",
+          mode === "hotseat" ? "motion-safe:animate-[turn-moment_1800ms_both]" : "turn-stay",
+        )}
       >
-        <SeatDot color={player.color} className="size-5" />
+        <SeatDot color={player.color} className="size-5 ring-1 ring-fg/60" />
         {mode === "hotseat" ? `${player.name}'s turn` : "Your turn"}
       </p>
     </div>

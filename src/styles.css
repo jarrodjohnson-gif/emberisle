@@ -97,6 +97,17 @@ body {
   90% { opacity: 1; animation-timing-function: var(--ease-in); }
   100% { opacity: 0; }
 }
+/* "Your turn" online and in practice stays until it is pressed or the move passes (TurnMoment.tsx, #1140): in over --duration-base,
+   then a slow calm pulse. Reduced motion has no animation at all (the global rule below): a steady pill. */
+@keyframes turn-stay-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes turn-pulse {
+  0%, 100% { opacity: 1; transform: none; }
+  50% { opacity: 0.92; transform: scale(0.96); }
+}
+.turn-stay { animation: turn-stay-in var(--duration-base) var(--ease-out) both, turn-pulse 1600ms ease-in-out var(--duration-base) infinite; }
 /* Reduced motion: the same moments as a fade alone, no rise and no scale. */
 @keyframes moment-fade {
   0% { opacity: 0; }
