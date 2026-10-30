@@ -74,6 +74,7 @@
     "mobile-shots": "node scripts/mobile-shots.mjs",
     "touch-place-prove": "node scripts/touch-place-prove.mjs",
     "stale-pr-sweeper-prove": "node scripts/stale-pr-sweeper-prove.mjs",
+    "desk-board-prove": "node scripts/desk-board-prove.mjs",
     "review-desk-inbox-prove": "node scripts/review-desk-inbox-prove.mjs",
     "ffmpeg-install-prove": "node scripts/ffmpeg-install-prove.mjs",
     "flake-rerun-prove": "node scripts/flake-rerun-prove.mjs",
