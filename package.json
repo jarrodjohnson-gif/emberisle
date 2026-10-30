@@ -40,6 +40,7 @@
     "robber-hex-prove": "node scripts/robber-hex-prove.mjs",
     "robber-prompt-prove": "node scripts/robber-prompt-prove.mjs",
     "trade-prove": "node scripts/trade-prove.mjs",
+    "trade-tabs-prove": "node --import ./server/register.mjs scripts/trade-tabs-prove.mjs",
     "sounds-prove": "node scripts/sounds-prove.mjs",
     "audio-recovery-prove": "node scripts/audio-recovery-prove.mjs",
     "sound-mixer-prove": "node scripts/sound-mixer-prove.mjs",
