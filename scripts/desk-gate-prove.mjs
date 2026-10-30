@@ -26,6 +26,12 @@ for (const heading of ['**Clean.**', '# Clean', '**Review of PR #1192 (clean).**
 for (const heading of ['Review of PR #1192 (not clean).', `Review of head ${head}: not clean.`, 'Clean except for one issue.', 'Review of PR #1192: clean except pending CI.', 'Pending clean review']) {
   assert.equal(deskGate(pr, [{ ...review(), body: review().body.replace('Clean.', heading) }]).state, 'failure', heading);
 }
+// Real desk heading shapes: the verdict begins the first line after the marker.
+for (const heading of ['**Review of PR #1202 (clean).** The regression is real: the reviewer replaced the `Mention` renderer with `dangerouslySetInnerHTML` and `chat-text-prove` failed (timeout), then passed when restored.', '**Re-review of PR #1179 (not clean: CI is red on this head).** The earlier should-fix is fixed: every cache key now hashes `package.json`, `package-lock.json`, `server/package.json` and `server/package-lock.json`.']) {
+  const result = deskGate(pr, [{ ...review(), body: review().body.replace('Clean.', heading) }]);
+  assert.equal(result.state, heading.includes('(clean)') ? 'success' : 'failure', heading);
+}
+assert.equal(deskGate(pr, [{ ...review(), body: review().body.replace('Clean.', 'Pending review.\n**Review of PR #1202 (clean).** Later text') }]).state, 'failure');
 for (const author_association of [undefined, 'FIRST_TIME_CONTRIBUTOR']) assert.equal(deskGate(pr, [{ ...review(), author_association }]).state, 'failure');
 
 const requests = [];
@@ -49,4 +55,4 @@ await run({ event: { issue: { number: 42 } }, eventName: 'issue_comment', reposi
 assert.equal(requests.length, 0);
 await run({ event: { pull_request: { number: 42 } }, eventName: 'pull_request_target', repository: 'o/r', token: 'fixture', fetchImpl });
 assert.equal(requests.length, 4);
-console.log('desk-gate-prove: 35 checks passed (decision, trust, verdict, pagination, events and head status)');
+console.log('desk-gate-prove: 38 checks passed (decision, trust, verdict, pagination, events and head status)');
