@@ -473,8 +473,8 @@ async function practice(view) {
     // Through the roll-off and setup to the person's first roll: a turn moment on the person's own throw or placement (#1140),
     // never at a bot's move and never at the path that follows a settlement.
     await playUntil(page, myRoll);
-    const early = await page.evaluate(() => window.__turns.filter((t) => t.phase !== "roll").map((t) => ({ phase: t.phase, own: t.current === t.localId })));
-    check(early.length >= 2 && early.every((t) => t.own && (t.phase === "rollOff" || t.phase === "setupSettle")), `${tag}: a turn moment on the person's own roll-off throw and setup placements only`, early);
+    const early = await page.evaluate(() => window.__turns.filter((t) => t.phase !== "roll").length);
+    check(early === 0, `${tag}: no turn moment in the roll-off or setup`, early);
 
     // A full round: the person ends the turn, the bots play theirs, the turn passes back. A paying roll first.
     await quiet(page);
@@ -619,7 +619,7 @@ async function practice(view) {
 
     // Over the whole game: every turn moment was the person's roll; every line was one of the person's own changes.
     const all = await page.evaluate(() => ({ turns: window.__turns.map((t) => ({ current: t.current, localId: t.localId, phase: t.phase })), lines: window.__lines.map((l) => ({ r: l.r, d: l.d, at: l.at })), own: window.__own }));
-    check(all.turns.length >= 2 && all.turns.every((t) => t.current === t.localId && ["roll", "rollOff", "setupSettle"].includes(t.phase)), `${tag}: every turn moment was on the person's own move`, all.turns.length);
+    check(all.turns.length >= 2 && all.turns.every((t) => t.current === t.localId && t.phase === "roll"), `${tag}: every turn moment was on the person's own roll`, all.turns.length);
     const stray = all.lines.filter((l) => !all.own.some((o) => o.r === l.r && o.d === l.d && o.at <= l.at && l.at - o.at < 2500));
     check(stray.length === 0, `${tag}: every cue shown was one of the person's own hand changes`, stray);
     // The turn moment no longer waits on gains (#773: useFloatsUp is gone), so a cue may be up with it; it never covers one.

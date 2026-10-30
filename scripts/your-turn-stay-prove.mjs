@@ -5,11 +5,11 @@
 // - Online, over a scripted socket (page.routeWebSocket) at 390x844, once as each of the four seats: it appears once when the turn
 //   arrives and stays; a repeat state push of the same move adds none; a tap, a key, the person acting and the turn passing on
 //   each end it; another seat's turn, a bot's turn, a watcher's table, a first load onto an own roll and a rejoin onto an own roll
-//   show none, and a live turn after the rejoin shows one; the roll-off (an all-tie re-throw with no rolls recorded too) and the
-//   setup (a settlement, then its path: one moment) show one each; the dot is the seat's colour; untouched it leaves at its
+//   show none, and a live turn after the rejoin shows one; roll-off, tied rethrows and setup show none;
+//   the dot is the seat's colour; untouched it leaves at its
 //   8 s cap (first seat).
 // - Practice (real roll-off, setup and turns against three bots) at 320x568, 390x844, 844x390 and 1280x720, with safe-area insets
-//   emulated over CDP, in two seat colours (red, ivory): a moment at the roll-off or setup and at every roll, never at the path
+//   emulated over CDP, in two seat colours (red, ivory): a moment at every roll, none during roll-off or setup
 //   after a settlement; text 15 px or larger, ink at least 4.5:1 on its pill, a slow pulse (1.6 s, opacity 0.92 to 1), the dot the
 //   seat's colour, inside the safe area, over no HUD box (header row, seat strip, seat rail, bottom stack, status line, resource
 //   tabs), and it takes no tap: pointer-events none, nothing of it on top at its centre, and a real click on Roll goes through
@@ -333,37 +333,16 @@ async function online(me, { cap = false } = {}) {
     await tap(page);
     await gone();
 
-    // The roll-off and the setup: one moment each time it becomes the person's move. A settlement then its path is one move.
-    push(at({ turn: 0, phase: "rollOff", current: notMe, rollOff: { rolls: {}, pending: [notMe, me] } }));
-    await stays("a bot's roll-off throw", 5);
-    push(at({ turn: 0, phase: "rollOff", current: me, rollOff: { rolls: { [notMe]: 3 }, pending: [me] } }));
-    await shows(6);
-    check(true, `${tg} the roll-off: a moment when it is the person's throw`);
-    await tap(page);
-    await gone();
-    push(at({ turn: 0, phase: "setupSettle", current: me, setupIndex: 0, rollOff: null }));
-    await shows(7);
-    check(true, `${tg} setup: a moment when it is the person's settlement`);
-    push(at({ turn: 0, phase: "setupRoad", current: me, setupIndex: 0 }));
-    await page.waitForTimeout(500);
-    check((await bannerCount(page)) === 7 && (await up(page)) === 1, `${tg} the path that follows the settlement: the same moment stays, no second`, [await bannerCount(page), await up(page)]);
-    await tap(page);
-    await gone();
-    push(at({ turn: 0, phase: "setupSettle", current: notMe, setupIndex: 1 }));
-    push(at({ turn: 0, phase: "setupSettle", current: me, setupIndex: 4 }));
-    await shows(8);
-    check(true, `${tg} setup: a moment at the person's second placement`);
-    await tap(page);
-    await gone();
-    // An all-tie roll-off: every roll is deleted, so the throw comes back with `rolls` empty again. Each is a new move.
-    push(at({ turn: 0, phase: "rollOff", current: me, rollOff: { rolls: {}, pending: [me, notMe] } }));
-    await shows(9);
-    await tap(page);
-    await gone();
-    push(at({ turn: 0, phase: "rollOff", current: notMe, rollOff: { rolls: { [me]: 4 }, pending: [notMe] } }));
-    push(at({ turn: 0, phase: "rollOff", current: me, rollOff: { rolls: {}, pending: [me, notMe] } }));
-    await shows(10);
-    check(true, `${tg} roll-off: an all-tie re-throw (rolls empty again) shows a moment again`);
+    // The opening roll-off and setup must never cover legal corners.
+    for (const [label, patch] of [
+      ["other roll-off", { turn: 0, phase: "rollOff", current: notMe, rollOff: { rolls: {}, pending: [notMe, me] } }],
+      ["own roll-off", { turn: 0, phase: "rollOff", current: me, rollOff: { rolls: { [notMe]: 3 }, pending: [me] } }],
+      ["own settlement", { turn: 0, phase: "setupSettle", current: me, setupIndex: 0, rollOff: null }],
+      ["own road", { turn: 0, phase: "setupRoad", current: me, setupIndex: 0 }],
+      ["second settlement", { turn: 0, phase: "setupSettle", current: me, setupIndex: 4 }],
+      ["tied rethrow", { turn: 0, phase: "rollOff", current: me, rollOff: { rolls: {}, pending: [me, notMe] } }],
+    ]) { push(at(patch)); await stays(label, 5); }
+
   } catch (e) {
     console.error(`${tg}:`, e);
     failures++;
@@ -394,7 +373,7 @@ async function practice(view, [colorName, hex]) {
     const phases = new Set(first.map((r) => r.phase));
     check(phases.has("roll"), `${tag}: a moment at the first roll`, [...phases]);
     check(first.every((r) => r.phase !== "setupRoad"), `${tag}: never at the path that follows a settlement`, first.map((r) => r.phase));
-    check(first.some((r) => r.phase === "setupSettle" || r.phase === "rollOff"), `${tag}: a moment in the roll-off or setup`, first.map((r) => r.phase));
+    check(first.every((r) => r.phase === "roll"), `${tag}: no moment in roll-off or setup`, first.map((r) => r.phase));
     check(new Set(first.map((r) => `${r.phase}|${r.setupIndex}|${r.turn}|${r.seq}`)).size === first.length, `${tag}: no two moments for one move`);
     const seatHex = await page.evaluate(() => { const s = window.__emberisle.getState(); return s.state.players.find((p) => p.id === s.localId).color; });
     check(seatHex === hex, `${tag}: the person's seat has the chosen colour`, [seatHex, hex]);
