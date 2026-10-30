@@ -1,8 +1,7 @@
 // "Your turn", said once in the middle of the island when a move comes round to this seat (Jarrod's playtest: "not intuitive
 // on when it's your turn"; #1140: sound-off players still missed it). Online and in practice it comes in, then stays up with a
 // slow calm pulse until the person presses or types anything (they have seen it) or the move passes on (they rolled, placed or
-// the turn went elsewhere), and never longer than STAY_MS. The moves are a roll, a roll-off throw and a setup placement (the
-// settlement and its path are one move; every roll-off throw is an action, so an all-tie re-throw is a new move). Hotseat has
+// the turn went elsewhere), and never longer than STAY_MS. It appears on a roll, not during the opening setup. Hotseat has
 // no "you", so it names the seat taking the device, on a roll only, and keeps the old timed fade (it fades in, holds about
 // 1.2 s and fades out). It takes no pointer events, so it never blocks a tap, and reduced motion gets a steady pill, no pulse.
 // It waits for the roll moment to leave the centre (gains show on the hand, #773). The your-turn chime is the store's
@@ -21,12 +20,9 @@ const MOMENT_MS = 1800;
 const STAY_MS = 8000;
 
 // One id per move of this seat. Hotseat has only the roll.
-function moveKey(s: GameState, me: string, hotseat: boolean) {
+function moveKey(s: GameState, me: string) {
   if (s.current !== me) return null;
   if (s.phase === "roll") return `${s.seed}|${s.turn}|${me}`;
-  if (hotseat) return null;
-  if (s.phase === "rollOff") return `${s.seed}|o${s.seq}|${me}`;
-  if (s.phase === "setupSettle" || s.phase === "setupRoad") return `${s.seed}|s${s.setupIndex}|${me}`;
   return null;
 }
 
@@ -38,7 +34,7 @@ export function TurnMoment() {
   const rolling = useMomentUp((s) => s.up);
   const synced = useGame((s) => s.synced);
   const actor = mode === "hotseat" ? state?.current : localId;
-  const key = state && !spectator && actor ? moveKey(state, actor, mode === "hotseat") : null;
+  const key = state && !spectator && actor ? moveKey(state, actor) : null;
   // Mounted on a move already under way is the baseline, unless nobody has acted yet (a game that has just begun).
   const [seen, setSeen] = useState(state?.seq === 0 ? null : key);
   const [due, setDue] = useState<string | null>(null);
@@ -96,7 +92,7 @@ export function TurnMoment() {
           mode === "hotseat" ? "motion-safe:animate-[turn-moment_1800ms_both]" : "turn-stay",
         )}
       >
-        <SeatDot color={player.color} className="size-5" />
+        <SeatDot color={player.color} className="size-5 ring-1 ring-fg/60" />
         {mode === "hotseat" ? `${player.name}'s turn` : "Your turn"}
       </p>
     </div>
