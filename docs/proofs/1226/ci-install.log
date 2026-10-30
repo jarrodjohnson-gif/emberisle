@@ -1,0 +1,17 @@
+ok negative controls: missing root/server manifest rejected in all five cache keys
+ok manifest-only drift: old keys hit; fixed root/server keys miss with unchanged lockfiles
+ok cold: 2 npm ci calls across 14 dependency jobs (PR size baseline adds 1)
+ok warm: 0 npm ci calls across 14 dependency jobs (PR size baseline adds 1)
+ok unavailable: 28 npm ci calls across 14 dependency jobs (PR size baseline adds 1)
+ok docs: 0 npm ci calls across 14 dependency jobs (PR size baseline adds 1)
+ok failed install exits 31; exact cache identity and all required suites retained
+ci-install-prove ok
+ok desk proof: docs_only=true, checkout + declared Node 22 + real 38-check npm suite (v24.19.0 locally)
+ok desk proof: docs_only=false, checkout + declared Node 22 + real 38-check npm suite (v24.19.0 locally)
+ok desk proof negative control: docs-gated checkout
+ok desk proof negative control: docs-gated Node setup
+ok desk proof negative control: checkout after command
+ok desk proof negative control: docs-gated proof
+ok desk proof negative control: unpinned Node
+ok desk proof negative control: swallowed proof failure
+ok desk proof: real child assertion failure remains fatal
