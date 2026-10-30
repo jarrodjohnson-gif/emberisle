@@ -274,7 +274,7 @@ async function online(me, { cap = false } = {}) {
     if (cap) {
       await gone(9000);
       const held = Date.now() - t0;
-      check(held >= 6800 && held <= 8800, `${tg} untouched, it leaves at its 8 s cap (timed from just after it mounted)`, held);
+      check(held >= 7500 && held <= 8800, `${tg} untouched, it leaves at its 8 s cap (timed from just after it mounted)`, held);
       push(at({ turn: 3, phase: "roll", current: me }));
       await stays("a repeat push after the cap", 1);
       push(at({ turn: 4, phase: "roll", current: me }));
