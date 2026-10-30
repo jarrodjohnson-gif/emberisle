@@ -140,5 +140,7 @@ const workflow = readFileSync('.github/workflows/desk-board.yml', 'utf8');
 for (const required of ['workflows: [CI]', 'types: [completed]', 'types: [ready_for_review]', "cron: '17 0,8,16 * * *'", 'group: desk-board', 'cancel-in-progress: true', 'ref: ${{ github.event.repository.default_branch }}', 'persist-credentials: false', 'sparse-checkout: scripts/desk-board.mjs', 'sparse-checkout-cone-mode: false', 'issues: write']) {
   eq(workflow.includes(required), true);
 }
+// #1215: /issues/699/comments targets the inbox PR, so its token needs PR write.
+eq(/^  pull-requests: write$/m.test(workflow), true);
 eq(/pull_request:\s|secrets\.|npm (?:ci|install)|download-artifact/.test(workflow), false);
 console.log(`desk-board-prove: ${assertions} assertions passed; classification, routes, pagination, head races, deduplication, daily cap, body preservation, workflow trust`);
