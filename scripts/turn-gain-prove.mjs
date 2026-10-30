@@ -176,7 +176,7 @@ function recorders() {
       const shift = Number(host.dataset.shift);
       const r = host.getBoundingClientRect();
       const c = { left: r.left, right: r.right, top: r.top - shift - 8, bottom: r.bottom - shift + 8 };
-      const near = [...document.querySelectorAll('header, [data-testid="seat-strip"], [data-hud-stack], [data-testid="banner"]')].some((h) => {
+      const near = [...document.querySelectorAll('header, [data-testid="seat-strip"], [data-hud-stack], [data-testid="resource-flash"], [data-hand-rail], [data-testid="banner"]')].some((h) => {
         const b = h.getBoundingClientRect();
         return b.height > 1 && c.left < b.right && b.left < c.right && c.top < b.bottom && b.top < c.bottom;
       });
@@ -367,14 +367,24 @@ async function tabs(page, tag, what, lay) {
     const card = t.closest(".goods-card");
     const a = t.getBoundingClientRect();
     const c = card.getBoundingClientRect();
+    const rail = !!t.closest(".hud-goods-rail");
     t.style.pointerEvents = "auto";
     const hit = document.elementFromPoint(a.left + a.width / 2, a.top + 1);
     t.style.pointerEvents = "";
     // The +N tab stands 18 px above the edge, the hollow −N tab 19 px (its 1 px outline sits outside the card's edge).
-    return { r: t.dataset.resource, card: card.dataset.testid, box: a.toJSON(), off: a.left + a.width / 2 - (c.left + c.width / 2), above: c.top - a.top, want: t.dataset.sign === "+" ? 18 : 19, top: hit === t || t.contains(hit) };
+    // On the side rail, it sits 4 px beside the card toward the map, vertically centred.
+    return {
+      r: t.dataset.resource, card: card.dataset.testid, box: a.toJSON(),
+      off: rail ? a.top + a.height / 2 - (c.top + c.height / 2) : a.left + a.width / 2 - (c.left + c.width / 2),
+      beside: c.left - a.right,
+      above: c.top - a.top,
+      want: t.dataset.sign === "+" ? 18 : 19,
+      rail,
+      top: hit === t || t.contains(hit),
+    };
   }));
   check(got.length > 0 && got.every((t) => t.card === `resource-${t.r}`), `${tag}: ${what} sit on their own goods' cards`, got.map((t) => [t.r, t.card]));
-  check(got.every((t) => Math.abs(t.off) <= 0.5 && Math.abs(t.above - t.want) <= 0.5), `${tag}: ${what} are centred on their cards and grow out of the top edge`, got.map((t) => [t.off.toFixed(2), t.above.toFixed(2)]));
+  check(got.every((t) => t.rail ? Math.abs(t.off) <= 0.5 && Math.abs(t.beside - 4) <= 0.5 : Math.abs(t.off) <= 0.5 && Math.abs(t.above - t.want) <= 0.5), `${tag}: ${what} are centred on their cards and properly positioned`, got.map((t) => t.rail ? [t.off.toFixed(2), t.beside.toFixed(2)] : [t.off.toFixed(2), t.above.toFixed(2)]));
   check(got.every((t) => inside(t.box, lay.safe)), `${tag}: ${what} inside the safe area`, got.map((t) => t.box));
   check(got.every((t) => t.top), `${tag}: nothing covers or clips ${what}`, got.map((t) => [t.r, t.top]));
   return got;
@@ -504,7 +514,7 @@ async function practice(view) {
       const starts = roll.lines.map((l) => l.at);
       check(Math.max(...starts) - Math.min(...starts) <= 100, `${tag}: the cues of one roll start together`, starts.map((t) => (t - starts[0]).toFixed(0)));
     }
-    check(roll.lines.every((l) => l.move?.keyframes.some((k) => /translateY\(-/.test(k ?? ""))), `${tag}: gained cards lift (a translateY keyframe)`);
+    check(roll.lines.every((l) => l.move?.keyframes.some((k) => /translate[XY]\(-/.test(k ?? ""))), `${tag}: gained cards lift (a translateY/translateX keyframe)`);
 
     // A bank trade: −4 ore in red, +1 grain in green.
     await page.waitForFunction(() => window.__emberisle.getState().state.phase === "main", null, { timeout: STEP_MS });
@@ -532,7 +542,7 @@ async function practice(view) {
     const wheat = trade.find((l) => l.r === "grain");
     check(traded && trade.length === 2 && stone?.text === `−${gave}` && stone.color === RED && stone.bg === "rgb(255, 249, 240)" && stone.lost && !stone.lit, `${tag}: a bank trade shows −${gave} on Stone as a hollow red tab, the card ringed red`, trade);
     check(wheat?.text === "+1" && wheat.bg === PAINT.grain[1] && wheat.lit === PAINT.grain[0], `${tag}: and +1 on the filled Wheat card`, wheat);
-    check(stone?.move?.some((k) => /translateY\(2px\)/.test(k ?? "")) && wheat?.move?.some((k) => /translateY\(-/.test(k ?? "")), `${tag}: the given card dips and the received card lifts`, { stone: stone?.move, wheat: wheat?.move });
+    check(stone?.move?.some((k) => /translate[XY]\([23]px\)/.test(k ?? "")) && wheat?.move?.some((k) => /translate[XY]\(-/.test(k ?? "")), `${tag}: the given card dips and the received card lifts`, { stone: stone?.move, wheat: wheat?.move });
     for (const c of shades) check(c.min >= 4.5, `${tag}: ${c.color === RED ? "loss" : "gain"} tab text ≥ 4.5:1 against the pixels behind it`, { color: c.color, min: c.min.toFixed(2), pixels: c.pixels });
     await page.waitForFunction(() => !document.querySelector('[data-testid="resource-flash"]'), null, { timeout: STEP_MS });
 

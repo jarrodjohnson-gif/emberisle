@@ -291,7 +291,7 @@ export function Hud() {
   );
 
   const endRow = (
-    <div className={cn("flex *:self-center", column ? "end-footer sticky z-10 justify-between gap-1 rounded-control bg-surface p-1" : "tray-end ml-auto gap-2")}>
+    <div className={cn("flex *:self-center", column ? "end-footer sticky z-10 bottom-0 mt-auto justify-between gap-1 rounded-control bg-surface p-1" : "tray-end ml-auto gap-2")}>
       {/* The 260 px column has room for End turn and the dice only with the faces shrunk (they are not targets); Trade and My fortunes share the row above. */}
       {column ? <>{fortunes ? null : <TradeButton />}<div className="[&>div]:gap-1 [&_[data-testid=die]]:size-6 [&_[data-testid=die]]:p-0.5 [&_[data-pip]]:size-1">{dice}</div></> : dice}
       <Button size="sm" variant={endPrimary ? "primary" : "secondary"} className={phone ? "h-11" : undefined} onClick={() => dispatch({ type: "endTurn" })}>
@@ -392,7 +392,7 @@ export function Hud() {
               // #383: stop under the header (or the portrait seat strip) and leave the island at least ~8 rem.
               // #422: the column runs from under the header to the bottom edge every phase, so the hole beside it never moves.
               column
-                ? "h-[calc(100dvh-4.25rem-max(0.75rem,env(safe-area-inset-bottom)))] scroll-pb-16 rounded-b-[16px] [&>:first-child]:mt-auto"
+                ? "h-[calc(100dvh-4.25rem-max(0.75rem,env(safe-area-inset-bottom)))] scroll-pb-16 rounded-b-[16px]"
                 : portrait ? "max-h-[calc(100dvh-16rem)]" : "max-h-[calc(100dvh-13rem)]",
             )}
           >
@@ -409,7 +409,7 @@ export function Hud() {
               </p>
             ) : null}
 
-            {spectator ? null : <HandDock me={me} phase={state.phase} />}
+            {spectator || column ? null : <HandDock me={me} phase={state.phase} />}
 
             {discarder ? <DiscardBar key={`discard-${discarder}`} id={discarder} n={state.discardNeeded[discarder]!} /> : null}
             <TakeFromBar />
@@ -562,6 +562,8 @@ export function Hud() {
           ) : null}
         </div>
       </div>
+
+      {column && !spectator ? <HandDock me={me} phase={state.phase} rail /> : null}
 
       {/* #488: the trade panel, How to play and the win screen share one lazy chunk, fetched on idle once the table is up.
           If it fails the table stands with no sheet; SheetsFailed drops the open flags so the next tap tries again. */}

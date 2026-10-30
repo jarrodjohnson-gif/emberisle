@@ -3,7 +3,7 @@ import { useLayoutEffect, useRef } from "react";
 // The HUD that can reach into the island's hole: the top chrome, the phone seat strip and the bottom stack (on a short
 // phone it can rise past the middle, and the hole then runs under it); softer, the status line floating over the board,
 // which takes no taps and leaves on its own, so a moment may sit over it when nothing else gives it room.
-const HARD = 'header, [data-testid="seat-strip"], [data-hud-stack]';
+const HARD = 'header, [data-testid="seat-strip"], [data-hud-stack], [data-testid="resource-flash"], [data-hand-rail]';
 const SOFT = '[data-testid="banner"]';
 const GAP = 8;
 
