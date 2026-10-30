@@ -21,6 +21,26 @@ let checks = 0;
 const check = (value, why) => { assert.ok(value, why); checks++; console.log('ok', why); };
 const targets = { your_turn: 'your_turn.wav', trade_yes: 'confirmation_001.wav', dice_land: 'drop_001.wav', board_bong: 'bong_001.wav' };
 const files = Object.values(targets);
+let observedTabs = [];
+const observeFailure = async error => {
+  const snapshots = observedTabs.map(t => ({ name: t.name, status: 'timeout' }));
+  const attempts = observedTabs.map((t, index) => t.page.evaluate(files => {
+    const s = window.game?.getState();
+    return { documentIdentity: window.documentIdentity, restoreAt: window.mediaRestoreAt,
+      phase: s?.state?.phase, seq: s?.state?.seq, localId: s?.localId,
+      hostStates: window.hostFrames.filter(f => f.type === 'state').map(f => ({ seq: f.seq, you: f.you })),
+      bongReceived: s?.chat.some(l => l.sound === 'bong'),
+      media: window.audios.map((a, id) => ({ id, file: new URL(a.src).pathname.split('/').at(-1),
+        currentTime: a.currentTime, baseline: window.mediaTimeBaseline?.[id] ?? 0,
+        duration: Number.isFinite(a.duration) ? a.duration : null, paused: a.paused, ended: a.ended,
+        readyState: a.readyState, networkState: a.networkState, error: a.error?.code ?? null,
+        muted: a.muted, volume: a.volume })).filter(a => files.includes(a.file)),
+      plays: window.audioPlayAttempts, events: window.mediaEvents.slice(-200) };
+  }, files).then(value => { snapshots[index] = { name: t.name, status: 'fulfilled', ...value }; },
+    e => { snapshots[index] = { name: t.name, status: 'rejected', error: e.message }; }));
+  await Promise.race([Promise.allSettled(attempts), sleep(1000)]);
+  console.log('AUDIO_FAILURE', JSON.stringify({ message: error.message, snapshots }));
+};
 try {
   const port = await new Promise((resolve, reject) => {
     host.once('error', reject); host.once('exit', code => reject(new Error(`host exited ${code}`)));
@@ -39,11 +59,13 @@ try {
     // Desktop media fetch/decode recovery, deliberately independent of browser autoplay policy.
     args: ['--autoplay-policy=no-user-gesture-required'] });
   const tabs = [];
+  observedTabs = tabs;
   for (const name of ['Ember', 'Tide', 'Pine']) {
     const page = await browser.newPage();
     await page.addInitScript(name => {
       localStorage.setItem('emberisle-name', name);
       window.documentIdentity = crypto.randomUUID(); window.audios = []; window.mediaEvents = []; window.sockets = []; window.hostFrames = [];
+      window.audioPlayAttempts = [];
       const NativeSocket = window.WebSocket;
       window.WebSocket = class extends NativeSocket { constructor(...args) { super(...args); window.sockets.push(this); this.addEventListener('message', event => { const frame = JSON.parse(event.data); window.hostFrames.push({ type: frame.type, seq: frame.game?.seq, sound: frame.line?.sound, you: frame.you }); }); } };
       const NativeAudio = window.Audio;
@@ -52,6 +74,17 @@ try {
         for (const event of ['playing', 'timeupdate', 'error', 'ended']) audio.addEventListener(event, () => {
           window.mediaEvents.push({ event, id, file: new URL(audio.src).pathname.split('/').at(-1), time: audio.currentTime, error: audio.error?.code ?? null });
         });
+        const nativePlay = audio.play;
+        audio.play = function (...args) {
+          let attempt;
+          try {
+            attempt = { id, file: new URL(audio.src, location.href).pathname.split('/').at(-1), at: performance.now(), time: audio.currentTime };
+            window.audioPlayAttempts.push(attempt);
+          } catch { /* Observation must never prevent native playback. */ }
+          const result = nativePlay.apply(this, args);
+          if (attempt) result?.then(() => { attempt.resolvedAt = performance.now(); }, e => { attempt.rejectedAt = performance.now(); attempt.error = e?.name ?? 'rejected'; });
+          return result;
+        };
         return audio;
       };
     }, name);
@@ -112,6 +145,7 @@ try {
   for (const t of tabs) { t.restore(); await t.page.evaluate(() => {
     window.mediaEvents = []; window.hostFrames = [];
     window.mediaTimeBaseline = window.audios.map(audio => audio.currentTime);
+    window.mediaRestoreAt = performance.now();
   }); }
   await sleep(200); // Existing burst gap; no artificial media reset or reload.
   const recoveryStart = Date.now();
@@ -182,6 +216,8 @@ try {
   }
   check(failures.length === 0, `native host-driven playback recovers for all seats: ${failures.join('; ')}`);
   console.log(`audio-recovery-prove: ${checks} checks passed; native recovery in ${Date.now() - recoveryStart}ms`);
+} catch (error) {
+  try { await observeFailure(error); } finally { throw error; }
 } finally {
   clearTimeout(watchdog); await browser?.close(); await vite?.close(); host.kill();
   if (host.exitCode === null && host.signalCode === null) await once(host, 'exit');
