@@ -1,0 +1,12 @@
+
+> seat-rail-prove
+> node scripts/seat-rail-prove.mjs
+
+1280x720: cells 192 px, counts shown
+1280x720: four one-line seats (<= 44 px, points 20px/750), static ring follows the turn, die only in the roll-off, counts only when held, facts on tap (fortunes by kind, dropped seat), clear of the menu and the Watching chip
+390x844: cells 77 px, counts folded into the facts
+390x844: four one-line seats (<= 44 px, points 20px/750), static ring follows the turn, die only in the roll-off, counts only when held, facts on tap (fortunes by kind, dropped seat), clear of the menu and the Watching chip
+667x375: cells 146 px, counts folded into the facts
+667x375: four one-line seats (<= 44 px, points 20px/750), static ring follows the turn, die only in the roll-off, counts only when held, facts on tap (fortunes by kind, dropped seat), clear of the menu and the Watching chip
+844x390: cells 189 px, counts folded into the facts
+844x390: four one-line seats (<= 44 px, points 20px/750), static ring follows the turn, die only in the roll-off, counts only when held, facts on tap (fortunes by kind, dropped seat), clear of the menu and the Watching chip

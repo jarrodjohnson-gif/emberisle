@@ -1,0 +1,11 @@
+
+> turn-marker-prove
+> node scripts/turn-marker-prove.mjs
+
+1280x720: 32 moves, 7 passes, the marker on exactly one visible seat after each, always on state.current
+1280x720: strip rise none on the rail; trade offer and win row wear the ring and mark; zero and two markers fail
+390x844: 31 moves, 7 passes, the marker on exactly one visible seat after each, always on state.current
+390x844: strip rise 2 px under motion, none under reduced motion; trade offer and win row wear the ring and mark; zero and two markers fail
+844x390: 30 moves, 7 passes, the marker on exactly one visible seat after each, always on state.current
+844x390: strip rise 2 px under motion, none under reduced motion; trade offer and win row wear the ring and mark; zero and two markers fail
+turn-marker-prove: ok

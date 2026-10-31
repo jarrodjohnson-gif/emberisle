@@ -1,11 +1,12 @@
 // The ask-the-table toast (docs/BUILD_BIBLE.md 4.4): "Ember offers 2 sheep for 1 ore", Yes / No, and the 20 s left.
 // The asker sees the same offer with who has declined, then the outcome for a moment.
 // #537: a seat that cannot pay sees a compact demand ("Ember is looking for 2 ore") with Dismiss only — no Accept.
-import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import { Check, Hourglass, X } from "lucide-react";
 import { useViewport } from "@/lib/viewport";
 import { Button } from "@/components/ui/button";
+import { TurnMark } from "@/components/game/SeatRail";
 import { SeatDot } from "@/components/game/SeatDot";
 import { bagText } from "@/lib/game/trade";
 import { useGame } from "@/lib/game/store";
@@ -32,6 +33,7 @@ function declinedLine(names: string[]) {
 }
 
 export function TradeToast() {
+  const turnId = useGame((s) => s.state?.current);
   const { phone } = useViewport();
   const chatOpen = useGame((s) => s.chatOpen);
   const aboveChat = phone && chatOpen;
@@ -215,23 +217,27 @@ export function TradeToast() {
   if (body) lastBody.current = body;
   if (!body && !fading) return null;
 
+  // #531: only the offer from the seat on turn wears the ring; the rail/strip owns data-current-turn.
+  const onTurn = !!offer && offer.from === turnId;
   const card = (
     <section
       ref={dock}
       data-testid="trade-toast"
+      data-turn-ring={onTurn ? "true" : undefined}
       data-compact={compact || undefined}
       data-leaving={fading || undefined}
       aria-hidden={fading || undefined}
       inert={fading || undefined}
       data-fade-ms={fadeMs}
       className={`trade-dock pointer-events-auto shrink-0 rounded-chip p-2${aboveChat ? " trade-above-chat" : ""}${fading ? " opacity-0" : " opacity-100"}`}
-      style={{ transition: fading ? `opacity ${fadeMs}ms linear` : undefined }}
+      style={{ transition: fading ? `opacity ${fadeMs}ms linear` : undefined, ...(onTurn ? { "--seat-color": players?.find((p) => p.id === offer?.from)?.color } : {}) } as CSSProperties}
       role="region"
       aria-label="Trade offer"
       aria-labelledby={offer ? lineId : undefined}
       aria-describedby={why ? whyId : undefined}
       onKeyDown={(e) => { if (answering && e.key === "Escape") answerTrade(false); }}
     >
+      {onTurn ? <TurnMark /> : null}
       {body ?? lastBody.current}
     </section>
   );

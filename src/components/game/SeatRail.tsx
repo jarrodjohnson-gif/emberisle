@@ -4,10 +4,12 @@
 // non-zero, the roll-off die only while the roll-off is live, and the points at text-title. The seat on turn carries
 // `seat-turn`: its dot pulses softly (bible §4.3) and the card brightens over 200 ms (§8), with an ink ring on the dot and
 // aria-current so the turn never rests on colour or motion alone (#312); the dot is a SeatDot.
+// #531: that card is also the one `[data-current-turn="true"]` on the page: a 3 px ring in the seat's colour, its turn mark, and
+// on the strip a 2 px rise of the card's content (scripts/turn-marker-prove.mjs).
 // #645: under that line, on a line of its own, two public tallies at every width: "🛤 n" (longest continuous path) and "⚔ n"
 // (wayfarers played); the Longest Path / Largest Army holder wears a gold badge on its tally (see Tally).
 // Your fortunes by kind and a dropped seat's state are facts in the player menu, one tap away.
-import { useMemo } from "react";
+import { type CSSProperties, useMemo } from "react";
 import { type LucideIcon, Route, ScrollText, Swords } from "lucide-react";
 import { SeatBubbles } from "@/components/game/chunks";
 import { LazyBoundary } from "@/lib/lazy";
@@ -125,6 +127,13 @@ function SeatLine({ p, actor, short }: { p: PlayerState; actor: string; short?: 
   );
 }
 
+// #531: the non-colour half of the current-turn marker. Every chip of the seat on turn (rail, phone strip, trade toast, win rows)
+// wears one beside its ring: an ink pointer hanging from the top edge, so the turn never rests on the seat's colour alone (#312).
+// It sits out of the flow, so a chip with and without it is the same size. The parent must be positioned.
+export function TurnMark() {
+  return <span aria-hidden="true" data-testid="turn-mark" className="turn-mark" />;
+}
+
 // One seat's card: the menu's trigger (docs/design/chat.md "The player action menu") with its seat bubble beside it (#899). The rail
 // gives it `rail-<id>` and chip corners, the strip `seat-<id>`, control corners and a short name.
 function SeatCard({ p, actor, short, className }: { p: PlayerState; actor: string; short?: string; className: string }) {
@@ -134,10 +143,15 @@ function SeatCard({ p, actor, short, className }: { p: PlayerState; actor: strin
   // #488: reactions only arrive at an online table; the chunk that draws them is loaded by then (see chunks.ts).
   const online = useGame((s) => s.mode === "online");
   const strip = short !== undefined;
+  const turn = p.id === current;
+  // #531: the one persistent turn marker. The rail and the strip never mount together (Hud.tsx), so exactly one card carries it.
+  // The ring is the seat's colour (--seat-color) and the TurnMark is the non-colour cue; the strip's card also rises 2 px (styles.css).
   return (
     <div
       data-testid={`${strip ? "seat" : "rail"}-${p.id}`}
-      className={cn("seat-card relative transition-colors duration-200", className, p.id === current && "seat-turn")}
+      className={cn("seat-card relative transition-colors duration-200", className, strip && "seat-strip-cell", turn && "seat-turn")}
+      data-current-turn={turn ? "true" : undefined}
+      style={turn ? ({ "--seat-color": p.color } as CSSProperties) : undefined}
     >
       <button
         type="button"
@@ -153,6 +167,7 @@ function SeatCard({ p, actor, short, className }: { p: PlayerState; actor: strin
       >
         <SeatLine p={p} actor={actor} short={short} />
       </button>
+      {turn ? <TurnMark /> : null}
       {online ? (
         <LazyBoundary failed={null}>
           <SeatBubbles by="player" id={p.id} at={strip ? "strip" : "rail"} />

@@ -1,0 +1,10 @@
+
+> hud-safe-area-prove
+> node scripts/hud-safe-area-prove.mjs
+
+Warning: Detected unsettled top-level await at file:///tmp/p706-main/fresh/scripts/hud-safe-area-prove.mjs:51
+const hostPort = await new Promise((resolve) =>
+                 ^
+
+
+

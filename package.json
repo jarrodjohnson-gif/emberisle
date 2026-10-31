@@ -129,6 +129,7 @@
     "hex-variety-prove": "node scripts/hex-variety-prove.mjs",
     "seat-rail-prove": "node scripts/seat-rail-prove.mjs",
     "longest-army-prove": "node scripts/longest-army-prove.mjs",
+    "turn-marker-prove": "node scripts/turn-marker-prove.mjs",
     "roll-log-prove": "node scripts/roll-log-prove.mjs",
     "public-score-prove": "node --import ./server/register.mjs scripts/public-score-prove.mjs",
     "fortune-tray-prove": "node scripts/fortune-tray-prove.mjs",

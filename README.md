@@ -203,6 +203,7 @@ npm run tokens-prove         # number tokens are rimmed and legible, and nothing
 npm run touch-place-prove    # phone camera fit and touch picking from docs/design/mobile-camera-touch.md, checked on pure math in src/lib/scene/mobile-fit.ts (no browser)
 npm run turn-copy-prove      # action-first setup, roll, builds, discard and wayfarer; 15 px, at most two lines; waiting ownership preserved
 npm run turn-gain-prove      # practice at 4 sizes: "Your turn" notice when turn passes to person, floating "+N Good" gain lines after roll
+npm run turn-marker-prove    # the seat on turn carries exactly one [data-current-turn] with a seat-colour ring and a turn mark after every move, at 1280x720, 390x844 and 844x390; also on the trade offer and win rows
 npm run upgrade-prove        # one touch tap or click upgrades a starter outpost to a stronghold with no Place chip; status line shortfall on short hand
 npm run victory-target-prove # real lobby controls and hosted rules: default 10, public 7/10 selection, host-only updates, restart persistence, target win condition
 npm run visual-direction-prove # geometry, AA colour pairs, offer placement/refit, touch targets and truly static reduced motion

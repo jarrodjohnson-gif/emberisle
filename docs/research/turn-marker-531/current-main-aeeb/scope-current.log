@@ -1,0 +1,6 @@
+PASS TurnMark exact function/comment moved; only three import edges rewired
+PASS SeatDot exact main; marker JSX/DOM and all feature CSS unchanged
+PASS original marker proof exact1897fe6 SHA256 0fcc75a26b839052eb198e585ba0f2afb2801f20eaa1e3d2283bd6a8fa7edc06
+PASS every main command/guard/matrix retained plus own proof once in presentation-2
+PASS existing budgets exact main; source/proof scope retained; no new lazy gate or chunk
+PASS subsequent main refresh keeps all tested app/host runtime bytes exact2ea5ff6

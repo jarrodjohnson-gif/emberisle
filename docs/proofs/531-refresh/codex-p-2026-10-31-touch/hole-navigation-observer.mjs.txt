@@ -1,0 +1,22 @@
+import { chromium } from '/workspace/work/531-touch-ring/node_modules/playwright/index.mjs';
+const launch = chromium.launch.bind(chromium);
+const out = (kind, data) => process.stderr.write(`OBSERVER ${new Date().toISOString()} ${kind} ${JSON.stringify(data)}\n`);
+chromium.launch = async (...args) => {
+  const browser = await launch(...args);
+  const make = browser.newContext.bind(browser);
+  browser.newContext = async (...args) => {
+    const ctx = await make(...args);
+    ctx.on('page', (page) => {
+      page.on('framenavigated', (frame) => { if (frame === page.mainFrame()) out('navigation', frame.url()); });
+      page.on('console', (msg) => { if (/vite|reload|optimiz/i.test(msg.text())) out('console', {type:msg.type(),text:msg.text()}); });
+      page.on('response', (res) => { if (res.status() >= 400) out('response', {status:res.status(),url:res.url()}); });
+      page.on('websocket', (ws) => {
+        out('websocket', ws.url());
+        ws.on('framereceived', ({payload}) => { if (typeof payload === 'string' && /full-reload|update|error|connected/.test(payload)) out('ws-received', payload); });
+      });
+    });
+    return ctx;
+  };
+  return browser;
+};
+out('started', {node:process.version});
