@@ -51,3 +51,12 @@ Proof changes are separate from runtime changes. `title-layout-prove` adds liste
 The before-fix overflow proof fails at 844x390 with wordmark y=−207. Desk comment 6402475580 explicitly approves the chat width and Watch assertion equivalents; the owner accepted the existing pictures in comment 6402771837.
 
 The restored Wayfarer prefetch can retry the intentionally aborted target on opening its sheet. The console filter now recognizes only that exact controlled `target + "?retry="` URL in addition to the existing target URL; the no-unrelated-errors assertion is unchanged. This probe-only change is separate from runtime code.
+
+## Third desk review (comment on 2026-10-31 04:52), adopter Claude Opus 5.5 (builder 2)
+
+| File:line | Old | New | Why |
+|---|---|---|---|
+| `scripts/title-chunks-prove.mjs:124` (main) | `check((await settings.locator("summary").textContent()).includes("Online: on"), "settings summary stays eager")`: the eager settings shell shows while the optional module is held. | `check(dialog "Wayfarer rules" isVisible() && settings comboboxes === 0, "rules dialog opens eagerly while the settings module is held")`, after the existing dialog `waitFor()`. | This replaces the PR's earlier line, `"rules sheet entry stays eager"`, which checked that the button just clicked was visible and so was always true (desk finding 1). The new line protects the same thing as main's: the eager shell is open while the module is held. Mutation: releasing the module before the check fails it (`AssertionError … rules dialog opens eagerly while the settings module is held`); the real code passes. |
+| `scripts/title-chunks-prove.mjs:61` (console filter) | Console errors were ignored only for the controlled target URL. | Also ignores the controlled `target + "?retry="` URL. | Listed here as the desk asked (finding 2): it widens the error filter by exactly that one URL, which the restored Wayfarer prefetch requests when it retries the intentionally aborted target. Any other console error still fails the proof. |
+
+Pictures (finding 2: a 390x844 listed picture, plus the rules and colour sheets) are not added. Jarrod answered `q1117-interim` on 2026-10-31 ("too busy and not good Apple UI/UX"), so this title won't ship and the redesign follows #1216. New pictures of this look would not be used. The test work above stays as the base for the redesign.

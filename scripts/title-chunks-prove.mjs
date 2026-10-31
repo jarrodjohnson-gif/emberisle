@@ -122,8 +122,8 @@ try {
   await controlled("WayfarerOptions", false, async (page, release) => {
     await page.getByRole("button", { name: "Wayfarer rules", exact: true }).click();
     const settings = page.getByTestId("wayfarer-setup");
-    check(await page.getByRole("button", { name: "Wayfarer rules", exact: true }).isVisible(), "rules sheet entry stays eager");
     await page.getByRole("dialog", { name: "Wayfarer rules", exact: true }).waitFor();
+    check(await page.getByRole("dialog", { name: "Wayfarer rules", exact: true }).isVisible() && await settings.getByRole("combobox").count() === 0, "rules dialog opens eagerly while the settings module is held");
     check(await settings.getByRole("combobox").count() === 0, "held settings body is isolated from core title controls");
     check(await page.getByRole("button", { name: "Host a table", exact: true }).isVisible(), "held settings retain Host");
     release();
