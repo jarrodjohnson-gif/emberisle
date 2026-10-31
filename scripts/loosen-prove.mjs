@@ -8,6 +8,8 @@
 // #947 retirement: a proof whose feature was removed on purpose may be deleted only when docs/retired-proofs.json on the
 // base already lists that exact path, so the owner lists it in an earlier PR. A rename away from *-prove.mjs still fails,
 // listed or not, and a listed proof that is edited rather than deleted is compared like any other.
+// Guard proofs cannot be retired, and a retired path cannot be reused by an added or renamed proof. Each entry copies
+// an exact dated decision row naming its file in backticks; that row must already exist in docs/DECISIONS.md on the base.
 // The list is owner-only: any change to it fails unless the PR's author and the account that started the run are both
 // the repo owner, read from GitHub's event payload as label-commands.yml does for its owner-only labels. The one
 // exception is creating it with no entries where the base has none: an empty list lets no proof go. CI runs the base's
@@ -24,6 +26,8 @@ const PASS_EXIT = /process\.exit\(\s*0?\s*\)|process\.exitCode\s*=\s*0\b/g;
 const SKIP = /\.skip\b/g;
 const PROOF = /^(scripts|server)\/[^/]+-prove\.mjs$/;
 const RETIRED = "docs/retired-proofs.json";
+const DECISIONS = "docs/DECISIONS.md";
+const GUARDS = new Set(["scripts/loosen-prove.mjs", "scripts/registered-prove.mjs"]);
 
 const count = (text, re) => text.match(re)?.length ?? 0;
 const code = (text) =>
@@ -66,15 +70,34 @@ export function retiredProofs(text) {
     const bad = !PROOF.test(e?.file ?? "") ? "file" : !/^\d{4}-\d{2}-\d{2}$/.test(e.date ?? "") ? "date"
       : !Number.isInteger(e.issue) || e.issue < 1 ? "issue" : typeof e.reason !== "string" || !e.reason.trim() ? "reason" : null;
     if (bad) throw new Error(`entry ${i} has no valid ${bad}`);
+    if (GUARDS.has(e.file)) throw new Error(`entry ${i} cannot retire a proof guard`);
+    if (typeof e.decision !== "string" || !/^\| \d{4}-\d{2}-\d{2} \|.+\|$/.test(e.decision)
+      || !e.decision.includes(`\`${e.file}\``)) throw new Error(`entry ${i} has no valid decision row naming its file`);
     listed.set(e.file, e);
   });
   return listed;
+}
+
+function decisionRows(retired, decisions) {
+  const rows = new Set((decisions ?? "").split("\n"));
+  for (const e of retired.values()) {
+    if (!rows.has(e.decision)) throw new Error(`decision row for ${e.file} is missing from ${DECISIONS} on the base`);
+  }
+}
+
+// Both authorization documents come from the same base ref. HEAD cannot authorize its own deletion.
+export function readRetirements(base, show) {
+  const retired = retiredProofs(show(base, RETIRED));
+  decisionRows(retired, show(base, DECISIONS));
+  return retired;
 }
 
 // The reasons one `git diff --name-status` row loosens a proof (empty when it does not). retired: retiredProofs of the
 // base's list. show(side, path) returns the file's text at "base" or at "head".
 export function changeReasons([status, from, to = from], retired, show) {
   if (status === "D") return retired.has(from) ? [] : [`deleted, and ${RETIRED} on the base does not list it`];
+  if ((status === "A" || (status.startsWith("R") && from !== to)) && retired.has(to)) return ["added proof reuses a retired path"];
+  if (status === "A") return [];
   if (!PROOF.test(to)) return ["renamed away from *-prove.mjs (a retired proof is deleted, not renamed)"];
   return loosened(show("base", from), show("head", to));
 }
@@ -89,12 +112,13 @@ export function byOwner(event) {
 // The reasons a change to the retirement list fails (empty when it passes). status: its `git diff --no-renames` status.
 // headText: the list at HEAD (null when deleted). owner: byOwner of the run. Only the owner may change the list, except
 // that anyone may create it with no entries where the base has none, because an empty list lets no proof go.
-export function listReasons(status, headText, owner, who = "") {
+export function listReasons(status, headText, owner, who = "", decisions = "") {
   const reasons = [];
   let head = null;
   if (status !== "D") {
     try {
       head = retiredProofs(headText);
+      decisionRows(head, decisions);
     } catch (e) {
       reasons.push(`not a valid list: ${e.message}`);
     }
@@ -142,7 +166,8 @@ for (const [label, before, after, want] of cases) {
 
 // #947 self-test: [label, diff row, the base's list, HEAD's text (the base's is `proof`), a reason that must appear or null].
 const gone = "scripts/gone-prove.mjs";
-const listed = retiredProofs(JSON.stringify({ entries: [{ file: gone, date: "2026-10-21", issue: 923, reason: "feature removed" }] }));
+const decision = `| 2026-10-21 | Retire \`${gone}\` because its feature was removed. | Jarrod, #923 |`;
+const listed = retiredProofs(JSON.stringify({ entries: [{ file: gone, date: "2026-10-21", issue: 923, reason: "feature removed", decision }] }));
 const unlisted = retiredProofs(`{ "about": "seed", "entries": [] }`);
 const retireCases = [
   ["an unlisted deletion fails", ["D", gone], unlisted, null, `deleted, and ${RETIRED} on the base does not list it`],
@@ -152,6 +177,9 @@ const retireCases = [
   ["a listed proof with a removed check fails", ["M", gone], listed, proof.replace(/^check\(score.*\n/m, ""), "check count fell"],
   ["a listed proof renamed away fails", ["R100", gone, "scripts/gone.mjs"], listed, proof, "renamed away from *-prove.mjs"],
   ["an unlisted proof renamed away fails", ["R100", gone, "scripts/gone.mjs"], unlisted, proof, "renamed away from *-prove.mjs"],
+  ["an added proof cannot reuse a retired path", ["A", gone], listed, proof, "added proof reuses a retired path"],
+  ["a rename cannot reuse a retired path", ["R100", "scripts/other-prove.mjs", gone], listed, proof, "added proof reuses a retired path"],
+  ["an unlisted new proof passes", ["A", gone], unlisted, proof, null],
 ];
 for (const [label, row, retired, head, want] of retireCases) {
   const got = changeReasons(row, retired, (side) => (side === "base" ? proof : head));
@@ -159,7 +187,7 @@ for (const [label, row, retired, head, want] of retireCases) {
   else assert.ok(got.some((r) => r.startsWith(want)), `${label}: got ${JSON.stringify(got)}`);
   console.log(`ok   self-test: ${label}`);
 }
-const entry = (over) => JSON.stringify({ entries: [{ file: gone, date: "2026-10-21", issue: 923, reason: "feature removed", ...over }] });
+const entry = (over) => JSON.stringify({ entries: [{ file: gone, date: "2026-10-21", issue: 923, reason: "feature removed", decision, ...over }] });
 for (const [label, text, want] of [
   ["a missing list allows no deletion", null, 0],
   ["the empty seed list allows no deletion", `{ "about": "seed", "entries": [] }`, 0],
@@ -170,6 +198,11 @@ for (const [label, text, want] of [
   ["an entry with an empty reason fails", entry({ reason: " " }), /entry 0 has no valid reason/],
   ["a list with no entries array fails", `{ "files": ["${gone}"] }`, /no "entries" array/],
   ["a list that is not JSON fails", `entries: ["${gone}"]`, /JSON/],
+  ["loosen-prove cannot be retired", entry({ file: "scripts/loosen-prove.mjs" }), /cannot retire a proof guard/],
+  ["registered-prove cannot be retired", entry({ file: "scripts/registered-prove.mjs" }), /cannot retire a proof guard/],
+  ["an entry must cite a decision row", entry({ decision: undefined }), /no valid decision row/],
+  ["the decision row must name the exact proof", entry({ decision: decision.replace(gone, "scripts/other-prove.mjs") }), /no valid decision row/],
+  ["prose cannot stand in for a decision row", entry({ decision: `Retire \`${gone}\`` }), /no valid decision row/],
 ]) {
   if (typeof want === "number") assert.equal(retiredProofs(text).size, want, label);
   else assert.throws(() => retiredProofs(text), want, label);
@@ -201,11 +234,22 @@ for (const [label, status, headText, owner, want] of [
   ["the owner creating a seed with one entry passes", "A", entry({}), true, null],
   ["the owner breaking the list fails", "M", entry({ issue: 0 }), true, "not a valid list: entry 0 has no valid issue"],
 ]) {
-  const got = listReasons(status, headText, owner);
+  const got = listReasons(status, headText, owner, "", decision);
   if (want === null) assert.deepEqual(got, [], label);
   else assert.ok(got.some((r) => r.startsWith(want)), `${label}: got ${JSON.stringify(got)}`);
   console.log(`ok   self-test: ${label}`);
 }
+
+const fixtureShow = (baseList, baseDecisions, headList = entry({}), headDecisions = decision) => (ref, path) =>
+  ref === "fixture-base" ? (path === RETIRED ? baseList : baseDecisions) : (path === RETIRED ? headList : headDecisions);
+assert.equal(readRetirements("fixture-base", fixtureShow(seed, decision)).size, 0, "HEAD-only listing cannot authorize retirement");
+assert.equal(readRetirements("fixture-base", fixtureShow(null, decision)).size, 0, "missing base list ignores a HEAD list");
+assert.equal(readRetirements("fixture-base", fixtureShow(entry({}), decision, seed, "")).size, 1, "valid base authorization survives a different HEAD");
+assert.throws(() => readRetirements("fixture-base", fixtureShow(entry({}), "")), /decision row.*missing/, "HEAD-only decision cannot authorize retirement");
+assert.throws(() => readRetirements("fixture-base", fixtureShow(entry({}), decision.replace(gone, "scripts/other-prove.mjs"))), /decision row.*missing/, "another file's row is not authorization");
+assert.throws(() => readRetirements("fixture-base", fixtureShow(entry({}), null)), /decision row.*missing/, "missing decisions fail closed");
+assert.ok(listReasons("M", entry({}), true).some((r) => r.includes("decision row") && r.includes("missing")), "even the owner needs an existing base decision");
+console.log("ok   self-test: retirement list and exact decision rows come from the base only; HEAD grants no permission");
 
 const git = (...args) => execFileSync("git", args, { encoding: "utf8", maxBuffer: 64 << 20 });
 const flag = process.argv.indexOf("--base");
@@ -217,12 +261,12 @@ const changes = git("diff", "--name-status", "-M", base, "HEAD", "--", "scripts"
 
 // The retirement list is read from the base only. Missing (an older base) means empty; malformed means empty, so no deletion passes.
 let retired = new Map();
-let baseList = null;
+const showOrMissing = (ref, path) => {
+  try { return execFileSync("git", ["show", `${ref}:${path}`], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }); }
+  catch { return null; }
+};
 try {
-  baseList = execFileSync("git", ["show", `${base}:${RETIRED}`], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
-} catch {}
-try {
-  retired = retiredProofs(baseList);
+  retired = readRetirements(base, showOrMissing);
 } catch (e) {
   console.log(`note: ${RETIRED} on the base is not a valid list (${e.message}), so no proof may be deleted`);
 }
@@ -232,8 +276,7 @@ let compared = 0;
 let retiredNow = 0;
 for (const [status, from, to = from] of changes) {
   if (!PROOF.test(from) && !PROOF.test(to)) continue;
-  if (status === "A") continue;
-  compared++;
+  if (status !== "A") compared++;
   const reasons = changeReasons([status, from, to], retired, (side, path) => git("show", `${side === "base" ? base : "HEAD"}:${path}`));
   if (status === "D" && !reasons.length) {
     const e = retired.get(from);
@@ -251,7 +294,7 @@ try {
 } catch {}
 const who = `in a PR by ${payload?.pull_request?.user?.login ?? "(no event payload)"} in a run started by ${payload?.sender?.login ?? "(no event payload)"}`;
 for (const [status] of git("diff", "--name-status", "--no-renames", base, "HEAD", "--", RETIRED).split("\n").filter(Boolean).map((l) => l.split("\t"))) {
-  const reasons = listReasons(status, status === "D" ? null : git("show", `HEAD:${RETIRED}`), byOwner(payload), who);
+  const reasons = listReasons(status, status === "D" ? null : git("show", `HEAD:${RETIRED}`), byOwner(payload), who, showOrMissing(base, DECISIONS));
   if (!reasons.length) console.log(`${RETIRED}: ${status === "A" && !byOwner(payload) ? "created with no entries, which lets no proof go" : "changed by the repo owner"}`);
   for (const r of reasons) console.log(`FAIL ${RETIRED}: ${r}`);
   if (reasons.length) failed++;

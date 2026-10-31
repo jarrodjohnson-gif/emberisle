@@ -87,6 +87,7 @@
     "registered-prove": "node scripts/registered-prove.mjs",
     "readme-server-prove": "node scripts/readme-server-prove.mjs",
     "loosen-prove": "node scripts/loosen-prove.mjs",
+    "proof-retirement-prove": "node scripts/proof-retirement-prove.mjs",
     "desk-gate-prove": "node scripts/desk-gate-prove.mjs",
     "label-commands-prove": "node scripts/label-commands-prove.mjs",
     "dice-prove": "node --import ./server/register.mjs scripts/dice-prove.mjs",
