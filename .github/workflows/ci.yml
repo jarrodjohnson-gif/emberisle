@@ -571,6 +571,8 @@ jobs:
         run: npm run board-look-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation'
         run: npm run hex-variety-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation'
+        run: npm run harbor-access-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-3'
         run: npm run dock-piles-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-3'
