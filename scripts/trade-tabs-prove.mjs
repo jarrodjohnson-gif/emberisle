@@ -352,7 +352,7 @@ async function bankMotion(page, rate, tag) {
         `${tag}: ${key} starts and settles at rest ${JSON.stringify(cue)}`);
       assert.ok(Math.abs(cue.peak.y - trajectories[key]) < 0.1 && Math.abs(cue.hold.y - trajectories[key]) < 0.1,
         `${tag}: ${key} lifts for gain or dips for loss through the full hold ${JSON.stringify(cue)}`);
-      if (key.startsWith("card")) assert.equal(cue.movementDuration, 2500, `${tag}: ${key} card movement shares the fill clock`);
+      if (key.startsWith("card")) assert.equal(cue.movementDuration, 3000, `${tag}: ${key} card movement shares the fill clock`);
       assert.equal(cue.end.opacity, 0, `${tag}: ${key} fades after its reading window`);
     }
   }
